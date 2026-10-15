@@ -44,6 +44,26 @@ const tradeMonSchema = z.object({
   nickname: z.unknown().transform(cleanNickname),
 })
 
+const typeEnum = z.enum(POKE_TYPES as unknown as [PokeType, ...PokeType[]])
+const offerSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('heal'), percent: z.number().min(0).max(100) }),
+  z.object({ kind: z.literal('revive'), uid: z.string() }),
+  z.object({ kind: z.literal('boost'), type: typeEnum, amount: z.number().min(0) }),
+  z.object({ kind: z.literal('die'), uid: z.string(), type: typeEnum }),
+  z.object({ kind: z.literal('item') }),
+])
+const portalSchema = z.object({
+  active: z.boolean(),
+  closed: z.number().int().min(0),
+  deck: z.array(z.enum(['wild', 'item', 'distortion'])),
+  offers: z.array(offerSchema).max(8).nullable().optional(),
+  boosts: z.record(typeEnum, z.number().min(0)).optional(),
+  dice: z.record(z.array(typeEnum).max(8)).optional(),
+  won: z.boolean().optional(),
+  wonSeen: z.boolean().optional(),
+  tries: z.number().int().min(0).optional(),
+})
+
 const progressSchema = z.object({
   roundsDone: z.number().int().min(0).optional(),
   roundCounted: z.boolean().optional(),
@@ -60,6 +80,8 @@ const progressSchema = z.object({
   round: z.number().int().min(0).optional(),
   drawn: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'legend'])).optional(),
   lastCenter: z.boolean().optional(),
+  // The portal run (docs/28): an odd value in an edited save drops the run, never the save.
+  portal: portalSchema.optional().catch(undefined),
 })
 
 /** One parked region's block: the same fields the live region keeps at the top level of the save. */
@@ -148,6 +170,7 @@ export const saveSchema = z.object({
   adminEditAt: z.number().optional(),
   leaderboardVisited: z.boolean().optional(),
   versusRulesSeen: z.boolean().optional(),
+  portalRulesSeen: z.boolean().optional(),
   events: z
     .object({
       seen: z.array(z.enum(EVENT_IDS)).optional(),

@@ -9,6 +9,7 @@ import { addFossil, isReviving } from './fossils'
 import { LEGACY_GAUGE } from './legacyGauge'
 import { itemOnFor, MONEY, sellPrice, shopSells, usableIn } from './items'
 import { earnedGold } from './liveEvents'
+import { inPortalRun, portalModeOf, portalStateOf, portalWipe } from './portal'
 import { areaOpenAt } from './worldList'
 import {
   averageLevel,
@@ -581,6 +582,8 @@ export function finishRound(
  * Pokémon levels and XP, items and Pokédollars are all kept. In Extreme mode nothing heals: the team rests.
  */
 export function applyWipe(save: SaveData, areaId: string, data: GameData): SaveData {
+  // A portal run (docs/28) ends there: its portals closed go back to 0 and its boons are lost.
+  if (inPortalRun(save, data, areaId)) return portalWipe(save, data, areaId)
   const p = progressOf(save, areaId)
   const healed = new Set(wipeHeals(save, data) ? save.team : [])
   return {
@@ -807,4 +810,22 @@ export function releaseDuplicates(save: SaveData): { save: SaveData; released: P
   if (!released.length) return { save, released }
   const gone = new Set(released.map((p) => p.id))
   return { save: { ...save, box: save.box.filter((p) => !gone.has(p.id)) }, released }
+}
+
+/**
+ * The portal run's rules pop-up is due (docs/28, docs/15 §20): the first area of the region being played with a portal
+ * run switched on, open and not won yet, while the player hasn't seen the rules. Null otherwise.
+ */
+export function portalRulesDue(save: SaveData, data: GameData): Area | null {
+  if (save.portalRulesSeen) return null
+  const region = regionOf(save)
+  return (
+    data.areas.find(
+      (a) =>
+        regionOfArea(a) === region &&
+        !!portalModeOf(a, data) &&
+        !portalStateOf(save, a.id).won &&
+        isAreaUnlocked(save, a.id, data),
+    ) ?? null
+  )
 }

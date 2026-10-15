@@ -5,6 +5,7 @@
 // areas on the days left. Each raid Pokémon has its area in its home region — a mythical's lair, a legendary's boss
 // area, else where it lives — and a catch stays locked until that area is completed (engine/raid.ts).
 import { isLegendary } from './breeding'
+import { portalRaidRules } from './portalMode'
 import { raidAllyAllowed } from './raidBattle'
 import { regionOf, regionOfArea, regionOfSpecies } from './regions'
 import { createRng } from './rng'
@@ -42,6 +43,10 @@ export function raidRules(data: GameData, dex: number, kind: RaidKindOf = 'daily
     const v = Number(own[k])
     return own[k] != null && Number.isFinite(v) ? v : (cfg[k] as number)
   }
+  // A portal area's raid (docs/28: Distortion World's Giratina) has its own numbers, set on the area.
+  const portal = kind === 'progress' ? portalRaidRules(data, areaId) : null
+  if (portal)
+    return { bars: portal.bars, barHp: Math.max(0.1, pick('barHp') ?? 1), level: portal.level, upgradeLevel: portal.upgradeLevel }
   const level = (kind === 'progress' && worldRaidLevel(data, dex, areaId)) || pick('level')
   return {
     bars: Math.max(1, Math.round(pick('bars'))),
@@ -66,6 +71,8 @@ export function worldRaidLevel(data: GameData, dex: number, areaId: string | und
 export function raidTeamCap(data: GameData, dex: number, kind: RaidKindOf = 'daily', areaId?: string): number {
   const cfg = data.config.events.raid
   if (kind === 'daily') return cfg.teamCap
+  const portal = portalRaidRules(data, areaId)
+  if (portal) return portal.teamCap
   const world = worldRaidLevel(data, dex, areaId)
   if (world) return Math.max(1, Math.min(100, Math.round(world)))
   const own = Number(cfg.progress?.perMon?.[dex]?.teamCap)

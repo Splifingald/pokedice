@@ -1,0 +1,94 @@
+// The portal run's settings (docs/28), on their own so the raid's numbers can read them without the run's rules: an
+// area's `mode` as the admin set it, cleaned and filled from the defaults, and the switch that turns it on.
+import { eventOpenTo } from './events'
+import type { Area, GameData, PortalRunMode } from './types'
+
+/** Distortion World's numbers (the user's spec of 2026-10-15): what a new portal area starts with. */
+export const DEFAULT_PORTAL_RUN: PortalRunMode = {
+  kind: 'portal',
+  portals: 10,
+  wild: 5,
+  items: 1,
+  offers: 3,
+  heal: { weight: 1, percent: 30 },
+  revive: { weight: 1 },
+  boost: { weight: 1, amount: 10 },
+  die: { weight: 1, maxDice: 8 },
+  item: {
+    weight: 1,
+    items: [
+      { key: 'hyper-potion', weight: 40 },
+      { key: 'revive', weight: 40 },
+      { key: 'max-revive', weight: 20 },
+    ],
+  },
+  raid: { level: 100, upgradeLevel: 10, bars: 4, teamCap: 100 },
+}
+
+const num = (v: unknown, fallback: number, min: number, max: number): number => {
+  const n = Number(v)
+  return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : fallback
+}
+const int = (v: unknown, fallback: number, min: number, max: number) => Math.round(num(v, fallback, min, max))
+const obj = (v: unknown): Record<string, unknown> =>
+  v && typeof v === 'object' ? (v as Record<string, unknown>) : {}
+
+/** A portal mode as the admin left it (a missing or odd number falls back to the default); null when it isn't one. */
+export function normalisePortal(raw: unknown): PortalRunMode | null {
+  const r = obj(raw)
+  if (r.kind !== 'portal') return null
+  const d = DEFAULT_PORTAL_RUN
+  const heal = obj(r.heal)
+  const boost = obj(r.boost)
+  const die = obj(r.die)
+  const item = obj(r.item)
+  const raid = obj(r.raid)
+  const items = Array.isArray(item.items)
+    ? item.items
+        .map((x) => obj(x))
+        .filter((x) => typeof x.key === 'string' && x.key)
+        .map((x) => ({ key: String(x.key), weight: num(x.weight, 0, 0, 1e6) }))
+    : d.item.items
+  return {
+    kind: 'portal',
+    portals: int(r.portals, d.portals, 1, 99),
+    wild: int(r.wild, d.wild, 0, 30),
+    items: int(r.items, d.items, 0, 30),
+    offers: int(r.offers, d.offers, 1, 5),
+    heal: {
+      weight: num(heal.weight, d.heal.weight, 0, 1e6),
+      percent: num(heal.percent, d.heal.percent, 0, 100),
+    },
+    revive: { weight: num(obj(r.revive).weight, d.revive.weight, 0, 1e6) },
+    boost: {
+      weight: num(boost.weight, d.boost.weight, 0, 1e6),
+      amount: int(boost.amount, d.boost.amount, 0, 999),
+    },
+    die: { weight: num(die.weight, d.die.weight, 0, 1e6), maxDice: int(die.maxDice, d.die.maxDice, 1, 12) },
+    item: { weight: num(item.weight, d.item.weight, 0, 1e6), items },
+    raid: {
+      level: int(raid.level, d.raid.level, 1, 100),
+      upgradeLevel: int(raid.upgradeLevel, d.raid.upgradeLevel, 1, 10),
+      bars: int(raid.bars, d.raid.bars, 1, 10),
+      teamCap: int(raid.teamCap, d.raid.teamCap, 1, 100),
+    },
+  }
+}
+
+/** The portal run is switched on for whoever is playing (Off by default; docs/15 §20). */
+export const portalRunsOn = (data: GameData): boolean => eventOpenTo(data.config.portalRun?.access, data)
+
+/** The area's portal run, when it has one and the switch is on for the player; null otherwise (it plays as before). */
+export function portalModeOf(
+  area: Pick<Area, 'mode'> | undefined | null,
+  data: GameData,
+): PortalRunMode | null {
+  if (!area?.mode || !portalRunsOn(data)) return null
+  return normalisePortal(area.mode)
+}
+
+/** The raid's numbers of a portal area (Lv.100, dice level 10, 4 bars, teams up to Lv.100); null elsewhere. */
+export function portalRaidRules(data: GameData, areaId: string | undefined): PortalRunMode['raid'] | null {
+  const area = areaId ? data.areas.find((a) => a.id === areaId) : undefined
+  return portalModeOf(area, data)?.raid ?? null
+}
