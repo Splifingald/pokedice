@@ -8,6 +8,7 @@ import {
   applyEnded,
   applyTake,
   applyTaken,
+  chooseLanding,
   inWorldRegion,
   isExtreme,
   listOut,
@@ -18,7 +19,9 @@ import {
   tradesOf,
   tradesOn,
   previewTake,
+  type Landed,
   type OpenListing,
+  type RegionId,
   type TradeLogEntry,
   type TradeVisibility,
   type TradeWant,
@@ -276,21 +279,37 @@ export async function post(
   return listing
 }
 
-/** TRADE: the server takes the listing (first come), then this save applies its half at once; the scene follows. */
-export async function take(listing: TradeListing, instId: string): Promise<TradeShow> {
+/**
+ * TRADE: the server takes the listing (first come), then this save applies its half at once, in the Box picked on the
+ * confirm (`region`) when several may take it; the scene follows.
+ */
+export async function take(listing: TradeListing, instId: string, region?: RegionId): Promise<TradeShow> {
   await pushed()
   const r = await takeListing(listing.code, instId)
   const cur = useGame.getState()
   if (!cur.save) throw new Error('trades_no_save')
   // Your copy it will meet, as it is before the trade.
-  const { mine } = previewTake(cur.save, cur.data, r.listed, r.given)
-  const res = applyTake(cur.save, cur.data, r, Date.now(), newId)
+  const { mine } = previewTake(cur.save, cur.data, r.listed, r.given, region)
+  const res = applyTake(cur.save, cur.data, r, Date.now(), newId, region)
   commitSave(res.save)
   forgetBoard(listing.id)
   void settle([r.id])
   const entry = tradesOf(res.save).log?.find((l) => l.id === r.id)
   if (!entry) throw new Error('trades_failed')
   return { entry, isNew: res.received?.isNew, mine, instId: res.received?.instId }
+}
+
+/**
+ * The Box picked for a traded Pokémon several could take (the scene's last step): it goes there, or waits there
+ * locked, and the cloud copy follows. Null when it no longer waits (picked on another device).
+ */
+export function land(id: string, region: RegionId): Landed | null {
+  const { save, data } = useGame.getState()
+  const res = save && chooseLanding(save, data, id, region)
+  if (!res) return null
+  commitSave(res.save)
+  void pushSaveNow().catch(() => {})
+  return res
 }
 
 /** CANCEL: back to the Box; too late (taken a moment before), the check applies the trade instead. */

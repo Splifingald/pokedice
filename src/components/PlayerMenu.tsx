@@ -11,6 +11,7 @@ import {
   tradeCfg,
   tradeClosed,
   tradesOf,
+  tradesToWatch,
   tradesOn,
 } from '@/engine'
 import { otherSave } from '@/store/extreme'
@@ -121,8 +122,9 @@ export function PlayerMenu() {
   // Invite rewards ready to open (docs/15 §25) wait on the Friends page: its dot counts them too.
   const rewardsReady = useInviteGauge()?.ready.length ?? 0
   const friendCount = useFriends((s) => s.ids.size)
-  // Trades (docs/23): a trade of yours went through while you were away, and you haven't looked yet.
-  const tradesUnseen = save && !isExtreme(save) ? (tradesOf(save).unseen?.length ?? 0) : 0
+  // Trades (docs/23): a trade of yours went through while you were away and you haven't looked yet, or a traded
+  // Pokémon waits for you to pick its Box.
+  const tradesUnseen = save && !isExtreme(save) ? tradesToWatch(save).length : 0
   const tradesOut = save ? tradesOf(save).out.length : 0
   // The row is there once the admin's switch is on for this player (and while something is listed, so it can come back).
   // Not inside a small world: no trade reaches one (docs/21).

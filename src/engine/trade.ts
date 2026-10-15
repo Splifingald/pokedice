@@ -7,6 +7,7 @@ import { everyRegionBox, type BoxedMon } from './daycare'
 import { eventOpenTo } from './events'
 import { isExtreme } from './extreme'
 import { isReviving } from './fossils'
+import { regionBestLevel, worldHomers } from './homecoming'
 import { badgesHeld } from './liveEvents'
 import { cleanNickname } from './nickname'
 import { createInstance, evolve, instanceMaxHp, isTradeEvolution, tradeEvolutionOf } from './progression'
@@ -17,6 +18,7 @@ import {
   KANTO,
   regionOf,
   regionOfSpecies,
+  regionSpecies,
   speciesAllowedIn,
   unlockedRegions,
   worldRegionOf,
@@ -28,12 +30,14 @@ import type {
   RegionSave,
   SaveData,
   TradeConfig,
+  TradeLanding,
   TradeLogEntry,
   TradeOut,
   TradeOutcome,
   TradeVisibility,
   TradeWant,
   TradesSave,
+  WorldHomer,
 } from './types'
 
 export const tradeCfg = (data: GameData): TradeConfig => data.config.trade
@@ -485,6 +489,7 @@ export function listBack(save: SaveData, data: GameData, listingId: string): Pla
 
 export interface Received {
   save: SaveData
+  /** `pending` when the player still has to pick its Box (`landings`), `locked` when it waits there. */
   outcome: TradeOutcome
   /** The species that arrived, and the level it arrived at (§1.3). */
   dex: number
@@ -496,12 +501,81 @@ export interface Received {
   instId: string | null
   /** It (or what it evolved into) wasn't in that region's Pokédex. */
   isNew: boolean
+  /** The Boxes it may go to (§1.4): more than one, and the player picks. */
+  landings: RegionId[]
+  /** As it arrived (its level, nickname, a trade evolution), before any Box. */
+  inst: PokemonInstance
+}
+
+// Built once per data, as the minimum's index: the picker previews a trade on every row.
+const regionDexes = new WeakMap<GameData, Map<RegionId, Set<number>>>()
+
+function regionDex(data: GameData, region: RegionId): Set<number> {
+  let byRegion = regionDexes.get(data)
+  if (!byRegion) regionDexes.set(data, (byRegion = new Map()))
+  let dex = byRegion.get(region)
+  if (!dex) byRegion.set(region, (dex = regionSpecies(data, region)))
+  return dex
+}
+
+/**
+ * The Boxes a traded Pokémon may go to (§1.4): its home region's first, then every other region started (small worlds
+ * left out) whose Pokédex lists it (Pikachu: Kanto, and Johto, whose Viridian Forest… has one), in the regions' order.
+ * More than one, and the player picks. Empty when not even its home region is started (switched off since): it lands
+ * where it always did (`landing`).
+ */
+export function tradeLandings(save: SaveData, data: GameData, dex: number): RegionId[] {
+  const started = tradeRegions(save, data)
+  const home = homeRegionOf(data, dex)
+  const others = started.filter((id) => id !== home && regionDex(data, id).has(dex))
+  return home && started.includes(home) ? [home, ...others] : others
+}
+
+/** The level of your weakest plain copy of a species in a region's Box, or null when you have none. */
+function mineIn(save: SaveData, region: RegionId, dex: number): number | null {
+  const block = region === regionOf(save) ? save : save.parked?.[region]
+  const plain = (block?.box ?? []).filter((p) => p.dex === dex && !p.shiny && !isReviving(p))
+  return plain.length ? Math.min(...plain.map((p) => p.level)) : null
+}
+
+/**
+ * A traded Pokémon arriving in a region's Box. Above that region's best level (its team, Box and Day Care, as a small
+ * world's Pokémon going home count it, docs/26 §1) it waits there, locked, on the same list (`events.worldHome`) until
+ * one of its Pokémon reaches its level, so a Lv.50 from a trade can't carry a region still being played; it arrives
+ * then by the catch rule, Pokédex entry and all. At or under it, the catch rule now, with both species in the Pokédex
+ * when it evolved on the way in.
+ */
+function landTraded(
+  save: SaveData,
+  data: GameData,
+  region: RegionId,
+  inst: PokemonInstance,
+  arrivedDex: number,
+  tradedBy?: string,
+): Placed & { isNew: boolean } {
+  const here = landing(save, data, region)
+  const dexBefore = pokedexOf(save, here)
+  const isNew = !dexBefore.includes(inst.dex) || (arrivedDex !== inst.dex && !dexBefore.includes(arrivedDex))
+  if (regionBestLevel(save, data, here) < inst.level) {
+    const homer: WorldHomer = { inst, region: here, ...(tradedBy && { tradedBy }) }
+    const next: SaveData = { ...save, events: { ...save.events, worldHome: [...worldHomers(save), homer] } }
+    return { save: next, outcome: 'locked', instId: inst.id, region: here, isNew }
+  }
+  const placed = placeInBox(save, data, here, inst)
+  // The species that arrived counts too when it evolved on the way in.
+  if (arrivedDex === inst.dex) return { ...placed, isNew }
+  const next = withBlock(placed.save, placed.region, (b) => ({
+    ...b,
+    pokedex: b.pokedex.includes(arrivedDex) ? b.pokedex : [...b.pokedex, arrivedDex],
+  }))
+  return { ...placed, save: next, isNew }
 }
 
 /**
  * A Pokémon arrives in a trade: a fresh instance at the arrival level (XP 0, full HP) with the nickname its trainer
- * gave it, evolved at once when it's a trade evolution its home region allows, then placed in its home region's Box by
- * the catch rule. Both species go in that region's Pokédex.
+ * gave it, evolved at once when it's a trade evolution its home region allows. Then it goes to a Box (`landTraded`):
+ * `region` when it's one it may go to; the only one when there's one; otherwise it waits, out of every Box, for the
+ * player to pick (`pending`, `chooseLanding`).
  */
 export function receiveTrade(
   save: SaveData,
@@ -510,38 +584,102 @@ export function receiveTrade(
   givenLevel: number,
   now: number,
   newId: () => string,
+  opts: { region?: RegionId; tradedBy?: string } = {},
 ): Received {
   const arrival = arrivalLevel(data, mon.dex, givenLevel)
-  const region = homeRegionOf(data, mon.dex) ?? regionOf(save)
+  const home = homeRegionOf(data, mon.dex) ?? regionOf(save)
   let inst = createInstance(mon.dex, arrival.level, data, newId(), now)
   if (mon.shiny) inst.shiny = true
   const nickname = cleanNickname(mon.nickname)
   if (nickname) inst.nickname = nickname
   const to = tradeEvolutionOf(data, mon.dex)
-  const evolvedTo = to != null && speciesAllowedIn(data, region)(to) ? to : null
+  const evolvedTo = to != null && speciesAllowedIn(data, home)(to) ? to : null
   if (evolvedTo != null) inst = evolve(inst, evolvedTo, data)
   inst.currentHp = instanceMaxHp(inst, data)
-  const dexBefore = pokedexOf(save, region)
-  const isNew = !dexBefore.includes(inst.dex) || (evolvedTo != null && !dexBefore.includes(mon.dex))
-  let placed = placeInBox(save, data, region, inst)
-  // The species that arrived counts too when it evolved on the way in.
-  if (evolvedTo != null)
-    placed = {
-      ...placed,
-      save: withBlock(placed.save, placed.region, (b) => ({
-        ...b,
-        pokedex: b.pokedex.includes(mon.dex) ? b.pokedex : [...b.pokedex, mon.dex],
-      })),
-    }
+  const landings = tradeLandings(save, data, inst.dex)
+  const base = { dex: mon.dex, arrival, evolvedTo, landings, inst }
+  const region =
+    opts.region && landings.includes(opts.region)
+      ? opts.region
+      : landings.length > 1
+        ? null
+        : (landings[0] ?? home)
+  if (!region) return { ...base, save, outcome: 'pending', region: home, instId: null, isNew: false }
+  const placed = landTraded(save, data, region, inst, mon.dex, opts.tradedBy)
+  return { ...base, ...placed }
+}
+
+/** The trade waiting for its trainer to pick a Box, if this one is. */
+export const pendingLanding = (save: SaveData, id: string): TradeLanding | undefined =>
+  tradesOf(save).landing?.find((l) => l.id === id)
+
+/** What one Box would make of a Pokémon waiting for its pick: how it'd be kept, your copy there, the best level. */
+export interface LandingOption {
+  region: RegionId
+  outcome: TradeOutcome
+  isNew: boolean
+  /** Your weakest plain copy there, if you have one. */
+  mine: number | null
+  /** That region's best level now: above it, the Pokémon waits locked. */
+  best: number
+}
+
+/** Each Box a waiting Pokémon may go to, as it would go there now: the pick's rows. Empty when it isn't waiting. */
+export function landingOptions(save: SaveData, data: GameData, id: string): LandingOption[] {
+  const p = pendingLanding(save, id)
+  if (!p) return []
+  return tradeLandings(save, data, p.inst.dex).map((region) =>
+    landingOption(save, data, region, p.inst, p.dex),
+  )
+}
+
+function landingOption(
+  save: SaveData,
+  data: GameData,
+  region: RegionId,
+  inst: PokemonInstance,
+  arrivedDex: number,
+): LandingOption {
+  const r = landTraded(save, data, region, inst, arrivedDex)
   return {
-    save: placed.save,
-    outcome: placed.outcome,
-    dex: mon.dex,
-    arrival,
-    evolvedTo,
-    region: placed.region,
+    region: r.region,
+    outcome: r.outcome,
+    isNew: r.isNew,
+    mine: mineIn(save, r.region, inst.dex),
+    best: regionBestLevel(save, data, r.region),
+  }
+}
+
+export interface Landed {
+  save: SaveData
+  /** How it was kept there, with what the result card says. */
+  option: LandingOption
+  /** The instance it is now (a new one, or the copy it replaced); null when it merged into yours. */
+  instId: string | null
+}
+
+/**
+ * The player picked the Box a traded Pokémon goes to (one of `tradeLandings`, worked out again now: a region started
+ * since counts): it goes there by `landTraded`, the trade's log says how it was kept and where. Null when it isn't
+ * waiting or can't go there.
+ */
+export function chooseLanding(save: SaveData, data: GameData, id: string, region: RegionId): Landed | null {
+  const p = pendingLanding(save, id)
+  if (!p) return null
+  const options = tradeLandings(save, data, p.inst.dex)
+  if (options.length ? !options.includes(region) : region !== homeRegionOf(data, p.inst.dex)) return null
+  const t = tradesOf(save)
+  const entry = t.log?.find((l) => l.id === id)
+  const option = landingOption(save, data, region, p.inst, p.dex)
+  const placed = landTraded(save, data, region, p.inst, p.dex, entry?.with || undefined)
+  const t2 = tradesOf(placed.save)
+  const landing = (t2.landing ?? []).filter((l) => l.id !== id)
+  const { landing: _all, ...rest } = t2
+  const log = t2.log?.map((l) => (l.id === id ? { ...l, outcome: placed.outcome, region: placed.region } : l))
+  return {
+    save: { ...placed.save, trades: { ...rest, ...(log && { log }), ...(landing.length && { landing }) } },
+    option,
     instId: placed.instId,
-    isNew,
   }
 }
 
@@ -556,7 +694,11 @@ const LOG_KEPT = 20
 
 function markDone(save: SaveData, id: string, log?: TradeLogEntry, unseen = false): SaveData {
   const t = tradesOf(save)
-  const nextLog = log ? [log, ...(t.log ?? []).filter((l) => l.id !== id)].slice(0, LOG_KEPT) : t.log
+  // A trade still waiting for its Box keeps its entry: its scene is where the pick is made.
+  const waiting = new Set((t.landing ?? []).map((l) => l.id))
+  const nextLog = log
+    ? [log, ...(t.log ?? []).filter((l) => l.id !== id)].filter((l, i) => i < LOG_KEPT || waiting.has(l.id))
+    : t.log
   const ids = unseen ? [id, ...(t.unseen ?? []).filter((u) => u !== id)] : t.unseen
   return {
     ...save,
@@ -611,17 +753,36 @@ export interface TradeResult {
   already: boolean
 }
 
-/** You took a listing: the Pokémon you gave leaves your Box for good, theirs arrives at that one's level. */
+/** A Pokémon received with its Box still to pick waits in `trades.landing` (§1.4). */
+function keepPending(save: SaveData, id: string, r: Received): SaveData {
+  if (r.outcome !== 'pending') return save
+  const t = tradesOf(save)
+  const entry: TradeLanding = { id, inst: r.inst, dex: r.dex }
+  return { ...save, trades: { ...t, landing: [...(t.landing ?? []).filter((l) => l.id !== id), entry] } }
+}
+
+/** Where it went, for the log: absent while the player still has to pick. */
+const wentTo = (r: Received) => (r.outcome === 'pending' ? {} : { region: r.region })
+
+/**
+ * You took a listing: the Pokémon you gave leaves your Box for good, theirs arrives at that one's level, in `region`
+ * (picked on the confirm) when it may go there. Without one (a trade a closed tab left half done) and with several
+ * Boxes it may go to, it waits for the pick.
+ */
 export function applyTake(
   save: SaveData,
   data: GameData,
   t: TakenTrade,
   now: number,
   newId: () => string,
+  region?: RegionId,
 ): TradeResult {
   if (tradeApplied(save, t.id)) return { save, received: null, already: true }
   const gone = takeOutOfBox(save, data, t.given.id) ?? save
-  const received = receiveTrade(gone, data, t.listed, t.given.level, now, newId)
+  const received = receiveTrade(gone, data, t.listed, t.given.level, now, newId, {
+    region,
+    tradedBy: t.with || undefined,
+  })
   const log: TradeLogEntry = {
     id: t.id,
     at: now,
@@ -632,13 +793,15 @@ export function applyTake(
     got: { dex: received.dex, level: received.arrival.level, ...extras(t.listed) },
     ...(received.evolvedTo != null && { evolvedTo: received.evolvedTo }),
     outcome: received.outcome,
+    ...wentTo(received),
   }
-  return { save: markDone(received.save, t.id, log), received, already: false }
+  return { save: markDone(keepPending(received.save, t.id, received), t.id, log), received, already: false }
 }
 
 /**
  * Your listing was taken while you were away: it leaves `trades.out` (or, from an old copy of the save, your Box), and
- * the Pokémon given for it arrives at the level of the one you listed. It waits for you to see it (the gold dot).
+ * the Pokémon given for it arrives at the level of the one you listed. It waits for you to see it (the gold dot), and
+ * for you to pick its Box when several may take it (on the scene's last step).
  */
 export function applyTaken(
   save: SaveData,
@@ -652,7 +815,9 @@ export function applyTaken(
   let next: SaveData = { ...save, trades: { ...tr, out: tr.out.filter((o) => o.listing !== t.id) } }
   if (everyRegionBox(next, data).some((m) => m.inst.id === t.listed.id))
     next = takeOutOfBox(next, data, t.listed.id) ?? next
-  const received = receiveTrade(next, data, t.given, t.listed.level, now, newId)
+  const received = receiveTrade(next, data, t.given, t.listed.level, now, newId, {
+    tradedBy: t.with || undefined,
+  })
   const log: TradeLogEntry = {
     id: t.id,
     at: now,
@@ -663,8 +828,13 @@ export function applyTaken(
     got: { dex: received.dex, level: received.arrival.level, ...extras(t.given) },
     ...(received.evolvedTo != null && { evolvedTo: received.evolvedTo }),
     outcome: received.outcome,
+    ...wentTo(received),
   }
-  return { save: markDone(received.save, t.id, log, true), received, already: false }
+  return {
+    save: markDone(keepPending(received.save, t.id, received), t.id, log, true),
+    received,
+    already: false,
+  }
 }
 
 /** A listing of yours ended without a trade: its Pokémon is back (by the catch rule), once. */
@@ -804,30 +974,61 @@ export interface TakePreview {
   received: Received
   /** The level of your copy it would replace or merge into, if you have one there. */
   mine: number | null
+  /** That region's best level before the trade: above it, the Pokémon waits there, locked. */
+  best: number
 }
 
-/** What giving this Pokémon for that listed one would bring, without doing it: the picker's lines and the confirm. */
+/**
+ * What giving this Pokémon for that listed one would bring, without doing it: the picker's lines and the confirm. It
+ * goes to `region` when it may go there; else, of the Boxes it may go to, the first where it can play now (not
+ * locked), or its home region's: the confirm's pick starts there.
+ */
 export function previewTake(
   save: SaveData,
   data: GameData,
   listed: { dex: number; shiny?: boolean },
   given: PokemonInstance,
+  region?: RegionId,
 ): TakePreview {
   const gone = takeOutOfBox(save, data, given.id) ?? save
-  const received = receiveTrade(gone, data, listed, given.level, 0, () => 'preview')
-  const final = received.evolvedTo ?? listed.dex
-  const block = received.region === regionOf(gone) ? gone : gone.parked?.[received.region]
-  const plain = (block?.box ?? []).filter((p) => p.dex === final && !p.shiny && !isReviving(p))
-  return { received, mine: plain.length ? Math.min(...plain.map((p) => p.level)) : null }
+  const at = (r?: RegionId) =>
+    receiveTrade(gone, data, listed, given.level, 0, () => 'preview', { region: r })
+  const draft = at(region)
+  let received = draft
+  if (draft.outcome === 'pending') {
+    const each = draft.landings.map(at)
+    received = each.find((r) => r.outcome !== 'locked') ?? each[0]!
+  }
+  return {
+    received,
+    mine: mineIn(gone, received.region, received.evolvedTo ?? listed.dex),
+    best: regionBestLevel(gone, data, received.region),
+  }
+}
+
+/** The same for each Box it may go to, in `tradeLandings`' order: the confirm's pick when there's more than one. */
+export function previewLandings(
+  save: SaveData,
+  data: GameData,
+  listed: { dex: number; shiny?: boolean },
+  given: PokemonInstance,
+): TakePreview[] {
+  const first = previewTake(save, data, listed, given)
+  return first.received.landings.length > 1
+    ? first.received.landings.map((r) => previewTake(save, data, listed, given, r))
+    : [first]
 }
 
 /**
- * Your listings taken while you were away whose scene hasn't played yet, oldest first: Home plays them in turn, and
- * the gold dot stays until it has (or until the trade is opened from the Done list).
+ * Your listings taken while you were away whose scene hasn't played yet, and any trade whose Box is still to pick,
+ * oldest first: Home plays them in turn, and the gold dot stays until it has (or until the trade is opened from the
+ * Done list) and the pick is made.
  */
 export function tradesToWatch(save: SaveData): TradeLogEntry[] {
-  const unseen = new Set(tradesOf(save).unseen ?? [])
-  return (tradesOf(save).log ?? []).filter((l) => unseen.has(l.id)).reverse()
+  // A trade whose Box is still to pick waits too, seen or not: its scene ends on the pick.
+  const t = tradesOf(save)
+  const due = new Set([...(t.unseen ?? []), ...(t.landing ?? []).map((l) => l.id)])
+  return (t.log ?? []).filter((l) => due.has(l.id)).reverse()
 }
 
 /** The trades you've looked at (all of them, or these): the gold dot goes. */

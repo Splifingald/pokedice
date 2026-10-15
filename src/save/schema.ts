@@ -209,6 +209,7 @@ export const saveSchema = z.object({
             region: z.string().min(1).max(80),
             worldId: z.string().max(80).optional(),
             from: z.string().min(1).max(80).optional(),
+            tradedBy: z.string().max(40).optional(),
           }),
         )
         .max(2000)
@@ -281,12 +282,17 @@ export const saveSchema = z.object({
             gave: tradeMonSchema,
             got: tradeMonSchema,
             evolvedTo: z.number().int().min(1).optional(),
-            outcome: z.enum(['new', 'replaced', 'merged', 'shiny']),
+            outcome: z.enum(['new', 'replaced', 'merged', 'shiny', 'locked', 'pending']),
+            region: z.string().min(1).max(80).optional(),
           }),
         )
         .max(40)
         .optional(),
       unseen: z.array(z.string().max(80)).max(40).optional(),
+      landing: z
+        .array(z.object({ id: z.string().min(1).max(80), inst: instanceSchema, dex: z.number().int().min(1) }))
+        .max(20)
+        .optional(),
       rulesSeen: z.boolean().optional(),
     })
     .optional(),

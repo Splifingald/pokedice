@@ -1118,7 +1118,11 @@ export interface TradeOut {
 }
 
 /** How a Pokémon that arrived was kept (the catch rule, docs/23 §1.4). */
-export type TradeOutcome = 'new' | 'replaced' | 'merged' | 'shiny'
+/**
+ * How a traded Pokémon was kept: the catch rule's four, `locked` (above that region's best level, it waits there until
+ * one reaches it), or `pending` (more than one region's Pokédex lists it, and its trainer hasn't picked yet).
+ */
+export type TradeOutcome = 'new' | 'replaced' | 'merged' | 'shiny' | 'locked' | 'pending'
 
 /** One trade done, for the Done list: who with, what went and what came. */
 export interface TradeLogEntry {
@@ -1135,6 +1139,21 @@ export interface TradeLogEntry {
   got: { dex: number; level: number; shiny?: boolean; nickname?: string }
   evolvedTo?: number
   outcome: TradeOutcome
+  /** The region whose Box it went to (absent: its home region, as before the choice, or still to pick). */
+  region?: RegionId
+}
+
+/**
+ * A traded Pokémon whose trainer still has to pick its Box: more than one region they've started lists it in its
+ * Pokédex (docs/23 §1.4). It waits here, out of every Box, until they do.
+ */
+export interface TradeLanding {
+  /** The trade's id, as its log entry has it. */
+  id: string
+  /** As it arrived: at its arrival level, evolved by the trade if it was a trade evolution. */
+  inst: PokemonInstance
+  /** The species that arrived, before a trade evolution: it joins the Pokédex too. */
+  dex: number
 }
 
 export interface TradesSave {
@@ -1145,6 +1164,8 @@ export interface TradesSave {
   log?: TradeLogEntry[]
   /** Your listings taken while you were away, not looked at yet: the gold dot. */
   unseen?: string[]
+  /** Traded Pokémon waiting for their trainer to pick the Box they go to. */
+  landing?: TradeLanding[]
   /** The rules pop-up has been shown (once; INFO shows it again). */
   rulesSeen?: boolean
 }
@@ -1238,6 +1259,8 @@ export interface WorldHomer {
   worldId?: string
   /** The region it was sent on from (docs/05), when it didn't come from a world. */
   from?: RegionId
+  /** The trainer it came from in a trade (docs/23 §1.4), when it arrived above the region's best level. */
+  tradedBy?: string
 }
 
 /** A shiny mythical won in a small world, waiting for its home region to be started. */

@@ -1,16 +1,16 @@
 // Kitchen sink: Trades (docs/23) — who can see a listing, what it wants, its time left, board rows in every state
 // (you can trade, a friend's, yours, greyed with why, shiny and NEW, a guest's view), the listing's sheet, the share
 // pop-up, the rules (unlock and INFO), the trade scene (plain, shiny, "Trade done!" back Home, a trade evolution) and
-// what it ends on.
+// what it ends on (locked too), and the pick of the Box a traded Pokémon goes to (docs/23 §1.4).
 import { useState } from 'react'
-import { encodeDexSet, type TradeLogEntry } from '@/engine'
+import { encodeDexSet, type LandingOption, type RegionId, type TradeLogEntry } from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
 import { InfoButton } from '@/components/RulesModal'
 import { ListingSheet } from '@/components/trades/ListingSheet'
 import { ShareListingModal, type Shared } from '@/components/trades/ShareListing'
-import { ListingRow, TimeLeft, VisChip, WantTile } from '@/components/trades/TradeBits'
+import { LandingPick, ListingRow, TimeLeft, VisChip, WantTile } from '@/components/trades/TradeBits'
 import { TradesRulesModal } from '@/components/trades/TradeRules'
-import { TradeResult, TradeScene } from '@/components/trades/TradeScene'
+import { LandingStepView, TradeResult, TradeScene } from '@/components/trades/TradeScene'
 import type { TradeListing } from '@/lib/trades'
 import type { TradeShow } from '@/store/trades'
 
@@ -138,6 +138,25 @@ const RESULTS: { label: string; show: TradeShow }[] = [
     label: 'Merged: nothing gained',
     show: { entry: entry({ id: 'r3', got: { dex: 19, level: 22 }, outcome: 'merged' }), mine: 40 },
   },
+  {
+    label: 'Locked: above your best there',
+    show: {
+      entry: entry({ id: 'r5', got: { dex: 25, level: 30 }, outcome: 'locked', region: 'johto' }),
+      isNew: true,
+    },
+  },
+]
+
+/** The Box pick's rows: one in each state (joins NEW, STRONGER, nothing gained, locked, a shiny). */
+const LANDINGS: LandingOption[] = [
+  { region: 'kanto', outcome: 'merged', isNew: false, mine: 34, best: 52 },
+  { region: 'johto', outcome: 'replaced', isNew: false, mine: 12, best: 40 },
+  { region: 'hoenn', outcome: 'new', isNew: true, mine: null, best: 31 },
+  { region: 'sinnoh', outcome: 'locked', isNew: true, mine: null, best: 9 },
+]
+const SHINY_LANDINGS: LandingOption[] = [
+  { region: 'kanto', outcome: 'shiny', isNew: false, mine: 34, best: 52 },
+  { region: 'johto', outcome: 'locked', isNew: true, mine: null, best: 18 },
 ]
 
 export function TradeKitBits() {
@@ -145,6 +164,7 @@ export function TradeKitBits() {
   const [open, setOpen] = useState<TradeListing | null>(null)
   const [share, setShare] = useState<Shared | null>(null)
   const [rules, setRules] = useState<null | 'unlock' | 'info'>(null)
+  const [landing, setLanding] = useState<RegionId | null>('hoenn')
   return (
     <div className="grid w-full max-w-2xl gap-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -190,6 +210,35 @@ export function TradeKitBits() {
             <TradeResult show={r.show} />
           </div>
         ))}
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-1 bg-panel p-2 shadow-ring-line">
+          <small className="font-pixel-sm text-[13px] text-muted">Pick its Box (the scene's last step)</small>
+          <LandingStepView
+            name="Pikachu"
+            dex={25}
+            shiny={false}
+            level={22}
+            options={LANDINGS}
+            value={landing}
+            onChange={setLanding}
+            onSend={() => setLanding(null)}
+          />
+        </div>
+        <div className="grid content-start gap-2 bg-panel p-2 shadow-ring-line">
+          <small className="font-pixel-sm text-[13px] text-muted">
+            A shiny, nothing picked; disabled (trading)
+          </small>
+          <LandingPick name="Eevee" level={25} options={SHINY_LANDINGS} value={null} onChange={() => {}} />
+          <LandingPick
+            name="Eevee"
+            level={25}
+            options={SHINY_LANDINGS}
+            value="kanto"
+            onChange={() => {}}
+            disabled
+          />
+        </div>
       </div>
       <ListingSheet listing={open} onClose={() => setOpen(null)} />
       <ShareListingModal listing={share} onClose={() => setShare(null)} />

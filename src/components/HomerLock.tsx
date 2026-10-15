@@ -6,8 +6,8 @@ import { PixelIcon } from './icons'
 
 /**
  * A Pokémon waiting to unlock in a region (docs/26 §1), on its sheet: the level it waits for, where it came from (the
- * small world it came home from, when the admin still lists it, or the region it was sent from), and the region's best
- * now, with what it can't do until then.
+ * small world it came home from, when the admin still lists it, the region it was sent from, or the trainer it was
+ * traded by), and the region's best now, with what it can't do until then.
  */
 export function HomerLockView({
   name,
@@ -16,6 +16,7 @@ export function HomerLockView({
   region,
   world,
   from = null,
+  tradedBy = null,
 }: {
   name: string
   level: number
@@ -24,6 +25,8 @@ export function HomerLockView({
   world: string | null
   /** The region it was sent from, for one that didn't come from a world. */
   from?: string | null
+  /** The trainer it came from in a trade, for one that arrived above the region's best (docs/23 §1.4). */
+  tradedBy?: string | null
 }) {
   const { t } = useT()
   return (
@@ -36,10 +39,14 @@ export function HomerLockView({
         <p className="font-pixel-sm text-[15px] leading-tight text-muted">
           {t('ui.sheet.lockFrom', { world })}
         </p>
+      ) : from ? (
+        <p className="font-pixel-sm text-[15px] leading-tight text-muted">
+          {t('ui.sheet.lockSentFrom', { region: from })}
+        </p>
       ) : (
-        from && (
+        tradedBy && (
           <p className="font-pixel-sm text-[15px] leading-tight text-muted">
-            {t('ui.sheet.lockSentFrom', { region: from })}
+            {t('ui.sheet.lockTradedBy', { name: tradedBy })}
           </p>
         )
       )}
@@ -63,6 +70,7 @@ export function HomerLock({ homer }: { homer: WorldHomer }) {
       region={regionName(homer.region)}
       world={world ? worldName(world, data) : null}
       from={homer.from ? regionName(homer.from) : null}
+      tradedBy={homer.tradedBy || null}
     />
   )
 }
