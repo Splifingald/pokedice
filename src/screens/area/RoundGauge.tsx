@@ -24,6 +24,7 @@ const CARD_ICON: Record<DeckCard, IconName> = {
   center: 'heart',
   item: 'box',
   casino: 'coin',
+  trick: 'pumpkin',
   legend: 'masterball',
 }
 /** What a met card was, for the gauge's tooltips. */
@@ -52,7 +53,10 @@ export function RoundGauge({
   const cfg = data.config
   // A portal run (docs/28) counts the portals closed instead of a round's cards.
   const portal = portalModeOf(area, data)
-  if (portal) return <DistortionGauge closed={progress.portal?.closed ?? 0} total={portal.portals} className={className} />
+  if (portal)
+    return (
+      <DistortionGauge closed={progress.portal?.closed ?? 0} total={portal.portals} className={className} />
+    )
   if (!cfg.showRoundGauge || cfg.encounterMode !== 'deck') return null
   const remaining = progress.deck?.length ?? 0
   const met = progress.drawn ?? []
@@ -62,10 +66,10 @@ export function RoundGauge({
   const total = inRound
     ? progress.drawn
       ? met.length + remaining
-      : Math.max(deckSize(area), remaining)
+      : Math.max(deckSize(area, data), remaining)
     : justDone
       ? met.length
-      : deckSize(area)
+      : deckSize(area, data)
   const metCount = inRound ? total - remaining : justDone ? total : 0
   const unknown = Math.max(0, metCount - met.length)
   // Preview (admin option): the deck is drawn from the end, so the next card is its last one.

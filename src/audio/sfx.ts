@@ -247,6 +247,18 @@ const FX_SOUNDS = {
   },
   // Broke free but stays put (Capture Luck): a short, cheeky hop.
   'catch.stay': () => tone(520, 0.08, { type: 'square', vol: 0.04, slide: 260 }),
+  // Trick or Treat (docs/29): a Treat tossed and eaten, the gauge ticking up, and the ghost fading into the night.
+  'trick.toss': () => tone(520, 0.22, { type: 'triangle', vol: 0.04, slide: 420 }),
+  'trick.munch': () => {
+    hiss(0.05, { freq: 900, vol: 0.06 })
+    hiss(0.05, { freq: 700, vol: 0.06, at: 0.1 })
+    tone(784, 0.1, { type: 'square', vol: 0.03, at: 0.2 })
+  },
+  'trick.fill': (n = 0) => tone(440 + n * 30, 0.04, { type: 'square', vol: 0.025 }),
+  'trick.flee': () => {
+    tone(660, 0.7, { type: 'triangle', vol: 0.05, slide: -480 })
+    tone(668, 0.7, { type: 'sine', vol: 0.04, slide: -500 })
+  },
   'legend.pulse': () => tone(55, 0.3, { type: 'sine', vol: 0.12 }),
   'legend.shatter': () => hiss(0.6, { freq: 4000, slide: -3500, vol: 0.05 }),
   'legend.heart': () => tone(48, 0.25, { type: 'sine', vol: 0.14 }),

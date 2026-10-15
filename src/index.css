@@ -5,6 +5,7 @@
 @import './styles/live.css';
 @import './styles/world.css';
 @import './styles/portal.css';
+@import './styles/trick.css';
 
 /* Jersey 25: Daybreak's face for titles, names, buttons and most text. */
 @font-face {

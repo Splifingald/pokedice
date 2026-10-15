@@ -13,7 +13,12 @@ const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
 const h = haunted()
 /** 0052 ran on live as it was then: later changes come as patches, never by regenerating it. */
-const HH = ['0052_haunted_hollow.sql', '0055_hh_new_species.sql', '0057_hh_distortion_world.sql']
+const HH = [
+  '0052_haunted_hollow.sql',
+  '0055_hh_new_species.sql',
+  '0056_trick_or_treat.sql',
+  '0057_hh_distortion_world.sql',
+]
 const runAll = async () => {
   for (const f of HH) await db.exec(sql(f))
 }
@@ -84,6 +89,11 @@ describe('0052 and its patches: Haunted Hollow', () => {
       )
       .sort((x, y) => (x.id < y.id ? -1 : 1))
     expect(rows.rows).toEqual(want)
+    // Every deck as the script deals it, Trick or Treat's card (0056) included.
+    const decks = await db.query<{ id: string; w: unknown }>(`select id, encounter_weights w from areas where region_id = 'world-haunted-hollow' order by id`)
+    expect(decks.rows).toEqual(
+      [...h.areas].sort((x, y) => (x.id < y.id ? -1 : 1)).map((a) => ({ id: a.id, w: a.encounterWeights })),
+    )
   })
 
   it('adds the world, keeps the switch and the other worlds, and bumps the content version', async () => {

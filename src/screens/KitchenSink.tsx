@@ -55,6 +55,7 @@ import { PortalBits } from './kitchen/PortalBits'
 import { GiftBits } from './kitchen/GiftBits'
 import { InviteBits } from './kitchen/InviteBits'
 import { SupportBits } from './kitchen/SupportBits'
+import { TrickBits } from './kitchen/TrickBits'
 import { RotateView } from '@/components/RotateCover'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
 import { BoardRow } from '@/components/BoardRow'
@@ -628,6 +629,9 @@ export function KitchenSink() {
 
       <Section title="Portal run (Distortion World): the portal, gauge, breach and its pop-up, rules, boons, bonuses, shader, screen distortion, victory">
         <PortalBits />
+      </Section>
+      <Section title="Trick or Treat: the gauge of each tier, Treat and Trick Ball, rarity chips, the stage's looks, preview card, results, rules">
+        <TrickBits />
       </Section>
 
       <Section title="StatusIcons · PixelIcon">

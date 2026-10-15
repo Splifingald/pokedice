@@ -1,7 +1,7 @@
 // Zod row schemas for every config table (snake_case, as stored). Errors are shown in the cell; saving is blocked.
 import { z } from 'zod'
 import type { Row, TableName } from '@/config/mapping'
-import { BATTLE_BACKGROUNDS, COMBO_KEYS, POKE_TYPES, STATUS_KINDS } from '@/engine/types'
+import { BATTLE_BACKGROUNDS, COMBO_KEYS, EVENT_ACCESS, POKE_TYPES, STATUS_KINDS, TRICK_TIERS } from '@/engine/types'
 
 const pokeType = z.enum(POKE_TYPES)
 const background = z.enum(BATTLE_BACKGROUNDS)
@@ -33,6 +33,44 @@ const itemEffect = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('link') }),
   z.object({ kind: z.literal('bait'), faces: z.array(int(0, 12)).length(6, 'exactly 6 faces') }),
 ])
+
+/** One rarity tier of Trick or Treat (docs/29): its weight, its sections (from 0, rising, inside the flee zone) and flee. */
+const trickTier = z
+  .object({
+    weight: z.number().min(0),
+    flee: int(1, 100),
+    sections: z
+      .array(z.object({ from: int(0, 99), need: int(1, 7) }))
+      .min(1, 'at least one section')
+      .max(6, 'six sections at most'),
+  })
+  .superRefine((t, ctx) => {
+    if (t.sections[0]?.from !== 0) ctx.addIssue({ code: 'custom', message: 'the first section starts at 0', path: ['sections'] })
+    t.sections.forEach((sec, i) => {
+      if (i > 0 && sec.from <= t.sections[i - 1]!.from)
+        ctx.addIssue({ code: 'custom', message: 'sections must start higher and higher', path: ['sections', i, 'from'] })
+      if (sec.from >= t.flee) ctx.addIssue({ code: 'custom', message: 'a section starts inside the flee zone', path: ['sections', i, 'from'] })
+    })
+  })
+
+/** game_config `trickOrTreat` (docs/29): the switch, the Treat's range, a miss's push, the tiers and each area's ghosts. */
+export const TRICK_SCHEMA = z
+  .object({
+    access: z.enum(EVENT_ACCESS),
+    treatMin: int(1, 100),
+    treatMax: int(1, 100),
+    failPush: int(1, 100),
+    tiers: z.object(Object.fromEntries(TRICK_TIERS.map((k) => [k, trickTier])) as Record<(typeof TRICK_TIERS)[number], typeof trickTier>),
+    areas: z.record(z.array(z.object({ dex: int(1, 99999), tier: z.enum(TRICK_TIERS) }))),
+  })
+  .refine((c) => c.treatMax >= c.treatMin, { message: 'Treat max below min', path: ['treatMax'] })
+
+/** Problems with a game_config value that has a schema of its own (Trick or Treat's), as readable lines. */
+export function configProblems(key: string, value: unknown): string[] {
+  if (key !== 'trickOrTreat') return []
+  const res = TRICK_SCHEMA.safeParse(value)
+  return res.success ? [] : res.error.issues.map((i) => `${i.path.join('.') || 'value'}: ${i.message}`)
+}
 
 export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
   type_chart: z.object({
@@ -129,6 +167,9 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
       trainer: z.number().min(0),
       center: z.number().min(0),
       item: z.number().min(0),
+      casino: z.number().min(0).optional(),
+      // Trick or Treat (docs/29): its copies, dealt only while its switch is on and the area has ghosts.
+      trick: z.number().min(0).optional(),
     }),
     backtrack_multiplier: z.number().min(0).max(1),
     legendary_boss: z
@@ -244,7 +285,9 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
     region: z.string().nullable().optional(),
     once_only: z.boolean().optional(),
   }),
-  game_config: z.object({ key: z.string().min(1), value: z.unknown() }),
+  game_config: z.object({ key: z.string().min(1), value: z.unknown() }).superRefine((r, ctx) => {
+    for (const message of configProblems(r.key, r.value)) ctx.addIssue({ code: 'custom', message, path: ['value'] })
+  }),
 }
 
 /** column → first error message ('*' for row-level problems). */

@@ -8,6 +8,7 @@ import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { BattleView } from './battle/BattleView'
 import { CasinoView } from './area/CasinoView'
+import { TrickView } from './area/TrickView'
 import { AreaIdle } from './area/AreaIdle'
 import { CenterView } from './area/CenterView'
 import { EncounterPreview } from './area/EncounterPreview'
@@ -138,6 +139,7 @@ export function AreaScreen() {
         </>
       )}
       {mode && run.phase === 'idle' && <PortalInfo mode={mode} />}
+      {run.phase === 'trick' && run.trick && <TrickView key={run.trick.id} />}
     </div>
   )
 }

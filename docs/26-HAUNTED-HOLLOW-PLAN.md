@@ -70,7 +70,7 @@ switch** (the Link Cable is Off in Admin → Config).
 
 ### 2.4 Its areas
 
-Every area's deck is **10 cards** (wild and trainers in varied amounts, **1 item, 1 Pokémon Center**); the game's usual
+Every area's deck is **10 cards** (11 with Trick or Treat's card, §2.9; wild and trainers in varied amounts, **1 item, 1 Pokémon Center**); the game's usual
 extra Centers still happen. **The rounds per area come from the campaign simulator.** Easy at first and harder later.
 Each area has a clear identity. Existing pictures only.
 
@@ -196,3 +196,9 @@ The user's calls of 2026-10-15:
    `configVersion`. Safe to run again. `supabase/seed.sql` does not carry it (it holds no Haunted Hollow; content
    migrations are not inlined there).
 2. Or, over an admin export: `tsx scripts/patch-hh-new-species.ts <in.json> <out.json>`, then `pnpm import-bundle`.
+
+### 2.9 Trick or Treat
+
+The user's call of 2026-10-15 (docs/29-TRICK-OR-TREAT.md): one **Trick or Treat** card in each of the ten main areas'
+decks (**11 cards**, dealt only while its switch is on), each area with its own ghost list. Migration **0056**
+(`scripts/patch-hh-trick-or-treat.ts`), after 0052 and 0055; the content script's decks and `TRICK_GHOSTS` match it.

@@ -157,6 +157,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `RotateCover` / `RotateView` | A phone or a tablet held sideways (§6) | Over everything, not dismissable: the pixel phone tipping upright in steps (upright and still under reduced motion), the title and a line |
 | `SupportModal` / `SupportView` | SUPPORT ME (side menu, Settings), and once per region at its 5th badge | A rules pop-up (the village banner) with a button per row: Join the Discord (left out with no link set), Share invite link, Support me on PayPal under the line saying Pokémon is a licence so the game is never for sale; a big OK |
 | `GiftPresent` / `GiftOpened` / `GiftResult` / `GiftMoment` | A gift from the developer (§23) | Under a message: the wrapped gift (wobbling, still when the OS asks for reduced motion), "3 things inside" and what happens next (close the message, OPEN IT in My messages, or why it waits); opened: what it held; the opening, full screen; what arrived and where |
+| `TrickGauge` / `TrickStage` / `TrickCard` / `TrickResult` / `TierChip` / `TrickSprite` / `TrickRulesModal` | Trick or Treat (§27) | The gauge: its sections in their colours (deep purple, the hardest, to pumpkin and gold), the flee zone striped night with a ghost, bright up to its value and dim past it, the section it is in ringed in gold, the white post where it stands, and under each section what a Trick Ball needs ("6", "5+", Flees); a `meter`. The stage: the area's picture, the ghost floating (still under reduced motion), the Treat's and the ball's arcs, the ball on the ground wobbling, the stars, the flee. The preview card, the result (caught: where it went, NEW, ✦ Shiny, a secret area opened; fled), the rarity chip (a word, never colour alone), the two pictures, the rules |
 | `InviteGaugeBar` / `InviteRewardsCard` / `InviteGaugeCompact` / `InviteReadyModal` | Friend invite rewards (§25) | The gauge: a tile per tier (its reward; gold with the gift wobbling when ready; green with a check once opened), the gold track, the friends each needs; six tiers fit a phone. The Friends page's card (ready with OPEN IT, asking the server, every reward won); the compact one in Prof. Oak's invite; the reward's pop-up (who won their first badge, or a friend) |
 | `PortalArt` / `PortalEntry` / `DistortionGauge` / `DistortionChoiceView` / `RunBonuses` / `PortalVictoryView` / `DistortionFx` | Distortion World's portal run (§27) | The portal drawn in code (turning in steps; still); the breach and its pop-up (NOT NOW / READY!); the gauge of portals closed (fresh, under way, won); a distortion's boons (three, fewer); the run's bonuses (none, some); the victory; the screen's distortion; the sprite shader at each motion level |
 
@@ -614,7 +615,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
   queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
   again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the portal run (§27) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the portal run (§27), Trick or Treat (§28) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **Items with a switch** (`game_config.itemSwitches`, `itemOn`): the Link Cable and the Bait (docs/25). Off: not sold,
   not found, not usable, never offered; bags keep theirs. An item is explained where it's met (its description in the
@@ -914,3 +915,32 @@ The pieces are in `src/components/Portal.tsx` and `src/screens/area/PortalRun.ts
   that XP, ₽ and items stay and the team is healed.
 - **The raid's page** before the victory: the lock says to close every portal of the area; the area's details say
   "Opens when every distortion portal is closed".
+
+## 28. Trick or Treat
+
+An encounter card (docs/29-TRICK-OR-TREAT.md): a ghost from the area's list floats in; Treats fill its gauge, a Trick
+Ball rolls a d6 against the gauge's section, a miss pushes the gauge up, the flee zone ends it. The engine
+(`engine/trickOrTreat.ts`) decides every number and outcome; the pieces are in `src/components/TrickOrTreat.tsx`, every
+state on `/kitchen-sink` (`TrickBits`), and the area screen plays them (`src/screens/area/TrickView.tsx`).
+
+- **The switch and the rules** follow §20: Off, the card is never dealt (no tile on the round gauge, no share in the
+  area's round mix). The rules pop-up opens the first time a ghost floats in, over the screen (Later / Let's go! both
+  carry on); INFO sits under the panel.
+- **The card**: a pumpkin on the round gauge and its preview row; its preview is the ghost on a night tile, its name,
+  rarity chip, level, NEW, "Treats and Trick Balls are free and endless", and one red button, TRICK OR TREAT!. It can't
+  be skipped (a card the player meets, like the Game Corner).
+- **The screen**, phone first: the panel with the title, the ghost's name, level and rarity; the stage (3:2, the area's
+  picture as the battle cuts it, a night sky where there's none) with the ghost floating at its centre; the gauge right
+  under it; one message line (polite live region) saying what happened in numbers ("Rolled 4, needed 5+: … The gauge
+  rises by 35!"); then the result once it's over. The pinned action bar (§6) carries the round gauge and **TREAT**
+  (white, the Treat's picture, "+10 to 30" under it) beside **TRICK BALL** (red, the one main action, "Roll 5+: 33% ·
+  miss +35" under it, from the engine); once caught or fled, **CONTINUE**.
+- **Motion** (§8): `full`: the Treat tossed in an arc from the left (stepped, two steps a stretch), a squash and hop as
+  it's eaten, then the gauge fills in 8 steps and its section lights; the Trick Ball's arc from the right, the ghost
+  drawn in (two white silhouette frames), the ball on the ground, the die tumbling (the catch's d6, `Die`), one to three
+  wobbles (three for a catch, fewer the further the die fell short), then stars and Gotcha!, or the ball breaking open,
+  the ghost back out and the gauge's push; a flee is the ghost rising and fading in five steps. The buttons wait while
+  a step plays. `short`: the flight, then the result at once. `off`: every step lands at once, its message kept. `calm`
+  stops the idle float. Pixel steps everywhere; no screen flash.
+- **Sound** (§9): `trick.toss`, `trick.munch`, `trick.fill`, `trick.flee`, with the catch's throw, open, wobble, Gotcha!
+  and break-free.

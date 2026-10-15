@@ -1,0 +1,144 @@
+/*
+ * Trick or Treat (docs/29): the ghost floating over its area, a Treat eaten, the Trick Ball's wobbles, the catch's
+ * stars and the flee. Pixel motion steps (docs/15 §8). `.tt-still` (motion off, or the OS asking for less) stops the
+ * idle float; every other effect is only ever put on while a step is playing, and the screen jumps to its end state
+ * when animations are off.
+ */
+
+/* The ghost hovers: four steps up, four down. */
+.tt-float {
+  animation: tt-float 1.2s steps(4, jump-none) infinite alternate;
+}
+.tt-still .tt-float {
+  animation: none;
+}
+@keyframes tt-float {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-8px);
+  }
+}
+
+/* A Treat eaten: a squash and a hop. */
+.tt-munch {
+  animation: tt-munch 360ms steps(1) both;
+}
+@keyframes tt-munch {
+  0% {
+    transform: scale(1.08, 0.9);
+  }
+  33% {
+    transform: scale(0.94, 1.08) translateY(-6px);
+  }
+  66% {
+    transform: scale(1.04, 0.96);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* Drawn into the ball: two white silhouette frames, then it shrinks away. */
+.tt-absorb {
+  animation: tt-absorb 280ms steps(1) both;
+}
+@keyframes tt-absorb {
+  0% {
+    filter: brightness(0) invert(1);
+    transform: scale(1);
+  }
+  25% {
+    filter: brightness(0) invert(1);
+    transform: scale(0.7);
+  }
+  50% {
+    filter: brightness(0) invert(1);
+    transform: scale(0.4);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(0.15);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+/* Broke free: it pops back out of the ball. */
+.tt-out {
+  animation: tt-out 280ms steps(1) both;
+}
+@keyframes tt-out {
+  0% {
+    filter: brightness(0) invert(1);
+    transform: scale(0.3);
+  }
+  34% {
+    filter: brightness(0) invert(1);
+    transform: scale(0.75);
+  }
+  67% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* Fled: it rises and fades out in five steps. */
+.tt-flee {
+  animation: tt-flee 640ms steps(5) both;
+}
+@keyframes tt-flee {
+  to {
+    opacity: 0;
+    transform: translateY(-24px) scale(0.85);
+  }
+}
+
+/* The Trick Ball on the ground: a wobble each time `key` changes. */
+.tt-wobble {
+  animation: tt-wobble 420ms steps(1) both;
+  transform-origin: 50% 90%;
+}
+@keyframes tt-wobble {
+  0% {
+    transform: rotate(-16deg);
+  }
+  33% {
+    transform: rotate(14deg);
+  }
+  66% {
+    transform: rotate(-6deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* Caught: stars burst out of the ball. */
+.tt-star {
+  animation: tt-star 700ms steps(5) both;
+}
+@keyframes tt-star {
+  from {
+    opacity: 1;
+    transform: translate(0, 0) scale(0.6);
+  }
+  to {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) scale(1);
+  }
+}
+
+/* The gauge's fill moves in steps. */
+.tt-fill {
+  transition: clip-path 480ms steps(8, end);
+}
+.tt-fill-now {
+  transition: none;
+}
