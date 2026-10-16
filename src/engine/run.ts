@@ -10,6 +10,7 @@ import { LEGACY_GAUGE } from './legacyGauge'
 import { itemOnFor, MONEY, sellPrice, shopSells, usableIn } from './items'
 import { earnedGold } from './liveEvents'
 import { canStartPortal, inPortalRun, markPortalWonSeen, portalModeOf, portalStateOf, portalWipe } from './portal'
+import { canStartNightmare, inNightmare, markNightmareWonSeen, nightmareStateOf, nightmareWipe } from './nightmare'
 import { areaOpenAt } from './worldList'
 import {
   averageLevel,
@@ -367,6 +368,10 @@ export type RunEvent =
    * for that region to be started (`waiting`).
    */
   | { kind: 'world_mythical'; dex: number; level: number; region: string; waiting: boolean }
+  /** A round of the nightmare won (docs/30): `round` of `total`. */
+  | { kind: 'nightmare_round'; round: number; total: number }
+  /** The item a nightmare round left in the bag (docs/30), once for good. */
+  | { kind: 'nightmare_gift'; key: string; qty: number }
 
 export interface VictoryInput {
   areaId: string
@@ -584,6 +589,8 @@ export function finishRound(
 export function applyWipe(save: SaveData, areaId: string, data: GameData): SaveData {
   // A portal run (docs/28) ends there: its portals closed go back to 0 and its boons are lost.
   if (inPortalRun(save, data, areaId)) return portalWipe(save, data, areaId)
+  // So does the nightmare (docs/30): the player wakes up, the rounds back to 0.
+  if (inNightmare(save, data, areaId)) return nightmareWipe(save, data, areaId)
   const p = progressOf(save, areaId)
   const healed = new Set(wipeHeals(save, data) ? save.team : [])
   return {
@@ -612,11 +619,34 @@ export function centerHeal(save: SaveData, data: GameData): SaveData {
  */
 export function arriveAtPortal(save: SaveData, data: GameData, areaId: string): SaveData {
   if (!canStartPortal(save, data, areaId)) return save
+  return healedOrSame(save, data)
+}
+
+/** A Center's heal (its rules), or the same save when it heals nobody. */
+function healedOrSame(save: SaveData, data: GameData): SaveData {
   const healed = centerHeal(save, data)
   const same =
     healed.box.every((p, i) => p.currentHp === save.box[i]?.currentHp) &&
     (healed.dayCare?.residents ?? []).every((r, i) => r.inst.currentHp === save.dayCare?.residents[i]?.inst.currentHp)
   return same ? save : healed
+}
+
+/**
+ * Arriving at a nightmare area's way in (docs/30, before BEGIN THE NIGHTMARE) heals as a Pokémon Center does, as the
+ * portal's way in does. The same save when there is nothing to heal, or outside a way in.
+ */
+export function arriveAtNightmare(save: SaveData, data: GameData, areaId: string): SaveData {
+  if (!canStartNightmare(save, data, areaId)) return save
+  return healedOrSame(save, data)
+}
+
+/**
+ * Waking up from the nightmare, HEAL & START RAID (docs/30, as the portal run's victory): the team and the Box healed as
+ * a Pokémon Center would, the waking marked seen. The same save when no waking is waiting here.
+ */
+export function nightmareVictoryToRaid(save: SaveData, data: GameData, areaId: string): SaveData {
+  if (!nightmareStateOf(save, areaId).won) return save
+  return markNightmareWonSeen(centerHeal(save, data), areaId)
 }
 
 /**
@@ -642,7 +672,13 @@ export interface SwapPlace {
  */
 export function teamSwapsOpen(save: SaveData, data: GameData, at: SwapPlace): boolean {
   if (at.phase === 'center') return true
-  return at.phase === 'idle' && !!at.areaId && save.currentAreaId === at.areaId && canStartPortal(save, data, at.areaId)
+  // The nightmare's way in too (docs/30), before it begins: there is no Center inside it either.
+  return (
+    at.phase === 'idle' &&
+    !!at.areaId &&
+    save.currentAreaId === at.areaId &&
+    (canStartPortal(save, data, at.areaId) || canStartNightmare(save, data, at.areaId))
+  )
 }
 
 export function setTeam(save: SaveData, ids: readonly string[], data: GameData): SaveData {

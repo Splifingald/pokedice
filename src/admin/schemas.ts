@@ -212,7 +212,8 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
     gyms: z.array(uuid),
     // A special mode (docs/28): Distortion World's portal run. Optional so a database before migration 0057 still loads.
     mode: z
-      .object({
+      .discriminatedUnion('kind', [
+        z.object({
         kind: z.literal('portal'),
         portals: int(1, 99),
         wild: int(0, 30),
@@ -227,7 +228,16 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
           items: z.array(z.object({ key: z.string().min(1), weight: z.number().min(0) })),
         }),
         raid: z.object({ level: int(1, 100), upgradeLevel: int(1, 10), bars: int(1, 10), teamCap: int(1, 100) }),
-      })
+        }),
+        // Newmoon Island's nightmare (docs/30): its foes in order, Darkrai's strike, the rounds' gifts, the raid after.
+        z.object({
+          kind: z.literal('nightmare'),
+          foes: z.array(z.object({ dex: int(1, 99999), level: int(1, 100) })).min(1, 'at least one foe').max(20),
+          strikePercent: z.number().min(0).max(99),
+          gifts: z.array(z.object({ round: int(1, 20), key: z.string().min(1), qty: int(1, 99) })),
+          raid: z.object({ level: int(1, 100), upgradeLevel: int(1, 10), bars: int(1, 10), teamCap: int(1, 100) }),
+        }),
+      ])
       .nullable()
       .optional(),
   }),

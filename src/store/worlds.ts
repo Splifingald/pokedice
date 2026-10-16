@@ -12,6 +12,7 @@ import {
   leaveWorld,
   markWorldBye,
   markWorldSeen,
+  nightmareLock,
   payWheelPrize,
   regionOf,
   worldById,
@@ -79,6 +80,12 @@ export function leaveSmallWorld(): boolean {
   if (!save) return false
   if (battle) {
     pushToast(t('ui.region.finishFight'), 'bad')
+    return false
+  }
+  // Darkrai's nightmare (docs/30) holds the player in its area, so in the world too, until they wake up.
+  const held = nightmareLock(save, data)
+  if (held) {
+    pushToast(t('ui.nightmare.locked', { area: held.name }), 'info')
     return false
   }
   const next = leaveWorld(save, data)

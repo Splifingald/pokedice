@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { portalLock, teamOf, type Area } from '@/engine'
+import { nightmareLock, portalLock, teamOf, type Area } from '@/engine'
 import { useT } from '@/i18n/react'
 import { RestingPanel } from '@/components/Extreme'
 import { PixelIcon } from '@/components/icons'
@@ -22,6 +22,8 @@ export function AreaIdle({ area }: { area: Area }) {
   const { label, sub, go, explore, off, gym, boss, raid, closed, empty, resting } = useContinue(area)
   // Inside a portal run (docs/28) there is no way Home: CONTINUE alone.
   const locked = useGame((s) => !!portalLock(s.save, s.data))
+  // The nightmare (docs/30) shuts travel only: HOME stays, the reason is said over the bar.
+  const held = useGame((s) => nightmareLock(s.save, s.data))
   if (!save) return null
 
   return (
@@ -55,6 +57,11 @@ export function AreaIdle({ area }: { area: Area }) {
           {/* Why the next encounter can't start (no energy, the area closed, everyone resting): said next to it. */}
           {off && <p className="m-0 truncate text-center font-pixel-sm text-[15px] leading-none text-muted">{sub}</p>}
           {locked && <p className="m-0 text-center font-pixel-sm text-[15px] leading-tight text-muted">{t('ui.portal.locked')}</p>}
+          {held && (
+            <p className="m-0 text-center font-pixel-sm text-[15px] leading-tight text-muted">
+              {t('ui.nightmare.locked', { area: held.name })}
+            </p>
+          )}
           <div className={locked ? 'grid' : 'grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5'}>
             {!locked && (
               <PixelButton size="lg" className="px-2" onClick={() => navigate('/home')}>

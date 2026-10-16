@@ -1,6 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { portalModeOf, portalStateOf, progressOf, scaledLevelSpan, teamAverageLevel, type Area, type AreaProgress } from '@/engine'
+import {
+  nightmareModeOf,
+  portalModeOf,
+  portalStateOf,
+  progressOf,
+  scaledLevelSpan,
+  teamAverageLevel,
+  type Area,
+  type AreaProgress,
+} from '@/engine'
 import { AreaTypes } from '@/components/AreaTypes'
 import { AutoModeToggle } from '@/components/AutoModeToggle'
 import { preloadSprites } from '@/components/SpriteImg'
@@ -18,6 +27,7 @@ import { RebattleHeader } from './events/RebattlePage'
 import { AreaStrip } from '@/components/AreaStrip'
 import { WipeView } from './battle/VictoryView'
 import { PortalBonuses, PortalInfo, PortalStep } from './area/PortalRun'
+import { NightmareInfo, NightmareStep, nightmareStepDue } from './area/NightmareRun'
 
 /**
  * Encounter types, a slim banner, then the name with its round (or a checkmark) and levels, the round gauge and, in a
@@ -33,8 +43,8 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
   ].filter(Boolean)
   // "Round 2/3" while rounds are still needed; a checkmark once they're all done (secret areas: nothing).
   // 0 rounds: a league of fights only (docs/26), nothing to count.
-  // A portal run (docs/28) has no rounds: its gauge counts the portals closed.
-  const portal = !!portalModeOf(area, data)
+  // A portal run (docs/28) has no rounds: its gauge counts the portals closed; the nightmare's (docs/30), its rounds.
+  const portal = !!portalModeOf(area, data) || !!nightmareModeOf(area, data)
   const need = portal ? null : area.roundsToClear || null
   const done = progress.roundsDone ?? 0
   const [details, setDetails] = useState(false)
@@ -125,6 +135,9 @@ export function AreaScreen() {
   const step = mode && run.phase === 'idle' ? <PortalStep area={area} /> : null
   const p = portalStateOf(save, area.id)
   const own = !!mode && ((p.won && !p.wonSeen) || (!p.active && !p.won) || (p.active && !!p.offers?.length))
+  // The nightmare's area (docs/30): its way in, its intro, Darkrai's strike after a round, the waking.
+  const nm = run.rebattle ? null : nightmareModeOf(area, data)
+  const dream = !!nm && run.phase === 'idle' && nightmareStepDue(area, { save, data }, run)
   return (
     <div className="flex flex-col gap-4">
       {run.rebattle ? <RebattleHeader /> : <AreaHeader area={area} progress={progress} teamAvg={teamAverageLevel(save)} />}
@@ -134,13 +147,15 @@ export function AreaScreen() {
       {/* A run that ended outside a fight (nobody left standing): its wipe card. */}
       {run.phase === 'wipe' && <WipeView />}
       {run.phase === 'idle' && own && step}
-      {run.phase === 'idle' && !own && (
+      {dream && <NightmareStep area={area} />}
+      {run.phase === 'idle' && !own && !dream && (
         <>
           {mode && <PortalBonuses area={area} />}
           <AreaIdle area={area} />
         </>
       )}
       {mode && run.phase === 'idle' && <PortalInfo mode={mode} />}
+      {nm && run.phase === 'idle' && <NightmareInfo mode={nm} />}
     </div>
   )
 }

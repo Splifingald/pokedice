@@ -266,12 +266,64 @@ export interface Area {
   wildPool: WildPoolEntry[]
   trainerPool: TrainerPoolEntry[]
   lootPool: LootEntry[]
-  /** How the area plays instead of rounds (docs/28): Distortion World's portal run. Absent or null = a plain area. */
+  /**
+   * How the area plays instead of rounds: Distortion World's portal run (docs/28), Newmoon Island's nightmare
+   * (docs/30). Absent or null = a plain area.
+   */
   mode?: AreaMode | null
 }
 
-/** An area's special mode (docs/28). One kind for now: the portal run. */
-export type AreaMode = PortalRunMode
+/** An area's special mode: the portal run (docs/28) or the nightmare (docs/30). */
+export type AreaMode = PortalRunMode | NightmareMode
+
+/** One of the nightmare's foes, met in its order (docs/30): a wild Pokémon at a set level. */
+export interface NightmareFoe {
+  dex: number
+  level: number
+}
+
+/** An item the nightmare gives once a round is won (docs/30): once for good, not on every try. */
+export interface NightmareGift {
+  /** The round (1-based) whose win gives it. */
+  round: number
+  key: string
+  qty: number
+}
+
+/**
+ * The nightmare (docs/30, Newmoon Island): Darkrai's dream. Its `foes` are fought one a round, in their order, as wild
+ * Pokémon that can't be caught; after each round but the last, Darkrai's shadow strikes the team for `strikePercent` %
+ * of each one's max HP (never a K.O.); a round's `gifts` go into the bag. The player can't travel to another area until
+ * it ends (the Mart, the menus and Home stay open). Winning the last round wakes the player, for good, and opens the
+ * area's raid at `raid`'s numbers. A full K.O. wakes them too, the rounds back to 0. Every number is the admin's.
+ */
+export interface NightmareMode {
+  kind: 'nightmare'
+  foes: NightmareFoe[]
+  /** % of max HP Darkrai's shadow takes from every team member after a round (rounded, at least 1, never a K.O.). */
+  strikePercent: number
+  gifts: NightmareGift[]
+  /** The area's raid once the nightmare is over: its level, the foe's dice level, its HP bars and the teams' level cap. */
+  raid: { level: number; upgradeLevel: number; bars: number; teamCap: number }
+}
+
+/** Where the nightmare stands, in its area's progress (so it's saved and parked with the region). */
+export interface NightmareState {
+  /** In the nightmare: the player can't travel elsewhere until it ends. */
+  active: boolean
+  /** Rounds won this try (the next foe is `foes[round]`). */
+  round: number
+  /** Darkrai's shadow is due to strike (a round was just won): played and applied before the next round. */
+  strike?: boolean
+  /** The rounds whose gift was given (once for good, kept through wipes). */
+  gifted?: number[]
+  /** Every round won: woken up for good, the raid open. */
+  won?: boolean
+  /** The waking's moment has played. */
+  wonSeen?: boolean
+  /** Tries started here (a wipe ends one). */
+  tries?: number
+}
 
 /**
  * The portal run (docs/28, Distortion World): an endless deck of `wild` wild Pokémon and `items` finds, shuffled, then
@@ -806,6 +858,8 @@ export interface GameConfig {
   push: PushConfig
   /** The areas' portal run (docs/28): its switch. The server reads the same row (0057). */
   portalRun: { access: EventAccess }
+  /** The areas' nightmare (docs/30): its switch. The server reads the same row (0059). */
+  nightmare: { access: EventAccess }
   /** Trick or Treat (docs/29): its switch, numbers and each area's ghosts. The server reads the switch too. */
   trickOrTreat: TrickOrTreatConfig
 }
@@ -1126,6 +1180,8 @@ export interface AreaProgress {
   lastCenter?: boolean
   /** A portal run here (docs/28): where it stands, its bonuses, whether it's won. */
   portal?: PortalState
+  /** The nightmare here (docs/30): its round, Darkrai's strike due, the gifts given, whether it's over. */
+  nightmare?: NightmareState
 }
 
 export interface SaveData {
@@ -1174,6 +1230,8 @@ export interface SaveData {
   versusRulesSeen?: boolean
   /** The portal run's rules pop-up (docs/28) has been shown (once; INFO shows them again). */
   portalRulesSeen?: boolean
+  /** The nightmare's rules pop-up (docs/30) has been shown (once; INFO shows them again). */
+  nightmareRulesSeen?: boolean
   /** The region being played. Absent on saves from before the second region = 'kanto'. */
   region?: RegionId
   /** The regions not being played, each holding everything that region owns. */

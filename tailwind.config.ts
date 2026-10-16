@@ -111,6 +111,18 @@ export default {
           'color-scheme': 'dark',
           color: `rgb(var(--c-ink))`,
         },
+        // Darkrai's moonlit night (docs/15 §29: its area raid's page and pop-ups), the same way.
+        ':where(.nm-scope)': {
+          ...vars(SCOPES.nightmare),
+          '--silhouette': SILHOUETTE.dark,
+          'color-scheme': 'dark',
+          color: `rgb(var(--c-ink))`,
+        },
+        ':where(.nm-scope) :where(.light-scope, .bg-gold, .bg-hp-green, .bg-hp-yellow)': {
+          ...vars(THEMES.light),
+          '--silhouette': SILHOUETTE.light,
+          color: `rgb(var(--c-ink))`,
+        },
         ':where(.dw-scope) :where(.light-scope, .bg-gold, .bg-hp-green, .bg-hp-yellow)': {
           ...vars(THEMES.light),
           '--silhouette': SILHOUETTE.light,

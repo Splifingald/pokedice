@@ -17,6 +17,7 @@ import {
   hasWorldMythical,
   heldWorld,
   inWorld,
+  nightmareLock,
   isAreaClosed,
   isAreaUnlocked,
   leaderboardTutorialDue,
@@ -520,7 +521,20 @@ export function useBackName(): string {
  * Under the top bar inside a world: its picture, its name, the time left (red in the last day) and Back to the region
  * the player came from. `world` may be unknown yet (the content not in): the way back still works.
  */
-export function WorldStripView({ world, now, back, onBack }: { world: SmallWorld | null; now: number | null; back: string; onBack: () => void }) {
+export function WorldStripView({
+  world,
+  now,
+  back,
+  onBack,
+  locked,
+}: {
+  world: SmallWorld | null
+  now: number | null
+  back: string
+  onBack: () => void
+  /** Why the way back is shut right now (Darkrai's nightmare holds the player, docs/30): a lock on it, its reason. */
+  locked?: string | null
+}) {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const left = world && now != null ? worldLeft(world, now) : null
@@ -541,7 +555,16 @@ export function WorldStripView({ world, now, back, onBack }: { world: SmallWorld
           </small>
         )}
       </span>
-      <PixelButton size="sm" className="shrink-0" onClick={onBack}>
+      {/* Shut by the nightmare: still a button, so a tap says why (the reason is its accessible description too). */}
+      <PixelButton
+        size="sm"
+        className={cx('shrink-0', locked && 'hatched')}
+        onClick={onBack}
+        aria-disabled={locked ? true : undefined}
+        title={locked ?? undefined}
+        aria-description={locked ?? undefined}
+      >
+        {locked && <PixelIcon name="lock" size={16} />}
         {t('ui.world.backTo', { region: back })}
       </PixelButton>
     </div>
@@ -553,8 +576,18 @@ export function WorldStrip() {
   const { world, inside } = useInWorld()
   const now = useServerNow(1000)
   const back = useBackName()
+  const { t } = useT()
+  const held = useGame((s) => nightmareLock(s.save, s.data))
   if (!inside) return null
-  return <WorldStripView world={world} now={now} back={back} onBack={() => leaveSmallWorld()} />
+  return (
+    <WorldStripView
+      world={world}
+      now={now}
+      back={back}
+      onBack={() => leaveSmallWorld()}
+      locked={held ? t('ui.nightmare.locked', { area: held.name }) : null}
+    />
+  )
 }
 
 /** Inside a world, Home's square for its mythical: its silhouette (its colours once caught), its level, where it is. */

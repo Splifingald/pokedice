@@ -41,6 +41,7 @@ import {
 import { cx } from '@/theme/util'
 import { TrainerName } from '@/components/TrainerName'
 import { useTearIn } from './PortalRaid'
+import { useShadowIn } from '@/components/Nightmare'
 
 const TEAM_SIZE = 3
 
@@ -109,10 +110,13 @@ function teamSetup(source: RaidSource, save: SaveData, data: GameData, t: (key: 
 export function RaidTeamSection({
   source = { kind: 'daily' },
   portal = false,
+  nightmare = false,
 }: {
   source?: RaidSource
   /** Giratina's raid (docs/15 §27): its editor in the Distortion World's violet night, its cards glitching now and then. */
   portal?: boolean
+  /** Darkrai's raid (docs/15 §29): its editor in the moonlit night, its cards darkening as the shadow passes. */
+  nightmare?: boolean
 }) {
   const { t } = useT()
   const save = useGame((s) => s.save)
@@ -136,7 +140,7 @@ export function RaidTeamSection({
         {team.map((m) => (
           <li
             key={m.id}
-            data-glitch={portal || undefined}
+            data-glitch={portal || nightmare || undefined}
             className="grid justify-items-center gap-0.5 bg-paper px-1 pb-1.5 pt-1 shadow-ring"
           >
             <MiniSprite dex={m.dex} size={48} />
@@ -147,7 +151,13 @@ export function RaidTeamSection({
       </ul>
       <p className="m-0 font-pixel-sm text-[14px] leading-tight text-muted">{setup.hint}</p>
       {editing && (
-        <TeamEditor setup={setup} initial={team.map((m) => m.id)} onClose={() => setEditing(false)} portal={portal} />
+        <TeamEditor
+          setup={setup}
+          initial={team.map((m) => m.id)}
+          onClose={() => setEditing(false)}
+          portal={portal}
+          nightmare={nightmare}
+        />
       )}
     </section>
   )
@@ -162,14 +172,17 @@ function TeamEditor({
   initial,
   onClose,
   portal = false,
+  nightmare = false,
 }: {
   setup: TeamSetup
   initial: string[]
   onClose: () => void
   portal?: boolean
+  nightmare?: boolean
 }) {
   const { t } = useT()
   const tear = useTearIn(portal)
+  const shade = useShadowIn(nightmare)
   const data = useGame((s) => s.data)
   const cap = setup.cap
   const [picks, setPicks] = useState(initial)
@@ -195,7 +208,7 @@ function TeamEditor({
       open
       onClose={onClose}
       title={setup.title}
-      className={portal ? cx('dw-scope dw-modal', tear) : undefined}
+      className={portal ? cx('dw-scope dw-modal', tear) : nightmare ? cx('nm-scope nm-modal', shade) : undefined}
       footer={
         <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] gap-2.5">
           <PixelButton disabled={!valid.length || saving} onClick={() => setPicks([])}>
@@ -285,10 +298,13 @@ type FriendsLoad = { state: 'loading' } | { state: 'ready'; rows: RaidFriend[] }
 export function RaidGroupSection({
   source = { kind: 'daily' },
   portal = false,
+  nightmare = false,
 }: {
   source?: RaidSource
   /** Giratina's raid (docs/15 §27): its friends' sheet in the Distortion World's violet night. */
   portal?: boolean
+  /** Darkrai's raid (docs/15 §29): its friends' sheet in the moonlit night. */
+  nightmare?: boolean
 }) {
   const { t, tPlural } = useT()
   const save = useGame((s) => s.save)
@@ -370,7 +386,7 @@ export function RaidGroupSection({
         open={picking}
         onClose={() => setPicking(false)}
         title={t('ui.raid.friendsTitle')}
-        className={portal ? 'dw-scope dw-modal' : undefined}
+        className={portal ? 'dw-scope dw-modal' : nightmare ? 'nm-scope nm-modal' : undefined}
       >
         <div className="grid gap-2">
           <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">{t(progress ? 'ui.raid.progress.friendsHint' : 'ui.raid.friendsHint')}</p>

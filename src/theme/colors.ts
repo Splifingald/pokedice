@@ -126,6 +126,7 @@ export const THEMES = {
 /**
  * A theme for one part of a page, whatever the player's theme (`.dw-scope`, tailwind.config.ts and frames.ts): the
  * same tokens, redrawn. `distortion` is Distortion World's violet night (docs/28, docs/15 §27): its area raid's page,
+ * its pop-ups; `nightmare` is Darkrai's moonlit night (`.nm-scope`, docs/30, docs/15 §29), the same for its raid.
  * its pop-ups. Text keeps 4.5:1 on every surface, outlines 3:1 (tests/daybreak.test.ts).
  */
 export const SCOPES = {
@@ -156,6 +157,36 @@ export const SCOPES = {
     'sand-lip': '#4a2d3a',
     dot: '#1a0c2c',
     'dialog-ring': '#6b2fc4',
+    rich: PALETTE.gold,
+  },
+  // Darkrai's nightmare (docs/30, docs/15 §29): a moonlit night of deep blues, its area raid's page and pop-ups.
+  nightmare: {
+    parchment: '#060a1c',
+    ink: '#eef0ff',
+    edge: '#8b95d6',
+    panel: '#0e1430',
+    paper: '#161e42',
+    shadow: '#33407a',
+    line: '#1d2652',
+    lip: '#090d22',
+    muted: '#b8c0ec',
+    faint: '#5d6aa6',
+    'gold-light': '#7a5212',
+    'gold-pale': '#2a2418',
+    danger: '#ff8a93',
+    'danger-light': '#b3263a',
+    good: '#72dca0',
+    'good-pale': '#143428',
+    well: '#0a0f26',
+    'well-deep': '#1c2550',
+    sky: '#141d44',
+    'sky-line': '#33407a',
+    rose: '#33162a',
+    cream: '#262418',
+    sand: '#24202a',
+    'sand-lip': '#463a4a',
+    dot: '#141a3a',
+    'dialog-ring': '#5a3aa8',
     rich: PALETTE.gold,
   },
 } as const satisfies Record<string, Record<keyof (typeof THEMES)['light'], string>>

@@ -145,7 +145,8 @@ export function frameCss(k: number, theme: ThemeName = 'light'): string {
     return vars.join(';')
   }
   // A scope's frames ride along whatever the theme: Distortion World's violet night (`.dw-scope`, docs/15 §27).
-  return `:root{${varsOf(theme)}}.dw-scope{${varsOf('distortion')}}`
+  // …and Darkrai's moonlit night (`.nm-scope`, docs/15 §29).
+  return `:root{${varsOf(theme)}}.dw-scope{${varsOf('distortion')}}.nm-scope{${varsOf('nightmare')}}`
 }
 
 let redraw: (() => void) | null = null

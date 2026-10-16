@@ -19,6 +19,7 @@ const HH = [
   '0056_trick_or_treat.sql',
   '0057_hh_distortion_world.sql',
   '0058_hh_distortion_pool.sql',
+  '0059_hh_nightmare.sql',
 ]
 const runAll = async () => {
   for (const f of HH) await db.exec(sql(f))
@@ -77,6 +78,11 @@ describe('0052 and its patches: Haunted Hollow', () => {
       )
     ).rows[0]!
     expect(got).toEqual({ u: dw.unlockConditions, m: dw.mode })
+    // Newmoon Island as the script has it now (0059, docs/30): its nightmare set.
+    const nm = h.areas.find((a) => a.name === 'Newmoon Island')!
+    const nmMode = (await db.query<{ m: unknown }>('select mode m from areas where id = $1', [nm.id]))
+      .rows[0]!.m
+    expect(nmMode).toEqual(nm.mode)
     const rows = await db.query<{ id: string; area: string; dex: number; w: number; lo: number; hi: number }>(
       'select id, area_id area, dex, weight w, min_level lo, max_level hi from area_wild_pool order by id',
     )

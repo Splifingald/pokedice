@@ -12,6 +12,8 @@ import { useT } from '@/i18n/react'
 import { pushToast, useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { PortalRaidBanner, useTearIn } from './PortalRaid'
+import { NightmareRaidBanner } from './NightmareRaid'
+import { useShadowIn } from '@/components/Nightmare'
 
 /** Someone already in the group: you, or a friend bringing their team. */
 export interface GroupMember {
@@ -29,6 +31,7 @@ export function RaidNpcPicker({
   onStart,
   initial = [],
   portal,
+  nightmare,
 }: {
   open: boolean
   offer: RaidNpcOption[]
@@ -46,11 +49,17 @@ export function RaidNpcPicker({
    * and that Pokémon distorted as its banner, tearing in as it opens.
    */
   portal?: number
+  /**
+   * Darkrai's raid (docs/15 §29), its raid Pokémon's dex: the pop-up in the moonlit night, the full moon and that
+   * Pokémon as its banner, coming out of the shadow as it opens.
+   */
+  nightmare?: number
 }) {
   const { t, tPlural } = useT()
   const data = useGame((s) => s.data)
   const [picked, setPicked] = useState<number[]>(initial)
   const tear = useTearIn(open && portal != null)
+  const shade = useShadowIn(open && nightmare != null)
   const left = need - picked.length
   const nameOf = (o: RaidNpcOption, i: number) => o.owner ?? t('ui.raid.npcName', { n: i + 1 })
   const toggle = (i: number) =>
@@ -67,8 +76,20 @@ export function RaidNpcPicker({
       open={open}
       onClose={onBack}
       title={tPlural('ui.raid.npcPick.title', need)}
-      className={cx('max-w-md', portal != null && 'dw-scope dw-modal', tear)}
-      banner={portal != null ? <PortalRaidBanner mon={portal} className="h-[112px]" /> : undefined}
+      className={cx(
+        'max-w-md',
+        portal != null && 'dw-scope dw-modal',
+        tear,
+        nightmare != null && 'nm-scope nm-modal',
+        shade,
+      )}
+      banner={
+        portal != null ? (
+          <PortalRaidBanner mon={portal} className="h-[112px]" />
+        ) : nightmare != null ? (
+          <NightmareRaidBanner mon={nightmare} className="h-[112px]" />
+        ) : undefined
+      }
     >
       <div className="grid gap-3">
         {/* The group as it will start: you and your friends, then the slots the picks fill. */}

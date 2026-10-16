@@ -64,6 +64,16 @@ const portalSchema = z.object({
   tries: z.number().int().min(0).optional(),
 })
 
+const nightmareSchema = z.object({
+  active: z.boolean(),
+  round: z.number().int().min(0).max(99),
+  strike: z.boolean().optional(),
+  gifted: z.array(z.number().int().min(1).max(99)).max(99).optional(),
+  won: z.boolean().optional(),
+  wonSeen: z.boolean().optional(),
+  tries: z.number().int().min(0).optional(),
+})
+
 const progressSchema = z.object({
   roundsDone: z.number().int().min(0).optional(),
   roundCounted: z.boolean().optional(),
@@ -82,6 +92,8 @@ const progressSchema = z.object({
   lastCenter: z.boolean().optional(),
   // The portal run (docs/28): an odd value in an edited save drops the run, never the save.
   portal: portalSchema.optional().catch(undefined),
+  // The nightmare (docs/30): the same, an odd value drops it, never the save.
+  nightmare: nightmareSchema.optional().catch(undefined),
 })
 
 /** One parked region's block: the same fields the live region keeps at the top level of the save. */
@@ -171,6 +183,7 @@ export const saveSchema = z.object({
   leaderboardVisited: z.boolean().optional(),
   versusRulesSeen: z.boolean().optional(),
   portalRulesSeen: z.boolean().optional(),
+  nightmareRulesSeen: z.boolean().optional(),
   events: z
     .object({
       seen: z.array(z.enum(EVENT_IDS)).optional(),
