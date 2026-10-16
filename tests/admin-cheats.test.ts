@@ -48,8 +48,9 @@ describe('admin cheats', () => {
 
   it('an admin edit wins the next sync, even with less progress', () => {
     const local: SaveData = { ...adminAddPokemon(base, { dex: 25, level: 50, shiny: false }, data, 2000, 'pika'), adminEditAt: undefined }
-    const cloud = adminRemovePokemon(local, 'pika', 3000)
-    // Without the flag, the same progress on both: this device's save stays.
+    // The admin's copy is behind (its Pokédex without Pikachu), so only the flag can make it win.
+    const cloud = { ...adminRemovePokemon(local, 'pika', 3000), pokedex: base.pokedex }
+    // Without the flag, the copy ahead in progress stays.
     expect(decideSync(local, { ...cloud, adminEditAt: undefined })).toBe('local')
     expect(decideSync(local, cloud)).toBe('cloud')
     // Once the player has played past it, the flag no longer matters.
