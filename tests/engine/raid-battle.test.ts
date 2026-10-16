@@ -8,6 +8,8 @@ import {
   createBattle,
   createRaid,
   createRng,
+  gmaxChoices,
+  megaChoices,
   npcTeam,
   raidAllyAllowed,
   raidDispatch,
@@ -233,6 +235,18 @@ describe('your turn', () => {
     expect(next).toBeGreaterThan(0)
     expect(r.log.slice(0, next).some((e) => e.kind === 'damage')).toBe(false)
     expect(r.log[next]).toEqual({ kind: 'raid_front', ally: 's0-1', actor: 'boss' })
+  })
+
+  it('offers no Mega Evolution or Gigantamax, and ignores one asked for', () => {
+    // Charizard at Lv.50 has both Megas and a Gigantamax form.
+    const { state } = mine([{ uid: 's0-0', dex: 6, level: 50, hp: 999 }])
+    expect(megaChoices(state.duel!, data)).toEqual([])
+    expect(gmaxChoices(state.duel!, data)).toEqual([])
+    for (const e of [{ t: 'MEGA', toDex: 10034 }, { t: 'GMAX', toDex: 10196 }] as const) {
+      const r = raidDispatch(state, e, data, createRng(1))
+      expect(r.log.some((l) => l.kind === 'form')).toBe(false)
+      expect(r.state.duel?.player[0]?.dex).toBe(6)
+    }
   })
 
   it('a forfeit ends the raid as a loss', () => {

@@ -52,7 +52,8 @@ Golem, Kukui's Ninetales, Hau's Raichu, Opal's Weezing, Bede's Rapidash, Klara's
 ## 3. Mega Evolution, Primal Reversion, Ultra Burst
 
 - **Unlocked** once the player has reached Kalos (started it, live or parked) — `megaEvolution.region` — and then in
-  every region. No stone, no item.
+  every region. No stone, no item. **Never in a small world** (docs/21) or a raid (any kind: weekly,
+  progression, portal), for the player or a foe; Gigantamax neither.
 - **Lv.50** (`megaEvolution.level`) for every Pokémon with a Mega form. The Pokémon sheet shows it on the levelling
   curve at Lv.50, with each Mega form and the die it adds, once the feature is unlocked.
 - In battle, a **MEGA** button sits beside ITEM and SWITCH (**PRIMAL** for Kyogre and Groudon, **ULTRA BURST** for
@@ -70,7 +71,8 @@ species in this game), and **Mega Zygarde**, which PokeAPI has no sprite for yet
 
 ## 4. Gigantamax
 
-- **Unlocked** once the player has reached Galar (`gigantamax.region`), then everywhere; no level.
+- **Unlocked** once the player has reached Galar (`gigantamax.region`), then everywhere but a small world or a
+  raid; no level.
 - A **G-MAX** button beside MEGA: the Gigantamax look and +1 die of the Pokémon's first type for **its next turn**
   (`gigantamax.turns`), then it shrinks back — or when it leaves the field. **Never in the same battle as a Mega**: the
   two share the one per battle.
