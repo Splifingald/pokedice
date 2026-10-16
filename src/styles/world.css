@@ -102,13 +102,59 @@
     inset 0 0 0 5px #ffbe2e;
 }
 
+/*
+ * The preview before a world starts (docs/21 §9): the square greyed, its ring a quiet slate instead of the accent, and
+ * its gauge in the world's main colour, red in the last hour, blinking red in the last five minutes. Where motion is
+ * calmed (the OS asking, or animations off) the blink becomes still red stripes: the same warning, nothing flashing.
+ */
+.wp-square::after {
+  box-shadow:
+    inset 0 0 0 2px #8592ad,
+    inset 0 0 0 4px rgb(36 48 79 / 0.5);
+}
+.wp-gauge {
+  background: rgb(251 253 255 / 0.28);
+  box-shadow: 0 0 0 2px #24304f;
+}
+.wp-gauge i {
+  background: linear-gradient(
+    color-mix(in srgb, var(--w-main, #5b3a9e) 55%, #fff) 0 35%,
+    var(--w-main, #5b3a9e) 35% 70%,
+    color-mix(in srgb, var(--w-main, #5b3a9e) 75%, #000) 70%
+  );
+}
+.wp-gauge.hot i {
+  background: linear-gradient(#ffb3a8 0 35%, #f2553f 35% 70%, #c4382a 70%);
+}
+/* Twice a second at most (§8: no flash faster than 3 a second), in two steps, not a fade. */
+.wp-gauge.wp-blinking i {
+  animation: wp-blink 1s steps(1) infinite;
+}
+@keyframes wp-blink {
+  50% {
+    opacity: 0.15;
+  }
+}
+.wp-gauge.wp-blinking.still i {
+  animation: none;
+  background: repeating-linear-gradient(135deg, #f2553f 0 4px, #8a1f15 4px 8px);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .w-sil,
   .w-got {
     animation: none;
   }
+  .wp-gauge.wp-blinking i {
+    animation: none;
+    background: repeating-linear-gradient(135deg, #f2553f 0 4px, #8a1f15 4px 8px);
+  }
 }
 html.reduce-motion .w-sil,
 html.reduce-motion .w-got {
   animation: none;
+}
+html.reduce-motion .wp-gauge.wp-blinking i {
+  animation: none;
+  background: repeating-linear-gradient(135deg, #f2553f 0 4px, #8a1f15 4px 8px);
 }

@@ -51,7 +51,7 @@ const area = {
   enemyUpgradeLevel: env('UPG', DW.enemyUpgradeLevel ?? 8),
   mode: { ...DW.mode!, portals: env('PORTALS', DW.mode!.portals), wild: env('WILD', DW.mode!.wild) },
 }
-const world = { ...h.world, start: '2026-10-18T12:00:00.000Z', minBadges: 0 }
+const world = { ...h.world, start: '2026-10-18T12:00:00.000Z', minBadges: 0, previewHours: 48 }
 const data: GameData = compileGameData({
   ...BUNDLE,
   areas: [...BUNDLE.areas, ...h.areas.map((a) => (a.id === DW.id ? area : a))],

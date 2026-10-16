@@ -1100,7 +1100,7 @@ function trainerOf(areaKey: string, t: TrainerSpec): Trainer {
 }
 
 /** Its region row, areas, trainers and world settings. */
-export function haunted(): { region: Region; areas: Area[]; trainers: Trainer[]; world: SmallWorld } {
+export function haunted(): { region: Region; areas: Area[]; trainers: Trainer[]; world: Omit<SmallWorld, 'previewHours'> } {
   const trainers: Trainer[] = []
   const areas = AREAS.map((a, i): Area => {
     const pool = a.trainers.map((t) => trainerOf(a.key, t))
@@ -1161,7 +1161,9 @@ export function haunted(): { region: Region; areas: Area[]; trainers: Trainer[];
     nextRegion: null,
     enabled: false,
   }
-  const world: SmallWorld = {
+  // As the admin saved it before the preview existed (docs/21 §9): the game reads it with the default 48 hours, and
+  // migration 0052, generated from this, stays as it was run.
+  const world: Omit<SmallWorld, 'previewHours'> = {
     id: WORLD_ID,
     regionId: REGION_ID,
     start: '2026-10-18T12:00:00.000Z',
@@ -1187,7 +1189,7 @@ export function withHaunted(b: BundleRaw): BundleRaw {
   const areaIds = new Set(h.areas.map((a) => a.id))
   const trainerIds = new Set(h.trainers.map((t) => t.id))
   const config = b.config as Record<string, unknown> & {
-    smallWorlds?: { access?: string; list?: SmallWorld[] }
+    smallWorlds?: { access?: string; previewAccess?: string; list?: Partial<SmallWorld>[] }
     trickOrTreat?: Partial<TrickOrTreatConfig>
   }
   const worlds = config.smallWorlds ?? {}
@@ -1201,6 +1203,7 @@ export function withHaunted(b: BundleRaw): BundleRaw {
       configVersion: Number(config.configVersion ?? 0) + 1,
       // The switch stays where the admin left it (On for admin, to try it first).
       smallWorlds: {
+        ...worlds,
         access: worlds.access ?? 'admin',
         list: [...(worlds.list ?? []).filter((w) => w.id !== WORLD_ID), h.world],
       },

@@ -58,7 +58,7 @@ import { makeDataWith, newId } from '../fixtures'
 const h = haunted()
 const DW = h.areas.find((a) => a.name === 'Distortion World')!
 const NOW = Date.parse('2026-10-20T12:00:00.000Z')
-const world = { ...h.world, start: '2026-10-18T12:00:00.000Z', minBadges: 0 }
+const world = { ...h.world, start: '2026-10-18T12:00:00.000Z', minBadges: 0, previewHours: 48 }
 const dataWith = (access: 'off' | 'all') =>
   makeDataWith(
     { areas: h.areas, regions: [h.region] },

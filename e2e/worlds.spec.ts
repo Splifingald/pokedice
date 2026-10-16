@@ -1,6 +1,6 @@
 // Small worlds (docs/21): the admin's world reaches the game as content (a newer configVersion, served from the content
 // cache the way a player gets it the second time), with its region and areas, on the server's clock. Its pop-up and
-// square, the partner pick, Home inside (the strip, its squares, its Mart, its own Upgrades, an event's page), a battle
+// square (and its preview before the start, §9), the partner pick, Home inside (the strip, its squares, its Mart, its own Upgrades, an event's page), a battle
 // there (the booster), Home's secret area rows (docs/26 §2.6), the final fight and the
 // catch that goes home, the closing with its Pokémon gone home (docs/26 §1), and a phone.
 import { expect, test, type Page } from '@playwright/test'
@@ -104,7 +104,8 @@ function bundle(world: SmallWorld = WORLD): BundleRaw {
     config: {
       ...b.config,
       configVersion: VERSION,
-      smallWorlds: { access: 'all', list: [world] },
+      // Its preview on Home too (docs/21 §9): only a clock before the start shows it.
+      smallWorlds: { access: 'all', previewAccess: 'all', list: [world] },
       events: { ...events, wheel: { ...events.wheel, access: 'all' } },
     },
   }
@@ -115,8 +116,9 @@ const DATA = compileGameData(bundle())
  * The game boots on its bundle, asks for the content version, finds a newer one and plays it from the content cache.
  * The server's clock says `now`.
  */
-async function boot(page: Page, save: SaveData, now = NOW, settings = FAST, world: SmallWorld = WORLD) {
-  await mockSupabase(page, { rpc: { event_time: () => ({ now, day: now.slice(0, 10) }) } })
+async function boot(page: Page, save: SaveData, now: string | (() => string) = NOW, settings = FAST, world: SmallWorld = WORLD) {
+  const at = () => (typeof now === 'function' ? now() : now)
+  await mockSupabase(page, { rpc: { event_time: () => ({ now: at(), day: at().slice(0, 10) }) } })
   await page.route(`${SUPABASE}/rest/v1/game_config*`, async (route) => {
     if (!route.request().url().includes('configVersion')) return route.fallback()
     await new Promise((r) => setTimeout(r, 300))
@@ -217,6 +219,48 @@ test('the world opens: its pop-up, the partner pick, Home inside, its Mart and U
   expect(s.parked?.[REGION.id]?.box[0]?.dex).toBe(92)
   await page.goto('/home')
   await expect(page.getByRole('button', { name: /^Mirage Island, small world: Areas 0\/3, with Gastly\. Ends in 6d \d+h\. Enter$/ })).toBeVisible()
+})
+
+test('before it starts: its preview in the world’s slot, a tap says when, then its square at the start without a reload', async ({ page }) => {
+  const start = Date.parse(START)
+  // The server's clock follows the page's fake one: each jump below moves both.
+  let server = start - 90 * 60_000
+  await page.clock.install({ time: server })
+  await boot(page, kanto(), () => new Date(server).toISOString())
+  await page.goto('/home')
+  const preview = page.getByRole('button', { name: /^Mirage Island, small world, coming soon: starts in 1h (30|29)m, / })
+  await expect(preview).toBeVisible({ timeout: 15_000 })
+  await expect(preview).toHaveAttribute('data-phase', 'normal')
+  await expect(preview.getByText(/^1:(29|30):\d\d$/)).toBeVisible()
+  // Greyed, no Pokémon on it: only its picture.
+  await expect(preview.locator('img')).toHaveCount(1)
+  await page.evaluate(() => ((window as unknown as { kept: number }).kept = 1))
+  // It hasn't started: a tap says when, and goes nowhere.
+  await preview.click()
+  await expect(page.getByText(/^Mirage Island isn't open yet: it starts in 1h (30|29)m\.$/)).toBeVisible()
+  await expect(page).toHaveURL(/\/home$/)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+
+  // Its label says the time left, which moves on: from here, the square by what it is.
+  const square = page.getByRole('button', { name: /^Mirage Island, small world, coming soon: / })
+  const jump = async (ms: number) => {
+    server += ms
+    await page.clock.fastForward(ms)
+  }
+  // The last hour: red. The last five minutes: blinking.
+  await jump(31 * 60_000)
+  await expect(square).toHaveAttribute('data-phase', 'red')
+  await expect(square).toHaveAccessibleName(/starts in (59|58) min, /)
+  await jump(55 * 60_000)
+  await expect(square).toHaveAttribute('data-phase', 'blink')
+  await expect(square.getByText(/^[34]:\d\d$/)).toBeVisible()
+  // The start: the world's own square takes the slot on the next tick, the same page (no reload), and its pop-up opens.
+  await jump(4 * 60_000 + 5_000)
+  await expect(page.getByRole('button', { name: /coming soon/ })).toHaveCount(0)
+  await expect(page.getByRole('dialog', { name: 'Mirage Island' })).toBeVisible()
+  await page.getByRole('dialog', { name: 'Mirage Island' }).getByRole('button', { name: 'Later' }).click()
+  await expect(page.getByRole('button', { name: /^Mirage Island, small world: Areas 0\/3, fresh start\. Ends in / })).toBeVisible()
+  expect(await page.evaluate(() => (window as unknown as { kept?: number }).kept)).toBe(1)
 })
 
 test('Home inside a world without a mythical: its secret areas only, a locked one saying what opens it', async ({ page }) => {
@@ -379,5 +423,16 @@ test('a 360×640 phone inside: Home and its Mart fit, in Jersey, with big enough
   await phone(page)
   await page.goto('/shop')
   await expect(page.getByRole('heading', { name: 'World Mart', level: 1 })).toBeVisible()
+  await phone(page)
+})
+
+test('a 360×640 phone before it starts: the preview fits, in Jersey, with a big enough square', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 640 })
+  // Its longest clock: days, hours, minutes and seconds.
+  await boot(page, kanto(), new Date(Date.parse(START) - 47 * 3_600_000).toISOString())
+  await page.goto('/home')
+  const preview = page.getByRole('button', { name: /^Mirage Island, small world, coming soon: starts in 1d 2[23]h, / })
+  await expect(preview).toBeVisible({ timeout: 15_000 })
+  await expect(preview.getByText(/^1d \d\d:\d\d:\d\d$/)).toBeVisible()
   await phone(page)
 })

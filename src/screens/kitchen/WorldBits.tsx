@@ -1,5 +1,6 @@
 // Kitchen sink: Small worlds' pieces (docs/21) in every state — Home's square (a fresh start, played, the last day,
-// the mythical caught), the pop-up, the partner pick in the world's colours, the strip (running, the last day, content
+// the mythical caught), its preview before the start (§9: the world's colour, red in the last hour, blinking in the last
+// five minutes, and that blink still where motion is calmed), the pop-up, the partner pick in the world's colours, the strip (running, the last day, content
 // not in yet), the squares inside (the mythical waiting, ready, gone home, waiting for its region; the Mart), the
 // booster chips and the dice level tag, the mythical's result card, the closing pop-up (kept, got away, never entered,
 // with its Pokémon gone home), the lock of a Pokémon waiting in its region (docs/26 §1), Home's Pokédex square and secret
@@ -22,8 +23,10 @@ import {
   WorldSquareView,
   WorldStripView,
 } from '@/screens/events/world'
+import { WorldPreviewSquareView } from '@/screens/events/worldPreview'
 
-const HOUR = 3_600_000
+const MINUTE = 60_000
+const HOUR = 60 * MINUTE
 const DAY = 24 * HOUR
 
 /** A world like the Visual Lab's Mirage Island, ten days long, `done` of it gone by. */
@@ -57,6 +60,10 @@ export function WorldBits() {
   const mid = useMemo(() => sampleWorld(now, 5 * DAY), [now])
   const last = useMemo(() => sampleWorld(now, 10 * DAY - 9 * HOUR), [now])
   const fresh = useMemo(() => sampleWorld(now, 2 * HOUR), [now])
+  // Not started yet: 30 hours, 40 minutes and 3 minutes to go (its preview is the default 48 hours).
+  const soon = useMemo(() => sampleWorld(now, -30 * HOUR), [now])
+  const lastHour = useMemo(() => sampleWorld(now, -40 * MINUTE), [now])
+  const lastMinutes = useMemo(() => sampleWorld(now, -3 * MINUTE), [now])
   const [popup, setPopup] = useState(false)
   const [pick, setPick] = useState(false)
   const [bye, setBye] = useState<WorldBye | null>(null)
@@ -94,6 +101,13 @@ export function WorldBits() {
         <WorldSquareView world={mid} now={now} cleared={3} total={6} partner="Abra" caught={false} onClick={noop} />
         <WorldSquareView world={last} now={now} cleared={5} total={6} partner="Gastly" caught={false} onClick={noop} />
         <WorldSquareView world={last} now={now} cleared={6} total={6} partner="Gastly" caught onClick={noop} />
+      </div>
+      {/* The preview before the start, in each phase: normal, red (last hour), blinking (last 5 min), and still. */}
+      <div className="grid max-w-[600px] grid-cols-2 gap-2.5">
+        <WorldPreviewSquareView world={soon} now={now} onClick={noop} />
+        <WorldPreviewSquareView world={lastHour} now={now} onClick={noop} />
+        <WorldPreviewSquareView world={lastMinutes} now={now} still={false} onClick={noop} />
+        <WorldPreviewSquareView world={lastMinutes} now={now} still onClick={noop} />
       </div>
       <div className="grid max-w-[600px] gap-2">
         <WorldStripView world={mid} now={now} back="Kanto" onBack={noop} />

@@ -7,9 +7,12 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   POKE_TYPES,
+  PREVIEW_HOURS,
+  PREVIEW_HOURS_MAX,
   isWorldRegion,
   newSmallWorld,
   normaliseWorld,
+  previewWindow,
   realRegions,
   regionAreas,
   sellPrice,
@@ -29,6 +32,7 @@ import { ART_GEOMETRY } from '@/fx/areaArtMap'
 import { LANGS } from '@/i18n/langs'
 import { money } from '@/lib/format'
 import { WorldSquareView } from '@/screens/events/world'
+import { WorldPreviewSquareView } from '@/screens/events/worldPreview'
 import { useNow } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { addRows, newUuid, rowKey, updateRow, useAdmin, useAdminData } from '../../store'
@@ -141,6 +145,7 @@ export function SmallWorldsTab() {
   const now = useNow(30_000)
   const [draft, setDraft] = useState<SmallWorld | null>(null)
   const access = raw?.access ?? 'off'
+  const previewAccess = raw?.previewAccess ?? 'off'
   const write = (next: SmallWorld[]) => setRaw({ ...raw, access, list: next })
   const problems = draft && data ? worldProblems(list, draft, data) : []
   const isNew = !!draft && !list.some((w) => w.id === draft.id)
@@ -170,13 +175,28 @@ export function SmallWorldsTab() {
       >
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xl">Who sees them</span>
-          <AccessSwitch value={access} onChange={(a) => setRaw({ list: raw?.list ?? [], access: a })} label="Small worlds: who sees them" />
+          <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, list: raw?.list ?? [], access: a })} label="Small worlds: who sees them" />
           <span className="text-base text-muted">
             {access === 'off'
               ? 'None opens, whatever the list says (worlds already entered wait, kept).'
               : access === 'admin'
                 ? 'Only you, signed in as admin, see them.'
                 : 'Every player of the main save sees them, from the badges set (not the Extreme save).'}
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xl">Preview on Home</span>
+          <AccessSwitch
+            value={previewAccess}
+            onChange={(a) => setRaw({ ...raw, list: raw?.list ?? [], access, previewAccess: a })}
+            label="Small worlds' preview: who sees it"
+          />
+          <span className="text-base text-muted">
+            {previewAccess === 'off'
+              ? 'No preview: a world shows up on Home when it starts.'
+              : `Before a world starts (its "Preview" hours, 48 by default), Home shows it greyed in its slot with a countdown, ${
+                  previewAccess === 'admin' ? 'to you alone, signed in as admin' : 'to everyone who will see the world'
+                }. It needs the worlds' own switch on as well.`}
           </span>
         </div>
         {sorted.length ? (
@@ -327,6 +347,14 @@ function WorldEditor({
               }}
             />
           </Field>
+          <Field label="Preview (hours before)" hint="Home shows it greyed, with a countdown, this long before it starts. 0 = none.">
+            <NumInput
+              value={draft.previewHours}
+              min={0}
+              max={PREVIEW_HOURS_MAX}
+              onChange={(v) => patch({ previewHours: Math.min(PREVIEW_HOURS_MAX, Math.max(0, Math.floor(v ?? PREVIEW_HOURS))) })}
+            />
+          </Field>
           <Field label="Shown from (badges)" hint="Every region's counted.">
             <NumInput value={draft.minBadges} min={0} max={80} onChange={(v) => patch({ minBadges: Math.max(0, v ?? 0) })} />
           </Field>
@@ -391,13 +419,23 @@ function WorldEditor({
   )
 }
 
-/** How Home's square looks in these colours: the game's own square (players see it first among the events). */
+/**
+ * How Home's square looks in these colours: the game's own square (players see it first among the events), and its
+ * preview before the start (halfway through the preview's window), when it has one.
+ */
 function SquarePreview({ w, data }: { w: SmallWorld; data: GameData }) {
   const total = regionAreas(data, w.regionId).length
+  const halfway = Date.parse(w.start) - previewWindow(w) / 2
   return (
     <div className="grid content-start gap-1">
       <span className="text-base text-muted">Home's square</span>
       <WorldSquareView world={w} now={Math.min(Date.now(), Date.parse(w.end))} cleared={0} total={total} partner={null} caught={false} onClick={() => {}} />
+      {previewWindow(w) > 0 && Number.isFinite(halfway) && (
+        <>
+          <span className="text-base text-muted">Its preview, {w.previewHours} h before</span>
+          <WorldPreviewSquareView world={w} now={halfway} onClick={() => {}} />
+        </>
+      )}
     </div>
   )
 }

@@ -245,3 +245,40 @@ interface SmallWorld {
   worlds), Home shows the strip and "The world is on its way" until the content arrives (`WorldWaiting`).
 - **A world's partners against its wild Pokémon**: a type that can't touch them (Gastly against Normal types) is a
   stalemate in the world as anywhere; the admin's pools and partners decide it.
+
+## 9. The preview on Home (2026-10-16)
+
+Before a world starts, Home announces it: for **N hours before its start** (48 by default), its square stands **greyed**
+in the slot the world will take, with a **countdown** to the start and a **gauge** over those N hours. At the start it
+gives its place to the world's own square on the same tick (no reload), and the world's pop-up follows as usual.
+
+| Topic | Choice |
+|---|---|
+| Where N lives | **Per world**: `SmallWorld.previewHours` (whole hours, 0–336; 0 = no preview), in the world's editor ("Preview (hours before)"). Each world is already its own row in `smallWorlds.list` with its own dates, so its lead time sits with them; a world saved before this reads as 48 (`normaliseWorld`). |
+| The switch (docs/15 §20) | `smallWorlds.previewAccess`: Off / On for admin / On for everyone, **Off by default** (unset = Off), on the Small worlds tab under the worlds' own switch. Both switches must be on for the player: a preview never announces a world they couldn't enter. |
+| Who sees it | The live square's own rules (`worldPreviewFor`): the main save, outside any world, its region known, from the world's badge count. The soonest world if two are in their windows. |
+| Where | Home's world slot (`WorldSlot`), first among the event squares, where the world's square goes. While another world runs, the preview comes right after its square. |
+| The gauge | **Fills** from empty (N hours before) to full (the start): it counts *toward* something, like the Day Care's and the wheel's gauges; once live, the world's own square drains. In the world's main colour; **red from 1 hour before** (that moment included); **blinking red from 5 minutes before** (included), twice a second at most. Where motion is calmed (the OS's reduce motion, or animations off) the blink is still red stripes instead. |
+| The look | The world's picture greyed and dimmed, WORLD and SOON (red with the gauge), "Starts in" over a ticking clock ("1d 04:12:33", "4:12:33", "12:33"), its name, the gauge, "Opens {date}" (local time). **No Pokémon**: no silhouette, no sprite, no prize chip. |
+| A tap | Doesn't enter (nothing is open yet): a toast says when it starts ("Mirage Island isn't open yet: it starts in 1h 30m."), as a locked square says what opens it. |
+| Rules pop-up / INFO | **None of its own**: the preview is a passive announcement with nothing to do and no page; it says everything on its face, and the world's own pop-up (its rules) opens at the start. Like the items with a switch (docs/15 §20), it's explained where it's met. |
+
+Engine: `engine/worldPreview.ts` (`previewWindow`, `inPreviewWindow`, `previewLeft`, `previewFill`, `previewPhase`,
+`previewState`, `worldPreviewOn`, `worldPreviewFor`; `PREVIEW_HOURS`, `PREVIEW_HOURS_MAX`, `PREVIEW_RED_MS`,
+`PREVIEW_BLINK_MS`). UI: `screens/events/worldPreview.tsx` (`WorldSlot`, `WorldPreviewSquareView`, `PreviewGauge`), its
+styles in `styles/world.css` (`.wp-*`), every phase on `/kitchen-sink` (`WorldBits`). Tests:
+`tests/engine/world-preview.test.ts` (the boundaries: exactly N h, 1 h, 5 min, the start; the switches; who sees it) and
+`e2e/worlds.spec.ts` ("before it starts": the preview, the tap, red, blinking, then the world's square at the start
+without a reload; and its longest clock on a 360×640 phone).
+
+**No server check**: no server function serves or acts on the preview. The `smallWorlds` row is read from `game_config`
+as content (like the worlds themselves), the preview only draws it, and its tap does nothing on the server; entering
+the world is unchanged and only possible once it's live.
+
+### Setting it up
+1. **No SQL to run**: the switch and the hours are in the `smallWorlds` game_config row, written by Publish.
+2. Admin → Events → **Small worlds**: set **Preview on Home** to *On for admin* (Off by default). The worlds' own switch
+   must be on for you too.
+3. Edit a world: **Preview (hours before)** (48 by default; 0 = no preview). The editor shows its preview square as it
+   looks halfway through that window, beside the live square. Apply, then **Save & Publish**.
+4. Check Home as admin within the window, then switch **Preview on Home** to *On for everyone* and Publish.
