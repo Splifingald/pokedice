@@ -14,7 +14,7 @@ import { catchTimeline } from '@/fx/timelines/catch'
 import { TREAT_URL, treatTimeline } from '@/fx/timelines/trick'
 import { loadTrickBall } from '@/fx/scenes'
 import { centerTimeline } from '@/fx/timelines/center'
-import { gmaxEndTimeline, gmaxFor, megaFor } from '@/fx/timelines/forms'
+import { gmaxEndTimeline, gmaxFor, megaFor, unleashTimeline } from '@/fx/timelines/forms'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { breachTimeline, closeTimeline, victoryTimeline, wildGlitchTimeline } from '@/fx/timelines/portal'
 import { raidEntranceTimeline } from '@/fx/timelines/portalRaid'
@@ -432,6 +432,24 @@ const PRESETS: Preset[] = [
         from: own(25),
         to: own(10199),
         die: 'electric',
+        short: o.short,
+      }),
+  },
+  {
+    name: "A raid's last bar: Giratina's Origin Forme unleashed",
+    sprites: [
+      [150, true],
+      [487, false, true],
+      [10007, false, true],
+    ],
+    make: (o) =>
+      unleashTimeline({
+        own: own(150),
+        foe: spriteKey(487, false, true),
+        side: 'foe',
+        from: spriteKey(487, false, true),
+        to: spriteKey(10007, false, true),
+        die: 'dragon',
         short: o.short,
       }),
   },

@@ -14,7 +14,7 @@ import { background, setArtUnderStage, zones } from '@/fx/scenes'
 import { loadSprite, placeSprite, spriteKey, stageSprite } from '@/fx/sprites'
 import { H, quicken, W, type Hud, type Timeline } from '@/fx/timeline'
 import { attackTimeline } from '@/fx/timelines/attacks'
-import { gmaxEndTimeline, gmaxFor, megaFor } from '@/fx/timelines/forms'
+import { gmaxEndTimeline, gmaxFor, megaFor, unleashTimeline } from '@/fx/timelines/forms'
 import { usePace } from '@/lib/pace'
 import { useMotion } from '@/lib/motion'
 import { useGame } from '@/store/game'
@@ -322,10 +322,18 @@ function useSceneTimeline(scene: Scene | null, own: Battler, foe: Battler, short
         side: mine ? ('own' as const) : ('foe' as const),
         from: key(changing, mine, from),
         to: key(changing, mine, to),
-        die: data.species[scene.kind === 'gmaxEnd' ? from : to]?.type1 ?? 'normal',
+        // The die the new form gained colours its aura (a raid Pokémon's unleashed form names it).
+        die: scene.type ?? data.species[scene.kind === 'gmaxEnd' ? from : to]?.type1 ?? 'normal',
         short,
       }
-      timeline = scene.kind === 'mega' ? megaFor(p) : scene.kind === 'gmax' ? gmaxFor(p) : gmaxEndTimeline(p)
+      timeline =
+        scene.kind === 'mega'
+          ? megaFor(p)
+          : scene.kind === 'gmax'
+            ? gmaxFor(p)
+            : scene.kind === 'unleash'
+              ? unleashTimeline(p)
+              : gmaxEndTimeline(p)
     }
     if (scene.speed && scene.speed !== 1) timeline = quicken(timeline, scene.speed)
     return { timeline, ready: Promise.all(sprites) }

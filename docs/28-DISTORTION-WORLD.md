@@ -28,7 +28,7 @@ on the pixel engine (`src/fx/timelines/portal.ts`, `src/fx/glitch.ts`, hosted by
 | Run bonuses | The boosts and dice are **for the run only**: gone on the victory or a wipe. The heals, revives and items stay as they are. |
 | The last portal | **No choice: victory.** The portal again, **shiny Giratina coming out of it, its cry**, "Every portal is closed! Shiny Giratina came through the last one: it is now available in raids." **HEAL & START RAID** (healed as at a Center, then the raid's page) or the green **BACK TO THE WORLD** (the world's Home). The run is **won for good**: the area is **only its raid** from then on (CONTINUE: RAID: GIRATINA, then sealed once caught). The team is healed. |
 | A wipe | XP, ₽ and items **kept**; portals closed **back to 0**; run bonuses **lost**; team **healed**; back to the world, to try again (no limit). |
-| The raid | Shiny Giratina, the world's prize: **only after the run is won**, at **Lv.100, foes' dice level 10, 4 HP bars**, teams **from the world's Box, up to Lv.100** (all on the area's mode). Before, its page is locked ("Close every portal of Distortion World to open this raid"). This replaces the raid at the end of S5's rounds. |
+| The raid | Shiny Giratina, the world's prize: **only after the run is won**, at **Lv.100, foes' dice level 10, 4 HP bars**, teams **from the world's Box, up to Lv.100** (all on the area's mode). Before, its page is locked ("Close every portal of Distortion World to open this raid"). This replaces the raid at the end of S5's rounds. **Its Origin Forme waits for the last bar** (the user, 2026-10-16; every raid's Giratina, not only this one): Altered through the first bars whatever its HP, then on the last one "Giratina's Origin Forme is unleashed! +1 Dragon die!", its own animation, and it keeps that form to the end, with **one more Dragon die** (3 Ghost + 3 Dragon) where a battle swaps a Ghost one for a Dragon one. |
 | Giratina's cry | The game's cries (`src/audio/cries.ts`, Showdown's, one request, none while sound is off). The breach and a portal closing have 8-bit cues of their own (`portal.breach`, `portal.close` in `src/audio/sfx.ts`). |
 | Art | Existing art only (the area's picture), plus code: **pixel art on the game's FX engine**, like the legend's entrance (the user's ask of 2026-10-15: the first SVG/CSS effects were underwhelming next to the rest). §6. |
 
@@ -154,6 +154,7 @@ setting lightens them; only motion off (the admins' no-animations switch) stills
 | The victory (`victoryTimeline`) | Legend.ts's entrance for shiny Giratina: dark pulses, shadow tendrils, heartbeats, its silhouette rising out of the portal in a red-and-gold outline, rays and a gleam, the reveal (flash, rings, roar and its cry, quake), the shiny sparkle, the portal sealed behind it, the name card (SHINY, its raid level); then the screen's words, HEAL & START RAID and the green BACK TO THE WORLD. 6.2 s. | 3.1 s / at its end at once |
 | The raid's page and pop-ups (`PortalRaid.tsx`, `.dw-scope`) | The violet night, the void as the page's ground, the portal as its banner, Giratina distorted on its island on the card, the screen's tears and the UI's glitches; its pop-ups with the portal and Giratina as a banner, tearing in as they open. | Lighter tears and glitches / still |
 | The raid's stage (`raidBattleStage`, `RaidStageArt`) and a bar breaking (`StageTear`) | The void, rocks drifting upside-down, the portal turning far behind Giratina, floating islands to stand on; Giratina distorted; a tear across the stage when a bar breaks. | One thin band / still, no tear |
+| The last bar: the Origin Forme unleashed (`unleashTimeline` in `forms.ts`, the stage's scene `unleash`) | The stage darkens, shadow tendrils out of Giratina, two heartbeats in a red outline, its two forms flickering faster and faster as a black shape in red and gold; the reveal (a flash, gold, red and Dragon rings, a quake, a gleam): the Origin Forme, Dragon motes rising off it, while "Giratina's Origin Forme is unleashed! +1 Dragon die!", the UNLEASHED! banner and its cry are read. 3.2 s. | The flash and the new sprite, held 1.6 s / at once |
 | The raid's entrance (`raidEntranceTimeline`, under the raid intro's words) | Pulses, a tear and its cracks, the portal opening, tendrils, heartbeats, shiny Giratina rising out of the portal, rays and a gleam, the reveal (flash, rings, roar, quake), the sparkle, then hovering and tearing in front of the portal. 6.2 s, **no Skip** (the user, 2026-10-15). | In full (an encounter) / straight to the fight |
 
 Sounds: the breach and a closing keep `portal.breach` and `portal.close`; the scenes add the legend's cues
@@ -175,3 +176,19 @@ Then, the same day: the way in waits for a tap at the breach's end and its pop-u
 team can change until READY! (§1, the engine's `arriveAtPortal` and `teamSwapsOpen`); a boon is confirmed before it is
 taken; its icons are an extra die of its type with a "+" and a rare item turning through its items every 2 s. Still no
 migration: nothing on the server changes.
+
+Then, on 2026-10-16, Giratina's Origin Forme in raids (the user: "Change it for the raid only. The origin forme should
+trigger on the last hp bar with an animation and text showing 'Giratina origin forme is unleashed' + 1 dragon die.
+Giratina gets an additional dragon die instead of the usual replacement here in the raid"). In a raid the boss's HP is
+one bar, so the battle's rule (below half HP, back above it) changed form on every bar. Now a raid Pokémon holds its
+below-half-HP form (`Battler.formHeld`, set by `createRaid`; `checkHpForms` skips it) until its last bar starts
+(`breakBar`, or the start for a raid of one bar), where `unleashForm` (battle.ts) puts it on for good and adds one die
+of the type the form brings (`swapDie.to`: Dragon for Giratina) with its typed dice; its log entry is a `form` with
+`reason: 'unleash'` and `die`. The same holds for the other below-half-HP forms if one is ever a raid Pokémon (their
+names are in strings.csv: `ui.raid.form.<form dex>`). Your own Giratina, in a raid or anywhere, and every battle keep
+the old rule. The screen: the stage's `unleash` scene (§6), its words landing at the reveal (the `contact` cue): the
+line, the UNLEASHED! banner (`ui.raid.unleash`) and the cry; the battle's history says it too (`ui.hist.unleashed`).
+No switch (a rule of a raid that exists, not a new feature), no migration, nothing on the server.
+`tests/engine/raid-battle.test.ts` covers it (Altered through the first bars, the last one's Origin Forme with one
+more Dragon die and no Ghost lost, a raid of one bar, a raid Pokémon with no such form, a battle's swap unchanged);
+the scene is on `/kitchen-sink/fx`.

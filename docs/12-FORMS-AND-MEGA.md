@@ -82,7 +82,9 @@ species in this game), and **Mega Zygarde**, which PokeAPI has no sprite for yet
 - **Below half HP** — Giratina (Origin Forme: Ghost → Dragon), Darmanitan (Zen Mode: Fire → Psychic; the Galarian one
   Ice → Fire), Zygarde (Complete: Ground → Dragon), Wishiwashi (School: a base die → Water), Minior (Core: Rock →
   Flying): either side, one die swapping type and a new sprite, back at half HP or above. Checked after every HP change;
-  sent out below half, it starts in the form. A Mega or Gigantamax Pokémon keeps that look instead.
+  sent out below half, it starts in the form. A Mega or Gigantamax Pokémon keeps that look instead. **A raid Pokémon**
+  (2026-10-16, docs/28) waits for its last bar instead, whatever its HP: the form is unleashed then, for good, and it
+  gains one die of the form's type (Giratina: one more Dragon die) rather than swapping one.
 - **TYPE menu** — Arceus (17 Plates), Silvally (17 Memories) and Ogerpon (3 masks): its type and every die — base dice
   included, the hand already thrown too — become the type (an Ogerpon mask's: Water, Fire, Rock). **Once per battle**
   (`formChangesPerBattle`) for each Pokémon: an Arceus and a Silvally on one team change once each.

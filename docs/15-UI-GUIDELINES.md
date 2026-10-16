@@ -251,6 +251,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 | Catch | throw, beam, drop, wobbles, result; with a Bait to offer it holds on the ball lying still (`hold`) and the answer plays on from that frame (`from: 'ground'`: the Bait tossed beside the ball, a heart, a last wobble; or straight to the break-free); Capture Luck's stay (`stays`): out of the ball, a "!" and two hops, no flight | throw and drop, result at once (the Bait still lands); a throw that can't miss jumps to its end at every level |
 | Pokémon Center | in its picture (`public/backgrounds/pokemon-center.png`): a ball per team member into the machine's slots, the heal jingle (B G♯ ×3, E) | one flash, healed |
 | Mega Evolution, Gigantamax | the full change | a white flash and the new sprite |
+| A raid Pokémon's form unleashed on its last bar (`unleashTimeline`: Giratina's Origin Forme, §27) | the full change, held on its new form while the words are read | a white flash and the new sprite, held as long |
 | Trick or Treat's Treat (`trick.ts`) and Trick Ball (the catch, `ball: 'trick'`) | the perk-up, the Treat's arc with twinkles, the catch (hit-stop, warm frames), three chomps with crumbs and hearts, the gauge's glow, ring and sparks; the Trick Ball as the catch; a flee rises and dithers into wisps, the area dimming | the toss or the throw, then the result at once; a flee is a short dither out |
 | Legendary intro, Evolution, Egg hatching, the lab (a partner), a trade | in full | in full |
 | The portal run (§27): the breach, a portal closing, the victory | in full | in half the time (a portal closing: 0.9 s) |
@@ -1015,7 +1016,11 @@ full-screen flash).
     void, rocks drifting upside-down, the portal turning far behind Giratina, the floating islands they stand on; the
     timelines draw no background over it), shiny Giratina wearing the wild Pokémon's distortion (the softened level), the
     panel in the violet night, the screen's tears and the UI's glitches, and a tear across the stage when a bar breaks
-    (`StageTear`: four frames, one violet shift; calm: no shift).
+    (`StageTear`: four frames, one violet shift; calm: no shift). On the last bar Giratina's Origin Forme is unleashed
+    (every raid's Giratina, 2026-10-16): the stage's `unleash` scene (`unleashTimeline`: the dark, tendrils,
+    heartbeats, its two forms flickering in red and gold, the reveal), and at the reveal (its `contact` cue) the line
+    "Giratina's Origin Forme is unleashed! +1 Dragon die!", the gold UNLEASHED! banner and its cry, read while the
+    scene holds on the new form (1.6 s).
   - **Its entrance** (`RaidIntro world="distortion"`, `raidEntranceTimeline` in `src/fx/timelines/portalRaid.ts`, on a
     stage of the screen's shape at 3 to 4 CSS pixels per art pixel): two dark pulses, a red point tears and cracks race
     out, the portal opens and turns, shadow tendrils, two heartbeats, shiny Giratina's silhouette rising out of the
