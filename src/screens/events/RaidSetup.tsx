@@ -5,6 +5,7 @@
 import { useState } from 'react'
 import {
   getRegion,
+  POKE_TYPES,
   progressRaidOf,
   progressRaidTeam,
   raidTeam,
@@ -15,6 +16,7 @@ import {
   versusClosest,
   type GameData,
   type PokemonInstance,
+  type PokeType,
   type RaidMon,
   type SaveData,
 } from '@/engine'
@@ -23,7 +25,9 @@ import { SearchField } from '@/components/Segmented'
 import { Sheet } from '@/components/Sheet'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { TrainerSprite } from '@/components/TrainerArt'
-import { searchFold } from '@/i18n'
+import { speciesTypes } from '@/components/TypeMatchups'
+import { SortSelect, TypeSelect } from '@/components/TypeSelect'
+import { getLang, searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { avatarOf, playerAvatarId } from '@/lib/avatars'
 import { fetchProgressRaidFriends, fetchRaidFriends, type RaidFriend } from '@/lib/raid'
@@ -43,6 +47,8 @@ import { TrainerName } from '@/components/TrainerName'
 import { useTearIn } from './PortalRaid'
 
 const TEAM_SIZE = 3
+
+type TeamSort = 'level' | 'dex' | 'az'
 
 /** Three Pokémon minis, in order. */
 function Minis({ team }: { team: { dex: number; shiny?: boolean }[] }) {
@@ -154,8 +160,8 @@ export function RaidTeamSection({
 }
 
 /**
- * Pick up to three, strongest first (the day's raid: every region's Box; a progression raid: its region's); Save keeps
- * them (and tells the server, signed in).
+ * Pick up to three (the day's raid: every region's Box; a progression raid: its region's), strongest first unless the
+ * sort says otherwise; Save keeps them (and tells the server, signed in).
  */
 function TeamEditor({
   setup,
@@ -174,11 +180,30 @@ function TeamEditor({
   const cap = setup.cap
   const [picks, setPicks] = useState(initial)
   const [q, setQ] = useState('')
+  const [sort, setSort] = useState<TeamSort>('level')
+  const [type, setType] = useState<PokeType | 'all'>('all')
   const [saving, setSaving] = useState(false)
   const candidates = setup.candidates
   const manyRegions = new Set(candidates.map((c) => c.region)).size > 1
+  const types = POKE_TYPES.filter((ty) => candidates.some((c) => speciesTypes(data, c.inst.dex).includes(ty)))
+  const name = (dex: number) => data.species[dex]?.name ?? ''
+  const collator = new Intl.Collator(getLang())
   const needle = searchFold(q)
-  const shown = needle ? candidates.filter((c) => searchFold(data.species[c.inst.dex]?.name ?? '').includes(needle)) : candidates
+  // The search and the type narrow the list; picks they hide stay picked. Every order falls back to the next key so
+  // two copies of a species always read the same way.
+  const shown = candidates
+    .filter(
+      (c) =>
+        (!needle || searchFold(name(c.inst.dex)).includes(needle)) &&
+        (type === 'all' || speciesTypes(data, c.inst.dex).includes(type)),
+    )
+    .sort(
+      ({ inst: a }, { inst: b }) =>
+        (sort === 'az' ? collator.compare(name(a.dex), name(b.dex)) : 0) ||
+        (sort === 'level' ? b.level - a.level : 0) ||
+        a.dex - b.dex ||
+        b.level - a.level,
+    )
   const valid = picks.filter((id) => candidates.some((c) => c.inst.id === id))
   const toggle = (id: string) =>
     setPicks((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : cur.length >= TEAM_SIZE ? cur : [...cur, id]))
@@ -236,6 +261,24 @@ function TeamEditor({
           })}
         </ol>
         <SearchField id="raid-team-q" value={q} onChange={setQ} label={t('ui.versus.searchLabel')} placeholder={t('ui.versus.search')} />
+        {candidates.length > 1 && (
+          <div className="flex flex-wrap gap-2">
+            <SortSelect
+              label={t('ui.board.sortBy')}
+              value={sort}
+              onChange={setSort}
+              options={[
+                { id: 'level', label: t('ui.raid.sortLevel') },
+                { id: 'dex', label: t('ui.raid.sortDex') },
+                { id: 'az', label: t('ui.raid.sortAz') },
+              ]}
+              className="min-w-0 flex-[1_1_140px]"
+            />
+            {types.length > 1 && (
+              <TypeSelect value={type} onChange={setType} types={types} className="min-w-0 flex-[1_1_140px]" />
+            )}
+          </div>
+        )}
         {shown.length === 0 && <p className="m-0 text-center font-pixel-sm text-[16px] text-muted">{t('ui.search.noMatch')}</p>}
         <ul className="m-0 grid list-none gap-1.5 p-0 sm:grid-cols-2">
           {shown.map(({ inst: p, region }) => {

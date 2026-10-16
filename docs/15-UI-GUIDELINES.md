@@ -142,7 +142,8 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `Seg` | Two to four views of one thing (tabs) | `tabs` → `role=tablist`; otherwise a radio group. Counts after labels. Arrow keys move |
 | `FilterChips` | Narrowing a list | A radio group with counts; scrolls sideways when it runs out of room |
 | `SearchField` | Searching a list | 44 px, an ink ring, a top lip, a screen-reader label. The search ignores case and Latin accents (`searchFold`: "evoli" finds Évoli) |
-| `TypeSelect` | Narrowing a list of Pokémon to one type (the Box, Versus's picks) | One dropdown, "All types" first, only the types the list holds; the picked type's colour beside it |
+| `TypeSelect` | Narrowing a list of Pokémon to one type (the Box, Versus's picks, the raid team's picks) | One dropdown, "All types" first, only the types the list holds; the picked type's colour beside it |
+| `SortSelect` | Ordering a list of Pokémon from a dropdown (the raid team's picks: Highest level, Pokédex No., Name A–Z) | `TypeSelect`'s dropdown with the given options and a screen-reader label; the two share a row, wrapping on a narrow phone |
 | `Sheet` | Anything opened from a screen: details, lists, pickers | Phones: from the bottom, grab handle, ✕, 90 % tall at most, `head` (filters) pinned, body scrolls, `footer` pinned. Desktop: a centred panel |
 | `Modal` | A short decision or message | Centred framed panel; `dismissable={false}` for a choice that must be made |
 | `SidePanel` | The trainer menu drawer | From the right |

@@ -237,6 +237,40 @@ function raidSave(): SaveData {
   }
 }
 
+test('the raid team editor: sorted by level, Pokédex No. or name, narrowed to a type', async ({ page }) => {
+  await mockSupabase(page, { rpc: { event_time: raidTime } })
+  const save = raidSave()
+  const lv = { a: 100, b: 80, c: 90 } as Record<string, number>
+  await boot(page, {
+    ...save,
+    box: [
+      ...save.box.map((p) => ({ ...p, level: lv[p.id]! })),
+      { id: 'd', dex: 25, level: 60, xp: 0, currentHp: 999, caughtAt: 0 },
+    ],
+    pokedex: [...save.pokedex, 25],
+  })
+  await page.goto('/events/raid')
+  await page.getByRole('button', { name: 'Edit' }).click()
+  const sheet = page.getByRole('dialog', { name: 'Your raid team' })
+  const names = sheet.locator('button[aria-pressed] b')
+  // Strongest first by default.
+  await expect(names).toHaveText(['Tyranitar', 'Umbreon', 'Absol', 'Pikachu'])
+  const sort = sheet.getByRole('combobox', { name: 'Sort by' })
+  await sort.selectOption('dex')
+  await expect(names).toHaveText(['Pikachu', 'Umbreon', 'Tyranitar', 'Absol'])
+  await sort.selectOption('az')
+  await expect(names).toHaveText(['Absol', 'Pikachu', 'Tyranitar', 'Umbreon'])
+  // Only the types the Box holds; Dark is every one but Pikachu.
+  const type = sheet.getByRole('combobox', { name: 'Filter by type' })
+  await expect(type.locator('option')).toHaveText(['All types', 'Electric', 'Rock', 'Dark'])
+  await type.selectOption('dark')
+  await expect(names).toHaveText(['Absol', 'Tyranitar', 'Umbreon'])
+  await type.selectOption('electric')
+  await expect(names).toHaveText(['Pikachu'])
+  // Hidden picks stay picked.
+  await expect(sheet.getByRole('list', { name: 'Your raid team' }).getByText('Pick one below')).toHaveCount(0)
+})
+
 test('a raid: the day’s raid, its lock, NPC trainers in the group, the fight to a result, a locked catch', async ({ page }) => {
   test.setTimeout(180_000)
   await mockSupabase(page, { rpc: { event_time: raidTime } })
