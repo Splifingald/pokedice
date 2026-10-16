@@ -121,6 +121,21 @@ export function readSave(which: SaveMode = slot): ReadResult {
   return { save: null, corrupt: true }
 }
 
+/**
+ * The slot's save as another tab of this game last stored it (`raw`: a storage event's value, else read now), or null.
+ * Unlike readSave it never archives: an unreadable value is that tab's to deal with, and this one keeps playing its own.
+ */
+export function peekSave(raw?: string | null): SaveData | null {
+  const text = raw === undefined ? storage()?.getItem(KEYS[slot].save) : raw
+  if (!text) return null
+  try {
+    const res = parseSave(JSON.parse(text))
+    return res.ok ? res.save : null
+  } catch {
+    return null
+  }
+}
+
 /** Where a save goes: an Extreme save to the Extreme key, any other to the main one; nothing (a delete), the slot's. */
 const keyOf = (save: SaveData | null, fallback: SaveMode): SaveMode =>
   save ? (save.mode === 'extreme' ? 'extreme' : 'main') : fallback

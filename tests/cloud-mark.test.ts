@@ -5,9 +5,9 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { newSave, type SaveData } from '@/engine'
 import { cancelPush, cloudSaveAt, cloudUnchanged, PUSH_GAP_MS, pushGapLeft, pushKey } from '@/save/cloud'
-import { readCloudMark, wipePlayerData, wipeSlot, writeCloudMark } from '@/save/storage'
+import { readCloudMark, saveKeyOf, wipePlayerData, wipeSlot, writeCloudMark } from '@/save/storage'
 import { useGame } from '@/store/game'
-import { reconcile } from '@/store/sync'
+import { adoptStoredSave, reconcile } from '@/store/sync'
 import { data, newId } from './fixtures'
 
 function memoryStorage(): Storage {
@@ -253,6 +253,89 @@ describe('a cloud copy written elsewhere', () => {
     cloud.rows.length = 0
     expect(await reconcile(cloud.client, USER)).toBe('pushed')
     expect(cloud.uploads).toHaveLength(1)
+  })
+})
+
+describe('General upgrades across devices and tabs (lost on 2026-10-16)', () => {
+  // Rematches pay ₽ and upgrades spend them, and neither is progress: the two copies tie on areas and the Pokédex.
+  const bought = (s: SaveData, general: SaveData['general'], by = 1): SaveData => ({
+    ...s,
+    gold: s.gold + 100,
+    general,
+    updatedAt: s.updatedAt + by * 1000,
+  })
+
+  it('an idle device opened the next morning takes the copy where the upgrades were bought', async () => {
+    const cloud = fakeCloud([row(base)])
+    useGame.setState({ save: base })
+    await reconcile(cloud.client, USER)
+    // The phone did the Kanto rematches and bought levels; this PC never saw it.
+    const phone = bought(base, { luck: 2, offline: 4, rulesSeen: true }, 30)
+    cloud.rows[0] = row(phone)
+    expect(await reconcile(cloud.client, USER)).toBe('loaded')
+    expect(useGame.getState().save!.general).toMatchObject({ luck: 2, offline: 4 })
+    expect(useGame.getState().save!.gold).toBe(phone.gold)
+    expect(cloud.uploads).toHaveLength(0)
+  })
+
+  it('a level only this device bought survives the cloud copy winning, and goes up with it', async () => {
+    const cloud = fakeCloud([row(base)])
+    useGame.setState({ save: base })
+    await reconcile(cloud.client, USER)
+    cloud.rows[0] = row(played(played(base, 1), 2))
+    useGame.setState({ save: bought(base, { offline: 3 }, 1) })
+    expect(await reconcile(cloud.client, USER)).toBe('loaded')
+    expect(useGame.getState().save!.general?.offline).toBe(3)
+    expect(useGame.getState().save!.pokedex).toEqual(played(played(base, 1), 2).pokedex)
+    expect(cloud.uploads).toHaveLength(1)
+    expect((cloud.rows[0]!.data as SaveData).general?.offline).toBe(3)
+  })
+
+  it('a level bought while the sync downloads is not undone by the copy read before', async () => {
+    const cloud = fakeCloud([row(base)])
+    useGame.setState({ save: base })
+    await reconcile(cloud.client, USER)
+    cloud.rows[0] = row({ ...base, updatedAt: base.updatedAt + 500 })
+    const slow = {
+      from: () => {
+        const q = cloud.client.from('saves')
+        return {
+          ...q,
+          select: (columns: string) => {
+            // The player buys a level while the cloud copy is on its way.
+            if (columns.includes('data')) useGame.setState({ save: bought(base, { luck: 1 }, 5) })
+            return q.select(columns)
+          },
+        }
+      },
+    } as unknown as SupabaseClient
+    await reconcile(slow, USER)
+    expect(useGame.getState().save!.general?.luck).toBe(1)
+    expect((cloud.rows[0]!.data as SaveData).general?.luck).toBe(1)
+  })
+
+  it('an old tab takes in the newer save another tab stored, keeping what either bought', () => {
+    useGame.setState({ save: bought(base, { rulesSeen: true }, 1) })
+    const other = bought(base, { offline: 5 }, 60)
+    expect(adoptStoredSave(JSON.stringify(other))).toBe(true)
+    expect(useGame.getState().save!.gold).toBe(other.gold)
+    expect(useGame.getState().save!.general).toMatchObject({ offline: 5, rulesSeen: true })
+    // It added what only this tab had, so it's stamped past the other tab's: that tab takes it in turn.
+    expect(useGame.getState().save!.updatedAt).toBeGreaterThan(other.updatedAt)
+    // An older one, or this tab's own, changes nothing.
+    expect(adoptStoredSave(JSON.stringify(base))).toBe(false)
+    expect(adoptStoredSave(JSON.stringify(useGame.getState().save))).toBe(false)
+    expect(adoptStoredSave('not a save')).toBe(false)
+  })
+
+  it('reads the stored save itself when no value is handed over (the tab coming back)', () => {
+    useGame.setState({ save: base })
+    const other = bought(base, { luck: 3 }, 60)
+    localStorage.setItem(saveKeyOf(), JSON.stringify(other))
+    expect(adoptStoredSave()).toBe(true)
+    expect(useGame.getState().save!.general?.luck).toBe(3)
+    // Nothing added: the other tab's own stamp, so it isn't news to that tab.
+    expect(useGame.getState().save!.updatedAt).toBe(other.updatedAt)
   })
 })
 
