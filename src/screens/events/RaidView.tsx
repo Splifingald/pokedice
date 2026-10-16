@@ -777,8 +777,9 @@ function RaidResult({ run }: { run: RaidRun }) {
       <h2 className="m-0 text-[28px] font-normal leading-none">{t(fled ? 'ui.raid.result.fledTitle' : 'ui.raid.result.lostTitle', { name })}</h2>
       <p className="copy m-0 text-lg">{t(fled ? `${k}.fled` : `${k}.lost`, { name })}</p>
       <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
-        <PixelButton size="lg" onClick={leaveRaid}>
-          {t('ui.raid.back')}
+        {/* Beside TRY AGAIN, the long name doesn't fit a phone's half row: "Back" shows, the full name is read. */}
+        <PixelButton size="lg" onClick={leaveRaid} aria-label={t('ui.raid.back')}>
+          {t('ui.common.back')}
         </PixelButton>
         <PixelButton variant="primary" size="lg" onClick={() => (need ? setOffer(ensureNpcOffer(run.source)) : again())}>
           {t('ui.raid.again')}

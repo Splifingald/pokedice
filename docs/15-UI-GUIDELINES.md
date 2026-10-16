@@ -447,6 +447,8 @@ in view) and the battle history sits beside it from 1024 px.
   its label). The speed button plays the ally sides' turns at ×1.5 (`RAID_FAST_SPEED`): their delays, scenes
   (`Scene.speed`), HP bars and dice; the raid Pokémon's turns (even striking back at an ally) and yours never change. It shows the
   speed those turns play at (×1 / ×1.5), so its state is a word too, and the setting is kept (`settings.raidFast`).
+  A side's next Pokémon after a K.O. goes to the front only when it's the next to act (`frontsNext`); when another
+  side plays first, it waits beside the ally in front for its turn, never sent out only to step straight back.
   Giratina's raid, its area in portal mode, plays in the Distortion World (§27): its stage, its look, its entrance.
 - **The catch happens on the stage**: the worn-out foe stays on its platform, greyed; the panel shows a radio group
   of balls (each with its chance from `catchChance`, how many you have, "not needed" when a weaker one is already
