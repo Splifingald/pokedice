@@ -121,8 +121,9 @@ interface SmallWorld {
   a player out of a disabled region on every load. Instead `isWorldRegion(data, id)` keeps worlds out of everything a
   real region is part of: `enabledRegions` / `unlockedRegions` (switcher chips, the Areas sheet's "more to come"),
   `offeredRegion` and the league chain, `sendTargets`, `regionCases` (badges, the leaderboard gate, live events'
-  badge count, donations), `reached()` (Mega / Gigantamax), `speciesAllowedIn` / `evolutionGate` (inside a world every
-  generation may evolve), `regionOfSpecies`, the Pokédex totals of `speciesCaughtEverywhere` and `progressTotals`,
+  badge count, donations), `reached()` and `megaUnlocked` / `gmaxUnlocked` (no Mega or Gigantamax inside a
+  world, even after Kalos / Galar), `speciesAllowedIn` / `evolutionGate` (inside a world every generation may
+  evolve), `regionOfSpecies`, the Pokédex totals of `speciesCaughtEverywhere` and `progressTotals`,
   `everyBox` (Versus) and `everyInstance` (raid teams). The server's leaderboard keeps only rows with badges, and a
   world has none.
 - **Entering**: the first time, the partner pick (`PartnerMoment`) then `newRegionBlock(world region, starter)` +
