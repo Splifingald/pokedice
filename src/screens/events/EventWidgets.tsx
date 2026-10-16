@@ -17,7 +17,7 @@ import { useTodayRaid } from '@/store/raid'
 import { HeadTag, Meter, Widget, WidgetBanner, WIDGET_BANNER_H, WidgetRows } from '@/screens/home/Widget'
 import { Medal, tierName } from './RebattlePage'
 import { LiveSquare } from './live'
-import { WorldSquare } from './world'
+import { WorldSlot } from './worldPreview'
 import { EVENT_ICON, EventPicture, RewardIcon, rewardName, useWheelDay } from './shared'
 
 const DAY = 24 * 60 * 60 * 1000
@@ -235,9 +235,10 @@ export function EventWidgets() {
   const open = activeEvents(save, data)
   // The rebattle only shows while the region being played has tiers left to fight.
   const onHome = open.filter((id) => id !== 'rebattle' || rebattleOnHome(save, data))
-  // A small world (docs/21, priority 1) comes first, then a live event (docs/20, priority 2), whatever else is open.
+  // A small world (docs/21, priority 1) comes first (or its preview before it starts, §9), then a live event (docs/20,
+  // priority 2), whatever else is open.
   if (open.length)
-    return [<WorldSquare key="world" />, <LiveSquare key="live" />, ...onHome.map((id) =>
+    return [<WorldSlot key="world" />, <LiveSquare key="live" />, ...onHome.map((id) =>
       id === 'wheel' ? (
         <WheelSquare key={id} />
       ) : id === 'rebattle' ? (
@@ -252,7 +253,7 @@ export function EventWidgets() {
   const area = teaser?.kind === 'soon' ? data.areas.find((a) => a.id === teaser.areaId) : null
   return (
     <>
-      <WorldSquare />
+      <WorldSlot />
       <LiveSquare />
       <EventsTeaser areaName={area?.name ?? null} />
     </>

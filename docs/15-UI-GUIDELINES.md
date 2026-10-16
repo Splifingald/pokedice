@@ -608,6 +608,8 @@ Two rules for every feature that adds something players can do (an event, a mode
   again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25)
   and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
+- **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
+  nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
 - **Items with a switch** (`game_config.itemSwitches`, `itemOn`): the Link Cable and the Bait (docs/25). Off: not sold,
   not found, not usable, never offered; bags keep theirs. An item is explained where it's met (its description in the
   Mart and the bag; the Bait's die and odds on the catch prompt), so items have no rules pop-up of their own.
@@ -685,6 +687,12 @@ on `/kitchen-sink` (`WorldBits`). Every rule and number comes from `engine/world
 - **Outside, Home's square** (`WorldSquare`) is first among the event squares, on the Live square's frame: the world's
   picture, WORLD and SHINY MEW, the silhouette, the name, the gauge draining and "Areas 3/8 · Ends in 2d 4h" (red in
   the last day). The second line says the partner once the player has been in. A tap goes in (the lab first).
+- **Before it starts, its preview** (`WorldPreviewSquareView`, docs/21 §9; its own switch, Off by default): for the
+  world's preview hours (48 by default) the same frame stands in the world's slot (`WorldSlot`), its picture greyed and
+  dimmed, a slate ring for the accent's, WORLD and SOON, "Starts in" over a ticking clock, the name, the gauge filling
+  toward the start in the world's main colour (`PreviewGauge`: red in the last hour, SOON red with it; blinking in the
+  last five minutes, still red stripes where motion is calmed) and "Opens {date}". No Pokémon on it. A tap says when it
+  starts in a toast; at the start the world's square takes its place on the same tick.
 - **The pop-up** (`WorldPopup`): once, between fights, after Prof. Oak's tutorials and the other one-time pop-ups and
   before the live event's (never on the Poké Mart). The banner with the silhouette, the time left and until when, the
   rules (`WorldRules`: XP ×, each booster, the shiny mythical at the end or its shiny prizes, its Pokémon going home),

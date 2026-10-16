@@ -227,13 +227,16 @@ export function WorldSquareView({
   )
 }
 
-/** Home's square for the world that's open to this player, first among the event squares. Tap: in (the pick first). */
-export function WorldSquare() {
+/**
+ * Home's square for the world that's open to this player, first among the event squares. Tap: in (the pick first).
+ * The world and the time come from Home's world slot (`WorldSlot`, worldPreview.tsx), which reads one clock for this
+ * square and the preview before it, so the one hands over to the other on the same tick.
+ */
+export function WorldSquare({ world, now }: { world: SmallWorld; now: number }) {
   const navigate = useNavigate()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
-  const { world, now } = useWorld(1000)
-  if (!world || !save || now == null || inWorld(save, data)) return null
+  if (!save || inWorld(save, data)) return null
   const prog = worldProgress(save, data, world)
   const held = heldWorld(save)
   const mine = held?.id === world.id

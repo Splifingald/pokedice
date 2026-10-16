@@ -303,7 +303,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   // Off until the admin switches it on (for the admin alone, or everyone).
   liveEvents: { access: 'off', list: [] },
   // Off until the admin switches it on (for the admin alone, or everyone).
-  smallWorlds: { access: 'off', list: [] },
+  smallWorlds: { access: 'off', previewAccess: 'off', list: [] },
   // Push notifications (docs/27): off until the admin switches them on. The day's raid is announced at 9:00 the
   // player's time, and no Egg wakes anyone between 22:00 and 8:00.
   push: { access: 'off', raidHour: 9, quietHours: [22, 8] },

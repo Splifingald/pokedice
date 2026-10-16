@@ -719,8 +719,11 @@ export interface GameConfig {
   liveEvents: { access: EventAccess; list: LiveEvent[] }
   /** Trades (docs/23): their switch and numbers, a game_config row of its own that seeding never writes. */
   trade: TradeConfig
-  /** Small worlds (docs/21): their switch, and the admin's list, past, running and to come; one runs at a time. */
-  smallWorlds: { access: EventAccess; list: SmallWorld[] }
+  /**
+   * Small worlds (docs/21): their switch, and the admin's list, past, running and to come; one runs at a time.
+   * `previewAccess` is the switch of Home's preview before a world starts (§9; unset = off).
+   */
+  smallWorlds: { access: EventAccess; previewAccess?: EventAccess; list: SmallWorld[] }
   /** Gifts with the developer's messages (docs/15 §23): their switch. The server reads the same row. */
   gifts: GiftsConfig
   /**
@@ -882,6 +885,8 @@ export interface SmallWorld {
   mythical: { dex: number; level: number; areaId: string }
   /** Areas that open at a date-time (ISO, UTC) as well as when the one before is cleared. */
   opens: Record<string, string>
+  /** Home shows it greyed, with a countdown, this many hours before its start (docs/21 §9). 0 = no preview. */
+  previewHours: number
 }
 
 /**

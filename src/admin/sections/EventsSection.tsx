@@ -459,7 +459,7 @@ function WorldsSwitchRow() {
   return (
     <div className="flex flex-wrap items-center gap-2 border-t-2 border-line pt-3">
       <span className="text-xl">Small worlds</span>
-      <AccessSwitch value={raw?.access ?? 'off'} onChange={(access) => setRaw({ list: raw?.list ?? [], access })} label="Small worlds: who sees them" />
+      <AccessSwitch value={raw?.access ?? 'off'} onChange={(access) => setRaw({ ...raw, list: raw?.list ?? [], access })} label="Small worlds: who sees them" />
       <span className="text-base text-muted">A region of its own for a while, a shiny mythical at its end: scheduled on their tab. First on Home.</span>
     </div>
   )

@@ -62,6 +62,20 @@ export function countdown(ms: number): string {
   return `${m}:${String(s % 60).padStart(2, '0')}`
 }
 
+/**
+ * A ticking clock to a start (a small world's preview): "1d 04:12:33", "4:12:33", "12:33". Seconds always show, so it
+ * visibly counts down; only the days are words.
+ */
+export function clockTo(ms: number): string {
+  const s = Math.max(0, Math.ceil(ms / 1000))
+  const d = Math.floor(s / 86_400)
+  const h = Math.floor((s % 86_400) / 3600)
+  const mm = String(Math.floor((s % 3600) / 60)).padStart(2, '0')
+  const ss = String(s % 60).padStart(2, '0')
+  if (d > 0) return `${t('ui.live.days', { d })} ${String(h).padStart(2, '0')}:${mm}:${ss}`
+  return h > 0 ? `${h}:${mm}:${ss}` : `${Number(mm)}:${ss}`
+}
+
 /** Time left on something that lasts days (a trade listing): "45 min", "5h 05m", "2d 4h". */
 export function timeLeft(ms: number): string {
   const mins = Math.max(1, Math.ceil(ms / 60_000))

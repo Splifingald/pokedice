@@ -3,6 +3,11 @@
 // low-level rules (XP, encounters) can read it without an import cycle.
 import type { Area, GameData, SmallWorld } from './types'
 
+/** Home's preview of a world starts this many hours before it does, unless the admin says otherwise (docs/21 §9). */
+export const PREVIEW_HOURS = 48
+/** The longest preview the admin can set: two weeks. */
+export const PREVIEW_HOURS_MAX = 14 * 24
+
 /** A new world's settings, so the admin's editor starts from the numbers the plan settled on (×5 XP, 3 badges). */
 export function newSmallWorld(id: string, regionId: string, start: string, end: string): SmallWorld {
   return {
@@ -20,6 +25,7 @@ export function newSmallWorld(id: string, regionId: string, start: string, end: 
     shop: [],
     mythical: { dex: 0, level: 60, areaId: '' },
     opens: {},
+    previewHours: PREVIEW_HOURS,
   }
 }
 
@@ -40,6 +46,8 @@ export function normaliseWorld(raw: Partial<SmallWorld>): SmallWorld {
     shop: Array.isArray(raw.shop) ? raw.shop.filter((r) => !!r?.key) : [],
     mythical: { ...d.mythical, ...raw.mythical },
     opens: { ...raw.opens },
+    // A row saved before the preview existed gets the default; whole hours, never negative, two weeks at most.
+    previewHours: Math.min(PREVIEW_HOURS_MAX, Math.max(0, Math.floor(num(raw.previewHours, d.previewHours)))),
   } as SmallWorld
 }
 
