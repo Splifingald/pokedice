@@ -124,7 +124,7 @@ function reduce(state: BattleState, e: BattleEvent, cfg: Config, rng: Rng): { st
 - `localStorage` read/write, debounced 500 ms.
 - **HP regen on load:** `hours = (now - lastRegenTick)/3.6e6`; each Pokémon heals `floor(hours × 0.05 × maxHp)`, capped at maxHp; a fainted one revives if it lands above 0; `lastRegenTick = now`. Do this before rendering.
 - Zustand slices: `save` (persistent), `run` (current area/encounter, transient), `battle` (mirrors engine state), `ui`.
-- Cloud sync: on sign-in fetch `saves`; **the save with more progress wins silently** with a toast naming the winner: areas first (cleared, then gym battles won), then the Pokédex (all regions), and on a tie this device's own (unless it misses a trade the cloud copy did, docs/23). The other save goes to Settings → backups. No "which save?" pop-up. Push debounced 2 s after any save mutation. Never block the UI on the network.
+- Cloud sync: on sign-in fetch `saves`; **the save with more progress wins silently** with a toast naming the winner: areas first (cleared, then gym battles won), then the Pokédex (all regions), and on a tie the one played last (unless one misses a trade the other did, docs/23). Whichever wins keeps the higher General upgrade levels of the two (`keepGeneralBought`, docs/25 §5). The other save goes to Settings → backups. A tab takes in a newer save another tab of the game stored (`adoptStoredSave`), so an old tab never writes its stale copy back. No "which save?" pop-up. Push debounced 2 s after any save mutation. Never block the UI on the network.
 
 **Done when:** a save survives reload; killing the tab mid-battle loses only the battle, not progression; regen visibly works when you fake `lastRegenTick` two hours back.
 

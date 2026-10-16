@@ -18,6 +18,7 @@ import {
   generalRulesDue,
   getInstance,
   isRich,
+  keepGeneralBought,
   itemOn,
   lootPoolFor,
   markGeneralRulesSeen,
@@ -256,5 +257,25 @@ describe('the General upgrades', () => {
     expect(generalRulesDue(badged, on)).toBe(true)
     expect(generalRulesDue(badged, off)).toBe(false)
     expect(generalRulesDue(markGeneralRulesSeen(badged), on)).toBe(false)
+  })
+})
+
+describe('keepGeneralBought: two copies of one save', () => {
+  const save = newSave(4, on, 1000, newId)
+  it('keeps the higher level of each, and "I am just rich" if either bought it', () => {
+    const a = { ...save, gold: 50, general: { luck: 3, offline: 1, awayFrom: 9 } }
+    const b = { ...save, gold: 900, general: { luck: 1, offline: 6, rich: true, rulesSeen: true } }
+    const kept = keepGeneralBought(a, b)
+    expect(kept.general).toEqual({ luck: 3, offline: 6, rich: true, rulesSeen: true, awayFrom: 9 })
+    // Its own ₽ and offline clock: nothing is paid twice.
+    expect(kept.gold).toBe(50)
+  })
+
+  it('hands the same save back when the other copy adds nothing', () => {
+    const a = { ...save, general: { luck: 3, offline: 2 } }
+    expect(keepGeneralBought(a, { ...save, general: { luck: 1 } })).toBe(a)
+    expect(keepGeneralBought(a, save)).toBe(a)
+    expect(keepGeneralBought(a, null)).toBe(a)
+    expect(keepGeneralBought(save, { ...save, general: { offline: 2 } }).general).toEqual({ offline: 2 })
   })
 })

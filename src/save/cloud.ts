@@ -180,8 +180,10 @@ export type SyncDecision = 'none' | 'local' | 'cloud'
 
 /**
  * The sync, with no question asked: the save further along in its areas wins, then the one with the bigger Pokédex
- * (`compareProgress`); level on both, this device's own. Which one was played last doesn't count: a stamp is easy to
- * move, progress isn't.
+ * (`compareProgress`). A stamp is easy to move, progress isn't, so progress decides first. Level on both, the one
+ * played last: ₽, levels, rematches and upgrades don't count as progress, and keeping this device's own on a tie let
+ * an idle device's older save undo all of them on another (players lost their General upgrades and the ₽ spent on
+ * them that way, 2026-10-16).
  */
 export function decideSync(local: SaveData | null, cloud: SaveData | null): SyncDecision {
   if (!local && !cloud) return 'none'
@@ -191,9 +193,11 @@ export function decideSync(local: SaveData | null, cloud: SaveData | null): Sync
   if (cloud.updatedAt > local.updatedAt && (cloud.adminEditAt ?? 0) > local.updatedAt) return 'cloud'
   const ahead = compareProgress(local, cloud)
   if (ahead !== 0) return ahead > 0 ? 'local' : 'cloud'
-  // Level, but this device never saw a trade the cloud copy did: keeping it would bring back the Pokémon traded away
-  // while the other trainer keeps it too (docs/23).
-  return missesTrades(local, cloud) ? 'cloud' : 'local'
+  // Level, but one copy never saw a trade the other did: keeping it would bring back the Pokémon traded away while the
+  // other trainer keeps it too (docs/23).
+  if (missesTrades(local, cloud)) return 'cloud'
+  if (missesTrades(cloud, local)) return 'local'
+  return cloud.updatedAt > local.updatedAt ? 'cloud' : 'local'
 }
 
 /**

@@ -23,13 +23,16 @@ import {
   sameSave,
   schedulePush,
 } from '@/save/cloud'
+import { keepGeneralBought } from '@/engine'
 import type { SaveData, SaveMode } from '@/engine/types'
 import {
   activeSlot,
   backupSave,
   flushWrite,
+  peekSave,
   readCloudMark,
   readSave,
+  saveKeyOf,
   wipePlayerData,
   wipeSlot,
   writeCloudMark,
@@ -95,6 +98,15 @@ const pushDue = () => {
   return !user || pushGapLeft(readCloudMark(activeSlot()), user) === 0
 }
 
+/**
+ * Push the save as it is when the timer fires, not one captured when it was set: the save may have changed since
+ * without a commit of this page's own (another tab's, taken in by adoptStoredSave).
+ */
+function pushLatest(client: SupabaseClient, userId: string): Promise<void> {
+  const save = useGame.getState().save
+  return save ? push(client, userId, save) : Promise.resolve()
+}
+
 async function push(client: SupabaseClient, userId: string, save: SaveData) {
   lastTry = Date.now()
   const key = pushKey(save)
@@ -117,7 +129,7 @@ async function pushOrWait(client: SupabaseClient, userId: string, save: SaveData
     await push(client, userId, save)
   } catch (err) {
     if (!isRateLimited(err)) throw err
-    schedulePush(() => push(client, userId, save), PUSH_GAP_MS)
+    schedulePush(() => pushLatest(client, userId), PUSH_GAP_MS)
   }
 }
 
@@ -136,15 +148,17 @@ export async function reconcile(client: SupabaseClient, id: string, manual = fal
   cloudKey = null
   cancelPush() // whatever was waiting goes out below, if this device wins
   lastTry = Date.now()
-  const local = useGame.getState().save
+  const before = useGame.getState().save
   // The save this page plays: the main one, or the Extreme one beside it (docs/22).
   const realm = activeSlot()
   const known = readCloudMark(realm)
-  if (local && known?.user === id && cloudUnchanged(known, id, await cloudSaveAt(client, id, realm))) {
+  if (before && known?.user === id && cloudUnchanged(known, id, await cloudSaveAt(client, id, realm))) {
     cloudKey = known.key
+    // The save as it is now, not as it was before the wait: a purchase made meanwhile goes up too.
+    const local = useGame.getState().save ?? before
     if (pushKey(local) !== known.key) {
       const wait = manual ? 0 : pushGapLeft(known, id)
-      if (wait) schedulePush(() => push(client, id, local), wait)
+      if (wait) schedulePush(() => pushLatest(client, id), wait)
       else await pushOrWait(client, id, local)
     }
     markSynced()
@@ -152,24 +166,33 @@ export async function reconcile(client: SupabaseClient, id: string, manual = fal
     return 'same'
   }
   const { save: cloud, at } = await pullCloudSave(client, id, realm)
+  // Read again after the downloads: what was committed while they ran (a purchase, the offline pay) is part of this
+  // device's save, and building on the copy read before would undo it.
+  const local = useGame.getState().save
   const decision = decideSync(local, cloud)
   let outcome: 'loaded' | 'pushed' | 'same' = 'same'
   if (decision === 'cloud' && cloud && !(local && sameSave(local, cloud))) {
     if (local) backupSave(local, t('ui.sync.replacedByCloud'))
-    commitSave(cloud, { silent: true, keepTimestamp: true })
+    // What this device bought stays bought (keepGeneralBought): the cloud copy then gets it too, stamped past itself.
+    const merged = keepGeneralBought(cloud, local)
+    const loaded = merged === cloud ? cloud : { ...merged, updatedAt: Math.max(Date.now(), cloud.updatedAt + 1) }
+    commitSave(loaded, { silent: true, keepTimestamp: true })
     resetRun()
     pushToast(t('ui.toast.cloudLoaded'), 'good')
     outcome = 'loaded'
     cloudKey = pushKey(cloud)
     rememberCloud(id, realm, at, cloudKey)
+    if (loaded !== cloud) await pushOrWait(client, id, useGame.getState().save ?? loaded)
   } else if (decision === 'local' && local && !(cloud && sameSave(local, cloud))) {
     if (cloud) backupSave(cloud, t('ui.sync.replacedByLocal'))
-    // Kept over a copy stamped later: stamped past it, so the cloud row's stamp never goes back (an older page still
-    // lets the newest stamp win; another device's clock may be ahead of this one).
+    // What the cloud copy bought stays bought (keepGeneralBought). Kept over a copy stamped later: stamped past it, so
+    // the cloud row's stamp never goes back (an older page still lets the newest stamp win; another device's clock may
+    // be ahead of this one).
+    const merged = keepGeneralBought(local, cloud)
     const kept =
-      cloud && cloud.updatedAt >= local.updatedAt
-        ? { ...local, updatedAt: Math.max(Date.now(), cloud.updatedAt + 1) }
-        : local
+      cloud && cloud.updatedAt >= merged.updatedAt
+        ? { ...merged, updatedAt: Math.max(Date.now(), cloud.updatedAt + 1) }
+        : merged
     if (kept !== local) commitSave(kept, { silent: true, keepTimestamp: true })
     await pushOrWait(client, id, kept)
     pushToast(t(cloud ? 'ui.toast.localKept' : 'ui.toast.backedUp'), 'good')
@@ -269,7 +292,7 @@ export async function initAuth() {
     // device's last upload.
     const since = Math.max(useCloudSync.getState().lastAt ?? 0, lastTry)
     const gap = pushGapLeft(readCloudMark(realmOf(save)), userId)
-    schedulePush(() => push(client, userId, save), Math.max(0, since + syncEveryMs() - Date.now(), gap))
+    schedulePush(() => pushLatest(client, userId), Math.max(0, since + syncEveryMs() - Date.now(), gap))
   })
   client.auth.onAuthStateChange((_event, session) => {
     // Defer: supabase-js warns against awaiting other calls inside this callback.
@@ -681,6 +704,29 @@ function checkFreshness(returning: boolean) {
     void checkForNewBuild()
 }
 
+/**
+ * Another tab of the game (or the installed app beside a browser tab) stored a newer save: this tab plays on from it.
+ * Each tab keeps its own copy in memory, so an old tab brought back (its offline pay, a fossil, any tap) used to write
+ * its stale copy over the newer one, here and in the cloud, and undo what was played in the other tab (General upgrades
+ * lost, 2026-10-16). What either bought stays bought (keepGeneralBought). `raw`: a storage event's value.
+ */
+export function adoptStoredSave(raw?: string | null): boolean {
+  const { save } = useGame.getState()
+  const stored = peekSave(raw)
+  if (!stored || (save && stored.updatedAt <= save.updatedAt)) return false
+  // Kept at the other tab's stamp: written back here unchanged, it is no news to that tab (it only takes a newer one).
+  // With a level only this tab had, it is: stamped now, so that tab takes it in turn.
+  const merged = keepGeneralBought(stored, save)
+  commitSave(merged === stored ? stored : { ...merged, updatedAt: Math.max(Date.now(), stored.updatedAt + 1) }, {
+    silent: true,
+    keepTimestamp: true,
+  })
+  // The fight or run this tab was in belongs to the copy it played; the Pokémon in it may have moved on since.
+  resetRun()
+  if (typeof document !== 'undefined' && document.visibilityState === 'visible') pushToast(t('ui.toast.otherTab'), 'info')
+  return true
+}
+
 let started = false
 export function startBackgroundServices() {
   if (started) return
@@ -709,6 +755,10 @@ export function startBackgroundServices() {
   // The Day Care's timer is set from the save as it was; whatever changes it later (a resident left, a friend's
   // Pokémon invited) sets it again here.
   useGame.subscribe((s, prev) => s.save?.dayCare !== prev.save?.dayCare && armDayCareTimer())
+  // Another tab of the game stored a newer save (adoptStoredSave).
+  window.addEventListener('storage', (e) => {
+    if (e.key === saveKeyOf(activeSlot()) && e.newValue) adoptStoredSave(e.newValue)
+  })
   // Closing the page sends what the automatic sync hasn't yet. Merely switching away doesn't: on phones that happens
   // all the time, and the local save keeps everything until the next sync. Nor does a close within PUSH_GAP_MS of the
   // last upload — a page reloaded over and over would upload on every reload: it goes up at the next load instead.
@@ -726,6 +776,8 @@ export function startBackgroundServices() {
       flushWrite()
       leaveTimer = setTimeout(leaveChannel, HIDDEN_LEAVE_MS)
     } else {
+      // First: a frozen tab may not have heard another tab's writes, and what follows commits this tab's save.
+      adoptStoredSave()
       checkFreshness(true)
       tickFossils()
       tickDayCare()

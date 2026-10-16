@@ -120,3 +120,21 @@ Five things, from one request:
   the friend list, a friend's card and preview, raid friends (setup and the ally plate), trade listings (row and sheet),
   the trade scene and the Done list, the Day Care's visitors and the friend picker, and the player's own trainer card.
   Inside a translated sentence ("Misty's") only the name is golden.
+
+## 5. Two copies of one save: levels never go down
+
+On 2026-10-16 players found their General upgrades back at 0, with the ₽ spent on them gone too (often a Kanto
+rematch's: ₽ and rematches are not progress). Two ways an older copy of the save replaced the newer one:
+
+- **The cloud sync on a tie.** `decideSync` ranks areas, then the Pokédex; level on both, it kept this device's own. An
+  idle device opened the next morning had the same progress as the cloud copy where the upgrades were bought, won the
+  tie, and was uploaded over it. On a tie the one played last now wins.
+- **An old tab.** Each tab keeps its own copy in memory and never read the other's: a tab brought back (its offline pay,
+  a fossil, any tap) wrote its stale copy over the newer one, on the device and in the cloud. A tab now takes in a newer
+  save another tab stored (`adoptStoredSave`, on the `storage` event and on coming back), with a toast when it's on
+  screen (`ui.toast.otherTab`).
+
+Also: the sync decides from the save as it is once the cloud copy has downloaded (not the copy read before), and a
+waiting push sends the save as it is when it fires. Whichever copy wins, `keepGeneralBought` (engine/general.ts) keeps
+the higher level of each upgrade from either copy, and "I am just rich" if either bought it; its own ₽ and offline
+clock stay. When the cloud copy wins but this device had bought more, the merged save goes back up at once.
