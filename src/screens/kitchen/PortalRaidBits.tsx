@@ -100,7 +100,7 @@ export function PortalRaidBits() {
           <PixelButton variant="primary" size="lg" className="sheen w-full" onClick={() => setPicker(true)}>
             Start
           </PixelButton>
-          <RaidTeamSection portal />
+          <RaidTeamSection portal boss={GIRATINA} />
           <BallOdds dex={GIRATINA} />
           <RaidCard raid={card(true)} msLeft={null} kind="progress" portal />
         </div>
@@ -135,6 +135,7 @@ export function PortalRaidBits() {
           need={2}
           group={[{ name: 'You', look: avatarOf(playerAvatarId(player)).src }]}
           level={100}
+          boss={GIRATINA}
           onBack={() => setPicker(false)}
           onStart={() => setPicker(false)}
           portal={GIRATINA}

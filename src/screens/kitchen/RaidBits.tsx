@@ -9,6 +9,9 @@ import { pushToast, useGame } from '@/store/game'
 import { RaidCard } from '@/screens/events/RaidPage'
 import { RaidNpcPicker } from '@/screens/events/RaidNpcPicker'
 
+/** The pop-up's raid Pokémon: the green thumbs on the NPCs' Pokémon that hit it super effectively. */
+const MEWTWO = 150
+
 interface PickerState {
   label: string
   need: number
@@ -62,6 +65,7 @@ export function RaidBits() {
           group={group}
           level={data.config.events.raid.progress.teamCap}
           initial={open.initial}
+          boss={MEWTWO}
           onBack={() => setOpen(null)}
           onStart={(picked) => {
             setOpen(null)

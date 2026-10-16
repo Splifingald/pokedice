@@ -31,6 +31,7 @@ import { PixelButton } from '@/components/PixelButton'
 import { SearchSelect } from '@/components/SearchSelect'
 import { FilterChips, SearchField, Seg } from '@/components/Segmented'
 import { SortSelect, TypeSelect } from '@/components/TypeSelect'
+import { RecommendedThumb } from '@/components/RecommendedThumb'
 import { Medal } from '@/screens/events/RebattlePage'
 import { RoundGauge } from '@/screens/area/RoundGauge'
 import { Sheet } from '@/components/Sheet'
@@ -241,6 +242,14 @@ export function KitchenSink() {
         ))}
         <NewTag />
         <LevelTag level={36} />
+        {/* RecommendedThumb: inline after a name, and over a sprite's corner (a raid team's Pokémon worth bringing). */}
+        <span className="flex items-center gap-1.5 text-[18px]">
+          Charizard <RecommendedThumb size={18} />
+        </span>
+        <span className="relative inline-block">
+          <SpriteImg dex={6} size={48} />
+          <RecommendedThumb overlay />
+        </span>
         <div className="flex w-full flex-wrap gap-2">
           {STATUS_KINDS.map((s, i) => (
             <StatusChip key={s} status={s} count={i % 2 ? '1/2' : undefined} lit={i % 3 !== 2} />

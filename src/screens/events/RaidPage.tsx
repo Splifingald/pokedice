@@ -315,8 +315,8 @@ export function RaidPage() {
         </PixelButton>
       )}
       <p className="m-0 text-center font-pixel-sm text-[15px] text-muted">{tPlural('ui.events.raid.tries', raid.tries, { n: raid.tries })}</p>
-      <RaidTeamSection />
-      {!raid.caught && <RaidGroupSection />}
+      <RaidTeamSection boss={raid.dex} />
+      {!raid.caught && <RaidGroupSection boss={raid.dex} />}
       {!raid.caught && <BallOdds dex={raid.dex} />}
       <Waiting />
       <ProgressRaidList />
@@ -329,6 +329,7 @@ export function RaidPage() {
           need={need}
           group={group}
           level={data.config.events.raid.teamCap}
+          boss={raid.dex}
           onBack={() => setOffer(null)}
           onStart={go}
         />

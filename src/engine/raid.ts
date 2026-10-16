@@ -2,9 +2,10 @@
 // one raid, the same for every player (engine/raidCalendar.ts). Anyone with raids open can fight it; a caught raid
 // Pokémon joins its home region's Box once its area there is completed, and waits locked until then.
 import { areaProgressAnywhere } from './events'
-import { createInstance } from './progression'
+import { createInstance, instanceStats } from './progression'
 import { raidOfDay, raidRegion, raidRules, type RaidKindOf } from './raidCalendar'
 import { regionOf, worldRegionOf } from './regions'
+import { typeMultiplier } from './typechart'
 import type { GameData, PokemonInstance, RaidLock, SaveData, TodayRaid } from './types'
 
 /** Every Pokémon the player has, in any region (Box, team) or at the Day Care. A small world's stay in it. */
@@ -40,6 +41,29 @@ export const raidLocked = (save: SaveData, data: GameData, areaId: string): bool
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Fighting it: the team you bring, the tries, and where a caught raid Pokémon goes.
+
+/** The level a Pokémon needs to be recommended for a raid (the user's rule, 2026-10-16), or the raid's cap if lower. */
+export const RAID_RECOMMENDED_LEVEL = 50
+
+/**
+ * A Pokémon worth bringing to this raid (the green thumb, docs/18 §3): at Lv.50 or more (a raid capped lower: at its
+ * cap, so the rule still means "at full strength"), and one of its typed dice, at the level it fights at, hits the raid
+ * Pokémon super effectively on the type chart. The raid's own matchups (`sideTypes`) only scale how much.
+ */
+export function raidRecommended(
+  data: GameData,
+  mon: { dex: number; level: number },
+  bossDex: number,
+  cap: number,
+): boolean {
+  const boss = data.species[bossDex]
+  if (!boss || !data.species[mon.dex] || mon.level < Math.min(RAID_RECOMMENDED_LEVEL, cap)) return false
+  const foe = boss.type2 ? [boss.type1, boss.type2] : [boss.type1]
+  const { dice } = instanceStats({ dex: mon.dex, level: Math.min(mon.level, cap) }, data)
+  return dice.some(
+    (d) => d !== 'base' && !!data.diceTypes[d]?.countsForMajority && typeMultiplier(data.typeChart, d, foe) > 1,
+  )
+}
 
 /** A Pokémon fighting in a raid: a clone of one of yours at the raid's team cap at most, full HP. */
 export interface RaidMon {
