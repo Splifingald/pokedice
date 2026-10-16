@@ -48,9 +48,10 @@ export interface Scene {
   id: number
   /** The log entry it belongs to. */
   cursor: number
-  kind: 'attack' | 'mega' | 'gmax' | 'gmaxEnd'
+  kind: 'attack' | 'mega' | 'gmax' | 'gmaxEnd' | 'unleash'
   /** Who acts: the attacker, or the Pokémon whose form changes. */
   side: Side
+  /** The attack's type, or the die an unleashed form gained. */
   type?: DieType
   damage?: number
   fromDex?: number
@@ -308,7 +309,13 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
             ? t(e.revert ? 'ui.log.gmaxEnd' : 'ui.log.gmax', { name: e.revert ? after : before })
             : e.reason === 'lowHp'
               ? t(e.revert ? 'ui.log.formBack' : 'ui.log.formChanged', { name: nameOf(e.uid) })
-              : t('ui.log.typeChange', { name: nameOf(e.uid), type: typeName(e.dice[0] ?? 'normal') })
+              : e.reason === 'unleash'
+                ? t('ui.raid.log.unleashed', {
+                    name: before,
+                    form: t(`ui.raid.form.${e.toDex}`),
+                    type: typeName(e.die ?? 'normal'),
+                  })
+                : t('ui.log.typeChange', { name: nameOf(e.uid), type: typeName(e.dice[0] ?? 'normal') })
       // Your Pokémon's new die, said under the dice until its next roll.
       const gained =
         e.side === 'player' && !e.revert && e.die && (e.reason === 'mega' || e.reason === 'gmax')
@@ -317,15 +324,22 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
             : t(`ui.battle.gmaxDie.${ctx.gmaxTurns === 1 ? 'one' : 'other'}`, { type: typeName(e.die), n: ctx.gmaxTurns })
           : null
       const chip = (f: Fx) => (gained ? { id: nextId(), text: gained } : f.chip)
-      // A Mega with a cry of its own lets it out in place of the jingle (Showdown has none for the Gigantamax forms).
-      const cryDex = e.reason === 'mega' && !e.revert && hasOwnCry(e.toDex) ? e.toDex : null
+      // A Mega with a cry of its own lets it out in place of the jingle (Showdown has none for the Gigantamax
+      // forms); a raid Pokémon unleashing its form roars with its own.
+      const unleash = e.reason === 'unleash'
+      const cryDex = unleash || (e.reason === 'mega' && !e.revert && hasOwnCry(e.toDex)) ? e.toDex : null
       const cry = (f: Fx) => (cryDex ? { id: nextId(), dex: cryDex } : f.cry)
+      // The raid's word over the stage, like BREAK!.
+      const banner = (f: Fx) =>
+        unleash ? { id: nextId(), text: t('ui.raid.unleash'), tone: 'super' as const } : f.banner
       const scene: Step['scene'] =
         e.reason === 'mega'
           ? { kind: 'mega', side: e.side, fromDex: e.fromDex, toDex: e.toDex }
           : e.reason === 'gmax'
             ? { kind: e.revert ? 'gmaxEnd' : 'gmax', side: e.side, fromDex: e.fromDex, toDex: e.toDex }
-            : undefined
+            : unleash
+              ? { kind: 'unleash', side: e.side, fromDex: e.fromDex, toDex: e.toDex, type: e.die }
+              : undefined
       const formed = (f: Fx) => ({ ...f.dex, [e.uid]: e.toDex })
       return {
         delay: 1300,
@@ -333,7 +347,9 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
         apply: (f) =>
           scene ? f : { ...f, dex: formed(f), message: text, chip: chip(f), flash: { id: nextId(), target: e.side } },
         scene,
-        land: scene ? (f) => ({ ...f, dex: formed(f), message: text, chip: chip(f), cry: cry(f) }) : undefined,
+        land: scene
+          ? (f) => ({ ...f, dex: formed(f), message: text, chip: chip(f), cry: cry(f), banner: banner(f) })
+          : undefined,
       }
     }
     case 'item': {

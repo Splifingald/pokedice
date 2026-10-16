@@ -2,6 +2,7 @@
 // change flickering inside, cracks, a shatter, the Mega symbol (yours, or a trainer's ace on the far side).
 // Gigantamax: the recall into the ball, Dynamax energy swells it, it is thrown up under a crimson sky, a red
 // silhouette rises in steps, the G-Max form with its cloud crown and a shockwave; on its end it shrinks back.
+// A raid Pokémon's last bar: its form unleashed (Giratina's Origin Forme) out of the dark, in red and gold.
 // Short motion: a white flash and the new sprite.
 import { fxSound } from '@/audio/sfx'
 import type { DieType } from '@/engine/types'
@@ -29,8 +30,23 @@ import {
   type G,
 } from '../pixel'
 import { ball, type Point } from '../scenes'
+import { DW } from '../glitch'
 import { drawSprite, spriteSize, type SpriteLook } from '../sprites'
-import { quad, quicken, screenFlash, Stage, STEP, W, within, type Cue, type Side, type Timeline } from '../timeline'
+import {
+  H,
+  quad,
+  quicken,
+  screenFlash,
+  Stage,
+  STEP,
+  W,
+  within,
+  type Cue,
+  type Side,
+  type Timeline,
+} from '../timeline'
+import { gleam } from './legend'
+import { burstRings, tendrils } from './portal'
 
 const PRISM = ['#ff6b8f', '#ffb23a', '#ffe14d', '#7cf07a', '#4ad7ff', '#8f7bff', '#e07bff']
 
@@ -613,6 +629,103 @@ export function gmaxEndTimeline(p: FormParams): Timeline<Stage> {
       [0.05, () => fxSound('gmax.shrink')],
       [p.short ? 0.3 : T_END, (hud) => hud.formEnd?.(p.side)],
     ],
+  }
+}
+
+// ---------------------------------------------------------------- a raid Pokémon's form unleashed
+/** The reveal: the screen's words (the unleash line, the banner, the cry) land here, read while it holds. */
+export const UNLEASH_REVEAL = 1.6
+
+/**
+ * A raid Pokémon's last bar (docs/28, the user's call of 2026-10-16): the stage darkens, shadow tendrils
+ * reach out of it, two heartbeats with a red outline, its silhouette flickering faster and faster between
+ * its two forms in red and gold; then the reveal (a flash, gold and red rings, a quake, a gleam) and it
+ * stands in its new form, its new die's colour rising off it, while the screen's words are read. Short
+ * motion: the flash and the new sprite, held as long.
+ */
+export function unleashTimeline(p: FormParams): Timeline<Stage> {
+  const T = p.short ? 0.25 : UNLEASH_REVEAL
+  const DUR = T + 1.6
+  const aura = typeColor(p.die)
+  const at = (s: Stage) => (p.side === 'own' ? s.L.own : s.L.foe)
+  return {
+    id: p.short ? 'unleash-short' : 'unleash',
+    dur: DUR,
+    setup: () => {
+      const s = new Stage({ own: p.own, foe: p.foe }, 487)
+      if (!p.short) s.screenShakes.push([T, 0.7, 3])
+      return s
+    },
+    step(s, t, dt) {
+      if (!s.step(t, dt) || t < T || t > DUR - 0.4 || s.r() > dt * 28) return
+      const L = at(s)
+      const size = spriteSize(p.to)
+      s.fx.add({
+        x: L.x + s.r.range(-size.w * 0.4, size.w * 0.4),
+        y: L.y - s.r.range(0, size.h * 0.8),
+        vy: -s.r.range(10, 22),
+        life: s.r.range(0.5, 0.9),
+        colors: ['#ffffff', aura, DW.red, DW.blood],
+      })
+    },
+    draw(g, s, t) {
+      s.begin(g, t)
+      const L = at(s)
+      const other: Side = p.side === 'own' ? 'foe' : 'own'
+      if (p.short) {
+        if (other === 'foe') drawSide(g, s, 'foe', p.foe)
+        const flash = t < T ? span(t, 0, T) : 1 - span(t, T, T + 0.35)
+        drawSide(g, s, p.side, t < T ? p.from : p.to, { flash })
+      } else {
+        // The dark falls over the stage, and lifts once it stands in its new form.
+        const dark = t < T ? 0.55 * span(t, 0, 0.5) : 0.55 * (1 - span(t, T + 0.3, DUR - 0.3))
+        ditherFill(g, 0, 0, W, H, DW.night, dark)
+        if (other === 'foe') drawSide(g, s, 'foe', p.foe)
+        const size = spriteSize(t < T ? p.from : p.to)
+        const c = { x: L.x, y: L.y - size.h / 2 }
+        if (t < T) {
+          tendrils(g, c, Math.max(8, size.w * 0.3), t, ease.outQ(span(t, 0.2, 1.1)) * (1 - span(t, 1.3, T)))
+          if (t < 0.9) {
+            const beat = within(t, 0.25, 0.4) || within(t, 0.65, 0.8)
+            drawSide(g, s, p.side, p.from, { outline: beat ? DW.red : undefined, dx: Math.floor(t * 30) % 2 })
+          } else {
+            // Its two forms flickering, faster and faster, as a black shape outlined in red and gold.
+            const rate = lerp(6, 20, span(t, 0.9, T))
+            const key = Math.floor(t * rate) % 2 ? p.to : p.from
+            const rim = Math.floor(t * 30) % 2 ? DW.gold : DW.red
+            drawSide(g, s, p.side, key, { sil: '#06020c', outline: rim })
+          }
+        } else {
+          burstRings(g, c, t, T, 70, [
+            [0, DW.gold],
+            [0.12, DW.red],
+            [0.24, aura],
+          ])
+          const glint = Math.floor(t * 8) % 2 && t < DUR - 0.6
+          const flash = 1 - span(t, T, T + 0.3)
+          drawSide(g, s, p.side, p.to, { flash, outline: glint ? DW.gold : undefined })
+          const q = span(t, T + 0.4, T + 0.9)
+          if (q > 0 && q < 1) gleam(g, p.to, L, 0, q)
+          if (within(t, T, T + 0.12)) screenFlash(g, '#ffffff', 0.8)
+        }
+      }
+      s.fx.draw(g)
+      if (other === 'own') drawSide(g, s, 'own', p.own)
+      s.end(g)
+    },
+    cues: () =>
+      p.short
+        ? [
+            [T, () => fxSound('form.flash')],
+            [T, (hud) => hud.contact?.()],
+          ]
+        : [
+            [0.25, () => fxSound('legend.heart')],
+            [0.65, () => fxSound('legend.heart')],
+            [0.9, () => fxSound('portal.breach')],
+            [T, () => fxSound('legend.shatter')],
+            [T, (hud) => hud.contact?.()],
+          ],
   }
 }
 

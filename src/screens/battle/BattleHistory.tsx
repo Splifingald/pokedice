@@ -229,7 +229,12 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], enemy: 
                 ? t(e.revert ? 'ui.hist.gmaxEnd' : 'ui.hist.gmax')
                 : e.reason === 'lowHp'
                   ? t(e.revert ? 'ui.hist.formBack' : 'ui.hist.formChanged')
-                  : t('ui.hist.typeChange', { type: typeName(e.dice[0] ?? 'normal') }),
+                  : e.reason === 'unleash'
+                    ? t('ui.hist.unleashed', {
+                        form: t(`ui.raid.form.${e.toDex}`),
+                        type: typeName(e.die ?? 'normal'),
+                      })
+                    : t('ui.hist.typeChange', { type: typeName(e.dice[0] ?? 'normal') }),
           icon: 'up',
         })
         return

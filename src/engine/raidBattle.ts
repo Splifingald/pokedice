@@ -8,6 +8,7 @@ import {
   makeBattler,
   reduce,
   startDuelStep,
+  unleashForm,
   type BattleEvent,
   type BattleState,
   type Battler,
@@ -199,6 +200,8 @@ export function createRaid(opts: CreateRaidOptions, data: GameData, rng: Rng): {
   // A bar holds `barHp` times its own HP.
   boss.maxHp = Math.max(1, Math.round(boss.maxHp * rules.barHp))
   boss.hp = boss.maxHp
+  // Giratina's Origin Forme (any below-half-HP form) is its last bar's, not its HP's.
+  boss.formHeld = true
   const sides: RaidSide[] = opts.sides.map((seed) => {
     const { team, ...who } = seed
     const mons = team.map((t) => makeBattler(t, data))
@@ -223,6 +226,8 @@ export function createRaid(opts: CreateRaidOptions, data: GameData, rng: Rng): {
     ...(opts.auto && { auto: true }),
   }
   const log: RaidLogEntry[] = [{ kind: 'raid_start', boss: boss.uid }]
+  // A raid of one bar starts on its last.
+  if (s.bars === 1) unleash(s, data, log)
   advance(s, data, rng, log)
   return { state: s, log }
 }
@@ -311,7 +316,7 @@ function sideTurn(s: RaidState, sideIdx: number, data: GameData, rng: Rng, log: 
       log.push(...r.log)
     }
   }
-  settle(s, sideIdx, duel, bossHp, step, log)
+  settle(s, sideIdx, duel, bossHp, step, log, data)
 }
 
 function bossTurn(s: RaidState, after: number, data: GameData, rng: Rng, log: RaidLogEntry[]) {
@@ -328,7 +333,7 @@ function bossTurn(s: RaidState, after: number, data: GameData, rng: Rng, log: Ra
     step.push(...r.log)
   }
   log.push(...step)
-  settle(s, sideIdx, duel, bossHp, step, log)
+  settle(s, sideIdx, duel, bossHp, step, log, data)
 }
 
 /**
@@ -342,6 +347,7 @@ function settle(
   bossHpBefore: number,
   step: LogEntry[],
   log: RaidLogEntry[],
+  data: GameData,
 ) {
   const side = s.sides[sideIdx]!
   side.mons = duel.player
@@ -354,18 +360,25 @@ function settle(
         n + ((e.kind === 'damage' || e.kind === 'status_tick') && e.targetUid === s.boss.uid ? e.amount : 0),
       0,
     )
-    breakBar(s, Math.max(0, harm - bossHpBefore), log)
+    breakBar(s, Math.max(0, harm - bossHpBefore), log, data)
     if (s.phase !== 'running') return
   }
   knockouts(s, log)
 }
 
-function breakBar(s: RaidState, overflow: number, log: RaidLogEntry[]) {
+function breakBar(s: RaidState, overflow: number, log: RaidLogEntry[], data: GameData) {
   s.broken += 1
   if (s.broken >= s.bars) return finish(s, 'won', log)
   // A new bar never empties on the hit that broke the last one.
   s.boss.hp = Math.max(1, s.boss.maxHp - overflow)
   log.push({ kind: 'raid_bar', broken: s.broken, barsLeft: s.bars - s.broken, hpAfter: s.boss.hp })
+  if (s.bars - s.broken === 1) unleash(s, data, log)
+}
+
+/** The last bar: the raid Pokémon's below-half-HP form unleashed, one more die with it (none for most). */
+function unleash(s: RaidState, data: GameData, log: RaidLogEntry[]) {
+  const e = unleashForm(s.boss, data)
+  if (e) log.push(e)
 }
 
 /** A side whose Pokémon is down sends its next, or is out. */
@@ -424,7 +437,7 @@ export function raidDispatch(state: RaidState, e: RaidEvent, data: GameData, rng
   }
   s.duel = null
   s.phase = 'running'
-  settle(s, sideIdx, r.state, before, r.log, log)
+  settle(s, sideIdx, r.state, before, r.log, log, data)
   advance(s, data, rng, log)
   return { state: s, log }
 }

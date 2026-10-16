@@ -175,6 +175,74 @@ describe('the raid on auto', () => {
   })
 })
 
+describe("Giratina's Origin Forme in a raid (the user's call of 2026-10-16)", () => {
+  // Strong sides against a low-level Giratina with small bars, so a raid reaches its last bar.
+  const easy = makeData({
+    events: { ...data.config.events, raid: { ...cfg, bars: 3, barHp: 0.5, level: 20 } },
+  })
+  const strong = (k: number): RaidSideSeed => ({
+    owner: `Side ${k}`,
+    look: null,
+    kind: 'npc',
+    team: [0, 1, 2].map((i) => ({ uid: `s${k}-${i}`, dex: 150, level: 100, hp: 9999 })),
+  })
+  const raid = (d: GameData, seed: number, dex = 487) =>
+    createRaid({ boss: { dex, shiny: true }, sides: [0, 1, 2].map(strong), auto: true }, d, createRng(seed))
+  const bossForms = (log: RaidLogEntry[]) =>
+    log.filter((e): e is Extract<RaidLogEntry, { kind: 'form' }> => e.kind === 'form' && e.uid === BOSS_UID)
+  // Giratina in a battle: its Altered Forme's dice at full HP, its Origin Forme's below half.
+  const giratina = (hp: number) =>
+    createBattle(
+      {
+        kind: 'boss',
+        team: [{ uid: 'a', dex: 7, level: 50, hp: 9999 }],
+        enemy: { dex: 487, level: 50, hp },
+        playerLevels: uniformLevels(1),
+        enemyLevels: uniformLevels(1),
+      },
+      data,
+    ).state.enemy
+  const count = (dice: readonly string[], type: string) => dice.filter((d) => d === type).length
+
+  it('stays Altered through the first bars, below half HP too, and unleashes Origin on the last one', () => {
+    const { state, log } = raid(easy, 1)
+    expect(state.broken).toBe(state.bars)
+    const forms = bossForms(log)
+    expect(forms).toHaveLength(1)
+    expect(log[log.indexOf(forms[0]!) - 1]).toMatchObject({ kind: 'raid_bar', barsLeft: 1 })
+    expect(forms[0]).toMatchObject({
+      side: 'enemy',
+      fromDex: 487,
+      toDex: 10007,
+      reason: 'unleash',
+      die: 'dragon',
+    })
+    expect(state.boss.dex).toBe(10007)
+    // One more Dragon die, every Ghost die kept.
+    const altered = giratina(9999).dice
+    expect(forms[0]!.dice).toHaveLength(altered.length + 1)
+    expect(count(forms[0]!.dice, 'ghost')).toBe(count(altered, 'ghost'))
+    expect(count(forms[0]!.dice, 'dragon')).toBe(count(altered, 'dragon') + 1)
+  })
+
+  it('a raid of one bar starts in its Origin Forme', () => {
+    const one = makeData({ events: { ...data.config.events, raid: { ...cfg, bars: 1, level: 20 } } })
+    const { log } = raid(one, 2)
+    expect(log[1]).toMatchObject({ kind: 'form', uid: BOSS_UID, toDex: 10007, reason: 'unleash' })
+    expect(bossForms(log)).toHaveLength(1)
+  })
+
+  it('a raid Pokémon with no such form never changes', () => {
+    expect(bossForms(raid(easy, 3, 151).log)).toEqual([])
+  })
+
+  it('a battle still swaps a Ghost die for a Dragon one below half HP', () => {
+    const low = giratina(10)
+    expect(low.dex).toBe(10007)
+    expect(low.dice).toHaveLength(giratina(9999).dice.length)
+  })
+})
+
 describe('the side the raid Pokémon strikes back at', () => {
   const state = (out: boolean[]) => ({ sides: out.map((o) => ({ out: o })) }) as unknown as RaidState
   it('the one that just played; when it’s just gone out, the next one still in', () => {
