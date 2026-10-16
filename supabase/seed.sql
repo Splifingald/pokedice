@@ -4549,7 +4549,7 @@ insert into game_config (key, value) values ('configVersion', '1'::jsonb) on con
 
 alter table areas add column if not exists mode jsonb;
 
-update areas set mode = '{"kind":"nightmare","foes":[{"dex":518,"level":62},{"dex":302,"level":63},{"dex":359,"level":64},{"dex":571,"level":65},{"dex":635,"level":66},{"dex":248,"level":67},{"dex":430,"level":68}],"strikePercent":10,"gifts":[{"round":3,"key":"revive","qty":1},{"round":6,"key":"max-revive","qty":1}],"raid":{"level":80,"upgradeLevel":9,"bars":3,"teamCap":80}}'::jsonb where id = '2361c7fc-b267-5637-a81d-c622b95003b9' and mode is null;
+update areas set mode = '{"kind":"nightmare","foes":[{"dex":518,"level":62},{"dex":302,"level":63},{"dex":359,"level":64},{"dex":571,"level":65},{"dex":635,"level":66},{"dex":248,"level":67},{"dex":430,"level":68}],"strikePercent":10,"gifts":[{"round":3,"key":"revive","qty":1},{"round":6,"key":"max-revive","qty":1}],"raid":{"level":70,"upgradeLevel":8,"bars":3,"teamCap":70}}'::jsonb where id = '2361c7fc-b267-5637-a81d-c622b95003b9' and mode is null;
 
 insert into game_config (key, value) values ('nightmare', '{"access": "off"}'::jsonb) on conflict (key) do nothing;
 

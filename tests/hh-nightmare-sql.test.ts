@@ -183,7 +183,7 @@ describe('0059: the raid’s checks', () => {
   it('over (the world parked or played): teams up to the area’s cap, and the close counts once', async () => {
     await putSave(save(true, true))
     const [{ t }] = (await setTeam()) as [{ t: { level: number }[] }]
-    expect(t[0]!.level).toBe(80)
+    expect(t[0]!.level).toBe(70)
     await putSave(save(true, false))
     expect((await close())[0]!.r.raidsWon).toBe(1)
     expect((await close())[0]!.r.raidsWon).toBe(1)

@@ -107,8 +107,8 @@ The Shadow Elite: Vesper (Poison), Rime (Ice), Orin (Psychic), Morwen (Ghost), t
 Glacia's, Will's, Phoebe's and Karen's pictures; no badges.
 
 *Changed 2026-10-16 (docs/30): Newmoon Island is **Darkrai's nightmare** (seven fixed rounds, Darkrai's strike after
-each, no travel until it ends). Its shiny Darkrai raid opens once the nightmare is over, at Lv.80, dice level 9 and 3
-bars, teams up to Lv.80 (0059).*
+each, no travel until it ends). Its shiny Darkrai raid opens once the nightmare is over, at Lv.70, dice level 8 and 3
+bars, teams up to Lv.70 (0059).*
 
 *Changed 2026-10-15 (docs/28): Distortion World opens at **100** caught and is a **portal run** (no rounds, no Center;
 close 10 distortion portals in one go). Its shiny Giratina raid opens once the run is won, at Lv.100, dice level 10 and 4

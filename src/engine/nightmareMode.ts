@@ -9,7 +9,7 @@ import type { Area, GameData, NightmareFoe, NightmareGift, NightmareMode } from 
  * types, weakest to strongest as the battle AI measures them (`pnpm nightmare-balance rank`: the share of 1-on-1 fights
  * the world's own Pokémon lose to each at the same level, 3 % for Musharna up to 87 % for Honchkrow), a level up each
  * round; a Revive after round 3 and a Max Revive after round 6; the shadow takes 10 % after each round; the raid after
- * it at Lv.80.
+ * it at Lv.70.
  */
 export const DEFAULT_NIGHTMARE: NightmareMode = {
   kind: 'nightmare',
@@ -34,7 +34,7 @@ export const DEFAULT_NIGHTMARE: NightmareMode = {
     { round: 3, key: 'revive', qty: 1 },
     { round: 6, key: 'max-revive', qty: 1 },
   ],
-  raid: { level: 80, upgradeLevel: 9, bars: 3, teamCap: 80 },
+  raid: { level: 70, upgradeLevel: 8, bars: 3, teamCap: 70 },
 }
 
 const num = (v: unknown, fallback: number, min: number, max: number): number => {
@@ -96,7 +96,7 @@ export function nightmareModeOf(
   return normaliseNightmare(area.mode)
 }
 
-/** The raid's numbers of a nightmare area (Lv.80, dice level 9, 3 bars, teams up to Lv.80); null elsewhere. */
+/** The raid's numbers of a nightmare area (Lv.70, dice level 8, 3 bars, teams up to Lv.70); null elsewhere. */
 export function nightmareRaidRules(data: GameData, areaId: string | undefined): NightmareMode['raid'] | null {
   const area = areaId ? data.areas.find((a) => a.id === areaId) : undefined
   return nightmareModeOf(area, data)?.raid ?? null

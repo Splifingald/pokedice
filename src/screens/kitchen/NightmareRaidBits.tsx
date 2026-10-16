@@ -36,9 +36,9 @@ export function NightmareRaidBits() {
   })
   const { own, foe } = useMemo(
     () => ({
-      own: makeBattler({ uid: 'k-nm-own', dex: 448, level: 80, hp: 250 }, data),
+      own: makeBattler({ uid: 'k-nm-own', dex: 448, level: 70, hp: 250 }, data),
       foe: {
-        ...makeBattler({ uid: 'k-nm-foe', dex: DARKRAI, level: 80, hp: 600, shiny: true }, data),
+        ...makeBattler({ uid: 'k-nm-foe', dex: DARKRAI, level: 70, hp: 600, shiny: true }, data),
         mega: false,
       },
     }),
@@ -137,7 +137,7 @@ export function NightmareRaidBits() {
           offer={offer}
           need={2}
           group={[{ name: 'You', look: avatarOf(playerAvatarId(player)).src }]}
-          level={80}
+          level={70}
           onBack={() => setPicker(false)}
           onStart={() => setPicker(false)}
           nightmare={DARKRAI}

@@ -1,7 +1,7 @@
 // Newmoon Island's nightmare (docs/30): the foes in their fixed order (weakest to strongest, mostly Dark), the way in
 // (healed on arrival as at a Center, the team free to change until it begins), Darkrai's strike after each round (10 %
 // of max HP, rounded, at least 1, never a K.O.), the gifts after rounds 3 and 6 (once for good), the travel lock, the
-// last round (woken up for good, the raid open at Lv.80), the wipe (back to 0, XP, ₽ and items kept), and the switch
+// last round (woken up for good, the raid open at Lv.70), the wipe (back to 0, XP, ₽ and items kept), and the switch
 // (off: the area plays as before).
 import { describe, expect, it } from 'vitest'
 import {
@@ -107,7 +107,7 @@ describe('the area and its switch', () => {
         { round: 3, key: 'revive', qty: 1 },
         { round: 6, key: 'max-revive', qty: 1 },
       ],
-      raid: { level: 80, upgradeLevel: 9, bars: 3, teamCap: 80 },
+      raid: { level: 70, upgradeLevel: 8, bars: 3, teamCap: 70 },
     })
     expect(nightmareRounds(DEFAULT_NIGHTMARE)).toBe(7)
     expect(nightmareModeOf(NM, off)).toBeNull()
@@ -314,7 +314,7 @@ describe('the gifts', () => {
 describe('how it ends', () => {
   const darkrai = () => progressRaidOf(data, progressRaidKey(NM.id, 491))!
 
-  it('the 7th round won wakes the player: no strike, the team healed, the lock gone, the raid open at Lv.80', () => {
+  it('the 7th round won wakes the player: no strike, the team healed, the lock gone, the raid open at Lv.70', () => {
     let s = withNightmare(begun(), { round: 6 })
     s = { ...s, box: s.box.map((p) => ({ ...p, currentHp: 1 })) }
     expect(progressRaidState(s, data, darkrai())).toBe('locked')
@@ -334,8 +334,8 @@ describe('how it ends', () => {
     expect(nightmareVictoryDue(w.save, data, NM.id)).toBe(true)
     expect(nightmareVictoryDue(markNightmareWonSeen(w.save, NM.id), data, NM.id)).toBe(false)
     expect(progressRaidState(w.save, data, darkrai())).toBe('open')
-    expect(raidRules(data, 491, 'progress', NM.id)).toMatchObject({ level: 80, upgradeLevel: 9, bars: 3 })
-    expect(raidTeamCap(data, 491, 'progress', NM.id)).toBe(80)
+    expect(raidRules(data, 491, 'progress', NM.id)).toMatchObject({ level: 70, upgradeLevel: 8, bars: 3 })
+    expect(raidTeamCap(data, 491, 'progress', NM.id)).toBe(70)
   })
 
   it('HEAL & START RAID: the team and the Box healed as at a Center, the waking seen, the raid open to start', () => {
