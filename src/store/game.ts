@@ -113,6 +113,15 @@ export interface RunState {
    * end, with no breach and no tap to wait for.
    */
   portalPopup?: boolean
+  /** A wipe just woke the player from the nightmare (docs/30): the rounds it had won, lost now (the wipe card says so). */
+  nightmareLost?: number | null
+  /**
+   * The nightmare has just begun (docs/30): its intro plays (Darkrai across the full moon), then its rules once, then
+   * the first round. Not kept through a reload: the area's CONTINUE carries on from there.
+   */
+  nightmareIntro?: boolean
+  /** Darkrai's strike has landed and its moment is still on the area's page (until CONTINUE: the next round). */
+  nightmareStruck?: boolean
   /** Trick or Treat under way (docs/29). */
   trick?: TrickRun | null
 }

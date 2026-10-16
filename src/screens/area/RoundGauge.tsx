@@ -4,6 +4,7 @@ import {
   fightBosses,
   gymsFor,
   playerSideOf,
+  nightmareModeOf,
   portalModeOf,
   progressOf,
   type Area,
@@ -17,6 +18,7 @@ import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { DistortionGauge } from '@/components/Portal'
+import { NightmareGauge } from '@/components/Nightmare'
 
 const CARD_ICON: Record<DeckCard, IconName> = {
   wild: 'ball',
@@ -56,6 +58,16 @@ export function RoundGauge({
   if (portal)
     return (
       <DistortionGauge closed={progress.portal?.closed ?? 0} total={portal.portals} className={className} />
+    )
+  // The nightmare (docs/30) counts its rounds won.
+  const dream = nightmareModeOf(area, data)
+  if (dream)
+    return (
+      <NightmareGauge
+        round={progress.nightmare?.round ?? 0}
+        total={dream.foes.length}
+        className={className}
+      />
     )
   if (!cfg.showRoundGauge || cfg.encounterMode !== 'deck') return null
   const remaining = progress.deck?.length ?? 0

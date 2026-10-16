@@ -18,6 +18,12 @@ import { gmaxEndTimeline, gmaxFor, megaFor } from '@/fx/timelines/forms'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { breachTimeline, closeTimeline, victoryTimeline, wildGlitchTimeline } from '@/fx/timelines/portal'
 import { raidEntranceTimeline } from '@/fx/timelines/portalRaid'
+import {
+  nightmareIntroTimeline,
+  nightmareStrikeTimeline,
+  nightmareWakeTimeline,
+} from '@/fx/timelines/nightmare'
+import { nightRaidEntranceTimeline } from '@/fx/timelines/nightmareRaid'
 import { artUrl } from '@/fx/areaArt'
 import { evolveTimeline, hatchTimeline } from '@/fx/timelines/moments'
 import { tradeTimeline } from '@/fx/timelines/trade'
@@ -47,6 +53,8 @@ const STONE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/
 const CANDY = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/rare-candy.png'
 /** Distortion World's picture (Haunted Hollow), cracked open by the breach. */
 const RIFT = artUrl('a123')
+// Newmoon Island's picture (docs/30): what the nightmare's intro sinks into the night.
+const NEWMOON = artUrl('a127')
 
 const attack = (
   name: string,
@@ -279,6 +287,58 @@ const PRESETS: Preset[] = [
     name: "Portal run: Giratina's raid entrance (shiny Giratina out of the portal)",
     sprites: [[487, false, true]],
     make: (o) => raidEntranceTimeline({ mon: spriteKey(487, false, true), short: o.short }),
+  },
+  // Darkrai's nightmare (docs/30): the intro, the strike after a round, the waking, the raid's entrance.
+  {
+    name: 'Nightmare: the intro (drawn field)',
+    sprites: [[491, false]],
+    make: (o) =>
+      nightmareIntroTimeline({ title: "Darkrai's nightmare", mon: spriteKey(491, false), short: o.short }),
+  },
+  {
+    name: "Nightmare: the intro (Newmoon Island's picture)",
+    sprites: [[491, false]],
+    item: NEWMOON,
+    make: (o) =>
+      nightmareIntroTimeline({
+        title: "Darkrai's nightmare",
+        mon: spriteKey(491, false),
+        picture: `item|${NEWMOON}`,
+        short: o.short,
+      }),
+  },
+  {
+    name: "Nightmare: Darkrai's strike after a round (three on the team)",
+    sprites: [
+      [491, false],
+      [94, true],
+      [448, true],
+      [609, true],
+    ],
+    make: (o) =>
+      nightmareStrikeTimeline({
+        mon: spriteKey(491, false),
+        team: [94, 448, 609].map((d) => spriteKey(d, true)),
+        // The lab's stage is 240 × 160 (the game's strike panel is 2:1, 240 × 120).
+        h: 160,
+        short: o.short,
+      }),
+  },
+  {
+    name: 'Nightmare: the waking (shiny Darkrai)',
+    sprites: [[491, false, true]],
+    make: (o) =>
+      nightmareWakeTimeline({
+        mon: spriteKey(491, false, true),
+        name: 'Darkrai',
+        subs: ['SHINY', 'Lv.80'],
+        short: o.short,
+      }),
+  },
+  {
+    name: "Nightmare: Darkrai's raid entrance (out of the smoke, before the moon)",
+    sprites: [[491, false, true]],
+    make: (o) => nightRaidEntranceTimeline({ mon: spriteKey(491, false, true), short: o.short }),
   },
   {
     name: 'Evolution (Charmeleon)',

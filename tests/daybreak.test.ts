@@ -123,8 +123,11 @@ describe('themes', () => {
     expect(contrast(T.good, T['good-pale'])).toBeGreaterThanOrEqual(4.5)
   })
 
-  it('keeps Distortion World’s violet night (.dw-scope) as readable as dusk, with the same tokens', () => {
-    const T = SCOPES.distortion
+  it.each([
+    ['Distortion World’s violet night (.dw-scope)', 'distortion'],
+    ['the nightmare’s moonlit night (.nm-scope)', 'nightmare'],
+  ] as const)('keeps %s as readable as dusk, with the same tokens', (_, name) => {
+    const T = SCOPES[name]
     expect(Object.keys(T).sort()).toEqual(Object.keys(THEMES.light).sort())
     const surfaces = [T.parchment, T.panel, T.paper, T.well, T['well-deep'], T.sky, T.cream, T.sand, T['gold-pale'], T.rose]
     for (const bg of surfaces)
@@ -138,7 +141,7 @@ describe('themes', () => {
     for (const fg of [T.panel, T['gold-light'], T['danger-light']])
       expect(contrast(fg, T.ink), `${fg} on ink`).toBeGreaterThanOrEqual(4.5)
     expect(contrast(T.good, T['good-pale'])).toBeGreaterThanOrEqual(4.5)
-    expect(frameSpecs('distortion').panel.out).toBe(T.edge)
+    expect(frameSpecs(name).panel.out).toBe(T.edge)
   })
 
   it('keeps a golden name readable on every surface, in both themes (docs/25)', () => {

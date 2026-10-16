@@ -238,7 +238,7 @@ describe('the export patch', () => {
     }
     const dw = patchHhDistortion(own).areas.find((a) => a.id === DW.id)!
     expect(dw.unlockConditions).toEqual([{ kind: 'pokedex', count: 90 }])
-    expect(dw.mode?.portals).toBe(5)
+    expect(dw.mode?.kind === 'portal' && dw.mode.portals).toBe(5)
     expect((patchHhDistortion(own).config as { portalRun: unknown }).portalRun).toEqual({ access: 'admin' })
   })
 })

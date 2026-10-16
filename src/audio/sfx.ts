@@ -419,6 +419,30 @@ const FX_SOUNDS = {
     tone(659, 0.1, { type: 'triangle', vol: 0.05, at: 0.1 })
     tone(330, 0.22, { type: 'triangle', vol: 0.05, at: 0.2 })
   },
+  // Darkrai's nightmare (docs/30): night falling (two detuned notes sliding down), a breath on the neck (a low hiss
+  // swelling twice), the shadow gathering (a dark hum rising), its beams (a falling zap over a rush of noise), and
+  // waking up (a soft chime climbing, dawn).
+  'nightmare.fall': () => {
+    tone(330, 1.4, { type: 'triangle', vol: 0.05, slide: -170 })
+    tone(336, 1.4, { type: 'sine', vol: 0.04, slide: -180 })
+  },
+  'nightmare.breath': () => {
+    hiss(0.55, { freq: 260, type: 'lowpass', vol: 0.09 })
+    hiss(0.7, { freq: 220, type: 'lowpass', vol: 0.1, at: 0.6 })
+  },
+  'nightmare.charge': () => {
+    tone(70, 0.55, { type: 'sawtooth', vol: 0.05, slide: 90 })
+    hiss(0.55, { freq: 300, slide: 900, vol: 0.04 })
+  },
+  'nightmare.beam': () => {
+    tone(880, 0.32, { type: 'sawtooth', vol: 0.04, slide: -700 })
+    hiss(0.35, { freq: 1800, slide: -1500, vol: 0.08 })
+  },
+  'nightmare.wake': () => {
+    tone(523, 0.18, { type: 'triangle', vol: 0.04 })
+    tone(784, 0.18, { type: 'triangle', vol: 0.04, at: 0.16 })
+    tone(1047, 0.45, { type: 'triangle', vol: 0.045, at: 0.32 })
+  },
   'impact.windup': () => hiss(0.2, { freq: 700, slide: 900, vol: 0.04 }),
   'impact.hit': () => {
     hiss(0.18, { freq: 420, vol: 0.12 })

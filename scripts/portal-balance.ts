@@ -37,6 +37,7 @@ import {
   withWorldBoost,
   type DistortionOffer,
   type GameData,
+  type PortalRunMode,
   type SaveData,
 } from '../src/engine'
 import { haunted } from './content-haunted-hollow'
@@ -46,10 +47,12 @@ const SEED = Number(process.argv[3] ?? 1)
 const env = (k: string, d: number) => (process.env[k] != null ? Number(process.env[k]) : d)
 const h = haunted()
 const DW = h.areas.find((a) => a.name === 'Distortion World')!
+// An area's mode is a portal run or a nightmare (docs/30): Distortion World's is its portal run.
+const dwMode = DW.mode as PortalRunMode
 const area = {
   ...DW,
   enemyUpgradeLevel: env('UPG', DW.enemyUpgradeLevel ?? 8),
-  mode: { ...DW.mode!, portals: env('PORTALS', DW.mode!.portals), wild: env('WILD', DW.mode!.wild) },
+  mode: { ...dwMode, portals: env('PORTALS', dwMode.portals), wild: env('WILD', dwMode.wild) },
 }
 const world = { ...h.world, start: '2026-10-18T12:00:00.000Z', minBadges: 0, previewHours: 48 }
 const data: GameData = compileGameData({

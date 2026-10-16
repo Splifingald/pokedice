@@ -13,6 +13,7 @@ import {
   progressRaidShiny,
   progressRaidState,
   portalModeOf,
+  nightmareModeOf,
   progressRaidTeam,
   raidTeamCap,
   type RaidNpcOption,
@@ -39,6 +40,8 @@ import { RaidView } from './RaidView'
 import { DistortionFx, DistortionGround } from '@/components/Portal'
 import { cx } from '@/theme/util'
 import { PortalRaidBanner } from './PortalRaid'
+import { NightGround, NightmareFx } from '@/components/Nightmare'
+import { NightmareRaidBanner } from './NightmareRaid'
 
 export function ProgressRaidScreen() {
   const { areaId = '', dex = '' } = useParams()
@@ -67,6 +70,8 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
   const state = progressRaidState(save, data, raid)
   // A portal area's raid (docs/28) opens with its run won, not its rounds.
   const portal = !!portalModeOf(data.areas.find((a) => a.id === raid.areaId), data)
+  // So does a nightmare area's (docs/30), once the player wakes up; it wears the moonlit night (docs/15 §29).
+  const nightmare = !portal && !!nightmareModeOf(data.areas.find((a) => a.id === raid.areaId), data)
   const area = data.areas.find((a) => a.id === raid.areaId)!
   const region = getRegion(data, raid.region)?.name ?? raid.region
   const name = data.species[raid.dex]?.name ?? ''
@@ -122,14 +127,25 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
     // pop-ups, the portal turning as its banner, the void as its ground, the screen's tears and the UI's glitches.
     // Everything else is any progression raid's.
     <div
-      className={cx('mx-auto flex w-full max-w-[560px] flex-col gap-3', portal && 'dw-scope')}
+      className={cx(
+        'mx-auto flex w-full max-w-[560px] flex-col gap-3',
+        portal && 'dw-scope',
+        nightmare && 'nm-scope',
+      )}
       data-portal-raid={portal || undefined}
+      data-nightmare-raid={nightmare || undefined}
     >
       {portal ? (
         <>
           <DistortionGround />
           <DistortionFx />
           <PortalRaidBanner className="-mx-3 -mt-4 h-[132px]">{plate}</PortalRaidBanner>
+        </>
+      ) : nightmare ? (
+        <>
+          <NightGround />
+          <NightmareFx />
+          <NightmareRaidBanner className="-mx-3 -mt-4 h-[132px]">{plate}</NightmareRaidBanner>
         </>
       ) : (
         <div className="relative -mx-3 -mt-4 overflow-hidden bg-night leading-[0] shadow-[0_2px_0_rgb(var(--c-edge))]">
@@ -138,12 +154,12 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
         </div>
       )}
 
-      <RaidCard raid={card} msLeft={null} kind="progress" portal={portal} />
+      <RaidCard raid={card} msLeft={null} kind="progress" portal={portal} nightmare={nightmare} />
 
       {state === 'locked' && (
         <div
           role="note"
-          data-glitch={portal || undefined}
+          data-glitch={portal || nightmare || undefined}
           className="flex items-start gap-2.5 bg-gold-pale p-2.5 shadow-[inset_0_0_0_2px_#d99a1e]"
         >
           <span className="grid h-9 w-9 shrink-0 place-items-center bg-paper shadow-ring-line" aria-hidden>
@@ -151,10 +167,20 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
           </span>
           <span className="grid gap-0.5 leading-tight">
             <b className="text-[19px] font-normal leading-none">
-              {t(portal ? 'ui.portal.raidLockTitle' : 'ui.raid.progress.lockTitle', { area: area.name })}
+              {t(
+                portal
+                  ? 'ui.portal.raidLockTitle'
+                  : nightmare
+                    ? 'ui.nightmare.raidLockTitle'
+                    : 'ui.raid.progress.lockTitle',
+                { area: area.name },
+              )}
             </b>
             <small className="font-pixel-sm text-[15px] text-ink">
-              {t(portal ? 'ui.portal.raidLockText' : 'ui.raid.progress.lockText', { name })}
+              {t(
+                portal ? 'ui.portal.raidLockText' : nightmare ? 'ui.nightmare.raidLockText' : 'ui.raid.progress.lockText',
+                { name },
+              )}
             </small>
           </span>
         </div>
@@ -169,7 +195,7 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
       )}
       {state === 'open' && (
         <>
-          <PixelButton variant="primary" size="lg" className={cx('w-full', portal && 'sheen')} onClick={start}>
+          <PixelButton variant="primary" size="lg" className={cx('w-full', (portal || nightmare) && 'sheen')} onClick={start}>
             {t('ui.events.raid.start')}
           </PixelButton>
           <p className="m-0 text-center font-pixel-sm text-[15px] text-muted">
@@ -178,8 +204,8 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
         </>
       )}
 
-      <RaidTeamSection source={source} portal={portal} />
-      {state === 'open' && <RaidGroupSection source={source} portal={portal} />}
+      <RaidTeamSection source={source} portal={portal} nightmare={nightmare} />
+      {state === 'open' && <RaidGroupSection source={source} portal={portal} nightmare={nightmare} />}
       {state === 'open' && <BallOdds dex={raid.dex} />}
 
       {offer && (
@@ -192,6 +218,7 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
           onBack={() => setOffer(null)}
           onStart={go}
           portal={portal ? raid.dex : undefined}
+          nightmare={nightmare ? raid.dex : undefined}
         />
       )}
     </div>

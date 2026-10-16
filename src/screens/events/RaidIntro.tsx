@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { hiss, tone } from '@/audio/sfx'
 import { StageCanvas } from '@/components/StageCanvas'
 import { raidEntranceStage, raidEntranceTimeline } from '@/fx/timelines/portalRaid'
+import { nightRaidEntranceTimeline } from '@/fx/timelines/nightmareRaid'
 import { MiniSprite } from '@/components/SpriteImg'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { bolt, disc, ease, polyline, rng as pixelRng } from '@/fx/pixel'
@@ -46,12 +47,16 @@ export function RaidIntro({
 }: {
   run: RaidRun
   onDone: () => void
-  /** Giratina's raid in the Distortion World (docs/15 §27): its own scene under the intro's words. */
-  world?: 'distortion'
+  /**
+   * Giratina's raid in the Distortion World (docs/15 §27), or Darkrai's under the nightmare's full moon (§29): its own
+   * scene under the intro's words, and no Skip.
+   */
+  world?: 'distortion' | 'nightmare'
 }) {
   const { t } = useT()
   const { level } = useMotion()
-  const dw = world === 'distortion'
+  // A themed raid's scene is the pixel engine's: only the words and their sounds are timed here, and it has no Skip.
+  const dw = !!world
   // Measured once when it opens.
   const [size] = useState(() =>
     typeof window === 'undefined' ? { w: 130, h: 280 } : raidEntranceStage(window.innerWidth, window.innerHeight),
@@ -64,7 +69,7 @@ export function RaidIntro({
       dw
         ? {
             ready: loadSprite(boss.dex, false, boss.shiny),
-            timeline: raidEntranceTimeline({
+            timeline: (world === 'nightmare' ? nightRaidEntranceTimeline : raidEntranceTimeline)({
               w: size.w,
               h: size.h,
               mon: spriteKey(boss.dex, false, boss.shiny),
@@ -314,7 +319,7 @@ export function RaidIntro({
       role="dialog"
       tabIndex={-1}
       aria-label={t('ui.raid.intro.label', { name: boss.name })}
-      className={cx('rd-intro', dw && 'dw', ...stage, leaving && 'out')}
+      className={cx('rd-intro', world === 'distortion' && 'dw', world === 'nightmare' && 'nm', ...stage, leaving && 'out')}
     >
       {scene ? (
         <StageCanvas
@@ -328,10 +333,24 @@ export function RaidIntro({
         <canvas ref={cv} className="rd-i-cv" width={W} height={H} aria-hidden />
       )}
       <div className="rd-i-tape top" aria-hidden>
-        <b>{t(dw ? 'ui.portal.raidIntroTop' : 'ui.raid.intro.warning')}</b>
+        <b>
+          {t(
+            world === 'nightmare'
+              ? 'ui.nightmare.raidIntroTop'
+              : world === 'distortion'
+                ? 'ui.portal.raidIntroTop'
+                : 'ui.raid.intro.warning',
+          )}
+        </b>
       </div>
       <div className="rd-i-tape bottom" aria-hidden>
-        <b>{dw ? t('ui.portal.raidIntroBottom', { name: boss.name }) : t('ui.raid.intro.appears')}</b>
+        <b>
+          {world === 'nightmare'
+            ? t('ui.nightmare.raidIntroBottom', { name: boss.name })
+            : world === 'distortion'
+              ? t('ui.portal.raidIntroBottom', { name: boss.name })
+              : t('ui.raid.intro.appears')}
+        </b>
       </div>
       <div className="rd-i-name">
         <small>{t('ui.raid.intro.kicker')}</small>

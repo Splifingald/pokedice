@@ -5,6 +5,7 @@
 import { raidBosses, shinyLocked } from './encounters'
 import { areaProgressAnywhere } from './events'
 import { portalModeOf } from './portalMode'
+import { nightmareModeOf } from './nightmareMode'
 import { addRaidMon, type RaidMon } from './raid'
 import { raidRules, raidTeamCap } from './raidCalendar'
 import { inWorldRegion, isWorldRegion, regionOf, regionOfArea } from './regions'
@@ -83,6 +84,9 @@ export function progressRaidState(save: SaveData, data: GameData, raid: Progress
   if (save.events?.raidsDone?.includes(raid.key)) return 'done'
   // A portal area's raid (docs/28) opens once its run is won, never with the area's rounds.
   if (portalModeOf(data.areas.find((a) => a.id === raid.areaId), data)) return progress?.portal?.won ? 'open' : 'locked'
+  // So does a nightmare area's (docs/30), once the player has woken up from it.
+  if (nightmareModeOf(data.areas.find((a) => a.id === raid.areaId), data))
+    return progress?.nightmare?.won ? 'open' : 'locked'
   if (progress?.bossesDefeated.includes(raid.dex) && regionPokedex(save, raid.region).includes(raid.dex))
     return 'done'
   return progress?.cleared ? 'open' : 'locked'

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   homersIn,
   teamSwapsOpen,
+  nightmareModeOf,
   monName,
   POKE_TYPES,
   regionBestLevel,
@@ -38,6 +39,15 @@ export function TeamScreen() {
   // has nothing to warn about, and a Pokémon's sheet has the Center's moves.
   const swaps = useGame((s) => !!s.save && teamSwapsOpen(s.save, s.data, s.run))
   const atPortal = useGame((s) => swaps && s.run.phase === 'idle')
+  // …or the nightmare's way in (docs/30): its own words.
+  const atNightmare = useGame(
+    (s) =>
+      atPortal &&
+      !!nightmareModeOf(
+        s.data.areas.find((a) => a.id === s.run.areaId),
+        s.data,
+      ),
+  )
   const navigate = useNavigate()
   const now = useNow(30_000)
   const [view, setView] = useState<SheetView | null>(null)
@@ -89,10 +99,10 @@ export function TeamScreen() {
         <div className="pixel-dialogue flex flex-col gap-2.5 px-3 py-2.5 sm:flex-row sm:items-center">
           <p className="m-0 flex flex-1 items-center gap-3 text-[20px] leading-[1.15]">
             <PixelIcon name="heart" size={24} className="shrink-0" />
-            <span>{t('ui.portal.teamHint')}</span>
+            <span>{t(atNightmare ? 'ui.nightmare.teamHint' : 'ui.portal.teamHint')}</span>
           </p>
           <PixelButton variant="primary" className="shrink-0" onClick={() => navigate('/area')}>
-            {t('ui.portal.backToPortal')}
+            {t(atNightmare ? 'ui.nightmare.backToWayIn' : 'ui.portal.backToPortal')}
           </PixelButton>
         </div>
       )}

@@ -30,6 +30,7 @@ import { useTodayRaid } from '@/store/raid'
 import { avatarOf, playerAvatarId } from '@/lib/avatars'
 import { emptySlots, ensureNpcOffer, groupOf, startRaid, useRaidGroup } from '@/store/raidBattle'
 import { PortalRaidCard } from './PortalRaid'
+import { NightmareRaidCard } from './NightmareRaid'
 import { ProgressRaidList } from './ProgressRaidList'
 import { RaidNpcPicker } from './RaidNpcPicker'
 import { RaidGroupSection, RaidTeamSection } from './RaidSetup'
@@ -63,12 +64,15 @@ export function RaidCard({
   msLeft,
   kind = 'daily',
   portal = false,
+  nightmare = false,
 }: {
   raid: TodayRaid
   msLeft: number | null
   kind?: RaidKindOf
   /** Giratina's raid in an area in portal mode (docs/15 §27): on the Distortion World, distorted. */
   portal?: boolean
+  /** Darkrai's raid in an area in nightmare mode (docs/15 §29): under the full moon. */
+  nightmare?: boolean
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
@@ -78,6 +82,7 @@ export function RaidCard({
   const area = data.areas.find((a) => a.id === raid.areaId)
   const name = data.species[raid.dex]?.name ?? `#${raid.dex}`
   if (portal) return <PortalRaidCard raid={raid} rules={rules} name={name} areaName={area?.name ?? ''} />
+  if (nightmare) return <NightmareRaidCard raid={raid} rules={rules} name={name} areaName={area?.name ?? ''} />
   return (
     <RaidPicture areaId={raid.areaId} className="aspect-[3/2] w-full shadow-ring">
       <span

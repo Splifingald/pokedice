@@ -29,6 +29,7 @@ import { addRows, newUuid, removeRows, rowKey, setTable, updateRow, useAdmin, us
 import { BackgroundPicker, Box, Field, NumInput, PokemonPicker, Stepper, TextInput, inputCls, n, s } from '../widgets'
 import { AreaBanner } from '@/components/AreaBanner'
 import { PortalModeBox } from './PortalModeBox'
+import { NightmareModeBox } from './NightmareModeBox'
 
 const KINDS: EncounterKind[] = ['wild', 'trainer', 'center', 'item', 'casino', 'trick']
 const CARD: Record<EncounterKind, { label: string; color: string }> = {
@@ -289,7 +290,13 @@ function AreaEditor({ area }: { area: Row }) {
         </Box>
 
         {/* A special mode (docs/28): shown on an area that has one, or a small world's secret area that could. */}
-        {(!!area.mode || (!!area.hidden && isWorldRegion(data, s(area.region_id)))) && <PortalModeBox area={area} />}
+        {(!!area.mode || (!!area.hidden && isWorldRegion(data, s(area.region_id)))) && (
+          <>
+            <PortalModeBox area={area} />
+            {/* The nightmare (docs/30): one special mode per area, so ticking one replaces the other. */}
+            <NightmareModeBox area={area} />
+          </>
+        )}
 
         <Box
           title="Encounter deck" icon="dice"

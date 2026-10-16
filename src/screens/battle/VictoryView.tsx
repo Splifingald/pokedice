@@ -29,6 +29,7 @@ import { XpBar } from '@/components/MonCard'
 import { PixelButton } from '@/components/PixelButton'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
+import { ItemSprite } from '@/components/ItemSprite'
 import { milestoneText, money, trainerTitle, typeName } from '@/lib/format'
 import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
@@ -374,6 +375,39 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
                 <div className="text-lg">
                   {next ? t('ui.victory.nextOpen', { name: next.name }) : t('ui.victory.allCleared')}
                 </div>
+              </div>
+            ),
+          })
+          return
+        }
+        case 'nightmare_round':
+          // A round of the nightmare survived (docs/30): the next brings Darkrai's strike, the last the waking.
+          extras.push({
+            key: k,
+            node: (
+              <div className="light-scope flex items-center justify-center gap-2 bg-[#080b1f] p-2 text-center text-[#eef0ff] shadow-[inset_0_3px_0_#f3efd6,0_0_0_2px_#24304f]">
+                <PixelIcon name="moon" size={22} />
+                <span className="text-xl leading-tight">
+                  {e.round >= e.total
+                    ? t('ui.nightmare.lastRoundWon')
+                    : t('ui.nightmare.roundWon', { n: e.round, total: e.total })}
+                </span>
+              </div>
+            ),
+          })
+          return
+        case 'nightmare_gift': {
+          // The item a round left in the bag (docs/30), once for good.
+          const item = data.items[e.key]
+          extras.push({
+            key: k,
+            sound: 'gold',
+            node: (
+              <div className="flex items-center justify-center gap-2 bg-gold-pale p-2 text-center shadow-ring">
+                {item && <ItemSprite item={item} size={32} />}
+                <span className="text-xl leading-tight">
+                  {t('ui.nightmare.gotGift', { item: `${item?.name ?? e.key}${e.qty > 1 ? ` ×${e.qty}` : ''}` })}
+                </span>
               </div>
             ),
           })
@@ -767,6 +801,8 @@ function AreaWipe() {
   const done = p?.roundsDone ?? 0
   // A wipe that ended a portal run (docs/28): its portals opened again and its boons are gone.
   const portalLost = useGame((s) => s.run.portalLost)
+  // A wipe that woke the player from the nightmare (docs/30): its rounds start again from the first.
+  const nightmareLost = useGame((s) => s.run.nightmareLost)
   return (
     <Overlay
       label={t('ui.wipe.title')}
@@ -781,6 +817,8 @@ function AreaWipe() {
         {/* Extreme mode heals nobody after a lost round: the fainted ones rest (docs/22). */}
         {portalLost != null
           ? t('ui.portal.wipeBody', { n: portalLost })
+          : nightmareLost != null
+          ? t('ui.nightmare.wipeBody', { n: nightmareLost })
           : save && !wipeHeals(save, data)
           ? t('ui.wipe.bodyExtreme', {
               area: area?.name ?? '',
@@ -789,7 +827,7 @@ function AreaWipe() {
             })
           : t('ui.wipe.body', { area: area?.name ?? '', kept: done > 0 ? t('ui.wipe.keptRounds') : '' })}
       </p>
-      {area && p && portalLost == null && <RoundsCounter area={area} progress={p} />}
+      {area && p && portalLost == null && nightmareLost == null && <RoundsCounter area={area} progress={p} />}
     </Overlay>
   )
 }

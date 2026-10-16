@@ -79,6 +79,17 @@ import {
   portalNextCard,
   portalStateOf,
   startPortalRun,
+  applyNightmareStrike,
+  arriveAtNightmare,
+  inNightmare,
+  markNightmareWonSeen,
+  nightmareEncounter,
+  nightmareLock,
+  nightmareNoCatch,
+  nightmareStateOf,
+  nightmareVictoryToRaid,
+  startNightmare,
+  winNightmareRound,
   type BattleEvent,
   type BattleKind,
   type ForceKind,
@@ -137,8 +148,8 @@ export function deleteSave() {
 export function enterArea(areaId: string): boolean {
   const { save, data } = useGame.getState()
   if (!save || !isAreaUnlocked(save, areaId, data) || isAreaClosed(save, areaId, data)) return false
-  // Inside a portal run (docs/28) there is no other area to go to.
-  const locked = portalLock(save, data)
+  // Inside a portal run (docs/28) there is no other area to go to, nor in the nightmare (docs/30).
+  const locked = portalLock(save, data) ?? nightmareLock(save, data)
   if (locked && locked.id !== areaId) return false
   // A small world's area may also wait for its date (docs/21), on the server's clock.
   if (!areaOpenAt(data, areaId, serverNow())) return false
@@ -235,6 +246,8 @@ export function outOfEnergy(): boolean {
   if (!hasAbleTeam(save) || !run.areaId) return false
   // A portal run deals no Center: only a distortion waiting to be picked is free.
   if (inPortalRun(save, data, run.areaId)) return !portalStateOf(save, run.areaId).offers?.length
+  // Nor does the nightmare (docs/30): only Darkrai's strike, due after a round, is free.
+  if (inNightmare(save, data, run.areaId)) return !nightmareStateOf(save, run.areaId).strike
   const ctx = encounterContext(save, run.areaId, null)
   return !ctx || !centerIsNext(ctx)
 }
@@ -332,11 +345,115 @@ export function healAndStartPortalRaid(): ProgressRaid | null {
   return openRaidIn(next, data, area)
 }
 
+/**
+ * The next round of the nightmare (docs/30): its foe's preview, always the same one for that round. Nothing while
+ * Darkrai's strike is due (the area shows it); a team with nobody standing wakes up (the wipe).
+ */
+function rollNightmare(save: SaveData, areaId: string) {
+  const { data } = useGame.getState()
+  if (nightmareStateOf(save, areaId).strike) return setRun({ phase: 'idle', encounter: null })
+  if (!hasAbleTeam(save)) {
+    const lost = nightmareStateOf(save, areaId).round
+    commitSave(applyWipe(save, areaId, data))
+    setRun({ phase: 'wipe', trainer: null, events: [], nightmareLost: lost })
+    return
+  }
+  const encounter = nightmareEncounter(save, data, areaId)
+  if (!encounter) return setRun({ phase: 'idle', encounter: null, nightmareStruck: false })
+  const cost = data.config.energy.enabled ? encounterEnergyCost(encounter) : 0
+  if (cost > 0) commitSave(spendEnergy(save, data.config.energy, Date.now(), cost) ?? save)
+  setRun({ phase: 'preview', encounter, firstInArea: false, nightmareStruck: false })
+}
+
+/**
+ * BEGIN THE NIGHTMARE (docs/30): into it, the team healed, round 1 next; its intro plays first (then its rules, once).
+ * False when it can't begin here.
+ */
+export function beginNightmare(areaId: string): boolean {
+  const { save, data, run } = useGame.getState()
+  if (!save || run.phase !== 'idle') return false
+  if (run.areaId !== areaId && !enterArea(areaId)) return false
+  const started = startNightmare(useGame.getState().save!, data, areaId)
+  if (!started) return false
+  commitSave(started)
+  setRun({ nightmareLost: null, nightmareIntro: true })
+  return true
+}
+
+/** The intro (and its rules, the first time) is over: the first round's foe comes. */
+export function finishNightmareIntro() {
+  if (!useGame.getState().run.nightmareIntro) return
+  setRun({ nightmareIntro: false })
+  rollNext()
+}
+
+/** The way in shows: the team and the Box are healed as at a Pokémon Center (the engine's). */
+export function arriveAtNightmareWayIn(areaId: string) {
+  const { save, data } = useGame.getState()
+  if (!save) return
+  const next = arriveAtNightmare(save, data, areaId)
+  if (next !== save) commitSave(next)
+}
+
+/**
+ * Darkrai's shadow strikes (its moment, after a round): the engine takes each team member's share. Who lost what, or
+ * null when no strike is due (already taken: a second call does nothing).
+ */
+export function strikeNightmare(): { uid: string; from: number; to: number }[] | null {
+  const { save, data, run } = useGame.getState()
+  const areaId = run.areaId ?? save?.currentAreaId
+  if (!save || !areaId) return null
+  const res = applyNightmareStrike(save, data, areaId)
+  if (!res) return null
+  commitSave(res.save)
+  // Its moment stays on the area's page until CONTINUE (the next round).
+  setRun({ nightmareStruck: true })
+  return res.hits
+}
+
+/** CONTINUE after Darkrai's strike: its moment closes, and the next round's foe comes. */
+export function nextNightmareRound() {
+  setRun({ nightmareStruck: false })
+  rollNext()
+}
+
+/** The waking's moment is over: back to the world's Home, where the area is its raid now. */
+export function finishNightmareVictory() {
+  const { save, run } = useGame.getState()
+  const areaId = run.areaId ?? save?.currentAreaId
+  if (save && areaId) commitSave(markNightmareWonSeen(save, areaId))
+  useGame.setState((s) => ({ run: { ...initialRun(), forceNext: s.run.forceNext }, battle: null }))
+}
+
+/**
+ * HEAL & START RAID on waking (docs/30, as the portal run's victory): the team and the Box healed as at a Pokémon
+ * Center, the waking seen (the engine's nightmareVictoryToRaid), and the area's raid to open, its page next. Null when
+ * there is none (the screen goes Home then).
+ */
+export function healAndStartNightmareRaid(): ProgressRaid | null {
+  const { save, data, run } = useGame.getState()
+  const areaId = run.areaId ?? save?.currentAreaId
+  const area = data.areas.find((a) => a.id === areaId)
+  if (!save || !area) return null
+  const next = nightmareVictoryToRaid(save, data, area.id)
+  if (next !== save) commitSave(next)
+  useGame.setState((s) => ({ run: { ...initialRun(), forceNext: s.run.forceNext }, battle: null }))
+  return openRaidIn(next, data, area)
+}
+
 /** Roll the next encounter and show its preview card. */
 export function rollNext() {
   settleRound()
   const { save, data, run } = useGame.getState()
   if (!save || !run.areaId) return
+  if (inNightmare(save, data, run.areaId)) {
+    if (outOfEnergy()) {
+      setRun({ phase: 'idle', encounter: null })
+      pushToast(t('ui.toast.outOfEnergy'), 'bad')
+      return
+    }
+    return rollNightmare(save, run.areaId)
+  }
   if (inPortalRun(save, data, run.areaId)) {
     if (outOfEnergy()) {
       setRun({ phase: 'idle', encounter: null })
@@ -379,8 +496,8 @@ export function rollNext() {
 export function challenge() {
   const { save, data, run } = useGame.getState()
   if (!save || !run.areaId || run.phase !== 'idle') return
-  // A portal run has no challenge: its cards come one after the other (docs/28).
-  if (inPortalRun(save, data, run.areaId)) return
+  // A portal run has no challenge: its cards come one after the other (docs/28); nor has the nightmare (docs/30).
+  if (inPortalRun(save, data, run.areaId) || inNightmare(save, data, run.areaId)) return
   const area = data.areas.find((a) => a.id === run.areaId)
   const encounter = area ? challengeEncounter(area, progressOf(save, area.id), data, teamAverageLevel(save), playerSideOf(save), runRng) : null
   if (encounter) setRun({ phase: 'preview', encounter, firstInArea: false, skipsUsed: 0 })
@@ -598,17 +715,26 @@ function settleBattle(stalemate: boolean) {
       newId,
       currentLive(),
     )
-    commitSave(res.save)
+    // A round of the nightmare won (docs/30): it counts, its gift goes into the bag, Darkrai's strike is due (or, the
+    // last one, the player wakes up). The result card says so.
+    const dream = inNightmare(res.save, data, run.areaId) ? winNightmareRound(res.save, data, run.areaId) : null
+    commitSave(dream?.save ?? res.save)
+    const dreamEvents: RunEvent[] = dream
+      ? [
+          { kind: 'nightmare_round', round: dream.round, total: dream.total },
+          ...(dream.gift ? [{ kind: 'nightmare_gift' as const, ...dream.gift }] : []),
+        ]
+      : []
     // The round's last card was this fight: count it now, so "AREA CLEARED" is part of the rewards.
     const cleared = trainerHasNext() ? null : settleRound(true)
-    const events = cleared ? [...res.events, cleared] : res.events
+    const events = [...(cleared ? [...res.events, cleared] : res.events), ...dreamEvents]
     const gold = res.events.reduce((g, e) => (e.kind === 'gold' ? g + e.amount : g), 0)
     // A wild or legendary K.O. that can be caught goes to the catch throw first; the rewards screen follows it.
     const kind = s.kind === 'wild' || s.kind === 'boss' ? s.kind : null
     const foeDex = s.enemy.baseDex ?? s.enemy.dex
-    // A portal run's wild Pokémon can't be caught (docs/28).
-    const target =
-      kind && !portalNoCatch(save, data, run.areaId) ? catchTarget(res.save, foeDex, s.enemy.level, kind, data, s.enemy.shiny) : null
+    // A portal run's wild Pokémon can't be caught (docs/28), nor the nightmare's (docs/30).
+    const noCatch = portalNoCatch(save, data, run.areaId) || nightmareNoCatch(save, data, run.areaId)
+    const target = kind && !noCatch ? catchTarget(res.save, foeDex, s.enemy.level, kind, data, s.enemy.shiny) : null
     setRun({
       phase: target ? 'catch' : 'victory',
       events,
@@ -620,8 +746,9 @@ function settleBattle(stalemate: boolean) {
   }
   if (out.result === 'lost') {
     const lost = inPortalRun(withHp, data, run.areaId) ? portalStateOf(withHp, run.areaId).closed : null
+    const dream = inNightmare(withHp, data, run.areaId) ? nightmareStateOf(withHp, run.areaId).round : null
     commitSave(applyWipe(withHp, run.areaId, data))
-    setRun({ phase: 'wipe', trainer: null, events: [], portalLost: lost })
+    setRun({ phase: 'wipe', trainer: null, events: [], portalLost: lost, nightmareLost: dream })
     return
   }
   // fled / stalemate: damage is kept, no rewards
@@ -754,6 +881,9 @@ export function continueExploring() {
   // A portal run just won (its last distortion turned over on the way back): its victory shows first, nothing else.
   const { save, run } = useGame.getState()
   if (save && run.areaId && portalStateOf(save, run.areaId).won && !portalStateOf(save, run.areaId).wonSeen) return
+  // The nightmare (docs/30): the waking shows first, or Darkrai's strike after a round; the area's page plays them.
+  const dream = save && run.areaId ? nightmareStateOf(save, run.areaId) : null
+  if (dream && ((dream.won && !dream.wonSeen) || (dream.active && dream.strike))) return
   challenge()
   if (useGame.getState().run.phase === 'idle') rollNext()
 }
@@ -779,8 +909,9 @@ export function forfeit() {
   }
   if (run.phase !== 'victory' || !trainerHasNext()) return
   const lost = inPortalRun(save, data, run.areaId) ? portalStateOf(save, run.areaId).closed : null
+  const dream = inNightmare(save, data, run.areaId) ? nightmareStateOf(save, run.areaId).round : null
   commitSave(run.rebattle ? applyRebattleLoss(save, data, run.rebattle.regionId) : applyWipe(save, run.areaId, data))
-  setRun({ phase: 'wipe', trainer: null, events: [], portalLost: lost })
+  setRun({ phase: 'wipe', trainer: null, events: [], portalLost: lost, nightmareLost: dream })
 }
 
 /** After a full K.O. the run is over: Home (where CONTINUE starts the area afresh), or the rebattle page. */

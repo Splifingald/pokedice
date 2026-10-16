@@ -78,6 +78,8 @@ import { battlerOf, sideOfUid, useRaidAnimator, type RaidFx } from './raidAnimat
 import { TrainerName } from '@/components/TrainerName'
 import { DistortionFx, DistortionGround, StageTear } from '@/components/Portal'
 import { usePortalRaid } from './PortalRaid'
+import { NightGround, NightmareFx, StageShadow } from '@/components/Nightmare'
+import { useNightmareRaid } from './NightmareRaid'
 
 const BANNER_TONE = {
   super: 'bg-gold text-ink',
@@ -304,6 +306,8 @@ export function RaidView({ run }: { run: RaidRun }) {
   const ownSide = Math.max(0, sideOfUid(st.sides, own.uid))
   const art = useMemo(() => pictureOf(run.raid.areaId), [run.raid.areaId])
   const portal = usePortalRaid(run.raid.areaId)
+  // Darkrai's raid, its area in nightmare mode (docs/15 §29): under the full moon.
+  const nightmare = useNightmareRaid(run.raid.areaId) && !portal
 
   // ---- Your turn.
   const duel = st.duel
@@ -451,7 +455,7 @@ export function RaidView({ run }: { run: RaidRun }) {
         onSceneDone={sceneDone}
         tapLabel={(b) => t('ui.types.tap', { name: b.name })}
         label={heading}
-        world={portal ? 'distortion' : undefined}
+        world={portal ? 'distortion' : nightmare ? 'nightmare' : undefined}
         distorted={portal}
       >
         {!intro && !thrown && (
@@ -491,6 +495,7 @@ export function RaidView({ run }: { run: RaidRun }) {
           )}
         </AnimatePresence>
         {portal && <StageTear id={fx.barBreak?.id ?? null} />}
+        {nightmare && <StageShadow id={fx.barBreak?.id ?? null} />}
         {fx.barBreak && !calm && <Shards key={fx.barBreak.id} color={cfg.barColors[(fx.broken - 1 + cfg.barColors.length) % cfg.barColors.length] ?? '#34c97a'} />}
       </BattleStage>
     </div>
@@ -529,13 +534,21 @@ export function RaidView({ run }: { run: RaidRun }) {
           <DistortionFx />
         </>
       )}
+      {nightmare && (
+        <>
+          <NightGround />
+          <NightmareFx />
+        </>
+      )}
       <section
         aria-label={heading}
         className={cx(
           'mx-auto flex min-h-[100dvh] w-full max-w-[max(300px,min(560px,calc((100dvh_-_330px)_*_1.5)))] flex-col',
           portal && 'dw-scope',
+          nightmare && 'nm-scope',
         )}
         data-portal-raid={portal || undefined}
+        data-nightmare-raid={nightmare || undefined}
       >
         <h1 className="sr-only">{heading}</h1>
         {stage}
@@ -599,7 +612,13 @@ export function RaidView({ run }: { run: RaidRun }) {
         </div>
       </section>
 
-      {intro && <RaidIntro run={run} onDone={raidIntroDone} world={portal ? 'distortion' : undefined} />}
+      {intro && (
+        <RaidIntro
+          run={run}
+          onDone={raidIntroDone}
+          world={portal ? 'distortion' : nightmare ? 'nightmare' : undefined}
+        />
+      )}
 
       <Modal open={menu === 'giveUp'} onClose={() => setMenu(null)} title={t('ui.raid.giveUpTitle')}>
         <div className="grid gap-3">

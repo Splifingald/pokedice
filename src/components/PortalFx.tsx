@@ -51,7 +51,7 @@ function useDistortionLevel(): MotionLevel {
  * Runs a loop on a canvas: fixed 60 Hz steps, drawn 30 times a second (it is ambient), paused with the tab. `still`:
  * one frame, drawn once.
  */
-function useLoop(
+export function useLoop(
   ref: RefObject<HTMLCanvasElement | null>,
   make: () => PortalLoop | null,
   still: boolean,
@@ -96,7 +96,7 @@ function useLoop(
 }
 
 /** A box's size in CSS pixels, kept up to date. */
-function useBoxSize(ref: RefObject<HTMLElement | null>) {
+export function useBoxSize(ref: RefObject<HTMLElement | null>) {
   const [size, setSize] = useState<{ w: number; h: number } | null>(null)
   useEffect(() => {
     const el = ref.current
@@ -400,6 +400,7 @@ export function useUiGlitch({
   selector = GLITCH_TARGETS,
   every = [5, 9],
   dur = 350,
+  classes,
 }: {
   enabled: boolean
   short?: boolean
@@ -408,11 +409,15 @@ export function useUiGlitch({
   selector?: string
   every?: readonly [number, number]
   dur?: number
+  /** The look it plays: the glitch's by default; the nightmare's shadow passing over (docs/30) brings its own. */
+  classes?: { full: string; short: string }
 }) {
   const [min, max] = every
+  const full = classes?.full ?? 'ui-glitch'
+  const shortCls = classes?.short ?? 'ui-glitch-short'
   useEffect(() => {
     if (!enabled) return
-    const cls = short ? 'ui-glitch-short' : 'ui-glitch'
+    const cls = short ? shortCls : full
     let timer = 0
     let current: Element | null = null
     const end = () => {
@@ -452,7 +457,7 @@ export function useUiGlitch({
       clearTimeout(timer)
       end()
     }
-  }, [enabled, short, root, selector, min, max, dur])
+  }, [enabled, short, root, selector, min, max, dur, full, shortCls])
 }
 
 /** The SVG filters the UI's glitch tears with (once in the page). */

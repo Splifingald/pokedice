@@ -8,6 +8,9 @@ import {
   hasAbleTeam,
   isAreaClosed,
   latestOpenArea,
+  nightmareLock,
+  nightmareModeOf,
+  nightmareStateOf,
   openRaidIn,
   playerSideOf,
   portalModeOf,
@@ -22,7 +25,7 @@ import { RestingPanel } from '@/components/Extreme'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { countdown, trainerTitle } from '@/lib/format'
-import { useGame } from '@/store/game'
+import { pushToast, useGame } from '@/store/game'
 import { useEnergy } from '@/store/hooks'
 import { serverNow } from '@/store/serverTime'
 import { challenge, enterArea, outOfEnergy, rollNext } from '@/store/run'
@@ -56,9 +59,12 @@ export function useContinue(area: Area) {
   // it is only its raid, then sealed.
   const mode = portalModeOf(area, data)
   const portal = mode ? portalStateOf(save, area.id) : null
-  const gym = mode ? null : dueGym(area, progress, data, side)
-  const boss = gym || mode ? null : dueBoss(area, progress, teamAverageLevel(save), data)
-  const closed = isAreaClosed(save, area.id, data) || !!portal?.won
+  // A nightmare area (docs/30): the same way: before it, CONTINUE goes to its way in; once over, only its raid.
+  const dreamMode = nightmareModeOf(area, data)
+  const dream = dreamMode ? nightmareStateOf(save, area.id) : null
+  const gym = mode || dreamMode ? null : dueGym(area, progress, data, side)
+  const boss = gym || mode || dreamMode ? null : dueBoss(area, progress, teamAverageLevel(save), data)
+  const closed = isAreaClosed(save, area.id, data) || !!portal?.won || !!dream?.won
   const busy = (run.areaId === area.id && run.phase !== 'idle') || battle
   const raid = gym || boss || busy ? null : openRaidIn(save, data, area)
   const raidName = raid ? (data.species[raid.dex]?.name ?? '') : ''
@@ -70,11 +76,23 @@ export function useContinue(area: Area) {
   const resting = !busy && !hasAbleTeam(save) && !centersOn(save, data)
   const back = resting ? firstComeback(save, data) : null
 
-  const enter = !!mode && !portal?.active && !portal?.won && !busy
+  const enterPortal = !!mode && !portal?.active && !portal?.won && !busy
+  const enterDream = !!dreamMode && !dream?.active && !dream?.won && !busy
+  const enter = enterPortal || enterDream
+  // Darkrai's strike waits on the area's page after a round (docs/30).
+  const struck = !!dream?.active && (!!dream.strike || (run.areaId === area.id && !!run.nightmareStruck))
   const sub = busy
     ? t('ui.home.backToEncounter')
-    : enter
+    : enterDream
+      ? t('ui.nightmare.enterSub', { n: dreamMode!.foes.length })
+      : enter
       ? t('ui.portal.enterSub', { n: mode!.portals })
+      : raid && dream?.won
+        ? t('ui.raid.progress.continueSub', { level: raidRules(data, raid.dex, 'progress', raid.areaId).level })
+      : dream?.won
+        ? t('ui.nightmare.sealed')
+      : dream?.active
+        ? t('ui.nightmare.continueSub', { n: Math.min(dream.round + 1, dreamMode!.foes.length), total: dreamMode!.foes.length })
       : raid && portal?.won
         ? t('ui.raid.progress.continueSub', { level: raidRules(data, raid.dex, 'progress', raid.areaId).level })
       : portal?.won
@@ -112,7 +130,7 @@ export function useContinue(area: Area) {
   const go = () => {
     if (busy) return navigate('/area')
     if (raid) return navigate(progressRaidPath(raid))
-    if (enter || (portal?.active && portal.offers?.length)) {
+    if (enter || (portal?.active && portal.offers?.length) || struck) {
       ensureRun(area)
       return navigate('/area')
     }
@@ -129,7 +147,9 @@ export function useContinue(area: Area) {
   // when a gym or a legendary waits. Home sizes its scene around them.
   const latest = useGame((s) => (busy || !s.save ? null : latestOpenArea(s.save, s.data, serverNow())))
   const keepExploring = !!(gym || boss || raid) && !closed && !busy && !resting
-  const label = enter
+  const label = enterDream
+    ? t('ui.nightmare.enter')
+    : enter
     ? t('ui.portal.enter')
     : gym
     ? t('ui.area.challenge', { name: gym.name.toUpperCase() })
@@ -158,31 +178,40 @@ export function ContinueBar({
   const { t } = useT()
   const { label, sub, go, explore, off, gym, boss, raid, empty, resting, latest, keepExploring } = useContinue(area)
   const subId = useId()
+  const lockId = useId()
+  // Darkrai's nightmare holds the player in its area (docs/30): the Areas button is shut, and says why.
+  const held = useGame((s) => nightmareLock(s.save, s.data))
+  const heldWhy = held ? t('ui.nightmare.locked', { area: held.name }) : null
 
   return (
     <div className="flex flex-col gap-2">
       <div className="grid grid-cols-[76px_minmax(0,1fr)] gap-2.5">
         <button
           type="button"
-          onClick={onAreas}
-          aria-haspopup="dialog"
+          // Shut by the nightmare: a tap says why instead of opening the map (still a button, for its reason).
+          onClick={heldWhy ? () => pushToast(heldWhy, 'info') : onAreas}
+          aria-haspopup={heldWhy ? undefined : 'dialog'}
+          aria-disabled={heldWhy ? true : undefined}
+          aria-describedby={heldWhy ? lockId : undefined}
           aria-label={
-            areasState === 'region'
-              ? t('ui.home.areasNewRegion')
-              : areasState === 'new'
-                ? t('ui.home.areasNew')
-                : t('ui.home.areasLabel')
+            heldWhy
+              ? t('ui.nightmare.areasLocked')
+              : areasState === 'region'
+                ? t('ui.home.areasNewRegion')
+                : areasState === 'new'
+                  ? t('ui.home.areasNew')
+                  : t('ui.home.areasLabel')
           }
           className={cx(
             'pixel-btn relative flex min-h-[72px] flex-col items-center justify-center gap-0.5 px-0.5',
-            areasState === 'region' && 'frame-gold sheen',
+            heldWhy ? 'hatched' : areasState === 'region' && 'frame-gold sheen',
           )}
         >
-          <PixelIcon name="map" size={24} />
+          <PixelIcon name={heldWhy ? 'lock' : 'map'} size={24} />
           <span className="whitespace-normal text-center font-pixel-sm text-[15px] uppercase leading-none tracking-[0.04em]">
-            {areasState === 'region' ? t('ui.home.newRegion') : t('ui.home.areas')}
+            {heldWhy ? t('ui.home.areas') : areasState === 'region' ? t('ui.home.newRegion') : t('ui.home.areas')}
           </span>
-          {areasState === 'new' && (
+          {!heldWhy && areasState === 'new' && (
             <span className="absolute -right-2 -top-2 z-[1] bg-gold px-1 pb-0.5 font-pixel-sm text-[13px] leading-none text-ink shadow-ring">
               {t('ui.common.new')}
             </span>
@@ -218,8 +247,17 @@ export function ContinueBar({
           </span>
         </PixelButton>
       </div>
+      {heldWhy && (
+        <p
+          id={lockId}
+          className="m-0 flex items-start gap-2 bg-well p-2 font-pixel-sm text-[15px] leading-tight text-muted shadow-ring-line"
+        >
+          <PixelIcon name="lock" size={16} className="mt-px shrink-0" />
+          <span>{heldWhy}</span>
+        </p>
+      )}
       {resting && <RestingPanel />}
-      {latest && (
+      {latest && !heldWhy && (
         <PixelButton variant="success" size="lg" className="w-full" onClick={() => travelTo(latest)}>
           <PixelIcon name="map" size={20} />
           {t('ui.victory.goToArea', { name: latest.name })}

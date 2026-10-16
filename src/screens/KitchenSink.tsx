@@ -53,6 +53,8 @@ import { RaidBits } from './kitchen/RaidBits'
 import { WorldBits } from './kitchen/WorldBits'
 import { PortalBits } from './kitchen/PortalBits'
 import { PortalRaidBits } from './kitchen/PortalRaidBits'
+import { NightmareBits } from './kitchen/NightmareBits'
+import { NightmareRaidBits } from './kitchen/NightmareRaidBits'
 import { GiftBits } from './kitchen/GiftBits'
 import { InviteBits } from './kitchen/InviteBits'
 import { SupportBits } from './kitchen/SupportBits'
@@ -633,6 +635,12 @@ export function KitchenSink() {
       </Section>
       <Section title="Giratina's area raid (Distortion World): the themed raid page, its pop-up, the raid's stage and a bar's tear">
         <PortalRaidBits />
+      </Section>
+      <Section title="Darkrai's nightmare (Newmoon Island): the moon, gauge, way in, intro and its rules, Darkrai's strike, result cards, the locked Areas button, the screen's vignette, the waking">
+        <NightmareBits />
+      </Section>
+      <Section title="Darkrai's area raid (the nightmare): the themed raid page, its pop-up, the raid's stage and a bar's shadow">
+        <NightmareRaidBits />
       </Section>
       <Section title="Trick or Treat: the gauge of each tier, the screen in each state (idle, after a Treat, a Treat and a throw playing, a miss, caught, fled), the recaps, the pieces, preview cards, rules">
         <TrickBits />
