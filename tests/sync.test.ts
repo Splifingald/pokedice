@@ -1,4 +1,4 @@
-// Cloud sync: settled with no question asked — areas, then the Pokédex, then this device's own save.
+// Cloud sync: settled with no question asked — areas, then the Pokédex, then the save played last.
 import { describe, expect, it } from 'vitest'
 import { applyTake, createInstance, liveBlock, newSave, syncXpCurve, xpToNext, type SaveData } from '@/engine'
 import { compareProgress, decideSync, progressTotals, pushKey, sameSave } from '@/save/cloud'
@@ -23,12 +23,19 @@ describe('decideSync', () => {
     expect(decideSync(at(further, 2), at(base, 5))).toBe('local')
   })
 
-  it('keeps this device’s save when both got as far', () => {
+  it('keeps the one played last when both got as far', () => {
     expect(decideSync(at(base, 3), at(base, 2))).toBe('local')
-    expect(decideSync(at(base, 2), at(base, 3))).toBe('local')
-    // Levels, gold and the rest don't count: areas and the Pokédex only.
-    const richer: SaveData = { ...base, gold: base.gold + 500, box: base.box.map((p) => ({ ...p, level: p.level + 10 })) }
-    expect(decideSync(at(base, 2), at(richer, 3))).toBe('local')
+    expect(decideSync(at(base, 2), at(base, 3))).toBe('cloud')
+    // Levels, gold, rematches and upgrades aren't progress: an idle device's older save, level on areas and the
+    // Pokédex, must not undo them (players lost their General upgrades that way, 2026-10-16).
+    const richer: SaveData = {
+      ...base,
+      gold: base.gold + 500,
+      box: base.box.map((p) => ({ ...p, level: p.level + 10 })),
+      general: { offline: 4 },
+    }
+    expect(decideSync(at(base, 2), at(richer, 3))).toBe('cloud')
+    expect(decideSync(at(richer, 3), at(base, 2))).toBe('local')
   })
 
   it('…unless this device never saw a trade the cloud copy did: the Pokémon traded away would come back', () => {

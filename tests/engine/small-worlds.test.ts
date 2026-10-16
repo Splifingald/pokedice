@@ -42,6 +42,8 @@ import {
   markWorldSeen,
   markOfflineFrom,
   megaUnlocked,
+  gmaxUnlocked,
+  enemyPlanFor,
   newLiveEvent,
   newRegionBlock,
   newSave,
@@ -174,6 +176,19 @@ describe('a small world is no real region', () => {
 
   it('opens no Mega Evolution, wherever its row sits in the order', () => {
     expect(megaUnlocked(inside(), data)).toBe(false)
+  })
+
+  it('has no Mega Evolution or Gigantamax, even once Galar is reached, nor do its trainers', () => {
+    const galar: SaveData = { ...kanto(), region: 'galar' }
+    expect(megaUnlocked(galar, data) && gmaxUnlocked(galar, data)).toBe(true)
+    const s = inside(galar)
+    expect(megaUnlocked(s, data)).toBe(false)
+    expect(gmaxUnlocked(s, data)).toBe(false)
+    const ace = { regionId: REGION.id, role: 'champion' as const, ace: true }
+    expect(enemyPlanFor(s, data, { dex: 6, level: 65 }, ace)).toBeNull()
+    // Back out of it, both come back.
+    const out = leaveWorld(s, data)!
+    expect(megaUnlocked(out, data) && gmaxUnlocked(out, data)).toBe(true)
   })
 
   it('sends nothing out and takes nothing in', () => {

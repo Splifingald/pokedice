@@ -7,7 +7,7 @@
  * looks a Pokémon takes in a fight and loses when it ends: nothing about them is ever saved.
  */
 import type { EnemyPlan } from './battle'
-import { getRegion, realRegions, regionOf } from './regions'
+import { getRegion, inWorldRegion, realRegions, regionOf } from './regions'
 import type { DieType, Evolution, GameData, PokeType, RegionId, SaveData, Species, TrainerRole } from './types'
 
 /** A form that only exists inside a battle (a Mega Evolution, a Gigantamax, Giratina's Origin Forme, Arceus's types). */
@@ -70,15 +70,17 @@ export function megaDie(base: Species, mega: Species): PokeType {
 
 /**
  * Mega Evolution is on once the player has reached `megaEvolution.region` (Kalos) — the region started, live or
- * parked — or any region after it. From then on it works everywhere, earlier regions included.
+ * parked — or any region after it. From then on it works everywhere, earlier regions included, but a small
+ * world: there it is off, for the player and its trainers alike (raids never have it either: see raidBattle's
+ * duels).
  */
 export function megaUnlocked(save: SaveData, data: GameData): boolean {
-  return reached(save, data, data.config.megaEvolution.region)
+  return !inWorldRegion(save, data) && reached(save, data, data.config.megaEvolution.region)
 }
 
-/** Gigantamax is on once the player has reached `gigantamax.region` (Galar), and then everywhere. */
+/** Gigantamax is on once the player has reached `gigantamax.region` (Galar), anywhere but a small world. */
 export function gmaxUnlocked(save: SaveData, data: GameData): boolean {
-  return reached(save, data, data.config.gigantamax.region)
+  return !inWorldRegion(save, data) && reached(save, data, data.config.gigantamax.region)
 }
 
 function reached(save: SaveData, data: GameData, regionId: RegionId): boolean {

@@ -78,6 +78,36 @@ export function buyGeneral(save: SaveData, data: GameData, id: GeneralId): SaveD
   return { ...save, gold: save.gold - cost, general }
 }
 
+/**
+ * Two copies of one player's save, one replacing the other (the cloud sync, another tab): what either copy bought stays
+ * bought. A level is paid for once and never goes down, so whichever copy wins keeps the higher of each; its own ₽ and
+ * offline clock stay as they are. The same save back when there's nothing to add.
+ */
+export function keepGeneralBought(save: SaveData, other: SaveData | null | undefined): SaveData {
+  const g = generalOf(save)
+  const o = other?.general
+  if (!o) return save
+  const luck = Math.max(g.luck ?? 0, o.luck ?? 0)
+  const offline = Math.max(g.offline ?? 0, o.offline ?? 0)
+  const rich = !!g.rich || !!o.rich
+  const rulesSeen = !!g.rulesSeen || !!o.rulesSeen
+  if (
+    luck === (g.luck ?? 0) &&
+    offline === (g.offline ?? 0) &&
+    rich === !!g.rich &&
+    rulesSeen === !!g.rulesSeen
+  )
+    return save
+  const general: GeneralSave = {
+    ...g,
+    ...(luck > 0 && { luck }),
+    ...(offline > 0 && { offline }),
+    ...(rich && { rich }),
+    ...(rulesSeen && { rulesSeen }),
+  }
+  return { ...save, general }
+}
+
 // ---------------------------------------------------------------- Capture Luck
 
 /**
