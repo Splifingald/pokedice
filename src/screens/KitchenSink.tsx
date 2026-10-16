@@ -661,10 +661,10 @@ export function KitchenSink() {
       <Section title="Giratina's area raid (Distortion World): the themed raid page, its pop-up, the raid's stage and a bar's tear">
         <PortalRaidBits />
       </Section>
-      <Section title="Darkrai's nightmare (Newmoon Island): the moon, gauge, way in, intro and its rules, Darkrai's strike, result cards, the locked Areas button, the screen's vignette, the waking">
+      <Section title="Darkrai's nightmare (Newmoon Island): the moon, gauge, way in (intro, then its pop-up), rules, a haunted foe, Darkrai's strike, result cards, the locked Areas button, the waking">
         <NightmareBits />
       </Section>
-      <Section title="Darkrai's area raid (the nightmare): the themed raid page, its pop-up, the raid's stage and a bar's shadow">
+      <Section title="Darkrai's area raid (the nightmare): the themed raid page, its pop-up, the raid's stage and a bar's shadow, the screen's vignette">
         <NightmareRaidBits />
       </Section>
       <Section title="Trick or Treat: the gauge of each tier, the screen in each state (idle, after a Treat, a Treat and a throw playing, a miss, caught, fled), the recaps, the pieces, preview cards, rules">

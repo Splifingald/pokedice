@@ -366,8 +366,8 @@ function rollNightmare(save: SaveData, areaId: string) {
 }
 
 /**
- * BEGIN THE NIGHTMARE (docs/30): into it, the team healed, round 1 next; its intro plays first (then its rules, once).
- * False when it can't begin here.
+ * BEGIN THE NIGHTMARE (docs/30), on the way in's pop-up: into it, round 1's foe next (its intro has played already,
+ * as the Distortion World's breach before READY!). False when it can't begin here.
  */
 export function beginNightmare(areaId: string): boolean {
   const { save, data, run } = useGame.getState()
@@ -376,15 +376,14 @@ export function beginNightmare(areaId: string): boolean {
   const started = startNightmare(useGame.getState().save!, data, areaId)
   if (!started) return false
   commitSave(started)
-  setRun({ nightmareLost: null, nightmareIntro: true })
+  setRun({ nightmareLost: null })
+  rollNext()
   return true
 }
 
-/** The intro (and its rules, the first time) is over: the first round's foe comes. */
-export function finishNightmareIntro() {
-  if (!useGame.getState().run.nightmareIntro) return
-  setRun({ nightmareIntro: false })
-  rollNext()
+/** The way in's pop-up is up: back from the Team screen, it shows again at once. */
+export function markNightmarePopup() {
+  if (!useGame.getState().run.nightmarePopup) setRun({ nightmarePopup: true })
 }
 
 /** The way in shows: the team and the Box are healed as at a Pokémon Center (the engine's). */

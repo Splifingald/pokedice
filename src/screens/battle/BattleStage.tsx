@@ -7,7 +7,7 @@ import type { Battler, Side } from '@/engine'
 import { AreaArt } from '@/components/AreaArt'
 import { PixelIcon, STATUS_ICON } from '@/components/icons'
 import { RaidStageArt, useStageDistortion } from '@/components/PortalFx'
-import { NightStageArt } from '@/components/NightmareFx'
+import { NightStageArt, useHaunt } from '@/components/NightmareFx'
 import { StageCanvas } from '@/components/StageCanvas'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { artPlacement, battleWindow, type AreaPicture } from '@/fx/areaArt'
@@ -137,12 +137,17 @@ function Mon({
   onTap,
   tapLabel,
   host,
+  hostClass = 'portal-glitch-host',
 }: {
   b: Battler
   side: Side
   scale: number
-  /** A portal run's wild Pokémon (docs/28): its box, whose sprite wears the distortion (CSS filters set on it). */
+  /**
+   * A portal run's wild Pokémon (docs/28) or a nightmare's foe (docs/30): its box, whose sprite wears the distortion or
+   * the haunting (CSS filters set on it, under `hostClass`).
+   */
   host?: RefObject<HTMLDivElement>
+  hostClass?: string
   /** Out on the field (the foe has slid in, yours has popped out of its ball). */
   shown: boolean
   fainted: boolean
@@ -179,7 +184,7 @@ function Mon({
   return (
     <div
       ref={host}
-      className={cx('absolute', host && 'portal-glitch-host')}
+      className={cx('absolute', host && hostClass)}
       style={{
         left: box.left * scale,
         top: box.top * scale,
@@ -371,10 +376,13 @@ export function BattleStage({
   label,
   children,
   distorted,
+  haunted,
   world,
 }: {
   /** The foe is one of a portal run's wild Pokémon (docs/28): it wears the distortion shader. */
   distorted?: boolean
+  /** The foe is one of the nightmare's (docs/30): a dark shadow haunts it (a rim on its sprite, smoke behind it). */
+  haunted?: boolean
   /**
    * The stage stands in the Distortion World (Giratina's area raid, docs/15 §27): its void, rocks and far portal on
    * the pixel engine, islands to stand on, in place of the area's picture. Or under the nightmare's full moon (its
@@ -423,6 +431,17 @@ export function BattleStage({
     scale,
     !!distorted && scale > 0 && foeShown && !foeOut && !playing && !worn,
   )
+  // The nightmare's foe (docs/30): its shadow behind it, its rim on its own sprite.
+  const haunt = useHaunt({
+    host: foeBox,
+    dex: foe.dex,
+    shiny: foe.shiny,
+    at: LAYOUT.foe,
+    w: W,
+    h: H,
+    px: scale,
+    active: !!haunted && !distorted && scale > 0 && foeShown && !foeOut && !playing && !worn,
+  })
   const artId = art?.id ?? null
   // Which picture has loaded and shows (the drawn background stands in until then).
   const [shownArt, setShownArt] = useState<string | null>(null)
@@ -472,6 +491,16 @@ export function BattleStage({
       {artShown && !world && <Zones />}
       {scale > 0 && (
         <>
+          {haunt.smoke && (
+            <canvas
+              ref={haunt.under}
+              width={W}
+              height={H}
+              aria-hidden
+              className="pixelated pointer-events-none absolute inset-0 h-full w-full"
+              style={{ imageRendering: 'pixelated' }}
+            />
+          )}
           <Mon
             b={foe}
             side="enemy"
@@ -483,7 +512,8 @@ export function BattleStage({
             fx={fx}
             onTap={onTap && (() => onTap('enemy'))}
             tapLabel={tapLabel(foe)}
-            host={distorted ? foeBox : undefined}
+            host={distorted || haunted ? foeBox : undefined}
+            hostClass={distorted ? 'portal-glitch-host' : 'nm-haunt-host'}
           />
           {distorted && (
             <canvas

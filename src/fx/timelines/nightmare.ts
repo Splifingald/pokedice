@@ -3,8 +3,9 @@
 // from below and curling up the edges. The intro (the area sinks into night, the moon rises, Darkrai's silhouette
 // passes across it), Darkrai's strike after a round (its shadow rises out of the smoke and fires a beam at each team
 // member), the waking (its shadow in front of the moon, then shiny Darkrai revealed with a roar, the sky paling to dawn),
-// and the moon on a loop (the rules' banner, the way in). Words come from the screen; sizes too: the full-screen scenes
-// draw on a stage of the screen's shape, the FX lab on the usual 240 × 160.
+// the moon on a loop (the rules' banner, the way in's pop-up), and the shadow haunting a nightmare's foe in its fights.
+// Words come from the screen; sizes too: the full-screen scenes draw on a stage of the screen's shape, the FX lab on the
+// usual 240 × 160.
 import { fxSound } from '@/audio/sfx'
 import {
   bayer,
@@ -73,8 +74,8 @@ export const NM = {
 } as const
 
 /**
- * How the nightmare's lasting effects play (the moon's smoke drifting, the screen's vignette, a shadow passing over the
- * page): unlike the Distortion World's glitches they follow the motion rules as every effect does (docs/15 §8), so a
+ * How the nightmare's lasting effects play (the moon's smoke drifting, a foe's haunting shadow, the raid's vignette and
+ * its shadow over the page): unlike the Distortion World's glitches they follow the motion rules as every effect does (docs/15 §8), so a
  * calm OS stills them; the player's short setting lightens them; motion off stills them.
  */
 export function nightmareLevel(level: MotionLevel, calm: boolean): MotionLevel {
@@ -911,15 +912,11 @@ export function nightmareWakeTimeline(p: WakeParams): Timeline<WakeState> {
 // ---------------------------------------------------------------- the moon, looping
 
 /**
- * The full moon on a loop (the rules' banner, the way in, the raid's page): the night, the stars twinkling, the moon,
- * the smoke banked below and drifting up. `mon` (Darkrai's front sprite key): its shadow passes across the moon every
- * 10 s. `still`: one frame, held.
+ * The full moon on a loop (the rules' banner, the way in's pop-up, the raid's page): the night, the stars twinkling, the
+ * moon, the smoke banked below and drifting up. Nothing crosses it (the user, 2026-10-16: no shadow passing). `still`:
+ * one frame, held.
  */
-export function moonLoop(
-  w: number,
-  h: number,
-  { still = false, mon }: { still?: boolean; mon?: string } = {},
-): PortalLoop {
+export function moonLoop(w: number, h: number, { still = false }: { still?: boolean } = {}): PortalLoop {
   const r = rng(w * 29 + h)
   const stars = makeStars(r, w, h)
   const R = Math.max(8, Math.round(Math.min(w * 0.22, h * 0.34)))
@@ -940,22 +937,94 @@ export function moonLoop(
       g.drawImage(nightSky(w, h), 0, 0)
       drawStars(g, stars, t, still)
       drawMoon(g, c.x, c.y, R, 0.7)
-      // Every 10 s its shadow crosses the moon in 2.4 s.
-      const q = span(t % 10, 6, 8.4)
-      if (mon && !still && q > 0 && q < 1) {
-        const fw = spriteFrame(mon)?.width ?? 64
-        const fh = spriteFrame(mon)?.height ?? 64
-        const k = Math.min(1, (R * 2.2) / Math.max(1, fh))
-        drawSprite(g, mon, Math.round(lerp(-fw, w + fw, q)), Math.round(c.y + fh * k * 0.5), {
-          sil: NM.smoke,
-          outline: NM.violet,
-          sx: k,
-          sy: k,
-          flip: true,
-        })
-      }
       amb.draw(g)
       smokeBank(g, w, h, t, 0.8, still)
+    },
+  }
+}
+
+// ---------------------------------------------------------------- a haunted foe
+
+/**
+ * The haunted foe's rim on its own sprite (CSS filters: zero-blur drop shadows, so it follows every frame of the
+ * animated sprite and never covers it): the smoke's black an art pixel all round, then a faint violet edge above and to
+ * the sides. `deep`: the black rises a pixel higher (its breath). `px`: CSS pixels per art pixel.
+ */
+export function hauntCss(px: number, deep = false): string {
+  const p = Math.max(1, Math.round(px))
+  // NM.smoke and NM.violet, see-through.
+  const dark = 'rgb(5 4 9 / 0.85)'
+  const edge = 'rgb(90 58 168 / 0.55)'
+  return [
+    `drop-shadow(${p}px 0 0 ${dark})`,
+    `drop-shadow(${-p}px 0 0 ${dark})`,
+    `drop-shadow(0 ${p}px 0 ${dark})`,
+    `drop-shadow(0 ${-p}px 0 ${dark})`,
+    ...(deep ? [`drop-shadow(0 ${-p}px 0 rgb(5 4 9 / 0.6))`] : []),
+    `drop-shadow(${p}px 0 0 ${edge})`,
+    `drop-shadow(${-p}px 0 0 ${edge})`,
+    `drop-shadow(0 ${-p}px 0 ${edge})`,
+  ].join(' ')
+}
+
+/**
+ * The shadow haunting a nightmare's foe (the user, 2026-10-16: "a dark haunted shadow effect on opponent pokemon"),
+ * drawn behind its sprite on a canvas of its own (`w` × `h` art pixels, the foe's feet at `at`, its frame `fw` × `fh`):
+ * a dark pool dithered under its feet and black smoke drifting slowly up from its flanks, its puffs lit a dim violet. Behind
+ * the sprite only, so the foe stays whole and readable. `still` (motion off, a calm OS): the pool and the wisps of one
+ * moment, held; `short`: half the smoke.
+ */
+export function hauntLoop(
+  w: number,
+  h: number,
+  at: Point,
+  fw: number,
+  fh: number,
+  { still = false, short = false }: { still?: boolean; short?: boolean } = {},
+): PortalLoop {
+  const r = rng(Math.round(at.x * 31 + at.y + fw))
+  const amb = new Particles()
+  // Puffs per second.
+  const rate = short ? 3 : 6
+  // From its flanks, not its middle: a puff behind the body would never show.
+  const emit = () => {
+    const side = r() < 0.5 ? -1 : 1
+    amb.add({
+      x: at.x + side * r.range(fw * 0.3, fw * 0.6),
+      y: at.y - r.range(0, fh * 0.8),
+      vx: side * r.range(1, 4),
+      vy: -r.range(6, 12),
+      life: r.range(2, 3.2),
+      size: r.int(3, 5),
+      shape: 'smoke',
+      colors: [NM.smoke, NM.smoke, NM.smokeLit, NM.smokeEdge],
+      // Its top lit a dim violet: dark smoke, a faint edge.
+      light: NM.smokeEdge,
+    })
+  }
+  // Warmed up, so it opens mid-drift (and the still frame has its wisps).
+  for (let i = 0; i < 150; i++) {
+    if (r() < rate / 60) emit()
+    amb.update(1 / 60)
+  }
+  const rx = Math.max(6, Math.round(fw * 0.45))
+  const ry = Math.max(2, Math.round(rx * 0.2))
+  return {
+    step(_t, dt) {
+      if (still) return
+      if (r() < rate * dt) emit()
+      amb.update(dt)
+    },
+    draw(g) {
+      g.clearRect(0, 0, w, h)
+      // The pool: densest at its middle, an ordered dither out to its rim.
+      for (let y = -ry; y <= ry; y++)
+        for (let x = -rx; x <= rx; x++) {
+          const d = (x / rx) ** 2 + (y / ry) ** 2
+          if (d < 1 && bayer(at.x + x, at.y + y) < (1 - d) * 0.9)
+            rect(g, at.x + x, at.y + y - 1, 1, 1, d < 0.35 ? NM.smoke : NM.smokeLit)
+        }
+      amb.draw(g)
     },
   }
 }

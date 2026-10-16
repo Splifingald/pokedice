@@ -168,8 +168,8 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `InviteGaugeBar` / `InviteRewardsCard` / `InviteGaugeCompact` / `InviteReadyModal` | Friend invite rewards (§25) | The gauge: a tile per tier (its reward; gold with the gift wobbling when ready; green with a check once opened), the gold track, the friends each needs; six tiers fit a phone. The Friends page's card (ready with OPEN IT, asking the server, every reward won); the compact one in Prof. Oak's invite; the reward's pop-up (who won their first badge, or a friend) |
 | `PortalArt` / `PortalScene` / `PortalEntry` / `DistortionGauge` / `DistortionChoiceView` / `ExtraDie` / `ItemCycle` / `BoonConfirm` / `PortalCloseFx` / `RunBonuses` / `PortalVictoryView` / `GlitchSprite` / `DistortionFx` / `useUiGlitch` | Distortion World's portal run (§27) | The portal and the Distortion World on the pixel engine (turning; still); the breach (playing; held at its end, "Tap to continue ▼") and its pop-up over that end (TEAM / NOT NOW / READY!), back from TEAM (the pop-up at once), the pop-up on its own; the gauge of portals closed (fresh, under way, won); a distortion's boons (three, fewer), their icons (an extra die with its "+", a rare item turning through its items, still), a boon's confirm pop-up (BACK / CONFIRM); a portal closing; the run's bonuses (none, some); the victory (HEAL & START RAID over the green BACK TO THE WORLD); the screen's distortion; a distorted sprite at each motion level (full, short, off); the UI's glitch on a few pieces |
 | `PortalRaidBanner` / `PortalRaidCard` (`RaidCard portal`) / `RaidStageArt` / `DistortionGround` / `StageTear` / `RaidNpcPicker portal` / `BattleStage world="distortion"` | Giratina's area raid (§27) | The raid page in the violet night (`.dw-scope`): the portal banner with its plate, the card open and caught, the lock, START, the team; its NPC partners pop-up (the portal and Giratina distorted as its banner); the raid's stage (the Distortion World, Giratina distorted on its island) and a bar's tear. The entrance is on `/kitchen-sink/fx` |
-| `MoonScene` / `NightmareGauge` / `NightmareWayInView` / `NightmareIntro` / `NightmareRulesModal` / `NightmareStrikeView` / `NightmareVictoryView` / `NightmareFx` | Darkrai's nightmare (§29) | The moon on the pixel engine (moving; still); the gauge of rounds (fresh, under way, won); the way in (TEAM / NOT NOW / BEGIN THE NIGHTMARE); the intro (playing; held at its end, "Tap to continue ▼"; its rules over that end); the rules pop-up; Darkrai's strike (playing, the cards draining; landed, from Home); the round's result cards (a round, the last, a gift); Home's Areas button locked with its reason; the screen's vignette; the shadow over a few pieces; the waking (HEAL & START RAID over the green BACK TO THE WORLD) |
-| `NightmareRaidBanner` / `NightmareRaidCard` (`RaidCard nightmare`) / `NightStageArt` / `NightGround` / `StageShadow` / `RaidNpcPicker nightmare` / `BattleStage world="nightmare"` | Darkrai's area raid, and the nightmare's fights (§29) | The raid page in the moonlit night (`.nm-scope`): the moon banner with its plate, the card open and caught, the lock, START, the team; its NPC partners pop-up (the moon and Darkrai as its banner); the stage (the night, the moon behind the foe, smoke rising off its rock) and a bar's shadow. The entrance is on `/kitchen-sink/fx` |
+| `MoonScene` / `NightmareGauge` / `NightmareEntry` / `NightmareEntryDialog` / `NightmareIntro` / `NightmareRulesModal` / `HauntSprite` / `BattleStage haunted` / `NightmareStrikeView` / `NightmareVictoryView` | Darkrai's nightmare (§29) | The moon on the pixel engine (moving; still); the gauge of rounds (fresh, under way, won); the way in (the intro playing, held at its end with "Tap to continue ▼", then its pop-up over that end; the pop-up at once, back from TEAM; the pop-up on its own: TEAM / NOT NOW / BEGIN THE NIGHTMARE); the rules pop-up (INFO); a haunted foe (full, short, off; on the night's stage); Darkrai's strike (playing, the cards draining; landed, from Home); the round's result cards (a round, the last, a gift); Home's Areas button locked with its reason; the waking (HEAL & START RAID over the green BACK TO THE WORLD) |
+| `NightmareRaidBanner` / `NightmareRaidCard` (`RaidCard nightmare`) / `NightStageArt` / `NightGround` / `StageShadow` / `RaidNpcPicker nightmare` / `BattleStage world="nightmare"` / `NightmareFx` | Darkrai's area raid, and the nightmare's fights (§29) | The raid page in the moonlit night (`.nm-scope`): the moon banner with its plate, the card open and caught, the lock, START, the team; its NPC partners pop-up (the moon and Darkrai as its banner); the stage (the night, the moon behind the foe, smoke rising off its rock) and a bar's shadow; the raid's screen vignette with the shadow over the page. The entrance is on `/kitchen-sink/fx` |
 | `TeamSwapActions` | A Pokémon's sheet where the team can change (`teamSwapsOpen`: inside a Pokémon Center, at a portal's way in before READY!) | In the team: Make lead (not the lead), Send to the Box (not the last one); in the Box: Add to team, or, the team full, "swap it in for" each member (a button each: its still mini icon on the left, name and level, "goes to the Box" and the swap arrow, `reroll`, at the far right); still reviving from its fossil: a line saying so. It sits above Strengths and weaknesses in the sheet, whether type hints are on or not (`PokemonSheet`'s `beforeMatchups`, the user's call, 2026-10-15) |
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
@@ -232,8 +232,9 @@ How much the game animates comes from one place, `src/lib/motion.ts`:
 
 `calm` (the OS setting, or `off`): no screen shake, no flashing, the Home team stands still. One exception, the user's
 call: Distortion World's lasting distortion (§27) is the world's identity and keeps playing under a calm OS (never faster
-than 3 a second); only `off` stills it. The nightmare's lasting effects (§29) are not an exception: a calm OS stills them
-(`nightmareLevel`).
+than 3 a second); only `off` stills it. The nightmare's lasting effects (§29: the haunted foe, the moon's smoke, the
+raid's vignette) are not an exception: a calm OS stills them (`nightmareLevel`). Its intro and waking are scenes, not
+lasting effects: under the OS setting they play in half the time, as every scene does.
 
 House rules for every effect and timeline:
 
@@ -641,7 +642,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
   queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
   again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the portal run (§27), Trick or Treat (§28), the nightmare (§29: its rules once, right after its intro's tap) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the portal run (§27), Trick or Treat (§28), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
@@ -1114,20 +1115,29 @@ with a lilac edge, its red and its eye's ice blue. **Its lasting effects follow 
 `nightmareLevel`), unlike the Distortion World's.
 
 - **The switch and the rules** follow §20: `nightmare` (Admin → Areas → Special mode: nightmare), Off by default and
-  checked by the server for the area's raid. Its rules pop-up (`NightmareRulesModal`, the moon as its banner, four rows
-  from the area's numbers: the foes in their order, the strike and the gifts, no way out, waking up) shows **once, right
-  after the intro's tap** (the user's flow), over the intro's held end; INFO sits at the bottom of the area's page.
-- **The way in** (`NightmareWayInView`): CONTINUE on Home says ENTER THE NIGHTMARE. The area's page shows a panel with
-  the moon as its banner (`.nm-panel`: the moon's cream and the night's violet along its top), the rules, "Healed as at a
-  Pokémon Center" with TEAM (the team can change until it begins, `teamSwapsOpen`), the warning in a red-ringed note,
-  NOT NOW and BEGIN THE NIGHTMARE (red). Arriving heals as a Center does.
-- **The intro** (`NightmareIntro`): BEGIN starts it, full screen; Darkrai's silhouette across the full moon; the line in
-  a night-blue card from the moment the shadow slows in front of the moon; held at its end, "Tap to continue ▼" with the
-  focus; no SKIP; motion off, its end at once.
+  checked by the server for the area's raid. **Its rules are short** (the user: "no need for that much details"): four
+  one-line `RuleList` rows (a row's text may be left out: the title alone), from the area's numbers and nothing more:
+  "7 rounds of nightmares", "Darkrai's shadow takes 10% HP after each round", "Items after rounds 3 and 6", "No travel
+  until you wake (the shop stays open)". They are on the way in's pop-up, and from INFO at the bottom of the area's
+  page (`NightmareRulesModal`, the moon as its banner).
+- **The way in** (`NightmareEntry`): the Distortion World's, piece for piece (§27). CONTINUE on Home says ENTER THE
+  NIGHTMARE; it, or any way into the area before the nightmare begins, plays **the intro at once** (`NightmareIntro`,
+  full screen: Darkrai's silhouette across the full moon; the line in a night-blue card from the moment the shadow slows
+  in front of the moon; held at its end, "Tap to continue ▼" with the focus; no SKIP; motion off, its end at once).
+  Arriving heals as a Center does. The tap raises its pop-up over that end, at the bottom, up to 92 % of the screen
+  (`NightmareEntryDialog`, "Into the nightmare"): the short rules, "Healed as at a Pokémon Center" with TEAM (the team
+  can change until it begins, `teamSwapsOpen`; back from the Team screen the pop-up is up again at once, no intro:
+  `run.nightmarePopup`), NOT NOW and BEGIN THE NIGHTMARE (red), which starts round 1. Once under way, a reload or a trip
+  Home never plays the intro again; after a wipe the next way in does.
 - **The gauge** (`NightmareGauge`): the round gauge's place, a tile per round with a pixel moon (lit once survived, half
   in shadow for the one under way with the gold edge, dark to come), "3/7"; an image with "Nightmare rounds won: 3/7".
 - **The foes**: the preview says "Nightmare 3/7" over the name and "A nightmare: it can't be caught." in place of the
-  catch hint (no NEW / caught tag); their fights stand under the moon (`BattleStage world="nightmare"`).
+  catch hint (no NEW / caught tag); their fights stand under the moon (`BattleStage world="nightmare"`). **Each foe is
+  haunted** (`BattleStage haunted`, `HauntSprite` on the preview): a rim of the smoke's black an art pixel round its own
+  sprite with a faint violet edge (zero-blur drop shadows, `hauntCss`, following every frame and never over it), its
+  black rising a pixel every 1.2 s; behind it a dark pool under its feet and black smoke drifting slowly up
+  (`hauntLoop`). Never on the player's side or the HUD; gone while a move plays. Short: no breath, half the smoke; off
+  or a calm OS: the rim and one still frame.
 - **The result card** adds "Nightmare 3/7 survived" (or "The last nightmare is over!") on a night card, and a round's
   gift on a gold-pale card with the item ("Something glimmers in the dark: Revive!").
 - **Darkrai's strike** (`NightmareStrikeView`): after a round, on the area's page: the 2:1 scene over the team's cards;
@@ -1137,9 +1147,9 @@ with a lilac edge, its red and its eye's ice blue. **Its lasting effects follow 
 - **The lock**: only travel shuts. Home's **Areas** button turns into a lock (hatched, `aria-disabled`, "Areas: locked
   during the nightmare"; a tap toasts the reason) with the reason under the bar in a well with a lock icon; the green GO
   TO is hidden; the world strip's Back to … is hatched with a lock and says why; the area's action bar keeps HOME and says
-  why too. The Mart, the Team, the bag and the menus stay open. The screen wears the dream's vignette meanwhile
-  (`NightmareFx`: the night thickening at the edges, lightest at the bottom, smoke at the sides, Darkrai's shadow passing
-  over now and then; a piece of the page darkening as it brushes it, `.ui-shadow`).
+  why too. The Mart, the Team, the bag and the menus stay open. **No screen effect meanwhile** (the user: "side screen
+  effects make the screen VERY hard to read"): no vignette, no smoke at the edges, no shadow over the page or across the
+  moon; only the foes are haunted.
 - **The waking** (`NightmareVictoryView`): full screen; "You woke up from your nightmare, Darkrai awaits" in ice blue on
   the night card, the raid line, HEAL & START RAID (red, the focus) over the green BACK TO THE WORLD; no skip.
 - **A wipe** keeps the wipe card (§14), its line: the player woke up in a cold sweat, the rounds back to 1, XP, ₽ and
@@ -1147,5 +1157,7 @@ with a lilac edge, its red and its eye's ice blue. **Its lasting effects follow 
 - **Darkrai's area raid** wears the nightmare: its page (`.nm-scope`, `data-nightmare-raid`, the night as the page's
   ground, `html[data-nm-page]`, the moon as its banner, `NightmareRaidCard`), its pop-ups (`.nm-modal`, the NPC
   partners' with the moon and Darkrai as its banner, `useShadowIn`), its fight (`BattleStage world="nightmare"`, a bar
-  breaking: `StageShadow`) and its entrance (`RaidIntro world="nightmare"`, no Skip, its tapes in the night's blue and
+  breaking: `StageShadow`), the screen's vignette on its page and fight (`NightmareFx`: the night thickening at the
+  edges, smoke at the sides, Darkrai's shadow passing over now and then, a piece of the page darkening as it brushes it,
+  `.ui-shadow`) and its entrance (`RaidIntro world="nightmare"`, no Skip, its tapes in the night's blue and
   the moon's cream). Its rules, numbers and server checks are the area's mode's (docs/30 §1).

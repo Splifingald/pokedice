@@ -3,7 +3,7 @@
 // Darkrai's strike after a round, and the waking (shiny Darkrai, HEAL & START RAID). The scenes are the pixel engine's
 // (src/fx/timelines/nightmare.ts), hosted with the moon and the screen's vignette in NightmareFx.tsx.
 // Every number comes from the engine (the area's mode, the nightmare's state); these pieces only show them.
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { GameData, NightmareMode } from '@/engine'
 import { playCry } from '@/audio/cries'
 import { loadItemSprite, loadSprite, spriteKey } from '@/fx/sprites'
@@ -18,6 +18,7 @@ import { useHoldFullscreen } from '@/lib/fullscreen'
 import { useMotion } from '@/lib/motion'
 import { cx } from '@/theme/util'
 import { PixelIcon } from './icons'
+import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
 import { RulesModal, RuleList, type RuleRow } from './RulesModal'
 import { useFullStage } from './PortalFx'
@@ -26,6 +27,7 @@ import { DARKRAI, MoonScene } from './NightmareFx'
 
 export {
   DARKRAI,
+  HauntSprite,
   MoonScene,
   NightGround,
   NightmareFx,
@@ -93,48 +95,37 @@ export function NightmareGauge({
 
 // ------------------------------------------------------------------ its rules
 
-/** The nightmare's rules, from the area's numbers: its foes in order, the strike and the gifts, the lock, the waking. */
+/**
+ * The nightmare's rules, short (the user, 2026-10-16: "no need for that much details"): four one-line rows from the
+ * area's numbers: its rounds, Darkrai's strike, the rounds that leave an item, the lock.
+ */
 export function useNightmareRules(mode: NightmareMode, data: GameData): RuleRow[] {
   const { t } = useT()
-  const name = data.species[DARKRAI]?.name ?? 'Darkrai'
-  const foes = joinList(mode.foes.map((f) => data.species[f.dex]?.name ?? `#${f.dex}`))
-  const levels = mode.foes.map((f) => f.level)
-  const gifts = mode.gifts.filter((g) => data.items[g.key])
-  const giftLine = joinList(
-    gifts.map((g) =>
-      t('ui.nightmare.rule.gift', {
-        n: g.round,
-        item: `${data.items[g.key]!.name}${g.qty > 1 ? ` ×${g.qty}` : ''}`,
-      }),
-    ),
-  )
+  const giftRounds = mode.gifts.filter((g) => data.items[g.key]).map((g) => g.round)
   return [
-    {
-      icon: 'moon',
-      title: t('ui.nightmare.rule.rounds.title', { n: mode.foes.length }),
-      text: t('ui.nightmare.rule.rounds.text', {
-        foes,
-        min: Math.min(...levels),
-        max: Math.max(...levels),
-      }),
-    },
-    {
-      icon: 'skull',
-      title: t('ui.nightmare.rule.strike.title', { name }),
-      text:
-        t('ui.nightmare.rule.strike.text', { percent: mode.strikePercent }) +
-        (giftLine ? ` ${t('ui.nightmare.rule.gifts', { gifts: giftLine })}` : ''),
-    },
-    { icon: 'lock', title: t('ui.nightmare.rule.lock.title'), text: t('ui.nightmare.rule.lock.text') },
-    {
-      icon: 'star',
-      title: t('ui.nightmare.rule.wake.title'),
-      text: t('ui.nightmare.rule.wake.text', { name, level: mode.raid.level }),
-    },
+    { icon: 'moon', title: t('ui.nightmare.rule.rounds', { n: mode.foes.length }), text: '' },
+    { icon: 'skull', title: t('ui.nightmare.rule.strike', { percent: mode.strikePercent }), text: '' },
+    ...(giftRounds.length
+      ? [
+          {
+            icon: 'gift' as const,
+            // "after rounds 3 and 6": the last round apart, for each language's "and".
+            title: t(
+              giftRounds.length === 1 ? 'ui.nightmare.rule.gifts.one' : 'ui.nightmare.rule.gifts.other',
+              {
+                rounds: joinList(giftRounds.slice(0, -1).map(String)),
+                last: giftRounds[giftRounds.length - 1]!,
+              },
+            ),
+            text: '',
+          },
+        ]
+      : []),
+    { icon: 'lock', title: t('ui.nightmare.rule.lock'), text: '' },
   ]
 }
 
-/** The rules pop-up (docs/15 §20): once, after the intro the first time; then from INFO (OK). */
+/** The rules pop-up from INFO (OK): the same short rows as the way in's pop-up. */
 export function NightmareRulesModal({
   open,
   onClose,
@@ -163,62 +154,109 @@ export function NightmareRulesModal({
 // ------------------------------------------------------------------ the way in
 
 /**
- * The way in, on the area's page while the nightmare hasn't begun: the moon as its banner, what waits, the heal (as at
- * a Pokémon Center, so the team can still change: TEAM), the warning that travel shuts once it begins (the Mart stays
- * open), NOT NOW (Home) and BEGIN THE NIGHTMARE.
+ * The way in's pop-up (as the Distortion World's, PortalEntryDialog): the short rules, TEAM (healed as at a Pokémon
+ * Center, the team can still change), NOT NOW and BEGIN THE NIGHTMARE. Over the intro's held end, at the bottom of the
+ * screen and up to 92 % of its height; on its own (`banner`, the kitchen sink), the moon as its picture.
  */
-export function NightmareWayInView({
+export function NightmareEntryDialog({
+  open,
   mode,
   data,
+  onBegin,
+  onNotNow,
+  onTeam,
+  banner = true,
+}: {
+  open: boolean
+  mode: NightmareMode
+  data: GameData
+  onBegin: () => void
+  onNotNow: () => void
+  /** To the Team screen, and back here after. */
+  onTeam?: () => void
+  banner?: boolean
+}) {
+  const { t } = useT()
+  const rules = useNightmareRules(mode, data)
+  return (
+    <Modal
+      open={open}
+      onClose={onNotNow}
+      title={t('ui.nightmare.enterTitle')}
+      bottom={!banner}
+      className={cx('max-w-md', !banner && 'flex !max-h-[92dvh] flex-col')}
+    >
+      <div className={cx('flex flex-col gap-3', !banner && 'min-h-0 flex-1')}>
+        {banner && (
+          <div className="relative -mx-4 h-[150px] overflow-hidden bg-[#03040c]" aria-hidden>
+            <MoonScene />
+          </div>
+        )}
+        <div className={cx(!banner && 'pixel-scroll -mr-2 min-h-0 flex-1 overflow-y-auto pr-2')}>
+          <RuleList rules={rules} />
+        </div>
+        {onTeam && (
+          <div className="flex items-center gap-2.5 bg-well p-2.5 shadow-ring-line">
+            <PixelIcon name="heart" size={20} className="shrink-0" />
+            <p className="m-0 min-w-0 flex-1 text-[18px] leading-tight">{t('ui.nightmare.teamHint')}</p>
+            <PixelButton className="shrink-0" onClick={onTeam}>
+              {t('ui.portal.team')}
+            </PixelButton>
+          </div>
+        )}
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
+          <PixelButton onClick={onNotNow}>{t('ui.portal.notNow')}</PixelButton>
+          <PixelButton variant="primary" onClick={onBegin}>
+            {t('ui.nightmare.begin')}
+          </PixelButton>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+/**
+ * Opening the area, as the Distortion World's breach (PortalEntry): the intro full screen (the area sinking into the
+ * night, Darkrai across the full moon), held at its end until the player taps, then its pop-up over that end. `popup`:
+ * the pop-up was already up (back from the Team screen): the end and the pop-up at once.
+ */
+export function NightmareEntry({
+  mode,
+  data,
+  picture,
+  popup = false,
+  onPopup,
   onBegin,
   onNotNow,
   onTeam,
 }: {
   mode: NightmareMode
   data: GameData
+  picture?: string | null
+  popup?: boolean
+  onPopup?: () => void
   onBegin: () => void
   onNotNow: () => void
   onTeam?: () => void
 }) {
-  const { t } = useT()
-  const rules = useNightmareRules(mode, data)
+  const [open, setOpen] = useState(popup)
+  const show = useCallback(() => {
+    setOpen(true)
+    onPopup?.()
+  }, [onPopup])
   return (
-    <section className="pixel-panel nm-panel flex flex-col gap-3 p-3 pt-0" aria-labelledby="nm-way-in">
-      <div className="relative -mx-3 h-[132px] overflow-hidden" aria-hidden>
-        <MoonScene />
-      </div>
-      <div className="grid gap-1">
-        <h2 id="nm-way-in" className="m-0 text-[28px] font-normal leading-none">
-          {t('ui.nightmare.wayInTitle')}
-        </h2>
-        <p className="m-0 font-pixel-sm text-[16px] leading-tight text-muted">
-          {t('ui.nightmare.wayInBody', { n: mode.foes.length })}
-        </p>
-      </div>
-      <RuleList rules={rules} />
-      {onTeam && (
-        <div className="flex items-center gap-2.5 bg-well p-2.5 shadow-ring-line">
-          <PixelIcon name="heart" size={20} className="shrink-0" />
-          <p className="m-0 min-w-0 flex-1 text-[18px] leading-tight">{t('ui.nightmare.teamHint')}</p>
-          <PixelButton className="shrink-0" onClick={onTeam}>
-            {t('ui.portal.team')}
-          </PixelButton>
-        </div>
-      )}
-      <p
-        role="note"
-        className="m-0 flex items-start gap-2 bg-rose p-2.5 text-[18px] leading-tight text-ink shadow-[inset_0_0_0_2px_rgb(var(--c-danger))]"
-      >
-        <PixelIcon name="warning" size={20} className="mt-0.5 shrink-0" />
-        <span>{t('ui.nightmare.sure')}</span>
-      </p>
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
-        <PixelButton onClick={onNotNow}>{t('ui.portal.notNow')}</PixelButton>
-        <PixelButton variant="primary" onClick={onBegin}>
-          {t('ui.nightmare.begin')}
-        </PixelButton>
-      </div>
-    </section>
+    <>
+      <NightmareIntro onContinue={show} picture={picture} instant={popup} under={open} />
+      <NightmareEntryDialog
+        open={open}
+        banner={false}
+        mode={mode}
+        data={data}
+        onBegin={onBegin}
+        onNotNow={onNotNow}
+        onTeam={onTeam}
+      />
+    </>
   )
 }
 
@@ -237,10 +275,13 @@ const LINE_CARD =
 export function NightmareIntro({
   onContinue,
   picture,
+  instant = false,
   under = false,
 }: {
   onContinue: () => void
   picture?: string | null
+  /** Starts at its end (back from the Team screen). */
+  instant?: boolean
   under?: boolean
 }) {
   const { t } = useT()
@@ -281,6 +322,7 @@ export function NightmareIntro({
       <StageCanvas
         timeline={scene.timeline}
         ready={scene.ready}
+        instant={instant}
         size={{ w: size.w, h: size.h }}
         hud={{ beat: (b) => b === 'line' && setLine(true) }}
         onEnd={() => setEnd(true)}

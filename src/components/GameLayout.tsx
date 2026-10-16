@@ -85,7 +85,7 @@ export function GameLayout() {
       <PortalUnlockPopup />
       {/* A portal run under way (docs/28): the area is the only page, and the screen wears the distortion. */}
       <PortalGuard />
-      {/* The nightmare holding the player (docs/30): the run kept in its area, the screen's vignette. */}
+      {/* The nightmare holding the player (docs/30): the run kept in its area (no screen effect). */}
       <NightmareGuard />
     </div>
   )

@@ -10,7 +10,7 @@
     inset 0 5px 0 #5a3aa8;
 }
 
-/* The screen's vignette: over everything but the dialogs, catching no tap. */
+/* The screen's vignette (Darkrai's raid): over everything but the dialogs, catching no tap. */
 .nm-fx {
   position: fixed;
   inset: 0;
@@ -19,7 +19,7 @@
   overflow: hidden;
 }
 
-/* The shadow passing over a piece of the page (useUiGlitch with the nightmare's classes): darkened in four stepped
+/* The shadow passing over a piece of the raid's page (useUiGlitch with the nightmare's classes): darkened in four stepped
    frames, a black copy and a violet one a pixel or two off, then back. `translate` composes with any transform. */
 .ui-shadow {
   animation: ui-shadow 0.5s steps(1, end) both;
@@ -56,6 +56,23 @@
   }
   100% {
     filter: none;
+  }
+}
+
+/* A nightmare's foe, haunted (useHaunt): the dark rim on its own sprite (CSS drop shadows, set per scale), breathing in
+   two stepped frames in full motion. */
+.nm-haunt-host img {
+  filter: var(--haunt, none);
+}
+.nm-haunt-host[data-breathe] img {
+  animation: nm-haunt 2.4s steps(1, end) infinite;
+}
+@keyframes nm-haunt {
+  0% {
+    filter: var(--haunt, none);
+  }
+  50% {
+    filter: var(--haunt-deep, none);
   }
 }
 

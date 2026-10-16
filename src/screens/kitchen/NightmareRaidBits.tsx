@@ -1,13 +1,14 @@
 // Kitchen sink: Darkrai's area raid in the nightmare's look (docs/15 §29): the themed raid page's pieces (the moon
 // banner with its plate, the card open and caught, the lock, START, the team and the ball odds) in the moonlit night,
 // its NPC partners pop-up (the moon and Darkrai as its banner, coming out of the shadow), and the raid's stage (the
-// night under the full moon, a bar breaking into a shadow sweeping it). The entrance is on /kitchen-sink/fx; the page's
-// own ground and the screen's vignette are the game's (NightGround, NightmareFx).
+// night under the full moon, a bar breaking into a shadow sweeping it), and the screen's vignette with the shadow
+// passing over the page (NightmareFx: the raid's only, the area has none). The entrance is on /kitchen-sink/fx; the
+// page's own ground is the game's (NightGround).
 import { useMemo, useState } from 'react'
 import { makeBattler, raidNpcOffer, type TodayRaid } from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
 import { PixelIcon } from '@/components/icons'
-import { StageShadow } from '@/components/Nightmare'
+import { NightmareFx, StageShadow } from '@/components/Nightmare'
 import { avatarOf, playerAvatarId } from '@/lib/avatars'
 import { useGame } from '@/store/game'
 import { BattleStage } from '../battle/BattleStage'
@@ -24,6 +25,7 @@ export function NightmareRaidBits() {
   const player = useGame((s) => s.save?.player)
   const [picker, setPicker] = useState(false)
   const [sweep, setSweep] = useState<number | null>(null)
+  const [vignette, setVignette] = useState(false)
   const offer = useMemo(() => raidNpcOffer(data, ['kanto'], 20261016), [data])
   const areaId = data.areas[0]?.id ?? ''
   const card = (caught: boolean): TodayRaid => ({
@@ -71,6 +73,9 @@ export function NightmareRaidBits() {
         </PixelButton>
         <PixelButton size="sm" onClick={() => setSweep((n) => (n ?? 0) + 1)}>
           A bar breaks: a shadow sweeps the stage
+        </PixelButton>
+        <PixelButton size="sm" onClick={() => setVignette((v) => !v)}>
+          Screen vignette and the shadow over the page {vignette ? 'off' : 'on'}
         </PixelButton>
       </div>
       <div className="grid gap-3 lg:grid-cols-2">
@@ -143,6 +148,7 @@ export function NightmareRaidBits() {
           nightmare={DARKRAI}
         />
       )}
+      {vignette && <NightmareFx />}
     </div>
   )
 }

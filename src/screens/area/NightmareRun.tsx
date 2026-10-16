@@ -1,6 +1,6 @@
-// The nightmare on the game's screens (docs/30): the guard that keeps the run in its area while it holds the player
-// (and the screen's vignette meanwhile), its INFO, and the area's own steps (the way in, the intro and its rules once,
-// Darkrai's strike after a round, the waking). The engine (engine/nightmare.ts) decides everything; these only show it.
+// The nightmare on the game's screens (docs/30): the guard that keeps the run in its area while it holds the player,
+// its INFO, and the area's own steps (the way in: the intro full screen, then
+// its pop-up; Darkrai's strike after a round; the waking). The engine (engine/nightmare.ts) decides everything; these only show it.
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -14,12 +14,10 @@ import {
 import { useT } from '@/i18n/react'
 import {
   DARKRAI,
-  NightmareFx,
-  NightmareIntro,
+  NightmareEntry,
   NightmareRulesModal,
   NightmareStrikeView,
   NightmareVictoryView,
-  NightmareWayInView,
 } from '@/components/Nightmare'
 import { InfoButton } from '@/components/RulesModal'
 import { pictureOf } from '@/fx/areaArt'
@@ -28,10 +26,10 @@ import {
   arriveAtNightmareWayIn,
   beginNightmare,
   enterArea,
-  finishNightmareIntro,
   finishNightmareVictory,
   healAndStartNightmareRaid,
   leaveArea,
+  markNightmarePopup,
   nextNightmareRound,
   strikeNightmare,
 } from '@/store/run'
@@ -41,8 +39,9 @@ import { AreaTeam } from './AreaIdle'
 const markSeen = () => mutateSave((s) => (s.nightmareRulesSeen ? null : { ...s, nightmareRulesSeen: true }))
 
 /**
- * While the nightmare holds the player, the run stays in its area (a reload picks it up there) and the screen wears the
- * dream's vignette. Every page stays open (the Mart, the Team, Home): only travel is shut (engine/nightmare.ts).
+ * While the nightmare holds the player, the run stays in its area (a reload picks it up there). Every page stays open
+ * (the Mart, the Team, Home): only travel is shut (engine/nightmare.ts). No screen effect meanwhile (the user,
+ * 2026-10-16: "side screen effects make the screen VERY hard to read"): its foes wear the shadow instead.
  */
 export function NightmareGuard() {
   const lock = useGame((s) => nightmareLock(s.save, s.data))
@@ -50,7 +49,7 @@ export function NightmareGuard() {
   useEffect(() => {
     if (lock && runArea && runArea !== lock.id) enterArea(lock.id)
   }, [lock, runArea])
-  return lock ? <NightmareFx /> : null
+  return null
 }
 
 /** INFO at the bottom of the area's page: the nightmare's rules again. */
@@ -70,20 +69,18 @@ export function NightmareInfo({ mode }: { mode: NightmareMode }) {
 export function nightmareStepDue(
   area: Area,
   s: { save: Parameters<typeof nightmareStateOf>[0]; data: Parameters<typeof nightmareModeOf>[1] },
-  run: { nightmareIntro?: boolean; nightmareStruck?: boolean },
+  run: { nightmareStruck?: boolean },
 ): boolean {
   if (!nightmareModeOf(area, s.data)) return false
   const n = nightmareStateOf(s.save, area.id)
   return (
-    (!!n.won && !n.wonSeen) ||
-    (!n.active && !n.won) ||
-    (n.active && (!!run.nightmareIntro || !!n.strike || !!run.nightmareStruck))
+    (!!n.won && !n.wonSeen) || (!n.active && !n.won) || (n.active && (!!n.strike || !!run.nightmareStruck))
   )
 }
 
 /**
- * The area's own step: the waking once due, the intro just after BEGIN (then its rules the first time), the way in
- * while it hasn't begun (and isn't over), Darkrai's strike after a round. Null otherwise (the usual page).
+ * The area's own step: the waking once due, the way in while it hasn't begun (and isn't over), Darkrai's strike after
+ * a round. Null otherwise (the usual page).
  */
 export function NightmareStep({ area }: { area: Area }) {
   const navigate = useNavigate()
@@ -108,7 +105,6 @@ export function NightmareStep({ area }: { area: Area }) {
         }}
       />
     )
-  if (n.active && run.nightmareIntro) return <IntroThenRules area={area} mode={mode} />
   if (!n.active && !n.won) return <WayIn area={area} mode={mode} />
   if (n.active && (n.strike || run.nightmareStruck)) {
     const team = teamOf(save).filter((p) => data.species[p.dex])
@@ -131,48 +127,31 @@ export function NightmareStep({ area }: { area: Area }) {
   return null
 }
 
-/** The intro, then (the first time) its rules over its held end; then the first round. */
-function IntroThenRules({ area, mode }: { area: Area; mode: NightmareMode }) {
-  const data = useGame((s) => s.data)
-  const seen = useGame((s) => !!s.save?.nightmareRulesSeen)
-  const [rules, setRules] = useState(false)
-  return (
-    <>
-      <NightmareIntro
-        picture={pictureOf(area.id)?.url ?? null}
-        under={rules}
-        onContinue={() => (seen ? finishNightmareIntro() : setRules(true))}
-      />
-      <NightmareRulesModal
-        open={rules}
-        onClose={() => {
-          markSeen()
-          setRules(false)
-          finishNightmareIntro()
-        }}
-        mode={mode}
-        data={data}
-      />
-    </>
-  )
-}
-
 /**
- * The way in (docs/30): arriving heals the team and the Box as a Pokémon Center does (the engine's arriveAtNightmare),
- * and until it begins the team can change in the Team screen (teamSwapsOpen); NOT NOW goes Home; BEGIN THE NIGHTMARE
- * starts it, its intro next.
+ * The way in (docs/30), as the Distortion World's: arriving heals the team and the Box as a Pokémon Center does (the
+ * engine's arriveAtNightmare); the intro plays full screen and waits for a tap, then its pop-up: TEAM goes to the Team
+ * screen, where the team can change until BEGIN (teamSwapsOpen), and coming back shows the pop-up at once; NOT NOW goes
+ * Home; BEGIN THE NIGHTMARE starts it, round 1's foe next.
  */
 function WayIn({ area, mode }: { area: Area; mode: NightmareMode }) {
   const navigate = useNavigate()
   const data = useGame((s) => s.data)
+  const popup = useGame((s) => !!s.run.nightmarePopup)
   useEffect(() => arriveAtNightmareWayIn(area.id), [area.id])
   return (
-    <NightmareWayInView
+    <NightmareEntry
       mode={mode}
       data={data}
+      picture={pictureOf(area.id)?.url ?? null}
+      popup={popup}
+      onPopup={markNightmarePopup}
       onTeam={() => navigate('/team')}
-      onBegin={() => beginNightmare(area.id)}
+      onBegin={() => {
+        markSeen()
+        beginNightmare(area.id)
+      }}
       onNotNow={() => {
+        markSeen()
         leaveArea()
         navigate('/home')
       }}

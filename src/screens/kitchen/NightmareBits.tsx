@@ -1,21 +1,21 @@
 // Kitchen sink: Darkrai's nightmare (docs/30) in every state — the moon on the pixel engine (moving and still), the
-// gauge of rounds (fresh, under way, won), the way in, the intro (playing, held at its end with "Tap to continue ▼",
-// its rules over it), the rules pop-up (once and from INFO), Darkrai's strike after a round (playing, landed), the
-// round's result cards (a round, the last, a gift), the Home bar's Areas button locked with its reason, the screen's
-// vignette, the shadow passing over a few pieces, and the waking. Every scene is also on /kitchen-sink/fx.
-import { useMemo, useRef, useState } from 'react'
-import { createInstance, DEFAULT_NIGHTMARE } from '@/engine'
+// gauge of rounds (fresh, under way, won), the way in (the intro full screen, held at its end with "Tap to continue ▼",
+// then its pop-up over that end; the pop-up at once, back from TEAM; the pop-up on its own), the rules pop-up (INFO),
+// a haunted foe (its preview at each motion level, and on the battle stage), Darkrai's strike after a round (playing,
+// landed), the round's result cards (a round, the last, a gift), the Home bar's Areas button locked with its reason,
+// and the waking. Every scene is also on /kitchen-sink/fx; the raid's vignette is with the raid's pieces.
+import { useMemo, useState } from 'react'
+import { createInstance, DEFAULT_NIGHTMARE, makeBattler } from '@/engine'
 import {
+  HauntSprite,
   MoonScene,
-  NightmareFx,
+  NightmareEntry,
+  NightmareEntryDialog,
   NightmareGauge,
-  NightmareIntro,
   NightmareRulesModal,
   NightmareStrikeView,
   NightmareVictoryView,
-  NightmareWayInView,
 } from '@/components/Nightmare'
-import { useUiGlitch } from '@/components/PortalFx'
 import { InfoButton } from '@/components/RulesModal'
 import { MonCard } from '@/components/MonCard'
 import { PixelButton } from '@/components/PixelButton'
@@ -24,24 +24,42 @@ import { ItemSprite } from '@/components/ItemSprite'
 import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
+import { BattleStage } from '../battle/BattleStage'
+import type { Fx } from '../battle/useBattleAnimator'
 
 export function NightmareBits() {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const mode = DEFAULT_NIGHTMARE
-  const [open, setOpen] = useState<null | 'intro' | 'introRules' | 'rules' | 'info' | 'won' | 'fx'>(null)
+  const [open, setOpen] = useState<null | 'intro' | 'held' | 'entry' | 'info' | 'won'>(null)
   const [strike, setStrike] = useState(0)
-  const [shadow, setShadow] = useState(false)
-  const demo = useRef<HTMLDivElement>(null)
-  // The shadow passing over the page, often, on the demo's pieces only.
-  useUiGlitch({
-    enabled: shadow,
-    root: demo,
-    selector: '[data-glitch]',
-    every: [0.8, 1.6],
-    dur: 500,
-    classes: { full: 'ui-shadow', short: 'ui-shadow-short' },
-  })
+  // A round's fight: the foe haunted on the night's stage.
+  const fight = useMemo(
+    () => ({
+      own: makeBattler({ uid: 'k-nm-own', dex: 448, level: 50, hp: 160 }, data),
+      foe: { ...makeBattler({ uid: 'k-nm-foe', dex: 197, level: 50, hp: 160 }, data), mega: false },
+    }),
+    [data],
+  )
+  const fx: Fx = {
+    cursor: 0,
+    message: '',
+    hp: {},
+    activeUid: fight.own.uid,
+    fainted: {},
+    dex: {},
+    wornOut: {},
+    tray: null,
+    pop: null,
+    banner: null,
+    shake: null,
+    flash: null,
+    status: null,
+    fly: null,
+    scene: null,
+    chip: null,
+    cry: null,
+  }
   // A team as the strike finds it; its HP drops once the beams land (here, a second strike resets it).
   const base = useMemo(
     () =>
@@ -61,13 +79,16 @@ export function NightmareBits() {
     <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)] gap-3">
       <div className="flex flex-wrap gap-2 [&>*]:max-w-full [&>*]:whitespace-normal">
         <PixelButton size="sm" onClick={() => setOpen('intro')}>
-          The intro (Darkrai across the moon, tap to continue)
+          The intro (Darkrai across the moon, tap to continue, then its pop-up over its end)
         </PixelButton>
-        <PixelButton size="sm" onClick={() => setOpen('introRules')}>
-          The rules over the intro&apos;s end (the first time)
+        <PixelButton size="sm" onClick={() => setOpen('held')}>
+          The pop-up over the intro&apos;s end (back from TEAM)
         </PixelButton>
-        <PixelButton size="sm" onClick={() => setOpen('rules')}>
-          Rules pop-up
+        <PixelButton size="sm" onClick={() => setOpen('entry')}>
+          Its pop-up on its own (TEAM / NOT NOW / BEGIN THE NIGHTMARE)
+        </PixelButton>
+        <PixelButton size="sm" onClick={() => setOpen('info')}>
+          Rules pop-up (INFO)
         </PixelButton>
         <PixelButton
           size="sm"
@@ -81,12 +102,6 @@ export function NightmareBits() {
         <PixelButton size="sm" onClick={() => setOpen('won')}>
           The waking (HEAL &amp; START RAID over a green BACK TO THE WORLD)
         </PixelButton>
-        <PixelButton size="sm" onClick={() => setOpen(open === 'fx' ? null : 'fx')}>
-          Screen vignette {open === 'fx' ? 'off' : 'on'}
-        </PixelButton>
-        <PixelButton size="sm" onClick={() => setShadow((g) => !g)}>
-          Shadow-over-the-page demo {shadow ? 'off' : 'on'}
-        </PixelButton>
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="relative h-[150px] overflow-hidden">
@@ -96,24 +111,38 @@ export function NightmareBits() {
           <MoonScene still />
         </div>
       </div>
-      <div ref={demo} className="grid max-w-xl gap-2">
-        <div data-glitch>
-          <NightmareGauge round={0} total={7} />
-        </div>
-        <div data-glitch>
-          <NightmareGauge round={3} total={7} />
-        </div>
-        <div data-glitch>
-          <NightmareGauge round={7} total={7} />
-        </div>
-        <div className="flex gap-2">
-          <PixelButton data-glitch size="sm">
-            Fight
-          </PixelButton>
-          <PixelButton data-glitch size="sm" variant="primary">
-            Continue
-          </PixelButton>
-        </div>
+      <div className="grid max-w-xl gap-2">
+        <NightmareGauge round={0} total={7} />
+        <NightmareGauge round={3} total={7} />
+        <NightmareGauge round={7} total={7} />
+      </div>
+      {/* A haunted foe: the round's preview at each motion level (full, short, off), then on the night's stage. */}
+      <div className="flex flex-wrap items-end gap-3">
+        {(['full', 'short', 'off'] as const).map((level) => (
+          <figure key={level} className="m-0 grid justify-items-center gap-1">
+            <div className="light-scope bg-[#080b1f] shadow-[inset_0_0_0_3px_#5a3aa8]">
+              <HauntSprite dex={197} size={104} level={level} />
+            </div>
+            <figcaption className="font-pixel-sm text-[15px] text-muted">{level}</figcaption>
+          </figure>
+        ))}
+      </div>
+      <div className="max-w-xl">
+        <BattleStage
+          own={fight.own}
+          foe={fight.foe}
+          fx={fx}
+          ownShown
+          foeShown
+          trainer={null}
+          overlay={null}
+          onContact={() => {}}
+          onSceneDone={() => {}}
+          tapLabel={(b) => b.name}
+          label="A round of the nightmare: Umbreon haunted"
+          world="nightmare"
+          haunted
+        />
       </div>
       {/* The round's result cards, as VictoryView shows them. */}
       <div className="grid max-w-xl gap-2">
@@ -150,14 +179,7 @@ export function NightmareBits() {
           <span>{t('ui.nightmare.locked', { area: 'Newmoon Island' })}</span>
         </p>
       </div>
-      <div className="grid gap-3 lg:grid-cols-2">
-        <NightmareWayInView
-          mode={mode}
-          data={data}
-          onBegin={() => setOpen('intro')}
-          onNotNow={() => {}}
-          onTeam={() => {}}
-        />
+      <div className="max-w-xl">
         <NightmareStrikeView
           key={strike}
           team={team.map((p) => ({ uid: p.id, dex: p.dex }))}
@@ -194,18 +216,24 @@ export function NightmareBits() {
       <div className="max-w-xs">
         <InfoButton name={t('ui.nightmare.title')} onClick={() => setOpen('info')} />
       </div>
-      {(open === 'intro' || open === 'introRules') && (
-        <NightmareIntro
+      {(open === 'intro' || open === 'held') && (
+        <NightmareEntry
+          mode={mode}
+          data={data}
           picture={artUrl('a127')}
-          under={open === 'introRules'}
-          onContinue={() => setOpen('introRules')}
+          popup={open === 'held'}
+          onBegin={close}
+          onNotNow={close}
+          onTeam={close}
         />
       )}
-      <NightmareRulesModal
-        open={open === 'introRules' || open === 'rules'}
-        onClose={close}
+      <NightmareEntryDialog
+        open={open === 'entry'}
         mode={mode}
         data={data}
+        onBegin={close}
+        onNotNow={close}
+        onTeam={close}
       />
       <NightmareRulesModal open={open === 'info'} onClose={close} mode={mode} data={data} />
       {open === 'won' && (
@@ -216,7 +244,6 @@ export function NightmareBits() {
           onRaid={close}
         />
       )}
-      {open === 'fx' && <NightmareFx />}
     </div>
   )
 }

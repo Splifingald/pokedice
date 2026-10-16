@@ -1,6 +1,6 @@
-// Darkrai's nightmare (docs/30) in a small world served as content (as e2e/portal.spec.ts does): CONTINUE goes to its way
-// in (arriving heals; NOT NOW goes Home); BEGIN THE NIGHTMARE plays the intro held at its end until a tap, then its
-// rules once; its foes come in their order and can't be caught; Home's Areas button is locked with its reason while the
+// Darkrai's nightmare (docs/30) in a small world served as content (as e2e/portal.spec.ts does): ENTER THE NIGHTMARE
+// plays the intro at once, held at its end until a tap, then its pop-up with the short rules (arriving heals; NOT NOW
+// goes Home; TEAM and back; BEGIN starts it), as the Distortion World's breach; its foes, haunted, come in their order and can't be caught; Home's Areas button is locked with its reason while the
 // Mart stays open; after a round, Darkrai's strike takes 10 % of each one's max HP, a gift lands in the bag; the last
 // round wakes the player (HEAL & START RAID over a green BACK TO THE WORLD); HEAL & START RAID opens Darkrai's raid in
 // the nightmare's look (its page, its pop-up, its fight); the raid's entrance can't be skipped; a wipe sends the rounds
@@ -199,49 +199,69 @@ async function playUntil(page: Page, until: ReturnType<Page['getByRole']>, ms = 
   await expect(until).toBeVisible()
 }
 
-test('the way in heals; BEGIN plays the intro held for a tap, then its rules once; Areas locked but the Mart open; the strike after a round; a gift; the last round wakes the player', async ({
+test('ENTER plays the intro at once, held for a tap, then its pop-up with the short rules (as the breach); Areas locked but the Mart open; a haunted foe; the strike after a round; a gift; the last round wakes the player', async ({
   page,
 }) => {
   test.setTimeout(150_000)
   const save = atDream([[150, 100]], undefined, false)
-  await boot(page, { ...save, box: save.box.map((p) => ({ ...p, currentHp: 10 })) })
+  const pika = { id: 'mon-box', dex: 25, level: 40, xp: 0, currentHp: 5, caughtAt: 0 }
+  await boot(page, { ...save, box: [...save.box.map((p) => ({ ...p, currentHp: 10 })), pika] })
   await page.goto('/home')
   const enter = page.getByRole('button', { name: /^Enter the nightmare/ })
   await enter.first().click({ timeout: 15_000 })
   await expect(page).toHaveURL(/\/area$/)
-  // The way in: healed as at a Center, the warning, NOT NOW goes Home with nothing begun.
-  await expect(page.getByRole('heading', { name: 'A nightmare waits' })).toBeVisible()
-  await expect.poll(async () => (await stored(page)).box[0]!.currentHp).toBeGreaterThan(10)
-  await expect(
-    page.getByText('Once the nightmare begins, you can’t travel to another area until you wake up.'),
-  ).toBeVisible()
-  await page.getByRole('button', { name: 'Not now' }).click()
-  await expect(page).toHaveURL(/\/home$/)
-  expect(dreamOf(await stored(page))?.active ?? false).toBe(false)
-
-  // In again, and BEGIN: the intro (motion off: its end at once), waiting for a tap.
-  await enter.first().click()
-  await page.getByRole('button', { name: 'Begin the nightmare' }).click()
-  await expect
-    .poll(async () => dreamOf(await stored(page)))
-    .toMatchObject({ active: true, round: 0, tries: 1 })
+  // The intro straight away (motion off: its end at once), waiting for a tap; the pop-up isn't up yet.
   const intro = page.getByRole('dialog', { name: 'Darkrai’s nightmare' })
   await expect(
     intro.getByText('You feel a shadow breathing down your neck, the nightmare begins'),
   ).toBeVisible()
+  const dialog = page.getByRole('dialog', { name: 'Into the nightmare' })
   const tap = page.getByRole('button', { name: 'Tap to continue' })
   await expect(tap).toBeFocused()
+  await expect(dialog).toBeHidden()
+  // Arriving healed the team and the Box, as a Pokémon Center does, before BEGIN; nothing has begun.
+  await expect.poll(async () => (await stored(page)).box.map((p) => p.currentHp > 10)).toEqual([true, true])
+  expect(dreamOf(await stored(page))?.active ?? false).toBe(false)
+  // Enter goes on, as a tap does: the pop-up rises over the intro's end, its rules four short lines.
   await page.keyboard.press('Enter')
-  // The rules, the first time, over the intro's end; the lock is one of them.
-  const rules = page.getByRole('dialog', { name: 'Darkrai’s nightmare' }).last()
-  await expect(rules.getByText('No way out')).toBeVisible()
-  await expect(rules.getByText(/the Areas map is locked/)).toBeVisible()
-  await expect(rules.getByText(/Revive after round 1/)).toBeVisible()
-  await rules.getByRole('button', { name: 'OK' }).click()
+  await expect(dialog).toBeVisible()
+  await expect(page.locator('.nm-intro canvas')).toBeVisible()
+  await expect(dialog.getByText('2 rounds of nightmares')).toBeVisible()
+  await expect(dialog.getByText('Darkrai’s shadow takes 10% HP after each round')).toBeVisible()
+  await expect(dialog.getByText('An item after round 1')).toBeVisible()
+  await expect(dialog.getByText('No travel until you wake (the shop stays open)')).toBeVisible()
+  await expect(dialog.locator('li')).toHaveCount(4)
+  await dialog.getByRole('button', { name: 'Not now' }).click()
+  await expect(page).toHaveURL(/\/home$/)
+  expect(dreamOf(await stored(page))?.active ?? false).toBe(false)
+
+  // In again: the intro again, then TEAM, where the team can change as at a Center.
+  await enter.first().click()
+  await tap.click()
+  await dialog.getByRole('button', { name: 'Team' }).click()
+  await expect(page).toHaveURL(/\/team$/)
+  await page
+    .getByRole('button', { name: /^Pikachu/ })
+    .first()
+    .click()
+  await page.getByRole('button', { name: 'Add to team' }).click()
+  await expect.poll(async () => (await stored(page)).team).toEqual(['mon-0', 'mon-box'])
+  // Back: the pop-up again at once, no intro to wait for; BEGIN starts it, round 1's foe next.
+  await page.getByRole('button', { name: 'Back to the nightmare' }).click()
+  await expect(page).toHaveURL(/\/area$/)
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: 'Begin the nightmare' }).click()
+  await expect
+    .poll(async () => dreamOf(await stored(page)))
+    .toMatchObject({ active: true, round: 0, tries: 1 })
   await expect.poll(async () => (await stored(page)).nightmareRulesSeen).toBe(true)
   // The first round's foe: its round, and it can't be caught.
   await expect(page.getByText('Nightmare 1/2').first()).toBeVisible()
   await expect(page.getByText('A nightmare: it can’t be caught.')).toBeVisible()
+  // …and a dark shadow haunts it (the rim on its own sprite).
+  await expect(page.locator('.nm-haunt-host img').first()).toHaveCSS('filter', /drop-shadow/)
+  // No screen effect in the area: no vignette, no shadow over the page.
+  await expect(page.locator('.nm-fx')).toHaveCount(0)
 
   // Home: the Areas button is locked and says why; the Mart stays open.
   await page.goto('/home')

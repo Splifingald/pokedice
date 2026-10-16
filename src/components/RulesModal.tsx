@@ -28,7 +28,7 @@ export function RuleList({ rules }: { rules: RuleRow[] }) {
           </span>
           <span className="grid gap-0.5 leading-tight">
             <b className="text-[19px] font-normal leading-none">{r.title}</b>
-            <small className="font-pixel-sm text-[15px] text-muted">{r.text}</small>
+            {r.text && <small className="font-pixel-sm text-[15px] text-muted">{r.text}</small>}
             {r.action && <span className="mt-1.5 flex">{r.action}</span>}
           </span>
         </li>

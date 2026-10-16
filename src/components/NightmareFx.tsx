@@ -1,19 +1,32 @@
 // Darkrai's nightmare on the page (docs/30, docs/15 §29), hosting the pixel engine's scenes (src/fx/timelines/
-// nightmare.ts, nightmareRaid.ts): the full moon on a loop, the screen's dream-like vignette with smoke curling at its
-// edges and Darkrai's shadow passing over the page now and then, a piece of the page darkening as the shadow brushes it,
-// the raid's night as the page's ground and its stage, and a shadow sweeping the stage when a raid bar breaks. Every
-// piece honours the motion level (nightmareLevel): a calm OS or motion off shows a still frame (or nothing), the
-// player's short setting a lighter version.
-import { useEffect, useRef, useState } from 'react'
+// nightmare.ts, nightmareRaid.ts): the full moon on a loop, the shadow haunting a nightmare's foe (a dark rim on its own
+// sprite, smoke drifting up behind it), and for Darkrai's raid only: the screen's dream-like vignette with smoke curling
+// at its edges and Darkrai's shadow passing over the page now and then, the raid's night as the page's ground and its
+// stage, and a shadow sweeping the stage when a raid bar breaks. (The nightmare's area itself has no screen effect: the
+// user, 2026-10-16, "side screen effects make the screen VERY hard to read".) Every piece honours the motion level
+// (nightmareLevel): a calm OS or motion off shows a still frame (or nothing), the player's short setting a lighter
+// version.
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { rect, rng, bayer, cached, shade, type Canvas, type G } from '@/fx/pixel'
-import { drawSprite, loadSprite, spriteFrame, spriteKey } from '@/fx/sprites'
+import { drawSprite, loadSprite, spriteFrame, spriteKey, stageSprite } from '@/fx/sprites'
 import { H, W } from '@/fx/timeline'
-import { drawStars, makeStars, moonLoop, nightmareLevel, nightSky, NM } from '@/fx/timelines/nightmare'
+import {
+  drawStars,
+  hauntCss,
+  hauntLoop,
+  makeStars,
+  moonLoop,
+  nightmareLevel,
+  nightSky,
+  NM,
+} from '@/fx/timelines/nightmare'
 import { nightBattleStage, nightCardStage } from '@/fx/timelines/nightmareRaid'
 import { useMotion, type MotionLevel } from '@/lib/motion'
+import { artBox } from '@/lib/showdown'
 import { cx } from '@/theme/util'
 import { useBoxSize, useLoop, useUiGlitch } from './PortalFx'
+import { showdownView, SpriteImg } from './SpriteImg'
 
 /** Darkrai: the nightmare's shadow, and its prize. */
 export const DARKRAI = 491
@@ -33,9 +46,9 @@ function useDarkraiKey(shiny = false): string {
 // ------------------------------------------------------------------ the moon
 
 /**
- * The full moon filling its box (the rules' banner, the way in, the raid's page): the night, its stars twinkling, the
- * moon, the smoke banked below, Darkrai's shadow crossing the moon every 10 s. 2 CSS pixels per art pixel. `still`
- * holds one frame (motion off, a calm OS).
+ * The full moon filling its box (the rules' banner, the way in's pop-up, the raid's page): the night, its stars
+ * twinkling, the moon, the smoke banked below; nothing crosses it. 2 CSS pixels per art pixel. `still` holds one frame
+ * (motion off, a calm OS).
  */
 export function MoonScene({ className, still }: { className?: string; still?: boolean }) {
   const level = useNightmareLevel()
@@ -43,10 +56,9 @@ export function MoonScene({ className, still }: { className?: string; still?: bo
   const box = useRef<HTMLDivElement>(null)
   const ref = useRef<HTMLCanvasElement>(null)
   const size = useBoxSize(box)
-  const mon = useDarkraiKey()
   const w = size ? Math.max(16, Math.ceil(size.w / 2)) : 0
   const h = size ? Math.max(16, Math.ceil(size.h / 2)) : 0
-  useLoop(ref, () => (w && h ? moonLoop(w, h, { still: hold, mon }) : null), hold, [w, h])
+  useLoop(ref, () => (w && h ? moonLoop(w, h, { still: hold }) : null), hold, [w, h])
   return (
     <div ref={box} aria-hidden className={cx('absolute inset-0 overflow-hidden bg-[#03040c]', className)}>
       {w > 0 && (
@@ -62,7 +74,136 @@ export function MoonScene({ className, still }: { className?: string; still?: bo
   )
 }
 
-// ------------------------------------------------------------------ the screen's vignette
+// ------------------------------------------------------------------ a haunted foe
+
+/**
+ * The shadow haunting a nightmare's foe (docs/15 §29): the rim on its sprite (`host`'s `img`, `.nm-haunt-host`),
+ * breathing every 1.2 s in full motion, and the smoke drifting up behind it on `under` (a canvas behind the sprite,
+ * `w` × `h` art pixels, its feet at `at`: hauntLoop). Short: no breath, half the smoke; motion off or a calm OS: the
+ * rim and one still frame of the smoke. Nothing while `active` is false (the foe out, a move playing).
+ */
+export function useHaunt({
+  host,
+  dex,
+  shiny = false,
+  at,
+  w,
+  h,
+  px,
+  active,
+  level: forced,
+}: {
+  host: RefObject<HTMLElement | null>
+  dex: number
+  shiny?: boolean
+  at: { x: number; y: number }
+  w: number
+  h: number
+  px: number
+  active: boolean
+  level?: MotionLevel
+}) {
+  const shown = useNightmareLevel()
+  const level = forced ?? shown
+  const under = useRef<HTMLCanvasElement>(null)
+  const key = spriteKey(dex, false, shiny)
+  // Its canvas frame tells the smoke how big it is.
+  const [frame, setFrame] = useState<{ w: number; h: number } | null>(null)
+  useEffect(() => {
+    let live = true
+    void loadSprite(dex, false, shiny).then(() => {
+      const f = spriteFrame(key)
+      if (live) setFrame(f ? { w: f.width, h: f.height } : null)
+    })
+    return () => {
+      live = false
+    }
+  }, [dex, shiny, key])
+  useEffect(() => {
+    const el = host.current
+    if (!el || !active) return
+    el.style.setProperty('--haunt', hauntCss(px))
+    el.style.setProperty('--haunt-deep', hauntCss(px, true))
+    el.toggleAttribute('data-breathe', level === 'full')
+    return () => {
+      el.style.removeProperty('--haunt')
+      el.style.removeProperty('--haunt-deep')
+      el.removeAttribute('data-breathe')
+    }
+  }, [host, active, px, level])
+  const still = level === 'off'
+  const smoke = active && !!frame
+  useLoop(
+    under,
+    () =>
+      smoke && frame ? hauntLoop(w, h, at, frame.w, frame.h, { still, short: level === 'short' }) : null,
+    still,
+    [smoke, frame, at.x, at.y, w, h, level],
+  )
+  return { under, smoke }
+}
+
+/**
+ * A haunted foe in a box (the round's preview, the kitchen sink): the smoke behind, the page's animated sprite wearing
+ * the rim. `level` overrides the motion level (the kitchen sink shows each).
+ */
+export function HauntSprite({
+  dex,
+  size,
+  shiny = false,
+  level,
+  className,
+}: {
+  dex: number
+  size: number
+  shiny?: boolean
+  level?: MotionLevel
+  className?: string
+}) {
+  const host = useRef<HTMLDivElement>(null)
+  // The art's scale in the box, as SpriteImg places it: CSS pixels per canvas-sprite pixel.
+  const s = stageSprite(dex, false, shiny)
+  const sd = showdownView(dex, false, shiny)
+  let per = size / 64 / Math.max(0.01, s.k)
+  if (sd) {
+    const [x0, y0, x1, y1] = artBox(sd.box)
+    per = Math.min(size / 96, size / Math.max(x1 - x0 + 1, y1 - y0 + 1)) / s.k
+  }
+  const n = Math.max(16, Math.round(size / per))
+  const fh = Math.round(s.artH * s.k)
+  const { under, smoke } = useHaunt({
+    host,
+    dex,
+    shiny,
+    at: { x: n / 2, y: Math.round(n / 2 + fh / 2) },
+    w: n,
+    h: n,
+    px: per,
+    active: true,
+    level,
+  })
+  return (
+    <div
+      ref={host}
+      className={cx('nm-haunt-host relative inline-block shrink-0', className)}
+      style={{ width: size, height: size }}
+    >
+      {smoke && (
+        <canvas
+          ref={under}
+          width={n}
+          height={n}
+          aria-hidden
+          className="pixelated pointer-events-none absolute inset-0 h-full w-full"
+          style={{ imageRendering: 'pixelated' }}
+        />
+      )}
+      <SpriteImg dex={dex} size={size} shiny={shiny} className="relative" />
+    </div>
+  )
+}
+
+// ------------------------------------------------------------------ Darkrai's raid: the screen's vignette
 
 /** CSS pixels per art pixel of the screen's vignette. */
 const FX_PX = 3
@@ -99,7 +240,8 @@ function edgeWisps(g: G, w: number, h: number, t: number) {
 }
 
 /**
- * The screen while the nightmare holds the player (over the page, under the pop-ups, catching no tap): the dream's
+ * The screen during Darkrai's raid, its page and its fight (over the page, under the pop-ups, catching no tap): the
+ * dream's
  * vignette breathing every 4 s, smoke curling at the edges, and every 12–18 s Darkrai's shadow passing over the page in
  * 1.4 s; now and then one piece of the page darkens as it brushes it (useUiGlitch with the shadow's look). `short`: no
  * breathing, the shadow every 25–35 s, the pieces' lighter look; motion off or a calm OS: the vignette alone, still.

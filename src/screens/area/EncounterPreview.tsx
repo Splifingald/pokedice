@@ -1,3 +1,4 @@
+import { HauntSprite } from '@/components/Nightmare'
 import { GlitchSprite } from '@/components/Portal'
 import { motion } from 'framer-motion'
 import { useId, useState } from 'react'
@@ -56,6 +57,8 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
       >
         {distorted ? (
           <GlitchSprite dex={enc.dex} size={desktop ? 144 : 104} shiny={enc.shiny} />
+        ) : dream ? (
+          <HauntSprite dex={enc.dex} size={desktop ? 144 : 104} shiny={enc.shiny} />
         ) : (
           <SpriteImg dex={enc.dex} size={desktop ? 144 : 104} shiny={enc.shiny} />
         )}
