@@ -1,4 +1,4 @@
-// Newmoon Island's nightmare (docs/30) as a patch over live content: migration 0059 against a real Postgres (PGlite, in
+// Newmoon Island's nightmare (docs/30) as a patch over live content: migration 0060 against a real Postgres (PGlite, in
 // process). First over Haunted Hollow as 0052 to 0058 left it, plus the admin's own edits: only the mode lands, twice
 // changes nothing, an admin's own mode stays. Then the server's checks on the area's raid (on top of the raids' own
 // migrations and 0057's): with the switch off it's as before; on, it stays shut until the cloud save says the
@@ -18,7 +18,7 @@ const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
 const NM = newmoonArea()
 const DW = distortionArea()
-const FILE = '0059_hh_nightmare.sql'
+const FILE = '0060_hh_nightmare.sql'
 
 const AUTH = `create role anon; create role authenticated; create schema auth; create table auth.users (id uuid primary key);
   create function auth.uid() returns uuid language sql stable as $$
@@ -34,7 +34,7 @@ async function speciesInto(db: PGlite) {
   )
 }
 
-describe('0059: the content patch', () => {
+describe('0060: the content patch', () => {
   let db: PGlite
   const area = async () =>
     (
@@ -90,7 +90,7 @@ describe('0059: the content patch', () => {
   })
 })
 
-describe('0059: the raid’s checks', () => {
+describe('0060: the raid’s checks', () => {
   let db: PGlite
   const ME = '00000000-0000-4000-8000-0000000000aa'
   const KEY = `${NM.id}:491`

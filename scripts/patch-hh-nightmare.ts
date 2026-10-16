@@ -5,7 +5,7 @@
  *
  * `tsx scripts/patch-hh-nightmare.ts <in-bundle.json> <out-bundle.json>` patches an admin export for
  * `pnpm import-bundle`; `tsx scripts/patch-hh-nightmare.ts --sql <out.sql>` writes the migration
- * (supabase/migrations/0059_hh_nightmare.sql): the same content patch, plus the switch's row and the server's checks
+ * (supabase/migrations/0060_hh_nightmare.sql): the same content patch, plus the switch's row and the server's checks
  * (the raid's team cap, and the raid closed until the nightmare is over). The values are the content script's, so fresh
  * content (`pnpm haunted-hollow`) and patched content agree.
  */

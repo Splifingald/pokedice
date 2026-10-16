@@ -901,7 +901,7 @@ export const AREAS: AreaSpec[] = [
     hidden: true,
     unlock: [{ kind: 'cleared', areaId: id('area', 'shadow-elite') }],
     // Darkrai's nightmare (docs/30, the user's spec of 2026-10-16): seven fixed rounds, the shadow's strike after each,
-    // no travel until it ends; its raid opens once it's over. 0059 patches the live area (scripts/patch-hh-nightmare.ts).
+    // no travel until it ends; its raid opens once it's over. 0060 patches the live area (scripts/patch-hh-nightmare.ts).
     mode: DEFAULT_NIGHTMARE,
     boss: [{ dex: 491, level: 60, shiny: true, raid: true }],
     wild: [

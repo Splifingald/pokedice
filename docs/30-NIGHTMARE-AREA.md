@@ -10,7 +10,7 @@ engine module, a screen step, pixel-art timelines, a themed raid), less restrict
 `src/components/Nightmare.tsx` and `src/screens/area/NightmareRun.tsx`, its effects on the pixel engine
 (`src/fx/timelines/nightmare.ts`, `nightmareRaid.ts`, hosted by `src/components/NightmareFx.tsx`: §6); its raid's look
 `src/screens/events/NightmareRaid.tsx`; admin `src/admin/sections/NightmareModeBox.tsx`; migration
-`supabase/migrations/0059_hh_nightmare.sql` (written by `scripts/patch-hh-nightmare.ts`). Rules for the screens:
+`supabase/migrations/0060_hh_nightmare.sql` (written by `scripts/patch-hh-nightmare.ts`). Rules for the screens:
 docs/15 §29.
 
 ## 1. Decisions
@@ -53,7 +53,7 @@ docs/15 §29.
 - Tests: `tests/engine/nightmare.test.ts` (the order, fixed every try and harder each round; the way in and its heal;
   the strike's numbers, rounding, never a K.O.; the gifts at 3 and 6, once for good; the lock; the waking and the raid;
   the wipe; the switch off), `tests/nightmare-fx.test.ts` (the scenes' beats, the strike's landing time, the motion
-  rules), `tests/hh-nightmare-sql.test.ts` (0059), `e2e/nightmare.spec.ts`.
+  rules), `tests/hh-nightmare-sql.test.ts` (0060), `e2e/nightmare.spec.ts`.
 
 ## 3. Balance: the order and the numbers
 
@@ -98,9 +98,9 @@ lets them plan. A pure Ghost team can't win at any setting tried (foes 4 levels 
 Ghost and Psychic. The simulator's player always leads with its first Pokémon and uses items only between fights (a
 real player also heals in battle and shops mid-nightmare), so these numbers lean low.
 
-## 4. Server (migration 0059)
+## 4. Server (migration 0060)
 
-`supabase/migrations/0059_hh_nightmare.sql`, from `tsx scripts/patch-hh-nightmare.ts --sql`. A patch over 0052 to 0058
+`supabase/migrations/0060_hh_nightmare.sql`, from `tsx scripts/patch-hh-nightmare.ts --sql`. A patch over 0052 to 0058
 and the admin's later edits; safe to run twice (tested on PGlite: `tests/hh-nightmare-sql.test.ts`, and in the chain
 `tests/haunted-hollow-sql.test.ts`).
 
@@ -121,8 +121,8 @@ the bundle having no Haunted Hollow).
 ## 5. Setting it up
 
 1. Deploy the client (the switch is Off: nothing changes for anyone).
-2. Run `supabase/migrations/0059_hh_nightmare.sql` (after 0057; safe to run again):
-   https://github.com/Splifingald/pokedice/blob/feature/version_2/supabase/migrations/0059_hh_nightmare.sql
+2. Run `supabase/migrations/0060_hh_nightmare.sql` (after 0057 to 0059; safe to run again):
+   https://github.com/Splifingald/pokedice/blob/feature/version_2/supabase/migrations/0060_hh_nightmare.sql
    (on `feature/version_2` once merged there; before that, the same path on the branch it was pushed to).
    `supabase/seed.sql` carries it too (inlined in its schema part).
    - Or, for an export: `tsx scripts/patch-hh-nightmare.ts <in.json> <out.json>`, then `pnpm import-bundle`.

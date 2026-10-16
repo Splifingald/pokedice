@@ -499,6 +499,7 @@ export async function signOut() {
 export async function checkContent() {
   const { data } = useGame.getState()
   const res = await checkContentVersion(data.config.configVersion)
+  useGame.setState({ contentAsked: true })
   if (!res) return
   if (res.bundle) {
     setContent(res.bundle, 'remote')

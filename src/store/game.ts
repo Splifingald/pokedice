@@ -159,6 +159,11 @@ export interface GameStore {
    * theirs): only then may the game act on what it doesn't hold — a small world gone from the admin's list (docs/21).
    */
   contentChecked: boolean
+  /**
+   * The content check has come back, whatever it said (newer content in, the same, no answer): until then the game runs
+   * on the content bundled with the build, whose admin settings may be out of date (what a pop-up shows waits for it).
+   */
+  contentAsked: boolean
   save: SaveData | null
   corruptSaveArchived: boolean
   settings: Settings
@@ -251,6 +256,7 @@ export const useGame = create<GameStore>()(() => ({
   ...boot(),
   contentSource: 'bundle',
   contentChecked: false,
+  contentAsked: false,
   run: initialRun(),
   battle: null,
   auth: { status: 'unknown', userId: null, email: null },

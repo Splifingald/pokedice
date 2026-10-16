@@ -65,6 +65,8 @@ export interface Battler {
   mega?: boolean
   /** A form taken below half HP (Giratina's Origin Forme…): how it looked and rolled before, for above half again. */
   preForm?: FormSnapshot
+  /** A raid Pokémon: its below-half-HP form waits for its last bar (`unleashForm`), whatever its HP does. */
+  formHeld?: boolean
   /** Type changes (Arceus, Silvally, Ogerpon) this Pokémon has made this battle. */
   formChanges?: number
   /** Gigantamaxed: its own turns left, and how it looked before (the die it gained goes when it shrinks back). */
@@ -183,7 +185,8 @@ export type LogEntry =
   /**
    * A Pokémon changed form: `mega` (Mega Evolution, Primal Reversion, Ultra Burst — `die` is the die it gained),
    * `gmax` (Gigantamax; `revert` when it shrinks back), `lowHp` (Giratina's Origin Forme…, `revert` when it goes back
-   * above half HP) or `choice` (an Arceus, Silvally or Ogerpon type).
+   * above half HP), `unleash` (that form on a raid Pokémon's last bar, for good; `die` is the die it gained)
+   * or `choice` (an Arceus, Silvally or Ogerpon type).
    */
   | {
       kind: 'form'
@@ -191,7 +194,7 @@ export type LogEntry =
       uid: string
       fromDex: number
       toDex: number
-      reason: 'mega' | 'gmax' | 'lowHp' | 'choice'
+      reason: 'mega' | 'gmax' | 'lowHp' | 'unleash' | 'choice'
       dice: DieType[]
       die?: DieType
       revert?: boolean
@@ -405,8 +408,8 @@ export function autoTypeForm(s: BattleState, data: GameData, rng: Rng): Species 
  */
 function checkHpForms(s: BattleState, data: GameData, log: LogEntry[]) {
   for (const [side, b] of [...s.player.map((p) => ['player', p] as const), ['enemy', s.enemy] as const]) {
-    // A Mega or Gigantamax Pokémon keeps that look whatever its HP.
-    if (b.hp <= 0 || b.mega || b.gmax) continue
+    // A Mega or Gigantamax Pokémon keeps that look whatever its HP; a raid Pokémon's waits for its last bar.
+    if (b.hp <= 0 || b.mega || b.gmax || b.formHeld) continue
     const low = b.hp * 2 < b.maxHp
     if (low && !b.preForm) {
       const form = lowHpFormOf(data, b.dex)
@@ -423,6 +426,31 @@ function checkHpForms(s: BattleState, data: GameData, log: LogEntry[]) {
       delete b.preForm
       log.push({ kind: 'form', side, uid: b.uid, fromDex, toDex: b.dex, reason: 'lowHp', dice: [...b.dice], revert: true })
     }
+  }
+}
+
+/**
+ * A raid Pokémon's last bar (docs/28, the user's call of 2026-10-16): its below-half-HP form is unleashed for
+ * good, and it gains a die of the type the form brings (Giratina's Origin Forme: one more Dragon die) where a
+ * battle swaps one. Null for a Pokémon with no such form, or already in it.
+ */
+export function unleashForm(b: Battler, data: GameData): Extract<LogEntry, { kind: 'form' }> | null {
+  const form = lowHpFormOf(data, b.baseDex ?? b.dex)
+  if (!form || b.dex === form.dex) return null
+  const die = form.form?.swapDie?.to ?? form.type1
+  const fromDex = b.dex
+  wearForm(b, form)
+  // With the other typed dice, ahead of any base die.
+  b.dice.splice(b.dice.filter((d) => d !== 'base').length, 0, die)
+  return {
+    kind: 'form',
+    side: 'enemy',
+    uid: b.uid,
+    fromDex,
+    toDex: b.dex,
+    reason: 'unleash',
+    dice: [...b.dice],
+    die,
   }
 }
 

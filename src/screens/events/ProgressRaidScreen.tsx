@@ -215,6 +215,7 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
           need={need}
           group={group}
           level={raidTeamCap(data, raid.dex, 'progress', raid.areaId)}
+          boss={raid.dex}
           onBack={() => setOffer(null)}
           onStart={go}
           portal={portal ? raid.dex : undefined}

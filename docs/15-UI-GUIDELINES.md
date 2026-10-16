@@ -143,7 +143,9 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `Seg` | Two to four views of one thing (tabs) | `tabs` → `role=tablist`; otherwise a radio group. Counts after labels. Arrow keys move |
 | `FilterChips` | Narrowing a list | A radio group with counts; scrolls sideways when it runs out of room |
 | `SearchField` | Searching a list | 44 px, an ink ring, a top lip, a screen-reader label. The search ignores case and Latin accents (`searchFold`: "evoli" finds Évoli) |
-| `TypeSelect` | Narrowing a list of Pokémon to one type (the Box, Versus's picks) | One dropdown, "All types" first, only the types the list holds; the picked type's colour beside it |
+| `TypeSelect` | Narrowing a list of Pokémon to one type (the Box, Versus's picks, the raid team's picks) | One dropdown, "All types" first, only the types the list holds; the picked type's colour beside it |
+| `RecommendedThumb` | A Pokémon worth bringing to a raid (`raidRecommended`, docs/18 §3) | The green `thumbUp`, titled "Recommended": inline after a name, or `overlay` on a sprite's bottom-right corner (12 px on 32 px minis) |
+| `SortSelect` | Ordering a list of Pokémon from a dropdown (the raid team's picks: Recommended, Highest level, Pokédex No., Name A–Z) | `TypeSelect`'s dropdown with the given options and a screen-reader label; the two share a row, wrapping on a narrow phone |
 | `Sheet` | Anything opened from a screen: details, lists, pickers | Phones: from the bottom, grab handle, ✕, 90 % tall at most, `head` (filters) pinned, body scrolls, `footer` pinned. Desktop: a centred panel |
 | `Modal` | A short decision or message | Centred framed panel; `dismissable={false}` for a choice that must be made |
 | `SidePanel` | The trainer menu drawer | From the right |
@@ -255,6 +257,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 | Catch | throw, beam, drop, wobbles, result; with a Bait to offer it holds on the ball lying still (`hold`) and the answer plays on from that frame (`from: 'ground'`: the Bait tossed beside the ball, a heart, a last wobble; or straight to the break-free); Capture Luck's stay (`stays`): out of the ball, a "!" and two hops, no flight | throw and drop, result at once (the Bait still lands); a throw that can't miss jumps to its end at every level |
 | Pokémon Center | in its picture (`public/backgrounds/pokemon-center.png`): a ball per team member into the machine's slots, the heal jingle (B G♯ ×3, E) | one flash, healed |
 | Mega Evolution, Gigantamax | the full change | a white flash and the new sprite |
+| A raid Pokémon's form unleashed on its last bar (`unleashTimeline`: Giratina's Origin Forme, §27) | the full change, held on its new form while the words are read | a white flash and the new sprite, held as long |
 | Trick or Treat's Treat (`trick.ts`) and Trick Ball (the catch, `ball: 'trick'`) | the perk-up, the Treat's arc with twinkles, the catch (hit-stop, warm frames), three chomps with crumbs and hearts, the gauge's glow, ring and sparks; the Trick Ball as the catch; a flee rises and dithers into wisps, the area dimming | the toss or the throw, then the result at once; a flee is a short dither out |
 | Legendary intro, Evolution, Egg hatching, the lab (a partner), a trade | in full | in full |
 | The portal run (§27): the breach, a portal closing, the victory | in full | in half the time (a portal closing: 0.9 s) |
@@ -454,6 +457,8 @@ in view) and the battle history sits beside it from 1024 px.
   its label). The speed button plays the ally sides' turns at ×1.5 (`RAID_FAST_SPEED`): their delays, scenes
   (`Scene.speed`), HP bars and dice; the raid Pokémon's turns (even striking back at an ally) and yours never change. It shows the
   speed those turns play at (×1 / ×1.5), so its state is a word too, and the setting is kept (`settings.raidFast`).
+  A side's next Pokémon after a K.O. goes to the front only when it's the next to act (`frontsNext`); when another
+  side plays first, it waits beside the ally in front for its turn, never sent out only to step straight back.
   Giratina's raid, its area in portal mode, plays in the Distortion World (§27): its stage, its look, its entrance.
 - **The catch happens on the stage**: the worn-out foe stays on its platform, greyed; the panel shows a radio group
   of balls (each with its chance from `catchChance`, how many you have, "not needed" when a weaker one is already
@@ -1030,7 +1035,11 @@ full-screen flash).
     void, rocks drifting upside-down, the portal turning far behind Giratina, the floating islands they stand on; the
     timelines draw no background over it), shiny Giratina wearing the wild Pokémon's distortion (the softened level), the
     panel in the violet night, the screen's tears and the UI's glitches, and a tear across the stage when a bar breaks
-    (`StageTear`: four frames, one violet shift; calm: no shift).
+    (`StageTear`: four frames, one violet shift; calm: no shift). On the last bar Giratina's Origin Forme is unleashed
+    (every raid's Giratina, 2026-10-16): the stage's `unleash` scene (`unleashTimeline`: the dark, tendrils,
+    heartbeats, its two forms flickering in red and gold, the reveal), and at the reveal (its `contact` cue) the line
+    "Giratina's Origin Forme is unleashed! +1 Dragon die!", the gold UNLEASHED! banner and its cry, read while the
+    scene holds on the new form (1.6 s).
   - **Its entrance** (`RaidIntro world="distortion"`, `raidEntranceTimeline` in `src/fx/timelines/portalRaid.ts`, on a
     stage of the screen's shape at 3 to 4 CSS pixels per art pixel): two dark pulses, a red point tears and cracks race
     out, the portal opens and turns, shadow tendrils, two heartbeats, shiny Giratina's silhouette rising out of the

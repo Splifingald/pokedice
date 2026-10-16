@@ -7,8 +7,10 @@ import { discordUrl, donationDue, donationEnabled, donationUrl, tutorialPending 
 import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
 import { unseenReplies, useInbox } from '@/lib/feedback'
+import { isSupabaseConfigured } from '@/lib/supabase'
 import { closeDonation } from '@/store/actions'
 import { useGame } from '@/store/game'
+import { useCloudSync } from '@/store/sync'
 import { PixelIcon } from './icons'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
@@ -22,7 +24,15 @@ export function DonationPopup() {
   const due = useGame((s) => !!s.save && donationDue(s.save, s.data) && !tutorialPending(s.save, s.data))
   const idle = useGame((s) => s.run.phase === 'idle')
   const replies = useInbox((s) => (s.messages ? unseenReplies(s.messages).length : 0))
-  return <SupportModal open={due && idle && !replies} onClose={() => undefined} />
+  // A reload starts on the build's content, before the sign-in, the cloud save and the developer's answers are in: any
+  // of them can still take the pop-up away (the admin's settings, a region seen on another device, an answer first), so
+  // it waits for them rather than show and vanish.
+  const status = useGame((s) => s.auth.status)
+  const contentIn = useGame((s) => s.contentAsked)
+  const synced = useCloudSync((s) => s.settled)
+  const answersIn = useInbox((s) => s.loaded) || !isSupabaseConfigured
+  const ready = contentIn && status !== 'unknown' && (status !== 'signed_in' || synced) && answersIn
+  return <SupportModal open={ready && due && idle && !replies} onClose={() => undefined} />
 }
 
 const openTab = (url: string) => window.open(url, '_blank', 'noopener,noreferrer')

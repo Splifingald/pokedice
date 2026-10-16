@@ -861,7 +861,7 @@ export interface GameConfig {
   push: PushConfig
   /** The areas' portal run (docs/28): its switch. The server reads the same row (0057). */
   portalRun: { access: EventAccess }
-  /** The areas' nightmare (docs/30): its switch. The server reads the same row (0059). */
+  /** The areas' nightmare (docs/30): its switch. The server reads the same row (0060). */
   nightmare: { access: EventAccess }
   /** Trick or Treat (docs/29): its switch, numbers and each area's ghosts. The server reads the switch too. */
   trickOrTreat: TrickOrTreatConfig

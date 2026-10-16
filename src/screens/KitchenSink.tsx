@@ -30,7 +30,8 @@ import { Panel } from '@/components/Panel'
 import { PixelButton } from '@/components/PixelButton'
 import { SearchSelect } from '@/components/SearchSelect'
 import { FilterChips, SearchField, Seg } from '@/components/Segmented'
-import { TypeSelect } from '@/components/TypeSelect'
+import { SortSelect, TypeSelect } from '@/components/TypeSelect'
+import { RecommendedThumb } from '@/components/RecommendedThumb'
 import { Medal } from '@/screens/events/RebattlePage'
 import { RoundGauge } from '@/screens/area/RoundGauge'
 import { Sheet } from '@/components/Sheet'
@@ -124,6 +125,7 @@ export function KitchenSink() {
   const [filter, setFilter] = useState<'all' | 'catch' | 'secret' | 'cleared'>('all')
   const [q, setQ] = useState('')
   const [ksType, setKsType] = useState<PokeType | 'all'>('all')
+  const [ksSort, setKsSort] = useState<'level' | 'dex' | 'az'>('level')
   const [toggle, setToggle] = useState(true)
 
   const faceFor = (t: (typeof DIE_TYPES)[number], i: number) => data.diceTypes[t]?.faces[(i + roll) % 6] ?? null
@@ -242,6 +244,14 @@ export function KitchenSink() {
         ))}
         <NewTag />
         <LevelTag level={36} />
+        {/* RecommendedThumb: inline after a name, and over a sprite's corner (a raid team's Pokémon worth bringing). */}
+        <span className="flex items-center gap-1.5 text-[18px]">
+          Charizard <RecommendedThumb size={18} />
+        </span>
+        <span className="relative inline-block">
+          <SpriteImg dex={6} size={48} />
+          <RecommendedThumb overlay />
+        </span>
         <div className="flex w-full flex-wrap gap-2">
           {STATUS_KINDS.map((s, i) => (
             <StatusChip key={s} status={s} count={i % 2 ? '1/2' : undefined} lit={i % 3 !== 2} />
@@ -278,6 +288,21 @@ export function KitchenSink() {
         {/* TypeSelect: every type, then one picked (its colour beside it). */}
         <TypeSelect value={ksType} onChange={setKsType} types={['fire', 'water', 'grass', 'electric']} className="w-full" />
         <TypeSelect value="fire" onChange={() => undefined} types={['fire', 'water']} className="w-full" />
+        {/* SortSelect: the raid team's order, beside its TypeSelect. */}
+        <div className="flex w-full flex-wrap gap-2">
+          <SortSelect
+            label="Sort by"
+            value={ksSort}
+            onChange={setKsSort}
+            options={[
+              { id: 'level', label: 'Highest level' },
+              { id: 'dex', label: 'Pokédex No.' },
+              { id: 'az', label: 'Name (A–Z)' },
+            ]}
+            className="min-w-0 flex-[1_1_140px]"
+          />
+          <TypeSelect value={ksType} onChange={setKsType} types={['fire', 'water']} className="min-w-0 flex-[1_1_140px]" />
+        </div>
       </Section>
 
       <Section title="Dialogue">

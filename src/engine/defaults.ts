@@ -309,7 +309,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   push: { access: 'off', raidHour: 9, quietHours: [22, 8] },
   // The areas' portal run (docs/28): off until the admin switches it on. Migration 0057 inserts the same row.
   portalRun: { access: 'off' },
-  // The areas' nightmare (docs/30): off until the admin switches it on. Migration 0059 inserts the same row.
+  // The areas' nightmare (docs/30): off until the admin switches it on. Migration 0060 inserts the same row.
   nightmare: { access: 'off' },
   // The Link Cable and the Bait (docs/25): off until the admin switches each on.
   itemSwitches: { 'link-cable': 'off', bait: 'off' },

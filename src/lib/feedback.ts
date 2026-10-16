@@ -69,6 +69,8 @@ interface Inbox {
   /** Null until the first load comes back (or when it failed). */
   messages: MyMessage[] | null
   loading: boolean
+  /** The first load has come back, loaded or not (what pops up on opening the game waits for the answers). */
+  loaded: boolean
   /**
    * Messages whose gifts don't pop up again by themselves while the page stays open: put off from the rules pop-up
    * (Later), or not opened (offline). They wait in My messages, with a button.
@@ -86,6 +88,7 @@ interface Inbox {
 export const useInbox = create<Inbox>((set, get) => ({
   messages: null,
   loading: false,
+  loaded: false,
   later: [],
   load: async () => {
     set({ loading: true })
@@ -98,7 +101,7 @@ export const useInbox = create<Inbox>((set, get) => ({
     } catch (err) {
       console.warn('[feedback] answers not loaded:', err instanceof Error ? err.message : err)
     } finally {
-      set({ loading: false })
+      set({ loading: false, loaded: true })
     }
   },
   markOpened: (ids) =>

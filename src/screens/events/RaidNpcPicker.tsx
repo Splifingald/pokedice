@@ -2,9 +2,10 @@
 // NPC trainers with three Pokémon each, and the player picks as many as there are empty slots. The four come from a
 // seed kept in the save, so a reload shows the same four; the next try brings four new ones (store/raidBattle.ts).
 import { useState } from 'react'
-import type { RaidNpcOption } from '@/engine'
+import { raidRecommended, type RaidNpcOption } from '@/engine'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
+import { RecommendedThumb } from '@/components/RecommendedThumb'
 import { MiniSprite } from '@/components/SpriteImg'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { TypeBadge } from '@/components/TypeBadge'
@@ -30,6 +31,7 @@ export function RaidNpcPicker({
   onBack,
   onStart,
   initial = [],
+  boss,
   portal,
   nightmare,
 }: {
@@ -44,6 +46,8 @@ export function RaidNpcPicker({
   onStart: (picked: RaidNpcOption[]) => void
   /** Picked from the start (the kitchen sink's states). */
   initial?: number[]
+  /** The raid Pokémon: the green thumb on the NPCs' Pokémon worth bringing against it. */
+  boss?: number
   /**
    * Giratina's raid (docs/15 §27), its raid Pokémon's dex: the pop-up in the Distortion World's violet night, the portal
    * and that Pokémon distorted as its banner, tearing in as it opens.
@@ -159,7 +163,12 @@ export function RaidNpcPicker({
                       const s = data.species[d]
                       return (
                         <span key={k} className="grid min-w-0 justify-items-center gap-0.5">
-                          <MiniSprite dex={d} size={32} className="-my-1" />
+                          <span className="relative">
+                            <MiniSprite dex={d} size={32} className="-my-1" />
+                            {boss != null && raidRecommended(data, { dex: d, level }, boss, level) && (
+                              <RecommendedThumb overlay size={12} />
+                            )}
+                          </span>
                           {s && <TypeBadge type={s.type1} size="sm" />}
                         </span>
                       )

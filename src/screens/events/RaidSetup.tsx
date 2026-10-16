@@ -5,25 +5,32 @@
 import { useState } from 'react'
 import {
   getRegion,
+  POKE_TYPES,
   progressRaidOf,
   progressRaidTeam,
+  raidRecommended,
   raidTeam,
   raidTeamCap,
+  RAID_RECOMMENDED_LEVEL,
   regionBox,
   setProgressRaidTeam,
   setRaidTeamIds,
   versusClosest,
   type GameData,
   type PokemonInstance,
+  type PokeType,
   type RaidMon,
   type SaveData,
 } from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
+import { RecommendedThumb } from '@/components/RecommendedThumb'
 import { SearchField } from '@/components/Segmented'
 import { Sheet } from '@/components/Sheet'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { TrainerSprite } from '@/components/TrainerArt'
-import { searchFold } from '@/i18n'
+import { speciesTypes } from '@/components/TypeMatchups'
+import { SortSelect, TypeSelect } from '@/components/TypeSelect'
+import { getLang, searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { avatarOf, playerAvatarId } from '@/lib/avatars'
 import { fetchProgressRaidFriends, fetchRaidFriends, type RaidFriend } from '@/lib/raid'
@@ -45,16 +52,27 @@ import { useShadowIn } from '@/components/Nightmare'
 
 const TEAM_SIZE = 3
 
-/** Three Pokémon minis, in order. */
-function Minis({ team }: { team: { dex: number; shiny?: boolean }[] }) {
+type TeamSort = 'recommended' | 'level' | 'dex' | 'az'
+
+type Mon = { dex: number; level: number }
+
+/** Three Pokémon minis, in order; the green thumb on those `recommended` says are worth bringing. */
+function Minis({ team, recommended }: { team: (Mon & { shiny?: boolean })[]; recommended?: (m: Mon) => boolean }) {
   return (
     <span className="flex shrink-0 gap-0.5" aria-hidden>
       {team.map((m, i) => (
-        <MiniSprite key={i} dex={m.dex} size={32} className="-my-1" />
+        <span key={i} className="relative">
+          <MiniSprite dex={m.dex} size={32} className="-my-1" />
+          {recommended?.(m) && <RecommendedThumb overlay size={12} />}
+        </span>
       ))}
     </span>
   )
 }
+
+/** The engine's green-thumb rule for one raid (none without its raid Pokémon). */
+const recommender = (data: GameData, boss: number | undefined, cap: number) => (m: Mon) =>
+  boss != null && raidRecommended(data, m, boss, cap)
 
 /** A raid's team (the day's raid's, or the one left on a progression raid) and what its editor offers. */
 interface TeamSetup {
@@ -66,10 +84,18 @@ interface TeamSetup {
   pick: string
   /** The Pokémon the editor lists, with their region. */
   candidates: { inst: PokemonInstance; region: string }[]
+  /** The raid Pokémon, for the green thumbs and the Recommended sort. */
+  boss?: number
   save: (ids: string[]) => Promise<boolean>
 }
 
-function teamSetup(source: RaidSource, save: SaveData, data: GameData, t: (key: string, vars?: Record<string, string | number>) => string): TeamSetup | null {
+function teamSetup(
+  source: RaidSource,
+  save: SaveData,
+  data: GameData,
+  t: (key: string, vars?: Record<string, string | number>) => string,
+  boss?: number,
+): TeamSetup | null {
   if (source.kind === 'daily') {
     const cap = data.config.events.raid.teamCap
     return {
@@ -79,6 +105,7 @@ function teamSetup(source: RaidSource, save: SaveData, data: GameData, t: (key: 
       hint: t('ui.raid.teamHint', { cap }),
       pick: t('ui.raid.teamPick', { cap }),
       candidates: versusClosest(save, data, Number.MAX_SAFE_INTEGER),
+      boss,
       save: async (ids) => {
         mutateSave((s) => setRaidTeamIds(s, ids))
         return useGame.getState().auth.status === 'signed_in' ? syncRaidTeam(true) : true
@@ -99,6 +126,7 @@ function teamSetup(source: RaidSource, save: SaveData, data: GameData, t: (key: 
       .filter((p) => !!data.species[p.dex])
       .sort((a, b) => b.level - a.level)
       .map((inst) => ({ inst, region: raid.region })),
+    boss: raid.dex,
     save: async (ids) => {
       mutateSave((s) => setProgressRaidTeam(s, raid.key, ids))
       return useGame.getState().auth.status === 'signed_in' ? syncProgressRaidTeam(raid, true) : true
@@ -109,10 +137,13 @@ function teamSetup(source: RaidSource, save: SaveData, data: GameData, t: (key: 
 /** A raid's team, and the editor behind its button. */
 export function RaidTeamSection({
   source = { kind: 'daily' },
+  boss,
   portal = false,
   nightmare = false,
 }: {
   source?: RaidSource
+  /** The day's raid Pokémon (a progression raid knows its own). */
+  boss?: number
   /** Giratina's raid (docs/15 §27): its editor in the Distortion World's violet night, its cards glitching now and then. */
   portal?: boolean
   /** Darkrai's raid (docs/15 §29): its editor in the moonlit night, its cards darkening as the shadow passes. */
@@ -123,9 +154,10 @@ export function RaidTeamSection({
   const data = useGame((s) => s.data)
   const [editing, setEditing] = useState(false)
   if (!save) return null
-  const setup = teamSetup(source, save, data, t)
+  const setup = teamSetup(source, save, data, t, boss)
   if (!setup) return null
   const team = setup.team
+  const recommended = recommender(data, setup.boss, setup.cap)
   return (
     <section aria-labelledby="raid-team-h" className="grid gap-1.5">
       <div className="flex items-center gap-2">
@@ -143,7 +175,10 @@ export function RaidTeamSection({
             data-glitch={portal || nightmare || undefined}
             className="grid justify-items-center gap-0.5 bg-paper px-1 pb-1.5 pt-1 shadow-ring"
           >
-            <MiniSprite dex={m.dex} size={48} />
+            <span className="relative">
+              <MiniSprite dex={m.dex} size={48} />
+              {recommended(m) && <RecommendedThumb overlay />}
+            </span>
             <span className="max-w-full truncate text-[17px] leading-none">{data.species[m.dex]?.name}</span>
             <small className="font-pixel-sm text-[14px] leading-none text-muted">{t('ui.common.level.short', { n: m.level })}</small>
           </li>
@@ -164,8 +199,8 @@ export function RaidTeamSection({
 }
 
 /**
- * Pick up to three, strongest first (the day's raid: every region's Box; a progression raid: its region's); Save keeps
- * them (and tells the server, signed in).
+ * Pick up to three (the day's raid: every region's Box; a progression raid: its region's), strongest first unless the
+ * sort says otherwise; Save keeps them (and tells the server, signed in).
  */
 function TeamEditor({
   setup,
@@ -187,11 +222,37 @@ function TeamEditor({
   const cap = setup.cap
   const [picks, setPicks] = useState(initial)
   const [q, setQ] = useState('')
+  const [sort, setSort] = useState<TeamSort>(setup.boss != null ? 'recommended' : 'level')
+  const [type, setType] = useState<PokeType | 'all'>('all')
   const [saving, setSaving] = useState(false)
   const candidates = setup.candidates
   const manyRegions = new Set(candidates.map((c) => c.region)).size > 1
+  const types = POKE_TYPES.filter((ty) => candidates.some((c) => speciesTypes(data, c.inst.dex).includes(ty)))
+  const name = (dex: number) => data.species[dex]?.name ?? ''
+  const isRecommended = recommender(data, setup.boss, cap)
+  const recommended = new Set(candidates.filter((c) => isRecommended(c.inst)).map((c) => c.inst.id))
+  const collator = new Intl.Collator(getLang())
   const needle = searchFold(q)
-  const shown = needle ? candidates.filter((c) => searchFold(data.species[c.inst.dex]?.name ?? '').includes(needle)) : candidates
+  // The search and the type narrow the list; picks they hide stay picked. Every order falls back to the next key so
+  // two copies of a species always read the same way. Recommended: the green thumbs first by Pokédex No. (the user's
+  // rule, 2026-10-16), then the rest strongest first.
+  const shown = candidates
+    .filter(
+      (c) =>
+        (!needle || searchFold(name(c.inst.dex)).includes(needle)) &&
+        (type === 'all' || speciesTypes(data, c.inst.dex).includes(type)),
+    )
+    .sort(
+      ({ inst: a }, { inst: b }) =>
+        (sort === 'recommended'
+          ? Number(recommended.has(b.id)) - Number(recommended.has(a.id)) ||
+            (recommended.has(a.id) ? a.dex - b.dex : b.level - a.level)
+          : 0) ||
+        (sort === 'az' ? collator.compare(name(a.dex), name(b.dex)) : 0) ||
+        (sort === 'level' ? b.level - a.level : 0) ||
+        a.dex - b.dex ||
+        b.level - a.level,
+    )
   const valid = picks.filter((id) => candidates.some((c) => c.inst.id === id))
   const toggle = (id: string) =>
     setPicks((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : cur.length >= TEAM_SIZE ? cur : [...cur, id]))
@@ -238,7 +299,10 @@ function TeamEditor({
                 </span>
                 {c ? (
                   <span className="grid justify-items-center gap-0.5">
-                    <SpriteImg dex={c.inst.dex} size={48} shiny={c.inst.shiny} />
+                    <span className="relative">
+                      <SpriteImg dex={c.inst.dex} size={48} shiny={c.inst.shiny} />
+                      {recommended.has(c.inst.id) && <RecommendedThumb overlay />}
+                    </span>
                     <small className="font-pixel-sm text-[13px] text-muted">{t('ui.common.level.short', { n: Math.min(c.inst.level, cap) })}</small>
                   </span>
                 ) : (
@@ -249,6 +313,34 @@ function TeamEditor({
           })}
         </ol>
         <SearchField id="raid-team-q" value={q} onChange={setQ} label={t('ui.versus.searchLabel')} placeholder={t('ui.versus.search')} />
+        {candidates.length > 1 && (
+          <div className="flex flex-wrap gap-2">
+            <SortSelect
+              label={t('ui.board.sortBy')}
+              value={sort}
+              onChange={setSort}
+              options={[
+                ...(setup.boss != null ? [{ id: 'recommended' as const, label: t('ui.raid.sortRecommended') }] : []),
+                { id: 'level', label: t('ui.raid.sortLevel') },
+                { id: 'dex', label: t('ui.raid.sortDex') },
+                { id: 'az', label: t('ui.raid.sortAz') },
+              ]}
+              className="min-w-0 flex-[1_1_140px]"
+            />
+            {types.length > 1 && (
+              <TypeSelect value={type} onChange={setType} types={types} className="min-w-0 flex-[1_1_140px]" />
+            )}
+          </div>
+        )}
+        {setup.boss != null && (
+          <p className="m-0 flex items-start gap-1.5 font-pixel-sm text-[14px] leading-tight text-muted">
+            <RecommendedThumb />
+            {t('ui.raid.recommendedNote', {
+              level: Math.min(RAID_RECOMMENDED_LEVEL, cap),
+              name: data.species[setup.boss]?.name ?? '',
+            })}
+          </p>
+        )}
         {shown.length === 0 && <p className="m-0 text-center font-pixel-sm text-[16px] text-muted">{t('ui.search.noMatch')}</p>}
         <ul className="m-0 grid list-none gap-1.5 p-0 sm:grid-cols-2">
           {shown.map(({ inst: p, region }) => {
@@ -274,6 +366,7 @@ function TeamEditor({
                       {manyRegions && ` · ${getRegion(data, region)?.name ?? region}`}
                     </small>
                   </span>
+                  {recommended.has(p.id) && <RecommendedThumb size={18} />}
                   {order >= 0 && (
                     <span className="light-scope grid h-7 w-7 shrink-0 place-items-center bg-night text-[18px] leading-none text-gold-light">
                       {order + 1}
@@ -297,10 +390,13 @@ type FriendsLoad = { state: 'loading' } | { state: 'ready'; rows: RaidFriend[] }
  */
 export function RaidGroupSection({
   source = { kind: 'daily' },
+  boss,
   portal = false,
   nightmare = false,
 }: {
   source?: RaidSource
+  /** The day's raid Pokémon (a progression raid knows its own). */
+  boss?: number
   /** Giratina's raid (docs/15 §27): its friends' sheet in the Distortion World's violet night. */
   portal?: boolean
   /** Darkrai's raid (docs/15 §29): its friends' sheet in the moonlit night. */
@@ -318,10 +414,12 @@ export function RaidGroupSection({
   if (!save) return null
   const slots = raidFriendSlots()
   const progress = source.kind === 'progress'
-  const myTeam = progress ? (() => {
-    const raid = progressRaidOf(data, source.key)
-    return raid ? progressRaidTeam(save, data, raid) : []
-  })() : raidTeam(save, data)
+  const raid = progress ? progressRaidOf(data, source.key) : null
+  const myTeam = progress ? (raid ? progressRaidTeam(save, data, raid) : []) : raidTeam(save, data)
+  // Friends' teams come at the raid's cap already (the server's `least(level, cap)`), like yours.
+  const recommended = raid
+    ? recommender(data, raid.dex, raidTeamCap(data, raid.dex, 'progress', raid.areaId))
+    : recommender(data, progress ? undefined : boss, data.config.events.raid.teamCap)
   const toggle = (f: RaidFriend) => toggleRaidFriend(f, key)
   const open = async () => {
     setPicking(true)
@@ -338,7 +436,7 @@ export function RaidGroupSection({
         <li className="flex min-h-[52px] items-center gap-2 bg-paper py-1 pl-1 pr-2.5 shadow-ring">
           <TrainerSprite src={avatarOf(playerAvatarId(save.player)).src} size={44} />
           <b className="min-w-0 flex-1 truncate text-[18px] font-normal">{t('ui.raid.you')}</b>
-          <Minis team={myTeam} />
+          <Minis team={myTeam} recommended={recommended} />
         </li>
         {Array.from({ length: slots }, (_, i) => {
           const f = friends[i]
@@ -352,7 +450,7 @@ export function RaidGroupSection({
                   </b>
                   <small className="font-pixel-sm text-[13px] text-muted">{tPlural('ui.raid.helped', f.helped)}</small>
                 </span>
-                <Minis team={f.team} />
+                <Minis team={f.team} recommended={recommended} />
                 <button
                   type="button"
                   onClick={() => toggle(f)}
@@ -419,7 +517,7 @@ export function RaidGroupSection({
                   </b>
                         <small className="font-pixel-sm text-[13px] text-muted">{tPlural('ui.raid.helped', f.helped)}</small>
                       </span>
-                      <Minis team={f.team} />
+                      <Minis team={f.team} recommended={recommended} />
                     </button>
                   </li>
                 )

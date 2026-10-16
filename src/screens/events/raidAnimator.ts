@@ -91,6 +91,19 @@ export function fastTurn(e: RaidLogEntry, sides: readonly RaidSide[], was: boole
   return was
 }
 
+/**
+ * Whether a side's next Pokémon, sent after a K.O., is the one to step to the front next: the log's next ally in front
+ * is it. When another side plays first, it waits beside the others for its turn, so it's never sent to the front only
+ * to step straight back.
+ */
+export function frontsNext(log: readonly RaidLogEntry[], from: number, uid: string): boolean {
+  for (let i = from; i < log.length; i++) {
+    const e = log[i]!
+    if (e.kind === 'raid_front') return e.ally === uid
+  }
+  return false
+}
+
 function describeRaid(e: RaidLogEntry, run: RaidRun, f: RaidFx, ctx: AnimatorContext): Step {
   const sides = run.state.sides
   const nameOf = (uid: string) => battlerOf(run, uid)?.name ?? t('ui.common.unknown')
@@ -150,7 +163,7 @@ function describeRaid(e: RaidLogEntry, run: RaidRun, f: RaidFx, ctx: AnimatorCon
           ...x,
           message: e.side === 0 ? t('ui.log.goName', { name: nameOf(e.uid) }) : t('ui.raid.log.next', { owner, name: nameOf(e.uid) }),
           sideActive: x.sideActive.map((u, i) => (i === e.side ? e.uid : u)),
-          activeUid: x.sideActive[e.side] === x.activeUid ? e.uid : x.activeUid,
+          activeUid: x.sideActive[e.side] === x.activeUid && frontsNext(run.log, f.cursor + 1, e.uid) ? e.uid : x.activeUid,
           fainted: { ...x.fainted, [e.uid]: false },
         })),
       }
