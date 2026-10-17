@@ -291,12 +291,19 @@ Mart, Arceus's TYPE menu and the admin.
   `/underground`), `UndergroundDig.tsx` (`/underground/dig`), `UndergroundTeam.tsx` (seats and the team sheet); pieces
   `src/components/Underground.tsx`, `src/styles/underground.css`; Home's live square, the rules pop-up, the Mart's
   section, KITS on the shop tab, the push line, the TYPE menu and Arceus's sheet. Docs/15 §30; the kitchen sink.
+- **Art** `src/assets/underground.png` and `src/data/underground-atlas.json`, built by `pnpm underground-sprites`
+  (`scripts/underground-sprites.ts`): Pokémon Platinum's own mining treasures from the pret/pokeplatinum decompilation
+  (small and large spheres, the plate under each type's palette, the Gen 1–4 fossils), a pink ramp for the Pixie
+  Plate (Fairy came later), and the official item sprites for the later fossils (PokeAPI; Galar's halves from
+  pokesprite). Each picture is cropped to what it draws, so it fills the tiles it takes, its shape kept.
 - **Server** `supabase/migrations/0061_underground.sql`, inlined into `supabase/seed.sql`.
 - **Tests** `tests/engine/underground.test.ts` (29), `tests/underground-sql.test.ts` (9, PGlite),
   `e2e/underground.spec.ts` (5).
 
 Differences from the plan:
 
+- **Shapes follow Platinum's treasures**: its large sphere is half again the small one and it has no medium, so the
+  orbs are squares, small 1×1, medium 2×2, large 3×3 (the large sphere's picture for both), instead of a 2×1 capsule.
 - **Kit limit**: 0 means no limit (a null is lost when the admin's row is merged over the defaults).
 - **The plate lock follows the Underground's switch**: Off, Arceus changes type as before (docs/15 §20: a feature
   switched off is nowhere in the game). On, the lock applies to everyone, whether an event is running or not.
@@ -311,10 +318,10 @@ Differences from the plan:
 
 | Pickaxe | Things dug out (of ~3) | ₽ in orbs | Fossils | Plates | Walls cleared |
 |---|---|---|---|---|---|
-| Lv.0 | 1.0 | 274 | 0.17 | 0.05 | 5 % |
-| Lv.3 | 2.1 | 526 | 0.25 | 0.11 | 35 % |
-| Lv.5 | 2.7 | 651 | 0.27 | 0.11 | 72 % |
-| Lv.8 | 2.9 | 671 | 0.30 | 0.11 | 90 % |
+| Lv.0 | 0.9 | 219 | 0.13 | 0.05 | 3 % |
+| Lv.3 | 2.1 | 531 | 0.25 | 0.10 | 34 % |
+| Lv.5 | 2.6 | 613 | 0.28 | 0.10 | 68 % |
+| Lv.8 | 2.9 | 665 | 0.25 | 0.11 | 89 % |
 
 With the defaults a bought kit (₽1,000) never pays for itself in orbs: kits are bought for plates and fossils, and
 there is no ₽ loop. A plate comes about once in 9 walls with a good pickaxe; at 3 free kits a day, a week's event

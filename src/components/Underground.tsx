@@ -21,17 +21,34 @@ import {
 import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { money, typeName } from '@/lib/format'
-import { badgeColors, cx, typeColor } from '@/theme/util'
+import { cx } from '@/theme/util'
+import sheet from '@/assets/underground.png'
+import atlas from '@/data/underground-atlas.json'
 import { Die } from './Die'
 import { ItemSprite } from './ItemSprite'
 import { PixelIcon } from './icons'
 import { RulesModal, type RuleRow } from './RulesModal'
 
-/** The orbs' colours: the three seats of a team. */
-export const ORB_FILL: Record<OrbColour, string> = { red: '#f2553f', blue: '#6390f0', green: '#7ac74c' }
+const SPRITES = atlas.sprites as unknown as Record<string, [number, number, number, number] | undefined>
+const [SHEET_W, SHEET_H] = atlas.size as [number, number]
 
 const sizeOf = (kind: WallThing['kind']): OrbSize | null =>
   kind === 'orbS' ? 's' : kind === 'orbM' ? 'm' : kind === 'orbL' ? 'l' : null
+
+/**
+ * A thing's picture in the sheet (`pnpm underground-sprites`: Platinum's own mining treasures): a sphere (small, or the
+ * large one for medium and large orbs), a plate, a fossil. Null for a fossil the sheet hasn't got yet.
+ */
+export function thingSprite(thing: WallThing): string | null {
+  const size = sizeOf(thing.kind)
+  const id =
+    size != null
+      ? `sphere.${thing.colour}.${size === 's' ? 's' : 'l'}`
+      : thing.kind === 'plate'
+        ? `plate.${thing.plate}`
+        : `fossil.${thing.item}`
+  return SPRITES[id] ? id : null
+}
 
 /** A thing's name: "Large Red Orb", "Flame Plate", "Helix Fossil". */
 export function thingName(thing: WallThing, data: GameData): string {
@@ -41,7 +58,57 @@ export function thingName(thing: WallThing, data: GameData): string {
   return data.items[thing.item ?? '']?.name ?? t('ui.ug.thing')
 }
 
-/** The cave, drawn in code: rock walls, a dug face with orbs and a plate in it, a pickaxe leaning on the right. */
+/**
+ * One picture of the sheet. With `fit` (a box's width and height, in any unit) it fills that box as much as it can
+ * without stretching, centred (the box being its positioned parent); with `px`, it is that wide and as high as its
+ * shape says.
+ */
+export function UgSprite({
+  id,
+  fit,
+  px,
+  className,
+  style,
+}: {
+  id: string
+  fit?: { w: number; h: number }
+  px?: number
+  className?: string
+  style?: CSSProperties
+}) {
+  const s = SPRITES[id]
+  if (!s) return null
+  const [sx, sy, sw, sh] = s
+  const art: CSSProperties = {
+    backgroundImage: `url(${sheet})`,
+    backgroundSize: `${(SHEET_W / sw) * 100}% ${(SHEET_H / sh) * 100}%`,
+    backgroundPosition: `${SHEET_W > sw ? (sx / (SHEET_W - sw)) * 100 : 0}% ${SHEET_H > sh ? (sy / (SHEET_H - sh)) * 100 : 0}%`,
+    imageRendering: 'pixelated',
+  }
+  if (fit) {
+    // The box's shape against the picture's: whichever side runs out first sets the scale.
+    const wide = fit.w / fit.h > sw / sh
+    const w = wide ? ((sw / sh) * (fit.h / fit.w)) * 100 : 100
+    const h = wide ? 100 : ((sh / sw) * (fit.w / fit.h)) * 100
+    return (
+      <span
+        aria-hidden
+        className={cx('pixelated absolute block', className)}
+        style={{ ...art, width: `${w}%`, height: `${h}%`, left: `${(100 - w) / 2}%`, top: `${(100 - h) / 2}%`, ...style }}
+      />
+    )
+  }
+  const width = px ?? sw
+  return (
+    <span
+      aria-hidden
+      className={cx('pixelated inline-block shrink-0', className)}
+      style={{ ...art, width, height: (width * sh) / sw, ...style }}
+    />
+  )
+}
+
+/** The cave: rock walls, a dug face with a large sphere, two small ones and a plate in it, a pickaxe on the right. */
 export function UgCave({ className, big }: { className?: string; big?: boolean }) {
   return (
     <span className={cx('ug-cave block overflow-hidden', big && 'big', className)} aria-hidden>
@@ -51,27 +118,29 @@ export function UgCave({ className, big }: { className?: string; big?: boolean }
         <i className="ug-cave-pillar l" />
         <i className="ug-cave-pillar r" />
         <i className="ug-cave-face" />
-        <i className="ug-cave-orb" style={{ ['--c' as string]: ORB_FILL.red, left: '41%', bottom: '38%' }} />
-        <i
-          className="ug-cave-orb s"
-          style={{ ['--c' as string]: ORB_FILL.blue, left: '53%', bottom: '30%' }}
-        />
-        <i
-          className="ug-cave-orb s"
-          style={{ ['--c' as string]: ORB_FILL.green, left: '60%', bottom: '48%' }}
-        />
-        <i className="ug-cave-plate" />
+        <span className="ug-cave-gem" style={{ left: '35%', bottom: '30%', width: '15%' }}>
+          <UgSprite id="sphere.red.l" fit={{ w: 1, h: 1 }} />
+        </span>
+        <span className="ug-cave-gem" style={{ left: '51%', bottom: '28%', width: '8%' }}>
+          <UgSprite id="sphere.blue.s" fit={{ w: 1, h: 1 }} />
+        </span>
+        <span className="ug-cave-gem" style={{ left: '62%', bottom: '50%', width: '8%' }}>
+          <UgSprite id="sphere.green.s" fit={{ w: 1, h: 1 }} />
+        </span>
+        <span className="ug-cave-gem plate" style={{ left: '50%', bottom: '50%', width: '11%' }}>
+          <UgSprite id="plate.fire" fit={{ w: 4, h: 3 }} />
+        </span>
         <PixelIcon name="pickaxe" size={big ? 44 : 28} className="ug-cave-pick" />
       </span>
     </span>
   )
 }
 
-/** An orb: round, its colour, a highlight; `px` its width. A medium orb is a capsule twice as wide as it is high. */
+/** An orb: Platinum's sphere of its colour (the large one for medium and large); `px` its width. */
 export function OrbArt({
   colour,
   size = 's',
-  px,
+  px = 16,
   className,
 }: {
   colour: OrbColour
@@ -79,43 +148,23 @@ export function OrbArt({
   px?: number
   className?: string
 }) {
-  const style: CSSProperties = { ['--c' as string]: ORB_FILL[colour] }
-  if (px) Object.assign(style, { width: px, height: size === 'm' ? Math.round(px / 2) : px })
-  return <span className={cx('ug-orb block', size === 'm' && 'pill', className)} style={style} aria-hidden />
+  return <UgSprite id={`sphere.${colour}.${size === 's' ? 's' : 'l'}`} px={px} className={className} />
 }
 
-/** A plate: a slab in its type's colour, an engraved line, its corner cut. */
-export function PlateArt({
-  type,
-  className,
-  style,
-}: {
-  type: PokeType
-  className?: string
-  style?: CSSProperties
-}) {
-  return (
-    <span
-      className={cx('ug-plate block', className)}
-      style={{ ['--c' as string]: typeColor(type), ...style }}
-      aria-hidden
-    />
-  )
+/** A plate: Platinum's plate in its type's colours; `px` its width. */
+export function PlateArt({ type, px = 24, className }: { type: PokeType; px?: number; className?: string }) {
+  return <UgSprite id={`plate.${type}`} px={px} className={className} />
 }
 
-/** A thing as it lies in the wall, filling its box. */
+/** A thing as it lies in the wall: its picture filling the tiles it takes (the item's sprite for one not drawn yet). */
 function ThingArt({ thing, data, done }: { thing: WallThing; data: GameData; done: boolean }) {
-  const size = sizeOf(thing.kind)
+  const id = thingSprite(thing)
   return (
     <span className={cx('ug-thing', done && 'done')}>
-      {size ? (
-        <OrbArt colour={thing.colour!} size={size} className={cx('ug-thing-orb', size)} />
-      ) : thing.kind === 'plate' ? (
-        <PlateArt type={thing.plate!} className="ug-thing-plate" />
+      {id ? (
+        <UgSprite id={id} fit={{ w: thing.w, h: thing.h }} />
       ) : (
-        <span className="ug-thing-fossil">
-          <ItemSprite item={data.items[thing.item ?? '']} size={48} />
-        </span>
+        <ItemSprite item={data.items[thing.item ?? '']} size={48} />
       )}
     </span>
   )
@@ -332,26 +381,18 @@ const OUTCOME_TONE: Record<HaulLine['outcome'], string> = {
   lost: 'bg-well-deep text-ink',
 }
 
-/** A haul's thing, as a small picture. */
+/** A haul's thing, as a small picture: its sprite filling a square on night. */
 export function ThingIcon({ thing, data, size = 40 }: { thing: WallThing; data: GameData; size?: number }) {
-  const s = sizeOf(thing.kind)
+  const id = thingSprite(thing)
   return (
     <span
-      className="grid shrink-0 place-items-center bg-night shadow-ring"
+      className="relative grid shrink-0 place-items-center bg-night shadow-ring"
       style={{ width: size + 4, height: size + 4 }}
       aria-hidden
     >
-      {s ? (
-        <OrbArt
-          colour={thing.colour!}
-          size={s}
-          px={s === 's' ? size * 0.45 : s === 'm' ? size * 0.75 : size * 0.7}
-        />
-      ) : thing.kind === 'plate' ? (
-        <PlateArt type={thing.plate!} style={{ width: size * 0.75, height: size * 0.5 }} />
-      ) : (
-        <ItemSprite item={data.items[thing.item ?? '']} size={size * 0.8} />
-      )}
+      <span className="absolute inset-[3px]">
+        {id ? <UgSprite id={id} fit={{ w: 1, h: 1 }} /> : <ItemSprite item={data.items[thing.item ?? '']} size={size - 4} />}
+      </span>
     </span>
   )
 }
@@ -426,47 +467,28 @@ export function HaulList({ lines, data }: { lines: HaulLine[]; data: GameData })
   )
 }
 
-/** The plates: one tile per type, bright when held, a dashed "?" when not. */
+/** The plates: one tile per type, its plate and type when held, a dim plate and "?" when not. */
 export function PlateGrid({ held }: { held: readonly PokeType[] }) {
-  const all: PokeType[] = [
-    'fire',
-    'water',
-    'grass',
-    'electric',
-    'ice',
-    'fighting',
-    'poison',
-    'ground',
-    'flying',
-    'psychic',
-    'bug',
-    'rock',
-    'ghost',
-    'dragon',
-    'dark',
-    'steel',
-    'fairy',
-  ]
+  const all: PokeType[] = ['fire', 'water', 'grass', 'electric', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy']
   return (
     <ul className="m-0 grid list-none grid-cols-6 gap-1 p-0">
       {all.map((type) => {
         const has = held.includes(type)
         const name = t(`plate.${type}`)
-        const c = badgeColors(typeColor(type))
         return (
           <li
             key={type}
-            title={name}
+            title={has ? name : undefined}
             aria-label={has ? name : t('ui.ug.plateMissing')}
             className={cx(
-              'grid h-10 place-items-end justify-center pb-0.5 font-pixel-sm text-[12px] leading-none',
-              has
-                ? 'light-scope shadow-ring'
-                : 'bg-well-deep text-ink shadow-[inset_0_0_0_2px_rgb(var(--c-shadow))]',
+              'grid justify-items-center gap-0.5 px-0.5 pb-0.5 pt-1 font-pixel-sm text-[12px] leading-none',
+              has ? 'bg-paper text-ink shadow-ring-thin' : 'bg-well-deep text-ink shadow-[inset_0_0_0_2px_rgb(var(--c-shadow))]',
             )}
-            style={has ? { background: c.bg, color: c.fg } : undefined}
           >
-            {has ? <span className="truncate px-0.5">{typeName(type)}</span> : '?'}
+            <span className="relative block aspect-[4/3] w-full max-w-[40px]">
+              <UgSprite id={`plate.${type}`} fit={{ w: 4, h: 3 }} className={cx(!has && 'opacity-30 grayscale')} />
+            </span>
+            <span className="max-w-full truncate">{has ? typeName(type) : '?'}</span>
           </li>
         )
       })}
@@ -547,7 +569,7 @@ export function ugRuleRows(data: GameData): RuleRow[] {
       text: t(cfg.sellNeedsFull ? 'ui.ug.rules.orbs.text' : 'ui.ug.rules.orbs.textFree'),
     },
     {
-      icon: <PlateArt type="fire" style={{ width: 24, height: 16 }} />,
+      icon: <PlateArt type="fire" px={28} />,
       title: t('ui.ug.rules.plates.title'),
       text: t('ui.ug.rules.plates.text'),
     },

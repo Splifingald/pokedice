@@ -8,8 +8,9 @@ upgrades, and the goal is 151/151 in the Pokédex.
 > Game Freak and Creatures. Pokémon and trainer sprites come from [Pokémon Showdown](https://pokemonshowdown.com): the
 > animated Pokémon load from its sprite server, its menu icons and trainer sprites are bundled (credits in
 > [docs/13](docs/13-SHOWDOWN-SPRITES.md#credits)). The offline fallback sprites come from the public
-> [PokeAPI sprites](https://github.com/PokeAPI/sprites) repository. Area banners and trainer badges are original,
-> generated pixel art; sound effects are synthesised at runtime, and the Pokémon cries load from Showdown's audio
+> [PokeAPI sprites](https://github.com/PokeAPI/sprites) repository. The Underground's treasures are Pokémon Platinum's
+> mining sprites, from the [pret/pokeplatinum](https://github.com/pret/pokeplatinum) decompilation. Area banners and
+> trainer badges are original, generated pixel art; sound effects are synthesised at runtime, and the Pokémon cries load from Showdown's audio
 > server. Made by Splifingald.
 
 The design lives in [`docs/`](docs): [game spec](docs/01-GAME-SPEC.md) · [data model](docs/02-DATA-MODEL.md) ·

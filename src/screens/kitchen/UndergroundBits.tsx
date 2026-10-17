@@ -44,8 +44,8 @@ const WALL: Wall = {
     2,
   ],
   things: [
-    { kind: 'orbL', x: 1, y: 1, w: 2, h: 2, colour: 'red' },
-    { kind: 'orbM', x: 4, y: 4, w: 2, h: 1, colour: 'green' },
+    { kind: 'orbL', x: 1, y: 1, w: 3, h: 3, colour: 'red' },
+    { kind: 'orbM', x: 4, y: 4, w: 2, h: 2, colour: 'green' },
     { kind: 'plate', x: 0, y: 4, w: 3, h: 2, plate: 'fire' },
     { kind: 'fossil', x: 4, y: 0, w: 2, h: 2, item: 'skull-fossil' },
   ],
@@ -152,9 +152,9 @@ export function UndergroundBits() {
         {ORB_COLOURS.flatMap((c) =>
           ORB_SIZES.map((s) => <OrbArt key={c + s} colour={c} size={s} px={s === 's' ? 16 : 32} />),
         )}
-        <PlateArt type="fire" style={{ width: 36, height: 24 }} />
-        <PlateArt type="dragon" style={{ width: 36, height: 24 }} />
-        <PlateArt type="fairy" style={{ width: 36, height: 24 }} />
+        <PlateArt type="fire" px={40} />
+        <PlateArt type="dragon" px={40} />
+        <PlateArt type="fairy" px={40} />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">

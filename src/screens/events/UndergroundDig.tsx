@@ -171,9 +171,9 @@ export function UndergroundDig() {
                   >
                     {done ? (
                       th.kind === 'plate' ? (
-                        <PlateArt type={th.plate!} style={{ width: 14, height: 10 }} />
+                        <PlateArt type={th.plate!} px={16} />
                       ) : th.colour ? (
-                        <OrbArt colour={th.colour} px={10} />
+                        <OrbArt colour={th.colour} px={12} />
                       ) : (
                         <PixelIcon name="pickaxe" size={12} />
                       )

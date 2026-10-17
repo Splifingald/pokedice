@@ -1169,6 +1169,9 @@ A live event type (docs/31): Explorakits open walls, the pickaxe die digs them, 
 Its switch is its own (`underground.access`, §20) on top of the live events' one; its numbers are the admin's
 (game_config `underground`). Components in `src/components/Underground.tsx`, all on `/kitchen-sink`.
 
+- **The treasures are Platinum's** (`UgSprite`, one sheet: `pnpm underground-sprites`, docs/31 §10): spheres, plates,
+  fossils as the game draws them in its wall, pixelated, each filling the tiles it takes as much as its shape allows
+  (`fit`), never stretched; elsewhere at a set width (`px`). Orbs, plates and the cave's gems all use them.
 - **Art, not theme**: the cave (`UgCave`), the crack gauge and the wall are drawn in code and stay the same in Daybreak
   and Dusk (§2 "Art stays art"). The cave keeps its size on a wide screen: a scene at most 320 px wide, centred, rock
   on both sides. With no picture picked by the admin, it is the live event's picture (Home's square, the Mart's section).

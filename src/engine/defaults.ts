@@ -387,7 +387,8 @@ export const DEFAULT_CONFIG: GameConfig = {
     },
     areas: {},
   },
-  // The Underground (docs/31): off until the admin switches it on. A 6×6 wall of 1–3 layers (30 / 40 / 30 %) hides 2–4
+  // The Underground (docs/31): off until the admin switches it on. Shapes follow Platinum's treasures, whose large
+  // sphere is half again the small one: small orb 1×1, medium 2×2, large 3×3, a plate 3×2, a fossil 2×2. A 6×6 wall of 1–3 layers (30 / 40 / 30 %) hides 2–4
   // things and takes 15 strikes. Free kits: 3 a day, one every 8 h, at most 3 waiting. The pickaxe's 8 levels each
   // raise one face by 1, from five 1s and a 2 to three 2s and three 3s. Prices are a first guess for the balance pass
   // (tests/engine/underground.test.ts reports a wall's yield per pickaxe level).
@@ -399,8 +400,8 @@ export const DEFAULT_CONFIG: GameConfig = {
       weights: { orbS: 40, orbM: 25, orbL: 10, fossil: 8, plate: 3 },
       shapes: {
         orbS: { w: 1, h: 1 },
-        orbM: { w: 2, h: 1 },
-        orbL: { w: 2, h: 2 },
+        orbM: { w: 2, h: 2 },
+        orbL: { w: 3, h: 3 },
         fossil: { w: 2, h: 2 },
         plate: { w: 3, h: 2 },
       },

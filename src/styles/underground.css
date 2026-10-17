@@ -52,67 +52,18 @@
     inset 0 0 0 2px #1a130e,
     inset 4px 4px 0 #7a5a3e;
 }
-.ug-cave-orb {
-  width: 9%;
+.ug-cave-gem {
+  position: absolute;
+  display: block;
   aspect-ratio: 1;
-  border-radius: 50%;
-  background: var(--c);
-  box-shadow:
-    inset -3px -3px 0 rgb(0 0 0 / 0.25),
-    inset 2px 2px 0 rgb(255 255 255 / 0.6);
 }
-.ug-cave-orb.s {
-  width: 6%;
-}
-.ug-cave-plate {
-  left: 46%;
-  bottom: 55%;
-  width: 11%;
-  height: 12%;
-  background: #ee8130;
-  box-shadow:
-    inset 0 0 0 2px #24304f,
-    inset 3px 3px 0 rgb(255 255 255 / 0.45);
+.ug-cave-gem.plate {
+  aspect-ratio: 4 / 3;
 }
 .ug-cave-pick {
   position: absolute;
   right: 4%;
   top: 10%;
-}
-
-/* An orb: round (it's a sphere), its colour, a shine and a shade, an ink edge. A medium orb is a capsule. */
-.ug-orb {
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: var(--c);
-  box-shadow:
-    0 0 0 2px #24304f,
-    inset -3px -3px 0 rgb(0 0 0 / 0.25),
-    inset 3px 3px 0 rgb(255 255 255 / 0.55);
-}
-.ug-orb.pill {
-  aspect-ratio: 2;
-  border-radius: 999px;
-}
-
-/* A plate: a slab in its type's colour, an engraved line, a corner cut. */
-.ug-plate {
-  position: relative;
-  background: var(--c);
-  clip-path: polygon(0 4px, 4px 0, 100% 0, 100% 100%, 0 100%);
-  box-shadow:
-    inset 0 0 0 2px #24304f,
-    inset 4px 4px 0 rgb(255 255 255 / 0.4),
-    inset -4px -4px 0 rgb(0 0 0 / 0.15);
-}
-.ug-plate::after {
-  content: '';
-  position: absolute;
-  left: 25%;
-  right: 25%;
-  top: 46%;
-  height: 2px;
-  background: rgb(36 48 79 / 0.45);
 }
 
 /* The crack gauge: a band of rock, a section per strike, cracking from the right; red and shaking near the end. */
@@ -185,29 +136,6 @@
   inset: 0;
   display: grid;
   place-items: center;
-}
-.ug-thing-orb.s {
-  width: 52%;
-}
-.ug-thing-orb.m {
-  width: 78%;
-}
-.ug-thing-orb.l {
-  width: 82%;
-}
-.ug-thing-plate {
-  width: 88%;
-  height: 76%;
-}
-.ug-thing-fossil {
-  display: grid;
-  width: 88%;
-  height: 88%;
-  place-items: center;
-  background: #d9c58a;
-  box-shadow:
-    inset 0 0 0 2px #24304f,
-    inset 3px 3px 0 #efe0b0;
 }
 .ug-thing.done::after {
   content: '';
