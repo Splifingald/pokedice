@@ -25,6 +25,7 @@ import { useMotion } from '@/lib/motion'
 import { pushToast, useGame } from '@/store/game'
 import { ugOpenWall, ugStrike, ugTakeHaul, useUnderground } from '@/store/underground'
 import { cx } from '@/theme/util'
+import { flushUgOutbox } from '@/store/ugTeams'
 import { UgClosed } from './Underground'
 
 const doneCount = (w: Wall) => w.things.filter((th) => thingDone(w, th)).length
@@ -72,7 +73,10 @@ export function UndergroundDig() {
 
   const takeHaul = () => {
     const lines = ugTakeHaul()
-    if (lines) setHaul(lines)
+    if (!lines) return
+    setHaul(lines)
+    // Orbs owed to teammates go to the server now (they wait in the save if it can't be reached).
+    void flushUgOutbox()
   }
 
   const nextWall = () => {

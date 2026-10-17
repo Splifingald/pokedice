@@ -496,13 +496,20 @@ export function applyHaul(
   return { save: next, lines, sent }
 }
 
-/** Orbs a teammate dug up for this player (from the server's inbox) go into the bag. */
-export function receiveOrbs(save: SaveData, orbs: readonly { colour: OrbColour; size: OrbSize }[]): SaveData {
+/** Orbs teammates dug up for this player (the server's inbox) go into the bag, each delivery once. */
+export function receiveOrbs(
+  save: SaveData,
+  gifts: readonly { id: string; orbs: readonly { colour: OrbColour; size: OrbSize }[] }[],
+): SaveData {
   const u = save.underground
-  if (!u || !orbs.length) return save
+  const seen = new Set(u?.received ?? [])
+  const fresh = gifts.filter((g) => !seen.has(g.id))
+  if (!u || !fresh.length) return save
   const bag: OrbBag = { red: { ...u.bag.red }, blue: { ...u.bag.blue }, green: { ...u.bag.green } }
-  for (const o of orbs) if (bag[o.colour] && o.size in bag[o.colour]) bag[o.colour][o.size]++
-  return { ...save, underground: { ...u, bag } }
+  for (const g of fresh)
+    for (const o of g.orbs) if (bag[o.colour] && ORB_SIZES.includes(o.size)) bag[o.colour][o.size]++
+  const received = [...(u.received ?? []), ...fresh.map((g) => g.id)].slice(-100)
+  return { ...save, underground: { ...u, bag, received } }
 }
 
 /** The server has these walls' orbs: they leave the outbox. */

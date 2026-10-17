@@ -490,3 +490,29 @@ describe('the save and the yield', () => {
     expect(high.cleared).toBeGreaterThan(low.cleared)
   })
 })
+
+describe('orbs from teammates', () => {
+  it('land in the bag once per delivery', async () => {
+    const { receiveOrbs, clearOutbox } = await import('@/engine')
+    const s = inEvent()
+    const gift = { id: 'g1', orbs: [{ colour: 'blue' as const, size: 'l' as const }] }
+    const once = receiveOrbs(s, [gift])
+    expect(once.underground!.bag.blue.l).toBe(1)
+    expect(receiveOrbs(once, [gift])).toBe(once)
+    expect(
+      receiveOrbs(once, [gift, { id: 'g2', orbs: [{ colour: 'red', size: 's' }] }]).underground!.bag.red.s,
+    ).toBe(1)
+    // The outbox empties as the server takes each wall.
+    const owed = {
+      ...s,
+      underground: {
+        ...s.underground!,
+        outbox: [
+          { wallId: 'w1', orbs: [] },
+          { wallId: 'w2', orbs: [] },
+        ],
+      },
+    }
+    expect(clearOutbox(owed, ['w1']).underground!.outbox).toEqual([{ wallId: 'w2', orbs: [] }])
+  })
+})

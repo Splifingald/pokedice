@@ -1197,6 +1197,11 @@ Its switch is its own (`underground.access`, §20) on top of the live events' on
   collapse drops the tiles in steps (full) or gives one thud (short); off: nothing moves. A thing fully dug out glints.
   Calm stills the gauge's shake and the glint. Sounds: `ug.strike` (lower the bigger the roll), `ug.found`,
   `ug.collapse`.
+- **The team** (`UgTeamPanel`, `UgTeamSheet`): the three seats (you, a friend, a free seat; solo: dashes and the line
+  that every orb is yours) and a button: TEAM UP, MANAGE, or a gold INVITATIONS: n. The sheet: invitations to answer
+  (gold cards, DECLINE / the green JOIN, the line that joining leaves your team), the seats, your friends with INVITE
+  (green), "Invited · waiting" with CANCEL, "In your team"; LEAVE THE TEAM; signed out, the line and the sign-in button.
+  A server refusal is a toast in words (team full, friends only, too many invitations).
 - **Arceus**: while the Underground is on, the battle's TYPE menu lists the types it may take (its plates) and, after
   them, the locked ones greyed with a lock and their plate's name, and a line on where plates come from; the TYPE
   button shows even with no plate, so the lock is explained. Its sheet says which plates it holds. Foes are untouched.

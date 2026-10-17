@@ -81,6 +81,7 @@ const undergroundSchema = z.object({
     .nullable(),
   walls: count,
   hauls: z.array(z.string().max(120)).max(50),
+  received: z.array(z.string().max(80)).max(100).optional(),
   outbox: z
     .array(
       z.object({

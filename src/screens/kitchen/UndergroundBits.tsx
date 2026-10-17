@@ -19,7 +19,8 @@ import {
   UgRulesModal,
   UgWall,
 } from '@/components/Underground'
-import { UgTeamSeats } from '@/screens/events/UndergroundTeam'
+import { UgTeamSeats, UgTeamSheet } from '@/screens/events/UndergroundTeam'
+import { useUgTeams } from '@/store/ugTeams'
 import { useGame } from '@/store/game'
 
 const CFG = DEFAULT_CONFIG.underground
@@ -72,6 +73,7 @@ const LINES: HaulLine[] = [
 export function UndergroundBits() {
   const data = useGame((s) => s.data)
   const [rules, setRules] = useState<'unlock' | 'info' | null>(null)
+  const [sheet, setSheet] = useState(false)
   const [flash, setFlash] = useState(1)
   return (
     <div className="flex w-full flex-col gap-4" data-testid="ug-sink">
@@ -197,7 +199,25 @@ export function UndergroundBits() {
           Rules (once: Later / Let’s go!)
         </PixelButton>
         <InfoButton name="The Underground" onClick={() => setRules('info')} className="max-w-[240px]" />
+        <PixelButton
+          size="sm"
+          onClick={() => {
+            // Two invitations waiting, one sent (signed in, the friends list follows; signed out, the sign-in line).
+            useUgTeams.setState({
+              invites: [
+                { team: 'k1', from: 'u4', name: 'Barry', seats: 1 },
+                { team: 'k2', from: 'u5', name: 'Cynthia', seats: 2 },
+              ],
+              sent: [{ id: 'u2', name: 'Dawn' }],
+              state: 'ready',
+            })
+            setSheet(true)
+          }}
+        >
+          Team sheet
+        </PixelButton>
       </div>
+      <UgTeamSheet open={sheet} onClose={() => setSheet(false)} />
       <UgRulesModal
         open={!!rules}
         onClose={() => setRules(null)}

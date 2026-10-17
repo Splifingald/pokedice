@@ -25,7 +25,8 @@ import { OrbBagTable, PickaxeFaces, PlateGrid, UgCave, UgNote, UgRulesModal } fr
 import { useT } from '@/i18n/react'
 import { countdown, money, typeName } from '@/lib/format'
 import { pushToast, useGame } from '@/store/game'
-import { ugOpenWall, ugSell, ugUpgrade, useUgTeam, useUnderground } from '@/store/underground'
+import { ugOpenWall, ugUpgrade, useUgTeam, useUnderground } from '@/store/underground'
+import { ugSellOrbs, useUgTeamSync } from '@/store/ugTeams'
 import { cx } from '@/theme/util'
 import { liveTime } from './live'
 import { UgTeamPanel } from './UndergroundTeam'
@@ -90,6 +91,8 @@ export function UndergroundScreen() {
   const team = useUgTeam((s) => s.team)
   const { live, now, u } = useUnderground(1000)
   const [info, setInfo] = useState(false)
+  // The team and the orbs between teammates, now and every minute while the page is open.
+  useUgTeamSync(live?.id ?? null)
   if (now == null || !save) return <p className="copy p-3 text-muted">{t('ui.common.loading')}</p>
   // Not running for this player (or its content still on its way): say so; the page fills in once it runs.
   if (!live || !u) return <UgClosed />
@@ -206,13 +209,13 @@ export function UndergroundScreen() {
         <PixelButton
           variant={sellable ? 'success' : 'secondary'}
           aria-disabled={!sellable}
-          onClick={() => {
+          onClick={async () => {
             if (!orbs) return pushToast(t('ui.ug.sellEmpty'), 'info')
             if (!sellable) return pushToast(t('ui.ug.sellNeedTeam'), 'info')
-            if (ugSell()) {
+            if (await ugSellOrbs()) {
               sfx('gold')
               pushToast(t('ui.ug.sold', { price: money(worth) }), 'good')
-            }
+            } else pushToast(t('ui.ug.sellNeedTeam'), 'bad')
           }}
         >
           {!orbs

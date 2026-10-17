@@ -10,7 +10,6 @@ import {
   markUgRulesSeen,
   openWall,
   randomSeed,
-  sellOrbs,
   settleUnderground,
   strike,
   undergroundLive,
@@ -92,9 +91,6 @@ export function ugTakeHaul(): HaulLine[] | null {
 }
 
 export const ugUpgrade = (): boolean => act((s) => upgradePickaxe(s, useGame.getState().data, serverNow()))
-
-export const ugSell = (): boolean =>
-  act((s) => sellOrbs(s, useGame.getState().data, serverNow(), useUgTeam.getState().team))
 
 export function ugRulesSeen(): void {
   mutateSave((s) => {

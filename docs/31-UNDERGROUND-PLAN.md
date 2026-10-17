@@ -1,6 +1,7 @@
 # The Underground: plan (for validation)
 
-Status: **plan**, after the questions (§0) and the mockups (§9). Nothing is built yet. Branch `ccr-a3f3bfa6-jmvzyg`.
+Status: **built** (2026-10-17), phases 1 to 4, on `ccr-a3f3bfa6-jmvzyg`. It ships **Off** (Admin → Live events → an
+Underground event → the switch). What was built and where it differs from the plan: §10; setting it up: §11.
 
 A new **live event type** (docs/20), inspired by the Sinnoh Underground of Diamond, Pearl and Platinum: players spend
 **Explorakits** to dig 6×6 walls with a pickaxe die, before the wall collapses. Buried in them are **orbs** (three
@@ -273,3 +274,58 @@ and sizes, the plates.
 The design canvas: https://claude.ai/artifact/15u6vZUEW93yT7rsXLYLjV. Home's square, the rules pop-up, the
 Underground page, a playable wall (its Tweaks set the pickaxe level and the strikes), the haul, the team sheet, the
 Mart, Arceus's TYPE menu and the admin.
+
+## 10. Built
+
+- **Engine** `src/engine/underground.ts` (pure): kits (`refillKits`, `buyKits`, `openWall`), `dealWall` /
+  `dealWallWith`, `strikeWall` / `strike`, `wallStatus`, the haul (`wallHaul`, `applyHaul`, the save's outbox,
+  `receiveOrbs`, `clearOutbox`), the pickaxe (`pickaxeLevels`, `nextPickaxe`, `upgradePickaxe`), selling (`canSell`,
+  `sellOrbs`), `settleUnderground`, the rules seen, `plateTypes`, and the yield simulation (`plainStrikeTile`,
+  `wallYield`). Arceus: `CreateBattleOptions.plates`, `formChoices` filtered, `lockedTypeForms` (`battle.ts`).
+- **Config** `game_config.underground` (`UndergroundConfig`, `DEFAULT_CONFIG.underground`); the live event type
+  `'underground'` (`LIVE_TYPES`). **Save** `underground` (the event's block) and `plates`.
+- **Admin** `src/admin/sections/UndergroundBox.tsx`, under an Underground live event: the switch and every number,
+  with the yield table per pickaxe level.
+- **Game** `src/store/underground.ts` (the save's actions, the settle loop in `GameLayout`), `src/store/ugTeams.ts`
+  (teams, the orbs both ways, selling confirmed by the server); screens `src/screens/events/Underground.tsx` (the page,
+  `/underground`), `UndergroundDig.tsx` (`/underground/dig`), `UndergroundTeam.tsx` (seats and the team sheet); pieces
+  `src/components/Underground.tsx`, `src/styles/underground.css`; Home's live square, the rules pop-up, the Mart's
+  section, KITS on the shop tab, the push line, the TYPE menu and Arceus's sheet. Docs/15 §30; the kitchen sink.
+- **Server** `supabase/migrations/0061_underground.sql`, inlined into `supabase/seed.sql`.
+- **Tests** `tests/engine/underground.test.ts` (29), `tests/underground-sql.test.ts` (9, PGlite),
+  `e2e/underground.spec.ts` (5).
+
+Differences from the plan:
+
+- **Kit limit**: 0 means no limit (a null is lost when the admin's row is merged over the defaults).
+- **The plate lock follows the Underground's switch**: Off, Arceus changes type as before (docs/15 §20: a feature
+  switched off is nowhere in the game). On, the lock applies to everyone, whether an event is running or not.
+- **Orbs owed to teammates wait in the save** (`underground.outbox`) until the server takes them, and orbs received
+  are kept by id (`underground.received`), so a reload never loses or doubles any.
+- **Versus is untouched**: its battles are replayed by both players from a seed, so neither side's Arceus is locked
+  there.
+- **Opening `/underground` before the event's content has arrived** shows "isn't open right now" rather than sending
+  the player Home; the page fills in once the event is known.
+
+### The yield, with the defaults (2,000 walls per level, `wallYield`)
+
+| Pickaxe | Things dug out (of ~3) | ₽ in orbs | Fossils | Plates | Walls cleared |
+|---|---|---|---|---|---|
+| Lv.0 | 1.0 | 274 | 0.17 | 0.05 | 5 % |
+| Lv.3 | 2.1 | 526 | 0.25 | 0.11 | 35 % |
+| Lv.5 | 2.7 | 651 | 0.27 | 0.11 | 72 % |
+| Lv.8 | 2.9 | 671 | 0.30 | 0.11 | 90 % |
+
+With the defaults a bought kit (₽1,000) never pays for itself in orbs: kits are bought for plates and fossils, and
+there is no ₽ loop. A plate comes about once in 9 walls with a good pickaxe; at 3 free kits a day, a week's event
+gives one or two. The admin sets the rate (the plate weight, the kit price, the strikes).
+
+## 11. Setting it up
+
+1. Run the migration on Supabase (SQL editor):
+   https://github.com/Splifingald/pokedice/blob/ccr-a3f3bfa6-jmvzyg/supabase/migrations/0061_underground.sql
+   (`supabase/seed.sql` carries it too, inlined: a database built from it needs nothing else).
+2. Admin → Live events → New: type **Underground**, its dates (one live event at a time), its badges and picture
+   (empty: the cave drawn in code). Under it, the Underground's settings: tune the numbers, then the switch **On for
+   admin** to try it, **On for everyone** to open it. Save & Publish.
+3. Teams need players signed in and friends with each other; signed out, players dig solo.

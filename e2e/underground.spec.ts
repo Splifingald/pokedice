@@ -10,7 +10,17 @@ import {
   type SaveData,
   type UndergroundSave,
 } from '../src/engine'
-import { FAST, makeSave, mockSupabase, nonJerseyText, smallControls, STORAGE_KEY, SUPABASE } from './helpers'
+import {
+  FAST,
+  fakeSession,
+  makeSave,
+  mockSupabase,
+  nonJerseyText,
+  smallControls,
+  STORAGE_KEY,
+  SUPABASE,
+  type SupabaseMock,
+} from './helpers'
 
 const NOW = '2027-04-22T12:00:00.000Z'
 const START = '2027-04-20T18:00:00.000Z'
@@ -34,8 +44,8 @@ const FILES = {
 
 const dig: LiveEvent = { ...newLiveEvent('ug', START, END), type: 'underground', minBadges: 0 }
 
-async function boot(page: Page, save: SaveData) {
-  await mockSupabase(page, { rpc: { event_time: () => ({ now: NOW, day: NOW.slice(0, 10) }) } })
+async function boot(page: Page, save: SaveData, opts: { session?: boolean; rpc?: SupabaseMock['rpc'] } = {}) {
+  await mockSupabase(page, { rpc: { event_time: () => ({ now: NOW, day: NOW.slice(0, 10) }), ...opts.rpc } })
   await page.route(`${SUPABASE}/rest/v1/game_config*`, async (route) => {
     if (!route.request().url().includes('configVersion')) return route.fallback()
     await new Promise((r) => setTimeout(r, 400))
@@ -51,8 +61,9 @@ async function boot(page: Page, save: SaveData) {
     underground: { ...DEFAULT_CONFIG.underground, access: 'all' },
   }
   await page.addInitScript(
-    ([s, f, b, v, key]) => {
-      localStorage.removeItem(key!)
+    ([s, f, b, v, key, session]) => {
+      if (session) localStorage.setItem(key!, session)
+      else localStorage.removeItem(key!)
       if (!localStorage.getItem('pokedice.save')) localStorage.setItem('pokedice.save', s!)
       localStorage.setItem('pokedice.settings', f!)
       const req = indexedDB.open('pokedice', 1)
@@ -64,7 +75,14 @@ async function boot(page: Page, save: SaveData) {
           .put({ version: Number(v), build: 'e2e', bundle: JSON.parse(b!) }, 'remote')
       }
     },
-    [JSON.stringify(save), FAST, JSON.stringify(bundle), String(VERSION), STORAGE_KEY],
+    [
+      JSON.stringify(save),
+      FAST,
+      JSON.stringify(bundle),
+      String(VERSION),
+      STORAGE_KEY,
+      opts.session ? JSON.stringify(fakeSession()) : '',
+    ],
   )
 }
 
@@ -208,4 +226,58 @@ test('a phone: the page, the dig and the haul fit, Jersey only, 44 px controls',
   expect(await smallControls(page), 'dig: controls under 44px').toEqual([])
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360)
   await shot(page, 'phone-dig')
+})
+
+test('signed in, in a full team: a teammate’s orb arrives, the orbs sell, a finished wall’s orbs go to the server', async ({
+  page,
+}) => {
+  const me = '11111111-2222-4333-8444-555555555555'
+  const sent: unknown[] = []
+  const applied: unknown[] = []
+  const team = {
+    event: 'ug',
+    team: 't1',
+    me: 'red',
+    seats: [
+      { colour: 'red', id: me, name: 'Sam' },
+      { colour: 'blue', id: 'u2', name: 'Dawn' },
+      { colour: 'green', id: 'u3', name: 'Barry' },
+    ],
+    invites: [],
+    sent: [],
+  }
+  const save = inEvent(1_000, {
+    wall: null,
+    outbox: [{ wallId: 'ug:0', orbs: [{ colour: 'blue', size: 'm', to: 'u2' }] }],
+  })
+  await boot(page, save, {
+    session: true,
+    rpc: {
+      ug_team: team,
+      ug_inbox: [{ id: 'g1', from: 'Dawn', orbs: [{ colour: 'red', size: 'l' }] }],
+      ug_applied: (body: Record<string, unknown>) => {
+        applied.push(body)
+        return null
+      },
+      ug_send: (body: Record<string, unknown>) => {
+        sent.push(body)
+        return 1
+      },
+      ug_can_sell: true,
+    },
+  })
+  await page.goto('/underground')
+  await expect(page.getByTestId('ug-kits')).toBeVisible({ timeout: 15_000 })
+  const seats = page.getByRole('region', { name: 'Your team' })
+  await expect(seats.getByText('Dawn')).toBeVisible()
+  await expect(seats.getByText('Barry')).toBeVisible()
+  // Dawn's large red orb lands once; the owed wall leaves the outbox.
+  await expect.poll(async () => (await stored(page)).underground?.bag.red.l).toBe(1)
+  expect(applied).toEqual([{ p_ids: ['g1'] }])
+  expect(sent).toEqual([{ p_wall: 'ug:0', p_orbs: [{ colour: 'blue', size: 'm' }] }])
+  await expect.poll(async () => (await stored(page)).underground?.outbox).toEqual([])
+  await shot(page, 'team')
+  await page.getByRole('button', { name: 'Sell orbs · ₽800' }).click()
+  await expect.poll(async () => (await stored(page)).gold).toBe(1_800)
+  expect((await stored(page)).underground!.bag.red.l).toBe(0)
 })
