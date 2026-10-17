@@ -61,7 +61,7 @@ interface Spot {
   loot?: { item: ItemDef; entryId: string; unique: boolean }
   /** Set when the area's legendary is a progression raid (docs/24): GO opens the raid's page. */
   raid?: ProgressRaid
-  /** Met here only by day or only by night (docs/31). */
+  /** Met here only by day or only by night (docs/32). */
   time?: DayTime | null
 }
 
@@ -82,7 +82,7 @@ export function whereToFind(dex: number, data: GameData, region: RegionId, now: 
     const total = area.wildPool.reduce((sum, e) => sum + Math.max(0, e.weight), 0)
     const hits = area.wildPool.filter((e) => e.dex === dex && e.weight > 0)
     if (hits.length && total) {
-      // Where the area keeps the time (docs/31): the share when it's met, and its sun or moon.
+      // Where the area keeps the time (docs/32): the share when it's met, and its sun or moon.
       const time = speciesTime(data, area, dex)
       out.push({
         area,
@@ -214,7 +214,7 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
           {locked && ` · ${lockReason(save, data, area) || t('ui.dex.locked')}`}
           {closed && t('ui.dex.closedSuffix')}
         </small>
-        {/* Day and night (docs/31): a place where it comes only by day or only by night says so on its own chip. */}
+        {/* Day and night (docs/32): a place where it comes only by day or only by night says so on its own chip. */}
         {spot.time && (
           <span className="flex">
             <DayNightPill time={spot.time} />

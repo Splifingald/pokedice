@@ -1,4 +1,4 @@
-// Day and night in Johto (docs/31): the two halves of the player's day, the switch (off, the admin's, everyone's), only
+// Day and night in Johto (docs/32): the two halves of the player's day, the switch (off, the admin's, everyone's), only
 // Johto keeping the time, the wild Pokémon of the other half never dealt (an area never running dry), the lists'
 // shares and tags, the rules pop-up once, and the bundled Johto pools carrying the real games' times.
 import { describe, expect, it } from 'vitest'

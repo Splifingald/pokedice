@@ -1,4 +1,4 @@
-// Day and night (docs/31): the player's local hour. The real time (the server's, as the events read it) in the
+// Day and night (docs/32): the player's local hour. The real time (the server's, as the events read it) in the
 // device's time zone, so winding the device's clock on doesn't bring the night sooner; until the server has answered,
 // the device's own clock, so the game never waits on it.
 import { areaDayTime, dayTimeAt, regionKeepsTime, type DayTime } from '@/engine'

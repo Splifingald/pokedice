@@ -60,7 +60,7 @@ export function rowsToBundle(r: TableRows): BundleRaw {
       weight: num(w.weight),
       minLevel: num(w.min_level),
       maxLevel: num(w.max_level),
-      // Day and night (docs/31): absent before migration 0061, and null = any time.
+      // Day and night (docs/32): absent before migration 0061, and null = any time.
       ...((w.time_of_day === 'day' || w.time_of_day === 'night') && { time: w.time_of_day }),
     })
     wildBy.set(String(w.area_id), list)

@@ -1195,7 +1195,7 @@ async function main() {
   // still describe them, so they're dropped here, with the trainers only they used.
   // The mythicals are their lairs' bosses, every other boss a progression raid in a completable area (scripts/raid-areas.ts).
   const eggs = await readJson<Record<string, { l?: number }>>('egg-groups.json')
-  // Johto's day and night (docs/31): its wild Pokémon met only by day or only by night keep their times.
+  // Johto's day and night (docs/32): its wild Pokémon met only by day or only by night keep their times.
   const builtAreas = withDayNight(
     raidAreas(
       rebuilt.areas.filter((a) => !(a.id in LEAGUE_II)),

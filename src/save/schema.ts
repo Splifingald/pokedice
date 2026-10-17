@@ -346,7 +346,7 @@ export const saveSchema = z.object({
     .optional(),
   // Trick or Treat (docs/29): its rules pop-up seen.
   trickOrTreat: z.object({ rulesSeen: z.boolean().optional() }).optional(),
-  // Day and night (docs/31): its rules pop-up seen.
+  // Day and night (docs/32): its rules pop-up seen.
   dayNight: z.object({ rulesSeen: z.boolean().optional() }).optional(),
 })
 

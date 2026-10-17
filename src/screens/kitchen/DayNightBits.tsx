@@ -1,4 +1,4 @@
-// Kitchen sink (dev only): day and night in Johto (docs/31) — the top bar's chip by day and by night, the fights'
+// Kitchen sink (dev only): day and night in Johto (docs/32) — the top bar's chip by day and by night, the fights'
 // indicator on a stage, the tags in an area's lists (its own half, the other half), the Pokédex locations' chips, and
 // the rules (unlock and INFO).
 import { useState, type ReactNode } from 'react'

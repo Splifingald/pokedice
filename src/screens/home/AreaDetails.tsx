@@ -262,7 +262,7 @@ function DetailsBody({ area }: { area: Area }) {
   const league = gyms.length > 1
   const due = dueBoss(area, p, avg, data)
 
-  // Wild Pokémon, merged by species: their share of the pool (when they're met, docs/31) and their levels.
+  // Wild Pokémon, merged by species: their share of the pool (when they're met, docs/32) and their levels.
   const wild = new Map<number, { share: number; min: number; max: number; time: DayTime | null }>()
   for (const w of area.wildPool) {
     if (w.weight <= 0) continue

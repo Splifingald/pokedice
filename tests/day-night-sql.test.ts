@@ -1,4 +1,4 @@
-// Day and night in Johto (docs/31) as a patch over live content: migration 0061 against a real Postgres (PGlite, in
+// Day and night in Johto (docs/32) as a patch over live content: migration 0061 against a real Postgres (PGlite, in
 // process), over Johto's pools as the seed writes them before it. The times land on the tagged species' rows, the
 // switch goes in Off, a time the admin set stays, twice changes nothing. Then the same patch over an admin export, and
 // the rows ↔ bundle mapping both ways.

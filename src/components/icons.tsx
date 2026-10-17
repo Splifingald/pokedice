@@ -318,7 +318,7 @@ export const ICONS = {
     'kYYk........',
     'kk..........',
   ],
-  // Day and night (docs/31): the top bar's and the fights' sun (6:00–17:59) and moon (18:00–5:59), 16×16.
+  // Day and night (docs/32): the top bar's and the fights' sun (6:00–17:59) and moon (18:00–5:59), 16×16.
   daySun: [
     '.......oo.......',
     '.......oo.......',

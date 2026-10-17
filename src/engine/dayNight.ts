@@ -1,4 +1,4 @@
-// Day and night in Johto (docs/31): the player's own clock splits the day in two, 6:00 to 17:59 the day and 18:00 to
+// Day and night in Johto (docs/32): the player's own clock splits the day in two, 6:00 to 17:59 the day and 18:00 to
 // 5:59 the night, and a wild Pokémon whose row says `time` (from the real games) is met only in its half. The engine
 // never reads a clock: the hour comes in from the store, as Extreme mode's and the events' times do.
 import { eventOpenTo } from './events'

@@ -229,7 +229,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const enc = versus ? null : run.encounter
   // The area's picture is the battle's background; Versus keeps the drawn one.
   const art = useMemo(() => (versus ? null : pictureOf(run.areaId)), [versus, run.areaId])
-  // Day and night (docs/31): in Johto, the stage's corner says which half of the day the fight is in.
+  // Day and night (docs/32): in Johto, the stage's corner says which half of the day the fight is in.
   const dayTime = useAreaDayTime(versus ? null : run.areaId)
   const isTrainerFight = !!versus || enc?.kind === 'trainer' || enc?.kind === 'gym'
   const trainerName = versus

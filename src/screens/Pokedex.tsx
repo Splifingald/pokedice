@@ -55,7 +55,7 @@ export function PokedexScreen() {
   const count = save?.pokedex.length ?? 0
   useEffect(() => markDexSeen(), [count])
 
-  // In Johto with day and night on (docs/31): the half of the day it is, so "right now" leaves out the other half's.
+  // In Johto with day and night on (docs/32): the half of the day it is, so "right now" leaves out the other half's.
   const now = useDayTime()
   // Missing species you can meet right now: in a wild pool (or as a legendary) of an area you've opened.
   const nearby = useMemo(() => {

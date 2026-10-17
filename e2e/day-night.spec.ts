@@ -1,4 +1,4 @@
-// Day and night in Johto (docs/31, docs/15 §30): with the switch on, a Johto save gets its rules once, then the top
+// Day and night in Johto (docs/32, docs/15 §30): with the switch on, a Johto save gets its rules once, then the top
 // bar's far left shows the moon at night and the sun by day, on the player's clock; a tap shows the rules again; a
 // 360-wide phone still fits the top bar. Switched off, or in Kanto, there is no sun or moon.
 import { expect, test, type Page } from '@playwright/test'

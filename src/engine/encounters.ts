@@ -83,7 +83,7 @@ export interface EncounterContext {
   /** × the wild shiny odds here: a Shiny Parade live event covering the area (liveEvents shinyBoost). */
   shinyBoost?: number
   /**
-   * The player's local hour (0–23): in an area that keeps the time (docs/31), only its half's wild Pokémon come.
+   * The player's local hour (0–23): in an area that keeps the time (docs/32), only its half's wild Pokémon come.
    * Unset = every one, as where time isn't kept.
    */
   hour?: number | null
@@ -253,7 +253,7 @@ export function rollRoamer(ctx: EncounterContext, rng: Rng): Encounter | null {
 }
 
 /**
- * Each wild pool entry's weight for the next wild Pokémon. Where the area keeps the time (docs/31), the other half's
+ * Each wild pool entry's weight for the next wild Pokémon. Where the area keeps the time (docs/32), the other half's
  * Pokémon weigh 0. Once the pity (game_config.newPokemonPity) kicks in, the ones not caught yet are weighted up
  * together so that they come `pityChance` of the time instead of their share of the pool, keeping their odds among
  * themselves. While it's ×1, or every one is caught (or none is), the pool's own weights.

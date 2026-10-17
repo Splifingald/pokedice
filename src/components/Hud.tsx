@@ -182,7 +182,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 bg-panel shadow-[0_2px_0_rgb(var(--c-edge)),0_4px_0_rgb(var(--c-edge)/0.13)]">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-2.5 md:max-w-none">
-        {/* Day and night (docs/31): the sun or the moon, far left, while in Johto. */}
+        {/* Day and night (docs/32): the sun or the moon, far left, while in Johto. */}
         <DayNightButton />
         <EnergyPill />
         <span className="flex-1" />

@@ -1,4 +1,4 @@
-// Day and night in Johto (docs/31, docs/15 §30): the sun or the moon in the top bar (a tap shows the rules), its small
+// Day and night in Johto (docs/32, docs/15 §30): the sun or the moon in the top bar (a tap shows the rules), its small
 // twin on a fight's stage, the tags in an area's lists, and the rules pop-up. The engine decides the time
 // (`dayTimeAt`, `areaDayTime`); these only show it.
 import { useState } from 'react'

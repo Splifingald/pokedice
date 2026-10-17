@@ -15,16 +15,16 @@ export interface AreaMon {
   kind: 'wild' | 'legendary' | 'fossil'
   /**
    * Share of the wild pool (or, for a fossil, of the loot table); 0 for a legendary. Where the area keeps the time
-   * (docs/31), the share when it's met: now, or in its own half.
+   * (docs/32), the share when it's met: now, or in its own half.
    */
   share: number
-  /** Met only by day or only by night (docs/31). */
+  /** Met only by day or only by night (docs/32). */
   time?: DayTime | null
 }
 
 /**
  * Every Pokémon an area can give: its wild ones by Pokédex number, then its legendaries, then its fossils. `now` is the
- * time in the area (docs/31), null where it isn't kept.
+ * time in the area (docs/32), null where it isn't kept.
  */
 export function areaPokemon(area: Area, data: GameData, now: DayTime | null = null): AreaMon[] {
   const wild = new Set<number>()

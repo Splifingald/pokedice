@@ -249,7 +249,7 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
       weight: int(0),
       min_level: int(1, 100),
       max_level: int(1, 100),
-      // Day and night (docs/31): met only by day or only by night; null = any time.
+      // Day and night (docs/32): met only by day or only by night; null = any time.
       time_of_day: z.enum(DAY_TIMES).nullable().optional(),
     })
     .refine((r) => r.max_level >= r.min_level, { message: 'max below min', path: ['max_level'] }),

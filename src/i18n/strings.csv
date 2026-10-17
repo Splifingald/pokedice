@@ -4590,7 +4590,7 @@ ui.nightmare.raidLockTitle,Wake up from {area}’s nightmare to open this raid,R
 ui.nightmare.raidLockText,Win every round of the nightmare to face {name} here.,Gagne toutes les manches du cauchemar pour affronter {name} ici.,Gana todas las rondas de la pesadilla para enfrentarte a {name} aquí.,"Gewinne jede Runde des Albtraums, um hier gegen {name} anzutreten.",Vinci tutti i round dell’incubo per affrontare {name} qui.,Ganha todas as rondas do pesadelo para enfrentares {name} aqui.,Vença todas as rodadas do pesadelo para enfrentar {name} aqui.,あくむの ラウンドに すべて かつと ここで {name}と たたかえる。,악몽의 모든 라운드를 이기면 여기서 {name}와 싸울 수 있어.,赢下噩梦的所有回合，就能在这里挑战{name}。
 ui.nightmare.raidIntroTop,Warning · the nightmare takes shape,Alerte · le cauchemar prend forme,Alerta · la pesadilla toma forma,Achtung · der Albtraum nimmt Gestalt an,Attenzione · l’incubo prende forma,Alerta · o pesadelo ganha forma,Alerta · o pesadelo toma forma,けいこく・あくむが かたちを なす,경고 · 악몽이 모습을 드러낸다,警告 · 噩梦正在成形
 ui.nightmare.raidIntroBottom,{name} steps out of the shadow,{name} sort de l’ombre,{name} sale de las sombras,{name} tritt aus dem Schatten,{name} esce dall’ombra,{name} sai da sombra,{name} sai da sombra,{name}が かげから あらわれた,{name}가 그림자에서 나타났다,{name}从影子中现身
-# --- Day and night in Johto (docs/31),,,,,,,,,,
+# --- Day and night in Johto (docs/32),,,,,,,,,,
 ui.dayNight.title,Day and night,Le jour et la nuit,Día y noche,Tag und Nacht,Giorno e notte,Dia e noite,Dia e noite,ひると よる,낮과 밤,白天与夜晚
 ui.dayNight.day,Day,Jour,Día,Tag,Giorno,Dia,Dia,ひる,낮,白天
 ui.dayNight.night,Night,Nuit,Noche,Nacht,Notte,Noite,Noite,よる,밤,夜晚

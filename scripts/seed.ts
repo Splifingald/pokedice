@@ -854,7 +854,7 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  * content, 0052), then 0057 (Distortion World's portal run, docs/28: `areas.mode`, its switch, and 0045's and 0046's
  * raid functions redefined; its Distortion World patch is a no-op before Haunted Hollow's content, which the bundle
  * hasn't got), then 0060 (Newmoon Island's nightmare, docs/30: its switch, and 0057's raid functions redefined; its
- * Newmoon Island patch is a no-op there too), then 0061 (day and night in Johto, docs/31: `area_wild_pool.time_of_day`
+ * Newmoon Island patch is a no-op there too), then 0061 (day and night in Johto, docs/32: `area_wild_pool.time_of_day`
  * and its switch, Off; its tags are the bundle's own, written below). Folded into seed.sql so there is
  * one file to run rather than several in a particular order. The
  * migrations stay the single source of that SQL — they are written to be idempotent, so re-running them costs little.
@@ -914,7 +914,7 @@ export function buildSql(b: {
     'alter table items add column if not exists region text;',
     'alter table items add column if not exists once_only boolean not null default false;',
     'alter table pokemon add column if not exists form jsonb;',
-    // Day and night (0061, docs/31): a wild Pokémon met only by day or only by night.
+    // Day and night (0061, docs/32): a wild Pokémon met only by day or only by night.
     'alter table area_wild_pool add column if not exists time_of_day text;',
     prelude,
     upsert(

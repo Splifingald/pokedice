@@ -234,7 +234,7 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
     noCenters: !centersOn(save, data),
     // A Shiny Parade covering this area: wild Pokémon are more often shiny.
     shinyBoost: shinyBoost(currentLive(), area),
-    // Day and night (docs/31): in Johto, only the hour's wild Pokémon come.
+    // Day and night (docs/32): in Johto, only the hour's wild Pokémon come.
     hour: localHour(),
   }
 }

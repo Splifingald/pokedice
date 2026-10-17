@@ -115,7 +115,7 @@ describe('whereToFindItem', () => {
   })
 })
 
-describe('whereToFind with day and night (docs/31)', () => {
+describe('whereToFind with day and night (docs/32)', () => {
   const real = compileGameData(REAL)
   const on = { ...real, config: { ...real.config, dayNight: { access: 'all' as const } } }
 
