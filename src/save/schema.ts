@@ -184,6 +184,7 @@ export const saveSchema = z.object({
   versusRulesSeen: z.boolean().optional(),
   portalRulesSeen: z.boolean().optional(),
   nightmareRulesSeen: z.boolean().optional(),
+  doubleRulesSeen: z.boolean().optional(),
   events: z
     .object({
       seen: z.array(z.enum(EVENT_IDS)).optional(),

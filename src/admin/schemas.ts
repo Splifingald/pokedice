@@ -251,21 +251,29 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
       max_level: int(1, 100),
     })
     .refine((r) => r.max_level >= r.min_level, { message: 'max below min', path: ['max_level'] }),
-  trainers: z.object({
-    id: uuid,
-    name: z.string().min(1),
-    sprite_url: z.string().nullable(),
-    team: z
-      .array(z.object({ dex: int(1), level: int(1, 100), shiny: z.boolean().optional() }))
-      .min(1, '1–3 Pokémon')
-      .max(3, '1–3 Pokémon'),
-    role: z.enum(['trainer', 'leader', 'elite', 'champion']),
-    badge: z.string().nullable(),
-    upgrade_level: int(1, 10).nullable().optional(),
-    battle_background: background.nullable().optional(),
-    rival_of: int(1).nullable().optional(),
-    items: z.array(z.string().min(1)).max(3, 'one potion per Pokémon').nullable().optional(),
-  }),
+  trainers: z
+    .object({
+      id: uuid,
+      name: z.string().min(1),
+      sprite_url: z.string().nullable(),
+      team: z
+        .array(z.object({ dex: int(1), level: int(1, 100), shiny: z.boolean().optional() }))
+        .min(1, '1–3 Pokémon')
+        .max(3, '1–3 Pokémon'),
+      role: z.enum(['trainer', 'leader', 'elite', 'champion']),
+      badge: z.string().nullable(),
+      upgrade_level: int(1, 10).nullable().optional(),
+      battle_background: background.nullable().optional(),
+      rival_of: int(1).nullable().optional(),
+      items: z.array(z.string().min(1)).max(3, 'one potion per Pokémon').nullable().optional(),
+      // Two Pokémon out at once where double battles are on (docs/31): a pair needs a second one to send out.
+      duo: z.boolean().optional(),
+    })
+    .refine((r) => !r.duo || r.team.length >= 2, { message: 'a duo needs 2 Pokémon', path: ['duo'] })
+    .refine((r) => !r.duo || (r.role !== 'elite' && r.role !== 'champion'), {
+      message: 'the Elite Four and Champion never fight doubles',
+      path: ['duo'],
+    }),
   area_trainer_pool: z.object({ id: uuid, area_id: uuid, trainer_id: uuid, weight: int(0) }),
   area_loot_pool: z
     .object({

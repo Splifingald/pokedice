@@ -166,6 +166,8 @@ export function rowsToBundle(r: TableRows): BundleRaw {
       battleBackground: (x.battle_background as Trainer['battleBackground'] | undefined) ?? null,
       ...(x.rival_of != null && { rivalOf: num(x.rival_of) }),
       ...(Array.isArray(x.items) && x.items.length > 0 && { items: (x.items as unknown[]).map(String) }),
+      // A pair who fights 2 v 2 (docs/31, migration 0061): only when set, so other trainers round-trip unchanged.
+      ...(x.duo === true && { duo: true }),
     })),
     upgrades: {
       combos: r.combo_upgrades.map((x): ComboUpgradeRow => ({
@@ -288,6 +290,7 @@ export function bundleToRows(b: BundleRaw): TableRows {
       battle_background: x.battleBackground ?? null,
       rival_of: x.rivalOf ?? null,
       items: x.items ?? [],
+      duo: !!x.duo,
     })),
     area_trainer_pool: b.areas.flatMap((a) =>
       a.trainerPool.map((t) => ({ id: t.id, area_id: a.id, trainer_id: t.trainerId, weight: t.weight })),

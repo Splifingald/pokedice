@@ -36,6 +36,7 @@ function initFx(run: RaidRun): RaidFx {
     message: '',
     hp,
     activeUid: lead[0]!,
+    foeUid: st.boss.uid,
     fainted: {},
     dex: {},
     wornOut: {},

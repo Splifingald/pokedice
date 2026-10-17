@@ -27,8 +27,10 @@ import type {
 } from './types'
 
 export type Encounter =
-  | { kind: 'wild'; dex: number; level: number; isNew: boolean; shiny?: boolean }
-  | { kind: 'trainer'; trainerId: string; name: string; spriteUrl: string | null; team: TrainerMon[] }
+  /** `partner`: a second wild Pokémon, for a double battle (docs/31). */
+  | { kind: 'wild'; dex: number; level: number; isNew: boolean; shiny?: boolean; partner?: WildPartner }
+  /** `double`: fought 2 v 2, two of the team out at once (docs/31). */
+  | { kind: 'trainer'; trainerId: string; name: string; spriteUrl: string | null; team: TrainerMon[]; double?: boolean }
   | {
       kind: 'gym'
       trainerId: string
@@ -44,6 +46,8 @@ export type Encounter =
       upgradeLevel?: number
       /** An Elite Rebattle fight: the region and the tier (0 = Bronze). */
       rebattle?: { regionId: string; tier: number }
+      /** Fought 2 v 2 (Tate & Liza, docs/31). */
+      double?: boolean
     }
   /** `reason`: 'round' opens a new round; 'fainted' follows a K.O. in an easy area. */
   | { kind: 'center'; forced: boolean; reason?: 'fainted' | 'round' }
@@ -55,6 +59,14 @@ export type Encounter =
   | { kind: 'casino' }
   /** Trick or Treat (docs/29): a ghost from the area's list, tempted with Treats and caught with a Trick Ball. */
   | { kind: 'trick'; dex: number; level: number; tier: TrickTier; isNew: boolean; shiny?: boolean }
+
+/** A wild double battle's second Pokémon (docs/31). */
+export interface WildPartner {
+  dex: number
+  level: number
+  isNew: boolean
+  shiny?: boolean
+}
 
 export type ForceKind = EncounterKind | 'boss' | 'gym'
 

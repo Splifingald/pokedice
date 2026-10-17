@@ -4672,6 +4672,11 @@
     "id": "db03e817-82dd-53b7-88e1-daad1e9955ca",
     "trainerId": "84fcb5e7-0a26-5dc7-aa50-87dbaca0d175",
     "weight": 10
+   },
+   {
+    "id": "c16be6c2-a80a-53f5-9cdb-c51ac797d306",
+    "trainerId": "5fc5d093-5c33-5b5d-8acd-a7008a01cde0",
+    "weight": 10
    }
   ],
   "lootPool": [
@@ -5297,6 +5302,11 @@
    {
     "id": "85b48c3b-21f5-5594-b7c2-f59c64b5dcf9",
     "trainerId": "4d602bbd-8c48-5abb-b7e3-93cda5a27e88",
+    "weight": 10
+   },
+   {
+    "id": "c9ee3233-b545-5035-89cf-2a56f1d90977",
+    "trainerId": "05834043-8e15-5bb1-97d9-d688f56b29d8",
     "weight": 10
    }
   ],
@@ -9013,6 +9023,11 @@
     "id": "ce89f642-44ed-54ed-8ae4-23f21432252d",
     "trainerId": "b7e52358-dcb6-5004-97cc-0b0cd5fbf000",
     "weight": 10
+   },
+   {
+    "id": "bcb8cac6-edee-5b09-854c-17da615ea487",
+    "trainerId": "3d804f90-9194-59d1-ad2a-1af563f7c1e4",
+    "weight": 10
    }
   ],
   "lootPool": [
@@ -9462,6 +9477,11 @@
    {
     "id": "441ba364-b326-515b-bfc6-f22c799f7f63",
     "trainerId": "4888d111-57e6-5fb5-9013-5459f6f0f635",
+    "weight": 10
+   },
+   {
+    "id": "6eadde48-2a30-5a64-bd03-1db72db29496",
+    "trainerId": "2d862857-b247-5fef-abc2-92e45643ccaf",
     "weight": 10
    }
   ],
@@ -11156,6 +11176,11 @@
     "id": "c4afab1c-eaf7-57aa-959a-f574b3e51672",
     "trainerId": "1e15106f-82b3-5ddd-b546-fda1690a7506",
     "weight": 10
+   },
+   {
+    "id": "2d9dd735-abc0-5707-999e-a475d7125e8c",
+    "trainerId": "e9994740-7ac1-5e8c-a42a-6c4d1facd34c",
+    "weight": 10
    }
   ],
   "lootPool": [
@@ -11698,6 +11723,11 @@
    {
     "id": "8e3ad9e7-6ef8-577f-9d5f-57b4dad519cc",
     "trainerId": "edb37b61-3a50-5c3a-bea5-daef7f9ea5a5",
+    "weight": 10
+   },
+   {
+    "id": "1a0a944f-5d71-5261-a8f9-8605562ef5e4",
+    "trainerId": "2f3473eb-8684-535b-b91f-17b0fbf9395d",
     "weight": 10
    }
   ],
@@ -12388,6 +12418,11 @@
     "id": "072cb9ee-fa0b-5be6-970a-4f4d2b7f0050",
     "trainerId": "f87b3275-f8a6-51d7-9eb5-156f943d535c",
     "weight": 10
+   },
+   {
+    "id": "ff6fe553-4eae-58f0-942a-c42844fe3b10",
+    "trainerId": "98532b6c-11f4-5ade-bf9a-cabf935ccbbb",
+    "weight": 10
    }
   ],
   "lootPool": [
@@ -13038,6 +13073,11 @@
     "id": "83b248e8-f64e-58b1-9c03-062298ec92e4",
     "trainerId": "96746f5b-0ccf-5527-aac1-a031531ef166",
     "weight": 10
+   },
+   {
+    "id": "c863606f-5795-52e9-ac09-e7e6ce3a487c",
+    "trainerId": "6b3cfae2-6706-55e1-b475-b3aa955b3e82",
+    "weight": 10
    }
   ],
   "lootPool": [
@@ -13656,6 +13696,11 @@
    {
     "id": "5c84f399-4626-57f6-b0ea-1426a31f289e",
     "trainerId": "d325b8e1-69cc-56ed-a3cf-19e70e4275b7",
+    "weight": 10
+   },
+   {
+    "id": "216b3ff5-22e7-5f18-8100-aeb042e86977",
+    "trainerId": "8600a8b8-6ccc-5c57-8ae5-ecb4211a2bff",
     "weight": 10
    }
   ],
@@ -20872,6 +20917,11 @@
     "id": "ee3a5012-8c68-5e36-8e94-af26edea31b5",
     "trainerId": "ec7d3253-fe83-5410-a696-80ce8dfc7a8b",
     "weight": 10
+   },
+   {
+    "id": "52f7595b-b2b9-5326-b32b-f0ac5172439e",
+    "trainerId": "be3fdaf8-722c-5f10-8b4f-4af0daae465b",
+    "weight": 10
    }
   ],
   "lootPool": [
@@ -25231,6 +25281,11 @@
     "id": "c3690424-7727-5df6-9c5d-6c1ba76c98e5",
     "trainerId": "5857ea46-e634-5ed1-aa86-1be59c64eafd",
     "weight": 10
+   },
+   {
+    "id": "c9ade344-b164-56dd-9871-8056c4193ea3",
+    "trainerId": "30b4ba6f-8043-53de-afb4-f24b7efca9ca",
+    "weight": 10
    }
   ],
   "lootPool": [
@@ -26734,6 +26789,11 @@
     "id": "6e1a991a-4ee9-513b-a456-7d41887c41d4",
     "trainerId": "3d2b2e02-39d7-5e51-9cfa-11f46b7638e4",
     "weight": 10
+   },
+   {
+    "id": "b06df108-4982-5cd9-a462-023e2ace1c35",
+    "trainerId": "ff3ff731-45c9-5d4d-8609-9d69b11f965b",
+    "weight": 10
    }
   ],
   "lootPool": [
@@ -27265,6 +27325,11 @@
    {
     "id": "f2d18d01-0e20-54f8-b3da-8133083adb64",
     "trainerId": "1364cd0a-f8d5-5c9f-9b47-270a9e3a6a74",
+    "weight": 10
+   },
+   {
+    "id": "9ea8e421-9b7d-5a1b-9148-8f1ecc15ca52",
+    "trainerId": "51958f41-6d15-5a56-8754-cb2d31abc879",
     "weight": 10
    }
   ],
@@ -28182,6 +28247,11 @@
    {
     "id": "708b54ac-d944-5420-8938-6a4c3e1b26a3",
     "trainerId": "f3cf001e-bbfb-5d24-bbf3-06318b1cade0",
+    "weight": 10
+   },
+   {
+    "id": "29549dc0-0ede-51f4-ad19-8c54ab4518d8",
+    "trainerId": "a884ca34-1e91-5a8a-ae40-e413a5fb1725",
     "weight": 10
    }
   ],
@@ -29190,6 +29260,11 @@
     "id": "fd39cd24-6f83-5d68-8e54-78ee6094f669",
     "trainerId": "a291f26a-d650-51f8-b6fa-d31e21e30e59",
     "weight": 10
+   },
+   {
+    "id": "855e043a-f5a6-5e57-bcbf-9f17487a2c0b",
+    "trainerId": "b031043f-3161-5e5d-936b-ddbc13f31a5b",
+    "weight": 10
    }
   ],
   "lootPool": [
@@ -29889,6 +29964,11 @@
    {
     "id": "74de3bfa-3328-5636-a06f-09ab73d42c4c",
     "trainerId": "d594d5c4-7f6a-59cc-b049-051600c3b3a7",
+    "weight": 10
+   },
+   {
+    "id": "fb6d0ce3-e506-5315-bb62-2d38958ddc3d",
+    "trainerId": "c64a3cff-3102-58e3-87db-9897579c5dfd",
     "weight": 10
    }
   ],
@@ -31888,6 +31968,11 @@
     "id": "be33d5ca-07fc-5d7b-b18e-c2537962d067",
     "trainerId": "56442dde-b5a1-5fad-9102-c39858cf052e",
     "weight": 10
+   },
+   {
+    "id": "af36653a-02e7-5025-9ef8-f8001d0b119c",
+    "trainerId": "7c665393-b5d5-5e15-a48f-49ac59f4a3bb",
+    "weight": 10
    }
   ],
   "lootPool": [
@@ -32201,6 +32286,11 @@
    {
     "id": "3ab6e5a0-1531-530e-bcc8-3bf07e26e6bb",
     "trainerId": "1bfa8015-191b-549b-93d5-3bedd3bf8975",
+    "weight": 10
+   },
+   {
+    "id": "68a626ed-27a5-5eeb-b0fc-414074ee986f",
+    "trainerId": "52e4b123-3ff6-55fc-89fb-ea4ca4924e65",
     "weight": 10
    }
   ],
@@ -33199,6 +33289,11 @@
    {
     "id": "e04bad52-192f-503d-8671-b45a482dba2a",
     "trainerId": "3acff8d3-ed25-54ff-a1ac-4aa31c258b7b",
+    "weight": 10
+   },
+   {
+    "id": "327b5069-122d-5e4c-b74b-25889e7040bb",
+    "trainerId": "7cb37504-4a8e-5d15-8d0b-cea367cd5939",
     "weight": 10
    }
   ],
@@ -37286,6 +37381,11 @@
    {
     "id": "b407861d-7128-5a0f-bdf6-7cf71a253660",
     "trainerId": "9fd23a5b-3b48-5a19-b9a2-a42d2398dbc7",
+    "weight": 10
+   },
+   {
+    "id": "95e4b9c6-73de-5279-9f4b-ea5615bb7b77",
+    "trainerId": "dc193d74-e3e7-51e8-b9ba-4eadb0aa78bd",
     "weight": 10
    }
   ],
@@ -43017,6 +43117,11 @@
     "id": "a2d15783-0d99-54c8-83fb-bacaf92e52f7",
     "trainerId": "2ff624d9-fd92-556a-bad5-8d8a6db0f04c",
     "weight": 10
+   },
+   {
+    "id": "bffb8259-bca1-54bc-b4bb-970f85e186c3",
+    "trainerId": "d73fe745-3d19-5f49-a73d-800e6d507677",
+    "weight": 10
    }
   ],
   "lootPool": [
@@ -44324,6 +44429,11 @@
     "id": "81540125-8734-54e3-9b3f-dd19403b982e",
     "trainerId": "4d05e348-5809-5e06-a5d3-2429f9f31861",
     "weight": 10
+   },
+   {
+    "id": "e0dcd91e-665c-5a6a-b780-8588b3ad13c0",
+    "trainerId": "5fd01ade-3d73-586e-acd2-2b283363db1f",
+    "weight": 10
    }
   ],
   "lootPool": [
@@ -44770,6 +44880,11 @@
    {
     "id": "2a3b6bc6-352e-599e-80d1-7d4ef80956e2",
     "trainerId": "dfca275e-9409-56be-b714-fbc476f0aace",
+    "weight": 10
+   },
+   {
+    "id": "1872d159-4ddd-521c-b943-0e7d4ce2bf78",
+    "trainerId": "3a59c183-f154-54c7-ba05-053510c5a21a",
     "weight": 10
    }
   ],
@@ -50721,6 +50836,11 @@
     "id": "7eebae9a-a00e-57a2-ac9e-1b3c88be622c",
     "trainerId": "b4f8e68f-1d8f-5855-9ba7-db578d8786a4",
     "weight": 10
+   },
+   {
+    "id": "ca04fa3b-e336-58eb-b351-9b699a50fdd7",
+    "trainerId": "468feabe-47f9-5325-ae99-fc59311b4c66",
+    "weight": 10
    }
   ],
   "lootPool": [
@@ -52420,6 +52540,11 @@
     "id": "4df5890a-7820-514d-bd91-51b4e22ff726",
     "trainerId": "e0b4ac83-7fda-5fea-890a-91d6e0ba9062",
     "weight": 10
+   },
+   {
+    "id": "c3b5ef97-9fa6-50ce-81c1-9b365ed70635",
+    "trainerId": "06fc0ac4-a301-5ccf-b709-ec8b3cc9031a",
+    "weight": 10
    }
   ],
   "lootPool": [
@@ -53319,6 +53444,11 @@
    {
     "id": "7516d2c5-d1f6-503e-9570-0c9ae6672347",
     "trainerId": "4580309f-551a-5e2a-9dc7-38291cb21393",
+    "weight": 10
+   },
+   {
+    "id": "6174de44-1cea-5715-a706-044cff285bd6",
+    "trainerId": "556cfac2-b0f3-5b5c-83a9-e7d02693a998",
     "weight": 10
    }
   ],
@@ -57697,6 +57827,11 @@
     "id": "ae083c00-6311-5de5-bb54-b774d6370baa",
     "trainerId": "bd2fa0bd-ee47-5d1a-9d8a-fd62a37d76e6",
     "weight": 10
+   },
+   {
+    "id": "ade1b62c-2e2d-5728-b5bc-b55e2c7b52ba",
+    "trainerId": "eb8cb72d-90db-5b5c-800d-a8851c38db89",
+    "weight": 10
    }
   ],
   "lootPool": [
@@ -58237,6 +58372,11 @@
    {
     "id": "c10e016b-7bc3-5849-b0c6-33c6de5642c2",
     "trainerId": "4dc0142b-95b0-570b-9b27-4a97c2765f7c",
+    "weight": 10
+   },
+   {
+    "id": "b75f8c8d-10b7-580f-9730-ac9570ed03be",
+    "trainerId": "21014f08-2d91-5fbd-8f2b-4dc2a16039a1",
     "weight": 10
    }
   ],

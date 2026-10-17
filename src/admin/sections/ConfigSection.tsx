@@ -11,6 +11,7 @@ import {
   slotReturnPerSpin,
   xpToNext,
   type DayCareConfig,
+  type DoubleBattlesConfig,
   type DonationConfig,
   type EnergyConfig,
   type EventAccess,
@@ -351,6 +352,58 @@ function ExtremeBox() {
           playing: never.{!cfg.centers && ' No Pokémon Center is ever dealt.'}
         </p>
       )}
+    </Box>
+  )
+}
+
+/**
+ * Double battles (docs/31): the switch, the regions where they happen and how often a wild Pokémon comes with a
+ * partner. Duo trainers are ticked in Trainers (Duo); Elite Four and Champions never fight 2 v 2.
+ */
+function DoubleBattlesBox() {
+  const data = useAdminData()
+  const [raw, setRaw] = useConfigRow('doubleBattles')
+  const cfg: DoubleBattlesConfig = { ...DEFAULT_CONFIG.doubleBattles, ...(raw ?? {}) }
+  const set = (patch: Partial<DoubleBattlesConfig>) => setRaw({ ...cfg, ...patch })
+  const toggle = (id: string, on: boolean) =>
+    set({ regions: on ? [...new Set([...cfg.regions, id])] : cfg.regions.filter((r) => r !== id) })
+  return (
+    <Box
+      title="Double battles"
+      icon="vs"
+      hint="Two of yours against two foes. Wild Pokémon sometimes come in pairs; duo trainers (Trainers → Duo) and Tate & Liza always fight 2 v 2. Never in Extreme mode, small worlds, the portal run or the nightmare."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Who gets them</span>
+        <AccessSwitch value={cfg.access ?? 'off'} onChange={(access) => set({ access })} label="Double battles: who gets them" />
+        <span className="text-base text-muted">
+          {cfg.access === 'all'
+            ? 'On for every player, in the regions ticked below.'
+            : cfg.access === 'admin'
+              ? 'Only you get them (to try them first). Players fight one on one.'
+              : 'Off: every battle is one on one.'}
+        </span>
+      </div>
+      <Field label="Regions" hint="where double battles happen">
+        <div className="flex flex-wrap gap-x-4 gap-y-1">
+          {(data?.regions ?? []).map((reg) => (
+            <label key={reg.id} className="flex items-center gap-2 text-lg">
+              <input type="checkbox" checked={cfg.regions.includes(reg.id)} onChange={(e) => toggle(reg.id, e.target.checked)} />
+              {reg.name}
+            </label>
+          ))}
+        </div>
+      </Field>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Wild pairs (%)" hint="of the wild encounters in those regions">
+          <NumInput
+            min={0}
+            max={100}
+            value={cfg.wildChance}
+            onChange={(v) => set({ wildChance: Math.max(0, Math.min(100, v ?? 0)) })}
+          />
+        </Field>
+      </div>
     </Box>
   )
 }
@@ -1077,6 +1130,8 @@ export function ConfigSection() {
       <DayCareBox />
 
       <ExtremeBox />
+
+      <DoubleBattlesBox />
 
       <TradesBox />
 

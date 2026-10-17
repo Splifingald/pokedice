@@ -42,6 +42,7 @@ import { TypeBadge, TypeSwatch } from '@/components/TypeBadge'
 import { soundOn } from '@/save/storage'
 import { pushToast, setSettings, useGame } from '@/store/game'
 import { BattleBits } from './kitchen/BattleBits'
+import { DoubleBits } from './kitchen/DoubleBits'
 import { DayCareBits } from './kitchen/DayCareBits'
 import { NicknameBits } from './kitchen/NicknameBits'
 import { TradeKitBits } from './kitchen/TradeBits'
@@ -595,6 +596,10 @@ export function KitchenSink() {
 
       <Section title="Battle: stage, plates, tray, readout, team pips (and the raid's compact ones, speed button), Bag, catch">
         <BattleBits />
+      </Section>
+
+      <Section title="Double battles: the four-Pokémon stage (front pair big, partners behind), name-less plates, target picker, the preview's tag and INFO, rules, two leads">
+        <DoubleBits />
       </Section>
 
       <Section title="PartnerMoment: the lab (new game, new region)">

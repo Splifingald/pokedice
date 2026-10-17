@@ -137,6 +137,12 @@ export const TRAINER_CLASSES = [
   'Madame',
   'Fisher',
   'Model',
+  // Pairs (double battles, docs/31)
+  'Young Couple',
+  'Interviewers',
+  'Sis and Bro',
+  'Cool Couple',
+  'Crush Kin',
 ].sort((a, b) => b.length - a.length)
 
 /** Splits `Bug Catcher Kent` into its class and its given name; a bare `Misty` has neither. */

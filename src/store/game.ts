@@ -62,6 +62,8 @@ export interface TrickRun {
 
 /** The catch throw after a wild / legendary K.O. `result` is set once the die is thrown. */
 export interface CatchState {
+  /** A double battle's foe (its battle uid): which of the two waits for the ball (docs/31). */
+  uid?: string
   dex: number
   level: number
   shiny?: boolean
@@ -100,6 +102,8 @@ export interface RunState {
   /** A catch waiting on the "Add to team?" decision. */
   pendingCatchId: string | null
   catch: CatchState | null
+  /** After a wild double battle, the other one's throw, waiting for this one's to end (docs/31). */
+  catchQueue?: CatchState[]
   /** Dev tools: force the next encounter type. */
   forceNext: ForceKind | null
   /** An Elite Rebattle gauntlet is being fought: its region and tier (the fights run on its League area). */

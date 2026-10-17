@@ -139,6 +139,16 @@ One combo pays per roll. Straights are scanned over the **distinct sorted face v
 
 Ditto never gains dice of its own. When a battle starts, and again whenever its opponent changes (a switch, a trainer's next Pokémon), it copies the opponent's dice — a copying opponent lends its own set — and rolls them itself, with its own rerolls and its own side's upgrade levels. A foe's Ditto copies your active Pokémon. The battle log says "Ditto copied X's dice!".
 
+### 2.6 Double battles (docs/31)
+
+In the regions the admin ticks (Hoenn → Paldea by default, switch Off until opened): 10 % of wild encounters come as a
+pair, duo trainers (the Twins, Young Couples…) and Tate & Liza always fight 2 v 2. Two of yours go out; every round all
+four act once by Speed (a tie goes to yours); you pick the foe you attack, foes attack one of yours at random. A
+trainer's whole team is one battle, the next one coming out in a fallen one's spot; a K.O. of yours is replaced from
+the bench, or the other fights on alone. Each K.O. gives its full XP to both of yours out; after a wild pair, a throw
+at each one. Never for the Elite Four, Champions, legendaries, raids, Versus, Extreme mode, small worlds or the special
+areas.
+
 ## 3. Dice
 
 Every Pokémon owns at least one die, gained by level and evolution (§4.2). There is no cap: every `ADD_DIE` milestone lands (Lugia's Lv.75 die is its sixth). Two categories:

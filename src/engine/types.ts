@@ -496,6 +496,11 @@ export interface Trainer {
    * sprite of the character the player didn't pick. An area lists one version per starter; the others are skipped.
    */
   rivalOf?: number | null
+  /**
+   * A pair (Twins, a Young Couple, Tate & Liza…): in a region with double battles on, they fight 2 v 2 with two of
+   * their Pokémon out at once (docs/31). Elite Four and Champions never do. Missing = no.
+   */
+  duo?: boolean
 }
 
 export type CurableStatus = 'burn' | 'poison' | 'frozen' | 'paralyze' | 'confuse'
@@ -865,6 +870,17 @@ export interface GameConfig {
   nightmare: { access: EventAccess }
   /** Trick or Treat (docs/29): its switch, numbers and each area's ghosts. The server reads the switch too. */
   trickOrTreat: TrickOrTreatConfig
+  /** Double battles (docs/31): their switch, the regions that have them and the wild odds. */
+  doubleBattles: DoubleBattlesConfig
+}
+
+/** Double battles (docs/31): two of yours against two foes, in the regions ticked here. */
+export interface DoubleBattlesConfig {
+  access: EventAccess
+  /** The regions where they happen: wild Pokémon in pairs, duo trainers, Tate & Liza. */
+  regions: RegionId[]
+  /** % of the wild encounters there that come as a pair. */
+  wildChance: number
 }
 
 /** A Trick or Treat ghost's rarity (docs/29): it picks the ghost and sets its gauge. */
@@ -1237,6 +1253,8 @@ export interface SaveData {
   portalRulesSeen?: boolean
   /** The nightmare's rules pop-up (docs/30) has been shown (once; INFO shows them again). */
   nightmareRulesSeen?: boolean
+  /** Double battles' rules pop-up (docs/31) has been shown (once, at the first one; INFO shows them again). */
+  doubleRulesSeen?: boolean
   /** The region being played. Absent on saves from before the second region = 'kanto'. */
   region?: RegionId
   /** The regions not being played, each holding everything that region owns. */

@@ -379,6 +379,8 @@ export interface VictoryInput {
   enemyDex: number
   enemyLevel: number
   fighterUid: string
+  /** A double battle: yours that were out when it fell, each earning its full XP (docs/31). Overrides `fighterUid`. */
+  fighterUids?: string[]
   /** Gym battles: the trainer, and whether this K.O. was their last Pokémon. */
   gymTrainerId?: string
   gymComplete?: boolean
@@ -397,7 +399,8 @@ export interface VictoryResult {
 export function awardBattleXp(
   save: SaveData,
   enemyLevel: number,
-  fighterUid: string,
+  /** The fighter, or a double battle's two (each gets the full XP). */
+  fighterUid: string | readonly string[],
   area: Area,
   cleared: boolean,
   data: GameData,
@@ -418,9 +421,10 @@ export function awardBattleXp(
     for (const ev of res.events)
       if (ev.kind === 'evolve' && !next.pokedex.includes(ev.toDex)) next.pokedex.push(ev.toDex)
   }
-  const recipients = data.config.xpShareMode === 'team' ? next.team : [fighterUid]
-  // Multi EXP compares levels from before this K.O.'s XP.
-  const fighterLevel = getInstance(next, fighterUid)?.level ?? 1
+  const fighters = typeof fighterUid === 'string' ? [fighterUid] : [...fighterUid]
+  const recipients = data.config.xpShareMode === 'team' ? next.team : fighters
+  // Multi EXP compares levels from before this K.O.'s XP (the highest fighter's, in a double battle).
+  const fighterLevel = Math.max(1, ...fighters.map((uid) => getInstance(next, uid)?.level ?? 1))
   for (const uid of recipients) award(uid, xp, false)
 
   // Multi EXP: team members who didn't fight (and are still standing) get a share, bigger the further behind they are.
@@ -454,7 +458,8 @@ export function applyVictory(
   let progress = progressOf(save, area.id)
   const events: RunEvent[] = []
   const hiddenBefore = new Set(unlockedHiddenAreas(save, data))
-  let next = awardBattleXp(save, input.enemyLevel, input.fighterUid, area, progress.cleared, data, rng, events)
+  const fighters = input.fighterUids?.length ? input.fighterUids : input.fighterUid
+  let next = awardBattleXp(save, input.enemyLevel, fighters, area, progress.cleared, data, rng, events)
 
   // Gold — trainers only (gym leaders, the Elite Four and the Champion pay extra), more under Cash Flow
   if (input.kind === 'trainer' || input.kind === 'gym') {

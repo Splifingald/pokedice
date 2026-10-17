@@ -3,7 +3,7 @@ import { GlitchSprite } from '@/components/Portal'
 import { motion } from 'framer-motion'
 import { useId, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { catchTarget, catchValueOf, effectiveStats, getSpecies, MONEY, paidKey, rebattleProgress, rebattleTiers, type Encounter, portalNoCatch, nightmareFoe } from '@/engine'
+import { catchTarget, catchValueOf, effectiveStats, getSpecies, isDoubleEncounter, MONEY, paidKey, rebattleProgress, rebattleTiers, type Encounter, portalNoCatch, nightmareFoe } from '@/engine'
 import { joinList } from '@/i18n'
 import { effectText } from '@/i18n/text'
 import { money } from '@/lib/format'
@@ -13,7 +13,8 @@ import { BadgeIcon } from '@/components/BadgeIcon'
 import { DiceSet } from '@/components/DiceSet'
 import { ItemSprite } from '@/components/ItemSprite'
 import { PixelIcon } from '@/components/icons'
-import { LeadPicker, defaultLead } from '@/components/LeadPicker'
+import { DoubleTag } from '@/components/DoubleBattle'
+import { LeadPicker, defaultLead, pickedPair } from '@/components/LeadPicker'
 import { PixelButton } from '@/components/PixelButton'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { StatChip } from '@/components/StatChip'
@@ -178,7 +179,9 @@ function TrainerCard({ enc }: { enc: Extract<Encounter, { kind: 'trainer' }> }) 
       <TrainerIntro src={enc.spriteUrl} size={desktop ? 192 : 128} />
       <div className="flex min-w-0 flex-col gap-1">
         <div className="text-[30px] leading-none">{enc.name}</div>
-        <div className="text-xl leading-tight text-muted">{t('ui.enc.wantsToBattle', { count: enc.team.length })}</div>
+        <div className="text-xl leading-tight text-muted">
+          {t(enc.double ? 'ui.enc.wantsToBattleDouble' : 'ui.enc.wantsToBattle', { count: enc.team.length })}
+        </div>
         <div className="flex flex-wrap gap-1.5">
           {enc.team.map((m, i) => (
             <div key={i} className="flex flex-col items-center bg-paper px-1 py-0.5 shadow-ring">
@@ -313,6 +316,9 @@ const TITLES: Record<Encounter['kind'], string> = {
 export function EncounterPreview({ enc }: { enc: Encounter }) {
   const { t } = useT()
   const [lead, setLead] = useState<string | null>(null)
+  // A double battle sends two out (docs/31).
+  const [leads, setLeads] = useState<string[]>([])
+  const double = isDoubleEncounter(enc)
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
   const titleId = useId()
@@ -338,11 +344,13 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
       >
         {/* Gym and legendary cards carry their own banner, so their title is for screen readers only. */}
         <h2 id={titleId} className={dark ? 'sr-only' : 'border-b-[3px] border-edge px-3 py-2 text-center text-2xl leading-tight sm:text-3xl'}>
-          {t(TITLES[enc.kind])}
+          {t(enc.kind === 'wild' && enc.partner ? 'ui.enc.titleWildPair' : TITLES[enc.kind])}
         </h2>
         <div className="pixel-scroll flex flex-col gap-3 overflow-y-auto p-3 sm:p-4">
+          {double && <DoubleTag className={cx('justify-center', dark && 'text-paper')} />}
           {enc.kind === 'gym' && <GymCard enc={enc} />}
           {enc.kind === 'wild' && <WildCard enc={enc} />}
+          {enc.kind === 'wild' && enc.partner && <WildCard enc={{ kind: 'wild', ...enc.partner }} />}
           {enc.kind === 'boss' && (
             <>
               <div className="text-center text-2xl leading-tight text-gold">
@@ -363,7 +371,12 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
 
           {fight && save && (
             <div className={dark ? 'bg-panel p-2 text-ink' : undefined}>
-              <LeadPicker value={lead} onChange={setLead} foe={foeTypes(data, enc)} />
+              <LeadPicker
+                value={lead}
+                onChange={setLead}
+                foe={foeTypes(data, enc)}
+                {...(double && { pair: { value: leads, onChange: setLeads } })}
+              />
             </div>
           )}
         </div>
@@ -377,7 +390,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
             size="lg"
             className="flex-1"
             autoFocus
-            onClick={() => engage(fight ? (lead ?? defaultLead()) : undefined)}
+            onClick={() => engage(!fight ? undefined : double ? pickedPair(leads) : (lead ?? defaultLead()))}
           >
             {fight && <PixelIcon name="sword" size={22} />}
             {enc.kind === 'trick' && <PixelIcon name="pumpkin" size={22} />}
