@@ -1,9 +1,11 @@
 // Kitchen sink (dev only): day and night in Johto (docs/31) — the top bar's chip by day and by night, the fights'
-// indicator on a stage, the tags in an area's lists (its own half, the other half), and the rules (unlock and INFO).
+// indicator on a stage, the tags in an area's lists (its own half, the other half), the Pokédex locations' chips, and
+// the rules (unlock and INFO).
 import { useState, type ReactNode } from 'react'
 import {
   BattleDayTime,
   DayNightChip,
+  DayNightPill,
   DayNightRulesModal,
   DayNightTag,
   useDayNightLine,
@@ -79,6 +81,12 @@ export function DayNightBits() {
       <Tile dex={163} time="night" now="day" />
       <Tile dex={161} time="day" now="day" />
       <Tile dex={161} time="day" now="night" />
+      <Frame name="Pokédex location · day only / night only">
+        <div className="flex gap-2">
+          <DayNightPill time="day" />
+          <DayNightPill time="night" />
+        </div>
+      </Frame>
       <Frame name="Rules">
         <div className="flex flex-col gap-2">
           <PixelButton onClick={() => setRules('unlock')}>Rules (first time)</PixelButton>

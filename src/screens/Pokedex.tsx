@@ -10,6 +10,8 @@ import {
   regionSpecies,
   type GameData,
   type SaveData,
+  areaKeepsTime,
+  wildPoolAt,
 } from '@/engine'
 import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
@@ -20,6 +22,7 @@ import { FilterChips, SearchField } from '@/components/Segmented'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { markDexSeen, useDexNew } from '@/lib/dexSeen'
 import { dexNo } from '@/lib/format'
+import { useDayTime } from '@/store/dayTime'
 import { useGame } from '@/store/game'
 
 type Filter = 'all' | 'caught' | 'missing' | 'nearby'
@@ -52,6 +55,8 @@ export function PokedexScreen() {
   const count = save?.pokedex.length ?? 0
   useEffect(() => markDexSeen(), [count])
 
+  // In Johto with day and night on (docs/31): the half of the day it is, so "right now" leaves out the other half's.
+  const now = useDayTime()
   // Missing species you can meet right now: in a wild pool (or as a legendary) of an area you've opened.
   const nearby = useMemo(() => {
     const set = new Set<number>()
@@ -59,11 +64,12 @@ export function PokedexScreen() {
     for (const a of data.areas) {
       // "Nearby" means without leaving: an unlocked area of the region you are standing in.
       if (regionOfArea(a) !== regionOf(save) || !isAreaUnlocked(save, a.id, data)) continue
-      for (const w of a.wildPool) if (w.weight > 0 && !save.pokedex.includes(w.dex)) set.add(w.dex)
+      for (const w of wildPoolAt(a, areaKeepsTime(data, a) ? now : null))
+        if (w.weight > 0 && !save.pokedex.includes(w.dex)) set.add(w.dex)
       for (const b of a.legendaryBoss ?? []) if (!save.pokedex.includes(b.dex)) set.add(b.dex)
     }
     return set
-  }, [save, data])
+  }, [save, data, now])
 
   if (!save) return null
   const caught = new Set(save.pokedex)

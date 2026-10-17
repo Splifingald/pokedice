@@ -45,7 +45,7 @@ import { evolutionHow, PokemonSheet, useVisibleEvolutions } from './PokemonSheet
 import { MiniSprite } from './SpriteImg'
 import { areaStatus, lockReason } from '@/screens/home/areas'
 import { AreaStrip } from './AreaStrip'
-import { DayNightTag } from './DayNight'
+import { DayNightPill } from './DayNight'
 import { travelTo } from '@/store/travel'
 
 interface Spot {
@@ -155,7 +155,6 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const navigate = useNavigate()
-  const now = useDayTime()
   if (!save) return null
   const { area } = spot
   const st = areaStatus(save, data, area)
@@ -212,18 +211,15 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
               : spot.legendary
                 ? t('ui.dex.legendarySpot', { levels })
                 : t('ui.dex.wildSpot', { levels, rarity: rarity(spot.share) })}
-          {spot.time && (
-            <>
-              {' · '}
-              <span className="inline-flex items-center gap-1 align-middle">
-                <DayNightTag time={spot.time} now={now} size={12} />
-                {t(spot.time === 'day' ? 'ui.dayNight.onlyDay' : 'ui.dayNight.onlyNight')}
-              </span>
-            </>
-          )}
           {locked && ` · ${lockReason(save, data, area) || t('ui.dex.locked')}`}
           {closed && t('ui.dex.closedSuffix')}
         </small>
+        {/* Day and night (docs/31): a place where it comes only by day or only by night says so on its own chip. */}
+        {spot.time && (
+          <span className="flex">
+            <DayNightPill time={spot.time} />
+          </span>
+        )}
       </span>
       {locked || closed ? (
         <span className="absolute right-2.5 top-1/2 grid h-11 w-[60px] -translate-y-1/2 place-items-center bg-well-deep shadow-ring-line" aria-hidden>

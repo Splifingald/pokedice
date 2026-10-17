@@ -123,6 +123,26 @@ export function DayNightTag({
   )
 }
 
+/**
+ * A Pokédex location met only by day or only by night: the sun or the moon and its words, on the time's own chip
+ * (sky blue by day, night blue by night), so it reads at a glance in the list of places.
+ */
+export function DayNightPill({ time }: { time: DayTime }) {
+  const { t } = useT()
+  return (
+    <span
+      className={cx(
+        'inline-flex items-center gap-1 px-1.5 pb-0.5 pt-px font-pixel-sm text-[13px] leading-none',
+        time === 'day' ? 'bg-sky text-ink shadow-ring-line' : 'light-scope bg-night text-gold-light',
+      )}
+      data-day-time={time}
+    >
+      <PixelIcon name={ICON[time]} size={12} />
+      {t(time === 'day' ? 'ui.dayNight.onlyDay' : 'ui.dayNight.onlyNight')}
+    </span>
+  )
+}
+
 /** The rules' banner: the day's sky on the left with its sun, the night's on the right with its moon and stars. */
 function DayNightBanner() {
   return (

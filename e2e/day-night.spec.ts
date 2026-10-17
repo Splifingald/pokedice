@@ -3,7 +3,14 @@
 // 360-wide phone still fits the top bar. Switched off, or in Kanto, there is no sun or moon.
 import { expect, test, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
-import { compileGameData, createInstance, newRegionBlock, startRegion, type BundleRaw, type SaveData } from '../src/engine'
+import {
+  compileGameData,
+  createInstance,
+  newRegionBlock,
+  startRegion,
+  type BundleRaw,
+  type SaveData,
+} from '../src/engine'
 import { EVENTS_ON, FAST, makeSave, mockSupabase } from './helpers'
 
 const load = (f: string) => JSON.parse(readFileSync(new URL(`../src/data/${f}`, import.meta.url), 'utf8'))
@@ -25,7 +32,14 @@ const johto = data.regions.find((r) => r.id === 'johto')!
 /** A Kanto save that has just started Johto, on its first starter. */
 function inJohto(): SaveData {
   let c = 0
-  const block = newRegionBlock(johto, johto.starters[0]!, data, Date.now(), () => `e2e-j-${++c}`, createInstance)
+  const block = newRegionBlock(
+    johto,
+    johto.starters[0]!,
+    data,
+    Date.now(),
+    () => `e2e-j-${++c}`,
+    createInstance,
+  )
   return { ...startRegion(makeSave(4), johto, block), regionOfferSeen: ['johto'] }
 }
 
@@ -51,7 +65,9 @@ async function boot(page: Page, save: SaveData, at: Date, devConfig: object = ON
 
 const timeButton = (page: Page) => page.getByRole('button', { name: /in Johto until/ })
 
-test('at night in Johto: the rules once, the moon far left, a tap shows the rules again', async ({ page }) => {
+test('at night in Johto: the rules once, the moon far left, a tap shows the rules again', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 360, height: 640 })
   await boot(page, inJohto(), NIGHT)
   await page.goto('/home')
@@ -80,7 +96,9 @@ test('at night in Johto: the rules once, the moon far left, a tap shows the rule
 
   // Seen, in the save: it won't show by itself again.
   await expect
-    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}').dayNight?.rulesSeen))
+    .poll(() =>
+      page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}').dayNight?.rulesSeen),
+    )
     .toBe(true)
 })
 
@@ -90,6 +108,22 @@ test('by day in Johto: the sun', async ({ page }) => {
   const chip = timeButton(page)
   await expect(chip).toHaveAccessibleName(/It's day in Johto until 6:00 PM/)
   await expect(chip.locator('[data-day-time]')).toHaveAttribute('data-day-time', 'day')
+})
+
+test('the Pokédex: each place says when it comes, and Nearby counts only what the hour brings', async ({
+  page,
+}) => {
+  await boot(page, { ...inJohto(), dayNight: { rulesSeen: true } }, DAY)
+  await page.goto('/pokedex')
+  // By day, Route 29's Hoothoot (night only) isn't nearby; Sentret (day only) is.
+  await page.getByRole('radio', { name: /Nearby/ }).click()
+  await expect(page.getByRole('button', { name: /#161/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /#163/ })).toHaveCount(0)
+
+  await page.getByRole('radio', { name: /^All/ }).click()
+  await page.getByRole('button', { name: /#163/ }).click()
+  const place = page.getByRole('listitem').filter({ hasText: 'Route 29' }).first()
+  await expect(place.locator('[data-day-time="night"]')).toHaveText('Night only')
 })
 
 test('switched off, or in Kanto: no sun or moon, no rules', async ({ page }) => {

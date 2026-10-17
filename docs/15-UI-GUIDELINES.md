@@ -1180,7 +1180,11 @@ Pokémon met only in one half comes only then. The pieces are in `src/components
   18:00. Tap for the rules."). Re-read every 30 s.
 - **The fights** (`BattleDayTime`): the same chip, small (16 px icon), on the stage's top right corner of every fight in
   a Johto area; not in Versus. It never covers a plate and takes no taps.
-- **The lists** (the area's details, the area's Pokédex, a Pokémon's where-to-find): a 12 px sun or moon by a species
-  met in one half only (`DayNightTag`, its name "Day only" / "Night only" as its title), at half opacity while it's the
-  other half; its share is the one when it's met. Untagged species show nothing.
+- **The lists** (the area's details, the area's Pokédex): a 12 px sun or moon by a species met in one half only
+  (`DayNightTag`, its name "Day only" / "Night only" as its title), at half opacity while it's the other half; its share
+  is the one when it's met. Untagged species show nothing.
+- **The Pokédex entry's places** (where to find it): each place where the species comes only by day or only by night
+  carries a chip under its line (`DayNightPill`: the sun and "Day only" on `bg-sky`, the moon and "Night only" on
+  `light-scope bg-night` in `gold-light`), whatever the time now. The Pokédex's **Nearby** filter counts only what the
+  hour brings.
 
