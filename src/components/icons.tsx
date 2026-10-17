@@ -64,6 +64,18 @@ const PUMPKIN_PAL: Record<string, string> = {
   g: '#34c97a',
 }
 
+/** The Underground's pickaxe and Explorakit (docs/31): steel, a wooden handle, a leather kit. */
+const DIG_PAL: Record<string, string> = {
+  k: '#24304f',
+  s: '#b7b7ce',
+  S: '#e6e8f2',
+  h: '#a87a48',
+  H: '#7a5230',
+  b: '#c88a3a',
+  B: '#8a5a1c',
+  y: '#ffe7a8',
+}
+
 export const ICONS = {
   gift: [
     '..kkk..kkk..',
@@ -344,6 +356,34 @@ export const ICONS = {
     'kwkwwkkwkk',
     'kk.kk..kk.',
   ],
+  pickaxe: [
+    '...kkkkk....',
+    '..kSSSSSkk..',
+    '.kSsssssssk.',
+    'ks.kkkkhksk.',
+    'kk....khk.kk',
+    '.....khk....',
+    '....khk.....',
+    '...khk......',
+    '..khk.......',
+    '.kHk........',
+    'kHk.........',
+    '.k..........',
+  ],
+  kit: [
+    '....kkkk....',
+    '...k....k...',
+    '...k....k...',
+    'kkkkkkkkkkkk',
+    'kBBBBBBBBBBk',
+    'kbbbbbbbbbbk',
+    'kbbbbkkbbbbk',
+    'kbbbkyykbbbk',
+    'kbbbbkkbbbbk',
+    'kbbbbbbbbbbk',
+    'kBBBBBBBBBBk',
+    'kkkkkkkkkkkk',
+  ],
   ...PACK_ICONS,
 } as const
 
@@ -360,6 +400,8 @@ const OWN_PALETTE: Partial<Record<IconName, Record<string, string>>> = {
   trade: TRADE_PAL,
   gift: GIFT_PAL,
   pumpkin: PUMPKIN_PAL,
+  pickaxe: DIG_PAL,
+  kit: DIG_PAL,
 }
 
 export function PixelIcon({

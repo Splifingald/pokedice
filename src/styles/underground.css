@@ -1,0 +1,434 @@
+/*
+ * The Underground (docs/31; docs/15 §30). The cave, the crack gauge and the wall are art: the same in Daybreak and
+ * Dusk. Pixel motion steps (docs/15 §8); the screen leaves the motion classes off at motion `off`, and calm (the OS
+ * setting) stills the shakes.
+ */
+
+/* The cave, drawn in code: dark rock, a floor, two pillars, a dug face with orbs and a plate in it. */
+.ug-cave {
+  position: relative;
+  background: #2b211a;
+}
+.ug-cave > i,
+.ug-cave-stage > i {
+  position: absolute;
+  display: block;
+}
+.ug-cave-stage {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: min(100%, 320px);
+  transform: translateX(-50%);
+}
+.ug-cave-floor {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 22%;
+  background: #4a372a;
+}
+.ug-cave-pillar {
+  top: 0;
+  bottom: 0;
+  width: 22%;
+  background: #3a2b20;
+}
+.ug-cave-pillar.l {
+  left: 0;
+}
+.ug-cave-pillar.r {
+  right: 0;
+  width: 16%;
+}
+.ug-cave-face {
+  left: 32%;
+  right: 26%;
+  bottom: 22%;
+  height: 58%;
+  background: #94704b;
+  box-shadow:
+    inset 0 0 0 2px #1a130e,
+    inset 4px 4px 0 #7a5a3e;
+}
+.ug-cave-orb {
+  width: 9%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow:
+    inset -3px -3px 0 rgb(0 0 0 / 0.25),
+    inset 2px 2px 0 rgb(255 255 255 / 0.6);
+}
+.ug-cave-orb.s {
+  width: 6%;
+}
+.ug-cave-plate {
+  left: 46%;
+  bottom: 55%;
+  width: 11%;
+  height: 12%;
+  background: #ee8130;
+  box-shadow:
+    inset 0 0 0 2px #24304f,
+    inset 3px 3px 0 rgb(255 255 255 / 0.45);
+}
+.ug-cave-pick {
+  position: absolute;
+  right: 4%;
+  top: 10%;
+}
+
+/* An orb: round (it's a sphere), its colour, a shine and a shade, an ink edge. A medium orb is a capsule. */
+.ug-orb {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow:
+    0 0 0 2px #24304f,
+    inset -3px -3px 0 rgb(0 0 0 / 0.25),
+    inset 3px 3px 0 rgb(255 255 255 / 0.55);
+}
+.ug-orb.pill {
+  aspect-ratio: 2;
+  border-radius: 999px;
+}
+
+/* A plate: a slab in its type's colour, an engraved line, a corner cut. */
+.ug-plate {
+  position: relative;
+  background: var(--c);
+  clip-path: polygon(0 4px, 4px 0, 100% 0, 100% 100%, 0 100%);
+  box-shadow:
+    inset 0 0 0 2px #24304f,
+    inset 4px 4px 0 rgb(255 255 255 / 0.4),
+    inset -4px -4px 0 rgb(0 0 0 / 0.15);
+}
+.ug-plate::after {
+  content: '';
+  position: absolute;
+  left: 25%;
+  right: 25%;
+  top: 46%;
+  height: 2px;
+  background: rgb(36 48 79 / 0.45);
+}
+
+/* The crack gauge: a band of rock, a section per strike, cracking from the right; red and shaking near the end. */
+.ug-gauge {
+  gap: 2px;
+  padding: 4px;
+  background: #3a2b20;
+  box-shadow:
+    inset 0 0 0 2px #1a130e,
+    inset 0 4px 0 #5e4633;
+}
+.ug-seg {
+  position: relative;
+  flex: 1;
+  height: 20px;
+  background: #8f6a43;
+  box-shadow:
+    inset 0 2px 0 #b38a5a,
+    inset 0 -2px 0 #6b4a2f;
+}
+.ug-seg.used {
+  background: #2a1d14;
+  box-shadow: inset 0 2px 0 #1a130e;
+}
+.ug-seg svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: #c49a63;
+}
+.ug-gauge.hot .ug-seg.used {
+  background: #5a1a12;
+}
+.ug-gauge.shake {
+  animation: ug-shake 600ms steps(1) infinite;
+}
+@keyframes ug-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+}
+
+/* The wall: a frame of dark rock, the soil and what's buried beneath, the tiles on top. */
+.ug-wall {
+  width: 100%;
+  padding: 6px;
+  background: #1a130e;
+  box-shadow:
+    0 0 0 2px rgb(var(--c-edge)),
+    0 4px 0 2px rgb(var(--c-edge));
+}
+.ug-wall > .ug-soil {
+  inset: 6px;
+  background: #2a1d14;
+}
+/* Edge to edge: a gap would show the soil, and what's buried in it, between tiles. Their bevels part them. */
+.ug-wall > .ug-tiles {
+  gap: 0;
+}
+.ug-thing {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+.ug-thing-orb.s {
+  width: 52%;
+}
+.ug-thing-orb.m {
+  width: 78%;
+}
+.ug-thing-orb.l {
+  width: 82%;
+}
+.ug-thing-plate {
+  width: 88%;
+  height: 76%;
+}
+.ug-thing-fossil {
+  display: grid;
+  width: 88%;
+  height: 88%;
+  place-items: center;
+  background: #d9c58a;
+  box-shadow:
+    inset 0 0 0 2px #24304f,
+    inset 3px 3px 0 #efe0b0;
+}
+.ug-thing.done::after {
+  content: '';
+  position: absolute;
+  right: 8%;
+  top: 8%;
+  width: 6px;
+  height: 6px;
+  background: #fff;
+  box-shadow:
+    -3px 3px 0 #fff,
+    3px 3px 0 #fff,
+    0 6px 0 #fff;
+  animation: ug-glint 900ms steps(1) infinite;
+}
+@keyframes ug-glint {
+  0%,
+  60% {
+    opacity: 1;
+  }
+  61%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.ug-tile {
+  aspect-ratio: 1;
+  border: 0;
+  padding: 0;
+  min-height: 0;
+  background-repeat: no-repeat;
+}
+.ug-tile:disabled {
+  cursor: default;
+}
+.ug-tile:focus-visible {
+  outline: 3px solid #ffbe2e;
+  outline-offset: -3px;
+}
+.ug-tile.d3 {
+  background-color: #5a3d25;
+  background-image: linear-gradient(#3f2a18, #3f2a18), linear-gradient(#74522f, #74522f);
+  background-size:
+    6px 4px,
+    4px 4px;
+  background-position:
+    62% 30%,
+    28% 70%;
+  box-shadow:
+    inset 3px 3px 0 #74522f,
+    inset -3px -3px 0 #3f2a18;
+}
+.ug-tile.d2 {
+  background-color: #8f6a43;
+  background-image: linear-gradient(#6b4a2f, #6b4a2f);
+  background-size: 6px 4px;
+  background-position: 45% 62%;
+  box-shadow:
+    inset 3px 3px 0 #a98257,
+    inset -3px -3px 0 #6b4a2f;
+}
+.ug-tile.d1 {
+  background-color: #c49a63;
+  background-image: linear-gradient(#9c7646, #9c7646);
+  background-size: 4px 4px;
+  background-position: 70% 40%;
+  box-shadow:
+    inset 3px 3px 0 #dbb47c,
+    inset -3px -3px 0 #9c7646;
+}
+.ug-tile.open {
+  background: transparent;
+}
+@media (hover: hover) {
+  .ug-tile:not(:disabled):hover {
+    filter: brightness(1.12);
+  }
+}
+
+/* The layers as dots too: depth is never colour alone. */
+.ug-dots {
+  position: absolute;
+  left: 12%;
+  top: 12%;
+  width: 4px;
+  height: 4px;
+  background: rgb(255 255 255 / 0.65);
+}
+.ug-dots.n2 {
+  box-shadow: 6px 0 0 rgb(255 255 255 / 0.65);
+}
+.ug-dots.n3 {
+  box-shadow:
+    6px 0 0 rgb(255 255 255 / 0.65),
+    12px 0 0 rgb(255 255 255 / 0.65);
+}
+.d1 .ug-dots {
+  background: rgb(36 48 79 / 0.55);
+}
+
+/* A strike: the tile it hit flashes two white frames, its neighbours one; dust flies off in steps. */
+.ug-flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  animation: ug-flash-side 160ms steps(1) both;
+}
+.ug-flash.main {
+  animation: ug-flash 240ms steps(1) both;
+}
+@keyframes ug-flash {
+  0%,
+  24% {
+    opacity: 0.9;
+  }
+  25%,
+  49% {
+    opacity: 0;
+  }
+  50%,
+  74% {
+    opacity: 0.9;
+  }
+  75%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes ug-flash-side {
+  0%,
+  49% {
+    opacity: 0.6;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+.ug-dust {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.ug-dust b {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  background: #dbb47c;
+  animation: ug-dust 360ms steps(4, end) both;
+}
+.ug-dust b:nth-child(1) {
+  --dx: -14px;
+  --dy: -12px;
+}
+.ug-dust b:nth-child(2) {
+  --dx: 12px;
+  --dy: -14px;
+}
+.ug-dust b:nth-child(3) {
+  --dx: -12px;
+  --dy: 10px;
+}
+.ug-dust b:nth-child(4) {
+  --dx: 14px;
+  --dy: 8px;
+}
+@keyframes ug-dust {
+  from {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  to {
+    transform: translate(var(--dx), var(--dy));
+    opacity: 0;
+  }
+}
+
+/* The collapse: the tiles fall in steps (full), or the wall gives one thud (short). */
+.ug-wall.fall .ug-tile:not(.open) {
+  animation: ug-fall 700ms steps(6, end) both;
+}
+.ug-wall.fall .ug-tile:nth-child(3n + 1):not(.open) {
+  animation-delay: 80ms;
+}
+.ug-wall.fall .ug-tile:nth-child(3n + 2):not(.open) {
+  animation-delay: 160ms;
+}
+@keyframes ug-fall {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(18px);
+    filter: brightness(0.6);
+  }
+}
+.ug-wall.thud {
+  animation: ug-thud 240ms steps(2) both;
+}
+@keyframes ug-thud {
+  50% {
+    transform: translateY(3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ug-gauge.shake,
+  .ug-thing.done::after {
+    animation: none;
+  }
+}
+html.reduce-motion .ug-gauge.shake,
+html.reduce-motion .ug-thing.done::after,
+html.reduce-motion .ug-flash,
+html.reduce-motion .ug-dust b,
+html.reduce-motion .ug-wall.fall .ug-tile,
+html.reduce-motion .ug-wall.thud {
+  animation: none;
+}

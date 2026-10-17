@@ -170,6 +170,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `PortalRaidBanner` / `PortalRaidCard` (`RaidCard portal`) / `RaidStageArt` / `DistortionGround` / `StageTear` / `RaidNpcPicker portal` / `BattleStage world="distortion"` | Giratina's area raid (§27) | The raid page in the violet night (`.dw-scope`): the portal banner with its plate, the card open and caught, the lock, START, the team; its NPC partners pop-up (the portal and Giratina distorted as its banner); the raid's stage (the Distortion World, Giratina distorted on its island) and a bar's tear. The entrance is on `/kitchen-sink/fx` |
 | `MoonScene` / `NightmareGauge` / `NightmareEntry` / `NightmareEntryDialog` / `NightmareIntro` / `NightmareRulesModal` / `HauntSprite` / `BattleStage haunted` / `NightmareStrikeView` / `NightmareVictoryView` | Darkrai's nightmare (§29) | The moon on the pixel engine (moving; still); the gauge of rounds (fresh, under way, won); the way in (the intro playing, held at its end with "Tap to continue ▼", then its pop-up over that end; the pop-up at once, back from TEAM; the pop-up on its own: TEAM / NOT NOW / BEGIN THE NIGHTMARE); the rules pop-up (INFO); a haunted foe (full, short, off; on the night's stage); Darkrai's strike (playing, the cards draining; landed, from Home); the round's result cards (a round, the last, a gift); Home's Areas button locked with its reason; the waking (HEAL & START RAID over the green BACK TO THE WORLD) |
 | `NightmareRaidBanner` / `NightmareRaidCard` (`RaidCard nightmare`) / `NightStageArt` / `NightGround` / `StageShadow` / `RaidNpcPicker nightmare` / `BattleStage world="nightmare"` / `NightmareFx` | Darkrai's area raid, and the nightmare's fights (§29) | The raid page in the moonlit night (`.nm-scope`): the moon banner with its plate, the card open and caught, the lock, START, the team; its NPC partners pop-up (the moon and Darkrai as its banner); the stage (the night, the moon behind the foe, smoke rising off its rock) and a bar's shadow; the raid's screen vignette with the shadow over the page. The entrance is on `/kitchen-sink/fx` |
+| `UgCave` / `CrackGauge` / `UgWall` / `PickaxeDie` / `PickaxeFaces` / `OrbArt` / `PlateArt` / `ThingIcon` / `HaulList` / `PlateGrid` / `OrbBagTable` / `UgRulesModal` / `UgTeamSeats` | The Underground (§30) | The cave (a square's size; big); the gauge fresh, under way, its last three shaking or calm, collapsed; the wall fresh, half dug with a strike flashing, cleared (glinting), collapsing; the die unrolled and rolled; the faces with the one that came up, and the next level's with its raised face; orbs of every colour and size, plates; the haul with every outcome; the plates none and some; the orb bag; the team seats solo, two, full; the rules (once, INFO) |
 | `TeamSwapActions` | A Pokémon's sheet where the team can change (`teamSwapsOpen`: inside a Pokémon Center, at a portal's way in before READY!) | In the team: Make lead (not the lead), Send to the Box (not the last one); in the Box: Add to team, or, the team full, "swap it in for" each member (a button each: its still mini icon on the left, name and level, "goes to the Box" and the swap arrow, `reroll`, at the far right); still reviving from its fossil: a line saying so. It sits above Strengths and weaknesses in the sheet, whether type hints are on or not (`PokemonSheet`'s `beforeMatchups`, the user's call, 2026-10-15) |
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
@@ -642,7 +643,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
   queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
   again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the portal run (§27), Trick or Treat (§28), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the portal run (§27), Trick or Treat (§28), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), the Underground (§30: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
@@ -1161,3 +1162,41 @@ with a lilac edge, its red and its eye's ice blue. **Its lasting effects follow 
   edges, smoke at the sides, Darkrai's shadow passing over now and then, a piece of the page darkening as it brushes it,
   `.ui-shadow`) and its entrance (`RaidIntro world="nightmare"`, no Skip, its tapes in the night's blue and
   the moon's cream). Its rules, numbers and server checks are the area's mode's (docs/30 §1).
+
+## 30. The Underground
+
+A live event type (docs/31): Explorakits open walls, the pickaxe die digs them, orbs, fossils and plates come out.
+Its switch is its own (`underground.access`, §20) on top of the live events' one; its numbers are the admin's
+(game_config `underground`). Components in `src/components/Underground.tsx`, all on `/kitchen-sink`.
+
+- **Art, not theme**: the cave (`UgCave`), the crack gauge and the wall are drawn in code and stay the same in Daybreak
+  and Dusk (§2 "Art stays art"). The cave keeps its size on a wide screen: a scene at most 320 px wide, centred, rock
+  on both sides. With no picture picked by the admin, it is the live event's picture (Home's square, the Mart's section).
+- **Home's square** is the live square (§ docs/20) with the type's tag (a dark chip, the pickaxe, DIG) and the kits held
+  as its line ("Explorakits: 2 · +1 in 5h 12m"); a tap opens `/underground`. The Mart's tab wears KITS while it runs.
+- **Its pop-up is its rules** (`UgRulesModal`, the cave as banner): once per event (it also marks the live pop-up
+  seen), Later / Let's go! to the page; INFO at the bottom of the page shows it again with OK.
+- **The page** (`/underground`): the cave banner with the plate (back, title, time left); Explorakits (warm card: kits
+  held, free over cap and bought, the next free kit or "full", BUY KITS and the red DIG A WALL, or RESUME THE WALL);
+  the pickaxe (level of max, its faces as dice, the next level's with its raised face ringed in gold, the gold upgrade
+  button or what's missing); the team seats; the orb bag (a table, colour × size; SELL in green once allowed, hatched
+  otherwise with the reason in words); the plates (17 tiles, the held ones in their type's badge colours, a dashed "?"
+  for the rest); the end-of-event note; INFO. Outside the event (or before its content arrives) the page says it isn't
+  open and offers Back Home, never a silent redirect.
+- **The dig** (`/underground/dig`, full screen, `useHoldFullscreen`): the title and LEAVE FOR NOW (the wall waits in the
+  save); the crack gauge (`CrackGauge`: a section per strike cracking from the right; its last three red, and shaking
+  unless calm; `role="meter"` with "N strikes left"); the wall (`UgWall`): what's buried drawn underneath, the tiles
+  edge to edge on top (a gap would show what lies beneath), each a button labelled "Row r, column c: n layers" / "dug
+  out, part of the …", its depth as rock colour **and** dots; then what's still buried and the kits left; the footer
+  with the rolled die (`PickaxeDie`, tumbling), the line that says what the roll did, and the die's faces with the one
+  that came up lifted and ringed. At the end: "Everything dug out!" or "The wall collapsed!" and the red SEE THE HAUL.
+- **The haul** (`HaulList` in a `Modal`): a line per thing, a new plate first (gold card, NEW, "Arceus can now turn
+  Fire!"), then the fossil (to the Box, reviving), orbs (Orb bag / To Dawn, with whose colour it is), and what was lost
+  in the rubble (a grey line); DONE and the red NEXT WALL · n.
+- **Motion**: a strike flashes the tile two white frames and its hit neighbours one, with dust in steps (full); the
+  collapse drops the tiles in steps (full) or gives one thud (short); off: nothing moves. A thing fully dug out glints.
+  Calm stills the gauge's shake and the glint. Sounds: `ug.strike` (lower the bigger the roll), `ug.found`,
+  `ug.collapse`.
+- **Arceus**: while the Underground is on, the battle's TYPE menu lists the types it may take (its plates) and, after
+  them, the locked ones greyed with a lock and their plate's name, and a line on where plates come from; the TYPE
+  button shows even with no plate, so the lock is explained. Its sheet says which plates it holds. Foes are untouched.

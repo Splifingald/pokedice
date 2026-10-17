@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { badgeCase, isAreaUnlocked, liveLeft, liveShopRows, regionOf, sellPrice, shopStock, worldLeft, worldShopRows, type ItemDef } from '@/engine'
+import { badgeCase, isAreaUnlocked, kitPrice, kitsHeld, kitsLeftToBuy, liveLeft, liveShopRows, regionOf, sellPrice, shopStock, ugCfg, worldLeft, worldShopRows, type ItemDef } from '@/engine'
 import { effectText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
 import { sfx } from '@/audio/sfx'
@@ -19,6 +19,8 @@ import { useInWorld, worldVars, WorldTag } from '@/screens/events/world'
 import { useServerNow } from '@/store/serverTime'
 import { buyWorld, worldName } from '@/store/worlds'
 import { pushToast, useGame } from '@/store/game'
+import { ugBuyKits, useUnderground } from '@/store/underground'
+import { useNavigate } from 'react-router-dom'
 import { cx } from '@/theme/util'
 
 type Kind = ItemDef['effect']['kind']
@@ -251,6 +253,89 @@ function LiveShopSection() {
 }
 
 /**
+ * The Underground's Explorakits (docs/31), over the Mart's shelves while it runs: its cave, the time left, the kit at
+ * its price, what's left of the player's limit. Never in a small world's Mart (the event doesn't reach one).
+ */
+function UgKitSection() {
+  const { t } = useT()
+  const navigate = useNavigate()
+  const { live, now, u } = useUnderground(1000)
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  const [qty, setQty] = useState<'1' | '5' | '10'>('1')
+  if (!live || !u || !save || now == null) return null
+  const cfg = ugCfg(data)
+  const price = kitPrice(cfg)
+  const room = kitsLeftToBuy(u, cfg)
+  const limit = cfg.kits.limit
+  const steps = (['1', '5', '10'] as const).filter((q) => room == null || Number(q) <= room)
+  const n = Math.min(Number(steps.includes(qty) ? qty : '1'), room ?? Infinity)
+  const total = price * n
+  const can = room !== 0 && total <= save.gold
+  const left = liveLeft(live, now)
+  return (
+    <section aria-labelledby="ug-shop" className="lv-shop flex flex-col gap-2 pb-2.5" data-testid="ug-shop">
+      <header className="lv-shop-head relative isolate grid min-h-[92px] content-end gap-1.5 overflow-hidden px-3 pb-3 pt-2.5">
+        <LivePicture e={live} className="absolute inset-0 -z-10" />
+        <span className="flex min-w-0 items-center gap-2">
+          <LiveBadge />
+          <h2 id="ug-shop" className="lv-ink m-0 min-w-0 truncate text-[28px] leading-none">
+            {liveName(live)}
+          </h2>
+        </span>
+        <span className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2.5 font-pixel-sm text-[16px] leading-none">
+          <span className="lv-ink text-gold-light">{t('ui.live.endsIn', { time: liveTime(left.ms) })}</span>
+          <LiveGauge share={left.share} hot={left.ms < 3 * 3_600_000} />
+        </span>
+      </header>
+      <div className="mx-2 flex flex-col gap-2 bg-cream p-2.5 shadow-[inset_0_0_0_3px_rgb(var(--c-edge)),inset_0_-4px_0_rgb(var(--c-gold-light))]">
+        <div className="flex items-center gap-2.5">
+          <PixelIcon name="kit" size={36} />
+          <span className="grid min-w-0 flex-1 gap-0.5 leading-tight">
+            <b className="text-[20px] font-normal leading-none">{t('ui.ug.kit')}</b>
+            <small className="font-pixel-sm text-[15px] text-muted">{t('ui.ug.kitDesc')}</small>
+          </span>
+          <span className="light-scope bg-night px-2 pb-2 pt-1.5 text-[18px] leading-none text-gold-light">{money(price)}</span>
+        </div>
+        <span className={cx('font-pixel-sm text-[15px]', room != null && room <= 2 ? 'text-danger' : 'text-muted')}>
+          {t('ui.ug.held', { n: kitsHeld(u) })} ·{' '}
+          {room == null ? t('ui.live.shop.noLimit') : room === 0 ? t('ui.live.shop.soldOut') : t('ui.live.shop.left', { left: room, limit })}
+        </span>
+        {room !== 0 && (
+          <div className="flex items-center gap-2">
+            {steps.length > 1 && (
+              <Seg
+                label={t('ui.shop.howMany', { item: t('ui.ug.kit') })}
+                value={steps.includes(qty) ? qty : '1'}
+                onChange={setQty}
+                options={steps.map((q) => ({ id: q, label: `×${q}` }))}
+              />
+            )}
+            <PixelButton
+              variant={can ? 'primary' : 'secondary'}
+              className="min-h-[50px] flex-1"
+              aria-disabled={!can}
+              onClick={() => {
+                if (!can) return pushToast(t('ui.shop.needMore', { price: money(total - save.gold) }), 'bad')
+                if (!ugBuyKits(n)) return
+                sfx('gold')
+                pushToast(t('ui.shop.bought', { n, item: t('ui.ug.kit'), left: money(useGame.getState().save?.gold ?? 0) }), 'good')
+              }}
+            >
+              {can ? t('ui.shop.buyFor', { price: money(total) }) : t('ui.shop.needMore', { price: money(total - save.gold) })}
+            </PixelButton>
+          </div>
+        )}
+        <PixelButton size="sm" onClick={() => navigate('/underground')}>
+          {t('ui.ug.toUnderground')}
+        </PixelButton>
+      </div>
+      <p className="m-0 px-3 font-pixel-sm text-[14px] leading-tight text-muted">{t('ui.ug.kitNote')}</p>
+    </section>
+  )
+}
+
+/**
  * A small world's Mart (docs/21): the admin's list and nothing else, for the world's own ₽ — each item's limit and
  * what's left of it, the world's picture and time left over it. Nothing bought here leaves the world.
  */
@@ -413,6 +498,7 @@ function BuyTab({ badges }: { badges: number }) {
         </div>
       </Modal>
       <LiveShopSection />
+      <UgKitSection />
       <CatChips
         items={all}
         value={cat}

@@ -81,6 +81,15 @@ const undergroundSchema = z.object({
     .nullable(),
   walls: count,
   hauls: z.array(z.string().max(120)).max(50),
+  outbox: z
+    .array(
+      z.object({
+        wallId: z.string().max(120),
+        orbs: z.array(z.object({ colour: z.enum(['red', 'blue', 'green']), size: z.enum(['s', 'm', 'l']), to: z.string().max(80) })).max(20),
+      }),
+    )
+    .max(200)
+    .optional(),
   rulesSeen: z.boolean().optional(),
 })
 const offerSchema = z.discriminatedUnion('kind', [

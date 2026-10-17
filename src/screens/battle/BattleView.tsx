@@ -14,6 +14,7 @@ import {
   faceOf,
   facesOf,
   formChoices,
+  lockedTypeForms,
   gmaxChoices,
   hasStatus,
   megaChoices,
@@ -426,7 +427,12 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         ? 'ui.battle.ultra'
         : 'ui.battle.mega'
   const formOpts = versus ? [] : formChoices(st, data)
+  // Arceus's types still waiting for their plate (docs/31): listed, locked, in the same menu.
+  const lockedOpts = versus ? [] : lockedTypeForms(st, data)
   const formsLeft = data.config.formChangesPerBattle - (activeBattler(st).formChanges ?? 0)
+  const typeMenu =
+    formOpts.length > 0 ||
+    (lockedOpts.length > 0 && formsLeft > 0 && (st.phase === 'player_roll' || st.phase === 'player_reroll'))
   const megaBase = data.species[activeBattler(st).baseDex ?? activeBattler(st).dex]
   const megaEvolve = (toDex: number) => {
     setMenu(null)
@@ -597,7 +603,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     else if (canAct && showSwitch) setMenu('switch')
   }
   const extras =
-    !auto && !terminal && (megaOpts.length > 0 || gmaxOpts.length > 0 || formOpts.length > 0 || st.canRun)
+    !auto && !terminal && (megaOpts.length > 0 || gmaxOpts.length > 0 || typeMenu || st.canRun)
 
   let actions: ReactNode = null
   if (over) actions = versus!.end
@@ -884,7 +890,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                         <PixelIcon name="up" size={14} /> {t('ui.battle.gmax')}
                       </PixelButton>
                     )}
-                    {formOpts.length > 0 && (
+                    {typeMenu && (
                       <PixelButton size="sm" disabled={!canAct} onClick={() => setMenu('form')}>
                         <PixelIcon name="dice" size={14} /> {t('ui.battle.type', { left: formsLeft })}
                       </PixelButton>
@@ -998,7 +1004,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
       {/* Arceus: its type, picked from a menu, a few times per battle. */}
       <Modal
-        open={menu === 'form' && formOpts.length > 0}
+        open={menu === 'form' && typeMenu}
         onClose={() => setMenu(null)}
         title={t('ui.battle.typeTitle', { name: active.name })}
       >
@@ -1019,7 +1025,22 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                 <TypeBadge type={f.type1} size="sm" />
               </button>
             ))}
+            {lockedOpts.map((f) => (
+              <span
+                key={f.dex}
+                role="img"
+                aria-label={t('ui.ug.typeLocked', { type: typeName(f.type1), plate: t(`plate.${f.type1}`) })}
+                className="flex flex-col items-center gap-1 bg-well-deep p-1 text-center text-ink shadow-[inset_0_0_0_2px_rgb(var(--c-shadow))]"
+              >
+                <span className="flex items-center gap-1 pt-1">
+                  <PixelIcon name="lock" size={12} />
+                  <TypeBadge type={f.type1} size="sm" />
+                </span>
+                <small className="font-pixel-sm text-[12px] leading-tight">{t(`plate.${f.type1}`)}</small>
+              </span>
+            ))}
           </div>
+          {lockedOpts.length > 0 && <p className="copy font-pixel-sm text-[15px] text-muted">{t('ui.ug.typeLockedNote')}</p>}
         </div>
       </Modal>
 

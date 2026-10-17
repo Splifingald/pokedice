@@ -25,6 +25,8 @@ import { Title } from '@/screens/Title'
 import { UpgradesScreen } from '@/screens/Upgrades'
 import { VersusScreen } from '@/screens/Versus'
 import { EventsScreen } from '@/screens/events/EventsScreen'
+import { UndergroundScreen } from '@/screens/events/Underground'
+import { UndergroundDig } from '@/screens/events/UndergroundDig'
 import { ProgressRaidScreen } from '@/screens/events/ProgressRaidScreen'
 import { soundOn } from '@/save/storage'
 import { useGame } from '@/store/game'
@@ -83,6 +85,8 @@ export function App() {
               <Route path="/versus" element={<VersusScreen />} />
               <Route path="/trades" element={<TradesScreen />} />
               <Route path="/events/:id" element={<EventsScreen />} />
+              <Route path="/underground" element={<UndergroundScreen />} />
+              <Route path="/underground/dig" element={<UndergroundDig />} />
               <Route path="/raid/:areaId/:dex" element={<ProgressRaidScreen />} />
               <Route path="/settings" element={<SettingsScreen />} />
             </Route>

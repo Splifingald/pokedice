@@ -484,7 +484,14 @@ export function applyHaul(
       if (item) next = addFossil(next, item, data, now, newId())
     }
   }
-  const underground: UndergroundSave = { ...u, bag, wall: null, hauls: [...u.hauls, wall.id].slice(-50) }
+  const outbox = sent.length ? [...(u.outbox ?? []), { wallId: wall.id, orbs: sent }] : u.outbox
+  const underground: UndergroundSave = {
+    ...u,
+    bag,
+    wall: null,
+    hauls: [...u.hauls, wall.id].slice(-50),
+    ...(outbox && { outbox }),
+  }
   next = { ...next, underground, ...(plates.length !== (save.plates ?? []).length ? { plates } : {}) }
   return { save: next, lines, sent }
 }
@@ -496,6 +503,15 @@ export function receiveOrbs(save: SaveData, orbs: readonly { colour: OrbColour; 
   const bag: OrbBag = { red: { ...u.bag.red }, blue: { ...u.bag.blue }, green: { ...u.bag.green } }
   for (const o of orbs) if (bag[o.colour] && o.size in bag[o.colour]) bag[o.colour][o.size]++
   return { ...save, underground: { ...u, bag } }
+}
+
+/** The server has these walls' orbs: they leave the outbox. */
+export function clearOutbox(save: SaveData, wallIds: readonly string[]): SaveData {
+  const u = save.underground
+  if (!u?.outbox?.length) return save
+  const outbox = u.outbox.filter((w) => !wallIds.includes(w.wallId))
+  if (outbox.length === u.outbox.length) return save
+  return { ...save, underground: { ...u, outbox } }
 }
 
 // ------------------------------------------------------------------ the pickaxe and selling

@@ -983,6 +983,8 @@ export interface UndergroundSave {
   walls: number
   /** Walls whose haul is in this save (last 50). */
   hauls: string[]
+  /** Orbs owed to teammates, per wall, until the server has them (docs/31 §3). */
+  outbox?: { wallId: string; orbs: { colour: OrbColour; size: OrbSize; to: string }[] }[]
   /** The rules pop-up has been shown this event. */
   rulesSeen?: boolean
 }
