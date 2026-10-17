@@ -3451,6 +3451,7 @@ trainerClass.team-star-grunt,Team Star Grunt,Sbire de la Team Star,Recluta del T
 trainerClass.bodybuilder,Bodybuilder,Culturiste,Culturista,Bodybuilder,Culturista,Fisiculturista,Fisiculturista,ボディビルダー,보디빌더,健美运动员
 trainerClass.cabbie,Cabbie,Chauffeur de taxi,Taxista,Taxifahrer,Tassista,Taxista,Taxista,タクシードライバー,택시 운전사,出租车司机
 trainerClass.cook,Cook,Cuisinier,Cocinero,Koch,Cuoco,Cozinheiro,Cozinheiro,コック,요리사,厨师
+trainerClass.collector,Collector,Collectionneur,Coleccionista,Pokémon-Sammler,Cercapokémon,Collector,Collector,ポケモンコレクター,포켓몬콜렉터,宝可梦收藏家
 trainerName.nemona,Nemona,Menzi,Mencía,Nemila,Nemi,Nemona,Nemona,ネモ,네모,妮莫
 trainerName.arven,Arven,Pepper,Damián,Pepper,Pepe,Arven,Arven,ペパー,페퍼,派帕
 trainerName.penny,Penny,Pania,Noa,Cosima,Penny,Penny,Penny,ボタン,모란,牡丹
@@ -3478,6 +3479,31 @@ trainerName.crispin,Crispin,Rubépin,Denis,Matt,Piros,Crispin,Crispin,アカマ�
 trainerName.amarys,Amarys,Nérine,Nerina,Erin,Erin,Amarys,Amarys,ネリネ,Amarys,Amarys
 trainerName.lacey,Lacey,Taro,Aroa,Tara,Rupi,Lacey,Lacey,タロ,Lacey,Lacey
 trainerName.drayton,Drayton,Irido,Levi,Levy,Aris,Drayton,Drayton,カキツバタ,Drayton,Drayton
+trainerName.chase,Chase,Chase,Chase,Chase,Chase,Chase,Chase,カケル,태주,小驱
+trainerName.elaine,Elaine,Elaine,Elaine,Elaine,Elaine,Elaine,Elaine,アユミ,보연,步美
+trainerName.ethan,Ethan,Luth,Eco,Klarin,Armonio,Ethan,Ethan,ヒビキ,심향,阿响
+trainerName.lyra,Lyra,Célesta,Lira,Lyra,Cetra,Lyra,Lyra,コトネ,금선,琴音
+trainerName.kris,Kris,Christy,Cristi,Krista,Kristy,Kris,Kris,クリス,크리스,克丽丝
+trainerName.wally,Wally,Timmy,Blasco,Heiko,Lino,Wally,Wally,ミツル,민진,满充
+trainerName.brendan,Brendan,Brice,Bruno,Brix,Brendon,Brendan,Brendan,ユウキ,휘웅,小悠
+trainerName.may,May,Flora,Aura,Maike,Vera,May,May,ハルカ,봄이,小遥
+trainerName.lucas,Lucas,Louka,León,Lucius,Lucas,Lucas,Lucas,コウキ,광휘,明辉
+trainerName.dawn,Dawn,Aurore,Maya,Lucia,Lucinda,Dawn,Dawn,ヒカリ,빛나,小光
+trainerName.rei,Rei,Aurel,Luka,Lumius,Luca,Rei,Rei,テル,영빈,明耀
+trainerName.akari,Akari,Lucia,Kira,Lumia,Luce,Akari,Akari,ショウ,윤슬,小照
+trainerName.hilbert,Hilbert,Ludwig,Lucho,Warren,Alcide,Hilbert,Hilbert,トウヤ,투지,斗也
+trainerName.hilda,Hilda,Ludvina,Liza,Lotta,Anita,Hilda,Hilda,トウコ,투희,斗子
+trainerName.nate,Nate,Mélis,Rizzo,Tony,Sanzo,Nate,Nate,キョウヘイ,공명,共平
+trainerName.rosa,Rosa,Écho,Nanci,Rosy,Rina,Rosa,Rosa,メイ,명희,鸣依
+trainerName.calem,Calem,Kalem,Kalm,Kalem,Calem,Calem,Calem,カルム,칼름,卡鲁穆
+trainerName.lillie,Lillie,Lilie,Lylia,Lilly,Lylia,Lillie,Lillie,リーリエ,릴리에,莉莉艾
+trainerName.elio,Elio,Elio,Elio,Elio,Elio,Elio,Elio,ヨウ,영태,小阳
+trainerName.selene,Selene,Selene,Selene,Selene,Selene,Selene,Selene,ミヅキ,미월,美月
+trainerName.victor,Victor,Victor,Victor,Victor,Victor,Victor,Victor,マサル,승재,小胜
+trainerName.gloria,Gloria,Gloria,Gloria,Gloria,Gloria,Gloria,Gloria,ユウリ,우리,小优
+trainerName.florian,Florian,Florian,Florian,Florian,Florian,Florian,Florian,ハルト,보민,小春
+trainerName.juliana,Juliana,Juliana,Juliana,Juliana,Juliana,Juliana,Juliana,アオイ,푸름,小青
+trainerName.carmine,Carmine,Roseille,Corin,Hana,Rubra,Carmine,Carmine,ゼイユ,시유,丹瑜
 itemDesc.auspicious-armor,Makes certain Pokémon evolve: Charcadet (Armarouge). Use it from the Team screen.,Fait évoluer certains Pokémon : Charbambin (Carmadura). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Charcadet (Armarouge). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Knarbon (Crimanzo). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Charcadet (Armarouge). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Charcadet (Armarouge). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Charcadet (Armarouge). Use na tela Equipe.,特定のポケモンを進化させる：カルボウ（グレンアルマ）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 카르본(카디나르마). 팀 화면에서 사용한다.,让特定的宝可梦进化：炭小侍（红莲铠骑）。在队伍画面中使用。
 itemDesc.malicious-armor,Makes certain Pokémon evolve: Charcadet (Ceruledge). Use it from the Team screen.,Fait évoluer certains Pokémon : Charbambin (Malvalame). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Charcadet (Ceruledge). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Knarbon (Azugladis). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Charcadet (Ceruledge). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Charcadet (Ceruledge). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Charcadet (Ceruledge). Use na tela Equipe.,特定のポケモンを進化させる：カルボウ（ソウブレイズ）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 카르본(파라블레이즈). 팀 화면에서 사용한다.,让特定的宝可梦进化：炭小侍（苍炎刃鬼）。在队伍画面中使用。
 itemDesc.syrupy-apple,Makes certain Pokémon evolve: Applin (Dipplin). Use it from the Team screen.,Fait évoluer certains Pokémon : Verpom (Pomdramour). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Applin (Dipplin). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Knapfel (Sirapfel). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Applin (Dipplin). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Applin (Dipplin). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Applin (Dipplin). Use na tela Equipe.,特定のポケモンを進化させる：カジッチュ（カミッチュ）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 과사삭벌레(과미르). 팀 화면에서 사용한다.,让特定的宝可梦进化：啃果虫（裹蜜虫）。在队伍画面中使用。
@@ -4510,6 +4536,40 @@ ui.portal.confirmTitle,Take this boon?,Prendre ce bonus ?,¿Tomar esta bendició
 ui.portal.confirm,Confirm,Confirmer,Confirmar,Bestätigen,Conferma,Confirmar,Confirmar,けってい,확인,确认
 # --- Trick or Treat (docs/29),,,,,,,,,,
 ui.card.trick,Trick or Treat,Un bonbon ou un sort,Truco o trato,Süßes oder Saures,Dolcetto o scherzetto,Doçura ou travessura,Gostosuras ou travessuras,トリック・オア・トリート,트릭 오어 트릿,不给糖就捣蛋
+ui.looks.title,Trainer looks,Apparences de dresseur,Aspectos de entrenador,Trainer-Looks,Aspetti allenatore,Visuais de treinador,Visuais de treinador,トレーナーの見た目,트레이너 모습,训练家外观
+ui.looks.count,{n} of {total} unlocked,{n} sur {total} débloquées,{n} de {total} desbloqueados,{n} von {total} freigeschaltet,{n} su {total} sbloccati,{n} de {total} desbloqueados,{n} de {total} desbloqueados,{n}/{total} 解放済み,{total}개 중 {n}개 해금,已解锁 {n}/{total}
+ui.looks.rowNew,"{name}, new: {n}","{name}, nouveautés : {n}","{name}, novedades: {n}","{name}, Neues: {n}","{name}, novità: {n}","{name}, novidades: {n}","{name}, novidades: {n}",{name}、新しい見た目：{n},"{name}, 새로운 모습: {n}",{name}，新外观：{n}
+ui.looks.wearing,"How other trainers see you on the leaderboard, in Versus and on your card.","Ce que les autres dresseurs voient au classement, en Versus et sur ta carte.","Cómo te ven los demás en la clasificación, en Versus y en tu tarjeta.","So sehen dich andere in der Bestenliste, im Versus und auf deinem Pass.","Come ti vedono gli altri in classifica, in Versus e sulla tua scheda.","Como os outros te veem na classificação, no Versus e no teu cartão.","Como os outros veem você na classificação, no Versus e no seu cartão.",ランキング、対戦、トレーナーカードでほかのトレーナーに見える姿。,"랭킹, 대전, 트레이너 카드에서 다른 트레이너에게 보이는 모습.",其他训练家在排行榜、对战和训练家卡上看到的样子。
+ui.looks.unlocked,Unlocked,Débloquées,Desbloqueados,Freigeschaltet,Sbloccati,Desbloqueados,Desbloqueados,解放済み,해금됨,已解锁
+ui.looks.locked,Locked,Verrouillées,Bloqueados,Gesperrt,Bloccati,Bloqueados,Bloqueados,未解放,잠김,未解锁
+ui.looks.region,Region,Région,Región,Region,Regione,Região,Região,地方,지방,地区
+ui.looks.all,All,Toutes,Todos,Alle,Tutti,Todos,Todos,すべて,전체,全部
+ui.looks.playing,{region} · playing now,{region} · en cours,{region} · jugando ahora,{region} · aktuell,{region} · in corso,{region} · a jogar,{region} · jogando agora,{region}・プレイ中,{region} · 플레이 중,{region}・游玩中
+ui.looks.notStarted,{n} looks · start {region} to see them,{n} apparences · commence {region} pour les voir,{n} aspectos · empieza {region} para verlos,"{n} Looks · starte {region}, um sie zu sehen",{n} aspetti · inizia {region} per vederli,{n} visuais · começa {region} para os ver,{n} visuais · comece {region} para vê-los,{n}種類・{region}を始めると見られる,{n}개 · {region}을(를) 시작하면 볼 수 있어요,{n}种・开始{region}后可见
+ui.looks.allDone,Every look is yours!,Toutes les apparences sont à toi !,¡Tienes todos los aspectos!,Du hast alle Looks!,Hai tutti gli aspetti!,Tens todos os visuais!,Você tem todos os visuais!,すべての見た目を解放した！,모든 모습을 해금했어요!,已解锁全部外观！
+ui.looks.progress,{have}/{need},{have}/{need},{have}/{need},{have}/{need},{have}/{need},{have}/{need},{have}/{need},{have}/{need},{have}/{need},{have}/{need}
+ui.looks.away.one,{n} area away,à {n} zone,a {n} zona,{n} Gebiet entfernt,a {n} zona,a {n} zona,a {n} área,あと{n}エリア,{n}지역 남음,还差{n}个区域
+ui.looks.away.other,{n} areas away,à {n} zones,a {n} zonas,{n} Gebiete entfernt,a {n} zone,a {n} zonas,a {n} áreas,あと{n}エリア,{n}지역 남음,还差{n}个区域
+ui.looks.goal.start,From the start,Dès le début,Desde el principio,Von Anfang an,Fin dall'inizio,Desde o início,Desde o início,最初から,처음부터,一开始就有
+ui.looks.goal.catch,Catch {n} {region} Pokémon,Attrape {n} Pokémon de {region},Atrapa {n} Pokémon de {region},Fange {n} Pokémon aus {region},Cattura {n} Pokémon di {region},Apanha {n} Pokémon de {region},Capture {n} Pokémon de {region},{region}のポケモンを{n}匹つかまえる,{region}의 포켓몬 {n}마리 잡기,捕捉{n}只{region}的宝可梦
+ui.looks.goal.reach,Reach {area},Atteins {area},Llega a {area},Erreiche {area},Raggiungi {area},Chega a {area},Chegue a {area},{area}にたどり着く,{area}에 도착하기,抵达{area}
+ui.looks.goal.champion,Become the {region} Champion,Deviens Maître de {region},Conviértete en Campeón de {region},Werde Champ von {region},Diventa Campione di {region},Torna-te Campeão de {region},Torne-se Campeão de {region},{region}のチャンピオンになる,{region}의 챔피언 되기,成为{region}的冠军
+ui.looks.goal.complete,Complete the {region} Pokédex,Complète le Pokédex de {region},Completa la Pokédex de {region},Vervollständige den {region}-Pokédex,Completa il Pokédex di {region},Completa a Pokédex de {region},Complete a Pokédex de {region},{region}ずかんを完成させる,{region} 도감 완성하기,完成{region}图鉴
+ui.looks.outfit,{name} ({outfit}),{name} ({outfit}),{name} ({outfit}),{name} ({outfit}),{name} ({outfit}),{name} ({outfit}),{name} ({outfit}),{name}（{outfit}）,{name} ({outfit}),{name}（{outfit}）
+ui.looks.rules.start.title,{red} and {leaf} are yours,{red} et {leaf} sont à toi,{red} y {leaf} son tuyos,{red} und {leaf} gehören dir,{red} e {leaf} sono tuoi,{red} e {leaf} são teus,{red} e {leaf} são seus,{red}と{leaf}は最初から,{red}와(과) {leaf}는 처음부터,{red}和{leaf}一开始就有
+ui.looks.rules.start.text,Every other look belongs to a region and unlocks as you play there.,Chaque autre apparence appartient à une région et se débloque en y jouant.,Cada otro aspecto pertenece a una región y se desbloquea jugando en ella.,Jeder andere Look gehört zu einer Region und wird dort beim Spielen freigeschaltet.,Ogni altro aspetto appartiene a una regione e si sblocca giocandoci.,Cada outro visual pertence a uma região e desbloqueia-se ao jogar lá.,Cada outro visual pertence a uma região e é desbloqueado jogando nela.,ほかの見た目はそれぞれの地方にあり、その地方を遊ぶと解放される。,"다른 모습은 각 지방에 속하며, 그 지방을 플레이하면 해금돼요.",其他外观各属于一个地区，在该地区游玩即可解锁。
+ui.looks.rules.play.title,Catch and explore,Attrape et explore,Atrapa y explora,Fangen und erkunden,Cattura ed esplora,Apanha e explora,Capture e explore,つかまえて、冒険しよう,잡고 탐험하기,捕捉与探索
+ui.looks.rules.play.text,"Catch Pokémon of a region's Pokédex, or reach the area a trainer belongs to.","Attrape des Pokémon du Pokédex d'une région, ou atteins la zone d'un dresseur.",Atrapa Pokémon de la Pokédex de una región o llega a la zona de un entrenador.,Fange Pokémon aus dem Pokédex einer Region oder erreiche das Gebiet eines Trainers.,Cattura Pokémon del Pokédex di una regione o raggiungi la zona di un allenatore.,Apanha Pokémon da Pokédex de uma região ou chega à zona de um treinador.,Capture Pokémon da Pokédex de uma região ou chegue à área de um treinador.,地方のずかんのポケモンをつかまえるか、トレーナーのいるエリアにたどり着こう。,지방 도감의 포켓몬을 잡거나 트레이너가 있는 지역에 도착하세요.,捕捉地区图鉴中的宝可梦，或抵达训练家所在的区域。
+ui.looks.rules.top.title,Champions and collectors,Maîtres et collectionneurs,Campeones y coleccionistas,Champs und Sammler,Campioni e collezionisti,Campeões e colecionadores,Campeões e colecionadores,チャンピオンとコレクター,챔피언과 수집가,冠军与收藏家
+ui.looks.rules.top.text,"A region's League gives its two heroes, and its full Pokédex one last outfit.","La Ligue d'une région donne ses deux héros, et son Pokédex complet une dernière tenue.","La Liga de una región da sus dos héroes, y su Pokédex completa un último atuendo.","Die Liga einer Region bringt ihre zwei Helden, der volle Pokédex ein letztes Outfit.","La Lega di una regione dà i suoi due eroi, e il Pokédex completo un ultimo outfit.","A Liga de uma região dá os seus dois heróis, e a Pokédex completa um último visual.","A Liga de uma região dá seus dois heróis, e a Pokédex completa um último visual.",地方のリーグを制すると2人の主人公、ずかんを完成させると最後の衣装が手に入る。,"지방 리그를 제패하면 두 주인공, 도감을 완성하면 마지막 의상을 얻어요.",征服地区联盟可得两位主角，完成图鉴可得最后一套服装。
+ui.looks.rules.seen.title,Your look travels,Ton apparence te suit,Tu aspecto viaja contigo,Dein Look reist mit,Il tuo aspetto ti segue,O teu visual vai contigo,Seu visual vai com você,見た目はみんなに見える,모습은 모두에게 보여요,你的外观人人可见
+ui.looks.rules.seen.text,"Other trainers see it on the leaderboard, in Versus and on your card. Your character in battle doesn't change.","Les autres dresseurs la voient au classement, en Versus et sur ta carte. Ton personnage en combat ne change pas.","Los demás lo ven en la clasificación, en Versus y en tu tarjeta. Tu personaje en combate no cambia.","Andere sehen ihn in der Bestenliste, im Versus und auf deinem Pass. Deine Figur im Kampf bleibt gleich.","Gli altri lo vedono in classifica, in Versus e sulla tua scheda. Il tuo personaggio in lotta non cambia.","Os outros veem-no na classificação, no Versus e no teu cartão. A tua personagem em combate não muda.","Os outros o veem na classificação, no Versus e no seu cartão. Seu personagem em batalha não muda.",ランキング、対戦、トレーナーカードで見られる。バトルのキャラクターは変わらない。,"랭킹, 대전, 트레이너 카드에서 보여요. 배틀 캐릭터는 바뀌지 않아요.",会显示在排行榜、对战和训练家卡上。对战中的角色不变。
+ui.looks.outfit.gameboy,Game Boy,Game Boy,Game Boy,Game Boy,Game Boy,Game Boy,Game Boy,ゲームボーイ,게임보이,Game Boy
+ui.looks.outfit.ruby,Ruby,Rubis,Rubí,Rubin,Rubino,Ruby,Ruby,ルビー,루비,红宝石
+ui.looks.outfit.sapphire,Sapphire,Saphir,Zafiro,Saphir,Zaffiro,Sapphire,Sapphire,サファイア,사파이어,蓝宝石
+ui.looks.outfit.ultra,Ultra,Ultra,Ultra,Ultra,Ultra,Ultra,Ultra,ウルトラ,울트라,究极
+ui.looks.outfit.dojo,Dojo,Dojo,Dojo,Dojo,Dojo,Dojo,Dojo,道場,도장,武馆
+ui.looks.outfit.blueberry,Blueberry,Myrtille,Arándano,Blaubeere,Mirtillo,Blueberry,Blueberry,ブルーベリー,블루베리,蓝莓
 ui.home.kind.trick,Trick or Treat,Un bonbon ou un sort,Truco o trato,Süßes oder Saures,Dolcetto o scherzetto,Doçura ou travessura,Gostosuras ou travessuras,トリック・オア・トリート,트릭 오어 트릿,不给糖就捣蛋
 ui.enc.titleTrick,Trick or Treat!,Un bonbon ou un sort !,¡Truco o trato!,Süßes oder Saures!,Dolcetto o scherzetto!,Doçura ou travessura!,Gostosuras ou travessuras!,トリック・オア・トリート！,트릭 오어 트릿!,不给糖就捣蛋！
 ui.trick.title,Trick or Treat,Un bonbon ou un sort,Truco o trato,Süßes oder Saures,Dolcetto o scherzetto,Doçura ou travessura,Gostosuras ou travessuras,トリック・オア・トリート,트릭 오어 트릿,不给糖就捣蛋

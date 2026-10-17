@@ -475,6 +475,27 @@ function TradesBox() {
 const accessNote = (access: EventAccess, all: string, off: string) =>
   access === 'all' ? all : access === 'admin' ? 'Only you see it (to try it first). Players see nothing yet.' : off
 
+/** Trainer looks (docs/31): unlockable looks from every region in place of the free Kanto and Johto list. */
+function LooksBox() {
+  const [raw, setRaw] = useConfigRow('looks')
+  const access = raw?.access ?? 'off'
+  return (
+    <Box
+      title="Trainer looks"
+      icon="user"
+      hint="The look other trainers see (leaderboard, Versus, friends). On: Red and Leaf are free and every other look unlocks by playing its region (Pokémon caught, an area reached, the League, the full Pokédex), from the row under the trainer card. A look worn but not unlocked comes off (back to Red or Leaf). Off: the old free list of Kanto and Johto classes."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Trainer looks</span>
+        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="Trainer looks: who sees them" />
+        <span className="text-base text-muted">
+          {accessNote(access, 'Open to every player.', 'Off: the free list as before. Seen looks are kept in saves.')}
+        </span>
+      </div>
+    </Box>
+  )
+}
+
 /**
  * The General upgrades and the two items that came with them (docs/25): each its own three-way switch, Off by default
  * (the server reads the General one too, for the golden names), then the levels' numbers.
@@ -1082,6 +1103,8 @@ export function ConfigSection() {
 
       <PushBox />
       <GeneralBox />
+
+      <LooksBox />
 
       <InviteRewardsBox />
 

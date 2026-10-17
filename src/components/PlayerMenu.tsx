@@ -15,6 +15,7 @@ import {
   tradesOn,
 } from '@/engine'
 import { otherSave } from '@/store/extreme'
+import { useNewLooks } from '@/store/looks'
 import { useT } from '@/i18n/react'
 import { useFriends } from '@/lib/friends'
 import { useInviteGauge } from './friends/InviteRewards'
@@ -32,6 +33,7 @@ import { TrainerLook } from './TrainerLook'
 import { avatarOf, playerAvatarId } from '@/lib/avatars'
 import { SidePanel } from './SidePanel'
 import { TrainerCard } from './TrainerCard'
+import { LooksDot } from './TrainerLooks'
 import { playerOf } from './TrainerArt'
 
 const HelpContent = lazy(() => import('@/screens/Help').then((m) => ({ default: m.HelpContent })))
@@ -132,6 +134,8 @@ export function PlayerMenu() {
   const tradesRow =
     isSupabaseConfigured && !!save && !isExtreme(save) && !inWorldRegion(save, data) && (tradesOn(data) || tradesOut > 0)
   const news = newFriends + rewardsReady + tradesUnseen
+  // Trainer looks unlocked since the menu was last opened (docs/31): their own red dot, under the gold one.
+  const looksNew = useNewLooks()
 
   const name = playerOf(save).name
   const badges = save ? badgeCase(save, data) : []
@@ -156,7 +160,7 @@ export function PlayerMenu() {
         aria-disabled={inFight || undefined}
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-label={news ? t('ui.profile.menuLabelNew', { n: news }) : t('ui.profile.menuLabel')}
+        aria-label={news + looksNew ? t('ui.profile.menuLabelNew', { n: news + looksNew }) : t('ui.profile.menuLabel')}
         title={t(lock === 'portal' ? 'ui.portal.locked' : inFight ? 'ui.nav.finishFight' : 'ui.profile.menuLabel')}
         className={cx('flex min-h-[44px] min-w-0 shrink flex-row-reverse items-center gap-2 text-right', inFight && 'pointer-events-none opacity-60')}
       >
@@ -173,6 +177,7 @@ export function PlayerMenu() {
               {news > 9 ? '9+' : news}
             </span>
           )}
+          {!news && looksNew > 0 && <LooksDot n={looksNew} className="absolute -right-1 -top-1" />}
         </span>
         <span className="grid min-w-0 leading-none">
           <b className="truncate text-[20px] font-normal">{name || t('ui.profile.title')}</b>
