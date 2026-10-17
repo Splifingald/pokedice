@@ -350,6 +350,8 @@ export const saveSchema = z.object({
   looks: z
     .object({ seen: z.array(z.string().max(40)).max(400).optional(), rulesSeen: z.boolean().optional() })
     .optional(),
+  // Day and night (docs/32): its rules pop-up seen.
+  dayNight: z.object({ rulesSeen: z.boolean().optional() }).optional(),
 })
 
 /**
