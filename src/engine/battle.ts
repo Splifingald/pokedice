@@ -123,13 +123,13 @@ export interface BattleState {
    */
   single?: boolean
   /**
-   * A double battle (docs/31): two of each side out at once. `activeIndex` and `enemy` are then the pair in front —
+   * A double battle (docs/33): two of each side out at once. `activeIndex` and `enemy` are then the pair in front —
    * the Pokémon whose turn it is and the one it targets — so every rule written for one against one applies to them.
    */
   double?: DoubleState
 }
 
-/** A double battle's field (docs/31). */
+/** A double battle's field (docs/33). */
 export interface DoubleState {
   /** Every foe of the fight: a wild pair, or the trainer's whole team (those not out yet wait for a free slot). */
   foes: Battler[]
@@ -188,11 +188,11 @@ export type BattleEvent =
   | { t: 'GMAX'; toDex: number }
   /** Arceus, Silvally, Ogerpon: take this form (a type). It doesn't end the turn. */
   | { t: 'CHANGE_FORM'; toDex: number }
-  /** A double battle: the foe your Pokémon will attack (docs/31). It doesn't end the turn. */
+  /** A double battle: the foe your Pokémon will attack (docs/33). It doesn't end the turn. */
   | { t: 'TARGET'; uid: string }
 
 export type LogEntry =
-  /** `double`: a double battle's opening, yours and the foes out (docs/31). */
+  /** `double`: a double battle's opening, yours and the foes out (docs/33). */
   | { kind: 'start'; first: Side; double?: { own: string[]; foes: string[] } }
   /** A double battle: the pair in front changed — the Pokémon whose turn it is, and the one it attacks. */
   | { kind: 'focus'; own: string; foe: string }
@@ -322,7 +322,7 @@ export interface CreateBattleOptions {
   leadUid?: string
   enemy: FoeSeed
   /**
-   * A double battle (docs/31): every foe, two out at once (`enemy` is ignored), and yours led by `leadUids`. With
+   * A double battle (docs/33): every foe, two out at once (`enemy` is ignored), and yours led by `leadUids`. With
    * `plans` each foe's Mega / Gigantamax / type change, in the same order.
    */
   double?: { foes: FoeSeed[]; leadUids?: string[]; plans?: (EnemyPlan | null)[] }
@@ -726,7 +726,7 @@ function afterAction(s: BattleState, side: Side, data: GameData, log: LogEntry[]
   beginTurn(s, other(side), data, log)
 }
 
-// ---------------------------------------------------------------- Double battles (docs/31)
+// ---------------------------------------------------------------- Double battles (docs/33)
 //
 // Two of each side out at once. Every round, all of them act once, fastest first (a tie goes to yours). The one whose
 // turn it is and the one it attacks are the pair in front — `activeIndex` and `enemy` — so the rules above (the roll,
@@ -746,7 +746,7 @@ function createDouble(
   data: GameData,
 ): { state: BattleState; log: LogEntry[] } {
   const player = opts.team.map((t) => makeBattler(t, data))
-  // The leads picked, then whoever is able, two at most; one alone fights both (docs/31).
+  // The leads picked, then whoever is able, two at most; one alone fights both (docs/33).
   const ownSlots: number[] = []
   for (const uid of [...(double.leadUids ?? []), ...(opts.leadUid ? [opts.leadUid] : []), ...player.map((b) => b.uid)]) {
     const i = player.findIndex((b) => b.uid === uid && b.hp > 0)
@@ -1272,7 +1272,7 @@ export function reduce(
     }
     case 'AI_TURN': {
       if (s.phase !== 'enemy_turn') return NOOP(state)
-      // A double battle: the foe attacks one of yours at random (docs/31), with its own plan if it is the ace.
+      // A double battle: the foe attacks one of yours at random (docs/33), with its own plan if it is the ace.
       if (s.double) aimAtRandom(s, rng, log)
       const en = s.enemy
       const target = activeBattler(s)
@@ -1347,7 +1347,7 @@ export interface BattleOutcome {
   participants: string[]
   /** The Pokémon active at the end — the one that earns XP in 'fighter' mode. */
   fighterUid: string
-  /** A double battle: every foe K.O.'d, in order, with yours that were out (docs/31). */
+  /** A double battle: every foe K.O.'d, in order, with yours that were out (docs/33). */
   kos?: DoubleKo[]
 }
 

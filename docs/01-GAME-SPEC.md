@@ -139,7 +139,7 @@ One combo pays per roll. Straights are scanned over the **distinct sorted face v
 
 Ditto never gains dice of its own. When a battle starts, and again whenever its opponent changes (a switch, a trainer's next Pokémon), it copies the opponent's dice — a copying opponent lends its own set — and rolls them itself, with its own rerolls and its own side's upgrade levels. A foe's Ditto copies your active Pokémon. The battle log says "Ditto copied X's dice!".
 
-### 2.6 Double battles (docs/31)
+### 2.6 Double battles (docs/33)
 
 In the regions the admin ticks (Hoenn → Paldea by default, switch Off until opened): 10 % of wild encounters come as a
 pair, duo trainers (the Twins, Young Couples…) and Tate & Liza always fight 2 v 2. Two of yours go out; every round all

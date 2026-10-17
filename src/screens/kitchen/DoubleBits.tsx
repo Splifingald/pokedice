@@ -1,4 +1,4 @@
-// Kitchen sink (dev only): double battles' pieces (docs/31) — the four-Pokémon stage, its name-less plates, the target
+// Kitchen sink (dev only): double battles' pieces (docs/33) — the four-Pokémon stage, its name-less plates, the target
 // picker and the lead picker sending two. Made-up battlers.
 import { useMemo, useState } from 'react'
 import { makeBattler, type Battler } from '@/engine'

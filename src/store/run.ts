@@ -111,6 +111,7 @@ import {
 } from '@/engine'
 import { activeSlot } from '@/save/storage'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type CatchState, type RunState } from './game'
+import { localHour } from './dayTime'
 import { currentLive } from './live'
 import { useRebattleMedal } from './rebattle'
 import { serverNow } from './serverTime'
@@ -237,6 +238,8 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
     noCenters: !centersOn(save, data),
     // A Shiny Parade covering this area: wild Pokémon are more often shiny.
     shinyBoost: shinyBoost(currentLive(), area),
+    // Day and night (docs/32): in Johto, only the hour's wild Pokémon come.
+    hour: localHour(),
   }
 }
 
@@ -483,7 +486,7 @@ export function rollNext() {
   if (!ctx) return
   const area = ctx.area
   const roll = nextEncounter(ctx, runRng)
-  // A wild pair or a duo trainer is fought 2 v 2 (docs/31): decided now, so the preview says so.
+  // A wild pair or a duo trainer is fought 2 v 2 (docs/33): decided now, so the preview says so.
   const encounter = asDouble(roll.encounter, ctx, save, runRng)
   // The decks live in the save, so reloading the page can't reshuffle them.
   // Always recorded: besides the decks, the area notes whether this was a Center (never two in a row).
@@ -504,7 +507,7 @@ export function challenge() {
   if (inPortalRun(save, data, run.areaId) || inNightmare(save, data, run.areaId)) return
   const area = data.areas.find((a) => a.id === run.areaId)
   const found = area ? challengeEncounter(area, progressOf(save, area.id), data, teamAverageLevel(save), playerSideOf(save), runRng) : null
-  // Tate & Liza fight 2 v 2 where double battles are on (docs/31).
+  // Tate & Liza fight 2 v 2 where double battles are on (docs/33).
   const ctx = found && run.areaId ? encounterContext(save, run.areaId, null) : null
   const encounter = found && ctx ? asDouble(found, ctx, save, runRng) : found
   if (encounter) setRun({ phase: 'preview', encounter, firstInArea: false, skipsUsed: 0 })
@@ -533,7 +536,7 @@ export function skipEncounter() {
   pushToast(t(trainer ? 'ui.toast.slippedPast' : 'ui.toast.gotAway'))
 }
 
-/** `double`: a double battle's foes, all of them (two out at once), and the two leads picked (docs/31). */
+/** `double`: a double battle's foes, all of them (two out at once), and the two leads picked (docs/33). */
 function startBattle(
   kind: BattleKind,
   enemy: FoeSeed,
@@ -636,7 +639,7 @@ export function engage(lead?: string | string[]) {
     case 'gym': {
       const first = enc.team[0]
       if (!first) return
-      // A double battle is the whole team at once (docs/31): no next Pokémon after it.
+      // A double battle is the whole team at once (docs/33): no next Pokémon after it.
       if (isDoubleEncounter(enc) && enc.team.length > 1) {
         setRun({ trainer: { index: enc.team.length - 1, gold: 0 } })
         return startBattle('trainer', first, leadUid, { foes: enc.team, leadUids })
@@ -794,7 +797,7 @@ function settleBattle(stalemate: boolean) {
 }
 
 /**
- * A double battle is over (docs/31): every foe K.O.'d pays like a one-on-one K.O. — the XP in full to each of yours
+ * A double battle is over (docs/33): every foe K.O.'d pays like a one-on-one K.O. — the XP in full to each of yours
  * that was out, a trainer's Pokédollars — whatever the end, as each K.O. of a trainer's one-by-one gauntlet is kept.
  * Won, each wild one that can be caught gets its throw, one after the other, before the rewards.
  */
@@ -942,7 +945,7 @@ export function retryCatch() {
 
 /**
  * Leave the throw for the rewards screen, which now lists the catch (or the flight) too — or, after a wild double
- * battle, for the other one's throw first (docs/31).
+ * battle, for the other one's throw first (docs/33).
  */
 export function finishCatch() {
   const { run } = useGame.getState()
@@ -1008,7 +1011,7 @@ export function resolveCatch(replaceId: string | null) {
   if (!run.pendingCatchId) return
   if (replaceId) mutateSave((s) => swapIntoTeam(s, run.pendingCatchId!, replaceId, data))
   setRun({ pendingCatchId: null })
-  // A wild double battle's other throw waited for this answer (docs/31).
+  // A wild double battle's other throw waited for this answer (docs/33).
   const [next, ...rest] = run.catchQueue ?? []
   if (next) setRun({ phase: 'catch', catch: next, catchQueue: rest })
 }

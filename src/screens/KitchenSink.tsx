@@ -48,6 +48,7 @@ import { NicknameBits } from './kitchen/NicknameBits'
 import { TradeKitBits } from './kitchen/TradeBits'
 import { PushBits } from './kitchen/PushBits'
 import { GeneralBits } from './kitchen/GeneralBits'
+import { LooksBits } from './kitchen/LooksBits'
 import { RulesBits } from './kitchen/RulesBits'
 import { ExtremeBits } from './kitchen/ExtremeBits'
 import { PartnerBits } from './kitchen/PartnerBits'
@@ -61,6 +62,7 @@ import { GiftBits } from './kitchen/GiftBits'
 import { InviteBits } from './kitchen/InviteBits'
 import { SupportBits } from './kitchen/SupportBits'
 import { TrickBits } from './kitchen/TrickBits'
+import { DayNightBits } from './kitchen/DayNightBits'
 import { RotateView } from '@/components/RotateCover'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
 import { BoardRow } from '@/components/BoardRow'
@@ -622,6 +624,10 @@ export function KitchenSink() {
         <GeneralBits />
       </Section>
 
+      <Section title="Trainer looks: the row and its red dot, the menu in each state, locked looks, rules and INFO (docs/31)">
+        <LooksBits />
+      </Section>
+
       <Section title="Trades: visibility, wants, time left, board rows (every state), listing sheet, share, rules, the trade scene, results">
         <TradeKitBits />
       </Section>
@@ -674,6 +680,9 @@ export function KitchenSink() {
       </Section>
       <Section title="Trick or Treat: the gauge of each tier, the screen in each state (idle, after a Treat, a Treat and a throw playing, a miss, caught, fled), the recaps, the pieces, preview cards, rules">
         <TrickBits />
+      </Section>
+      <Section title="Day and night (Johto): the top bar's chip by day and by night, the fights' indicator, the list tags (its half, the other half), rules">
+        <DayNightBits />
       </Section>
 
       <Section title="StatusIcons · PixelIcon">

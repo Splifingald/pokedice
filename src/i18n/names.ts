@@ -137,7 +137,7 @@ export const TRAINER_CLASSES = [
   'Madame',
   'Fisher',
   'Model',
-  // Pairs (double battles, docs/31)
+  // Pairs (double battles, docs/33)
   'Young Couple',
   'Interviewers',
   'Sis and Bro',

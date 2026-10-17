@@ -379,7 +379,7 @@ export interface VictoryInput {
   enemyDex: number
   enemyLevel: number
   fighterUid: string
-  /** A double battle: yours that were out when it fell, each earning its full XP (docs/31). Overrides `fighterUid`. */
+  /** A double battle: yours that were out when it fell, each earning its full XP (docs/33). Overrides `fighterUid`. */
   fighterUids?: string[]
   /** Gym battles: the trainer, and whether this K.O. was their last Pokémon. */
   gymTrainerId?: string

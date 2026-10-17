@@ -1,4 +1,4 @@
-// Double battles (docs/31, docs/15 §30): a wild pair in a ticked region — the preview shows both, no rules pop-up nor
+// Double battles (docs/33, docs/15 §30): a wild pair in a ticked region — the preview shows both, no rules pop-up nor
 // tag (the user, 2026-10-17), two leads go out — then the battle with four Pokémon on the stage and the target picker, a throw at each
 // one, and the rewards; switched off, the same encounter is one wild Pokémon. The kitchen sink shows every piece.
 // Set SHOTS=<dir> to keep screenshots of the stage at phone size.

@@ -1,4 +1,4 @@
-// Double battles (docs/31): when an encounter is fought two against two. The admin's switch and regions decide where,
+// Double battles (docs/33): when an encounter is fought two against two. The admin's switch and regions decide where,
 // the wild odds how often; duo trainers (the Twins, Tate & Liza…) always are. The battle itself is engine/battle.ts.
 import { DEFAULT_CONFIG } from './defaults'
 import { rollWild, type Encounter, type EncounterContext } from './encounters'

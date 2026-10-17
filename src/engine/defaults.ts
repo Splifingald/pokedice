@@ -311,8 +311,12 @@ export const DEFAULT_CONFIG: GameConfig = {
   portalRun: { access: 'off' },
   // The areas' nightmare (docs/30): off until the admin switches it on. Migration 0060 inserts the same row.
   nightmare: { access: 'off' },
-  // Double battles (docs/31): off until the admin switches them on; from Hoenn on, 10 % of the wild encounters.
-  // Migration 0061 inserts the same row.
+  // Trainer looks (docs/31): off until the admin switches them on; the old free list stays meanwhile.
+  looks: { access: 'off' },
+  // Day and night in Johto (docs/32): off until the admin switches it on. Migration 0061 inserts the same row.
+  dayNight: { access: 'off' },
+  // Double battles (docs/33): off until the admin switches them on; from Hoenn on, 10 % of the wild encounters.
+  // Migration 0062 inserts the same row.
   doubleBattles: { access: 'off', regions: ['hoenn', 'sinnoh', 'unova', 'kalos', 'alola', 'galar', 'paldea'], wildChance: 10 },
   // The Link Cable and the Bait (docs/25): off until the admin switches each on.
   itemSwitches: { 'link-cable': 'off', bait: 'off' },

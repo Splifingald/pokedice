@@ -25,7 +25,7 @@ import type { Fx, Scene } from './useBattleAnimator'
 const LAYOUT = background(W, H).layout
 
 /**
- * A double battle's Pokémon behind (docs/31): where its feet go, smaller, up the stage and to the left, half hidden
+ * A double battle's Pokémon behind (docs/33): where its feet go, smaller, up the stage and to the left, half hidden
  * by the one in front (the user, 2026-10-17: "the pokemon that is not attacking should be at the back"); the pair in
  * front stand on the usual spots, where every move's timeline draws them.
  */
@@ -161,7 +161,7 @@ function Mon({
   b: Battler
   side: Side
   scale: number
-  /** A double battle's spot for it (docs/31); it slides there when the pair in front changes. */
+  /** A double battle's spot for it (docs/33); it slides there when the pair in front changes. */
   place?: Place
   /** The fx aimed at its side (a hit, a status, a number) play on it: the one in front of a double battle. */
   front?: boolean
@@ -320,7 +320,7 @@ function Mon({
 }
 
 /**
- * A double battle's Pokémon (docs/31), one keyed list so that a Pokémon moving between the front and the back slides
+ * A double battle's Pokémon (docs/33), one keyed list so that a Pokémon moving between the front and the back slides
  * there instead of coming out again: the pair in front on the usual spots, their partners smaller behind, each with
  * a shadow. The ones in front hide while a timeline draws them; the ones behind stay.
  */
@@ -506,7 +506,7 @@ export function BattleStage({
   aimLabel,
 }: {
   /**
-   * A double battle (docs/31): every Pokémon out is on the stage, the pair in front (`own`, `foe`: whose turn it is and
+   * A double battle (docs/33): every Pokémon out is on the stage, the pair in front (`own`, `foe`: whose turn it is and
    * its target) big on the usual spots, their partners (`ownBack`, `foeBack`) smaller behind.
    */
   double?: boolean

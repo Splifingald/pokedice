@@ -111,7 +111,7 @@ function nearMisses(dice: readonly RolledDie[], data: GameData): string | undefi
   return bits.length ? bits.join(' · ') : undefined
 }
 
-/** `foes`: the one foe, or a double battle's every foe (docs/31). */
+/** `foes`: the one foe, or a double battle's every foe (docs/33). */
 function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: readonly Battler[], data: GameData): Row[] {
   const itemName = (k: string) => data.items[k]?.name ?? k
   const who = (uid: string) => {

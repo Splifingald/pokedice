@@ -171,12 +171,21 @@ export type EncounterKind = (typeof ENCOUNTER_KINDS)[number]
 /** Cards in an area's encounter deck; 'legend' is a fled legendary coming back (one per deck until it's caught). */
 export type DeckCard = EncounterKind | 'legend'
 
+/** Day and night (docs/32): the half of the day an area's wild Pokémon is met in, where the region keeps the time. */
+export const DAY_TIMES = ['day', 'night'] as const
+export type DayTime = (typeof DAY_TIMES)[number]
+
 export interface WildPoolEntry {
   id: string
   dex: number
   weight: number
   minLevel: number
   maxLevel: number
+  /**
+   * Met only by day or only by night (docs/32), as in the real games; absent or null = any time. Read only in a region
+   * that keeps the time (Johto) while the switch is on: elsewhere every row is met at any hour.
+   */
+  time?: DayTime | null
 }
 
 export interface TrainerPoolEntry {
@@ -498,7 +507,7 @@ export interface Trainer {
   rivalOf?: number | null
   /**
    * A pair (Twins, a Young Couple, Tate & Liza…): in a region with double battles on, they fight 2 v 2 with two of
-   * their Pokémon out at once (docs/31). Elite Four and Champions never do. Missing = no.
+   * their Pokémon out at once (docs/33). Elite Four and Champions never do. Missing = no.
    */
   duo?: boolean
 }
@@ -868,13 +877,17 @@ export interface GameConfig {
   portalRun: { access: EventAccess }
   /** The areas' nightmare (docs/30): its switch. The server reads the same row (0060). */
   nightmare: { access: EventAccess }
+  /** Trainer looks (docs/31): unlockable looks in place of the free list. Off by default. */
+  looks: { access: EventAccess }
   /** Trick or Treat (docs/29): its switch, numbers and each area's ghosts. The server reads the switch too. */
   trickOrTreat: TrickOrTreatConfig
-  /** Double battles (docs/31): their switch, the regions that have them and the wild odds. */
+  /** Day and night in Johto (docs/32): its switch. Migration 0061 inserts the same row. */
+  dayNight: { access: EventAccess }
+  /** Double battles (docs/33): their switch, the regions that have them and the wild odds. */
   doubleBattles: DoubleBattlesConfig
 }
 
-/** Double battles (docs/31): two of yours against two foes, in the regions ticked here. */
+/** Double battles (docs/33): two of yours against two foes, in the regions ticked here. */
 export interface DoubleBattlesConfig {
   access: EventAccess
   /** The regions where they happen: wild Pokémon in pairs, duo trainers, Tate & Liza. */
@@ -1285,6 +1298,17 @@ export interface SaveData {
   general?: GeneralSave
   /** Trick or Treat (docs/29): its rules seen. Absent = never met. */
   trickOrTreat?: TrickSave
+  /** Trainer looks (docs/31): the unlocked looks already seen in the menu, and its rules pop-up shown. */
+  looks?: LooksSave
+  /** Day and night (docs/32): its rules seen. Absent = never in Johto with it on. */
+  dayNight?: { rulesSeen?: boolean }
+}
+
+/** Trainer looks (docs/31): only what was seen; what is unlocked is worked out from progress (engine/looks). */
+export interface LooksSave {
+  /** Unlocked looks already seen in the menu: the red dot counts the others. */
+  seen?: string[]
+  rulesSeen?: boolean
 }
 
 /** The General upgrades bought (docs/25), and the offline earnings' clock. */

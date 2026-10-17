@@ -58,7 +58,7 @@ function toPlayer(s: BattleState, r = rng()): { state: BattleState; log: LogEntr
   return { state: s, log }
 }
 
-describe('double battle: the field (docs/31)', () => {
+describe('double battle: the field (docs/33)', () => {
   it('puts both leads and both foes out, and says so in the opening', () => {
     const { state, log } = start()
     expect(ownOnField(state).map((b) => b.uid)).toEqual(['a', 'b'])
@@ -145,7 +145,7 @@ describe('double battle: the field (docs/31)', () => {
   })
 })
 
-describe('double battle: K.O.s (docs/31)', () => {
+describe('double battle: K.O.s (docs/33)', () => {
   it("brings the trainer's next Pokémon out in a fallen one's spot, and shares the K.O. with both of yours", () => {
     const { state } = start([{ dex: 16, level: 5 }, { dex: 16, level: 5 }, { dex: 19, level: 5 }], 'trainer')
     let s = toPlayer(state).state
@@ -237,7 +237,7 @@ describe('double battle: K.O.s (docs/31)', () => {
   })
 })
 
-describe('double battle: when (docs/31)', () => {
+describe('double battle: when (docs/33)', () => {
   const on = (config: Partial<GameData['config']> = {}) =>
     makeData({ doubleBattles: { access: 'all', regions: ['hoenn'], wildChance: 100 }, ...config })
   const ctxIn = (d: GameData, region: string): EncounterContext => {

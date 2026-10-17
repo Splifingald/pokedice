@@ -72,7 +72,7 @@ front, the others smaller behind. You pick which foe your Pokémon attacks; foes
   Lila & Roy, Cool Couple Lea & Jed), Sinnoh 4, Unova 4, Kalos 3, Alola 3, Galar 3, Paldea 3. The later games have few
   such pairs: those names are made up in the same style. Alola, Galar and Paldea borrow Kalos's pair sprites.
 
-## 5. Server (migration 0061)
+## 5. Server (migration 0062)
 
 Battles are played in the client like every battle: no server function acts for a double battle, so there is nothing
 for the server to refuse; the switch is read from `game_config.doubleBattles` like every content setting. The
@@ -82,8 +82,8 @@ exists), the `doubleBattles` row (Off, Hoenn → Paldea, 10 %) and `configVersio
 ## 6. Setting it up
 
 1. Deploy the client (the switch is Off: nothing changes for anyone).
-2. Run `supabase/migrations/0061_double_battles.sql` (after 0060; safe to run again):
-   https://github.com/Splifingald/pokedice/blob/ccr-54f4f353-lh3o5s/supabase/migrations/0061_double_battles.sql
+2. Run `supabase/migrations/0062_double_battles.sql` (after 0061; safe to run again):
+   https://github.com/Splifingald/pokedice/blob/feature/version_2/supabase/migrations/0062_double_battles.sql
    `supabase/seed.sql` carries it too (inlined). Until it has run, Admin's remote check reports the missing
    `trainers.duo` column and saving trainers fails.
    - Or, for an export: `tsx scripts/patch-double-battles.ts <in.json> <out.json>`, then `pnpm import-bundle`.

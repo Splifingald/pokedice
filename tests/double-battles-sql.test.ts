@@ -1,4 +1,4 @@
-// Double battles (docs/31): migration 0061 against a real Postgres (PGlite, in process), over the content as it was
+// Double battles (docs/33): migration 0062 against a real Postgres (PGlite, in process), over the content as it was
 // live before it (the bundle's areas, trainers and pools without the flag or the new pairs). It adds `trainers.duo`,
 // flags the pairs, adds the new ones to their areas and the switch, Off; run again it changes nothing but the content
 // version, and the admin's own edits since (a pair unticked, a team, the switch) stay. On an empty database (as
@@ -20,7 +20,7 @@ import { upsert } from '../scripts/seed'
 
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
-const FILE = '0061_double_battles.sql'
+const FILE = '0062_double_battles.sql'
 const TATE = FLAGGED.find(([, name]) => name === 'Tate & Liza')![0]
 
 const AUTH = `create role anon; create role authenticated; create schema auth; create table auth.users (id uuid primary key);
@@ -37,7 +37,7 @@ async function schema(db: PGlite) {
   await db.exec(`insert into game_config (key, value) values ('configVersion', '98')`)
 }
 
-/** The live content before 0061, written the way seed.sql wrote it then (no `duo` column). */
+/** The live content before 0062, written the way seed.sql wrote it then (no `duo` column). */
 async function liveContent(db: PGlite) {
   const newIds = new Set(NEW_DUOS.map((d) => duoTrainer(d).id))
   const poolIds = new Set(NEW_DUOS.map((d) => duoPoolEntry(d).id))
@@ -128,7 +128,7 @@ async function liveContent(db: PGlite) {
 const config = async (db: PGlite, key: string) =>
   (await db.query<{ v: unknown }>('select value v from game_config where key = $1', [key])).rows[0]?.v
 
-describe('0061 over the live content', () => {
+describe('0062 over the live content', () => {
   let db: PGlite
   const duoIds = async () =>
     (await db.query<{ id: string }>('select id from trainers where duo order by id')).rows.map((r) => r.id)
@@ -207,7 +207,7 @@ describe('0061 over the live content', () => {
   })
 })
 
-describe('0061 on an empty database (seed.sql’s schema part, before its data)', () => {
+describe('0062 on an empty database (seed.sql’s schema part, before its data)', () => {
   it('adds the column and the switch, and no trainer', async () => {
     const db = new PGlite()
     await schema(db)

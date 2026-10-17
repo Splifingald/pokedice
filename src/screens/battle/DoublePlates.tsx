@@ -1,4 +1,4 @@
-// A double battle's plates and target picker (docs/31). Four plates would hide the stage, so they lose the names: each
+// A double battle's plates and target picker (docs/33). Four plates would hide the stage, so they lose the names: each
 // is the Pokémon's mini icon, its level, HP and statuses, the foes' at the top left and yours at the bottom right, the
 // one in front (whose turn it is, and its target) ringed in gold.
 import { type Battler } from '@/engine'

@@ -20,7 +20,7 @@ export interface Fx {
   message: string
   hp: Record<string, number>
   activeUid: string
-  /** The foe in front (a double battle's acting or targeted one, docs/31; else the one foe). */
+  /** The foe in front (a double battle's acting or targeted one, docs/33; else the one foe). */
   foeUid: string
   /**
    * A double battle's Pokémon out, as the log has played (the state may be past it), left to right: a K.O.'d one stays
@@ -303,7 +303,7 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
         }),
       }
     case 'focus':
-      // A double battle's pair in front moves (docs/31): the stage swaps them, big in front, small behind.
+      // A double battle's pair in front moves (docs/33): the stage swaps them, big in front, small behind.
       return { delay: 350, apply: (f) => ({ ...f, activeUid: e.own, foeUid: e.foe, tray: null }) }
     case 'foe_out':
       return {
@@ -422,7 +422,7 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           message: text,
           hp: { ...f.hp, [e.targetUid]: e.hpAfter },
           fainted: e.revived ? { ...f.fainted, [e.targetUid]: false } : f.fainted,
-          // A double battle with a spot empty: the revived one stands back up there (docs/31).
+          // A double battle with a spot empty: the revived one stands back up there (docs/33).
           field:
             e.revived && f.field && !f.field.own.includes(e.targetUid) && st.double
               ? { ...f.field, own: takeSpot(f.field.own, e.targetUid, (u) => !!f.fainted[u]) }

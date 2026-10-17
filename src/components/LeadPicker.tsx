@@ -25,7 +25,7 @@ export function LeadPicker({
   onChange: (uid: string) => void
   /** The types of the Pokémon about to be faced, when the player can see it. */
   foe?: readonly PokeType[]
-  /** A double battle (docs/31): two go out. SWITCH picks one, the earlier pick making way when two are picked. */
+  /** A double battle (docs/33): two go out. SWITCH picks one, the earlier pick making way when two are picked. */
   pair?: { value: string[]; onChange: (uids: string[]) => void }
 }) {
   const { t } = useT()

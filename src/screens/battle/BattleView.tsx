@@ -45,6 +45,7 @@ import { Sheet } from '@/components/Sheet'
 import { SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { TypeMatchups } from '@/components/TypeMatchups'
+import { BattleDayTime } from '@/components/DayNight'
 import { pictureOf } from '@/fx/areaArt'
 import { ballOfItem } from '@/fx/scenes'
 import { loadSprite, spriteKey } from '@/fx/sprites'
@@ -59,6 +60,7 @@ import { AUTO_PACE, PaceContext, VERSUS_PACE } from '@/lib/pace'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { setSettings, useGame, type BattleSlice, type CatchThrow } from '@/store/game'
 import { answerBait, dispatchBattle, retryCatch, throwBall } from '@/store/run'
+import { useAreaDayTime } from '@/store/dayTime'
 import { cx } from '@/theme/util'
 import { BattleHistory, BattleHistoryList, DamageRecap } from './BattleHistory'
 import { BagButton, DiceTray, Readout, SwitchRow, TeamColumn, TeamPips, type Preview, type TrayDice } from './BattlePanel'
@@ -201,7 +203,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const { level: chosenLevel, calm } = useMotion()
   const wide = useMediaQuery('(min-width: 1024px)')
   const st = battle.state
-  // A double battle (docs/31): four on the stage, the pair in front being whose turn it is and its target.
+  // A double battle (docs/33): four on the stage, the pair in front being whose turn it is and its target.
   const dbl = st.double
   // A portal run's wild Pokémon wear the distortion (docs/28).
   const distorted = !versus && st.kind === 'wild' && !!save && inPortalRun(save, data, run.areaId)
@@ -231,6 +233,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const enc = versus ? null : run.encounter
   // The area's picture is the battle's background; Versus keeps the drawn one.
   const art = useMemo(() => (versus ? null : pictureOf(run.areaId)), [versus, run.areaId])
+  // Day and night (docs/32): in Johto, the stage's corner says which half of the day the fight is in.
+  const dayTime = useAreaDayTime(versus ? null : run.areaId)
   const isTrainerFight = !!versus || enc?.kind === 'trainer' || enc?.kind === 'gym'
   const trainerName = versus
     ? versus.trainerName
@@ -519,7 +523,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     setRevealed(false)
     setThrown(catchScene(r, 'ground'))
   }
-  // After a wild pair, the other one's throw (docs/31): a fresh start, the first throw's scene gone.
+  // After a wild pair, the other one's throw (docs/33): a fresh start, the first throw's scene gone.
   const catchUid = run.catch?.uid ?? null
   const lastCatch = useRef(catchUid)
   useEffect(() => {
@@ -767,6 +771,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         tapLabel={(b) => t('ui.types.tap', { name: b.name })}
         label={heading}
       >
+        {dayTime && <BattleDayTime time={dayTime} />}
         {dbl && foeOut && ownOut && !catching && (
           <DoublePlates
             foes={foeRow}

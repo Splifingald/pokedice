@@ -40,7 +40,7 @@ function TeamEditor({ id, onClose }: { id: string; onClose: () => void }) {
   const potions = Object.values(data.items).filter((it) => it.effect.kind === 'heal')
   const setItems = (k: string[]) => updateRow('trainers', rowKey('trainers', row), { items: k })
   const role = s(row.role)
-  // The Elite Four and the Champion always fight 1 v 1 (docs/31), so the box is off for them.
+  // The Elite Four and the Champion always fight 1 v 1 (docs/33), so the box is off for them.
   const noDuo = role === 'elite' || role === 'champion'
   return (
     <Modal open onClose={onClose} title={s(row.name)}>

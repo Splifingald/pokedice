@@ -315,7 +315,7 @@ const TITLES: Record<Encounter['kind'], string> = {
 export function EncounterPreview({ enc }: { enc: Encounter }) {
   const { t } = useT()
   const [lead, setLead] = useState<string | null>(null)
-  // A double battle sends two out (docs/31).
+  // A double battle sends two out (docs/33).
   const [leads, setLeads] = useState<string[]>([])
   const double = isDoubleEncounter(enc)
   const data = useGame((s) => s.data)

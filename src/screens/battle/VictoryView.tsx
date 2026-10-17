@@ -660,7 +660,7 @@ export function VictoryView() {
         {enemy && (
           <div className="min-w-0 truncate text-lg text-muted">
             {battle?.state.double
-              ? // A double battle (docs/31): every foe it had.
+              ? // A double battle (docs/33): every foe it had.
                 t('ui.victory.foesDefeated', { names: joinList(battle.state.double.foes.map((f) => f.name)) })
               : t('ui.victory.foeDefeated', { name: enemy.name, level: enemy.level })}
           </div>

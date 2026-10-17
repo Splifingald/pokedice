@@ -1,4 +1,4 @@
-// Double battles' pairs (docs/31) in the bundled content: who is a duo, and the real games' pairs added from Hoenn on.
+// Double battles' pairs (docs/33) in the bundled content: who is a duo, and the real games' pairs added from Hoenn on.
 // Every duo can send out two Pokémon and is never the Elite Four or a Champion; the only Gym Leader is Tate & Liza;
 // every new pair fights with species the game has, in one area of its own region at that area's levels, under a pair's
 // sprite and a class the sheet translates. The bundle is exactly what scripts/patch-double-battles.ts makes of it,

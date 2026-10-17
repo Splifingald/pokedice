@@ -2543,7 +2543,8 @@
     "dex": 28,
     "weight": 12,
     "minLevel": 41,
-    "maxLevel": 47
+    "maxLevel": 47,
+    "time": "day"
    },
    {
     "id": "129c40a9-02f8-5fd6-a6c4-7afbd3e27fc6",
@@ -13993,7 +13994,8 @@
     "dex": 16,
     "weight": 16,
     "minLevel": 32,
-    "maxLevel": 40
+    "maxLevel": 40,
+    "time": "day"
    },
    {
     "id": "8e27b7ac-552a-54f1-a43b-4f33cc83a14e",
@@ -14014,28 +14016,32 @@
     "dex": 163,
     "weight": 20,
     "minLevel": 32,
-    "maxLevel": 40
+    "maxLevel": 40,
+    "time": "night"
    },
    {
     "id": "fdba9a54-6e14-508f-886c-4aa9461eb02d",
     "dex": 164,
     "weight": 14,
     "minLevel": 36,
-    "maxLevel": 44
+    "maxLevel": 44,
+    "time": "night"
    },
    {
     "id": "b96df6cf-0479-524e-8c18-9d958618a7c0",
     "dex": 92,
     "weight": 18,
     "minLevel": 32,
-    "maxLevel": 40
+    "maxLevel": 40,
+    "time": "night"
    },
    {
     "id": "72076c4e-450a-531c-9a28-3ad25d45c01d",
     "dex": 93,
     "weight": 14,
     "minLevel": 36,
-    "maxLevel": 44
+    "maxLevel": 44,
+    "time": "night"
    }
   ],
   "trainerPool": [],
@@ -14577,14 +14583,16 @@
     "dex": 187,
     "weight": 16,
     "minLevel": 6,
-    "maxLevel": 10
+    "maxLevel": 10,
+    "time": "day"
    },
    {
     "id": "a3070eec-b7e1-5520-a056-77fc79549804",
     "dex": 194,
     "weight": 14,
     "minLevel": 7,
-    "maxLevel": 11
+    "maxLevel": 11,
+    "time": "night"
    },
    {
     "id": "2ee7528f-fda1-5e0e-ab45-9b84ff4ee099",
@@ -14989,7 +14997,8 @@
     "dex": 183,
     "weight": 14,
     "minLevel": 30,
-    "maxLevel": 36
+    "maxLevel": 36,
+    "time": "night"
    },
    {
     "id": "70c95a98-5c28-5ae0-8bf3-b21d56398849",
@@ -15024,7 +15033,8 @@
     "dex": 163,
     "weight": 10,
     "minLevel": 30,
-    "maxLevel": 37
+    "maxLevel": 37,
+    "time": "night"
    },
    {
     "id": "c6cfc7e9-e553-53e2-ad6f-45ff15cc4f8a",
@@ -15199,14 +15209,16 @@
     "dex": 21,
     "weight": 16,
     "minLevel": 10,
-    "maxLevel": 15
+    "maxLevel": 15,
+    "time": "day"
    },
    {
     "id": "5ab50314-d418-5c9c-b6ae-4c1a4d598a81",
     "dex": 187,
     "weight": 16,
     "minLevel": 10,
-    "maxLevel": 15
+    "maxLevel": 15,
+    "time": "day"
    }
   ],
   "trainerPool": [
@@ -15363,7 +15375,8 @@
     "dex": 165,
     "weight": 20,
     "minLevel": 11,
-    "maxLevel": 16
+    "maxLevel": 16,
+    "time": "day"
    },
    {
     "id": "c0b27da9-0d13-5412-94bb-ac15a2e446de",
@@ -15522,14 +15535,16 @@
     "dex": 10,
     "weight": 14,
     "minLevel": 12,
-    "maxLevel": 16
+    "maxLevel": 16,
+    "time": "day"
    },
    {
     "id": "83046a14-f94b-5bfc-a838-845802b7ca35",
     "dex": 11,
     "weight": 12,
     "minLevel": 14,
-    "maxLevel": 18
+    "maxLevel": 18,
+    "time": "day"
    },
    {
     "id": "0e71632a-6059-598e-a441-c973a4e431c8",
@@ -15543,7 +15558,8 @@
     "dex": 43,
     "weight": 16,
     "minLevel": 13,
-    "maxLevel": 18
+    "maxLevel": 18,
+    "time": "night"
    },
    {
     "id": "0dd8df5a-516e-50b9-8f0f-92d766e538c3",
@@ -15747,14 +15763,16 @@
     "dex": 209,
     "weight": 14,
     "minLevel": 15,
-    "maxLevel": 20
+    "maxLevel": 20,
+    "time": "day"
    },
    {
     "id": "a05110e0-3fe8-5ebe-82e8-e485b3b1d92f",
     "dex": 16,
     "weight": 16,
     "minLevel": 14,
-    "maxLevel": 20
+    "maxLevel": 20,
+    "time": "day"
    },
    {
     "id": "c62a111f-96c1-5b8b-930e-6a712fdeefff",
@@ -16024,7 +16042,8 @@
     "dex": 16,
     "weight": 30,
     "minLevel": 15,
-    "maxLevel": 20
+    "maxLevel": 20,
+    "time": "day"
    },
    {
     "id": "ee8e63f8-7226-5ddf-a99a-892896e17472",
@@ -16254,7 +16273,8 @@
     "dex": 191,
     "weight": 12,
     "minLevel": 18,
-    "maxLevel": 23
+    "maxLevel": 23,
+    "time": "day"
    },
    {
     "id": "64e45e86-4f86-52b1-9eeb-405f86e1c50e",
@@ -16275,14 +16295,16 @@
     "dex": 165,
     "weight": 10,
     "minLevel": 18,
-    "maxLevel": 24
+    "maxLevel": 24,
+    "time": "day"
    },
    {
     "id": "ff79cf80-9132-54f3-a999-a850990cc150",
     "dex": 167,
     "weight": 10,
     "minLevel": 18,
-    "maxLevel": 24
+    "maxLevel": 24,
+    "time": "night"
    },
    {
     "id": "9e1c7921-7a72-5bde-91ae-3bd99d68941c",
@@ -16296,7 +16318,8 @@
     "dex": 16,
     "weight": 10,
     "minLevel": 17,
-    "maxLevel": 24
+    "maxLevel": 24,
+    "time": "day"
    },
    {
     "id": "29d3e958-1b64-5c9c-8fd4-ac8c7e2d390d",
@@ -16523,7 +16546,8 @@
     "dex": 191,
     "weight": 10,
     "minLevel": 19,
-    "maxLevel": 25
+    "maxLevel": 25,
+    "time": "day"
    },
    {
     "id": "1ad09066-3c48-5fca-bf6e-8b33261cc84e",
@@ -16694,14 +16718,16 @@
     "dex": 92,
     "weight": 22,
     "minLevel": 20,
-    "maxLevel": 26
+    "maxLevel": 26,
+    "time": "night"
    },
    {
     "id": "0593b819-074e-51ec-88fe-2c83d9b88158",
     "dex": 93,
     "weight": 10,
     "minLevel": 24,
-    "maxLevel": 29
+    "maxLevel": 29,
+    "time": "night"
    },
    {
     "id": "4b4f22a5-e46e-52a6-8d9a-474df180972d",
@@ -16946,7 +16972,8 @@
     "dex": 16,
     "weight": 12,
     "minLevel": 22,
-    "maxLevel": 28
+    "maxLevel": 28,
+    "time": "day"
    },
    {
     "id": "6d238e32-ea5e-55de-b879-9d0dd77bc525",
@@ -16967,7 +16994,8 @@
     "dex": 83,
     "weight": 6,
     "minLevel": 24,
-    "maxLevel": 30
+    "maxLevel": 30,
+    "time": "day"
    },
    {
     "id": "1858bc12-51f8-567e-b7b4-0965c84ba7b0",
@@ -17150,7 +17178,8 @@
     "dex": 120,
     "weight": 16,
     "minLevel": 25,
-    "maxLevel": 31
+    "maxLevel": 31,
+    "time": "night"
    },
    {
     "id": "8614d4e5-3e3f-57dc-b604-9922dca4ce4a",
@@ -17567,14 +17596,16 @@
     "dex": 120,
     "weight": 16,
     "minLevel": 29,
-    "maxLevel": 35
+    "maxLevel": 35,
+    "time": "night"
    },
    {
     "id": "ae0b63b1-3783-56ca-8905-645288040c13",
     "dex": 222,
     "weight": 8,
     "minLevel": 28,
-    "maxLevel": 34
+    "maxLevel": 34,
+    "time": "day"
    }
   ],
   "trainerPool": [
@@ -18874,21 +18905,24 @@
     "dex": 161,
     "weight": 40,
     "minLevel": 2,
-    "maxLevel": 5
+    "maxLevel": 5,
+    "time": "day"
    },
    {
     "id": "528a03dd-edec-5712-8764-8a0ac60acd3f",
     "dex": 163,
     "weight": 25,
     "minLevel": 2,
-    "maxLevel": 5
+    "maxLevel": 5,
+    "time": "night"
    },
    {
     "id": "992fdd0d-74eb-59d6-852e-07b7a9351e3b",
     "dex": 16,
     "weight": 20,
     "minLevel": 2,
-    "maxLevel": 4
+    "maxLevel": 4,
+    "time": "day"
    },
    {
     "id": "58c6e4d9-0d24-5e48-8266-683d3a7b7459",
@@ -18988,21 +19022,24 @@
     "dex": 13,
     "weight": 14,
     "minLevel": 3,
-    "maxLevel": 6
+    "maxLevel": 6,
+    "time": "day"
    },
    {
     "id": "9f2fb242-33fa-5157-8541-319f226a47b9",
     "dex": 165,
     "weight": 16,
     "minLevel": 3,
-    "maxLevel": 6
+    "maxLevel": 6,
+    "time": "day"
    },
    {
     "id": "b3d21bef-c0c8-5d6f-a580-fbd5f2c1b530",
     "dex": 167,
     "weight": 16,
     "minLevel": 3,
-    "maxLevel": 6
+    "maxLevel": 6,
+    "time": "night"
    },
    {
     "id": "a1d90c2f-e434-5e85-bcf9-72616b50e5a6",
@@ -19016,7 +19053,8 @@
     "dex": 163,
     "weight": 12,
     "minLevel": 3,
-    "maxLevel": 7
+    "maxLevel": 7,
+    "time": "night"
    },
    {
     "id": "0d52c9bd-31b7-58f8-8e83-0c1e424dd472",
@@ -19030,14 +19068,16 @@
     "dex": 41,
     "weight": 6,
     "minLevel": 4,
-    "maxLevel": 7
+    "maxLevel": 7,
+    "time": "night"
    },
    {
     "id": "bf50723a-304a-5528-b1c1-5ff11575c43c",
     "dex": 10,
     "weight": 14,
     "minLevel": 3,
-    "maxLevel": 6
+    "maxLevel": 6,
+    "time": "day"
    }
   ],
   "trainerPool": [
@@ -19160,21 +19200,24 @@
     "dex": 92,
     "weight": 16,
     "minLevel": 5,
-    "maxLevel": 9
+    "maxLevel": 9,
+    "time": "night"
    },
    {
     "id": "1fdea70a-4b5d-5b20-b512-a0db21f71371",
     "dex": 163,
     "weight": 18,
     "minLevel": 4,
-    "maxLevel": 9
+    "maxLevel": 9,
+    "time": "night"
    },
    {
     "id": "4a0f4e19-f7a7-5dc0-a5c9-40e1b9079685",
     "dex": 16,
     "weight": 16,
     "minLevel": 4,
-    "maxLevel": 9
+    "maxLevel": 9,
+    "time": "day"
    },
    {
     "id": "a6644992-10bf-5dc9-8008-6d6916113a0a",
@@ -19323,7 +19366,8 @@
     "dex": 16,
     "weight": 10,
     "minLevel": 55,
-    "maxLevel": 70
+    "maxLevel": 70,
+    "time": "day"
    },
    {
     "id": "425c10e2-d271-577f-8642-1d6935e92a6a",
@@ -19414,7 +19458,8 @@
     "dex": 43,
     "weight": 10,
     "minLevel": 55,
-    "maxLevel": 70
+    "maxLevel": 70,
+    "time": "night"
    },
    {
     "id": "05b248ce-59fc-55f7-b66f-4d4e8d0d1dc5",
@@ -19554,14 +19599,16 @@
     "dex": 92,
     "weight": 10,
     "minLevel": 55,
-    "maxLevel": 70
+    "maxLevel": 70,
+    "time": "night"
    },
    {
     "id": "4e889cf0-2c38-5c24-bc97-a1892d61fdb2",
     "dex": 93,
     "weight": 10,
     "minLevel": 55,
-    "maxLevel": 70
+    "maxLevel": 70,
+    "time": "night"
    },
    {
     "id": "e1f2d6ba-1a8e-5cc8-8b22-57ee77722583",
@@ -19806,28 +19853,32 @@
     "dex": 163,
     "weight": 10,
     "minLevel": 55,
-    "maxLevel": 70
+    "maxLevel": 70,
+    "time": "night"
    },
    {
     "id": "2f75f314-b891-5e1b-a7de-2e5502283410",
     "dex": 164,
     "weight": 10,
     "minLevel": 55,
-    "maxLevel": 70
+    "maxLevel": 70,
+    "time": "night"
    },
    {
     "id": "16fd96a5-8b92-5f73-a5c8-2563e8ff5cfa",
     "dex": 165,
     "weight": 10,
     "minLevel": 55,
-    "maxLevel": 70
+    "maxLevel": 70,
+    "time": "day"
    },
    {
     "id": "ff6af4a6-4927-520e-b765-158687cd85a9",
     "dex": 166,
     "weight": 10,
     "minLevel": 55,
-    "maxLevel": 70
+    "maxLevel": 70,
+    "time": "day"
    },
    {
     "id": "e48212e3-3393-5b24-b0ce-12685b159892",
@@ -19841,7 +19892,8 @@
     "dex": 168,
     "weight": 10,
     "minLevel": 55,
-    "maxLevel": 70
+    "maxLevel": 70,
+    "time": "night"
    },
    {
     "id": "79cd5be8-8583-5b10-bd8a-937e469eda7e",
@@ -20002,7 +20054,8 @@
     "dex": 191,
     "weight": 10,
     "minLevel": 55,
-    "maxLevel": 70
+    "maxLevel": 70,
+    "time": "day"
    },
    {
     "id": "6661c9f0-6ec8-5c73-8482-5da6199a29db",
@@ -20065,7 +20118,8 @@
     "dex": 200,
     "weight": 10,
     "minLevel": 55,
-    "maxLevel": 70
+    "maxLevel": 70,
+    "time": "night"
    },
    {
     "id": "38398df7-5eb7-52b9-8f87-c8b2ef963179",
@@ -20135,7 +20189,8 @@
     "dex": 210,
     "weight": 10,
     "minLevel": 55,
-    "maxLevel": 70
+    "maxLevel": 70,
+    "time": "day"
    },
    {
     "id": "f68390f9-3a22-54e8-8cef-d581001b4452",
@@ -20352,7 +20407,8 @@
     "dex": 222,
     "weight": 10,
     "minLevel": 55,
-    "maxLevel": 70
+    "maxLevel": 70,
+    "time": "day"
    },
    {
     "id": "0a1de192-9341-5029-9341-c5b1fbd7885a",
@@ -25741,7 +25797,8 @@
     "dex": 215,
     "weight": 10,
     "minLevel": 37,
-    "maxLevel": 44
+    "maxLevel": 44,
+    "time": "night"
    },
    {
     "id": "4b38efcf-c639-579f-9cd6-aa65796e359d",

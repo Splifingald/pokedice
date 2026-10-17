@@ -46,7 +46,7 @@ export function autoEvents(state: BattleState, data: GameData, rng: Rng): Battle
       const form = state.auto ? autoTypeForm(state, data, rng) : null
       if (form) return [{ t: 'CHANGE_FORM', toDex: form.dex }]
       const a = activeBattler(state)
-      // A double battle: aim at the foe its dice hit hardest, the weakest of those first (docs/31).
+      // A double battle: aim at the foe its dice hit hardest, the weakest of those first (docs/33).
       const aim = state.double ? bestTarget(state, data) : null
       if (aim && aim.uid !== state.enemy.uid) return [{ t: 'TARGET', uid: aim.uid }, { t: 'ROLL' }]
       // Like a player would: a Pokémon that can't touch the foe (Normal vs Ghost) makes way for one that can.
