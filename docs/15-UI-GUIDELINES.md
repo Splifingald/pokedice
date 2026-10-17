@@ -170,6 +170,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `PortalRaidBanner` / `PortalRaidCard` (`RaidCard portal`) / `RaidStageArt` / `DistortionGround` / `StageTear` / `RaidNpcPicker portal` / `BattleStage world="distortion"` | Giratina's area raid (§27) | The raid page in the violet night (`.dw-scope`): the portal banner with its plate, the card open and caught, the lock, START, the team; its NPC partners pop-up (the portal and Giratina distorted as its banner); the raid's stage (the Distortion World, Giratina distorted on its island) and a bar's tear. The entrance is on `/kitchen-sink/fx` |
 | `MoonScene` / `NightmareGauge` / `NightmareEntry` / `NightmareEntryDialog` / `NightmareIntro` / `NightmareRulesModal` / `HauntSprite` / `BattleStage haunted` / `NightmareStrikeView` / `NightmareVictoryView` | Darkrai's nightmare (§29) | The moon on the pixel engine (moving; still); the gauge of rounds (fresh, under way, won); the way in (the intro playing, held at its end with "Tap to continue ▼", then its pop-up over that end; the pop-up at once, back from TEAM; the pop-up on its own: TEAM / NOT NOW / BEGIN THE NIGHTMARE); the rules pop-up (INFO); a haunted foe (full, short, off; on the night's stage); Darkrai's strike (playing, the cards draining; landed, from Home); the round's result cards (a round, the last, a gift); Home's Areas button locked with its reason; the waking (HEAL & START RAID over the green BACK TO THE WORLD) |
 | `NightmareRaidBanner` / `NightmareRaidCard` (`RaidCard nightmare`) / `NightStageArt` / `NightGround` / `StageShadow` / `RaidNpcPicker nightmare` / `BattleStage world="nightmare"` / `NightmareFx` | Darkrai's area raid, and the nightmare's fights (§29) | The raid page in the moonlit night (`.nm-scope`): the moon banner with its plate, the card open and caught, the lock, START, the team; its NPC partners pop-up (the moon and Darkrai as its banner); the stage (the night, the moon behind the foe, smoke rising off its rock) and a bar's shadow; the raid's screen vignette with the shadow over the page. The entrance is on `/kitchen-sink/fx` |
+| `LooksRow` / `LooksDot` / `LooksMenu` / `LooksSheet` / `LockedLook` / `LooksRulesModal` | Trainer looks (§17, docs/31) | The row under the trainer card (with and without its red dot); the menu (a new game, some new looks, every look unlocked); a locked look of each kind (a catch goal with its bar, an area with how far away, the League, the full Pokédex); the rules (the first open, INFO) |
 | `TeamSwapActions` | A Pokémon's sheet where the team can change (`teamSwapsOpen`: inside a Pokémon Center, at a portal's way in before READY!) | In the team: Make lead (not the lead), Send to the Box (not the last one); in the Box: Add to team, or, the team full, "swap it in for" each member (a button each: its still mini icon on the left, name and level, "goes to the Box" and the swap arrow, `reroll`, at the far right); still reviving from its fossil: a line saying so. It sits above Strengths and weaknesses in the sheet, whether type hints are on or not (`PokemonSheet`'s `beforeMatchups`, the user's call, 2026-10-15) |
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
@@ -578,6 +579,13 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   game alive" or hosting costs: the money is for the developer, not the game.
 - **Look**: "How other trainers see you…" with Change opening a radio grid of every look, in one block (no region headings); picking one closes it. The same
   crop (`TrainerLook`) is used wherever a trainer appears.
+- **Trainer looks** (docs/31, while its switch is on, in the Look block's place): one row under the card (the look
+  worn, "27 of 138 unlocked", a **red** dot counting looks unlocked since the menu was last opened, the one red dot
+  for "new": it marks a collection to look at, the user's call, 2026-10-17; `crimson` under 24 px) opening a sheet:
+  the look worn, the unlocked looks as a radio grid (a tap wears it; gold NEW on the unseen ones), then the locked
+  ones by region, the one being played first, nearest goal first (a silhouette, the name, the goal with a gold bar or
+  "3 areas away"); a region not started is one line; INFO at the bottom. Closing the sheet marks them seen. The top
+  bar's avatar carries the red dot when no gold one is there.
 - **The menu** under the card: rows with an icon tile, a label and a one-line description (Leaderboard, Versus with
   "0/3 at Lv.50" while locked, Settings, How to play, Type chart, Admin for admins, Cloud backup, Connect). The label
   alone names a row; the description is its `aria-describedby`.
@@ -642,7 +650,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
   queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
   again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the portal run (§27), Trick or Treat (§28), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the portal run (§27), Trick or Treat (§28), trainer looks (§17, docs/31), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.

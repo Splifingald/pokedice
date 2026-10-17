@@ -863,6 +863,8 @@ export interface GameConfig {
   portalRun: { access: EventAccess }
   /** The areas' nightmare (docs/30): its switch. The server reads the same row (0060). */
   nightmare: { access: EventAccess }
+  /** Trainer looks (docs/31): unlockable looks in place of the free list. Off by default. */
+  looks: { access: EventAccess }
   /** Trick or Treat (docs/29): its switch, numbers and each area's ghosts. The server reads the switch too. */
   trickOrTreat: TrickOrTreatConfig
 }
@@ -1269,6 +1271,15 @@ export interface SaveData {
   general?: GeneralSave
   /** Trick or Treat (docs/29): its rules seen. Absent = never met. */
   trickOrTreat?: TrickSave
+  /** Trainer looks (docs/31): the unlocked looks already seen in the menu, and its rules pop-up shown. */
+  looks?: LooksSave
+}
+
+/** Trainer looks (docs/31): only what was seen; what is unlocked is worked out from progress (engine/looks). */
+export interface LooksSave {
+  /** Unlocked looks already seen in the menu: the red dot counts the others. */
+  seen?: string[]
+  rulesSeen?: boolean
 }
 
 /** The General upgrades bought (docs/25), and the offline earnings' clock. */
