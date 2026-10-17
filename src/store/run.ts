@@ -57,6 +57,7 @@ import {
   newSave,
   nextEncounter,
   progressOf,
+  plateTypes,
   randomSeed,
   reduce,
   swapIntoTeam,
@@ -575,6 +576,8 @@ function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shin
       megaAllowed: megaUnlocked(save, data),
       gmaxAllowed: gmaxUnlocked(save, data),
       noHealItems: !healItemsOn(save, data),
+      // Arceus takes only the types of its plates while the Underground is on (docs/31).
+      plates: plateTypes(save, data),
       enemyPlan: enemyPlanFor(save, data, enemy, trainer),
       auto,
     },

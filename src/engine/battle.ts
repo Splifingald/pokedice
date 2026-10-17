@@ -4,7 +4,7 @@ import { getSpecies } from './data'
 import { attackMultiplier, attackType, computeDamage, type DamageResult, type UpgradeLevels } from './damage'
 import { rerollMasked, rollAll, type RolledDie } from './dice'
 import { reviveHp } from './economy'
-import { choiceFormDie, choiceFormsOf, gmaxFormsOf, lowHpFormOf, megaDie, megaOptions, swapOneDie } from './forms'
+import { ARCEUS_DEX, choiceFormDie, choiceFormsOf, gmaxFormsOf, lowHpFormOf, megaDie, megaOptions, swapOneDie } from './forms'
 import { effectiveStats } from './progression'
 import { potionHeal, shouldUsePotion } from './trainerItems'
 import type { Rng } from './rng'
@@ -102,6 +102,8 @@ export interface BattleState {
   canRun: boolean
   /** Extreme mode with the admin's items switch off: no Potion or Revive works. */
   noHealItems?: boolean
+  /** The types the player's Arceus may take (its plates, docs/31). Absent = any. */
+  plates?: PokeType[]
   lastDamage: DamageResult | null
   /** One item per turn — it doesn't end the turn. */
   itemUsedThisTurn: boolean
@@ -282,6 +284,8 @@ export interface CreateBattleOptions {
   auto?: boolean
   /** No Potion or Revive works (Extreme mode, items switched off). */
   noHealItems?: boolean
+  /** The types the player's Arceus may take: its plates (docs/31). Absent = any. Foes are never limited. */
+  plates?: PokeType[]
 }
 
 /** Takes on a form's look and types (the dice are the caller's business). */
@@ -478,7 +482,17 @@ export function formChoices(s: BattleState, data: GameData): Species[] {
   const a = activeBattler(s)
   // Each Pokémon has its own changes for the battle.
   if (a.hp <= 0 || (a.formChanges ?? 0) >= data.config.formChangesPerBattle) return []
-  return typeForms(a, data)
+  const forms = typeForms(a, data)
+  // Arceus takes only the types of the plates held (docs/31); its Normal self is always there to go back to.
+  if (!s.plates || (a.baseDex ?? a.dex) !== ARCEUS_DEX) return forms
+  return forms.filter((f) => f.dex === ARCEUS_DEX || s.plates!.includes(choiceFormDie(f)))
+}
+
+/** Arceus's types still locked for the player (docs/31): the forms it has no plate for. Empty for anyone else. */
+export function lockedTypeForms(s: BattleState, data: GameData): Species[] {
+  const a = activeBattler(s)
+  if (!s.plates || (a.baseDex ?? a.dex) !== ARCEUS_DEX) return []
+  return choiceFormsOf(data, ARCEUS_DEX).filter((f) => !s.plates!.includes(choiceFormDie(f)))
 }
 
 const other = (s: Side): Side => (s === 'player' ? 'enemy' : 'player')
@@ -512,6 +526,7 @@ export function createBattle(opts: CreateBattleOptions, data: GameData): { state
     participants: [lead.uid],
     canRun: opts.kind === 'wild' && !data.config.noEscape,
     ...(opts.noHealItems && { noHealItems: true }),
+    ...(opts.plates && { plates: [...opts.plates] }),
     lastDamage: null,
     itemUsedThisTurn: false,
     ...(opts.auto

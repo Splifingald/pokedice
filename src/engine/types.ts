@@ -719,7 +719,7 @@ export interface EventsConfig {
 }
 
 /** Live events (docs/20): the kinds the admin can schedule. */
-export const LIVE_TYPES = ['shiny', 'shop', 'cash'] as const
+export const LIVE_TYPES = ['shiny', 'shop', 'cash', 'underground'] as const
 export type LiveType = (typeof LIVE_TYPES)[number]
 
 /** One item of a Special Shop: its event price, how many each player may buy (null = no limit), where it's sold. */
@@ -865,6 +865,126 @@ export interface GameConfig {
   nightmare: { access: EventAccess }
   /** Trick or Treat (docs/29): its switch, numbers and each area's ghosts. The server reads the switch too. */
   trickOrTreat: TrickOrTreatConfig
+  /**
+   * The Underground (docs/31): its switch and every number. Each live event of type `underground` uses it; the server
+   * reads the same row.
+   */
+  underground: UndergroundConfig
+}
+
+/** The Underground's orbs (docs/31): three colours, one per team seat, and three sizes. */
+export const ORB_COLOURS = ['red', 'blue', 'green'] as const
+export type OrbColour = (typeof ORB_COLOURS)[number]
+export const ORB_SIZES = ['s', 'm', 'l'] as const
+export type OrbSize = (typeof ORB_SIZES)[number]
+export type OrbBag = Record<OrbColour, Record<OrbSize, number>>
+
+/** What a wall can hide: an orb of each size, a fossil, a plate. */
+export const UG_LOOT = ['orbS', 'orbM', 'orbL', 'fossil', 'plate'] as const
+export type UgLoot = (typeof UG_LOOT)[number]
+
+/** One level of the pickaxe: its die's six faces (layers a strike takes off) and its price in ₽. */
+export interface PickaxeLevel {
+  faces: number[]
+  price: number
+}
+
+/**
+ * The Underground (docs/31): Explorakits open walls of tiles 1–3 layers deep; a strike rolls the pickaxe die. What a
+ * wall hides is won only once all its tiles are dug out, before the strikes run out. Everything here is the admin's.
+ */
+export interface UndergroundConfig {
+  /** The switch (docs/15 §20): off (nowhere in the game, Arceus unlocked), on for the admin only, on for everyone. */
+  access: EventAccess
+  kits: {
+    /** The Mart's price of an Explorakit (₽). */
+    price: number
+    /** Explorakits each player may buy per event; 0 = no limit (a null would be lost merging over the defaults). */
+    limit: number
+    /** Free kits: `freeAmount` every `freePeriodHours`, coming one at a time, at most `freeCap` waiting. */
+    freeAmount: number
+    freePeriodHours: number
+    freeCap: number
+  }
+  wall: {
+    cols: number
+    rows: number
+    /** Strikes before the wall collapses. */
+    strikes: number
+    /** Shares (any scale) of tiles 1, 2 and 3 layers deep. */
+    layers: [number, number, number]
+    /** How many things a wall hides. */
+    itemsMin: number
+    itemsMax: number
+    /** A strike's 4 neighbours lose the roll minus this (0 = as much as the tile). */
+    neighbourLoss: number
+  }
+  loot: {
+    /** How often each kind is drawn for a wall. */
+    weights: Record<UgLoot, number>
+    /** Each kind's footprint, in tiles. */
+    shapes: Record<UgLoot, { w: number; h: number }>
+    /** An orb's colour odds. */
+    colours: Record<OrbColour, number>
+  }
+  /** An orb's selling price (₽), by colour and size. */
+  prices: Record<OrbColour, Record<OrbSize, number>>
+  /** The pickaxe: level 0 first; it starts at 0 each event. */
+  pickaxe: PickaxeLevel[]
+  /** Orbs sell only once the team has all its seats (one per colour). */
+  sellNeedsFull: boolean
+}
+
+/** One thing buried in a wall, at (x, y) for w × h tiles. */
+export interface WallThing {
+  kind: UgLoot
+  x: number
+  y: number
+  w: number
+  h: number
+  /** An orb's colour. */
+  colour?: OrbColour
+  /** A fossil's item key. */
+  item?: string
+  /** A plate's type. */
+  plate?: PokeType
+}
+
+/** An Underground wall being dug: kept in the save after every strike, so it resumes after a reload. */
+export interface Wall {
+  /** Unique within the event: the haul is applied once per wall. */
+  id: string
+  cols: number
+  rows: number
+  /** Layers left per tile, row by row. */
+  depth: number[]
+  things: WallThing[]
+  /** Strikes this wall allows (the admin's number when it was dealt) and strikes used. */
+  strikes: number
+  used: number
+  /** The neighbours' loss when it was dealt. */
+  neighbourLoss: number
+}
+
+/** The Underground in a save (docs/31): one event's kits, pickaxe, orb bag and open wall. A new event starts afresh. */
+export interface UndergroundSave {
+  eventId: string
+  /** Free kits waiting, and when the next one comes (server ms; null while at the cap). */
+  freeKits: number
+  freeAt: number | null
+  /** Bought kits waiting, and how many were bought this event (the limit). */
+  boughtKits: number
+  boughtCount: number
+  /** The pickaxe's level. */
+  pickaxe: number
+  bag: OrbBag
+  wall: Wall | null
+  /** Walls opened this event (wall ids are numbered from it). */
+  walls: number
+  /** Walls whose haul is in this save (last 50). */
+  hauls: string[]
+  /** The rules pop-up has been shown this event. */
+  rulesSeen?: boolean
 }
 
 /** A Trick or Treat ghost's rarity (docs/29): it picks the ghost and sets its gauge. */
@@ -1269,6 +1389,10 @@ export interface SaveData {
   general?: GeneralSave
   /** Trick or Treat (docs/29): its rules seen. Absent = never met. */
   trickOrTreat?: TrickSave
+  /** The Underground (docs/31): the running event's kits, pickaxe, orbs and wall. Gone when the event ends. */
+  underground?: UndergroundSave
+  /** Arceus's plates found in the Underground, by type: kept for good. Each lets the player's Arceus take its type. */
+  plates?: PokeType[]
 }
 
 /** The General upgrades bought (docs/25), and the offline earnings' clock. */

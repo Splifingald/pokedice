@@ -1,6 +1,7 @@
 // Admin → Live events (docs/20): what changes the whole game for a while, the same for everyone — a Shiny Parade, a
-// Special Shop or Cash Flow. One game_config row, `liveEvents`; one event runs at a time. An event is edited as a
-// draft and goes into the list only when nothing is wrong with it (an overlap is refused); Save & Publish sends it.
+// Special Shop, Cash Flow or the Underground (docs/31; its numbers are a row of their own, UndergroundBox). One
+// game_config row, `liveEvents`; one event runs at a time. An event is edited as a draft and goes into the list only
+// when nothing is wrong with it (an overlap is refused); Save & Publish sends it.
 import { useMemo, useState } from 'react'
 import {
   LIVE_TYPES,
@@ -27,8 +28,9 @@ import { useAdminData } from '../store'
 import { AccessSwitch, Box, Field, NumInput, inputCls } from '../widgets'
 import { useConfigRow } from './ConfigSection'
 import { EVENT_BANNERS } from './EventsSection'
+import { UndergroundBox } from './UndergroundBox'
 
-const TYPE_NAME: Record<LiveType, string> = { shiny: 'Shiny Parade', shop: 'Special Shop', cash: 'Cash Flow' }
+const TYPE_NAME: Record<LiveType, string> = { shiny: 'Shiny Parade', shop: 'Special Shop', cash: 'Cash Flow', underground: 'Underground' }
 const STATE_CLS = { live: 'bg-good text-white', scheduled: 'bg-[#2f4f8f] text-white', ended: 'bg-shadow text-muted' }
 const HOUR = 3_600_000
 
@@ -53,6 +55,7 @@ const pct = (m: number) => Math.round((m - 1) * 100)
 function summary(e: LiveEvent, data: GameData | null): string {
   if (e.type === 'cash') return `+${pct(e.cash.multiplier)} % on every ₽ earned`
   if (e.type === 'shop') return `${e.shop.items.length} item${e.shop.items.length === 1 ? '' : 's'}`
+  if (e.type === 'underground') return 'walls to dig, orbs, fossils and plates (its settings are shared)'
   const s = e.shiny
   const where =
     s.scope === 'all'
@@ -303,6 +306,7 @@ function LiveEditor({
       </details>
       <div className="border-t-2 border-line pt-2">
         {draft.type === 'shiny' && <ShinyEditor e={draft} set={(shiny) => patch({ shiny })} data={data} />}
+        {draft.type === 'underground' && <UndergroundBox />}
         {draft.type === 'shop' && <ShopEditor items={draft.shop.items} set={(items) => patch({ shop: { items } })} data={data} />}
         {draft.type === 'cash' && (
           <Field label="₽ earned + %" hint="Trainers and Gyms, ₽ found in areas, the Elite Rebattle, the Game Corner, the Day Care, the Fortune Wheel. Selling isn't boosted.">
