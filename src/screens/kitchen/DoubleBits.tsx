@@ -1,10 +1,8 @@
 // Kitchen sink (dev only): double battles' pieces (docs/31) — the four-Pokémon stage, its name-less plates, the target
-// picker, the preview's tag with its INFO and rules, and the lead picker sending two. Made-up battlers.
+// picker and the lead picker sending two. Made-up battlers.
 import { useMemo, useState } from 'react'
 import { makeBattler, type Battler } from '@/engine'
-import { DoubleRulesModal, DoubleTag } from '@/components/DoubleBattle'
 import { LeadPicker } from '@/components/LeadPicker'
-import { PixelButton } from '@/components/PixelButton'
 import { Toggle } from '@/components/Toggle'
 import { useGame } from '@/store/game'
 import { BattleStage } from '../battle/BattleStage'
@@ -36,7 +34,6 @@ export function DoubleBits() {
   const data = useGame((s) => s.data)
   const [swap, setSwap] = useState(false)
   const [aim, setAim] = useState(0)
-  const [rules, setRules] = useState(false)
   const [leads, setLeads] = useState<string[]>([])
   const { own, foes } = useMemo(() => {
     const own = [
@@ -123,9 +120,6 @@ export function DoubleBits() {
         <MiniPlate b={foes[1]!} hp={foes[1]!.hp} foe front />
         <MiniPlate b={own[0]!} hp={own[0]!.hp} foe={false} front />
         <MiniPlate b={own[1]!} hp={0} foe={false} front={false} fainted />
-        <DoubleTag firstTime={false} />
-        <PixelButton onClick={() => setRules(true)}>Rules pop-up</PixelButton>
-        <DoubleRulesModal open={rules} onClose={() => setRules(false)} />
         <LeadPicker value={null} onChange={() => {}} pair={{ value: leads, onChange: setLeads }} />
       </div>
     </>

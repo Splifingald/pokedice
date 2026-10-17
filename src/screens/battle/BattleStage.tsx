@@ -25,12 +25,13 @@ import type { Fx, Scene } from './useBattleAnimator'
 const LAYOUT = background(W, H).layout
 
 /**
- * A double battle's Pokémon behind (docs/31): where its feet go, smaller, a little up the stage and to the side; the
- * pair in front stand on the usual spots, where every move's timeline draws them.
+ * A double battle's Pokémon behind (docs/31): where its feet go, smaller, up the stage and to the left, half hidden
+ * by the one in front (the user, 2026-10-17: "the pokemon that is not attacking should be at the back"); the pair in
+ * front stand on the usual spots, where every move's timeline draws them.
  */
 const BACK = {
   foe: { x: LAYOUT.foe.x - 48, y: LAYOUT.foe.y - 16, k: 0.7 },
-  own: { x: LAYOUT.own.x + 50, y: LAYOUT.own.y - 34, k: 0.66 },
+  own: { x: LAYOUT.own.x - 34, y: LAYOUT.own.y - 40, k: 0.66 },
 }
 /** Where a Pokémon stands and how big, with its depth (a double battle's; absent = its side's usual spot). */
 interface Place {

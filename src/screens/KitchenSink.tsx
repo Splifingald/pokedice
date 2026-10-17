@@ -598,7 +598,7 @@ export function KitchenSink() {
         <BattleBits />
       </Section>
 
-      <Section title="Double battles: the four-Pokémon stage (front pair big, partners behind), name-less plates, target picker, the preview's tag and INFO, rules, two leads">
+      <Section title="Double battles: the four-Pokémon stage (front pair big, partners behind), name-less plates, target picker, two leads">
         <DoubleBits />
       </Section>
 

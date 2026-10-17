@@ -1,5 +1,5 @@
-// Double battles (docs/31, docs/15 §30): a wild pair in a ticked region — the preview says so with its tag, the rules
-// open once, two leads go out — then the battle with four Pokémon on the stage and the target picker, a throw at each
+// Double battles (docs/31, docs/15 §30): a wild pair in a ticked region — the preview shows both, no rules pop-up nor
+// tag (the user, 2026-10-17), two leads go out — then the battle with four Pokémon on the stage and the target picker, a throw at each
 // one, and the rewards; switched off, the same encounter is one wild Pokémon. The kitchen sink shows every piece.
 // Set SHOTS=<dir> to keep screenshots of the stage at phone size.
 import { expect, test, type Page } from '@playwright/test'
@@ -39,7 +39,7 @@ async function boot(page: Page, save: SaveData, devConfig: object) {
   )
 }
 
-test('a wild pair: the tag and rules, two leads, four on the stage, a target, a throw at each, the rewards', async ({
+test('a wild pair: no pop-up, two leads, four on the stage, a target, a throw at each, the rewards', async ({
   page,
 }) => {
   // Four take turns, each one's move played: a long fight.
@@ -51,15 +51,12 @@ test('a wild pair: the tag and rules, two leads, four on the stage, a target, a 
   await page.goto('/home')
   await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
 
-  // The rules open by themselves the first time.
-  const rules = page.getByRole('dialog', { name: 'Double battles' })
-  await expect(rules).toBeVisible()
-  await expect(rules.getByText('Two against two')).toBeVisible()
-  await rules.getByRole('button', { name: 'OK', exact: true }).click()
 
   const preview = page.getByRole('dialog', { name: 'Two wild Pokémon appeared!' })
   await expect(preview).toBeVisible()
-  await expect(preview.getByText('DOUBLE BATTLE')).toBeVisible()
+  // No rules pop-up over it, no tag in it.
+  await expect(page.getByRole('dialog')).toHaveCount(1)
+  await expect(preview.getByText('DOUBLE BATTLE')).toHaveCount(0)
   await expect(preview.getByText('Send out two:')).toBeVisible()
   await expect(preview.getByRole('button', { pressed: true })).toHaveCount(2)
   await preview.getByRole('button', { name: /FIGHT/ }).click()
@@ -111,16 +108,13 @@ test('the kitchen sink shows every double battle piece, with no error', async ({
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
   await page.setViewportSize({ width: 390, height: 844 })
-  await boot(page, makeSave(4, { doubleRulesSeen: true }), EVENTS_ON)
+  await boot(page, makeSave(4), EVENTS_ON)
   await page.goto('/kitchen-sink')
   const title = page.getByText(/^Double battles: the four-Pokémon stage/)
   await expect(title).toBeVisible({ timeout: 30_000 })
   // The target picker, live and disabled, and the plates of both stages.
   await expect(page.getByRole('radiogroup', { name: 'Which foe to attack' })).toHaveCount(2)
   expect(await page.getByRole('group', { name: /^(Your )?(Plusle|Minun|Solrock|Lunatone), Lv\./ }).count()).toBeGreaterThanOrEqual(12)
-  await page.getByRole('button', { name: 'Rules pop-up', exact: true }).click()
-  await expect(page.getByRole('dialog', { name: 'Double battles' })).toBeVisible()
-  await page.getByRole('dialog', { name: 'Double battles' }).getByRole('button', { name: 'OK', exact: true }).click()
   if (process.env.SHOTS) {
     await title.scrollIntoViewIfNeeded()
     await page.screenshot({ path: `${process.env.SHOTS}/double-kitchen.png`, fullPage: false })

@@ -28,6 +28,8 @@ front, the others smaller behind. You pick which foe your Pokémon attacks; foes
 | Catching | After a wild pair, a throw at each one, one after the other. |
 | Money | Trainers pay per K.O. as before (gyms × the gym multiplier). |
 | Names | Hidden in double battles only: the plates show the Pokémon's icon, level, HP and statuses. |
+| Rules pop-up, tag | None (the user, after seeing it in game): no rules pop-up, no INFO, no DOUBLE BATTLE tag on the preview. |
+| The one not acting | Behind, smaller, up the stage and to the left of the one in front. |
 
 ## 2. Engine (pure)
 
@@ -56,8 +58,7 @@ front, the others smaller behind. You pick which foe your Pokémon attacks; foes
   Mega / Gigantamax); **`settleDouble`** pays each K.O. (`applyVictory` with `fighterUids`) whatever the end — as each
   K.O. of a one-by-one gauntlet is kept — then the wipe, the stalemate, or the rewards; won, each wild one that can be
   caught gets its throw (`run.catch`, then `run.catchQueue`; "Add to team?" is answered before the next throw).
-- Screens (§30 of docs/15): the stage with four, the name-less plates, the target picker, the preview's tag, INFO and
-  rules, the lead picker sending two, the victory card naming every foe, the history.
+- Screens (§30 of docs/15): the stage with four, the name-less plates, the target picker, the lead picker sending two, the victory card naming every foe, the history.
 
 ## 4. Content: duo trainers
 

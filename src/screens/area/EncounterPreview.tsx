@@ -13,7 +13,6 @@ import { BadgeIcon } from '@/components/BadgeIcon'
 import { DiceSet } from '@/components/DiceSet'
 import { ItemSprite } from '@/components/ItemSprite'
 import { PixelIcon } from '@/components/icons'
-import { DoubleTag } from '@/components/DoubleBattle'
 import { LeadPicker, defaultLead, pickedPair } from '@/components/LeadPicker'
 import { PixelButton } from '@/components/PixelButton'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
@@ -347,7 +346,6 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
           {t(enc.kind === 'wild' && enc.partner ? 'ui.enc.titleWildPair' : TITLES[enc.kind])}
         </h2>
         <div className="pixel-scroll flex flex-col gap-3 overflow-y-auto p-3 sm:p-4">
-          {double && <DoubleTag className={cx('justify-center', dark && 'text-paper')} />}
           {enc.kind === 'gym' && <GymCard enc={enc} />}
           {enc.kind === 'wild' && <WildCard enc={enc} />}
           {enc.kind === 'wild' && enc.partner && <WildCard enc={{ kind: 'wild', ...enc.partner }} />}

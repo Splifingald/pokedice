@@ -1253,8 +1253,6 @@ export interface SaveData {
   portalRulesSeen?: boolean
   /** The nightmare's rules pop-up (docs/30) has been shown (once; INFO shows them again). */
   nightmareRulesSeen?: boolean
-  /** Double battles' rules pop-up (docs/31) has been shown (once, at the first one; INFO shows them again). */
-  doubleRulesSeen?: boolean
   /** The region being played. Absent on saves from before the second region = 'kanto'. */
   region?: RegionId
   /** The regions not being played, each holding everything that region owns. */
