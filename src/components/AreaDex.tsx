@@ -1,28 +1,37 @@
 import { useMemo } from 'react'
-import { nationalDex, type Area, type GameData } from '@/engine'
+import { nationalDex, speciesTime, wildShare, type Area, type DayTime, type GameData } from '@/engine'
 import { dexNo } from '@/lib/format'
 import { useT } from '@/i18n/react'
+import { useAreaDayTime } from '@/store/dayTime'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { AreaStrip } from './AreaStrip'
+import { DayNightTag } from './DayNight'
 import { rarity } from './DexEntry'
 import { SpriteImg } from './SpriteImg'
 
 export interface AreaMon {
   dex: number
   kind: 'wild' | 'legendary' | 'fossil'
-  /** Share of the wild pool (or, for a fossil, of the loot table); 0 for a legendary. */
+  /**
+   * Share of the wild pool (or, for a fossil, of the loot table); 0 for a legendary. Where the area keeps the time
+   * (docs/31), the share when it's met: now, or in its own half.
+   */
   share: number
+  /** Met only by day or only by night (docs/31). */
+  time?: DayTime | null
 }
 
-/** Every Pokémon an area can give: its wild ones by Pokédex number, then its legendaries, then its fossils. */
-export function areaPokemon(area: Area, data: GameData): AreaMon[] {
-  const wildTotal = area.wildPool.reduce((sum, e) => sum + Math.max(0, e.weight), 0)
-  const wild = new Map<number, number>()
-  for (const e of area.wildPool) if (e.weight > 0) wild.set(e.dex, (wild.get(e.dex) ?? 0) + e.weight)
+/**
+ * Every Pokémon an area can give: its wild ones by Pokédex number, then its legendaries, then its fossils. `now` is the
+ * time in the area (docs/31), null where it isn't kept.
+ */
+export function areaPokemon(area: Area, data: GameData, now: DayTime | null = null): AreaMon[] {
+  const wild = new Set<number>()
+  for (const e of area.wildPool) if (e.weight > 0) wild.add(e.dex)
   const out: AreaMon[] = [...wild]
-    .sort(([a], [b]) => a - b)
-    .map(([dex, w]) => ({ dex, kind: 'wild', share: wildTotal ? w / wildTotal : 0 }))
+    .sort((a, b) => a - b)
+    .map((dex) => ({ dex, kind: 'wild', share: wildShare(data, area, dex, now), time: speciesTime(data, area, dex) }))
   for (const b of area.legendaryBoss ?? []) out.push({ dex: b.dex, kind: 'legendary', share: 0 })
   const lootTotal = area.lootPool.reduce((sum, e) => sum + Math.max(0, e.weight), 0)
   for (const e of area.lootPool) {
@@ -40,7 +49,8 @@ export function AreaDex({ areaId, onOpenDex }: { areaId: string; onOpenDex: (dex
   const data = useGame((s) => s.data)
   const pokedex = useGame((s) => s.save?.pokedex)
   const area = data.areas.find((a) => a.id === areaId)
-  const mons = useMemo(() => (area ? areaPokemon(area, data) : []), [area, data])
+  const now = useAreaDayTime(areaId)
+  const mons = useMemo(() => (area ? areaPokemon(area, data, now) : []), [area, data, now])
   if (!area) return null
   const caught = new Set(pokedex ?? [])
   const wild = mons.filter((m) => m.kind === 'wild')
@@ -82,10 +92,11 @@ export function AreaDex({ areaId, onOpenDex }: { areaId: string; onOpenDex: (dex
                   </span>
                   <span
                     className={cx(
-                      'text-sm leading-none',
+                      'inline-flex items-center gap-1 text-sm leading-none',
                       m.kind === 'legendary' ? 'text-danger' : 'text-muted',
                     )}
                   >
+                    {m.time && <DayNightTag time={m.time} now={now} size={12} />}
                     {m.kind === 'legendary'
                       ? t('ui.areaDex.legendary')
                       : m.kind === 'fossil'

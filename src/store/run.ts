@@ -107,6 +107,7 @@ import {
 } from '@/engine'
 import { activeSlot } from '@/save/storage'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type RunState } from './game'
+import { localHour } from './dayTime'
 import { currentLive } from './live'
 import { useRebattleMedal } from './rebattle'
 import { serverNow } from './serverTime'
@@ -233,6 +234,8 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
     noCenters: !centersOn(save, data),
     // A Shiny Parade covering this area: wild Pokémon are more often shiny.
     shinyBoost: shinyBoost(currentLive(), area),
+    // Day and night (docs/31): in Johto, only the hour's wild Pokémon come.
+    hour: localHour(),
   }
 }
 

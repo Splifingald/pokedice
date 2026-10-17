@@ -13,6 +13,7 @@ import { useInWorld, worldVars, WorldByePopup, WorldPopup } from '@/screens/even
 import { WorldPick } from '@/screens/events/worldPick'
 import { VersusUnlockPopup } from './FeatureRules'
 import { GeneralUnlockPopup, OfflineReportModal } from './GeneralRules'
+import { DayNightRulesPopup } from './DayNight'
 import { RaidGiftPopup } from './RaidGiftPopup'
 import { FriendsService } from './friends/FriendsService'
 import { InviteRewardPopup, InviteRulesPopup } from './friends/InviteRewards'
@@ -70,6 +71,7 @@ export function GameLayout() {
       <VersusUnlockPopup />
       <ExtremeUnlockPopup />
       <GeneralUnlockPopup />
+      <DayNightRulesPopup />
       <AwayReportModal />
       <OfflineReportModal />
       <RaidGiftPopup />

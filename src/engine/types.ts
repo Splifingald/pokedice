@@ -171,12 +171,21 @@ export type EncounterKind = (typeof ENCOUNTER_KINDS)[number]
 /** Cards in an area's encounter deck; 'legend' is a fled legendary coming back (one per deck until it's caught). */
 export type DeckCard = EncounterKind | 'legend'
 
+/** Day and night (docs/31): the half of the day an area's wild Pokémon is met in, where the region keeps the time. */
+export const DAY_TIMES = ['day', 'night'] as const
+export type DayTime = (typeof DAY_TIMES)[number]
+
 export interface WildPoolEntry {
   id: string
   dex: number
   weight: number
   minLevel: number
   maxLevel: number
+  /**
+   * Met only by day or only by night (docs/31), as in the real games; absent or null = any time. Read only in a region
+   * that keeps the time (Johto) while the switch is on: elsewhere every row is met at any hour.
+   */
+  time?: DayTime | null
 }
 
 export interface TrainerPoolEntry {
@@ -865,6 +874,8 @@ export interface GameConfig {
   nightmare: { access: EventAccess }
   /** Trick or Treat (docs/29): its switch, numbers and each area's ghosts. The server reads the switch too. */
   trickOrTreat: TrickOrTreatConfig
+  /** Day and night in Johto (docs/31): its switch. Migration 0061 inserts the same row. */
+  dayNight: { access: EventAccess }
 }
 
 /** A Trick or Treat ghost's rarity (docs/29): it picks the ghost and sets its gauge. */
@@ -1269,6 +1280,8 @@ export interface SaveData {
   general?: GeneralSave
   /** Trick or Treat (docs/29): its rules seen. Absent = never met. */
   trickOrTreat?: TrickSave
+  /** Day and night (docs/31): its rules seen. Absent = never in Johto with it on. */
+  dayNight?: { rulesSeen?: boolean }
 }
 
 /** The General upgrades bought (docs/25), and the offline earnings' clock. */

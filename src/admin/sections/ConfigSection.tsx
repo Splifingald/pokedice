@@ -286,6 +286,34 @@ function DiscordBox() {
  * Extreme mode (docs/22): the second save that a league opens, with no Pokémon Centers, K.O.s that rest for hours and
  * healing only while the player is away. Every number here is read by the game's engine (engine/extreme).
  */
+/**
+ * Day and night in Johto (docs/31): its switch. Each wild row's time is set in Areas → its wild pool (Time); the tags
+ * from the real games came with migration 0061.
+ */
+function DayNightBox() {
+  const [cfg, set] = useConfigRow('dayNight')
+  const access = cfg?.access ?? 'off'
+  return (
+    <Box
+      title="Day and night"
+      icon="moon"
+      hint="Johto keeps the time (docs/31): 6:00–17:59 is the day and 18:00–5:59 the night, on the player's clock. A wild Pokémon whose Time says day or night (Areas → wild pool) comes only then, as in the real games; the top bar shows the sun or the moon, and so do the fights."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Who has it</span>
+        <AccessSwitch value={access} onChange={(a) => set({ access: a })} label="Day and night: who has it" />
+        <span className="text-base text-muted">
+          {access === 'all'
+            ? 'Every player: Johto’s wild Pokémon follow the time, and the sun or the moon shows.'
+            : access === 'admin'
+              ? 'Only you (signed in) have it; other players meet every Pokémon at any hour.'
+              : 'Off: every Pokémon at any hour, no sun or moon anywhere. The tags stay in the pools.'}
+        </span>
+      </div>
+    </Box>
+  )
+}
+
 function ExtremeBox() {
   const data = useAdminData()
   const [raw, setRaw] = useConfigRow('extreme')
@@ -1075,6 +1103,8 @@ export function ConfigSection() {
       <SlotMachineBox />
 
       <DayCareBox />
+
+      <DayNightBox />
 
       <ExtremeBox />
 

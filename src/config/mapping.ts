@@ -60,6 +60,8 @@ export function rowsToBundle(r: TableRows): BundleRaw {
       weight: num(w.weight),
       minLevel: num(w.min_level),
       maxLevel: num(w.max_level),
+      // Day and night (docs/31): absent before migration 0061, and null = any time.
+      ...((w.time_of_day === 'day' || w.time_of_day === 'night') && { time: w.time_of_day }),
     })
     wildBy.set(String(w.area_id), list)
   }
@@ -200,6 +202,7 @@ export function rowsToBundle(r: TableRows): BundleRaw {
 }
 
 export function bundleToRows(b: BundleRaw): TableRows {
+  const timed = b.areas.some((a) => a.wildPool.some((w) => w.time))
   return {
     type_chart: b.typeChart.map((x) => ({
       attacking: x.attacking,
@@ -275,6 +278,8 @@ export function bundleToRows(b: BundleRaw): TableRows {
         weight: w.weight,
         min_level: w.minLevel,
         max_level: w.maxLevel,
+        // Only once some row has a time: a database before migration 0061 has no `time_of_day` column.
+        ...(timed && { time_of_day: w.time ?? null }),
       })),
     ),
     trainers: b.trainers.map((x) => ({

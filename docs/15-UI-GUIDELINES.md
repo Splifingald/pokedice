@@ -337,7 +337,7 @@ Players shouldn't have to make many requests:
 
 ## 12. Navigation, Home and stages
 
-- **Top bar** (`Header` in `src/components/Hud.tsx`): energy on the left; on the right the gold as a navy pill (a tap
+- **Top bar** (`Header` in `src/components/Hud.tsx`): in Johto, the day's sun or the night's moon first (§30); energy on the left; on the right the gold as a navy pill (a tap
   opens the Poké Mart, no "+"), the cup (→ the leaderboard; greyed until the first badge, and a tap says what opens
   it) and, last, you (name and badge count, then your trainer look → the trainer menu, which slides in from that side).
   Everything in it is disabled mid-fight and says why.
@@ -476,6 +476,7 @@ in view) and the battle history sits beside it from 1024 px.
 - **Capture Luck** (docs/25): a wild Pokémon that broke free may stay: the message says it broke free but didn't run
   away, the stage shows it back on its platform, and the panel's button is THROW AGAIN (back to the ball picker, "Snorlax
   is still here! Pick a ball and throw again."). Once per encounter; never a legendary or a raid.
+- **The time of day** (§30): in a Johto area, a small sun or moon chip on the stage's top right corner.
 - **Result cards** rise from the bottom over the panel on every screen size, wild and trainer fights alike, the stage
   still in view: XP per Pokémon, the catch (NEW when
   the species is new to the Pokédex), "Wild battles pay no ₽" when that is why no money came; **Home** and **Next
@@ -642,7 +643,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
   queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
   again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the portal run (§27), Trick or Treat (§28), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the portal run (§27), Trick or Treat (§28), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
@@ -1161,3 +1162,25 @@ with a lilac edge, its red and its eye's ice blue. **Its lasting effects follow 
   edges, smoke at the sides, Darkrai's shadow passing over now and then, a piece of the page darkening as it brushes it,
   `.ui-shadow`) and its entrance (`RaidIntro world="nightmare"`, no Skip, its tapes in the night's blue and
   the moon's cream). Its rules, numbers and server checks are the area's mode's (docs/30 §1).
+
+## 30. Day and night (Johto)
+
+Johto keeps the time (docs/31-DAY-NIGHT.md): 6:00–17:59 the day, 18:00–5:59 the night, on the player's clock; a wild
+Pokémon met only in one half comes only then. The pieces are in `src/components/DayNight.tsx`, every state on
+`/kitchen-sink` (`DayNightBits`); the engine (`engine/dayNight.ts`) decides the time and who comes.
+
+- **The switch and the rules** follow §20: `dayNight` (Admin → Config → Day and night), Off by default. Wild Pokémon
+  are dealt on the device, so no server function reads it. Its rules pop-up (`DayNightRulesModal`: the day's sky and
+  sun beside the night's sky and moon as its banner; three rows: day from 6:00 to 18:00, night from 18:00 to 6:00,
+  they stay in their areas; the hours in the player's language, `hourOfDay`) shows once, the first time in Johto with
+  it on, queued behind the other one-time pop-ups. **Its INFO is the top bar's chip**: the feature has no page.
+- **The top bar** (`DayNightButton`): far left, before the energy, only in Johto. A 44 px-tall button around a chip:
+  `bg-sky` with the sun by day, `light-scope bg-night` with the moon by night (`DayNightChip`, the `daySun` /
+  `nightMoon` icons, 16×16 in the tab bar's palette). Its name says the time and its turn ("It's day in Johto until
+  18:00. Tap for the rules."). Re-read every 30 s.
+- **The fights** (`BattleDayTime`): the same chip, small (16 px icon), on the stage's top right corner of every fight in
+  a Johto area; not in Versus. It never covers a plate and takes no taps.
+- **The lists** (the area's details, the area's Pokédex, a Pokémon's where-to-find): a 12 px sun or moon by a species
+  met in one half only (`DayNightTag`, its name "Day only" / "Night only" as its title), at half opacity while it's the
+  other half; its share is the one when it's met. Untagged species show nothing.
+

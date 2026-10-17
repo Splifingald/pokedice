@@ -311,6 +311,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   portalRun: { access: 'off' },
   // The areas' nightmare (docs/30): off until the admin switches it on. Migration 0060 inserts the same row.
   nightmare: { access: 'off' },
+  // Day and night in Johto (docs/31): off until the admin switches it on. Migration 0061 inserts the same row.
+  dayNight: { access: 'off' },
   // The Link Cable and the Bait (docs/25): off until the admin switches each on.
   itemSwitches: { 'link-cable': 'off', bait: 'off' },
   // The General upgrades (docs/25): off until the admin switches them on. A whole region's combos and dice cost about

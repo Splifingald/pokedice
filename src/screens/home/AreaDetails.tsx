@@ -20,10 +20,14 @@ import {
   type Area,
   type BossDef,
   type EncounterKind,
+  speciesTime,
+  wildShare,
+  type DayTime,
 } from '@/engine'
 import { useT } from '@/i18n/react'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { Chip } from '@/components/Chip'
+import { DayNightTag } from '@/components/DayNight'
 import { rarity } from '@/components/DexEntry'
 import { PixelIcon } from '@/components/icons'
 import { ItemInfo } from '@/components/ItemInfo'
@@ -35,6 +39,7 @@ import { Sheet } from '@/components/Sheet'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { MiniSprite } from '@/components/SpriteImg'
 import { money } from '@/lib/format'
+import { useAreaDayTime } from '@/store/dayTime'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { RoundGauge } from '../area/RoundGauge'
@@ -244,6 +249,7 @@ function DetailsBody({ area }: { area: Area }) {
   const [view, setView] = useState<SheetView | null>(null)
   const [itemKey, setItemKey] = useState<string | null>(null)
   const p = progressOf(save, area.id)
+  const now = useAreaDayTime(area.id)
   const st = areaStatus(save, data, area)
   const locked = st === 'locked'
   const side = playerSideOf(save)
@@ -256,16 +262,16 @@ function DetailsBody({ area }: { area: Area }) {
   const league = gyms.length > 1
   const due = dueBoss(area, p, avg, data)
 
-  // Wild Pokémon, merged by species: their share of the pool and their levels.
-  const total = area.wildPool.reduce((n, w) => n + Math.max(0, w.weight), 0)
-  const wild = new Map<number, { share: number; min: number; max: number }>()
+  // Wild Pokémon, merged by species: their share of the pool (when they're met, docs/31) and their levels.
+  const wild = new Map<number, { share: number; min: number; max: number; time: DayTime | null }>()
   for (const w of area.wildPool) {
     if (w.weight <= 0) continue
     const cur = wild.get(w.dex)
     wild.set(w.dex, {
-      share: (cur?.share ?? 0) + (total ? w.weight / total : 0),
+      share: cur?.share ?? wildShare(data, area, w.dex, now),
       min: Math.min(cur?.min ?? Infinity, w.minLevel),
       max: Math.max(cur?.max ?? 0, w.maxLevel),
+      time: cur?.time ?? speciesTime(data, area, w.dex),
     })
   }
   const mons = [...wild].map(([dex, w]) => ({ dex, ...w })).sort((a, b) => b.share - a.share || a.dex - b.dex)
@@ -473,6 +479,11 @@ function DetailsBody({ area }: { area: Area }) {
                         title={t('ui.enc.caught')}
                         className="absolute right-1.5 top-1.5"
                       />
+                    )}
+                    {m.time && (
+                      <span className="absolute left-1.5 top-1.5">
+                        <DayNightTag time={m.time} now={now} size={12} />
+                      </span>
                     )}
                   </button>
                 </li>
