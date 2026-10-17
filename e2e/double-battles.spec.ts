@@ -42,6 +42,8 @@ async function boot(page: Page, save: SaveData, devConfig: object) {
 test('a wild pair: the tag and rules, two leads, four on the stage, a target, a throw at each, the rewards', async ({
   page,
 }) => {
+  // Four take turns, each one's move played: a long fight.
+  test.setTimeout(240_000)
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
   await page.setViewportSize({ width: 390, height: 844 })
@@ -76,7 +78,8 @@ test('a wild pair: the tag and rules, two leads, four on the stage, a target, a 
   const roll = page.getByRole('button', { name: /^(ROLL TO CATCH|CATCH)$/ })
   const victory = page.getByRole('heading', { name: 'VICTORY!' })
   let throws = 0
-  for (let i = 0; i < 200 && !(await victory.isVisible()); i++) {
+  const until = Date.now() + 180_000
+  while (Date.now() < until && !(await victory.isVisible())) {
     // isVisible() first: isEnabled() would wait for a button that isn't there.
     if ((await roll.isVisible()) && (await roll.isEnabled())) {
       if (process.env.SHOTS && throws === 0) await page.screenshot({ path: `${process.env.SHOTS}/double-catch.png` })

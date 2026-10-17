@@ -519,6 +519,15 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     setRevealed(false)
     setThrown(catchScene(r, 'ground'))
   }
+  // After a wild pair, the other one's throw (docs/31): a fresh start, the first throw's scene gone.
+  const catchUid = run.catch?.uid ?? null
+  const lastCatch = useRef(catchUid)
+  useEffect(() => {
+    if (lastCatch.current === catchUid) return
+    lastCatch.current = catchUid
+    setThrown(null)
+    setRevealed(false)
+  }, [catchUid])
   // Back to the ball picker: the Pokémon stands worn out on its platform again.
   const onRetry = () => {
     retryCatch()

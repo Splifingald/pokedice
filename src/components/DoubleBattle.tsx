@@ -66,10 +66,17 @@ const markSeen = () => mutateSave((s) => (s.doubleRulesSeen ? null : { ...s, dou
  * The tag on a double battle's preview: DOUBLE BATTLE and its INFO button. The first time one shows, the rules open by
  * themselves.
  */
-export function DoubleTag({ className }: { className?: string }) {
+export function DoubleTag({
+  className,
+  firstTime = true,
+}: {
+  className?: string
+  /** Off: the rules wait for INFO even the first time (the kitchen sink shows the tag on its own). */
+  firstTime?: boolean
+}) {
   const { t } = useT()
   const seen = useGame((s) => !!s.save?.doubleRulesSeen)
-  const [open, setOpen] = useState(!seen)
+  const [open, setOpen] = useState(firstTime && !seen)
   const close = () => {
     setOpen(false)
     markSeen()

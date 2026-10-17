@@ -123,7 +123,7 @@ export function DoubleBits() {
         <MiniPlate b={foes[1]!} hp={foes[1]!.hp} foe front />
         <MiniPlate b={own[0]!} hp={own[0]!.hp} foe={false} front />
         <MiniPlate b={own[1]!} hp={0} foe={false} front={false} fainted />
-        <DoubleTag />
+        <DoubleTag firstTime={false} />
         <PixelButton onClick={() => setRules(true)}>Rules pop-up</PixelButton>
         <DoubleRulesModal open={rules} onClose={() => setRules(false)} />
         <LeadPicker value={null} onChange={() => {}} pair={{ value: leads, onChange: setLeads }} />
