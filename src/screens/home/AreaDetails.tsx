@@ -17,9 +17,11 @@ import {
   raidRules,
   teamAverageLevel,
   trickDealable,
+  uniqueFindChances,
   type Area,
   type BossDef,
   type EncounterKind,
+  type LootEntry,
   speciesTime,
   wildShare,
   type DayTime,
@@ -279,8 +281,16 @@ function DetailsBody({ area }: { area: Area }) {
   const [mode, setMode] = useState<'catch' | 'all'>(left.length ? 'catch' : 'all')
   const shown = mode === 'catch' ? left : mons
 
-  const finds = area.lootPool.filter((e) => e.unique && e.weight > 0)
+  // One row per item: an evolution item's one-time find has a twin since 0059, and the row says "2 in all".
+  const finds: LootEntry[][] = []
+  for (const e of area.lootPool) {
+    if (!e.unique || e.weight <= 0) continue
+    const same = e.itemKey !== MONEY && finds.find((g) => g[0]!.itemKey === e.itemKey)
+    if (same) same.push(e)
+    else finds.push([e])
+  }
   const found = new Set(p.uniqueFound ?? [])
+  const findChance = uniqueFindChances(area, p, data)
   const common = area.lootPool.filter((e) => !e.unique && e.weight > 0)
   const kinds = (Object.entries(area.encounterWeights) as [EncounterKind, number][]).filter(
     // Trick or Treat only where it is dealt (its switch on, the area's ghosts listed: docs/29).
@@ -374,8 +384,12 @@ function DetailsBody({ area }: { area: Area }) {
       {finds.length > 0 && (
         <SheetSection title={t('ui.home.finds')} hint={t('ui.home.oneTime')}>
           <ul className="grid gap-1.5">
-            {finds.map((e) => {
-              const got = found.has(e.id)
+            {finds.map((g) => {
+              const e = g[0]!
+              const left = g.filter((x) => !found.has(x.id)).length
+              const got = !left
+              const chance = g.reduce((sum, x) => sum + (findChance.get(x.id) ?? 0), 0)
+              const pct = chance < 0.01 ? '<1' : String(Math.round(chance * 100))
               return (
                 <li
                   key={e.id}
@@ -392,11 +406,18 @@ function DetailsBody({ area }: { area: Area }) {
                   <span className="grid min-w-0 flex-1 leading-[1.05]">
                     <b className="text-[19px] font-normal">{itemName(e.itemKey, e.maxQty)}</b>
                     <small className="font-pixel-sm text-[14px] text-muted">
-                      {e.itemKey === MONEY ? t('ui.home.moneyStash') : t('ui.home.onlyOne')}
+                      {e.itemKey === MONEY
+                        ? t('ui.home.moneyStash')
+                        : g.length > 1
+                          ? t('ui.home.inAll', { n: g.length })
+                          : t('ui.home.onlyOne')}
+                      {chance > 0 && ` · ${t('ui.home.findChance', { pct })}`}
                     </small>
                   </span>
                   {got ? (
                     <Chip tone="done">{t('ui.home.found')}</Chip>
+                  ) : left < g.length ? (
+                    <Chip tone="gold">{t('ui.home.leftN', { n: left })}</Chip>
                   ) : (
                     <Chip tone="gold">{t('ui.home.stillHere')}</Chip>
                   )}

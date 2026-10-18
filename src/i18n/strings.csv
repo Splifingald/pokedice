@@ -1928,6 +1928,9 @@ ui.home.finds,Limited finds,Trouvailles limitées,Hallazgos limitados,Begrenzte 
 ui.home.oneTime,One time only,Une seule fois,Solo una vez,Nur einmal,Una volta sola,Só uma vez,Só uma vez,1回きり,한 번뿐,仅一次
 ui.home.moneyStash,A stash of Pokédollars,Une cachette de Pokédollars,Un alijo de Pokédólares,Ein Pokédollar-Versteck,Un gruzzolo di Pokédollari,Um esconderijo de Pokédólares,Um esconderijo de Pokédólares,かくされたお金,숨겨진 돈,藏起来的钱
 ui.home.onlyOne,Only one,Un seul,Solo uno,Nur einer,Solo uno,Só um,Só um,1つだけ,하나뿐,只有一个
+ui.home.inAll,{n} in all,{n} en tout,{n} en total,{n} insgesamt,{n} in tutto,{n} ao todo,{n} no total,全部で{n}つ,모두 {n}개,共{n}个
+ui.home.findChance,{pct}% per item found,{pct} % par objet trouvé,{pct} % por objeto hallado,{pct} % pro gefundenem Item,{pct}% per strumento trovato,{pct}% por objeto achado,{pct}% por item achado,どうぐ発見ごとに{pct}%,도구 발견마다 {pct}%,每次找到道具{pct}%
+ui.home.leftN,{n} left,Encore {n},Aún {n},Noch {n},Ancora {n},Ainda {n},Ainda {n},残り{n},{n}개 남음,还剩{n}个
 ui.home.found,Found,Trouvé,Encontrado,Gefunden,Trovato,Encontrado,Encontrado,入手済み,획득,已找到
 ui.home.stillHere,Still here,Toujours là,Aún aquí,Noch da,Ancora qui,Ainda aqui,Ainda aqui,まだある,아직 있다,还在这里
 ui.home.showPokemon,Show Pokémon,Afficher les Pokémon,Mostrar Pokémon,Pokémon zeigen,Mostra Pokémon,Mostrar Pokémon,Mostrar Pokémon,ポケモンの表示,포켓몬 보기,显示宝可梦
