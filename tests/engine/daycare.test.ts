@@ -516,5 +516,19 @@ describe('leaderboardTutorialDue', () => {
     const moved = { ...fresh, region: 'johto', areaProgress: {}, parked: { kanto } } as unknown as SaveData
     expect(leaderboardUnlocked(moved, data)).toBe(true)
   })
+
+  it('in a small world, opens with the first area cleared, badge or not', () => {
+    const world = (cleared: boolean) =>
+      ({
+        ...fresh,
+        region: 'world-test',
+        areaProgress: {
+          'world-area': { roundsDone: 0, cleared, bossDefeated: false, bossesDefeated: [], gymsDefeated: [] },
+        },
+        events: { ...fresh.events, world: { id: 'w', regionId: 'world-test' } },
+      }) as unknown as SaveData
+    expect(leaderboardUnlocked(world(false), data)).toBe(false)
+    expect(leaderboardUnlocked(world(true), data)).toBe(true)
+  })
 })
 

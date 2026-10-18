@@ -125,7 +125,7 @@ interface SmallWorld {
   world, even after Kalos / Galar), `speciesAllowedIn` / `evolutionGate` (inside a world every generation may
   evolve), `regionOfSpecies`, the Pokédex totals of `speciesCaughtEverywhere` and `progressTotals`,
   `everyBox` (Versus) and `everyInstance` (raid teams). The server's leaderboard keeps only rows with badges, and a
-  world has none.
+  world has none: in a world the first area cleared stands for the badge (§10, migration 0066).
 - **Entering**: the first time, the partner pick (`PartnerMoment`) then `newRegionBlock(world region, starter)` +
   `startRegion`; later `switchRegion`. `events.worldFrom` remembers the region to go back to. **Leaving**:
   `switchRegion(worldFrom)`. **Closing** (its end, the switch turned off, or a later world): the block is dropped from
@@ -283,3 +283,23 @@ the world is unchanged and only possible once it's live.
 3. Edit a world: **Preview (hours before)** (48 by default; 0 = no preview). The editor shows its preview square as it
    looks halfway through that window, beside the live square. Apply, then **Save & Publish**.
 4. Check Home as admin within the window, then switch **Preview on Home** to *On for everyone* and Publish.
+
+## 10. The leaderboard in a world (2026-10-18)
+
+A world has no gyms, so the board's badge rule (0024: a region's row only once its player holds a badge there) left
+every world board empty. **In a small world, the first area cleared stands for the badge**: its board lists every
+trainer who has cleared one of its areas, badges elsewhere or not. Real regions keep the badge rule.
+
+- **Server**: `leaderboard()` (migration `0066_leaderboard_worlds.sql`, 0054's function with one more condition) keeps
+  a region's row when it holds a badge, or when the region is on the admin's `smallWorlds` list and one of its areas
+  is cleared. A world taken off the list leaves the boards with it. The 72-hour and ban rules are unchanged.
+- **Game**: the board on screen is already the live region's, so inside a world it is the world's. The cup opens with
+  a badge in any real region, or inside a world with one of its areas cleared (`leaderboardUnlocked`).
+- **Cross-region boards** (Shiny, Raids): a trainer playing in a world with an area cleared has the world as their
+  lead row, so those boards show their world team, as they show the team of the region being played.
+- No new switch: it is part of the small worlds, behind their own.
+- Tests: `tests/leaderboard-worlds-sql.test.ts` (PGlite), `tests/engine/daycare.test.ts` (the gate).
+
+### Setting it up
+1. Run [`supabase/migrations/0066_leaderboard_worlds.sql`](https://github.com/Splifingald/pokedice/blob/ccr-f12a8110-dwlg75/supabase/migrations/0066_leaderboard_worlds.sql)
+   once on the live database, after 0054. `supabase/seed.sql` carries it too (inlined after 0064).

@@ -54,10 +54,12 @@ export function dayCareTutorialDue(save: SaveData, data: GameData): boolean {
 
 /**
  * The leaderboard opens with the first gym badge, in any region played: before it there is nothing worth comparing,
- * and the board itself only lists trainers who hold one (leaderboard(), migration 0024).
+ * and the board itself only lists trainers who hold one (leaderboard(), migration 0024). A small world has no gyms:
+ * there the first area cleared opens it, as it puts a trainer on the world's board (0066).
  */
 export function leaderboardUnlocked(save: SaveData, data: GameData): boolean {
-  return regionCases(save, data).some((r) => r.earned > 0)
+  if (regionCases(save, data).some((r) => r.earned > 0)) return true
+  return inWorldRegion(save, data) && Object.values(save.areaProgress).some((p) => p.cleared)
 }
 
 /**
