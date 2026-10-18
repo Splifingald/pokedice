@@ -92,3 +92,37 @@ test('Shiny and Raids rank every region together, each trainer once; Max level s
   await expect(page.getByRole('tabpanel')).not.toContainText('Blue')
   await expect(page.getByText('Raids won, in every region.')).toBeVisible()
 })
+
+test('a long board shows its top 100, you with the 10 either side, and your friends, with the real ranks', async ({ page }) => {
+  // 250 trainers on the Max level board, best first: Sam is #180, Erika (a friend) #140.
+  const rows = Array.from({ length: 250 }, (_, i) => {
+    const name = i === 179 ? 'Sam' : i === 139 ? 'Erika' : `T${i + 1}`
+    return {
+      region: 'kanto',
+      is_me: name === 'Sam',
+      name,
+      character: 'red',
+      // All under the level cap (no Hall of Fame); the Pokédex breaks the tie, so every rank is its own.
+      team: [{ dex: 25, level: 50 }],
+      pokedex: 300 - i,
+      max_level: 50,
+      progress: {},
+      is_friend: name === 'Erika',
+      friend_id: name === 'Erika' ? '00000000-0000-0000-0000-0000000000e1' : null,
+    }
+  })
+  await mockSupabase(page, { rpc: { leaderboard: rows } })
+  await signedIn(page, withBadge(makeSave(4, { player: { name: 'Sam', character: 'red' } })))
+  await page.goto('/leaderboard')
+  const ranked = page.getByRole('tabpanel').getByRole('listitem').filter({ has: page.locator('[aria-label^="Rank"]') })
+  // 100 + Erika + Sam with 10 either side.
+  await expect(ranked).toHaveCount(122)
+  await expect(page.getByText("You're #180 of 250")).toBeVisible()
+  await expect(ranked.nth(100)).toContainText('Erika')
+  await expect(ranked.nth(100).getByLabel('Rank 140')).toBeVisible()
+  await expect(ranked.nth(101).getByLabel('Rank 170')).toBeVisible()
+  await expect(ranked.nth(111)).toContainText('Sam')
+  await expect(page.getByText('39 trainers not shown')).toBeVisible()
+  await expect(page.getByText('29 trainers not shown')).toBeVisible()
+  await expect(page.getByText('60 trainers not shown')).toBeVisible()
+})

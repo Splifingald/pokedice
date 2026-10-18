@@ -1,6 +1,6 @@
 // Leaderboard ranking: each tab sorts by its own measure, ties share a rank, and SQL rows are parsed defensively.
 import { describe, expect, it } from 'vitest'
-import { friendsOnly, frontierArea, parseLeaderboard, rankLeaderboard, splitLeaderboard, type LeaderboardRow } from '@/lib/leaderboard'
+import { boardWindow, friendsOnly, frontierArea, parseLeaderboard, rankLeaderboard, splitLeaderboard, type BoardItem, type LeaderboardRow } from '@/lib/leaderboard'
 import { regionSpecies } from '@/engine'
 import { data } from './fixtures'
 
@@ -234,5 +234,45 @@ describe('Shiny and Raids span every region (0054)', () => {
     expect([lead!.lead, lead!.shinies, other!.lead, other!.shinies]).toEqual([true, 4, false, 4])
     expect(old!.shinies).toBe(2)
     expect('lead' in old!).toBe(false)
+  })
+})
+
+describe('boardWindow: the top 100, you with 10 either side, your friends', () => {
+  // 300 trainers ranked 1..300: rank n is at index n - 1.
+  const ranked = (me: number, friends: number[] = []) =>
+    Array.from({ length: 300 }, (_, i) => ({
+      rank: i + 1,
+      isMe: i + 1 === me,
+      friendId: friends.includes(i + 1) ? `f${i + 1}` : null,
+    }))
+  const shape = (items: BoardItem<{ rank: number }>[]) =>
+    items.map((it) => ('gap' in it ? `…${it.gap}` : it.row.rank))
+  const range = (a: number, b: number) => Array.from({ length: b - a + 1 }, (_, i) => a + i)
+
+  it('keeps the top 100 and the 10 ahead of you and behind you, with their real ranks', () => {
+    expect(shape(boardWindow(ranked(200)))).toEqual([...range(1, 100), '…89', ...range(190, 210), '…90'])
+  })
+
+  it('keeps every friend wherever they are', () => {
+    expect(shape(boardWindow(ranked(200, [150, 299])))).toEqual([
+      ...range(1, 100),
+      '…49',
+      150,
+      '…39',
+      ...range(190, 210),
+      '…88',
+      299,
+      '…1',
+    ])
+  })
+
+  it('needs no gap where you are near the top, and cuts at 100 when you aren\'t on the board', () => {
+    expect(shape(boardWindow(ranked(105)))).toEqual([...range(1, 115), '…185'])
+    expect(shape(boardWindow(ranked(0)))).toEqual([...range(1, 100), '…200'])
+    expect(shape(boardWindow(ranked(300)))).toEqual([...range(1, 100), '…189', ...range(290, 300)])
+  })
+
+  it('shows a short board whole', () => {
+    expect(boardWindow(ranked(50).slice(0, 80)).every((it) => 'row' in it)).toBe(true)
   })
 })

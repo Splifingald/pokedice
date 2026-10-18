@@ -551,6 +551,11 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   menu icons (`TeamIcons`, one atlas), the value at the end. Your row is gold-ringed. A row can carry a line under
   the team (Versus: how many of their Pokémon your team hits super effectively, green at 2+, red at 0) and an action
   in place of the value (FIGHT, or a green Beaten tag that says when you can fight them again).
+- **A long board is cut** (`boardWindow`, every board: the leaderboard's five tabs, its Hall of Fame and Versus's
+  board): it always shows its real top 100, every friend wherever they are, and you with the 10 trainers ahead of you
+  and the 10 behind, all with their real ranks ("You're #N of M" counts the whole board). Each run of rows left out is
+  one `BoardGap` between dashed rules, "37 trainers not shown", the last one too. FRIENDS shows only your friends and
+  you, as before, with no gaps.
 - **Versus locked**: what opens it, a meter n/3, and the three Pokémon closest to Lv.50 with how many levels to go
   (`versusClosest`). Unlocked: tabs Opponents (with the count still to beat) / My team / Leaderboard; Opponents has
   your team strip with Change, a search by trainer *or* Pokémon and To beat / Beaten / All chips with counts. My team

@@ -215,6 +215,37 @@ export function friendsOnly<T extends { isMe: boolean; friendId: string | null }
   return rows.filter((r) => r.isMe || !!r.friendId)
 }
 
+/** The real top of every board, always shown. */
+export const BOARD_TOP = 100
+/** Past the top, how many trainers either side of you are shown. */
+export const BOARD_AROUND = 10
+
+/** A shown row, or a run of hidden ones and how many it holds. */
+export type BoardItem<T> = { row: T } | { gap: number }
+
+/**
+ * What a board shows of a long ranking (the user's ask of 2026-10-18): its real top 100, every friend wherever they
+ * are, and you with the 10 trainers ahead of you and the 10 behind. Ranks are the whole board's, given before this;
+ * each run of rows left out becomes one gap saying how many, the last one included so the board doesn't look ended.
+ */
+export function boardWindow<T extends { isMe: boolean; friendId: string | null }>(rows: T[]): BoardItem<T>[] {
+  const me = rows.findIndex((r) => r.isMe)
+  const items: BoardItem<T>[] = []
+  let hidden = 0
+  rows.forEach((row, i) => {
+    const near = me >= 0 && Math.abs(i - me) <= BOARD_AROUND
+    if (i >= BOARD_TOP && !near && !row.isMe && !row.friendId) {
+      hidden++
+      return
+    }
+    if (hidden) items.push({ gap: hidden })
+    hidden = 0
+    items.push({ row })
+  })
+  if (hidden) items.push({ gap: hidden })
+  return items
+}
+
 /** A short reason for the error line. PGRST202 = the database has no leaderboard() (migration 0011 not run). */
 export function leaderboardError(err: unknown): string {
   const e = (err ?? {}) as { code?: string; message?: string }

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getRegion, leaderboardUnlocked, regionOf } from '@/engine'
-import { BoardRow, Crown } from '@/components/BoardRow'
+import { BoardGap, BoardRow, Crown } from '@/components/BoardRow'
 import { FriendProfileSheet } from '@/components/friends/FriendProfileSheet'
 import { Seg } from '@/components/Segmented'
 import { AccountButton } from '@/components/AccountButton'
@@ -16,6 +16,7 @@ import { avatarOf } from '@/lib/avatars'
 import { useFriends } from '@/lib/friends'
 import { useFriendsFilter } from '@/lib/useFriendsFilter'
 import {
+  boardWindow,
   crossRegion,
   fetchLeaderboard,
   friendsOnly,
@@ -103,9 +104,9 @@ function Board() {
     [load, tab, data, region],
   )
   const signedIn = auth.status === 'signed_in'
-  // FRIENDS keeps the whole board's ranks: the filter only hides rows.
+  // FRIENDS keeps the whole board's ranks: the filter only hides rows. ALL shows the top, you and your friends.
   const filtering = signedIn && hasFriends && onlyFriends
-  const shown = filtering ? friendsOnly(board) : board
+  const shown = filtering ? friendsOnly(board).map((row) => ({ row })) : boardWindow(board)
   const friendRows = board.filter((r) => r.friendId).length
   const open = (r: LeaderboardRow) => (r.friendId ? () => setCard({ id: r.friendId!, name: r.name }) : undefined)
   const meRef = useSnapToMe(`${tab}:${board.findIndex((r) => r.isMe)}:${found}:${filtering}`)
@@ -243,27 +244,31 @@ function Board() {
         )}
         {shown.length > 0 && (
           <ol className="m-0 grid list-none gap-1.5 p-0" aria-label={tabLabel}>
-            {shown.map((r, i) => (
-              <BoardRow
-                key={`${found}:${i}`}
-                rowRef={r.isMe ? meRef : undefined}
-                flash={r.isMe && found > 0}
-                rank={r.rank}
-                look={avatarOf(r.avatar).src}
-                name={r.name}
-                rich={r.rich}
-                isMe={r.isMe}
-                isFriend={!!r.friendId}
-                onOpen={open(r)}
-                team={r.team}
-                value={scoreAside ? r.score : undefined}
-                sub={
-                  !scoreAside && (
-                    <small className="truncate font-pixel-sm text-[14px] text-muted">{r.score}</small>
-                  )
-                }
-              />
-            ))}
+            {shown.map((item, i) =>
+              'gap' in item ? (
+                <BoardGap key={`${found}:${i}`} count={item.gap} />
+              ) : (
+                <BoardRow
+                  key={`${found}:${i}`}
+                  rowRef={item.row.isMe ? meRef : undefined}
+                  flash={item.row.isMe && found > 0}
+                  rank={item.row.rank}
+                  look={avatarOf(item.row.avatar).src}
+                  name={item.row.name}
+                  rich={item.row.rich}
+                  isMe={item.row.isMe}
+                  isFriend={!!item.row.friendId}
+                  onOpen={open(item.row)}
+                  team={item.row.team}
+                  value={scoreAside ? item.row.score : undefined}
+                  sub={
+                    !scoreAside && (
+                      <small className="truncate font-pixel-sm text-[14px] text-muted">{item.row.score}</small>
+                    )
+                  }
+                />
+              ),
+            )}
           </ol>
         )}
       </div>
@@ -280,25 +285,30 @@ function Board() {
           </p>
         )}
         <ul className="m-0 grid list-none gap-1.5 p-0">
-          {hall.map((r, i) => (
-            <BoardRow
-              key={i}
-              lead={<Crown />}
-              look={avatarOf(r.avatar).src}
-              name={r.name}
-              rich={r.rich}
-              isMe={r.isMe}
-              isFriend={!!r.friendId}
-              onOpen={open(r)}
-              team={r.team}
-              value={scoreAside ? r.score : undefined}
-              sub={
-                !scoreAside && (
-                  <small className="truncate font-pixel-sm text-[14px] text-muted">{r.score}</small>
-                )
-              }
-            />
-          ))}
+          {/* A long Hall of Fame is cut as the boards are: its first 100, you and those near you, your friends. */}
+          {boardWindow(hall).map((item, i) =>
+            'gap' in item ? (
+              <BoardGap key={i} count={item.gap} />
+            ) : (
+              <BoardRow
+                key={i}
+                lead={<Crown />}
+                look={avatarOf(item.row.avatar).src}
+                name={item.row.name}
+                rich={item.row.rich}
+                isMe={item.row.isMe}
+                isFriend={!!item.row.friendId}
+                onOpen={open(item.row)}
+                team={item.row.team}
+                value={scoreAside ? item.row.score : undefined}
+                sub={
+                  !scoreAside && (
+                    <small className="truncate font-pixel-sm text-[14px] text-muted">{item.row.score}</small>
+                  )
+                }
+              />
+            ),
+          )}
         </ul>
       </Sheet>
 
