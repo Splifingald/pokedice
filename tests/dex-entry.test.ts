@@ -113,6 +113,18 @@ describe('whereToFindItem', () => {
   it('knows nothing of an unknown item', () => {
     expect(whereToFindItem('no-such-item', data, 'kanto')).toEqual([])
   })
+
+  it("shows an area once for all of an item's one-time finds there (0059's twins)", () => {
+    const moon = data.areas.find((a) => a.name === 'Mt. Moon')!
+    const entry = moon.lootPool.find((e) => e.itemKey === 'moon-stone')!
+    const twin = { ...entry, id: `${entry.id}-twin`, unique: true }
+    const once = { ...entry, unique: true }
+    const pool = [...moon.lootPool.filter((e) => e.id !== entry.id), once, twin]
+    const twinned = { ...data, areas: data.areas.map((a) => (a.id === moon.id ? { ...a, lootPool: pool } : a)) }
+    const spots = whereToFindItem('moon-stone', twinned, 'kanto').filter((s) => s.area.id === moon.id)
+    expect(spots).toHaveLength(1)
+    expect(spots[0]!.loot!.entryIds).toEqual([entry.id, twin.id])
+  })
 })
 
 describe('whereToFind with day and night (docs/32)', () => {
