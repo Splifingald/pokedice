@@ -342,8 +342,9 @@ Players shouldn't have to make many requests:
 ## 12. Navigation, Home and stages
 
 - **Top bar** (`Header` in `src/components/Hud.tsx`): in Johto, the day's sun or the night's moon first (§30); energy on the left; on the right the gold as a navy pill (a tap
-  opens the Poké Mart, no "+"), the cup (→ the leaderboard; greyed until the first badge, and a tap says what opens
-  it) and, last, you (name and badge count, then your trainer look → the trainer menu, which slides in from that side).
+  opens the Poké Mart, no "+"), the cup (→ the leaderboard; greyed until the first badge, or in a small world its
+  first area cleared, and a tap says what opens it) and, last, you (name and badge count, then your trainer look →
+  the trainer menu, which slides in from that side).
   Everything in it is disabled mid-fight and says why.
 - **Tab bar** (phones): Poké Mart, Upgrades, **Home** (in the middle, under the thumb: a tab like the others, its Poké Ball icon and label), Team,
   Pokédex. The side nav (desktop) has the same entries with Home first. A tab's hit area is the whole column, at

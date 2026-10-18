@@ -150,7 +150,9 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
 - **Leaderboard badge** — the trophy button and `/leaderboard` stay locked until the player's first gym badge (any
   region), and a region's board only lists trainers with at least one badge there. Prof. Oak's share prompt comes with
   the region's 2nd badge. Needs `supabase/migrations/0024_leaderboard_badge.sql` run once on the live database
-  (re-running `supabase/seed.sql` does it too).
+  (re-running `supabase/seed.sql` does it too). A small world has no gyms: its board lists every trainer who has
+  cleared one of its areas, badge or not, and the cup opens there with that first area (docs/21 §10). Needs
+  `supabase/migrations/0066_leaderboard_worlds.sql`, after 0054 (`supabase/seed.sql` carries it too).
 - **Leaderboard tabs** — four boards per region, each tab an icon that spells out its name once open: max level,
   progression, Pokédex, and shinies caught (the shiny Pokémon owned in the region — Box, team and Day Care — since a
   shiny is never released). The shiny board has no ceiling, so no Hall of Fame. Needs

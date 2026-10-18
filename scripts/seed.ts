@@ -858,7 +858,8 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  * and its switch, Off; its tags are the bundle's own, written below), then 0062 (double battles, docs/33: `trainers.duo`, which the trainers
  * below need, and the switch's row; its new trainers are no-ops before the areas, then come with the bundle), then 0063 (the Underground's teams, docs/34: its row, Off, and
  * delete_my_data once more), then 0065 (raid teams at their own levels: 0039's and 0060's team writers
- * redefined). Folded into seed.sql so there is
+ * redefined), then 0066 (the small worlds on the leaderboard: it redefines 0054's leaderboard). Folded into seed.sql
+ * so there is
  * one file to run rather than several in a particular order. The
  * migrations stay the single source of that SQL — they are written to be idempotent, so re-running them costs little.
  */
@@ -886,6 +887,7 @@ export async function regionsPrelude(): Promise<string> {
       '0063_underground.sql',
       '0064_battle_powers.sql',
       '0065_raid_true_levels.sql',
+      '0066_leaderboard_worlds.sql',
     ].map(async (name) => {
       const sql = (await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')).replace(/^(begin|commit);\n/gm, '')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`
