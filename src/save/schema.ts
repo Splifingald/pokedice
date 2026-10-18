@@ -276,10 +276,13 @@ export const saveSchema = z.object({
           bought: z.record(z.number().int().min(0)).optional(),
           closed: z.boolean().optional(),
           home: z.record(z.number().int().min(0)).optional(),
+          finished: z.boolean().optional(),
+          finishSeen: z.boolean().optional(),
         })
         .optional(),
       worldSeen: z.array(z.string().max(80)).max(20).optional(),
       worldBye: z.array(z.string().max(80)).max(20).optional(),
+      worldDone: z.array(z.string().max(80)).max(20).optional(),
       worldPending: z
         .array(z.object({ dex: z.number().int().min(1), level: z.number().int().min(1), shiny: z.boolean(), worldId: z.string().max(80) }))
         .max(50)

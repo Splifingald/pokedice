@@ -303,3 +303,36 @@ trainer who has cleared one of its areas, badges elsewhere or not. Real regions 
 ### Setting it up
 1. Run [`supabase/migrations/0066_leaderboard_worlds.sql`](https://github.com/Splifingald/pokedice/blob/feature/version_2/supabase/migrations/0066_leaderboard_worlds.sql)
    once on the live database, after 0054. `supabase/seed.sql` carries it too (inlined after 0064).
+
+## 11. Finishing a world early (2026-10-18)
+
+The user's ask: once a player has cleared every area of a world and completed its Pokédex, they may **finish the
+world**: its Pokémon go to their regions and the world is no longer open to them, as if the event had ended.
+
+| Topic | Choice |
+|---|---|
+| When it's offered | **Inside the world, while it runs**, once **every area is done** (every area of the world's region, secret ones included: cleared, or for a special-mode area its run won, as the portal run's and the nightmare's areas are only their raid afterwards) **and its Pokédex is complete** (`regionSpecies`, the very list its Pokédex page counts, so the mythical and the shiny prizes are in it). `worldCompletion`, `worldFinishable`. |
+| What it does | **Exactly what its end does** (`finishWorld` → `closeWorld`): the player goes back where they came from, its Pokémon go home (each to its species' region, locked by level, docs/26 §1), its items, ₽ and the rest of its block are deleted, and its closing pop-up follows, titled "You finished {world}!" with the picture in colour and the prize caught. |
+| Afterwards | **Shut for that player for good** (`events.worldDone`, the last 20 ids): no square on Home, no opening pop-up, no way in (`worldFor` and `enterWorld` refuse it), while it still runs for everyone else. No second closing pop-up when it ends. |
+| The switch (docs/15 §20) | `smallWorlds.finishAccess`: Off / On for admin / On for everyone, **Off by default** (unset = Off), on the Small worlds tab under the preview's switch. The worlds' own switch must be on too. Off: no row, no pop-up, a world closes at its end only. |
+| Its rules, once | The offer is the rules pop-up (`WorldFinishView`): once on its own, between fights and behind the other one-time pop-ups, the first time everything is done (`events.world.finishSeen`). "You cleared all 4 areas and caught all 124 Pokémon. Finish it now, as if it had ended:" then three rows (your Pokémon go home, its items and ₽ close with it, no way back in), **Not yet** / **Finish the world**. |
+| INFO | There is no page: **Home's row** inside the world (`WorldFinishRowView`, first, two squares wide: WORLD and COMPLETE over its picture, "World complete!", "14 areas cleared · Pokédex 124/124", **Finish the world**) opens the same pop-up whenever the player wants. |
+| Refused | Mid-fight, while Darkrai's nightmare holds the player (as Back to Kanto), outside the world, once it has ended (its end closes it anyway). |
+| The leaderboard | The world's board lists those with one of its areas cleared in their save (§10): a player who finishes leaves it, as everyone does at its end. |
+
+Engine: `engine/worlds.ts` (`worldFinishOn`, `worldCompletion`, `worldFinishable`, `finishWorld`, `worldFinished`,
+`worldFinishPopupDue`, `markWorldFinishSeen`; `WorldBye.finished`). Store: `finishSmallWorld`,
+`markWorldFinishPopupSeen` (`store/worlds.ts`). UI: `WorldFinishRowView`, `WorldFinishView`, `WorldFinishPopup`
+(mounted in `GameLayout`) in `screens/events/world.tsx`; every state on `/kitchen-sink` (`WorldBits`). Save:
+`events.worldDone`, `events.world.finished` / `finishSeen`. Tests: `tests/engine/world-finish.test.ts`,
+`e2e/worlds.spec.ts` ("everything done").
+
+**No server check**: no server function serves or acts on it. Closing a world, at its end or early, is a change the
+game makes to the save, as it always was; the server's own world rules (trades, 0044's `trade_world`; the leaderboard,
+0066) already read a closed world as gone.
+
+### Setting it up
+1. **No SQL to run**: the switch is in the `smallWorlds` game_config row, written by Publish.
+2. Admin → Events → **Small worlds**: set **Finish early** to *On for admin* (Off by default). The worlds' own switch
+   must be on for you too. Save & Publish.
+3. Check it as admin in a world where everything is done, then switch **Finish early** to *On for everyone* and Publish.

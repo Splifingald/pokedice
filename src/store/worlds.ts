@@ -6,11 +6,13 @@ import {
   buyWorldItem,
   closeWorld,
   enterWorld,
+  finishWorld,
   getRegion,
   heldWorld,
   isExtreme,
   leaveWorld,
   markWorldBye,
+  markWorldFinishSeen,
   markWorldSeen,
   nightmareLock,
   payWheelPrize,
@@ -96,6 +98,39 @@ export function leaveSmallWorld(): boolean {
   pushToast(t('ui.world.back', { region: getRegion(data, regionOf(next))?.name ?? '' }), 'good')
   void collectRaidGifts(true)
   return true
+}
+
+/**
+ * Finishes the world (docs/21 §11): every area done and its Pokédex complete, the player closes it for themselves, as
+ * at its end. Back where they came from, its Pokémon gone home; its closing pop-up follows. Refused mid-fight.
+ */
+export function finishSmallWorld(): boolean {
+  const { save, data, battle } = useGame.getState()
+  if (!save) return false
+  if (battle) {
+    pushToast(t('ui.region.finishFight'), 'bad')
+    return false
+  }
+  const held = nightmareLock(save, data)
+  if (held) {
+    pushToast(t('ui.nightmare.locked', { area: held.name }), 'info')
+    return false
+  }
+  const next = finishWorld(save, data, serverNow())
+  if (!next) return false
+  useGame.setState({ run: initialRun() })
+  // What waited outside while the player was in comes in now, as on the way out.
+  commitSave(payWheelPrize(next, data))
+  void collectRaidGifts(true)
+  return true
+}
+
+/** The pop-up offering to finish the world was shown. */
+export function markWorldFinishPopupSeen(): void {
+  mutateSave((s) => {
+    const next = markWorldFinishSeen(s)
+    return next === s ? null : next
+  })
 }
 
 /** Buys from the world's Mart; false (and a toast) when it can't. */

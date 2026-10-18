@@ -3,7 +3,7 @@
 // five minutes, and that blink still where motion is calmed), the pop-up, the partner pick in the world's colours, the strip (running, the last day, content
 // not in yet), the squares inside (the mythical waiting, ready, gone home, waiting for its region; the Mart), the
 // booster chips and the dice level tag, the mythical's result card, the closing pop-up (kept, got away, never entered,
-// with its Pokémon gone home), the lock of a Pokémon waiting in its region (docs/26 §1), Home's Pokédex square and secret
+// with its Pokémon gone home, finished early), the way to finish a world (Home's row and its pop-up, docs/21 §11), the lock of a Pokémon waiting in its region (docs/26 §1), Home's Pokédex square and secret
 // area rows inside a world without a mythical (docs/26 §2.6) and the page the main game's screens show inside a world.
 import { useMemo, useState } from 'react'
 import { newSmallWorld, type SmallWorld, type WorldBye } from '@/engine'
@@ -17,6 +17,8 @@ import {
   SecretRowView,
   WorldAwayView,
   WorldByeView,
+  WorldFinishRowView,
+  WorldFinishView,
   WorldMythicalCard,
   WorldPopupView,
   WorldRules,
@@ -67,15 +69,34 @@ export function WorldBits() {
   const [popup, setPopup] = useState(false)
   const [pick, setPick] = useState(false)
   const [bye, setBye] = useState<WorldBye | null>(null)
+  const [finish, setFinish] = useState(false)
+  const done = { areas: { done: 14, total: 14 }, dex: { caught: 124, total: 124 }, complete: true }
   const areas = useGame((s) => s.data.areas)
   const areaNamed = (name: string) => areas.find((a) => a.name === name) ?? areas[0]!
   const haunted = areaNamed('Pokémon Tower')
   const cave = areaNamed('Rock Tunnel')
   const island = areaNamed('Newmoon Island')
   const byes: Record<string, WorldBye> = {
-    kept: { id: mid.id, world: mid, entered: true, caught: true, partner: 63, home: { kanto: 8, johto: 5, sinnoh: 3 } },
-    gone: { id: mid.id, world: mid, entered: true, caught: false, partner: 92, home: { kanto: 1 } },
-    never: { id: mid.id, world: mid, entered: false, caught: false, partner: null, home: {} },
+    kept: {
+      id: mid.id,
+      world: mid,
+      entered: true,
+      caught: true,
+      partner: 63,
+      home: { kanto: 8, johto: 5, sinnoh: 3 },
+      finished: false,
+    },
+    gone: { id: mid.id, world: mid, entered: true, caught: false, partner: 92, home: { kanto: 1 }, finished: false },
+    never: { id: mid.id, world: mid, entered: false, caught: false, partner: null, home: {}, finished: false },
+    finished: {
+      id: mid.id,
+      world: mid,
+      entered: true,
+      caught: true,
+      partner: 63,
+      home: { kanto: 40, johto: 12 },
+      finished: true,
+    },
   }
   return (
     <div className="grid w-full gap-3">
@@ -94,6 +115,12 @@ export function WorldBits() {
         </PixelButton>
         <PixelButton size="sm" onClick={() => setBye(byes.never!)}>
           Closed: never entered
+        </PixelButton>
+        <PixelButton size="sm" onClick={() => setBye(byes.finished!)}>
+          Closed: finished early
+        </PixelButton>
+        <PixelButton size="sm" onClick={() => setFinish(true)}>
+          Finish the world
         </PixelButton>
       </div>
       <div className="grid max-w-[600px] grid-cols-2 gap-2.5">
@@ -119,6 +146,15 @@ export function WorldBits() {
         <MythicalSquare world={mid} caught={false} state="Waiting: fight it!" onClick={noop} />
         <MythicalSquare world={mid} caught state="In your Kanto Box" onClick={noop} />
         <MythicalSquare world={mid} caught state="Waits for Johto" onClick={noop} />
+      </div>
+      {/* Everything in the world done (docs/21 §11): Home's row inside it, first, two squares wide. */}
+      <div className="grid max-w-xl grid-cols-2 gap-2.5">
+        <WorldFinishRowView world={mid} done={done} onFinish={() => setFinish(true)} />
+        <WorldFinishRowView
+          world={last}
+          done={{ ...done, areas: { done: 3, total: 3 }, dex: { caught: 9, total: 9 } }}
+          onFinish={() => setFinish(true)}
+        />
       </div>
       {/* A world's secret areas on Home inside it (docs/26 §2.6): every state, two squares wide. */}
       <div className="grid max-w-xl grid-cols-2 gap-2.5">
@@ -153,6 +189,13 @@ export function WorldBits() {
       </div>
       <WorldPopupView world={mid} now={now} open={popup} onLater={() => setPopup(false)} onEnter={() => setPopup(false)} />
       {bye && <WorldByeView bye={bye} open onOk={() => setBye(null)} />}
+      <WorldFinishView
+        world={mid}
+        done={done}
+        open={finish}
+        onLater={() => setFinish(false)}
+        onFinish={() => setFinish(false)}
+      />
       {pick && (
         <PartnerMoment
           starters={mid.starters}

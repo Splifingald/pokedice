@@ -146,6 +146,7 @@ export function SmallWorldsTab() {
   const [draft, setDraft] = useState<SmallWorld | null>(null)
   const access = raw?.access ?? 'off'
   const previewAccess = raw?.previewAccess ?? 'off'
+  const finishAccess = raw?.finishAccess ?? 'off'
   const write = (next: SmallWorld[]) => setRaw({ ...raw, access, list: next })
   const problems = draft && data ? worldProblems(list, draft, data) : []
   const isNew = !!draft && !list.some((w) => w.id === draft.id)
@@ -196,6 +197,21 @@ export function SmallWorldsTab() {
               ? 'No preview: a world shows up on Home when it starts.'
               : `Before a world starts (its "Preview" hours, 48 by default), Home shows it greyed in its slot with a countdown, ${
                   previewAccess === 'admin' ? 'to you alone, signed in as admin' : 'to everyone who will see the world'
+                }. It needs the worlds' own switch on as well.`}
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xl">Finish early</span>
+          <AccessSwitch
+            value={finishAccess}
+            onChange={(a) => setRaw({ ...raw, list: raw?.list ?? [], access, finishAccess: a })}
+            label="Small worlds' finish early: who sees it"
+          />
+          <span className="text-base text-muted">
+            {finishAccess === 'off'
+              ? 'A world closes at its end only.'
+              : `A player who has cleared every area of a world and completed its Pokédex may finish it: it closes for them as at its end (its Pokémon go home, its items and ₽ close) and stays shut for them, ${
+                  finishAccess === 'admin' ? 'for you alone, signed in as admin' : 'for everyone'
                 }. It needs the worlds' own switch on as well.`}
           </span>
         </div>
