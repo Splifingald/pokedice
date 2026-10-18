@@ -80,6 +80,7 @@ export function BattleBits() {
     message: '',
     hp: {},
     activeUid: own.uid,
+    foeUid: foe.uid,
     fainted: {},
     dex: {},
     wornOut: {},

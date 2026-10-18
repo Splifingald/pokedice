@@ -39,6 +39,8 @@ import type { AreaPlan } from './content'
 import type { Area, BattleBackground, Evolution, ItemDef, PokeType, Region, Species, Trainer } from '../src/engine/types'
 import { LEAGUE_II } from '../src/engine/rebattle'
 import { raidAreas } from './raid-areas'
+import { withDayNight } from './patch-day-night'
+import { withDuos } from './patch-double-battles'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const CACHE_DIR = path.join(ROOT, 'scripts', '.cache')
@@ -1194,13 +1196,18 @@ async function main() {
   // still describe them, so they're dropped here, with the trainers only they used.
   // The mythicals are their lairs' bosses, every other boss a progression raid in a completable area (scripts/raid-areas.ts).
   const eggs = await readJson<Record<string, { l?: number }>>('egg-groups.json')
-  const builtAreas = raidAreas(
-    rebuilt.areas.filter((a) => !(a.id in LEAGUE_II)),
-    (dex) => !!eggs[String(dex)]?.l,
-    (dex) => !out.find((s) => s.dex === dex)?.evolutions.length,
+  // Johto's day and night (docs/32): its wild Pokémon met only by day or only by night keep their times.
+  const builtAreas = withDayNight(
+    raidAreas(
+      rebuilt.areas.filter((a) => !(a.id in LEAGUE_II)),
+      (dex) => !!eggs[String(dex)]?.l,
+      (dex) => !out.find((s) => s.dex === dex)?.evolutions.length,
+    ),
   )
   const usedIds = new Set([...builtAreas.flatMap((a) => [...a.gyms, ...a.trainerPool.map((t) => t.trainerId)]), ...lineupIds])
-  const built = { ...rebuilt, areas: builtAreas, trainers: rebuilt.trainers.filter((t) => usedIds.has(t.id)) }
+  // The double battles' pairs (docs/33) live in patch-double-battles.ts, not in the content scripts: put back the ones
+  // a rebuilt region just lost, and the flag on its pairs.
+  const built = withDuos({ ...rebuilt, areas: builtAreas, trainers: rebuilt.trainers.filter((t) => usedIds.has(t.id)) })
 
   const existingRegions = await readJson<Region[]>('regions.json').catch(() => [] as Region[])
   const keptRegions = existingRegions.filter((r) => !rebuiltIds.has(r.id))

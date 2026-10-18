@@ -1,5 +1,26 @@
 import { useState, type ReactNode } from 'react'
-import { badgeCase, isAreaUnlocked, liveLeft, liveShopRows, regionOf, sellPrice, shopStock, worldLeft, worldShopRows, type ItemDef } from '@/engine'
+import {
+  badgeCase,
+  gemRulesOn,
+  gemShelf,
+  isAreaUnlocked,
+  isGem,
+  kitPrice,
+  kitsHeld,
+  kitsLeftToBuy,
+  liveLeft,
+  liveShopRows,
+  ownedGems,
+  powerEarned,
+  regionOf,
+  sellPrice,
+  shopStock,
+  ugCfg,
+  worldLeft,
+  worldShopRows,
+  type GemShelfRow,
+  type ItemDef,
+} from '@/engine'
 import { effectText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
 import { sfx } from '@/audio/sfx'
@@ -10,7 +31,9 @@ import { PageHead, Wallet } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
 import { FilterChips, Seg } from '@/components/Segmented'
 import { money } from '@/lib/format'
-import { buy, sell } from '@/store/actions'
+import { buy, buyGem, sell } from '@/store/actions'
+import { MiniSprite } from '@/components/SpriteImg'
+import { PowerInfo } from '@/components/PowersRules'
 import { buyLive, useLive } from '@/store/live'
 import { Chip } from '@/components/Chip'
 import { LiveBadge, LiveGauge, LivePicture, liveName, liveTime } from '@/screens/events/live'
@@ -19,10 +42,12 @@ import { useInWorld, worldVars, WorldTag } from '@/screens/events/world'
 import { useServerNow } from '@/store/serverTime'
 import { buyWorld, worldName } from '@/store/worlds'
 import { pushToast, useGame } from '@/store/game'
+import { ugBuyKits, useUnderground } from '@/store/underground'
+import { useNavigate } from 'react-router-dom'
 import { cx } from '@/theme/util'
 
 type Kind = ItemDef['effect']['kind']
-type GroupId = 'ball' | 'heal' | 'battle' | 'cure' | 'stone' | 'fossil'
+type GroupId = 'ball' | 'heal' | 'battle' | 'cure' | 'stone' | 'fossil' | 'gem'
 
 /**
  * The Mart's categories, Balls first. Both tabs list items by group, so an item whose effect kind is in no group would
@@ -36,6 +61,8 @@ const GROUPS: { id: GroupId; chip: string; title: string; kinds: Kind[] }[] = [
   { id: 'cure', chip: 'ui.shop.groupCures', title: 'ui.shop.groupCures', kinds: ['cure'] },
   { id: 'stone', chip: 'ui.shop.groupEvolution', title: 'ui.shop.groupEvolution', kinds: ['stone', 'link'] },
   { id: 'fossil', chip: 'ui.shop.groupFossils', title: 'ui.shop.groupFossils', kinds: ['fossil'] },
+  // Mega Gems have a shelf of their own (GemShelf), never the Mart's stock; the bag lists the ones held.
+  { id: 'gem', chip: 'ui.shop.groupGems', title: 'ui.shop.groupGems', kinds: ['megaGem'] },
 ]
 
 /** The group an item is listed under (its title key), or null when no group claims its kind. */
@@ -251,6 +278,89 @@ function LiveShopSection() {
 }
 
 /**
+ * The Underground's Explorakits (docs/34), over the Mart's shelves while it runs: its cave, the time left, the kit at
+ * its price, what's left of the player's limit. Never in a small world's Mart (the event doesn't reach one).
+ */
+function UgKitSection() {
+  const { t } = useT()
+  const navigate = useNavigate()
+  const { live, now, u } = useUnderground(1000)
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  const [qty, setQty] = useState<'1' | '5' | '10'>('1')
+  if (!live || !u || !save || now == null) return null
+  const cfg = ugCfg(data)
+  const price = kitPrice(cfg)
+  const room = kitsLeftToBuy(u, cfg)
+  const limit = cfg.kits.limit
+  const steps = (['1', '5', '10'] as const).filter((q) => room == null || Number(q) <= room)
+  const n = Math.min(Number(steps.includes(qty) ? qty : '1'), room ?? Infinity)
+  const total = price * n
+  const can = room !== 0 && total <= save.gold
+  const left = liveLeft(live, now)
+  return (
+    <section aria-labelledby="ug-shop" className="lv-shop flex flex-col gap-2 pb-2.5" data-testid="ug-shop">
+      <header className="lv-shop-head relative isolate grid min-h-[92px] content-end gap-1.5 overflow-hidden px-3 pb-3 pt-2.5">
+        <LivePicture e={live} className="absolute inset-0 -z-10" />
+        <span className="flex min-w-0 items-center gap-2">
+          <LiveBadge />
+          <h2 id="ug-shop" className="lv-ink m-0 min-w-0 truncate text-[28px] leading-none">
+            {liveName(live)}
+          </h2>
+        </span>
+        <span className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2.5 font-pixel-sm text-[16px] leading-none">
+          <span className="lv-ink text-gold-light">{t('ui.live.endsIn', { time: liveTime(left.ms) })}</span>
+          <LiveGauge share={left.share} hot={left.ms < 3 * 3_600_000} />
+        </span>
+      </header>
+      <div className="mx-2 flex flex-col gap-2 bg-cream p-2.5 shadow-[inset_0_0_0_3px_rgb(var(--c-edge)),inset_0_-4px_0_rgb(var(--c-gold-light))]">
+        <div className="flex items-center gap-2.5">
+          <PixelIcon name="kit" size={36} />
+          <span className="grid min-w-0 flex-1 gap-0.5 leading-tight">
+            <b className="text-[20px] font-normal leading-none">{t('ui.ug.kit')}</b>
+            <small className="font-pixel-sm text-[15px] text-muted">{t('ui.ug.kitDesc')}</small>
+          </span>
+          <span className="light-scope bg-night px-2 pb-2 pt-1.5 text-[18px] leading-none text-gold-light">{money(price)}</span>
+        </div>
+        <span className={cx('font-pixel-sm text-[15px]', room != null && room <= 2 ? 'text-danger' : 'text-muted')}>
+          {t('ui.ug.held', { n: kitsHeld(u) })} ·{' '}
+          {room == null ? t('ui.live.shop.noLimit') : room === 0 ? t('ui.live.shop.soldOut') : t('ui.live.shop.left', { left: room, limit })}
+        </span>
+        {room !== 0 && (
+          <div className="flex items-center gap-2">
+            {steps.length > 1 && (
+              <Seg
+                label={t('ui.shop.howMany', { item: t('ui.ug.kit') })}
+                value={steps.includes(qty) ? qty : '1'}
+                onChange={setQty}
+                options={steps.map((q) => ({ id: q, label: `×${q}` }))}
+              />
+            )}
+            <PixelButton
+              variant={can ? 'primary' : 'secondary'}
+              className="min-h-[50px] flex-1"
+              aria-disabled={!can}
+              onClick={() => {
+                if (!can) return pushToast(t('ui.shop.needMore', { price: money(total - save.gold) }), 'bad')
+                if (!ugBuyKits(n)) return
+                sfx('gold')
+                pushToast(t('ui.shop.bought', { n, item: t('ui.ug.kit'), left: money(useGame.getState().save?.gold ?? 0) }), 'good')
+              }}
+            >
+              {can ? t('ui.shop.buyFor', { price: money(total) }) : t('ui.shop.needMore', { price: money(total - save.gold) })}
+            </PixelButton>
+          </div>
+        )}
+        <PixelButton size="sm" onClick={() => navigate('/underground')}>
+          {t('ui.ug.toUnderground')}
+        </PixelButton>
+      </div>
+      <p className="m-0 px-3 font-pixel-sm text-[14px] leading-tight text-muted">{t('ui.ug.kitNote')}</p>
+    </section>
+  )
+}
+
+/**
  * A small world's Mart (docs/21): the admin's list and nothing else, for the world's own ₽ — each item's limit and
  * what's left of it, the world's picture and time left over it. Nothing bought here leaves the world.
  */
@@ -363,6 +473,102 @@ function WorldShop() {
   )
 }
 
+/** The Mart's Mega Gems as shown (docs/35): its rows, or null while the shelf is shut here (`gemShelf`). */
+export function GemShelfView({
+  rows,
+  gold,
+  onBuy,
+}: {
+  rows: GemShelfRow[] | null
+  gold: number
+  /** Buys one: true when it went through. */
+  onBuy: (row: GemShelfRow) => boolean
+}) {
+  const { t } = useT()
+  const [open, setOpen] = useState<string | null>(null)
+  return (
+    <section aria-labelledby="mart-gems" className="flex flex-col gap-1.5">
+      <h2 id="mart-gems" className="mt-1 text-[24px] leading-none">
+        {t('ui.shop.groupGems')}
+      </h2>
+      {!rows ? (
+        <p className="copy m-0 font-pixel-sm text-[15px] text-muted">{t('ui.shop.gemsAfterLeague')}</p>
+      ) : rows.length === 0 ? (
+        <p className="copy m-0 font-pixel-sm text-[15px] text-muted">{t('ui.shop.gemsNone')}</p>
+      ) : (
+        <ul className="grid grid-cols-2 gap-1.5 md:grid-cols-3">
+          {rows.map((row) => {
+            const { item, mega, owned } = row
+            const can = item.price <= gold
+            return (
+              <Row
+                key={item.key}
+                it={item}
+                side="buy"
+                open={open === item.key && !owned}
+                onToggle={owned ? undefined : () => setOpen(open === item.key ? null : item.key)}
+                sub={
+                  <span className="inline-flex items-center gap-1">
+                    <MiniSprite dex={mega.dex} size={24} className="-my-1.5" />
+                    {mega.name}
+                  </span>
+                }
+                pill={
+                  owned ? (
+                    <Chip tone="dark">{t('ui.shop.gemOwned')}</Chip>
+                  ) : (
+                    <span
+                      className={cx(
+                        'min-w-[62px] px-2 pb-2 pt-1.5 text-center text-[18px] leading-none',
+                        can ? 'light-scope bg-night text-gold-light' : 'bg-well-deep text-ink',
+                      )}
+                    >
+                      {money(item.price)}
+                    </span>
+                  )
+                }
+                owned={0}
+              >
+                <p className="copy font-pixel-sm text-[15px] leading-tight text-muted">
+                  {t('ui.shop.gemNote', { mega: mega.name })}
+                </p>
+                <PixelButton
+                  variant={can ? 'primary' : 'secondary'}
+                  className="min-h-[50px]"
+                  disabled={!can}
+                  onClick={() => {
+                    if (!onBuy(row)) return
+                    sfx('gold')
+                    setOpen(null)
+                    pushToast(t('ui.shop.gemBought', { gem: item.name, mega: mega.name }), 'good')
+                  }}
+                >
+                  {can
+                    ? t('ui.shop.buyFor', { price: money(item.price) })
+                    : t('ui.shop.needMore', { price: money(item.price - gold) })}
+                </PixelButton>
+              </Row>
+            )
+          })}
+        </ul>
+      )}
+      <PowerInfo kind="mega" />
+    </section>
+  )
+}
+
+/**
+ * The Mart's Mega Gems (docs/35): the gems of the Pokémon found in this region, at their price, each bought once and
+ * never sold; the ones held say so. While the shelf is shut here (its League not beaten yet) a line says when it
+ * opens. Nothing at all before Korrina's badge, or with the gem rules off.
+ */
+function GemShelf() {
+  const data = useGame((s) => s.data)
+  const save = useGame((s) => s.save)
+  if (!save || !gemRulesOn(data) || !powerEarned(save, data, 'mega')) return null
+  return <GemShelfView rows={gemShelf(save, data)} gold={save.gold} onBuy={(r) => buyGem(r.item.key)} />
+}
+
 function BuyTab({ badges }: { badges: number }) {
   const { t } = useT()
   // Held here, not in the row: a unique item leaves the shelf the moment it is bought, and a pop-up owned by the
@@ -413,6 +619,7 @@ function BuyTab({ badges }: { badges: number }) {
         </div>
       </Modal>
       <LiveShopSection />
+      <UgKitSection />
       <CatChips
         items={all}
         value={cat}
@@ -491,6 +698,7 @@ function BuyTab({ badges }: { badges: number }) {
         })}
       </ul>
       {shelf.length === 0 && <p className="copy text-muted">{t('ui.shop.nothingHere')}</p>}
+      <GemShelf />
       {later.length > 0 && (
         <section className="flex flex-col gap-1.5" aria-labelledby="mart-later">
           <h2 id="mart-later" className="mt-1 text-[24px] leading-none">
@@ -528,10 +736,41 @@ function SellTab() {
   const [cat, setCat] = useState<Cat>('all')
   const [open, setOpen] = useState<string | null>(null)
   const [qty, setQty] = useState<string>('1')
+  // The list as the save holds it (a stable reference); a gem the admin removed since is skipped.
+  const held = useGame((s) => s.save?.powers?.gems)
+  const gems = ownedGems({ powers: { gems: held } })
+    .map((k) => data.items[k])
+    .filter(isGem)
   const bag = Object.entries(inventory ?? {})
     .filter(([k, n]) => n > 0 && data.items[k])
     .map(([k, n]) => ({ it: data.items[k]!, owned: n }))
-  if (!bag.length) return <p className="copy text-muted">{t('ui.shop.bagEmpty')}</p>
+  // Mega Gems are held, never in the bag's counts: listed apart, and never sold (docs/35).
+  const gemList = gems.length > 0 && (
+    <section aria-labelledby="bag-gems" className="flex flex-col gap-1.5">
+      <h2 id="bag-gems" className="mt-1 text-[24px] leading-none">
+        {t('ui.shop.groupGems')}
+      </h2>
+      <ul className="grid grid-cols-2 gap-1.5 md:grid-cols-3">
+        {gems.map((it) => (
+          <Row
+            key={it.key}
+            it={it}
+            side="sell"
+            open={false}
+            sub={t('ui.shop.cantSell')}
+            owned={0}
+          />
+        ))}
+      </ul>
+    </section>
+  )
+  if (!bag.length)
+    return (
+      <>
+        <p className="copy text-muted">{t('ui.shop.bagEmpty')}</p>
+        {gemList}
+      </>
+    )
   const rows = bag
     .filter((r) => inCat(cat)(r.it))
     .sort(
@@ -610,6 +849,7 @@ function SellTab() {
           )
         })}
       </ul>
+      {gemList}
     </>
   )
 }

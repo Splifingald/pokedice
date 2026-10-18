@@ -39,9 +39,27 @@ function TeamEditor({ id, onClose }: { id: string; onClose: () => void }) {
   const items = (row.items as string[] | null) ?? []
   const potions = Object.values(data.items).filter((it) => it.effect.kind === 'heal')
   const setItems = (k: string[]) => updateRow('trainers', rowKey('trainers', row), { items: k })
+  const role = s(row.role)
+  // The Elite Four and the Champion always fight 1 v 1 (docs/33), so the box is off for them.
+  const noDuo = role === 'elite' || role === 'champion'
   return (
     <Modal open onClose={onClose} title={s(row.name)}>
       <div className="flex flex-col gap-2">
+        <Field
+          label="Duo (2 v 2)"
+          hint="Fights double battles with two Pokémon out at once, where double battles are on; never for the Elite Four or Champion."
+        >
+          <span className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={!!row.duo && !noDuo}
+              disabled={noDuo}
+              onChange={(e) => updateRow('trainers', rowKey('trainers', row), { duo: e.target.checked })}
+            />
+            {team.length < 2 && !!row.duo && <span className="text-sm text-muted">needs a second Pokémon</span>}
+          </span>
+        </Field>
+        <h3 className="mt-2 text-xl">Team</h3>
         {team.map((m, i) => (
           <div key={i} className="flex items-center gap-2">
             <PokemonPicker className="flex-1" data={data} value={m.dex} onChange={(d) => set(team.map((x, j) => (j === i ? { ...x, dex: d } : x)))} />
@@ -118,6 +136,7 @@ export function TrainersSection() {
           battle_background: null,
           rival_of: null,
           items: [],
+          duo: false,
         })}
         duplicate={(r) => ({ ...r, id: newUuid(), name: `${s(r.name)} II` })}
         columns={[
@@ -134,6 +153,7 @@ export function TrainersSection() {
           { key: 'badge', label: 'Badge', kind: 'text', nullable: true },
           { key: 'upgrade_level', label: 'Upgrade Lv (empty = area)', kind: 'number', nullable: true, width: 110 },
           { key: 'rival_of', label: "Rival of player's starter (dex)", kind: 'number', nullable: true, width: 110 },
+          { key: 'duo', label: 'Duo (2 v 2)', kind: 'bool', width: 80 },
           { key: 'battle_background', label: 'Scene (— = area)', kind: 'enum', options: [...BATTLE_BACKGROUNDS], nullable: true, width: 110 },
           {
             key: 'specialty',
@@ -195,6 +215,7 @@ const EFFECT_DEFAULTS: Record<ItemEffect['kind'], ItemEffect> = {
   ball: { kind: 'ball', bonus: 1 },
   link: { kind: 'link' },
   bait: { kind: 'bait', faces: [1, 1, 1, 2, 2, 3] },
+  megaGem: { kind: 'megaGem', mega: 10059 },
 }
 
 const describeEffect = (effect: unknown) => {
@@ -220,6 +241,7 @@ function EffectEditor({ value, onDone }: { value: ItemEffect | undefined; onDone
         <option value="ball">ball: catch-die bonus</option>
         <option value="link">link cable: evolves a trade evolution (Team screen)</option>
         <option value="bait">bait: its die adds to a throw that fell short (six faces)</option>
+        <option value="megaGem">Mega Gem: opens this Mega form (its species dex, docs/35)</option>
       </select>
       {draft.kind === 'cure' ? (
         <div className="flex flex-wrap gap-2 text-base">
@@ -262,6 +284,10 @@ function EffectEditor({ value, onDone }: { value: ItemEffect | undefined; onDone
         </div>
       ) : draft.kind === 'ball' ? (
         <NumInput value={draft.bonus} min={0} max={9} onChange={(v) => setDraft({ kind: 'ball', bonus: v ?? 0 })} />
+      ) : draft.kind === 'megaGem' ? (
+        <label className="flex items-center gap-1 text-base">
+          Mega dex <NumInput value={draft.mega} min={1} onChange={(v) => setDraft({ kind: 'megaGem', mega: v ?? 10059 })} />
+        </label>
       ) : (
         <NumInput value={draft.amount} min={1} onChange={(v) => setDraft({ kind: draft.kind, amount: v ?? 1 } as ItemEffect)} />
       )}

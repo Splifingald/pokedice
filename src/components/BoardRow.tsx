@@ -93,6 +93,18 @@ export function TeamIcons({
   )
 }
 
+/** Trainers a long board leaves out between two shown rows (`boardWindow`): how many, between dashed rules. */
+export function BoardGap({ count }: { count: number }) {
+  const { tPlural } = useT()
+  return (
+    <li className="flex items-center gap-2 px-2 py-0.5 font-pixel-sm text-[14px] leading-none text-muted">
+      <span aria-hidden className="flex-1 border-t-[3px] border-dashed border-shadow/40" />
+      {tPlural('ui.board.gap', count)}
+      <span aria-hidden className="flex-1 border-t-[3px] border-dashed border-shadow/40" />
+    </li>
+  )
+}
+
 /** One trainer on a board. `lead` replaces the rank (the Hall of Fame's crown). */
 export function BoardRow({
   rank,

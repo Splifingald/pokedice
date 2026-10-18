@@ -407,7 +407,8 @@
   "role": "trainer",
   "badge": null,
   "upgradeLevel": null,
-  "battleBackground": null
+  "battleBackground": null,
+  "duo": true
  },
  {
   "id": "d3301214-ac28-55b9-833a-65f5f0ce0999",
@@ -12024,7 +12025,8 @@
   "role": "trainer",
   "badge": null,
   "upgradeLevel": null,
-  "battleBackground": null
+  "battleBackground": null,
+  "duo": true
  },
  {
   "id": "db8d267b-8319-508b-89ad-86d6a2f270c9",
@@ -15761,7 +15763,8 @@
   "role": "leader",
   "badge": "Mind Badge",
   "upgradeLevel": null,
-  "battleBackground": "default"
+  "battleBackground": "default",
+  "duo": true
  },
  {
   "id": "49915a41-cfb5-530b-9741-bd803c09da8d",
@@ -16149,7 +16152,8 @@
   "role": "trainer",
   "badge": null,
   "upgradeLevel": null,
-  "battleBackground": null
+  "battleBackground": null,
+  "duo": true
  },
  {
   "id": "e151d7a4-6577-5520-8225-029992d2feca",
@@ -17269,7 +17273,8 @@
   "role": "trainer",
   "badge": null,
   "upgradeLevel": null,
-  "battleBackground": null
+  "battleBackground": null,
+  "duo": true
  },
  {
   "id": "d61d0cfd-916c-5334-9323-f2e92429a1e5",
@@ -18679,7 +18684,8 @@
   "role": "trainer",
   "badge": null,
   "upgradeLevel": null,
-  "battleBackground": null
+  "battleBackground": null,
+  "duo": true
  },
  {
   "id": "8c22dad6-02fc-5413-8395-ae4297541156",
@@ -24922,5 +24928,573 @@
   "items": [
    "hyper-potion"
   ]
+ },
+ {
+  "id": "be3fdaf8-722c-5f10-8b4f-4af0daae465b",
+  "name": "Twins Amy & Liv",
+  "spriteUrl": "/trainers/classes/twins.png",
+  "team": [
+   {
+    "dex": 311,
+    "level": 7
+   },
+   {
+    "dex": 312,
+    "level": 7
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "30b4ba6f-8043-53de-afb4-f24b7efca9ca",
+  "name": "Twins Gina & Mia",
+  "spriteUrl": "/trainers/classes/twins.png",
+  "team": [
+   {
+    "dex": 273,
+    "level": 10
+   },
+   {
+    "dex": 270,
+    "level": 10
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "e9994740-7ac1-5e8c-a42a-6c4d1facd34c",
+  "name": "Crush Kin Mik & Kia",
+  "spriteUrl": "/trainers/classes/crush-kin.png",
+  "team": [
+   {
+    "dex": 296,
+    "level": 18
+   },
+   {
+    "dex": 307,
+    "level": 18
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "98532b6c-11f4-5ade-bf9a-cabf935ccbbb",
+  "name": "Interviewers Gabby & Ty",
+  "spriteUrl": "/trainers/classes/kalos/interviewers.png",
+  "team": [
+   {
+    "dex": 81,
+    "level": 27
+   },
+   {
+    "dex": 293,
+    "level": 27
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "2f3473eb-8684-535b-b91f-17b0fbf9395d",
+  "name": "Young Couple Lois & Hal",
+  "spriteUrl": "/trainers/classes/kalos/young-couple.png",
+  "team": [
+   {
+    "dex": 313,
+    "level": 37
+   },
+   {
+    "dex": 314,
+    "level": 37
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "8600a8b8-6ccc-5c57-8ae5-ecb4211a2bff",
+  "name": "Sis and Bro Lila & Roy",
+  "spriteUrl": "/trainers/classes/sis-and-bro.png",
+  "team": [
+   {
+    "dex": 171,
+    "level": 46
+   },
+   {
+    "dex": 319,
+    "level": 46
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "ff3ff731-45c9-5d4d-8609-9d69b11f965b",
+  "name": "Interviewers Gabby & Ty",
+  "spriteUrl": "/trainers/classes/kalos/interviewers.png",
+  "team": [
+   {
+    "dex": 82,
+    "level": 48
+   },
+   {
+    "dex": 294,
+    "level": 48
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "7c665393-b5d5-5e15-a48f-49ac59f4a3bb",
+  "name": "Cool Couple Lea & Jed",
+  "spriteUrl": "/trainers/classes/cool-couple.png",
+  "team": [
+   {
+    "dex": 334,
+    "level": 54
+   },
+   {
+    "dex": 308,
+    "level": 54
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "c64a3cff-3102-58e3-87db-9897579c5dfd",
+  "name": "Twins Liv & Liz",
+  "spriteUrl": "/trainers/classes/sinnoh/twins.png",
+  "team": [
+   {
+    "dex": 417,
+    "level": 22
+   },
+   {
+    "dex": 427,
+    "level": 22
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "5fc5d093-5c33-5b5d-8acd-a7008a01cde0",
+  "name": "Young Couple Ty & Sue",
+  "spriteUrl": "/trainers/classes/sinnoh/young-couple.png",
+  "team": [
+   {
+    "dex": 431,
+    "level": 27
+   },
+   {
+    "dex": 441,
+    "level": 27
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "05834043-8e15-5bb1-97d9-d688f56b29d8",
+  "name": "Twins Teri & Tia",
+  "spriteUrl": "/trainers/classes/sinnoh/twins.png",
+  "team": [
+   {
+    "dex": 418,
+    "level": 34
+   },
+   {
+    "dex": 422,
+    "level": 34
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "52e4b123-3ff6-55fc-89fb-ea4ca4924e65",
+  "name": "Cool Couple Zac & Jen",
+  "spriteUrl": "/trainers/classes/cool-couple.png",
+  "team": [
+   {
+    "dex": 475,
+    "level": 51
+   },
+   {
+    "dex": 282,
+    "level": 51
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "dc193d74-e3e7-51e8-b9ba-4eadb0aa78bd",
+  "name": "Twins Kiri & Jan",
+  "spriteUrl": "/trainers/classes/unova/twins.png",
+  "team": [
+   {
+    "dex": 546,
+    "level": 21
+   },
+   {
+    "dex": 548,
+    "level": 21
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "eb8cb72d-90db-5b5c-800d-a8851c38db89",
+  "name": "Backers Ruth & Mel",
+  "spriteUrl": "/trainers/classes/unova/backers.png",
+  "team": [
+   {
+    "dex": 587,
+    "level": 33
+   },
+   {
+    "dex": 585,
+    "level": 33
+   },
+   {
+    "dex": 520,
+    "level": 33
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "21014f08-2d91-5fbd-8f2b-4dc2a16039a1",
+  "name": "Twins Rio & Mia",
+  "spriteUrl": "/trainers/classes/unova/twins.png",
+  "team": [
+   {
+    "dex": 588,
+    "level": 37
+   },
+   {
+    "dex": 616,
+    "level": 37
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "51958f41-6d15-5a56-8754-cb2d31abc879",
+  "name": "Backers Ivy & Juan",
+  "spriteUrl": "/trainers/classes/unova/backers.png",
+  "team": [
+   {
+    "dex": 626,
+    "level": 47
+   },
+   {
+    "dex": 627,
+    "level": 47
+   },
+   {
+    "dex": 629,
+    "level": 47
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "3d804f90-9194-59d1-ad2a-1af563f7c1e4",
+  "name": "Twins Lia & Lea",
+  "spriteUrl": "/trainers/classes/kalos/twins.png",
+  "team": [
+   {
+    "dex": 587,
+    "level": 22
+   },
+   {
+    "dex": 309,
+    "level": 22
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "2d862857-b247-5fef-abc2-92e45643ccaf",
+  "name": "Young Couple Zane & Jen",
+  "spriteUrl": "/trainers/classes/kalos/young-couple.png",
+  "team": [
+   {
+    "dex": 241,
+    "level": 28
+   },
+   {
+    "dex": 128,
+    "level": 28
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "6b3cfae2-6706-55e1-b475-b3aa955b3e82",
+  "name": "Young Couple Owen & Ola",
+  "spriteUrl": "/trainers/classes/kalos/young-couple.png",
+  "team": [
+   {
+    "dex": 195,
+    "level": 49
+   },
+   {
+    "dex": 705,
+    "level": 49
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "a884ca34-1e91-5a8a-ae40-e413a5fb1725",
+  "name": "Twins Kai & Lani",
+  "spriteUrl": "/trainers/classes/kalos/twins.png",
+  "team": [
+   {
+    "dex": 731,
+    "level": 15
+   },
+   {
+    "dex": 761,
+    "level": 15
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "b031043f-3161-5e5d-936b-ddbc13f31a5b",
+  "name": "Young Couple Noa & Mele",
+  "spriteUrl": "/trainers/classes/kalos/young-couple.png",
+  "team": [
+   {
+    "dex": 120,
+    "level": 25
+   },
+   {
+    "dex": 456,
+    "level": 25
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "7cb37504-4a8e-5d15-8d0b-cea367cd5939",
+  "name": "Twins Ana & Ula",
+  "spriteUrl": "/trainers/classes/kalos/twins.png",
+  "team": [
+   {
+    "dex": 10101,
+    "level": 32
+   },
+   {
+    "dex": 10103,
+    "level": 32
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "d73fe745-3d19-5f49-a73d-800e6d507677",
+  "name": "Twins Ella & Effie",
+  "spriteUrl": "/trainers/classes/kalos/twins.png",
+  "team": [
+   {
+    "dex": 835,
+    "level": 17
+   },
+   {
+    "dex": 831,
+    "level": 17
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "5fd01ade-3d73-586e-acd2-2b283363db1f",
+  "name": "Young Couple Rory & Tess",
+  "spriteUrl": "/trainers/classes/kalos/young-couple.png",
+  "team": [
+   {
+    "dex": 857,
+    "level": 36
+   },
+   {
+    "dex": 860,
+    "level": 36
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "3a59c183-f154-54c7-ba05-053510c5a21a",
+  "name": "Twins Bree & Bea",
+  "spriteUrl": "/trainers/classes/kalos/twins.png",
+  "team": [
+   {
+    "dex": 872,
+    "level": 42
+   },
+   {
+    "dex": 361,
+    "level": 42
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "468feabe-47f9-5325-ae99-fc59311b4c66",
+  "name": "Twins Pia & Pilar",
+  "spriteUrl": "/trainers/classes/kalos/twins.png",
+  "team": [
+   {
+    "dex": 924,
+    "level": 11
+   },
+   {
+    "dex": 926,
+    "level": 11
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "06fc0ac4-a301-5ccf-b709-ec8b3cc9031a",
+  "name": "Young Couple Leo & Rosa",
+  "spriteUrl": "/trainers/classes/kalos/young-couple.png",
+  "team": [
+   {
+    "dex": 973,
+    "level": 34
+   },
+   {
+    "dex": 916,
+    "level": 34
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
+ },
+ {
+  "id": "556cfac2-b0f3-5b5c-83a9-e7d02693a998",
+  "name": "Twins Sol & Luz",
+  "spriteUrl": "/trainers/classes/kalos/twins.png",
+  "team": [
+   {
+    "dex": 958,
+    "level": 48
+   },
+   {
+    "dex": 707,
+    "level": 48
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "duo": true
  }
 ]

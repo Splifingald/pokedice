@@ -416,7 +416,7 @@ export function RaidGroupSection({
   const progress = source.kind === 'progress'
   const raid = progress ? progressRaidOf(data, source.key) : null
   const myTeam = progress ? (raid ? progressRaidTeam(save, data, raid) : []) : raidTeam(save, data)
-  // Friends' teams come at their own levels (0061), like yours: the fight caps them, all but their dice.
+  // Friends' teams come at their own levels (0065), like yours: the fight caps them, all but their dice.
   const recommended = raid
     ? recommender(data, raid.dex, raidTeamCap(data, raid.dex, 'progress', raid.areaId))
     : recommender(data, progress ? undefined : boss, data.config.events.raid.teamCap)

@@ -16,6 +16,7 @@ import { loadSprite, placeSprite, spriteKey, stageSprite } from '@/fx/sprites'
 import { H, quicken, W, type Hud, type Timeline } from '@/fx/timeline'
 import { attackTimeline } from '@/fx/timelines/attacks'
 import { gmaxEndTimeline, gmaxFor, megaFor, unleashTimeline } from '@/fx/timelines/forms'
+import { zAwayTimeline, zMoveTimeline, zStrikeTimeline } from '@/fx/timelines/zmove'
 import { usePace } from '@/lib/pace'
 import { useMotion } from '@/lib/motion'
 import { useGame } from '@/store/game'
@@ -23,6 +24,23 @@ import { cx } from '@/theme/util'
 import type { Fx, Scene } from './useBattleAnimator'
 
 const LAYOUT = background(W, H).layout
+
+/**
+ * A double battle's Pokémon behind (docs/33): where its feet go, smaller, up the stage and to the left, half hidden
+ * by the one in front (the user, 2026-10-17: "the pokemon that is not attacking should be at the back"); the pair in
+ * front stand on the usual spots, where every move's timeline draws them.
+ */
+const BACK = {
+  foe: { x: LAYOUT.foe.x - 48, y: LAYOUT.foe.y - 16, k: 0.7 },
+  own: { x: LAYOUT.own.x - 34, y: LAYOUT.own.y - 40, k: 0.66 },
+}
+/** Where a Pokémon stands and how big, with its depth (a double battle's; absent = its side's usual spot). */
+interface Place {
+  x: number
+  y: number
+  k: number
+  z: number
+}
 
 /** The area picture's two zones, translucent on its ground (in place of the drawn background's platforms). */
 function Zones() {
@@ -138,10 +156,16 @@ function Mon({
   tapLabel,
   host,
   hostClass = 'portal-glitch-host',
+  place,
+  front = true,
 }: {
   b: Battler
   side: Side
   scale: number
+  /** A double battle's spot for it (docs/33); it slides there when the pair in front changes. */
+  place?: Place
+  /** The fx aimed at its side (a hit, a status, a number) play on it: the one in front of a double battle. */
+  front?: boolean
   /**
    * A portal run's wild Pokémon (docs/28) or a nightmare's foe (docs/30): its box, whose sprite wears the distortion or
    * the haunting (CSS filters set on it, under `hostClass`).
@@ -164,9 +188,12 @@ function Mon({
   const still = level === 'off'
   const back = side === 'player'
   const s = useMemo(() => stageSprite(b.dex, back, b.shiny), [b.dex, back, b.shiny])
-  const at = back ? LAYOUT.own : LAYOUT.foe
-  const box = placeSprite(s, at.x, at.y)
-  const flash = useFlash(fx.flash?.target === side ? fx.flash.id : null, still)
+  const at = place ?? (back ? LAYOUT.own : LAYOUT.foe)
+  const raw = placeSprite(s, at.x, at.y)
+  // Scaled about its feet, so it stands on the same spot.
+  const k = place?.k ?? 1
+  const box = { left: at.x + (raw.left - at.x) * k, top: at.y + (raw.top - at.y) * k, w: raw.w * k, h: raw.h * k }
+  const flash = useFlash(fx.flash?.target === side && front ? fx.flash.id : null, still)
   // Worn out, waiting for the ball: the animated sprite stops on the frame it was showing (a still copy on a canvas).
   const img = useRef<HTMLImageElement>(null)
   const frozen = useRef<HTMLCanvasElement>(null)
@@ -191,6 +218,10 @@ function Mon({
         width: box.w * scale,
         height: box.h * scale,
         opacity: hidden ? 0 : 1,
+        ...(place && {
+          zIndex: place.z,
+          transition: still ? undefined : `left ${0.3 * pace}s, top ${0.3 * pace}s, width ${0.3 * pace}s, height ${0.3 * pace}s`,
+        }),
       }}
     >
       <motion.div
@@ -253,7 +284,7 @@ function Mon({
         <button type="button" onClick={onTap} aria-label={tapLabel} className="absolute inset-0 z-[1]" />
       )}
       <AnimatePresence>
-        {fx.status?.target === side && !hidden && (
+        {fx.status?.target === side && front && !hidden && (
           <motion.div
             key={fx.status.id}
             className="pointer-events-none absolute inset-0 flex items-center justify-center"
@@ -267,7 +298,7 @@ function Mon({
             />
           </motion.div>
         )}
-        {fx.pop?.target === side && (
+        {fx.pop?.target === side && front && (
           <motion.div
             key={fx.pop.id}
             className="pointer-events-none absolute left-1/2 top-[25%] z-20 -translate-x-1/2 font-pixel leading-none"
@@ -286,6 +317,97 @@ function Mon({
         )}
       </AnimatePresence>
     </div>
+  )
+}
+
+/**
+ * A double battle's Pokémon (docs/33), one keyed list so that a Pokémon moving between the front and the back slides
+ * there instead of coming out again: the pair in front on the usual spots, their partners smaller behind, each with
+ * a shadow. The ones in front hide while a timeline draws them; the ones behind stay.
+ */
+function DoubleMons({
+  own,
+  foe,
+  ownBack,
+  foeBack,
+  scale,
+  ownShown,
+  foeShown,
+  playing,
+  overlay,
+  worn,
+  fx,
+  onTap,
+  tapLabel,
+  onAim,
+  aimLabel,
+}: {
+  own: Battler
+  foe: Battler
+  ownBack: Battler | null
+  foeBack: Battler | null
+  scale: number
+  ownShown: boolean
+  foeShown: boolean
+  playing: boolean
+  overlay: boolean
+  worn?: boolean
+  fx: Fx
+  onTap?: (side: Side) => void
+  tapLabel: (b: Battler) => string
+  onAim?: (b: Battler) => void
+  aimLabel?: (b: Battler) => string
+}) {
+  const mons = [
+    { b: foeBack, side: 'enemy' as const, place: { ...BACK.foe, z: 1 }, front: false },
+    { b: foe, side: 'enemy' as const, place: { ...LAYOUT.foe, k: 1, z: 2 }, front: true },
+    { b: ownBack, side: 'player' as const, place: { ...BACK.own, z: 3 }, front: false },
+    { b: own, side: 'player' as const, place: { ...LAYOUT.own, k: 1, z: 4 }, front: true },
+  ].flatMap((m) => (m.b ? [{ ...m, b: asShown(m.b, fx) }] : []))
+  // The same order every render (by uid): React keeps each Pokémon's sprite as it changes places.
+  const ordered = [...mons].sort((a, b) => (a.b.uid < b.b.uid ? -1 : 1))
+  return (
+    <>
+      {mons
+        .filter((m) => !m.front)
+        .map((m) => (
+          <i
+            key={`shadow-${m.side}`}
+            aria-hidden
+            className="pointer-events-none absolute rounded-[50%] bg-ink/20"
+            style={{
+              left: (m.place.x - 30 * m.place.k) * scale,
+              top: (m.place.y - 5 * m.place.k) * scale,
+              width: 60 * m.place.k * scale,
+              height: 12 * m.place.k * scale,
+            }}
+          />
+        ))}
+      {ordered.map(({ b, side, place, front }) => {
+        const foeSide = side === 'enemy'
+        // The catch waits with the foe in front worn out on its spot.
+        const wornHere = foeSide && front && worn
+        return (
+          <Mon
+            key={b.uid}
+            b={b}
+            side={side}
+            scale={scale}
+            shown={foeSide ? foeShown : ownShown}
+            fainted={(!!fx.fainted[b.uid] || !!fx.wornOut[b.uid]) && !wornHere}
+            hidden={front ? playing : overlay}
+            worn={wornHere}
+            fx={fx}
+            place={place}
+            front={front}
+            onTap={
+              front ? onTap && (() => onTap(side)) : foeSide && onAim ? () => onAim(b) : undefined
+            }
+            tapLabel={!front && foeSide && aimLabel ? aimLabel(b) : tapLabel(b)}
+          />
+        )
+      })}
+    </>
   )
 }
 
@@ -315,6 +437,25 @@ function useSceneTimeline(scene: Scene | null, own: Battler, foe: Battler, short
         by: mine ? 'own' : 'foe',
         type: scene.type ?? 'base',
         damage: scene.damage,
+        short,
+      })
+    } else if (scene.kind === 'zstrike') {
+      timeline = zStrikeTimeline({
+        own: key(own, true),
+        foe: key(foe, false),
+        side: mine ? 'own' : 'foe',
+        type: scene.type ?? 'base',
+        from: scene.how,
+        short,
+      })
+    } else if (scene.kind === 'zaway') {
+      timeline = zAwayTimeline({ own: key(own, true), foe: key(foe, false), side: mine ? 'own' : 'foe', how: scene.how ?? 'fly', short })
+    } else if (scene.kind === 'zmove') {
+      timeline = zMoveTimeline({
+        own: key(own, true),
+        foe: key(foe, false),
+        side: mine ? 'own' : 'foe',
+        type: scene.type ?? 'base',
         short,
       })
     } else {
@@ -378,7 +519,22 @@ export function BattleStage({
   distorted,
   haunted,
   world,
+  ownBack,
+  foeBack,
+  double,
+  onAim,
+  aimLabel,
 }: {
+  /**
+   * A double battle (docs/33): every Pokémon out is on the stage, the pair in front (`own`, `foe`: whose turn it is and
+   * its target) big on the usual spots, their partners (`ownBack`, `foeBack`) smaller behind.
+   */
+  double?: boolean
+  ownBack?: Battler | null
+  foeBack?: Battler | null
+  /** Tapping the foe behind makes it the target (on your turn). */
+  onAim?: (b: Battler) => void
+  aimLabel?: (b: Battler) => string
   /** The foe is one of a portal run's wild Pokémon (docs/28): it wears the distortion shader. */
   distorted?: boolean
   /** The foe is one of the nightmare's (docs/30): a dark shadow haunts it (a rim on its sprite, smoke behind it). */
@@ -448,11 +604,12 @@ export function BattleStage({
   const artShown = !!artId && shownArt === artId
   // Over a picture (or the Distortion World) the timelines draw no background of their own (before a picture loads,
   // the drawn one shows through).
+  // A double battle too: the Pokémon behind stay on the page under the timeline, so it must not paint over them.
   useLayoutEffect(() => {
-    if (!artId && !world) return
+    if (!artId && !world && !double) return
     setArtUnderStage(true)
     return () => setArtUnderStage(false)
-  }, [artId, world])
+  }, [artId, world, double])
 
   // Keep both Pokémon ready on the canvas: a move can start any moment.
   useEffect(() => {
@@ -501,20 +658,41 @@ export function BattleStage({
               style={{ imageRendering: 'pixelated' }}
             />
           )}
-          <Mon
-            b={foe}
-            side="enemy"
-            scale={scale}
-            shown={foeShown}
-            fainted={(!!fx.fainted[foe.uid] || !!fx.wornOut[foe.uid]) && !worn}
-            hidden={playing}
-            worn={worn}
-            fx={fx}
-            onTap={onTap && (() => onTap('enemy'))}
-            tapLabel={tapLabel(foe)}
-            host={distorted || haunted ? foeBox : undefined}
-            hostClass={distorted ? 'portal-glitch-host' : 'nm-haunt-host'}
-          />
+          {double && (
+            <DoubleMons
+              own={own}
+              foe={foe}
+              ownBack={ownBack ?? null}
+              foeBack={foeBack ?? null}
+              scale={scale}
+              ownShown={ownShown}
+              foeShown={foeShown}
+              playing={playing}
+              overlay={!!overlay}
+              worn={worn}
+              fx={fx}
+              onTap={onTap}
+              tapLabel={tapLabel}
+              onAim={onAim}
+              aimLabel={aimLabel}
+            />
+          )}
+          {!double && (
+            <Mon
+              b={foe}
+              side="enemy"
+              scale={scale}
+              shown={foeShown}
+              fainted={(!!fx.fainted[foe.uid] || !!fx.wornOut[foe.uid]) && !worn}
+              hidden={playing || !!fx.away?.[foe.uid]}
+              worn={worn}
+              fx={fx}
+              onTap={onTap && (() => onTap('enemy'))}
+              tapLabel={tapLabel(foe)}
+              host={distorted || haunted ? foeBox : undefined}
+              hostClass={distorted ? 'portal-glitch-host' : 'nm-haunt-host'}
+            />
+          )}
           {distorted && (
             <canvas
               ref={distortion.over}
@@ -545,17 +723,19 @@ export function BattleStage({
               </motion.div>
             )}
           </AnimatePresence>
-          <Mon
-            b={own}
-            side="player"
-            scale={scale}
-            shown={ownShown}
-            fainted={!!fx.fainted[own.uid]}
-            hidden={playing}
-            fx={fx}
-            onTap={onTap && (() => onTap('player'))}
-            tapLabel={tapLabel(own)}
-          />
+          {!double && (
+            <Mon
+              b={own}
+              side="player"
+              scale={scale}
+              shown={ownShown}
+              fainted={!!fx.fainted[own.uid]}
+              hidden={playing || !!fx.away?.[own.uid]}
+              fx={fx}
+              onTap={onTap && (() => onTap('player'))}
+              tapLabel={tapLabel(own)}
+            />
+          )}
         </>
       )}
       {overlay ? (
@@ -567,7 +747,7 @@ export function BattleStage({
           onEnd={overlay.onEnd}
           label={overlay.label}
           instant={overlay.instant}
-          className="absolute inset-0"
+          className={cx('absolute inset-0', double && 'z-[4]')}
         />
       ) : (
         scene && (
@@ -578,7 +758,7 @@ export function BattleStage({
             hud={{ contact: onContact }}
             onEnd={onSceneDone}
             label={label}
-            className="absolute inset-0"
+            className={cx('absolute inset-0', double && 'z-[4]')}
           />
         )
       )}

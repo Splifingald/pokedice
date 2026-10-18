@@ -171,12 +171,21 @@ export type EncounterKind = (typeof ENCOUNTER_KINDS)[number]
 /** Cards in an area's encounter deck; 'legend' is a fled legendary coming back (one per deck until it's caught). */
 export type DeckCard = EncounterKind | 'legend'
 
+/** Day and night (docs/32): the half of the day an area's wild Pokémon is met in, where the region keeps the time. */
+export const DAY_TIMES = ['day', 'night'] as const
+export type DayTime = (typeof DAY_TIMES)[number]
+
 export interface WildPoolEntry {
   id: string
   dex: number
   weight: number
   minLevel: number
   maxLevel: number
+  /**
+   * Met only by day or only by night (docs/32), as in the real games; absent or null = any time. Read only in a region
+   * that keeps the time (Johto) while the switch is on: elsewhere every row is met at any hour.
+   */
+  time?: DayTime | null
 }
 
 export interface TrainerPoolEntry {
@@ -496,6 +505,11 @@ export interface Trainer {
    * sprite of the character the player didn't pick. An area lists one version per starter; the others are skipped.
    */
   rivalOf?: number | null
+  /**
+   * A pair (Twins, a Young Couple, Tate & Liza…): in a region with double battles on, they fight 2 v 2 with two of
+   * their Pokémon out at once (docs/33). Elite Four and Champions never do. Missing = no.
+   */
+  duo?: boolean
 }
 
 export type CurableStatus = 'burn' | 'poison' | 'frozen' | 'paralyze' | 'confuse'
@@ -524,6 +538,11 @@ export type ItemEffect =
    * (engine/catching). Never chosen from the bag: the catch offers it.
    */
   | { kind: 'bait'; faces: number[] }
+  /**
+   * A Mega Gem (docs/35): lets the Pokémon this Mega form belongs to take it in battle, under the gem rules. Kept in
+   * `SaveData.powers.gems`, never in a bag: bought once, never sold.
+   */
+  | { kind: 'megaGem'; mega: number }
 
 export interface ItemDef {
   key: string
@@ -719,7 +738,7 @@ export interface EventsConfig {
 }
 
 /** Live events (docs/20): the kinds the admin can schedule. */
-export const LIVE_TYPES = ['shiny', 'shop', 'cash'] as const
+export const LIVE_TYPES = ['shiny', 'shop', 'cash', 'underground'] as const
 export type LiveType = (typeof LIVE_TYPES)[number]
 
 /** One item of a Special Shop: its event price, how many each player may buy (null = no limit), where it's sold. */
@@ -825,6 +844,7 @@ export interface GameConfig {
   discordUrl: string
   megaEvolution: MegaConfig
   gigantamax: GigantamaxConfig
+  zMove: ZMoveConfig
   /** Arceus, Silvally and Ogerpon can each change type this many times per battle (the TYPE menu). */
   formChangesPerBattle: number
   /** Once-only finds get likelier the more rounds a player has done in their area. */
@@ -863,8 +883,147 @@ export interface GameConfig {
   portalRun: { access: EventAccess }
   /** The areas' nightmare (docs/30): its switch. The server reads the same row (0060). */
   nightmare: { access: EventAccess }
+  /** Trainer looks (docs/31): unlockable looks in place of the free list. Off by default. */
+  looks: { access: EventAccess }
   /** Trick or Treat (docs/29): its switch, numbers and each area's ghosts. The server reads the switch too. */
   trickOrTreat: TrickOrTreatConfig
+  /** Day and night in Johto (docs/32): its switch. Migration 0061 inserts the same row. */
+  dayNight: { access: EventAccess }
+  /** Double battles (docs/33): their switch, the regions that have them and the wild odds. */
+  doubleBattles: DoubleBattlesConfig
+  /**
+   * The Underground (docs/34): its switch and every number. Each live event of type `underground` uses it; the server
+   * reads the same row.
+   */
+  underground: UndergroundConfig
+}
+
+/** Double battles (docs/33): two of yours against two foes, in the regions ticked here. */
+export interface DoubleBattlesConfig {
+  access: EventAccess
+  /** The regions where they happen: wild Pokémon in pairs, duo trainers, Tate & Liza. */
+  regions: RegionId[]
+  /** % of the wild encounters there that come as a pair. */
+  wildChance: number
+}
+
+/** The Underground's orbs (docs/34): three colours, one per team seat, and three sizes. */
+export const ORB_COLOURS = ['red', 'blue', 'green'] as const
+export type OrbColour = (typeof ORB_COLOURS)[number]
+export const ORB_SIZES = ['s', 'm', 'l'] as const
+export type OrbSize = (typeof ORB_SIZES)[number]
+export type OrbBag = Record<OrbColour, Record<OrbSize, number>>
+
+/** What a wall can hide: an orb of each size, a fossil, a plate. */
+export const UG_LOOT = ['orbS', 'orbM', 'orbL', 'fossil', 'plate'] as const
+export type UgLoot = (typeof UG_LOOT)[number]
+
+/** One level of the pickaxe: its die's six faces (layers a strike takes off) and its price in ₽. */
+export interface PickaxeLevel {
+  faces: number[]
+  price: number
+}
+
+/**
+ * The Underground (docs/34): Explorakits open walls of tiles 1–3 layers deep; a strike rolls the pickaxe die. What a
+ * wall hides is won only once all its tiles are dug out, before the strikes run out. Everything here is the admin's.
+ */
+export interface UndergroundConfig {
+  /** The switch (docs/15 §20): off (nowhere in the game, Arceus unlocked), on for the admin only, on for everyone. */
+  access: EventAccess
+  kits: {
+    /** The Mart's price of an Explorakit (₽). */
+    price: number
+    /** Explorakits each player may buy per event; 0 = no limit (a null would be lost merging over the defaults). */
+    limit: number
+    /** Free kits: `freeAmount` every `freePeriodHours`, coming one at a time, at most `freeCap` waiting. */
+    freeAmount: number
+    freePeriodHours: number
+    freeCap: number
+  }
+  wall: {
+    cols: number
+    rows: number
+    /** Strikes before the wall collapses. */
+    strikes: number
+    /** Shares (any scale) of tiles 1, 2 and 3 layers deep. */
+    layers: [number, number, number]
+    /** How many things a wall hides. */
+    itemsMin: number
+    itemsMax: number
+    /** A strike's 4 neighbours lose the roll minus this (0 = as much as the tile). */
+    neighbourLoss: number
+  }
+  loot: {
+    /** How often each kind is drawn for a wall. */
+    weights: Record<UgLoot, number>
+    /** Each kind's footprint, in tiles. */
+    shapes: Record<UgLoot, { w: number; h: number }>
+    /** An orb's colour odds. */
+    colours: Record<OrbColour, number>
+  }
+  /** An orb's selling price (₽), by colour and size. */
+  prices: Record<OrbColour, Record<OrbSize, number>>
+  /** The pickaxe: level 0 first; it starts at 0 each event. */
+  pickaxe: PickaxeLevel[]
+  /** Orbs sell only once the team has all its seats (one per colour). */
+  sellNeedsFull: boolean
+}
+
+/** One thing buried in a wall, at (x, y) for w × h tiles. */
+export interface WallThing {
+  kind: UgLoot
+  x: number
+  y: number
+  w: number
+  h: number
+  /** An orb's colour. */
+  colour?: OrbColour
+  /** A fossil's item key. */
+  item?: string
+  /** A plate's type. */
+  plate?: PokeType
+}
+
+/** An Underground wall being dug: kept in the save after every strike, so it resumes after a reload. */
+export interface Wall {
+  /** Unique within the event: the haul is applied once per wall. */
+  id: string
+  cols: number
+  rows: number
+  /** Layers left per tile, row by row. */
+  depth: number[]
+  things: WallThing[]
+  /** Strikes this wall allows (the admin's number when it was dealt) and strikes used. */
+  strikes: number
+  used: number
+  /** The neighbours' loss when it was dealt. */
+  neighbourLoss: number
+}
+
+/** The Underground in a save (docs/34): one event's kits, pickaxe, orb bag and open wall. A new event starts afresh. */
+export interface UndergroundSave {
+  eventId: string
+  /** Free kits waiting, and when the next one comes (server ms; null while at the cap). */
+  freeKits: number
+  freeAt: number | null
+  /** Bought kits waiting, and how many were bought this event (the limit). */
+  boughtKits: number
+  boughtCount: number
+  /** The pickaxe's level. */
+  pickaxe: number
+  bag: OrbBag
+  wall: Wall | null
+  /** Walls opened this event (wall ids are numbered from it). */
+  walls: number
+  /** Walls whose haul is in this save (last 50). */
+  hauls: string[]
+  /** Teammates' orbs already in the bag, by the server's id (last 100): each lands once. */
+  received?: string[]
+  /** Orbs owed to teammates, per wall, until the server has them (docs/34 §3). */
+  outbox?: { wallId: string; orbs: { colour: OrbColour; size: OrbSize; to: string }[] }[]
+  /** The rules pop-up has been shown this event. */
+  rulesSeen?: boolean
 }
 
 /** A Trick or Treat ghost's rarity (docs/29): it picks the ghost and sets its gauge. */
@@ -1115,6 +1274,56 @@ export interface GigantamaxConfig {
   turns: number
   /** Trainers Gigantamax their ace in these regions (leaders, Elite Four, Champions), once the player has it too. */
   trainerRegions: RegionId[]
+  /** The rules of 2026-10-18 (docs/35), behind their own switch: off, Gigantamax works as above. */
+  boost: GmaxBoostConfig
+}
+
+/** Gigantamax's newer rules (docs/35): a badge to open it, more dice, a heal, its own once per battle. */
+export interface GmaxBoostConfig {
+  access: EventAccess
+  /** Badges of `gigantamax.region` that open it there (Kabu's, the 3rd); elsewhere, the region's league. */
+  badges: number
+  /** Dice of its first type it gains for its turns. */
+  dice: number
+  /** % of its max HP it heals as it Gigantamaxes (kept after it shrinks back). */
+  healPercent: number
+}
+
+/** Mega Evolution's gem rules (docs/35), behind their own switch: off, Mega Evolution works as `MegaConfig` says. */
+export interface MegaGemsConfig {
+  access: EventAccess
+  /** Badges of `megaEvolution.region` that open it there (Korrina's, the 3rd); elsewhere, the region's league. */
+  badges: number
+  /** Its own turns a Mega lasts (the one it Mega Evolves in included), then it changes back. */
+  turns: number
+  /** The gems a badge of `megaEvolution.region` comes with: badge number (1 = the first) and gem item key. */
+  rewards: { badge: number; gem: string }[]
+}
+
+/** Z-Moves (docs/35): once per battle, the attack's type adds an effect. Off by default. */
+export interface ZMoveConfig {
+  access: EventAccess
+  /** The region whose badges open them (Alola)… */
+  region: RegionId
+  /** …at this badge (Lana's Waterium Z, the 3rd); elsewhere, the region's league. */
+  badges: number
+  perBattle: number
+  /** Ice: the chance (%) it freezes the foe. */
+  freezeChance: number
+  /** Electric: the chance (%) it paralyzes the foe. */
+  paralyzeChance: number
+  /** Fire: Burn stacks it lands. */
+  burnStacks: number
+  /** Grass: % of the user's max HP it heals. */
+  healPercent: number
+  /** Fighting: % more damage on the Z-Move itself… */
+  recklessPercent: number
+  /** …and the share (%) of what it dealt the user takes back. */
+  recklessRecoilPercent: number
+  /** Every other type: % more damage on the Z-Move itself. */
+  damagePercent: number
+  /** Trainers' aces use one in these regions (`megaEvolution.trainerRoles`), once the player has them too. */
+  trainerRegions: RegionId[]
 }
 
 /** Mega Evolution: no stone, no item — a button in battle, once the player has reached `region`. */
@@ -1129,6 +1338,8 @@ export interface MegaConfig {
   trainerRegions: RegionId[]
   /** Trainer roles that use Mega Evolution and Gigantamax. */
   trainerRoles: TrainerRole[]
+  /** The gem rules of 2026-10-18 (docs/35), behind their own switch. */
+  gems: MegaGemsConfig
 }
 
 // ---------------------------------------------------------------- save data (01-GAME-SPEC §9)
@@ -1269,6 +1480,40 @@ export interface SaveData {
   general?: GeneralSave
   /** Trick or Treat (docs/29): its rules seen. Absent = never met. */
   trickOrTreat?: TrickSave
+  /** The Underground (docs/34): the running event's kits, pickaxe, orbs and wall. Gone when the event ends. */
+  underground?: UndergroundSave
+  /** Arceus's plates found in the Underground, by type: kept for good. Each lets the player's Arceus take its type. */
+  plates?: PokeType[]
+  /** Trainer looks (docs/31): the unlocked looks already seen in the menu, and its rules pop-up shown. */
+  looks?: LooksSave
+  /** Day and night (docs/32): its rules seen. Absent = never in Johto with it on. */
+  dayNight?: { rulesSeen?: boolean }
+  /** Mega Gems, and the battle powers' rules seen (docs/35), for every region of this save. Absent = none yet. */
+  powers?: PowersSave
+}
+
+/** The three battle powers (docs/35). */
+export const POWER_KINDS = ['mega', 'gmax', 'z'] as const
+export type PowerKind = (typeof POWER_KINDS)[number]
+
+/** Mega Gems and the battle powers' pop-ups (docs/35). */
+export interface PowersSave {
+  /** Mega Gems held (item keys): from a badge or the Mart, each once, never sold. */
+  gems?: string[]
+  /** Each power's rules pop-up has been shown (once; INFO shows it again). */
+  seen?: PowerKind[]
+  /**
+   * The powers whose badge has been won (Kalos's 3rd, Galar's, Alola's), whatever the switches say: Versus reads them
+   * from the save on the server, as it reads the gems (docs/35 §5).
+   */
+  earned?: PowerKind[]
+}
+
+/** Trainer looks (docs/31): only what was seen; what is unlocked is worked out from progress (engine/looks). */
+export interface LooksSave {
+  /** Unlocked looks already seen in the menu: the red dot counts the others. */
+  seen?: string[]
+  rulesSeen?: boolean
 }
 
 /** The General upgrades bought (docs/25), and the offline earnings' clock. */

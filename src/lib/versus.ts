@@ -1,6 +1,6 @@
 // Versus, the cloud side: every registered team with both scores, setting your own, and recording a fight. The rows
 // come from the SQL functions of supabase/migrations/0018_versus.sql; the fight itself is engine/versus.
-import type { VersusMon } from '@/engine'
+import type { VersusMon, VersusPowers } from '@/engine'
 import { avatarOf } from './avatars'
 import { getSupabase } from './supabase'
 import { realmArgs } from '@/lib/realm'
@@ -26,6 +26,8 @@ export interface VersusEntry {
   beaten: boolean
   /** Their name shines gold ("I am just rich", docs/25). */
   rich: boolean
+  /** Their battle powers (docs/35 §5), from their save: none while the switches are off for you. */
+  powers: VersusPowers
 }
 
 export interface RankedVersusEntry extends VersusEntry {
@@ -47,6 +49,14 @@ interface RawEntry {
   beaten: boolean | null
   /** Missing on a database that hasn't run 0049_general_upgrades.sql. */
   rich?: boolean | null
+  /** Missing on a database that hasn't run 0064_battle_powers.sql. */
+  powers?: { gems?: unknown; gmax?: unknown; z?: unknown } | null
+}
+
+/** A row's powers, checked: gem keys as strings, the two flags as booleans. Anything odd is no power. */
+export function parsePowers(raw: RawEntry['powers']): VersusPowers {
+  const gems = Array.isArray(raw?.gems) ? raw.gems.filter((g): g is string => typeof g === 'string') : []
+  return { gems, gmax: raw?.gmax === true, z: raw?.z === true }
 }
 
 export function parseVersusBoard(raw: RawEntry[]): VersusEntry[] {
@@ -63,6 +73,7 @@ export function parseVersusBoard(raw: RawEntry[]): VersusEntry[] {
     defenseWins: Number(r.defense_wins) || 0,
     beaten: !!r.beaten,
     rich: !!r.rich,
+    powers: parsePowers(r.powers),
   }))
 }
 

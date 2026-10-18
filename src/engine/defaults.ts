@@ -98,10 +98,46 @@ export const DEFAULT_CONFIG: GameConfig = {
     perBattle: 1,
     trainerRegions: ['hoenn', 'kalos', 'alola'],
     trainerRoles: ['leader', 'elite', 'champion'],
+    // The gem rules (docs/35), off until the admin opens them: Korrina's badge opens Mega Evolution in Kalos, a league
+    // anywhere else; a Mega needs its gem and lasts 3 turns. Korrina hands over the Lucarionite, as in X and Y; the
+    // three Kanto starters' gems come with the last three badges.
+    gems: {
+      access: 'off',
+      badges: 3,
+      turns: 3,
+      rewards: [
+        { badge: 3, gem: 'lucarionite' },
+        { badge: 6, gem: 'charizardite-y' },
+        { badge: 7, gem: 'venusaurite' },
+        { badge: 8, gem: 'blastoisinite' },
+      ],
+    },
   },
   // Gigantamax opens with Galar, for the Pokémon's next turn only (fights here are short); Galar's leaders and Champion
-  // use it with their ace.
-  gigantamax: { region: 'galar', turns: 1, trainerRegions: ['galar'] },
+  // use it with their ace. Its newer rules (docs/35), off until the admin opens them: Kabu's badge, two dice and a 30 %
+  // heal, a use of its own beside the Mega's.
+  gigantamax: {
+    region: 'galar',
+    turns: 1,
+    trainerRegions: ['galar'],
+    boost: { access: 'off', badges: 3, dice: 2, healPercent: 30 },
+  },
+  // Z-Moves (docs/35), off until the admin opens them: Lana's trial opens them in Alola, a league anywhere else. Once per
+  // battle, the attack's type brings an effect; Alola's leaders, Elite Four and Champion use one with their ace.
+  zMove: {
+    access: 'off',
+    region: 'alola',
+    badges: 3,
+    perBattle: 1,
+    freezeChance: 30,
+    paralyzeChance: 50,
+    burnStacks: 2,
+    healPercent: 20,
+    recklessPercent: 40,
+    recklessRecoilPercent: 20,
+    damagePercent: 20,
+    trainerRegions: ['alola'],
+  },
   formChangesPerBattle: 1,
   // A once-only find in a big loot deck can take a hundred rounds to turn up: from the 5th round done in its area, its
   // odds climb to ×10 at the 50th.
@@ -311,6 +347,13 @@ export const DEFAULT_CONFIG: GameConfig = {
   portalRun: { access: 'off' },
   // The areas' nightmare (docs/30): off until the admin switches it on. Migration 0060 inserts the same row.
   nightmare: { access: 'off' },
+  // Trainer looks (docs/31): off until the admin switches them on; the old free list stays meanwhile.
+  looks: { access: 'off' },
+  // Day and night in Johto (docs/32): off until the admin switches it on. Migration 0061 inserts the same row.
+  dayNight: { access: 'off' },
+  // Double battles (docs/33): off until the admin switches them on; from Hoenn on, 10 % of the wild encounters.
+  // Migration 0062 inserts the same row.
+  doubleBattles: { access: 'off', regions: ['hoenn', 'sinnoh', 'unova', 'kalos', 'alola', 'galar', 'paldea'], wildChance: 10 },
   // The Link Cable and the Bait (docs/25): off until the admin switches each on.
   itemSwitches: { 'link-cable': 'off', bait: 'off' },
   // The General upgrades (docs/25): off until the admin switches them on. A whole region's combos and dice cost about
@@ -386,5 +429,43 @@ export const DEFAULT_CONFIG: GameConfig = {
       },
     },
     areas: {},
+  },
+  // The Underground (docs/34): off until the admin switches it on. Shapes follow Platinum's treasures, whose large
+  // sphere is half again the small one: small orb 1×1, medium 2×2, large 3×3, a plate 3×2, a fossil 2×2. A 6×6 wall of 1–3 layers (30 / 40 / 30 %) hides 2–4
+  // things and takes 15 strikes. Free kits: 3 a day, one every 8 h, at most 3 waiting. The pickaxe's 8 levels each
+  // raise one face by 1, from five 1s and a 2 to three 2s and three 3s. Prices are a first guess for the balance pass
+  // (tests/engine/underground.test.ts reports a wall's yield per pickaxe level).
+  underground: {
+    access: 'off',
+    kits: { price: 1000, limit: 10, freeAmount: 3, freePeriodHours: 24, freeCap: 3 },
+    wall: { cols: 6, rows: 6, strikes: 15, layers: [30, 40, 30], itemsMin: 2, itemsMax: 4, neighbourLoss: 1 },
+    loot: {
+      weights: { orbS: 40, orbM: 25, orbL: 10, fossil: 8, plate: 3 },
+      shapes: {
+        orbS: { w: 1, h: 1 },
+        orbM: { w: 2, h: 2 },
+        orbL: { w: 3, h: 3 },
+        fossil: { w: 2, h: 2 },
+        plate: { w: 3, h: 2 },
+      },
+      colours: { red: 34, blue: 33, green: 33 },
+    },
+    prices: {
+      red: { s: 100, m: 300, l: 800 },
+      blue: { s: 100, m: 300, l: 800 },
+      green: { s: 100, m: 300, l: 800 },
+    },
+    pickaxe: [
+      { faces: [1, 1, 1, 1, 1, 2], price: 0 },
+      { faces: [1, 1, 1, 1, 2, 2], price: 500 },
+      { faces: [1, 1, 1, 2, 2, 2], price: 1000 },
+      { faces: [1, 1, 2, 2, 2, 2], price: 1500 },
+      { faces: [1, 2, 2, 2, 2, 2], price: 2500 },
+      { faces: [2, 2, 2, 2, 2, 2], price: 4000 },
+      { faces: [2, 2, 2, 2, 2, 3], price: 6000 },
+      { faces: [2, 2, 2, 2, 3, 3], price: 8000 },
+      { faces: [2, 2, 2, 3, 3, 3], price: 10000 },
+    ],
+    sellNeedsFull: true,
   },
 }

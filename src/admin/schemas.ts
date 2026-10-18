@@ -1,7 +1,7 @@
 // Zod row schemas for every config table (snake_case, as stored). Errors are shown in the cell; saving is blocked.
 import { z } from 'zod'
 import type { Row, TableName } from '@/config/mapping'
-import { BATTLE_BACKGROUNDS, COMBO_KEYS, EVENT_ACCESS, POKE_TYPES, STATUS_KINDS, TRICK_TIERS } from '@/engine/types'
+import { BATTLE_BACKGROUNDS, COMBO_KEYS, DAY_TIMES, EVENT_ACCESS, POKE_TYPES, STATUS_KINDS, TRICK_TIERS } from '@/engine/types'
 
 const pokeType = z.enum(POKE_TYPES)
 const background = z.enum(BATTLE_BACKGROUNDS)
@@ -32,6 +32,7 @@ const itemEffect = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('ball'), bonus: int(0, 12) }),
   z.object({ kind: z.literal('link') }),
   z.object({ kind: z.literal('bait'), faces: z.array(int(0, 12)).length(6, 'exactly 6 faces') }),
+  z.object({ kind: z.literal('megaGem'), mega: int(1, 99999) }),
 ])
 
 /** One rarity tier of Trick or Treat (docs/29): its weight, its sections (from 0, rising, inside the flee zone) and flee. */
@@ -249,23 +250,33 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
       weight: int(0),
       min_level: int(1, 100),
       max_level: int(1, 100),
+      // Day and night (docs/32): met only by day or only by night; null = any time.
+      time_of_day: z.enum(DAY_TIMES).nullable().optional(),
     })
     .refine((r) => r.max_level >= r.min_level, { message: 'max below min', path: ['max_level'] }),
-  trainers: z.object({
-    id: uuid,
-    name: z.string().min(1),
-    sprite_url: z.string().nullable(),
-    team: z
-      .array(z.object({ dex: int(1), level: int(1, 100), shiny: z.boolean().optional() }))
-      .min(1, '1–3 Pokémon')
-      .max(3, '1–3 Pokémon'),
-    role: z.enum(['trainer', 'leader', 'elite', 'champion']),
-    badge: z.string().nullable(),
-    upgrade_level: int(1, 10).nullable().optional(),
-    battle_background: background.nullable().optional(),
-    rival_of: int(1).nullable().optional(),
-    items: z.array(z.string().min(1)).max(3, 'one potion per Pokémon').nullable().optional(),
-  }),
+  trainers: z
+    .object({
+      id: uuid,
+      name: z.string().min(1),
+      sprite_url: z.string().nullable(),
+      team: z
+        .array(z.object({ dex: int(1), level: int(1, 100), shiny: z.boolean().optional() }))
+        .min(1, '1–3 Pokémon')
+        .max(3, '1–3 Pokémon'),
+      role: z.enum(['trainer', 'leader', 'elite', 'champion']),
+      badge: z.string().nullable(),
+      upgrade_level: int(1, 10).nullable().optional(),
+      battle_background: background.nullable().optional(),
+      rival_of: int(1).nullable().optional(),
+      items: z.array(z.string().min(1)).max(3, 'one potion per Pokémon').nullable().optional(),
+      // Two Pokémon out at once where double battles are on (docs/33): a pair needs a second one to send out.
+      duo: z.boolean().optional(),
+    })
+    .refine((r) => !r.duo || r.team.length >= 2, { message: 'a duo needs 2 Pokémon', path: ['duo'] })
+    .refine((r) => !r.duo || (r.role !== 'elite' && r.role !== 'champion'), {
+      message: 'the Elite Four and Champion never fight doubles',
+      path: ['duo'],
+    }),
   area_trainer_pool: z.object({ id: uuid, area_id: uuid, trainer_id: uuid, weight: int(0) }),
   area_loot_pool: z
     .object({

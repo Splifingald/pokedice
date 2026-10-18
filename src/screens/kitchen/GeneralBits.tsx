@@ -1,7 +1,7 @@
 // Kitchen sink (dev only): the General upgrades (docs/25) — the tab's cards in each state, its rules pop-up and INFO,
 // the offline earnings' card, and golden names wherever a trainer's name shows.
 import { useState } from 'react'
-import { BoardRow } from '@/components/BoardRow'
+import { BoardGap, BoardRow } from '@/components/BoardRow'
 import { GeneralRulesModal, OfflineReportModal } from '@/components/GeneralRules'
 import { PixelButton } from '@/components/PixelButton'
 import { PixelIcon } from '@/components/icons'
@@ -147,6 +147,10 @@ export function GeneralBits() {
           team={[{ dex: 9, level: 66 }]}
           value="Lv.66"
         />
+        {/* Rows a long board leaves out (past its top 100, away from you and your friends): one and many. */}
+        <BoardGap count={1} />
+        <BoardRow rank={120} look="/characters/red.png" name="Gold" team={[{ dex: 155, level: 40 }]} value="Lv.40" />
+        <BoardGap count={1342} />
       </ol>
     </div>
   )

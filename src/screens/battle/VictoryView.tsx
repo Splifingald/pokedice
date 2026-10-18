@@ -31,7 +31,7 @@ import { TrainerSprite } from '@/components/TrainerArt'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { ItemSprite } from '@/components/ItemSprite'
 import { milestoneText, money, trainerTitle, typeName } from '@/lib/format'
-import { t } from '@/i18n'
+import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { usePace } from '@/lib/pace'
 import { BadgeIcon } from '@/components/BadgeIcon'
@@ -659,7 +659,10 @@ export function VictoryView() {
         <h2 className="m-0 text-[28px] font-normal leading-none">{title}</h2>
         {enemy && (
           <div className="min-w-0 truncate text-lg text-muted">
-            {t('ui.victory.foeDefeated', { name: enemy.name, level: enemy.level })}
+            {battle?.state.double
+              ? // A double battle (docs/33): every foe it had.
+                t('ui.victory.foesDefeated', { names: joinList(battle.state.double.foes.map((f) => f.name)) })
+              : t('ui.victory.foeDefeated', { name: enemy.name, level: enemy.level })}
           </div>
         )}
       </div>

@@ -1,6 +1,8 @@
 import { useMemo, type ReactNode } from 'react'
 import {
+  ARCEUS_DEX,
   choiceFormsOf,
+  plateTypes,
   COPIES_FOE_DICE,
   effectiveStats,
   evolutionGate,
@@ -12,7 +14,12 @@ import {
   megaUnlocked,
   gmaxFormsOf,
   gmaxUnlocked,
+  gemOf,
+  gemRulesOn,
+  gmaxBoostOn,
   isTradeEvolution,
+  ownedGems,
+  zUnlocked,
   type DieType,
   type Evolution,
   type GameData,
@@ -35,6 +42,7 @@ import { PixelIcon, type IconName } from './icons'
 import { ItemSprite } from './ItemSprite'
 import { RevivalBar, XpBar } from './MonCard'
 import { SheetSection } from './SheetSection'
+import { PowerInfo } from './PowersRules'
 import { MiniSprite, SpriteImg } from './SpriteImg'
 import { StatChip, statHint, statLabel, type StatKind } from './StatChip'
 import { TypeBadge } from './TypeBadge'
@@ -203,6 +211,11 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
   // Gigantamax has no level: a line under the curve once the player has reached Galar.
   const gmax = save && gmaxUnlocked(save, data) ? gmaxFormsOf(data, species.dex)[0] : undefined
   const megaLevel = data.config.megaEvolution.level
+  // The gem rules (docs/35): no level, a gem — so Mega Evolution leaves the curve for a line under it.
+  const gems = gemRulesOn(data)
+  const held = new Set(save ? ownedGems(save) : [])
+  const boost = gmaxBoostOn(data) ? data.config.gigantamax.boost : null
+  const zOpen = !!save && zUnlocked(save, data)
   type Row = { level: number; m: Milestone } | { level: number; mega: true }
   // Its EVOLVE milestone stays off the curve when only a trade evolves it.
   const tradeOnly =
@@ -212,7 +225,7 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
       .filter((m) => !(tradeOnly && m.effect === 'EVOLVE'))
       .sort((a, b) => a.level - b.level)
       .map((m) => ({ level: m.level, m })),
-    ...(megas.length ? [{ level: megaLevel, mega: true as const }] : []),
+    ...(megas.length && !gems ? [{ level: megaLevel, mega: true as const }] : []),
   ].sort((a, b) => a.level - b.level)
   const ahead = level == null ? ms : ms.filter((r) => r.level > level)
   const done = level == null ? [] : ms.filter((r) => r.level <= level)
@@ -272,17 +285,53 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
   const notes = (
     <>
       {byLevel.length > 1 && <p className="font-pixel-sm text-[15px] text-muted">{t('ui.sheet.oneAtRandom')}</p>}
-      {megas.length > 0 && <p className="copy font-pixel-sm text-[15px] text-muted">{t('ui.sheet.megaNote')}</p>}
+      {megas.length > 0 && !gems && <p className="copy font-pixel-sm text-[15px] text-muted">{t('ui.sheet.megaNote')}</p>}
+      {megas.length > 0 && gems && (
+        <div className="flex flex-col gap-1">
+          {megas.map((x) => {
+            const gem = gemOf(data, x.dex)
+            return (
+              <p key={x.dex} className="copy flex flex-wrap items-center gap-1 font-pixel-sm text-[15px]">
+                <MiniSprite dex={x.dex} size={28} className="-my-2" />
+                <b className="font-normal">{x.name}</b>({t('ui.sheet.msAddDie', { to: typeName(megaDie(species, x)) })})
+                {gem && (
+                  <Chip tone={held.has(gem.key) ? 'gold' : 'plain'}>
+                    {t(held.has(gem.key) ? 'ui.sheet.gemHeld' : 'ui.sheet.gemNeeded', { gem: gem.name })}
+                  </Chip>
+                )}
+              </p>
+            )
+          })}
+          <p className="copy font-pixel-sm text-[15px] text-muted">
+            {t('ui.sheet.megaGemNote', { n: data.config.megaEvolution.gems.turns })}
+          </p>
+          <PowerInfo kind="mega" />
+        </div>
+      )}
       {gmax && (
         <p className="copy flex items-center gap-1 font-pixel-sm text-[15px]">
           <MiniSprite dex={gmax.dex} size={28} className="-my-2" />
           <span>
-            {t(`ui.sheet.gmaxNote.${data.config.gigantamax.turns === 1 ? 'one' : 'other'}`, {
-              to: typeName(megaDie(species, gmax)),
-              n: data.config.gigantamax.turns,
-            })}
+            {boost
+              ? t(`ui.sheet.gmaxBoostNote.${data.config.gigantamax.turns === 1 ? 'one' : 'other'}`, {
+                  to: typeName(megaDie(species, gmax)),
+                  dice: boost.dice,
+                  heal: boost.healPercent,
+                  n: data.config.gigantamax.turns,
+                })
+              : t(`ui.sheet.gmaxNote.${data.config.gigantamax.turns === 1 ? 'one' : 'other'}`, {
+                  to: typeName(megaDie(species, gmax)),
+                  n: data.config.gigantamax.turns,
+                })}
           </span>
         </p>
+      )}
+      {gmax && boost && <PowerInfo kind="gmax" />}
+      {zOpen && (
+        <>
+          <p className="copy font-pixel-sm text-[15px] text-muted">{t('ui.sheet.zNote')}</p>
+          <PowerInfo kind="z" />
+        </>
       )}
     </>
   )
@@ -384,6 +433,8 @@ export function PokemonSheet({
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
+  const save = useGame((s) => s.save)
+  const plates = save ? plateTypes(save, data) : undefined
   const species = getSpecies(data, dex)
   const level = inst?.level ?? 1
   const stats = effectiveStats(species, level, data)
@@ -464,6 +515,14 @@ export function PokemonSheet({
         )}
         {choiceFormsOf(data, species.dex).length > 0 && (
           <p className="copy font-pixel-sm text-[15px]">{t('ui.sheet.choiceForm', { n: data.config.formChangesPerBattle })}</p>
+        )}
+        {/* Arceus's plates (docs/34): the types it may take, while the Underground is on. */}
+        {plates && species.dex === ARCEUS_DEX && (
+          <p className="copy font-pixel-sm text-[15px]" data-testid="arceus-plates">
+            {plates.length
+              ? t('ui.ug.sheetPlates', { types: plates.map((p) => typeName(p)).join(', '), n: plates.length, total: 17 })
+              : t('ui.ug.sheetNoPlates')}
+          </p>
         )}
         <ul className="grid gap-3">
           {groups.map(({ type, n }) => {

@@ -51,6 +51,7 @@ export function NightmareRaidBits() {
     message: '',
     hp: {},
     activeUid: own.uid,
+    foeUid: 'enemy',
     fainted: {},
     dex: {},
     wornOut: {},

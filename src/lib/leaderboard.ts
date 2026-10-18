@@ -1,7 +1,8 @@
 // The leaderboard: every cloud save (signed-in players only, Google or Discord) played in the last 72 hours, ranked by best level,
 // campaign progress, Pokédex, shinies caught or raids won. The rows come from the `leaderboard()` SQL function, which leaves inactive players out
 // (migration 0023), and a region's row out until the player holds a badge there (0024); ranking happens here, against
-// the game data. Level, Progression and Pokédex are one board per region; Shiny and Raids span every region (0054).
+// the game data. Level, Progression and Pokédex are one board per region; Shiny and Raids span every region (0054)
+// and hold only the trainers with at least one shiny / raid won.
 import { linearAreas } from '@/engine/data'
 import { regionSpecies } from '@/engine/regions'
 import type { GameData, RegionId } from '@/engine/types'
@@ -75,10 +76,18 @@ export function clearedRegion(row: LeaderboardRow, data: GameData): boolean {
 /** Shiny and Raids rank a trainer once, over every region, not once per region played. */
 export const crossRegion = (tab: LeaderboardTab) => tab === 'shiny' || tab === 'raids'
 
-/** The rows this tab's board ranks: the region's own, or one per trainer on a cross-region board. */
+/** What Shiny and Raids count; a trainer at 0 on it isn't on that board at all. */
+const crossScore = (row: LeaderboardRow, tab: LeaderboardTab) => (tab === 'shiny' ? row.shinies : row.raidsWon)
+
+/**
+ * The rows this tab's board ranks: the region's own, or one per trainer on a cross-region board. Shiny and Raids leave
+ * out whoever has no shiny / no raid won yet (the user's ask of 2026-10-18): a long tail of zeros ranks nobody.
+ */
 function boardRows(rows: LeaderboardRow[], tab: LeaderboardTab, region: RegionId): LeaderboardRow[] {
-  if (crossRegion(tab) && rows.every((r) => r.lead !== undefined)) return rows.filter((r) => r.lead)
-  return rows.filter((r) => r.region === region)
+  if (!crossRegion(tab)) return rows.filter((r) => r.region === region)
+  const scored = rows.filter((r) => crossScore(r, tab) > 0)
+  if (rows.every((r) => r.lead !== undefined)) return scored.filter((r) => r.lead)
+  return scored.filter((r) => r.region === region)
 }
 
 /**
@@ -204,6 +213,37 @@ export function parseLeaderboard(raw: RawRow[]): LeaderboardRow[] {
  */
 export function friendsOnly<T extends { isMe: boolean; friendId: string | null }>(rows: T[]): T[] {
   return rows.filter((r) => r.isMe || !!r.friendId)
+}
+
+/** The real top of every board, always shown. */
+export const BOARD_TOP = 100
+/** Past the top, how many trainers either side of you are shown. */
+export const BOARD_AROUND = 10
+
+/** A shown row, or a run of hidden ones and how many it holds. */
+export type BoardItem<T> = { row: T } | { gap: number }
+
+/**
+ * What a board shows of a long ranking (the user's ask of 2026-10-18): its real top 100, every friend wherever they
+ * are, and you with the 10 trainers ahead of you and the 10 behind. Ranks are the whole board's, given before this;
+ * each run of rows left out becomes one gap saying how many, the last one included so the board doesn't look ended.
+ */
+export function boardWindow<T extends { isMe: boolean; friendId: string | null }>(rows: T[]): BoardItem<T>[] {
+  const me = rows.findIndex((r) => r.isMe)
+  const items: BoardItem<T>[] = []
+  let hidden = 0
+  rows.forEach((row, i) => {
+    const near = me >= 0 && Math.abs(i - me) <= BOARD_AROUND
+    if (i >= BOARD_TOP && !near && !row.isMe && !row.friendId) {
+      hidden++
+      return
+    }
+    if (hidden) items.push({ gap: hidden })
+    hidden = 0
+    items.push({ row })
+  })
+  if (hidden) items.push({ gap: hidden })
+  return items
 }
 
 /** A short reason for the error line. PGRST202 = the database has no leaderboard() (migration 0011 not run). */

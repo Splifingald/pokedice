@@ -23,6 +23,7 @@ import {
   pityMultiplier,
   progressOf,
   recordDraws,
+  uniqueFindChances,
   reduce,
   rollCatch,
   sureThrow,
@@ -154,6 +155,16 @@ describe('loot', () => {
     it('below the threshold the draw is exactly the deck, as before', () => {
       const off: GameData = { ...d, config: { ...d.config, uniquePity: { ...pity, maxMultiplier: 1 } } }
       for (const seed of [1, 2, 3]) expect(drawLoot(area, after(5), d, createRng(seed))).toEqual(drawLoot(area, after(5), off, createRng(seed)))
+    })
+
+    it("the area's sheet shows the same odds the draw gives, per once-only find still to be made", () => {
+      expect(uniqueFindChances(area, after(0), d).get('candy')).toBeCloseTo(0.01)
+      expect(uniqueFindChances(area, after(50), d).get('candy')).toBeCloseTo(candyRate(50), 1)
+      const twin = { ...candy, id: 'candy-2' }
+      const twinned = { ...area, lootPool: [candy, twin, bigDeck] }
+      const chances = uniqueFindChances(twinned, { ...after(0), uniqueFound: ['candy'] }, withArea(twinned))
+      expect([...chances.keys()]).toEqual(['candy-2']) // the one already picked up is gone
+      expect(chances.get('candy-2')).toBeCloseTo(0.01)
     })
 
     it('a pity find leaves the loot deck as it was; its card is skipped once it has been picked up', () => {

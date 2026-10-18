@@ -15,6 +15,7 @@ import { TREAT_URL, treatTimeline } from '@/fx/timelines/trick'
 import { loadTrickBall } from '@/fx/scenes'
 import { centerTimeline } from '@/fx/timelines/center'
 import { gmaxEndTimeline, gmaxFor, megaFor, unleashTimeline } from '@/fx/timelines/forms'
+import { zAwayTimeline, zMoveTimeline, zStrikeTimeline } from '@/fx/timelines/zmove'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { breachTimeline, closeTimeline, victoryTimeline, wildGlitchTimeline } from '@/fx/timelines/portal'
 import { raidEntranceTimeline } from '@/fx/timelines/portalRaid'
@@ -531,6 +532,66 @@ const PRESETS: Preset[] = [
         short: o.short,
       }),
   },
+  {
+    name: 'Z-Move (Pikachu, Electric)',
+    sprites: [
+      [25, true],
+      [130, false],
+    ],
+    make: (o) =>
+      zMoveTimeline({ own: own(25), foe: foe(130), side: 'own', type: 'electric', short: o.short }),
+  },
+  {
+    name: "Z-Move (a trainer's Decidueye, Grass)",
+    sprites: [
+      [258, true],
+      [724, false],
+    ],
+    make: (o) => zMoveTimeline({ own: own(258), foe: foe(724), side: 'foe', type: 'grass', short: o.short }),
+  },
+  {
+    name: 'Z-Move strike (Pikachu, Electric)',
+    sprites: [
+      [25, true],
+      [130, false],
+    ],
+    make: (o) =>
+      zStrikeTimeline({ own: own(25), foe: foe(130), side: 'own', type: 'electric', short: o.short }),
+  },
+  {
+    name: "Z-Move strike (a trainer's Decidueye, Grass)",
+    sprites: [
+      [258, true],
+      [724, false],
+    ],
+    make: (o) =>
+      zStrikeTimeline({ own: own(258), foe: foe(724), side: 'foe', type: 'grass', short: o.short }),
+  },
+  ...(['fly', 'dig', 'dive'] as const).flatMap((how) => {
+    const [dex, type] =
+      how === 'fly'
+        ? ([6, 'flying'] as const)
+        : how === 'dig'
+          ? ([51, 'ground'] as const)
+          : ([9, 'water'] as const)
+    const sprites: [number, boolean][] = [
+      [dex, true],
+      [143, false],
+    ]
+    return [
+      {
+        name: `Z-Move away: ${how}`,
+        sprites,
+        make: (o: Opts) => zAwayTimeline({ own: own(dex), foe: foe(143), side: 'own', how, short: o.short }),
+      },
+      {
+        name: `Z-Move strike, back from ${how}`,
+        sprites,
+        make: (o: Opts) =>
+          zStrikeTimeline({ own: own(dex), foe: foe(143), side: 'own', type, from: how, short: o.short }),
+      },
+    ]
+  }),
 ]
 
 export function FxLab() {

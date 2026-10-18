@@ -20,6 +20,13 @@ export interface Fx {
   message: string
   hp: Record<string, number>
   activeUid: string
+  /** The foe in front (a double battle's acting or targeted one, docs/33; else the one foe). */
+  foeUid: string
+  /**
+   * A double battle's Pokémon out, as the log has played (the state may be past it), left to right: a K.O.'d one stays
+   * (fainted) until another takes its spot.
+   */
+  field?: { own: string[]; foes: string[] }
   fainted: Record<string, boolean>
   /**
    * The form each Pokémon shows, as the log has played so far: the state is already past the log (a Gigantamax has
@@ -41,6 +48,8 @@ export interface Fx {
   chip: { id: number; text: string } | null
   /** A cry the screen plays: a Mega's, once it stands there. */
   cry: { id: number; dex: number } | null
+  /** Pokémon away after a Flying, Ground or Water Z-Move (docs/35): the stage doesn't draw them until they strike. */
+  away?: Record<string, 'fly' | 'dig' | 'dive'>
 }
 
 /** What the battle stage plays for a log entry (src/fx timelines). */
@@ -48,7 +57,9 @@ export interface Scene {
   id: number
   /** The log entry it belongs to. */
   cursor: number
-  kind: 'attack' | 'mega' | 'gmax' | 'gmaxEnd' | 'unleash'
+  kind: 'attack' | 'mega' | 'gmax' | 'gmaxEnd' | 'unleash' | 'zmove' | 'zstrike' | 'zaway'
+  /** A Z-Move's going away, or the strike's coming back (docs/35). */
+  how?: 'fly' | 'dig' | 'dive'
   /** Who acts: the attacker, or the Pokémon whose form changes. */
   side: Side
   /** The attack's type, or the die an unleashed form gained. */
@@ -79,7 +90,10 @@ const nextId = () => ++seq
 
 function initFx(b: BattleSlice): Fx {
   const hp: Record<string, number> = { [b.state.enemy.uid]: b.state.enemy.hp }
+  for (const f of b.state.double?.foes ?? []) hp[f.uid] = f.hp
   for (const p of b.state.player) hp[p.uid] = p.hp
+  // A double battle's log starts from its opening pair; its focus entries move the pair from there.
+  const opening = b.log[0]?.kind === 'start' ? b.log[0].double : undefined
   // The forms as of the log's start: replaying it from there changes them on its form entries.
   const dex: Record<string, number> = {}
   for (const e of b.log) if (e.kind === 'form' && !(e.uid in dex)) dex[e.uid] = e.fromDex
@@ -87,7 +101,9 @@ function initFx(b: BattleSlice): Fx {
     cursor: 0,
     message: '',
     hp,
-    activeUid: activeBattler(b.state).uid,
+    activeUid: opening?.own[0] ?? activeBattler(b.state).uid,
+    foeUid: opening?.foes[0] ?? b.state.enemy.uid,
+    ...(opening && { field: { own: [...opening.own], foes: [...opening.foes] } }),
     fainted: {},
     dex,
     wornOut: {},
@@ -101,6 +117,7 @@ function initFx(b: BattleSlice): Fx {
     scene: null,
     chip: null,
     cry: null,
+    away: {},
   }
 }
 
@@ -125,12 +142,24 @@ const STATUS_TEXT: Record<StatusKind, (n: string, stacks?: number) => string> = 
 }
 
 export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
+  const foes = st.double?.foes ?? [st.enemy]
   const nameOf = (uid: string) =>
-    uid === st.enemy.uid ? st.enemy.name : (st.player.find((p) => p.uid === uid)?.name ?? t('ui.common.unknown'))
-  const sideUid = (side: Side, f: Fx) => (side === 'enemy' ? st.enemy.uid : f.activeUid)
+    (foes.find((f) => f.uid === uid) ?? st.player.find((p) => p.uid === uid))?.name ?? t('ui.common.unknown')
+  const sideUid = (side: Side, f: Fx) => (side === 'enemy' ? f.foeUid : f.activeUid)
+  const names = (uids: readonly string[]) => uids.map(nameOf)
 
   switch (e.kind) {
     case 'start': {
+      if (e.double) {
+        const [foe = '', foe2 = ''] = names(e.double.foes)
+        const [lead = '', lead2] = names(e.double.own)
+        const go = lead2 ? t('ui.log.goPair', { a: lead, b: lead2 }) : t('ui.log.goName', { name: lead })
+        const text =
+          ctx.kind === 'wild'
+            ? t('ui.log.startWildPair', { foe, foe2, go })
+            : t('ui.log.startTrainerPair', { trainer: ctx.trainerName ?? t('ui.log.theTrainer'), foe, foe2, go })
+        return { delay: 1300, apply: (f) => ({ ...f, message: text }) }
+      }
       const lead = activeBattler(st).name
       const text =
         ctx.kind === 'wild'
@@ -149,7 +178,7 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           fly: null,
           chip: e.side === 'player' ? f.chip : null,
           message:
-            e.side === 'player' ? t('ui.log.whatWillDo', { name: nameOf(e.uid) }) : t('ui.log.foeRolls', { foe: st.enemy.name }),
+            e.side === 'player' ? t('ui.log.whatWillDo', { name: nameOf(e.uid) }) : t('ui.log.foeRolls', { foe: nameOf(e.uid) }),
         }),
       }
     case 'roll':
@@ -165,7 +194,7 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
         apply: (f) => ({
           ...f,
           message:
-            e.side === 'enemy' ? t('ui.log.foeRerolls', { foe: st.enemy.name, count: e.mask.filter(Boolean).length }) : f.message,
+            e.side === 'enemy' ? t('ui.log.foeRerolls', { foe: nameOf(f.foeUid), count: e.mask.filter(Boolean).length }) : f.message,
           tray: {
             side: e.side,
             dice: e.dice,
@@ -180,7 +209,7 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       const target = nameOf(e.targetUid)
       const combo = r.combo ? `${comboName(r.combo.key).toUpperCase()}! ` : ''
       const textFor = (f: Fx) => {
-        const attacker = e.side === 'enemy' ? st.enemy.name : nameOf(f.activeUid)
+        const attacker = nameOf(sideUid(e.side, f))
         if (r.immune) return t('ui.log.noEffect', { target })
         return t('ui.log.dealt', { combo, attacker, amount: e.amount })
       }
@@ -196,12 +225,19 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       return {
         delay: 1300,
         sound: tone === 'super' ? 'super' : tone === 'immune' ? 'error' : 'hit',
-        // The dice fly at the target as the move starts; the HP waits for the hit.
-        apply: (f) => ({ ...f, fly: { id: nextId(), to: e.target } }),
-        // No effect: nothing to animate but the message.
+        // The dice fly at the target as the move starts; the HP waits for the hit. A Z-Move's strike brings back an
+        // attacker that went away.
+        apply: (f) => {
+          const atkUid = e.side === 'enemy' ? st.enemy.uid : f.activeUid
+          const { [atkUid]: _back, ...away } = f.away ?? {}
+          return { ...f, fly: { id: nextId(), to: e.target }, away }
+        },
+        // No effect: nothing to animate but the message. A Z-Move has a strike of its own.
         scene: r.immune
           ? undefined
-          : { kind: 'attack', side: e.side, type: r.attackType ?? r.perDie[0]?.type ?? 'base', damage: e.amount },
+          : e.z
+            ? { kind: 'zstrike', side: e.side, type: r.attackType ?? r.perDie[0]?.type ?? 'base', damage: e.amount, how: e.z.from }
+            : { kind: 'attack', side: e.side, type: r.attackType ?? r.perDie[0]?.type ?? 'base', damage: e.amount },
         land: (f, staged) => ({
           ...f,
           message: textFor(f),
@@ -278,12 +314,36 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           tray: null,
         }),
       }
+    case 'focus':
+      // A double battle's pair in front moves (docs/33): the stage swaps them, big in front, small behind.
+      return { delay: 350, apply: (f) => ({ ...f, activeUid: e.own, foeUid: e.foe, tray: null }) }
+    case 'foe_out':
+      return {
+        delay: 900,
+        apply: (f) => ({
+          ...f,
+          // It takes the spot of the first one K.O.'d.
+          field: f.field && { ...f.field, foes: takeSpot(f.field.foes, e.uid, (u) => !!f.fainted[u]) },
+          fainted: { ...f.fainted, [e.uid]: false },
+          message: t('ui.log.foeSentOut', { trainer: ctx.trainerName ?? t('ui.log.theTrainer'), name: nameOf(e.uid) }),
+          tray: null,
+        }),
+      }
     case 'switch':
       return {
         delay: 800,
         apply: (f) => ({
           ...f,
           activeUid: e.uid,
+          // A double battle: into a K.O.'d one's spot, an empty one, or the spot of the one going back.
+          field: f.field && {
+            ...f.field,
+            own:
+              e.free || f.field.own.some((u) => f.fainted[u])
+                ? takeSpot(f.field.own, e.uid, (u) => !!f.fainted[u])
+                : // Alone on its side, the newcomer joins it; else it takes the place of the one going back.
+                  takeSpot(f.field.own, e.uid, (u) => f.field!.own.length >= 2 && u === f.activeUid),
+          },
           fainted: { ...f.fainted, [e.uid]: false },
           message: t('ui.log.goName', { name: nameOf(e.uid) }),
           tray: null,
@@ -299,7 +359,9 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       const after = ctx.speciesName(e.toDex)
       const mechanic = e.reason === 'mega' ? ctx.megaMechanic(e.toDex) : null
       const text =
-        e.reason === 'mega'
+        e.reason === 'mega' && e.revert
+          ? t('ui.log.megaEnd', { name: after })
+          : e.reason === 'mega'
           ? mechanic === 'primal'
             ? t('ui.log.primal', { name: before })
             : mechanic === 'ultra'
@@ -320,8 +382,16 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       const gained =
         e.side === 'player' && !e.revert && e.die && (e.reason === 'mega' || e.reason === 'gmax')
           ? e.reason === 'mega'
-            ? t('ui.battle.megaDie', { type: typeName(e.die) })
-            : t(`ui.battle.gmaxDie.${ctx.gmaxTurns === 1 ? 'one' : 'other'}`, { type: typeName(e.die), n: ctx.gmaxTurns })
+            ? st.megaTurns
+              ? t('ui.battle.megaDieTimed', { type: typeName(e.die), n: st.megaTurns })
+              : t('ui.battle.megaDie', { type: typeName(e.die) })
+            : st.gmaxBoost
+              ? t(`ui.battle.gmaxBoostDie.${ctx.gmaxTurns === 1 ? 'one' : 'other'}`, {
+                  type: typeName(e.die),
+                  dice: st.gmaxBoost.dice,
+                  n: ctx.gmaxTurns,
+                })
+              : t(`ui.battle.gmaxDie.${ctx.gmaxTurns === 1 ? 'one' : 'other'}`, { type: typeName(e.die), n: ctx.gmaxTurns })
           : null
       const chip = (f: Fx) => (gained ? { id: nextId(), text: gained } : f.chip)
       // A Mega with a cry of its own lets it out in place of the jingle (Showdown has none for the Gigantamax
@@ -332,8 +402,11 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       // The raid's word over the stage, like BREAK!.
       const banner = (f: Fx) =>
         unleash ? { id: nextId(), text: t('ui.raid.unleash'), tone: 'super' as const } : f.banner
+      // A timed Mega changing back (the gem rules) has no scene of its own: the flash, like a form going back.
       const scene: Step['scene'] =
-        e.reason === 'mega'
+        e.reason === 'mega' && e.revert
+          ? undefined
+          : e.reason === 'mega'
           ? { kind: 'mega', side: e.side, fromDex: e.fromDex, toDex: e.toDex }
           : e.reason === 'gmax'
             ? { kind: e.revert ? 'gmaxEnd' : 'gmax', side: e.side, fromDex: e.fromDex, toDex: e.toDex }
@@ -352,6 +425,44 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           : undefined,
       }
     }
+    case 'zmove': {
+      // The power gathers on the stage, then the attack's own scene plays with the next entry.
+      const name = e.side === 'enemy' ? st.enemy.name : nameOf(e.uid)
+      const type = e.type ? typeName(e.type) : t('ui.common.unknown')
+      return {
+        delay: 1100,
+        apply: (f) => ({ ...f, message: t('ui.log.zMove', { name, type }) }),
+        scene: { kind: 'zmove', side: e.side, type: e.type ?? 'base' },
+        land: (f) => ({ ...f, banner: { id: nextId(), text: t('ui.battle.zBanner'), tone: 'super' } }),
+      }
+    }
+    case 'away':
+      return {
+        delay: 1000,
+        apply: (f) => ({ ...f, message: t(`ui.log.zAway.${e.how}`, { name: nameOf(e.uid) }) }),
+        scene: { kind: 'zaway', side: e.side, how: e.how },
+        land: (f) => ({ ...f, away: { ...(f.away ?? {}), [e.uid]: e.how } }),
+      }
+    case 'dodge':
+      return {
+        delay: 1000,
+        sound: 'error',
+        apply: (f) => ({
+          ...f,
+          message: t(`ui.log.zDodge.${e.how}`, { name: nameOf(e.uid) }),
+          banner: { id: nextId(), text: t('ui.log.missBanner'), tone: 'immune' },
+        }),
+      }
+    case 'cleansed':
+      return {
+        delay: 900,
+        sound: 'heal',
+        apply: (f) => ({
+          ...f,
+          message: t('ui.log.zCleansed', { name: nameOf(e.uid) }),
+          status: { id: nextId(), target: e.side, status: 'heal' },
+        }),
+      }
     case 'item': {
       const who = nameOf(e.targetUid)
       const item = ctx.itemName(e.key)
@@ -374,6 +485,11 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           message: text,
           hp: { ...f.hp, [e.targetUid]: e.hpAfter },
           fainted: e.revived ? { ...f.fainted, [e.targetUid]: false } : f.fainted,
+          // A double battle with a spot empty: the revived one stands back up there (docs/33).
+          field:
+            e.revived && f.field && !f.field.own.includes(e.targetUid) && st.double
+              ? { ...f.field, own: takeSpot(f.field.own, e.targetUid, (u) => !!f.fainted[u]) }
+              : f.field,
           pop: e.amount ? { id: nextId(), target: e.side ?? 'player', amount: e.amount, tone: 'heal' } : f.pop,
         }),
       }
@@ -396,10 +512,10 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
         sound: 'hit',
         apply: (f) => ({
           ...f,
-          message: t('ui.log.recoil', { name: nameOf(e.uid), amount: e.amount }),
+          message: t(e.z ? 'ui.log.zRecoil' : 'ui.log.recoil', { name: nameOf(e.uid), amount: e.amount }),
           hp: { ...f.hp, [e.uid]: e.hpAfter },
           pop: { id: nextId(), target: e.side, amount: e.amount, tone: 'normal' },
-          status: { id: nextId(), target: e.side, status: 'confuse' },
+          status: e.z ? f.status : { id: nextId(), target: e.side, status: 'confuse' },
           shake: { id: nextId(), power: 3 },
         }),
       }
@@ -411,7 +527,9 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           tray: null,
           message:
             e.result === 'won'
-              ? t('ui.log.endWon', { foe: st.enemy.name })
+              ? st.double
+                ? t('ui.log.endWonPair')
+                : t('ui.log.endWon', { foe: st.enemy.name })
               : e.result === 'lost'
                 ? t(e.reason === 'forfeit' ? 'ui.log.endForfeit' : 'ui.log.endLost')
                 : t(e.reason === 'stalemate' ? 'ui.log.endStalemate' : 'ui.log.endFled'),
@@ -419,8 +537,14 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       }
   }
   // exhaustive
-  void sideUid
   return { delay: 0, apply: (f) => f }
+}
+
+/** `uid` comes out in the first spot `leaving` says is free (or a third, while one side has a single Pokémon out). */
+function takeSpot(row: readonly string[], uid: string, leaving: (uid: string) => boolean): string[] {
+  const at = row.findIndex(leaving)
+  if (at >= 0) return row.map((u, i) => (i === at ? uid : u))
+  return row.length < 2 ? [...row, uid] : [...row]
 }
 
 /** A scene that never reports back (its stage went away) stops holding the log after this long. */

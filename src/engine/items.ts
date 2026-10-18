@@ -30,7 +30,9 @@ export function itemUses(item: ItemDef): ItemUse[] {
     case 'ball':
     case 'bait':
       return ['catch']
+    // A fossil revives on its own; a Mega Gem is held, not used: the battle reads it (docs/35).
     case 'fossil':
+    case 'megaGem':
       return []
   }
 }
@@ -56,8 +58,12 @@ export const usableIn = (item: ItemDef | undefined, use: ItemUse): boolean => !!
 /** What a ball adds to the catch die (0 for anything else). */
 export const ballBonus = (item: ItemDef | undefined): number => (item?.effect.kind === 'ball' ? item.effect.bonus : 0)
 
-/** What the Mart pays for one: half its price, rounded down. Only items the Mart sells can be sold back (0 = can't). */
-export const sellPrice = (item: ItemDef | undefined): number => (item?.inShop ? Math.floor(item.price / 2) : 0)
+/**
+ * What the Mart pays for one: half its price, rounded down. Only items the Mart sells can be sold back (0 = can't); a
+ * Mega Gem never is (docs/35).
+ */
+export const sellPrice = (item: ItemDef | undefined): number =>
+  item?.inShop && item.effect.kind !== 'megaGem' ? Math.floor(item.price / 2) : 0
 
 /**
  * The Poké Mart's stock, by badge tier then price; `unlocked` once the player holds enough badges and has reached the
@@ -124,13 +130,30 @@ export function buildLootDeck(pool: readonly LootEntry[], rng: Rng): string[] {
  */
 function pityFind(pool: readonly LootEntry[], size: number, progress: AreaProgress, data: GameData, rng: Rng): LootEntry | null {
   const uniques = pool.filter((e) => e.unique)
-  if (!uniques.length) return null
+  const extra = pityExtra(uniques, size, progress, data)
+  return extra > 0 && rng.next() < extra ? rng.pick(uniques) : null
+}
+
+/** The pity roll's chance of handing out one of `uniques` before the deck is drawn; 0 while the pity is ×1. */
+function pityExtra(uniques: readonly LootEntry[], size: number, progress: AreaProgress, data: GameData): number {
+  if (!uniques.length || !size) return 0
   const share = uniques.reduce((sum, e) => sum + lootCopies(e), 0) / size
   const chance = pityChance(share, progress.roundsDone ?? 0, data.config.uniquePity)
-  if (chance <= share) return null
   // chance = extra + (1 − extra) × share: the roll, else the deck as usual.
-  const extra = (chance - share) / (1 - share)
-  return rng.next() < extra ? rng.pick(uniques) : null
+  return chance > share ? (chance - share) / (1 - share) : 0
+}
+
+/**
+ * The chance an item find in this area is each one-time find still to be made, by entry id: the pity roll's even
+ * share of it, else its one card in the loot deck. The odds over a whole deck, for the area's sheet: which cards are
+ * left in the current deal is not read.
+ */
+export function uniqueFindChances(area: Area, progress: AreaProgress, data: GameData): Map<string, number> {
+  const pool = lootPoolFor(area, progress, data)
+  const size = pool.reduce((sum, e) => sum + lootCopies(e), 0)
+  const uniques = pool.filter((e) => e.unique)
+  const extra = pityExtra(uniques, size, progress, data)
+  return new Map(uniques.map((e) => [e.id, extra / uniques.length + ((1 - extra) * lootCopies(e)) / size]))
 }
 
 /**

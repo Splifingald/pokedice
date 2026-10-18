@@ -970,5 +970,1240 @@
   },
   "inShop": true,
   "shopBadges": 7
+ },
+ {
+  "key": "venusaurite",
+  "name": "Venusaurite",
+  "description": "Lets Venusaur Mega Evolve into Mega Venusaur in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/venusaurite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10033
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "charizardite-x",
+  "name": "Charizardite X",
+  "description": "Lets Charizard Mega Evolve into Mega Charizard X in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/charizardite-x.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10034
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "charizardite-y",
+  "name": "Charizardite Y",
+  "description": "Lets Charizard Mega Evolve into Mega Charizard Y in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/charizardite-y.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10035
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "blastoisinite",
+  "name": "Blastoisinite",
+  "description": "Lets Blastoise Mega Evolve into Mega Blastoise in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/blastoisinite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10036
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "alakazite",
+  "name": "Alakazite",
+  "description": "Lets Alakazam Mega Evolve into Mega Alakazam in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/alakazite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10037
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "gengarite",
+  "name": "Gengarite",
+  "description": "Lets Gengar Mega Evolve into Mega Gengar in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/gengarite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10038
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "kangaskhanite",
+  "name": "Kangaskhanite",
+  "description": "Lets Kangaskhan Mega Evolve into Mega Kangaskhan in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/kangaskhanite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10039
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "pinsirite",
+  "name": "Pinsirite",
+  "description": "Lets Pinsir Mega Evolve into Mega Pinsir in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/pinsirite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10040
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "gyaradosite",
+  "name": "Gyaradosite",
+  "description": "Lets Gyarados Mega Evolve into Mega Gyarados in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/gyaradosite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10041
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "aerodactylite",
+  "name": "Aerodactylite",
+  "description": "Lets Aerodactyl Mega Evolve into Mega Aerodactyl in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/aerodactylite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10042
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "mewtwonite-x",
+  "name": "Mewtwonite X",
+  "description": "Lets Mewtwo Mega Evolve into Mega Mewtwo X in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/mewtwonite-x.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10043
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "mewtwonite-y",
+  "name": "Mewtwonite Y",
+  "description": "Lets Mewtwo Mega Evolve into Mega Mewtwo Y in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/mewtwonite-y.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10044
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "ampharosite",
+  "name": "Ampharosite",
+  "description": "Lets Ampharos Mega Evolve into Mega Ampharos in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ampharosite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10045
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "scizorite",
+  "name": "Scizorite",
+  "description": "Lets Scizor Mega Evolve into Mega Scizor in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/scizorite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10046
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "heracronite",
+  "name": "Heracronite",
+  "description": "Lets Heracross Mega Evolve into Mega Heracross in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/heracronite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10047
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "houndoominite",
+  "name": "Houndoominite",
+  "description": "Lets Houndoom Mega Evolve into Mega Houndoom in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/houndoominite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10048
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "tyranitarite",
+  "name": "Tyranitarite",
+  "description": "Lets Tyranitar Mega Evolve into Mega Tyranitar in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/tyranitarite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10049
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "blazikenite",
+  "name": "Blazikenite",
+  "description": "Lets Blaziken Mega Evolve into Mega Blaziken in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/blazikenite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10050
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "gardevoirite",
+  "name": "Gardevoirite",
+  "description": "Lets Gardevoir Mega Evolve into Mega Gardevoir in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/gardevoirite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10051
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "mawilite",
+  "name": "Mawilite",
+  "description": "Lets Mawile Mega Evolve into Mega Mawile in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/mawilite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10052
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "aggronite",
+  "name": "Aggronite",
+  "description": "Lets Aggron Mega Evolve into Mega Aggron in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/aggronite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10053
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "medichamite",
+  "name": "Medichamite",
+  "description": "Lets Medicham Mega Evolve into Mega Medicham in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/medichamite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10054
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "manectite",
+  "name": "Manectite",
+  "description": "Lets Manectric Mega Evolve into Mega Manectric in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/manectite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10055
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "banettite",
+  "name": "Banettite",
+  "description": "Lets Banette Mega Evolve into Mega Banette in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/banettite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10056
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "absolite",
+  "name": "Absolite",
+  "description": "Lets Absol Mega Evolve into Mega Absol in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/absolite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10057
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "garchompite",
+  "name": "Garchompite",
+  "description": "Lets Garchomp Mega Evolve into Mega Garchomp in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/garchompite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10058
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "lucarionite",
+  "name": "Lucarionite",
+  "description": "Lets Lucario Mega Evolve into Mega Lucario in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/lucarionite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10059
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "abomasite",
+  "name": "Abomasite",
+  "description": "Lets Abomasnow Mega Evolve into Mega Abomasnow in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/abomasite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10060
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "latiasite",
+  "name": "Latiasite",
+  "description": "Lets Latias Mega Evolve into Mega Latias in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/latiasite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10062
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "latiosite",
+  "name": "Latiosite",
+  "description": "Lets Latios Mega Evolve into Mega Latios in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/latiosite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10063
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "swampertite",
+  "name": "Swampertite",
+  "description": "Lets Swampert Mega Evolve into Mega Swampert in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/swampertite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10064
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "sceptilite",
+  "name": "Sceptilite",
+  "description": "Lets Sceptile Mega Evolve into Mega Sceptile in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/sceptilite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10065
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "sablenite",
+  "name": "Sablenite",
+  "description": "Lets Sableye Mega Evolve into Mega Sableye in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/sablenite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10066
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "altarianite",
+  "name": "Altarianite",
+  "description": "Lets Altaria Mega Evolve into Mega Altaria in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/altarianite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10067
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "galladite",
+  "name": "Galladite",
+  "description": "Lets Gallade Mega Evolve into Mega Gallade in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/galladite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10068
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "audinite",
+  "name": "Audinite",
+  "description": "Lets Audino Mega Evolve into Mega Audino in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/audinite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10069
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "sharpedonite",
+  "name": "Sharpedonite",
+  "description": "Lets Sharpedo Mega Evolve into Mega Sharpedo in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/sharpedonite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10070
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "slowbronite",
+  "name": "Slowbronite",
+  "description": "Lets Slowbro Mega Evolve into Mega Slowbro in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/slowbronite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10071
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "steelixite",
+  "name": "Steelixite",
+  "description": "Lets Steelix Mega Evolve into Mega Steelix in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/steelixite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10072
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "pidgeotite",
+  "name": "Pidgeotite",
+  "description": "Lets Pidgeot Mega Evolve into Mega Pidgeot in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/pidgeotite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10073
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "glalitite",
+  "name": "Glalitite",
+  "description": "Lets Glalie Mega Evolve into Mega Glalie in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/glalitite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10074
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "diancite",
+  "name": "Diancite",
+  "description": "Lets Diancie Mega Evolve into Mega Diancie in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/diancite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10075
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "metagrossite",
+  "name": "Metagrossite",
+  "description": "Lets Metagross Mega Evolve into Mega Metagross in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/metagrossite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10076
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "blue-orb",
+  "name": "Blue Orb",
+  "description": "Lets Kyogre undergo Primal Reversion in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/blue-orb.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10077
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "red-orb",
+  "name": "Red Orb",
+  "description": "Lets Groudon undergo Primal Reversion in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/red-orb.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10078
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "meteorite",
+  "name": "Meteorite",
+  "description": "Lets Rayquaza Mega Evolve into Mega Rayquaza in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/meteorite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10079
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "cameruptite",
+  "name": "Cameruptite",
+  "description": "Lets Camerupt Mega Evolve into Mega Camerupt in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/cameruptite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10087
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "lopunnite",
+  "name": "Lopunnite",
+  "description": "Lets Lopunny Mega Evolve into Mega Lopunny in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/lopunnite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10088
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "salamencite",
+  "name": "Salamencite",
+  "description": "Lets Salamence Mega Evolve into Mega Salamence in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/salamencite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10089
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "beedrillite",
+  "name": "Beedrillite",
+  "description": "Lets Beedrill Mega Evolve into Mega Beedrill in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/beedrillite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10090
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "ultranecrozium-z",
+  "name": "Ultranecrozium Z",
+  "description": "Lets Necrozma Ultra Burst into Ultra Necrozma in battle. Kept for good, never sold.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultranecrozium-z--bag.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10157
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "clefablite",
+  "name": "Clefablite",
+  "description": "Lets Clefable Mega Evolve into Mega Clefable in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/clefablite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10278
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "victreebelite",
+  "name": "Victreebelite",
+  "description": "Lets Victreebel Mega Evolve into Mega Victreebel in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/victreebelite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10279
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "starminite",
+  "name": "Starminite",
+  "description": "Lets Starmie Mega Evolve into Mega Starmie in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/starminite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10280
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "dragoninite",
+  "name": "Dragoninite",
+  "description": "Lets Dragonite Mega Evolve into Mega Dragonite in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/dragoninite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10281
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "meganiumite",
+  "name": "Meganiumite",
+  "description": "Lets Meganium Mega Evolve into Mega Meganium in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/meganiumite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10282
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "feraligite",
+  "name": "Feraligite",
+  "description": "Lets Feraligatr Mega Evolve into Mega Feraligatr in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/feraligite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10283
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "skarmorite",
+  "name": "Skarmorite",
+  "description": "Lets Skarmory Mega Evolve into Mega Skarmory in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/skarmorite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10284
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "froslassite",
+  "name": "Froslassite",
+  "description": "Lets Froslass Mega Evolve into Mega Froslass in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/froslassite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10285
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "emboarite",
+  "name": "Emboarite",
+  "description": "Lets Emboar Mega Evolve into Mega Emboar in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/emboarite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10286
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "excadrite",
+  "name": "Excadrite",
+  "description": "Lets Excadrill Mega Evolve into Mega Excadrill in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/excadrite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10287
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "scolipite",
+  "name": "Scolipite",
+  "description": "Lets Scolipede Mega Evolve into Mega Scolipede in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/scolipite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10288
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "scraftinite",
+  "name": "Scraftinite",
+  "description": "Lets Scrafty Mega Evolve into Mega Scrafty in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/scraftinite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10289
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "eelektrossite",
+  "name": "Eelektrossite",
+  "description": "Lets Eelektross Mega Evolve into Mega Eelektross in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/eelektrossite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10290
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "chandelurite",
+  "name": "Chandelurite",
+  "description": "Lets Chandelure Mega Evolve into Mega Chandelure in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/chandelurite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10291
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "chesnaughtite",
+  "name": "Chesnaughtite",
+  "description": "Lets Chesnaught Mega Evolve into Mega Chesnaught in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/chesnaughtite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10292
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "delphoxite",
+  "name": "Delphoxite",
+  "description": "Lets Delphox Mega Evolve into Mega Delphox in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/delphoxite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10293
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "greninjite",
+  "name": "Greninjite",
+  "description": "Lets Greninja Mega Evolve into Mega Greninja in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/greninjite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10294
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "pyroarite",
+  "name": "Pyroarite",
+  "description": "Lets Pyroar Mega Evolve into Mega Pyroar in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/pyroarite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10295
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "floettite",
+  "name": "Floettite",
+  "description": "Lets Floette Mega Evolve into Mega Floette in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/floettite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10296
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "malamarite",
+  "name": "Malamarite",
+  "description": "Lets Malamar Mega Evolve into Mega Malamar in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/malamarite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10297
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "barbaracite",
+  "name": "Barbaracite",
+  "description": "Lets Barbaracle Mega Evolve into Mega Barbaracle in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/barbaracite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10298
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "dragalgite",
+  "name": "Dragalgite",
+  "description": "Lets Dragalge Mega Evolve into Mega Dragalge in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/dragalgite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10299
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "hawluchanite",
+  "name": "Hawluchanite",
+  "description": "Lets Hawlucha Mega Evolve into Mega Hawlucha in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/hawluchanite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10300
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "drampanite",
+  "name": "Drampanite",
+  "description": "Lets Drampa Mega Evolve into Mega Drampa in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/drampanite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10302
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "falinksite",
+  "name": "Falinksite",
+  "description": "Lets Falinks Mega Evolve into Mega Falinks in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/falinksite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10303
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "raichunite-x",
+  "name": "Raichunite X",
+  "description": "Lets Raichu Mega Evolve into Mega Raichu X in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/raichunite-x.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10304
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "raichunite-y",
+  "name": "Raichunite Y",
+  "description": "Lets Raichu Mega Evolve into Mega Raichu Y in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/raichunite-y.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10305
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "chimechite",
+  "name": "Chimechite",
+  "description": "Lets Chimecho Mega Evolve into Mega Chimecho in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/chimechite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10306
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "absolite-z",
+  "name": "Absolite Z",
+  "description": "Lets Absol Mega Evolve into Mega Absol Z in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/absolite-z.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10307
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "staraptite",
+  "name": "Staraptite",
+  "description": "Lets Staraptor Mega Evolve into Mega Staraptor in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/staraptite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10308
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "garchompite-z",
+  "name": "Garchompite Z",
+  "description": "Lets Garchomp Mega Evolve into Mega Garchomp Z in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/garchompite-z.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10309
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "lucarionite-z",
+  "name": "Lucarionite Z",
+  "description": "Lets Lucario Mega Evolve into Mega Lucario Z in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/lucarionite-z.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10310
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "heatranite",
+  "name": "Heatranite",
+  "description": "Lets Heatran Mega Evolve into Mega Heatran in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/heatranite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10311
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "darkranite",
+  "name": "Darkranite",
+  "description": "Lets Darkrai Mega Evolve into Mega Darkrai in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/darkranite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10312
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "golurkite",
+  "name": "Golurkite",
+  "description": "Lets Golurk Mega Evolve into Mega Golurk in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/golurkite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10313
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "meowsticite",
+  "name": "Meowsticite",
+  "description": "Lets Meowstic Mega Evolve into Mega Meowstic in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/meowsticite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10314
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "crabominite",
+  "name": "Crabominite",
+  "description": "Lets Crabominable Mega Evolve into Mega Crabominable in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/crabominite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10315
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "golisopite",
+  "name": "Golisopite",
+  "description": "Lets Golisopod Mega Evolve into Mega Golisopod in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/golisopite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10316
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "magearnite",
+  "name": "Magearnite",
+  "description": "Lets Magearna Mega Evolve into Mega Magearna in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/magearnite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10317
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "zeraorite",
+  "name": "Zeraorite",
+  "description": "Lets Zeraora Mega Evolve into Mega Zeraora in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/zeraorite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10319
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "scovillainite",
+  "name": "Scovillainite",
+  "description": "Lets Scovillain Mega Evolve into Mega Scovillain in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/scovillainite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10320
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "glimmoranite",
+  "name": "Glimmoranite",
+  "description": "Lets Glimmora Mega Evolve into Mega Glimmora in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/glimmoranite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10321
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "tatsugirinite",
+  "name": "Tatsugirinite",
+  "description": "Lets Tatsugiri Mega Evolve into Mega Curly Tatsugiri in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/tatsugirinite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10322
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "baxcalibrite",
+  "name": "Baxcalibrite",
+  "description": "Lets Baxcalibur Mega Evolve into Mega Baxcalibur in battle. Kept for good, never sold.",
+  "spriteUrl": "/items/baxcalibrite.png",
+  "price": 1000,
+  "effect": {
+   "kind": "megaGem",
+   "mega": 10325
+  },
+  "inShop": false,
+  "shopBadges": 0
  }
 ]

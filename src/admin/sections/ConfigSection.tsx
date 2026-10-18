@@ -11,6 +11,7 @@ import {
   slotReturnPerSpin,
   xpToNext,
   type DayCareConfig,
+  type DoubleBattlesConfig,
   type DonationConfig,
   type EnergyConfig,
   type EventAccess,
@@ -286,6 +287,34 @@ function DiscordBox() {
  * Extreme mode (docs/22): the second save that a league opens, with no Pokémon Centers, K.O.s that rest for hours and
  * healing only while the player is away. Every number here is read by the game's engine (engine/extreme).
  */
+/**
+ * Day and night in Johto (docs/32): its switch. Each wild row's time is set in Areas → its wild pool (Time); the tags
+ * from the real games came with migration 0061.
+ */
+function DayNightBox() {
+  const [cfg, set] = useConfigRow('dayNight')
+  const access = cfg?.access ?? 'off'
+  return (
+    <Box
+      title="Day and night"
+      icon="moon"
+      hint="Johto keeps the time (docs/32): 6:00–17:59 is the day and 18:00–5:59 the night, on the player's clock. A wild Pokémon whose Time says day or night (Areas → wild pool) comes only then, as in the real games; the top bar shows the sun or the moon, and so do the fights."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Who has it</span>
+        <AccessSwitch value={access} onChange={(a) => set({ access: a })} label="Day and night: who has it" />
+        <span className="text-base text-muted">
+          {access === 'all'
+            ? 'Every player: Johto’s wild Pokémon follow the time, and the sun or the moon shows.'
+            : access === 'admin'
+              ? 'Only you (signed in) have it; other players meet every Pokémon at any hour.'
+              : 'Off: every Pokémon at any hour, no sun or moon anywhere. The tags stay in the pools.'}
+        </span>
+      </div>
+    </Box>
+  )
+}
+
 function ExtremeBox() {
   const data = useAdminData()
   const [raw, setRaw] = useConfigRow('extreme')
@@ -351,6 +380,58 @@ function ExtremeBox() {
           playing: never.{!cfg.centers && ' No Pokémon Center is ever dealt.'}
         </p>
       )}
+    </Box>
+  )
+}
+
+/**
+ * Double battles (docs/33): the switch, the regions where they happen and how often a wild Pokémon comes with a
+ * partner. Duo trainers are ticked in Trainers (Duo); Elite Four and Champions never fight 2 v 2.
+ */
+function DoubleBattlesBox() {
+  const data = useAdminData()
+  const [raw, setRaw] = useConfigRow('doubleBattles')
+  const cfg: DoubleBattlesConfig = { ...DEFAULT_CONFIG.doubleBattles, ...(raw ?? {}) }
+  const set = (patch: Partial<DoubleBattlesConfig>) => setRaw({ ...cfg, ...patch })
+  const toggle = (id: string, on: boolean) =>
+    set({ regions: on ? [...new Set([...cfg.regions, id])] : cfg.regions.filter((r) => r !== id) })
+  return (
+    <Box
+      title="Double battles"
+      icon="vs"
+      hint="Two of yours against two foes. Wild Pokémon sometimes come in pairs; duo trainers (Trainers → Duo) and Tate & Liza always fight 2 v 2. Never in Extreme mode, small worlds, the portal run or the nightmare."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Who gets them</span>
+        <AccessSwitch value={cfg.access ?? 'off'} onChange={(access) => set({ access })} label="Double battles: who gets them" />
+        <span className="text-base text-muted">
+          {cfg.access === 'all'
+            ? 'On for every player, in the regions ticked below.'
+            : cfg.access === 'admin'
+              ? 'Only you get them (to try them first). Players fight one on one.'
+              : 'Off: every battle is one on one.'}
+        </span>
+      </div>
+      <Field label="Regions" hint="where double battles happen">
+        <div className="flex flex-wrap gap-x-4 gap-y-1">
+          {(data?.regions ?? []).map((reg) => (
+            <label key={reg.id} className="flex items-center gap-2 text-lg">
+              <input type="checkbox" checked={cfg.regions.includes(reg.id)} onChange={(e) => toggle(reg.id, e.target.checked)} />
+              {reg.name}
+            </label>
+          ))}
+        </div>
+      </Field>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Wild pairs (%)" hint="of the wild encounters in those regions">
+          <NumInput
+            min={0}
+            max={100}
+            value={cfg.wildChance}
+            onChange={(v) => set({ wildChance: Math.max(0, Math.min(100, v ?? 0)) })}
+          />
+        </Field>
+      </div>
     </Box>
   )
 }
@@ -475,6 +556,27 @@ function TradesBox() {
 const accessNote = (access: EventAccess, all: string, off: string) =>
   access === 'all' ? all : access === 'admin' ? 'Only you see it (to try it first). Players see nothing yet.' : off
 
+/** Trainer looks (docs/31): unlockable looks from every region in place of the free Kanto and Johto list. */
+function LooksBox() {
+  const [raw, setRaw] = useConfigRow('looks')
+  const access = raw?.access ?? 'off'
+  return (
+    <Box
+      title="Trainer looks"
+      icon="user"
+      hint="The look other trainers see (leaderboard, Versus, friends). On: Red and Leaf are free and every other look unlocks by playing its region (Pokémon caught, an area reached, the League, the full Pokédex), from the row under the trainer card. A look worn but not unlocked comes off (back to Red or Leaf). Off: the old free list of Kanto and Johto classes."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Trainer looks</span>
+        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="Trainer looks: who sees them" />
+        <span className="text-base text-muted">
+          {accessNote(access, 'Open to every player.', 'Off: the free list as before. Seen looks are kept in saves.')}
+        </span>
+      </div>
+    </Box>
+  )
+}
+
 /**
  * The General upgrades and the two items that came with them (docs/25): each its own three-way switch, Off by default
  * (the server reads the General one too, for the golden names), then the levels' numbers.
@@ -565,6 +667,110 @@ function GeneralBox() {
  * who have won their first badge, and the gifts it gives (the same editor as a message's gifts). The server reads the
  * same row (0051): it counts the invites only while the switch isn't off, and hands each tier over once.
  */
+/**
+ * The battle powers (docs/35): Mega Evolution's gem rules, Gigantamax's newer rules and Z-Moves, each with its switch
+ * (Off: Mega Evolution and Gigantamax as before, no Z-Moves; the server checks them for Versus), then their numbers.
+ */
+function BattlePowersBox() {
+  const [megaRaw, setMega] = useConfigRow('megaEvolution')
+  const [gmaxRaw, setGmax] = useConfigRow('gigantamax')
+  const [zRaw, setZ] = useConfigRow('zMove')
+  const D = DEFAULT_CONFIG
+  const mega = { ...D.megaEvolution, ...(megaRaw ?? {}), gems: { ...D.megaEvolution.gems, ...(megaRaw?.gems ?? {}) } }
+  const gmax = { ...D.gigantamax, ...(gmaxRaw ?? {}), boost: { ...D.gigantamax.boost, ...(gmaxRaw?.boost ?? {}) } }
+  const z = { ...D.zMove, ...(zRaw ?? {}) }
+  const setGems = (patch: Partial<typeof mega.gems>) => setMega({ ...mega, gems: { ...mega.gems, ...patch } })
+  const setBoost = (patch: Partial<typeof gmax.boost>) => setGmax({ ...gmax, boost: { ...gmax.boost, ...patch } })
+  const setZOne = (patch: Partial<typeof z>) => setZ({ ...z, ...patch })
+  const num = (v: number | null | undefined, min: number, max: number, dflt: number) => Math.max(min, Math.min(max, v ?? dflt))
+  return (
+    <Box
+      title="Battle powers: Mega Gems, Gigantamax, Z-Moves" icon="up"
+      hint="docs/35. Each switch is Off by default. Off, Mega Evolution and Gigantamax keep their older rules (Kalos / Galar reached, one shared use) and there are no Z-Moves. On: each opens at its region's badge, elsewhere after that region's League, never in a small world."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Mega Gems</span>
+        <AccessSwitch value={mega.gems.access} onChange={(access) => setGems({ access })} label="Mega gem rules: who plays by them" />
+        <span className="text-base text-muted">
+          {accessNote(mega.gems.access, 'A Mega needs its gem and lasts its turns.', 'Off: Mega Evolution as before (Lv.50, the whole battle). Gems held are kept.')}
+        </span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Opens at this badge of Kalos" hint="3 = Korrina's">
+          <NumInput min={1} max={8} value={mega.gems.badges} onChange={(v) => setGems({ badges: num(v, 1, 8, 3) })} />
+        </Field>
+        <Field label="A Mega lasts (its own turns)" hint="the one it Mega Evolves in included">
+          <NumInput min={1} max={20} value={mega.gems.turns} onChange={(v) => setGems({ turns: num(v, 1, 20, 3) })} />
+        </Field>
+        <Field label="Badge gems" hint="badge number = gem key, one per line">
+          <textarea
+            className={cx(inputCls, 'min-h-[96px] font-mono text-base')}
+            defaultValue={mega.gems.rewards.map((r) => `${r.badge} = ${r.gem}`).join('\n')}
+            onBlur={(e) =>
+              setGems({
+                rewards: e.target.value
+                  .split('\n')
+                  .map((l) => /^\s*(\d+)\s*=\s*([a-z0-9-]+)\s*$/.exec(l))
+                  .filter((m): m is RegExpExecArray => !!m)
+                  .map((m) => ({ badge: Number(m[1]), gem: m[2]! })),
+              })
+            }
+          />
+        </Field>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Gigantamax</span>
+        <AccessSwitch value={gmax.boost.access} onChange={(access) => setBoost({ access })} label="Gigantamax newer rules: who plays by them" />
+        <span className="text-base text-muted">
+          {accessNote(gmax.boost.access, 'More dice, a heal, a use of its own.', 'Off: Gigantamax as before (Galar reached, one die, shared with the Mega).')}
+        </span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Opens at this badge of Galar" hint="3 = Kabu's">
+          <NumInput min={1} max={8} value={gmax.boost.badges} onChange={(v) => setBoost({ badges: num(v, 1, 8, 3) })} />
+        </Field>
+        <Field label="Dice it gains" hint="of its first type">
+          <NumInput min={1} max={6} value={gmax.boost.dice} onChange={(v) => setBoost({ dice: num(v, 1, 6, 2) })} />
+        </Field>
+        <Field label="Heals (% of max HP)" hint="kept after it shrinks back">
+          <NumInput min={0} max={100} value={gmax.boost.healPercent} onChange={(v) => setBoost({ healPercent: num(v, 0, 100, 30) })} />
+        </Field>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Z-Moves</span>
+        <AccessSwitch value={z.access} onChange={(access) => setZOne({ access })} label="Z-Moves: who can use them" />
+        <span className="text-base text-muted">{accessNote(z.access, 'Once per battle, from Alola.', 'Off: no Z-Moves anywhere.')}</span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Opens at this badge of Alola" hint="3 = Lana's Waterium Z">
+          <NumInput min={1} max={8} value={z.badges} onChange={(v) => setZOne({ badges: num(v, 1, 8, 3) })} />
+        </Field>
+        <Field label="Ice: freeze chance (%)">
+          <NumInput min={0} max={100} value={z.freezeChance} onChange={(v) => setZOne({ freezeChance: num(v, 0, 100, 30) })} />
+        </Field>
+        <Field label="Electric: paralysis chance (%)">
+          <NumInput min={0} max={100} value={z.paralyzeChance} onChange={(v) => setZOne({ paralyzeChance: num(v, 0, 100, 50) })} />
+        </Field>
+        <Field label="Fire: Burn stacks">
+          <NumInput min={1} max={10} value={z.burnStacks} onChange={(v) => setZOne({ burnStacks: num(v, 1, 10, 2) })} />
+        </Field>
+        <Field label="Grass: heals (% of max HP)">
+          <NumInput min={0} max={100} value={z.healPercent} onChange={(v) => setZOne({ healPercent: num(v, 0, 100, 20) })} />
+        </Field>
+        <Field label="Fighting: more damage (%)">
+          <NumInput min={0} max={200} value={z.recklessPercent} onChange={(v) => setZOne({ recklessPercent: num(v, 0, 200, 40) })} />
+        </Field>
+        <Field label="Fighting: recoil (% of the damage dealt)">
+          <NumInput min={0} max={100} value={z.recklessRecoilPercent} onChange={(v) => setZOne({ recklessRecoilPercent: num(v, 0, 100, 20) })} />
+        </Field>
+        <Field label="Other types: more damage (%)">
+          <NumInput min={0} max={200} value={z.damagePercent} onChange={(v) => setZOne({ damagePercent: num(v, 0, 200, 20) })} />
+        </Field>
+      </div>
+    </Box>
+  )
+}
+
 function InviteRewardsBox() {
   const data = useAdminData()
   const [raw, setRaw] = useConfigRow('inviteRewards')
@@ -1076,12 +1282,19 @@ export function ConfigSection() {
 
       <DayCareBox />
 
+      <DayNightBox />
+
       <ExtremeBox />
+
+      <DoubleBattlesBox />
 
       <TradesBox />
 
       <PushBox />
       <GeneralBox />
+      <BattlePowersBox />
+
+      <LooksBox />
 
       <InviteRewardsBox />
 

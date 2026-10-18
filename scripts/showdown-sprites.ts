@@ -29,7 +29,7 @@ import { fileURLToPath } from 'node:url'
 import { PNG } from 'pngjs'
 import pokemon from '../src/data/pokemon.json' with { type: 'json' }
 import trainers from '../src/data/trainers.json' with { type: 'json' }
-import { AVATAR_GROUPS } from '../src/lib/avatars.ts'
+import { AVATAR_GROUPS, TRAINER_LOOKS } from '../src/lib/avatars.ts'
 import {
   ANI_DIRS,
   GEN5_DIRS,
@@ -517,7 +517,7 @@ async function buildIcons(entries: Record<string, ShowdownEntry>) {
  * from.
  */
 const TRAINERS: Record<
-  'characters' | 'kanto' | 'johto' | 'hoenn' | 'sinnoh' | 'unova',
+  'characters' | 'kanto' | 'johto' | 'hoenn' | 'sinnoh' | 'unova' | 'kalos' | 'alola' | 'galar' | 'paldea',
   Record<string, string>
 > = {
   characters: {
@@ -531,6 +531,7 @@ const TRAINERS: Record<
     biker: 'biker',
     'bird-keeper': 'birdkeeper',
     'black-belt': 'blackbelt',
+    blue: 'blue',
     'blue-1': 'blue-gen3',
     'blue-2': 'blue-gen3two',
     'blue-3': 'blue-gen3champion',
@@ -547,10 +548,12 @@ const TRAINERS: Record<
     'champion-misty': 'misty',
     'champion-sabrina': 'sabrina',
     channeler: 'channeler-gen3',
+    chase: 'chase',
     'cool-couple': 'acetrainercouple',
     'cooltrainer-f': 'acetrainerf',
     'cooltrainer-m': 'acetrainer',
     'crush-kin': 'crushkin-gen3',
+    elaine: 'elaine',
     'elite-agatha': 'agatha-gen3',
     'elite-bruno': 'bruno',
     'elite-lance': 'lance',
@@ -572,6 +575,7 @@ const TRAINERS: Record<
     'psychic-m': 'psychic',
     'ranger-f': 'pokemonrangerf',
     'ranger-m': 'pokemonranger',
+    'red-gen1': 'red-gen1',
     rocker: 'rocker-gen3',
     'ruin-maniac': 'ruinmaniac',
     sailor: 'sailor',
@@ -604,6 +608,7 @@ const TRAINERS: Record<
     'elite-karen': 'karen',
     'elite-koga': 'koga',
     'elite-will': 'will',
+    ethan: 'ethan',
     falkner: 'falkner',
     firebreather: 'firebreather',
     fisherman: 'fisherman',
@@ -612,8 +617,10 @@ const TRAINERS: Record<
     hiker: 'hiker',
     jasmine: 'jasmine',
     'kimono-girl': 'kimonogirl',
+    kris: 'kris',
     lady: 'lady',
     lass: 'lass',
+    lyra: 'lyra',
     morty: 'morty',
     officer: 'policeman',
     picnicker: 'picnicker',
@@ -647,6 +654,8 @@ const TRAINERS: Record<
     'bird-keeper': 'birdkeeper',
     'black-belt': 'blackbelt',
     brawly: 'brawly',
+    brendan: 'brendan',
+    'brendan-rs': 'brendan-rs',
     'bug-catcher': 'bugcatcher',
     camper: 'camper',
     'champion-wallace': 'wallace',
@@ -668,6 +677,8 @@ const TRAINERS: Record<
     lass: 'lass',
     'magma-grunt-m': 'magmagrunt',
     'magma-leader-maxie': 'maxie-gen6',
+    may: 'may',
+    'may-rs': 'may-rs',
     'ninja-boy': 'ninjaboy',
     norman: 'norman',
     'parasol-lady': 'parasollady',
@@ -692,6 +703,7 @@ const TRAINERS: Record<
   sinnoh: {
     'ace-trainer-f': 'acetrainerf',
     'ace-trainer-m': 'acetrainer',
+    akari: 'akari',
     argenta: 'argenta',
     'aroma-lady': 'aromalady',
     artist: 'artist',
@@ -749,6 +761,7 @@ const TRAINERS: Record<
     'psychic-m': 'psychic',
     'ranger-f': 'pokemonrangerf',
     'ranger-m': 'pokemonranger',
+    rei: 'rei',
     reporter: 'reporter',
     riley: 'riley',
     roark: 'roark',
@@ -813,6 +826,8 @@ const TRAINERS: Record<
     ghetsis: 'ghetsis',
     harlequin: 'harlequin',
     hiker: 'hiker',
+    hilbert: 'hilbert',
+    hilda: 'hilda',
     hoopster: 'hoopster',
     infielder: 'infielder',
     janitor: 'janitor',
@@ -823,6 +838,7 @@ const TRAINERS: Record<
     maid: 'maid',
     musician: 'musician',
     n: 'n',
+    nate: 'nate',
     nurse: 'nurse',
     'nursery-aide': 'nurseryaide',
     'parasol-lady': 'parasollady',
@@ -837,6 +853,7 @@ const TRAINERS: Record<
     'psychic-m': 'psychic',
     'ranger-f': 'pokemonrangerf',
     'ranger-m': 'pokemonranger',
+    rosa: 'rosa',
     roughneck: 'roughneck',
     'school-kid-f': 'schoolkidf',
     'school-kid-m': 'schoolkid',
@@ -854,6 +871,23 @@ const TRAINERS: Record<
     worker: 'worker',
     youngster: 'youngster',
     zinzolin: 'zinzolin',
+  },
+  // The trainer looks' new sprites (docs/31). These regions' other trainers are already on disk (Showdown's too).
+  kalos: { calem: 'calem' },
+  alola: {
+    elio: 'elio',
+    'elio-usum': 'elio-usum',
+    lillie: 'lillie',
+    selene: 'selene',
+    'selene-usum': 'selene-usum',
+  },
+  galar: { gloria: 'gloria', 'gloria-dojo': 'gloria-dojo', victor: 'victor', 'victor-dojo': 'victor-dojo' },
+  paldea: {
+    carmine: 'carmine',
+    florian: 'florian-s',
+    'florian-bb': 'florian-bb',
+    juliana: 'juliana-s',
+    'juliana-bb': 'juliana-bb',
   },
 }
 
@@ -885,6 +919,7 @@ async function buildTrainers() {
   const urls = new Set<string>(['/characters/red.png', '/characters/green.png', '/characters/prof-oak.png'])
   for (const t of trainers as { spriteUrl: string | null }[]) if (t.spriteUrl) urls.add(t.spriteUrl)
   for (const g of AVATAR_GROUPS) for (const a of g.avatars) urls.add(a.src)
+  for (const a of TRAINER_LOOKS) urls.add(a.src)
   const regionOf = (url: string) => url.match(/^\/trainers\/classes\/([a-z]+)\//)?.[1] ?? 'kanto'
   const byRegion = new Map<string, string[]>()
   for (const url of [...urls].sort())

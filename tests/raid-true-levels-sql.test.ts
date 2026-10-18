@@ -1,4 +1,4 @@
-// Migration 0061 against a real Postgres (PGlite, in process), on top of the raids' migrations and 0060: the teams
+// Migration 0065 against a real Postgres (PGlite, in process), on top of the raids' migrations and 0060: the teams
 // registered for friends keep each Pokémon's own level (the user's rule, 2026-10-18: a raid's team cap holds back only
 // the HP, which the game caps in the fight). The day's raid's and a progression raid's alike, a nightmare raid's
 // checks kept.
@@ -13,14 +13,14 @@ import { newmoonArea } from '../scripts/patch-hh-nightmare'
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
 const NM = newmoonArea()
-const FILE = '0061_raid_true_levels.sql'
+const FILE = '0065_raid_true_levels.sql'
 
 const AUTH = `create role anon; create role authenticated; create schema auth; create table auth.users (id uuid primary key);
   create function auth.uid() returns uuid language sql stable as $$
     select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
   create function auth.jwt() returns jsonb language sql stable as $$ select '{}'::jsonb $$;`
 
-describe('0061: raid teams at their own levels', () => {
+describe('0065: raid teams at their own levels', () => {
   let db: PGlite
   const ME = '00000000-0000-4000-8000-0000000000aa'
   const KEY = `${NM.id}:491`

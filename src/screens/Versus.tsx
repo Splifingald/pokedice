@@ -10,6 +10,7 @@ import {
   randomSeed,
   sameEvent,
   simulateVersus,
+  versusPowersOf,
   versusCandidates,
   versusChoices,
   versusMoveAt,
@@ -21,7 +22,7 @@ import {
   type PokeType,
   type VersusFight,
 } from '@/engine'
-import { BoardRow, TeamIcons } from '@/components/BoardRow'
+import { BoardGap, BoardRow, TeamIcons } from '@/components/BoardRow'
 import { FriendProfileSheet } from '@/components/friends/FriendProfileSheet'
 import { Chip } from '@/components/Chip'
 import { AccountButton } from '@/components/AccountButton'
@@ -41,7 +42,7 @@ import { useSnapToMe } from '@/lib/useSnapToMe'
 import { getLang, searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useFriends } from '@/lib/friends'
-import { friendsOnly } from '@/lib/leaderboard'
+import { boardWindow, friendsOnly } from '@/lib/leaderboard'
 import { useFriendsFilter } from '@/lib/useFriendsFilter'
 import {
   fetchVersusBoard,
@@ -118,7 +119,11 @@ function VersusScreenMain() {
     if (!me || busy) return
     setBusy(true)
     const seed = randomSeed()
-    const result = simulateVersus(me.team, foe.team, data, seed)
+    // Your powers from your own save (it may hold a gem bought since the board was read), theirs from the board.
+    const result = simulateVersus(me.team, foe.team, data, seed, {
+      attacker: save ? versusPowersOf(save, data) : undefined,
+      defender: foe.powers,
+    })
     try {
       await recordVersus(foe, seed, result.winner === 'attacker')
       setFight({ fight: result, foe, n: ++fights.current })
@@ -617,9 +622,9 @@ function Board({ rows }: { rows: VersusEntry[] }) {
     () => rankVersus(rows, tab).map((r) => ({ ...r, friendId: friends.has(r.userId) ? r.userId : null })),
     [rows, tab, friends],
   )
-  // FRIENDS keeps the whole board's ranks, as on the leaderboard.
+  // FRIENDS keeps the whole board's ranks, as on the leaderboard; ALL shows the top, you and your friends.
   const filtering = friends.size > 0 && onlyFriends
-  const shown = filtering ? friendsOnly(ranked) : ranked
+  const shown = filtering ? friendsOnly(ranked).map((row) => ({ row })) : boardWindow(ranked)
   const friendRows = ranked.filter((r) => r.friendId).length
   const meRef = useSnapToMe(`${tab}:${ranked.findIndex((r) => r.isMe)}:${filtering}`)
   return (
@@ -656,30 +661,34 @@ function Board({ rows }: { rows: VersusEntry[] }) {
         <p className="m-0 p-2 text-center text-[19px] text-muted">{t('ui.friends.noneOnBoard')}</p>
       )}
       <ol className="m-0 grid list-none gap-1.5 p-0">
-        {shown.map((r) => (
-          <BoardRow
-            key={r.userId}
-            rowRef={r.isMe ? meRef : undefined}
-            rank={r.rank}
-            look={avatarOf(r.avatar).src}
-            name={r.name}
-            rich={r.rich}
-            isMe={r.isMe}
-            isFriend={!!r.friendId}
-            onOpen={r.friendId ? () => setCard({ id: r.userId, name: r.name }) : undefined}
-            team={r.team}
-            value={
-              // The count and what it counts, as the sword (attack) or the shield (defense).
-              <span
-                className="inline-flex items-center gap-1.5 font-pixel-sm text-[20px] leading-none"
-                aria-label={tPlural(tab === 'attack' ? 'ui.versus.wins' : 'ui.versus.defenseWins', r.score)}
-              >
-                {r.score}
-                <PixelIcon name={tab === 'attack' ? 'sword' : 'shield'} size={20} />
-              </span>
-            }
-          />
-        ))}
+        {shown.map((item, i) => {
+          if ('gap' in item) return <BoardGap key={`gap:${i}`} count={item.gap} />
+          const r = item.row
+          return (
+            <BoardRow
+              key={r.userId}
+              rowRef={r.isMe ? meRef : undefined}
+              rank={r.rank}
+              look={avatarOf(r.avatar).src}
+              name={r.name}
+              rich={r.rich}
+              isMe={r.isMe}
+              isFriend={!!r.friendId}
+              onOpen={r.friendId ? () => setCard({ id: r.userId, name: r.name }) : undefined}
+              team={r.team}
+              value={
+                // The count and what it counts, as the sword (attack) or the shield (defense).
+                <span
+                  className="inline-flex items-center gap-1.5 font-pixel-sm text-[20px] leading-none"
+                  aria-label={tPlural(tab === 'attack' ? 'ui.versus.wins' : 'ui.versus.defenseWins', r.score)}
+                >
+                  {r.score}
+                  <PixelIcon name={tab === 'attack' ? 'sword' : 'shield'} size={20} />
+                </span>
+              }
+            />
+          )
+        })}
       </ol>
       <FriendProfileSheet userId={card?.id ?? null} name={card?.name} onClose={() => setCard(null)} />
     </>
