@@ -278,7 +278,8 @@ export type LogEntry =
   /** `double`: a double battle's opening, yours and the foes out (docs/33). */
   | { kind: 'start'; first: Side; double?: { own: string[]; foes: string[] } }
   /** A double battle: the pair in front changed — the Pokémon whose turn it is, and the one it attacks. */
-  | { kind: 'focus'; own: string; foe: string }
+  /** `aim`: you picked another foe to attack, your dice still in hand (the tray stays as it is). */
+  | { kind: 'focus'; own: string; foe: string; aim?: true }
   /** A double battle: the trainer's next Pokémon takes the place of one K.O.'d. */
   | { kind: 'foe_out'; uid: string }
   | { kind: 'turn'; side: Side; turn: number; uid: string }
@@ -1055,13 +1056,13 @@ function roundOrder(s: BattleState): { side: Side; uid: string }[] {
 }
 
 /** The pair in front: yours at `own`, the foe at `foe` (indexes into `player` and `double.foes`); said when it moves. */
-function setFront(s: BattleState, own: number, foe: number, log: LogEntry[]) {
+function setFront(s: BattleState, own: number, foe: number, log: LogEntry[], aim = false) {
   const d = s.double!
   const changed = s.activeIndex !== own || d.foeIndex !== foe
   s.activeIndex = own
   d.foeIndex = foe
   s.enemy = d.foes[foe]!
-  if (changed) log.push({ kind: 'focus', own: s.player[own]!.uid, foe: s.enemy.uid })
+  if (changed) log.push({ kind: 'focus', own: s.player[own]!.uid, foe: s.enemy.uid, ...(aim && { aim: true as const }) })
 }
 
 /** Ditto takes `foe`'s dice (a copying foe lends its own set), said only when that changes them. */
@@ -1594,7 +1595,7 @@ export function reduce(
       if (!s.double || (s.phase !== 'player_roll' && s.phase !== 'player_reroll')) return NOOP(state)
       const i = s.double.foes.findIndex((f) => f.uid === e.uid)
       if (i < 0 || i === s.double.foeIndex || !s.double.foeSlots.includes(i) || s.double.foes[i]!.hp <= 0) return NOOP(state)
-      setFront(s, s.activeIndex, i, log)
+      setFront(s, s.activeIndex, i, log, true)
       // Ditto copies the foe it aims at, while its dice are still in its hand.
       if (s.phase === 'player_roll') copyTarget(s, 'player', log)
       break
