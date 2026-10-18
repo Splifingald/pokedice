@@ -88,6 +88,9 @@ export function timeLeft(ms: number): string {
 /** Pokédollars: ₽1,250 — grouped the way the player's language groups numbers. */
 export const money = (n: number) => `₽${Math.round(n).toLocaleString(getLang())}`
 
+/** Odds as the N of "1 in N" (0.001 → "1,000"), in the player's language's digits. */
+export const oneInText = (chance: number) => Math.round(1 / chance).toLocaleString(getLang())
+
 /** "Gym Leader Brock", "Champion d'Arène Pierre", "Bug Catcher Rick"… */
 export function trainerTitle(tr: { name: string; kind?: string; role?: string }): string {
   return tr.role === 'leader' ? t('ui.trainer.gymLeader', { name: tr.name }) : tr.name

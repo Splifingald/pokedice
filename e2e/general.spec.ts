@@ -1,6 +1,7 @@
 // The General upgrades (docs/25) against the mocked Supabase, on a phone: switched off they're nowhere; on, their rules
 // pop up once (Let's go! opens the tab), Capture Luck is bought with the region's ₽, INFO shows the rules again; golden
-// names on the leaderboard; and in dusk every text keeps its contrast.
+// names on the leaderboard; and in dusk every text keeps its contrast. The Shiny Charm: its own pop-up once for a
+// player who read the tab's rules before it came, and a level bought.
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { DEFAULT_CONFIG, type SaveData } from '../src/engine'
@@ -89,4 +90,28 @@ test('golden names on the leaderboard, and dusk keeps their contrast', async ({ 
   await expect(page.getByRole('listitem').filter({ hasText: 'I am just rich' })).toContainText('MAX')
   await page.waitForTimeout(400)
   expect(await contrast(page)).toEqual([])
+})
+
+test('the Shiny Charm: its own pop-up once, then a level bought', async ({ page }) => {
+  const charmOn = {
+    ...GENERAL_ON,
+    shinyChance: 0.001,
+    general: { ...GENERAL_ON.general, charmAccess: 'all' },
+  }
+  await boot(page, trainer({ general: { rulesSeen: true } }), charmOn)
+  await page.goto('/home')
+  const rules = page.getByRole('dialog', { name: 'Shiny Charm' })
+  await expect(rules).toBeVisible()
+  await expect(rules).toContainText('from 1 in 1,000 to 1 in 333')
+  await rules.getByRole('button', { name: /Let's go/i }).click()
+  await expect(page).toHaveURL(/\/upgrades\?tab=general/)
+
+  const charm = page.getByRole('listitem').filter({ hasText: 'Shiny Charm' })
+  await expect(charm).toContainText('1 in 1,000')
+  await charm.getByRole('button', { name: /₽1,000/ }).click()
+  await expect(charm).toContainText('Lv.1')
+  await expect(charm).toContainText('1 in 950')
+  await page.goto('/home')
+  await page.waitForTimeout(600)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
 })

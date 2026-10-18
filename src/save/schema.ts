@@ -332,9 +332,11 @@ export const saveSchema = z.object({
       luck: z.number().int().min(0).max(100).optional(),
       offline: z.number().int().min(0).max(100).optional(),
       rich: z.boolean().optional(),
+      charm: z.number().int().min(0).max(100).optional(),
       awayFrom: z.number().optional(),
       carryMs: z.number().int().min(0).optional(),
       rulesSeen: z.boolean().optional(),
+      charmSeen: z.boolean().optional(),
     })
     .optional(),
   trades: z

@@ -13,6 +13,7 @@ import {
   buyItem,
   buyWorldItem,
   captureLuck,
+  wildShinyChance,
   catchWorldMythical,
   centerHeal,
   challengeEncounter,
@@ -509,6 +510,13 @@ describe('the General upgrades stay outside (docs/25)', () => {
     expect(res.save.general?.carryMs).toBe(1000)
     // Back in Kanto, the world's hours pay nothing.
     expect(collectOffline(leaveWorld(res.save, gd)!, gd, NOW + 20 * H)).toBeNull()
+  })
+
+  it('the Shiny Charm: a world keeps the wild odds', () => {
+    const cd: GameData = { ...gd, config: { ...gd.config, shinyChance: 0.001, general: { ...general, charmAccess: 'all' } } }
+    const charmed = (x: SaveData): SaveData => ({ ...x, general: { ...x.general, charm: 10 } })
+    expect(wildShinyChance(charmed(kanto()), cd)).toBeCloseTo(1 / 333)
+    expect(wildShinyChance(charmed(enterWorld(kanto(), cd, WORLD, 63, NOW, newId)!), cd)).toBe(0.001)
   })
 })
 

@@ -387,6 +387,21 @@ export const DEFAULT_CONFIG: GameConfig = {
     ],
     offlineMaxHours: 24,
     richCost: 99999,
+    // The Shiny Charm (the user's numbers, 2026-10-18): from the base 1 in 1,000 to 1 in 333, ₽69,000 in all, a
+    // goal as long as Capture Luck. Off on its own switch too.
+    charmAccess: 'off',
+    charm: [
+      { oneIn: 950, cost: 1000 },
+      { oneIn: 900, cost: 1500 },
+      { oneIn: 850, cost: 2000 },
+      { oneIn: 800, cost: 3000 },
+      { oneIn: 750, cost: 4000 },
+      { oneIn: 700, cost: 5000 },
+      { oneIn: 625, cost: 7500 },
+      { oneIn: 550, cost: 10000 },
+      { oneIn: 450, cost: 15000 },
+      { oneIn: 333, cost: 20000 },
+    ],
   },
   // Trick or Treat (docs/29): off until the admin switches it on; the areas' ghost lists come with their content
   // (Haunted Hollow's from migration 0056). The numbers were set by the exact best play and a Monte Carlo of simpler

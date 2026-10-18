@@ -1,12 +1,12 @@
 // The General upgrades (docs/25): the Upgrades screen's third tab. Slow, very expensive upgrades bought with the ₽ of
-// whichever region is being played and kept by the save for every region: Capture Luck, offline earnings and "I am
-// just rich". The admin's switch (docs/15 §20) hides the tab and stops every effect; what was bought stays in the save.
+// whichever region is being played and kept by the save for every region: Capture Luck, offline earnings, "I am
+// just rich" and the Shiny Charm (its own switch too). The admin's switch (docs/15 §20) hides the tab and stops every effect; what was bought stays in the save.
 import { eventOpenTo } from './events'
 import { badgesHeld } from './liveEvents'
 import { inWorldRegion } from './regions'
 import type { GameData, GeneralConfig, GeneralSave, SaveData } from './types'
 
-export const GENERAL_IDS = ['luck', 'offline', 'rich'] as const
+export const GENERAL_IDS = ['luck', 'offline', 'rich', 'charm'] as const
 export type GeneralId = (typeof GENERAL_IDS)[number]
 
 const HOUR = 3_600_000
@@ -15,6 +15,14 @@ export const generalCfg = (data: GameData): GeneralConfig => data.config.general
 
 /** The admin's switch: on for everyone, or for the admin only. */
 export const generalOn = (data: GameData): boolean => eventOpenTo(data.config.general?.access, data)
+
+/** The Shiny Charm's own switch, inside the General tab's: both have to be on for this player. */
+export const charmOn = (data: GameData): boolean =>
+  generalOn(data) && eventOpenTo(data.config.general?.charmAccess, data)
+
+/** The upgrades the General tab shows (and sells) while it's open: the Shiny Charm only with its own switch on. */
+export const generalShown = (data: GameData): GeneralId[] =>
+  GENERAL_IDS.filter((id) => id !== 'charm' || charmOn(data))
 
 export const generalOf = (save: Pick<SaveData, 'general'>): GeneralSave => save.general ?? {}
 
@@ -28,8 +36,11 @@ export function generalLevel(save: Pick<SaveData, 'general'>, id: GeneralId, dat
 /** How many levels it has. */
 export function generalMax(data: GameData, id: GeneralId): number {
   const c = generalCfg(data)
-  return id === 'rich' ? 1 : (id === 'luck' ? c.luck : c.offline).length
+  return id === 'rich' ? 1 : levelRows(c, id).length
 }
+
+const levelRows = (c: GeneralConfig, id: Exclude<GeneralId, 'rich'>): { cost: number }[] =>
+  (id === 'luck' ? c.luck : id === 'offline' ? c.offline : c.charm) ?? []
 
 /** The price of the next level, or null at the top. */
 export function nextGeneralCost(
@@ -40,7 +51,7 @@ export function nextGeneralCost(
   const lv = generalLevel(save, id, data)
   if (lv >= generalMax(data, id)) return null
   const c = generalCfg(data)
-  const cost = id === 'rich' ? c.richCost : (id === 'luck' ? c.luck : c.offline)[lv]?.cost
+  const cost = id === 'rich' ? c.richCost : levelRows(c, id)[lv]?.cost
   return cost == null ? null : Math.max(0, Math.round(cost))
 }
 
@@ -57,6 +68,14 @@ export function offlineAt(data: GameData, level: number): number {
   return row ? Math.max(0, row.perHour) : 0
 }
 
+/** The wild shiny odds (0–1) with the Shiny Charm at a level: game_config's at level 0, never worse than them. */
+export function charmChanceAt(data: GameData, level: number): number {
+  const base = Math.max(0, Math.min(1, data.config.shinyChance ?? 0))
+  const rows = generalCfg(data).charm ?? []
+  const row = level > 0 ? rows[Math.min(level, rows.length) - 1] : undefined
+  return row && row.oneIn >= 1 ? Math.max(base, 1 / row.oneIn) : base
+}
+
 /**
  * Why the General tab can't sell here, or null: the switch, or a small world (its ₽ is the world's, docs/21). Each
  * save buys its own: an Extreme save's are its own too.
@@ -69,7 +88,7 @@ export function generalClosed(save: SaveData, data: GameData): 'off' | 'world' |
 
 /** Buy the next level with the live region's ₽. Null when it can't be bought (closed, maxed, too poor). */
 export function buyGeneral(save: SaveData, data: GameData, id: GeneralId): SaveData | null {
-  if (generalClosed(save, data)) return null
+  if (generalClosed(save, data) || (id === 'charm' && !charmOn(data))) return null
   const cost = nextGeneralCost(save, data, id)
   if (cost == null || save.gold < cost) return null
   const g = generalOf(save)
@@ -89,21 +108,27 @@ export function keepGeneralBought(save: SaveData, other: SaveData | null | undef
   if (!o) return save
   const luck = Math.max(g.luck ?? 0, o.luck ?? 0)
   const offline = Math.max(g.offline ?? 0, o.offline ?? 0)
+  const charm = Math.max(g.charm ?? 0, o.charm ?? 0)
   const rich = !!g.rich || !!o.rich
   const rulesSeen = !!g.rulesSeen || !!o.rulesSeen
+  const charmSeen = !!g.charmSeen || !!o.charmSeen
   if (
     luck === (g.luck ?? 0) &&
     offline === (g.offline ?? 0) &&
+    charm === (g.charm ?? 0) &&
     rich === !!g.rich &&
-    rulesSeen === !!g.rulesSeen
+    rulesSeen === !!g.rulesSeen &&
+    charmSeen === !!g.charmSeen
   )
     return save
   const general: GeneralSave = {
     ...g,
     ...(luck > 0 && { luck }),
     ...(offline > 0 && { offline }),
+    ...(charm > 0 && { charm }),
     ...(rich && { rich }),
     ...(rulesSeen && { rulesSeen }),
+    ...(charmSeen && { charmSeen }),
   }
   return { ...save, general }
 }
@@ -118,6 +143,18 @@ export function keepGeneralBought(save: SaveData, other: SaveData | null | undef
 export function captureLuck(save: SaveData, data: GameData, kind: 'wild' | 'boss', retried: boolean): number {
   if (kind !== 'wild' || retried || !generalOn(data) || inWorldRegion(save, data)) return 0
   return luckAt(data, generalLevel(save, 'luck', data))
+}
+
+// ---------------------------------------------------------------- the Shiny Charm
+
+/**
+ * The wild shiny odds (0–1) this save plays at: the Shiny Charm's, or game_config's `shinyChance` with the charm
+ * switched off, not bought, or inside a small world (a world plays by its own rules, docs/21). A Shiny Parade multiplies
+ * them on top (encounters' `shinyBoost`). Day Care Eggs keep their own odds.
+ */
+export function wildShinyChance(save: SaveData, data: GameData): number {
+  if (!charmOn(data) || inWorldRegion(save, data)) return charmChanceAt(data, 0)
+  return charmChanceAt(data, generalLevel(save, 'charm', data))
 }
 
 // ---------------------------------------------------------------- offline earnings
@@ -182,11 +219,23 @@ export const isRich = (save: Pick<SaveData, 'general'>, data: GameData): boolean
 
 /**
  * The General tab's rules pop-up is due: the tab is open to this player, it hasn't been shown, and the player holds a
- * badge (a new trainer has the starting tutorials to read first, and nothing here to afford).
+ * badge (a new trainer has the starting tutorials to read first, and nothing here to afford). Or the Shiny Charm's,
+ * once, for a player who read the tab's rules before the charm was switched on.
  */
 export const generalRulesDue = (save: SaveData, data: GameData): boolean =>
-  generalOn(data) && !save.general?.rulesSeen && !inWorldRegion(save, data) && badgesHeld(save, data) >= 1
+  generalOn(data) &&
+  !inWorldRegion(save, data) &&
+  badgesHeld(save, data) >= 1 &&
+  (!save.general?.rulesSeen || (charmOn(data) && !save.general.charmSeen))
 
-export function markGeneralRulesSeen(save: SaveData): SaveData {
-  return save.general?.rulesSeen ? save : { ...save, general: { ...generalOf(save), rulesSeen: true } }
+/** The pop-up due is the Shiny Charm's alone: the tab's own rules were read before it came. */
+export const charmRulesOnly = (save: SaveData, data: GameData): boolean =>
+  !!save.general?.rulesSeen && charmOn(data) && !save.general.charmSeen
+
+/** The rules have been shown: the tab's, and the Shiny Charm's with them while it's on (they're in the same list). */
+export function markGeneralRulesSeen(save: SaveData, data: GameData): SaveData {
+  const g = generalOf(save)
+  const charmSeen = !!g.charmSeen || charmOn(data)
+  if (g.rulesSeen && charmSeen === !!g.charmSeen) return save
+  return { ...save, general: { ...g, rulesSeen: true, ...(charmSeen && { charmSeen }) } }
 }

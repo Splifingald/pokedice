@@ -37,6 +37,7 @@ import {
   MONEY,
   pickUpItem,
   shinyBoost,
+  wildShinyChance,
   recordDraws,
   rollCatch,
   spinSlots,
@@ -238,6 +239,8 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
     noCenters: !centersOn(save, data),
     // A Shiny Parade covering this area: wild Pokémon are more often shiny.
     shinyBoost: shinyBoost(currentLive(), area),
+    // The Shiny Charm (docs/25): the player's own wild odds.
+    shinyChance: wildShinyChance(save, data),
     // Day and night (docs/32): in Johto, only the hour's wild Pokémon come.
     hour: localHour(),
   }
@@ -506,7 +509,17 @@ export function challenge() {
   // A portal run has no challenge: its cards come one after the other (docs/28); nor has the nightmare (docs/30).
   if (inPortalRun(save, data, run.areaId) || inNightmare(save, data, run.areaId)) return
   const area = data.areas.find((a) => a.id === run.areaId)
-  const found = area ? challengeEncounter(area, progressOf(save, area.id), data, teamAverageLevel(save), playerSideOf(save), runRng) : null
+  const found = area
+    ? challengeEncounter(
+        area,
+        progressOf(save, area.id),
+        data,
+        teamAverageLevel(save),
+        playerSideOf(save),
+        runRng,
+        wildShinyChance(save, data),
+      )
+    : null
   // Tate & Liza fight 2 v 2 where double battles are on (docs/33).
   const ctx = found && run.areaId ? encounterContext(save, run.areaId, null) : null
   const encounter = found && ctx ? asDouble(found, ctx, save, runRng) : found

@@ -8,7 +8,9 @@ import {
   generalCfg,
   generalLevel,
   generalMax,
+  charmChanceAt,
   generalOn,
+  generalShown,
   luckAt,
   maxComboLevel,
   maxDieLevel,
@@ -27,7 +29,7 @@ import { FaceDice, facesStatuses, StatusLines } from '@/components/FaceDice'
 import { PixelIcon } from '@/components/icons'
 import { PageHead, Wallet } from '@/components/PageHead'
 import { Seg } from '@/components/Segmented'
-import { COMBO_EXAMPLES, comboExampleText, comboName, money, typeName } from '@/lib/format'
+import { COMBO_EXAMPLES, comboExampleText, comboName, money, oneInText, typeName } from '@/lib/format'
 import { dieCarriers, maxDiceOwned } from '@/lib/upgrades'
 import { useT } from '@/i18n/react'
 import { GeneralRulesModal } from '@/components/GeneralRules'
@@ -265,8 +267,10 @@ export function UpgradesScreen() {
   const cfg = generalCfg(data)
   const pct = (n: number) => t('ui.general.luck.pct', { n: Math.round(n * 100) })
   const rate = (n: number) => t('ui.general.offline.rate', { amount: money(n) })
+  const oneIn = (chance: number) =>
+    chance > 0 ? t('ui.general.charm.odds', { n: oneInText(chance) }) : t('ui.general.none')
   const general: Up[] = generalOpen
-    ? (['luck', 'offline', 'rich'] as GeneralId[]).map((id) => {
+    ? generalShown(data).map((id: GeneralId) => {
         const lv = generalLevel(save, id, data)
         const max = generalMax(data, id)
         const top = lv >= max
@@ -279,7 +283,9 @@ export function UpgradesScreen() {
               ? l > 0
                 ? rate(offlineAt(data, l))
                 : t('ui.general.none')
-              : t(l > 0 ? 'ui.general.rich.on' : 'ui.general.rich.off')
+              : id === 'charm'
+                ? oneIn(charmChanceAt(data, l))
+                : t(l > 0 ? 'ui.general.rich.on' : 'ui.general.rich.off')
         return {
           id,
           kind: 'general' as const,
@@ -302,7 +308,7 @@ export function UpgradesScreen() {
                 className="max-w-[45%] truncate text-[20px] leading-none"
               />
             ) : (
-              <PixelIcon name={id === 'luck' ? 'ball' : 'moon'} size={24} />
+              <PixelIcon name={id === 'luck' ? 'ball' : id === 'charm' ? 'sparkle' : 'moon'} size={24} />
             ),
           buy: () => upgradeGeneral(id),
         }
