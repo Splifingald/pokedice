@@ -139,13 +139,13 @@ const terminal = (s: BattleState) => s.phase === 'won' || s.phase === 'lost' || 
 /** The attacker's Pokémon ids in the battle state; the defender's is always 'enemy', one at a time. */
 const attackerUid = (i: number) => `a${i}`
 
-/** Both sides' battle powers (docs/31 §5): absent = none, the way Versus was before them. */
+/** Both sides' battle powers (docs/35 §5): absent = none, the way Versus was before them. */
 export interface VersusSides {
   attacker?: VersusPowers
   defender?: VersusPowers
 }
 
-/** What one side has spent of its powers, the whole fight being one battle (docs/31 §5): each power once. */
+/** What one side has spent of its powers, the whole fight being one battle (docs/35 §5): each power once. */
 type Spent = Partial<Record<PowerKind, number>>
 
 /**
@@ -183,7 +183,7 @@ function attackerPowers(powers: VersusPowers | undefined, data: GameData) {
  * defender's in turn, carrying their HP from one battle to the next, both sides played by the auto-mode AI.
  *
  * Nobody brings their own upgrades: both sides fight with every combo and die track at `versusUpgradeLevel` (admin).
- * Each side brings its battle powers (`sides`, docs/31 §5): the whole fight counts as one battle, so each power is
+ * Each side brings its battle powers (`sides`, docs/35 §5): the whole fight counts as one battle, so each power is
  * used once per side, and one per Pokémon.
  *
  * The attacker wins by knocking out all three defenders. Anything else — the attacker's team knocked out, or a

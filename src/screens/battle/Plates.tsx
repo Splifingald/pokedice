@@ -13,7 +13,7 @@ import { cx } from '@/theme/util'
 function FormTag({ b }: { b: Battler }) {
   const { t } = useT()
   if (b.gmax) return <Chip tone="red">{t('ui.battle.gmax')}</Chip>
-  // A timed Mega (the gem rules, docs/31) says how many of its turns are left.
+  // A timed Mega (the gem rules, docs/35) says how many of its turns are left.
   if (b.mega)
     return (
       <Chip tone="gold" title={b.megaTimer ? t('ui.battle.megaTurnsLeft', { n: b.megaTimer.turns }) : undefined}>

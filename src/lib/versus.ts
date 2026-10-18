@@ -26,7 +26,7 @@ export interface VersusEntry {
   beaten: boolean
   /** Their name shines gold ("I am just rich", docs/25). */
   rich: boolean
-  /** Their battle powers (docs/31 §5), from their save: none while the switches are off for you. */
+  /** Their battle powers (docs/35 §5), from their save: none while the switches are off for you. */
   powers: VersusPowers
 }
 
@@ -49,7 +49,7 @@ interface RawEntry {
   beaten: boolean | null
   /** Missing on a database that hasn't run 0049_general_upgrades.sql. */
   rich?: boolean | null
-  /** Missing on a database that hasn't run 0061_battle_powers.sql. */
+  /** Missing on a database that hasn't run 0064_battle_powers.sql. */
   powers?: { gems?: unknown; gmax?: unknown; z?: unknown } | null
 }
 

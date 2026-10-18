@@ -41,7 +41,7 @@ export interface Fx {
   chip: { id: number; text: string } | null
   /** A cry the screen plays: a Mega's, once it stands there. */
   cry: { id: number; dex: number } | null
-  /** Pokémon away after a Flying, Ground or Water Z-Move (docs/31): the stage doesn't draw them until they strike. */
+  /** Pokémon away after a Flying, Ground or Water Z-Move (docs/35): the stage doesn't draw them until they strike. */
   away?: Record<string, 'fly' | 'dig' | 'dive'>
 }
 
@@ -51,7 +51,7 @@ export interface Scene {
   /** The log entry it belongs to. */
   cursor: number
   kind: 'attack' | 'mega' | 'gmax' | 'gmaxEnd' | 'unleash' | 'zmove' | 'zstrike' | 'zaway'
-  /** A Z-Move's going away, or the strike's coming back (docs/31). */
+  /** A Z-Move's going away, or the strike's coming back (docs/35). */
   how?: 'fly' | 'dig' | 'dive'
   /** Who acts: the attacker, or the Pokémon whose form changes. */
   side: Side

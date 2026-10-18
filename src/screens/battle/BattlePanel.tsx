@@ -381,7 +381,7 @@ export function SwitchRow({
 }
 
 /**
- * Z-MOVE (docs/31): after the roll, the attack as the dice stand, with what its type adds (`hint`, said on hover and
+ * Z-MOVE (docs/35): after the roll, the attack as the dice stand, with what its type adds (`hint`, said on hover and
  * read out). Gold like MEGA and G-MAX, the battle powers.
  */
 export function ZMoveButton({ hint, disabled, onClick }: { hint: string; disabled?: boolean; onClick: () => void }) {

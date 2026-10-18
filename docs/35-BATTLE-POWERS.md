@@ -1,6 +1,6 @@
 # Battle powers: Mega Gems, Gigantamax, Z-Moves
 
-Status: **built** (2026-10-18) on `ccr-92f0fa53-9n0srr`; the migration is **0061**. Everything ships **Off**: three
+Status: **built** (2026-10-18) on `ccr-92f0fa53-9n0srr`, merged into `feature/version_2`; the migration is **0064**. Everything ships **Off**: three
 switches in Admin → Config → "Battle powers" (docs/15 §20). Off, Mega Evolution and Gigantamax work as docs/12 §3–4
 describe, and there are no Z-Moves.
 
@@ -117,7 +117,7 @@ The user's request, and the answers to the questions asked before building it:
 - The fight is computed by the attacker with the switches as they are for the attacker; the server only shows a
   player's powers while the switch is on for whoever asks.
 
-## 4. The switches and the server — `supabase/migrations/0061_battle_powers.sql`
+## 4. The switches and the server — `supabase/migrations/0064_battle_powers.sql`
 
 - `game_config.megaEvolution.gems.access`, `gigantamax.boost.access`, `zMove.access`: Off / On for admin / On for
   everyone (Admin → Config → "Battle powers", with the badges, the turns, the badge gems, the dice, the heal and the
@@ -130,7 +130,7 @@ The user's request, and the answers to the questions asked before building it:
 ## 5. Setting it up
 
 1. Run the migration in Supabase → SQL Editor:
-   https://github.com/Splifingald/pokedice/blob/ccr-92f0fa53-9n0srr/supabase/migrations/0061_battle_powers.sql
-   (after 0060). It adds the gems, the switches' server check and the Versus board's powers. Safe to run again.
+   https://github.com/Splifingald/pokedice/blob/feature/version_2/supabase/migrations/0064_battle_powers.sql
+   (after 0063). It adds the gems, the switches' server check and the Versus board's powers. Safe to run again.
    `supabase/seed.sql` carries it too (inlined last), and its item rows hold the gems.
 2. Admin → Config → **Battle powers**: each switch **On for admin** to try it, then **On for everyone**.

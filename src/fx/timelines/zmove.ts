@@ -1,4 +1,4 @@
-// A Z-Move (docs/31), in three timelines. The power gathering: the stage dims, light of the attack's type rises off the
+// A Z-Move (docs/35), in three timelines. The power gathering: the stage dims, light of the attack's type rises off the
 // attacker, a golden Z draws itself over it in three strokes and blazes. The strike, bigger than any move: a sphere of
 // the type's light, a Z at its heart, crosses the field and bursts on the target (hit-stop, white frames, rings, a quake)
 // — after a Flying, Ground or Water one, the attacker first comes back down out of the sky, up out of the ground or out

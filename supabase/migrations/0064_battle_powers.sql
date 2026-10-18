@@ -1,4 +1,4 @@
--- Battle powers (docs/31): Mega Evolution's gem rules, Gigantamax's newer rules and Z-Moves. The game decides all of it
+-- Battle powers (docs/35): Mega Evolution's gem rules, Gigantamax's newer rules and Z-Moves. The game decides all of it
 -- and keeps it in the save (src/engine/powers.ts: `save.powers`, the gems held and the badges that open each power);
 -- the server holds the three switches and shows Versus each player's powers.
 --
@@ -13,7 +13,7 @@
 -- 4. versus_board: a last `powers` column (last, so a client reading by position keeps working). Its return type
 --    changes, so it is dropped and made again with its grants, as 0049 did.
 --
--- Run after 0060; safe to run again. seed.sql inlines it last (scripts/seed.ts), after 0049, whose versus_board it
+-- Run after 0063; safe to run again. seed.sql inlines it last (scripts/seed.ts), after 0049, whose versus_board it
 -- redefines.
 
 -- ---------------------------------------------------------------- 1. the gems

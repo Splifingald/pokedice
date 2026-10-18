@@ -540,7 +540,7 @@ function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shin
     ...portalDiceFor(save, data, run.areaId, p.id),
   }))
   // Auto-mode (a cleared area) fights without Mega Evolution or Gigantamax under their older rules, on both sides —
-  // with the powers whose newer rules are on (docs/31); type changers (Arceus…) on both sides take a better type by
+  // with the powers whose newer rules are on (docs/35); type changers (Arceus…) on both sides take a better type by
   // themselves.
   const auto = !!useGame.getState().settings.autoMode && !!run.areaId && progressOf(save, run.areaId).cleared
   // A trainer's ace — its strongest, the last of them if several — may Mega Evolve or Gigantamax (see enemyPlanFor).

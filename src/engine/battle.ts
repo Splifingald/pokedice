@@ -64,15 +64,15 @@ export interface Battler {
   baseDex?: number
   /**
    * Mega Evolved (or Primal Reversion, Ultra Burst) now. It stays so until the fight ends — or, under the gem rules
-   * (docs/31), for `megaTimer`'s turns, or until it leaves the field.
+   * (docs/35), for `megaTimer`'s turns, or until it leaves the field.
    */
   mega?: boolean
   /** Under the gem rules: its own turns left as a Mega, and how it looked before. */
   megaTimer?: { turns: number; pre: FormSnapshot }
-  /** The battle power it has used this battle (docs/31): one each, a Mega, a Gigantamax or a Z-Move. */
+  /** The battle power it has used this battle (docs/35): one each, a Mega, a Gigantamax or a Z-Move. */
   powered?: PowerKind
   /**
-   * Up high, under ground or under water after a Flying, Ground or Water Z-Move (docs/31): every attack misses it, and
+   * Up high, under ground or under water after a Flying, Ground or Water Z-Move (docs/35): every attack misses it, and
    * at the start of its next turn it strikes with the roll it kept.
    */
   away?: { how: ZAway; dice: RolledDie[] }
@@ -127,11 +127,11 @@ export interface BattleState {
    * one limit under the older rules).
    */
   megaUsed?: number
-  /** Gigantamax and Z-Moves used by the player's side this battle (docs/31). */
+  /** Gigantamax and Z-Moves used by the player's side this battle (docs/35). */
   gmaxUsed?: number
   zUsed?: number
   /**
-   * The gem rules (docs/31): Mega Evolution only into these forms (the player's gems), at any level. Absent = the older
+   * The gem rules (docs/35): Mega Evolution only into these forms (the player's gems), at any level. Absent = the older
    * rule (any Mega form, from `megaEvolution.level`).
    */
   megaForms?: number[]
@@ -141,11 +141,11 @@ export interface BattleState {
   gmaxBoost?: { dice: number; healPercent: number }
   /** Mega Evolution and Gigantamax have a use each (the newer rules), rather than one shared. */
   ownLimits?: boolean
-  /** The player may use a Z-Move in this fight (docs/31). Absent = no. */
+  /** The player may use a Z-Move in this fight (docs/35). Absent = no. */
   zAllowed?: boolean
   /**
    * An auto battle: under the older rules no Mega Evolution or Gigantamax on either side; type changers on both pick
-   * their type themselves. Under the newer ones (docs/31) the player's side uses its powers by itself.
+   * their type themselves. Under the newer ones (docs/35) the player's side uses its powers by itself.
    */
   auto?: boolean
   /** What the foe does on its first turn — a trainer's ace Mega Evolving or Gigantamaxing — and whether it changes type. */
@@ -168,7 +168,7 @@ export interface EnemyPlan {
   gmax?: number | null
   /** It may change type (Arceus, Silvally, Ogerpon) to the one best against your Pokémon. */
   formChanges?: boolean
-  /** Its first attack is a Z-Move (docs/31). */
+  /** Its first attack is a Z-Move (docs/35). */
   z?: boolean
 }
 
@@ -176,7 +176,7 @@ export interface EnemyPlan {
 export type ZAway = 'fly' | 'dig' | 'dive'
 
 /**
- * What a Z-Move adds, by the attack's type (docs/31): a status, a heal, a turn away then the strike (Flying, Ground,
+ * What a Z-Move adds, by the attack's type (docs/35): a status, a heal, a turn away then the strike (Flying, Ground,
  * Water), a reckless blow (Fighting), every status shaken off (Steel), or more damage for every other type.
  */
 export type ZEffect = 'freeze' | 'paralyze' | 'burn' | 'heal' | 'confuse' | 'poison' | ZAway | 'reckless' | 'cleanse' | 'power'
@@ -229,7 +229,7 @@ export type BattleEvent =
   | { t: 'MEGA'; toDex: number }
   /** Gigantamax the Pokémon in battle. It doesn't end the turn. */
   | { t: 'GMAX'; toDex: number }
-  /** Attack with a Z-Move (docs/31): the roll as it stands, plus its type's effect. Ends the turn like ATTACK. */
+  /** Attack with a Z-Move (docs/35): the roll as it stands, plus its type's effect. Ends the turn like ATTACK. */
   | { t: 'ZMOVE' }
   /** Arceus, Silvally, Ogerpon: take this form (a type). It doesn't end the turn. */
   | { t: 'CHANGE_FORM'; toDex: number }
@@ -248,7 +248,7 @@ export type LogEntry =
       hpAfter: number
       dice: RolledDie[]
       result: DamageResult
-      /** A Z-Move's hit (docs/31); `from`: the strike of one that went away a turn before. */
+      /** A Z-Move's hit (docs/35); `from`: the strike of one that went away a turn before. */
       z?: { from?: ZAway }
     }
   | { kind: 'status'; target: Side; targetUid: string; status: StatusKind; stacks?: number; turns?: number }
@@ -265,7 +265,7 @@ export type LogEntry =
   /** Confusion recoil: the confused attacker hurts itself after its attack; `z`: a Fighting Z-Move's own force. */
   | { kind: 'recoil'; side: Side; uid: string; amount: number; hpAfter: number; z?: boolean }
   /**
-   * A Z-Move (docs/31), just before its hit: the attack's type, what it adds, and whether a chance-based effect (a
+   * A Z-Move (docs/35), just before its hit: the attack's type, what it adds, and whether a chance-based effect (a
    * freeze, a paralysis) landed. The status, heal or bigger hit itself follows in its own entries.
    */
   | { kind: 'zmove'; side: Side; uid: string; type: PokeType | null; effect: ZEffect; landed: boolean }
@@ -305,7 +305,7 @@ export interface BattlerSeed {
   /** A portal run's extra dice (docs/28), after its typed dice; the whole set kept to `diceCap` dice. */
   extraDice?: DieType[]
   diceCap?: number
-  /** The battle power it already used (a Versus fight carries it from one battle to the next, docs/31). */
+  /** The battle power it already used (a Versus fight carries it from one battle to the next, docs/35). */
   powered?: PowerKind
 }
 
@@ -375,7 +375,7 @@ export interface CreateBattleOptions {
   gmaxAllowed?: boolean
   /** The player has unlocked Z-Moves (see `zUnlocked`). */
   zAllowed?: boolean
-  /** The newer rules (docs/31, see `battlePowersFor`): the gems' Mega forms and a Mega's turns… */
+  /** The newer rules (docs/35, see `battlePowersFor`): the gems' Mega forms and a Mega's turns… */
   megaForms?: number[]
   megaTurns?: number
   /** …and Gigantamax's dice and heal. */
@@ -386,7 +386,7 @@ export interface CreateBattleOptions {
   enemyPlan?: EnemyPlan | null
   /**
    * An auto battle. Under the older rules no Mega Evolution or Gigantamax, for either side — only the foe's type
-   * change is kept; under the newer ones (docs/31) each power whose rules are on stays, used by the auto player.
+   * change is kept; under the newer ones (docs/35) each power whose rules are on stays, used by the auto player.
    */
   auto?: boolean
   /** No Potion or Revive works (Extreme mode, items switched off). */
@@ -422,7 +422,7 @@ function addDie(s: BattleState, side: Side, b: Battler, die: DieType, data: Game
 
 /**
  * Mega Evolution (Primal Reversion, Ultra Burst): its look and types, and a die — until the battle ends, or under the
- * gem rules (docs/31) for `megaTurns` of its own turns, the one it Mega Evolves in included.
+ * gem rules (docs/35) for `megaTurns` of its own turns, the one it Mega Evolves in included.
  */
 function megaEvolve(s: BattleState, side: Side, b: Battler, mega: Species, data: GameData, rng: Rng, log: LogEntry[]) {
   const base = data.species[b.baseDex ?? b.dex]
@@ -449,7 +449,7 @@ function endMega(side: Side, b: Battler, data: GameData, log: LogEntry[]) {
 
 /**
  * Gigantamax: its look and a die of its first type, for `gigantamax.turns` of its own turns. Under the newer rules
- * (docs/31, `gmaxBoost`) it gains that many dice instead, and heals a share of its max HP, which it keeps.
+ * (docs/35, `gmaxBoost`) it gains that many dice instead, and heals a share of its max HP, which it keeps.
  */
 function gigantamax(s: BattleState, side: Side, b: Battler, form: Species, data: GameData, rng: Rng, log: LogEntry[]) {
   const base = data.species[b.baseDex ?? b.dex]
@@ -596,7 +596,7 @@ export function unleashForm(b: Battler, data: GameData): Extract<LogEntry, { kin
 
 /**
  * The player's side has spent this power for the battle. Under the older rules Mega Evolution and Gigantamax share one
- * use; under the newer ones (docs/31) each has its own, and Z-Moves always do.
+ * use; under the newer ones (docs/35) each has its own, and Z-Moves always do.
  */
 export function powerSpent(s: BattleState, kind: PowerKind, data: GameData): boolean {
   const per = data.config.megaEvolution.perBattle
@@ -653,7 +653,7 @@ const other = (s: Side): Side => (s === 'player' ? 'enemy' : 'player')
 export const activeBattler = (s: BattleState): Battler => s.player[s.activeIndex]!
 
 /**
- * The powers a battle starts with. An auto battle keeps only the powers under the newer rules (docs/31) — the gems'
+ * The powers a battle starts with. An auto battle keeps only the powers under the newer rules (docs/35) — the gems'
  * Mega Evolution, the boosted Gigantamax, Z-Moves — on both sides; the foe's type change always.
  */
 function battlePowersOf(opts: CreateBattleOptions): Partial<BattleState> {
@@ -826,7 +826,7 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[]) 
       return
     }
 
-    // Back from up high, under ground or under water (a Z-Move, docs/31): it strikes with the roll it kept.
+    // Back from up high, under ground or under water (a Z-Move, docs/35): it strikes with the roll it kept.
     if (b.away) {
       const { how, dice } = b.away
       delete b.away
@@ -870,7 +870,7 @@ export function confusionRecoil(maxHp: number, data: GameData): number {
 }
 
 /**
- * A Z-Move (docs/31): what the attack's type adds, and whether a chance-based effect lands — rolled before the hit, so
+ * A Z-Move (docs/35): what the attack's type adds, and whether a chance-based effect lands — rolled before the hit, so
  * the log can say it first. Every other type hits `damagePercent` % harder.
  */
 function zMoveOf(result: DamageResult, data: GameData, rng: Rng): { effect: ZEffect; landed: boolean; result: DamageResult } {
@@ -931,7 +931,7 @@ function endAttack(s: BattleState, side: Side, data: GameData, log: LogEntry[]) 
 }
 
 /**
- * An attack with the hand on the table. `z`: true for a Z-Move (docs/31), or where a Flying, Ground or Water one went
+ * An attack with the hand on the table. `z`: true for a Z-Move (docs/35), or where a Flying, Ground or Water one went
  * — the strike it comes back with, from the roll it kept.
  */
 function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry[], rng?: Rng, z: boolean | ZAway = false) {
@@ -1222,7 +1222,7 @@ export function reduce(
         en.rerollsLeft -= 1
         log.push({ kind: 'reroll', side: 'enemy', mask, dice: s.dice, rerollsLeft: en.rerollsLeft })
       }
-      // A trainer's ace attacks with its Z-Move the first time it can (docs/31): never on a Pokémon already powered.
+      // A trainer's ace attacks with its Z-Move the first time it can (docs/35): never on a Pokémon already powered.
       const z = !!plan?.z && !s.enemyZDone && !en.powered
       if (z) {
         s.enemyZDone = true

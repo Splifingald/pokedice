@@ -384,7 +384,7 @@ function WorldShop() {
   )
 }
 
-/** The Mart's Mega Gems as shown (docs/31): its rows, or null while the shelf is shut here (`gemShelf`). */
+/** The Mart's Mega Gems as shown (docs/35): its rows, or null while the shelf is shut here (`gemShelf`). */
 export function GemShelfView({
   rows,
   gold,
@@ -469,7 +469,7 @@ export function GemShelfView({
 }
 
 /**
- * The Mart's Mega Gems (docs/31): the gems of the Pokémon found in this region, at their price, each bought once and
+ * The Mart's Mega Gems (docs/35): the gems of the Pokémon found in this region, at their price, each bought once and
  * never sold; the ones held say so. While the shelf is shut here (its League not beaten yet) a line says when it
  * opens. Nothing at all before Korrina's badge, or with the gem rules off.
  */
@@ -654,7 +654,7 @@ function SellTab() {
   const bag = Object.entries(inventory ?? {})
     .filter(([k, n]) => n > 0 && data.items[k])
     .map(([k, n]) => ({ it: data.items[k]!, owned: n }))
-  // Mega Gems are held, never in the bag's counts: listed apart, and never sold (docs/31).
+  // Mega Gems are held, never in the bag's counts: listed apart, and never sold (docs/35).
   const gemList = gems.length > 0 && (
     <section aria-labelledby="bag-gems" className="flex flex-col gap-1.5">
       <h2 id="bag-gems" className="mt-1 text-[24px] leading-none">

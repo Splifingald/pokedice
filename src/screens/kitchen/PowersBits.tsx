@@ -1,4 +1,4 @@
-// Kitchen sink (dev only): the battle powers (docs/31) — the plates of a Mega with its turns left, a Mega of the older
+// Kitchen sink (dev only): the battle powers (docs/35) — the plates of a Mega with its turns left, a Mega of the older
 // rules and a Gigantamax; Z-MOVE with each type's hint (and disabled); the Mart's Mega Gems open (held, affordable, too
 // dear), shut until the League, and with nothing for the region; each power's rules, the first time and from INFO.
 import { useMemo, useState } from 'react'

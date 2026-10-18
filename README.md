@@ -14,7 +14,7 @@ upgrades, and the goal is 151/151 in the Pokédex.
 
 The design lives in [`docs/`](docs): [game spec](docs/01-GAME-SPEC.md) · [data model](docs/02-DATA-MODEL.md) ·
 [build plan](docs/03-BUILD-PLAN.md) · [Sinnoh plan](docs/07-SINNOH-PLAN.md) · [Unova plan](docs/08-UNOVA-PLAN.md) · [Gen 6–9 plan](docs/11-GEN6-9-REGIONS-PLAN.md) ·
-[Gen 6–9 sprite sources](docs/10-GEN6-9-SPRITES.md) · [forms & Mega Evolution](docs/12-FORMS-AND-MEGA.md) · [battle powers: Mega Gems, Gigantamax, Z-Moves](docs/31-BATTLE-POWERS.md) ·
+[Gen 6–9 sprite sources](docs/10-GEN6-9-SPRITES.md) · [forms & Mega Evolution](docs/12-FORMS-AND-MEGA.md) · [battle powers: Mega Gems, Gigantamax, Z-Moves](docs/35-BATTLE-POWERS.md) ·
 [Showdown sprites](docs/13-SHOWDOWN-SPRITES.md) · [the Daybreak port](docs/14-DAYBREAK-PORT.md) ·
 [**UI guidelines**](docs/15-UI-GUIDELINES.md) (the rules every screen follows) · [friends](docs/16-FRIENDS-PLAN.md) ·
 [Discord sign-in setup](docs/17-DISCORD-SIGN-IN.md) · [the Discord server](docs/23-DISCORD-SERVER.md) (`pnpm discord`,

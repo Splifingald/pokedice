@@ -525,7 +525,7 @@ export type ItemEffect =
    */
   | { kind: 'bait'; faces: number[] }
   /**
-   * A Mega Gem (docs/31): lets the Pokémon this Mega form belongs to take it in battle, under the gem rules. Kept in
+   * A Mega Gem (docs/35): lets the Pokémon this Mega form belongs to take it in battle, under the gem rules. Kept in
    * `SaveData.powers.gems`, never in a bag: bought once, never sold.
    */
   | { kind: 'megaGem'; mega: number }
@@ -1121,11 +1121,11 @@ export interface GigantamaxConfig {
   turns: number
   /** Trainers Gigantamax their ace in these regions (leaders, Elite Four, Champions), once the player has it too. */
   trainerRegions: RegionId[]
-  /** The rules of 2026-10-18 (docs/31), behind their own switch: off, Gigantamax works as above. */
+  /** The rules of 2026-10-18 (docs/35), behind their own switch: off, Gigantamax works as above. */
   boost: GmaxBoostConfig
 }
 
-/** Gigantamax's newer rules (docs/31): a badge to open it, more dice, a heal, its own once per battle. */
+/** Gigantamax's newer rules (docs/35): a badge to open it, more dice, a heal, its own once per battle. */
 export interface GmaxBoostConfig {
   access: EventAccess
   /** Badges of `gigantamax.region` that open it there (Kabu's, the 3rd); elsewhere, the region's league. */
@@ -1136,7 +1136,7 @@ export interface GmaxBoostConfig {
   healPercent: number
 }
 
-/** Mega Evolution's gem rules (docs/31), behind their own switch: off, Mega Evolution works as `MegaConfig` says. */
+/** Mega Evolution's gem rules (docs/35), behind their own switch: off, Mega Evolution works as `MegaConfig` says. */
 export interface MegaGemsConfig {
   access: EventAccess
   /** Badges of `megaEvolution.region` that open it there (Korrina's, the 3rd); elsewhere, the region's league. */
@@ -1147,7 +1147,7 @@ export interface MegaGemsConfig {
   rewards: { badge: number; gem: string }[]
 }
 
-/** Z-Moves (docs/31): once per battle, the attack's type adds an effect. Off by default. */
+/** Z-Moves (docs/35): once per battle, the attack's type adds an effect. Off by default. */
 export interface ZMoveConfig {
   access: EventAccess
   /** The region whose badges open them (Alola)… */
@@ -1185,7 +1185,7 @@ export interface MegaConfig {
   trainerRegions: RegionId[]
   /** Trainer roles that use Mega Evolution and Gigantamax. */
   trainerRoles: TrainerRole[]
-  /** The gem rules of 2026-10-18 (docs/31), behind their own switch. */
+  /** The gem rules of 2026-10-18 (docs/35), behind their own switch. */
   gems: MegaGemsConfig
 }
 
@@ -1327,15 +1327,15 @@ export interface SaveData {
   general?: GeneralSave
   /** Trick or Treat (docs/29): its rules seen. Absent = never met. */
   trickOrTreat?: TrickSave
-  /** Mega Gems, and the battle powers' rules seen (docs/31), for every region of this save. Absent = none yet. */
+  /** Mega Gems, and the battle powers' rules seen (docs/35), for every region of this save. Absent = none yet. */
   powers?: PowersSave
 }
 
-/** The three battle powers (docs/31). */
+/** The three battle powers (docs/35). */
 export const POWER_KINDS = ['mega', 'gmax', 'z'] as const
 export type PowerKind = (typeof POWER_KINDS)[number]
 
-/** Mega Gems and the battle powers' pop-ups (docs/31). */
+/** Mega Gems and the battle powers' pop-ups (docs/35). */
 export interface PowersSave {
   /** Mega Gems held (item keys): from a badge or the Mart, each once, never sold. */
   gems?: string[]
@@ -1343,7 +1343,7 @@ export interface PowersSave {
   seen?: PowerKind[]
   /**
    * The powers whose badge has been won (Kalos's 3rd, Galar's, Alola's), whatever the switches say: Versus reads them
-   * from the save on the server, as it reads the gems (docs/31 §5).
+   * from the save on the server, as it reads the gems (docs/35 §5).
    */
   earned?: PowerKind[]
 }

@@ -1,4 +1,4 @@
-// The battle powers' rules (docs/15 §20, docs/31): Mega Evolution's gems, Gigantamax and Z-Moves. Each pops up once,
+// The battle powers' rules (docs/15 §20, docs/35): Mega Evolution's gems, Gigantamax and Z-Moves. Each pops up once,
 // when its badge is won with its switch on (queued behind the other one-time pop-ups), then from its INFO button (the
 // Mart's Mega Gems for Mega Evolution, the Pokémon sheet for all three). The numbers come from the config.
 import { useState } from 'react'

@@ -434,7 +434,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     setMenu(null)
     dispatch({ t: 'MEGA', toDex })
   }
-  // A Z-Move (docs/31): after the roll, the attack as the dice stand, with its type's effect.
+  // A Z-Move (docs/35): after the roll, the attack as the dice stand, with its type's effect.
   const zOpen = !versus && canZMove(st, data)
   const zType = preview?.r.attackType ?? null
   // Stunned, only a Steel-type has it: it shakes the stun off (no roll yet to name a type).
@@ -443,7 +443,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     : st.phase === 'player_stunned'
       ? zMoveText('cleanse', typeName('steel'), data)
       : zMoveText(zEffectOf(zType), zType ? typeName(zType) : null, data)
-  // The newer rules (docs/31) say how long a Mega lasts and what a Gigantamax brings.
+  // The newer rules (docs/35) say how long a Mega lasts and what a Gigantamax brings.
   const megaHint = st.megaTurns ? t('ui.battle.megaTimed', { n: st.megaTurns }) : t('ui.battle.megaOnce')
   const gmaxHint = st.gmaxBoost
     ? t(`ui.battle.gmaxBoostHint.${data.config.gigantamax.turns === 1 ? 'one' : 'other'}`, {

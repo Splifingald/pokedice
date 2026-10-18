@@ -36,7 +36,7 @@ export function effectText(item: ItemDef): string {
 }
 
 /**
- * What a Z-Move of this type adds (docs/31), with the config's numbers: "Electric: 50% chance to paralyze the foe".
+ * What a Z-Move of this type adds (docs/35), with the config's numbers: "Electric: 50% chance to paralyze the foe".
  * `typeLabel` is the type's name in the player's language; an untyped attack (base dice only) says "Z-Move".
  */
 export function zMoveText(effect: ZEffect, typeLabel: string | null, data: GameData): string {

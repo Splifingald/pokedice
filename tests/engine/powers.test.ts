@@ -1,4 +1,4 @@
-// The battle powers (docs/31): where each opens, the Mega Gems, and what a battle does with them under the newer rules.
+// The battle powers (docs/35): where each opens, the Mega Gems, and what a battle does with them under the newer rules.
 import { describe, expect, it } from 'vitest'
 import {
   activeBattler,

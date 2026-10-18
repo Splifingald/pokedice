@@ -1,4 +1,4 @@
-// Migration 0061 against a real Postgres (PGlite, in process): the battle powers (docs/31). The 95 Mega Gems as
+// Migration 0064 against a real Postgres (PGlite, in process): the battle powers (docs/35). The 95 Mega Gems as
 // items.json has them; each power's switch as the server reads it; and the Versus board shows each player's gems and
 // powers only while the switch is on for the caller, from the save of the board's realm. Then seed.sql's schema part,
 // run again over it, still ends on these versions. Supabase's own pieces are stood in for, as in general-sql.test.ts.
@@ -122,11 +122,11 @@ beforeAll(async () => {
     '0046_progress_raids_worlds.sql',
     '0047_trades_admin_read.sql',
     '0049_general_upgrades.sql',
-    '0061_battle_powers.sql',
+    '0064_battle_powers.sql',
   ])
     await db.exec(sql(f))
   // Safe to run again.
-  await db.exec(sql('0061_battle_powers.sql'))
+  await db.exec(sql('0064_battle_powers.sql'))
 
   await db.exec(
     `insert into auth.users (id) values ${Object.values(U)
@@ -150,7 +150,7 @@ afterAll(async () => {
   await db?.close()
 })
 
-describe('0061: the gems', () => {
+describe('0064: the gems', () => {
   it('adds the 95 Mega Gems as items.json has them', async () => {
     const rows = await as<Record<string, unknown>>(
       null,
@@ -175,7 +175,7 @@ describe('0061: the gems', () => {
   })
 })
 
-describe('0061: the switches and the Versus board', () => {
+describe('0064: the switches and the Versus board', () => {
   it('with no row, every power is off: the game’s defaults', async () => {
     expect(DEFAULT_CONFIG.megaEvolution.gems.access).toBe('off')
     expect(DEFAULT_CONFIG.gigantamax.boost.access).toBe('off')

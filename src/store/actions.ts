@@ -49,14 +49,14 @@ export function buy(key: string, qty = 1): boolean {
   return ok
 }
 
-/** A Mega Gem from this region's shelf (docs/31): once each, never sold. */
+/** A Mega Gem from this region's shelf (docs/35): once each, never sold. */
 export function buyGem(key: string): boolean {
   const ok = mutateSave((s) => buyGemIn(s, useGame.getState().data, key))
   if (!ok) pushToast(t('ui.toast.tooPoor'), 'bad')
   return ok
 }
 
-/** A battle power's rules pop-up has been shown (docs/31): it doesn't open by itself again. */
+/** A battle power's rules pop-up has been shown (docs/35): it doesn't open by itself again. */
 export function markPowerRulesSeen(kind: PowerKind): void {
   mutateSave((s) => (s.powers?.seen?.includes(kind) ? null : markPowerRulesSeenIn(s, kind)))
 }

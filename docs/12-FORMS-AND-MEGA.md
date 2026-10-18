@@ -51,7 +51,7 @@ Golem, Kukui's Ninetales, Hau's Raichu, Opal's Weezing, Bede's Rapidash, Klara's
 
 ## 3. Mega Evolution, Primal Reversion, Ultra Burst
 
-> **The gem rules** (docs/31, behind their own switch, Off by default) replace this section's unlock, level and
+> **The gem rules** (docs/35, behind their own switch, Off by default) replace this section's unlock, level and
 > duration while on: Korrina's badge, a gem per Mega, 3 turns, and a use of its own beside Gigantamax's.
 
 - **Unlocked** once the player has reached Kalos (started it, live or parked) — `megaEvolution.region` — and then in
@@ -74,7 +74,7 @@ species in this game), and **Mega Zygarde**, which PokeAPI has no sprite for yet
 
 ## 4. Gigantamax
 
-> **Its newer rules** (docs/31, behind their own switch, Off by default): Kabu's badge, +2 dice and a 30 % heal, and a
+> **Its newer rules** (docs/35, behind their own switch, Off by default): Kabu's badge, +2 dice and a 30 % heal, and a
 > use of its own beside the Mega's.
 
 - **Unlocked** once the player has reached Galar (`gigantamax.region`), then everywhere but a small world or a
@@ -99,7 +99,7 @@ species in this game), and **Mega Zygarde**, which PokeAPI has no sprite for yet
 
 ## 6. Trainers, and auto battles
 
-> With the newer rules on (docs/31), auto battles and Versus use the powers whose rules are on, and Alola's aces use a
+> With the newer rules on (docs/35), auto battles and Versus use the powers whose rules are on, and Alola's aces use a
 > Z-Move.
 
 - **Foes use them too** where the games did, and never before the player has the mechanic (`enemyPlanFor`):

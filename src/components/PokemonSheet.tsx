@@ -209,7 +209,7 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
   // Gigantamax has no level: a line under the curve once the player has reached Galar.
   const gmax = save && gmaxUnlocked(save, data) ? gmaxFormsOf(data, species.dex)[0] : undefined
   const megaLevel = data.config.megaEvolution.level
-  // The gem rules (docs/31): no level, a gem — so Mega Evolution leaves the curve for a line under it.
+  // The gem rules (docs/35): no level, a gem — so Mega Evolution leaves the curve for a line under it.
   const gems = gemRulesOn(data)
   const held = new Set(save ? ownedGems(save) : [])
   const boost = gmaxBoostOn(data) ? data.config.gigantamax.boost : null

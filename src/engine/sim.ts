@@ -53,7 +53,7 @@ export function autoEvents(state: BattleState, data: GameData, rng: Rng): Battle
         !canHurt(a, state.enemy, data, scale) &&
         state.player.find((b) => b.hp > 0 && canHurt(b, state.enemy, data, scale))
       if (better && data.config.allowVoluntarySwitch) return [{ t: 'SWITCH', instanceId: better.uid }]
-      // The battle powers it has (docs/31), the first Pokémon able to taking each: a Mega first, else a Gigantamax.
+      // The battle powers it has (docs/35), the first Pokémon able to taking each: a Mega first, else a Gigantamax.
       const mega = megaChoices(state, data)[0]
       if (mega) return [{ t: 'MEGA', toDex: mega.dex }]
       const gmax = gmaxChoices(state, data)[0]
@@ -61,7 +61,7 @@ export function autoEvents(state: BattleState, data: GameData, rng: Rng): Battle
       return [{ t: 'ROLL' }]
     }
     case 'player_stunned':
-      // A Steel-type's Z-Move shakes the stun off (docs/31).
+      // A Steel-type's Z-Move shakes the stun off (docs/35).
       return [canZMove(state, data) ? { t: 'ZMOVE' } : { t: 'PASS' }]
     case 'player_switch': {
       const alive = state.player.filter((b, i) => b.hp > 0 && i !== state.activeIndex)

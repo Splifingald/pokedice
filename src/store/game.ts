@@ -217,7 +217,7 @@ function settle(save: SaveData, data: GameData) {
   // Extreme mode (docs/22): the main save beat the league that opens it (noted once, so it stays open); an Extreme
   // save's K.O. clocks, on the real time.
   const ko = settleKo(stampExtremeUnlock(dup.save, data, Date.now()), data, trustedNow())
-  // The battle powers (docs/31): a badge's Mega Gem handed over (one won now, or before the gem rules were on), and the
+  // The battle powers (docs/35): a badge's Mega Gem handed over (one won now, or before the gem rules were on), and the
   // badges that open each power noted for Versus.
   const powers = syncPowers(ko.save, data)
   return {

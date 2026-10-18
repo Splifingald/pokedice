@@ -30,7 +30,7 @@ export function itemUses(item: ItemDef): ItemUse[] {
     case 'ball':
     case 'bait':
       return ['catch']
-    // A fossil revives on its own; a Mega Gem is held, not used: the battle reads it (docs/31).
+    // A fossil revives on its own; a Mega Gem is held, not used: the battle reads it (docs/35).
     case 'fossil':
     case 'megaGem':
       return []
@@ -60,7 +60,7 @@ export const ballBonus = (item: ItemDef | undefined): number => (item?.effect.ki
 
 /**
  * What the Mart pays for one: half its price, rounded down. Only items the Mart sells can be sold back (0 = can't); a
- * Mega Gem never is (docs/31).
+ * Mega Gem never is (docs/35).
  */
 export const sellPrice = (item: ItemDef | undefined): number =>
   item?.inShop && item.effect.kind !== 'megaGem' ? Math.floor(item.price / 2) : 0

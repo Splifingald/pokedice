@@ -221,7 +221,7 @@ function EffectEditor({ value, onDone }: { value: ItemEffect | undefined; onDone
         <option value="ball">ball: catch-die bonus</option>
         <option value="link">link cable: evolves a trade evolution (Team screen)</option>
         <option value="bait">bait: its die adds to a throw that fell short (six faces)</option>
-        <option value="megaGem">Mega Gem: opens this Mega form (its species dex, docs/31)</option>
+        <option value="megaGem">Mega Gem: opens this Mega form (its species dex, docs/35)</option>
       </select>
       {draft.kind === 'cure' ? (
         <div className="flex flex-wrap gap-2 text-base">

@@ -1,5 +1,5 @@
 /**
- * The battle powers (docs/31): Mega Evolution, Gigantamax and Z-Moves — where each is open, the Mega Gems, the rules
+ * The battle powers (docs/35): Mega Evolution, Gigantamax and Z-Moves — where each is open, the Mega Gems, the rules
  * pop-ups, and what foes do with them. The battle (engine/battle.ts) only applies what `battlePowersFor` hands it.
  *
  * Each power has a switch (docs/15 §20). Mega Evolution's and Gigantamax's turn on their newer rules; off, they work as
@@ -230,7 +230,7 @@ export function badgeGemsDue(save: SaveData, data: GameData): BadgeGem[] {
 
 /**
  * Keeps the powers' part of the save up to date: hands over the badges' gems that are due (a badge won just now, or
- * before the gem rules were on) and notes the powers whose badge is won, for Versus (docs/31 §5). The same save when
+ * before the gem rules were on) and notes the powers whose badge is won, for Versus (docs/35 §5). The same save when
  * nothing changed.
  */
 export function syncPowers(save: SaveData, data: GameData): { save: SaveData; given: BadgeGem[] } {
@@ -291,7 +291,7 @@ export function battlePowersFor(
   }
 }
 
-/** A Versus side's powers (docs/31 §5): the gems its save holds, and whether it has won Gigantamax's and Z-Moves' badges. */
+/** A Versus side's powers (docs/35 §5): the gems its save holds, and whether it has won Gigantamax's and Z-Moves' badges. */
 export interface VersusPowers {
   gems: string[]
   gmax: boolean

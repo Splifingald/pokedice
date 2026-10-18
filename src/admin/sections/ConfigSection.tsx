@@ -566,7 +566,7 @@ function GeneralBox() {
  * same row (0051): it counts the invites only while the switch isn't off, and hands each tier over once.
  */
 /**
- * The battle powers (docs/31): Mega Evolution's gem rules, Gigantamax's newer rules and Z-Moves, each with its switch
+ * The battle powers (docs/35): Mega Evolution's gem rules, Gigantamax's newer rules and Z-Moves, each with its switch
  * (Off: Mega Evolution and Gigantamax as before, no Z-Moves; the server checks them for Versus), then their numbers.
  */
 function BattlePowersBox() {
@@ -584,7 +584,7 @@ function BattlePowersBox() {
   return (
     <Box
       title="Battle powers: Mega Gems, Gigantamax, Z-Moves" icon="up"
-      hint="docs/31. Each switch is Off by default. Off, Mega Evolution and Gigantamax keep their older rules (Kalos / Galar reached, one shared use) and there are no Z-Moves. On: each opens at its region's badge, elsewhere after that region's League, never in a small world."
+      hint="docs/35. Each switch is Off by default. Off, Mega Evolution and Gigantamax keep their older rules (Kalos / Galar reached, one shared use) and there are no Z-Moves. On: each opens at its region's badge, elsewhere after that region's League, never in a small world."
     >
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-lg">Mega Gems</span>
