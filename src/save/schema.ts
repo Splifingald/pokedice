@@ -397,6 +397,12 @@ export const saveSchema = z.object({
   // The Underground (docs/34): the running event's block, and the plates kept for good.
   underground: undergroundSchema.optional(),
   plates: z.array(typeEnum).max(18).optional(),
+  // Trainer looks (docs/31): the unlocked looks seen in the menu (the red dot), and its rules pop-up shown.
+  looks: z
+    .object({ seen: z.array(z.string().max(40)).max(400).optional(), rulesSeen: z.boolean().optional() })
+    .optional(),
+  // Day and night (docs/32): its rules pop-up seen.
+  dayNight: z.object({ rulesSeen: z.boolean().optional() }).optional(),
 })
 
 /**

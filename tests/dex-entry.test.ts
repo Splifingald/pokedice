@@ -114,3 +114,24 @@ describe('whereToFindItem', () => {
     expect(whereToFindItem('no-such-item', data, 'kanto')).toEqual([])
   })
 })
+
+describe('whereToFind with day and night (docs/32)', () => {
+  const real = compileGameData(REAL)
+  const on = { ...real, config: { ...real.config, dayNight: { access: 'all' as const } } }
+
+  it('marks each Johto place where the species comes only by night or only by day, at any hour', () => {
+    for (const now of ['day', 'night', null] as const) {
+      const hoothoot = whereToFind(163, on, 'johto', now).filter((s) => !s.legendary && !s.fossil)
+      expect(hoothoot.length).toBeGreaterThan(0)
+      const route29 = hoothoot.find((s) => s.area.name === 'Route 29')!
+      expect(route29.time).toBe('night')
+      expect(whereToFind(161, on, 'johto', now).find((s) => s.area.name === 'Route 29')!.time).toBe('day')
+      // Rattata comes at any hour there: no mark.
+      expect(whereToFind(19, on, 'johto', now).find((s) => s.area.name === 'Route 29')!.time).toBeUndefined()
+    }
+  })
+
+  it('marks nothing while the switch is off', () => {
+    expect(whereToFind(163, real, 'johto', 'day').some((s) => s.time)).toBe(false)
+  })
+})

@@ -158,3 +158,7 @@ export const statusName = (status: StatusKind) => t(`ui.status.${status}.name`)
 /** A moment in the player's language and time: "Sat 18 Oct, 18:00" (a small world's end, an area's opening). */
 export const dayTime = (ms: number) =>
   new Date(ms).toLocaleString(getLang(), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+
+/** An hour of the day as the player's language writes it: "18:00", "6:00 PM" (day and night's turns, docs/32). */
+export const hourOfDay = (hour: number) =>
+  new Date(2000, 0, 1, hour).toLocaleTimeString(getLang(), { hour: 'numeric', minute: '2-digit' })

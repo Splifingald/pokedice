@@ -15,6 +15,7 @@ import {
   facesOf,
   formChoices,
   lockedTypeForms,
+  foesOnField,
   gmaxChoices,
   hasStatus,
   megaChoices,
@@ -45,6 +46,7 @@ import { Sheet } from '@/components/Sheet'
 import { SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { TypeMatchups } from '@/components/TypeMatchups'
+import { BattleDayTime } from '@/components/DayNight'
 import { pictureOf } from '@/fx/areaArt'
 import { ballOfItem } from '@/fx/scenes'
 import { loadSprite, spriteKey } from '@/fx/sprites'
@@ -59,11 +61,13 @@ import { AUTO_PACE, PaceContext, VERSUS_PACE } from '@/lib/pace'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { setSettings, useGame, type BattleSlice, type CatchThrow } from '@/store/game'
 import { answerBait, dispatchBattle, retryCatch, throwBall } from '@/store/run'
+import { useAreaDayTime } from '@/store/dayTime'
 import { cx } from '@/theme/util'
 import { BattleHistory, BattleHistoryList, DamageRecap } from './BattleHistory'
 import { BagButton, DiceTray, Readout, SwitchRow, TeamColumn, TeamPips, type Preview, type TrayDice } from './BattlePanel'
 import { BattleStage, type StageOverlay } from './BattleStage'
 import { CatchPanel, catchMessage } from './CatchPanel'
+import { DoublePlates, TargetPicker } from './DoublePlates'
 import { FoePlate, OwnPlate } from './Plates'
 import { useBattleAnimator } from './useBattleAnimator'
 import { StalemateView, VictoryView, WipeView } from './VictoryView'
@@ -200,6 +204,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const { level: chosenLevel, calm } = useMotion()
   const wide = useMediaQuery('(min-width: 1024px)')
   const st = battle.state
+  // A double battle (docs/33): four on the stage, the pair in front being whose turn it is and its target.
+  const dbl = st.double
   // A portal run's wild Pokémon wear the distortion (docs/28).
   const distorted = !versus && st.kind === 'wild' && !!save && inPortalRun(save, data, run.areaId)
   // The nightmare's rounds (docs/30) are fought under its full moon, a dark shadow haunting the foe.
@@ -228,6 +234,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const enc = versus ? null : run.encounter
   // The area's picture is the battle's background; Versus keeps the drawn one.
   const art = useMemo(() => (versus ? null : pictureOf(run.areaId)), [versus, run.areaId])
+  // Day and night (docs/32): in Johto, the stage's corner says which half of the day the fight is in.
+  const dayTime = useAreaDayTime(versus ? null : run.areaId)
   const isTrainerFight = !!versus || enc?.kind === 'trainer' || enc?.kind === 'gym'
   const trainerName = versus
     ? versus.trainerName
@@ -250,6 +258,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   // A wild or legendary foe the player can still catch isn't knocked out of the scene: the catch throw comes next.
   const catchable =
     !versus &&
+    !dbl &&
     (st.kind === 'wild' || st.kind === 'boss') &&
     !!save &&
     !!catchTarget(save, st.enemy.baseDex ?? st.enemy.dex, st.enemy.level, st.kind, data, st.enemy.shiny)
@@ -296,10 +305,24 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   }, [ready, intro, st.phase, quick, pace, battle.log.length, dispatch])
 
   const active = st.player.find((p) => p.uid === fx.activeUid) ?? activeBattler(st)
+  // The foe in front, as the log has played; a double battle's catch shows the one waiting for the ball.
+  const catchFoe = dbl && run.catch?.uid ? dbl.foes.find((f) => f.uid === run.catch!.uid) : undefined
+  const foeFront = catchFoe ?? (dbl ? (dbl.foes.find((f) => f.uid === fx.foeUid) ?? st.enemy) : st.enemy)
+  const byUid = (uids: readonly string[] | undefined, pool: readonly Battler[]) =>
+    (uids ?? []).flatMap((u) => pool.filter((b) => b.uid === u))
+  const ownRow = dbl ? byUid(fx.field?.own, st.player) : [active]
+  const foeRow = dbl ? byUid(fx.field?.foes, dbl.foes) : [st.enemy]
+  // Behind the pair in front: their partners still standing (or falling).
+  const ownBack = dbl ? (ownRow.find((b) => b.uid !== active.uid) ?? null) : null
+  const foeBack = dbl && !catchFoe ? (foeRow.find((b) => b.uid !== foeFront.uid) ?? null) : null
   // Cries: the foe's as it comes out, yours as each of yours does (after the foe's when both come out at once), a
   // Mega's once it stands there.
   useEffect(() => {
-    if (foeOut) playCry(st.enemy.dex)
+    if (!foeOut) return
+    playCry(st.enemy.dex)
+    // A pair: the second one's cry after the first's.
+    const partner = dbl?.foes[1]
+    if (dbl && partner) playCry(partner.dex, { wait: true })
     // Once per Pokémon coming out: a form change later is the Mega's own cry, below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [foeOut, st.enemy.uid])
@@ -359,7 +382,9 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     if (e.kind === 'rerolls') return p.rerollsLeft < p.rerolls
     return false
   }
-  const switchTargets = st.player.filter((p, i) => p.hp > 0 && i !== st.activeIndex)
+  // Out on the field already: not one to switch in (a double battle has two out).
+  const onField = (p: Battler) => (dbl ? dbl.ownSlots.some((i) => st.player[i]!.uid === p.uid) : p.uid === activeBattler(st).uid)
+  const switchTargets = st.player.filter((p) => p.hp > 0 && !onField(p))
 
   // Keyboard: 1..6 toggle, R reroll, Space/Enter roll or attack.
   useEffect(() => {
@@ -464,7 +489,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
    * asks; the answer plays on from that frame (docs/25). Capture Luck's stay ends with the Pokémon back on its platform.
    */
   const catchScene = (r: CatchThrow, from?: 'ground'): StageOverlay => {
-    const foe = st.enemy
+    const foe = foeFront
     // A throw that couldn't miss has no suspense to build: its result at once.
     const instant = sureThrow(r)
     return {
@@ -504,6 +529,15 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     setRevealed(false)
     setThrown(catchScene(r, 'ground'))
   }
+  // After a wild pair, the other one's throw (docs/33): a fresh start, the first throw's scene gone.
+  const catchUid = run.catch?.uid ?? null
+  const lastCatch = useRef(catchUid)
+  useEffect(() => {
+    if (lastCatch.current === catchUid) return
+    lastCatch.current = catchUid
+    setThrown(null)
+    setRevealed(false)
+  }, [catchUid])
   // Back to the ball picker: the Pokémon stands worn out on its platform again.
   const onRetry = () => {
     retryCatch()
@@ -576,21 +610,29 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const party = versus
     ? { count: versus.foeCount, index: versus.foeIndex }
     : (enc?.kind === 'trainer' || enc?.kind === 'gym') && run.trainer
-      ? { count: enc.team.length, index: run.trainer.index }
+      ? dbl
+        ? { count: dbl.foes.length, index: dbl.foes.filter((f) => fx.fainted[f.uid]).length }
+        : { count: enc.team.length, index: run.trainer.index }
       : null
 
-  const heading = t('ui.battle.heading', {
-    mine: active.name,
-    foe: trainerName
-      ? t('ui.battle.theirs', { trainer: trainerName, name: st.enemy.name })
-      : st.kind === 'wild'
-        ? t('ui.battle.aWild', { name: st.enemy.name })
-        : st.enemy.name,
-  })
+  const pairNames = (row: readonly Battler[]) => row.map((b) => b.name).join(' & ')
+  const heading = dbl
+    ? t('ui.battle.heading', {
+        mine: pairNames(ownRow),
+        foe: trainerName ? t('ui.battle.theirs', { trainer: trainerName, name: pairNames(foeRow) }) : pairNames(foeRow),
+      })
+    : t('ui.battle.heading', {
+        mine: active.name,
+        foe: trainerName
+          ? t('ui.battle.theirs', { trainer: trainerName, name: st.enemy.name })
+          : st.kind === 'wild'
+            ? t('ui.battle.aWild', { name: st.enemy.name })
+            : st.enemy.name,
+      })
 
   const over = !!versus && played && !!versus.end
   const message = catching
-    ? catchMessage(run.catch!, st.enemy.name, { revealed })
+    ? catchMessage(run.catch!, foeFront.name, { revealed })
     : forced && !auto
       ? t('ui.battle.chooseNext')
       : canAct && rolling && !auto && active.rerollsLeft > 0
@@ -633,7 +675,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     actions = (
       <div className="flex flex-col gap-2">
         {st.player
-          .filter((p) => p.hp > 0)
+          .filter((p) => p.hp > 0 && !onField(p))
           .map((p) => (
             <SwitchRow key={p.uid} b={p} detailed onPick={() => dispatch({ t: 'SWITCH', instanceId: p.uid })} />
           ))}
@@ -713,7 +755,12 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     <div ref={stageBox} className="shadow-ledge">
       <BattleStage
         own={active}
-        foe={st.enemy}
+        foe={foeFront}
+        double={!!dbl}
+        ownBack={ownBack}
+        foeBack={foeBack}
+        onAim={canAct && !auto && dbl ? (b) => dispatch({ t: 'TARGET', uid: b.uid }) : undefined}
+        aimLabel={(b) => t('ui.battle.aimAt', { name: b.name })}
         fx={fx}
         art={art}
         ownShown={ownOut}
@@ -723,14 +770,26 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         distorted={distorted}
         world={dream ? 'nightmare' : undefined}
         haunted={dream}
-        worn={(catching || !!fx.wornOut[st.enemy.uid]) && !thrown}
+        worn={(catching || !!fx.wornOut[foeFront.uid]) && !thrown}
         onContact={sceneContact}
         onSceneDone={sceneDone}
         onTap={tapMatchups}
         tapLabel={(b) => t('ui.types.tap', { name: b.name })}
         label={heading}
       >
-        {foeOut && !bossIntro && (
+        {dayTime && <BattleDayTime time={dayTime} />}
+        {dbl && foeOut && ownOut && !catching && (
+          <DoublePlates
+            foes={foeRow}
+            own={ownRow}
+            frontFoe={foeFront.uid}
+            frontOwn={active.uid}
+            hpOf={(b) => fx.hp[b.uid] ?? b.hp}
+            faintedOf={(b) => !!fx.fainted[b.uid]}
+            party={party}
+          />
+        )}
+        {!dbl && foeOut && !bossIntro && (
           <FoePlate
             b={st.enemy}
             hp={fx.hp[st.enemy.uid] ?? st.enemy.hp}
@@ -739,7 +798,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             open={matchups === 'enemy'}
           />
         )}
-        {ownOut && !bossIntro && (
+        {!dbl && ownOut && !bossIntro && (
           <OwnPlate
             b={active}
             hp={fx.hp[active.uid] ?? active.hp}
@@ -749,7 +808,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         )}
         {matchups && (
           <MatchupPopup
-            b={matchups === 'enemy' ? st.enemy : active}
+            b={matchups === 'enemy' ? foeFront : active}
             side={matchups}
             onClose={() => setMatchups(null)}
           />
@@ -819,8 +878,17 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                   combo={ring}
                   onToggle={canAct && rolling && !auto ? (i) => dispatch({ t: 'TOGGLE_DIE', i }) : undefined}
                   size={dieSize}
-                  foeName={st.enemy.name}
+                  foeName={foeFront.name}
                 />
+                {/* A double battle: which foe the attack goes to (the stage's foe in front). */}
+                {dbl && canAct && !auto && foesOnField(st).filter((f) => f.hp > 0).length > 1 && (
+                  <TargetPicker
+                    foes={foesOnField(st).filter((f) => f.hp > 0)}
+                    target={st.enemy.uid}
+                    hpOf={(b) => fx.hp[b.uid] ?? b.hp}
+                    onPick={(b) => dispatch({ t: 'TARGET', uid: b.uid })}
+                  />
+                )}
                 <div
                   className="flex min-h-[30px] flex-wrap items-center justify-center gap-x-2 gap-y-1"
                   aria-live="polite"

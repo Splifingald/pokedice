@@ -42,11 +42,13 @@ import { TypeBadge, TypeSwatch } from '@/components/TypeBadge'
 import { soundOn } from '@/save/storage'
 import { pushToast, setSettings, useGame } from '@/store/game'
 import { BattleBits } from './kitchen/BattleBits'
+import { DoubleBits } from './kitchen/DoubleBits'
 import { DayCareBits } from './kitchen/DayCareBits'
 import { NicknameBits } from './kitchen/NicknameBits'
 import { TradeKitBits } from './kitchen/TradeBits'
 import { PushBits } from './kitchen/PushBits'
 import { GeneralBits } from './kitchen/GeneralBits'
+import { LooksBits } from './kitchen/LooksBits'
 import { RulesBits } from './kitchen/RulesBits'
 import { ExtremeBits } from './kitchen/ExtremeBits'
 import { PartnerBits } from './kitchen/PartnerBits'
@@ -61,6 +63,7 @@ import { InviteBits } from './kitchen/InviteBits'
 import { SupportBits } from './kitchen/SupportBits'
 import { TrickBits } from './kitchen/TrickBits'
 import { UndergroundBits } from './kitchen/UndergroundBits'
+import { DayNightBits } from './kitchen/DayNightBits'
 import { RotateView } from '@/components/RotateCover'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
 import { BoardRow } from '@/components/BoardRow'
@@ -598,6 +601,10 @@ export function KitchenSink() {
         <BattleBits />
       </Section>
 
+      <Section title="Double battles: the four-Pokémon stage (front pair big, partners behind), name-less plates, target picker, two leads">
+        <DoubleBits />
+      </Section>
+
       <Section title="PartnerMoment: the lab (new game, new region)">
         <PartnerBits />
       </Section>
@@ -616,6 +623,10 @@ export function KitchenSink() {
 
       <Section title="General upgrades: the tab's cards, rules and INFO, while you were away, golden names (docs/25)">
         <GeneralBits />
+      </Section>
+
+      <Section title="Trainer looks: the row and its red dot, the menu in each state, locked looks, rules and INFO (docs/31)">
+        <LooksBits />
       </Section>
 
       <Section title="Trades: visibility, wants, time left, board rows (every state), listing sheet, share, rules, the trade scene, results">
@@ -673,6 +684,9 @@ export function KitchenSink() {
       </Section>
       <Section title="The Underground: the cave, the crack gauge, a wall in each state (fresh, half dug with a strike flashing, cleared, collapsing), the pickaxe die and faces, orbs and plates, the haul, the plates and orb bag, the team seats, the rules">
         <UndergroundBits />
+      </Section>
+      <Section title="Day and night (Johto): the top bar's chip by day and by night, the fights' indicator, the list tags (its half, the other half), rules">
+        <DayNightBits />
       </Section>
 
       <Section title="StatusIcons · PixelIcon">

@@ -19,11 +19,14 @@ export function LeadPicker({
   value,
   onChange,
   foe,
+  pair,
 }: {
   value: string | null
   onChange: (uid: string) => void
   /** The types of the Pokémon about to be faced, when the player can see it. */
   foe?: readonly PokeType[]
+  /** A double battle (docs/33): two go out. SWITCH picks one, the earlier pick making way when two are picked. */
+  pair?: { value: string[]; onChange: (uids: string[]) => void }
 }) {
   const { t } = useT()
   const save = useGame((s) => s.save)
@@ -33,15 +36,21 @@ export function LeadPicker({
   if (!save) return null
   const team = teamOf(save)
   const current = value && team.some((p) => p.id === value && p.currentHp > 0) ? value : team.find((p) => p.currentHp > 0)?.id
+  const picked = pair ? pickedPair(pair.value) : []
+  const pick = (id: string) => {
+    if (!pair) return onChange(id)
+    if (picked.includes(id)) return
+    pair.onChange([...picked, id].slice(-2))
+  }
   return (
     <div>
-      <div className="mb-1 text-lg text-muted">{t('ui.lead.sendOut')}</div>
+      <div className="mb-1 text-lg text-muted">{t(pair ? 'ui.lead.sendOutTwo' : 'ui.lead.sendOut')}</div>
       <ul className="grid grid-cols-3 gap-1.5 sm:gap-2">
         {team.map((p) => {
           const species = data.species[p.dex]
           if (!species) return null
           const fainted = p.currentHp <= 0
-          const selected = p.id === current
+          const selected = pair ? picked.includes(p.id) : p.id === current
           const edge = hints && foe?.length ? attackEdge(data, instanceStats(p, data).dice, foe) : 1
           return (
             <li
@@ -81,7 +90,7 @@ export function LeadPicker({
                   disabled={fainted}
                   aria-pressed={selected}
                   aria-label={t('ui.lead.sendOutName', { name: species.name })}
-                  onClick={() => onChange(p.id)}
+                  onClick={() => pick(p.id)}
                 >
                   {t('ui.lead.switch')}
                 </PixelButton>
@@ -102,6 +111,15 @@ export function LeadPicker({
       <SheetModal view={info ? { kind: 'inst', id: info } : null} onClose={() => setInfo(null)} />
     </div>
   )
+}
+
+/** A double battle's two leads: those picked still able, filled up with the first able ones, in team order. */
+export function pickedPair(value: readonly string[]): string[] {
+  const save = useGame.getState().save
+  if (!save) return []
+  const able = teamOf(save).filter((p) => p.currentHp > 0).map((p) => p.id)
+  const kept = value.filter((id) => able.includes(id))
+  return [...kept, ...able.filter((id) => !kept.includes(id))].slice(0, 2)
 }
 
 export function defaultLead(): string | undefined {
