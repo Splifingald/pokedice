@@ -13,6 +13,7 @@ import { useInWorld, worldVars, WorldByePopup, WorldPopup } from '@/screens/even
 import { WorldPick } from '@/screens/events/worldPick'
 import { VersusUnlockPopup } from './FeatureRules'
 import { GeneralUnlockPopup, OfflineReportModal } from './GeneralRules'
+import { DayNightRulesPopup } from './DayNight'
 import { RaidGiftPopup } from './RaidGiftPopup'
 import { FriendsService } from './friends/FriendsService'
 import { InviteRewardPopup, InviteRulesPopup } from './friends/InviteRewards'
@@ -25,6 +26,7 @@ import { GiftService } from './Gifts'
 import { ShareTutorial } from './ShareTutorial'
 import { PortalGuard, PortalUnlockPopup } from '@/screens/area/PortalRun'
 import { NightmareGuard } from '@/screens/area/NightmareRun'
+import { useUndergroundSettle } from '@/store/underground'
 
 /** In-game shell: top bar, side bar (desktop) or bottom bar (phones), and the screen. No save → back to the title. */
 export function GameLayout() {
@@ -40,6 +42,8 @@ export function GameLayout() {
   const { inside, world } = useInWorld()
   // The special events read the real time (docs/18): kept fresh while the game is open.
   useServerTimeSync()
+  // The Underground's block follows the event: a new one starts afresh, an ended one goes, free kits come in.
+  useUndergroundSettle()
   if (!hasSave) return <Navigate to="/" replace />
   return (
     <div className={cx('flex min-h-screen flex-col', inside && 'in-world')} style={inside ? worldVars(world) : undefined}>
@@ -70,6 +74,7 @@ export function GameLayout() {
       <VersusUnlockPopup />
       <ExtremeUnlockPopup />
       <GeneralUnlockPopup />
+      <DayNightRulesPopup />
       <AwayReportModal />
       <OfflineReportModal />
       <RaidGiftPopup />

@@ -272,6 +272,7 @@ const liveTitle = (e: LiveEvent) =>
 function liveLine(e: LiveEvent, data: GameData, save: SaveData): string {
   const pct = Math.round((e.cash.multiplier - 1) * 100)
   if (e.type === 'cash') return t('ui.push.live.cash', { pct })
+  if (e.type === 'underground') return t('ui.push.live.underground')
   if (e.type === 'shop') {
     const names = liveShopRows(save, data, e).map((r) => r.item.name)
     return t('ui.push.live.shop', { items: joinList(names.slice(0, 3)) })
@@ -336,7 +337,7 @@ export function payloadOf(n: PushNotice, save: SaveData, data: GameData): PushPa
     ...base,
     title: t('ui.push.live.title', { name: liveTitle(e) }),
     body: liveLine(e, data, save),
-    url: e.type === 'shop' ? '/shop' : '/home',
+    url: e.type === 'shop' ? '/shop' : e.type === 'underground' ? '/underground' : '/home',
     ...(e.banner && { image: pictureArt(e.banner).bg?.src, art: pictureArt(e.banner) }),
   }
 }

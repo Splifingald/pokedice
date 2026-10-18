@@ -49,6 +49,7 @@ export function PortalRaidBits() {
     message: '',
     hp: {},
     activeUid: own.uid,
+    foeUid: 'enemy',
     fainted: {},
     dex: {},
     wornOut: {},

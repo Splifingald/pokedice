@@ -1,4 +1,5 @@
 import { isLegendary } from './breeding'
+import { areaDayTime, wildPoolAt } from './dayNight'
 import { shuffle } from './deal'
 import { eventOn } from './events'
 import { regionOfArea } from './regions'
@@ -27,8 +28,10 @@ import type {
 } from './types'
 
 export type Encounter =
-  | { kind: 'wild'; dex: number; level: number; isNew: boolean; shiny?: boolean }
-  | { kind: 'trainer'; trainerId: string; name: string; spriteUrl: string | null; team: TrainerMon[] }
+  /** `partner`: a second wild Pokémon, for a double battle (docs/33). */
+  | { kind: 'wild'; dex: number; level: number; isNew: boolean; shiny?: boolean; partner?: WildPartner }
+  /** `double`: fought 2 v 2, two of the team out at once (docs/33). */
+  | { kind: 'trainer'; trainerId: string; name: string; spriteUrl: string | null; team: TrainerMon[]; double?: boolean }
   | {
       kind: 'gym'
       trainerId: string
@@ -44,6 +47,8 @@ export type Encounter =
       upgradeLevel?: number
       /** An Elite Rebattle fight: the region and the tier (0 = Bronze). */
       rebattle?: { regionId: string; tier: number }
+      /** Fought 2 v 2 (Tate & Liza, docs/33). */
+      double?: boolean
     }
   /** `reason`: 'round' opens a new round; 'fainted' follows a K.O. in an easy area. */
   | { kind: 'center'; forced: boolean; reason?: 'fainted' | 'round' }
@@ -55,6 +60,14 @@ export type Encounter =
   | { kind: 'casino' }
   /** Trick or Treat (docs/29): a ghost from the area's list, tempted with Treats and caught with a Trick Ball. */
   | { kind: 'trick'; dex: number; level: number; tier: TrickTier; isNew: boolean; shiny?: boolean }
+
+/** A wild double battle's second Pokémon (docs/33). */
+export interface WildPartner {
+  dex: number
+  level: number
+  isNew: boolean
+  shiny?: boolean
+}
 
 export type ForceKind = EncounterKind | 'boss' | 'gym'
 
@@ -81,6 +94,11 @@ export interface EncounterContext {
   noCenters?: boolean
   /** × the wild shiny odds here: a Shiny Parade live event covering the area (liveEvents shinyBoost). */
   shinyBoost?: number
+  /**
+   * The player's local hour (0–23): in an area that keeps the time (docs/32), only its half's wild Pokémon come.
+   * Unset = every one, as where time isn't kept.
+   */
+  hour?: number | null
 }
 
 /** Every round the area asks for is done: its gym / legendary waits, and the area can clear. */
@@ -247,15 +265,17 @@ export function rollRoamer(ctx: EncounterContext, rng: Rng): Encounter | null {
 }
 
 /**
- * Each wild pool entry's weight for the next wild Pokémon. Once the pity (game_config.newPokemonPity) kicks in, the
- * ones not caught yet are weighted up together so that they come `pityChance` of the time instead of their share of the
- * pool, keeping their odds among themselves. While it's ×1, or every one is caught (or none is), the pool's own weights.
+ * Each wild pool entry's weight for the next wild Pokémon. Where the area keeps the time (docs/32), the other half's
+ * Pokémon weigh 0. Once the pity (game_config.newPokemonPity) kicks in, the ones not caught yet are weighted up
+ * together so that they come `pityChance` of the time instead of their share of the pool, keeping their odds among
+ * themselves. While it's ×1, or every one is caught (or none is), the pool's own weights.
  */
 export function wildOdds(
-  ctx: Pick<EncounterContext, 'area' | 'progress' | 'data' | 'pokedex'>,
+  ctx: Pick<EncounterContext, 'area' | 'progress' | 'data' | 'pokedex' | 'hour'>,
 ): { entry: WildPoolEntry; weight: number; isNew: boolean }[] {
   const caught = new Set(ctx.pokedex)
-  const odds = ctx.area.wildPool.map((entry) => ({
+  const pool = wildPoolAt(ctx.area, areaDayTime(ctx.data, ctx.area, ctx.hour))
+  const odds = pool.map((entry) => ({
     entry,
     weight: ctx.data.species[entry.dex] ? Math.max(0, entry.weight) : 0,
     isNew: !caught.has(entry.dex),

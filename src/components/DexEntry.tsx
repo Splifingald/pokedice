@@ -27,9 +27,13 @@ import {
   type ItemDef,
   type ProgressRaid,
   type RegionId,
+  speciesTime,
+  wildShare,
+  type DayTime,
 } from '@/engine'
 import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
+import { useDayTime } from '@/store/dayTime'
 import { useGame } from '@/store/game'
 import { useServerNow } from '@/store/serverTime'
 import { progressRaidPath } from '@/screens/events/progressRaids'
@@ -41,6 +45,7 @@ import { evolutionHow, PokemonSheet, useVisibleEvolutions } from './PokemonSheet
 import { MiniSprite } from './SpriteImg'
 import { areaStatus, lockReason } from '@/screens/home/areas'
 import { AreaStrip } from './AreaStrip'
+import { DayNightPill } from './DayNight'
 import { travelTo } from '@/store/travel'
 
 interface Spot {
@@ -52,10 +57,15 @@ interface Spot {
   legendary: boolean
   /** Set when the species is revived from a fossil found here rather than met in the grass. */
   fossil?: ItemDef
-  /** Set when this is where an item (an evolution stone…) turns up in the loot, not a Pokémon. */
-  loot?: { item: ItemDef; entryId: string; unique: boolean }
+  /**
+   * Set when this is where an item (an evolution stone…) turns up in the loot, not a Pokémon. `entryIds` holds every
+   * one-time find of it in the area (0059 gave each a twin), so the area shows once with how many there are.
+   */
+  loot?: { item: ItemDef; entryIds: string[]; unique: boolean }
   /** Set when the area's legendary is a progression raid (docs/24): GO opens the raid's page. */
   raid?: ProgressRaid
+  /** Met here only by day or only by night (docs/32). */
+  time?: DayTime | null
 }
 
 const byRoute = (a: Spot, b: Spot) => Number(a.area.hidden) - Number(b.area.hidden) || a.area.orderIndex - b.area.orderIndex
@@ -68,19 +78,22 @@ const byRoute = (a: Spot, b: Spot) => Number(a.area.hidden) - Number(b.area.hidd
  * `isAreaUnlocked` can answer for (it reads the live region's progress), and the only ones the card's travel button
  * can enter. Listing another region's routes offered a Kanto player a walk to Mount Silver.
  */
-export function whereToFind(dex: number, data: GameData, region: RegionId): Spot[] {
+export function whereToFind(dex: number, data: GameData, region: RegionId, now: DayTime | null = null): Spot[] {
   const out: Spot[] = []
   for (const area of data.areas) {
     if (regionOfArea(area) !== region) continue
     const total = area.wildPool.reduce((sum, e) => sum + Math.max(0, e.weight), 0)
     const hits = area.wildPool.filter((e) => e.dex === dex && e.weight > 0)
     if (hits.length && total) {
+      // Where the area keeps the time (docs/32): the share when it's met, and its sun or moon.
+      const time = speciesTime(data, area, dex)
       out.push({
         area,
         minLevel: Math.min(...hits.map((h) => h.minLevel)),
         maxLevel: Math.max(...hits.map((h) => h.maxLevel)),
-        share: hits.reduce((sum, h) => sum + h.weight, 0) / total,
+        share: wildShare(data, area, dex, now),
         legendary: false,
+        ...(time && { time }),
       })
     }
     const boss = area.legendaryBoss?.find((b) => b.dex === dex)
@@ -119,19 +132,35 @@ export function whereToFindItem(itemKey: string, data: GameData, region: RegionI
   for (const area of data.areas) {
     if (regionOfArea(area) !== region) continue
     const lootTotal = area.lootPool.reduce((sum, e) => sum + Math.max(0, e.weight), 0)
+    let once: Spot | null = null
     for (const entry of area.lootPool) {
       if (entry.itemKey !== itemKey || entry.weight <= 0) continue
-      out.push({
+      if (entry.unique && once) {
+        once.loot!.entryIds.push(entry.id)
+        continue
+      }
+      const spot: Spot = {
         area,
         minLevel: 0,
         maxLevel: 0,
         share: lootTotal ? entry.weight / lootTotal : 0,
         legendary: false,
-        loot: { item, entryId: entry.id, unique: entry.unique },
-      })
+        loot: { item, entryIds: [entry.id], unique: entry.unique },
+      }
+      if (entry.unique) once = spot
+      out.push(spot)
     }
   }
   return out.sort(byRoute)
+}
+
+/** An area's one-time finds of an item: once or n times, and how many of them are still to be found. */
+function lootOnceLine(entryIds: readonly string[], found: readonly string[]) {
+  const total = entryIds.length
+  const left = entryIds.filter((id) => !found.includes(id)).length
+  const line = total > 1 ? t('ui.dex.lootTimes', { n: total }) : t('ui.dex.lootOnce')
+  if (!left) return line + t('ui.dex.alreadyFoundSuffix')
+  return left < total ? line + t('ui.dex.lootLeftSuffix', { n: left }) : line
 }
 
 export const rarity = (share: number) => t(share >= 0.15 ? 'ui.dex.common' : share >= 0.06 ? 'ui.dex.uncommon' : 'ui.dex.rare')
@@ -191,7 +220,7 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
         <small className="font-pixel-sm text-[14px] leading-tight text-muted">
           {spot.loot
             ? spot.loot.unique
-              ? t('ui.dex.lootOnce') + (progressOf(save, area.id).uniqueFound?.includes(spot.loot.entryId) ? t('ui.dex.alreadyFoundSuffix') : '')
+              ? lootOnceLine(spot.loot.entryIds, progressOf(save, area.id).uniqueFound ?? [])
               : t('ui.dex.lootSpot', { rarity: rarity(spot.share) })
             : spot.fossil
               ? t('ui.dex.fossilSpot', { item: spot.fossil.name, levels, rarity: rarity(spot.share) })
@@ -204,6 +233,12 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
           {locked && ` · ${lockReason(save, data, area) || t('ui.dex.locked')}`}
           {closed && t('ui.dex.closedSuffix')}
         </small>
+        {/* Day and night (docs/32): a place where it comes only by day or only by night says so on its own chip. */}
+        {spot.time && (
+          <span className="flex">
+            <DayNightPill time={spot.time} />
+          </span>
+        )}
       </span>
       {locked || closed ? (
         <span className="absolute right-2.5 top-1/2 grid h-11 w-[60px] -translate-y-1/2 place-items-center bg-well-deep shadow-ring-line" aria-hidden>
@@ -302,7 +337,8 @@ function useSpots(dex: number) {
   // Travel waits while an encounter is under way; between encounters every GO works.
   const busy = useGame((s) => s.run.phase !== 'idle')
   const here = save?.currentAreaId
-  const spots = useMemo(() => (region ? whereToFind(dex, data, region) : []), [dex, data, region])
+  const now = useDayTime()
+  const spots = useMemo(() => (region ? whereToFind(dex, data, region, now) : []), [dex, data, region, now])
   return { spots, travelHint: busy && spots.some((s) => s.area.id !== here) }
 }
 
@@ -310,7 +346,7 @@ function SpotList({ spots, onTravel }: { spots: Spot[]; onTravel?: () => void })
   return (
     <ul className="grid gap-1.5">
       {spots.map((s) => (
-        <SpotCard key={`${s.area.id}-${s.legendary}-${s.fossil?.key ?? ''}-${s.loot?.entryId ?? ''}`} spot={s} onTravel={onTravel} />
+        <SpotCard key={`${s.area.id}-${s.legendary}-${s.fossil?.key ?? ''}-${s.loot?.entryIds[0] ?? ''}`} spot={s} onTravel={onTravel} />
       ))}
     </ul>
   )

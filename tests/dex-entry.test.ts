@@ -113,4 +113,37 @@ describe('whereToFindItem', () => {
   it('knows nothing of an unknown item', () => {
     expect(whereToFindItem('no-such-item', data, 'kanto')).toEqual([])
   })
+
+  it("shows an area once for all of an item's one-time finds there (0059's twins)", () => {
+    const moon = data.areas.find((a) => a.name === 'Mt. Moon')!
+    const entry = moon.lootPool.find((e) => e.itemKey === 'moon-stone')!
+    const twin = { ...entry, id: `${entry.id}-twin`, unique: true }
+    const once = { ...entry, unique: true }
+    const pool = [...moon.lootPool.filter((e) => e.id !== entry.id), once, twin]
+    const twinned = { ...data, areas: data.areas.map((a) => (a.id === moon.id ? { ...a, lootPool: pool } : a)) }
+    const spots = whereToFindItem('moon-stone', twinned, 'kanto').filter((s) => s.area.id === moon.id)
+    expect(spots).toHaveLength(1)
+    expect(spots[0]!.loot!.entryIds).toEqual([entry.id, twin.id])
+  })
+})
+
+describe('whereToFind with day and night (docs/32)', () => {
+  const real = compileGameData(REAL)
+  const on = { ...real, config: { ...real.config, dayNight: { access: 'all' as const } } }
+
+  it('marks each Johto place where the species comes only by night or only by day, at any hour', () => {
+    for (const now of ['day', 'night', null] as const) {
+      const hoothoot = whereToFind(163, on, 'johto', now).filter((s) => !s.legendary && !s.fossil)
+      expect(hoothoot.length).toBeGreaterThan(0)
+      const route29 = hoothoot.find((s) => s.area.name === 'Route 29')!
+      expect(route29.time).toBe('night')
+      expect(whereToFind(161, on, 'johto', now).find((s) => s.area.name === 'Route 29')!.time).toBe('day')
+      // Rattata comes at any hour there: no mark.
+      expect(whereToFind(19, on, 'johto', now).find((s) => s.area.name === 'Route 29')!.time).toBeUndefined()
+    }
+  })
+
+  it('marks nothing while the switch is off', () => {
+    expect(whereToFind(163, real, 'johto', 'day').some((s) => s.time)).toBe(false)
+  })
 })
