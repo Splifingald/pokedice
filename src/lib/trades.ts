@@ -58,6 +58,8 @@ export interface MineRow {
   with: string
   /** The other trainer's golden name (docs/25). */
   withRich?: boolean
+  /** Their account (0061; absent before it). */
+  withId?: string
 }
 
 /** What a trade taken just now brought: the listed Pokémon and the one given, as the server saw them. */
@@ -68,6 +70,8 @@ export interface TakeResult {
   with: string
   /** The poster's golden name (docs/25). */
   withRich?: boolean
+  /** The poster's account (0061; absent before it). */
+  withId?: string
 }
 
 /** What went wrong, for a sentence (strings.csv `ui.trades.error.*`). */
@@ -218,6 +222,7 @@ export function parseMine(raw: unknown): MineRow[] {
         takerMon: parseInstance(r.taker_mon),
         with: typeof r.with === 'string' ? r.with : '',
         withRich: r.withRich === true,
+        ...(typeof r.withId === 'string' && { withId: r.withId }),
       }
     })
     .filter((r): r is MineRow => !!r)
@@ -261,6 +266,7 @@ export async function takeListing(code: string, inst: string): Promise<TakeResul
     given,
     with: typeof r.with === 'string' ? r.with : '',
     withRich: r.withRich === true,
+    ...(typeof r.withId === 'string' && { withId: r.withId }),
   }
 }
 

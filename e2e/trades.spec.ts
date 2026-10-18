@@ -1,7 +1,7 @@
 // Trades (docs/23) against the mocked Supabase, on a phone: the rules pop-up once; a poster lists a Pokémon, then
 // finds it taken while away (back Home, "Trade done!" plays by itself, then what arrived; the Done list plays it
 // again); a listing taken while you play shows up when you come back Home; a taker trades for a listing from the
-// board; a guest sees the connect prompt and the newest listings; a shared link opens the listing, signed out too.
+// board, then opens the poster's card from the scene and adds them as a friend; a guest sees the connect prompt and the newest listings; a shared link opens the listing, signed out too.
 // With Johto started too, a Pokémon both Pokédexes list asks where it goes (on the confirm for a taker, at the end of
 // "Trade done!" for a poster), and one above that region's best waits there, locked (docs/23 §1.4).
 import AxeBuilder from '@axe-core/playwright'
@@ -210,7 +210,7 @@ test('a poster: the rules once, a listing posted, then taken while away', async 
   await expect(scene.getByText('Wartortle', { exact: true })).toBeVisible()
   // Lv.12 raised to Wartortle's lowest: Squirtle evolves at 16.
   await expect(scene.getByText(/Squirtle evolves at Lv\.16/)).toBeVisible()
-  await scene.getByRole('button', { name: 'Done' }).click()
+  await scene.getByRole('button', { name: 'Close', exact: true }).click()
   await expect(scene).toBeHidden()
   await expect.poll(() => applied.flat()).toContain('L1')
 
@@ -224,7 +224,7 @@ test('a poster: the rules once, a listing posted, then taken while away', async 
   const again = page.getByRole('dialog', { name: 'Trade with Misty' })
   await again.getByRole('button', { name: /Skip/i }).click()
   await expect(again.getByText('Wartortle', { exact: true })).toBeVisible()
-  await again.getByRole('button', { name: 'Done' }).click()
+  await again.getByRole('button', { name: 'Close', exact: true }).click()
   await expect(again).toBeHidden()
 })
 
@@ -268,7 +268,7 @@ test('a listing taken while you play: back Home, the scene', async ({ page }) =>
   await expect(scene.getByText('Brock took your Pidgey.')).toBeVisible()
   await scene.getByRole('button', { name: /Skip/i }).click()
   await expect(scene.getByText('Onix', { exact: true })).toBeVisible()
-  await scene.getByRole('button', { name: 'Done' }).click()
+  await scene.getByRole('button', { name: 'Close', exact: true }).click()
   await expect(scene).toBeHidden()
 })
 
@@ -277,6 +277,7 @@ test('a taker: from the board to the picker, the confirm, the scene', async ({ p
   const kanto = trader(1, 22)
   const save = { ...kanto, box: [...kanto.box, mon('e2e-ace', 9, 30)] }
   const applied: unknown[] = []
+  const added: unknown[] = []
   await boot(page, { ...save, trades: { out: [], done: [], rulesSeen: true } }, {
     rpc: {
       trade_board: [row(), row({ id: 'L-far', code: 'ZZ99ZZ99', dex: 158, home_region: 'johto', name: 'Ethan' })],
@@ -286,10 +287,19 @@ test('a taker: from the board to the picker, the confirm, the scene', async ({ p
         listed: mon('sora-charmander', 4, 12),
         given: mon('e2e-pidgey', 16, 22),
         with: 'Sora',
+        withId: SORA,
       },
       trade_applied: (body: Record<string, unknown>) => {
         applied.push(body.p_ids)
         return null
+      },
+      // Sora's card: a trade partner, not a friend yet (no `since`).
+      friend_profile: [
+        { user_id: SORA, name: 'Sora', avatar: 'green', region: 'kanto', area_id: null, updated_at: iso(NOW), since: null, regions: [], versus: null },
+      ],
+      friend_add_partner: (body: Record<string, unknown>) => {
+        added.push(body)
+        return [{ status: 'added', user_id: SORA, name: 'Sora', avatar: 'green' }]
       },
     },
   })
@@ -312,7 +322,17 @@ test('a taker: from the board to the picker, the confirm, the scene', async ({ p
   await expect(scene.getByRole('img', { name: /Pidgey goes into its ball/ })).toBeVisible()
   await scene.getByRole('button', { name: /Skip/i }).click()
   await expect(scene.getByText(/It joined your Kanto Box/)).toBeVisible()
-  await scene.getByRole('button', { name: 'Done' }).click()
+  await expect(scene.getByRole('button', { name: 'Close', exact: true })).toBeVisible()
+  await fitsThePhone(page)
+  // Sora's card, to thank them: not a friend yet, ADD AS FRIEND.
+  await scene.getByRole('button', { name: 'See their card' }).click()
+  await expect(scene).toBeHidden()
+  const card = page.getByRole('dialog', { name: 'Sora' })
+  await expect(card.getByRole('button', { name: 'Remove friend' })).toBeHidden()
+  await card.getByRole('button', { name: 'Add as friend' }).click()
+  await expect(page.getByText('You and Sora are now friends!')).toBeVisible()
+  await expect(card.getByRole('button', { name: 'Remove friend' })).toBeVisible()
+  expect(added).toEqual([{ p_user: SORA }])
   await expect.poll(() => applied.flat()).toContain('L-sora')
   const box = () =>
     page.evaluate(
@@ -396,7 +416,7 @@ test('a taker with Johto started picks the Box on the confirm; above Johto’s b
   const scene = page.getByRole('dialog', { name: 'Trade with Sora' })
   await scene.getByRole('button', { name: /Skip/i }).click()
   await expect(scene.getByText(/It waits in your Johto Box, locked until one of your Pokémon there reaches Lv\.22/)).toBeVisible()
-  await scene.getByRole('button', { name: 'Done' }).click()
+  await scene.getByRole('button', { name: 'Close', exact: true }).click()
   const waiting = () =>
     page.evaluate(
       () =>
@@ -460,7 +480,7 @@ test('a poster with Johto started picks the Box at the end of "Trade done!"', as
   expect(await seriousAxe(page)).toEqual([])
   await scene.getByRole('button', { name: 'Send it there' }).click()
   await expect(scene.getByText(/It joined your Kanto Box, and your Pokédex/)).toBeVisible()
-  await scene.getByRole('button', { name: 'Done' }).click()
+  await scene.getByRole('button', { name: 'Close', exact: true }).click()
   await expect(scene).toBeHidden()
   const stored = () =>
     page.evaluate(() => {

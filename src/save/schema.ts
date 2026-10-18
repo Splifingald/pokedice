@@ -315,6 +315,7 @@ export const saveSchema = z.object({
             role: z.enum(['poster', 'taker']),
             with: z.string().max(40),
             withRich: z.boolean().optional(),
+            withId: z.string().max(80).optional(),
             gave: tradeMonSchema,
             got: tradeMonSchema,
             evolvedTo: z.number().int().min(1).optional(),

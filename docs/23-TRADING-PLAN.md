@@ -374,7 +374,7 @@ live, then On for everyone.
 |---|---|
 | Rules, levels, landing, outcomes, applying once | `src/engine/trade.ts` (+ `isTradeEvolution` / `tradeEvolutionOf` in `progression.ts`), `tests/engine/trade.test.ts` |
 | Config and save | `trade` in `engine/defaults.ts` and `types.ts`; `trades` in the save schema |
-| Server | `supabase/migrations/0044_trades.sql`, inlined in `seed.sql`; `tests/trades-sql.test.ts` (PGlite) |
+| Server | `supabase/migrations/0044_trades.sql` (and 0061: who a trade was with, their card, adding them), inlined in `seed.sql`; `tests/trades-sql.test.ts`, `tests/trade-partners-sql.test.ts` (PGlite) |
 | Client | `src/lib/trades.ts` (calls, parsing, errors, the link kept a week), `src/store/trades.ts` (post, take, cancel, the board's cache, the check, the scene), `tests/trades-client.test.ts` |
 | Screens | `src/screens/Trades.tsx` (`/trades`), `src/screens/TradeLink.tsx` (`/t/:code`), `src/components/trades/*` (docs/15 §21), the menu row, TRADE on a Pokémon's sheet, "Their trades" on a friend's card, trade evolutions on the sheet and in the Pokédex |
 | Scene | `tradeTimeline` in `src/fx/timelines/trade.ts` (three acts: sending, the link, arriving), its sounds `trade.*` in `src/audio/sfx.ts`, both Pokémon's cries; on `/kitchen-sink/fx` (plain, shiny) and `/kitchen-sink` (every state) |
@@ -419,6 +419,22 @@ What differs from the sections above, or wasn't in them:
   keeps yours when it has none; one that merges into yours brings nothing. The log keeps both sides' nicknames for
   the scene and the Done list. The board, a listing's sheet and a friend's card still show the species: a nickname is
   only seen by whoever ends up with the Pokémon, who can change it from its sheet.
+- **The other trainer's card from the scene** (the players' ask on Discord, 2026-10-18: "a link to their card, to
+  thank them by adding them"): the scene's last step has CLOSE and SEE THEIR CARD (the Done list's replays too). The
+  card is the friend card (`FriendProfileSheet`); for a trade partner who isn't a friend yet it has ADD AS FRIEND in
+  place of REMOVE FRIEND, friends at once with no code (the trade vouches for them), and the other side gets the usual
+  "new friend" toast. Migration 0061: `trade_take` / `trade_mine` say who the trade was with (`withId`, kept in the
+  log); `friend_profile` opens for a trade partner too and `friend_add_partner(user)` adds one, both only while Trades
+  is open to the caller and while the server still holds a taken listing between the two (`trade_partners`; the check
+  on load clears those 30 days after both sides applied them, after which the card says it can't be opened any
+  more). A trade logged before 0061 has no `withId`: CLOSE alone. It rides on Trades' switch, with no switch or rules
+  of its own: it's a button on the scene, not a feature with a page. Tests: `tests/trade-partners-sql.test.ts`, the
+  taker's run in `e2e/trades.spec.ts`.
+
+  **Setting it up**: run
+  [`supabase/migrations/0061_trade_partners.sql`](https://github.com/Splifingald/pokedice/blob/ccr-af0e2001-qjitjp/supabase/migrations/0061_trade_partners.sql)
+  in the Supabase SQL editor (after 0049; safe to run again). `supabase/seed.sql` inlines it too. Until it runs, the
+  scene shows CLOSE alone, as before.
 - **A friends-only listing opened by a non-friend** says "Only Sora's friends can take it" with a button to the
   Friends page, not ADD SORA: adding a friend takes their friend ID, which a listing doesn't carry. The listing's
   sheet has no "Their card" button either; a friend's card lists their trades instead.

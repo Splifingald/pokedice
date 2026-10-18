@@ -702,7 +702,7 @@ decides every level, landing Box and outcome, and the screens only say them.
   white frames, a ring, the shiny's stars). Over the stage, both Pokémon facing each other (Yours ⇄ Misty's); under it,
   the lines in a `Dialogue` text box (beats `sending`, `incoming`, `care`; `bye` and `out` are the cries), each
   Pokémon called by the nickname it carries ("Misty sent Bubbles over!"), each line also in a polite live region. A trade evolution follows with the evolution scene; then what arrived (`TradeResult`:
-  sprite, its nickname with the species beside it unless it merged into yours, level, SHINY / NEW / STRONGER / LOCKED, where it went (the Box picked; locked: "It waits in your Johto Box, locked until one of your Pokémon there reaches Lv.22"), the level note, "its Pokédex entry stays") and DONE. SKIP and
+  sprite, its nickname with the species beside it unless it merged into yours, level, SHINY / NEW / STRONGER / LOCKED, where it went (the Box picked; locked: "It waits in your Johto Box, locked until one of your Pokémon there reaches Lv.22"), the level note, "its Pokédex entry stays") and two buttons side by side: CLOSE and **SEE THEIR CARD** (red), the other trainer's card (`FriendProfileSheet`, `fromTrade`) to thank them by adding them: a trade partner who isn't a friend has **ADD AS FRIEND** (red) where a friend has REMOVE FRIEND. A trade from before migration 0061 (no `withId` in the log), or Trades off, has CLOSE alone. SKIP and
   Esc jump to the result. Motion off jumps there at once.
 - **Coming back**: a listing taken while you were away waits in the save (`trades.unseen`, `tradesToWatch`) until its
   scene has played: back on Home, once the run is idle and no other one-time pop-up is due, the scene opens by itself

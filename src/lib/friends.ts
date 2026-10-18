@@ -425,6 +425,19 @@ export async function addFriend(code: string): Promise<{ status: AddStatus; frie
   return { status, friend }
 }
 
+/** Adds someone you've traded with, at once (0061): no code needed, the trade vouches for them. */
+export async function addTradePartner(userId: string): Promise<AddStatus> {
+  const rows = await rpc<{ status: AddStatus }[]>('friend_add_partner', { p_user: userId, ...realmArgs() })
+  const status = (rows?.[0]?.status ?? 'not_found') as AddStatus
+  if (status === 'added' || status === 'already') {
+    const st = useFriends.getState()
+    useFriends.setState({ ids: new Set([...st.ids, userId]) })
+    forgetProfile(userId)
+    void loadFriendList(true)
+  }
+  return status
+}
+
 /** Ends a friendship, for both players. */
 export async function removeFriend(userId: string): Promise<void> {
   await rpc('friend_remove', { p_friend: userId })

@@ -1326,6 +1326,8 @@ export interface TradeLogEntry {
   with: string
   /** …and whether it shone gold ("I am just rich", docs/25). */
   withRich?: boolean
+  /** Their account, for their card from the scene (absent: a trade from before 0061). */
+  withId?: string
   gave: { dex: number; level: number; shiny?: boolean; nickname?: string }
   /** The species that arrived, at the level it arrived at (before a trade evolution), and the name it came with. */
   got: { dex: number; level: number; shiny?: boolean; nickname?: string }

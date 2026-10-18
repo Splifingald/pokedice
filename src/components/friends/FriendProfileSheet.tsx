@@ -1,14 +1,17 @@
 // A friend's trainer card (docs/16): drawn with the same pieces as your own — the blue card, their badges counted
-// across every region — from their player card, as of their last cloud push. Friends only; REMOVE FRIEND ends it for both.
+// across every region — from their player card, as of their last cloud push. Friends, and someone you've traded with
+// (opened from the trade scene, 0061): REMOVE FRIEND ends a friendship for both, ADD FRIEND starts one with a trade
+// partner.
 import { useEffect, useState } from 'react'
 import { linearAreas, regionCaseOf, regionSpecies } from '@/engine'
 import { getLang } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { agoText } from '@/lib/ago'
 import { avatarOf } from '@/lib/avatars'
-import { fetchFriendProfile, friendError, removeFriend, type FriendProfile } from '@/lib/friends'
+import { addTradePartner, fetchFriendProfile, friendError, removeFriend, type FriendProfile } from '@/lib/friends'
 import { pushToast, useGame } from '@/store/game'
 import { TeamIcons } from '../BoardRow'
+import { PixelIcon } from '../icons'
 import { Modal } from '../Modal'
 import { PixelButton } from '../PixelButton'
 import { Sheet } from '../Sheet'
@@ -25,12 +28,15 @@ const dateText = (ms: number) => new Date(ms).toLocaleDateString(getLang(), { da
 export function FriendProfileSheet({
   userId,
   name,
+  fromTrade,
   onClose,
 }: {
   /** The friend to show; null closes the sheet. */
   userId: string | null
   /** Their name, shown while the card loads. */
   name?: string
+  /** Opened from a trade: they may not be a friend, and a card that won't open isn't "not your friend any more". */
+  fromTrade?: boolean
   onClose: () => void
 }) {
   const { t } = useT()
@@ -66,6 +72,22 @@ export function FriendProfileSheet({
     0,
   )
 
+  const add = async () => {
+    if (!userId || busy) return
+    setBusy(true)
+    try {
+      const status = await addTradePartner(userId)
+      if (status === 'added' || status === 'already') {
+        pushToast(t(status === 'added' ? 'ui.friends.added' : 'ui.friends.already', { name: shownName }), 'good')
+        setLoad((l) => (l.state === 'ready' ? { state: 'ready', profile: { ...l.profile, since: Date.now() } } : l))
+      } else pushToast(errorText(status === 'not_found' ? 'failed' : status, shownName), 'bad')
+    } catch (err) {
+      pushToast(errorText(friendError(err)), 'bad')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const remove = async () => {
     if (!userId || busy) return
     setBusy(true)
@@ -91,15 +113,26 @@ export function FriendProfileSheet({
         footer={
           profile && (
             <div className="flex justify-end">
-              <PixelButton size="sm" variant="danger" onClick={() => setConfirm(true)}>
-                {t('ui.friends.remove')}
-              </PixelButton>
+              {profile.since ? (
+                <PixelButton size="sm" variant="danger" onClick={() => setConfirm(true)}>
+                  {t('ui.friends.remove')}
+                </PixelButton>
+              ) : (
+                <PixelButton variant="primary" disabled={busy} onClick={() => void add()}>
+                  <PixelIcon name="friends" size={18} />
+                  {t('ui.friends.addThem')}
+                </PixelButton>
+              )}
             </div>
           )
         }
       >
         {load.state === 'loading' && <p className="m-0 p-4 text-center text-[20px] text-muted">{t('ui.common.loading')}</p>}
-        {load.state === 'gone' && <p className="m-0 p-4 text-center text-[20px] text-muted">{t('ui.friends.gone')}</p>}
+        {load.state === 'gone' && (
+          <p className="m-0 p-4 text-center text-[20px] text-muted">
+            {t(fromTrade ? 'ui.friends.cardGone' : 'ui.friends.gone')}
+          </p>
+        )}
         {load.state === 'error' && <p className="m-0 p-4 text-center text-[20px] text-danger">{load.why}</p>}
         {profile && (
           <div className="flex flex-col gap-3">

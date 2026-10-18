@@ -5,7 +5,7 @@
 //   nothing else is up; a toast for a listing that came back, and for a trade you took that a closed tab left half
 //   done;
 // - a shared link (/t/<code>): the listing in its sheet once the run is idle, never mid-fight;
-// - the trade scene itself, over any page.
+// - the trade scene itself, over any page, and the other trainer's card it opens.
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import {
@@ -18,6 +18,7 @@ import {
   regionOfferDue,
   tradeRulesDue,
   tradesOf,
+  tradesOn,
   tradesToWatch,
   generalRulesDue,
   versusRulesDue,
@@ -29,9 +30,10 @@ import { clearTradeLink, readTradeLink, TRADE_LINK_EVENT, viewListing, type Trad
 import { pushToast, useGame } from '@/store/game'
 import { useCloudSync } from '@/store/sync'
 import { checkListings, checkTrades, clearReturned, endTrade, playTrade, useTrades } from '@/store/trades'
+import { FriendProfileSheet } from '../friends/FriendProfileSheet'
 import { useSharePromptWaiting } from '../ShareTutorial'
 import { ListingSheet } from './ListingSheet'
-import { TradeScene } from './TradeScene'
+import { TradeScene, type TradePartner } from './TradeScene'
 import { TradesUnlockPopup } from './TradeRules'
 
 export function TradesService() {
@@ -42,6 +44,9 @@ export function TradesService() {
   const synced = useCloudSync((s) => s.settled)
   const scene = useTrades((s) => s.scene)
   const home = useLocation().pathname === '/home'
+  const [card, setCard] = useState<TradePartner | null>(null)
+  // Their card opens for a trade partner only while Trades is open to you (the server says the same).
+  const cards = useGame((s) => tradesOn(s.data))
 
   useEffect(() => {
     if (userId && synced && !inWorld) void checkTrades(true)
@@ -64,7 +69,24 @@ export function TradesService() {
       <Comebacks />
       <LinkHandler />
       <TradesUnlockPopup />
-      <TradeScene show={scene} onDone={endTrade} />
+      <TradeScene
+        show={scene}
+        onDone={endTrade}
+        onCard={
+          cards
+            ? (who) => {
+                endTrade()
+                setCard(who)
+              }
+            : undefined
+        }
+      />
+      <FriendProfileSheet
+        userId={card?.id ?? null}
+        name={card?.name}
+        fromTrade
+        onClose={() => setCard(null)}
+      />
     </>
   )
 }

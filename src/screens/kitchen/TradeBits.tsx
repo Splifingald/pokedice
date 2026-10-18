@@ -1,7 +1,7 @@
 // Kitchen sink: Trades (docs/23) — who can see a listing, what it wants, its time left, board rows in every state
 // (you can trade, a friend's, yours, greyed with why, shiny and NEW, a guest's view), the listing's sheet, the share
 // pop-up, the rules (unlock and INFO), the trade scene (plain, shiny, "Trade done!" back Home, a trade evolution) and
-// what it ends on (locked too), and the pick of the Box a traded Pokémon goes to (docs/23 §1.4).
+// what it ends on (locked too; CLOSE and SEE THEIR CARD, or CLOSE alone for a trade from before 0061), and the pick of the Box a traded Pokémon goes to (docs/23 §1.4).
 import { useState } from 'react'
 import { encodeDexSet, type LandingOption, type RegionId, type TradeLogEntry } from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
@@ -57,6 +57,7 @@ const entry = (over: Partial<TradeLogEntry>): TradeLogEntry => ({
   at: now,
   role: 'taker',
   with: 'Sora',
+  withId: 'kit-sora',
   gave: { dex: 16, level: 22 },
   got: { dex: 4, level: 22 },
   outcome: 'new',
@@ -107,6 +108,10 @@ const SCENES: { label: string; show: TradeShow }[] = [
       }),
       isNew: true,
     },
+  },
+  {
+    label: 'From before 0061: CLOSE alone',
+    show: { entry: entry({ id: 'old', withId: undefined }) },
   },
 ]
 
@@ -247,7 +252,7 @@ export function TradeKitBits() {
         onClose={() => setRules(null)}
         onGo={rules === 'unlock' ? () => setRules(null) : undefined}
       />
-      <TradeScene show={scene} onDone={() => setScene(null)} />
+      <TradeScene show={scene} onDone={() => setScene(null)} onCard={() => setScene(null)} />
     </div>
   )
 }

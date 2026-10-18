@@ -96,6 +96,15 @@ describe('reading what the database returns', () => {
     expect(rows[0]!.want).toEqual({ kind: 'any' })
     expect(rows[1]).toMatchObject({ role: 'owner', status: 'expired', mon: { level: 100, shiny: true } })
   })
+  it('keeps who the other trainer is, when the database says (0061)', () => {
+    const mon = { id: 'p', dex: 25, level: 7 }
+    const [now, before] = parseMine([
+      { id: 'a', role: 'taker', status: 'taken', mon, taker_mon: mon, with: 'Sora', withId: 'sora-id' },
+      { id: 'b', role: 'taker', status: 'taken', mon, taker_mon: mon, with: 'Sora' },
+    ])
+    expect(now!.withId).toBe('sora-id')
+    expect(before).not.toHaveProperty('withId')
+  })
 })
 
 describe('what went wrong', () => {

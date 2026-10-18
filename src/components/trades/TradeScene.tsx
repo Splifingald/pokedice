@@ -1,7 +1,7 @@
 // The trade scene (docs/23 §2), full screen: the games' trade in three acts (your Pokémon into its ball and up, the
 // two balls crossing along the link, theirs down onto your pad and out), each Pokémon's cry, the lines in a text box;
-// a trade evolution after it with the usual evolution scene; then what you got and where it went. SKIP goes straight
-// to that. A Pokémon several of your regions could take waits there for you to pick its Box (docs/23 §1.4) before
+// a trade evolution after it with the usual evolution scene; then what you got and where it went, with CLOSE and the
+// other trainer's card (to add them as a friend, a thank-you). SKIP goes straight to that. A Pokémon several of your regions could take waits there for you to pick its Box (docs/23 §1.4) before
 // the result. Played when you take a listing, by itself back Home ("Trade done!") when one of yours was taken while
 // you were away, and from a trade in the Done list.
 import { motion } from 'framer-motion'
@@ -37,14 +37,40 @@ import { NameIn } from '../TrainerName'
 
 const BALLS: BallKind[] = ['poke', 'great', 'ultra']
 
-export function TradeScene({ show, onDone }: { show: TradeShow | null; onDone: () => void }) {
+/** The other trainer, for their card. */
+export interface TradePartner {
+  id: string
+  name: string
+}
+
+export function TradeScene({
+  show,
+  onDone,
+  onCard,
+}: {
+  show: TradeShow | null
+  onDone: () => void
+  /** SEE THEIR CARD; without it (or a trade from before the server said who it was with), CLOSE alone. */
+  onCard?: (who: TradePartner) => void
+}) {
   if (!show || typeof document === 'undefined') return null
-  return createPortal(<SceneBody key={show.entry.id} show={show} onDone={onDone} />, document.body)
+  return createPortal(
+    <SceneBody key={show.entry.id} show={show} onDone={onDone} onCard={onCard} />,
+    document.body,
+  )
 }
 
 type Step = 'trade' | 'evolve' | 'done'
 
-function SceneBody({ show, onDone }: { show: TradeShow; onDone: () => void }) {
+function SceneBody({
+  show,
+  onDone,
+  onCard,
+}: {
+  show: TradeShow
+  onDone: () => void
+  onCard?: (who: TradePartner) => void
+}) {
   useHoldFullscreen()
   const { t } = useT()
   const data = useGame((s) => s.data)
@@ -62,6 +88,7 @@ function SceneBody({ show, onDone }: { show: TradeShow; onDone: () => void }) {
   const give = e.gave.nickname || name(e.gave.dex)
   const get = e.got.nickname || name(e.got.dex)
   const who = e.with || t('ui.friends.someone')
+  const partner = onCard && e.withId ? { id: e.withId, name: who } : null
   const { timeline, ready } = useMemo(
     () => ({
       ready: Promise.all([
@@ -211,9 +238,20 @@ function SceneBody({ show, onDone }: { show: TradeShow; onDone: () => void }) {
                   : show
               }
             />
-            <PixelButton ref={end} variant="primary" size="lg" className="w-full" onClick={onDone}>
-              {t('ui.trades.done')}
-            </PixelButton>
+            {partner ? (
+              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2">
+                <PixelButton ref={end} size="lg" className="w-full" onClick={onDone}>
+                  {t('ui.common.close')}
+                </PixelButton>
+                <PixelButton variant="primary" size="lg" className="w-full" onClick={() => onCard?.(partner)}>
+                  {t('ui.friends.seeProfile')}
+                </PixelButton>
+              </div>
+            ) : (
+              <PixelButton ref={end} variant="primary" size="lg" className="w-full" onClick={onDone}>
+                {t('ui.common.close')}
+              </PixelButton>
+            )}
           </>
         )}
       </div>

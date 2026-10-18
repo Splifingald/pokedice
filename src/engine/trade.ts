@@ -744,6 +744,8 @@ export interface TakenTrade {
   with: string
   /** …shining gold ("I am just rich", docs/25), as the server said then. */
   withRich?: boolean
+  /** Their account (from 0061): the scene opens their card. */
+  withId?: string
 }
 
 export interface TradeResult {
@@ -789,6 +791,7 @@ export function applyTake(
     role: 'taker',
     with: t.with,
     ...(t.withRich && { withRich: true }),
+    ...(t.withId && { withId: t.withId }),
     gave: { dex: t.given.dex, level: t.given.level, ...extras(t.given) },
     got: { dex: received.dex, level: received.arrival.level, ...extras(t.listed) },
     ...(received.evolvedTo != null && { evolvedTo: received.evolvedTo }),
@@ -824,6 +827,7 @@ export function applyTaken(
     role: 'poster',
     with: t.with,
     ...(t.withRich && { withRich: true }),
+    ...(t.withId && { withId: t.withId }),
     gave: { dex: t.listed.dex, level: t.listed.level, ...extras(t.listed) },
     got: { dex: received.dex, level: received.arrival.level, ...extras(t.given) },
     ...(received.evolvedTo != null && { evolvedTo: received.evolvedTo }),

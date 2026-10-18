@@ -430,7 +430,7 @@ describe('a trade, applied once on each side', () => {
     const given = mon(16, 22)
     const s = kanto(given, ace())
     const listed = mon(4, 12)
-    const t = { id: 'T1', listed, given, with: 'Misty' }
+    const t = { id: 'T1', listed, given, with: 'Misty', withId: 'misty-id' }
     const r = applyTake(s, data, t, NOW, newId)
     expect(r.save.box.some((p) => p.id === given.id)).toBe(false)
     expect(r.save.box.find((p) => p.dex === 4)!.level).toBe(22)
@@ -438,6 +438,7 @@ describe('a trade, applied once on each side', () => {
     expect(tradesOf(r.save).log![0]).toMatchObject({
       role: 'taker',
       with: 'Misty',
+      withId: 'misty-id', // her card, from the scene
       got: { dex: 4, level: 22 },
     })
     const again = applyTake(r.save, data, t, NOW, newId)
