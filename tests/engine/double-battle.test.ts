@@ -109,7 +109,7 @@ describe('double battle: the field (docs/33)', () => {
     const aimed = reduce(s, { t: 'TARGET', uid: 'enemy-1' }, data, rng())
     s = aimed.state
     expect(s.enemy.uid).toBe('enemy-1')
-    expect(aimed.log).toContainEqual({ kind: 'focus', own: activeBattler(s).uid, foe: 'enemy-1' })
+    expect(aimed.log).toContainEqual({ kind: 'focus', own: activeBattler(s).uid, foe: 'enemy-1', aim: true })
     const hit = reduce({ ...s, phase: 'player_reroll', dice: [die('base', 3)], selected: [false] }, { t: 'ATTACK' }, data, rng())
     const dmg = hit.log.find((e) => e.kind === 'damage')
     expect(dmg?.kind === 'damage' && dmg.targetUid).toBe('enemy-1')

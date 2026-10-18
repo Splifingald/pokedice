@@ -315,6 +315,8 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
         }),
       }
     case 'focus':
+      // You picked another foe to attack: only the foe in front changes; the dice stay on the tray, unrolled again.
+      if (e.aim) return { delay: 0, apply: (f) => ({ ...f, foeUid: e.foe }) }
       // A double battle's pair in front moves (docs/33): the stage swaps them, big in front, small behind.
       return { delay: 350, apply: (f) => ({ ...f, activeUid: e.own, foeUid: e.foe, tray: null }) }
     case 'foe_out':
@@ -570,6 +572,8 @@ export function useBattleAnimator(
   // What the scene playing now will apply when its hit lands.
   const landing = useRef<((f: Fx, staged: boolean) => Fx) | null>(null)
   const pending = fx.cursor < battle.log.length
+  // A new target alone doesn't lock the inputs: the picker, the dice and the damage stay up while it plays.
+  const settled = battle.log.slice(fx.cursor).every((e) => e.kind === 'focus' && e.aim)
 
   useEffect(() => {
     if (!pending || (hold && fx.cursor > 0)) return
@@ -620,5 +624,5 @@ export function useBattleAnimator(
     setFx((f) => (f.scene ? { ...(land ? land(f, true) : f), scene: null, cursor: f.scene.cursor + 1 } : f))
   }, [])
 
-  return { fx, ready: !pending, sceneContact, sceneDone }
+  return { fx, ready: settled, sceneContact, sceneDone }
 }

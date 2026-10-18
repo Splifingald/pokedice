@@ -44,7 +44,8 @@ front, the others smaller behind. You pick which foe your Pokémon attacks; foes
   `double: DoubleState` (every foe, the slots out on each side, the round's queue, the K.O.s with yours that were out).
   `activeIndex` and `enemy` are **the pair in front** — whose turn it is and its target — so every one-on-one rule
   (the roll, damage, statuses, items, Mega / Gigantamax / type changes, potions) runs on them unchanged. New: the
-  `TARGET` event; the `focus` (the pair in front changed) and `foe_out` (the trainer's next one comes out) log entries;
+  `TARGET` event; the `focus` (the pair in front changed; `aim` when you picked another target, your dice still in
+  hand) and `foe_out` (the trainer's next one comes out) log entries;
   `start.double`. A trainer's whole team is **one battle** (two out, the others waiting for a free spot), not a
   gauntlet. The turn cap is `maxBattleTurns × 2` (four take turns); the stalemate check covers everyone.
 - **`engine/run.ts`**: `VictoryInput.fighterUids` — both of yours get the full XP (`awardBattleXp`); Multi EXP compares
@@ -59,6 +60,8 @@ front, the others smaller behind. You pick which foe your Pokémon attacks; foes
   K.O. of a one-by-one gauntlet is kept — then the wipe, the stalemate, or the rewards; won, each wild one that can be
   caught gets its throw (`run.catch`, then `run.catchQueue`; "Add to team?" is answered before the next throw).
 - Screens (§30 of docs/15): the stage with four, the name-less plates, the target picker, the lead picker sending two, the victory card naming every foe, the history.
+- Picking another target only swaps the foe in front and updates the damage: the dice stay on the tray, not rolled
+  again, and the inputs stay unlocked (`useBattleAnimator`: an `aim` focus takes no time).
 
 ## 4. Content: duo trainers
 
@@ -93,6 +96,7 @@ exists), the `doubleBattles` row (Off, Hoenn → Paldea, 10 %) and `configVersio
 ## 7. Tests
 
 `tests/engine/double-battle.test.ts` (the field, the order, targeting, random foe targets, replacements, 1 v 2, the
-win and its K.O.s, auto to the end on 30 seeds, when a battle is double, the XP for both),
+win and its K.O.s, auto to the end on 30 seeds, when a battle is double, the XP for both), `tests/battle-aim.test.ts`
+(a new target keeps the tray),
 `tests/double-battles-content.test.ts`, `tests/double-battles-sql.test.ts`, `e2e/double-battles.spec.ts` (a wild pair
 from the preview to the rewards at phone size, the switch off, the kitchen sink).
