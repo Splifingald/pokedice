@@ -445,6 +445,7 @@ function useSceneTimeline(scene: Scene | null, own: Battler, foe: Battler, short
         foe: key(foe, false),
         side: mine ? 'own' : 'foe',
         type: scene.type ?? 'base',
+        damage: scene.damage,
         from: scene.how,
         short,
       })

@@ -3,7 +3,8 @@
 // (Rock), a swarm and X-Scissor (Bug), Shadow Ball (Ghost), Metal Claw (Steel), Ice Beam (Ice), a Dragon Breath
 // spiral (Dragon), Dark Pulse and Crunch (Dark), Moonblast (Fairy). attacks.ts registers them in its TYPED map.
 // Same rules as there: they speak of attacker and target, so the foe's move plays right to left, and `short` never
-// reaches them (short motion is the generic hit).
+// reaches them (short motion is the generic hit). A Z-Move's (`z`) is the same move, more powerful: every burst and
+// puff fuller and faster here, and each move more of itself — more punches, rocks, bugs, a bigger fist, moon, jaws.
 import { fxSound } from '@/audio/sfx'
 import {
   bayer,
@@ -32,7 +33,7 @@ import {
 } from '@/fx/pixel'
 import type { Point } from '@/fx/scenes'
 import { dist, quad, screenFlash, Stage, within, type Timeline } from '@/fx/timeline'
-import { attackCues, damagePop, statusTint, type AttackParams } from '@/fx/timelines/attacks'
+import { attackCues, damagePop, statusTint, zv, type AttackParams } from '@/fx/timelines/attacks'
 
 // Colour ramps, bright to dark: a particle steps through one over its life, so each is that move's palette.
 const NORMAL = ['#ffffff', '#fff6d8', '#e8dfb8', '#c8b88a', '#8a7c5a']
@@ -94,16 +95,18 @@ interface Burst {
   spin?: number
 }
 
-/** A burst of particles from a point. */
+/** A burst of particles from a point: a Z-Move's has more of them, flying faster. */
 function burst(s: Stage, at: Point, o: Burst) {
   const r = s.r
-  for (let k = 0; k < o.n; k++) {
+  const z = s.z ? 1.8 : 1
+  for (let k = 0; k < Math.round(o.n * z); k++) {
     const a = o.arc ? r.range(o.arc[0], o.arc[1]) : r() * Math.PI * 2
     const [v0, v1] = o.speed ?? [50, 120]
+    const vz = s.z ? 1.25 : 1
     const [l0, l1] = o.life ?? [0.25, 0.4]
     const [z0, z1] = o.size ?? [1, 2]
     const sd = o.spread ?? 0
-    const sp = r.range(v0, v1)
+    const sp = r.range(v0 * vz, v1 * vz)
     s.fx.add({
       x: at.x + r.range(-sd, sd),
       y: at.y + r.range(-sd, sd),
@@ -123,10 +126,10 @@ function burst(s: Stage, at: Point, o: Burst) {
   }
 }
 
-/** Dust puffs rolling out from a point on the ground. */
+/** Dust puffs rolling out from a point on the ground (more of them for a Z-Move). */
 function dust(s: Stage, at: Point, n: number, spread: number) {
   const r = s.r
-  for (let k = 0; k < n; k++)
+  for (let k = 0; k < Math.round(n * (s.z ? 1.6 : 1)); k++)
     s.fx.add({
       x: at.x + r.range(-spread, spread),
       y: at.y - r.range(0, 3),
@@ -292,7 +295,7 @@ function normalAnim(p: AttackParams): Timeline<St<{ T: Point; D: Point }>> {
       const b = body(s, t)
       if (within(t, CROUCH, DASH) && Math.floor(t * 60) % 6 === 0) dust(s, s.atk.at, 1, 8)
       if (within(t, DASH, HIT))
-        for (let k = 0; k < 2; k++) {
+        for (let k = 0; k < zv(p, 2, 4); k++) {
           // Speed lines left behind the dash.
           const a = s.atk
           s.fx.add({
@@ -312,7 +315,8 @@ function normalAnim(p: AttackParams): Timeline<St<{ T: Point; D: Point }>> {
       s.begin(g, t)
       const b = body(s, t)
       const crouch = within(t, CROUCH, DASH) ? ease.outQ(span(t, CROUCH, DASH)) : 0
-      const knock = 6 * ease.outQ(span(t, HIT, HIT + 0.12)) * (1 - ease.ioS(span(t, HIT + 0.5, HIT + 0.9)))
+      const knock =
+        zv(p, 6, 11) * ease.outQ(span(t, HIT, HIT + 0.12)) * (1 - ease.ioS(span(t, HIT + 0.5, HIT + 0.9)))
       s.drawBoth(
         g,
         t,
@@ -326,21 +330,35 @@ function normalAnim(p: AttackParams): Timeline<St<{ T: Point; D: Point }>> {
             ? [
                 { dx: -7 * s.dir, color: '#ffffff', a: 0.45 },
                 { dx: -14 * s.dir, color: '#e8dfb8', a: 0.25 },
+                ...(p.z
+                  ? [
+                      { dx: -21 * s.dir, color: '#ffd23a', a: 0.25 },
+                      { dx: -28 * s.dir, color: '#e8dfb8', a: 0.15 },
+                    ]
+                  : []),
               ]
             : undefined,
         },
       )
-      const q = span(t, HIT, HIT + 0.32)
+      const q = span(t, HIT, HIT + zv(p, 0.32, 0.45))
       if (q > 0 && q < 1) {
         impactStar(
           g,
           s.T,
-          Math.round(8 + 10 * ease.outBack(Math.min(1, q * 2.5))) * (q > 0.7 ? 0.6 : 1),
+          Math.round(zv(p, 8, 13) + zv(p, 10, 17) * ease.outBack(Math.min(1, q * 2.5))) * (q > 0.7 ? 0.6 : 1),
           t,
           NORMAL,
         )
-        const R = Math.round(6 + 24 * ease.outC(q))
-        g.drawImage(ring(R, 2, '#fff6d8', 1 - q), Math.round(s.T.x - R - 1), Math.round(s.T.y - R - 1))
+        const R = Math.round(6 + zv(p, 24, 40) * ease.outC(q))
+        g.drawImage(
+          ring(R, zv(p, 2, 3), '#fff6d8', 1 - q),
+          Math.round(s.T.x - R - 1),
+          Math.round(s.T.y - R - 1),
+        )
+        // The Z's shockwave: a second ring, a beat behind.
+        const R2 = Math.round(4 + 28 * ease.outC(span(q, 0.2, 1)))
+        if (p.z && q > 0.2)
+          g.drawImage(ring(R2, 2, '#e8dfb8', 1 - q), Math.round(s.T.x - R2 - 1), Math.round(s.T.y - R2 - 1))
       }
       s.fx.draw(g)
       damagePop(g, s, p, s.T.x, t, HIT + 0.04)
@@ -372,13 +390,15 @@ const FIST = [
 const FIST_PAL = { k: '#3a1018', W: '#ffb8a0', w: '#e84a3a', d: '#a02018' }
 
 function fightingAnim(p: AttackParams): Timeline<St<{ T: Point; F: Point; J: Point[] }>> {
-  const JABS = [0.95, 1.1, 1.25, 1.4] as const
+  // The Z: a flurry of seven, and a fist half as big again.
+  const JABS = p.z ? [0.95, 1.03, 1.11, 1.19, 1.27, 1.35, 1.43] : [0.95, 1.1, 1.25, 1.4]
+  const FS = zv(p, 2, 3)
   const RAISE = 1.55
   const BIG = 1.9
   const T_STATUS = BIG + 0.5
   /** The big fist: appears up and back from the target, draws back (shaking), then drives in. */
   const bigAt = (s: { T: Point; dir: number }, t: number): Point => {
-    const from = { x: s.T.x - 30 * s.dir, y: s.T.y - 18 }
+    const from = { x: s.T.x - zv(p, 30, 40) * s.dir, y: s.T.y - zv(p, 18, 26) }
     if (t < BIG - 0.08) {
       const back = ease.outQ(span(t, RAISE, BIG - 0.08)) * 6
       const shiver = Math.floor(t * 30) % 2
@@ -397,7 +417,7 @@ function fightingAnim(p: AttackParams): Timeline<St<{ T: Point; F: Point; J: Poi
         return {
           T,
           F: st.atkAt(0.82, 0.5),
-          J: JABS.map(() => ({ x: T.x + r.range(-12, 12), y: T.y + r.range(-12, 8) })),
+          J: JABS.map(() => ({ x: T.x + r.range(-zv(p, 12, 16), zv(p, 12, 16)), y: T.y + r.range(-12, 8) })),
         }
       })
       JABS.forEach((t0, i) =>
@@ -441,10 +461,15 @@ function fightingAnim(p: AttackParams): Timeline<St<{ T: Point; F: Point; J: Poi
       s.begin(g, t)
       const pull = within(t, 0.35, 0.9) ? -4 * ease.outQ(span(t, 0.35, 0.9)) : 0
       // Jabbing: the attacker rocks forward on each punch.
-      const jab = JABS.some((t0) => within(t, t0 - 0.04, t0 + 0.06)) ? 4 : within(t, 0.9, 1.5) ? 1 : 0
+      const jab = JABS.some((t0) => within(t, t0 - 0.04, t0 + zv(p, 0.06, 0.04)))
+        ? 4
+        : within(t, 0.9, 1.5)
+          ? 1
+          : 0
       const lunge = 6 * Math.sin(Math.PI * span(t, BIG - 0.1, BIG + 0.25))
       const knock = JABS.some((t0) => within(t, t0, t0 + 0.08)) ? 2 : 0
-      const big = 7 * ease.outQ(span(t, BIG, BIG + 0.12)) * (1 - ease.ioS(span(t, BIG + 0.5, BIG + 0.9)))
+      const big =
+        zv(p, 7, 11) * ease.outQ(span(t, BIG, BIG + 0.12)) * (1 - ease.ioS(span(t, BIG + 0.5, BIG + 0.9)))
       s.drawBoth(
         g,
         t,
@@ -470,18 +495,18 @@ function fightingAnim(p: AttackParams): Timeline<St<{ T: Point; F: Point; J: Poi
       if (within(t, RAISE, BIG + 0.14)) {
         const B = bigAt(s, t)
         if (t < BIG) {
-          const R = 7 + (Math.floor(t * 20) % 2)
+          const R = zv(p, 7, 11) + (Math.floor(t * 20) % 2)
           g.drawImage(glow(R + 6, '#ff8a4a', 1.3, 0.8), Math.round(B.x - R - 6), Math.round(B.y - R - 6))
         }
         if (within(t, BIG - 0.08, BIG))
           for (let k = -1; k <= 1; k++)
             line(g, B.x - 26 * s.dir, B.y - 8 + k * 6, B.x - 12 * s.dir, B.y - 4 + k * 6, '#ffd0a8')
-        g.drawImage(icon(FIST, FIST_PAL, 2), Math.round(B.x - 13), Math.round(B.y - 10))
+        g.drawImage(icon(FIST, FIST_PAL, FS), Math.round(B.x - 6.5 * FS), Math.round(B.y - 5 * FS))
       }
       const q = span(t, BIG, BIG + 0.35)
       if (q > 0 && q < 1) {
-        impactStar(g, s.T, Math.round(18 * ease.outBack(Math.min(1, q * 3))), t, FIGHT)
-        const R = Math.round(8 + 26 * ease.outC(q))
+        impactStar(g, s.T, Math.round(zv(p, 18, 28) * ease.outBack(Math.min(1, q * 3))), t, FIGHT)
+        const R = Math.round(8 + zv(p, 26, 42) * ease.outC(q))
         g.drawImage(ring(R, 3, '#ff8a4a', 1 - q), Math.round(s.T.x - R - 1), Math.round(s.T.y - R - 1))
       }
       s.fx.draw(g)
@@ -501,7 +526,9 @@ function fightingAnim(p: AttackParams): Timeline<St<{ T: Point; F: Point; J: Poi
 
 // ---------------------------------------------------------------- Flying: Gust, then a wing slash from above
 function flyingAnim(p: AttackParams): Timeline<St<{ G0: Point; T: Point }>> {
-  const GUSTS = [0.85, 1.0, 1.15] as const
+  // The Z: a gale of five gusts, and a wing of five feathers, longer.
+  const GUSTS = p.z ? [0.85, 0.96, 1.07, 1.18, 1.29] : [0.85, 1.0, 1.15]
+  const LAST_GUST = GUSTS[GUSTS.length - 1]!
   const FLIGHT = 0.36
   const SLASH = 1.75
   const T_STATUS = SLASH + 0.45
@@ -550,8 +577,8 @@ function flyingAnim(p: AttackParams): Timeline<St<{ G0: Point; T: Point }>> {
           light: '#ffffff',
           dark: '#9a8ce0',
         })
-      if (within(t, GUSTS[0], GUSTS[2] + FLIGHT))
-        for (let k = 0; k < 2; k++) {
+      if (within(t, GUSTS[0]!, LAST_GUST + FLIGHT))
+        for (let k = 0; k < zv(p, 2, 4); k++) {
           const u = r()
           s.fx.add({
             x: lerp(s.G0.x, s.T.x, u) + r.range(-6, 6),
@@ -569,9 +596,11 @@ function flyingAnim(p: AttackParams): Timeline<St<{ G0: Point; T: Point }>> {
       s.begin(g, t)
       const rise = -5 * ease.outQ(span(t, 0.3, 0.7)) * (1 - ease.ioS(span(t, 1.4, 1.75)))
       const flap = within(t, 0.3, 1.4) && Math.floor(t * 15) % 2 ? 0.94 : 1
-      const sway = within(t, GUSTS[0] + FLIGHT, GUSTS[2] + FLIGHT + 0.2) ? 2 + (Math.floor(t * 20) % 2) : 0
+      const sway = within(t, GUSTS[0]! + FLIGHT, LAST_GUST + FLIGHT + 0.2) ? 2 + (Math.floor(t * 20) % 2) : 0
       const knock =
-        5 * ease.outQ(span(t, SLASH, SLASH + 0.12)) * (1 - ease.ioS(span(t, SLASH + 0.4, SLASH + 0.8)))
+        zv(p, 5, 9) *
+        ease.outQ(span(t, SLASH, SLASH + 0.12)) *
+        (1 - ease.ioS(span(t, SLASH + 0.4, SLASH + 0.8)))
       s.drawBoth(
         g,
         t,
@@ -586,7 +615,7 @@ function flyingAnim(p: AttackParams): Timeline<St<{ G0: Point; T: Point }>> {
         const y = lerp(s.G0.y, s.T.y, q)
         const a0 = s.dir > 0 ? -1.1 : Math.PI - 1.1
         for (let k = 0; k < 3; k++) {
-          const R = 6 + k * 3 + 6 * q
+          const R = zv(p, 6, 9) + k * zv(p, 3, 4) + zv(p, 6, 12) * q
           // Two pixels thick: a one-pixel arc vanishes against the sky.
           for (const o of [0, 1])
             ellipseLine(g, x - (k * 3 + o) * s.dir, y, R, R * 1.3, FLY[k * 2]!, a0, a0 + 2.2)
@@ -604,7 +633,14 @@ function flyingAnim(p: AttackParams): Timeline<St<{ G0: Point; T: Point }>> {
         strokes(
           g,
           s.T,
-          { ang: 0.95, len: 48, n: 3, gap: 6, dir: s.dir, cols: ['#ffffff', '#c4d0f8', '#9a8ce0'] },
+          {
+            ang: 0.95,
+            len: zv(p, 48, 70),
+            n: zv(p, 3, 5),
+            gap: 6,
+            dir: s.dir,
+            cols: ['#ffffff', '#c4d0f8', '#9a8ce0'],
+          },
           span(t, SLASH, SLASH + 0.12),
           span(t, SLASH + 0.14, SLASH + 0.42),
         )
@@ -629,9 +665,10 @@ interface Blob {
 }
 
 function poisonAnim(p: AttackParams): Timeline<St<{ M: Point; T: Point; blobs: Blob[] }>> {
-  const N = 4
+  // The Z: seven bombs, bigger, the last a great one.
+  const N = zv(p, 4, 7)
   const LAUNCH = 0.9
-  const GAP = 0.13
+  const GAP = zv(p, 0.13, 0.1)
   const FLIGHT = 0.42
   const arrive = (i: number) => LAUNCH + i * GAP + FLIGHT
   const LAST = arrive(N - 1)
@@ -654,8 +691,9 @@ function poisonAnim(p: AttackParams): Timeline<St<{ M: Point; T: Point; blobs: B
           M: st.atkAt(0.8, 0.32),
           T,
           blobs: Array.from({ length: N }, (_, i) => ({
-            to: i === N - 1 ? T : { x: T.x + r.range(-10, 10), y: T.y + r.range(-10, 8) },
-            r: i === N - 1 ? 6 : 4,
+            to:
+              i === N - 1 ? T : { x: T.x + r.range(-zv(p, 10, 16), zv(p, 10, 16)), y: T.y + r.range(-10, 8) },
+            r: i === N - 1 ? zv(p, 6, 10) : zv(p, 4, 5),
           })),
         }
       })
@@ -732,7 +770,16 @@ function poisonAnim(p: AttackParams): Timeline<St<{ M: Point; T: Point; blobs: B
       s.begin(g, t)
       // A puddle of sludge spreads under the target once the first blob lands.
       const pud = ease.outQ(span(t, arrive(0), LAST + 0.2)) * (1 - span(t, 2.8, 3.4))
-      if (pud > 0) softEllipse(g, s.tgt.at.x, s.tgt.at.y, Math.round(8 + 14 * pud), 4, '#8a3aa0', 0.8 * pud)
+      if (pud > 0)
+        softEllipse(
+          g,
+          s.tgt.at.x,
+          s.tgt.at.y,
+          Math.round(8 + zv(p, 14, 26) * pud),
+          zv(p, 4, 6),
+          '#8a3aa0',
+          0.8 * pud,
+        )
       const shiver = within(t, 0.3, 0.9) ? (Math.floor(t * 30) % 2 ? 1 : -1) : 0
       s.drawBoth(
         g,
@@ -802,13 +849,20 @@ function groundAnim(
         return {
           T: st.tgtAt(0.5, 0.5),
           crack: bolt(rng(7), a.x, a.y, b.x, b.y, 0.1, 4),
-          pillars: [-0.42, -0.2, 0, 0.22, 0.4].map((k, i) => ({
-            dx: k * fw * 1.1 + r.range(-2, 2),
-            h: (i === 2 ? 34 : 20) + r.range(0, 8) - Math.abs(k) * 10,
-            w: i === 2 ? 15 : r.range(9, 12),
-            lean: k * 8,
-            t0: ERUPT + Math.abs(i - 2) * 0.04,
-          })),
+          // The Z's: nine, half as tall again, the earth heaving up all round the target.
+          pillars: (p.z
+            ? [-0.62, -0.46, -0.3, -0.15, 0, 0.15, 0.3, 0.46, 0.62]
+            : [-0.42, -0.2, 0, 0.22, 0.4]
+          ).map((k, i, all) => {
+            const mid = (all.length - 1) / 2
+            return {
+              dx: k * fw * 1.1 + r.range(-2, 2),
+              h: ((i === mid ? 34 : 20) + r.range(0, 8) - Math.abs(k) * 10) * zv(p, 1, 1.5),
+              w: (i === mid ? 15 : r.range(9, 12)) * zv(p, 1, 1.2),
+              lean: k * 8,
+              t0: ERUPT + Math.abs(i - mid) * 0.04,
+            }
+          }),
         }
       })
       st.screenShakes.push([STOMP, 0.25, 2])
@@ -921,9 +975,10 @@ interface Stone {
 }
 
 function rockAnim(p: AttackParams): Timeline<St<{ T: Point; stones: Stone[] }>> {
-  const LANDS = [1.2, 1.36, 1.52, 1.72] as const
+  // The Z: an avalanche of seven, the last a boulder half as big again.
+  const LANDS = p.z ? [1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.92] : [1.2, 1.36, 1.52, 1.72]
   const FALL = 0.34
-  const LAST = LANDS[3]
+  const LAST = LANDS[LANDS.length - 1]!
   const T_STATUS = LAST + 0.5
   return {
     id: 'rock',
@@ -939,9 +994,14 @@ function rockAnim(p: AttackParams): Timeline<St<{ T: Point; stones: Stone[] }>> 
             return {
               to: last
                 ? { x: T.x, y: T.y - 2 }
-                : { x: T.x + (i - 1) * 11 + r.range(-3, 3), y: T.y + r.range(-8, 6) },
+                : {
+                    x: T.x + (i - (LANDS.length - 2) / 2) * zv(p, 11, 9) + r.range(-3, 3),
+                    y: T.y + r.range(-8, 6),
+                  },
               // Sized to the target: a pebble on a Snorlax doesn't read as a rock slide.
-              r: last ? Math.round(Math.min(14, Math.max(9, st.tgt.size.w * 0.2))) : r.int(6, 9),
+              r: last
+                ? Math.round(Math.min(14, Math.max(9, st.tgt.size.w * 0.2)) * zv(p, 1, 1.5))
+                : r.int(6, zv(p, 9, 11)),
               seed: i * 3 + 1,
               land,
               big: last,
@@ -1021,12 +1081,12 @@ function rockAnim(p: AttackParams): Timeline<St<{ T: Point; stones: Stone[] }>> 
         g.drawImage(boulder(S.r, S.seed), Math.round(x - S.r - 1), Math.round(y - S.r - 1))
       }
       s.fx.draw(g)
-      damagePop(g, s, p, s.T.x, t, LANDS[0] + 0.04)
+      damagePop(g, s, p, s.T.x, t, LANDS[0]! + 0.04)
       s.end(g)
       if (within(t, LAST, LAST + 2 / 60)) screenFlash(g, '#fff6d8', 0.35)
     },
     cues: () =>
-      attackCues(LANDS[0], p.status ? T_STATUS : null, [
+      attackCues(LANDS[0]!, p.status ? T_STATUS : null, [
         [0.3, () => fxSound('impact.windup')],
         ...LANDS.map((t0) => [t0, () => fxSound('gmax.step')] as const),
         [LAST, () => fxSound('catch.break')],
@@ -1036,7 +1096,8 @@ function rockAnim(p: AttackParams): Timeline<St<{ T: Point; stones: Stone[] }>> 
 
 // ---------------------------------------------------------------- Bug: a swarm, then X-Scissor
 function bugAnim(p: AttackParams): Timeline<St<{ M: Point; T: Point; C: Point[] }>> {
-  const N = 16
+  // The Z: a swarm of thirty, and three blades a side.
+  const N = zv(p, 16, 30)
   const OUT = 0.6
   const FLIGHT = 0.45
   const X1 = 1.65
@@ -1044,10 +1105,13 @@ function bugAnim(p: AttackParams): Timeline<St<{ M: Point; T: Point; C: Point[] 
   const T_STATUS = X2 + 0.45
   /** Where bug i is at t: out of the attacker, buzzing round the target, then scattering up and away. */
   const bugAt = (s: { M: Point; T: Point }, i: number, t: number): Point | null => {
-    const t0 = OUT + i * 0.03
+    const t0 = OUT + i * zv(p, 0.03, 0.018)
     if (t < t0 || t > X1 + 0.3) return null
     const a = t * 7 + (i * Math.PI * 2) / N
-    const orbit = { x: s.T.x + Math.cos(a) * (14 + (i % 3) * 4), y: s.T.y + Math.sin(a) * 9 + (i % 4) - 2 }
+    const orbit = {
+      x: s.T.x + Math.cos(a) * (zv(p, 14, 18) + (i % 3) * 4),
+      y: s.T.y + Math.sin(a) * zv(p, 9, 13) + (i % 4) - 2,
+    }
     const q = ease.outQ(span(t, t0, t0 + FLIGHT))
     const wob = Math.sin(t * 40 + i) * 2 * (1 - q)
     const pt = { x: lerp(s.M.x, orbit.x, q), y: lerp(s.M.y, orbit.y, q) + wob }
@@ -1133,7 +1197,7 @@ function bugAnim(p: AttackParams): Timeline<St<{ M: Point; T: Point; C: Point[] 
         strokes(
           g,
           s.T,
-          { ang: 0.8, len: 46, n: 2, gap: 2, dir: s.dir, cols },
+          { ang: 0.8, len: zv(p, 46, 64), n: zv(p, 2, 3), gap: zv(p, 2, 4), dir: s.dir, cols },
           span(t, X1, X1 + 0.1),
           span(t, X2 + 0.1, X1 + 0.42),
         )
@@ -1141,7 +1205,7 @@ function bugAnim(p: AttackParams): Timeline<St<{ M: Point; T: Point; C: Point[] 
         strokes(
           g,
           s.T,
-          { ang: Math.PI - 0.8, len: 46, n: 2, gap: 2, dir: s.dir, cols },
+          { ang: Math.PI - 0.8, len: zv(p, 46, 64), n: zv(p, 2, 3), gap: zv(p, 2, 4), dir: s.dir, cols },
           span(t, X2, X2 + 0.1),
           span(t, X2 + 0.14, X2 + 0.42),
         )
@@ -1198,9 +1262,9 @@ function ghostAnim(p: AttackParams): Timeline<St<{ B: Point; T: Point }>> {
       if (!s.step(t, dt)) return
       const r = s.r
       // Wisps spiral in and knot into the ball.
-      if (within(t, 0.3, LAUNCH - 0.1) && Math.floor(t * 60) % 2 === 0) {
+      if (within(t, 0.3, LAUNCH - 0.1) && Math.floor(t * 60) % zv(p, 2, 1) === 0) {
         const a = r() * Math.PI * 2
-        const d = r.range(16, 24)
+        const d = r.range(16, zv(p, 24, 32))
         s.fx.add({
           x: s.B.x + Math.cos(a) * d,
           y: s.B.y + Math.sin(a) * d,
@@ -1251,7 +1315,8 @@ function ghostAnim(p: AttackParams): Timeline<St<{ B: Point; T: Point }>> {
       )
       if (within(t, FORM - 0.2, HIT)) {
         const b = ballAt(s, t)
-        const R = Math.round(1 + 6 * ease.outBack(span(t, FORM - 0.2, LAUNCH - 0.1)))
+        // A Z-Move's Shadow Ball is twice the size.
+        const R = Math.round(1 + zv(p, 6, 12) * ease.outBack(span(t, FORM - 0.2, LAUNCH - 0.1)))
         g.drawImage(glow(R + 4, '#6a4aa0', 1.3, 0.9), Math.round(b.x - R - 4), Math.round(b.y - R - 4))
         disc(g, b.x, b.y, R, '#1a1030')
         if (R > 2) {
@@ -1264,19 +1329,20 @@ function ghostAnim(p: AttackParams): Timeline<St<{ B: Point; T: Point }>> {
       }
       const q = span(t, HIT, HIT + 0.4)
       if (q > 0 && q < 1) {
-        const R = Math.round(6 + 26 * ease.outC(q))
+        const R = Math.round(6 + zv(p, 26, 42) * ease.outC(q))
         g.drawImage(ring(R, 3, '#3a2860', 1 - q), Math.round(s.T.x - R - 1), Math.round(s.T.y - R - 1))
         if (R > 8)
           g.drawImage(ring(R - 4, 1, '#a080e0', 1 - q), Math.round(s.T.x - R + 3), Math.round(s.T.y - R + 3))
       }
-      // A lick of darkness: tendrils climb the target from its feet, then thin out.
+      // A lick of darkness: tendrils climb the target from its feet, then thin out (five, taller, for a Z-Move).
       const lq = span(t, HIT + 0.15, HIT + 0.45)
       const lf = span(t, HIT + 0.6, HIT + 1.0)
       if (lq > 0 && lf < 1) {
         const fs = s.tgt.size
-        for (let k = 0; k < 3; k++) {
-          const bx = s.tgt.at.x + (k - 1) * fs.w * 0.28
-          const h = fs.h * (0.55 + 0.2 * (k % 2)) * ease.outC(lq)
+        const n = zv(p, 3, 5)
+        for (let k = 0; k < n; k++) {
+          const bx = s.tgt.at.x + (k - (n - 1) / 2) * fs.w * zv(p, 0.28, 0.22)
+          const h = fs.h * (zv(p, 0.55, 0.8) + 0.2 * (k % 2)) * ease.outC(lq)
           for (let yy = 0; yy < h; yy++) {
             const x = Math.round(bx + Math.sin(yy * 0.22 + t * 9 + k * 2) * 3 * (yy / h))
             const y = Math.round(s.tgt.at.y - yy)
@@ -1309,11 +1375,12 @@ function steelAnim(p: AttackParams): Timeline<St<{ T: Point; top: Point }>> {
   const CLAW2 = 1.45
   const T_STATUS = CLAW2 + 0.45
   const GLINTS = [0.55, 0.8] as const
+  // The Z: claws of five blades, longer.
   const claw = (ang: number, dir: number) => ({
     ang,
-    len: 40,
-    n: 3,
-    gap: 6,
+    len: zv(p, 40, 58),
+    n: zv(p, 3, 5),
+    gap: zv(p, 6, 5),
     dir,
     cols: [STEEL[0]!, STEEL[3]!, STEEL[4]!],
   })
@@ -1357,7 +1424,8 @@ function steelAnim(p: AttackParams): Timeline<St<{ T: Point; top: Point }>> {
     },
     draw(g, s, t) {
       s.begin(g, t)
-      const lunge = 10 * ease.inQ(span(t, LUNGE, CLAW1)) * (1 - ease.outQ(span(t, CLAW2 + 0.1, CLAW2 + 0.4)))
+      const lunge =
+        zv(p, 10, 14) * ease.inQ(span(t, LUNGE, CLAW1)) * (1 - ease.outQ(span(t, CLAW2 + 0.1, CLAW2 + 0.4)))
       const knock =
         5 * ease.outQ(span(t, CLAW2, CLAW2 + 0.12)) * (1 - ease.ioS(span(t, CLAW2 + 0.4, CLAW2 + 0.8)))
       // The sheen: a silver coat flickering on, a steady shine just before the strike.
@@ -1379,8 +1447,12 @@ function steelAnim(p: AttackParams): Timeline<St<{ T: Point; top: Point }>> {
       // The clang: a hard silver ring.
       const q = span(t, CLAW2, CLAW2 + 0.3)
       if (q > 0 && q < 1) {
-        const R = Math.round(6 + 22 * ease.outC(q))
-        g.drawImage(ring(R, 2, '#c4ccd8', 1 - q), Math.round(s.T.x - R - 1), Math.round(s.T.y - R - 1))
+        const R = Math.round(6 + zv(p, 22, 38) * ease.outC(q))
+        g.drawImage(
+          ring(R, zv(p, 2, 3), '#c4ccd8', 1 - q),
+          Math.round(s.T.x - R - 1),
+          Math.round(s.T.y - R - 1),
+        )
       }
       s.fx.draw(g)
       damagePop(g, s, p, s.T.x, t, CLAW1 + 0.04)
@@ -1427,17 +1499,23 @@ function iceAnim(p: AttackParams): Timeline<St<{ M: Point; T: Point; shards: Sha
           M: st.atkAt(0.8, 0.3),
           T: st.tgtAt(0.45, 0.48),
           // Crystals on the ground round its feet and a few up its body, each forming in turn.
-          shards: Array.from({ length: 8 }, (_, k): Shard => {
-            const ground = k < 5
+          // A Z-Move's: fourteen, bigger, the ground round it a field of ice.
+          shards: Array.from({ length: zv(p, 8, 14) }, (_, k): Shard => {
+            const nGround = zv(p, 5, 8)
+            const ground = k < nGround
             // Sized to the target, so a big Pokémon is still encased.
-            const z = Math.min(1.6, Math.max(0.9, fs.h / 45))
+            const z = Math.min(1.6, Math.max(0.9, fs.h / 45)) * zv(p, 1, 1.35)
             return {
-              x: at.x + (ground ? (k - 2) * fs.w * 0.24 : r.range(-fs.w * 0.3, fs.w * 0.3)),
+              x:
+                at.x +
+                (ground
+                  ? (k - (nGround - 1) / 2) * fs.w * zv(p, 0.24, 0.2)
+                  : r.range(-fs.w * 0.3, fs.w * 0.3)),
               base: ground ? at.y + 1 : at.y - r.range(fs.h * 0.2, fs.h * 0.6),
               h: (ground ? r.range(12, 20) : r.range(7, 11)) * z,
               w: (ground ? r.range(7, 10) : r.range(5, 7)) * z,
               lean: r.range(-4, 4),
-              t0: HIT + 0.1 + k * 0.09,
+              t0: HIT + 0.1 + k * zv(p, 0.09, 0.06),
             }
           }),
         }
@@ -1508,7 +1586,15 @@ function iceAnim(p: AttackParams): Timeline<St<{ M: Point; T: Point; shards: Sha
     },
     draw(g, s, t) {
       s.begin(g, t)
-      softEllipse(g, s.tgt.at.x, s.tgt.at.y, Math.round(20 * ease.outQ(span(t, HIT, OFF))), 4, '#e0fbff', 0.5)
+      softEllipse(
+        g,
+        s.tgt.at.x,
+        s.tgt.at.y,
+        Math.round(zv(p, 20, 34) * ease.outQ(span(t, HIT, OFF))),
+        zv(p, 4, 6),
+        '#e0fbff',
+        0.5,
+      )
       const frozen = within(t, HIT + 0.2, SHATTER) ? { color: '#b0f0f8', a: 0.3 } : null
       const recoil = within(t, ON, OFF) ? -2 + (Math.floor(t * 30) % 2) : 0
       s.drawBoth(
@@ -1522,7 +1608,7 @@ function iceAnim(p: AttackParams): Timeline<St<{ M: Point; T: Point; shards: Sha
         },
       )
       if (within(t, 0.35, OFF)) {
-        const R = Math.round(2 + 5 * ease.outQ(span(t, 0.35, ON)))
+        const R = Math.round(2 + zv(p, 5, 9) * ease.outQ(span(t, 0.35, ON)))
         g.drawImage(glow(R, '#b0f0f8', 1.2), Math.round(s.M.x - R), Math.round(s.M.y - R))
       }
       if (within(t, ON, OFF + 0.12))
@@ -1534,7 +1620,7 @@ function iceAnim(p: AttackParams): Timeline<St<{ M: Point; T: Point; shards: Sha
           ease.outQ(span(t, ON, HIT)),
           t,
           ICE.slice(0, 4),
-          2.2,
+          zv(p, 2.2, 4.2),
         )
       // The crystals: each grows from its base, holds, and is gone when the ice shatters.
       if (t < SHATTER)
@@ -1630,7 +1716,7 @@ function dragonAnim(p: AttackParams): Timeline<St<{ M: Point; T: Point }>> {
         },
       )
       if (within(t, 0.3, OFF)) {
-        const R = Math.round(2 + 5 * ease.outQ(span(t, 0.3, ON)))
+        const R = Math.round(2 + zv(p, 5, 9) * ease.outQ(span(t, 0.3, ON)))
         g.drawImage(glow(R, '#7a5af0', 1.2), Math.round(s.M.x - R), Math.round(s.M.y - R))
         const r2 = Math.max(1, R - 3)
         g.drawImage(glow(r2, '#c0fff0', 1), Math.round(s.M.x - r2), Math.round(s.M.y - r2))
@@ -1648,7 +1734,8 @@ function dragonAnim(p: AttackParams): Timeline<St<{ M: Point; T: Point }>> {
           const cy = s.M.y + Math.sin(ang) * d
           px(g, Math.round(cx), Math.round(cy), '#c0fff0')
           const ph = d * 0.22 - t * 26
-          const R = 3 + 7 * (d / len)
+          // A Z-Move's spiral is wider and its strands thicker.
+          const R = zv(p, 3, 5) + zv(p, 7, 13) * (d / len)
           for (const [k, front, back] of [
             [1, '#40e0c8', '#2a8a80'],
             [-1, '#7a5af0', '#4a2ab0'],
@@ -1657,17 +1744,18 @@ function dragonAnim(p: AttackParams): Timeline<St<{ M: Point; T: Point }>> {
             const col = Math.cos(ph) * k > 0 ? front : back
             const x = Math.round(cx + nx * o)
             const y = Math.round(cy + ny * o)
-            rect(g, x, y, 2, 2, col)
+            rect(g, x, y, zv(p, 2, 3), zv(p, 2, 3), col)
           }
         }
       }
       // The vortex round the target: sparks orbiting, climbing its body.
       if (within(t, HIT, FINISH)) {
         const fs = s.tgt.size
-        for (let k = 0; k < 12; k++) {
-          const a = t * 10 + (k * Math.PI * 2) / 12
-          const climb = ((k / 12 + (t - HIT) * 0.8) % 1) * fs.h * 0.9
-          const x = Math.round(s.tgt.at.x + Math.cos(a) * fs.w * 0.45)
+        const n = zv(p, 12, 22)
+        for (let k = 0; k < n; k++) {
+          const a = t * 10 + (k * Math.PI * 2) / n
+          const climb = ((k / n + (t - HIT) * 0.8) % 1) * fs.h * zv(p, 0.9, 1.2)
+          const x = Math.round(s.tgt.at.x + Math.cos(a) * fs.w * zv(p, 0.45, 0.6))
           const y = Math.round(s.tgt.at.y - climb + Math.sin(a) * 4)
           px(g, x, y, Math.sin(a) > 0 ? (k % 2 ? '#40e0c8' : '#7a5af0') : '#24145a')
           if (Math.sin(a) > 0.5) px(g, x, y - 1, '#ffffff')
@@ -1675,7 +1763,7 @@ function dragonAnim(p: AttackParams): Timeline<St<{ M: Point; T: Point }>> {
       }
       const q = span(t, FINISH, FINISH + 0.35)
       if (q > 0 && q < 1) {
-        const R = Math.round(6 + 26 * ease.outC(q))
+        const R = Math.round(6 + zv(p, 26, 42) * ease.outC(q))
         g.drawImage(ring(R, 3, '#7a5af0', 1 - q), Math.round(s.T.x - R - 1), Math.round(s.T.y - R - 1))
         if (R > 8)
           g.drawImage(ring(R - 4, 1, '#40e0c8', 1 - q), Math.round(s.T.x - R + 3), Math.round(s.T.y - R + 3))
@@ -1721,7 +1809,9 @@ function jaw(lower: boolean): Canvas {
 }
 
 function darkAnim(p: AttackParams): Timeline<St<{ A: Point; T: Point }>> {
-  const RINGS = [0.8, 0.92, 1.04, 1.16] as const
+  // The Z: six rings, wider, and jaws twice the size.
+  const RINGS = p.z ? [0.8, 0.88, 0.96, 1.04, 1.12, 1.2] : [0.8, 0.92, 1.04, 1.16]
+  const JAW = zv(p, 1, 2)
   const TRAVEL = 0.4
   const OPEN = 1.4
   const BITE = 1.68
@@ -1731,7 +1821,7 @@ function darkAnim(p: AttackParams): Timeline<St<{ A: Point; T: Point }>> {
     dur: 3.6,
     setup() {
       const st = stage(p, 213, (st) => ({ A: st.atkAt(0.6, 0.45), T: st.tgtAt(0.5, 0.5) }))
-      st.hit(RINGS[0] + TRAVEL, { stop: 0.05, shake: 2, dur: 0.4, tint: '#4a3444', screen: 1 })
+      st.hit(RINGS[0]! + TRAVEL, { stop: 0.05, shake: 2, dur: 0.4, tint: '#4a3444', screen: 1 })
       st.hit(BITE, { stop: 0.08, shake: 4, dur: 0.6, tint: '#7a6070', screen: 3 })
       return st
     },
@@ -1777,7 +1867,7 @@ function darkAnim(p: AttackParams): Timeline<St<{ A: Point; T: Point }>> {
         { dx: knock + Math.round(big), tint: statusTint(p, t, T_STATUS) ?? shadow },
         {
           dx: Math.round(lunge),
-          outline: within(t, 0.3, RINGS[3]) && Math.floor(t * 15) % 2 ? '#7a6070' : undefined,
+          outline: within(t, 0.3, RINGS[RINGS.length - 1]!) && Math.floor(t * 15) % 2 ? '#7a6070' : undefined,
           tint: shadow,
         },
       )
@@ -1787,7 +1877,7 @@ function darkAnim(p: AttackParams): Timeline<St<{ A: Point; T: Point }>> {
         if (q <= 0 || q >= 1) return
         const x = lerp(s.A.x, s.T.x, q)
         const y = lerp(s.A.y, s.T.y, q)
-        const R = Math.round(5 + 11 * q)
+        const R = Math.round(zv(p, 5, 7) + zv(p, 11, 18) * q)
         g.drawImage(ring(R, 3, '#241820'), Math.round(x - R - 1), Math.round(y - R - 1))
         g.drawImage(ring(R, 1, '#c8b8c8', 0.8), Math.round(x - R - 1), Math.round(y - R - 1))
       })
@@ -1798,19 +1888,20 @@ function darkAnim(p: AttackParams): Timeline<St<{ A: Point; T: Point }>> {
             ? 10 + 6 * ease.outQ(span(t, OPEN, BITE - 0.07))
             : 16 * (1 - span(t, BITE - 0.07, BITE))
         const shiver = t < BITE - 0.07 && Math.floor(t * 30) % 2 ? 1 : 0
-        const x = Math.round(s.T.x - 19 + shiver)
-        g.drawImage(jaw(false), x, Math.round(s.T.y - 11 - open))
-        g.drawImage(jaw(true), x, Math.round(s.T.y - 1 + open))
+        const x = Math.round(s.T.x - 19 * JAW + shiver)
+        g.drawImage(jaw(false), x, Math.round(s.T.y - (11 + open) * JAW), 38 * JAW, 12 * JAW)
+        g.drawImage(jaw(true), x, Math.round(s.T.y + (open - 1) * JAW), 38 * JAW, 12 * JAW)
       }
       const q = span(t, BITE, BITE + 0.3)
-      if (q > 0 && q < 1) impactStar(g, s.T, Math.round(14 * ease.outBack(Math.min(1, q * 3))), t, DARK)
+      if (q > 0 && q < 1)
+        impactStar(g, s.T, Math.round(zv(p, 14, 24) * ease.outBack(Math.min(1, q * 3))), t, DARK)
       s.fx.draw(g)
-      damagePop(g, s, p, s.T.x, t, RINGS[0] + TRAVEL + 0.04)
+      damagePop(g, s, p, s.T.x, t, RINGS[0]! + TRAVEL + 0.04)
       s.end(g)
       if (within(t, BITE, BITE + 2 / 60)) screenFlash(g, '#ffffff', 0.3)
     },
     cues: () =>
-      attackCues(RINGS[0] + TRAVEL, p.status ? T_STATUS : null, [
+      attackCues(RINGS[0]! + TRAVEL, p.status ? T_STATUS : null, [
         [0.3, () => fxSound('legend.pulse')],
         ...RINGS.map((t0) => [t0, () => fxSound('catch.throw')] as const),
         [OPEN, () => fxSound('impact.windup')],
@@ -1837,7 +1928,7 @@ function fairyAnim(p: AttackParams): Timeline<St<{ Mo: Point; T: Point }>> {
       // The moon rises over the attacker, kept on the stage for a tall sprite.
       const st = stage(p, 225, (st) => {
         const top = st.atkAt(0.5, 0)
-        return { Mo: { x: top.x, y: Math.max(14, top.y - 14) }, T: st.tgtAt(0.5, 0.5) }
+        return { Mo: { x: top.x, y: Math.max(zv(p, 14, 22), top.y - 14) }, T: st.tgtAt(0.5, 0.5) }
       })
       st.hit(HIT, { stop: 0.08, shake: 3, dur: 0.65, tint: '#ff8ac8', screen: 2 })
       return st
@@ -1890,7 +1981,7 @@ function fairyAnim(p: AttackParams): Timeline<St<{ Mo: Point; T: Point }>> {
         })
       }
       // Hearts float off the target afterwards.
-      if (within(t, HIT + 0.2, 3.0) && Math.floor(t * 60) % 9 === 0) {
+      if (within(t, HIT + 0.2, 3.0) && Math.floor(t * 60) % zv(p, 9, 4) === 0) {
         const fs = s.tgt.size
         s.fx.add({
           x: s.tgt.at.x + r.range(-fs.w * 0.4, fs.w * 0.4),
@@ -1917,8 +2008,14 @@ function fairyAnim(p: AttackParams): Timeline<St<{ Mo: Point; T: Point }>> {
       )
       if (within(t, FORM, HIT)) {
         const m = moonAt(s, t)
-        const R = Math.round(1 + 8 * ease.outBack(span(t, FORM, LAUNCH - 0.15)))
-        g.drawImage(glow(R + 6, '#ff8ac8', 1.4, 0.8), Math.round(m.x - R - 6), Math.round(m.y - R - 6))
+        // A Z-Move's moon: nearly twice the size, in a wider halo.
+        const R = Math.round(1 + zv(p, 8, 15) * ease.outBack(span(t, FORM, LAUNCH - 0.15)))
+        const halo = zv(p, 6, 10)
+        g.drawImage(
+          glow(R + halo, '#ff8ac8', 1.4, 0.8),
+          Math.round(m.x - R - halo),
+          Math.round(m.y - R - halo),
+        )
         disc(g, m.x, m.y, R, '#ffc8e8')
         if (R > 2) {
           disc(g, m.x - 1, m.y - 1, R - 1, '#fff0f8')
@@ -1929,7 +2026,7 @@ function fairyAnim(p: AttackParams): Timeline<St<{ Mo: Point; T: Point }>> {
       }
       const q = span(t, HIT, HIT + 0.4)
       if (q > 0 && q < 1) {
-        const R = Math.round(6 + 28 * ease.outC(q))
+        const R = Math.round(6 + zv(p, 28, 46) * ease.outC(q))
         g.drawImage(ring(R, 3, '#ff8ac8', 1 - q), Math.round(s.T.x - R - 1), Math.round(s.T.y - R - 1))
         if (R > 8)
           g.drawImage(ring(R - 5, 1, '#ffffff', 1 - q), Math.round(s.T.x - R + 4), Math.round(s.T.y - R + 4))

@@ -75,10 +75,19 @@ The user's request, and the answers to the questions asked before building it:
   (The user's additions of 2026-10-18 for Flying, Ground, Water, Fighting and Steel.) An attack with no effect (an
   immunity) lands nothing. The log says it first (`zmove` entry: type, effect, landed). On the stage, every Z-Move has
   animations of its own (`src/fx/timelines/zmove.ts`): the power gathering (the stage dims, light of the type rises, a
-  golden Z draws itself and blazes), then **the Z strike** in place of the move's usual one — a sphere of the type's
-  light with a Z at its heart crossing the field and bursting on the target (hit-stop, white frames, three rings, a
-  flash, a quake). A Flying, Ground or Water one plays its going away (shooting up, sinking into the ground, diving),
-  hides the Pokémon on the stage while it's away, and its strike starts with it coming back down, up or out.
+  golden Z draws itself and blazes), then **the Z strike** in place of the move's usual one: one per type, a more
+  powerful variant of that type's own move (the user's ask of 2026-10-18; `AttackParams.z`) — Flamethrower with a
+  pillar of fire on the target, Hydro Pump twice as thick with a geyser, a storm of leaves and two crescents, five
+  bolts and a pillar of lightning, Psychic slamming twice, a Tackle with a shockwave, seven punches and a bigger fist,
+  five gusts and a five-feather wing, seven bigger Sludge Bombs, nine taller earth pillars, an avalanche of seven
+  rocks, a swarm of thirty and three-bladed X-Scissors, a Shadow Ball twice the size with five tendrils, five-bladed
+  Metal Claws, a thicker Ice Beam and fourteen crystals, a wider Dragon Breath spiral, six pulse rings and jaws twice
+  the size, a Moonblast nearly twice the size; a typeless die's impact, bigger. Every Z variant plays on a dimmed field
+  with the attacker outlined in gold and the type's light, its bursts fuller and its hits harder (longer stop, more
+  shake), and its last hit carries **the Z's mark**: a golden Z blazing on the target, rings of white, gold and the
+  type's light, sparks and a white flash. Short motion: the one generic hit with the mark. A Flying, Ground or Water
+  one plays its going away (shooting up, sinking into the ground, diving), hides the Pokémon on the stage while it's
+  away, and its strike starts with it coming back down, up or out.
 
 ### 1.4 Foes and auto battles
 
@@ -104,8 +113,8 @@ The user's request, and the answers to the questions asked before building it:
 - **Rules**: each power's pop-up once its badge is won with its switch on (`powerRulesDue`, Mega first), queued behind
   every other one-time pop-up; Mega's Let's go! opens the Mart. Its picture is the leader's area.
 - `/kitchen-sink`: "Battle powers" (plates, Z-MOVE hints, the shelf open / poor / shut / empty, the rules);
-  `/kitchen-sink/fx`: the Z-Move's power gathering and strike (yours and a trainer's), and each going away with its
-  strike back.
+  `/kitchen-sink/fx`: the Z-Move's power gathering (yours and a trainer's), its strike for every type ("Foe attacks"
+  for a trainer's, "Short motion" for the short one), and each going away with its strike back.
 
 ## 3. Versus
 

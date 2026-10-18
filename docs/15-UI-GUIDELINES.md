@@ -259,6 +259,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 | Timeline | full | short |
 |---|---|---|
 | Attacks: one move per type (Flamethrower, Hydro Pump, Razor Leaf, Thunderbolt, Psychic in `attacks.ts`; Tackle, jabs and a fist, gusts and a wing slash, Sludge Bomb, earth spikes, Rock Slide, a swarm and X-Scissor, Shadow Ball, Metal Claw, Ice Beam, Dragon Breath, Dark Pulse and Crunch, Moonblast in `attacks-types.ts`); a generic impact for typeless dice | the typed move | one generic hit |
+| A Z-Move (§33, `zmove.ts`): the power gathering, then the strike — the type's own move as its Z variant (`z`: more of it, bigger, harder, on a dimmed field, the attacker outlined in gold and the type's light) with the Z's mark on its last hit (a golden Z on the target, rings, a white flash); a Flying, Ground or Water one goes away first and comes back before its strike | the gathering, the Z variant | a flash of the type's colour; the one generic hit with the Z's mark |
 | Catch | throw, beam, drop, wobbles, result; with a Bait to offer it holds on the ball lying still (`hold`) and the answer plays on from that frame (`from: 'ground'`: the Bait tossed beside the ball, a heart, a last wobble; or straight to the break-free); Capture Luck's stay (`stays`): out of the ball, a "!" and two hops, no flight | throw and drop, result at once (the Bait still lands); a throw that can't miss jumps to its end at every level |
 | Pokémon Center | in its picture (`public/backgrounds/pokemon-center.png`): a ball per team member into the machine's slots, the heal jingle (B G♯ ×3, E) | one flash, healed |
 | Mega Evolution, Gigantamax | the full change | a white flash and the new sprite |
@@ -1295,6 +1296,6 @@ and there are no Z-Moves. On:
   (`PowerInfo`) under the Mart's Mega Gems and on the Pokémon sheet, beside each power's line.
 - **In battle**: MEGA, G-MAX and Z-MOVE (`ZMoveButton`) are gold, in the extras row; Z-MOVE comes after the roll and
   ends the turn as ATTACK does. The Z-Move timeline plays before the attack's own (`src/fx/timelines/zmove.ts`; short
-  motion: a flash of the type's colour). A timed Mega changing back is a flash, no scene.
+  motion: a flash of the type's colour), and the attack's own is the type's move as its Z variant (§9's table). A timed Mega changing back is a flash, no scene.
 - **A gem from a badge** is a toast ("Korrina gave you the Lucarionite!"), however long after the badge it comes.
 - Never inside a small world: no button, no shelf, no pop-up.

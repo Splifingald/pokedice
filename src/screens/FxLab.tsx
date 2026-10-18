@@ -98,6 +98,47 @@ const legend = (dex: number, name: string, type: PokeType): Preset => ({
     }),
 })
 
+/** Every typed move (and the typeless impact): its name, attacker, target, type and the status it can cause. */
+const ATTACKS: [string, number, number, DieType, StatusKind | null][] = [
+  ['Flamethrower', 6, 123, 'fire', 'burn'],
+  ['Hydro Pump', 9, 59, 'water', null],
+  ['Razor Leaf', 3, 76, 'grass', 'poison'],
+  ['Thunderbolt', 25, 130, 'electric', 'paralyze'],
+  ['Psychic', 65, 68, 'psychic', 'confuse'],
+  ['Tackle (Normal)', 19, 74, 'normal', null],
+  ['Punches and a big fist (Fighting)', 68, 143, 'fighting', null],
+  ['Gust and a wing slash (Flying)', 18, 46, 'flying', null],
+  ['Sludge Bomb', 89, 35, 'poison', 'poison'],
+  ['Stomp and eruption (Ground)', 51, 25, 'ground', null],
+  ['Rock Slide', 76, 6, 'rock', null],
+  ['Swarm and X-Scissor (Bug)', 123, 1, 'bug', null],
+  ['Shadow Ball', 94, 65, 'ghost', null],
+  ['Metal Claw', 208, 131, 'steel', null],
+  ['Ice Beam', 131, 149, 'ice', 'frozen'],
+  ['Dragon Breath', 149, 143, 'dragon', null],
+  ['Dark Pulse and Crunch', 197, 65, 'dark', null],
+  ['Moonblast', 36, 149, 'fairy', null],
+  ['Generic impact (typeless die)', 133, 19, 'base', null],
+]
+
+/** A typed move as a Z-Move's strike; "Foe attacks" plays it as a trainer's. */
+const zStrike = (name: string, atk: number, def: number, type: DieType): Preset => ({
+  name: `Z-Move strike: ${name}`,
+  sprites: [
+    [atk, true],
+    [def, false],
+  ],
+  make: (o) =>
+    zStrikeTimeline({
+      own: own(atk),
+      foe: foe(def),
+      side: o.foeAttacks ? 'foe' : 'own',
+      type,
+      damage: 76,
+      short: o.short,
+    }),
+})
+
 const PRESETS: Preset[] = [
   {
     name: 'Pokémon Center',
@@ -223,25 +264,7 @@ const PRESETS: Preset[] = [
         ground: 126,
       }),
   },
-  attack('Flamethrower', 6, 123, 'fire', 'burn'),
-  attack('Hydro Pump', 9, 59, 'water', null),
-  attack('Razor Leaf', 3, 76, 'grass', 'poison'),
-  attack('Thunderbolt', 25, 130, 'electric', 'paralyze'),
-  attack('Psychic', 65, 68, 'psychic', 'confuse'),
-  attack('Tackle (Normal)', 19, 74, 'normal', null),
-  attack('Punches and a big fist (Fighting)', 68, 143, 'fighting', null),
-  attack('Gust and a wing slash (Flying)', 18, 46, 'flying', null),
-  attack('Sludge Bomb', 89, 35, 'poison', 'poison'),
-  attack('Stomp and eruption (Ground)', 51, 25, 'ground', null),
-  attack('Rock Slide', 76, 6, 'rock', null),
-  attack('Swarm and X-Scissor (Bug)', 123, 1, 'bug', null),
-  attack('Shadow Ball', 94, 65, 'ghost', null),
-  attack('Metal Claw', 208, 131, 'steel', null),
-  attack('Ice Beam', 131, 149, 'ice', 'frozen'),
-  attack('Dragon Breath', 149, 143, 'dragon', null),
-  attack('Dark Pulse and Crunch', 197, 65, 'dark', null),
-  attack('Moonblast', 36, 149, 'fairy', null),
-  attack('Generic impact (typeless die)', 133, 19, 'base', null),
+  ...ATTACKS.map(([name, atk, def, type, status]) => attack(name, atk, def, type, status)),
   legend(150, 'Mewtwo', 'psychic'),
   legend(144, 'Articuno', 'ice'),
   legend(145, 'Zapdos', 'electric'),
@@ -549,24 +572,8 @@ const PRESETS: Preset[] = [
     ],
     make: (o) => zMoveTimeline({ own: own(258), foe: foe(724), side: 'foe', type: 'grass', short: o.short }),
   },
-  {
-    name: 'Z-Move strike (Pikachu, Electric)',
-    sprites: [
-      [25, true],
-      [130, false],
-    ],
-    make: (o) =>
-      zStrikeTimeline({ own: own(25), foe: foe(130), side: 'own', type: 'electric', short: o.short }),
-  },
-  {
-    name: "Z-Move strike (a trainer's Decidueye, Grass)",
-    sprites: [
-      [258, true],
-      [724, false],
-    ],
-    make: (o) =>
-      zStrikeTimeline({ own: own(258), foe: foe(724), side: 'foe', type: 'grass', short: o.short }),
-  },
+  // Each type's move as a Z-Move: the same move, more powerful, with the Z's mark on its last hit.
+  ...ATTACKS.map(([name, atk, def, type]) => zStrike(name, atk, def, type)),
   ...(['fly', 'dig', 'dive'] as const).flatMap((how) => {
     const [dex, type] =
       how === 'fly'

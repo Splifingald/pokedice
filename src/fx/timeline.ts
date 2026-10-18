@@ -3,7 +3,7 @@
 // frame hit-stop on contact, two white silhouette frames on a hit (never an opacity blink), ordered-dithered light and
 // smoke (never blur), particles stepping through a colour ramp, and no screen flash faster than 3 a second.
 import { stageBackground, type Background, type Layout, type Point } from './scenes'
-import { clamp, ease, Particles, rng, text, textWidth, wash, type G, type Rng } from './pixel'
+import { clamp, ease, Particles, rng, span, text, textWidth, wash, type G, type Rng } from './pixel'
 import { drawSprite, spriteSize, type SpriteLook } from './sprites'
 
 export const W = 240
@@ -131,7 +131,15 @@ export interface Fighters {
   foe: string
   /** Who acts: 'own' attacks the foe, 'foe' attacks you. */
   by?: Side
+  /**
+   * A Z-Move's strike (docs/35), in the type's light: the field dims behind the fighters, the attacker is outlined in
+   * that light and gold until its last hit, and every hit stops longer and shakes harder.
+   */
+  z?: string
 }
+
+/** A Z-Move's gold. */
+export const Z_GOLD = '#ffd23a'
 
 interface Hit {
   t0: number
@@ -157,6 +165,10 @@ export class Stage {
   hits: Hit[] = []
   fx = new Particles()
   under = new Particles()
+  /** A Z-Move's light (Fighters.z). */
+  z: string | null
+  /** How long a Z-Move's dim takes to come down: none when the strike follows the comeback, already dark. */
+  zIn = 0.3
   constructor(f: Fighters, seed: number) {
     // Over an area picture the stage draws no background: the picture under the canvas shows through.
     this.bg = stageBackground(W, H)
@@ -164,7 +176,12 @@ export class Stage {
     this.own = f.own
     this.foe = f.foe
     this.by = f.by ?? 'own'
+    this.z = f.z ?? null
     this.r = rng(seed)
+  }
+  /** The last hit registered (a Z-Move's light holds until then); none yet: never. */
+  get lastHit() {
+    return this.hits.length ? Math.max(...this.hits.map((h) => h.t0)) : Infinity
   }
   get os() {
     return spriteSize(this.own)
@@ -230,6 +247,13 @@ export class Stage {
       flash?: boolean
     } = {},
   ) {
+    if (this.z) {
+      // A Z-Move lands harder: a longer stop (at most the house rule's five frames), more shake, a bigger quake.
+      stop = stop ? Math.min(0.09, stop * 1.4) : 0
+      shake += 2
+      dur *= 1.2
+      screen = screen ? screen + 2 : 0
+    }
     if (stop) this.stops.push([t0, t0 + stop])
     this.targetShakes.push([t0, dur, shake])
     if (screen) this.screenShakes.push([t0, dur * 0.8, screen])
@@ -276,6 +300,12 @@ export class Stage {
     g.translate(s.x, s.y)
     g.drawImage(this.bg.cv, 0, 0)
     this.bg.dyn(g, t)
+    if (this.z) {
+      // Stepped alpha, not dither: a full-screen dim (the guidelines' washes).
+      const last = this.lastHit
+      const lift = Number.isFinite(last) ? span(t, last + 0.3, last + 0.9) : 0
+      wash(g, '#0b0f24', 0.4 * (this.zIn ? span(t, 0, this.zIn) : 1) * (1 - lift))
+    }
   }
   end(g: G) {
     g.restore()
@@ -299,6 +329,8 @@ export class Stage {
   }
   /** Both Pokémon, back to front: the foe's platform is further away, so it is drawn first. */
   drawBoth(g: G, t: number, target: SpriteLook = {}, attacker: SpriteLook = {}) {
+    if (this.z && !attacker.outline && t < this.lastHit + 0.15)
+      attacker = { ...attacker, outline: Math.floor(t * 12) % 2 ? this.z : Z_GOLD }
     if (this.by === 'own') {
       this.drawTarget(g, t, target)
       this.drawAttacker(g, attacker)
