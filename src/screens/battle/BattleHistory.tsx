@@ -213,8 +213,31 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: r
       case 'heal':
         rows.push({ key, ...who(e.uid), text: t('ui.hist.healed'), icon: 'heal', amount: e.amount, heal: true })
         return
+      case 'zmove':
+        rows.push({
+          key,
+          ...who(e.uid),
+          text: t(`ui.hist.zMove.${e.landed ? 'landed' : 'missed'}`, { type: e.type ? typeName(e.type) : '—' }),
+          icon: 'up',
+        })
+        return
+      case 'away':
+        rows.push({ key, ...who(e.uid), text: t(`ui.hist.zAway.${e.how}`), icon: 'up' })
+        return
+      case 'dodge':
+        rows.push({ key, ...who(e.uid), text: t('ui.hist.zDodged'), icon: 'shield' })
+        return
+      case 'cleansed':
+        rows.push({ key, ...who(e.uid), text: t('ui.hist.zCleansed'), icon: 'heal' })
+        return
       case 'recoil':
-        rows.push({ key, ...who(e.uid), text: t('ui.hist.tookRecoil'), icon: STATUS_ICON.confuse, amount: e.amount })
+        rows.push({
+          key,
+          ...who(e.uid),
+          text: t(e.z ? 'ui.hist.zRecoil' : 'ui.hist.tookRecoil'),
+          icon: e.z ? 'sword' : STATUS_ICON.confuse,
+          amount: e.amount,
+        })
         return
       case 'form': {
         const before = data.species[e.fromDex]?.name ?? who(e.uid).name
@@ -224,7 +247,9 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: r
           dex: e.toDex,
           name: before,
           text:
-            e.reason === 'mega'
+            e.reason === 'mega' && e.revert
+              ? t('ui.hist.megaEnd')
+              : e.reason === 'mega'
               ? data.species[e.toDex]?.form?.mechanic === 'primal'
                 ? t('ui.hist.primal')
                 : data.species[e.toDex]?.form?.mechanic === 'ultra'

@@ -64,6 +64,7 @@ import { SupportBits } from './kitchen/SupportBits'
 import { TrickBits } from './kitchen/TrickBits'
 import { UndergroundBits } from './kitchen/UndergroundBits'
 import { DayNightBits } from './kitchen/DayNightBits'
+import { PowersBits } from './kitchen/PowersBits'
 import { RotateView } from '@/components/RotateCover'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
 import { BoardRow } from '@/components/BoardRow'
@@ -603,6 +604,10 @@ export function KitchenSink() {
 
       <Section title="Double battles: the four-Pokémon stage (front pair big, partners behind), name-less plates, target picker, two leads">
         <DoubleBits />
+      </Section>
+
+      <Section title="Battle powers: Mega plates (timed, last turn, older rules), G-MAX, Z-MOVE hints, the Mart's Mega Gems (open, poor, shut, empty), rules and INFO (docs/35)">
+        <PowersBits />
       </Section>
 
       <Section title="PartnerMoment: the lab (new game, new region)">

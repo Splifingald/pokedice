@@ -10,6 +10,7 @@ import {
   randomSeed,
   sameEvent,
   simulateVersus,
+  versusPowersOf,
   versusCandidates,
   versusChoices,
   versusMoveAt,
@@ -118,7 +119,11 @@ function VersusScreenMain() {
     if (!me || busy) return
     setBusy(true)
     const seed = randomSeed()
-    const result = simulateVersus(me.team, foe.team, data, seed)
+    // Your powers from your own save (it may hold a gem bought since the board was read), theirs from the board.
+    const result = simulateVersus(me.team, foe.team, data, seed, {
+      attacker: save ? versusPowersOf(save, data) : undefined,
+      defender: foe.powers,
+    })
     try {
       await recordVersus(foe, seed, result.winner === 'attacker')
       setFight({ fight: result, foe, n: ++fights.current })

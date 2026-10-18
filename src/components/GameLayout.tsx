@@ -14,6 +14,7 @@ import { WorldPick } from '@/screens/events/worldPick'
 import { VersusUnlockPopup } from './FeatureRules'
 import { GeneralUnlockPopup, OfflineReportModal } from './GeneralRules'
 import { DayNightRulesPopup } from './DayNight'
+import { PowersUnlockPopup } from './PowersRules'
 import { RaidGiftPopup } from './RaidGiftPopup'
 import { FriendsService } from './friends/FriendsService'
 import { InviteRewardPopup, InviteRulesPopup } from './friends/InviteRewards'
@@ -75,6 +76,7 @@ export function GameLayout() {
       <ExtremeUnlockPopup />
       <GeneralUnlockPopup />
       <DayNightRulesPopup />
+      <PowersUnlockPopup />
       <AwayReportModal />
       <OfflineReportModal />
       <RaidGiftPopup />

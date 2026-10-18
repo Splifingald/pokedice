@@ -32,6 +32,7 @@ const itemEffect = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('ball'), bonus: int(0, 12) }),
   z.object({ kind: z.literal('link') }),
   z.object({ kind: z.literal('bait'), faces: z.array(int(0, 12)).length(6, 'exactly 6 faces') }),
+  z.object({ kind: z.literal('megaGem'), mega: int(1, 99999) }),
 ])
 
 /** One rarity tier of Trick or Treat (docs/29): its weight, its sections (from 0, rising, inside the flee zone) and flee. */

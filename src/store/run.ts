@@ -49,8 +49,7 @@ import {
   isAreaClosed,
   isAreaUnlocked,
   isTeamHurt,
-  megaUnlocked,
-  gmaxUnlocked,
+  battlePowersFor,
   enemyPlanFor,
   regionOf,
   regionOfArea,
@@ -558,8 +557,9 @@ function startBattle(
     // A portal run's extra dice (docs/28).
     ...portalDiceFor(save, data, run.areaId, p.id),
   }))
-  // Auto-mode (a cleared area) fights without Mega Evolution or Gigantamax, on both sides; type changers (Arceus…) on
-  // both sides take a better type by themselves.
+  // Auto-mode (a cleared area) fights without Mega Evolution or Gigantamax under their older rules, on both sides —
+  // with the powers whose newer rules are on (docs/35); type changers (Arceus…) on both sides take a better type by
+  // themselves.
   const auto = !!useGame.getState().settings.autoMode && !!run.areaId && progressOf(save, run.areaId).cleared
   // A trainer's ace — its strongest, the last of them if several — may Mega Evolve or Gigantamax (see enemyPlanFor).
   const enc = run.encounter
@@ -591,8 +591,7 @@ function startBattle(
         run.areaId,
       ),
       enemyLevels: withWorldBoost(uniformLevels(upgradeLevel), data, area),
-      megaAllowed: megaUnlocked(save, data),
-      gmaxAllowed: gmaxUnlocked(save, data),
+      ...battlePowersFor(save, data),
       noHealItems: !healItemsOn(save, data),
       // Arceus takes only the types of its plates while the Underground is on (docs/34).
       plates: plateTypes(save, data),

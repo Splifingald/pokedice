@@ -417,7 +417,9 @@ Players shouldn't have to make many requests:
   picker and one button that names the total ("Buy ₽500") or what's missing ("Need ₽40 more"). Category chips put the
   most-used group first (Balls). What isn't sold yet waits under "Coming later" with what it waits for. The Bait sits
   with the balls ("Poké Balls & Bait"), the Link Cable with the stones ("Evolution items"); an item switched off in the
-  admin (§20) is not on the shelf at all.
+  admin (§20) is not on the shelf at all. **Mega Gems** (docs/35) have a shelf of their own under the stock
+  (`GemShelfView`): each once, the Mega's icon and name under the gem, ₽ or HELD, a line while it's shut here, INFO at
+  its foot; the bag lists the gems held, "Can't sell".
 - **Search resets filters**: typing in a search shows everything that matches (the Pokédex's filter goes back to All).
   A Pokédex number finds any entry; a name only finds what has been caught.
 - **Grey plates** (`#e3e8f0`, `#f1f4f9`) take ink text: muted grey on them is under 4.5:1.
@@ -436,7 +438,8 @@ in view) and the battle history sits beside it from 1024 px.
   stage. Over a picture the timelines draw no background of their own (`setArtUnderStage`), so the picture stays put
   under every move. Plates sit on the stage: the foe's
   top left (name, level, types, HP as a bar only, status, a trainer's party as small red squares), yours bottom right
-  (level, HP with numbers, status). MEGA / G-MAX tags join the plate when the form changes.
+  (level, HP with numbers, status). MEGA / G-MAX tags join the plate when the form changes; a timed Mega (the gem
+  rules, docs/35) says its turns left ("MEGA ·2").
 - **The log drives everything** (`useBattleAnimator`): each entry is a step; a hit is a *scene* the stage plays, and
   the HP waits for the timeline's `contact` cue before it drains. Entrances hold the log after its opening line.
   When animations are off, every step lands at once and no scene plays.
@@ -444,8 +447,8 @@ in view) and the battle history sits beside it from 1024 px.
   throw them again." is added on your turn), the dice tray (your dice up to 54 px and never under 44, lifted with a
   red outline when picked, the combo's dice in a gold ring; the foe's dice smaller, not buttons), the readout (combo
   chip or "No combo", the damage alone and big — a button: the math, `(sum + bonus) × mult = damage`, shows once,
-  under the readout — how effective it is, a `StatusChip` per status face, lit once its threshold is met), the extras (Mega, G-MAX, Type,
-  Run) only when they exist, the actions (REROLL with its count, ATTACK in red; SKIP TURN when stunned; the AUTO note
+  under the readout — how effective it is, a `StatusChip` per status face, lit once its threshold is met), the extras (Mega, G-MAX,
+  Z-MOVE, Type, Run) only when they exist — the battle powers gold, Z-MOVE's hint saying what this roll's type adds (docs/35) — the actions (REROLL with its count, ATTACK in red; SKIP TURN when stunned; the AUTO note
   with STOP, none in Versus), then the Bag, the team pips and the history.
 - **Auto battles** (auto-mode, Versus) play at the `short` motion level unless animations are off (`MotionCap`).
   Auto-mode is switched in the area (under its header), never from Home. Prof. Oak's tip about it, the first time,
@@ -659,7 +662,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
   queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
   again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the portal run (§27), Trick or Treat (§28), trainer looks (§17, docs/31), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the portal run (§27), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
@@ -1279,3 +1282,18 @@ Its switch is its own (`underground.access`, §20) on top of the live events' on
 - **Arceus**: while the Underground is on, the battle's TYPE menu lists the types it may take (its plates) and, after
   them, the locked ones greyed with a lock and their plate's name, and a line on where plates come from; the TYPE
   button shows even with no plate, so the lock is explained. Its sheet says which plates it holds. Foes are untouched.
+
+## 33. The battle powers (Mega Gems, Gigantamax, Z-Moves)
+
+Three switches (docs/35), each Off / On for admin / On for everyone. Off, Mega Evolution and Gigantamax are as before
+and there are no Z-Moves. On:
+
+- **Rules, once and on demand**: a power's pop-up (`PowersUnlockPopup`, `PowerRulesModal`: its leader's area as the
+  banner, the badge that opens it, what it does with the config's numbers, how Versus and auto battles use it) the first
+  time its badge is won, queued behind every other one-time pop-up; Mega Evolution's Let's go! opens the Mart. INFO
+  (`PowerInfo`) under the Mart's Mega Gems and on the Pokémon sheet, beside each power's line.
+- **In battle**: MEGA, G-MAX and Z-MOVE (`ZMoveButton`) are gold, in the extras row; Z-MOVE comes after the roll and
+  ends the turn as ATTACK does. The Z-Move timeline plays before the attack's own (`src/fx/timelines/zmove.ts`; short
+  motion: a flash of the type's colour). A timed Mega changing back is a flash, no scene.
+- **A gem from a badge** is a toast ("Korrina gave you the Lucarionite!"), however long after the badge it comes.
+- Never inside a small world: no button, no shelf, no pop-up.

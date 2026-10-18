@@ -14,12 +14,14 @@ import {
   faceOf,
   facesOf,
   formChoices,
+  canZMove,
   lockedTypeForms,
   foesOnField,
   gmaxChoices,
   hasStatus,
   megaChoices,
   megaDie,
+  zEffectOf,
   progressOf,
   randomSeed,
   statusCounts,
@@ -53,7 +55,7 @@ import { loadSprite, spriteKey } from '@/fx/sprites'
 import { catchTimeline } from '@/fx/timelines/catch'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { useT } from '@/i18n/react'
-import { effectText } from '@/i18n/text'
+import { effectText, zMoveText } from '@/i18n/text'
 import { statusName, trainerTitle, typeName } from '@/lib/format'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { capMotion, MotionCap, useMotion, type MotionLevel } from '@/lib/motion'
@@ -64,7 +66,7 @@ import { answerBait, dispatchBattle, retryCatch, throwBall } from '@/store/run'
 import { useAreaDayTime } from '@/store/dayTime'
 import { cx } from '@/theme/util'
 import { BattleHistory, BattleHistoryList, DamageRecap } from './BattleHistory'
-import { BagButton, DiceTray, Readout, SwitchRow, TeamColumn, TeamPips, type Preview, type TrayDice } from './BattlePanel'
+import { BagButton, DiceTray, Readout, SwitchRow, TeamColumn, TeamPips, ZMoveButton, type Preview, type TrayDice } from './BattlePanel'
 import { BattleStage, type StageOverlay } from './BattleStage'
 import { CatchPanel, catchMessage } from './CatchPanel'
 import { DoublePlates, TargetPicker } from './DoublePlates'
@@ -463,9 +465,27 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     setMenu(null)
     dispatch({ t: 'MEGA', toDex })
   }
+  // A Z-Move (docs/35): after the roll, the attack as the dice stand, with its type's effect.
+  const zOpen = !versus && canZMove(st, data)
+  const zType = preview?.r.attackType ?? null
+  // Stunned, only a Steel-type has it: it shakes the stun off (no roll yet to name a type).
+  const zHint = !zOpen
+    ? ''
+    : st.phase === 'player_stunned'
+      ? zMoveText('cleanse', typeName('steel'), data)
+      : zMoveText(zEffectOf(zType), zType ? typeName(zType) : null, data)
+  // The newer rules (docs/35) say how long a Mega lasts and what a Gigantamax brings.
+  const megaHint = st.megaTurns ? t('ui.battle.megaTimed', { n: st.megaTurns }) : t('ui.battle.megaOnce')
+  const gmaxHint = st.gmaxBoost
+    ? t(`ui.battle.gmaxBoostHint.${data.config.gigantamax.turns === 1 ? 'one' : 'other'}`, {
+        dice: st.gmaxBoost.dice,
+        heal: st.gmaxBoost.healPercent,
+        n: data.config.gigantamax.turns,
+      })
+    : t(`ui.battle.gmaxHint.${data.config.gigantamax.turns === 1 ? 'one' : 'other'}`, { n: data.config.gigantamax.turns })
 
   // Stunned with no item that could help: nothing to do but lose the turn.
-  const stunChoice = canItem && usefulItems.length > 0
+  const stunChoice = (canItem && usefulItems.length > 0) || zOpen
   useEffect(() => {
     if (auto || !stunned || menu || stunChoice) return
     const t = setTimeout(() => dispatch({ t: 'PASS' }), 900)
@@ -645,7 +665,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     else if (canAct && showSwitch) setMenu('switch')
   }
   const extras =
-    !auto && !terminal && (megaOpts.length > 0 || gmaxOpts.length > 0 || typeMenu || st.canRun)
+    !auto && !terminal && (megaOpts.length > 0 || gmaxOpts.length > 0 || zOpen || typeMenu || st.canRun)
 
   let actions: ReactNode = null
   if (over) actions = versus!.end
@@ -930,7 +950,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                         size="sm"
                         variant="gold"
                         disabled={!canAct}
-                        title={t('ui.battle.megaOnce')}
+                        title={megaHint}
                         // One Mega form: straight in. Several (Charizard X and Y…): the player picks.
                         onClick={() =>
                           megaOpts.length === 1 ? megaEvolve(megaOpts[0]!.dex) : setMenu('mega')
@@ -944,12 +964,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                         size="sm"
                         variant="gold"
                         disabled={!canAct}
-                        title={t(
-                          `ui.battle.gmaxHint.${data.config.gigantamax.turns === 1 ? 'one' : 'other'}`,
-                          {
-                            n: data.config.gigantamax.turns,
-                          },
-                        )}
+                        title={gmaxHint}
                         onClick={() => {
                           setMenu(null)
                           dispatch({ t: 'GMAX', toDex: gmaxOpts[0]!.dex })
@@ -957,6 +972,16 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                       >
                         <PixelIcon name="up" size={14} /> {t('ui.battle.gmax')}
                       </PixelButton>
+                    )}
+                    {zOpen && (
+                      <ZMoveButton
+                        hint={zHint}
+                        disabled={!canAct && !stunned}
+                        onClick={() => {
+                          setMenu(null)
+                          dispatch({ t: 'ZMOVE' })
+                        }}
+                      />
                     )}
                     {typeMenu && (
                       <PixelButton size="sm" disabled={!canAct} onClick={() => setMenu('form')}>
@@ -1066,7 +1091,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
               </button>
             )
           })}
-          <p className="copy text-base text-muted">{t('ui.battle.megaOnce')}</p>
+          <p className="copy text-base text-muted">{megaHint}</p>
         </div>
       </Modal>
 

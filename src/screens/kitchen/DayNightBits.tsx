@@ -89,7 +89,7 @@ export function DayNightBits() {
       </Frame>
       <Frame name="Rules">
         <div className="flex flex-col gap-2">
-          <PixelButton onClick={() => setRules('unlock')}>Rules (first time)</PixelButton>
+          <PixelButton onClick={() => setRules('unlock')}>Day and night: its pop-up, once</PixelButton>
           <InfoButton name={t('ui.dayNight.title')} onClick={() => setRules('info')} />
         </div>
       </Frame>

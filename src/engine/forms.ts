@@ -6,9 +6,7 @@
  * a Pokémon like any other: it is caught, levels, evolves and has its Pokédex entry. **Mega** and **battle** forms are
  * looks a Pokémon takes in a fight and loses when it ends: nothing about them is ever saved.
  */
-import type { EnemyPlan } from './battle'
-import { getRegion, inWorldRegion, realRegions, regionOf } from './regions'
-import type { DieType, Evolution, GameData, PokeType, RegionId, SaveData, Species, TrainerRole } from './types'
+import type { DieType, Evolution, GameData, PokeType, RegionId, Species } from './types'
 
 /** A form that only exists inside a battle (a Mega Evolution, a Gigantamax, Giratina's Origin Forme, Arceus's types). */
 export const isBattleForm = (s: Species | null | undefined): boolean =>
@@ -69,53 +67,6 @@ export const choiceFormDie = (form: Species): PokeType => form.type2 ?? form.typ
 export function megaDie(base: Species, mega: Species): PokeType {
   const had = new Set(typesOf(base))
   return typesOf(mega).find((t) => !had.has(t)) ?? base.type1
-}
-
-/**
- * Mega Evolution is on once the player has reached `megaEvolution.region` (Kalos) — the region started, live or
- * parked — or any region after it. From then on it works everywhere, earlier regions included, but a small
- * world: there it is off, for the player and its trainers alike (raids never have it either: see raidBattle's
- * duels).
- */
-export function megaUnlocked(save: SaveData, data: GameData): boolean {
-  return !inWorldRegion(save, data) && reached(save, data, data.config.megaEvolution.region)
-}
-
-/** Gigantamax is on once the player has reached `gigantamax.region` (Galar), anywhere but a small world. */
-export function gmaxUnlocked(save: SaveData, data: GameData): boolean {
-  return !inWorldRegion(save, data) && reached(save, data, data.config.gigantamax.region)
-}
-
-function reached(save: SaveData, data: GameData, regionId: RegionId): boolean {
-  const gate = getRegion(data, regionId)
-  if (!gate) return false
-  const started = new Set<RegionId>([regionOf(save), ...Object.keys(save.parked ?? {})])
-  // A small world is no step of the journey, wherever its row sits in the order.
-  return realRegions(data).some((r) => started.has(r.id) && r.orderIndex >= gate.orderIndex)
-}
-
-/**
- * What a foe does with these mechanics. A type changer (Arceus, Silvally, Ogerpon) picks its type against yours. A
- * trainer's ace — a leader's, the Elite Four's, a Champion's: the last of its strongest — Gigantamaxes in Galar and
- * Mega Evolves (Primal Reversion, Ultra Burst) in the regions whose games have it (Hoenn, Kalos, Alola), at Lv.50 like
- * yours. Only once the player has the mechanic too: a foe never shows one first.
- */
-export function enemyPlanFor(
-  save: SaveData,
-  data: GameData,
-  foe: { dex: number; level: number },
-  trainer: { regionId: RegionId; role: TrainerRole; ace: boolean } | null,
-): EnemyPlan | null {
-  const plan: EnemyPlan = {}
-  if (choiceFormsOf(data, foe.dex).length) plan.formChanges = true
-  const cfg = data.config
-  if (trainer?.ace && cfg.megaEvolution.trainerRoles.includes(trainer.role)) {
-    const gmax = gmaxFormsOf(data, foe.dex)[0]
-    const mega = megaOptions(data, foe.dex, foe.level)[0]
-    if (gmax && gmaxUnlocked(save, data) && cfg.gigantamax.trainerRegions.includes(trainer.regionId)) plan.gmax = gmax.dex
-    else if (mega && megaUnlocked(save, data) && cfg.megaEvolution.trainerRegions.includes(trainer.regionId)) plan.mega = mega.dex
-  }
-  return Object.keys(plan).length ? plan : null
 }
 
 /** The Mega forms open to a Pokémon of this species and level (empty below the level, or with none). */

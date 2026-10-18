@@ -4,8 +4,11 @@ import {
   activeBattler,
   autoTypeForm,
   canHurt,
+  canZMove,
   createBattle,
   foesOnField,
+  gmaxChoices,
+  megaChoices,
   reduce,
   type BattleEvent,
   type BattleState,
@@ -55,10 +58,16 @@ export function autoEvents(state: BattleState, data: GameData, rng: Rng): Battle
         !canHurt(a, state.enemy, data, scale) &&
         benchOf(state).find((b) => b.hp > 0 && canHurt(b, state.enemy, data, scale))
       if (better && data.config.allowVoluntarySwitch) return [{ t: 'SWITCH', instanceId: better.uid }]
+      // The battle powers it has (docs/35), the first Pokémon able to taking each: a Mega first, else a Gigantamax.
+      const mega = megaChoices(state, data)[0]
+      if (mega) return [{ t: 'MEGA', toDex: mega.dex }]
+      const gmax = gmaxChoices(state, data)[0]
+      if (gmax) return [{ t: 'GMAX', toDex: gmax.dex }]
       return [{ t: 'ROLL' }]
     }
     case 'player_stunned':
-      return [{ t: 'PASS' }]
+      // A Steel-type's Z-Move shakes the stun off (docs/35).
+      return [canZMove(state, data) ? { t: 'ZMOVE' } : { t: 'PASS' }]
     case 'player_switch': {
       const alive = benchOf(state).filter((b) => b.hp > 0)
       const next = alive.find((b) => canHurt(b, state.enemy, data, state.playerLevels.typeScale)) ?? alive[0]
@@ -79,7 +88,8 @@ export function autoEvents(state: BattleState, data: GameData, rng: Rng): Battle
               targetHp: state.enemy.hp,
             })
           : null
-      if (!mask?.some(Boolean)) return [{ t: 'ATTACK' }]
+      // A Pokémon that took no other power attacks with the Z-Move as soon as it may.
+      if (!mask?.some(Boolean)) return [canZMove(state, data) ? { t: 'ZMOVE' } : { t: 'ATTACK' }]
       const toggles: BattleEvent[] = mask.flatMap((m, i) => (m !== !!state.selected[i] ? [{ t: 'TOGGLE_DIE' as const, i }] : []))
       return [...toggles, { t: 'REROLL' }]
     }

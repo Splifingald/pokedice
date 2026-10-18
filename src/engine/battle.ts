@@ -4,7 +4,7 @@ import { getSpecies } from './data'
 import { attackMultiplier, attackType, computeDamage, type DamageResult, type UpgradeLevels } from './damage'
 import { rerollMasked, rollAll, type RolledDie } from './dice'
 import { reviveHp } from './economy'
-import { ARCEUS_DEX, choiceFormDie, choiceFormsOf, gmaxFormsOf, lowHpFormOf, megaDie, megaOptions, swapOneDie } from './forms'
+import { ARCEUS_DEX, choiceFormDie, choiceFormsOf, gmaxFormsOf, lowHpFormOf, megaDie, megaFormsOf, megaOptions, swapOneDie } from './forms'
 import { effectiveStats } from './progression'
 import { potionHeal, shouldUsePotion } from './trainerItems'
 import type { Rng } from './rng'
@@ -13,13 +13,14 @@ import {
   clearStatuses,
   consumeStun,
   emptyStatus,
+  hasAnyStatus,
   hasStatus,
   statusesFromRoll,
   stunKind,
   tickDot,
   type StatusState,
 } from './status'
-import type { CurableStatus, DieType, GameData, PokeType, RaidTypeScale, Species, StatusKind } from './types'
+import type { CurableStatus, DieType, GameData, PokeType, PowerKind, RaidTypeScale, Species, StatusKind } from './types'
 
 export type Side = 'player' | 'enemy'
 export type BattleKind = 'wild' | 'trainer' | 'boss'
@@ -61,8 +62,20 @@ export interface Battler {
   ownDice?: DieType[]
   /** The species it was sent out as. `dex` is the form it shows now (a Mega, Giratina's Origin Forme, an Arceus type). */
   baseDex?: number
-  /** Mega Evolved (or Primal Reversion, Ultra Burst) this battle: it stays so until the fight ends. */
+  /**
+   * Mega Evolved (or Primal Reversion, Ultra Burst) now. It stays so until the fight ends — or, under the gem rules
+   * (docs/35), for `megaTimer`'s turns, or until it leaves the field.
+   */
   mega?: boolean
+  /** Under the gem rules: its own turns left as a Mega, and how it looked before. */
+  megaTimer?: { turns: number; pre: FormSnapshot }
+  /** The battle power it has used this battle (docs/35): one each, a Mega, a Gigantamax or a Z-Move. */
+  powered?: PowerKind
+  /**
+   * Up high, under ground or under water after a Flying, Ground or Water Z-Move (docs/35): every attack misses it, and
+   * at the start of its next turn it strikes with the roll it kept.
+   */
+  away?: { how: ZAway; dice: RolledDie[] }
   /** A form taken below half HP (Giratina's Origin Forme…): how it looked and rolled before, for above half again. */
   preForm?: FormSnapshot
   /** A raid Pokémon: its below-half-HP form waits for its last bar (`unleashForm`), whatever its HP does. */
@@ -111,14 +124,38 @@ export interface BattleState {
   megaAllowed?: boolean
   /** The player may Gigantamax in this fight (they have reached Galar). Absent = no. */
   gmaxAllowed?: boolean
-  /** Mega Evolutions and Gigantamax the player's side has used this battle (they share one limit). */
+  /**
+   * Mega Evolutions the player's side has used this battle; Gigantamax counts here too unless `ownLimits` (they share
+   * one limit under the older rules).
+   */
   megaUsed?: number
-  /** An auto battle: no Mega Evolution or Gigantamax on either side; type changers on both pick their type themselves. */
+  /** Gigantamax and Z-Moves used by the player's side this battle (docs/35). */
+  gmaxUsed?: number
+  zUsed?: number
+  /**
+   * The gem rules (docs/35): Mega Evolution only into these forms (the player's gems), at any level. Absent = the older
+   * rule (any Mega form, from `megaEvolution.level`).
+   */
+  megaForms?: number[]
+  /** The gem rules: a Mega lasts this many of its own turns, on both sides. Absent = until the battle ends. */
+  megaTurns?: number
+  /** Gigantamax's newer rules: the dice it gains and the % of max HP it heals, on both sides. Absent = one die, no heal. */
+  gmaxBoost?: { dice: number; healPercent: number }
+  /** Mega Evolution and Gigantamax have a use each (the newer rules), rather than one shared. */
+  ownLimits?: boolean
+  /** The player may use a Z-Move in this fight (docs/35). Absent = no. */
+  zAllowed?: boolean
+  /**
+   * An auto battle: under the older rules no Mega Evolution or Gigantamax on either side; type changers on both pick
+   * their type themselves. Under the newer ones (docs/35) the player's side uses its powers by itself.
+   */
   auto?: boolean
   /** What the foe does on its first turn — a trainer's ace Mega Evolving or Gigantamaxing — and whether it changes type. */
   enemyPlan?: EnemyPlan
   /** The plan's Mega / Gigantamax has been used. */
   enemyPlanDone?: boolean
+  /** The plan's Z-Move has been used. */
+  enemyZDone?: boolean
   /**
    * A raid step (engine/raidBattle.ts): one actor's one action, then phase 'done'. No next turn, no K.O. handling, no
    * end of battle and no statuses cleared: the raid decides what a K.O. means and who acts next.
@@ -169,6 +206,48 @@ export interface EnemyPlan {
   gmax?: number | null
   /** It may change type (Arceus, Silvally, Ogerpon) to the one best against your Pokémon. */
   formChanges?: boolean
+  /** Its first attack is a Z-Move (docs/35). */
+  z?: boolean
+}
+
+/** Where a Flying, Ground or Water Z-Move takes its Pokémon for a turn. */
+export type ZAway = 'fly' | 'dig' | 'dive'
+
+/**
+ * What a Z-Move adds, by the attack's type (docs/35): a status, a heal, a turn away then the strike (Flying, Ground,
+ * Water), a reckless blow (Fighting), every status shaken off (Steel), or more damage for every other type.
+ */
+export type ZEffect = 'freeze' | 'paralyze' | 'burn' | 'heal' | 'confuse' | 'poison' | ZAway | 'reckless' | 'cleanse' | 'power'
+
+export const isAway = (e: ZEffect): e is ZAway => e === 'fly' || e === 'dig' || e === 'dive'
+
+export function zEffectOf(type: PokeType | null): ZEffect {
+  switch (type) {
+    case 'flying':
+      return 'fly'
+    case 'ground':
+      return 'dig'
+    case 'water':
+      return 'dive'
+    case 'fighting':
+      return 'reckless'
+    case 'steel':
+      return 'cleanse'
+    case 'ice':
+      return 'freeze'
+    case 'electric':
+      return 'paralyze'
+    case 'fire':
+      return 'burn'
+    case 'grass':
+      return 'heal'
+    case 'psychic':
+      return 'confuse'
+    case 'poison':
+      return 'poison'
+    default:
+      return 'power'
+  }
 }
 
 export type BattleEvent =
@@ -188,6 +267,8 @@ export type BattleEvent =
   | { t: 'MEGA'; toDex: number }
   /** Gigantamax the Pokémon in battle. It doesn't end the turn. */
   | { t: 'GMAX'; toDex: number }
+  /** Attack with a Z-Move (docs/35): the roll as it stands, plus its type's effect. Ends the turn like ATTACK. */
+  | { t: 'ZMOVE' }
   /** Arceus, Silvally, Ogerpon: take this form (a type). It doesn't end the turn. */
   | { t: 'CHANGE_FORM'; toDex: number }
   /** A double battle: the foe your Pokémon will attack (docs/33). It doesn't end the turn. */
@@ -212,6 +293,8 @@ export type LogEntry =
       hpAfter: number
       dice: RolledDie[]
       result: DamageResult
+      /** A Z-Move's hit (docs/35); `from`: the strike of one that went away a turn before. */
+      z?: { from?: ZAway }
     }
   | { kind: 'status'; target: Side; targetUid: string; status: StatusKind; stacks?: number; turns?: number }
   | { kind: 'status_tick'; target: Side; targetUid: string; status: 'burn' | 'poison'; amount: number; hpAfter: number }
@@ -224,8 +307,19 @@ export type LogEntry =
   /** `side` 'enemy': a trainer's potion (absent = the player's item). */
   | { kind: 'item'; key: string; targetUid: string; amount: number; hpAfter: number; cured?: CurableStatus[]; rerolls?: number; side?: Side; revived?: boolean }
   | { kind: 'heal'; side: Side; uid: string; amount: number; hpAfter: number }
-  /** Confusion recoil: the confused attacker hurts itself after its attack. */
-  | { kind: 'recoil'; side: Side; uid: string; amount: number; hpAfter: number }
+  /** Confusion recoil: the confused attacker hurts itself after its attack; `z`: a Fighting Z-Move's own force. */
+  | { kind: 'recoil'; side: Side; uid: string; amount: number; hpAfter: number; z?: boolean }
+  /**
+   * A Z-Move (docs/35), just before its hit: the attack's type, what it adds, and whether a chance-based effect (a
+   * freeze, a paralysis) landed. The status, heal or bigger hit itself follows in its own entries.
+   */
+  | { kind: 'zmove'; side: Side; uid: string; type: PokeType | null; effect: ZEffect; landed: boolean }
+  /** A Flying, Ground or Water Z-Move: the Pokémon flies up, digs or dives, out of reach until its strike. */
+  | { kind: 'away'; side: Side; uid: string; how: ZAway }
+  /** An attack missed a Pokémon that is away: up high, under ground or under water. */
+  | { kind: 'dodge'; side: Side; uid: string; how: ZAway }
+  /** A Steel Z-Move: the Pokémon shook off every status (a stun included). */
+  | { kind: 'cleansed'; side: Side; uid: string }
   | { kind: 'end'; result: 'won' | 'lost' | 'fled'; reason?: 'stalemate' | 'forfeit' }
   /**
    * A Pokémon changed form: `mega` (Mega Evolution, Primal Reversion, Ultra Burst — `die` is the die it gained),
@@ -256,6 +350,8 @@ export interface BattlerSeed {
   /** A portal run's extra dice (docs/28), after its typed dice; the whole set kept to `diceCap` dice. */
   extraDice?: DieType[]
   diceCap?: number
+  /** The battle power it already used (a Versus fight carries it from one battle to the next, docs/35). */
+  powered?: PowerKind
 }
 
 /** A set of dice with extra ones joining the typed dice (ahead of any base die), the extras cut to stay within `cap`. */
@@ -289,6 +385,7 @@ export function makeBattler(seed: BattlerSeed, data: GameData): Battler {
     shiny: !!seed.shiny,
     baseDex: seed.dex,
     ...(seed.item && { item: seed.item }),
+    ...(seed.powered && { powered: seed.powered }),
     ...(COPIES_FOE_DICE.has(seed.dex) && { copiesFoe: true, ownDice: stats.dice }),
   }
 }
@@ -334,9 +431,21 @@ export interface CreateBattleOptions {
   megaAllowed?: boolean
   /** The player has unlocked Gigantamax (see `gmaxUnlocked`). */
   gmaxAllowed?: boolean
-  /** The foe's Mega / Gigantamax / type change (see `enemyPlanFor`). */
+  /** The player has unlocked Z-Moves (see `zUnlocked`). */
+  zAllowed?: boolean
+  /** The newer rules (docs/35, see `battlePowersFor`): the gems' Mega forms and a Mega's turns… */
+  megaForms?: number[]
+  megaTurns?: number
+  /** …and Gigantamax's dice and heal. */
+  gmaxBoost?: { dice: number; healPercent: number }
+  /** Powers already used by the player's side (a Versus fight carries them from one battle to the next). */
+  used?: { mega?: number; gmax?: number; z?: number }
+  /** The foe's Mega / Gigantamax / Z-Move / type change (see `enemyPlanFor`). */
   enemyPlan?: EnemyPlan | null
-  /** An auto battle: no Mega Evolution or Gigantamax, for either side — only the foe's type change is kept. */
+  /**
+   * An auto battle. Under the older rules no Mega Evolution or Gigantamax, for either side — only the foe's type
+   * change is kept; under the newer ones (docs/35) each power whose rules are on stays, used by the auto player.
+   */
   auto?: boolean
   /** No Potion or Revive works (Extreme mode, items switched off). */
   noHealItems?: boolean
@@ -371,28 +480,53 @@ function addDie(s: BattleState, side: Side, b: Battler, die: DieType, data: Game
   }
 }
 
-/** Mega Evolution (Primal Reversion, Ultra Burst): its look and types, and a die, until the battle ends. */
+/**
+ * Mega Evolution (Primal Reversion, Ultra Burst): its look and types, and a die — until the battle ends, or under the
+ * gem rules (docs/35) for `megaTurns` of its own turns, the one it Mega Evolves in included.
+ */
 function megaEvolve(s: BattleState, side: Side, b: Battler, mega: Species, data: GameData, rng: Rng, log: LogEntry[]) {
   const base = data.species[b.baseDex ?? b.dex]
   if (!base) return
-  const fromDex = b.dex
+  const pre = snapshot(b)
   const die = megaDie(base, mega)
   wearForm(b, mega)
   b.mega = true
+  b.powered = 'mega'
+  if (s.megaTurns) b.megaTimer = { turns: Math.max(1, s.megaTurns), pre }
   addDie(s, side, b, die, data, rng)
-  log.push({ kind: 'form', side, uid: b.uid, fromDex, toDex: b.dex, reason: 'mega', dice: [...b.dice], die })
+  log.push({ kind: 'form', side, uid: b.uid, fromDex: pre.dex, toDex: b.dex, reason: 'mega', dice: [...b.dice], die })
 }
 
-/** Gigantamax: its look and a die of its first type, for `gigantamax.turns` of its own turns. */
+/** A timed Mega's turns are over, or it left the field: its look, types and dice from before. */
+function endMega(side: Side, b: Battler, data: GameData, log: LogEntry[]) {
+  if (!b.megaTimer) return
+  const fromDex = b.dex
+  restore(b, b.megaTimer.pre, data)
+  delete b.megaTimer
+  delete b.mega
+  log.push({ kind: 'form', side, uid: b.uid, fromDex, toDex: b.dex, reason: 'mega', dice: [...b.dice], revert: true })
+}
+
+/**
+ * Gigantamax: its look and a die of its first type, for `gigantamax.turns` of its own turns. Under the newer rules
+ * (docs/35, `gmaxBoost`) it gains that many dice instead, and heals a share of its max HP, which it keeps.
+ */
 function gigantamax(s: BattleState, side: Side, b: Battler, form: Species, data: GameData, rng: Rng, log: LogEntry[]) {
   const base = data.species[b.baseDex ?? b.dex]
   if (!base) return
   const pre = snapshot(b)
   const die = megaDie(base, form)
   wearForm(b, form)
-  addDie(s, side, b, die, data, rng)
+  for (let i = 0; i < Math.max(1, s.gmaxBoost?.dice ?? 1); i++) addDie(s, side, b, die, data, rng)
   b.gmax = { turns: Math.max(1, data.config.gigantamax.turns), pre }
+  b.powered = 'gmax'
   log.push({ kind: 'form', side, uid: b.uid, fromDex: pre.dex, toDex: b.dex, reason: 'gmax', dice: [...b.dice], die })
+  const heal = s.gmaxBoost ? Math.round((b.maxHp * s.gmaxBoost.healPercent) / 100) : 0
+  if (heal > 0 && b.hp > 0 && b.hp < b.maxHp) {
+    const before = b.hp
+    b.hp = Math.min(b.maxHp, b.hp + heal)
+    log.push({ kind: 'heal', side, uid: b.uid, amount: b.hp - before, hpAfter: b.hp })
+  }
 }
 
 /** Back to its size: the look and the dice it had before. */
@@ -404,12 +538,18 @@ function endGmax(side: Side, b: Battler, data: GameData, log: LogEntry[]) {
   log.push({ kind: 'form', side, uid: b.uid, fromDex, toDex: b.dex, reason: 'gmax', dice: [...b.dice], revert: true })
 }
 
-/** One of its own turns has gone by: a Gigantamax Pokémon shrinks back after its last. */
+/** One of its own turns has gone by: a Gigantamax Pokémon shrinks back after its last, a timed Mega changes back. */
 function tickGmax(s: BattleState, side: Side, data: GameData, log: LogEntry[]) {
   const b = side === 'player' ? activeBattler(s) : s.enemy
-  if (!b.gmax || b.hp <= 0) return
-  b.gmax.turns -= 1
-  if (b.gmax.turns <= 0) endGmax(side, b, data, log)
+  if (b.hp <= 0) return
+  if (b.gmax) {
+    b.gmax.turns -= 1
+    if (b.gmax.turns <= 0) endGmax(side, b, data, log)
+  }
+  if (b.megaTimer) {
+    b.megaTimer.turns -= 1
+    if (b.megaTimer.turns <= 0) endMega(side, b, data, log)
+  }
 }
 
 /** A type picked from the menu (Arceus, Silvally, Ogerpon): its look, and every die — the hand too — takes the type. */
@@ -515,22 +655,50 @@ export function unleashForm(b: Battler, data: GameData): Extract<LogEntry, { kin
   }
 }
 
-/** The Mega forms the Pokémon in battle could take right now (empty when it can't Mega Evolve). */
-export function megaChoices(s: BattleState, data: GameData): Species[] {
-  if (s.auto || !s.megaAllowed || (s.megaUsed ?? 0) >= data.config.megaEvolution.perBattle) return []
-  if (s.phase !== 'player_roll' && s.phase !== 'player_reroll') return []
-  const a = activeBattler(s)
-  if (a.mega || a.gmax || a.hp <= 0 || a.preForm) return []
-  return megaOptions(data, a.baseDex ?? a.dex, a.level)
+/**
+ * The player's side has spent this power for the battle. Under the older rules Mega Evolution and Gigantamax share one
+ * use; under the newer ones (docs/35) each has its own, and Z-Moves always do.
+ */
+export function powerSpent(s: BattleState, kind: PowerKind, data: GameData): boolean {
+  const per = data.config.megaEvolution.perBattle
+  if (kind === 'z') return (s.zUsed ?? 0) >= data.config.zMove.perBattle
+  if (!s.ownLimits) return (s.megaUsed ?? 0) >= per
+  return ((kind === 'mega' ? s.megaUsed : s.gmaxUsed) ?? 0) >= per
 }
 
-/** The Gigantamax form the Pokémon in battle could take right now — it shares the Mega's one-per-battle. */
-export function gmaxChoices(s: BattleState, data: GameData): Species[] {
-  if (s.auto || !s.gmaxAllowed || (s.megaUsed ?? 0) >= data.config.megaEvolution.perBattle) return []
+/** The Pokémon in battle may still take a power: alive, not already powered (one per Pokémon), not in a low-HP form. */
+const canPower = (a: Battler) => !a.powered && !a.mega && !a.gmax && a.hp > 0 && !a.preForm
+
+/** The Mega forms the Pokémon in battle could take right now (empty when it can't Mega Evolve). */
+export function megaChoices(s: BattleState, data: GameData): Species[] {
+  if (!s.megaAllowed || powerSpent(s, 'mega', data)) return []
   if (s.phase !== 'player_roll' && s.phase !== 'player_reroll') return []
   const a = activeBattler(s)
-  if (a.mega || a.gmax || a.hp <= 0 || a.preForm) return []
+  if (!canPower(a)) return []
+  const base = a.baseDex ?? a.dex
+  // The gem rules: the forms the player's gems open, at any level.
+  const forms = s.megaForms
+  return forms ? megaFormsOf(data, base).filter((f) => forms.includes(f.dex)) : megaOptions(data, base, a.level)
+}
+
+/** The Gigantamax form the Pokémon in battle could take right now (its use shared with the Mega's under the older rules). */
+export function gmaxChoices(s: BattleState, data: GameData): Species[] {
+  if (!s.gmaxAllowed || powerSpent(s, 'gmax', data)) return []
+  if (s.phase !== 'player_roll' && s.phase !== 'player_reroll') return []
+  const a = activeBattler(s)
+  if (!canPower(a)) return []
   return gmaxFormsOf(data, a.baseDex ?? a.dex)
+}
+
+/**
+ * The Pokémon in battle could attack with a Z-Move now: after the roll, once per battle, not already powered — or,
+ * a Steel-type, while frozen or paralyzed (its Z-Move shakes the stun off).
+ */
+export function canZMove(s: BattleState, data: GameData): boolean {
+  if (!s.zAllowed || powerSpent(s, 'z', data)) return false
+  const a = activeBattler(s)
+  const when = s.phase === 'player_reroll' || (s.phase === 'player_stunned' && a.types.includes('steel'))
+  return when && canPower(a)
 }
 
 /** The types the Pokémon in battle could take right now (empty when it has none, or the change is spent). */
@@ -554,6 +722,37 @@ export function lockedTypeForms(s: BattleState, data: GameData): Species[] {
 
 const other = (s: Side): Side => (s === 'player' ? 'enemy' : 'player')
 export const activeBattler = (s: BattleState): Battler => s.player[s.activeIndex]!
+
+/**
+ * The powers a battle starts with. An auto battle keeps only the powers under the newer rules (docs/35) — the gems'
+ * Mega Evolution, the boosted Gigantamax, Z-Moves — on both sides; the foe's type change always.
+ */
+function battlePowersOf(opts: CreateBattleOptions): Partial<BattleState> {
+  const auto = !!opts.auto
+  const mega = !!opts.megaAllowed && (!auto || !!opts.megaForms)
+  const gmax = !!opts.gmaxAllowed && (!auto || !!opts.gmaxBoost)
+  const plan = opts.enemyPlan
+  const foe: EnemyPlan = {
+    ...(plan?.formChanges && { formChanges: true }),
+    ...(plan?.mega && (!auto || opts.megaForms) && { mega: plan.mega }),
+    ...(plan?.gmax && (!auto || opts.gmaxBoost) && { gmax: plan.gmax }),
+    ...(plan?.z && { z: true }),
+  }
+  return {
+    ...(auto && { auto: true }),
+    ...(mega && { megaAllowed: true }),
+    ...(gmax && { gmaxAllowed: true }),
+    ...(opts.zAllowed && { zAllowed: true }),
+    ...(opts.megaForms && { megaForms: [...opts.megaForms] }),
+    ...(opts.megaTurns && { megaTurns: opts.megaTurns }),
+    ...(opts.gmaxBoost && { gmaxBoost: { ...opts.gmaxBoost } }),
+    ...((opts.megaForms || opts.gmaxBoost) && { ownLimits: true }),
+    ...(opts.used?.mega && { megaUsed: opts.used.mega }),
+    ...(opts.used?.gmax && { gmaxUsed: opts.used.gmax }),
+    ...(opts.used?.z && { zUsed: opts.used.z }),
+    ...(Object.keys(foe).length && { enemyPlan: foe }),
+  }
+}
 
 export function createBattle(opts: CreateBattleOptions, data: GameData): { state: BattleState; log: LogEntry[] } {
   if (opts.double && opts.double.foes.length > 1) return createDouble(opts, opts.double, data)
@@ -587,13 +786,7 @@ export function createBattle(opts: CreateBattleOptions, data: GameData): { state
     ...(opts.plates && { plates: [...opts.plates] }),
     lastDamage: null,
     itemUsedThisTurn: false,
-    ...(opts.auto
-      ? { auto: true, ...(opts.enemyPlan?.formChanges && { enemyPlan: { formChanges: true } }) }
-      : {
-          ...(opts.megaAllowed && { megaAllowed: true }),
-          ...(opts.gmaxAllowed && { gmaxAllowed: true }),
-          ...(opts.enemyPlan && { enemyPlan: opts.enemyPlan }),
-        }),
+    ...battlePowersOf(opts),
   }
   const log: LogEntry[] = [{ kind: 'start', first }]
   // A Giratina sent out below half HP is already in its Origin Forme.
@@ -708,6 +901,15 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[]) 
       return
     }
 
+    // Back from up high, under ground or under water (a Z-Move, docs/35): it strikes with the roll it kept.
+    if (b.away) {
+      const { how, dice } = b.away
+      delete b.away
+      s.dice = dice
+      s.selected = dice.map(() => false)
+      return resolveAttack(s, side, data, log, undefined, how)
+    }
+
     const stun = stunKind(b.status)
     if (stun && side === 'player') {
       // The player may cure it first (Ice Heal, Paralyze Heal) — or PASS, which spends the stunned turn.
@@ -774,7 +976,16 @@ function createDouble(
   })
   const plans: Record<string, EnemyPlan> = {}
   double.plans?.forEach((p, i) => {
-    if (p && foes[i]) plans[foes[i]!.uid] = opts.auto ? { ...(p.formChanges && { formChanges: true }) } : p
+    // An auto battle keeps a foe's powers whose newer rules are on (docs/35), as one on one does.
+    if (p && foes[i])
+      plans[foes[i]!.uid] = opts.auto
+        ? {
+            ...(p.formChanges && { formChanges: true }),
+            ...(p.mega && opts.megaForms && { mega: p.mega }),
+            ...(p.gmax && opts.gmaxBoost && { gmax: p.gmax }),
+            ...(p.z && { z: true }),
+          }
+        : p
   })
   const state: BattleState = {
     kind: opts.kind,
@@ -947,6 +1158,14 @@ function beginDoubleTurn(s: BattleState, data: GameData, log: LogEntry[]) {
       if (doubleKnockouts(s, log)) return
       continue
     }
+    // Back from a Z-Move's turn away (docs/35): it strikes the one in front with the roll it kept.
+    if (b.away) {
+      const { how, dice } = b.away
+      delete b.away
+      s.dice = dice
+      s.selected = dice.map(() => false)
+      return resolveAttack(s, side, data, log, undefined, how)
+    }
     const stun = stunKind(b.status)
     if (stun && side === 'player') {
       s.phase = 'player_stunned'
@@ -1067,13 +1286,100 @@ export function confusionRecoil(maxHp: number, data: GameData): number {
   return Math.max(1, Math.round((maxHp * data.config.status.confuse.recoilPercent) / 100))
 }
 
-function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry[]) {
+/**
+ * A Z-Move (docs/35): what the attack's type adds, and whether a chance-based effect lands — rolled before the hit, so
+ * the log can say it first. Every other type hits `damagePercent` % harder.
+ */
+function zMoveOf(result: DamageResult, data: GameData, rng: Rng): { effect: ZEffect; landed: boolean; result: DamageResult } {
+  const cfg = data.config.zMove
+  const effect = zEffectOf(result.attackType)
+  const chance = effect === 'freeze' ? cfg.freezeChance : effect === 'paralyze' ? cfg.paralyzeChance : 100
+  const landed = !result.immune && rng.next() * 100 < chance
+  const more = effect === 'power' ? cfg.damagePercent : effect === 'reckless' ? cfg.recklessPercent : 0
+  if (!more || result.immune) return { effect, landed, result }
+  const final = Math.max(1, Math.round((result.final * (100 + more)) / 100))
+  return { effect, landed, result: { ...result, final, zPercent: more } }
+}
+
+/**
+ * What a Z-Move's effect does once its hit has landed (`dealt`): the status on the foe, the heal on the user, or a
+ * Fighting Z-Move's recoil, a share of what it dealt.
+ */
+function applyZEffect(effect: ZEffect, atk: Battler, def: Battler, side: Side, dealt: number, data: GameData, log: LogEntry[]) {
+  const cfg = data.config.zMove
+  if (effect === 'power' || effect === 'cleanse' || isAway(effect)) return
+  if (effect === 'reckless') {
+    if (dealt <= 0 || atk.hp <= 0) return
+    const amount = Math.max(1, Math.round((dealt * cfg.recklessRecoilPercent) / 100))
+    atk.hp = Math.max(0, atk.hp - amount)
+    log.push({ kind: 'recoil', side, uid: atk.uid, amount, hpAfter: atk.hp, z: true })
+    return
+  }
+  if (effect === 'heal') {
+    const amount = Math.round((atk.maxHp * cfg.healPercent) / 100)
+    if (amount <= 0 || atk.hp <= 0 || atk.hp >= atk.maxHp) return
+    const before = atk.hp
+    atk.hp = Math.min(atk.maxHp, atk.hp + amount)
+    log.push({ kind: 'heal', side, uid: atk.uid, amount: atk.hp - before, hpAfter: atk.hp })
+    return
+  }
+  if (def.hp <= 0) return
+  const status: StatusKind = effect === 'freeze' ? 'frozen' : effect
+  const app = effect === 'burn' ? { status, stacks: cfg.burnStacks } : { status }
+  def.status = applyStatuses(def.status, [app], data.config.status)
+  log.push({ kind: 'status', target: other(side), targetUid: def.uid, status, ...(effect === 'burn' && { stacks: cfg.burnStacks }) })
+}
+
+/** Confusion: the attack still lands (or misses), then the attacker takes recoil (a % of its max HP) and it clears. */
+function confusedRecoil(atk: Battler, side: Side, data: GameData, log: LogEntry[]) {
+  if (!atk.status.confused) return
+  atk.status = { ...atk.status, confused: false }
+  const amount = confusionRecoil(atk.maxHp, data)
+  atk.hp = Math.max(0, atk.hp - amount)
+  log.push({ kind: 'recoil', side, uid: atk.uid, amount, hpAfter: atk.hp })
+}
+
+/** The attack's end: forms by HP, the hand cleared, the turn over. */
+function endAttack(s: BattleState, side: Side, data: GameData, log: LogEntry[]) {
+  checkHpForms(s, data, log)
+  s.dice = []
+  s.selected = []
+  afterAction(s, side, data, log)
+}
+
+/**
+ * An attack with the hand on the table. `z`: true for a Z-Move (docs/35), or where a Flying, Ground or Water one went
+ * — the strike it comes back with, from the roll it kept.
+ */
+function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry[], rng?: Rng, z: boolean | ZAway = false) {
   const atk = side === 'player' ? activeBattler(s) : s.enemy
   const def = side === 'player' ? s.enemy : activeBattler(s)
   const levels = side === 'player' ? s.playerLevels : s.enemyLevels
   const dice = s.dice
 
-  const result = computeDamage(dice, atk.types, def.types, levels, data)
+  let result = computeDamage(dice, atk.types, def.types, levels, data)
+  const zMove = z === true && rng ? zMoveOf(result, data, rng) : null
+  if (zMove) {
+    result = zMove.result
+    log.push({ kind: 'zmove', side, uid: atk.uid, type: result.attackType, effect: zMove.effect, landed: zMove.landed })
+    // Up, down or under: out of reach for a turn, the roll kept for the strike at the start of its next one.
+    if (isAway(zMove.effect)) {
+      atk.away = { how: zMove.effect, dice: [...dice] }
+      log.push({ kind: 'away', side, uid: atk.uid, how: zMove.effect })
+      return endAttack(s, side, data, log)
+    }
+    // Steel: every status shaken off before the blow (so a confusion costs nothing either).
+    if (zMove.effect === 'cleanse' && hasAnyStatus(atk.status)) {
+      atk.status = emptyStatus()
+      log.push({ kind: 'cleansed', side, uid: atk.uid })
+    }
+  }
+  // The target is away: the attack misses, and nothing it carries lands.
+  if (def.away) {
+    log.push({ kind: 'dodge', side: other(side), uid: def.uid, how: def.away.how })
+    confusedRecoil(atk, side, data, log)
+    return endAttack(s, side, data, log)
+  }
   def.hp = Math.max(0, def.hp - result.final)
   s.lastDamage = result
   log.push({
@@ -1085,6 +1391,7 @@ function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry
     hpAfter: def.hp,
     dice,
     result,
+    ...(z && { z: typeof z === 'string' ? { from: z } : {} }),
   })
   const all = statusesFromRoll(dice, data)
   const apps = all.filter((a) => a.status !== 'heal')
@@ -1094,6 +1401,7 @@ function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry
     for (const a of apps)
       log.push({ kind: 'status', target: other(side), targetUid: def.uid, status: a.status, stacks: a.stacks, turns: a.turns })
   }
+  if (zMove?.landed) applyZEffect(zMove.effect, atk, def, side, result.final, data, log)
   // Heal faces: the attacker restores HP on top of the damage it dealt.
   const heal = all.find((a) => a.status === 'heal')
   if (heal?.amount && atk.hp > 0 && atk.hp < atk.maxHp) {
@@ -1101,17 +1409,8 @@ function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry
     atk.hp = Math.min(atk.maxHp, atk.hp + heal.amount)
     log.push({ kind: 'heal', side, uid: atk.uid, amount: atk.hp - before, hpAfter: atk.hp })
   }
-  // Confusion: the attack still lands, then the attacker takes recoil (a % of its max HP) and the confusion clears.
-  if (atk.status.confused) {
-    atk.status = { ...atk.status, confused: false }
-    const amount = confusionRecoil(atk.maxHp, data)
-    atk.hp = Math.max(0, atk.hp - amount)
-    log.push({ kind: 'recoil', side, uid: atk.uid, amount, hpAfter: atk.hp })
-  }
-  checkHpForms(s, data, log)
-  s.dice = []
-  s.selected = []
-  afterAction(s, side, data, log)
+  confusedRecoil(atk, side, data, log)
+  endAttack(s, side, data, log)
 }
 
 const NOOP = (state: BattleState) => ({ state, log: [] as LogEntry[] })
@@ -1157,6 +1456,22 @@ export function reduce(
     case 'ATTACK': {
       if (s.phase !== 'player_reroll') return NOOP(state)
       resolveAttack(s, 'player', data, log)
+      break
+    }
+    case 'ZMOVE': {
+      if (!canZMove(s, data)) return NOOP(state)
+      const a = activeBattler(s)
+      // A Steel-type frozen or paralyzed: its Z-Move shakes off the stun and every status, then it throws and strikes.
+      if (s.phase === 'player_stunned') {
+        a.status = emptyStatus()
+        log.push({ kind: 'cleansed', side: 'player', uid: a.uid })
+        s.dice = rollAll(a.dice, data, rng)
+        s.selected = s.dice.map(() => false)
+        log.push({ kind: 'roll', side: 'player', dice: s.dice })
+      }
+      s.zUsed = (s.zUsed ?? 0) + 1
+      a.powered = 'z'
+      resolveAttack(s, 'player', data, log, rng, true)
       break
     }
     case 'USE_ITEM': {
@@ -1216,7 +1531,8 @@ export function reduce(
       const form = gmaxChoices(s, data).find((m) => m.dex === e.toDex)
       if (!form) return NOOP(state)
       gigantamax(s, 'player', a, form, data, rng, log)
-      s.megaUsed = (s.megaUsed ?? 0) + 1
+      if (s.ownLimits) s.gmaxUsed = (s.gmaxUsed ?? 0) + 1
+      else s.megaUsed = (s.megaUsed ?? 0) + 1
       break
     }
     case 'CHANGE_FORM': {
@@ -1248,8 +1564,9 @@ export function reduce(
       if (!target || target.hp <= 0 || idx === s.activeIndex) return NOOP(state)
       const outgoing = activeBattler(s)
       const switchable = s.phase === 'player_switch' || ((s.phase === 'player_roll' || s.phase === 'player_reroll') && data.config.allowVoluntarySwitch)
-      // A Gigantamax Pokémon shrinks back when it leaves the field.
+      // A Gigantamax Pokémon shrinks back when it leaves the field; so does a timed Mega (the gem rules) change back.
       if (switchable && outgoing.gmax) endGmax('player', outgoing, data, log)
+      if (switchable && outgoing.megaTimer) endMega('player', outgoing, data, log)
       if (s.phase === 'player_switch') {
         s.activeIndex = idx
         if (!s.participants.includes(target.uid)) s.participants.push(target.uid)
@@ -1296,8 +1613,8 @@ export function reduce(
       if (plan && !s.enemyPlanDone && en.hp > 0) {
         const mega = plan.mega ? data.species[plan.mega] : undefined
         const gmax = plan.gmax ? data.species[plan.gmax] : undefined
-        if (mega && !en.mega) megaEvolve(s, 'enemy', en, mega, data, rng, log)
-        else if (gmax && !en.gmax) gigantamax(s, 'enemy', en, gmax, data, rng, log)
+        if (mega && !en.powered) megaEvolve(s, 'enemy', en, mega, data, rng, log)
+        else if (gmax && !en.powered) gigantamax(s, 'enemy', en, gmax, data, rng, log)
         s.enemyPlanDone = true
         if (s.double) s.double.plansDone = [...(s.double.plansDone ?? []), en.uid]
       }
@@ -1348,7 +1665,13 @@ export function reduce(
         en.rerollsLeft -= 1
         log.push({ kind: 'reroll', side: 'enemy', mask, dice: s.dice, rerollsLeft: en.rerollsLeft })
       }
-      resolveAttack(s, 'enemy', data, log)
+      // A trainer's ace attacks with its Z-Move the first time it can (docs/35): never on a Pokémon already powered.
+      const z = !!plan?.z && !s.enemyZDone && !en.powered
+      if (z) {
+        s.enemyZDone = true
+        en.powered = 'z'
+      }
+      resolveAttack(s, 'enemy', data, log, rng, z)
       break
     }
   }

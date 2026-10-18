@@ -18,6 +18,7 @@ import {
   settleKo,
   settleLook,
   stampExtremeUnlock,
+  syncPowers,
   syncEggClocks,
   syncHpScale,
   syncXpCurve,
@@ -229,9 +230,13 @@ function settle(save: SaveData, data: GameData) {
   // Trainer looks (docs/31): while the switch is on, a look not unlocked comes off. The Extreme save wears the looks
   // the main save has earned.
   const progress = isExtreme(ko.save) ? (mainForLooks() ?? ko.save) : ko.save
+  // The battle powers (docs/35): a badge's Mega Gem handed over (one won now, or before the gem rules were on), and the
+  // badges that open each power noted for Versus.
+  const powers = syncPowers(settleLook(ko.save, progress, data), data)
   return {
     ...dup,
-    save: settleLook(ko.save, progress, data),
+    save: powers.save,
+    gemsGiven: powers.given,
     revived: fossils.revived,
     raidsReleased: raids.released,
     worldsReleased: worlds.released,
@@ -323,6 +328,8 @@ export function commitSave(next: SaveData | null, opts: { silent?: boolean; keep
   if (!opts.silent) for (const fn of saveListeners) fn(stamped, prev)
   for (const p of settled?.revived ?? [])
     pushToast(t('ui.toast.revivedFossil', { name: data.species[p.dex]?.name ?? `#${p.dex}` }), 'good', 4500)
+  for (const g of settled?.gemsGiven ?? [])
+    pushToast(t('ui.powers.gemGiven', { leader: g.leader, gem: g.gem.name }), 'good', 5000)
   for (const id of settled?.back ?? []) {
     const inst = stamped?.box.find((p) => p.id === id)
     if (inst) pushToast(t('ui.extreme.backToast', { name: data.species[inst.dex]?.name ?? '' }), 'good', 4000)
