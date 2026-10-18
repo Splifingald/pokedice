@@ -1,4 +1,4 @@
-// Kitchen sink (dev only): the Underground (docs/31) — the cave, the crack gauge (fresh, under way, shaking, collapsed),
+// Kitchen sink (dev only): the Underground (docs/34) — the cave, the crack gauge (fresh, under way, shaking, collapsed),
 // a wall in every state (fresh, half dug with a thing half uncovered, a strike flashing, cleared, collapsing), the
 // pickaxe die (unrolled, rolled) and its faces (now, the next level's), orbs of every colour and size, plates, the
 // haul (every outcome), the plates grid (none, some), the orb bag, the team seats (solo, two, full) and the rules.

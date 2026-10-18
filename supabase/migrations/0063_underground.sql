@@ -1,4 +1,4 @@
--- The Underground (docs/31-UNDERGROUND-PLAN.md §3): what crosses between players. A save is written only by its owner,
+-- The Underground (docs/34-UNDERGROUND-PLAN.md §3): what crosses between players. A save is written only by its owner,
 -- so the walls, kits, the orb bag and the plates stay in each player's save; the server holds the teams and the orbs one
 -- teammate dug for another, like the trades' inbox: the sender's game says which wall's orbs it owes, the server routes
 -- each to whoever holds its colour, and the receiver's game applies them once and says so.
@@ -13,8 +13,8 @@
 -- 5. ug_can_sell: the caller's team has all three seats (the game sells orbs only then).
 -- 6. delete_my_data: 0053's, plus the caller's seats, invitations and orbs owed.
 --
--- The main save only: Extreme mode is a solo challenge. Run after 0060; safe to run again.
--- seed.sql inlines it (scripts/seed.ts), after 0060.
+-- The main save only: Extreme mode is a solo challenge. Run after 0062; safe to run again.
+-- seed.sql inlines it (scripts/seed.ts), after 0062.
 
 -- ---------------------------------------------------------------- 1. the switch and the numbers
 
@@ -406,7 +406,7 @@ begin
     update trade_listings set owner = null, owner_name = null, owner_applied = true where owner = me;
     update trade_listings set taker = null, taker_name = null, taker_applied = true where taker = me;
   end if;
-  -- The Underground (0061): your seat (an emptied team goes), your invitations, the orbs owed to you.
+  -- The Underground (0063): your seat (an emptied team goes), your invitations, the orbs owed to you.
   if to_regclass('public.ug_members') is not null and (p_realm is null or p_realm = 'main') then
     delete from ug_invites where from_user = me or to_user = me;
     delete from ug_orbs where to_user = me;

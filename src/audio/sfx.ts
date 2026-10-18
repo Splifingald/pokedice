@@ -443,7 +443,7 @@ const FX_SOUNDS = {
     tone(784, 0.18, { type: 'triangle', vol: 0.04, at: 0.16 })
     tone(1047, 0.45, { type: 'triangle', vol: 0.045, at: 0.32 })
   },
-  // The Underground (docs/31): a pickaxe's clink on rock (lower and heavier the bigger the roll), the wall rumbling
+  // The Underground (docs/34): a pickaxe's clink on rock (lower and heavier the bigger the roll), the wall rumbling
   // down, and a little chime when something is dug out whole.
   'ug.strike': (n = 1) => {
     tone(1400 - n * 300, 0.05, { type: 'square', vol: 0.05, slide: -200 })

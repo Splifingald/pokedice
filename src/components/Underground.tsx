@@ -1,4 +1,4 @@
-// The Underground's pieces (docs/31; docs/15 §30): the cave drawn in code (Home's square, the rules, the Mart), the
+// The Underground's pieces (docs/34; docs/15 §32): the cave drawn in code (Home's square, the rules, the Mart), the
 // crack gauge, the wall with what it hides, the pickaxe die, orbs, plates and the haul's lines. They draw what the
 // engine decided (engine/underground.ts); the screens are screens/events/Underground*.tsx.
 import { type CSSProperties, type ReactNode } from 'react'

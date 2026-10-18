@@ -1,4 +1,4 @@
-// The Underground's teams (docs/31 §3), the game's side of migration 0061: the team and its invitations as the server
+// The Underground's teams (docs/34 §3), the game's side of migration 0063: the team and its invitations as the server
 // tells them, the orbs a finished wall owes to teammates (they wait in the save's outbox until the server has them),
 // the orbs teammates dug for this player (into the bag, each delivery once), and selling, which the server confirms.
 // Signed out, there is no team: every orb is the player's, and orbs can't be sold while a full team is asked for.

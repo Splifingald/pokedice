@@ -1,4 +1,4 @@
-// Migration 0061 against a real Postgres (PGlite, in process): the Underground's teams (docs/31 §3). Its row lands
+// Migration 0063 against a real Postgres (PGlite, in process): the Underground's teams (docs/34 §3). Its row lands
 // with the game's defaults, off; nothing answers outside a running Underground event or with a switch off; friends
 // only, three seats with a colour each, dealt at random; orbs a wall owes go to whoever holds their colour, once; a
 // full team can sell; an ended event's teams go; deleting your data takes your seat. Supabase's own pieces (the auth
@@ -108,11 +108,11 @@ beforeAll(async () => {
     '0040_lighter_save_writes.sql',
     '0044_trades.sql',
     '0053_push.sql',
-    '0061_underground.sql',
+    '0063_underground.sql',
   ])
     await db.exec(sql(f))
   // Safe to run again.
-  await db.exec(sql('0061_underground.sql'))
+  await db.exec(sql('0063_underground.sql'))
   const ids = [...Object.values(U), ADMIN]
   await db.exec(`insert into auth.users (id) values ${ids.map((u) => `('${u}')`).join(',')}`)
   // Ash, Misty, Brock and Erika are all friends; Gary is nobody's.

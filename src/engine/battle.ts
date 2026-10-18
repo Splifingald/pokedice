@@ -102,7 +102,7 @@ export interface BattleState {
   canRun: boolean
   /** Extreme mode with the admin's items switch off: no Potion or Revive works. */
   noHealItems?: boolean
-  /** The types the player's Arceus may take (its plates, docs/31). Absent = any. */
+  /** The types the player's Arceus may take (its plates, docs/34). Absent = any. */
   plates?: PokeType[]
   lastDamage: DamageResult | null
   /** One item per turn — it doesn't end the turn. */
@@ -284,7 +284,7 @@ export interface CreateBattleOptions {
   auto?: boolean
   /** No Potion or Revive works (Extreme mode, items switched off). */
   noHealItems?: boolean
-  /** The types the player's Arceus may take: its plates (docs/31). Absent = any. Foes are never limited. */
+  /** The types the player's Arceus may take: its plates (docs/34). Absent = any. Foes are never limited. */
   plates?: PokeType[]
 }
 
@@ -483,12 +483,12 @@ export function formChoices(s: BattleState, data: GameData): Species[] {
   // Each Pokémon has its own changes for the battle.
   if (a.hp <= 0 || (a.formChanges ?? 0) >= data.config.formChangesPerBattle) return []
   const forms = typeForms(a, data)
-  // Arceus takes only the types of the plates held (docs/31); its Normal self is always there to go back to.
+  // Arceus takes only the types of the plates held (docs/34); its Normal self is always there to go back to.
   if (!s.plates || (a.baseDex ?? a.dex) !== ARCEUS_DEX) return forms
   return forms.filter((f) => f.dex === ARCEUS_DEX || s.plates!.includes(choiceFormDie(f)))
 }
 
-/** Arceus's types still locked for the player (docs/31): the forms it has no plate for. Empty for anyone else. */
+/** Arceus's types still locked for the player (docs/34): the forms it has no plate for. Empty for anyone else. */
 export function lockedTypeForms(s: BattleState, data: GameData): Species[] {
   const a = activeBattler(s)
   if (!s.plates || (a.baseDex ?? a.dex) !== ARCEUS_DEX) return []

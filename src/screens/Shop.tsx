@@ -253,7 +253,7 @@ function LiveShopSection() {
 }
 
 /**
- * The Underground's Explorakits (docs/31), over the Mart's shelves while it runs: its cave, the time left, the kit at
+ * The Underground's Explorakits (docs/34), over the Mart's shelves while it runs: its cave, the time left, the kit at
  * its price, what's left of the player's limit. Never in a small world's Mart (the event doesn't reach one).
  */
 function UgKitSection() {

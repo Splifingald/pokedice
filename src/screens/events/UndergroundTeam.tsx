@@ -1,4 +1,4 @@
-// The Underground's team (docs/31 §3), on its page: three seats, one orb colour each, dealt at random on joining; and
+// The Underground's team (docs/34 §3), on its page: three seats, one orb colour each, dealt at random on joining; and
 // the sheet to manage it: invitations to answer, friends to invite, the invitations sent, leaving. Solo (or signed
 // out), every orb is the player's. The server decides every seat (store/ugTeams.ts).
 import { useEffect, useState } from 'react'

@@ -1,6 +1,6 @@
 # The Underground: plan (for validation)
 
-Status: **built** (2026-10-17), phases 1 to 4, on `ccr-a3f3bfa6-jmvzyg`. It ships **Off** (Admin → Live events → an
+Status: **built** (2026-10-17), phases 1 to 4, on `ccr-a3f3bfa6-jmvzyg`, merged into `feature/version_2`. It ships **Off** (Admin → Live events → an
 Underground event → the switch). What was built and where it differs from the plan: §10; setting it up: §11.
 
 A new **live event type** (docs/20), inspired by the Sinnoh Underground of Diamond, Pearl and Platinum: players spend
@@ -157,7 +157,7 @@ below 1 is refused).
 
 ---
 
-## 3. Server (one migration, `0061_underground.sql` or the next free number when built; `seed.sql` carries it)
+## 3. Server (one migration, `0063_underground.sql`; `seed.sql` carries it)
 
 A save is written only by its owner, so what crosses between players goes through a server inbox, like trades and raid
 gifts: the server records it, the receiving game applies it to its own save and says so, once.
@@ -201,7 +201,7 @@ plates?: PokeType[]                         // for good, outside the event block
 
 ---
 
-## 5. What players see (docs/15 gets a section for it, §30)
+## 5. What players see (docs/15 gets a section for it, §32)
 
 1. **Home**: the live event's square, the Underground variant: the cave picture drawn in code, LIVE, kits held and the
    next free kit, the time left as a draining gauge. Tap: the Underground page. A KITS tag on the Mart tab while kits
@@ -253,7 +253,7 @@ names too; `pnpm i18n:fonts` after the CJK columns.
 
 1. **Engine, config, save, admin, the Arceus lock**, with their tests.
 2. **Solo play**: the square, the rules, the page, the dig with its effects and sounds, the haul, the Mart row, the
-   locked TYPE menu; strings; kitchen sink; docs/15 §30.
+   locked TYPE menu; strings; kitchen sink; docs/15 §32.
 3. **Teams**: the migration, the team sheet, orbs between teammates, selling.
 4. Balance pass on the yield simulation; the admin tunes the numbers.
 
@@ -290,13 +290,13 @@ Mart, Arceus's TYPE menu and the admin.
   (teams, the orbs both ways, selling confirmed by the server); screens `src/screens/events/Underground.tsx` (the page,
   `/underground`), `UndergroundDig.tsx` (`/underground/dig`), `UndergroundTeam.tsx` (seats and the team sheet); pieces
   `src/components/Underground.tsx`, `src/styles/underground.css`; Home's live square, the rules pop-up, the Mart's
-  section, KITS on the shop tab, the push line, the TYPE menu and Arceus's sheet. Docs/15 §30; the kitchen sink.
+  section, KITS on the shop tab, the push line, the TYPE menu and Arceus's sheet. Docs/15 §32; the kitchen sink.
 - **Art** `src/assets/underground.png` and `src/data/underground-atlas.json`, built by `pnpm underground-sprites`
   (`scripts/underground-sprites.ts`): Pokémon Platinum's own mining treasures from the pret/pokeplatinum decompilation
   (small and large spheres, the plate under each type's palette, the Gen 1–4 fossils), a pink ramp for the Pixie
   Plate (Fairy came later), and the official item sprites for the later fossils (PokeAPI; Galar's halves from
   pokesprite). Each picture is cropped to what it draws, so it fills the tiles it takes, its shape kept.
-- **Server** `supabase/migrations/0061_underground.sql`, inlined into `supabase/seed.sql`.
+- **Server** `supabase/migrations/0063_underground.sql`, inlined into `supabase/seed.sql`.
 - **Tests** `tests/engine/underground.test.ts` (29), `tests/underground-sql.test.ts` (9, PGlite),
   `e2e/underground.spec.ts` (5).
 
@@ -330,7 +330,7 @@ gives one or two. The admin sets the rate (the plate weight, the kit price, the 
 ## 11. Setting it up
 
 1. Run the migration on Supabase (SQL editor):
-   https://github.com/Splifingald/pokedice/blob/ccr-a3f3bfa6-jmvzyg/supabase/migrations/0061_underground.sql
+   https://github.com/Splifingald/pokedice/blob/feature/version_2/supabase/migrations/0063_underground.sql
    (`supabase/seed.sql` carries it too, inlined: a database built from it needs nothing else).
 2. Admin → Live events → New: type **Underground**, its dates (one live event at a time), its badges and picture
    (empty: the cave drawn in code). Under it, the Underground's settings: tune the numbers, then the switch **On for

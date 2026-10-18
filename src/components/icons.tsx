@@ -64,7 +64,7 @@ const PUMPKIN_PAL: Record<string, string> = {
   g: '#34c97a',
 }
 
-/** The Underground's pickaxe and Explorakit (docs/31): steel, a wooden handle, a leather kit. */
+/** The Underground's pickaxe and Explorakit (docs/34): steel, a wooden handle, a leather kit. */
 const DIG_PAL: Record<string, string> = {
   k: '#24304f',
   s: '#b7b7ce',

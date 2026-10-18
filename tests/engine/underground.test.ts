@@ -1,4 +1,4 @@
-// The Underground (docs/31): a live event type. Explorakits open walls; a strike rolls the pickaxe die and takes that
+// The Underground (docs/34): a live event type. Explorakits open walls; a strike rolls the pickaxe die and takes that
 // many layers off a tile (one fewer off its neighbours); a thing is won once every tile of it is dug out. Orbs go to
 // whoever holds their colour and sell only in a full team; plates let the player's Arceus take their type.
 import { describe, expect, it } from 'vitest'

@@ -1,4 +1,4 @@
-// The Underground's page (docs/31; docs/15 §30), reached from Home's live square: the Explorakits and DIG A WALL, the
+// The Underground's page (docs/34; docs/15 §32), reached from Home's live square: the Explorakits and DIG A WALL, the
 // pickaxe and its upgrade, the team, the orb bag and selling, the plates, and INFO. The dig itself is full screen
 // (UndergroundDig.tsx). Every number is the engine's.
 import { useState } from 'react'

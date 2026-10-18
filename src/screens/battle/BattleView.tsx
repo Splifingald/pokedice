@@ -427,7 +427,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         ? 'ui.battle.ultra'
         : 'ui.battle.mega'
   const formOpts = versus ? [] : formChoices(st, data)
-  // Arceus's types still waiting for their plate (docs/31): listed, locked, in the same menu.
+  // Arceus's types still waiting for their plate (docs/34): listed, locked, in the same menu.
   const lockedOpts = versus ? [] : lockedTypeForms(st, data)
   const formsLeft = data.config.formChangesPerBattle - (activeBattler(st).formChanges ?? 0)
   const typeMenu =

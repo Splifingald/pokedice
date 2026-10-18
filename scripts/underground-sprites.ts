@@ -1,5 +1,5 @@
 /**
- * `pnpm underground-sprites`: the Underground's treasures (docs/31) as Pokémon Platinum draws them in its mining wall,
+ * `pnpm underground-sprites`: the Underground's treasures (docs/34) as Pokémon Platinum draws them in its mining wall,
  * packed into one sheet, src/assets/underground.png, with its index in src/data/underground-atlas.json.
  *
  * - Spheres, small and large, and the fossils of Generations 1–4: pret/pokeplatinum's mining objects

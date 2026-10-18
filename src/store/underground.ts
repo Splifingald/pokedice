@@ -1,4 +1,4 @@
-// The Underground (docs/31), the game's side: the save's event block kept in step with the server's clock, and the
+// The Underground (docs/34), the game's side: the save's event block kept in step with the server's clock, and the
 // player's actions (buy kits, open a wall, strike, take the haul, upgrade the pickaxe, sell orbs). Every rule and
 // number is the engine's (engine/underground.ts); this only feeds it the time, the dice and the team.
 import { useEffect } from 'react'
@@ -23,7 +23,7 @@ import { mutateSave, useGame } from './game'
 import { newId } from './run'
 import { serverNow, useServerNow } from './serverTime'
 
-/** The player's Underground team, as the server last told it (docs/31 §3); null = solo, or not known. */
+/** The player's Underground team, as the server last told it (docs/34 §3); null = solo, or not known. */
 export const useUgTeam = create<{ team: UgTeam | null }>(() => ({ team: null }))
 
 let rng = createRng(randomSeed())

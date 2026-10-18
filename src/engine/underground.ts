@@ -1,4 +1,4 @@
-// The Underground (docs/31): a live event type. Explorakits open walls of tiles 1 to 3 layers deep; tapping a tile
+// The Underground (docs/34): a live event type. Explorakits open walls of tiles 1 to 3 layers deep; tapping a tile
 // rolls the pickaxe die, which takes that many layers off the tile and one fewer off its 4 neighbours. Each strike
 // brings the wall closer to collapsing. What a wall hides (orbs, fossils, Arceus's plates) is won only once every tile
 // of it is dug out. Players team up by three, one orb colour each: an orb goes to whoever holds its colour, and orbs
@@ -405,7 +405,7 @@ export function strike(
 
 // ------------------------------------------------------------------ teams and the haul
 
-/** A team as the server tells it (docs/31 §3): the seat this player holds and who holds each colour. */
+/** A team as the server tells it (docs/34 §3): the seat this player holds and who holds each colour. */
 export interface UgTeam {
   me: OrbColour | null
   seats: Partial<Record<OrbColour, { id: string; name: string }>>
@@ -431,7 +431,7 @@ export interface HaulLine {
   to?: { id: string; name: string }
 }
 
-/** An orb going to a teammate: what the server is told (docs/31 §3). */
+/** An orb going to a teammate: what the server is told (docs/34 §3). */
 export interface SentOrb {
   colour: OrbColour
   size: OrbSize

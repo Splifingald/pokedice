@@ -1,4 +1,4 @@
-// Admin → Live events → an Underground event (docs/31): the Underground's switch and every number, in their own
+// Admin → Live events → an Underground event (docs/34): the Underground's switch and every number, in their own
 // game_config row `underground` (every Underground event uses it; the server reads its switch). Shown under the live
 // event's dates when its type is Underground. The yield table digs a few hundred walls the plain way at each pickaxe
 // level, so the prices can be set knowing what a kit is worth.

@@ -1,4 +1,4 @@
-// The Underground (docs/31): a live event of its own type, its switch on, reaching the game as content (a newer
+// The Underground (docs/34): a live event of its own type, its switch on, reaching the game as content (a newer
 // configVersion from the content cache), on the server's clock. Its rules pop-up once, Home's square with the kits,
 // the page, a wall dug to its haul (a plate, an orb), the resumed wall, the Mart's Explorakits; a phone.
 import { expect, test, type Page } from '@playwright/test'

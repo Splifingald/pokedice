@@ -866,13 +866,13 @@ export interface GameConfig {
   /** Trick or Treat (docs/29): its switch, numbers and each area's ghosts. The server reads the switch too. */
   trickOrTreat: TrickOrTreatConfig
   /**
-   * The Underground (docs/31): its switch and every number. Each live event of type `underground` uses it; the server
+   * The Underground (docs/34): its switch and every number. Each live event of type `underground` uses it; the server
    * reads the same row.
    */
   underground: UndergroundConfig
 }
 
-/** The Underground's orbs (docs/31): three colours, one per team seat, and three sizes. */
+/** The Underground's orbs (docs/34): three colours, one per team seat, and three sizes. */
 export const ORB_COLOURS = ['red', 'blue', 'green'] as const
 export type OrbColour = (typeof ORB_COLOURS)[number]
 export const ORB_SIZES = ['s', 'm', 'l'] as const
@@ -890,7 +890,7 @@ export interface PickaxeLevel {
 }
 
 /**
- * The Underground (docs/31): Explorakits open walls of tiles 1–3 layers deep; a strike rolls the pickaxe die. What a
+ * The Underground (docs/34): Explorakits open walls of tiles 1–3 layers deep; a strike rolls the pickaxe die. What a
  * wall hides is won only once all its tiles are dug out, before the strikes run out. Everything here is the admin's.
  */
 export interface UndergroundConfig {
@@ -966,7 +966,7 @@ export interface Wall {
   neighbourLoss: number
 }
 
-/** The Underground in a save (docs/31): one event's kits, pickaxe, orb bag and open wall. A new event starts afresh. */
+/** The Underground in a save (docs/34): one event's kits, pickaxe, orb bag and open wall. A new event starts afresh. */
 export interface UndergroundSave {
   eventId: string
   /** Free kits waiting, and when the next one comes (server ms; null while at the cap). */
@@ -985,7 +985,7 @@ export interface UndergroundSave {
   hauls: string[]
   /** Teammates' orbs already in the bag, by the server's id (last 100): each lands once. */
   received?: string[]
-  /** Orbs owed to teammates, per wall, until the server has them (docs/31 §3). */
+  /** Orbs owed to teammates, per wall, until the server has them (docs/34 §3). */
   outbox?: { wallId: string; orbs: { colour: OrbColour; size: OrbSize; to: string }[] }[]
   /** The rules pop-up has been shown this event. */
   rulesSeen?: boolean
@@ -1393,7 +1393,7 @@ export interface SaveData {
   general?: GeneralSave
   /** Trick or Treat (docs/29): its rules seen. Absent = never met. */
   trickOrTreat?: TrickSave
-  /** The Underground (docs/31): the running event's kits, pickaxe, orbs and wall. Gone when the event ends. */
+  /** The Underground (docs/34): the running event's kits, pickaxe, orbs and wall. Gone when the event ends. */
   underground?: UndergroundSave
   /** Arceus's plates found in the Underground, by type: kept for good. Each lets the player's Arceus take its type. */
   plates?: PokeType[]

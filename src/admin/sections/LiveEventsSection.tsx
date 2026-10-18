@@ -1,5 +1,5 @@
 // Admin → Live events (docs/20): what changes the whole game for a while, the same for everyone — a Shiny Parade, a
-// Special Shop, Cash Flow or the Underground (docs/31; its numbers are a row of their own, UndergroundBox). One
+// Special Shop, Cash Flow or the Underground (docs/34; its numbers are a row of their own, UndergroundBox). One
 // game_config row, `liveEvents`; one event runs at a time. An event is edited as a draft and goes into the list only
 // when nothing is wrong with it (an overlap is refused); Save & Publish sends it.
 import { useMemo, useState } from 'react'

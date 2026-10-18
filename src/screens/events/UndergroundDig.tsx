@@ -1,4 +1,4 @@
-// Digging a wall (docs/31; docs/15 §30), full screen: the crack gauge, the wall, what's still buried, the pickaxe's
+// Digging a wall (docs/34; docs/15 §32), full screen: the crack gauge, the wall, what's still buried, the pickaxe's
 // roll. A tap on a tile strikes it (the engine rolls the die and digs); at the end the wall collapses or is cleared,
 // and the haul shows where each thing went. Leaving keeps the wall: it waits in the save.
 import { useEffect, useRef, useState } from 'react'

@@ -469,7 +469,7 @@ export function PokemonSheet({
         {choiceFormsOf(data, species.dex).length > 0 && (
           <p className="copy font-pixel-sm text-[15px]">{t('ui.sheet.choiceForm', { n: data.config.formChangesPerBattle })}</p>
         )}
-        {/* Arceus's plates (docs/31): the types it may take, while the Underground is on. */}
+        {/* Arceus's plates (docs/34): the types it may take, while the Underground is on. */}
         {plates && species.dex === ARCEUS_DEX && (
           <p className="copy font-pixel-sm text-[15px]" data-testid="arceus-plates">
             {plates.length

@@ -46,7 +46,7 @@ const tradeMonSchema = z.object({
 
 const typeEnum = z.enum(POKE_TYPES as unknown as [PokeType, ...PokeType[]])
 
-// The Underground (docs/31): one event's kits, pickaxe, orb bag and open wall.
+// The Underground (docs/34): one event's kits, pickaxe, orb bag and open wall.
 const count = z.number().int().min(0)
 const orbRow = z.object({ s: count, m: count, l: count })
 const wallThingSchema = z.object({
@@ -394,7 +394,7 @@ export const saveSchema = z.object({
     .optional(),
   // Trick or Treat (docs/29): its rules pop-up seen.
   trickOrTreat: z.object({ rulesSeen: z.boolean().optional() }).optional(),
-  // The Underground (docs/31): the running event's block, and the plates kept for good.
+  // The Underground (docs/34): the running event's block, and the plates kept for good.
   underground: undergroundSchema.optional(),
   plates: z.array(typeEnum).max(18).optional(),
 })
