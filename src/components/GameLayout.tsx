@@ -9,7 +9,7 @@ import { DonationPopup } from './SupportModal'
 import { EventUnlockPopup } from './EventUnlockPopup'
 import { AwayReportModal, ExtremeUnlockPopup } from './Extreme'
 import { LivePopup } from '@/screens/events/live'
-import { useInWorld, worldVars, WorldByePopup, WorldPopup } from '@/screens/events/world'
+import { useInWorld, worldVars, WorldByePopup, WorldFinishPopup, WorldPopup } from '@/screens/events/world'
 import { WorldPick } from '@/screens/events/worldPick'
 import { VersusUnlockPopup } from './FeatureRules'
 import { GeneralUnlockPopup, OfflineReportModal } from './GeneralRules'
@@ -82,6 +82,7 @@ export function GameLayout() {
       <RaidGiftPopup />
       <WorldPopup />
       <WorldPick />
+      <WorldFinishPopup />
       <WorldByePopup />
       <LivePopup />
       <FriendsService />

@@ -2,7 +2,7 @@
 // cache the way a player gets it the second time), with its region and areas, on the server's clock. Its pop-up and
 // square (and its preview before the start, §9), the partner pick, Home inside (the strip, its squares, its Mart, its own Upgrades, an event's page), a battle
 // there (the booster), Home's secret area rows (docs/26 §2.6), the final fight and the
-// catch that goes home, the closing with its Pokémon gone home (docs/26 §1), and a phone.
+// catch that goes home, the closing with its Pokémon gone home (docs/26 §1), finishing it early (§11), and a phone.
 import { expect, test, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import {
@@ -11,6 +11,7 @@ import {
   emptyProgress,
   enterWorld,
   newSmallWorld,
+  regionSpecies,
   type Area,
   type BundleRaw,
   type Region,
@@ -105,7 +106,8 @@ function bundle(world: SmallWorld = WORLD): BundleRaw {
       ...b.config,
       configVersion: VERSION,
       // Its preview on Home too (docs/21 §9): only a clock before the start shows it.
-      smallWorlds: { access: 'all', previewAccess: 'all', list: [world] },
+      // Finishing it early too (§11): only a save with everything done there is offered it.
+      smallWorlds: { access: 'all', previewAccess: 'all', finishAccess: 'all', list: [world] },
       events: { ...events, wheel: { ...events.wheel, access: 'all' } },
     },
   }
@@ -386,6 +388,50 @@ test('the world closes: back in Kanto, its Pokémon gone home (one locked), the 
   await expect(page.getByText('Haunter was let go.')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Waiting to unlock' })).toHaveCount(0)
   await expect.poll(async () => (await stored(page)).events?.worldHome).toBeUndefined()
+})
+
+test('everything done: it offers to finish the world once, Home keeps the offer, and finishing closes it for good', async ({ page }) => {
+  // The mythical caught, every area cleared (the secret one too), every species of its Pokédex caught.
+  const mew = catchWorldMythical(inside(), DATA, 'e2e-lair', { dex: 151, level: 5 }, Date.parse(NOW), id)!.save
+  const done: SaveData = {
+    ...mew,
+    pokedex: [...regionSpecies(DATA, REGION.id)].filter((d) => !!DATA.species[d]),
+    areaProgress: Object.fromEntries(AREAS.map((a) => [a.id, { ...emptyProgress(), cleared: true }])),
+  }
+  await boot(page, done)
+  await page.goto('/home')
+  const offer = page.getByRole('dialog', { name: 'Finish Mirage Island?' })
+  await expect(offer).toBeVisible({ timeout: 15_000 })
+  await expect(offer.getByText(/^You cleared all 4 areas and caught all \d+ Pokémon\./)).toBeVisible()
+  await expect(offer.getByText('Your Pokémon go home')).toBeVisible()
+  await expect(offer.getByText('No way back in')).toBeVisible()
+  await offer.getByRole('button', { name: 'Not yet' }).click()
+  await expect(offer).toHaveCount(0)
+  await expect.poll(async () => (await stored(page)).events?.world?.finishSeen).toBe(true)
+
+  // Home's row keeps the offer; the pop-up doesn't come back on its own.
+  const row = page.getByRole('region', { name: 'World complete!' })
+  await expect(row).toBeVisible()
+  await expect(row.getByText(/^4 areas cleared · Pokédex \d+\/\d+$/)).toBeVisible()
+  await row.getByRole('button', { name: 'Finish the world' }).click()
+  await expect(offer).toBeVisible()
+  await offer.getByRole('button', { name: 'Finish the world' }).click()
+
+  // Closed as at its end: back in Kanto, its Pokémon gone home, a closing pop-up that says it was finished.
+  const bye = page.getByRole('dialog', { name: 'You finished Mirage Island!' })
+  await expect(bye).toBeVisible()
+  await expect(bye.getByText('You kept a shiny Mew')).toBeVisible()
+  await expect(bye.getByText('Your Pokémon went home')).toBeVisible()
+  await bye.getByRole('button', { name: 'OK' }).click()
+  await expect.poll(async () => (await stored(page)).events?.worldBye).toEqual(['mirage'])
+  const s = await stored(page)
+  expect(s.region).toBe('kanto')
+  expect(s.parked?.[REGION.id]).toBeUndefined()
+  expect(s.events?.worldDone).toEqual(['mirage'])
+  expect(s.box.find((p) => p.dex === 151)).toMatchObject({ shiny: true })
+  // The world still runs for others, but not for this player: no square, no way in.
+  await expect(page.getByRole('button', { name: 'Back to Kanto' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /small world/ })).toHaveCount(0)
 })
 
 /** Nothing scrolls sideways, every word in Jersey; on the page itself (`controls`), no control under 44px. */

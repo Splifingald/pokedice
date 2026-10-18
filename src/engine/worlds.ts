@@ -2,7 +2,8 @@
 // won. A world is a region row (Config → Regions) named by a world of `smallWorlds.list`; the save holds it like any
 // region (its own Box, bag, ₽ and areas, parked while elsewhere), plus `events.world` saying which world it is and
 // where the player came from. One world runs at a time, on the server's clock; when it ends, its block is deleted and
-// only the mythical, already sent home when it was caught, is left of it.
+// only the mythical, already sent home when it was caught, is left of it. A player who has done everything in it may
+// close it for themselves earlier, the same way (docs/21 §11).
 //
 // Its rules: a fresh start on one of three partners; areas that may wait for a date as well as for the one before; ×
 // XP; no upgrades (dice and combos follow each Pokémon's level, both sides); booster types (× damage, both sides, always
@@ -27,6 +28,7 @@ import {
   realRegions,
   regionAreas,
   regionOf,
+  regionSpecies,
   startRegion,
   switchRegion,
 } from './regions'
@@ -67,8 +69,12 @@ export function worldAt(data: GameData, now: number | null): SmallWorld | null {
 export function worldFor(save: SaveData, data: GameData, now: number | null): SmallWorld | null {
   if (isExtreme(save)) return null
   const w = worldAt(data, now)
-  return w && badgesHeld(save, data) >= w.minBadges ? w : null
+  return w && !worldFinished(save, w.id) && badgesHeld(save, data) >= w.minBadges ? w : null
 }
+
+/** The player finished this world early (docs/21 §11): it's over for them, as if it had ended. */
+export const worldFinished = (save: Pick<SaveData, 'events'>, id: string): boolean =>
+  !!save.events?.worldDone?.includes(id)
 
 // ------------------------------------------------------------------ the world a save holds
 
@@ -130,7 +136,7 @@ export function enterWorld(
   now: number,
   newId: () => string,
 ): SaveData | null {
-  if (isExtreme(save)) return null
+  if (isExtreme(save) || worldFinished(save, world.id)) return null
   const region = getRegion(data, world.regionId)
   if (!region) return null
   if (regionOf(save) === world.regionId) return save
@@ -204,6 +210,89 @@ export function closeWorld(save: SaveData, data: GameData): SaveData {
   return { ...home.save, events: { ...home.save.events, world: { ...held, closed: true, home: home.counts } } }
 }
 
+// ------------------------------------------------------------------ finishing it early (docs/21 §11)
+
+/** Finishing a world early has a switch of its own (Off by default), on top of the worlds' own. */
+export const worldFinishOn = (data: GameData): boolean =>
+  worldsOn(data) && eventOpenTo(data.config.smallWorlds?.finishAccess, data)
+
+/** How far the player is from finishing a world: its areas done and its Pokédex, as its Pokédex page counts them. */
+export interface WorldCompletion {
+  areas: { done: number; total: number }
+  dex: { caught: number; total: number }
+  /** Every area done and every Pokémon caught. */
+  complete: boolean
+}
+
+/**
+ * The world's areas (secret ones included) and Pokédex, for the save holding it. An area is done once cleared, or once
+ * its special run is won (the portal run's and the nightmare's areas are only their raid afterwards, never "cleared").
+ */
+export function worldCompletion(save: SaveData, data: GameData, world: SmallWorld): WorldCompletion {
+  const live = regionOf(save) === world.regionId
+  const block = live ? save : save.parked?.[world.regionId]
+  const mine = heldWorld(save)?.id === world.id && !!block
+  const progress = mine ? block.areaProgress : {}
+  const caught = new Set(mine ? block.pokedex : [])
+  const areas = data.areas.filter((a) => (a.regionId ?? KANTO) === world.regionId)
+  const done = areas.filter((a) => {
+    const p = progress[a.id]
+    return !!(p?.cleared || p?.portal?.won || p?.nightmare?.won)
+  }).length
+  const species = [...regionSpecies(data, world.regionId)].filter((d) => !!data.species[d])
+  const dex = species.filter((d) => caught.has(d)).length
+  return {
+    areas: { done, total: areas.length },
+    dex: { caught: dex, total: species.length },
+    complete: areas.length > 0 && species.length > 0 && done === areas.length && dex === species.length,
+  }
+}
+
+/**
+ * The world the player may finish now: they're in it, it's still running and switched on for them, and they've done
+ * everything in it. Null otherwise.
+ */
+export function worldFinishable(save: SaveData, data: GameData, now: number | null): SmallWorld | null {
+  if (!worldFinishOn(data)) return null
+  const held = heldWorld(save)
+  const world = currentWorld(save, data)
+  if (!held || !world || held.id !== world.id || regionOf(save) !== world.regionId) return null
+  if (worldFor(save, data, now)?.id !== world.id) return null
+  return worldCompletion(save, data, world).complete ? world : null
+}
+
+/**
+ * The player finishes the world: it closes for them exactly as at its end (they go back where they came from, its
+ * Pokémon go home, the rest of its block is deleted, its closing pop-up follows), and it stays shut for them until it
+ * ends for everyone (`worldDone`). Null when it can't be finished now, or there is nowhere to go back to.
+ */
+export function finishWorld(save: SaveData, data: GameData, now: number | null): SaveData | null {
+  const world = worldFinishable(save, data, now)
+  if (!world) return null
+  const closed = closeWorld(save, data)
+  if (closed === save || !closed.events?.world?.closed) return null
+  const done = closed.events.worldDone ?? []
+  return {
+    ...closed,
+    events: {
+      ...closed.events,
+      world: { ...closed.events.world, finished: true },
+      worldDone: done.includes(world.id) ? done : [...done, world.id].slice(-20),
+    },
+  }
+}
+
+/** The pop-up offering to finish the world is due: it can be finished, and the pop-up hasn't been shown yet. */
+export const worldFinishPopupDue = (save: SaveData, data: GameData, now: number | null): boolean =>
+  !!worldFinishable(save, data, now) && !heldWorld(save)?.finishSeen
+
+/** The pop-up offering to finish the world was shown (Home's row still offers it). */
+export function markWorldFinishSeen(save: SaveData): SaveData {
+  const held = heldWorld(save)
+  if (!held || held.finishSeen) return save
+  return { ...save, events: { ...save.events, world: { ...held, finishSeen: true } } }
+}
+
 // ------------------------------------------------------------------ pop-ups
 
 /** Its opening pop-up is due: open for this player, not shown yet. */
@@ -226,6 +315,8 @@ export interface WorldBye {
   partner: number | null
   /** How many of its Pokémon went home to each region (empty for a player who never went in). */
   home: Record<RegionId, number>
+  /** The player finished it early (docs/21 §11), rather than seeing it end. */
+  finished: boolean
 }
 
 /**
@@ -236,14 +327,22 @@ export function worldByeDue(save: SaveData, data: GameData, now: number | null):
   const bye = new Set(save.events?.worldBye ?? [])
   const w = save.events?.world
   if (w?.closed && !bye.has(w.id))
-    return { id: w.id, world: worldById(data, w.id), entered: true, caught: !!w.caught, partner: w.partner, home: w.home ?? {} }
+    return {
+      id: w.id,
+      world: worldById(data, w.id),
+      entered: true,
+      caught: !!w.caught,
+      partner: w.partner,
+      home: w.home ?? {},
+      finished: !!w.finished,
+    }
   if (now == null || heldWorld(save)) return null
   const seen = new Set(save.events?.worldSeen ?? [])
   const last = smallWorlds(data)
     .filter((x) => worldState(x, now) === 'ended' && at(x.end) <= now)
     .sort((a, b) => at(b.end) - at(a.end))[0]
   if (!last || !seen.has(last.id) || bye.has(last.id)) return null
-  return { id: last.id, world: last, entered: false, caught: false, partner: null, home: {} }
+  return { id: last.id, world: last, entered: false, caught: false, partner: null, home: {}, finished: false }
 }
 
 /** The closing pop-up was shown: the closed world's record goes (the last 20 ids are kept). */

@@ -1,8 +1,8 @@
 // Small worlds (docs/21), what players see. Outside a world: Home's square (first among the event squares), the pop-up
 // once when one opens and the closing pop-up (the partner pick, the lab in the world's colours, is in worldPick.tsx).
 // Inside: the world's colours, its strip on Home (its name, the time left, the way back), its two squares (the
-// mythical, its Mart), the booster chips, the mythical's result card, and the panel the main game's pages show instead
-// of theirs. Every rule and number comes from engine/worlds.ts; the store's actions are store/worlds.ts.
+// mythical, its Mart), the way to finish it once everything in it is done, the booster chips, the mythical's result
+// card, and the panel the main game's pages show instead of theirs. Every rule and number comes from engine/worlds.ts; the store's actions are store/worlds.ts.
 import { type CSSProperties, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { create } from 'zustand'
@@ -26,6 +26,9 @@ import {
   generalRulesDue,
   versusRulesDue,
   worldByeDue,
+  worldCompletion,
+  worldFinishable,
+  worldFinishPopupDue,
   worldLeft,
   worldPopupDue,
   worldPrize,
@@ -42,6 +45,7 @@ import {
   type SmallWorld,
   type UnlockCondition,
   type WorldBye,
+  type WorldCompletion,
 } from '@/engine'
 import { joinList } from '@/i18n'
 import { useT } from '@/i18n/react'
@@ -58,7 +62,16 @@ import { pushToast, useGame } from '@/store/game'
 import { useRaidGifts } from '@/store/raidGifts'
 import { serverNow, useServerNow } from '@/store/serverTime'
 import { travelTo } from '@/store/travel'
-import { enterSmallWorld, leaveSmallWorld, markWorldByeSeen, markWorldPopupSeen, useWorld, worldName } from '@/store/worlds'
+import {
+  enterSmallWorld,
+  finishSmallWorld,
+  leaveSmallWorld,
+  markWorldByeSeen,
+  markWorldFinishPopupSeen,
+  markWorldPopupSeen,
+  useWorld,
+  worldName,
+} from '@/store/worlds'
 import { HeadTag, Meter, Widget, WidgetBanner, WidgetRows, WIDGET_BANNER_H } from '@/screens/home/Widget'
 import { areaStatus, lockReason } from '@/screens/home/areas'
 import { conditionLabel } from '@/i18n/text'
@@ -318,7 +331,17 @@ export function WorldRules({ world }: { world: SmallWorld }) {
 }
 
 /** The banner of the pop-ups: the world's picture, its tag, the mythical (or the prize it is known by). */
-function WorldBanner({ world, tag, closed }: { world: SmallWorld | null; tag: string; closed?: boolean }) {
+function WorldBanner({
+  world,
+  tag,
+  closed,
+  caught = false,
+}: {
+  world: SmallWorld | null
+  tag: string
+  closed?: boolean
+  caught?: boolean
+}) {
   const data = useGame((s) => s.data)
   const prize = world ? worldPrize(data, world) : null
   return (
@@ -328,7 +351,7 @@ function WorldBanner({ world, tag, closed }: { world: SmallWorld | null; tag: st
       </span>
       {prize && !closed && (
         <span className="absolute inset-0 z-[1] grid place-items-center">
-          <MythicalArt dex={prize.dex} caught={false} size={96} sparkles={6} />
+          <MythicalArt dex={prize.dex} caught={caught} size={96} sparkles={6} />
         </span>
       )}
       <span className="w-tag absolute left-2.5 top-2.5 z-[2] font-pixel-sm text-[15px]">{tag}</span>
@@ -440,9 +463,19 @@ export function WorldByeView({ bye, open, onOk }: { bye: WorldBye; open: boolean
     .map((r) => t('ui.world.bye.homeCount', { region: r.name, n: bye.home[r.id]! }))
     .join(' · ')
   return (
-    <Modal open={open} onClose={onOk} title={t('ui.world.bye.title', { world: name })} className="max-w-md">
+    <Modal
+      open={open}
+      onClose={onOk}
+      title={t(bye.finished ? 'ui.world.bye.finishedTitle' : 'ui.world.bye.title', { world: name })}
+      className="max-w-md"
+    >
       <div className="flex flex-col gap-3" style={worldVars(w)}>
-        <WorldBanner world={w} tag={t('ui.world.bye.tag')} closed />
+        {/* Finished early, it's a win: the picture keeps its colours and the prize shows caught. */}
+        {bye.finished ? (
+          <WorldBanner world={w} tag={t('ui.world.finish.tag')} caught />
+        ) : (
+          <WorldBanner world={w} tag={t('ui.world.bye.tag')} closed />
+        )}
         <ul className="m-0 grid list-none gap-2.5 p-0">
           {w && myth && (
             <li className="flex items-center gap-2.5">
@@ -500,6 +533,161 @@ export function WorldByePopup() {
   const bye = save ? worldByeDue(save, data, now) : null
   if (!bye || !save) return null
   return <WorldByeView bye={bye} open={idle && !others} onOk={() => markWorldByeSeen(bye.id)} />
+}
+
+// ------------------------------------------------------------------ finishing it early (docs/21 §11)
+
+/** The pop-up offering to finish the world is open (from Home's row; it also opens on its own, once). */
+export const useWorldFinish = create<{ open: boolean }>(() => ({ open: false }))
+
+/**
+ * Home's row inside a world once everything in it is done: WORLD and COMPLETE over its picture, what was done, and the
+ * button that opens the pop-up (its rules, then the choice).
+ */
+export function WorldFinishRowView({
+  world,
+  done,
+  onFinish,
+}: {
+  world: SmallWorld
+  done: WorldCompletion
+  onFinish: () => void
+}) {
+  const { t } = useT()
+  return (
+    <section
+      aria-label={t('ui.world.finish.rowTitle')}
+      className="pixel-panel lv-square w-square relative isolate col-span-2 flex min-w-0 flex-col gap-[5px] overflow-hidden px-2.5 pb-2.5 pt-2"
+      style={worldVars(world)}
+    >
+      <span className="lv-pic absolute inset-0 -z-10 block overflow-hidden bg-night" aria-hidden>
+        {world.banner && <img src={bannerUrl(world.banner)} alt="" className="pixelated absolute inset-0 h-full w-full object-cover" />}
+      </span>
+      <span className="flex w-full min-w-0 items-center gap-1.5 text-[19px] leading-none">
+        <WorldTag />
+        <HeadTag>
+          <Chip tone="gold" className="uppercase tracking-[0.04em]">
+            <PixelIcon name="star" size={11} />
+            {t('ui.world.finish.tag')}
+          </Chip>
+        </HeadTag>
+      </span>
+      <span className="mt-1 flex min-w-0 flex-wrap items-end justify-between gap-2">
+        <span className="grid min-w-0 gap-1 leading-none">
+          <b className="lv-ink truncate text-[22px] font-normal">{t('ui.world.finish.rowTitle')}</b>
+          <small className="lv-ink truncate font-pixel-sm text-[15px] text-gold-light">
+            {t('ui.world.finish.progress', { areas: done.areas.total, dex: done.dex.total })}
+          </small>
+        </span>
+        <PixelButton variant="primary" size="sm" className="shrink-0" onClick={onFinish}>
+          {t('ui.world.finish.button')}
+        </PixelButton>
+      </span>
+    </section>
+  )
+}
+
+/**
+ * The pop-up offering to finish the world: what was done, what finishing does (its Pokémon go home, its items and ₽
+ * close, no way back in), Not yet and Finish the world.
+ */
+export function WorldFinishView({
+  world,
+  done,
+  open,
+  onLater,
+  onFinish,
+}: {
+  world: SmallWorld
+  done: WorldCompletion
+  open: boolean
+  onLater: () => void
+  onFinish: () => void
+}) {
+  const { t } = useT()
+  const data = useGame((s) => s.data)
+  const name = worldName(world, data)
+  const rows: { key: string; icon: ReactNode; title: string; text: string }[] = [
+    {
+      key: 'home',
+      icon: <PixelIcon name="box" size={22} />,
+      title: t('ui.world.rules.home.title'),
+      text: t('ui.world.finish.homeText'),
+    },
+    {
+      key: 'rest',
+      icon: <PixelIcon name="close" size={20} />,
+      title: t('ui.world.finish.rest'),
+      text: t('ui.world.finish.restText'),
+    },
+    {
+      key: 'shut',
+      icon: <PixelIcon name="lock" size={20} />,
+      title: t('ui.world.finish.shut'),
+      text: t('ui.world.finish.shutText', { world: name }),
+    },
+  ]
+  return (
+    <Modal open={open} onClose={onLater} title={t('ui.world.finish.title', { world: name })} className="max-w-md">
+      <div className="flex flex-col gap-3" style={worldVars(world)}>
+        <WorldBanner world={world} tag={t('ui.world.finish.tag')} caught />
+        <p className="copy m-0">{t('ui.world.finish.intro', { areas: done.areas.total, dex: done.dex.total })}</p>
+        <ul className="m-0 grid list-none gap-2.5 p-0">
+          {rows.map((r) => (
+            <li key={r.key} className="flex items-center gap-2.5">
+              <span className="grid h-[42px] w-[42px] shrink-0 place-items-center bg-line shadow-ring-line" aria-hidden>
+                {r.icon}
+              </span>
+              <span className="grid gap-0.5 leading-tight">
+                <b className="text-[19px] font-normal leading-none">{r.title}</b>
+                <small className="font-pixel-sm text-[15px] text-muted">{r.text}</small>
+              </span>
+            </li>
+          ))}
+        </ul>
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] gap-2.5 pt-1">
+          <PixelButton onClick={onLater}>{t('ui.world.finish.later')}</PixelButton>
+          <PixelButton variant="primary" onClick={onFinish}>
+            {t('ui.world.finish.button')}
+          </PixelButton>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+/**
+ * The pop-up offering to finish the world: on its own once, between fights, the first time everything in it is done;
+ * again whenever Home's row opens it. Finishing sends the player Home, where the closing pop-up follows.
+ */
+export function WorldFinishPopup() {
+  const navigate = useNavigate()
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  const idle = useGame((s) => s.run.phase === 'idle' && !s.battle)
+  const asked = useWorldFinish((s) => s.open)
+  const others = useOthersDue()
+  const now = useServerNow(5000)
+  const world = save ? worldFinishable(save, data, now) : null
+  if (!save || !world) return null
+  // On its own it waits behind the other one-time pop-ups; asked for from Home's row, it opens at once.
+  const open = idle && (asked || (!others && worldFinishPopupDue(save, data, now)))
+  const close = () => {
+    useWorldFinish.setState({ open: false })
+    markWorldFinishPopupSeen()
+  }
+  return (
+    <WorldFinishView
+      world={world}
+      done={worldCompletion(save, data, world)}
+      open={open}
+      onLater={close}
+      onFinish={() => {
+        close()
+        if (finishSmallWorld()) navigate('/home')
+      }}
+    />
+  )
 }
 
 // ------------------------------------------------------------------ inside
@@ -713,7 +901,17 @@ export function WorldWidgets() {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const { world, save } = useInWorld()
+  const now = useServerNow(5000)
   if (!world || !save) return null
+  // Everything in it done (docs/21 §11): the way to finish it comes first.
+  const finish =
+    worldFinishable(save, data, now)?.id === world.id ? (
+      <WorldFinishRowView
+        world={world}
+        done={worldCompletion(save, data, world)}
+        onFinish={() => useWorldFinish.setState({ open: true })}
+      />
+    ) : null
   const secrets = worldSecrets(save, data, world).map((x) => {
     const status = areaStatus(save, data, x.area)
     const state: SecretRowState = status === 'locked' ? 'locked' : x.caught ? 'done' : status === 'new' ? 'new' : 'open'
@@ -733,7 +931,13 @@ export function WorldWidgets() {
     />
   ))
   // The nav bar reaches its Mart, Pokédex and Upgrades: Home keeps to what has no other place (docs/26 §2.6).
-  if (!hasWorldMythical(data, world)) return <>{rows}</>
+  if (!hasWorldMythical(data, world))
+    return (
+      <>
+        {finish}
+        {rows}
+      </>
+    )
   const caught = !!heldWorld(save)?.caught
   const m = world.mythical
   const area = data.areas.find((a) => a.id === m.areaId)
@@ -749,6 +953,7 @@ export function WorldWidgets() {
       : t('ui.world.myth.inArea', { area: area?.name ?? '' })
   return (
     <>
+      {finish}
       <MythicalSquare
         world={world}
         caught={caught}

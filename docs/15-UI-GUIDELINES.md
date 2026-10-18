@@ -664,7 +664,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
   queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
   again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the portal run (§27), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the portal run (§27), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
@@ -796,7 +796,15 @@ on `/kitchen-sink` (`WorldBits`). Every rule and number comes from `engine/world
   why they wait (`WorldAwayPage`), with Back to Kanto.
 - **Closing**: the world gone grey (`WorldByePopup`), once, to whoever played it or saw it open: the mythical kept (or
   "got away"), **where its Pokémon went** ("Your Pokémon went home": "Kanto 8 · Johto 5 · Sinnoh 3", in the regions'
-  order, the partner's sprite beside it), and that the world's items and ₽ closed with it.
+  order, the partner's sprite beside it), and that the world's items and ₽ closed with it. Finished early (below), it
+  says "You finished {world}!", its picture in colour and the prize caught, under COMPLETE.
+- **Finishing it early** (docs/21 §11; its own switch, Off by default): once every area is done and its Pokédex
+  complete, Home inside shows a row first, two squares wide (`WorldFinishRowView`): WORLD and a gold COMPLETE chip over
+  the world's picture, "World complete!", "14 areas cleared · Pokédex 124/124" in gold-light and a red **Finish the
+  world**. It opens the offer (`WorldFinishView`), which also opens on its own once, between fights, behind the other
+  one-time pop-ups: the banner with the prize caught, what was done, three rows (its Pokémon go home, its items and ₽
+  close, no way back in), **Not yet** and **Finish the world**. Finishing closes the world as its end does; it stays
+  shut for that player, with no square on Home, while it runs for the others.
 - **Its Pokémon go home** (docs/26 §1): the rules (`WorldRules`) say so in every world ("Your Pokémon go home": each to
   its own region, locked until your best there reaches its level). In that region's Team screen, under the Box, a
   **Waiting to unlock** section (its count, a line with the region's best now, "Your best: Lv.31") holds them as

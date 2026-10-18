@@ -863,9 +863,10 @@ export interface GameConfig {
   trade: TradeConfig
   /**
    * Small worlds (docs/21): their switch, and the admin's list, past, running and to come; one runs at a time.
-   * `previewAccess` is the switch of Home's preview before a world starts (§9; unset = off).
+   * `previewAccess` is the switch of Home's preview before a world starts (§9; unset = off), `finishAccess` the switch
+   * of finishing a world early, once every area is cleared and its Pokédex complete (§11; unset = off).
    */
-  smallWorlds: { access: EventAccess; previewAccess?: EventAccess; list: SmallWorld[] }
+  smallWorlds: { access: EventAccess; previewAccess?: EventAccess; finishAccess?: EventAccess; list: SmallWorld[] }
   /** Gifts with the developer's messages (docs/15 §23): their switch. The server reads the same row. */
   gifts: GiftsConfig
   /**
@@ -1657,6 +1658,8 @@ export interface EventsSave {
   worldSeen?: string[]
   /** Small worlds whose closing pop-up has been shown (ids). */
   worldBye?: string[]
+  /** Small worlds the player finished early (docs/21 §11): closed for them for good, even while they still run. */
+  worldDone?: string[]
   /** Shiny mythicals won in a small world, waiting for their home region to be started. */
   worldPending?: WorldCatch[]
   /**
@@ -1684,6 +1687,10 @@ export interface WorldSave {
   closed?: boolean
   /** How many of its Pokémon went home to each region when it closed (its closing pop-up says so). */
   home?: Record<RegionId, number>
+  /** The player finished it early (docs/21 §11): it closed for them, every area cleared and its Pokédex complete. */
+  finished?: boolean
+  /** The pop-up offering to finish it has been shown. */
+  finishSeen?: boolean
 }
 
 /** A closed small world's Pokémon, waiting in its home region until that region's best reaches its level. */
