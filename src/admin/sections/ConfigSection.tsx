@@ -565,6 +565,110 @@ function GeneralBox() {
  * who have won their first badge, and the gifts it gives (the same editor as a message's gifts). The server reads the
  * same row (0051): it counts the invites only while the switch isn't off, and hands each tier over once.
  */
+/**
+ * The battle powers (docs/31): Mega Evolution's gem rules, Gigantamax's newer rules and Z-Moves, each with its switch
+ * (Off: Mega Evolution and Gigantamax as before, no Z-Moves; the server checks them for Versus), then their numbers.
+ */
+function BattlePowersBox() {
+  const [megaRaw, setMega] = useConfigRow('megaEvolution')
+  const [gmaxRaw, setGmax] = useConfigRow('gigantamax')
+  const [zRaw, setZ] = useConfigRow('zMove')
+  const D = DEFAULT_CONFIG
+  const mega = { ...D.megaEvolution, ...(megaRaw ?? {}), gems: { ...D.megaEvolution.gems, ...(megaRaw?.gems ?? {}) } }
+  const gmax = { ...D.gigantamax, ...(gmaxRaw ?? {}), boost: { ...D.gigantamax.boost, ...(gmaxRaw?.boost ?? {}) } }
+  const z = { ...D.zMove, ...(zRaw ?? {}) }
+  const setGems = (patch: Partial<typeof mega.gems>) => setMega({ ...mega, gems: { ...mega.gems, ...patch } })
+  const setBoost = (patch: Partial<typeof gmax.boost>) => setGmax({ ...gmax, boost: { ...gmax.boost, ...patch } })
+  const setZOne = (patch: Partial<typeof z>) => setZ({ ...z, ...patch })
+  const num = (v: number | null | undefined, min: number, max: number, dflt: number) => Math.max(min, Math.min(max, v ?? dflt))
+  return (
+    <Box
+      title="Battle powers: Mega Gems, Gigantamax, Z-Moves" icon="up"
+      hint="docs/31. Each switch is Off by default. Off, Mega Evolution and Gigantamax keep their older rules (Kalos / Galar reached, one shared use) and there are no Z-Moves. On: each opens at its region's badge, elsewhere after that region's League, never in a small world."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Mega Gems</span>
+        <AccessSwitch value={mega.gems.access} onChange={(access) => setGems({ access })} label="Mega gem rules: who plays by them" />
+        <span className="text-base text-muted">
+          {accessNote(mega.gems.access, 'A Mega needs its gem and lasts its turns.', 'Off: Mega Evolution as before (Lv.50, the whole battle). Gems held are kept.')}
+        </span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Opens at this badge of Kalos" hint="3 = Korrina's">
+          <NumInput min={1} max={8} value={mega.gems.badges} onChange={(v) => setGems({ badges: num(v, 1, 8, 3) })} />
+        </Field>
+        <Field label="A Mega lasts (its own turns)" hint="the one it Mega Evolves in included">
+          <NumInput min={1} max={20} value={mega.gems.turns} onChange={(v) => setGems({ turns: num(v, 1, 20, 3) })} />
+        </Field>
+        <Field label="Badge gems" hint="badge number = gem key, one per line">
+          <textarea
+            className={cx(inputCls, 'min-h-[96px] font-mono text-base')}
+            defaultValue={mega.gems.rewards.map((r) => `${r.badge} = ${r.gem}`).join('\n')}
+            onBlur={(e) =>
+              setGems({
+                rewards: e.target.value
+                  .split('\n')
+                  .map((l) => /^\s*(\d+)\s*=\s*([a-z0-9-]+)\s*$/.exec(l))
+                  .filter((m): m is RegExpExecArray => !!m)
+                  .map((m) => ({ badge: Number(m[1]), gem: m[2]! })),
+              })
+            }
+          />
+        </Field>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Gigantamax</span>
+        <AccessSwitch value={gmax.boost.access} onChange={(access) => setBoost({ access })} label="Gigantamax newer rules: who plays by them" />
+        <span className="text-base text-muted">
+          {accessNote(gmax.boost.access, 'More dice, a heal, a use of its own.', 'Off: Gigantamax as before (Galar reached, one die, shared with the Mega).')}
+        </span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Opens at this badge of Galar" hint="3 = Kabu's">
+          <NumInput min={1} max={8} value={gmax.boost.badges} onChange={(v) => setBoost({ badges: num(v, 1, 8, 3) })} />
+        </Field>
+        <Field label="Dice it gains" hint="of its first type">
+          <NumInput min={1} max={6} value={gmax.boost.dice} onChange={(v) => setBoost({ dice: num(v, 1, 6, 2) })} />
+        </Field>
+        <Field label="Heals (% of max HP)" hint="kept after it shrinks back">
+          <NumInput min={0} max={100} value={gmax.boost.healPercent} onChange={(v) => setBoost({ healPercent: num(v, 0, 100, 30) })} />
+        </Field>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Z-Moves</span>
+        <AccessSwitch value={z.access} onChange={(access) => setZOne({ access })} label="Z-Moves: who can use them" />
+        <span className="text-base text-muted">{accessNote(z.access, 'Once per battle, from Alola.', 'Off: no Z-Moves anywhere.')}</span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Opens at this badge of Alola" hint="3 = Lana's Waterium Z">
+          <NumInput min={1} max={8} value={z.badges} onChange={(v) => setZOne({ badges: num(v, 1, 8, 3) })} />
+        </Field>
+        <Field label="Ice: freeze chance (%)">
+          <NumInput min={0} max={100} value={z.freezeChance} onChange={(v) => setZOne({ freezeChance: num(v, 0, 100, 30) })} />
+        </Field>
+        <Field label="Electric: paralysis chance (%)">
+          <NumInput min={0} max={100} value={z.paralyzeChance} onChange={(v) => setZOne({ paralyzeChance: num(v, 0, 100, 50) })} />
+        </Field>
+        <Field label="Fire: Burn stacks">
+          <NumInput min={1} max={10} value={z.burnStacks} onChange={(v) => setZOne({ burnStacks: num(v, 1, 10, 2) })} />
+        </Field>
+        <Field label="Grass: heals (% of max HP)">
+          <NumInput min={0} max={100} value={z.healPercent} onChange={(v) => setZOne({ healPercent: num(v, 0, 100, 20) })} />
+        </Field>
+        <Field label="Fighting: more damage (%)">
+          <NumInput min={0} max={200} value={z.recklessPercent} onChange={(v) => setZOne({ recklessPercent: num(v, 0, 200, 40) })} />
+        </Field>
+        <Field label="Fighting: recoil (% of the damage dealt)">
+          <NumInput min={0} max={100} value={z.recklessRecoilPercent} onChange={(v) => setZOne({ recklessRecoilPercent: num(v, 0, 100, 20) })} />
+        </Field>
+        <Field label="Other types: more damage (%)">
+          <NumInput min={0} max={200} value={z.damagePercent} onChange={(v) => setZOne({ damagePercent: num(v, 0, 200, 20) })} />
+        </Field>
+      </div>
+    </Box>
+  )
+}
+
 function InviteRewardsBox() {
   const data = useAdminData()
   const [raw, setRaw] = useConfigRow('inviteRewards')
@@ -1082,6 +1186,7 @@ export function ConfigSection() {
 
       <PushBox />
       <GeneralBox />
+      <BattlePowersBox />
 
       <InviteRewardsBox />
 

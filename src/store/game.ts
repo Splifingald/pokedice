@@ -16,6 +16,7 @@ import {
   releaseWorldPending,
   settleKo,
   stampExtremeUnlock,
+  syncPowers,
   syncEggClocks,
   syncHpScale,
   syncXpCurve,
@@ -216,9 +217,13 @@ function settle(save: SaveData, data: GameData) {
   // Extreme mode (docs/22): the main save beat the league that opens it (noted once, so it stays open); an Extreme
   // save's K.O. clocks, on the real time.
   const ko = settleKo(stampExtremeUnlock(dup.save, data, Date.now()), data, trustedNow())
+  // The battle powers (docs/31): a badge's Mega Gem handed over (one won now, or before the gem rules were on), and the
+  // badges that open each power noted for Versus.
+  const powers = syncPowers(ko.save, data)
   return {
     ...dup,
-    save: ko.save,
+    save: powers.save,
+    gemsGiven: powers.given,
     revived: fossils.revived,
     raidsReleased: raids.released,
     worldsReleased: worlds.released,
@@ -310,6 +315,8 @@ export function commitSave(next: SaveData | null, opts: { silent?: boolean; keep
   if (!opts.silent) for (const fn of saveListeners) fn(stamped, prev)
   for (const p of settled?.revived ?? [])
     pushToast(t('ui.toast.revivedFossil', { name: data.species[p.dex]?.name ?? `#${p.dex}` }), 'good', 4500)
+  for (const g of settled?.gemsGiven ?? [])
+    pushToast(t('ui.powers.gemGiven', { leader: g.leader, gem: g.gem.name }), 'good', 5000)
   for (const id of settled?.back ?? []) {
     const inst = stamped?.box.find((p) => p.id === id)
     if (inst) pushToast(t('ui.extreme.backToast', { name: data.species[inst.dex]?.name ?? '' }), 'good', 4000)

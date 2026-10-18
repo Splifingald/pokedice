@@ -1,8 +1,10 @@
 // Sentences the game builds from data rather than reads off a single row: an item's one-line effect,
 // the Multi EXP share, a secret area's unlock condition. They live here, not in the engine, because
 // the engine also runs under `tsx` in the seed and sim scripts, where the CSV import has no loader.
-import type { GameData, ItemDef, UnlockCondition } from '@/engine/types'
+import type { ZEffect } from '@/engine/battle'
+import type { GameData, ItemDef, PokeType, UnlockCondition } from '@/engine/types'
 import { hasKey, joinList, t } from '.'
+import { pokemonKey } from './names'
 
 /** One-line effect for menus: "+20 HP", "Cures paralysis", "+1 reroll", "+2 to the catch die". */
 export function effectText(item: ItemDef): string {
@@ -28,8 +30,46 @@ export function effectText(item: ItemDef): string {
       return t('ui.effect.link')
     case 'bait':
       return t('ui.effect.bait', { faces: joinList(e.faces.map(String)) })
+    case 'megaGem':
+      return t('ui.effect.megaGem', { mega: hasKey(pokemonKey(e.mega)) ? t(pokemonKey(e.mega)) : `#${e.mega}` })
   }
 }
+
+/**
+ * What a Z-Move of this type adds (docs/31), with the config's numbers: "Electric: 50% chance to paralyze the foe".
+ * `typeLabel` is the type's name in the player's language; an untyped attack (base dice only) says "Z-Move".
+ */
+export function zMoveText(effect: ZEffect, typeLabel: string | null, data: GameData): string {
+  const c = data.config.zMove
+  const type = typeLabel ?? t('ui.battle.zMoveName')
+  switch (effect) {
+    case 'freeze':
+      return t('ui.zmove.freeze', { type, pct: c.freezeChance })
+    case 'paralyze':
+      return t('ui.zmove.paralyze', { type, pct: c.paralyzeChance })
+    case 'burn':
+      return t('ui.zmove.burn', { type, n: c.burnStacks })
+    case 'heal':
+      return t('ui.zmove.heal', { type, pct: c.healPercent })
+    case 'confuse':
+      return t('ui.zmove.confuse', { type })
+    case 'poison':
+      return t('ui.zmove.poison', { type })
+    case 'fly':
+    case 'dig':
+    case 'dive':
+      return t(`ui.zmove.${effect}`, { type })
+    case 'reckless':
+      return t('ui.zmove.reckless', { type, pct: c.recklessPercent, back: c.recklessRecoilPercent })
+    case 'cleanse':
+      return t('ui.zmove.cleanse', { type })
+    case 'power':
+      return t('ui.zmove.power', { type, pct: c.damagePercent })
+  }
+}
+
+/** The types whose Z-Move adds an effect of its own (the rest hit harder), in the rules' order. */
+export const Z_TYPES: PokeType[] = ['ice', 'electric', 'fire', 'grass', 'psychic', 'poison', 'flying', 'ground', 'water', 'fighting', 'steel']
 
 const pct = (x: number) => `${Math.round(x * 100)} %`
 

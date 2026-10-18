@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react'
 import { faceOf, type Battler, type DamageResult, type RolledDie, type Side, type StatusKind } from '@/engine'
 import { Chip, StatusChip } from '@/components/Chip'
+import { PixelButton } from '@/components/PixelButton'
 import { DiceSet } from '@/components/DiceSet'
 import { Die } from '@/components/Die'
 import { PixelIcon } from '@/components/icons'
@@ -376,5 +377,25 @@ export function SwitchRow({
         )}
       </div>
     </button>
+  )
+}
+
+/**
+ * Z-MOVE (docs/31): after the roll, the attack as the dice stand, with what its type adds (`hint`, said on hover and
+ * read out). Gold like MEGA and G-MAX, the battle powers.
+ */
+export function ZMoveButton({ hint, disabled, onClick }: { hint: string; disabled?: boolean; onClick: () => void }) {
+  const { t } = useT()
+  return (
+    <PixelButton
+      size="sm"
+      variant="gold"
+      disabled={disabled}
+      title={hint}
+      aria-label={`${t('ui.battle.zMove')} — ${hint}`}
+      onClick={onClick}
+    >
+      <PixelIcon name="sword" size={14} /> {t('ui.battle.zMove')}
+    </PixelButton>
   )
 }

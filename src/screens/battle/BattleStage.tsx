@@ -16,6 +16,7 @@ import { loadSprite, placeSprite, spriteKey, stageSprite } from '@/fx/sprites'
 import { H, quicken, W, type Hud, type Timeline } from '@/fx/timeline'
 import { attackTimeline } from '@/fx/timelines/attacks'
 import { gmaxEndTimeline, gmaxFor, megaFor, unleashTimeline } from '@/fx/timelines/forms'
+import { zAwayTimeline, zMoveTimeline, zStrikeTimeline } from '@/fx/timelines/zmove'
 import { usePace } from '@/lib/pace'
 import { useMotion } from '@/lib/motion'
 import { useGame } from '@/store/game'
@@ -317,6 +318,25 @@ function useSceneTimeline(scene: Scene | null, own: Battler, foe: Battler, short
         damage: scene.damage,
         short,
       })
+    } else if (scene.kind === 'zstrike') {
+      timeline = zStrikeTimeline({
+        own: key(own, true),
+        foe: key(foe, false),
+        side: mine ? 'own' : 'foe',
+        type: scene.type ?? 'base',
+        from: scene.how,
+        short,
+      })
+    } else if (scene.kind === 'zaway') {
+      timeline = zAwayTimeline({ own: key(own, true), foe: key(foe, false), side: mine ? 'own' : 'foe', how: scene.how ?? 'fly', short })
+    } else if (scene.kind === 'zmove') {
+      timeline = zMoveTimeline({
+        own: key(own, true),
+        foe: key(foe, false),
+        side: mine ? 'own' : 'foe',
+        type: scene.type ?? 'base',
+        short,
+      })
     } else {
       const from = scene.fromDex ?? changing.dex
       const to = scene.toDex ?? changing.dex
@@ -507,7 +527,7 @@ export function BattleStage({
             scale={scale}
             shown={foeShown}
             fainted={(!!fx.fainted[foe.uid] || !!fx.wornOut[foe.uid]) && !worn}
-            hidden={playing}
+            hidden={playing || !!fx.away?.[foe.uid]}
             worn={worn}
             fx={fx}
             onTap={onTap && (() => onTap('enemy'))}
@@ -551,7 +571,7 @@ export function BattleStage({
             scale={scale}
             shown={ownShown}
             fainted={!!fx.fainted[own.uid]}
-            hidden={playing}
+            hidden={playing || !!fx.away?.[own.uid]}
             fx={fx}
             onTap={onTap && (() => onTap('player'))}
             tapLabel={tapLabel(own)}

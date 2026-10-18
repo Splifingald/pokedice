@@ -98,10 +98,46 @@ export const DEFAULT_CONFIG: GameConfig = {
     perBattle: 1,
     trainerRegions: ['hoenn', 'kalos', 'alola'],
     trainerRoles: ['leader', 'elite', 'champion'],
+    // The gem rules (docs/31), off until the admin opens them: Korrina's badge opens Mega Evolution in Kalos, a league
+    // anywhere else; a Mega needs its gem and lasts 3 turns. Korrina hands over the Lucarionite, as in X and Y; the
+    // three Kanto starters' gems come with the last three badges.
+    gems: {
+      access: 'off',
+      badges: 3,
+      turns: 3,
+      rewards: [
+        { badge: 3, gem: 'lucarionite' },
+        { badge: 6, gem: 'charizardite-y' },
+        { badge: 7, gem: 'venusaurite' },
+        { badge: 8, gem: 'blastoisinite' },
+      ],
+    },
   },
   // Gigantamax opens with Galar, for the Pokémon's next turn only (fights here are short); Galar's leaders and Champion
-  // use it with their ace.
-  gigantamax: { region: 'galar', turns: 1, trainerRegions: ['galar'] },
+  // use it with their ace. Its newer rules (docs/31), off until the admin opens them: Kabu's badge, two dice and a 30 %
+  // heal, a use of its own beside the Mega's.
+  gigantamax: {
+    region: 'galar',
+    turns: 1,
+    trainerRegions: ['galar'],
+    boost: { access: 'off', badges: 3, dice: 2, healPercent: 30 },
+  },
+  // Z-Moves (docs/31), off until the admin opens them: Lana's trial opens them in Alola, a league anywhere else. Once per
+  // battle, the attack's type brings an effect; Alola's leaders, Elite Four and Champion use one with their ace.
+  zMove: {
+    access: 'off',
+    region: 'alola',
+    badges: 3,
+    perBattle: 1,
+    freezeChance: 30,
+    paralyzeChance: 50,
+    burnStacks: 2,
+    healPercent: 20,
+    recklessPercent: 40,
+    recklessRecoilPercent: 20,
+    damagePercent: 20,
+    trainerRegions: ['alola'],
+  },
   formChangesPerBattle: 1,
   // A once-only find in a big loot deck can take a hundred rounds to turn up: from the 5th round done in its area, its
   // odds climb to ×10 at the 50th.

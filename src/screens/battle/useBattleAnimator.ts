@@ -41,6 +41,8 @@ export interface Fx {
   chip: { id: number; text: string } | null
   /** A cry the screen plays: a Mega's, once it stands there. */
   cry: { id: number; dex: number } | null
+  /** Pokémon away after a Flying, Ground or Water Z-Move (docs/31): the stage doesn't draw them until they strike. */
+  away?: Record<string, 'fly' | 'dig' | 'dive'>
 }
 
 /** What the battle stage plays for a log entry (src/fx timelines). */
@@ -48,7 +50,9 @@ export interface Scene {
   id: number
   /** The log entry it belongs to. */
   cursor: number
-  kind: 'attack' | 'mega' | 'gmax' | 'gmaxEnd' | 'unleash'
+  kind: 'attack' | 'mega' | 'gmax' | 'gmaxEnd' | 'unleash' | 'zmove' | 'zstrike' | 'zaway'
+  /** A Z-Move's going away, or the strike's coming back (docs/31). */
+  how?: 'fly' | 'dig' | 'dive'
   /** Who acts: the attacker, or the Pokémon whose form changes. */
   side: Side
   /** The attack's type, or the die an unleashed form gained. */
@@ -101,6 +105,7 @@ function initFx(b: BattleSlice): Fx {
     scene: null,
     chip: null,
     cry: null,
+    away: {},
   }
 }
 
@@ -196,12 +201,19 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       return {
         delay: 1300,
         sound: tone === 'super' ? 'super' : tone === 'immune' ? 'error' : 'hit',
-        // The dice fly at the target as the move starts; the HP waits for the hit.
-        apply: (f) => ({ ...f, fly: { id: nextId(), to: e.target } }),
-        // No effect: nothing to animate but the message.
+        // The dice fly at the target as the move starts; the HP waits for the hit. A Z-Move's strike brings back an
+        // attacker that went away.
+        apply: (f) => {
+          const atkUid = e.side === 'enemy' ? st.enemy.uid : f.activeUid
+          const { [atkUid]: _back, ...away } = f.away ?? {}
+          return { ...f, fly: { id: nextId(), to: e.target }, away }
+        },
+        // No effect: nothing to animate but the message. A Z-Move has a strike of its own.
         scene: r.immune
           ? undefined
-          : { kind: 'attack', side: e.side, type: r.attackType ?? r.perDie[0]?.type ?? 'base', damage: e.amount },
+          : e.z
+            ? { kind: 'zstrike', side: e.side, type: r.attackType ?? r.perDie[0]?.type ?? 'base', damage: e.amount, how: e.z.from }
+            : { kind: 'attack', side: e.side, type: r.attackType ?? r.perDie[0]?.type ?? 'base', damage: e.amount },
         land: (f, staged) => ({
           ...f,
           message: textFor(f),
@@ -299,7 +311,9 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       const after = ctx.speciesName(e.toDex)
       const mechanic = e.reason === 'mega' ? ctx.megaMechanic(e.toDex) : null
       const text =
-        e.reason === 'mega'
+        e.reason === 'mega' && e.revert
+          ? t('ui.log.megaEnd', { name: after })
+          : e.reason === 'mega'
           ? mechanic === 'primal'
             ? t('ui.log.primal', { name: before })
             : mechanic === 'ultra'
@@ -320,8 +334,16 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       const gained =
         e.side === 'player' && !e.revert && e.die && (e.reason === 'mega' || e.reason === 'gmax')
           ? e.reason === 'mega'
-            ? t('ui.battle.megaDie', { type: typeName(e.die) })
-            : t(`ui.battle.gmaxDie.${ctx.gmaxTurns === 1 ? 'one' : 'other'}`, { type: typeName(e.die), n: ctx.gmaxTurns })
+            ? st.megaTurns
+              ? t('ui.battle.megaDieTimed', { type: typeName(e.die), n: st.megaTurns })
+              : t('ui.battle.megaDie', { type: typeName(e.die) })
+            : st.gmaxBoost
+              ? t(`ui.battle.gmaxBoostDie.${ctx.gmaxTurns === 1 ? 'one' : 'other'}`, {
+                  type: typeName(e.die),
+                  dice: st.gmaxBoost.dice,
+                  n: ctx.gmaxTurns,
+                })
+              : t(`ui.battle.gmaxDie.${ctx.gmaxTurns === 1 ? 'one' : 'other'}`, { type: typeName(e.die), n: ctx.gmaxTurns })
           : null
       const chip = (f: Fx) => (gained ? { id: nextId(), text: gained } : f.chip)
       // A Mega with a cry of its own lets it out in place of the jingle (Showdown has none for the Gigantamax
@@ -332,8 +354,11 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       // The raid's word over the stage, like BREAK!.
       const banner = (f: Fx) =>
         unleash ? { id: nextId(), text: t('ui.raid.unleash'), tone: 'super' as const } : f.banner
+      // A timed Mega changing back (the gem rules) has no scene of its own: the flash, like a form going back.
       const scene: Step['scene'] =
-        e.reason === 'mega'
+        e.reason === 'mega' && e.revert
+          ? undefined
+          : e.reason === 'mega'
           ? { kind: 'mega', side: e.side, fromDex: e.fromDex, toDex: e.toDex }
           : e.reason === 'gmax'
             ? { kind: e.revert ? 'gmaxEnd' : 'gmax', side: e.side, fromDex: e.fromDex, toDex: e.toDex }
@@ -352,6 +377,44 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           : undefined,
       }
     }
+    case 'zmove': {
+      // The power gathers on the stage, then the attack's own scene plays with the next entry.
+      const name = e.side === 'enemy' ? st.enemy.name : nameOf(e.uid)
+      const type = e.type ? typeName(e.type) : t('ui.common.unknown')
+      return {
+        delay: 1100,
+        apply: (f) => ({ ...f, message: t('ui.log.zMove', { name, type }) }),
+        scene: { kind: 'zmove', side: e.side, type: e.type ?? 'base' },
+        land: (f) => ({ ...f, banner: { id: nextId(), text: t('ui.battle.zBanner'), tone: 'super' } }),
+      }
+    }
+    case 'away':
+      return {
+        delay: 1000,
+        apply: (f) => ({ ...f, message: t(`ui.log.zAway.${e.how}`, { name: nameOf(e.uid) }) }),
+        scene: { kind: 'zaway', side: e.side, how: e.how },
+        land: (f) => ({ ...f, away: { ...(f.away ?? {}), [e.uid]: e.how } }),
+      }
+    case 'dodge':
+      return {
+        delay: 1000,
+        sound: 'error',
+        apply: (f) => ({
+          ...f,
+          message: t(`ui.log.zDodge.${e.how}`, { name: nameOf(e.uid) }),
+          banner: { id: nextId(), text: t('ui.log.missBanner'), tone: 'immune' },
+        }),
+      }
+    case 'cleansed':
+      return {
+        delay: 900,
+        sound: 'heal',
+        apply: (f) => ({
+          ...f,
+          message: t('ui.log.zCleansed', { name: nameOf(e.uid) }),
+          status: { id: nextId(), target: e.side, status: 'heal' },
+        }),
+      }
     case 'item': {
       const who = nameOf(e.targetUid)
       const item = ctx.itemName(e.key)
@@ -396,10 +459,10 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
         sound: 'hit',
         apply: (f) => ({
           ...f,
-          message: t('ui.log.recoil', { name: nameOf(e.uid), amount: e.amount }),
+          message: t(e.z ? 'ui.log.zRecoil' : 'ui.log.recoil', { name: nameOf(e.uid), amount: e.amount }),
           hp: { ...f.hp, [e.uid]: e.hpAfter },
           pop: { id: nextId(), target: e.side, amount: e.amount, tone: 'normal' },
-          status: { id: nextId(), target: e.side, status: 'confuse' },
+          status: e.z ? f.status : { id: nextId(), target: e.side, status: 'confuse' },
           shake: { id: nextId(), power: 3 },
         }),
       }

@@ -60,6 +60,7 @@ import { GiftBits } from './kitchen/GiftBits'
 import { InviteBits } from './kitchen/InviteBits'
 import { SupportBits } from './kitchen/SupportBits'
 import { TrickBits } from './kitchen/TrickBits'
+import { PowersBits } from './kitchen/PowersBits'
 import { RotateView } from '@/components/RotateCover'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
 import { BoardRow } from '@/components/BoardRow'
@@ -595,6 +596,10 @@ export function KitchenSink() {
 
       <Section title="Battle: stage, plates, tray, readout, team pips (and the raid's compact ones, speed button), Bag, catch">
         <BattleBits />
+      </Section>
+
+      <Section title="Battle powers: Mega plates (timed, last turn, older rules), G-MAX, Z-MOVE hints, the Mart's Mega Gems (open, poor, shut, empty), rules and INFO (docs/31)">
+        <PowersBits />
       </Section>
 
       <Section title="PartnerMoment: the lab (new game, new region)">

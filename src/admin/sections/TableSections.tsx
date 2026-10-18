@@ -195,6 +195,7 @@ const EFFECT_DEFAULTS: Record<ItemEffect['kind'], ItemEffect> = {
   ball: { kind: 'ball', bonus: 1 },
   link: { kind: 'link' },
   bait: { kind: 'bait', faces: [1, 1, 1, 2, 2, 3] },
+  megaGem: { kind: 'megaGem', mega: 10059 },
 }
 
 const describeEffect = (effect: unknown) => {
@@ -220,6 +221,7 @@ function EffectEditor({ value, onDone }: { value: ItemEffect | undefined; onDone
         <option value="ball">ball: catch-die bonus</option>
         <option value="link">link cable: evolves a trade evolution (Team screen)</option>
         <option value="bait">bait: its die adds to a throw that fell short (six faces)</option>
+        <option value="megaGem">Mega Gem: opens this Mega form (its species dex, docs/31)</option>
       </select>
       {draft.kind === 'cure' ? (
         <div className="flex flex-wrap gap-2 text-base">
@@ -262,6 +264,10 @@ function EffectEditor({ value, onDone }: { value: ItemEffect | undefined; onDone
         </div>
       ) : draft.kind === 'ball' ? (
         <NumInput value={draft.bonus} min={0} max={9} onChange={(v) => setDraft({ kind: 'ball', bonus: v ?? 0 })} />
+      ) : draft.kind === 'megaGem' ? (
+        <label className="flex items-center gap-1 text-base">
+          Mega dex <NumInput value={draft.mega} min={1} onChange={(v) => setDraft({ kind: 'megaGem', mega: v ?? 10059 })} />
+        </label>
       ) : (
         <NumInput value={draft.amount} min={1} onChange={(v) => setDraft({ kind: draft.kind, amount: v ?? 1 } as ItemEffect)} />
       )}

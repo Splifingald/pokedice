@@ -5,8 +5,10 @@ import {
   applyLevelEvolution,
   buyComboUpgrade,
   buyDieUpgrade,
+  buyGem as buyGemIn,
   buyGeneral,
   buyItem,
+  markPowerRulesSeen as markPowerRulesSeenIn,
   markGeneralRulesSeen as markGeneralRulesSeenIn,
   sellItem,
   createRng,
@@ -31,6 +33,7 @@ import {
   type Hatch,
   type Pickup,
   type PokeType,
+  type PowerKind,
   type RushRefusal,
 } from '@/engine'
 import { tickDayCare } from './daycare'
@@ -44,6 +47,18 @@ export function buy(key: string, qty = 1): boolean {
   const ok = mutateSave((s) => buyItem(s, key, qty, data, Date.now(), newId))
   if (!ok) pushToast(t('ui.toast.tooPoor'), 'bad')
   return ok
+}
+
+/** A Mega Gem from this region's shelf (docs/31): once each, never sold. */
+export function buyGem(key: string): boolean {
+  const ok = mutateSave((s) => buyGemIn(s, useGame.getState().data, key))
+  if (!ok) pushToast(t('ui.toast.tooPoor'), 'bad')
+  return ok
+}
+
+/** A battle power's rules pop-up has been shown (docs/31): it doesn't open by itself again. */
+export function markPowerRulesSeen(kind: PowerKind): void {
+  mutateSave((s) => (s.powers?.seen?.includes(kind) ? null : markPowerRulesSeenIn(s, kind)))
 }
 
 export function sell(key: string, qty = 1): boolean {

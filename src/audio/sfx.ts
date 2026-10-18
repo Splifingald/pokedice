@@ -353,6 +353,16 @@ const FX_SOUNDS = {
     tone(392, 0.8, { type: 'triangle', vol: 0.07, slide: 520 })
   },
   'mega.swap': (n = 0) => tone(440 + n * 45, 0.06, { type: 'square', vol: 0.04 }),
+  // A Z-Move (docs/31): the power gathering in a rising sweep, then a bright chord as the Z blazes.
+  'z.charge': () => {
+    tone(262, 0.7, { type: 'sawtooth', vol: 0.045, slide: 780 })
+    hiss(0.6, { freq: 1200, vol: 0.04, slide: 2600 })
+  },
+  'z.blaze': () => {
+    tone(1047, 0.35, { type: 'square', vol: 0.045 })
+    tone(1568, 0.4, { type: 'triangle', vol: 0.05, at: 0.05 })
+    hiss(0.3, { freq: 3000, vol: 0.05, slide: -2200 })
+  },
   'mega.crack': () => {
     hiss(0.45, { freq: 2200, vol: 0.08 })
     tone(1760, 0.3, { type: 'square', vol: 0.035, slide: 800 })

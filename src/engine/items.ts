@@ -30,7 +30,9 @@ export function itemUses(item: ItemDef): ItemUse[] {
     case 'ball':
     case 'bait':
       return ['catch']
+    // A fossil revives on its own; a Mega Gem is held, not used: the battle reads it (docs/31).
     case 'fossil':
+    case 'megaGem':
       return []
   }
 }
@@ -56,8 +58,12 @@ export const usableIn = (item: ItemDef | undefined, use: ItemUse): boolean => !!
 /** What a ball adds to the catch die (0 for anything else). */
 export const ballBonus = (item: ItemDef | undefined): number => (item?.effect.kind === 'ball' ? item.effect.bonus : 0)
 
-/** What the Mart pays for one: half its price, rounded down. Only items the Mart sells can be sold back (0 = can't). */
-export const sellPrice = (item: ItemDef | undefined): number => (item?.inShop ? Math.floor(item.price / 2) : 0)
+/**
+ * What the Mart pays for one: half its price, rounded down. Only items the Mart sells can be sold back (0 = can't); a
+ * Mega Gem never is (docs/31).
+ */
+export const sellPrice = (item: ItemDef | undefined): number =>
+  item?.inShop && item.effect.kind !== 'megaGem' ? Math.floor(item.price / 2) : 0
 
 /**
  * The Poké Mart's stock, by badge tier then price; `unlocked` once the player holds enough badges and has reached the

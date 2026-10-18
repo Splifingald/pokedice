@@ -122,6 +122,8 @@ export interface DamageResult {
   boost?: { type: PokeType; multiplier: number } | null
   /** A portal run's boost on this attack's type (docs/28): + `amount`, like the combo's bonus, before the multipliers. */
   flat?: { type: PokeType; amount: number } | null
+  /** A Z-Move of a type with no effect of its own (docs/31): `final` is this % more than the dice made. */
+  zPercent?: number
 }
 
 /**
