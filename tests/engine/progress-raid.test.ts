@@ -125,7 +125,7 @@ describe('an area and its raid', () => {
 })
 
 describe('your team for a raid', () => {
-  it('that region’s Box only: the three left on it, else its three highest, capped at the raid’s team cap', () => {
+  it('that region’s Box only: the three left on it, else its three highest, at their own levels', () => {
     const raid = progressRaidOf(data, ARTICUNO)!
     const strong = [
       createInstance(6, 80, data, 'c', 0),
@@ -133,12 +133,12 @@ describe('your team for a raid', () => {
       createInstance(3, 60, data, 'v', 0),
     ]
     let s = { ...fresh(), box: [...fresh().box, ...strong] }
-    const cap = raidTeamCap(data, 144, 'progress')
-    expect(cap).toBe(data.config.events.raid.progress.teamCap)
+    expect(raidTeamCap(data, 144, 'progress')).toBe(data.config.events.raid.progress.teamCap)
+    // The cap holds back only their HP, in the fight (`raidSeedLevels`).
     expect(progressRaidTeam(s, data, raid).map((m) => [m.id, m.level])).toEqual([
-      ['c', Math.min(80, cap)],
-      ['v', Math.min(60, cap)],
-      ['b', Math.min(40, cap)],
+      ['c', 80],
+      ['v', 60],
+      ['b', 40],
     ])
     s = setProgressRaidTeam(s, ARTICUNO, ['b', 'nobody', 'c', 'b'])
     expect(s.events?.raidTeams?.[ARTICUNO]).toEqual(['b', 'nobody', 'c'])

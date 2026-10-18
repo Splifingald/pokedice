@@ -854,7 +854,8 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  * content, 0052), then 0057 (Distortion World's portal run, docs/28: `areas.mode`, its switch, and 0045's and 0046's
  * raid functions redefined; its Distortion World patch is a no-op before Haunted Hollow's content, which the bundle
  * hasn't got), then 0060 (Newmoon Island's nightmare, docs/30: its switch, and 0057's raid functions redefined; its
- * Newmoon Island patch is a no-op there too). Folded into seed.sql so there is
+ * Newmoon Island patch is a no-op there too), then 0061 (raid teams at their own levels: 0039's and 0060's
+ * team writers redefined). Folded into seed.sql so there is
  * one file to run rather than several in a particular order. The
  * migrations stay the single source of that SQL — they are written to be idempotent, so re-running them costs little.
  */
@@ -877,6 +878,7 @@ export async function regionsPrelude(): Promise<string> {
       '0056_trick_or_treat.sql',
       '0057_hh_distortion_world.sql',
       '0060_hh_nightmare.sql',
+      '0061_raid_true_levels.sql',
     ].map(async (name) => {
       const sql = (await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')).replace(/^(begin|commit);\n/gm, '')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`

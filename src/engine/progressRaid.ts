@@ -7,7 +7,7 @@ import { areaProgressAnywhere } from './events'
 import { portalModeOf } from './portalMode'
 import { nightmareModeOf } from './nightmareMode'
 import { addRaidMon, type RaidMon } from './raid'
-import { raidRules, raidTeamCap } from './raidCalendar'
+import { raidRules } from './raidCalendar'
 import { inWorldRegion, isWorldRegion, regionOf, regionOfArea } from './regions'
 import type { Area, BossDef, GameData, PokemonInstance, RegionId, SaveData } from './types'
 
@@ -105,10 +105,10 @@ export function regionBox(save: SaveData, region: RegionId): PokemonInstance[] {
 
 /**
  * Your team for a progression raid: the three left on it (`events.raidTeams`), or until then that region's three
- * highest levels. Only that region's Box, each fighting as a copy at the raid's team cap at most.
+ * highest levels. Only that region's Box, each fighting as a copy with its own dice and rerolls, its HP at the
+ * raid's team cap at most.
  */
 export function progressRaidTeam(save: SaveData, data: GameData, raid: ProgressRaid): RaidMon[] {
-  const cap = raidTeamCap(data, raid.dex, 'progress', raid.areaId)
   const box = regionBox(save, raid.region).filter((p) => !!data.species[p.dex])
   const chosen = (save.events?.raidTeams?.[raid.key] ?? []).flatMap((id) =>
     box.filter((p) => p.id === id).slice(0, 1),
@@ -116,7 +116,7 @@ export function progressRaidTeam(save: SaveData, data: GameData, raid: ProgressR
   const team = chosen.length ? chosen : [...box].sort((a, b) => b.level - a.level).slice(0, 3)
   return team
     .slice(0, 3)
-    .map((p) => ({ id: p.id, dex: p.dex, level: Math.min(p.level, cap), shiny: !!p.shiny }))
+    .map((p) => ({ id: p.id, dex: p.dex, level: p.level, shiny: !!p.shiny }))
 }
 
 /** Leaves a team on a progression raid: up to three ids from its region's Box. */

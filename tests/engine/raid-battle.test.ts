@@ -8,11 +8,14 @@ import {
   createBattle,
   createRaid,
   createRng,
+  effectiveStats,
   gmaxChoices,
+  makeBattler,
   megaChoices,
   npcTeam,
   raidAllyAllowed,
   raidDispatch,
+  raidSeedLevels,
   RAID_MAX_STEPS,
   reduce,
   simulateRaid,
@@ -64,6 +67,40 @@ describe('who fights beside you', () => {
       expect(allowed(t.dex)).toBe(true)
       expect(t.level).toBe(cfg.teamCap)
     }
+  })
+})
+
+describe('the team cap (the user’s rule, 2026-10-18)', () => {
+  const DRAGONITE = data.species[149]!
+  const own = effectiveStats(DRAGONITE, 80, data)
+  const capped = effectiveStats(DRAGONITE, 50, data)
+
+  it('holds back only the HP: the dice and rerolls are its own level’s', () => {
+    // Dragonite earns a die and a reroll past Lv.50, so the cap would cost it both.
+    expect(own.dice.length).toBeGreaterThan(capped.dice.length)
+    expect(own.rerolls).toBeGreaterThan(capped.rerolls)
+    const b = makeBattler({ uid: 's0-0', dex: 149, ...raidSeedLevels(80, 50), hp: Number.MAX_SAFE_INTEGER }, data)
+    expect(b).toMatchObject({ level: 80, dice: own.dice, rerolls: own.rerolls, rerollsLeft: own.rerolls })
+    expect(b.maxHp).toBe(capped.maxHp)
+    expect(b.hp).toBe(capped.maxHp)
+  })
+
+  it('changes nothing for a Pokémon under the cap', () => {
+    const plain = makeBattler({ uid: 'a', dex: 149, level: 40, hp: Number.MAX_SAFE_INTEGER }, data)
+    const seeded = makeBattler({ uid: 'a', dex: 149, ...raidSeedLevels(40, 50), hp: Number.MAX_SAFE_INTEGER }, data)
+    expect(seeded).toEqual(plain)
+  })
+
+  it('in the raid: your side fights with them', () => {
+    const team = [{ uid: 's0-0', dex: 149, ...raidSeedLevels(80, 50), hp: Number.MAX_SAFE_INTEGER }]
+    const sides: RaidSideSeed[] = [{ owner: 'Me', look: null, kind: 'me', team }]
+    const { state } = createRaid({ boss: { dex: 151, shiny: false }, sides }, data, createRng(3))
+    expect(state.sides[0]!.mons[0]!).toMatchObject({
+      level: 80,
+      dice: own.dice,
+      rerolls: own.rerolls,
+      maxHp: capped.maxHp,
+    })
   })
 })
 

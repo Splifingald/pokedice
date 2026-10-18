@@ -206,13 +206,13 @@ describe('the shiny lock', () => {
 describe('a catch and its area (the lock)', () => {
   const MEW = { day: DAY, dex: 151, shiny: false, areaId: FARAWAY, caught: false, tries: 0 }
 
-  it('your raid team: the three you registered, else your three highest-level Pokémon, capped at the raid level', () => {
+  it('your raid team: the three you registered, else your three highest-level Pokémon, at their own levels', () => {
     let s = fresh()
     const strong = [createInstance(6, 80, data, 'c', 0), createInstance(9, 40, data, 'b', 0), createInstance(3, 60, data, 'v', 0)]
     s = { ...s, box: [...s.box, ...strong] }
     expect(raidTeam(s, data).map((m) => [m.dex, m.level])).toEqual([
-      [6, cfg.teamCap],
-      [3, cfg.teamCap],
+      [6, 80],
+      [3, 60],
       [9, 40],
     ])
     s = { ...s, events: { raidTeam: ['b', 'nobody', 'c'] } }

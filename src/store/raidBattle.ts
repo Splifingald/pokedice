@@ -24,6 +24,7 @@ import {
   progressRaidTeam,
   raidDispatch,
   raidNpcOffer,
+  raidSeedLevels,
   raidTeam,
   raidTeamCap,
   randomSeed,
@@ -227,7 +228,7 @@ function friendSide(f: RaidFriend, k: number, cap: number): RaidSideSeed {
     look: avatarOf(f.avatar).src,
     kind: 'friend',
     userId: f.userId,
-    team: f.team.slice(0, 3).map((m, i) => ({ uid: `s${k}-${i}`, dex: m.dex, level: Math.min(m.level, cap), hp: Number.MAX_SAFE_INTEGER, shiny: m.shiny })),
+    team: f.team.slice(0, 3).map((m, i) => ({ uid: `s${k}-${i}`, dex: m.dex, ...raidSeedLevels(m.level, cap), hp: Number.MAX_SAFE_INTEGER, shiny: m.shiny })),
   }
 }
 
@@ -253,7 +254,7 @@ function startFight(
     team: team.map((m, i) => ({
       uid: `s0-${i}`,
       dex: m.dex,
-      level: m.level,
+      ...raidSeedLevels(m.level, cap),
       hp: Number.MAX_SAFE_INTEGER,
       shiny: m.shiny,
       nickname: m.nickname,
