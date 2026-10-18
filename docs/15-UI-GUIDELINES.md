@@ -554,7 +554,7 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   row its name, ✦ and types (no level: everyone is Lv.50 here); a search, No. / A–Z and a `TypeSelect` order and narrow
   it, and picks they hide stay picked.
 - **The leaderboard**: the region's name as the head's count, or "All regions" on Shiny and Raids (one board over
-  every region, each trainer on it once: 0054); five tabs that are icons, only the open one spelling out its name
+  every region, each trainer on it once: 0054; a trainer with no shiny / no raid won isn't on that board, and without a row there your gold card isn't shown); five tabs that are icons, only the open one spelling out its name
   (five names don't fit a phone in every language); a gold card with your look, the board's one-line
   note and "You're #N of M" (tap: your row scrolls into view and blinks) or "You're in the Hall of Fame"; a navy
   **Hall of Fame** button with the crown, how many maxed the board out and their faces, opening a sheet with the

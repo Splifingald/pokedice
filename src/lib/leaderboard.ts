@@ -1,7 +1,8 @@
 // The leaderboard: every cloud save (signed-in players only, Google or Discord) played in the last 72 hours, ranked by best level,
 // campaign progress, Pokédex, shinies caught or raids won. The rows come from the `leaderboard()` SQL function, which leaves inactive players out
 // (migration 0023), and a region's row out until the player holds a badge there (0024); ranking happens here, against
-// the game data. Level, Progression and Pokédex are one board per region; Shiny and Raids span every region (0054).
+// the game data. Level, Progression and Pokédex are one board per region; Shiny and Raids span every region (0054)
+// and hold only the trainers with at least one shiny / raid won.
 import { linearAreas } from '@/engine/data'
 import { regionSpecies } from '@/engine/regions'
 import type { GameData, RegionId } from '@/engine/types'
@@ -75,10 +76,18 @@ export function clearedRegion(row: LeaderboardRow, data: GameData): boolean {
 /** Shiny and Raids rank a trainer once, over every region, not once per region played. */
 export const crossRegion = (tab: LeaderboardTab) => tab === 'shiny' || tab === 'raids'
 
-/** The rows this tab's board ranks: the region's own, or one per trainer on a cross-region board. */
+/** What Shiny and Raids count; a trainer at 0 on it isn't on that board at all. */
+const crossScore = (row: LeaderboardRow, tab: LeaderboardTab) => (tab === 'shiny' ? row.shinies : row.raidsWon)
+
+/**
+ * The rows this tab's board ranks: the region's own, or one per trainer on a cross-region board. Shiny and Raids leave
+ * out whoever has no shiny / no raid won yet (the user's ask of 2026-10-18): a long tail of zeros ranks nobody.
+ */
 function boardRows(rows: LeaderboardRow[], tab: LeaderboardTab, region: RegionId): LeaderboardRow[] {
-  if (crossRegion(tab) && rows.every((r) => r.lead !== undefined)) return rows.filter((r) => r.lead)
-  return rows.filter((r) => r.region === region)
+  if (!crossRegion(tab)) return rows.filter((r) => r.region === region)
+  const scored = rows.filter((r) => crossScore(r, tab) > 0)
+  if (rows.every((r) => r.lead !== undefined)) return scored.filter((r) => r.lead)
+  return scored.filter((r) => r.region === region)
 }
 
 /**
