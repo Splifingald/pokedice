@@ -1,6 +1,8 @@
 import { useMemo, type ReactNode } from 'react'
 import {
+  ARCEUS_DEX,
   choiceFormsOf,
+  plateTypes,
   COPIES_FOE_DICE,
   effectiveStats,
   evolutionGate,
@@ -431,6 +433,8 @@ export function PokemonSheet({
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
+  const save = useGame((s) => s.save)
+  const plates = save ? plateTypes(save, data) : undefined
   const species = getSpecies(data, dex)
   const level = inst?.level ?? 1
   const stats = effectiveStats(species, level, data)
@@ -511,6 +515,14 @@ export function PokemonSheet({
         )}
         {choiceFormsOf(data, species.dex).length > 0 && (
           <p className="copy font-pixel-sm text-[15px]">{t('ui.sheet.choiceForm', { n: data.config.formChangesPerBattle })}</p>
+        )}
+        {/* Arceus's plates (docs/34): the types it may take, while the Underground is on. */}
+        {plates && species.dex === ARCEUS_DEX && (
+          <p className="copy font-pixel-sm text-[15px]" data-testid="arceus-plates">
+            {plates.length
+              ? t('ui.ug.sheetPlates', { types: plates.map((p) => typeName(p)).join(', '), n: plates.length, total: 17 })
+              : t('ui.ug.sheetNoPlates')}
+          </p>
         )}
         <ul className="grid gap-3">
           {groups.map(({ type, n }) => {

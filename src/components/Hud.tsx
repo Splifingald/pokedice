@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useT } from '@/i18n/react'
 import { getLang } from '@/i18n'
-import { donationEnabled, leaderboardUnlocked } from '@/engine'
+import { donationEnabled, leaderboardUnlocked, undergroundLive } from '@/engine'
 import { useDexNew } from '@/lib/dexSeen'
 import { affordableUpgrades } from '@/lib/upgrades'
 import { pushToast, useGame } from '@/store/game'
@@ -14,9 +14,11 @@ import { PlayerMenu } from './PlayerMenu'
 import { cx } from '@/theme/util'
 import { useCountUp, useGoldBump } from './GoldPill'
 import { EnergyPill } from './EnergyPill'
+import { DayNightButton } from './DayNight'
 import { PixelIcon, type IconName } from './icons'
 import { CashChip } from '@/screens/events/live'
 import { useLive } from '@/store/live'
+import { serverNow } from '@/store/serverTime'
 
 interface NavItem {
   to: string
@@ -45,7 +47,10 @@ function useNavDot(n: NavItem): { text: string; label: string; gold?: boolean } 
   const upgrades = useGame((s) => (n === UPGRADES && s.save ? affordableUpgrades(s.save, s.data) : 0))
   const dexNew = useDexNew()
   const { live } = useLive(15_000)
+  // The Underground's kits are sold while it runs for this player (its own switch on too).
+  const ugOn = useGame((s) => !!s.save && !!undergroundLive(s.save, s.data, serverNow()))
   if (n === SHOP && live?.type === 'shop') return { text: t('ui.live.sale'), label: t('ui.live.shopDot'), gold: true }
+  if (n === SHOP && live?.type === 'underground' && ugOn) return { text: t('ui.ug.kitsTag'), label: t('ui.ug.kitsDot'), gold: true }
   if (n === UPGRADES && upgrades > 0) return { text: upgrades > 9 ? '9+' : String(upgrades), label: t('ui.nav.upgradesDot', { n: upgrades }) }
   if (n === DEX && dexNew > 0) return { text: t('ui.common.new'), label: t('ui.nav.dexDot', { n: dexNew }), gold: true }
   return null
@@ -181,6 +186,8 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 bg-panel shadow-[0_2px_0_rgb(var(--c-edge)),0_4px_0_rgb(var(--c-edge)/0.13)]">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-2.5 md:max-w-none">
+        {/* Day and night (docs/32): the sun or the moon, far left, while in Johto. */}
+        <DayNightButton />
         <EnergyPill />
         <span className="flex-1" />
         <CashChip />

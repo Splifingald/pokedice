@@ -11,6 +11,7 @@ import {
   slotReturnPerSpin,
   xpToNext,
   type DayCareConfig,
+  type DoubleBattlesConfig,
   type DonationConfig,
   type EnergyConfig,
   type EventAccess,
@@ -286,6 +287,34 @@ function DiscordBox() {
  * Extreme mode (docs/22): the second save that a league opens, with no Pokémon Centers, K.O.s that rest for hours and
  * healing only while the player is away. Every number here is read by the game's engine (engine/extreme).
  */
+/**
+ * Day and night in Johto (docs/32): its switch. Each wild row's time is set in Areas → its wild pool (Time); the tags
+ * from the real games came with migration 0061.
+ */
+function DayNightBox() {
+  const [cfg, set] = useConfigRow('dayNight')
+  const access = cfg?.access ?? 'off'
+  return (
+    <Box
+      title="Day and night"
+      icon="moon"
+      hint="Johto keeps the time (docs/32): 6:00–17:59 is the day and 18:00–5:59 the night, on the player's clock. A wild Pokémon whose Time says day or night (Areas → wild pool) comes only then, as in the real games; the top bar shows the sun or the moon, and so do the fights."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Who has it</span>
+        <AccessSwitch value={access} onChange={(a) => set({ access: a })} label="Day and night: who has it" />
+        <span className="text-base text-muted">
+          {access === 'all'
+            ? 'Every player: Johto’s wild Pokémon follow the time, and the sun or the moon shows.'
+            : access === 'admin'
+              ? 'Only you (signed in) have it; other players meet every Pokémon at any hour.'
+              : 'Off: every Pokémon at any hour, no sun or moon anywhere. The tags stay in the pools.'}
+        </span>
+      </div>
+    </Box>
+  )
+}
+
 function ExtremeBox() {
   const data = useAdminData()
   const [raw, setRaw] = useConfigRow('extreme')
@@ -351,6 +380,58 @@ function ExtremeBox() {
           playing: never.{!cfg.centers && ' No Pokémon Center is ever dealt.'}
         </p>
       )}
+    </Box>
+  )
+}
+
+/**
+ * Double battles (docs/33): the switch, the regions where they happen and how often a wild Pokémon comes with a
+ * partner. Duo trainers are ticked in Trainers (Duo); Elite Four and Champions never fight 2 v 2.
+ */
+function DoubleBattlesBox() {
+  const data = useAdminData()
+  const [raw, setRaw] = useConfigRow('doubleBattles')
+  const cfg: DoubleBattlesConfig = { ...DEFAULT_CONFIG.doubleBattles, ...(raw ?? {}) }
+  const set = (patch: Partial<DoubleBattlesConfig>) => setRaw({ ...cfg, ...patch })
+  const toggle = (id: string, on: boolean) =>
+    set({ regions: on ? [...new Set([...cfg.regions, id])] : cfg.regions.filter((r) => r !== id) })
+  return (
+    <Box
+      title="Double battles"
+      icon="vs"
+      hint="Two of yours against two foes. Wild Pokémon sometimes come in pairs; duo trainers (Trainers → Duo) and Tate & Liza always fight 2 v 2. Never in Extreme mode, small worlds, the portal run or the nightmare."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Who gets them</span>
+        <AccessSwitch value={cfg.access ?? 'off'} onChange={(access) => set({ access })} label="Double battles: who gets them" />
+        <span className="text-base text-muted">
+          {cfg.access === 'all'
+            ? 'On for every player, in the regions ticked below.'
+            : cfg.access === 'admin'
+              ? 'Only you get them (to try them first). Players fight one on one.'
+              : 'Off: every battle is one on one.'}
+        </span>
+      </div>
+      <Field label="Regions" hint="where double battles happen">
+        <div className="flex flex-wrap gap-x-4 gap-y-1">
+          {(data?.regions ?? []).map((reg) => (
+            <label key={reg.id} className="flex items-center gap-2 text-lg">
+              <input type="checkbox" checked={cfg.regions.includes(reg.id)} onChange={(e) => toggle(reg.id, e.target.checked)} />
+              {reg.name}
+            </label>
+          ))}
+        </div>
+      </Field>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Wild pairs (%)" hint="of the wild encounters in those regions">
+          <NumInput
+            min={0}
+            max={100}
+            value={cfg.wildChance}
+            onChange={(v) => set({ wildChance: Math.max(0, Math.min(100, v ?? 0)) })}
+          />
+        </Field>
+      </div>
     </Box>
   )
 }
@@ -474,6 +555,27 @@ function TradesBox() {
 /** What each state of a switch means, for the line beside it. */
 const accessNote = (access: EventAccess, all: string, off: string) =>
   access === 'all' ? all : access === 'admin' ? 'Only you see it (to try it first). Players see nothing yet.' : off
+
+/** Trainer looks (docs/31): unlockable looks from every region in place of the free Kanto and Johto list. */
+function LooksBox() {
+  const [raw, setRaw] = useConfigRow('looks')
+  const access = raw?.access ?? 'off'
+  return (
+    <Box
+      title="Trainer looks"
+      icon="user"
+      hint="The look other trainers see (leaderboard, Versus, friends). On: Red and Leaf are free and every other look unlocks by playing its region (Pokémon caught, an area reached, the League, the full Pokédex), from the row under the trainer card. A look worn but not unlocked comes off (back to Red or Leaf). Off: the old free list of Kanto and Johto classes."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Trainer looks</span>
+        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="Trainer looks: who sees them" />
+        <span className="text-base text-muted">
+          {accessNote(access, 'Open to every player.', 'Off: the free list as before. Seen looks are kept in saves.')}
+        </span>
+      </div>
+    </Box>
+  )
+}
 
 /**
  * The General upgrades and the two items that came with them (docs/25): each its own three-way switch, Off by default
@@ -1180,13 +1282,19 @@ export function ConfigSection() {
 
       <DayCareBox />
 
+      <DayNightBox />
+
       <ExtremeBox />
+
+      <DoubleBattlesBox />
 
       <TradesBox />
 
       <PushBox />
       <GeneralBox />
       <BattlePowersBox />
+
+      <LooksBox />
 
       <InviteRewardsBox />
 

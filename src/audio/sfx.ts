@@ -453,6 +453,20 @@ const FX_SOUNDS = {
     tone(784, 0.18, { type: 'triangle', vol: 0.04, at: 0.16 })
     tone(1047, 0.45, { type: 'triangle', vol: 0.045, at: 0.32 })
   },
+  // The Underground (docs/34): a pickaxe's clink on rock (lower and heavier the bigger the roll), the wall rumbling
+  // down, and a little chime when something is dug out whole.
+  'ug.strike': (n = 1) => {
+    tone(1400 - n * 300, 0.05, { type: 'square', vol: 0.05, slide: -200 })
+    hiss(0.08 + n * 0.03, { freq: 900 - n * 150, vol: 0.06 + n * 0.02 })
+  },
+  'ug.collapse': () => {
+    hiss(0.9, { freq: 220, type: 'lowpass', vol: 0.14 })
+    tone(90, 0.7, { type: 'sawtooth', vol: 0.05, slide: -50 })
+  },
+  'ug.found': () => {
+    tone(1047, 0.08, { type: 'triangle', vol: 0.04 })
+    tone(1568, 0.2, { type: 'triangle', vol: 0.04, at: 0.08 })
+  },
   'impact.windup': () => hiss(0.2, { freq: 700, slide: 900, vol: 0.04 }),
   'impact.hit': () => {
     hiss(0.18, { freq: 420, vol: 0.12 })

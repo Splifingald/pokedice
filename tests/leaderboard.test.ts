@@ -197,8 +197,21 @@ describe('Shiny and Raids span every region (0054)', () => {
         ['Brock', 2],
         ['Misty', 3],
       ])
-      expect(splitLeaderboard(rows, 'raids', data, region).board.map((r) => r.name)).toEqual(['Misty', 'Ash', 'Brock'])
+      // Brock has won no raid: he isn't on the Raids board.
+      expect(splitLeaderboard(rows, 'raids', data, region).board.map((r) => r.name)).toEqual(['Misty', 'Ash'])
     }
+  })
+
+  it('leaves out whoever has no shiny, or no raid won, on that board only', () => {
+    const more = [...rows, row('Gary', { region: 'kanto', lead: true, isMe: true, pokedex: 90 })]
+    for (const tab of ['shiny', 'raids'] as const) {
+      const { board, hall } = splitLeaderboard(more, tab, data, 'kanto')
+      expect([...board, ...hall].map((r) => r.name)).not.toContain('Gary')
+    }
+    expect(rankLeaderboard(more, 'level', data, 'kanto').map((r) => r.name)).toContain('Gary')
+    // The same on a database without 0054.
+    const old = more.map(({ lead: _, ...r }) => r)
+    expect(rankLeaderboard(old, 'raids', data, 'kanto').map((r) => r.name)).toEqual(['Ash'])
   })
 
   it('leaves the other boards per region', () => {

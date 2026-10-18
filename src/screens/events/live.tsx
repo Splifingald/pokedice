@@ -10,6 +10,7 @@ import {
   donationDue,
   eventUnlockDue,
   inWorld,
+  kitsHeld,
   leaderboardTutorialDue,
   liveCovers,
   liveLeft,
@@ -36,6 +37,8 @@ import { countdown, money } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { askPush, pushReady } from '@/lib/push'
 import { markLivePopupSeen, useLive } from '@/store/live'
+import { ugRulesSeen } from '@/store/underground'
+import { UgCave, UgRulesModal } from '@/components/Underground'
 import { serverNow } from '@/store/serverTime'
 import { useRaidGifts } from '@/store/raidGifts'
 import { HeadTag, WidgetRows, WIDGET_BANNER_H } from '@/screens/home/Widget'
@@ -64,6 +67,7 @@ const areaNames = (data: GameData, ids: string[]) => ids.map((id) => data.areas.
 
 /** What it does, in a line: "×5 shiny in Kanto", "3 items, for a while", "+50% on every ₽". */
 export function liveSub(e: LiveEvent, data: GameData): string {
+  if (e.type === 'underground') return t('ui.live.underground.sub')
   if (e.type === 'cash') return t('ui.live.cash.sub', { pct: pct(e.cash.multiplier) })
   if (e.type === 'shop') {
     const n = e.shop.items.length
@@ -94,6 +98,13 @@ export function LiveTag({ e, className }: { e: LiveEvent; className?: string }) 
     return (
       <Chip tone="red" className={cx('tracking-[0.04em]', className)}>
         {t('ui.live.sale')}
+      </Chip>
+    )
+  if (e.type === 'underground')
+    return (
+      <Chip tone="dark" className={cx('tracking-[0.04em]', className)}>
+        <PixelIcon name="pickaxe" size={11} />
+        {t('ui.ug.tag')}
       </Chip>
     )
   return (
@@ -127,6 +138,8 @@ export function LiveGauge({ share, hot, className }: { share: number; hot: boole
 export function LivePicture({ e, className, children }: { e: LiveEvent; className?: string; children?: ReactNode }) {
   return (
     <span className={cx('lv-pic block overflow-hidden bg-night', className)} aria-hidden>
+      {/* The Underground's cave is drawn in code when the admin picked no picture. */}
+      {!e.banner && e.type === 'underground' && <UgCave className="absolute inset-0" />}
       {e.banner && <img src={bannerUrl(e.banner)} alt="" className="pixelated absolute inset-0 h-full w-full object-cover" />}
       {children}
     </span>
@@ -135,6 +148,7 @@ export function LivePicture({ e, className, children }: { e: LiveEvent; classNam
 
 /** What floats over the picture: sparkles, falling coins, the shop's first items. */
 export function LiveFx({ e, data, big }: { e: LiveEvent; data: GameData; big?: boolean }) {
+  if (e.type === 'underground') return null
   if (e.type === 'shiny')
     return (
       <span className={cx('lv-fx lv-spk', big && 'big')} aria-hidden>
@@ -178,19 +192,28 @@ export function LiveSquare() {
   const { t } = useT()
   const navigate = useNavigate()
   const data = useGame((s) => s.data)
+  const ug = useGame((s) => s.save?.underground)
   const { live, now } = useLive(1000)
   if (!live || now == null) return null
   const left = liveLeft(live, now)
   const name = liveName(live)
-  const sub = liveSub(live, data)
+  const shop = live.type === 'shop'
+  const dig = live.type === 'underground'
+  // The Underground's square says what the player holds: kits, and when the next free one comes.
+  const kits = dig && ug?.eventId === live.id ? kitsHeld(ug) : null
+  const sub =
+    kits == null
+      ? liveSub(live, data)
+      : ug!.freeAt != null
+        ? t('ui.live.underground.kitsNext', { n: kits, time: countdown(Math.max(0, ug!.freeAt - now)) })
+        : t('ui.live.underground.kits', { n: kits })
   const time = t('ui.live.endsIn', { time: liveTime(left.ms) })
   const hot = left.ms < 3 * HOUR
-  const shop = live.type === 'shop'
   return (
     <button
       type="button"
-      onClick={() => (shop ? navigate('/shop') : openLivePopup())}
-      aria-label={t(shop ? 'ui.live.labelShop' : 'ui.live.label', { name, sub, time })}
+      onClick={() => (shop ? navigate('/shop') : dig ? navigate('/underground') : openLivePopup())}
+      aria-label={t(shop ? 'ui.live.labelShop' : dig ? 'ui.live.labelUnderground' : 'ui.live.label', { name, sub, time })}
       className="pixel-panel lv-square relative isolate flex min-w-0 flex-col gap-[5px] overflow-hidden px-2.5 pb-2.5 pt-2 text-left"
     >
       <LivePicture e={live} className="absolute inset-0 -z-10" />
@@ -306,9 +329,23 @@ export function LivePopup() {
   const close = () => {
     usePopupAsked.setState({ asked: false })
     if (livePopupDue(save, live)) markLivePopupSeen(live)
+    if (live.type === 'underground') ugRulesSeen()
     // Push notifications' question, once (docs/27): the next live event can be announced as it starts.
     if (pushReady(data)) askPush('live')
   }
+  // The Underground's pop-up is its rules (docs/15 §20): Later, or Let's go! to its page.
+  if (live.type === 'underground')
+    return (
+      <UgRulesModal
+        open={open}
+        onClose={close}
+        onGo={() => {
+          close()
+          navigate('/underground')
+        }}
+        data={data}
+      />
+    )
   const left = liveLeft(live, now)
   const big = live.type === 'shiny' ? `×${live.shiny.multiplier}` : live.type === 'cash' ? t('ui.live.pct', { pct: pct(cashMultiplier(live)) }) : null
   return (

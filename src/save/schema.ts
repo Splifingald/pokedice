@@ -45,6 +45,54 @@ const tradeMonSchema = z.object({
 })
 
 const typeEnum = z.enum(POKE_TYPES as unknown as [PokeType, ...PokeType[]])
+
+// The Underground (docs/34): one event's kits, pickaxe, orb bag and open wall.
+const count = z.number().int().min(0)
+const orbRow = z.object({ s: count, m: count, l: count })
+const wallThingSchema = z.object({
+  kind: z.enum(['orbS', 'orbM', 'orbL', 'fossil', 'plate']),
+  x: count,
+  y: count,
+  w: z.number().int().min(1).max(12),
+  h: z.number().int().min(1).max(12),
+  colour: z.enum(['red', 'blue', 'green']).optional(),
+  item: z.string().max(80).optional(),
+  plate: typeEnum.optional(),
+})
+const undergroundSchema = z.object({
+  eventId: z.string().max(80),
+  freeKits: count,
+  freeAt: z.number().nullable(),
+  boughtKits: count,
+  boughtCount: count,
+  pickaxe: count,
+  bag: z.object({ red: orbRow, blue: orbRow, green: orbRow }),
+  wall: z
+    .object({
+      id: z.string().max(120),
+      cols: z.number().int().min(1).max(12),
+      rows: z.number().int().min(1).max(12),
+      depth: z.array(z.number().int().min(0).max(3)).max(144),
+      things: z.array(wallThingSchema).max(20),
+      strikes: z.number().int().min(1).max(200),
+      used: count,
+      neighbourLoss: count,
+    })
+    .nullable(),
+  walls: count,
+  hauls: z.array(z.string().max(120)).max(50),
+  received: z.array(z.string().max(80)).max(100).optional(),
+  outbox: z
+    .array(
+      z.object({
+        wallId: z.string().max(120),
+        orbs: z.array(z.object({ colour: z.enum(['red', 'blue', 'green']), size: z.enum(['s', 'm', 'l']), to: z.string().max(80) })).max(20),
+      }),
+    )
+    .max(200)
+    .optional(),
+  rulesSeen: z.boolean().optional(),
+})
 const offerSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('heal'), percent: z.number().min(0).max(100) }),
   z.object({ kind: z.literal('revive'), uid: z.string() }),
@@ -346,6 +394,15 @@ export const saveSchema = z.object({
     .optional(),
   // Trick or Treat (docs/29): its rules pop-up seen.
   trickOrTreat: z.object({ rulesSeen: z.boolean().optional() }).optional(),
+  // The Underground (docs/34): the running event's block, and the plates kept for good.
+  underground: undergroundSchema.optional(),
+  plates: z.array(typeEnum).max(18).optional(),
+  // Trainer looks (docs/31): the unlocked looks seen in the menu (the red dot), and its rules pop-up shown.
+  looks: z
+    .object({ seen: z.array(z.string().max(40)).max(400).optional(), rulesSeen: z.boolean().optional() })
+    .optional(),
+  // Day and night (docs/32): its rules pop-up seen.
+  dayNight: z.object({ rulesSeen: z.boolean().optional() }).optional(),
 })
 
 /**

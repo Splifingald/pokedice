@@ -6,6 +6,7 @@ import {
   canHurt,
   canZMove,
   createBattle,
+  foesOnField,
   gmaxChoices,
   megaChoices,
   reduce,
@@ -13,6 +14,7 @@ import {
   type BattleState,
   type LogEntry,
 } from './battle'
+import { attackMultiplier, attackType } from './damage'
 import { computeDamage, uniformLevels, type UpgradeLevels } from './damage'
 import { getSpecies } from './data'
 import { rollAll, rerollMasked } from './dice'
@@ -46,12 +48,15 @@ export function autoEvents(state: BattleState, data: GameData, rng: Rng): Battle
       // In an auto battle a type changer (Arceus…) first takes a type that hits the foe harder, if it has one.
       const form = state.auto ? autoTypeForm(state, data, rng) : null
       if (form) return [{ t: 'CHANGE_FORM', toDex: form.dex }]
-      // Like a player would: a Pokémon that can't touch the foe (Normal vs Ghost) makes way for one that can.
       const a = activeBattler(state)
+      // A double battle: aim at the foe its dice hit hardest, the weakest of those first (docs/33).
+      const aim = state.double ? bestTarget(state, data) : null
+      if (aim && aim.uid !== state.enemy.uid) return [{ t: 'TARGET', uid: aim.uid }, { t: 'ROLL' }]
+      // Like a player would: a Pokémon that can't touch the foe (Normal vs Ghost) makes way for one that can.
       const scale = state.playerLevels.typeScale
       const better =
         !canHurt(a, state.enemy, data, scale) &&
-        state.player.find((b) => b.hp > 0 && canHurt(b, state.enemy, data, scale))
+        benchOf(state).find((b) => b.hp > 0 && canHurt(b, state.enemy, data, scale))
       if (better && data.config.allowVoluntarySwitch) return [{ t: 'SWITCH', instanceId: better.uid }]
       // The battle powers it has (docs/35), the first Pokémon able to taking each: a Mega first, else a Gigantamax.
       const mega = megaChoices(state, data)[0]
@@ -64,7 +69,7 @@ export function autoEvents(state: BattleState, data: GameData, rng: Rng): Battle
       // A Steel-type's Z-Move shakes the stun off (docs/35).
       return [canZMove(state, data) ? { t: 'ZMOVE' } : { t: 'PASS' }]
     case 'player_switch': {
-      const alive = state.player.filter((b, i) => b.hp > 0 && i !== state.activeIndex)
+      const alive = benchOf(state).filter((b) => b.hp > 0)
       const next = alive.find((b) => canHurt(b, state.enemy, data, state.playerLevels.typeScale)) ?? alive[0]
       return next ? [{ t: 'SWITCH', instanceId: next.uid }] : []
     }
@@ -91,6 +96,21 @@ export function autoEvents(state: BattleState, data: GameData, rng: Rng): Battle
     default:
       return []
   }
+}
+
+/** Yours that could come in: every other one, or in a double battle those not out on the field. */
+function benchOf(state: BattleState) {
+  const out = state.double?.ownSlots ?? [state.activeIndex]
+  return state.player.filter((_, i) => !out.includes(i))
+}
+
+/** The foe out that the Pokémon in front hits hardest (its dice's best type against each), the weakest of those. */
+function bestTarget(state: BattleState, data: GameData) {
+  const a = activeBattler(state)
+  const dice = a.dice.map((type) => ({ type, faceIndex: 0 }))
+  const score = (f: (typeof state.player)[number]) => attackMultiplier(attackType(dice, a.types, f.types, data), f.types, data)
+  const able = foesOnField(state).filter((f) => f.hp > 0)
+  return able.sort((x, y) => score(y) - score(x) || x.hp - y.hp)[0] ?? null
 }
 
 /** One automatic step for whoever must act — the player side uses the same greedy AI as enemies. */

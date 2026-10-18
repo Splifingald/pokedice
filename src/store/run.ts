@@ -56,6 +56,7 @@ import {
   newSave,
   nextEncounter,
   progressOf,
+  plateTypes,
   randomSeed,
   reduce,
   swapIntoTeam,
@@ -79,6 +80,10 @@ import {
   portalStateOf,
   startPortalRun,
   applyNightmareStrike,
+  asDouble,
+  isDoubleEncounter,
+  type FoeSeed,
+  type DoubleKo,
   arriveAtNightmare,
   inNightmare,
   markNightmareWonSeen,
@@ -105,7 +110,8 @@ import {
   type ProgressRaid,
 } from '@/engine'
 import { activeSlot } from '@/save/storage'
-import { commitSave, initialRun, mutateSave, pushToast, useGame, type RunState } from './game'
+import { commitSave, initialRun, mutateSave, pushToast, useGame, type CatchState, type RunState } from './game'
+import { localHour } from './dayTime'
 import { currentLive } from './live'
 import { useRebattleMedal } from './rebattle'
 import { serverNow } from './serverTime'
@@ -232,6 +238,8 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
     noCenters: !centersOn(save, data),
     // A Shiny Parade covering this area: wild Pokémon are more often shiny.
     shinyBoost: shinyBoost(currentLive(), area),
+    // Day and night (docs/32): in Johto, only the hour's wild Pokémon come.
+    hour: localHour(),
   }
 }
 
@@ -478,7 +486,8 @@ export function rollNext() {
   if (!ctx) return
   const area = ctx.area
   const roll = nextEncounter(ctx, runRng)
-  const encounter = roll.encounter
+  // A wild pair or a duo trainer is fought 2 v 2 (docs/33): decided now, so the preview says so.
+  const encounter = asDouble(roll.encounter, ctx, save, runRng)
   // The decks live in the save, so reloading the page can't reshuffle them.
   // Always recorded: besides the decks, the area notes whether this was a Center (never two in a row).
   let recorded = recordDraws(save, area.id, roll)
@@ -497,7 +506,10 @@ export function challenge() {
   // A portal run has no challenge: its cards come one after the other (docs/28); nor has the nightmare (docs/30).
   if (inPortalRun(save, data, run.areaId) || inNightmare(save, data, run.areaId)) return
   const area = data.areas.find((a) => a.id === run.areaId)
-  const encounter = area ? challengeEncounter(area, progressOf(save, area.id), data, teamAverageLevel(save), playerSideOf(save), runRng) : null
+  const found = area ? challengeEncounter(area, progressOf(save, area.id), data, teamAverageLevel(save), playerSideOf(save), runRng) : null
+  // Tate & Liza fight 2 v 2 where double battles are on (docs/33).
+  const ctx = found && run.areaId ? encounterContext(save, run.areaId, null) : null
+  const encounter = found && ctx ? asDouble(found, ctx, save, runRng) : found
   if (encounter) setRun({ phase: 'preview', encounter, firstInArea: false, skipsUsed: 0 })
 }
 
@@ -524,7 +536,13 @@ export function skipEncounter() {
   pushToast(t(trainer ? 'ui.toast.slippedPast' : 'ui.toast.gotAway'))
 }
 
-function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shiny?: boolean; item?: string }, leadUid?: string) {
+/** `double`: a double battle's foes, all of them (two out at once), and the two leads picked (docs/33). */
+function startBattle(
+  kind: BattleKind,
+  enemy: FoeSeed,
+  leadUid?: string,
+  double?: { foes: FoeSeed[]; leadUids: string[] },
+) {
   const { save, data, run } = useGame.getState()
   if (!save) return
   const area = data.areas.find((a) => a.id === run.areaId)
@@ -545,17 +563,18 @@ function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shin
   const auto = !!useGame.getState().settings.autoMode && !!run.areaId && progressOf(save, run.areaId).cleared
   // A trainer's ace — its strongest, the last of them if several — may Mega Evolve or Gigantamax (see enemyPlanFor).
   const enc = run.encounter
-  const trainer =
+  const trainerAt = (index: number) =>
     kind === 'trainer' && run.trainer && (enc?.kind === 'trainer' || enc?.kind === 'gym')
       ? (() => {
           const levels = enc.team.map((m) => m.level)
           return {
             regionId: area ? regionOfArea(area) : regionOf(save),
             role: enc.kind === 'gym' ? enc.role : (data.trainers[enc.trainerId]?.role ?? 'trainer'),
-            ace: run.trainer.index === levels.lastIndexOf(Math.max(...levels)),
+            ace: index === levels.lastIndexOf(Math.max(...levels)),
           }
         })()
       : null
+  const trainer = trainerAt(run.trainer?.index ?? 0)
   battleRng = createRng(randomSeed() ^ battleRng.getState())
   const { state, log } = createBattle(
     {
@@ -574,16 +593,23 @@ function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shin
       enemyLevels: withWorldBoost(uniformLevels(upgradeLevel), data, area),
       ...battlePowersFor(save, data),
       noHealItems: !healItemsOn(save, data),
+      // Arceus takes only the types of its plates while the Underground is on (docs/34).
+      plates: plateTypes(save, data),
       enemyPlan: enemyPlanFor(save, data, enemy, trainer),
       auto,
+      ...(double && {
+        double: { foes: double.foes, leadUids: double.leadUids, plans: double.foes.map((f, i) => enemyPlanFor(save, data, f, trainerAt(i))) },
+      }),
     },
     data,
   )
   useGame.setState((s) => ({ battle: { state, log, id: ++battleSeq }, run: { ...s.run, phase: 'battle' } }))
 }
 
-/** ENGAGE the previewed encounter (with the chosen lead for fights). */
-export function engage(leadUid?: string) {
+/** ENGAGE the previewed encounter (with the chosen lead for fights, or a double battle's two). */
+export function engage(lead?: string | string[]) {
+  const leadUids = typeof lead === 'string' ? [lead] : (lead ?? [])
+  const leadUid = leadUids[0]
   const { run, save, data } = useGame.getState()
   const enc = run.encounter
   if (!enc || !save) return
@@ -604,14 +630,22 @@ export function engage(leadUid?: string) {
     case 'trick':
       void beginTrick(enc)
       return
-    case 'wild':
-      return startBattle('wild', { dex: enc.dex, level: enc.level, shiny: enc.shiny }, leadUid)
+    case 'wild': {
+      const foe = { dex: enc.dex, level: enc.level, shiny: enc.shiny }
+      const partner = enc.partner && { dex: enc.partner.dex, level: enc.partner.level, shiny: enc.partner.shiny }
+      return startBattle('wild', foe, leadUid, partner ? { foes: [foe, partner], leadUids } : undefined)
+    }
     case 'boss':
       return startBattle('boss', { dex: enc.dex, level: enc.level, shiny: enc.shiny }, leadUid)
     case 'trainer':
     case 'gym': {
       const first = enc.team[0]
       if (!first) return
+      // A double battle is the whole team at once (docs/33): no next Pokémon after it.
+      if (isDoubleEncounter(enc) && enc.team.length > 1) {
+        setRun({ trainer: { index: enc.team.length - 1, gold: 0 } })
+        return startBattle('trainer', first, leadUid, { foes: enc.team, leadUids })
+      }
       setRun({ trainer: { index: 0, gold: 0 } })
       return startBattle('trainer', first, leadUid)
     }
@@ -692,6 +726,8 @@ function settleBattle(stalemate: boolean) {
     return
   }
 
+  if (s.double && out.kos) return settleDouble(withHp, out.result, out.kos, stalemate)
+
   if (out.result === 'won') {
     const enc = run.encounter
     const gym = enc?.kind === 'gym'
@@ -738,6 +774,7 @@ function settleBattle(stalemate: boolean) {
       events,
       pendingCatchId: null,
       catch: target && kind ? { dex: foeDex, level: s.enemy.level, shiny: s.enemy.shiny, kind, target, result: null } : null,
+      catchQueue: [],
       trainer: run.trainer ? { ...run.trainer, gold: run.trainer.gold + gold } : null,
     })
     return
@@ -759,6 +796,81 @@ function settleBattle(stalemate: boolean) {
   setRun({ trainer: null })
   pushToast(t('ui.toast.gotAway'))
   rollNext()
+}
+
+/**
+ * A double battle is over (docs/33): every foe K.O.'d pays like a one-on-one K.O. — the XP in full to each of yours
+ * that was out, a trainer's Pokédollars — whatever the end, as each K.O. of a trainer's one-by-one gauntlet is kept.
+ * Won, each wild one that can be caught gets its throw, one after the other, before the rewards.
+ */
+function settleDouble(save: SaveData, result: 'won' | 'lost' | 'fled' | 'ongoing', kos: DoubleKo[], stalemate: boolean) {
+  const { run, data, battle } = useGame.getState()
+  if (!run.areaId || !battle) return
+  const enc = run.encounter
+  const gym = enc?.kind === 'gym'
+  const kind = battle.state.kind
+  let next = save
+  let events: RunEvent[] = []
+  let gold = 0
+  kos.forEach((ko, i) => {
+    const res = applyVictory(
+      next,
+      {
+        areaId: run.areaId!,
+        kind: gym ? 'gym' : kind,
+        enemyDex: ko.dex,
+        enemyLevel: ko.level,
+        fighterUid: ko.fighters[0] ?? '',
+        fighterUids: ko.fighters,
+        gymTrainerId: gym ? enc.trainerId : undefined,
+        gymComplete: gym && result === 'won' && i === kos.length - 1,
+      },
+      data,
+      runRng,
+      Date.now(),
+      newId,
+      currentLive(),
+    )
+    next = res.save
+    events = [...events, ...res.events]
+    gold += res.events.reduce((g, e) => (e.kind === 'gold' ? g + e.amount : g), 0)
+  })
+  if (result === 'lost') {
+    commitSave(applyWipe(next, run.areaId, data))
+    setRun({ phase: 'wipe', trainer: null, events: [], portalLost: null, nightmareLost: null })
+    return
+  }
+  if (result !== 'won') {
+    commitSave(next)
+    if (gold > 0) pushToast(t('ui.toast.trainerBeaten', { gold }), 'good')
+    if (stalemate) {
+      setRun({ phase: 'stalemate', trainer: null })
+      return
+    }
+    useGame.setState({ battle: null })
+    setRun({ trainer: null })
+    pushToast(t('ui.toast.gotAway'))
+    rollNext()
+    return
+  }
+  commitSave(next)
+  const cleared = settleRound(true)
+  if (cleared) events = [...events, cleared]
+  const catchKind = kind === 'wild' || kind === 'boss' ? kind : null
+  const catches: CatchState[] = catchKind
+    ? kos.flatMap((ko) => {
+        const target = catchTarget(next, ko.dex, ko.level, catchKind, data, ko.shiny)
+        return target ? [{ uid: ko.uid, dex: ko.dex, level: ko.level, shiny: ko.shiny, kind: catchKind, target, result: null }] : []
+      })
+    : []
+  setRun({
+    phase: catches.length ? 'catch' : 'victory',
+    events,
+    pendingCatchId: null,
+    catch: catches[0] ?? null,
+    catchQueue: catches.slice(1),
+    trainer: run.trainer ? { ...run.trainer, gold: run.trainer.gold + gold } : null,
+  })
 }
 
 /**
@@ -833,11 +945,20 @@ export function retryCatch() {
   setRun({ catch: { ...c, retried: true, result: null } })
 }
 
-/** Leave the throw for the rewards screen, which now lists the catch (or the flight) too. */
+/**
+ * Leave the throw for the rewards screen, which now lists the catch (or the flight) too — or, after a wild double
+ * battle, for the other one's throw first (docs/33).
+ */
 export function finishCatch() {
   const { run } = useGame.getState()
   const r = run.catch?.result
   if (!r || r.baitOffer || r.stays) return
+  const [next, ...rest] = run.catchQueue ?? []
+  // "Add to team?" is answered on the rewards screen first; the other throw follows the answer (resolveCatch).
+  if (next && !r.pendingCatchId) {
+    setRun({ events: [...run.events, ...r.events], catch: next, catchQueue: rest })
+    return
+  }
   setRun({ phase: 'victory', events: [...run.events, ...r.events], pendingCatchId: r.pendingCatchId, catch: null })
 }
 
@@ -892,6 +1013,9 @@ export function resolveCatch(replaceId: string | null) {
   if (!run.pendingCatchId) return
   if (replaceId) mutateSave((s) => swapIntoTeam(s, run.pendingCatchId!, replaceId, data))
   setRun({ pendingCatchId: null })
+  // A wild double battle's other throw waited for this answer (docs/33).
+  const [next, ...rest] = run.catchQueue ?? []
+  if (next) setRun({ phase: 'catch', catch: next, catchQueue: rest })
 }
 
 /**

@@ -1,0 +1,260 @@
+{
+  "size": [
+    244,
+    474
+  ],
+  "sprites": {
+    "fossil.armor-fossil": [
+      142,
+      0,
+      62,
+      63
+    ],
+    "fossil.bird-and-dino-fossils": [
+      179,
+      423,
+      47,
+      23
+    ],
+    "fossil.bird-and-drake-fossils": [
+      0,
+      451,
+      46,
+      23
+    ],
+    "fossil.claw-fossil": [
+      79,
+      0,
+      62,
+      78
+    ],
+    "fossil.cover-fossil": [
+      47,
+      451,
+      21,
+      20
+    ],
+    "fossil.dome-fossil": [
+      124,
+      80,
+      77,
+      59
+    ],
+    "fossil.fish-and-dino-fossils": [
+      56,
+      423,
+      48,
+      24
+    ],
+    "fossil.fish-and-drake-fossils": [
+      105,
+      423,
+      47,
+      24
+    ],
+    "fossil.helix-fossil": [
+      0,
+      80,
+      62,
+      61
+    ],
+    "fossil.jaw-fossil": [
+      31,
+      423,
+      24,
+      25
+    ],
+    "fossil.old-amber": [
+      63,
+      80,
+      60,
+      61
+    ],
+    "fossil.plume-fossil": [
+      69,
+      451,
+      19,
+      18
+    ],
+    "fossil.root-fossil": [
+      0,
+      0,
+      78,
+      79
+    ],
+    "fossil.sail-fossil": [
+      153,
+      423,
+      25,
+      24
+    ],
+    "fossil.skull-fossil": [
+      0,
+      142,
+      62,
+      59
+    ],
+    "plate.bug": [
+      110,
+      142,
+      60,
+      44
+    ],
+    "plate.dark": [
+      171,
+      142,
+      60,
+      44
+    ],
+    "plate.dragon": [
+      0,
+      202,
+      60,
+      44
+    ],
+    "plate.electric": [
+      61,
+      202,
+      60,
+      44
+    ],
+    "plate.fairy": [
+      122,
+      202,
+      60,
+      44
+    ],
+    "plate.fighting": [
+      183,
+      202,
+      60,
+      44
+    ],
+    "plate.fire": [
+      0,
+      247,
+      60,
+      44
+    ],
+    "plate.flying": [
+      61,
+      247,
+      60,
+      44
+    ],
+    "plate.ghost": [
+      122,
+      247,
+      60,
+      44
+    ],
+    "plate.grass": [
+      183,
+      247,
+      60,
+      44
+    ],
+    "plate.ground": [
+      0,
+      292,
+      60,
+      44
+    ],
+    "plate.ice": [
+      61,
+      292,
+      60,
+      44
+    ],
+    "plate.poison": [
+      122,
+      292,
+      60,
+      44
+    ],
+    "plate.psychic": [
+      183,
+      292,
+      60,
+      44
+    ],
+    "plate.rock": [
+      0,
+      337,
+      60,
+      44
+    ],
+    "plate.steel": [
+      61,
+      337,
+      60,
+      44
+    ],
+    "plate.water": [
+      122,
+      337,
+      60,
+      44
+    ],
+    "sphere.blue.l": [
+      0,
+      382,
+      40,
+      40
+    ],
+    "sphere.blue.s": [
+      154,
+      382,
+      28,
+      28
+    ],
+    "sphere.green.l": [
+      41,
+      382,
+      40,
+      40
+    ],
+    "sphere.green.s": [
+      183,
+      382,
+      28,
+      28
+    ],
+    "sphere.pale.l": [
+      63,
+      142,
+      46,
+      46
+    ],
+    "sphere.pale.s": [
+      123,
+      382,
+      30,
+      30
+    ],
+    "sphere.prism.l": [
+      183,
+      337,
+      43,
+      42
+    ],
+    "sphere.prism.s": [
+      0,
+      423,
+      30,
+      27
+    ],
+    "sphere.red.l": [
+      82,
+      382,
+      40,
+      40
+    ],
+    "sphere.red.s": [
+      212,
+      382,
+      28,
+      28
+    ]
+  }
+}

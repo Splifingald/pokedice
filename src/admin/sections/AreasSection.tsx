@@ -17,6 +17,8 @@ import {
   type LevelOffsetRange,
   type ScaleOffsets,
   type UnlockCondition,
+  DAY_NIGHT_REGIONS,
+  DAY_TIMES,
 } from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
 import { SearchSelect } from '@/components/SearchSelect'
@@ -466,7 +468,7 @@ function AreaEditor({ area }: { area: Row }) {
         </Box>
       )}
 
-      <Box title="Wild pool" icon="ball" hint={`When a Wild card is drawn, one of these is picked by weight. ${deck.wild} Wild card(s) per deck.`}>
+      <Box title="Wild pool" icon="ball" hint={`When a Wild card is drawn, one of these is picked by weight. ${deck.wild} Wild card(s) per deck.${DAY_NIGHT_REGIONS.includes(s(area.region_id)) ? ' Time (docs/32): day = met only 6:00–17:59, night = only 18:00–5:59 (the player’s clock), — = any time; read while Day and night is on (Config).' : ''}`}>
         <DataTable
           table="area_wild_pool"
           pageSize={50}
@@ -488,6 +490,10 @@ function AreaEditor({ area }: { area: Row }) {
             { key: 'weight', label: 'Weight', kind: 'number', width: 90 },
             { key: 'min_level', label: 'Min Lv', kind: 'number', width: 80 },
             { key: 'max_level', label: 'Max Lv', kind: 'number', width: 80 },
+            // Day and night (docs/32): read only where the region keeps the time, so only shown there.
+            ...(DAY_NIGHT_REGIONS.includes(s(area.region_id))
+              ? [{ key: 'time_of_day', label: 'Time', kind: 'enum' as const, options: DAY_TIMES, nullable: true, width: 90 }]
+              : []),
             {
               key: 'share',
               label: 'Of wild cards',

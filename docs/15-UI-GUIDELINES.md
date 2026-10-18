@@ -170,6 +170,10 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `PortalRaidBanner` / `PortalRaidCard` (`RaidCard portal`) / `RaidStageArt` / `DistortionGround` / `StageTear` / `RaidNpcPicker portal` / `BattleStage world="distortion"` | Giratina's area raid (§27) | The raid page in the violet night (`.dw-scope`): the portal banner with its plate, the card open and caught, the lock, START, the team; its NPC partners pop-up (the portal and Giratina distorted as its banner); the raid's stage (the Distortion World, Giratina distorted on its island) and a bar's tear. The entrance is on `/kitchen-sink/fx` |
 | `MoonScene` / `NightmareGauge` / `NightmareEntry` / `NightmareEntryDialog` / `NightmareIntro` / `NightmareRulesModal` / `HauntSprite` / `BattleStage haunted` / `NightmareStrikeView` / `NightmareVictoryView` | Darkrai's nightmare (§29) | The moon on the pixel engine (moving; still); the gauge of rounds (fresh, under way, won); the way in (the intro playing, held at its end with "Tap to continue ▼", then its pop-up over that end; the pop-up at once, back from TEAM; the pop-up on its own: TEAM / NOT NOW / BEGIN THE NIGHTMARE); the rules pop-up (INFO); a haunted foe (full, short, off; on the night's stage); Darkrai's strike (playing, the cards draining; landed, from Home); the round's result cards (a round, the last, a gift); Home's Areas button locked with its reason; the waking (HEAL & START RAID over the green BACK TO THE WORLD) |
 | `NightmareRaidBanner` / `NightmareRaidCard` (`RaidCard nightmare`) / `NightStageArt` / `NightGround` / `StageShadow` / `RaidNpcPicker nightmare` / `BattleStage world="nightmare"` / `NightmareFx` | Darkrai's area raid, and the nightmare's fights (§29) | The raid page in the moonlit night (`.nm-scope`): the moon banner with its plate, the card open and caught, the lock, START, the team; its NPC partners pop-up (the moon and Darkrai as its banner); the stage (the night, the moon behind the foe, smoke rising off its rock) and a bar's shadow; the raid's screen vignette with the shadow over the page. The entrance is on `/kitchen-sink/fx` |
+| `LooksRow` / `LooksDot` / `LooksMenu` / `LooksSheet` / `LockedLook` / `LooksRulesModal` | Trainer looks (§17, docs/31) | The row under the trainer card (with and without its red dot); the menu (a new game, some new looks, every look unlocked); a locked look of each kind (a catch goal with its bar, an area with how far away, the League, the full Pokédex); the rules (the first open, INFO) |
+| `DayNightButton` / `DayNightChip` / `BattleDayTime` / `DayNightTag` / `DayNightPill` / `DayNightRulesModal` | Day and night in Johto (§30, docs/32) | The top bar's chip by day and by night; the fights' indicator on a stage (day, night); a list's tag (its own half, greyed in the other); the Pokédex places' chip (day only, night only); the rules (the first time, INFO) |
+| `DoubleMons` (`BattleStage double`) / `DoublePlates` / `MiniPlate` / `TargetPicker` / `LeadPicker pair` | Double battles (§31) | The stage with four (the pair in front big on the usual spots, their partners smaller behind, each with a shadow; toggled, they change places), one K.O. on each side (greyed plates, 1 v 2); the name-less plates (icon, level, HP, statuses; the one in front ringed in gold; a fallen one greyed); the target picker (live, disabled); the lead picker sending two |
+| `UgCave` / `CrackGauge` / `UgWall` / `PickaxeDie` / `PickaxeFaces` / `OrbArt` / `PlateArt` / `ThingIcon` / `HaulList` / `PlateGrid` / `OrbBagTable` / `UgRulesModal` / `UgTeamSeats` | The Underground (§32) | The cave (a square's size; big); the gauge fresh, under way, its last three shaking or calm, collapsed; the wall fresh, half dug with a strike flashing, cleared (glinting), collapsing; the die unrolled and rolled; the faces with the one that came up, and the next level's with its raised face; orbs of every colour and size, plates; the haul with every outcome; the plates none and some; the orb bag; the team seats solo, two, full; the rules (once, INFO) |
 | `TeamSwapActions` | A Pokémon's sheet where the team can change (`teamSwapsOpen`: inside a Pokémon Center, at a portal's way in before READY!) | In the team: Make lead (not the lead), Send to the Box (not the last one); in the Box: Add to team, or, the team full, "swap it in for" each member (a button each: its still mini icon on the left, name and level, "goes to the Box" and the swap arrow, `reroll`, at the far right); still reviving from its fossil: a line saying so. It sits above Strengths and weaknesses in the sheet, whether type hints are on or not (`PokemonSheet`'s `beforeMatchups`, the user's call, 2026-10-15) |
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
@@ -337,7 +341,7 @@ Players shouldn't have to make many requests:
 
 ## 12. Navigation, Home and stages
 
-- **Top bar** (`Header` in `src/components/Hud.tsx`): energy on the left; on the right the gold as a navy pill (a tap
+- **Top bar** (`Header` in `src/components/Hud.tsx`): in Johto, the day's sun or the night's moon first (§30); energy on the left; on the right the gold as a navy pill (a tap
   opens the Poké Mart, no "+"), the cup (→ the leaderboard; greyed until the first badge, and a tap says what opens
   it) and, last, you (name and badge count, then your trainer look → the trainer menu, which slides in from that side).
   Everything in it is disabled mid-fight and says why.
@@ -479,6 +483,7 @@ in view) and the battle history sits beside it from 1024 px.
 - **Capture Luck** (docs/25): a wild Pokémon that broke free may stay: the message says it broke free but didn't run
   away, the stage shows it back on its platform, and the panel's button is THROW AGAIN (back to the ball picker, "Snorlax
   is still here! Pick a ball and throw again."). Once per encounter; never a legendary or a raid.
+- **The time of day** (§30): in a Johto area, a small sun or moon chip on the stage's top right corner.
 - **Result cards** rise from the bottom over the panel on every screen size, wild and trainer fights alike, the stage
   still in view: XP per Pokémon, the catch (NEW when
   the species is new to the Pokédex), "Wild battles pay no ₽" when that is why no money came; **Home** and **Next
@@ -557,7 +562,7 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   row its name, ✦ and types (no level: everyone is Lv.50 here); a search, No. / A–Z and a `TypeSelect` order and narrow
   it, and picks they hide stay picked.
 - **The leaderboard**: the region's name as the head's count, or "All regions" on Shiny and Raids (one board over
-  every region, each trainer on it once: 0054); five tabs that are icons, only the open one spelling out its name
+  every region, each trainer on it once: 0054; a trainer with no shiny / no raid won isn't on that board, and without a row there your gold card isn't shown); five tabs that are icons, only the open one spelling out its name
   (five names don't fit a phone in every language); a gold card with your look, the board's one-line
   note and "You're #N of M" (tap: your row scrolls into view and blinks) or "You're in the Hall of Fame"; a navy
   **Hall of Fame** button with the crown, how many maxed the board out and their faces, opening a sheet with the
@@ -581,6 +586,13 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   game alive" or hosting costs: the money is for the developer, not the game.
 - **Look**: "How other trainers see you…" with Change opening a radio grid of every look, in one block (no region headings); picking one closes it. The same
   crop (`TrainerLook`) is used wherever a trainer appears.
+- **Trainer looks** (docs/31, while its switch is on, in the Look block's place): one row under the card (the look
+  worn, "27 of 138 unlocked", a **red** dot counting looks unlocked since the menu was last opened, the one red dot
+  for "new": it marks a collection to look at, the user's call, 2026-10-17; `crimson` under 24 px) opening a sheet:
+  the look worn, the unlocked looks as a radio grid (a tap wears it; gold NEW on the unseen ones), then the locked
+  ones by region, the one being played first, nearest goal first (a silhouette, the name, the goal with a gold bar or
+  "3 areas away"); a region not started is one line; INFO at the bottom. Closing the sheet marks them seen. The top
+  bar's avatar carries the red dot when no gold one is there.
 - **The menu** under the card: rows with an icon tile, a label and a one-line description (Leaderboard, Versus with
   "0/3 at Lv.50" while locked, Settings, How to play, Type chart, Admin for admins, Cloud backup, Connect). The label
   alone names a row; the description is its `aria-describedby`.
@@ -645,7 +657,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
   queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
   again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the portal run (§27), Trick or Treat (§28), the battle powers (§33), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the portal run (§27), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
@@ -1165,6 +1177,107 @@ with a lilac edge, its red and its eye's ice blue. **Its lasting effects follow 
   `.ui-shadow`) and its entrance (`RaidIntro world="nightmare"`, no Skip, its tapes in the night's blue and
   the moon's cream). Its rules, numbers and server checks are the area's mode's (docs/30 §1).
 
+## 30. Day and night (Johto)
+
+Johto keeps the time (docs/32-DAY-NIGHT.md): 6:00–17:59 the day, 18:00–5:59 the night, on the player's clock; a wild
+Pokémon met only in one half comes only then. The pieces are in `src/components/DayNight.tsx`, every state on
+`/kitchen-sink` (`DayNightBits`); the engine (`engine/dayNight.ts`) decides the time and who comes.
+
+- **The switch and the rules** follow §20: `dayNight` (Admin → Config → Day and night), Off by default. Wild Pokémon
+  are dealt on the device, so no server function reads it. Its rules pop-up (`DayNightRulesModal`: the day's sky and
+  sun beside the night's sky and moon as its banner; three rows: day from 6:00 to 18:00, night from 18:00 to 6:00,
+  they stay in their areas; the hours in the player's language, `hourOfDay`) shows once, the first time in Johto with
+  it on, queued behind the other one-time pop-ups. **Its INFO is the top bar's chip**: the feature has no page.
+- **The top bar** (`DayNightButton`): far left, before the energy, only in Johto. A 44 px-tall button around a chip:
+  `bg-sky` with the sun by day, `light-scope bg-night` with the moon by night (`DayNightChip`, the `daySun` /
+  `nightMoon` icons, 16×16 in the tab bar's palette). Its name says the time and its turn ("It's day in Johto until
+  18:00. Tap for the rules."). Re-read every 30 s.
+- **The fights** (`BattleDayTime`): the same chip, small (16 px icon), on the stage's top right corner of every fight in
+  a Johto area; not in Versus. It never covers a plate and takes no taps.
+- **The lists** (the area's details, the area's Pokédex): a 12 px sun or moon by a species met in one half only
+  (`DayNightTag`, its name "Day only" / "Night only" as its title), at half opacity while it's the other half; its share
+  is the one when it's met. Untagged species show nothing.
+- **The Pokédex entry's places** (where to find it): each place where the species comes only by day or only by night
+  carries a chip under its line (`DayNightPill`: the sun and "Day only" on `bg-sky`, the moon and "Night only" on
+  `light-scope bg-night` in `gold-light`), whatever the time now. The Pokédex's **Nearby** filter counts only what the
+  hour brings.
+
+## 31. Double battles
+
+Two of yours against two foes (docs/33-DOUBLE-BATTLES.md). The engine (`engine/doubles.ts`, `engine/battle.ts`)
+decides when, who acts, who is hit and every number; the battle screen only moves the pair in front as the log says.
+The pieces are in `src/screens/battle/DoublePlates.tsx` and `BattleStage` (`DoubleMons`), every state on
+`/kitchen-sink` (`DoubleBits`).
+
+- **The switch** follows §20: `doubleBattles` (Admin → Config → Double battles: the switch, the regions, the wild %),
+  Off by default. **No rules pop-up and no INFO** — the one exception to §20's rules, the user's call of 2026-10-17
+  ("remove the rules pop up"): the preview's two foes and "Send out two:" say it all. No tag on the preview either.
+- **The preview** says so: a wild pair's title is "Two wild Pokémon appeared!" with both cards; a duo trainer "want to
+  battle together! (3 Pokémon, two at a time)". **The lead picker sends two** ("Send out two:"): the first two able are
+  picked; SWITCH on a third replaces the earlier pick.
+- **The stage shows all four.** The pair in front — the Pokémon whose turn it is and its target, or the foe acting and
+  the one of yours it aims at — stand on the usual spots at full size, where every move's timeline draws them; their
+  partners stand **behind, smaller** (×0.7 / ×0.66, up the stage and to the left, half hidden by the one in front, a
+  soft shadow under each). When the turn passes they **slide** to their new spots (0.3 s × pace; at once with animations off).
+  The timelines draw no background in a double battle, so those behind stay on the page under them.
+- **No names on the plates** (the user: "Pokémon names can be removed from the UI to get space"): each plate is the
+  Pokémon's mini icon, its level, its HP bar (numbers on yours only) and statuses, MEGA / G-MAX; foes at the top left,
+  yours at the bottom right, in field order (they never jump about), **the one in front ringed in gold**; a K.O.'d one
+  greyed until another takes its spot; a trainer's party pips under the foes' when it has more than two. Screen readers
+  get the name and level from each plate's label.
+- **The target**: on your turn, under the dice, "Attack:" and a radio button per foe standing (its icon and HP bar, the
+  picked one ringed in gold with the sword), 44 px tall; tapping the foe behind on the stage picks it too. Hidden with
+  one foe left, and in auto mode (which aims by itself).
+- The heading and history name every Pokémon out; the opening line names both foes and both of yours; the victory card
+  names every foe defeated; after a wild pair each one waits worn out in front for its throw, one after the other.
+- Switching: the bench only (those out aren't offered); after a K.O. the replacement is picked as in one on one.
+
+## 32. The Underground
+
+A live event type (docs/34): Explorakits open walls, the pickaxe die digs them, orbs, fossils and plates come out.
+Its switch is its own (`underground.access`, §20) on top of the live events' one; its numbers are the admin's
+(game_config `underground`). Components in `src/components/Underground.tsx`, all on `/kitchen-sink`.
+
+- **The treasures are Platinum's** (`UgSprite`, one sheet: `pnpm underground-sprites`, docs/34 §10): spheres, plates,
+  fossils as the game draws them in its wall, pixelated, each filling the tiles it takes as much as its shape allows
+  (`fit`), never stretched; elsewhere at a set width (`px`). Orbs, plates and the cave's gems all use them.
+- **Art, not theme**: the cave (`UgCave`), the crack gauge and the wall are drawn in code and stay the same in Daybreak
+  and Dusk (§2 "Art stays art"). The cave keeps its size on a wide screen: a scene at most 320 px wide, centred, rock
+  on both sides. With no picture picked by the admin, it is the live event's picture (Home's square, the Mart's section).
+- **Home's square** is the live square (§ docs/20) with the type's tag (a dark chip, the pickaxe, DIG) and the kits held
+  as its line ("Explorakits: 2 · +1 in 5h 12m"); a tap opens `/underground`. The Mart's tab wears KITS while it runs.
+- **Its pop-up is its rules** (`UgRulesModal`, the cave as banner): once per event (it also marks the live pop-up
+  seen), Later / Let's go! to the page; INFO at the bottom of the page shows it again with OK.
+- **The page** (`/underground`): the cave banner with the plate (back, title, time left); Explorakits (warm card: kits
+  held, free over cap and bought, the next free kit or "full", BUY KITS and the red DIG A WALL, or RESUME THE WALL);
+  the pickaxe (level of max, its faces as dice, the next level's with its raised face ringed in gold, the gold upgrade
+  button or what's missing); the team seats; the orb bag (a table, colour × size; SELL in green once allowed, hatched
+  otherwise with the reason in words); the plates (17 tiles, the held ones in their type's badge colours, a dashed "?"
+  for the rest); the end-of-event note; INFO. Outside the event (or before its content arrives) the page says it isn't
+  open and offers Back Home, never a silent redirect.
+- **The dig** (`/underground/dig`, full screen, `useHoldFullscreen`): the title and LEAVE FOR NOW (the wall waits in the
+  save); the crack gauge (`CrackGauge`: a section per strike cracking from the right; its last three red, and shaking
+  unless calm; `role="meter"` with "N strikes left"); the wall (`UgWall`): what's buried drawn underneath, the tiles
+  edge to edge on top (a gap would show what lies beneath), each a button labelled "Row r, column c: n layers" / "dug
+  out, part of the …", its depth as rock colour **and** dots; then what's still buried and the kits left; the footer
+  with the rolled die (`PickaxeDie`, tumbling), the line that says what the roll did, and the die's faces with the one
+  that came up lifted and ringed. At the end: "Everything dug out!" or "The wall collapsed!" and the red SEE THE HAUL.
+- **The haul** (`HaulList` in a `Modal`): a line per thing, a new plate first (gold card, NEW, "Arceus can now turn
+  Fire!"), then the fossil (to the Box, reviving), orbs (Orb bag / To Dawn, with whose colour it is), and what was lost
+  in the rubble (a grey line); DONE and the red NEXT WALL · n.
+- **Motion**: a strike flashes the tile two white frames and its hit neighbours one, with dust in steps (full); the
+  collapse drops the tiles in steps (full) or gives one thud (short); off: nothing moves. A thing fully dug out glints.
+  Calm stills the gauge's shake and the glint. Sounds: `ug.strike` (lower the bigger the roll), `ug.found`,
+  `ug.collapse`.
+- **The team** (`UgTeamPanel`, `UgTeamSheet`): the three seats (you, a friend, a free seat; solo: dashes and the line
+  that every orb is yours) and a button: TEAM UP, MANAGE, or a gold INVITATIONS: n. The sheet: invitations to answer
+  (gold cards, DECLINE / the green JOIN, the line that joining leaves your team), the seats, your friends with INVITE
+  (green), "Invited · waiting" with CANCEL, "In your team"; LEAVE THE TEAM; signed out, the line and the sign-in button.
+  A server refusal is a toast in words (team full, friends only, too many invitations).
+- **Arceus**: while the Underground is on, the battle's TYPE menu lists the types it may take (its plates) and, after
+  them, the locked ones greyed with a lock and their plate's name, and a line on where plates come from; the TYPE
+  button shows even with no plate, so the lock is explained. Its sheet says which plates it holds. Foes are untouched.
+
 ## 33. The battle powers (Mega Gems, Gigantamax, Z-Moves)
 
 Three switches (docs/35), each Off / On for admin / On for everyone. Off, Mega Evolution and Gigantamax are as before
@@ -1179,4 +1292,3 @@ and there are no Z-Moves. On:
   motion: a flash of the type's colour). A timed Mega changing back is a flash, no scene.
 - **A gem from a badge** is a toast ("Korrina gave you the Lucarionite!"), however long after the badge it comes.
 - Never inside a small world: no button, no shelf, no pop-up.
-

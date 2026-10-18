@@ -130,13 +130,30 @@ export function buildLootDeck(pool: readonly LootEntry[], rng: Rng): string[] {
  */
 function pityFind(pool: readonly LootEntry[], size: number, progress: AreaProgress, data: GameData, rng: Rng): LootEntry | null {
   const uniques = pool.filter((e) => e.unique)
-  if (!uniques.length) return null
+  const extra = pityExtra(uniques, size, progress, data)
+  return extra > 0 && rng.next() < extra ? rng.pick(uniques) : null
+}
+
+/** The pity roll's chance of handing out one of `uniques` before the deck is drawn; 0 while the pity is ×1. */
+function pityExtra(uniques: readonly LootEntry[], size: number, progress: AreaProgress, data: GameData): number {
+  if (!uniques.length || !size) return 0
   const share = uniques.reduce((sum, e) => sum + lootCopies(e), 0) / size
   const chance = pityChance(share, progress.roundsDone ?? 0, data.config.uniquePity)
-  if (chance <= share) return null
   // chance = extra + (1 − extra) × share: the roll, else the deck as usual.
-  const extra = (chance - share) / (1 - share)
-  return rng.next() < extra ? rng.pick(uniques) : null
+  return chance > share ? (chance - share) / (1 - share) : 0
+}
+
+/**
+ * The chance an item find in this area is each one-time find still to be made, by entry id: the pity roll's even
+ * share of it, else its one card in the loot deck. The odds over a whole deck, for the area's sheet: which cards are
+ * left in the current deal is not read.
+ */
+export function uniqueFindChances(area: Area, progress: AreaProgress, data: GameData): Map<string, number> {
+  const pool = lootPoolFor(area, progress, data)
+  const size = pool.reduce((sum, e) => sum + lootCopies(e), 0)
+  const uniques = pool.filter((e) => e.unique)
+  const extra = pityExtra(uniques, size, progress, data)
+  return new Map(uniques.map((e) => [e.id, extra / uniques.length + ((1 - extra) * lootCopies(e)) / size]))
 }
 
 /**

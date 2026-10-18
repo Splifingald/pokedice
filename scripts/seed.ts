@@ -854,8 +854,10 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  * content, 0052), then 0057 (Distortion World's portal run, docs/28: `areas.mode`, its switch, and 0045's and 0046's
  * raid functions redefined; its Distortion World patch is a no-op before Haunted Hollow's content, which the bundle
  * hasn't got), then 0060 (Newmoon Island's nightmare, docs/30: its switch, and 0057's raid functions redefined; its
- * Newmoon Island patch is a no-op there too), then 0064 (the battle powers, docs/35: the switches' server check and
- * 0049's Versus board redefined with each player's powers). Folded into seed.sql so there is
+ * Newmoon Island patch is a no-op there too), then 0061 (day and night in Johto, docs/32: `area_wild_pool.time_of_day`
+ * and its switch, Off; its tags are the bundle's own, written below), then 0062 (double battles, docs/33: `trainers.duo`, which the trainers
+ * below need, and the switch's row; its new trainers are no-ops before the areas, then come with the bundle), then 0063 (the Underground's teams, docs/34: its row, Off, and
+ * delete_my_data once more). Folded into seed.sql so there is
  * one file to run rather than several in a particular order. The
  * migrations stay the single source of that SQL — they are written to be idempotent, so re-running them costs little.
  */
@@ -878,6 +880,9 @@ export async function regionsPrelude(): Promise<string> {
       '0056_trick_or_treat.sql',
       '0057_hh_distortion_world.sql',
       '0060_hh_nightmare.sql',
+      '0061_day_night.sql',
+      '0062_double_battles.sql',
+      '0063_underground.sql',
       '0064_battle_powers.sql',
     ].map(async (name) => {
       const sql = (await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')).replace(/^(begin|commit);\n/gm, '')
@@ -914,6 +919,8 @@ export function buildSql(b: {
     'alter table items add column if not exists region text;',
     'alter table items add column if not exists once_only boolean not null default false;',
     'alter table pokemon add column if not exists form jsonb;',
+    // Day and night (0061, docs/32): a wild Pokémon met only by day or only by night.
+    'alter table area_wild_pool add column if not exists time_of_day text;',
     prelude,
     upsert(
       'type_chart',
@@ -1019,14 +1026,14 @@ export function buildSql(b: {
     ),
     upsert(
       'trainers',
-      ['id', 'name', 'sprite_url', 'team', 'role', 'badge', 'upgrade_level', 'battle_background', 'rival_of', 'items'],
-      b.trainers.map((t) => [t.id, t.name, t.spriteUrl, t.team, t.role, t.badge, t.upgradeLevel, t.battleBackground, t.rivalOf ?? null, t.items ?? []]),
+      ['id', 'name', 'sprite_url', 'team', 'role', 'badge', 'upgrade_level', 'battle_background', 'rival_of', 'items', 'duo'],
+      b.trainers.map((t) => [t.id, t.name, t.spriteUrl, t.team, t.role, t.badge, t.upgradeLevel, t.battleBackground, t.rivalOf ?? null, t.items ?? [], !!t.duo]),
       ['id'],
     ),
     upsert(
       'area_wild_pool',
-      ['id', 'area_id', 'dex', 'weight', 'min_level', 'max_level'],
-      b.areas.flatMap((a) => a.wildPool.map((w) => [w.id, a.id, w.dex, w.weight, w.minLevel, w.maxLevel])),
+      ['id', 'area_id', 'dex', 'weight', 'min_level', 'max_level', 'time_of_day'],
+      b.areas.flatMap((a) => a.wildPool.map((w) => [w.id, a.id, w.dex, w.weight, w.minLevel, w.maxLevel, w.time ?? null])),
       ['id'],
     ),
     upsert(

@@ -133,7 +133,8 @@ describe('0054: the cross-region boards', () => {
         ['ASH', 2, true],
         ['BROCK', 3, false],
       ])
-      expect(names('raids', region).map(([n]) => n)).toEqual(['ASH', 'BROCK', 'MISTY'])
+      // Brock and Misty have won no raid: only Ash is on the Raids board.
+      expect(names('raids', region).map(([n]) => n)).toEqual(['ASH'])
     }
     expect(names('level', 'kanto')).toHaveLength(3)
     expect(names('level', 'johto')).toEqual([['ASH', 1, true]])

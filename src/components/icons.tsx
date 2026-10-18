@@ -64,6 +64,18 @@ const PUMPKIN_PAL: Record<string, string> = {
   g: '#34c97a',
 }
 
+/** The Underground's pickaxe and Explorakit (docs/34): steel, a wooden handle, a leather kit. */
+const DIG_PAL: Record<string, string> = {
+  k: '#24304f',
+  s: '#b7b7ce',
+  S: '#e6e8f2',
+  h: '#a87a48',
+  H: '#7a5230',
+  b: '#c88a3a',
+  B: '#8a5a1c',
+  y: '#ffe7a8',
+}
+
 export const ICONS = {
   gift: [
     '..kkk..kkk..',
@@ -318,6 +330,43 @@ export const ICONS = {
     'kYYk........',
     'kk..........',
   ],
+  // Day and night (docs/32): the top bar's and the fights' sun (6:00–17:59) and moon (18:00–5:59), 16×16.
+  daySun: [
+    '.......oo.......',
+    '.......oo.......',
+    '..oo........oo..',
+    '..ooo......ooo..',
+    '...o..kkkk..o...',
+    '.....kYYYyk.....',
+    '....kYYyyyyk....',
+    'oo..kYyyyyyk..oo',
+    'oo..kyyyyyok..oo',
+    '....kyyyyook....',
+    '.....kyyook.....',
+    '...o..kkkk..o...',
+    '..ooo......ooo..',
+    '..oo........oo..',
+    '.......oo.......',
+    '.......oo.......',
+  ],
+  nightMoon: [
+    '................',
+    '..........y.....',
+    '.....kk..yYy....',
+    '...kkYk...y.....',
+    '..kYYk..........',
+    '.kYYYk......y...',
+    '.kYYYk.....yYy..',
+    '.kYYYYk.....y...',
+    '.kYYYYk.........',
+    '.kYYYYYk........',
+    '.kYYYYyykkkkk...',
+    '.kYYYyyyyyyyk...',
+    '..kYyyyyyyyk....',
+    '...kkyyyyykk....',
+    '.....kkkkk......',
+    '................',
+  ],
   // Trick or Treat (docs/29): its card (a jack-o'-lantern), and the flee zone's ghost.
   pumpkin: [
     '....kkk....',
@@ -344,6 +393,34 @@ export const ICONS = {
     'kwkwwkkwkk',
     'kk.kk..kk.',
   ],
+  pickaxe: [
+    '...kkkkk....',
+    '..kSSSSSkk..',
+    '.kSsssssssk.',
+    'ks.kkkkhksk.',
+    'kk....khk.kk',
+    '.....khk....',
+    '....khk.....',
+    '...khk......',
+    '..khk.......',
+    '.kHk........',
+    'kHk.........',
+    '.k..........',
+  ],
+  kit: [
+    '....kkkk....',
+    '...k....k...',
+    '...k....k...',
+    'kkkkkkkkkkkk',
+    'kBBBBBBBBBBk',
+    'kbbbbbbbbbbk',
+    'kbbbbkkbbbbk',
+    'kbbbkyykbbbk',
+    'kbbbbkkbbbbk',
+    'kbbbbbbbbbbk',
+    'kBBBBBBBBBBk',
+    'kkkkkkkkkkkk',
+  ],
   ...PACK_ICONS,
 } as const
 
@@ -360,6 +437,10 @@ const OWN_PALETTE: Partial<Record<IconName, Record<string, string>>> = {
   trade: TRADE_PAL,
   gift: GIFT_PAL,
   pumpkin: PUMPKIN_PAL,
+  pickaxe: DIG_PAL,
+  kit: DIG_PAL,
+  daySun: NAV_PAL,
+  nightMoon: NAV_PAL,
 }
 
 export function PixelIcon({

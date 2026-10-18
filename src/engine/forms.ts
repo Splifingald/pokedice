@@ -48,6 +48,9 @@ export const gmaxFormsOf = (data: GameData, dex: number): Species[] => formsOf(d
 export const lowHpFormOf = (data: GameData, dex: number): Species | undefined =>
   formsOf(data, dex).find((s) => s.form!.kind === 'battle' && s.form!.trigger === 'lowHp')
 
+/** Arceus's dex: its types need their plates once the Underground is on (docs/34). */
+export const ARCEUS_DEX = 493
+
 /** Arceus's types, Silvally's Memories, Ogerpon's masks: the forms picked from the battle menu. */
 export const choiceFormsOf = (data: GameData, dex: number): Species[] =>
   formsOf(data, dex).filter((s) => s.form!.kind === 'battle' && s.form!.trigger === 'choice')

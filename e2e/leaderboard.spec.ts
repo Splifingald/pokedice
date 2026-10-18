@@ -35,10 +35,12 @@ test('five tabs, named only when open; the Shiny board ranks shinies caught, the
   await expect(rows.nth(1)).toContainText('Sam')
   await expect(rows.nth(1)).toContainText('1 shiny')
 
-  // Raids: a count from the board (a database before 0035 says 0 for everyone).
+  // Raids: a count from the board (a database before 0035 says 0 for everyone); nobody here has won one, and a trainer
+  // with none isn't on the board.
   await page.getByRole('tab', { name: 'Raids' }).click()
   await expect(page.getByRole('tab', { name: 'Raids' })).toHaveAttribute('aria-selected', 'true')
-  await expect(rows.first()).toContainText('raids won')
+  await expect(rows).toHaveCount(0)
+  await expect(page.getByText('No trainers yet — be the first!')).toBeVisible()
 })
 
 test('Shiny and Raids rank every region together, each trainer once; Max level stays the region’s', async ({ page }) => {
@@ -82,8 +84,11 @@ test('Shiny and Raids rank every region together, each trainer once; Max level s
   await expect(rows.nth(1)).toContainText('3 shinies')
   await expect(rows.nth(2)).toContainText('Sam')
 
+  // Blue has won no raid: he isn't on the Raids board.
   await page.getByRole('tab', { name: 'Raids' }).click()
-  await expect(rows).toHaveCount(3)
+  await expect(rows).toHaveCount(2)
   await expect(rows.nth(0)).toContainText('Gold')
+  await expect(rows.nth(1)).toContainText('Sam')
+  await expect(page.getByRole('tabpanel')).not.toContainText('Blue')
   await expect(page.getByText('Raids won, in every region.')).toBeVisible()
 })

@@ -111,13 +111,15 @@ function nearMisses(dice: readonly RolledDie[], data: GameData): string | undefi
   return bits.length ? bits.join(' · ') : undefined
 }
 
-function buildRows(log: readonly LogEntry[], player: readonly Battler[], enemy: Battler, data: GameData): Row[] {
+/** `foes`: the one foe, or a double battle's every foe (docs/33). */
+function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: readonly Battler[], data: GameData): Row[] {
   const itemName = (k: string) => data.items[k]?.name ?? k
   const who = (uid: string) => {
-    const b = uid === enemy.uid ? enemy : player.find((p) => p.uid === uid)
-    return { dex: b?.dex ?? 0, name: b?.name ?? t('ui.common.unknown'), foe: uid === enemy.uid }
+    const foe = foes.find((f) => f.uid === uid)
+    const b = foe ?? player.find((p) => p.uid === uid)
+    return { dex: b?.dex ?? 0, name: b?.name ?? t('ui.common.unknown'), foe: !!foe }
   }
-  let active: Record<Side, string> = { enemy: enemy.uid, player: player[0]?.uid ?? '' }
+  let active: Record<Side, string> = { enemy: foes[0]?.uid ?? '', player: player[0]?.uid ?? '' }
   const rows: Row[] = []
   log.forEach((e, key) => {
     switch (e.kind) {
@@ -127,6 +129,9 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], enemy: 
       case 'switch':
         active = { ...active, player: e.uid }
         rows.push({ key, ...who(e.uid), text: t(e.free ? 'ui.hist.sentOut' : 'ui.hist.switchedIn'), icon: 'ball' })
+        return
+      case 'foe_out':
+        rows.push({ key, ...who(e.uid), text: t('ui.hist.sentOut'), icon: 'ball' })
         return
       case 'transform':
         rows.push({ key, ...who(e.uid), text: t('ui.hist.copied', { from: who(e.fromUid).name }), icon: 'reroll' })
@@ -314,8 +319,8 @@ export function BattleHistoryList({ battle, cursor }: { battle: BattleSlice; cur
   const { t } = useT()
   const data = useGame((s) => s.data)
   const rows = useMemo(
-    () => buildRows(battle.log.slice(0, cursor), battle.state.player, battle.state.enemy, data),
-    [battle.log, battle.state.player, battle.state.enemy, cursor, data],
+    () => buildRows(battle.log.slice(0, cursor), battle.state.player, battle.state.double?.foes ?? [battle.state.enemy], data),
+    [battle.log, battle.state.player, battle.state.enemy, battle.state.double, cursor, data],
   )
   if (!rows.length) return <p className="copy px-1 text-muted">{t('ui.hist.empty')}</p>
   return <ol aria-label={t('ui.hist.label')}>{rows.map((r) => <HistoryRow key={r.key} r={r} />)}</ol>

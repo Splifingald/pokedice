@@ -3,9 +3,9 @@
 // team, and the look other trainers see on the leaderboard and in Versus. A friend's card (docs/16) is drawn with the
 // same pieces: CardFrame, Stat and CardTeam.
 import { useEffect, useState, type ReactNode } from 'react'
-import { badgesHeld, isRich, linearAreas, regionOf, regionSpecies, teamOf, versusUnlocked } from '@/engine'
+import { badgesHeld, isRich, linearAreas, looksOn, regionOf, regionSpecies, teamOf, versusUnlocked } from '@/engine'
 import { useT } from '@/i18n/react'
-import { AVATAR_GROUPS, avatarOf, playerAvatarId } from '@/lib/avatars'
+import { AVATAR_GROUPS, avatarName, avatarOf, playerAvatarId } from '@/lib/avatars'
 import { money } from '@/lib/format'
 import { formatCode, useFriends } from '@/lib/friends'
 import { fetchVersusBoard } from '@/lib/versus'
@@ -16,6 +16,7 @@ import { PixelButton } from './PixelButton'
 import { MiniSprite } from './SpriteImg'
 import { playerOf } from './TrainerArt'
 import { TrainerLook } from './TrainerLook'
+import { TrainerLooks } from './TrainerLooks'
 import { TrainerName } from './TrainerName'
 
 /** A five-digit ID number, the same every time for the same trainer. */
@@ -98,7 +99,7 @@ export function TrainerCard() {
   if (!save) return null
   const me = playerOf(save)
   const look = avatarOf(playerAvatarId(save.player))
-  const lookName = t(look.labelKey)
+  const lookName = avatarName(look, t)
   const region = regionOf(save)
   const species = regionSpecies(data, region)
   const areas = linearAreas(data, region)
@@ -173,59 +174,64 @@ export function TrainerCard() {
         <CardTeam team={teamOf(save)} label={t('ui.team.title')} />
       </CardFrame>
 
-      <section className="flex flex-col gap-2">
-        <h3 className="m-0 text-[24px] font-normal leading-none">{t('ui.profile.look')}</h3>
-        <div className="flex items-center gap-2.5 bg-paper py-1 pl-1 pr-2 shadow-ring-line">
-          <span role="img" aria-label={lookName} className="shrink-0">
-            <TrainerLook src={look.src} w={44} h={48} />
-          </span>
-          <p className="m-0 min-w-0 flex-1 font-pixel-sm text-[15px] leading-[1.15] text-muted">
-            {t('ui.card.lookIs', { look: lookName })}
-          </p>
-          <PixelButton
-            size="sm"
-            className="shrink-0"
-            aria-label={t('ui.profile.lookTitle')}
-            aria-expanded={picking}
-            onClick={() => setPicking((v) => !v)}
-          >
-            {picking ? t('ui.card.done') : t('ui.settings.change')}
-          </PixelButton>
-        </div>
-        {/* Every look in one grid, no region headings; picking one closes it. */}
-        {picking && (
-          <div
-            role="radiogroup"
-            aria-label={t('ui.profile.lookTitle')}
-            className="grid grid-cols-[repeat(auto-fill,minmax(56px,1fr))] gap-1.5"
-          >
-            {AVATAR_GROUPS.flatMap(({ avatars }) => avatars).map((a) => {
-              const label = t(a.labelKey)
-              const on = a.id === look.id
-              return (
-                <button
-                  key={a.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  aria-label={label}
-                  title={label}
-                  onClick={() => {
-                    mutateSave((s) => (s.player ? { ...s, player: { ...s.player, avatar: a.id } } : s))
-                    setPicking(false)
-                  }}
-                  className={cx(
-                    'grid min-h-[60px] place-items-center pt-1',
-                    on ? 'bg-gold-pale shadow-card-gold' : 'bg-paper shadow-ring-line',
-                  )}
-                >
-                  <TrainerLook src={a.src} w={44} h={52} />
-                </button>
-              )
-            })}
+      {/* Trainer looks (docs/31) take the free picker's place while the admin's switch is on. */}
+      {looksOn(data) ? (
+        <TrainerLooks />
+      ) : (
+        <section className="flex flex-col gap-2">
+          <h3 className="m-0 text-[24px] font-normal leading-none">{t('ui.profile.look')}</h3>
+          <div className="flex items-center gap-2.5 bg-paper py-1 pl-1 pr-2 shadow-ring-line">
+            <span role="img" aria-label={lookName} className="shrink-0">
+              <TrainerLook src={look.src} w={44} h={48} />
+            </span>
+            <p className="m-0 min-w-0 flex-1 font-pixel-sm text-[15px] leading-[1.15] text-muted">
+              {t('ui.card.lookIs', { look: lookName })}
+            </p>
+            <PixelButton
+              size="sm"
+              className="shrink-0"
+              aria-label={t('ui.profile.lookTitle')}
+              aria-expanded={picking}
+              onClick={() => setPicking((v) => !v)}
+            >
+              {picking ? t('ui.card.done') : t('ui.settings.change')}
+            </PixelButton>
           </div>
-        )}
-      </section>
+          {/* Every look in one grid, no region headings; picking one closes it. */}
+          {picking && (
+            <div
+              role="radiogroup"
+              aria-label={t('ui.profile.lookTitle')}
+              className="grid grid-cols-[repeat(auto-fill,minmax(56px,1fr))] gap-1.5"
+            >
+              {AVATAR_GROUPS.flatMap(({ avatars }) => avatars).map((a) => {
+                const label = avatarName(a, t)
+                const on = a.id === look.id
+                return (
+                  <button
+                    key={a.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    aria-label={label}
+                    title={label}
+                    onClick={() => {
+                      mutateSave((s) => (s.player ? { ...s, player: { ...s.player, avatar: a.id } } : s))
+                      setPicking(false)
+                    }}
+                    className={cx(
+                      'grid min-h-[60px] place-items-center pt-1',
+                      on ? 'bg-gold-pale shadow-card-gold' : 'bg-paper shadow-ring-line',
+                    )}
+                  >
+                    <TrainerLook src={a.src} w={44} h={52} />
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </section>
+      )}
     </div>
   )
 }

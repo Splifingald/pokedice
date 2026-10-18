@@ -46,6 +46,7 @@ export function NightmareBits() {
     message: '',
     hp: {},
     activeUid: fight.own.uid,
+    foeUid: fight.foe.uid,
     fainted: {},
     dex: {},
     wornOut: {},
