@@ -105,8 +105,8 @@ export function regionBox(save: SaveData, region: RegionId): PokemonInstance[] {
 
 /**
  * Your team for a progression raid: the three left on it (`events.raidTeams`), or until then that region's three
- * highest levels. Only that region's Box, each fighting as a copy with its own dice and rerolls, its HP at the
- * raid's team cap at most.
+ * highest levels. Only that region's Box, each fighting as a copy at the raid's team cap at most, with the dice
+ * and rerolls of its own level.
  */
 export function progressRaidTeam(save: SaveData, data: GameData, raid: ProgressRaid): RaidMon[] {
   const box = regionBox(save, raid.region).filter((p) => !!data.species[p.dex])

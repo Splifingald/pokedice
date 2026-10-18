@@ -1,5 +1,5 @@
 // The Raids page's setup (docs/18 §3 "Teams"): your raid team — three Pokémon from any region's Box, fighting
-// as copies, their HP at the team cap — and your group: up to two friends whose raid teams fight beside you. Slots
+// as copies at the team cap (their own dice) — and your group: up to two friends whose raid teams fight beside you. Slots
 // left empty stay empty here; NPC trainers only fill them once you start. A progression raid's (docs/24) are its
 // own: the team left on it, from its region's Box only, and the friends who left a team on it.
 import { useState } from 'react'
@@ -303,7 +303,7 @@ function TeamEditor({
                       <SpriteImg dex={c.inst.dex} size={48} shiny={c.inst.shiny} />
                       {recommended.has(c.inst.id) && <RecommendedThumb overlay />}
                     </span>
-                    <small className="font-pixel-sm text-[13px] text-muted">{t('ui.common.level.short', { n: c.inst.level })}</small>
+                    <small className="font-pixel-sm text-[13px] text-muted">{t('ui.common.level.short', { n: Math.min(c.inst.level, cap) })}</small>
                   </span>
                 ) : (
                   t('ui.versus.slotEmpty')
@@ -361,7 +361,8 @@ function TeamEditor({
                   <span className="grid min-w-0 flex-1 leading-[1.05]">
                     <b className="truncate text-[18px] font-normal">{name}</b>
                     <small className="font-pixel-sm text-[14px] text-muted">
-                      {t('ui.common.level.short', { n: p.level })}
+                      {t('ui.common.level.short', { n: Math.min(p.level, cap) })}
+                      {p.level > cap && ` (${p.level})`}
                       {manyRegions && ` · ${getRegion(data, region)?.name ?? region}`}
                     </small>
                   </span>
@@ -415,7 +416,7 @@ export function RaidGroupSection({
   const progress = source.kind === 'progress'
   const raid = progress ? progressRaidOf(data, source.key) : null
   const myTeam = progress ? (raid ? progressRaidTeam(save, data, raid) : []) : raidTeam(save, data)
-  // Friends' teams come at their own levels (0061), like yours: the cap holds back only their HP, in the fight.
+  // Friends' teams come at their own levels (0061), like yours: the fight caps them, all but their dice.
   const recommended = raid
     ? recommender(data, raid.dex, raidTeamCap(data, raid.dex, 'progress', raid.areaId))
     : recommender(data, progress ? undefined : boss, data.config.events.raid.teamCap)

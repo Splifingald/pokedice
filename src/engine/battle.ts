@@ -205,10 +205,10 @@ export interface BattlerSeed {
   dex: number
   level: number
   /**
-   * The level its HP is figured at, when lower than `level`: a raid's team cap holds back only the HP, the dice
-   * and rerolls stay those of its own level (the user's rule, 2026-10-18).
+   * The level its dice and rerolls are figured at, when higher than `level`: in a raid it fights (and shows) at the
+   * team cap, but keeps the dice and rerolls of its own level (the user's rule, 2026-10-18).
    */
-  hpLevel?: number
+  diceLevel?: number
   hp: number
   shiny?: boolean
   item?: string
@@ -229,11 +229,9 @@ export function withExtraDice(dice: readonly DieType[], extra: readonly DieType[
 
 export function makeBattler(seed: BattlerSeed, data: GameData): Battler {
   const species = getSpecies(data, seed.dex)
-  const own = effectiveStats(species, seed.level, data)
-  const base =
-    seed.hpLevel != null && seed.hpLevel < seed.level
-      ? { ...own, maxHp: effectiveStats(species, seed.hpLevel, data).maxHp }
-      : own
+  const at = effectiveStats(species, seed.level, data)
+  const own = seed.diceLevel != null && seed.diceLevel > seed.level ? effectiveStats(species, seed.diceLevel, data) : at
+  const base = own === at ? at : { ...at, dice: own.dice, rerolls: own.rerolls }
   const stats = seed.extraDice?.length ? { ...base, dice: withExtraDice(base.dice, seed.extraDice, seed.diceCap) } : base
   return {
     uid: seed.uid,

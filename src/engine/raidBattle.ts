@@ -33,7 +33,7 @@ export interface RaidSideSeed {
   look: string | null
   kind: RaidSideKind
   userId?: string
-  /** Up to three Pokémon, their HP already capped (`raidSeedLevels`); uids unique in the raid. */
+  /** Up to three Pokémon, levels already capped (`raidSeedLevels`); uids unique in the raid. */
   team: BattlerSeed[]
 }
 
@@ -95,12 +95,12 @@ export const RAID_MAX_STEPS = 400
 export const BOSS_UID = 'raid-boss'
 
 /**
- * A Pokémon of yours or a friend's in a raid: at its own level (its dice and rerolls), its HP at the team cap at
- * most (the user's rule, 2026-10-18). The NPC trainers' fight at the cap, both alike.
+ * A Pokémon of yours or a friend's in a raid: at the team cap at most (its level shown, its HP), with the dice and
+ * rerolls of its own level (the user's rule, 2026-10-18). The NPC trainers' fight at the cap, both alike.
  */
-export const raidSeedLevels = (level: number, cap: number): Pick<BattlerSeed, 'level' | 'hpLevel'> => ({
-  level,
-  hpLevel: Math.min(level, cap),
+export const raidSeedLevels = (level: number, cap: number): Pick<BattlerSeed, 'level' | 'diceLevel'> => ({
+  level: Math.min(level, cap),
+  diceLevel: level,
 })
 
 // ---------------------------------------------------------------------------------------------------------------------

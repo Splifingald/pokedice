@@ -113,7 +113,7 @@ and the admin's later edits; safe to run twice (tested on PGlite: `tests/hh-nigh
    `raid_progress_special_locked(key, realm)` (a portal or nightmare raid the caller can't use yet). 0057's
    `raid_progress_set_team` and `raid_progress_close` are redefined on it: a nightmare raid's team is capped at its own
    `teamCap` (70) and both refuse (`events_raid_locked`) until the nightmare is over; the portal's checks are the same as
-   0057's. (Since 0061 no team is capped on the server: the game caps only the HP, in the fight, docs/18 §3.)
+   0057's. (Since 0061 no team is capped on the server: the game caps it in the fight, all but its dice and rerolls, docs/18 §3.)
 4. `configVersion` + 1.
 
 `supabase/seed.sql` carries it too (inlined in its schema part, after 0057; its Newmoon Island patch is a no-op there,

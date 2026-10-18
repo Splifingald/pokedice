@@ -104,7 +104,8 @@ checkbox per boss.
     Pokédex (it was caught from the boss fight, before this change).
 - `progressRaidTeam(save, data, key)`: the team left on that raid (`events.raidTeams[key]`, instance ids). Until one
   is set: that region's three highest levels. Only Pokémon in that region's team and Box, not resting (Extreme mode),
-  at their own levels: the raid's team cap holds back only their HP in the fight (docs/18 §3, since 2026-10-18).
+  at their own levels: the fight caps them at the raid's team cap, all but their dice and rerolls (docs/18 §3,
+  since 2026-10-18).
 - `progressRaidRegionMons(save, data, region)`: the editor's candidates.
 - `applyProgressRaidCatch`: the Pokémon joins its region's Box at once (the area is completed by definition; it
   reuses `addToRegion`), the key goes into `raidsDone`, and `raidsWon` + 1.

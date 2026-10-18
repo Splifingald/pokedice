@@ -107,7 +107,7 @@ with its first Pokémon and uses items only between fights, so these numbers lea
    `raid_progress_set_team` (0046's) caps a portal raid's team at its own `teamCap` (100) and refuses
    (`events_raid_locked`) until the run is won; `raid_progress_close` (0045's) refuses too. The game sends its save
    just before closing a portal raid, so the server sees the win. (Since 0061 no team is capped on the server: the
-   game caps only the HP, in the fight, docs/18 §3.)
+   game caps it in the fight, all but its dice and rerolls, docs/18 §3.)
 4. `configVersion` + 1.
 
 `supabase/seed.sql` inlines 0057 in its schema part (after 0054); its Distortion World patch is a no-op there (the

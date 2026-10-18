@@ -75,12 +75,12 @@ describe('the team cap (the user’s rule, 2026-10-18)', () => {
   const own = effectiveStats(DRAGONITE, 80, data)
   const capped = effectiveStats(DRAGONITE, 50, data)
 
-  it('holds back only the HP: the dice and rerolls are its own level’s', () => {
+  it('it fights and shows at the cap, with the dice and rerolls of its own level', () => {
     // Dragonite earns a die and a reroll past Lv.50, so the cap would cost it both.
     expect(own.dice.length).toBeGreaterThan(capped.dice.length)
     expect(own.rerolls).toBeGreaterThan(capped.rerolls)
     const b = makeBattler({ uid: 's0-0', dex: 149, ...raidSeedLevels(80, 50), hp: Number.MAX_SAFE_INTEGER }, data)
-    expect(b).toMatchObject({ level: 80, dice: own.dice, rerolls: own.rerolls, rerollsLeft: own.rerolls })
+    expect(b).toMatchObject({ level: 50, dice: own.dice, rerolls: own.rerolls, rerollsLeft: own.rerolls })
     expect(b.maxHp).toBe(capped.maxHp)
     expect(b.hp).toBe(capped.maxHp)
   })
@@ -96,7 +96,7 @@ describe('the team cap (the user’s rule, 2026-10-18)', () => {
     const sides: RaidSideSeed[] = [{ owner: 'Me', look: null, kind: 'me', team }]
     const { state } = createRaid({ boss: { dex: 151, shiny: false }, sides }, data, createRng(3))
     expect(state.sides[0]!.mons[0]!).toMatchObject({
-      level: 80,
+      level: 50,
       dice: own.dice,
       rerolls: own.rerolls,
       maxHp: capped.maxHp,

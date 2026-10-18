@@ -1,5 +1,5 @@
--- Raid teams at their own levels (the user's rule, 2026-10-18): a raid's team cap holds back only a Pokémon's HP, its
--- dice and rerolls stay those of its own level. The game caps the HP in the fight (`raidSeedLevels`), so the teams
+-- Raid teams at their own levels (the user's rule, 2026-10-18): a Pokémon fights at a raid's team cap, but its dice
+-- and rerolls stay those of its own level. The game caps it in the fight (`raidSeedLevels`), so the teams
 -- registered for friends keep each Pokémon's real level instead of `least(level, cap)`. Still built from the cloud
 -- save, never from what the page sends. Run after 0060; safe to run again. A team registered before keeps its capped
 -- levels until its owner registers it again (choosing it, or starting a raid with it).

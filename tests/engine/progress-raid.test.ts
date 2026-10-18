@@ -134,7 +134,7 @@ describe('your team for a raid', () => {
     ]
     let s = { ...fresh(), box: [...fresh().box, ...strong] }
     expect(raidTeamCap(data, 144, 'progress')).toBe(data.config.events.raid.progress.teamCap)
-    // The cap holds back only their HP, in the fight (`raidSeedLevels`).
+    // The fight caps them, all but their dice and rerolls (`raidSeedLevels`).
     expect(progressRaidTeam(s, data, raid).map((m) => [m.id, m.level])).toEqual([
       ['c', 80],
       ['v', 60],

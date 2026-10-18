@@ -47,8 +47,8 @@ export const RAID_RECOMMENDED_LEVEL = 50
 
 /**
  * A Pokémon worth bringing to this raid (the green thumb, docs/18 §3): at Lv.50 or more (a raid capped lower: at
- * its cap, so the rule still means "at full strength"), and one of its typed dice, at its own level (the cap holds
- * back only its HP), hits the raid Pokémon super effectively on the type chart. The raid's own matchups
+ * its cap, so the rule still means "at full strength"), and one of its typed dice, at its own level (the cap leaves
+ * its dice alone), hits the raid Pokémon super effectively on the type chart. The raid's own matchups
  * (`sideTypes`) only scale how much.
  */
 export function raidRecommended(
@@ -66,12 +66,12 @@ export function raidRecommended(
   )
 }
 
-/** A Pokémon fighting in a raid: a clone of one of yours, full HP, its HP at the raid's team cap at most. */
+/** A Pokémon fighting in a raid: a clone of one of yours, full HP, at the raid's team cap at most (not its dice). */
 export interface RaidMon {
   /** The instance it's cloned from. */
   id: string
   dex: number
-  /** Its own level: the dice and rerolls are its own, only its HP is capped (`raidSeedLevels`). */
+  /** Its own level, for its dice and rerolls: it fights and shows at the cap (`raidSeedLevels`). */
   level: number
   shiny: boolean
   nickname?: string
@@ -79,7 +79,7 @@ export interface RaidMon {
 
 /**
  * Your raid team: the three you registered (from any region's Box), or until then the three highest-level Pokémon you
- * have. Each fights as a clone with its own dice and rerolls, its HP at the raid's team cap at most.
+ * have. Each fights as a clone at the raid's team cap at most, with the dice and rerolls of its own level.
  */
 export function raidTeam(save: SaveData, data: GameData): RaidMon[] {
   const every = everyInstance(save).filter((p) => p.revivesAt == null && !!data.species[p.dex])
