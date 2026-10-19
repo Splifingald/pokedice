@@ -1,9 +1,17 @@
 // Kitchen sink (dev only): trainer looks (docs/31) — the row under the trainer card with and without its red dot,
-// the menu in each state (a new game, some new looks, every look unlocked), a locked look of each kind, and the rules
-// pop-up (the unlock and INFO).
+// the menu in each state (a new game, some new looks, its list on the unlocked looks, every look unlocked), a locked
+// look of each kind, an unlocked one with how it was won, and the rules pop-up (the unlock and INFO).
 import { useState } from 'react'
 import { PixelButton } from '@/components/PixelButton'
-import { LockedLook, LooksDot, LooksMenu, LooksRow, LooksRulesModal } from '@/components/TrainerLooks'
+import {
+  LockedLook,
+  LooksDot,
+  LooksMenu,
+  LooksRow,
+  LooksRulesModal,
+  OwnedLook,
+  type LooksListView,
+} from '@/components/TrainerLooks'
 import { LOOKS, type LookState } from '@/engine'
 import { useT } from '@/i18n/react'
 
@@ -45,7 +53,7 @@ function states(kanto: boolean, johto: boolean, all = false): LookState[] {
   })
 }
 
-const MENUS: [string, LookState[], string, Set<string>][] = [
+const MENUS: [string, LookState[], string, Set<string>, LooksListView?][] = [
   ['A new game', states(false, false), 'red', new Set()],
   [
     'Kanto done, two new in Johto',
@@ -53,6 +61,7 @@ const MENUS: [string, LookState[], string, Set<string>][] = [
     'johto/firebreather',
     new Set(['johto/firebreather', 'johto/schoolgirl']),
   ],
+  ['Its list on the unlocked looks', states(true, true), 'johto/firebreather', new Set(), 'unlocked'],
   ['Every look unlocked', states(true, true, true), 'paldea/juliana-bb', new Set()],
 ]
 
@@ -87,8 +96,19 @@ export function LooksBits() {
         </ul>
       </div>
 
+      <div className="grid max-w-md gap-1.5">
+        <small className="font-pixel-sm text-[14px] text-muted">An unlocked look, with how it was won</small>
+        <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+          <OwnedLook s={one('red')} />
+          <OwnedLook s={one('kanto/lass')} />
+          <OwnedLook s={one('kanto/cooltrainer-f')} />
+          <OwnedLook s={one('johto/firebreather')} />
+          <OwnedLook s={one('kanto/chase')} />
+        </ul>
+      </div>
+
       <div className="flex flex-wrap items-start gap-4">
-        {MENUS.map(([label, list, worn, fresh]) => (
+        {MENUS.map(([label, list, worn, fresh, view]) => (
           <div key={label} className="grid w-full max-w-[380px] gap-1 bg-panel p-3 shadow-card">
             <small className="font-pixel-sm text-[14px] text-muted">{label}</small>
             <LooksMenu
@@ -96,6 +116,7 @@ export function LooksBits() {
               liveRegion="johto"
               wearing={wearing[label] ?? worn}
               fresh={fresh}
+              initialView={view}
               onWear={(id) => setWearing((w) => ({ ...w, [label]: id }))}
               onInfo={() => setRules('info')}
             />
