@@ -8,6 +8,7 @@ import { AreaArt } from '@/components/AreaArt'
 import { PixelIcon, STATUS_ICON } from '@/components/icons'
 import { RaidStageArt, useStageDistortion } from '@/components/PortalFx'
 import { NightStageArt, useHaunt } from '@/components/NightmareFx'
+import { SkyStageArt } from '@/components/SkyFx'
 import { StageCanvas } from '@/components/StageCanvas'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { artPlacement, battleWindow, type AreaPicture } from '@/fx/areaArt'
@@ -543,9 +544,10 @@ export function BattleStage({
   /**
    * The stage stands in the Distortion World (Giratina's area raid, docs/15 §27): its void, rocks and far portal on
    * the pixel engine, islands to stand on, in place of the area's picture. Or under the nightmare's full moon (its
-   * rounds and Darkrai's area raid, docs/15 §29): the night, the moon behind the foe, smoke rising off its rock.
+   * rounds and Darkrai's area raid, docs/15 §29): the night, the moon behind the foe, smoke rising off its rock. Or in
+   * the sky (Rayquaza's raids, docs/15 §14): the day over a sea of clouds, each side on a tower's top.
    */
-  world?: 'distortion' | 'nightmare'
+  world?: 'distortion' | 'nightmare' | 'sky'
   own: Battler
   foe: Battler
   fx: Fx
@@ -635,6 +637,8 @@ export function BattleStage({
         <RaidStageArt kind="battle" />
       ) : world === 'nightmare' ? (
         <NightStageArt kind="battle" />
+      ) : world === 'sky' ? (
+        <SkyStageArt />
       ) : (
         <Backdrop calm={calm || artShown} />
       )}

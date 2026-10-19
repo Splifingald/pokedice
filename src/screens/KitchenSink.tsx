@@ -58,6 +58,7 @@ import { PortalBits } from './kitchen/PortalBits'
 import { PortalRaidBits } from './kitchen/PortalRaidBits'
 import { NightmareBits } from './kitchen/NightmareBits'
 import { NightmareRaidBits } from './kitchen/NightmareRaidBits'
+import { SkyRaidBits } from './kitchen/SkyRaidBits'
 import { GiftBits } from './kitchen/GiftBits'
 import { InviteBits } from './kitchen/InviteBits'
 import { SupportBits } from './kitchen/SupportBits'
@@ -683,6 +684,9 @@ export function KitchenSink() {
       </Section>
       <Section title="Darkrai's area raid (the nightmare): the themed raid page, its pop-up, the raid's stage and a bar's shadow, the screen's vignette">
         <NightmareRaidBits />
+      </Section>
+      <Section title="Rayquaza's raids (the sky): the raid's stage over the sea of clouds">
+        <SkyRaidBits />
       </Section>
       <Section title="Trick or Treat: the gauge of each tier, the screen in each state (idle, after a Treat, a Treat and a throw playing, a miss, caught, fled), the recaps, the pieces, preview cards, rules">
         <TrickBits />

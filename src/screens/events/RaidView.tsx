@@ -73,6 +73,7 @@ import {
 import { BattleStage, type StageOverlay } from '../battle/BattleStage'
 import { CatchPanel, catchMessage } from '../battle/CatchPanel'
 import { RaidIntro } from './RaidIntro'
+import { RAYQUAZA } from '@/fx/timelines/skyRaid'
 import { RaidNpcPicker } from './RaidNpcPicker'
 import { battlerOf, sideOfUid, useRaidAnimator, type RaidFx } from './raidAnimator'
 import { TrainerName } from '@/components/TrainerName'
@@ -308,6 +309,9 @@ export function RaidView({ run }: { run: RaidRun }) {
   const portal = usePortalRaid(run.raid.areaId)
   // Darkrai's raid, its area in nightmare mode (docs/15 §29): under the full moon.
   const nightmare = useNightmareRaid(run.raid.areaId) && !portal
+  // Rayquaza's raids, wherever they're fought (docs/15 §14): in the sky.
+  const sky = !portal && !nightmare && (foe.baseDex ?? foe.dex) === RAYQUAZA
+  const world = portal ? 'distortion' : nightmare ? 'nightmare' : sky ? 'sky' : undefined
 
   // ---- Your turn.
   const duel = st.duel
@@ -455,7 +459,7 @@ export function RaidView({ run }: { run: RaidRun }) {
         onSceneDone={sceneDone}
         tapLabel={(b) => t('ui.types.tap', { name: b.name })}
         label={heading}
-        world={portal ? 'distortion' : nightmare ? 'nightmare' : undefined}
+        world={world}
         distorted={portal}
       >
         {!intro && !thrown && (
@@ -616,7 +620,7 @@ export function RaidView({ run }: { run: RaidRun }) {
         <RaidIntro
           run={run}
           onDone={raidIntroDone}
-          world={portal ? 'distortion' : nightmare ? 'nightmare' : undefined}
+          world={world}
         />
       )}
 

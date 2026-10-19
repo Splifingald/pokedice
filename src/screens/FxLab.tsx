@@ -25,6 +25,7 @@ import {
   nightmareWakeTimeline,
 } from '@/fx/timelines/nightmare'
 import { nightRaidEntranceTimeline } from '@/fx/timelines/nightmareRaid'
+import { RAYQUAZA, skyRaidEntranceTimeline } from '@/fx/timelines/skyRaid'
 import { artUrl } from '@/fx/areaArt'
 import { evolveTimeline, hatchTimeline } from '@/fx/timelines/moments'
 import { tradeTimeline } from '@/fx/timelines/trade'
@@ -363,6 +364,18 @@ const PRESETS: Preset[] = [
     name: "Nightmare: Darkrai's raid entrance (out of the smoke, before the moon)",
     sprites: [[491, false, true]],
     make: (o) => nightRaidEntranceTimeline({ mon: spriteKey(491, false, true), short: o.short }),
+  },
+  // Rayquaza's raid in the sky: down out of a gap in the clouds, between the Sky Pillar's towers.
+  {
+    name: "Sky: Rayquaza's raid entrance (down through the clouds)",
+    sprites: [[RAYQUAZA, false]],
+    make: (o) => skyRaidEntranceTimeline({ mon: spriteKey(RAYQUAZA, false), short: o.short }),
+  },
+  {
+    name: "Sky: Rayquaza's raid entrance (shiny)",
+    sprites: [[RAYQUAZA, false, true]],
+    make: (o) =>
+      skyRaidEntranceTimeline({ mon: spriteKey(RAYQUAZA, false, true), shiny: true, short: o.short }),
   },
   {
     name: 'Evolution (Charmeleon)',

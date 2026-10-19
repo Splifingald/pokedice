@@ -5,12 +5,16 @@
 // animations off. Giratina's raid, its area in portal mode (docs/15 §27), opens in the Distortion World instead: the
 // pixel engine's scene (raidEntranceTimeline: shiny Giratina coming out of the portal) under the same words and timing,
 // its tapes in Giratina's red and the void's night. That one has no Skip (the user, 2026-10-15, as the portal's breach
-// and victory): a tap or Esc does nothing, it plays out; motion off still goes straight to the fight.
+// and victory): a tap or Esc does nothing, it plays out; motion off still goes straight to the fight. Darkrai's raid
+// in nightmare mode opens under the full moon the same way (no Skip). Rayquaza's raids open in the sky (skyRaid.ts:
+// Rayquaza diving down through a gap in the clouds between the Sky Pillar's towers), light where the other two are dark,
+// and keep their Skip: they come back every year.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { hiss, tone } from '@/audio/sfx'
 import { StageCanvas } from '@/components/StageCanvas'
 import { raidEntranceStage, raidEntranceTimeline } from '@/fx/timelines/portalRaid'
 import { nightRaidEntranceTimeline } from '@/fx/timelines/nightmareRaid'
+import { skyRaidEntranceTimeline } from '@/fx/timelines/skyRaid'
 import { MiniSprite } from '@/components/SpriteImg'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { bolt, disc, ease, polyline, rng as pixelRng } from '@/fx/pixel'
@@ -49,14 +53,16 @@ export function RaidIntro({
   onDone: () => void
   /**
    * Giratina's raid in the Distortion World (docs/15 §27), or Darkrai's under the nightmare's full moon (§29): its own
-   * scene under the intro's words, and no Skip.
+   * scene under the intro's words, and no Skip. Rayquaza's in the sky (§14): its own scene, with its Skip.
    */
-  world?: 'distortion' | 'nightmare'
+  world?: 'distortion' | 'nightmare' | 'sky'
 }) {
   const { t } = useT()
   const { level } = useMotion()
-  // A themed raid's scene is the pixel engine's: only the words and their sounds are timed here, and it has no Skip.
+  // A themed raid's scene is the pixel engine's: only the words and their sounds are timed here. Giratina's and
+  // Darkrai's have no Skip.
   const dw = !!world
+  const noSkip = world === 'distortion' || world === 'nightmare'
   // Measured once when it opens.
   const [size] = useState(() =>
     typeof window === 'undefined' ? { w: 130, h: 280 } : raidEntranceStage(window.innerWidth, window.innerHeight),
@@ -69,10 +75,15 @@ export function RaidIntro({
       dw
         ? {
             ready: loadSprite(boss.dex, false, boss.shiny),
-            timeline: (world === 'nightmare' ? nightRaidEntranceTimeline : raidEntranceTimeline)({
+            timeline: (world === 'nightmare'
+              ? nightRaidEntranceTimeline
+              : world === 'sky'
+                ? skyRaidEntranceTimeline
+                : raidEntranceTimeline)({
               w: size.w,
               h: size.h,
               mon: spriteKey(boss.dex, false, boss.shiny),
+              shiny: boss.shiny,
               short: level === 'short',
             }),
           }
@@ -104,7 +115,7 @@ export function RaidIntro({
 
   useEffect(() => {
     if (level === 'off') return
-    // Unskippable in the Distortion World: the focus rests on the intro itself.
+    // Unskippable in the Distortion World and the nightmare: the focus rests on the intro itself.
     ;(skip.current ?? root.current)?.focus({ preventScroll: true })
     const key = spriteKey(boss.dex, false, boss.shiny)
     void loadSprite(boss.dex, false, boss.shiny)
@@ -319,7 +330,14 @@ export function RaidIntro({
       role="dialog"
       tabIndex={-1}
       aria-label={t('ui.raid.intro.label', { name: boss.name })}
-      className={cx('rd-intro', world === 'distortion' && 'dw', world === 'nightmare' && 'nm', ...stage, leaving && 'out')}
+      className={cx(
+        'rd-intro',
+        world === 'distortion' && 'dw',
+        world === 'nightmare' && 'nm',
+        world === 'sky' && 'sky',
+        ...stage,
+        leaving && 'out',
+      )}
     >
       {scene ? (
         <StageCanvas
@@ -339,7 +357,9 @@ export function RaidIntro({
               ? 'ui.nightmare.raidIntroTop'
               : world === 'distortion'
                 ? 'ui.portal.raidIntroTop'
-                : 'ui.raid.intro.warning',
+                : world === 'sky'
+                  ? 'ui.sky.raidIntroTop'
+                  : 'ui.raid.intro.warning',
           )}
         </b>
       </div>
@@ -349,7 +369,9 @@ export function RaidIntro({
             ? t('ui.nightmare.raidIntroBottom', { name: boss.name })
             : world === 'distortion'
               ? t('ui.portal.raidIntroBottom', { name: boss.name })
-              : t('ui.raid.intro.appears')}
+              : world === 'sky'
+                ? t('ui.sky.raidIntroBottom', { name: boss.name })
+                : t('ui.raid.intro.appears')}
         </b>
       </div>
       <div className="rd-i-name">
@@ -385,7 +407,7 @@ export function RaidIntro({
       <div className="rd-i-go" aria-hidden>
         {t('ui.raid.intro.go')}
       </div>
-      {!dw && (
+      {!noSkip && (
         <button ref={skip} type="button" className="rd-i-skip" onClick={() => finish(true)}>
           {t('ui.raid.intro.skip')}
         </button>

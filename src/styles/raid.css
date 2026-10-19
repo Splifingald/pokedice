@@ -325,3 +325,51 @@
     animation: none;
   }
 }
+
+/* Rayquaza's raids (RaidIntro world="sky", docs/15 §14): light where the other themed openings are dark. Its tapes in
+   the sky's white and Rayquaza's emerald, the words in gold on emerald, the alarm a pulse of the sky's light. */
+.rd-intro.sky {
+  background: #fff4dc;
+}
+.rd-intro.sky .rd-i-tape {
+  background: repeating-linear-gradient(-45deg, #ffffff 0 16px, #2bd67b 16px 32px);
+  background-size: 45px 45px;
+  box-shadow:
+    0 0 0 3px #0f8a4f,
+    0 6px 0 #1d355040;
+}
+.rd-intro.sky .rd-i-tape b {
+  background: #0f8a4f;
+  color: #fff1b8;
+  box-shadow: inset 0 0 0 2px #ffd36b;
+  text-transform: uppercase;
+}
+.rd-intro.sky .rd-i-name small {
+  color: #0f8a4f;
+  text-shadow: 0 2px 0 #ffffff;
+}
+.rd-intro.sky .rd-i-name b {
+  text-shadow:
+    0 4px 0 #0f8a4f,
+    4px 0 0 #1d3550,
+    -4px 0 0 #1d3550,
+    0 -4px 0 #1d3550,
+    0 8px 0 #1d3550,
+    0 0 24px #ffd36b;
+}
+.rd-intro.sky .rd-i-sub {
+  color: #1d3550;
+  text-shadow: 0 2px 0 #ffffff;
+}
+.rd-intro.sky .rd-i-go {
+  color: #fff1b8;
+  text-shadow:
+    0 6px 0 #0f8a4f,
+    6px 0 0 #1d3550,
+    -6px 0 0 #1d3550,
+    0 -6px 0 #1d3550,
+    0 12px 0 #1d3550;
+}
+.rd-intro.sky::after {
+  background: radial-gradient(circle, transparent 45%, rgba(255, 251, 232, 0.8));
+}

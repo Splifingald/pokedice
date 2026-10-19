@@ -453,6 +453,20 @@ const FX_SOUNDS = {
     tone(784, 0.18, { type: 'triangle', vol: 0.04, at: 0.16 })
     tone(1047, 0.45, { type: 'triangle', vol: 0.045, at: 0.32 })
   },
+  // Rayquaza's raid in the sky: a gust of wind (an airy swell), a shimmer of light (a high chime climbing), a bright
+  // thunderclap (a crack falling into a short rumble), and its dive (a whoosh falling with a gliding note).
+  'sky.gust': () => hiss(1.2, { freq: 500, slide: 900, q: 0.5, vol: 0.06 }),
+  'sky.shimmer': () => {
+    ;[1047, 1319, 1568, 2093].forEach((f, i) => tone(f, 0.16, { type: 'triangle', vol: 0.025, at: i * 0.06 }))
+  },
+  'sky.thunder': () => {
+    hiss(0.5, { freq: 3200, slide: -2900, vol: 0.09 })
+    tone(62, 0.6, { type: 'sawtooth', vol: 0.05, slide: -25 })
+  },
+  'sky.dive': () => {
+    hiss(0.9, { freq: 2600, slide: -2200, vol: 0.07 })
+    tone(520, 0.9, { type: 'triangle', vol: 0.035, slide: -380 })
+  },
   // The Underground (docs/34): a pickaxe's clink on rock (lower and heavier the bigger the roll), the wall rumbling
   // down, and a little chime when something is dug out whole.
   'ug.strike': (n = 1) => {

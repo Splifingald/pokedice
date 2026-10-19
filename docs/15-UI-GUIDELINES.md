@@ -170,6 +170,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `PortalRaidBanner` / `PortalRaidCard` (`RaidCard portal`) / `RaidStageArt` / `DistortionGround` / `StageTear` / `RaidNpcPicker portal` / `BattleStage world="distortion"` | Giratina's area raid (§27) | The raid page in the violet night (`.dw-scope`): the portal banner with its plate, the card open and caught, the lock, START, the team; its NPC partners pop-up (the portal and Giratina distorted as its banner); the raid's stage (the Distortion World, Giratina distorted on its island) and a bar's tear. The entrance is on `/kitchen-sink/fx` |
 | `MoonScene` / `NightmareGauge` / `NightmareEntry` / `NightmareEntryDialog` / `NightmareIntro` / `NightmareRulesModal` / `HauntSprite` / `BattleStage haunted` / `NightmareStrikeView` / `NightmareVictoryView` | Darkrai's nightmare (§29) | The moon on the pixel engine (moving; still); the gauge of rounds (fresh, under way, won); the way in (the intro playing, held at its end with "Tap to continue ▼", then its pop-up over that end; the pop-up at once, back from TEAM; the pop-up on its own: TEAM / NOT NOW / BEGIN THE NIGHTMARE); the rules pop-up (INFO); a haunted foe (full, short, off; on the night's stage); Darkrai's strike (playing, the cards draining; landed, from Home); the round's result cards (a round, the last, a gift); Home's Areas button locked with its reason; the waking (HEAL & START RAID over the green BACK TO THE WORLD) |
 | `NightmareRaidBanner` / `NightmareRaidCard` (`RaidCard nightmare`) / `NightStageArt` / `NightGround` / `StageShadow` / `RaidNpcPicker nightmare` / `BattleStage world="nightmare"` / `NightmareFx` | Darkrai's area raid, and the nightmare's fights (§29) | The raid page in the moonlit night (`.nm-scope`): the moon banner with its plate, the card open and caught, the lock, START, the team; its NPC partners pop-up (the moon and Darkrai as its banner); the stage (the night, the moon behind the foe, smoke rising off its rock) and a bar's shadow; the raid's screen vignette with the shadow over the page. The entrance is on `/kitchen-sink/fx` |
+| `SkyStageArt` / `BattleStage world="sky"` / `RaidIntro world="sky"` | Rayquaza's raids (§14) | The raid's stage in the sky (Rayquaza on a pillar's top, yours over the clouds). The entrance is on `/kitchen-sink/fx` |
 | `LooksRow` / `LooksDot` / `LooksMenu` / `LooksSheet` / `LockedLook` / `LooksRulesModal` | Trainer looks (§17, docs/31) | The row under the trainer card (with and without its red dot); the menu (a new game, some new looks, every look unlocked); a locked look of each kind (a catch goal with its bar, an area with how far away, the League, the full Pokédex); the rules (the first open, INFO) |
 | `DayNightButton` / `DayNightChip` / `BattleDayTime` / `DayNightTag` / `DayNightPill` / `DayNightRulesModal` | Day and night in Johto (§30, docs/32) | The top bar's chip by day and by night; the fights' indicator on a stage (day, night); a list's tag (its own half, greyed in the other); the Pokédex places' chip (day only, night only); the rules (the first time, INFO) |
 | `DoubleMons` (`BattleStage double`) / `DoublePlates` / `MiniPlate` / `TargetPicker` / `LeadPicker pair` | Double battles (§31) | The stage with four (the pair in front big on the usual spots, their partners smaller behind, each with a shadow; toggled, they change places), one K.O. on each side (greyed plates, 1 v 2); the name-less plates (icon, level, HP, statuses; the one in front ringed in gold; a fallen one greyed); the target picker (live, disabled); the lead picker sending two |
@@ -271,6 +272,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 | The nightmare (§29): the intro, the waking | in full | in half the time |
 | Darkrai's strike after a round (§29, `nightmareStrikeTimeline`) | 2 s: the shadow rises, gathers, the beams | 1 s, straight to the beams |
 | Darkrai's raid entrance (§29, `nightRaidEntranceTimeline`) | in full | in full (an encounter) |
+| Rayquaza's raid entrance (§14, `skyRaidEntranceTimeline`) | in full | in full (an encounter) |
 
 `calm` (OS reduce motion, or animations off) also removes screen shakes and full-screen flashes; a hit keeps its two
 white sprite frames. Every timeline is on `/kitchen-sink/fx` (dev): replay, ¼ speed, one-frame steps, the end state,
@@ -470,6 +472,16 @@ in view) and the battle history sits beside it from 1024 px.
   A side's next Pokémon after a K.O. goes to the front only when it's the next to act (`frontsNext`); when another
   side plays first, it waits beside the ally in front for its turn, never sent out only to step straight back.
   Giratina's raid, its area in portal mode, plays in the Distortion World (§27): its stage, its look, its entrance.
+  **Rayquaza's raids** (any of them: its area's progression raid, its day in the calendar) play **in the sky**, light
+  where the Distortion World and the nightmare are dark (`src/fx/timelines/skyRaid.ts`, palette `SKY`: the day's blues,
+  the clouds' whites, the Sky Pillar's creams, Rayquaza's emerald and gold). Its entrance (`RaidIntro world="sky"`,
+  `skyRaidEntranceTimeline`): two white pulses, the camera rising out of a sea of clouds along the Sky Pillar's towers,
+  the clouds overhead parting with light pouring through and emerald lightning, Rayquaza's silhouette diving down the
+  shaft of light trailing green, the reveal at the intro's white-out (rings, the clouds blown back), then rings of
+  emerald light spiralling up round it; its tapes white and emerald with gold words ("Warning · the sky splits open",
+  "Rayquaza descends from the sky"); it **keeps its Skip** (it comes back every year). Its fight stands in the sky
+  (`BattleStage world="sky"`, `SkyStageArt`: the day, far towers, the clouds drifting, each side on a pillar's top), one
+  still frame with motion off or a calm OS. Its page is the usual raid page.
 - **The catch happens on the stage**: the worn-out foe stays on its platform, greyed; the panel shows a radio group
   of balls (each with its chance from `catchChance`, how many you have, "not needed" when a weaker one is already
   certain), the catch math (`d6 + bonus ≥ need`), and one throw. The catch timeline plays; the die and the
