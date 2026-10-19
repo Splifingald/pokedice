@@ -223,7 +223,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   // Auto-mode (cleared areas only): the player's side plays itself, like the enemy's. A Versus fight is always on auto.
   const autoOn = useGame((s) => !!s.settings.autoMode)
-  const auto = !!versus || (autoOn && !!save && !!run.areaId && progressOf(save, run.areaId).cleared)
+  const autoOpen = !versus && !!save && !!run.areaId && progressOf(save, run.areaId).cleared
+  const auto = !!versus || (autoOn && autoOpen)
   // Auto-mode plays the whole fight faster: animations, dice and timers.
   const pace = versus ? VERSUS_PACE : auto ? AUTO_PACE : 1
   // A fight that plays itself is watched, not played: short animations unless the player turned them off altogether.
@@ -668,8 +669,12 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     if (forced && !auto) dispatch({ t: 'SWITCH', instanceId: b.uid })
     else if (canAct && showSwitch) setMenu('switch')
   }
+  // A cleared area's fight can be handed to auto-mode midway, as the area's switch would have from its start.
+  const autoStart = autoOpen && !auto && !catching
   const extras =
-    !auto && !terminal && (megaOpts.length > 0 || gmaxOpts.length > 0 || zOpen || typeMenu || st.canRun)
+    !auto &&
+    !terminal &&
+    (megaOpts.length > 0 || gmaxOpts.length > 0 || zOpen || typeMenu || st.canRun || autoStart)
 
   let actions: ReactNode = null
   if (over) actions = versus!.end
@@ -1000,6 +1005,18 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                         onClick={() => dispatch({ t: 'RUN' })}
                       >
                         <PixelIcon name="run" size={14} /> {t('ui.battle.run')}
+                      </PixelButton>
+                    )}
+                    {autoStart && (
+                      <PixelButton
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setMenu(null)
+                          setSettings({ autoMode: true })
+                        }}
+                      >
+                        <PixelIcon name="dice" size={14} /> {t('ui.battle.autoMode')}
                       </PixelButton>
                     )}
                   </div>

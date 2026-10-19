@@ -450,10 +450,12 @@ in view) and the battle history sits beside it from 1024 px.
   red outline when picked, the combo's dice in a gold ring; the foe's dice smaller, not buttons), the readout (combo
   chip or "No combo", the damage alone and big — a button: the math, `(sum + bonus) × mult = damage`, shows once,
   under the readout — how effective it is, a `StatusChip` per status face, lit once its threshold is met), the extras (Mega, G-MAX,
-  Z-MOVE, Type, Run) only when they exist — the battle powers gold, Z-MOVE's hint saying what this roll's type adds (docs/35) — the actions (REROLL with its count, ATTACK in red; SKIP TURN when stunned; the AUTO note
+  Z-MOVE, Type, Run, AUTO-MODE) only when they exist — the battle powers gold, Z-MOVE's hint saying what this roll's type adds (docs/35) — the actions (REROLL with its count, ATTACK in red; SKIP TURN when stunned; the AUTO note
   with STOP, none in Versus), then the Bag, the team pips and the history.
 - **Auto battles** (auto-mode, Versus) play at the `short` motion level unless animations are off (`MotionCap`).
-  Auto-mode is switched in the area (under its header), never from Home. Prof. Oak's tip about it, the first time,
+  Auto-mode is switched in the area (under its header), never from Home; a cleared area's battle also offers it among
+  its extras (AUTO-MODE, ghost, last), which hands the rest of that fight to auto and turns the setting on, like the
+  area's switch. The fight keeps the rules it started with (its powers, `state.auto`); STOP gives it back. Prof. Oak's tip about it, the first time,
   takes the full width above the switch (never squeezed into a column beside it).
 - **Team pips**: menu icon + an HP bar, the one in battle ringed in gold, fainted ones grey. Tapping one switches
   (it costs the turn; the dialog also holds Forfeit). After a K.O. the message asks "Choose your next Pokémon",
