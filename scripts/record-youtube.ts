@@ -43,8 +43,10 @@ const FORMAT: Format = {
   dpr: SIZE[0] / STAGE,
   touch: false,
 }
-/** The pages shown whole (the raid's intro, the title): 1:1. */
+/** The title, 1:1 (its end card a 2× part of it). */
 const WHOLE = { width: 1920, height: 1080, dpr: 1 }
+/** The raid's intro on a 960×540 page at 2×: it fills the screen whatever its size, Rayquaza twice as big. */
+const HALF = { width: 960, height: 540, dpr: 2 }
 
 const ready = '!!window.__promo && location.pathname === "/area"'
 const plan = '(window.__promo && window.__promo.plan)'
@@ -171,7 +173,7 @@ const SCENES: Scene[] = [
   },
   {
     name: 'raid',
-    size: WHOLE,
+    size: HALF,
     async play(c, url) {
       await c.cap.open(`${url}/__demo/raid`, '!!window.__promo')
       mark(c, 'intro')
@@ -189,57 +191,79 @@ const SCENES: Scene[] = [
   },
 ]
 
-/** The stage 1:1; the tray (dice and buttons) doubled; the dice and their readout tripled; a whole page. */
-type View = 'stage' | 'tray' | 'dice' | 'whole'
+/**
+ * The stage 1:1; the dice and their readout (and a power's button) tripled, the dialogue above them left out; the
+ * title's logo, buttons and notice doubled (the dev-only links under them left out); a whole page.
+ */
+type View = 'stage' | 'dice' | 'title' | 'whole'
 
 /** A view's part of a take's frames, device pixels; scaled to 1920×1080 it is an exact 1×, 2× or 3×. */
 function cropOf(take: Take, view: View): Cut['crop'] {
+  const [W, H] = SIZE
   if (view === 'whole') return undefined
+  if (view === 'title') return { x: (W - W / 2) / 2, y: 218, w: W / 2, h: H / 2 }
   const d = take.dpr
   const stage = take.boxes.stage
   if (!stage) throw new Error('the take has no stage measured')
-  const [W, H] = SIZE
   // The stage's foe HP box (its top) is what a 16:9 frame of a 3:2 stage leaves out.
   if (view === 'stage')
     return { x: Math.round(stage.x * d), y: Math.round((stage.y + stage.height) * d) - H, w: W, h: H }
   const dice = take.boxes.dice ?? stage
-  const zoom = view === 'tray' ? 2 : 3
-  const w = W / zoom
-  const h = H / zoom
+  const w = W / 3
+  const h = H / 3
   const cx = (dice.x + dice.width / 2) * d
-  // The tray: the dice a little above the middle (the buttons below); the dice: the dice and their readout centred.
-  const cy = (dice.y + dice.height / 2 + (view === 'tray' ? 40 : 28)) * d
-  return { x: Math.round(cx - w / 2), y: Math.round(cy - h / 2), w, h }
+  // Its top just under the dialogue box (which ends 11 px above the dice).
+  const top = (dice.y - 6) * d
+  return { x: Math.round(cx - w / 2), y: Math.round(top), w, h }
 }
 
-/** The trailer's cuts (trailer A): hands climbing the combos, the reroll, the Mega, Celebi, the finale, the end card. */
+/**
+ * Trailer A: four hands climbing the combos (a dice close-up, then its move), a reroll into Four of a Kind and a K.O.,
+ * a Mega Evolution and its hit, Celebi's entrance and strike, the finale (Five of a Kind, a Z-Move, the K.O.), Rayquaza,
+ * the title. 30 s; seconds off each take's marks.
+ */
 function cutList(t: Record<string, Take>): Cut[] {
   const s = (sec: number) => Math.round(sec * FPS)
-  const cut = (scene: string, view: View, from: [string, number], to: [string, number]): Cut => {
+  // Every shot's sound runs a little under the next one (the game's effects are short; no dead air between hits).
+  const cut = (scene: string, view: View, from: [string, number], to: [string, number], tail = 0.35): Cut => {
     const take = t[scene]!
     const at = (name: string, sec: number) => take.marks[name]! + s(sec)
-    return { take, from: at(...from), to: at(...to), crop: cropOf(take, view) }
+    return { take, from: at(...from), to: at(...to), crop: cropOf(take, view), tail }
   }
   return [
-    cut('reroll', 'dice', ['roll', 0], ['roll', 1.4]),
-    cut('pair', 'dice', ['roll', 0.6], ['roll', 1.2]),
-    cut('pair', 'stage', ['attack', 0.2], ['attack', 1.2]),
-    cut('three', 'dice', ['roll', 0.6], ['roll', 1.2]),
-    cut('three', 'stage', ['attack', 0.2], ['attack', 1.2]),
-    cut('straight', 'dice', ['roll', 0.6], ['roll', 1.2]),
-    cut('straight', 'stage', ['attack', 0.2], ['attack', 1.2]),
-    cut('fullhouse', 'dice', ['roll', 0.6], ['roll', 1.2]),
-    cut('fullhouse', 'stage', ['attack', 0.2], ['attack', 1.4]),
-    cut('reroll', 'dice', ['reroll', -0.6], ['combo', 0.5]),
-    cut('reroll', 'stage', ['attack', 0.1], ['faint', 0.4]),
-    cut('megahit', 'stage', ['mega', 0.1], ['mega', 3.0]),
-    cut('megahit', 'stage', ['attack', 0.1], ['attack', 1.4]),
-    cut('boss', 'stage', ['intro', 2.5], ['intro', 4.8]),
-    cut('boss', 'stage', ['hit', -1.4], ['hit', 0.2]),
-    cut('finale', 'dice', ['reroll', -0.2], ['five', 0.6]),
-    cut('finale', 'stage', ['z', 0], ['faint', 0.6]),
-    cut('raid', 'whole', ['intro', 2.4], ['intro', 3.6]),
-    cut('title', 'whole', ['title', 0.3], ['title', 2.3]),
+    // A Pair: the dice thrown (their rattle) and landing, then Thunderbolt (its bolt at +1.05 s, the damage at +1.35 s).
+    cut('pair', 'dice', ['roll', 0.05], ['roll', 1.05]),
+    cut('pair', 'stage', ['attack', 0.7], ['attack', 1.6]),
+    // Three of a Kind: Ice Beam's beam and spikes, then its shatter (+2.45 s).
+    cut('three', 'dice', ['roll', 0.05], ['roll', 1.05]),
+    cut('three', 'stage', ['attack', 1.0], ['attack', 1.45]),
+    cut('three', 'stage', ['attack', 2.35], ['attack', 2.8]),
+    // A Small Straight: Shadow Ball flying in and bursting (+1.63 s).
+    cut('straight', 'dice', ['roll', 0.05], ['roll', 1.05]),
+    cut('straight', 'stage', ['attack', 1.1], ['attack', 2.0]),
+    // A Full House: Hydro Pump, SUPER EFFECTIVE!
+    cut('fullhouse', 'dice', ['roll', 0.05], ['roll', 1.05]),
+    cut('fullhouse', 'stage', ['attack', 0.65], ['attack', 2.0]),
+    // Three of a Kind kept, two dice thrown again: Four of a Kind. Flamethrower, then the K.O.
+    cut('reroll', 'dice', ['reroll', -0.6], ['combo', 0.4]),
+    cut('reroll', 'stage', ['attack', 0.85], ['attack', 2.3]),
+    cut('reroll', 'stage', ['faint', -0.05], ['faint', 0.55]),
+    // Lucario Mega Evolves; Mega Lucario's punches, the K.O.
+    cut('megahit', 'stage', ['mega', 1.2], ['mega', 3.15]),
+    cut('megahit', 'stage', ['attack', 0.95], ['attack', 2.15]),
+    cut('megahit', 'stage', ['faint', -0.05], ['faint', 0.45]),
+    // Celebi's entrance (the silhouette, its rays, the reveal, its name), then its strike.
+    cut('boss', 'stage', ['intro', 2.2], ['intro', 4.6]),
+    cut('boss', 'stage', ['hit', -1.0], ['hit', 0.4]),
+    // The finale: Four of a Kind, one die thrown again, Five of a Kind; the Z-Move; the K.O.
+    cut('finale', 'dice', ['roll', 0.4], ['roll', 1.05]),
+    cut('finale', 'dice', ['reroll', -0.25], ['z', 0.05]),
+    cut('finale', 'stage', ['z', 0], ['z', 1.45]),
+    cut('finale', 'stage', ['z', 2.65], ['z', 4.4]),
+    cut('finale', 'stage', ['faint', -0.05], ['faint', 0.75]),
+    // Rayquaza out of the sky (its sky still heard under the title); the title.
+    cut('raid', 'whole', ['intro', 1.65], ['intro', 3.75], 2.4),
+    cut('title', 'title', ['title', 0.3], ['title', 2.6]),
   ]
 }
 

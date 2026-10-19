@@ -339,7 +339,9 @@ function tryDuel(start: BattleState, data: GameData, goal: DuelGoal, seed: numbe
   score -= statusFaces()
   const finisher = goal.kind === 'reroll' && goal.finisher === 'z' ? 'ZMOVE' : 'ATTACK'
   const end = reduce(s, { t: finisher }, data, rng)
-  const hit = end.log.find((e): e is Extract<LogEntry, { kind: 'damage' }> => e.kind === 'damage' && e.side === 'player')
+  const hit = end.log.find(
+    (e): e is Extract<LogEntry, { kind: 'damage' }> => e.kind === 'damage' && e.side === 'player',
+  )
   if (!hit || hit.result.effectiveness < 1.5) return null
   const ko = end.log.some((e) => e.kind === 'faint' && e.side === 'enemy')
   if (goal.kind !== 'hand' && !ko) return null
@@ -352,7 +354,12 @@ function tryDuel(start: BattleState, data: GameData, goal: DuelGoal, seed: numbe
 }
 
 /** The best seed for a duel's goal on the battle as engaged (the store's own state: nothing to keep in step). */
-export function planDuel(start: BattleState, data: GameData, goal: DuelGoal, count = 40_000): DuelPlan | null {
+export function planDuel(
+  start: BattleState,
+  data: GameData,
+  goal: DuelGoal,
+  count = 40_000,
+): DuelPlan | null {
   let found: DuelPlan | null = null
   for (let seed = 1; seed <= count; seed++) {
     const p = tryDuel(start, data, goal, seed)

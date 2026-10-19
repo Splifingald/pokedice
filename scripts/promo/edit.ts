@@ -21,6 +21,8 @@ export interface Cut {
   noGif?: boolean
   /** The part of its frames that fills the picture, device pixels (scaled nearest-neighbour to the edit's size). */
   crop?: { x: number; y: number; w: number; h: number }
+  /** Its sound goes on this many seconds under the next cut, fading out (an L-cut): no silence on a quiet shot. */
+  tail?: number
 }
 
 const CRIES = resolve('scripts/.cache/cries')
@@ -118,17 +120,28 @@ export async function edit(cuts: Cut[], fps: number, out: string, work: string, 
   for (const c of cuts)
     if (!sounds.has(c.take)) sounds.set(c.take, takeSound(c.take, work, c.take.frames.length / fps + 1))
   const inputs = [...new Set(sounds.values())]
+  // Each cut's sound at its place on the timeline, its tail (if any) fading out under what follows.
+  let at = 0
   const parts = cuts.map((c, k) => {
     const i = inputs.indexOf(sounds.get(c.take)!)
     const a = Math.max(0, c.from) / fps
-    const b = c.to / fps
-    return `[${i}:a]atrim=${a.toFixed(4)}:${b.toFixed(4)},asetpts=PTS-STARTPTS,afade=t=in:d=0.008,afade=t=out:st=${(b - a - 0.008).toFixed(4)}:d=0.008[s${k}]`
+    const len = (c.to - Math.max(0, c.from)) / fps
+    const tail = Math.min(c.tail ?? 0, c.take.frames.length / fps - a - len)
+    const fade =
+      tail > 0 ? `st=${len.toFixed(4)}:d=${tail.toFixed(4)}` : `st=${(len - 0.008).toFixed(4)}:d=0.008`
+    const delay = Math.round(at * 48_000)
+    at += len
+    return (
+      `[${i}:a]atrim=${a.toFixed(4)}:${(a + len + Math.max(0, tail)).toFixed(4)},asetpts=PTS-STARTPTS,` +
+      `afade=t=in:d=0.008,afade=t=out:${fade},adelay=${delay}S|${delay}S[s${k}]`
+    )
   })
   const audio = join(work, 'sound.wav')
   ffmpeg([
     ...inputs.flatMap((f) => ['-i', f]),
     '-filter_complex',
-    `${parts.join(';')};${cuts.map((_, k) => `[s${k}]`).join('')}concat=n=${cuts.length}:v=0:a=1,loudnorm=I=-16:TP=-1.5:LRA=11[out]`,
+    `${parts.join(';')};${cuts.map((_, k) => `[s${k}]`).join('')}amix=inputs=${cuts.length}:normalize=0:duration=longest,` +
+      `atrim=0:${at.toFixed(4)},loudnorm=I=-16:TP=-1.5:LRA=11[out]`,
     '-map',
     '[out]',
     '-ar',
