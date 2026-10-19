@@ -1,0 +1,190 @@
+<!doctype html>
+<!--
+  The link preview (og:image, twitter:image): 1200×630, drawn in Johto Daybreak (docs/15) from the game's own art.
+  Re-render public/og-image.png after changing it: `pnpm og-image`.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      @font-face {
+        font-family: 'Jersey 25';
+        src: url('../../public/fonts/jersey25-latin.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'Jersey 15';
+        src: url('../../public/fonts/jersey15-latin.woff2') format('woff2');
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+      }
+      body {
+        position: relative;
+        font-family: 'Jersey 25', sans-serif;
+        color: #24304f;
+        -webkit-font-smoothing: none;
+      }
+      .ground {
+        position: absolute;
+        inset: 0;
+        /* The morning sky's dot texture (frames.ts textureArt) at 4 px per art pixel: twice the game's scale. */
+        background-color: #e9f0f8;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' shape-rendering='crispEdges'%3E%3Crect width='4' height='4' fill='%23dde7f3'/%3E%3Crect x='16' y='16' width='4' height='4' fill='%23dde7f3'/%3E%3C/svg%3E");
+      }
+      .scanlines {
+        position: absolute;
+        inset: 0;
+        background-image: repeating-linear-gradient(to bottom, rgb(36 48 79 / 0.05) 0 2px, transparent 2px 6px);
+      }
+      /* The battle field: grass.png at 5× (art pixels stay square), its striped sky fading into the morning one. */
+      .field {
+        position: absolute;
+        left: 0;
+        bottom: -10px;
+        width: 1200px;
+        height: 560px;
+        background: url('../../public/battle/grass.png') 0 0 / 1200px 560px no-repeat;
+        image-rendering: pixelated;
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 200px);
+        mask-image: linear-gradient(to bottom, transparent 0, #000 200px);
+      }
+      .title {
+        position: absolute;
+        left: 64px;
+        top: 52px;
+        margin: 0;
+        font-weight: 400;
+        font-size: 176px;
+        line-height: 0.8;
+        letter-spacing: 0.1em;
+        text-shadow:
+          8px 8px 0 #b6c3d9,
+          16px 16px 0 #24304f;
+      }
+      .title .dice {
+        color: #c4382a;
+      }
+      .chip {
+        position: absolute;
+        left: 72px;
+        top: 262px;
+        padding: 6px 22px 10px;
+        background: #24304f;
+        color: #ffe7a8;
+        font-family: 'Jersey 15', sans-serif;
+        font-size: 38px;
+        letter-spacing: 0.08em;
+        line-height: 1;
+        /* Clipped pixel corners (.pixel-corners), at 4 px. */
+        clip-path: polygon(
+          4px 0,
+          calc(100% - 4px) 0,
+          calc(100% - 4px) 4px,
+          100% 4px,
+          100% calc(100% - 4px),
+          calc(100% - 4px) calc(100% - 4px),
+          calc(100% - 4px) 100%,
+          4px 100%,
+          4px calc(100% - 4px),
+          0 calc(100% - 4px),
+          0 4px,
+          4px 4px
+        );
+      }
+      .chip b {
+        color: #ffbe2e;
+        font-weight: 400;
+      }
+      /* Dice (Die.tsx, .die): type fill, ink edge, a light and a dark lip, pips on whole pixels. All doubled. */
+      .dice-row {
+        position: absolute;
+        left: 96px;
+        top: 452px;
+        display: flex;
+        gap: 36px;
+        align-items: flex-end;
+      }
+      .die-wrap {
+        filter: drop-shadow(0 8px 0 rgba(36, 48, 79, 0.28));
+      }
+      .die {
+        position: relative;
+        width: 112px;
+        height: 112px;
+        background: var(--c);
+        box-shadow:
+          inset 0 0 0 4px #24304f,
+          inset 4px 8px 0 0 rgba(255, 255, 255, 0.45),
+          inset -4px -8px 0 0 rgba(20, 30, 60, 0.18);
+      }
+      .die i {
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        background: var(--pip);
+      }
+      .mon {
+        position: absolute;
+        width: 256px;
+        height: 256px;
+        image-rendering: pixelated;
+        filter: drop-shadow(0 8px 0 rgba(36, 48, 79, 0.25));
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ground"></div>
+    <div class="field"></div>
+    <div class="scanlines"></div>
+
+    <h1 class="title">POKÉ<span class="dice">DICE</span></h1>
+    <div class="chip">ROLL <b>·</b> BATTLE <b>·</b> CATCH</div>
+
+    <div class="dice-row" id="dice"></div>
+
+    <img class="mon" src="../../public/pokemon/447_front.png" style="left: 640px; top: 238px" alt="" />
+    <img class="mon" src="../../public/pokemon/025_front.png" style="left: 846px; top: 262px" alt="" />
+    <img class="mon" src="../../public/pokemon/151_front.png" style="left: 880px; top: 44px" alt="" />
+
+    <script>
+      // The same pip map and geometry as Die.tsx (pipLayout), for a 112 px die.
+      const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] }
+      const size = 112
+      const pip = Math.max(2, Math.round((size * 0.15) / 2) * 2)
+      const margin = Math.round(size * 0.2)
+      const at = [margin, Math.round((size - pip) / 2), size - margin - pip]
+      const dice = [
+        { fill: '#f7d02c', pip: '#24304f', value: 6, tilt: -6, lift: 0 },
+        { fill: '#f95587', pip: '#ffffff', value: 5, tilt: 4, lift: 18 },
+        { fill: '#c22e28', pip: '#ffffff', value: 3, tilt: -3, lift: 4 },
+      ]
+      const row = document.getElementById('dice')
+      for (const d of dice) {
+        const wrap = document.createElement('span')
+        wrap.className = 'die-wrap'
+        wrap.style.transform = `translateY(${-d.lift}px) rotate(${d.tilt}deg)`
+        const die = document.createElement('span')
+        die.className = 'die'
+        die.style.setProperty('--c', d.fill)
+        die.style.setProperty('--pip', d.pip)
+        die.style.display = 'block'
+        for (const cell of PIPS[d.value]) {
+          const i = document.createElement('i')
+          i.style.left = at[cell % 3] + 'px'
+          i.style.top = at[Math.floor(cell / 3)] + 'px'
+          i.style.width = i.style.height = pip + 'px'
+          die.appendChild(i)
+        }
+        wrap.appendChild(die)
+        row.appendChild(wrap)
+      }
+    </script>
+  </body>
+</html>

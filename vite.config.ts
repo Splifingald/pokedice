@@ -52,8 +52,22 @@ function buildVersion(): Plugin {
   }
 }
 
+/**
+ * Link previews (og:image, twitter:image) need an absolute image URL: Netlify sets URL to the site's address at build
+ * time. Without it (local builds) the tags keep the path, which is still right for the site's own pages.
+ */
+function absoluteOgImage(): Plugin {
+  return {
+    name: 'pokedice-og-image',
+    transformIndexHtml(html) {
+      const site = process.env.URL?.replace(/\/$/, '')
+      return site ? html.replaceAll('content="/og-image.png"', `content="${site}/og-image.png"`) : html
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [react(), devBundleWriter(), buildVersion()],
+  plugins: [react(), devBundleWriter(), buildVersion(), absoluteOgImage()],
   define: { __BUILD_ID__: JSON.stringify(BUILD_ID) },
   resolve: {
     alias: {
