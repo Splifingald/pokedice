@@ -10,12 +10,23 @@ import { commitSave, initialRun, useGame } from '@/store/game'
 import { useRaidRun } from '@/store/raidBattle'
 import { engage, seedRun } from '@/store/run'
 import { buildHeroSave, HERO_AREA_ID, HERO_LEAD_ID, heroEncounter, heroOptionsFrom } from './heroDemo'
-import { AREA, PLAYER, promoSave, rayquazaRaid, withDayCare, withTrades } from './promo'
+import {
+  AREA,
+  DUELS,
+  duelSave,
+  planDuel,
+  PLAYER,
+  promoSave,
+  rayquazaRaid,
+  withDayCare,
+  withTrades,
+  type DuelPlan,
+} from './promo'
 
 declare global {
   interface Window {
-    /** What the recording reads back: the game's store. */
-    __promo?: { state: () => ReturnType<typeof useGame.getState> }
+    /** What the recording reads back: the game's store, and a duel's turn (the dice it rerolls). */
+    __promo?: { state: () => ReturnType<typeof useGame.getState>; plan?: DuelPlan }
   }
 }
 
@@ -150,6 +161,32 @@ export default function PromoDemo() {
       case 'title':
         // A first visit: no save at all.
         return navigate('/', { replace: true })
+      default: {
+        const duel = DUELS[scene]
+        if (!duel) return
+        const save = duelSave(data, duel, now)
+        load(save)
+        useGame.setState({
+          run: { ...initialRun(), areaId: duel.areaId, phase: 'preview', encounter: duel.foe },
+          battle: null,
+        })
+        engage(save.team[0]!)
+        const battle = useGame.getState().battle!
+        const enemy = battle.state.enemy
+        // A fight already under way (the foe worn down), Z-Moves open: the starting state only.
+        const state = {
+          ...battle.state,
+          enemy: duel.foeHp ? { ...enemy, hp: Math.round(enemy.maxHp * duel.foeHp) } : enemy,
+          ...(duel.z && { zAllowed: true }),
+        }
+        useGame.setState({ battle: { ...battle, state } })
+        // The turn the trailer shows, found on this very battle; its seed in before the first roll.
+        const plan = planDuel(state, data, duel.goal)
+        if (!plan) throw new Error(`No seed plays the ${scene} duel's turn`)
+        seedRun(plan.seed)
+        window.__promo.plan = plan
+        return navigate('/area', { replace: true })
+      }
     }
   }, [scene, params, navigate])
 

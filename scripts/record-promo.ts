@@ -8,26 +8,31 @@
 // --scene records one scene alone; --explore writes its contact sheet (every 15th frame) instead of the trailer.
 // Writes promo/trailer-4x5.mp4 (1080×1350), promo/trailer-16x9.mp4 (1920×1080) and promo/trailer-4x5.gif (540×675).
 import { spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import type { Route } from '@playwright/test'
 import { PNG } from 'pngjs'
 import { BUNDLE } from '@/config/bundle'
-import { compileGameData, createInstance, DEFAULT_CONFIG } from '@/engine'
+import { compileGameData, createInstance } from '@/engine'
 import { HERO_DEFAULTS, heroQuery } from '@/dev/heroDemo'
-import { arg, openCapture, startServer, type Capture, type CryNote } from './promo/capture'
+import { arg, startServer, type Capture } from './promo/capture'
 import { edit, gifOf, type Cut } from './promo/edit'
+import {
+  buttonOn,
+  FPS,
+  hasLog,
+  hold,
+  mark,
+  record,
+  SUPABASE,
+  text,
+  until,
+  type Format,
+  type Scene,
+  type Take,
+} from './promo/take'
 import { planFor } from './find-hero-seed'
-
-export interface Format {
-  name: 'mobile' | 'desktop'
-  out: string
-  width: number
-  height: number
-  dpr: number
-  touch: boolean
-}
 
 // The 4:5 phone is 576×720 CSS px (the whole battle fits; still the one-column layout), the desktop 1280×720.
 const FORMATS: Format[] = [
@@ -35,58 +40,13 @@ const FORMATS: Format[] = [
   { name: 'desktop', out: 'trailer-16x9.mp4', width: 1280, height: 720, dpr: 1.5, touch: false },
 ]
 
-const FPS = 60
 /** The hero turn's seed (scripts/find-hero-seed.ts), Celebi's strike's and Greninja's light opener's. */
 const SEEDS = { battle: 3494, boss: 6, mega: 27 }
 
-/** A stand-in for Supabase on the trade scene: a signed-in player, Sora's Kadabra on the board. */
-const SUPABASE = 'http://127.0.0.1:54399'
+/** The trades' scene signs in: Supabase's session as the client keeps it. */
 const SESSION_KEY = 'sb-127-auth-token'
 
-export interface Take {
-  frames: string[]
-  marks: Record<string, number>
-  wav: string | null
-  cries: CryNote[]
-}
-
-interface Ctx {
-  cap: Capture
-  f: Format
-  dir: string
-  frames: string[]
-  marks: Record<string, number>
-}
-
-async function tick(c: Ctx) {
-  const png = await c.cap.frame()
-  const file = join(c.dir, `${String(c.frames.length).padStart(5, '0')}.png`)
-  writeFileSync(file, png)
-  c.frames.push(file)
-}
-const mark = (c: Ctx, name: string) => void (c.marks[name] = c.frames.length)
-async function hold(c: Ctx, ms: number) {
-  for (let i = Math.round((ms * FPS) / 1000); i > 0; i--) await tick(c)
-}
-/** Frames until the page says so (checked before each one), at most `max` ms of game time. */
-async function until(c: Ctx, expr: string, max = 15_000) {
-  for (let i = 0; i < (max * FPS) / 1000; i++) {
-    if (await c.cap.page.evaluate(expr)) return
-    await tick(c)
-  }
-  throw new Error(`[${c.f.name}] waited too long for: ${expr}`)
-}
-
-const store = '(window.__promo && window.__promo.state())'
-const battleLog = `((${store} || {}).battle || { log: [] }).log`
-const hasLog = (kind: string, side?: string) =>
-  `${battleLog}.some((e) => e.kind === '${kind}'${side ? ` && e.side === '${side}'` : ''})`
-const buttonOn = (re: string) =>
-  `[...document.querySelectorAll('button')].some((b) => ${re}.test(b.textContent.trim()) && !b.disabled)`
-const text = (s: string) => `document.body.innerText.includes(${JSON.stringify(s)})`
-
-interface Scene {
-  name: string
+interface PromoScene extends Omit<Scene, 'size' | 'setup' | 'storage'> {
   /**
    * Its desktop take's page size instead of 1280×720 (the same 1920×1080 frame): Trades, a page that keeps a reading
    * width, at 960×540, a third bigger in the frame. (Home, the Day Care and the lab would crop their scenes there.)
@@ -94,14 +54,13 @@ interface Scene {
   desktop?: Pick<Format, 'width' | 'height' | 'dpr'>
   /** Signed in, with the Supabase stand-in answering (the trades' board). */
   online?: boolean
-  play: (c: Ctx, url: string) => Promise<void>
 }
 
 const plan = planFor(compileGameData(BUNDLE), { ...HERO_DEFAULTS, seed: SEEDS.battle })!
 
 const READING = { width: 960, height: 540, dpr: 2 }
 
-const SCENES: Scene[] = [
+const SCENES: PromoScene[] = [
   {
     name: 'battle',
     async play(c, url) {
@@ -179,6 +138,11 @@ const SCENES: Scene[] = [
       await c.cap.open(`${url}/__demo/daycare`, '!!window.__promo && location.pathname === "/daycare"')
       mark(c, 'yard')
       await hold(c, 12_000)
+    },
+    after(c) {
+      const at = firstHeart(c.frames)
+      if (at == null) throw new Error(`[${c.f.name}] no hearts in the Day Care's yard`)
+      c.marks.hearts = at
     },
   },
   {
@@ -363,47 +327,13 @@ function session(): string {
   })
 }
 
-async function record(url: string, format: Format, scene: Scene, dir: string): Promise<Take> {
-  const f = format.name === 'desktop' && scene.desktop ? { ...format, ...scene.desktop } : format
-  const cap = await openCapture({
-    width: f.width,
-    height: f.height,
-    dpr: f.dpr,
-    touch: f.touch,
-    fps: FPS,
-    audioSeconds: 40,
-    storage: {
-      // Trades switched on (they ship off), as the dev server reads its config.
-      'pokedice.devConfig': JSON.stringify({ trade: { ...DEFAULT_CONFIG.trade, access: 'all' } }),
-      ...(scene.online && { [SESSION_KEY]: session() }),
-      // Prof. Oak's "Invite a friend" (once a region's second badge is won) already seen.
-      ...Object.fromEntries(
-        ['kanto', 'johto', 'hoenn', 'kalos'].map((r) => [`pokedice.sharePrompt.${r}`, '1']),
-      ),
-    },
-  })
-  if (scene.online) await online(cap)
-  else
-    await cap.page.route(`${SUPABASE}/**`, (r) =>
-      r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }),
-    )
-  const c: Ctx = { cap, f, dir, frames: [], marks: {} }
-  try {
-    await scene.play(c, url)
-    if (scene.name === 'daycare') {
-      const at = firstHeart(c.frames)
-      if (at == null) throw new Error(`[${f.name}] no hearts in the Day Care's yard`)
-      c.marks.hearts = at
-    }
-    const { wav, cries } = await cap.sounds()
-    let wavFile: string | null = null
-    if (wav) writeFileSync((wavFile = join(dir, 'sound.wav')), wav)
-    console.log(
-      `[${f.name}] ${scene.name}: ${c.frames.length} frames, marks ${JSON.stringify(c.marks)}, cries ${cries.length}`,
-    )
-    return { frames: c.frames, marks: c.marks, wav: wavFile, cries }
-  } finally {
-    await cap.close()
+/** A scene as this format records it: its desktop size, signed in with the stand-in answering when it's online. */
+function sceneFor(scene: PromoScene, f: Format): Scene {
+  return {
+    ...scene,
+    size: f.name === 'desktop' ? scene.desktop : undefined,
+    setup: scene.online ? online : undefined,
+    storage: scene.online ? { [SESSION_KEY]: session() } : undefined,
   }
 }
 
@@ -461,7 +391,7 @@ async function main() {
         if (sceneName && !sceneName.split(',').includes(scene.name)) continue
         const dir = join(root, scene.name)
         mkdirSync(dir)
-        takes[scene.name] = await record(server.url, f, scene, dir)
+        takes[scene.name] = await record(server.url, f, sceneFor(scene, f), dir)
         if (explore) {
           const sheet = join(outDir, '.explore', `${scene.name}-${f.name}.png`)
           mkdirSync(join(outDir, '.explore'), { recursive: true })
