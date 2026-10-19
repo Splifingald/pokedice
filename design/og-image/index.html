@@ -74,13 +74,17 @@
       .chip {
         position: absolute;
         left: 72px;
-        top: 262px;
-        padding: 6px 22px 10px;
+        top: 258px;
+        /* As wide as the title above it. */
+        width: 766px;
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 30px 14px;
         background: #24304f;
         color: #ffe7a8;
         font-family: 'Jersey 15', sans-serif;
-        font-size: 38px;
-        letter-spacing: 0.08em;
+        font-size: 76px;
+        letter-spacing: 0.06em;
         line-height: 1;
         /* Clipped pixel corners (.pixel-corners), at 4 px. */
         clip-path: polygon(
@@ -145,12 +149,12 @@
     <div class="scanlines"></div>
 
     <h1 class="title">POKÉ<span class="dice">DICE</span></h1>
-    <div class="chip">ROLL <b>·</b> BATTLE <b>·</b> CATCH</div>
+    <div class="chip"><span>ROLL</span><b>·</b><span>BATTLE</span><b>·</b><span>CATCH</span></div>
 
     <div class="dice-row" id="dice"></div>
 
-    <img class="mon" src="../../public/pokemon/447_front.png" style="left: 640px; top: 238px" alt="" />
-    <img class="mon" src="../../public/pokemon/025_front.png" style="left: 846px; top: 262px" alt="" />
+    <img class="mon" src="../../public/pokemon/447_front.png" style="left: 690px; top: 270px" alt="" />
+    <img class="mon" src="../../public/pokemon/025_front.png" style="left: 910px; top: 282px" alt="" />
     <img class="mon" src="../../public/pokemon/151_front.png" style="left: 880px; top: 44px" alt="" />
 
     <script>
