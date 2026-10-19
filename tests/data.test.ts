@@ -12,7 +12,7 @@ import { BUNDLE } from '@/config/bundle'
 import { DEFAULT_CONFIG } from '@/engine'
 import { bundleToRows, TABLES } from '@/config/mapping'
 import { validateRow } from '@/admin/schemas'
-import { compileGameData, effectiveStats } from '@/engine'
+import { compileGameData, deckAbilities, deckCounts, effectiveStats } from '@/engine'
 import type { Area, DiceEntry, Species, Trainer } from '@/engine/types'
 import { composeDice, diceCountFromBst, hpAtLevel, stableUuid } from '../scripts/seed'
 import { KANTO_RIVAL, MIN_BENCH, ROSTERS } from '../scripts/rebattle-teams'
@@ -177,6 +177,14 @@ describe('areas & trainers', () => {
     // The Game Corner jackpot prize (Porygon) counts too.
     const catchable = new Set([...allAreas.flatMap((a) => a.wildPool.map((w) => w.dex)), ...LEGENDARIES, (BUNDLE.config.slotMachine as { prizeDex: number }).prizeDex])
     expect(catchable.size).toBe(151)
+  })
+
+  // Route 4 & Nugget Bridge once had item weight 0: its sheet offered a ₱250 stash no deck could ever deal.
+  it('deals an item card wherever a one-time find waits, in every region', () => {
+    for (const a of everyArea) {
+      if (!a.lootPool.some((e) => e.unique && e.weight > 0)) continue
+      expect(deckCounts(a.encounterWeights, deckAbilities(a)).item, a.name).toBeGreaterThan(0)
+    }
   })
 
   it('every trainer referenced exists and has 1–3 Pokémon', () => {

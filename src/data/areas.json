@@ -18442,7 +18442,7 @@
   "minLevel": 9,
   "maxLevel": 15,
   "encounterWeights": {
-   "item": 0,
+   "item": 1,
    "wild": 2,
    "center": 0,
    "trainer": 2
