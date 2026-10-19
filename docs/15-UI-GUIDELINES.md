@@ -1244,7 +1244,13 @@ The pieces are in `src/screens/battle/DoublePlates.tsx` and `BattleStage` (`Doub
   picked one ringed in gold with the sword), 44 px tall; tapping the foe behind on the stage picks it too. Hidden with
   one foe left, and in auto mode (which aims by itself).
 - The heading and history name every Pokémon out; the opening line names both foes and both of yours; the victory card
-  names every foe defeated; after a wild pair each one waits worn out in front for its throw, one after the other.
+  names every foe defeated.
+- **A wild pair's catch** (the user, 2026-10-19): a foe that can be caught doesn't faint away when K.O.'d — it stays on
+  its spot, **worn out** (greyed, dizzy stars, its plate greyed, not a target), behind the one still fighting, until
+  that one falls too. Then a throw at each, **one after the other with nothing between them**: the first K.O.'d slides
+  in front for its throw while the other waits worn out behind (it stays through the throw); then the other's. The
+  rewards come after both; each "Add to team?" is asked there in turn (CONTINUE sends the one asked to the Box and
+  shows the next).
 - Switching: the bench only (those out aren't offered); after a K.O. the replacement is picked as in one on one.
 
 ## 32. The Underground

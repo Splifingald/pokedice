@@ -385,8 +385,10 @@ function DoubleMons({
         ))}
       {ordered.map(({ b, side, place, front }) => {
         const foeSide = side === 'enemy'
-        // The catch waits with the foe in front worn out on its spot.
-        const wornHere = foeSide && front && worn
+        // The catch waits with the foe in front worn out on its spot; a wild pair's first K.O. waits behind, worn out
+        // too, through the rest of the fight and the other's throw (docs/33).
+        const wornBack = foeSide && !front && !!fx.wornOut[b.uid]
+        const wornHere = (foeSide && front && worn) || wornBack
         return (
           <Mon
             key={b.uid}
@@ -395,13 +397,13 @@ function DoubleMons({
             scale={scale}
             shown={foeSide ? foeShown : ownShown}
             fainted={(!!fx.fainted[b.uid] || !!fx.wornOut[b.uid]) && !wornHere}
-            hidden={front ? playing : overlay}
+            hidden={front ? playing : overlay && !wornBack}
             worn={wornHere}
             fx={fx}
             place={place}
             front={front}
             onTap={
-              front ? onTap && (() => onTap(side)) : foeSide && onAim ? () => onAim(b) : undefined
+              front ? onTap && (() => onTap(side)) : foeSide && onAim && !wornBack ? () => onAim(b) : undefined
             }
             tapLabel={!front && foeSide && aimLabel ? aimLabel(b) : tapLabel(b)}
           />

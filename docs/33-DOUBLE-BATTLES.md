@@ -25,7 +25,7 @@ front, the others smaller behind. You pick which foe your Pokémon attacks; foes
 | One of yours K.O. | A free replacement from the bench, your pick; with none left, the other fights on alone (1 v 2). |
 | Only one able at the start | It fights both, 1 v 2. |
 | XP | Each K.O. gives its full XP to **both** of yours out when it fell. |
-| Catching | After a wild pair, a throw at each one, one after the other. |
+| Catching | After a wild pair, a throw at each one, one after the other. The first K.O.'d waits worn out on its side until the other falls (2026-10-19); the two throws follow each other, and each "Add to team?" is asked on the rewards screen afterwards. |
 | Money | Trainers pay per K.O. as before (gyms × the gym multiplier). |
 | Names | Hidden in double battles only: the plates show the Pokémon's icon, level, HP and statuses. |
 | Rules pop-up, tag | None (the user, after seeing it in game): no rules pop-up, no INFO, no DOUBLE BATTLE tag on the preview. |
@@ -58,7 +58,10 @@ front, the others smaller behind. You pick which foe your Pokémon attacks; foes
 - `store/run.ts`: `engage(leads)` with the two leads picked; `startBattle(…, double)` (each foe's plan, the ace's
   Mega / Gigantamax); **`settleDouble`** pays each K.O. (`applyVictory` with `fighterUids`) whatever the end — as each
   K.O. of a one-by-one gauntlet is kept — then the wipe, the stalemate, or the rewards; won, each wild one that can be
-  caught gets its throw (`run.catch`, then `run.catchQueue`; "Add to team?" is answered before the next throw).
+  caught gets its throw (`run.catch`, then `run.catchQueue`), back to back: a catch that needs "Add to team?" waits in
+  `run.catchPending` and the rewards screen asks each in turn (`pendingCatchId`, then the next on `resolveCatch`).
+- The stage: a foe that can be caught is worn out, not fainted, when K.O.'d (`useBattleAnimator`'s `catchable` asks
+  per foe); it stays behind the one still fighting, then slides in front for its throw while the other waits behind.
 - Screens (§30 of docs/15): the stage with four, the name-less plates, the target picker, the lead picker sending two, the victory card naming every foe, the history.
 - Picking another target only swaps the foe in front and updates the damage: the dice stay on the tray, not rolled
   again, and the inputs stay unlocked (`useBattleAnimator`: an `aim` focus takes no time).
@@ -98,5 +101,7 @@ exists), the `doubleBattles` row (Off, Hoenn → Paldea, 10 %) and `configVersio
 `tests/engine/double-battle.test.ts` (the field, the order, targeting, random foe targets, replacements, 1 v 2, the
 win and its K.O.s, auto to the end on 30 seeds, when a battle is double, the XP for both), `tests/battle-aim.test.ts`
 (a new target keeps the tray),
+`tests/double-catch.test.ts` (the worn-out K.O., the throws back to back, the questions in turn),
 `tests/double-battles-content.test.ts`, `tests/double-battles-sql.test.ts`, `e2e/double-battles.spec.ts` (a wild pair
-from the preview to the rewards at phone size, the switch off, the kitchen sink).
+from the preview to the rewards at phone size, both throws before the rewards, a full team's two questions, the switch
+off, the kitchen sink).

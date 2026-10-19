@@ -775,6 +775,7 @@ function settleBattle(stalemate: boolean) {
       pendingCatchId: null,
       catch: target && kind ? { dex: foeDex, level: s.enemy.level, shiny: s.enemy.shiny, kind, target, result: null } : null,
       catchQueue: [],
+      catchPending: [],
       trainer: run.trainer ? { ...run.trainer, gold: run.trainer.gold + gold } : null,
     })
     return
@@ -869,6 +870,7 @@ function settleDouble(save: SaveData, result: 'won' | 'lost' | 'fled' | 'ongoing
     pendingCatchId: null,
     catch: catches[0] ?? null,
     catchQueue: catches.slice(1),
+    catchPending: [],
     trainer: run.trainer ? { ...run.trainer, gold: run.trainer.gold + gold } : null,
   })
 }
@@ -947,19 +949,22 @@ export function retryCatch() {
 
 /**
  * Leave the throw for the rewards screen, which now lists the catch (or the flight) too — or, after a wild double
- * battle, for the other one's throw first (docs/33).
+ * battle, for the other one's throw first (docs/33): the throws follow one another, and each "Add to team?" waits for
+ * the rewards screen, in the order they were caught.
  */
 export function finishCatch() {
   const { run } = useGame.getState()
   const r = run.catch?.result
   if (!r || r.baitOffer || r.stays) return
+  const events = [...run.events, ...r.events]
+  const pending = [...(run.catchPending ?? []), ...(r.pendingCatchId ? [r.pendingCatchId] : [])]
   const [next, ...rest] = run.catchQueue ?? []
-  // "Add to team?" is answered on the rewards screen first; the other throw follows the answer (resolveCatch).
-  if (next && !r.pendingCatchId) {
-    setRun({ events: [...run.events, ...r.events], catch: next, catchQueue: rest })
+  if (next) {
+    setRun({ events, catch: next, catchQueue: rest, catchPending: pending })
     return
   }
-  setRun({ phase: 'victory', events: [...run.events, ...r.events], pendingCatchId: r.pendingCatchId, catch: null })
+  const [first = null, ...later] = pending
+  setRun({ phase: 'victory', events, pendingCatchId: first, catchPending: later, catch: null })
 }
 
 /** The trainer still has Pokémon left after this victory? */
@@ -1012,10 +1017,9 @@ export function resolveCatch(replaceId: string | null) {
   const { run, data } = useGame.getState()
   if (!run.pendingCatchId) return
   if (replaceId) mutateSave((s) => swapIntoTeam(s, run.pendingCatchId!, replaceId, data))
-  setRun({ pendingCatchId: null })
-  // A wild double battle's other throw waited for this answer (docs/33).
-  const [next, ...rest] = run.catchQueue ?? []
-  if (next) setRun({ phase: 'catch', catch: next, catchQueue: rest })
+  // After a wild double battle, the other catch's question comes next (docs/33).
+  const [next = null, ...rest] = run.catchPending ?? []
+  setRun({ pendingCatchId: next, catchPending: rest })
 }
 
 /**

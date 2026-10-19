@@ -9,12 +9,16 @@ import { EVENTS_ON, FAST, gameData, makeSave, mockSupabase } from './helpers'
 const data = gameData()
 const base = makeSave(4)
 const AREA = base.currentAreaId
-/** Charmander and Squirtle at Lv.50, so the pair is won, and a wild card on top of the deck. */
-function strongSave(): SaveData {
+/**
+ * Charmander and Squirtle at Lv.50, so the pair is won, and a wild card on top of the deck. `full`: Bulbasaur too, a
+ * full team, so each catch asks "Add to team?".
+ */
+function strongSave(full = false): SaveData {
   const lead = base.box.find((p) => p.id === base.team[0])!
   const mons = [
     { ...lead, level: 50 },
     { ...lead, id: 'e2e-squirtle', dex: 7, level: 50 },
+    ...(full ? [{ ...lead, id: 'e2e-bulbasaur', dex: 1, level: 50 }] : []),
   ].map((p) => ({ ...p, currentHp: instanceMaxHp(p, data) }))
   return {
     ...base,
@@ -71,6 +75,15 @@ test('a wild pair: no pop-up, two leads, four on the stage, a target, a throw at
   await expect(picker.getByRole('radio', { checked: true })).toHaveCount(1)
 
   // Attack until both are down, then a throw at each one.
+  expect(await fightAndCatch(page)).toBe(2)
+  expect(errors).toEqual([])
+})
+
+/**
+ * Attack until both are down, then throw at each one; returns how many throws were made. The rewards never show
+ * between the two throws: the second follows the first at once.
+ */
+async function fightAndCatch(page: Page): Promise<number> {
   const attack = page.getByRole('button', { name: 'ATTACK', exact: true })
   const roll = page.getByRole('button', { name: /^(ROLL TO CATCH|CATCH)$/ })
   const victory = page.getByRole('heading', { name: 'VICTORY!' })
@@ -85,12 +98,38 @@ test('a wild pair: no pop-up, two leads, four on the stage, a target, a throw at
       // The throw's result, then on: the other one's throw, or the rewards.
       const next = page.getByRole('button', { name: 'CONTINUE', exact: true })
       await expect(next.first()).toBeVisible({ timeout: 15_000 })
+      if (throws === 1) await expect(victory).toHaveCount(0)
       if (!(await victory.isVisible())) await next.first().click()
     } else if ((await attack.isVisible()) && (await attack.isEnabled())) await attack.click()
     await page.waitForTimeout(250)
   }
   await expect(victory).toBeVisible()
-  expect(throws).toBe(2)
+  return throws
+}
+
+test('a wild pair with a full team: both throws, then "Add to team?" for each, one after the other', async ({ page }) => {
+  test.setTimeout(240_000)
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  await page.setViewportSize({ width: 390, height: 844 })
+  await boot(page, strongSave(true), DOUBLES_ON)
+  await page.goto('/home')
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+  await page.getByRole('dialog', { name: 'Two wild Pokémon appeared!' }).getByRole('button', { name: /FIGHT/ }).click()
+  expect(await fightAndCatch(page)).toBe(2)
+
+  // The rewards: the first catch's question, then (CONTINUE sends it to the Box) the second's, then on.
+  const victory = page.getByRole('heading', { name: 'VICTORY!' })
+  const question = page.getByText(/^Add .+ to your team\?$/)
+  await expect(question).toBeVisible({ timeout: 20_000 })
+  // The second question: one of the team swapped out for the second catch.
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).click()
+  await expect(victory).toBeVisible()
+  await expect(question).toBeVisible()
+  await page.getByRole('button', { name: /^Swap out Charizard/ }).click()
+  await expect(question).toHaveCount(0)
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).click()
+  await expect(victory).toHaveCount(0)
   expect(errors).toEqual([])
 })
 

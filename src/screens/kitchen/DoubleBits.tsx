@@ -9,7 +9,12 @@ import { BattleStage } from '../battle/BattleStage'
 import { DoublePlates, MiniPlate, TargetPicker } from '../battle/DoublePlates'
 import type { Fx } from '../battle/useBattleAnimator'
 
-const fxFor = (own: Battler, foe: Battler, fainted: Record<string, boolean> = {}): Fx => ({
+const fxFor = (
+  own: Battler,
+  foe: Battler,
+  fainted: Record<string, boolean> = {},
+  wornOut: Record<string, boolean> = {},
+): Fx => ({
   cursor: 0,
   message: '',
   hp: {},
@@ -17,7 +22,7 @@ const fxFor = (own: Battler, foe: Battler, fainted: Record<string, boolean> = {}
   foeUid: foe.uid,
   fainted,
   dex: {},
-  wornOut: {},
+  wornOut,
   tray: null,
   pop: null,
   banner: null,
@@ -113,6 +118,27 @@ export function DoubleBits() {
           label="Double battle stage, one K.O. on each side"
         >
           {plates({ [own[1]!.uid]: true, [foes[1]!.uid]: true })}
+        </BattleStage>
+      </div>
+      {/* A wild pair: the first one K.O.'d waits behind, worn out, for the other to fall; then a throw at each. */}
+      <div className="w-full max-w-[400px]">
+        <BattleStage
+          own={own[0]!}
+          foe={foes[0]!}
+          double
+          ownBack={own[1]}
+          foeBack={foes[1]}
+          fx={fxFor(own[0]!, foes[0]!, {}, { [foes[1]!.uid]: true })}
+          ownShown
+          foeShown
+          trainer={null}
+          overlay={null}
+          onContact={() => {}}
+          onSceneDone={() => {}}
+          tapLabel={(b) => b.name}
+          label="Double battle stage, a wild one worn out behind"
+        >
+          {plates({ [foes[1]!.uid]: true })}
         </BattleStage>
       </div>
       <div className="flex w-full max-w-[400px] flex-col gap-2">

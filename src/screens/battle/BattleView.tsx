@@ -257,13 +257,14 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const [ownOut, setOwnOut] = useState(quick)
   const intro = bossIntro || trainerIntro || !ownOut
 
-  // A wild or legendary foe the player can still catch isn't knocked out of the scene: the catch throw comes next.
-  const catchable =
+  // A wild or legendary foe the player can still catch isn't knocked out of the scene: the catch throw comes next. A
+  // wild pair's first K.O. waits worn out on its spot until the other is down too, then each gets its throw (docs/33).
+  const canCatch = (b: Battler) =>
     !versus &&
-    !dbl &&
     (st.kind === 'wild' || st.kind === 'boss') &&
     !!save &&
-    !!catchTarget(save, st.enemy.baseDex ?? st.enemy.dex, st.enemy.level, st.kind, data, st.enemy.shiny)
+    !!catchTarget(save, b.baseDex ?? b.dex, b.level, st.kind, data, b.shiny)
+  const catchable = dbl ? (uid: string) => dbl.foes.some((f) => f.uid === uid && canCatch(f)) : canCatch(st.enemy)
   const { fx, ready, sceneContact, sceneDone } = useBattleAnimator(
     battle,
     quick,
@@ -307,16 +308,20 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   }, [ready, intro, st.phase, quick, pace, battle.log.length, dispatch])
 
   const active = st.player.find((p) => p.uid === fx.activeUid) ?? activeBattler(st)
+  // The catch, once the log has played the last K.O. (before that, the fight's own pair stays in front).
+  const catching = !versus && ready && run.phase === 'catch' && !!run.catch
   // The foe in front, as the log has played; a double battle's catch shows the one waiting for the ball.
-  const catchFoe = dbl && run.catch?.uid ? dbl.foes.find((f) => f.uid === run.catch!.uid) : undefined
+  const catchFoe = dbl && catching && run.catch?.uid ? dbl.foes.find((f) => f.uid === run.catch!.uid) : undefined
   const foeFront = catchFoe ?? (dbl ? (dbl.foes.find((f) => f.uid === fx.foeUid) ?? st.enemy) : st.enemy)
   const byUid = (uids: readonly string[] | undefined, pool: readonly Battler[]) =>
     (uids ?? []).flatMap((u) => pool.filter((b) => b.uid === u))
   const ownRow = dbl ? byUid(fx.field?.own, st.player) : [active]
   const foeRow = dbl ? byUid(fx.field?.foes, dbl.foes) : [st.enemy]
-  // Behind the pair in front: their partners still standing (or falling).
+  // Behind the pair in front: their partners still standing (or falling, or worn out waiting for the ball). During the
+  // first throw, the other one waits behind for its own; once its turn comes, the first is gone (caught or fled).
   const ownBack = dbl ? (ownRow.find((b) => b.uid !== active.uid) ?? null) : null
-  const foeBack = dbl && !catchFoe ? (foeRow.find((b) => b.uid !== foeFront.uid) ?? null) : null
+  const waiting = (b: Battler) => !catchFoe || !!run.catchQueue?.some((c) => c.uid === b.uid)
+  const foeBack = dbl ? (foeRow.find((b) => b.uid !== foeFront.uid && waiting(b)) ?? null) : null
   // Cries: the foe's as it comes out, yours as each of yours does (after the foe's when both come out at once), a
   // Mega's once it stands there.
   useEffect(() => {
@@ -500,7 +505,6 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   }, [played])
 
   // ---- The catch, in the scene: the worn-out foe waits on its platform; one throw plays the catch timeline.
-  const catching = !versus && ready && run.phase === 'catch' && !!run.catch
   const [thrown, setThrown] = useState<StageOverlay | null>(null)
   // Back on a throw already made (the Bait's question, a stay): its result shows at once, with its buttons.
   const [revealed, setRevealed] = useState(() => !!useGame.getState().run.catch?.result)
@@ -805,7 +809,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             frontFoe={foeFront.uid}
             frontOwn={active.uid}
             hpOf={(b) => fx.hp[b.uid] ?? b.hp}
-            faintedOf={(b) => !!fx.fainted[b.uid]}
+            faintedOf={(b) => !!fx.fainted[b.uid] || !!fx.wornOut[b.uid]}
             party={party}
           />
         )}

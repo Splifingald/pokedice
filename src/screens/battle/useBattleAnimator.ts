@@ -74,8 +74,11 @@ export interface Scene {
 export interface AnimatorContext {
   kind: BattleState['kind']
   trainerName: string | null
-  /** The foe goes to the catch throw once it's K.O.'d (wild or legendary, and a catch on offer). */
-  catchable: boolean
+  /**
+   * The foe goes to the catch throw once it's K.O.'d (wild or legendary, and a catch on offer). A double battle asks per
+   * foe: a wild pair's first K.O. waits, worn out on its spot, for the other's (docs/33).
+   */
+  catchable: boolean | ((uid: string) => boolean)
   itemName: (key: string) => string
   /** A species' (or form's) name, for the form changes. */
   speciesName: (dex: number) => string
@@ -290,7 +293,7 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
         }),
       }
     case 'faint':
-      if (e.side === 'enemy' && ctx.catchable)
+      if (e.side === 'enemy' && (typeof ctx.catchable === 'function' ? ctx.catchable(e.uid) : ctx.catchable))
         return {
           delay: 1200,
           apply: (f) => ({

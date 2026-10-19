@@ -567,9 +567,13 @@ export function VictoryView() {
     if (mons[0]?.toLevel != null) sfx('levelup')
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // CONTINUE answers a pending "add to your team?" by sending the catch to the Box, then plays any evolution.
+  // CONTINUE answers a pending "add to your team?" by sending the catch to the Box, then plays any evolution. After a
+  // wild pair (docs/33), the other catch's question comes next: CONTINUE stays here for it.
   const go = (action: () => void) => () => {
-    if (useGame.getState().run.pendingCatchId) resolveCatch(null)
+    if (useGame.getState().run.pendingCatchId) {
+      resolveCatch(null)
+      if (useGame.getState().run.pendingCatchId) return
+    }
     if (evolutions.length) setThen(() => action)
     else action()
   }

@@ -107,6 +107,8 @@ export interface RunState {
   catch: CatchState | null
   /** After a wild double battle, the other one's throw, waiting for this one's to end (docs/33). */
   catchQueue?: CatchState[]
+  /** After a wild double battle, the other catches waiting on "Add to team?", asked after pendingCatchId's (docs/33). */
+  catchPending?: string[]
   /** Dev tools: force the next encounter type. */
   forceNext: ForceKind | null
   /** An Elite Rebattle gauntlet is being fought: its region and tier (the fights run on its League area). */
