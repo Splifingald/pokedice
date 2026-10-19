@@ -50,9 +50,14 @@ that region.
   - the look worn at 1.25×, its name, and who sees it;
   - **Unlocked**: every unlocked look as a radio grid ("6/138"); a tap wears it at once; NEW (gold) on the ones not
     seen yet;
-  - **Locked**: region chips with counts (All, then each started region), then the locked looks by region, the one
-    being played first ("Johto · playing now"), each sorted nearest goal first: a silhouette (`var(--silhouette)`),
-    the name, the goal and its bar or "areas away";
+  - **The list**: Locked / Unlocked (a `Seg` with counts) and a region dropdown ("All regions (12)", then each
+    started region with what it holds in that view), then the looks by region, the one being played first ("Johto ·
+    playing now"):
+    - **Locked**, each sorted nearest goal first: a silhouette (`var(--silhouette)`), the name, the goal and its bar
+      or "areas away";
+    - **Unlocked** (`OwnedLook`), in the ladder's order: the sprite, the name and, after a check, how it was won (the
+      goal's words: "Catch 20 Kanto Pokémon", "Become the Kanto Champion"); Red and Leaf first, "From the start", with
+      All regions only;
   - a region not started is one line ("13 looks · start Johto to see them"): its looks stay a surprise;
   - the blue INFO button: the rules again.
   - Closing it marks every unlocked look seen: the NEW tags and the dots go.

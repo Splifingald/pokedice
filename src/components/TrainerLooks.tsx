@@ -11,9 +11,10 @@ import { cx } from '@/theme/util'
 import { NewTag } from './Chip'
 import { PixelIcon } from './icons'
 import { InfoButton, RulesModal, type RuleRow } from './RulesModal'
-import { FilterChips } from './Segmented'
+import { Seg } from './Segmented'
 import { Sheet } from './Sheet'
 import { TrainerLook } from './TrainerLook'
+import { SortSelect } from './TypeSelect'
 
 type T = ReturnType<typeof useT>['t']
 
@@ -180,6 +181,27 @@ export function LockedLook({ s }: { s: LookState }) {
   )
 }
 
+/** One unlocked look in the list: its sprite, its name, and how it was won ("Catch 45 Johto Pokémon"). */
+export function OwnedLook({ s }: { s: LookState }) {
+  const { t } = useT()
+  const data = useGame((st) => st.data)
+  const a = avatarOf(s.def.id)
+  return (
+    <li className="grid grid-cols-[46px_minmax(0,1fr)] items-center gap-2 bg-well py-1 pl-1 pr-2 shadow-ring-line">
+      <span className="grid h-12 w-[46px] place-items-center overflow-hidden bg-sky">
+        <TrainerLook src={a.src} w={44} h={48} />
+      </span>
+      <span className="grid min-w-0 gap-0.5">
+        <b className="truncate text-[19px] font-normal leading-none">{avatarName(a, t)}</b>
+        <span className="flex min-w-0 items-center gap-1.5 font-pixel-sm text-[15px] leading-tight text-muted">
+          <PixelIcon name="check" size={14} className="shrink-0" />
+          <span>{lookGoal(t, s, data)}</span>
+        </span>
+      </span>
+    </li>
+  )
+}
+
 /** How close a locked look is, 0–1, for the order of the list: the nearest goals first. */
 function closeness(s: LookState): number {
   if (s.need) return (s.have ?? 0) / s.need
@@ -187,21 +209,28 @@ function closeness(s: LookState): number {
   return 0
 }
 
-/** The locked looks, by region: the one being played first, then the others started, then the ones not started. */
-function lockedGroups(states: LookState[], live: string, data: GameData) {
+/**
+ * The looks by region: the one being played first, then the others in order. Locked ones nearest goal first;
+ * unlocked ones in the ladder's order, so they read as the way they were won.
+ */
+function regionGroups(states: LookState[], live: string, data: GameData) {
   const regions = [...data.regions]
     .filter((r) => states.some((s) => s.def.region === r.id))
     .sort((a, b) => (a.id === live ? -1 : b.id === live ? 1 : a.orderIndex - b.orderIndex))
   return regions.map((r) => {
     const own = states.filter((s) => s.def.region === r.id)
     const locked = own.filter((s) => !s.open).sort((a, b) => closeness(b) - closeness(a))
-    return { region: r, started: own.some((s) => s.started), locked, total: own.length }
+    const unlocked = own.filter((s) => s.open)
+    return { region: r, started: own.some((s) => s.started), locked, unlocked, total: own.length }
   })
 }
 
+export type LooksListView = 'locked' | 'unlocked'
+
 /**
  * The menu's body: the look you wear, every unlocked look as a grid (tap to wear it; NEW on the ones not seen yet),
- * then the locked ones with their goals, by region. `fresh`: the looks to tag NEW.
+ * then a list by region: the locked looks with their goals, or the unlocked ones with how each was won, narrowed to
+ * one region from a dropdown. `fresh`: the looks to tag NEW.
  */
 export function LooksMenu({
   states,
@@ -210,6 +239,7 @@ export function LooksMenu({
   fresh,
   onWear,
   onInfo,
+  initialView = 'locked',
 }: {
   states: LookState[]
   /** The region being played: its locked looks come first. */
@@ -218,15 +248,26 @@ export function LooksMenu({
   fresh: ReadonlySet<string>
   onWear: (id: string) => void
   onInfo: () => void
+  /** The list's view on opening (the kitchen sink shows both). */
+  initialView?: LooksListView
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
+  const [view, setView] = useState(initialView)
   const [region, setRegion] = useState('all')
   const look = avatarOf(wearing)
   const unlocked = states.filter((s) => s.open)
-  const groups = lockedGroups(states, liveRegion, data).filter((g) => g.locked.length)
+  const groups = regionGroups(states, liveRegion, data)
   const lockedCount = groups.reduce((n, g) => n + g.locked.length, 0)
-  const shown = groups.filter((g) => region === 'all' || g.region.id === region)
+  const listOf = (g: (typeof groups)[number]) => (view === 'locked' ? g.locked : g.unlocked)
+  const listed = groups.filter((g) => listOf(g).length)
+  // The dropdown holds the started regions with something to list; a region it no longer holds (after switching
+  // views) falls back to all of them.
+  const picks = listed.filter((g) => g.started)
+  const pick = picks.some((g) => g.region.id === region) ? region : 'all'
+  const shown = listed.filter((g) => pick === 'all' || g.region.id === pick)
+  // Red and Leaf belong to no region: first in the unlocked list, with every region only.
+  const starters = view === 'unlocked' && pick === 'all' ? unlocked.filter((s) => !s.def.region) : []
   return (
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-[64px_minmax(0,1fr)] items-center gap-2.5 bg-sky p-2 shadow-ring-line">
@@ -276,30 +317,53 @@ export function LooksMenu({
         })}
       </div>
 
-      <div className="flex items-baseline justify-between gap-2 pt-1">
-        <h3 className="m-0 text-[22px] font-normal leading-none">{t('ui.looks.locked')}</h3>
-        {lockedCount > 0 && (
-          <span className="font-pixel-sm text-[15px] tabular-nums text-muted">{lockedCount}</span>
+      <div className="flex flex-wrap items-center gap-2 pt-1">
+        <Seg
+          label={t('ui.looks.show')}
+          value={view}
+          onChange={setView}
+          className="flex-[1_0_auto]"
+          options={[
+            { id: 'locked', label: t('ui.looks.locked'), count: lockedCount },
+            { id: 'unlocked', label: t('ui.looks.unlocked'), count: unlocked.length },
+          ]}
+        />
+        {picks.length > 0 && (
+          <SortSelect
+            label={t('ui.looks.region')}
+            value={pick}
+            onChange={setRegion}
+            className="min-w-[160px] flex-1"
+            options={[
+              {
+                id: 'all',
+                label: t('ui.looks.regionCount', {
+                  region: t('ui.looks.all'),
+                  n: view === 'locked' ? lockedCount : unlocked.length,
+                }),
+              },
+              ...picks.map((g) => ({
+                id: g.region.id,
+                label: t('ui.looks.regionCount', { region: g.region.name, n: listOf(g).length }),
+              })),
+            ]}
+          />
         )}
       </div>
-      {lockedCount === 0 ? (
+      {view === 'locked' && lockedCount === 0 ? (
         <p className="m-0 flex items-center gap-2 bg-gold-pale px-3 py-2 shadow-card-gold">
           <PixelIcon name="crown" size={20} />
           {t('ui.looks.allDone')}
         </p>
       ) : (
         <>
-          <FilterChips
-            label={t('ui.looks.region')}
-            value={region}
-            onChange={setRegion}
-            options={[
-              { id: 'all', label: t('ui.looks.all'), count: lockedCount },
-              ...groups
-                .filter((g) => g.started)
-                .map((g) => ({ id: g.region.id, label: g.region.name, count: g.locked.length })),
-            ]}
-          />
+          {starters.length > 0 && (
+            <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+              {starters.map((s) => (
+                <OwnedLook key={s.def.id} s={s} />
+              ))}
+            </ul>
+          )}
           {shown.map((g) =>
             g.started ? (
               <section key={g.region.id} className="flex flex-col gap-1.5" aria-label={g.region.name}>
@@ -309,9 +373,9 @@ export function LooksMenu({
                     : g.region.name}
                 </h4>
                 <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
-                  {g.locked.map((s) => (
-                    <LockedLook key={s.def.id} s={s} />
-                  ))}
+                  {listOf(g).map((s) =>
+                    s.open ? <OwnedLook key={s.def.id} s={s} /> : <LockedLook key={s.def.id} s={s} />,
+                  )}
                 </ul>
               </section>
             ) : (

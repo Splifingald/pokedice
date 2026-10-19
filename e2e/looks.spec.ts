@@ -1,7 +1,8 @@
 // Trainer looks (docs/31) on a phone: switched off, the old free picker is still under the trainer card; on, a look
 // not unlocked comes off, the row's rules pop up once (Let's go! opens the menu), the red dot counts the new looks
-// on the avatar and the row, a look is worn from the grid, closing the menu takes the dot away, and in dusk every
-// text keeps its contrast.
+// on the avatar and the row, a look is worn from the grid, the list narrows to a region from a dropdown and shows the
+// unlocked looks with how each was won, closing the menu takes the dot away, and in dusk every text keeps its
+// contrast.
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { regionSpecies, type SaveData } from '../src/engine'
@@ -83,6 +84,17 @@ test('on: a look not unlocked comes off, the rules once, the menu and its red do
   await expect.poll(async () => (await stored(page)).player?.avatar).toBe('kanto/lass')
   await expect(grid.getByRole('radio', { name: 'Lass · NEW' })).toHaveAttribute('aria-checked', 'true')
 
+  // The list narrows to a region from a dropdown, and shows the unlocked looks with how each was won.
+  const region = menu.getByRole('combobox', { name: 'Region' })
+  await expect(region.locator('option')).toHaveText([/^All regions \(\d+\)$/, /^Kanto \(\d+\)$/])
+  await region.selectOption('kanto')
+  await menu.getByRole('radio', { name: /^Unlocked/ }).click()
+  await expect(region.locator('option')).toHaveText(['All regions (4)', 'Kanto (2)'])
+  await expect(menu.getByText('Catch 20 Kanto Pokémon')).toBeVisible()
+  await expect(menu.getByText('From the start')).toHaveCount(0)
+  await region.selectOption('all')
+  await expect(menu.getByText('From the start')).toHaveCount(2)
+
   // Closing the menu: the looks are seen, the dots go.
   await menu.getByRole('button', { name: 'Close' }).click()
   await expect(card.getByRole('button', { name: 'Trainer looks', exact: true })).toBeVisible()
@@ -107,8 +119,13 @@ test('the menu in dusk keeps every text readable', async ({ page }) => {
   await page.getByRole('button', { name: /Trainer menu/ }).click()
   await page.getByRole('button', { name: /Trainer looks/ }).click()
   await expect(page.getByRole('radiogroup', { name: 'Unlocked' })).toBeVisible()
-  const { violations } = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze()
-  expect(
-    violations.flatMap((v) => v.nodes.map((n) => `${n.target.join(' ')}: ${n.any[0]?.message}`)),
-  ).toEqual([])
+  const contrast = async () => {
+    const { violations } = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze()
+    return violations.flatMap((v) => v.nodes.map((n) => `${n.target.join(' ')}: ${n.any[0]?.message}`))
+  }
+  expect(await contrast()).toEqual([])
+  // The list on the unlocked looks too.
+  await page.getByRole('radio', { name: /^Unlocked/ }).click()
+  await expect(page.getByText('Catch 20 Kanto Pokémon')).toBeVisible()
+  expect(await contrast()).toEqual([])
 })
