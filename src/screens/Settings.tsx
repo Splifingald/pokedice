@@ -168,7 +168,8 @@ export function SettingsScreen() {
 
       <ExtremePanel />
 
-      <BackupsPanel />
+      {/* Restoring a backup rewrites the cloud save the trade server reads, like an import: admins only (docs/23). */}
+      {isAdmin && <BackupsPanel />}
 
       <Panel title={t('ui.settings.content')}>
         <p className="text-lg">
