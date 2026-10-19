@@ -6,7 +6,7 @@
 //                      [--chromium /path/to/headless_shell]
 //
 // --scene records one scene alone; --explore writes its contact sheet (every 15th frame) instead of the trailer.
-// Writes promo/trailer-4x5.mp4 (1080×1350) and promo/trailer-16x9.mp4 (1920×1080).
+// Writes promo/trailer-4x5.mp4 (1080×1350), promo/trailer-16x9.mp4 (1920×1080) and promo/trailer-4x5.gif (540×675).
 import { spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -17,7 +17,7 @@ import { BUNDLE } from '@/config/bundle'
 import { compileGameData, createInstance, DEFAULT_CONFIG } from '@/engine'
 import { HERO_DEFAULTS, heroQuery } from '@/dev/heroDemo'
 import { arg, openCapture, startServer, type Capture, type CryNote } from './promo/capture'
-import { edit, type Cut } from './promo/edit'
+import { edit, gifOf, type Cut } from './promo/edit'
 import { planFor } from './find-hero-seed'
 
 export interface Format {
@@ -424,7 +424,7 @@ function cutList(t: Record<string, Take>): Cut[] {
     cut('boss', ['intro', 2.5], ['intro', 5.0]),
     cut('boss', ['hit', -1.5], ['hit', 0.3]),
     // Kalos: Lucario Mega Evolves.
-    cut('mega', ['mega', 0.15], ['mega', 3.4]),
+    { ...cut('mega', ['mega', 0.15], ['mega', 3.4]), noGif: true },
     // Home, the Day Care's pair meeting, the trade (Kadabra arrives and evolves).
     cut('home', ['home', 0.5], ['home', 1.6]),
     cut('daycare', ['hearts', -1.6], ['hearts', 0.6]),
@@ -482,8 +482,15 @@ async function main() {
       }
       if (!explore && !sceneName) {
         const out = join(outDir, f.out)
-        await edit(cutList(takes), FPS, out, root)
+        const cuts = cutList(takes)
+        await edit(cuts, FPS, out, root)
         console.log(`[${f.name}] ${out}`)
+        // The phone's cut, as a GIF too (the Mega left out to stay under 10 MB).
+        if (f.name === 'mobile') {
+          const gif = join(outDir, 'trailer-4x5.gif')
+          gifOf(out, cuts, FPS, gif)
+          console.log(`[${f.name}] ${gif}`)
+        }
       }
       if (arg('keep-frames') != null) console.log(`[${f.name}] frames kept in ${root}`)
       else rmSync(root, { recursive: true, force: true })

@@ -17,6 +17,8 @@ export interface Cut {
   take: TakeLike
   from: number
   to: number
+  /** Left out of the GIF (it must stay under 10 MB). */
+  noGif?: boolean
 }
 
 const CRIES = resolve('scripts/.cache/cries')
@@ -133,6 +135,34 @@ export async function edit(cuts: Cut[], fps: number, out: string, work: string) 
     '-shortest',
     '-movflags',
     '+faststart',
+    out,
+  ])
+}
+
+/**
+ * The trailer as a GIF under 10 MB: the cuts not marked `noGif`, from the encoded trailer, at half size (every pixel of
+ * the art an even block: nearest-neighbour, a 2:1 step), 20 frames a second (GIF delays are hundredths), one palette.
+ */
+export function gifOf(trailer: string, cuts: Cut[], fps: number, out: string) {
+  let at = 0
+  const keep: [number, number][] = []
+  for (const c of cuts) {
+    const len = (c.to - Math.max(0, c.from)) / fps
+    if (!c.noGif) keep.push([at, at + len])
+    at += len
+  }
+  const trims = keep.map(
+    ([a, b], i) => `[0:v]trim=${a.toFixed(4)}:${b.toFixed(4)},setpts=PTS-STARTPTS[g${i}]`,
+  )
+  const join = `${keep.map((_, i) => `[g${i}]`).join('')}concat=n=${keep.length}:v=1:a=0`
+  ffmpeg([
+    '-i',
+    trailer,
+    '-filter_complex',
+    `${trims.join(';')};${join},fps=20,scale=iw/2:ih/2:flags=neighbor,split[x][y];` +
+      `[x]palettegen=max_colors=192:stats_mode=diff[p];[y][p]paletteuse=dither=none:diff_mode=rectangle`,
+    '-loop',
+    '0',
     out,
   ])
 }
