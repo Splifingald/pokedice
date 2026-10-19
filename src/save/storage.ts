@@ -2,12 +2,13 @@
 import type { SaveData, SaveMode } from '@/engine/types'
 import { isLang, type Lang } from '@/i18n/langs'
 import { detectLang } from '@/i18n'
+import { BACKUP_KEYS, CORRUPT_KEYS, setWithRoom } from './room'
 import { parseSave } from './schema'
 
 export const SAVE_KEY = 'pokedice.save'
-export const CORRUPT_KEY = 'pokedice.save.corrupt'
+export const CORRUPT_KEY = CORRUPT_KEYS.main
 export const SETTINGS_KEY = 'pokedice.settings'
-export const BACKUPS_KEY = 'pokedice.save.backups'
+export const BACKUPS_KEY = BACKUP_KEYS.main
 /** Which of the two saves this device plays (docs/22): 'main' (absent) or 'extreme'. */
 export const SLOT_KEY = 'pokedice.slot'
 
@@ -16,8 +17,8 @@ const KEYS: Record<SaveMode, { save: string; corrupt: string; backups: string; c
   main: { save: SAVE_KEY, corrupt: CORRUPT_KEY, backups: BACKUPS_KEY, cloud: 'pokedice.save.cloud' },
   extreme: {
     save: 'pokedice.save.extreme',
-    corrupt: 'pokedice.save.extreme.corrupt',
-    backups: 'pokedice.save.extreme.backups',
+    corrupt: CORRUPT_KEYS.extreme,
+    backups: BACKUP_KEYS.extreme,
     cloud: 'pokedice.save.extreme.cloud',
   },
 }
@@ -145,7 +146,8 @@ export function writeSave(save: SaveData | null, which: SaveMode = keyOf(save, s
   if (!ls) return
   const key = KEYS[which].save
   try {
-    if (save) ls.setItem(key, JSON.stringify(save))
+    // A full device gives up the backups and archived copies before the save itself (src/save/room.ts).
+    if (save) setWithRoom(key, JSON.stringify(save), ls)
     else ls.removeItem(key)
   } catch (err) {
     console.warn('[save] write failed', err)
@@ -207,8 +209,8 @@ export interface SaveBackup {
 }
 
 /**
- * Saves replaced by a sync or a restore on this device, newest first (the last 5) — a wrong choice can be undone.
- * Each save keeps its own: an Extreme backup is never offered to the main save, nor the other way round.
+ * Saves replaced by a sync or a restore on this device, newest first (the last 5, fewer for a big save:
+ * BACKUPS_BUDGET) — a wrong choice can be undone. Each save keeps its own: an Extreme backup is never offered to the main save, nor the other way round.
  */
 export function readBackups(which: SaveMode = slot): SaveBackup[] {
   try {
@@ -223,11 +225,19 @@ export function readBackups(which: SaveMode = slot): SaveBackup[] {
   }
 }
 
+/**
+ * The backups' share of the device's ~5 MB (localStorage counts characters): five copies of a big save would leave the
+ * save and the sign-in no room (src/save/room.ts), so a big save keeps fewer of them, and always the newest.
+ */
+export const BACKUPS_BUDGET = 1_000_000
+
 export function backupSave(save: SaveData, reason: string) {
   const which: SaveMode = save.mode === 'extreme' ? 'extreme' : 'main'
   try {
     const list = [{ at: Date.now(), reason, save }, ...readBackups(which)].slice(0, 5)
-    storage()?.setItem(KEYS[which].backups, JSON.stringify(list))
+    let size = 0
+    const kept = list.filter((b, i) => (size += JSON.stringify(b).length) <= BACKUPS_BUDGET || i === 0)
+    setWithRoom(KEYS[which].backups, JSON.stringify(kept), storage())
   } catch (err) {
     console.warn('[save] backup failed', err)
   }

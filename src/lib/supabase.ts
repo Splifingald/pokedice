@@ -1,6 +1,7 @@
 // Supabase is optional. The client is loaded lazily so it never weighs on first paint, and is null when the
 // environment variables are missing — the game then simply runs offline.
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { authStorage, makeAuthRoom } from '@/save/room'
 import { guardRefresh } from './refreshGuard'
 
 // `import.meta.env` is Vite's, and is undefined when a Node script imports this module (scripts/pull-remote.ts
@@ -21,7 +22,15 @@ export function getSupabase(): Promise<SupabaseClient | null> {
   clientPromise ??= import('@supabase/supabase-js')
     .then(({ createClient }) =>
       createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' },
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          flowType: 'pkce',
+          // A full device would otherwise sign the player out for good (src/save/room.ts). Without localStorage at
+          // all, supabase-js falls back to memory by itself.
+          storage: makeAuthRoom() ? authStorage : undefined,
+        },
         // Session refreshes back off while Auth answers with server errors (src/lib/refreshGuard.ts).
         global: { fetch: guardRefresh((...args) => fetch(...args)) },
       }),
