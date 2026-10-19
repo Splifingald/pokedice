@@ -44,6 +44,7 @@
     "i18n:names": "tsx scripts/i18n-names.ts",
     "i18n:fonts": "tsx scripts/i18n-fonts.ts",
     "e2e": "playwright test",
+    "promo:hero": "tsx scripts/record-hero.ts",
     "discord": "tsx scripts/discord/setup.ts",
     "discord:raid": "tsx scripts/discord/raid-post.ts",
     "discord:patch-notes": "tsx scripts/discord/patch-notes.ts"
