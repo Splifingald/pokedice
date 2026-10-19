@@ -2,8 +2,11 @@
 // Each battle is a duel of the dev-only harness (src/dev/promo.ts DUELS), its seed found on the battle itself; every
 // frame stepped with its sounds (scripts/promo/capture.ts), then cut together (scripts/promo/edit.ts).
 //
-//   pnpm promo:youtube [--scene pair,three] [--explore] [--keep-frames] [--reuse /tmp/youtube-xxxx]
+//   pnpm promo:youtube [--cut a|d] [--scene pair,three] [--explore] [--keep-frames] [--reuse /tmp/youtube-xxxx]
 //                      [--url http://localhost:5173] [--chromium /path/to/headless_shell]
+//
+// --cut picks the trailer: A (the combos climbing, a story to the finale; promo/youtube-a-16x9.mp4) or D (a rush of
+// types, the powers, the raids; promo/youtube-d-16x9.mp4).
 //
 // The battles are filmed on a 1920×1080 page whose battle stage is 1110 px wide, at the pixel ratio that makes that
 // stage exactly 1920 device pixels: the stage shots are the stage itself, 1:1 (the foe's HP box above them left out);
@@ -37,7 +40,7 @@ const SIZE: [number, number] = [1920, 1080]
 const STAGE = 1110
 const FORMAT: Format = {
   name: 'youtube',
-  out: 'youtube-16x9.mp4',
+  out: '',
   width: 1920,
   height: 1080,
   dpr: SIZE[0] / STAGE,
@@ -96,6 +99,8 @@ const SCENES: Scene[] = [
   hand('three'),
   hand('straight'),
   hand('fullhouse'),
+  // Trailer D's type rush.
+  ...['grass', 'psychic', 'dragon', 'fairy', 'fighting', 'dark', 'ground', 'rock'].map(hand),
   {
     name: 'reroll',
     async play(c, url) {
@@ -131,6 +136,26 @@ const SCENES: Scene[] = [
         )
       }
       mark(c, 'mega')
+      await until(c, buttonOn('/^ATTACK$/'), 15_000)
+      mark(c, 'ready')
+      await hold(c, 300)
+      await c.cap.press(c.cap.page.getByRole('button', { name: /^ATTACK$/ }))
+      mark(c, 'attack')
+      await until(c, text('fainted!'))
+      mark(c, 'faint')
+      await hold(c, 1500)
+    },
+  },
+  {
+    name: 'gmax',
+    async play(c, url) {
+      await c.cap.open(`${url}/__demo/gmax`, ready)
+      await until(c, `${hasLog('roll', 'player')} && ${buttonOn('/G-MAX/')}`, 30_000)
+      mark(c, 'roll')
+      await boxes(c)
+      await hold(c, 400)
+      await c.cap.press(c.cap.page.getByRole('button', { name: /G-MAX/ }).first())
+      mark(c, 'gmax')
       await until(c, buttonOn('/^ATTACK$/'), 15_000)
       mark(c, 'ready')
       await hold(c, 300)
@@ -180,6 +205,16 @@ const SCENES: Scene[] = [
       await hold(c, 7000)
     },
   },
+  // Darkrai's and Giratina's raid intros (their own worlds), as Rayquaza's.
+  ...['darkrai', 'giratina'].map((name): Scene => ({
+    name,
+    size: HALF,
+    async play(c, url) {
+      await c.cap.open(`${url}/__demo/${name}`, '!!window.__promo')
+      mark(c, 'intro')
+      await hold(c, 8000)
+    },
+  })),
   {
     name: 'title',
     size: WHOLE,
@@ -222,7 +257,7 @@ function cropOf(take: Take, view: View): Cut['crop'] {
  * a Mega Evolution and its hit, Celebi's entrance and strike, the finale (Five of a Kind, a Z-Move, the K.O.), Rayquaza,
  * the title. 30 s; seconds off each take's marks.
  */
-function cutList(t: Record<string, Take>): Cut[] {
+function trailerA(t: Record<string, Take>): Cut[] {
   const s = (sec: number) => Math.round(sec * FPS)
   // Every shot's sound runs a little under the next one (the game's effects are short; no dead air between hits).
   const cut = (scene: string, view: View, from: [string, number], to: [string, number], tail = 0.35): Cut => {
@@ -284,6 +319,26 @@ function sheet(take: Take, out: string) {
   console.log(`  sheet: ${out}`)
 }
 
+/** The trailers: their file, the takes they cut from, their cuts. */
+const CUTS: Record<string, { out: string; scenes: string[]; cuts: (t: Record<string, Take>) => Cut[] }> = {
+  a: {
+    out: 'youtube-a-16x9.mp4',
+    scenes: [
+      'pair',
+      'three',
+      'straight',
+      'fullhouse',
+      'reroll',
+      'megahit',
+      'boss',
+      'finale',
+      'raid',
+      'title',
+    ],
+    cuts: trailerA,
+  },
+}
+
 async function main() {
   const only = arg('scene')?.split(',')
   const reuse = arg('reuse')
@@ -311,12 +366,16 @@ async function main() {
   } finally {
     server?.stop()
   }
-  if (!explore && SCENES.every((sc) => takes[sc.name])) {
-    const out = join(outDir, FORMAT.out)
+  const trailer = CUTS[arg('cut') ?? 'a']
+  if (!trailer) throw new Error(`--cut: one of ${Object.keys(CUTS).join(', ')}`)
+  const missing = trailer.scenes.filter((name) => !takes[name])
+  if (!explore && missing.length) console.log(`[youtube] not cut yet, takes missing: ${missing.join(', ')}`)
+  if (!explore && !missing.length) {
+    const out = join(outDir, trailer.out)
     const work = join(root, 'edit')
     rmSync(work, { recursive: true, force: true })
     mkdirSync(work)
-    await edit(cutList(takes), FPS, out, work, SIZE)
+    await edit(trailer.cuts(takes), FPS, out, work, SIZE)
     console.log(`[youtube] ${out}`)
   }
   if (arg('keep-frames') != null || reuse) console.log(`[youtube] frames kept in ${root}`)

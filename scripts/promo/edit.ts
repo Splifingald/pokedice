@@ -23,6 +23,8 @@ export interface Cut {
   crop?: { x: number; y: number; w: number; h: number }
   /** Its sound goes on this many seconds under the next cut, fading out (an L-cut): no silence on a quiet shot. */
   tail?: number
+  /** Its sound's level (1 as played; 0 silent, a hush before a payoff). */
+  gain?: number
 }
 
 const CRIES = resolve('scripts/.cache/cries')
@@ -133,7 +135,7 @@ export async function edit(cuts: Cut[], fps: number, out: string, work: string, 
     at += len
     return (
       `[${i}:a]atrim=${a.toFixed(4)}:${(a + len + Math.max(0, tail)).toFixed(4)},asetpts=PTS-STARTPTS,` +
-      `afade=t=in:d=0.008,afade=t=out:${fade},adelay=${delay}S|${delay}S[s${k}]`
+      `volume=${c.gain ?? 1},afade=t=in:d=0.008,afade=t=out:${fade},adelay=${delay}S|${delay}S[s${k}]`
     )
   })
   const audio = join(work, 'sound.wav')

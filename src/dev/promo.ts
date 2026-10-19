@@ -10,6 +10,7 @@ import {
   detectCombos,
   dieValue,
   faceOf,
+  gmaxChoices,
   megaChoices,
   progressOf,
   progressRaidKey,
@@ -26,9 +27,14 @@ import {
 } from '@/engine'
 import type { RaidRun } from '@/store/raidBattle'
 
-/** The scenes' places: Sky Pillar (Rayquaza's raid), Ilex Shrine (Celebi), Lumiose City, Cerulean Cave. */
+/**
+ * The scenes' places: Sky Pillar (Rayquaza's raid), Newmoon Island (Darkrai's), Turnback Cave (Giratina's), Ilex Shrine
+ * (Celebi), Lumiose City, Cerulean Cave.
+ */
 export const AREA = {
   skyPillar: '4ef12821-79bb-5aa1-ad96-5bd2fbba093f',
+  newmoon: '5e2e78f9-5ad7-5e3c-a9f2-518a4c11799c',
+  turnback: '9e01bf6d-a07a-5d1c-85c2-6f93074b9dbb',
   ilexShrine: '100e6644-3f5b-553a-ad22-e26551b04edc',
   lumiose: '6e410147-d926-5e1e-b132-47d7a9470438',
   ceruleanCave: 'a5d11263-453f-5181-9a73-2c30df79d3fc',
@@ -96,9 +102,21 @@ const raidMon = (uid: string, dex: number, level: number) => ({
  * and a Metagross.
  */
 export function rayquazaRaid(data: GameData, areaId: string, look: string | null): RaidRun {
+  return raidRun(data, areaId, look, 384, 'hoenn')
+}
+
+/** A raid on `dex` as it opens: you and two trainers of `region` (the same three teams whoever the boss is). */
+export function raidRun(
+  data: GameData,
+  areaId: string,
+  look: string | null,
+  dex: number,
+  region: string,
+): RaidRun {
   const trainer = (cls: string) =>
     Object.values(data.trainers).find(
-      (t) => t.role === 'trainer' && t.spriteUrl?.includes(`/classes/hoenn/${cls}`) && t.name.includes(' '),
+      (t) =>
+        t.role === 'trainer' && t.spriteUrl?.includes(`/classes/${region}/${cls}`) && t.name.includes(' '),
     )
   const ace = trainer('ace-trainer') ?? trainer('dragon-tamer')
   const expert = trainer('expert') ?? trainer('black-belt')
@@ -123,15 +141,15 @@ export function rayquazaRaid(data: GameData, areaId: string, look: string | null
     },
   ]
   const { state, log } = createRaid(
-    { boss: { dex: 384, shiny: false }, sides, kind: 'progress', areaId },
+    { boss: { dex, shiny: false }, sides, kind: 'progress', areaId },
     data,
-    createRng(384),
+    createRng(dex),
   )
   return {
     id: 1,
-    source: { kind: 'progress', key: progressRaidKey(areaId, 384) },
+    source: { kind: 'progress', key: progressRaidKey(areaId, dex) },
     friends: [],
-    raid: { day: '', dex: 384, shiny: false, areaId, caught: false, tries: 0 },
+    raid: { day: '', dex, shiny: false, areaId, caught: false, tries: 0 },
     state,
     log,
     stage: 'intro',
@@ -192,8 +210,11 @@ export type DuelGoal =
    * K.O.s the foe.
    */
   | { kind: 'reroll'; from: ComboKey[]; to: ComboKey; finisher: 'attack' | 'z' }
-  /** After the roll, the Pokémon Mega Evolves (its first form), and its attack is super effective and K.O.s. */
-  | { kind: 'mega' }
+  /**
+   * After the roll, the Pokémon Mega Evolves (its first form) or Gigantamaxes, and its attack is super effective and
+   * K.O.s.
+   */
+  | { kind: 'power'; power: 'mega' | 'gmax' }
 
 export interface Duel {
   areaId: string
@@ -206,6 +227,17 @@ export interface Duel {
   /** Z-Moves open in this battle (they ship switched off). */
   z?: boolean
   goal: DuelGoal
+}
+
+/** A quick hand: `dex` (Lv.`level`) against a wild `foe` (Lv.44) in an area, landing `combo`. */
+function duel(areaId: string, region: string, dex: number, foe: number, combo: ComboKey, level = 50): Duel {
+  return {
+    areaId,
+    region,
+    team: [{ dex, level }],
+    foe: { kind: 'wild', dex: foe, level: 44, isNew: false },
+    goal: { kind: 'hand', combo },
+  }
 }
 
 /** The trailer's duels, by scene name (/__demo/<name>): a different place, type and combo each. */
@@ -264,7 +296,28 @@ export const DUELS: Record<string, Duel> = {
       { dex: 6, level: 52 },
     ],
     foe: { kind: 'wild', dex: 658, level: 40, isNew: false },
-    goal: { kind: 'mega' },
+    goal: { kind: 'power', power: 'mega' },
+  },
+  // The YouTube trailer's type rush (trailer D): one more type each, a place of its own.
+  grass: duel('57a87398-8ee0-5924-b794-bb1ca29ed358', 'hoenn', 254, 260, 'three_kind'),
+  psychic: duel('132bb05f-9768-59fb-89de-b25ecb1acc45', 'sinnoh', 65, 454, 'two_pair'),
+  dragon: duel('aa7c054d-8c55-5640-b3d5-2731ca24a00c', 'hoenn', 149, 373, 'full_house', 55),
+  fairy: duel('a70959b8-95b3-5534-9d93-01262a0e1179', 'kalos', 700, 635, 'pair'),
+  fighting: duel('c3397515-cd10-59d4-b70a-949ef766c59d', 'hoenn', 68, 306, 'three_kind'),
+  dark: duel('2d2bfbee-476c-56e7-b814-4d73b9c1425c', 'johto', 197, 196, 'two_pair'),
+  ground: duel('8ced3bb7-e9ea-59b5-9515-aed7d2ced0d7', 'hoenn', 330, 310, 'pair'),
+  rock: duel('9f511e0a-42ac-51b1-90ca-8c1458531603', 'johto', 248, 6, 'three_kind'),
+  // Galar's Wild Area: Charizard Gigantamaxes, then G-Max Wildfire on a Ferrothorn.
+  gmax: {
+    areaId: '98ab6c0a-a752-5157-8ce5-94208fcbbfdf',
+    region: 'galar',
+    team: [
+      { dex: 6, level: 55 },
+      { dex: 149, level: 55 },
+      { dex: 26, level: 50 },
+    ],
+    foe: { kind: 'wild', dex: 598, level: 44, isNew: false },
+    goal: { kind: 'power', power: 'gmax' },
   },
   // The finale: Celebi worn down at its shrine, Charizard's dice rerolled into Five of a Kind, a Z-Move.
   finale: {
@@ -331,9 +384,9 @@ function tryDuel(start: BattleState, data: GameData, goal: DuelGoal, seed: numbe
     s = reduce(s, { t: 'REROLL' }, data, rng).state
     if (best(values()) !== goal.to) return null
   } else {
-    const mega = megaChoices(s, data)[0]
-    if (!mega) return null
-    s = reduce(s, { t: 'MEGA', toDex: mega.dex }, data, rng).state
+    const form = (goal.power === 'mega' ? megaChoices : gmaxChoices)(s, data)[0]
+    if (!form) return null
+    s = reduce(s, { t: goal.power === 'mega' ? 'MEGA' : 'GMAX', toDex: form.dex }, data, rng).state
   }
   const final = values()
   score -= statusFaces()

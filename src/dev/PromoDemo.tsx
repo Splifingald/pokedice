@@ -5,7 +5,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import type { Encounter, SaveData } from '@/engine'
 import { avatarOf, playerAvatarId } from '@/lib/avatars'
+import { RaidIntro } from '@/screens/events/RaidIntro'
 import { RaidView } from '@/screens/events/RaidView'
+import type { RaidRun } from '@/store/raidBattle'
 import { commitSave, initialRun, useGame } from '@/store/game'
 import { useRaidRun } from '@/store/raidBattle'
 import { engage, seedRun } from '@/store/run'
@@ -17,6 +19,7 @@ import {
   planDuel,
   PLAYER,
   promoSave,
+  raidRun,
   rayquazaRaid,
   withDayCare,
   withTrades,
@@ -52,6 +55,8 @@ export default function PromoDemo() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const [blocked, setBlocked] = useState(false)
+  // Darkrai's and Giratina's raid intros, their worlds' scenes (the areas that hold those raids are the admin's).
+  const [intro, setIntro] = useState<{ run: RaidRun; world: 'nightmare' | 'distortion' } | null>(null)
   const run = useRaidRun((s) => s.run)
 
   useEffect(() => {
@@ -158,6 +163,28 @@ export default function PromoDemo() {
         useRaidRun.setState({ run: rayquazaRaid(data, AREA.skyPillar, avatarOf(playerAvatarId(PLAYER)).src) })
         return
       }
+      case 'darkrai':
+      case 'giratina': {
+        const nightmare = scene === 'darkrai'
+        const areaId = nightmare ? AREA.newmoon : AREA.turnback
+        const save = promoSave(data, {
+          team: [
+            { dex: 149, level: 70 },
+            { dex: 6, level: 70 },
+            { dex: 130, level: 70 },
+          ],
+          areaId,
+          region: 'sinnoh',
+          now,
+        })
+        load(save)
+        const look = avatarOf(playerAvatarId(PLAYER)).src
+        setIntro({
+          run: raidRun(data, areaId, look, nightmare ? 491 : 487, 'sinnoh'),
+          world: nightmare ? 'nightmare' : 'distortion',
+        })
+        return
+      }
       case 'title':
         // A first visit: no save at all.
         return navigate('/', { replace: true })
@@ -193,5 +220,6 @@ export default function PromoDemo() {
   if (blocked)
     return <div className="p-6 text-2xl">This browser already holds a save: open it in a private window.</div>
   if (scene === 'raid' && run) return <RaidView key={run.id} run={run} />
+  if (intro) return <RaidIntro run={intro.run} world={intro.world} onDone={() => {}} />
   return <div className="p-6 text-2xl">Loading…</div>
 }
