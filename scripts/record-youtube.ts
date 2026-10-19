@@ -257,14 +257,20 @@ function cropOf(take: Take, view: View): Cut['crop'] {
  * a Mega Evolution and its hit, Celebi's entrance and strike, the finale (Five of a Kind, a Z-Move, the K.O.), Rayquaza,
  * the title. 30 s; seconds off each take's marks.
  */
-function trailerA(t: Record<string, Take>): Cut[] {
-  const s = (sec: number) => Math.round(sec * FPS)
-  // Every shot's sound runs a little under the next one (the game's effects are short; no dead air between hits).
-  const cut = (scene: string, view: View, from: [string, number], to: [string, number], tail = 0.35): Cut => {
+/**
+ * A cut of a take, seconds off its marks, in a view. Every shot's sound runs a little under the next one (the game's
+ * effects are short; no dead air between hits).
+ */
+const cutter =
+  (t: Record<string, Take>) =>
+  (scene: string, view: View, from: [string, number], to: [string, number], tail = 0.35, gain = 1): Cut => {
     const take = t[scene]!
-    const at = (name: string, sec: number) => take.marks[name]! + s(sec)
-    return { take, from: at(...from), to: at(...to), crop: cropOf(take, view), tail }
+    const at = (name: string, sec: number) => take.marks[name]! + Math.round(sec * FPS)
+    return { take, from: at(...from), to: at(...to), crop: cropOf(take, view), tail, gain }
   }
+
+function trailerA(t: Record<string, Take>): Cut[] {
+  const cut = cutter(t)
   return [
     // A Pair: the dice thrown (their rattle) and landing, then Thunderbolt (its bolt at +1.05 s, the damage at +1.35 s).
     cut('pair', 'dice', ['roll', 0.05], ['roll', 1.05]),
@@ -319,6 +325,54 @@ function sheet(take: Take, out: string) {
   console.log(`  sheet: ${out}`)
 }
 
+/**
+ * Trailer D: a rush of twelve types (each the dice landing, then its move at its peak), a hush and a reroll into Four
+ * of a Kind, Mega Evolution and Gigantamax, three raid intros, the finale (Five of a Kind, a Z-Move, the K.O.), the
+ * title. 30 s; seconds off each take's marks.
+ */
+function trailerD(t: Record<string, Take>): Cut[] {
+  const cut = cutter(t)
+  // A type: its dice landing (the first one from the throw, its rattle), then its move from `a` to `b` after ATTACK.
+  const type = (scene: string, a: number, b: number, first = false) => [
+    cut(scene, 'dice', ['roll', first ? 0.05 : 0.35], ['roll', 0.7]),
+    cut(scene, 'stage', ['attack', a], ['attack', b]),
+  ]
+  return [
+    ...type('fullhouse', 1.0, 1.6, true),
+    ...type('pair', 0.95, 1.55),
+    ...type('grass', 1.45, 2.05),
+    ...type('three', 1.0, 1.6),
+    ...type('psychic', 1.95, 2.55),
+    ...type('straight', 1.25, 1.85),
+    ...type('dragon', 1.0, 1.6),
+    ...type('fairy', 1.0, 1.6),
+    ...type('fighting', 1.0, 1.6),
+    ...type('dark', 1.0, 1.6),
+    ...type('ground', 1.0, 1.6),
+    ...type('rock', 1.0, 1.6),
+    // The hush: two dice thrown again in silence; they land, Four of a Kind, and Flamethrower breaks it. The K.O.
+    cut('reroll', 'dice', ['reroll', -0.15], ['reroll', 0.55], 0, 0),
+    cut('reroll', 'dice', ['reroll', 0.55], ['combo', 0.45]),
+    cut('reroll', 'stage', ['attack', 1.35], ['attack', 2.2]),
+    cut('reroll', 'stage', ['faint', -0.05], ['faint', 0.45]),
+    // The powers: Lucario Mega Evolves; Charizard Gigantamaxes, then G-Max Wildfire.
+    cut('megahit', 'stage', ['mega', 1.2], ['mega', 3.1]),
+    cut('gmax', 'stage', ['gmax', 0.85], ['gmax', 3.1]),
+    cut('gmax', 'stage', ['attack', 1.15], ['attack', 1.85]),
+    // The raids: Darkrai, Giratina, Rayquaza, each at its reveal.
+    cut('darkrai', 'whole', ['intro', 2.2], ['intro', 3.6]),
+    cut('giratina', 'whole', ['intro', 2.2], ['intro', 3.6]),
+    cut('raid', 'whole', ['intro', 2.0], ['intro', 3.5]),
+    // The finale: Four of a Kind, one die again, Five of a Kind; the Z-Move; the K.O. (heard under the title).
+    cut('finale', 'dice', ['roll', 0.4], ['roll', 1.0]),
+    cut('finale', 'dice', ['reroll', -0.2], ['five', 0.3]),
+    cut('finale', 'stage', ['z', 0.1], ['z', 1.2]),
+    cut('finale', 'stage', ['z', 2.75], ['z', 4.2]),
+    cut('finale', 'stage', ['faint', -0.05], ['faint', 0.6], 1.0),
+    cut('title', 'title', ['title', 0.3], ['title', 1.8]),
+  ]
+}
+
 /** The trailers: their file, the takes they cut from, their cuts. */
 const CUTS: Record<string, { out: string; scenes: string[]; cuts: (t: Record<string, Take>) => Cut[] }> = {
   a: {
@@ -336,6 +390,25 @@ const CUTS: Record<string, { out: string; scenes: string[]; cuts: (t: Record<str
       'title',
     ],
     cuts: trailerA,
+  },
+  d: {
+    out: 'youtube-d-16x9.mp4',
+    scenes: [
+      ...[
+        'fullhouse',
+        'pair',
+        'grass',
+        'three',
+        'psychic',
+        'straight',
+        'dragon',
+        'fairy',
+        'fighting',
+        'dark',
+      ],
+      ...['ground', 'rock', 'reroll', 'megahit', 'gmax', 'darkrai', 'giratina', 'raid', 'finale', 'title'],
+    ],
+    cuts: trailerD,
   },
 }
 

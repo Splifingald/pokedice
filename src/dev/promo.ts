@@ -301,10 +301,10 @@ export const DUELS: Record<string, Duel> = {
   // The YouTube trailer's type rush (trailer D): one more type each, a place of its own.
   grass: duel('57a87398-8ee0-5924-b794-bb1ca29ed358', 'hoenn', 254, 260, 'three_kind'),
   psychic: duel('132bb05f-9768-59fb-89de-b25ecb1acc45', 'sinnoh', 65, 454, 'two_pair'),
-  dragon: duel('aa7c054d-8c55-5640-b3d5-2731ca24a00c', 'hoenn', 149, 373, 'full_house', 55),
+  dragon: duel('aa7c054d-8c55-5640-b3d5-2731ca24a00c', 'hoenn', 149, 373, 'three_kind', 55),
   fairy: duel('a70959b8-95b3-5534-9d93-01262a0e1179', 'kalos', 700, 635, 'pair'),
   fighting: duel('c3397515-cd10-59d4-b70a-949ef766c59d', 'hoenn', 68, 306, 'three_kind'),
-  dark: duel('2d2bfbee-476c-56e7-b814-4d73b9c1425c', 'johto', 197, 196, 'two_pair'),
+  dark: duel('2d2bfbee-476c-56e7-b814-4d73b9c1425c', 'johto', 197, 196, 'pair'),
   ground: duel('8ced3bb7-e9ea-59b5-9515-aed7d2ced0d7', 'hoenn', 330, 310, 'pair'),
   rock: duel('9f511e0a-42ac-51b1-90ca-8c1458531603', 'johto', 248, 6, 'three_kind'),
   // Galar's Wild Area: Charizard Gigantamaxes, then G-Max Wildfire on a Ferrothorn.
