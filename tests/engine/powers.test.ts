@@ -244,6 +244,29 @@ describe('a Mega under the gem rules', () => {
     expect(s.player[0]!.mega).toBeFalsy()
     expect(s.player[0]!.dex).toBe(448)
   })
+
+  it('needs its gem in a double battle too', () => {
+    const foes = [
+      { dex: 242, level: 100 },
+      { dex: 242, level: 100 },
+    ]
+    const double = (dex: number, level: number, opts: Partial<CreateBattleOptions> = {}) =>
+      fight(
+        [
+          { dex, level },
+          { dex: 25, level },
+        ],
+        { double: { foes, leadUids: ['p0', 'p1'] }, ...opts },
+        foes[0],
+      ).state
+    // Gengar has no gem, even at Lv.80; Lucario has its own, at Lv.12, and lasts its turns.
+    expect(megaChoices(double(94, 80), on)).toEqual([])
+    const s = double(448, 12)
+    expect(megaChoices(s, on).map((m) => m.dex)).toEqual([10059])
+    expect(step(s, { t: 'MEGA', toDex: 10059 }).state.player[0]!.megaTimer?.turns).toBe(3)
+    // No gems at all: no Mega.
+    expect(megaChoices(double(94, 80, { megaForms: [] }), on)).toEqual([])
+  })
 })
 
 describe('Gigantamax under the newer rules', () => {

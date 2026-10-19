@@ -957,6 +957,8 @@ function afterAction(s: BattleState, side: Side, data: GameData, log: LogEntry[]
 // turn it is and the one it attacks are the pair in front — `activeIndex` and `enemy` — so the rules above (the roll,
 // the damage, statuses, items, forms) work on them unchanged; these functions only move the pair and run the round.
 
+const withoutEnemyPlan = ({ enemyPlan: _, ...powers }: Partial<BattleState>): Partial<BattleState> => powers
+
 /** The foe uid of each of a trainer's or wild pair's Pokémon: the first keeps the one-on-one's. */
 const foeUid = (i: number) => (i === 0 ? 'enemy' : `enemy-${i}`)
 
@@ -1011,11 +1013,12 @@ function createDouble(
     participants: ownSlots.map((i) => player[i]!.uid),
     canRun: opts.kind === 'wild' && !data.config.noEscape,
     ...(opts.noHealItems && { noHealItems: true }),
+    ...(opts.plates && { plates: [...opts.plates] }),
     lastDamage: null,
     itemUsedThisTurn: false,
-    ...(opts.auto
-      ? { auto: true }
-      : { ...(opts.megaAllowed && { megaAllowed: true }), ...(opts.gmaxAllowed && { gmaxAllowed: true }) }),
+    // The same powers as one on one — the gems' Mega forms above all, or a Mega would only need its level. Each foe's
+    // plan is in `plans`, set as it comes to the front.
+    ...withoutEnemyPlan(battlePowersOf(opts)),
     double: {
       foes,
       foeSlots: foes.length > 1 ? [0, 1] : [0],
