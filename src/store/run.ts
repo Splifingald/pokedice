@@ -953,12 +953,20 @@ export function retryCatch() {
  * the rewards screen, in the order they were caught.
  */
 export function finishCatch() {
-  const { run } = useGame.getState()
+  const { run, save, data } = useGame.getState()
   const r = run.catch?.result
   if (!r || r.baitOffer || r.stays) return
   const events = [...run.events, ...r.events]
   const pending = [...(run.catchPending ?? []), ...(r.pendingCatchId ? [r.pendingCatchId] : [])]
-  const [next, ...rest] = run.catchQueue ?? []
+  // The next throw's target as the save stands now, not as it stood before the first: a pair of one species, the first
+  // just caught, leaves the second replacing it if stronger, else not on offer, as in a single wild battle. A second
+  // copy taken as new would be let go at once (one copy per species), its "Add to team?" asking about nobody.
+  const queue = (run.catchQueue ?? []).flatMap((c) => {
+    if (!save) return [c]
+    const target = catchTarget(save, c.dex, c.level, c.kind, data, c.shiny)
+    return target ? [{ ...c, target }] : []
+  })
+  const [next, ...rest] = queue
   if (next) {
     setRun({ events, catch: next, catchQueue: rest, catchPending: pending })
     return

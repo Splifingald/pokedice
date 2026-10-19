@@ -74,8 +74,13 @@ test('a wild pair: no pop-up, two leads, four on the stage, a target, a throw at
   await picker.getByRole('radio', { checked: false }).click()
   await expect(picker.getByRole('radio', { checked: true })).toHaveCount(1)
 
-  // Attack until both are down, then a throw at each one.
-  expect(await fightAndCatch(page)).toBe(2)
+  // Attack until both are down, then a throw at each one: two species, two throws; one species twice, the second
+  // only if stronger than the first just caught (one copy per species).
+  const title = (await page.getByRole('heading', { level: 1, name: /^Battle: / }).textContent()) ?? ''
+  const [a, b] = title.replace(/^.* against /, '').split(' & ')
+  const throws = await fightAndCatch(page)
+  if (a !== b) expect(throws).toBe(2)
+  else expect([1, 2]).toContain(throws)
   expect(errors).toEqual([])
 })
 
@@ -116,17 +121,34 @@ test('a wild pair with a full team: both throws, then "Add to team?" for each, o
   await page.goto('/home')
   await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
   await page.getByRole('dialog', { name: 'Two wild Pokémon appeared!' }).getByRole('button', { name: /FIGHT/ }).click()
-  expect(await fightAndCatch(page)).toBe(2)
+  // The pair is the area's luck of the draw: two species, or one twice.
+  const title = (await page.getByRole('heading', { level: 1, name: /^Battle: / }).textContent()) ?? ''
+  const [a, b] = title.replace(/^.* against /, '').split(' & ')
+  const throws = await fightAndCatch(page)
 
-  // The rewards: the first catch's question, then (CONTINUE sends it to the Box) the second's, then on.
   const victory = page.getByRole('heading', { name: 'VICTORY!' })
   const question = page.getByText(/^Add .+ to your team\?$/)
   await expect(question).toBeVisible({ timeout: 20_000 })
-  // The second question: one of the team swapped out for the second catch.
-  await page.getByRole('button', { name: 'CONTINUE', exact: true }).click()
-  await expect(victory).toBeVisible()
-  await expect(question).toBeVisible()
-  await page.getByRole('button', { name: /^Swap out Charizard/ }).click()
+  if (a !== b) {
+    // Two species: the first catch's question, then (CONTINUE sends it to the Box) the second's, then on.
+    expect(throws).toBe(2)
+    await page.getByRole('button', { name: 'CONTINUE', exact: true }).click()
+    await expect(victory).toBeVisible()
+    await expect(question).toBeVisible()
+    await page.getByRole('button', { name: /^Swap out Charizard/ }).click()
+  } else {
+    // One species twice: one copy kept (a stronger second replaces the first; a weaker one isn't on offer), so one
+    // question, about a Pokémon that is there.
+    await page.getByRole('button', { name: /^Swap out Charizard/ }).click()
+    const dex = data.speciesList.find((sp) => sp.name === a)?.dex
+    expect(dex).toBeDefined()
+    await expect
+      .poll(async () => {
+        const save = await page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}') as SaveData)
+        return save.box?.filter((p) => p.dex === dex && !p.shiny).length
+      })
+      .toBe(1)
+  }
   await expect(question).toHaveCount(0)
   await page.getByRole('button', { name: 'CONTINUE', exact: true }).click()
   await expect(victory).toHaveCount(0)

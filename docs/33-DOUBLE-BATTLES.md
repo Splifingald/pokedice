@@ -60,6 +60,9 @@ front, the others smaller behind. You pick which foe your Pokémon attacks; foes
   K.O. of a one-by-one gauntlet is kept — then the wipe, the stalemate, or the rewards; won, each wild one that can be
   caught gets its throw (`run.catch`, then `run.catchQueue`), back to back: a catch that needs "Add to team?" waits in
   `run.catchPending` and the rewards screen asks each in turn (`pendingCatchId`, then the next on `resolveCatch`).
+  The second throw's target is worked out again at its turn (`finishCatch`), from the save the first left: a pair of
+  one species, the first caught, leaves the second replacing it if stronger, else not on offer, as in a single wild
+  battle (one copy per species; taken as new, it was let go at once and its question asked about nobody).
 - The stage: a foe that can be caught is worn out, not fainted, when K.O.'d (`useBattleAnimator`'s `catchable` asks
   per foe); it stays behind the one still fighting, then slides in front for its throw while the other waits behind.
 - Screens (§30 of docs/15): the stage with four, the name-less plates, the target picker, the lead picker sending two, the victory card naming every foe, the history.
@@ -101,7 +104,9 @@ exists), the `doubleBattles` row (Off, Hoenn → Paldea, 10 %) and `configVersio
 `tests/engine/double-battle.test.ts` (the field, the order, targeting, random foe targets, replacements, 1 v 2, the
 win and its K.O.s, auto to the end on 30 seeds, when a battle is double, the XP for both), `tests/battle-aim.test.ts`
 (a new target keeps the tray),
-`tests/double-catch.test.ts` (the worn-out K.O., the throws back to back, the questions in turn),
+`tests/double-catch.test.ts` (the worn-out K.O., the throws back to back, the questions in turn, a pair of one
+species),
 `tests/double-battles-content.test.ts`, `tests/double-battles-sql.test.ts`, `e2e/double-battles.spec.ts` (a wild pair
-from the preview to the rewards at phone size, both throws before the rewards, a full team's two questions, the switch
+from the preview to the rewards at phone size, both throws before the rewards, a full team's two questions (one, and one copy kept, for a pair of one
+species), the switch
 off, the kitchen sink).
