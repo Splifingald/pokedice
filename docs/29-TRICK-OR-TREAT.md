@@ -18,7 +18,8 @@ Treats and throw Trick Balls, and too many of either make it flee.
 | Treat | Endless and free (not an item). Fills the gauge by a random whole number, 10 to 30 (admin). Into the flee zone: it flees. |
 | Trick Ball | Endless and free (not an item). Rolls a d6 against the section the gauge is in: at or over the need, caught. A miss doesn't scare it off, but it gets **restless: the gauge rises by 35** (admin), which can push it into the flee zone. |
 | A catch | As a wild catch there (`catchTarget`, `applyCatch`): the team if it has room, else the Box (no "Add to team?" question); a stronger one replaces your weakest plain copy; a shiny is its own Pokémon; one as strong as yours merges into it (nothing new). The world's Pokédex notes it; a secret area whose condition it meets opens. |
-| The end | Caught or fled, the card is used. No battle, no XP, no ₽. The energy it costs is a wild card's (1). |
+| FLEE | The player can leave it be at any point between steps (`fleeTrick`, the user's call of 2026-10-20, for those who'd rather skip it): it ends as fled, nothing caught, straight back on the trail with "Got away safely!" (no result card). It isn't a skip: the skip policy doesn't count it. |
+| The end | Caught or fled (by the ghost or by FLEE), the card is used. No battle, no XP, no ₽. The energy it costs is a wild card's (1). |
 
 ### Each tier's gauge (defaults)
 
@@ -103,7 +104,8 @@ All of them are already the world's (its pools, or Froslass by the Dawn Stone), 
   `TrickView` takes the whole screen in place of the area page (`screens/Area.tsx`, as a battle does), the battle's
   stage on top with the ghost at its centre and its plate, then the message box, the gauge with its value ("62/100")
   and what the last Treat or miss added ("+18"), the last step's die against the die it needed, TREAT and TRICK BALL
-  (the die the section needs, its "+", the odds and a miss's push under it), INFO at the foot; once it's over, the
+  (the die the section needs, its "+", the odds and a miss's push under it), INFO at the foot with a small FLEE at
+  its right (waiting, as both buttons do, while a step plays); once it's over, the
   battle's result card (`Overlay`, `CatchCard` with the Trick Ball, `SecretAreaCard`) with the round gauge and
   CONTINUE. Every state on `/kitchen-sink` (`TrickBits`: idle, after a Treat, a Treat and a throw playing, a miss, a
   flee, caught, each tier's gauge, the recaps and the risen result card).

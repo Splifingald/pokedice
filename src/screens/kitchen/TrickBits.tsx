@@ -112,6 +112,7 @@ export function TrickBits() {
     onTreat: noop,
     onBall: noop,
     onInfo: () => setRules('info'),
+    onFlee: noop,
   }
   const screens: [string, TrickScreenProps][] = [
     ['Idle', base],

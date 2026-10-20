@@ -1103,8 +1103,9 @@ and the battle's `catch.ts`; every state on `/kitchen-sink` (`TrickBits`), every
   area's round mix). The rules pop-up opens the first time a ghost floats in, over the screen (Later / Let's go! both
   carry on); INFO sits at the foot of the panel.
 - **The card**: a pumpkin on the round gauge and its preview row; its preview is the ghost on a night tile, its name,
-  rarity chip, level, NEW, "Treats and Trick Balls are free and endless", and one red button, TRICK OR TREAT!. It can't
-  be skipped (a card the player meets, like the Game Corner).
+  rarity chip, level, NEW, "Treats and Trick Balls are free and endless", and one red button, TRICK OR TREAT!. The
+  card can't be skipped (a card the player meets, like the Game Corner), but on the screen a small **FLEE** leaves the
+  ghost be (below).
 - **The screen is the battle's** (§14), the user's request of 2026-10-15: full screen (`useHoldFullscreen`: no top bar,
   side nav or tab bar), the battle's column (phones: the whole width; wide screens: up to 700 px, as big as the height
   allows with the panel in view), and it fits a 360×640 phone with nothing to scroll (`e2e/trick-or-treat.spec.ts`).
@@ -1116,7 +1117,9 @@ and the battle's `catch.ts`; every state on `/kitchen-sink` (`TrickBits`), every
     Treat's picture, or the Trick Ball's die, `≥` or `<`, and the die it needed), on the right "+35" and the value
     "62/100"; the gauge; **TREAT** (white, the Treat's picture, "+10 to 30" under it) beside **TRICK BALL** (red, the
     one main action, the die it needs here with its "+" and "33% · miss +35" under it, from the engine), in the
-    battle's `1fr / 1.4fr` grid; INFO at the foot.
+    battle's `1fr / 1.4fr` grid; INFO at the foot, and at its right a small **FLEE** (`PixelButton` `sm`, the run
+    icon; the user's call, 2026-10-20) for those who'd rather skip it: it waits while a step plays, and goes straight
+    back on the trail with "Got away safely!" (no result card).
   - **The result card** rises over the panel as a battle's (`Overlay`): the title ("Gastly caught!" / "Gastly fled"),
     the catch as the battle's `CatchCard` (the Trick Ball rocking in, the ghost, Gotcha! and NEW, "was caught", where it
     went: the team, the Box, in place of a weaker copy, or into yours) or the ghost greyed with "It vanished into the

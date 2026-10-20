@@ -168,6 +168,22 @@ test('INFO shows the rules again; with animations on, a Treat plays and the butt
   await expect(page.getByText(/Gotcha!|broke free|vanished/).first()).toBeVisible()
 })
 
+test('FLEE leaves the ghost be: straight back on the trail, nothing caught', async ({ page }) => {
+  await boot(page, withCard({ ...save0, trickOrTreat: { rulesSeen: true } }))
+  await page.goto('/home')
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+  await page
+    .getByRole('dialog', { name: /trick or treat/i })
+    .getByRole('button', { name: /trick or treat!/i })
+    .click()
+  await page.getByRole('button', { name: 'FLEE', exact: true }).click()
+  await expect(page.getByText('Got away safely!')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Trick Ball', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('dialog', { name: /Gastly (caught!|fled)/ })).toHaveCount(0)
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}') as SaveData)
+  expect(saved.pokedex).not.toContain(92)
+})
+
 test('switched off, the card is never played: the next card comes instead', async ({ page }) => {
   await boot(page, withCard(), EVENTS_ON)
   await page.goto('/home')
@@ -187,7 +203,7 @@ test('a 360 × 640 phone: the stage, the gauge and both buttons fit, nothing scr
     .getByRole('dialog', { name: /trick or treat/i })
     .getByRole('button', { name: /trick or treat!/i })
     .click()
-  for (const name of ['Treat', 'Trick Ball', 'Trick or Treat gauge']) {
+  for (const name of ['Treat', 'Trick Ball', 'FLEE', 'Trick or Treat gauge']) {
     const el = name.endsWith('gauge')
       ? page.getByRole('meter', { name })
       : page.getByRole('button', { name, exact: true })

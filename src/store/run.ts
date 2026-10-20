@@ -103,6 +103,7 @@ import {
   type SpinResult,
   applyTrickCatch,
   feedTreat,
+  fleeTrick as fleeTrickIn,
   startTrick,
   throwTrickBall as throwTrickBallIn,
   trickCfg,
@@ -1136,6 +1137,18 @@ export function giveTreat(): TrickStep | null {
 /** TRICK BALL: the d6 against the gauge's section. */
 export function throwTrickBall(): TrickStep | null {
   return trickStep((cfg) => throwTrickBallIn(useGame.getState().run.trick!.state, cfg, runRng))
+}
+
+/** FLEE: the ghost left be, straight back on the trail (no result card: the player chose to skip it). */
+export function fleeTrick() {
+  const { run } = useGame.getState()
+  const tr = run.trick
+  if (run.phase !== 'trick' || !tr) return
+  const state = fleeTrickIn(tr.state)
+  if (!state) return
+  setRun({ trick: { ...tr, state, last: null } })
+  leaveTrick()
+  pushToast(t('ui.toast.gotAway'))
 }
 
 /** Caught or fled: back on the trail (the round may be complete). */

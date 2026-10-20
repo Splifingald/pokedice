@@ -261,6 +261,14 @@ export function throwTrickBall(state: TrickState, cfg: TrickOrTreatConfig, rng: 
   }
 }
 
+/**
+ * FLEE: the player leaves the ghost be (the user's call, 2026-10-20, for those who'd rather skip it). It ends as fled,
+ * nothing caught; null once it's over.
+ */
+export function fleeTrick(state: TrickState): TrickState | null {
+  return state.end ? null : { ...state, end: 'fled' }
+}
+
 // ---------------------------------------------------------------- balance
 
 export interface TrickPlay {

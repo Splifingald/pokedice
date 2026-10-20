@@ -1,6 +1,6 @@
 // Trick or Treat (docs/29), laid out as the battle is (docs/15 §14, §28): full screen, the battle's stage on top (the
 // area's picture, the ghost at its centre, its plate), then the panel: the message box, the gauge with its value and
-// what the last Treat or miss added, TREAT and TRICK BALL; INFO at the foot. The store asks the engine for each step
+// what the last Treat or miss added, TREAT and TRICK BALL; INFO at the foot, a small FLEE at its right. The store asks the engine for each step
 // (store/run.ts); this screen only plays it, with the battle's own pieces: the Treat's timeline (the toss, the munch,
 // the flee) and the battle's catch timeline with the Trick Ball (the throw, the ball on the ground, the wobbles, Gotcha!
 // or the break-free), the die shown as the ball stops. Once it's over, the result card rises as a battle's does.
@@ -47,7 +47,7 @@ import { useT } from '@/i18n/react'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { useMotion } from '@/lib/motion'
 import { mutateSave, useGame, type TrickRun } from '@/store/game'
-import { giveTreat, leaveTrick, throwTrickBall } from '@/store/run'
+import { fleeTrick, giveTreat, leaveTrick, throwTrickBall } from '@/store/run'
 import { CatchCard, Overlay, SecretAreaCard } from '@/screens/battle/VictoryView'
 import { cx } from '@/theme/util'
 import { PlateBox } from '@/screens/battle/Plates'
@@ -152,6 +152,8 @@ export interface TrickScreenProps {
   onTreat: () => void
   onBall: () => void
   onInfo: () => void
+  /** FLEE: leave the ghost be, back on the trail. */
+  onFlee: () => void
   /** The screen's full height (the game); the kitchen sink shows it in a box. */
   fill?: boolean
   /** The result card, over the panel. */
@@ -254,8 +256,13 @@ export function TrickScreen(p: TrickScreenProps) {
               </span>
             </div>
           </div>
-          <div className="mt-auto pt-1">
-            <InfoButton name={t('ui.trick.title')} onClick={p.onInfo} />
+          {/* FLEE stays small, beside INFO: the way out for those who'd rather skip it, never the main action. */}
+          <div className="mt-auto flex items-center gap-2 pt-1">
+            <InfoButton name={t('ui.trick.title')} onClick={p.onInfo} className="min-w-0 flex-1" />
+            <PixelButton size="sm" className="shrink-0" disabled={off} onClick={p.onFlee}>
+              <PixelIcon name="run" size={16} />
+              {t('ui.enc.flee')}
+            </PixelButton>
           </div>
         </div>
       </section>
@@ -492,6 +499,9 @@ export function TrickView() {
       onTreat={() => act(giveTreat)}
       onBall={() => act(throwTrickBall)}
       onInfo={() => setRules('info')}
+      onFlee={() => {
+        if (!busy && !end) fleeTrick()
+      }}
       fill
     >
       <TrickRulesModal

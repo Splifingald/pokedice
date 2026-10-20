@@ -12,6 +12,7 @@ import {
   deckAbilities,
   emptyProgress,
   feedTreat,
+  fleeTrick,
   ghostsFromWildPool,
   nextEncounter,
   newSave,
@@ -142,6 +143,13 @@ describe('a Treat and a Trick Ball', () => {
     const out = throwTrickBall({ ...s0, gauge: 80 }, CFG, fixed([0]))!
     expect([out.die, out.need, out.fled, out.state.end]).toEqual([1, 3, true, 'fled'])
     expect(throwTrickBall(out.state, CFG, fixed([0.9]))).toBeNull()
+  })
+
+  it('FLEE ends it as fled, the gauge and the count as they were; not once it is over', () => {
+    const left = fleeTrick({ ...s0, gauge: 40, treats: 2 })!
+    expect([left.end, left.gauge, left.treats, left.balls]).toEqual(['fled', 40, 2, 0])
+    expect(fleeTrick(left)).toBeNull()
+    expect(fleeTrick({ ...s0, end: 'caught' })).toBeNull()
   })
 })
 
