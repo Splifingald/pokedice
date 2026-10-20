@@ -273,6 +273,13 @@ test('Home inside a world without a mythical: its secret areas only, a locked on
   await expect(page.getByRole('button', { name: /^The shiny Mew/ })).toHaveCount(0)
   await locked.click()
   await expect(page.getByText('Catch 3 Pokémon · 1/3')).toBeVisible()
+  // INFO under the secret areas: the world's pop-up again, its rules with OK.
+  await page.getByRole('button', { name: 'Info: how Mirage Island works' }).click()
+  const info = page.getByRole('dialog', { name: 'Mirage Island' })
+  await expect(info.getByText('Your Pokémon go home')).toBeVisible()
+  await expect(info.getByRole('button', { name: 'Enter' })).toHaveCount(0)
+  await info.getByRole('button', { name: 'OK' }).click()
+  await expect(info).toHaveCount(0)
 })
 
 test('Home inside: a secret area opened shows its shiny boss, new, and travels there', async ({ page }) => {

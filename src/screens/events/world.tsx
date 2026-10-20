@@ -3,7 +3,7 @@
 // Inside: the world's colours, its strip on Home (its name, the time left, the way back), its two squares (the
 // mythical, its Mart), the way to finish it once everything in it is done, the booster chips, the mythical's result
 // card, and the panel the main game's pages show instead of theirs. Every rule and number comes from engine/worlds.ts; the store's actions are store/worlds.ts.
-import { type CSSProperties, type ReactNode } from 'react'
+import { type CSSProperties, type ReactNode, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { create } from 'zustand'
 import {
@@ -55,6 +55,7 @@ import { PixelIcon } from '@/components/icons'
 import { Modal } from '@/components/Modal'
 import { PageHead } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
+import { InfoButton } from '@/components/RulesModal'
 import { SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { dayTime, typeName } from '@/lib/format'
@@ -376,7 +377,7 @@ function useOthersDue(): boolean {
   return others || gifts > 0
 }
 
-/** The world's pop-up: its banner, the time left, its rules; Later and Enter. */
+/** The world's pop-up: its banner, the time left, its rules; Later and Enter, or just OK as Home's INFO inside it. */
 export function WorldPopupView({
   world,
   now,
@@ -388,7 +389,8 @@ export function WorldPopupView({
   now: number
   open: boolean
   onLater: () => void
-  onEnter: () => void
+  /** Without it, the INFO copy (the player is already inside): OK closes it. */
+  onEnter?: () => void
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
@@ -404,12 +406,18 @@ export function WorldPopupView({
           <LiveGauge share={left.share} hot={left.ms < DAY} className="lv-gauge-light" />
         </div>
         <WorldRules world={world} />
-        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] gap-2.5 pt-1">
-          <PixelButton onClick={onLater}>{t('ui.events.later')}</PixelButton>
-          <PixelButton variant="primary" onClick={onEnter}>
-            {t('ui.world.enter')}
+        {onEnter ? (
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] gap-2.5 pt-1">
+            <PixelButton onClick={onLater}>{t('ui.events.later')}</PixelButton>
+            <PixelButton variant="primary" onClick={onEnter}>
+              {t('ui.world.enter')}
+            </PixelButton>
+          </div>
+        ) : (
+          <PixelButton variant="primary" onClick={onLater}>
+            {t('ui.common.ok')}
           </PixelButton>
-        </div>
+        )}
       </div>
     </Modal>
   )
@@ -896,13 +904,23 @@ export function SecretRowView({
   )
 }
 
-/** Inside a world, Home's squares: the mythical (or its Pokédex), its Mart, then a row per secret area. */
+/**
+ * Inside a world, Home's squares: the mythical (or its Pokédex), its Mart, then a row per secret area, and INFO at the
+ * bottom (the world's pop-up again, its rules with OK: it opens only once on its own).
+ */
 export function WorldWidgets() {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const { world, save } = useInWorld()
   const now = useServerNow(5000)
+  const [info, setInfo] = useState(false)
   if (!world || !save) return null
+  const infoRow = (
+    <>
+      <InfoButton name={worldName(world, data)} onClick={() => setInfo(true)} className="col-span-2" />
+      {now != null && <WorldPopupView world={world} now={now} open={info} onLater={() => setInfo(false)} />}
+    </>
+  )
   // Everything in it done (docs/21 §11): the way to finish it comes first.
   const finish =
     worldFinishable(save, data, now)?.id === world.id ? (
@@ -936,6 +954,7 @@ export function WorldWidgets() {
       <>
         {finish}
         {rows}
+        {infoRow}
       </>
     )
   const caught = !!heldWorld(save)?.caught
@@ -965,6 +984,7 @@ export function WorldWidgets() {
         }}
       />
       {rows}
+      {infoRow}
     </>
   )
 }

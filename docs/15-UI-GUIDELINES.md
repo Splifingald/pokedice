@@ -669,7 +669,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
   queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
   again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the portal run (§27), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the portal run (§27), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
@@ -777,7 +777,8 @@ on `/kitchen-sink` (`WorldBits`). Every rule and number comes from `engine/world
 - **Home inside** (`WorldWidgets`) keeps to what the nav bar doesn't reach (the user's call, 2026-10-13): the mythical,
   when the world has one (its silhouette on the world's ground, Lv. · name, where it is: "In Dream Peak", "Waiting:
   fight it!", "In your Kanto Box", "Waits for Johto"; a tap travels to its area once open), then **a row per secret
-  area** (`SecretRowView`, docs/26 §2.6), up to six, each two squares wide (`col-span-2`). The nav bar stays as
+  area** (`SecretRowView`, docs/26 §2.6), up to six, each two squares wide (`col-span-2`), and **INFO** at the bottom,
+  under them (two squares wide): the world's pop-up again, its rules with OK (the user's call, 2026-10-20). The nav bar stays as
   everywhere: the World Mart, the world's own Upgrades, its Team and Pokédex.
 - **A secret area's row** is its picture, the whole width (`lv-pic`: darker at the top and the foot), with everything on
   it in `lv-ink` (white, an ink shadow): "Secret area" and a tag at the top, its boss on the right (a silhouette glowing

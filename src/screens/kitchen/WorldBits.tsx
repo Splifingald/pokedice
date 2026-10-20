@@ -1,6 +1,6 @@
 // Kitchen sink: Small worlds' pieces (docs/21) in every state — Home's square (a fresh start, played, the last day,
 // the mythical caught), its preview before the start (§9: the world's colour, red in the last hour, blinking in the last
-// five minutes, and that blink still where motion is calmed), the pop-up, the partner pick in the world's colours, the strip (running, the last day, content
+// five minutes, and that blink still where motion is calmed), the pop-up (and its INFO copy inside), the partner pick in the world's colours, the strip (running, the last day, content
 // not in yet), the squares inside (the mythical waiting, ready, gone home, waiting for its region; the Mart), the
 // booster chips and the dice level tag, the mythical's result card, the closing pop-up (kept, got away, never entered,
 // with its Pokémon gone home, finished early), the way to finish a world (Home's row and its pop-up, docs/21 §11), the lock of a Pokémon waiting in its region (docs/26 §1), Home's Pokédex square and secret
@@ -10,6 +10,7 @@ import { newSmallWorld, type SmallWorld, type WorldBye } from '@/engine'
 import { HomerLockView } from '@/components/HomerLock'
 import { PartnerMoment } from '@/components/PartnerMoment'
 import { PixelButton } from '@/components/PixelButton'
+import { InfoButton } from '@/components/RulesModal'
 import { useGame } from '@/store/game'
 import {
   BoosterChip,
@@ -67,6 +68,7 @@ export function WorldBits() {
   const lastHour = useMemo(() => sampleWorld(now, -40 * MINUTE), [now])
   const lastMinutes = useMemo(() => sampleWorld(now, -3 * MINUTE), [now])
   const [popup, setPopup] = useState(false)
+  const [info, setInfo] = useState(false)
   const [pick, setPick] = useState(false)
   const [bye, setBye] = useState<WorldBye | null>(null)
   const [finish, setFinish] = useState(false)
@@ -164,6 +166,8 @@ export function WorldBits() {
         <SecretRowView area={haunted} state="new" boss={{ dex: 93, level: 30, shiny: true }} raid={false} cond={null} onClick={noop} />
         <SecretRowView area={island} state="open" boss={{ dex: 491, level: 60, shiny: true, raid: true }} raid cond={null} onClick={noop} />
         <SecretRowView area={cave} state="done" boss={{ dex: 442, level: 50, shiny: true }} raid={false} cond={null} onClick={noop} />
+        {/* Under the rows, the world's INFO: its pop-up again, with OK. */}
+        <InfoButton name="Mirage Island" onClick={() => setInfo(true)} className="col-span-2" />
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <BoosterChip type="psychic" n={1.5} />
@@ -188,6 +192,7 @@ export function WorldBits() {
         <WorldAwayView world={mid} kind="main" back="Kanto" onBack={noop} />
       </div>
       <WorldPopupView world={mid} now={now} open={popup} onLater={() => setPopup(false)} onEnter={() => setPopup(false)} />
+      <WorldPopupView world={mid} now={now} open={info} onLater={() => setInfo(false)} />
       {bye && <WorldByeView bye={bye} open onOk={() => setBye(null)} />}
       <WorldFinishView
         world={mid}
