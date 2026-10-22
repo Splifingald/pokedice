@@ -9,8 +9,23 @@ import { addFossil, isReviving } from './fossils'
 import { LEGACY_GAUGE } from './legacyGauge'
 import { itemOnFor, MONEY, sellPrice, shopSells, usableIn } from './items'
 import { earnedGold } from './liveEvents'
-import { canStartPortal, inPortalRun, markPortalWonSeen, portalModeOf, portalStateOf, portalWipe } from './portal'
-import { canStartNightmare, inNightmare, markNightmareWonSeen, nightmareStateOf, nightmareWipe } from './nightmare'
+import {
+  canStartPortal,
+  inPortalRun,
+  markPortalWonSeen,
+  portalModeOf,
+  portalStateOf,
+  portalWipe,
+  portalWon,
+} from './portal'
+import {
+  canStartNightmare,
+  inNightmare,
+  markNightmareWonSeen,
+  nightmareStateOf,
+  nightmareWipe,
+  nightmareWon,
+} from './nightmare'
 import { areaOpenAt } from './worldList'
 import {
   averageLevel,
@@ -288,6 +303,13 @@ export function isAreaClosed(save: SaveData, areaId: string, data: GameData): bo
     bosses.every((b) => p.bossesDefeated.includes(b.dex) && bossCaught(area, p, save.pokedex, b.dex, data))
   )
 }
+
+/**
+ * The area deals no more cards: its portal run (docs/28) or its nightmare (docs/30) is won, so it is only its raid,
+ * then sealed. Unlike a closed area it can still be entered (its raid is reached from it).
+ */
+export const isAreaSealed = (save: SaveData, data: GameData, areaId: string): boolean =>
+  portalWon(save, data, areaId) || nightmareWon(save, data, areaId)
 
 /** A boss of this area was caught here: noted in its progress (what a small world's bosses go by, docs/26 §2.5). */
 export function noteBossCaught(save: SaveData, areaId: string, dex: number): SaveData {

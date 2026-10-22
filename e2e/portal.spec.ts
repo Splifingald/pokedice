@@ -15,6 +15,7 @@ import {
   emptyProgress,
   enterWorld,
   newSmallWorld,
+  progressRaidKey,
   type Area,
   type BundleRaw,
   type PortalState,
@@ -417,6 +418,24 @@ test('a wipe: the portals closed go back to 0, the boons are lost, XP and items 
   await page.getByRole('button', { name: 'TRY AGAIN' }).click()
   await expect(page).toHaveURL(/\/home$/)
   await expect(page.getByRole('button', { name: /^Enter the distortion/ }).first()).toBeVisible()
+})
+
+test('won and Giratina caught, the area is sealed: CONTINUE is shut, and CONTINUE HERE says why instead of dealing a card (a player’s report, 2026-10-21)', async ({
+  page,
+}) => {
+  const won: PortalState = { active: false, closed: 2, deck: [], won: true, wonSeen: true, tries: 1 }
+  const save = atPortal([[150, 100]], won)
+  await boot(page, { ...save, events: { ...save.events, raidsDone: [progressRaidKey(PORTAL, 487)] } })
+  await page.goto('/home')
+  const shut = page.getByRole('button', { name: /^CONTINUE/ }).first()
+  await expect(shut).toBeDisabled()
+  await expect(page.getByText('The distortion is sealed').first()).toBeVisible()
+  await page.getByRole('button', { name: /^Torn Rift/ }).first().click()
+  await page.getByRole('dialog', { name: 'Torn Rift' }).getByRole('button', { name: 'CONTINUE HERE' }).click()
+  await expect(page.getByRole('button', { name: 'The distortion is sealed', exact: true })).toBeVisible()
+  // No card dealt: still Home, no preview over it.
+  await expect(page).toHaveURL(/\/home$/)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
 test('a 360×640 phone: a distortion’s boons fit, nothing scrolls sideways, and the menus say why they are shut', async ({

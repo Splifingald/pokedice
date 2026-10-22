@@ -7,6 +7,7 @@ import {
   firstComeback,
   hasAbleTeam,
   isAreaClosed,
+  isAreaSealed,
   latestOpenArea,
   nightmareLock,
   nightmareModeOf,
@@ -64,7 +65,7 @@ export function useContinue(area: Area) {
   const dream = dreamMode ? nightmareStateOf(save, area.id) : null
   const gym = mode || dreamMode ? null : dueGym(area, progress, data, side)
   const boss = gym || mode || dreamMode ? null : dueBoss(area, progress, teamAverageLevel(save), data)
-  const closed = isAreaClosed(save, area.id, data) || !!portal?.won || !!dream?.won
+  const closed = isAreaClosed(save, area.id, data) || isAreaSealed(save, data, area.id)
   const busy = (run.areaId === area.id && run.phase !== 'idle') || battle
   const raid = gym || boss || busy ? null : openRaidIn(save, data, area)
   const raidName = raid ? (data.species[raid.dex]?.name ?? '') : ''
@@ -122,6 +123,7 @@ export function useContinue(area: Area) {
                 ? t('ui.home.roundOf', { n: Math.min(done + 1, need), total: need })
                 : t('ui.home.secretArea')
 
+  const off = !busy && !raid && !enter && (resting || (!gym && !boss && (closed || empty)))
   const explore = () => {
     ensureRun(area)
     rollNext()
@@ -129,6 +131,8 @@ export function useContinue(area: Area) {
   }
   const go = () => {
     if (busy) return navigate('/area')
+    // Shut (sealed, no energy, resting): CONTINUE is greyed out, and the map's CONTINUE HERE says why instead.
+    if (off) return pushToast(sub, 'info')
     if (raid) return navigate(progressRaidPath(raid))
     if (enter || (portal?.active && portal.offers?.length) || struck) {
       ensureRun(area)
@@ -142,7 +146,6 @@ export function useContinue(area: Area) {
     }
     explore()
   }
-  const off = !busy && !raid && !enter && (resting || (!gym && !boss && (closed || empty)))
   // Under CONTINUE: the green GO TO when behind in the region's main chain (not mid-encounter), and "keep exploring"
   // when a gym or a legendary waits. Home sizes its scene around them.
   const latest = useGame((s) => (busy || !s.save ? null : latestOpenArea(s.save, s.data, serverNow())))
