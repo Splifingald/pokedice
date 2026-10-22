@@ -400,6 +400,7 @@ async function buildPokemon(entries: Record<string, ShowdownEntry>) {
   const results = await pool([...ids], 16, async ([dex, id]) => {
     const kinds: string[] = []
     const boxes: (ShowdownBox | undefined)[] = []
+    const files: (Buffer | null)[] = []
     for (const view of SHOWDOWN_VIEWS) {
       const gif = await fetchCached(
         `${SHOWDOWN_SPRITES}/${ANI_DIRS[view]}/${id}.gif`,
@@ -408,6 +409,7 @@ async function buildPokemon(entries: Record<string, ShowdownEntry>) {
       if (gif) {
         kinds.push('a')
         boxes.push(gifBox(gif))
+        files.push(gif)
         continue
       }
       const png = await fetchCached(
@@ -416,6 +418,16 @@ async function buildPokemon(entries: Record<string, ShowdownEntry>) {
       )
       kinds.push(png ? 'g' : '-')
       boxes.push(png ? pngBox(png) : undefined)
+      files.push(png)
+    }
+    // Some of Showdown's "shiny" files are the plain sprite copied (Rabsca, Pawmo, Ogerpon's masks…): counted as
+    // missing, so the game shows our own shiny (public/pokemon) instead of a shiny that looks plain.
+    for (const v of [2, 3]) {
+      const plain = files[v - 2]
+      if (plain && files[v]?.equals(plain)) {
+        kinds[v] = '-'
+        boxes[v] = undefined
+      }
     }
     return { dex, id, kinds, boxes }
   })

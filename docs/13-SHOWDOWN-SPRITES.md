@@ -23,6 +23,12 @@ art and clash with the game's look, so they are never used. Coverage of the pixe
 | #650–1025 | 159 / 376 | 217 | 159 |
 | forms | 76 / 227 | 114 | 96 (17 have no front at all) |
 
+**Fake shinies.** A few of Showdown's shiny files are the plain sprite copied (Pangoro, Honedge, Inkay, Malamar,
+Pawmo, Naclstack, Wattrel, Toedscruel, Rellor's back, Rabsca, Farigiraf, Mega Metagross's back, Ogerpon's masks).
+`pnpm showdown-sprites` marks a shiny view whose file is byte for byte the plain one as missing (`-`), so the game and
+the Discord raid post show the local shiny (`public/pokemon/<dex>_<view>_shiny.png`) instead. Gigantamax Butterfree's
+back has no real shiny in either set.
+
 `public/trainers/classes/**` and `public/characters/{red,green,prof-oak}.png` also hold the Showdown sprites, one file
 each. The game only loads those for a URL outside the sheets: a `sprite_url` someone typed in admin.
 

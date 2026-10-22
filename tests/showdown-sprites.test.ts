@@ -29,8 +29,9 @@ describe('Showdown Pokémon sprites (pnpm showdown-sprites)', () => {
       expect(e, `#${p.dex}`).toBeTruthy()
       expect(e!.v, `#${p.dex}`).toMatch(/^[ag-]{4}$/)
       // Every Pokémon has its front and back on Showdown (animated, or the static set for the few not animated yet);
-      // only the newest Megas can miss views, and fall back to the local sprites.
-      if (p.dex <= 1025) expect(e!.v, `#${p.dex}`).toMatch(/^[ag]{4}$/)
+      // only the newest Megas can miss views, and fall back to the local sprites. A shiny view can be missing too:
+      // Showdown's is the plain sprite copied for a few (Rabsca, Pawmo…), so the local shiny shows instead.
+      if (p.dex <= 1025) expect(e!.v.slice(0, 2), `#${p.dex}`).toMatch(/^[ag]{2}$/)
       if (e!.v[0] !== '-') expect(e!.f, `#${p.dex} front`).toBeTruthy()
       if (e!.v[1] !== '-') expect(e!.b, `#${p.dex} back`).toBeTruthy()
       for (const box of [e!.f, e!.b, e!.fs, e!.bs]) {
@@ -38,6 +39,19 @@ describe('Showdown Pokémon sprites (pnpm showdown-sprites)', () => {
         const [x0, y0, x1, y1] = artBox(box)
         expect(x1 >= x0 && y1 >= y0 && x1 < box[0] && y1 < box[1], `#${p.dex} ${box}`).toBe(true)
       }
+    }
+  })
+
+  it('has a local shiny wherever Showdown has no real one', () => {
+    const local = (dex: string, view: string) =>
+      path.join('public/pokemon', `${dex.padStart(3, '0')}_${view}_shiny.png`)
+    // Rabsca's Showdown shiny is its plain sprite copied: the regression that showed shiny raid bosses plain.
+    expect(entries[954]!.v).toBe('gg--')
+    for (const [dex, e] of Object.entries(entries)) {
+      if (e.v[0] !== '-' && e.v[2] === '-')
+        expect(existsSync(local(dex, 'front')), `#${dex} ${e.id}`).toBe(true)
+      if (e.v[1] !== '-' && e.v[3] === '-')
+        expect(existsSync(local(dex, 'back')), `#${dex} ${e.id}`).toBe(true)
     }
   })
 
