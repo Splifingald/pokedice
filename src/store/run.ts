@@ -1007,6 +1007,22 @@ export function continueAfterVictory(leadUid?: string) {
 }
 
 /**
+ * A victory's result card left open behind the player (the back gesture went Home from under it): the fight is over,
+ * so the card closes as its HOME does — a catch waiting on "Add to team?" goes to the Box, as CONTINUE sends it — and
+ * the player can travel again (the next area the fight opened included). Not between a trainer's Pokémon (the fight
+ * goes on), nor in an Elite Rebattle or a run that holds the player in its area (portal, nightmare): those go back to
+ * their page. True when the run is free again.
+ */
+export function closeVictoryLeftOpen(): boolean {
+  const { save, data, run } = useGame.getState()
+  if (run.phase !== 'victory' || run.rebattle || trainerHasNext()) return false
+  if (save && (portalLock(save, data) ?? nightmareLock(save, data))) return false
+  while (useGame.getState().run.pendingCatchId) resolveCatch(null)
+  continueAfterVictory()
+  return useGame.getState().run.phase === 'idle'
+}
+
+/**
  * CONTINUE on a result card: what Home's CONTINUE would start next (a waiting gym or legendary first), without
  * the trip Home. Call it once the battle is closed (continueAfterVictory).
  */

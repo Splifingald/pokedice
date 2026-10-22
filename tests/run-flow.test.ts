@@ -19,6 +19,7 @@ import {
   startNewGame,
   canSkipCurrent,
 } from '@/store/run'
+import { travelTo } from '@/store/travel'
 
 /** Turn the engine's auto-player into store dispatches (the UI does the same thing with clicks). */
 function playBattle() {
@@ -216,5 +217,53 @@ describe('run flow', () => {
     expect(useGame.getState().run).toMatchObject({ phase: 'wipe', trainer: null })
     expect(progressOf(useGame.getState().save!, a1.id)).toMatchObject({ deck: [], drawn: [] })
     afterWipe()
+  })
+
+  it("the card of the fight that cleared the area, left open (the back gesture went Home), doesn't hold the next area", () => {
+    seedRun(2024)
+    startNewGame(7)
+    const { data } = useGame.getState()
+    const [a1, a2] = data.areas
+    enterArea(a1!.id)
+    const clearedHere = () => useGame.getState().run.events.some((e) => e.kind === 'area_cleared')
+    for (let step = 0; step < 3000 && !(useGame.getState().run.phase === 'victory' && clearedHere()); step++) {
+      const { run } = useGame.getState()
+      if (run.phase === 'idle') rollNext()
+      else if (run.phase === 'preview') engage()
+      else if (run.phase === 'battle') playBattle()
+      else if (run.phase === 'catch') {
+        if (!run.catch?.result) throwBall((useGame.getState().save!.inventory['poke-ball'] ?? 0) > 0 ? 'poke-ball' : null)
+        else finishCatch()
+      } else if (run.phase === 'victory') {
+        if (run.pendingCatchId) resolveCatch(null)
+        continueAfterVictory()
+      } else if (run.phase === 'center') finishCenter()
+      else if (run.phase === 'wipe') afterWipe()
+    }
+    expect(useGame.getState().run.phase).toBe('victory')
+    expect(isAreaUnlocked(useGame.getState().save!, a2!.id, data)).toBe(true)
+    // Neither GO TO NEW AREA nor HOME was pressed: travelling from the Areas sheet closes the card and goes.
+    expect(travelTo(a2!)).toBe(true)
+    expect(useGame.getState().run).toMatchObject({ phase: 'idle', areaId: a2!.id, events: [] })
+    expect(useGame.getState().save!.currentAreaId).toBe(a2!.id)
+  })
+
+  it("between a trainer's Pokémon the fight goes on: no travel", () => {
+    seedRun(3)
+    startNewGame(4)
+    const { data } = useGame.getState()
+    const a1 = data.areas[0]!
+    enterArea(a1.id)
+    const team = [{ dex: 19, level: 3 }, { dex: 16, level: 3 }]
+    useGame.setState((s) => ({
+      run: {
+        ...s.run,
+        phase: 'victory',
+        encounter: { kind: 'trainer', trainerId: 't', name: 'Youngster', spriteUrl: null, team },
+        trainer: { index: 0, gold: 10 },
+      },
+    }))
+    expect(travelTo(data.areas[1]!)).toBe(false)
+    expect(useGame.getState().run.phase).toBe('victory')
   })
 })

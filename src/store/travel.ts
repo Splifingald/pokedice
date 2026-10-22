@@ -2,7 +2,7 @@
 import { nightmareLock, type Area } from '@/engine'
 import { t } from '@/i18n'
 import { pushToast, useGame } from '@/store/game'
-import { enterArea } from '@/store/run'
+import { closeVictoryLeftOpen, enterArea } from '@/store/run'
 
 /** Go to an area (from the Areas sheet, its details, a widget). False when it can't be entered right now. */
 export function travelTo(area: Area): boolean {
@@ -13,8 +13,8 @@ export function travelTo(area: Area): boolean {
     pushToast(t('ui.nightmare.locked', { area: held.name }), 'info')
     return false
   }
-  // Mid-encounter, the run belongs to the area it started in.
-  if (run.phase !== 'idle') {
+  // Mid-encounter, the run belongs to the area it started in; a won fight's card left open is over, so it closes.
+  if (run.phase !== 'idle' && !closeVictoryLeftOpen()) {
     pushToast(t('ui.home.finishFirst'), 'info')
     return false
   }
