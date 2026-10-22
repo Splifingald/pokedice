@@ -419,14 +419,25 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
               ? { kind: 'unleash', side: e.side, fromDex: e.fromDex, toDex: e.toDex, type: e.die }
               : undefined
       const formed = (f: Fx) => ({ ...f.dex, [e.uid]: e.toDex })
+      // Dice gained mid-turn land in your hand: only they tumble, the others keep their keys (and stay still).
+      const hand = e.hand
+      const tray = (f: Fx): Fx['tray'] => {
+        if (!hand) return f.tray
+        const old = f.tray?.side === e.side ? f.tray.keys : []
+        let j = 0
+        const keys = hand.dice.map((_, i) => (hand.fresh[i] ? undefined : old[j++]) ?? `r${nextId()}-${i}`)
+        return { side: e.side, dice: hand.dice, keys }
+      }
       return {
         delay: 1300,
         sound: cryDex ? undefined : 'levelup',
         apply: (f) =>
-          scene ? f : { ...f, dex: formed(f), message: text, chip: chip(f), flash: { id: nextId(), target: e.side } },
+          scene
+            ? f
+            : { ...f, dex: formed(f), message: text, chip: chip(f), tray: tray(f), flash: { id: nextId(), target: e.side } },
         scene,
         land: scene
-          ? (f) => ({ ...f, dex: formed(f), message: text, chip: chip(f), cry: cry(f), banner: banner(f) })
+          ? (f) => ({ ...f, dex: formed(f), message: text, chip: chip(f), tray: tray(f), cry: cry(f), banner: banner(f) })
           : undefined,
       }
     }

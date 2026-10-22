@@ -62,8 +62,9 @@ export function DiceTray({
     >
       {children ??
         tray?.dice.map((d, i) => (
+          // Keyed by its throw: a die thrown in ahead of it (a Mega's) moves it along without a fresh tumble.
           <Die
-            key={i}
+            key={tray.keys[i] ?? i}
             type={d.type}
             face={faceOf(d, data)}
             size={foe ? Math.min(40, size) : size}
