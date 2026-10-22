@@ -34,47 +34,62 @@ const MIN_FIT_SCALE = 0.6
  *
  * Only ever shrinks, never grows past the size the class gives it. A button whose width follows its own text can
  * never overflow, so this does nothing there — it only bites when something else fixes the width (`w-full`, a flex
- * row, a max-width). That also makes the measurement stable: the label's box does not move when its font does.
+ * row, a max-width).
+ *
+ * The room is the button's content box, never the label's own box: Safari lays a button's children out in an
+ * anonymous box sized to them, so the label's `max-w-full` resolved against its previous size, and each fit fed the
+ * next one through the ResizeObserver. The partner pick's buttons flipped between full size and far too small on
+ * every frame.
  */
 function useFitText(label: ReactNode) {
   const ref = useRef<HTMLSpanElement>(null)
   useLayoutEffect(() => {
     const el = ref.current
-    if (!el) return
+    const box = el?.parentElement
+    if (!el || !box) return
+    const roomOf = () => {
+      const cs = getComputedStyle(box)
+      const pad = Number.parseFloat(cs.paddingLeft) + Number.parseFloat(cs.paddingRight)
+      return Math.max(0, box.clientWidth - pad)
+    }
     let width = 0
     const fit = () => {
       el.style.fontSize = ''
       const base = Number.parseFloat(getComputedStyle(el).fontSize)
-      const room = el.clientWidth
-      if (!base || !room) return
-      // Measured from the start edge: centred, an overflow spills out on both sides and scrollWidth only counts the
-      // half on the right, so the loop below under-corrected and could stop with the label still clipped.
-      el.style.justifyContent = 'flex-start'
-      const floor = base * MIN_FIT_SCALE
-      let size = base
-      // An icon beside the text keeps its size whatever the font does, so a single ratio undershoots. Close in
-      // instead: each pass measures what is left over and takes another bite, and it settles in two or three.
-      for (let i = 0; i < 8 && el.scrollWidth > room && size > floor; i++) {
-        size = Math.max(floor, size * (room / el.scrollWidth))
-        el.style.fontSize = `${size}px`
+      const room = roomOf()
+      if (base && room) {
+        // Measured at its natural width, whatever its box: clamped, scrollWidth also counts the box itself.
+        el.style.flex = 'none'
+        el.style.width = 'max-content'
+        el.style.maxWidth = 'none'
+        const floor = base * MIN_FIT_SCALE
+        let size = base
+        // An icon beside the text keeps its size whatever the font does, so a single ratio undershoots. Close in
+        // instead: each pass measures what is left over and takes another bite, and it settles in two or three.
+        for (let i = 0; i < 8 && el.offsetWidth > room && size > floor; i++) {
+          size = Math.max(floor, size * (room / el.offsetWidth))
+          el.style.fontSize = `${size}px`
+        }
+        el.style.flex = ''
+        el.style.width = ''
+        el.style.maxWidth = ''
+        // A red button's white label under 24px needs the deeper red to stay readable (pixel.css).
+        box.toggleAttribute('data-small', size < 24)
       }
-      el.style.justifyContent = ''
-      // A red button's white label under 24px needs the deeper red to stay readable (pixel.css).
-      el.parentElement?.toggleAttribute('data-small', size < 24)
+      // Taken after the fit: a button whose width follows its label has just moved, and that is not a resize.
+      width = roomOf()
     }
     fit()
     // Measured before the Jersey fonts arrived (a cold load), the label would be sized for the narrower fallback face:
     // once they're in, measure again.
     let live = true
     void document.fonts?.ready.then(() => live && fit())
-    // Re-fit on a real width change only: reacting to our own font change would loop.
+    // Re-fit when the button's width really changes (a rotation, a wrap), never on what our own fit did.
     const ro = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect.width ?? 0
-      if (Math.abs(w - width) < 1) return
-      width = w
+      if (Math.abs((entries[0]?.contentRect.width ?? 0) - width) < 1) return
       fit()
     })
-    ro.observe(el)
+    ro.observe(box)
     return () => {
       live = false
       ro.disconnect()
@@ -112,8 +127,8 @@ export const PixelButton = forwardRef<HTMLButtonElement, PixelButtonProps>(funct
       }}
       {...rest}
     >
-      {/* The label measures itself: `min-w-0` lets it be narrower than its text, which is what makes the overflow
-          visible to `scrollWidth`, and `whitespace-nowrap` keeps it on one line so shrinking is what fixes it. */}
+      {/* `whitespace-nowrap` keeps the label on one line so shrinking is what fixes it; `min-w-0` and the clip keep a
+          label still too wide at the smallest size inside the frame. */}
       <span ref={label} className="inline-flex min-w-0 max-w-full items-center justify-center gap-2 overflow-hidden whitespace-nowrap">
         {children}
       </span>
