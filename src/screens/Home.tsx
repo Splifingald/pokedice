@@ -6,7 +6,7 @@ import { useT } from '@/i18n/react'
 import { RegionBar } from '@/components/RegionBar'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { useGame } from '@/store/game'
-import { enterArea } from '@/store/run'
+import { closeVictoryLeftOpen, enterArea } from '@/store/run'
 import { regionOnOffer } from '@/store/regions'
 import { AreaDetails } from './home/AreaDetails'
 import { AreaPlate } from './home/AreaPlate'
@@ -40,6 +40,7 @@ function HomeView({ area }: { area: Area }) {
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
   const runArea = useGame((s) => s.run.areaId)
+  const runPhase = useGame((s) => s.run.phase)
   const [details, setDetails] = useState<string | null>(null)
   const [sheet, setSheet] = useState<{ view: 'areas' | 'regions'; filter: AreasFilter; key: number } | null>(
     null,
@@ -58,6 +59,12 @@ function HomeView({ area }: { area: Area }) {
   useEffect(() => {
     if (!runArea && playable(save, data, area)) enterArea(area.id)
   }, [save, data, area, runArea])
+
+  // Back Home from under a won fight's result card (the back gesture): it closes as its HOME would, so the menus open
+  // again and the area the fight opened can be travelled to, rather than waiting on a card nobody sees.
+  useEffect(() => {
+    if (runPhase === 'victory') closeVictoryLeftOpen()
+  }, [runPhase])
 
   const offer = inside ? null : regionOnOffer()
   const areasState = offer ? 'region' : hasNewSecret(save, data) ? 'new' : 'plain'
