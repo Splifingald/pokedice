@@ -1,8 +1,9 @@
-import { regionCases, type SaveData } from '@/engine'
-import { progressTotals } from '@/save/cloud'
+import { regionCases, worldById, type SaveData } from '@/engine'
+import { playedOf, progressTotals } from '@/save/cloud'
 import { joinList } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
+import { worldName } from '@/store/worlds'
 
 /**
  * One line per fact that tells two saves apart — every one of them counted across all the save's regions, the same
@@ -30,8 +31,14 @@ export function SaveFacts({ save }: { save: SaveData }) {
       <dd>{badges}</dd>
       <dt className="text-muted">{t('ui.sync.areasCleared')}</dt>
       <dd>{totals.cleared}</dd>
+      {totals.world && (
+        <>
+          <dt className="text-muted">{worldName(worldById(data, totals.world.id), data)}</dt>
+          <dd>{t('ui.sync.worldFacts', { areas: totals.world.cleared, species: totals.world.species })}</dd>
+        </>
+      )}
       <dt className="text-muted">{t('ui.sync.lastPlayed')}</dt>
-      <dd>{new Date(save.updatedAt).toLocaleString()}</dd>
+      <dd>{new Date(playedOf(save)).toLocaleString()}</dd>
     </dl>
   )
 }

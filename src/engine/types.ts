@@ -1439,6 +1439,12 @@ export interface SaveData {
   dayCareNotice?: { dex: number[] }
   /** When the admin last edited this save (cheats): that cloud save then wins the next sync, even with less progress. */
   adminEditAt?: number
+  /**
+   * When the player last changed this save themselves. `updatedAt` moves with every change, the clocks' too (the
+   * offline pay, an Extreme absence healed, a fossil revived); this one doesn't, and breaks the sync's ties
+   * (`decideSync`). Absent on saves from before it: `updatedAt` stands in.
+   */
+  playedAt?: number
   /** Energy held at `at` (ms); it refills from there (see engine/energy). Absent = full. */
   energy?: { value: number; at: number }
   /** The player has opened the leaderboard (Prof. Oak sends them there once). */

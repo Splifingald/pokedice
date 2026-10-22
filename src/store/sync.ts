@@ -21,6 +21,7 @@ import {
   pushGapLeft,
   pushKey,
   sameSave,
+  SaveConflictError,
   schedulePush,
 } from '@/save/cloud'
 import { keepGeneralBought } from '@/engine'
@@ -98,26 +99,75 @@ const pushDue = () => {
   return !user || pushGapLeft(readCloudMark(activeSlot()), user) === 0
 }
 
+/** A refused upload found mid-play tries again this much later, when the cloud copy may be loaded. */
+const CONFLICT_RETRY_MS = 30_000
 /**
- * Push the save as it is when the timer fires, not one captured when it was set: the save may have changed since
- * without a commit of this page's own (another tab's, taken in by adoptStoredSave).
+ * The cloud copy moved under this device (an upload was refused): uploads stop until the two are compared again, with
+ * no request for each — a save is 30–400 kB.
  */
-function pushLatest(client: SupabaseClient, userId: string): Promise<void> {
-  const save = useGame.getState().save
-  return save ? push(client, userId, save) : Promise.resolve()
+let cloudMoved = false
+/** Something on screen that loading the cloud copy would cut short: a fight, an encounter, a catch decision, Versus. */
+const playing = () => {
+  const { run } = useGame.getState()
+  return inFight() || !!run.encounter || !!run.pendingCatchId || useReloadHolds.getState().count > 0
 }
 
+/**
+ * Push the save as it is when the timer fires, not one captured when it was set: the save may have changed since
+ * without a commit of this page's own (another tab's, taken in by adoptStoredSave). Refused because another device
+ * wrote the cloud copy since (SaveConflictError): the two are compared again, as at sign-in, never written over.
+ */
+async function pushLatest(client: SupabaseClient, userId: string): Promise<void> {
+  const save = useGame.getState().save
+  if (!save) return
+  try {
+    await push(client, userId, save)
+  } catch (err) {
+    if (!(err instanceof SaveConflictError)) throw err
+    cloudMoved = true
+    // The cloud copy may win, and loading it would end what's on screen.
+    if (playing()) schedulePush(() => pushLatest(client, userId), CONFLICT_RETRY_MS)
+    else await resync(client, userId)
+  }
+}
+
+/** The stamp of the cloud copy this device last matched for `user`; null when it knows of none. */
+function knownAt(user: string, realm: SaveMode): number | null {
+  const mark = readCloudMark(realm)
+  return mark?.user === user ? mark.at : null
+}
+
+/** Uploads over the cloud copy this device last matched only (`pushCloudSave`); SaveConflictError if it moved. */
 async function push(client: SupabaseClient, userId: string, save: SaveData) {
+  if (cloudMoved) throw new SaveConflictError()
   lastTry = Date.now()
   const key = pushKey(save)
-  // Nothing changed since the cloud last matched (only timestamps): the upsert would rewrite the same row.
+  // Nothing changed since the cloud last matched (only timestamps): the upload would rewrite the same row.
   if (key !== cloudKey) {
-    await pushCloudSave(client, userId, save)
+    const at = await pushCloudSave(client, userId, save, knownAt(userId, realmOf(save)))
     cloudKey = key
-    // The row is stamped with the save's updatedAt (src/save/cloud.ts).
-    rememberCloud(userId, realmOf(save), save.updatedAt, key, Date.now())
+    rememberCloud(userId, realmOf(save), at, key, Date.now())
   }
   markSynced()
+}
+
+/**
+ * Another device wrote the cloud copy under this one: compare and settle again, unless a sync is already running.
+ * False when it couldn't: pushes then wait for the next sign-in event or SYNC ONLINE, as after a failed sign-in sync.
+ */
+async function resync(client: SupabaseClient, userId: string): Promise<boolean> {
+  if (useCloudSync.getState().busy) return false
+  useCloudSync.setState({ busy: true })
+  try {
+    await reconcile(client, userId)
+    return true
+  } catch (err) {
+    console.warn('[cloud] sync failed', err)
+    syncedUser = null
+    return false
+  } finally {
+    useCloudSync.setState({ busy: false })
+  }
 }
 
 /**
@@ -146,6 +196,7 @@ async function pushOrWait(client: SupabaseClient, userId: string, save: SaveData
 export async function reconcile(client: SupabaseClient, id: string, manual = false): Promise<'loaded' | 'pushed' | 'same'> {
   settleSync(false)
   cloudKey = null
+  cloudMoved = false
   cancelPush() // whatever was waiting goes out below, if this device wins
   lastTry = Date.now()
   const before = useGame.getState().save
@@ -185,6 +236,9 @@ export async function reconcile(client: SupabaseClient, id: string, manual = fal
     if (loaded !== cloud) await pushOrWait(client, id, useGame.getState().save ?? loaded)
   } else if (decision === 'local' && local && !(cloud && sameSave(local, cloud))) {
     if (cloud) backupSave(cloud, t('ui.sync.replacedByLocal'))
+    // The copy just read is the one to write over (and none at all without a row): a device writing in between wins
+    // the next compare instead of being overwritten.
+    rememberCloud(id, realm, at, cloud ? pushKey(cloud) : '')
     // What the cloud copy bought stays bought (keepGeneralBought). Kept over a copy stamped later: stamped past it, so
     // the cloud row's stamp never goes back (an older page still lets the newest stamp win; another device's clock may
     // be ahead of this one).
@@ -197,9 +251,10 @@ export async function reconcile(client: SupabaseClient, id: string, manual = fal
     await pushOrWait(client, id, kept)
     pushToast(t(cloud ? 'ui.toast.localKept' : 'ui.toast.backedUp'), 'good')
     outcome = 'pushed'
-  } else if (cloud) {
-    cloudKey = pushKey(cloud)
-    rememberCloud(id, realm, at, cloudKey)
+  } else if (at != null) {
+    // A row that can't be read is still a row: the next upload goes over it, not beside it.
+    cloudKey = cloud ? pushKey(cloud) : null
+    rememberCloud(id, realm, at, cloudKey ?? '')
   }
   markSynced()
   settleSync(true)
@@ -311,7 +366,13 @@ export async function pushSaveNow(): Promise<boolean> {
   const { auth, save } = useGame.getState()
   if (!client || !save || !pushAllowed || auth.status !== 'signed_in' || !auth.userId) return false
   cancelPush()
-  await push(client, auth.userId, save)
+  try {
+    await push(client, auth.userId, save)
+  } catch (err) {
+    if (!(err instanceof SaveConflictError)) throw err
+    // Settled again, the cloud holds whichever save won.
+    return resync(client, auth.userId)
+  }
   return true
 }
 

@@ -24,7 +24,7 @@ export async function collectRaidGifts(force = false): Promise<void> {
   try {
     const gifts = await claimRaidGifts()
     if (!gifts.length) return
-    mutateSave((s) => addRaidGifts(s, useGame.getState().data, gifts.map((g) => g.itemKey)))
+    mutateSave((s) => addRaidGifts(s, useGame.getState().data, gifts.map((g) => g.itemKey)), { auto: true })
     useRaidGifts.setState((st) => ({ gifts: [...st.gifts, ...gifts] }))
   } finally {
     busy = false

@@ -31,7 +31,7 @@ export function markOfflineAway() {
   const now = trustedNow()
   if (!save || now == null) return
   const next = markOfflineFrom(save, data, now)
-  if (next !== save) commitSave(next)
+  if (next !== save) commitSave(next, { auto: true })
 }
 
 let returning = false
@@ -50,7 +50,7 @@ export async function collectOfflineGold(force = false) {
   // Inside a small world an open absence closes unpaid (engine), so there's no time to ask for.
   if (inWorldRegion(first, firstData)) {
     const res = collectOffline(first, firstData, 0)
-    if (res) commitSave(res.save)
+    if (res) commitSave(res.save, { auto: true })
     return
   }
   if (!force && performance.now() - failedAt < RETRY_MS) return
@@ -63,7 +63,7 @@ export async function collectOfflineGold(force = false) {
     if (now == null || !save) return
     const res = collectOffline(save, data, now)
     if (!res) return
-    commitSave(res.save)
+    commitSave(res.save, { auto: true })
     if (res.gold <= 0) return
     if (res.ms >= HOUR)
       useOfflineReport.setState({ report: { gold: res.gold, ms: res.ms, perHour: res.perHour } })

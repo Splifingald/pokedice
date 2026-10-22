@@ -336,3 +336,35 @@ game makes to the save, as it always was; the server's own world rules (trades, 
 2. Admin → Events → **Small worlds**: set **Finish early** to *On for admin* (Off by default). The worlds' own switch
    must be on for you too. Save & Publish.
 3. Check it as admin in a world where everything is done, then switch **Finish early** to *On for everyone* and Publish.
+
+## 12. The cloud sync and a world in progress (2026-10-22)
+
+Reported on Discord: a player nearly finished Haunted Hollow on their phone (all but Giratina), then opened the game on
+their PC and got the PC's older save back, SYNC ONLINE pressed or not. Three faults, all fixed:
+
+- **The sync counted nothing in a world.** `progressTotals` left the world's block out (it closes with the world), so a
+  world nearly finished tied with a save that never went in, and the tie went to the newer stamp — which a stale device
+  gets at load (the offline pay commits before the sync compares). One extra catch in Kanto beat the whole world too.
+  Now the world held open counts apart: its areas done (a portal run or a nightmare won counts, as for finishing it)
+  and its own Pokédex, added to the regions' figures. Not when the other copy is already done with that world (closed,
+  finished early, or its closing pop-up shown): the copy still holding it open is the older one, and level otherwise,
+  the one done with it wins (`compareProgress`). Settings → backups shows the world's figures too (`SaveFacts`).
+- **An upload never looked at the cloud copy.** Only the sign-in and SYNC ONLINE compared; a tab left open on the PC
+  uploaded its old save over the phone's at its next change (the offline pay on coming back to the tab, any tap).
+  `pushCloudSave` now writes only over the copy the device last matched — an update filtered on the row's stamp (to
+  the millisecond; the row keeps microseconds), or an insert when it knew of no row — and anything else throws
+  `SaveConflictError` without writing. The waiting upload then compares the two again as at sign-in, so the further
+  copy wins and the other goes to the device's backups — once nothing on screen would be cut short (a fight, an
+  encounter, a catch decision, Versus); until then no upload is even tried. Pages still on an older build write as
+  before until they reload (a day at most).
+- **A tie went to the save changed last, not played last.** Level on progress, the sync keeps the one played last —
+  but `updatedAt` moves with every change, and a stale device changes its save on its own at load (the offline pay, an
+  Extreme absence healed, a fossil revived, raid gifts and settled trades arriving), so it looked newest. The save now
+  carries `playedAt`, moved only by the player's own changes: `commitSave(…, { auto: true })` (and `mutateSave`'s)
+  leaves it, a save taken in as it is (cloud, another tab) keeps its own, and a save from before it starts from its
+  last stamp. `decideSync` breaks ties on it (`updatedAt` for a copy without it), Settings → backups shows it as "Last
+  played", and it is no reason to upload (left out of `pushKey`, so older saves keep their key). The cost: raid gifts
+  claimed at load on the device that then loses a tie stay in that device's backup.
+
+### Setting it up
+1. **No SQL to run**: the check is the upload's own filter, on the `saves` table as it is.

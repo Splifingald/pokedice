@@ -181,7 +181,8 @@ export async function checkTrades(force = false, now = Date.now(), every = CHECK
         if (!res.already) settled.push(r.id)
       }
     }
-    if (next !== st.save) commitSave(next)
+    // Trades settled by the server, not played here: a copy that misses one loses the sync anyway (missesTrades).
+    if (next !== st.save) commitSave(next, { auto: true })
     if (returned.length || settled.length)
       useTrades.setState((s) => ({
         returned: [...s.returned, ...returned],

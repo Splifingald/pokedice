@@ -32,7 +32,7 @@ export function ensureTodayRaid() {
   if (!raid) return
   asking = true
   try {
-    mutateSave((s) => (todayRaid(s, day) ? null : setTodayRaid(s, raid)))
+    mutateSave((s) => (todayRaid(s, day) ? null : setTodayRaid(s, raid)), { auto: true })
     if (auth.status === 'signed_in') void recordOnServer(raid)
   } finally {
     asking = false
