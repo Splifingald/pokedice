@@ -336,3 +336,27 @@ game makes to the save, as it always was; the server's own world rules (trades, 
 2. Admin → Events → **Small worlds**: set **Finish early** to *On for admin* (Off by default). The worlds' own switch
    must be on for you too. Save & Publish.
 3. Check it as admin in a world where everything is done, then switch **Finish early** to *On for everyone* and Publish.
+
+## 12. The cloud sync and a world in progress (2026-10-22)
+
+Reported on Discord: a player nearly finished Haunted Hollow on their phone (all but Giratina), then opened the game on
+their PC and got the PC's older save back, SYNC ONLINE pressed or not. Two faults, both fixed:
+
+- **The sync counted nothing in a world.** `progressTotals` left the world's block out (it closes with the world), so a
+  world nearly finished tied with a save that never went in, and the tie went to the newer stamp — which a stale device
+  gets at load (the offline pay commits before the sync compares). One extra catch in Kanto beat the whole world too.
+  Now the world held open counts apart: its areas done (a portal run or a nightmare won counts, as for finishing it)
+  and its own Pokédex, added to the regions' figures. Not when the other copy is already done with that world (closed,
+  finished early, or its closing pop-up shown): the copy still holding it open is the older one, and level otherwise,
+  the one done with it wins (`compareProgress`). Settings → backups shows the world's figures too (`SaveFacts`).
+- **An upload never looked at the cloud copy.** Only the sign-in and SYNC ONLINE compared; a tab left open on the PC
+  uploaded its old save over the phone's at its next change (the offline pay on coming back to the tab, any tap).
+  `pushCloudSave` now writes only over the copy the device last matched — an update filtered on the row's stamp (to
+  the millisecond; the row keeps microseconds), or an insert when it knew of no row — and anything else throws
+  `SaveConflictError` without writing. The waiting upload then compares the two again as at sign-in, so the further
+  copy wins and the other goes to the device's backups — once nothing on screen would be cut short (a fight, an
+  encounter, a catch decision, Versus); until then no upload is even tried. Pages still on an older build write as
+  before until they reload (a day at most).
+
+### Setting it up
+1. **No SQL to run**: the check is the upload's own filter, on the `saves` table as it is.

@@ -65,19 +65,60 @@ export async function cloudSaveAt(client: SupabaseClient, userId: string, realm:
   return row ? stampOf(row.updated_at) : null
 }
 
-/** Writes the save to its own realm's row: the main save as it always was, the Extreme one beside it. */
-export async function pushCloudSave(client: SupabaseClient, userId: string, save: SaveData): Promise<void> {
+/** Another device (or the admin) wrote the cloud copy since this device last matched it: nothing was written. */
+export class SaveConflictError extends Error {
+  constructor() {
+    super('save_conflict')
+  }
+}
+
+const iso = (ms: number) => new Date(ms).toISOString()
+
+/**
+ * Writes the save to its own realm's row — only if the row is still the copy this device last matched: stamped `base`,
+ * or no row at all when `base` is null. Otherwise nothing is written and SaveConflictError is thrown, for the caller to
+ * compare again. A plain upsert let a device left open on an old save write it over what another device had played
+ * since (a small world nearly finished on a phone, undone by a PC tab's offline pay, 2026-10-22). Resolves to the
+ * row's stamp afterwards.
+ */
+export async function pushCloudSave(
+  client: SupabaseClient,
+  userId: string,
+  save: SaveData,
+  base: number | null,
+): Promise<number> {
   const extreme = save.mode === 'extreme'
   if (extreme && noRealm) throw new NoRealmError()
-  // The main row is written as before (its realm is the column's default), so an older database takes it too.
-  const row: Record<string, unknown> = { user_id: userId, data: save, updated_at: new Date(save.updatedAt).toISOString() }
-  if (extreme) row.realm = 'extreme'
-  const { error } = await client.from('saves').upsert(row)
-  if (error && extreme && missingColumn(error)) {
-    noRealm = true
-    throw new NoRealmError()
+  const realm: SaveMode = extreme ? 'extreme' : 'main'
+  const at = iso(save.updatedAt)
+  const write = (withRealm: boolean) => {
+    if (base == null) {
+      // The main row is written as before (its realm is the column's default), so an older database takes it too.
+      const row: Record<string, unknown> = { user_id: userId, data: save, updated_at: at }
+      if (extreme) row.realm = 'extreme'
+      return client.from('saves').insert(row).select('updated_at')
+    }
+    const q = client.from('saves').update({ data: save, updated_at: at }).eq('user_id', userId)
+    // The row's stamp has microseconds, the device's copy of it milliseconds: anything within that millisecond.
+    return (withRealm ? q.eq('realm', realm) : q)
+      .gte('updated_at', iso(base))
+      .lt('updated_at', iso(base + 1))
+      .select('updated_at')
   }
-  if (error) throw error
+  let res = await write(!noRealm)
+  if (res.error && missingColumn(res.error)) {
+    noRealm = true
+    if (extreme) throw new NoRealmError()
+    res = await write(false)
+  }
+  // A row this device didn't know of: another device's first upload.
+  if (res.error?.code === '23505') throw new SaveConflictError()
+  if (res.error) throw res.error
+  if (base == null || res.data?.length) return save.updatedAt
+  // No row updated: someone else's stamp is on it now, or it already held this very save (0037 drops that write).
+  const now = await cloudSaveAt(client, userId, realm)
+  if (now != null && now === base) return now
+  throw new SaveConflictError()
 }
 
 export type SyncWinner = 'local' | 'cloud' | 'none'
@@ -128,8 +169,7 @@ export function cancelPush() {
 /**
  * Every region the save holds: the live one, lifted out of the top level, and each parked block. Regions are
  * separate runs, so anything that measures a whole save has to walk all of them — reading `save.areaProgress` alone
- * sees only wherever the player happens to be standing. A small world's block isn't progress (it closes with the
- * world), so it's left out.
+ * sees only wherever the player happens to be standing. A small world's block is counted apart (`openWorld`).
  */
 const regionBlocks = (s: SaveData): RegionSave[] => {
   const world = worldRegionOf(s)
@@ -139,8 +179,24 @@ const regionBlocks = (s: SaveData): RegionSave[] => {
   ]
 }
 
+/** The small world the save holds open, and its block (live when the player is inside, else parked). */
+function openWorld(s: SaveData): { id: string; block: RegionSave } | null {
+  const w = s.events?.world
+  if (!w || w.closed) return null
+  const block = regionOf(s) === w.regionId ? liveBlock(s) : s.parked?.[w.regionId]
+  return block ? { id: w.id, block } : null
+}
+
+/** The save is done with world `id`: closed at its end, finished early, or its closing pop-up already shown. */
+const pastWorld = (s: SaveData, id: string): boolean => {
+  const e = s.events
+  return (e?.world?.id === id && !!e.world.closed) || !!e?.worldDone?.includes(id) || !!e?.worldBye?.includes(id)
+}
+
 /**
- * How far a save got across every region it holds: its areas (cleared, then gym battles won), then its Pokédex.
+ * How far a save got across every region it holds: its areas (cleared, then gym battles won), then its Pokédex. And,
+ * apart, the small world it holds open: areas done (a portal run or a nightmare won counts, as for finishing it) and
+ * its own Pokédex.
  *
  * Areas and gyms add up, because clearing Johto is work done on top of Kanto, not instead of it. Species are the
  * union: the regions' Pokédexes overlap — Johto's routes are full of Gen 1 — and catching the same Pikachu twice is
@@ -160,19 +216,40 @@ export function progressTotals(s: SaveData) {
     }
     for (const dex of block.pokedex) species.add(dex)
   }
-  return { regions: regionBlocks(s).length, cleared, gyms, species: species.size }
+  const open = openWorld(s)
+  const world = open && {
+    id: open.id,
+    cleared: Object.values(open.block.areaProgress).filter((p) => p.cleared || p.portal?.won || p.nightmare?.won)
+      .length,
+    gyms: Object.values(open.block.areaProgress).reduce((n, p) => n + (p.gymsDefeated?.length ?? 0), 0),
+    species: new Set(open.block.pokedex).size,
+  }
+  return { regions: regionBlocks(s).length, cleared, gyms, species: species.size, world }
 }
 
-function progressTuple(s: SaveData): number[] {
+/**
+ * The progress `s` brings against `other`. Its open small world adds to it — a fresh start of its own, so its species
+ * add up too — unless `other` is already done with that world: the copy holding it open is then the older one, and the
+ * world's Pokémon have gone home in the other.
+ */
+function progressTuple(s: SaveData, other: SaveData): number[] {
   const t = progressTotals(s)
-  return [t.cleared, t.gyms, t.species]
+  const w = t.world && !pastWorld(other, t.world.id) ? t.world : null
+  return [t.cleared + (w?.cleared ?? 0), t.gyms + (w?.gyms ?? 0), t.species + (w?.species ?? 0)]
 }
 
-/** > 0 when `a` got further than `b`, < 0 when it's behind, 0 when they're level. */
+/**
+ * > 0 when `a` got further than `b`, < 0 when it's behind, 0 when they're level. Level, the copy done with a small
+ * world is ahead of one still holding it open: a world only ever goes from open to closed.
+ */
 export function compareProgress(a: SaveData, b: SaveData): number {
-  const x = progressTuple(a)
-  const y = progressTuple(b)
+  const x = progressTuple(a, b)
+  const y = progressTuple(b, a)
   for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return x[i]! - y[i]!
+  const wa = openWorld(a)
+  const wb = openWorld(b)
+  if (wa && pastWorld(b, wa.id)) return -1
+  if (wb && pastWorld(a, wb.id)) return 1
   return 0
 }
 

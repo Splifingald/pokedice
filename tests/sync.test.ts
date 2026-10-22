@@ -1,9 +1,28 @@
 // Cloud sync: settled with no question asked — areas, then the Pokédex, then the save played last.
 import { describe, expect, it } from 'vitest'
-import { applyTake, createInstance, liveBlock, newSave, syncXpCurve, xpToNext, type SaveData } from '@/engine'
+import {
+  applyTake,
+  closeWorld,
+  createInstance,
+  emptyProgress,
+  enterWorld,
+  leaveWorld,
+  liveBlock,
+  markWorldBye,
+  newSave,
+  newSmallWorld,
+  syncXpCurve,
+  xpToNext,
+  type Area,
+  type PortalState,
+  type Region,
+  type SaveData,
+  type SmallWorld,
+} from '@/engine'
+import { BUNDLE } from '@/config/bundle'
 import { compareProgress, decideSync, progressTotals, pushKey, sameSave } from '@/save/cloud'
 import { parseSave } from '@/save/schema'
-import { data, newId } from './fixtures'
+import { data, makeDataWith, newId } from './fixtures'
 
 const base = newSave(4, data, 1000, newId)
 const at = (s: SaveData, updatedAt: number): SaveData => ({ ...s, updatedAt })
@@ -141,5 +160,81 @@ describe('XP from an older curve', () => {
     const synced = syncXpCurve(stale, data)
     expect(synced.box[0]).toMatchObject({ level: p.level + 2, xp: 0 })
     expect(syncXpCurve(base, data)).toBe(base)
+  })
+})
+
+describe('a small world held open (2026-10-22)', () => {
+  const T0 = Date.parse('2026-11-01T18:00:00.000Z')
+  const iso = (ms: number) => new Date(ms).toISOString()
+  const REGION: Region = {
+    id: 'world-mirage',
+    name: 'Mirage Island',
+    orderIndex: 99,
+    dexRange: [99999, 99999],
+    starters: [63],
+    starterLevel: 5,
+    leagueAreaId: 'w-lair',
+    nextRegion: null,
+    enabled: false,
+  }
+  const route1 = BUNDLE.areas.find((a) => a.name === 'Route 1' && (a.regionId ?? 'kanto') === 'kanto')!
+  const area = (id: string, order: number): Area => ({
+    ...route1,
+    id,
+    name: id,
+    regionId: REGION.id,
+    orderIndex: 9000 + order,
+    legendaryBoss: null,
+    gyms: [],
+    hidden: false,
+    unlockConditions: null,
+  })
+  const MARSH = area('w-marsh', 1)
+  const LAIR = area('w-lair', 2)
+  const RIFT = area('w-rift', 3)
+  const WORLD: SmallWorld = { ...newSmallWorld('mirage', REGION.id, iso(T0), iso(T0 + 864e6)), minBadges: 0, starters: [63] }
+  const wd = makeDataWith({ regions: [REGION], areas: [MARSH, LAIR, RIFT] }, { smallWorlds: { access: 'all', list: [WORLD] } })
+  const at = (s: SaveData, updatedAt: number): SaveData => ({ ...s, updatedAt })
+
+  const kanto = newSave(4, wd, T0, newId)
+  /** Inside the world: two areas done (one of them a portal run won) and ten species caught there. */
+  const inside: SaveData = (() => {
+    const s = enterWorld(kanto, wd, WORLD, 63, T0, newId)!
+    const won = { active: false, won: true } as unknown as PortalState
+    return {
+      ...s,
+      pokedex: [...s.pokedex, 1, 4, 7, 10, 13, 16, 19, 21, 23],
+      areaProgress: { [MARSH.id]: { ...emptyProgress(), cleared: true }, [RIFT.id]: { ...emptyProgress(), portal: won } },
+    }
+  })()
+  const outside = leaveWorld(inside, wd)!
+
+  it('counts its areas done and its own Pokédex, apart from the regions, inside it or out', () => {
+    for (const s of [inside, outside]) {
+      expect(progressTotals(s).world).toEqual({ id: WORLD.id, cleared: 2, gyms: 0, species: 10 })
+      expect(progressTotals(s).species).toBe(progressTotals(kanto).species)
+    }
+    expect(progressTotals(kanto).world).toBeNull()
+  })
+
+  it('a world nearly finished on one device beats a stale one that never went in, stamped later or a catch ahead', () => {
+    const pc = at(kanto, T0 + 864e5)
+    expect(decideSync(pc, at(inside, T0 + 1000))).toBe('cloud')
+    expect(decideSync(at(outside, T0 + 1000), pc)).toBe('local')
+    const pcCaught = { ...pc, pokedex: [...pc.pokedex, 150] }
+    expect(decideSync(pcCaught, at(outside, T0 + 1000))).toBe('cloud')
+  })
+
+  it('a copy done with the world is ahead of an older one still holding it open, its progress there left out', () => {
+    const closed = closeWorld(outside, wd)
+    expect(closed.events?.world?.closed).toBe(true)
+    // Level on the regions (the partner coming home adds nothing here), the world's lifecycle decides.
+    const level = { ...closed, pokedex: outside.pokedex }
+    expect(compareProgress(level, outside)).toBeGreaterThan(0)
+    expect(compareProgress(outside, level)).toBeLessThan(0)
+    expect(decideSync(at(outside, T0 + 864e5), at(level, T0 + 1000))).toBe('cloud')
+    // Its closing pop-up shown, the record goes: still done with it.
+    const bye = markWorldBye(closed, WORLD.id)
+    expect(decideSync(at(bye, T0 + 1000), at(outside, T0 + 864e5))).toBe('local')
   })
 })

@@ -4,7 +4,16 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { newSave, type SaveData } from '@/engine'
-import { cancelPush, cloudSaveAt, cloudUnchanged, PUSH_GAP_MS, pushGapLeft, pushKey } from '@/save/cloud'
+import {
+  cancelPush,
+  cloudSaveAt,
+  cloudUnchanged,
+  PUSH_GAP_MS,
+  pushCloudSave,
+  pushGapLeft,
+  pushKey,
+  SaveConflictError,
+} from '@/save/cloud'
 import { readCloudMark, saveKeyOf, wipePlayerData, wipeSlot, writeCloudMark } from '@/save/storage'
 import { useGame } from '@/store/game'
 import { adoptStoredSave, reconcile } from '@/store/sync'
@@ -31,13 +40,22 @@ interface Row {
   updated_at: string
 }
 
+/** A stamp in microseconds, as Postgres keeps it (an ISO string with up to six decimals). */
+const micros = (at: string) => {
+  const [, frac = ''] = /\.(\d+)/.exec(at) ?? []
+  return Date.parse(at.replace(/\.\d+/, '')) * 1000 + Number(frac.padEnd(6, '0').slice(0, 6))
+}
+
 /**
- * The `saves` table as PostgREST serves it: reads (by columns asked for) and upserts are counted. `refuse` uploads are
- * turned away with 0040's HTTP 429 first.
+ * The `saves` table as PostgREST serves it: reads (by columns asked for) and writes are counted. A write is an insert
+ * (refused when the row is there) or an update filtered on the row's stamp (no row taken when it moved). `refuse`
+ * updates are turned away with 0040's HTTP 429 first.
  */
 function fakeCloud(rows: Row[] = [], refuse = 0) {
   const reads: string[] = []
   const uploads: SaveData[] = []
+  let tries = 0
+  const find = (f: Record<string, unknown>) => rows.findIndex((r) => r.user_id === f.user_id && r.realm === (f.realm ?? 'main'))
   const client = {
     from: () => ({
       select: (columns: string) => {
@@ -46,7 +64,7 @@ function fakeCloud(rows: Row[] = [], refuse = 0) {
           eq: (k: string, v: unknown) => ((filters[k] = v), query),
           maybeSingle: async () => {
             reads.push(columns)
-            const row = rows.find((r) => r.user_id === filters.user_id && r.realm === (filters.realm ?? 'main'))
+            const row = rows[find(filters)]
             if (!row) return { data: null, error: null }
             const cols = columns.split(',').map((c) => c.trim()) as (keyof Row)[]
             return { data: Object.fromEntries(cols.map((c) => [c, structuredClone(row[c])])), error: null }
@@ -54,23 +72,43 @@ function fakeCloud(rows: Row[] = [], refuse = 0) {
         }
         return query
       },
-      upsert: async (row: { user_id: string; realm?: string; data: SaveData; updated_at: string }) => {
-        if (refuse > 0) {
-          refuse--
-          return { error: { code: 'PT429', message: 'save_rate_limited' } }
+      insert: (row: { user_id: string; realm?: string; data: SaveData; updated_at: string }) => ({
+        select: async () => {
+          const realm = row.realm ?? 'main'
+          if (find({ user_id: row.user_id, realm }) >= 0) return { data: null, error: { code: '23505', message: 'duplicate key' } }
+          uploads.push(row.data)
+          rows.push({ user_id: row.user_id, realm, data: structuredClone(row.data), updated_at: row.updated_at })
+          return { data: [{ updated_at: row.updated_at }], error: null }
+        },
+      }),
+      update: (patch: { data: SaveData; updated_at: string }) => {
+        const filters: Record<string, unknown> = {}
+        let from = -Infinity
+        let to = Infinity
+        const query = {
+          eq: (k: string, v: unknown) => ((filters[k] = v), query),
+          gte: (_k: string, v: string) => ((from = micros(v)), query),
+          lt: (_k: string, v: string) => ((to = micros(v)), query),
+          select: async () => {
+            tries++
+            if (refuse > 0) {
+              refuse--
+              return { data: null, error: { code: 'PT429', message: 'save_rate_limited' } }
+            }
+            const i = find(filters)
+            const at = i >= 0 ? micros(rows[i]!.updated_at) : NaN
+            if (i < 0 || at < from || at >= to) return { data: [], error: null }
+            uploads.push(patch.data)
+            rows[i] = { ...rows[i]!, data: structuredClone(patch.data), updated_at: patch.updated_at }
+            return { data: [{ updated_at: patch.updated_at }], error: null }
+          },
         }
-        uploads.push(row.data)
-        const realm = row.realm ?? 'main'
-        const next = { user_id: row.user_id, realm, data: structuredClone(row.data), updated_at: row.updated_at }
-        const i = rows.findIndex((r) => r.user_id === row.user_id && r.realm === realm)
-        if (i >= 0) rows[i] = next
-        else rows.push(next)
-        return { error: null }
+        return query
       },
     }),
   }
   const downloads = () => reads.filter((c) => c.includes('data')).length
-  return { client: client as unknown as SupabaseClient, rows, reads, uploads, downloads }
+  return { client: client as unknown as SupabaseClient, rows, reads, uploads, downloads, updates: () => tries }
 }
 
 const USER = 'ash'
@@ -181,7 +219,8 @@ describe('loading the game with a save already in the cloud', () => {
     useGame.setState({ save: base })
     await reconcile(cloud.client, USER)
     playOn()
-    const broken = { from: () => ({ ...cloud.client.from('saves'), upsert: async () => ({ error: { code: '500', message: 'down' } }) }) }
+    const down = { select: async () => ({ data: null, error: { code: '500', message: 'down' } }) }
+    const broken = { from: () => ({ ...cloud.client.from('saves'), update: () => ({ eq: () => ({ eq: () => ({ gte: () => ({ lt: () => down }) }) }) }) }) }
     await expect(reconcile(broken as unknown as SupabaseClient, USER)).rejects.toMatchObject({ code: '500' })
   })
 
@@ -253,6 +292,83 @@ describe('a cloud copy written elsewhere', () => {
     cloud.rows.length = 0
     expect(await reconcile(cloud.client, USER)).toBe('pushed')
     expect(cloud.uploads).toHaveLength(1)
+  })
+})
+
+describe('a device left open on an old save (2026-10-22)', () => {
+  it('writes only over the copy it last matched, and never beside a row it did not know of', async () => {
+    const cloud = fakeCloud([row(base)])
+    const next = played(base)
+    await expect(pushCloudSave(cloud.client, USER, next, base.updatedAt)).resolves.toBe(next.updatedAt)
+    // The row moved on since: nothing written.
+    await expect(pushCloudSave(cloud.client, USER, played(base, 5), base.updatedAt)).rejects.toBeInstanceOf(SaveConflictError)
+    await expect(pushCloudSave(cloud.client, USER, played(base, 5), null)).rejects.toBeInstanceOf(SaveConflictError)
+    expect(cloud.uploads).toEqual([next])
+    expect(cloud.rows[0]!.data).toEqual(next)
+  })
+
+  it('matches a stamp the database keeps with microseconds', async () => {
+    const cloud = fakeCloud([{ ...row(base), updated_at: '2026-10-11T12:59:00.000734+00:00' }])
+    await expect(pushCloudSave(cloud.client, USER, played(base), base.updatedAt)).resolves.toBe(played(base).updatedAt)
+  })
+
+  it('its waiting upload, refused because another device played since, compares again: the further copy loads', async () => {
+    const cloud = fakeCloud([row(base)])
+    useGame.setState({ save: base })
+    await reconcile(cloud.client, USER)
+    playOn()
+    await reconcile(cloud.client, USER) // uploads
+    playOn()
+    await reconcile(cloud.client, USER) // within the gap: waits
+    // Meanwhile the phone plays on much further, and uploads.
+    const phone = played(played(played(base, 2), 3), 4)
+    cloud.rows[0] = row({ ...phone, pokedex: [...phone.pokedex, 200, 201, 202] })
+    // This page's save is stamped later (an automatic change, the offline pay): it used to go up over the phone's.
+    useGame.setState({ save: { ...useGame.getState().save!, updatedAt: Date.now() } })
+    await vi.advanceTimersByTimeAsync(PUSH_GAP_MS)
+    expect(cloud.uploads).toHaveLength(1)
+    expect(useGame.getState().save!.pokedex).toContain(202)
+    expect((cloud.rows[0]!.data as SaveData).pokedex).toContain(202)
+    expect(readCloudMark()?.at).toBe(phone.updatedAt)
+  })
+
+  it('refused in the middle of a fight, it waits for the fight to end, sending nothing meanwhile', async () => {
+    const cloud = fakeCloud([row(base)])
+    useGame.setState({ save: base })
+    await reconcile(cloud.client, USER)
+    playOn()
+    await reconcile(cloud.client, USER)
+    playOn()
+    await reconcile(cloud.client, USER) // within the gap: waits
+    const phone = played(played(played(base, 2), 3), 4)
+    cloud.rows[0] = row(phone)
+    const run = useGame.getState().run
+    useGame.setState({ run: { ...run, phase: 'battle' } })
+    await vi.advanceTimersByTimeAsync(PUSH_GAP_MS)
+    const tried = cloud.updates()
+    await vi.advanceTimersByTimeAsync(5 * 60_000)
+    expect(cloud.updates()).toBe(tried)
+    expect(useGame.getState().save!.pokedex).not.toEqual(phone.pokedex)
+    useGame.setState({ run })
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(useGame.getState().save!.pokedex).toEqual(phone.pokedex)
+    expect(cloud.uploads).toHaveLength(1)
+  })
+
+  it('…and goes up over it once compared, when this device got further', async () => {
+    const cloud = fakeCloud([row(base)])
+    useGame.setState({ save: base })
+    await reconcile(cloud.client, USER)
+    playOn()
+    await reconcile(cloud.client, USER)
+    playOn(2)
+    playOn(3)
+    await reconcile(cloud.client, USER) // within the gap: waits
+    cloud.rows[0] = row({ ...base, gold: base.gold + 50, updatedAt: base.updatedAt + 90_000 })
+    await vi.advanceTimersByTimeAsync(PUSH_GAP_MS)
+    expect(cloud.uploads).toHaveLength(2)
+    expect((cloud.rows[0]!.data as SaveData).pokedex).toEqual(useGame.getState().save!.pokedex)
+    expect(useGame.getState().save!.updatedAt).toBeGreaterThan(base.updatedAt + 90_000)
   })
 })
 
