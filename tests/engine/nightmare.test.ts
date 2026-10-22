@@ -30,6 +30,7 @@ import {
   nightmareVictoryDue,
   nightmareVictoryToRaid,
   nightmareWon,
+  isAreaSealed,
   normaliseNightmare,
   normalisePortal,
   openRaidIn,
@@ -330,6 +331,9 @@ describe('how it ends', () => {
     for (const p of w.save.box) expect(p.currentHp).toBe(instanceMaxHp(p, data))
     expect(nightmareLock(w.save, data)).toBeNull()
     expect(nightmareWon(w.save, data, NM.id)).toBe(true)
+    // No more cards there, whatever asks for one: only its raid.
+    expect(isAreaSealed(s, data, NM.id)).toBe(false)
+    expect(isAreaSealed(w.save, data, NM.id)).toBe(true)
     expect(canStartNightmare(w.save, data, NM.id)).toBe(false)
     expect(nightmareVictoryDue(w.save, data, NM.id)).toBe(true)
     expect(nightmareVictoryDue(markNightmareWonSeen(w.save, NM.id), data, NM.id)).toBe(false)

@@ -19,6 +19,7 @@ import {
   eligibleOffers,
   enterWorld,
   inPortalRun,
+  isAreaSealed,
   instanceMaxHp,
   makeBattler,
   newSave,
@@ -393,6 +394,14 @@ describe('how a run ends', () => {
     // No victory here: nothing changes.
     const plain = atDistortion()
     expect(portalVictoryToRaid(plain, data, DW.id)).toBe(plain)
+  })
+
+  it('once won, the area deals no more cards (only its raid, then sealed); never before, nor switched off', () => {
+    const won = withPortal(atDistortion(), { active: false, closed: 10, deck: [], won: true, wonSeen: true })
+    expect(isAreaSealed(won, data, DW.id)).toBe(true)
+    expect(isAreaSealed(inRun(), data, DW.id)).toBe(false)
+    expect(isAreaSealed(atDistortion(), data, DW.id)).toBe(false)
+    expect(isAreaSealed(withPortal(atDistortion(off), { won: true }), off, DW.id)).toBe(false)
   })
 
   it('any other distortion opens its boons instead', () => {

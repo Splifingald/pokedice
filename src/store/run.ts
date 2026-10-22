@@ -47,6 +47,7 @@ import {
   hasFaintedMember,
   healItemsOn,
   isAreaClosed,
+  isAreaSealed,
   isAreaUnlocked,
   isTeamHurt,
   battlePowersFor,
@@ -453,6 +454,9 @@ export function rollNext() {
   settleRound()
   const { save, data, run } = useGame.getState()
   if (!save || !run.areaId) return
+  // A won portal run or nightmare leaves only its raid: whatever asked (the map's CONTINUE HERE, a result card's
+  // CONTINUE), no card is dealt there, or the next stop on its page would find CONTINUE shut (a player’s report, 2026-10-21).
+  if (isAreaSealed(save, data, run.areaId)) return setRun({ phase: 'idle', encounter: null })
   if (inNightmare(save, data, run.areaId)) {
     if (outOfEnergy()) {
       setRun({ phase: 'idle', encounter: null })
@@ -504,8 +508,10 @@ export function rollNext() {
 export function challenge() {
   const { save, data, run } = useGame.getState()
   if (!save || !run.areaId || run.phase !== 'idle') return
-  // A portal run has no challenge: its cards come one after the other (docs/28); nor has the nightmare (docs/30).
-  if (inPortalRun(save, data, run.areaId) || inNightmare(save, data, run.areaId)) return
+  // A portal run has no challenge: its cards come one after the other (docs/28); nor has the nightmare (docs/30), nor
+  // either once won.
+  if (inPortalRun(save, data, run.areaId) || inNightmare(save, data, run.areaId) || isAreaSealed(save, data, run.areaId))
+    return
   const area = data.areas.find((a) => a.id === run.areaId)
   const found = area ? challengeEncounter(area, progressOf(save, area.id), data, teamAverageLevel(save), playerSideOf(save), runRng) : null
   // Tate & Liza fight 2 v 2 where double battles are on (docs/33).
