@@ -1,5 +1,5 @@
 import { regionCases, worldById, type SaveData } from '@/engine'
-import { progressTotals } from '@/save/cloud'
+import { playedOf, progressTotals } from '@/save/cloud'
 import { joinList } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
@@ -38,7 +38,7 @@ export function SaveFacts({ save }: { save: SaveData }) {
         </>
       )}
       <dt className="text-muted">{t('ui.sync.lastPlayed')}</dt>
-      <dd>{new Date(save.updatedAt).toLocaleString()}</dd>
+      <dd>{new Date(playedOf(save)).toLocaleString()}</dd>
     </dl>
   )
 }

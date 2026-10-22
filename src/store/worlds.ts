@@ -188,7 +188,7 @@ function settleOnce(): void {
   if (worldOver(save, data, now, contentChecked)) {
     const next = closeWorld(save, data)
     if (next === save) return
-    commitSave(next)
+    commitSave(next, { auto: true })
     if (inside) useGame.setState({ run: initialRun() })
     return
   }
@@ -203,7 +203,7 @@ function settleOnce(): void {
   if (!hidden) return
   const next = leaveWorld(save, data)
   if (!next) return
-  commitSave(next)
+  commitSave(next, { auto: true })
   useGame.setState({ run: initialRun() })
   pushToast(t('ui.world.paused', { world: worldName(world, data) }), 'info', 6000)
 }

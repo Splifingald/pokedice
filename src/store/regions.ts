@@ -122,6 +122,6 @@ export function rescueIfRegionDisabled(): void {
   const rescued = rescueFromDisabledRegion(save, data)
   if (!rescued) return
   useGame.setState({ run: initialRun() })
-  commitSave(rescued.save)
+  commitSave(rescued.save, { auto: true })
   pushToast(t('ui.region.closed', { region: rescued.from.name }), 'info', 6000)
 }

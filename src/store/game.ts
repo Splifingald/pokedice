@@ -318,13 +318,26 @@ export function onSaveCommitted(fn: SaveListener) {
   return () => saveListeners.delete(fn)
 }
 
-/** Every save mutation goes through here: stamps updatedAt, persists (debounced), notifies sync. */
-export function commitSave(next: SaveData | null, opts: { silent?: boolean; keepTimestamp?: boolean } = {}) {
+/**
+ * Every save mutation goes through here: stamps updatedAt, persists (debounced), notifies sync. `auto`: a change the
+ * game made on its own (a clock, the offline pay, gifts arriving), not the player — it leaves `playedAt` where it was.
+ */
+export function commitSave(next: SaveData | null, opts: { silent?: boolean; keepTimestamp?: boolean; auto?: boolean } = {}) {
   const { settings, data, save: prev } = useGame.getState()
   // Whatever arrives here (cloud pull, import, new game) is settled: HP scale, XP curve, one copy per species.
   const settled = next ? settle(next, data) : null
   const scaled = settled?.save ?? null
-  const stamped = scaled ? { ...scaled, settings, updatedAt: opts.keepTimestamp ? scaled.updatedAt : Date.now() } : null
+  const now = Date.now()
+  // A save from before playedAt, changed on its own: last played no later than its stamp so far.
+  const playedAt = opts.keepTimestamp ? scaled?.playedAt : opts.auto ? (scaled?.playedAt ?? scaled?.updatedAt) : now
+  const stamped = scaled
+    ? {
+        ...scaled,
+        settings,
+        updatedAt: opts.keepTimestamp ? scaled.updatedAt : now,
+        ...(playedAt != null ? { playedAt } : {}),
+      }
+    : null
   useGame.setState({ save: stamped })
   scheduleWrite(stamped)
   if (!opts.silent) for (const fn of saveListeners) fn(stamped, prev)
@@ -372,12 +385,12 @@ export function commitSave(next: SaveData | null, opts: { silent?: boolean; keep
     )
 }
 
-export function mutateSave(fn: (s: SaveData) => SaveData | null | undefined): boolean {
+export function mutateSave(fn: (s: SaveData) => SaveData | null | undefined, opts: { auto?: boolean } = {}): boolean {
   const cur = useGame.getState().save
   if (!cur) return false
   const next = fn(cur)
   if (!next) return false
-  commitSave(next)
+  commitSave(next, opts)
   return true
 }
 
@@ -425,5 +438,5 @@ export function setContent(raw: BundleRaw, source: 'bundle' | 'remote') {
 /** A fossil in the Box may be due: settle the save (reviveFossils) — only when one is, to keep saves quiet. */
 export function tickFossils(now = Date.now()) {
   const { save } = useGame.getState()
-  if (save?.box.some((p) => p.revivesAt != null && p.revivesAt <= now)) commitSave(save, { keepTimestamp: false })
+  if (save?.box.some((p) => p.revivesAt != null && p.revivesAt <= now)) commitSave(save, { auto: true })
 }

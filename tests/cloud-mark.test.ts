@@ -15,7 +15,7 @@ import {
   SaveConflictError,
 } from '@/save/cloud'
 import { readCloudMark, saveKeyOf, wipePlayerData, wipeSlot, writeCloudMark } from '@/save/storage'
-import { useGame } from '@/store/game'
+import { commitSave, useGame } from '@/store/game'
 import { adoptStoredSave, reconcile } from '@/store/sync'
 import { data, newId } from './fixtures'
 
@@ -369,6 +369,44 @@ describe('a device left open on an old save (2026-10-22)', () => {
     expect(cloud.uploads).toHaveLength(2)
     expect((cloud.rows[0]!.data as SaveData).pokedex).toEqual(useGame.getState().save!.pokedex)
     expect(useGame.getState().save!.updatedAt).toBeGreaterThan(base.updatedAt + 90_000)
+  })
+})
+
+describe('played last, not changed last (2026-10-22)', () => {
+  it("a change the game makes on its own leaves when the player last played; the player's own moves it", () => {
+    const legacy = { ...base, updatedAt: T0 - 5000 }
+    commitSave(legacy, { auto: true })
+    // A save from before playedAt: last played no later than its stamp so far.
+    expect(useGame.getState().save).toMatchObject({ updatedAt: T0, playedAt: T0 - 5000 })
+    vi.setSystemTime(T0 + 1000)
+    commitSave({ ...useGame.getState().save!, gold: 1 }, { auto: true })
+    expect(useGame.getState().save).toMatchObject({ updatedAt: T0 + 1000, playedAt: T0 - 5000 })
+    commitSave({ ...useGame.getState().save!, gold: 2 })
+    expect(useGame.getState().save).toMatchObject({ updatedAt: T0 + 1000, playedAt: T0 + 1000 })
+    // A save taken in as it is (the cloud's, another tab's) keeps its own.
+    commitSave({ ...base, playedAt: 7 }, { keepTimestamp: true })
+    expect(useGame.getState().save?.playedAt).toBe(7)
+  })
+
+  it('a stale device whose offline pay came in at load takes the copy played since, level on progress', async () => {
+    const cloud = fakeCloud([row(base)])
+    useGame.setState({ save: base })
+    await reconcile(cloud.client, USER)
+    // The phone played on (₽, levels: no progress) and uploaded; the PC was closed.
+    vi.setSystemTime(T0 + 3_600_000)
+    const phone = { ...base, gold: base.gold + 900, updatedAt: Date.now(), playedAt: Date.now() }
+    cloud.rows[0] = row(phone)
+    // The PC opens the next morning; its offline pay commits before the sync compares.
+    vi.setSystemTime(T0 + 86_400_000)
+    commitSave({ ...base, gold: base.gold + 40 }, { auto: true })
+    expect(useGame.getState().save!.updatedAt).toBeGreaterThan(phone.updatedAt)
+    expect(await reconcile(cloud.client, USER)).toBe('loaded')
+    expect(useGame.getState().save!.gold).toBe(phone.gold)
+    expect(cloud.uploads).toHaveLength(0)
+  })
+
+  it('when the player last played is no reason to upload', () => {
+    expect(pushKey({ ...base, playedAt: 123 })).toBe(pushKey(base))
   })
 })
 

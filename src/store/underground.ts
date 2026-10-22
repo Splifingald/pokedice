@@ -31,10 +31,13 @@ let rng = createRng(randomSeed())
 /** The save's block in step with the event: a new event, an event over, free kits come in. */
 export function settleUgNow(): void {
   const { data } = useGame.getState()
-  mutateSave((s) => {
-    const next = settleUnderground(s, data, serverNow())
-    return next === s ? null : next
-  })
+  mutateSave(
+    (s) => {
+      const next = settleUnderground(s, data, serverNow())
+      return next === s ? null : next
+    },
+    { auto: true },
+  )
 }
 
 /** Mounted once (GameLayout): settles on start, whenever the server's time becomes known, and every 30 s. */

@@ -255,12 +255,16 @@ export function compareProgress(a: SaveData, b: SaveData): number {
 
 export type SyncDecision = 'none' | 'local' | 'cloud'
 
+/** When the player last played the save themselves (`playedAt`); a save from before it, its last change. */
+export const playedOf = (s: SaveData): number => s.playedAt ?? s.updatedAt
+
 /**
  * The sync, with no question asked: the save further along in its areas wins, then the one with the bigger Pokédex
  * (`compareProgress`). A stamp is easy to move, progress isn't, so progress decides first. Level on both, the one
  * played last: ₽, levels, rematches and upgrades don't count as progress, and keeping this device's own on a tie let
  * an idle device's older save undo all of them on another (players lost their General upgrades and the ₽ spent on
- * them that way, 2026-10-16).
+ * them that way, 2026-10-16). Played, not changed: a stale device's own clocks (its offline pay at load) stamp its
+ * save "now" before the sync compares, and used to win it the tie that way (2026-10-22).
  */
 export function decideSync(local: SaveData | null, cloud: SaveData | null): SyncDecision {
   if (!local && !cloud) return 'none'
@@ -274,7 +278,7 @@ export function decideSync(local: SaveData | null, cloud: SaveData | null): Sync
   // other trainer keeps it too (docs/23).
   if (missesTrades(local, cloud)) return 'cloud'
   if (missesTrades(cloud, local)) return 'local'
-  return cloud.updatedAt > local.updatedAt ? 'cloud' : 'local'
+  return playedOf(cloud) > playedOf(local) ? 'cloud' : 'local'
 }
 
 /**
@@ -290,7 +294,7 @@ const canonical = (v: unknown) =>
 
 /** Same game state, ignoring bookkeeping (timestamps, settings; `lastRegenTick` from saves made before regen was removed). */
 export function sameSave(a: SaveData, b: SaveData): boolean {
-  const strip = (s: SaveData) => canonical({ ...s, updatedAt: 0, lastRegenTick: 0, settings: null })
+  const strip = ({ playedAt: _, ...s }: SaveData) => canonical({ ...s, updatedAt: 0, lastRegenTick: 0, settings: null })
   return strip(a) === strip(b)
 }
 
@@ -312,7 +316,8 @@ export function fingerprint(s: string): string {
  * The save as far as a push is concerned: a fingerprint of everything but its timestamps. Settings count, so a change
  * made only there still reaches the cloud. Two saves with the same key, and the second push would change nothing.
  */
-export function pushKey(s: SaveData): string {
+export function pushKey({ playedAt: _, ...s }: SaveData): string {
+  // playedAt left out rather than zeroed: a save from before it keeps the key the device already holds.
   return fingerprint(canonical({ ...s, updatedAt: 0, lastRegenTick: 0 }))
 }
 

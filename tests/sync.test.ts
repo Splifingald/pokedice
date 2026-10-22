@@ -57,6 +57,16 @@ describe('decideSync', () => {
     expect(decideSync(at(richer, 3), at(base, 2))).toBe('local')
   })
 
+  it('breaks the tie on when each was last played, not last changed (a clock restamps a stale save)', () => {
+    const stale = { ...base, updatedAt: 9000, playedAt: 2000 }
+    const played = { ...base, updatedAt: 5000, playedAt: 5000 }
+    expect(decideSync(stale, played)).toBe('cloud')
+    expect(decideSync(played, stale)).toBe('local')
+    // A save from before playedAt: its stamp stands in.
+    expect(decideSync(at(base, 6000), played)).toBe('local')
+    expect(sameSave(stale, played)).toBe(true)
+  })
+
   it('…unless this device never saw a trade the cloud copy did: the Pokémon traded away would come back', () => {
     const given = base.box[0]!
     const traded = applyTake(

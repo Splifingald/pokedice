@@ -41,7 +41,7 @@ const inFight = () => {
 export function settleExtreme() {
   const { save, data } = useGame.getState()
   if (!save || !isExtreme(save)) return
-  if (settleKo(save, data, trustedNow()).save !== save) commitSave(save)
+  if (settleKo(save, data, trustedNow()).save !== save) commitSave(save, { auto: true })
 }
 
 /** The page is hidden or leaving (or the other save is about to be played): the absence has started. */
@@ -56,7 +56,7 @@ export function markAway() {
   const { save } = useGame.getState()
   const now = trustedNow()
   if (!save || !isExtreme(save) || save.extreme?.awayFrom != null || now == null) return
-  commitSave({ ...save, extreme: { ...save.extreme, awayFrom: now } })
+  commitSave({ ...save, extreme: { ...save.extreme, awayFrom: now } }, { auto: true })
 }
 
 /**
@@ -88,7 +88,7 @@ function finishReturn() {
   const save = useGame.getState().save
   if (!save || !isExtreme(save)) return
   const from = save.extreme?.awayFrom
-  if (from != null) commitSave(addAwayWindow(save, from, Math.max(from, at)))
+  if (from != null) commitSave(addAwayWindow(save, from, Math.max(from, at)), { auto: true })
   healPending()
 }
 
@@ -98,7 +98,7 @@ export function healPending() {
   if (!save || !isExtreme(save) || !save.extreme?.pending?.length || inFight()) return
   const res = awayHeal(save, data, save.extreme.pending)
   // Rests that end after the absence end in settle(), now that nothing waits.
-  commitSave({ ...res.save, extreme: { ...res.save.extreme, pending: undefined } })
+  commitSave({ ...res.save, extreme: { ...res.save.extreme, pending: undefined } }, { auto: true })
   if (res.changes.some((c) => c.to !== c.from || c.back)) useAwayReport.setState({ report: { minutes: res.minutes, changes: res.changes } })
 }
 

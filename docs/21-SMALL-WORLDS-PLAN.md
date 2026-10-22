@@ -340,7 +340,7 @@ game makes to the save, as it always was; the server's own world rules (trades, 
 ## 12. The cloud sync and a world in progress (2026-10-22)
 
 Reported on Discord: a player nearly finished Haunted Hollow on their phone (all but Giratina), then opened the game on
-their PC and got the PC's older save back, SYNC ONLINE pressed or not. Two faults, both fixed:
+their PC and got the PC's older save back, SYNC ONLINE pressed or not. Three faults, all fixed:
 
 - **The sync counted nothing in a world.** `progressTotals` left the world's block out (it closes with the world), so a
   world nearly finished tied with a save that never went in, and the tie went to the newer stamp — which a stale device
@@ -357,6 +357,14 @@ their PC and got the PC's older save back, SYNC ONLINE pressed or not. Two fault
   copy wins and the other goes to the device's backups — once nothing on screen would be cut short (a fight, an
   encounter, a catch decision, Versus); until then no upload is even tried. Pages still on an older build write as
   before until they reload (a day at most).
+- **A tie went to the save changed last, not played last.** Level on progress, the sync keeps the one played last —
+  but `updatedAt` moves with every change, and a stale device changes its save on its own at load (the offline pay, an
+  Extreme absence healed, a fossil revived, raid gifts and settled trades arriving), so it looked newest. The save now
+  carries `playedAt`, moved only by the player's own changes: `commitSave(…, { auto: true })` (and `mutateSave`'s)
+  leaves it, a save taken in as it is (cloud, another tab) keeps its own, and a save from before it starts from its
+  last stamp. `decideSync` breaks ties on it (`updatedAt` for a copy without it), Settings → backups shows it as "Last
+  played", and it is no reason to upload (left out of `pushKey`, so older saves keep their key). The cost: raid gifts
+  claimed at load on the device that then loses a tie stay in that device's backup.
 
 ### Setting it up
 1. **No SQL to run**: the check is the upload's own filter, on the `saves` table as it is.

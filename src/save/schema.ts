@@ -228,6 +228,7 @@ export const saveSchema = z.object({
   dayCareNotice: z.object({ dex: z.array(z.number().int().min(1)) }).optional(),
   energy: z.object({ value: z.number().min(0), at: z.number() }).optional(),
   adminEditAt: z.number().optional(),
+  playedAt: z.number().optional(),
   leaderboardVisited: z.boolean().optional(),
   versusRulesSeen: z.boolean().optional(),
   portalRulesSeen: z.boolean().optional(),

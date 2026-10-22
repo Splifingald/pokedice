@@ -34,7 +34,7 @@ export function tickDayCare(now = Date.now()): boolean {
   const { save, data } = useGame.getState()
   if (!save) return false
   const res = processDayCare(save, data, now, createRng(randomSeed()))
-  if (res.save !== save) commitSave(res.save)
+  if (res.save !== save) commitSave(res.save, { auto: true })
   const parents = res.laid ? dayCareOf(res.save).egg?.parents : undefined
   if (parents)
     pushToast(t('ui.dayCare.eggLaidToast', { a: parentName(parents[0]), b: parentName(parents[1]) }), 'good', 4500)
@@ -73,7 +73,7 @@ export async function syncFriendDayCares(force = false): Promise<void> {
   const live = useFriendCares.getState().rows.map((r) => ({ owner: r.owner, mons: r.mons }))
   const { save: next, left } = refreshGuests(save, live, Date.now(), data)
   if (next === save) return
-  commitSave(next)
+  commitSave(next, { auto: true })
   if (left.length)
     pushToast(
       joinList(
