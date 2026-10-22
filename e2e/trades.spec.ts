@@ -205,6 +205,8 @@ test('a poster: the rules once, a listing posted, then taken while away', async 
   await expect(scene.getByText('Misty took your Pidgey.')).toBeVisible()
   await expect(scene.getByRole('img', { name: /Pidgey goes into its ball/ })).toBeVisible()
   await fitsThePhone(page)
+  // The scene fades in: axe measures the colours as they are, so a half-faded caption reads under 4.5:1.
+  await expect(scene).toHaveCSS('opacity', '1')
   expect(await seriousAxe(page)).toEqual([])
   await scene.getByRole('button', { name: /Skip/i }).click()
   await expect(scene.getByText('Wartortle', { exact: true })).toBeVisible()
