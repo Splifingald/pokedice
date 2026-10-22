@@ -82,6 +82,30 @@ describe('Versus teams', () => {
     ])
   })
 
+  it('lists a Pokémon whose id sits in several Boxes once, its first copy', () => {
+    const save = newSave(1, data, 0, () => 'x')
+    const at = (id: string, level: number) => ({ id, dex: 25, level, xp: 0, currentHp: 1, caughtAt: 0 })
+    const s = {
+      ...save,
+      box: [at('a', 60), at('b', 55)],
+      parked: {
+        johto: { ...liveBlock(save), box: [at('a', 60), at('c', 52)] },
+        hoenn: { ...liveBlock(save), box: [at('c', 52)] },
+      },
+    }
+    const ids = (cs: { inst: { id: string }; region: string }[]) => cs.map((c) => [c.region, c.inst.id])
+    expect(ids(versusClosest(s, data, Number.MAX_SAFE_INTEGER))).toEqual([
+      ['kanto', 'a'],
+      ['kanto', 'b'],
+      ['johto', 'c'],
+    ])
+    expect(ids(versusCandidates(s, data))).toEqual([
+      ['kanto', 'a'],
+      ['kanto', 'b'],
+      ['johto', 'c'],
+    ])
+  })
+
   it('counts how many of their Pokémon your team hits super effectively', () => {
     // Charizard (fire, flying) and Blastoise (water) against Venusaur (grass, poison), Golem (rock, ground), Pidgey.
     expect(versusEdge([6, 9], [3, 76, 16], data)).toBe(2)

@@ -55,15 +55,21 @@ export function versusChoices(save: SaveData, data: GameData, keep: readonly str
   return out
 }
 
-/** Every region's Box the player has played, the one being played first. A small world's stays in it. */
+/**
+ * Every region's Box the player has played, the one being played first. A small world's stays in it. A Pokémon id
+ * found in several Boxes (a save seen on 2026-10-22 held 264 such copies) counts once, its first copy, the one a
+ * picked id resolves to: the lists are keyed by id, and two rows with one key leave stale rows on screen.
+ */
 function everyBox(save: SaveData): [RegionId, PokemonInstance[]][] {
   const live = regionOf(save)
   const world = worldRegionOf(save)
+  const seen = new Set<string>()
+  const once = (box: PokemonInstance[]) => box.filter((p) => !seen.has(p.id) && !!seen.add(p.id))
   return [
-    ...(live === world ? [] : [[live, save.box] as [RegionId, PokemonInstance[]]]),
+    ...(live === world ? [] : [[live, once(save.box)] as [RegionId, PokemonInstance[]]]),
     ...Object.entries(save.parked ?? {})
       .filter(([region, b]) => region !== live && region !== world && !!b)
-      .map(([region, b]): [RegionId, PokemonInstance[]] => [region as RegionId, b!.box]),
+      .map(([region, b]): [RegionId, PokemonInstance[]] => [region as RegionId, once(b!.box)]),
   ]
 }
 
