@@ -338,6 +338,8 @@ export type LogEntry =
       dice: DieType[]
       die?: DieType
       revert?: boolean
+      /** Your hand once the new dice were thrown into it mid-turn (`fresh`: those just thrown), for the tray. */
+      hand?: { dice: RolledDie[]; fresh: boolean[] }
     }
 
 export interface BattlerSeed {
@@ -478,14 +480,23 @@ function restore(b: Battler, pre: FormSnapshot, data: GameData) {
   b.spriteUrl = data.species[pre.dex]?.spriteUrl ?? b.spriteUrl
 }
 
-/** A new die goes with the other typed dice, ahead of any base die; thrown into the hand when the hand is out. */
-function addDie(s: BattleState, side: Side, b: Battler, die: DieType, data: GameData, rng: Rng) {
-  const at = b.dice.filter((d) => d !== 'base').length
-  b.dice.splice(at, 0, die)
-  if (side === 'player' && s.phase === 'player_reroll') {
-    s.dice.splice(Math.min(at, s.dice.length), 0, rollAll([die], data, rng)[0]!)
-    s.selected.splice(Math.min(at, s.selected.length), 0, false)
+/**
+ * New dice go with the other typed dice, ahead of any base die; thrown into the hand when the hand is out. Returns the
+ * hand for the log in that case, so the tray throws only the new dice and keeps the others where they lie.
+ */
+function addDice(s: BattleState, side: Side, b: Battler, die: DieType, count: number, data: GameData, rng: Rng) {
+  const hand = side === 'player' && s.phase === 'player_reroll'
+  const fresh = s.dice.map(() => false)
+  for (let n = 0; n < count; n++) {
+    const at = b.dice.filter((d) => d !== 'base').length
+    b.dice.splice(at, 0, die)
+    if (!hand) continue
+    const i = Math.min(at, s.dice.length)
+    s.dice.splice(i, 0, rollAll([die], data, rng)[0]!)
+    s.selected.splice(i, 0, false)
+    fresh.splice(i, 0, true)
   }
+  return hand ? { hand: { dice: [...s.dice], fresh } } : {}
 }
 
 /**
@@ -501,8 +512,18 @@ function megaEvolve(s: BattleState, side: Side, b: Battler, mega: Species, data:
   b.mega = true
   b.powered = 'mega'
   if (s.megaTurns) b.megaTimer = { turns: Math.max(1, s.megaTurns), pre }
-  addDie(s, side, b, die, data, rng)
-  log.push({ kind: 'form', side, uid: b.uid, fromDex: pre.dex, toDex: b.dex, reason: 'mega', dice: [...b.dice], die })
+  const thrown = addDice(s, side, b, die, 1, data, rng)
+  log.push({
+    kind: 'form',
+    side,
+    uid: b.uid,
+    fromDex: pre.dex,
+    toDex: b.dex,
+    reason: 'mega',
+    dice: [...b.dice],
+    die,
+    ...thrown,
+  })
 }
 
 /** A timed Mega's turns are over, or it left the field: its look, types and dice from before. */
@@ -525,10 +546,20 @@ function gigantamax(s: BattleState, side: Side, b: Battler, form: Species, data:
   const pre = snapshot(b)
   const die = megaDie(base, form)
   wearForm(b, form)
-  for (let i = 0; i < Math.max(1, s.gmaxBoost?.dice ?? 1); i++) addDie(s, side, b, die, data, rng)
+  const thrown = addDice(s, side, b, die, Math.max(1, s.gmaxBoost?.dice ?? 1), data, rng)
   b.gmax = { turns: Math.max(1, data.config.gigantamax.turns), pre }
   b.powered = 'gmax'
-  log.push({ kind: 'form', side, uid: b.uid, fromDex: pre.dex, toDex: b.dex, reason: 'gmax', dice: [...b.dice], die })
+  log.push({
+    kind: 'form',
+    side,
+    uid: b.uid,
+    fromDex: pre.dex,
+    toDex: b.dex,
+    reason: 'gmax',
+    dice: [...b.dice],
+    die,
+    ...thrown,
+  })
   const heal = s.gmaxBoost ? Math.round((b.maxHp * s.gmaxBoost.healPercent) / 100) : 0
   if (heal > 0 && b.hp > 0 && b.hp < b.maxHp) {
     const before = b.hp

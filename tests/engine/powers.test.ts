@@ -234,6 +234,22 @@ describe('a Mega under the gem rules', () => {
     expect(megaChoices(s, on)).toEqual([])
   })
 
+  it('after the roll, throws only its new die into the hand and keeps the others', () => {
+    let s = step(fight([{ dex: 448, level: 100 }]).state, { t: 'ROLL' }).state
+    const before = s.dice
+    const r = step(s, { t: 'MEGA', toDex: 10059 })
+    s = r.state
+    const form = r.log.find((e) => e.kind === 'form')
+    expect(form?.kind === 'form' && form.hand?.fresh.filter(Boolean).length).toBe(1)
+    expect(form?.kind === 'form' && form.hand?.dice).toEqual(s.dice)
+    expect(s.dice.filter((_, i) => form?.kind === 'form' && !form.hand!.fresh[i])).toEqual(before)
+    // The next reroll throws only the die picked.
+    s = step(s, { t: 'TOGGLE_DIE', i: 0 }).state
+    const reroll = step(s, { t: 'REROLL' })
+    expect(reroll.log.find((e) => e.kind === 'reroll')).toMatchObject({ mask: s.dice.map((_, i) => i === 0) })
+    expect(reroll.state.dice.slice(1)).toEqual(s.dice.slice(1))
+  })
+
   it('changes back when it leaves the field', () => {
     let s = fight([
       { dex: 448, level: 100 },
