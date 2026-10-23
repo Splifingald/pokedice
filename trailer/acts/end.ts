@@ -8,8 +8,9 @@ import { play } from '../lib/audio'
 import { pokeballBackdrop } from '../lib/backdrop'
 import { drawDie, drawShadow, project, type View } from '../lib/cube'
 import { GOLD, INK, outBack, OW, rect, span, text, textWidth, wash, type G } from '../lib/draw'
+import { F } from '../lib/frame'
 import { blit } from '../lib/hud'
-import { LH, LK, logoDice, LW } from './title'
+import { LH, LK, logoDice, LW, SIZE } from './title'
 import type { Act } from '../main'
 
 const low = canvas(LW, LH)
@@ -93,6 +94,7 @@ const SLOW: EndTimes = { dice: 0.1, stagger: 0.05, ring: 0.7, tagline: 0.8, url:
 
 /** The end card at time e of its own, starting at T0 on the cut's clock. */
 export function drawEnd(g: G, e: number, T0: number, at: EndTimes = SLOW) {
+  if (F.portrait) return drawEndTall(g, e, T0, at)
   pokeballBackdrop(low.g, LW, LH, T0 + e)
   // The dice drop in, one after another, onto their crooked row.
   const v: View = { tilt: (62 * Math.PI) / 180, cs: 2, cx: LW / 2, cy: 100 }
@@ -139,6 +141,62 @@ export function drawEnd(g: G, e: number, T0: number, at: EndTimes = SLOW) {
     ow: 0,
     alpha: step(at.footer),
   })
+  if (e > at.fade[0]) wash(g, '#000000', span(e, at.fade[0], at.fade[1]))
+}
+
+// ---------------------------------------------------------------- portrait
+const tall = canvas(360, 640)
+// POKÉ over DICE: two rows of four dice, the word big enough on a phone.
+const ROW = 26
+const PITCH = SIZE + 9
+
+/** A text size that fits `max` px of width, at most `size`. */
+const fit = (g: G, s: string, size: number, max: number, font = 'Jersey 25', spacing = 0) =>
+  Math.min(size, Math.floor((size * max) / textWidth(g, s, size, font, spacing)))
+
+/** The end card in portrait (1080×1920): the dice in two rows, the website, the badges stacked, the fan-made line. */
+function drawEndTall(g: G, e: number, T0: number, at: EndTimes) {
+  pokeballBackdrop(tall.g, tall.width, tall.height, T0 + e)
+  const v: View = { tilt: (62 * Math.PI) / 180, cs: 2, cx: 180, cy: 220 }
+  const dice = logoDice(0, { thrown: false }).map((d, i) => {
+    const a = at.dice + i * at.stagger
+    const p = span(e, a, a + 0.36)
+    const fall = p < 0.7 ? (1 - p / 0.7) ** 2 * 140 : Math.sin(((p - 0.7) / 0.3) * Math.PI) * 7
+    const pos = [((i % 4) - 1.5) * PITCH, d.pos[1] * 0.5 + (i < 4 ? ROW : -ROW), d.pos[2] + fall] as const
+    return { ...d, pos, show: e >= a, landAt: a + 0.25 }
+  })
+  if (e > at.ring) {
+    const c = project(v, [0, 0, 0])
+    const pulse = (e - at.ring) % 1
+    tall.g.globalAlpha = Math.round((1 - pulse) * 4) / 4
+    const r = 150 + pulse * 26
+    for (const k of [0, 1, 2]) ellipseLine(tall.g, c.x, c.y + 8, r + k, (r + k) * 0.42, GOLD)
+    tall.g.globalAlpha = 1
+  }
+  for (const d of dice) if (d.show) drawShadow(tall.g, v, d, 'rgba(4,6,20,0.5)')
+  // Back row (POKÉ) first.
+  for (const d of [...dice].sort((a, b) => b.pos[1] - a.pos[1]))
+    if (d.show) drawDie(tall.g, v, { ...d, ring: e > at.ring ? GOLD : null })
+  dice.forEach((d) => hit(T0 + d.landAt) && play('land'))
+  g.imageSmoothingEnabled = false
+  g.drawImage(tall, 0, 0, 1080, 1920)
+
+  const step = (a: number) => Math.round(span(e, a, a + 0.15) * 4) / 4
+  const tag = 'PLAY FREE IN YOUR BROWSER'
+  text(g, tag, 540, 1050, { size: fit(g, tag, 64, 900, 'Jersey 15', 8), font: 'Jersey 15', color: GOLD, align: 'center', ow: 6, spacing: 8, alpha: step(at.tagline) })
+  const url = 'poke-dice.netlify.app'
+  text(g, url, 540, 1190, { size: fit(g, url, 150, 940), align: 'center', ow: 10, drop: 10, alpha: step(at.url) })
+  // The two badges, one above the other, the same width.
+  const ph = phone()
+  const dc = discord()
+  const w = Math.max(28 + ph.width * 6 + 28 + textWidth(g, 'MOBILE FRIENDLY', 66), 28 + dc.width * 4 + 28 + textWidth(g, 'DISCORD COMMUNITY', 66)) + 36
+  const [b1, b2] = at.badges
+  badge(g, ph, 6, 'MOBILE FRIENDLY', 540 - w / 2, 1310, w, span(e, b1, b1 + 0.2))
+  badge(g, dc, 4, 'DISCORD COMMUNITY', 540 - w / 2, 1480, w, span(e, b2, b2 + 0.2))
+  if (hit(T0 + b1) || hit(T0 + b2)) play('button')
+  const foot = { size: 32, font: 'Jersey 15', color: PALETTE.faint, align: 'center', ow: 0, alpha: step(at.footer) } as const
+  text(g, 'Fan-made · non-commercial.', 540, 1690, foot)
+  text(g, 'Pokémon © Nintendo / Game Freak / Creatures.', 540, 1730, foot)
   if (e > at.fade[0]) wash(g, '#000000', span(e, at.fade[0], at.fade[1]))
 }
 

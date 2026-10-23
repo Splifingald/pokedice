@@ -17,7 +17,6 @@ import {
   faint,
   idleAt,
   shakeAt,
-  STAGE,
   tray,
   type BigRoll,
 } from '../lib/fight'
@@ -25,6 +24,7 @@ import { caption, damageSlam, foePlate, ownPlate, valuePops } from '../lib/hud'
 import { Run } from '../lib/run'
 import { idle, playAt } from '../lib/scene'
 import { loadMon, mon } from '../lib/sprites'
+import { F, stageEdge, surround } from '../lib/frame'
 import { clampCam, drawStage, loadPicture, picture } from '../lib/stage'
 import { drawEnd } from './end'
 import type { Act } from '../main'
@@ -83,7 +83,9 @@ const charmander: Act = {
     const pic = picture('meadow')
     const attack = u >= A.attack && u < A.faint
     const layer = attack ? playAt(r.aFire, u, A.attack, 0.7, 1.6) : idleAt(r.a, u)
-    drawStage(g, pic, [layer], clampCam(STAGE, pic), undefined, { shake: shakeAt(u, CA, 9) })
+    surround(g, u)
+    drawStage(g, pic, [layer], clampCam(F.cam, pic, F.stage), F.stage, { shake: shakeAt(u, CA, 9) })
+    stageEdge(g)
     if (hit(0.03)) cry(1)
     if (hit(CA)) play('super')
     if (hit(A.faint)) play('faint')
@@ -92,7 +94,7 @@ const charmander: Act = {
     if (u >= A.throw && u < A.attack) {
       tray(g, A_DICE, u)
       valuePops(g, [3, 4], diceAt(2), u, A.pops)
-      damageSlam(g, 7, 960, 700, u, A.damage, { size: 200 })
+      damageSlam(g, 7, F.damageSmall.x, F.damageSmall.y, u, A.damage, { size: 200 })
     }
     if (u >= A.white) wash(g, '#ffffff', span(u, A.white, SOCIAL.charmander[1]))
   },
@@ -103,7 +105,9 @@ const evolution: Act = {
   load: async () => {},
   render(g, u) {
     const layer = playAt(runs!.evo, u, E.from, E.tl, E.speed)
-    drawStage(g, null, [layer], { x: 120, y: 82, z: 8 })
+    surround(g, u)
+    drawStage(g, null, [layer], { x: 120, y: F.portrait ? 80 : 82, z: F.cam.z }, F.stage)
+    stageEdge(g)
     if (u < E.from + 0.1) wash(g, '#ffffff', 1 - span(u, E.from, E.from + 0.1))
     caption(g, 'What? Charmeleon is evolving!', u, E.from + 0.1, EVOLVED - 0.05)
     caption(g, 'Charmeleon evolved into Charizard!', u, EVOLVED, SOCIAL.evolution[1])
@@ -120,13 +124,17 @@ const charizard: Act = {
     if (u < Z.idle) {
       // Mewtwo's entrance, from its rising silhouette to its name, twice the game's speed.
       r.legend.at(2.4 + (u - Z.legend) * 2, 2.4)
-      drawStage(g, pic, [r.legend.draw()], STAGE)
+      surround(g, u)
+      drawStage(g, pic, [r.legend.draw()], F.cam, F.stage)
+      stageEdge(g)
       if (hit(Z.legend + (3.2 - 2.4) / 2)) cry(150)
       return
     }
     const slow = u >= ROLL.slowA && u < LAND
     const layer = u >= Z.attack ? playAt(r.zFire, u, Z.attack, 0.7, 1.8) : idleAt(r.z, u)
-    drawStage(g, pic, [layer], clampCam(STAGE, pic), undefined, { shake: shakeAt(u, CZ, 14, 0.4) })
+    surround(g, u)
+    drawStage(g, pic, [layer], clampCam(F.cam, pic, F.stage), F.stage, { shake: shakeAt(u, CZ, 14, 0.4) })
+    stageEdge(g)
     if (hit(Z.idle + 0.02)) cry(6)
     if (hit(CZ)) play('super')
     if (slow) {
@@ -141,7 +149,7 @@ const charizard: Act = {
     else if (u >= CZ + 2 / 60 && u < CZ + 7 / 60) {
       rect(g, 0, 0, OW, OH, '#ffffff')
       r.ink.at(u)
-      drawStage(g, null, [r.ink.draw()], clampCam({ x: 140, y: 88, z: 10 }, pic), undefined, { ground: '#ffffff' })
+      drawStage(g, null, [r.ink.draw()], clampCam(F.inkCam, pic, F.stage), F.stage, { ground: '#ffffff' })
       speedLines(g, 1300, 420, u, { color: INK, inner: 420, a: 1, n: 64 })
     }
     if (u >= Z.end - 0.08) wash(g, '#000000', 1)

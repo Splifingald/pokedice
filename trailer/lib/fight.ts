@@ -5,6 +5,7 @@ import { drawTray, restScreen, slowLanding, TRAY_H, TRAY_K, TRAY_W, type TrayPla
 import { bottomShade, GOLD, inOut, INK, OH, OW, outBack, outCubic, panel, rect, span, speedLines, text, TYPE, type G } from './draw'
 import { celebrate, damageSlam, valuePops } from './hud'
 import { icon } from '@/fx/pixel'
+import { F } from './frame'
 import type { Run } from './run'
 import { setArtUnderStage, stageBackground } from '@/fx/scenes'
 import { H, W } from '@/fx/timeline'
@@ -37,16 +38,17 @@ export const faint = (u: number, a: number) => {
 function trayFrame(n: number, zoom: number, on: number) {
   const p = restScreen(n, on)
   const k = TRAY_K * zoom
-  // Keep the die where it is, sliding it toward the middle as the camera closes in.
-  const tx = p.x + ((960 - p.x) * (zoom - 1)) / 1.6
-  const ty = p.y + ((640 - p.y) * (zoom - 1)) / 1.6
-  return { x: tx - (p.x / TRAY_K) * k, y: ty - (p.y / TRAY_K) * k, k }
+  // Keep the die where it is, sliding it toward the frame's spot as the camera closes in.
+  const tx = p.x + ((F.zoomTo.x - p.x) * (zoom - 1)) / 1.6
+  const ty = p.y + ((F.zoomTo.y - p.y) * (zoom - 1)) / 1.6
+  // The die's place on the tray canvas (restScreen without the frame's offset), scaled.
+  return { x: tx - ((p.x - F.tray.x) / TRAY_K) * k, y: ty - ((p.y - F.tray.y) / TRAY_K) * k, k }
 }
 
 /** The tray over a dark band; `zoom` pushes in on die `on`. */
 export function tray(g: G, plan: TrayPlan, u: number, zoom = 1, on = 0) {
   // Light enough that your Pokémon, bottom left, stays in view behind the dice.
-  bottomShade(g, 640, 0.6)
+  if (F.shade != null) bottomShade(g, F.shade, 0.6)
   const cv = drawTray(plan, u)
   const f = trayFrame(plan.fills.length, zoom, on)
   sharpDraw(g, cv, f.x, f.y, TRAY_W * f.k, TRAY_H * f.k)
@@ -56,7 +58,7 @@ export function tray(g: G, plan: TrayPlan, u: number, zoom = 1, on = 0) {
 export function trayPoint(n: number, i: number, zoom = 1, on = 0, lift = 96) {
   const f = trayFrame(n, zoom, on)
   const p = restScreen(n, i)
-  return { x: f.x + (p.x / TRAY_K) * f.k, y: f.y + (p.y / TRAY_K) * f.k - lift * (zoom - 1) }
+  return { x: f.x + ((p.x - F.tray.x) / TRAY_K) * f.k, y: f.y + ((p.y - F.tray.y) / TRAY_K) * f.k - lift * (zoom - 1) }
 }
 
 /** Where each of n dice rests on the screen (for the values popping up over them). */
@@ -79,10 +81,14 @@ export function fiveBanner(g: G, u: number, land: number, sounded: (t: number) =
   if (u < land) return
   const k = 2.2 - 1.2 * outBack(span(u, land, land + 0.2), 2.2)
   const sh = Math.round(Math.sin(u * 70) * 6 * (1 - span(u, land, land + 0.6)))
+  const b = F.banner
+  const mid = ((b.lines.length - 1) * b.step) / 2
   g.save()
-  g.translate(OW / 2 + sh, 330)
+  g.translate(b.x + sh, b.y + mid)
   g.scale(k, k)
-  text(g, 'FIVE OF A KIND!', 0, 0, { size: 190, color: '#ffbe2e', align: 'center', base: 'middle', ow: 14, drop: 16, dropColor: '#c4382a' })
+  b.lines.forEach((line, i) =>
+    text(g, line, 0, i * b.step - mid, { size: b.size, color: '#ffbe2e', align: 'center', base: 'middle', ow: 14, drop: 16, dropColor: '#c4382a' }),
+  )
   g.restore()
   if (sounded(land)) play('levelup')
   if (sounded(land + 0.18)) play('catch')
@@ -131,7 +137,6 @@ export interface BigRoll {
 const FIRST = [5, 5, 2, 5, 3]
 const PICKED = [2, 4]
 const SLOW = 0.3
-const ZOOM = 1.5
 // The middle die: closing in on it keeps the row centred, all five in view (the tray at a whole 6× at full zoom).
 const ON = 2
 
@@ -155,7 +160,8 @@ export function bigRollPlan(b: BigRoll): TrayPlan {
 }
 
 /** The plate's corner is the REROLL button's while the hand picks dice, then the close dice's, until the camera is back. */
-export const bigRollBusy = (u: number, b: BigRoll) => u >= b.taps[0] - 0.4 && u < b.out + 0.3
+// In portrait the plate would come back over the damage: it stays away until the cut.
+export const bigRollBusy = (u: number, b: BigRoll) => u >= b.taps[0] - 0.4 && (F.portrait || u < b.out + 0.3)
 
 const HAND = [
   '....kk......',
@@ -175,10 +181,10 @@ const HAND = [
   '...kkkkkkk..',
 ]
 const HK = 6
-const BUTTON = { x: 1450, y: 880, w: 380, h: 100 }
 
 /** The game's REROLL button (a secondary PixelButton): greyed until a die is picked, pushed in when pressed. */
 function rerollButton(g: G, u: number, b: BigRoll) {
+  const BUTTON = F.button
   const a = span(u, b.taps[0] - 0.4, b.taps[0] - 0.25) * (1 - span(u, b.press + 0.4, b.press + 0.55))
   if (a <= 0) return
   const down = u >= b.press && u < b.press + 0.12 ? 6 : 0
@@ -196,12 +202,13 @@ function hand(g: G, u: number, b: BigRoll) {
     const p = restScreen(5, i)
     return { x: p.x + 10, y: p.y - 40 }
   }
+  const B = F.button
   const stops = [
-    { t: b.taps[0] - 0.4, x: 1560, y: 1180 },
+    { t: b.taps[0] - 0.4, x: B.x + 110, y: B.y + 300 },
     { t: b.taps[0], ...die(PICKED[0]!) },
     { t: b.taps[1], ...die(PICKED[1]!) },
-    { t: b.press, x: BUTTON.x + BUTTON.w / 2, y: BUTTON.y + 50 },
-    { t: b.press + 0.45, x: 1700, y: 1200 },
+    { t: b.press, x: B.x + B.w / 2, y: B.y + 50 },
+    { t: b.press + 0.45, x: B.x + 250, y: B.y + 320 },
   ]
   if (u < stops[0]!.t || u >= stops[4]!.t) return
   let j = 0
@@ -220,10 +227,10 @@ function hand(g: G, u: number, b: BigRoll) {
 export function bigRoll(g: G, u: number, b: BigRoll, sounded: (t: number) => boolean) {
   const land = bigRollLand(b)
   const zoom =
-    1 + (ZOOM - 1) * (u < land ? outCubic(span(u, b.slowA, b.slowA + 0.4)) : 1 - inOut(span(u, b.out, b.out + 0.3)))
-  celebrate(g, u, land)
+    1 + (F.zoom - 1) * (u < land ? outCubic(span(u, b.slowA, b.slowA + 0.4)) : 1 - inOut(span(u, b.out, b.out + 0.3)))
+  celebrate(g, u, land, F.burst.x, F.burst.y)
   tray(g, bigRollPlan(b), u, zoom, ON)
-  if (u >= land - 0.02 && u < land + 0.1) speedLines(g, OW / 2, 900, u, { color: '#ffbe2e', inner: 260, a: 0.6 })
+  if (u >= land - 0.02 && u < land + 0.1) speedLines(g, F.burst.x, F.burst.y, u, { color: '#ffbe2e', inner: 260, a: 0.6 })
   const at = (i: number) => trayPoint(5, i, zoom, ON, 150)
   if (u < reroll(b))
     valuePops(g, FIRST, at, u, b.pops, (i) =>
@@ -234,5 +241,5 @@ export function bigRoll(g: G, u: number, b: BigRoll, sounded: (t: number) => boo
   hand(g, u, b)
   for (const t of [...b.taps, b.press]) if (sounded(t)) play('button')
   fiveBanner(g, u, land, sounded)
-  damageSlam(g, 95, 960, 640, u, b.damage, { size: 230, shake: 16 })
+  damageSlam(g, 95, F.damage.x, F.damage.y, u, b.damage, { size: 230, shake: 16 })
 }

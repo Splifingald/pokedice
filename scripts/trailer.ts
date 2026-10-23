@@ -6,6 +6,7 @@
 //   pnpm trailer --stills 0,150,600   just those frames → trailer/out/stills/f0150.png …
 //   pnpm trailer --from 150 --to 540  a part, silent → trailer/out/part-150-540.mp4
 //   pnpm trailer --cut social         the 15-second social cut → trailer/out/pokedice-trailer-social.mp4
+//   pnpm trailer --cut portrait       the social cut in 1080×1920 → trailer/out/pokedice-trailer-portrait.mp4
 import { chromium } from '@playwright/test'
 import { spawn, execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
@@ -83,7 +84,13 @@ async function main() {
     await page.goto(`http://localhost:${PORT}/trailer/${page_}.html`)
     await page.evaluate(() => window.trailer.ready)
     const total = await page.evaluate(() => window.trailer.frames)
-    const shot = () => page.screenshot({ type: 'png', clip: { x: 0, y: 0, width: 1920, height: 1080 } })
+    // The page's canvas decides the frame: 1920×1080, or 1080×1920 for the portrait cut.
+    const size = await page.evaluate(() => {
+      const c = document.getElementById('out') as HTMLCanvasElement
+      return { width: c.width, height: c.height }
+    })
+    await page.setViewportSize(size)
+    const shot = () => page.screenshot({ type: 'png', clip: { x: 0, y: 0, ...size } })
 
     if (stills) {
       mkdirSync(join(OUT, `stills${suffix}`), { recursive: true })

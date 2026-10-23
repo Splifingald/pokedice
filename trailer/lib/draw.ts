@@ -2,8 +2,13 @@
 // an ink edge and a lip, the HP bar, and the trailer's own touches (flashes, speed lines, wipes).
 import { DAYBREAK_TYPES, PALETTE } from '@/theme/colors'
 
-export const OW = 1920
-export const OH = 1080
+// The canvas size: 1920×1080, or 1080×1920 for the portrait cut (lib/frame sets it before anything is drawn).
+export let OW = 1920
+export let OH = 1080
+export function setCanvasSize(w: number, h: number) {
+  OW = w
+  OH = h
+}
 export const INK = PALETTE.ink
 export const GOLD = PALETTE.gold
 export const TYPE = DAYBREAK_TYPES

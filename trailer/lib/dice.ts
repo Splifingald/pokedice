@@ -4,6 +4,7 @@ import { canvas } from '@/fx/pixel'
 import { drawDie, drawShadow, faceOf, FACES, restOn, throwAt, type Throw, type View } from './cube'
 import { play } from './audio'
 import { hit } from './clock'
+import { F } from './frame'
 
 export const TRAY_W = 480
 export const TRAY_H = 270
@@ -111,9 +112,9 @@ export function drawTray(plan: TrayPlan, t: number) {
   return tray
 }
 
-/** Where die i rests on the screen (1920×1080), for the numbers drawn over the tray. */
+/** Where die i rests on the screen (the tray canvas at ×4, placed by the frame), for the numbers drawn over it. */
 export function restScreen(n: number, i: number, baseY = 228) {
   const rowW = n * SIZE + (n - 1) * GAP
   const x = TRAY_W / 2 - rowW / 2 + SIZE / 2 + i * (SIZE + GAP)
-  return { x: x * TRAY_K, y: baseY * TRAY_K }
+  return { x: F.tray.x + x * TRAY_K, y: F.tray.y + baseY * TRAY_K }
 }

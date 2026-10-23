@@ -3,6 +3,7 @@
 import { PALETTE } from '@/theme/colors'
 import { icon } from '@/fx/pixel'
 import { sharpDraw } from './stage'
+import { F } from './frame'
 import { GOLD, hpBar, INK, outBack, panel, rect, span, text, textWidth, type G } from './draw'
 
 export interface PlateInfo {
@@ -19,7 +20,7 @@ export interface PlateInfo {
 const W = 560
 
 /** The foe's plate, top left; slides in from the left from `inAt`. */
-export function foePlate(g: G, p: PlateInfo, t: number, inAt: number, x = 48, y = 48) {
+export function foePlate(g: G, p: PlateInfo, t: number, inAt: number, x = F.foe.x, y = F.foe.y) {
   if (t < inAt) return
   const k = outBack(span(t, inAt, inAt + 0.18), 1.4)
   const dx = Math.round((1 - k) * -(W + 120))
@@ -27,7 +28,7 @@ export function foePlate(g: G, p: PlateInfo, t: number, inAt: number, x = 48, y 
 }
 
 /** Your plate, bottom right (clear of the Pokémon and the dice); slides in from the right. */
-export function ownPlate(g: G, p: PlateInfo, t: number, inAt: number, x = 1920 - 48 - W, y = 1080 - 48 - 150) {
+export function ownPlate(g: G, p: PlateInfo, t: number, inAt: number, x = F.own.x, y = F.own.y) {
   if (t < inAt) return
   const k = outBack(span(t, inAt, inAt + 0.18), 1.4)
   const dx = Math.round((1 - k) * (W + 120))
@@ -146,10 +147,11 @@ export function caption(g: G, line: string, t: number, from: number, to: number)
   if (t < from || t >= to) return
   const p = outBack(span(t, from, from + 0.15), 1.3)
   const w = textWidth(g, line, 56) + 80
-  const x = 960 - w / 2
-  const y = 64 - (1 - p) * 220
+  const x = F.caption.x - w / 2
+  // Landscape: it drops in from above the frame; portrait: it rises into its place under the stage.
+  const y = F.caption.y - (1 - p) * (F.portrait ? -60 : 220)
   panel(g, x, y, w, 96, { b: 6 })
-  text(g, line, 960, y + 66, { size: 56, color: INK, ow: 0, align: 'center' })
+  text(g, line, F.caption.x, y + 66, { size: 56, color: INK, ow: 0, align: 'center' })
 }
 
 // ---------------------------------------------------------------- the five of a kind
@@ -159,7 +161,7 @@ const CONFETTI = Array.from({ length: 140 }, (_, i) => {
     return s - Math.floor(s)
   }
   return {
-    x: r(1) * 1920,
+    x: r(1),
     vx: (r(2) - 0.5) * 500,
     vy: -900 - r(3) * 900,
     c: ['#ffbe2e', '#f2553f', '#6390f0', '#7ac74c', '#ffffff', '#f95587'][i % 6]!,
@@ -189,9 +191,9 @@ export function celebrate(g: G, t: number, at: number, cx = 960, cy = 900) {
   }
   g.restore()
   for (const c of CONFETTI) {
-    const x = c.x + c.vx * e
-    const y = 1100 + c.vy * e + 900 * e * e
-    if (y > 1140) continue
+    const x = c.x * F.w + c.vx * e
+    const y = F.h + 20 + c.vy * e + 900 * e * e
+    if (y > F.h + 60) continue
     const w = Math.round(c.s * Math.abs(Math.cos(e * c.spin)))
     rect(g, Math.round(x / 6) * 6, Math.round(y / 6) * 6, Math.max(6, w), c.s, c.c)
   }

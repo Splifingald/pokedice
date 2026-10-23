@@ -4,7 +4,7 @@ A trailer for Pokédice, written shot by shot first, then built from the game's 
 Every timecode is in seconds from the start (frames at 60 fps: `f` = s × 60). This file is the reference for the
 build; change it here first.
 
-**Status (2026-10-23): built** on `claude/pokedice-trailer-video-5jq0o9`: the main trailer **58.5 s**, the social cut **15 s** (§12). The timecodes of §1–§7 are version 3's, before the evolution was shortened by 1.5 s: from the evolution on, everything comes 1.5 s earlier (the end card ends at 58.5). The video's name:
+**Status (2026-10-23): built** on `claude/pokedice-trailer-video-5jq0o9`: the main trailer **58.5 s**, the social cut **15 s** (§12) and its vertical version (§9). The timecodes of §1–§7 are version 3's, before the evolution was shortened by 1.5 s: from the evolution on, everything comes 1.5 s earlier (the end card ends at 58.5). The video's name:
 **Pokédice - Web Game Trailer** (never shown on screen).
 
 Version 1 (22 s) went by too fast to understand, the user said. Version 2 follows their notes (§11): a longer pause on
@@ -182,9 +182,24 @@ fan-made line. No Discord link. Fade to black at 59.7–60. The last chord in D 
 - **Sound effects**: the game's own, on the frame each cue fires (`src/audio/sfx.ts` gets an offline audio context
   whose clock reads the trailer's time). **Cries**: Showdown's.
 
-## 9. A vertical cut (1080×1920), later
+## 9. The vertical cut (1080×1920, 15 s)
 
-Not built yet.
+`pnpm trailer --cut portrait` → `trailer/out/pokedice-trailer-portrait.mp4` (`trailer/portrait.html`,
+`trailer/portrait.ts`), for TikTok, YouTube Shorts, Instagram Reels and Snapchat (9:16, all of them). It is the
+social cut (§12): the same acts, times and score, laid out by the portrait frame of `trailer/lib/frame.ts` instead of
+the landscape one.
+
+- **Stacked, not overlaid.** Top to bottom: a header (POKÉDICE, `ROLL · BATTLE · CATCH` in gold) on the title's navy
+  with its drifting Poké Balls; the whole battle stage, 1080×800 at ×5 (12 stage pixels of each side cut off), with
+  its ink edge and the two plates on it; the game's line (`Select dice to reroll`, the evolution's) just under it; the
+  dice on their own band below, nothing over them; the REROLL button under the dice.
+- **Clear of the apps' overlays.** Their tabs over the top (~200 px), their caption and music line over the bottom
+  (~330 px), their like / comment / share buttons down the right: the header starts at 210, the button ends at 1585,
+  and the dice row is 760 px wide (160 → 920). Only the five 5s' push (×1.25, a second) and the celebration reach the
+  edges.
+- **Small changes for a phone.** FIVE OF A KIND! on two lines (FIVE OF / A KIND!) over the stage, `95` under it;
+  Charizard's plate stays away after the reroll so it can't cover `95`; the end card puts POKÉ over DICE (two rows of
+  four dice), the website fitted to the width, the two badges one above the other, the fan-made line on two lines.
 
 ## 10. How it's made
 
@@ -240,3 +255,4 @@ its own score `scoreSocial`). 1920×1080 like the main one. No title: it opens o
     Gigantamax shots; the raid Pokémon all at one size.
 11. The five of a kind easier to follow: less zoom (all five dice stay in view), a shorter slow motion, and the reroll
     shown step by step (a hand taps the 2 and the 3, then REROLL).
+12. A portrait version for scrollable social media (TikTok, Shorts), with small layout changes for legibility (§9).
