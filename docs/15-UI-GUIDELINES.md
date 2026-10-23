@@ -152,7 +152,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `SettingsOverlay` | Settings opened from the trainer menu under a lock (mid-fight, a portal run: §12) | A `Modal` titled Settings over the page: mid-fight a line saying the fight waits, Settings' panels with what would end the fight shut, BACK TO THE FIGHT pinned at its bottom (BACK under a portal run's lock alone); SUPPORT ME white there |
 | `HpBar` | HP | Track with ink ring; the fill drains over 700 ms, the trail waits 280 ms then follows over 900 ms; numbers for your own, words for a foe's (screen readers) |
 | `TypeBadge`, `TypeSwatch` | A type | `md` 20 px, `sm` 16 px (plates) |
-| `Die` | A die face | Square corners; pips on whole pixels (`pipLayout`: one even pip size, three fixed columns) at any size; ink pips on light dice, white on dark; status face = white + status ring and a round badge with its icon; `selected` = lifted 6 px with a red outline; `combo` = a gold ring; values without a pip layout (0, 7, 8…) show their number, centred on the face; with a `rollKey` it tumbles in, or, with the dice throws on (docs/37), is thrown in as a pixel cube and lands on its face (`useDieThrow`; on `/kitchen-sink` at every motion level, frozen mid-throw) |
+| `Die` | A die face | Square corners; pips on whole pixels (`pipLayout`: one even pip size, three fixed columns) at any size; ink pips on light dice, white on dark; status face = white + status ring and a round badge with its icon; `selected` = lifted 6 px with a red outline and a ↻ tag on its top-left corner; `combo` = a gold ring and gold corner brackets (a shape each, never colour alone), with the game feel on its tier's ring (`tier`, docs/38); `squash` (the last die of a throw down), `jitter` (a pick before the last reroll); `onLand` once it is down; values without a pip layout (0, 7, 8…) show their number, centred on the face; with a `rollKey` it tumbles in, or, with the dice throws on (docs/37), is thrown in as a pixel cube and lands on its face (`useDieThrow`; on `/kitchen-sink` at every motion level, frozen mid-throw) |
 | `PageHead` / `Wallet` | A tab's title row | Tab icon, the one `<h1>` (`as="h2"` where the page has its own), a count ("3/3", "81/151") or the gold as a navy plate |
 | `SheetSection` | A titled block inside a sheet | 22 px heading, a muted hint on the same row, extra controls |
 | `NicknameButton` / `NicknameModal` | Giving one of your Pokémon a nickname (its sheet's title) | The name and a pencil, 44 px tall on phones; the dialog with the field (empty: the species as placeholder; named: selected), the 0/12 counter, the trade line only where trades exist, Cancel / SAVE (§13) |
@@ -251,6 +251,10 @@ House rules for every effect and timeline:
 - **No screen flash faster than 3 a second.**
 - Timelines run at **60 fixed steps a second** and fire their cues (message, HP, status, form…) at exact times.
 - Durations: a button press 60 ms in 2 steps; a sheet rises in 220 ms; HP 700 ms / 280 ms / 900 ms; dice tumble 600 ms.
+- **The game feel** (docs/38 §3, the admin's switch): a die's pick lifts in 2 steps over 60 ms; the last die of a throw
+  squashes for two frames; the damage counts up after the dice land (`src/fx/dice/score.ts`: pops 60 ms apart, the
+  combo's beat, the count over 300–500 ms; `short` 250 ms in all; `off` the end state); a tier 3+ combo shakes the
+  tray 2 px and a tier 4 flashes it once, neither when calm.
 - **Dice** (docs/37 §7): without the dice throws, a die tumbles in over 600 ms. With them (the admin's switch), a die
   is thrown in as a pixel cube replaying a recorded throw (0.53–0.70 s × pace, 2 px art pixels, an ink outline, a
   dithered shadow, a click per bounce) that lands square and upright on the engine's face, then the DOM die takes over
@@ -474,12 +478,16 @@ in view) and the battle history sits beside it from 1024 px.
   the HP waits for the timeline's `contact` cue before it drains. Entrances hold the log after its opening line.
   When animations are off, every step lands at once and no scene plays.
 - **Panel**, top to bottom, each part keeping its height so nothing jumps: the message box (two lines; "Tap dice to
-  throw them again." is added on your turn), the dice tray (your dice up to 54 px and never under 44, lifted with a
-  red outline when picked, the combo's dice in a gold ring; the foe's dice smaller, not buttons), the readout (combo
-  chip or "No combo", the damage alone and big — a button: the math, `(sum + bonus) × mult = damage`, shows once,
-  under the readout — how effective it is, a `StatusChip` per status face, lit once its threshold is met), the extras (Mega, G-MAX,
-  Z-MOVE, Type, Run, AUTO-MODE) only when they exist — the battle powers gold, Z-MOVE's hint saying what this roll's type adds (docs/35) — the actions (REROLL with its count, ATTACK in red; SKIP TURN when stunned; the AUTO note
-  with STOP, none in Versus), then the Bag, the team pips and the history.
+  throw them again." is added on your turn), the dice tray (your dice up to 54 px — 72 on a phone
+  740 px tall or more — and never under 44, lifted with a red outline and a ↻ tag when picked, the combo's dice in a
+  gold ring with gold corner brackets; the foe's dice smaller, not buttons, ¾ of yours with the game feel), the readout
+  once the last die of the throw is down, kept through a reroll until the new dice land (one line: the damage first
+  and big, "26 DMG" — a button: the math, `(sum + bonus) × mult = damage`, shows once, under the readout — the combo
+  chip when there is one, how effective it is, a `StatusChip` per status face, lit once its threshold is met; with the
+  game feel it counts up, docs/38 §3), the extras (Mega, G-MAX,
+  Z-MOVE, Type, Run, AUTO-MODE) only when they exist — the battle powers gold, Z-MOVE's hint saying what this roll's type adds (docs/35) — the actions (REROLL with its count — LAST REROLL in gold with the game feel — ATTACK in
+  red; SKIP TURN when stunned; the AUTO note with STOP, none in Versus), low in the panel with the room to spare above
+  them (in the thumb's reach), then the Bag, the team pips and the history.
 - **Auto battles** (auto-mode, Versus) play at the `short` motion level unless animations are off (`MotionCap`).
   Auto-mode is switched in the area (under its header), never from Home; a cleared area's battle also offers it among
   its extras (AUTO-MODE, ghost, last), which hands the rest of that fight to auto and turns the setting on, like the

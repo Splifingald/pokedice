@@ -54,6 +54,8 @@ export interface DieThrowArgs {
   pip: string
   locked: boolean
   delay: number
+  /** The die is down (docs/38: the tray's last landing, the readout waiting for it). */
+  onLand?: () => void
 }
 
 /**
@@ -116,6 +118,7 @@ export function useDieThrow(a: DieThrowArgs): { active: boolean; flying: boolean
       done = true
       el.style.visibility = ''
       setLanded(args.rollKey)
+      now.current.a.onLand?.()
     }
     const startedAt = performance.now()
     const giveUp = setTimeout(show, LOAD_WAIT_MS + args.delay * 1000)

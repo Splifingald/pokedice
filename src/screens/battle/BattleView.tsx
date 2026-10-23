@@ -35,8 +35,10 @@ import {
   type Side,
   inPortalRun,
   inNightmare,
+  gameFeelOn,
 } from '@/engine'
 import { playCry } from '@/audio/cries'
+import { feelSound } from '@/audio/feel'
 import { Chip } from '@/components/Chip'
 import { DiceSet } from '@/components/DiceSet'
 import { ForfeitButton } from '@/components/ForfeitButton'
@@ -59,6 +61,7 @@ import { useT } from '@/i18n/react'
 import { effectText, zMoveText } from '@/i18n/text'
 import { statusName, trainerTitle, typeName } from '@/lib/format'
 import { useHoldFullscreen } from '@/lib/fullscreen'
+import { haptic } from '@/lib/haptics'
 import { capMotion, MotionCap, useMotion, type MotionLevel } from '@/lib/motion'
 import { AUTO_PACE, PaceContext, VERSUS_PACE } from '@/lib/pace'
 import { useDialogOpen } from '@/lib/useDialog'
@@ -69,7 +72,7 @@ import { answerBait, dispatchBattle, finishCatch, passCatch, retryCatch, throwBa
 import { useAreaDayTime } from '@/store/dayTime'
 import { cx } from '@/theme/util'
 import { BattleHistory, BattleHistoryList, DamageRecap } from './BattleHistory'
-import { BagButton, DiceTray, Readout, SwitchRow, TeamColumn, TeamPips, ZMoveButton, type Preview, type TrayDice } from './BattlePanel'
+import { BagButton, DiceTray, Readout, SwitchRow, TeamColumn, TeamPips, trayKeyOf, turnInHand, useDamageReveal, ZMoveButton, type Preview, type TrayDice } from './BattlePanel'
 import { BattleStage, type StageOverlay } from './BattleStage'
 import { CatchPanel, catchMessage } from './CatchPanel'
 import { DoublePlates, TargetPicker } from './DoublePlates'
@@ -410,7 +413,22 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const onField = (p: Battler) => (dbl ? dbl.ownSlots.some((i) => st.player[i]!.uid === p.uid) : p.uid === activeBattler(st).uid)
   const switchTargets = st.player.filter((p) => p.hp > 0 && !onField(p))
 
+  // The game feel (docs/38): the dice and the readout's sounds and touches. Off, everything plays as before.
+  const feel = useGame((s) => gameFeelOn(s.data))
+  // Your hand: picking a die clicks (and buzzes), and the last reroll sounds its own warning (F7b, F9a).
+  const toggleDie = (i: number) => {
+    if (feel) feelSound(st.selected[i] ? 'die.unpick' : 'die.pick')
+    haptic('diePick')
+    dispatch({ t: 'TOGGLE_DIE', i })
+  }
+  const reroll = () => {
+    if (feel && active.rerollsLeft === 1) feelSound('reroll.last')
+    dispatch({ t: 'REROLL' })
+  }
+
   // Keyboard: 1..6 toggle, R reroll, Space/Enter roll or attack.
+  const keyAct = useRef({ toggleDie, reroll })
+  keyAct.current = { toggleDie, reroll }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!(canAct || stunned) || auto || held || (e.target as HTMLElement)?.tagName === 'INPUT') return
@@ -419,19 +437,33 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         if ((e.target as HTMLElement)?.closest?.('button, a[href]')) return
         e.preventDefault()
         dispatch(stunned ? { t: 'PASS' } : st.phase === 'player_roll' ? { t: 'ROLL' } : { t: 'ATTACK' })
-      } else if (e.key.toLowerCase() === 'r' && rolling) dispatch({ t: 'REROLL' })
-      else if (/^[1-6]$/.test(e.key) && rolling) dispatch({ t: 'TOGGLE_DIE', i: Number(e.key) - 1 })
+      } else if (e.key.toLowerCase() === 'r' && rolling) keyAct.current.reroll()
+      else if (/^[1-6]$/.test(e.key) && rolling) keyAct.current.toggleDie(Number(e.key) - 1)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [canAct, stunned, auto, held, rolling, st.phase, dispatch])
 
   // Every turn starts with the throw, so the dice roll themselves (items, switching and running still work after it).
+  // With the game feel on (F8c, F1d) it comes sooner, after the dice in hand jitter for two frames.
+  const [anticipate, setAnticipate] = useState(0)
+  const handReady = !auto && ready && !intro && st.phase === 'player_roll'
   useEffect(() => {
-    if (auto || !ready || intro || held || st.phase !== 'player_roll') return
-    const t = setTimeout(() => dispatch({ t: 'ROLL' }), quick ? 0 : 400)
-    return () => clearTimeout(t)
-  }, [auto, ready, intro, held, st.phase, quick, battle.log.length, dispatch])
+    if (!handReady || held) return
+    const wait = quick ? 0 : feel ? 250 : 400
+    const jitter =
+      feel && !quick
+        ? setTimeout(() => {
+            setAnticipate((n) => n + 1)
+            feelSound('die.jitter')
+          }, wait - 100)
+        : undefined
+    const t = setTimeout(() => dispatch({ t: 'ROLL' }), wait)
+    return () => {
+      clearTimeout(jitter)
+      clearTimeout(t)
+    }
+  }, [handReady, held, quick, feel, battle.log.length, dispatch])
 
   // Auto-mode: every player move once the log has caught up. A reroll shows its selected dice for a moment first.
   const autoPhase =
@@ -658,9 +690,11 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   // ---- Layout numbers.
   const panelWidth = useWidth(panel)
   const diceCount = Math.max(1, active.dice.length)
-  // Your dice fill the tray: up to 54px, never under a 44px tap target.
+  // A tall phone (P1a, P1b) has room to spare under the stage: bigger dice, and the actions down in the thumb's reach.
+  const tall = useMediaQuery('(max-width: 767px) and (min-height: 740px)')
+  // Your dice fill the tray: up to 54px (72 on a tall phone), never under a 44px tap target.
   const dieSize = panelWidth
-    ? Math.max(44, Math.min(54, Math.floor((panelWidth - 24 - (diceCount - 1) * 8) / diceCount)))
+    ? Math.max(44, Math.min(tall ? 72 : 54, Math.floor((panelWidth - 24 - (diceCount - 1) * 8) / diceCount)))
     : 54
 
   // Tray: the animated roll while the log plays; the live, selectable roll once caught up.
@@ -675,18 +709,41 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
               : st.dice.map((_, i) => `s${i}`),
         }
       : fx.tray
+  // The readout waits for the last die of the throw to be down, and keeps the roll before's numbers through a reroll
+  // (F2d); with the game feel on, each landing plays the damage count-up (F2a).
+  const throwKey = trayKeyOf(tray)
+  const [landedKey, setLandedKey] = useState('')
+  const settled = ready && rolling && tray?.side === 'player' && (!throwKey || landedKey === throwKey)
+  const reveal = useDamageReveal(preview, settled, throwKey, feel)
+  const shownR = reveal.preview?.r
+  // The combo's ring, once its dice are down (with the game feel, once its beat has landed).
+  const comboIn = settled && !!shownR?.combo && (!reveal.score || reveal.score.combo)
   const ring = useMemo(
     () =>
-      preview?.r.combo
+      comboIn && shownR?.combo
         ? new Set(
             comboDice(
-              preview.r.perDie.map((p) => p.value),
-              preview.r.combo.key,
+              shownR.perDie.map((p) => p.value),
+              shownR.combo.key,
             ),
           )
         : new Set<number>(),
-    [preview],
+    [comboIn, shownR],
   )
+  // Before your turn's throw, your dice wait in hand (F8c). The foe's turn shows its dice in the panel from its first
+  // line, face down until they're thrown, then landing (P1c), a size up where the panel has room.
+  const foeTurn = fx.tray ? null : turnInHand(battle.log, fx.cursor)
+  const foeHand = foeTurn?.side === 'enemy' ? (dbl?.foes ?? [st.enemy]).find((f) => f.uid === foeTurn.uid)?.dice : undefined
+  const hand =
+    !feel || quick
+      ? undefined
+      : handReady
+        ? { side: 'player' as const, dice: active.dice }
+        : foeHand && { side: 'enemy' as const, dice: foeHand }
+  const foeSize = feel ? Math.max(40, Math.round((dieSize * 0.75) / 2) * 2) : undefined
+  const lastReroll = feel && rolling && active.rerollsLeft === 1
+  // Prof. Oak's threshold tip, about the dice once they're down.
+  const tipFor = settled && !auto && statusTip ? reveal.preview?.almost.find((x) => x.have > 0) : undefined
 
   const party = versus
     ? { count: versus.foeCount, index: versus.foeIndex }
@@ -772,12 +829,14 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
         <PixelButton
           size="lg"
+          // The last one says so, in gold (F9a, game feel).
+          variant={lastReroll ? 'gold' : undefined}
           className="whitespace-nowrap px-2"
           disabled={!canAct || active.rerollsLeft <= 0 || !st.selected.some(Boolean)}
           title={t('ui.battle.selectDice')}
-          onClick={() => dispatch({ t: 'REROLL' })}
+          onClick={reroll}
         >
-          {t('ui.battle.reroll', { left: active.rerollsLeft })}
+          {lastReroll ? t('ui.battle.lastReroll') : t('ui.battle.reroll', { left: active.rerollsLeft })}
         </PixelButton>
         <PixelButton
           variant="primary"
@@ -957,14 +1016,23 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
               <div className="mt-auto">{actions}</div>
             ) : (
               <>
+                {/* A tall phone: the dice come down a little, towards the thumb (P1b). */}
+                {tall && <div aria-hidden className="h-[clamp(0px,calc((100dvh-740px)*0.6),72px)] shrink-0" />}
                 <DiceTray
                   tray={tray}
                   live={ready && rolling}
                   selected={st.selected}
                   combo={ring}
-                  onToggle={canAct && rolling && !auto ? (i) => dispatch({ t: 'TOGGLE_DIE', i }) : undefined}
+                  onToggle={canAct && rolling && !auto ? toggleDie : undefined}
                   size={dieSize}
                   foeName={foeFront.name}
+                  onSettled={setLandedKey}
+                  feel={feel}
+                  score={reveal.score}
+                  hand={hand}
+                  anticipate={anticipate}
+                  nervous={lastReroll}
+                  foeSize={foeSize}
                 />
                 {/* A double battle: which foe the attack goes to (the stage's foe in front). */}
                 {dbl && canAct && !auto && foesOnField(st).filter((f) => f.hp > 0).length > 1 && (
@@ -984,20 +1052,21 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                       {fx.chip.text}
                     </Chip>
                   )}
-                  {ready && preview && (
+                  {reveal.preview && (
                     <Readout
-                      preview={preview}
+                      preview={reveal.preview}
                       activeName={active.name}
                       open={showBreakdown}
                       onToggle={() => setShowBreakdown((v) => !v)}
+                      score={reveal.score}
                     />
                   )}
                 </div>
-                {ready && preview && showBreakdown && <DamageRecap result={preview.r} />}
-                {ready && preview && !auto && statusTip && preview.almost.some((s) => s.have > 0) && (
+                {reveal.preview && showBreakdown && <DamageRecap result={reveal.preview.r} />}
+                {tipFor && (
                   <OakTip onClose={closeStatusTip}>
                     {(() => {
-                      const s = preview.almost.find((x) => x.have > 0)!
+                      const s = tipFor
                       return t('ui.battle.statusTip', {
                         status: statusName(s.status),
                         need: s.need,
@@ -1078,6 +1147,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                     )}
                   </div>
                 )}
+                {/* The room to spare goes above the actions, so they sit low, in the thumb's reach (P1b). */}
+                <div aria-hidden className="-mt-2 flex-1" />
                 <div className="min-h-[56px]">{actions}</div>
                 {/* Phones: the Bag, the team and the history at the foot of the panel; wide screens: at the side. */}
                 {!wide && teamRow}
