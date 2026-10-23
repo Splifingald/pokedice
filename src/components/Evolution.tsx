@@ -92,11 +92,23 @@ export function EvolutionSequence({
   )
 }
 
+/** How long the autopilot leaves an evolution's reveal up before the next (docs/36). */
+const AUTO_EVOLVED_MS = 1800
+
 /**
  * Evolutions one after another, full screen: each plays, then CONTINUE moves to the next; after the last, `onDone`.
  * The button is always in view (bottom of the card).
  */
-export function EvolutionQueue({ items, onDone }: { items: EvolutionShow[]; onDone: () => void }) {
+export function EvolutionQueue({
+  items,
+  onDone,
+  auto = false,
+}: {
+  items: EvolutionShow[]
+  onDone: () => void
+  /** The autopilot (docs/36): each evolution plays in full, stays a moment once revealed, then moves on by itself. */
+  auto?: boolean
+}) {
   const { t } = useT()
   const [i, setI] = useState(0)
   const [ready, setReady] = useState(false)
@@ -104,6 +116,14 @@ export function EvolutionQueue({ items, onDone }: { items: EvolutionShow[]; onDo
   useEffect(() => {
     if (!cur) onDone()
   }, [cur]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!auto || !ready) return
+    const timer = setTimeout(() => {
+      setReady(false)
+      setI((n) => n + 1)
+    }, AUTO_EVOLVED_MS)
+    return () => clearTimeout(timer)
+  }, [auto, ready])
   if (!cur) return null
   // On the page itself, above any sheet it was opened from (a fixed box inside a transformed modal would be clipped).
   return createPortal(

@@ -1,5 +1,5 @@
 // localStorage is always written. Everything is wrapped: storage can be full, disabled or throw in private modes.
-import type { SaveData, SaveMode } from '@/engine/types'
+import { PLAY_STYLES, type PlayStyle, type SaveData, type SaveMode } from '@/engine/types'
 import { isLang, type Lang } from '@/i18n/langs'
 import { detectLang } from '@/i18n'
 import { BACKUP_KEYS, CORRUPT_KEYS, setWithRoom } from './room'
@@ -71,8 +71,13 @@ export interface Settings {
   animations?: AnimationLevel
   /** Multi EXP — on by default. */
   multiExp: boolean
-  /** Auto-mode: fights in cleared areas play themselves — off by default. */
+  /**
+   * Auto engaged — off by default. Its switch is in the area: a cleared area's fights play themselves; with the play
+   * styles on (docs/36), the autopilot runs where the style allows.
+   */
   autoMode?: boolean
+  /** The play style (docs/36): Classic, Auto on explored areas, Idle. Unset = from before them (engine/autopilot). */
+  playStyle?: PlayStyle
   /** Type hints: matchups on a Pokémon's sheet, and on tapping one in battle — off by default. */
   typeHints?: boolean
   /** Raids: the ally sides' turns at 1.5× speed (the speed button) — off by default. */
@@ -184,6 +189,8 @@ export function readSettings(): Settings {
       animations: s.animations === 'short' ? 'short' : 'full',
       multiExp: s.multiExp !== false,
       autoMode: !!s.autoMode,
+      // Kept only when it is one of the styles; unset stays unset (playStyleOf reads it as the old auto-mode's).
+      ...(PLAY_STYLES.includes(s.playStyle as PlayStyle) && { playStyle: s.playStyle }),
       typeHints: !!s.typeHints,
       raidFast: !!s.raidFast,
       lang: isLang(s.lang) ? s.lang : detectLang(),

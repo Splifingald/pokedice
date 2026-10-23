@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import {
+  autoAvailable,
   nightmareModeOf,
   portalModeOf,
   portalStateOf,
@@ -28,14 +29,17 @@ import { AreaStrip } from '@/components/AreaStrip'
 import { WipeView } from './battle/VictoryView'
 import { PortalBonuses, PortalInfo, PortalStep } from './area/PortalRun'
 import { NightmareInfo, NightmareStep, nightmareStepDue } from './area/NightmareRun'
+import { AutopilotNote } from './area/AutopilotNote'
+import { useAutopilot } from './area/useAutopilot'
 
 /**
- * Encounter types, a slim banner, then the name with its round (or a checkmark) and levels, the round gauge and, in a
- * cleared area, the auto-mode switch.
+ * Encounter types, a slim banner, then the name with its round (or a checkmark) and levels, the round gauge and, where
+ * the play style offers it (a cleared area; with Idle, any: docs/36), the auto-mode switch.
  */
 function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaProgress; teamAvg: number }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
+  const autoHere = useGame((s) => !!s.save && autoAvailable(s.save, s.data, s.settings, area.id))
   const span = area.scalesToTeam ? scaledLevelSpan(area, teamAvg, data) : { min: area.minLevel, max: area.maxLevel }
   const notes = [
     area.scalesToTeam && t('ui.area.foesScale'),
@@ -94,8 +98,9 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
         </div>
         {notes.length > 0 && <div className="text-lg leading-tight text-muted">{notes.join(' · ')}</div>}
         <RoundGauge area={area} progress={progress} />
-        {/* A cleared area can play itself: switched here, between its encounters, without a trip Home. */}
-        {progress.cleared && (
+        {/* A cleared area can play itself (with Idle, any area): switched here, between its encounters, without a
+            trip Home. */}
+        {autoHere && (
           <div className="flex justify-end">
             <AutoModeToggle />
           </div>
@@ -120,6 +125,9 @@ export function AreaScreen() {
   useEffect(() => {
     if (area) preloadSprites(area.wildPool.map((w) => w.dex))
   }, [area])
+  // The autopilot (docs/36): while it runs, the cards it takes by itself (a preview, the Center, the Game Corner) don't
+  // open; a short note stands in for them.
+  const pilot = useAutopilot()
 
   if (!save) return <Navigate to="/" replace />
   if (battle) return <BattleView key={battle.id} battle={battle} />
@@ -141,9 +149,15 @@ export function AreaScreen() {
   return (
     <div className="flex flex-col gap-4">
       {run.rebattle ? <RebattleHeader /> : <AreaHeader area={area} progress={progress} teamAvg={teamAverageLevel(save)} />}
-      {run.phase === 'preview' && run.encounter && <EncounterPreview enc={run.encounter} />}
-      {run.phase === 'center' && <CenterView />}
-      {run.phase === 'casino' && <CasinoView />}
+      {run.phase === 'preview' && run.encounter && !(pilot && run.encounter.kind !== 'trick') && (
+        <EncounterPreview enc={run.encounter} />
+      )}
+      {run.phase === 'center' && !pilot && <CenterView />}
+      {run.phase === 'casino' && !pilot && <CasinoView />}
+      {pilot &&
+        (run.phase === 'center' ||
+          run.phase === 'casino' ||
+          (run.phase === 'preview' && run.encounter?.kind !== 'trick')) && <AutopilotNote />}
       {/* A run that ended outside a fight (nobody left standing): its wipe card. */}
       {run.phase === 'wipe' && <WipeView />}
       {run.phase === 'idle' && own && step}

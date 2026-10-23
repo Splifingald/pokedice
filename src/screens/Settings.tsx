@@ -18,6 +18,7 @@ import { useIsAdmin } from '@/store/hooks'
 import { checkContent, deleteAllData, deleteExtremeSave, providerName } from '@/store/sync'
 import { otherSave } from '@/store/extreme'
 import { ExtremeRulesModal } from '@/components/Extreme'
+import { PlayStylePanel } from '@/components/IdleMode'
 import { AccountButton, ConnectedAccounts, DisconnectButton } from '@/components/AccountButton'
 import { SaveFacts } from '@/components/SaveFacts'
 import { backupSave, readBackups, soundOn } from '@/save/storage'
@@ -117,6 +118,9 @@ export function SettingsScreen() {
           />
         )}
       </Panel>
+
+      {/* Idle mode and the play styles (docs/36): switched any time. */}
+      <PlayStylePanel />
 
       <PushSettingsPanel />
 

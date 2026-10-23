@@ -556,6 +556,30 @@ function TradesBox() {
 const accessNote = (access: EventAccess, all: string, off: string) =>
   access === 'all' ? all : access === 'admin' ? 'Only you see it (to try it first). Players see nothing yet.' : off
 
+/**
+ * Idle mode and the play styles (docs/36): Classic, Auto on explored areas, Idle. Off: auto-mode stays as it always was
+ * (a cleared area's fights only). The game reads it on the player's device; no server function acts for it.
+ */
+function IdleModeBox() {
+  const [raw, setRaw] = useConfigRow('idleMode')
+  const access = raw?.access ?? 'off'
+  return (
+    <Box
+      title="Idle mode"
+      icon="dice"
+      hint="On: a new game first asks how to play (Classic, Auto on explored areas, Idle), Settings switches it any time, and auto-mode becomes the autopilot: it plays the whole area (fights, finds, Centers without team swaps, no items, no Game Corner), moves on to the next area once one is cleared, and after a lost round plays one round of the area before, then goes back. Only catches wait for the player. Off: auto-mode as before, fights only, in cleared areas. Players' choices are kept either way."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Idle mode</span>
+        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="Idle mode: who has it" />
+        <span className="text-base text-muted">
+          {accessNote(access, 'Open to every player.', 'Off: no play styles, auto-mode as before (fights only).')}
+        </span>
+      </div>
+    </Box>
+  )
+}
+
 /** Trainer looks (docs/31): unlockable looks from every region in place of the free Kanto and Johto list. */
 function LooksBox() {
   const [raw, setRaw] = useConfigRow('looks')
@@ -1283,6 +1307,8 @@ export function ConfigSection() {
       <DayCareBox />
 
       <DayNightBox />
+
+      <IdleModeBox />
 
       <ExtremeBox />
 
