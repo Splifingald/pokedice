@@ -4,11 +4,13 @@ import type { GameData, PokemonInstance } from '@/engine'
 import { useT } from '@/i18n/react'
 import { cx } from '@/theme/util'
 
-export type BoxSort = 'dex' | 'level' | 'type' | 'newest'
+export type BoxSort = 'dex' | 'level' | 'speed' | 'type' | 'newest'
 
 const SORTS: { id: BoxSort; label: string }[] = [
   { id: 'dex', label: 'ui.team.sortDex' },
   { id: 'level', label: 'ui.team.sortLevel' },
+  // The stat's own name, so the button says exactly what the sheet's Speed tile says.
+  { id: 'speed', label: 'ui.stat.speed.label' },
   { id: 'type', label: 'ui.team.sortType' },
   { id: 'newest', label: 'ui.team.sortNewest' },
 ]
@@ -17,17 +19,21 @@ const SORTS: { id: BoxSort; label: string }[] = [
  * A sorted copy — the caller's array is never touched. Every order falls back until nothing is left to chance, so
  * two Pokémon of the same species read the same way wherever they appear: lowest number first within a type, and
  * the strongest first within a species. Only "newest" stops at one key, since no two catches share an instant.
+ * Speed is the species' (what the battle compares to decide who acts first), fastest first.
  */
 export function sortBox(box: readonly PokemonInstance[], sort: BoxSort, data: GameData): PokemonInstance[] {
   const type1 = (p: PokemonInstance) => data.species[p.dex]?.type1 ?? ''
+  const speed = (p: PokemonInstance) => data.species[p.dex]?.speed ?? 0
   return [...box].sort((a, b) =>
     sort === 'level'
       ? b.level - a.level || a.dex - b.dex
-      : sort === 'type'
-        ? type1(a).localeCompare(type1(b)) || a.dex - b.dex || b.level - a.level
-        : sort === 'newest'
-          ? b.caughtAt - a.caughtAt
-          : a.dex - b.dex || b.level - a.level,
+      : sort === 'speed'
+        ? speed(b) - speed(a) || a.dex - b.dex || b.level - a.level
+        : sort === 'type'
+          ? type1(a).localeCompare(type1(b)) || a.dex - b.dex || b.level - a.level
+          : sort === 'newest'
+            ? b.caughtAt - a.caughtAt
+            : a.dex - b.dex || b.level - a.level,
   )
 }
 
@@ -43,7 +49,10 @@ export function BoxSortPicker({ sort, onChange }: { sort: BoxSort; onChange: (s:
           type="button"
           aria-pressed={sort === s.id}
           onClick={() => onChange(s.id)}
-          className={cx('pixel-btn min-h-[44px] min-w-[44px] px-2 text-lg md:min-h-[32px] md:min-w-0', sort === s.id ? 'bg-gold' : 'bg-panel')}
+          className={cx(
+            'pixel-btn min-h-[44px] min-w-[44px] px-2 text-lg md:min-h-[32px] md:min-w-0',
+            sort === s.id ? 'bg-gold' : 'bg-panel',
+          )}
         >
           {t(s.label)}
         </button>

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { teamOf, type PokemonInstance } from '@/engine'
 import { useT } from '@/i18n/react'
 import { BoxSortPicker, sortBox, type BoxSort } from '@/components/BoxSort'
+import { StatChip } from '@/components/StatChip'
 import { PixelIcon } from '@/components/icons'
 import { MonCard } from '@/components/MonCard'
 import { PixelButton } from '@/components/PixelButton'
@@ -121,7 +122,16 @@ export function CenterView() {
         <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {box.map((p) => (
             <li key={p.id}>
-              <MonCard inst={p} onClick={() => open(p)} />
+              {/* Sorted by speed, each card says its speed, the reason for its place. */}
+              <MonCard
+                inst={p}
+                onClick={() => open(p)}
+                badge={
+                  sort === 'speed' && (
+                    <StatChip stat="speed" value={data.species[p.dex]?.speed ?? 0} size={12} className="text-sm" />
+                  )
+                }
+              />
             </li>
           ))}
         </ul>

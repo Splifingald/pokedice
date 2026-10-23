@@ -22,6 +22,11 @@ describe('sortBox', () => {
     expect(keys(sortBox(box, 'level', data))).toEqual(['7/50', '1/40', '4/20', '1/5'])
   })
 
+  it('by speed, fastest first, then by number and level', () => {
+    // Charmander 6, Squirtle 5, both Bulbasaur 4: the stronger Bulbasaur first, as in the Pokédex-number sort.
+    expect(keys(sortBox(box, 'speed', data))).toEqual(['4/20', '7/50', '1/40', '1/5'])
+  })
+
   it('by type, then by number within a type', () => {
     // fire (Charmander), grass (both Bulbasaur), water (Squirtle) — the type keys, alphabetically. Within grass,
     // the same species orders by level, exactly as the Pokédex-number sort does.

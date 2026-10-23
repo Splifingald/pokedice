@@ -446,6 +446,10 @@ Players shouldn't have to make many requests:
   admin (§20) is not on the shelf at all. **Mega Gems** (docs/35) have a shelf of their own under the stock
   (`GemShelfView`): each once, the Mega's icon and name under the gem, ₽ or HELD, a line while it's shut here, INFO at
   its foot; the bag lists the gems held, "Can't sell".
+- **Sorting the Box** (`sortBox`, the same orders on the Team screen and in the Center's PC): No., Level, Speed,
+  Type (the Center only, the Team screen has its type dropdown) and Newest. Speed is the species' (what decides who
+  acts first in battle), fastest first; while it's picked, each tile or card shows its speed chip, so the order has
+  its reason in sight. Sorting is a way of looking at the Box, not a feature: no switch, no rules pop-up (§20).
 - **Search resets filters**: typing in a search shows everything that matches (the Pokédex's filter goes back to All).
   A Pokédex number finds any entry; a name only finds what has been caught.
 - **Grey plates** (`#e3e8f0`, `#f1f4f9`) take ink text: muted grey on them is under 4.5:1.

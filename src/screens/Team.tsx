@@ -24,6 +24,7 @@ import { PixelButton } from '@/components/PixelButton'
 import { TeamSwapActions } from '@/components/TeamSwapActions'
 import { SearchField, Seg } from '@/components/Segmented'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
+import { StatChip, statLabel } from '@/components/StatChip'
 import { countdown } from '@/lib/format'
 import { pushToast, useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
@@ -140,6 +141,7 @@ export function TeamScreen() {
                 options={[
                   { id: 'dex', label: t('ui.team.sortDex') },
                   { id: 'level', label: t('ui.team.sortLevel') },
+                  { id: 'speed', label: statLabel('speed') },
                   { id: 'newest', label: t('ui.team.sortNewest') },
                 ]}
               />
@@ -157,11 +159,20 @@ export function TeamScreen() {
             const fossil = p.revivesAt != null && p.fossil ? data.items[p.fossil] : undefined
             const reviving = p.revivesAt != null
             const left = reviving ? Math.max(0, p.revivesAt! - now) : 0
-            const sub = reviving
-              ? left > 0
-                ? countdown(left)
-                : t('ui.mon.soon')
-              : t('ui.common.level.short', { n: p.level })
+            // Sorted by speed, each tile says its speed: an order you can't see the reason for reads as random.
+            const speed = sort === 'speed' ? data.species[p.dex]?.speed : undefined
+            const revive = left > 0 ? countdown(left) : t('ui.mon.soon')
+            const level = t('ui.common.level.short', { n: p.level })
+            const sub = reviving ? (
+              revive
+            ) : speed != null ? (
+              <span className="inline-flex items-center gap-1.5">
+                {level}
+                <StatChip stat="speed" value={speed} size={10} />
+              </span>
+            ) : (
+              level
+            )
             return (
               <li key={p.id}>
                 <MonTile
@@ -173,9 +184,8 @@ export function TeamScreen() {
                     name(p),
                     p.nickname ? speciesName(p) : null,
                     p.shiny ? t('ui.mon.shiny') : null,
-                    reviving
-                      ? t('ui.mon.revivesIn', { time: sub })
-                      : t('ui.common.level.short', { n: p.level }),
+                    reviving ? t('ui.mon.revivesIn', { time: revive }) : level,
+                    speed != null ? `${statLabel('speed')} ${speed}` : null,
                   ]
                     .filter(Boolean)
                     .join(', ')}
