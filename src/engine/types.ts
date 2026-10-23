@@ -892,6 +892,8 @@ export interface GameConfig {
   dayNight: { access: EventAccess }
   /** Idle mode and the play styles (docs/36): its switch. Migration 0068 inserts the same row. */
   idleMode: { access: EventAccess }
+  /** Recorded dice throws (docs/37): its switch. Purely visual. Migration 0069 inserts the same row. */
+  diceThrows: { access: EventAccess }
   /** Double battles (docs/33): their switch, the regions that have them and the wild odds. */
   doubleBattles: DoubleBattlesConfig
   /**

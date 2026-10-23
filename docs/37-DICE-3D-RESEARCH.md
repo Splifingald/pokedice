@@ -1,7 +1,8 @@
 # Pokédice: 3D and more natural dice animations (research)
 
-*Research only. Nothing in the repo was changed. Written 2026-10-23. Bundle sizes were measured here with esbuild
-(minify, tree-shaken, ESM) and `gzip -9` on the npm versions current today. They are not bundlephobia figures.*
+*Research written 2026-10-23; phase 1, the recorded throws, is now in the game behind its switch: see
+[§7 Implemented](#7-implemented-recorded-throws-phase-1). Bundle sizes in §1–§6 were measured with esbuild (minify,
+tree-shaken, ESM) and `gzip -9` on the npm versions current that day. They are not bundlephobia figures.*
 
 ---
 
@@ -230,6 +231,103 @@ Results:
   three (E), or need React 19 (G).
 - **Testability.** Recordings plus a pure solver can be unit-tested in vitest: "every throw × face lands on that face".
   Live physics can't be tested that way.
+
+---
+
+## 7. Implemented: recorded throws (phase 1)
+
+Option C, as the Dice Lab prototype's third panel (`docs/37-dice/dice-lab.html`) showed it, ported into modules.
+Phase 0 (the keyframe bounce) was skipped: with the switch off, the dice tumble exactly as before.
+
+### 7.1 What a player sees
+
+Every die thrown with a roll key (the battle tray, yours and the foe's; the catch die and the Bait's; the pickaxe; Trick
+or Treat; the title; the Kitchen Sink) comes in from about three dice above its spot as a small pixel cube: it tumbles,
+bounces one to three times with a click each, slides and settles flat, square and upright on the face the engine
+rolled. Then the normal die takes over in the same frame, and only then do its rings (a pick, a combo, a status) and
+its lift show. Rerolling the picked dice throws only those: they are the dice with fresh roll keys. A Mega's extra die
+throws alone, the same way.
+
+### 7.2 How it is built
+
+| File | Pure? | Role |
+|---|---|---|
+| `scripts/bake-dice.ts` (`pnpm bake:dice`) | dev | The prototype's rigid-body simulation (a unit cube, a floor, impulses at its corners; no dependency). Seeded throws, released high and far back. Keeps a throw only if it settles flat (up-normal ≥ 0.99), stays in its lane (|x| ≤ 0.62 die, thrown from behind, never more than 0.35 die past its spot) and lasts **0.45–0.70 s** in all. Turns the whole path about the vertical so the die rests square, eases the last few degrees of tilt out over 8 frames, snaps the last pose to an exact cube symmetry and holds it 4 frames (the hand-over). Writes `src/fx/dice/throws.json`: 48 throws, 30 frames a second (slerped in between), positions × 100 and quaternions × 1000 as whole numbers, each frame as its change from the one before, and the contacts worth a sound in ms. The same file on every run (same md5) |
+| `src/fx/dice/math.ts`, `pips.ts` | pure | Vectors, quaternions and 3×3 matrices (the playback ones write into scratch, no allocation); the pip layout, moved out of `Die.tsx` so the DOM die and the cube draw the same face |
+| `src/fx/dice/solve.ts` | pure | `planThrow(set, key, face, level)`: the recording comes from a **hash of the die's roll key** (FNV-1a with a final mix; never the engine's RNG), skipping the recordings other dice in the air are playing, plus a mirror bit. `R = Mfᵀ · goal`, where goal puts the face's normal up and its art's top towards the top of the screen: a rotation of the cube onto itself, so the turned recording is the same physical throw. `samplePlan` gives the pose at any moment, exactly the resting pose from the held frames on |
+| `src/fx/dice/cube.ts` | pure | The renderer, into a canvas-sized pixel buffer at **1 pixel = 1 CSS px, drawn in 2 px blocks** (the art pixel) whose grid sits on the resting die's corner. Orthographic top-down camera with the prototype's fake perspective (× (1 + 0.09·height)) and lift (0.55·height up the screen). Each visible face is an exact affine image of its face art, sampled per block; three stepped shades from the light (top left), ink untouched; a one-block ink outline round the silhouette; an ordered-dither floor shadow that shrinks and thins with height. Face art is built once per look from the same data as `Die.tsx`: the type colour (or a die's own colour, the Bait's), `.die`'s light and dark rows (none under 40 px, as `.die-mini`), the 2 px ink edge, the pips at `pipLayout`, a number in the pixel font, a status face's badge folded inside its top right corner, a locked die's 80 % |
+| `src/fx/dice/player.ts` | DOM | Lazy (with the JSON). **One requestAnimationFrame loop** for every die in the air: it reads every die's place first, then draws. Each die has its own small canvas (3 dice wide, 5 tall), `position: fixed` over its resting die, `aria-hidden`, `pointer-events: none`, `image-rendering: pixelated`, under the top bar (z 35; over the pop-up when the die is in one). It clears and uploads only what the last frame and this one drew. A `land` click per contact, at most one every 40 ms across the tray |
+| `src/components/useDieThrow.ts` | React | Used by `Die.tsx`, whose props are unchanged. With the switch on and a roll key, the face (`.die`) is hidden with `visibility` (its place and the button's focus kept) and the throw starts; on landing it shows again in the same frame as the canvas goes. A pick's or a combo's lift waits for the landing. The chunk is fetched as soon as any die renders with the switch on; a first throw waits at most 400 ms for it, then the die simply shows |
+
+**The last frame is the resting die.** The held pose is not sampled in blocks: the face art is copied pixel for pixel
+onto the die's spot, with `.die-wrap`'s 3 px drop shadow under it, so the hand-over can't be seen. Where `pipLayout`
+puts a pip on an odd pixel (44, 50 and 54 px dice), the blocks in flight can't, so those pips move by 1 px as the die
+comes to rest, inside the throw, never at the hand-over. A status face's ring and its badge outside the corner are the
+DOM die's (a filter round the whole die): they appear on landing, with the badge moving from inside the corner to its
+place, which reads as the status lighting up.
+
+**Timing.** The battle's roll step is 750 ms (a reroll's 700) × pace (`useBattleAnimator.ts`); the throws last 0.53–0.70 s
+at 1×, plus the tray's 50 ms stagger per die: as long as the old 0.6 s tumble with its stagger. The throw plays at the
+battle's pace: auto battles (`AUTO_PACE`, ⅔) and Versus play faster, and idle mode's autopilot plays its fights as auto
+battles, capped at `short` (`MotionCap`), so its dice play only their last 0.32 s at ⅔: about 0.2 s.
+
+### 7.3 Motion levels and sound
+
+| Level | Throw |
+|---|---|
+| `full` | The whole recorded throw at the battle's pace, a click per bounce |
+| `short` (the setting, auto battles, Versus) | The last 0.32 s: the last bounce and the settle |
+| The OS asks for less motion (`calm`) | No tumble: the resting face 2 art pixels above its shadow, then 1, then down (67 ms each). No click |
+| `off` (admin) | At rest at once, as before |
+
+### 7.4 The switch, and no rules pop-up
+
+Admin → Config → **Dice throws**: Off / On for admin / On for everyone, **Off by default** (`config.diceThrows`,
+`diceThrowsOn`). Off: the dice tumble as before (the framer tween, untouched). It changes how dice look, never what they
+roll, so the game alone reads it: no server function acts for it, and there is nothing for the server to check.
+It is purely visual, with nothing to learn or do, so it has **no rules pop-up and no INFO button** (§20 of the UI
+guidelines: like a passive announcement).
+
+### 7.5 Kitchen Sink
+
+`/kitchen-sink` → "Dice throws", whatever the switch says (`DiceLabContext`): a tray at each motion level (full, short,
+the calm drop, off) with THROW ALL, a reroll of the picked dice only and slow motion (¼); frozen frames at 0.10, 0.25,
+0.40 and 0.55 s; every status face; the foe's 40 px dice; the dice at rest; and under each tray which recording each die
+plays (its number, mirrored or not, the face it would show unturned, its length).
+
+### 7.6 Size and cost
+
+Measured with `vite build`: the lazy chunk (`player-*.js`: the throws, the solver, the renderer, the loop) is
+**35.7 kB, 14.8 kB gzipped**; the main chunk grows by 1.9 kB (0.7 kB gzipped). No new dependency. At run time a die's
+canvas is about 160 × 270 px for a 54 px die, drawn only while it flies; a frame samples one block per art pixel of
+the cube's box (at most about 1,600 for a 54 px die, against three faces) and allocates nothing but the browser's
+own `DOMRect`s.
+
+### 7.7 Setting it up
+
+1. Deploy the client (the switch is Off: nothing changes for anyone).
+2. Run `supabase/migrations/0069_dice_throws.sql` (the switch's row, Off, and the content version + 1; safe to run
+   again): https://github.com/Splifingald/pokedice/blob/claude/gifted-cray-t73mqb/supabase/migrations/0069_dice_throws.sql
+   (the branch this was made for; the same path on whichever branch it is pushed to). `supabase/seed.sql` carries it too
+   (inlined). Without it, the admin's switch still saves (it inserts the row).
+3. Admin → Config → **Dice throws**: **On for admin** to try it signed in, **On for everyone** to open it. Publish.
+
+To record new throws (other ranges, more of them), change `scripts/bake-dice.ts` and run `pnpm bake:dice`; the tests
+check whatever it writes.
+
+### 7.8 Tests
+
+- `tests/dice-throws.test.ts`: every throw × every face × mirror ends with that face up and its art upright, and the
+  frame before the held pose already shows that face (no snap); R is a cube symmetry; the same key plays the same
+  throw; eight dice of a roll never share a recording, over 50 rolls; keys spread over the recordings and both
+  mirrors; `short` is the end of the same throw, `calm` a two-step drop with no clicks; every recording is 0.45–0.70 s,
+  in its lane and ends on an exact cube pose; the resting pose is drawn pixel for pixel on the die's spot; a frame in
+  the air is whole 2 px blocks with an ink outline; the switch (off, admin only, everyone).
+- `tests/dice-throws-sql.test.ts`: migration 0069 on PGlite (Off, the version + 1, the admin's choice kept on a second
+  run, inlined in `seed.sql`).
+- `e2e/dice-throws.spec.ts`: a real battle on a 360×640 phone. Switch on: the dice land with no canvas left; a reroll
+  of one picked die gives one canvas, that die's face hidden (its button still there) and the others showing; then
+  the canvas goes, the face shows, the kept dice keep their names. Switch off: no canvas ever.
 
 ---
 

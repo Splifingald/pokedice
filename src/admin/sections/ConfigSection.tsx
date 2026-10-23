@@ -580,6 +580,30 @@ function IdleModeBox() {
   )
 }
 
+/**
+ * Recorded dice throws (docs/37): the dice land as replayed physics throws, a pixel cube turned to land on the engine's
+ * face. Purely visual, so the game alone reads it. Off: the dice tumble as they always have.
+ */
+function DiceThrowsBox() {
+  const [raw, setRaw] = useConfigRow('diceThrows')
+  const access = raw?.access ?? 'off'
+  return (
+    <Box
+      title="Dice throws"
+      icon="dice"
+      hint="On: every thrown die (battles, catches, the Bait, the pickaxe, Trick or Treat, the title) is a little pixel cube thrown into its spot, bouncing and settling on the face the game rolled. Short animations play only its last bounce; a device asking for less motion gets a small drop with no spin. Off: the dice tumble as before. It changes how dice look, never what they roll."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Dice throws</span>
+        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="Dice throws: who has them" />
+        <span className="text-base text-muted">
+          {accessNote(access, 'Open to every player.', 'Off: the dice tumble as before.')}
+        </span>
+      </div>
+    </Box>
+  )
+}
+
 /** Trainer looks (docs/31): unlockable looks from every region in place of the free Kanto and Johto list. */
 function LooksBox() {
   const [raw, setRaw] = useConfigRow('looks')
@@ -1309,6 +1333,8 @@ export function ConfigSection() {
       <DayNightBox />
 
       <IdleModeBox />
+
+      <DiceThrowsBox />
 
       <ExtremeBox />
 

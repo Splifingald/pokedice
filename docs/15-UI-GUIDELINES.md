@@ -151,7 +151,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `SidePanel` | The trainer menu drawer | From the right |
 | `HpBar` | HP | Track with ink ring; the fill drains over 700 ms, the trail waits 280 ms then follows over 900 ms; numbers for your own, words for a foe's (screen readers) |
 | `TypeBadge`, `TypeSwatch` | A type | `md` 20 px, `sm` 16 px (plates) |
-| `Die` | A die face | Square corners; pips on whole pixels (`pipLayout`: one even pip size, three fixed columns) at any size; ink pips on light dice, white on dark; status face = white + status ring and a round badge with its icon; `selected` = lifted 6 px with a red outline; `combo` = a gold ring; values without a pip layout (0, 7, 8…) show their number, centred on the face |
+| `Die` | A die face | Square corners; pips on whole pixels (`pipLayout`: one even pip size, three fixed columns) at any size; ink pips on light dice, white on dark; status face = white + status ring and a round badge with its icon; `selected` = lifted 6 px with a red outline; `combo` = a gold ring; values without a pip layout (0, 7, 8…) show their number, centred on the face; with a `rollKey` it tumbles in, or, with the dice throws on (docs/37), is thrown in as a pixel cube and lands on its face (`useDieThrow`; on `/kitchen-sink` at every motion level, frozen mid-throw) |
 | `PageHead` / `Wallet` | A tab's title row | Tab icon, the one `<h1>` (`as="h2"` where the page has its own), a count ("3/3", "81/151") or the gold as a navy plate |
 | `SheetSection` | A titled block inside a sheet | 22 px heading, a muted hint on the same row, extra controls |
 | `NicknameButton` / `NicknameModal` | Giving one of your Pokémon a nickname (its sheet's title) | The name and a pencil, 44 px tall on phones; the dialog with the field (empty: the species as placeholder; named: selected), the 0/12 counter, the trade line only where trades exist, Cancel / SAVE (§13) |
@@ -250,6 +250,12 @@ House rules for every effect and timeline:
 - **No screen flash faster than 3 a second.**
 - Timelines run at **60 fixed steps a second** and fire their cues (message, HP, status, form…) at exact times.
 - Durations: a button press 60 ms in 2 steps; a sheet rises in 220 ms; HP 700 ms / 280 ms / 900 ms; dice tumble 600 ms.
+- **Dice** (docs/37 §7): without the dice throws, a die tumbles in over 600 ms. With them (the admin's switch), a die
+  is thrown in as a pixel cube replaying a recorded throw (0.53–0.70 s × pace, 2 px art pixels, an ink outline, a
+  dithered shadow, a click per bounce) that lands square and upright on the engine's face, then the DOM die takes over
+  in the same frame; its rings and its lift come with the landing. `short` plays the last bounce and settle (0.32 s);
+  the OS's reduced motion, a two-step drop with no spin and no click; `off`, the die at rest at once. The animation
+  never picks a face: it is turned to land on the one the engine rolled.
 - Pixel motion steps (`steps()`), it doesn't glide, except HP bars and sheets.
 
 **Timelines** (`src/fx`, no React): a timeline is `setup / step / draw / cues` on a 240×160 stage. A screen plays one
@@ -695,6 +701,8 @@ Two rules for every feature that adds something players can do (an event, a mode
   Notifications) follow it.
 - **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
+- **A purely visual change** (the dice throws, docs/37): the switch, but no rules pop-up and no INFO: it only changes
+  how something already there looks, so there is nothing to learn or do.
 - **Items with a switch** (`game_config.itemSwitches`, `itemOn`): the Link Cable and the Bait (docs/25). Off: not sold,
   not found, not usable, never offered; bags keep theirs. An item is explained where it's met (its description in the
   Mart and the bag; the Bait's die and odds on the catch prompt), so items have no rules pop-up of their own.
