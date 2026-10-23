@@ -88,8 +88,8 @@ export const choice: Act = {
     const st = labTime(c)
     r.at(st, FROM)
     // The lab picture under the scene, as PartnerMoment lays it (the 240×160 stage, drawn 400 px wide), the camera
-    // closing in on the middle ball.
-    const cam: Cam = camLerp({ x: 120, y: 80, z: 8 }, { x: SEAT.x, y: SEAT.y, z: 17 }, inOut(span(c, ZOOM[0], ZOOM[1])))
+    // closing in on the middle ball. Its two zooms put 5, then 10, screen pixels on each picture pixel: crisp.
+    const cam: Cam = camLerp({ x: 120, y: 80, z: 25 / 3 }, { x: SEAT.x, y: SEAT.y, z: 50 / 3 }, inOut(span(c, ZOOM[0], ZOOM[1])))
     drawStage(g, null, [], cam, undefined, { ground: '#2a3150' })
     const ox = Math.round(OW / 2 - cam.x * cam.z)
     const oy = Math.round(OH / 2 - cam.y * cam.z)

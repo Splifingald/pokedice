@@ -1,13 +1,13 @@
 // Act 1, the title (0 → 4 s): eight pixel-art dice thrown onto a dark floor patterned with Poké Balls roll right to
 // left and stop, a little crooked, on the letters P O K É D I C E, under a still camera. The gold combo ring, a long
-// hold on the word with "A dice battler" under it, then the É die flies at the camera and its yellow fills the screen.
+// hold on the word with "Roll · Battle · Catch" under it, then a side swap into the first fight.
 import { canvas, ellipseLine } from '@/fx/pixel'
 import { ACT, hit } from '../lib/clock'
 import { play } from '../lib/audio'
 import { pokeballBackdrop } from '../lib/backdrop'
-import { drawDie, drawShadow, faceTexture, FACES, project, restOn, throwAt, type DieDraw, type Throw, type View } from '../lib/cube'
-import { GOLD, OH, OW, span, text, TYPE, wash } from '../lib/draw'
-import { sharpDraw } from '../lib/stage'
+import { drawDie, drawShadow, FACES, project, restOn, throwAt, type DieDraw, type Throw, type View } from '../lib/cube'
+import { GOLD, inOut, OH, OW, span, text, TYPE, wash } from '../lib/draw'
+import { journey } from './journey'
 import type { Act } from '../main'
 
 // Twice the art resolution of the stage acts (640×360 shown ×3): the turning letters step half as coarsely.
@@ -75,47 +75,53 @@ export function drawLogoScene(t: number, v: View, bgT: number, { combo = -1, fla
 
 const T0 = ACT.title[0]
 const COMBO = 1.5
-const FLY = 3.72
+const SWAP = 3.6
 
 export const title: Act = {
   range: ACT.title,
   load: async () => {},
   render(g, T) {
     const t = T - T0
-    // A still camera: only the dice move.
-    const v: View = { tilt: (60 * Math.PI) / 180, cs: 2.15, cx: LW / 2, cy: LH * 0.52 }
-    const { dice } = drawLogoScene(t, v, t, { combo: COMBO, flash: COMBO })
-    // The combo: a gold ring rushes out over the floor, in art pixels.
-    if (t >= COMBO && t < COMBO + 0.6) {
-      const p = span(t, COMBO, COMBO + 0.6)
-      const c = project(v, [0, 0, 0])
-      const r = 60 + 560 * p
-      low.g.globalAlpha = Math.round((1 - p) * 4) / 4
-      for (const k of [0, 1, 2]) ellipseLine(low.g, c.x, c.y, r + k, (r + k) * Math.sin(v.tilt), GOLD)
-      low.g.globalAlpha = 1
-    }
-    if (hit(T0 + 0.02)) play('rattle')
-    dice.forEach((d) => d.landings.slice(0, 2).forEach((l) => hit(T0 + l) && play('land')))
-    if (hit(T0 + COMBO)) play('levelup')
-    g.imageSmoothingEnabled = false
-    g.drawImage(low, 0, 0, LW * LK, LH * LK)
-    // "A dice battler", under the row, for the long hold.
-    if (t >= 2.0) {
-      const a = Math.round(span(t, 2.0, 2.3) * 4) / 4
-      text(g, 'A dice battler', OW / 2, OH * 0.74, { size: 96, font: 'Jersey 15', align: 'center', ow: 7, alpha: a, spacing: 8 })
-    }
-    // The É die flies at the camera: its face fills the screen.
-    if (t >= FLY) {
-      const p = span(t, FLY, 4)
-      const d = dice[3]!
-      const c = project(v, d.pos)
-      const s = 170 + 2900 * p ** 2
+    // The side swap: the title slides out to the left as the first fight, already in its still shot, slides in.
+    const swap = Math.round(inOut(span(t, SWAP, ACT.title[1])) * OW)
+    g.save()
+    g.translate(-swap, 0)
+    drawTitle(g, t)
+    g.restore()
+    if (swap > 0) {
       g.save()
-      g.translate(c.x * LK + (OW / 2 - c.x * LK) * p, c.y * LK + (OH / 2 - c.y * LK) * p - 300 * Math.sin(p * Math.PI))
-      g.rotate(p * 2.4)
-      sharpDraw(g, faceTexture(TYPE.electric, 'É', SIZE), -s / 2, -s / 2, s, s)
+      g.translate(OW - swap, 0)
+      g.beginPath()
+      g.rect(0, 0, OW, OH)
+      g.clip()
+      journey.render(g, ACT.journey[0])
       g.restore()
     }
     if (t < 0.12) wash(g, '#000000', 1 - t / 0.12)
   },
+}
+
+function drawTitle(g: CanvasRenderingContext2D, t: number) {
+  // A still camera: only the dice move.
+  const v: View = { tilt: (60 * Math.PI) / 180, cs: 2.15, cx: LW / 2, cy: LH * 0.52 }
+  const { dice } = drawLogoScene(t, v, t, { combo: COMBO, flash: COMBO })
+  // The combo: a gold ring rushes out over the floor, in art pixels.
+  if (t >= COMBO && t < COMBO + 0.6) {
+    const p = span(t, COMBO, COMBO + 0.6)
+    const c = project(v, [0, 0, 0])
+    const r = 60 + 560 * p
+    low.g.globalAlpha = Math.round((1 - p) * 4) / 4
+    for (const k of [0, 1, 2]) ellipseLine(low.g, c.x, c.y, r + k, (r + k) * Math.sin(v.tilt), GOLD)
+    low.g.globalAlpha = 1
+  }
+  if (hit(T0 + 0.02)) play('rattle')
+  dice.forEach((d) => d.landings.slice(0, 2).forEach((l) => hit(T0 + l) && play('land')))
+  if (hit(T0 + COMBO)) play('levelup')
+  g.imageSmoothingEnabled = false
+  g.drawImage(low, 0, 0, LW * LK, LH * LK)
+  // What the game is, in three words, under the row for the long hold.
+  if (t >= 2.0) {
+    const a = Math.round(span(t, 2.0, 2.3) * 4) / 4
+    text(g, 'Roll · Battle · Catch', OW / 2, OH * 0.74, { size: 96, font: 'Jersey 15', align: 'center', ow: 7, alpha: a, spacing: 8 })
+  }
 }

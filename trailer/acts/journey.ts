@@ -29,7 +29,7 @@ const SCYTHER = mon(123)
 const MEWTWO = mon(150)
 
 // The beats, in seconds from the act's start.
-const F1 = { throw: 0.7, pops: 1.2, damage: 1.65, attack: 2.8, faint: 3.7, level: 4.0, white: 4.6 }
+const F1 = { throw: 0.7, pops: 1.2, damage: 1.65, attack: 2.25, faint: 3.15, level: 3.6, white: 4.6 }
 // The evolution: the game's, from the silhouette's morph on, 3× its speed (1.5 s).
 const EVO = { from: 5, to: 6.5, tl: 2.9, speed: 3 }
 const EVOLVED = EVO.from + (6.37 - EVO.tl) / EVO.speed

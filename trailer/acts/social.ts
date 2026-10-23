@@ -31,7 +31,7 @@ const BULBASAUR = mon(1)
 const MEWTWO = mon(150)
 
 // Charmander (0 → 3.8)
-const A = { throw: 0.25, pops: 0.78, damage: 1.15, attack: 1.9, faint: 2.75, white: 3.45 }
+const A = { throw: 0.25, pops: 0.78, damage: 1.15, attack: 1.6, faint: 2.45, white: 3.45 }
 const CA = contactOf(A.attack, 0.7, 1.6)
 // The evolution (3.8 → 5.3): the game's, from the silhouette's morph on, 3× its speed.
 const E = { from: 3.8, tl: 2.9, speed: 3 }

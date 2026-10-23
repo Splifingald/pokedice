@@ -104,11 +104,11 @@ export class RaidIntroScene {
     this.last = T
     const g = this.cv.g
     const r = this.r
-    // The Pokémon at its own size, doubled when it has room: whole art pixels, never the stage's shrunk copy.
+    // Every raid Pokémon at its own size, one sprite pixel to one art pixel: they all fit, and none blurs.
     const full = nativeFrameOf(this.key, T) ?? spriteFrame(this.key) ?? null
     const sil = full && tinted(full, '#0b0e1e')
     const glow = full && tinted(full, '#ffbe2e')
-    const K = full && Math.max(full.width, full.height) * 2 <= 190 ? 2 : 1
+    const K = 1
     const sw = Math.round((full?.width ?? 64) * K)
     const sh = Math.round((full?.height ?? 64) * K)
     const shake = T > 2.75 && T < 3.25 ? Math.round(Math.sin(T * 97) * 4 * (3.25 - T) * 2) : 0
@@ -272,34 +272,25 @@ export class RaidIntroScene {
   }
 }
 
+/**
+ * A hazard tape across the screen, sliding in and out: level, with its stripes laid pixel by pixel and the words in the
+ * bitmap font, so every edge stays sharp at any scale (the game tilts its tapes; tilted pixel art can't stay sharp).
+ */
 function tape(g: CanvasRenderingContext2D, y: number, dir: number, inP: number, outP: number, words: string, T: number) {
   const off = Math.round(dir * (1 - inP) * -400 + dir * outP * 400)
-  g.save()
-  g.translate(RW / 2 + off, y)
-  g.rotate(-0.12)
+  const top = y - 10
   g.fillStyle = '#24304f'
-  g.fillRect(-260, -11, 520, 22)
-  // Hazard stripes, scrolling.
-  g.beginPath()
-  g.rect(-258, -9, 516, 18)
-  g.clip()
+  g.fillRect(off - 10, top - 1, RW + 20, 22)
+  const shift = Math.floor(T * 60 * dir)
   g.fillStyle = '#ffbe2e'
-  const shift = Math.round((T * 60 * dir) % 16)
-  for (let x = -280; x < 280; x += 16) {
-    g.beginPath()
-    g.moveTo(x + shift, -9)
-    g.lineTo(x + 8 + shift, -9)
-    g.lineTo(x + shift, 9)
-    g.lineTo(x - 8 + shift, 9)
-    g.closePath()
-    g.fill()
-  }
+  for (let r = 0; r < 20; r++)
+    for (let x = -10; x < RW + 10; x++) if ((((x - off + r + shift) % 16) + 16) % 16 < 8) g.fillRect(x, top + r, 1, 1)
   const w = textWidth(words, 1)
+  const x0 = Math.round(RW / 2 + off - w / 2)
   g.fillStyle = '#24304f'
-  g.fillRect(-w / 2 - 5, -7, w + 10, 14)
+  g.fillRect(x0 - 6, top + 3, w + 12, 14)
   g.fillStyle = '#ffbe2e'
-  g.fillRect(-w / 2 - 5, -7, w + 10, 1)
-  g.fillRect(-w / 2 - 5, 6, w + 10, 1)
-  text(g, words, -w / 2, -3, '#ffe7a8', null, 1)
-  g.restore()
+  g.fillRect(x0 - 6, top + 3, w + 12, 1)
+  g.fillRect(x0 - 6, top + 16, w + 12, 1)
+  text(g, words, x0, top + 6, '#ffe7a8', null, 1)
 }

@@ -47,10 +47,11 @@ function cut(image: CanvasImageSource, s: StageSprite, k: number): Canvas {
 const natives = new Map<string, Anim>()
 
 /**
- * The hero's line, seen from behind, at its own size: the game shrinks Charizard to 80 art pixels; the trailer keeps
- * every one whole (one sprite pixel, one art pixel), so Charmander, Charmeleon and Charizard grow as they should.
+ * Every Pokémon at its own size, one sprite pixel to one art pixel: the game shrinks anything over 80 art pixels
+ * (Mewtwo, Charizard, Dragonite…), and any shrink blurs or drops pixels. All the trailer's Pokémon fit its stages at
+ * full size; only one past this (none today) would still be shrunk.
  */
-const HEROES = new Set([4, 5, 6, 10034])
+const NATIVE_MAX = 110
 
 /** Load a Pokémon's view for the canvas, with its animation when Showdown draws one. Resolves to its key. */
 export async function loadMon(dex: number, back = false, shiny = false): Promise<string> {
@@ -71,7 +72,7 @@ export async function loadMon(dex: number, back = false, shiny = false): Promise
     let t = 0
     for (let i = 0; i < n; i++) {
       const { image } = await dec.decode({ frameIndex: i })
-      frames.push(cut(image, s, back && HEROES.has(dex) ? 1 : s.k))
+      frames.push(cut(image, s, Math.max(s.artW, s.artH) <= NATIVE_MAX ? 1 : s.k))
       full.push(cut(image, s, 1))
       starts.push(t)
       t += Math.max(0.02, (image.duration ?? 100_000) / 1e6)

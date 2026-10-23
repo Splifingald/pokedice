@@ -109,11 +109,12 @@ export const montage: Act = {
       drawStage(g, null, [layer], { x: 160, y: 90, z: 6 })
     } else if (v < MEGA[1]) {
       const layer = playAt(m.mega, v, MEGA[0], 1.2, 1.4)
-      drawStage(g, picture('league'), [layer], { x: 112, y: 92, z: 8 })
+      // Centred on the stage: the timeline's dimming covers the whole frame.
+      drawStage(g, picture('league'), [layer], { x: 120, y: 83, z: 8 })
       caption(g, 'Charizard Mega Evolved into Mega Charizard X!', v, MEGA[0] + 2.15, MEGA[1])
     } else if (v < GMAX[1]) {
       const layer = playAt(m.gmax, v, GMAX[0], 1.4, 1.4)
-      drawStage(g, picture('haunted'), [layer], { x: 108, y: 93, z: 8 })
+      drawStage(g, picture('haunted'), [layer], { x: 120, y: 88, z: 8 })
       caption(g, 'Gengar Gigantamaxed!', v, GMAX[0] + 2.1, GMAX[1])
     } else if (v < BOSSES[1]) {
       // Four bosses at once, their entrances a beat apart so the reveals cascade.

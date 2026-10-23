@@ -30,6 +30,10 @@ DISCORD COMMUNITY instead of the Discord link, and a better Discord mark; every 
   the type chart's ×2 (Fire on Grass, Fire on Bug); the third is neutral anyway. The captions are the game's own
   battle lines (`strings.csv`).
 - **Always the battle area** in the fights and the big moments; menus only in the features, as cut-ins.
+- **Nothing blurry.** Every Pokémon is drawn at its sprite's own size (the game shrinks anything over 80 px, which
+  blurs or drops pixels; every Pokémon here fits at full size), the area pictures and the lab at a whole number of
+  screen pixels per picture pixel, the raid openings' Pokémon at 1×, and their hazard tapes level and laid pixel by
+  pixel. Every stage shot is centred on the stage, so a timeline's dimming covers the whole frame.
 - **Your Pokémon in full view.** In the game, your Pokémon's feet sit 4 px below the stage (a back view cut by the
   panel under it). In a video the bottom of the frame is the dice's band and a player's control bar, so the trailer
   stands it 12 px higher, whole (`liftHero`, fight.ts), keeps the dice band lighter, and draws Charmander, Charmeleon
@@ -81,8 +85,8 @@ face; the letters are the game's own bitmap font (three texels a dot), so their 
 |---|---|---|
 | 0–1.4 | The dice come in from the bottom right, bounce and roll right to left, and settle a little crooked on their letters; the E wobbles on an edge. | `rattle`, a `land` per bounce, a riser. |
 | 1.5 | The dice flash white and ring gold; a gold ring rushes out over the floor. | `levelup`, the downbeat. |
-| 1.75–3.7 | The camera pushes in and drifts; `A dice battler` comes in under the row and holds. | The riff, a held chord. |
-| 3.7–4 | The É die flies at the camera and fills the screen. | A snare pickup. |
+| 1.75–3.7 | The camera pushes in and drifts; `Roll · Battle · Catch` comes in under the row and holds. | The riff, a held chord. |
+| 3.6–4 | A side swap: the title slides out left as the first fight, in its still shot, slides in from the right. | A snare pickup. |
 
 ## 3. The fights (4 → 26.5)
 
@@ -229,3 +233,7 @@ its own score `scoreSocial`). 1920×1080 like the main one. No title: it opens o
 7. A 15-second social media cut: no intro, straight on Charmander, skip Charmeleon's fight, Charmeleon evolving into
    Charizard, the Charizard fight, a shorter end screen (§12).
 8. In both: a shorter evolution; Charizard's dice 5 · 5 · 2 · 5 · 3, the 2 and the 3 rerolled into 5s.
+9. Your Pokémon fully visible (not hidden by the dice band or a player's controls).
+10. "Roll · Battle · Catch" under the title; a side swap instead of the É die; a shorter hold on the 7; nothing blurry
+    (Mewtwo, Dragonite, Charizard, the backgrounds, the raid tapes); no light strip at the edge of the Mega and
+    Gigantamax shots; the raid Pokémon all at one size.

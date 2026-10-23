@@ -126,9 +126,17 @@ export function drawStage(
   const ox = Math.round(box.x + box.w / 2 - cam.x * cam.z + shake.x)
   const oy = Math.round(box.y + box.h / 2 - cam.y * cam.z + shake.y)
   if (pic) {
-    // The picture keeps its own 400 px resolution, so its pixels are never a whole number of screen pixels: sharp.
-    const k = cam.z / ART_K
-    sharpDraw(g, pic.img, ox - pic.x * cam.z, oy - (pic.y + ART_CROP / ART_K) * cam.z, ART_PX * k, pic.img.naturalHeight * k, true)
+    // The picture has its own 400 px resolution (1.39 picture pixels per art pixel): drawn at the nearest whole number
+    // of screen pixels per picture pixel, scaled about the camera's centre, so it stays crisp. It is a backdrop: a few
+    // per cent larger or smaller than the stage on top of it changes nothing anyone sees.
+    const k = Math.max(1, Math.round(cam.z / ART_K))
+    const f = (k * ART_K) / cam.z
+    const cx = box.x + box.w / 2 + shake.x
+    const cy = box.y + box.h / 2 + shake.y
+    const px0 = cx + (-pic.x - cam.x) * cam.z * f
+    const py0 = cy + (-(pic.y + ART_CROP / ART_K) - cam.y) * cam.z * f
+    g.imageSmoothingEnabled = false
+    g.drawImage(pic.img, Math.round(px0), Math.round(py0), ART_PX * k, pic.img.naturalHeight * k)
   }
   for (const l of layers) if (l) sharpDraw(g, l, ox, oy, l.width * cam.z, l.height * cam.z)
   g.restore()
