@@ -29,6 +29,7 @@ import { PixelButton } from '../PixelButton'
 import { FilterChips, SearchField, Seg } from '../Segmented'
 import { Sheet } from '../Sheet'
 import { MiniSprite } from '../SpriteImg'
+import type { Shared } from './ShareListing'
 import { ShinyStar, useBlockText, useTradeErrorText } from './TradeBits'
 
 /** The species grid shows this many at first, then more on demand: a phone draws a few hundred tiles slowly. */
@@ -37,11 +38,9 @@ const GRID_PAGE = 90
 type Own = 'not' | 'own' | 'all'
 type Kind = TradeWant['kind']
 
-export interface Posted {
+/** What was posted: enough to share it straight away. */
+export interface Posted extends Shared {
   id: string
-  code: string
-  dex: number
-  visibility: TradeVisibility
 }
 
 export function NewListingSheet({
@@ -354,7 +353,15 @@ function Draft({
     try {
       const listing = await post(picked.inst.id, w, vis)
       pushToast(t('ui.trades.new.posted', { name: name(picked.inst.dex) }), 'good')
-      onPosted({ id: listing.id, code: listing.code, dex: picked.inst.dex, visibility: vis })
+      onPosted({
+        id: listing.id,
+        code: listing.code,
+        dex: picked.inst.dex,
+        level: picked.inst.level,
+        shiny: !!picked.inst.shiny,
+        want: w,
+        visibility: vis,
+      })
     } catch (err) {
       pushToast(errorText(err), 'bad', 4500)
     } finally {
