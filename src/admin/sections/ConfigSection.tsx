@@ -616,6 +616,72 @@ function DiceThrowsBox() {
   )
 }
 
+/**
+ * The game-feel pass (docs/38): count-ups, combo tiers, hits that scale with what they do, the KO beat, the victory
+ * payoff, the catch moments. Purely visual and audible, so the game alone reads it. Off: everything plays as before.
+ */
+function GameFeelBox() {
+  const [raw, setRaw] = useConfigRow('gameFeel')
+  const access = raw?.access ?? 'off'
+  return (
+    <Box
+      title="Game feel"
+      icon="dice"
+      hint="On: the damage counts up die by die, combos have four tiers, hits scale with how much they matter, the final blow lands harder, victories, badges, catches and upgrades are celebrated, and fights move faster between hits. Off: everything plays as before. It changes how things look and sound, never what happens."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Game feel</span>
+        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="Game feel: who has it" />
+        <span className="text-base text-muted">
+          {accessNote(access, 'Open to every player.', 'Off: everything plays as before.')}
+        </span>
+      </div>
+    </Box>
+  )
+}
+
+/** Haptics (docs/38): short vibrations on dice, hits and catches. Android only; iOS browsers can't vibrate. */
+function HapticsBox() {
+  const [raw, setRaw] = useConfigRow('haptics')
+  const access = raw?.access ?? 'off'
+  return (
+    <Box
+      title="Haptics"
+      icon="energy"
+      hint="On: short vibrations when a die is picked or lands, on hits (stronger for bigger ones), a KO, each catch wobble and a catch, with a switch in Settings. Android browsers only: iOS Safari can't vibrate. Calm devices (reduce motion) get none."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Haptics</span>
+        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="Haptics: who has it" />
+        <span className="text-base text-muted">
+          {accessNote(access, 'Open to every player.', 'Off: no vibrations, no Settings row.')}
+        </span>
+      </div>
+    </Box>
+  )
+}
+
+/** Battle music (docs/38): an original 8-bit loop under fights, synthesised like the effects. */
+function MusicBox() {
+  const [raw, setRaw] = useConfigRow('music')
+  const access = raw?.access ?? 'off'
+  return (
+    <Box
+      title="Battle music"
+      icon="sound"
+      hint="On: an original 8-bit loop plays under fights, synthesised on the device like the effects (no download), with a switch in Settings. It follows Sound: no sound, no music. Off: fights are silent between effects, as before."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Battle music</span>
+        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="Battle music: who has it" />
+        <span className="text-base text-muted">
+          {accessNote(access, 'Open to every player.', 'Off: no music, no Settings row.')}
+        </span>
+      </div>
+    </Box>
+  )
+}
+
 /** Trainer looks (docs/31): unlockable looks from every region in place of the free Kanto and Johto list. */
 function LooksBox() {
   const [raw, setRaw] = useConfigRow('looks')
@@ -1347,6 +1413,12 @@ export function ConfigSection() {
       <IdleModeBox />
 
       <DiceThrowsBox />
+
+      <GameFeelBox />
+
+      <HapticsBox />
+
+      <MusicBox />
 
       <ExtremeBox />
 

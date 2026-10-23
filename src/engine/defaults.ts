@@ -357,6 +357,11 @@ export const DEFAULT_CONFIG: GameConfig = {
   // Recorded dice throws (docs/37): off until the admin switches them on; the dice tumble as before meanwhile.
   // Migration 0069 inserts the same row.
   diceThrows: { access: 'off' },
+  // The game-feel pass, haptics and battle music (docs/38): off until the admin switches each on; everything plays as
+  // before meanwhile. Migration 0072 inserts the same rows.
+  gameFeel: { access: 'off' },
+  haptics: { access: 'off' },
+  music: { access: 'off' },
   // Double battles (docs/33): off until the admin switches them on; from Hoenn on, 10 % of the wild encounters.
   // Migration 0062 inserts the same row.
   doubleBattles: { access: 'off', regions: ['hoenn', 'sinnoh', 'unova', 'kalos', 'alola', 'galar', 'paldea'], wildChance: 10 },

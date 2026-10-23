@@ -21,6 +21,15 @@ export const eventOpenTo = (access: EventAccess | undefined, data: GameData): bo
 /** Recorded dice throws (docs/37): the dice's look only, so the game alone reads it (no server function acts for it). */
 export const diceThrowsOn = (data: GameData): boolean => eventOpenTo(data.config.diceThrows?.access, data)
 
+/** The game-feel pass (docs/38): how things look and sound only, so the game alone reads it. */
+export const gameFeelOn = (data: GameData): boolean => eventOpenTo(data.config.gameFeel?.access, data)
+
+/** Haptics (docs/38): the device's vibrations only; the game alone reads it. */
+export const hapticsOn = (data: GameData): boolean => eventOpenTo(data.config.haptics?.access, data)
+
+/** Battle music (docs/38): sound only; the game alone reads it. */
+export const musicOn = (data: GameData): boolean => eventOpenTo(data.config.music?.access, data)
+
 /** This event is switched on for whoever is playing. */
 export const eventOn = (data: GameData, id: EventId): boolean => eventOpenTo(eventDef(data, id)?.access, data)
 

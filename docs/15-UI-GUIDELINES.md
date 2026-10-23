@@ -718,8 +718,9 @@ Two rules for every feature that adds something players can do (an event, a mode
   Notifications) follow it.
 - **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
-- **A purely visual change** (the dice throws, docs/37): the switch, but no rules pop-up and no INFO: it only changes
-  how something already there looks, so there is nothing to learn or do.
+- **A purely visual change** (the dice throws, docs/37; the game-feel pass, haptics and battle music, docs/38): the
+  switch, but no rules pop-up and no INFO: it only changes how something already there looks, sounds or feels, so
+  there is nothing to learn or do.
 - **Items with a switch** (`game_config.itemSwitches`, `itemOn`): the Link Cable and the Bait (docs/25). Off: not sold,
   not found, not usable, never offered; bags keep theirs. An item is explained where it's met (its description in the
   Mart and the bag; the Bait's die and odds on the catch prompt), so items have no rules pop-up of their own.

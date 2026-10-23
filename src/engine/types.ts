@@ -148,6 +148,24 @@ export const COMBO_NAMES: Record<ComboKey, string> = {
   five_kind: 'Five of a Kind',
 }
 
+/**
+ * How big a combo feels (docs/38): 1 a pair or two pairs, 2 three of a kind or a small straight, 3 a full house or four
+ * of a kind, 4 a full straight or five of a kind. Presentation only: the damage comes from the combo's own bonus.
+ */
+export const COMBO_TIERS: Record<ComboKey, 1 | 2 | 3 | 4> = {
+  pair: 1,
+  two_pair: 1,
+  three_kind: 2,
+  small_straight: 2,
+  full_house: 3,
+  four_kind: 3,
+  full_straight: 4,
+  five_kind: 4,
+}
+
+/** A roll's combo tier: 0 with no combo. */
+export const comboTier = (key: ComboKey | null | undefined): 0 | 1 | 2 | 3 | 4 => (key ? COMBO_TIERS[key] : 0)
+
 export interface ComboUpgradeRow {
   comboKey: ComboKey
   level: number
@@ -898,6 +916,15 @@ export interface GameConfig {
   idleMode: { access: EventAccess }
   /** Recorded dice throws (docs/37): its switch. Purely visual. Migration 0069 inserts the same row. */
   diceThrows: { access: EventAccess }
+  /**
+   * The game-feel pass (docs/38): count-ups, combo tiers, hits that scale, the KO beat, the victory payoff, the catch
+   * moments. Purely visual and audible. Migration 0072 inserts the same row.
+   */
+  gameFeel: { access: EventAccess }
+  /** Haptics (docs/38): short vibrations on dice, hits and catches, where the device can. Migration 0072. */
+  haptics: { access: EventAccess }
+  /** Battle music (docs/38): an original 8-bit loop under fights. Migration 0072 inserts the same row. */
+  music: { access: EventAccess }
   /** Double battles (docs/33): their switch, the regions that have them and the wild odds. */
   doubleBattles: DoubleBattlesConfig
   /**

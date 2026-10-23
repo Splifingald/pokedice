@@ -86,6 +86,10 @@ export interface Settings {
   lang?: Lang
   /** Light, dark or the device's. Unset = light. */
   theme?: ThemeSetting
+  /** Haptics (docs/38), where the admin has switched them on and the device can vibrate. Unset = on. */
+  haptics?: boolean
+  /** Battle music (docs/38), where the admin has switched it on; it also needs Sound. Unset = on. */
+  music?: boolean
 }
 export const DEFAULT_SETTINGS: Settings = { sfx: true, sound: true, reducedMotion: false, multiExp: true }
 
