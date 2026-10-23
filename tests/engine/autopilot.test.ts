@@ -227,6 +227,13 @@ describe('each step of a run', () => {
     expect(at('stays')).toEqual({ do: 'retry' })
     expect(at('done')).toEqual({ do: 'wait', why: 'result' })
     expect(at('none', OWNED_DEX)).toEqual({ do: 'pass', why: 'owned' })
+    const shiny = autopilotStep(
+      bag,
+      VALUE5,
+      'idle',
+      view('catch', B.id, { catch: { dex: OWNED_DEX, shiny: true, throw: 'none' } }),
+    )
+    expect(shiny).toEqual({ do: 'throw', ball: 'great-ball' })
     const empty = { ...s, inventory: { 'master-ball': 1 } }
     expect(
       autopilotStep(empty, VALUE5, 'idle', view('catch', B.id, { catch: { dex: NEW_DEX, throw: 'none' } })),
@@ -305,7 +312,11 @@ describe('each step of a run', () => {
 })
 
 describe("Idle's catch: chooseIdleBall", () => {
-  const bag = (inventory: Record<string, number>, pokedex = fresh().pokedex) => ({ pokedex, inventory })
+  const bag = (inventory: Record<string, number>, pokedex = fresh().pokedex) => ({
+    pokedex,
+    inventory,
+    box: fresh().box,
+  })
 
   it('not owned: the ball with the best chance', () => {
     // Catch value 7: a Poké Ball needs a 6 (1/6), a Great Ball a 5 (2/6), an Ultra Ball a 4 (3/6).
@@ -354,6 +365,19 @@ describe("Idle's catch: chooseIdleBall", () => {
     expect(chooseIdleBall(full, withValue(7, OWNED_DEX), OWNED_DEX)).toBeNull()
     expect(chooseIdleBall(full, VALUE5, NEW_DEX)).not.toBeNull()
     expect(chooseIdleBall({ ...full, pokedex: [...full.pokedex, NEW_DEX] }, VALUE5, NEW_DEX)).toBeNull()
+  })
+
+  it('a shiny is not the same Pokémon: owned only with a shiny of its species in the Box', () => {
+    const full = bag({ 'poke-ball': 9, 'great-ball': 9, 'ultra-ball': 9 })
+    // The plain one is in the Pokédex and the Box: a shiny of it is still new.
+    expect(chooseIdleBall(full, withValue(7, OWNED_DEX), OWNED_DEX, true)?.ball).toBe('ultra-ball')
+    const mon = full.box.find((m) => m.dex === OWNED_DEX)!
+    const shinyHeld = { ...full, box: [...full.box, { ...mon, id: 'shiny-copy', shiny: true }] }
+    expect(chooseIdleBall(shinyHeld, withValue(7, OWNED_DEX), OWNED_DEX, true)).toBeNull()
+    // A shiny in the Box doesn't make the plain one owned when the Pokédex doesn't have it.
+    expect(chooseIdleBall({ ...shinyHeld, pokedex: [] }, withValue(7, OWNED_DEX), OWNED_DEX)?.ball).toBe(
+      'ultra-ball',
+    )
   })
 
   it('no ball held, or none that could catch it: no throw', () => {

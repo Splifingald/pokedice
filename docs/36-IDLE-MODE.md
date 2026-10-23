@@ -73,11 +73,13 @@ The user's rule, decided by `chooseIdleBall(save, data, dex)` (`engine/autopilot
 `autopilotStep`'s `'catch'` phase (`throw` / `pass` / `keepBait` / `retry`); `BattleView` carries the step out so the
 throw plays on the stage.
 
-- **Owned** = the species is in the save's Pokédex (`save.pokedex`, by dex number), as the Pokédex and the catch count
-  it: one entry per species, **shiny or not**; a **regional form** is a species of its own (its own dex number, its own
+- **Owned** (`idleOwns`) = for a plain Pokémon, the species is in the save's Pokédex (`save.pokedex`, by dex number),
+  as the Pokédex and the catch count it; a **regional form** is a species of its own (its own dex number, its own
   entry), so an Alolan form not yet caught is new even with the Kanto one owned; a battle form (Mega, Gigantamax…) is
-  its base Pokémon. Owned: **no throw**, even when the catch would offer a stronger copy (replacing the weaker one), a
-  shiny copy or a small world's boss; it moves on as a catch not on offer does (nothing added to the result card).
+  its base Pokémon. A **shiny is not the same Pokémon** (the user's rule): it is owned only while a shiny of its species
+  is in this region's Box, since the Pokédex keeps no shiny record (one traded or released away makes the next shiny
+  new again). Owned: **no throw**, even when the catch would offer a stronger copy (replacing the weaker one) or a small
+  world's boss; it moves on as a catch not on offer does (nothing added to the result card).
 - **Not owned**: the balls held (quantity above 0), **the Master Ball never** (`MASTER_BALL`, `master-ball`), each with
   its chance by the catch's own formula for this Pokémon (`catchChance(catchValueOf(dex), ballBonus)`: the d6 plus the
   ball's bonus against the species' catch value — the formula has no HP, status or other modifier, so nothing else

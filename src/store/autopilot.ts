@@ -47,7 +47,9 @@ export function autoStepNow(held = false): AutopilotStep | null {
       pendingCatch: !!run.pendingCatchId,
       held,
       noEnergy: run.phase === 'idle' && outOfEnergy(),
-      catch: run.catch ? { dex: run.catch.dex, throw: throwOf(run.catch.result) } : undefined,
+      catch: run.catch
+        ? { dex: run.catch.dex, shiny: !!run.catch.shiny, throw: throwOf(run.catch.result) }
+        : undefined,
     },
     serverNow(),
   )

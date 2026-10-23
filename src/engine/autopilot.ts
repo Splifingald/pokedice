@@ -177,10 +177,19 @@ export interface IdleThrow {
 }
 
 /**
+ * Whether Idle leaves this Pokémon be. The Pokédex has one entry per species, shiny or not, and keeps no shiny record,
+ * so a shiny counts as owned only while a shiny of its species is in the Box: one traded or released away is new again.
+ */
+export function idleOwns(save: Pick<SaveData, 'pokedex' | 'box'>, dex: number, shiny = false): boolean {
+  return shiny ? save.box.some((m) => m.dex === dex && m.shiny) : save.pokedex.includes(dex)
+}
+
+/**
  * The ball Idle throws at this K.O.'d Pokémon (the user's rule, 2026-10-23), or null: no throw, it is left behind.
  *
- * - **Owned** (its species in the Pokédex: one entry per species, shiny or not; a regional form is a species of its own,
- *   with its own entry, as the catch and the Pokédex count it): no throw, not even for a stronger or shiny copy.
+ * - **Owned** (`idleOwns`): no throw, not even for a stronger copy. A plain one is owned once its species is in the
+ *   Pokédex (a regional form is a species of its own, with its own entry, as the catch and the Pokédex count it); a
+ *   shiny only once a shiny of that species is in this region's Box (the user's rule: a shiny isn't the same Pokémon).
  * - **Not owned**: among the balls held (one at least), the Master Ball aside, the highest chance by the catch's own
  *   formula (`catchChance`: the d6 plus the ball's bonus against the species' catch value — nothing else changes a
  *   throw), and among the balls tied at that chance the cheapest by its Mart price (then the weaker, then by key, so
@@ -190,11 +199,12 @@ export interface IdleThrow {
  * - No ball held, or none with any chance: no throw (a ball spent on a sure miss is a ball lost).
  */
 export function chooseIdleBall(
-  save: Pick<SaveData, 'pokedex' | 'inventory'>,
+  save: Pick<SaveData, 'pokedex' | 'inventory' | 'box'>,
   data: GameData,
   dex: number,
+  shiny = false,
 ): IdleThrow | null {
-  if (save.pokedex.includes(dex)) return null
+  if (idleOwns(save, dex, shiny)) return null
   const value = catchValueOf(data, dex)
   const bare = catchChance(value, 0)
   if (bare >= 1) return { ball: null, chance: bare }
@@ -228,7 +238,7 @@ export interface AutoView {
    * The catch on the panel: the K.O.'d Pokémon (its species) and where its throw stands — none yet, a Bait offered,
    * kept by Capture Luck for another throw, or done (caught or fled).
    */
-  catch?: { dex: number; throw: 'none' | 'bait' | 'stays' | 'done' }
+  catch?: { dex: number; shiny?: boolean; throw: 'none' | 'bait' | 'stays' | 'done' }
 }
 
 /**
@@ -317,8 +327,8 @@ function idleCatchStep(save: SaveData, data: GameData, c: NonNullable<AutoView['
     case 'done':
       return { do: 'wait', why: 'result' }
     case 'none': {
-      if (save.pokedex.includes(c.dex)) return { do: 'pass', why: 'owned' }
-      const pick = chooseIdleBall(save, data, c.dex)
+      if (idleOwns(save, c.dex, c.shiny)) return { do: 'pass', why: 'owned' }
+      const pick = chooseIdleBall(save, data, c.dex, c.shiny)
       return pick ? { do: 'throw', ball: pick.ball } : { do: 'pass', why: 'noBall' }
     }
   }
