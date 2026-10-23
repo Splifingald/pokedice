@@ -1,7 +1,9 @@
-// Kitchen sink (dev only): the Underground (docs/34) — the cave, the crack gauge (fresh, under way, shaking, collapsed),
-// a wall in every state (fresh, half dug with a thing half uncovered, a strike flashing, cleared, collapsing), the
-// pickaxe die (unrolled, rolled) and its faces (now, the next level's), orbs of every colour and size, plates, the
-// haul (every outcome), the plates grid (none, some), the orb bag, the team seats (solo, two, full) and the rules.
+// Kitchen sink (dev only): the Underground (docs/34) — the cave, the zig-zag crack gauge (fresh, under way, a strike
+// landing, shaking, calm, collapsed), a wall in every state (fresh, half dug with a thing half uncovered, the pickaxe
+// striking where it was tapped at full and short motion, a thing popping out, cleared, collapsing), the pickaxe die
+// (unrolled, rolled) and its faces (now, the next level's), orbs of every colour and size, plates, the haul (every
+// outcome), the plates grid (none, some), the orb bag, the solo price's warning and its confirmation, the team seats
+// (solo, two, full) and the rules.
 import { useState, type ReactNode } from 'react'
 import { DEFAULT_CONFIG, ORB_COLOURS, ORB_SIZES, type HaulLine, type Wall } from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
@@ -17,6 +19,8 @@ import {
   PlateGrid,
   UgCave,
   UgRulesModal,
+  UgSellModal,
+  UgSoloWarning,
   UgWall,
 } from '@/components/Underground'
 import { UgTeamSeats, UgTeamSheet } from '@/screens/events/UndergroundTeam'
@@ -75,6 +79,9 @@ export function UndergroundBits() {
   const [rules, setRules] = useState<'unlock' | 'info' | null>(null)
   const [sheet, setSheet] = useState(false)
   const [flash, setFlash] = useState(1)
+  const [sell, setSell] = useState(false)
+  // Where the last tap on the striking wall landed; the pickaxe swings there.
+  const [at, setAt] = useState<{ tile: number; at?: { x: number; y: number } }>({ tile: 14 })
   return (
     <div className="flex w-full flex-col gap-4" data-testid="ug-sink">
       <div className="grid gap-3 sm:grid-cols-2">
@@ -93,6 +100,12 @@ export function UndergroundBits() {
         <Frame name="CrackGauge: under way">
           <CrackGauge strikes={15} used={7} />
         </Frame>
+        <Frame name="CrackGauge: a strike landing (replay below)">
+          <CrackGauge strikes={15} used={8} hitKey={flash} />
+        </Frame>
+        <Frame name="CrackGauge: a strike landing, short motion">
+          <CrackGauge strikes={15} used={8} hitKey={flash} motion="short" />
+        </Frame>
         <Frame name="CrackGauge: last 3, shaking">
           <CrackGauge strikes={15} used={13} />
         </Frame>
@@ -108,12 +121,26 @@ export function UndergroundBits() {
         <Frame name="UgWall: fresh">
           <UgWall wall={WALL} data={data} />
         </Frame>
-        <Frame name="UgWall: half dug, the large orb half uncovered, a strike flashing">
+        <Frame name="UgWall: half dug, the large orb half uncovered; tap it: the pickaxe strikes there">
           <UgWall
             wall={HALF}
             data={data}
-            fx={{ tile: 14, roll: 2, key: flash }}
-            onStrike={() => setFlash((k) => k + 1)}
+            fx={{ tile: at.tile, roll: 2, key: flash, at: at.at }}
+            onStrike={(tile, spot) => {
+              setAt({ tile, at: spot })
+              setFlash((k) => k + 1)
+            }}
+          />
+        </Frame>
+        <Frame name="UgWall: a strike at short motion (the pickaxe's impact frame only)">
+          <UgWall wall={HALF} data={data} fx={{ tile: 21, roll: 1, key: flash }} motion="short" />
+        </Frame>
+        <Frame name="UgWall: the fossil just dug out, its name popping">
+          <UgWall
+            wall={dug(WALL, [4, 5, 10, 11], 6)}
+            data={data}
+            fx={{ tile: 11, roll: 2, key: flash }}
+            found={{ thing: 3, key: flash }}
           />
         </Frame>
         <Frame name="UgWall: cleared (everything glints)">
@@ -168,6 +195,10 @@ export function UndergroundBits() {
             bag={{ red: { s: 6, m: 2, l: 1 }, blue: { s: 0, m: 0, l: 0 }, green: { s: 3, m: 1, l: 0 } }}
             cfg={CFG}
           />
+          <UgSoloWarning share={CFG.soloShare} price={290} full={2900} />
+          <PixelButton size="sm" className="self-start" onClick={() => setSell(true)}>
+            Selling outside a full team (the confirmation)
+          </PixelButton>
         </div>
       </div>
 
@@ -218,6 +249,14 @@ export function UndergroundBits() {
         </PixelButton>
       </div>
       <UgTeamSheet open={sheet} onClose={() => setSheet(false)} />
+      <UgSellModal
+        open={sell}
+        onClose={() => setSell(false)}
+        onSell={() => setSell(false)}
+        share={CFG.soloShare}
+        price={290}
+        full={2900}
+      />
       <UgRulesModal
         open={!!rules}
         onClose={() => setRules(null)}

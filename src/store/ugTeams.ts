@@ -1,14 +1,14 @@
 // The Underground's teams (docs/34 §3), the game's side of migration 0063: the team and its invitations as the server
 // tells them, the orbs a finished wall owes to teammates (they wait in the save's outbox until the server has them),
 // the orbs teammates dug for this player (into the bag, each delivery once), and selling, which the server confirms.
-// Signed out, there is no team: every orb is the player's, and orbs can't be sold while a full team is asked for.
+// Signed out, there is no team: every orb is the player's, and orbs sell for the solo share of their price.
 import { useEffect } from 'react'
 import { create } from 'zustand'
 import {
   clearOutbox,
+  fullPrice,
   receiveOrbs,
   sellOrbs,
-  ugCfg,
   undergroundLive,
   ORB_COLOURS,
   type OrbColour,
@@ -207,24 +207,28 @@ export const ugAnswer = (team: string, yes: boolean) => act('ug_answer', { p_tea
 export const ugLeave = () => act('ug_leave', {})
 
 /**
- * Sells the orb bag: when the admin asks for a full team, the server confirms it first (a team can change on another
- * device). False when it can't.
+ * Sells the orb bag. At full price (`solo` false) a full team is confirmed by the server first (a team can change on
+ * another device): when it isn't full, nothing sells and the answer is 'notFull', so the screen can warn about the
+ * solo price before anything is sold. With `solo` the player has accepted the solo share. Null when it can't sell.
  */
-export async function ugSellOrbs(): Promise<boolean> {
+export async function ugSellOrbs(solo: boolean): Promise<{ paid: number } | 'notFull' | null> {
   settleUgNow()
   const { data } = useGame.getState()
   let team = useUgTeam.getState().team
-  if (ugCfg(data).sellNeedsFull) {
-    if (!signedIn()) return false
+  if (!fullPrice(data, null) && !solo) {
+    if (!signedIn()) return 'notFull'
     try {
       const full = await rpc<boolean>('ug_can_sell')
       // The seats as they are now, whatever the server said: the next sell reads them.
       await refreshUgTeam(true)
-      if (!full) return false
+      if (!full) return 'notFull'
       team = useUgTeam.getState().team
     } catch {
-      return false
+      return null
     }
+    if (!fullPrice(data, team)) return 'notFull'
   }
-  return mutateSave((s) => sellOrbs(s, useGame.getState().data, serverNow(), team))
+  const before = useGame.getState().save?.gold ?? 0
+  const sold = mutateSave((s) => sellOrbs(s, useGame.getState().data, serverNow(), team))
+  return sold ? { paid: (useGame.getState().save?.gold ?? 0) - before } : null
 }

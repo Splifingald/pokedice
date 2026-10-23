@@ -1,6 +1,7 @@
 // The Underground (docs/34): a live event of its own type, its switch on, reaching the game as content (a newer
 // configVersion from the content cache), on the server's clock. Its rules pop-up once, Home's square with the kits,
-// the page, a wall dug to its haul (a plate, an orb), the resumed wall, the Mart's Explorakits; a phone.
+// the page, a wall dug to its haul (a plate, an orb), the resumed wall, the orb sold solo for a tenth after a warning,
+// the pickaxe striking where tapped, the Mart's Explorakits; a phone.
 import { expect, test, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import {
@@ -196,7 +197,49 @@ test('a wall dug to its haul: the plate for Arceus, an orb in the bag', async ({
   await haul.getByRole('button', { name: 'Done' }).click()
   await expect(page).toHaveURL(/\/underground$/)
   await expect(page.getByText('1 / 17 found')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Selling opens in a team of 3' })).toBeVisible()
+  // Solo, the orb sells for a tenth, said before and asked again before anything sells.
+  await expect(
+    page.getByRole('note').filter({ hasText: 'only 10% of their price (₽10 instead of ₽100)' }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Sell for 10% · ₽10' }).click()
+  const confirm = page.getByRole('dialog', { name: 'Sell for only 10%?' })
+  await expect(confirm.getByText('You give up ₽90. A sale can’t be undone.')).toBeVisible()
+  await shot(page, 'sell-solo')
+  await confirm.getByRole('button', { name: 'Keep my orbs' }).click()
+  await expect(confirm).toBeHidden()
+  expect((await stored(page)).underground!.bag.red.s).toBe(1)
+  const gold = (await stored(page)).gold
+  await page.getByRole('button', { name: 'Sell for 10% · ₽10' }).click()
+  await confirm.getByRole('button', { name: 'Sell for ₽10' }).click()
+  await expect.poll(async () => (await stored(page)).gold).toBe(gold + 10)
+  expect((await stored(page)).underground!.bag.red.s).toBe(0)
+})
+
+test('the pickaxe strikes where the finger lands, and the gauge cracks a slab', async ({ page }) => {
+  await boot(page, inEvent())
+  await page.goto('/underground/dig')
+  const tile = page.getByRole('button', { name: 'Row 2, column 2: 1 layer' })
+  await expect(tile).toBeVisible({ timeout: 15_000 })
+  const box = (await tile.boundingBox())!
+  await page.mouse.click(box.x + box.width * 0.25, box.y + box.height * 0.75)
+  const pick = page.locator('.ug-pick')
+  await expect(pick).toHaveCount(1)
+  // The pickaxe's tip sits on the spot tapped, not the tile's centre.
+  const wall = (await page.locator('.ug-wall').boundingBox())!
+  const spot = await pick.evaluate((el) => {
+    const r = el.getBoundingClientRect()
+    return { x: r.left, y: r.top }
+  })
+  expect(Math.abs(spot.x - (box.x + box.width * 0.25))).toBeLessThan(2)
+  expect(Math.abs(spot.y - (box.y + box.height * 0.75))).toBeLessThan(2)
+  expect(spot.x).toBeGreaterThan(wall.x)
+  await expect(page.getByRole('meter', { name: 'Strikes before the wall collapses' })).toHaveAttribute(
+    'aria-valuenow',
+    '14',
+  )
+  await expect(page.locator('.ug-slab.broken')).toHaveCount(1)
+  await expect(page.locator('.ug-slab')).toHaveCount(15)
+  await shot(page, 'dig-strike')
 })
 
 test('the Mart sells Explorakits while it runs', async ({ page }) => {

@@ -1325,13 +1325,17 @@ Its switch is its own (`underground.access`, §20) on top of the live events' on
 - **The page** (`/underground`): the cave banner with the plate (back, title, time left); Explorakits (warm card: kits
   held, free over cap and bought, the next free kit or "full", BUY KITS and the red DIG A WALL, or RESUME THE WALL);
   the pickaxe (level of max, its faces as dice, the next level's with its raised face ringed in gold, the gold upgrade
-  button or what's missing); the team seats; the orb bag (a table, colour × size; SELL in green once allowed, hatched
-  otherwise with the reason in words); the plates (17 tiles, the held ones in their type's badge colours, a dashed "?"
+  button or what's missing); the team seats; the orb bag (a table, colour × size; SELL in green in a full team; outside
+  one, the solo price: a red-ringed warning note with the share and both prices (`UgSoloWarning`), the white "Sell for
+  10% · ₽…", then a confirmation before anything sells (`UgSellModal`: both prices, the full one struck, "You give up
+  ₽…", KEEP MY ORBS / the red SELL FOR ₽…); with a solo share of 0, hatched with the reason in words); the plates (17 tiles, the held ones in their type's badge colours, a dashed "?"
   for the rest); the end-of-event note; INFO. Outside the event (or before its content arrives) the page says it isn't
   open and offers Back Home, never a silent redirect.
 - **The dig** (`/underground/dig`, full screen, `useHoldFullscreen`): the title and LEAVE FOR NOW (the wall waits in the
-  save); the crack gauge (`CrackGauge`: a section per strike cracking from the right; its last three red, and shaking
-  unless calm; `role="meter"` with "N strikes left"); the wall (`UgWall`): what's buried drawn underneath, the tiles
+  save); the crack gauge (`CrackGauge`: a zig-zag band of slanted slabs, one per strike, alternately falling and rising,
+  so it's both countable and a crack; intact slabs light rock, broken ones dark holes with a bright crack running
+  through them from the right; the rock left red in the last three, shaking unless calm; `role="meter"` with "N strikes
+  left", the count over it large, red in the last three); the wall (`UgWall`): what's buried drawn underneath, the tiles
   edge to edge on top (a gap would show what lies beneath), each a button labelled "Row r, column c: n layers" / "dug
   out, part of the …", its depth as rock colour **and** dots; then what's still buried and the kits left; the footer
   with the rolled die (`PickaxeDie`, tumbling), the line that says what the roll did, and the die's faces with the one
@@ -1339,9 +1343,14 @@ Its switch is its own (`underground.access`, §20) on top of the live events' on
 - **The haul** (`HaulList` in a `Modal`): a line per thing, a new plate first (gold card, NEW, "Arceus can now turn
   Fire!"), then the fossil (to the Box, reviving), orbs (Orb bag / To Dawn, with whose colour it is), and what was lost
   in the rubble (a grey line); DONE and the red NEXT WALL · n.
-- **Motion**: a strike flashes the tile two white frames and its hit neighbours one, with dust in steps (full); the
-  collapse drops the tiles in steps (full) or gives one thud (short); off: nothing moves. A thing fully dug out glints.
-  Calm stills the gauge's shake and the glint. Sounds: `ug.strike` (lower the bigger the roll), `ug.found`,
+- **Motion**: the pickaxe strikes **where the finger landed** (a key press: the tile's centre): raised, a wind-up, down
+  on the spot at 90 ms (`UG_IMPACT_MS`), a hit-stop, a recoil, frame by frame. Everything waits for that impact: the
+  tile flashes two white frames and its hit neighbours one, dust flies in steps, the wall gives (more for a bigger
+  roll), the gauge's broken slab flashes and sheds chips, the band jolts, the count bumps, the sounds play. Short: the
+  pickaxe's impact frame only and the flashes at once (no dust, give, chips or jolt); off: nothing moves. A thing
+  fully dug out glints, and its name pops over it in a gold tag ("Dug out: …!" in the footer's line). The collapse
+  drops the tiles in steps (full) or gives one thud (short). Calm stills the shakes, the jolts, the give and the
+  glint. Sounds: `ug.strike` (lower the bigger the roll), `ug.found`,
   `ug.collapse`.
 - **The team** (`UgTeamPanel`, `UgTeamSheet`): the three seats (you, a friend, a free seat; solo: dashes and the line
   that every orb is yours) and a button: TEAM UP, MANAGE, or a gold INVITATIONS: n. The sheet: invitations to answer

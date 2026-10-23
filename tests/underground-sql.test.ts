@@ -1,8 +1,8 @@
-// Migration 0063 against a real Postgres (PGlite, in process): the Underground's teams (docs/34 §3). Its row lands
-// with the game's defaults, off; nothing answers outside a running Underground event or with a switch off; friends
-// only, three seats with a colour each, dealt at random; orbs a wall owes go to whoever holds their colour, once; a
-// full team can sell; an ended event's teams go; deleting your data takes your seat. Supabase's own pieces (the auth
-// schema, the roles) are stood in for at the top, as in trades-sql.test.ts.
+// Migrations 0063 and 0070 against a real Postgres (PGlite, in process): the Underground's teams (docs/34 §3). Its row
+// lands with the game's defaults, off; nothing answers outside a running Underground event or with a switch off;
+// friends only, three seats with a colour each, dealt at random; orbs a wall owes go to whoever holds their colour,
+// once; a full team can sell; an ended event's teams go; deleting your data takes your seat. Supabase's own pieces (the
+// auth schema, the roles) are stood in for at the top, as in trades-sql.test.ts.
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
@@ -113,6 +113,7 @@ beforeAll(async () => {
     await db.exec(sql(f))
   // Safe to run again.
   await db.exec(sql('0063_underground.sql'))
+  await db.exec(sql('0070_underground_solo_sell.sql'))
   const ids = [...Object.values(U), ADMIN]
   await db.exec(`insert into auth.users (id) values ${ids.map((u) => `('${u}')`).join(',')}`)
   // Ash, Misty, Brock and Erika are all friends; Gary is nobody's.

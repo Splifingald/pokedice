@@ -1,10 +1,11 @@
 // The Underground's pieces (docs/34; docs/15 §32): the cave drawn in code (Home's square, the rules, the Mart), the
 // crack gauge, the wall with what it hides, the pickaxe die, orbs, plates and the haul's lines. They draw what the
 // engine decided (engine/underground.ts); the screens are screens/events/Underground*.tsx.
-import { type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import {
   freeKitRules,
   orbsValue,
+  soloShare,
   thingDone,
   thingTiles,
   ugCfg,
@@ -26,11 +27,19 @@ import sheet from '@/assets/underground.png'
 import atlas from '@/data/underground-atlas.json'
 import { Die } from './Die'
 import { ItemSprite } from './ItemSprite'
+import { Modal } from './Modal'
+import { PixelButton } from './PixelButton'
 import { PixelIcon } from './icons'
 import { RulesModal, type RuleRow } from './RulesModal'
 
 const SPRITES = atlas.sprites as unknown as Record<string, [number, number, number, number] | undefined>
 const [SHEET_W, SHEET_H] = atlas.size as [number, number]
+
+/**
+ * When the pickaxe meets the rock, after the tap (full motion): the swing's wind-up comes first, and the tile's flash,
+ * the dust, the wall's give, the gauge's jolt and the clink all wait for it (underground.css keeps the same number).
+ */
+export const UG_IMPACT_MS = 90
 
 const sizeOf = (kind: WallThing['kind']): OrbSize | null =>
   kind === 'orbS' ? 's' : kind === 'orbM' ? 'm' : kind === 'orbL' ? 'l' : null
@@ -170,23 +179,54 @@ function ThingArt({ thing, data, done }: { thing: WallThing; data: GameData; don
   )
 }
 
+/** One section of the crack gauge: a slanted slab, alternately falling and rising, so the band zig-zags. */
+const SEG_W = 10
+const SEG_H = 14
+const zig = (k: number): [number, number] => (k % 2 === 0 ? [1, 9] : [9, 1])
+const segPoints = (k: number) => {
+  const [a, b] = zig(k)
+  const x0 = k * SEG_W
+  const x1 = x0 + SEG_W
+  return `${x0},${a} ${x1},${b} ${x1},${b + SEG_H} ${x0},${a + SEG_H}`
+}
+
 /**
- * The crack gauge, like the games' cleft meter: one section per strike, cracking from the right. Its last three
- * sections left, it turns red (and shakes, unless the player asked for calm).
+ * The crack gauge, like the games' cleft meter: a zig-zag band of rock, one slab per strike, cracking from the right
+ * (a bright crack runs through the broken ones). Its last three slabs left, the rock left glows red (and shakes,
+ * unless calm). `hitKey` marks a new strike: the slab it broke flashes and sheds chips, and the band jolts (full
+ * motion), timed to the pickaxe's impact.
  */
 export function CrackGauge({
   strikes,
   used,
   calm,
+  hitKey,
+  motion = 'full',
   className,
 }: {
   strikes: number
   used: number
   calm?: boolean
+  hitKey?: number
+  motion?: 'full' | 'short' | 'off'
   className?: string
 }) {
   const left = Math.max(0, strikes - used)
   const hot = left <= 3
+  const broken = (k: number) => k >= left
+  // The slab the last strike broke: the leftmost broken one.
+  const fresh = hitKey != null && used > 0 && motion !== 'off' ? left : null
+  const crack: string[] = []
+  for (let k = left; k < strikes; k++) {
+    const [a, b] = zig(k)
+    const x0 = k * SEG_W
+    const mid = SEG_H / 2
+    crack.push(
+      `${x0},${a + mid}`,
+      `${x0 + 4},${(a + b) / 2 + mid + (k % 2 ? -3 : 3)}`,
+      `${x0 + SEG_W},${b + mid}`,
+    )
+  }
   return (
     <div
       role="meter"
@@ -195,39 +235,64 @@ export function CrackGauge({
       aria-valuemax={strikes}
       aria-valuenow={left}
       aria-valuetext={t(`ui.ug.strikesLeft.${left === 1 ? 'one' : 'other'}`, { count: left })}
-      className={cx(
-        'ug-gauge flex flex-row-reverse',
-        hot && 'hot',
-        hot && left > 0 && !calm && 'shake',
-        className,
-      )}
+      className={cx('ug-gauge', hot && 'hot', hot && left > 0 && !calm && 'shake', className)}
     >
-      {Array.from({ length: strikes }, (_, i) => (
-        <span key={i} className={cx('ug-seg', i < used && 'used')}>
-          {i < used && (
-            <svg viewBox="0 0 10 11" preserveAspectRatio="none" aria-hidden shapeRendering="crispEdges">
-              <rect x="4" y="0" width="2" height="3" />
-              <rect x="5" y="3" width="2" height="3" />
-              <rect x="3" y="6" width="2" height="3" />
-              <rect x="4" y="9" width="2" height="2" />
-            </svg>
-          )}
-        </span>
-      ))}
+      <div
+        key={hitKey}
+        className={cx('ug-gauge-band', fresh != null && motion === 'full' && !calm && 'jolt')}
+      >
+        <svg
+          viewBox={`0 0 ${strikes * SEG_W} ${SEG_H + 10}`}
+          preserveAspectRatio="none"
+          aria-hidden
+          className="block h-full w-full"
+        >
+          {Array.from({ length: strikes }, (_, k) => (
+            <polygon key={k} points={segPoints(k)} className={cx('ug-slab', broken(k) && 'broken')} />
+          ))}
+          {crack.length > 0 && <polyline points={crack.join(' ')} className="ug-crack" />}
+          {fresh != null && <polygon points={segPoints(fresh)} className="ug-slab-flash" />}
+        </svg>
+        {fresh != null && motion === 'full' && (
+          <i className="ug-chips" style={{ left: `${((fresh + 0.5) / strikes) * 100}%` }} aria-hidden>
+            <b />
+            <b />
+            <b />
+            <b />
+          </i>
+        )}
+      </div>
     </div>
   )
 }
 
-/** The last strike, for the tiles it hit: which tile, how hard, and a key that restarts its flash. */
+/**
+ * The last strike: which tile, how hard, where the finger landed (fractions of the wall's box; a key press strikes
+ * the tile's centre) and a key that restarts its effects.
+ */
 export interface StrikeFx {
   tile: number
   roll: number
   key: number
+  at?: { x: number; y: number }
 }
+
+/** A thing just dug out: which one, and a key that restarts its pop. */
+export interface FoundFx {
+  thing: number
+  key: number
+}
+
+/** Where on the wall's box a tile's centre lies, as CSS lengths (the frame's 6 px padding counted). */
+const tileCentre = (wall: Pick<Wall, 'cols' | 'rows'>, tile: number) => ({
+  left: `calc(6px + (100% - 12px) * ${((tile % wall.cols) + 0.5) / wall.cols})`,
+  top: `calc(6px + (100% - 12px) * ${(Math.floor(tile / wall.cols) + 0.5) / wall.rows})`,
+})
 
 /**
  * The wall: what it hides drawn underneath, each tile on top a button (its layers as rock and as dots, its row,
- * column and layers read out). A dug tile shows what lies beneath. `fx` flashes the tiles the last strike hit.
+ * column and layers read out). A dug tile shows what lies beneath. `fx` swings the pickaxe where the finger landed
+ * and flashes the tiles the strike hit on its impact; `found` pops the name of a thing just dug out.
  */
 export function UgWall({
   wall,
@@ -235,17 +300,22 @@ export function UgWall({
   onStrike,
   disabled,
   fx,
+  found,
   motion = 'full',
+  calm,
   collapsing,
 }: {
   wall: Wall
   data: GameData
-  onStrike?: (tile: number) => void
+  onStrike?: (tile: number, at?: { x: number; y: number }) => void
   disabled?: boolean
   fx?: StrikeFx | null
+  found?: FoundFx | null
   motion?: 'full' | 'short' | 'off'
+  calm?: boolean
   collapsing?: boolean
 }) {
+  const box = useRef<HTMLDivElement>(null)
   const owner = new Map<number, WallThing>()
   for (const th of wall.things) for (const i of thingTiles(wall, th)) owner.set(i, th)
   const near = (i: number) => {
@@ -255,9 +325,40 @@ export function UgWall({
     return dx + dy === 1 && fx.roll - wall.neighbourLoss > 0
   }
   const animate = motion !== 'off'
+  const swing = motion === 'full'
+
+  // The wall gives under the blow, harder the bigger the roll: on the pickaxe's impact, never under calm.
+  const fxKey = fx?.key
+  const fxRoll = fx?.roll ?? 1
+  useEffect(() => {
+    const el = box.current
+    if (fxKey == null || !el || !swing || calm || typeof el.animate !== 'function') return
+    const d = 1 + fxRoll
+    el.animate(
+      [
+        { transform: 'translate(0, 0)' },
+        { transform: `translate(0, ${d}px)` },
+        { transform: `translate(${-d / 2}px, ${-1}px)` },
+        { transform: 'translate(0, 0)' },
+      ],
+      { duration: 150, delay: UG_IMPACT_MS, easing: 'steps(4, end)' },
+    )
+  }, [fxKey, fxRoll, swing, calm])
+
+  const pickAt = fx
+    ? fx.at
+      ? { left: `${fx.at.x * 100}%`, top: `${fx.at.y * 100}%` }
+      : tileCentre(wall, fx.tile)
+    : null
+  const pop = found ? wall.things[found.thing] : undefined
   return (
     <div
-      className={cx('ug-wall relative', collapsing && animate && (motion === 'full' ? 'fall' : 'thud'))}
+      ref={box}
+      className={cx(
+        'ug-wall relative',
+        swing && 'swing',
+        collapsing && animate && (motion === 'full' ? 'fall' : 'thud'),
+      )}
       style={{ aspectRatio: `${wall.cols} / ${wall.rows}` }}
     >
       <div className="ug-soil absolute inset-0" aria-hidden>
@@ -299,12 +400,20 @@ export function UgWall({
               type="button"
               aria-label={label}
               disabled={disabled || d === 0}
-              onClick={() => onStrike?.(i)}
+              onClick={(e) => {
+                // A tap strikes where the finger landed; a key press (no pointer: detail 0), the tile's centre.
+                const r = box.current?.getBoundingClientRect()
+                const at =
+                  e.detail > 0 && r && r.width > 0 && r.height > 0
+                    ? { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height }
+                    : undefined
+                onStrike?.(i, at)
+              }}
               className={cx('ug-tile relative', d > 0 ? `d${d}` : 'open')}
             >
               {d > 0 && <i className={cx('ug-dots', `n${d}`)} aria-hidden />}
               {hit && <i key={fx!.key} className={cx('ug-flash', fx!.tile === i && 'main')} aria-hidden />}
-              {hit && fx!.tile === i && motion === 'full' && (
+              {hit && fx!.tile === i && swing && (
                 <i key={`d${fx!.key}`} className="ug-dust" aria-hidden>
                   <b />
                   <b />
@@ -316,6 +425,26 @@ export function UgWall({
           )
         })}
       </div>
+      {animate && fx && pickAt && (
+        <i key={`p${fx.key}`} className={cx('ug-pick', swing ? 'full' : 'short')} style={pickAt} aria-hidden>
+          <span>
+            <PixelIcon name="pickaxe" size={64} />
+          </span>
+        </i>
+      )}
+      {animate && pop && found && (
+        <b
+          key={`f${found.key}`}
+          className="ug-pop font-pixel-sm"
+          style={{
+            left: `calc(6px + (100% - 12px) * ${(pop.x + pop.w / 2) / wall.cols})`,
+            top: `calc(6px + (100% - 12px) * ${pop.y / wall.rows})`,
+          }}
+          aria-hidden
+        >
+          {thingName(pop, data)}
+        </b>
+      )}
     </div>
   )
 }
@@ -541,6 +670,85 @@ export function OrbBagTable({
   )
 }
 
+/**
+ * The solo price, said before anything sells: a red-ringed note (a warning icon, never colour alone) with the share
+ * and both prices.
+ */
+export function UgSoloWarning({
+  share,
+  price,
+  full,
+  className,
+}: {
+  share: number
+  price: number
+  full: number
+  className?: string
+}) {
+  const { t } = useT()
+  return (
+    <p
+      role="note"
+      className={cx(
+        'm-0 flex items-start gap-2 bg-rose p-2.5 text-[18px] leading-tight text-ink shadow-[inset_0_0_0_2px_rgb(var(--c-danger))]',
+        className,
+      )}
+    >
+      <PixelIcon name="warning" size={20} className="mt-0.5 shrink-0" />
+      <span>{t('ui.ug.soloWarn', { share, price: money(price), full: money(full) })}</span>
+    </p>
+  )
+}
+
+/**
+ * Selling outside a full team, confirmed: both prices side by side, what's given up, KEEP MY ORBS or the red SELL FOR.
+ * Nothing sells until the player says so.
+ */
+export function UgSellModal({
+  open,
+  onClose,
+  onSell,
+  share,
+  price,
+  full,
+}: {
+  open: boolean
+  onClose: () => void
+  onSell: () => void
+  share: number
+  price: number
+  full: number
+}) {
+  const { t } = useT()
+  return (
+    <Modal open={open} onClose={onClose} title={t('ui.ug.soloTitle', { share })} className="max-w-md">
+      <div className="flex flex-col gap-3">
+        <dl className="m-0 grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 gap-y-1.5 bg-well p-2.5 shadow-ring-line">
+          <dt className="text-[19px] leading-tight text-muted">{t('ui.ug.soloFull')}</dt>
+          <dd className="m-0 text-right font-pixel-sm text-[18px] tabular-nums text-muted line-through">
+            {money(full)}
+          </dd>
+          <dt className="text-[22px] leading-tight">{t('ui.ug.soloNow')}</dt>
+          <dd className="m-0 text-right text-[28px] leading-none tabular-nums text-danger">{money(price)}</dd>
+        </dl>
+        <p
+          role="note"
+          className="m-0 flex items-start gap-2 bg-rose p-2.5 text-[18px] leading-tight text-ink shadow-[inset_0_0_0_2px_rgb(var(--c-danger))]"
+        >
+          <PixelIcon name="warning" size={20} className="mt-0.5 shrink-0" />
+          <span>{t('ui.ug.soloLoss', { price: money(full - price) })}</span>
+        </p>
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-2.5">
+          <PixelButton onClick={onClose}>{t('ui.ug.keep')}</PixelButton>
+          <PixelButton variant="danger" onClick={onSell}>
+            {t('ui.ug.soloSell', { price: money(price) })}
+          </PixelButton>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 /** The rules' rows, with the admin's numbers. */
 export function ugRuleRows(data: GameData): RuleRow[] {
   const cfg = ugCfg(data)
@@ -566,7 +774,11 @@ export function ugRuleRows(data: GameData): RuleRow[] {
         </span>
       ),
       title: t('ui.ug.rules.orbs.title'),
-      text: t(cfg.sellNeedsFull ? 'ui.ug.rules.orbs.text' : 'ui.ug.rules.orbs.textFree'),
+      text: !cfg.sellNeedsFull
+        ? t('ui.ug.rules.orbs.textFree')
+        : soloShare(cfg) > 0
+          ? t('ui.ug.rules.orbs.textSolo', { share: soloShare(cfg) })
+          : t('ui.ug.rules.orbs.text'),
     },
     {
       icon: <PlateArt type="fire" px={28} />,

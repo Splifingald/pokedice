@@ -473,5 +473,7 @@ export const DEFAULT_CONFIG: GameConfig = {
       { faces: [2, 2, 2, 3, 3, 3], price: 10000 },
     ],
     sellNeedsFull: true,
+    // Outside a full team, orbs sell for a tenth of their price: teaming up stays worth it.
+    soloShare: 10,
   },
 }

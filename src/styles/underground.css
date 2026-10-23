@@ -66,37 +66,48 @@
   top: 10%;
 }
 
-/* The crack gauge: a band of rock, a section per strike, cracking from the right; red and shaking near the end. */
+/*
+ * The crack gauge: a zig-zag band of rock slabs, one per strike, cracking from the right. Intact slabs are light rock
+ * with a lit top; broken ones are dark with a bright crack running through. The rock left glows red near the end.
+ */
 .ug-gauge {
-  gap: 2px;
+  position: relative;
+  height: 40px;
   padding: 4px;
   background: #3a2b20;
   box-shadow:
-    inset 0 0 0 2px #1a130e,
-    inset 0 4px 0 #5e4633;
+    0 0 0 2px rgb(var(--c-edge)),
+    inset 0 3px 0 #3a2b20;
 }
-.ug-seg {
+.ug-gauge-band {
   position: relative;
-  flex: 1;
-  height: 20px;
-  background: #8f6a43;
-  box-shadow:
-    inset 0 2px 0 #b38a5a,
-    inset 0 -2px 0 #6b4a2f;
-}
-.ug-seg.used {
-  background: #2a1d14;
-  box-shadow: inset 0 2px 0 #1a130e;
-}
-.ug-seg svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
   height: 100%;
-  fill: #c49a63;
 }
-.ug-gauge.hot .ug-seg.used {
-  background: #5a1a12;
+.ug-slab {
+  fill: #b98a55;
+  stroke: #1a130e;
+  stroke-width: 2px;
+  stroke-linejoin: miter;
+  vector-effect: non-scaling-stroke;
+}
+.ug-slab.broken {
+  fill: #140d09;
+}
+.ug-crack {
+  fill: none;
+  stroke: #f0c98e;
+  stroke-width: 2px;
+  stroke-linejoin: miter;
+  vector-effect: non-scaling-stroke;
+}
+.ug-gauge.hot .ug-slab:not(.broken) {
+  fill: #e0563a;
+}
+.ug-gauge.hot .ug-slab.broken {
+  fill: #2e0b08;
+}
+.ug-gauge.hot .ug-crack {
+  stroke: #ff9a6a;
 }
 .ug-gauge.shake {
   animation: ug-shake 600ms steps(1) infinite;
@@ -113,8 +124,112 @@
     transform: translateX(2px);
   }
 }
+/* A strike's mark on the gauge, on the pickaxe's impact: the broken slab flashes two white frames, chips fall off it
+   and the band jolts (full motion only). */
+.ug-slab-flash {
+  fill: #fff;
+  opacity: 0;
+  pointer-events: none;
+  animation: ug-flash 240ms steps(1) forwards;
+  animation-delay: var(--ug-impact, 0ms);
+}
+.ug-gauge-band.jolt {
+  animation: ug-jolt 200ms steps(1) both;
+  animation-delay: var(--ug-impact, 0ms);
+}
+@keyframes ug-jolt {
+  0% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(-3px, 2px);
+  }
+  45% {
+    transform: translate(3px, -1px);
+  }
+  70% {
+    transform: translate(-1px, 1px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+.ug-chips {
+  position: absolute;
+  top: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.ug-chips b {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #b98a55;
+  box-shadow: inset -1px -1px 0 #6b4a2f;
+  opacity: 0;
+  animation: ug-chip 420ms steps(5, end) forwards;
+  animation-delay: var(--ug-impact, 0ms);
+}
+.ug-gauge.hot .ug-chips b {
+  background: #e0563a;
+}
+.ug-chips b:nth-child(1) {
+  --dx: -12px;
+  --dy: 18px;
+}
+.ug-chips b:nth-child(2) {
+  --dx: 9px;
+  --dy: 22px;
+}
+.ug-chips b:nth-child(3) {
+  --dx: -4px;
+  --dy: 26px;
+}
+.ug-chips b:nth-child(4) {
+  --dx: 14px;
+  --dy: 14px;
+}
+@keyframes ug-chip {
+  0% {
+    transform: translate(0, -4px);
+    opacity: 1;
+  }
+  40% {
+    transform: translate(calc(var(--dx) * 0.6), calc(var(--dy) * 0.2 - 6px));
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx), var(--dy));
+    opacity: 0;
+  }
+}
 
-/* The wall: a frame of dark rock, the soil and what's buried beneath, the tiles on top. */
+/* The strikes left, over the gauge: the number gives a two-frame bump with each strike, on the impact. */
+.ug-count.bump {
+  display: inline-block;
+  animation: ug-bump 180ms steps(1, end) both;
+  animation-delay: var(--ug-impact, 0ms);
+}
+@keyframes ug-bump {
+  0% {
+    transform: translateY(0);
+  }
+  1%,
+  50% {
+    transform: translateY(-3px) scale(1.15);
+  }
+  51%,
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* The wall: a frame of dark rock, the soil and what's buried beneath, the tiles on top. With the swing (full motion)
+   a strike's effects wait for the pickaxe's impact (UG_IMPACT_MS). */
+.ug-wall.swing {
+  --ug-impact: 90ms;
+}
 .ug-wall {
   width: 100%;
   padding: 6px;
@@ -244,10 +359,13 @@
   background: #fff;
   opacity: 0;
   pointer-events: none;
-  animation: ug-flash-side 160ms steps(1) both;
+  /* forwards, not both: waiting for the impact, the tile shows as it is, not the first white frame. */
+  animation: ug-flash-side 160ms steps(1) forwards;
+  animation-delay: var(--ug-impact, 0ms);
 }
 .ug-flash.main {
-  animation: ug-flash 240ms steps(1) both;
+  animation: ug-flash 240ms steps(1) forwards;
+  animation-delay: var(--ug-impact, 0ms);
 }
 @keyframes ug-flash {
   0%,
@@ -289,7 +407,9 @@
   width: 4px;
   height: 4px;
   background: #dbb47c;
-  animation: ug-dust 360ms steps(4, end) both;
+  opacity: 0;
+  animation: ug-dust 360ms steps(4, end) forwards;
+  animation-delay: var(--ug-impact, 0ms);
 }
 .ug-dust b:nth-child(1) {
   --dx: -14px;
@@ -314,6 +434,128 @@
   }
   to {
     transform: translate(var(--dx), var(--dy));
+    opacity: 0;
+  }
+}
+
+/*
+ * The pickaxe, where the finger landed. Full: raised, a wind-up, down on the rock at UG_IMPACT_MS (its tip on the
+ * spot), a hit-stop, a recoil, gone; frame by frame. Short: only the impact frame, briefly. The handle is held from
+ * the lower right (the icon mirrored), so the tip at the left of the head strikes.
+ */
+.ug-pick {
+  position: absolute;
+  z-index: 2;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.ug-pick > span {
+  position: absolute;
+  /* The hand, the turning point, at the lower right; the tip (the mirrored head's left end) lands on the spot at the
+     impact's angle (−10°). */
+  left: 3px;
+  top: -34px;
+  width: 64px;
+  height: 64px;
+  transform-origin: 92% 92%;
+  opacity: 0;
+}
+.ug-pick > span > svg {
+  transform: scaleX(-1);
+  filter: drop-shadow(2px 2px 0 rgb(26 19 14 / 0.6));
+}
+.ug-pick.full > span {
+  animation: ug-swing 320ms steps(1, end) both;
+}
+.ug-pick.short > span {
+  animation: ug-tap 180ms steps(1, end) both;
+}
+@keyframes ug-swing {
+  0% {
+    transform: rotate(40deg);
+    opacity: 1;
+  }
+  14% {
+    transform: rotate(52deg);
+    opacity: 1;
+  }
+  22% {
+    transform: rotate(24deg);
+    opacity: 1;
+  }
+  /* 90 ms: the impact, held (hit-stop). */
+  28%,
+  50% {
+    transform: rotate(-10deg);
+    opacity: 1;
+  }
+  60% {
+    transform: rotate(4deg) translateY(-2px);
+    opacity: 1;
+  }
+  80% {
+    transform: rotate(12deg) translateY(-3px);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(12deg) translateY(-3px);
+    opacity: 0;
+  }
+}
+@keyframes ug-tap {
+  0%,
+  99% {
+    transform: rotate(-10deg);
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* A thing just dug out: its name pops over it, rises in steps and goes. */
+.ug-pop {
+  position: absolute;
+  z-index: 3;
+  max-width: 90%;
+  padding: 1px 6px 3px;
+  font-size: 15px;
+  font-weight: normal;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #24304f;
+  background: #ffe066;
+  box-shadow:
+    0 0 0 2px #24304f,
+    0 3px 0 2px #24304f;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  animation: ug-pop 1400ms steps(1, end) forwards;
+  animation-delay: var(--ug-impact, 0ms);
+}
+@keyframes ug-pop {
+  0% {
+    transform: translate(-50%, -20%);
+    opacity: 1;
+  }
+  8% {
+    transform: translate(-50%, -60%);
+  }
+  16%,
+  80% {
+    transform: translate(-50%, -80%);
+    opacity: 1;
+  }
+  90% {
+    transform: translate(-50%, -100%);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(-50%, -110%);
     opacity: 0;
   }
 }
@@ -348,6 +590,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ug-gauge.shake,
+  .ug-gauge-band.jolt,
   .ug-thing.done::after {
     animation: none;
   }
@@ -357,6 +600,12 @@ html.reduce-motion .ug-thing.done::after,
 html.reduce-motion .ug-flash,
 html.reduce-motion .ug-dust b,
 html.reduce-motion .ug-wall.fall .ug-tile,
-html.reduce-motion .ug-wall.thud {
+html.reduce-motion .ug-wall.thud,
+html.reduce-motion .ug-gauge-band.jolt,
+html.reduce-motion .ug-slab-flash,
+html.reduce-motion .ug-chips b,
+html.reduce-motion .ug-pick > span,
+html.reduce-motion .ug-count.bump,
+html.reduce-motion .ug-pop {
   animation: none;
 }
