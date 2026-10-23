@@ -1,6 +1,6 @@
 // The social media cut (15 s, docs/36 §12): no title; straight into Charmander's two dice (3 + 4 = 7), then
-// Charmeleon evolving into Charizard, the Charizard fight (Mewtwo's entrance short, the slow die short), and a
-// shorter end card. The same stage shot, dice and readouts as the main trailer.
+// Charmeleon evolving into Charizard (quick), the Charizard fight (Mewtwo's entrance short, the slow dice short), and
+// a shorter end card. The same stage shot, dice and readouts as the main trailer.
 import { attackTimeline } from '@/fx/timelines/attacks'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { evolveTimeline } from '@/fx/timelines/moments'
@@ -19,9 +19,9 @@ import type { Act } from '../main'
 
 export const SOCIAL = {
   charmander: [0, 3.8],
-  evolution: [3.8, 6.3],
-  charizard: [6.3, 12.5],
-  end: [12.5, 15],
+  evolution: [3.8, 5.3],
+  charizard: [5.3, 11.5],
+  end: [11.5, 15],
 } as const satisfies Record<string, readonly [number, number]>
 export const SOCIAL_FRAMES = 15 * 60
 
@@ -33,11 +33,11 @@ const MEWTWO = mon(150)
 // Charmander (0 → 3.8)
 const A = { throw: 0.25, pops: 0.78, damage: 1.15, attack: 1.9, faint: 2.75, white: 3.45 }
 const CA = contactOf(A.attack, 0.7, 1.6)
-// The evolution (3.8 → 6.3): the game's, from the light gathering, 2.6× its speed.
-const E = { from: 3.8, tl: 1.2, speed: 2.6 }
+// The evolution (3.8 → 5.3): the game's, from the silhouette's morph on, 3× its speed.
+const E = { from: 3.8, tl: 2.9, speed: 3 }
 const EVOLVED = E.from + (6.37 - E.tl) / E.speed
-// Charizard (6.3 → 12.5)
-const Z = { legend: 6.3, idle: 7.1, throw: 7.3, pops: 8.0, pick: 8.3, reroll: 8.6, slowA: 8.75, slowB: 9.95, attack: 11.2, end: 12.5 }
+// Charizard (5.3 → 11.5)
+const Z = { legend: 5.3, idle: 6.1, throw: 6.3, pops: 7.0, pick: 7.3, reroll: 7.6, slowA: 7.75, slowB: 8.95, attack: 10.2, end: 11.5 }
 const LAND = slowLanding(Z.reroll, 0.5, Z.slowA, Z.slowB, 0.08)
 const CZ = contactOf(Z.attack, 0.7, 1.8)
 
@@ -61,11 +61,11 @@ const A_DICE: TrayPlan = { fills: [TYPE.fire, TYPE.fire], throws: [{ t: A.throw,
 const Z_DICE: TrayPlan = {
   fills: [TYPE.fire, TYPE.fire, TYPE.fire, TYPE.flying, TYPE.flying],
   throws: [
-    { t: Z.throw, values: [5, 5, 5, 5, 2], dur: 0.5 },
-    { t: Z.reroll, values: [5], which: [4], dur: 0.5 },
+    { t: Z.throw, values: [5, 5, 2, 5, 3], dur: 0.5 },
+    { t: Z.reroll, values: [5, 5], which: [2, 4], dur: 0.5 },
   ],
-  picked: { t: Z.pick, which: [4] },
-  slow: [4, Z.slowA, Z.slowB, 0.08],
+  picked: { t: Z.pick, which: [2, 4] },
+  slow: [[2, 4], Z.slowA, Z.slowB, 0.08],
   combo: { t: LAND, which: [0, 1, 2, 3, 4] },
   flash: LAND,
   jump: LAND + 0.05,
@@ -142,9 +142,9 @@ const charizard: Act = {
           ? 1 + 1.6 * (1 - outCubic(span(u, LAND, LAND + 0.2)))
           : 1
       celebrate(g, u, LAND)
-      tray(g, Z_DICE, u, zoom, 4)
+      tray(g, Z_DICE, u, zoom, 3)
       if (u >= LAND - 0.02 && u < LAND + 0.1) speedLines(g, OW / 2, 900, u, { color: '#ffbe2e', inner: 260, a: 0.6 })
-      if (u < Z.reroll) valuePops(g, [5, 5, 5, 5, 2], diceAt(5), u, Z.pops)
+      if (u < Z.reroll) valuePops(g, [5, 5, 2, 5, 3], diceAt(5), u, Z.pops)
       else if (u >= LAND + 0.15) valuePops(g, [5, 5, 5, 5, 5], diceAt(5), u, LAND + 0.15)
       fiveBanner(g, u, LAND, hit)
       damageSlam(g, 95, 960, 640, u, LAND + 0.5, { size: 230, shake: 16 })
@@ -172,7 +172,7 @@ const end: Act = {
       url: 0.45,
       badges: [0.65, 0.75],
       footer: 0.9,
-      fade: [2.3, 2.5],
+      fade: [3.3, 3.5],
     }),
 }
 

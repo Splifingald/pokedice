@@ -30,11 +30,13 @@ const MEWTWO = mon(150)
 
 // The beats, in seconds from the act's start.
 const F1 = { throw: 0.7, pops: 1.2, damage: 1.65, attack: 2.8, faint: 3.7, level: 4.0, white: 4.6 }
-const EVO = { from: 5, to: 8 }
-const F2 = { cut: 8, strike: 8.2, throw: 9, pops: 9.55, combo: 9.95, damage: 10.35, attack: 11.4, faint: 12.1, burn: 12.75 }
-const F3 = { legend: 13, reverse: 14.8, throw: 15.6, pops: 16.3, pick: 16.9, reroll: 17.4, slowA: 17.55, slowB: 19.75 }
+// The evolution: the game's, from the silhouette's morph on, 3× its speed (1.5 s).
+const EVO = { from: 5, to: 6.5, tl: 2.9, speed: 3 }
+const EVOLVED = EVO.from + (6.37 - EVO.tl) / EVO.speed
+const F2 = { cut: 6.5, strike: 6.7, throw: 7.5, pops: 8.05, combo: 8.45, damage: 8.85, attack: 9.9, faint: 10.6, burn: 11.25 }
+const F3 = { legend: 11.5, reverse: 13.3, throw: 14.1, pops: 14.8, pick: 15.4, reroll: 15.9, slowA: 16.05, slowB: 18.25 }
 const LAND = slowLanding(F3.reroll, 0.5, F3.slowA, F3.slowB, 0.08)
-const F3b = { damage: LAND + 0.9, attack: 21.6, end: 22.5 }
+const F3b = { damage: LAND + 0.9, attack: 20.1, end: 21 }
 
 const C1 = contactOf(F1.attack, 0.7, 1.6)
 const C2own = contactOf(F2.strike, 1.2, 1.4, 1.67)
@@ -92,11 +94,11 @@ const F2_DICE: TrayPlan = {
 const F3_DICE: TrayPlan = {
   fills: [TYPE.fire, TYPE.fire, TYPE.fire, TYPE.flying, TYPE.flying],
   throws: [
-    { t: F3.throw, values: [5, 5, 5, 5, 2], dur: 0.55 },
-    { t: F3.reroll, values: [5], which: [4], dur: 0.5 },
+    { t: F3.throw, values: [5, 5, 2, 5, 3], dur: 0.55 },
+    { t: F3.reroll, values: [5, 5], which: [2, 4], dur: 0.5 },
   ],
-  picked: { t: F3.pick, which: [4] },
-  slow: [4, F3.slowA, F3.slowB, 0.08],
+  picked: { t: F3.pick, which: [2, 4] },
+  slow: [[2, 4], F3.slowA, F3.slowB, 0.08],
   combo: { t: LAND, which: [0, 1, 2, 3, 4] },
   flash: LAND,
   jump: LAND + 0.05,
@@ -129,13 +131,13 @@ function fight1(g: G, u: number) {
 
 // ---------------------------------------------------------------- the evolution (5 → 8)
 function evolution(g: G, u: number) {
-  // The whole morph, from the light gathering to Charmeleon standing in it, a little faster than the game's.
-  const layer = playAt(runs!.evo, u, EVO.from, 1.2, 1.9)
+  // The morph, quick: the silhouette changing, the burst, Charmeleon standing in its light.
+  const layer = playAt(runs!.evo, u, EVO.from, EVO.tl, EVO.speed)
   drawStage(g, null, [layer], { x: 120, y: 82, z: 8 })
-  if (u < EVO.from + 0.12) wash(g, '#ffffff', 1 - span(u, EVO.from, EVO.from + 0.12))
-  caption(g, 'What? Charmander is evolving!', u, EVO.from + 0.2, EVO.from + 2.2)
-  caption(g, 'Charmander evolved into Charmeleon!', u, EVO.from + 2.72, EVO.to)
-  if (hit(T0 + EVO.from + 2.75)) cry(5)
+  if (u < EVO.from + 0.1) wash(g, '#ffffff', 1 - span(u, EVO.from, EVO.from + 0.1))
+  caption(g, 'What? Charmander is evolving!', u, EVO.from + 0.05, EVOLVED - 0.05)
+  caption(g, 'Charmander evolved into Charmeleon!', u, EVOLVED, EVO.to)
+  if (hit(T0 + EVOLVED + 0.03)) cry(5)
 }
 
 // ---------------------------------------------------------------- fight 2: Charmeleon vs Scyther (8 → 13)
@@ -173,7 +175,7 @@ function fight2(g: G, u: number) {
     g.restore()
     if (hit(T0 + a)) play('gold')
   }
-  if (u >= F2.burn) flameWipe(g, span(u, F2.burn, 13), u)
+  if (u >= F2.burn) flameWipe(g, span(u, F2.burn, F3.legend), u)
 }
 
 // ---------------------------------------------------------------- fight 3: Charizard vs Mewtwo (13 → 22.5)
@@ -211,9 +213,10 @@ function fight3(g: G, u: number) {
         ? 1 + 1.6 * (1 - outCubic(span(u, LAND, LAND + 0.25)))
         : 1
     celebrate(g, u, LAND)
-    tray(g, F3_DICE, u, zoom, 4)
+    // The camera closes in between the two slow dice (the 3rd and the 5th): on the 4th's place.
+    tray(g, F3_DICE, u, zoom, 3)
     if (u >= LAND - 0.02 && u < LAND + 0.1) speedLines(g, OW / 2, 900, u, { color: '#ffbe2e', inner: 260, a: 0.6 })
-    if (u < F3.reroll) valuePops(g, [5, 5, 5, 5, 2], diceAt(5), u, F3.pops)
+    if (u < F3.reroll) valuePops(g, [5, 5, 2, 5, 3], diceAt(5), u, F3.pops)
     else if (u >= LAND + 0.2) valuePops(g, [5, 5, 5, 5, 5], diceAt(5), u, LAND + 0.2)
     // FIVE OF A KIND, huge, then the damage under it.
     fiveBanner(g, u, LAND, (t) => hit(T0 + t))
@@ -252,7 +255,7 @@ export const journey: Act = {
     const u = T - T0
     if (u < EVO.from) fight1(g, u)
     else if (u < EVO.to) evolution(g, u)
-    else if (u < F2.burn + 0.25) fight2(g, u)
+    else if (u < F3.legend) fight2(g, u)
     else fight3(g, u)
   },
 }

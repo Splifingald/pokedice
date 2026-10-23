@@ -5,11 +5,11 @@ export const BEAT = 0.5
 
 export const ACT = {
   title: [0, 4],
-  journey: [4, 26.5],
-  montage: [26.5, 44],
-  features: [44, 50],
-  choice: [50, 54.5],
-  end: [54.5, 60],
+  journey: [4, 25],
+  montage: [25, 42.5],
+  features: [42.5, 48.5],
+  choice: [48.5, 53],
+  end: [53, 58.5],
 } as const satisfies Record<string, readonly [number, number]>
 
 export const TOTAL_FRAMES = Math.round(ACT.end[1] * FPS)

@@ -4,7 +4,7 @@ A trailer for Pokédice, written shot by shot first, then built from the game's 
 Every timecode is in seconds from the start (frames at 60 fps: `f` = s × 60). This file is the reference for the
 build; change it here first.
 
-**Status (2026-10-23): version 3 built** on `claude/pokedice-trailer-video-5jq0o9`, **60 s**. The video's name:
+**Status (2026-10-23): built** on `claude/pokedice-trailer-video-5jq0o9`: the main trailer **58.5 s**, the social cut **15 s** (§12). The timecodes of §1–§7 are version 3's, before the evolution was shortened by 1.5 s: from the evolution on, everything comes 1.5 s earlier (the end card ends at 58.5). The video's name:
 **Pokédice - Web Game Trailer** (never shown on screen).
 
 Version 1 (22 s) went by too fast to understand, the user said. Version 2 follows their notes (§11): a longer pause on
@@ -47,7 +47,7 @@ DISCORD COMMUNITY instead of the Discord link, and a better Discord mark; every 
 |---|---|---|---|---|
 | 1 | Title | 0 | 4 | Dice roll and spell POKÉDICE, long hold |
 | 2 | Fight 1 | 4 | 9 | Charmander vs Bulbasaur: two dice, 3 + 4 = 7 |
-| 3 | Evolution | 9 | 12 | Charmander → Charmeleon, the whole morph |
+| 3 | Evolution | 9 | 10.5 | Charmander → Charmeleon, the morph, quick (1.5 s) |
 | 4 | Fight 2 | 12 | 17 | Charmeleon vs Scyther: three dice, a pair, 14 |
 | 5 | Fight 3 | 17 | 26.5 | Mewtwo's entrance; Charizard's five 5s in slow motion, a celebration, 95 |
 | 6 | Rayquaza | 26.5 | 31 | Its raid opening, full screen |
@@ -97,10 +97,10 @@ appears; the damage slams in above them. No formula.
 | 6.8–7.7 | Flamethrower, `-7`, Bulbasaur faints. | `super`, `faint`. |
 | 8–9 | `Charmander grew to Lv.16!`; it glows white and the white takes the screen. | `levelup`. |
 
-### The evolution (9 → 12)
+### The evolution (9 → 10.5)
 
-The game's evolution, nearly whole (1.9× its speed): the light gathers, the silhouette morphs, the burst, Charmeleon
-standing in its light. `What? Charmander is evolving!`, then `Charmander evolved into Charmeleon!` and its cry.
+The game's evolution from the silhouette's morph on, 3× its speed: the morph, the burst, Charmeleon standing in its
+light. `What? Charmander is evolving!`, then `Charmander evolved into Charmeleon!` and its cry.
 
 ### Fight 2, Charmeleon vs a trainer's Scyther (12 → 17)
 
@@ -118,10 +118,10 @@ standing in its light. `What? Charmander is evolving!`, then `Charmander evolved
 |---|---|---|
 | 17–18.8 | Cerulean Cave: Mewtwo's legendary entrance, its name card. | Heartbeats, its cry. |
 | 18.8–19.5 | The same shot, Charizard's plate slides in. | Its cry. |
-| 19.6–20.3 | Five dice, **three Fire and two Flying**, land 5 · 5 · 5 · 5 · 2. | |
-| 20.7–21.4 | `Tap dice to throw them again.` The 2 (a Flying die) lifts and is thrown again. | |
-| 21.55–23.92 | **The slow motion**: the camera closes in on that die as it turns at a twelfth of its speed, the stage dark and pulsing with a heartbeat. | The music stops: a heartbeat, a long riser. |
-| 23.92 | It lands on 5: five 5s. The dice flash white and ring gold, gold rays turn behind them, confetti bursts, the dice hop, **FIVE OF A KIND!** slams in huge. | A fanfare in D major. |
+| 19.6–20.3 | Five dice, **three Fire and two Flying**, land 5 · 5 · 2 · 5 · 3. | |
+| 20.7–21.4 | `Tap dice to throw them again.` The 2 (Fire) and the 3 (Flying) lift with the red ring and are thrown again. | |
+| 21.55–23.92 | **The slow motion**: the camera closes in on those two dice as they turn at a twelfth of their speed, the stage dark and pulsing with a heartbeat. | The music stops: a heartbeat, a long riser. |
+| 23.92 | Both land on 5: five 5s. The dice flash white and ring gold, gold rays turn behind them, confetti bursts, the dice hop, **FIVE OF A KIND!** slams in huge. | A fanfare in D major. |
 | 24.82 | `95` slams in under it. | |
 | 25.6–26.5 | Flamethrower; on the hit a white impact frame, then the two as ink silhouettes on white, then colour as Mewtwo's HP empties; cut to black. | The biggest hit. |
 
@@ -201,11 +201,11 @@ its own score `scoreSocial`). 1920×1080 like the main one. No title: it opens o
 | Time | Picture | Sound |
 |---|---|---|
 | 0–3.8 | Charmander vs Bulbasaur, the plates already in: two Fire dice, 3 · 4, `7`; Flamethrower, Bulbasaur faints; white. | Bulbasaur's cry, the groove, `super`, `faint`. |
-| 3.8–6.3 | Charmeleon evolving into Charizard (the game's evolution from the light gathering, 2.6× its speed): `What? Charmeleon is evolving!`, `Charmeleon evolved into Charizard!` | Climbing arpeggios, the burst in D major, Charizard's cry. |
-| 6.3–7.1 | Mewtwo's entrance, from its rising silhouette to its name card (2× speed). | Heartbeats, its cry. |
-| 7.1–10.2 | The same stage shot; five dice (three Fire, two Flying) land 5 · 5 · 5 · 5 · 2; `Tap dice to throw them again.`; the 2 rerolled in a shorter slow motion (1.2 s). | The groove, then the stop. |
-| 10.2–12.5 | Five 5s: the celebration, **FIVE OF A KIND!**, `95`; Flamethrower, the impact frame and the ink freeze; cut to black. | The fanfare, the hit. |
-| 12.5–15 | The end card, faster: the dice drop, the ring, the website, MOBILE FRIENDLY and DISCORD COMMUNITY, the fan-made line; fade out. | The last chord. |
+| 3.8–5.3 | Charmeleon evolving into Charizard (the game's evolution from the morph on, 3× its speed): `What? Charmeleon is evolving!`, `Charmeleon evolved into Charizard!` | Climbing arpeggios, the burst in D major, Charizard's cry. |
+| 5.3–6.1 | Mewtwo's entrance, from its rising silhouette to its name card (2× speed). | Heartbeats, its cry. |
+| 6.1–9.2 | The same stage shot; five dice (three Fire, two Flying) land 5 · 5 · 2 · 5 · 3; `Tap dice to throw them again.`; the 2 and the 3 rerolled in a shorter slow motion (1.2 s). | The groove, then the stop. |
+| 9.2–11.5 | Five 5s: the celebration, **FIVE OF A KIND!**, `95`; Flamethrower, the impact frame and the ink freeze; cut to black. | The fanfare, the hit. |
+| 11.5–15 | The end card, faster: the dice drop, the ring, the website, MOBILE FRIENDLY and DISCORD COMMUNITY, the fan-made line; fade out. | The last chord. |
 
 ## 11. The user's decisions (2026-10-23)
 
@@ -224,3 +224,4 @@ its own score `scoreSocial`). 1920×1080 like the main one. No title: it opens o
    don't share the screen.
 7. A 15-second social media cut: no intro, straight on Charmander, skip Charmeleon's fight, Charmeleon evolving into
    Charizard, the Charizard fight, a shorter end screen (§12).
+8. In both: a shorter evolution; Charizard's dice 5 · 5 · 2 · 5 · 3, the 2 and the 3 rerolled into 5s.

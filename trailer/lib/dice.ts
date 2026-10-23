@@ -23,8 +23,8 @@ export interface TrayPlan {
   flash?: number
   /** Where the row sits (tray pixels): its centre and baseline. */
   y?: number
-  /** The tray's own time stretch for one die (the slow-motion one): [die, from, to, factor]. */
-  slow?: [number, number, number, number]
+  /** The tray's own time stretch for the slow-motion dice: [dice, from, to, factor]. */
+  slow?: [number[], number, number, number]
   /** The dice hop for joy from this time (the celebration). */
   jump?: number
 }
@@ -74,7 +74,7 @@ export function drawTray(plan: TrayPlan, t: number) {
       size: SIZE,
     }
     let tt = t
-    if (plan.slow && plan.slow[0] === i && t > plan.slow[1]) {
+    if (plan.slow && plan.slow[0].includes(i) && t > plan.slow[1]) {
       const [, a, b, f] = plan.slow
       tt = a + (Math.min(t, b) - a) * f + Math.max(0, t - b)
     }
