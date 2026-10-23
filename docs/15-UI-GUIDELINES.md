@@ -363,7 +363,7 @@ Players shouldn't have to make many requests:
   that plays the fight takes it over from its next move, once Settings close). What would end the fight or leave the
   page stays listed and shut with the reason (`PixelButton shut`): signing in (it may load the cloud's save over this
   one), disconnecting, linking or unlinking an account (linking leaves for the provider's page), deleting the save, the
-  Extreme save or all the data, restoring a backup, checking for new content (it swaps the game's data under the fight)
+  Extreme save or all the data, checking for new content (it swaps the game's data under the fight)
   and the deploy guide's link. The same under a portal run's lock, with its own reason.
 - **Tab bar** (phones): Poké Mart, Upgrades, **Home** (in the middle, under the thumb: a tab like the others, its Poké Ball icon and label), Team,
   Pokédex. The side nav (desktop) has the same entries with Home first. A tab's hit area is the whole column, at

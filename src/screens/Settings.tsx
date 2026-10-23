@@ -7,21 +7,20 @@ import { PushSettingsPanel } from '@/components/PushSettings'
 import { PixelButton } from '@/components/PixelButton'
 import { Seg } from '@/components/Segmented'
 import { Toggle } from '@/components/Toggle'
-import { donationEnabled, extremeOpen, isExtreme, missesTrades } from '@/engine'
+import { donationEnabled, extremeOpen, isExtreme } from '@/engine'
 import { LANG_LABELS, LANGS, type Lang } from '@/i18n'
 import { multiExpText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { pushToast, setSettings, useGame } from '@/store/game'
-import { deleteSave, replaceSave } from '@/store/run'
+import { deleteSave } from '@/store/run'
 import { useIsAdmin, useLockReason, useNavLock } from '@/store/hooks'
 import { checkContent, deleteAllData, deleteExtremeSave, providerName } from '@/store/sync'
 import { otherSave } from '@/store/extreme'
 import { ExtremeRulesModal } from '@/components/Extreme'
 import { PlayStylePanel } from '@/components/IdleMode'
 import { AccountButton, ConnectedAccounts, DisconnectButton } from '@/components/AccountButton'
-import { SaveFacts } from '@/components/SaveFacts'
-import { backupSave, readBackups, soundOn } from '@/save/storage'
+import { soundOn } from '@/save/storage'
 import { cx } from '@/theme/util'
 
 export function SettingsScreen() {
@@ -66,7 +65,7 @@ export function SettingsOverlay({
 /**
  * Everything Settings holds, on its route or over the page (`over`: the dialog's title names it, no page heading).
  * Under a lock (`shut`, by default `useLockReason`: a fight under way, a portal run), what would end the fight or
- * leave the page is shut and says why — signing in or out, linking an account, deleting a save, restoring a backup,
+ * leave the page is shut and says why — signing in or out, linking an account, deleting a save,
  * new content, the deploy guide — and the rest (sound, animations, theme, play style, notifications, language, copying
  * the save, the rules) works as ever.
  */
@@ -235,9 +234,6 @@ function SettingsContent({ over = false, shut }: { over?: boolean; shut?: string
 
       <ExtremePanel shut={why} />
 
-      {/* Restoring a backup rewrites the cloud save the trade server reads, like an import: admins only (docs/23). */}
-      {isAdmin && <BackupsPanel shut={why} />}
-
       <Panel title={t('ui.settings.content')}>
         <p className="text-lg">
           {t('ui.settings.gameData', {
@@ -374,52 +370,6 @@ function ExtremePanel({ shut }: { shut?: string | null }) {
         {hasSave && <DeleteData scope="extreme" shut={shut} />}
       </div>
       <ExtremeRulesModal open={rules} onClose={() => setRules(false)} />
-    </Panel>
-  )
-}
-
-/** Saves replaced by a cloud sync (or a restore) on this device — a wrong choice can be undone here. */
-function BackupsPanel({ shut }: { shut?: string | null }) {
-  const { t } = useT()
-  const current = useGame((s) => s.save)
-  const [list, setList] = useState(() => readBackups())
-  const [confirm, setConfirm] = useState<number | null>(null)
-  if (!list.length) return null
-  return (
-    <Panel title={t('ui.settings.backups')}>
-      <p className="copy mb-2 text-muted">{t('ui.settings.backupsHint')}</p>
-      <ul className="flex flex-col gap-2">
-        {list.map((b) => {
-          // Going back to before a trade would give back the Pokémon traded away: a duplicate (docs/23).
-          const traded = !!current && missesTrades(b.save, current)
-          return (
-            <li key={b.at} className="flex flex-wrap items-center gap-3 bg-paper p-2 shadow-ring">
-              <div className="min-w-0 flex-1">
-                <div className="text-lg leading-tight">{b.reason}</div>
-                <div className="text-base text-muted">{t('ui.settings.setAside', { when: new Date(b.at).toLocaleString() })}</div>
-                <SaveFacts save={b.save} />
-                {traded && <div className="copy text-muted">{t('ui.settings.restoreTraded')}</div>}
-              </div>
-              <PixelButton
-                size="sm"
-                variant={confirm === b.at ? 'danger' : 'secondary'}
-                disabled={traded}
-                shut={shut}
-                onClick={() => {
-                  if (confirm !== b.at) return setConfirm(b.at)
-                  if (current) backupSave(current, t('ui.settings.beforeRestore'))
-                  replaceSave({ ...b.save, updatedAt: Date.now() })
-                  setConfirm(null)
-                  setList(readBackups())
-                  pushToast(t('ui.settings.restored'), 'good')
-                }}
-              >
-                {t(confirm === b.at ? 'ui.settings.replaceMine' : 'ui.settings.restore')}
-              </PixelButton>
-            </li>
-          )
-        })}
-      </ul>
     </Panel>
   )
 }
