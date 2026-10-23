@@ -123,9 +123,8 @@ function tray(g: G, plan: TrayPlan, u: number, zoom = 1, on = 0) {
 }
 const at = (n: number) => (i: number) => restScreen(n, i)
 
-// The fights' two shots: the whole stage, and Charizard close and low.
+// The fights' one shot: the whole stage. Every fight, and Mewtwo's entrance, are framed exactly alike.
 const STAGE: Cam = { x: 120, y: 86, z: 8 }
-const CLOSE: Cam = { x: 70, y: 114, z: 10 }
 
 const shakeAt = (u: number, at: number, amp: number, dur = 0.3) => {
   const p = (u - at) / dur
@@ -236,14 +235,13 @@ function fight3(g: G, u: number) {
     const v = u - F3.legend
     const tl = v < 1.2 ? 1.9 + v : 3.1 + (v - 1.2) * 1.2
     r.f3legend.at(tl, 1.9)
-    drawStage(g, pic, [r.f3legend.draw()], { x: 120, y: 80, z: 8 })
+    drawStage(g, pic, [r.f3legend.draw()], STAGE)
     if (hit(T0 + F3.legend + 1.3)) cry(150)
     if (u < F3.legend + 0.08) wash(g, '#ee8130', 1 - span(u, F3.legend, F3.legend + 0.08))
     return
   }
   const slow = u >= F3.slowA && u < LAND
-  // A cut to Charizard, low and close, then a cut back to the whole stage; no camera moves.
-  const cam = u < F3.throw ? CLOSE : STAGE
+  const cam = STAGE
   const layer = u >= F3b.attack ? playAt(r.f3fire, u, F3b.attack, 0.7, 1.6) : idleAt(r.f3idle, u)
   drawStage(g, pic, [layer], clampCam(cam, pic), undefined, { shake: shakeAt(u, C3, 14, 0.4) })
   if (hit(T0 + F3.reverse + 0.02)) cry(6)

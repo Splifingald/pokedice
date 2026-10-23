@@ -22,7 +22,7 @@ DISCORD COMMUNITY instead of the Discord link, and a better Discord mark; every 
 - **About 70 % the game, 30 % trailer.** The Pokémon sprites, the dice, the Daybreak palette, the Jersey fonts, the
   area pictures, the stage and the move / evolution / Mega / Gigantamax / legendary / raid / trade / starter effects
   are the game's (`src/fx/timelines`, `src/components/Die.tsx`, `docs/15-UI-GUIDELINES.md`). On top of them: camera
-  moves, close-ups on the battle area, the dice as an overlay, the damage worked out on screen, speed lines, impact
+  moves, close-ups on the battle area, the dice as an overlay, the damage shown big, speed lines, impact
   frames, an ink freeze, confetti, music.
 - **It explains, without a formula.** Every roll shows each die's value, the combo's chip when there is one, and the
   damage, big. The numbers stay simple enough to add up at a glance: 3 + 4 = 7; 5 + 5 + 2 and a pair = 14; five 5s and
@@ -31,7 +31,7 @@ DISCORD COMMUNITY instead of the Discord link, and a better Discord mark; every 
   battle lines (`strings.csv`).
 - **Always the battle area** in the fights and the big moments; menus only in the features, as cut-ins.
 - **A still camera** (after version 3, the user: too many camera moves). The title and every fight are one fixed
-  shot; Charizard's close-up is a cut, not a move; hits shake the screen lightly. The only camera moves left are the
+  shot, Mewtwo's entrance framed exactly like the fight after it; hits shake the screen lightly. The only camera moves left are the
   ones asked for: the slow-motion push onto Charizard's last die, and the lab's zoom onto the shaking ball.
 - **Clear pixels.** The art is drawn small and scaled up nearest-neighbour at whole scales: the stage at ×8 to ×10,
   the title and the end card at ×3 (640×360), the dice overlay at ×4. Anything at a fractional scale — the area
@@ -53,7 +53,7 @@ DISCORD COMMUNITY instead of the Discord link, and a better Discord mark; every 
 | 6 | Rayquaza | 26.5 | 31 | Its raid opening, full screen |
 | 7 | Mega Evolution | 31 | 34 | Charizard → Mega Charizard X, full screen |
 | 8 | Gigantamax | 34 | 37 | Gengar → G-Max Gengar, full screen |
-| 9 | Bosses | 37 | 40.5 | Mew, Celebi, Jirachi, Shaymin, together: MYTHICAL BOSSES |
+| 9 | Bosses | 37 | 40.5 | Mew, Celebi, Jirachi, Manaphy, together: MYTHICAL BOSSES |
 | 10 | Raids | 40.5 | 44 | Lugia, Groudon, Palkia, Zacian, together |
 | 11 | Features | 44 | 50 | Friends, Versus, Trading, Co-op raids, Co-op Day Care, 1.2 s each |
 | 12 | The choice | 50 | 54.5 | Oak's lab: the balls drop, the middle one shakes, "What's your choice?" |
@@ -117,7 +117,7 @@ standing in its light. `What? Charmander is evolving!`, then `Charmander evolved
 | Time | Picture | Sound |
 |---|---|---|
 | 17–18.8 | Cerulean Cave: Mewtwo's legendary entrance, its name card. | Heartbeats, its cry. |
-| 18.8–19.5 | Low and close on Charizard. | Its cry. |
+| 18.8–19.5 | The same shot, Charizard's plate slides in. | Its cry. |
 | 19.6–20.3 | Five dice, **three Fire and two Flying**, land 5 · 5 · 5 · 5 · 2. | |
 | 20.7–21.4 | `Tap dice to throw them again.` The 2 (a Flying die) lifts and is thrown again. | |
 | 21.55–23.92 | **The slow motion**: the camera closes in on that die as it turns at a twelfth of its speed, the stage dark and pulsing with a heartbeat. | The music stops: a heartbeat, a long riser. |
@@ -132,7 +132,7 @@ standing in its light. `What? Charmander is evolving!`, then `Charmander evolved
 | 26.5–31 | **Rayquaza's raid opening**, full screen (`RaidIntro.tsx`, redrawn landscape in `trailer/lib/raidIntro.ts`): the alarm and its hazard tapes, the storm and lightning, the silhouette rising, the pillar of light, the reveal, `RAID BATTLE / RAYQUAZA` and its five HP bars filling. |
 | 31–34 | **Mega Evolution**, full screen, on the Indigo Plateau: Charizard → Mega Charizard X. `Charizard Mega Evolved into Mega Charizard X!` |
 | 34–37 | **Gigantamax**, full screen, in Pokémon Tower: Gengar → G-Max Gengar. `Gengar Gigantamaxed!` |
-| 37–40.5 | **Four mythical bosses** in a 2×2 grid, their entrances a beat apart: Mew (Faraway Island), Celebi (Ilex Forest), Jirachi (a summit), Shaymin (a flower field). A `MYTHICAL BOSSES` chip where the tiles meet. |
+| 37–40.5 | **Four mythical bosses** in a 2×2 grid, their entrances a beat apart: Mew (Faraway Island), Celebi (Ilex Forest), Jirachi (a summit), Manaphy (a beach). A `MYTHICAL BOSSES` chip where the tiles meet. |
 | 40.5–44 | **Four raids** in a 2×2 grid, each one's raid opening: Lugia, Groudon, Palkia, Zacian. A `RAIDS WITH FRIENDS` chip. White takes the screen at the end. |
 
 Each tile has a 12-px ink border and its star's type colour as a rim; each part opens on a white frame.
@@ -206,3 +206,5 @@ Not built yet.
 5. After version 2: no damage formula; Charmander two dice, 3 + 4 = 7; Charmeleon three dice with a pair; Charizard
    as is, without the formula; MYTHICAL BOSSES; the end card 2 s longer, MOBILE FRIENDLY and DISCORD COMMUNITY instead
    of the Discord link, a better Discord logo; every pixel image clear, whatever the zoom or the aspect ratio.
+6. After version 4: no close-up at the start of the Charizard fight; Manaphy instead of Shaymin, so two Grass bosses
+   don't share the screen.

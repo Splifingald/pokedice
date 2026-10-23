@@ -1,5 +1,5 @@
 // Act 3, the big moments (26.5 → 44 s): Rayquaza's raid opening, a Mega Evolution and a Gigantamax, each full screen
-// with the game's own line; then four mythical bosses at once (Mew, Celebi, Jirachi, Shaymin) and four raids at once
+// with the game's own line; then four mythical bosses at once (Mew, Celebi, Jirachi, Manaphy) and four raids at once
 // (Lugia, Groudon, Palkia, Zacian), each tile framed on its battle with an ink border and its type colour as a rim.
 import { gmaxTimeline, megaTimeline } from '@/fx/timelines/forms'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
@@ -29,7 +29,7 @@ const BOSS_LIST: { dex: number; name: string; type: PokeType; pic: string; rim: 
   { dex: 151, name: 'MEW', type: 'psychic', pic: 'lair-island', rim: TYPE.psychic },
   { dex: 251, name: 'CELEBI', type: 'grass', pic: 'oldforest', rim: TYPE.grass },
   { dex: 385, name: 'JIRACHI', type: 'steel', pic: 'lair-summit', rim: TYPE.steel },
-  { dex: 492, name: 'SHAYMIN', type: 'grass', pic: 'flowers', rim: TYPE.fairy },
+  { dex: 490, name: 'MANAPHY', type: 'water', pic: 'beach', rim: TYPE.water },
 ]
 const RAID_LIST: { dex: number; name: string; rim: string }[] = [
   { dex: 249, name: 'LUGIA', rim: TYPE.flying },
