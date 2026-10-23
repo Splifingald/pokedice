@@ -354,6 +354,9 @@ export const DEFAULT_CONFIG: GameConfig = {
   // Idle mode and the play styles (docs/36): off until the admin switches it on; auto-mode stays as it was meanwhile.
   // Migration 0068 inserts the same row.
   idleMode: { access: 'off' },
+  // Recorded dice throws (docs/37): off until the admin switches them on; the dice tumble as before meanwhile.
+  // Migration 0069 inserts the same row.
+  diceThrows: { access: 'off' },
   // Double battles (docs/33): off until the admin switches them on; from Hoenn on, 10 % of the wild encounters.
   // Migration 0062 inserts the same row.
   doubleBattles: { access: 'off', regions: ['hoenn', 'sinnoh', 'unova', 'kalos', 'alola', 'galar', 'paldea'], wildChance: 10 },

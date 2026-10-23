@@ -1,38 +1,20 @@
+import { useRef } from 'react'
 import { motion } from 'framer-motion'
 import type { DieType, Face } from '@/engine/types'
+import { numberPx, pipLayout, PIPS } from '@/fx/dice/pips'
 import { usePace } from '@/lib/pace'
 import { PALETTE, STATUS_COLORS } from '@/theme/colors'
 import { cx, hexToRgb, typeColor } from '@/theme/util'
 import { PixelIcon, STATUS_ICON } from './icons'
+import { useDieThrow } from './useDieThrow'
 import { t } from '@/i18n'
 import { statusName, typeName } from '@/lib/format'
 
-/**
- * Which of the nine pip cells (0–8, row by row) each value lights: a die's own 1 to 6. Anything else (0, 7, 8, a
- * negative face) has no pips and shows its number, so it reads at a glance as out of the ordinary.
- */
-const PIPS: Record<number, number[]> = {
-  1: [4],
-  2: [0, 8],
-  3: [0, 4, 8],
-  4: [0, 2, 6, 8],
-  5: [0, 2, 4, 6, 8],
-  6: [0, 2, 3, 5, 6, 8],
-}
+// The pips live with the thrown cube's face art (fx/dice/pips.ts), so both draw the same face.
+export { pipLayout }
 
 /** Under this size a die drops its 3D lip for a thinner one. */
 const MINI = 40
-
-/**
- * Pip geometry on whole pixels: one even pip size per die and three fixed columns and rows, so every dot on a die is
- * the same size whatever the die's size (a fractional pip renders as a blur or a lopsided dot).
- */
-export function pipLayout(size: number) {
-  const pip = Math.max(2, Math.round((size * 0.15) / 2) * 2)
-  const margin = Math.round(size * 0.2)
-  const at = [margin, Math.round((size - pip) / 2), size - margin - pip]
-  return { pip, at }
-}
 
 /** Ink pips on light dice, white on dark ones (perceived brightness, as the lab draws them). */
 const pipColor = (fill: string) => {
@@ -50,7 +32,7 @@ function FaceArt({ face, size, ink }: { face: Face; size: number; ink: string })
     return (
       <span
         className="absolute inset-0 flex items-center justify-center font-pixel leading-none"
-        style={{ fontSize: Math.round(size * 0.62), color: ink }}
+        style={{ fontSize: numberPx(size), color: ink }}
       >
         {face.value}
       </span>
@@ -112,8 +94,22 @@ export function Die({ type, face, size = 56, selected, combo, locked, rollKey, d
         })
       : t('ui.die.name', { type: typeName(type) }))
   const tag = Math.max(14, Math.round(size * 0.3))
+  // With the recorded throws on (docs/37), the face hides while a canvas throws the die onto it.
+  const bodyRef = useRef<HTMLSpanElement>(null)
+  const { active: thrown, flying } = useDieThrow({
+    rollKey,
+    body: bodyRef,
+    type,
+    face,
+    size,
+    fill,
+    pip: ink,
+    locked: !!locked,
+    delay,
+  })
   const body = (
     <span
+      ref={bodyRef}
       className={cx(size < MINI ? 'die-mini' : 'die', 'relative block')}
       style={{ width: size, height: size, ['--c' as string]: fill, opacity: locked ? 0.8 : 1 }}
     >
@@ -139,8 +135,10 @@ export function Die({ type, face, size = 56, selected, combo, locked, rollKey, d
   const motionProps = {
     className: cx(wrap, 'relative select-none', interactive && 'cursor-pointer', className),
     style: { ['--stc' as string]: special ?? undefined, transformStyle: 'preserve-3d' as const },
-    initial: rollKey !== undefined ? { rotateX: 540, rotateZ: 200, y: -size * 1.2, scale: 0.6, opacity: 0 } : (false as const),
-    animate: { rotateX: 0, rotateZ: 0, y: selected ? -6 : combo ? -5 : 0, scale: 1, opacity: 1 },
+    initial:
+      rollKey !== undefined && !thrown ? { rotateX: 540, rotateZ: 200, y: -size * 1.2, scale: 0.6, opacity: 0 } : (false as const),
+    // A thrown die lands flat; a pick or a combo lifts it once it's down.
+    animate: { rotateX: 0, rotateZ: 0, y: flying ? 0 : selected ? -6 : combo ? -5 : 0, scale: 1, opacity: 1 },
     transition: {
       default: { duration: 0.6 * pace, delay, ease: [0.2, 0.9, 0.3, 1.2] },
       y: { duration: 0.12 * pace, ease: 'linear' },

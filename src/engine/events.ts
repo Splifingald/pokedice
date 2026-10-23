@@ -18,6 +18,9 @@ export const eventDef = (data: GameData, id: EventId): EventDef => data.config.e
 export const eventOpenTo = (access: EventAccess | undefined, data: GameData): boolean =>
   access === 'all' || (access === 'admin' && !!data.viewer?.admin)
 
+/** Recorded dice throws (docs/37): the dice's look only, so the game alone reads it (no server function acts for it). */
+export const diceThrowsOn = (data: GameData): boolean => eventOpenTo(data.config.diceThrows?.access, data)
+
 /** This event is switched on for whoever is playing. */
 export const eventOn = (data: GameData, id: EventId): boolean => eventOpenTo(eventDef(data, id)?.access, data)
 

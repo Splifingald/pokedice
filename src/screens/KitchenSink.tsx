@@ -65,6 +65,7 @@ import { TrickBits } from './kitchen/TrickBits'
 import { UndergroundBits } from './kitchen/UndergroundBits'
 import { DayNightBits } from './kitchen/DayNightBits'
 import { IdleBits } from './kitchen/IdleBits'
+import { DiceThrowBits } from './kitchen/DiceThrowBits'
 import { PowersBits } from './kitchen/PowersBits'
 import { RotateView } from '@/components/RotateCover'
 import { SettingsOverlay } from '@/screens/Settings'
@@ -718,6 +719,9 @@ export function KitchenSink() {
       </Section>
       <Section title="Idle mode and the play styles: the style cards (each picked, none), a new game's question, the area's switch (AUTO-MODE, Idle mode; off, on, the tip), the autopilot's note, rules (docs/36)">
         <IdleBits />
+      </Section>
+      <Section title="Dice throws: a tray at each motion level (full, short, the OS's calm drop, off), reroll of the picked dice only, slow motion, frozen mid-throw, the status faces, the foe's size, at rest (docs/37)">
+        <DiceThrowBits />
       </Section>
 
       <Section title="StatusIcons · PixelIcon">
