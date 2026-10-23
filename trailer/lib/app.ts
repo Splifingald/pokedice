@@ -3,6 +3,7 @@
 import { renderAudio, setNow, sound } from './audio'
 import { clock, FPS } from './clock'
 import { animateAll } from './sprites'
+import { liftHero } from './fight'
 
 export interface Act {
   range: readonly [number, number]
@@ -29,6 +30,7 @@ export function start(ACTS: Act[], TOTAL_FRAMES: number, score: Score) {
   const g = cv.getContext('2d')!
 
   async function load() {
+    liftHero()
     await Promise.all([document.fonts.load('64px "Jersey 25"'), document.fonts.load('64px "Jersey 15"')])
     await Promise.all(ACTS.map((a) => a.load()))
     return true

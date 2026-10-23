@@ -4,10 +4,23 @@ import { play } from './audio'
 import { drawTray, restScreen, TRAY_H, TRAY_K, TRAY_W, type TrayPlan } from './dice'
 import { bottomShade, OH, OW, outBack, outCubic, rect, span, text, type G } from './draw'
 import type { Run } from './run'
+import { setArtUnderStage, stageBackground } from '@/fx/scenes'
+import { H, W } from '@/fx/timeline'
 import { sharpDraw, type Cam } from './stage'
 
 /** The fights' one shot: the whole stage. Every fight, and a legend's entrance, are framed exactly alike. */
-export const STAGE: Cam = { x: 120, y: 86, z: 8 }
+export const STAGE: Cam = { x: 120, y: 90, z: 8 }
+
+/**
+ * Your Pokémon stands higher than in the game. The game puts its feet 4 px below the stage (a back view cut by the
+ * panel under it); in a video, the bottom of the frame is the dice's dark band and a player's control bar, so it stands
+ * 12 px up, whole. Every battle timeline over an area picture reads this one cached layout when it builds its stage.
+ */
+export function liftHero() {
+  setArtUnderStage(true)
+  stageBackground(W, H).layout.own.y = H - 8
+  setArtUnderStage(false)
+}
 
 /** When an attack timeline's hit lands on the act's clock: started at `start`, played from `from` at `speed`. */
 export const contactOf = (start: number, from: number, speed: number, at = 1.47) => start + (at - from) / speed
@@ -20,7 +33,8 @@ export const faint = (u: number, a: number) => {
 
 /** The tray over a dark band; `zoom` pushes in on die `on` (the slow one). */
 export function tray(g: G, plan: TrayPlan, u: number, zoom = 1, on = 0) {
-  bottomShade(g, 560, 0.88)
+  // Light enough that your Pokémon, bottom left, stays in view behind the dice.
+  bottomShade(g, 640, 0.6)
   const cv = drawTray(plan, u)
   if (zoom === 1) sharpDraw(g, cv, 0, 0, TRAY_W * TRAY_K, TRAY_H * TRAY_K)
   else {

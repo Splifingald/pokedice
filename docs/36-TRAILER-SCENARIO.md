@@ -30,6 +30,10 @@ DISCORD COMMUNITY instead of the Discord link, and a better Discord mark; every 
   the type chart's ×2 (Fire on Grass, Fire on Bug); the third is neutral anyway. The captions are the game's own
   battle lines (`strings.csv`).
 - **Always the battle area** in the fights and the big moments; menus only in the features, as cut-ins.
+- **Your Pokémon in full view.** In the game, your Pokémon's feet sit 4 px below the stage (a back view cut by the
+  panel under it). In a video the bottom of the frame is the dice's band and a player's control bar, so the trailer
+  stands it 12 px higher, whole (`liftHero`, fight.ts), keeps the dice band lighter, and draws Charmander, Charmeleon
+  and Charizard at their sprites' own size (the game shrinks Charizard to 80 px), so they grow as they evolve.
 - **A still camera** (after version 3, the user: too many camera moves). The title and every fight are one fixed
   shot, Mewtwo's entrance framed exactly like the fight after it; hits shake the screen lightly. The only camera moves left are the
   ones asked for: the slow-motion push onto Charizard's last die, and the lab's zoom onto the shaking ball.

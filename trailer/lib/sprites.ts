@@ -46,6 +46,12 @@ function cut(image: CanvasImageSource, s: StageSprite, k: number): Canvas {
 
 const natives = new Map<string, Anim>()
 
+/**
+ * The hero's line, seen from behind, at its own size: the game shrinks Charizard to 80 art pixels; the trailer keeps
+ * every one whole (one sprite pixel, one art pixel), so Charmander, Charmeleon and Charizard grow as they should.
+ */
+const HEROES = new Set([4, 5, 6, 10034])
+
 /** Load a Pokémon's view for the canvas, with its animation when Showdown draws one. Resolves to its key. */
 export async function loadMon(dex: number, back = false, shiny = false): Promise<string> {
   const key = await loadSprite(dex, back, shiny)
@@ -65,7 +71,7 @@ export async function loadMon(dex: number, back = false, shiny = false): Promise
     let t = 0
     for (let i = 0; i < n; i++) {
       const { image } = await dec.decode({ frameIndex: i })
-      frames.push(cut(image, s, s.k))
+      frames.push(cut(image, s, back && HEROES.has(dex) ? 1 : s.k))
       full.push(cut(image, s, 1))
       starts.push(t)
       t += Math.max(0.02, (image.duration ?? 100_000) / 1e6)
