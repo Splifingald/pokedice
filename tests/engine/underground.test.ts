@@ -1,6 +1,7 @@
 // The Underground (docs/34): a live event type. Explorakits open walls; a strike rolls the pickaxe die and takes that
 // many layers off a tile (one fewer off its neighbours); a thing is won once every tile of it is dug out. Orbs go to
-// whoever holds their colour and sell only in a full team; plates let the player's Arceus take their type.
+// whoever holds their colour and sell in full only in a full team (a tenth outside one); plates let the player's
+// Arceus take their type.
 import { describe, expect, it } from 'vitest'
 import {
   ARCEUS_DEX,
@@ -28,6 +29,7 @@ import {
   reduce,
   regionOfSpecies,
   sellOrbs,
+  sellValue,
   settleUnderground,
   strike,
   strikeWall,
@@ -351,15 +353,24 @@ describe('selling and the pickaxe', () => {
     }
   }
 
-  it('orbs sell only in a full team, at the admin’s prices', () => {
+  it('orbs sell at the admin’s prices in a full team, for a tenth outside one', () => {
     const s = withOrbs()
     expect(orbsValue(s.underground!.bag, UG)).toBe(2 * 100 + 300 + 800)
-    expect(canSell(s, data, null)).toBe(false)
-    expect(sellOrbs(s, data, T0, { ...full, seats: { red: full.seats.red } })).toBeNull()
     const sold = sellOrbs(s, data, T0, full)!
     expect(sold.gold).toBe(1300)
     expect(sold.underground!.bag.red.s).toBe(0)
-    // Without the full-team rule, a solo player sells too.
+    // Solo, or in a team of two: a tenth of the price, rounded down.
+    expect(canSell(s, data, null)).toBe(true)
+    expect(sellValue(s.underground!.bag, UG, false)).toBe(130)
+    expect(sellOrbs(s, data, T0, null)!.gold).toBe(130)
+    expect(sellOrbs(s, data, T0, { ...full, seats: { red: full.seats.red } })!.gold).toBe(130)
+    expect(sellOrbs(s, world({ cfg: { soloShare: 25 } }), T0, null)!.gold).toBe(325)
+    // A solo share of 0: nothing sells until the team is full.
+    const closed = world({ cfg: { soloShare: 0 } })
+    expect(canSell(s, closed, null)).toBe(false)
+    expect(sellOrbs(s, closed, T0, null)).toBeNull()
+    expect(sellOrbs(s, closed, T0, full)!.gold).toBe(1300)
+    // Without the full-team rule, a solo player sells at full price.
     expect(sellOrbs(s, world({ cfg: { sellNeedsFull: false } }), T0, null)!.gold).toBe(1300)
   })
 

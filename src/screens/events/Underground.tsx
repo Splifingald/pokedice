@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   canSell,
   freeKitRules,
+  fullPrice,
   kitsHeld,
   liveLeft,
   nextPickaxe,
@@ -13,7 +14,8 @@ import {
   orbsValue,
   pickaxeFaces,
   pickaxeMax,
-  teamFull,
+  sellValue,
+  soloShare,
   ugCfg,
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
@@ -21,7 +23,16 @@ import { InfoButton } from '@/components/RulesModal'
 import { BackButton } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
 import { PixelIcon } from '@/components/icons'
-import { OrbBagTable, PickaxeFaces, PlateGrid, UgCave, UgNote, UgRulesModal } from '@/components/Underground'
+import {
+  OrbBagTable,
+  PickaxeFaces,
+  PlateGrid,
+  UgCave,
+  UgNote,
+  UgRulesModal,
+  UgSellModal,
+  UgSoloWarning,
+} from '@/components/Underground'
 import { useT } from '@/i18n/react'
 import { countdown, money, typeName } from '@/lib/format'
 import { pushToast, useGame } from '@/store/game'
@@ -91,6 +102,7 @@ export function UndergroundScreen() {
   const team = useUgTeam((s) => s.team)
   const { live, now, u } = useUnderground(1000)
   const [info, setInfo] = useState(false)
+  const [confirm, setConfirm] = useState(false)
   // The team and the orbs between teammates, now and every minute while the page is open.
   useUgTeamSync(live?.id ?? null)
   if (now == null || !save) return <p className="copy p-3 text-muted">{t('ui.common.loading')}</p>
@@ -106,7 +118,19 @@ export function UndergroundScreen() {
   const orbs = orbCount(u.bag)
   const worth = orbsValue(u.bag, cfg)
   const sellable = canSell(save, data, team)
+  const full = fullPrice(data, team)
+  const share = soloShare(cfg)
+  const soloPrice = sellValue(u.bag, cfg, false)
   const tillFree = u.freeAt != null ? Math.max(0, u.freeAt - now) : null
+
+  const sell = async (solo: boolean) => {
+    const r = await ugSellOrbs(solo)
+    // The team isn't full after all (changed on another device): the warning, before anything sells.
+    if (r === 'notFull') return setConfirm(true)
+    if (!r) return pushToast(t('ui.ug.sellFailed'), 'bad')
+    sfx('gold')
+    pushToast(t('ui.ug.sold', { price: money(r.paid) }), 'good')
+  }
 
   const dig = () => {
     if (u.wall) return navigate('/underground/dig')
@@ -206,26 +230,39 @@ export function UndergroundScreen() {
 
       <Section id="ug-bag" title={t('ui.ug.bag')} hint={t('ui.ug.bagWorth', { price: money(worth) })}>
         <OrbBagTable bag={u.bag} cfg={cfg} />
+        {orbs > 0 && !full && share > 0 && <UgSoloWarning share={share} price={soloPrice} full={worth} />}
         <PixelButton
-          variant={sellable ? 'success' : 'secondary'}
+          variant={sellable && full ? 'success' : 'secondary'}
           aria-disabled={!sellable}
-          onClick={async () => {
+          onClick={() => {
             if (!orbs) return pushToast(t('ui.ug.sellEmpty'), 'info')
             if (!sellable) return pushToast(t('ui.ug.sellNeedTeam'), 'info')
-            if (await ugSellOrbs()) {
-              sfx('gold')
-              pushToast(t('ui.ug.sold', { price: money(worth) }), 'good')
-            } else pushToast(t('ui.ug.sellNeedTeam'), 'bad')
+            // Outside a full team, nothing sells before the player has seen both prices and said yes.
+            if (!full) return setConfirm(true)
+            void sell(false)
           }}
         >
           {!orbs
             ? t('ui.ug.sellEmpty')
-            : sellable
-              ? t('ui.ug.sell', { price: money(worth) })
-              : t('ui.ug.sellNeedTeam')}
+            : !sellable
+              ? t('ui.ug.sellNeedTeam')
+              : full
+                ? t('ui.ug.sell', { price: money(worth) })
+                : t('ui.ug.sellSolo', { share, price: money(soloPrice) })}
         </PixelButton>
-        {cfg.sellNeedsFull && !teamFull(team) && <UgNote>{t('ui.ug.sellWhy')}</UgNote>}
+        {!full && share === 0 && <UgNote>{t('ui.ug.sellWhy')}</UgNote>}
       </Section>
+      <UgSellModal
+        open={confirm}
+        onClose={() => setConfirm(false)}
+        onSell={() => {
+          setConfirm(false)
+          void sell(true)
+        }}
+        share={share}
+        price={soloPrice}
+        full={worth}
+      />
 
       <Section
         id="ug-plates"

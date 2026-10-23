@@ -2,7 +2,8 @@
 // rolls the pickaxe die, which takes that many layers off the tile and one fewer off its 4 neighbours. Each strike
 // brings the wall closer to collapsing. What a wall hides (orbs, fossils, Arceus's plates) is won only once every tile
 // of it is dug out. Players team up by three, one orb colour each: an orb goes to whoever holds its colour, and orbs
-// sell only in a full team. Kits, orbs, the pickaxe and the team are the event's; plates and fossils stay for good.
+// sell at full price only in a full team (for a tenth outside one). Kits, orbs, the pickaxe and the team are the
+// event's; plates and fossils stay for good.
 // Every number is the admin's (game_config `underground`); every outcome is decided here.
 import { DEFAULT_CONFIG } from './defaults'
 import { eventOpenTo } from './events'
@@ -552,14 +553,31 @@ export const orbsValue = (bag: OrbBag, cfg: UndergroundConfig): number =>
     0,
   )
 
-/** Selling is open: orbs to sell, and a full team when the admin asks for one. */
+/** The share (%) of their price orbs sell for outside a full team; 0 = not at all. */
+export const soloShare = (cfg: UndergroundConfig): number =>
+  int(cfg.soloShare, 0, 100, DEFAULT_CONFIG.underground.soloShare)
+
+/** Orbs sell at their full price: a full team, or the admin doesn't ask for one. */
+export const fullPrice = (data: GameData, team: UgTeam | null | undefined): boolean =>
+  !ugCfg(data).sellNeedsFull || teamFull(team)
+
+/** What the bag sells for: its worth in a full team, the solo share of it (rounded down) otherwise. */
+export const sellValue = (bag: OrbBag, cfg: UndergroundConfig, full: boolean): number => {
+  const worth = orbsValue(bag, cfg)
+  return full ? worth : Math.floor((worth * soloShare(cfg)) / 100)
+}
+
+/** Selling is open: orbs to sell, and a full team or a solo share above 0. */
 export const canSell = (save: SaveData, data: GameData, team: UgTeam | null | undefined): boolean => {
   const u = save.underground
   if (!u || !orbCount(u.bag)) return false
-  return !ugCfg(data).sellNeedsFull || teamFull(team)
+  return fullPrice(data, team) || soloShare(ugCfg(data)) > 0
 }
 
-/** Sells every orb in the bag into the live region's ₽. Null when selling isn't open. */
+/**
+ * Sells every orb in the bag into the live region's ₽: their price in a full team, the solo share outside one. Null
+ * when selling isn't open.
+ */
 export function sellOrbs(
   save: SaveData,
   data: GameData,
@@ -568,7 +586,8 @@ export function sellOrbs(
 ): SaveData | null {
   const u = save.underground
   if (!u || !undergroundLive(save, data, now) || !canSell(save, data, team)) return null
-  return { ...save, gold: save.gold + orbsValue(u.bag, ugCfg(data)), underground: { ...u, bag: emptyBag() } }
+  const paid = sellValue(u.bag, ugCfg(data), fullPrice(data, team))
+  return { ...save, gold: save.gold + paid, underground: { ...u, bag: emptyBag() } }
 }
 
 // ------------------------------------------------------------------ what a wall yields (the admin, the balance pass)

@@ -26,7 +26,7 @@ orb colour each; orbs sell for ₽ only in a full team.
 | Arceus | **Its type changes are locked until the player holds the plate.** Without plates, the player's Arceus stays Normal; the TYPE menu shows the others locked. **Foe Arceus are untouched** (bosses, trainers). Players who already have an Arceus **get nothing**: the lock applies to everyone |
 | Teams | **3 players, friends only, by invite.** Each digs **their own walls, asynchronously**. Each player is **dealt a colour at random** on joining; every orb of that colour, found by anyone in the team, goes to that player |
 | Before a full team | **Orbs are kept**, and sell once the team has 3. Solo, a player keeps every colour; in a team of 2, the free colour stays with whoever digs it |
-| Selling | Orbs sell for **₽, a price per colour and size** (admin), in the ₽ of the region being played. **Only in a team of 3** |
+| Selling | Orbs sell for **₽, a price per colour and size** (admin), in the ₽ of the region being played. **Full price only in a team of 3**; outside one, **a tenth of it** (`soloShare`, admin, added 2026-10-23), after a warning |
 | Pickaxe | Its die starts at **five 1s and a 2**; **8 upgrades for ₽**, each raising one face by 1, up to **three 2s and three 3s**. **Per event**: back to level 0 at the next one |
 | When the event ends | **Unused kits and unsold orbs are lost; the team breaks up.** Plates and revived fossils stay for good |
 | Leaving a wall | **Allowed: the wall is saved** and resumes where it was. Its kit was spent when it opened |
@@ -85,8 +85,9 @@ Assumed while planning (say if not):
 ### 1.5 Pickaxe, selling, the end
 
 - `pickaxeUpgrade(save, cfg)`: pays the next level's price in ₽, level + 1, at most the table's last level.
-- `sellOrbs(save, cfg, teamFull)`: refused unless the team is full (the server says so, §3); pays each orb's price
-  into the live region's ₽, empties the bag. Cash Flow can't stack with it (one live event at a time).
+- `sellOrbs(save, cfg, teamFull)`: pays each orb's price into the live region's ₽ in a full team (the server says so,
+  §3), and `soloShare` % of it (rounded down, `sellValue`) outside one; empties the bag. A solo share of 0 refuses to
+  sell until the team is full. Cash Flow can't stack with it (one live event at a time).
 - `settleUnderground(save, live)`: when the save's event id is no longer the live Underground, kits, the orb bag,
   the pickaxe and any open wall go. Plates stay.
 
@@ -126,6 +127,7 @@ interface UndergroundConfig {
   prices: Record<'red' | 'blue' | 'green', { s: number; m: number; l: number }>              // 100, 300, 800
   pickaxe: { faces: number[]; price: number }[]   // level 0..8, see 2.4
   team: { size: number; sellNeedsFull: boolean }  // 3, true
+  soloShare: number                               // 10: % of the price paid outside a full team (0 = no selling)
 }
 ```
 
@@ -327,12 +329,31 @@ With the defaults a bought kit (₽1,000) never pays for itself in orbs: kits ar
 there is no ₽ loop. A plate comes about once in 9 walls with a good pickaxe; at 3 free kits a day, a week's event
 gives one or two. The admin sets the rate (the plate weight, the kit price, the strikes).
 
+### The game-feel pass (2026-10-23)
+
+- **The pickaxe strikes where the finger lands**: a tap's spot on the wall (a key press: the tile's centre) carries in
+  `StrikeFx.at`; the pickaxe swings there (raised, a wind-up, the impact at 90 ms with its tip on the spot, a hit-stop,
+  a recoil), and the tile's flash, the dust, the wall's give (harder for a bigger roll), the gauge's mark and the clink
+  wait for that impact (`UG_IMPACT_MS`). Short motion: the impact frame only, no wait; off: nothing.
+- **The crack gauge zig-zags**: a band of slanted slabs, one per strike, alternately falling and rising; intact rock is
+  light, broken slabs are dark holes with a bright crack running through them, from the right. Each strike breaks a
+  slab on the impact: it flashes two white frames, chips fall off it, the band jolts and the count over it bumps. The
+  rock left turns red in the last 3 (and shakes unless calm). The count of strikes left is bigger and red there too.
+- **A thing dug out** pops its name over it, and the footer's line says "Dug out: …!".
+- **Selling solo**: players outside a full team sell their orbs for `soloShare` % (10) of the price. The bag shows a
+  red-ringed warning with both prices, the button says "Sell for 10% · ₽…", and a confirmation (both prices, what's
+  given up, KEEP MY ORBS / the red SELL FOR) comes before anything sells. A sale asked at full price whose team the
+  server finds not full stops and shows that confirmation instead. The team line and the rules say it too.
+
 ## 11. Setting it up
 
 1. Run the migration on Supabase (SQL editor):
    https://github.com/Splifingald/pokedice/blob/feature/version_2/supabase/migrations/0063_underground.sql
-   (`supabase/seed.sql` carries it too, inlined: a database built from it needs nothing else).
+   (`supabase/seed.sql` carries it too, inlined: a database built from it needs nothing else). Then the solo price's
+   key: https://github.com/Splifingald/pokedice/blob/claude/awesome-mccarthy-cp64ef/supabase/migrations/0070_underground_solo_sell.sql
+   (inlined into `seed.sql` too; without it, the game uses the default, 10 %).
 2. Admin → Live events → New: type **Underground**, its dates (one live event at a time), its badges and picture
    (empty: the cave drawn in code). Under it, the Underground's settings: tune the numbers, then the switch **On for
-   admin** to try it, **On for everyone** to open it. Save & Publish.
+   admin** to try it, **On for everyone** to open it. Under "Teams and orb prices", the share orbs sell for outside a
+   full team (10 %; 0 = not at all). Save & Publish.
 3. Teams need players signed in and friends with each other; signed out, players dig solo.

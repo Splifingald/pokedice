@@ -2,7 +2,7 @@
 // the sheet to manage it: invitations to answer, friends to invite, the invitations sent, leaving. Solo (or signed
 // out), every orb is the player's. The server decides every seat (store/ugTeams.ts).
 import { useEffect, useState } from 'react'
-import { ORB_COLOURS, type UgTeam } from '@/engine'
+import { ORB_COLOURS, soloShare, ugCfg, type UgTeam } from '@/engine'
 import { AccountButton } from '@/components/AccountButton'
 import { PixelButton } from '@/components/PixelButton'
 import { Sheet } from '@/components/Sheet'
@@ -20,6 +20,9 @@ import { cx } from '@/theme/util'
 /** The three seats: who holds each colour (you, a friend, or free), and the line under them. */
 export function UgTeamSeats({ team }: { team: UgTeam | null }) {
   const { t } = useT()
+  const cfg = useGame((s) => ugCfg(s.data))
+  // Solo, orbs still sell, for the admin's small share: say so where the player decides to team up or not.
+  const share = cfg.sellNeedsFull ? soloShare(cfg) : 0
   return (
     <div className="flex flex-col gap-2">
       <ul className="m-0 flex list-none gap-2 p-0">
@@ -43,7 +46,9 @@ export function UgTeamSeats({ team }: { team: UgTeam | null }) {
           )
         })}
       </ul>
-      <UgNote>{team ? t('ui.ug.teamNote') : t('ui.ug.teamSolo')}</UgNote>
+      <UgNote>
+        {team ? t('ui.ug.teamNote') : share > 0 ? t('ui.ug.teamSoloShare', { share }) : t('ui.ug.teamSolo')}
+      </UgNote>
     </div>
   )
 }

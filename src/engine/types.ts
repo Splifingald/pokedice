@@ -971,8 +971,13 @@ export interface UndergroundConfig {
   prices: Record<OrbColour, Record<OrbSize, number>>
   /** The pickaxe: level 0 first; it starts at 0 each event. */
   pickaxe: PickaxeLevel[]
-  /** Orbs sell only once the team has all its seats (one per colour). */
+  /** Orbs sell at full price only once the team has all its seats (one per colour). */
   sellNeedsFull: boolean
+  /**
+   * With `sellNeedsFull`, the share (%) of their price orbs sell for outside a full team: players who don't team up
+   * can still sell, for a small part of it. 0 = no selling until the team is full.
+   */
+  soloShare: number
 }
 
 /** One thing buried in a wall, at (x, y) for w × h tiles. */
