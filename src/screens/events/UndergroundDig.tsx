@@ -205,7 +205,7 @@ export function UndergroundDig() {
                       ) : th.colour ? (
                         <OrbArt colour={th.colour} px={12} />
                       ) : (
-                        <PixelIcon name="pickaxe" size={12} />
+                        <PixelIcon name="pickaxeSm" size={12} />
                       )
                     ) : (
                       <span aria-hidden>?</span>

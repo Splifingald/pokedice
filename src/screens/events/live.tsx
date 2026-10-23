@@ -103,7 +103,7 @@ export function LiveTag({ e, className }: { e: LiveEvent; className?: string }) 
   if (e.type === 'underground')
     return (
       <Chip tone="dark" className={cx('tracking-[0.04em]', className)}>
-        <PixelIcon name="pickaxe" size={11} />
+        <PixelIcon name="pickaxeSm" size={11} />
         {t('ui.ug.tag')}
       </Chip>
     )

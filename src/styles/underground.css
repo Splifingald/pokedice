@@ -441,7 +441,7 @@
 /*
  * The pickaxe, where the finger landed. Full: raised, a wind-up, down on the rock at UG_IMPACT_MS (its tip on the
  * spot), a hit-stop, a recoil, gone; frame by frame. Short: only the impact frame, briefly. The handle is held from
- * the lower right (the icon mirrored), so the tip at the left of the head strikes.
+ * the lower right (the icon mirrored), so the head's lower tip, on the left, strikes.
  */
 .ug-pick {
   position: absolute;
@@ -452,13 +452,13 @@
 }
 .ug-pick > span {
   position: absolute;
-  /* The hand, the turning point, at the lower right; the tip (the mirrored head's left end) lands on the spot at the
+  /* The hand on the grip, the turning point, at the lower right; the head's lower tip lands on the spot at the
      impact's angle (−10°). */
-  left: 3px;
-  top: -34px;
+  left: -8px;
+  top: -68px;
   width: 64px;
   height: 64px;
-  transform-origin: 92% 92%;
+  transform-origin: 84% 84%;
   opacity: 0;
 }
 .ug-pick > span > svg {
@@ -473,15 +473,15 @@
 }
 @keyframes ug-swing {
   0% {
-    transform: rotate(40deg);
+    transform: rotate(60deg);
     opacity: 1;
   }
   14% {
-    transform: rotate(52deg);
+    transform: rotate(75deg);
     opacity: 1;
   }
   22% {
-    transform: rotate(24deg);
+    transform: rotate(35deg);
     opacity: 1;
   }
   /* 90 ms: the impact, held (hit-stop). */
@@ -491,15 +491,15 @@
     opacity: 1;
   }
   60% {
-    transform: rotate(4deg) translateY(-2px);
+    transform: rotate(5deg) translateY(-2px);
     opacity: 1;
   }
   80% {
-    transform: rotate(12deg) translateY(-3px);
+    transform: rotate(15deg) translateY(-3px);
     opacity: 1;
   }
   100% {
-    transform: rotate(12deg) translateY(-3px);
+    transform: rotate(15deg) translateY(-3px);
     opacity: 0;
   }
 }
