@@ -1491,6 +1491,22 @@ export interface SaveData {
   dayNight?: { rulesSeen?: boolean }
   /** Mega Gems, and the battle powers' rules seen (docs/35), for every region of this save. Absent = none yet. */
   powers?: PowersSave
+  /**
+   * An encounter under way when the page was left (src/store/resume.ts), so the next load picks it up where it stood.
+   * Only in this device's stored copy: the game's save in memory and the cloud copy never carry it.
+   */
+  resume?: ResumeSnapshot
+}
+
+/**
+ * The run and the battle as they stood, and where both dice streams were, so a reload rolls exactly what staying would
+ * have. Their shapes are the store's (RunState, BattleSlice): the engine never reads this, the store checks it.
+ */
+export interface ResumeSnapshot {
+  v: 1
+  run: Record<string, unknown>
+  battle: { id: number; state: Record<string, unknown>; log: unknown[] } | null
+  rng: { run: number; battle: number }
 }
 
 /** The three battle powers (docs/35). */

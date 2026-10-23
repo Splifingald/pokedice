@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useGame } from '@/store/game'
-import { useFullscreen } from '@/lib/fullscreen'
+import { useFullscreen, useTopBarHidden } from '@/lib/fullscreen'
 import { useInFight } from '@/store/hooks'
 import { useServerTimeSync } from '@/store/serverTime'
 import { cx } from '@/theme/util'
@@ -33,8 +33,12 @@ import { useUndergroundSettle } from '@/store/underground'
 export function GameLayout() {
   const hasSave = useGame((s) => !!s.save)
   const inFight = useInFight()
-  // The battle takes the whole screen: no top bar, no side bar, no tab bar.
+  // The battle takes the whole screen: no side bar, no tab bar. It keeps the top bar (docs/15 §12): what's in it stays
+  // in reach mid-fight; the other full-screen moments (a hatching, a trade) put it away too.
   const full = useFullscreen()
+  const noTop = useTopBarHidden()
+  // Extreme mode's band (22 px) sits under the top bar.
+  const extreme = useGame((s) => s.save?.mode === 'extreme')
   const home = useLocation().pathname === '/home'
   // Over Home a full-screen moment is an overlay (a trade, the partner): the page keeps its padding, which Home's
   // scene bleeds into, rather than jumping and running off the side of a phone behind it.
@@ -47,8 +51,12 @@ export function GameLayout() {
   useUndergroundSettle()
   if (!hasSave) return <Navigate to="/" replace />
   return (
-    <div className={cx('flex min-h-screen flex-col', inside && 'in-world')} style={inside ? worldVars(world) : undefined}>
-      {!full && <Header />}
+    <div
+      className={cx('flex min-h-screen flex-col', inside && 'in-world')}
+      // --top-bar: the top bar's height, for a full-screen page under it to fit the rest of the screen (the battle).
+      style={{ ...(inside ? worldVars(world) : undefined), ['--top-bar' as string]: noTop ? '0px' : extreme ? '78px' : '56px' }}
+    >
+      {!noTop && <Header />}
       <div className="flex flex-1">
         {!full && <SideNav />}
         <main

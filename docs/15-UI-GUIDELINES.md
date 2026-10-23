@@ -207,7 +207,8 @@ Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`)
 - One `<h1>` per route; headings in order; landmarks (`main`, `nav`).
 - **One primary (red) action per screen**, in thumb reach on phones. Gold appears at most once, for something new.
 - Lists of things you can open are buttons (whole card), with a keyboard path to every action inside them.
-- Full-screen moments (the battle, a hatching, a trade) hide the tab bar and the top bar. Over Home one is an overlay
+- Full-screen moments (the battle, a hatching, a trade) hide the tab bar and the side nav; all but the battle hide the
+  top bar too (the battle keeps it, §12, and fits under it: `--top-bar`). Over Home one is an overlay
   (a trade, the partner): Home keeps its page padding under it, which its scene bleeds into, so nothing jumps or runs
   off the side of a phone behind the moment.
 - From 768 px the side nav takes ~210 px, so the content is only ~550 px wide: **side-by-side columns start at
@@ -346,7 +347,13 @@ Players shouldn't have to make many requests:
   opens the Poké Mart, no "+"), the cup (→ the leaderboard; greyed until the first badge, or in a small world its
   first area cleared, and a tap says what opens it) and, last, you (name and badge count, then your trainer look →
   the trainer menu, which slides in from that side).
-  Everything in it is disabled mid-fight and says why.
+  **It stays up in battle, every part of it in reach** (`useHoldFullscreen(true, true)`): nothing is hidden, covered or
+  `pointer-events-none`. Mid-fight (and in a portal run) what would leave the fight is shut and says why
+  (`useLockReason`): the gold and the cup stay focusable (`aria-disabled`), the reason in their name, and a tap says it
+  in a toast. The sun or moon and the energy work as ever, and so does the trainer menu: the guide, the type chart,
+  Contact and Discord open; the rows that would leave the page or the save (the leaderboard, Friends, Trades, Settings,
+  Admin, the other save, signing in) stay listed, greyed with a lock and the reason as their line; SYNC ONLINE says
+  "Finish the fight first".
 - **Tab bar** (phones): Poké Mart, Upgrades, **Home** (in the middle, under the thumb: a tab like the others, its Poké Ball icon and label), Team,
   Pokédex. The side nav (desktop) has the same entries with Home first. A tab's hit area is the whole column, at
   least 60 px tall, even where the drawing is smaller.
@@ -428,8 +435,9 @@ Players shouldn't have to make many requests:
 
 ## 14. The battle
 
-The battle (`src/screens/battle/BattleView.tsx`) is **full screen**: `useHoldFullscreen()` puts the top bar, the side
-nav and the tab bar away while it is mounted. It must fit a 360×640 phone with nothing to scroll
+The battle (`src/screens/battle/BattleView.tsx`) is **full screen under the top bar**: `useHoldFullscreen(true, true)`
+puts the side nav and the tab bar away while it is mounted and keeps the top bar (§12); the battle takes the rest of
+the height (`calc(100dvh - var(--top-bar))`). It must fit a 360×640 phone, top bar included, with nothing to scroll
 (`e2e/layout.spec.ts`). On desktop the column is at most 560 px wide (narrower on short screens, so the actions stay
 in view) and the battle history sits beside it from 1024 px.
 
@@ -488,6 +496,15 @@ in view) and the battle history sits beside it from 1024 px.
   away, the stage shows it back on its platform, and the panel's button is THROW AGAIN (back to the ball picker, "Snorlax
   is still here! Pick a ball and throw again."). Once per encounter; never a legendary or a raid.
 - **The time of day** (§30): in a Johto area, a small sun or moon chip on the stage's top right corner.
+- **Leaving never skips a step** (`src/store/resume.ts`): an encounter under way — its preview, the fight (state, log,
+  dice already thrown), the catch, the result card, the Center, the Game Corner, a ghost — is written with the save on
+  the device (`resume`, beside the save in `pokedice.save`, flushed when the page goes) and a reload or a return puts
+  the player straight back in it (the title's CONTINUE and the first Home go to `/area`), at the same point. Both dice
+  streams are kept with it, so the fight rolls exactly what staying would have: leaving can't throw again. The screen
+  opens on the fight as it stands (`battle.resumed`: no entrance, the log already played). Before, the run lived only in
+  memory: the card already drawn was lost and the next CONTINUE dealt the following one. It is only on the device: the
+  save in play and the cloud copy never carry it, and one that no longer fits the save (another device's came in) is
+  dropped, never the save. Raids are not kept (docs/19 §6.4: leaving one is a free retry, its try already counted).
 - **Result cards** rise from the bottom over the panel on every screen size, wild and trainer fights alike, the stage
   still in view: XP per Pokémon, the catch (NEW when
   the species is new to the Pokédex), "Wild battles pay no ₽" when that is why no money came; **Home** and **Next

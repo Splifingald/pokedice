@@ -20,8 +20,8 @@ import { useT } from '@/i18n/react'
 import { useFriends } from '@/lib/friends'
 import { useInviteGauge } from './friends/InviteRewards'
 import { isSupabaseConfigured } from '@/lib/supabase'
-import { useGame } from '@/store/game'
-import { useIsAdmin, useNavLock } from '@/store/hooks'
+import { pushToast, useGame } from '@/store/game'
+import { useIsAdmin, useLockReason } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { CloudSyncButton } from './CloudSyncButton'
 import { ExtremeMark, SwitchSaveModal } from './Extreme'
@@ -42,18 +42,19 @@ const TypesContent = lazy(() => import('@/screens/Types').then((m) => ({ default
 /**
  * One row of the menu: an icon in a tile, a label, a one-line description, and either a route or an action — or
  * `href`, a link out of the game opened in a new tab. `hint`: a short tag at the far end. The label alone names the
- * row; the description is read after it.
+ * row; the description is read after it. `shut`: why it can't be used right now (a fight under way): it stays listed,
+ * greyed with a lock, the reason as its description, and a tap says it again.
  */
-function MenuRow({
-  icon,
-  mark,
-  label,
-  desc,
-  hint,
-  dot,
-  href,
-  onClick,
-}: {
+function MenuRow({ shut, ...row }: MenuRowProps & { shut?: string | null }) {
+  // Shut: the same row, greyed, with a lock and the reason in place of what it does; a tap says it again.
+  return shut ? (
+    <MenuRowView label={row.label} icon="lock" desc={shut} onClick={() => pushToast(shut, 'info')} shut />
+  ) : (
+    <MenuRowView {...row} />
+  )
+}
+
+interface MenuRowProps {
   icon?: IconName
   mark?: boolean
   label: string
@@ -63,10 +64,14 @@ function MenuRow({
   dot?: number
   href?: string
   onClick?: () => void
-}) {
+}
+
+function MenuRowView({ icon, mark, label, desc, hint, dot, href, onClick, shut }: MenuRowProps & { shut?: boolean }) {
   const descId = useId()
-  const className =
-    'flex min-h-[56px] w-full items-center gap-2.5 bg-paper pb-2 pl-2 pr-3 pt-1.5 text-left text-ink shadow-card'
+  const className = cx(
+    'flex min-h-[56px] w-full items-center gap-2.5 bg-paper pb-2 pl-2 pr-3 pt-1.5 text-left text-ink shadow-card',
+    shut && 'opacity-60',
+  )
   const body = (
     <>
       <span className="grid h-8 w-8 shrink-0 place-items-center bg-sky shadow-ring">
@@ -88,7 +93,11 @@ function MenuRow({
       {hint && <em className="light-scope shrink-0 bg-night px-2 pb-[3px] pt-0.5 text-[15px] not-italic text-gold-light">{hint}</em>}
     </>
   )
-  const a11y = { 'aria-label': dot ? `${label} (${dot})` : label, 'aria-describedby': desc ? descId : undefined }
+  const a11y = {
+    'aria-label': dot ? `${label} (${dot})` : label,
+    'aria-describedby': desc ? descId : undefined,
+    'aria-disabled': shut || undefined,
+  }
   return href ? (
     <a href={href} target="_blank" rel="noopener noreferrer" onClick={onClick} className={className} {...a11y}>
       {body}
@@ -103,13 +112,14 @@ function MenuRow({
 /**
  * The header's avatar button and everything behind it: the player's profile, the settings screen,
  * the rules, the type chart, the admin (admins only), the Google connection and, pinned at the bottom, the community
- * Discord (once the admin has set its link) and Contact the developer. Disabled mid-fight, like the rest of the header.
+ * Discord (once the admin has set its link) and Contact the developer. Mid-fight it opens as ever; the rows that would
+ * leave the fight (another page, the other save, signing in) are shut and say why.
  */
 export function PlayerMenu() {
   const { t } = useT()
   const navigate = useNavigate()
-  const lock = useNavLock()
-  const inFight = !!lock
+  // Mid-fight (or in a portal run) the menu still opens: what stays on this page works, what would leave it says why.
+  const shut = useLockReason()
   const isAdmin = useIsAdmin()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
@@ -156,13 +166,12 @@ export function PlayerMenu() {
     <>
       <button
         type="button"
-        onClick={() => !inFight && setOpen(true)}
-        aria-disabled={inFight || undefined}
+        onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={news + looksNew ? t('ui.profile.menuLabelNew', { n: news + looksNew }) : t('ui.profile.menuLabel')}
-        title={t(lock === 'portal' ? 'ui.portal.locked' : inFight ? 'ui.nav.finishFight' : 'ui.profile.menuLabel')}
-        className={cx('flex min-h-[44px] min-w-0 shrink flex-row-reverse items-center gap-2 text-right', inFight && 'pointer-events-none opacity-60')}
+        title={t('ui.profile.menuLabel')}
+        className="flex min-h-[44px] min-w-0 shrink flex-row-reverse items-center gap-2 text-right"
       >
         <span className="relative shrink-0">
           <span className="grid h-[38px] w-[38px] place-items-center overflow-hidden rounded-full bg-[#7fb4ff] shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_-4px_0_#4f86d8]">
@@ -219,6 +228,7 @@ export function PlayerMenu() {
             label={t('ui.board.title')}
             desc={boardOpen ? t('ui.menu.board') : t('ui.nav.boardLocked')}
             onClick={go('/leaderboard')}
+            shut={shut}
           />
           {isSupabaseConfigured && (
             <MenuRow
@@ -228,6 +238,7 @@ export function PlayerMenu() {
               dot={newFriends + rewardsReady}
               hint={!newFriends && !rewardsReady && friendCount ? String(friendCount) : undefined}
               onClick={go('/friends')}
+              shut={shut}
             />
           )}
           {tradesRow && (
@@ -244,6 +255,7 @@ export function PlayerMenu() {
               dot={tradesUnseen}
               hint={!tradesUnseen && tradesOut ? `${tradesOut}/${tradeCfg(data).maxListings}` : undefined}
               onClick={go('/trades')}
+              shut={shut}
             />
           )}
           {canSwitch && (
@@ -255,9 +267,10 @@ export function PlayerMenu() {
                 setOpen(false)
                 setSwitching(true)
               }}
+              shut={shut}
             />
           )}
-          <MenuRow icon="gear" label={t('ui.nav.settings')} desc={t('ui.menu.settings')} onClick={go('/settings')} />
+          <MenuRow icon="gear" label={t('ui.nav.settings')} desc={t('ui.menu.settings')} onClick={go('/settings')} shut={shut} />
           <MenuRow
             icon="book"
             label={t('ui.profile.guide')}
@@ -276,7 +289,7 @@ export function PlayerMenu() {
               setTypes(true)
             }}
           />
-          {isAdmin && <MenuRow icon="wrench" label={t('ui.nav.admin')} desc={t('ui.menu.admin')} onClick={go('/admin')} />}
+          {isAdmin && <MenuRow icon="wrench" label={t('ui.nav.admin')} desc={t('ui.menu.admin')} onClick={go('/admin')} shut={shut} />}
           <CloudSyncButton />
           {canConnect && (
             <MenuRow
@@ -287,6 +300,8 @@ export function PlayerMenu() {
                 setOpen(false)
                 connect()
               }}
+              // Signing in may load the cloud's save over this one, which would end the fight (as SYNC ONLINE).
+              shut={shut}
             />
           )}
         </nav>

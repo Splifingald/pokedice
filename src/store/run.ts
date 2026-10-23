@@ -113,6 +113,7 @@ import {
 import { activeSlot } from '@/save/storage'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type CatchState, type RunState } from './game'
 import { localHour } from './dayTime'
+import { resumedRngs, trackRngs } from './resume'
 import { currentLive } from './live'
 import { useRebattleMedal } from './rebattle'
 import { serverNow } from './serverTime'
@@ -120,10 +121,14 @@ import { trickAllowed } from './trick'
 import { t } from '@/i18n'
 import { money } from '@/lib/format'
 
-let runRng = createRng(randomSeed())
-let battleRng = createRng(randomSeed())
-let battleSeq = 0
-let trickSeq = 0
+// An encounter picked up from the last visit (store/resume.ts) rolls on from where both streams stood, so a reload
+// throws the same dice staying would have; its ids carry on too, so the next battle or ghost is a new screen.
+const resumed = resumedRngs()
+let runRng = createRng(resumed?.run ?? randomSeed())
+let battleRng = createRng(resumed?.battle ?? randomSeed())
+let battleSeq = useGame.getState().battle?.id ?? 0
+let trickSeq = useGame.getState().run.trick?.id ?? 0
+trackRngs(() => ({ run: runRng.getState(), battle: battleRng.getState() }))
 
 export const newId = (): string =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto

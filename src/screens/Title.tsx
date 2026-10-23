@@ -16,6 +16,7 @@ import { avatarOf } from '@/lib/avatars'
 import { TrainerLook } from '@/components/TrainerLook'
 import { activeSlot } from '@/save/storage'
 import { useGame } from '@/store/game'
+import { takeResumeLanding } from '@/store/resume'
 import { AccountButton } from '@/components/AccountButton'
 import type { DieType } from '@/engine/types'
 
@@ -90,7 +91,11 @@ export function Title() {
           <PixelButton
             variant="primary"
             size="lg"
-            onClick={() => navigate('/home')}
+            // An encounter left under way (store/resume.ts) is where CONTINUE goes: straight back into it.
+            onClick={() => {
+              const { run } = useGame.getState()
+              navigate(takeResumeLanding(run) || run.phase !== 'idle' ? '/area' : '/home')
+            }}
             aria-label={lead ? t('ui.title.continueWith', { name: data.species[lead.dex]?.name ?? '' }) : t('ui.common.continue')}
           >
             {lead && <MiniSprite dex={lead.dex} size={48} className="-my-3 -ml-2" />}
