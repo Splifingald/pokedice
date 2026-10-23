@@ -124,6 +124,17 @@ export function useContinue(area: Area) {
                 : t('ui.home.secretArea')
 
   const off = !busy && !raid && !enter && (resting || (!gym && !boss && (closed || empty)))
+  /** What waits in another area of the chain: its gym leader, its legend, or the round to play. */
+  const waitsIn = (to: Area) => {
+    const p = progressOf(save, to.id)
+    const leader = dueGym(to, p, data, side)
+    const rounds = to.roundsToClear || null
+    if (leader) return t('ui.home.gymReady', { name: trainerTitle(leader) })
+    if (dueBoss(to, p, teamAverageLevel(save), data)) return t('ui.home.legendReady')
+    return rounds != null
+      ? t('ui.home.roundOf', { n: Math.min((p.roundsDone ?? 0) + 1, rounds), total: rounds })
+      : t('ui.home.secretArea')
+  }
   const explore = () => {
     ensureRun(area)
     rollNext()
@@ -146,9 +157,31 @@ export function useContinue(area: Area) {
     }
     explore()
   }
-  // Under CONTINUE: the green GO TO when behind in the region's main chain (not mid-encounter), and "keep exploring"
-  // when a gym or a legendary waits. Home sizes its scene around them.
+  // Behind in the region's main chain (not mid-encounter): the furthest open area, where the story goes on.
   const latest = useGame((s) => (busy || !s.save ? null : latestOpenArea(s.save, s.data, serverNow())))
+  // With nothing of its own waiting here (a cleared area's free play, or a closed one), CONTINUE itself becomes GO TO
+  // that area: the red button moved nothing on, and the green one under it did. "Stay here" keeps the free play.
+  // Anything else waiting here (a gym, a legend, a raid, a secret area's rounds, a portal, the nightmare) keeps CONTINUE,
+  // with the green GO TO under it. Home sizes its scene around what sits under the button.
+  const behind =
+    !!latest &&
+    !busy &&
+    !resting &&
+    !gym &&
+    !boss &&
+    !raid &&
+    !enter &&
+    !struck &&
+    !portal?.active &&
+    !dream?.active &&
+    (progress.cleared || closed)
+  // GO TO's two lines: the area, and what waits for the player there (the gym, the legend, the round).
+  const goTo =
+    behind && latest
+      ? { area: latest, label: t('ui.victory.goToArea', { name: latest.name }), sub: waitsIn(latest) }
+      : null
+  // Free play stays a tap away under GO TO, unless the area has nothing left to play.
+  const stayHere = behind && !closed
   const keepExploring = !!(gym || boss || raid) && !closed && !busy && !resting
   const label = enterDream
     ? t('ui.nightmare.enter')
@@ -161,12 +194,96 @@ export function useContinue(area: Area) {
       : raid
         ? t('ui.raid.progress.continue', { name: raidName.toUpperCase() })
         : t('ui.common.continue')
-  return { label, sub, go, explore, off, gym, boss, raid, closed, empty, busy, resting, cleared: progress.cleared, latest, keepExploring, enter }
+  return {
+    label,
+    sub,
+    go,
+    explore,
+    off,
+    gym,
+    boss,
+    raid,
+    closed,
+    empty,
+    busy,
+    resting,
+    cleared: progress.cleared,
+    latest,
+    goTo,
+    stayHere,
+    keepExploring,
+    enter,
+  }
 }
 
 /**
- * The Areas button and CONTINUE, the one big action (useContinue). Under it, when the player is behind in the region's
- * main chain, the green GO TO its furthest open area; when a gym or a legendary waits, "keep exploring". (Auto-mode is switched in the area itself, on the encounter screens.)
+ * The one big action: its label (CONTINUE, the challenge waiting, GO TO), and under it what comes next. Greyed out
+ * (`off`) when it can't start, and a tap says why.
+ */
+export function ContinueButton({
+  label,
+  sub,
+  icon,
+  off = false,
+  onClick,
+}: {
+  label: string
+  sub: string
+  icon: 'play' | 'sword' | 'map'
+  off?: boolean
+  onClick: () => void
+}) {
+  const subId = useId()
+  return (
+    <PixelButton
+      variant="primary"
+      size="xl"
+      className={cx('w-full', !off && 'sheen')}
+      disabled={off}
+      onClick={onClick}
+      aria-label={label}
+      aria-describedby={subId}
+    >
+      <span className="flex min-w-0 items-center gap-3">
+        {/* The play arrow in white on the red; the sword and the map keep their own colours. */}
+        <PixelIcon name={icon} size={24} color={icon === 'play' && !off ? '#ffffff' : undefined} />
+        <span className="grid min-w-0 gap-[3px] text-left">
+          <span className="truncate leading-none">{label}</span>
+          <span
+            id={subId}
+            className={cx(
+              'truncate font-pixel-sm text-[16px] normal-case leading-none tracking-[0.02em] [text-shadow:none]',
+              off ? 'text-muted' : 'text-[#ffe2db]',
+            )}
+          >
+            {sub}
+          </span>
+        </span>
+      </span>
+    </PixelButton>
+  )
+}
+
+/** Under GO TO: the free play where the player stands, as CONTINUE gave it (`sub` says what it is, for screen readers). */
+export function StayHere({ sub, onClick }: { sub: string; onClick: () => void }) {
+  const { t } = useT()
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`${t('ui.home.stayHere')} · ${sub}`}
+      className="min-h-[44px] self-center px-3 text-[20px] leading-none underline decoration-2 underline-offset-4"
+    >
+      {t('ui.home.stayHere')}
+    </button>
+  )
+}
+
+/**
+ * The Areas button and the one big action (useContinue). Behind in the region's main chain with nothing waiting here, it
+ * is GO TO the furthest open area, with "Stay here" (the free play) under it; otherwise CONTINUE, with the green GO TO
+ * under it while behind, and "keep exploring" when a gym or a legendary waits. (Auto-mode is switched in the area
+ * itself, on the encounter screens.)
  */
 export function ContinueBar({
   area,
@@ -179,12 +296,13 @@ export function ContinueBar({
   onAreas: () => void
 }) {
   const { t } = useT()
-  const { label, sub, go, explore, off, gym, boss, raid, empty, resting, latest, keepExploring } = useContinue(area)
-  const subId = useId()
+  const { label, sub, go, explore, off, gym, boss, raid, empty, resting, latest, goTo, stayHere, keepExploring } =
+    useContinue(area)
   const lockId = useId()
   // Darkrai's nightmare holds the player in its area (docs/30): the Areas button is shut, and says why.
   const held = useGame((s) => nightmareLock(s.save, s.data))
   const heldWhy = held ? t('ui.nightmare.locked', { area: held.name }) : null
+  const ahead = heldWhy ? null : goTo
 
   return (
     <div className="flex flex-col gap-2">
@@ -220,36 +338,13 @@ export function ContinueBar({
             </span>
           )}
         </button>
-        <PixelButton
-          variant="primary"
-          size="xl"
-          className={cx('w-full', !off && 'sheen')}
-          disabled={off}
-          onClick={go}
-          aria-label={label}
-          aria-describedby={subId}
-        >
-          <span className="flex min-w-0 items-center gap-3">
-            <PixelIcon
-              name={gym || boss || raid ? 'sword' : 'play'}
-              size={24}
-              color={gym || boss || raid || off ? undefined : '#ffffff'}
-            />
-            <span className="grid min-w-0 gap-[3px] text-left">
-              <span className="truncate leading-none">{label}</span>
-              <span
-                id={subId}
-                className={cx(
-                  'truncate font-pixel-sm text-[16px] normal-case leading-none tracking-[0.02em] [text-shadow:none]',
-                  off ? 'text-muted' : 'text-[#ffe2db]',
-                )}
-              >
-                {sub}
-              </span>
-            </span>
-          </span>
-        </PixelButton>
+        {ahead ? (
+          <ContinueButton label={ahead.label} sub={ahead.sub} icon="map" onClick={() => travelTo(ahead.area)} />
+        ) : (
+          <ContinueButton label={label} sub={sub} icon={gym || boss || raid ? 'sword' : 'play'} off={off} onClick={go} />
+        )}
       </div>
+      {ahead && stayHere && <StayHere sub={sub} onClick={go} />}
       {heldWhy && (
         <p
           id={lockId}
@@ -260,7 +355,7 @@ export function ContinueBar({
         </p>
       )}
       {resting && <RestingPanel />}
-      {latest && !heldWhy && (
+      {latest && !heldWhy && !ahead && (
         <PixelButton variant="success" size="lg" className="w-full" onClick={() => travelTo(latest)}>
           <PixelIcon name="map" size={20} />
           {t('ui.victory.goToArea', { name: latest.name })}

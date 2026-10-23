@@ -100,11 +100,31 @@ test('Home offers the furthest open area of the region when the player is behind
   await page.goto('/home')
 
   const latest = chain[2]!
+  // Standing in a cleared area: the big button itself is GO TO (no CONTINUE to replay it), and Stay here keeps the
+  // free play.
   const go = page.getByRole('button', { name: `Go to ${latest.name}` })
+  await expect(go).toHaveCount(1)
+  await expect(page.getByRole('button', { name: 'CONTINUE', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Stay here · Cleared · free play' })).toBeVisible()
   await go.click()
   await expect(page.getByRole('heading', { level: 1 })).toContainText(latest.name)
   // There now: nothing more to offer.
   await expect(go).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'CONTINUE', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Stay here/ })).toHaveCount(0)
+})
+
+test('Stay here keeps the free play of a cleared area when the story goes on elsewhere', async ({ page }) => {
+  const data = gameData()
+  const base = makeSave(4)
+  const chain = linearAreas(data, regionOf(base))
+  const areaProgress = Object.fromEntries(chain.slice(0, 2).map((a) => [a.id, { ...emptyProgress(), cleared: true }]))
+  await boot(page, { ...base, areaProgress, currentAreaId: chain[0]!.id })
+  await page.goto('/home')
+  await page.getByRole('button', { name: /^Stay here/ }).click()
+  // An encounter of the area the player stands in.
+  await expect(page).toHaveURL(/\/area$/)
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(chain[0]!.name)
 })
 
 test("the area's details count the rounds done over the rounds that clear it, past the goal too", async ({ page }) => {
@@ -131,7 +151,8 @@ test("a cleared area's battle can go on auto midway, and STOP hands it back", as
 
   await boot(page, { ...base, areaProgress: { ...base.areaProgress, [area]: progress(true) } })
   await page.goto('/home')
-  await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+  // Cleared, with the next area open: the big button goes there, and Stay here plays this one.
+  await page.getByRole('button', { name: /^Stay here/ }).click()
   await page.getByRole('button', { name: /FIGHT/ }).first().click()
   // Your turn, played by hand: the dice wait for ATTACK, and AUTO-MODE sits among the extras.
   await expect(attack).toBeVisible({ timeout: 20_000 })

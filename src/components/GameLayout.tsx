@@ -4,28 +4,10 @@ import { useFullscreen, useTopBarHidden } from '@/lib/fullscreen'
 import { useInFight } from '@/store/hooks'
 import { useServerTimeSync } from '@/store/serverTime'
 import { cx } from '@/theme/util'
-import { DayCareNotice, DayCareTutorial } from './DayCareTutorial'
-import { DonationPopup } from './SupportModal'
-import { EventUnlockPopup } from './EventUnlockPopup'
-import { AwayReportModal, ExtremeUnlockPopup } from './Extreme'
-import { LivePopup } from '@/screens/events/live'
-import { useInWorld, worldVars, WorldByePopup, WorldFinishPopup, WorldPopup } from '@/screens/events/world'
-import { WorldPick } from '@/screens/events/worldPick'
-import { VersusUnlockPopup } from './FeatureRules'
-import { GeneralUnlockPopup, OfflineReportModal } from './GeneralRules'
-import { DayNightRulesPopup } from './DayNight'
-import { PowersUnlockPopup } from './PowersRules'
-import { RaidGiftPopup } from './RaidGiftPopup'
-import { FriendsService } from './friends/FriendsService'
-import { InviteRewardPopup, InviteRulesPopup } from './friends/InviteRewards'
-import { TradesService } from './trades/TradesService'
-import { PushService } from './PushService'
+import { useInWorld, worldVars } from '@/screens/events/world'
 import { BottomNav, Header, SideNav } from './Hud'
-import { LeaderboardTutorial } from './LeaderboardTutorial'
-import { ReplyPopup } from './ReplyPopup'
-import { GiftService } from './Gifts'
-import { ShareTutorial } from './ShareTutorial'
-import { PortalGuard, PortalUnlockPopup } from '@/screens/area/PortalRun'
+import { OneTimePopups, PopupQueue } from './PopupQueue'
+import { PortalGuard } from '@/screens/area/PortalRun'
 import { NightmareGuard } from '@/screens/area/NightmareRun'
 import { useUndergroundSettle } from '@/store/underground'
 
@@ -51,58 +33,39 @@ export function GameLayout() {
   useUndergroundSettle()
   if (!hasSave) return <Navigate to="/" replace />
   return (
-    <div
-      className={cx('flex min-h-screen flex-col', inside && 'in-world')}
-      // --top-bar: the top bar's height, for a full-screen page under it to fit the rest of the screen (the battle).
-      style={{ ...(inside ? worldVars(world) : undefined), ['--top-bar' as string]: noTop ? '0px' : extreme ? '78px' : '56px' }}
-    >
-      {!noTop && <Header />}
-      <div className="flex flex-1">
-        {!full && <SideNav />}
-        <main
-          className={cx(
-            // Home and the battle spread over wide screens (the scene and the stage grow with them); every other screen
-            // keeps a reading width.
-            'mx-auto w-full min-w-0 flex-1',
-            bare ? 'max-w-none' : home ? 'max-w-[1760px]' : 'max-w-6xl',
-            bare ? 'p-0' : inFight ? 'px-3 pb-2 pt-2 md:pb-10 md:pt-4' : 'px-3 pb-24 pt-4 md:pb-10 md:pt-4',
-          )}
-        >
-          <Outlet />
-        </main>
+    // The one-time pop-ups take turns (engine/popups.ts): the queue wraps the pages too, whose own pop-ups (the region
+    // offer, the push question) wait their turn.
+    <PopupQueue>
+      <div
+        className={cx('flex min-h-screen flex-col', inside && 'in-world')}
+        // --top-bar: the top bar's height, for a full-screen page under it to fit the rest of the screen (the battle).
+        style={{
+          ...(inside ? worldVars(world) : undefined),
+          ['--top-bar' as string]: noTop ? '0px' : extreme ? '78px' : '56px',
+        }}
+      >
+        {!noTop && <Header />}
+        <div className="flex flex-1">
+          {!full && <SideNav />}
+          <main
+            className={cx(
+              // Home and the battle spread over wide screens (the scene and the stage grow with them); every other screen
+              // keeps a reading width.
+              'mx-auto w-full min-w-0 flex-1',
+              bare ? 'max-w-none' : home ? 'max-w-[1760px]' : 'max-w-6xl',
+              bare ? 'p-0' : inFight ? 'px-3 pb-2 pt-2 md:pb-10 md:pt-4' : 'px-3 pb-24 pt-4 md:pb-10 md:pt-4',
+            )}
+          >
+            <Outlet />
+          </main>
+        </div>
+        {!full && <BottomNav />}
+        <OneTimePopups />
+        {/* A portal run under way (docs/28): the area is the only page, and the screen wears the distortion. */}
+        <PortalGuard />
+        {/* The nightmare holding the player (docs/30): the run kept in its area (no screen effect). */}
+        <NightmareGuard />
       </div>
-      {!full && <BottomNav />}
-      <DayCareTutorial />
-      <DayCareNotice />
-      <LeaderboardTutorial />
-      <ShareTutorial />
-      <ReplyPopup />
-      <GiftService />
-      <DonationPopup />
-      <EventUnlockPopup />
-      <VersusUnlockPopup />
-      <ExtremeUnlockPopup />
-      <GeneralUnlockPopup />
-      <DayNightRulesPopup />
-      <PowersUnlockPopup />
-      <AwayReportModal />
-      <OfflineReportModal />
-      <RaidGiftPopup />
-      <WorldPopup />
-      <WorldPick />
-      <WorldFinishPopup />
-      <WorldByePopup />
-      <LivePopup />
-      <FriendsService />
-      <InviteRulesPopup />
-      <InviteRewardPopup />
-      <TradesService />
-      <PushService />
-      <PortalUnlockPopup />
-      {/* A portal run under way (docs/28): the area is the only page, and the screen wears the distortion. */}
-      <PortalGuard />
-      {/* The nightmare holding the player (docs/30): the run kept in its area (no screen effect). */}
-      <NightmareGuard />
-    </div>
+    </PopupQueue>
   )
 }

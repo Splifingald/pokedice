@@ -1,19 +1,9 @@
 // Prof. Oak's "invite a friend" prompt: once per region, when the player holds its 2nd badge (between fights). INVITE
 // shares the player's friend invite link (opening it makes the two of them friends, docs/16); signed out there is no
 // friend ID, so it shares the game's own link. The native share sheet on phones, or a copied link where there is none
-// (desktop). Remembered in localStorage. The donation pop-up and a special event's unlock pop-up go first when they're
-// waiting too.
-import { useEffect, useState, useSyncExternalStore } from 'react'
-import {
-  badgeCase,
-  dayCareTutorialDue,
-  donationDue,
-  eventUnlockDue,
-  invitesWait,
-  leaderboardTutorialDue,
-  regionOf,
-  versusRulesDue,
-} from '@/engine'
+// (desktop). Remembered in localStorage. It takes its turn in the one-time pop-ups' queue (engine/popups.ts).
+import { useEffect, useSyncExternalStore } from 'react'
+import { invitesWait, regionOf } from '@/engine'
 import { useT } from '@/i18n/react'
 import { formatCode, inviteUrl, loadInviteStatus, loadMyCode, useFriends } from '@/lib/friends'
 import { shareOrCopy } from '@/lib/share'
@@ -24,9 +14,13 @@ import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { InviteGaugeCompact, useInviteGauge } from './friends/InviteRewards'
+import { useMyTurn, useOnScreen } from './popupTurn'
 
 const seenKey = (region: string) => `pokedice.sharePrompt.${region}`
+/** Closed this visit, for a device that can't store it (private mode): it stays closed until the next one. */
+const closedNow = new Set<string>()
 const seen = (region: string) => {
+  if (closedNow.has(region)) return true
   try {
     return localStorage.getItem(seenKey(region)) === '1'
   } catch {
@@ -36,14 +30,10 @@ const seen = (region: string) => {
 
 const seenListeners = new Set<() => void>()
 
-/**
- * The prompt is waiting in this region (its 2nd badge, not seen yet): the one-time pop-ups that come later (Trades'
- * rules) queue behind it, one pop-up at a time.
- */
-export function useSharePromptWaiting(): boolean {
+/** The prompt was closed in the region being played, on this device: the queue's `shareSeen` (engine/popups.ts). */
+export function useShareSeen(): boolean {
   const region = useGame((s) => (s.save ? regionOf(s.save) : null))
-  const twoBadges = useGame((s) => !!s.save && badgeCase(s.save, s.data).filter((b) => b.earned).length >= 2)
-  const done = useSyncExternalStore(
+  return useSyncExternalStore(
     (l) => {
       seenListeners.add(l)
       return () => seenListeners.delete(l)
@@ -51,7 +41,6 @@ export function useSharePromptWaiting(): boolean {
     () => !region || seen(region),
     () => true,
   )
-  return twoBadges && !done
 }
 
 /**
@@ -78,20 +67,8 @@ export function useInviteShare(open: boolean): () => Promise<boolean> {
 export function ShareTutorial() {
   const { t } = useT()
   const region = useGame((s) => (s.save ? regionOf(s.save) : null))
-  const due = useGame(
-    (s) =>
-      !!s.save &&
-      badgeCase(s.save, s.data).filter((b) => b.earned).length >= 2 &&
-      !dayCareTutorialDue(s.save, s.data) &&
-      !leaderboardTutorialDue(s.save, s.data) &&
-      !donationDue(s.save, s.data) &&
-      !eventUnlockDue(s.save, s.data) &&
-      // Versus's rules pop-up goes first: one pop-up at a time.
-      !versusRulesDue(s.save, s.data),
-  )
-  const idle = useGame((s) => s.run.phase === 'idle')
-  const [closed, setClosed] = useState<string[]>([])
-  const open = !!region && due && idle && !closed.includes(region) && !seen(region)
+  const open = useMyTurn('share') && !!region
+  useOnScreen('share', open)
   const signedIn = useGame((s) => s.auth.status === 'signed_in')
   // Invite rewards (docs/15 §25): the gauge, signed in; signed out, a line saying an account earns them.
   const gauge = useInviteGauge()
@@ -109,7 +86,7 @@ export function ShareTutorial() {
     } catch {
       /* private mode: may show again next visit */
     }
-    setClosed((c) => [...c, region])
+    closedNow.add(region)
     seenListeners.forEach((l) => l())
   }
 

@@ -5,8 +5,10 @@ import { expect, test, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import {
   createInstance,
+  linearAreas,
   newRegionBlock,
   regionAreas,
+  regionOf,
   startRegion,
   type Region,
   type SaveData,
@@ -75,6 +77,23 @@ test('AREAS lists the region, and its search finds areas by Pokémon', async ({ 
   await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
+test('the Areas sheet has one red GO, where the story goes on; the others are navy', async ({ page }) => {
+  const base = makeSave(4)
+  const chain = linearAreas(data, regionOf(base))
+  const cleared = { roundsDone: 1, cleared: true, bossDefeated: false, bossesDefeated: [], gymsDefeated: [] }
+  const areaProgress = Object.fromEntries(chain.slice(0, 3).map((a) => [a.id, cleared]))
+  await boot(page, { ...base, areaProgress, currentAreaId: chain[0]!.id })
+  await page.goto('/home')
+  await page.getByRole('button', { name: 'Areas: change where you explore' }).click()
+  const sheet = page.getByRole('dialog', { name: 'Kanto' })
+  const gos = sheet.getByRole('button', { name: /^(Go to|Play) / })
+  expect(await gos.count()).toBeGreaterThan(2)
+  const red = sheet.locator('button.frame-primary', { hasText: 'GO' })
+  await expect(red).toHaveCount(1)
+  await expect(red).toHaveAccessibleName(`Go to ${chain[3]!.name}`)
+  await expect(sheet.getByRole('button', { name: `Play ${chain[0]!.name}` })).toHaveClass(/frame-dark/)
+})
+
 test("a region's GO opens that region's areas, in the same sheet", async ({ page }) => {
   // Kanto's league is won and Johto begun: Kanto waits, parked, in the Regions view.
   const league = 'bbe7e459-a138-5106-bd01-fce7ff422e7f'
@@ -136,18 +155,27 @@ test('CONTINUE plays the area on /area, and an idle /area goes back Home', async
   )
 })
 
-test("Home's widgets say what's next: the Day Care's unlock and how close Versus is", async ({ page }) => {
+test("Home's squares are only for what's open, and one line says what opens next", async ({ page }) => {
   await boot(page, makeSave(4))
   await page.goto('/home')
-  // A locked widget says what opens it and how far you are; a tap says it again.
-  const dayCare = page.getByRole('button', { name: 'Day Care: opens at 20 Pokémon caught, 1 so far' })
-  await expect(dayCare).toContainText('1/20 caught')
-  await expect(dayCare).toContainText('Opens for every region')
-  await dayCare.click()
-  await expect(page.getByText('The Day Care opens at 20 Pokémon caught, in every region')).toBeVisible()
-  const versus = page.getByRole('button', { name: /Versus opens when 3 of your Pokémon reach Lv\.50/ })
-  await expect(versus).toContainText('0/3 at Lv.50')
+  // A new game: nothing is open yet, so no square at all (no locked Day Care, Versus or events placeholder); the line
+  // counts the Day Care's catches.
+  await expect(page.getByText('Coming up: Day Care · 1/20 caught')).toBeVisible()
+  const squares = page.getByRole('region', { name: 'Shortcuts' }).getByRole('button')
+  await expect(squares).toHaveCount(0)
+  await expect(page.getByText('Special events')).toHaveCount(0)
   expect(await seriousAxe(page)).toEqual([])
+
+  // Twenty species caught: the Day Care's square, and the line moves on to Versus.
+  const save = makeSave(4)
+  await page.evaluate(
+    (s) => localStorage.setItem('pokedice.save', s),
+    JSON.stringify({ ...save, pokedex: Array.from({ length: 20 }, (_, i) => i + 1) }),
+  )
+  await page.reload()
+  await expect(page.getByText('Coming up: Versus · 0/3 at Lv.50')).toBeVisible()
+  await expect(squares).toHaveCount(1)
+  await expect(squares.first()).toHaveAccessibleName(/^Day Care/)
 })
 
 test('a new region: its partner is picked in the lab, from three Poké Balls', async ({ page }) => {

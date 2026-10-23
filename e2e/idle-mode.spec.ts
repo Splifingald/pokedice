@@ -188,7 +188,8 @@ test('Idle moves on by itself once the area is cleared', async ({ page }) => {
   const settings = { ...base.settings, ...JSON.parse(FAST), playStyle: 'idle' as const, autoMode: true }
   await bootSave(page, { ...base, areaProgress, settings }, IDLE_ON)
   await page.goto('/home')
-  await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+  // Cleared, with the next area open: the big button is GO TO it; Stay here plays the find left here first.
+  await page.getByRole('button', { name: /^Stay here/ }).click()
   await expect(page.getByText(`Now exploring ${second!.name}`)).toBeVisible({ timeout: 30_000 })
   await expect(page.getByRole('button', { name: /^Idle mode: ON$/i })).toBeVisible()
   // The save follows (written a moment later).

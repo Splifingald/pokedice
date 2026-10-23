@@ -97,7 +97,7 @@ export function GeneralBits() {
         onClose={() => setRules(null)}
         onGo={rules === 'unlock' ? () => setRules(null) : undefined}
       />
-      <OfflineReportModal />
+      <OfflineReportModal show />
 
       {/* Golden names: plain, golden, cut short, on a warm card, on a light chip (dusk too), inside a sentence. */}
       <div className="grid gap-1.5 bg-paper p-2 text-[20px] shadow-card">

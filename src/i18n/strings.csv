@@ -1813,6 +1813,7 @@ ui.nav.upgradesDot,{n} you can afford,{n} à ta portée,{n} a tu alcance,{n} bez
 ui.nav.dexDot,{n} new,{n} nouveaux,{n} nuevos,{n} neu,{n} nuovi,{n} novos,{n} novos,新しく{n}匹,새로 {n}마리,新增 {n} 只
 ui.home.heading,Exploring {area},Exploration : {area},Explorando: {area},Erkundung: {area},In esplorazione: {area},A explorar: {area},Explorando: {area},{area}を探索中,{area} 탐험 중,正在探索：{area}
 ui.home.widgets,Shortcuts,Raccourcis,Accesos directos,Schnellzugriff,Scorciatoie,Atalhos,Atalhos,ショートカット,바로가기,快捷入口
+ui.home.comingUp,Coming up: {what},Bientôt : {what},Próximamente: {what},Demnächst: {what},Prossimamente: {what},A seguir: {what},Em breve: {what},もうすぐ：{what},곧 열림: {what},即将开放：{what}
 ui.home.teamLabel,Your team in {area}: {names},Ton équipe à {area} : {names},Tu equipo en {area}: {names},Dein Team in {area}: {names},La tua squadra a {area}: {names},A tua equipa em {area}: {names},Sua equipe em {area}: {names},{area}の手持ち：{names},{area}의 팀: {names},{area}的队伍：{names}
 ui.home.teamList,Your team: open one,Ton équipe : ouvre un Pokémon,Tu equipo: abre uno,Dein Team: eines öffnen,La tua squadra: aprine uno,A tua equipa: abre um,Sua equipe: abra um,手持ち：ポケモンを開く,팀: 포켓몬 열기,你的队伍：打开一只
 ui.home.monButton,"{name}, Lv.{level}, {hp} of {max} HP","{name}, N.{level}, {hp} PV sur {max}","{name}, Nv.{level}, {hp} de {max} PS","{name}, Lv.{level}, {hp} von {max} KP","{name}, Lv.{level}, {hp} di {max} PS","{name}, Nv.{level}, {hp} de {max} PS","{name}, Nv.{level}, {hp} de {max} PS",{name}、Lv.{level}、HP {hp}/{max},"{name}, Lv.{level}, HP {hp}/{max}",{name}，Lv.{level}，HP {hp}/{max}
@@ -1832,6 +1833,7 @@ ui.home.closed,Nothing left here: pick another area,Plus rien ici : choisis une 
 ui.home.freePlay,Cleared · free play,Terminée · jeu libre,Superada · juego libre,Abgeschlossen · freies Spiel,Completata · gioco libero,Concluída · jogo livre,Concluída · jogo livre,クリア済み・自由にプレイ,클리어 · 자유 플레이,已通关 · 自由游玩
 ui.home.roundOf,Round {n} of {total},Manche {n} sur {total},Ronda {n} de {total},Runde {n} von {total},Round {n} di {total},Ronda {n} de {total},Rodada {n} de {total},ラウンド{n}/{total},라운드 {n}/{total},第{n}/{total}轮
 ui.home.keepExploring,KEEP EXPLORING,EXPLORER ENCORE,SEGUIR EXPLORANDO,WEITER ERKUNDEN,CONTINUA A ESPLORARE,CONTINUAR A EXPLORAR,CONTINUAR EXPLORANDO,探索をつづける,계속 탐험하기,继续探索
+ui.home.stayHere,Stay here,Rester ici,Quedarme aquí,Hierbleiben,Resta qui,Ficar aqui,Ficar aqui,ここに残る,여기 남기,留在这里
 ui.home.areas,Areas,Zones,Zonas,Gebiete,Aree,Áreas,Áreas,エリア,지역,区域
 ui.home.newRegion,New region,Nouvelle région,Nueva región,Neue Region,Nuova regione,Nova região,Nova região,新しい地方,새로운 지방,新地区
 ui.home.areasLabel,Areas: change where you explore,Zones : changer de lieu d'exploration,Zonas: cambia dónde exploras,Gebiete: woanders erkunden,Aree: cambia dove esplori,Áreas: muda onde exploras,Áreas: mude onde você explora,エリア：探索する場所を変える,지역: 탐험할 곳 바꾸기,区域：更换探索地点

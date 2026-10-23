@@ -14,6 +14,25 @@ async function signedIn(page: Page, save: object) {
   )
 }
 
+test('Prof. Oak’s leaderboard tip comes with the first badge, and Later (or ✕) ends it for good', async ({ page }) => {
+  await mockSupabase(page)
+  await signedIn(page, withBadge(makeSave(4, { leaderboardVisited: false })))
+  await page.goto('/home')
+  const tip = page.getByRole('dialog', { name: 'The leaderboard' })
+  await expect(tip).toBeVisible()
+  // A tip, not a choice to make: it can be closed, and SEE THE LEADERBOARD is still there.
+  await expect(tip.getByRole('button', { name: 'Close' })).toBeVisible()
+  await expect(tip.getByRole('button', { name: 'SEE THE LEADERBOARD' })).toBeVisible()
+  await tip.getByRole('button', { name: 'Later' }).click()
+  await expect(tip).toHaveCount(0)
+  await expect(page).toHaveURL(/\/home$/)
+  // Saved in the save: a reload doesn't bring it back.
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!).leaderboardVisited)).toBe(true)
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'CONTINUE', exact: true })).toBeVisible()
+  await expect(tip).toHaveCount(0)
+})
+
 test('five tabs, named only when open; the Shiny board ranks shinies caught, the Raids board raids won', async ({ page }) => {
   await mockSupabase(page)
   await signedIn(page, withBadge(makeSave(4, { player: { name: 'Sam', character: 'red' } })))

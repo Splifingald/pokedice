@@ -1,22 +1,14 @@
 // The Day Care's and Versus's rules (docs/15), in the special events' pop-up: once when each opens, then from the INFO
 // button at the bottom of its page. The numbers come from the config, so a rebalance shows up in the text.
-import { useLocation, useNavigate } from 'react-router-dom'
-import {
-  dayCareTutorialDue,
-  donationDue,
-  eventUnlockDue,
-  leaderboardTutorialDue,
-  regionOfferDue,
-  versusRulesDue,
-  VERSUS_LEVEL,
-  VERSUS_TEAM_SIZE,
-} from '@/engine'
+import { useNavigate } from 'react-router-dom'
+import { VERSUS_LEVEL, VERSUS_TEAM_SIZE } from '@/engine'
 import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
 import { markVersusRulesSeen } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { EggSprite } from './EggSprite'
+import { useMyTurn, useOnScreen } from './popupTurn'
 import { RulesModal, type RuleRow, type RulesPicture } from './RulesModal'
 
 /** The Day Care's yard, framed on the whole cottage, chimney to fence. */
@@ -110,27 +102,16 @@ export function VersusRulesModal({ open, onClose, onGo }: { open: boolean; onClo
 }
 
 /**
- * Versus has opened (three Pokémon at Lv.50): once, between fights, its rules and a button straight to it. It waits
- * its turn behind Prof. Oak's tutorials, the donation pop-up, a new region's offer and a new event's pop-up.
+ * Versus has opened (three Pokémon at Lv.50): once, between fights, its rules and a button straight to it. It takes its
+ * turn in the one-time pop-ups' queue (engine/popups.ts), never on Versus's own page.
  */
 export function VersusUnlockPopup() {
   const navigate = useNavigate()
-  const onVersus = useLocation().pathname.startsWith('/versus')
-  const due = useGame(
-    (s) =>
-      !!s.save &&
-      versusRulesDue(s.save, s.data) &&
-      !dayCareTutorialDue(s.save, s.data) &&
-      !leaderboardTutorialDue(s.save, s.data) &&
-      !donationDue(s.save, s.data) &&
-      !regionOfferDue(s.save, s.data) &&
-      !eventUnlockDue(s.save, s.data),
-  )
-  const idle = useGame((s) => s.run.phase === 'idle')
-  if (!due) return null
+  const open = useMyTurn('versus')
+  useOnScreen('versus', open)
   return (
     <VersusRulesModal
-      open={idle && !onVersus}
+      open={open}
       onClose={markVersusRulesSeen}
       onGo={() => {
         markVersusRulesSeen()

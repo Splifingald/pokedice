@@ -4,11 +4,12 @@
 // nothing at all, which is what keeps Johto unmentioned for a player still working through Kanto.
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { donationDue, getRegion, regionOf, regionOfferDue, tutorialPending, type Region } from '@/engine'
+import { getRegion, regionOf, type Region } from '@/engine'
 import { useT } from '@/i18n/react'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
 import { PartnerMoment } from '@/components/PartnerMoment'
+import { useMyTurn, useOnScreen } from '@/components/popupTurn'
 import { availableRegions, closeRegionOffer, regionOnOffer, startRegion, switchRegion } from '@/store/regions'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
@@ -19,19 +20,19 @@ export function RegionBar({ modalOnly = false }: { modalOnly?: boolean }) {
   const { t } = useT()
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
-  // Prof. Oak's one-time pop-ups queue rather than stack, and they go first: the offer waits its turn behind them,
-  // and the banner keeps it on screen meanwhile. The donation pop-up goes first too.
-  const waiting = useGame((s) => !!s.save && (tutorialPending(s.save, s.data) || donationDue(s.save, s.data)))
   const busy = useGame((s) => s.run.phase !== 'idle')
-  // The pop-up opens by itself once per region; once closed, it is saved as seen and only the banner reopens it.
-  const due = useGame((s) => !!s.save && !!regionOfferDue(s.save, s.data))
+  // The pop-up opens by itself once per region, on its turn in the one-time pop-ups' queue (engine/popups.ts: after
+  // Prof. Oak's tutorials and the donation pop-up; the banner keeps it on screen meanwhile). Once closed, it is saved as
+  // seen and only the banner reopens it.
+  const turn = useMyTurn('regionOffer')
   const [reopened, setReopened] = useState(false)
   const [picking, setPicking] = useState(false)
 
   const regions = availableRegions()
   const offer = regionOnOffer()
   const current = regionOf(save)
-  const offerOpen = (due || reopened) && !waiting && !busy && !picking
+  const offerOpen = (turn || reopened) && !busy && !picking
+  useOnScreen('regionOffer', offerOpen && turn)
   const closeOffer = () => {
     setReopened(false)
     closeRegionOffer()

@@ -1,9 +1,10 @@
 // The developer answered, or wrote first: when the player opens the game (signs in, or comes back to the tab a while
-// later), answers they haven't seen yet pop up, between fights and after Prof. Oak's tutorials. A message carrying a gift
-// (docs/15 §23) shows it under the words, and pops up until it's opened: closing the message opens it (the rules first,
-// the first time). Closing marks the answers seen; they stay in Contact the developer → My messages.
+// later), answers they haven't seen yet pop up, between fights, on their turn in the one-time pop-ups' queue
+// (engine/popups.ts: after Prof. Oak's tutorials). A message carrying a gift (docs/15 §23) shows it under the words, and
+// pops up until it's opened: closing the message opens it (the rules first, the first time). Closing marks the answers
+// seen; they stay in Contact the developer → My messages.
 import { useEffect } from 'react'
-import { dayCareTutorialDue, giftsWait, leaderboardTutorialDue, parseGifts } from '@/engine'
+import { giftsWait, parseGifts } from '@/engine'
 import { useT } from '@/i18n/react'
 import { unopenedGifts, unseenReplies, useInbox, type MyMessage } from '@/lib/feedback'
 import { isSupabaseConfigured } from '@/lib/supabase'
@@ -14,10 +15,29 @@ import { GiftPresent } from './Gifts'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
 import { ReplyBox } from './ContactModal'
+import { useMyTurn, useOnScreen } from './popupTurn'
 
 /** Coming back to the tab asks again, at most this often. */
 const AGAIN_MS = 5 * 60_000
 let lastLoad = 0
+
+/** What pops up: the answers not seen yet, and the messages whose gift isn't opened (where gifts open), oldest first. */
+function toShow(messages: MyMessage[], later: readonly number[], giftsHere: boolean): MyMessage[] {
+  const unseen = unseenReplies(messages)
+  // Gifts not opened yet pop up again until they are, where they can open (and not put off this visit).
+  const gifted = giftsHere ? unopenedGifts(messages).filter((m) => !later.includes(m.id)) : []
+  return [...unseen, ...gifted.filter((g) => !unseen.some((u) => u.id === g.id))].sort((a, b) =>
+    a.created_at.localeCompare(b.created_at),
+  )
+}
+
+/** Something is waiting to pop up: the queue's `replies` (engine/popups.ts). */
+export function useRepliesWaiting(): boolean {
+  const messages = useInbox((s) => s.messages)
+  const later = useInbox((s) => s.later)
+  const giftsHere = useGame((s) => !!s.save && giftsWait(s.save, s.data) === null)
+  return !!messages && toShow(messages, later, giftsHere).length > 0
+}
 
 export function ReplyPopup() {
   const { t, tPlural } = useT()
@@ -27,10 +47,7 @@ export function ReplyPopup() {
   const later = useInbox((s) => s.later)
   const load = useInbox((s) => s.load)
   const markSeen = useInbox((s) => s.markSeen)
-  const idle = useGame((s) => s.run.phase === 'idle' && !s.battle)
-  const tutorial = useGame(
-    (s) => !!s.save && (dayCareTutorialDue(s.save, s.data) || leaderboardTutorialDue(s.save, s.data)),
-  )
+  const turn = useMyTurn('replies')
   const wait = useGame((s) => (s.save ? giftsWait(s.save, s.data) : 'off'))
   // A signed-in player's gifts wait for the sign-in's sync, so the cloud copy can't replace what they went into.
   const synced = useCloudSync((s) => s.settled)
@@ -57,14 +74,11 @@ export function ReplyPopup() {
 
   const giftsHere = wait === null
   const unseen = messages ? unseenReplies(messages) : []
-  // Gifts not opened yet pop up again until they are, where they can open (and not put off this visit).
-  const gifted = giftsHere && messages ? unopenedGifts(messages).filter((m) => !later.includes(m.id)) : []
-  const shown: MyMessage[] = [...unseen, ...gifted.filter((g) => !unseen.some((u) => u.id === g.id))].sort(
-    (a, b) => a.created_at.localeCompare(b.created_at),
-  )
+  const shown = messages ? toShow(messages, later, giftsHere) : []
   const giftOf = (m: MyMessage) => (wait === 'off' || m.gifts_claimed ? [] : parseGifts(m.gifts))
   const toOpen = giftsHere ? shown.filter((m) => giftOf(m).length > 0) : []
-  const open = shown.length > 0 && idle && !tutorial && !giftsBusy && !(toOpen.length > 0 && syncWait)
+  const open = shown.length > 0 && turn && !giftsBusy && !(toOpen.length > 0 && syncWait)
+  useOnScreen('replies', open)
   const fromDev = shown.length > 0 && shown.every((m) => m.from_admin)
 
   const close = () => {

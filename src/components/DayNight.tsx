@@ -2,30 +2,14 @@
 // twin on a fight's stage, the tags in an area's lists, and the rules pop-up. The engine decides the time
 // (`dayTimeAt`, `areaDayTime`); these only show it.
 import { useState } from 'react'
-import {
-  DAY_START_HOUR,
-  NIGHT_START_HOUR,
-  dayCareTutorialDue,
-  dayNightRulesDue,
-  donationDue,
-  eventUnlockDue,
-  extremeRulesDue,
-  generalRulesDue,
-  inviteRulesDue,
-  leaderboardTutorialDue,
-  markDayNightRulesSeen,
-  nextTurnHour,
-  regionOfferDue,
-  tradeRulesDue,
-  versusRulesDue,
-  type DayTime,
-} from '@/engine'
+import { DAY_START_HOUR, NIGHT_START_HOUR, markDayNightRulesSeen, nextTurnHour, type DayTime } from '@/engine'
 import { useT } from '@/i18n/react'
 import { hourOfDay } from '@/lib/format'
 import { useDayTime } from '@/store/dayTime'
-import { mutateSave, useGame } from '@/store/game'
+import { mutateSave } from '@/store/game'
 import { cx } from '@/theme/util'
 import { PixelIcon } from './icons'
+import { useMyTurn, useOnScreen } from './popupTurn'
 import { RulesModal, type RuleRow } from './RulesModal'
 
 const ICON: Record<DayTime, 'daySun' | 'nightMoon'> = { day: 'daySun', night: 'nightMoon' }
@@ -204,26 +188,12 @@ export function DayNightRulesModal({
 const seen = () => mutateSave((s) => (s.dayNight?.rulesSeen ? null : markDayNightRulesSeen(s)))
 
 /**
- * Once, between fights, the first time the player is in Johto with the switch on. It waits its turn behind Prof. Oak's
- * tutorials and the other one-time pop-ups, the General upgrades' last.
+ * Once, between fights, the first time the player is in Johto with the switch on. It takes its turn in the one-time
+ * pop-ups' queue (engine/popups.ts): after the features' rules that came before it, before the battle powers'.
  */
 export function DayNightRulesPopup() {
-  const due = useGame(
-    (s) =>
-      !!s.save &&
-      dayNightRulesDue(s.save, s.data) &&
-      !dayCareTutorialDue(s.save, s.data) &&
-      !leaderboardTutorialDue(s.save, s.data) &&
-      !donationDue(s.save, s.data) &&
-      !regionOfferDue(s.save, s.data) &&
-      !eventUnlockDue(s.save, s.data) &&
-      !versusRulesDue(s.save, s.data) &&
-      !extremeRulesDue(s.save, s.data) &&
-      !generalRulesDue(s.save, s.data) &&
-      !(s.auth.status === 'signed_in' && (tradeRulesDue(s.save, s.data) || inviteRulesDue(s.save, s.data))),
-  )
-  const idle = useGame((s) => s.run.phase === 'idle')
-  if (!due) return null
+  const open = useMyTurn('dayNight')
+  useOnScreen('dayNight', open)
   // Let's go! has nowhere to lead: the feature is the whole region. Both buttons just close it.
-  return <DayNightRulesModal open={idle} onClose={seen} onGo={seen} />
+  return <DayNightRulesModal open={open} onClose={seen} onGo={seen} />
 }

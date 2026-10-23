@@ -4,15 +4,12 @@
 // mythical, its Mart), the way to finish it once everything in it is done, the booster chips, the mythical's result
 // card, and the panel the main game's pages show instead of theirs. Every rule and number comes from engine/worlds.ts; the store's actions are store/worlds.ts.
 import { type CSSProperties, type ReactNode, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { create } from 'zustand'
 import {
   areaOpenAt,
   conditionStatus,
   currentWorld,
-  dayCareTutorialDue,
-  donationDue,
-  eventUnlockDue,
   getRegion,
   hasWorldMythical,
   heldWorld,
@@ -20,11 +17,7 @@ import {
   nightmareLock,
   isAreaClosed,
   isAreaUnlocked,
-  leaderboardTutorialDue,
   mythicalHome,
-  regionOfferDue,
-  generalRulesDue,
-  versusRulesDue,
   worldByeDue,
   worldCompletion,
   worldFinishable,
@@ -55,12 +48,12 @@ import { PixelIcon } from '@/components/icons'
 import { Modal } from '@/components/Modal'
 import { PageHead } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
+import { useMyTurn, useOnScreen } from '@/components/popupTurn'
 import { InfoButton } from '@/components/RulesModal'
 import { SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { dayTime, typeName } from '@/lib/format'
 import { pushToast, useGame } from '@/store/game'
-import { useRaidGifts } from '@/store/raidGifts'
 import { serverNow, useServerNow } from '@/store/serverTime'
 import { travelTo } from '@/store/travel'
 import {
@@ -360,23 +353,6 @@ function WorldBanner({
   )
 }
 
-/** Other one-time pop-ups go first; the world's waits its turn (it goes before the live event's). */
-function useOthersDue(): boolean {
-  const gifts = useRaidGifts((s) => s.gifts.length)
-  const others = useGame(
-    (s) =>
-      !s.save ||
-      dayCareTutorialDue(s.save, s.data) ||
-      leaderboardTutorialDue(s.save, s.data) ||
-      donationDue(s.save, s.data) ||
-      !!regionOfferDue(s.save, s.data) ||
-      !!eventUnlockDue(s.save, s.data) ||
-      versusRulesDue(s.save, s.data) ||
-      generalRulesDue(s.save, s.data),
-  )
-  return others || gifts > 0
-}
-
 /** The world's pop-up: its banner, the time left, its rules; Later and Enter, or just OK as Home's INFO inside it. */
 export function WorldPopupView({
   world,
@@ -424,20 +400,20 @@ export function WorldPopupView({
 }
 
 /**
- * The world's pop-up: once, the first time the player is between fights while it's open (after Prof. Oak's tutorials
- * and the other pop-ups, before the live event's). Later, or Enter (the partner pick the first time).
+ * The world's pop-up: once, the first time the player is between fights while it's open, on its turn in the one-time
+ * pop-ups' queue (engine/popups.ts: after the features' rules, before the live event's; never in the Mart). Later, or
+ * Enter (the partner pick the first time).
  */
 export function WorldPopup() {
   const navigate = useNavigate()
-  const onShop = useLocation().pathname.startsWith('/shop')
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
-  const others = useOthersDue()
-  const idle = useGame((s) => s.run.phase === 'idle' && !s.battle)
+  const turn = useMyTurn('world')
   const picking = useWorldPick((s) => s.open)
   const { world, now } = useWorld(5000)
+  const open = turn && !picking && !!world && !!save && now != null && !inWorld(save, data) && worldPopupDue(save, world)
+  useOnScreen('world', open)
   if (!world || !save || now == null || inWorld(save, data)) return null
-  const open = idle && !picking && worldPopupDue(save, world) && !others && !onShop
   const close = () => {
     if (worldPopupDue(save, world)) markWorldPopupSeen(world)
   }
@@ -535,12 +511,12 @@ export function WorldByeView({ bye, open, onOk }: { bye: WorldBye; open: boolean
 export function WorldByePopup() {
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
-  const others = useOthersDue()
-  const idle = useGame((s) => s.run.phase === 'idle' && !s.battle)
+  const turn = useMyTurn('worldBye')
   const now = useServerNow(5000)
   const bye = save ? worldByeDue(save, data, now) : null
+  useOnScreen('worldBye', turn && !!bye)
   if (!bye || !save) return null
-  return <WorldByeView bye={bye} open={idle && !others} onOk={() => markWorldByeSeen(bye.id)} />
+  return <WorldByeView bye={bye} open={turn} onOk={() => markWorldByeSeen(bye.id)} />
 }
 
 // ------------------------------------------------------------------ finishing it early (docs/21 §11)
@@ -674,12 +650,13 @@ export function WorldFinishPopup() {
   const data = useGame((s) => s.data)
   const idle = useGame((s) => s.run.phase === 'idle' && !s.battle)
   const asked = useWorldFinish((s) => s.open)
-  const others = useOthersDue()
+  const turn = useMyTurn('worldFinish')
   const now = useServerNow(5000)
   const world = save ? worldFinishable(save, data, now) : null
+  // On its own it takes its turn in the one-time pop-ups' queue; asked for from Home's row, it opens at once.
+  const open = !!save && !!world && ((idle && asked) || (turn && worldFinishPopupDue(save, data, now)))
+  useOnScreen('worldFinish', open)
   if (!save || !world) return null
-  // On its own it waits behind the other one-time pop-ups; asked for from Home's row, it opens at once.
-  const open = idle && (asked || (!others && worldFinishPopupDue(save, data, now)))
   const close = () => {
     useWorldFinish.setState({ open: false })
     markWorldFinishPopupSeen()
