@@ -84,7 +84,7 @@ nightmare, a new region.
 
 1. Deploy the client (the switch is Off: nothing changes for anyone; auto-mode stays as it was).
 2. Run `supabase/migrations/0068_idle_mode.sql` (the switch's row, Off, and the content version + 1; safe to run again):
-   https://github.com/Splifingald/pokedice/blob/worktree-agent-ab263b46ffaaa256f/supabase/migrations/0068_idle_mode.sql
+   https://github.com/Splifingald/pokedice/blob/claude/gifted-cray-t73mqb/supabase/migrations/0068_idle_mode.sql
    (the branch this was committed on; the same path on whichever branch it is pushed to). `supabase/seed.sql` carries it
    too (inlined). Without it, the admin's switch still saves (it inserts the row).
 3. Admin → Config → **Idle mode**: **On for admin** to try it signed in, **On for everyone** to open it. Publish.
