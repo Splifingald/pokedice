@@ -175,6 +175,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `DoubleMons` (`BattleStage double`) / `DoublePlates` / `MiniPlate` / `TargetPicker` / `LeadPicker pair` | Double battles (§31) | The stage with four (the pair in front big on the usual spots, their partners smaller behind, each with a shadow; toggled, they change places), one K.O. on each side (greyed plates, 1 v 2); the name-less plates (icon, level, HP, statuses; the one in front ringed in gold; a fallen one greyed); the target picker (live, disabled); the lead picker sending two |
 | `UgCave` / `CrackGauge` / `UgWall` / `PickaxeDie` / `PickaxeFaces` / `OrbArt` / `PlateArt` / `ThingIcon` / `HaulList` / `PlateGrid` / `OrbBagTable` / `UgRulesModal` / `UgTeamSeats` | The Underground (§32) | The cave (a square's size; big); the gauge fresh, under way, its last three shaking or calm, collapsed; the wall fresh, half dug with a strike flashing, cleared (glinting), collapsing; the die unrolled and rolled; the faces with the one that came up, and the next level's with its raised face; orbs of every colour and size, plates; the haul with every outcome; the plates none and some; the orb bag; the team seats solo, two, full; the rules (once, INFO) |
 | `TeamSwapActions` | A Pokémon's sheet where the team can change (`teamSwapsOpen`: inside a Pokémon Center, at a portal's way in before READY!) | In the team: Make lead (not the lead), Send to the Box (not the last one); in the Box: Add to team, or, the team full, "swap it in for" each member (a button each: its still mini icon on the left, name and level, "goes to the Box" and the swap arrow, `reroll`, at the far right); still reviving from its fossil: a line saying so. It sits above Strengths and weaknesses in the sheet, whether type hints are on or not (`PokemonSheet`'s `beforeMatchups`, the user's call, 2026-10-15) |
+| `PlayStylePicker` / `PlayStylePrompt` / `PlayStylePanel` / `IdleRulesModal` / `AutoModeButton` / `AutopilotNote` | Idle mode and the play styles (§34, docs/36) | The three styles as a radio group of cards (an icon, the name, its line; the picked one on gold-pale with the gold ring and a check; none picked; arrow keys move the pick); a new game's question (NEXT disabled until one is picked); Settings' panel with INFO; the rules (once, INFO); the area's switch (AUTO-MODE or Idle mode, off and on, with Prof. Oak's tip); the line standing in for a card the autopilot takes |
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
 **Esc closes the top dialog only**, focus returns to what opened it.
@@ -455,7 +456,9 @@ in view) and the battle history sits beside it from 1024 px.
 - **Auto battles** (auto-mode, Versus) play at the `short` motion level unless animations are off (`MotionCap`).
   Auto-mode is switched in the area (under its header), never from Home; a cleared area's battle also offers it among
   its extras (AUTO-MODE, ghost, last), which hands the rest of that fight to auto and turns the setting on, like the
-  area's switch. The fight keeps the rules it started with (its powers, `state.auto`); STOP gives it back. Prof. Oak's tip about it, the first time,
+  area's switch. With the play styles on (§34), where it is offered follows the style (`autoAvailable`: Classic
+  nowhere, Auto on explored areas in cleared areas, Idle everywhere), and the catch's result moves on by itself while
+  the autopilot runs. The fight keeps the rules it started with (its powers, `state.auto`); STOP gives it back. Prof. Oak's tip about it, the first time,
   takes the full width above the switch (never squeezed into a column beside it).
 - **Team pips**: menu icon + an HP bar, the one in battle ringed in gold, fainted ones grey. Tapping one switches
   (it costs the turn; the dialog also holds Forfeit). After a K.O. the message asks "Choose your next Pokémon",
@@ -622,6 +625,8 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   one. Opening one lets its Pokémon out (`starter.open`) and asks "Do you want to pick Charmander?" in the message
   box, with a card under it: its types, what it hits hard, what hits it hard, its dice and rerolls at the starting
   level. Not this one puts it back; another ball swaps it.
+- **Before it, how to play** (§34): a new game first asks for a play style when the idle mode's switch is on for the
+  player; otherwise it starts with Prof. Oak, as always.
 - **Yes**: the partner hops with hearts, the other two balls sink away (`starter.fanfare`), "Charmander is your
   partner! Your Kanto journey begins." and one wide button, Let's go!, which starts the game or the region.
 - **Leaving**: a new region has ✕ (Not now) and Esc; a new game has nothing to go back to. With motion `off` the balls
@@ -669,7 +674,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
   queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
   again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the portal run (§27), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the portal run (§27), idle mode (§34: a new game's question is its rules; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
@@ -1322,3 +1327,26 @@ and there are no Z-Moves. On:
   motion: a flash of the type's colour), and the attack's own is the type's move as its Z variant (§9's table). A timed Mega changing back is a flash, no scene.
 - **A gem from a badge** is a toast ("Korrina gave you the Lucarionite!"), however long after the badge it comes.
 - Never inside a small world: no button, no shelf, no pop-up.
+
+## 34. Idle mode and the play styles
+
+One setting of the one save (docs/36): **Classic**, **Auto on explored areas**, **Idle**, behind its switch (§20, Off:
+none of this shows, auto-mode is a cleared area's fights as before). Every decision is the engine's
+(`engine/autopilot.ts`); the screens carry the steps out and pace them. The pieces are in `src/components/IdleMode.tsx`,
+every state on `/kitchen-sink` (`IdleBits`).
+
+- **The styles are cards** (`PlayStylePicker`): an icon (sword, map, dice), the name, one line; a radio group, the
+  picked one on `gold-pale` with `shadow-card-gold` and a check (never colour alone), arrow keys move it. The same cards
+  in a new game's question (`PlayStylePrompt`, before Prof. Oak, NEXT disabled until one is picked) and in Settings →
+  **Play style**, under Game (`PlayStylePanel`, its INFO under the cards). A pick there applies at once.
+- **The area's switch** says what runs: AUTO-MODE (auto-mode, Auto on explored areas) or **Idle mode** (Idle), ON in
+  green, OFF ghost (`AutoModeButton`). Prof. Oak's tip is auto-mode's only. It sits where the style offers auto
+  (`autoAvailable`); Classic has none, and no AUTO-MODE in a battle's extras either.
+- **While the autopilot runs, the cards it takes don't open**: the encounter preview, the Center's healing scene and its
+  team section, the Game Corner. One `pixel-dialogue` line (`AutopilotNote`, `role="status"`) stands in for the moment
+  it takes. What it shows for a moment and then closes itself: the area's page between encounters (~1 s), the result
+  card (whole at once, 1.6 s), each evolution (played in full, 1.8 s after its reveal), the wipe and stalemate cards.
+- **It stops only for the player's choices**: the catch panel (the ball, the Bait, THROW AGAIN; its result then moves
+  on after 1.4 s), "Add to team?", Trick or Treat, and any dialog that is open (a one-time pop-up, a sheet the player
+  opened): it waits for it to close. Never an item, never a team change, never a spin.
+- **Between areas**, a toast says each move ("Now exploring…", "Round lost: one round in…", "Round done: back to…").

@@ -1,6 +1,6 @@
 // Result screens: victory (XP, level-ups, milestones, gold, catch, then evolutions), wipe and stalemate.
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   getInstance,
@@ -37,6 +37,7 @@ import { usePace } from '@/lib/pace'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { Confetti } from '@/components/Confetti'
 import { useGame } from '@/store/game'
+import { autoStepNow } from '@/store/autopilot'
 import {
   afterStalemate,
   afterWipe,
@@ -531,6 +532,9 @@ function MonRow({ m }: { m: MonRecap }) {
   )
 }
 
+/** How long the autopilot leaves a result card up before closing it (docs/36). */
+const AUTO_CARD_MS = 1600
+
 /**
  * The rewards after a K.O. Built for phones: the recap scrolls, the action button never does (it sits at the bottom of
  * the card). One row per Pokémon with its celebrations under it; then gold, catches, badges. Evolutions play after
@@ -591,9 +595,27 @@ export function VictoryView() {
   const clearedTo = run.events.flatMap((e) => (e.kind === 'area_cleared' && e.nextAreaId ? [e.nextAreaId] : []))[0]
   const nextArea = clearedTo ? data.areas.find((a) => a.id === clearedTo) : undefined
 
+  // The autopilot (docs/36): the card shows whole at once, stays a moment to be read, then closes by itself — on to the
+  // trainer's next Pokémon, or back on the trail, where the autopilot picks up (evolutions play on their own first).
+  // "Add to team?" waits for the player: it is part of the catch.
+  const closes = useGame((s) => !!s.save && s.run.phase === 'victory' && autoStepNow()?.do === 'close')
+  const closeRef = useRef<() => void>(() => {})
+  closeRef.current =
+    hasNext && nextMon
+      ? go(() => continueAfterVictory(lead ?? stillIn ?? defaultLead()))
+      : go(() => continueAfterVictory())
+  useEffect(() => {
+    if (closes) setShown(Number.MAX_SAFE_INTEGER)
+  }, [closes])
+  useEffect(() => {
+    if (!closes || !allShown || then) return
+    const timer = setTimeout(() => closeRef.current(), AUTO_CARD_MS)
+    return () => clearTimeout(timer)
+  }, [closes, allShown, then])
+
   // Inside a portal run (docs/28) there is no way Home: CONTINUE alone.
   const locked = useGame((s) => !!portalLock(s.save, s.data))
-  if (then) return <EvolutionQueue items={evolutions} onDone={then} />
+  if (then) return <EvolutionQueue items={evolutions} onDone={then} auto={closes} />
 
   const footer = !allShown ? (
     <PixelButton variant="primary" size="lg" className="w-full" onClick={() => setShown(Number.MAX_SAFE_INTEGER)}>

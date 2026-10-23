@@ -890,6 +890,8 @@ export interface GameConfig {
   trickOrTreat: TrickOrTreatConfig
   /** Day and night in Johto (docs/32): its switch. Migration 0061 inserts the same row. */
   dayNight: { access: EventAccess }
+  /** Idle mode and the play styles (docs/36): its switch. Migration 0068 inserts the same row. */
+  idleMode: { access: EventAccess }
   /** Double battles (docs/33): their switch, the regions that have them and the wild odds. */
   doubleBattles: DoubleBattlesConfig
   /**
@@ -1420,7 +1422,10 @@ export interface SaveData {
     reducedMotion: boolean
     animations?: 'full' | 'short'
     multiExp: boolean
+    /** Auto engaged: a cleared area's fights play themselves (and with the play styles on, the autopilot runs). */
     autoMode?: boolean
+    /** The play style (docs/36). Unset = from before the styles: "Auto on explored areas" (engine/autopilot). */
+    playStyle?: PlayStyle
     /** Raids: the ally sides' turns at 1.5× speed. */
     raidFast?: boolean
     lang?: Lang
@@ -1497,6 +1502,27 @@ export interface SaveData {
   dayNight?: { rulesSeen?: boolean }
   /** Mega Gems, and the battle powers' rules seen (docs/35), for every region of this save. Absent = none yet. */
   powers?: PowersSave
+  /** Idle mode (docs/36): its rules seen, and a lost round's detour under way. Absent = neither. */
+  idle?: IdleSave
+}
+
+/** Classic: the player does everything. Explored: cleared areas play themselves when asked. Idle: every area does. */
+export const PLAY_STYLES = ['classic', 'explored', 'idle'] as const
+export type PlayStyle = (typeof PLAY_STYLES)[number]
+
+/**
+ * A lost round's detour (docs/36): one round in the area before (`to`), then back to the one lost (`from`). `rounds`
+ * is the rounds `to` had done when it began: one more, and the detour is over.
+ */
+export interface IdleDetour {
+  from: string
+  to: string
+  rounds: number
+}
+
+export interface IdleSave {
+  rulesSeen?: boolean
+  detour?: IdleDetour
 }
 
 /** The three battle powers (docs/35). */

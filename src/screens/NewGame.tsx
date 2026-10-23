@@ -6,9 +6,11 @@ import { Dialogue } from '@/components/Dialogue'
 import { PixelButton } from '@/components/PixelButton'
 import { PartnerMoment } from '@/components/PartnerMoment'
 import { PLAYER_CHARACTERS, TrainerSprite } from '@/components/TrainerArt'
-import type { PlayerCharacter, PlayerProfile } from '@/engine'
+import { PlayStylePrompt } from '@/components/IdleMode'
+import { newGameAsksStyle, type PlayerCharacter, type PlayerProfile, type PlayStyle } from '@/engine'
 import { cx } from '@/theme/util'
 import { useGame } from '@/store/game'
+import { choosePlayStyle } from '@/store/autopilot'
 import { enterArea, startNewGame } from '@/store/run'
 
 const INTRO = ['ui.newGame.intro1', 'ui.newGame.intro2', 'ui.newGame.intro3', 'ui.newGame.intro4']
@@ -19,6 +21,9 @@ export function NewGame() {
   const navigate = useNavigate()
   const [line, setLine] = useState(0)
   const [player, setPlayer] = useState<PlayerProfile | null>(null)
+  // How to play (docs/36), asked before everything else when there is a choice (the idle mode's switch is on).
+  const asks = newGameAsksStyle(data)
+  const [style, setStyle] = useState<PlayStyle | null>(null)
   const level = data.config.starterLevel
   const starters = data.config.starters.filter((d) => data.species[d])
   // A new game starts in the first region.
@@ -27,6 +32,8 @@ export function NewGame() {
 
   const begin = (dex: number) => {
     startNewGame(dex, player ?? undefined)
+    // The question showed what each style does: that was its rules pop-up.
+    if (style) choosePlayStyle(style, true)
     const first = data.areas[0]
     if (first) enterArea(first.id)
     navigate('/home')
@@ -35,7 +42,9 @@ export function NewGame() {
   return (
     <main className="scanlines min-h-screen px-3 py-8">
       <div className="mx-auto flex max-w-5xl flex-col gap-6">
-        {!picking ? (
+        {asks && !style ? (
+          <PlayStylePrompt onPick={setStyle} />
+        ) : !picking ? (
           <div className="mx-auto mt-[12vh] w-full max-w-2xl">
             <h1 className="sr-only">{t('ui.newGame.heading')}</h1>
             <motion.div className="mb-2 flex justify-center" initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>

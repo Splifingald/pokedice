@@ -5,6 +5,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import {
   activeBattler,
+  autoAvailable,
+  autoLevel,
   autoEvents,
   catchTarget,
   comboDice,
@@ -22,7 +24,6 @@ import {
   megaChoices,
   megaDie,
   zEffectOf,
-  progressOf,
   randomSeed,
   statusCounts,
   statusesFromRoll,
@@ -62,7 +63,7 @@ import { capMotion, MotionCap, useMotion, type MotionLevel } from '@/lib/motion'
 import { AUTO_PACE, PaceContext, VERSUS_PACE } from '@/lib/pace'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { setSettings, useGame, type BattleSlice, type CatchThrow } from '@/store/game'
-import { answerBait, dispatchBattle, retryCatch, throwBall } from '@/store/run'
+import { answerBait, dispatchBattle, finishCatch, retryCatch, throwBall } from '@/store/run'
 import { useAreaDayTime } from '@/store/dayTime'
 import { cx } from '@/theme/util'
 import { BattleHistory, BattleHistoryList, DamageRecap } from './BattleHistory'
@@ -165,6 +166,8 @@ const SEND_OUT_MS = 900
 const autoRng = createRng(randomSeed())
 /** How long auto-mode shows its dice selection before the reroll. */
 const AUTO_SELECT_MS = 450
+/** How long the autopilot leaves a throw's result on screen before moving on (docs/36). */
+const AUTO_RESULT_MS = 1400
 
 const BANNER_TONE = {
   super: 'bg-gold text-ink',
@@ -221,10 +224,12 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const typeHints = useGame((s) => !!s.settings.typeHints)
   const [matchups, setMatchups] = useState<Side | null>(null)
 
-  // Auto-mode (cleared areas only): the player's side plays itself, like the enemy's. A Versus fight is always on auto.
-  const autoOn = useGame((s) => !!s.settings.autoMode)
-  const autoOpen = !versus && !!save && !!run.areaId && progressOf(save, run.areaId).cleared
-  const auto = !!versus || (autoOn && autoOpen)
+  // Auto-mode (cleared areas; with the play styles, where the style allows: docs/36): the player's side plays itself,
+  // like the enemy's. A Versus fight is always on auto.
+  const settings = useGame((s) => s.settings)
+  const autoOpen = !versus && !!save && autoAvailable(save, data, settings, run.areaId)
+  const autoAt = !versus && save ? autoLevel(save, data, settings, run) : 'off'
+  const auto = !!versus || autoAt !== 'off'
   // Auto-mode plays the whole fight faster: animations, dice and timers.
   const pace = versus ? VERSUS_PACE : auto ? AUTO_PACE : 1
   // A fight that plays itself is watched, not played: short animations unless the player turned them off altogether.
@@ -569,6 +574,15 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     setThrown(null)
     setRevealed(false)
   }
+  // The autopilot (docs/36): the throw was the player's; its result, once read, moves on by itself (the Bait's question
+  // and THROW AGAIN still wait for the player).
+  const caughtResult = catching ? run.catch?.result : null
+  const autoFinish = autoAt === 'full' && revealed && !!caughtResult && !caughtResult.baitOffer && !caughtResult.stays
+  useEffect(() => {
+    if (!autoFinish) return
+    const t = setTimeout(finishCatch, AUTO_RESULT_MS)
+    return () => clearTimeout(t)
+  }, [autoFinish])
 
   // A legendary's entrance: the boss intro is its timeline (the foe and yours appear on its cues).
   const legend = useMemo<StageOverlay | null>(() => {

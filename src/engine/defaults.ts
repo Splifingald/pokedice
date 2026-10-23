@@ -351,6 +351,9 @@ export const DEFAULT_CONFIG: GameConfig = {
   looks: { access: 'off' },
   // Day and night in Johto (docs/32): off until the admin switches it on. Migration 0061 inserts the same row.
   dayNight: { access: 'off' },
+  // Idle mode and the play styles (docs/36): off until the admin switches it on; auto-mode stays as it was meanwhile.
+  // Migration 0068 inserts the same row.
+  idleMode: { access: 'off' },
   // Double battles (docs/33): off until the admin switches them on; from Hoenn on, 10 % of the wild encounters.
   // Migration 0062 inserts the same row.
   doubleBattles: { access: 'off', regions: ['hoenn', 'sinnoh', 'unova', 'kalos', 'alola', 'galar', 'paldea'], wildChance: 10 },

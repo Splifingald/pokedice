@@ -3,6 +3,7 @@ import { cleanNickname } from '@/engine/nickname'
 import {
   COMBO_KEYS,
   EVENT_IDS,
+  PLAY_STYLES,
   POKE_TYPES,
   TRADE_VISIBILITY,
   type ComboKey,
@@ -217,6 +218,8 @@ export const saveSchema = z.object({
     animations: z.enum(['full', 'short']).optional(),
     multiExp: z.boolean().default(true),
     autoMode: z.boolean().optional(),
+    // A style this build doesn't know (a newer one's) reads as unset rather than failing the whole save.
+    playStyle: z.enum(PLAY_STYLES).optional().catch(undefined),
     typeHints: z.boolean().optional(),
     raidFast: z.boolean().optional(),
     lang: z.enum(LANGS).optional(),
@@ -407,6 +410,12 @@ export const saveSchema = z.object({
     .optional(),
   // Day and night (docs/32): its rules pop-up seen.
   dayNight: z.object({ rulesSeen: z.boolean().optional() }).optional(),
+  idle: z
+    .object({
+      rulesSeen: z.boolean().optional(),
+      detour: z.object({ from: z.string(), to: z.string(), rounds: z.number().int().min(0) }).optional(),
+    })
+    .optional(),
 })
 
 /**
