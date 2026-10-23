@@ -85,10 +85,12 @@ describe('Multi EXP', () => {
   it('gives team members who did not fight 30 % of the XP; the fighter keeps 100 %', () => {
     const r = win(teamOfThree())
     const xp = r.events.filter((e) => e.kind === 'xp')
+    // Each with where its XP bar starts on the result card: its level and XP before this award.
+    const from = { level: 5, xp: 0 }
     expect(xp).toEqual([
-      { kind: 'xp', uid: r.save.team[0], amount: 10 },
-      { kind: 'xp', uid: 'bench-a', amount: 3, shared: true },
-      { kind: 'xp', uid: 'bench-b', amount: 3, shared: true },
+      { kind: 'xp', uid: r.save.team[0], amount: 10, from },
+      { kind: 'xp', uid: 'bench-a', amount: 3, shared: true, from },
+      { kind: 'xp', uid: 'bench-b', amount: 3, shared: true, from },
     ])
   })
 
@@ -120,9 +122,9 @@ describe('Multi EXP', () => {
     const strong = { ...s, box: s.box.map((p) => (p.id === s.team[0] ? { ...p, level: 30 } : p.id === 'bench-b' ? { ...p, level: 25 } : p)) }
     const r = applyVictory(strong, { areaId: area.id, kind: 'wild', enemyDex: 16, enemyLevel: 20, fighterUid: s.team[0]! }, data, createRng(1), 1, newId)
     expect(r.events.filter((e) => e.kind === 'xp')).toEqual([
-      { kind: 'xp', uid: s.team[0], amount: 20 },
-      { kind: 'xp', uid: 'bench-a', amount: 20, shared: true }, // 25 levels behind: capped at 100 %
-      { kind: 'xp', uid: 'bench-b', amount: 11, shared: true }, // 5 behind: 55 %
+      { kind: 'xp', uid: s.team[0], amount: 20, from: { level: 30, xp: 0 } },
+      { kind: 'xp', uid: 'bench-a', amount: 20, shared: true, from: { level: 5, xp: 0 } }, // 25 levels behind: capped at 100 %
+      { kind: 'xp', uid: 'bench-b', amount: 11, shared: true, from: { level: 25, xp: 0 } }, // 5 behind: 55 %
     ])
   })
 

@@ -67,6 +67,7 @@ import { DayNightBits } from './kitchen/DayNightBits'
 import { IdleBits } from './kitchen/IdleBits'
 import { DiceThrowBits } from './kitchen/DiceThrowBits'
 import { PowersBits } from './kitchen/PowersBits'
+import { RewardBits } from './kitchen/RewardBits'
 import { RotateView } from '@/components/RotateCover'
 import { SettingsOverlay } from '@/screens/Settings'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
@@ -479,6 +480,10 @@ export function KitchenSink() {
 
       <Section title="RoundGauge — a round under way, its start, just done; compact over an action bar">
         <RoundGaugeStates />
+      </Section>
+
+      <Section title="Rewards' game feel (docs/38): gold from 0, coins to the top bar, XP steps, pixel confetti, Pokédex card, Upgrades' buttons and pop">
+        <RewardBits />
       </Section>
 
       <Section title="GoldPill · Toast · Modal · Sheet">

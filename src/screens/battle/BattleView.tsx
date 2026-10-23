@@ -540,6 +540,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         foe: spriteKey(foe.dex, false, foe.shiny),
         ball: ballOfItem(r.ballKey),
         caught: r.caught,
+        roll: r,
         short: level === 'short',
         hold: !!r.baitOffer,
         from,

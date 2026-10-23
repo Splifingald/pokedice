@@ -1337,6 +1337,7 @@ ui.victory.shinyPrefix,Shiny ,Chromatique ,Variocolor ,Schillerndes ,cromatico ,
 ui.victory.replacesYours,It replaces your Lv.{level} {name}.,Il remplace ton {name} N.{level}.,Reemplaza a tu {name} Nv.{level}.,Es ersetzt dein {name} Lv.{level}.,Sostituisce il tuo {name} Lv.{level}.,Substitui o teu {name} Nv.{level}.,Substitui o seu {name} Nv.{level}.,手持ちの{name} Lv.{level}と入れ替わる。,보유한 {name} Lv.{level}을(를) 대신한다.,替换了你的{name} Lv.{level}。
 ui.victory.joinedTeam,{name} joined your team.,{name} a rejoint ton équipe.,{name} se ha unido a tu equipo.,{name} ist deinem Team beigetreten.,{name} si è unito alla tua squadra.,{name} juntou-se à tua equipa.,{name} entrou na sua equipe.,{name}が手持ちに加わった。,{name}이(가) 팀에 들어왔다.,{name}加入了队伍。
 ui.victory.teamFull,Your team is full…,Ton équipe est pleine…,Tu equipo está lleno…,Dein Team ist voll …,La tua squadra è piena…,A tua equipa está cheia…,Sua equipe está cheia…,手持ちがいっぱいだ…,팀이 가득 찼다…,队伍已满…
+ui.victory.dexRegistered,Registered in the Pokédex!,Enregistré dans le Pokédex !,¡Registrado en la Pokédex!,Im Pokédex registriert!,Registrato nel Pokédex!,Registado na Pokédex!,Registrado na Pokédex!,図鑑に登録された！,도감에 등록되었다!,已登录到图鉴！
 ui.victory.addToTeam,Add {name} to your team?,Ajouter {name} à ton équipe ?,¿Añadir a {name} a tu equipo?,{name} ins Team aufnehmen?,Aggiungere {name} alla squadra?,Adicionar {name} à tua equipa?,Adicionar {name} à sua equipe?,{name}を手持ちに加える？,{name}을(를) 팀에 넣을까요?,要让{name}加入队伍吗？
 ui.victory.swapOutFor,Swap out {name} Lv.{level} for {newName},Remplacer {name} N.{level} par {newName},Cambiar a {name} Nv.{level} por {newName},{name} Lv.{level} gegen {newName} tauschen,Sostituisci {name} Lv.{level} con {newName},Trocar {name} Nv.{level} por {newName},Trocar {name} Nv.{level} por {newName},{name} Lv.{level}を{newName}と入れ替える,{name} Lv.{level}을(를) {newName}와(과) 교체,用{newName}替换{name} Lv.{level}
 ui.victory.swapOut,Swap out,Remplacer,Cambiar,Tauschen,Sostituisci,Trocar,Trocar,入れ替え,교체,替换
@@ -2503,6 +2504,7 @@ ui.upgrades.dieBonus,+{n} a die,+{n} par dé,+{n} por dado,+{n} pro Würfel,+{n}
 ui.upgrades.then,then,puis,luego,dann,poi,depois,depois,次は,다음,然后
 ui.upgrades.lockedWord,Locked,Verrouillé,Bloqueado,Gesperrt,Bloccato,Bloqueado,Bloqueado,ロック中,잠김,未解锁
 ui.upgrades.upgrade,Upgrade,Améliorer,Mejorar,Verbessern,Potenzia,Melhorar,Melhorar,強化,강화,升级
+ui.upgrades.bestBuy,Best buy,Bon plan,Mejor compra,Bester Kauf,Miglior acquisto,Melhor compra,Melhor compra,おすすめ,추천,推荐
 ui.upgrades.needShort,need {amount},il manque {amount},faltan {amount},fehlen {amount},mancano {amount},faltam {amount},faltam {amount},あと{amount},{amount} 부족,还差{amount}
 ui.upgrades.bought,{name} Lv.{level}: {bonus},{name} N.{level} : {bonus},{name} Nv.{level}: {bonus},{name} Lv.{level}: {bonus},{name} Lv.{level}: {bonus},{name} Nv.{level}: {bonus},{name} Nv.{level}: {bonus},{name} Lv.{level}：{bonus},{name} Lv.{level}: {bonus},{name} Lv.{level}：{bonus}
 ui.upgrades.dieName,{type} die,Dé {type},Dado {type},{type}-Würfel,Dado {type},Dado {type},Dado {type},{type}ダイス,{type} 주사위,{type}骰子

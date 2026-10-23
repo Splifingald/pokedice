@@ -4,11 +4,14 @@ import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 
-/** Count-up number (instant with reduced motion). */
-export function useCountUp(target: number, ms = 600): number {
+/**
+ * Count-up number (instant with reduced motion). It counts from `start` when given (a reward counting up from 0),
+ * else from its first value: a counter already on screen (the top bar's gold) only moves when its target does.
+ */
+export function useCountUp(target: number, ms = 600, start?: number): number {
   const reduced = useGame((s) => s.settings.reducedMotion)
-  const [shown, setShown] = useState(target)
-  const from = useRef(target)
+  const [shown, setShown] = useState(reduced ? target : (start ?? target))
+  const from = useRef(start ?? target)
   useEffect(() => {
     if (reduced || typeof requestAnimationFrame === 'undefined') {
       from.current = target

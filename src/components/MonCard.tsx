@@ -1,7 +1,11 @@
-import type { ReactNode } from 'react'
-import { instanceStats, xpToNext, type PokemonInstance } from '@/engine'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { gameFeelOn, instanceStats, xpToNext, type PokemonInstance } from '@/engine'
+import { feelSound } from '@/audio/feel'
 import { useT } from '@/i18n/react'
 import { countdown } from '@/lib/format'
+import { haptic } from '@/lib/haptics'
+import { useMotion } from '@/lib/motion'
+import { xpFillFrames, type XpFrame } from '@/lib/xpFill'
 import { useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
 import { cx } from '@/theme/util'
@@ -31,19 +35,100 @@ export function RevivalBar({ inst, className }: { inst: PokemonInstance; classNa
   )
 }
 
-export function XpBar({ inst, className }: { inst: PokemonInstance; className?: string }) {
+/** One step of the XP bar filling (docs/38 F5c), and the wait before it starts once the row is on screen. */
+const XP_STEP_MS = 50
+const XP_START_MS = 300
+// Two bars filling at once (a team's XP) share one run of ticks, never a click on top of a click.
+let lastXpTick = 0
+
+/**
+ * The result card's XP bar filling in steps from where it stood before the battle (`from`, the engine's), with the
+ * Game feel switch on (docs/38 F5c): a rising tick per step; a level-up rolls over with two white frames (not when
+ * calm), its sound and a buzz, and calls `onRoll` with the new level. The frame to draw, or null once it is done (or
+ * when there's nothing to play: the switch off, animations off, no `from`).
+ */
+export function useXpFill(
+  inst: PokemonInstance | undefined,
+  from: { level: number; xp: number } | null | undefined,
+  onRoll?: (level: number) => void,
+): XpFrame | null {
+  const cfg = useGame((s) => s.data.config)
+  const feel = useGame((s) => gameFeelOn(s.data))
+  const { level: motion, calm } = useMotion()
+  const roll = useRef(onRoll)
+  roll.current = onRoll
+  const lv = inst?.level
+  const xp = inst?.xp
+  const frames = useMemo(
+    () =>
+      feel && from && lv != null && xp != null && motion !== 'off'
+        ? xpFillFrames(from, { level: lv, xp }, cfg, !calm)
+        : [],
+    // Played once: a later change to the Pokémon (the next K.O.) doesn't replay the old fill.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [feel, from, motion === 'off', calm, cfg],
+  )
+  const [at, setAt] = useState(-1)
+  useEffect(() => {
+    if (!frames.length) return
+    setAt(-1)
+    let i = -1
+    let n = 0
+    let timer = 0
+    const step = () => {
+      i += 1
+      setAt(i)
+      const f = frames[i]
+      if (f?.roll) {
+        n = 0
+        feelSound('level.roll')
+        haptic('reward')
+        roll.current?.(f.level)
+      } else if (f && !f.white && performance.now() - lastXpTick > XP_STEP_MS * 0.8) {
+        lastXpTick = performance.now()
+        feelSound('xp.tick', n++)
+      }
+      if (i < frames.length) timer = window.setTimeout(step, XP_STEP_MS)
+    }
+    timer = window.setTimeout(step, XP_START_MS)
+    return () => window.clearTimeout(timer)
+  }, [frames])
+  if (!frames.length || at >= frames.length) return null
+  return at < 0 && from ? from : (frames[at] ?? null)
+}
+
+/**
+ * The XP bar. `shown` draws a step of `useXpFill` in place of the Pokémon's own level and XP; `stepped` (the Game feel
+ * fill) moves it frame by frame instead of gliding.
+ */
+export function XpBar({
+  inst,
+  className,
+  shown,
+  stepped,
+}: {
+  inst: PokemonInstance
+  className?: string
+  shown?: XpFrame | null
+  stepped?: boolean
+}) {
   const { t } = useT()
   const cfg = useGame((s) => s.data.config)
-  const need = xpToNext(inst.level, cfg)
-  const pct = inst.level >= cfg.maxLevel ? 1 : Math.min(1, inst.xp / need)
+  const level = shown?.level ?? inst.level
+  const xp = shown?.xp ?? inst.xp
+  const need = xpToNext(level, cfg)
+  const pct = level >= cfg.maxLevel ? 1 : Math.min(1, xp / need)
   return (
     <div className={cx('flex items-center gap-2', className)}>
       <span className="text-sm leading-none">{t('ui.mon.xp')}</span>
       <div className="h-1.5 flex-1 border border-edge bg-night" style={{ borderRadius: 1 }}>
-        <div className="h-full bg-type-water" style={{ width: `${pct * 100}%`, transition: 'width 700ms ease-out' }} />
+        <div
+          className={shown?.white ? 'h-full bg-white' : 'h-full bg-type-water'}
+          style={{ width: `${pct * 100}%`, transition: stepped ? 'none' : 'width 700ms ease-out' }}
+        />
       </div>
       <span className="min-w-[4.5ch] text-right font-mono text-xs tabular-nums leading-none">
-        {inst.level >= cfg.maxLevel ? t('ui.mon.xpMax') : `${inst.xp}/${need}`}
+        {level >= cfg.maxLevel ? t('ui.mon.xpMax') : `${xp}/${need}`}
       </span>
     </div>
   )

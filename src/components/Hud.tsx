@@ -139,6 +139,8 @@ function GoldButton() {
       aria-disabled={why ? true : undefined}
       aria-label={why ? `${label}. ${why}` : label}
       title={why ?? undefined}
+      // Where a reward's coins land (CoinFlight, docs/38 F5f).
+      data-hud-gold=""
       className={cx(
         'pixel-corners inline-flex min-h-[44px] light-scope shrink-0 items-center gap-1.5 bg-night px-2.5 text-[19px] leading-none text-gold-light md:min-h-[40px]',
         why && 'opacity-60',

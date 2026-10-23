@@ -372,7 +372,8 @@ export function applyHp(save: SaveData, hpByUid: Record<string, number>): SaveDa
 
 export type RunEvent =
   | ProgressEvent
-  | { kind: 'xp'; uid: string; amount: number; shared?: boolean }
+  /** `from`: its level and XP before this award, where the result card's XP bar starts filling (docs/38 F5c). */
+  | { kind: 'xp'; uid: string; amount: number; shared?: boolean; from?: { level: number; xp: number } }
   /** `bonus`: the part of `amount` a Cash Flow live event added. */
   | { kind: 'gold'; amount: number; bonus?: number }
   /** `replacedLevel`: a stronger copy replaced the one you had at that level. */
@@ -436,7 +437,8 @@ export function awardBattleXp(
   const award = (uid: string, amount: number, shared: boolean) => {
     const inst = getInstance(next, uid)
     if (!inst) return
-    events.push(shared ? { kind: 'xp', uid, amount, shared } : { kind: 'xp', uid, amount })
+    const from = { level: inst.level, xp: inst.xp }
+    events.push(shared ? { kind: 'xp', uid, amount, shared, from } : { kind: 'xp', uid, amount, from })
     const res = gainXp(inst, amount, data, rng, { owned: save.pokedex, allowDex })
     next = replaceInstance(next, res.inst)
     events.push(...res.events)

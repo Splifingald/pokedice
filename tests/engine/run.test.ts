@@ -241,7 +241,7 @@ describe('victory rewards', () => {
     const s = { ...fresh(), areaProgress: { [FOREST.id]: { ...emptyProgress(), cleared: true, xp: 150 } } }
     const r = win(s, { areaId: FOREST.id, kind: 'trainer', enemyDex: 10, enemyLevel: 8 })
     expect(r.save.gold).toBe(4)
-    expect(r.events).toContainEqual({ kind: 'xp', uid: s.team[0], amount: 4 })
+    expect(r.events).toContainEqual(expect.objectContaining({ kind: 'xp', uid: s.team[0], amount: 4 }))
   })
 
   it('every round done with no gym or legendary: the area clears and unlocks the next', () => {

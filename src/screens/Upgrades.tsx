@@ -1,10 +1,11 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   COMBO_KEYS,
   COMBO_MIN_DICE,
   comboBonusAt,
   dieBonusAt,
+  gameFeelOn,
   generalCfg,
   generalLevel,
   generalMax,
@@ -22,13 +23,16 @@ import {
   type PokeType,
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
+import { feelSound } from '@/audio/feel'
+import { Chip } from '@/components/Chip'
 import { Die } from '@/components/Die'
 import { FaceDice, facesStatuses, StatusLines } from '@/components/FaceDice'
 import { PixelIcon } from '@/components/icons'
 import { PageHead, Wallet } from '@/components/PageHead'
 import { Seg } from '@/components/Segmented'
 import { COMBO_EXAMPLES, comboExampleText, comboName, money, typeName } from '@/lib/format'
-import { dieCarriers, maxDiceOwned } from '@/lib/upgrades'
+import { bestBuy, dieCarriers, maxDiceOwned } from '@/lib/upgrades'
+import { useMotion } from '@/lib/motion'
 import { useT } from '@/i18n/react'
 import { GeneralRulesModal } from '@/components/GeneralRules'
 import { InfoButton } from '@/components/RulesModal'
@@ -77,45 +81,116 @@ function ComboExample({ k }: { k: ComboKey }) {
   )
 }
 
-/** The level track: one pip per level, gold up to the current one. */
-function Pips({ level, max }: { level: number; max: number }) {
+/**
+ * A purchase's pop (docs/38 F12a), frame by frame (60 ms each): the new pip fills in three steps, flashes white for one
+ * frame (not when calm), and the bonus rises over the track and goes.
+ */
+const POP_MS = 60
+const POP_FRAMES = 16
+const POP_FILL = [1 / 3, 2 / 3, 1]
+const POP_WHITE = 3
+export interface UpPop {
+  /** The level the purchase reached: its pip fills. */
+  level: number
+  /** The new bonus, as the engine gives it ("+4 damage"). */
+  text: string
+  frame: number
+  calm: boolean
+}
+
+/** The level track: one pip per level, gold up to the current one; the one a purchase just filled, in steps. */
+function Pips({ level, max, pop }: { level: number; max: number; pop?: UpPop | null }) {
   const { t } = useT()
+  const filling = pop ? pop.level - 1 : -1
   return (
     <span
       className="flex flex-1 gap-[2px]"
       role="img"
       aria-label={t('ui.upgrades.trackLevel', { level, max })}
     >
-      {Array.from({ length: max }, (_, i) => (
-        <i
-          key={i}
-          className={cx(
-            'h-2.5 flex-1',
-            i < level ? 'bg-gold shadow-ring-thin' : 'bg-well-deep shadow-ring-line-thin',
-          )}
-        />
-      ))}
+      {Array.from({ length: max }, (_, i) => {
+        const part = pop && i === filling ? POP_FILL[pop.frame] : undefined
+        const white = !!pop && i === filling && pop.frame === POP_WHITE && !pop.calm
+        return (
+          <i
+            key={i}
+            className={cx(
+              'relative h-2.5 flex-1',
+              white
+                ? 'bg-white shadow-ring-thin'
+                : i < level && part == null
+                  ? 'bg-gold shadow-ring-thin'
+                  : 'bg-well-deep shadow-ring-line-thin',
+            )}
+          >
+            {part != null && (
+              <span className="absolute inset-y-0 left-0 bg-gold" style={{ width: `${part * 100}%` }} />
+            )}
+          </i>
+        )
+      })}
     </span>
   )
 }
 
-export function UpCard({ u, gold }: { u: Up; gold: number }) {
+/** The bonus a purchase brought, rising 2 px a frame over the track, then gone. */
+function PopText({ pop }: { pop: UpPop }) {
+  if (pop.frame < 2 || pop.frame >= POP_FRAMES - 1) return null
+  return (
+    <span
+      aria-hidden
+      className="light-scope pointer-events-none absolute -top-6 right-0 whitespace-nowrap bg-night px-1.5 py-0.5 font-pixel-sm text-[15px] leading-none text-gold-light"
+      style={{ transform: `translateY(${-2 * Math.min(6, pop.frame - 2)}px)` }}
+    >
+      {pop.text}
+    </span>
+  )
+}
+
+export function UpCard({
+  u,
+  gold,
+  best,
+  frozenPop,
+}: {
+  u: Up
+  gold: number
+  best?: boolean
+  frozenPop?: UpPop
+}) {
   const { t } = useT()
+  const feel = useGame((s) => gameFeelOn(s.data))
+  const { level: motion, calm } = useMotion()
   const can = !u.locked && u.cost != null && u.cost <= gold
   const bonus = (n: number) =>
     t(u.kind === 'combo' ? 'ui.upgrades.comboBonus' : 'ui.upgrades.dieBonus', { n })
   const now = u.now ?? bonus(u.bonus)
   const then = u.then !== undefined ? u.then : u.next != null ? `+${u.next}` : null
+  // With the Game feel switch on, a purchase pops (docs/38 F12a); the toast says it either way.
+  const [pop, setPop] = useState<UpPop | null>(null)
+  const popTimer = useRef(0)
+  useEffect(() => () => window.clearTimeout(popTimer.current), [])
+  const playPop = (level: number, text: string) => {
+    window.clearTimeout(popTimer.current)
+    const step = (frame: number) => {
+      setPop(frame < POP_FRAMES ? { level, text, frame, calm } : null)
+      if (frame < POP_FRAMES) popTimer.current = window.setTimeout(() => step(frame + 1), POP_MS)
+    }
+    step(0)
+  }
   const buy = () => {
     if (u.cost == null || u.locked) return
     if (!can) return pushToast(t('ui.upgrades.short', { amount: money(u.cost - gold) }), 'info')
+    const level = u.level + 1
+    const gained = u.then ?? bonus(u.next ?? u.bonus)
     if (!u.buy()) return
-    sfx('levelup')
-    pushToast(
-      t('ui.upgrades.bought', { name: u.name, level: u.level + 1, bonus: u.then ?? bonus(u.next ?? u.bonus) }),
-      'good',
-    )
+    if (feel) {
+      feelSound('upgrade.pop')
+      if (motion !== 'off') playPop(level, gained)
+    } else sfx('levelup')
+    pushToast(t('ui.upgrades.bought', { name: u.name, level, bonus: gained }), 'good')
   }
+  const shownPop = frozenPop ?? pop
   return (
     <li
       className={cx(
@@ -135,11 +210,14 @@ export function UpCard({ u, gold }: { u: Up; gold: number }) {
         {u.visual}
       </div>
       {u.faces}
-      <div className="flex items-center gap-2">
-        <Pips level={u.level} max={u.max} />
+      <div className="relative flex items-center gap-2">
+        <Pips level={u.level} max={u.max} pop={shownPop} />
+        {/* The best buy says so in words too, never by its gold alone. */}
+        {best && can && <Chip tone="gold">{t('ui.upgrades.bestBuy')}</Chip>}
         <span className="font-pixel-sm text-[15px] text-muted">
           {t('ui.common.level.short', { n: u.level })}
         </span>
+        {shownPop && <PopText pop={shownPop} />}
       </div>
       <div className="flex items-center justify-between gap-2">
         <span className="text-[18px]">
@@ -171,7 +249,12 @@ export function UpCard({ u, gold }: { u: Up; gold: number }) {
             aria-disabled={!can || undefined}
             className={cx(
               'grid min-h-[46px] min-w-[96px] place-items-center px-2.5 pb-2 pt-1 leading-none',
-              can ? 'pixel-btn frame-deep text-white' : 'bg-well-deep text-ink shadow-ring-line',
+              // Navy, the best buy gold: a list of red buttons was a screen of "main" actions (docs/15 §13).
+              can
+                ? best
+                  ? 'pixel-btn frame-gold'
+                  : 'pixel-btn frame-dark'
+                : 'bg-well-deep text-ink shadow-ring-line',
             )}
           >
             <b className="text-[20px] font-normal">{money(u.cost)}</b>
@@ -314,6 +397,7 @@ export function UpgradesScreen() {
   const open = shown.filter((u) => !u.locked)
   const locked = shown.filter((u) => u.locked)
   const canCount = [...combos, ...dice, ...general].filter(affordable).length
+  const best = bestBuy(open, save.gold)
   const tabCount = (l: Up[]) => l.filter(affordable).length || undefined
 
   return (
@@ -361,7 +445,7 @@ export function UpgradesScreen() {
         </div>
         <ul className="grid gap-2">
           {open.map((u) => (
-            <UpCard key={u.id} u={u} gold={save.gold} />
+            <UpCard key={u.id} u={u} gold={save.gold} best={u.id === best} />
           ))}
           {open.length === 0 && <li className="copy text-muted">{t('ui.upgrades.noneAffordable')}</li>}
         </ul>
