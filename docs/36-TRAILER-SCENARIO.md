@@ -193,6 +193,20 @@ Not built yet.
 - The dice are the trailer's own 3D renderer. The game is getting its own 3D dice ("Recorded throws", docs/37, on
   another branch); once that lands, the trailer can switch to it if wanted.
 
+## 12. The social media cut (15 s)
+
+`pnpm trailer --cut social` → `trailer/out/pokedice-trailer-social.mp4` (`trailer/social.html`, `trailer/acts/social.ts`,
+its own score `scoreSocial`). 1920×1080 like the main one. No title: it opens on the fight.
+
+| Time | Picture | Sound |
+|---|---|---|
+| 0–3.8 | Charmander vs Bulbasaur, the plates already in: two Fire dice, 3 · 4, `7`; Flamethrower, Bulbasaur faints; white. | Bulbasaur's cry, the groove, `super`, `faint`. |
+| 3.8–6.3 | Charmeleon evolving into Charizard (the game's evolution from the light gathering, 2.6× its speed): `What? Charmeleon is evolving!`, `Charmeleon evolved into Charizard!` | Climbing arpeggios, the burst in D major, Charizard's cry. |
+| 6.3–7.1 | Mewtwo's entrance, from its rising silhouette to its name card (2× speed). | Heartbeats, its cry. |
+| 7.1–10.2 | The same stage shot; five dice (three Fire, two Flying) land 5 · 5 · 5 · 5 · 2; `Tap dice to throw them again.`; the 2 rerolled in a shorter slow motion (1.2 s). | The groove, then the stop. |
+| 10.2–12.5 | Five 5s: the celebration, **FIVE OF A KIND!**, `95`; Flamethrower, the impact frame and the ink freeze; cut to black. | The fanfare, the hit. |
+| 12.5–15 | The end card, faster: the dice drop, the ring, the website, MOBILE FRIENDLY and DISCORD COMMUNITY, the fan-made line; fade out. | The last chord. |
+
 ## 11. The user's decisions (2026-10-23)
 
 1. **Website**: `poke-dice.netlify.app`. **Discord**: `discord.gg/XKJQYw3p9`.
@@ -208,3 +222,5 @@ Not built yet.
    of the Discord link, a better Discord logo; every pixel image clear, whatever the zoom or the aspect ratio.
 6. After version 4: no close-up at the start of the Charizard fight; Manaphy instead of Shaymin, so two Grass bosses
    don't share the screen.
+7. A 15-second social media cut: no intro, straight on Charmander, skip Charmeleon's fight, Charmeleon evolving into
+   Charizard, the Charizard fight, a shorter end screen (§12).

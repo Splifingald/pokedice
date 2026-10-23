@@ -17,7 +17,8 @@ const D: Chord = { root: 62, third: 4 }
 const G: Chord = { root: 55, third: 4 }
 const tones = (c: Chord) => [0, c.third, 7, 12, 12 + c.third, 19]
 
-export function scoreMusic(ctx: BaseAudioContext, out: AudioNode) {
+/** The chiptune's voices and parts, writing into `out`. */
+function synth(ctx: BaseAudioContext, out: AudioNode) {
   const waves = new Map<number, PeriodicWave>()
   const pulse = (duty: number) => {
     let w = waves.get(duty)
@@ -141,6 +142,13 @@ export function scoreMusic(ctx: BaseAudioContext, out: AudioNode) {
     }
   }
 
+  return { voice, noise, kick, snare, hat, crash, groove, arp, line, off: (v: number) => void (OFF = v) }
+}
+
+/** The main trailer's score (60 s). */
+export function scoreMusic(ctx: BaseAudioContext, out: AudioNode) {
+  const { voice, noise, kick, snare, hat, crash, groove, arp, line, off } = synth(ctx, out)
+
   // ---- act 1, the title (0 → 4): a riser under the dice, the riff on the combo, a held chord while the word stays
   noise(0.2, 1.3, { v: 0.05, f: 300, type: 'bandpass', q: 1.5, slide: 3000 })
   kick(1.5, 1)
@@ -211,7 +219,7 @@ export function scoreMusic(ctx: BaseAudioContext, out: AudioNode) {
   crash(26.08, 0.3)
 
   // Everything after the fights is written at its first times (the fights were 3 s longer) and moved back with OFF.
-  OFF = -3
+  off(-3)
 
   // ---- the big moments (29.5 → 47)
   voice(29.5, 38, 2.2, { v: 0.35, tri: true })
@@ -282,4 +290,51 @@ export function scoreMusic(ctx: BaseAudioContext, out: AudioNode) {
   arp(59.5, 4, D, { tri: true, v: 0.08, oct: 12 })
   voice(59.5, 50, 3.5, { v: 0.3, tri: true })
   for (const m of [62, 66, 69]) voice(59.5, m, 3.5, { v: 0.03, duty: 0.5 })
+}
+
+/**
+ * The social cut's score (15 s): the fight's groove, the climb into Charizard's evolution, Mewtwo's dark, the stop
+ * under the slow die, the five of a kind in D major, the last chord on the end card.
+ */
+export function scoreSocial(ctx: BaseAudioContext, out: AudioNode) {
+  const { voice, noise, kick, crash, groove, arp, line } = synth(ctx, out)
+  // Charmander (0 → 3.8)
+  crash(0, 0.2)
+  groove(0, 3.8, Dm)
+  line(0, [[69, 4], [74, 2], [76, 2], [77, 4]])
+  kick(1.9, 1)
+  crash(2.38, 0.2)
+  // The evolution (3.8 → 6.3): climbing arpeggios, the burst in D major
+  ;[Dm, Bb, C].forEach((c, i) => arp(3.8 + i * 0.66, 1.4, c, { oct: i * 5, v: 0.05 + i * 0.015, tri: i < 1 }))
+  noise(3.9, 1.9, { v: 0.05, f: 300, type: 'bandpass', q: 1.2, slide: 6000 })
+  voice(3.8, 38, 2, { v: 0.3, tri: true })
+  kick(5.79, 1)
+  crash(5.79, 0.3)
+  for (const m of [50, 62, 66, 69, 74]) voice(5.79, m, 0.5, { v: m < 60 ? 0.4 : 0.06, tri: m < 60 })
+  // Mewtwo (6.3 → 7.1): a drone and heartbeats
+  voice(6.3, 38, 0.8, { v: 0.4, tri: true })
+  kick(6.4, 0.6)
+  kick(6.6, 0.45)
+  kick(6.72, 1)
+  crash(6.72, 0.22)
+  // The throw (7.1 → 8.75)
+  groove(7.1, 3.3, C, { busy: true })
+  arp(7.1, 3.3, C, { oct: 12, v: 0.05 })
+  // The stop under the slow die (8.75 → 10.2)
+  for (let t = 8.8; t < 10.2; t += 0.42) kick(t, 0.55)
+  noise(8.75, 1.45, { v: 0.05, f: 150, type: 'bandpass', q: 2, slide: 5000 })
+  // Five 5s (10.2), the hit (11.63)
+  kick(10.2, 1)
+  crash(10.2, 0.35)
+  for (const m of [50, 62, 66, 69, 74, 78]) voice(10.2, m, 0.8, { v: m < 60 ? 0.45 : 0.06, tri: m < 60 })
+  ;[74, 78, 81, 86, 90, 93].forEach((m, i) => voice(10.23 + i * 0.07, m, 0.3, { v: 0.07, duty: 0.25, pan: 0.3 }))
+  groove(10.6, 1.9, D, { busy: true })
+  kick(11.63, 1)
+  crash(11.63, 0.3)
+  // The end card (12.5 → 15): the last chord, ringing out
+  kick(12.5, 1)
+  crash(12.5, 0.3)
+  for (const m of [50, 62, 66, 69, 74]) voice(12.5, m, 2.5, { v: m < 60 ? 0.4 : 0.07, tri: m < 60, duty: 0.25 })
+  ;[62, 66, 69, 74, 78, 81, 86].forEach((m, i) => voice(12.5 + i * 0.06, m, 0.5, { v: 0.06, duty: 0.125, pan: 0.3 }))
+  line(13, [[86, 4], [90, 8]], { v: 0.1, duty: 0.25 })
 }

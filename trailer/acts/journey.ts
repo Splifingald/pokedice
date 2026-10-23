@@ -9,13 +9,14 @@ import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { evolveTimeline } from '@/fx/timelines/moments'
 import { ACT, hit } from '../lib/clock'
 import { cry, play } from '../lib/audio'
-import { drawTray, restScreen, slowLanding, TRAY_H, TRAY_K, TRAY_W, type TrayPlan } from '../lib/dice'
-import { bottomShade, INK, OH, OW, outBack, outCubic, rect, span, speedLines, text, TYPE, wash, type G } from '../lib/draw'
+import { contactOf, diceAt, faint, fiveBanner, flameWipe, idleAt, shakeAt, STAGE, tray } from '../lib/fight'
+import { slowLanding, type TrayPlan } from '../lib/dice'
+import { INK, OH, OW, outBack, outCubic, rect, span, speedLines, TYPE, wash, type G } from '../lib/draw'
 import { blit, boulderBadge, caption, celebrate, comboChip, damageSlam, foePlate, ownPlate, valuePops } from '../lib/hud'
 import { Run } from '../lib/run'
 import { idle, playAt } from '../lib/scene'
 import { loadMon, mon } from '../lib/sprites'
-import { clampCam, drawStage, loadPicture, picture, sharpDraw, type Cam } from '../lib/stage'
+import { clampCam, drawStage, loadPicture, picture } from '../lib/stage'
 import type { Act } from '../main'
 
 const T0 = ACT.journey[0]
@@ -35,18 +36,12 @@ const F3 = { legend: 13, reverse: 14.8, throw: 15.6, pops: 16.3, pick: 16.9, rer
 const LAND = slowLanding(F3.reroll, 0.5, F3.slowA, F3.slowB, 0.08)
 const F3b = { damage: LAND + 0.9, attack: 21.6, end: 22.5 }
 
-const contactOf = (start: number, from: number, speed: number, at = 1.47) => start + (at - from) / speed
 const C1 = contactOf(F1.attack, 0.7, 1.6)
 const C2own = contactOf(F2.strike, 1.2, 1.4, 1.67)
 const C2 = contactOf(F2.attack, 0.7, 1.6)
 const C3 = contactOf(F3b.attack, 0.7, 1.6)
 
 let runs: ReturnType<typeof makeRuns> | null = null
-const faint = (u: number, a: number) => {
-  const p = span(u, a, a + 0.25)
-  return p > 0 ? { dy: Math.round(26 * p * p), alpha: Math.round((1 - p) * 4) / 4 } : {}
-}
-
 function makeRuns() {
   return {
     f1idle: new Run(
@@ -107,34 +102,6 @@ const F3_DICE: TrayPlan = {
   jump: LAND + 0.05,
 }
 
-/** The tray over a dark band; `zoom` pushes in on die `on` (the slow one). */
-function tray(g: G, plan: TrayPlan, u: number, zoom = 1, on = 0) {
-  bottomShade(g, 560, 0.88)
-  const cv = drawTray(plan, u)
-  if (zoom === 1) sharpDraw(g, cv, 0, 0, TRAY_W * TRAY_K, TRAY_H * TRAY_K)
-  else {
-    const p = restScreen(plan.fills.length, on)
-    const k = TRAY_K * zoom
-    // Keep the die where it is, sliding it toward the middle as the camera closes in.
-    const tx = p.x + ((960 - p.x) * (zoom - 1)) / 1.6
-    const ty = p.y + ((640 - p.y) * (zoom - 1)) / 1.6
-    sharpDraw(g, cv, tx - (p.x / TRAY_K) * k, ty - (p.y / TRAY_K) * k, TRAY_W * k, TRAY_H * k)
-  }
-}
-const at = (n: number) => (i: number) => restScreen(n, i)
-
-// The fights' one shot: the whole stage. Every fight, and Mewtwo's entrance, are framed exactly alike.
-const STAGE: Cam = { x: 120, y: 86, z: 8 }
-
-const shakeAt = (u: number, at: number, amp: number, dur = 0.3) => {
-  const p = (u - at) / dur
-  if (p < 0 || p >= 1) return { x: 0, y: 0 }
-  const f = Math.floor((u - at) * 30)
-  const k = amp * (1 - p)
-  return { x: (f % 2 ? 1 : -1) * Math.round(k), y: ((f >> 1) % 2 ? 1 : -1) * Math.round(k * 0.5) }
-}
-const idleAt = (r: Run, u: number) => (r.at(u), r.draw())
-
 // ---------------------------------------------------------------- fight 1: Charmander vs Bulbasaur (0 → 5)
 function fight1(g: G, u: number) {
   const r = runs!
@@ -154,7 +121,7 @@ function fight1(g: G, u: number) {
   caption(g, 'Charmander grew to Lv.16!', u, F1.level, F1.white)
   if (u >= F1.throw && u < F1.attack) {
     tray(g, F1_DICE, u)
-    valuePops(g, [3, 4], at(2), u, F1.pops)
+    valuePops(g, [3, 4], diceAt(2), u, F1.pops)
     damageSlam(g, 7, 960, 700, u, F1.damage, { size: 200 })
   }
   if (u >= F1.white) wash(g, '#ffffff', span(u, F1.white, F1.white + 0.35))
@@ -191,7 +158,7 @@ function fight2(g: G, u: number) {
   ownPlate(g, { name: 'Charmeleon', level: 24, hp: 1 - 0.3 * span(u, C2own, C2own + 0.2), max: 66 }, u, F2.cut + 0.03)
   if (u >= F2.throw && u < F2.attack) {
     tray(g, F2_DICE, u)
-    valuePops(g, [5, 5, 2], at(3), u, F2.pops)
+    valuePops(g, [5, 5, 2], diceAt(3), u, F2.pops)
     comboChip(g, 'PAIR', 960, 560, u, F2.combo, 64)
     damageSlam(g, 14, 960, 715, u, F2.damage, { size: 200 })
   }
@@ -207,23 +174,6 @@ function fight2(g: G, u: number) {
     if (hit(T0 + a)) play('gold')
   }
   if (u >= F2.burn) flameWipe(g, span(u, F2.burn, 13), u)
-}
-
-function flameWipe(g: G, p: number, u: number) {
-  const layers: [string, number][] = [
-    ['#c4382a', 0],
-    ['#ee8130', 0.15],
-    ['#ffbe2e', 0.3],
-  ]
-  for (const [c, lag] of layers) {
-    const q = Math.max(0, Math.min(1, (p - lag) / (1 - lag)))
-    if (q <= 0) continue
-    const top = OH * (1.1 - outCubic(q) * 1.45)
-    for (let x = 0; x < OW; x += 24) {
-      const h = 70 + 55 * Math.sin(x * 0.011 + u * 34 + lag * 9) + 35 * Math.sin(x * 0.037 - u * 21)
-      rect(g, x, top - h, 24, OH, c)
-    }
-  }
 }
 
 // ---------------------------------------------------------------- fight 3: Charizard vs Mewtwo (13 → 22.5)
@@ -263,20 +213,10 @@ function fight3(g: G, u: number) {
     celebrate(g, u, LAND)
     tray(g, F3_DICE, u, zoom, 4)
     if (u >= LAND - 0.02 && u < LAND + 0.1) speedLines(g, OW / 2, 900, u, { color: '#ffbe2e', inner: 260, a: 0.6 })
-    if (u < F3.reroll) valuePops(g, [5, 5, 5, 5, 2], at(5), u, F3.pops)
-    else if (u >= LAND + 0.2) valuePops(g, [5, 5, 5, 5, 5], at(5), u, LAND + 0.2)
+    if (u < F3.reroll) valuePops(g, [5, 5, 5, 5, 2], diceAt(5), u, F3.pops)
+    else if (u >= LAND + 0.2) valuePops(g, [5, 5, 5, 5, 5], diceAt(5), u, LAND + 0.2)
     // FIVE OF A KIND, huge, then the damage under it.
-    if (u >= LAND) {
-      const k = 2.2 - 1.2 * outBack(span(u, LAND, LAND + 0.2), 2.2)
-      const sh = Math.round(Math.sin(u * 70) * 6 * (1 - span(u, LAND, LAND + 0.6)))
-      g.save()
-      g.translate(OW / 2 + sh, 330)
-      g.scale(k, k)
-      text(g, 'FIVE OF A KIND!', 0, 0, { size: 190, color: '#ffbe2e', align: 'center', base: 'middle', ow: 14, drop: 16, dropColor: '#c4382a' })
-      g.restore()
-      if (hit(T0 + LAND)) play('levelup')
-      if (hit(T0 + LAND + 0.18)) play('catch')
-    }
+    fiveBanner(g, u, LAND, (t) => hit(T0 + t))
     damageSlam(g, 95, 960, 640, u, F3b.damage, { size: 230, shake: 16 })
   }
   // The impact frame, then two silhouettes in ink on white, then colour again.

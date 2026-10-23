@@ -5,7 +5,6 @@
 // OfflineAudioContext whose clock reads the trailer's time instead, so each sound lands on the frame that fired it.
 import { setSfxEnabled, sfx, type SfxName } from '@/audio/sfx'
 import { cryUrl } from '@/audio/cries'
-import { scoreMusic } from './music'
 
 export const RATE = 48000
 export const SECONDS = 60.5
@@ -92,9 +91,9 @@ async function scheduleCries() {
 }
 
 /** Mix everything heard during the pass into a 16-bit stereo WAV, peak-normalised, as base64. */
-export async function renderAudio(): Promise<string> {
+export async function renderAudio(score: (ctx: BaseAudioContext, out: AudioNode) => void): Promise<string> {
   await scheduleCries()
-  scoreMusic(ctx, musicBus)
+  score(ctx, musicBus)
   const out = await ctx.startRendering()
   const L = out.getChannelData(0)
   const R = out.getChannelData(1)

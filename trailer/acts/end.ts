@@ -12,7 +12,6 @@ import { blit } from '../lib/hud'
 import { LH, LK, logoDice, LW } from './title'
 import type { Act } from '../main'
 
-const T0 = ACT.end[0]
 const low = canvas(LW, LH)
 
 // Discord's mark in pixels: its blurple badge, the white face with two eyes.
@@ -79,57 +78,72 @@ function badge(g: G, ic: HTMLCanvasElement, k: number, word: string, x: number, 
   g.restore()
 }
 
+/** When each part of the end card comes in (seconds from its start), and when it fades out. */
+export interface EndTimes {
+  dice: number
+  stagger: number
+  ring: number
+  tagline: number
+  url: number
+  badges: [number, number]
+  footer: number
+  fade: [number, number]
+}
+const SLOW: EndTimes = { dice: 0.1, stagger: 0.05, ring: 0.7, tagline: 0.8, url: 1.0, badges: [1.3, 1.5], footer: 1.9, fade: [5.2, 5.5] }
+
+/** The end card at time e of its own, starting at T0 on the cut's clock. */
+export function drawEnd(g: G, e: number, T0: number, at: EndTimes = SLOW) {
+  pokeballBackdrop(low.g, LW, LH, T0 + e)
+  // The dice drop in, one after another, onto their crooked row.
+  const v: View = { tilt: (62 * Math.PI) / 180, cs: 2, cx: LW / 2, cy: 100 }
+  const dice = logoDice(0, { thrown: false }).map((d, i) => {
+    const a = at.dice + i * at.stagger
+    const p = span(e, a, a + 0.36)
+    const fall = p < 0.7 ? (1 - p / 0.7) ** 2 * 140 : Math.sin(((p - 0.7) / 0.3) * Math.PI) * 7
+    return { ...d, pos: [d.pos[0], d.pos[1], d.pos[2] + fall] as const, show: e >= a, landAt: a + 0.25 }
+  })
+  // The ring under the row, pulsing once a second.
+  if (e > at.ring) {
+    const c = project(v, [0, 0, 0])
+    const pulse = (e - at.ring) % 1
+    low.g.globalAlpha = Math.round((1 - pulse) * 4) / 4
+    const r = 276 + pulse * 46
+    for (const k of [0, 1, 2]) ellipseLine(low.g, c.x, c.y + 8, r + k, (r + k) * 0.17, GOLD)
+    low.g.globalAlpha = 1
+  }
+  for (const d of dice) if (d.show) drawShadow(low.g, v, d, 'rgba(4,6,20,0.5)')
+  for (const d of dice) if (d.show) drawDie(low.g, v, { ...d, ring: e > at.ring ? GOLD : null })
+  dice.forEach((d) => hit(T0 + d.landAt) && play('land'))
+  g.imageSmoothingEnabled = false
+  g.drawImage(low, 0, 0, LW * LK, LH * LK)
+
+  const step = (a: number) => Math.round(span(e, a, a + 0.15) * 4) / 4
+  text(g, 'PLAY FREE IN YOUR BROWSER', OW / 2, 560, { size: 64, font: 'Jersey 15', color: GOLD, align: 'center', ow: 6, spacing: 8, alpha: step(at.tagline) })
+  text(g, 'poke-dice.netlify.app', OW / 2, 712, { size: 150, align: 'center', ow: 10, drop: 10, alpha: step(at.url) })
+  // The two badges, side by side.
+  const ph = phone()
+  const dc = discord()
+  const w1 = 28 + ph.width * 6 + 28 + textWidth(g, 'MOBILE FRIENDLY', 66) + 36
+  const w2 = 28 + dc.width * 4 + 28 + textWidth(g, 'DISCORD COMMUNITY', 66) + 36
+  const gap = 60
+  const x0 = OW / 2 - (w1 + gap + w2) / 2
+  const [b1, b2] = at.badges
+  badge(g, ph, 6, 'MOBILE FRIENDLY', x0, 820, w1, span(e, b1, b1 + 0.2))
+  badge(g, dc, 4, 'DISCORD COMMUNITY', x0 + w1 + gap, 820, w2, span(e, b2, b2 + 0.2))
+  if (hit(T0 + b1) || hit(T0 + b2)) play('button')
+  text(g, 'Fan-made · non-commercial. Pokémon © Nintendo / Game Freak / Creatures.', OW / 2, 1050, {
+    size: 32,
+    font: 'Jersey 15',
+    color: PALETTE.faint,
+    align: 'center',
+    ow: 0,
+    alpha: step(at.footer),
+  })
+  if (e > at.fade[0]) wash(g, '#000000', span(e, at.fade[0], at.fade[1]))
+}
+
 export const endCard: Act = {
   range: ACT.end,
   load: async () => {},
-  render(g, T) {
-    const e = T - T0
-    pokeballBackdrop(low.g, LW, LH, T)
-    // The dice drop in, one after another, onto their crooked row.
-    const v: View = { tilt: (62 * Math.PI) / 180, cs: 2, cx: LW / 2, cy: 100 }
-    const dice = logoDice(0, { thrown: false }).map((d, i) => {
-      const a = 0.1 + i * 0.05
-      const p = span(e, a, a + 0.36)
-      const fall = p < 0.7 ? (1 - p / 0.7) ** 2 * 140 : Math.sin(((p - 0.7) / 0.3) * Math.PI) * 7
-      return { ...d, pos: [d.pos[0], d.pos[1], d.pos[2] + fall] as const, show: e >= a, landAt: a + 0.25 }
-    })
-    // The ring under the row, pulsing once a second.
-    const ringOn = 0.7
-    if (e > ringOn) {
-      const c = project(v, [0, 0, 0])
-      const pulse = (e - ringOn) % 1
-      low.g.globalAlpha = Math.round((1 - pulse) * 4) / 4
-      const r = 276 + pulse * 46
-      for (const k of [0, 1, 2]) ellipseLine(low.g, c.x, c.y + 8, r + k, (r + k) * 0.17, GOLD)
-      low.g.globalAlpha = 1
-    }
-    for (const d of dice) if (d.show) drawShadow(low.g, v, d, 'rgba(4,6,20,0.5)')
-    for (const d of dice) if (d.show) drawDie(low.g, v, { ...d, ring: e > ringOn ? GOLD : null })
-    dice.forEach((d) => hit(T0 + d.landAt) && play('land'))
-    g.imageSmoothingEnabled = false
-    g.drawImage(low, 0, 0, LW * LK, LH * LK)
-
-    const step = (a: number) => Math.round(span(e, a, a + 0.15) * 4) / 4
-    text(g, 'PLAY FREE IN YOUR BROWSER', OW / 2, 560, { size: 64, font: 'Jersey 15', color: GOLD, align: 'center', ow: 6, spacing: 8, alpha: step(0.8) })
-    text(g, 'poke-dice.netlify.app', OW / 2, 712, { size: 150, align: 'center', ow: 10, drop: 10, alpha: step(1.0) })
-    // The two badges, side by side.
-    const ph = phone()
-    const dc = discord()
-    const w1 = 28 + ph.width * 6 + 28 + textWidth(g, 'MOBILE FRIENDLY', 66) + 36
-    const w2 = 28 + dc.width * 4 + 28 + textWidth(g, 'DISCORD COMMUNITY', 66) + 36
-    const gap = 60
-    const x0 = OW / 2 - (w1 + gap + w2) / 2
-    badge(g, ph, 6, 'MOBILE FRIENDLY', x0, 820, w1, span(e, 1.3, 1.5))
-    badge(g, dc, 4, 'DISCORD COMMUNITY', x0 + w1 + gap, 820, w2, span(e, 1.5, 1.7))
-    if (hit(T0 + 1.3) || hit(T0 + 1.5)) play('button')
-    text(g, 'Fan-made · non-commercial. Pokémon © Nintendo / Game Freak / Creatures.', OW / 2, 1050, {
-      size: 32,
-      font: 'Jersey 15',
-      color: PALETTE.faint,
-      align: 'center',
-      ow: 0,
-      alpha: step(1.9),
-    })
-    if (e > 5.2) wash(g, '#000000', span(e, 5.2, 5.5))
-  },
+  render: (g, T) => drawEnd(g, T - ACT.end[0], ACT.end[0]),
 }

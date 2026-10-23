@@ -5,6 +5,7 @@
 //   pnpm trailer                      the whole trailer → trailer/out/pokedice-trailer.mp4
 //   pnpm trailer --stills 0,150,600   just those frames → trailer/out/stills/f0150.png …
 //   pnpm trailer --from 150 --to 540  a part, silent → trailer/out/part-150-540.mp4
+//   pnpm trailer --cut social         the 15-second social cut → trailer/out/pokedice-trailer-social.mp4
 import { chromium } from '@playwright/test'
 import { spawn, execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
@@ -34,6 +35,10 @@ const arg = (name: string) => {
   return i >= 0 ? process.argv[i + 1] : undefined
 }
 const stills = arg('stills')?.split(',').map(Number)
+// Which cut: the main trailer (trailer/index.html) or another page in trailer/ (`social` → social.html).
+const cut = arg('cut') ?? 'main'
+const page_ = cut === 'main' ? 'index' : cut
+const suffix = cut === 'main' ? '' : `-${cut}`
 const from = Number(arg('from') ?? 0)
 const toArg = arg('to')
 
@@ -75,17 +80,17 @@ async function main() {
         headers: { 'access-control-allow-origin': '*', 'content-type': MIME[ext] ?? 'application/octet-stream' },
       })
     })
-    await page.goto(`http://localhost:${PORT}/trailer/index.html`)
+    await page.goto(`http://localhost:${PORT}/trailer/${page_}.html`)
     await page.evaluate(() => window.trailer.ready)
     const total = await page.evaluate(() => window.trailer.frames)
     const shot = () => page.screenshot({ type: 'png', clip: { x: 0, y: 0, width: 1920, height: 1080 } })
 
     if (stills) {
-      mkdirSync(join(OUT, 'stills'), { recursive: true })
+      mkdirSync(join(OUT, `stills${suffix}`), { recursive: true })
       for (const n of stills) {
         // Step from a little before, so the timelines' particles are where playing would have left them.
         for (let k = Math.max(0, n - 30); k <= n; k++) await page.evaluate((k) => window.trailer.render(k), k)
-        const file = join(OUT, 'stills', `f${String(n).padStart(4, '0')}.png`)
+        const file = join(OUT, `stills${suffix}`, `f${String(n).padStart(4, '0')}.png`)
         writeFileSync(file, await shot())
         console.log(file)
       }
@@ -94,7 +99,7 @@ async function main() {
 
     const whole = !toArg && from === 0
     const to = Math.min(total, Number(toArg ?? total))
-    const video = join(OUT, whole ? 'video-only.mp4' : `part-${from}-${to}.mp4`)
+    const video = join(OUT, whole ? `video-only${suffix}.mp4` : `part${suffix}-${from}-${to}.mp4`)
     const ff = spawn(
       'ffmpeg',
       ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', '60', '-i', '-'].concat(
@@ -119,10 +124,10 @@ async function main() {
       console.log(video)
       return
     }
-    const wav = join(OUT, 'sound.wav')
+    const wav = join(OUT, `sound${suffix}.wav`)
     writeFileSync(wav, Buffer.from(await page.evaluate(() => window.trailer.audio()), 'base64'))
     // −14 LUFS, the loudness web video players normalise to.
-    const final = join(OUT, 'pokedice-trailer.mp4')
+    const final = join(OUT, `pokedice-trailer${suffix}.mp4`)
     execFileSync('ffmpeg', [
       '-y', '-loglevel', 'error', '-i', video, '-i', wav,
       '-c:v', 'copy', '-af', 'loudnorm=I=-14:TP=-1:LRA=11', '-ar', '48000', '-c:a', 'aac', '-b:a', '256k', '-t', String(total / 60), '-movflags', '+faststart', final,
