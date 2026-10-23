@@ -16,7 +16,7 @@ export interface Frame {
   portrait: boolean
   w: number
   h: number
-  /** Where the battle stage shows, and its camera. */
+  /** Where the battle stage shows, and its camera: the fights' one shot, every fight and a legend's entrance alike. */
   stage: Box
   cam: Cam
   /** The ink freeze's camera, on the hit. */
@@ -38,6 +38,14 @@ export interface Frame {
   button: Box
   /** The celebration's centre: the dice row. */
   burst: Point
+  /** The combo chip (PAIR) and the badge won from a trainer. */
+  combo: Point
+  badge: Point
+  /** Where the 2×2 grids of the montage go, and the zoom of a boss's stage in a tile. */
+  grid: Box
+  gridZoom: number
+  /** A feature's word: its baseline's left end and size. */
+  word: { x: number; y: number; size: number }
 }
 
 export const LANDSCAPE: Frame = {
@@ -59,6 +67,11 @@ export const LANDSCAPE: Frame = {
   damageSmall: { x: 960, y: 700 },
   button: { x: 1450, y: 880, w: 380, h: 100 },
   burst: { x: 960, y: 900 },
+  combo: { x: 960, y: 560 },
+  badge: { x: 1920 - 200, y: 230 },
+  grid: { x: 0, y: 0, w: 1920, h: 1080 },
+  gridZoom: 4,
+  word: { x: 96, y: 1000, size: 150 },
 }
 
 // The stage at ×5 is 1200 px wide: 12 stage pixels of each side fall outside the 1080 px, nothing that matters.
@@ -83,6 +96,12 @@ export const PORTRAIT: Frame = {
   damageSmall: { x: 540, y: STAGE_Y + 420 },
   button: { x: 540 - 190, y: 1485, w: 380, h: 100 },
   burst: { x: 540, y: 1430 },
+  combo: { x: 540, y: 1210 },
+  badge: { x: 880, y: STAGE_Y + 200 },
+  // Square tiles of 540: a stage at ×3 shows 180×180 of it.
+  grid: { x: 0, y: STAGE_Y, w: 1080, h: 1080 },
+  gridZoom: 3,
+  word: { x: 60, y: 1520, size: 120 },
 }
 
 /** The frame in use: landscape unless a page sets another before drawing. */
@@ -115,6 +134,12 @@ export function surround(g: G, t: number) {
     spacing: 6,
   })
 }
+
+/** Where a stage point (stage pixels) lands on the screen, through a camera centred in a box. */
+export const toScreen = (cam: Cam, box: Box, x: number, y: number) => ({
+  x: box.x + box.w / 2 + (x - cam.x) * cam.z,
+  y: box.y + box.h / 2 + (y - cam.y) * cam.z,
+})
 
 /** The stage's ink edge (portrait), drawn over the stage. */
 export function stageEdge(g: G) {

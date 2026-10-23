@@ -6,13 +6,14 @@ import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import type { PokeType } from '@/engine/types'
 import { ACT, hit } from '../lib/clock'
 import { cry } from '../lib/audio'
-import { GOLD, INK, OH, OW, outBack, rect, span, text, textWidth, TYPE, wash, type G } from '../lib/draw'
+import { GOLD, INK, outBack, rect, span, text, textWidth, TYPE, wash, type G } from '../lib/draw'
 import { caption } from '../lib/hud'
 import { RaidIntroScene } from '../lib/raidIntro'
 import { Run } from '../lib/run'
 import { playAt } from '../lib/scene'
 import { loadMon, mon } from '../lib/sprites'
-import { drawStage, loadPicture, picture, type Box } from '../lib/stage'
+import { F, stageEdge, surround } from '../lib/frame'
+import { drawStage, loadPicture, picture, type Box, type Cam } from '../lib/stage'
 import type { Act } from '../main'
 
 const T0 = ACT.montage[0]
@@ -55,12 +56,19 @@ function make() {
   }
 }
 
-const QUAD: Box[] = [
-  { x: 0, y: 0, w: OW / 2, h: OH / 2 },
-  { x: OW / 2, y: 0, w: OW / 2, h: OH / 2 },
-  { x: 0, y: OH / 2, w: OW / 2, h: OH / 2 },
-  { x: OW / 2, y: OH / 2, w: OW / 2, h: OH / 2 },
-]
+/** The grid's four tiles (the whole frame in landscape, a square under the header in portrait). */
+function quads(): Box[] {
+  const { x, y, w, h } = F.grid
+  return [
+    { x, y, w: w / 2, h: h / 2 },
+    { x: x + w / 2, y, w: w / 2, h: h / 2 },
+    { x, y: y + h / 2, w: w / 2, h: h / 2 },
+    { x: x + w / 2, y: y + h / 2, w: w / 2, h: h / 2 },
+  ]
+}
+
+/** A full-screen moment's camera: landscape's, or the portrait stage's whole width at ×5. */
+const shot = (land: Cam, tall: Cam = { x: 120, y: 80, z: 5 }) => (F.portrait ? tall : land)
 
 function frame(g: G, box: Box, rim: string) {
   g.save()
@@ -79,7 +87,7 @@ function gridLabel(g: G, word: string, v: number, from: number) {
   if (p <= 0) return
   const w = textWidth(g, word, 64, 'Jersey 25', 4) + 60
   g.save()
-  g.translate(OW / 2, OH / 2)
+  g.translate(F.grid.x + F.grid.w / 2, F.grid.y + F.grid.h / 2)
   g.scale(p, p)
   rect(g, -w / 2 - 8, -46, w + 16, 92, INK)
   rect(g, -w / 2, -38, w, 76, GOLD)
@@ -103,18 +111,24 @@ export const montage: Act = {
   render(g, T) {
     const v = T - T0
     const m = made!
+    const quad = quads()
+    surround(g, T)
     if (v < RAY[1]) {
       // Rayquaza's raid opening, full screen, in the Sky Pillar's day: the alarm, the reveal, its name, its three bars.
       const layer = m.ray.draw(0.1 + (v - RAY[0]) * 1.2)
-      drawStage(g, null, [layer], { x: 160, y: 90, z: 6 })
+      // Portrait: ×5 shows its middle 216 of 320, the name, the bars and the pillar all inside.
+      drawStage(g, null, [layer], shot({ x: 160, y: 90, z: 6 }, { x: 160, y: 88, z: 5 }), F.stage)
+      stageEdge(g)
     } else if (v < MEGA[1]) {
       const layer = playAt(m.mega, v, MEGA[0], 1.2, 1.4)
       // Centred on the stage: the timeline's dimming covers the whole frame.
-      drawStage(g, picture('league'), [layer], { x: 120, y: 83, z: 8 })
+      drawStage(g, picture('league'), [layer], shot({ x: 120, y: 83, z: 8 }), F.stage)
+      stageEdge(g)
       caption(g, 'Charizard Mega Evolved into Mega Charizard X!', v, MEGA[0] + 2.15, MEGA[1])
     } else if (v < GMAX[1]) {
       const layer = playAt(m.gmax, v, GMAX[0], 1.4, 1.4)
-      drawStage(g, picture('haunted'), [layer], { x: 120, y: 88, z: 8 })
+      drawStage(g, picture('haunted'), [layer], shot({ x: 120, y: 88, z: 8 }), F.stage)
+      stageEdge(g)
       caption(g, 'Gengar Gigantamaxed!', v, GMAX[0] + 2.1, GMAX[1])
     } else if (v < BOSSES[1]) {
       // Four bosses at once, their entrances a beat apart so the reveals cascade.
@@ -123,8 +137,8 @@ export const montage: Act = {
         const run = m.bosses[i]!
         run.loud = i === 0
         const layer = playAt(run, v, start, 1.9, 0.95)
-        drawStage(g, picture(b.pic), [layer], { x: 120, y: 82, z: 4 }, QUAD[i])
-        frame(g, QUAD[i]!, b.rim)
+        drawStage(g, picture(b.pic), [layer], { x: 120, y: 82, z: F.gridZoom }, quad[i])
+        frame(g, quad[i]!, b.rim)
         if (hit(T0 + start + (3.2 - 1.9) / 0.95)) cry(b.dex, 0.6)
       })
       gridLabel(g, 'MYTHICAL BOSSES', v, BOSSES[0])
@@ -132,8 +146,8 @@ export const montage: Act = {
       // Four raids at once: each one's opening, offset a little.
       RAID_LIST.forEach((r, i) => {
         const layer = m.raids[i]!.draw(0.6 + Math.max(0, v - RAIDS[0] - i * 0.1) * 1.3, i === 0)
-        drawStage(g, null, [layer], { x: 160, y: 90, z: 3 }, QUAD[i])
-        frame(g, QUAD[i]!, r.rim)
+        drawStage(g, null, [layer], { x: 160, y: 90, z: 3 }, quad[i])
+        frame(g, quad[i]!, r.rim)
         if (hit(T0 + RAIDS[0] + i * 0.1 + (2.75 - 0.6) / 1.3)) cry(r.dex, 0.6)
       })
       gridLabel(g, 'RAIDS WITH FRIENDS', v, RAIDS[0])

@@ -7,6 +7,7 @@ import { play } from '../lib/audio'
 import { pokeballBackdrop } from '../lib/backdrop'
 import { drawDie, drawShadow, FACES, project, restOn, throwAt, type DieDraw, type Throw, type View } from '../lib/cube'
 import { GOLD, inOut, OH, OW, span, text, TYPE, wash } from '../lib/draw'
+import { F } from '../lib/frame'
 import { journey } from './journey'
 import type { Act } from '../main'
 
@@ -15,6 +16,8 @@ export const LW = 640
 export const LH = 360
 export const LK = 3
 const low = canvas(LW, LH)
+// Portrait: the same art pixels on a 360×640 canvas (×3), the word in two rows, POKÉ over DICE.
+const tallLow = canvas(360, 640)
 
 export const LETTERS = ['P', 'O', 'K', 'É', 'D', 'I', 'C', 'E'] as const
 export const FILLS = [TYPE.fire, TYPE.water, TYPE.grass, TYPE.electric, TYPE.psychic, TYPE.ice, TYPE.dragon, TYPE.fairy]
@@ -24,8 +27,16 @@ const GAP = 6
 const YAW = [0.08, -0.05, 0.1, -0.08, 0.03, -0.1, 0.06, -0.04]
 const OFF = [1.5, -1, 0.5, -2, 1, -0.5, 2, -1.5]
 
-/** The eight dice at rest, or rolling in: where each one is at time t (seconds since the throw). */
-export function logoDice(t: number, { thrown = true, dur = 1.15 } = {}): (DieDraw & { landings: number[] })[] {
+const TALL_PITCH = SIZE + 9
+const TALL_ROW = 26
+/** Die i's resting place in portrait's two rows (world x, y). */
+const tallRest = (i: number) => [((i % 4) - 1.5) * TALL_PITCH, OFF[i]! * 0.5 + (i < 4 ? TALL_ROW : -TALL_ROW)] as const
+
+/**
+ * The eight dice at rest, or rolling in: where each one is at time t (seconds since the throw). `tall`: in two rows
+ * (portrait), each die's whole flight moved by how far its resting place moved.
+ */
+export function logoDice(t: number, { thrown = true, dur = 1.15, tall = false } = {}): (DieDraw & { landings: number[] })[] {
   return LETTERS.map((letter, i) => {
     const x = (i - 3.5) * (SIZE + GAP)
     const faces: (number | string)[] = FACES.map((f) => f.pips)
@@ -43,20 +54,23 @@ export function logoDice(t: number, { thrown = true, dur = 1.15 } = {}): (DieDra
       size: SIZE,
     }
     const at = thrown ? throwAt(th, t) : { pos: [x, OFF[i]!, SIZE / 2] as const, R: th.rest, landings: [] }
-    return { pos: at.pos, R: at.R, fill: FILLS[i]!, faces, size: SIZE, landings: at.landings }
+    const [tx, ty] = tall ? tallRest(i) : [x, OFF[i]!]
+    const pos = [at.pos[0] + tx - x, at.pos[1] + ty - OFF[i]!, at.pos[2]] as const
+    return { pos, R: at.R, fill: FILLS[i]!, faces, size: SIZE, landings: at.landings }
   })
 }
 
 /** The dice row on the dark floor at time t (seconds since the throw), on the low-res canvas. */
-export function drawLogoScene(t: number, v: View, bgT: number, { combo = -1, flash = -1, thrown = true } = {}) {
-  const g = low.g
-  pokeballBackdrop(g, LW, LH, bgT)
-  const dice = logoDice(t, { thrown })
+export function drawLogoScene(t: number, v: View, bgT: number, { combo = -1, flash = -1, thrown = true, tall = false } = {}) {
+  const cv = tall ? tallLow : low
+  const g = cv.g
+  pokeballBackdrop(g, cv.width, cv.height, bgT)
+  const dice = logoDice(t, { thrown, tall })
   for (const d of dice) drawShadow(g, v, d, 'rgba(4,6,20,0.5)')
   // Smears behind the dice still in the air: two ghost frames.
   if (thrown)
     for (const back of [2 / 60, 1 / 60]) {
-      const prev = logoDice(t - back)
+      const prev = logoDice(t - back, { tall })
       g.globalAlpha = 0.3
       prev.forEach((d, i) => {
         if (dice[i]!.pos[2] > SIZE * 0.9 && t - back > 0) drawDie(g, v, d)
@@ -70,7 +84,7 @@ export function drawLogoScene(t: number, v: View, bgT: number, { combo = -1, fla
       ring: combo >= 0 && t >= combo ? GOLD : null,
       flash: flash >= 0 && t >= flash && t < flash + 2 / 60 ? 1 : 0,
     })
-  return { low, dice }
+  return { low: cv, dice }
 }
 
 const T0 = ACT.title[0]
@@ -103,8 +117,10 @@ export const title: Act = {
 
 function drawTitle(g: CanvasRenderingContext2D, t: number) {
   // A still camera: only the dice move.
-  const v: View = { tilt: (60 * Math.PI) / 180, cs: 2.15, cx: LW / 2, cy: LH * 0.52 }
-  const { dice } = drawLogoScene(t, v, t, { combo: COMBO, flash: COMBO })
+  const v: View = F.portrait
+    ? { tilt: (60 * Math.PI) / 180, cs: 2.15, cx: 180, cy: 300 }
+    : { tilt: (60 * Math.PI) / 180, cs: 2.15, cx: LW / 2, cy: LH * 0.52 }
+  const { dice, low } = drawLogoScene(t, v, t, { combo: COMBO, flash: COMBO, tall: F.portrait })
   // The combo: a gold ring rushes out over the floor, in art pixels.
   if (t >= COMBO && t < COMBO + 0.6) {
     const p = span(t, COMBO, COMBO + 0.6)
@@ -118,10 +134,11 @@ function drawTitle(g: CanvasRenderingContext2D, t: number) {
   dice.forEach((d) => d.landings.slice(0, 2).forEach((l) => hit(T0 + l) && play('land')))
   if (hit(T0 + COMBO)) play('levelup')
   g.imageSmoothingEnabled = false
-  g.drawImage(low, 0, 0, LW * LK, LH * LK)
+  g.drawImage(low, 0, 0, low.width * LK, low.height * LK)
   // What the game is, in three words, under the row for the long hold.
   if (t >= 2.0) {
     const a = Math.round(span(t, 2.0, 2.3) * 4) / 4
-    text(g, 'Roll · Battle · Catch', OW / 2, OH * 0.74, { size: 96, font: 'Jersey 15', align: 'center', ow: 7, alpha: a, spacing: 8 })
+    const y = F.portrait ? 1330 : OH * 0.74
+    text(g, 'Roll · Battle · Catch', OW / 2, y, { size: F.portrait ? 84 : 96, font: 'Jersey 15', align: 'center', ow: 7, alpha: a, spacing: 8 })
   }
 }

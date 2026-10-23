@@ -201,6 +201,25 @@ the landscape one.
   Charizard's plate stays away after the reroll so it can't cover `95`; the end card puts POKÉ over DICE (two rows of
   four dice), the website fitted to the width, the two badges one above the other, the fan-made line on two lines.
 
+**The long portrait cut** (`pnpm trailer --cut portrait-long` → `pokedice-trailer-portrait-long.mp4`,
+`trailer/portrait-long.html`): the whole 58.5 s trailer in the same frame, same acts, times and score.
+
+- The title's dice land in two rows, POKÉ over DICE, `Roll · Battle · Catch` under them; the side swap as in landscape.
+- The three fights and the evolution as in the vertical cut; the PAIR chip just above the dice, the Boulder Badge over
+  the stage's top right.
+- Rayquaza's raid, the Mega Evolution and the Gigantamax in the stage's window (the raid at ×5, its middle 216 of 320
+  art pixels); the two 2×2 grids as a 1080 px square of 540 px tiles under the header (bosses at ×3).
+- The features: the friends' cards stacked; Versus with the rival and her dice up top, VS, you and yours below (the
+  stadium at ×8 to cover the height); trading, the co-op raid and the Day Care in the stage's window, the raid's three
+  bars over it and the trainers' cards in a row under it; the word bottom left, above the apps' caption.
+- The lab in the stage's window at ×5 then ×10 (3 then 6 screen pixels per picture pixel), "What's your choice?"
+  under it; the portrait end card.
+
+**Compact copies** (`--compact`, with any whole cut): `…-compact.mp4`, under 20 MB for where uploads are capped (the
+main trailer: 18.5 MB against 43). Two-pass H.264 at the bitrate that fits 19 MB with 128 kb/s of AAC, still 1080p and
+60 fps: a smaller frame would blur the pixel art, and 30 fps (measured: a little sharper at the same size) makes the
+dice and the particles judder. SSIM against the full-quality master: 0.992.
+
 ## 10. How it's made
 
 - **`trailer/`**: a page Vite serves in development (`/trailer/index.html`), not part of the game's build, so nothing
@@ -259,3 +278,4 @@ its own score `scoreSocial`). 1920×1080 like the main one. No title: it opens o
 13. Rayquaza's raid in the Sky Pillar (the background made for the promo video), not the default storm; every raid
     with three HP bars, not five (the four raids, Kyogre's co-op raid).
 14. The co-op raid against Kyogre with Hoenn's starters at their last stage (Blaziken, Swampert, Sceptile).
+15. A long portrait cut (the whole trailer in 9:16), and long versions under 20 MB without losing much (§9).

@@ -7,9 +7,11 @@
 //   pnpm trailer --from 150 --to 540  a part, silent → trailer/out/part-150-540.mp4
 //   pnpm trailer --cut social         the 15-second social cut → trailer/out/pokedice-trailer-social.mp4
 //   pnpm trailer --cut portrait       the social cut in 1080×1920 → trailer/out/pokedice-trailer-portrait.mp4
+//   pnpm trailer --cut portrait-long  the whole trailer in 1080×1920 → trailer/out/pokedice-trailer-portrait-long.mp4
+//   --compact                         also a copy under 20 MB (…-compact.mp4), for where uploads are capped
 import { chromium } from '@playwright/test'
 import { spawn, execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { createServer } from 'vite'
 
@@ -42,6 +44,7 @@ const page_ = cut === 'main' ? 'index' : cut
 const suffix = cut === 'main' ? '' : `-${cut}`
 const from = Number(arg('from') ?? 0)
 const toArg = arg('to')
+const compact = process.argv.includes('--compact')
 
 const MIME: Record<string, string> = { gif: 'image/gif', png: 'image/png', mp3: 'audio/mpeg' }
 
@@ -140,6 +143,22 @@ async function main() {
       '-c:v', 'copy', '-af', 'loudnorm=I=-14:TP=-1:LRA=11', '-ar', '48000', '-c:a', 'aac', '-b:a', '256k', '-t', String(total / 60), '-movflags', '+faststart', final,
     ])
     console.log(final)
+    if (compact) {
+      // Under 20 MB: two-pass H.264 at the bitrate that fits 19 MB with 128 kb/s of sound. Still 1080p and 60 fps (a
+      // smaller frame would blur the pixel art); the slowest preset spends the bits where the picture needs them.
+      const seconds = total / 60
+      const kbps = Math.floor(((19e6 * 8) / seconds / 1000 - 128) * 0.98)
+      const small = join(OUT, `pokedice-trailer${suffix}-compact.mp4`)
+      const log = join(OUT, `x264${suffix}`)
+      const enc = ['-c:v', 'libx264', '-preset', 'veryslow', '-tune', 'animation', '-b:v', `${kbps}k`, '-pix_fmt', 'yuv420p', '-passlogfile', log]
+      execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', final, '-an', ...enc, '-pass', '1', '-f', 'mp4', '/dev/null'])
+      execFileSync('ffmpeg', [
+        '-y', '-loglevel', 'error', '-i', final, ...enc, '-maxrate', `${kbps * 2}k`, '-bufsize', `${kbps * 4}k`, '-pass', '2',
+        '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', small,
+      ])
+      for (const f of [`${log}-0.log`, `${log}-0.log.mbtree`]) if (existsSync(f)) rmSync(f)
+      console.log(small)
+    }
   } finally {
     await browser.close()
     await server.close()

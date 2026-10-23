@@ -19,7 +19,6 @@ import {
   flameWipe,
   idleAt,
   shakeAt,
-  STAGE,
   tray,
   type BigRoll,
 } from '../lib/fight'
@@ -29,6 +28,7 @@ import { blit, boulderBadge, caption, comboChip, damageSlam, foePlate, ownPlate,
 import { Run } from '../lib/run'
 import { idle, playAt } from '../lib/scene'
 import { loadMon, mon } from '../lib/sprites'
+import { F, stageEdge, surround } from '../lib/frame'
 import { clampCam, drawStage, loadPicture, picture } from '../lib/stage'
 import type { Act } from '../main'
 
@@ -109,10 +109,11 @@ function fight1(g: G, u: number) {
   const r = runs!
   const pic = picture('meadow')
   // One still shot of the whole stage: the action moves, the camera doesn't.
-  const cam = STAGE
   const attack = u >= F1.attack && u < F1.faint
   const layer = attack ? playAt(r.f1fire, u, F1.attack, 0.7, 1.6) : idleAt(r.f1idle, u)
-  drawStage(g, pic, [layer], clampCam(cam, pic), undefined, { shake: shakeAt(u, C1, 9) })
+  surround(g, T0 + u)
+  drawStage(g, pic, [layer], clampCam(F.cam, pic, F.stage), F.stage, { shake: shakeAt(u, C1, 9) })
+  stageEdge(g)
   if (hit(T0 + 0.05)) cry(1)
   if (hit(T0 + C1)) play('super')
   if (hit(T0 + F1.faint)) play('faint')
@@ -124,7 +125,7 @@ function fight1(g: G, u: number) {
   if (u >= F1.throw && u < F1.attack) {
     tray(g, F1_DICE, u)
     valuePops(g, [3, 4], diceAt(2), u, F1.pops)
-    damageSlam(g, 7, 960, 700, u, F1.damage, { size: 200 })
+    damageSlam(g, 7, F.damageSmall.x, F.damageSmall.y, u, F1.damage, { size: 200 })
   }
   if (u >= F1.white) wash(g, '#ffffff', span(u, F1.white, F1.white + 0.35))
 }
@@ -133,7 +134,9 @@ function fight1(g: G, u: number) {
 function evolution(g: G, u: number) {
   // The morph, quick: the silhouette changing, the burst, Charmeleon standing in its light.
   const layer = playAt(runs!.evo, u, EVO.from, EVO.tl, EVO.speed)
-  drawStage(g, null, [layer], { x: 120, y: 82, z: 8 })
+  surround(g, T0 + u)
+  drawStage(g, null, [layer], { x: 120, y: F.portrait ? 80 : 82, z: F.cam.z }, F.stage)
+  stageEdge(g)
   if (u < EVO.from + 0.1) wash(g, '#ffffff', 1 - span(u, EVO.from, EVO.from + 0.1))
   caption(g, 'What? Charmander is evolving!', u, EVO.from + 0.05, EVOLVED - 0.05)
   caption(g, 'Charmander evolved into Charmeleon!', u, EVOLVED, EVO.to)
@@ -144,13 +147,14 @@ function evolution(g: G, u: number) {
 function fight2(g: G, u: number) {
   const r = runs!
   const pic = picture('forest')
-  const cam = STAGE
   let layer
   if (u >= F2.strike && u < F2.strike + 0.7) layer = playAt(r.f2bug, u, F2.strike, 1.2, 1.4)
   else if (u >= F2.attack && u < F2.faint) layer = playAt(r.f2fire, u, F2.attack, 0.7, 1.6)
   else layer = idleAt(r.f2idle, u)
   const shake = u < F2.throw ? shakeAt(u, C2own, 7) : shakeAt(u, C2, 10)
-  drawStage(g, pic, [layer], clampCam(cam, pic), undefined, { shake })
+  surround(g, T0 + u)
+  drawStage(g, pic, [layer], clampCam(F.cam, pic, F.stage), F.stage, { shake })
+  stageEdge(g)
   if (hit(T0 + F2.cut + 0.02)) cry(123)
   if (hit(T0 + C2own)) play('hit')
   if (hit(T0 + F2.combo)) play('gold')
@@ -161,15 +165,15 @@ function fight2(g: G, u: number) {
   if (u >= F2.throw && u < F2.attack) {
     tray(g, F2_DICE, u)
     valuePops(g, [5, 5, 2], diceAt(3), u, F2.pops)
-    comboChip(g, 'PAIR', 960, 560, u, F2.combo, 64)
-    damageSlam(g, 14, 960, 715, u, F2.damage, { size: 200 })
+    comboChip(g, 'PAIR', F.combo.x, F.combo.y, u, F2.combo, 64)
+    damageSlam(g, 14, F.damageSmall.x, F.damageSmall.y + 15, u, F2.damage, { size: 200 })
   }
   if (u >= F2.faint + 0.05) {
     const a = F2.faint + 0.05
     const k = 14 * outBack(span(u, a, a + 0.14), 2)
     const b = boulderBadge()
     g.save()
-    g.translate(OW - 200, 230)
+    g.translate(F.badge.x, F.badge.y)
     g.scale(Math.cos((u - a) * 14) || 0.05, 1)
     blit(g, b, (-b.width * k) / 2, (-b.height * k) / 2, k)
     g.restore()
@@ -187,15 +191,18 @@ function fight3(g: G, u: number) {
     const v = u - F3.legend
     const tl = v < 1.2 ? 1.9 + v : 3.1 + (v - 1.2) * 1.2
     r.f3legend.at(tl, 1.9)
-    drawStage(g, pic, [r.f3legend.draw()], STAGE)
+    surround(g, T0 + u)
+    drawStage(g, pic, [r.f3legend.draw()], F.cam, F.stage)
+    stageEdge(g)
     if (hit(T0 + F3.legend + 1.3)) cry(150)
     if (u < F3.legend + 0.08) wash(g, '#ee8130', 1 - span(u, F3.legend, F3.legend + 0.08))
     return
   }
   const slow = u >= ROLL.slowA && u < LAND
-  const cam = STAGE
   const layer = u >= F3.attack ? playAt(r.f3fire, u, F3.attack, 0.7, 1.6) : idleAt(r.f3idle, u)
-  drawStage(g, pic, [layer], clampCam(cam, pic), undefined, { shake: shakeAt(u, C3, 14, 0.4) })
+  surround(g, T0 + u)
+  drawStage(g, pic, [layer], clampCam(F.cam, pic, F.stage), F.stage, { shake: shakeAt(u, C3, 14, 0.4) })
+  stageEdge(g)
   if (hit(T0 + F3.reverse + 0.02)) cry(6)
   if (hit(T0 + C3)) play('super')
   // The slow die: the stage goes dark while it turns, pulsing with a heartbeat.
@@ -212,7 +219,7 @@ function fight3(g: G, u: number) {
   else if (u >= C3 + 2 / 60 && u < C3 + 7 / 60) {
     rect(g, 0, 0, OW, OH, '#ffffff')
     r.f3ink.at(u)
-    drawStage(g, null, [r.f3ink.draw()], clampCam({ x: 140, y: 88, z: 10 }, pic), undefined, { ground: '#ffffff' })
+    drawStage(g, null, [r.f3ink.draw()], clampCam(F.inkCam, pic, F.stage), F.stage, { ground: '#ffffff' })
     speedLines(g, 1300, 420, u, { color: INK, inner: 420, a: 1, n: 64 })
   }
   if (u >= F3.end - 0.08) wash(g, '#000000', 1)

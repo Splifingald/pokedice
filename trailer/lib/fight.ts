@@ -9,10 +9,7 @@ import { F } from './frame'
 import type { Run } from './run'
 import { setArtUnderStage, stageBackground } from '@/fx/scenes'
 import { H, W } from '@/fx/timeline'
-import { sharpDraw, type Cam } from './stage'
-
-/** The fights' one shot: the whole stage. Every fight, and a legend's entrance, are framed exactly alike. */
-export const STAGE: Cam = { x: 120, y: 90, z: 8 }
+import { sharpDraw } from './stage'
 
 /**
  * Your Pokémon stands higher than in the game. The game puts its feet 4 px below the stage (a back view cut by the

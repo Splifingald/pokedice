@@ -8,9 +8,10 @@ import { tone } from '@/audio/sfx'
 import { PALETTE } from '@/theme/colors'
 import { ACT } from '../lib/clock'
 import { playWith } from '../lib/audio'
-import { inOut, INK, OH, OW, rect, span, text, wash, type G } from '../lib/draw'
+import { inOut, INK, OW, rect, span, text, wash, type G } from '../lib/draw'
 import { Run } from '../lib/run'
 import { loadMon, mon } from '../lib/sprites'
+import { F, stageEdge, surround } from '../lib/frame'
 import { camLerp, drawStage, sharpDraw, type Cam } from '../lib/stage'
 import type { Act } from '../main'
 
@@ -51,10 +52,12 @@ function labTimeline(): Timeline<StarterScene> {
 const LINE = "What's your choice?"
 
 /** The game's dialogue box: paper, the ink edge, its pale inner ring, the typewriter and the blinking ▼. */
-export function dialogue(g: G, line: string, shown: number, t: number, y = 790) {
-  const x = 150
-  const w = OW - 300
+export function dialogue(g: G, line: string, shown: number, t: number, y = F.portrait ? F.stage.y + F.stage.h + 60 : 790) {
+  // Portrait: under the lab, nearly the frame's width, the words a little smaller to fit.
+  const x = F.portrait ? 40 : 150
+  const w = OW - 2 * x
   const h = 220
+  const size = F.portrait ? 92 : 104
   rect(g, x - 8, y - 8, w + 16, h + 16 + 8, 'rgba(36,48,79,0.25)')
   rect(g, x - 8, y - 8, w + 16, h + 16, INK)
   rect(g, x, y, w, h, PALETTE.paper)
@@ -63,7 +66,7 @@ export function dialogue(g: G, line: string, shown: number, t: number, y = 790) 
   rect(g, x + 8, y + 8, 6, h - 16, '#cfe0f4')
   rect(g, x + w - 14, y + 8, 6, h - 16, '#cfe0f4')
   const n = Math.floor(shown)
-  text(g, line.slice(0, n), x + 70, y + 138, { size: 104, color: INK, ow: 0 })
+  text(g, line.slice(0, n), x + (F.portrait ? 50 : 70), y + 138, { size, color: INK, ow: 0 })
   if (n >= line.length && Math.floor(t * 3) % 2 === 0) {
     g.fillStyle = INK
     g.beginPath()
@@ -88,15 +91,25 @@ export const choice: Act = {
     const st = labTime(c)
     r.at(st, FROM)
     // The lab picture under the scene, as PartnerMoment lays it (the 240×160 stage, drawn 400 px wide), the camera
-    // closing in on the middle ball. Its two zooms put 5, then 10, screen pixels on each picture pixel: crisp.
-    const cam: Cam = camLerp({ x: 120, y: 80, z: 25 / 3 }, { x: SEAT.x, y: SEAT.y, z: 50 / 3 }, inOut(span(c, ZOOM[0], ZOOM[1])))
-    drawStage(g, null, [], cam, undefined, { ground: '#2a3150' })
-    const ox = Math.round(OW / 2 - cam.x * cam.z)
-    const oy = Math.round(OH / 2 - cam.y * cam.z)
+    // closing in on the middle ball. Its two zooms put 5, then 10, screen pixels on each picture pixel (portrait: 3,
+    // then 6, in the stage's window): crisp.
+    const [z0, z1] = F.portrait ? [5, 10] : [25 / 3, 50 / 3]
+    const cam: Cam = camLerp({ x: 120, y: 80, z: z0 }, { x: SEAT.x, y: SEAT.y, z: z1 }, inOut(span(c, ZOOM[0], ZOOM[1])))
+    const box = F.stage
+    surround(g, T)
+    drawStage(g, null, [], cam, box, { ground: '#2a3150' })
+    const ox = Math.round(box.x + box.w / 2 - cam.x * cam.z)
+    const oy = Math.round(box.y + box.h / 2 - cam.y * cam.z)
     const w = Math.round(240 * cam.z)
     const h = Math.round(160 * cam.z)
+    g.save()
+    g.beginPath()
+    g.rect(box.x, box.y, box.w, box.h)
+    g.clip()
     if (labImg) sharpDraw(g, labImg, ox, oy, w, h, true)
     sharpDraw(g, r.draw(), ox, oy, w, h)
+    g.restore()
+    stageEdge(g)
     // Each shake rattles.
     const prev = labTime(Math.max(0, c - 1 / 60))
     if (st >= 2.5 && (st - 2.5) % 0.9 < (prev - 2.5 + 0.9) % 0.9) playWith(() => tone(220, 0.05, { vol: 0.05, type: 'triangle' }))

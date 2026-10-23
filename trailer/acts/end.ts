@@ -10,7 +10,7 @@ import { drawDie, drawShadow, project, type View } from '../lib/cube'
 import { GOLD, INK, outBack, OW, rect, span, text, textWidth, wash, type G } from '../lib/draw'
 import { F } from '../lib/frame'
 import { blit } from '../lib/hud'
-import { LH, LK, logoDice, LW, SIZE } from './title'
+import { LH, LK, logoDice, LW } from './title'
 import type { Act } from '../main'
 
 const low = canvas(LW, LH)
@@ -146,9 +146,6 @@ export function drawEnd(g: G, e: number, T0: number, at: EndTimes = SLOW) {
 
 // ---------------------------------------------------------------- portrait
 const tall = canvas(360, 640)
-// POKÉ over DICE: two rows of four dice, the word big enough on a phone.
-const ROW = 26
-const PITCH = SIZE + 9
 
 /** A text size that fits `max` px of width, at most `size`. */
 const fit = (g: G, s: string, size: number, max: number, font = 'Jersey 25', spacing = 0) =>
@@ -158,12 +155,12 @@ const fit = (g: G, s: string, size: number, max: number, font = 'Jersey 25', spa
 function drawEndTall(g: G, e: number, T0: number, at: EndTimes) {
   pokeballBackdrop(tall.g, tall.width, tall.height, T0 + e)
   const v: View = { tilt: (62 * Math.PI) / 180, cs: 2, cx: 180, cy: 220 }
-  const dice = logoDice(0, { thrown: false }).map((d, i) => {
+  // POKÉ over DICE: two rows of four dice, the word big enough on a phone.
+  const dice = logoDice(0, { thrown: false, tall: true }).map((d, i) => {
     const a = at.dice + i * at.stagger
     const p = span(e, a, a + 0.36)
     const fall = p < 0.7 ? (1 - p / 0.7) ** 2 * 140 : Math.sin(((p - 0.7) / 0.3) * Math.PI) * 7
-    const pos = [((i % 4) - 1.5) * PITCH, d.pos[1] * 0.5 + (i < 4 ? ROW : -ROW), d.pos[2] + fall] as const
-    return { ...d, pos, show: e >= a, landAt: a + 0.25 }
+    return { ...d, pos: [d.pos[0], d.pos[1], d.pos[2] + fall] as const, show: e >= a, landAt: a + 0.25 }
   })
   if (e > at.ring) {
     const c = project(v, [0, 0, 0])
