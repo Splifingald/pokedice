@@ -1,7 +1,8 @@
 // The trailer's music: an original chiptune at 120 BPM, synthesised like the game's sound effects (pulse, triangle and
-// noise voices), so nothing is borrowed. D minor through the journey, D major on the end card. Its sections follow
-// the beat sheet (clock.ts): the title's riff, the journey's groove with a stop under the slow die, the montage's
-// build, the features' riff an octave up, the lab's quiet arpeggio, the last chord.
+// noise voices), so nothing is borrowed. D minor through the journey, D major for the evolution, the five of a kind and
+// the end card. Its sections follow the beat sheet (clock.ts): the title's riff and held chord, a light groove under
+// each explained roll, the climb of the evolution, a stop under the slow die, the build through the big moments, the
+// features' riff an octave up, the lab's quiet arpeggio, the last chord.
 
 const Q = 0.5
 const S = Q / 4
@@ -135,104 +136,140 @@ export function scoreMusic(ctx: BaseAudioContext, out: AudioNode) {
     }
   }
 
-  // ---- act 1, the title (0 → 2.5): a riser under the dice, then the riff on the combo
+  // ---- act 1, the title (0 → 4): a riser under the dice, the riff on the combo, a held chord while the word stays
   noise(0.2, 1.3, { v: 0.05, f: 300, type: 'bandpass', q: 1.5, slide: 3000 })
   kick(1.5, 1)
   crash(1.5, 0.25)
   arp(1.5, 2, Dm, { oct: 12, v: 0.09, duty: 0.25 })
-  voice(1.5, 38, 1.0, { v: 0.5, tri: true })
-  hat(2.25, 0.05)
-  noise(2.0, 0.5, { v: 0.06, f: 800, type: 'bandpass', q: 1, slide: 6000 })
+  arp(2.5, 2, Bb, { oct: 12, v: 0.07, duty: 0.25 })
+  voice(1.5, 38, 2.4, { v: 0.45, tri: true })
+  for (const m of [62, 65, 69]) voice(2.0, m, 1.9, { v: 0.035, duty: 0.5 })
+  for (let i = 0; i < 4; i++) snare(3.5 + i * S, 0.1 + i * 0.03)
 
-  // ---- act 2, the journey (2.5 → 10): a bar a fight, the legend's dark, a stop under the slow die
-  crash(2.5)
-  groove(2.5, 4, Dm)
-  line(2.5, [
-    [69, 4], [74, 2], [76, 2], [77, 4], [76, 2], [74, 2],
-  ])
-  crash(4.5, 0.18)
-  groove(4.5, 4, Bb)
-  line(4.5, [
-    [77, 4], [74, 2], [77, 2], [82, 6], [81, 2],
-  ])
-  arp(4.5, 4, Bb, { v: 0.045 })
-  groove(6.5, 1, C, { busy: true })
-  line(6.5, [[79, 2], [84, 2]])
-  // Mewtwo's entrance (7 → 7.8): the drums drop out under a low drone and its heartbeats.
-  voice(7.0, 38, 0.8, { v: 0.45, tri: true })
-  voice(7.0, 50, 0.8, { v: 0.05, duty: 0.5 })
-  kick(7.05, 0.6)
-  kick(7.25, 0.45)
-  crash(7.33, 0.25)
-  kick(7.33, 1)
-  groove(7.8, 2, C, { busy: true })
-  arp(7.8, 2, C, { oct: 12, v: 0.05 })
-  line(7.8, [[79, 4], [76, 2], [79, 2]])
-  groove(8.8, 0.1, A, { drums: false })
-  // The stop under the slow die (8.85 → 9.375): only a heartbeat and a riser.
-  kick(8.9, 0.7)
-  kick(9.12, 0.5)
-  noise(8.85, 0.52, { v: 0.05, f: 200, type: 'bandpass', q: 2, slide: 4000 })
-  // Five of a kind lands: the big hit on the A chord, until the smash cut.
-  kick(9.375, 1)
-  crash(9.375, 0.3)
-  groove(9.375, 1, A, { busy: true })
-  line(9.375, [[81, 4]], { v: 0.18 })
-  arp(9.375, 1, A, { oct: 12, v: 0.06 })
-  kick(9.835, 1)
+  // ---- act 2, fight 1 (4 → 10): a light groove under the explained roll, a hit on the move, the level-up's run
+  crash(4)
+  groove(4, 4, Dm)
+  groove(6, 3.4, Dm, { drums: false })
+  for (let i = 0; i < 7; i++) hat(6 + i * Q, 0.05)
+  line(4, [[69, 4], [74, 2], [76, 2], [77, 4], [76, 2], [74, 2]])
+  kick(7.7, 1)
+  crash(7.7, 0.2)
+  groove(7.7, 2.4, Bb, { busy: true })
+  arp(8.9, 2, D, { oct: 12, v: 0.08 })
+  voice(8.9, 50, 1.1, { v: 0.35, tri: true })
 
-  // ---- act 3, the montage (10 → 15): the siren's bar, then a build to the roll
-  for (let i = 0; i < 4; i++) voice(10 + i * 0.25, i % 2 ? 81 : 76, 0.22, { v: 0.05, duty: 0.5 })
-  groove(10, 2, Dm, { drums: false })
-  kick(10)
-  kick(10.5)
-  crash(11)
-  groove(11, 2, Bb)
-  arp(11, 2, Bb, { v: 0.06 })
-  line(11, [[77, 4], [74, 4]], { v: 0.13 })
-  groove(12, 2, C, { busy: true })
-  arp(12, 2, C, { oct: 12, v: 0.06 })
-  line(12, [[79, 4], [84, 4]], { v: 0.14 })
-  crash(13, 0.2)
-  groove(13, 2, A, { busy: true })
-  arp(13, 2, A, { oct: 12, v: 0.07 })
-  line(13, [[81, 2], [83, 2], [85, 2], [88, 2]], { v: 0.14 })
-  // The roll: sixteenths, then thirty-seconds, rising.
-  for (let i = 0; i < 8; i++) snare(14 + i * S, 0.12 + i * 0.015)
-  for (let i = 0; i < 8; i++) snare(14.5 + i * (S / 2), 0.2 + i * 0.02)
-  groove(14, 2, A, { drums: false })
-  noise(14, 1.0, { v: 0.08, f: 400, type: 'bandpass', q: 1, slide: 8000 })
+  // ---- the evolution (10 → 13): no drums, arpeggios climbing, the burst in D major
+  ;[Dm, Bb, C, A].forEach((c, i) => arp(10 + i * 0.68, 1.4, c, { oct: i * 5, v: 0.05 + i * 0.012, tri: i < 2 }))
+  noise(10.2, 2.5, { v: 0.05, f: 300, type: 'bandpass', q: 1.2, slide: 6000 })
+  voice(10, 38, 2.7, { v: 0.3, tri: true })
+  kick(12.72, 1)
+  crash(12.72, 0.3)
+  for (const m of [50, 62, 66, 69, 74]) voice(12.72, m, 0.3, { v: m < 60 ? 0.4 : 0.06, tri: m < 60 })
 
-  // ---- act 4, the features (15 → 17.5): the riff an octave up, full groove
-  crash(15, 0.3)
-  kick(15, 1)
-  const feat: [number, number, Chord][] = [
-    [15, 2, D],
-    [16, 1, Bb],
-    [16.5, 1, C],
-    [17, 1, A],
+  // ---- fight 2 (13 → 20)
+  crash(13, 0.18)
+  groove(13, 4, Bb)
+  line(13, [[77, 4], [74, 2], [77, 2], [82, 6], [81, 2]])
+  arp(13, 4, Bb, { v: 0.045 })
+  groove(15, 4, C)
+  line(15, [[79, 4], [76, 2], [79, 2], [84, 8]])
+  groove(17, 3, Bb, { drums: false })
+  for (let i = 0; i < 6; i++) hat(17 + i * Q, 0.05)
+  kick(18.6, 1)
+  crash(18.6, 0.2)
+  groove(18.6, 2.8, C, { busy: true })
+  arp(19.2, 1.6, C, { oct: 12, v: 0.06 })
+
+  // ---- fight 3 (20 → 29.5): Mewtwo's dark, the throw, the stop under the slow die, the five of a kind in D major
+  voice(20, 38, 1.8, { v: 0.45, tri: true })
+  voice(20, 50, 1.8, { v: 0.05, duty: 0.5 })
+  kick(20.3, 0.6)
+  kick(20.52, 0.45)
+  kick(20.9, 0.6)
+  kick(21.12, 0.45)
+  kick(21.3, 1)
+  crash(21.3, 0.25)
+  groove(21.8, 4, C, { busy: true })
+  arp(21.8, 4, C, { oct: 12, v: 0.05 })
+  line(21.8, [[79, 4], [76, 2], [79, 2], [84, 4], [83, 4]])
+  groove(23.8, 1.5, A, { busy: true })
+  // The stop (24.55 → 26.92): only a slow heartbeat and a long riser.
+  for (let t = 24.6; t < 26.9; t += 0.42) kick(t, 0.55)
+  noise(24.55, 2.37, { v: 0.05, f: 150, type: 'bandpass', q: 2, slide: 5000 })
+  voice(24.55, 33, 2.37, { v: 0.25, tri: true, slide: 12 })
+  // Five 5s: a fanfare.
+  kick(26.92, 1)
+  crash(26.92, 0.35)
+  for (const m of [50, 62, 66, 69, 74, 78]) voice(26.92, m, 0.9, { v: m < 60 ? 0.45 : 0.06, tri: m < 60 })
+  ;[74, 78, 81, 86, 90, 93].forEach((m, i) => voice(26.95 + i * 0.07, m, 0.3, { v: 0.07, duty: 0.25, pan: 0.3 }))
+  groove(27.4, 2.4, D, { busy: true })
+  line(27.4, [[86, 2], [88, 2], [90, 4], [93, 4]], { v: 0.12 })
+  kick(29.08, 1)
+  crash(29.08, 0.3)
+
+  // ---- the big moments (29.5 → 47)
+  voice(29.5, 38, 2.2, { v: 0.35, tri: true })
+  for (let t = 29.5; t < 31.7; t += 0.5) kick(t, 0.5)
+  crash(31.7, 0.25)
+  groove(31.7, 4.6, Dm, { busy: true })
+  arp(31.7, 4.6, Dm, { oct: 12, v: 0.05 })
+  groove(34, 2, C)
+  groove(35, 2, Bb, { busy: true })
+  crash(36.12, 0.25)
+  groove(36.12, 1.8, C, { busy: true })
+  arp(36.12, 1.8, C, { oct: 12, v: 0.06 })
+  groove(37, 4, A)
+  crash(39.05, 0.25)
+  groove(39.05, 2, Dm, { busy: true })
+  arp(39.05, 2, Dm, { oct: 12, v: 0.06 })
+  crash(40, 0.2)
+  groove(40, 4, Bb)
+  arp(40, 4, Bb, { v: 0.06 })
+  line(40, [[77, 4], [74, 4], [77, 4], [82, 4]], { v: 0.12 })
+  groove(42, 3, C, { busy: true })
+  arp(42, 3, C, { oct: 12, v: 0.06 })
+  crash(43.5, 0.25)
+  groove(43.5, 5, A, { busy: true })
+  arp(43.5, 5, A, { oct: 12, v: 0.07 })
+  line(43.5, [[81, 4], [83, 4], [85, 4], [88, 8]], { v: 0.13 })
+  for (let i = 0; i < 8; i++) snare(46 + i * S, 0.12 + i * 0.015)
+  for (let i = 0; i < 8; i++) snare(46.5 + i * (S / 2), 0.2 + i * 0.02)
+  noise(46, 1.0, { v: 0.08, f: 400, type: 'bandpass', q: 1, slide: 8000 })
+
+  // ---- the features (47 → 53): the riff an octave up, full groove
+  crash(47, 0.3)
+  kick(47, 1)
+  const feat: [number, Chord][] = [
+    [47, D],
+    [48.5, Bb],
+    [50, C],
+    [51.5, A],
   ]
-  for (const [t, beats, c] of feat) {
-    groove(t, beats, c, { busy: true })
-    arp(t, beats, c, { oct: 12, v: 0.08, duty: 0.25 })
+  for (const [t, c] of feat) {
+    groove(t, 3, c, { busy: true })
+    arp(t, 3, c, { oct: 12, v: 0.08, duty: 0.25 })
   }
-  line(15, [
+  line(47, [
     [86, 2], [85, 2], [86, 2], [90, 2], [93, 4], [94, 2], [93, 2],
     [91, 4], [88, 4], [89, 2], [88, 2], [85, 4],
   ], { v: 0.12, duty: 0.125 })
+  line(50, [
+    [88, 2], [86, 2], [88, 2], [91, 2], [93, 6], [91, 2],
+    [89, 4], [88, 4], [85, 8],
+  ], { v: 0.12, duty: 0.125 })
 
-  // ---- act 5, the lab (17.5 → 20): a quiet arpeggio, no drums, leaning on the last chord
-  arp(17.5, 2, Dm, { tri: true, v: 0.12 })
-  arp(18.5, 2, G, { tri: true, v: 0.1, oct: 12 })
-  arp(19.5, 1, A, { tri: true, v: 0.09, oct: 12 })
-  voice(17.5, 38, 2, { v: 0.3, tri: true })
-  voice(18.5, 43, 1, { v: 0.25, tri: true })
-  voice(19.5, 45, 0.5, { v: 0.25, tri: true })
+  // ---- the lab (53 → 57.5): a quiet arpeggio, no drums, hanging on the A chord while the ball shakes
+  arp(53, 4, Dm, { tri: true, v: 0.12 })
+  arp(55, 2, G, { tri: true, v: 0.1, oct: 12 })
+  arp(56, 3, A, { tri: true, v: 0.09, oct: 12 })
+  voice(53, 38, 2, { v: 0.3, tri: true })
+  voice(55, 43, 1, { v: 0.25, tri: true })
+  voice(56, 45, 1.5, { v: 0.25, tri: true })
 
-  // ---- act 6, the end card (20 → 22): the last chord in D major, a run up, ringing out
-  kick(20, 1)
-  crash(20, 0.32)
-  for (const m of [50, 62, 66, 69, 74]) voice(20, m, 2, { v: m < 60 ? 0.4 : 0.07, tri: m < 60, duty: 0.25 })
-  ;[62, 66, 69, 74, 78, 81, 86].forEach((m, i) => voice(20 + i * 0.06, m, 0.5, { v: 0.06, duty: 0.125, pan: 0.3 }))
-  line(20.5, [[86, 4], [90, 10]], { v: 0.1, duty: 0.25 })
+  // ---- the end card (57.5 → 61): the last chord in D major, a run up, ringing out
+  kick(57.5, 1)
+  crash(57.5, 0.32)
+  for (const m of [50, 62, 66, 69, 74]) voice(57.5, m, 3.2, { v: m < 60 ? 0.4 : 0.07, tri: m < 60, duty: 0.25 })
+  ;[62, 66, 69, 74, 78, 81, 86].forEach((m, i) => voice(57.5 + i * 0.06, m, 0.5, { v: 0.06, duty: 0.125, pan: 0.3 }))
+  line(58, [[86, 4], [90, 16]], { v: 0.1, duty: 0.25 })
 }

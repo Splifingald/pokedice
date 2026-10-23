@@ -8,7 +8,7 @@ import { cryUrl } from '@/audio/cries'
 import { scoreMusic } from './music'
 
 export const RATE = 48000
-export const SECONDS = 22.5
+export const SECONDS = 61.5
 
 /** On during the one in-order pass that records the sound; off for stills and previews. */
 export const sound = { on: false }

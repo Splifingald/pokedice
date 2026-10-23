@@ -1,148 +1,89 @@
-// Act 3, the montage (10 → 15 s): the screen fills with battles. One clip, then two, four, eight, splitting on the beat,
-// every tile framed on the battle area with an ink border and its star's type colour as a rim: the Rayquaza raid's
-// opening, Mega Charizard X, Gigantamax Gengar, Groudon's raid, the Mew and Celebi boss fights, Lugia, a trade. The
-// tiles flash gold one after another like a combo, then the white takes the screen. No title.
+// Act 3, the big moments (29.5 → 47 s): Rayquaza's raid opening, a Mega Evolution and a Gigantamax, each full screen
+// with the game's own line; then four legendary bosses at once (Mew, Celebi, Jirachi, Shaymin) and four raids at once
+// (Lugia, Groudon, Palkia, Zacian), each tile framed on its battle with an ink border and its type colour as a rim.
 import { gmaxTimeline, megaTimeline } from '@/fx/timelines/forms'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
-import { tradeTimeline } from '@/fx/timelines/trade'
 import type { PokeType } from '@/engine/types'
-import { ACT } from '../lib/clock'
-import { GOLD, INK, OH, OW, rect, span, TYPE, wash, type G } from '../lib/draw'
+import { ACT, hit } from '../lib/clock'
+import { cry } from '../lib/audio'
+import { GOLD, INK, OH, OW, outBack, rect, span, text, textWidth, TYPE, wash, type G } from '../lib/draw'
+import { caption } from '../lib/hud'
 import { RaidIntroScene } from '../lib/raidIntro'
 import { Run } from '../lib/run'
 import { playAt } from '../lib/scene'
 import { loadMon, mon } from '../lib/sprites'
-import { clampCam, drawStage, loadPicture, picture, type Box } from '../lib/stage'
+import { drawStage, loadPicture, picture, type Box } from '../lib/stage'
 import type { Act } from '../main'
 
 const T0 = ACT.montage[0]
+const RAY = [0, 4.5] as const
+const MEGA = [4.5, 7.5] as const
+const GMAX = [7.5, 10.5] as const
+const BOSSES = [10.5, 14] as const
+const RAIDS = [14, 17.5] as const
 
-interface Clip {
-  appear: number
-  rim: string
-  pic: string | null
-  from: number
-  speed: number
-  focus: { x: number; y: number }
-  run?: Run
-  raid?: RaidIntroScene
-}
+const legend = (dex: number, name: string, type: PokeType, level: string) =>
+  legendTimeline({ own: mon(6, true), foe: mon(dex), look: legendLook(dex, type), name, level, types: type.toUpperCase() })
 
-type Key = 'G' | 'E' | 'F' | 'D' | 'A' | 'B' | 'C' | 'H'
-let clips: Record<Key, Clip> | null = null
+const BOSS_LIST: { dex: number; name: string; type: PokeType; pic: string; rim: string }[] = [
+  { dex: 151, name: 'MEW', type: 'psychic', pic: 'lair-island', rim: TYPE.psychic },
+  { dex: 251, name: 'CELEBI', type: 'grass', pic: 'oldforest', rim: TYPE.grass },
+  { dex: 385, name: 'JIRACHI', type: 'steel', pic: 'lair-summit', rim: TYPE.steel },
+  { dex: 492, name: 'SHAYMIN', type: 'grass', pic: 'flowers', rim: TYPE.fairy },
+]
+const RAID_LIST: { dex: number; name: string; rim: string }[] = [
+  { dex: 249, name: 'LUGIA', rim: TYPE.flying },
+  { dex: 383, name: 'GROUDON', rim: TYPE.ground },
+  { dex: 484, name: 'PALKIA', rim: TYPE.water },
+  { dex: 888, name: 'ZACIAN', rim: TYPE.fairy },
+]
 
-const legend = (dex: number, name: string, type: PokeType) =>
-  legendTimeline({
-    own: mon(6, true),
-    foe: mon(dex),
-    look: legendLook(dex, type),
-    name,
-    level: name === 'MEW' || name === 'CELEBI' ? 'LV60' : 'LV70',
-    types: type.toUpperCase(),
-  })
-
-function makeClips() {
+let made: ReturnType<typeof make> | null = null
+function make() {
   return {
-    G: { appear: 0, rim: TYPE.dragon, pic: null, from: 0.35, speed: 1.8, focus: { x: 160, y: 90 }, raid: new RaidIntroScene(mon(384), 'RAYQUAZA') },
-    E: {
-      appear: 1,
-      rim: TYPE.fire,
-      pic: 'league',
-      from: 2.7,
-      speed: 1.7,
-      focus: { x: 80, y: 108 },
-      run: new Run(
-        () => megaTimeline({ own: mon(6, true), foe: mon(149), side: 'own', from: mon(6, true), to: mon(10034, true), die: 'dragon' }),
-        { art: true },
-      ),
-    },
-    F: {
-      appear: 2,
-      rim: TYPE.ghost,
-      pic: 'haunted',
-      from: 3.0,
-      speed: 1.6,
-      focus: { x: 92, y: 92 },
-      run: new Run(
-        () => gmaxTimeline({ own: mon(94, true), foe: mon(143), side: 'own', from: mon(94, true), to: mon(10202, true), die: 'ghost' }),
-        { art: true },
-      ),
-    },
-    D: { appear: 2, rim: TYPE.ground, pic: 'lair-volcano', from: 2.2, speed: 1.6, focus: { x: 140, y: 82 }, run: new Run(() => legend(383, 'GROUDON', 'ground'), { art: true }) },
-    A: { appear: 3, rim: TYPE.psychic, pic: 'lair-island', from: 2.6, speed: 1.5, focus: { x: 140, y: 82 }, run: new Run(() => legend(151, 'MEW', 'psychic'), { art: true }) },
-    B: { appear: 3.08, rim: TYPE.flying, pic: 'lair-sea', from: 2.6, speed: 1.5, focus: { x: 140, y: 80 }, run: new Run(() => legend(249, 'LUGIA', 'flying'), { art: true }) },
-    C: { appear: 3.16, rim: TYPE.grass, pic: 'oldforest', from: 2.6, speed: 1.5, focus: { x: 140, y: 82 }, run: new Run(() => legend(251, 'CELEBI', 'grass'), { art: true }) },
-    H: {
-      appear: 3.24,
-      rim: GOLD,
-      pic: null,
-      from: 2.45,
-      speed: 1.2,
-      focus: { x: 120, y: 80 },
-      run: new Run(() => tradeTimeline({ give: mon(25), get: mon(94, false, true), giveBall: 'poke', getBall: 'great', shiny: true })),
-    },
-  } satisfies Record<string, Clip>
-}
-
-type Tile = [Key, Box]
-const HALF_W = OW / 2
-const HALF_H = OH / 2
-const Q = OW / 4
-
-function layout(v: number): Tile[] {
-  if (v < 1) return [['G', { x: 0, y: 0, w: OW, h: OH }]]
-  if (v < 2)
-    return [
-      ['G', { x: 0, y: 0, w: HALF_W, h: OH }],
-      ['E', { x: HALF_W, y: 0, w: HALF_W, h: OH }],
-    ]
-  if (v < 3)
-    return [
-      ['G', { x: 0, y: 0, w: HALF_W, h: HALF_H }],
-      ['E', { x: HALF_W, y: 0, w: HALF_W, h: HALF_H }],
-      ['F', { x: 0, y: HALF_H, w: HALF_W, h: HALF_H }],
-      ['D', { x: HALF_W, y: HALF_H, w: HALF_W, h: HALF_H }],
-    ]
-  const order = ['G', 'E', 'F', 'D', 'A', 'B', 'C', 'H'] as const
-  return order.map((k, i): Tile => [k, { x: (i % 4) * Q, y: Math.floor(i / 4) * HALF_H, w: Q, h: HALF_H }])
-}
-
-function drawTile(g: G, v: number, key: Key, box: Box, loud: boolean) {
-  const c = clips![key]
-  if (v < c.appear) {
-    rect(g, box.x, box.y, box.w, box.h, INK)
-    return
-  }
-  if (c.raid) {
-    // The raid's own 320×180 scene: it fills a tile at 6, 3 or 1.5 screen pixels per art pixel.
-    const z = box.h / 180
-    const layer = c.raid.draw(c.from + (v - c.appear) * c.speed, loud)
-    drawStage(g, null, [layer], { x: 160, y: 90, z }, box)
-  } else if (c.run) {
-    c.run.loud = loud
-    const pic = c.pic ? picture(c.pic) : null
-    const z = box.h >= OH ? 6 : box.w >= HALF_W ? 4 : c.pic ? 3 : 4
-    const layer = playAt(c.run, v, c.appear, c.from, c.speed)
-    drawStage(g, pic, [layer], clampCam({ ...c.focus, z }, pic, box), box)
-  }
-  // A new tile comes in white.
-  const age = v - c.appear
-  if (age >= 0 && age < 0.1) {
-    g.save()
-    g.globalAlpha = Math.round((1 - age / 0.1) * 4) / 4
-    rect(g, box.x, box.y, box.w, box.h, '#ffffff')
-    g.restore()
+    ray: new RaidIntroScene(mon(384), 'RAYQUAZA'),
+    mega: new Run(
+      () => megaTimeline({ own: mon(6, true), foe: mon(149), side: 'own', from: mon(6, true), to: mon(10034, true), die: 'dragon' }),
+      { art: true },
+    ),
+    gmax: new Run(
+      () => gmaxTimeline({ own: mon(94, true), foe: mon(143), side: 'own', from: mon(94, true), to: mon(10202, true), die: 'ghost' }),
+      { art: true },
+    ),
+    bosses: BOSS_LIST.map((b) => new Run(() => legend(b.dex, b.name, b.type, 'LV60'), { art: true })),
+    raids: RAID_LIST.map((r, i) => new RaidIntroScene(mon(r.dex), r.name, 21 + i * 7)),
   }
 }
 
-function frame(g: G, box: Box, rim: string, thick = 4) {
+const QUAD: Box[] = [
+  { x: 0, y: 0, w: OW / 2, h: OH / 2 },
+  { x: OW / 2, y: 0, w: OW / 2, h: OH / 2 },
+  { x: 0, y: OH / 2, w: OW / 2, h: OH / 2 },
+  { x: OW / 2, y: OH / 2, w: OW / 2, h: OH / 2 },
+]
+
+function frame(g: G, box: Box, rim: string) {
   g.save()
-  g.lineWidth = thick
+  g.lineWidth = 6
   g.strokeStyle = rim
-  g.strokeRect(box.x + 6 + thick / 2, box.y + 6 + thick / 2, box.w - 12 - thick, box.h - 12 - thick)
+  g.strokeRect(box.x + 9, box.y + 9, box.w - 18, box.h - 18)
   g.lineWidth = 12
   g.strokeStyle = INK
   g.strokeRect(box.x, box.y, box.w, box.h)
+  g.restore()
+}
+
+/** A word in a chip where the four tiles meet: what the grid is. */
+function gridLabel(g: G, word: string, v: number, from: number) {
+  const p = outBack(span(v, from + 0.2, from + 0.4), 1.6)
+  if (p <= 0) return
+  const w = textWidth(g, word, 64, 'Jersey 25', 4) + 60
+  g.save()
+  g.translate(OW / 2, OH / 2)
+  g.scale(p, p)
+  rect(g, -w / 2 - 8, -46, w + 16, 92, INK)
+  rect(g, -w / 2, -38, w, 76, GOLD)
+  text(g, word, 0, 22, { size: 64, color: INK, ow: 0, align: 'center', spacing: 4 })
   g.restore()
 }
 
@@ -150,34 +91,57 @@ export const montage: Act = {
   range: ACT.montage,
   async load() {
     await Promise.all([
-      ...['league', 'haunted', 'lair-volcano', 'lair-island', 'lair-sea', 'oldforest'].map(loadPicture),
-      loadMon(384),
+      ...['league', 'haunted', ...BOSS_LIST.map((b) => b.pic)].map(loadPicture),
+      ...[384, 149, 143, ...BOSS_LIST.map((b) => b.dex), ...RAID_LIST.map((r) => r.dex)].map((d) => loadMon(d)),
       loadMon(6, true),
       loadMon(10034, true),
-      loadMon(149),
       loadMon(94, true),
       loadMon(10202, true),
-      loadMon(143),
-      loadMon(383),
-      loadMon(151),
-      loadMon(249),
-      loadMon(251),
-      loadMon(25),
-      loadMon(94, false, true),
     ])
-    clips = makeClips()
+    made = make()
   },
   render(g, T) {
     const v = T - T0
-    const tiles = layout(v)
-    // Sound: the big tile, then the two newest; the eight-tile grid leaves it to the music.
-    const loudKeys: Key[] = v < 1 ? ['G'] : v < 2 ? ['G', 'E'] : v < 3 ? ['G', 'F', 'D'] : []
-    for (const [k, box] of tiles) drawTile(g, v, k, box, loudKeys.includes(k))
-    tiles.forEach(([k, box], i) => {
-      const flashAt = 4.5 + i * 0.04
-      const gold = v >= flashAt && v < flashAt + 0.14
-      frame(g, box, gold ? GOLD : clips![k].rim, gold ? 18 : 4)
-    })
-    if (v >= 4.82) wash(g, '#ffffff', span(v, 4.82, 4.98))
+    const m = made!
+    if (v < RAY[1]) {
+      // Rayquaza's raid opening, full screen: the alarm, the storm, the reveal, its name and its five bars.
+      const layer = m.ray.draw(0.1 + (v - RAY[0]) * 1.2)
+      drawStage(g, null, [layer], { x: 160, y: 90, z: 6 })
+    } else if (v < MEGA[1]) {
+      const layer = playAt(m.mega, v, MEGA[0], 1.2, 1.4)
+      drawStage(g, picture('league'), [layer], { x: 112, y: 92, z: 8 })
+      caption(g, 'Charizard Mega Evolved into Mega Charizard X!', v, MEGA[0] + 2.15, MEGA[1])
+    } else if (v < GMAX[1]) {
+      const layer = playAt(m.gmax, v, GMAX[0], 1.4, 1.4)
+      drawStage(g, picture('haunted'), [layer], { x: 108, y: 93, z: 8 })
+      caption(g, 'Gengar Gigantamaxed!', v, GMAX[0] + 2.1, GMAX[1])
+    } else if (v < BOSSES[1]) {
+      // Four bosses at once, their entrances a beat apart so the reveals cascade.
+      BOSS_LIST.forEach((b, i) => {
+        const start = BOSSES[0] + i * 0.12
+        const run = m.bosses[i]!
+        run.loud = i === 0
+        const layer = playAt(run, v, start, 1.9, 0.95)
+        drawStage(g, picture(b.pic), [layer], { x: 120, y: 82, z: 4 }, QUAD[i])
+        frame(g, QUAD[i]!, b.rim)
+        if (hit(T0 + start + (3.2 - 1.9) / 0.95)) cry(b.dex, 0.6)
+      })
+      gridLabel(g, 'LEGENDARY BOSSES', v, BOSSES[0])
+    } else {
+      // Four raids at once: each one's opening, offset a little.
+      RAID_LIST.forEach((r, i) => {
+        const layer = m.raids[i]!.draw(0.6 + Math.max(0, v - RAIDS[0] - i * 0.1) * 1.3, i === 0)
+        drawStage(g, null, [layer], { x: 160, y: 90, z: 3 }, QUAD[i])
+        frame(g, QUAD[i]!, r.rim)
+        if (hit(T0 + RAIDS[0] + i * 0.1 + (2.75 - 0.6) / 1.3)) cry(r.dex, 0.6)
+      })
+      gridLabel(g, 'RAIDS WITH FRIENDS', v, RAIDS[0])
+    }
+    if (hit(T0 + RAY[0] + (2.75 - 0.1) / 1.2)) cry(384)
+    if (hit(T0 + MEGA[0] + (4.17 - 1.2) / 1.4)) cry(10034)
+    if (hit(T0 + GMAX[0] + (4.27 - 1.4) / 1.4)) cry(94)
+    // Each big moment opens on a white frame; the last one hands over to the features in white.
+    for (const a of [MEGA[0], GMAX[0], BOSSES[0], RAIDS[0]]) if (v >= a && v < a + 2 / 60) wash(g, '#ffffff', 1)
+    if (v >= RAIDS[1] - 0.15) wash(g, '#ffffff', span(v, RAIDS[1] - 0.15, RAIDS[1]))
   },
 }

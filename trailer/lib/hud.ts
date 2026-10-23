@@ -117,3 +117,119 @@ export function blit(g: G, c: HTMLCanvasElement, x: number, y: number, k: number
   g.imageSmoothingEnabled = false
   g.drawImage(c, Math.round(x), Math.round(y), Math.round(c.width * k), Math.round(c.height * k))
 }
+
+// ---------------------------------------------------------------- explaining a roll
+export interface Term {
+  text: string
+  at: number
+  color?: string
+  /** A word above the term (the combo, "SUPER EFFECTIVE"), in a chip of this colour. */
+  label?: string
+  labelFill?: string
+}
+
+/**
+ * The damage worked out the way the game's readout does — (the dice + the combo) × the type — one term at a time,
+ * then "= N" slamming in bigger. Centred on x, its baseline at y.
+ */
+export function equation(g: G, terms: Term[], result: { n: number; at: number }, t: number, x = 960, y = 720) {
+  const size = 92
+  const gap = 26
+  const res = `= ${result.n}`
+  // A term's slot is as wide as its label too, so two labels never overlap.
+  const widths = terms.map((tm) => Math.max(textWidth(g, tm.text, size), tm.label ? textWidth(g, tm.label, 36, 'Jersey 25', 2) + 40 : 0))
+  const resW = textWidth(g, res, size * 1.6)
+  const total = widths.reduce((a, b) => a + b + gap, 0) + resW
+  let cx = x - total / 2
+  terms.forEach((tm, i) => {
+    const w = widths[i]!
+    if (t >= tm.at) {
+      const k = outBack(span(t, tm.at, tm.at + 0.16), 2)
+      g.save()
+      g.translate(cx + w / 2, y)
+      g.scale(k, k)
+      text(g, tm.text, 0, 0, { size, color: tm.color ?? '#ffffff', align: 'center', ow: 8 })
+      if (tm.label) {
+        const lw = textWidth(g, tm.label, 36, 'Jersey 25', 2) + 24
+        rect(g, -lw / 2 - 4, -size - 34, lw + 8, 52, INK)
+        rect(g, -lw / 2, -size - 30, lw, 44, tm.labelFill ?? GOLD)
+        text(g, tm.label, 0, -size + 2, { size: 36, color: tm.labelFill === '#c4382a' ? '#ffffff' : INK, ow: 0, align: 'center', spacing: 2 })
+      }
+      g.restore()
+    }
+    cx += w + gap
+  })
+  damageSlam(g, result.n, cx + resW / 2 + 40, y - size * 0.45, t, result.at, { size: size * 1.6 })
+  if (t >= result.at) text(g, '=', cx + 20, y, { size, align: 'center', ow: 8 })
+}
+
+/** Each die's value popping up over it as the dice settle (screen positions of the dice). */
+export function valuePops(g: G, values: number[], at: (i: number) => { x: number; y: number }, t: number, from: number) {
+  values.forEach((v, i) => {
+    const a = from + i * 0.06
+    if (t < a) return
+    const p = at(i)
+    const k = outBack(span(t, a, a + 0.14), 2.2)
+    g.save()
+    g.translate(p.x, p.y - 96)
+    g.scale(k, k)
+    text(g, String(v), 0, 0, { size: 64, color: GOLD, align: 'center', base: 'middle', ow: 7 })
+    g.restore()
+  })
+}
+
+/** A line of the game's battle message, in its box, at the top of the screen. */
+export function caption(g: G, line: string, t: number, from: number, to: number) {
+  if (t < from || t >= to) return
+  const p = outBack(span(t, from, from + 0.15), 1.3)
+  const w = textWidth(g, line, 56) + 80
+  const x = 960 - w / 2
+  const y = 64 - (1 - p) * 220
+  panel(g, x, y, w, 96, { b: 6 })
+  text(g, line, 960, y + 66, { size: 56, color: INK, ow: 0, align: 'center' })
+}
+
+// ---------------------------------------------------------------- the five of a kind
+const CONFETTI = Array.from({ length: 140 }, (_, i) => {
+  const r = (n: number) => {
+    const s = Math.sin(i * 127.1 + n * 311.7) * 43758.5453
+    return s - Math.floor(s)
+  }
+  return {
+    x: r(1) * 1920,
+    vx: (r(2) - 0.5) * 500,
+    vy: -900 - r(3) * 900,
+    c: ['#ffbe2e', '#f2553f', '#6390f0', '#7ac74c', '#ffffff', '#f95587'][i % 6]!,
+    s: 12 + Math.round(r(4) * 3) * 6,
+    spin: r(5) * 10,
+  }
+})
+
+/** Gold rays turning behind the dice, confetti bursting up and raining down. */
+export function celebrate(g: G, t: number, at: number, cx = 960, cy = 900) {
+  const e = t - at
+  if (e < 0) return
+  const a = Math.min(1, e / 0.15) * (1 - span(e, 1.6, 2.0))
+  if (a <= 0) return
+  g.save()
+  g.globalAlpha = 0.55 * a
+  g.fillStyle = GOLD
+  const n = 18
+  for (let i = 0; i < n; i++) {
+    const ang = (i / n) * Math.PI * 2 + e * 0.8
+    g.beginPath()
+    g.moveTo(cx, cy)
+    g.lineTo(cx + Math.cos(ang - 0.06) * 2600, cy + Math.sin(ang - 0.06) * 2600)
+    g.lineTo(cx + Math.cos(ang + 0.06) * 2600, cy + Math.sin(ang + 0.06) * 2600)
+    g.closePath()
+    g.fill()
+  }
+  g.restore()
+  for (const c of CONFETTI) {
+    const x = c.x + c.vx * e
+    const y = 1100 + c.vy * e + 900 * e * e
+    if (y > 1140) continue
+    const w = Math.round(c.s * Math.abs(Math.cos(e * c.spin)))
+    rect(g, Math.round(x / 6) * 6, Math.round(y / 6) * 6, Math.max(6, w), c.s, c.c)
+  }
+}

@@ -1,15 +1,15 @@
-// The trailer's one clock: 60 frames a second, 120 BPM (a beat is half a second, so every cut lands on a beat or a
-// half-beat). The acts' times are docs/36's beat sheet.
+// The trailer's one clock: 60 frames a second, 120 BPM (a beat is half a second, so every act starts on a beat). The
+// acts' times are docs/36's beat sheet.
 export const FPS = 60
 export const BEAT = 0.5
 
 export const ACT = {
-  title: [0, 2.5],
-  journey: [2.5, 10],
-  montage: [10, 15],
-  features: [15, 17.5],
-  choice: [17.5, 20],
-  end: [20, 22],
+  title: [0, 4],
+  journey: [4, 29.5],
+  montage: [29.5, 47],
+  features: [47, 53],
+  choice: [53, 57.5],
+  end: [57.5, 61],
 } as const satisfies Record<string, readonly [number, number]>
 
 export const TOTAL_FRAMES = Math.round(ACT.end[1] * FPS)

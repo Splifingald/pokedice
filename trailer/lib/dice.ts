@@ -8,7 +8,7 @@ import { hit } from './clock'
 export const TRAY_W = 480
 export const TRAY_H = 270
 export const TRAY_K = 4
-const SIZE = 26
+const SIZE = 30
 const GAP = 10
 
 export interface TrayPlan {
@@ -25,6 +25,15 @@ export interface TrayPlan {
   y?: number
   /** The tray's own time stretch for one die (the slow-motion one): [die, from, to, factor]. */
   slow?: [number, number, number, number]
+  /** The dice hop for joy from this time (the celebration). */
+  jump?: number
+}
+
+/** When a slowed die lands, in real time: thrown at t0 for `dur` of its own time, slowed by f between a and b. */
+export function slowLanding(t0: number, dur: number, a: number, b: number, f: number) {
+  const before = a - t0
+  const inside = (b - a) * f
+  return before + inside >= dur ? t0 + (dur - before) / f + (a - t0) : b + (dur - before - inside)
 }
 
 const tray = canvas(TRAY_W, TRAY_H)
@@ -80,10 +89,11 @@ export function drawTray(plan: TrayPlan, t: number) {
       !!pick && t >= pick.t && pick.which.includes(i) && !plan.throws.some((x) => x.which?.includes(i) && x.t > pick.t && t >= x.t)
     const combo = plan.combo && t >= plan.combo.t && plan.combo.which.includes(i)
     const pos = at.pos
+    const joy = plan.jump != null && t >= plan.jump ? Math.abs(Math.sin((t - plan.jump) * 9 - i * 0.7)) * 10 * (1 - Math.min(1, (t - plan.jump) / 1.6)) : 0
     draws.push({
       i,
       d: {
-        pos: [pos[0], pos[1], pos[2] + (pickedNow ? 3 : 0)],
+        pos: [pos[0], pos[1], pos[2] + (pickedNow ? 3 : 0) + joy],
         R: at.R,
         fill: plan.fills[i]!,
         faces: FACES.map((f) => f.pips),

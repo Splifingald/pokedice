@@ -2,7 +2,7 @@
 // the type colour, the ink edge, a light top-left and a shaded bottom-right, pips on whole pixels), then scaled up with
 // square pixels. Each face is an affine-mapped texture under an orthographic camera, so a turning die stays crisp.
 import { pipLayout } from '@/components/Die'
-import { canvas, type Canvas } from '@/fx/pixel'
+import { canvas, GLYPHS, type Canvas } from '@/fx/pixel'
 import { hexToRgb } from '@/theme/util'
 import { PALETTE } from '@/theme/colors'
 
@@ -118,36 +118,24 @@ export function faceTexture(fill: string, face: number | string, N: number): Can
     g.fillStyle = ink
     for (const cell of lit[face] ?? []) g.fillRect(at[cell % 3]!, at[Math.floor(cell / 3)]!, pip, pip)
   } else {
-    // A letter in Jersey 25, thresholded so it stays pixel-sharp.
-    const m = canvas(N * 4, N * 4)
-    m.g.font = `${Math.round(N * 4 * 0.98)}px "Jersey 25"`
-    m.g.textAlign = 'center'
-    m.g.textBaseline = 'middle'
-    m.g.fillStyle = '#000'
-    m.g.fillText(face, N * 2, N * 2 + N * 0.12)
-    const small = canvas(N, N)
-    small.g.imageSmoothingEnabled = true
-    small.g.drawImage(m, 0, 0, N, N)
-    const d = small.g.getImageData(0, 0, N, N)
-    const [r, gg, b] = hexToRgb(ink)
-    const out = g.getImageData(0, 0, N, N)
-    // A one-texel outline in the other colour keeps the letter readable on any fill.
-    const on = (x: number, y: number) => x >= 0 && y >= 0 && x < N && y < N && d.data[(y * N + x) * 4 + 3]! >= 110
-    const [or, og, ob] = hexToRgb(ink === '#ffffff' ? PALETTE.ink : '#ffffff')
-    for (let y = 1; y < N - 1; y++)
-      for (let x = 1; x < N - 1; x++) {
-        const i = (y * N + x) * 4
-        if (on(x, y)) {
-          out.data[i] = r
-          out.data[i + 1] = gg
-          out.data[i + 2] = b
-        } else if (ink === '#ffffff' && (on(x + 1, y) || on(x - 1, y) || on(x, y + 1) || on(x, y - 1))) {
-          out.data[i] = or
-          out.data[i + 1] = og
-          out.data[i + 2] = ob
-        }
-      }
-    g.putImageData(out, 0, 0)
+    // A letter from the game's own bitmap font (fx/pixel GLYPHS), three texels a dot: straight edges, nothing to
+    // smooth. É gets its accent drawn above the E.
+    const glyph = GLYPHS[face.normalize('NFD')[0]!.toUpperCase()] ?? GLYPHS[' ']!
+    const k = Math.max(1, Math.floor((N - 4) / 8))
+    const accent = face !== face.normalize('NFD')[0]
+    const x0 = Math.round((N - 5 * k) / 2)
+    const y0 = accent ? N - 1 - 7 * k : Math.round((N - 7 * k) / 2)
+    const dots: [number, number][] = []
+    glyph.forEach((row, r) => [...row].forEach((ch, col) => ch === '1' && dots.push([x0 + col * k, y0 + r * k])))
+    // The accent: two blocks stepping up to the right, in the rows left above the E.
+    if (accent) dots.push([x0 + 3 * k, 1], [x0 + 3 * k - 2, 2])
+    // A one-texel ink outline keeps a white letter readable on any fill.
+    if (ink === '#ffffff') {
+      g.fillStyle = PALETTE.ink
+      for (const [x, y] of dots) g.fillRect(x - 1, y - 1, k + 2, k + 2)
+    }
+    g.fillStyle = ink
+    for (const [x, y] of dots) g.fillRect(x, y, k, k)
   }
   textures.set(key, c)
   return c

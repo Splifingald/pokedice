@@ -44,7 +44,8 @@ async function main() {
   const server = await createServer({
     root: ROOT,
     configFile: join(ROOT, 'vite.config.ts'),
-    server: { port: PORT, strictPort: true },
+    // No live reload: an edit made while a render runs must not reload the page under it.
+    server: { port: PORT, strictPort: true, hmr: false, watch: null },
     logLevel: 'warn',
   })
   await server.listen()
