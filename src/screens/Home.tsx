@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { cx } from '@/theme/util'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { heldWorld, linearAreas, regionOf, teamOf, type Area } from '@/engine'
 import { useT } from '@/i18n/react'
 import { RegionBar } from '@/components/RegionBar'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { useGame } from '@/store/game'
 import { closeVictoryLeftOpen, enterArea } from '@/store/run'
+import { takeResumeLanding } from '@/store/resume'
 import { regionOnOffer } from '@/store/regions'
 import { AreaDetails } from './home/AreaDetails'
 import { AreaPlate } from './home/AreaPlate'
@@ -54,6 +55,12 @@ function HomeView({ area }: { area: Area }) {
   const inside = useInWorld().inside
   const strip = inside ? 72 : 0
   const below = (latest ? 64 : 0) + (keepExploring ? 44 : 0) + strip
+
+  // Opened on an encounter left under way (store/resume.ts; the installed app starts on Home): straight back into it.
+  const navigate = useNavigate()
+  useEffect(() => {
+    if (takeResumeLanding(useGame.getState().run)) navigate('/area', { replace: true })
+  }, [navigate])
 
   // Arriving with no run (a reload, the first visit): start the save's current area, so CONTINUE plays right there.
   useEffect(() => {

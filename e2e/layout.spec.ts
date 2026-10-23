@@ -207,8 +207,9 @@ test('a battle fits a 360×640 phone', async ({ page }) => {
     const h = (sel: string) => Math.round(document.querySelector(sel)?.getBoundingClientRect().height ?? -1)
     return { page: document.documentElement.scrollHeight, view: window.innerHeight, header: h('header'), dialogue: h('.pixel-dialogue') }
   })
-  // Full screen: no top bar, no tab bar, and the whole battle — down to the team and the history — fits.
-  expect(dims.header, 'no top bar in battle').toBe(-1)
+  // Full screen under the top bar (kept, so what's in it stays in reach), no tab bar, and the whole battle — down to the
+  // team and the history — fits.
+  expect(dims.header, 'the top bar in battle').toBe(56)
   const history = await page.getByRole('button', { name: 'Battle history' }).boundingBox()
   expect(history, 'the history button is there').not.toBeNull()
   expect(history!.y + history!.height, 'the history button is on screen').toBeLessThanOrEqual(640)

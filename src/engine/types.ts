@@ -1504,6 +1504,11 @@ export interface SaveData {
   powers?: PowersSave
   /** Idle mode (docs/36): its rules seen, and a lost round's detour under way. Absent = neither. */
   idle?: IdleSave
+  /**
+   * An encounter under way when the page was left (src/store/resume.ts), so the next load picks it up where it stood.
+   * Only in this device's stored copy: the game's save in memory and the cloud copy never carry it.
+   */
+  resume?: ResumeSnapshot
 }
 
 /** Classic: the player does everything. Explored: cleared areas play themselves when asked. Idle: every area does. */
@@ -1523,6 +1528,17 @@ export interface IdleDetour {
 export interface IdleSave {
   rulesSeen?: boolean
   detour?: IdleDetour
+}
+
+/**
+ * The run and the battle as they stood, and where both dice streams were, so a reload rolls exactly what staying would
+ * have. Their shapes are the store's (RunState, BattleSlice): the engine never reads this, the store checks it.
+ */
+export interface ResumeSnapshot {
+  v: 1
+  run: Record<string, unknown>
+  battle: { id: number; state: Record<string, unknown>; log: unknown[] } | null
+  rng: { run: number; battle: number }
 }
 
 /** The three battle powers (docs/35). */

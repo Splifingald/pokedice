@@ -124,6 +124,21 @@ function initFx(b: BattleSlice): Fx {
   }
 }
 
+/**
+ * A fight picked up as it stands (store/resume.ts: a reload, a return): its whole log applied at once, with no sound,
+ * no scene and no delay, so the stage, the plates and the message box open where the fight was left. The moment's
+ * flourishes (a damage number, a banner, a shake…) are dropped: they belonged to a moment already over.
+ */
+export function caughtUpFx(b: BattleSlice, ctx: AnimatorContext): Fx {
+  let f = initFx(b)
+  for (const entry of b.log) {
+    const step = describe(entry, b.state, ctx)
+    const applied = step.apply(f)
+    f = step.land ? step.land(applied, false) : applied
+  }
+  return { ...f, cursor: b.log.length, pop: null, banner: null, shake: null, flash: null, status: null, fly: null, scene: null, cry: null }
+}
+
 export interface Step {
   delay: number
   sound?: SfxName
@@ -580,7 +595,7 @@ export function useBattleAnimator(
   /** An entrance is playing: the opening line shows, the rest of the log waits. */
   hold = false,
 ): { fx: Fx; ready: boolean; sceneContact: () => void; sceneDone: () => void } {
-  const [fx, setFx] = useState(() => initFx(battle))
+  const [fx, setFx] = useState(() => (battle.resumed ? caughtUpFx(battle, ctx) : initFx(battle)))
   const ctxRef = useRef(ctx)
   ctxRef.current = ctx
   // What the scene playing now will apply when its hit lands.

@@ -42,6 +42,7 @@ import { trustedNow } from './clock'
 import { DEFAULT_LANG, setLangInternal, t, type Lang } from '@/i18n'
 import { localizeGameData } from '@/i18n/data'
 import { isAdminEmail } from '@/lib/supabase'
+import { restoreSnapshot, snapshotOf } from './resume'
 
 export type ToastTone = 'info' | 'good' | 'bad'
 export interface Toast {
@@ -141,6 +142,11 @@ export interface BattleSlice {
   log: LogEntry[]
   /** Increments per battle so the UI can reset its animation cursor. */
   id: number
+  /**
+   * Picked up from the last visit (store/resume.ts): the screen opens on the fight as it stands, with no entrance and
+   * no replay of the log so far.
+   */
+  resumed?: boolean
 }
 
 /** The ways in: Supabase Auth providers the game offers (docs/17). */
@@ -258,7 +264,7 @@ function inSlot(save: SaveData): SaveData {
   return main
 }
 
-function boot(): Pick<GameStore, 'data' | 'rawData' | 'save' | 'corruptSaveArchived' | 'settings'> {
+function boot(): Pick<GameStore, 'data' | 'rawData' | 'save' | 'corruptSaveArchived' | 'settings' | 'run' | 'battle'> {
   const rawData = compileGameData(BUNDLE)
   const { save, corrupt } = readSave()
   // A save carries the language it was last played in; a fresh browser falls back to readSettings' detection.
@@ -266,10 +272,36 @@ function boot(): Pick<GameStore, 'data' | 'rawData' | 'save' | 'corruptSaveArchi
   const settings = save?.settings ? { ...save.settings, lang: save.settings.lang ?? stored.lang } : stored
   setLangInternal(settings.lang ?? DEFAULT_LANG)
   const data = localizeGameData(rawData, settings.lang ?? DEFAULT_LANG)
-  if (!save) return { data, rawData, save: null, corruptSaveArchived: corrupt, settings }
+  if (!save) return { data, rawData, save: null, corruptSaveArchived: corrupt, settings, run: initialRun(), battle: null }
   // Settle the save (HP scale, XP curve, duplicates) before the first render. A Fortune Wheel prize still waiting (the
   // page closed while the wheel turned) is paid now.
-  return { data, rawData, save: settle(payWheelPrize(save, data), data).save, corruptSaveArchived: corrupt, settings }
+  const settled = settle(payWheelPrize(withoutResume(save), data), data).save
+  // Back into the encounter the page was left in, at the point it was left (store/resume.ts).
+  const resumed = restoreSnapshot(save.resume, settled, data, initialRun())
+  return {
+    data,
+    rawData,
+    save: settled,
+    corruptSaveArchived: corrupt,
+    settings,
+    run: resumed?.run ?? initialRun(),
+    battle: resumed?.battle ?? null,
+  }
+}
+
+/** The encounter under way travels with the stored save only (onDisk), never in the save in play or the cloud's. */
+function withoutResume(save: SaveData): SaveData {
+  if (!('resume' in save)) return save
+  const { resume: _r, ...rest } = save
+  return rest
+}
+
+/** The save as this device stores it: with the encounter under way, if any, to play on from at the next load. */
+function onDisk(save: SaveData | null): SaveData | null {
+  if (!save) return null
+  const { run, battle } = useGame.getState()
+  const resume = snapshotOf(run, battle)
+  return resume ? { ...save, resume } : save
 }
 
 export const useGame = create<GameStore>()(() => ({
@@ -277,8 +309,6 @@ export const useGame = create<GameStore>()(() => ({
   contentSource: 'bundle',
   contentChecked: false,
   contentAsked: false,
-  run: initialRun(),
-  battle: null,
   auth: { status: 'unknown', userId: null, email: null },
   toasts: [],
 }))
@@ -291,6 +321,11 @@ function withViewer(data: GameData, auth: AuthState): GameData {
   const admin = auth.status === 'signed_in' && isAdminEmail(auth.email)
   return !!data.viewer?.admin === admin ? data : { ...data, viewer: { admin } }
 }
+// The encounter moves on (a roll, a K.O., the rewards) without the save always changing: stored with it each time, so
+// a reload finds it as it stood (onDisk). The write is the save's own debounced one, flushed when the page goes.
+useGame.subscribe((s, prev) => {
+  if ((s.run !== prev.run || s.battle !== prev.battle) && s.save) scheduleWrite(onDisk(s.save))
+})
 useGame.subscribe((s, prev) => {
   if (s.auth === prev.auth && s.data === prev.data) return
   const data = withViewer(s.data, s.auth)
@@ -325,7 +360,8 @@ export function onSaveCommitted(fn: SaveListener) {
 export function commitSave(next: SaveData | null, opts: { silent?: boolean; keepTimestamp?: boolean; auto?: boolean } = {}) {
   const { settings, data, save: prev } = useGame.getState()
   // Whatever arrives here (cloud pull, import, new game) is settled: HP scale, XP curve, one copy per species.
-  const settled = next ? settle(next, data) : null
+  // A stored copy read back (another tab's) may carry its encounter under way: that one is the other page's, not this one's.
+  const settled = next ? settle(withoutResume(next), data) : null
   const scaled = settled?.save ?? null
   const now = Date.now()
   // A save from before playedAt, changed on its own: last played no later than its stamp so far.
@@ -339,7 +375,7 @@ export function commitSave(next: SaveData | null, opts: { silent?: boolean; keep
       }
     : null
   useGame.setState({ save: stamped })
-  scheduleWrite(stamped)
+  scheduleWrite(onDisk(stamped))
   if (!opts.silent) for (const fn of saveListeners) fn(stamped, prev)
   for (const p of settled?.revived ?? [])
     pushToast(t('ui.toast.revivedFossil', { name: data.species[p.dex]?.name ?? `#${p.dex}` }), 'good', 4500)

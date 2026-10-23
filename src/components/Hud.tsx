@@ -6,7 +6,7 @@ import { donationEnabled, leaderboardUnlocked, undergroundLive } from '@/engine'
 import { useDexNew } from '@/lib/dexSeen'
 import { affordableUpgrades } from '@/lib/upgrades'
 import { pushToast, useGame } from '@/store/game'
-import { useInFight, useNavLock } from '@/store/hooks'
+import { useInFight, useLockReason, useNavLock } from '@/store/hooks'
 import { CloudSyncButton } from './CloudSyncButton'
 import { SupportModal } from './SupportModal'
 import { ExtremeBand } from './Extreme'
@@ -122,20 +122,26 @@ function NavEntry({ n, variant }: { n: NavItem; variant: 'side' | 'bottom' }) {
 function GoldButton() {
   const { t } = useT()
   const gold = useGame((s) => s.save?.gold ?? 0)
-  const inFight = !!useNavLock()
+  const why = useLockReason()
   const shown = useCountUp(gold)
   const bump = useGoldBump()
   const text = shown.toLocaleString(getLang())
+  const label = t('ui.nav.goldShop', { amount: gold.toLocaleString(getLang()) })
   return (
     <Link
       key={bump}
-      to={inFight ? '#' : '/shop'}
-      onClick={(e) => inFight && e.preventDefault()}
-      aria-disabled={inFight || undefined}
-      aria-label={t('ui.nav.goldShop', { amount: gold.toLocaleString(getLang()) })}
+      to={why ? '#' : '/shop'}
+      onClick={(e) => {
+        if (!why) return
+        e.preventDefault()
+        pushToast(why, 'info')
+      }}
+      aria-disabled={why ? true : undefined}
+      aria-label={why ? `${label}. ${why}` : label}
+      title={why ?? undefined}
       className={cx(
         'pixel-corners inline-flex min-h-[44px] light-scope shrink-0 items-center gap-1.5 bg-night px-2.5 text-[19px] leading-none text-gold-light md:min-h-[40px]',
-        inFight && 'pointer-events-none opacity-60',
+        why && 'opacity-60',
         bump > 0 && 'gold-bump',
       )}
     >
@@ -171,18 +177,18 @@ function RoundLink({ to, label, children, blocked, current, onBlocked }: { to: s
 
 /**
  * Top bar: energy on the left; on the right your gold (→ Poké Mart), the cup (→ the leaderboard, locked until the
- * first badge) and, last, you (your look, name and badges: the trainer menu). Menus mid-fight are disabled.
+ * first badge) and, last, you (your look, name and badges: the trainer menu). It stays up in battle: mid-fight the
+ * ways out (the Mart, the cup) are shut and say why, the rest (the sun or moon, the energy, the trainer menu) works.
  */
 export function Header() {
   const { t } = useT()
   const save = useGame((s) => s.save)
-  const lock = useNavLock()
-  const inFight = !!lock
+  const why = useLockReason()
   const { pathname } = useLocation()
   const boardOpen = useGame((s) => !!s.save && leaderboardUnlocked(s.save, s.data))
   if (!save) return null
-  // Before the first badge the cup is greyed; a tap says what opens it.
-  const blocked = inFight || !boardOpen
+  // Before the first badge the cup is greyed; a tap says what opens it. Mid-fight, a tap says the fight comes first.
+  const blocked = !!why || !boardOpen
   return (
     <header className="sticky top-0 z-40 bg-panel shadow-[0_2px_0_rgb(var(--c-edge)),0_4px_0_rgb(var(--c-edge)/0.13)]">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-2.5 md:max-w-none">
@@ -194,10 +200,10 @@ export function Header() {
         <GoldButton />
         <RoundLink
           to="/leaderboard"
-          label={t(lock === 'portal' ? 'ui.portal.locked' : inFight ? 'ui.nav.finishFight' : boardOpen ? 'ui.nav.leaderboard' : 'ui.nav.boardLocked')}
+          label={why ? `${t('ui.nav.leaderboard')}. ${why}` : t(boardOpen ? 'ui.nav.leaderboard' : 'ui.nav.boardLocked')}
           blocked={blocked}
           current={pathname === '/leaderboard'}
-          onBlocked={() => !inFight && pushToast(t('ui.nav.boardLocked'), 'info')}
+          onBlocked={() => pushToast(why ?? t('ui.nav.boardLocked'), 'info')}
         >
           <PixelIcon name="navRanks" size={30} />
         </RoundLink>

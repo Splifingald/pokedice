@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { energyNow, portalLock, type EnergyView } from '@/engine'
+import { useT } from '@/i18n/react'
 import { isAdminEmail } from '@/lib/supabase'
 import { useGame } from './game'
 
@@ -20,6 +21,16 @@ export function useNavLock(): 'fight' | 'portal' | null {
   const fight = useInFight()
   const portal = useGame((s) => !!portalLock(s.save, s.data))
   return fight ? 'fight' : portal ? 'portal' : null
+}
+
+/**
+ * Why the ways out of the page are shut right now (useNavLock), in words; null when they're open. What says it stays in
+ * reach (docs/15 §12): focusable, the reason in its name, and a tap says it again in a toast.
+ */
+export function useLockReason(): string | null {
+  const { t } = useT()
+  const lock = useNavLock()
+  return lock ? t(lock === 'portal' ? 'ui.portal.locked' : 'ui.nav.finishFight') : null
 }
 
 /** The clock, refreshed every `ms`. */

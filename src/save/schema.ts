@@ -416,6 +416,24 @@ export const saveSchema = z.object({
       detour: z.object({ from: z.string(), to: z.string(), rounds: z.number().int().min(0) }).optional(),
     })
     .optional(),
+  // An encounter under way when the page was left (src/store/resume.ts). Only its outline is checked here: the store
+  // checks the rest against the save and the content before playing on. One that doesn't fit is dropped, never the save
+  // (`catch`), so an older or a damaged one costs the encounter at worst. An optional field: no new save version.
+  resume: z
+    .object({
+      v: z.literal(1),
+      run: z.record(z.unknown()),
+      battle: z
+        .object({
+          id: z.number().int().min(0),
+          state: z.record(z.unknown()),
+          log: z.array(z.unknown()).max(20_000),
+        })
+        .nullable(),
+      rng: z.object({ run: z.number().int().min(0), battle: z.number().int().min(0) }),
+    })
+    .optional()
+    .catch(undefined),
 })
 
 /**

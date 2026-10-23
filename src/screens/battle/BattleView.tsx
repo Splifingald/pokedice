@@ -198,7 +198,8 @@ export interface VersusReplay {
 
 export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: VersusReplay }) {
   const { t } = useT()
-  useHoldFullscreen()
+  // Full screen, the top bar kept: what's in it stays in reach mid-fight (docs/15 §12).
+  useHoldFullscreen(true, true)
   // Read through a ref, so a new `versus` object each render doesn't restart the timers that use it.
   const versusRef = useRef(versus)
   versusRef.current = versus
@@ -256,11 +257,13 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       ? enc.spriteUrl
       : null
 
-  // The entrances: a legendary's timeline, or the trainer stepping onto the field; then the foe; then yours.
-  const [bossIntro, setBossIntro] = useState(st.kind === 'boss' && level !== 'off')
-  const [trainerIntro, setTrainerIntro] = useState(isTrainerFight && !quick)
+  // The entrances: a legendary's timeline, or the trainer stepping onto the field; then the foe; then yours. A fight
+  // picked up from the last visit (store/resume.ts) has had them: everyone is out already.
+  const resumed = !!battle.resumed
+  const [bossIntro, setBossIntro] = useState(st.kind === 'boss' && level !== 'off' && !resumed)
+  const [trainerIntro, setTrainerIntro] = useState(isTrainerFight && !quick && !resumed)
   const [foeOut, setFoeOut] = useState(!bossIntro && !trainerIntro)
-  const [ownOut, setOwnOut] = useState(quick)
+  const [ownOut, setOwnOut] = useState(quick || resumed)
   const intro = bossIntro || trainerIntro || !ownOut
 
   // A wild or legendary foe the player can still catch isn't knocked out of the scene: the catch throw comes next. A
@@ -404,8 +407,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     const onKey = (e: KeyboardEvent) => {
       if (!(canAct || stunned) || auto || menu || (e.target as HTMLElement)?.tagName === 'INPUT') return
       if (e.key === ' ' || e.key === 'Enter') {
-        // A focused button answers Enter/Space itself.
-        if ((e.target as HTMLElement)?.closest?.('button')) return
+        // A focused button or link answers Enter/Space itself (the top bar's too, which stays up in battle).
+        if ((e.target as HTMLElement)?.closest?.('button, a[href]')) return
         e.preventDefault()
         dispatch(stunned ? { t: 'PASS' } : st.phase === 'player_roll' ? { t: 'ROLL' } : { t: 'ATTACK' })
       } else if (e.key.toLowerCase() === 'r' && rolling) dispatch({ t: 'REROLL' })
@@ -884,10 +887,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     <BattleContexts pace={pace} motionCap={motionCap}>
       {/* Wide screens: the stage as big as the height allows (3:2, with the message, dice and actions under it still in
           view: ≈340px); the Bag and the team on its left, the history on its right. */}
-      <div className="mx-auto w-full lg:grid lg:grid-cols-[220px_minmax(0,calc((100dvh-340px)*1.5))_300px] lg:items-start lg:justify-center lg:gap-4 lg:p-4">
+      <div className="mx-auto w-full lg:grid lg:grid-cols-[220px_minmax(0,calc((100dvh_-_340px_-_var(--top-bar,0px))_*_1.5))_300px] lg:items-start lg:justify-center lg:gap-4 lg:p-4">
         <section
           aria-label={heading}
-          className="mx-auto flex min-h-[100dvh] w-full max-w-[max(300px,min(560px,calc((100dvh_-_330px)_*_1.5)))] flex-col lg:min-h-0 lg:max-w-none"
+          className="mx-auto flex min-h-[calc(100dvh_-_var(--top-bar,0px))] w-full max-w-[max(300px,min(560px,calc((100dvh_-_330px_-_var(--top-bar,0px))_*_1.5)))] flex-col lg:min-h-0 lg:max-w-none"
         >
           <h1 className="sr-only">{heading}</h1>
           {stage}
@@ -1062,7 +1065,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         )}
         {wide && (
           // The history runs the page's whole height, and stays there while the page scrolls.
-          <aside className="sticky top-4 flex h-[calc(100dvh-2rem)] flex-col gap-2">
+          <aside className="sticky top-[calc(var(--top-bar,0px)_+_1rem)] flex h-[calc(100dvh_-_2rem_-_var(--top-bar,0px))] flex-col gap-2">
             <BattleHistory battle={battle} cursor={fx.cursor} defaultOpen fill />
             {canAct && !auto && (
               <p className="m-0 font-pixel-sm text-[15px] text-muted">
