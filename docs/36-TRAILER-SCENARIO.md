@@ -4,7 +4,7 @@ A trailer for Pokédice, written shot by shot first, then built from the game's 
 Every timecode is in seconds from the start (frames at 60 fps: `f` = s × 60). This file is the reference for the
 build; change it here first.
 
-**Status (2026-10-23): version 2 built** on `claude/pokedice-trailer-video-5jq0o9`, **61 s**. The video's name:
+**Status (2026-10-23): version 3 built** on `claude/pokedice-trailer-video-5jq0o9`, **60 s**. The video's name:
 **Pokédice - Web Game Trailer** (never shown on screen).
 
 Version 1 (22 s) went by too fast to understand, the user said. Version 2 follows their notes (§11): a longer pause on
@@ -13,6 +13,10 @@ held; the whole evolution; Charizard's five dice with two Flying ones, a long sl
 the Mega Evolution and the Gigantamax each full screen; four bosses together, then four raids together, no trade
 there; slower features; in the lab, the balls stay shut and the camera closes in on the middle one while it shakes.
 
+Version 3, the user's next notes: no damage formula on screen; Charmander rolls two dice, 3 + 4 = 7, easy to add up
+without one; Charmeleon three dice with a pair; MYTHICAL BOSSES; the end card 2 s longer with MOBILE FRIENDLY and
+DISCORD COMMUNITY instead of the Discord link, and a better Discord mark; every pixel image clear (§0).
+
 ## 0. The rules of the trailer
 
 - **About 70 % the game, 30 % trailer.** The Pokémon sprites, the dice, the Daybreak palette, the Jersey fonts, the
@@ -20,12 +24,18 @@ there; slower features; in the lab, the balls stay shut and the camera closes in
   are the game's (`src/fx/timelines`, `src/components/Die.tsx`, `docs/15-UI-GUIDELINES.md`). On top of them: camera
   moves, close-ups on the battle area, the dice as an overlay, the damage worked out on screen, speed lines, impact
   frames, an ink freeze, confetti, music.
-- **It explains.** Every roll shows each die's value, then the game's formula: (the dice + the combo's bonus) × the
-  type's multiplier = the damage, using the game's real numbers (combo bonuses from `upgrades.json`, the type chart).
-  The captions are the game's own battle lines (`strings.csv`).
+- **It explains, without a formula.** Every roll shows each die's value, the combo's chip when there is one, and the
+  damage, big. The numbers stay simple enough to add up at a glance: 3 + 4 = 7; 5 + 5 + 2 and a pair = 14; five 5s and
+  a maxed Five of a Kind (+70, `upgrades.json` level 10) = 95. To keep them that simple, the first two fights leave out
+  the type chart's ×2 (Fire on Grass, Fire on Bug); the third is neutral anyway. The captions are the game's own
+  battle lines (`strings.csv`).
 - **Always the battle area** in the fights and the big moments; menus only in the features, as cut-ins.
-- **Square pixels.** The art is drawn small and scaled up nearest-neighbour: the stage at ×8 to ×17, the title and the
-  end card at ×3 (640×360), the dice overlay at ×4.
+- **Clear pixels.** The art is drawn small and scaled up nearest-neighbour at whole scales: the stage at ×8 to ×10,
+  the title and the end card at ×3 (640×360), the dice overlay at ×4. Anything at a fractional scale — the area
+  pictures (400 px for 288 scene pixels), the lab, the Versus stadium, a camera zooming — goes through sharp scaling
+  (`sharpDraw`: a whole-number nearest-neighbour blow-up, then a smooth last fraction), so no pixel comes out wider
+  than its neighbours. Big Pokémon, which the game shrinks to 80 art pixels by dropping rows, are shrunk smoothly
+  with hard edges instead; the raid openings use the sprites at their own size, at ×1 or ×2.
 - **Format.** 1920×1080, 60 fps, H.264 + AAC at −14 LUFS. 16:9 first; a vertical cut may come later.
 
 ## 1. The beat sheet
@@ -33,18 +43,18 @@ there; slower features; in the lab, the balls stay shut and the camera closes in
 | # | Part | From | To | What |
 |---|---|---|---|---|
 | 1 | Title | 0 | 4 | Dice roll and spell POKÉDICE, long hold |
-| 2 | Fight 1 | 4 | 10 | Charmander vs Bulbasaur: a pair, explained |
-| 3 | Evolution | 10 | 13 | Charmander → Charmeleon, the whole morph |
-| 4 | Fight 2 | 13 | 20 | Charmeleon vs Scyther: a reroll, three of a kind |
-| 5 | Fight 3 | 20 | 29.5 | Mewtwo's entrance; Charizard's five 5s in slow motion, a celebration |
-| 6 | Rayquaza | 29.5 | 34 | Its raid opening, full screen |
-| 7 | Mega Evolution | 34 | 37 | Charizard → Mega Charizard X, full screen |
-| 8 | Gigantamax | 37 | 40 | Gengar → G-Max Gengar, full screen |
-| 9 | Bosses | 40 | 43.5 | Mew, Celebi, Jirachi, Shaymin, together |
-| 10 | Raids | 43.5 | 47 | Lugia, Groudon, Palkia, Zacian, together |
-| 11 | Features | 47 | 53 | Friends, Versus, Trading, Co-op raids, Co-op Day Care, 1.2 s each |
-| 12 | The choice | 53 | 57.5 | Oak's lab: the balls drop, the middle one shakes, "What's your choice?" |
-| 13 | End card | 57.5 | 61 | The dice logo, website, Discord |
+| 2 | Fight 1 | 4 | 9 | Charmander vs Bulbasaur: two dice, 3 + 4 = 7 |
+| 3 | Evolution | 9 | 12 | Charmander → Charmeleon, the whole morph |
+| 4 | Fight 2 | 12 | 17 | Charmeleon vs Scyther: three dice, a pair, 14 |
+| 5 | Fight 3 | 17 | 26.5 | Mewtwo's entrance; Charizard's five 5s in slow motion, a celebration, 95 |
+| 6 | Rayquaza | 26.5 | 31 | Its raid opening, full screen |
+| 7 | Mega Evolution | 31 | 34 | Charizard → Mega Charizard X, full screen |
+| 8 | Gigantamax | 34 | 37 | Gengar → G-Max Gengar, full screen |
+| 9 | Bosses | 37 | 40.5 | Mew, Celebi, Jirachi, Shaymin, together: MYTHICAL BOSSES |
+| 10 | Raids | 40.5 | 44 | Lugia, Groudon, Palkia, Zacian, together |
+| 11 | Features | 44 | 50 | Friends, Versus, Trading, Co-op raids, Co-op Day Care, 1.2 s each |
+| 12 | The choice | 50 | 54.5 | Oak's lab: the balls drop, the middle one shakes, "What's your choice?" |
+| 13 | End card | 54.5 | 60 | The dice logo, website, MOBILE FRIENDLY, DISCORD COMMUNITY |
 
 The music is 120 BPM (a beat is 0.5 s).
 
@@ -67,89 +77,89 @@ face; the letters are the game's own bitmap font (three texels a dot), so their 
 | 1.75–3.7 | The camera pushes in and drifts; `A dice battler` comes in under the row and holds. | The riff, a held chord. |
 | 3.7–4 | The É die flies at the camera and fills the screen. | A snare pickup. |
 
-## 3. The fights (4 → 29.5)
+## 3. The fights (4 → 26.5)
 
 The stage at ×8–×10 on the area's picture. The plates: the foe's top left, yours bottom right. The dice are an
 overlay over a dark band at the bottom: thrown in from the left, rolling, stopping on their faces; each die's value
-pops up over it; picked dice lift with the red ring and are thrown again; the combo's dice ring gold. Above them the
-damage builds term by term, each combo and multiplier named in a chip over its number, then the result slams in.
+pops up over it; picked dice lift with the red ring and are thrown again; the combo's dice ring gold and its chip
+appears; the damage slams in above them. No formula.
 
-### Fight 1, Charmander vs a wild Bulbasaur (4 → 10)
+### Fight 1, Charmander vs a wild Bulbasaur (4 → 9)
 
 | Time | Picture | Sound |
 |---|---|---|
 | 4 | Route 1; the plates slide in; `What will Charmander do?` | Bulbasaur's cry. |
-| 4.7–5.3 | Three Fire dice land 4 · 4 · 2; the values pop up. | `rattle`, `land`s. |
-| 5.6–6.9 | `(4 + 4 + 2` · `+ 2)` under **PAIR** (the two 4s ring gold) · `× 2` under **SUPER EFFECTIVE** (Fire on Grass) · `= 24`. Held to 7.7. | |
-| 7.7–8.6 | Flamethrower, `-24`, Bulbasaur faints. | `super`, `faint`. |
-| 8.9–10 | `Charmander grew to Lv.16!`; it glows white and the white takes the screen. | `levelup`. |
+| 4.7–5.2 | Two Fire dice land 3 · 4; the values pop up. | `rattle`, `land`s. |
+| 5.65 | `7` slams in. Held to 6.8. | |
+| 6.8–7.7 | Flamethrower, `-7`, Bulbasaur faints. | `super`, `faint`. |
+| 8–9 | `Charmander grew to Lv.16!`; it glows white and the white takes the screen. | `levelup`. |
 
-### The evolution (10 → 13)
+### The evolution (9 → 12)
 
 The game's evolution, nearly whole (1.9× its speed): the light gathers, the silhouette morphs, the burst, Charmeleon
 standing in its light. `What? Charmander is evolving!`, then `Charmander evolved into Charmeleon!` and its cry.
 
-### Fight 2, Charmeleon vs a trainer's Scyther (13 → 20)
+### Fight 2, Charmeleon vs a trainer's Scyther (12 → 17)
 
 | Time | Picture | Sound |
 |---|---|---|
-| 13–13.9 | Viridian Forest. Scyther (a party of 3) strikes first; Charmeleon's HP drops to yellow. | Scyther's cry, a hit. |
-| 14–14.6 | Three Fire dice and a Normal one land 6 · 2 · 6 · 3. | `rattle`. |
-| 15–16.4 | `Tap dice to throw them again.` The 2 and the 3 lift with the red ring, are thrown again and land 6 and 3. | `rattle`. |
-| 16.7–17.9 | `(6 + 6 + 6 + 3` · `+ 6)` under **THREE OF A KIND** · `× 2` under **SUPER EFFECTIVE** · `= 54`. Held to 18.6. | |
-| 18.6–19.75 | Flamethrower, `-54`, Scyther faints, the Boulder Badge spins in. | `super`, `faint`, `gold`. |
-| 19.75–20 | The screen burns from the bottom. | |
+| 12–12.9 | Viridian Forest. Scyther (a party of 3) strikes first. | Scyther's cry, a hit. |
+| 13–13.55 | Two Fire dice and a Normal one land 5 · 5 · 2; the values pop up. | `rattle`. |
+| 13.95 | The two 5s ring gold, the `PAIR` chip. | `gold`. |
+| 14.35 | `14` slams in. Held to 15.4. | |
+| 15.4–16.75 | Flamethrower, `-14`, Scyther faints, the Boulder Badge spins in; the screen burns from the bottom. | `super`, `faint`, `gold`. |
 
-### Fight 3, Charizard vs Mewtwo (20 → 29.5)
+### Fight 3, Charizard vs Mewtwo (17 → 26.5)
 
 | Time | Picture | Sound |
 |---|---|---|
-| 20–21.8 | Cerulean Cave: Mewtwo's legendary entrance, its name card. | Heartbeats, its cry. |
-| 21.8–22.5 | Low and close on Charizard. | Its cry. |
-| 22.6–23.3 | Five dice, **three Fire and two Flying**, land 5 · 5 · 5 · 5 · 2. | |
-| 23.7–24.4 | `Tap dice to throw them again.` The 2 (a Flying die) lifts and is thrown again. | |
-| 24.55–26.92 | **The slow motion**: the camera closes in on that die as it turns at a twelfth of its speed, the stage dark and pulsing with a heartbeat. | The music stops: a heartbeat, a long riser. |
-| 26.92 | It lands on 5: five 5s. The dice flash white and ring gold, gold rays turn behind them, confetti bursts, the dice hop, **FIVE OF A KIND!** slams in huge. | A fanfare in D major. |
-| 27.4–28.3 | `5 + 5 + 5 + 5 + 5` · `+ 70` under **FIVE OF A KIND** (maxed, as a Charizard this far along has it) · `= 95`. | |
-| 28.6–29.5 | Flamethrower; on the hit a white impact frame, then the two as ink silhouettes on white, then colour as Mewtwo's HP empties; cut to black. | The biggest hit. |
+| 17–18.8 | Cerulean Cave: Mewtwo's legendary entrance, its name card. | Heartbeats, its cry. |
+| 18.8–19.5 | Low and close on Charizard. | Its cry. |
+| 19.6–20.3 | Five dice, **three Fire and two Flying**, land 5 · 5 · 5 · 5 · 2. | |
+| 20.7–21.4 | `Tap dice to throw them again.` The 2 (a Flying die) lifts and is thrown again. | |
+| 21.55–23.92 | **The slow motion**: the camera closes in on that die as it turns at a twelfth of its speed, the stage dark and pulsing with a heartbeat. | The music stops: a heartbeat, a long riser. |
+| 23.92 | It lands on 5: five 5s. The dice flash white and ring gold, gold rays turn behind them, confetti bursts, the dice hop, **FIVE OF A KIND!** slams in huge. | A fanfare in D major. |
+| 24.82 | `95` slams in under it. | |
+| 25.6–26.5 | Flamethrower; on the hit a white impact frame, then the two as ink silhouettes on white, then colour as Mewtwo's HP empties; cut to black. | The biggest hit. |
 
-## 4. The big moments (29.5 → 47)
+## 4. The big moments (26.5 → 44)
 
 | Time | Picture |
 |---|---|
-| 29.5–34 | **Rayquaza's raid opening**, full screen (`RaidIntro.tsx`, redrawn landscape in `trailer/lib/raidIntro.ts`): the alarm and its hazard tapes, the storm and lightning, the silhouette rising, the pillar of light, the reveal, `RAID BATTLE / RAYQUAZA` and its five HP bars filling. |
-| 34–37 | **Mega Evolution**, full screen, on the Indigo Plateau: Charizard → Mega Charizard X. `Charizard Mega Evolved into Mega Charizard X!` |
-| 37–40 | **Gigantamax**, full screen, in Pokémon Tower: Gengar → G-Max Gengar. `Gengar Gigantamaxed!` |
-| 40–43.5 | **Four legendary bosses** in a 2×2 grid, their entrances a beat apart: Mew (Faraway Island), Celebi (Ilex Forest), Jirachi (a summit), Shaymin (a flower field). A `LEGENDARY BOSSES` chip where the tiles meet. |
-| 43.5–47 | **Four raids** in a 2×2 grid, each one's raid opening: Lugia, Groudon, Palkia, Zacian. A `RAIDS WITH FRIENDS` chip. White takes the screen at the end. |
+| 26.5–31 | **Rayquaza's raid opening**, full screen (`RaidIntro.tsx`, redrawn landscape in `trailer/lib/raidIntro.ts`): the alarm and its hazard tapes, the storm and lightning, the silhouette rising, the pillar of light, the reveal, `RAID BATTLE / RAYQUAZA` and its five HP bars filling. |
+| 31–34 | **Mega Evolution**, full screen, on the Indigo Plateau: Charizard → Mega Charizard X. `Charizard Mega Evolved into Mega Charizard X!` |
+| 34–37 | **Gigantamax**, full screen, in Pokémon Tower: Gengar → G-Max Gengar. `Gengar Gigantamaxed!` |
+| 37–40.5 | **Four mythical bosses** in a 2×2 grid, their entrances a beat apart: Mew (Faraway Island), Celebi (Ilex Forest), Jirachi (a summit), Shaymin (a flower field). A `MYTHICAL BOSSES` chip where the tiles meet. |
+| 40.5–44 | **Four raids** in a 2×2 grid, each one's raid opening: Lugia, Groudon, Palkia, Zacian. A `RAIDS WITH FRIENDS` chip. White takes the screen at the end. |
 
 Each tile has a 12-px ink border and its star's type colour as a rim; each part opens on a white frame.
 
-## 5. The features (47 → 53)
+## 5. The features (44 → 50)
 
 Five cut-ins of 1.2 s. The word slams in bottom left (Jersey 25, white, ink outline, a gold bar under it).
 
 | Time | Picture | Word |
 |---|---|---|
-| 47 | Three friends' cards slide in: trainer sprite, name (the first golden), friend ID, their Pokémon, the online dot. | `FRIENDS` |
-| 48.2 | The Versus stadium: Red and Green slide in, `VS` slams in, each side's dice hop onto the field. | `VERSUS` |
-| 49.4 | The trade's arrival: the ball comes down the beam, bounces, opens on Alakazam. | `TRADING` |
-| 50.6 | A sea cave: Kyogre with five HP bars, Charizard, Blastoise and Venusaur, three trainers' cards, three dice landing over each ally, the last bar draining. | `CO-OP RAIDS` |
-| 51.8 | The Day Care yard: Ditto and a friend's Dragonite (its `FRIEND'S` tag) hop toward each other, a heart, an Egg pops up and wobbles. | `CO-OP DAY CARE` |
+| 44 | Three friends' cards slide in: trainer sprite, name (the first golden), friend ID, their Pokémon, the online dot. | `FRIENDS` |
+| 45.2 | The Versus stadium: Red and Green slide in, `VS` slams in, each side's dice hop onto the field. | `VERSUS` |
+| 46.4 | The trade's arrival: the ball comes down the beam, bounces, opens on Alakazam. | `TRADING` |
+| 47.6 | A sea cave: Kyogre with five HP bars, Charizard, Blastoise and Venusaur, three trainers' cards, three dice landing over each ally, the last bar draining. | `CO-OP RAIDS` |
+| 48.8 | The Day Care yard: Ditto and a friend's Dragonite (its `FRIEND'S` tag) hop toward each other, a heart, an Egg pops up and wobbles. | `CO-OP DAY CARE` |
 
-## 6. The choice (53 → 57.5)
+## 6. The choice (50 → 54.5)
 
 | Time | Picture | Sound |
 |---|---|---|
-| 53–54.2 | Oak's lab (`StarterScene` on the lab picture): the three Poké Balls drop onto their cradles. They stay shut. | The game's drop and land sounds. |
-| 54.3–56 | The camera closes in on the middle ball (×8 → ×17) while it shakes in bursts, like one about to open. | A rattle per shake, a quiet arpeggio. |
-| 55.7–57.5 | The game's dialogue box: `What's your choice?` types in, its ▼ blinks. | A blip per letter, the music hangs on its A chord. |
+| 50–51.2 | Oak's lab (`StarterScene` on the lab picture): the three Poké Balls drop onto their cradles. They stay shut. | The game's drop and land sounds. |
+| 51.3–53 | The camera closes in on the middle ball (×8 → ×17) while it shakes in bursts, like one about to open. | A rattle per shake, a quiet arpeggio. |
+| 52.7–54.5 | The game's dialogue box: `What's your choice?` types in, its ▼ blinks. | A blip per letter, the music hangs on its A chord. |
 
-## 7. End card (57.5 → 61)
+## 7. End card (54.5 → 60)
 
 The title's navy backdrop. The POKÉDICE dice drop into their crooked row, ring gold, a gold ring pulses under them;
-`PLAY FREE IN YOUR BROWSER`, `poke-dice.netlify.app`, the Discord badge and `discord.gg/XKJQYw3p9`, the fan-made
-line. Fade to black at 60.7–61. The last chord in D major rings out.
+`PLAY FREE IN YOUR BROWSER`, `poke-dice.netlify.app`, then two badges side by side — a pixel phone and **MOBILE
+FRIENDLY**, Discord's mark (redrawn in pixels: its blurple badge and white face) and **DISCORD COMMUNITY** — and the
+fan-made line. No Discord link. Fade to black at 59.7–60. The last chord in D major, then a slow arpeggio, ring out.
 
 ## 8. Sound
 
@@ -190,3 +200,6 @@ Not built yet.
    Charizard with two Flying dice, five 5s, a huge slow motion and a big celebration; Rayquaza, Mega and Gigantamax
    full screen; four bosses (Mew, Celebi, Jirachi, Shaymin) then four raids (Lugia, Groudon, Palkia, Zacian), no trade
    in the montage; slower features; the lab's balls don't open, the camera zooms on the middle one while it shakes.
+5. After version 2: no damage formula; Charmander two dice, 3 + 4 = 7; Charmeleon three dice with a pair; Charizard
+   as is, without the formula; MYTHICAL BOSSES; the end card 2 s longer, MOBILE FRIENDLY and DISCORD COMMUNITY instead
+   of the Discord link, a better Discord logo; every pixel image clear, whatever the zoom or the aspect ratio.

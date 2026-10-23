@@ -56,7 +56,7 @@ For local cloud/admin work, copy `.env.example` to `.env.local` and fill it in. 
 | `pnpm balance [N] [seed]` | Simulated campaign with an upgrade-buying policy (the same engine as the admin Campaign simulator); reports fight length per area. `GOLD=0.8 HP=1.6 pnpm balance` tries other multipliers |
 | `pnpm balance table` | Every starter of every region over seeds 1–6 — the summary table of [docs/06](docs/06-REGION-BALANCE.md) |
 | `pnpm import-bundle <file>` | Turns an admin *Export bundle* download into `src/data/*.json` + `seed.sql` to commit |
-| `pnpm trailer` | Renders the 61-second trailer ([docs/36](docs/36-TRAILER-SCENARIO.md)) from the game's own animations to `trailer/out/pokedice-trailer.mp4`: Vite serves `trailer/`, Chromium draws each frame, ffmpeg encodes. `--stills 0,150` writes single frames. Needs ffmpeg |
+| `pnpm trailer` | Renders the 60-second trailer ([docs/36](docs/36-TRAILER-SCENARIO.md)) from the game's own animations to `trailer/out/pokedice-trailer.mp4`: Vite serves `trailer/`, Chromium draws each frame, ffmpeg encodes. `--stills 0,150` writes single frames. Needs ffmpeg |
 
 ## The UI
 
