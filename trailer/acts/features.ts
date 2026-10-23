@@ -100,10 +100,11 @@ function trading(g: G, f: number) {
 }
 
 // ---------------------------------------------------------------- 4. co-op raids
+// Hoenn's three starters at their last stage (Blaziken, Swampert, Sceptile) against Hoenn's Kyogre.
 const ALLIES: [number, number][] = [
-  [6, 44],
-  [9, 120],
-  [3, 196],
+  [257, 44],
+  [260, 120],
+  [254, 196],
 ]
 const RAID_FILLS = [TYPE.fire, TYPE.water, TYPE.grass]
 const RAID_DICE = [
@@ -124,9 +125,9 @@ function raids(g: G, f: number, T: number) {
   for (let i = 0; i < 3; i++) hpBar(g, 520 + i * 300, 40, 280, 22, i < 2 ? 1 : 1 - span(f, 0.85, 1.05))
   // The three trainers cut in, like the raid's opening.
   const trio: [string, number][] = [
-    ['/characters/red.png', 6],
-    ['/characters/green.png', 9],
-    ['/trainers/classes/cooltrainer-f.png', 3],
+    ['/characters/red.png', 257],
+    ['/characters/green.png', 260],
+    ['/trainers/classes/cooltrainer-f.png', 254],
   ]
   trio.forEach(([src, d], i) => {
     const p = outBack(span(f, i * 0.08, i * 0.08 + 0.22), 1.4)
@@ -193,9 +194,9 @@ export const features: Act = {
       loadMon(65),
       loadMon(64),
       loadMon(382),
-      loadMon(6, true),
-      loadMon(9, true),
-      loadMon(3, true),
+      loadMon(257, true),
+      loadMon(260, true),
+      loadMon(254, true),
       loadMon(132),
       loadMon(149),
     ])

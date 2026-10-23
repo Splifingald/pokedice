@@ -155,7 +155,7 @@ Five cut-ins of 1.2 s. The word slams in bottom left (Jersey 25, white, ink outl
 | 44 | Three friends' cards slide in: trainer sprite, name (the first golden), friend ID, their Pokémon, the online dot. | `FRIENDS` |
 | 45.2 | The Versus stadium: Red and Green slide in, `VS` slams in, each side's dice hop onto the field. | `VERSUS` |
 | 46.4 | The trade's arrival: the ball comes down the beam, bounces, opens on Alakazam. | `TRADING` |
-| 47.6 | A sea cave: Kyogre with three HP bars, Charizard, Blastoise and Venusaur, three trainers' cards, three dice landing over each ally, the last bar draining. | `CO-OP RAIDS` |
+| 47.6 | A sea cave: Kyogre with three HP bars, Blaziken, Swampert and Sceptile (Hoenn's starters, last stage), three trainers' cards, three dice landing over each ally, the last bar draining. | `CO-OP RAIDS` |
 | 48.8 | The Day Care yard: Ditto and a friend's Dragonite (its `FRIEND'S` tag) hop toward each other, a heart, an Egg pops up and wobbles. | `CO-OP DAY CARE` |
 
 ## 6. The choice (50 → 54.5)
@@ -258,3 +258,4 @@ its own score `scoreSocial`). 1920×1080 like the main one. No title: it opens o
 12. A portrait version for scrollable social media (TikTok, Shorts), with small layout changes for legibility (§9).
 13. Rayquaza's raid in the Sky Pillar (the background made for the promo video), not the default storm; every raid
     with three HP bars, not five (the four raids, Kyogre's co-op raid).
+14. The co-op raid against Kyogre with Hoenn's starters at their last stage (Blaziken, Swampert, Sceptile).
