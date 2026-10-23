@@ -1,12 +1,12 @@
 // Act 1, the title (0 → 4 s): eight pixel-art dice thrown onto a dark floor patterned with Poké Balls roll right to
-// left and stop, a little crooked, on the letters P O K É D I C E. The gold combo ring, a long hold on the word with
-// "A dice battler" under it, then the É die flies at the camera and its yellow fills the screen.
+// left and stop, a little crooked, on the letters P O K É D I C E, under a still camera. The gold combo ring, a long
+// hold on the word with "A dice battler" under it, then the É die flies at the camera and its yellow fills the screen.
 import { canvas, ellipseLine } from '@/fx/pixel'
 import { ACT, hit } from '../lib/clock'
 import { play } from '../lib/audio'
 import { pokeballBackdrop } from '../lib/backdrop'
 import { drawDie, drawShadow, faceTexture, FACES, project, restOn, throwAt, type DieDraw, type Throw, type View } from '../lib/cube'
-import { clamp, GOLD, OH, OW, outBack, span, text, TYPE, wash } from '../lib/draw'
+import { GOLD, OH, OW, span, text, TYPE, wash } from '../lib/draw'
 import { sharpDraw } from '../lib/stage'
 import type { Act } from '../main'
 
@@ -75,7 +75,6 @@ export function drawLogoScene(t: number, v: View, bgT: number, { combo = -1, fla
 
 const T0 = ACT.title[0]
 const COMBO = 1.5
-const PUSH = 1.75
 const FLY = 3.72
 
 export const title: Act = {
@@ -83,10 +82,8 @@ export const title: Act = {
   load: async () => {},
   render(g, T) {
     const t = T - T0
-    // The camera trails the dice a little, then pushes in on the beat and drifts in while the word holds.
-    const pan = 30 * (1 - clamp(t / 1.3)) ** 2
-    const push = PUSH <= t ? 1 + 0.1 * outBack(span(t, PUSH, PUSH + 0.35), 1.2) + 0.04 * span(t, PUSH + 0.35, FLY) : 1
-    const v: View = { tilt: (60 * Math.PI) / 180, cs: 2.05 * push, cx: LW / 2 - pan * push, cy: LH * 0.52 }
+    // A still camera: only the dice move.
+    const v: View = { tilt: (60 * Math.PI) / 180, cs: 2.15, cx: LW / 2, cy: LH * 0.52 }
     const { dice } = drawLogoScene(t, v, t, { combo: COMBO, flash: COMBO })
     // The combo: a gold ring rushes out over the floor, in art pixels.
     if (t >= COMBO && t < COMBO + 0.6) {

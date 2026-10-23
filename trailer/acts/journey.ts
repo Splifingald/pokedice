@@ -10,12 +10,12 @@ import { evolveTimeline } from '@/fx/timelines/moments'
 import { ACT, hit } from '../lib/clock'
 import { cry, play } from '../lib/audio'
 import { drawTray, restScreen, slowLanding, TRAY_H, TRAY_K, TRAY_W, type TrayPlan } from '../lib/dice'
-import { bottomShade, inOut, INK, OH, OW, outBack, outCubic, rect, span, speedLines, text, TYPE, wash, type G } from '../lib/draw'
+import { bottomShade, INK, OH, OW, outBack, outCubic, rect, span, speedLines, text, TYPE, wash, type G } from '../lib/draw'
 import { blit, boulderBadge, caption, celebrate, comboChip, damageSlam, foePlate, ownPlate, valuePops } from '../lib/hud'
 import { Run } from '../lib/run'
 import { idle, playAt } from '../lib/scene'
 import { loadMon, mon } from '../lib/sprites'
-import { camLerp, clampCam, drawStage, loadPicture, picture, sharpDraw, type Cam } from '../lib/stage'
+import { clampCam, drawStage, loadPicture, picture, sharpDraw, type Cam } from '../lib/stage'
 import type { Act } from '../main'
 
 const T0 = ACT.journey[0]
@@ -123,16 +123,9 @@ function tray(g: G, plan: TrayPlan, u: number, zoom = 1, on = 0) {
 }
 const at = (n: number) => (i: number) => restScreen(n, i)
 
-/** A camera path: keyframes [time, cam], eased between. */
-function path(u: number, keys: [number, Cam][]): Cam {
-  if (u <= keys[0]![0]) return keys[0]![1]
-  for (let i = 1; i < keys.length; i++) {
-    const [t1, c1] = keys[i]!
-    const [t0, c0] = keys[i - 1]!
-    if (u <= t1) return camLerp(c0, c1, inOut(span(u, t0, t1)))
-  }
-  return keys[keys.length - 1]![1]
-}
+// The fights' two shots: the whole stage, and Charizard close and low.
+const STAGE: Cam = { x: 120, y: 86, z: 8 }
+const CLOSE: Cam = { x: 70, y: 114, z: 10 }
 
 const shakeAt = (u: number, at: number, amp: number, dur = 0.3) => {
   const p = (u - at) / dur
@@ -147,21 +140,11 @@ const idleAt = (r: Run, u: number) => (r.at(u), r.draw())
 function fight1(g: G, u: number) {
   const r = runs!
   const pic = picture('meadow')
-  const cam = path(u, [
-    [0, { x: 160, y: 76, z: 9 }],
-    [0.6, { x: 152, y: 80, z: 9 }],
-    [1.1, { x: 122, y: 86, z: 8 }],
-    [F1.attack, { x: 122, y: 86, z: 8 }],
-    [F1.attack + 0.12, { x: 92, y: 108, z: 9 }],
-    [F1.attack + 0.3, { x: 98, y: 106, z: 9 }],
-    [F1.attack + 0.4, { x: 158, y: 80, z: 9 }],
-    [F1.faint + 0.2, { x: 150, y: 82, z: 9 }],
-    [F1.level, { x: 110, y: 96, z: 8 }],
-    [5, { x: 92, y: 110, z: 10 }],
-  ])
+  // One still shot of the whole stage: the action moves, the camera doesn't.
+  const cam = STAGE
   const attack = u >= F1.attack && u < F1.faint
   const layer = attack ? playAt(r.f1fire, u, F1.attack, 0.7, 1.6) : idleAt(r.f1idle, u)
-  drawStage(g, pic, [layer], clampCam(cam, pic), undefined, { shake: shakeAt(u, C1, 18) })
+  drawStage(g, pic, [layer], clampCam(cam, pic), undefined, { shake: shakeAt(u, C1, 9) })
   if (hit(T0 + 0.05)) cry(1)
   if (hit(T0 + C1)) play('super')
   if (hit(T0 + F1.faint)) play('faint')
@@ -193,21 +176,12 @@ function evolution(g: G, u: number) {
 function fight2(g: G, u: number) {
   const r = runs!
   const pic = picture('forest')
-  const cam = path(u, [
-    [F2.cut, { x: 150, y: 80, z: 9 }],
-    [F2.strike + 0.15, { x: 98, y: 104, z: 9 }],
-    [F2.throw - 0.1, { x: 104, y: 100, z: 9 }],
-    [F2.throw + 0.4, { x: 120, y: 86, z: 8 }],
-    [F2.attack, { x: 120, y: 86, z: 8 }],
-    [F2.attack + 0.12, { x: 96, y: 106, z: 9 }],
-    [F2.attack + 0.32, { x: 156, y: 80, z: 9 }],
-    [13, { x: 150, y: 82, z: 10 }],
-  ])
+  const cam = STAGE
   let layer
   if (u >= F2.strike && u < F2.strike + 0.7) layer = playAt(r.f2bug, u, F2.strike, 1.2, 1.4)
   else if (u >= F2.attack && u < F2.faint) layer = playAt(r.f2fire, u, F2.attack, 0.7, 1.6)
   else layer = idleAt(r.f2idle, u)
-  const shake = u < F2.throw ? shakeAt(u, C2own, 14) : shakeAt(u, C2, 20)
+  const shake = u < F2.throw ? shakeAt(u, C2own, 7) : shakeAt(u, C2, 10)
   drawStage(g, pic, [layer], clampCam(cam, pic), undefined, { shake })
   if (hit(T0 + F2.cut + 0.02)) cry(123)
   if (hit(T0 + C2own)) play('hit')
@@ -268,17 +242,10 @@ function fight3(g: G, u: number) {
     return
   }
   const slow = u >= F3.slowA && u < LAND
-  const cam = path(u, [
-    [F3.reverse, { x: 66, y: 116, z: 10 }],
-    [F3.reverse + 0.65, { x: 74, y: 112, z: 10 }],
-    [F3.throw + 0.1, { x: 120, y: 86, z: 8 }],
-    [F3b.attack, { x: 120, y: 86, z: 8 }],
-    [F3b.attack + 0.12, { x: 92, y: 108, z: 9 }],
-    [F3b.attack + 0.32, { x: 158, y: 80, z: 9 }],
-    [F3b.end, { x: 152, y: 82, z: 10 }],
-  ])
+  // A cut to Charizard, low and close, then a cut back to the whole stage; no camera moves.
+  const cam = u < F3.throw ? CLOSE : STAGE
   const layer = u >= F3b.attack ? playAt(r.f3fire, u, F3b.attack, 0.7, 1.6) : idleAt(r.f3idle, u)
-  drawStage(g, pic, [layer], clampCam(cam, pic), undefined, { shake: shakeAt(u, C3, 28, 0.45) })
+  drawStage(g, pic, [layer], clampCam(cam, pic), undefined, { shake: shakeAt(u, C3, 14, 0.4) })
   if (hit(T0 + F3.reverse + 0.02)) cry(6)
   if (hit(T0 + C3)) play('super')
   // The slow die: the stage goes dark while it turns, pulsing with a heartbeat.

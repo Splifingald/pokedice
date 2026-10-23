@@ -30,6 +30,9 @@ DISCORD COMMUNITY instead of the Discord link, and a better Discord mark; every 
   the type chart's ×2 (Fire on Grass, Fire on Bug); the third is neutral anyway. The captions are the game's own
   battle lines (`strings.csv`).
 - **Always the battle area** in the fights and the big moments; menus only in the features, as cut-ins.
+- **A still camera** (after version 3, the user: too many camera moves). The title and every fight are one fixed
+  shot; Charizard's close-up is a cut, not a move; hits shake the screen lightly. The only camera moves left are the
+  ones asked for: the slow-motion push onto Charizard's last die, and the lab's zoom onto the shaking ball.
 - **Clear pixels.** The art is drawn small and scaled up nearest-neighbour at whole scales: the stage at ×8 to ×10,
   the title and the end card at ×3 (640×360), the dice overlay at ×4. Anything at a fractional scale — the area
   pictures (400 px for 288 scene pixels), the lab, the Versus stadium, a camera zooming — goes through sharp scaling
