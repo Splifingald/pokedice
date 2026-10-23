@@ -784,8 +784,9 @@ decides every level, landing Box and outcome, and the screens only say them.
   a listing out asks the server again (at most once a minute), so a trade made while you play shows up there too. The
   gold dot and the NEW tag in Mine stay until the scene has played (and its Box is picked, `tradesToWatch`); every trade in Mine's Done list is a button that
   plays its scene again. A toast for a listing that came back and for a trade a closed tab left half done.
-- **Sharing** (`ShareListingModal`): the link `<site>/t/<code>` with COPY, a line on who can use it, and SHARE (the
-  share sheet on phones). A private listing opens it right after POST. A link opens the listing in its sheet when the
+- **Sharing** (`ShareListingModal`): the message (the Pokémon, shiny or not, its level and what it's wanted for) above
+  the link `<site>/t/<code>` with COPY, a line on who can use it, and SHARE (the share sheet on phones). COPY, and SHARE
+  where there is no share sheet, copy the message with the link: every link's preview is the same picture. A private listing opens it right after POST. A link opens the listing in its sheet when the
   moment is calm; signed out it asks to connect and keeps the link through the sign-in.
 
 ## 22. Small worlds

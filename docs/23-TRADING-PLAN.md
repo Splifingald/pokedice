@@ -171,7 +171,14 @@ Then a summary ("Charmander leaves your Box now. It comes back if nobody trades 
 Lv.12, or its minimum.") and **POST**. A private listing opens the share sheet straight away.
 
 **Sharing**: a link `https://<site>/t/K7QM4XD9`, through the share sheet on phones or copied on desktop, as for friend
-invites.
+invites. A message goes with it, so a chat says what's on offer without opening it (every link's preview is the site's
+one picture):
+
+```
+Trade with me on Pokédice: my shiny Pikachu (Lv.32) is up for trade!
+I want: Riolu
+https://<site>/t/K7QM4XD9
+```
 
 - Opening it shows the listing in its sheet once the run is idle, never mid-fight.
 - Signed out: "Sora wants to trade. Connect to take part" with CONNECT.

@@ -63,6 +63,43 @@ const entry = (over: Partial<TradeLogEntry>): TradeLogEntry => ({
   ...over,
 })
 
+// The share modal for each kind of want, and a shiny: its message names them all.
+const SHARES: { label: string; share: Shared }[] = [
+  {
+    label: 'Share (private, any new)',
+    share: {
+      code: 'K7QM4XD9',
+      dex: 4,
+      level: 12,
+      shiny: false,
+      want: { kind: 'notOwned' },
+      visibility: 'private',
+    },
+  },
+  {
+    label: 'Share (shiny, for a species)',
+    share: {
+      code: 'P3WX8NHT',
+      dex: 25,
+      level: 32,
+      shiny: true,
+      want: { kind: 'species', dex: 447 },
+      visibility: 'public',
+    },
+  },
+  {
+    label: 'Share (friends, any)',
+    share: {
+      code: 'B6RJ2ZQF',
+      dex: 133,
+      level: 20,
+      shiny: false,
+      want: { kind: 'any' },
+      visibility: 'friends',
+    },
+  },
+]
+
 const SCENES: { label: string; show: TradeShow }[] = [
   {
     label: 'Pikachu for Totodile',
@@ -195,9 +232,11 @@ export function TradeKitBits() {
             {s.label}
           </PixelButton>
         ))}
-        <PixelButton size="sm" onClick={() => setShare({ code: 'K7QM4XD9', dex: 4, visibility: 'private' })}>
-          Share (private)
-        </PixelButton>
+        {SHARES.map((s) => (
+          <PixelButton key={s.label} size="sm" onClick={() => setShare(s.share)}>
+            {s.label}
+          </PixelButton>
+        ))}
         <PixelButton size="sm" onClick={() => setRules('unlock')}>
           Trades open
         </PixelButton>
