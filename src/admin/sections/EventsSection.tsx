@@ -22,21 +22,17 @@ import {
   type WheelReward,
 } from '@/engine'
 import { PixelIcon, type IconName } from '@/components/icons'
-import { ART_GEOMETRY } from '@/fx/areaArtMap'
 import { WheelStage } from '@/fx/wheel'
 import { money } from '@/lib/format'
 import { bannerUrl, RewardIcon } from '@/screens/events/shared'
 import { cx } from '@/theme/util'
 import { useAdminData } from '../store'
-import { AccessSwitch, Box, Field, NumInput, inputCls } from '../widgets'
+import { AccessSwitch, Box, Field, NumInput, PicturePicker, inputCls } from '../widgets'
 import { useConfigRow } from './ConfigSection'
 import { RaidsTab } from './events/RaidsTab'
 import { SmallWorldsTab } from './events/SmallWorldsTab'
 import { TrickOrTreatTab } from './events/TrickOrTreatTab'
 import { LiveEventsSection } from './LiveEventsSection'
-
-/** Pictures made for the events (public/backgrounds). */
-export const EVENT_BANNERS = ['/backgrounds/fortune-wheel.png']
 
 const NAMES: Record<EventId, string> = { wheel: 'Fortune Wheel', raid: 'Raid Battles', rebattle: 'Elite Rebattle' }
 
@@ -65,8 +61,6 @@ export function useEventsConfig(): [EventsConfig, (patch: Partial<EventsConfig>)
 function EventRow({ id, def, set }: { id: EventId; def: EventDef; set: (patch: Partial<EventDef>) => void }) {
   const data = useAdminData()
   const areas = (data?.areas ?? []).slice().sort((a, b) => a.orderIndex - b.orderIndex)
-  // The events' own pictures first, then every area picture.
-  const pictures = [...EVENT_BANNERS, ...Object.keys(ART_GEOMETRY).sort()]
   return (
     <div className="grid gap-3 border-t-2 border-line pt-3 md:grid-cols-[minmax(0,1fr)_200px]">
       <div className="grid gap-2 sm:grid-cols-2">
@@ -97,14 +91,7 @@ function EventRow({ id, def, set }: { id: EventId; def: EventDef; set: (patch: P
           </Field>
         )}
         <Field label="Banner picture" hint="The event's own picture, or an area picture.">
-          <select className={inputCls} value={def.banner} onChange={(e) => set({ banner: e.target.value })}>
-            {!pictures.includes(def.banner) && <option value={def.banner}>{def.banner}</option>}
-            {pictures.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
+          <PicturePicker value={def.banner} onChange={(banner) => set({ banner })} />
         </Field>
         <Field label="Unlock pop-up rules" hint={`2 to 4, in order. Known: ${RULES[id].join(', ')}`}>
           <input

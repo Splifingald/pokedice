@@ -17,7 +17,6 @@ import {
   type LiveType,
   type RegionId,
 } from '@/engine'
-import { ART_GEOMETRY } from '@/fx/areaArtMap'
 import { LANGS } from '@/i18n/langs'
 import { money } from '@/lib/format'
 import { bannerUrl } from '@/screens/events/shared'
@@ -25,9 +24,8 @@ import { useNow } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { PixelButton } from '@/components/PixelButton'
 import { useAdminData } from '../store'
-import { AccessSwitch, Box, Field, NumInput, inputCls } from '../widgets'
+import { AccessSwitch, Box, Field, NumInput, PicturePicker, inputCls } from '../widgets'
 import { useConfigRow } from './ConfigSection'
-import { EVENT_BANNERS } from './EventsSection'
 import { UndergroundBox } from './UndergroundBox'
 
 const TYPE_NAME: Record<LiveType, string> = { shiny: 'Shiny Parade', shop: 'Special Shop', cash: 'Cash Flow', underground: 'Underground' }
@@ -212,7 +210,6 @@ function LiveEditor({
   onCancel: () => void
 }) {
   const patch = (p: Partial<LiveEvent>) => set({ ...draft, ...p })
-  const pictures = [...EVENT_BANNERS, ...Object.keys(ART_GEOMETRY).sort()]
   const span = Date.parse(draft.end) - Date.parse(draft.start)
   return (
     <Box
@@ -242,15 +239,7 @@ function LiveEditor({
             </select>
           </Field>
           <Field label="Picture" hint="Home's square, the pop-up, the shop's section.">
-            <select className={inputCls} value={draft.banner} onChange={(e) => patch({ banner: e.target.value })}>
-              <option value="">— pick one —</option>
-              {!pictures.includes(draft.banner) && draft.banner && <option value={draft.banner}>{draft.banner}</option>}
-              {pictures.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
+            <PicturePicker value={draft.banner} placeholder="— pick one —" onChange={(banner) => patch({ banner })} />
           </Field>
           <Field label="Shown from (badges)" hint="Every region's counted.">
             <NumInput value={draft.minBadges} min={0} max={80} onChange={(v) => patch({ minBadges: Math.max(0, v ?? 0) })} />

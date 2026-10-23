@@ -348,6 +348,9 @@ Players shouldn't have to make many requests:
     picture steps in over the stand-in.
   - **Adding one**: a new area needs its line in `areaArtMap.ts`; a new picture needs measuring. `tests/area-art.test.ts`
     checks every area has a picture, every picture a file 400 px wide, and lists the ones still to make.
+  - **Named in the admin**: every picture (and every battle scene) has a name and a few words on what it shows in
+    `src/admin/pictureNames.ts`, which the admin's pickers list by group; `tests/admin-picture-names.test.ts` fails on
+    a measured picture without one.
 
 ## 12. Navigation, Home and stages
 

@@ -14,6 +14,8 @@ export interface ColumnDef {
   label: string
   kind?: 'text' | 'number' | 'bool' | 'json' | 'enum' | 'color'
   options?: readonly string[]
+  /** What an enum's option shows in the cell and its dropdown; the stored value stays the option. */
+  optionLabel?: (o: string) => string
   nullable?: boolean
   width?: number
   readOnly?: boolean
@@ -136,7 +138,7 @@ function CellEditor({ col, row, onCommit, onCancel }: { col: ColumnDef; row: Row
           {col.nullable && <option value="">—</option>}
           {(col.options ?? []).map((o) => (
             <option key={o} value={o}>
-              {o}
+              {col.optionLabel ? col.optionLabel(o) : o}
             </option>
           ))}
         </select>
@@ -347,7 +349,7 @@ export function DataTable({ table, columns, where, newRow, duplicate, onOpen, pa
                             }}
                           />
                         ) : (
-                          <div className="truncate">{c.render ? c.render(r) : display(r[c.key], c.kind)}</div>
+                          <div className="truncate">{c.render ? c.render(r) : display(c.optionLabel && typeof r[c.key] === 'string' ? c.optionLabel(r[c.key] as string) : r[c.key], c.kind)}</div>
                         )}
                         {err && <div className="text-xs leading-tight text-danger">{err}</div>}
                       </td>

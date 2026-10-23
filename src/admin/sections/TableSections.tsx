@@ -7,6 +7,7 @@ import {
   COMBO_NAMES,
   POKE_TYPES,
   BATTLE_BACKGROUNDS,
+  type BattleBackground,
   STATUS_KINDS,
   trainerSpecialty,
   type CurableStatus,
@@ -23,6 +24,7 @@ import { SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { cx } from '@/theme/util'
 import { DataTable } from '../DataTable'
+import { BATTLE_SCENE_NAMES } from '../pictureNames'
 import { newUuid, rowKey, setTable, updateRow, useAdmin, useAdminData } from '../store'
 import { Field, NumInput, PokemonPicker, TextInput, n, s, useNumberField } from '../widgets'
 import { effectText } from '@/i18n/text'
@@ -154,7 +156,15 @@ export function TrainersSection() {
           { key: 'upgrade_level', label: 'Upgrade Lv (empty = area)', kind: 'number', nullable: true, width: 110 },
           { key: 'rival_of', label: "Rival of player's starter (dex)", kind: 'number', nullable: true, width: 110 },
           { key: 'duo', label: 'Duo (2 v 2)', kind: 'bool', width: 80 },
-          { key: 'battle_background', label: 'Scene (— = area)', kind: 'enum', options: [...BATTLE_BACKGROUNDS], nullable: true, width: 110 },
+          {
+            key: 'battle_background',
+            label: 'Scene (— = area)',
+            kind: 'enum',
+            options: [...BATTLE_BACKGROUNDS],
+            optionLabel: (o) => BATTLE_SCENE_NAMES[o as BattleBackground],
+            nullable: true,
+            width: 170,
+          },
           {
             key: 'specialty',
             label: 'Type',
