@@ -35,6 +35,7 @@ import { SidePanel } from './SidePanel'
 import { TrainerCard } from './TrainerCard'
 import { LooksDot } from './TrainerLooks'
 import { playerOf } from './TrainerArt'
+import { SettingsOverlay } from '@/screens/Settings'
 
 const HelpContent = lazy(() => import('@/screens/Help').then((m) => ({ default: m.HelpContent })))
 const TypesContent = lazy(() => import('@/screens/Types').then((m) => ({ default: m.TypesContent })))
@@ -113,7 +114,8 @@ function MenuRowView({ icon, mark, label, desc, hint, dot, href, onClick, shut }
  * The header's avatar button and everything behind it: the player's profile, the settings screen,
  * the rules, the type chart, the admin (admins only), the Google connection and, pinned at the bottom, the community
  * Discord (once the admin has set its link) and Contact the developer. Mid-fight it opens as ever; the rows that would
- * leave the fight (another page, the other save, signing in) are shut and say why.
+ * leave the fight (another page, the other save, signing in) are shut and say why. Settings opens over the fight
+ * instead of on its page (SettingsOverlay), what in it would end the fight shut there.
  */
 export function PlayerMenu() {
   const { t } = useT()
@@ -129,6 +131,7 @@ export function PlayerMenu() {
   const [guide, setGuide] = useState(false)
   const [types, setTypes] = useState(false)
   const [contact, setContact] = useState(false)
+  const [settingsOver, setSettingsOver] = useState(false)
   const [switching, setSwitching] = useState(false)
   const { connect, chooser } = useConnect()
   const newFriends = useFriends((s) => (s.userId && s.userId === auth.userId ? s.unseen.length : 0))
@@ -270,7 +273,20 @@ export function PlayerMenu() {
               shut={shut}
             />
           )}
-          <MenuRow icon="gear" label={t('ui.nav.settings')} desc={t('ui.menu.settings')} onClick={go('/settings')} shut={shut} />
+          {/* Under a lock, Settings opens over the page: the fight stays mounted under it, and closing is back in it. */}
+          <MenuRow
+            icon="gear"
+            label={t('ui.nav.settings')}
+            desc={t('ui.menu.settings')}
+            onClick={
+              shut
+                ? () => {
+                    setOpen(false)
+                    setSettingsOver(true)
+                  }
+                : go('/settings')
+            }
+          />
           <MenuRow
             icon="book"
             label={t('ui.profile.guide')}
@@ -308,6 +324,7 @@ export function PlayerMenu() {
       </SidePanel>
 
       <ContactModal open={contact} onClose={() => setContact(false)} />
+      <SettingsOverlay open={settingsOver} onClose={() => setSettingsOver(false)} />
       <SwitchSaveModal to={extreme ? 'main' : 'extreme'} open={switching} onClose={() => setSwitching(false)} />
 
       {chooser}

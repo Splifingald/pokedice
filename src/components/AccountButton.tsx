@@ -112,12 +112,12 @@ function DisconnectModal({ open, onClose }: { open: boolean; onClose: () => void
 }
 
 /** CONNECT. Renders wherever a sign-in is offered (the title screen, the boards, Settings). */
-export function ConnectButton({ size = 'md', className }: { size?: PixelButtonProps['size']; className?: string }) {
+export function ConnectButton({ size = 'md', className, shut }: AccountButtonProps) {
   const { t } = useT()
   const { connect, chooser } = useConnect()
   return (
     <>
-      <PixelButton size={size} className={className} onClick={connect} aria-label={t('ui.account.connectLabel')}>
+      <PixelButton size={size} className={className} onClick={connect} aria-label={t('ui.account.connectLabel')} shut={shut}>
         <ConnectMarks />
         {t('ui.account.connect')}
       </PixelButton>
@@ -126,15 +126,22 @@ export function ConnectButton({ size = 'md', className }: { size?: PixelButtonPr
   )
 }
 
+interface AccountButtonProps {
+  size?: PixelButtonProps['size']
+  className?: string
+  /** Why it can't be used right now (a fight under way): shown, its reason said, nothing done (PixelButton `shut`). */
+  shut?: string | null
+}
+
 /** DISCONNECT, with the confirmation. Only useful while signed in — renders nothing otherwise. */
-export function DisconnectButton({ size = 'md', className }: { size?: PixelButtonProps['size']; className?: string }) {
+export function DisconnectButton({ size = 'md', className, shut }: AccountButtonProps) {
   const { t } = useT()
   const status = useGame((s) => s.auth.status)
   const [confirm, setConfirm] = useState(false)
   if (status !== 'signed_in') return null
   return (
     <>
-      <PixelButton size={size} variant="danger" className={className} onClick={() => setConfirm(true)}>
+      <PixelButton size={size} variant="danger" className={className} onClick={() => setConfirm(true)} shut={shut}>
         {t('ui.account.disconnect')}
       </PixelButton>
       <DisconnectModal open={confirm} onClose={() => setConfirm(false)} />
@@ -146,12 +153,12 @@ export function DisconnectButton({ size = 'md', className }: { size?: PixelButto
  * Cloud backup in one button: CONNECT when signed out; a greyed CONNECTED with the profile picture (or the provider's
  * mark) when signed in — clicking it asks before disconnecting. Renders nothing while auth is unknown or unavailable.
  */
-export function AccountButton({ size = 'md', className }: { size?: PixelButtonProps['size']; className?: string }) {
+export function AccountButton({ size = 'md', className, shut }: AccountButtonProps) {
   const { t } = useT()
   const auth = useGame((s) => s.auth)
   const [confirm, setConfirm] = useState(false)
   const [broken, setBroken] = useState(false)
-  if (auth.status === 'signed_out') return <ConnectButton size={size} className={className} />
+  if (auth.status === 'signed_out') return <ConnectButton size={size} className={className} shut={shut} />
   if (auth.status !== 'signed_in') return null
   const avatar = auth.avatarUrl && !broken ? auth.avatarUrl : null
   return (
@@ -162,6 +169,7 @@ export function AccountButton({ size = 'md', className }: { size?: PixelButtonPr
         onClick={() => setConfirm(true)}
         title={auth.email ?? undefined}
         aria-label={t('ui.account.connectedLabel', { who: auth.email ?? t('ui.settings.yourGoogle') })}
+        shut={shut}
       >
         {avatar ? (
           <img
@@ -187,7 +195,7 @@ export function AccountButton({ size = 'md', className }: { size?: PixelButtonPr
  * Settings → Connected accounts: each way in this deployment offers (or that the account already has), linked or
  * not, with LINK, and UNLINK while another one is linked. Nothing to show while there is only one way in.
  */
-export function ConnectedAccounts() {
+export function ConnectedAccounts({ shut }: { shut?: string | null }) {
   const { t } = useT()
   const auth = useGame((s) => s.auth)
   const offered = useAuthProviders()
@@ -213,7 +221,13 @@ export function ConnectedAccounts() {
               </span>
               <Chip tone={on ? 'done' : 'lock'}>{t(on ? 'ui.account.linked' : 'ui.account.notLinked')}</Chip>
               {!on ? (
-                <PixelButton size="sm" onClick={() => void linkProvider(p)} aria-label={`${t('ui.account.link')} ${providerName(p)}`}>
+                <PixelButton
+                  size="sm"
+                  onClick={() => void linkProvider(p)}
+                  aria-label={`${t('ui.account.link')} ${providerName(p)}`}
+                  // Linking leaves the page for the provider's own: the fight would be left with it.
+                  shut={shut}
+                >
                   {t('ui.account.link')}
                 </PixelButton>
               ) : (
@@ -223,6 +237,7 @@ export function ConnectedAccounts() {
                     variant="ghost"
                     onClick={() => void unlinkProvider(p)}
                     aria-label={`${t('ui.account.unlink')} ${providerName(p)}`}
+                    shut={shut}
                   >
                     {t('ui.account.unlink')}
                   </PixelButton>

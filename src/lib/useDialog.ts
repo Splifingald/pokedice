@@ -1,9 +1,43 @@
 // What every dialog does (Modal, Sheet, SidePanel): focus moves in, Tab stays inside, Esc closes the top one only, and
 // focus goes back where it came from.
-import { useEffect, useRef, type RefObject } from 'react'
+import { useEffect, useRef, useSyncExternalStore, type RefObject } from 'react'
 
 /** Open dialogs, oldest first: only the last one answers the keyboard. */
 const stack: object[] = []
+const listeners = new Set<() => void>()
+
+/** Puts a dialog on the stack; the function returned takes it off again (only it, whatever opened since). */
+export function pushDialog(token: object): () => void {
+  stack.push(token)
+  listeners.forEach((fn) => fn())
+  return () => {
+    const i = stack.indexOf(token)
+    if (i < 0) return
+    stack.splice(i, 1)
+    listeners.forEach((fn) => fn())
+  }
+}
+
+/** How many dialogs are open right now. */
+export const dialogsOpen = (): number => stack.length
+
+/** Called whenever a dialog opens or closes; returns the unsubscribe. */
+export function onDialogs(fn: () => void): () => void {
+  listeners.add(fn)
+  return () => void listeners.delete(fn)
+}
+
+/**
+ * A dialog is open over the page (a Modal, a Sheet, the trainer menu…). The battle waits while one is (docs/15 §14):
+ * nothing of the fight plays behind Settings opened mid-fight, or the guide.
+ */
+export function useDialogOpen(): boolean {
+  return useSyncExternalStore(
+    onDialogs,
+    () => stack.length > 0,
+    () => false,
+  )
+}
 
 const FOCUSABLE =
   'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),summary,[tabindex]:not([tabindex="-1"])'
@@ -24,7 +58,7 @@ export function useDialog(ref: RefObject<HTMLElement>, open: boolean, onEscape?:
   useEffect(() => {
     if (!open) return
     const token = {}
-    stack.push(token)
+    const close = pushDialog(token)
     const prev = document.activeElement as HTMLElement | null
     ref.current?.focus()
     const onKey = (e: KeyboardEvent) => {
@@ -56,7 +90,7 @@ export function useDialog(ref: RefObject<HTMLElement>, open: boolean, onEscape?:
     window.addEventListener('keydown', onKey)
     return () => {
       window.removeEventListener('keydown', onKey)
-      stack.splice(stack.indexOf(token), 1)
+      close()
       prev?.focus?.()
     }
   }, [open, ref])

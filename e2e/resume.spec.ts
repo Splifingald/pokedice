@@ -130,3 +130,62 @@ test('the top bar stays in reach in battle: what would leave the fight says why'
   // Back to the fight, untouched.
   await expect(attack(page)).toBeEnabled()
 })
+
+test('Settings open over the fight: the harmless ones work, what would end it says why, and back is the same fight', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await boot(page)
+  await toBattle(page)
+  const before = await fightNow(page)
+  const kept = await stored(page)
+  expect(kept?.phase).toBe('battle')
+  const toasts = page.getByRole('region', { name: 'Notifications' })
+
+  // The trainer menu's Settings row works mid-fight: Settings open over the battle, which stays where it is.
+  await page.getByRole('button', { name: /trainer menu/i }).click()
+  const menu = page.getByRole('dialog', { name: 'Trainer card' })
+  const row = menu.getByRole('button', { name: 'Settings', exact: true })
+  await expect(row).not.toHaveAttribute('aria-disabled', 'true')
+  await row.click()
+  const settings = page.getByRole('dialog', { name: 'Settings' })
+  await expect(settings).toBeVisible()
+  await expect(page).toHaveURL(/\/area$/)
+  await expect(settings.getByText(/The fight waits while you're here/)).toBeVisible()
+
+  // Something harmless: the theme changes at once.
+  await settings.getByRole('radio', { name: 'Dark' }).click()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+
+  // What would end the fight is there, shut, its reason in its name; a tap says it and does nothing else.
+  const wipe = settings.getByRole('button', { name: /^Delete all my data/ })
+  await expect(wipe).toHaveAttribute('aria-disabled', 'true')
+  await expect(wipe).toHaveAccessibleName('Delete all my data. Finish the fight first')
+  // (Playwright won't tap what says it's disabled: the tap is forced, as a finger would.)
+  await wipe.click({ force: true })
+  await expect(toasts.getByText('Finish the fight first')).toBeVisible()
+  await expect(page.getByRole('dialog', { name: 'Delete all your data?' })).toHaveCount(0)
+  await settings.getByText('Advanced: copy or delete your save').click()
+  const del = settings.getByRole('button', { name: /^Delete save/ })
+  await expect(del).toHaveAttribute('aria-disabled', 'true')
+  await expect(del).toHaveAccessibleName('Delete save. Finish the fight first')
+  await expect(settings.getByRole('button', { name: /^Check for updates/ })).toHaveAccessibleName(
+    'Check for updates. Finish the fight first',
+  )
+  // Keys inside Settings never play the fight behind it (Enter on the battle's page, not on a button, is ATTACK).
+  await settings.focus()
+  await page.keyboard.press('Enter')
+  await page.keyboard.press('Space')
+
+  // The fight waited: nothing thrown, nothing played while Settings were up.
+  expect(await stored(page)).toEqual(kept)
+
+  // BACK TO THE FIGHT: the very same fight, its dice and its message, the setting kept.
+  await settings.getByRole('button', { name: 'Back to the fight' }).click()
+  await expect(settings).toHaveCount(0)
+  await expect(page).toHaveURL(/\/area$/)
+  await expect(attack(page)).toBeEnabled()
+  expect(await fightNow(page)).toEqual(before)
+  expect(await stored(page)).toEqual(kept)
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+})

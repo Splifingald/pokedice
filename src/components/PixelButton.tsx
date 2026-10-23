@@ -1,6 +1,7 @@
 import { forwardRef, useLayoutEffect, useRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { cx } from '@/theme/util'
 import { sfx } from '@/audio/sfx'
+import { pushToast } from '@/store/game'
 
 type Variant = 'primary' | 'secondary' | 'gold' | 'danger' | 'success' | 'ghost' | 'dark'
 type Size = 'sm' | 'md' | 'lg' | 'xl'
@@ -103,13 +104,22 @@ export interface PixelButtonProps extends ButtonHTMLAttributes<HTMLButtonElement
   size?: Size
   /** Skip the click sound (e.g. when the action plays its own). */
   quiet?: boolean
+  /**
+   * Why it can't be used right now (a fight under way: `useLockReason`). Not `disabled`, which would drop it from the
+   * keyboard and say nothing: it stays focusable and drawn as disabled (`aria-disabled`), the reason joins its name
+   * and its title, and a tap says it in a toast instead of acting (docs/15 §12).
+   */
+  shut?: string | null
 }
 
 export const PixelButton = forwardRef<HTMLButtonElement, PixelButtonProps>(function PixelButton(
-  { variant = 'secondary', size = 'md', className, quiet, onClick, type = 'button', children, ...rest },
+  { variant = 'secondary', size = 'md', className, quiet, onClick, type = 'button', children, shut, ...rest },
   ref,
 ) {
   const label = useFitText(children)
+  // Shut: the reason after its name — its aria-label or its text, else (a label of several parts) in a hidden span.
+  const named = rest['aria-label'] ?? (typeof children === 'string' ? children : undefined)
+  const lock = shut ? { 'aria-disabled': true, title: shut, ...(named && { 'aria-label': `${named}. ${shut}` }) } : null
   return (
     <button
       ref={ref}
@@ -122,16 +132,19 @@ export const PixelButton = forwardRef<HTMLButtonElement, PixelButtonProps>(funct
         className,
       )}
       onClick={(e) => {
+        if (shut) return pushToast(shut, 'info')
         if (!quiet) sfx('button')
         onClick?.(e)
       }}
       {...rest}
+      {...lock}
     >
       {/* `whitespace-nowrap` keeps the label on one line so shrinking is what fixes it; `min-w-0` and the clip keep a
           label still too wide at the smallest size inside the frame. */}
       <span ref={label} className="inline-flex min-w-0 max-w-full items-center justify-center gap-2 overflow-hidden whitespace-nowrap">
         {children}
       </span>
+      {shut && !named && <span className="sr-only">. {shut}</span>}
     </button>
   )
 })

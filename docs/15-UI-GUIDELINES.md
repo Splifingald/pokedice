@@ -134,7 +134,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 
 | Component | When | States |
 |---|---|---|
-| `PixelButton` | Any action | `primary` (red, the one main action), `secondary` (white), `gold` (one new thing to open: a new region, an Egg), `success` (green: collect), `danger` (destructive, red), `ghost`, `dark`; sizes `sm` (44 px on phones), `md`, `lg` (56 px), `xl` (72 px, the big CTA); disabled. `.sheen` adds the passing light on a CTA |
+| `PixelButton` | Any action | `primary` (red, the one main action), `secondary` (white), `gold` (one new thing to open: a new region, an Egg), `success` (green: collect), `danger` (destructive, red), `ghost`, `dark`; sizes `sm` (44 px on phones), `md`, `lg` (56 px), `xl` (72 px, the big CTA); disabled; **shut** (`shut={reason}`: a lock such as a fight under way; drawn as disabled but focusable, `aria-disabled`, the reason after its name and in its title, a tap says it in a toast and does nothing else). `.sheen` adds the passing light on a CTA |
 | `Panel` | A block of content | light, dark, dialogue; optional title row |
 | `Dialogue` | Narration, battle messages | Typewriter text (tap to finish), blinking ▼; two lines tall so nothing jumps |
 | `Chip` | A short label | `plain`, `gold`, `green` (ready), `done` (cleared), `red` (where you are), `blue` (open), `lock`, `dark` |
@@ -149,6 +149,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `Sheet` | Anything opened from a screen: details, lists, pickers | Phones: from the bottom, grab handle, ✕, 90 % tall at most, `head` (filters) pinned, body scrolls, `footer` pinned. Desktop: a centred panel |
 | `Modal` | A short decision or message | Centred framed panel; `dismissable={false}` for a choice that must be made |
 | `SidePanel` | The trainer menu drawer | From the right |
+| `SettingsOverlay` | Settings opened from the trainer menu under a lock (mid-fight, a portal run: §12) | A `Modal` titled Settings over the page: mid-fight a line saying the fight waits, Settings' panels with what would end the fight shut, BACK TO THE FIGHT pinned at its bottom (BACK under a portal run's lock alone); SUPPORT ME white there |
 | `HpBar` | HP | Track with ink ring; the fill drains over 700 ms, the trail waits 280 ms then follows over 900 ms; numbers for your own, words for a foe's (screen readers) |
 | `TypeBadge`, `TypeSwatch` | A type | `md` 20 px, `sm` 16 px (plates) |
 | `Die` | A die face | Square corners; pips on whole pixels (`pipLayout`: one even pip size, three fixed columns) at any size; ink pips on light dice, white on dark; status face = white + status ring and a round badge with its icon; `selected` = lifted 6 px with a red outline; `combo` = a gold ring; values without a pip layout (0, 7, 8…) show their number, centred on the face |
@@ -352,9 +353,18 @@ Players shouldn't have to make many requests:
   `pointer-events-none`. Mid-fight (and in a portal run) what would leave the fight is shut and says why
   (`useLockReason`): the gold and the cup stay focusable (`aria-disabled`), the reason in their name, and a tap says it
   in a toast. The sun or moon and the energy work as ever, and so does the trainer menu: the guide, the type chart,
-  Contact and Discord open; the rows that would leave the page or the save (the leaderboard, Friends, Trades, Settings,
-  Admin, the other save, signing in) stay listed, greyed with a lock and the reason as their line; SYNC ONLINE says
+  Contact and Discord open; the rows that would leave the page or the save (the leaderboard, Friends, Trades, Admin,
+  the other save, signing in) stay listed, greyed with a lock and the reason as their line; SYNC ONLINE says
   "Finish the fight first".
+  **Settings open mid-fight too, over it** (`SettingsOverlay`, a `Modal`; not their route, which would unmount the
+  battle and play its entrance and log again on the way back): the battle stays mounted under them and waits (§14), so
+  BACK TO THE FIGHT (or ✕, Esc) is the very same fight, its dice and its message. Sound, animations, the theme, Multi
+  EXP, the play style, notifications, the language, copying the save and the rules work and apply at once (a play style
+  that plays the fight takes it over from its next move, once Settings close). What would end the fight or leave the
+  page stays listed and shut with the reason (`PixelButton shut`): signing in (it may load the cloud's save over this
+  one), disconnecting, linking or unlinking an account (linking leaves for the provider's page), deleting the save, the
+  Extreme save or all the data, restoring a backup, checking for new content (it swaps the game's data under the fight)
+  and the deploy guide's link. The same under a portal run's lock, with its own reason.
 - **Tab bar** (phones): Poké Mart, Upgrades, **Home** (in the middle, under the thumb: a tab like the others, its Poké Ball icon and label), Team,
   Pokédex. The side nav (desktop) has the same entries with Home first. A tab's hit area is the whole column, at
   least 60 px tall, even where the drawing is smaller.
@@ -499,6 +509,10 @@ in view) and the battle history sits beside it from 1024 px.
   away, the stage shows it back on its platform, and the panel's button is THROW AGAIN (back to the ball picker, "Snorlax
   is still here! Pick a ball and throw again."). Once per encounter; never a legendary or a raid.
 - **The time of day** (§30): in a Johto area, a small sun or moon chip on the stage's top right corner.
+- **The fight waits while a pop-up is over it** (`useDialogOpen`: any `Modal`, `Sheet` or `SidePanel`, its own menus
+  and the top bar's — the trainer menu, Settings, the guide): no throw of its own, no auto-mode move, no skipped turn,
+  no catch result moving on, and Space or Enter inside the pop-up never rolls or attacks behind it. The step under way
+  still finishes playing. Closing the last pop-up picks up from there, with whatever Settings changed.
 - **Leaving never skips a step** (`src/store/resume.ts`): an encounter under way — its preview, the fight (state, log,
   dice already thrown), the catch, the result card, the Center, the Game Corner, a ghost — is written with the save on
   the device (`resume`, beside the save in `pokedice.save`, flushed when the page goes) and a reload or a return puts
@@ -1365,5 +1379,6 @@ every state on `/kitchen-sink` (`IdleBits`).
   card (whole at once, 1.6 s), each evolution (played in full, 1.8 s after its reveal), the wipe and stalemate cards.
 - **It stops only for the player's choices**: the catch panel (the ball, the Bait, THROW AGAIN; its result then moves
   on after 1.4 s), "Add to team?", Trick or Treat, and any dialog that is open (a one-time pop-up, a sheet the player
-  opened): it waits for it to close. Never an item, never a team change, never a spin.
+  opened, Settings opened mid-fight): it waits for it to close, the fight's own moves too (§14). Never an item, never
+  a team change, never a spin.
 - **Between areas**, a toast says each move ("Now exploring…", "Round lost: one round in…", "Round done: back to…").

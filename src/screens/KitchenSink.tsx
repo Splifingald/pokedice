@@ -67,6 +67,7 @@ import { DayNightBits } from './kitchen/DayNightBits'
 import { IdleBits } from './kitchen/IdleBits'
 import { PowersBits } from './kitchen/PowersBits'
 import { RotateView } from '@/components/RotateCover'
+import { SettingsOverlay } from '@/screens/Settings'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
 import { BoardRow } from '@/components/BoardRow'
 
@@ -125,6 +126,7 @@ export function KitchenSink() {
   const [selected, setSelected] = useState<number[]>([1])
   const [modal, setModal] = useState(false)
   const [sheet, setSheet] = useState(false)
+  const [settingsOver, setSettingsOver] = useState<null | 'fight' | 'free'>(null)
   const [mon, setMon] = useState<Species | null>(data.species[6] ?? null)
   const [gaugeVal, setGaugeVal] = useState(30)
   const [seg, setSeg] = useState<'combos' | 'dice'>('combos')
@@ -215,6 +217,11 @@ export function KitchenSink() {
           <PixelButton disabled>disabled</PixelButton>
           <PixelButton variant="primary" disabled>
             primary off
+          </PixelButton>
+          {/* Shut by a lock: still focusable, the reason in its name, a tap says it. */}
+          <PixelButton shut="Finish the fight first">shut</PixelButton>
+          <PixelButton size="sm" variant="danger" shut="Finish the fight first">
+            Delete save
           </PixelButton>
         </div>
         {/* The tight case: a full-width button, the largest size, and the longest label a translation produces.
@@ -653,6 +660,21 @@ export function KitchenSink() {
 
       <Section title="Support me: the developer's asks (Discord, invite, PayPal), with and without a Discord link">
         <SupportBits />
+      </Section>
+
+      <Section title="SettingsOverlay: Settings opened over a fight (what would end it shut, BACK TO THE FIGHT), and with nothing shut (BACK)">
+        <PixelButton size="sm" onClick={() => setSettingsOver('fight')}>
+          Over a fight
+        </PixelButton>
+        <PixelButton size="sm" onClick={() => setSettingsOver('free')}>
+          Nothing shut
+        </PixelButton>
+        <SettingsOverlay
+          open={settingsOver != null}
+          onClose={() => setSettingsOver(null)}
+          shut={settingsOver === 'fight' ? 'Finish the fight first' : null}
+          fight={settingsOver === 'fight'}
+        />
       </Section>
 
       <Section title="RotateCover: a phone or a tablet held sideways (over the whole game, nothing to dismiss)">

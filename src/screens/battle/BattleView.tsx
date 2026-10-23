@@ -61,6 +61,7 @@ import { statusName, trainerTitle, typeName } from '@/lib/format'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { capMotion, MotionCap, useMotion, type MotionLevel } from '@/lib/motion'
 import { AUTO_PACE, PaceContext, VERSUS_PACE } from '@/lib/pace'
+import { useDialogOpen } from '@/lib/useDialog'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { setSettings, useGame, type BattleSlice, type CatchThrow } from '@/store/game'
 import { answerBait, dispatchBattle, finishCatch, retryCatch, throwBall } from '@/store/run'
@@ -219,6 +220,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const stageBox = useRef<HTMLDivElement>(null)
   const panel = useRef<HTMLDivElement>(null)
   const [menu, setMenu] = useState<null | 'item' | 'switch' | 'history' | 'mega' | 'form'>(null)
+  // The fight waits while a pop-up is over it: one of its own menus, or one from the top bar (the trainer menu,
+  // Settings, the guide). No throw, no auto move and no key press plays behind it; closing it picks up from there.
+  const covered = useDialogOpen()
+  const held = !!menu || covered
   const [itemKey, setItemKey] = useState<string | null>(null)
   const [showBreakdown, setShowBreakdown] = useState(false)
   // Type hints (Trainer menu → Type chart): tapping a Pokémon opens its matchups over the stage.
@@ -405,7 +410,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   // Keyboard: 1..6 toggle, R reroll, Space/Enter roll or attack.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!(canAct || stunned) || auto || menu || (e.target as HTMLElement)?.tagName === 'INPUT') return
+      if (!(canAct || stunned) || auto || held || (e.target as HTMLElement)?.tagName === 'INPUT') return
       if (e.key === ' ' || e.key === 'Enter') {
         // A focused button or link answers Enter/Space itself (the top bar's too, which stays up in battle).
         if ((e.target as HTMLElement)?.closest?.('button, a[href]')) return
@@ -416,14 +421,14 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [canAct, stunned, auto, menu, rolling, st.phase, dispatch])
+  }, [canAct, stunned, auto, held, rolling, st.phase, dispatch])
 
   // Every turn starts with the throw, so the dice roll themselves (items, switching and running still work after it).
   useEffect(() => {
-    if (auto || !ready || intro || menu || st.phase !== 'player_roll') return
+    if (auto || !ready || intro || held || st.phase !== 'player_roll') return
     const t = setTimeout(() => dispatch({ t: 'ROLL' }), quick ? 0 : 400)
     return () => clearTimeout(t)
-  }, [auto, ready, intro, menu, st.phase, quick, battle.log.length, dispatch])
+  }, [auto, ready, intro, held, st.phase, quick, battle.log.length, dispatch])
 
   // Auto-mode: every player move once the log has caught up. A reroll shows its selected dice for a moment first.
   const autoPhase =
@@ -432,7 +437,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     st.phase === 'player_stunned' ||
     st.phase === 'player_switch'
   useEffect(() => {
-    if (!auto || !ready || intro || menu || !autoPhase) return
+    if (!auto || !ready || intro || held || !autoPhase) return
     let inner: ReturnType<typeof setTimeout> | undefined
     const t = setTimeout(
       () => {
@@ -451,7 +456,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       clearTimeout(t)
       clearTimeout(inner)
     }
-  }, [auto, ready, intro, menu, autoPhase, st.phase, data, quick, pace, battle.log.length, dispatch])
+  }, [auto, ready, intro, held, autoPhase, st.phase, data, quick, pace, battle.log.length, dispatch])
 
   const usefulItems = ownedItems.filter(([k]) => st.player.some((p) => itemHelps(k, p)))
   // Kept with no one left to switch to: the menu is also where FORFEIT lives.
@@ -501,10 +506,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   // Stunned with no item that could help: nothing to do but lose the turn.
   const stunChoice = (canItem && usefulItems.length > 0) || zOpen
   useEffect(() => {
-    if (auto || !stunned || menu || stunChoice) return
+    if (auto || !stunned || held || stunChoice) return
     const t = setTimeout(() => dispatch({ t: 'PASS' }), 900)
     return () => clearTimeout(t)
-  }, [auto, stunned, menu, stunChoice, dispatch])
+  }, [auto, stunned, held, stunChoice, dispatch])
 
   const terminal = st.phase === 'won' || st.phase === 'lost' || st.phase === 'fled'
   // Versus: once this battle has played out, the fight moves on (the next defender, or the result).
@@ -582,10 +587,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const caughtResult = catching ? run.catch?.result : null
   const autoFinish = autoAt === 'full' && revealed && !!caughtResult && !caughtResult.baitOffer && !caughtResult.stays
   useEffect(() => {
-    if (!autoFinish) return
+    if (!autoFinish || covered) return
     const t = setTimeout(finishCatch, AUTO_RESULT_MS)
     return () => clearTimeout(t)
-  }, [autoFinish])
+  }, [autoFinish, covered])
 
   // A legendary's entrance: the boss intro is its timeline (the foe and yours appear on its cues).
   const legend = useMemo<StageOverlay | null>(() => {
