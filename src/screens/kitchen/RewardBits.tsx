@@ -96,8 +96,8 @@ export function RewardBits() {
           <PixelButton size="sm" onClick={replayXp}>
             Fill again
           </PixelButton>
-          <XpBar inst={inst} shown={frames[2]} stepped />
-          <Label>Filling (frame 3)</Label>
+          <XpBar inst={inst} shown={frames[0]} stepped />
+          <Label>Filling: its first step</Label>
           <XpBar inst={inst} shown={frames[white]} stepped />
           <Label>The level-up's white frame</Label>
           <XpBar inst={inst} shown={frames[white + 2]} stepped />
@@ -106,13 +106,13 @@ export function RewardBits() {
       )}
 
       <div className="grid gap-1">
-        <div className="flex flex-wrap items-center gap-6 py-6">
+        <div className="flex flex-wrap items-center gap-x-24 gap-y-16 px-8 py-10">
           {[undefined, 2, 6, 10].map((frame) => (
             <span
               key={`${frame}-${burst}`}
               className="relative inline-block h-10 w-10 bg-well shadow-ring-line"
             >
-              <Confetti pixel frame={frame} />
+              <Confetti pixel frame={frame} spread={18} />
             </span>
           ))}
         </div>

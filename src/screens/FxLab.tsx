@@ -155,24 +155,22 @@ const PRESETS: Preset[] = [
       catchTimeline({ own: own(25), foe: foe(133), ball: 'great', caught: o.caught, short: o.short }),
   },
   // A miss wobbles fewer times the further it fell short (the engine's catchShakes): 3, 2, 1, then none.
-  ...[1, 2, 3, 4].map(
-    (by): Preset => ({
-      name: `Catch: a miss ${by} short`,
-      sprites: [
-        [25, true],
-        [133, false],
-      ],
-      make: (o) =>
-        catchTimeline({
-          own: own(25),
-          foe: foe(133),
-          ball: 'great',
-          caught: false,
-          roll: { total: 7 - by, need: 7, caught: false },
-          short: o.short,
-        }),
-    }),
-  ),
+  ...[1, 2, 3, 4].map((by): Preset => ({
+    name: `Catch: a miss ${by} short`,
+    sprites: [
+      [25, true],
+      [133, false],
+    ],
+    make: (o) =>
+      catchTimeline({
+        own: own(25),
+        foe: foe(133),
+        ball: 'great',
+        caught: false,
+        roll: { total: 7 - by, need: 7, caught: false },
+        short: o.short,
+      }),
+  })),
   // The Bait (docs/25): the throw stops on the ground while the player is asked, then plays on from there.
   {
     name: 'Catch: short, held for the Bait',
