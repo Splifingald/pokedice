@@ -166,9 +166,10 @@ gh variable set DISCORD_RAID_ROLE --body "the-id"
 
 ## 8. The daily raid post
 
-Every day at about 00:07 UTC (GitHub's schedules can run a few minutes late), `#🔥-daily-raid` gets the day's raid
-Pokémon: its name (✨ when shiny), level and HP bars, its lair, its catch value and each ball's odds, a countdown to
-the next raid, its animated sprite and its area's picture. It pings Raid Pings. The raid comes from the game's own
+Every day at about 00:07 UTC (GitHub's schedules can run a few minutes late), `#🔥-daily-raid` gets a small card,
+**Today's raid**: the Pokémon's name (✨ when shiny), level and HP bars, its catch value and its animated sprite; the
+lair, the odds and the countdown stay in the game. No text above the card: the message holds only the Raid Pings
+mention (Discord pings from the message text alone). The raid comes from the game's own
 calendar over the live content, so it's the raid players get, including your anchors and swaps in Admin → Events.
 
 **Nothing is posted while raids are Off or On for admin** in Admin → Events. Switch them **On for everyone** and the

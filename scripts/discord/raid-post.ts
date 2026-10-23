@@ -13,21 +13,11 @@ import { BUNDLE, withStatics } from '@/config/bundle'
 import { isPlayableBundle, rowsToBundle } from '@/config/mapping'
 import { fetchAllRows } from '@/config/remote'
 import showdown from '@/data/showdown-sprites.json'
-import { ballBonus, catchChance, catchValueOf, compileGameData, msToUtcMidnight, raidOfDay, regionOfArea, utcDay, type GameData, type RaidDay } from '@/engine'
-// The map, not fx/areaArt: that one reaches the i18n sheet, which only Vite can load.
-import { AREA_ART, ART_GEOMETRY } from '@/fx/areaArtMap'
+import { catchValueOf, compileGameData, raidOfDay, utcDay, type GameData, type RaidDay } from '@/engine'
 import { showdownSpriteUrl, type ShowdownEntry } from '@/lib/showdown'
 import { postWebhook, type DEmbed } from './api'
 import { loadEnv } from './env'
 import { COLORS, SITE } from './layout'
-
-const KIND_LABEL: Record<RaidDay['kind'], string> = {
-  special: 'Special raid',
-  mythical: 'Mythical raid',
-  legendary: 'Legendary raid',
-  pseudo: 'Raid',
-  filler: 'Raid',
-}
 
 /** The raid Pokémon's front sprite: Showdown's animated one when there is one, else the game's own picture. */
 export function raidSprite(dex: number, shiny: boolean, site = SITE): string {
@@ -43,50 +33,26 @@ export interface RaidMessageOptions {
   site?: string
 }
 
-/** The webhook message for one day's raid: what the raid card in the game shows, plus each ball's odds. */
+/** The webhook message for one day's raid: a small card (who, level, bars, catch value); the game has the rest. */
 export function raidMessage(data: GameData, raid: RaidDay, day: string, opts: RaidMessageOptions = {}) {
   const site = opts.site ?? SITE
   const cfg = data.config.events.raid
-  const species = data.species[raid.dex]
-  const name = species?.name ?? `#${raid.dex}`
-  const area = data.areas.find((a) => a.id === raid.areaId)
-  const region = area ? data.regions.find((r) => r.id === regionOfArea(area)) : undefined
-  const value = catchValueOf(data, raid.dex)
-  const balls = Object.values(data.items)
-    .filter((it) => it.effect.kind === 'ball')
-    .sort((a, b) => ballBonus(a) - ballBonus(b))
-  const pct = (bonus: number) => `${Math.round(catchChance(value, bonus) * 100)}%`
-  const odds = [`No ball ${pct(0)}`, ...balls.map((b) => `${b.name} ${pct(ballBonus(b))}`)].join(' · ')
-  const start = Date.parse(`${day}T00:00:00Z`)
-  const next = Math.round((start + msToUtcMidnight(start)) / 1000)
-  const art = AREA_ART[raid.areaId]
-  const picture = art && ART_GEOMETRY[art] ? `/area-art/${art}.png` : null
-
+  const name = data.species[raid.dex]?.name ?? `#${raid.dex}`
   const embed: DEmbed = {
-    author: { name: KIND_LABEL[raid.kind] },
+    author: { name: "Today's raid" },
     title: raid.shiny ? `✨ Shiny ${name}` : name,
     url: site,
-    description: [
-      `Lv.${cfg.level} · ${cfg.bars} HP bars`,
-      area ? `Its lair: **${area.name}**${region ? `, ${region.name}` : ''}` : '',
-      `Team up with up to 2 friends. A new raid comes <t:${next}:R>.`,
-    ]
-      .filter(Boolean)
-      .join('\n'),
+    description: `Lv.${cfg.level} · ${cfg.bars} HP bars`,
     color: raid.shiny ? COLORS.gold : COLORS.red,
-    fields: [
-      { name: 'Catch value', value: String(value), inline: true },
-      { name: 'Catch odds once its bars are broken', value: odds },
-    ],
+    fields: [{ name: 'Catch value', value: String(catchValueOf(data, raid.dex)), inline: true }],
     thumbnail: { url: raidSprite(raid.dex, raid.shiny, site) },
-    ...(picture ? { image: { url: `${site}${picture}` } } : {}),
-    footer: { text: 'The same raid for every trainer · new raid every day at 00:00 UTC' },
-    timestamp: new Date(start).toISOString(),
+    timestamp: new Date(Date.parse(`${day}T00:00:00Z`)).toISOString(),
   }
   return {
     username: 'Pokédice Raids',
     avatar_url: `${site}/discord/raid.png`,
-    content: `${opts.roleId ? `<@&${opts.roleId}> ` : ''}Today's raid is up: **${raid.shiny ? `Shiny ${name}` : name}**!`,
+    // No text above the card: only the role mention, since Discord pings from the message text alone.
+    ...(opts.roleId ? { content: `<@&${opts.roleId}>` } : {}),
     embeds: [embed],
     allowed_mentions: { parse: [], roles: opts.roleId ? [opts.roleId] : [] },
   }

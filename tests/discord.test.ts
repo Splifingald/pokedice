@@ -205,20 +205,23 @@ describe('the daily raid post', () => {
   const day = '2026-10-11'
   const raid = raidOfDay(data, day)!
 
-  it("names the game's raid of the day, with its catch odds", () => {
+  it("names the game's raid of the day in a small card: level, bars and catch value only", () => {
     const msg = raidMessage(data, raid, day, { roleId: '42' })
-    const name = data.species[raid.dex]!.name
-    expect(msg.embeds[0]!.title).toContain(name)
-    expect(msg.content.startsWith('<@&42> ')).toBe(true)
+    const e = msg.embeds[0]!
+    expect(e.author!.name).toBe("Today's raid")
+    expect(e.title).toContain(data.species[raid.dex]!.name)
+    expect(e.description).toBe(`Lv.${data.config.events.raid.level} · ${data.config.events.raid.bars} HP bars`)
+    expect(e.fields!.map((f) => f.name)).toEqual(['Catch value'])
+    expect(e.image).toBeUndefined()
+    expect(msg.content).toBe('<@&42>')
     expect(msg.allowed_mentions.roles).toEqual(['42'])
-    expect(msg.embeds[0]!.fields![1]!.value).toMatch(/^No ball \d+% · Poké Ball \d+%/)
-    expect(msg.embeds[0]!.description).toContain('<t:1791763200:R>')
   })
 
-  it('pings nobody without a role, and a shiny raid says so', () => {
+  it('has no text above the card without a role, and a shiny raid says so', () => {
     const msg = raidMessage(data, { ...raid, shiny: true }, day)
-    expect(msg.content).toMatch(/^Today's raid is up: \*\*Shiny /)
+    expect('content' in msg).toBe(false)
     expect(msg.allowed_mentions.roles).toEqual([])
+    expect(msg.embeds[0]!.title).toMatch(/^✨ Shiny /)
     expect(msg.embeds[0]!.thumbnail!.url).toMatch(/shiny/)
   })
 })
