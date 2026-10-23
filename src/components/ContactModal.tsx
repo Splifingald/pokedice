@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { getLang } from '@/i18n'
 import { useT } from '@/i18n/react'
+import { offlineOr } from '@/lib/online'
 import { giftsWait, parseGifts } from '@/engine'
 import {
   FEEDBACK_MESSAGE_MAX,
@@ -69,7 +70,9 @@ function History({ onClose }: { onClose: () => void }) {
 
   if (!messages)
     return (
-      <p className="text-xl text-muted">{t(loading ? 'ui.common.loading' : 'ui.contact.historyFailed')}</p>
+      <p className="text-xl text-muted">
+        {loading ? t('ui.common.loading') : offlineOr(t('ui.contact.historyFailed'))}
+      </p>
     )
   const info = wait !== 'off' && (
     <>
@@ -148,7 +151,7 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
     const err = await sendFeedback(title, message)
     setSending(false)
     if (err) {
-      setError(t(err === 'rate_limited' ? 'ui.contact.rateLimited' : 'ui.contact.failed'))
+      setError(err === 'rate_limited' ? t('ui.contact.rateLimited') : offlineOr(t('ui.contact.failed')))
       return
     }
     setTitle('')

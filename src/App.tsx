@@ -3,9 +3,9 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { MotionConfig } from 'framer-motion'
 import { setCriesEnabled, unlockCriesOnFirstTap } from '@/audio/cries'
 import { setSfxEnabled } from '@/audio/sfx'
-import { t } from '@/i18n'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { GameLayout } from '@/components/GameLayout'
+import { PageLoading } from '@/components/PageLoading'
 import { RotateCover } from '@/components/RotateCover'
 import { ToastStack } from '@/components/Toast'
 import { AreaScreen } from '@/screens/Area'
@@ -28,6 +28,7 @@ import { EventsScreen } from '@/screens/events/EventsScreen'
 import { UndergroundScreen } from '@/screens/events/Underground'
 import { UndergroundDig } from '@/screens/events/UndergroundDig'
 import { ProgressRaidScreen } from '@/screens/events/ProgressRaidScreen'
+import { PageMeta } from '@/lib/pageMeta'
 import { soundOn } from '@/save/storage'
 import { useGame } from '@/store/game'
 import { startBackgroundServices } from '@/store/sync'
@@ -40,7 +41,7 @@ const KitchenSink = lazy(() => import('@/screens/KitchenSink').then((m) => ({ de
 const FxLab = lazy(() => import('@/screens/FxLab').then((m) => ({ default: m.FxLab })))
 
 function Lazy({ children }: { children: ReactNode }) {
-  return <Suspense fallback={<div className="p-6 text-3xl">{t('ui.common.loading')}</div>}>{children}</Suspense>
+  return <Suspense fallback={<PageLoading />}>{children}</Suspense>
 }
 
 export function App() {
@@ -59,6 +60,8 @@ export function App() {
     <MotionConfig reducedMotion={settings.reducedMotion ? 'always' : 'user'}>
       <ErrorBoundary>
         <BrowserRouter>
+          {/* The tab's title per page, and the focus on its <h1> after a move (docs/15 §7). */}
+          <PageMeta />
           <Routes>
             <Route path="/" element={<Title />} />
             <Route path="/new" element={<NewGame />} />

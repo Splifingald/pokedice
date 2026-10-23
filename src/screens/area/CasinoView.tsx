@@ -5,6 +5,7 @@ import { sfx } from '@/audio/sfx'
 import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { GoldPill } from '@/components/GoldPill'
+import { useMotion } from '@/lib/motion'
 import { CashChip } from '@/screens/events/live'
 import { RunRoundGauge } from '@/screens/area/RoundGauge'
 import { PixelIcon } from '@/components/icons'
@@ -52,7 +53,8 @@ export function CasinoView() {
   const save = useGame((s) => s.save)
   const cfg = useGame((s) => s.data.config.slotMachine)
   const prizeName = useGame((s) => s.data.species[s.data.config.slotMachine.prizeDex]?.name) ?? t('ui.common.pokemon')
-  const reduced = useGame((s) => s.settings.reducedMotion)
+  // Off: the result at once. Calm (the OS's reduced motion): no 11-a-second flicker, the reels just stop in three steps.
+  const { level, calm } = useMotion()
   const [reels, setReels] = useState<SlotSymbol[]>(['prize', 'ball', 'prize'])
   const [stopped, setStopped] = useState(3)
   const [last, setLast] = useState<SpinResult | null>(null)
@@ -89,21 +91,24 @@ export function CasinoView() {
             : 'gold',
       )
     }
-    if (reduced) return reveal()
+    if (level === 'off') return reveal()
     setHidden(res.gold)
     setStopped(0)
     stopAt.current = { target: res.reels, stopped: 0 }
-    // Every turning reel flickers; they stop one after the other, left to right, on the drawn result.
-    const flicker = window.setInterval(
-      () =>
-        setReels((r) =>
-          r.map((_, i) =>
-            i < stopAt.current.stopped ? stopAt.current.target[i]! : Math.random() < 0.5 ? 'ball' : 'prize',
-          ),
-        ),
-      TICK_MS,
-    )
-    timers.current.push(flicker)
+    // Every turning reel flickers (not when calm: they wait, still); they stop one after the other, left to right, on
+    // the engine's result.
+    const flicker = calm
+      ? undefined
+      : window.setInterval(
+          () =>
+            setReels((r) =>
+              r.map((_, i) =>
+                i < stopAt.current.stopped ? stopAt.current.target[i]! : Math.random() < 0.5 ? 'ball' : 'prize',
+              ),
+            ),
+          TICK_MS,
+        )
+    if (flicker) timers.current.push(flicker)
     for (let i = 0; i < 3; i++) {
       timers.current.push(
         window.setTimeout(
@@ -147,17 +152,27 @@ export function CasinoView() {
               : t('ui.casino.reels', { symbols: joinList(reels.map((r) => (r === 'ball' ? t('ui.casino.pokeBall') : prizeName))) })
           }
         >
-          {[0, 1, 2].map((i) => (
-            <motion.div
-              key={i}
-              className="flex h-24 w-20 items-center justify-center bg-paper shadow-ring sm:h-28 sm:w-24"
-              style={{ boxShadow: 'inset 0 6px 0 rgba(0,0,0,0.18), inset 0 -6px 0 rgba(0,0,0,0.18)' }}
-              animate={spinning && i >= stopped ? { y: [0, -3, 0] } : { y: 0 }}
-              transition={spinning && i >= stopped ? { duration: 0.18, repeat: Infinity } : { duration: 0.1 }}
-            >
-              <Symbol symbol={reels[i]!} prizeDex={cfg.prizeDex} size={64} />
-            </motion.div>
-          ))}
+          {[0, 1, 2].map((i) => {
+            const turning = spinning && i >= stopped
+            return (
+              <motion.div
+                key={i}
+                className="flex h-24 w-20 items-center justify-center bg-paper shadow-ring sm:h-28 sm:w-24"
+                style={{ boxShadow: 'inset 0 6px 0 rgba(0,0,0,0.18), inset 0 -6px 0 rgba(0,0,0,0.18)' }}
+                animate={turning && !calm ? { y: [0, -3, 0] } : { y: 0 }}
+                transition={turning && !calm ? { duration: 0.18, repeat: Infinity } : { duration: 0.1 }}
+              >
+                {turning && calm ? (
+                  // Calm: a still "?" until this reel stops, rather than symbols swapping 11 times a second.
+                  <span className="text-[48px] leading-none text-muted" aria-hidden="true">
+                    ?
+                  </span>
+                ) : (
+                  <Symbol symbol={reels[i]!} prizeDex={cfg.prizeDex} size={64} />
+                )}
+              </motion.div>
+            )
+          })}
         </div>
 
         <p

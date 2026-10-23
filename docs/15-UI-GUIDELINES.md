@@ -24,10 +24,12 @@ as they are.
 Defined once in `src/theme/colors.ts`, exposed as Tailwind colours (`tailwind.config.ts`). Never write a hex in a
 component when a token exists; never invent a near-duplicate.
 
-**Two themes** (Settings → Theme: Light, Dark, Auto; unset = Light): **Daybreak** (light) and **Dusk** (dark). The
-themed tokens are CSS variables (`--c-ink` …) generated from `THEMES` by a Tailwind plugin; `data-theme="dark"` on
-`<html>` switches them (`src/theme/theme.ts`, and a two-line script in `index.html` so a dark page never flashes
-light). The pixel frames and the ground texture are redrawn in the theme's colours (`frameSpecs(theme)`).
+**Two themes** (Settings → Theme: Light, Dark, Auto): **Daybreak** (light) and **Dusk** (dark). A new player follows
+the device (Auto, `DEFAULT_SETTINGS`); stored settings without a theme (a player from before) stay Light, so nobody's
+look changes under them. The themed tokens are CSS variables (`--c-ink` …) generated from `THEMES` by a Tailwind plugin;
+`data-theme="dark"` on `<html>` switches them (`src/theme/theme.ts`, and a short script in `index.html` so a dark page
+never flashes light: the theme last shown, or on a first visit the device's). The pixel frames and the ground texture
+are redrawn in the theme's colours (`frameSpecs(theme)`).
 
 | Token (Tailwind) | Daybreak | Dusk | Use |
 |---|---|---|---|
@@ -162,7 +164,9 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `PixelIcon` | Every icon | Pixel maps drawn as SVG rects: the Pokémon ones hand-drawn in `icons.tsx` (balls, Pokédex, badges, status symbols), the generic UI ones (coin, heart, shop, trophy, settings…) from the "1-bit Pixel Icons" pack, recoloured into `packIcons.ts` by `scripts/import-icons.ts` (11–16 px squares; the tab bar's on 16×16). Draw them at 12 px or more. One shared palette (`ICON_PALETTE`); a map may have its own (`OWN_PALETTE`) |
 | `TrainerName` / `NameIn` | Another trainer's name anywhere social (§24) | Plain; golden (`rich`: the `rich` token, a sparkle that twinkles, a stepped glint, still under reduced motion). Inline, so `truncate` around it still ends in "…". `NameIn` puts it in a translated sentence ("Misty's"), only the name golden |
 | `RulesModal` / `InfoButton` | A feature's rules: once when it unlocks, then from the blue INFO button at the bottom of its page | The special events' pop-up: its picture as a banner (`RulesBanner`), or a banner drawn in code (the gifts'), a NOW OPEN tag on the unlock, 2–4 `RuleList` rows (an icon, a short title, a line with the config's numbers, optionally a small button under it); Later and Let's go! on the unlock, OK from INFO. The Day Care and Versus use it (`FeatureRules.tsx`); the events have their own copies (`EventUnlockPopup`, `EventInfo`), with the same words |
-| `RotateCover` / `RotateView` | A phone or a tablet held sideways (§6) | Over everything, not dismissable: the pixel phone tipping upright in steps (upright and still under reduced motion), the title and a line |
+| `RotateCover` / `RotateView` | A phone held sideways (§6) | Over everything, not dismissable: the pixel phone tipping upright in steps (upright and still under reduced motion), the title and a line |
+| `ToastStack` / `ToastCard` | A short word on what just happened, or why something didn't (§7) | On `<body>`, beside the dialogs: under the top bar on phones, at the bottom on desktop; four at most. Info (panel) and good (green): a tap closes them, they go after 4 s or 1.2 s + 70 ms a character, waiting while touched, hovered or focused. Error (red): a ✕ (44 px), stays until closed |
+| `PageLoading` | A page split out of the main bundle loading (`Lazy` in `App.tsx`) | A Poké Ball drawn in code wobbling in pixel steps (`steps()`), still under calm; "Loading…" for screen readers (`role="status"`) |
 | `SupportModal` / `SupportView` | SUPPORT ME (side menu, Settings), and once per region at its 5th badge | A rules pop-up (the village banner) with a button per row: Join the Discord (left out with no link set), Share invite link, Support me on Ko-fi under the line saying Pokémon is a licence so the game is never for sale; a big OK |
 | `GiftPresent` / `GiftOpened` / `GiftResult` / `GiftMoment` | A gift from the developer (§23) | Under a message: the wrapped gift (wobbling, still when the OS asks for reduced motion), "3 things inside" and what happens next (close the message, OPEN IT in My messages, or why it waits); opened: what it held; the opening, full screen; what arrived and where |
 | `TrickGauge` / `TrickStage` / `NeedDie` / `TrickScreen` / `TrickPlate` / `TrickRecap` / `TrickCard` / `TierChip` / `TrickSprite` / `TrickRulesModal` | Trick or Treat (§28) | The gauge: its value in numbers ("62/100") with what the last Treat or miss added (a gold "+18" that pops in; the added stretch flashes white twice once filled), its sections each in a colour of its own (red for a 6, the hardest, then orange, yellow, green and teal as it gets easier; lilac where no roll can) with a dark line between two, the flee zone striped night with a ghost, bright up to its value and as a pastel past it, the section it is in ringed in gold, the white post where it stands, and under each section the die a Trick Ball needs on a chip of the section's colour (`NeedDie`: the `Die` face with its "+", the face alone where a section is narrow; the current one ringed in gold), then Flees; a `meter`. The stage: the battle's (the area's picture as the battle cuts it, a night sky where there's none), the ghost at its centre floating in pixel steps (still when calm), its shadow, the timelines on top; at rest the ball on the ground (caught) or nobody (fled). The screen in every state (idle, after a Treat, a Treat and a throw playing, a miss, a flee, caught), the plate, the result card (caught: the battle's `CatchCard` with the Trick Ball, NEW, ✦ Shiny, where it went, a secret area; fled), the preview card, the rarity chip (a word, never colour alone), the two pictures, the rules |
@@ -179,17 +183,24 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `PlayStylePicker` / `PlayStylePrompt` / `PlayStylePanel` / `IdleRulesModal` / `AutoModeButton` / `AutopilotNote` | Idle mode and the play styles (§34, docs/36) | The three styles as a radio group of cards (an icon, the name, its line; the picked one on gold-pale with the gold ring and a check; none picked; arrow keys move the pick); a new game's question (NEXT disabled until one is picked); Settings' panel with INFO; the rules (INFO only: they never pop up); the area's switch (AUTO-MODE or Idle mode, off and on, with Prof. Oak's tip); the line standing in for a card the autopilot takes (each style's); the catch panel with Idle's pick (`BattleBits`) |
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
-**Esc closes the top dialog only**, focus returns to what opened it.
+**the page behind is inert** (`src/lib/inert.ts`: a screen reader's swipe can't leave the dialog either), **Esc closes
+the top dialog only**, focus returns to what opened it. Every dialog is portalled to `<body>`: what came before the top
+one (the game in `#root`, a dialog under it) is inert, what opened after it (a moment started from inside it) stays
+live, and so do the toasts (`data-stay-live`). The rotate cover holds everything, the toasts included.
 
 ## 6. Layout
 
 - Phone first, from **360 px**. Nothing scrolls sideways at 360, 375, 768 or 1280 (`e2e/layout.spec.ts`).
-- **Portrait only on phones and tablets.** The installed app is held upright by its manifest (`orientation:
-  portrait`); in a browser tab the game asks for the lock (`lockPortrait`, allowed only in full screen on Android, never
-  on iOS) and, while the device is still sideways, `RotateCover` covers everything: a pixel phone tipping upright and
-  "Turn your device", nothing to dismiss, the game behind it inert. Sideways is the screen's orientation
-  (`screen.orientation`), not the page's shape, so a keyboard that makes the page wide never shows it; computers never
-  see it (`platform().mobile`). The rule is the device's, not a feature: no admin switch (`e2e/rotate.spec.ts`).
+- **Portrait only on phones; tablets turn.** A phone plays upright: the installed app is held upright by its manifest
+  (`orientation: portrait`); in a browser tab the game asks for the lock (`lockPortrait`, allowed only in full screen on
+  Android, never on iOS) and, while the phone is still sideways, `RotateCover` covers everything: a pixel phone tipping
+  upright and "Turn your device", nothing to dismiss, the game behind it inert. A **tablet** (a mobile device whose
+  screen is at least 600 CSS px on its short side, `isTabletScreen`) held sideways plays on in the wide layout (the
+  side nav from 768 px, columns from 1024 px) and is never asked to lock. The manifest can't tell a tablet from a phone,
+  so it keeps the portrait lock for the phones' sake: an Android tablet with the game installed stays upright (iOS
+  doesn't read the manifest's orientation). Sideways is the screen's orientation (`screen.orientation`), not the page's
+  shape, so a keyboard that makes the page wide never shows it; computers never see it (`platform().mobile`). The rule
+  is the device's, not a feature: no admin switch (`e2e/rotate.spec.ts`).
 - **No zoom on phones**: `touch-action: pan-x pan-y` on the page (no pinch, no double-tap zoom) and Safari's gesture
   events cancelled (`main.tsx`). Not through the viewport tag, which axe counts as a critical issue.
 - **A pop-up is never wider than the screen**: a sheet, the result card or the drawer that is a flex item carries
@@ -225,6 +236,14 @@ Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`)
 - Disabled things say why, in words, next to them.
 - Live text (battle messages, toasts) is in an `aria-live` region. Canvases have a `role="img"` and a label, and
   anything you can do on a canvas also exists as a button.
+- **Toasts last long enough to read** (`toastMs`): 4 s at least, 1.2 s + 70 ms a character beyond (a caller may ask
+  for longer, never shorter); the countdown waits while a finger, the pointer or the focus is on one. An **error** (the
+  red `bad` tone) stays until its ✕ (44 px): a toast is often the only word on why something didn't happen.
+- **Each page names itself**: `document.title` is "Team · Pokédice" in the player's language (`ui.page.title`; the
+  area's name on `/area`, "Battle" in a fight, the game's name alone on the title page), and after a move inside the
+  game the focus lands on the new page's `<h1>` (`tabIndex=-1`; the ring shows for a keyboard only), unless a dialog
+  or a field already has it (`src/lib/pageMeta.ts`, mounted once in `App.tsx`). The first load leaves the focus alone.
+- **Dialogs make the page behind inert** (§5), so VoiceOver and TalkBack stay in them.
 - Arrow keys in radio groups and tab lists; Enter/Space on everything else.
 
 ## 8. Motion
@@ -237,7 +256,9 @@ How much the game animates comes from one place, `src/lib/motion.ts`:
 | `short` | The player (Settings → Animations), or the OS "reduce motion" | A hit is one generic impact (no typed attack); Mega Evolution and Gigantamax are a white flash and the new sprite; a catch is the throw with its result at once; a quick Pokémon Center. Evolutions, Eggs hatching and encounters (legendary and trainer intros) still play in full |
 | `off` | Admins only (Settings → No animations) | Nothing animates: every timeline jumps to its end state, its messages kept |
 
-`calm` (the OS setting, or `off`): no screen shake, no flashing, the Home team stands still. One exception, the user's
+`calm` (the OS setting, or `off`): no screen shake, no flashing, the Home team stands still, the Game Corner's reels
+don't flicker (each waits still on a "?" and stops on the engine's symbol in turn: three steps), a loading page's Poké
+Ball doesn't wobble. One exception, the user's
 call: Distortion World's lasting distortion (§27) is the world's identity and keeps playing under a calm OS (never faster
 than 3 a second); only `off` stills it. The nightmare's lasting effects (§29: the haunted foe, the moon's smoke, the
 raid's vignette) are not an exception: a calm OS stills them (`nightmareLevel`). Its intro and waking are scenes, not
@@ -351,6 +372,10 @@ Players shouldn't have to make many requests:
   - **Named in the admin**: every picture (and every battle scene) has a name and a few words on what it shows in
     `src/admin/pictureNames.ts`, which the admin's pickers list by group; `tests/admin-picture-names.test.ts` fails on
     a measured picture without one.
+- **Offline, say so**: when the device has no connection (`navigator.onLine` false, `useOnline` / `offlineOr` in
+  `src/lib/online.ts`), what needs the server — Friends, Trades, the leaderboard, Versus, My messages, signing in and
+  the cloud sync — says "You're offline. Check your connection." (`ui.common.offline`) where it would have said
+  "couldn't load, try again later"; signing in doesn't leave for a provider's page that can't load. Nothing else changes.
 
 ## 12. Navigation, Home and stages
 

@@ -1071,6 +1071,7 @@ ui.common.ok,OK,OK,OK,OK,OK,OK,OK,OK,확인,好的
 ui.common.on,ON,ON,SÍ,AN,ON,LIGADO,ATIVO,オン,켬,开
 ui.common.off,OFF,OFF,NO,AUS,OFF,DESLIGADO,INATIVO,オフ,끔,关
 ui.common.loading,Loading…,Chargement…,Cargando…,Wird geladen…,Caricamento…,A carregar…,Carregando…,読み込み中…,불러오는 중…,加载中…
+ui.common.offline,You're offline. Check your connection.,Tu es hors ligne. Vérifie ta connexion.,Estás sin conexión. Comprueba tu red.,Du bist offline. Prüf deine Verbindung.,Sei offline. Controlla la connessione.,Estás offline. Verifica a tua ligação.,Você está offline. Verifique sua conexão.,オフラインです。接続を確認してください。,오프라인 상태예요. 연결을 확인해 주세요.,你已离线。请检查网络连接。
 ui.common.level.short,Lv.{n},N.{n},Nv.{n},Lv.{n},Lv.{n},Nv.{n},Nv.{n},Lv.{n},Lv.{n},Lv.{n}
 ui.common.unknown,???,???,???,???,???,???,???,？？？,???,？？？
 ui.common.listSep,", ",", ",", ",", ",", ",", ",", ",、,", ",、
@@ -1087,6 +1088,8 @@ ui.nav.exploring, (exploring {area}), (en exploration : {area}), (explorando {ar
 ui.nav.finishFight,Finish the fight first,Termine d'abord le combat,Termina antes el combate,Beende zuerst den Kampf,Prima finisci la lotta,Termina primeiro a batalha,Termine a batalha primeiro,先に戦闘を終わらせよう,먼저 배틀을 끝내세요,请先结束战斗
 ui.nav.boardLocked,Win your first badge to open the leaderboard,Gagne ton premier badge pour ouvrir le classement,Gana tu primera medalla para abrir la clasificación,"Gewinne deinen ersten Orden, um die Bestenliste zu öffnen",Vinci la tua prima medaglia per aprire la classifica,Ganha a tua primeira insígnia para abrir a classificação,Ganhe sua primeira insígnia para abrir a classificação,最初のバッジを手に入れるとランキングが開くよ,첫 배지를 얻으면 랭킹이 열려요,赢得第一枚徽章即可开启排行榜
 ui.nav.backToGame,Pokédice — back to the game,Pokédice — retour au jeu,Pokédice: volver al juego,Pokédice — zurück zum Spiel,Pokédice — torna al gioco,Pokédice — voltar ao jogo,Pokédice — voltar ao jogo,Pokédice — ゲームに戻る,Pokédice — 게임으로 돌아가기,Pokédice — 返回游戏
+ui.page.title,{page} · Pokédice,{page} · Pokédice,{page} · Pokédice,{page} · Pokédice,{page} · Pokédice,{page} · Pokédice,{page} · Pokédice,{page} · Pokédice,{page} · Pokédice,{page} · Pokédice
+ui.page.battle,Battle,Combat,Combate,Kampf,Lotta,Batalha,Batalha,バトル,배틀,战斗
 ui.nav.leaderboard,Leaderboard,Classement,Clasificación,Bestenliste,Classifica,Classificação,Classificação,ランキング,랭킹,排行榜
 ui.nav.settings,Settings,Réglages,Ajustes,Einstellungen,Impostazioni,Definições,Configurações,設定,설정,设置
 ui.nav.saveInBrowser,Your save lives in this browser.,Ta sauvegarde vit dans ce navigateur.,Tu partida vive en este navegador.,Dein Spielstand lebt in diesem Browser.,Il tuo salvataggio vive in questo browser.,O teu jogo guardado vive neste navegador.,Seu jogo salvo fica neste navegador.,セーブデータはこのブラウザに保存されています。,저장 데이터는 이 브라우저에 있어요.,存档保存在这个浏览器中。
@@ -1191,7 +1194,7 @@ ui.oak.gotIt,GOT IT,COMPRIS,ENTENDIDO,VERSTANDEN,CAPITO,PERCEBI,ENTENDI,わか�
 ui.toast.stack,Notifications,Notifications,Notificaciones,Benachrichtigungen,Notifiche,Notificações,Notificações,お知らせ,알림,通知
 ui.modal.dialog,Dialog,Boîte de dialogue,Cuadro de diálogo,Dialog,Finestra di dialogo,Caixa de diálogo,Caixa de diálogo,ダイアログ,대화상자,对话框
 ui.rotate.title,Turn your device,Tourne ton appareil,Gira tu dispositivo,Dreh dein Gerät,Ruota il dispositivo,Roda o dispositivo,Gire o aparelho,端末を縦にしてね,기기를 세로로 돌려 주세요,请把设备竖过来
-ui.rotate.text,Pokédice plays upright: hold your phone or tablet in portrait.,Pokédice se joue à la verticale : tiens ton téléphone ou ta tablette en mode portrait.,Pokédice se juega en vertical: sujeta tu móvil o tablet en modo retrato.,Pokédice spielt man hochkant: Halte dein Handy oder Tablet im Hochformat.,Pokédice si gioca in verticale: tieni il telefono o il tablet dritto.,O Pokédice joga-se na vertical: segura o telemóvel ou o tablet ao alto.,Pokédice é jogado na vertical: segure o celular ou o tablet em pé.,Pokédiceは縦画面で遊ぶゲームです。スマホやタブレットを縦向きに持ってください。,Pokédice는 세로 화면으로 즐기는 게임이에요. 휴대폰이나 태블릿을 세로로 들어 주세요.,Pokédice需要竖屏游玩：请竖着拿手机或平板。
+ui.rotate.text,Pokédice plays upright: hold your phone in portrait.,Pokédice se joue à la verticale : tiens ton téléphone en mode portrait.,Pokédice se juega en vertical: sujeta tu móvil en modo retrato.,Pokédice spielt man hochkant: Halte dein Handy im Hochformat.,Pokédice si gioca in verticale: tieni il telefono dritto.,O Pokédice joga-se na vertical: segura o telemóvel ao alto.,Pokédice é jogado na vertical: segure o celular em pé.,Pokédiceは縦画面で遊ぶゲームです。スマホを縦向きに持ってください。,Pokédice는 세로 화면으로 즐기는 게임이에요. 휴대폰을 세로로 들어 주세요.,Pokédice需要竖屏游玩：请竖着拿手机。
 ui.battle.heading,Battle: {mine} against {foe},Combat : {mine} contre {foe},Combate: {mine} contra {foe},Kampf: {mine} gegen {foe},Lotta: {mine} contro {foe},Batalha: {mine} contra {foe},Batalha: {mine} contra {foe},戦闘：{mine} 対 {foe},배틀: {mine} 대 {foe},战斗：{mine}对{foe}
 ui.battle.aWild,a wild {name},un {name} sauvage,un {name} salvaje,ein wildes {name},un {name} selvatico,um {name} selvagem,um {name} selvagem,野生の{name},야생 {name},野生的{name}
 ui.battle.theirs,{trainer}'s {name},le {name} de {trainer},el {name} de {trainer},{trainer}s {name},{name} di {trainer},{name} de {trainer},{name} de {trainer},{trainer}の{name},{trainer}의 {name},{trainer}的{name}

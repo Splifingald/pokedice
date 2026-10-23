@@ -213,6 +213,32 @@ canvas.pixelated,
   animation: rotate-hint 2.4s steps(1, end) infinite;
 }
 
+/* A page loading (PageLoading): the Poké Ball wobbles on its base in pixel steps, as before a catch, then rests.
+   Calm leaves the class off; reduced motion would leave it on its last frame, upright. */
+@keyframes loading-ball {
+  0%,
+  45%,
+  100% {
+    transform: rotate(0deg);
+  }
+  55% {
+    transform: rotate(-20deg);
+  }
+  65% {
+    transform: rotate(20deg);
+  }
+  75% {
+    transform: rotate(-10deg);
+  }
+  85% {
+    transform: rotate(10deg);
+  }
+}
+.loading-ball {
+  transform-origin: 50% 100%;
+  animation: loading-ball 1.2s steps(1, end) infinite;
+}
+
 /* Reduced motion: the OS setting or the in-game setting (html.reduce-motion) collapses everything. */
 @media (prefers-reduced-motion: reduce) {
   *,

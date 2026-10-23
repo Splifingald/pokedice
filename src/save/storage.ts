@@ -84,14 +84,23 @@ export interface Settings {
   raidFast?: boolean
   /** UI language. Unset on an older save: the browser's language decides, English if we don't speak it. */
   lang?: Lang
-  /** Light, dark or the device's. Unset = light. */
+  /**
+   * Light, dark or the device's. A new player follows the device (DEFAULT_SETTINGS); unset in stored settings = light,
+   * so a player from before keeps the look they had.
+   */
   theme?: ThemeSetting
   /** Haptics (docs/38), where the admin has switched them on and the device can vibrate. Unset = on. */
   haptics?: boolean
   /** Battle music (docs/38), where the admin has switched it on; it also needs Sound. Unset = on. */
   music?: boolean
 }
-export const DEFAULT_SETTINGS: Settings = { sfx: true, sound: true, reducedMotion: false, multiExp: true }
+export const DEFAULT_SETTINGS: Settings = {
+  sfx: true,
+  sound: true,
+  reducedMotion: false,
+  multiExp: true,
+  theme: 'auto',
+}
 
 /** Whether the game makes any sound: one switch for the effects and the cries. */
 export const soundOn = (s: Pick<Settings, 'sound'>) => s.sound !== false

@@ -42,6 +42,7 @@ import { useSnapToMe } from '@/lib/useSnapToMe'
 import { getLang, searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useFriends } from '@/lib/friends'
+import { offlineOr } from '@/lib/online'
 import { boardWindow, friendsOnly } from '@/lib/leaderboard'
 import { useFriendsFilter } from '@/lib/useFriendsFilter'
 import {
@@ -68,8 +69,8 @@ type Load =
   | { state: 'offline' }
   | { state: 'error'; why: string }
 
-/** A refusal of the database, said in the player's language. */
-const errorText = (t: (k: string) => string, err: unknown) => t(`ui.versus.err.${versusErrorCode(err)}`)
+/** A refusal of the database, said in the player's language; "You're offline" when there's no connection. */
+const errorText = (t: (k: string) => string, err: unknown) => offlineOr(t(`ui.versus.err.${versusErrorCode(err)}`))
 
 function VersusScreenMain() {
   const { t } = useT()
