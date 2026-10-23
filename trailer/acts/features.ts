@@ -120,8 +120,8 @@ function raids(g: G, f: number, T: number) {
   drawStage(g, picture('lair-sea'), [stage], { x: 120, y: 86, z: 8 }, undefined, {
     shake: f > 0.85 && f < 1.0 ? { x: Math.round(Math.sin(f * 200) * 10), y: 0 } : { x: 0, y: 0 },
   })
-  // The raid Pokémon's five bars.
-  for (let i = 0; i < 5; i++) hpBar(g, 520 + i * 180, 40, 160, 22, i < 4 ? 1 : 1 - span(f, 0.85, 1.05))
+  // The raid Pokémon's three bars, the last one draining.
+  for (let i = 0; i < 3; i++) hpBar(g, 520 + i * 300, 40, 280, 22, i < 2 ? 1 : 1 - span(f, 0.85, 1.05))
   // The three trainers cut in, like the raid's opening.
   const trio: [string, number][] = [
     ['/characters/red.png', 6],

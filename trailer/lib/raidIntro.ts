@@ -1,12 +1,14 @@
 // The raid's opening (src/screens/events/RaidIntro.tsx) redrawn for the trailer: the same beats on a landscape 320×180
 // stage, stepped on the trailer's clock with seeded randomness instead of the screen's timers. The alarm and its
 // hazard tapes, the storm with lightning, the silhouette rising with a glowing outline, the pillar of light, the
-// white-out reveal with shockwaves and embers, the name slamming down as the HP bars fill.
+// white-out reveal with shockwaves and embers, the name slamming down as its three HP bars fill. Rayquaza's raids play
+// in the sky (world 'sky'): the Sky Pillar over the clouds instead of the storm, its lightning emerald.
 import { bolt, canvas, disc, ease, polyline, rng, text, textWidth } from '@/fx/pixel'
 import { spriteFrame } from '@/fx/sprites'
 import { nativeFrameOf } from './sprites'
 import { hiss, tone } from '@/audio/sfx'
 import { playWith } from './audio'
+import { SKY, SkyStage } from './skyPillar'
 
 const tints = new WeakMap<HTMLCanvasElement, Map<string, HTMLCanvasElement>>()
 /** A frame's shape in one colour (cached per frame). */
@@ -29,6 +31,9 @@ function tinted(src: HTMLCanvasElement, color: string) {
 export const RW = 320
 export const RH = 180
 const FEET = 150
+// A raid boss has three HP bars (wider than the five the trailer drew before, the same width in all).
+const BARS = 3
+const BAR_PITCH = 46
 
 interface Particle {
   x: number
@@ -50,12 +55,16 @@ export class RaidIntroScene {
   private readonly r
   private readonly bolts
   private readonly clouds
+  private readonly sky: SkyStage | null
 
   constructor(
     private readonly key: string,
     private readonly name: string,
     seed = 11,
+    world: 'storm' | 'sky' = 'storm',
   ) {
+    // The Pokémon stands on a pillar's top, over the sea of clouds.
+    this.sky = world === 'sky' ? new SkyStage(RW, RH, { x: RW / 2, y: FEET + 1, rx: 64, ry: 12 }, Math.round(RH * 0.6)) : null
     this.r = rng(seed)
     const r = rng(seed + 1)
     this.bolts = [1.15, 1.5, 1.85, 2.2].map((at) => {
@@ -89,7 +98,7 @@ export class RaidIntroScene {
       hiss(0.6, { vol: 0.1, freq: 300 })
     })
     at(3.25, () => hiss(0.18, { vol: 0.09, freq: 160 }))
-    for (let i = 0; i < 5; i++) at(3.65 + i * 0.25, () => tone(1320 + i * 220, 0.12, { vol: 0.045 }))
+    for (let i = 0; i < BARS; i++) at(3.65 + i * 0.25, () => tone(1320 + i * 220, 0.12, { vol: 0.045 }))
   }
 
   /** Draw the scene at its time T (seconds), stepping its particles from the last call. */
@@ -119,6 +128,16 @@ export class RaidIntroScene {
       g.fillRect(-10, -10, RW + 20, RH + 20)
       g.fillStyle = `rgba(242,85,63,${0.18 + 0.18 * Math.max(0, Math.sin(T * 14))})`
       g.fillRect(-10, -10, RW + 20, RH + 20)
+    } else if (this.sky) {
+      this.sky.draw(g, T)
+      for (const b of this.bolts) {
+        const e = T - b.at
+        if (e < 0 || e > 0.16) continue
+        g.fillStyle = `rgba(228,255,244,${0.45 * (1 - e / 0.16)})`
+        g.fillRect(-10, -10, RW + 20, RH + 20)
+        polyline(g, b.pts.map(([x, y]) => [Math.round(x) + 1, Math.round(y)] as [number, number]), SKY.emerald, 3)
+        polyline(g, b.pts.map(([x, y]) => [Math.round(x), Math.round(y)] as [number, number]), '#ffffff', 1)
+      }
     } else {
       const sky = g.createLinearGradient(0, 0, 0, RH)
       sky.addColorStop(0, '#120a22')
@@ -207,14 +226,25 @@ export class RaidIntroScene {
             g: 0.09,
             life: 1.4,
             age: 0,
-            c: ['#ffffff', '#ffe066', '#ffbe2e', '#c58aff'][i % 4]!,
+            c: ['#ffffff', '#ffe066', '#ffbe2e', this.sky ? SKY.emerald : '#c58aff'][i % 4]!,
             s: 1 + (i % 3),
           })
         }
       }
       for (let k2 = 0; k2 < steps; k2++)
         if (r() < 0.6)
-          this.parts.push({ x: 40 + r() * 240, y: FEET + 6, vx: (r() - 0.5) * 0.4, vy: -0.6 - r() * 0.8, g: 0, life: 2, age: 0, c: '#ff9a5a', s: 1 })
+          this.parts.push({
+            x: 40 + r() * 240,
+            y: FEET + 6,
+            vx: (r() - 0.5) * 0.4,
+            vy: -0.6 - r() * 0.8,
+            g: 0,
+            life: 2,
+            age: 0,
+            // Embers off the storm's ground; in the sky, light rising off the clouds.
+            c: this.sky ? (r() < 0.5 ? SKY.jade : SKY.paleGold) : '#ff9a5a',
+            s: 1,
+          })
     }
     for (let k2 = 0; k2 < steps; k2++)
       for (let i = this.parts.length - 1; i >= 0; i--) {
@@ -258,15 +288,15 @@ export class RaidIntroScene {
       const w = textWidth(this.name, s)
       text(g, 'RAID BATTLE', RW / 2 - textWidth('RAID BATTLE', 1) / 2, 10, '#ffbe2e', '#24304f', 1)
       text(g, this.name, RW / 2 - w / 2, 22, '#fbfdff', '#24304f', s, '#c4382a')
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < BARS; i++) {
         const f = Math.max(0, Math.min(1, (T - 3.6 - i * 0.25) / 0.24))
-        const bx = RW / 2 - (5 * 30 - 4) / 2 + i * 30
+        const bx = RW / 2 - (BARS * BAR_PITCH - 4) / 2 + i * BAR_PITCH
         g.fillStyle = '#fbfdff'
-        g.fillRect(bx - 1, 49, 28, 7)
+        g.fillRect(bx - 1, 49, BAR_PITCH - 2, 7)
         g.fillStyle = '#24304f'
-        g.fillRect(bx, 50, 26, 5)
-        g.fillStyle = ['#34c97a', '#34c97a', '#ffbe2e', '#ffbe2e', '#ff5a4a'][i]!
-        g.fillRect(bx + 1, 51, Math.round(24 * f), 3)
+        g.fillRect(bx, 50, BAR_PITCH - 4, 5)
+        g.fillStyle = ['#34c97a', '#ffbe2e', '#ff5a4a'][i]!
+        g.fillRect(bx + 1, 51, Math.round((BAR_PITCH - 6) * f), 3)
       }
     }
   }

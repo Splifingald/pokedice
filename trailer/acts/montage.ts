@@ -41,7 +41,7 @@ const RAID_LIST: { dex: number; name: string; rim: string }[] = [
 let made: ReturnType<typeof make> | null = null
 function make() {
   return {
-    ray: new RaidIntroScene(mon(384), 'RAYQUAZA'),
+    ray: new RaidIntroScene(mon(384), 'RAYQUAZA', 11, 'sky'),
     mega: new Run(
       () => megaTimeline({ own: mon(6, true), foe: mon(149), side: 'own', from: mon(6, true), to: mon(10034, true), die: 'dragon' }),
       { art: true },
@@ -104,7 +104,7 @@ export const montage: Act = {
     const v = T - T0
     const m = made!
     if (v < RAY[1]) {
-      // Rayquaza's raid opening, full screen: the alarm, the storm, the reveal, its name and its five bars.
+      // Rayquaza's raid opening, full screen, in the Sky Pillar's day: the alarm, the reveal, its name, its three bars.
       const layer = m.ray.draw(0.1 + (v - RAY[0]) * 1.2)
       drawStage(g, null, [layer], { x: 160, y: 90, z: 6 })
     } else if (v < MEGA[1]) {

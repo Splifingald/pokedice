@@ -138,7 +138,7 @@ light. `What? Charmander is evolving!`, then `Charmander evolved into Charmeleon
 
 | Time | Picture |
 |---|---|
-| 26.5–31 | **Rayquaza's raid opening**, full screen (`RaidIntro.tsx`, redrawn landscape in `trailer/lib/raidIntro.ts`): the alarm and its hazard tapes, the storm and lightning, the silhouette rising, the pillar of light, the reveal, `RAID BATTLE / RAYQUAZA` and its five HP bars filling. |
+| 26.5–31 | **Rayquaza's raid opening**, full screen (`RaidIntro.tsx`, redrawn landscape in `trailer/lib/raidIntro.ts`): in **the Sky Pillar's day** (the backdrop of the promo video's sky raid, `trailer/lib/skyPillar.ts`: the sky, the sea of clouds, the far towers, Rayquaza on a pillar's top): the alarm and its hazard tapes, emerald lightning, the silhouette rising, the pillar of light, the reveal, `RAID BATTLE / RAYQUAZA` and its three HP bars filling. |
 | 31–34 | **Mega Evolution**, full screen, on the Indigo Plateau: Charizard → Mega Charizard X. `Charizard Mega Evolved into Mega Charizard X!` |
 | 34–37 | **Gigantamax**, full screen, in Pokémon Tower: Gengar → G-Max Gengar. `Gengar Gigantamaxed!` |
 | 37–40.5 | **Four mythical bosses** in a 2×2 grid, their entrances a beat apart: Mew (Faraway Island), Celebi (Ilex Forest), Jirachi (a summit), Manaphy (a beach). A `MYTHICAL BOSSES` chip where the tiles meet. |
@@ -155,7 +155,7 @@ Five cut-ins of 1.2 s. The word slams in bottom left (Jersey 25, white, ink outl
 | 44 | Three friends' cards slide in: trainer sprite, name (the first golden), friend ID, their Pokémon, the online dot. | `FRIENDS` |
 | 45.2 | The Versus stadium: Red and Green slide in, `VS` slams in, each side's dice hop onto the field. | `VERSUS` |
 | 46.4 | The trade's arrival: the ball comes down the beam, bounces, opens on Alakazam. | `TRADING` |
-| 47.6 | A sea cave: Kyogre with five HP bars, Charizard, Blastoise and Venusaur, three trainers' cards, three dice landing over each ally, the last bar draining. | `CO-OP RAIDS` |
+| 47.6 | A sea cave: Kyogre with three HP bars, Charizard, Blastoise and Venusaur, three trainers' cards, three dice landing over each ally, the last bar draining. | `CO-OP RAIDS` |
 | 48.8 | The Day Care yard: Ditto and a friend's Dragonite (its `FRIEND'S` tag) hop toward each other, a heart, an Egg pops up and wobbles. | `CO-OP DAY CARE` |
 
 ## 6. The choice (50 → 54.5)
@@ -256,3 +256,5 @@ its own score `scoreSocial`). 1920×1080 like the main one. No title: it opens o
 11. The five of a kind easier to follow: less zoom (all five dice stay in view), a shorter slow motion, and the reroll
     shown step by step (a hand taps the 2 and the 3, then REROLL).
 12. A portrait version for scrollable social media (TikTok, Shorts), with small layout changes for legibility (§9).
+13. Rayquaza's raid in the Sky Pillar (the background made for the promo video), not the default storm; every raid
+    with three HP bars, not five (the four raids, Kyogre's co-op raid).
