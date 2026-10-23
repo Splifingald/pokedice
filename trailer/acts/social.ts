@@ -1,15 +1,27 @@
 // The social media cut (15 s, docs/36 §12): no title; straight into Charmander's two dice (3 + 4 = 7), then
-// Charmeleon evolving into Charizard (quick), the Charizard fight (Mewtwo's entrance short, the slow dice short), and
+// Charmeleon evolving into Charizard (quick), the Charizard fight (Mewtwo's entrance short, the reroll quick), and
 // a shorter end card. The same stage shot, dice and readouts as the main trailer.
 import { attackTimeline } from '@/fx/timelines/attacks'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { evolveTimeline } from '@/fx/timelines/moments'
 import { hit } from '../lib/clock'
 import { cry, play } from '../lib/audio'
-import { slowLanding, type TrayPlan } from '../lib/dice'
-import { INK, OH, OW, outCubic, rect, span, speedLines, TYPE, wash } from '../lib/draw'
-import { contactOf, diceAt, faint, fiveBanner, idleAt, shakeAt, STAGE, tray } from '../lib/fight'
-import { caption, celebrate, damageSlam, foePlate, ownPlate, valuePops } from '../lib/hud'
+import type { TrayPlan } from '../lib/dice'
+import { INK, OH, OW, rect, span, speedLines, TYPE, wash } from '../lib/draw'
+import {
+  bigRoll,
+  bigRollBusy,
+  bigRollLand,
+  contactOf,
+  diceAt,
+  faint,
+  idleAt,
+  shakeAt,
+  STAGE,
+  tray,
+  type BigRoll,
+} from '../lib/fight'
+import { caption, damageSlam, foePlate, ownPlate, valuePops } from '../lib/hud'
 import { Run } from '../lib/run'
 import { idle, playAt } from '../lib/scene'
 import { loadMon, mon } from '../lib/sprites'
@@ -37,8 +49,10 @@ const CA = contactOf(A.attack, 0.7, 1.6)
 const E = { from: 3.8, tl: 2.9, speed: 3 }
 const EVOLVED = E.from + (6.37 - E.tl) / E.speed
 // Charizard (5.3 → 11.5)
-const Z = { legend: 5.3, idle: 6.1, throw: 6.3, pops: 7.0, pick: 7.3, reroll: 7.6, slowA: 7.75, slowB: 8.95, attack: 10.2, end: 11.5 }
-const LAND = slowLanding(Z.reroll, 0.5, Z.slowA, Z.slowB, 0.08)
+const Z = { legend: 5.3, idle: 6.1, attack: 10.2, end: 11.5 }
+const ROLL_DICE = { throw: 6.3, pops: 7.0, taps: [7.45, 7.7] as [number, number], press: 8.0, slowA: 8.2, slowB: 8.8 }
+const LAND = bigRollLand(ROLL_DICE)
+const ROLL: BigRoll = { ...ROLL_DICE, out: LAND + 0.5, damage: LAND + 0.75 }
 const CZ = contactOf(Z.attack, 0.7, 1.8)
 
 let runs: ReturnType<typeof makeRuns> | null = null
@@ -58,19 +72,6 @@ function makeRuns() {
 }
 
 const A_DICE: TrayPlan = { fills: [TYPE.fire, TYPE.fire], throws: [{ t: A.throw, values: [3, 4], dur: 0.45 }] }
-const Z_DICE: TrayPlan = {
-  fills: [TYPE.fire, TYPE.fire, TYPE.fire, TYPE.flying, TYPE.flying],
-  throws: [
-    { t: Z.throw, values: [5, 5, 2, 5, 3], dur: 0.5 },
-    { t: Z.reroll, values: [5, 5], which: [2, 4], dur: 0.5 },
-  ],
-  picked: { t: Z.pick, which: [2, 4] },
-  slow: [[2, 4], Z.slowA, Z.slowB, 0.08],
-  combo: { t: LAND, which: [0, 1, 2, 3, 4] },
-  flash: LAND,
-  jump: LAND + 0.05,
-}
-
 const charmander: Act = {
   range: SOCIAL.charmander,
   async load() {
@@ -123,32 +124,19 @@ const charizard: Act = {
       if (hit(Z.legend + (3.2 - 2.4) / 2)) cry(150)
       return
     }
-    const slow = u >= Z.slowA && u < LAND
+    const slow = u >= ROLL.slowA && u < LAND
     const layer = u >= Z.attack ? playAt(r.zFire, u, Z.attack, 0.7, 1.8) : idleAt(r.z, u)
     drawStage(g, pic, [layer], clampCam(STAGE, pic), undefined, { shake: shakeAt(u, CZ, 14, 0.4) })
     if (hit(Z.idle + 0.02)) cry(6)
     if (hit(CZ)) play('super')
     if (slow) {
-      const beat = Math.max(0, Math.sin((u - Z.slowA) * Math.PI * 2.4)) ** 6
-      wash(g, '#0b0f24', 0.55 * span(u, Z.slowA, Z.slowA + 0.2) + 0.15 * beat)
+      const beat = Math.max(0, Math.sin((u - ROLL.slowA) * Math.PI * 2.4)) ** 6
+      wash(g, '#0b0f24', 0.45 * span(u, ROLL.slowA, ROLL.slowA + 0.2) + 0.12 * beat)
     }
     foePlate(g, { name: 'Mewtwo', level: 70, hp: 1 - span(u, CZ + 0.1, CZ + 0.25), types: ['psychic'] }, u, Z.idle)
-    if (!slow) ownPlate(g, { name: 'Charizard', level: 68, hp: 1, max: 210 }, u, Z.idle + 0.03)
-    caption(g, 'Tap dice to throw them again.', u, Z.pick - 0.15, Z.reroll + 0.1)
-    if (u >= Z.throw && u < Z.attack) {
-      const zoom = slow
-        ? 1 + 1.6 * outCubic(span(u, Z.slowA, Z.slowA + 0.4))
-        : u >= LAND
-          ? 1 + 1.6 * (1 - outCubic(span(u, LAND, LAND + 0.2)))
-          : 1
-      celebrate(g, u, LAND)
-      tray(g, Z_DICE, u, zoom, 3)
-      if (u >= LAND - 0.02 && u < LAND + 0.1) speedLines(g, OW / 2, 900, u, { color: '#ffbe2e', inner: 260, a: 0.6 })
-      if (u < Z.reroll) valuePops(g, [5, 5, 2, 5, 3], diceAt(5), u, Z.pops)
-      else if (u >= LAND + 0.15) valuePops(g, [5, 5, 5, 5, 5], diceAt(5), u, LAND + 0.15)
-      fiveBanner(g, u, LAND, hit)
-      damageSlam(g, 95, 960, 640, u, LAND + 0.5, { size: 230, shake: 16 })
-    }
+    if (!bigRollBusy(u, ROLL)) ownPlate(g, { name: 'Charizard', level: 68, hp: 1, max: 210 }, u, Z.idle + 0.03)
+    caption(g, 'Select dice to reroll', u, ROLL.taps[0] - 0.4, ROLL.press + 0.2)
+    if (u >= ROLL.throw && u < Z.attack) bigRoll(g, u, ROLL, hit)
     if (u >= CZ && u < CZ + 2 / 60) wash(g, '#ffffff', 1)
     else if (u >= CZ + 2 / 60 && u < CZ + 7 / 60) {
       rect(g, 0, 0, OW, OH, '#ffffff')

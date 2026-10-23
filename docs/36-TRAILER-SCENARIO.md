@@ -9,7 +9,7 @@ build; change it here first.
 
 Version 1 (22 s) went by too fast to understand, the user said. Version 2 follows their notes (§11): a longer pause on
 the title, cleaner letters on the dice and a dark backdrop instead of the table; every roll worked out on screen and
-held; the whole evolution; Charizard's five dice with two Flying ones, a long slow motion and a celebration; Rayquaza,
+held; the whole evolution; Charizard's five dice with two Flying ones, a reroll in slow motion and a celebration; Rayquaza,
 the Mega Evolution and the Gigantamax each full screen; four bosses together, then four raids together, no trade
 there; slower features; in the lab, the balls stay shut and the camera closes in on the middle one while it shakes.
 
@@ -40,7 +40,8 @@ DISCORD COMMUNITY instead of the Discord link, and a better Discord mark; every 
   and Charizard at their sprites' own size (the game shrinks Charizard to 80 px), so they grow as they evolve.
 - **A still camera** (after version 3, the user: too many camera moves). The title and every fight are one fixed
   shot, Mewtwo's entrance framed exactly like the fight after it; hits shake the screen lightly. The only camera moves left are the
-  ones asked for: the slow-motion push onto Charizard's last die, and the lab's zoom onto the shaking ball.
+  ones asked for: a gentle push (×1.5) onto Charizard's dice in slow motion, all five kept in view, and the lab's
+  zoom onto the shaking ball.
 - **Clear pixels.** The art is drawn small and scaled up nearest-neighbour at whole scales: the stage at ×8 to ×10,
   the title and the end card at ×3 (640×360), the dice overlay at ×4. Anything at a fractional scale — the area
   pictures (400 px for 288 scene pixels), the lab, the Versus stadium, a camera zooming — goes through sharp scaling
@@ -57,7 +58,7 @@ DISCORD COMMUNITY instead of the Discord link, and a better Discord mark; every 
 | 2 | Fight 1 | 4 | 9 | Charmander vs Bulbasaur: two dice, 3 + 4 = 7 |
 | 3 | Evolution | 9 | 10.5 | Charmander → Charmeleon, the morph, quick (1.5 s) |
 | 4 | Fight 2 | 12 | 17 | Charmeleon vs Scyther: three dice, a pair, 14 |
-| 5 | Fight 3 | 17 | 26.5 | Mewtwo's entrance; Charizard's five 5s in slow motion, a celebration, 95 |
+| 5 | Fight 3 | 17 | 26.5 | Mewtwo's entrance; Charizard rerolls two dice into five 5s, a celebration, 95 |
 | 6 | Rayquaza | 26.5 | 31 | Its raid opening, full screen |
 | 7 | Mega Evolution | 31 | 34 | Charizard → Mega Charizard X, full screen |
 | 8 | Gigantamax | 34 | 37 | Gengar → G-Max Gengar, full screen |
@@ -127,10 +128,10 @@ light. `What? Charmander is evolving!`, then `Charmander evolved into Charmeleon
 | 17–18.8 | Cerulean Cave: Mewtwo's legendary entrance, its name card. | Heartbeats, its cry. |
 | 18.8–19.5 | The same shot, Charizard's plate slides in. | Its cry. |
 | 19.6–20.3 | Five dice, **three Fire and two Flying**, land 5 · 5 · 2 · 5 · 3. | |
-| 20.7–21.4 | `Tap dice to throw them again.` The 2 (Fire) and the 3 (Flying) lift with the red ring and are thrown again. | |
-| 21.55–23.92 | **The slow motion**: the camera closes in on those two dice as they turn at a twelfth of their speed, the stage dark and pulsing with a heartbeat. | The music stops: a heartbeat, a long riser. |
-| 23.92 | Both land on 5: five 5s. The dice flash white and ring gold, gold rays turn behind them, confetti bursts, the dice hop, **FIVE OF A KIND!** slams in huge. | A fanfare in D major. |
-| 24.82 | `95` slams in under it. | |
+| 20.55–21.8 | **The reroll, the way a player does it**: `Select dice to reroll` (the game's line); the REROLL (2) button appears (greyed) where Charizard's plate was; a hand taps the 2 (Fire), then the 3 (Flying): each lifts with the red ring, its number turns red; the button lights up and the hand presses it. | A click per tap and on the button. |
+| 21.85–23.12 | The two dice are thrown again. **The slow motion** (from 22): they turn at 0.3× their speed for a little over a second, the camera pushed in gently (×1.5) on the middle of the row so all five dice stay in view, the stage dark and pulsing with a heartbeat. | The music stops: a heartbeat, a riser. |
+| 23.12 | Both land on 5: five 5s, held close. The dice flash white and ring gold, a `5` pops up over each, gold rays turn behind them, confetti bursts, the dice hop, **FIVE OF A KIND!** slams in huge. | A fanfare in D major. |
+| 24.22–24.62 | The camera eases back; `95` slams in under the banner. | |
 | 25.6–26.5 | Flamethrower; on the hit a white impact frame, then the two as ink silhouettes on white, then colour as Mewtwo's HP empties; cut to black. | The biggest hit. |
 
 ## 4. The big moments (26.5 → 44)
@@ -211,8 +212,8 @@ its own score `scoreSocial`). 1920×1080 like the main one. No title: it opens o
 | 0–3.8 | Charmander vs Bulbasaur, the plates already in: two Fire dice, 3 · 4, `7`; Flamethrower, Bulbasaur faints; white. | Bulbasaur's cry, the groove, `super`, `faint`. |
 | 3.8–5.3 | Charmeleon evolving into Charizard (the game's evolution from the morph on, 3× its speed): `What? Charmeleon is evolving!`, `Charmeleon evolved into Charizard!` | Climbing arpeggios, the burst in D major, Charizard's cry. |
 | 5.3–6.1 | Mewtwo's entrance, from its rising silhouette to its name card (2× speed). | Heartbeats, its cry. |
-| 6.1–9.2 | The same stage shot; five dice (three Fire, two Flying) land 5 · 5 · 2 · 5 · 3; `Tap dice to throw them again.`; the 2 and the 3 rerolled in a shorter slow motion (1.2 s). | The groove, then the stop. |
-| 9.2–11.5 | Five 5s: the celebration, **FIVE OF A KIND!**, `95`; Flamethrower, the impact frame and the ink freeze; cut to black. | The fanfare, the hit. |
+| 6.1–9 | The same stage shot; five dice (three Fire, two Flying) land 5 · 5 · 2 · 5 · 3; `Select dice to reroll`, the hand taps the 2 and the 3 and presses REROLL (as in the main cut, quicker); a short slow motion (0.75 s), the same gentle push. | The groove, then the stop. |
+| 9–11.5 | Five 5s, held close: the celebration, **FIVE OF A KIND!**, `95`; Flamethrower, the impact frame and the ink freeze; cut to black. | The fanfare, the hit. |
 | 11.5–15 | The end card, faster: the dice drop, the ring, the website, MOBILE FRIENDLY and DISCORD COMMUNITY, the fan-made line; fade out. | The last chord. |
 
 ## 11. The user's decisions (2026-10-23)
@@ -237,3 +238,5 @@ its own score `scoreSocial`). 1920×1080 like the main one. No title: it opens o
 10. "Roll · Battle · Catch" under the title; a side swap instead of the É die; a shorter hold on the 7; nothing blurry
     (Mewtwo, Dragonite, Charizard, the backgrounds, the raid tapes); no light strip at the edge of the Mega and
     Gigantamax shots; the raid Pokémon all at one size.
+11. The five of a kind easier to follow: less zoom (all five dice stay in view), a shorter slow motion, and the reroll
+    shown step by step (a hand taps the 2 and the 3, then REROLL).

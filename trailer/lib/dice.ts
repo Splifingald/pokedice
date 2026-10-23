@@ -15,8 +15,8 @@ export interface TrayPlan {
   fills: string[]
   /** Each throw: when, the values the thrown dice land on, which dice (all by default), how long it rolls. */
   throws: { t: number; values: number[]; which?: number[]; dur?: number }[]
-  /** Dice lifted for a reroll (red ring), from when until their throw. */
-  picked?: { t: number; which: number[] }
+  /** Dice lifted for a reroll (red ring), from when (one time for all, or each die's tap) until their throw. */
+  picked?: { t: number | number[]; which: number[] }
   /** The combo's dice (gold ring) from when. */
   combo?: { t: number; which: number[] }
   /** A white flash on every die (the five of a kind landing). */
@@ -85,15 +85,16 @@ export function drawTray(plan: TrayPlan, t: number) {
     for (const L of at.landings.slice(0, 2)) if (hit(L)) play('land')
     // Picked: lifted with the red ring until its reroll is thrown.
     const pick = plan.picked
+    const pickT = pick ? (typeof pick.t === 'number' ? pick.t : (pick.t[pick.which.indexOf(i)] ?? Infinity)) : 0
     const pickedNow =
-      !!pick && t >= pick.t && pick.which.includes(i) && !plan.throws.some((x) => x.which?.includes(i) && x.t > pick.t && t >= x.t)
+      !!pick && t >= pickT && pick.which.includes(i) && !plan.throws.some((x) => x.which?.includes(i) && x.t > pickT && t >= x.t)
     const combo = plan.combo && t >= plan.combo.t && plan.combo.which.includes(i)
     const pos = at.pos
     const joy = plan.jump != null && t >= plan.jump ? Math.abs(Math.sin((t - plan.jump) * 9 - i * 0.7)) * 10 * (1 - Math.min(1, (t - plan.jump) / 1.6)) : 0
     draws.push({
       i,
       d: {
-        pos: [pos[0], pos[1], pos[2] + (pickedNow ? 3 : 0) + joy],
+        pos: [pos[0], pos[1], pos[2] + (pickedNow ? 5 : 0) + joy],
         R: at.R,
         fill: plan.fills[i]!,
         faces: FACES.map((f) => f.pips),

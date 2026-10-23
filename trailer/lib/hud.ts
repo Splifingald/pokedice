@@ -120,7 +120,14 @@ export function blit(g: G, c: HTMLCanvasElement, x: number, y: number, k: number
 
 // ---------------------------------------------------------------- explaining a roll
 /** Each die's value popping up over it as the dice settle (screen positions of the dice). */
-export function valuePops(g: G, values: number[], at: (i: number) => { x: number; y: number }, t: number, from: number) {
+export function valuePops(
+  g: G,
+  values: number[],
+  at: (i: number) => { x: number; y: number },
+  t: number,
+  from: number,
+  color: (i: number) => string = () => GOLD,
+) {
   values.forEach((v, i) => {
     const a = from + i * 0.06
     if (t < a) return
@@ -129,7 +136,7 @@ export function valuePops(g: G, values: number[], at: (i: number) => { x: number
     g.save()
     g.translate(p.x, p.y - 96)
     g.scale(k, k)
-    text(g, String(v), 0, 0, { size: 64, color: GOLD, align: 'center', base: 'middle', ow: 7 })
+    text(g, String(v), 0, 0, { size: 64, color: color(i), align: 'center', base: 'middle', ow: 7 })
     g.restore()
   })
 }

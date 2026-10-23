@@ -1,8 +1,10 @@
 // What the trailer's fights share, in every cut: the one stage shot, the dice tray over its dark band, the moves'
 // contact times, a faint, the screen shake on a hit, the five of a kind's banner and the flame wipe.
 import { play } from './audio'
-import { drawTray, restScreen, TRAY_H, TRAY_K, TRAY_W, type TrayPlan } from './dice'
-import { bottomShade, OH, OW, outBack, outCubic, rect, span, text, type G } from './draw'
+import { drawTray, restScreen, slowLanding, TRAY_H, TRAY_K, TRAY_W, type TrayPlan } from './dice'
+import { bottomShade, GOLD, inOut, INK, OH, OW, outBack, outCubic, panel, rect, span, speedLines, text, TYPE, type G } from './draw'
+import { celebrate, damageSlam, valuePops } from './hud'
+import { icon } from '@/fx/pixel'
 import type { Run } from './run'
 import { setArtUnderStage, stageBackground } from '@/fx/scenes'
 import { H, W } from '@/fx/timeline'
@@ -31,20 +33,30 @@ export const faint = (u: number, a: number) => {
   return p > 0 ? { dy: Math.round(26 * p * p), alpha: Math.round((1 - p) * 4) / 4 } : {}
 }
 
-/** The tray over a dark band; `zoom` pushes in on die `on` (the slow one). */
+/** Where the tray canvas goes on the screen when `zoom` pushes in on die `on`: its top left and its scale. */
+function trayFrame(n: number, zoom: number, on: number) {
+  const p = restScreen(n, on)
+  const k = TRAY_K * zoom
+  // Keep the die where it is, sliding it toward the middle as the camera closes in.
+  const tx = p.x + ((960 - p.x) * (zoom - 1)) / 1.6
+  const ty = p.y + ((640 - p.y) * (zoom - 1)) / 1.6
+  return { x: tx - (p.x / TRAY_K) * k, y: ty - (p.y / TRAY_K) * k, k }
+}
+
+/** The tray over a dark band; `zoom` pushes in on die `on`. */
 export function tray(g: G, plan: TrayPlan, u: number, zoom = 1, on = 0) {
   // Light enough that your Pokémon, bottom left, stays in view behind the dice.
   bottomShade(g, 640, 0.6)
   const cv = drawTray(plan, u)
-  if (zoom === 1) sharpDraw(g, cv, 0, 0, TRAY_W * TRAY_K, TRAY_H * TRAY_K)
-  else {
-    const p = restScreen(plan.fills.length, on)
-    const k = TRAY_K * zoom
-    // Keep the die where it is, sliding it toward the middle as the camera closes in.
-    const tx = p.x + ((960 - p.x) * (zoom - 1)) / 1.6
-    const ty = p.y + ((640 - p.y) * (zoom - 1)) / 1.6
-    sharpDraw(g, cv, tx - (p.x / TRAY_K) * k, ty - (p.y / TRAY_K) * k, TRAY_W * k, TRAY_H * k)
-  }
+  const f = trayFrame(plan.fills.length, zoom, on)
+  sharpDraw(g, cv, f.x, f.y, TRAY_W * f.k, TRAY_H * f.k)
+}
+
+/** Where die i of n rests on the screen under the tray's zoom; its readout sits `lift` px above it, zoomed too. */
+export function trayPoint(n: number, i: number, zoom = 1, on = 0, lift = 96) {
+  const f = trayFrame(n, zoom, on)
+  const p = restScreen(n, i)
+  return { x: f.x + (p.x / TRAY_K) * f.k, y: f.y + (p.y / TRAY_K) * f.k - lift * (zoom - 1) }
 }
 
 /** Where each of n dice rests on the screen (for the values popping up over them). */
@@ -94,3 +106,133 @@ export function flameWipe(g: G, p: number, u: number) {
   }
 }
 
+
+// ---------------------------------------------------------------- Charizard's roll
+/**
+ * Charizard's five dice in both cuts: 5 · 5 · 2 · 5 · 3; a hand taps the 2 and the 3 (lifted, red ring, their numbers
+ * red) and presses REROLL, the way a player does; the two dice turn in a short slow motion onto 5s, the camera closer
+ * but every die still in view, and FIVE OF A KIND lands on five gold-ringed 5s before the camera eases back for 95.
+ */
+export interface BigRoll {
+  throw: number
+  pops: number
+  /** The hand's taps on the 2, then the 3. */
+  taps: [number, number]
+  /** REROLL pressed: the two dice are thrown again just after. */
+  press: number
+  /** The slow motion, in real time. */
+  slowA: number
+  slowB: number
+  /** The camera eases back from here, and the damage lands. */
+  out: number
+  damage: number
+}
+
+const FIRST = [5, 5, 2, 5, 3]
+const PICKED = [2, 4]
+const SLOW = 0.3
+const ZOOM = 1.5
+// The middle die: closing in on it keeps the row centred, all five in view (the tray at a whole 6× at full zoom).
+const ON = 2
+
+const reroll = (b: Pick<BigRoll, 'press'>) => b.press + 0.05
+export const bigRollLand = (b: Pick<BigRoll, 'press' | 'slowA' | 'slowB'>) => slowLanding(reroll(b), 0.5, b.slowA, b.slowB, SLOW)
+
+export function bigRollPlan(b: BigRoll): TrayPlan {
+  const land = bigRollLand(b)
+  return {
+    fills: [TYPE.fire, TYPE.fire, TYPE.fire, TYPE.flying, TYPE.flying],
+    throws: [
+      { t: b.throw, values: FIRST, dur: 0.55 },
+      { t: reroll(b), values: [5, 5], which: PICKED, dur: 0.5 },
+    ],
+    picked: { t: b.taps, which: PICKED },
+    slow: [PICKED, b.slowA, b.slowB, SLOW],
+    combo: { t: land, which: [0, 1, 2, 3, 4] },
+    flash: land,
+    jump: land + 0.05,
+  }
+}
+
+/** The plate's corner is the REROLL button's while the hand picks dice, then the close dice's, until the camera is back. */
+export const bigRollBusy = (u: number, b: BigRoll) => u >= b.taps[0] - 0.4 && u < b.out + 0.3
+
+const HAND = [
+  '....kk......',
+  '...kwwk.....',
+  '...kwwk.....',
+  '...kwwk.....',
+  '...kwwkkk...',
+  '...kwwkwwkk.',
+  '.kkkwwkwwkwk',
+  'kwwkwwwwwwwk',
+  'kwwwwwwwwwsk',
+  'kwwwwwwwwwsk',
+  '.kwwwwwwwwsk',
+  '.kwwwwwwwsk.',
+  '..kwwwwwwsk.',
+  '...kwwwwsk..',
+  '...kkkkkkk..',
+]
+const HK = 6
+const BUTTON = { x: 1450, y: 880, w: 380, h: 100 }
+
+/** The game's REROLL button (a secondary PixelButton): greyed until a die is picked, pushed in when pressed. */
+function rerollButton(g: G, u: number, b: BigRoll) {
+  const a = span(u, b.taps[0] - 0.4, b.taps[0] - 0.25) * (1 - span(u, b.press + 0.4, b.press + 0.55))
+  if (a <= 0) return
+  const down = u >= b.press && u < b.press + 0.12 ? 6 : 0
+  g.save()
+  g.globalAlpha = Math.round(a * 4) / 4
+  if (u < b.taps[0]) g.globalAlpha *= 0.55
+  panel(g, BUTTON.x, BUTTON.y + down, BUTTON.w, BUTTON.h - down, { lip: !down })
+  text(g, 'REROLL (2)', BUTTON.x + BUTTON.w / 2, BUTTON.y + down + 66, { size: 56, color: INK, ow: 0, align: 'center' })
+  g.restore()
+}
+
+/** The hand: in from the bottom right, onto the 2, the 3, then REROLL, dipping as it taps, and away. */
+function hand(g: G, u: number, b: BigRoll) {
+  const die = (i: number) => {
+    const p = restScreen(5, i)
+    return { x: p.x + 10, y: p.y - 40 }
+  }
+  const stops = [
+    { t: b.taps[0] - 0.4, x: 1560, y: 1180 },
+    { t: b.taps[0], ...die(PICKED[0]!) },
+    { t: b.taps[1], ...die(PICKED[1]!) },
+    { t: b.press, x: BUTTON.x + BUTTON.w / 2, y: BUTTON.y + 50 },
+    { t: b.press + 0.45, x: 1700, y: 1200 },
+  ]
+  if (u < stops[0]!.t || u >= stops[4]!.t) return
+  let j = 0
+  while (j + 1 < stops.length && stops[j + 1]!.t <= u) j++
+  const a = stops[j]!
+  const z = stops[j + 1] ?? a
+  // Rests on each stop, then travels to the next in the last 0.25 s before it.
+  const p = inOut(span(u, Math.max(a.t, z.t - 0.25), z.t))
+  const dip = j > 0 && j < 4 && u - a.t < 0.1 ? 10 : 0
+  const x = a.x + (z.x - a.x) * p
+  const y = a.y + (z.y - a.y) * p + dip
+  sharpDraw(g, icon(HAND, { k: INK, w: '#ffffff', s: '#cfd6e4' }, 1), x - 4.5 * HK, y, 12 * HK, 15 * HK)
+}
+
+/** The roll's whole overlay at time u (from the throw to the attack): the tray, its readouts, the hand and the banner. */
+export function bigRoll(g: G, u: number, b: BigRoll, sounded: (t: number) => boolean) {
+  const land = bigRollLand(b)
+  const zoom =
+    1 + (ZOOM - 1) * (u < land ? outCubic(span(u, b.slowA, b.slowA + 0.4)) : 1 - inOut(span(u, b.out, b.out + 0.3)))
+  celebrate(g, u, land)
+  tray(g, bigRollPlan(b), u, zoom, ON)
+  if (u >= land - 0.02 && u < land + 0.1) speedLines(g, OW / 2, 900, u, { color: '#ffbe2e', inner: 260, a: 0.6 })
+  const at = (i: number) => trayPoint(5, i, zoom, ON, 150)
+  if (u < reroll(b))
+    valuePops(g, FIRST, at, u, b.pops, (i) =>
+      PICKED.includes(i) && u >= (b.taps[PICKED.indexOf(i)] ?? Infinity) ? '#f2553f' : GOLD,
+    )
+  else if (u >= land + 0.15) valuePops(g, [5, 5, 5, 5, 5], at, u, land + 0.15)
+  rerollButton(g, u, b)
+  hand(g, u, b)
+  for (const t of [...b.taps, b.press]) if (sounded(t)) play('button')
+  fiveBanner(g, u, land, sounded)
+  damageSlam(g, 95, 960, 640, u, b.damage, { size: 230, shake: 16 })
+}

@@ -2,17 +2,30 @@
 // dice thrown over its bottom. No formula on screen: each die's value pops up, the combo's chip appears, the damage
 // slams in, and the numbers are simple enough to add up at a glance. Charmander's two dice (3 + 4 = 7), the whole
 // evolution into Charmeleon, its three dice with a pair against a trainer's Scyther, Mewtwo's entrance, then
-// Charizard's five dice — three Fire, two Flying — the last one rerolled in a long slow motion onto five 5s, a
-// celebration, the biggest hit.
+// Charizard's five dice — three Fire, two Flying — a hand picking the 2 and the 3 and pressing REROLL, the two turning
+// in slow motion onto five 5s, a celebration, the biggest hit.
 import { attackTimeline } from '@/fx/timelines/attacks'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { evolveTimeline } from '@/fx/timelines/moments'
 import { ACT, hit } from '../lib/clock'
 import { cry, play } from '../lib/audio'
-import { contactOf, diceAt, faint, fiveBanner, flameWipe, idleAt, shakeAt, STAGE, tray } from '../lib/fight'
-import { slowLanding, type TrayPlan } from '../lib/dice'
-import { INK, OH, OW, outBack, outCubic, rect, span, speedLines, TYPE, wash, type G } from '../lib/draw'
-import { blit, boulderBadge, caption, celebrate, comboChip, damageSlam, foePlate, ownPlate, valuePops } from '../lib/hud'
+import {
+  bigRoll,
+  bigRollBusy,
+  bigRollLand,
+  contactOf,
+  diceAt,
+  faint,
+  flameWipe,
+  idleAt,
+  shakeAt,
+  STAGE,
+  tray,
+  type BigRoll,
+} from '../lib/fight'
+import type { TrayPlan } from '../lib/dice'
+import { INK, OH, OW, outBack, rect, span, speedLines, TYPE, wash, type G } from '../lib/draw'
+import { blit, boulderBadge, caption, comboChip, damageSlam, foePlate, ownPlate, valuePops } from '../lib/hud'
 import { Run } from '../lib/run'
 import { idle, playAt } from '../lib/scene'
 import { loadMon, mon } from '../lib/sprites'
@@ -34,14 +47,16 @@ const F1 = { throw: 0.7, pops: 1.2, damage: 1.65, attack: 2.25, faint: 3.15, lev
 const EVO = { from: 5, to: 6.5, tl: 2.9, speed: 3 }
 const EVOLVED = EVO.from + (6.37 - EVO.tl) / EVO.speed
 const F2 = { cut: 6.5, strike: 6.7, throw: 7.5, pops: 8.05, combo: 8.45, damage: 8.85, attack: 9.9, faint: 10.6, burn: 11.25 }
-const F3 = { legend: 11.5, reverse: 13.3, throw: 14.1, pops: 14.8, pick: 15.4, reroll: 15.9, slowA: 16.05, slowB: 18.25 }
-const LAND = slowLanding(F3.reroll, 0.5, F3.slowA, F3.slowB, 0.08)
-const F3b = { damage: LAND + 0.9, attack: 20.1, end: 21 }
+const F3 = { legend: 11.5, reverse: 13.3, attack: 20.1, end: 21 }
+const ROLL_DICE = { throw: 14.1, pops: 14.8, taps: [15.45, 15.85] as [number, number], press: 16.3, slowA: 16.5, slowB: 17.6 }
+const LAND = bigRollLand(ROLL_DICE)
+// The five 5s held close for a second, then the camera eases back and the damage lands.
+const ROLL: BigRoll = { ...ROLL_DICE, out: LAND + 1.1, damage: LAND + 1.5 }
 
 const C1 = contactOf(F1.attack, 0.7, 1.6)
 const C2own = contactOf(F2.strike, 1.2, 1.4, 1.67)
 const C2 = contactOf(F2.attack, 0.7, 1.6)
-const C3 = contactOf(F3b.attack, 0.7, 1.6)
+const C3 = contactOf(F3.attack, 0.7, 1.6)
 
 let runs: ReturnType<typeof makeRuns> | null = null
 function makeRuns() {
@@ -89,21 +104,6 @@ const F2_DICE: TrayPlan = {
   throws: [{ t: F2.throw, values: [5, 5, 2], dur: 0.5 }],
   combo: { t: F2.combo, which: [0, 1] },
 }
-// Charizard's: five dice, three Fire and two Flying; the last one rerolled in slow motion. Five 5s: 25, and a maxed
-// Five of a Kind's +70 (upgrades.json, level 10): 95.
-const F3_DICE: TrayPlan = {
-  fills: [TYPE.fire, TYPE.fire, TYPE.fire, TYPE.flying, TYPE.flying],
-  throws: [
-    { t: F3.throw, values: [5, 5, 2, 5, 3], dur: 0.55 },
-    { t: F3.reroll, values: [5, 5], which: [2, 4], dur: 0.5 },
-  ],
-  picked: { t: F3.pick, which: [2, 4] },
-  slow: [[2, 4], F3.slowA, F3.slowB, 0.08],
-  combo: { t: LAND, which: [0, 1, 2, 3, 4] },
-  flash: LAND,
-  jump: LAND + 0.05,
-}
-
 // ---------------------------------------------------------------- fight 1: Charmander vs Bulbasaur (0 → 5)
 function fight1(g: G, u: number) {
   const r = runs!
@@ -192,36 +192,21 @@ function fight3(g: G, u: number) {
     if (u < F3.legend + 0.08) wash(g, '#ee8130', 1 - span(u, F3.legend, F3.legend + 0.08))
     return
   }
-  const slow = u >= F3.slowA && u < LAND
+  const slow = u >= ROLL.slowA && u < LAND
   const cam = STAGE
-  const layer = u >= F3b.attack ? playAt(r.f3fire, u, F3b.attack, 0.7, 1.6) : idleAt(r.f3idle, u)
+  const layer = u >= F3.attack ? playAt(r.f3fire, u, F3.attack, 0.7, 1.6) : idleAt(r.f3idle, u)
   drawStage(g, pic, [layer], clampCam(cam, pic), undefined, { shake: shakeAt(u, C3, 14, 0.4) })
   if (hit(T0 + F3.reverse + 0.02)) cry(6)
   if (hit(T0 + C3)) play('super')
   // The slow die: the stage goes dark while it turns, pulsing with a heartbeat.
   if (slow) {
-    const beat = Math.max(0, Math.sin((u - F3.slowA) * Math.PI * 2.4)) ** 6
-    wash(g, '#0b0f24', 0.55 * span(u, F3.slowA, F3.slowA + 0.2) + 0.15 * beat)
+    const beat = Math.max(0, Math.sin((u - ROLL.slowA) * Math.PI * 2.4)) ** 6
+    wash(g, '#0b0f24', 0.45 * span(u, ROLL.slowA, ROLL.slowA + 0.2) + 0.12 * beat)
   }
   foePlate(g, { name: 'Mewtwo', level: 70, hp: 1 - span(u, C3 + 0.1, C3 + 0.25), types: ['psychic'] }, u, F3.reverse)
-  if (!slow) ownPlate(g, { name: 'Charizard', level: 68, hp: 1, max: 210 }, u, F3.reverse + 0.03)
-  caption(g, 'Tap dice to throw them again.', u, F3.pick - 0.2, F3.reroll + 0.1)
-  if (u >= F3.throw && u < F3b.attack) {
-    const zoom = slow
-      ? 1 + 1.6 * outCubic(span(u, F3.slowA, F3.slowA + 0.5))
-      : u >= LAND
-        ? 1 + 1.6 * (1 - outCubic(span(u, LAND, LAND + 0.25)))
-        : 1
-    celebrate(g, u, LAND)
-    // The camera closes in between the two slow dice (the 3rd and the 5th): on the 4th's place.
-    tray(g, F3_DICE, u, zoom, 3)
-    if (u >= LAND - 0.02 && u < LAND + 0.1) speedLines(g, OW / 2, 900, u, { color: '#ffbe2e', inner: 260, a: 0.6 })
-    if (u < F3.reroll) valuePops(g, [5, 5, 2, 5, 3], diceAt(5), u, F3.pops)
-    else if (u >= LAND + 0.2) valuePops(g, [5, 5, 5, 5, 5], diceAt(5), u, LAND + 0.2)
-    // FIVE OF A KIND, huge, then the damage under it.
-    fiveBanner(g, u, LAND, (t) => hit(T0 + t))
-    damageSlam(g, 95, 960, 640, u, F3b.damage, { size: 230, shake: 16 })
-  }
+  if (!bigRollBusy(u, ROLL)) ownPlate(g, { name: 'Charizard', level: 68, hp: 1, max: 210 }, u, F3.reverse + 0.03)
+  caption(g, 'Select dice to reroll', u, ROLL.taps[0] - 0.4, ROLL.press + 0.2)
+  if (u >= ROLL.throw && u < F3.attack) bigRoll(g, u, ROLL, (t) => hit(T0 + t))
   // The impact frame, then two silhouettes in ink on white, then colour again.
   if (u >= C3 && u < C3 + 2 / 60) wash(g, '#ffffff', 1)
   else if (u >= C3 + 2 / 60 && u < C3 + 7 / 60) {
@@ -230,7 +215,7 @@ function fight3(g: G, u: number) {
     drawStage(g, null, [r.f3ink.draw()], clampCam({ x: 140, y: 88, z: 10 }, pic), undefined, { ground: '#ffffff' })
     speedLines(g, 1300, 420, u, { color: INK, inner: 420, a: 1, n: 64 })
   }
-  if (u >= F3b.end - 0.08) wash(g, '#000000', 1)
+  if (u >= F3.end - 0.08) wash(g, '#000000', 1)
 }
 
 export const journey: Act = {
