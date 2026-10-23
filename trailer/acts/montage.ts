@@ -1,5 +1,5 @@
-// Act 3, the big moments (29.5 → 47 s): Rayquaza's raid opening, a Mega Evolution and a Gigantamax, each full screen
-// with the game's own line; then four legendary bosses at once (Mew, Celebi, Jirachi, Shaymin) and four raids at once
+// Act 3, the big moments (26.5 → 44 s): Rayquaza's raid opening, a Mega Evolution and a Gigantamax, each full screen
+// with the game's own line; then four mythical bosses at once (Mew, Celebi, Jirachi, Shaymin) and four raids at once
 // (Lugia, Groudon, Palkia, Zacian), each tile framed on its battle with an ink border and its type colour as a rim.
 import { gmaxTimeline, megaTimeline } from '@/fx/timelines/forms'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
@@ -126,7 +126,7 @@ export const montage: Act = {
         frame(g, QUAD[i]!, b.rim)
         if (hit(T0 + start + (3.2 - 1.9) / 0.95)) cry(b.dex, 0.6)
       })
-      gridLabel(g, 'LEGENDARY BOSSES', v, BOSSES[0])
+      gridLabel(g, 'MYTHICAL BOSSES', v, BOSSES[0])
     } else {
       // Four raids at once: each one's opening, offset a little.
       RAID_LIST.forEach((r, i) => {

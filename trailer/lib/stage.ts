@@ -44,6 +44,66 @@ export interface Box {
 }
 export const SCREEN: Box = { x: 0, y: 0, w: 1920, h: 1080 }
 
+// ---------------------------------------------------------------- sharp scaling
+// Nearest-neighbour at a fractional scale makes pixels alternate between two widths (5, 6, 5, 6 px…), which reads as
+// wobbly art. Sharp scaling avoids it: blow the image up by the whole part of the scale with nearest-neighbour, then
+// smooth only the last fraction, so each art pixel keeps one size with at most a one-pixel soft edge.
+const upscaled = new WeakMap<CanvasImageSource, Map<number, HTMLCanvasElement>>()
+const scratch = new Map<string, HTMLCanvasElement>()
+
+function wholeScale(src: HTMLCanvasElement | HTMLImageElement, n: number, cache: boolean) {
+  const w = src instanceof HTMLImageElement ? src.naturalWidth : src.width
+  const h = src instanceof HTMLImageElement ? src.naturalHeight : src.height
+  let c: HTMLCanvasElement | undefined
+  if (cache) {
+    let m = upscaled.get(src)
+    if (!m) upscaled.set(src, (m = new Map()))
+    c = m.get(n)
+    if (c) return c
+    c = document.createElement('canvas')
+    m.set(n, c)
+  } else {
+    const key = `${w * n}x${h * n}`
+    c = scratch.get(key)
+    if (!c) scratch.set(key, (c = document.createElement('canvas')))
+  }
+  c.width = w * n
+  c.height = h * n
+  const g = c.getContext('2d')!
+  g.imageSmoothingEnabled = false
+  g.clearRect(0, 0, c.width, c.height)
+  g.drawImage(src, 0, 0, w * n, h * n)
+  return c
+}
+
+/**
+ * Draw pixel art at any size and keep its pixels even: nearest-neighbour at a whole scale, sharp scaling otherwise.
+ * `still` caches the blown-up copy (a picture that never changes).
+ */
+export function sharpDraw(
+  g: CanvasRenderingContext2D,
+  src: HTMLCanvasElement | HTMLImageElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  still = false,
+) {
+  const sw = src instanceof HTMLImageElement ? src.naturalWidth : src.width
+  const k = w / sw
+  g.save()
+  if (Math.abs(k - Math.round(k)) < 0.004 || k < 1) {
+    g.imageSmoothingEnabled = false
+    g.drawImage(src, Math.round(x), Math.round(y), Math.round(w), Math.round(h))
+  } else {
+    const big = wholeScale(src, Math.floor(k), still)
+    g.imageSmoothingEnabled = true
+    g.imageSmoothingQuality = 'high'
+    g.drawImage(big, x, y, w, h)
+  }
+  g.restore()
+}
+
 /**
  * Draw a stage: its picture (or a plain ground), then each canvas layer (a timeline's), through the camera, clipped
  * to the box. `shake` moves the whole view by screen pixels.
@@ -62,21 +122,15 @@ export function drawStage(
   g.clip()
   g.fillStyle = ground
   g.fillRect(box.x, box.y, box.w, box.h)
-  g.imageSmoothingEnabled = false
   // Whole screen pixels for the stage's origin, so the art pixels stay a constant size.
   const ox = Math.round(box.x + box.w / 2 - cam.x * cam.z + shake.x)
   const oy = Math.round(box.y + box.h / 2 - cam.y * cam.z + shake.y)
   if (pic) {
+    // The picture keeps its own 400 px resolution, so its pixels are never a whole number of screen pixels: sharp.
     const k = cam.z / ART_K
-    g.drawImage(
-      pic.img,
-      Math.round(ox - pic.x * cam.z),
-      Math.round(oy - (pic.y + ART_CROP / ART_K) * cam.z),
-      Math.round(ART_PX * k),
-      Math.round(pic.img.naturalHeight * k),
-    )
+    sharpDraw(g, pic.img, ox - pic.x * cam.z, oy - (pic.y + ART_CROP / ART_K) * cam.z, ART_PX * k, pic.img.naturalHeight * k, true)
   }
-  for (const l of layers) if (l) g.drawImage(l, ox, oy, Math.round(l.width * cam.z), Math.round(l.height * cam.z))
+  for (const l of layers) if (l) sharpDraw(g, l, ox, oy, l.width * cam.z, l.height * cam.z)
   g.restore()
 }
 

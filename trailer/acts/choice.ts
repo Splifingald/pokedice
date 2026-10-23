@@ -1,4 +1,4 @@
-// Act 5, the choice (53 → 57.5 s): Prof. Oak's lab (the partner moment, docs/15 §18). The three Poké Balls drop onto
+// Act 5, the choice (50 → 54.5 s): Prof. Oak's lab (the partner moment, docs/15 §18). The three Poké Balls drop onto
 // their cradles and stay shut; the camera closes in on the middle one while it shakes, and the game's dialogue box
 // asks "What's your choice?"
 import { LAB_ART, loadArt as loadAreaArt } from '@/fx/areaArt'
@@ -11,7 +11,7 @@ import { playWith } from '../lib/audio'
 import { inOut, INK, OH, OW, rect, span, text, wash, type G } from '../lib/draw'
 import { Run } from '../lib/run'
 import { loadMon, mon } from '../lib/sprites'
-import { camLerp, drawStage, type Cam } from '../lib/stage'
+import { camLerp, drawStage, sharpDraw, type Cam } from '../lib/stage'
 import type { Act } from '../main'
 
 const T0 = ACT.choice[0]
@@ -95,9 +95,8 @@ export const choice: Act = {
     const oy = Math.round(OH / 2 - cam.y * cam.z)
     const w = Math.round(240 * cam.z)
     const h = Math.round(160 * cam.z)
-    g.imageSmoothingEnabled = false
-    if (labImg) g.drawImage(labImg, ox, oy, w, h)
-    g.drawImage(r.draw(), ox, oy, w, h)
+    if (labImg) sharpDraw(g, labImg, ox, oy, w, h, true)
+    sharpDraw(g, r.draw(), ox, oy, w, h)
     // Each shake rattles.
     const prev = labTime(Math.max(0, c - 1 / 60))
     if (st >= 2.5 && (st - 2.5) % 0.9 < (prev - 2.5 + 0.9) % 0.9) playWith(() => tone(220, 0.05, { vol: 0.05, type: 'triangle' }))

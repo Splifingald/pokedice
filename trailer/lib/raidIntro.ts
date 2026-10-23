@@ -3,9 +3,28 @@
 // hazard tapes, the storm with lightning, the silhouette rising with a glowing outline, the pillar of light, the
 // white-out reveal with shockwaves and embers, the name slamming down as the HP bars fill.
 import { bolt, canvas, disc, ease, polyline, rng, text, textWidth } from '@/fx/pixel'
-import { silhouette, spriteFrame } from '@/fx/sprites'
+import { spriteFrame } from '@/fx/sprites'
+import { nativeFrameOf } from './sprites'
 import { hiss, tone } from '@/audio/sfx'
 import { playWith } from './audio'
+
+const tints = new WeakMap<HTMLCanvasElement, Map<string, HTMLCanvasElement>>()
+/** A frame's shape in one colour (cached per frame). */
+function tinted(src: HTMLCanvasElement, color: string) {
+  let m = tints.get(src)
+  if (!m) tints.set(src, (m = new Map()))
+  let c = m.get(color)
+  if (!c) {
+    c = canvas(src.width, src.height)
+    const g = c.getContext('2d')!
+    g.drawImage(src, 0, 0)
+    g.globalCompositeOperation = 'source-in'
+    g.fillStyle = color
+    g.fillRect(0, 0, c.width, c.height)
+    m.set(color, c)
+  }
+  return c
+}
 
 export const RW = 320
 export const RH = 180
@@ -85,10 +104,11 @@ export class RaidIntroScene {
     this.last = T
     const g = this.cv.g
     const r = this.r
-    const full = spriteFrame(this.key)
-    const sil = silhouette(this.key, '#0b0e1e')
-    const glow = silhouette(this.key, '#ffbe2e')
-    const K = 1.5
+    // The Pokémon at its own size, doubled when it has room: whole art pixels, never the stage's shrunk copy.
+    const full = nativeFrameOf(this.key, T) ?? spriteFrame(this.key) ?? null
+    const sil = full && tinted(full, '#0b0e1e')
+    const glow = full && tinted(full, '#ffbe2e')
+    const K = full && Math.max(full.width, full.height) * 2 <= 190 ? 2 : 1
     const sw = Math.round((full?.width ?? 64) * K)
     const sh = Math.round((full?.height ?? 64) * K)
     const shake = T > 2.75 && T < 3.25 ? Math.round(Math.sin(T * 97) * 4 * (3.25 - T) * 2) : 0

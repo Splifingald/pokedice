@@ -1,7 +1,7 @@
 // Pokémon for the trailer: the game's canvas sprites (fx/sprites), and their animation. In the game the animated GIF
 // plays as an <img> over the stage and the canvas draws its first frame; here every frame is the canvas, so the GIF's
 // frames are decoded once and swapped in under the same key, frame by frame, on the trailer's clock.
-import { loadSprite, putSprite, spriteKey, stageSprite } from '@/fx/sprites'
+import { loadSprite, putSprite, spriteKey, stageSprite, type StageSprite } from '@/fx/sprites'
 import { canvas, type Canvas } from '@/fx/pixel'
 
 // Chromium has ImageDecoder; TypeScript's DOM types don't yet.
@@ -23,37 +23,72 @@ interface Anim {
 }
 const anims = new Map<string, Anim>()
 
+/**
+ * Cut a frame to its art the way the game does (fx/sprites `crop`), but shrink big Pokémon smoothly: the game's
+ * nearest-neighbour shrink (to at most 80 art pixels) drops whole rows and columns. Smoothed, then its edge made hard
+ * again, the shape keeps every line.
+ */
+function cut(image: CanvasImageSource, s: StageSprite, k: number): Canvas {
+  const y0 = s.h - s.below - s.artH
+  const c = canvas(Math.max(1, Math.round(s.artW * k)), Math.max(1, Math.round(s.artH * k)))
+  if (k < 1) {
+    c.g.imageSmoothingEnabled = true
+    c.g.imageSmoothingQuality = 'high'
+  }
+  c.g.drawImage(image, s.artX, y0, s.artW, s.artH, 0, 0, c.width, c.height)
+  if (k < 1) {
+    const d = c.g.getImageData(0, 0, c.width, c.height)
+    for (let i = 3; i < d.data.length; i += 4) d.data[i] = d.data[i]! >= 110 ? 255 : 0
+    c.g.putImageData(d, 0, 0)
+  }
+  return c
+}
+
+const natives = new Map<string, Anim>()
+
 /** Load a Pokémon's view for the canvas, with its animation when Showdown draws one. Resolves to its key. */
 export async function loadMon(dex: number, back = false, shiny = false): Promise<string> {
   const key = await loadSprite(dex, back, shiny)
   if (anims.has(key)) return key
   const s = stageSprite(dex, back, shiny)
-  if (!/gen5ani/.test(s.url)) return key
+  // Only Showdown's sprites (the local fallbacks are already small and still).
+  if (!/pokemonshowdown/.test(s.url)) return key
   try {
     const data = await (await fetch(s.url)).arrayBuffer()
-    const dec = new ImageDecoder({ data, type: 'image/gif' })
+    const animated = /gen5ani/.test(s.url)
+    const dec = new ImageDecoder({ data, type: animated ? 'image/gif' : 'image/png' })
     await dec.tracks.ready
     const n = dec.tracks.selectedTrack?.frameCount ?? 1
     const frames: Canvas[] = []
+    const full: Canvas[] = []
     const starts: number[] = []
     let t = 0
     for (let i = 0; i < n; i++) {
       const { image } = await dec.decode({ frameIndex: i })
-      // The same crop and scale as the game's still (fx/sprites `crop`).
-      const y0 = s.h - s.below - s.artH
-      const c = canvas(Math.max(1, Math.round(s.artW * s.k)), Math.max(1, Math.round(s.artH * s.k)))
-      c.g.drawImage(image, s.artX, y0, s.artW, s.artH, 0, 0, c.width, c.height)
-      frames.push(c)
+      frames.push(cut(image, s, s.k))
+      full.push(cut(image, s, 1))
       starts.push(t)
       t += Math.max(0.02, (image.duration ?? 100_000) / 1e6)
       image.close()
     }
     dec.close()
     anims.set(key, { frames, starts, total: t })
+    natives.set(key, { frames: full, starts, total: t })
+    putSprite(key, frames[0]!)
   } catch {
-    // No animation: the still stays.
+    // Not decodable: the game's own still stays.
   }
   return key
+}
+
+/** A Pokémon's frame at its own size (no shrink), for scenes that have room for it (the raid openings). */
+export function nativeFrameOf(key: string, t: number): Canvas | null {
+  const a = natives.get(key)
+  if (!a) return null
+  const local = ((t % a.total) + a.total) % a.total
+  let f = 0
+  while (f + 1 < a.starts.length && a.starts[f + 1]! <= local) f++
+  return a.frames[f]!
 }
 
 export const mon = (dex: number, back = false, shiny = false) => spriteKey(dex, back, shiny)

@@ -2,6 +2,7 @@
 // readout, the combo chip): name and level, the HP bar, a trainer's party as red squares, the damage alone and big.
 import { PALETTE } from '@/theme/colors'
 import { icon } from '@/fx/pixel'
+import { sharpDraw } from './stage'
 import { GOLD, hpBar, INK, outBack, panel, rect, span, text, textWidth, type G } from './draw'
 
 export interface PlateInfo {
@@ -112,57 +113,12 @@ const GEM = [
 ]
 export const boulderBadge = () => icon(GEM, { k: INK, w: '#ffffff', a: '#a8aebb', b: '#d8dce4', c: '#6f7686' }, 1)
 
-/** A small canvas scaled with square pixels. */
+/** A small canvas scaled up with even pixels (sharp scaling when k isn't whole). */
 export function blit(g: G, c: HTMLCanvasElement, x: number, y: number, k: number) {
-  g.imageSmoothingEnabled = false
-  g.drawImage(c, Math.round(x), Math.round(y), Math.round(c.width * k), Math.round(c.height * k))
+  sharpDraw(g, c, x, y, c.width * k, c.height * k)
 }
 
 // ---------------------------------------------------------------- explaining a roll
-export interface Term {
-  text: string
-  at: number
-  color?: string
-  /** A word above the term (the combo, "SUPER EFFECTIVE"), in a chip of this colour. */
-  label?: string
-  labelFill?: string
-}
-
-/**
- * The damage worked out the way the game's readout does — (the dice + the combo) × the type — one term at a time,
- * then "= N" slamming in bigger. Centred on x, its baseline at y.
- */
-export function equation(g: G, terms: Term[], result: { n: number; at: number }, t: number, x = 960, y = 720) {
-  const size = 92
-  const gap = 26
-  const res = `= ${result.n}`
-  // A term's slot is as wide as its label too, so two labels never overlap.
-  const widths = terms.map((tm) => Math.max(textWidth(g, tm.text, size), tm.label ? textWidth(g, tm.label, 36, 'Jersey 25', 2) + 40 : 0))
-  const resW = textWidth(g, res, size * 1.6)
-  const total = widths.reduce((a, b) => a + b + gap, 0) + resW
-  let cx = x - total / 2
-  terms.forEach((tm, i) => {
-    const w = widths[i]!
-    if (t >= tm.at) {
-      const k = outBack(span(t, tm.at, tm.at + 0.16), 2)
-      g.save()
-      g.translate(cx + w / 2, y)
-      g.scale(k, k)
-      text(g, tm.text, 0, 0, { size, color: tm.color ?? '#ffffff', align: 'center', ow: 8 })
-      if (tm.label) {
-        const lw = textWidth(g, tm.label, 36, 'Jersey 25', 2) + 24
-        rect(g, -lw / 2 - 4, -size - 34, lw + 8, 52, INK)
-        rect(g, -lw / 2, -size - 30, lw, 44, tm.labelFill ?? GOLD)
-        text(g, tm.label, 0, -size + 2, { size: 36, color: tm.labelFill === '#c4382a' ? '#ffffff' : INK, ow: 0, align: 'center', spacing: 2 })
-      }
-      g.restore()
-    }
-    cx += w + gap
-  })
-  damageSlam(g, result.n, cx + resW / 2 + 40, y - size * 0.45, t, result.at, { size: size * 1.6 })
-  if (t >= result.at) text(g, '=', cx + 20, y, { size, align: 'center', ow: 8 })
-}
-
 /** Each die's value popping up over it as the dice settle (screen positions of the dice). */
 export function valuePops(g: G, values: number[], at: (i: number) => { x: number; y: number }, t: number, from: number) {
   values.forEach((v, i) => {

@@ -1,4 +1,4 @@
-// Act 4, the features (47 → 53 s): five cut-ins of 1.2 s, one word each, in the same place so the eye stays put: FRIENDS (three friends' cards), VERSUS (two trainers and their dice), TRADING (the traded ball opening),
+// Act 4, the features (44 → 50 s): five cut-ins of 1.2 s, one word each, in the same place so the eye stays put: FRIENDS (three friends' cards), VERSUS (two trainers and their dice), TRADING (the traded ball opening),
 // CO-OP RAIDS (three trainers against one raid Pokémon), CO-OP DAY CARE (your Pokémon and a friend's, a heart, an Egg).
 import { tradeTimeline } from '@/fx/timelines/trade'
 import { canvas } from '@/fx/pixel'
@@ -8,12 +8,12 @@ import { ACT, hit } from '../lib/clock'
 import { cry, play } from '../lib/audio'
 import { drawIcon, drawTrainer, egg, heart, image, loadArt, loadImage } from '../lib/art'
 import { faceTexture } from '../lib/cube'
-import { dots, GOLD, hpBar, INK, OW, outBack, panel, rect, span, text, TYPE, wash, type G } from '../lib/draw'
+import { dots, GOLD, hpBar, INK, OH, OW, outBack, panel, rect, span, text, TYPE, wash, type G } from '../lib/draw'
 import { blit } from '../lib/hud'
 import { Run } from '../lib/run'
 import { playAt } from '../lib/scene'
 import { loadMon, mon } from '../lib/sprites'
-import { drawStage, loadPicture, picture } from '../lib/stage'
+import { drawStage, loadPicture, picture, sharpDraw } from '../lib/stage'
 import type { Act } from '../main'
 
 const T0 = ACT.features[0]
@@ -62,8 +62,8 @@ function friends(g: G, f: number) {
 // ---------------------------------------------------------------- 2. versus
 function versus(g: G, f: number) {
   const bg = image('/backgrounds/versus.png')
-  g.imageSmoothingEnabled = false
-  g.drawImage(bg, 0, 0, bg.naturalWidth, bg.naturalHeight, -24, -12, OW + 48, ((OW + 48) * bg.naturalHeight) / bg.naturalWidth)
+  // Five whole screen pixels per picture pixel, centred (its edges cropped): the stadium stays crisp.
+  sharpDraw(g, bg, (OW - bg.naturalWidth * 5) / 2, (OH - bg.naturalHeight * 5) / 2, bg.naturalWidth * 5, bg.naturalHeight * 5, true)
   const p = outBack(span(f, 0, 0.22), 1.4)
   drawTrainer(g, '/characters/red.png', 420 - (1 - p) * 900, 860, 6)
   drawTrainer(g, '/characters/green.png', 1500 + (1 - p) * 900, 860, 6, true)
@@ -115,7 +115,7 @@ function raids(g: G, f: number, T: number) {
   const s = stage.g
   s.clearRect(0, 0, 240, 160)
   const bob = Math.round(Math.sin(T * 4) * 2)
-  drawSprite(s, mon(382), 172, 92 + bob, { sx: 1.25, sy: 1.25 })
+  drawSprite(s, mon(382), 172, 92 + bob)
   ALLIES.forEach(([d, x]) => drawSprite(s, mon(d, true), x, 158))
   drawStage(g, picture('lair-sea'), [stage], { x: 120, y: 86, z: 8 }, undefined, {
     shake: f > 0.85 && f < 1.0 ? { x: Math.round(Math.sin(f * 200) * 10), y: 0 } : { x: 0, y: 0 },
@@ -134,8 +134,8 @@ function raids(g: G, f: number, T: number) {
     const y = 96 + i * 132
     panel(g, x, y, 380, 112, { fill: INK, b: 6, lip: false })
     rect(g, x, y, 380, 6, GOLD)
-    drawTrainer(g, src, x + 70, y + 112, 1.4)
-    drawIcon(g, d, x + 180, y + 14, 2.8)
+    drawTrainer(g, src, x + 70, y + 102, 1)
+    drawIcon(g, d, x + 190, y + 11, 3)
   })
   // Everyone's dice at once: three over each ally, landing one after another.
   ALLIES.forEach(([, ax], a) =>

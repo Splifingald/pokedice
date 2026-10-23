@@ -1,8 +1,9 @@
-// Act 2, the hero journey (4 → 29.5 s): three fights, each bigger than the last, framed close on the stage with the
-// dice thrown over its bottom, every roll worked out on screen the way the game scores it — (the dice + the combo) ×
-// the type — and held long enough to read. Charmander vs a wild Bulbasaur (a pair), the whole evolution into
-// Charmeleon, a trainer's Scyther (a reroll, three of a kind), Mewtwo's entrance, then Charizard's five dice — three
-// Fire, two Flying — the last one rerolled in a long slow motion onto five 5s, a celebration, the biggest hit.
+// Act 2, the hero journey (4 → 26.5 s): three fights, each bigger than the last, framed close on the stage with the
+// dice thrown over its bottom. No formula on screen: each die's value pops up, the combo's chip appears, the damage
+// slams in, and the numbers are simple enough to add up at a glance. Charmander's two dice (3 + 4 = 7), the whole
+// evolution into Charmeleon, its three dice with a pair against a trainer's Scyther, Mewtwo's entrance, then
+// Charizard's five dice — three Fire, two Flying — the last one rerolled in a long slow motion onto five 5s, a
+// celebration, the biggest hit.
 import { attackTimeline } from '@/fx/timelines/attacks'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { evolveTimeline } from '@/fx/timelines/moments'
@@ -10,11 +11,11 @@ import { ACT, hit } from '../lib/clock'
 import { cry, play } from '../lib/audio'
 import { drawTray, restScreen, slowLanding, TRAY_H, TRAY_K, TRAY_W, type TrayPlan } from '../lib/dice'
 import { bottomShade, inOut, INK, OH, OW, outBack, outCubic, rect, span, speedLines, text, TYPE, wash, type G } from '../lib/draw'
-import { blit, boulderBadge, caption, celebrate, equation, foePlate, ownPlate, valuePops, type Term } from '../lib/hud'
+import { blit, boulderBadge, caption, celebrate, comboChip, damageSlam, foePlate, ownPlate, valuePops } from '../lib/hud'
 import { Run } from '../lib/run'
 import { idle, playAt } from '../lib/scene'
 import { loadMon, mon } from '../lib/sprites'
-import { camLerp, clampCam, drawStage, loadPicture, picture, type Cam } from '../lib/stage'
+import { camLerp, clampCam, drawStage, loadPicture, picture, sharpDraw, type Cam } from '../lib/stage'
 import type { Act } from '../main'
 
 const T0 = ACT.journey[0]
@@ -27,27 +28,12 @@ const SCYTHER = mon(123)
 const MEWTWO = mon(150)
 
 // The beats, in seconds from the act's start.
-const F1 = { throw: 0.7, pops: 1.3, sum: 1.6, combo: 2.0, type: 2.45, result: 2.9, attack: 3.7, faint: 4.6, level: 4.9, white: 5.6 }
-const EVO = { from: 6, to: 9 }
-const F2 = {
-  cut: 9,
-  strike: 9.2,
-  throw: 10,
-  pops: 10.62,
-  pick: 11.2,
-  reroll: 11.9,
-  pops2: 12.4,
-  sum: 12.7,
-  combo: 13.1,
-  type: 13.5,
-  result: 13.9,
-  attack: 14.6,
-  faint: 15.3,
-  burn: 15.75,
-}
-const F3 = { legend: 16, reverse: 17.8, throw: 18.6, pops: 19.3, pick: 19.9, reroll: 20.4, slowA: 20.55, slowB: 22.75 }
+const F1 = { throw: 0.7, pops: 1.2, damage: 1.65, attack: 2.8, faint: 3.7, level: 4.0, white: 4.6 }
+const EVO = { from: 5, to: 8 }
+const F2 = { cut: 8, strike: 8.2, throw: 9, pops: 9.55, combo: 9.95, damage: 10.35, attack: 11.4, faint: 12.1, burn: 12.75 }
+const F3 = { legend: 13, reverse: 14.8, throw: 15.6, pops: 16.3, pick: 16.9, reroll: 17.4, slowA: 17.55, slowB: 19.75 }
 const LAND = slowLanding(F3.reroll, 0.5, F3.slowA, F3.slowB, 0.08)
-const F3b = { sum: LAND + 0.5, combo: LAND + 0.8, result: LAND + 1.2, attack: 24.6, end: 25.5 }
+const F3b = { damage: LAND + 0.9, attack: 21.6, end: 22.5 }
 
 const contactOf = (start: number, from: number, speed: number, at = 1.47) => start + (at - from) / speed
 const C1 = contactOf(F1.attack, 0.7, 1.6)
@@ -71,11 +57,11 @@ function makeRuns() {
         })),
       { art: true },
     ),
-    f1fire: new Run(() => attackTimeline({ own: CHARMANDER, foe: BULBASAUR, type: 'fire', damage: 24 }), { art: true }),
+    f1fire: new Run(() => attackTimeline({ own: CHARMANDER, foe: BULBASAUR, type: 'fire', damage: 7 }), { art: true }),
     evo: new Run(() => evolveTimeline({ from: mon(4), to: mon(5), type: 'fire' })),
     f2idle: new Run(() => idle(CHARMELEON, SCYTHER, (t) => ({ foe: faint(t, F2.faint) })), { art: true }),
-    f2bug: new Run(() => attackTimeline({ own: CHARMELEON, foe: SCYTHER, by: 'foe', type: 'bug', damage: 31 }), { art: true }),
-    f2fire: new Run(() => attackTimeline({ own: CHARMELEON, foe: SCYTHER, type: 'fire', damage: 54 }), { art: true }),
+    f2bug: new Run(() => attackTimeline({ own: CHARMELEON, foe: SCYTHER, by: 'foe', type: 'bug', damage: 9 }), { art: true }),
+    f2fire: new Run(() => attackTimeline({ own: CHARMELEON, foe: SCYTHER, type: 'fire', damage: 14 }), { art: true }),
     f3legend: new Run(
       () =>
         legendTimeline({
@@ -95,30 +81,19 @@ function makeRuns() {
 }
 
 // ---------------------------------------------------------------- the dice of each fight
+// Charmander's first roll: two dice, 3 + 4 = 7.
 const F1_DICE: TrayPlan = {
-  fills: [TYPE.fire, TYPE.fire, TYPE.fire],
-  throws: [{ t: F1.throw, values: [4, 4, 2], dur: 0.5 }],
-  combo: { t: F1.combo, which: [0, 1] },
+  fills: [TYPE.fire, TYPE.fire],
+  throws: [{ t: F1.throw, values: [3, 4], dur: 0.5 }],
 }
-const F1_MATH: Term[] = [
-  { text: '(4 + 4 + 2', at: F1.sum },
-  { text: '+ 2)', at: F1.combo, color: '#ffbe2e', label: 'PAIR' },
-  { text: '× 2', at: F1.type, color: '#ff8a7a', label: 'SUPER EFFECTIVE', labelFill: '#c4382a' },
-]
+// Charmeleon's: three dice, a pair of 5s — 5 + 5 + 2, and the pair's +2: 14.
 const F2_DICE: TrayPlan = {
-  fills: [TYPE.fire, TYPE.fire, TYPE.fire, TYPE.normal],
-  throws: [
-    { t: F2.throw, values: [6, 2, 6, 3], dur: 0.5 },
-    { t: F2.reroll, values: [6, 3], which: [1, 3], dur: 0.45 },
-  ],
-  picked: { t: F2.pick, which: [1, 3] },
-  combo: { t: F2.combo, which: [0, 1, 2] },
+  fills: [TYPE.fire, TYPE.fire, TYPE.normal],
+  throws: [{ t: F2.throw, values: [5, 5, 2], dur: 0.5 }],
+  combo: { t: F2.combo, which: [0, 1] },
 }
-const F2_MATH: Term[] = [
-  { text: '(6 + 6 + 6 + 3', at: F2.sum },
-  { text: '+ 6)', at: F2.combo, color: '#ffbe2e', label: 'THREE OF A KIND' },
-  { text: '× 2', at: F2.type, color: '#ff8a7a', label: 'SUPER EFFECTIVE', labelFill: '#c4382a' },
-]
+// Charizard's: five dice, three Fire and two Flying; the last one rerolled in slow motion. Five 5s: 25, and a maxed
+// Five of a Kind's +70 (upgrades.json, level 10): 95.
 const F3_DICE: TrayPlan = {
   fills: [TYPE.fire, TYPE.fire, TYPE.fire, TYPE.flying, TYPE.flying],
   throws: [
@@ -131,25 +106,19 @@ const F3_DICE: TrayPlan = {
   flash: LAND,
   jump: LAND + 0.05,
 }
-// A Charizard this far along has its Five of a Kind maxed: +70 (upgrades.json, level 10).
-const F3_MATH: Term[] = [
-  { text: '5 + 5 + 5 + 5 + 5', at: F3b.sum },
-  { text: '+ 70', at: F3b.combo, color: '#ffbe2e', label: 'FIVE OF A KIND' },
-]
 
 /** The tray over a dark band; `zoom` pushes in on die `on` (the slow one). */
 function tray(g: G, plan: TrayPlan, u: number, zoom = 1, on = 0) {
   bottomShade(g, 560, 0.88)
-  g.imageSmoothingEnabled = false
   const cv = drawTray(plan, u)
-  if (zoom === 1) g.drawImage(cv, 0, 0, TRAY_W * TRAY_K, TRAY_H * TRAY_K)
+  if (zoom === 1) sharpDraw(g, cv, 0, 0, TRAY_W * TRAY_K, TRAY_H * TRAY_K)
   else {
     const p = restScreen(plan.fills.length, on)
     const k = TRAY_K * zoom
     // Keep the die where it is, sliding it toward the middle as the camera closes in.
     const tx = p.x + ((960 - p.x) * (zoom - 1)) / 1.6
     const ty = p.y + ((640 - p.y) * (zoom - 1)) / 1.6
-    g.drawImage(cv, Math.round(tx - (p.x / TRAY_K) * k), Math.round(ty - (p.y / TRAY_K) * k), TRAY_W * k, TRAY_H * k)
+    sharpDraw(g, cv, tx - (p.x / TRAY_K) * k, ty - (p.y / TRAY_K) * k, TRAY_W * k, TRAY_H * k)
   }
 }
 const at = (n: number) => (i: number) => restScreen(n, i)
@@ -174,7 +143,7 @@ const shakeAt = (u: number, at: number, amp: number, dur = 0.3) => {
 }
 const idleAt = (r: Run, u: number) => (r.at(u), r.draw())
 
-// ---------------------------------------------------------------- fight 1: Charmander vs Bulbasaur (0 → 6)
+// ---------------------------------------------------------------- fight 1: Charmander vs Bulbasaur (0 → 5)
 function fight1(g: G, u: number) {
   const r = runs!
   const pic = picture('meadow')
@@ -186,9 +155,9 @@ function fight1(g: G, u: number) {
     [F1.attack + 0.12, { x: 92, y: 108, z: 9 }],
     [F1.attack + 0.3, { x: 98, y: 106, z: 9 }],
     [F1.attack + 0.4, { x: 158, y: 80, z: 9 }],
-    [F1.faint + 0.3, { x: 150, y: 82, z: 9 }],
+    [F1.faint + 0.2, { x: 150, y: 82, z: 9 }],
     [F1.level, { x: 110, y: 96, z: 8 }],
-    [6, { x: 92, y: 110, z: 10 }],
+    [5, { x: 92, y: 110, z: 10 }],
   ])
   const attack = u >= F1.attack && u < F1.faint
   const layer = attack ? playAt(r.f1fire, u, F1.attack, 0.7, 1.6) : idleAt(r.f1idle, u)
@@ -203,13 +172,13 @@ function fight1(g: G, u: number) {
   caption(g, 'Charmander grew to Lv.16!', u, F1.level, F1.white)
   if (u >= F1.throw && u < F1.attack) {
     tray(g, F1_DICE, u)
-    valuePops(g, [4, 4, 2], at(3), u, F1.pops)
-    equation(g, F1_MATH, { n: 24, at: F1.result }, u)
+    valuePops(g, [3, 4], at(2), u, F1.pops)
+    damageSlam(g, 7, 960, 700, u, F1.damage, { size: 200 })
   }
   if (u >= F1.white) wash(g, '#ffffff', span(u, F1.white, F1.white + 0.35))
 }
 
-// ---------------------------------------------------------------- the evolution (6 → 9)
+// ---------------------------------------------------------------- the evolution (5 → 8)
 function evolution(g: G, u: number) {
   // The whole morph, from the light gathering to Charmeleon standing in it, a little faster than the game's.
   const layer = playAt(runs!.evo, u, EVO.from, 1.2, 1.9)
@@ -220,7 +189,7 @@ function evolution(g: G, u: number) {
   if (hit(T0 + EVO.from + 2.75)) cry(5)
 }
 
-// ---------------------------------------------------------------- fight 2: Charmeleon vs Scyther (9 → 16)
+// ---------------------------------------------------------------- fight 2: Charmeleon vs Scyther (8 → 13)
 function fight2(g: G, u: number) {
   const r = runs!
   const pic = picture('forest')
@@ -232,7 +201,7 @@ function fight2(g: G, u: number) {
     [F2.attack, { x: 120, y: 86, z: 8 }],
     [F2.attack + 0.12, { x: 96, y: 106, z: 9 }],
     [F2.attack + 0.32, { x: 156, y: 80, z: 9 }],
-    [16, { x: 150, y: 82, z: 10 }],
+    [13, { x: 150, y: 82, z: 10 }],
   ])
   let layer
   if (u >= F2.strike && u < F2.strike + 0.7) layer = playAt(r.f2bug, u, F2.strike, 1.2, 1.4)
@@ -242,16 +211,16 @@ function fight2(g: G, u: number) {
   drawStage(g, pic, [layer], clampCam(cam, pic), undefined, { shake })
   if (hit(T0 + F2.cut + 0.02)) cry(123)
   if (hit(T0 + C2own)) play('hit')
+  if (hit(T0 + F2.combo)) play('gold')
   if (hit(T0 + C2)) play('super')
   if (hit(T0 + F2.faint)) play('faint')
   foePlate(g, { name: 'Scyther', level: 24, hp: 1 - span(u, C2, C2 + 0.25), party: 3, types: ['bug', 'flying'] }, u, F2.cut)
-  ownPlate(g, { name: 'Charmeleon', level: 24, hp: 1 - 0.55 * span(u, C2own, C2own + 0.2), max: 66 }, u, F2.cut + 0.03)
-  caption(g, 'Tap dice to throw them again.', u, F2.pick - 0.2, F2.reroll + 0.5)
+  ownPlate(g, { name: 'Charmeleon', level: 24, hp: 1 - 0.3 * span(u, C2own, C2own + 0.2), max: 66 }, u, F2.cut + 0.03)
   if (u >= F2.throw && u < F2.attack) {
     tray(g, F2_DICE, u)
-    if (u < F2.reroll) valuePops(g, [6, 2, 6, 3], at(4), u, F2.pops)
-    else valuePops(g, [6, 6, 6, 3], at(4), u, F2.pops2)
-    equation(g, F2_MATH, { n: 54, at: F2.result }, u)
+    valuePops(g, [5, 5, 2], at(3), u, F2.pops)
+    comboChip(g, 'PAIR', 960, 560, u, F2.combo, 64)
+    damageSlam(g, 14, 960, 715, u, F2.damage, { size: 200 })
   }
   if (u >= F2.faint + 0.05) {
     const a = F2.faint + 0.05
@@ -264,7 +233,7 @@ function fight2(g: G, u: number) {
     g.restore()
     if (hit(T0 + a)) play('gold')
   }
-  if (u >= F2.burn) flameWipe(g, span(u, F2.burn, 16), u)
+  if (u >= F2.burn) flameWipe(g, span(u, F2.burn, 13), u)
 }
 
 function flameWipe(g: G, p: number, u: number) {
@@ -284,7 +253,7 @@ function flameWipe(g: G, p: number, u: number) {
   }
 }
 
-// ---------------------------------------------------------------- fight 3: Charizard vs Mewtwo (16 → 25.5)
+// ---------------------------------------------------------------- fight 3: Charizard vs Mewtwo (13 → 22.5)
 function fight3(g: G, u: number) {
   const r = runs!
   const pic = picture('a26')
@@ -331,7 +300,7 @@ function fight3(g: G, u: number) {
     if (u >= LAND - 0.02 && u < LAND + 0.1) speedLines(g, OW / 2, 900, u, { color: '#ffbe2e', inner: 260, a: 0.6 })
     if (u < F3.reroll) valuePops(g, [5, 5, 5, 5, 2], at(5), u, F3.pops)
     else if (u >= LAND + 0.2) valuePops(g, [5, 5, 5, 5, 5], at(5), u, LAND + 0.2)
-    // FIVE OF A KIND, huge.
+    // FIVE OF A KIND, huge, then the damage under it.
     if (u >= LAND) {
       const k = 2.2 - 1.2 * outBack(span(u, LAND, LAND + 0.2), 2.2)
       const sh = Math.round(Math.sin(u * 70) * 6 * (1 - span(u, LAND, LAND + 0.6)))
@@ -343,7 +312,7 @@ function fight3(g: G, u: number) {
       if (hit(T0 + LAND)) play('levelup')
       if (hit(T0 + LAND + 0.18)) play('catch')
     }
-    if (u >= F3b.sum) equation(g, F3_MATH, { n: 95, at: F3b.result }, u, 960, 730)
+    damageSlam(g, 95, 960, 640, u, F3b.damage, { size: 230, shake: 16 })
   }
   // The impact frame, then two silhouettes in ink on white, then colour again.
   if (u >= C3 && u < C3 + 2 / 60) wash(g, '#ffffff', 1)

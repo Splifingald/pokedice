@@ -7,6 +7,7 @@ import { play } from '../lib/audio'
 import { pokeballBackdrop } from '../lib/backdrop'
 import { drawDie, drawShadow, faceTexture, FACES, project, restOn, throwAt, type DieDraw, type Throw, type View } from '../lib/cube'
 import { clamp, GOLD, OH, OW, outBack, span, text, TYPE, wash } from '../lib/draw'
+import { sharpDraw } from '../lib/stage'
 import type { Act } from '../main'
 
 // Twice the art resolution of the stage acts (640×360 shown ×3): the turning letters step half as coarsely.
@@ -115,8 +116,7 @@ export const title: Act = {
       g.save()
       g.translate(c.x * LK + (OW / 2 - c.x * LK) * p, c.y * LK + (OH / 2 - c.y * LK) * p - 300 * Math.sin(p * Math.PI))
       g.rotate(p * 2.4)
-      g.imageSmoothingEnabled = false
-      g.drawImage(faceTexture(TYPE.electric, 'É', SIZE), -s / 2, -s / 2, s, s)
+      sharpDraw(g, faceTexture(TYPE.electric, 'É', SIZE), -s / 2, -s / 2, s, s)
       g.restore()
     }
     if (t < 0.12) wash(g, '#000000', 1 - t / 0.12)

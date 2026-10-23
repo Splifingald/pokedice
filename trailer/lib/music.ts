@@ -46,12 +46,15 @@ export function scoreMusic(ctx: BaseAudioContext, out: AudioNode) {
     }
   }
 
+  // Added to every time below: the parts after the fights are written at their first times and moved with it.
+  let OFF = 0
   const voice = (
     t: number,
     m: number,
     d: number,
     { v = 0.2, duty = 0.25, tri = false, slide = 0, pan = 0 }: { v?: number; duty?: number; tri?: boolean; slide?: number; pan?: number } = {},
   ) => {
+    t += OFF
     const o = ctx.createOscillator()
     if (tri) o.type = 'triangle'
     else o.setPeriodicWave(pulse(duty))
@@ -69,6 +72,7 @@ export function scoreMusic(ctx: BaseAudioContext, out: AudioNode) {
     o.stop(t + d + 0.02)
   }
   const noise = (t: number, d: number, { v = 0.2, f = 6000, type = 'highpass' as BiquadFilterType, q = 0.7, slide = 0 } = {}) => {
+    t += OFF
     const s = ctx.createBufferSource()
     s.buffer = noiseBuf
     const fl = ctx.createBiquadFilter()
@@ -84,6 +88,7 @@ export function scoreMusic(ctx: BaseAudioContext, out: AudioNode) {
     s.stop(t + d + 0.02)
   }
   const kick = (t: number, v = 0.9) => {
+    t += OFF
     const o = ctx.createOscillator()
     o.type = 'sine'
     o.frequency.setValueAtTime(160, t)
@@ -146,66 +151,67 @@ export function scoreMusic(ctx: BaseAudioContext, out: AudioNode) {
   for (const m of [62, 65, 69]) voice(2.0, m, 1.9, { v: 0.035, duty: 0.5 })
   for (let i = 0; i < 4; i++) snare(3.5 + i * S, 0.1 + i * 0.03)
 
-  // ---- act 2, fight 1 (4 → 10): a light groove under the explained roll, a hit on the move, the level-up's run
+  // ---- act 2, fight 1 (4 → 9): a light groove under the roll, a hit on the move, the level-up's run
   crash(4)
   groove(4, 4, Dm)
-  groove(6, 3.4, Dm, { drums: false })
-  for (let i = 0; i < 7; i++) hat(6 + i * Q, 0.05)
   line(4, [[69, 4], [74, 2], [76, 2], [77, 4], [76, 2], [74, 2]])
-  kick(7.7, 1)
-  crash(7.7, 0.2)
-  groove(7.7, 2.4, Bb, { busy: true })
-  arp(8.9, 2, D, { oct: 12, v: 0.08 })
-  voice(8.9, 50, 1.1, { v: 0.35, tri: true })
+  groove(6, 1.6, Dm, { drums: false })
+  for (let i = 0; i < 3; i++) hat(6 + i * Q, 0.05)
+  kick(6.8, 1)
+  crash(6.8, 0.2)
+  groove(6.8, 2.4, Bb, { busy: true })
+  arp(8, 2, D, { oct: 12, v: 0.08 })
+  voice(8, 50, 1, { v: 0.35, tri: true })
 
-  // ---- the evolution (10 → 13): no drums, arpeggios climbing, the burst in D major
-  ;[Dm, Bb, C, A].forEach((c, i) => arp(10 + i * 0.68, 1.4, c, { oct: i * 5, v: 0.05 + i * 0.012, tri: i < 2 }))
-  noise(10.2, 2.5, { v: 0.05, f: 300, type: 'bandpass', q: 1.2, slide: 6000 })
-  voice(10, 38, 2.7, { v: 0.3, tri: true })
-  kick(12.72, 1)
-  crash(12.72, 0.3)
-  for (const m of [50, 62, 66, 69, 74]) voice(12.72, m, 0.3, { v: m < 60 ? 0.4 : 0.06, tri: m < 60 })
+  // ---- the evolution (9 → 12): no drums, arpeggios climbing, the burst in D major
+  ;[Dm, Bb, C, A].forEach((c, i) => arp(9 + i * 0.68, 1.4, c, { oct: i * 5, v: 0.05 + i * 0.012, tri: i < 2 }))
+  noise(9.2, 2.5, { v: 0.05, f: 300, type: 'bandpass', q: 1.2, slide: 6000 })
+  voice(9, 38, 2.7, { v: 0.3, tri: true })
+  kick(11.72, 1)
+  crash(11.72, 0.3)
+  for (const m of [50, 62, 66, 69, 74]) voice(11.72, m, 0.3, { v: m < 60 ? 0.4 : 0.06, tri: m < 60 })
 
-  // ---- fight 2 (13 → 20)
-  crash(13, 0.18)
-  groove(13, 4, Bb)
-  line(13, [[77, 4], [74, 2], [77, 2], [82, 6], [81, 2]])
-  arp(13, 4, Bb, { v: 0.045 })
-  groove(15, 4, C)
-  line(15, [[79, 4], [76, 2], [79, 2], [84, 8]])
-  groove(17, 3, Bb, { drums: false })
-  for (let i = 0; i < 6; i++) hat(17 + i * Q, 0.05)
-  kick(18.6, 1)
-  crash(18.6, 0.2)
-  groove(18.6, 2.8, C, { busy: true })
-  arp(19.2, 1.6, C, { oct: 12, v: 0.06 })
+  // ---- fight 2 (12 → 17)
+  crash(12, 0.18)
+  groove(12, 4, Bb)
+  line(12, [[77, 4], [74, 2], [77, 2], [82, 6], [81, 2]])
+  arp(12, 4, Bb, { v: 0.045 })
+  groove(14, 2.8, C)
+  line(14, [[79, 4], [76, 2], [79, 2], [84, 3]])
+  kick(15.4, 1)
+  crash(15.4, 0.2)
+  groove(15.4, 3.2, C, { busy: true })
+  arp(16, 2, C, { oct: 12, v: 0.06 })
 
-  // ---- fight 3 (20 → 29.5): Mewtwo's dark, the throw, the stop under the slow die, the five of a kind in D major
-  voice(20, 38, 1.8, { v: 0.45, tri: true })
-  voice(20, 50, 1.8, { v: 0.05, duty: 0.5 })
-  kick(20.3, 0.6)
-  kick(20.52, 0.45)
-  kick(20.9, 0.6)
-  kick(21.12, 0.45)
-  kick(21.3, 1)
-  crash(21.3, 0.25)
-  groove(21.8, 4, C, { busy: true })
-  arp(21.8, 4, C, { oct: 12, v: 0.05 })
-  line(21.8, [[79, 4], [76, 2], [79, 2], [84, 4], [83, 4]])
-  groove(23.8, 1.5, A, { busy: true })
-  // The stop (24.55 → 26.92): only a slow heartbeat and a long riser.
-  for (let t = 24.6; t < 26.9; t += 0.42) kick(t, 0.55)
-  noise(24.55, 2.37, { v: 0.05, f: 150, type: 'bandpass', q: 2, slide: 5000 })
-  voice(24.55, 33, 2.37, { v: 0.25, tri: true, slide: 12 })
+  // ---- fight 3 (17 → 26.5): Mewtwo's dark, the throw, the stop under the slow die, the five of a kind in D major
+  voice(17, 38, 1.8, { v: 0.45, tri: true })
+  voice(17, 50, 1.8, { v: 0.05, duty: 0.5 })
+  kick(17.3, 0.6)
+  kick(17.52, 0.45)
+  kick(17.9, 0.6)
+  kick(18.12, 0.45)
+  kick(18.28, 1)
+  crash(18.28, 0.25)
+  groove(18.8, 4, C, { busy: true })
+  arp(18.8, 4, C, { oct: 12, v: 0.05 })
+  line(18.8, [[79, 4], [76, 2], [79, 2], [84, 4], [83, 4]])
+  groove(20.8, 1.5, A, { busy: true })
+  // The stop (21.55 → 23.92): only a slow heartbeat and a long riser.
+  for (let t = 21.6; t < 23.9; t += 0.42) kick(t, 0.55)
+  noise(21.55, 2.37, { v: 0.05, f: 150, type: 'bandpass', q: 2, slide: 5000 })
+  voice(21.55, 33, 2.37, { v: 0.25, tri: true, slide: 12 })
   // Five 5s: a fanfare.
-  kick(26.92, 1)
-  crash(26.92, 0.35)
-  for (const m of [50, 62, 66, 69, 74, 78]) voice(26.92, m, 0.9, { v: m < 60 ? 0.45 : 0.06, tri: m < 60 })
-  ;[74, 78, 81, 86, 90, 93].forEach((m, i) => voice(26.95 + i * 0.07, m, 0.3, { v: 0.07, duty: 0.25, pan: 0.3 }))
-  groove(27.4, 2.4, D, { busy: true })
-  line(27.4, [[86, 2], [88, 2], [90, 4], [93, 4]], { v: 0.12 })
-  kick(29.08, 1)
-  crash(29.08, 0.3)
+  kick(23.92, 1)
+  crash(23.92, 0.35)
+  for (const m of [50, 62, 66, 69, 74, 78]) voice(23.92, m, 0.9, { v: m < 60 ? 0.45 : 0.06, tri: m < 60 })
+  ;[74, 78, 81, 86, 90, 93].forEach((m, i) => voice(23.95 + i * 0.07, m, 0.3, { v: 0.07, duty: 0.25, pan: 0.3 }))
+  groove(24.4, 2.4, D, { busy: true })
+  line(24.4, [[86, 2], [88, 2], [90, 4], [93, 4]], { v: 0.12 })
+  kick(26.08, 1)
+  crash(26.08, 0.3)
+
+  // Everything after the fights is written at its first times (the fights were 3 s longer) and moved back with OFF.
+  OFF = -3
 
   // ---- the big moments (29.5 → 47)
   voice(29.5, 38, 2.2, { v: 0.35, tri: true })
@@ -266,10 +272,14 @@ export function scoreMusic(ctx: BaseAudioContext, out: AudioNode) {
   voice(55, 43, 1, { v: 0.25, tri: true })
   voice(56, 45, 1.5, { v: 0.25, tri: true })
 
-  // ---- the end card (57.5 → 61): the last chord in D major, a run up, ringing out
+  // ---- the end card (57.5 → 63, so 54.5 → 60): the last chord in D major, a run up, a slow arpeggio while the
+  // badges come in, ringing out
   kick(57.5, 1)
   crash(57.5, 0.32)
-  for (const m of [50, 62, 66, 69, 74]) voice(57.5, m, 3.2, { v: m < 60 ? 0.4 : 0.07, tri: m < 60, duty: 0.25 })
+  for (const m of [50, 62, 66, 69, 74]) voice(57.5, m, 2.5, { v: m < 60 ? 0.4 : 0.07, tri: m < 60, duty: 0.25 })
   ;[62, 66, 69, 74, 78, 81, 86].forEach((m, i) => voice(57.5 + i * 0.06, m, 0.5, { v: 0.06, duty: 0.125, pan: 0.3 }))
-  line(58, [[86, 4], [90, 16]], { v: 0.1, duty: 0.25 })
+  line(58, [[86, 4], [90, 12]], { v: 0.1, duty: 0.25 })
+  arp(59.5, 4, D, { tri: true, v: 0.08, oct: 12 })
+  voice(59.5, 50, 3.5, { v: 0.3, tri: true })
+  for (const m of [62, 66, 69]) voice(59.5, m, 3.5, { v: 0.03, duty: 0.5 })
 }
