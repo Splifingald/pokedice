@@ -196,8 +196,9 @@ function PityBox({
 }
 
 /**
- * "Support me": the developer's pop-up (Discord, invite, PayPal), behind the SUPPORT ME button. Each player also sees
- * it once per region, when its 5th badge is won.
+ * "Support me": the developer's pop-up (Discord, invite, Ko-fi), behind the SUPPORT ME button. Each player also sees
+ * it once per region, when its 5th badge is won. The monthly goal and currency only feed the weekly #support-me post
+ * on Discord (docs/23 §11).
  * Ticking the reset bumps the round, so on the next Save + Publish everyone who has seen it gets it once more; the
  * box then reads unticked again, ready for the next time.
  */
@@ -207,28 +208,39 @@ function DonationBox() {
   const set = (patch: Partial<DonationConfig>) => setRaw({ ...cfg, ...patch })
   const saved = useAdmin((st) => st.base.game_config.find((r) => r.key === 'donation')?.value as Partial<DonationConfig> | undefined)
   const savedRound = Number(saved?.round ?? 0)
-  const url = cfg.paypalUrl.trim()
+  const url = cfg.kofiUrl.trim()
   const urlOk = isDonationUrl(url)
   return (
     <Box
       title="Support me (donations)" icon="heart"
-      hint="The SUPPORT ME button (side menu, Settings) and its pop-up: join the Discord, invite friends, and a PayPal button to support the developer, saying the game itself can never be paid for. It also shows once per region, when its 5th badge is won, between fights. Save, then Publish, for players to get the change."
+      hint="The SUPPORT ME button (side menu, Settings) and its pop-up: join the Discord, invite friends, and a Ko-fi button to support the developer, saying the game itself can never be paid for. It also shows once per region, when its 5th badge is won, between fights. Save, then Publish, for players to get the change."
     >
       <div className="grid gap-3 sm:grid-cols-3">
         <label className="flex items-center gap-2 text-lg">
           <input type="checkbox" checked={!!cfg.enabled} onChange={(e) => set({ enabled: e.target.checked })} /> enabled
         </label>
         <Field
-          label="PayPal link"
+          label="Ko-fi link"
           className="sm:col-span-2"
-          hint={url && !urlOk ? 'Must start with https:// — the pop-up stays hidden until it does' : 'e.g. https://paypal.me/yourname · empty = the pop-up stays hidden'}
+          hint={url && !urlOk ? 'Must start with https:// — the pop-up stays hidden until it does' : 'e.g. https://ko-fi.com/yourname · empty = the pop-up stays hidden'}
         >
           <input
             className={inputCls}
             type="url"
-            placeholder="https://paypal.me/…"
-            value={cfg.paypalUrl}
-            onChange={(e) => set({ paypalUrl: e.target.value })}
+            placeholder="https://ko-fi.com/…"
+            value={cfg.kofiUrl}
+            onChange={(e) => set({ kofiUrl: e.target.value })}
+          />
+        </Field>
+        <Field label="Monthly goal" hint="The weekly #support-me post's target · 0 = none">
+          <NumInput min={0} value={cfg.monthlyGoal} onChange={(v) => set({ monthlyGoal: Math.max(0, v ?? 0) })} />
+        </Field>
+        <Field label="Currency" hint="Your Ko-fi page's, e.g. EUR">
+          <input
+            className={inputCls}
+            maxLength={3}
+            value={cfg.currency}
+            onChange={(e) => set({ currency: e.target.value.toUpperCase().replace(/[^A-Z]/g, '') })}
           />
         </Field>
       </div>
@@ -247,7 +259,7 @@ function DonationBox() {
           </span>
         </span>
       </label>
-      {cfg.enabled && !urlOk && <p className="text-lg text-danger">Enabled, but hidden from players until the PayPal link is set.</p>}
+      {cfg.enabled && !urlOk && <p className="text-lg text-danger">Enabled, but hidden from players until the Ko-fi link is set.</p>}
     </Box>
   )
 }

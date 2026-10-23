@@ -1,7 +1,7 @@
 // "Support me": the developer's three asks, as a rules pop-up (docs/15 §17): join the Discord (the one that matters
-// most), invite friends, and support the developer with PayPal, under a line saying why the game itself can never be
+// most), invite friends, and support the developer on Ko-fi, under a line saying why the game itself can never be
 // paid for (Pokémon is a licence). The side menu's and Settings' SUPPORT ME open it whenever the admin has it switched
-// on with a PayPal link (engine/donation). It also shows once per region when its 5th badge is won, between fights,
+// on with a Ko-fi link (engine/donation). It also shows once per region when its 5th badge is won, between fights,
 // after Prof. Oak's tutorials and the developer's answers; the share prompt waits for it.
 import { discordUrl, donationDue, donationEnabled, donationUrl, tutorialPending } from '@/engine'
 import { artUrl } from '@/fx/areaArt'
@@ -39,13 +39,13 @@ const openTab = (url: string) => window.open(url, '_blank', 'noopener,noreferrer
 
 /** The pop-up itself. Closing it, either way, also counts as this region's showing. */
 export function SupportModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const paypal = useGame((s) => donationUrl(s.data))
+  const kofi = useGame((s) => donationUrl(s.data))
   const discord = useGame((s) => discordUrl(s.data))
   const enabled = useGame((s) => donationEnabled(s.data))
   return (
     <SupportView
-      open={open && enabled && !!paypal}
-      paypal={paypal ?? ''}
+      open={open && enabled && !!kofi}
+      kofi={kofi ?? ''}
       discord={discord}
       onClose={() => {
         closeDonation()
@@ -59,12 +59,12 @@ export function SupportModal({ open, onClose }: { open: boolean; onClose: () => 
 export function SupportView({
   open,
   onClose,
-  paypal,
+  kofi,
   discord,
 }: {
   open: boolean
   onClose: () => void
-  paypal: string
+  kofi: string
   /** The community Discord's invite; null (none set in the admin) leaves its row out. */
   discord: string | null
 }) {
@@ -103,7 +103,7 @@ export function SupportView({
       title: t('ui.support.me.title'),
       text: t('ui.support.me.text'),
       action: (
-        <PixelButton size="sm" onClick={() => openTab(paypal)}>
+        <PixelButton size="sm" onClick={() => openTab(kofi)}>
           <PixelIcon name="heart" size={18} />
           {t('ui.support.me.button')}
         </PixelButton>

@@ -1,4 +1,5 @@
-// The Discord tools (docs/23): the server setup's plan, the daily raid post and the patch notes.
+// The Discord tools (docs/23): the server setup's plan, the daily raid post, the patch notes, the live events and the
+// weekly Ko-fi update.
 import { describe, expect, it } from 'vitest'
 import type { DChannel, DRole } from '../scripts/discord/api'
 import { LAYOUT } from '../scripts/discord/layout'
@@ -6,8 +7,10 @@ import { P } from '../scripts/discord/perms'
 import { blockers, contentPhase, fillMentions, matchChannels, matchRoles, planAll, rolesPhase, type Snapshot } from '../scripts/discord/plan'
 import { raidMessage } from '../scripts/discord/raid-post'
 import { DESCRIPTION_MAX, MESSAGE_MAX, noteMessages, parseNote, splitText } from '../scripts/discord/patch-notes'
-import { raidOfDay } from '@/engine'
-import { data } from './fixtures'
+import { dueLiveEvents, liveBanner, liveMessage } from '../scripts/discord/live-event-post'
+import { gauge, money, supportMessage } from '../scripts/discord/support-post'
+import { newLiveEvent, raidOfDay, type LiveEvent } from '@/engine'
+import { data, makeData } from './fixtures'
 
 const UNKNOWN_BIT = 1n << 47n
 
@@ -242,5 +245,96 @@ describe('patch notes', () => {
     expect(msgs[0]!.content).toBe('<@&7> New update: **Big**')
     expect(msgs.slice(1).every((m) => !('content' in m))).toBe(true)
     expect(msgs.flatMap((m) => m.embeds).map((e) => e.description).join('\n\n')).toBe(body)
+  })
+})
+
+describe('live events', () => {
+  const event = (patch: Partial<LiveEvent>): LiveEvent => ({ ...newLiveEvent('ev1', '2026-12-24T20:30:00Z', '2026-12-26T20:00:00Z'), ...patch })
+  const withEvents = (...list: LiveEvent[]) => makeData({ liveEvents: { access: 'all', list } })
+  const at = (iso: string) => Date.parse(iso)
+
+  it('is posted by the run whose hour holds "two hours before", once', () => {
+    const d = withEvents(event({}))
+    // 18:30 is two hours before: the 18:07 run owns it, late or not, and waits until then.
+    expect(dueLiveEvents(d, at('2026-12-24T18:07:00Z')).map((x) => x.postAt)).toEqual([at('2026-12-24T18:30:00Z')])
+    expect(dueLiveEvents(d, at('2026-12-24T18:50:00Z'))).toHaveLength(1)
+    expect(dueLiveEvents(d, at('2026-12-24T17:07:00Z'))).toEqual([])
+    expect(dueLiveEvents(d, at('2026-12-24T19:07:00Z'))).toEqual([])
+  })
+
+  it('leaves out events already running or over', () => {
+    const d = withEvents(event({ start: '2026-12-24T20:00:00Z', end: '2026-12-24T20:00:00Z' }))
+    expect(dueLiveEvents(d, at('2026-12-24T18:07:00Z'))).toEqual([])
+  })
+
+  it('says what the event does in a short message, pinging the event role', () => {
+    const d = withEvents()
+    const e = event({ type: 'cash', cash: { multiplier: 1.5 }, banner: 'village', title: { en: 'Christmas Cash' } })
+    const msg = liveMessage(d, e, { roleId: '9' })
+    expect(msg.content).toBe(`<@&9> **Christmas Cash** starts <t:${at(e.start) / 1000}:R>!`)
+    expect(msg.allowed_mentions.roles).toEqual(['9'])
+    expect(msg.embeds[0]!.description).toContain('+50% on every ₽')
+    expect(msg.embeds[0]!.image!.url).toBe('https://poke-dice.netlify.app/area-art/village.png')
+    expect(msg.embeds[0]!.description!.length).toBeLessThan(300)
+  })
+
+  it("names a Shiny Parade's region, and the type when there's no title", () => {
+    const d = withEvents()
+    const region = d.regions[0]!
+    const msg = liveMessage(d, event({ type: 'shiny', shiny: { multiplier: 5, scope: 'region', areaIds: [], regionId: region.id } }))
+    expect(msg.embeds[0]!.title).toBe('Shiny Parade')
+    expect(msg.embeds[0]!.description).toContain(`5× more likely to be shiny, in ${region.name}`)
+    expect(msg.allowed_mentions.roles).toEqual([])
+  })
+
+  it('takes a banner as an area key, a path or a web address', () => {
+    expect(liveBanner('')).toBeNull()
+    expect(liveBanner('/events/x.png', 'https://s')).toBe('https://s/events/x.png')
+    expect(liveBanner('https://cdn/x.png')).toBe('https://cdn/x.png')
+  })
+})
+
+describe('the weekly Ko-fi update', () => {
+  const now = Date.parse('2026-10-23T08:00:00Z')
+  const url = 'https://ko-fi.com/gregoirefontaine'
+
+  it('shows the month against its goal, next month so far, and the link', () => {
+    const msg = supportMessage({ url, goal: 100, currency: 'EUR', now, totals: [{ currency: 'EUR', this_month: 42.5, supporters: 3, next_month: 15 }] })
+    const text = msg.embeds[0]!.description!
+    expect(msg.embeds[0]!.title).toBe('Ko-fi goal for October')
+    expect(text).toContain('**October: €42.50 / €100** (43%)')
+    expect(text).toContain('▰▰▰▰▱▱▱▱▱▱')
+    expect(text).toContain('**November:** €15 already lined up')
+    expect(text).toContain(`(${url})`)
+    expect(msg.allowed_mentions.parse).toEqual([])
+  })
+
+  it('reads zero before any payment, and no gauge without a goal', () => {
+    const msg = supportMessage({ url, goal: 0, currency: 'EUR', now, totals: [] })
+    const text = msg.embeds[0]!.description!
+    expect(text).toContain('**October: €0**')
+    expect(text).not.toContain('▱')
+    expect(text).toContain('**November:** €0')
+  })
+
+  it('lists payments in another currency apart', () => {
+    const msg = supportMessage({
+      url,
+      goal: 50,
+      currency: 'EUR',
+      now,
+      totals: [
+        { currency: 'EUR', this_month: 10, supporters: 1, next_month: 0 },
+        { currency: 'USD', this_month: 5, supporters: 1, next_month: 5 },
+      ],
+    })
+    expect(msg.embeds[0]!.description).toContain('Also in USD: $5 this month, $5 for November.')
+  })
+
+  it('fills the gauge by tenths, a sliver once anything came in', () => {
+    expect(gauge(0)).toBe('▱'.repeat(10))
+    expect(gauge(0.01)).toBe('▰' + '▱'.repeat(9))
+    expect(gauge(2)).toBe('▰'.repeat(10))
+    expect(money(3, 'XYZ1')).toBe('3 XYZ1')
   })
 })

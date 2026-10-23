@@ -1,0 +1,47 @@
+# Announces each live event in the Discord server's #events two hours before it starts (docs/23-DISCORD-SERVER.md §12).
+# Every hour at :07, the run takes the events whose "two hours before" falls in its hour and waits for that moment, so
+# it only stays up long (an hour at most) when an event is coming. Nothing is posted while Admin → Events has live
+# events Off or On for admin, nor before the DISCORD_EVENTS_WEBHOOK secret exists.
+name: Discord live events
+
+on:
+  schedule:
+    # Keep the minute equal to CRON_MINUTE in scripts/discord/live-event-post.ts.
+    - cron: '7 * * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Post even while live events aren't on for everyone
+        type: boolean
+        default: false
+
+# One run at a time, none cancelled: a run waiting for its moment must still post.
+concurrency:
+  group: discord-live
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Announce the live events starting in two hours
+        run: pnpm discord:live $FORCE
+        env:
+          FORCE: ${{ inputs.force && '--force' || '' }}
+          DISCORD_EVENTS_WEBHOOK: ${{ secrets.DISCORD_EVENTS_WEBHOOK }}
+          DISCORD_EVENT_ROLE: ${{ vars.DISCORD_EVENT_ROLE }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}

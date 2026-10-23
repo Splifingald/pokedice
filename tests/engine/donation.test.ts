@@ -20,7 +20,7 @@ import { parseSave } from '@/save/schema'
 import { makeData, newId } from '../fixtures'
 
 const on = (patch: Partial<DonationConfig> = {}): GameData =>
-  makeData({ donation: { enabled: true, paypalUrl: 'https://paypal.me/pokedice', round: 0, ...patch } })
+  makeData({ donation: { enabled: true, kofiUrl: 'https://ko-fi.com/pokedice', monthlyGoal: 0, currency: 'EUR', round: 0, ...patch } })
 
 /** The first `n` badges of the live region, won. */
 function withBadges(save: SaveData, data: GameData, n: number): SaveData {
@@ -55,7 +55,7 @@ describe('donation pop-up', () => {
     expect(donationEnabled(data)).toBe(true)
     expect(donationEnabled(makeData())).toBe(false)
     expect(donationEnabled(on({ enabled: false }))).toBe(false)
-    expect(donationEnabled(on({ paypalUrl: '' }))).toBe(false)
+    expect(donationEnabled(on({ kofiUrl: '' }))).toBe(false)
   })
 
   it('fires with the 5th badge of a region, not before', () => {
@@ -65,11 +65,11 @@ describe('donation pop-up', () => {
 
   it('stays hidden without a web link to open', () => {
     const save = withBadges(fresh, data, 5)
-    for (const paypalUrl of ['', '   ', 'paypal.me/x', 'javascript:alert(1)']) {
-      expect(donationUrl(on({ paypalUrl }))).toBeNull()
-      expect(donationDue(save, on({ paypalUrl }))).toBe(false)
+    for (const kofiUrl of ['', '   ', 'ko-fi.com/x', 'javascript:alert(1)']) {
+      expect(donationUrl(on({ kofiUrl }))).toBeNull()
+      expect(donationDue(save, on({ kofiUrl }))).toBe(false)
     }
-    expect(donationUrl(on({ paypalUrl: ' https://www.paypal.com/donate?id=1 ' }))).toBe('https://www.paypal.com/donate?id=1')
+    expect(donationUrl(on({ kofiUrl: ' https://ko-fi.com/pokedice?ref=1 ' }))).toBe('https://ko-fi.com/pokedice?ref=1')
   })
 
   it('shows once per region', () => {

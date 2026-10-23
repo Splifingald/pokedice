@@ -8,16 +8,13 @@
  * game's own calendar (engine/raidCalendar.ts) over the live content, so the post always names the raid players get.
  * Nothing is posted while Admin → Events has raids Off or On for admin.
  */
-import { createClient } from '@supabase/supabase-js'
-import { BUNDLE, withStatics } from '@/config/bundle'
-import { isPlayableBundle, rowsToBundle } from '@/config/mapping'
-import { fetchAllRows } from '@/config/remote'
 import showdown from '@/data/showdown-sprites.json'
-import { ballBonus, catchChance, catchValueOf, compileGameData, msToUtcMidnight, raidOfDay, regionOfArea, utcDay, type GameData, type RaidDay } from '@/engine'
+import { ballBonus, catchChance, catchValueOf, msToUtcMidnight, raidOfDay, regionOfArea, utcDay, type GameData, type RaidDay } from '@/engine'
 // The map, not fx/areaArt: that one reaches the i18n sheet, which only Vite can load.
 import { AREA_ART, ART_GEOMETRY } from '@/fx/areaArtMap'
 import { showdownSpriteUrl, type ShowdownEntry } from '@/lib/showdown'
 import { postWebhook, type DEmbed } from './api'
+import { liveData } from './content'
 import { loadEnv } from './env'
 import { COLORS, SITE } from './layout'
 
@@ -90,23 +87,6 @@ export function raidMessage(data: GameData, raid: RaidDay, day: string, opts: Ra
     embeds: [embed],
     allowed_mentions: { parse: [], roles: opts.roleId ? [opts.roleId] : [] },
   }
-}
-
-/** The content players get: the live tables when they read as playable, else the bundled copy. */
-async function liveData(env: Record<string, string | undefined>): Promise<{ data: GameData; source: string }> {
-  const url = env.VITE_SUPABASE_URL?.trim()
-  const key = env.VITE_SUPABASE_ANON_KEY?.trim()
-  if (url && key) {
-    try {
-      const client = createClient(url, key, { auth: { persistSession: false } })
-      const raw = rowsToBundle(await fetchAllRows(client))
-      if (isPlayableBundle(raw)) return { data: compileGameData(withStatics(raw)), source: 'Supabase' }
-      console.warn('! The live content is not playable: using the bundled content.')
-    } catch (err) {
-      console.warn(`! Could not read Supabase (${err instanceof Error ? err.message : String(err)}): using the bundled content.`)
-    }
-  } else console.warn('! No VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY: using the bundled content, not the live one.')
-  return { data: compileGameData(BUNDLE), source: 'the bundle' }
 }
 
 async function main() {

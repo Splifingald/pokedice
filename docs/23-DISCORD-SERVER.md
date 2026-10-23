@@ -2,8 +2,9 @@
 
 > **What this gives:** the server the game links to, rebuilt for a public player community. That means clear
 > channels, staff and ping roles, forums for help, bugs and ideas, safety settings and AutoMod, a "Channels & Roles"
-> question for pings and languages, and pinned welcome and rules posts. Two automatic posts come with it: **the daily
-> raid** at 00:00 UTC, and **the patch notes** of each update once it is live.
+> question for pings and languages, and pinned welcome and rules posts. Four automatic posts come with it: **the daily
+> raid** at 00:00 UTC, **the patch notes** of each update once it is live, **each live event** two hours before it
+> starts, and **the week's Ko-fi update** every Monday.
 >
 > **How:** the server is described in one file, `scripts/discord/layout.ts`. `pnpm discord` compares the live server
 > with that file and lists the differences without changing anything. `pnpm discord --apply` makes them. It adopts
@@ -16,7 +17,7 @@
 
 | Category | Channels | For |
 | --- | --- | --- |
-| **Start here** (read-only) | `#👋-welcome` · `#📜-rules` · `#📣-announcements` · `#📝-patch-notes` · `#🔥-daily-raid` | The welcome and rules posts (by the bot), news, the two automatic posts. The last three are announcement channels, so other servers can follow them. |
+| **Start here** (read-only) | `#👋-welcome` · `#📜-rules` · `#📣-announcements` · `#📝-patch-notes` · `#🔥-daily-raid` · `#🎉-events` · `#💖-support-me` | The welcome and rules posts (by the bot), news, the automatic posts. Announcements, patch notes, the raid and the events are announcement channels, so other servers can follow them. A `#support-me` or `#events` you made yourself is adopted. |
 | **Pokédice** | `#🎲-general` · `#🙋-help` (forum) · `#🧠-strategy` · `#🫂-raid-squad` (30 s slowmode) · `#✨-show-off` · `#💬-off-topic` · `#🥖-français` | Chat, questions that stay findable, team building, finding raid friends, best catches, the rest, and French (opt-in: members pick it in Channels & Roles). |
 | **Feedback** | `#🐛-bug-reports` (forum) · `#💡-suggestions` (forum, 👍 to vote) | One post per bug or idea, with tags. Status tags (Confirmed, Fixed, Planned, Done…) are moderator-only. |
 | **Voice** | 🎧 Lounge · 🐉 Raid Room (3 people, like a raid group) | |
@@ -26,7 +27,7 @@
 | --- | --- | --- |
 | **Professor** | admins (you, co-admins) | everything (Administrator) |
 | **Gym Leader** | moderators | delete messages, time out, kick, ban, manage threads and tags, see the audit log and Staff |
-| **Raid Pings** · **Patch Notes Pings** · **Event Pings** | members who asked | nothing extra: they get pinged by the daily raid, the patch notes, and your event news |
+| **Raid Pings** · **Patch Notes Pings** · **Event Pings** | members who asked | nothing extra: they get pinged by the daily raid, the patch notes, and the live events (and your event news) |
 
 Server settings: members must have a verified e-mail and be on Discord for 5 minutes before talking. Images from
 everyone are scanned. Notifications default to mentions only. Discord's join messages land in `#🎲-general`. AutoMod
@@ -133,7 +134,8 @@ private channel stays private, and the history stays. Delete the ones you don't 
 
 ## 7. GitHub: the automatic posts
 
-The two workflows (`.github/workflows/discord-raid.yml` and `discord-patch-notes.yml`) run from `main` only:
+The four workflows (`.github/workflows/discord-raid.yml`, `discord-patch-notes.yml`, `discord-live.yml` and
+`discord-support.yml`) run from `main` only:
 GitHub runs scheduled and push workflows from the default branch. They start working once this branch reaches `main`
 with version 2. GitHub → the repository → **Settings** → **Secrets and variables** → **Actions**:
 
@@ -141,8 +143,11 @@ with version 2. GitHub → the repository → **Settings** → **Secrets and var
 | --- | --- | --- |
 | Secret | `DISCORD_RAID_WEBHOOK` | from `.env.discord` |
 | Secret | `DISCORD_PATCH_WEBHOOK` | from `.env.discord` |
+| Secret | `DISCORD_EVENTS_WEBHOOK` | from `.env.discord` |
+| Secret | `DISCORD_SUPPORT_WEBHOOK` | from `.env.discord` |
 | Variable | `DISCORD_RAID_ROLE` | from `.env.discord` (leave it out and the post pings nobody) |
 | Variable | `DISCORD_PATCH_ROLE` | from `.env.discord` |
+| Variable | `DISCORD_EVENT_ROLE` | from `.env.discord` (the live events ping Event Pings) |
 | Variable | `VITE_SUPABASE_URL` | from `.env.local`: public, the site ships it |
 | Variable | `VITE_SUPABASE_ANON_KEY` | from `.env.local`: public, the site ships it |
 
@@ -161,7 +166,7 @@ gh secret set DISCORD_PATCH_WEBHOOK
 gh variable set DISCORD_RAID_ROLE --body "the-id"
 ```
 
-…and the same `gh variable set` for the three other variables.
+…and the same `gh secret set` / `gh variable set` for the others.
 
 ## 8. The daily raid post
 
@@ -202,6 +207,50 @@ What the setup matches and never touches:
   freely. While `#📜-rules` holds posts of yours, the layout's rules post is left out (delete yours and run again to
   use it instead).
 - Discord's own AutoMod rule from Community (`Block Mention Spam`) can't be edited by a bot: adjust it by hand.
+
+## 11. The weekly Ko-fi update (`#💖-support-me`)
+
+Every Monday at about 07:43 UTC, `#💖-support-me` gets one short post: **the month's goal**, **what Ko-fi has brought
+this month** (with a gauge and the number of supporters), **what next month already holds** from monthly members, and
+the Ko-fi link. Next month counts each Ko-fi membership paid within the last 35 days, since it renews; Ko-fi doesn't
+say when one is cancelled, so a missed renewal drops out after 35 days. One-off donations count in the month they
+were made. Nothing is posted while Support me is off in Admin → Config.
+
+The game's SUPPORT ME pop-up opens the same Ko-fi page (Admin → Config → Support me → **Ko-fi link**).
+
+### Setting it up
+
+1. **Supabase → SQL Editor**: run
+   [`supabase/migrations/0071_kofi.sql`](https://github.com/Splifingald/pokedice/blob/claude/modest-thompson-3x5pku/supabase/migrations/0071_kofi.sql)
+   (`supabase/seed.sql` carries it too, inlined). It switches the game's link to Ko-fi, and adds the payments table
+   and the totals the post reads.
+2. **Admin → Config → Support me**: check the Ko-fi link, set the **Monthly goal** and the **Currency** of your Ko-fi
+   page (EUR by default). Save, then Publish.
+3. **Netlify** → Site configuration → Environment variables: add `KOFI_VERIFICATION_TOKEN` (Ko-fi → Settings → API →
+   *Verification Token*). `VITE_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are already there for the push sender
+   (docs/27); add them if not. Redeploy.
+4. **Ko-fi** → Settings → API → **Webhook URL**: `https://poke-dice.netlify.app/.netlify/functions/kofi-webhook`, then
+   **Send Single Donation Test**: Netlify → Logs → Functions → `kofi-webhook` should say `Donation 3 …`. Ko-fi's tests
+   use made-up ids, so delete the test row afterwards (Supabase → Table Editor → `kofi_payments`).
+5. `pnpm discord --apply` makes `#💖-support-me` (or adopts yours) and its webhook; add `DISCORD_SUPPORT_WEBHOOK` to
+   GitHub (step 7).
+
+Payments made before step 4 aren't known: Ko-fi only sends new ones. Preview: `pnpm discord:support --dry`. Post now:
+GitHub → Actions → **Discord weekly Ko-fi update** → **Run workflow**.
+
+## 12. Live events (`#🎉-events`)
+
+Two hours before each live event starts, `#🎉-events` gets a short post: its name, what it does with its numbers
+(×5 shiny in Kanto, +50% ₽, the shop's items…), when it starts and ends, the badges it needs and its banner. It pings
+Event Pings. Every hour at :07 a run takes the events whose "two hours before" falls in its hour and waits for that
+moment, so each event is posted once, on time. An event scheduled (and Published) less than two hours before its start
+isn't announced: post in `#📣-announcements` by hand. A moved or removed event isn't posted.
+
+**Nothing is posted while live events are Off or On for admin** in Admin → Events.
+
+- Preview: `pnpm discord:live --dry --at 2026-12-24T18:07:00Z` (what the run of that hour would post).
+- `pnpm discord --apply` makes `#🎉-events` (or adopts yours) and its webhook; add `DISCORD_EVENTS_WEBHOOK` and
+  `DISCORD_EVENT_ROLE` to GitHub (step 7).
 
 ---
 

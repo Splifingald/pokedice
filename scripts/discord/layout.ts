@@ -1,7 +1,8 @@
 // The Pokédice Discord server as it should be (docs/23-DISCORD-SERVER.md): roles, categories, channels and their
 // permissions, the server's safety settings, AutoMod, the Channels & Roles questions, the welcome and rules posts, and
-// the webhooks the daily raid and the patch notes post through. `pnpm discord` compares the live server with this
-// and lists the differences; `pnpm discord --apply` makes them. Edit this file to change the server, then run both.
+// the webhooks the daily raid, the patch notes, the live events and the weekly Ko-fi update post through. `pnpm discord`
+// compares the live server with this and lists the differences; `pnpm discord --apply` makes them. Edit this file to
+// change the server, then run both.
 //
 // Matching: an existing role, category or channel counts as one of these when its name matches the name or an alias,
 // ignoring case, accents, emoji and separators ("🎲・Général" matches "🎲-general"). A match takes the layout's exact
@@ -265,6 +266,20 @@ export const LAYOUT: Layout = {
           aliases: ['raids', 'raid', 'raid-du-jour'],
           topic: "Today's raid Pokémon, posted at 00:00 UTC every day. Get Raid Pings in Channels & Roles.",
         },
+        {
+          key: 'liveEvents',
+          name: '🎉-events',
+          kind: 'announcement',
+          aliases: ['live-events', 'event', 'evenements', 'evenement'],
+          topic: 'Live events, announced two hours before they start. Get Event Pings in Channels & Roles.',
+        },
+        {
+          key: 'supportMe',
+          name: '💖-support-me',
+          kind: 'text',
+          aliases: ['soutien', 'soutenir', 'donations', 'donation', 'ko-fi', 'kofi'],
+          topic: "Pokédice is free forever. If you'd like to support the developer, Ko-fi's goal for the month is posted here every Monday.",
+        },
       ],
     },
     {
@@ -484,7 +499,7 @@ export const LAYOUT: Layout = {
             'dice, catch them all region after region, and take on the daily raid with your friends.\n\n' +
             `**[Play now: ${SITE.replace('https://', '')}](${SITE})**`,
           fields: [
-            { name: 'Start here', value: '{#rules} the rules\n{#announcements} news\n{#patchNotes} what each update changed\n{#dailyRaid} today\'s raid' },
+            { name: 'Start here', value: '{#rules} the rules\n{#announcements} news\n{#patchNotes} what each update changed\n{#dailyRaid} today\'s raid\n{#liveEvents} live events, two hours ahead\n{#supportMe} support the developer' },
             { name: 'Talk', value: '{#general} chat\n{#help} questions\n{#strategy} teams and dice\n{#raidSquad} find raid partners\n{#showOff} your best catches\n{#offTopic} anything else' },
             { name: 'Feedback', value: '{#bugs} something broke\n{#ideas} ideas and votes' },
             {
@@ -522,6 +537,8 @@ export const LAYOUT: Layout = {
   webhooks: [
     { channel: 'dailyRaid', name: 'Pokédice Raids', env: 'DISCORD_RAID_WEBHOOK' },
     { channel: 'patchNotes', name: 'Pokédice Patch Notes', env: 'DISCORD_PATCH_WEBHOOK' },
+    { channel: 'liveEvents', name: 'Pokédice Events', env: 'DISCORD_EVENTS_WEBHOOK' },
+    { channel: 'supportMe', name: 'Pokédice', env: 'DISCORD_SUPPORT_WEBHOOK' },
   ],
   roleEnv: { raidPings: 'DISCORD_RAID_ROLE', patchPings: 'DISCORD_PATCH_ROLE', eventPings: 'DISCORD_EVENT_ROLE' },
 }

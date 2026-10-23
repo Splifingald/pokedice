@@ -13,7 +13,7 @@ export interface RuleRow {
   icon: IconName | ReactNode
   title: string
   text: string
-  /** A button under the text (the Support me pop-up's Discord, invite and PayPal). */
+  /** A button under the text (the Support me pop-up's Discord, invite and Ko-fi). */
   action?: ReactNode
 }
 

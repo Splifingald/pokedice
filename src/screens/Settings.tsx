@@ -81,7 +81,7 @@ function SettingsContent({ over = false, shut }: { over?: boolean; shut?: string
   const source = useGame((s) => s.contentSource)
   const navigate = useNavigate()
   const [confirmDelete, setConfirmDelete] = useState(false)
-  // Only when the admin has it switched on, with a PayPal link.
+  // Only when the admin has it switched on, with a Ko-fi link.
   const canDonate = donationEnabled(data)
   const [donating, setDonating] = useState(false)
 

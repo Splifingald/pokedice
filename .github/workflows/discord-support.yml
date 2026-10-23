@@ -1,0 +1,42 @@
+# Posts the week's Ko-fi update to the Discord server's #support-me (docs/23-DISCORD-SERVER.md §11): the month's goal
+# (Admin → Config → Support me), what Ko-fi has brought this month, and what next month already holds from monthly
+# members. Nothing is posted while Support me is off, nor before the DISCORD_SUPPORT_WEBHOOK secret exists.
+name: Discord weekly Ko-fi update
+
+on:
+  schedule:
+    # Mondays 07:43 UTC (08:43 in Paris in winter): off the top of the hour, GitHub's busiest minute.
+    - cron: '43 7 * * 1'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Post even while Support me is off
+        type: boolean
+        default: false
+
+concurrency: discord-support
+
+permissions:
+  contents: read
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Post the Ko-fi update
+        run: pnpm discord:support $FORCE
+        env:
+          FORCE: ${{ inputs.force && '--force' || '' }}
+          DISCORD_SUPPORT_WEBHOOK: ${{ secrets.DISCORD_SUPPORT_WEBHOOK }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}

@@ -586,12 +586,16 @@ export interface EnergyConfig {
   minutesPerEnergy: number
 }
 
-/** "Support me": the developer's pop-up and its PayPal button (Admin → Config). */
+/** "Support me": the developer's pop-up and its Ko-fi button (Admin → Config). */
 export interface DonationConfig {
-  /** Off = the pop-up never shows. It also stays hidden while `paypalUrl` is empty. */
+  /** Off = the pop-up never shows. It also stays hidden while `kofiUrl` is empty. */
   enabled: boolean
-  /** Where the PayPal button leads (a paypal.me or donate link). */
-  paypalUrl: string
+  /** Where the Ko-fi button leads (the developer's ko-fi.com page). */
+  kofiUrl: string
+  /** The month's target, in `currency`, for the weekly #support-me post on Discord; 0 = the post names none. */
+  monthlyGoal: number
+  /** The Ko-fi page's currency (ISO code, e.g. EUR): the goal's, and the one the weekly post counts in. */
+  currency: string
   /** Bumped by the admin's reset: every player who has already seen the pop-up gets it once more. */
   round: number
 }

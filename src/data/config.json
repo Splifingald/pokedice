@@ -416,7 +416,9 @@
  "donation": {
   "round": 1,
   "enabled": true,
-  "paypalUrl": "https://paypal.me/GregoireFontaine"
+  "kofiUrl": "https://ko-fi.com/gregoirefontaine",
+  "monthlyGoal": 0,
+  "currency": "EUR"
  },
  "discordUrl": "https://discord.gg/XKJQYw3p9",
  "maxFriends": 30,

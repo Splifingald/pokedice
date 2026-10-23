@@ -659,7 +659,7 @@ export function KitchenSink() {
         <InviteBits />
       </Section>
 
-      <Section title="Support me: the developer's asks (Discord, invite, PayPal), with and without a Discord link">
+      <Section title="Support me: the developer's asks (Discord, invite, Ko-fi), with and without a Discord link">
         <SupportBits />
       </Section>
 
