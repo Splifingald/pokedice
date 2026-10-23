@@ -1,6 +1,6 @@
 // Idle mode and the play styles (docs/36): which areas play themselves under each style and switch, where the
 // autopilot goes between areas (on once cleared, one round back after a lost one, then home again), and what it does at
-// each step of a run — never an item, never a team change, only a catch waiting for the player.
+// each step of a run — never an item but Idle's own balls, never a team change; Idle's catch rule (chooseIdleBall).
 import { describe, expect, it } from 'vitest'
 import {
   autoAvailable,
@@ -8,12 +8,11 @@ import {
   autoLevel,
   autopilotStep,
   autoTravel,
+  chooseIdleBall,
   createBattle,
   createRng,
   emptyProgress,
-  idleRulesDue,
   linearAreas,
-  markIdleRulesSeen,
   newGameAsksStyle,
   newSave,
   playStyleOf,
@@ -55,6 +54,16 @@ const view = (phase: AutoView['phase'], areaId: string, more: Partial<AutoView> 
   ...more,
 })
 
+/** A species the fresh save hasn't caught (Rattata), and the one it has (its starter, Squirtle). */
+const NEW_DEX = 19
+const OWNED_DEX = 7
+/** The content with this species' catch value set, so each case's chances are known. */
+const withValue = (value: number, dex = NEW_DEX): GameData => ({
+  ...ON,
+  species: { ...ON.species, [dex]: { ...ON.species[dex]!, catchValue: value } },
+})
+const VALUE5 = withValue(5)
+
 describe('the play style setting', () => {
   it('reads a setting from before the styles as "Auto on explored areas", its switch as it was', () => {
     expect(playStyleOf({})).toBe('explored')
@@ -76,13 +85,6 @@ describe('the play style setting', () => {
     expect(newGameAsksStyle(ON)).toBe(true)
     expect(newGameAsksStyle(ADMIN_ONLY)).toBe(false)
     expect(newGameAsksStyle({ ...ADMIN_ONLY, viewer: { admin: true } } as GameData)).toBe(true)
-  })
-
-  it('shows its rules once, while it is on', () => {
-    const s = fresh()
-    expect(idleRulesDue(s, OFF)).toBe(false)
-    expect(idleRulesDue(s, ON)).toBe(true)
-    expect(idleRulesDue(markIdleRulesSeen(s), ON)).toBe(false)
   })
 })
 
@@ -203,14 +205,41 @@ describe('each step of a run', () => {
     })
   })
 
-  it('stops only at catches: the throw, and "Add to team?"', () => {
-    expect(autopilotStep(s, ON, 'idle', view('catch', B.id))).toEqual({ do: 'wait', why: 'player' })
-    expect(autopilotStep(s, ON, 'idle', view('trick', B.id))).toEqual({ do: 'wait', why: 'player' })
-    expect(autopilotStep(s, ON, 'idle', view('victory', B.id, { pendingCatch: true }))).toEqual({
+  it('Auto on explored areas stops at catches: the throw, and "Add to team?"', () => {
+    const c = { dex: NEW_DEX, throw: 'none' as const }
+    expect(autopilotStep(s, ON, 'explored', view('catch', B.id, { catch: c }))).toEqual({
       do: 'wait',
       why: 'player',
     })
+    expect(autopilotStep(s, ON, 'explored', view('victory', B.id, { pendingCatch: true }))).toEqual({
+      do: 'wait',
+      why: 'player',
+    })
+    expect(autopilotStep(s, ON, 'explored', view('victory', B.id))).toEqual({ do: 'close' })
+  })
+
+  it('Idle plays the catch itself: its ball, no Bait, again after Capture Luck, never "Add to team?"', () => {
+    const bag = { ...s, inventory: { 'poke-ball': 3, 'great-ball': 1, bait: 2 } }
+    const at = (t: 'none' | 'bait' | 'stays' | 'done', dex = NEW_DEX) =>
+      autopilotStep(bag, VALUE5, 'idle', view('catch', B.id, { catch: { dex, throw: t } }))
+    expect(at('none')).toEqual({ do: 'throw', ball: 'great-ball' })
+    expect(at('bait')).toEqual({ do: 'keepBait' })
+    expect(at('stays')).toEqual({ do: 'retry' })
+    expect(at('done')).toEqual({ do: 'wait', why: 'result' })
+    expect(at('none', OWNED_DEX)).toEqual({ do: 'pass', why: 'owned' })
+    const empty = { ...s, inventory: { 'master-ball': 1 } }
+    expect(
+      autopilotStep(empty, VALUE5, 'idle', view('catch', B.id, { catch: { dex: NEW_DEX, throw: 'none' } })),
+    ).toEqual({ do: 'pass', why: 'noBall' })
+    // "Add to team?" answered as CONTINUE answers it: the card closes, the catch to the Box.
+    expect(autopilotStep(s, ON, 'idle', view('victory', B.id, { pendingCatch: true }))).toEqual({
+      do: 'close',
+    })
     expect(autopilotStep(s, ON, 'idle', view('victory', B.id))).toEqual({ do: 'close' })
+  })
+
+  it('still waits for the player at Trick or Treat, and for the fight to play', () => {
+    expect(autopilotStep(s, ON, 'idle', view('trick', B.id))).toEqual({ do: 'wait', why: 'player' })
     expect(autopilotStep(s, ON, 'idle', view('battle', B.id))).toEqual({ do: 'wait', why: 'fight' })
   })
 
@@ -227,7 +256,7 @@ describe('each step of a run', () => {
     })
   })
 
-  it('never has a step that uses an item or changes the team', () => {
+  it('never has a step that uses an item (but its balls) or changes the team', () => {
     const phases: AutoView['phase'][] = [
       'idle',
       'preview',
@@ -272,5 +301,74 @@ describe('each step of a run', () => {
       moves++
     }
     expect(moves).toBeGreaterThan(0)
+  })
+})
+
+describe("Idle's catch: chooseIdleBall", () => {
+  const bag = (inventory: Record<string, number>, pokedex = fresh().pokedex) => ({ pokedex, inventory })
+
+  it('not owned: the ball with the best chance', () => {
+    // Catch value 7: a Poké Ball needs a 6 (1/6), a Great Ball a 5 (2/6), an Ultra Ball a 4 (3/6).
+    const d = withValue(7)
+    expect(chooseIdleBall(bag({ 'poke-ball': 5, 'great-ball': 2, 'ultra-ball': 1 }), d, NEW_DEX)).toEqual({
+      ball: 'ultra-ball',
+      chance: 0.5,
+    })
+    expect(chooseIdleBall(bag({ 'poke-ball': 5, 'great-ball': 2 }), d, NEW_DEX)?.ball).toBe('great-ball')
+  })
+
+  it('not owned: the cheapest of the balls tied at the best chance', () => {
+    // Catch value 3: a Great Ball (needs a 1) and an Ultra Ball are both certain; the Poké Ball isn't (5/6).
+    const d = withValue(3)
+    expect(chooseIdleBall(bag({ 'poke-ball': 5, 'great-ball': 2, 'ultra-ball': 1 }), d, NEW_DEX)).toEqual({
+      ball: 'great-ball',
+      chance: 1,
+    })
+    // Catch value 2: all three certain, so the Poké Ball (20 against 50 and 100).
+    expect(
+      chooseIdleBall(bag({ 'ultra-ball': 1, 'poke-ball': 5, 'great-ball': 2 }), withValue(2), NEW_DEX),
+    ).toEqual({
+      ball: 'poke-ball',
+      chance: 1,
+    })
+  })
+
+  it('no ball at all when the catch is already certain without one', () => {
+    expect(chooseIdleBall(bag({ 'poke-ball': 5 }), withValue(1), NEW_DEX)).toEqual({ ball: null, chance: 1 })
+    expect(chooseIdleBall(bag({}), withValue(1), NEW_DEX)).toEqual({ ball: null, chance: 1 })
+  })
+
+  it('never the Master Ball, even when it is the best or the only ball held', () => {
+    const d = withValue(9)
+    // Value 9: the Master Ball (+10) is certain, the Ultra Ball needs a 6, the Great Ball can't reach it.
+    expect(chooseIdleBall(bag({ 'master-ball': 1, 'ultra-ball': 1, 'great-ball': 4 }), d, NEW_DEX)).toEqual({
+      ball: 'ultra-ball',
+      chance: 1 / 6,
+    })
+    expect(chooseIdleBall(bag({ 'master-ball': 3 }), d, NEW_DEX)).toBeNull()
+    expect(chooseIdleBall(bag({ 'master-ball': 3 }), VALUE5, NEW_DEX)).toBeNull()
+  })
+
+  it('owned: no throw, whatever the bag holds', () => {
+    const full = bag({ 'poke-ball': 9, 'great-ball': 9, 'ultra-ball': 9 })
+    expect(chooseIdleBall(full, withValue(7, OWNED_DEX), OWNED_DEX)).toBeNull()
+    expect(chooseIdleBall(full, VALUE5, NEW_DEX)).not.toBeNull()
+    expect(chooseIdleBall({ ...full, pokedex: [...full.pokedex, NEW_DEX] }, VALUE5, NEW_DEX)).toBeNull()
+  })
+
+  it('no ball held, or none that could catch it: no throw', () => {
+    expect(chooseIdleBall(bag({}), VALUE5, NEW_DEX)).toBeNull()
+    // Value 9: a Poké Ball (+1) can never reach it; a ball spent on a sure miss is a ball lost.
+    expect(chooseIdleBall(bag({ 'poke-ball': 5, 'great-ball': 2 }), withValue(9), NEW_DEX)).toBeNull()
+    // Items that aren't balls don't count.
+    expect(chooseIdleBall(bag({ bait: 4, potion: 3 }), VALUE5, NEW_DEX)).toBeNull()
+  })
+
+  it('skips a ball the bag holds none of', () => {
+    const d = withValue(7)
+    expect(chooseIdleBall(bag({ 'ultra-ball': 0, 'great-ball': 0, 'poke-ball': 2 }), d, NEW_DEX)?.ball).toBe(
+      'poke-ball',
+    )
+    expect(chooseIdleBall(bag({ 'ultra-ball': 0, 'poke-ball': 0 }), d, NEW_DEX)).toBeNull()
   })
 })

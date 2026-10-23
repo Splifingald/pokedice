@@ -1,11 +1,10 @@
 // Kitchen sink (dev only): idle mode and the play styles (docs/36) — the style cards with each one picked (and none),
 // a new game's question, the area's switch (AUTO-MODE and Idle mode, off and on, with Prof. Oak's tip), the note that
-// stands in for a card the autopilot takes, and the rules (unlock and INFO).
+// stands in for a card the autopilot takes (each style's), and the rules from INFO (they never pop up by themselves).
 import { useState, type ReactNode } from 'react'
 import { AutoModeButton } from '@/components/AutoModeToggle'
 import { IdleRulesModal, PlayStylePicker, PlayStylePrompt } from '@/components/IdleMode'
 import { InfoButton } from '@/components/RulesModal'
-import { PixelButton } from '@/components/PixelButton'
 import { PLAY_STYLES, type PlayStyle } from '@/engine'
 import { useT } from '@/i18n/react'
 import { AutopilotNote } from '@/screens/area/AutopilotNote'
@@ -24,7 +23,7 @@ function Frame({ name, children, wide = false }: { name: string; children: React
 export function IdleBits() {
   const { t } = useT()
   const [pick, setPick] = useState<PlayStyle | null>('explored')
-  const [rules, setRules] = useState<'unlock' | 'info' | null>(null)
+  const [rules, setRules] = useState(false)
   return (
     <>
       <Frame name={`PlayStylePicker · live (${pick ?? 'none'})`}>
@@ -52,22 +51,16 @@ export function IdleBits() {
           <AutoModeButton on={false} tip onToggle={() => {}} />
         </div>
       </Frame>
-      <Frame name="AutopilotNote · a card the autopilot takes by itself">
-        <AutopilotNote />
+      <Frame name="AutopilotNote · Auto on explored areas (catches wait for the player)">
+        <AutopilotNote idle={false} />
       </Frame>
-      <Frame name="Rules · unlock (Later / Let's go!) and INFO (OK)">
-        <div className="flex flex-col gap-2">
-          <PixelButton size="sm" onClick={() => setRules('unlock')}>
-            Unlock pop-up
-          </PixelButton>
-          <InfoButton name={t('ui.playStyle.idle')} onClick={() => setRules('info')} />
-        </div>
+      <Frame name="AutopilotNote · Idle (catches by itself)">
+        <AutopilotNote idle />
       </Frame>
-      <IdleRulesModal
-        open={rules != null}
-        onClose={() => setRules(null)}
-        onGo={rules === 'unlock' ? () => setRules(null) : undefined}
-      />
+      <Frame name="Rules · INFO (OK), Settings → Play style">
+        <InfoButton name={t('ui.playStyle.idle')} onClick={() => setRules(true)} />
+      </Frame>
+      <IdleRulesModal open={rules} onClose={() => setRules(false)} />
     </>
   )
 }

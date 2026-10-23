@@ -50,6 +50,7 @@ export function catchMessage(c: Catch, name: string, thrown: { revealed: boolean
 /** The ball picker, the catch math and the throw; after it, the die and CONTINUE. */
 export function CatchPanel({
   c,
+  picked,
   onThrow,
   revealed,
   onContinue = finishCatch,
@@ -57,6 +58,8 @@ export function CatchPanel({
   onRetry,
 }: {
   c: Catch
+  /** The ball Idle picked for this throw (docs/36; null: none): shown chosen, whatever was tapped. */
+  picked?: string | null
   onThrow: (ballKey: string | null) => void
   /** The result is out. */
   revealed: boolean
@@ -87,7 +90,7 @@ export function CatchPanel({
       n: b.n as number | null,
     })),
   ]
-  const chosen = options.find((o) => o.key === ball) ?? options[0]!
+  const chosen = options.find((o) => o.key === (picked !== undefined ? picked : ball)) ?? options[0]!
   const pct = (bonus: number) => Math.round(catchChance(value, bonus) * 100)
   // A ball adds nothing once a weaker option (or no ball) is already certain.
   const sure = catchChance(value, 0) >= 1

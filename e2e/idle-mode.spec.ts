@@ -1,10 +1,11 @@
 // Idle mode and the play styles (docs/36): switched on, a new game asks how to play before anything else, and Idle
-// plays the area by itself until a catch waits for the player's throw; switched off, a new game starts as it always
-// did. An existing save gets the rules once, keeps its old auto-mode as "Auto on explored areas", and switches style in
-// Settings (INFO shows the rules again); switched off, Settings has no such panel.
+// plays the area by itself, catches included — a new Pokémon with the cheapest ball sure to do it (never the Master
+// Ball), one already owned left — with no rules pop-up ever; switched off, a new game starts as it always did. An
+// existing save keeps its old auto-mode as "Auto on explored areas" and switches style in Settings (INFO shows the
+// rules); switched off, Settings has no such panel.
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import { emptyProgress, linearAreas, type SaveData } from '../src/engine'
+import { emptyProgress, instanceMaxHp, linearAreas, type SaveData } from '../src/engine'
 import { EVENTS_ON, FAST, gameData, makeSave, mockSupabase } from './helpers'
 
 const IDLE_ON = { ...EVENTS_ON, idleMode: { access: 'all' } }
@@ -49,7 +50,10 @@ async function throughTheLab(page: Page) {
   await expect(page).toHaveURL(/\/home$/)
 }
 
-test('switched on, a new game asks how to play first; Idle plays on until a catch waits', async ({
+const stored = (page: Page) =>
+  page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}') as SaveData)
+
+test('switched on, a new game asks how to play first; Idle plays on and catches by itself', async ({
   page,
 }) => {
   await bootNew(page, IDLE_ON)
@@ -57,6 +61,7 @@ test('switched on, a new game asks how to play first; Idle plays on until a catc
   await expect(page.getByRole('heading', { name: 'How do you want to play?' })).toBeVisible()
   const styles = page.getByRole('radiogroup', { name: 'Play style' })
   await expect(styles.getByRole('radio')).toHaveCount(3)
+  await expect(styles.getByRole('radio', { name: /^Idle mode/ })).toContainText('never with the Master Ball')
   const next = page.getByRole('button', { name: 'NEXT ▸' })
   await expect(next).toBeDisabled()
   await styles.getByRole('radio', { name: /^Idle mode/ }).click()
@@ -64,13 +69,113 @@ test('switched on, a new game asks how to play first; Idle plays on until a catc
   await throughTheLab(page)
 
   expect(await settings(page)).toMatchObject({ playStyle: 'idle', autoMode: true })
-  // The question was its rules: no pop-up on top.
   await expect(page.getByRole('dialog', { name: 'Idle mode' })).toHaveCount(0)
 
-  // One CONTINUE, then hands off: the area plays itself until a wild Pokémon waits for the throw.
+  // One CONTINUE, then hands off: the area plays itself, and its first new Pokémon is caught with no tap.
   await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
   await expect(page).toHaveURL(/\/area$/)
-  await expect(page.getByRole('button', { name: /^(ROLL TO CATCH|CATCH)$/ })).toBeVisible({ timeout: 90_000 })
+  await expect.poll(async () => (await stored(page)).pokedex?.length, { timeout: 90_000 }).toBeGreaterThan(1)
+  // Never a rules pop-up on the way.
+  await expect(page.getByRole('dialog', { name: 'Idle mode' })).toHaveCount(0)
+})
+
+/** The team's Pokémon, fully evolved so no evolution adds to the Pokédex. */
+const OWN = [3, 4, 6, 9]
+
+/**
+ * Three at Lv.50 (a full team: a catch asks "Add to team?"), standing in `areaId` with one wild card on top of its
+ * deck, the area before it cleared, Idle on.
+ */
+function idleAt(areaId: string, patch: Partial<SaveData> = {}): SaveData {
+  const data = gameData()
+  const [first] = linearAreas(data, 'kanto')
+  const base = makeSave(4)
+  const lead = base.box.find((p) => p.id === base.team[0])!
+  const team = [
+    { ...lead, dex: 6, level: 50 },
+    { ...lead, id: 'e2e-blastoise', dex: 9, level: 50 },
+    { ...lead, id: 'e2e-venusaur', dex: 3, level: 50 },
+  ].map((p) => ({ ...p, currentHp: instanceMaxHp(p, data) }))
+  const areaProgress = {
+    ...(first!.id !== areaId && { [first!.id]: { ...emptyProgress(), cleared: true, roundsDone: 3 } }),
+    [areaId]: { ...emptyProgress(), deck: ['wild' as const] },
+  }
+  return {
+    ...base,
+    box: [...base.box.filter((p) => p.id !== lead.id), ...team],
+    team: team.map((p) => p.id),
+    pokedex: OWN,
+    currentAreaId: areaId,
+    areaProgress,
+    settings: { ...base.settings, ...JSON.parse(FAST), playStyle: 'idle', autoMode: true },
+    ...patch,
+  }
+}
+
+/**
+ * Into the area from Home, then hands off: the fight, the catch panel (shown, never tapped), the result card come and
+ * gone; then Idle paused, so the next card doesn't play.
+ */
+async function oneWildFight(page: Page) {
+  await page.goto('/home')
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+  await expect(page).toHaveURL(/\/area$/)
+  await expect(page.getByRole('button', { name: /^(ROLL TO CATCH|CATCH)$/ })).toBeVisible({ timeout: 60_000 })
+  const victory = page.getByRole('heading', { name: 'VICTORY!' })
+  await expect(victory).toBeVisible({ timeout: 15_000 })
+  await expect(victory).toBeHidden({ timeout: 15_000 })
+  await page.getByRole('button', { name: /^Idle mode: ON$/i }).click()
+  // The save is written a moment after the store.
+  await page.waitForTimeout(1500)
+}
+
+test('Idle catches a new Pokémon itself: the cheapest ball sure to catch it, never the Master Ball', async ({
+  page,
+}) => {
+  test.setTimeout(120_000)
+  // Routes 22 & 2: Mankey and the Nidoran (catch value 2) need a Poké Ball, as certain as a Great Ball and cheaper;
+  // the others (value 1) need no ball at all. None of them owned yet.
+  const [, route2] = linearAreas(gameData(), 'kanto')
+  const inventory = { 'poke-ball': 5, 'great-ball': 5, 'master-ball': 1 }
+  const start = idleAt(route2!.id, { inventory })
+  await bootSave(page, start, IDLE_ON)
+  await oneWildFight(page)
+
+  const save = await stored(page)
+  const caught = save.pokedex.filter((d) => !OWN.includes(d))
+  expect(caught).toHaveLength(1)
+  const needsBall = [56, 29, 32].includes(caught[0]!)
+  expect(save.inventory).toMatchObject({ 'poke-ball': needsBall ? 4 : 5, 'great-ball': 5, 'master-ball': 1 })
+  // "Add to team?" answered no, as Idle changes no team: the catch is in the Box.
+  expect(save.team).toEqual(start.team)
+  expect(save.box.some((p) => p.dex === caught[0] && !save.team.includes(p.id))).toBe(true)
+})
+
+test('Idle leaves a Pokémon it already owns: no ball, the weaker copy kept', async ({ page }) => {
+  test.setTimeout(120_000)
+  // Route 1: Pidgey and Rattata, both owned at Lv.1, so a stronger one would be on offer to replace them.
+  const [route1] = linearAreas(gameData(), 'kanto')
+  const base = idleAt(route1!.id)
+  const weak = [16, 19].map((dex, i) => ({
+    ...base.box[0]!,
+    id: `e2e-weak-${i}`,
+    dex,
+    level: 1,
+    xp: 0,
+    currentHp: 1,
+  }))
+  const inventory = { 'poke-ball': 5, 'great-ball': 5 }
+  await bootSave(
+    page,
+    { ...base, box: [...base.box, ...weak], pokedex: [...base.pokedex, 16, 19], inventory },
+    IDLE_ON,
+  )
+  await oneWildFight(page)
+
+  const save = await stored(page)
+  expect(save.inventory).toMatchObject(inventory)
+  expect(save.box.filter((p) => p.id.startsWith('e2e-weak-')).map((p) => p.level)).toEqual([1, 1])
+  expect(save.pokedex).toEqual([...OWN, 16, 19])
 })
 
 test('Idle moves on by itself once the area is cleared', async ({ page }) => {
@@ -81,7 +186,7 @@ test('Idle moves on by itself once the area is cleared', async ({ page }) => {
     [first!.id]: { ...emptyProgress(), cleared: true, roundsDone: 3, deck: ['item' as const] },
   }
   const settings = { ...base.settings, ...JSON.parse(FAST), playStyle: 'idle' as const, autoMode: true }
-  await bootSave(page, { ...base, areaProgress, settings, idle: { rulesSeen: true } }, IDLE_ON)
+  await bootSave(page, { ...base, areaProgress, settings }, IDLE_ON)
   await page.goto('/home')
   await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
   await expect(page.getByText(`Now exploring ${second!.name}`)).toBeVisible({ timeout: 30_000 })
@@ -99,7 +204,7 @@ test('switched off, a new game starts with Prof. Oak, as always', async ({ page 
   await expect(page.getByRole('heading', { name: 'How do you want to play?' })).toHaveCount(0)
 })
 
-test('an existing save: the rules once, its auto-mode kept as explored areas, and Settings switches the style', async ({
+test('an existing save: no rules pop-up, its auto-mode kept as explored areas, Settings switches the style', async ({
   page,
 }) => {
   const base = makeSave(4)
@@ -109,11 +214,10 @@ test('an existing save: the rules once, its auto-mode kept as explored areas, an
     IDLE_ON,
   )
   await page.goto('/home')
+  await expect(page.getByRole('button', { name: 'CONTINUE', exact: true }).first()).toBeVisible()
+  // Idle has no rules pop-up, ever (the user's ask): its rules are INFO's, in Settings.
   const rules = page.getByRole('dialog', { name: 'Idle mode' })
-  await expect(rules).toBeVisible()
-  await expect(rules.getByText('You throw the Poké Balls')).toBeVisible()
-  await rules.getByRole('button', { name: 'Later' }).click()
-  await expect(rules).toBeHidden()
+  await expect(rules).toHaveCount(0)
 
   await page.goto('/settings')
   const styles = page.getByRole('radiogroup', { name: 'Play style' })
@@ -124,6 +228,7 @@ test('an existing save: the rules once, its auto-mode kept as explored areas, an
   await styles.getByRole('radio', { name: /^Idle mode/ }).click()
   await expect(styles.getByRole('radio', { name: /^Idle mode/ })).toHaveAttribute('aria-checked', 'true')
   expect(await settings(page)).toMatchObject({ playStyle: 'idle', autoMode: true })
+  await expect(rules).toHaveCount(0)
   // Arrow keys move the pick, as in every radio group.
   await page.keyboard.press('ArrowUp')
   await expect(styles.getByRole('radio', { name: /^Auto on explored areas/ })).toHaveAttribute(
@@ -134,10 +239,11 @@ test('an existing save: the rules once, its auto-mode kept as explored areas, an
 
   await page.getByRole('button', { name: 'Info: how Idle mode works' }).click()
   await expect(rules).toBeVisible()
+  await expect(rules.getByText('It catches by itself')).toBeVisible()
+  await expect(rules.getByText(/never the Master Ball/)).toBeVisible()
   await rules.getByRole('button', { name: 'OK' }).click()
   await expect(rules).toBeHidden()
 
-  // Seen once: back Home, no pop-up again.
   await page.goto('/home')
   await expect(page.getByRole('button', { name: 'CONTINUE', exact: true }).first()).toBeVisible()
   await expect(rules).toHaveCount(0)
@@ -154,7 +260,7 @@ test('switched off, Settings has no play style and no rules pop up', async ({ pa
 test('the cards keep their contrast in dusk, and the page no serious issue', async ({ page }) => {
   const base = makeSave(4)
   const settings = { ...base.settings, ...JSON.parse(FAST), theme: 'dark' as const, playStyle: 'idle' as const }
-  await bootSave(page, { ...base, settings, idle: { rulesSeen: true } }, IDLE_ON)
+  await bootSave(page, { ...base, settings }, IDLE_ON)
   await page.goto('/settings')
   await expect(page.getByRole('radio', { name: /^Idle mode/ })).toHaveAttribute('aria-checked', 'true')
   const { violations } = await new AxeBuilder({ page }).analyze()

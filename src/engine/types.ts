@@ -1528,6 +1528,7 @@ export interface IdleDetour {
 }
 
 export interface IdleSave {
+  /** Written by builds that had Idle's rules pop-up (gone, docs/36): no longer read, kept so those saves load as ever. */
   rulesSeen?: boolean
   detour?: IdleDetour
 }

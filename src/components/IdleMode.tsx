@@ -1,27 +1,9 @@
 // Idle mode and the play styles (docs/36, docs/15 §20): the three styles as cards to pick from (a new game's question,
-// Settings), its rules pop-up (once, then INFO in Settings) and the Settings panel.
+// Settings), the Settings panel and its INFO. No rules pop-up ever opens by itself: the user's exception to §20.
 import { useRef, useState, type KeyboardEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
-import {
-  dayCareTutorialDue,
-  dayNightRulesDue,
-  donationDue,
-  eventUnlockDue,
-  extremeRulesDue,
-  generalRulesDue,
-  idleModeOn,
-  idleRulesDue,
-  inviteRulesDue,
-  leaderboardTutorialDue,
-  playStyleOf,
-  PLAY_STYLES,
-  regionOfferDue,
-  tradeRulesDue,
-  versusRulesDue,
-  type PlayStyle,
-} from '@/engine'
+import { idleModeOn, playStyleOf, PLAY_STYLES, type PlayStyle } from '@/engine'
 import { useT } from '@/i18n/react'
-import { choosePlayStyle, markIdleRulesSeenNow } from '@/store/autopilot'
+import { choosePlayStyle } from '@/store/autopilot'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { PixelIcon, type IconName } from './icons'
@@ -133,7 +115,7 @@ export function PlayStylePrompt({
   )
 }
 
-/** The rules' banner, drawn in code: the trail, the dice that play it, the ball that stays in your hand. */
+/** The rules' banner, drawn in code: the trail, the dice that play it, the ball it throws for you. */
 function IdleBanner() {
   return (
     <div className="light-scope absolute inset-0 flex items-center justify-center gap-6 bg-night" aria-hidden>
@@ -154,16 +136,8 @@ export function useIdleRules(): RuleRow[] {
   ]
 }
 
-/** Its rules (docs/15 §20): once when it opens (Later / Let's go!, to Settings), then from INFO in Settings. */
-export function IdleRulesModal({
-  open,
-  onClose,
-  onGo,
-}: {
-  open: boolean
-  onClose: () => void
-  onGo?: () => void
-}) {
+/** Its rules, from INFO in Settings only (OK): it never pops up by itself (the user's ask of 2026-10-23, docs/36). */
+export function IdleRulesModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useT()
   const rules = useIdleRules()
   return (
@@ -174,42 +148,6 @@ export function IdleRulesModal({
       picture={<IdleBanner />}
       icon="dice"
       rules={rules}
-      onGo={onGo}
-    />
-  )
-}
-
-/**
- * Once, between fights, when the switch opens it for a player who never saw it (a new game's question counts). It waits
- * its turn behind Prof. Oak's tutorials and the other one-time pop-ups, day and night's last.
- */
-export function IdleRulesPopup() {
-  const navigate = useNavigate()
-  const due = useGame(
-    (s) =>
-      !!s.save &&
-      idleRulesDue(s.save, s.data) &&
-      !dayCareTutorialDue(s.save, s.data) &&
-      !leaderboardTutorialDue(s.save, s.data) &&
-      !donationDue(s.save, s.data) &&
-      !regionOfferDue(s.save, s.data) &&
-      !eventUnlockDue(s.save, s.data) &&
-      !versusRulesDue(s.save, s.data) &&
-      !extremeRulesDue(s.save, s.data) &&
-      !generalRulesDue(s.save, s.data) &&
-      !dayNightRulesDue(s.save, s.data) &&
-      !(s.auth.status === 'signed_in' && (tradeRulesDue(s.save, s.data) || inviteRulesDue(s.save, s.data))),
-  )
-  const idle = useGame((s) => s.run.phase === 'idle')
-  if (!due) return null
-  return (
-    <IdleRulesModal
-      open={idle}
-      onClose={markIdleRulesSeenNow}
-      onGo={() => {
-        markIdleRulesSeenNow()
-        navigate('/settings')
-      }}
     />
   )
 }

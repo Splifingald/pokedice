@@ -63,8 +63,9 @@ import { capMotion, MotionCap, useMotion, type MotionLevel } from '@/lib/motion'
 import { AUTO_PACE, PaceContext, VERSUS_PACE } from '@/lib/pace'
 import { useDialogOpen } from '@/lib/useDialog'
 import { useMediaQuery } from '@/lib/useMediaQuery'
-import { setSettings, useGame, type BattleSlice, type CatchThrow } from '@/store/game'
-import { answerBait, dispatchBattle, finishCatch, retryCatch, throwBall } from '@/store/run'
+import { pushToast, setSettings, useGame, type BattleSlice, type CatchThrow } from '@/store/game'
+import { autoStepNow } from '@/store/autopilot'
+import { answerBait, dispatchBattle, finishCatch, passCatch, retryCatch, throwBall } from '@/store/run'
 import { useAreaDayTime } from '@/store/dayTime'
 import { cx } from '@/theme/util'
 import { BattleHistory, BattleHistoryList, DamageRecap } from './BattleHistory'
@@ -169,6 +170,8 @@ const autoRng = createRng(randomSeed())
 const AUTO_SELECT_MS = 450
 /** How long the autopilot leaves a throw's result on screen before moving on (docs/36). */
 const AUTO_RESULT_MS = 1400
+/** How long Idle shows the ball it picked on the catch panel before throwing it (or passing): long enough to read. */
+const AUTO_THROW_MS = 900
 
 const BANNER_TONE = {
   super: 'bg-gold text-ink',
@@ -582,8 +585,39 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     setThrown(null)
     setRevealed(false)
   }
-  // The autopilot (docs/36): the throw was the player's; its result, once read, moves on by itself (the Bait's question
-  // and THROW AGAIN still wait for the player).
+  // Idle (docs/36): the catch plays itself by the engine's rule (chooseIdleBall). The ball it picked shows on the panel a
+  // moment, then flies on the stage as the player's would; a Pokémon left behind passes; a Bait offered is kept, and
+  // Capture Luck's second chance is thrown again by the same rule. Auto on explored areas leaves all this to the player.
+  const idleCatch = useGame((s) => {
+    if (!catching || autoAt !== 'full' || !s.save) return null
+    const step = autoStepNow()
+    if (step?.do === 'throw') return `throw:${step.ball ?? ''}`
+    if (step?.do === 'pass') return `pass:${step.why}`
+    return step?.do === 'keepBait' || step?.do === 'retry' ? step.do : null
+  })
+  const idlePick = idleCatch?.startsWith('throw:') ? idleCatch.slice(6) || null : undefined
+  const idleAct = useRef<() => void>(() => {})
+  idleAct.current = () => {
+    if (idleCatch === 'keepBait') onBait(false)
+    else if (idleCatch === 'retry') onRetry()
+    else if (idleCatch?.startsWith('pass:')) {
+      const name = foeFront.name
+      passCatch()
+      if (idleCatch === 'pass:noBall') pushToast(t('ui.idle.noBall', { name }), 'info', 3500)
+    } else if (idleCatch) onThrow(idlePick ?? null)
+  }
+  useEffect(() => {
+    if (!idleCatch || covered) return
+    // The Bait's question and THROW AGAIN answer a throw: once its result has been seen.
+    const afterThrow = idleCatch === 'keepBait' || idleCatch === 'retry'
+    if (afterThrow && !revealed) return
+    const timer = setTimeout(() => idleAct.current(), afterThrow ? AUTO_RESULT_MS : AUTO_THROW_MS)
+    return () => clearTimeout(timer)
+    // A wild pair's second Pokémon may get the same step as the first (two passes): its own uid starts it again.
+  }, [idleCatch, covered, revealed, catchUid])
+
+  // The autopilot (docs/36): the throw's result, once read, moves on by itself (under Auto on explored areas the Bait's
+  // question and THROW AGAIN still wait for the player).
   const caughtResult = catching ? run.catch?.result : null
   const autoFinish = autoAt === 'full' && revealed && !!caughtResult && !caughtResult.baitOffer && !caughtResult.stays
   useEffect(() => {
@@ -913,6 +947,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             {catching ? (
               <CatchPanel
                 c={run.catch!}
+                picked={idlePick}
                 onThrow={onThrow}
                 revealed={revealed}
                 onBait={onBait}

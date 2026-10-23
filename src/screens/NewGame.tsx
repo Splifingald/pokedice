@@ -32,8 +32,7 @@ export function NewGame() {
 
   const begin = (dex: number) => {
     startNewGame(dex, player ?? undefined)
-    // The question showed what each style does: that was its rules pop-up.
-    if (style) choosePlayStyle(style, true)
+    if (style) choosePlayStyle(style)
     const first = data.areas[0]
     if (first) enterArea(first.id)
     navigate('/home')

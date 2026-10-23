@@ -597,13 +597,15 @@ export function VictoryView() {
 
   // The autopilot (docs/36): the card shows whole at once, stays a moment to be read, then closes by itself — on to the
   // trainer's next Pokémon, or back on the trail, where the autopilot picks up (evolutions play on their own first).
-  // "Add to team?" waits for the player: it is part of the catch.
+  // "Add to team?" waits for the player under Auto on explored areas; Idle changes no team, so every catch waiting on
+  // it (two after a wild pair) goes to the Box, as CONTINUE sends it.
   const closes = useGame((s) => !!s.save && s.run.phase === 'victory' && autoStepNow()?.do === 'close')
   const closeRef = useRef<() => void>(() => {})
-  closeRef.current =
-    hasNext && nextMon
-      ? go(() => continueAfterVictory(lead ?? stillIn ?? defaultLead()))
-      : go(() => continueAfterVictory())
+  closeRef.current = () => {
+    while (useGame.getState().run.pendingCatchId) resolveCatch(null)
+    if (hasNext && nextMon) go(() => continueAfterVictory(lead ?? stillIn ?? defaultLead()))()
+    else go(() => continueAfterVictory())()
+  }
   useEffect(() => {
     if (closes) setShown(Number.MAX_SAFE_INTEGER)
   }, [closes])

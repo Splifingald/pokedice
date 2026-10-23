@@ -176,7 +176,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `DoubleMons` (`BattleStage double`) / `DoublePlates` / `MiniPlate` / `TargetPicker` / `LeadPicker pair` | Double battles (§31) | The stage with four (the pair in front big on the usual spots, their partners smaller behind, each with a shadow; toggled, they change places), one K.O. on each side (greyed plates, 1 v 2); the name-less plates (icon, level, HP, statuses; the one in front ringed in gold; a fallen one greyed); the target picker (live, disabled); the lead picker sending two |
 | `UgCave` / `CrackGauge` / `UgWall` / `PickaxeDie` / `PickaxeFaces` / `OrbArt` / `PlateArt` / `ThingIcon` / `HaulList` / `PlateGrid` / `OrbBagTable` / `UgRulesModal` / `UgTeamSeats` | The Underground (§32) | The cave (a square's size; big); the gauge fresh, under way, its last three shaking or calm, collapsed; the wall fresh, half dug with a strike flashing, cleared (glinting), collapsing; the die unrolled and rolled; the faces with the one that came up, and the next level's with its raised face; orbs of every colour and size, plates; the haul with every outcome; the plates none and some; the orb bag; the team seats solo, two, full; the rules (once, INFO) |
 | `TeamSwapActions` | A Pokémon's sheet where the team can change (`teamSwapsOpen`: inside a Pokémon Center, at a portal's way in before READY!) | In the team: Make lead (not the lead), Send to the Box (not the last one); in the Box: Add to team, or, the team full, "swap it in for" each member (a button each: its still mini icon on the left, name and level, "goes to the Box" and the swap arrow, `reroll`, at the far right); still reviving from its fossil: a line saying so. It sits above Strengths and weaknesses in the sheet, whether type hints are on or not (`PokemonSheet`'s `beforeMatchups`, the user's call, 2026-10-15) |
-| `PlayStylePicker` / `PlayStylePrompt` / `PlayStylePanel` / `IdleRulesModal` / `AutoModeButton` / `AutopilotNote` | Idle mode and the play styles (§34, docs/36) | The three styles as a radio group of cards (an icon, the name, its line; the picked one on gold-pale with the gold ring and a check; none picked; arrow keys move the pick); a new game's question (NEXT disabled until one is picked); Settings' panel with INFO; the rules (once, INFO); the area's switch (AUTO-MODE or Idle mode, off and on, with Prof. Oak's tip); the line standing in for a card the autopilot takes |
+| `PlayStylePicker` / `PlayStylePrompt` / `PlayStylePanel` / `IdleRulesModal` / `AutoModeButton` / `AutopilotNote` | Idle mode and the play styles (§34, docs/36) | The three styles as a radio group of cards (an icon, the name, its line; the picked one on gold-pale with the gold ring and a check; none picked; arrow keys move the pick); a new game's question (NEXT disabled until one is picked); Settings' panel with INFO; the rules (INFO only: they never pop up); the area's switch (AUTO-MODE or Idle mode, off and on, with Prof. Oak's tip); the line standing in for a card the autopilot takes (each style's); the catch panel with Idle's pick (`BattleBits`) |
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
 **Esc closes the top dialog only**, focus returns to what opened it.
@@ -482,7 +482,7 @@ in view) and the battle history sits beside it from 1024 px.
   its extras (AUTO-MODE, ghost, last), which hands the rest of that fight to auto and turns the setting on, like the
   area's switch. With the play styles on (§34), where it is offered follows the style (`autoAvailable`: Classic
   nowhere, Auto on explored areas in cleared areas, Idle everywhere), and the catch's result moves on by itself while
-  the autopilot runs. The fight keeps the rules it started with (its powers, `state.auto`); STOP gives it back. Prof. Oak's tip about it, the first time,
+  the autopilot runs (Idle throws the ball itself, §34). The fight keeps the rules it started with (its powers, `state.auto`); STOP gives it back. Prof. Oak's tip about it, the first time,
   takes the full width above the switch (never squeezed into a column beside it).
 - **Team pips**: menu icon + an HP bar, the one in battle ringed in gold, fainted ones grey. Tapping one switches
   (it costs the turn; the dialog also holds Forfeit). After a K.O. the message asks "Choose your next Pokémon",
@@ -711,7 +711,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
   queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
   again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the portal run (§27), idle mode (§34: a new game's question is its rules; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
@@ -1385,8 +1385,15 @@ every state on `/kitchen-sink` (`IdleBits`).
   team section, the Game Corner. One `pixel-dialogue` line (`AutopilotNote`, `role="status"`) stands in for the moment
   it takes. What it shows for a moment and then closes itself: the area's page between encounters (~1 s), the result
   card (whole at once, 1.6 s), each evolution (played in full, 1.8 s after its reveal), the wipe and stalemate cards.
-- **It stops only for the player's choices**: the catch panel (the ball, the Bait, THROW AGAIN; its result then moves
-  on after 1.4 s), "Add to team?", Trick or Treat, and any dialog that is open (a one-time pop-up, a sheet the player
-  opened, Settings opened mid-fight): it waits for it to close, the fight's own moves too (§14). Never an item, never
-  a team change, never a spin.
+- **Idle catches by itself** (docs/36 §3.1, `chooseIdleBall`): the catch panel shows the ball it picked, chosen, for
+  0.9 s, then the throw plays on the stage as the player's would; a Pokémon it leaves (owned, or no ball that could
+  catch it) passes after the same 0.9 s, a toast saying when it was for want of a ball; a Bait offered is kept,
+  THROW AGAIN taken 1.4 s after the result; "Add to team?" answered no (to the Box). The style's card says so ("catches
+  too: new Pokémon, never with the Master Ball"); the rules are INFO's only: **Idle has no rules pop-up** (the user's
+  exception to §20).
+- **It stops only for the player's choices**: under Auto on explored areas, the catch panel (the ball, the Bait,
+  THROW AGAIN; its result then moves on after 1.4 s) and "Add to team?"; in both styles Trick or Treat, and any
+  dialog that is open (a one-time pop-up, a sheet the player opened, Settings opened mid-fight): it waits for it to
+  close, the fight's own moves too (§14) and Idle's throw. Never an item but Idle's Poké Balls (never the Master
+  Ball), never a team change, never a spin.
 - **Between areas**, a toast says each move ("Now exploring…", "Round lost: one round in…", "Round done: back to…").

@@ -4,17 +4,17 @@ import {
   autoLevel,
   autopilotStep,
   isDoubleEncounter,
-  markIdleRulesSeen,
   playStyleOf,
   settingsForStyle,
   teamOf,
   withDetour,
   type AutoLevel,
   type AutopilotStep,
+  type AutoView,
   type PlayStyle,
 } from '@/engine'
 import { t } from '@/i18n'
-import { commitSave, mutateSave, pushToast, setSettings, useGame } from './game'
+import { commitSave, mutateSave, pushToast, setSettings, useGame, type CatchThrow } from './game'
 import {
   afterStalemate,
   afterWipe,
@@ -47,9 +47,17 @@ export function autoStepNow(held = false): AutopilotStep | null {
       pendingCatch: !!run.pendingCatchId,
       held,
       noEnergy: run.phase === 'idle' && outOfEnergy(),
+      catch: run.catch ? { dex: run.catch.dex, throw: throwOf(run.catch.result) } : undefined,
     },
     serverNow(),
   )
+}
+
+/** Where the catch panel's throw stands, as the engine reads it. */
+function throwOf(r: CatchThrow | null): NonNullable<AutoView['catch']>['throw'] {
+  if (!r) return 'none'
+  if (r.baitOffer) return 'bait'
+  return r.stays ? 'stays' : 'done'
 }
 
 const areaName = (id: string) => useGame.getState().data.areas.find((a) => a.id === id)?.name ?? ''
@@ -64,7 +72,10 @@ function moveTo(areaId: string, detour: Extract<AutopilotStep, { do: 'travel' }>
   return enterArea(areaId)
 }
 
-/** Carries one step out. 'wait' and 'close' (the result card closes itself) do nothing here. */
+/**
+ * Carries one step out. 'wait' and 'close' (the result card closes itself) do nothing here, nor do Idle's catch steps:
+ * the battle screen plays them, so the throw is seen on the stage (BattleView).
+ */
 export function runAutoStep(step: AutopilotStep) {
   const { save, run } = useGame.getState()
   if (!save) return
@@ -114,16 +125,7 @@ export function runAutoStep(step: AutopilotStep) {
   }
 }
 
-/**
- * The player picks a play style (Settings, or a new game's question): its settings, and its rules seen (`seen`: the
- * question showed them).
- */
-export function choosePlayStyle(style: PlayStyle, seen = false) {
+/** The player picks a play style (Settings, or a new game's question): its settings, nothing else. */
+export function choosePlayStyle(style: PlayStyle) {
   setSettings(settingsForStyle(style))
-  if (seen) mutateSave((s) => (s.idle?.rulesSeen ? null : markIdleRulesSeen(s)))
-}
-
-/** The rules pop-up has been shown (Later, Let's go!, or a new game's question). */
-export function markIdleRulesSeenNow() {
-  mutateSave((s) => (s.idle?.rulesSeen ? null : markIdleRulesSeen(s)))
 }

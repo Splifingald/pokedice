@@ -1,7 +1,9 @@
 // Play styles and the autopilot (docs/36): Classic, Auto on explored areas, Idle. Which areas play themselves, and
 // what the game does next while one does — every decision here, the screens only carry it out and pace it.
+import { catchChance, catchValueOf } from './catching'
 import { eventOpenTo } from './events'
 import { centersOn } from './extreme'
+import { ballBonus } from './items'
 import { linearAreas } from './data'
 import { nightmareModeOf } from './nightmareMode'
 import { nightmareLock } from './nightmare'
@@ -51,14 +53,6 @@ export const playStylesOffered = (data: GameData): PlayStyle[] => (idleModeOn(da
 
 /** A new game asks first only when there is a choice to make. */
 export const newGameAsksStyle = (data: GameData): boolean => playStylesOffered(data).length > 1
-
-/** The rules pop-up (docs/15 §20) is due: switched on for the player, never shown (a new game's question shows them). */
-export const idleRulesDue = (save: SaveData, data: GameData): boolean =>
-  idleModeOn(data) && !save.idle?.rulesSeen
-
-export function markIdleRulesSeen(save: SaveData): SaveData {
-  return save.idle?.rulesSeen ? save : { ...save, idle: { ...save.idle, rulesSeen: true } }
-}
 
 /** What a run is: its area, and whether it is an Elite Rebattle (fights only, never on auto). */
 export interface AutoRun {
@@ -171,6 +165,50 @@ export function autoTravel(
   return { areaId: next.id, detour: null }
 }
 
+// ---------------------------------------------------------------- Idle's catches
+
+/** The one ball Idle never throws, whatever the catch: the player keeps it for the catch they choose. */
+export const MASTER_BALL = 'master-ball'
+
+/** Idle's throw: the ball (null: none, the catch is certain without one) and its chance, as the catch panel shows it. */
+export interface IdleThrow {
+  ball: string | null
+  chance: number
+}
+
+/**
+ * The ball Idle throws at this K.O.'d Pokémon (the user's rule, 2026-10-23), or null: no throw, it is left behind.
+ *
+ * - **Owned** (its species in the Pokédex: one entry per species, shiny or not; a regional form is a species of its own,
+ *   with its own entry, as the catch and the Pokédex count it): no throw, not even for a stronger or shiny copy.
+ * - **Not owned**: among the balls held (one at least), the Master Ball aside, the highest chance by the catch's own
+ *   formula (`catchChance`: the d6 plus the ball's bonus against the species' catch value — nothing else changes a
+ *   throw), and among the balls tied at that chance the cheapest by its Mart price (then the weaker, then by key, so
+ *   the pick never depends on the bag's order). The chances are the formula's exact value: two balls tie only when it
+ *   gives both the same number, as it does for equal bonuses or once both are certain, so no tolerance is needed.
+ * - **No ball needed** (certain with none, as the panel's CATCH): no ball, whatever the bag holds.
+ * - No ball held, or none with any chance: no throw (a ball spent on a sure miss is a ball lost).
+ */
+export function chooseIdleBall(
+  save: Pick<SaveData, 'pokedex' | 'inventory'>,
+  data: GameData,
+  dex: number,
+): IdleThrow | null {
+  if (save.pokedex.includes(dex)) return null
+  const value = catchValueOf(data, dex)
+  const bare = catchChance(value, 0)
+  if (bare >= 1) return { ball: null, chance: bare }
+  const balls = Object.entries(save.inventory)
+    .filter(([k, n]) => k !== MASTER_BALL && n > 0 && data.items[k]?.effect.kind === 'ball')
+    .map(([k]) => {
+      const item = data.items[k]!
+      return { k, price: item.price, bonus: ballBonus(item), chance: catchChance(value, ballBonus(item)) }
+    })
+    .sort((a, b) => b.chance - a.chance || a.price - b.price || a.bonus - b.bonus || a.k.localeCompare(b.k))
+  const best = balls[0]
+  return best && best.chance > 0 ? { ball: best.k, chance: best.chance } : null
+}
+
 // ---------------------------------------------------------------- what to do next
 
 /** What the run stands at, as the screens see it. */
@@ -186,20 +224,37 @@ export interface AutoView {
   held?: boolean
   /** The next encounter needs energy the player hasn't got (the run's outOfEnergy). */
   noEnergy?: boolean
+  /**
+   * The catch on the panel: the K.O.'d Pokémon (its species) and where its throw stands — none yet, a Bait offered,
+   * kept by Capture Luck for another throw, or done (caught or fled).
+   */
+  catch?: { dex: number; throw: 'none' | 'bait' | 'stays' | 'done' }
 }
 
 /**
- * The autopilot's next move. It never uses an item, never changes the team (a Center heals and that's all) and never
- * plays the Game Corner; a catch — the ball, the Bait, adding it to the team — and Trick or Treat wait for the player.
+ * The autopilot's next move. It never uses an item (a Bait included), never changes the team (a Center heals and that's
+ * all; "Add to team?" is answered no) and never plays the Game Corner. Idle throws its own balls (chooseIdleBall);
+ * under Auto on explored areas a catch waits for the player. Trick or Treat always does.
  */
 export type AutopilotStep =
-  /** Nothing to do now: a fight playing, the player's choice, a pop-up, no energy, everyone resting. */
-  | { do: 'wait'; why: 'fight' | 'player' | 'held' | 'energy' | 'resting' | 'closed' }
+  /**
+   * Nothing to do now: a fight playing, the player's choice, a pop-up, no energy, everyone resting; 'result': a throw's
+   * result on the panel, which the battle screen closes once it has been seen.
+   */
+  | { do: 'wait'; why: 'fight' | 'player' | 'held' | 'energy' | 'resting' | 'closed' | 'result' }
+  /** Idle: throw this ball (null: none, the catch is certain without one). */
+  | { do: 'throw'; ball: string | null }
+  /** Idle: no throw (owned, or no ball held that could catch it): on to the result card, as a catch not on offer. */
+  | { do: 'pass'; why: 'owned' | 'noBall' }
+  /** Idle: the Bait offered after a short throw is kept (no items): the throw stands as it fell. */
+  | { do: 'keepBait' }
+  /** Idle: Capture Luck kept it on the spot: back to the ball, for the rule to pick again from what is left. */
+  | { do: 'retry' }
   /** The next encounter, or the gym or legendary waiting (Home's CONTINUE). */
   | { do: 'continue' }
   /** Take the card on the table: fight it (default lead), pick it up, walk into the Center or the Game Corner. */
   | { do: 'engage' }
-  /** Close the result card (and its evolutions) and go back on the trail. */
+  /** Close the result card (and its evolutions) and go back on the trail; Idle sends a catch waiting there to the Box. */
   | { do: 'close' }
   /** Out of the Center (healed, no swaps), the Game Corner (no spin) or a stalemate. */
   | { do: 'leave' }
@@ -221,13 +276,15 @@ export function autopilotStep(
     case 'battle':
       return { do: 'wait', why: 'fight' }
     case 'catch':
+      return style === 'idle' && v.catch ? idleCatchStep(save, data, v.catch) : { do: 'wait', why: 'player' }
     case 'trick':
       return { do: 'wait', why: 'player' }
     case 'preview':
       // Trick or Treat is a catch of its own: the player plays it.
       return v.encounter === 'trick' ? { do: 'wait', why: 'player' } : { do: 'engage' }
     case 'victory':
-      return v.pendingCatch ? { do: 'wait', why: 'player' } : { do: 'close' }
+      // Idle changes no team: "Add to team?" is answered as CONTINUE answers it, to the Box.
+      return v.pendingCatch && style !== 'idle' ? { do: 'wait', why: 'player' } : { do: 'close' }
     case 'center':
     case 'casino':
     case 'stalemate':
@@ -246,6 +303,23 @@ export function autopilotStep(
       if (isAreaClosed(save, v.areaId, data)) return { do: 'wait', why: 'closed' }
       if (v.noEnergy) return { do: 'wait', why: 'energy' }
       return { do: 'continue' }
+    }
+  }
+}
+
+/** Idle at the catch panel: its own throw, never a Bait, the next throw by the same rule after Capture Luck. */
+function idleCatchStep(save: SaveData, data: GameData, c: NonNullable<AutoView['catch']>): AutopilotStep {
+  switch (c.throw) {
+    case 'bait':
+      return { do: 'keepBait' }
+    case 'stays':
+      return { do: 'retry' }
+    case 'done':
+      return { do: 'wait', why: 'result' }
+    case 'none': {
+      if (save.pokedex.includes(c.dex)) return { do: 'pass', why: 'owned' }
+      const pick = chooseIdleBall(save, data, c.dex)
+      return pick ? { do: 'throw', ball: pick.ball } : { do: 'pass', why: 'noBall' }
     }
   }
 }

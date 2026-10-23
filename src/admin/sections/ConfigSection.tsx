@@ -567,7 +567,7 @@ function IdleModeBox() {
     <Box
       title="Idle mode"
       icon="dice"
-      hint="On: a new game first asks how to play (Classic, Auto on explored areas, Idle), Settings switches it any time, and auto-mode becomes the autopilot: it plays the whole area (fights, finds, Centers without team swaps, no items, no Game Corner), moves on to the next area once one is cleared, and after a lost round plays one round of the area before, then goes back. Only catches wait for the player. Off: auto-mode as before, fights only, in cleared areas. Players' choices are kept either way."
+      hint="On: a new game first asks how to play (Classic, Auto on explored areas, Idle), Settings switches it any time, and auto-mode becomes the autopilot: it plays the whole area (fights, finds, Centers without team swaps, no items but Idle's Poké Balls, no Game Corner), moves on to the next area once one is cleared, and after a lost round plays one round of the area before, then goes back. Idle catches by itself (a new Pokémon with the cheapest ball at the best chance, never the Master Ball; one already owned is left); under Auto on explored areas catches wait for the player. Off: auto-mode as before, fights only, in cleared areas. Players' choices are kept either way."
     >
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-lg">Idle mode</span>

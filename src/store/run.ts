@@ -966,11 +966,26 @@ export function retryCatch() {
  * the rewards screen, in the order they were caught.
  */
 export function finishCatch() {
-  const { run, save, data } = useGame.getState()
+  const { run } = useGame.getState()
   const r = run.catch?.result
   if (!r || r.baitOffer || r.stays) return
-  const events = [...run.events, ...r.events]
-  const pending = [...(run.catchPending ?? []), ...(r.pendingCatchId ? [r.pendingCatchId] : [])]
+  afterCatch([...run.events, ...r.events], r.pendingCatchId)
+}
+
+/**
+ * No throw at all (Idle's rule, docs/36: a Pokémon already owned, or no ball that could catch it): on as after a catch
+ * not on offer — the other one's throw after a wild pair, else the rewards screen, nothing added to it.
+ */
+export function passCatch() {
+  const { run } = useGame.getState()
+  if (!run.catch || run.catch.result) return
+  afterCatch(run.events, null)
+}
+
+/** Out of this throw: the next one queued (after a wild pair), else the rewards screen with every "Add to team?". */
+function afterCatch(events: RunEvent[], caughtId: string | null) {
+  const { run, save, data } = useGame.getState()
+  const pending = [...(run.catchPending ?? []), ...(caughtId ? [caughtId] : [])]
   // The next throw's target as the save stands now, not as it stood before the first: a pair of one species, the first
   // just caught, leaves the second replacing it if stronger, else not on offer, as in a single wild battle. A second
   // copy taken as new would be let go at once (one copy per species), its "Add to team?" asking about nobody.

@@ -2,7 +2,7 @@
 // read from settings made before it as the old auto-mode ("Auto on explored areas", its switch as it was), and a style
 // this build doesn't know never costs a save.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { markIdleRulesSeen, newSave, playStyleOf, withDetour } from '@/engine'
+import { newSave, playStyleOf, withDetour } from '@/engine'
 import { parseSave } from '@/save/schema'
 import { readSettings, SETTINGS_KEY } from '@/save/storage'
 import { data, newId } from './fixtures'
@@ -47,10 +47,11 @@ describe('the play style setting', () => {
     expect(readSettings().playStyle).toBeUndefined()
   })
 
-  it('travels in the save, with the rules seen and a detour under way', () => {
+  it('travels in the save, with a detour under way and the rules flag an older build wrote', () => {
     const base = newSave(7, data, 123, newId)
+    // The rules pop-up is gone (docs/36), but saves from before it carry its flag: it still loads, kept as it was.
     const s = withDetour(
-      markIdleRulesSeen({ ...base, settings: { ...base.settings, playStyle: 'classic' } }),
+      { ...base, settings: { ...base.settings, playStyle: 'classic' }, idle: { rulesSeen: true } },
       {
         from: 'b',
         to: 'a',
