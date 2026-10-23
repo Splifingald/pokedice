@@ -231,7 +231,7 @@ function AreaEditor({ area }: { area: Row }) {
             <Field label="Foe upgrade level" hint={`dice & combos, 1–10 · empty = global (${data.config.enemyUpgradeLevel})`}>
               <NumInput nullable min={1} max={10} value={area.enemy_upgrade_level as number | null} onChange={(v) => patch({ enemy_upgrade_level: v })} />
             </Field>
-            <Field label="Battle scene" hint="grass: routes, forests · sea · water: lakes · rock: caves, mountains · default: indoors" className="col-span-2">
+            <Field label="Battle scene" hint="The platforms under the two teams in this area's battles." className="col-span-2">
               <BackgroundPicker
                 value={area.battle_background as BattleBackground | null}
                 emptyLabel="default"

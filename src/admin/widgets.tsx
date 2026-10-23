@@ -5,8 +5,10 @@ import { SearchSelect } from '@/components/SearchSelect'
 import { SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge, TypeSwatch } from '@/components/TypeBadge'
 import { BATTLE_BACKGROUNDS, DIE_TYPES, EVENT_ACCESS, POKE_TYPES, type BattleBackground, type DieType, type EventAccess, type GameData, type Species } from '@/engine'
+import { ART_GEOMETRY } from '@/fx/areaArtMap'
 import { dexNo } from '@/lib/format'
 import { cx } from '@/theme/util'
+import { BATTLE_SCENE_NAMES, PICTURE_GROUPS, pictureName } from './pictureNames'
 
 export function speciesOption(p: Species) {
   return (
@@ -113,7 +115,7 @@ export function BackgroundPicker({
         <option value="">{emptyLabel}</option>
         {BATTLE_BACKGROUNDS.map((b) => (
           <option key={b} value={b}>
-            {b}
+            {BATTLE_SCENE_NAMES[b]}
           </option>
         ))}
       </select>
@@ -121,6 +123,57 @@ export function BackgroundPicker({
         <img src={`/battle/${value}.png`} alt="" width={96} height={45} className="border-2 border-edge" style={{ imageRendering: 'pixelated' }} />
       )}
     </div>
+  )
+}
+
+/**
+ * A banner picture picker: the events' own pictures, then every measured area picture, by group and by name.
+ * `placeholder` adds an empty first choice; a saved key no longer on the list stays pickable.
+ */
+export function PicturePicker({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+}) {
+  const groups = PICTURE_GROUPS.map((g) => ({
+    label: g.label,
+    keys: Object.keys(g.names)
+      .filter((k) => k.includes('/') || k in ART_GEOMETRY)
+      .sort((a, b) => pictureName(a).localeCompare(pictureName(b))),
+  }))
+  // A measured picture nobody has named yet still shows, under its key.
+  const named = new Set(groups.flatMap((g) => g.keys))
+  const unnamed = Object.keys(ART_GEOMETRY)
+    .filter((k) => !named.has(k))
+    .sort()
+  const listed = named.has(value) || unnamed.includes(value)
+  return (
+    <select className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
+      {placeholder !== undefined && <option value="">{placeholder}</option>}
+      {!listed && value && <option value={value}>{value}</option>}
+      {groups.map((g) => (
+        <optgroup key={g.label} label={g.label}>
+          {g.keys.map((k) => (
+            <option key={k} value={k}>
+              {pictureName(k)}
+            </option>
+          ))}
+        </optgroup>
+      ))}
+      {unnamed.length > 0 && (
+        <optgroup label="Not named yet">
+          {unnamed.map((k) => (
+            <option key={k} value={k}>
+              {k}
+            </option>
+          ))}
+        </optgroup>
+      )}
+    </select>
   )
 }
 
