@@ -120,10 +120,11 @@ async function main() {
     }
     const wav = join(OUT, 'sound.wav')
     writeFileSync(wav, Buffer.from(await page.evaluate(() => window.trailer.audio()), 'base64'))
+    // −14 LUFS, the loudness web video players normalise to.
     const final = join(OUT, 'pokedice-trailer.mp4')
     execFileSync('ffmpeg', [
       '-y', '-loglevel', 'error', '-i', video, '-i', wav,
-      '-c:v', 'copy', '-c:a', 'aac', '-b:a', '256k', '-t', String(total / 60), '-movflags', '+faststart', final,
+      '-c:v', 'copy', '-af', 'loudnorm=I=-14:TP=-1:LRA=11', '-ar', '48000', '-c:a', 'aac', '-b:a', '256k', '-t', String(total / 60), '-movflags', '+faststart', final,
     ])
     console.log(final)
   } finally {
