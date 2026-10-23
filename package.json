@@ -47,7 +47,8 @@
     "e2e": "playwright test",
     "discord": "tsx scripts/discord/setup.ts",
     "discord:raid": "tsx scripts/discord/raid-post.ts",
-    "discord:patch-notes": "tsx scripts/discord/patch-notes.ts"
+    "discord:patch-notes": "tsx scripts/discord/patch-notes.ts",
+    "trailer": "tsx scripts/trailer.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",

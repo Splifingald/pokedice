@@ -1,216 +1,199 @@
-# 36 · The Pokédice trailer — scenario
+# 36 · The Pokédice trailer
 
-A 20-second trailer for Pokédice, written shot by shot before anything is built. Every timecode is in seconds and in
-frames at 60 fps (`f`). The scenario is the reference for the build; change it here first.
+A 22-second trailer for Pokédice, written shot by shot first, then built from the game's own code (`trailer/`,
+`pnpm trailer`). Every timecode is in seconds from the start (frames at 60 fps: `f` = s × 60). This file is the
+reference for the build; change it here first.
 
-**Status (2026-10-23): scenario written, waiting for the user's go.** Nothing is built yet.
+**Status (2026-10-23): built** on `claude/pokedice-trailer-video-5jq0o9`. The video's name: **Pokédice - Web Game
+Trailer** (never shown on screen). The user's answers are in §11. It came out 1.5 s longer than the first draft's
+20.5 s: the lab needed time for the three Pokémon to be seen and for the question to hold, and the showdown needed
+room for the slow die.
 
 ## 0. The rules of the trailer
 
-- **About 70 % the game, 30 % trailer.** The Pokémon sprites, the dice, the Daybreak palette, the Jersey fonts, the
-  stage, the plates and the move / Mega / Gigantamax / legendary / raid / trade effects come from the game
-  (`src/fx/timelines`, `src/components/Die.tsx`, `docs/15-UI-GUIDELINES.md`). On top of them, the trailer adds what
-  gameplay footage doesn't have: camera pushes and whip-pans, close-ups on the battle area, speed lines, impact frames,
-  light leaks, a beat-synced edit and music.
-- **Always the battle area.** Every shot of acts 2 and 3 is framed on the stage (the 240×160 battle scene), never on
-  menus. Menus only appear in act 4, and only as quick cut-ins.
-- **Minimal titles.** A handful of overlay words, the full list in §7. White Jersey 25 with the ink (`#24304f`)
-  2-pixel outline, as the game draws its labels.
-- **Pixels stay square.** The art is drawn at a low resolution and scaled by whole numbers only (×6 or ×9 for
-  1920×1080), nearest-neighbour. Camera zooms jump between whole scales or happen in the low-res space; nothing is
-  ever scaled by a fraction (blurred pixels are the one thing that would make it stop looking like the game).
-- **Format.** Master: 1920×1080, 60 fps, H.264 + AAC, about 20 s. A 1080×1920 vertical cut (Shorts / TikTok /
-  Discord) comes from the same shots, re-framed (§9).
+- **About 70 % the game, 30 % trailer** (the user's rule). The Pokémon sprites, the dice, the Daybreak palette, the
+  Jersey fonts, the area pictures, the stage and the move / evolution / Mega / Gigantamax / legendary / raid / trade /
+  starter effects are the game's (`src/fx/timelines`, `src/components/Die.tsx`, `docs/15-UI-GUIDELINES.md`). On top
+  of them, the trailer adds what gameplay footage doesn't have: camera moves, close-ups on the battle area, the dice
+  as an overlay, speed lines, impact frames, an ink freeze, a beat-synced edit and music.
+- **Always the battle area.** Every shot of acts 2 and 3 is framed on the stage. Menus only appear in act 4, as
+  quick cut-ins.
+- **Minimal titles.** The full list of words is in §7.
+- **Square pixels.** The art is drawn small and scaled up nearest-neighbour: the stage at ×8 to ×10, the dice
+  scenes at ×6, the dice overlay at ×4.
+- **Format.** 1920×1080, 60 fps, H.264 + AAC. 16:9 first; a vertical cut may come later (§9).
 
 ## 1. The beat sheet
 
 | # | Act | From | To | Length | What |
 |---|---|---|---|---|---|
-| 1 | Title | 0.00 (f0) | 2.50 (f150) | 2.5 s | Dice roll on a table and spell POKÉDICE |
-| 2 | Hero journey | 2.50 (f150) | 9.00 (f540) | 6.5 s | Charmander vs Bulbasaur → Charmeleon vs Scyther → Charizard vs Mewtwo |
-| 3 | Montage | 9.00 (f540) | 14.00 (f840) | 5.0 s | A grid of battle clips filling the screen |
-| 4 | Features | 14.00 (f840) | 16.50 (f990) | 2.5 s | Friends, Versus, Trading, Co-op raids, Co-op Day Care |
-| 5 | The choice | 16.50 (f990) | 18.50 (f1110) | 2.0 s | Oak's lab, three Poké Balls: "What's your choice?" |
-| 6 | End card | 18.50 (f1110) | 20.50 (f1230) | 2.0 s | Logo, website, Discord |
+| 1 | Title | 0 | 2.5 | 2.5 s | Dice roll onto a table and spell POKÉDICE |
+| 2 | Hero journey | 2.5 | 10 | 7.5 s | Charmander vs Bulbasaur → Charmeleon vs Scyther → Charizard vs Mewtwo |
+| 3 | Montage | 10 | 15 | 5 s | 1 → 2 → 4 → 8 battle clips filling the screen |
+| 4 | Features | 15 | 17.5 | 2.5 s | Friends, Versus, Trading, Co-op raids, Co-op Day Care |
+| 5 | The choice | 17.5 | 20 | 2.5 s | Oak's lab, three Poké Balls: "What's your choice?" |
+| 6 | End card | 20 | 22 | 2 s | The dice logo, website, Discord |
 
-Total: **20.5 s (1230 frames)**. The music is 128 BPM: a beat is 0.469 s (28.1 frames), a bar 1.875 s. Every hard
-cut below sits on a beat or a half-beat.
+Total **22 s (1320 frames)**. The music is 120 BPM (a beat is 0.5 s), so the acts start on beats.
 
 ---
 
-## 2. Act 1 — the title (0.00 → 2.50)
+## 2. Act 1 — the title (0 → 2.5)
 
-**Look.** A wooden table seen from three-quarters above, drawn at 320×180 and shown ×6: warm oak planks
-(`#c9925a` / `#a8703f` / `#7d4f2b` lines), a soft morning light from the top left, the Daybreak sky blue
-(`#e9f0f8`) in the far corners as a vignette. The dice are real 3D cubes rendered at the low resolution (so they look
-pixel-art while they turn), with the game's die look: the type colour, the 3D lip, the ink outline. Each die has a
-letter on its top face instead of pips, white Jersey 25 on dark colours and ink on light ones (the game's own pip
-rule, `pipColor`).
-
-**The eight dice**, left to right, each its own type colour (`DAYBREAK_TYPES`):
+A wooden table seen from three-quarters above (oak planks, seams, grain, a pool of morning light, dust in the light),
+drawn at 320×180 and shown ×6. The dice are real 3D cubes rendered at that size, so they stay pixel art while they
+turn, with the game's die look on every face: the type colour, the ink edge, the light top-left and shaded
+bottom-right, pips on whole pixels.
 
 | Die | P | O | K | É | D | I | C | E |
 |---|---|---|---|---|---|---|---|---|
 | Type | Fire | Water | Grass | Electric | Psychic | Ice | Dragon | Fairy |
 
-The other five faces of each die show ordinary pips, so the letter only appears when the die lands.
+The letter is on one face; the other five show pips, so it only appears when the die lands.
 
-| Time | Frames | Picture | Sound |
-|---|---|---|---|
-| 0.00–0.20 | f0–12 | Black. A hand-less throw: the eight dice enter from the bottom right, high and spinning, motion-smeared (two ghost frames behind each). | The game's `rattle`, thrown. |
-| 0.20–1.20 | f12–72 | They hit the table and tumble right to left, bouncing twice each, staggered by 3 frames. The camera trails them with a slight pan (in low-res pixels, whole steps). Pip faces flash by. | One `land` per bounce (16 short hits, panned left/right with each die). |
-| 1.20–1.60 | f72–96 | They slow down and settle in a row, each on its letter. **The misalignment**: each die rests turned −8° to +8° and up to 2 art pixels off the line, so POKÉDICE reads clearly but looks thrown, not typeset. The last die (E) wobbles once on an edge before it falls flat. | Last `land`, then a beat of silence. |
-| 1.60–1.75 | f96–105 | Impact frame: the dice flash white for 2 frames, a gold ring (the combo ring, `#ffbe2e`) pulses out from under all eight at once — a full straight combo. | A gold `levelup` chord, the music's downbeat hits. |
-| 1.75–2.40 | f105–144 | The camera pushes in (×6 → ×9, one jump on the beat) onto the row. Below it, small: `A dice battler` in Jersey 15 fades in (muted `#5c6a8a`). Dust particles drift in the light. | Music: the intro riff. |
-| 2.40–2.50 | f144–150 | Transition: the É die (Electric) is thrown again — it lifts off the table toward the camera and fills the screen yellow → cut. | Whoosh. |
+| Time | Picture | Sound |
+|---|---|---|
+| 0–0.12 | Out of black: the eight dice come in from the bottom right, high and spinning, two ghost frames behind each. | The game's `rattle`. |
+| 0.12–1.4 | They bounce twice and roll right to left (the turn follows the distance, so each stops turning as it arrives), staggered by 2–3 frames; the camera trails them. They settle in a row on their letters, each turned a little and a step off the line, so POKÉDICE reads but looks thrown. The E wobbles on an edge before it falls flat. | A `land` per bounce. A riser. |
+| 1.5 | Impact: the dice flash white for 2 frames, all eight ring gold (the combo ring) and a gold pixel ring rushes out over the table. | `levelup`, the music's downbeat. |
+| 1.75–2.3 | The camera pushes in. `A dice battler` comes in under the row. | The title riff. |
+| 2.3–2.5 | The É die flies at the camera, spinning, its face filling the screen yellow → cut. | |
 
----
+## 3. Act 2 — the hero journey (2.5 → 10)
 
-## 3. Act 2 — the hero journey (2.50 → 9.00)
+The stage at ×8–×10 on the area's picture, the camera moving between the foe and your Pokémon. The plates: the foe's
+top left (name, types, level, HP bar, a trainer's party as red squares), yours bottom right (name, level, HP bar and
+numbers). **The dice are an overlay** over a dark band at the bottom: 3D dice thrown in from the left, rolling and
+stopping on their faces; picked dice lift with the red ring and are thrown again; the combo's dice ring gold; the
+combo chip and the damage (big, white, ink outline, red drop) slam in above them. Then the move plays on the stage
+(the game's attack timeline, played faster and from just before its release).
 
-Three fights, each a little bigger than the last. Framing: the stage close-up (×9, a 213×120 window of the 240×160
-stage, the camera on the foe then sliding to your Pokémon), the plates kept on screen. **The dice are an overlay**,
-not the game's panel: four to six dice, 72 px each (×9 of an 8-px die), in a row along the bottom third over a dark
-gradient, thrown in from the left, rolling, stopping on their faces; the combo dice ring gold; the damage number
-slams in above them (big Jersey 25, white on ink outline). Then the attack plays on the stage.
+### 3.1 Charmander vs a wild Bulbasaur (2.5 → 4.5)
 
-### 3.1 Charmander vs Bulbasaur — the first fight (2.50 → 4.50, 2.0 s)
+| Time | Picture | Sound |
+|---|---|---|
+| 2.5 | Route 1. The camera on Bulbasaur, ×9; the plates slide in. | Bulbasaur's cry. |
+| 2.65–3.35 | Three Fire dice land 4 · 4 · 2; the two 4s ring gold: `PAIR`, `14`. | `rattle`, `land`s. |
+| 3.35–4.05 | Whip-pan to Charmander, Flamethrower (the fire timeline), whip-pan back: the hit, a screen shake, `-14`, Bulbasaur's HP drains. It faints (sinks and fades). | `super`, `faint`. |
+| 4.2–4.5 | Charmander's plate flips to Lv.16; it glows white and the white takes the screen. | `levelup`. |
 
-| Time | Frames | Picture | Sound |
-|---|---|---|---|
-| 2.50–2.80 | f150–168 | Route 1 (the area's own picture under the stage). Wild Bulbasaur Lv.5 on the far platform, Charmander from the back. Its plate slides in. Camera on Bulbasaur, ×9. | Bulbasaur's cry. |
-| 2.80–3.50 | f168–210 | Overlay: **three** red Fire dice thrown, they land on 4 · 4 · 2 → the two 4s ring gold (PAIR). `14` slams in. | `rattle`, three `land`, a soft gold `ding`. |
-| 3.50–4.20 | f210–252 | Whip-pan to Charmander: Ember (the game's fire move timeline). Back on Bulbasaur: `contact` cue, the hit shake, "It's super effective!" flash, the HP bar drains to zero. | `super` hit. |
-| 4.20–4.50 | f252–270 | Bulbasaur faints (drops out). An XP bar fills on a mini result card rising from the bottom; it flips to **Lv.16**, and Charmander glows white → cut on the white. | `faint`, `levelup`. |
+### 3.2 Charmeleon vs a trainer's Scyther (4.5 → 7)
 
-### 3.2 Charmeleon vs Scyther — the climb (4.50 → 6.50, 2.0 s)
+| Time | Picture | Sound |
+|---|---|---|
+| 4.5–4.75 | Out of the white: the evolution's burst, Charmeleon standing in its light. | Charmeleon's cry. |
+| 4.75 | Cut to Viridian Forest. Scyther (Lv.24, a party of 3) strikes first: Charmeleon's HP drops to yellow. | Scyther's cry, a hit. |
+| 5.16–6.3 | Three Fire dice and a Normal one land 6 · 2 · 6 · 3. The 2 and the 3 lift with the red ring and are rerolled → 6 and 3: three 6s ring gold, `THREE OF A KIND`, `38`. | `rattle` × 2. |
+| 6.3–6.85 | Flamethrower, `-38`, Scyther faints. The Boulder Badge spins in at the top right. | `super`, `faint`, `gold`. |
+| 6.84–7 | The screen burns from the bottom: red, orange, yellow flame tongues. | |
 
-| Time | Frames | Picture | Sound |
-|---|---|---|---|
-| 4.50–4.75 | f270–285 | Out of the white: the evolution timeline's last frames — the silhouette pops into **Charmeleon**. Hard cut on the beat to a forest area (Viridian Forest picture) with a trainer's **Scyther** Lv.24 in front of it. The foe's plate shows the trainer's party as red squares. | Charmeleon's cry. |
-| 4.75–5.10 | f285–306 | Scyther strikes first: a slash crosses the screen, Charmeleon's HP drops to yellow. Quick, the camera shakes. | Hit. |
-| 5.10–5.80 | f306–348 | Overlay: **four** dice — three Fire and one Normal. First throw: 6 · 2 · 6 · 3. Two dice lift with the red outline (picked), **REROLL**: they tumble again → 6 · 6 · 6 · 3 → the three 6s ring gold (**THREE OF A KIND**). `38` slams in, bigger than before. | `rattle` × 2, the gold chord a third higher. |
-| 5.80–6.50 | f348–390 | Flamethrower: the fire timeline, but framed ×9 so the stream crosses the whole screen. Scyther takes it, flashes, faints. On its fall, a badge (Boulder) spins in a corner for 6 frames — the "you're progressing" beat — then the screen burns orange from the bottom → cut. | `super`, `faint`, a short cheer sting. |
+### 3.3 Charizard vs Mewtwo (7 → 10)
 
-### 3.3 Charizard vs Mewtwo — the showdown (6.50 → 9.00, 2.5 s)
+| Time | Picture | Sound |
+|---|---|---|
+| 7–7.8 | Cerulean Cave. Mewtwo's legendary entrance (legend.ts, Mewtwo's own aura), hurried through the dark and the rising silhouette, slowed for the reveal and the name card `MEWTWO LV70 PSYCHIC`. | Heartbeats, Mewtwo's cry, the quake. |
+| 7.8–8.05 | Reverse shot, low and close on Charizard; the plates slide in. | Charizard's cry. |
+| 8.08–9.4 | Five dice land 5 · 5 · 5 · 5 · 2. The 2 lifts and is rerolled; it turns in slow motion (¼ speed) while the stage dims, then lands on 5: the five ring gold and flash white, gold speed lines, `FIVE OF A KIND`, `126` shaking. | The music stops under the slow die (a heartbeat), then hits when it lands. |
+| 9.45–9.94 | Flamethrower. On the hit: a white impact frame (2 frames), Charizard and Mewtwo as ink silhouettes on white with ink speed lines (5 frames), then colour again as Mewtwo's HP empties. | The biggest hit. |
+| 9.94–10 | Smash cut to black. | Silence. |
 
-| Time | Frames | Picture | Sound |
-|---|---|---|---|
-| 6.50–7.20 | f390–432 | The legendary entrance timeline, cut to its best 0.7 s: the dark pulses, darkness with heartbeats, **Mewtwo's** silhouette rising in its purple aura (legend.ts gives Mewtwo its own aura), light rays, the reveal flash. Name card `MEWTWO Lv.70` slams in. Cerulean Cave stage. | Heartbeat ×2, Mewtwo's cry, the quake. |
-| 7.20–7.45 | f432–447 | Reverse shot: **Charizard** (back sprite) on its platform, the camera low, wings filling the frame. Its plate: Lv.68, HP full. | Charizard's cry. |
-| 7.45–8.30 | f447–498 | Overlay: **five** dice, the biggest throw yet (they come in faster, with motion smears). They land 5 · 5 · 5 · 5 · 2 → reroll the 2 → **5** → five of a kind, the five dice ring gold and the whole overlay flashes: the top combo, shown as the game's chip (`FIVE OF A KIND`). `126` slams in, then shakes. Slow-motion on the last die (it rolls at ¼ speed for 10 frames, on the edge between 2 and 5). | The music drops out under the slow die — one heartbeat — then hits again when it lands. |
-| 8.30–9.00 | f498–540 | Fire Blast: the fire timeline at full motion, then trailer extras on top: a full-screen white impact frame (2 frames), an ink-on-white freeze of the two silhouettes (4 frames, manga-style), back to colour with Mewtwo's HP bar emptying. Smash cut to black on the beat. | The biggest hit in the mix, cut to silence for one half-beat. |
+## 4. Act 3 — the montage (10 → 15)
 
----
-
-## 4. Act 3 — the montage (9.00 → 14.00)
-
-**One idea**: the screen fills with battles. It starts with one clip full screen and splits on every beat until
-eight battle stages play at once in a 4×2 grid — all of them framed on the battle area, each with a thin ink border
-and the type colour of its star as a 2-px inner rim. No titles over the clips; one word over the whole grid at the end.
-
-**The eight clips** (each is the game's own timeline, cut to its most striking second, re-framed close):
+The screen fills with battles, splitting on the beat. Each tile has a 12-px ink border and its star's type colour as a
+rim; no titles.
 
 | Clip | What it shows | From the game | Rim |
 |---|---|---|---|
-| A | **Mew boss** — the mythical's lair: Mew's legendary entrance, pink aura, the silhouette rising | `legend.ts` | Psychic |
-| B | **Lugia** — its raid: Lugia over a stormy sea stage, wind and Aeroblast | the raid intro + `legend.ts` | Flying |
-| C | **Celebi** — its lair in the forest: green aura, leaves spiralling, the gleam | `legend.ts` | Grass |
-| D | **Groudon** — its raid: the ground cracks, lava light, the quake shake | the raid intro + `legend.ts` | Ground |
-| E | **Mega Evolution** — Charizard → **Mega Charizard X** (blue flames, black skin): the keystone flash, the DNA shell, the burst | `forms.ts` `megaTimeline` | Dragon |
-| F | **Gigantamax** — **Gengar** → G-Max Gengar: the red clouds, the body growing past the frame | `forms.ts` `gmaxTimeline` | Ghost |
-| G | **Rayquaza raid intro** — the alarm, hazard tapes, the storm with lightning, the green silhouette with its glowing outline, the pillar of light, `RAYQUAZA` slamming down as the HP bars fill | `RaidIntro.tsx` | Dragon |
-| H | **Trading** — the two balls braiding along the cable of light and crossing in the middle with a flash | `trade.ts` | Gold |
+| G | **Rayquaza's raid opening**: the alarm with its two hazard tapes, the storm and lightning, the silhouette rising with a glowing outline, the pillar of light, the white-out reveal with shockwaves and embers, `RAID BATTLE / RAYQUAZA` and the five HP bars filling | `RaidIntro.tsx`, redrawn landscape (`trailer/lib/raidIntro.ts`) | Dragon |
+| E | **Mega Evolution**: Charizard → Mega Charizard X, on the Indigo Plateau | `megaTimeline` | Fire |
+| F | **Gigantamax**: Gengar → G-Max Gengar, in Pokémon Tower | `gmaxTimeline` | Ghost |
+| D | **Groudon**: its entrance in a volcano lair | `legendTimeline` | Ground |
+| A | **Mew**: its entrance on Faraway Island | `legendTimeline` | Psychic |
+| B | **Lugia**: its entrance in a sea cave | `legendTimeline` | Flying |
+| C | **Celebi**: its entrance in Ilex Forest | `legendTimeline` | Grass |
+| H | **Trading**: the two balls along the cable of light | `tradeTimeline` | Gold |
 
-| Time | Frames | Grid | Notes |
-|---|---|---|---|
-| 9.00–9.94 | f540–596 | **1 tile**: G, the Rayquaza raid intro, full screen. | Two beats. The siren and the storm open the act. |
-| 9.94–10.88 | f596–653 | **2 tiles** (side by side): G keeps playing left, E (Mega) slides in right. | Split on the beat with a vertical white wipe. |
-| 10.88–11.81 | f653–709 | **4 tiles** (2×2): G, E, F (Gigantamax), D (Groudon). | Each tile shows the stage at ×4 (960×640, cropped to 960×540). |
-| 11.81–13.50 | f709–810 | **8 tiles** (4×2): every clip, each starting on its own half-beat, left to right, top to bottom, so the grid fills like a dice tray. | Each tile shows the stage at ×2 (480×320, cropped to 480×270). |
-| 13.50–14.00 | f810–840 | The 8 tiles flash gold one after another (like the combo ring running along the dice), then all at once. Over the grid, centred: **`1025 POKÉMON · 9 REGIONS`**. Then the grid collapses into the centre tile → cut. | The music's build peaks. |
+| Time | Grid | Sound |
+|---|---|---|
+| 10–11 | **1 tile**: G full screen (the alarm, the storm). | The raid's alarm and storm. |
+| 11–12 | **2 tiles**: G (Rayquaza revealed, its name slamming down) and E (Charizard Mega Evolving). | The raid's boom, the Mega. |
+| 12–13 | **4 tiles**: G, E, F, D. | Gigantamax, Groudon. |
+| 13–14.5 | **8 tiles** (4×2): the four new ones come in white, a beat apart (Mew, Lugia, Celebi, the trade). | The music alone. |
+| 14.5–14.8 | The tiles flash gold one after another, like a combo ring running along the dice. | The roll. |
+| 14.82–15 | White takes the screen. | |
 
-## 5. Act 4 — the features (14.00 → 16.50)
+## 5. Act 4 — the features (15 → 17.5)
 
-Five cut-ins of 0.5 s each (exactly a beat and a little: 30 frames), hard cuts, each a single strong picture with one
-word on it. They are the only shots that aren't the battle stage, but each still shows Pokémon first, UI second
-(the screens are cropped tight, never a whole page).
+Five cut-ins of 0.5 s, hard cuts, each opening on a white frame. The word slams in bottom left (Jersey 25, white, ink
+outline, a gold bar under it), always in the same place.
 
-| Time | Frames | Feature | Picture | Word |
-|---|---|---|---|---|
-| 14.00–14.50 | f840–870 | **Friend list** | Three friends' trainer cards slide in on top of each other (their trainer sprites, golden names, their lead Pokémon's menu icons), a friend ID chip, the "Add friend" button pressed. | `FRIENDS` |
-| 14.50–15.00 | f870–900 | **Versus** | The Versus background (`public/backgrounds/versus.png`), two trainers face to face, a `VS` slam between them, a split second of the auto-battle with dice on both sides. | `VERSUS` |
-| 15.00–15.50 | f900–930 | **Trading** | The last act of the trade: the ball comes down the beam onto your pad, wobbles, opens on the newcomer with sparkles. | `TRADE` |
-| 15.50–16.00 | f930–960 | **Co-op raids** | A raid stage with the raid Pokémon in the back and **three** allies in front (you and two friends), the three trainers' faces cutting in like in the raid intro, everyone's dice rolling at once. | `RAID TOGETHER` |
-| 16.00–16.50 | f960–990 | **Co-op Day Care** | The Day Care yard: your Pokémon and a friend's guest Pokémon (with the friend tag) walking together, a heart pops, an Egg appears between them and wobbles. | `DAY CARE` |
+| Time | Picture | Word |
+|---|---|---|
+| 15 | Three friends' cards slide in on the dotted parchment: trainer sprite, name (the first one golden), friend ID, three menu icons of their Pokémon, the green online dot. | `FRIENDS` |
+| 15.5 | The Versus stadium: Red and Green slide in face to face, `VS` slams in gold, each side's dice hop onto the field. | `VERSUS` |
+| 16 | The trade's arrival: the ball comes down the beam onto the pad, bounces, opens on Alakazam. | `TRADING` |
+| 16.5 | A sea cave: Kyogre with five HP bars, Charizard, Blastoise and Venusaur in front, three trainers' cards cutting in, three dice landing over each ally. | `CO-OP RAIDS` |
+| 17 | The Day Care yard: Ditto and a friend's Dragonite (with its `FRIEND'S` tag) hop toward each other, a heart, an Egg pops up and wobbles. | `CO-OP DAY CARE` |
 
-The five words stack in the same place (bottom left, Jersey 25, white on ink), each replaced by the next, so the
-eye stays put.
+## 6. Act 5 — the choice (17.5 → 20)
 
-## 6. Act 5 — the choice (16.50 → 18.50)
+The partner moment (docs/15 §18): the lab picture, Oak's table, its three cradles (`StarterScene`).
 
-The lab from the partner moment (`PartnerMoment`, docs/15 §18): the lab picture (`moment-lab.png`), Oak's table,
-the three Poké Balls.
+| Time | Picture | Sound |
+|---|---|---|
+| 17.5–18.25 | Out of a white frame, the three Poké Balls drop onto their cradles one after another (the lab's own animation, 2.4× faster). The camera pushes in on the table. | The game's drop and land sounds. |
+| 18.25–18.85 | Bulbasaur, Charmander and Squirtle pop out of their balls one after another and go back in. | Their cries. |
+| 18.9–20 | **Hold** on the three balls and the game's dialogue box: `What's your choice?` types in, then its ▼ blinks. | A blip per letter, the quiet arpeggio. |
 
-| Time | Frames | Picture | Sound |
-|---|---|---|---|
-| 16.50–17.10 | f990–1026 | Cut to the lab. The three balls drop onto their cradles one after another (`starter.drop`, `starter.land`) — in the trailer faster: 8 frames apart. | Three `land`s. The music drops to the intro riff, quieter. |
-| 17.10–17.70 | f1026–1062 | The camera pushes in on the table. Above each ball, a quick ghost of its Pokémon: **Bulbasaur**, **Charmander**, **Squirtle** flash out of their balls for 6 frames each, left to right, and back in. | Three cries, short. |
-| 17.70–18.50 | f1062–1110 | **Freeze.** The three balls on the table, the game's message box at the bottom with its arrow blinking: **`What's your choice?`** (the trailer's line, in the game's dialogue font and frame). Hold. | Silence but a soft room tone, and the dialogue `blip`s while the text types. |
+## 7. Act 6 — the end card (20 → 22)
 
-## 7. Act 6 — the end card (18.50 → 20.50)
+| Time | Picture | Sound |
+|---|---|---|
+| 20 | Cut to ink with the parchment's dot texture. The POKÉDICE dice drop into their crooked row one after another. | A `land` per die, the last chord (D major). |
+| 20.45 | The dice ring gold; a gold ring pulses under the row once a second. | |
+| 20.4–20.75 | `PLAY FREE IN YOUR BROWSER` (gold), `poke-dice.netlify.app` (big, white), the Discord badge and `discord.gg/XKJQYw3p9`, then `Fan-made · non-commercial. Pokémon © Nintendo / Game Freak / Creatures.` (small). | |
+| 21.85–22 | Fade to black. | The chord rings out. |
 
-| Time | Frames | Picture | Sound |
-|---|---|---|---|
-| 18.50–18.80 | f1110–1128 | The message box slides away; the lab dims to ink (`#24304f`) with the 8-px dot texture of the parchment. The eight POKÉDICE dice from act 1 drop back in a row in the middle, already on their letters, slightly crooked as before. | The eight `land`s in a roll, then the logo chord. |
-| 18.80–20.50 | f1128–1230 | The end card, still: | The music's last chord rings out. |
-
-The end card, top to bottom, centred:
-
-1. The **POKÉDICE dice row** (the logo), with the gold combo ring under it pulsing slowly (once a second).
-2. `PLAY FREE IN YOUR BROWSER` — Jersey 15, gold (`#ffbe2e`).
-3. The website: **`{SITE_URL}`** — Jersey 25, white, big. *(To fill: the live Netlify address — it isn't in the repo.)*
-4. The Discord: a pixel Discord icon + **`discord.gg/XKJQYw3p9`** (the invite in docs/23).
-5. Bottom, small, muted: `Fan-made · non-commercial. Pokémon © Nintendo / Game Freak / Creatures.`
-
-**All the overlay words of the trailer** (besides the logo and the end card): `A dice battler`, `14`, `38`, `126`
-(the damage numbers, as the game shows them), `FIVE OF A KIND`, `1025 POKÉMON · 9 REGIONS`, the five feature words,
-`What's your choice?`. Nothing else.
+**Every word on screen**: `A dice battler`; the plates' names and levels; `PAIR`, `THREE OF A KIND`,
+`FIVE OF A KIND` and the damage; the game's own name card (`MEWTWO`…) and the raid's (`RAID BATTLE`, `RAYQUAZA`,
+the tapes); `VS`; the five feature words; `What's your choice?`; the end card.
 
 ## 8. Sound
 
-- **Music**: an original chiptune at 128 BPM, synthesised like the game's sound effects (square + triangle + noise
-  channels), so nothing is borrowed. Shape: intro riff (act 1) → driving beat (act 2) with a stop under the slow
-  die → a 16-bar-feel build over the montage (act 3) → the same riff, one octave up, under the features (act 4) →
-  drops to the riff alone in the lab (act 5) → final chord (act 6).
-- **Sound effects**: the game's own (`src/audio/sfx.ts`: `rattle`, `land`, `hit`, `super`, `faint`, `levelup`,
-  `catch`, `gold`…), rendered offline. **Cries**: the Pokémon cries the game loads from Showdown's audio server.
-- **Mix**: music −14 LUFS overall, effects on top, the dice always audible (they are the game's identity).
+- **Music** (`trailer/lib/music.ts`): an original chiptune at 120 BPM, synthesised like the game's sound effects
+  (pulse, triangle, noise), so nothing is borrowed. D minor through the journey (a chord a fight), the drums out under
+  Mewtwo's entrance and under the slow die, a build and a snare roll over the montage, the riff an octave up under the
+  features, a quiet arpeggio in the lab, D major on the end card.
+- **Sound effects**: the game's own. `src/audio/sfx.ts` is handed an offline audio context whose clock reads the
+  trailer's time, so every timeline's cue sounds on the frame it fires; the raid opening's sounds are the game's too.
+- **Cries**: Showdown's, as the game plays them.
 
-## 9. The vertical cut (1080×1920)
+## 9. A vertical cut (1080×1920), later
 
-Same shots and timing. The stage close-ups are re-framed (×9, a 120×213 window following the active Pokémon); the dice
-overlay moves to the bottom quarter; the act 3 grid becomes 1 → 2 (stacked) → 4 (2×2) → 8 (2×4); the end card stacks
-as is.
+Same shots and timing; the stage re-framed on the Pokémon in action, the montage grid 1 → 2 (stacked) → 4 → 8 (2×4).
+Not built yet.
 
-## 10. How it's made (for the build)
+## 10. How it's made
 
-- **A trailer page** rendered frame by frame, outside the game's routes (a separate dev-only Vite entry,
-  `trailer/index.html`, so nothing ships to players and no admin switch is needed). It reuses the game's code
-  directly: the fx timelines (their 60 fixed steps a second make every frame deterministic), the sprite loader, the
-  palette, the fonts, the Die look. Act 1's dice are the only new 3D: a small cube renderer drawing to the 320×180
-  canvas.
-- **One clock**: the page draws frame `n` on request (`window.renderFrame(n)`), never in real time.
-- **Capture**: Playwright opens the page and screenshots every frame (1230 PNGs), the sound is rendered offline
-  (`OfflineAudioContext`) to a WAV with the same timeline, then `ffmpeg` joins them into `pokedice-trailer.mp4`
-  (and the vertical one).
-- **Sprites**: the game loads its animated Pokémon from Showdown's sprite server; the capture needs that server
-  reachable (or the sprites cached beforehand).
+- **`trailer/`**, a page Vite serves in development (`/trailer/index.html`). It isn't part of the game's build, so
+  nothing ships to players and it has no admin switch. Add `?play` to the address to watch it in real time (no
+  sound).
+- It reuses the game's code directly: the fx timelines (their fixed 1/60 s steps make every frame reproducible,
+  `trailer/lib/run.ts`), the sprites (each animated GIF decoded once and swapped in frame by frame,
+  `trailer/lib/sprites.ts`), the area pictures, the lab and the starter scene, the palette, the fonts, the die look.
+  The new drawing is the 3D dice (`trailer/lib/cube.ts`), the camera (`trailer/lib/stage.ts`), the plates and
+  readouts (`trailer/lib/hud.ts`) and each act (`trailer/acts/`).
+- **`pnpm trailer`** (`scripts/trailer.ts`): starts Vite, opens the page in Chromium, draws the frames in order and
+  pipes them to ffmpeg, then mixes the sound the page recorded into `trailer/out/pokedice-trailer.mp4` (git-ignored).
+  `--stills 0,150,600` writes single frames to `trailer/out/stills/`; `--from 150 --to 540` a silent part. Showdown's
+  sprites and cries are fetched once into `scripts/.cache/trailer`. `CHROMIUM_PATH` points at another Chromium when
+  Playwright's own isn't installed.
+- Needs ffmpeg on the PATH. A full render takes a few minutes.
 
-## 11. To decide before the build
+## 11. Decided (2026-10-23)
 
-1. **The website address** for the end card (`{SITE_URL}`).
-2. **The montage title**: `1025 POKÉMON · 9 REGIONS` (every region, Kanto to Paldea), or `151 POKÉMON` to keep the
-   trailer on Kanto.
-3. **Format**: 16:9 master + 9:16 cut (proposed), or only one of them.
-4. Charmeleon's fight: **Scyther** (proposed, a trainer's) — or another Pokémon you prefer.
+1. **Website**: `poke-dice.netlify.app` (https://poke-dice.netlify.app/).
+2. **Montage**: no title on screen. "Pokédice - Web Game Trailer" is the video's name.
+3. **Format**: 16:9 first.
+4. **Charmeleon's opponent**: Scyther.
+5. **Look**: at least 70 % like the game; it's a trailer, so not only pure gameplay footage.
