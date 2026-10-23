@@ -98,7 +98,7 @@ export function noteMessages(note: PatchNote, opts: { roleId?: string; site?: st
   }
   return messages.map((m, i) => ({
     username: 'Pokédice',
-    avatar_url: `${site}/characters/prof-oak.png`,
+    avatar_url: `${site}/discord/patch-notes.png`,
     ...(i === 0 ? { content: `${opts.roleId ? `<@&${opts.roleId}> ` : ''}New update: **${note.title}**` } : {}),
     embeds: m.embeds,
     allowed_mentions: { parse: [], roles: opts.roleId ? [opts.roleId] : [] },

@@ -128,8 +128,9 @@ private channel stays private, and the history stays. Delete the ones you don't 
   `+` next to a name).
 - **The invite**: the game's Discord button opens `https://discord.gg/XKJQYw3p9` (Admin → Config → Discord). Keep it
   permanent: Server Settings → **Invites**, check it shows no expiry. If you make a new one, paste it in Admin.
-- Optional: **Server Settings → Integrations → Webhooks**. The two posters show Prof. Oak's sprite already; you can
-  give them a picture of their own there.
+- The two posters bring their own pictures, `public/discord/raid.png` and `public/discord/patch-notes.png` (128×128):
+  each post sends its picture, so it wins over one set in Server Settings → Integrations → Webhooks. Upload the same
+  files there so the webhook list matches.
 
 ## 7. GitHub: the automatic posts
 

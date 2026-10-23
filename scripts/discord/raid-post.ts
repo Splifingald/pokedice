@@ -85,7 +85,7 @@ export function raidMessage(data: GameData, raid: RaidDay, day: string, opts: Ra
   }
   return {
     username: 'Pokédice Raids',
-    avatar_url: `${site}/characters/prof-oak.png`,
+    avatar_url: `${site}/discord/raid.png`,
     content: `${opts.roleId ? `<@&${opts.roleId}> ` : ''}Today's raid is up: **${raid.shiny ? `Shiny ${name}` : name}**!`,
     embeds: [embed],
     allowed_mentions: { parse: [], roles: opts.roleId ? [opts.roleId] : [] },
