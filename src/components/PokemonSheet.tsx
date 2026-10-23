@@ -31,6 +31,7 @@ import { typeName } from '@/lib/format'
 import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
+import { useTypeHints } from '@/store/hooks'
 import { cx, typeColor } from '@/theme/util'
 import { Chip } from './Chip'
 import { CryButton } from './CryButton'
@@ -438,7 +439,7 @@ export function PokemonSheet({
   const species = getSpecies(data, dex)
   const level = inst?.level ?? 1
   const stats = effectiveStats(species, level, data)
-  const hints = useGame((s) => s.settings.typeHints) ?? false
+  const hints = useTypeHints()
   const types = species.type2 ? [species.type1, species.type2] : [species.type1]
   const lowHp = lowHpFormOf(data, species.dex)
   // One row per die type, in the order the Pokémon throws them, with how many it throws.

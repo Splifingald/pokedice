@@ -111,8 +111,8 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   areas** open on conditions: Power Plant (50 caught), Cerulean Cave (a Lv.55 Pokémon), Faraway Island (150 caught).
 - **Starters in Cerulean Cave** — Bulbasaur, Charmander and Squirtle are rare encounters in the post-game catch-all
   cave (and nowhere else), so 151/151 is reachable.
-- **Area insights & help** — each area shows its encounter types (the "recommended types" were removed in v1.7); the `?` button in the top bar opens the rules and the
-  type chart.
+- **Area insights & help** — each area shows its encounter types (the "recommended types" were removed in v1.7); the
+  trainer menu (your trainer, at the right of the top bar) opens How to play and the Type chart.
 - **XP (v1.7)** — a K.O. gives the foe's level × `xpMultiplier` (1), to the Pokémon and to the area's exploration bar
   alike; the level curve (A 0.5, C 1) and the exploration targets are about ¼ of v1.6's.
 - **v1.7** — Speed is the base stat ÷ 10 (rounded down; ties go to the player); `noEscape` (on by default) removes
@@ -131,7 +131,7 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   `newPokemonPity` in Admin → Config; see [docs/01](docs/01-GAME-SPEC.md) §1.1.
 - **Pacing** — `hpMultiplier` 1 (fight length; 1.4 before the v1.8 dice schedule) and `goldMultiplier` 0.5 (economy), tuned with `pnpm balance` on the Kanto content. Damage has no global multiplier: a hit is exactly what the dice show (× type effectiveness, + the combo bonus).
 - `maxBattleTurns` (150) ends fights between two mutually-immune Pokémon in a no-reward stalemate.
-- **Versus** — trainer menu → Versus, open once 3 Pokémon reach Lv.50. A player leaves a team of three (cloned from
+- **Versus** — Home's Versus widget (`/versus`), open once 3 Pokémon reach Lv.50. A player leaves a team of three (cloned from
   any region's Box, capped at Lv.50) that others fight on auto at 1.75× speed. Nobody brings their own upgrades: both
   sides fight at `versusUpgradeLevel` (admin → Config, default 5). The whole fight is computed from a seed and recorded
   *before* it plays, so leaving halfway changes nothing. A team can be beaten once per attacker (retries until then);
@@ -163,9 +163,9 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   sent it (Google account or guest device) and allows 3 messages per player per 10 minutes. Needs
   `supabase/migrations/0019_feedback.sql` run once on the live database.
 - **Answers to messages** — Admin → Messages → REPLY writes an answer on a message and marks it read. The player finds
-  every message they sent and its answer under Contact the developer → *My messages* (their Google account's, plus the
-  ones sent as a guest from that browser), and an answer they haven't seen yet pops up the next time they open the
-  game. Needs `supabase/migrations/0025_feedback_replies.sql` run once on the live database.
+  every message they sent and its answer in the trainer menu's *Inbox*, also Contact the developer → *My messages*
+  (their Google account's, plus the ones sent as a guest from that browser), and an answer they haven't seen yet pops
+  up the next time they open the game. Needs `supabase/migrations/0025_feedback_replies.sql` run once on the live database.
 - **Gifts with messages** — an answer (Admin → Messages → REPLY → Add a gift) or a message you write to a player from
   their profile (Admin → Analytics → a player → Messages) can carry items (each with a quantity), Pokémon (each with a
   level, shiny or not) and Pokédollars, each sent to a region you pick or to the player's latest one. The player sees the gift under

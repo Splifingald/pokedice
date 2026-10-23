@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { SupportModal } from '@/components/SupportModal'
 import { Modal } from '@/components/Modal'
@@ -14,7 +14,7 @@ import { useT } from '@/i18n/react'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { pushToast, setSettings, useGame } from '@/store/game'
 import { deleteSave } from '@/store/run'
-import { useIsAdmin, useLockReason, useNavLock } from '@/store/hooks'
+import { useIsAdmin, useLockReason, useNavLock, useTypeHints } from '@/store/hooks'
 import { checkContent, deleteAllData, deleteExtremeSave, providerName } from '@/store/sync'
 import { otherSave } from '@/store/extreme'
 import { ExtremeRulesModal } from '@/components/Extreme'
@@ -79,11 +79,16 @@ function SettingsContent({ over = false, shut }: { over?: boolean; shut?: string
   const isAdmin = useIsAdmin()
   const data = useGame((s) => s.data)
   const source = useGame((s) => s.contentSource)
-  const navigate = useNavigate()
-  const [confirmDelete, setConfirmDelete] = useState(false)
+  const typeHints = useTypeHints()
   // Only when the admin has it switched on, with a Ko-fi link.
   const canDonate = donationEnabled(data)
   const [donating, setDonating] = useState(false)
+  // White, here and over the fight: red stays for the game's own actions (docs/38 U5d).
+  const support = canDonate && (
+    <PixelButton size="sm" onClick={() => setDonating(true)}>
+      {t('ui.support.button')}
+    </PixelButton>
+  )
 
   const copySave = async () => {
     if (!save) return
@@ -100,21 +105,10 @@ function SettingsContent({ over = false, shut }: { over?: boolean; shut?: string
       {!over ? (
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-[32px] leading-none">{t('ui.settings.title')}</h1>
-          {canDonate && (
-            <PixelButton variant="primary" size="sm" onClick={() => setDonating(true)}>
-              {t('ui.support.button')}
-            </PixelButton>
-          )}
+          {support}
         </div>
       ) : (
-        // Over the fight its red is BACK TO THE FIGHT's: SUPPORT ME goes white.
-        canDonate && (
-          <div className="flex justify-end">
-            <PixelButton size="sm" onClick={() => setDonating(true)}>
-              {t('ui.support.button')}
-            </PixelButton>
-          </div>
-        )
+        support && <div className="flex justify-end">{support}</div>
       )}
 
       <Panel title={t('ui.settings.game')}>
@@ -167,6 +161,13 @@ function SettingsContent({ over = false, shut }: { over?: boolean; shut?: string
           </div>
           <span className="copy block text-muted">{t('ui.settings.themeHint')}</span>
         </div>
+        {/* On until the first badge unless the player chose (docs/38 U1b); the type chart holds the same switch. */}
+        <Toggle
+          label={t('ui.settings.typeHints')}
+          hint={t('ui.settings.typeHintsHint')}
+          on={typeHints}
+          onChange={(v) => setSettings({ typeHints: v })}
+        />
         {/* No animations: admins only — but a player who already turned it on still sees it, so they can turn it off. */}
         {(isAdmin || settings.reducedMotion) && (
           <Toggle
@@ -219,12 +220,10 @@ function SettingsContent({ over = false, shut }: { over?: boolean; shut?: string
       <Panel title={t('ui.settings.saveFile')}>
         <details>
           <summary className="flex min-h-[44px] cursor-pointer items-center text-xl">{t('ui.settings.saveAdvanced')}</summary>
+        {/* Deleting it is the one Delete at the bottom of the page, with the other deletions (docs/38 U8b). */}
         <div className="mt-2 flex flex-wrap gap-2">
           <PixelButton size="sm" onClick={() => void copySave()} disabled={!save}>
             {t('ui.settings.copySave')}
-          </PixelButton>
-          <PixelButton size="sm" variant="danger" onClick={() => setConfirmDelete(true)} disabled={!save} shut={why}>
-            {t('ui.settings.deleteSave')}
           </PixelButton>
         </div>
         {/* No import here: the cloud save is what the trade server reads, so a pasted save would be a cheat that
@@ -232,7 +231,7 @@ function SettingsContent({ over = false, shut }: { over?: boolean; shut?: string
         </details>
       </Panel>
 
-      <ExtremePanel shut={why} />
+      <ExtremePanel />
 
       <Panel title={t('ui.settings.content')}>
         <p className="text-lg">
@@ -251,23 +250,126 @@ function SettingsContent({ over = false, shut }: { over?: boolean; shut?: string
         {t('ui.settings.legal')} <SetupLink shut={why}>{t('ui.title.deployGuide')}</SetupLink>
       </p>
 
-      {/* The bottom of the settings is where a disconnect belongs: out of the way, never a mis-tap. */}
-      {auth.status === 'signed_in' && (
-        <div className="flex justify-center">
-          <DisconnectButton shut={why} />
-        </div>
-      )}
-
+      {/* One Disconnect (Cloud backup's, beside who is signed in) and, at the very bottom, one Delete that asks what. */}
       <DeleteData shut={why} />
 
       <SupportModal open={donating} onClose={() => setDonating(false)} />
+    </div>
+  )
+}
 
-      <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)} title={t('ui.settings.deleteTitle')}>
+/** What the one Delete can take: the save in play, the Extreme save (docs/22), or everything. */
+export type DeleteChoice = 'save' | 'extreme' | 'all'
+
+const CHOICES: Record<DeleteChoice, { label: string; desc: string }> = {
+  save: { label: 'ui.settings.deleteSave', desc: 'ui.settings.deleteSaveDesc' },
+  extreme: { label: 'ui.extreme.settings.delete', desc: 'ui.settings.deleteExtremeDesc' },
+  all: { label: 'ui.settings.wipe', desc: 'ui.settings.wipeDesc' },
+}
+
+/**
+ * The one Delete's question (docs/38 U8b): which deletion, each a row with what it takes. Nothing is deleted here: each
+ * row goes on to its own pop-ups. White rows with red words, so the only red buttons are the confirmations'.
+ */
+export function DeleteChooser({
+  open,
+  onClose,
+  choices,
+  onPick,
+}: {
+  open: boolean
+  onClose: () => void
+  choices: readonly DeleteChoice[]
+  onPick: (c: DeleteChoice) => void
+}) {
+  const { t } = useT()
+  const id = useId()
+  return (
+    <Modal open={open} onClose={onClose} title={t('ui.settings.deleteWhat')}>
+      <ul className="m-0 flex list-none flex-col gap-2 p-0">
+        {choices.map((c) => (
+          <li key={c}>
+            <button
+              type="button"
+              onClick={() => onPick(c)}
+              aria-label={t(CHOICES[c].label)}
+              aria-describedby={`${id}-${c}`}
+              className="flex min-h-[56px] w-full flex-col items-start gap-1 bg-paper px-3 pb-2.5 pt-2 text-left shadow-card"
+            >
+              <b className="text-[22px] font-normal leading-none text-danger">{t(CHOICES[c].label)}</b>
+              <small id={`${id}-${c}`} className="font-pixel-sm text-[15px] leading-tight text-muted">
+                {t(CHOICES[c].desc)}
+              </small>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-4 flex justify-end">
+        <PixelButton onClick={onClose}>{t('ui.common.cancel')}</PixelButton>
+      </div>
+    </Modal>
+  )
+}
+
+/**
+ * The red button at the very bottom, the only Delete in Settings (docs/38 U8b): it asks what goes (`DeleteChooser`),
+ * then each asks as it always did. The save in play: one pop-up, then the title screen. The Extreme save, or everything
+ * the game keeps about the player in this browser and online (both saves, docs/22): two pop-ups in a row so it is never
+ * a mis-tap, what goes then a last "really?", and a reload onto the title screen.
+ */
+function DeleteData({ shut }: { shut?: string | null }) {
+  const { t } = useT()
+  const navigate = useNavigate()
+  const hasSave = useGame((s) => !!s.save)
+  const online = useGame((s) => s.auth.status === 'signed_in')
+  const playingExtreme = useGame((s) => isExtreme(s.save))
+  const hasExtreme = playingExtreme || isExtreme(otherSave())
+  const [asking, setAsking] = useState(false)
+  const [choice, setChoice] = useState<DeleteChoice | null>(null)
+  const [step, setStep] = useState<1 | 2>(1)
+  const [busy, setBusy] = useState(false)
+  const choices: DeleteChoice[] = [...(hasSave ? ['save' as const] : []), ...(hasExtreme ? ['extreme' as const] : []), 'all']
+  const all = choice === 'all'
+  const close = () => {
+    if (!busy) setChoice(null)
+  }
+  const wipe = async () => {
+    setBusy(true)
+    // A reload, not a navigation: the stores still hold the old save, friends and events in memory.
+    if (await (all ? deleteAllData() : deleteExtremeSave())) return window.location.assign('/')
+    setBusy(false)
+    setChoice(null)
+    pushToast(t('ui.settings.wipeFailed'), 'bad')
+  }
+  const body = all
+    ? [t(online ? 'ui.settings.wipeBodyOnline' : 'ui.settings.wipeBodyLocal'), hasExtreme ? t('ui.settings.wipeBothNote') : '']
+        .filter(Boolean)
+        .join(' ')
+    : t('ui.extreme.settings.deleteBody')
+  return (
+    <div className="flex justify-center">
+      {/* Full width on phones, so a long translation shrinks to fit instead of pushing the page sideways. */}
+      <PixelButton variant="danger" className="w-full sm:w-auto" onClick={() => setAsking(true)} shut={shut}>
+        {t('ui.settings.deleteAsk')}
+      </PixelButton>
+
+      <DeleteChooser
+        open={asking}
+        onClose={() => setAsking(false)}
+        choices={choices}
+        onPick={(c) => {
+          setAsking(false)
+          setStep(1)
+          setChoice(c)
+        }}
+      />
+
+      <Modal open={choice === 'save'} onClose={close} title={t('ui.settings.deleteTitle')}>
         <p className="copy mb-4 text-lg">
-          {t('ui.settings.deleteBody', { cloud: auth.status === 'signed_in' ? t('ui.settings.deleteCloudNote') : '' })}
+          {t('ui.settings.deleteBody', { cloud: online ? t('ui.settings.deleteCloudNote') : '' })}
         </p>
         <div className="flex justify-end gap-2">
-          <PixelButton onClick={() => setConfirmDelete(false)}>{t('ui.common.cancel')}</PixelButton>
+          <PixelButton onClick={close}>{t('ui.common.cancel')}</PixelButton>
           <PixelButton
             variant="danger"
             onClick={() => {
@@ -279,53 +381,12 @@ function SettingsContent({ over = false, shut }: { over?: boolean; shut?: string
           </PixelButton>
         </div>
       </Modal>
-    </div>
-  )
-}
 
-/**
- * The red button at the very bottom: everything the game keeps about the player, in this browser and online, deleted
- * (both saves, docs/22). Two pop-ups in a row so it is never a mis-tap: what goes, then a last "really?". Then the
- * title screen, from scratch. `extreme`: the Extreme save only, from its own section.
- */
-function DeleteData({ scope = 'all', shut }: { scope?: 'all' | 'extreme'; shut?: string | null }) {
-  const { t } = useT()
-  const online = useGame((s) => s.auth.status === 'signed_in')
-  const playingExtreme = useGame((s) => isExtreme(s.save))
-  const hasExtreme = playingExtreme || isExtreme(otherSave())
-  const [step, setStep] = useState<0 | 1 | 2>(0)
-  const [busy, setBusy] = useState(false)
-  const all = scope === 'all'
-  const close = () => {
-    if (!busy) setStep(0)
-  }
-  const wipe = async () => {
-    setBusy(true)
-    // A reload, not a navigation: the stores still hold the old save, friends and events in memory.
-    if (await (all ? deleteAllData() : deleteExtremeSave())) return window.location.assign('/')
-    setBusy(false)
-    setStep(0)
-    pushToast(t('ui.settings.wipeFailed'), 'bad')
-  }
-  const body = all
-    ? [t(online ? 'ui.settings.wipeBodyOnline' : 'ui.settings.wipeBodyLocal'), hasExtreme ? t('ui.settings.wipeBothNote') : '']
-        .filter(Boolean)
-        .join(' ')
-    : t('ui.extreme.settings.deleteBody')
-  return (
-    <div className={all ? 'flex justify-center' : 'flex'}>
-      {/* Full width on phones, so a long translation shrinks to fit instead of pushing the page sideways. */}
-      <PixelButton
-        variant="danger"
-        size={all ? 'md' : 'sm'}
-        className={all ? 'w-full sm:w-auto' : undefined}
-        onClick={() => setStep(1)}
-        shut={shut}
+      <Modal
+        open={(choice === 'all' || choice === 'extreme') && step === 1}
+        onClose={close}
+        title={t(all ? 'ui.settings.wipeTitle' : 'ui.extreme.settings.deleteTitle')}
       >
-        {t(all ? 'ui.settings.wipe' : 'ui.extreme.settings.delete')}
-      </PixelButton>
-
-      <Modal open={step === 1} onClose={close} title={t(all ? 'ui.settings.wipeTitle' : 'ui.extreme.settings.deleteTitle')}>
         <p className="copy mb-4 text-lg">{body}</p>
         <div className="flex flex-wrap justify-end gap-2">
           <PixelButton onClick={close}>{t('ui.common.cancel')}</PixelButton>
@@ -335,7 +396,12 @@ function DeleteData({ scope = 'all', shut }: { scope?: 'all' | 'extreme'; shut?:
         </div>
       </Modal>
 
-      <Modal open={step === 2} onClose={close} dismissable={!busy} title={t('ui.settings.wipeSureTitle')}>
+      <Modal
+        open={(choice === 'all' || choice === 'extreme') && step === 2}
+        onClose={close}
+        dismissable={!busy}
+        title={t('ui.settings.wipeSureTitle')}
+      >
         <p className="copy mb-4 text-lg">{t('ui.settings.wipeSureBody')}</p>
         <div className="flex flex-wrap justify-end gap-2">
           <PixelButton onClick={close} disabled={busy}>
@@ -350,15 +416,17 @@ function DeleteData({ scope = 'all', shut }: { scope?: 'all' | 'extreme'; shut?:
   )
 }
 
-/** Extreme mode (docs/22): what it is, its rules, and deleting its save. Once it's open, or a save of it exists. */
-function ExtremePanel({ shut }: { shut?: string | null }) {
+/**
+ * Extreme mode (docs/22): what it is and its rules. Once it's open, or a save of it exists. Deleting its save is the
+ * one Delete at the bottom of the page (docs/38 U8b).
+ */
+function ExtremePanel() {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const [rules, setRules] = useState(false)
   const extreme = isExtreme(save)
-  const other = otherSave()
-  const hasSave = extreme || isExtreme(other)
+  const hasSave = extreme || isExtreme(otherSave())
   if (!extreme && !hasSave && !extremeOpen(save, data)) return null
   return (
     <Panel title={t('ui.extreme.name')}>
@@ -367,7 +435,6 @@ function ExtremePanel({ shut }: { shut?: string | null }) {
         <PixelButton size="sm" onClick={() => setRules(true)} aria-label={t('ui.extreme.infoLabel')}>
           {t('ui.extreme.settings.rules')}
         </PixelButton>
-        {hasSave && <DeleteData scope="extreme" shut={shut} />}
       </div>
       <ExtremeRulesModal open={rules} onClose={() => setRules(false)} />
     </Panel>

@@ -3,7 +3,7 @@ import { GlitchSprite } from '@/components/Portal'
 import { motion } from 'framer-motion'
 import { useId, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { catchTarget, catchValueOf, effectiveStats, getSpecies, isDoubleEncounter, MONEY, paidKey, rebattleProgress, rebattleTiers, type Encounter, portalNoCatch, nightmareFoe } from '@/engine'
+import { catchTarget, catchValueOf, effectiveStats, getSpecies, isDoubleEncounter, MONEY, paidKey, rebattleProgress, rebattleTiers, teamOf, type Encounter, portalNoCatch, nightmareFoe } from '@/engine'
 import { joinList } from '@/i18n'
 import { effectText } from '@/i18n/text'
 import { money } from '@/lib/format'
@@ -367,7 +367,8 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
           {enc.kind === 'casino' && <CasinoCard />}
           {enc.kind === 'trick' && <TrickCard dex={enc.dex} level={enc.level} tier={enc.tier} isNew={enc.isNew} shiny={enc.shiny} />}
 
-          {fight && save && (
+          {/* A team of one has no one to pick: no "Send out" at all (LeadPicker draws nothing either). */}
+          {fight && save && teamOf(save).length > 1 && (
             <div className={dark ? 'bg-panel p-2 text-ink' : undefined}>
               <LeadPicker
                 value={lead}

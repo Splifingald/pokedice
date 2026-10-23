@@ -1,5 +1,6 @@
 // Side menu → Contact the developer: a title and a message, sent to Admin → Messages; and My messages, every message
-// the player sent with the developer's answer, what the developer wrote first, and the gifts they carry (docs/15 §23).
+// the player sent with the developer's answer, what the developer wrote first, and the gifts they carry (docs/15 §23),
+// also opened on its own from the menu's Inbox row.
 import { useEffect, useState, type FormEvent } from 'react'
 import { getLang } from '@/i18n'
 import { useT } from '@/i18n/react'
@@ -128,12 +129,30 @@ function History({ onClose }: { onClose: () => void }) {
   )
 }
 
+/** Answers not seen yet and gifts not opened: the count on the Inbox row and on My messages' tab. */
+export function useInboxUnseen(): number {
+  return useInbox((s) => (s.messages ? unseenReplies(s.messages).length + unopenedGifts(s.messages).length : 0))
+}
+
+/**
+ * The trainer menu's Inbox (docs/38 U6b): My messages on its own, the developer's answers, what they wrote first and
+ * the gifts, without going through Contact the developer (whose My messages tab is the same view).
+ */
+export function InboxModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useT()
+  return (
+    <Modal open={open} onClose={onClose} title={t('ui.contact.historyTab')}>
+      <History onClose={onClose} />
+    </Modal>
+  )
+}
+
 /** Closing without sending keeps what was typed for next time; a sent message closes the form. */
 export function ContactModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useT()
   const [tab, setTab] = useState<'write' | 'history'>('write')
   // New answers, and gifts waiting to be opened.
-  const unseen = useInbox((s) => (s.messages ? unseenReplies(s.messages).length + unopenedGifts(s.messages).length : 0))
+  const unseen = useInboxUnseen()
   const [title, setTitle] = useState('')
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)

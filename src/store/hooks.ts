@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { energyNow, portalLock, type EnergyView } from '@/engine'
+import { badgesHeld, energyNow, portalLock, type EnergyView } from '@/engine'
 import { useT } from '@/i18n/react'
 import { isAdminEmail } from '@/lib/supabase'
+import { typeHintsOn } from '@/save/storage'
 import { useGame } from './game'
 
 /** Cosmetic gate (renders the Admin link / route). Every write is enforced by Postgres RLS. */
@@ -11,6 +12,16 @@ export function useIsAdmin(): boolean {
 
 export function useInFight(): boolean {
   return useGame((s) => s.run.phase === 'battle' || s.run.phase === 'catch' || s.run.phase === 'victory')
+}
+
+/**
+ * Whether type hints show (docs/38 U1b): the player's choice once made; until then on while no badge is won, so a new
+ * player sees the matchups from the start. The badges are only counted while the setting is unset.
+ */
+export function useTypeHints(): boolean {
+  return useGame((s) =>
+    typeHintsOn(s.settings, s.settings.typeHints == null && s.save ? badgesHeld(s.save, s.data) : 0),
+  )
 }
 
 /**

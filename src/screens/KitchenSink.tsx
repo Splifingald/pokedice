@@ -52,6 +52,7 @@ import { LooksBits } from './kitchen/LooksBits'
 import { RulesBits } from './kitchen/RulesBits'
 import { ExtremeBits } from './kitchen/ExtremeBits'
 import { PartnerBits } from './kitchen/PartnerBits'
+import { OnboardingBits } from './kitchen/OnboardingBits'
 import { RaidBits } from './kitchen/RaidBits'
 import { WorldBits } from './kitchen/WorldBits'
 import { PortalBits } from './kitchen/PortalBits'
@@ -621,6 +622,9 @@ export function KitchenSink() {
 
       <Section title="PartnerMoment: the lab (new game, new region)">
         <PartnerBits />
+      </Section>
+      <Section title="Onboarding and menus: the default name, Settings' one Delete and its question, the Inbox, SENT OUT (docs/38 §8)">
+        <OnboardingBits />
       </Section>
 
       <Section title="Day Care: Egg, hearts, tags, slot cards, empty slots, Egg now, the Egg card">

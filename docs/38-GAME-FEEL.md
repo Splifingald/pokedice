@@ -51,7 +51,55 @@ switch; the haptics in `src/lib/haptics.ts` (`haptic(cue)`).
 
 ## 8. Onboarding, menus and copy
 
-<!-- WP7 -->
+No switch for any of these: they change screens and words already there (docs/15 §20).
+
+- **U1b Type hints on early.** A new player needs the matchups most, and they were off until found in the type chart.
+  `settings.typeHints` unset now means **on until the first badge** (`typeHintsOn` in `src/save/storage.ts`, read by
+  `useTypeHints` in `src/store/hooks.ts`, which counts `badgesHeld` only while it is unset); a choice made in Settings
+  or the type chart always wins. `readSettings` keeps it unset instead of turning it into `false`. The switch is in
+  Settings → Game ("Type hints", saying it is on until the first badge), and the type chart keeps the same one. The
+  Pokémon sheet and the lead picker read the hook. A browser that stored `false` before this (any settings change
+  wrote it) keeps hints off: it can't be told from a choice.
+- **U1f Default name.** "Select your character" fills the name in with the character's own, as each language's games
+  have it (`trainerName.red` / `trainerName.leaf`: Red, Rojo, Rot, Rosso, レッド…; Leaf, Hoja, リーフ…), so NEXT works at
+  once without a phone's keyboard. Picking the other character changes it while the player hasn't typed one (or has
+  emptied the field); what they type stays theirs. Renaming from the trainer card starts from the name already held.
+- **P2a Dialogue at the bottom.** Prof. Oak's intro had everything in the top half of a phone. Now it is the Game Boy's
+  layout: Oak in the room, the text box with SKIP INTRO and NEXT anchored to the bottom (`100dvh`, the home indicator's
+  safe area kept), from 360×640 up.
+- **P2b Lab card at the bottom.** In the professor's lab the picture stays on top, and the message box, the starter's
+  card (Hits hard, Weak to, Dice, NOT THIS ONE / PICK) and Let's go! sit at the bottom of the screen, under the thumb.
+- **B7 Intro matches the controls.** `ui.newGame.intro3` said "keep the dice you like, reroll the rest" while the game
+  has you tap the dice to throw again: "Throw, tap the dice you want to throw again… then ATTACK. Pairs, straights and
+  full houses add bonus damage.", in all ten languages.
+- **B8 No more "Map".** Home replaced the Map: `ui.victory.secretOnMap` ("… is now in your Areas list"),
+  `ui.victory.nextOpen` ("… is now open in your Areas list"), `ui.help.explore9` (Home's Areas list) and
+  `ui.help.goalRegions` (switch back from Regions, in Home's Areas list), in all ten languages. Their keys keep their
+  names. `ui.nav.map` and `ui.area.backToMap` are no longer used anywhere.
+- **B10 No developer link on the title.** "Deployment guide" shows on the title only in dev or for the admin
+  (`useIsAdmin`). Settings' legal line keeps its link to it.
+- **B11 Docs match the game.** README: help and the type chart are in the trainer menu (there is no `?` in the top bar)
+  and Versus is Home's widget; docs/15 §17: the menu's rows as they are (no Versus row).
+- **U5c Cleaner encounter preview.** A team of one has nothing to pick: no "Send out" (`LeadPicker` draws nothing, and
+  the preview leaves its frame out). The picked card's button is a white ✓ SENT OUT (`ui.lead.sentOut`), no longer a red
+  SWITCH beside the red FIGHT. The name has a line of its own under the mini and level, a size smaller on a phone when
+  long (more than nine letters, a CJK character counting two) and wrapping rather than cut: "Bulbasaur", "Charmander"
+  in full at 360 px.
+- **U5d SUPPORT ME not red.** Settings' SUPPORT ME is white, as it already was over a fight: red is for the game's own
+  actions.
+- **U6b Inbox row.** The trainer menu has an **Inbox** row (the envelope; Contact the developer now has the pencil)
+  opening My messages on its own (`InboxModal`), with a gold count of answers not seen and gifts not opened, the count
+  Contact's tab shows. Contact the developer keeps its My messages tab.
+- **U8b One Disconnect, one Delete.** Settings had two Disconnects (Cloud backup's and one at the bottom) and three
+  Deletes (Delete save under Save file → Advanced, Delete my Extreme save in Extreme mode, Delete all my data at the
+  bottom). Now Disconnect is only Cloud backup's, beside who is signed in, and the bottom has one red **Delete a save or
+  my data** that asks what goes (`DeleteChooser`: Delete save while there is one, Delete my Extreme save while one
+  exists, Delete all my data; each a white row with red words and what it takes). Each then asks as before: the save
+  one pop-up, the Extreme save and everything two in a row (`e2e/delete-data.spec.ts`, `e2e/extreme.spec.ts`). Under
+  a lock (mid-fight, a portal run) the one Delete is shut with the reason.
+
+Every new piece (`DeleteChooser` in each set of choices, `InboxModal`, the default name, the single lead picker) is on
+`/kitchen-sink` (`OnboardingBits`).
 
 ## 9. Setting it up
 

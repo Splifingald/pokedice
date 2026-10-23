@@ -158,17 +158,14 @@ test('Settings open over the fight: the harmless ones work, what would end it sa
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
 
   // What would end the fight is there, shut, its reason in its name; a tap says it and does nothing else.
-  const wipe = settings.getByRole('button', { name: /^Delete all my data/ })
+  // The one Delete (a save, the Extreme save, all the data: docs/38 U8b).
+  const wipe = settings.getByRole('button', { name: /^Delete a save or my data/ })
   await expect(wipe).toHaveAttribute('aria-disabled', 'true')
-  await expect(wipe).toHaveAccessibleName('Delete all my data. Finish the fight first')
+  await expect(wipe).toHaveAccessibleName('Delete a save or my data. Finish the fight first')
   // (Playwright won't tap what says it's disabled: the tap is forced, as a finger would.)
   await wipe.click({ force: true })
   await expect(toasts.getByText('Finish the fight first')).toBeVisible()
-  await expect(page.getByRole('dialog', { name: 'Delete all your data?' })).toHaveCount(0)
-  await settings.getByText('Advanced: copy or delete your save').click()
-  const del = settings.getByRole('button', { name: /^Delete save/ })
-  await expect(del).toHaveAttribute('aria-disabled', 'true')
-  await expect(del).toHaveAccessibleName('Delete save. Finish the fight first')
+  await expect(page.getByRole('dialog', { name: 'What do you want to delete?' })).toHaveCount(0)
   await expect(settings.getByRole('button', { name: /^Check for updates/ })).toHaveAccessibleName(
     'Check for updates. Finish the fight first',
   )

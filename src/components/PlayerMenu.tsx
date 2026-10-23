@@ -25,7 +25,7 @@ import { useIsAdmin, useLockReason } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { CloudSyncButton } from './CloudSyncButton'
 import { ExtremeMark, SwitchSaveModal } from './Extreme'
-import { ContactModal } from './ContactModal'
+import { ContactModal, InboxModal, useInboxUnseen } from './ContactModal'
 import { ConnectMarks, useConnect } from './AccountButton'
 import { PixelIcon, type IconName } from './icons'
 import { Modal } from './Modal'
@@ -111,11 +111,11 @@ function MenuRowView({ icon, mark, label, desc, hint, dot, href, onClick, shut }
 }
 
 /**
- * The header's avatar button and everything behind it: the player's profile, the settings screen,
- * the rules, the type chart, the admin (admins only), the Google connection and, pinned at the bottom, the community
- * Discord (once the admin has set its link) and Contact the developer. Mid-fight it opens as ever; the rows that would
- * leave the fight (another page, the other save, signing in) are shut and say why. Settings opens over the fight
- * instead of on its page (SettingsOverlay), what in it would end the fight shut there.
+ * The header's avatar button and everything behind it: the player's profile, the Inbox (the developer's messages and
+ * gifts), the settings screen, the rules, the type chart, the admin (admins only), the Google connection and, pinned at
+ * the bottom, the community Discord (once the admin has set its link) and Contact the developer. Mid-fight it opens as
+ * ever; the rows that would leave the fight (another page, the other save, signing in) are shut and say why. Settings
+ * opens over the fight instead of on its page (SettingsOverlay), what in it would end the fight shut there.
  */
 export function PlayerMenu() {
   const { t } = useT()
@@ -131,6 +131,8 @@ export function PlayerMenu() {
   const [guide, setGuide] = useState(false)
   const [types, setTypes] = useState(false)
   const [contact, setContact] = useState(false)
+  const [inbox, setInbox] = useState(false)
+  const inboxNew = useInboxUnseen()
   const [settingsOver, setSettingsOver] = useState(false)
   const [switching, setSwitching] = useState(false)
   const { connect, chooser } = useConnect()
@@ -213,7 +215,7 @@ export function PlayerMenu() {
             {/* Messages go to Supabase, so a deployment without it has no one to send them to. */}
             {isSupabaseConfigured && (
               <MenuRow
-                icon="mail"
+                icon="pencil"
                 label={t('ui.contact.button')}
                 onClick={() => {
                   setOpen(false)
@@ -259,6 +261,19 @@ export function PlayerMenu() {
               hint={!tradesUnseen && tradesOut ? `${tradesOut}/${tradeCfg(data).maxListings}` : undefined}
               onClick={go('/trades')}
               shut={shut}
+            />
+          )}
+          {/* Messages and gifts from the developer, a row of their own (docs/38 U6b); the count is what's new there. */}
+          {isSupabaseConfigured && (
+            <MenuRow
+              icon="mail"
+              label={t('ui.inbox.title')}
+              desc={t('ui.menu.inbox')}
+              dot={inboxNew}
+              onClick={() => {
+                setOpen(false)
+                setInbox(true)
+              }}
             />
           )}
           {canSwitch && (
@@ -324,6 +339,7 @@ export function PlayerMenu() {
       </SidePanel>
 
       <ContactModal open={contact} onClose={() => setContact(false)} />
+      <InboxModal open={inbox} onClose={() => setInbox(false)} />
       <SettingsOverlay open={settingsOver} onClose={() => setSettingsOver(false)} />
       <SwitchSaveModal to={extreme ? 'main' : 'extreme'} open={switching} onClose={() => setSwitching(false)} />
 

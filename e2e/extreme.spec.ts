@@ -151,7 +151,9 @@ test('Delete my Extreme save: two pop-ups, and the main save stays', async ({ pa
   await mockSupabase(page)
   await seed(page, { main: main(), extreme: extreme(), slot: 'extreme' })
   await page.goto('/settings')
-  await page.getByRole('button', { name: 'Delete my Extreme save' }).click()
+  // The one Delete asks what goes (docs/38 U8b).
+  await page.getByRole('button', { name: 'Delete a save or my data' }).click()
+  await page.getByRole('dialog', { name: 'What do you want to delete?' }).getByRole('button', { name: 'Delete my Extreme save' }).click()
   await expect(page.getByRole('dialog', { name: 'Delete your Extreme save?' })).toContainText('Your main save stays as it is.')
   await page.getByRole('dialog').getByRole('button', { name: 'Continue' }).click()
   await page.getByRole('dialog', { name: 'Really delete everything?' }).getByRole('button', { name: 'Delete everything' }).click()
