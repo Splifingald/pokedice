@@ -1,4 +1,4 @@
-// Migration 0072 against a real Postgres (PGlite, in process): Halloween 2026's look (docs/31 §7) granted to the
+// Migration 0077 against a real Postgres (PGlite, in process): Halloween 2026's look (docs/31 §7) granted to the
 // players holding a shiny Giratina anywhere it is theirs, or who won Haunted Hollow's Giratina raid, in either save;
 // into the main save only, stamped now; nobody else touched, and a second run changing nothing. The save it writes
 // still reads, and unlocks the look. Only the `saves` table is stood in for: the migration touches nothing else.
@@ -11,7 +11,7 @@ import { parseSave } from '@/save/schema'
 import { makeData, newId } from './fixtures'
 
 const MIG = readFileSync(
-  path.join(__dirname, '..', 'supabase', 'migrations', '0072_halloween_2026_look.sql'),
+  path.join(__dirname, '..', 'supabase', 'migrations', '0077_halloween_2026_look.sql'),
   'utf8',
 )
 const LOOK = 'events/halloween-2026-pokemaniac'
@@ -96,7 +96,7 @@ beforeAll(async () => {
   await db.exec(MIG)
 })
 
-describe('0072: the Halloween 2026 look', () => {
+describe('0077: the Halloween 2026 look', () => {
   it('goes to every player holding a shiny Giratina, or who won the raid, and nobody else', async () => {
     for (const [name, , , due] of PLAYERS) {
       const { data: save } = await row(name)

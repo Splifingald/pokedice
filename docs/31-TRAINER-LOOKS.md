@@ -82,7 +82,7 @@ other save field.
 
 1. Admin → Config → **Trainer looks**: On for admin, try it, then On for everyone. Save, then Publish.
 2. No SQL to run for the looks themselves. Halloween 2026's look (§7) has one, to run once:
-   [`0072_halloween_2026_look.sql`](https://github.com/Splifingald/pokedice/blob/ccr-57978ca3-fag4wr/supabase/migrations/0072_halloween_2026_look.sql).
+   [`0077_halloween_2026_look.sql`](https://github.com/Splifingald/pokedice/blob/feature/version_2_3/supabase/migrations/0077_halloween_2026_look.sql).
 
 ## 6. The sets
 
@@ -281,9 +281,9 @@ An event's prize, won there and **kept for good**, whatever happens to the event
 | The switch | The Trainer looks one: it is a look like the others. Nothing else to switch on. |
 | The rules (engine) | An unlock of its own kind, `{ kind: 'event', event, raids }`: open when a raid it names is in `events.raidsDone`, or its id is in `looks.earned`. Read from the main save's progress, like every look (the Extreme save wears what the main one won). |
 
-### The SQL grant (0072)
+### The SQL grant (0077)
 
-[`0072_halloween_2026_look.sql`](https://github.com/Splifingald/pokedice/blob/ccr-57978ca3-fag4wr/supabase/migrations/0072_halloween_2026_look.sql)
+[`0077_halloween_2026_look.sql`](https://github.com/Splifingald/pokedice/blob/feature/version_2_3/supabase/migrations/0077_halloween_2026_look.sql)
 adds the look to `looks.earned` in the **main** save of every player who, in either save, holds a shiny Giratina
 (the live Box or a parked region's, the Day Care, a closed world's homers or pending catches, a raid's locked prize,
 a trade still listed) or won the Distortion World's raid. Not today's raid boss, a friend's Day Care guest, a trade log
