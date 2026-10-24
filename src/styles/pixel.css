@@ -81,25 +81,28 @@
   color: #fbfdff;
 }
 
-/* Pressed: the button sinks onto its shadow, and its frame drops the shadow it no longer casts. */
-.pixel-btn:not(:disabled):not([aria-disabled='true']):active {
+/*
+ * Pressed: the button sinks onto its shadow, and its frame drops the shadow it no longer casts. `data-down` is
+ * PixelButton's own pressed state, set the moment the finger lands (a phone holds `:active` back in case of a scroll).
+ */
+.pixel-btn:not(:disabled):not([aria-disabled='true']):is(:active, [data-down]) {
   transform: translateY(4px);
   border-image-source: var(--fr-btn-down);
 }
-.frame-primary:not(:disabled):not([aria-disabled='true']):active {
+.frame-primary:not(:disabled):not([aria-disabled='true']):is(:active, [data-down]) {
   border-image-source: var(--fr-primary-down);
 }
-.frame-deep:not(:disabled):not([aria-disabled='true']):active,
-.frame-primary[data-small]:not(:disabled):not([aria-disabled='true']):active {
+.frame-deep:not(:disabled):not([aria-disabled='true']):is(:active, [data-down]),
+.frame-primary[data-small]:not(:disabled):not([aria-disabled='true']):is(:active, [data-down]) {
   border-image-source: var(--fr-deep-down);
 }
-.frame-gold:not(:disabled):not([aria-disabled='true']):active {
+.frame-gold:not(:disabled):not([aria-disabled='true']):is(:active, [data-down]) {
   border-image-source: var(--fr-gold-down);
 }
-.frame-green:not(:disabled):not([aria-disabled='true']):active {
+.frame-green:not(:disabled):not([aria-disabled='true']):is(:active, [data-down]) {
   border-image-source: var(--fr-green-down);
 }
-.frame-dark:not(:disabled):not([aria-disabled='true']):active {
+.frame-dark:not(:disabled):not([aria-disabled='true']):is(:active, [data-down]) {
   border-image-source: var(--fr-dark-down);
 }
 

@@ -107,6 +107,8 @@ export function UpCard({ u, gold }: { u: Up; gold: number }) {
   const now = u.now ?? bonus(u.bonus)
   const then = u.then !== undefined ? u.then : u.next != null ? `+${u.next}` : null
   const buy = () => {
+    // The press, as a PixelButton sounds it; a buy adds its level-up after.
+    sfx('button')
     if (u.cost == null || u.locked) return
     if (!can) return pushToast(t('ui.upgrades.short', { amount: money(u.cost - gold) }), 'info')
     if (!u.buy()) return

@@ -1,6 +1,7 @@
 import { forwardRef, useLayoutEffect, useRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { cx } from '@/theme/util'
 import { sfx } from '@/audio/sfx'
+import { haptic, useSwitchHaptics } from '@/lib/haptics'
 import { pushToast } from '@/store/game'
 
 type Variant = 'primary' | 'secondary' | 'gold' | 'danger' | 'success' | 'ghost' | 'dark'
@@ -117,9 +118,19 @@ export const PixelButton = forwardRef<HTMLButtonElement, PixelButtonProps>(funct
   ref,
 ) {
   const label = useFitText(children)
+  const primary = variant === 'primary'
+  // iOS's haptic on the primary buttons (lib/haptics). Never on a submit button: the tap would be the switch's click,
+  // not the button's, and the form would not be sent. Nor on one that can't act now.
+  const iosHaptic = useSwitchHaptics(primary && type === 'button' && !shut && !rest.disabled)
   // Shut: the reason after its name — its aria-label or its text, else (a label of several parts) in a hidden span.
   const named = rest['aria-label'] ?? (typeof children === 'string' ? children : undefined)
   const lock = shut ? { 'aria-disabled': true, title: shut, ...(named && { 'aria-label': `${named}. ${shut}` }) } : null
+  // Heard and felt as the finger lands (docs/38 F7a), not when it lifts: the click waited for the release, so a tap felt
+  // late. Android's haptic comes with it on a primary button.
+  const press = () => {
+    if (!quiet) sfx('button')
+    if (primary) haptic('tap')
+  }
   return (
     <button
       ref={ref}
@@ -133,10 +144,19 @@ export const PixelButton = forwardRef<HTMLButtonElement, PixelButtonProps>(funct
       )}
       onClick={(e) => {
         if (shut) return pushToast(shut, 'info')
-        if (!quiet) sfx('button')
+        // The action still waits for the click, so a press that turns into a scroll does nothing. A pointer's click has
+        // had its sound on the way down; one from the keyboard (or from code) has no pointer: `detail` 0.
+        if (e.detail === 0) press()
         onClick?.(e)
       }}
       {...rest}
+      // After `rest`, which may bring its own: that one runs first.
+      onPointerDown={(e) => {
+        rest.onPointerDown?.(e)
+        if (shut || rest.disabled || !e.isPrimary || e.button !== 0) return
+        press()
+        pressDown(e.currentTarget)
+      }}
       {...lock}
     >
       {/* `whitespace-nowrap` keeps the label on one line so shrinking is what fixes it; `min-w-0` and the clip keep a
@@ -145,6 +165,70 @@ export const PixelButton = forwardRef<HTMLButtonElement, PixelButtonProps>(funct
         {children}
       </span>
       {shut && !named && <span className="sr-only">. {shut}</span>}
+      {iosHaptic && <HapticSwitch />}
     </button>
   )
 })
+
+/**
+ * The pressed look from the pointer's first contact (`data-down`, drawn as `:active` in pixel.css): a phone's browser
+ * holds `:active` back a moment in case the touch is a scroll. A scroll (pointercancel), the release or the finger
+ * leaving takes it off.
+ */
+function pressDown(el: HTMLButtonElement) {
+  el.setAttribute('data-down', '')
+  const release = () => {
+    el.removeAttribute('data-down')
+    window.removeEventListener('pointerup', release, true)
+    window.removeEventListener('pointercancel', release, true)
+    el.removeEventListener('pointerleave', release)
+  }
+  window.addEventListener('pointerup', release, true)
+  window.addEventListener('pointercancel', release, true)
+  el.addEventListener('pointerleave', release)
+}
+
+/**
+ * iOS's haptic (lib/haptics `useSwitchHaptics`): an invisible native switch laid over the whole button. A real tap
+ * toggles it, which Safari answers with the system haptic, and its click bubbles on to the button, which acts as ever.
+ * Hidden from screen readers and out of the tab order, so the button keeps its name, its focus and its target; a
+ * scroll that starts on it still scrolls, and a drag puts it back (the guard ios-haptics 3.2 uses).
+ */
+export function HapticSwitch() {
+  const from = useRef<{ y: number; dragged: boolean } | null>(null)
+  const putBack = (el: HTMLInputElement) => {
+    from.current = null
+    el.checked = false
+  }
+  return (
+    <input
+      type="checkbox"
+      aria-hidden
+      tabIndex={-1}
+      data-haptic=""
+      ref={(el) => {
+        if (!el) return
+        // Not in React's attribute list: set by hand.
+        el.setAttribute('switch', '')
+        // It fills the nearest positioned box: a button that isn't positioned becomes that box.
+        const box = el.parentElement
+        if (box && getComputedStyle(box).position === 'static') box.style.position = 'relative'
+      }}
+      onPointerDown={(e) => {
+        from.current = { y: e.clientY, dragged: false }
+      }}
+      onPointerMove={(e) => {
+        if (!from.current || Math.abs(e.clientY - from.current.y) <= 10) return
+        from.current.dragged = true
+        e.currentTarget.checked = false
+      }}
+      onPointerUp={(e) => {
+        if (from.current?.dragged) putBack(e.currentTarget)
+        from.current = null
+      }}
+      onPointerCancel={(e) => putBack(e.currentTarget)}
+      className="absolute inset-0 m-0 h-full w-full cursor-pointer opacity-0"
+      style={{ touchAction: 'pan-x pan-y', WebkitTapHighlightColor: 'transparent' }}
+    />
+  )
+}

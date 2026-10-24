@@ -23,6 +23,7 @@ import {
   type RaidNpcOption,
 } from '@/engine'
 import { playCry } from '@/audio/cries'
+import { useBattleMusic } from '@/audio/useBattleMusic'
 import { HpBar } from '@/components/HpBar'
 import { PixelIcon } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
@@ -241,6 +242,7 @@ export function RaidSpeedButton({ on, onChange }: { on: boolean; onChange: (on: 
 export function RaidView({ run }: { run: RaidRun }) {
   const { t } = useT()
   useHoldFullscreen()
+  useBattleMusic(run.stage !== 'result')
   // A pending reload (new build, Admin → "Reload all players") waits for the raid to end.
   useEffect(() => holdReload(), [])
   useEffect(() => {

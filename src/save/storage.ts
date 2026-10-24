@@ -90,6 +90,8 @@ export interface Settings {
   haptics?: boolean
   /** Battle music (docs/38), where the admin has switched it on; it also needs Sound. Unset = on. */
   music?: boolean
+  /** Battle music's volume, 0–1 (Settings offers three steps, `MUSIC_VOLUMES`). Unset = `MUSIC_VOLUME`. */
+  musicVolume?: number
 }
 export const DEFAULT_SETTINGS: Settings = { sfx: true, sound: true, reducedMotion: false, multiExp: true }
 
@@ -199,6 +201,12 @@ export function readSettings(): Settings {
       raidFast: !!s.raidFast,
       lang: isLang(s.lang) ? s.lang : detectLang(),
       theme: s.theme === 'dark' || s.theme === 'auto' ? s.theme : 'light',
+      // The game-feel switches (docs/38): kept only once the player has set them; unset reads as on / the default.
+      ...(typeof s.haptics === 'boolean' && { haptics: s.haptics }),
+      ...(typeof s.music === 'boolean' && { music: s.music }),
+      ...(typeof s.musicVolume === 'number' &&
+        s.musicVolume >= 0 &&
+        s.musicVolume <= 1 && { musicVolume: s.musicVolume }),
     }
   } catch {
     return { ...DEFAULT_SETTINGS, lang: detectLang() }

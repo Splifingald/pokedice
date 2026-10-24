@@ -67,6 +67,7 @@ import { DayNightBits } from './kitchen/DayNightBits'
 import { IdleBits } from './kitchen/IdleBits'
 import { DiceThrowBits } from './kitchen/DiceThrowBits'
 import { PowersBits } from './kitchen/PowersBits'
+import { FeelBits } from './kitchen/FeelBits'
 import { RotateView } from '@/components/RotateCover'
 import { SettingsOverlay } from '@/screens/Settings'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
@@ -722,6 +723,9 @@ export function KitchenSink() {
       </Section>
       <Section title="Dice throws: a tray at each motion level (full, short, the OS's calm drop, off), reroll of the picked dice only, slow motion, frozen mid-throw, the status faces, the foe's size, at rest (docs/37)">
         <DiceThrowBits />
+      </Section>
+      <Section title="Taps, haptics and music: a pressed button, the haptics test pad, Settings' music and vibration rows (each state), the battle loop (docs/38)">
+        <FeelBits />
       </Section>
 
       <Section title="StatusIcons · PixelIcon">

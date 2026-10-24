@@ -12,6 +12,7 @@ import {
   type RolledDie,
   type Side,
 } from '@/engine'
+import { sfx } from '@/audio/sfx'
 import { Die } from '@/components/Die'
 import { PixelIcon, STATUS_ICON } from '@/components/icons'
 import { MiniSprite } from '@/components/SpriteImg'
@@ -345,7 +346,10 @@ export function BattleHistory({
       <button
         type="button"
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          sfx('button')
+          setOpen((v) => !v)
+        }}
         className="flex min-h-[36px] w-full items-center gap-2 text-left text-xl"
       >
         <PixelIcon name="history" size={16} />

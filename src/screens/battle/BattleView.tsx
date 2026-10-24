@@ -37,6 +37,8 @@ import {
   inNightmare,
 } from '@/engine'
 import { playCry } from '@/audio/cries'
+import { sfx } from '@/audio/sfx'
+import { useBattleMusic } from '@/audio/useBattleMusic'
 import { Chip } from '@/components/Chip'
 import { DiceSet } from '@/components/DiceSet'
 import { ForfeitButton } from '@/components/ForfeitButton'
@@ -712,6 +714,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       })
 
   const over = !!versus && played && !!versus.end
+  useBattleMusic(!over && !(ready && !versus && ['victory', 'wipe', 'stalemate'].includes(run.phase)))
   const message = catching
     ? catchMessage(run.catch!, foeFront.name, { revealed })
     : forced && !auto
@@ -827,7 +830,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
           type="button"
           aria-label={t('ui.battle.history')}
           title={t('ui.battle.history')}
-          onClick={() => setMenu('history')}
+          onClick={() => {
+            sfx('button')
+            setMenu('history')
+          }}
           className="grid min-h-[48px] min-w-[44px] place-items-center bg-paper shadow-ring"
         >
           <PixelIcon name="history" size={20} />
