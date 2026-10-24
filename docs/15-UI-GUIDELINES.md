@@ -1531,3 +1531,21 @@ every state on `/kitchen-sink` (`IdleBits`).
   close, the fight's own moves too (§14) and Idle's throw. Never an item but Idle's Poké Balls (never the Master
   Ball), never a team change, never a spin.
 - **Between areas**, a toast says each move ("Now exploring…", "Round lost: one round in…", "Round done: back to…").
+
+## 35. The raid overhaul
+
+One switch (docs/39, §20), Off: raids as before. On, the engine decides each raid's rules (`engine/raidSpecials.ts`)
+and the screens tell them; every piece is on `/kitchen-sink` ("Raid overhaul") and every entrance in the FX lab.
+
+- **The pattern before the fight**: each raid page has a "This raid" card (`RaidRulesPanel`, the `RuleList` rows of
+  the events' pop-ups): its level and bars first, then the weather or terrain, each rule, its last bar (crown) last.
+  The book icon opens the overhaul's rules (`RaidRulesInfo`), the pop-up shown once in the queue (§20).
+- **In the fight, the boss plate carries the state** (`RaidMarks`, after its types and statuses): the weather's or
+  terrain's icon on `sky`, a CHARGING tag on `accent` that blinks in two steps (still with reduced motion), the shield's
+  HP on `paper` with the shield icon, the last bar's crown on `gold`. The log line says what happened; banners only for
+  CHARGING!, INTERRUPTED!, UNLEASHED! and LAST BAR!, in the raid's banner tones.
+- **A legend's entrance** is the pixel engine's, like Giratina's (§27) and Darkrai's (§29), under the raid intro's
+  usual words: its place in dithered steps, never a gradient; its aura's four colours for the outline, the rays and the
+  rings. Pairs and trios share a place in their own colours. Skip shows from the second time; motion levels as §8.
+- **A Mega raid** is a progression raid with a MEGA RAID kicker; its lock says what opens it, its win shows the gem's
+  sprite and name instead of the catch.
