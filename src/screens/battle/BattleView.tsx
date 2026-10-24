@@ -285,7 +285,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     !!save &&
     !!catchTarget(save, b.baseDex ?? b.dex, b.level, st.kind, data, b.shiny)
   const catchable = dbl ? (uid: string) => dbl.foes.some((f) => f.uid === uid && canCatch(f)) : canCatch(st.enemy)
-  const { fx, ready, sceneContact, sceneDone } = useBattleAnimator(
+  const { fx, ready, sceneContact, sceneDone, feel: feelOn } = useBattleAnimator(
     battle,
     quick,
     {
@@ -320,12 +320,12 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     return () => clearTimeout(t)
   }, [ownOut, foeOut, bossIntro, quick, pace])
 
-  // The enemy acts on its own once the log has caught up.
+  // The enemy acts on its own once the log has caught up (sooner with the game-feel pass, docs/38 F1d).
   useEffect(() => {
     if (!ready || intro || st.phase !== 'enemy_turn') return
-    const t = setTimeout(() => dispatch({ t: 'AI_TURN' }), quick ? 0 : 450 * pace)
+    const t = setTimeout(() => dispatch({ t: 'AI_TURN' }), quick ? 0 : (feelOn ? 250 : 450) * pace)
     return () => clearTimeout(t)
-  }, [ready, intro, st.phase, quick, pace, battle.log.length, dispatch])
+  }, [ready, intro, st.phase, quick, pace, battle.log.length, dispatch, feelOn])
 
   const active = st.player.find((p) => p.uid === fx.activeUid) ?? activeBattler(st)
   // The catch, once the log has played the last K.O. (before that, the fight's own pair stays in front).
@@ -963,9 +963,23 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             <motion.div
               key={fx.banner.id}
               className="pointer-events-none absolute inset-x-0 top-[38%] flex justify-center"
-              initial={{ scale: 0.3, opacity: 0 }}
-              animate={{ scale: [0.3, 1.2, 1], opacity: [0, 1, 1, 0] }}
-              transition={{ duration: (quick ? 0.6 : 1.2) * pace, times: [0, 0.2, 0.8, 1] }}
+              // The game-feel pass stamps it down in three steps, held, then gone (docs/38 F3b); else it swells in.
+              initial={feelOn ? { scale: 1.8, opacity: 1 } : { scale: 0.3, opacity: 0 }}
+              animate={
+                feelOn
+                  ? { scale: [1.8, 1.4, 1, 1], opacity: [1, 1, 1, 0] }
+                  : { scale: [0.3, 1.2, 1], opacity: [0, 1, 1, 0] }
+              }
+              transition={
+                feelOn
+                  ? {
+                      duration: (quick ? 0.6 : 1.2) * pace,
+                      times: [0, 0.07, 0.14, 1],
+                      // Each keyframe held until the next: steps, never a glide.
+                      ease: (p: number) => (p < 1 ? 0 : 1),
+                    }
+                  : { duration: (quick ? 0.6 : 1.2) * pace, times: [0, 0.2, 0.8, 1] }
+              }
             >
               <span
                 className={cx(

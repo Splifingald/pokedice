@@ -2,7 +2,8 @@
 // is in attacks-types.ts), a generic impact in the type's colour for typeless dice, and the one-hit short version
 // (Settings → Animations: short). Every one plays either way: the stage speaks of attacker and target, so the foe's
 // move flies right to left. Each has its Z-Move (`z`, docs/35): the same move, more powerful — more of it, bigger,
-// harder — on the stage's Z look (timeline.ts) and under the Z's own mark (zmove.ts).
+// harder — on the stage's Z look (timeline.ts) and under the Z's own mark (zmove.ts). The game-feel pass (docs/38)
+// adds how hard each hit lands (`power`), the K.O.'s boss stop and the `settle` that lets the battle move on (`felt`).
 import { fxSound } from '@/audio/sfx'
 import type { DieType, StatusKind } from '@/engine/types'
 import { STATUS_COLORS } from '@/theme/colors'
@@ -41,6 +42,7 @@ import {
   Stage,
   W,
   within,
+  withoutFlashes,
   type Cue,
   type Fighters,
   type Timeline,
@@ -61,6 +63,11 @@ export interface AttackParams extends Fighters {
   status?: StatusKind | null
   /** Short motion: one hit, no typed move. */
   short?: boolean
+  /**
+   * The game-feel pass (docs/38 F1a): a `settle` cue half a second after the last hit lets the battle move on, and from
+   * then the canvas draws only the particles still flying, over the page's own sprites, until the scene ends.
+   */
+  trim?: boolean
 }
 
 /** A Z-Move's take on a number: `n` as drawn, `zn` when the move is a Z-Move's. */
@@ -74,9 +81,30 @@ export function attackCues<S>(tHit: number, tStatus: number | null, extra: Cue<S
   return c.sort((a, b) => a[0] - b[0])
 }
 
-/** Damage number over the target's head. */
+/** The damage number's colours with the game-feel pass: as the page's own numbers say a hit (BattleStage). */
+const POP_SUPER = '#ffd23a'
+const POP_PLAIN = '#ffffff'
+const POP_RESISTED = '#9c9caf'
+
+/**
+ * Damage number over the target's head. With a hit's power (docs/38 F3b, F3c) it is twice the size with an ink
+ * outline, gold when super effective; a resisted hit's stays small and grey.
+ */
 export function damagePop(g: G, s: Stage, p: AttackParams, x: number, t: number, t0: number) {
-  if (p.damage != null) pop(g, `-${p.damage}`, x, s.tgt.at.y - s.tgt.size.h - 2, t, t0, '#ffd23a')
+  if (p.damage == null) return
+  const y = s.tgt.at.y - s.tgt.size.h - 2
+  const w = p.power
+  if (!w) return pop(g, `-${p.damage}`, x, y, t, t0, POP_SUPER)
+  pop(
+    g,
+    `-${p.damage}`,
+    x,
+    y,
+    t,
+    t0,
+    w.super ? POP_SUPER : w.resisted ? POP_RESISTED : POP_PLAIN,
+    w.resisted ? 1 : 2,
+  )
 }
 
 /** The status pops over the target as a flickering tint in its colour. */
@@ -1021,9 +1049,62 @@ const TYPED: Partial<Record<DieType, (p: AttackParams) => Timeline<never>>> = {
 
 /** The timeline for one hit: the typed move when there is one, else the generic impact; short motion → one hit. */
 export function attackTimeline(p: AttackParams): Timeline<unknown> {
-  if (p.short) return impactAnim(p, true) as Timeline<unknown>
   const make = TYPED[p.type]
-  return (make ? make(p) : impactAnim(p, false)) as Timeline<unknown>
+  const tl = p.short ? impactAnim(p, true) : make ? make(p) : impactAnim(p, false)
+  return felt(tl as Timeline<Stage>, p) as Timeline<unknown>
+}
+
+/** How long the K.O.'s final blow holds the whole scene still (docs/38 F4a): Sakurai's "boss stop", kept short. */
+export const BOSS_STOP = 0.25
+/** The frame it holds: the final blow's own, the target a white silhouette and the burst just out. */
+const IMPACT = 1.5 / 60
+
+/** Every particle system a scene owns (the stage's, and a move's own smoke): what still flies once it has settled. */
+const particlesOf = (s: object) => Object.values(s).filter((v): v is Particles => v instanceof Particles)
+
+/**
+ * The game-feel pass on a move (docs/38): the K.O.'s boss stop, its clock held still on the final blow's impact frame
+ * (nothing steps, no full-screen flash held on), and `settle` — after it, nothing new spawns and only what already
+ * flies is drawn, fading out over the page's sprites. Neither asked: the move exactly as drawn.
+ */
+function felt(tl: Timeline<Stage>, p: AttackParams): Timeline<Stage> {
+  const hold = p.power?.ko ? BOSS_STOP : 0
+  if (!hold && !p.trim) return tl
+  const frozen = (s: Stage, t: number) => t >= s.freezeAt && t < s.freezeAt + hold
+  // The move's own clock: still through the stop, then on from where it stood.
+  const local = (s: Stage, t: number) => (t < s.freezeAt ? t : frozen(s, t) ? s.freezeAt : t - hold)
+  return {
+    ...tl,
+    dur: tl.dur + hold,
+    setup() {
+      const s = tl.setup()
+      if (hold) s.freezeAt = s.lastHit + IMPACT
+      return s
+    },
+    step(s, t, dt) {
+      if (s.tail) for (const ps of particlesOf(s)) ps.update(dt)
+      else if (!frozen(s, t)) tl.step(s, local(s, t), dt)
+    },
+    draw(g, s, t) {
+      if (s.tail) for (const ps of particlesOf(s)) ps.draw(g)
+      else if (frozen(s, t)) withoutFlashes(() => tl.draw(g, s, s.freezeAt))
+      else tl.draw(g, s, local(s, t))
+    },
+    cues(s) {
+      const later = (t0: number) => (t0 > s.freezeAt ? t0 + hold : t0)
+      const c: Cue<Stage>[] = tl.cues(s).map(([t0, fire]) => [later(t0), fire] as const)
+      if (hold) c.push([s.freezeAt, (hud) => hud.ko?.()])
+      if (p.trim)
+        c.push([
+          later(s.settleAt),
+          (hud, st) => {
+            st.tail = true
+            hud.settle?.()
+          },
+        ])
+      return c.sort((a, b) => a[0] - b[0])
+    },
+  }
 }
 
 /** The move types that have their own timeline (the dev page lists them). */

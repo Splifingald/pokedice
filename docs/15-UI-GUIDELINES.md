@@ -269,7 +269,8 @@ lasting effects: under the OS setting they play in half the time, as every scene
 
 House rules for every effect and timeline:
 
-- Anticipation before every release; a 3–5 frame **hit-stop** on contact.
+- Anticipation before every release; a 3–5 frame **hit-stop** on contact. One longer stop: with the game-feel pass,
+  a K.O.'s final blow holds the whole scene 0.25 s on its impact frame (its "boss stop", docs/38 F4a), no flash held on.
 - A hit flashes **two white silhouette frames**, never an opacity blink.
 - Light and smoke are **ordered-dithered**, never blurred; particles step through a fixed colour ramp.
 - **No screen flash faster than 3 a second.**
@@ -290,12 +291,14 @@ House rules for every effect and timeline:
 **Timelines** (`src/fx`, no React): a timeline is `setup / step / draw / cues` on a 240×160 stage. A screen plays one
 with `<StageCanvas timeline ready hud onEnd label>`: it waits for the sprites (`loadSprite`, at most 1.5 s), plays at
 60 fixed steps a second, and sends the cues to the `hud` (`contact` when a hit lands, `status`, `show`, `heal`,
-`form`, `catchResult`, `beat`). Timelines never decide words: the screen phrases each cue from strings.csv. With
+`form`, `catchResult`, `beat`; with the game-feel pass an attack's `settle`, half a second after its last hit, and the
+K.O.'s `ko`, docs/38 §2). Timelines never decide words: the screen phrases each cue from strings.csv. With
 motion `off` the stage jumps to the end and still fires every cue, so the screen ends up in the same state.
 
 | Timeline | full | short |
 |---|---|---|
-| Attacks: one move per type (Flamethrower, Hydro Pump, Razor Leaf, Thunderbolt, Psychic in `attacks.ts`; Tackle, jabs and a fist, gusts and a wing slash, Sludge Bomb, earth spikes, Rock Slide, a swarm and X-Scissor, Shadow Ball, Metal Claw, Ice Beam, Dragon Breath, Dark Pulse and Crunch, Moonblast in `attacks-types.ts`); a generic impact for typeless dice | the typed move | one generic hit |
+| Attacks: one move per type (Flamethrower, Hydro Pump, Razor Leaf, Thunderbolt, Psychic in `attacks.ts`; Tackle, jabs and a fist, gusts and a wing slash, Sludge Bomb, earth spikes, Rock Slide, a swarm and X-Scissor, Shadow Ball, Metal Claw, Ice Beam, Dragon Breath, Dark Pulse and Crunch, Moonblast in `attacks-types.ts`); a generic impact for typeless dice. With the game-feel pass (docs/38 §2): every hit scaled by its power (`hitPower`: shake, stop, particles), the damage number at 2× (gold super effective, grey 1× resisted), a settle 0.5 s after the last hit, the K.O.'s boss stop | the typed move | one generic hit |
+| A shiny's entrance (game-feel pass, `shiny.ts`): on a clear canvas over the page's sprite, two rings of stars as it lands, twinkles, the shiny chime | in full | in full |
 | A Z-Move (§33, `zmove.ts`): the power gathering, then the strike — the type's own move as its Z variant (`z`: more of it, bigger, harder, on a dimmed field, the attacker outlined in gold and the type's light) with the Z's mark on its last hit (a golden Z on the target, rings, a white flash); a Flying, Ground or Water one goes away first and comes back before its strike | the gathering, the Z variant | a flash of the type's colour; the one generic hit with the Z's mark |
 | Catch | throw, beam, drop, wobbles, result — the engine's count of wobbles (`catchShakes`): 3 for a catch, for a miss 3, 2, 1 or none as it fell 1, 2, 3 or 4+ short, so the third never gives it away; a buzz with each (`haptic`); with a Bait to offer it holds on the ball lying still (`hold`) and the answer plays on from that frame (`from: 'ground'`: the Bait tossed beside the ball, a heart, its last wobbles, 2 or fewer by the same rule; or straight to the break-free); Capture Luck's stay (`stays`): out of the ball, a "!" and two hops, no flight | throw and drop, result at once (the Bait still lands); a throw that can't miss jumps to its end at every level |
 | Pokémon Center | in its picture (`public/backgrounds/pokemon-center.png`): a ball per team member into the machine's slots, the heal jingle (B G♯ ×3, E) | one flash, healed |
@@ -513,8 +516,11 @@ in view) and the battle history sits beside it from 1024 px.
   (level, HP with numbers, status). MEGA / G-MAX tags join the plate when the form changes; a timed Mega (the gem
   rules, docs/35) says its turns left ("MEGA ·2").
 - **The log drives everything** (`useBattleAnimator`): each entry is a step; a hit is a *scene* the stage plays, and
-  the HP waits for the timeline's `contact` cue before it drains. Entrances hold the log after its opening line.
-  When animations are off, every step lands at once and no scene plays.
+  the HP waits for the timeline's `contact` cue before it drains; the hit's sound plays there too. Entrances hold the
+  log after its opening line. When animations are off, every step lands at once and no scene plays. With the game-feel
+  pass (docs/38 §2) a hit's scene hands the stage back at its `settle`, half a second after its last hit: the log moves
+  on, the page's sprites are back and the canvas only lets its particles fade over them; a K.O.'d Pokémon sinks through
+  its platform in four steps.
 - **Panel**, top to bottom, each part keeping its height so nothing jumps: the message box (two lines; "Tap dice to
   throw them again." is added on your turn), the dice tray (your dice up to 54 px — 72 on a phone
   740 px tall or more — and never under 44, lifted with a red outline and a ↻ tag when picked, the combo's dice in a

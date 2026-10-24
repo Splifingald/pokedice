@@ -2,8 +2,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   activeBattler,
+  gameFeelOn,
+  hitPower,
   type BattleState,
   type DieType,
+  type HitPower,
   type LogEntry,
   type RolledDie,
   type Side,
@@ -11,9 +14,11 @@ import {
 } from '@/engine'
 import { t } from '@/i18n'
 import { comboName, typeName } from '@/lib/format'
-import { hasOwnCry } from '@/audio/cries'
+import { haptic } from '@/lib/haptics'
+import { hasOwnCry, playCry } from '@/audio/cries'
+import { feelSound } from '@/audio/feel'
 import { sfx, type SfxName } from '@/audio/sfx'
-import type { BattleSlice } from '@/store/game'
+import { useGame, type BattleSlice } from '@/store/game'
 
 export interface Fx {
   cursor: number
@@ -69,6 +74,35 @@ export interface Scene {
   toDex?: number
   /** Played this many times faster: a raid's sped-up turns (absent = as drawn). */
   speed?: number
+  /** An attack's hit: how it sounds when it lands, and how hard the stage plays it (docs/38). */
+  hit?: SceneHit
+}
+
+/** A hit, as the log decided it: what the stage and the speakers make of it when it lands. */
+export interface SceneHit {
+  tone: 'super' | 'weak' | 'normal'
+  /** How hard it lands (docs/38 F3a): the stage scales its shake, particles and hit-stop with it. */
+  power: HitPower
+  /** The sound it has always made on landing (with a scene, at its contact). */
+  sound: SfxName
+}
+
+/**
+ * A hit landing, heard and felt: at the scene's contact, or at once without a scene. Its old sound (a bug fixed in
+ * docs/38 B2: with a scene it was never heard); with the game-feel pass (F3b) super effective and resisted have their
+ * own. A vibration by how hard it lands (the haptics switch decides; a K.O. without the pass's boss stop buzzes here).
+ */
+export function landHit(hit: SceneHit, feel: boolean) {
+  if (!feel || hit.tone === 'normal') sfx(hit.sound)
+  else feelSound(hit.tone === 'super' ? 'hit.super' : 'hit.resisted')
+  const { tier, ko } = hit.power
+  haptic(ko && !feel ? 'ko' : tier >= 3 ? 'hit3' : tier === 2 ? 'hit2' : 'hit1')
+}
+
+/** The final blow (docs/38 F4a), as its boss stop holds the stage: the K.O.'s thud and its vibration. */
+export function finalBlow() {
+  feelSound('hit.ko')
+  haptic('ko')
 }
 
 export interface AnimatorContext {
@@ -86,7 +120,13 @@ export interface AnimatorContext {
   megaMechanic: (dex: number) => 'primal' | 'ultra' | null
   /** How many turns a Gigantamax lasts (config). */
   gmaxTurns: number
+  /** The game-feel pass (docs/38): the animator fills it from the admin's switch. */
+  feel?: boolean
 }
+
+/** The foe's pause on each reroll (docs/38 F1d): shorter with the game-feel pass. */
+export const FOE_REROLL_MS = 700
+export const FOE_REROLL_FEEL_MS = 450
 
 let seq = 0
 const nextId = () => ++seq
@@ -146,6 +186,8 @@ export interface Step {
   effect?: () => void
   /** Played on the stage; `land` then applies when the hit lands (the HP drains with it), the rest when it ends. */
   scene?: Omit<Scene, 'id' | 'cursor'>
+  /** A hit: heard (`landHit`) when it lands, in place of `sound`. */
+  hit?: SceneHit
   /** What changes when the scene's hit lands — or right away when there is no scene. `staged`: a scene drew it. */
   land?: (f: Fx, staged: boolean) => Fx
 }
@@ -207,7 +249,7 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       }
     case 'reroll':
       return {
-        delay: 700,
+        delay: e.side === 'enemy' && ctx.feel ? FOE_REROLL_FEEL_MS : FOE_REROLL_MS,
         sound: 'rattle',
         apply: (f) => ({
           ...f,
@@ -240,9 +282,27 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
               ? t('ui.log.noEffectBanner')
               : null
       const power = tone === 'super' ? (eff >= 3 ? 10 : 7) : tone === 'weak' ? 2 : tone === 'immune' ? 0 : 4
+      const sound: SfxName = tone === 'super' ? 'super' : tone === 'immune' ? 'error' : 'hit'
+      const struck = foes.find((f) => f.uid === e.targetUid) ?? st.player.find((p) => p.uid === e.targetUid)
+      // How hard it lands (docs/38): the log's numbers, read for the stage and the speakers. No effect: no hit at all.
+      const hit: SceneHit | undefined =
+        tone === 'immune'
+          ? undefined
+          : {
+              tone,
+              sound,
+              power: hitPower({
+                effectiveness: eff,
+                combo: r.combo?.key,
+                damage: e.amount,
+                maxHp: struck?.maxHp ?? 0,
+                ko: e.hpAfter <= 0,
+              }),
+            }
       return {
         delay: 1300,
-        sound: tone === 'super' ? 'super' : tone === 'immune' ? 'error' : 'hit',
+        sound,
+        hit,
         // The dice fly at the target as the move starts; the HP waits for the hit. A Z-Move's strike brings back an
         // attacker that went away.
         apply: (f) => {
@@ -254,8 +314,8 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
         scene: r.immune
           ? undefined
           : e.z
-            ? { kind: 'zstrike', side: e.side, type: r.attackType ?? r.perDie[0]?.type ?? 'base', damage: e.amount, how: e.z.from }
-            : { kind: 'attack', side: e.side, type: r.attackType ?? r.perDie[0]?.type ?? 'base', damage: e.amount },
+            ? { kind: 'zstrike', side: e.side, type: r.attackType ?? r.perDie[0]?.type ?? 'base', damage: e.amount, how: e.z.from, hit }
+            : { kind: 'attack', side: e.side, type: r.attackType ?? r.perDie[0]?.type ?? 'base', damage: e.amount, hit },
         land: (f, staged) => ({
           ...f,
           message: textFor(f),
@@ -311,6 +371,8 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       if (e.side === 'enemy' && (typeof ctx.catchable === 'function' ? ctx.catchable(e.uid) : ctx.catchable))
         return {
           delay: 1200,
+          // The K.O. opens the catch (docs/38 F4b): a sting, where there was silence.
+          effect: ctx.feel ? () => feelSound('ko.sting') : undefined,
           apply: (f) => ({
             ...f,
             message: t('ui.catch.wornOut', {
@@ -324,6 +386,8 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       return {
         delay: 1200,
         sound: 'faint',
+        // Its cry, slower and lower, as it falls (docs/38 F4a).
+        effect: ctx.feel ? () => playCry(e.dex, { rate: 0.75 }) : undefined,
         apply: (f) => ({
           ...f,
           message: t('ui.log.fainted', { name: nameOf(e.uid) }),
@@ -594,10 +658,12 @@ export function useBattleAnimator(
   pace = 1,
   /** An entrance is playing: the opening line shows, the rest of the log waits. */
   hold = false,
-): { fx: Fx; ready: boolean; sceneContact: () => void; sceneDone: () => void } {
+): { fx: Fx; ready: boolean; sceneContact: () => void; sceneDone: () => void; feel: boolean } {
   const [fx, setFx] = useState(() => (battle.resumed ? caughtUpFx(battle, ctx) : initFx(battle)))
-  const ctxRef = useRef(ctx)
-  ctxRef.current = ctx
+  const feel = useGame((s) => gameFeelOn(s.data))
+  const withFeel = { ...ctx, feel: ctx.feel ?? feel }
+  const ctxRef = useRef(withFeel)
+  ctxRef.current = withFeel
   // What the scene playing now will apply when its hit lands.
   const landing = useRef<((f: Fx, staged: boolean) => Fx) | null>(null)
   const pending = fx.cursor < battle.log.length
@@ -630,7 +696,10 @@ export function useBattleAnimator(
       const applied = step.apply(f)
       return step.land ? step.land(applied, false) : applied
     })
-    if (step.sound) sfx(step.sound)
+    if (step.hit) {
+      landHit(step.hit, !!ctxRef.current.feel)
+      if (ctxRef.current.feel && step.hit.power.ko) finalBlow()
+    } else if (step.sound) sfx(step.sound)
     step.effect?.()
     const t = setTimeout(
       () => setFx((f) => (f.cursor === cursor ? { ...f, cursor: cursor + 1 } : f)),
@@ -653,5 +722,5 @@ export function useBattleAnimator(
     setFx((f) => (f.scene ? { ...(land ? land(f, true) : f), scene: null, cursor: f.scene.cursor + 1 } : f))
   }, [])
 
-  return { fx, ready: settled, sceneContact, sceneDone }
+  return { fx, ready: settled, sceneContact, sceneDone, feel }
 }

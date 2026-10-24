@@ -2,6 +2,7 @@
 // here; <StageCanvas> hosts a Player. House rules every timeline follows: anticipation before every release, a 3–5
 // frame hit-stop on contact, two white silhouette frames on a hit (never an opacity blink), ordered-dithered light and
 // smoke (never blur), particles stepping through a colour ramp, and no screen flash faster than 3 a second.
+import type { HitPower } from '@/engine/hitPower'
 import { stageBackground, type Background, type Layout, type Point } from './scenes'
 import { clamp, ease, Particles, rng, span, text, textWidth, wash, type G, type Rng } from './pixel'
 import { drawSprite, spriteSize, type SpriteLook } from './sprites'
@@ -21,6 +22,13 @@ export type Side = 'own' | 'foe'
 export interface Hud {
   /** An attack's hit lands: drain the HP, show the damage. */
   contact?(): void
+  /**
+   * The game-feel pass (docs/38 F1a): an attack has done its work, half a second after its last hit. The battle's log
+   * moves on; the canvas only lets what still flies fade out, over the page's sprites.
+   */
+  settle?(): void
+  /** The final blow lands, frozen for a beat (docs/38 F4a: the K.O.'s boss stop). */
+  ko?(): void
   /** A status lands on a side (the attack's status face worked). */
   status?(side: Side): void
   /** A Pokémon's plate appears or goes (a catch hides the foe's; an intro shows them). */
@@ -81,9 +89,20 @@ let calm = false
 /** Calm (the OS asks for reduced motion, or animations are off): no screen shakes, no full-screen flashes. */
 export const setCalm = (on: boolean) => void (calm = on)
 
+let hush = false
+/** Draws without full-screen flashes: a frozen frame (the K.O.'s boss stop) must not hold a flash on screen. */
+export function withoutFlashes(draw: () => void) {
+  hush = true
+  try {
+    draw()
+  } finally {
+    hush = false
+  }
+}
+
 /** A full-screen flash (a hit landing, a burst): skipped when calm. */
 export function screenFlash(g: G, color: string, alpha: number) {
-  if (!calm) wash(g, color, alpha)
+  if (!calm && !hush) wash(g, color, alpha)
 }
 
 /** The whole stage's shake at t: none when calm. */
@@ -105,20 +124,33 @@ export function shakeAt(t: number, list: readonly (readonly [number, number, num
   return { x, y }
 }
 
-/** Damage number: pops up with an overshoot, holds, then blinks out. */
-export function pop(g: G, str: string, x: number, y: number, t: number, t0: number, color = '#ffffff') {
+/**
+ * Damage number: pops up with an overshoot, holds, then blinks out. `size` 2 draws its glyphs twice as big with a
+ * two-pixel ink outline (docs/38 F3c), so it reads on any sky; its bottom stays where the 1× one's would be.
+ */
+export function pop(
+  g: G,
+  str: string,
+  x: number,
+  y: number,
+  t: number,
+  t0: number,
+  color = '#ffffff',
+  size = 1,
+) {
   const p = t - t0
   if (p < 0 || p > 1.3) return
   if (p > 1.0 && Math.floor(p * 20) % 2) return
   const rise = 14 * ease.outBack(clamp(p / 0.3), 2.4)
+  const w = textWidth(str, size)
   text(
     g,
     str,
-    clamp(x - textWidth(str) / 2, 3, W - textWidth(str) - 3),
-    Math.max(4, y - rise),
+    clamp(x - w / 2, 3, W - w - 3),
+    Math.max(4, y - rise - 7 * (size - 1)),
     color,
     '#1a1423',
-    1,
+    size,
     '#1a142380',
   )
 }
@@ -136,7 +168,17 @@ export interface Fighters {
    * that light and gold until its last hit, and every hit stops longer and shakes harder.
    */
   z?: string
+  /**
+   * How hard the hit lands (docs/38 F3a, the game-feel pass): its hits' shake, hit-stop and particles scale with it.
+   * Absent: every hit as drawn.
+   */
+  power?: HitPower | null
 }
+
+/** The house rule's longest hit-stop: five frames. */
+export const STOP_MAX = 5 / 60
+/** How long after its last hit (and that hit's stop) an attack has done its work (docs/38 F1a). */
+export const SETTLE = 0.5
 
 /** A Z-Move's gold. */
 export const Z_GOLD = '#ffd23a'
@@ -146,6 +188,7 @@ interface Hit {
   dur: number
   tint: string | null
   flash: boolean
+  stop: number
 }
 
 /**
@@ -169,6 +212,12 @@ export class Stage {
   z: string | null
   /** How long a Z-Move's dim takes to come down: none when the strike follows the comeback, already dark. */
   zIn = 0.3
+  /** How hard the hit lands (Fighters.power). */
+  power: HitPower | null
+  /** Past its settle (docs/38 F1a): only its particles still fly, over the page's own sprites. */
+  tail = false
+  /** When the K.O.'s boss stop holds the clock still (attacks.ts); never without one. */
+  freezeAt = Infinity
   constructor(f: Fighters, seed: number) {
     // Over an area picture the stage draws no background: the picture under the canvas shows through.
     this.bg = stageBackground(W, H)
@@ -177,11 +226,20 @@ export class Stage {
     this.foe = f.foe
     this.by = f.by ?? 'own'
     this.z = f.z ?? null
+    this.power = f.power ?? null
     this.r = rng(seed)
   }
   /** The last hit registered (a Z-Move's light holds until then); none yet: never. */
   get lastHit() {
     return this.hits.length ? Math.max(...this.hits.map((h) => h.t0)) : Infinity
+  }
+  /** The first hit registered; none yet: never. */
+  get firstHit() {
+    return this.hits.length ? Math.min(...this.hits.map((h) => h.t0)) : Infinity
+  }
+  /** When the attack has done its work: SETTLE after its last hit's stop. */
+  get settleAt() {
+    return this.hits.length ? Math.max(...this.hits.map((h) => h.t0 + h.stop)) + SETTLE : Infinity
   }
   get os() {
     return spriteSize(this.own)
@@ -254,10 +312,19 @@ export class Stage {
       dur *= 1.2
       screen = screen ? screen + 2 : 0
     }
+    if (this.power) {
+      // How hard it lands (docs/38 F3a): a resisted hit stops short, shakes less and is over sooner; a big one stops up
+      // to the house rule's five frames (never shorter than drawn) and shakes harder.
+      const k = this.power.k
+      stop = stop && (k < 1 ? stop * k : Math.max(stop, Math.min(STOP_MAX, stop * k)))
+      shake = Math.max(1, Math.round(shake * k))
+      screen = screen && Math.max(1, Math.round(screen * k))
+      if (k < 1) dur *= 0.75
+    }
     if (stop) this.stops.push([t0, t0 + stop])
     this.targetShakes.push([t0, dur, shake])
     if (screen) this.screenShakes.push([t0, dur * 0.8, screen])
-    this.hits.push({ t0, dur, tint, flash })
+    this.hits.push({ t0, dur, tint, flash, stop })
   }
   stopped(t: number) {
     return this.stops.some(([a, b]) => t >= a && t < b)
@@ -288,6 +355,8 @@ export class Stage {
     return (t0: number) => p < t0 && t >= t0
   }
   step(t: number, dt: number) {
+    // A hit's power thickens or thins what flies once it lands (set before the stop: a contact burst spawns in it).
+    if (this.power) this.fx.density = this.under.density = t >= this.firstHit - 0.05 ? this.power.k : 1
     if (this.stopped(t)) return false
     this.fx.update(dt)
     this.under.update(dt)

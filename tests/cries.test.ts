@@ -94,6 +94,20 @@ describe('playCry', () => {
     expect(a.played).toEqual([`${CRIES}pikachu.mp3`, `${CRIES}bulbasaur.mp3`])
   })
 
+  it('plays a fainting cry slower and lower, and the next one at its own speed again (docs/38 F4a)', async () => {
+    const { playCry, setCriesEnabled } = await fresh()
+    setCriesEnabled(true)
+    playCry(25, { rate: 0.75 })
+    const a = FakeAudio.made[0]! as FakeAudio & { playbackRate?: number; preservesPitch?: boolean }
+    expect(a.playbackRate).toBe(0.75)
+    expect(a.preservesPitch).toBe(false)
+    playCry(1, { wait: true })
+    a.finish()
+    expect(a.played).toEqual([`${CRIES}pikachu.mp3`, `${CRIES}bulbasaur.mp3`])
+    expect(a.playbackRate).toBe(1)
+    expect(a.preservesPitch).toBe(true)
+  })
+
   it("moves on to the waiting cry when one can't load", async () => {
     const { playCry, setCriesEnabled } = await fresh()
     setCriesEnabled(true)
