@@ -1,12 +1,19 @@
 // Leaderboard ranking: each tab sorts by its own measure, ties share a rank, and SQL rows are parsed defensively.
 import { describe, expect, it } from 'vitest'
 import { boardWindow, friendsOnly, frontierArea, parseLeaderboard, rankLeaderboard, splitLeaderboard, type BoardItem, type LeaderboardRow } from '@/lib/leaderboard'
-import { regionSpecies } from '@/engine'
+import { leagueArea, regionSpecies, type GameData } from '@/engine'
 import { data } from './fixtures'
 
 const main = data.areas.filter((a) => !a.hidden && (a.regionId ?? 'kanto') === 'kanto')
 const cleared = (n: number, gyms = 0) =>
   Object.fromEntries(main.slice(0, n).map((a, i) => [a.id, { cleared: true, gyms: i === 0 ? gyms : 0 }]))
+
+const league = leagueArea(data, 'kanto')!.id
+/** Every main area cleared, and `tiers` of the Elite Rebattle on the League's entry, as the card writer keeps it (0076). */
+const rebattled = (tiers: number) => {
+  const p = cleared(main.length)
+  return { ...p, [league]: { ...p[league]!, ...(tiers > 0 && { rebattle: tiers }) } }
+}
 
 const row = (name: string, p: Partial<LeaderboardRow>): LeaderboardRow => ({
   region: 'kanto',
@@ -71,26 +78,58 @@ describe('rankLeaderboard', () => {
     expect(frontierArea(row('Red', { progress: cleared(main.length) }), data)).toBe('Hall of Fame')
     expect(frontierArea(row('New', {}), data)).toBe(main[0]!.name)
   })
+
+  it('Progression: past the last area, Elite Rebattle tiers rank, and the tier being fought shows', () => {
+    const r = rankLeaderboard(
+      [row('Ash', { progress: cleared(main.length) }), row('Gold', { progress: rebattled(2) }), row('Blue', { progress: cleared(3) })],
+      'progress',
+      data,
+      'kanto',
+    )
+    expect(r.map((x) => [x.name, x.rank, x.score])).toEqual([
+      ['Gold', 1, 'Elite Rebattle · Gold'],
+      ['Ash', 2, 'Elite Rebattle · Bronze'],
+      ['Blue', 3, main[3]!.name],
+    ])
+  })
+
+  it('Progression: with the rebattle off, the board ends at the last area as before', () => {
+    const off: GameData = {
+      ...data,
+      config: { ...data.config, events: { ...data.config.events, rebattle: { ...data.config.events.rebattle, access: 'off' } } },
+    }
+    const r = rankLeaderboard([row('Ash', { progress: cleared(main.length) }), row('Gold', { progress: rebattled(2) })], 'progress', off, 'kanto')
+    expect(r.map((x) => [x.name, x.rank, x.score])).toEqual([
+      ['Ash', 1, 'Hall of Fame'],
+      ['Gold', 1, 'Hall of Fame'],
+    ])
+    expect(splitLeaderboard(r, 'progress', off, 'kanto').hall.map((x) => x.name)).toEqual(['Ash', 'Gold'])
+  })
 })
 
 describe('splitLeaderboard', () => {
   const capped = row('Red', { maxLevel: data.config.maxLevel, pokedex: 5, progress: cleared(1) })
   const dexDone = row('Blue', { pokedex: regionSpecies(data, 'kanto').size, maxLevel: 40 })
-  const champ = row('Green', { progress: cleared(main.length), maxLevel: 40, pokedex: 5 })
-  const all = [...rows, capped, dexDone, champ]
+  const champ = row('Green', { progress: rebattled(4), maxLevel: 40, pokedex: 5 })
+  // Every area cleared, but the rebattle's Diamond tier still to win: still on the board.
+  const almost = row('Silver', { progress: rebattled(3), maxLevel: 40, pokedex: 5 })
+  const all = [...rows, capped, dexDone, champ, almost]
 
   it('sends whoever maxed the tab out to the Hall of Fame, and closes the ranking up', () => {
     const { board, hall } = splitLeaderboard(all, 'level', data, 'kanto')
     expect(hall.map((x) => x.name)).toEqual(['Red'])
     expect(board.map((x) => x.name)).not.toContain('Red')
     // The board still ranks from 1 with nobody missing in the middle.
-    expect(board.map((x) => x.rank)).toEqual([1, 2, 3, 4, 5])
+    expect(board.map((x) => x.rank)).toEqual([1, 2, 3, 4, 5, 6])
   })
 
   it('each tab has its own maximum', () => {
     expect(splitLeaderboard(all, 'dex', data, 'kanto').hall.map((x) => x.name)).toEqual(['Blue'])
     // Clearing the region also fills its Pokédex measure for nobody but the one who cleared it.
-    expect(splitLeaderboard(all, 'progress', data, 'kanto').hall.map((x) => x.name)).toEqual(['Green'])
+    // Progression's Hall of Fame wants every area and every rebattle tier.
+    const progress = splitLeaderboard(all, 'progress', data, 'kanto')
+    expect(progress.hall.map((x) => x.name)).toEqual(['Green'])
+    expect(progress.board[0]!.name).toBe('Silver')
     // Shinies have no ceiling: everyone stays on the board.
     expect(splitLeaderboard(all, 'shiny', data, 'kanto').hall).toEqual([])
   })
@@ -117,6 +156,13 @@ describe('parseLeaderboard', () => {
     // …and one from a database without 0032 has no shinies, without 0033 no friends, without 0035 no raids, without
     // 0049 no golden name.
     expect(r).toEqual({ region: 'kanto', isMe: false, name: 'Trainer', avatar: 'red', team: [], pokedex: 0, maxLevel: 12, shinies: 0, raidsWon: 0, progress: { x: { cleared: true, gyms: 0 } }, friendId: null, rich: false })
+  })
+
+  it("reads the League's rebattle tiers (0076), leaving them out where there are none", () => {
+    const [r] = parseLeaderboard([
+      { region: 'kanto', is_me: false, name: 'A', character: 'red', team: [], pokedex: 1, max_level: 5, progress: { l: { cleared: true, gyms: 5, rebattle: 2 }, x: { cleared: true, rebattle: 0 } } },
+    ])
+    expect(r!.progress).toEqual({ l: { cleared: true, gyms: 5, rebattle: 2 }, x: { cleared: true, gyms: 0 } })
   })
 
   it('carries the golden name the server sends', () => {

@@ -165,6 +165,25 @@ Guests: no row; their state lives in `SaveData.events`, and they only need `even
 - Rebattle page: the live region only, with a line saying its rebattle is the one shown (each region has its own; the old chips of locked regions are gone), tier medals (bronze diamond, silver pentagon, gold hexagon, Diamond's blue circle drawn as a stepped octagon; CSS clip-paths), gauntlet ladder with paid marks, rules, Start / Continue.
 - The fights are normal `BattleView` trainer fights. A tier clear shows the medal card (stamp + confetti).
 
+### 5.6 On the Progression board (2026-10-24, the user's ask)
+- The rebattle counts on the leaderboard's **Progression** tab: past a region's last area, its tiers cleared are the
+  next steps. The sort key is areas cleared, gym / Elite Four battles won, then rebattle tiers cleared
+  (`lib/leaderboard.ts` `progressKey`); the other tabs take the same three as tie-breakers.
+- Once every area is cleared, the row reads the tier being fought ("Elite Rebattle · Silver", `ui.board.rebattle`).
+  The Hall of Fame wants every area **and** every tier; the board's note and Hall of Fame text say so
+  (`ui.board.note.progressRebattle`, `ui.board.hallBody.progressRebattle`).
+- Only while the rebattle is on for the viewer (its admin switch) and the region has one (`rebattleOnBoard`): with it
+  off, or in a small world, the board ends at the last area as before, so nobody waits on tiers they can't fight.
+- Tiers cleared, not the gauntlet's step: a loss sends the gauntlet back to its first fight, so the step isn't progress.
+- Server: the card writer (migration 0076) keeps `events.rebattle[region].done` as a `rebattle` count on the progress
+  entry of the region's League area (only above 0). `leaderboard()` already returns `progress`, so it is unchanged.
+  The cards of trainers on the boards now (last 72 hours) who hold a rebattle are written again by the migration.
+- **Setting it up**: run `supabase/migrations/0076_leaderboard_rebattle.sql` in Supabase → SQL Editor (also inlined
+  in `supabase/seed.sql`):
+  https://github.com/Splifingald/pokedice/blob/ccr-23e8fd18-02lk5x/supabase/migrations/0076_leaderboard_rebattle.sql
+  Until it runs, no card carries tiers: a trainer who cleared the region reads "Elite Rebattle · Bronze" and nobody
+  reaches the Progression Hall of Fame.
+
 ---
 
 ## 6. Raids (phases 4–6)
