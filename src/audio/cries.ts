@@ -15,7 +15,7 @@ let enabled = false
 // later on its own (a battle's cries start from timers, not taps).
 let player: HTMLAudioElement | null = null
 // A cry waiting for the one playing to end (`wait`); only the latest is kept.
-let waiting: string | null = null
+let waiting: { url: string; rate: number } | null = null
 // Whether a cry is playing or loading. Kept here: an element whose file failed to load still says it isn't paused.
 let busy = false
 // The latest `start`: a play() promise from an earlier one (a cry cut off) is no news.
@@ -60,16 +60,20 @@ function element(): HTMLAudioElement | null {
 
 function next(a: HTMLAudioElement) {
   busy = false
-  const url = waiting
+  const w = waiting
   waiting = null
-  if (url && enabled) start(a, url)
+  if (w && enabled) start(a, w.url, w.rate)
 }
 
-function start(a: HTMLAudioElement, url: string) {
+function start(a: HTMLAudioElement, url: string, rate = 1) {
   const id = ++current
   busy = true
   try {
     a.src = url
+    // After the source (a new one resets the rate to the default): slower and lower, as the games' fainting cry.
+    a.defaultPlaybackRate = a.playbackRate = rate
+    a.preservesPitch = rate === 1
+    ;(a as { webkitPreservesPitch?: boolean }).webkitPreservesPitch = rate === 1
     // A browser that won't play yet (no tap so far) or a file that won't load: no cry, and on to the next.
     void a.play()?.catch(() => id === current && next(a))
   } catch {
@@ -79,19 +83,20 @@ function start(a: HTMLAudioElement, url: string) {
 
 /**
  * Plays `dex`'s cry. `wait`: after the cry already playing, rather than over it (the foe's, then yours, when a battle
- * opens with no entrance to space them).
+ * opens with no entrance to space them). `rate`: its speed, its pitch going with it (0.75: a Pokémon fainting, docs/38
+ * F4a).
  */
-export function playCry(dex: number, { wait = false }: { wait?: boolean } = {}) {
+export function playCry(dex: number, { wait = false, rate = 1 }: { wait?: boolean; rate?: number } = {}) {
   if (!enabled) return
   const url = cryUrl(dex)
   const a = url && element()
   if (!a) return
   if (wait && busy) {
-    waiting = url
+    waiting = { url, rate }
     return
   }
   waiting = null
-  start(a, url)
+  start(a, url, rate)
 }
 
 /**

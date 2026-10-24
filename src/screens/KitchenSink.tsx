@@ -67,6 +67,7 @@ import { DayNightBits } from './kitchen/DayNightBits'
 import { IdleBits } from './kitchen/IdleBits'
 import { DiceThrowBits } from './kitchen/DiceThrowBits'
 import { PowersBits } from './kitchen/PowersBits'
+import { HitFeelBits } from './kitchen/HitFeelBits'
 import { RotateView } from '@/components/RotateCover'
 import { SettingsOverlay } from '@/screens/Settings'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
@@ -617,6 +618,10 @@ export function KitchenSink() {
 
       <Section title="Battle powers: Mega plates (timed, last turn, older rules), G-MAX, Z-MOVE hints, the Mart's Mega Gems (open, poor, shut, empty), rules and INFO (docs/35)">
         <PowersBits />
+      </Section>
+
+      <Section title="Game feel, hits (docs/38): a shiny's entrance, hits of each weight and their settle, the K.O.'s boss stop and drop">
+        <HitFeelBits />
       </Section>
 
       <Section title="PartnerMoment: the lab (new game, new region)">

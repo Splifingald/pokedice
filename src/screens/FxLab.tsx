@@ -7,9 +7,12 @@ import { Seg } from '@/components/Segmented'
 import { StageCanvas, type StageHandle } from '@/components/StageCanvas'
 import { Toggle } from '@/components/Toggle'
 import type { DieType, PokeType, StatusKind } from '@/engine/types'
+import { hitPower, type HitPower } from '@/engine/hitPower'
 import { loadItemSprite, loadSprite, spriteKey } from '@/fx/sprites'
-import type { Hud, Timeline } from '@/fx/timeline'
+import { H, Stage, W, type Hud, type Timeline } from '@/fx/timeline'
 import { attackTimeline } from '@/fx/timelines/attacks'
+import { shinyTimeline } from '@/fx/timelines/shiny'
+import { background } from '@/fx/scenes'
 import { catchTimeline } from '@/fx/timelines/catch'
 import { TREAT_URL, treatTimeline } from '@/fx/timelines/trick'
 import { loadTrickBall } from '@/fx/scenes'
@@ -46,10 +49,40 @@ interface Opts {
   foeAttacks: boolean
   status: boolean
   caught: boolean
+  /** The game-feel pass (docs/38): how hard the hit lands, and the battle's settle. */
+  power: keyof typeof POWERS
+  trim: boolean
+}
+
+/** A hit of each weight, as the battle reads one from the log (engine/hitPower). */
+const POWERS: Record<'off' | 'resisted' | 'plain' | 'super' | 'huge' | 'ko', HitPower | undefined> = {
+  off: undefined,
+  resisted: hitPower({ effectiveness: 0.5, damage: 3, maxHp: 100 }),
+  plain: hitPower({ effectiveness: 1, damage: 12, maxHp: 100 }),
+  super: hitPower({ effectiveness: 2, damage: 20, maxHp: 100 }),
+  huge: hitPower({ effectiveness: 2, combo: 'full_house', damage: 70, maxHp: 100 }),
+  ko: hitPower({ effectiveness: 2, damage: 40, maxHp: 100, ko: true }),
 }
 
 const own = (dex: number) => spriteKey(dex, true)
 const foe = (dex: number) => spriteKey(dex, false)
+
+/** A timeline that draws only its own layer (the shiny's stars), shown here over the stage and both Pokémon. */
+function onStage<S>(tl: Timeline<S>, ownKey: string, foeKey: string): Timeline<{ st: Stage; s: S }> {
+  return {
+    id: tl.id,
+    dur: tl.dur,
+    setup: () => ({ st: new Stage({ own: ownKey, foe: foeKey }, 1), s: tl.setup() }),
+    step: (x, t, dt) => tl.step(x.s, t, dt),
+    draw(g, x, t) {
+      x.st.begin(g, t)
+      x.st.drawBoth(g, t)
+      x.st.end(g)
+      tl.draw(g, x.s, t)
+    },
+    cues: (x) => tl.cues(x.s).map(([t0, fire]) => [t0, (hud: Hud) => fire(hud, x.s)] as const),
+  }
+}
 const STONE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/thunder-stone.png'
 const CANDY = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/rare-candy.png'
 /** Distortion World's picture (Haunted Hollow), cracked open by the breach. */
@@ -78,6 +111,8 @@ const attack = (
       damage: 38,
       status: o.status ? status : null,
       short: o.short,
+      power: POWERS[o.power],
+      trim: o.trim,
     }),
 })
 
@@ -136,6 +171,8 @@ const zStrike = (name: string, atk: number, def: number, type: DieType): Preset 
       type,
       damage: 76,
       short: o.short,
+      power: POWERS[o.power],
+      trim: o.trim,
     }),
 })
 
@@ -599,11 +636,32 @@ const PRESETS: Preset[] = [
       },
     ]
   }),
+  // The game-feel pass (docs/38 F10b): a shiny lands on its platform in the hatching's rings of stars.
+  {
+    name: 'Shiny entrance (Gyarados)',
+    sprites: [
+      [25, true],
+      [130, false, true],
+    ],
+    make: () =>
+      onStage(
+        shinyTimeline({ key: spriteKey(130, false, true), at: background(W, H).layout.foe, delay: 0.3 }),
+        own(25),
+        spriteKey(130, false, true),
+      ) as Timeline<unknown>,
+  },
 ]
 
 export function FxLab() {
   const [i, setI] = useState(0)
-  const [opts, setOpts] = useState<Opts>({ short: false, foeAttacks: false, status: true, caught: true })
+  const [opts, setOpts] = useState<Opts>({
+    short: false,
+    foeAttacks: false,
+    status: true,
+    caught: true,
+    power: 'off',
+    trim: false,
+  })
   const [speed, setSpeed] = useState<'1' | '0.25'>('1')
   const [log, setLog] = useState<string[]>([])
   const [t, setT] = useState(0)
@@ -625,6 +683,8 @@ export function FxLab() {
   const note = (s: string) => setLog((l) => [...l, `${t.toFixed(2)}s  ${s}`].slice(-14))
   const hud: Hud = {
     contact: () => note('contact'),
+    settle: () => note('settle: the battle moves on, only particles from here'),
+    ko: () => note('ko: the boss stop'),
     status: (side) => note(`status → ${side}`),
     show: (side, on) => note(`show ${side} ${on}`),
     heal: () => note('heal'),
@@ -633,7 +693,8 @@ export function FxLab() {
     catchResult: (c) => note(`catch ${c ? 'caught' : 'broke free'}`),
     beat: (n) => note(`beat ${n}`),
   }
-  const set = (k: keyof Opts) => (v: boolean) => setOpts((o) => ({ ...o, [k]: v }))
+  const set = (k: 'short' | 'foeAttacks' | 'status' | 'caught' | 'trim') => (v: boolean) =>
+    setOpts((o) => ({ ...o, [k]: v }))
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-3 p-3">
@@ -704,7 +765,14 @@ export function FxLab() {
         <Toggle label="Foe attacks" on={opts.foeAttacks} onChange={set('foeAttacks')} />
         <Toggle label="Status lands" on={opts.status} onChange={set('status')} />
         <Toggle label="Catch succeeds" on={opts.caught} onChange={set('caught')} />
+        <Toggle label="Battle's settle (game feel)" on={opts.trim} onChange={set('trim')} />
       </div>
+      <Seg
+        label="Hit power (game feel)"
+        value={opts.power}
+        onChange={(v) => setOpts((o) => ({ ...o, power: v }))}
+        options={(Object.keys(POWERS) as Opts['power'][]).map((id) => ({ id, label: id }))}
+      />
       <pre className="pixel-panel min-h-[120px] whitespace-pre-wrap p-2 font-pixel-sm text-[15px]">
         {log.join('\n')}
       </pre>

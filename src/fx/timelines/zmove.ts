@@ -20,7 +20,7 @@ import {
   type Side,
   type Timeline,
 } from '../timeline'
-import { attackTimeline } from './attacks'
+import { attackTimeline, type AttackParams } from './attacks'
 import { burstRings } from './portal'
 
 export interface ZMoveParams {
@@ -241,6 +241,9 @@ export interface ZStrikeParams {
   /** Coming back from where a Flying, Ground or Water Z-Move took it. */
   from?: ZAwayHow
   short?: boolean
+  /** The game-feel pass (docs/38): how hard it lands, and the settle that lets the battle move on (attacks.ts). */
+  power?: AttackParams['power']
+  trim?: boolean
 }
 
 interface ZStrikeState {
@@ -271,6 +274,8 @@ export function zStrikeTimeline(p: ZStrikeParams): Timeline<ZStrikeState> {
     short: p.short,
     // Short motion stays a flash: the one hit, undimmed, with the Z's mark on it.
     z: p.short ? undefined : aura,
+    power: p.power,
+    trim: p.trim,
   }) as Timeline<Stage>
   const local = (t: number) => t - T_BACK
   return {
