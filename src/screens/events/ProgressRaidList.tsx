@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   enabledRegions,
   isWorldRegion,
+  megaRaidLock,
   progressRaids,
   progressRaidState,
   progressRaidTeam,
@@ -65,7 +66,9 @@ export function ProgressRaidList() {
       <ul className="m-0 grid list-none gap-1.5 p-0">
         {raids.map(({ raid, state }) => {
           const area = data.areas.find((a) => a.id === raid.areaId)
-          const known = state !== 'locked' || save.pokedex.includes(raid.dex)
+          // A Mega raid (docs/39): known once its Pokémon is; locked, it says what opens it.
+          const known = state !== 'locked' || save.pokedex.includes(raid.mega?.base ?? raid.dex)
+          const megaLock = raid.mega && state === 'locked' ? megaRaidLock(save, data, raid) : null
           const name = known ? (data.species[raid.dex]?.name ?? '???') : t('ui.common.unknown')
           // The team left on it, as it stands (a Pokémon released since drops out of it).
           const left = save.events?.raidTeams?.[raid.key]?.length ? progressRaidTeam(save, data, raid) : []
@@ -88,9 +91,11 @@ export function ProgressRaidList() {
                 <span className="grid min-w-0 flex-1 leading-[1.05]">
                   <b className="truncate text-[19px] font-normal">{name}</b>
                   <small className="truncate font-pixel-sm text-[14px] text-muted">
-                    {state === 'locked'
-                      ? t('ui.raid.progress.clearArea', { area: area?.name ?? '' })
-                      : (area?.name ?? '')}
+                    {megaLock
+                      ? t(`ui.raid.mega.lock.${megaLock}.title`, { name: data.species[raid.mega!.base]?.name ?? '' })
+                      : state === 'locked'
+                        ? t('ui.raid.progress.clearArea', { area: area?.name ?? '' })
+                        : (area?.name ?? '')}
                   </small>
                   <small
                     className={cx(
