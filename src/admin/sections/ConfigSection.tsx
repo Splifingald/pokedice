@@ -617,6 +617,30 @@ function DiceThrowsBox() {
 }
 
 /**
+ * The raid overhaul (docs/39): each progression raid's own level, bars, rules and last bar, Arceus's daily raid, and
+ * the Mega raids after Kalos (their gems no longer on the Mart's shelves). The server reads it for the Mega raids' keys.
+ */
+function RaidOverhaulBox() {
+  const [raw, setRaw] = useConfigRow('raidOverhaul')
+  const access = raw?.access ?? 'off'
+  return (
+    <Box
+      title="Raid overhaul"
+      icon="star"
+      hint="On: every progression raid fights at its own level (its team cap too) with its own bars, weather, rules (telegraphed attacks to interrupt, combo-only shields, type changes…) and a power on its last bar; Arceus's daily raid changes plate; and after Kalos, the raids of Mewtwo, Gyarados, Latias, Latios, Rayquaza, Kyogre, Groudon and Heatran get a Mega (or Primal) raid whose win is the only way to get their gem or orb (no longer sold). Admin → Raids' own numbers still win. Off: raids play exactly as before."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Raid overhaul</span>
+        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="Raid overhaul: who has it" />
+        <span className="text-base text-muted">
+          {accessNote(access, 'Open to every player.', 'Off: raids as before.')}
+        </span>
+      </div>
+    </Box>
+  )
+}
+
+/**
  * The game-feel pass (docs/38): count-ups, combo tiers, hits that scale with what they do, the KO beat, the victory
  * payoff, the catch moments. Purely visual and audible, so the game alone reads it. Off: everything plays as before.
  */
@@ -1413,6 +1437,7 @@ export function ConfigSection() {
       <DiceThrowsBox />
 
       <GameFeelBox />
+      <RaidOverhaulBox />
 
       <HapticsBox />
 

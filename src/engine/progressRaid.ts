@@ -197,5 +197,18 @@ export function applyMegaRaidWin(save: SaveData, raid: ProgressRaid): SaveData {
   }
 }
 
+/**
+ * The raid overhaul's rules pop-up is due (docs/39): once, with the overhaul on and a progression raid open (or done)
+ * for the player, outside a small world.
+ */
+export function raidOverhaulRulesDue(save: SaveData, data: GameData): boolean {
+  if (save.events?.raidRulesSeen || !raidOverhaulOn(data) || inWorldRegion(save, data)) return false
+  return progressRaids(data).some((r) => !r.mega && progressRaidState(save, data, r) !== 'locked')
+}
+
+/** The rules pop-up has been shown. */
+export const markRaidRulesSeen = (save: SaveData): SaveData =>
+  save.events?.raidRulesSeen ? save : { ...save, events: { ...save.events, raidRulesSeen: true } }
+
 /** A progression raid's numbers (its own, then the progression default, then the raid's). */
 export const progressRaidRules = (data: GameData, raid: ProgressRaid) => raidRules(data, raid.dex, 'progress', raid.areaId)

@@ -11,6 +11,7 @@ import {
   progressRaidOf,
   progressRaidReachable,
   progressRaidShiny,
+  megaRaidLock,
   progressRaidState,
   portalModeOf,
   nightmareModeOf,
@@ -35,6 +36,7 @@ import {
 } from '@/store/raidBattle'
 import { BallOdds, RaidCard } from './RaidPage'
 import { RaidNpcPicker } from './RaidNpcPicker'
+import { RaidRulesPanel } from './RaidRules'
 import { RaidGroupSection, RaidTeamSection } from './RaidSetup'
 import { RaidView } from './RaidView'
 import { DistortionFx, DistortionGround } from '@/components/Portal'
@@ -68,6 +70,9 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
   const friends = groupOf(raidKey, useRaidGroup())
   const [offer, setOffer] = useState<RaidNpcOption[] | null>(null)
   const state = progressRaidState(save, data, raid)
+  // A Mega raid (docs/39): locked until its raid Pokémon is caught, then until Mega Evolution is earned in Kalos.
+  const megaLock = raid.mega && state === 'locked' ? megaRaidLock(save, data, raid) : null
+  const gemName = raid.mega ? (data.items[raid.mega.gem]?.name ?? raid.mega.gem) : ''
   // A portal area's raid (docs/28) opens with its run won, not its rounds.
   const portal = !!portalModeOf(data.areas.find((a) => a.id === raid.areaId), data)
   // So does a nightmare area's (docs/30), once the player wakes up; it wears the moonlit night (docs/15 §29).
@@ -114,7 +119,7 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
         />
       </button>
       <span className="grid min-w-0 gap-0.5">
-        <h1 className="m-0 text-[24px] font-normal leading-none">{t('ui.raid.progress.kicker')}</h1>
+        <h1 className="m-0 text-[24px] font-normal leading-none">{t(raid.mega ? 'ui.raid.mega.kicker' : 'ui.raid.progress.kicker')}</h1>
         <small className="truncate font-pixel-sm text-[14px] leading-none text-muted">
           {t('ui.raid.progress.where', { area: area.name, region })}
         </small>
@@ -168,18 +173,26 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
           <span className="grid gap-0.5 leading-tight">
             <b className="text-[19px] font-normal leading-none">
               {t(
-                portal
-                  ? 'ui.portal.raidLockTitle'
-                  : nightmare
-                    ? 'ui.nightmare.raidLockTitle'
-                    : 'ui.raid.progress.lockTitle',
-                { area: area.name },
+                megaLock
+                  ? `ui.raid.mega.lock.${megaLock}.title`
+                  : portal
+                    ? 'ui.portal.raidLockTitle'
+                    : nightmare
+                      ? 'ui.nightmare.raidLockTitle'
+                      : 'ui.raid.progress.lockTitle',
+                { area: area.name, name: data.species[raid.mega?.base ?? 0]?.name ?? '' },
               )}
             </b>
             <small className="font-pixel-sm text-[15px] text-ink">
               {t(
-                portal ? 'ui.portal.raidLockText' : nightmare ? 'ui.nightmare.raidLockText' : 'ui.raid.progress.lockText',
-                { name },
+                megaLock
+                  ? `ui.raid.mega.lock.${megaLock}.text`
+                  : portal
+                    ? 'ui.portal.raidLockText'
+                    : nightmare
+                      ? 'ui.nightmare.raidLockText'
+                      : 'ui.raid.progress.lockText',
+                { name, gem: gemName },
               )}
             </small>
           </span>
@@ -190,7 +203,7 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
           role="status"
           className="m-0 bg-good-pale p-2.5 text-[18px] leading-tight shadow-[inset_0_0_0_2px_#34c97a]"
         >
-          {t('ui.raid.progress.doneText', { name })}
+          {t(raid.mega ? 'ui.raid.mega.doneText' : 'ui.raid.progress.doneText', { name, gem: gemName })}
         </p>
       )}
       {state === 'open' && (
@@ -204,9 +217,10 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
         </>
       )}
 
+      <RaidRulesPanel dex={raid.dex} kind="progress" areaId={raid.areaId} />
       <RaidTeamSection source={source} portal={portal} nightmare={nightmare} />
       {state === 'open' && <RaidGroupSection source={source} portal={portal} nightmare={nightmare} />}
-      {state === 'open' && <BallOdds dex={raid.dex} />}
+      {state === 'open' && !raid.mega && <BallOdds dex={raid.dex} />}
 
       {offer && (
         <RaidNpcPicker

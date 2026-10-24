@@ -364,7 +364,9 @@ function describeSpecial(e: SpecialEntry, run: RaidRun, f: RaidFx): Step {
         apply: raid((x) => ({
           ...x,
           final: true,
-          message: e.dice.length ? t('ui.raid.x.finalDice', { boss, n: e.dice.length }) : t('ui.raid.x.final', { boss }),
+          message: e.dice.length
+            ? t('ui.raid.x.finalDice', { boss, types: e.dice.map((d) => typeName(d)).join(', ') })
+            : t('ui.raid.x.final', { boss }),
           banner: { id: nextId(), text: t('ui.raid.x.finalBanner'), tone: 'super' },
           shake: { id: nextId(), power: 8 },
         })),

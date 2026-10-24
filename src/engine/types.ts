@@ -1765,6 +1765,8 @@ export interface EventsSave {
    * progression raid's key), so a reload offers the same four; each try draws a new seed.
    */
   raidNpc?: { key: string; seed: number }
+  /** The raid overhaul's rules pop-up has been shown (docs/39): once; the raid pages' INFO shows it again. */
+  raidRulesSeen?: boolean
   /** Live events whose pop-up has been shown (ids). */
   liveSeen?: string[]
   /** Special Shop purchases, per live event id then item key: what counts against each item's limit. */

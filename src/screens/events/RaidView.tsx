@@ -117,6 +117,7 @@ function BossPlate({ b, hp, fx, bars, colors, aimed }: { b: Battler; hp: number;
           <TypeBadge key={ty} type={ty} size="sm" />
         ))}
         <StatusIcons status={b.status} />
+        <RaidMarks fx={fx} />
       </span>
       <span
         key={fx.barBreak?.id ?? 0}
@@ -131,6 +132,48 @@ function BossPlate({ b, hp, fx, bars, colors, aimed }: { b: Battler; hp: number;
         <b className="absolute -right-0.5 -top-[9px] bg-ink px-[5px] pb-px text-[15px] font-normal leading-none text-gold-pale">×{left}</b>
       </span>
     </div>
+  )
+}
+
+/**
+ * The raid overhaul's marks on the raid Pokémon's plate (docs/39), as the log has played: its last bar's power, a move
+ * charging (fires next round), and its combo-only shield with the HP it has left.
+ */
+export function RaidMarks({ fx }: { fx: Pick<RaidFx, 'charge' | 'shield' | 'final' | 'raidField'> }) {
+  const { t } = useT()
+  const { weather, terrain } = fx.raidField
+  const field = weather ? `ui.raid.x.weather.${weather}.name` : terrain ? `ui.raid.x.terrain.${terrain}.name` : null
+  return (
+    <>
+      {field && (
+        <span className="grid h-[18px] w-[18px] place-items-center bg-sky shadow-ring-line" title={t(field)}>
+          <PixelIcon
+            name={weather === 'sun' || weather === 'harshSun' ? 'daySun' : weather === 'snow' ? 'frozen' : terrain === 'grassy' ? 'heal' : 'cloud'}
+            size={14}
+            title={t(field)}
+          />
+        </span>
+      )}
+      {fx.final && (
+        <span title={t('ui.raid.x.finalBanner')} className="grid h-[18px] w-[18px] place-items-center bg-gold shadow-ring-line">
+          <PixelIcon name="crown" size={14} title={t('ui.raid.x.finalBanner')} />
+        </span>
+      )}
+      {fx.charge && (
+        <span className="rd-charge bg-accent px-1 pb-px font-pixel-sm text-[13px] leading-[16px] text-white shadow-ring-line">
+          {t('ui.raid.x.chargeBanner')}
+        </span>
+      )}
+      {fx.shield && (
+        <span
+          className="flex items-center gap-0.5 bg-paper px-1 font-pixel-sm text-[13px] leading-[16px] shadow-ring-line"
+          aria-label={t('ui.raid.x.shieldLabel', { hp: fx.shield.hp, max: fx.shield.max })}
+        >
+          <PixelIcon name="shield" size={12} />
+          {fx.shield.hp}
+        </span>
+      )}
+    </>
   )
 }
 
@@ -778,6 +821,22 @@ function RaidResult({ run }: { run: RaidRun }) {
   const regionName = (id?: string) => data.regions.find((r) => r.id === id)?.name ?? ''
   // A progression raid has no midnight: it stays open until caught, and its catch closes it for good.
   const k = run.source.kind === 'progress' ? 'ui.raid.progress.result' : 'ui.raid.result'
+  // A Mega raid won (docs/39): its gem or orb, nothing caught.
+  if (run.gem)
+    return (
+      <div className="grid gap-2.5 bg-paper p-3 shadow-card" role="status">
+        <h2 className="m-0 text-[28px] font-normal leading-none">{t('ui.raid.mega.wonTitle', { name })}</h2>
+        <p className="copy m-0 flex items-center gap-2 text-lg">
+          {data.items[run.gem]?.spriteUrl && (
+            <img src={data.items[run.gem]!.spriteUrl ?? undefined} alt="" width={30} height={30} className="pixelated shrink-0" />
+          )}
+          <span>{t('ui.raid.mega.wonText', { gem: data.items[run.gem]?.name ?? run.gem, name })}</span>
+        </p>
+        <PixelButton variant="primary" size="lg" className="w-full" onClick={leaveRaid}>
+          {t('ui.raid.back')}
+        </PixelButton>
+      </div>
+    )
   if (result?.caught)
     return (
       <div className="grid gap-2.5 bg-paper p-3 shadow-card" role="status">

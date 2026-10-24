@@ -54,7 +54,7 @@ import { HomeBits } from './kitchen/HomeBits'
 import { ExtremeBits } from './kitchen/ExtremeBits'
 import { PartnerBits } from './kitchen/PartnerBits'
 import { OnboardingBits } from './kitchen/OnboardingBits'
-import { RaidBits } from './kitchen/RaidBits'
+import { RaidBits, RaidOverhaulBits } from './kitchen/RaidBits'
 import { WorldBits } from './kitchen/WorldBits'
 import { PortalBits } from './kitchen/PortalBits'
 import { PortalRaidBits } from './kitchen/PortalRaidBits'
@@ -718,6 +718,9 @@ export function KitchenSink() {
 
       <Section title="Raids: the NPC partners pop-up (each state), a legendary raid's card open and caught">
         <RaidBits />
+      </Section>
+      <Section title="Raid overhaul (docs/39)">
+        <RaidOverhaulBits />
       </Section>
 
       <Section title="Small worlds: square, pop-up, partner pick, strip, squares inside, boosters, dice level, mythical card, closing, away page">

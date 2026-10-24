@@ -87,6 +87,7 @@ describe('the one-time pop-ups queue', () => {
       'portal',
       'dayNight',
       'powers',
+      'raidRules',
       'world',
       'worldFinish',
       'worldBye',

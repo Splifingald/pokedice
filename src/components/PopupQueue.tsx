@@ -30,6 +30,7 @@ import { GiftService } from './Gifts'
 import { LeaderboardTutorial } from './LeaderboardTutorial'
 import { PopupTurnContext, usePopupOnScreen } from './popupTurn'
 import { PowersUnlockPopup } from './PowersRules'
+import { RaidRulesPopup } from '@/screens/events/RaidRules'
 import { PushService } from './PushService'
 import { RaidGiftPopup } from './RaidGiftPopup'
 import { ReplyPopup, useRepliesWaiting } from './ReplyPopup'
@@ -119,6 +120,7 @@ export function OneTimePopups() {
       <PortalUnlockPopup />
       <DayNightRulesPopup />
       <PowersUnlockPopup />
+      <RaidRulesPopup />
       <WorldPopup />
       <WorldPick />
       <WorldFinishPopup />

@@ -34,6 +34,7 @@ import { PortalRaidCard } from './PortalRaid'
 import { NightmareRaidCard } from './NightmareRaid'
 import { ProgressRaidList } from './ProgressRaidList'
 import { RaidNpcPicker } from './RaidNpcPicker'
+import { RaidRulesPanel } from './RaidRules'
 import { RaidGroupSection, RaidTeamSection } from './RaidSetup'
 import { EventInfo, raidDate, raidDateParts } from './shared'
 import { cx } from '@/theme/util'
@@ -323,6 +324,7 @@ export function RaidPage() {
       <p className="m-0 text-center font-pixel-sm text-[15px] text-muted">{tPlural('ui.events.raid.tries', raid.tries, { n: raid.tries })}</p>
       <RaidTeamSection boss={raid.dex} />
       {!raid.caught && <RaidGroupSection boss={raid.dex} />}
+      <RaidRulesPanel dex={raid.dex} kind="daily" />
       {!raid.caught && <BallOdds dex={raid.dex} />}
       <Waiting />
       <ProgressRaidList />

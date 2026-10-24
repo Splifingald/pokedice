@@ -1,13 +1,17 @@
 // Kitchen sink: the raid pieces of docs/24. The NPC partners pop-up in each of its states (one or two empty slots,
 // none picked, one picked, ready to start, a trainer with no class to name it), and a progression raid's card open and
-// caught.
+// caught. The raid overhaul's (docs/39): each kind of raid's rules, the fight's marks, the rules pop-up.
 import { useMemo, useState } from 'react'
-import { raidNpcOffer, type TodayRaid } from '@/engine'
+import { MEGA_RAIDS, raidNpcOffer, type TodayRaid } from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
 import { avatarOf, playerAvatarId } from '@/lib/avatars'
 import { pushToast, useGame } from '@/store/game'
 import { RaidCard } from '@/screens/events/RaidPage'
 import { RaidNpcPicker } from '@/screens/events/RaidNpcPicker'
+import { RaidRulesInfo, raidRuleRows } from '@/screens/events/RaidRules'
+import { RaidMarks } from '@/screens/events/RaidView'
+import { RuleList } from '@/components/RulesModal'
+import { useT } from '@/i18n/react'
 
 /** The pop-up's raid Pokémon: the green thumbs on the NPCs' Pokémon that hit it super effectively. */
 const MEWTWO = 150
@@ -77,6 +81,56 @@ export function RaidBits() {
         <RaidCard raid={card(144, 'Seafoam Islands', false)} msLeft={null} kind="progress" />
         <RaidCard raid={card(150, 'Cerulean Cave', true)} msLeft={null} kind="progress" />
       </div>
+    </div>
+  )
+}
+
+/** The raid overhaul's pieces (docs/39) in each state, the switch on for this page only. */
+const OVERHAUL_RAIDS: { label: string; dex: number; kind: 'progress' | 'daily' }[] = [
+  { label: 'Trio: Articuno (snow, +1 die)', dex: 144, kind: 'progress' },
+  { label: 'Box legend: Lugia (rain, halved first hit, charged attack)', dex: 249, kind: 'progress' },
+  { label: 'Apex: Mewtwo (combo shield, charged attack, spread last bar)', dex: 150, kind: 'progress' },
+  { label: 'Ultra Beast: Stakataka (Beast Boost, Trick Room)', dex: 805, kind: 'progress' },
+  { label: 'Arceus, the daily raid (plates)', dex: 493, kind: 'daily' },
+  { label: 'Mega raid: Mega Mewtwo X', dex: 10043, kind: 'progress' },
+  { label: 'Kyurem (no last bar)', dex: 646, kind: 'progress' },
+]
+
+const MARKS: { label: string; fx: Parameters<typeof RaidMarks>[0]['fx'] }[] = [
+  { label: 'Nothing yet', fx: { raidField: { weather: null, terrain: null }, charge: null, shield: null, final: false } },
+  { label: 'Rain', fx: { raidField: { weather: 'rain', terrain: null }, charge: null, shield: null, final: false } },
+  { label: 'Grassy terrain, charging', fx: { raidField: { weather: null, terrain: 'grassy' }, charge: { move: 'spread', fires: 3 }, shield: null, final: false } },
+  { label: 'Shield 42 of 120', fx: { raidField: { weather: null, terrain: null }, charge: null, shield: { hp: 42, max: 120 }, final: false } },
+  { label: 'Sun, last bar', fx: { raidField: { weather: 'sun', terrain: null }, charge: null, shield: null, final: true } },
+]
+
+export function RaidOverhaulBits() {
+  const { t } = useT()
+  const base = useGame((s) => s.data)
+  const data = useMemo(() => ({ ...base, config: { ...base.config, raidOverhaul: { access: 'all' as const } } }), [base])
+  const [info, setInfo] = useState(false)
+  const areaOf = (dex: number) =>
+    data.areas.find((a) => a.legendaryBoss?.some((b) => b.dex === (MEGA_RAIDS[dex]?.base ?? dex) && b.raid))?.id
+  return (
+    <div className="grid gap-3">
+      <PixelButton onClick={() => setInfo(true)}>Rules pop-up (INFO)</PixelButton>
+      <RaidRulesInfo open={info} onClose={() => setInfo(false)} />
+      <div className="flex flex-wrap gap-3">
+        {MARKS.map((m) => (
+          <div key={m.label} className="grid gap-1">
+            <small className="text-muted">{m.label}</small>
+            <span className="flex min-h-[20px] flex-wrap items-center gap-1 bg-panel p-1.5 shadow-ring-line">
+              <RaidMarks fx={m.fx} />
+            </span>
+          </div>
+        ))}
+      </div>
+      {OVERHAUL_RAIDS.map((r) => (
+        <div key={r.label} className="grid gap-1.5 bg-paper p-3 shadow-card">
+          <b className="text-[18px] font-normal">{r.label}</b>
+          <RuleList rules={raidRuleRows(data, r.dex, r.kind, r.kind === 'daily' ? undefined : areaOf(r.dex), t) ?? []} />
+        </div>
+      ))}
     </div>
   )
 }

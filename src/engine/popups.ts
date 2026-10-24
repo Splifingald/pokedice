@@ -16,6 +16,7 @@ import { generalRulesDue } from './general'
 import { inviteRulesDue } from './invites'
 import { livePopupDue, livesFor } from './liveEvents'
 import { powerRulesDue } from './powers'
+import { raidOverhaulRulesDue } from './progressRaid'
 import { inWorldRegion, regionOfferDue } from './regions'
 import { badgeCase, portalRulesDue } from './run'
 import { tradeRulesDue, tradesToWatch } from './trade'
@@ -99,6 +100,8 @@ const QUEUE = {
   dayNight: { due: (s, d) => dayNightRulesDue(s, d) },
   /** Mega Evolution, Gigantamax and Z-Moves, each once its badge is won. */
   powers: { due: (s, d) => !!powerRulesDue(s, d) },
+  /** The raid overhaul's rules (docs/39), once a raid is open with it on. */
+  raidRules: { due: (s, d) => raidOverhaulRulesDue(s, d) },
   /** A small world has opened (the player outside it). */
   world: {
     due: (s, d, c) => !inWorld(s, d) && worldPopupDue(s, worldFor(s, d, c.now)),
