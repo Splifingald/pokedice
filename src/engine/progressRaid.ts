@@ -22,7 +22,7 @@ export interface ProgressRaid {
   region: RegionId
   boss: BossDef
   /**
-   * A Mega raid (docs/39): its raid Pokémon's Mega or Primal form (`dex` is the form's), opened once that raid is caught
+   * A Mega raid (docs/40): its raid Pokémon's Mega or Primal form (`dex` is the form's), opened once that raid is caught
    * and Mega Evolution is earned in Kalos. A win gives its gem or orb (`gem`), the only way to get it; no catch.
    */
   mega?: { base: number; gem: string }
@@ -42,7 +42,7 @@ const raidOf = (area: Area, boss: BossDef): ProgressRaid => ({
 export const progressRaidsIn = (data: GameData, area: Area): ProgressRaid[] =>
   raidBosses(area, data).flatMap((b) => [raidOf(area, b), ...megaRaidsOf(data, area, b)])
 
-/** The Mega raids of an area's raid boss (docs/39): with the overhaul on, never in a small world. */
+/** The Mega raids of an area's raid boss (docs/40): with the overhaul on, never in a small world. */
 function megaRaidsOf(data: GameData, area: Area, boss: BossDef): ProgressRaid[] {
   if (!raidOverhaulOn(data) || isWorldRegion(data, regionOfArea(area))) return []
   return Object.values(MEGA_RAIDS)
@@ -109,7 +109,7 @@ export function progressRaidState(save: SaveData, data: GameData, raid: Progress
 }
 
 /**
- * Why a Mega raid is locked (docs/39): its raid Pokémon isn't caught yet ('base'), or Mega Evolution isn't earned in
+ * Why a Mega raid is locked (docs/40): its raid Pokémon isn't caught yet ('base'), or Mega Evolution isn't earned in
  * Kalos yet ('kalos'). Null when it's open (or not a Mega raid).
  */
 export function megaRaidLock(save: SaveData, data: GameData, raid: ProgressRaid): 'base' | 'kalos' | null {
@@ -183,7 +183,7 @@ export function applyProgressRaidCatch(
 }
 
 /**
- * A Mega raid is won (docs/39): its gem or orb is the player's (for every region, like any gem), the raid closes for
+ * A Mega raid is won (docs/40): its gem or orb is the player's (for every region, like any gem), the raid closes for
  * good, and the count of raids won goes up. Nothing to catch.
  */
 export function applyMegaRaidWin(save: SaveData, raid: ProgressRaid): SaveData {
@@ -198,7 +198,7 @@ export function applyMegaRaidWin(save: SaveData, raid: ProgressRaid): SaveData {
 }
 
 /**
- * The raid overhaul's rules pop-up is due (docs/39): once, with the overhaul on and a progression raid open (or done)
+ * The raid overhaul's rules pop-up is due (docs/40): once, with the overhaul on and a progression raid open (or done)
  * for the player, outside a small world.
  */
 export function raidOverhaulRulesDue(save: SaveData, data: GameData): boolean {

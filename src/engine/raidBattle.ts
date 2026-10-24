@@ -87,13 +87,13 @@ export interface RaidState {
   foeLevels: UpgradeLevels
   /** Every side plays itself (the sims). */
   auto?: boolean
-  /** The raid overhaul's own rules for this raid and where they stand (docs/39); absent when it's off. */
+  /** The raid overhaul's own rules for this raid and where they stand (docs/40); absent when it's off. */
   special?: RaidSpecialState
 }
 
-/** What heals in a raid outside a duel step (docs/39). */
+/** What heals in a raid outside a duel step (docs/40). */
 export type RaidHealCause = 'regen' | 'recover' | 'grassy' | 'lifesteal' | 'love' | 'combo'
-/** What wears a Pokémon down outside a duel step (docs/39). */
+/** What wears a Pokémon down outside a duel step (docs/40). */
 export type RaidTickCause = 'snow' | 'sand' | 'chip' | 'meteor' | 'hazard' | 'reflect' | 'recoil'
 
 export type RaidLogEntry =
@@ -108,7 +108,7 @@ export type RaidLogEntry =
   | { kind: 'raid_next'; side: number; uid: string }
   | { kind: 'raid_out'; side: number }
   | { kind: 'raid_end'; result: 'won' | 'lost'; reason?: 'stalemate' | 'forfeit' }
-  // The raid overhaul's (docs/39):
+  // The raid overhaul's (docs/40):
   /** The raid's weather and terrain, as it starts. */
   | { kind: 'raid_field'; weather: RaidWeather | null; terrain: RaidTerrain | null }
   /** It starts charging a move that fires on round `fires`. */
@@ -291,7 +291,7 @@ export interface CreateRaidOptions {
 const live = (b: Battler) => b.hp > 0
 const activeOf = (side: RaidSide) => side.mons[side.active]!
 
-/** Its own rules' standing (docs/39), with the rules themselves: what changes as the raid goes. */
+/** Its own rules' standing (docs/40), with the rules themselves: what changes as the raid goes. */
 export interface RaidSpecialState {
   def: RaidSpecial
   /** Rain, sun… none under Air Lock. */
@@ -335,7 +335,7 @@ export function createRaid(
   rng: Rng,
 ): { state: RaidState; log: RaidLogEntry[] } {
   const cfg = data.config.events.raid
-  // This raid Pokémon's own numbers (Admin → Raids), over the raid overhaul's (docs/39), over the defaults.
+  // This raid Pokémon's own numbers (Admin → Raids), over the raid overhaul's (docs/40), over the defaults.
   const rules = raidRules(data, opts.boss.dex, opts.kind, opts.areaId)
   const def = raidSpecialFor(data, opts.boss.dex, opts.kind, opts.areaId)
   const boss = makeBattler(
@@ -430,7 +430,7 @@ const modOf = <K extends RaidMod['k']>(s: RaidState, k: K): Extract<RaidMod, { k
 
 /** A round: the sides still in, in order (you first), the raid Pokémon striking back after each one's turn. */
 function roundOrder(s: RaidState): RaidActor[] {
-  // Trick Room (docs/39): it strikes before each side's turn instead.
+  // Trick Room (docs/40): it strikes before each side's turn instead.
   const first = !!modOf(s, 'trickRoom')
   return s.sides.flatMap((side, i): RaidActor[] =>
     side.out ? [] : first ? [{ boss: i }, { side: i }] : [{ side: i }, { boss: i }],
@@ -491,7 +491,7 @@ function duelOf(s: RaidState, sideIdx: number, hit?: RaidHit): BattleState {
     participants: [activeOf(side).uid],
     canRun: false,
     lastDamage: null,
-    // No items in this raid (Unnerve, docs/39): as if one were used already.
+    // No items in this raid (Unnerve, docs/40): as if one were used already.
     itemUsedThisTurn: !!modOf(s, 'noItems'),
     // Mega Evolution and Gigantamax stay out of raids; a type changer on auto picks its type itself.
     ...((side.kind !== 'me' || s.auto) && { auto: true }),
@@ -728,7 +728,7 @@ function settle(
   knockouts(s, log, who === 'boss' ? sideIdx : null)
 }
 
-/** The raid's rules after a step (docs/39): the shield, halved hits, what a hit gives or costs. */
+/** The raid's rules after a step (docs/40): the shield, halved hits, what a hit gives or costs. */
 function afterStep(
   s: RaidState,
   sideIdx: number,
@@ -916,7 +916,7 @@ function newBar(s: RaidState, sideIdx: number, data: GameData, log: RaidLogEntry
 }
 
 /**
- * It takes the type that hits `target` hardest (docs/39): a menu form (Arceus, Ogerpon), else one of its shift's types
+ * It takes the type that hits `target` hardest (docs/40): a menu form (Arceus, Ogerpon), else one of its shift's types
  * on its `from` dice (Rotom, Calyrex, Necrozma). Nothing when what it has is already best.
  */
 function shiftType(s: RaidState, target: Battler, data: GameData, log: RaidLogEntry[]) {

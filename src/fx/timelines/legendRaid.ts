@@ -1,4 +1,4 @@
-// A legendary's raid entrance (docs/39 §5, the raid overhaul): its own place, drawn on the pixel engine like Giratina's
+// A legendary's raid entrance (docs/40 §5, the raid overhaul): its own place, drawn on the pixel engine like Giratina's
 // Distortion World entrance (portalRaid.ts) and Darkrai's (nightmareRaid.ts), and timed the same way so the raid intro's
 // words land on it: the place, its weather, an omen of its own (ice spreading, bells ringing, a quake, a whirlpool…),
 // two heartbeats, the legend's silhouette coming down, rising or taking shape, rays and a gleam; the reveal on the raid

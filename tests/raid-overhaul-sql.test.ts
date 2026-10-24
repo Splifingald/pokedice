@@ -1,4 +1,4 @@
-// The raid overhaul (docs/39): migration 0075 against a real Postgres (PGlite, in process). The switch goes in Off and
+// The raid overhaul (docs/40): migration 0076 against a real Postgres (PGlite, in process). The switch goes in Off and
 // the content version goes up; a Mega raid's key (`areaId:formDex`) is a raid only with the switch on for the caller,
 // and only in its raid boss's area; the game's Mega raids and the server's list agree; seed.sql carries the file.
 import { readFileSync } from 'node:fs'
@@ -10,11 +10,11 @@ import { DEFAULT_CONFIG, MEGA_RAIDS, type Area } from '@/engine'
 
 const ROOT = path.join(__dirname, '..', 'supabase')
 const sql = (file: string) => readFileSync(path.join(ROOT, 'migrations', file), 'utf8')
-const FILE = '0075_raid_overhaul.sql'
+const FILE = '0076_raid_overhaul.sql'
 const areas = areasJson as Area[]
 const areaOf = (dex: number) => areas.find((a) => a.legendaryBoss?.some((b) => b.dex === dex && b.raid))!
 
-describe('0075: the raid overhaul', () => {
+describe('0076: the raid overhaul', () => {
   let db: PGlite
   let admin = false
   const value = async (key: string) =>

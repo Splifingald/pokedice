@@ -1,4 +1,4 @@
-// Mega raids (docs/39): after Kalos, an earlier region's raid Pokémon in its Mega or Primal form, a raid of its own in
+// Mega raids (docs/40): after Kalos, an earlier region's raid Pokémon in its Mega or Primal form, a raid of its own in
 // the same area. Locked until that raid is caught and Mega Evolution is earned in Kalos; a win gives its gem or orb,
 // the only way to get it (never on a Mart's shelf), and nothing to catch. Only with the raid overhaul on.
 import { describe, expect, it } from 'vitest'

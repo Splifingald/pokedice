@@ -1,4 +1,4 @@
--- The raid overhaul (docs/39): each progression raid's own numbers, rules and last bar, and the Mega raids after Kalos.
+-- The raid overhaul (docs/40): each progression raid's own numbers, rules and last bar, and the Mega raids after Kalos.
 -- 1. game_config `raidOverhaul`: its switch, Off (left alone when there). The fights themselves are the game's (the engine
 --    decides every rule on the player's device); the server only needs the switch for the Mega raids' keys.
 -- 2. raid_progress_dex: a progression raid's key is `areaId:dex` as before, or, with the switch on for the caller, a Mega

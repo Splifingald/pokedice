@@ -70,7 +70,7 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
   const friends = groupOf(raidKey, useRaidGroup())
   const [offer, setOffer] = useState<RaidNpcOption[] | null>(null)
   const state = progressRaidState(save, data, raid)
-  // A Mega raid (docs/39): locked until its raid Pokémon is caught, then until Mega Evolution is earned in Kalos.
+  // A Mega raid (docs/40): locked until its raid Pokémon is caught, then until Mega Evolution is earned in Kalos.
   const megaLock = raid.mega && state === 'locked' ? megaRaidLock(save, data, raid) : null
   const gemName = raid.mega ? (data.items[raid.mega.gem]?.name ?? raid.mega.gem) : ''
   // A portal area's raid (docs/28) opens with its run won, not its rounds.

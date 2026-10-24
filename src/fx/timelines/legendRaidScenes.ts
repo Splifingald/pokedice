@@ -1,4 +1,4 @@
-// Each legendary raid's entrance scene (docs/39 §5): the place it waits in, its weather, its omen and how it comes out.
+// Each legendary raid's entrance scene (docs/40 §5): the place it waits in, its weather, its omen and how it comes out.
 // Data only: legendRaid.ts draws it. Pairs and trios share a place in their own colours; the Ultra Beasts share an
 // Ultra Wormhole and the Paradox Pokémon a time rift (the user's call: not legendaries, one opening each).
 

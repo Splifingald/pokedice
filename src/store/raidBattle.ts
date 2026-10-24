@@ -83,7 +83,7 @@ export interface RaidRun {
   log: RaidLogEntry[]
   stage: RaidStage
   catch: RaidCatch | null
-  /** A Mega raid won (docs/39): the gem or orb it gave. No catch. */
+  /** A Mega raid won (docs/40): the gem or orb it gave. No catch. */
   gem?: string
 }
 
@@ -324,7 +324,7 @@ export function raidAgain(npcs: RaidNpcOption[] = []): boolean {
 /** The empty sides a raid would start with: its friend slots minus the friends picked who have a team. */
 export const emptySlots = (friends: RaidFriend[]): number => Math.max(0, raidFriendSlots() - friends.filter((f) => f.team.length > 0).length)
 
-/** A legendary's own entrance has been seen once (docs/39): from now on it has a Skip. */
+/** A legendary's own entrance has been seen once (docs/40): from now on it has a Skip. */
 export function markRaidIntroSeen(dex: number) {
   mutateSave((s) =>
     s.events?.raidIntrosSeen?.includes(dex) ? null : { ...s, events: { ...s.events, raidIntrosSeen: [...(s.events?.raidIntrosSeen ?? []), dex].slice(-200) } },
@@ -353,7 +353,7 @@ export function raidAct(e: RaidEvent) {
 export function raidFightOver() {
   const run = useRaidRun.getState().run
   if (!run || run.stage !== 'fight') return
-  // A Mega raid (docs/39): won, its gem or orb is the player's, and nothing is caught.
+  // A Mega raid (docs/40): won, its gem or orb is the player's, and nothing is caught.
   const { save, data } = useGame.getState()
   const mega = run.source.kind === 'progress' ? progressRaidOf(data, run.source.key) : null
   if (run.state.phase === 'won' && save && mega?.mega) {

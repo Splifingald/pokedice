@@ -29,7 +29,7 @@ export interface RaidFx extends Fx {
   barBreak: { id: number } | null
   /** The entry playing belongs to an ally side's turn: the ones the speed button plays faster. */
   fast: boolean
-  /** The raid overhaul (docs/39), as the log has played: the weather or terrain, a move charging, the shield. */
+  /** The raid overhaul (docs/40), as the log has played: the weather or terrain, a move charging, the shield. */
   raidField: { weather: RaidWeather | null; terrain: RaidTerrain | null }
   charge: { move: RaidMove; fires: number } | null
   shield: { hp: number; max: number } | null
@@ -255,7 +255,7 @@ type SpecialEntry = Extract<
   }
 >
 
-/** The raid overhaul's moments (docs/39): what the engine decided, told and shown. */
+/** The raid overhaul's moments (docs/40): what the engine decided, told and shown. */
 function describeSpecial(e: SpecialEntry, run: RaidRun, f: RaidFx): Step {
   const boss = run.state.boss.name
   const nameOf = (uid: string) => battlerOf(run, uid)?.name ?? t('ui.common.unknown')

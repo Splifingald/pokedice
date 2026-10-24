@@ -1,4 +1,4 @@
-// A raid's own rules on its page (docs/39, the raid overhaul): its level and bars, its weather, each rule and its last
+// A raid's own rules on its page (docs/40, the raid overhaul): its level and bars, its weather, each rule and its last
 // bar, so players can learn the pattern before going in; INFO tells how the overhaul works. The engine decides every
 // rule and number (engine/raidSpecials.ts); this only words them.
 import { useState } from 'react'

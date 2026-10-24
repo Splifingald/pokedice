@@ -1,4 +1,4 @@
-# 39 · The raid overhaul
+# 40 · The raid overhaul
 
 The user's redesign of the progression raids, October 2026: every legendary raid of the main game gets its own
 entrance, its own level and HP bars, its own rules and a last bar of its own; Arceus's daily raid changes plate; and
@@ -7,13 +7,14 @@ way to get their gem or orb.
 
 The proposal and the user's answers live in the artifact <https://claude.ai/artifact/QXchFWK3Vy4WeTCNzpqxGW> (one choice
 per family of raids; the framework's 18 choices). **Status (2026-10-24): built** on
-`claude/raid-improvements-balancing-7h2x2h` (from `feature/version_2_3`), behind its switch, Off.
+`claude/raid-improvements-balancing-7h2x2h`, merged into `feature/version_2_3`, behind its switch, Off. (Numbered 40
+and migration 0076: the shiny Pokédex took docs/39 and 0075 the same day.)
 
 ## 1. Decisions
 
 | Question | Answer |
 |---|---|
-| Switch | **Off / On for admin / On for everyone**, Off by default (`game_config.raidOverhaul`, `raidOverhaulOn`). The server reads it for the Mega raids' keys (0075). Off: raids play exactly as before |
+| Switch | **Off / On for admin / On for everyone**, Off by default (`game_config.raidOverhaul`, `raidOverhaulOn`). The server reads it for the Mega raids' keys (0076). Off: raids play exactly as before |
 | Level | **Its old boss level, at least 50** (Mewtwo 70, Calyrex 80, Terapagos 85), a few box legends nudged up (Lugia/Ho-Oh 55, Kyogre/Groudon/Dialga/Palkia 60) |
 | Team cap | **The raid's level**: your Pokémon fight up to it, the NPC partners come at it. The green thumb (recommended) needs that level too |
 | Bars | 3 for trios, guardians, Ultra Beasts, Paradox and minor raids; 4 for box legends; 5 for apex raids and Arceus |
@@ -213,9 +214,9 @@ Gyarados 71, Articuno 62, Zapdos 53, Moltres 67, Mewtwo 34, Lugia 38, Ho-Oh 55, 
   levels: full; short (fewer particles, no shake); off (straight to the fight). Every scene is in the FX lab.
 - **Admin → Config**: the Raid overhaul switch. Admin → Raids' progression numbers show the overhaul's as
   placeholders and still win when set.
-- Kitchen sink: "Raid overhaul (docs/39)": the marks in each state, each kind of raid's rules, the pop-up.
+- Kitchen sink: "Raid overhaul (docs/40)": the marks in each state, each kind of raid's rules, the pop-up.
 
-## 6. Server (migration 0075)
+## 6. Server (migration 0076)
 
 - `game_config.raidOverhaul` = `{"access": "off"}` (kept when there), `raid_overhaul_open()`.
 - `raid_mega_base(form)`: the Mega raids' forms and bases (the same list as `MEGA_RAIDS`; a test keeps them in sync).
@@ -226,7 +227,7 @@ Gyarados 71, Articuno 62, Zapdos 53, Moltres 67, Mewtwo 34, Lugia 38, Ho-Oh 55, 
 ## 7. Setting it up
 
 1. Merge and deploy the client.
-2. Run [`supabase/migrations/0075_raid_overhaul.sql`](https://github.com/Splifingald/pokedice/blob/claude/raid-improvements-balancing-7h2x2h/supabase/migrations/0075_raid_overhaul.sql)
+2. Run [`supabase/migrations/0076_raid_overhaul.sql`](https://github.com/Splifingald/pokedice/blob/feature/version_2_3/supabase/migrations/0076_raid_overhaul.sql)
    in the SQL editor (safe to run again; `supabase/seed.sql` carries it inlined).
 3. Admin → Config → **Raid overhaul**: On for admin to try it, then On for everyone. Publish.
 

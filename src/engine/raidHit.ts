@@ -1,4 +1,4 @@
-// A raid's own rules on one hit (docs/39): the raid (engine/raidBattle.ts) sets them on each duel step, the battle
+// A raid's own rules on one hit (docs/40): the raid (engine/raidBattle.ts) sets them on each duel step, the battle
 // (battle.ts `resolveAttack`) runs every hit through `adjustRaidHit`. Pure numbers on the damage the dice made.
 import type { DamageResult } from './damage'
 import type { PokeType, RaidTypeScale } from './types'

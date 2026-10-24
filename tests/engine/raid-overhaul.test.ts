@@ -1,4 +1,4 @@
-// The raid overhaul (docs/39): each progression raid's own numbers, rules and last bar, behind its switch. Off: raids
+// The raid overhaul (docs/40): each progression raid's own numbers, rules and last bar, behind its switch. Off: raids
 // as before. On: the numbers, the weather, telegraphed moves and their interrupt, the shield, the type changes, the
 // last bar's power, Mega raids; every raid plays to its end without throwing, the same for a given seed.
 import { describe, expect, it } from 'vitest'

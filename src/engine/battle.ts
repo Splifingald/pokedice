@@ -169,7 +169,7 @@ export interface BattleState {
    * the Pokémon whose turn it is and the one it targets — so every rule written for one against one applies to them.
    */
   double?: DoubleState
-  /** A raid step's own rules on its hits (docs/39, engine/raidHit.ts), set by the raid; read back once the step is done. */
+  /** A raid step's own rules on its hits (docs/40, engine/raidHit.ts), set by the raid; read back once the step is done. */
   raidHit?: RaidHit
 }
 
@@ -653,7 +653,7 @@ function foeTypeForm(s: BattleState, b: Battler, target: Battler, data: GameData
 }
 
 /**
- * A raid Pokémon's type change (docs/39: Arceus's plates, Ogerpon's masks): the menu form whose type hits `target`
+ * A raid Pokémon's type change (docs/40: Arceus's plates, Ogerpon's masks): the menu form whose type hits `target`
  * hardest, when it beats what it rolls now; every die takes the type. Null when none does better (or it has none).
  */
 export function raidFormShift(b: Battler, target: Battler, data: GameData): Extract<LogEntry, { kind: 'form' }> | null {
@@ -1445,7 +1445,7 @@ function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry
   const dice = s.dice
 
   let result = computeDamage(dice, atk.types, def.types, levels, data)
-  // A raid's own rules on this hit (docs/39): shields, halved hits, hits never resisted…
+  // A raid's own rules on this hit (docs/40): shields, halved hits, hits never resisted…
   if (s.raidHit) result = adjustRaidHit(result, s.raidHit, levels.typeScale)
   const zMove = z === true && rng ? zMoveOf(result, data, rng) : null
   if (zMove) {
@@ -1483,7 +1483,7 @@ function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry
     ...(z && { z: typeof z === 'string' ? { from: z } : {} }),
   })
   const all = statusesFromRoll(dice, data, levels)
-  // An attack with no effect inflicts nothing either; nor one a raid's shield or terrain stopped (docs/39).
+  // An attack with no effect inflicts nothing either; nor one a raid's shield or terrain stopped (docs/40).
   if (def.hp > 0 && !result.immune && !s.raidHit?.bounced && !s.raidHit?.noStatus) {
     // Freeze and Paralysis land on their chance (each face adds to it); a sure one draws nothing.
     const chanceRng = rng ?? createRng(s.turn)
@@ -1494,7 +1494,7 @@ function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry
       if (chance >= 1 || chanceRng.next() < chance) apps.push(a)
       else log.push({ kind: 'status_resisted', target: other(side), targetUid: def.uid, status: a.status, chance })
     }
-    // A raid Pokémon's burns that last longer (Beads of Ruin, docs/39).
+    // A raid Pokémon's burns that last longer (Beads of Ruin, docs/40).
     const longer = s.raidHit?.burnLonger ?? 0
     if (longer) for (const a of apps) if (a.status === 'burn' && a.turns != null) a.turns += longer
     def.status = applyStatuses(def.status, apps, data.config.status)

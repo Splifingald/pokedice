@@ -1534,7 +1534,7 @@ every state on `/kitchen-sink` (`IdleBits`).
 
 ## 35. The raid overhaul
 
-One switch (docs/39, §20), Off: raids as before. On, the engine decides each raid's rules (`engine/raidSpecials.ts`)
+One switch (docs/40, §20), Off: raids as before. On, the engine decides each raid's rules (`engine/raidSpecials.ts`)
 and the screens tell them; every piece is on `/kitchen-sink` ("Raid overhaul") and every entrance in the FX lab.
 
 - **The pattern before the fight**: each raid page has a "This raid" card (`RaidRulesPanel`, the `RuleList` rows of

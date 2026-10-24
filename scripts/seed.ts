@@ -863,7 +863,7 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  * Underground's solo price, docs/34: its row gains `soloShare`, so it comes after 0063), then 0072 (recurring live
  * events, docs/20 §9: 0063's ug_live redefined, so it comes after it), then 0073 (the status faces' new rules,
  * docs/01 §3.2: the `status` row rewritten), then 0074 (the game-feel pass, haptics and battle music, docs/38: their
- * switches' rows, Off), then 0075 (the raid overhaul, docs/39: its switch's row, Off, and raid_progress_dex taking
+ * switches' rows, Off), then 0076 (the raid overhaul, docs/40: its switch's row, Off, and raid_progress_dex taking
  * the Mega raids' keys, so it comes after 0045). Folded into seed.sql
  * so there is
  * one file to run rather than several in a particular order. The
@@ -901,7 +901,7 @@ export async function regionsPrelude(): Promise<string> {
       '0072_live_recurring.sql',
       '0073_status_faces.sql',
       '0074_game_feel.sql',
-      '0075_raid_overhaul.sql',
+      '0076_raid_overhaul.sql',
     ].map(async (name) => {
       const sql = (await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')).replace(/^(begin|commit);\n/gm, '')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`

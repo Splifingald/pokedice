@@ -1,6 +1,6 @@
 /**
  * pnpm raid-overhaul-balance [raids per Pokémon=100] [shard=0] [shards=1]
- * The raid overhaul's win rates (docs/39), its rules playing: your side brings three Pokémon that hit the raid Pokémon
+ * The raid overhaul's win rates (docs/40), its rules playing: your side brings three Pokémon that hit the raid Pokémon
  * super effectively (the green thumb's rule), the two others are random NPC trainers, all at the raid's team cap and
  * on the battle AI. Prints each raid's win rate with RAID_SPECIALS' numbers against its tier's target.
  * TUNE=1 searches each raid's HP per bar (its level, bars and dice level kept) for its tier's target and prints the

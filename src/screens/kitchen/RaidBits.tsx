@@ -1,6 +1,6 @@
 // Kitchen sink: the raid pieces of docs/24. The NPC partners pop-up in each of its states (one or two empty slots,
 // none picked, one picked, ready to start, a trainer with no class to name it), and a progression raid's card open and
-// caught. The raid overhaul's (docs/39): each kind of raid's rules, the fight's marks, the rules pop-up.
+// caught. The raid overhaul's (docs/40): each kind of raid's rules, the fight's marks, the rules pop-up.
 import { useMemo, useState } from 'react'
 import { MEGA_RAIDS, raidNpcOffer, type TodayRaid } from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
@@ -85,7 +85,7 @@ export function RaidBits() {
   )
 }
 
-/** The raid overhaul's pieces (docs/39) in each state, the switch on for this page only. */
+/** The raid overhaul's pieces (docs/40) in each state, the switch on for this page only. */
 const OVERHAUL_RAIDS: { label: string; dex: number; kind: 'progress' | 'daily' }[] = [
   { label: 'Trio: Articuno (snow, +1 die)', dex: 144, kind: 'progress' },
   { label: 'Box legend: Lugia (rain, halved first hit, charged attack)', dex: 249, kind: 'progress' },

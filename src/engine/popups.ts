@@ -100,7 +100,7 @@ const QUEUE = {
   dayNight: { due: (s, d) => dayNightRulesDue(s, d) },
   /** Mega Evolution, Gigantamax and Z-Moves, each once its badge is won. */
   powers: { due: (s, d) => !!powerRulesDue(s, d) },
-  /** The raid overhaul's rules (docs/39), once a raid is open with it on. */
+  /** The raid overhaul's rules (docs/40), once a raid is open with it on. */
   raidRules: { due: (s, d) => raidOverhaulRulesDue(s, d) },
   /** A small world has opened (the player outside it). */
   world: {

@@ -140,7 +140,7 @@ function BossPlate({ b, hp, fx, bars, colors, aimed }: { b: Battler; hp: number;
 }
 
 /**
- * The raid overhaul's marks on the raid Pokémon's plate (docs/39), as the log has played: its last bar's power, a move
+ * The raid overhaul's marks on the raid Pokémon's plate (docs/40), as the log has played: its last bar's power, a move
  * charging (fires next round), and its combo-only shield with the HP it has left.
  */
 export function RaidMarks({ fx }: { fx: Pick<RaidFx, 'charge' | 'shield' | 'final' | 'raidField'> }) {
@@ -358,7 +358,7 @@ export function RaidView({ run }: { run: RaidRun }) {
   const portal = usePortalRaid(run.raid.areaId)
   // Darkrai's raid, its area in nightmare mode (docs/15 §29): under the full moon.
   const nightmare = useNightmareRaid(run.raid.areaId) && !portal
-  // A legendary's own entrance (docs/39): with the overhaul on, its place and omen (a Mega raid's base's place). Skip
+  // A legendary's own entrance (docs/40): with the overhaul on, its place and omen (a Mega raid's base's place). Skip
   // shows from the second time the player meets it.
   const legend = useMemo(() => {
     if (portal || nightmare) return undefined
@@ -839,7 +839,7 @@ function RaidResult({ run }: { run: RaidRun }) {
   const regionName = (id?: string) => data.regions.find((r) => r.id === id)?.name ?? ''
   // A progression raid has no midnight: it stays open until caught, and its catch closes it for good.
   const k = run.source.kind === 'progress' ? 'ui.raid.progress.result' : 'ui.raid.result'
-  // A Mega raid won (docs/39): its gem or orb, nothing caught.
+  // A Mega raid won (docs/40): its gem or orb, nothing caught.
   if (run.gem)
     return (
       <div className="grid gap-2.5 bg-paper p-3 shadow-card" role="status">

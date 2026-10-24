@@ -719,7 +719,7 @@ export function KitchenSink() {
       <Section title="Raids: the NPC partners pop-up (each state), a legendary raid's card open and caught">
         <RaidBits />
       </Section>
-      <Section title="Raid overhaul (docs/39)">
+      <Section title="Raid overhaul (docs/40)">
         <RaidOverhaulBits />
       </Section>
 

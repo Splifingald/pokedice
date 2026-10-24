@@ -368,7 +368,7 @@ const PRESETS: Preset[] = [
     sprites: [[487, false, true]],
     make: (o) => raidEntranceTimeline({ mon: spriteKey(487, false, true), short: o.short }),
   },
-  // The raid overhaul's legendary entrances (docs/39): one per scene, the raid intro's words being the page's.
+  // The raid overhaul's legendary entrances (docs/40): one per scene, the raid intro's words being the page's.
   ...Object.entries(LEGEND_RAID_SCENES).map(
     ([dex, scene]): Preset => ({
       name: `Raid entrance: #${dex} (${scene.omen}, ${scene.weather})`,

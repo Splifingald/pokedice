@@ -316,7 +316,7 @@
   }
 }
 
-/* A move charging (the raid overhaul, docs/39): its tag blinks on the boss plate, in two steps. */
+/* A move charging (the raid overhaul, docs/40): its tag blinks on the boss plate, in two steps. */
 .rd-charge {
   animation: rd-charge 900ms steps(2) infinite;
 }

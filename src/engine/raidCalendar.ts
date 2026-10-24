@@ -35,7 +35,7 @@ export type RaidRules = Required<RaidMonRules>
 export type RaidKindOf = 'daily' | 'progress'
 
 /**
- * A raid's own rules with the raid overhaul on (docs/39): a progression raid of the main game (or a Mega raid), or
+ * A raid's own rules with the raid overhaul on (docs/40): a progression raid of the main game (or a Mega raid), or
  * Arceus's daily raid. Never a small world's, a portal's or a nightmare's raid: those keep their own (docs/26, 28, 30).
  */
 export function raidSpecialFor(data: GameData, dex: number, kind: RaidKindOf = 'daily', areaId?: string): RaidSpecial | null {
@@ -48,7 +48,7 @@ export function raidSpecialFor(data: GameData, dex: number, kind: RaidKindOf = '
 }
 
 /**
- * A raid Pokémon's numbers: its own (Admin → Raids → Raid Pokémon) over the raid overhaul's (docs/39, when on) over the
+ * A raid Pokémon's numbers: its own (Admin → Raids → Raid Pokémon) over the raid overhaul's (docs/40, when on) over the
  * defaults. A progression raid reads its own list (`raid.progress.perMon`), never the day's raid's.
  */
 export function raidRules(data: GameData, dex: number, kind: RaidKindOf = 'daily', areaId?: string): RaidRules {
@@ -87,7 +87,7 @@ export function worldRaidLevel(data: GameData, dex: number, areaId: string | und
 /** The sides' level cap: the day's raid's, or a progression raid's (a world's at its level, its own, the default). */
 export function raidTeamCap(data: GameData, dex: number, kind: RaidKindOf = 'daily', areaId?: string): number {
   const cfg = data.config.events.raid
-  // The raid overhaul (docs/39): the sides fight up to the raid's own level.
+  // The raid overhaul (docs/40): the sides fight up to the raid's own level.
   const special = raidSpecialFor(data, dex, kind, areaId)
   if (kind === 'daily') return special ? special.level : cfg.teamCap
   const portal = portalRaidRules(data, areaId) ?? nightmareRaidRules(data, areaId)

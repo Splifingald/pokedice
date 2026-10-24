@@ -51,7 +51,7 @@ export function RaidIntro({
   run: RaidRun
   onDone: () => void
   /**
-   * A legendary's own entrance (docs/39, the raid overhaul): its place, weather and omen on the pixel engine under the
+   * A legendary's own entrance (docs/40, the raid overhaul): its place, weather and omen on the pixel engine under the
    * intro's words. Its Skip shows from the second time the player meets it (`skippable`).
    */
   legend?: { scene: LegendRaidScene; skippable: boolean }

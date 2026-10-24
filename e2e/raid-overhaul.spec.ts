@@ -1,4 +1,4 @@
-// The raid overhaul (docs/39), its switch on through the dev config: a legendary raid's own rules on its page and
+// The raid overhaul (docs/40), its switch on through the dev config: a legendary raid's own rules on its page and
 // its rules pop-up once, its own level for the NPC partners, and a Mega raid locked until its Pokémon is caught.
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'

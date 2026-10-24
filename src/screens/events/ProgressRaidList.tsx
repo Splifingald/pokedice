@@ -66,7 +66,7 @@ export function ProgressRaidList() {
       <ul className="m-0 grid list-none gap-1.5 p-0">
         {raids.map(({ raid, state }) => {
           const area = data.areas.find((a) => a.id === raid.areaId)
-          // A Mega raid (docs/39): known once its Pokémon is; locked, it says what opens it.
+          // A Mega raid (docs/40): known once its Pokémon is; locked, it says what opens it.
           const known = state !== 'locked' || save.pokedex.includes(raid.mega?.base ?? raid.dex)
           const megaLock = raid.mega && state === 'locked' ? megaRaidLock(save, data, raid) : null
           const name = known ? (data.species[raid.dex]?.name ?? '???') : t('ui.common.unknown')

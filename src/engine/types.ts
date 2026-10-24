@@ -951,8 +951,8 @@ export interface GameConfig {
   /** Battle music (docs/38): an original 8-bit loop under fights. Migration 0074 inserts the same row. */
   music: { access: EventAccess }
   /**
-   * The raid overhaul (docs/39): each progression raid's own numbers, rules and last bar, Arceus's daily raid, the Mega
-   * raids after Kalos. Its switch; migration 0075 inserts the same row and the server reads it for the Mega raids.
+   * The raid overhaul (docs/40): each progression raid's own numbers, rules and last bar, Arceus's daily raid, the Mega
+   * raids after Kalos. Its switch; migration 0076 inserts the same row and the server reads it for the Mega raids.
    */
   raidOverhaul: { access: EventAccess }
   /** Double battles (docs/33): their switch, the regions that have them and the wild odds. */
@@ -1765,9 +1765,9 @@ export interface EventsSave {
    * progression raid's key), so a reload offers the same four; each try draws a new seed.
    */
   raidNpc?: { key: string; seed: number }
-  /** The raid overhaul's rules pop-up has been shown (docs/39): once; the raid pages' INFO shows it again. */
+  /** The raid overhaul's rules pop-up has been shown (docs/40): once; the raid pages' INFO shows it again. */
   raidRulesSeen?: boolean
-  /** The legendaries whose raid entrance has played once (docs/39): from then on it has a Skip. */
+  /** The legendaries whose raid entrance has played once (docs/40): from then on it has a Skip. */
   raidIntrosSeen?: number[]
   /** Live events whose pop-up has been shown (ids). */
   liveSeen?: string[]

@@ -617,7 +617,7 @@ function DiceThrowsBox() {
 }
 
 /**
- * The raid overhaul (docs/39): each progression raid's own level, bars, rules and last bar, Arceus's daily raid, and
+ * The raid overhaul (docs/40): each progression raid's own level, bars, rules and last bar, Arceus's daily raid, and
  * the Mega raids after Kalos (their gems no longer on the Mart's shelves). The server reads it for the Mega raids' keys.
  */
 function RaidOverhaulBox() {

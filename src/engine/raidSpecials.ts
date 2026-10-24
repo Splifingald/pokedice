@@ -1,4 +1,4 @@
-// The raid overhaul (docs/39, the user's answers of 2026-10-24): every progression raid gets its own numbers, its own
+// The raid overhaul (docs/40, the user's answers of 2026-10-24): every progression raid gets its own numbers, its own
 // rules and a last bar of its own, and Arceus's daily raid too. Behind its switch (`raidOverhaulOn`): off, raids play
 // exactly as before. This file is the content (which raid has what); engine/raidBattle.ts plays it.
 // Mega Evolution and Primal Reversion stay out of the raids of the regions before Kalos (the user's rule): those forms
@@ -367,7 +367,7 @@ export const RAID_SPECIALS: Readonly<Record<number, RaidSpecial>> = {
   }),
   // Arceus, the daily raid (a mythical): the user's design, 5 bars so it changes plate often; no die on its last bar,
   // where it changes plate before every strike. 1.5× its HP per bar was asked; with its plates and Judgment playing,
-  // the sims won 0 % there, so each bar is 0.65× (33 %, docs/39 §4).
+  // the sims won 0 % there, so each bar is 0.65× (33 %, docs/40 §4).
   493: S('mythic', [70, 5, 0.65, 9], { mods: [{ k: 'shift' }, tg('spread')], final: { shiftEvery: true } }),
 }
 
@@ -437,7 +437,7 @@ export const MEGA_RAIDS: Readonly<Record<number, MegaRaid>> = Object.fromEntries
   ].map((m) => [m.form, m]),
 )
 
-/** The raid overhaul's switch (docs/39): Off, On for admin, On for everyone. The server reads the same row (0075). */
+/** The raid overhaul's switch (docs/40): Off, On for admin, On for everyone. The server reads the same row (0076). */
 export const raidOverhaulOn = (data: GameData): boolean => eventOpenTo(data.config.raidOverhaul?.access, data)
 
 /** A raid's rules with the overhaul on: a progression raid's (or a Mega raid's) by its dex, Arceus's daily raid. */
