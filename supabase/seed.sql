@@ -5844,7 +5844,7 @@ grant execute on function kofi_totals(timestamptz) to anon, authenticated;
 
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 
--- ↓ supabase/migrations/0072_status_faces.sql, inlined so this file stands alone.
+-- ↓ supabase/migrations/0073_status_faces.sql, inlined so this file stands alone.
 -- Status faces, reworked (docs/01 §3.2): a single face is enough for every status, so the thresholds are gone.
 -- 1. game_config `status`: Poison 5 % for 5 turns; Freeze and Paralysis a chance per face (sure at 3 and at 2 faces);
 --    Confusion 10 % recoil per face, 3 faces at most; Heal the Heal faces' value plus their die's upgrade (nothing to

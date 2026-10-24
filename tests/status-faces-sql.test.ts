@@ -1,4 +1,4 @@
-// Status faces, reworked (docs/01 §3.2): migration 0072 against a real Postgres (PGlite, in process). The status row
+// Status faces, reworked (docs/01 §3.2): migration 0073 against a real Postgres (PGlite, in process). The status row
 // takes the new rules, the game's defaults; Burn keeps the admin's numbers; run again, an admin's new numbers are kept.
 // seed.sql carries the same file, inlined.
 import { readFileSync } from 'node:fs'
@@ -9,7 +9,7 @@ import { DEFAULT_CONFIG } from '@/engine'
 
 const ROOT = path.join(__dirname, '..', 'supabase')
 const sql = (file: string) => readFileSync(path.join(ROOT, 'migrations', file), 'utf8')
-const FILE = '0072_status_faces.sql'
+const FILE = '0073_status_faces.sql'
 
 const OLD = {
   burn: { duration: 4, threshold: 1, percentPerStack: 5 },
@@ -20,7 +20,7 @@ const OLD = {
   paralyze: { stunTurns: 1, threshold: 2 },
 }
 
-describe('0072: status faces, reworked', () => {
+describe('0073: status faces, reworked', () => {
   let db: PGlite
   const value = async (key: string) =>
     (await db.query<{ v: unknown }>('select value v from game_config where key = $1', [key])).rows[0]?.v
