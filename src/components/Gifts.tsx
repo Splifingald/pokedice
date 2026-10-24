@@ -4,7 +4,6 @@
 import { motion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { sfx } from '@/audio/sfx'
 import {
   getRegion,
   GIFT_LATEST,
@@ -325,8 +324,8 @@ export function GiftMoment({
   const open = beat === 'opened'
   const reveal = () => {
     if (open) return
+    // The timeline's own fanfare celebrates it: no jingle on top (docs/38 B6).
     setBeat('opened')
-    sfx('levelup')
   }
   useEffect(() => {
     if (open) doneRef.current?.focus({ preventScroll: true })

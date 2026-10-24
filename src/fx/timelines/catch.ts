@@ -1,12 +1,15 @@
 // The catch, in the battle scene: the worn-out foe on its platform, the throw, contact, the capture beam, the drop
 // with two bounces, then the wobbles and "Gotcha!" or the break-free. Short motion (Settings → Animations: short):
-// the throw and the drop, then the result at once — no wobbles to wait through.
+// the throw and the drop, then the result at once — no wobbles to wait through. How many wobbles is the engine's
+// (`catchShakes`): three for a catch, fewer for a miss the further it fell short, so the third never tells.
 //
 // A throw that fell short with a Bait in the bag (docs/25) plays in two parts: `hold` stops with the ball lying still
 // after its wobbles while the player is asked; then `from: 'ground'` takes over from that very frame — the Bait tossed
 // beside the ball and a last wobble or two, or straight to the break-free when it's kept. `stays` (Capture Luck): it
 // breaks free but stays on its platform, for one more throw.
 import { fxSound, type FxSound } from '@/audio/sfx'
+import { catchShakes, type CatchRoll } from '@/engine'
+import { haptic } from '@/lib/haptics'
 import { cached, canvas, clamp, ease, lerp, line, rect, ring, rng, softEllipse, span, type G } from '../pixel'
 import { ball, type BallKind } from '../scenes'
 import { drawSprite } from '../sprites'
@@ -15,6 +18,7 @@ import {
   H,
   quad,
   screenFlash,
+  skippingNow,
   Stage,
   STEP,
   W,
@@ -37,6 +41,11 @@ export interface CatchParams extends Fighters {
   bait?: boolean
   /** It breaks free but stays on its platform instead of fleeing. */
   stays?: boolean
+  /**
+   * The throw as the engine rolled it: how many times the ball wobbles is the engine's (`catchShakes`), 0–3 after the
+   * throw, 0–2 more after a Bait. Left out, a catch wobbles 3 times (2 after a Bait) and a miss 2 (1).
+   */
+  roll?: Pick<CatchRoll, 'total' | 'need' | 'caught' | 'bait'>
   /**
    * A throw that can't miss: the screen jumps straight to the end (StageOverlay `instant`), so the throw, beam and
    * wobble sounds stay quiet instead of all firing in the same frame; only the "Gotcha!" plays.
@@ -122,18 +131,24 @@ export function catchTimeline(p: CatchParams): Timeline<S> {
   const B0 = O + 0.25
   const B1 = B0 + 0.55
   const BAIT = ground && !!p.bait
-  // After a hold, the ball has already wobbled twice (none in short motion): the vignette carries on from there.
-  const PRIOR = ground && !p.short ? 2 : 0
+  // The wobbles: the engine's count (a miss used to stop at two, a catch at three, which gave it away).
+  const shakes = p.roll ? catchShakes(p.roll) : null
+  const throwWobbles = Math.max(0, Math.min(3, shakes?.throw ?? (caught && !p.hold ? 3 : 2)))
+  // After a hold, the ball has already wobbled (none in short motion): the vignette carries on from there.
+  const PRIOR = ground && !p.short ? throwWobbles : 0
   // Short: the result as soon as the ball has settled.
   const T_ROLL = p.short ? T_DROP + 0.6 : 2.75
   let WOB: number[]
   let T_END: number
   if (!ground) {
-    WOB = p.short ? [] : caught && !p.hold ? [4.1, 4.95, 5.8] : [4.1, 4.95]
-    T_END = p.hold ? Infinity : p.short ? T_DROP + 0.7 : caught ? 6.45 : 5.7
+    WOB = p.short ? [] : [4.1, 4.95, 5.8].slice(0, throwWobbles)
+    // A beat after the last wobble (none: after the ball has lain still a moment), a miss a little longer.
+    const last = WOB.length ? WOB[WOB.length - 1]! : 2.9
+    T_END = p.hold ? Infinity : p.short ? T_DROP + 0.7 : last + (caught ? 0.65 : 0.75)
   } else {
     const start = BAIT ? B1 + 0.45 : O + 0.25
-    WOB = p.short || !BAIT ? [] : caught ? [start, start + 0.85] : [start]
+    const n = Math.max(0, Math.min(2, shakes?.bait ?? (caught ? 2 : 1)))
+    WOB = p.short || !BAIT ? [] : [start, start + 0.85].slice(0, n)
     T_END = WOB.length ? WOB[WOB.length - 1]! + 0.65 : start + 0.1
   }
   const T_FLEE = T_END + 0.7
@@ -475,9 +490,15 @@ export function catchTimeline(p: CatchParams): Timeline<S> {
           ]
       if (BAIT)
         c.push([B0, () => fxSound('catch.throw')], [B1, (hud) => (fxSound('catch.bait'), hud.beat?.('bait'))])
-      for (const w of WOB) c.push([w, () => sound('catch.wobble')], [w + 0.4, () => sound('catch.settle')])
+      // A buzz with each wobble (never all at once when skipped to the end), a longer one for the catch.
+      for (const w of WOB)
+        c.push(
+          [w, () => (sound('catch.wobble'), !p.instant && !skippingNow() && haptic('wobble'))],
+          [w + 0.4, () => sound('catch.settle')],
+        )
       if (p.hold) c.push([T_HOLD - 0.05, (hud) => hud.beat?.('hold')])
-      else if (caught) c.push([T_END, (hud) => (fxSound('catch.gotcha'), hud.catchResult?.(true))])
+      else if (caught)
+        c.push([T_END, (hud) => (fxSound('catch.gotcha'), haptic('catch'), hud.catchResult?.(true))])
       else {
         c.push(
           [T_END + 0.15, () => fxSound('catch.break')],

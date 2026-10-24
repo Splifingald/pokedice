@@ -435,6 +435,7 @@ export function TrickView() {
         foe: foeKey,
         ball: 'trick',
         caught: !!step.caught,
+        roll: { total: step.die ?? 0, need: step.need ?? 6, caught: !!step.caught },
         short,
         stays: !step.caught && !step.fled,
         awake: true,

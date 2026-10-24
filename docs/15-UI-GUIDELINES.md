@@ -159,6 +159,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `SheetSection` | A titled block inside a sheet | 22 px heading, a muted hint on the same row, extra controls |
 | `NicknameButton` / `NicknameModal` | Giving one of your Pokémon a nickname (its sheet's title) | The name and a pencil, 44 px tall on phones; the dialog with the field (empty: the species as placeholder; named: selected), the 0/12 counter, the trade line only where trades exist, Cancel / SAVE (§13) |
 | `MonTile` / `TileTag` | A grid of Pokémon (Box, Pokédex) | Menu icon from the atlas, number, name, a line under it; `missing` = grey tile + silhouette; corner tags NEW (gold) and Nearby (green). `TILE_GRID` = ~84 px columns |
+| `GoldCard` / `CoinFlight` / `XpBar` (`useXpFill`) / `Confetti` / `DexRegisteredCard` / `UpCard` | The rewards' game feel (docs/38 §4) | The gold counting up from 0; its coins flying to the top bar's gold (`data-hud-gold`; playing, none when calm or off); the XP bar in steps (filling, the level-up's white frame, rolled over); the pixel confetti (playing, frozen on frames); a species' first catch registered in the Pokédex; the Upgrades' buttons (navy, the best buy gold with its chip) and a purchase's pop frame by frame (`frozenPop`) |
 | `FaceDice` / `StatusLines` | What a die does | Its six faces as real dice, value under each; a status face keeps its ring and badge and gets its short name in a chip. One tinted line per status: when it triggers and what it does, with the live numbers (`statusEffects`) |
 | `ItemSprite` | An item's picture | From the item atlas (one request); falls back to the item's own URL for items added since the atlas was built |
 | `PixelIcon` | Every icon | Pixel maps drawn as SVG rects: the Pokémon ones hand-drawn in `icons.tsx` (balls, Pokédex, badges, status symbols), the generic UI ones (coin, heart, shop, trophy, settings…) from the "1-bit Pixel Icons" pack, recoloured into `packIcons.ts` by `scripts/import-icons.ts` (11–16 px squares; the tab bar's on 16×16). Draw them at 12 px or more. One shared palette (`ICON_PALETTE`); a map may have its own (`OWN_PALETTE`) |
@@ -292,7 +293,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 |---|---|---|
 | Attacks: one move per type (Flamethrower, Hydro Pump, Razor Leaf, Thunderbolt, Psychic in `attacks.ts`; Tackle, jabs and a fist, gusts and a wing slash, Sludge Bomb, earth spikes, Rock Slide, a swarm and X-Scissor, Shadow Ball, Metal Claw, Ice Beam, Dragon Breath, Dark Pulse and Crunch, Moonblast in `attacks-types.ts`); a generic impact for typeless dice | the typed move | one generic hit |
 | A Z-Move (§33, `zmove.ts`): the power gathering, then the strike — the type's own move as its Z variant (`z`: more of it, bigger, harder, on a dimmed field, the attacker outlined in gold and the type's light) with the Z's mark on its last hit (a golden Z on the target, rings, a white flash); a Flying, Ground or Water one goes away first and comes back before its strike | the gathering, the Z variant | a flash of the type's colour; the one generic hit with the Z's mark |
-| Catch | throw, beam, drop, wobbles, result; with a Bait to offer it holds on the ball lying still (`hold`) and the answer plays on from that frame (`from: 'ground'`: the Bait tossed beside the ball, a heart, a last wobble; or straight to the break-free); Capture Luck's stay (`stays`): out of the ball, a "!" and two hops, no flight | throw and drop, result at once (the Bait still lands); a throw that can't miss jumps to its end at every level |
+| Catch | throw, beam, drop, wobbles, result — the engine's count of wobbles (`catchShakes`): 3 for a catch, for a miss 3, 2, 1 or none as it fell 1, 2, 3 or 4+ short, so the third never gives it away; a buzz with each (`haptic`); with a Bait to offer it holds on the ball lying still (`hold`) and the answer plays on from that frame (`from: 'ground'`: the Bait tossed beside the ball, a heart, its last wobbles, 2 or fewer by the same rule; or straight to the break-free); Capture Luck's stay (`stays`): out of the ball, a "!" and two hops, no flight | throw and drop, result at once (the Bait still lands); a throw that can't miss jumps to its end at every level |
 | Pokémon Center | in its picture (`public/backgrounds/pokemon-center.png`): a ball per team member into the machine's slots, the heal jingle (B G♯ ×3, E) | one flash, healed |
 | Mega Evolution, Gigantamax | the full change | a white flash and the new sprite |
 | A raid Pokémon's form unleashed on its last bar (`unleashTimeline`: Giratina's Origin Forme, §27) | the full change, held on its new form while the words are read | a white flash and the new sprite, held as long |
@@ -483,6 +484,9 @@ Players shouldn't have to make many requests:
   admin (§20) is not on the shelf at all. **Mega Gems** (docs/35) have a shelf of their own under the stock
   (`GemShelfView`): each once, the Mega's icon and name under the gem, ₽ or HELD, a line while it's shut here, INFO at
   its foot; the bag lists the gems held, "Can't sell".
+- **Upgrades** (each row's buy button): navy (`frame-dark`), never red — a list of red buttons was a screen of main
+  actions. The **best buy** of the list shown, the cheapest upgrade within your gold (`bestBuy`; the first listed on a
+  tie), is gold with a "Best buy" chip by its level. One you can't afford stays grey and says what's missing.
 - **Search resets filters**: typing in a search shows everything that matches (the Pokédex's filter goes back to All).
   A Pokédex number finds any entry; a name only finds what has been caught.
 - **Grey plates** (`#e3e8f0`, `#f1f4f9`) take ink text: muted grey on them is under 4.5:1.
@@ -571,8 +575,11 @@ in view) and the battle history sits beside it from 1024 px.
   dropped, never the save. Raids are not kept (docs/19 §6.4: leaving one is a free retry, its try already counted).
 - **Result cards** rise from the bottom over the panel on every screen size, wild and trainer fights alike, the stage
   still in view: XP per Pokémon, the catch (NEW when
-  the species is new to the Pokédex), "Wild battles pay no ₽" when that is why no money came; **Home** and **Next
-  encounter** (what Home's CONTINUE would start). Between a trainer's Pokémon, the card shows the trainer and the
+  the species is new to the Pokédex), "Wild battles pay no ₽" when that is why no money came; the gold counts up from
+  0. **One way forward**: CONTINUE (what Home's CONTINUE would start), or GO TO NEW AREA in its place when this fight
+  cleared the area and opened the story's way forward (`latestOpenArea`), with **Home** the quiet white button beside
+  it. With the Game feel switch on (docs/38 §4) the card has its jingles, the XP bars fill in steps and the coins fly to
+  the top bar. Between a trainer's Pokémon, the card shows the trainer and the
   sprite of the one about to come out. Versus ends on its own card in the panel: Victory / Defeat and Back to
   Versus — once a fight is done, it's done (no rematch).
 - **Versus** plays on auto, to its end: no skip.

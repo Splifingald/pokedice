@@ -3,7 +3,9 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  gameFeelOn,
   getInstance,
+  latestOpenArea,
   portalLock,
   instanceStats,
   progressOf,
@@ -16,6 +18,8 @@ import {
   type RunEvent,
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
+import { feelSound, type FeelSound } from '@/audio/feel'
+import { CoinFlight } from '@/components/CoinFlight'
 import { EvolutionQueue, type EvolutionShow } from '@/components/Evolution'
 import { RoundsCounter } from '@/components/RoundsCounter'
 import { useCountUp } from '@/components/GoldPill'
@@ -25,19 +29,21 @@ import { LeadPicker, defaultLead } from '@/components/LeadPicker'
 import { ForfeitButton } from '@/components/ForfeitButton'
 import { speciesTypes } from '@/components/TypeMatchups'
 import { HpBar } from '@/components/HpBar'
-import { XpBar } from '@/components/MonCard'
+import { useXpFill, XpBar } from '@/components/MonCard'
 import { PixelButton } from '@/components/PixelButton'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { ItemSprite } from '@/components/ItemSprite'
-import { milestoneText, money, trainerTitle, typeName } from '@/lib/format'
+import { dexNo, milestoneText, money, trainerTitle, typeName } from '@/lib/format'
 import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
+import { useMotion } from '@/lib/motion'
 import { usePace } from '@/lib/pace'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { Confetti } from '@/components/Confetti'
 import { useGame } from '@/store/game'
 import { autoStepNow } from '@/store/autopilot'
+import { serverNow } from '@/store/serverTime'
 import {
   afterStalemate,
   afterWipe,
@@ -87,19 +93,54 @@ export function Overlay({ children, footer, label }: { children: ReactNode; foot
   )
 }
 
-function GoldCard({ amount, bonus = 0 }: { amount: number; bonus?: number }) {
+/** A card's sound once as it rises, with the Game feel switch on (docs/38): the victory and the defeat jingles. */
+function useFeelOnce(name: FeelSound, when = true) {
+  const feel = useGame((s) => gameFeelOn(s.data))
+  const played = useRef(false)
+  useEffect(() => {
+    if (!feel || !when || played.current) return
+    played.current = true
+    feelSound(name)
+  }, [feel, when, name])
+}
+
+/** How often the gold's count-up ticks (docs/38 F5b). */
+const COIN_TICK_MS = 50
+
+export function GoldCard({ amount, bonus = 0 }: { amount: number; bonus?: number }) {
   const { t } = useT()
-  const n = useCountUp(amount, 800)
+  const feel = useGame((s) => gameFeelOn(s.data))
+  const { level, calm } = useMotion()
+  // From 0 as it appears: it used to start at its total, so the count-up never ran (docs/38 B1).
+  const n = useCountUp(amount, 800, 0)
+  const counted = n >= amount
+  const box = useRef<HTMLDivElement>(null)
+  const tick = useRef(0)
+  // With the Game feel switch on: a coin's tick as it counts and the till at the end, then its coins fly into the top
+  // bar's gold (not under calm, nor with animations off).
+  useEffect(() => {
+    if (!feel || n <= 0) return
+    if (counted) {
+      sfx('gold')
+      return
+    }
+    const now = performance.now()
+    if (now - tick.current < COIN_TICK_MS) return
+    tick.current = now
+    feelSound('coin.tick')
+  }, [feel, n, counted])
+  const fly = feel && counted && amount > 0 && level !== 'off' && !calm
   // Cash Flow (docs/20): what it added, as a share of the usual pay.
   const pct = bonus > 0 && amount > bonus ? Math.round((bonus / (amount - bonus)) * 100) : 0
   return (
-    <div className="flex items-center gap-2 text-3xl text-ink">
+    <div ref={box} className="flex items-center gap-2 text-3xl text-ink">
       <PixelIcon name="coin" size={28} /> +{money(n)}
       {pct > 0 && (
         <span role="img" aria-label={t('ui.live.chip.cash', { pct })} className="inline-flex">
           <Chip tone="green">{t('ui.live.pct', { pct })}</Chip>
         </span>
       )}
+      {fly && <CoinFlight from={box} coins={Math.min(8, 3 + String(amount).length)} />}
     </div>
   )
 }
@@ -164,6 +205,27 @@ export function CatchCard({
                 : t('ui.victory.teamFull'))}
         </div>
       </div>
+    </div>
+  )
+}
+
+/**
+ * A species' first catch, registered in the Pokédex as in the main games (docs/38 F10a): with the Game feel switch on,
+ * right under its catch card, with its own jingle.
+ */
+export function DexRegisteredCard({ dex }: { dex: number }) {
+  const { t } = useT()
+  const name = useGame((s) => s.data.species[dex]?.name) ?? t('ui.common.unknown')
+  return (
+    <div className="flex items-center gap-2 bg-sky p-2 shadow-ring">
+      <PixelIcon name="navDex" size={28} className="shrink-0" />
+      <div className="min-w-0">
+        <div className="text-xl leading-tight">{t('ui.victory.dexRegistered')}</div>
+        <div className="truncate font-pixel-sm text-[16px] leading-tight text-muted">
+          {dexNo(dex)} {name}
+        </div>
+      </div>
+      <MiniSprite dex={dex} size={40} className="-my-2 ml-auto shrink-0" />
     </div>
   )
 }
@@ -234,6 +296,8 @@ interface MonRecap {
   /** The form it fought as (an evolution plays after the recap). */
   dex: number
   xp: number
+  /** Where its XP bar stood before this fight (the engine's), to fill from. */
+  from: { level: number; xp: number } | null
   shared: boolean
   fromLevel: number | null
   toLevel: number | null
@@ -241,11 +305,16 @@ interface MonRecap {
   evolvesTo: number | null
 }
 
-type Extra = { key: string; node: ReactNode; sound?: 'levelup' | 'catch' | 'gold' }
+/**
+ * A recap card and its sound as it appears; with the Game feel switch on, `feel` in its place (null: none, the card
+ * makes its own).
+ */
+type Extra = { key: string; node: ReactNode; sound?: 'levelup' | 'catch' | 'gold'; feel?: FeelSound | null }
 
 function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evolutions: EvolutionShow[] } {
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
+  const feel = useGame((s) => gameFeelOn(s.data))
   return useMemo(() => {
     const byUid = new Map<string, MonRecap>()
     // The form it fought as: the first level-up / milestone / evolution names it; before that, its current form.
@@ -254,7 +323,17 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
       let m = byUid.get(uid)
       if (!m) {
         const now = save ? getInstance(save, uid)?.dex : undefined
-        m = { uid, dex: dex ?? now ?? 0, xp: 0, shared: false, fromLevel: null, toLevel: null, milestones: [], evolvesTo: null }
+        m = {
+          uid,
+          dex: dex ?? now ?? 0,
+          xp: 0,
+          from: null,
+          shared: false,
+          fromLevel: null,
+          toLevel: null,
+          milestones: [],
+          evolvesTo: null,
+        }
         byUid.set(uid, m)
       }
       if (dex != null && !named.has(uid)) {
@@ -271,6 +350,7 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
         case 'xp': {
           const m = mon(e.uid)
           m.xp += e.amount
+          m.from ??= e.from ?? null
           m.shared ||= !!e.shared
           return
         }
@@ -292,7 +372,12 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           return
         }
         case 'gold':
-          extras.push({ key: k, sound: 'gold', node: <GoldCard amount={e.amount} bonus={e.bonus} /> })
+          extras.push({
+            key: k,
+            sound: 'gold',
+            feel: null,
+            node: <GoldCard amount={e.amount} bonus={e.bonus} />,
+          })
           return
         case 'caught':
           extras.push({
@@ -302,6 +387,9 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
               <CatchCard uid={e.uid} dex={e.dex} level={e.level} joined={e.joinedTeam} replacedLevel={e.replacedLevel} isNew={e.isNew} />
             ),
           })
+          // Its first catch: registered in the Pokédex, a moment of its own.
+          if (feel && e.isNew)
+            extras.push({ key: `${k}-dex`, feel: 'dex.registered', node: <DexRegisteredCard dex={e.dex} /> })
           return
         case 'fled':
           extras.push({
@@ -327,6 +415,7 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           extras.push({
             key: k,
             sound: 'levelup',
+            feel: e.role === 'champion' ? 'champion.fanfare' : 'badge.fanfare',
             node: (
               <div className="flex items-center justify-center gap-3 bg-gold p-2 text-center shadow-ring">
                 {e.badge && <BadgeIcon badge={e.badge} earned size={36} />}
@@ -357,6 +446,7 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           extras.push({
             key: k,
             sound: 'levelup',
+            feel: 'badge.fanfare',
             node: (
               <div className="flex items-center justify-center gap-3 bg-gold p-2 text-center shadow-ring">
                 <Medal tier={e.tier} />
@@ -370,6 +460,7 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           extras.push({
             key: k,
             sound: 'levelup',
+            feel: 'area.fanfare',
             node: (
               <div className="bg-hp-green p-2 text-center shadow-ring">
                 <div className="text-2xl">{t('ui.victory.areaCleared')}</div>
@@ -418,7 +509,7 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
     })
     return { mons: [...byUid.values()].filter((m) => m.dex), extras, evolutions }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [events, data])
+  }, [events, data, feel])
 }
 
 /** A blank die in its type's colour, small enough to sit in a chip (the colour is the type; a number would confuse). */
@@ -482,10 +573,16 @@ function MonRow({ m }: { m: MonRecap }) {
   const data = useGame((s) => s.data)
   const inst = useGame((s) => (s.save ? getInstance(s.save, m.uid) : undefined))
   const reduced = useGame((s) => s.settings.reducedMotion)
+  const feel = useGame((s) => gameFeelOn(s.data))
+  // With the Game feel switch on, the XP bar fills from before the fight and the level-up lands as it rolls over.
+  const [rolls, setRolls] = useState(0)
+  const fill = useXpFill(inst, m.from, () => setRolls((n) => n + 1))
   const species = data.species[m.dex]
   if (!species) return null
   const leveled = m.toLevel != null
-  const level = inst?.level ?? m.toLevel ?? 0
+  const level = fill?.level ?? inst?.level ?? m.toLevel ?? 0
+  // Still filling toward its level-up: the celebrations wait for the roll (their room kept, so nothing jumps).
+  const waiting = !!fill && rolls === 0
   const type1 = species.type1
   const chips: ReactNode[] = []
   if (leveled)
@@ -513,11 +610,15 @@ function MonRow({ m }: { m: MonRecap }) {
         <motion.span
           className="relative shrink-0"
           initial={false}
-          animate={leveled && !reduced ? { scale: [1, 1.4, 1, 1.3, 1], x: [0, -3, 3, -2, 2, 0], rotate: [0, -4, 4, -3, 0] } : undefined}
-          transition={{ duration: 1, delay: 0.15 }}
+          animate={
+            leveled && !reduced && !waiting
+              ? { scale: [1, 1.4, 1, 1.3, 1], x: [0, -3, 3, -2, 2, 0], rotate: [0, -4, 4, -3, 0] }
+              : undefined
+          }
+          transition={{ duration: 1, delay: feel ? 0 : 0.15 }}
         >
           <MiniSprite dex={m.dex} size={40} className="-my-2" />
-          {leveled && <Confetti />}
+          {leveled && !waiting && <Confetti key={rolls} />}
         </motion.span>
         <span className="min-w-0 truncate text-xl leading-none">{inst?.nickname || species.name}</span>
         <span className="shrink-0 text-lg leading-none">{t('ui.common.level.short', { n: level })}</span>
@@ -526,8 +627,10 @@ function MonRow({ m }: { m: MonRecap }) {
           {m.shared && <span className="text-sm text-muted">{t('ui.victory.multi')}</span>}
         </span>
       </div>
-      {inst && <XpBar inst={inst} className="mt-1" />}
-      {chips.length > 0 && <div className="mt-1.5 flex flex-wrap gap-1.5">{chips}</div>}
+      {inst && <XpBar inst={inst} className="mt-1" shown={fill} stepped={feel} />}
+      {chips.length > 0 && (
+        <div className={cx('mt-1.5 flex flex-wrap gap-1.5', leveled && waiting && 'invisible')}>{chips}</div>
+      )}
     </div>
   )
 }
@@ -547,8 +650,11 @@ export function VictoryView() {
   const battle = useGame((s) => s.battle)
   const data = useGame((s) => s.data)
   const reduced = useGame((s) => s.settings.reducedMotion)
+  const feel = useGame((s) => gameFeelOn(s.data))
   const { mons, extras, evolutions } = useRecap(run.events)
   const pace = usePace()
+  // The win's jingle as the card rises (docs/38 F5a), once the fight is over: not between a trainer's Pokémon.
+  useFeelOnce('win.jingle', !trainerHasNext())
   const total = mons.length + extras.length
   const [shown, setShown] = useState(reduced ? Number.MAX_SAFE_INTEGER : 1)
   const [lead, setLead] = useState<string | null>(null)
@@ -561,14 +667,20 @@ export function VictoryView() {
     const t = setTimeout(() => {
       setShown((s) => s + 1)
       const next = shown < mons.length ? mons[shown] : extras[shown - mons.length]
-      const sound = next && 'uid' in next ? (next.toLevel != null ? 'levelup' : undefined) : next?.sound
+      // With the Game feel switch on, a level-up sounds as its XP bar rolls over, and a card has its own fanfare.
+      if (next && !('uid' in next) && feel && next.feel !== undefined) {
+        if (next.feel) feelSound(next.feel)
+        return
+      }
+      const levelUp = !feel && next && 'uid' in next && next.toLevel != null
+      const sound = next && 'uid' in next ? (levelUp ? 'levelup' : undefined) : next?.sound
       if (sound) sfx(sound)
     }, 650 * pace)
     return () => clearTimeout(t)
-  }, [shown, allShown, mons, extras, pace])
+  }, [shown, allShown, mons, extras, pace, feel])
   // The first row's level-up sound (it appears without waiting).
   useEffect(() => {
-    if (mons[0]?.toLevel != null) sfx('levelup')
+    if (mons[0]?.toLevel != null && !feel) sfx('levelup')
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // CONTINUE answers a pending "add to your team?" by sending the catch to the Box, then plays any evolution. After a
@@ -591,9 +703,11 @@ export function VictoryView() {
   const nextMon =
     hasNext && (enc?.kind === 'trainer' || enc?.kind === 'gym') && run.trainer ? enc.team[run.trainer.index + 1] : null
   const trainerLabel = enc?.kind === 'gym' || enc?.kind === 'trainer' ? trainerTitle(enc) : t('ui.log.theTrainer')
-  // This fight cleared the area: offer the newly opened one straight away.
+  // This fight cleared the area and opened the story's way forward (the furthest open area of the region's chain, as
+  // Home's CONTINUE offers it): GO TO it is the card's one way on, in CONTINUE's place (docs/15 §6).
   const clearedTo = run.events.flatMap((e) => (e.kind === 'area_cleared' && e.nextAreaId ? [e.nextAreaId] : []))[0]
-  const nextArea = clearedTo ? data.areas.find((a) => a.id === clearedTo) : undefined
+  const latest = useGame((s) => (clearedTo && s.save ? latestOpenArea(s.save, s.data, serverNow()) : null))
+  const nextArea = clearedTo && latest?.id === clearedTo ? latest : undefined
 
   // The autopilot (docs/36): the card shows whole at once, stays a moment to be read, then closes by itself — on to the
   // trainer's next Pokémon, or back on the trail, where the autopilot picks up (evolutions play on their own first).
@@ -633,23 +747,8 @@ export function VictoryView() {
     <div className="flex flex-col gap-2">
       {/* Where the area's round stands, right over the way on. */}
       <RunRoundGauge className="px-1" />
-      {nextArea && (
-        // A new area just opened: travelling there is the green offer, above Home / Continue.
-        <PixelButton
-          variant="success"
-          size="lg"
-          className="w-full whitespace-nowrap"
-          aria-label={t('ui.victory.goToArea', { name: nextArea.name })}
-          onClick={go(() => {
-            continueAfterVictory()
-            enterArea(nextArea.id)
-          })}
-        >
-          <PixelIcon name="map" size={20} />
-          {t('ui.victory.goToNewArea')}
-        </PixelButton>
-      )}
-      <div className={locked ? 'grid' : 'grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5'}>
+      {/* One way forward, HOME the quiet one beside it. */}
+      <div className={locked ? 'grid' : 'grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-2.5'}>
         {!locked && (
           <PixelButton
             size="lg"
@@ -663,17 +762,33 @@ export function VictoryView() {
             {t('ui.nav.home')}
           </PixelButton>
         )}
-        <PixelButton
-          variant="primary"
-          size="lg"
-          className="whitespace-nowrap px-2"
-          onClick={go(() => {
-            continueAfterVictory()
-            continueExploring()
-          })}
-        >
-          {t('ui.common.continue')}
-        </PixelButton>
+        {nextArea ? (
+          <PixelButton
+            variant="primary"
+            size="lg"
+            className="whitespace-nowrap px-2"
+            aria-label={t('ui.victory.goToArea', { name: nextArea.name })}
+            onClick={go(() => {
+              continueAfterVictory()
+              enterArea(nextArea.id)
+            })}
+          >
+            <PixelIcon name="map" size={20} />
+            {t('ui.victory.goToNewArea')}
+          </PixelButton>
+        ) : (
+          <PixelButton
+            variant="primary"
+            size="lg"
+            className="whitespace-nowrap px-2"
+            onClick={go(() => {
+              continueAfterVictory()
+              continueExploring()
+            })}
+          >
+            {t('ui.common.continue')}
+          </PixelButton>
+        )}
       </div>
     </div>
   )
@@ -819,6 +934,8 @@ function RebattleWipe() {
 
 export function WipeView() {
   const rebattle = useGame((s) => !!s.run.rebattle)
+  // The defeat's jingle as the card rises (docs/38 F11a).
+  useFeelOnce('defeat.jingle')
   return rebattle ? <RebattleWipe /> : <AreaWipe />
 }
 

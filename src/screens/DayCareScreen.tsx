@@ -567,8 +567,8 @@ function HatchMoment({ hatch, onDone }: { hatch: Hatch; onDone: () => void }) {
   const name = sp?.name ?? t('ui.common.aPokemon')
   const reveal = () => {
     if (open) return
+    // The timeline's own fanfare celebrates it: no jingle on top (docs/38 B6).
     setOpen(true)
-    sfx('levelup')
   }
   useEffect(() => {
     if (open) doneRef.current?.focus({ preventScroll: true })

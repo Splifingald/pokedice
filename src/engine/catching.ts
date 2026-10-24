@@ -120,6 +120,40 @@ export function rollBait(roll: CatchRoll, faces: readonly number[], rng: Rng): C
   return { ...roll, bait, total, caught: total >= roll.need }
 }
 
+// ---------------------------------------------------------------- the wobbles
+
+/** A ball's wobbles before the result: a throw's, and the Bait's last ones from the ground. */
+export const CATCH_WOBBLES = 3
+export const BAIT_WOBBLES = 2
+
+/**
+ * How many times the ball wobbles before the result, as in the main games: a catch every time, a miss fewer the
+ * further it fell short — all of them one short, none from `max + 1` short. A miss used to stop one short of a catch,
+ * so the last wobble gave the result away before it came.
+ */
+export function catchWobbles(
+  roll: Pick<CatchRoll, 'total' | 'need' | 'caught'>,
+  max = CATCH_WOBBLES,
+): number {
+  if (roll.caught) return max
+  return Math.max(0, Math.min(max, max + 1 - (roll.need - roll.total)))
+}
+
+/**
+ * The wobbles of each part of a throw (docs/25): `throw`, the ball's own, measured on the throw alone (before any
+ * Bait, which only follows a miss); `bait`, the last ones from the ground once a Bait was thrown (0 without one).
+ */
+export function catchShakes(roll: Pick<CatchRoll, 'total' | 'need' | 'caught' | 'bait'>): {
+  throw: number
+  bait: number
+} {
+  if (roll.bait == null) return { throw: catchWobbles(roll), bait: 0 }
+  return {
+    throw: catchWobbles({ total: roll.total - roll.bait, need: roll.need, caught: false }),
+    bait: catchWobbles(roll, BAIT_WOBBLES),
+  }
+}
+
 export interface CatchResult {
   save: SaveData
   events: RunEvent[]

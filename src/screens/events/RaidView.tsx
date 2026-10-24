@@ -402,6 +402,7 @@ export function RaidView({ run }: { run: RaidRun }) {
       foe: spriteKey(st.boss.dex, false, st.boss.shiny),
       ball: ballOfItem(r.ballKey),
       caught: r.caught,
+      roll: r,
       short: level === 'short',
       hold: !!r.baitOffer,
       from,

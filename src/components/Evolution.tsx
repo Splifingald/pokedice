@@ -4,7 +4,6 @@ import { motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { getInstance, instanceStats } from '@/engine'
-import { sfx } from '@/audio/sfx'
 import { loadItemSprite, loadSprite, spriteKey } from '@/fx/sprites'
 import { evolveTimeline } from '@/fx/timelines/moments'
 import { useT } from '@/i18n/react'
@@ -63,8 +62,8 @@ export function EvolutionSequence({
   const stats = inst ? instanceStats(inst, data) : null
   const reveal = () => {
     if (done) return
+    // The timeline's own fanfare celebrates it: no jingle on top (docs/38 B6).
     setDone(true)
-    sfx('levelup')
     onDone?.()
   }
   return (
