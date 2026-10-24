@@ -26,6 +26,7 @@ import { VersusUnlockPopup } from './FeatureRules'
 import { FriendsService } from './friends/FriendsService'
 import { InviteRewardPopup, InviteRulesPopup, useInviteRewardWaiting } from './friends/InviteRewards'
 import { GeneralUnlockPopup, OfflineReportModal } from './GeneralRules'
+import { ShinyDexUnlockPopup } from './ShinyDexRules'
 import { GiftService } from './Gifts'
 import { LeaderboardTutorial } from './LeaderboardTutorial'
 import { PopupTurnContext, usePopupOnScreen } from './popupTurn'
@@ -115,6 +116,7 @@ export function OneTimePopups() {
       <ShareTutorial />
       <ExtremeUnlockPopup />
       <GeneralUnlockPopup />
+      <ShinyDexUnlockPopup />
       <InviteRulesPopup />
       <InviteRewardPopup />
       <PortalUnlockPopup />

@@ -37,14 +37,14 @@ import { useTradeThis } from './trades/TradeThis'
  */
 export type SheetView =
   | { kind: 'inst'; id: string }
-  | { kind: 'dex'; dex: number }
+  | { kind: 'dex'; dex: number; shiny?: boolean }
   | { kind: 'area'; areaId: string }
   | { kind: 'homer'; id: string }
 /** Views reached from inside the sheet: also the "Use an item" list for one of your Pokémon. */
 type StackView = SheetView | { kind: 'items'; id: string }
 
 const viewKey = (v: SheetView) =>
-  v.kind === 'inst' ? `i-${v.id}` : v.kind === 'dex' ? `d-${v.dex}` : v.kind === 'homer' ? `h-${v.id}` : `a-${v.areaId}`
+  v.kind === 'inst' ? `i-${v.id}` : v.kind === 'dex' ? `d-${v.dex}${v.shiny ? '-s' : ''}` : v.kind === 'homer' ? `h-${v.id}` : `a-${v.areaId}`
 
 /**
  * Pokémon details in a sheet (from the bottom on phones). Tapping an evolution opens its Pokédex entry on top, with
@@ -222,7 +222,7 @@ function SheetStack({
           {top.kind === 'area' ? (
             <AreaDex areaId={top.areaId} onOpenDex={openDex} />
           ) : top.kind === 'dex' ? (
-            <DexEntry key={top.dex} dex={top.dex} onOpenDex={openDex} onTravel={onClose} />
+            <DexEntry key={top.dex} dex={top.dex} shiny={top.shiny} onOpenDex={openDex} onTravel={onClose} />
           ) : top.kind === 'items' && inst ? (
             <ItemPanel inst={inst} onUsed={back} />
           ) : homer ? (

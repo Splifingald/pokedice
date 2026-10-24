@@ -424,9 +424,12 @@ export function PokemonSheet({
   children,
   beforeMatchups,
   onOpenDex,
+  shiny: shinyAsked,
 }: {
   dex: number
   inst?: PokemonInstance
+  /** Shiny colours whatever `inst` is: the shiny Pokédex's entry, owned shiny once (docs/39). */
+  shiny?: boolean
   children?: ReactNode
   /** Shown above Strengths and weaknesses, whether type hints are on or not: the team's moves at a Center. */
   beforeMatchups?: ReactNode
@@ -438,6 +441,7 @@ export function PokemonSheet({
   const plates = save ? plateTypes(save, data) : undefined
   const species = getSpecies(data, dex)
   const level = inst?.level ?? 1
+  const shiny = shinyAsked ?? inst?.shiny
   const stats = effectiveStats(species, level, data)
   const hints = useTypeHints()
   const types = species.type2 ? [species.type1, species.type2] : [species.type1]
@@ -454,14 +458,14 @@ export function PokemonSheet({
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
         <div className="grid h-[104px] w-[112px] shrink-0 place-items-center bg-sky shadow-ring">
-          <SpriteImg dex={dex} size={96} shiny={inst?.shiny} />
+          <SpriteImg dex={dex} size={96} shiny={shiny} />
         </div>
         <div className="grid min-w-0 flex-1 gap-1.5">
           <div className="flex flex-wrap items-center gap-1">
             {types.map((ty) => (
               <TypeBadge key={ty} type={ty} />
             ))}
-            {inst?.shiny && (
+            {shiny && (
               <Chip tone="gold">
                 <PixelIcon name="star" size={12} /> {t('ui.mon.shinyTag')}
               </Chip>

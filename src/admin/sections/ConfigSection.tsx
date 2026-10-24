@@ -706,6 +706,30 @@ function MusicBox() {
   )
 }
 
+/**
+ * The shiny Pokédex (docs/39): each region's Pokédex gets a Shiny page once its league is beaten. It shows what the
+ * save already holds, so the game alone reads it.
+ */
+function ShinyDexBox() {
+  const [raw, setRaw] = useConfigRow('shinyDex')
+  const access = raw?.access ?? 'off'
+  return (
+    <Box
+      title="Shiny Pokédex"
+      icon="book"
+      hint="On: once a region's League is beaten, its Pokédex has a Pokédex / Shiny switch. The Shiny page lists every species of the region the player has owned shiny there (caught, hatched, traded for or evolved), kept when it leaves, with its rules once as a pop-up and an INFO button. Saves note their shinies whatever the switch says, so the page is whole the day it opens."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Shiny Pokédex</span>
+        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="Shiny Pokédex: who has it" />
+        <span className="text-base text-muted">
+          {accessNote(access, 'Open to every player.', 'Off: the Pokédex has one page, as before.')}
+        </span>
+      </div>
+    </Box>
+  )
+}
+
 /** Trainer looks (docs/31): unlockable looks from every region in place of the free Kanto and Johto list. */
 function LooksBox() {
   const [raw, setRaw] = useConfigRow('looks')
@@ -732,12 +756,15 @@ function LooksBox() {
  * (the server reads the General one too, for the golden names), then the levels' numbers.
  */
 function GeneralBox() {
+  const data = useAdminData()
+  const wild = data?.config.shinyChance ?? 0
+  const wildOdds = wild > 0 ? `1 in ${Math.round(1 / wild)}` : 'never'
   const [raw, setRaw] = useConfigRow('general')
   const [items, setItems] = useConfigRow('itemSwitches')
   const cfg: GeneralConfig = { ...DEFAULT_CONFIG.general, ...(raw ?? {}) }
   const switches = { ...DEFAULT_CONFIG.itemSwitches, ...(items ?? {}) }
   const set = (patch: Partial<GeneralConfig>) => setRaw({ ...cfg, ...patch })
-  const row = <K extends 'luck' | 'offline'>(k: K, i: number, patch: Partial<GeneralConfig[K][number]>) =>
+  const row = <K extends 'luck' | 'offline' | 'charm'>(k: K, i: number, patch: Partial<GeneralConfig[K][number]>) =>
     set({ [k]: cfg[k].map((r, j) => (j === i ? { ...r, ...patch } : r)) })
   const ITEMS: [string, string, string][] = [
     ['link-cable', 'Link Cable', 'Used from the Team screen on a trade evolution. Not sold unless the item says so.'],
@@ -746,13 +773,24 @@ function GeneralBox() {
   return (
     <Box
       title="General upgrades & catch items" icon="navUpgrades"
-      hint="The Upgrades screen's third tab (Capture Luck, offline earnings, I am just rich) and the Link Cable and Bait items. Each switch is Off by default; the server checks the General one for the golden names."
+      hint="The Upgrades screen's third tab (Capture Luck, offline earnings, I am just rich, the Shiny Charm) and the Link Cable and Bait items. Each switch is Off by default; the server checks the General one for the golden names."
     >
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-lg">General tab</span>
         <AccessSwitch value={cfg.access ?? 'off'} onChange={(access) => set({ access })} label="General upgrades: who sees them" />
         <span className="text-base text-muted">
           {accessNote(cfg.access ?? 'off', 'Open to every player.', 'Off: no tab, no pop-up, no effect. Levels already bought are kept.')}
+        </span>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Shiny Charm</span>
+        <AccessSwitch value={cfg.charmAccess ?? 'off'} onChange={(charmAccess) => set({ charmAccess })} label="Shiny Charm: who sees it" />
+        <span className="text-base text-muted">
+          {accessNote(
+            cfg.charmAccess ?? 'off',
+            `In the General tab (itself on). Level 0 is the wild odds, now ${wildOdds}; a level never makes them worse.`,
+            'Off: no card, no pop-up, no effect. Levels already bought are kept.',
+          )}
         </span>
       </div>
       {ITEMS.map(([key, label, hint]) => (
@@ -784,10 +822,12 @@ function GeneralBox() {
             <th className="font-normal">its price (₽)</th>
             <th className="font-normal">Offline (₽ / hour)</th>
             <th className="font-normal">its price (₽)</th>
+            <th className="font-normal">Shiny Charm (1 in …)</th>
+            <th className="font-normal">its price (₽)</th>
           </tr>
         </thead>
         <tbody>
-          {Array.from({ length: Math.max(cfg.luck.length, cfg.offline.length) }, (_, i) => (
+          {Array.from({ length: Math.max(cfg.luck.length, cfg.offline.length, cfg.charm.length) }, (_, i) => (
             <tr key={i}>
               <td>{i + 1}</td>
               <td>
@@ -804,6 +844,12 @@ function GeneralBox() {
               <td>
                 {cfg.offline[i] && <NumInput min={0} value={cfg.offline[i]!.cost} onChange={(v) => row('offline', i, { cost: Math.max(0, v ?? 0) })} />}
               </td>
+              <td>
+                {cfg.charm[i] && (
+                  <NumInput min={1} value={cfg.charm[i]!.oneIn} onChange={(v) => row('charm', i, { oneIn: Math.max(1, v ?? 1) })} />
+                )}
+              </td>
+              <td>{cfg.charm[i] && <NumInput min={0} value={cfg.charm[i]!.cost} onChange={(v) => row('charm', i, { cost: Math.max(0, v ?? 0) })} />}</td>
             </tr>
           ))}
         </tbody>
@@ -1442,6 +1488,8 @@ export function ConfigSection() {
       <HapticsBox />
 
       <MusicBox />
+
+      <ShinyDexBox />
 
       <ExtremeBox />
 

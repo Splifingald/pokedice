@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   conditionStatus,
   getRegion,
@@ -8,6 +9,8 @@ import {
   regionOf,
   regionOfArea,
   regionSpecies,
+  shinyDexOf,
+  shinyDexOpen,
   type GameData,
   type SaveData,
   areaKeepsTime,
@@ -18,10 +21,13 @@ import { useT } from '@/i18n/react'
 import { PixelIcon } from '@/components/icons'
 import { MonTile, TILE_GRID, TileTag } from '@/components/MonTile'
 import { PageHead } from '@/components/PageHead'
+import { InfoButton } from '@/components/RulesModal'
 import { FilterChips, SearchField } from '@/components/Segmented'
+import { DexViewSwitch, ShinyDexRulesModal, type DexView } from '@/components/ShinyDexRules'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { markDexSeen, useDexNew } from '@/lib/dexSeen'
 import { dexNo } from '@/lib/format'
+import { markShinyDexSeen } from '@/store/actions'
 import { useDayTime } from '@/store/dayTime'
 import { useGame } from '@/store/game'
 
@@ -49,6 +55,16 @@ export function PokedexScreen() {
   const [view, setView] = useState<SheetView | null>(null)
   const [filter, setFilter] = useState<Filter>('all')
   const [q, setQ] = useState('')
+  const [info, setInfo] = useState(false)
+  // The shiny page (docs/39): there once the region's league is beaten. `?view=shiny` opens on it (its pop-up's GO).
+  const shinyOpen = useGame((s) => !!s.save && shinyDexOpen(s.save, s.data))
+  const [params, setParams] = useSearchParams()
+  const dexView: DexView = shinyOpen && params.get('view') === 'shiny' ? 'shiny' : 'all'
+  const setDexView = (v: DexView) => setParams(v === 'shiny' ? { view: 'shiny' } : {}, { replace: true })
+  // Seeing the page is reading what it is: its pop-up won't open later.
+  useEffect(() => {
+    if (dexView === 'shiny') markShinyDexSeen()
+  }, [dexView])
   // What was new on arrival keeps its NEW tag while the screen is open; looking clears the tab bar's dot.
   const newCount = useDexNew()
   const [fresh] = useState(() => new Set(newCount > 0 ? (save?.pokedex.slice(-newCount) ?? []) : []))
@@ -57,22 +73,26 @@ export function PokedexScreen() {
 
   // In Johto with day and night on (docs/32): the half of the day it is, so "right now" leaves out the other half's.
   const now = useDayTime()
-  // Missing species you can meet right now: in a wild pool (or as a legendary) of an area you've opened.
-  const nearby = useMemo(() => {
+  // Species you can meet right now: in a wild pool (or as a legendary) of an area you've opened.
+  const meetable = useMemo(() => {
     const set = new Set<number>()
     if (!save) return set
     for (const a of data.areas) {
       // "Nearby" means without leaving: an unlocked area of the region you are standing in.
       if (regionOfArea(a) !== regionOf(save) || !isAreaUnlocked(save, a.id, data)) continue
-      for (const w of wildPoolAt(a, areaKeepsTime(data, a) ? now : null))
-        if (w.weight > 0 && !save.pokedex.includes(w.dex)) set.add(w.dex)
-      for (const b of a.legendaryBoss ?? []) if (!save.pokedex.includes(b.dex)) set.add(b.dex)
+      for (const w of wildPoolAt(a, areaKeepsTime(data, a) ? now : null)) if (w.weight > 0) set.add(w.dex)
+      for (const b of a.legendaryBoss ?? []) set.add(b.dex)
     }
     return set
   }, [save, data, now])
 
   if (!save) return null
+  const shiny = dexView === 'shiny'
+  // Known by name: caught at all. Owned: on this page (caught, or owned shiny on the shiny page).
   const caught = new Set(save.pokedex)
+  const owned = shiny ? new Set(shinyDexOf(save)) : caught
+  // The missing ones you can meet right now.
+  const nearby = new Set([...meetable].filter((d) => !owned.has(d)))
   // The Pokédex is the region's, always — the one being played, with no way to browse another's. Regions are
   // separate runs, and a page you cannot catch anything for is a list of spoilers, not a checklist.
   const region = regionOf(save)
@@ -85,17 +105,17 @@ export function PokedexScreen() {
     .filter((s) => inRegion.has(s.dex))
     .sort((a, b) => natOf(a.dex) - natOf(b.dex) || a.dex - b.dex)
   const total = pageList.length
-  const n = pageList.filter((s) => caught.has(s.dex)).length
-  const unlock = nextDexUnlock(save, data)
+  const n = pageList.filter((s) => owned.has(s.dex)).length
+  const unlock = shiny ? null : nextDexUnlock(save, data)
   const needle = searchFold(q.trim())
   const asNumber = /^#?\d+$/.test(needle) ? needle.replace('#', '') : null
   const inFilter = (dex: number) =>
     filter === 'all'
       ? true
       : filter === 'caught'
-        ? caught.has(dex)
+        ? owned.has(dex)
         : filter === 'missing'
-          ? !caught.has(dex)
+          ? !owned.has(dex)
           : nearby.has(dex)
   const list = pageList
     .filter((s) => inFilter(s.dex))
@@ -121,11 +141,12 @@ export function PokedexScreen() {
         title={regionName ? t('ui.dex.titleRegion', { region: regionName }) : t('ui.dex.title')}
         count={`${n}/${total}`}
       />
+      {shinyOpen && <DexViewSwitch value={dexView} onChange={setDexView} />}
       <div className="grid gap-1">
         <span
           className="pixel-corners block h-2 bg-line shadow-ring"
           role="img"
-          aria-label={t('ui.dex.caughtOf', { n, total })}
+          aria-label={t(shiny ? 'ui.dex.shinyOf' : 'ui.dex.caughtOf', { n, total })}
         >
           <i className="block h-full bg-gold" style={{ width: `${(n / Math.max(1, total)) * 100}%` }} />
         </span>
@@ -146,9 +167,11 @@ export function PokedexScreen() {
           className="pixel-panel-dark flex flex-col items-center gap-2 p-5 text-center"
         >
           <PixelIcon name="star" size={40} />
-          <div className="text-[40px] leading-none text-gold">{t('ui.dex.complete')}</div>
+          <div className="text-[40px] leading-none text-gold">
+            {t(shiny ? 'ui.dex.shinyComplete' : 'ui.dex.complete')}
+          </div>
           <div className="text-2xl">
-            {t('ui.dex.completeBody', {
+            {t(shiny ? 'ui.dex.shinyCompleteBody' : 'ui.dex.completeBody', {
               total,
               where: regionName ? t('ui.dex.completeIn', { region: regionName }) : '',
             })}
@@ -173,7 +196,7 @@ export function PokedexScreen() {
         onChange={setFilter}
         options={[
           { id: 'all', label: t('ui.dex.fAll'), count: counts.all },
-          { id: 'caught', label: t('ui.dex.fCaught'), count: counts.caught },
+          { id: 'caught', label: t(shiny ? 'ui.dex.viewShiny' : 'ui.dex.fCaught'), count: counts.caught },
           { id: 'missing', label: t('ui.dex.fMissing'), count: counts.missing },
           { id: 'nearby', label: t('ui.dex.fNearby'), count: counts.nearby },
         ]}
@@ -191,8 +214,10 @@ export function PokedexScreen() {
       <ul className={TILE_GRID}>
         {list.map((s) => {
           const has = caught.has(s.dex)
+          // The shiny page: owned shiny gets the Box's star, the rest stays a silhouette (named once caught).
+          const star = shiny && owned.has(s.dex)
           const near = nearby.has(s.dex)
-          const isNew = fresh.has(s.dex)
+          const isNew = !shiny && fresh.has(s.dex)
           const no = dexNo(natOf(s.dex))
           return (
             <li key={s.dex}>
@@ -200,18 +225,20 @@ export function PokedexScreen() {
                 dex={s.dex}
                 number={no}
                 name={has ? s.name : t('ui.common.unknown')}
-                missing={!has}
+                missing={!owned.has(s.dex)}
                 label={[
                   has ? s.name : t('ui.common.unknown'),
                   no,
+                  star && t('ui.mon.shiny'),
                   near && t('ui.dex.fNearby'),
                   isNew && t('ui.common.new'),
                 ]
                   .filter(Boolean)
                   .join(', ')}
-                onClick={() => setView({ kind: 'dex', dex: s.dex })}
+                onClick={() => setView({ kind: 'dex', dex: s.dex, ...(star && { shiny: true }) })}
                 tags={
                   <>
+                    {star && <PixelIcon name="star" size={12} className="absolute left-[5px] top-[5px]" />}
                     {near && <TileTag tone="near">{t('ui.dex.fNearby')}</TileTag>}
                     {isNew && <TileTag tone="new">{t('ui.common.new')}</TileTag>}
                   </>
@@ -222,6 +249,8 @@ export function PokedexScreen() {
         })}
       </ul>
 
+      {shinyOpen && <InfoButton name={t('ui.dex.shinyTitle')} onClick={() => setInfo(true)} />}
+      <ShinyDexRulesModal open={info} onClose={() => setInfo(false)} />
       <SheetModal view={view} onClose={() => setView(null)} />
     </div>
   )

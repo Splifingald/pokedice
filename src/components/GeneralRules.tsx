@@ -2,10 +2,10 @@
 // player, then from the INFO button at the bottom of the tab. The numbers come from the config, so a rebalance shows
 // up in the text.
 import { useNavigate } from 'react-router-dom'
-import { generalCfg } from '@/engine'
+import { charmChanceAt, charmOn, charmRulesOnly, generalCfg, generalMax } from '@/engine'
 import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
-import { countdown, money } from '@/lib/format'
+import { countdown, money, oneInText } from '@/lib/format'
 import { markGeneralRulesSeen } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { closeOfflineReport, useOfflineReport } from '@/store/general'
@@ -18,9 +18,25 @@ import { RulesModal, type RuleRow, type RulesPicture } from './RulesModal'
 /** The Battle Frontier's plaza at sunset: the grand, golden end of the game. */
 export const GENERAL_PICTURE: RulesPicture = { src: artUrl('frontier'), focus: '50% 45%' }
 
+/** The Shiny Charm's row: its odds from level 0 (game_config's own) to the top level. */
+function useCharmRow(): RuleRow {
+  const { t } = useT()
+  const data = useGame((s) => s.data)
+  return {
+    icon: 'sparkle',
+    title: t('ui.general.charm.name'),
+    text: t('ui.rules.gen.charm.text', {
+      base: oneInText(charmChanceAt(data, 0) || 1),
+      best: oneInText(charmChanceAt(data, generalMax(data, 'charm')) || 1),
+    }),
+  }
+}
+
 export function useGeneralRules(): RuleRow[] {
   const { t } = useT()
-  const cfg = generalCfg(useGame((s) => s.data))
+  const data = useGame((s) => s.data)
+  const cfg = generalCfg(data)
+  const charm = useCharmRow()
   const first = <T,>(l: T[]) => l[0]
   const last = <T,>(l: T[]) => l[l.length - 1]
   return [
@@ -46,7 +62,19 @@ export function useGeneralRules(): RuleRow[] {
       title: t('ui.general.rich.name'),
       text: t('ui.rules.gen.rich.text', { price: money(cfg.richCost) }),
     },
+    // Its own switch: only while it's on for this player.
+    ...(charmOn(data) ? [charm] : []),
     { icon: 'coin', title: t('ui.rules.gen.all.title'), text: t('ui.rules.gen.all.text') },
+  ]
+}
+
+/** The Shiny Charm on its own, for a player who read the tab's rules before it was switched on. */
+export function useCharmRules(): RuleRow[] {
+  const { t } = useT()
+  return [
+    useCharmRow(),
+    { icon: 'dex', title: t('ui.rules.charm.where.title'), text: t('ui.rules.charm.where.text') },
+    { icon: 'coin', title: t('ui.rules.gen.all.title'), text: t('ui.rules.charm.all.text') },
   ]
 }
 
@@ -54,21 +82,25 @@ export function GeneralRulesModal({
   open,
   onClose,
   onGo,
+  charmOnly = false,
 }: {
   open: boolean
   onClose: () => void
   onGo?: () => void
+  /** The Shiny Charm's pop-up alone (it came after the tab's rules were read). */
+  charmOnly?: boolean
 }) {
   const { t } = useT()
-  const rules = useGeneralRules()
+  const all = useGeneralRules()
+  const charm = useCharmRules()
   return (
     <RulesModal
       open={open}
       onClose={onClose}
-      title={t('ui.upgrades.tabGeneral')}
+      title={t(charmOnly ? 'ui.general.charm.name' : 'ui.upgrades.tabGeneral')}
       picture={GENERAL_PICTURE}
       icon="navUpgrades"
-      rules={rules}
+      rules={charmOnly ? charm : all}
       onGo={onGo}
     />
   )
@@ -76,17 +108,20 @@ export function GeneralRulesModal({
 
 /**
  * The General tab has opened (the admin's switch, a first badge): once, between fights, its rules and a button straight
- * to it. It takes its turn in the one-time pop-ups' queue (engine/popups.ts), never on the Upgrades page.
+ * to it. It takes its turn in the one-time pop-ups' queue (engine/popups.ts), never on the Upgrades page. The same
+ * once for the Shiny Charm, on its own, when its switch comes on after the tab's rules were read.
  */
 export function GeneralUnlockPopup() {
   const navigate = useNavigate()
   const open = useMyTurn('general')
   useOnScreen('general', open)
+  const charmOnly = useGame((s) => !!s.save && charmRulesOnly(s.save, s.data))
   // Gone the moment its turn ends, as before the queue: its button leads to another page, which a fading pop-up
   // would cover.
   if (!open) return null
   return (
     <GeneralRulesModal
+      charmOnly={charmOnly}
       open={open}
       onClose={markGeneralRulesSeen}
       onGo={() => {

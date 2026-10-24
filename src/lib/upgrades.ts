@@ -2,8 +2,8 @@
 import {
   COMBO_KEYS,
   COMBO_MIN_DICE,
-  GENERAL_IDS,
   generalOn,
+  generalShown,
   inWorldRegion,
   nextGeneralCost,
   instanceStats,
@@ -46,7 +46,7 @@ export function affordableUpgrades(save: SaveData, data: GameData): number {
   }
   // The General tab's (docs/25), while the admin has it on.
   if (generalOn(data) && !inWorldRegion(save, data))
-    for (const id of GENERAL_IDS) {
+    for (const id of generalShown(data)) {
       const cost = nextGeneralCost(save, data, id)
       if (cost != null && cost <= save.gold) n++
     }

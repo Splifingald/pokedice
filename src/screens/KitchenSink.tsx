@@ -67,6 +67,7 @@ import { TrickBits } from './kitchen/TrickBits'
 import { UndergroundBits } from './kitchen/UndergroundBits'
 import { DayNightBits } from './kitchen/DayNightBits'
 import { IdleBits } from './kitchen/IdleBits'
+import { ShinyDexBits } from './kitchen/ShinyDexBits'
 import { DiceThrowBits } from './kitchen/DiceThrowBits'
 import { FeelDiceBits } from './kitchen/FeelDiceBits'
 import { HowToBits } from './kitchen/HowToBits'
@@ -661,6 +662,10 @@ export function KitchenSink() {
 
       <Section title="General upgrades: the tab's cards, rules and INFO, while you were away, golden names (docs/25)">
         <GeneralBits />
+      </Section>
+
+      <Section title="Shiny Pokédex: the Pokédex / Shiny switch, the shiny page's tiles (owned shiny, caught, unknown, nearby), complete, rules and INFO (docs/39)">
+        <ShinyDexBits />
       </Section>
 
       <Section title="Trainer looks: the row and its red dot, the menu in each state, locked looks, rules and INFO (docs/31)">

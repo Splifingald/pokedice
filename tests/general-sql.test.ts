@@ -225,8 +225,11 @@ describe('0049: the switches and the items', () => {
       null,
       `select key, value from game_config where key in ('general', 'itemSwitches') order by key`,
     )
+    // The Shiny Charm came later (2026-10-18): its switch and levels come from the game's defaults under this row (the
+    // server never reads them), so 0049's row is the defaults without them.
+    const { charmAccess: _access, charm: _charm, ...before } = DEFAULT_CONFIG.general
     expect(rows).toEqual([
-      { key: 'general', value: DEFAULT_CONFIG.general },
+      { key: 'general', value: before },
       { key: 'itemSwitches', value: DEFAULT_CONFIG.itemSwitches },
     ])
     expect(DEFAULT_CONFIG.general.access).toBe('off')

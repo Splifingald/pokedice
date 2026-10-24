@@ -5975,8 +5975,16 @@ insert into game_config (key, value) values ('haptics', '{"access": "off"}'::jso
 insert into game_config (key, value) values ('music', '{"access": "off"}'::jsonb) on conflict (key) do nothing;
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 
--- ↓ supabase/migrations/0075_raid_overhaul.sql, inlined so this file stands alone.
--- The raid overhaul (docs/39): each progression raid's own numbers, rules and last bar, and the Mega raids after Kalos.
+-- ↓ supabase/migrations/0075_shiny_dex.sql, inlined so this file stands alone.
+-- The shiny Pokédex (docs/39).
+-- 1. game_config `shinyDex`: the switch, Off (left alone when there). The page shows what the save already holds (the
+--    shinies each region has owned, noted on the player's device), so no server function acts for it and none reads it.
+-- 2. configVersion + 1, so players fetch the new content. Safe to run again.
+insert into game_config (key, value) values ('shinyDex', '{"access": "off"}'::jsonb) on conflict (key) do nothing;
+insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
+
+-- ↓ supabase/migrations/0076_raid_overhaul.sql, inlined so this file stands alone.
+-- The raid overhaul (docs/40): each progression raid's own numbers, rules and last bar, and the Mega raids after Kalos.
 -- 1. game_config `raidOverhaul`: its switch, Off (left alone when there). The fights themselves are the game's (the engine
 --    decides every rule on the player's device); the server only needs the switch for the Mega raids' keys.
 -- 2. raid_progress_dex: a progression raid's key is `areaId:dex` as before, or, with the switch on for the caller, a Mega

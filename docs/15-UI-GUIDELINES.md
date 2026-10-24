@@ -818,7 +818,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
   taking its turn in the one-time pop-ups' queue, below), and an **INFO** button at the bottom of its page that shows
   the same rules again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the shiny Pokédex (§35), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **The one-time pop-ups take turns, in one queue** (`nextOneTimePopup`, src/engine/popups.ts; docs/38 U2a): one at a
   time, only between fights (`run.phase === 'idle'`, no battle, no full-screen moment, no gift being opened), never on
@@ -827,7 +827,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   the server's clock, what waits outside the save); `PopupQueue` (GameLayout) works it out once for the whole game, and
   each pop-up opens only on its own turn (`useMyTurn`). The order: the away reports (Extreme's, the General upgrades'),
   Prof. Oak's Day Care and leaderboard tutorials, the developer's answers, friends' raid gifts, Support me, a new
-  region's offer, a special event, Versus, Prof. Oak's invite, Extreme mode, Trades, the General upgrades, the invite
+  region's offer, a special event, Versus, Prof. Oak's invite, Extreme mode, Trades, the General upgrades, the shiny Pokédex, the invite
   rewards' rules then a reward ready, the portal run, day and night, the battle powers, a small world's opening, its
   finish and its goodbye, a live event (the Underground's rules), a taken trade's scene (Home only), and push
   notifications' question last. A new pop-up gets a place in that list, not a list of its own. The rules that open at
@@ -1034,12 +1034,16 @@ pieces are in `src/components/Gifts.tsx`, every state on `/kitchen-sink` (`GiftB
 The Upgrades screen's third tab (docs/25), after Combos and Dice Types, there only while the admin has it on (§20).
 
 - **The tab**: one card each, the combos' and dice' `UpCard`: Capture Luck (10 % a level), Offline earnings (₽2 to
-  ₽20 an hour, in whole ₽), I am just rich (one level). The card says what it does now → at the next level ("None →
+  ₽20 an hour, in whole ₽), I am just rich (one level), the Shiny Charm (its own switch too; the sparkle, "1 in 1,000 →
+  1 in 950"). The card says what it does now → at the next level ("None →
   10% chance", "₽10/h → ₽12/h", "Plain name → Golden name"), the pips, the price button or MAX; "I am just rich" shows the player's
   own name, golden, as its picture. The note under the tabs says they're for every region. INFO at the bottom.
 - **Its rules pop-up** (`GeneralUnlockPopup`, the Battle Frontier's plaza as its banner): once, from the first badge,
   queued behind the other one-time pop-ups (the world's and the live event's wait for it); opening the tab counts as
-  seen. Four rows: Capture Luck, Offline earnings, I am just rich, For every region.
+  seen. Four rows: Capture Luck, Offline earnings, I am just rich, For every region; five while the Shiny Charm is on
+  (its row before the last). A player who read them before the charm was switched on gets the charm's own pop-up once
+  (same banner, its title "Shiny Charm", three rows: its odds, where it shines, for every region); opening the tab
+  counts as seen too.
 - **While you were away** (`OfflineReportModal`): an absence of an hour or more, between fights: the time away, +₽ on a
   warm card with the coin, the rate and the cap. Less than an hour: a toast. Inside a small world it waits.
 - **Golden names** (`TrainerName`): the leaderboard (and its Hall of Fame), Versus, friends (list, card, preview), raid
@@ -1532,7 +1536,21 @@ every state on `/kitchen-sink` (`IdleBits`).
   Ball), never a team change, never a spin.
 - **Between areas**, a toast says each move ("Now exploring…", "Round lost: one round in…", "Round done: back to…").
 
-## 35. The raid overhaul
+## 35. The shiny Pokédex
+
+Each region's Pokédex gets a **Shiny** page once its League is beaten (docs/39), behind its switch (§20, Off: the
+Pokédex has one page as before). The pieces are in `src/components/ShinyDexRules.tsx`, every state on `/kitchen-sink`
+(`ShinyDexBits`).
+
+- **Pokédex / Shiny** is a `Seg` under the page head (`DexViewSwitch`), the shiny option with the sparkle icon; the
+  choice is the URL's (`?view=shiny`), so the pop-up's Let's go! lands on it and Back leaves it.
+- **The shiny page is the Pokédex's grid**, counting what's owned shiny: the count, the gauge (its label "n of N owned
+  shiny"), the filters (All, Shiny, Missing, Nearby). A tile owned shiny wears the Box's star (top left, "Shiny" in its
+  name); the others are silhouettes (`missing`), named once caught, never a colour alone. No NEW tags there.
+- Its rules: the pop-up once, in the queue after the General upgrades', never on the Pokédex; INFO at the bottom of
+  the Pokédex while the page is open. Opening the page counts as reading them.
+
+## 36. The raid overhaul
 
 One switch (docs/40, §20), Off: raids as before. On, the engine decides each raid's rules (`engine/raidSpecials.ts`)
 and the screens tell them; every piece is on `/kitchen-sink` ("Raid overhaul") and every entrance in the FX lab.
