@@ -109,6 +109,9 @@ export function VersusUnlockPopup() {
   const navigate = useNavigate()
   const open = useMyTurn('versus')
   useOnScreen('versus', open)
+  // Gone the moment its turn ends, as before the queue: its button leads to another page, which a fading pop-up
+  // would cover.
+  if (!open) return null
   return (
     <VersusRulesModal
       open={open}

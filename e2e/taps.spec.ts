@@ -37,11 +37,10 @@ const notes = (page: Page) => page.evaluate(() => (window as unknown as { notes:
 
 test('a PixelButton sounds as the finger lands, once a press, and from the keyboard', async ({ page }) => {
   await boot(page, false)
-  // A quiet page: Delete save only asks first.
+  // A quiet page: Settings' one Delete only asks what to delete.
   await page.goto('/settings')
-  const button = page.getByRole('button', { name: 'Delete save', exact: true })
-  const confirm = page.getByRole('dialog', { name: 'Delete your save?' })
-  await page.getByText('Advanced: copy or delete your save').click()
+  const button = page.getByRole('button', { name: 'Delete a save or my data', exact: true })
+  const confirm = page.getByRole('dialog', { name: 'What do you want to delete?' })
   await button.scrollIntoViewIfNeeded()
   await button.hover()
   const before = await notes(page)

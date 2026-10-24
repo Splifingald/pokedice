@@ -15,6 +15,9 @@ export function LeaderboardTutorial() {
   // Its turn in the one-time pop-ups' queue: after the Day Care's, never on the leaderboard itself.
   const open = useMyTurn('leaderboard')
   useOnScreen('leaderboard', open)
+  // Gone the moment its turn ends, as before the queue: its button leads to another page, which a fading pop-up
+  // would cover.
+  if (!open) return null
   return <LeaderboardTipModal open={open} onClose={visitLeaderboard} onGo={() => navigate('/leaderboard')} />
 }
 

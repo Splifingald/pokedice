@@ -307,6 +307,9 @@ export function InviteRulesPopup() {
   const navigate = useNavigate()
   const open = useMyTurn('invite')
   useOnScreen('invite', open)
+  // Gone the moment its turn ends, as before the queue: its button leads to another page, which a fading pop-up
+  // would cover.
+  if (!open) return null
   return (
     <InviteRulesModal
       open={open}

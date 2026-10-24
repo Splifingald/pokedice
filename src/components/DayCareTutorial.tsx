@@ -14,6 +14,9 @@ export function DayCareTutorial() {
   // Care's own page.
   const open = useMyTurn('dayCare')
   useOnScreen('dayCare', open)
+  // Gone the moment its turn ends, as before the queue: its button leads to another page, which a fading pop-up
+  // would cover.
+  if (!open) return null
   return <DayCareRulesModal open={open} onClose={visitDayCare} onGo={() => navigate('/daycare')} />
 }
 

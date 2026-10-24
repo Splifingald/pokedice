@@ -82,6 +82,9 @@ export function GeneralUnlockPopup() {
   const navigate = useNavigate()
   const open = useMyTurn('general')
   useOnScreen('general', open)
+  // Gone the moment its turn ends, as before the queue: its button leads to another page, which a fading pop-up
+  // would cover.
+  if (!open) return null
   return (
     <GeneralRulesModal
       open={open}
