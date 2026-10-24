@@ -2,23 +2,16 @@
 // countdown, the resting team's panel, the welcome-back card and the switch between the two saves. Every number comes
 // from the engine (engine/extreme); these only show them.
 import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   badgeCase,
-  dayCareTutorialDue,
-  donationDue,
-  eventUnlockDue,
   extremeRules,
-  extremeRulesDue,
   firstComeback,
   getRegion,
   instanceMaxHp,
   koLeft,
-  leaderboardTutorialDue,
   regionOf,
-  regionOfferDue,
   teamOf,
-  versusRulesDue,
   type PokemonInstance,
   type SaveData,
   type SaveMode,
@@ -33,6 +26,7 @@ import { switchSave } from '@/store/sync'
 import { cx } from '@/theme/util'
 import { PixelIcon } from './icons'
 import { Modal } from './Modal'
+import { useMyTurn, useOnScreen } from './popupTurn'
 import { PixelButton } from './PixelButton'
 import { RulesModal, type RuleRow, type RulesPicture } from './RulesModal'
 import { MiniSprite } from './SpriteImg'
@@ -70,26 +64,14 @@ export function ExtremeRulesModal({ open, onClose, onGo }: { open: boolean; onCl
 
 /**
  * The main save beat the league that opens Extreme mode: once, between fights, its rules and a way straight in. It
- * waits its turn behind the other one-time pop-ups (Prof. Oak's tutorials, a donation, a new region, an event, Versus).
+ * takes its turn in the one-time pop-ups' queue (engine/popups.ts), never on Settings, where Extreme mode is.
  */
 export function ExtremeUnlockPopup() {
-  const onSettings = useLocation().pathname.startsWith('/settings')
-  const due = useGame(
-    (s) =>
-      !!s.save &&
-      extremeRulesDue(s.save, s.data) &&
-      !dayCareTutorialDue(s.save, s.data) &&
-      !leaderboardTutorialDue(s.save, s.data) &&
-      !donationDue(s.save, s.data) &&
-      !regionOfferDue(s.save, s.data) &&
-      !eventUnlockDue(s.save, s.data) &&
-      !versusRulesDue(s.save, s.data),
-  )
-  const idle = useGame((s) => s.run.phase === 'idle')
-  if (!due) return null
+  const open = useMyTurn('extreme')
+  useOnScreen('extreme', open)
   return (
     <ExtremeRulesModal
-      open={idle && !onSettings}
+      open={open}
       onClose={markExtremeRulesSeen}
       onGo={() => {
         markExtremeRulesSeen()
@@ -223,16 +205,18 @@ export function RestingPanel({ className, demo }: { className?: string; demo?: S
   )
 }
 
-/** Back in the game: what the absence healed, once. */
-export function AwayReportModal() {
+/** Back in the game: what the absence healed, once. `show`: the kitchen sink's, which has no queue. */
+export function AwayReportModal({ show }: { show?: boolean }) {
   const { t } = useT()
   const report = useAwayReport((s) => s.report)
   const data = useGame((s) => s.data)
-  const idle = useGame((s) => s.run.phase === 'idle')
+  // Between fights, first in the one-time pop-ups' queue (engine/popups.ts): what you came back to.
+  const open = (useMyTurn('away') || !!show) && !!report
+  useOnScreen('away', open)
   const now = useClock()
   const pct = data.config.extreme.awayHealPctPerHour
   return (
-    <Modal open={!!report && idle} onClose={closeAwayReport} title={t('ui.extreme.away.title')} className="max-w-md">
+    <Modal open={open} onClose={closeAwayReport} title={t('ui.extreme.away.title')} className="max-w-md">
       {report && (
         <div className="flex flex-col gap-3">
           <p className="copy m-0 text-muted">{t('ui.extreme.away.for', { time: countdown(report.minutes * 60_000) })}</p>

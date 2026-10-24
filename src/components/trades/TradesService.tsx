@@ -1,27 +1,14 @@
 // Trades' background work (docs/23 §1.6, §2), mounted with the game shell:
 // - the check once the sign-in's sync has settled (and when the save switches back from Extreme mode), on return to
 //   the tab (at most every 5 minutes), and back Home with a listing out (at most every minute);
-// - "Trade done!" for a listing of yours taken while you were away: its scene, by itself, once you're back Home and
-//   nothing else is up; a toast for a listing that came back, and for a trade you took that a closed tab left half
-//   done;
+// - "Trade done!" for a listing of yours taken while you were away: its scene, by itself, once you're back Home, on its
+//   turn in the one-time pop-ups' queue (engine/popups.ts); a toast for a listing that came back, and for a trade you
+//   took that a closed tab left half done;
 // - a shared link (/t/<code>): the listing in its sheet once the run is idle, never mid-fight;
 // - the trade scene itself, over any page.
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import {
-  dayCareTutorialDue,
-  donationDue,
-  eventUnlockDue,
-  inWorldRegion,
-  isExtreme,
-  leaderboardTutorialDue,
-  regionOfferDue,
-  tradeRulesDue,
-  tradesOf,
-  tradesToWatch,
-  generalRulesDue,
-  versusRulesDue,
-} from '@/engine'
+import { inWorldRegion, isExtreme, tradesOf, tradesToWatch } from '@/engine'
 import { useT } from '@/i18n/react'
 import { useFullscreen } from '@/lib/fullscreen'
 import { offlineOr } from '@/lib/online'
@@ -30,7 +17,7 @@ import { clearTradeLink, readTradeLink, TRADE_LINK_EVENT, viewListing, type Trad
 import { pushToast, useGame } from '@/store/game'
 import { useCloudSync } from '@/store/sync'
 import { checkListings, checkTrades, clearReturned, endTrade, playTrade, useTrades } from '@/store/trades'
-import { useSharePromptWaiting } from '../ShareTutorial'
+import { useMyTurn, usePopupTurn } from '../popupTurn'
 import { ListingSheet } from './ListingSheet'
 import { TradeScene } from './TradeScene'
 import { TradesUnlockPopup } from './TradeRules'
@@ -71,36 +58,15 @@ export function TradesService() {
 }
 
 /**
- * Between fights, after Prof. Oak's tutorials, never over a full-screen moment (a battle, a hatching, a trade), and
- * never inside a small world (no trade reaches one: they wait until the player is back).
+ * Between fights, once no one-time pop-up is due (they open by themselves, one at a time), never over a full-screen
+ * moment (a battle, a hatching, a trade), and never inside a small world (no trade reaches one: they wait until the
+ * player is back).
  */
 function useCalm() {
   const full = useFullscreen()
-  const calm = useGame(
-    (s) =>
-      s.run.phase === 'idle' &&
-      !!s.save &&
-      !inWorldRegion(s.save, s.data) &&
-      !dayCareTutorialDue(s.save, s.data) &&
-      !leaderboardTutorialDue(s.save, s.data),
-  )
-  return calm && !full
-}
-
-/** Waits while another one-time pop-up is due: those open by themselves, and the scene would cover them. */
-function useNothingElseDue() {
-  const due = useGame(
-    (s) =>
-      !!s.save &&
-      (tradeRulesDue(s.save, s.data) ||
-        donationDue(s.save, s.data) ||
-        regionOfferDue(s.save, s.data) ||
-        eventUnlockDue(s.save, s.data) ||
-        versusRulesDue(s.save, s.data) ||
-        generalRulesDue(s.save, s.data)),
-  )
-  const invite = useSharePromptWaiting()
-  return !due && !invite
+  const popup = usePopupTurn()
+  const calm = useGame((s) => s.run.phase === 'idle' && !!s.save && !inWorldRegion(s.save, s.data))
+  return calm && !full && !popup
 }
 
 /** A beat on Home before the scene, so it reads as coming home to it rather than a cut. */
@@ -114,9 +80,10 @@ function Comebacks() {
   const returned = useTrades((s) => s.returned)
   const settled = useTrades((s) => s.settled)
   const playing = useTrades((s) => !!s.scene)
-  const calm = useCalm()
-  const free = useNothingElseDue()
-  const home = useLocation().pathname === '/home'
+  // The scene's own turn in the queue (engine/popups.ts): back Home, between fights, nothing else up. The toasts may
+  // come with it.
+  const sceneTurn = useMyTurn('tradeScene')
+  const calm = useCalm() || sceneTurn
   // The oldest taken listing whose scene hasn't played (or traded Pokémon whose Box is still to pick): kept in the
   // save, so a reload or another device can't lose it.
   const next = useGame((s) => (s.save && !isExtreme(s.save) ? (tradesToWatch(s.save)[0] ?? null) : null))
@@ -140,11 +107,11 @@ function Comebacks() {
   }, [calm, returned, settled])
 
   useEffect(() => {
-    if (!next || !home || !calm || !free || playing) return
+    if (!next || !sceneTurn || playing) return
     // A trade you took comes back here only for its Box still to pick: it isn't "Trade done!".
     const id = setTimeout(() => playTrade({ entry: next, away: next.role === 'poster' }), HOME_PAUSE_MS)
     return () => clearTimeout(id)
-  }, [next, home, calm, free, playing])
+  }, [next, sceneTurn, playing])
 
   return null
 }

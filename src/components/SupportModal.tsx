@@ -1,12 +1,12 @@
 // "Support me": the developer's three asks, as a rules pop-up (docs/15 §17): join the Discord (the one that matters
 // most), invite friends, and support the developer on Ko-fi, under a line saying why the game itself can never be
 // paid for (Pokémon is a licence). The side menu's and Settings' SUPPORT ME open it whenever the admin has it switched
-// on with a Ko-fi link (engine/donation). It also shows once per region when its 5th badge is won, between fights,
-// after Prof. Oak's tutorials and the developer's answers; the share prompt waits for it.
-import { discordUrl, donationDue, donationEnabled, donationUrl, tutorialPending } from '@/engine'
+// on with a Ko-fi link (engine/donation). It also shows once per region when its 5th badge is won, between fights, on its
+// turn in the one-time pop-ups' queue (engine/popups.ts: after Prof. Oak's tutorials and the developer's answers).
+import { discordUrl, donationEnabled, donationUrl } from '@/engine'
 import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
-import { unseenReplies, useInbox } from '@/lib/feedback'
+import { useInbox } from '@/lib/feedback'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { closeDonation } from '@/store/actions'
 import { useGame } from '@/store/game'
@@ -14,6 +14,7 @@ import { useCloudSync } from '@/store/sync'
 import { PixelIcon } from './icons'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
+import { useMyTurn, useOnScreen } from './popupTurn'
 import { RuleList, RulesBanner, type RuleRow, type RulesPicture } from './RulesModal'
 import { useInviteShare } from './ShareTutorial'
 
@@ -21,9 +22,7 @@ import { useInviteShare } from './ShareTutorial'
 export const SUPPORT_PICTURE: RulesPicture = { src: artUrl('village'), focus: '50% 58%' }
 
 export function DonationPopup() {
-  const due = useGame((s) => !!s.save && donationDue(s.save, s.data) && !tutorialPending(s.save, s.data))
-  const idle = useGame((s) => s.run.phase === 'idle')
-  const replies = useInbox((s) => (s.messages ? unseenReplies(s.messages).length : 0))
+  const turn = useMyTurn('donation')
   // A reload starts on the build's content, before the sign-in, the cloud save and the developer's answers are in: any
   // of them can still take the pop-up away (the admin's settings, a region seen on another device, an answer first), so
   // it waits for them rather than show and vanish.
@@ -32,7 +31,9 @@ export function DonationPopup() {
   const synced = useCloudSync((s) => s.settled)
   const answersIn = useInbox((s) => s.loaded) || !isSupabaseConfigured
   const ready = contentIn && status !== 'unknown' && (status !== 'signed_in' || synced) && answersIn
-  return <SupportModal open={ready && due && idle && !replies} onClose={() => undefined} />
+  const open = ready && turn
+  useOnScreen('donation', open)
+  return <SupportModal open={open} onClose={() => undefined} />
 }
 
 const openTab = (url: string) => window.open(url, '_blank', 'noopener,noreferrer')

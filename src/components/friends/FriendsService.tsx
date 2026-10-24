@@ -4,7 +4,7 @@
 // - an invite link that was opened (/f/<code>): signed in, the two players become friends at once and a pop-up says
 //   so; signed out, a pop-up asks to connect first, and the add happens on the way back.
 import { useEffect, useRef, useState } from 'react'
-import { dayCareTutorialDue, inviteRewardsOn, leaderboardTutorialDue } from '@/engine'
+import { inviteRewardsOn } from '@/engine'
 import { useT } from '@/i18n/react'
 import { clearInvite, readInvite } from '@/lib/friendInvite'
 import {
@@ -26,6 +26,7 @@ import { useConnect } from '../AccountButton'
 import { PixelIcon } from '../icons'
 import { Modal } from '../Modal'
 import { PixelButton } from '../PixelButton'
+import { usePopupTurn } from '../popupTurn'
 import { useAddText } from './AddFriendModal'
 import { FriendPreview } from './FriendBits'
 import { FriendProfileSheet } from './FriendProfileSheet'
@@ -67,12 +68,12 @@ function InviteHandler() {
   const { t } = useT()
   const addText = useAddText()
   const status = useGame((s) => s.auth.status)
-  // Between fights, after Prof. Oak's tutorials, and never over a full-screen moment (a battle, a hatching, the lab).
+  // Between fights, once no one-time pop-up is due (engine/popups.ts), and never over a full-screen moment (a battle, a
+  // hatching, the lab).
   const full = useFullscreen()
-  const calm = useGame(
-    (s) => s.run.phase === 'idle' && !!s.save && !dayCareTutorialDue(s.save, s.data) && !leaderboardTutorialDue(s.save, s.data),
-  )
-  const ready = calm && !full
+  const popup = usePopupTurn()
+  const calm = useGame((s) => s.run.phase === 'idle' && !!s.save)
+  const ready = calm && !full && !popup
   const [code, setCode] = useState(() => readInvite())
   const [who, setWho] = useState<Who | null>(null)
   const [added, setAdded] = useState<FriendNotice | null>(null)

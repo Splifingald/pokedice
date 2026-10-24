@@ -57,11 +57,14 @@ const CARD: Record<AreaStatus, string> = {
 function AreaCard({
   area,
   query,
+  lead,
   onDetails,
   onGo,
 }: {
   area: Area
   query: string
+  /** Its GO is the sheet's one red action: where Home's big button leads (here, or where the story goes on). */
+  lead: boolean
   onDetails: () => void
   onGo: () => void
 }) {
@@ -172,7 +175,10 @@ function AreaCard({
               ? t('ui.home.playHere', { area: area.name })
               : t('ui.home.goTo', { area: area.name })
           }
-          className="pixel-btn frame-primary absolute bottom-3 right-2.5 h-11 w-[60px] text-[24px] uppercase leading-none tracking-[0.06em]"
+          className={cx(
+            'pixel-btn absolute bottom-3 right-2.5 h-11 w-[60px] text-[24px] uppercase leading-none tracking-[0.06em]',
+            lead ? 'frame-primary' : 'frame-dark',
+          )}
         >
           {t('ui.home.go')}
         </button>
@@ -185,7 +191,7 @@ function AreaCard({
  * A region the player has reached: its picture, areas, catches and badges, and GO. Tapping it moves there and shows
  * its areas, in the same sheet (the region you're in just goes back to its areas).
  */
-function RegionCard({ region, onDone }: { region: Region; onDone: () => void }) {
+function RegionCard({ region, lead, onDone }: { region: Region; lead: boolean; onDone: () => void }) {
   const { t } = useT()
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
@@ -230,7 +236,10 @@ function RegionCard({ region, onDone }: { region: Region; onDone: () => void }) 
         {/* The whole card is the button; GO says so. */}
         <span
           aria-hidden
-          className="pixel-btn frame-primary grid h-11 w-[60px] shrink-0 place-items-center text-[24px] uppercase leading-none tracking-[0.06em]"
+          className={cx(
+            'pixel-btn grid h-11 w-[60px] shrink-0 place-items-center text-[24px] uppercase leading-none tracking-[0.06em]',
+            lead ? 'frame-primary' : 'frame-dark',
+          )}
         >
           {t('ui.home.go')}
         </span>
@@ -324,13 +333,15 @@ function OfferCard({ region, onStarted }: { region: Region; onStarted: () => voi
 /**
  * The Areas sheet: every area of the region as a card (its scene's strip, level range, catches, its state as the
  * outline), searchable by area or by Pokémon, filtered and sorted. A card opens the area's details; GO travels there
- * (or plays, where you are). "Regions" beside the title switches to the regions reached and the one on offer.
+ * (or plays, where you are). "Regions" beside the title switches to the regions reached and the one on offer. One red
+ * GO (docs/15 §6): the `lead` area's, where Home's big button leads; the others are navy.
  */
 export function AreasSheet({
   open,
   onClose,
   view: initialView,
   filter: initialFilter,
+  lead,
   onDetails,
   onPlay,
   onTravel,
@@ -339,6 +350,8 @@ export function AreasSheet({
   onClose: () => void
   view: 'areas' | 'regions'
   filter: AreasFilter
+  /** The area whose GO is red: the one being played, or, behind in the region, the one the story goes on in. */
+  lead: string
   onDetails: (areaId: string) => void
   onPlay: () => void
   onTravel: (area: Area) => void
@@ -475,6 +488,7 @@ export function AreasSheet({
                 key={a.id}
                 area={a}
                 query={q}
+                lead={a.id === lead}
                 onDetails={() => onDetails(a.id)}
                 onGo={() => (a.id === save.currentAreaId ? onPlay() : onTravel(a))}
               />
@@ -486,7 +500,8 @@ export function AreasSheet({
       ) : (
         <div ref={regionsBody} className="flex flex-col gap-3 pt-1">
           {regions.map((r) => (
-            <RegionCard key={r.id} region={r} onDone={showAreas} />
+            // The new region's own button is the red one while one is on offer; else the region being played's GO.
+            <RegionCard key={r.id} region={r} lead={!offer && r.id === region} onDone={showAreas} />
           ))}
           {offer ? (
             <OfferCard region={offer} onStarted={onClose} />

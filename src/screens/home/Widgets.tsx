@@ -1,15 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  comingUp,
   dayCareLevelProgress,
   dayCareOf,
   isDayCareOpen,
   nextCheckProgress,
-  speciesCaughtEverywhere,
   teamOf,
-  versusReadyCount,
   versusUnlocked,
   VERSUS_TEAM_SIZE,
+  type ComingUp,
+  type ConditionStatus,
 } from '@/engine'
 import { useT } from '@/i18n/react'
 import { conditionLabel, waitText } from '@/i18n/text'
@@ -19,9 +20,8 @@ import { PixelIcon } from '@/components/icons'
 import { MINI_SCALE, MiniSprite } from '@/components/SpriteImg'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { rememberedVersus, versusBoardCached, type VersusEntry } from '@/lib/versus'
-import { pushToast, useGame } from '@/store/game'
+import { useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
-import { cx } from '@/theme/util'
 import { featuredSecret } from './areas'
 import { AreaStrip } from '@/components/AreaStrip'
 import { dayCarePicture } from '@/fx/areaArt'
@@ -31,76 +31,29 @@ import { useInWorld, WorldWidgets } from '@/screens/events/world'
 import { HeadTag, Meter, Widget, WidgetBanner, WIDGET_BANNER_H, WidgetRows as DayCareRows } from './Widget'
 
 /**
- * The newest secret area (one tap to travel), or the next one to open with how close it is. Gone once every secret area
- * of the region is found and played: nothing left to show off.
+ * The newest secret area: opened and never played, one tap to travel there. The next one still to open is a goal, not a
+ * square: the "Coming up" line says it once nothing else is closer (comingUp).
  */
-function SecretWidget({ onSecrets }: { onSecrets: () => void }) {
+function SecretWidget() {
   const { t } = useT()
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
   const f = featuredSecret(save, data)
-  if (!f) return null
-  if (f.fresh) {
-    const cond = f.area.unlockConditions?.[0]
-    return (
-      <Widget
-        title={t('ui.home.secretArea')}
-        tag={<NewTag />}
-        label={t('ui.home.secretNewLabel', { area: f.area.name })}
-        onClick={() => travelTo(f.area)}
-      >
-        <WidgetBanner>
-          <AreaStrip area={f.area} h={BANNER.h} className="absolute inset-0 h-full w-full" />
-        </WidgetBanner>
-        <DayCareRows
-          top={<span className="truncate text-[20px] leading-none">{f.area.name}</span>}
-          bottom={cond ? conditionLabel(cond, data) : ''}
-        />
-      </Widget>
-    )
-  }
-  // The condition still to meet, which the numbers count (not the area's first one, which may be met already).
-  const cond = f.cond
-  const label = conditionLabel(cond, data)
+  if (!f?.fresh) return null
+  const cond = f.area.unlockConditions?.[0]
   return (
     <Widget
-      title={t('ui.home.nextSecret')}
-      label={t('ui.home.secretNextLabel', {
-        area: f.area.name,
-        what: label,
-        current: f.current,
-        target: f.target,
-      })}
-      onClick={onSecrets}
+      title={t('ui.home.secretArea')}
+      tag={<NewTag />}
+      label={t('ui.home.secretNewLabel', { area: f.area.name })}
+      onClick={() => travelTo(f.area)}
     >
       <WidgetBanner>
-        <AreaStrip area={f.area} h={BANNER.h} className="absolute inset-0 h-full w-full grayscale-[0.7]" />
-        <PixelIcon
-          name="lock"
-          size={16}
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        />
+        <AreaStrip area={f.area} h={BANNER.h} className="absolute inset-0 h-full w-full" />
       </WidgetBanner>
       <DayCareRows
         top={<span className="truncate text-[20px] leading-none">{f.area.name}</span>}
-        meter={<Meter value={f.current} max={f.target} />}
-        bottom={
-      // What the numbers count, said: "22/133 in Pokédex" with its icon, not a bare fraction.
-      <span className="flex min-w-0 items-center gap-1">
-        {cond.kind === 'pokedex' ? (
-          <PixelIcon name="navDex" size={16} />
-        ) : cond.kind === 'maxLevel' ? (
-          <PixelIcon name="up" size={14} />
-        ) : null}
-        <span className="truncate">
-          {cond.kind === 'pokedex'
-            ? t('ui.home.secretDex', { current: Math.min(f.current, f.target), target: f.target })
-            : cond.kind === 'maxLevel'
-              ? t('ui.home.secretLevel', { current: Math.min(f.current, f.target), target: f.target })
-              : label || `${Math.min(f.current, f.target)}/${f.target}`}
-        </span>
-      </span>
-        }
+        bottom={cond ? conditionLabel(cond, data) : ''}
       />
     </Widget>
   )
@@ -136,7 +89,7 @@ function useHeight<T extends HTMLElement>() {
  * The banner keeps its shape whether its picture has loaded or not, so the widget never changes size. `children` sit
  * on it, given its height (the Pokémon are drawn to it).
  */
-function DayCareBanner({ dim, children }: { dim?: boolean; children?: (height: number) => ReactNode }) {
+function DayCareBanner({ children }: { children?: (height: number) => ReactNode }) {
   const [ref, height] = useHeight<HTMLSpanElement>()
   return (
     <span
@@ -148,7 +101,7 @@ function DayCareBanner({ dim, children }: { dim?: boolean; children?: (height: n
         area={DAY_CARE_SCENE}
         picture={bannerPicture()}
         h={BANNER.h}
-        className={cx('absolute inset-0 h-full w-full', dim && 'grayscale-[0.7]')}
+        className="absolute inset-0 h-full w-full"
       />
       {children && <span className="absolute inset-0 leading-none">{children(height)}</span>}
     </span>
@@ -161,9 +114,9 @@ const OnBanner = ({ children }: { children: ReactNode }) => <span className="gri
 /**
  * The Day Care, one for every region: its banner, with your two standing on it and the levels they gained there under
  * them (MAX at the level cap), the gauge to the next Egg check and its time (no gauge while no pair is there: nothing
- * is checked); locked (how close, all regions counted);
- * or, with an Egg waiting, gold with the Egg shaking on the banner. The same size in every state. It only ever opens
- * the Day Care page (with an Egg, straight into the hatching).
+ * is checked); or, with an Egg waiting, gold with the Egg shaking on the banner. The same size in every state. It only
+ * ever opens the Day Care page (with an Egg, straight into the hatching). No square until it opens: the "Coming up"
+ * line counts the catches to go.
  */
 function DayCareWidget() {
   const { t, tPlural } = useT()
@@ -172,30 +125,7 @@ function DayCareWidget() {
   const data = useGame((s) => s.data)
   const now = useNow(30_000)
   const cfg = data.config.dayCare
-  if (!isDayCareOpen(save, data)) {
-    const have = Math.min(speciesCaughtEverywhere(save), cfg.unlockPokedex)
-    return (
-      <Widget
-        title={t('ui.home.dayCare')}
-        tag={<HeadTag />}
-        label={t('ui.home.dcLockedLabel', { count: cfg.unlockPokedex, n: have })}
-        onClick={() => pushToast(t('ui.home.dcLockedToast', { count: cfg.unlockPokedex }))}
-      >
-        <DayCareBanner dim>
-          {() => (
-            <OnBanner>
-              <PixelIcon name="lock" size={16} />
-            </OnBanner>
-          )}
-        </DayCareBanner>
-        <DayCareRows
-          top={<span className="truncate text-[20px] leading-none">{t('ui.home.dcCaught', { n: have, max: cfg.unlockPokedex })}</span>}
-          meter={<Meter value={have} max={cfg.unlockPokedex} />}
-          bottom={t('ui.home.dcOpensAll')}
-        />
-      </Widget>
-    )
-  }
+  if (!isDayCareOpen(save, data)) return null
   const dc = dayCareOf(save)
   if (dc.egg)
     return (
@@ -300,7 +230,6 @@ function DayCareWidget() {
   )
 }
 
-/** Versus: locked (how close the team is), open (set a team), then teams to beat and defense wins. */
 /**
  * The Versus widget's banner (public/backgrounds/versus.png, 478 × 265, from the Visual Lab's prompt): a stadium at
  * night, red against blue; framed on the crowd and the centre circle (VS_FOCUS is its object-position).
@@ -351,6 +280,7 @@ function TeamFan({ dexes, size, step, className }: { dexes: number[]; size: numb
   )
 }
 
+/** Versus, once open: set a team, then teams to beat and defense wins. No square before: the "Coming up" line counts. */
 function VersusWidget() {
   const { t, tPlural } = useT()
   const navigate = useNavigate()
@@ -371,43 +301,7 @@ function VersusWidget() {
     }
   }, [open, signedIn])
 
-  const team = (
-    <TeamFan dexes={teamOf(save).map((p) => p.dex)} size={34} step={39} className={cx(!open && 'opacity-50 grayscale')} />
-  )
-  if (!open) {
-    const n = Math.min(versusReadyCount(save, data), VERSUS_TEAM_SIZE)
-    const best = Math.max(...save.box.map((p) => p.level))
-    return (
-      <Widget
-        title={t('ui.versus.title')}
-        tag={
-          <HeadTag>
-            <PixelIcon name="lock" size={16} />
-          </HeadTag>
-        }
-        label={`${t('ui.versus.locked')} ${t('ui.versus.lockedCount', { n })}`}
-        onClick={() => navigate('/versus')}
-      >
-        {/* Locked: the same banner greyed, the team waiting on it, then the same rows as every widget. */}
-        <WidgetBanner>
-          <img
-            src={VS_BANNER}
-            alt=""
-            className="pixelated absolute inset-0 h-full w-full object-cover grayscale-[0.7]"
-            style={{ imageRendering: 'pixelated', objectPosition: VS_FOCUS }}
-          />
-          {/* The team up to the lock. */}
-          <span className="absolute inset-y-0 left-0.5 right-6 flex items-center">{team}</span>
-          <PixelIcon name="lock" size={16} className="absolute right-2 top-1/2 -translate-y-1/2" />
-        </WidgetBanner>
-        <DayCareRows
-          top={<span className="truncate text-[20px] leading-none">{t('ui.versus.lockedCount', { n })}</span>}
-          meter={<Meter value={n} max={VERSUS_TEAM_SIZE} />}
-          bottom={t('ui.home.bestLevel', { n: best })}
-        />
-      </Widget>
-    )
-  }
+  if (!open) return null
   // The board decides once it has answered; until then (or when it can't be reached) your row as it last gave it, so
   // the widget never shows the party in place of a Versus team that is set.
   const me = board ? board.find((r) => r.isMe) : rememberedVersus(userId)
@@ -465,11 +359,51 @@ function VersusWidget() {
 }
 
 /**
- * Home's widgets, two by two: the secret area (while one is left to find or play) and the Day Care, then Versus and one
- * square per special event. Inside a small world, only the world's: its mythical and its Mart (the main game's wait
- * outside, docs/21).
+ * "Coming up: Day Care · 7/20 caught": the next thing to open and how close it is, from the engine's numbers
+ * (comingUp). One line instead of a locked square each, which a new game was mostly made of.
  */
-export function Widgets({ onSecrets }: { onSecrets: () => void }) {
+export function ComingUpView({ next }: { next: ComingUp }) {
+  const { t } = useT()
+  const data = useGame((s) => s.data)
+  /** A secret area's condition still to meet, counted: "Best Lv. 5/70", "22/133 in Pokédex", or its own words. */
+  const secretGoal = (st: ConditionStatus) => {
+    const vars = { current: Math.min(st.current, st.target), target: st.target }
+    if (st.cond.kind === 'pokedex') return t('ui.home.secretDex', vars)
+    if (st.cond.kind === 'maxLevel') return t('ui.home.secretLevel', vars)
+    const label = conditionLabel(st.cond, data)
+    // An area to reach or to clear is said in words: it has no count.
+    return st.cond.kind === 'area' || st.cond.kind === 'cleared' ? label : `${label} · ${vars.current}/${vars.target}`
+  }
+  const what =
+    next.kind === 'dayCare'
+      ? `${t('ui.home.dayCare')} · ${t('ui.home.dcCaught', { n: next.current, max: next.target })}`
+      : next.kind === 'versus'
+        ? `${t('ui.versus.title')} · ${t('ui.versus.lockedCount', { n: next.current })}`
+        : next.kind === 'events'
+          ? `${t('ui.home.events')} · ${t('ui.map.clearFirst', { area: data.areas.find((a) => a.id === next.areaId)?.name ?? '' })}`
+          : `${next.area.name} · ${secretGoal(next.status)}`
+  return (
+    <p className="m-0 flex min-w-0 items-center gap-2 bg-well px-2.5 py-2 font-pixel-sm text-[16px] leading-tight text-muted shadow-ring-line">
+      <PixelIcon name="lock" size={16} className="shrink-0" />
+      <span className="min-w-0">{t('ui.home.comingUp', { what })}</span>
+    </p>
+  )
+}
+
+/** The line under Home's squares, while something is still to open. */
+function ComingUpLine() {
+  const save = useGame((s) => s.save)!
+  const data = useGame((s) => s.data)
+  const next = comingUp(save, data)
+  return next && <ComingUpView next={next} />
+}
+
+/**
+ * Home's widgets, two by two: one square for each thing that's open (a secret area to travel to, the Day Care, Versus,
+ * each special event), then one line for the next thing to open (docs/15 §12). Inside a small world, only the world's:
+ * its mythical and its Mart (the main game's wait outside, docs/21).
+ */
+export function Widgets() {
   const inside = useInWorld().inside
   if (inside)
     return (
@@ -478,11 +412,14 @@ export function Widgets({ onSecrets }: { onSecrets: () => void }) {
       </div>
     )
   return (
-    <div className="grid grid-cols-2 content-start gap-2.5">
-      <SecretWidget onSecrets={onSecrets} />
-      <DayCareWidget />
-      <VersusWidget />
-      <EventWidgets />
+    <div className="flex flex-col gap-2.5">
+      <div className="grid grid-cols-2 content-start gap-2.5 empty:hidden">
+        <SecretWidget />
+        <DayCareWidget />
+        <VersusWidget />
+        <EventWidgets />
+      </div>
+      <ComingUpLine />
     </div>
   )
 }

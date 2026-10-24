@@ -50,6 +50,7 @@ import { PushBits } from './kitchen/PushBits'
 import { GeneralBits } from './kitchen/GeneralBits'
 import { LooksBits } from './kitchen/LooksBits'
 import { RulesBits } from './kitchen/RulesBits'
+import { HomeBits } from './kitchen/HomeBits'
 import { ExtremeBits } from './kitchen/ExtremeBits'
 import { PartnerBits } from './kitchen/PartnerBits'
 import { OnboardingBits } from './kitchen/OnboardingBits'
@@ -650,6 +651,10 @@ export function KitchenSink() {
 
       <Section title="RulesModal · InfoButton: a feature's rules (the unlock pop-up, the INFO copy)">
         <RulesBits />
+      </Section>
+
+      <Section title="Home: the Coming up line (each thing still to open), the big button (CONTINUE, a challenge, greyed out, GO TO with Stay here), the leaderboard tip">
+        <HomeBits />
       </Section>
 
       <Section title="General upgrades: the tab's cards, rules and INFO, while you were away, golden names (docs/25)">

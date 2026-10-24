@@ -47,14 +47,15 @@ function HomeView({ area }: { area: Area }) {
     null,
   )
   const [mon, setMon] = useState<SheetView | null>(null)
-  const { go, latest, keepExploring } = useContinue(area)
+  const { go, latest, goTo, keepExploring } = useContinue(area)
   // What sits under CONTINUE takes its height off the scene on wide screens, so the whole bar stays on screen: the
-  // green GO TO (a 56px button and its gap) and "keep exploring" (36px and its gap).
+  // green GO TO (a 56px button and its gap), or "Stay here" under GO TO (44px and its gap), and "keep exploring" (36px
+  // and its gap).
   // Inside a small world only its own things show (docs/21): its strip (about 60px and the gap) above the scene, no
   // other region on offer, no region switcher.
   const inside = useInWorld().inside
   const strip = inside ? 72 : 0
-  const below = (latest ? 64 : 0) + (keepExploring ? 44 : 0) + strip
+  const below = (goTo ? 52 : latest ? 64 : 0) + (keepExploring ? 44 : 0) + strip
 
   // Opened on an encounter left under way (store/resume.ts; the installed app starts on Home): straight back into it.
   const navigate = useNavigate()
@@ -119,7 +120,7 @@ function HomeView({ area }: { area: Area }) {
         />
       </section>
       <section aria-label={t('ui.home.widgets')}>
-        <Widgets onSecrets={() => setSheet({ view: 'areas', filter: 'secret', key: Date.now() })} />
+        <Widgets />
       </section>
 
       <AreasSheet
@@ -128,6 +129,7 @@ function HomeView({ area }: { area: Area }) {
         onClose={() => setSheet(null)}
         view={sheet?.view ?? 'areas'}
         filter={sheet?.filter ?? 'all'}
+        lead={goTo?.area.id ?? area.id}
         onDetails={(id) => setDetails(id)}
         onPlay={play}
         onTravel={travel}

@@ -2,26 +2,16 @@
 // and the pieces other screens show while one runs: the Shiny Parade's chip where it applies, Cash Flow's "+50 %" on
 // the purse and on the ₽ won. The Special Shop's section is the Poké Mart's (screens/Shop.tsx).
 import { type ReactNode } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { create } from 'zustand'
 import {
   cashMultiplier,
-  dayCareTutorialDue,
-  donationDue,
-  eventUnlockDue,
-  inWorld,
   kitsHeld,
-  leaderboardTutorialDue,
   liveCovers,
   liveLeft,
   livePopupDue,
   liveShopRows,
-  regionOfferDue,
   shinyBoost,
-  generalRulesDue,
-  versusRulesDue,
-  worldFor,
-  worldPopupDue,
   type Area,
   type GameData,
   type LiveEvent,
@@ -33,14 +23,13 @@ import { PixelIcon } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
+import { useMyTurn, useOnScreen } from '@/components/popupTurn'
 import { countdown, money } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { askPush, pushReady } from '@/lib/push'
 import { markLivePopupSeen, useLive } from '@/store/live'
 import { ugRulesSeen } from '@/store/underground'
 import { UgCave, UgRulesModal } from '@/components/Underground'
-import { serverNow } from '@/store/serverTime'
-import { useRaidGifts } from '@/store/raidGifts'
 import { HeadTag, WidgetRows, WIDGET_BANNER_H } from '@/screens/home/Widget'
 import { cx } from '@/theme/util'
 import { bannerUrl } from './shared'
@@ -297,35 +286,22 @@ function LiveRules({ e }: { e: LiveEvent }) {
 }
 
 /**
- * The live event's pop-up: once per event, the first time the player is between fights while it runs, after Prof.
- * Oak's tutorials and the other pop-ups; again from Home's square. OK; a Special Shop adds "Go to the shop".
+ * The live event's pop-up: once per event, the first time the player is between fights while it runs, on its turn in
+ * the one-time pop-ups' queue (engine/popups.ts: after the small world's, never in the Mart); again from Home's square.
+ * OK; a Special Shop adds "Go to the shop".
  */
 export function LivePopup() {
   const { t } = useT()
   const navigate = useNavigate()
-  const onShop = useLocation().pathname.startsWith('/shop')
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
   const asked = usePopupAsked((s) => s.asked)
-  const gifts = useRaidGifts((s) => s.gifts.length)
-  const others = useGame(
-    (s) =>
-      !s.save ||
-      dayCareTutorialDue(s.save, s.data) ||
-      leaderboardTutorialDue(s.save, s.data) ||
-      donationDue(s.save, s.data) ||
-      regionOfferDue(s.save, s.data) ||
-      !!eventUnlockDue(s.save, s.data) ||
-      versusRulesDue(s.save, s.data) ||
-      generalRulesDue(s.save, s.data) ||
-      // A small world's pop-up (priority 1) goes first.
-      (!inWorld(s.save, s.data) && worldPopupDue(s.save, worldFor(s.save, s.data, serverNow()))),
-  )
+  const turn = useMyTurn('live')
   const idle = useGame((s) => s.run.phase === 'idle')
   const { live, now } = useLive(asked ? 1000 : 5000)
+  const open = !!live && !!save && now != null && ((idle && asked) || (turn && livePopupDue(save, live)))
+  useOnScreen('live', open)
   if (!live || !save || now == null) return null
-  const due = livePopupDue(save, live) && !others && !gifts && !onShop
-  const open = idle && (asked || due)
   const close = () => {
     usePopupAsked.setState({ asked: false })
     if (livePopupDue(save, live)) markLivePopupSeen(live)

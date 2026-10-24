@@ -1,19 +1,8 @@
 // The General upgrades' rules (docs/15 §20, docs/25): the special events' pop-up, once when the tab opens to the
 // player, then from the INFO button at the bottom of the tab. The numbers come from the config, so a rebalance shows
 // up in the text.
-import { useLocation, useNavigate } from 'react-router-dom'
-import {
-  dayCareTutorialDue,
-  donationDue,
-  eventUnlockDue,
-  extremeRulesDue,
-  generalCfg,
-  generalRulesDue,
-  leaderboardTutorialDue,
-  regionOfferDue,
-  tradeRulesDue,
-  versusRulesDue,
-} from '@/engine'
+import { useNavigate } from 'react-router-dom'
+import { generalCfg } from '@/engine'
 import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
 import { countdown, money } from '@/lib/format'
@@ -23,6 +12,7 @@ import { closeOfflineReport, useOfflineReport } from '@/store/general'
 import { PixelIcon } from './icons'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
+import { useMyTurn, useOnScreen } from './popupTurn'
 import { RulesModal, type RuleRow, type RulesPicture } from './RulesModal'
 
 /** The Battle Frontier's plaza at sunset: the grand, golden end of the game. */
@@ -86,29 +76,15 @@ export function GeneralRulesModal({
 
 /**
  * The General tab has opened (the admin's switch, a first badge): once, between fights, its rules and a button straight
- * to it. It waits its turn behind Prof. Oak's tutorials and the other one-time pop-ups.
+ * to it. It takes its turn in the one-time pop-ups' queue (engine/popups.ts), never on the Upgrades page.
  */
 export function GeneralUnlockPopup() {
   const navigate = useNavigate()
-  const onUpgrades = useLocation().pathname.startsWith('/upgrades')
-  const due = useGame(
-    (s) =>
-      !!s.save &&
-      generalRulesDue(s.save, s.data) &&
-      !dayCareTutorialDue(s.save, s.data) &&
-      !leaderboardTutorialDue(s.save, s.data) &&
-      !donationDue(s.save, s.data) &&
-      !regionOfferDue(s.save, s.data) &&
-      !eventUnlockDue(s.save, s.data) &&
-      !versusRulesDue(s.save, s.data) &&
-      !extremeRulesDue(s.save, s.data) &&
-      !(s.auth.status === 'signed_in' && tradeRulesDue(s.save, s.data)),
-  )
-  const idle = useGame((s) => s.run.phase === 'idle')
-  if (!due) return null
+  const open = useMyTurn('general')
+  useOnScreen('general', open)
   return (
     <GeneralRulesModal
-      open={idle && !onUpgrades}
+      open={open}
       onClose={markGeneralRulesSeen}
       onGo={() => {
         markGeneralRulesSeen()
@@ -118,15 +94,20 @@ export function GeneralUnlockPopup() {
   )
 }
 
-/** "While you were away": what an absence of an hour or more earned (less is a toast). It waits for a fight to end. */
-export function OfflineReportModal() {
+/**
+ * "While you were away": what an absence of an hour or more earned (less is a toast). It waits for a fight to end, and
+ * takes its turn in the one-time pop-ups' queue (engine/popups.ts: what you came back to goes first). `show`: the
+ * kitchen sink's, which has no queue.
+ */
+export function OfflineReportModal({ show }: { show?: boolean }) {
   const { t } = useT()
   const report = useOfflineReport((s) => s.report)
   const hours = useGame((s) => generalCfg(s.data).offlineMaxHours)
-  const idle = useGame((s) => s.run.phase === 'idle')
+  const open = (useMyTurn('offline') || !!show) && !!report
+  useOnScreen('offline', open)
   return (
     <Modal
-      open={!!report && idle}
+      open={open}
       onClose={closeOfflineReport}
       title={t('ui.extreme.away.title')}
       className="max-w-md"

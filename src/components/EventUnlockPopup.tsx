@@ -1,9 +1,9 @@
 // A special event has opened (docs/18): once, between fights, its picture as a banner, its 2–4 rules (with the admin's
-// numbers) and a button straight to it. It waits for Prof. Oak's tutorials, the donation pop-up and a new region's
-// offer (winning a League opens both that and the rebattle). Only the newest open event shows; the others count as
-// seen with it.
-import { useLocation, useNavigate } from 'react-router-dom'
-import { dayCareTutorialDue, donationDue, eventUnlockDue, leaderboardTutorialDue, regionOfferDue } from '@/engine'
+// numbers) and a button straight to it. It takes its turn in the one-time pop-ups' queue (engine/popups.ts): after Prof.
+// Oak's tutorials, the donation pop-up and a new region's offer (winning a League opens both that and the rebattle),
+// never on the events' pages. Only the newest open event shows; the others count as seen with it.
+import { useNavigate } from 'react-router-dom'
+import { eventUnlockDue } from '@/engine'
 import { useT } from '@/i18n/react'
 import { markEventsSeen } from '@/store/actions'
 import { useGame } from '@/store/game'
@@ -11,23 +11,15 @@ import { EventPicture, EventRules, EVENT_ICON } from '@/screens/events/shared'
 import { PixelIcon } from './icons'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
+import { useMyTurn, useOnScreen } from './popupTurn'
 
 export function EventUnlockPopup() {
   const { t } = useT()
   const navigate = useNavigate()
-  const onEvents = useLocation().pathname.startsWith('/events')
   const data = useGame((s) => s.data)
-  const due = useGame((s) =>
-    s.save &&
-    !dayCareTutorialDue(s.save, s.data) &&
-    !leaderboardTutorialDue(s.save, s.data) &&
-    !donationDue(s.save, s.data) &&
-    !regionOfferDue(s.save, s.data)
-      ? eventUnlockDue(s.save, s.data)
-      : null,
-  )
-  const idle = useGame((s) => s.run.phase === 'idle')
-  const open = !!due && idle && !onEvents
+  const due = useGame((s) => (s.save ? eventUnlockDue(s.save, s.data) : null))
+  const open = useMyTurn('event') && !!due
+  useOnScreen('event', open)
   if (!due) return null
   const name = t(`ui.events.${due}.name`)
   const go = () => {

@@ -160,9 +160,12 @@ test('on a 360×640 phone: the square, the pop-up and the shop fit, in the Jerse
   await square.scrollIntoViewIfNeeded()
   await expect(square).toBeVisible()
   const sq = await square.boundingBox()
-  // The same size as the square beside it.
-  const daycare = await page.getByRole('button', { name: /Day Care/ }).first().boundingBox()
-  if (daycare) expect(Math.abs(sq!.height - daycare.height)).toBeLessThanOrEqual(2)
+  // The same size as the square beside it, if any: a locked feature has no square (docs/38 U3a).
+  const daycare = page.getByRole('button', { name: /^Day Care/ })
+  if (await daycare.count()) {
+    const dc = await daycare.first().boundingBox()
+    expect(Math.abs(sq!.height - dc!.height)).toBeLessThanOrEqual(2)
+  }
   for (const route of ['/home', '/shop']) {
     await page.goto(route)
     if (route === '/shop') await expect(page.getByRole('region', { name: 'Special Shop' })).toBeVisible({ timeout: 15_000 })

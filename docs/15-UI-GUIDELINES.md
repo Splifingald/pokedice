@@ -165,6 +165,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `PixelIcon` | Every icon | Pixel maps drawn as SVG rects: the Pokémon ones hand-drawn in `icons.tsx` (balls, Pokédex, badges, status symbols), the generic UI ones (coin, heart, shop, trophy, settings…) from the "1-bit Pixel Icons" pack, recoloured into `packIcons.ts` by `scripts/import-icons.ts` (11–16 px squares; the tab bar's on 16×16). Draw them at 12 px or more. One shared palette (`ICON_PALETTE`); a map may have its own (`OWN_PALETTE`) |
 | `TrainerName` / `NameIn` | Another trainer's name anywhere social (§24) | Plain; golden (`rich`: the `rich` token, a sparkle that twinkles, a stepped glint, still under reduced motion). Inline, so `truncate` around it still ends in "…". `NameIn` puts it in a translated sentence ("Misty's"), only the name golden |
 | `RulesModal` / `InfoButton` | A feature's rules: once when it unlocks, then from the blue INFO button at the bottom of its page | The special events' pop-up: its picture as a banner (`RulesBanner`), or a banner drawn in code (the gifts'), a NOW OPEN tag on the unlock, 2–4 `RuleList` rows (an icon, a short title, a line with the config's numbers, optionally a small button under it); Later and Let's go! on the unlock, OK from INFO. The Day Care and Versus use it (`FeatureRules.tsx`); the events have their own copies (`EventUnlockPopup`, `EventInfo`), with the same words |
+| `ContinueButton` / `StayHere` / `ComingUpView` / `LeaderboardTipModal` | Home (§12, docs/38 §6) | The big button: CONTINUE (the play arrow), a challenge waiting (the sword), greyed out (a tap says why), GO TO {area} behind in the region (the map) with Stay here, a 44 px link, under it; the "Coming up" line for the Day Care, the special events, Versus and a secret area (a level, the Pokédex); Prof. Oak's leaderboard tip with Later (✕ and Later end it for good) and SEE THE LEADERBOARD (`HomeBits`) |
 | `RotateCover` / `RotateView` | A phone held sideways (§6) | Over everything, not dismissable: the pixel phone tipping upright in steps (upright and still under reduced motion), the title and a line |
 | `ToastStack` / `ToastCard` | A short word on what just happened, or why something didn't (§7) | On `<body>`, beside the dialogs: under the top bar on phones, at the bottom on desktop; four at most. Info (panel) and good (green): a tap closes them, they go after 4 s or 1.2 s + 70 ms a character, waiting while touched, hovered or focused. Error (red): a ✕ (44 px), stays until closed |
 | `PageLoading` | A page split out of the main bundle loading (`Lazy` in `App.tsx`) | A Poké Ball drawn in code wobbling in pixel steps (`steps()`), still under calm; "Loading…" for screen readers (`role="status"`) |
@@ -430,6 +431,10 @@ Players shouldn't have to make many requests:
 - **Region cards** (Areas sheet → regions): each region's own picture (`public/region-art/<id>.png`, from the Visual
   Lab's region prompts; its first area's strip until it has one), name, counts and GO. A tap moves there and shows
   its areas in the same sheet, from the top (the region you're in just goes back to its areas).
+- **One red GO in the Areas sheet** (§6): only the GO of the area Home's big button leads to is red (the one being
+  played, or, behind in the region, the one the story goes on in, `AreasSheet`'s `lead`); every other GO is navy
+  (`frame-dark`). In the Regions view the new region's own button is the red one while one is on offer, else the GO of
+  the region being played.
 - **Area screen**: its title opens the area's details (the same sheet as Home's plate, without the travel footer).
   Under the details' name: the levels, the rounds done over the rounds that clear the area ("3/5 rounds"; more can be
   played once it's cleared, "7/5") or "Secret area", and where it stands.
@@ -449,16 +454,26 @@ Players shouldn't have to make many requests:
   card opens its sheet) and the action bar, HOME or CONTINUE, the next encounter (or the gym or legend waiting, with Keep exploring);
   when the next one can't start, the reason sits over the buttons. Only a full K.O. ends the run and goes back Home,
   and the HOME buttons.
-- **Behind in the region**: under CONTINUE, a green GO TO {area} travels to the furthest open area of the region's
-  main chain (`latestOpenArea`; secret areas don't count), until the player is there or the whole chain is cleared.
-  Not while an encounter is under way. On wide screens the scene gives up the height of what sits under CONTINUE (this
-  button, Keep exploring), so the whole bar stays on screen without scrolling.
-- **A team on a widget banner** (Versus, locked or open) spreads over the room up to what sits beside it (the VS, the
+- **Behind in the region** (the furthest open area of the region's main chain is elsewhere: `latestOpenArea`; secret
+  areas don't count; not while an encounter is under way): with nothing of its own waiting where the player stands (a
+  cleared area's free play), **CONTINUE itself reads GO TO {area}** and travels there, its second line saying what
+  waits there (the round, the gym leader, the legend); **Stay here**, a link under it (44 px tall), keeps the free play
+  CONTINUE gave (`ContinueButton`, `StayHere`; docs/38 U4a). With something else here (a gym, a legend, a raid, a
+  secret area's rounds, a portal, the nightmare, or a closed area's shut CONTINUE saying why) CONTINUE stays, and a
+  green GO TO {area} sits under it. Until the player is there or the whole chain is cleared. On wide screens the scene gives up the height of what
+  sits under the big button (Stay here, the green GO TO, Keep exploring), so the whole bar stays on screen without
+  scrolling.
+- **A team on a widget banner** (Versus) spreads over the room up to what sits beside it (the VS, the
   lock): its usual spacing when there is room, tighter on a phone's half-width widget, and only past 60 % of an icon do
   the icons get smaller (`TeamFan`). It never runs under the VS.
-- Home's widgets show what's next (the next secret, the Day Care, Versus, events) and are buttons when they lead
-  somewhere; a locked one says what opens it and how far you are. The secret one counts the condition still to meet
-  (the first left, as the areas list says), and goes once every secret area of the region is found and played.
+- **Home's squares are only for what is open** (docs/38 U3a): a secret area found and never played (one tap travels
+  there), the Day Care, Versus, each open special event, a small world and a live event; each is a button that leads
+  somewhere. Nothing locked gets a square: under them **one "Coming up" line** names the next thing to open and how
+  close the player is ("Coming up: Day Care · 7/20 caught", `ComingUpView`, from the engine's `comingUp`), in the order
+  things usually open: the Day Care, the special events (from the teaser's badge count, naming the area that opens the
+  first), Versus, then the secret area closest to opening (the condition still to meet, the first left, as the areas
+  list says). A goal is not a feature, so the next secret only shows once the features are open. No line once
+  everything is.
 - **Stages** (a canvas scene: Home, the battle, a hatching) are a background canvas, the Pokémon as DOM `<img>`s
   (Showdown's animated sprites, no extra request) and an effects canvas on top. A stage root is its own stacking
   context (`isolate`), so its internal z-indexes never rise above sheets and dialogs. The canvas has `role="img"` and a
@@ -788,10 +803,24 @@ Two rules for every feature that adds something players can do (an event, a mode
   every player's data as it is.
 - **Its rules, once and on demand**: a rules pop-up (`RulesModal`: its picture as a banner, 2–4 `RuleList` rows with
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
-  queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
-  again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
+  taking its turn in the one-time pop-ups' queue, below), and an **INFO** button at the bottom of its page that shows
+  the same rules again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
   the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
+- **The one-time pop-ups take turns, in one queue** (`nextOneTimePopup`, src/engine/popups.ts; docs/38 U2a): one at a
+  time, only between fights (`run.phase === 'idle'`, no battle, no full-screen moment, no gift being opened), never on
+  the page a pop-up leads to (the next one due takes the turn there), and the one on screen keeps its turn while it's
+  due. The engine decides whose turn it is from the save and what it can't know (`PopupContext`: the page, signed in,
+  the server's clock, what waits outside the save); `PopupQueue` (GameLayout) works it out once for the whole game, and
+  each pop-up opens only on its own turn (`useMyTurn`). The order: the away reports (Extreme's, the General upgrades'),
+  Prof. Oak's Day Care and leaderboard tutorials, the developer's answers, friends' raid gifts, Support me, a new
+  region's offer, a special event, Versus, Prof. Oak's invite, Extreme mode, Trades, the General upgrades, the invite
+  rewards' rules then a reward ready, the portal run, day and night, the battle powers, a small world's opening, its
+  finish and its goodbye, a live event (the Underground's rules), a taken trade's scene (Home only), and push
+  notifications' question last. A new pop-up gets a place in that list, not a list of its own. The rules that open at
+  their own moment (the gifts' before the first gift, Trick or Treat's at the first ghost, the portal's and the
+  nightmare's on their way in, the looks' at the first open, a world's finish or a live event asked for from Home) stay
+  there, and being due holds nothing back. Every "seen" flag stays where it was in the save.
 - **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
 - **A purely visual change** (the dice throws, docs/37; the game-feel pass, haptics and battle music, docs/38): the
@@ -1448,8 +1477,9 @@ and there are no Z-Moves. On:
 
 - **Rules, once and on demand**: a power's pop-up (`PowersUnlockPopup`, `PowerRulesModal`: its leader's area as the
   banner, the badge that opens it, what it does with the config's numbers, how Versus and auto battles use it) the first
-  time its badge is won, queued behind every other one-time pop-up; Mega Evolution's Let's go! opens the Mart. INFO
-  (`PowerInfo`) under the Mart's Mega Gems and on the Pokémon sheet, beside each power's line.
+  time its badge is won, on its turn in the one-time pop-ups' queue (§20; the gifts' and Trick or Treat's rules, which
+  open at their own moment, no longer hold it back); Mega Evolution's Let's go! opens the Mart. INFO (`PowerInfo`)
+  under the Mart's Mega Gems and on the Pokémon sheet, beside each power's line.
 - **In battle**: MEGA, G-MAX and Z-MOVE (`ZMoveButton`) are gold, in the extras row; Z-MOVE comes after the roll and
   ends the turn as ATTACK does. The Z-Move timeline plays before the attack's own (`src/fx/timelines/zmove.ts`; short
   motion: a flash of the type's colour), and the attack's own is the type's move as its Z variant (§9's table). A timed Mega changing back is a flash, no scene.

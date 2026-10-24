@@ -1,27 +1,20 @@
 // The Day Care has opened (20 species caught, across every region): once, between fights, its rules in the special
 // events' pop-up and a button straight to it. Later closes it for good, as the first visit does (saved, so it syncs).
 import { useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { dayCareTutorialDue } from '@/engine'
+import { useNavigate } from 'react-router-dom'
 import { joinList, t } from '@/i18n'
 import { takeDayCareNotice, visitDayCare } from '@/store/actions'
 import { pushToast, useGame } from '@/store/game'
 import { DayCareRulesModal } from './FeatureRules'
+import { useMyTurn, useOnScreen } from './popupTurn'
 
 export function DayCareTutorial() {
   const navigate = useNavigate()
-  const { pathname } = useLocation()
-  const due = useGame((s) => !!s.save && dayCareTutorialDue(s.save, s.data))
-  // Only between fights, never on top of a battle, a catch, the results or the Game Corner.
-  const idle = useGame((s) => s.run.phase === 'idle')
-  if (!due) return null
-  return (
-    <DayCareRulesModal
-      open={idle && pathname !== '/daycare'}
-      onClose={visitDayCare}
-      onGo={() => navigate('/daycare')}
-    />
-  )
+  // Its turn in the one-time pop-ups' queue (engine/popups.ts): first of Prof. Oak's, between fights, never on the Day
+  // Care's own page.
+  const open = useMyTurn('dayCare')
+  useOnScreen('dayCare', open)
+  return <DayCareRulesModal open={open} onClose={visitDayCare} onGo={() => navigate('/daycare')} />
 }
 
 /**

@@ -69,7 +69,7 @@ export function ExtremeBits() {
       <RestingPanel demo={saves.resting} />
       <ExtremeRulesModal open={rules != null} onClose={() => setRules(null)} onGo={rules === 'unlock' ? () => setRules(null) : undefined} />
       <SwitchSaveModal to={switching ?? 'extreme'} open={switching != null} onClose={() => setSwitching(null)} />
-      <AwayReportModal />
+      <AwayReportModal show />
     </div>
   )
 }

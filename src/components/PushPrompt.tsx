@@ -5,22 +5,9 @@
 // first, the only place iOS lets a web game send them. The same rules show from Settings' INFO button.
 import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import {
-  dayCareTutorialDue,
-  donationDue,
-  eventUnlockDue,
-  generalRulesDue,
-  inviteRulesDue,
-  leaderboardTutorialDue,
-  liveEventAt,
-  regionOfferDue,
-  tradeRulesDue,
-  versusRulesDue,
-  type PushTopic,
-} from '@/engine'
+import { liveEventAt, type PushTopic } from '@/engine'
 import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
-import { useFullscreen } from '@/lib/fullscreen'
 import { platform, pushSupport } from '@/lib/platform'
 import { askPush, declinePush, deferPush, enablePush, pushHours, pushReady, usePush } from '@/lib/push'
 import { pushToast, useGame } from '@/store/game'
@@ -29,6 +16,7 @@ import { EggSprite } from './EggSprite'
 import { PixelIcon } from './icons'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
+import { useMyTurn, useOnScreen, usePopupTurn } from './popupTurn'
 import { RuleList, type RuleRow, type RulesPicture } from './RulesModal'
 
 /** What each topic's notices say and when, with the config's hours. */
@@ -131,22 +119,22 @@ export function toastEnable(result: Awaited<ReturnType<typeof enablePush>>, t: (
 }
 
 /**
- * The question, wherever it was asked from (askPush): between fights, never over a full-screen moment, and after the
- * other one-time pop-ups.
+ * The question, wherever it was asked from (askPush): between fights, never over a full-screen moment, on its turn in
+ * the one-time pop-ups' queue (engine/popups.ts: the last).
  */
 export function PushAsk() {
   const { t } = useT()
   const asking = usePush((s) => s.asking)
   const busy = usePush((s) => s.busy)
   const data = useGame((s) => s.data)
-  const idle = useGame((s) => s.run.phase === 'idle')
-  const full = useFullscreen()
+  const turn = useMyTurn('push')
+  useOnScreen('push', turn && !!asking)
   if (!asking || !pushReady(data)) return null
   const install = pushSupport() === 'install'
   const live = liveEventAt(data, serverNow())
   return (
     <PushAskModal
-      open={idle && !full}
+      open={turn}
       topic={asking}
       picture={pushPicture(asking, { raid: data.config.events.raid.banner, live: live?.banner || null })}
       install={install}
@@ -160,21 +148,10 @@ export function PushAsk() {
   )
 }
 
-/** The other one-time pop-ups come first: they'd fight over the screen. */
+/** The other one-time pop-ups come first (they'd fight over the screen): one is due in the queue, not the question. */
 function useOthersDue(): boolean {
-  return useGame(
-    (s) =>
-      !s.save ||
-      dayCareTutorialDue(s.save, s.data) ||
-      leaderboardTutorialDue(s.save, s.data) ||
-      donationDue(s.save, s.data) ||
-      !!regionOfferDue(s.save, s.data) ||
-      !!eventUnlockDue(s.save, s.data) ||
-      versusRulesDue(s.save, s.data) ||
-      tradeRulesDue(s.save, s.data) ||
-      generalRulesDue(s.save, s.data) ||
-      (s.auth.status === 'signed_in' && inviteRulesDue(s.save, s.data)),
-  )
+  const turn = usePopupTurn()
+  return !!turn && turn !== 'push'
 }
 
 /** A feature's page asks its question once it has opened (a beat later, so the page is seen first). */

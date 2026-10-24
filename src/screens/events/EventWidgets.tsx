@@ -1,10 +1,10 @@
 // Home's squares for the special events (docs/18): one per open event, in the admin's order, beside the Day Care and
 // Versus, in the same frame as theirs (a banner of the Day Care's shape, then the same three rows), so every square on
-// Home is the same size. Before any event opens, one square holds the place: "coming later", then from the 3rd Kanto
-// badge a locked teaser naming the area that opens the first event.
+// Home is the same size. Before any event opens there is no square: from the 3rd Kanto badge, Home's "Coming up" line
+// names the area that opens the first one (engine/comingUp.ts).
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { activeEvents, currentTier, eventsTeaser, rebattleEncounter, rebattleOnHome, regionOf, type EventId } from '@/engine'
+import { activeEvents, currentTier, rebattleEncounter, rebattleOnHome, regionOf, type EventId } from '@/engine'
 import { AreaStrip } from '@/components/AreaStrip'
 import { Chip } from '@/components/Chip'
 import { PixelIcon } from '@/components/icons'
@@ -203,31 +203,6 @@ function EventSquare({ id }: { id: EventId }) {
   )
 }
 
-/** The square before any event: a dashed placeholder, locked and naming its area once the teaser is due. */
-function EventsTeaser({ areaName }: { areaName: string | null }) {
-  const { t } = useT()
-  const sub = areaName ? t('ui.events.teaser', { area: areaName }) : t('ui.shop.comingLater')
-  return (
-    <div
-      role="note"
-      aria-label={areaName ? t('ui.events.teaserLabel', { area: areaName }) : t('ui.home.eventsLabel')}
-      className="flex min-w-0 flex-col gap-[5px] bg-panel/50 px-2.5 pb-2.5 pt-2 text-faint outline-dashed outline-2 -outline-offset-2 outline-shadow"
-    >
-      {/* The same rows as a widget's, so the placeholder is the size of the squares beside it. */}
-      <span className="flex w-full items-center gap-1.5 text-[19px] leading-none text-muted">
-        <span className="min-w-0 flex-1 truncate">{t('ui.home.events')}</span>
-        <HeadTag>{areaName && <PixelIcon name="lock" size={16} />}</HeadTag>
-      </span>
-      <span className="block w-full" style={{ aspectRatio: `288 / ${WIDGET_BANNER_H}` }}>
-        <span className="grid h-full place-items-center">
-          <PixelIcon name="star" size={24} style={{ filter: 'grayscale(1) opacity(0.4)' }} />
-        </span>
-      </span>
-      <WidgetRows top={null} bottom={sub} />
-    </div>
-  )
-}
-
 export function EventWidgets() {
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
@@ -237,25 +212,15 @@ export function EventWidgets() {
   const onHome = open.filter((id) => id !== 'rebattle' || rebattleOnHome(save, data))
   // A small world (docs/21, priority 1) comes first (or its preview before it starts, §9), then a live event (docs/20,
   // priority 2), whatever else is open.
-  if (open.length)
-    return [<WorldSlot key="world" />, <LiveSquare key="live" />, ...onHome.map((id) =>
-      id === 'wheel' ? (
-        <WheelSquare key={id} />
-      ) : id === 'rebattle' ? (
-        <RebattleSquare key={id} />
-      ) : id === 'raid' ? (
-        <RaidSquare key={id} />
-      ) : (
-        <EventSquare key={id} id={id} />
-      ),
-    )]
-  const teaser = eventsTeaser(save, data)
-  const area = teaser?.kind === 'soon' ? data.areas.find((a) => a.id === teaser.areaId) : null
-  return (
-    <>
-      <WorldSlot />
-      <LiveSquare />
-      <EventsTeaser areaName={area?.name ?? null} />
-    </>
-  )
+  return [<WorldSlot key="world" />, <LiveSquare key="live" />, ...onHome.map((id) =>
+    id === 'wheel' ? (
+      <WheelSquare key={id} />
+    ) : id === 'rebattle' ? (
+      <RebattleSquare key={id} />
+    ) : id === 'raid' ? (
+      <RaidSquare key={id} />
+    ) : (
+      <EventSquare key={id} id={id} />
+    ),
+  )]
 }

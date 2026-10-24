@@ -2,26 +2,17 @@
 // reward's own pop-up), its rules (once when the rewards open, then INFO at the bottom of the Friends page), and the
 // pop-up that says a reward is ready. Every number — the tiers, the fill, what each one holds — is the engine's
 // (engine/invites.ts); the opening is the developer's gifts' own (GiftMoment).
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
-  dayCareTutorialDue,
-  donationDue,
-  eventUnlockDue,
   inviteGauge,
-  inviteRulesDue,
   inviteTiers,
   invitesWait,
-  leaderboardTutorialDue,
-  regionOfferDue,
-  tradeRulesDue,
-  versusRulesDue,
   type Gift,
   type InviteGauge,
   type InviteGaugeTier,
 } from '@/engine'
 import { useT } from '@/i18n/react'
 import { useFriends } from '@/lib/friends'
-import { useFullscreen } from '@/lib/fullscreen'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
 import { useGiftMoment } from '@/store/gifts'
@@ -32,8 +23,8 @@ import { GiftIcon, useGiftText } from '../Gifts'
 import { PixelIcon } from '../icons'
 import { Modal } from '../Modal'
 import { PixelButton } from '../PixelButton'
+import { useMyTurn, useOnScreen } from '../popupTurn'
 import { RulesModal, type RuleRow } from '../RulesModal'
-import { useSharePromptWaiting } from '../ShareTutorial'
 import { FriendPreview } from './FriendBits'
 
 /**
@@ -306,41 +297,19 @@ export function InviteRulesModal({
   )
 }
 
-/** The other one-time pop-ups, Prof. Oak's invite and the trades' rules among them, go first: one pop-up at a time. */
-function useOthersFirst(): boolean {
-  const invite = useSharePromptWaiting()
-  const others = useGame(
-    (s) =>
-      !!s.save &&
-      (dayCareTutorialDue(s.save, s.data) ||
-        leaderboardTutorialDue(s.save, s.data) ||
-        donationDue(s.save, s.data) ||
-        !!regionOfferDue(s.save, s.data) ||
-        !!eventUnlockDue(s.save, s.data) ||
-        versusRulesDue(s.save, s.data) ||
-        (s.auth.status === 'signed_in' && tradeRulesDue(s.save, s.data))),
-  )
-  return invite || others
-}
-
 /**
  * The rewards have opened to this player (signed in, the main game, the switch on): once, between fights, their
- * rules and a button to the Friends page, where the gauge is. On the Friends page itself, the page counts as seen.
+ * rules and a button to the Friends page, where the gauge is. It takes its turn in the one-time pop-ups' queue
+ * (engine/popups.ts: after Prof. Oak's invite and the trades' rules). On the Friends page itself, the page counts as
+ * seen.
  */
 export function InviteRulesPopup() {
   const navigate = useNavigate()
-  const onFriends = useLocation().pathname.startsWith('/friends')
-  const due = useGame(
-    (s) =>
-      isSupabaseConfigured && s.auth.status === 'signed_in' && !!s.save && inviteRulesDue(s.save, s.data),
-  )
-  const idle = useGame((s) => s.run.phase === 'idle' && !s.battle)
-  const full = useFullscreen()
-  const othersFirst = useOthersFirst()
-  if (!due || othersFirst) return null
+  const open = useMyTurn('invite')
+  useOnScreen('invite', open)
   return (
     <InviteRulesModal
-      open={idle && !full && !onFriends}
+      open={open}
       onClose={seeInviteRules}
       onGo={() => {
         seeInviteRules()
@@ -350,29 +319,32 @@ export function InviteRulesPopup() {
   )
 }
 
+/** A reward is waiting to pop up (one ready, not put off this visit): the queue's `inviteReward` (engine/popups.ts). */
+export function useInviteRewardWaiting(): boolean {
+  const ready = useInviteGauge()?.ready.length ?? 0
+  const putOff = useInviteRewards((s) => s.putOff)
+  return ready > 0 && !putOff
+}
+
 /**
- * A reward is ready (an invited friend won their first badge): between fights, after the rules and the other one-time
- * pop-ups, who did it, the gauge, and OPEN THE GIFT, which plays the gifts' opening. Later keeps it on the Friends page
- * until the next visit.
+ * A reward is ready (an invited friend won their first badge): between fights, on its turn in the one-time pop-ups'
+ * queue (engine/popups.ts: right after the rewards' rules), who did it, the gauge, and OPEN THE GIFT, which plays the
+ * gifts' opening. Later keeps it on the Friends page until the next visit.
  */
 export function InviteRewardPopup() {
   const gauge = useInviteGauge()
   const latest = useFriends((s) => s.invites?.latest ?? null)
-  const onFriends = useLocation().pathname.startsWith('/friends')
-  const rulesFirst = useGame((s) => !!s.save && inviteRulesDue(s.save, s.data))
-  const idle = useGame((s) => s.run.phase === 'idle' && !s.battle)
-  const full = useFullscreen()
+  const turn = useMyTurn('inviteReward')
   const busy = useInviteRewards((s) => s.busy)
-  const putOff = useInviteRewards((s) => s.putOff)
   const gifts = useGiftMoment((s) => s.busy || !!s.rulesFor || !!s.opening)
   // Opened once the sign-in's sync has settled, so the cloud copy can't replace what the gifts went into.
   const synced = useCloudSync((s) => s.settled)
-  const othersFirst = useOthersFirst()
-  const ready = gauge?.ready.length ?? 0
-  if (!gauge || !ready || putOff || rulesFirst || othersFirst) return null
+  const open = turn && !!gauge && !gifts && synced
+  useOnScreen('inviteReward', open)
+  if (!gauge || !gauge.ready.length) return null
   return (
     <InviteReadyModal
-      open={idle && !full && !onFriends && !gifts && synced}
+      open={open}
       gauge={gauge}
       latest={latest}
       busy={busy}

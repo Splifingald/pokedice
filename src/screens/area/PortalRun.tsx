@@ -4,19 +4,13 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import {
-  dayCareTutorialDue,
-  donationDue,
-  eventUnlockDue,
-  leaderboardTutorialDue,
   monName,
   portalDiceCount,
   portalLock,
   portalModeOf,
   portalRulesDue,
   portalStateOf,
-  regionOfferDue,
   teamOf,
-  versusRulesDue,
   type Area,
   type PortalRunMode,
 } from '@/engine'
@@ -33,6 +27,7 @@ import {
   PortalVictoryView,
   RunBonuses,
 } from '@/components/Portal'
+import { useMyTurn, useOnScreen } from '@/components/popupTurn'
 import { InfoButton } from '@/components/RulesModal'
 import { pictureOf } from '@/fx/areaArt'
 import { mutateSave, useGame } from '@/store/game'
@@ -74,30 +69,20 @@ export function PortalGuard() {
 }
 
 /**
- * The rules pop-up, once (docs/15 §20): when the region being played has a portal area open, between fights, after
- * the other one-time pop-ups. Let's go! travels there.
+ * The rules pop-up, once (docs/15 §20): when the region being played has a portal area open, between fights, on its turn
+ * in the one-time pop-ups' queue (engine/popups.ts), never over an area's page. Let's go! travels there.
  */
 export function PortalUnlockPopup() {
   const navigate = useNavigate()
   const data = useGame((s) => s.data)
-  const area = useGame((s) =>
-    !s.save ||
-    versusRulesDue(s.save, s.data) ||
-    dayCareTutorialDue(s.save, s.data) ||
-    leaderboardTutorialDue(s.save, s.data) ||
-    donationDue(s.save, s.data) ||
-    regionOfferDue(s.save, s.data) ||
-    eventUnlockDue(s.save, s.data)
-      ? null
-      : portalRulesDue(s.save, s.data),
-  )
-  const idle = useGame((s) => s.run.phase === 'idle')
-  const onArea = useLocation().pathname === '/area'
+  const area = useGame((s) => (s.save ? portalRulesDue(s.save, s.data) : null))
   const mode = portalModeOf(area, data)
+  const open = useMyTurn('portal') && !!area && !!mode
+  useOnScreen('portal', open)
   if (!area || !mode) return null
   return (
     <PortalRulesModal
-      open={idle && !onArea}
+      open={open}
       onClose={markSeen}
       onGo={() => {
         markSeen()
