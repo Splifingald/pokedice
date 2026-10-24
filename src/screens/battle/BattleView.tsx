@@ -719,7 +719,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const reveal = useDamageReveal(preview, settled, throwKey, feel)
   const shownR = reveal.preview?.r
   // The combo's ring, once its dice are down (with the game feel, once its beat has landed).
-  const comboIn = settled && !!shownR?.combo && (!reveal.score || reveal.score.combo)
+  const comboIn = settled && !!shownR?.combo && reveal.combo
   const ring = useMemo(
     () =>
       comboIn && shownR?.combo

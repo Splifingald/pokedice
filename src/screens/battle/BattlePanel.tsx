@@ -1,6 +1,6 @@
 // The battle panel under the stage: the dice tray, the readout under it (combo, damage math, effectiveness, statuses),
 // the team pips, the switch rows and the Bag. Every number comes from the engine (computeDamage, statusesFromRoll, comboDice).
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import {
   comboTier,
   faceOf,
@@ -57,6 +57,47 @@ export interface ScoreView {
   value: number
 }
 
+/**
+ * The count-up as it goes, beat by beat. A throw makes a dozen beats or more, 35 ms apart: held in the battle screen's
+ * state, each one re-rendered the whole screen (stage, team, buttons) just as the dice landed, more work than a slow
+ * phone gets done in 35 ms (players felt a freeze there, 2026-10-24). Only the tray and the readout read it
+ * (`useScore`), so a beat redraws them alone.
+ */
+export interface ScoreFeed {
+  get: () => ScoreView | null
+  subscribe: (fn: () => void) => () => void
+}
+
+type ScoreSet = ScoreView | null | ((s: ScoreView | null) => ScoreView | null)
+
+export function scoreFeed(): ScoreFeed & { set: (v: ScoreSet) => void } {
+  let view: ScoreView | null = null
+  const fns = new Set<() => void>()
+  return {
+    get: () => view,
+    subscribe: (fn) => {
+      fns.add(fn)
+      return () => fns.delete(fn)
+    },
+    set: (v) => {
+      const next = typeof v === 'function' ? v(view) : v
+      if (next === view) return
+      view = next
+      fns.forEach((fn) => fn())
+    },
+  }
+}
+
+const noFeed = () => () => {}
+const noView = () => null
+
+/** The count-up's view now: the feed's latest beat, or a fixed view (the Kitchen Sink's). */
+export function useScore(score: ScoreFeed | ScoreView | null | undefined): ScoreView | null {
+  const feed = score && 'subscribe' in score ? score : null
+  const live = useSyncExternalStore(feed?.subscribe ?? noFeed, feed?.get ?? noView)
+  return feed ? live : ((score as ScoreView | null | undefined) ?? null)
+}
+
 // The tray's own moves (Web Animations, in steps): a 2 px shake for a tier-3+ combo, a 2-frame jitter before a throw.
 const step = (tx: number) => ({ transform: `translateX(${tx}px)`, easing: 'steps(1, end)' })
 const TRAY_SHAKE = [step(-2), step(2), step(-2), step(2), { transform: 'none' }]
@@ -78,7 +119,7 @@ export function DiceTray({
   children,
   onSettled,
   feel = false,
-  score,
+  score: scoreIn,
   hand,
   anticipate = 0,
   nervous = false,
@@ -101,7 +142,7 @@ export function DiceTray({
   /** The game feel's touches (docs/38): the last die lands heavy. */
   feel?: boolean
   /** The count-up under way: the dice's "+N", the combo's ring tier, a tier 3's shake, a tier 4's banner. */
-  score?: ScoreView | null
+  score?: ScoreFeed | ScoreView | null
   /** No throw on the tray yet: whose turn it is, its dice waiting in hand, face down (F8c, P1c). */
   hand?: { side: Side; dice: readonly DieType[] }
   /** Bump it to jitter the tray for two frames, just before a throw (F8c). */
@@ -113,6 +154,7 @@ export function DiceTray({
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
+  const score = useScore(scoreIn)
   const { level, calm } = useMotion()
   const pace = usePace()
   const foe = (tray ?? hand)?.side === 'enemy'
@@ -244,7 +286,12 @@ export function useDamageReveal(
   settled: boolean,
   throwKey: string,
   feel: boolean,
-): { preview: Preview | null; score: ScoreView | null } {
+): {
+  preview: Preview | null
+  score: ScoreFeed | null
+  /** The combo may show: its beat has landed, or there's no count-up to wait for. */
+  combo: boolean
+} {
   const { level } = useMotion()
   const pace = usePace()
   const r = preview?.r
@@ -252,7 +299,13 @@ export function useDamageReveal(
   const sig = r ? `${throwKey}|${r.final}|${r.combo?.key ?? ''}|${r.attackType ?? ''}` : null
   const [shown, setShown] = useState<{ sig: string; preview: Preview } | null>(null)
   const [run, setRun] = useState<{ id: number; beats: ScoreBeat[]; to: number } | null>(null)
-  const [score, setScore] = useState<ScoreView | null>(null)
+  const [feed] = useState(scoreFeed)
+  const setScore = feed.set
+  // The one beat the battle screen redraws for: a boolean, so the other beats leave it alone.
+  const combo = useSyncExternalStore(feed.subscribe, () => {
+    const s = feed.get()
+    return !s || s.combo
+  })
 
   // The turn moved on (an attack, a switch…): nothing to show until the next throw is down.
   const gone = !preview
@@ -261,7 +314,7 @@ export function useDamageReveal(
     setShown(null)
     setRun(null)
     setScore(null)
-  }, [gone])
+  }, [gone, setScore])
 
   useEffect(() => {
     if (!preview || !settled || !sig || shown?.sig === sig) return
@@ -325,8 +378,8 @@ export function useDamageReveal(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [run])
 
-  if (!preview || !shown) return { preview: null, score: null }
-  return { preview: shown.sig === sig ? preview : shown.preview, score }
+  if (!preview || !shown) return { preview: null, score: null, combo }
+  return { preview: shown.sig === sig ? preview : shown.preview, score: feed, combo }
 }
 
 export interface Preview {
@@ -356,7 +409,7 @@ export function Readout({
   activeName,
   open,
   onToggle,
-  score,
+  score: scoreIn,
 }: {
   preview: Preview
   activeName: string
@@ -364,9 +417,10 @@ export function Readout({
   open: boolean
   onToggle: () => void
   /** The count-up under way (useDamageReveal). */
-  score?: ScoreView | null
+  score?: ScoreFeed | ScoreView | null
 }) {
   const { t } = useT()
+  const score = useScore(scoreIn)
   const { r } = preview
   const eff = r.immune ? 'none' : r.effectiveness > 1 ? 'up' : r.effectiveness < 1 ? 'down' : null
   const combo = r.combo && (!score || score.combo) ? r.combo : null

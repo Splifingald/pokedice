@@ -54,7 +54,7 @@ function Played({ hand, roll }: { hand: number[]; roll: number }) {
   const reveal = useDamageReveal(preview, landed === key, key, true)
   const r = reveal.preview?.r
   const ring = new Set(
-    r?.combo && reveal.score?.combo
+    r?.combo && reveal.combo
       ? comboDice(
           r.perDie.map((p) => p.value),
           r.combo.key,

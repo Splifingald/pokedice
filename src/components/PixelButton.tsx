@@ -42,9 +42,15 @@ const MIN_FIT_SCALE = 0.6
  * anonymous box sized to them, so the label's `max-w-full` resolved against its previous size, and each fit fed the
  * next one through the ResizeObserver. The partner pick's buttons flipped between full size and far too small on
  * every frame.
+ *
+ * Fitted again only when the label's text changes. A label with an icon is a new array on every render, so keyed on the
+ * label itself it measured (forced layouts) each time its screen drew: in a fight (RUN, AUTO), dozens of times a turn,
+ * the dice throw included.
  */
 function useFitText(label: ReactNode) {
   const ref = useRef<HTMLSpanElement>(null)
+  const refit = useRef<(() => void) | null>(null)
+  const fitted = useRef<string | null>(null)
   useLayoutEffect(() => {
     const el = ref.current
     const box = el?.parentElement
@@ -81,7 +87,7 @@ function useFitText(label: ReactNode) {
       // Taken after the fit: a button whose width follows its label has just moved, and that is not a resize.
       width = roomOf()
     }
-    fit()
+    refit.current = fit
     // Measured before the Jersey fonts arrived (a cold load), the label would be sized for the narrower fallback face:
     // once they're in, measure again.
     let live = true
@@ -95,7 +101,15 @@ function useFitText(label: ReactNode) {
     return () => {
       live = false
       ro.disconnect()
+      refit.current = null
     }
+  }, [])
+  // After the set-up above (effects run in order): the first fit, then one for each new text.
+  useLayoutEffect(() => {
+    const text = ref.current?.textContent ?? ''
+    if (text === fitted.current) return
+    fitted.current = text
+    refit.current?.()
   }, [label])
   return ref
 }

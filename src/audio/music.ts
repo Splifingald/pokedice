@@ -2,7 +2,7 @@
 // (sfx.ts `audio`), so no audio file is ever fetched and the Sound switch silences it with everything else. Written
 // for this game (A minor, 150 BPM, 16 bars), not a copy of any Pokémon tune.
 //
-// Low on CPU: a slow timer (every 100 ms) books the next 300 ms of notes on the AudioContext's own clock, which keeps
+// Low on CPU: a slow timer (every 250 ms) books the next second of notes on the AudioContext's own clock, which keeps
 // perfect time between wake-ups; nothing runs per frame. A hidden tab pauses it (and books nothing), the result card
 // or leaving the fight fades it out.
 import { audio } from './sfx'
@@ -156,9 +156,13 @@ export function volumeStep(v: number | undefined): MusicVolumeStep {
 // ---------------------------------------------------------------------------------------------------------------------
 // The player.
 
-/** How often the timer wakes, and how far ahead it books: the look-ahead covers a late wake-up or two. */
-const TICK_MS = 100
-const LOOKAHEAD = 0.3
+/**
+ * How often the timer wakes, and how far ahead it books. The look-ahead covers the page being busy: a slow phone can
+ * stall for a few hundred ms as the dice are thrown (players felt a freeze there, 2026-10-24), and with 300 ms booked
+ * the music would cut out with it. A fade, the volume and a hidden tab act on the output, so booking further is free.
+ */
+const TICK_MS = 250
+const LOOKAHEAD = 1
 /** The whole mix at full volume: under the effects, which play at about this level one note at a time. */
 const LEVEL = 0.5
 const VOICE_VOL: Record<Voice, number> = {
