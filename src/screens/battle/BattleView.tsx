@@ -72,6 +72,7 @@ import { pushToast, setSettings, useGame, type BattleSlice, type CatchThrow } fr
 import { autoStepNow } from '@/store/autopilot'
 import { answerBait, dispatchBattle, finishCatch, passCatch, retryCatch, throwBall } from '@/store/run'
 import { useAreaDayTime } from '@/store/dayTime'
+import { useTypeHints } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { BattleHistory, BattleHistoryList, DamageRecap } from './BattleHistory'
 import { BagButton, DiceTray, Readout, SwitchRow, TeamColumn, TeamPips, trayKeyOf, turnInHand, useDamageReveal, ZMoveButton, type Preview, type TrayDice } from './BattlePanel'
@@ -235,7 +236,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const [itemKey, setItemKey] = useState<string | null>(null)
   const [showBreakdown, setShowBreakdown] = useState(false)
   // Type hints (Trainer menu → Type chart): tapping a Pokémon opens its matchups over the stage.
-  const typeHints = useGame((s) => !!s.settings.typeHints)
+  // On until the first badge for a new player (docs/38 U1b), then the player's choice.
+  const typeHints = useTypeHints()
   const [matchups, setMatchups] = useState<Side | null>(null)
 
   // Auto-mode (cleared areas; with the play styles, where the style allows: docs/36): the player's side plays itself,
