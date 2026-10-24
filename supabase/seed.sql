@@ -6049,7 +6049,7 @@ insert into game_config (key, value) values ('configVersion', '1'::jsonb) on con
 -- 2. The cards of trainers on the boards now (played in the last 72 hours) who hold a rebattle are written again, so
 --    the board counts them before their next upload.
 --
--- Run after 0049. Safe to run again. seed.sql inlines it after 0071 (scripts/seed.ts), so a seed run keeps this
+-- Run after 0049. Safe to run again. seed.sql inlines it after 0076 (scripts/seed.ts), so a seed run keeps this
 -- version of the card writer.
 
 -- ---------------------------------------------------------------- 1. the card keeps the tiers
