@@ -11,7 +11,7 @@ Three admin switches (Admin → Config), each **Off / On for admin / On for ever
 
 | Switch | `config` key, helper | What it covers |
 |---|---|---|
-| **Game feel** | `gameFeel`, `gameFeelOn` | The juice: the damage count-up and combo tiers, hits that scale, the KO beat, faster turns, the victory payoff, the catch and progress moments, the extra taps and sounds. Off: everything plays as before |
+| **Game feel** | `gameFeel`, `gameFeelOn` | The juice: the damage count-up and combo tiers, hits that scale, the KO beat, faster turns, the victory payoff, the catch and progress moments, the extra taps and sounds, How to play's animated cards (§8b). Off: everything plays as before |
 | **Haptics** | `haptics`, `hapticsOn` | Short vibrations (`src/lib/haptics.ts`), with a Settings switch. Android; iOS Safari can't vibrate, so an iPhone only feels the primary buttons' tap (§5) |
 | **Battle music** | `music`, `musicOn` | An original 8-bit loop under fights, synthesised like the effects, with a Settings switch |
 
@@ -312,6 +312,52 @@ No switch for any of these: they change screens and words already there (docs/15
 
 Every new piece (`DeleteChooser` in each set of choices, `InboxModal`, the default name, the single lead picker) is on
 `/kitchen-sink` (`OnboardingBits`).
+
+## 8b. How to play, animated
+
+The user's request (2026-10-24): "How to play menu is plain text: Instead it should usually be animated images … that
+show how the game works. Keep it simple and start with the basic: throw dice, reroll, deal damage, catch." With **Game
+feel** on, the guide (`HelpContent`: `/help` and the trainer menu's How to play) opens on four small animated cards
+under "The basics"; the text, which carries the numbers, follows as it was under "All the rules" (its sections a
+heading level down). Off, the guide is exactly the text it was. A purely visual change: no rules pop-up, no INFO.
+
+| Card | What plays (one loop) |
+|---|---|
+| Throw the dice | The tray clears; the Pokémon's dice are thrown in (`Die` with a new `rollKey`: the tumble, or the recorded throw with Dice throws on) and land on their faces; each one's type badge shows under it, one by one. 4.6 s |
+| Reroll | A pixel finger (`tap` icon) taps one die, which lifts with its ↻ tag; it taps REROLL (pressed, `REROLL (3)` → `(2)`); that die alone is thrown again and lands on the first one's number: the pair's gold ring and brackets, the "Pair +2" chip. 4.8 s |
+| Deal damage | The battle's count-up (`planScore`, at half speed): "+5", "+5", "+3" pop over the dice, the pair lands, "0 DMG" counts to "15 DMG"; the finger presses ATTACK; the foe flashes white twice, shakes 2 px, its number rises over it and its HP bar drains (`FoePlate`, `HpBar`). 5.5 s |
+| Catch | A Poké Ball (`PixelIcon` `ball`) flies in a stepped arc, spinning a quarter turn a step, at the greyed, worn-out foe; the foe turns white and goes into it; the drop and a bounce; three wobbles in pixel steps; the click: stars, "Gotcha!", and the catch die with the ball's bonus ("2 +1 = 3 ≥ 3"). 6.1 s |
+
+- **Real pieces**: `Die` (ring, tier, ↻ tag), the battle's REROLL / ATTACK row as pictures (`ButtonLook` in
+  `PixelButton.tsx`: the same frame, label fit and pressed look in a span, so a scene has nothing to focus), the combo
+  `Chip` with `ui.battle.comboChip`, the readout's "N DMG", the foe's `FoePlate`, `MiniSprite` menu icons (the atlas
+  already loaded: no new request), the `.score-pop` of the count-up. Nothing new to download.
+- **Numbers from the engine** (`makeDemo`, `src/screens/help/howTo.ts`): Charmeleon Lv.16 with its own dice
+  (`makeBattler`: two fire and a Base) against a Machop Lv.6; a made-up throw of 5, 2, 3, the reroll's 5; the damage is
+  `computeDamage`'s (today 5 + 5 + 3 and the Pair's level-1 bonus, 2: 15), its count-up `planScore`'s, the foe's HP
+  `makeBattler`'s, the catch die the lowest that catches it with a Poké Ball (`catchValueOf`, `ballBonus`). Change the
+  config and the cards follow; nothing is hard-coded but the throw.
+- **Motion** (`useMotion`): a clock in 50 ms steps (`clockStep`), so pixel motion steps. Full (and the player's Short):
+  each card loops, resting 1.4 s on its last frame. Calm (the OS's reduced motion): no autoplay; each card is a still of
+  its key moment (the landed dice; the picked die, the finger on REROLL; the count done, the finger on ATTACK; the ball
+  in flight) with a **PLAY** button (44 px) that plays it once and stays on its end. Animations off: PLAY shows the end
+  at once. A loop sleeps while its card is off screen (`IntersectionObserver`) and while the tab is hidden. The hit's
+  two white frames are 400 ms apart (`whiteAt`: never more than 3 flashes a second); the foe's shake is left out when
+  calm.
+- **No sound**: it's reading material. The dice are thrown quietly (`DiceLab.quiet`: no bounce clicks); PLAY has the
+  button's own blip, nothing more.
+- **Accessibility**: each card is a `figure` with a `figcaption` (an `h3` title, one line); the scene is a `role="img"`
+  labelled "Animation: …" (its drawing `aria-hidden`); PLAY is named "Play the animation: {title}". Text in the
+  scenes is ink on paper, the "+N" gold and the hit's number white, both outlined in ink; axe is clean in both themes.
+  One column on phones, 2 × 2 from 1024 px; the 280 px stage fits a 360 px phone and the trainer menu's pop-up.
+- **Strings**: `ui.help.howBasics`, `howRules`, `howThrow`, `howThrowText`, `howThrowAlt`, `howReroll`,
+  `howRerollText`, `howRerollAlt`, `howHit`, `howHitText`, `howHitAlt`, `howCatch`, `howCatchText`, `howCatchAlt`,
+  `howPlay`, `howPlayLabel`; reused: `ui.battle.reroll`, `ui.battle.attack`, `ui.battle.dmg`, `ui.battle.comboChip`,
+  `ui.victory.gotcha`.
+- **Where to see it**: `/kitchen-sink` → "How to play, animated" (`HowToBits`: playing, the stills with PLAY, PLAY to
+  the end, the button pictures up and pressed). Tests: `tests/how-to-play.test.ts` (the fight is the engine's, the
+  clock, the flash rule), `e2e/how-to-play.spec.ts` (360×640 and 390×844, reduced motion, animations off, axe in both
+  themes, the trainer menu, the switch off). No migration: it rides the Game feel switch of §1.
 
 ## 9. The title, thrown
 

@@ -216,6 +216,23 @@ export const ICONS = {
   badge: ['...kk...', '..kyyk..', '.kyYyyk.', 'kyYyyyyk', 'kyyyyyok', '.kyyyok.', '..kyok..', '...kk...'],
   // A shiny's twinkle (the Shiny Parade's chips): a four-point star.
   sparkle: ['....k....', '...kyk...', '...kyk...', '.kkyYykk.', 'kyyYwYyyk', '.kkyYykk.', '...kyk...', '...kyk...', '....k....'],
+  // How to play's finger (docs/38 §8b): a pointing glove, its fingertip at the top, 5 pixels in from the left.
+  tap: [
+    '....kk.......',
+    '...kwwk......',
+    '...kwlk......',
+    '...kwlk......',
+    '...kwlkkk....',
+    '...kwlkwlkkk.',
+    '.kkkwlkwlkwlk',
+    'kwlkwwwwwwwlk',
+    'kwwwwwwwwwwlk',
+    '.kwwwwwwwwwlk',
+    '.kwwwwwwwwwlk',
+    '..kwwwwwwwlk.',
+    '...kwwwwwlk..',
+    '...kkkkkkkk..',
+  ],
   // The tab bar (NAV_PAL): three balls for the team, a red Pokédex (the shop, upgrades, ranks and friends are in PACK_ICONS).
   navTeam: [
     '......kkkk......',

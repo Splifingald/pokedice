@@ -169,6 +169,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `RotateCover` / `RotateView` | A phone held sideways (§6) | Over everything, not dismissable: the pixel phone tipping upright in steps (upright and still under reduced motion), the title and a line |
 | `ToastStack` / `ToastCard` | A short word on what just happened, or why something didn't (§7) | On `<body>`, beside the dialogs: under the top bar on phones, at the bottom on desktop; four at most. Info (panel) and good (green): a tap closes them, they go after 4 s or 1.2 s + 70 ms a character, waiting while touched, hovered or focused. Error (red): a ✕ (44 px), stays until closed |
 | `DiceLogo` | The title with the game feel on (docs/38 §9) | The word POKÉDICE as eight pixel-art dice on a canvas (`role="img"`, named Pokédice, inside the `<h1>`): thrown in and landing crooked on their letters (full), dropped in (short), two-step drops (calm), at rest (off); two rows under 768 px, one from 768; the white flash, the gold rings, the tagline; a tap throws it again. Off: the wordmark and its five dice |
+| `HowToPlay` / `ButtonLook` | How to play's animated cards (§17, docs/38 §8b), with the Game feel on | Four `figure`s (throw the dice, reroll, deal damage, catch), each a scene drawn with the battle's own pieces on a 280 × 224 stage, an `h3` and a line: looping (full motion), a still of its key moment with PLAY (calm: it plays once), PLAY showing the end (animations off). `ButtonLook`: a picture of a `PixelButton` (same frame, label fit, pressed look) in a span, for a scene with nothing to press |
 | `PageLoading` | A page split out of the main bundle loading (`Lazy` in `App.tsx`) | A Poké Ball drawn in code wobbling in pixel steps (`steps()`), still under calm; "Loading…" for screen readers (`role="status"`) |
 | `SupportModal` / `SupportView` | SUPPORT ME (side menu, Settings), and once per region at its 5th badge | A rules pop-up (the village banner) with a button per row: Join the Discord (left out with no link set), Share invite link, Support me on Ko-fi under the line saying Pokémon is a licence so the game is never for sale; a big OK |
 | `GiftPresent` / `GiftOpened` / `GiftResult` / `GiftMoment` | A gift from the developer (§23) | Under a message: the wrapped gift (wobbling, still when the OS asks for reduced motion), "3 things inside" and what happens next (close the message, OPEN IT in My messages, or why it waits); opened: what it held; the opening, full screen; what arrived and where |
@@ -292,6 +293,9 @@ House rules for every effect and timeline:
   (short), dropped two pixels in two steps with no flash or ring (calm), at rest (off); its sounds wait for the page's
   audio to be open (`audioUnlocked`), never forcing it before a tap.
 - Pixel motion steps (`steps()`), it doesn't glide, except HP bars and sheets.
+- **Teaching loops** (How to play's cards, docs/38 §8b): a loop plays only at full motion (or the player's Short),
+  and sleeps while it is off screen (`IntersectionObserver`) or the tab is hidden; under calm it is a still of its key
+  moment with a 44 px PLAY that plays it once; with animations off PLAY shows its end. No sound of its own.
 
 **Timelines** (`src/fx`, no React): a timeline is `setup / step / draw / cues` on a 240×160 stage. A screen plays one
 with `<StageCanvas timeline ready hud onEnd label>`: it waits for the sprites (`loadSprite`, at most 1.5 s), plays at
@@ -739,6 +743,10 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   Trades, **Inbox**, the other save, Settings, How to play, Type chart, Admin for admins, Cloud backup, Connect), then
   pinned at the bottom the Discord and Contact the developer. Versus is not in it: it is Home's widget. The label
   alone names a row; the description is its `aria-describedby`.
+- **How to play** (the menu's row, a `Modal`; also the `/help` page): `HelpContent`, the rules in words with the live
+  numbers (the combos' bonuses, the statuses), its sections linked from a row of chips at the top. With the Game feel
+  on (docs/38 §8b) it opens on "The basics", four animated cards (throw the dice, reroll, deal damage, catch: one
+  column on phones, 2 × 2 from 1024 px), then the same text under "All the rules", its section titles a level down.
 - **Inbox** (docs/38 U6b, `InboxModal`): the developer's messages and gifts on their own, the very My messages view
   that Contact the developer has as a tab (§23); a gold count on the row for answers not seen and gifts not opened.
   Contact the developer keeps its pencil, the Inbox the envelope.

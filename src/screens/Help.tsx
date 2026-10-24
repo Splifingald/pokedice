@@ -1,7 +1,7 @@
 // The rules in plain words. Numbers come from the live game data; the type chart has its own screen.
 import { type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { COMBO_KEYS, comboBonus, getRegion, regionOf, unlockedRegions } from '@/engine'
+import { COMBO_KEYS, comboBonus, gameFeelOn, getRegion, regionOf, unlockedRegions } from '@/engine'
 import { multiExpText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
 import { DieFaces } from '@/components/Die'
@@ -10,13 +10,26 @@ import { PixelButton } from '@/components/PixelButton'
 import { TypeBadge } from '@/components/TypeBadge'
 import { comboExampleText, comboName, statusEffects } from '@/lib/format'
 import { useGame } from '@/store/game'
+import { HowToPlay } from '@/screens/help/HowToPlay'
 
-function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+/** A block of the rules; under "All the rules" (the animated cards above them), its title is one level down. */
+function Section({
+  id,
+  title,
+  sub,
+  children,
+}: {
+  id: string
+  title: string
+  sub?: boolean
+  children: ReactNode
+}) {
+  const Heading = sub ? 'h3' : 'h2'
   return (
     <section id={id} aria-labelledby={`${id}-h`} className="flex flex-col gap-2">
-      <h2 id={`${id}-h`} className="border-b-[3px] border-edge text-3xl leading-tight">
+      <Heading id={`${id}-h`} className="border-b-[3px] border-edge text-3xl leading-tight">
         {title}
-      </h2>
+      </Heading>
       <div className="copy flex flex-col gap-2">{children}</div>
     </section>
   )
@@ -65,8 +78,12 @@ export function HelpContent() {
   const regions = save ? unlockedRegions(save, data) : []
   const regionName = (save && getRegion(data, regionOf(save))?.name) ?? 'Kanto'
   const manyRegions = regions.length > 1
+  // With the Game feel on (docs/38 §8b) the basics come first as animated cards, the rules below them.
+  const feel = gameFeelOn(data)
   return (
     <div className="flex flex-col gap-6">
+      {feel && <HowToPlay />}
+      {feel && <h2 className="text-[34px] leading-none">{t('ui.help.howRules')}</h2>}
       <nav aria-label={t('ui.help.sections')} className="flex flex-wrap gap-2 text-lg">
         {[
           ['goal', 'ui.help.navGoal'],
@@ -83,12 +100,12 @@ export function HelpContent() {
         ))}
       </nav>
 
-      <Section id="goal" title={t('ui.help.navGoal')}>
+      <Section id="goal" sub={feel} title={t('ui.help.navGoal')}>
         <p>{t('ui.help.goalBody', { region: regionName })}</p>
         {manyRegions && <p>{t('ui.help.goalRegions')}</p>}
       </Section>
 
-      <Section id="explore" title={t('ui.help.navExplore')}>
+      <Section id="explore" sub={feel} title={t('ui.help.navExplore')}>
         <ul className="ml-5 list-disc">
           <li>{t('ui.help.explore1')}</li>
           <li>{t('ui.help.explore2')}</li>
@@ -103,7 +120,7 @@ export function HelpContent() {
         </ul>
       </Section>
 
-      <Section id="battle" title={t('ui.help.navBattle')}>
+      <Section id="battle" sub={feel} title={t('ui.help.navBattle')}>
         <ol className="ml-5 list-decimal">
           <li>{t('ui.help.battle1')}</li>
           <li>{t('ui.help.battle2')}</li>
@@ -115,7 +132,7 @@ export function HelpContent() {
         </p>
       </Section>
 
-      <Section id="damage" title={t('ui.help.navDamage')}>
+      <Section id="damage" sub={feel} title={t('ui.help.navDamage')}>
         <p>{t('ui.help.damageBody')}</p>
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
@@ -126,7 +143,7 @@ export function HelpContent() {
         </div>
       </Section>
 
-      <Section id="combos" title={t('ui.help.navCombos')}>
+      <Section id="combos" sub={feel} title={t('ui.help.navCombos')}>
         <p>{t('ui.help.combosBody')}</p>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-lg">
@@ -150,11 +167,11 @@ export function HelpContent() {
         </div>
       </Section>
 
-      <Section id="status" title={t('ui.help.navStatus')}>
+      <Section id="status" sub={feel} title={t('ui.help.navStatus')}>
         <StatusTable />
       </Section>
 
-      <Section id="grow" title={t('ui.help.navGrow')}>
+      <Section id="grow" sub={feel} title={t('ui.help.navGrow')}>
         <ul className="ml-5 list-disc">
           <li>{t('ui.help.grow1')}</li>
           <li>{t('ui.help.grow2', { share: multiExpText(data) })}</li>
