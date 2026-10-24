@@ -361,6 +361,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   gameFeel: { access: 'off' },
   haptics: { access: 'off' },
   music: { access: 'off' },
+  // The shiny Pokédex (docs/39): off until the admin switches it on. Migration 0075 inserts the same row.
+  shinyDex: { access: 'off' },
   // Double battles (docs/33): off until the admin switches them on; from Hoenn on, 10 % of the wild encounters.
   // Migration 0062 inserts the same row.
   doubleBattles: { access: 'off', regions: ['hoenn', 'sinnoh', 'unova', 'kalos', 'alola', 'galar', 'paldea'], wildChance: 10 },

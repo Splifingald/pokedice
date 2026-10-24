@@ -337,6 +337,9 @@ export const saveSchema = z.object({
     .optional(),
   extremeUnlockedAt: z.number().optional(),
   extremeRulesSeen: z.boolean().optional(),
+  // The shiny Pokédex (docs/39): each region's species owned shiny, and its rules seen.
+  shinyDex: z.record(z.array(z.number().int().min(1)).max(3000)).optional(),
+  shinyDexSeen: z.boolean().optional(),
   // The General upgrades (docs/25): their levels and the offline earnings' clock.
   general: z
     .object({

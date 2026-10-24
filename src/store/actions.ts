@@ -10,6 +10,7 @@ import {
   buyItem,
   markPowerRulesSeen as markPowerRulesSeenIn,
   markGeneralRulesSeen as markGeneralRulesSeenIn,
+  markShinyDexSeen as markShinyDexSeenIn,
   sellItem,
   createRng,
   randomSeed,
@@ -187,6 +188,11 @@ export function markGeneralRulesSeen(): void {
 
 export function markVersusRulesSeen(): void {
   mutateSave((s) => (s.versusRulesSeen ? null : { ...s, versusRulesSeen: true }))
+}
+
+/** The shiny Pokédex's rules have been shown (its pop-up). */
+export function markShinyDexSeen(): void {
+  mutateSave((s) => (s.shinyDexSeen ? null : markShinyDexSeenIn(s)))
 }
 
 /** The first visit ends the unlock tutorial. */

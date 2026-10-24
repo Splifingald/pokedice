@@ -950,6 +950,8 @@ export interface GameConfig {
   haptics: { access: EventAccess }
   /** Battle music (docs/38): an original 8-bit loop under fights. Migration 0074 inserts the same row. */
   music: { access: EventAccess }
+  /** The shiny Pokédex (docs/39): each region's, once its league is beaten. Display only. Migration 0075. */
+  shinyDex: { access: EventAccess }
   /** Double battles (docs/33): their switch, the regions that have them and the wild odds. */
   doubleBattles: DoubleBattlesConfig
   /**
@@ -1552,6 +1554,13 @@ export interface SaveData {
   extremeUnlockedAt?: number
   /** Main save: Extreme mode's rules pop-up has been shown (once, when it opens; INFO shows it again). */
   extremeRulesSeen?: boolean
+  /**
+   * The shiny Pokédex (docs/39): every species owned shiny in each region, kept when it leaves (a trade, a release)
+   * as the Pokédex keeps its catches. Filled whatever the switch says, so it's whole the day it opens.
+   */
+  shinyDex?: Partial<Record<RegionId, number[]>>
+  /** The shiny Pokédex's rules pop-up has been shown (once, at the first league beaten; INFO shows it again). */
+  shinyDexSeen?: boolean
   /** Trades (docs/23): listed Pokémon, the trades already applied, the last ones done. Absent = never traded. */
   trades?: TradesSave
   /** Gifts from the developer (docs/15 §23): the ones opened, and the rules seen. Absent = none yet. */

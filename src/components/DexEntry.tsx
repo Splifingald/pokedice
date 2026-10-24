@@ -544,13 +544,25 @@ function EvolutionItems({ dex, onTravel }: { dex: number; onTravel?: () => void 
 }
 
 /** A Pokédex entry: the full sheet (and where to find it) once caught, otherwise just where to find it. */
-export function DexEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (dex: number) => void; onTravel?: () => void }) {
+export function DexEntry({
+  dex,
+  shiny,
+  onOpenDex,
+  onTravel,
+}: {
+  dex: number
+  /** From the shiny Pokédex (docs/39): its shiny colours, and the best shiny one owned if there's one. */
+  shiny?: boolean
+  onOpenDex?: (dex: number) => void
+  onTravel?: () => void
+}) {
   const save = useGame((s) => s.save)
   if (!save) return null
   if (!save.pokedex.includes(dex)) return <MissingEntry dex={dex} onOpenDex={onOpenDex} onTravel={onTravel} />
-  const best = save.box.filter((p) => p.dex === dex).sort((a, b) => b.level - a.level)[0]
+  const mine = save.box.filter((p) => p.dex === dex && (!shiny || p.shiny))
+  const best = (mine.length ? mine : save.box.filter((p) => p.dex === dex)).sort((a, b) => b.level - a.level)[0]
   return (
-    <PokemonSheet dex={dex} inst={best} onOpenDex={onOpenDex}>
+    <PokemonSheet dex={dex} inst={best} shiny={shiny || undefined} onOpenDex={onOpenDex}>
       <EvolutionItems dex={dex} onTravel={onTravel} />
       <CaughtSpots dex={dex} onTravel={onTravel} />
     </PokemonSheet>

@@ -682,6 +682,30 @@ function MusicBox() {
   )
 }
 
+/**
+ * The shiny Pokédex (docs/39): each region's Pokédex gets a Shiny page once its league is beaten. It shows what the
+ * save already holds, so the game alone reads it.
+ */
+function ShinyDexBox() {
+  const [raw, setRaw] = useConfigRow('shinyDex')
+  const access = raw?.access ?? 'off'
+  return (
+    <Box
+      title="Shiny Pokédex"
+      icon="book"
+      hint="On: once a region's League is beaten, its Pokédex has a Pokédex / Shiny switch. The Shiny page lists every species of the region the player has owned shiny there (caught, hatched, traded for or evolved), kept when it leaves, with its rules once as a pop-up and an INFO button. Saves note their shinies whatever the switch says, so the page is whole the day it opens."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Shiny Pokédex</span>
+        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="Shiny Pokédex: who has it" />
+        <span className="text-base text-muted">
+          {accessNote(access, 'Open to every player.', 'Off: the Pokédex has one page, as before.')}
+        </span>
+      </div>
+    </Box>
+  )
+}
+
 /** Trainer looks (docs/31): unlockable looks from every region in place of the free Kanto and Johto list. */
 function LooksBox() {
   const [raw, setRaw] = useConfigRow('looks')
@@ -1439,6 +1463,8 @@ export function ConfigSection() {
       <HapticsBox />
 
       <MusicBox />
+
+      <ShinyDexBox />
 
       <ExtremeBox />
 

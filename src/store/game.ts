@@ -18,6 +18,7 @@ import {
   settleKo,
   settleLook,
   stampExtremeUnlock,
+  noteShinyDex,
   syncPowers,
   syncEggClocks,
   syncHpScale,
@@ -241,9 +242,11 @@ function settle(save: SaveData, data: GameData) {
   // The battle powers (docs/35): a badge's Mega Gem handed over (one won now, or before the gem rules were on), and the
   // badges that open each power noted for Versus.
   const powers = syncPowers(settleLook(ko.save, progress, data), data)
+  // The shiny Pokédex (docs/39): every shiny held is noted under its region, kept when it leaves.
+  const shinyDex = noteShinyDex(powers.save)
   return {
     ...dup,
-    save: powers.save,
+    save: shinyDex,
     gemsGiven: powers.given,
     revived: fossils.revived,
     raidsReleased: raids.released,
