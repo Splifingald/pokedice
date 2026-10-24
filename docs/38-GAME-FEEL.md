@@ -7,7 +7,9 @@ Each item keeps its board id (F2a, U3a…), so a change can be traced to the dec
 
 ## 1. The switches
 
-Three admin switches (Admin → Config), each **Off / On for admin / On for everyone, Off by default** (docs/15 §20):
+Three admin switches (Admin → Config), each **Off / On for admin / On for everyone** (docs/15 §20). Unlike other
+features they ship **On for everyone**: the user chose to release 2.3 with them on (migration 0079, `DEFAULT_CONFIG`).
+The admin can still switch each off.
 
 | Switch | `config` key, helper | What it covers |
 |---|---|---|
@@ -407,10 +409,12 @@ one. Tests: `tests/dice-logo.test.ts`, `e2e/title.spec.ts`. Setting it up: nothi
 
 ## 10. Setting it up
 
-1. Deploy the client. The three switches are Off: nothing changes for anyone until the admin turns them on.
-2. Run migration `supabase/migrations/0074_game_feel.sql` in the Supabase SQL editor
-   (<https://github.com/Splifingald/pokedice/blob/feature/version_2_3/supabase/migrations/0074_game_feel.sql>): it adds
-   the three switches' rows, Off, and bumps `configVersion`. `supabase/seed.sql` carries it too, inlined. Safe to run
-   again.
-3. Admin → Config: try **Game feel**, **Haptics** and **Battle music** On for admin first, then On for everyone.
+1. Run migration `supabase/migrations/0074_game_feel.sql` in the Supabase SQL editor
+   (<https://github.com/Splifingald/pokedice/blob/ccr-dea77ca0-k5idj5/supabase/migrations/0074_game_feel.sql>): it adds
+   the three switches' rows, Off, and bumps `configVersion`. Safe to run again.
+2. Then `supabase/migrations/0079_game_feel_on.sql`
+   (<https://github.com/Splifingald/pokedice/blob/ccr-dea77ca0-k5idj5/supabase/migrations/0079_game_feel_on.sql>): it
+   turns all three On for everyone and bumps `configVersion`. Run it once: run again, it switches back on any the admin
+   has turned off since. `supabase/seed.sql` carries both, inlined.
+3. Deploy the client. Its defaults are On for everyone too, so a player whose config hasn't loaded yet gets the same.
 4. The board also chose to turn the existing **Dice throws** On for everyone (F8a): Admin → Config → Dice throws.

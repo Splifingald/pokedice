@@ -10,7 +10,7 @@ const MOTION_OFF = JSON.stringify({ sfx: false, sound: false, reducedMotion: tru
 
 async function boot(page: Page, { feel = true, save = true, settings = MOTION_ON } = {}) {
   await mockSupabase(page)
-  const config = JSON.stringify(feel ? { gameFeel: { access: 'all' } } : {})
+  const config = JSON.stringify({ gameFeel: { access: feel ? 'all' : 'off' } })
   await page.addInitScript(
     ([s, f, c]) => {
       if (s) localStorage.setItem('pokedice.save', s)

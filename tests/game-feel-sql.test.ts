@@ -5,7 +5,6 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { DEFAULT_CONFIG } from '@/engine'
 
 const ROOT = path.join(__dirname, '..', 'supabase')
 const sql = (file: string) => readFileSync(path.join(ROOT, 'migrations', file), 'utf8')
@@ -24,11 +23,8 @@ describe('0074: the game-feel pass, haptics and battle music', () => {
     await db.exec(sql(FILE))
   })
 
-  it('puts the switches in Off, as the game defaults them, and bumps the content version', async () => {
-    for (const key of KEYS) {
-      expect(await value(key)).toEqual({ access: 'off' })
-      expect(DEFAULT_CONFIG[key]).toEqual({ access: 'off' })
-    }
+  it('puts the switches in Off and bumps the content version (0079 turns them on)', async () => {
+    for (const key of KEYS) expect(await value(key)).toEqual({ access: 'off' })
     expect(await value('configVersion')).toBe(42)
   })
 

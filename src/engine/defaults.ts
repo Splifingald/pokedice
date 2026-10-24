@@ -357,11 +357,11 @@ export const DEFAULT_CONFIG: GameConfig = {
   // Migration 0069 inserts the same row.
   diceThrows: { access: 'off' },
   raidOverhaul: { access: 'off' },
-  // The game-feel pass, haptics and battle music (docs/38): off until the admin switches each on; everything plays as
-  // before meanwhile. Migration 0074 inserts the same rows.
-  gameFeel: { access: 'off' },
-  haptics: { access: 'off' },
-  music: { access: 'off' },
+  // The game-feel pass, haptics and battle music (docs/38): on for everyone, as the user chose for 2.3; the admin can
+  // still switch each off. Migration 0079 sets the same rows (0074 had put them in Off).
+  gameFeel: { access: 'all' },
+  haptics: { access: 'all' },
+  music: { access: 'all' },
   // The shiny Pokédex (docs/39): off until the admin switches it on. Migration 0075 inserts the same row.
   shinyDex: { access: 'off' },
   // Double battles (docs/33): off until the admin switches them on; from Hoenn on, 10 % of the wild encounters.

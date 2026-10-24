@@ -23,7 +23,7 @@ async function boot(
   await mockSupabase(page)
   const settings = { sfx: false, sound: false, reducedMotion: still, theme }
   const save = makeSave(4)
-  const config = feel ? { ...EVENTS_ON, gameFeel: { access: 'all' } } : EVENTS_ON
+  const config = { ...EVENTS_ON, gameFeel: { access: feel ? 'all' : 'off' } }
   await page.addInitScript(
     ([s, f, c]) => {
       localStorage.setItem('pokedice.save', s!)
