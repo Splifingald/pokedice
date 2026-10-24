@@ -272,6 +272,7 @@ export const saveSchema = z.object({
       raidTeams: z.record(z.array(z.string().max(80)).max(3)).optional(),
       raidNpc: z.object({ key: z.string().max(140), seed: z.number().int() }).optional(),
       raidRulesSeen: z.boolean().optional(),
+      raidIntrosSeen: z.array(z.number().int()).max(200).optional(),
       liveSeen: z.array(z.string().max(80)).max(50).optional(),
       liveBought: z.record(z.record(z.number().int().min(0))).optional(),
       // Small worlds (docs/21): the one held, the pop-ups shown, the mythicals waiting for their home region.

@@ -21,6 +21,8 @@ import { gmaxEndTimeline, gmaxFor, megaFor, unleashTimeline } from '@/fx/timelin
 import { zAwayTimeline, zMoveTimeline, zStrikeTimeline } from '@/fx/timelines/zmove'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { breachTimeline, closeTimeline, victoryTimeline, wildGlitchTimeline } from '@/fx/timelines/portal'
+import { legendRaidEntranceTimeline } from '@/fx/timelines/legendRaid'
+import { LEGEND_RAID_SCENES } from '@/fx/timelines/legendRaidScenes'
 import { raidEntranceTimeline } from '@/fx/timelines/portalRaid'
 import {
   nightmareIntroTimeline,
@@ -366,6 +368,14 @@ const PRESETS: Preset[] = [
     sprites: [[487, false, true]],
     make: (o) => raidEntranceTimeline({ mon: spriteKey(487, false, true), short: o.short }),
   },
+  // The raid overhaul's legendary entrances (docs/39): one per scene, the raid intro's words being the page's.
+  ...Object.entries(LEGEND_RAID_SCENES).map(
+    ([dex, scene]): Preset => ({
+      name: `Raid entrance: #${dex} (${scene.omen}, ${scene.weather})`,
+      sprites: [[Number(dex), false]],
+      make: (o) => legendRaidEntranceTimeline({ scene, mon: spriteKey(Number(dex), false), short: o.short }),
+    }),
+  ),
   // Darkrai's nightmare (docs/30): the intro, the strike after a round, the waking, the raid's entrance.
   {
     name: 'Nightmare: the intro (drawn field)',

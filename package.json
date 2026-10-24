@@ -21,6 +21,7 @@
     "rebattle-teams": "tsx scripts/rebattle-teams.ts",
     "rebattle-sql": "tsx scripts/rebattle-sql.ts",
     "remove-league-ii": "tsx scripts/remove-league-ii.ts",
+    "raid-overhaul-balance": "tsx scripts/raid-overhaul-balance.ts",
     "raid-balance": "tsx scripts/raid-balance.ts",
     "portal-balance": "tsx scripts/portal-balance.ts",
     "nightmare-balance": "tsx scripts/nightmare-balance.ts",

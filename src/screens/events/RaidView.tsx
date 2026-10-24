@@ -14,7 +14,9 @@ import {
   confusionLevel,
   confusionRecoil,
   hasStatus,
+  MEGA_RAIDS,
   progressRaidOf,
+  raidSpecialFor,
   raidTeamCap,
   statusesFromRoll,
   sureThrow,
@@ -55,6 +57,7 @@ import {
   raidAgain,
   raidCatchShown,
   raidFightOver,
+  markRaidIntroSeen,
   raidIntroDone,
   throwRaidBall,
   useRaidRun,
@@ -75,6 +78,7 @@ import {
 import { BattleStage, type StageOverlay } from '../battle/BattleStage'
 import { CatchPanel, catchMessage } from '../battle/CatchPanel'
 import { RaidIntro } from './RaidIntro'
+import { LEGEND_RAID_SCENES } from '@/fx/timelines/legendRaidScenes'
 import { RaidNpcPicker } from './RaidNpcPicker'
 import { battlerOf, sideOfUid, useRaidAnimator, type RaidFx } from './raidAnimator'
 import { TrainerName } from '@/components/TrainerName'
@@ -354,6 +358,16 @@ export function RaidView({ run }: { run: RaidRun }) {
   const portal = usePortalRaid(run.raid.areaId)
   // Darkrai's raid, its area in nightmare mode (docs/15 §29): under the full moon.
   const nightmare = useNightmareRaid(run.raid.areaId) && !portal
+  // A legendary's own entrance (docs/39): with the overhaul on, its place and omen (a Mega raid's base's place). Skip
+  // shows from the second time the player meets it.
+  const legend = useMemo(() => {
+    if (portal || nightmare) return undefined
+    const kind = run.source.kind === 'progress' ? 'progress' : 'daily'
+    if (!raidSpecialFor(data, run.raid.dex, kind, run.raid.areaId)) return undefined
+    const scene = LEGEND_RAID_SCENES[MEGA_RAIDS[run.raid.dex]?.base ?? run.raid.dex]
+    return scene ? { scene, skippable: !!save?.events?.raidIntrosSeen?.includes(run.raid.dex) } : undefined
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [run.id])
 
   // ---- Your turn.
   const duel = st.duel
@@ -666,8 +680,12 @@ export function RaidView({ run }: { run: RaidRun }) {
       {intro && (
         <RaidIntro
           run={run}
-          onDone={raidIntroDone}
+          onDone={() => {
+            if (legend && !legend.skippable) markRaidIntroSeen(run.raid.dex)
+            raidIntroDone()
+          }}
           world={portal ? 'distortion' : nightmare ? 'nightmare' : undefined}
+          legend={legend}
         />
       )}
 

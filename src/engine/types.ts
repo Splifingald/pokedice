@@ -1767,6 +1767,8 @@ export interface EventsSave {
   raidNpc?: { key: string; seed: number }
   /** The raid overhaul's rules pop-up has been shown (docs/39): once; the raid pages' INFO shows it again. */
   raidRulesSeen?: boolean
+  /** The legendaries whose raid entrance has played once (docs/39): from then on it has a Skip. */
+  raidIntrosSeen?: number[]
   /** Live events whose pop-up has been shown (ids). */
   liveSeen?: string[]
   /** Special Shop purchases, per live event id then item key: what counts against each item's limit. */

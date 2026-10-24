@@ -324,6 +324,13 @@ export function raidAgain(npcs: RaidNpcOption[] = []): boolean {
 /** The empty sides a raid would start with: its friend slots minus the friends picked who have a team. */
 export const emptySlots = (friends: RaidFriend[]): number => Math.max(0, raidFriendSlots() - friends.filter((f) => f.team.length > 0).length)
 
+/** A legendary's own entrance has been seen once (docs/39): from now on it has a Skip. */
+export function markRaidIntroSeen(dex: number) {
+  mutateSave((s) =>
+    s.events?.raidIntrosSeen?.includes(dex) ? null : { ...s, events: { ...s.events, raidIntrosSeen: [...(s.events?.raidIntrosSeen ?? []), dex].slice(-200) } },
+  )
+}
+
 /** The opening has played (or was skipped). */
 export function raidIntroDone() {
   const run = useRaidRun.getState().run

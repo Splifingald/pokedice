@@ -11,6 +11,8 @@ import { hiss, tone } from '@/audio/sfx'
 import { StageCanvas } from '@/components/StageCanvas'
 import { raidEntranceStage, raidEntranceTimeline } from '@/fx/timelines/portalRaid'
 import { nightRaidEntranceTimeline } from '@/fx/timelines/nightmareRaid'
+import { legendRaidEntranceTimeline } from '@/fx/timelines/legendRaid'
+import type { LegendRaidScene } from '@/fx/timelines/legendRaidScenes'
 import { MiniSprite } from '@/components/SpriteImg'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { bolt, disc, ease, polyline, rng as pixelRng } from '@/fx/pixel'
@@ -44,9 +46,15 @@ export function RaidIntro({
   run,
   onDone,
   world,
+  legend,
 }: {
   run: RaidRun
   onDone: () => void
+  /**
+   * A legendary's own entrance (docs/39, the raid overhaul): its place, weather and omen on the pixel engine under the
+   * intro's words. Its Skip shows from the second time the player meets it (`skippable`).
+   */
+  legend?: { scene: LegendRaidScene; skippable: boolean }
   /**
    * Giratina's raid in the Distortion World (docs/15 §27), or Darkrai's under the nightmare's full moon (§29): its own
    * scene under the intro's words, and no Skip.
@@ -56,7 +64,7 @@ export function RaidIntro({
   const { t } = useT()
   const { level } = useMotion()
   // A themed raid's scene is the pixel engine's: only the words and their sounds are timed here, and it has no Skip.
-  const dw = !!world
+  const dw = !!world || !!legend
   // Measured once when it opens.
   const [size] = useState(() =>
     typeof window === 'undefined' ? { w: 130, h: 280 } : raidEntranceStage(window.innerWidth, window.innerHeight),
@@ -69,12 +77,20 @@ export function RaidIntro({
       dw
         ? {
             ready: loadSprite(boss.dex, false, boss.shiny),
-            timeline: (world === 'nightmare' ? nightRaidEntranceTimeline : raidEntranceTimeline)({
-              w: size.w,
-              h: size.h,
-              mon: spriteKey(boss.dex, false, boss.shiny),
-              short: level === 'short',
-            }),
+            timeline: legend
+              ? legendRaidEntranceTimeline({
+                  scene: legend.scene,
+                  w: size.w,
+                  h: size.h,
+                  mon: spriteKey(boss.dex, false, boss.shiny),
+                  short: level === 'short',
+                })
+              : (world === 'nightmare' ? nightRaidEntranceTimeline : raidEntranceTimeline)({
+                  w: size.w,
+                  h: size.h,
+                  mon: spriteKey(boss.dex, false, boss.shiny),
+                  short: level === 'short',
+                }),
           }
         : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -385,7 +401,7 @@ export function RaidIntro({
       <div className="rd-i-go" aria-hidden>
         {t('ui.raid.intro.go')}
       </div>
-      {!dw && (
+      {(!dw || (legend?.skippable && !world)) && (
         <button ref={skip} type="button" className="rd-i-skip" onClick={() => finish(true)}>
           {t('ui.raid.intro.skip')}
         </button>
