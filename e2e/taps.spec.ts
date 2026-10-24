@@ -12,7 +12,9 @@ async function boot(page: Page, feel: boolean) {
   const save = { ...base, settings: { ...base.settings, sound: true, sfx: true, reducedMotion: true } }
   const config = JSON.stringify({
     ...EVENTS_ON,
-    ...(feel && { haptics: { access: 'all' }, music: { access: 'all' } }),
+    // On by default now (0079): the switches-off case asks for Off itself.
+    haptics: { access: feel ? 'all' : 'off' },
+    music: { access: feel ? 'all' : 'off' },
   })
   await page.addInitScript(
     ([s, c]) => {

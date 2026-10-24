@@ -28,7 +28,7 @@ test('hiding the page sends what was played since the last upload, over the copy
 
   // Played on (a setting is enough), past the gap between two uploads, then the page is hidden.
   await page.clock.fastForward('03:00')
-  await page.getByRole('switch', { name: /Sound/ }).click()
+  await page.getByRole('switch', { name: /^Sound/ }).click()
   await page.evaluate(() => {
     Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' })
     document.dispatchEvent(new Event('visibilitychange'))
