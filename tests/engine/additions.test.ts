@@ -24,16 +24,17 @@ describe('Grass Heal face', () => {
     expect(computeDamage([sdie('grass', 'heal')], ['grass'], [], uniformLevels(1), data).perDie[0]!.value).toBe(3)
   })
 
-  it('needs a pair of Heal faces, then heals the total value of the dice rolled', () => {
-    expect(statusesFromRoll([sdie('grass', 'heal'), die('grass', 6)], data)).toEqual([])
+  it('heals from a single face: the Heal faces only, never the other dice', () => {
+    expect(statusesFromRoll([sdie('grass', 'heal'), die('grass', 6)], data)).toEqual([{ status: 'heal', amount: 3 }])
     const roll = [sdie('grass', 'heal'), sdie('grass', 'heal'), die('base', 5)]
-    expect(statusesFromRoll(roll, data)).toEqual([{ status: 'heal', amount: 3 + 3 + 5 }])
+    expect(statusesFromRoll(roll, data)).toEqual([{ status: 'heal', amount: 6 }])
+    expect(statusesFromRoll([die('grass', 6)], data)).toEqual([])
   })
 
-  it('can heal by the Heal faces only (admin option)', () => {
-    const d = makeData({ status: { ...data.config.status, heal: { threshold: 2, amount: 'healFaces' } } })
-    const roll = [sdie('grass', 'heal', d), sdie('grass', 'heal', d), die('base', 5, d)]
-    expect(statusesFromRoll(roll, d)).toEqual([{ status: 'heal', amount: 6 }])
+  it("adds each Heal face's die upgrade (Grass Lv.3: +2 a face)", () => {
+    const roll = [sdie('grass', 'heal'), sdie('grass', 'heal'), die('grass', 6)]
+    expect(statusesFromRoll(roll, data, uniformLevels(3))).toEqual([{ status: 'heal', amount: (3 + 2) * 2 }])
+    expect(statusesFromRoll(roll, data, uniformLevels(1))).toEqual([{ status: 'heal', amount: 6 }])
   })
 
   it('heals the attacker on top of the damage, capped at max HP', () => {
@@ -59,9 +60,11 @@ describe('Grass Heal face', () => {
     expect(reduce(full, { t: 'ATTACK' }, data, createRng(1)).log.some((l) => l.kind === 'heal')).toBe(false)
   })
 
-  it('the AI always keeps a satisfied pair of Heal faces', () => {
+  it('the AI always keeps its Heal faces, even a single one', () => {
     const roll = [sdie('grass', 'heal'), sdie('grass', 'heal'), die('grass', 1), die('base', 1)]
     for (const keep of candidateKeepSets(roll, data)) expect(keep.slice(0, 2)).toEqual([true, true])
+    const one = [sdie('grass', 'heal'), die('grass', 1), die('base', 1)]
+    for (const keep of candidateKeepSets(one, data)) expect(keep[0]).toBe(true)
   })
 })
 

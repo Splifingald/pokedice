@@ -141,7 +141,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `Dialogue` | Narration, battle messages | Typewriter text (tap to finish), blinking ▼; two lines tall so nothing jumps |
 | `Chip` | A short label | `plain`, `gold`, `green` (ready), `done` (cleared), `red` (where you are), `blue` (open), `lock`, `dark` |
 | `NewTag`, `LevelTag` | NEW, "Lv.36" | |
-| `StatusChip` / `StatusIcons` | A status | Icon + short name (BRN, PAR…) + counter, ring in the status colour; `lit=false` before its threshold. **Status is never colour alone** |
+| `StatusChip` / `StatusIcons` | A status | Icon + short name (BRN, PAR…) + counter (Burn's stacks, a Freeze's or a Paralysis's chance short of sure, a confusion's ×2 / ×3, a heal's +HP, turns left), ring in the status colour; `lit=false` greys one that won't land. **Status is never colour alone** |
 | `Seg` | Two to four views of one thing (tabs) | `tabs` → `role=tablist`; otherwise a radio group. Counts after labels. Arrow keys move |
 | `FilterChips` | Narrowing a list | A radio group with counts; scrolls sideways when it runs out of room |
 | `SearchField` | Searching a list | 44 px, an ink ring, a top lip, a screen-reader label. The search ignores case and Latin accents (`searchFold`: "evoli" finds Évoli) |
@@ -348,7 +348,7 @@ the result card, pauses in a hidden tab.
   their descriptions, areas, badges, a die type's one-line nature (`diceDesc.*`), trainer classes and the named
   characters — gym leaders, Elite Four, champions, rivals, villains — under each language's official name (Brock is
   Pierre in French, Rocko in German); English in Portuguese, which the games never had.
-- **Numbers:** every number shown (damage, combos, multipliers, status thresholds, catch chance, XP, prices, unlocks)
+- **Numbers:** every number shown (damage, combos, multipliers, status chances, catch chance, XP, prices, unlocks)
   comes from the engine's helpers (`src/engine`). The UI never recomputes a rule.
 
 ## 11. Web requests
@@ -554,7 +554,8 @@ in view) and the battle history sits beside it from 1024 px.
   gold ring with gold corner brackets; the foe's dice smaller, not buttons, ¾ of yours with the game feel), the readout
   once the last die of the throw is down, kept through a reroll until the new dice land (one line: the damage first
   and big, "26 DMG" — a button: the math, `(sum + bonus) × mult = damage`, shows once, under the readout — the combo
-  chip when there is one, how effective it is, a `StatusChip` per status face, lit once its threshold is met; with the
+  chip when there is one, how effective it is, a `StatusChip` per status the faces cause, with its counter; Professor
+  Oak explains a Freeze's or a Paralysis's chance the first time one is short of sure, once the dice are down; with the
   game feel it counts up, docs/38 §3), the extras (Mega, G-MAX,
   Z-MOVE, Type, Run, AUTO-MODE) only when they exist — the battle powers gold, Z-MOVE's hint saying what this roll's type adds (docs/35) — the actions (REROLL with its count — LAST REROLL in gold with the game feel — ATTACK in
   red; SKIP TURN when stunned; the AUTO note with STOP, none in Versus), low in the panel with the room to spare above
@@ -894,8 +895,9 @@ decides every level, landing Box and outcome, and the screens only say them.
   a listing out asks the server again (at most once a minute), so a trade made while you play shows up there too. The
   gold dot and the NEW tag in Mine stay until the scene has played (and its Box is picked, `tradesToWatch`); every trade in Mine's Done list is a button that
   plays its scene again. A toast for a listing that came back and for a trade a closed tab left half done.
-- **Sharing** (`ShareListingModal`): the link `<site>/t/<code>` with COPY, a line on who can use it, and SHARE (the
-  share sheet on phones). A private listing opens it right after POST. A link opens the listing in its sheet when the
+- **Sharing** (`ShareListingModal`): the message (the Pokémon, shiny or not, its level and what it's wanted for) above
+  the link `<site>/t/<code>` with COPY, a line on who can use it, and SHARE (the share sheet on phones). COPY, and SHARE
+  where there is no share sheet, copy the message with the link: every link's preview is the same picture. A private listing opens it right after POST. A link opens the listing in its sheet when the
   moment is calm; signed out it asks to connect and keeps the link through the sign-in.
 
 ## 22. Small worlds
@@ -1431,7 +1433,8 @@ Its switch is its own (`underground.access`, §20) on top of the live events' on
 - **Art, not theme**: the cave (`UgCave`), the crack gauge and the wall are drawn in code and stay the same in Daybreak
   and Dusk (§2 "Art stays art"). The cave keeps its size on a wide screen: a scene at most 320 px wide, centred, rock
   on both sides. With no picture picked by the admin, it is the live event's picture (Home's square, the Mart's section).
-- **Home's square** is the live square (§ docs/20) with the type's tag (a dark chip, the pickaxe, DIG) and the kits held
+- **Home's square** is the live square (§ docs/20; one per live event running, so it may sit beside a Cash Flow's or
+  a Shiny Parade's) with the type's tag (a dark chip, the pickaxe, DIG) and the kits held
   as its line ("Explorakits: 2 · +1 in 5h 12m"); a tap opens `/underground`. The Mart's tab wears KITS while it runs.
 - **Its pop-up is its rules** (`UgRulesModal`, the cave as banner): once per event (it also marks the live pop-up
   seen), Later / Let's go! to the page; INFO at the bottom of the page shows it again with OK.

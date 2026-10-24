@@ -362,8 +362,8 @@ one. Tests: `tests/dice-logo.test.ts`, `e2e/title.spec.ts`. Setting it up: nothi
 ## 10. Setting it up
 
 1. Deploy the client. The three switches are Off: nothing changes for anyone until the admin turns them on.
-2. Run migration `supabase/migrations/0072_game_feel.sql` in the Supabase SQL editor
-   (<https://github.com/Splifingald/pokedice/blob/ccr-0d03596c-nyhjr3/supabase/migrations/0072_game_feel.sql>): it adds
+2. Run migration `supabase/migrations/0074_game_feel.sql` in the Supabase SQL editor
+   (<https://github.com/Splifingald/pokedice/blob/feature/version_2_3/supabase/migrations/0074_game_feel.sql>): it adds
    the three switches' rows, Off, and bumps `configVersion`. `supabase/seed.sql` carries it too, inlined. Safe to run
    again.
 3. Admin → Config: try **Game feel**, **Haptics** and **Battle music** On for admin first, then On for everyone.

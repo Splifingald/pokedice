@@ -20,6 +20,7 @@ import {
   worldShopRows,
   type GemShelfRow,
   type ItemDef,
+  type LiveEvent,
 } from '@/engine'
 import { effectText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
@@ -155,28 +156,43 @@ function Row({
   )
 }
 
+/** Every Special Shop running (docs/20), a section each, the earliest started first. */
+function LiveShopSections() {
+  const { lives, now } = useLive(1000)
+  if (now == null) return null
+  return (
+    <>
+      {lives
+        .filter((e) => e.type === 'shop')
+        .map((e) => (
+          <LiveShopSection key={e.id} live={e} now={now} />
+        ))}
+    </>
+  )
+}
+
 /**
  * A live event's Special Shop (docs/20), over the Mart's own shelves: its picture, the time left, then its items — at
  * their event price (the usual one struck out), the ones the Mart never sells, and what's left of each player's limit.
  */
-function LiveShopSection() {
+function LiveShopSection({ live, now }: { live: LiveEvent; now: number }) {
   const { t } = useT()
-  const { live, now } = useLive(1000)
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const [open, setOpen] = useState<string | null>(null)
   const [qty, setQty] = useState<'1' | '5' | '10'>('1')
-  if (!live || live.type !== 'shop' || !save || now == null) return null
+  if (!save) return null
   const rows = liveShopRows(save, data, live)
   if (!rows.length) return null
   const left = liveLeft(live, now)
+  const headId = `live-shop-${live.id}`
   return (
-    <section aria-labelledby="live-shop" className="lv-shop flex flex-col gap-2 pb-2.5">
+    <section aria-labelledby={headId} className="lv-shop flex flex-col gap-2 pb-2.5">
       <header className="lv-shop-head relative isolate grid min-h-[92px] content-end gap-1.5 overflow-hidden px-3 pb-3 pt-2.5">
         <LivePicture e={live} className="absolute inset-0 -z-10" />
         <span className="flex min-w-0 items-center gap-2">
           <LiveBadge />
-          <h2 id="live-shop" className="lv-ink m-0 min-w-0 truncate text-[28px] leading-none">
+          <h2 id={headId} className="lv-ink m-0 min-w-0 truncate text-[28px] leading-none">
             {liveName(live)}
           </h2>
         </span>
@@ -259,7 +275,7 @@ function LiveShopSection() {
                   className="min-h-[50px] flex-1"
                   disabled={!can}
                   onClick={() => {
-                    if (!buyLive(r.item.key, n)) return
+                    if (!buyLive(live.id, r.item.key, n)) return
                     sfx('gold')
                     if (r.left != null && r.left - n <= 0) setOpen(null)
                     pushToast(t('ui.shop.bought', { n, item: r.item.name, left: money(useGame.getState().save?.gold ?? 0) }), 'good')
@@ -618,7 +634,7 @@ function BuyTab({ badges }: { badges: number }) {
           </PixelButton>
         </div>
       </Modal>
-      <LiveShopSection />
+      <LiveShopSections />
       <UgKitSection />
       <CatChips
         items={all}

@@ -584,13 +584,16 @@ export interface ItemDef {
 export interface StatusRules {
   /** Burn and Poison hurt by a share of the victim's max HP each turn (at least 1): Burn `percentPerStack`% per stack. */
   burn: { threshold: number; percentPerStack: number; duration: number }
-  poison: { threshold: number; percent: number; duration: number }
-  frozen: { threshold: number; stunTurns: number }
-  paralyze: { threshold: number; stunTurns: number }
-  /** Confusion: the victim's next attack still lands, then it takes `recoilPercent`% of its max HP as recoil. */
-  confuse: { threshold: number; recoilPercent: number }
-  /** Heal faces: at the threshold the attacker heals itself, on top of the damage it deals. */
-  heal: { threshold: number; amount: 'rollTotal' | 'healFaces' }
+  /** Poison: one face is enough. It doesn't stack: another only brings its turns back up. */
+  poison: { percent: number; duration: number }
+  /** Freeze and Paralysis: each face gives a 1-in-`sureAt` chance to land, so `sureAt` faces make it sure. */
+  frozen: { sureAt: number; stunTurns: number }
+  paralyze: { sureAt: number; stunTurns: number }
+  /**
+   * Confusion: the victim's next attack still lands, then it takes `recoilPercentPerFace`% of its max HP as recoil per
+   * Confuse face that confused it, `maxFaces` at most ("a bit confused", "confused", "very confused").
+   */
+  confuse: { recoilPercentPerFace: number; maxFaces: number }
 }
 
 export type SkipPolicy = 'free' | 'once' | 'none'
@@ -772,16 +775,38 @@ export interface LiveShopItem {
   regions: RegionId[] | 'all'
 }
 
+/** A week of the month a weekly live event runs in: the 1st to the 4th of that weekday, or the month's last. */
+export type LiveWeek = 1 | 2 | 3 | 4 | 'last'
+
+/**
+ * A live event that comes back (docs/20 §9), at `time` (UTC, "HH:MM") for `hours`: every year on a date, or every
+ * week on a weekday (only some weeks of the month when `weeks` lists them; empty = every week).
+ */
+export type LiveRepeat =
+  | { kind: 'yearly'; month: number; day: number; time: string; hours: number }
+  | { kind: 'weekly'; weekday: number; weeks: LiveWeek[]; time: string; hours: number }
+
 /**
  * A live event (docs/20): the whole game changes for a while, the same for everyone, between `start` and `end` (ISO,
- * UTC, server time). Only the settings of its `type` count; the others stay so switching type back keeps them.
+ * UTC, server time), or on each date its `repeat` gives. Only the settings of its `type` count; the others stay so
+ * switching type back keeps them. Several can run at once.
  */
 export interface LiveEvent {
-  /** Stable: the pop-up's "seen" and the shop's per-player counts are kept by it. */
+  /**
+   * Stable: the pop-up's "seen" and the shop's per-player counts are kept by it. A recurring event's runs each have
+   * their own, `<id>@<YYYY-MM-DD>` (the UTC date it starts), so every run is a fresh event for players.
+   */
   id: string
   type: LiveType
+  /** A one-off event's start and end; a recurring one's runs take theirs from `repeat`. */
   start: string
   end: string
+  /** Comes back by itself (null or absent = once, between `start` and `end`). */
+  repeat?: LiveRepeat | null
+  /** A recurring event's runs ended early ("End now"): the run's UTC date → when it ended. */
+  stops?: Record<string, string>
+  /** On a run of a recurring event: the event it's a run of. */
+  ruleId?: string
   /** Its picture on Home, in the pop-up and over the shop's section: an area picture's key or a path. */
   banner: string
   /** A custom title for an occasion, per language (others fall back to English); empty = the type's own name. */
@@ -918,12 +943,12 @@ export interface GameConfig {
   diceThrows: { access: EventAccess }
   /**
    * The game-feel pass (docs/38): count-ups, combo tiers, hits that scale, the KO beat, the victory payoff, the catch
-   * moments. Purely visual and audible. Migration 0072 inserts the same row.
+   * moments. Purely visual and audible. Migration 0074 inserts the same row.
    */
   gameFeel: { access: EventAccess }
-  /** Haptics (docs/38): short vibrations on dice, hits and catches, where the device can. Migration 0072. */
+  /** Haptics (docs/38): short vibrations on dice, hits and catches, where the device can. Migration 0074. */
   haptics: { access: EventAccess }
-  /** Battle music (docs/38): an original 8-bit loop under fights. Migration 0072 inserts the same row. */
+  /** Battle music (docs/38): an original 8-bit loop under fights. Migration 0074 inserts the same row. */
   music: { access: EventAccess }
   /** Double battles (docs/33): their switch, the regions that have them and the wild odds. */
   doubleBattles: DoubleBattlesConfig

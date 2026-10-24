@@ -1,17 +1,50 @@
 // Live events (docs/20): the whole game changes for a while, the same for every player, scheduled by the admin
-// (game_config `liveEvents`). One runs at a time:
+// (game_config `liveEvents`). Several can run at once, each its own:
 //  - a Shiny Parade: wild Pokémon's shiny odds × n, in some areas, one region or everywhere;
 //  - a Special Shop: items at a special price, items the Mart never sells, some limited per player;
 //  - Cash Flow: every ₽ earned × n (selling excluded, so buying and selling back never pays).
+// Two of a kind add up: two Cash Flows of +50 % pay +100 %, two Shiny Parades of ×5 make ×9 where both cover.
+// An event runs once (a start and an end) or comes back (§9): every year on a date, or on a weekday, every week or on
+// some weeks of the month. Each run of a recurring event is an event of its own for players (its own id, pop-up and
+// shop limits), built from the rule here; the admin's list holds only the rule.
 // Time is the server's (store/serverTime): it starts and ends at the same moment for everyone; while the time is
 // unknown, no event runs. A player sees it, and gets it, from the event's badge count on.
 import { eventOpenTo } from './events'
 import { addFossil } from './fossils'
 import { sellPrice } from './items'
 import { inWorldRegion, regionCases, regionOf, regionOfArea } from './regions'
-import type { Area, GameData, ItemDef, LiveEvent, LiveShopItem, SaveData, WheelReward } from './types'
+import type {
+  Area,
+  GameData,
+  ItemDef,
+  LiveEvent,
+  LiveRepeat,
+  LiveShopItem,
+  LiveWeek,
+  SaveData,
+  WheelReward,
+} from './types'
 
 const at = (iso: string): number => Date.parse(iso)
+const HOUR = 3_600_000
+const DAY = 24 * HOUR
+
+/** How long a recurring event's runs may last: a weekly one's never reach the next week's, a yearly one's a month. */
+export const LIVE_REPEAT_MAX_HOURS: Record<LiveRepeat['kind'], number> = { weekly: 7 * 24, yearly: 31 * 24 }
+
+/** A recurring event's settings as saved, filled in and in range enough to compute with (liveProblems says what's off). */
+export function normaliseRepeat(raw: Partial<LiveRepeat> | null | undefined): LiveRepeat | null {
+  if (!raw || (raw.kind !== 'yearly' && raw.kind !== 'weekly')) return null
+  const time = typeof raw.time === 'string' && /^\d{1,2}:\d{2}$/.test(raw.time) ? raw.time : '00:00'
+  const hours = Number(raw.hours) > 0 ? Number(raw.hours) : 24
+  if (raw.kind === 'yearly') {
+    const r = raw as Partial<Extract<LiveRepeat, { kind: 'yearly' }>>
+    return { kind: 'yearly', month: Math.round(Number(r.month)) || 1, day: Math.round(Number(r.day)) || 1, time, hours }
+  }
+  const r = raw as Partial<Extract<LiveRepeat, { kind: 'weekly' }>>
+  const weeks = (Array.isArray(r.weeks) ? r.weeks : []).filter((w): w is LiveWeek => w === 'last' || [1, 2, 3, 4].includes(w as number))
+  return { kind: 'weekly', weekday: Math.round(Number(r.weekday)) || 0, weeks: [...new Set(weeks)], time, hours }
+}
 
 /** An event as the admin saved it, every type's settings filled in (a row from an older admin may miss some). */
 export function normaliseLiveEvent(raw: Partial<LiveEvent>): LiveEvent {
@@ -19,11 +52,81 @@ export function normaliseLiveEvent(raw: Partial<LiveEvent>): LiveEvent {
   return {
     ...d,
     ...raw,
+    repeat: normaliseRepeat(raw.repeat),
     title: { ...raw.title },
     shiny: { ...d.shiny, ...raw.shiny, areaIds: raw.shiny?.areaIds ?? [] },
     shop: { items: raw.shop?.items ?? [] },
     cash: { ...d.cash, ...raw.cash },
   } as LiveEvent
+}
+
+// ------------------------------------------------------------------ recurring events (§9)
+
+/** The ms past midnight (UTC) of "HH:MM"; 0 when it isn't one. */
+export function repeatTime(time: string): number {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(time)
+  if (!m) return 0
+  const h = Number(m[1])
+  const min = Number(m[2])
+  return h < 24 && min < 60 ? h * HOUR + min * 60_000 : 0
+}
+
+/** A run's length, in ms (at least an hour, at most its kind's longest). */
+const runLength = (r: LiveRepeat) => Math.min(LIVE_REPEAT_MAX_HOURS[r.kind], Math.max(1, Number(r.hours) || 0)) * HOUR
+
+/** Which of its weekday this date is in its month: 1 to 5. */
+const weekOfMonth = (d: Date) => Math.ceil(d.getUTCDate() / 7)
+/** This date is its weekday's last in the month (a week later is next month). */
+const lastOfMonth = (d: Date) => new Date(d.getTime() + 7 * DAY).getUTCMonth() !== d.getUTCMonth()
+
+/** A recurring event starts on this UTC day (ms at its midnight). */
+export function repeatsOn(r: LiveRepeat, day: number): boolean {
+  const d = new Date(day)
+  if (r.kind === 'yearly') return d.getUTCMonth() + 1 === r.month && d.getUTCDate() === r.day
+  if (d.getUTCDay() !== r.weekday) return false
+  if (!r.weeks.length) return true
+  return r.weeks.some((w) => (w === 'last' ? lastOfMonth(d) : weekOfMonth(d) === w))
+}
+
+const ymd = (ms: number) => new Date(ms).toISOString().slice(0, 10)
+
+/** The run of a recurring event that starts on that UTC day (ms at its midnight), cut short if "End now" stopped it. */
+function runOn(e: LiveEvent, r: LiveRepeat, day: number): LiveEvent {
+  const key = ymd(day)
+  const s = day + repeatTime(r.time)
+  const stop = e.stops?.[key] ? at(e.stops[key]!) : NaN
+  const end = Number.isFinite(stop) ? Math.max(s, Math.min(s + runLength(r), stop)) : s + runLength(r)
+  return { ...e, id: `${e.id}@${key}`, ruleId: e.id, repeat: null, stops: undefined, start: new Date(s).toISOString(), end: new Date(end).toISOString() }
+}
+
+/**
+ * The runs of an event that are on at some point between `from` and `to` (ms), in order, `max` at most: the event
+ * itself when it runs once, each date's run when it comes back.
+ */
+export function liveRuns(e: LiveEvent, from: number, to: number, max = Infinity): LiveEvent[] {
+  if (!e.repeat) return at(e.start) < to && from < at(e.end) && at(e.end) > at(e.start) ? [e] : []
+  const r = e.repeat
+  const out: LiveEvent[] = []
+  // A run that started up to its length before `from` may still be on.
+  for (let day = Math.floor((from - runLength(r) - repeatTime(r.time)) / DAY) * DAY; day < to && out.length < max; day += DAY) {
+    if (!repeatsOn(r, day)) continue
+    const run = runOn(e, r, day)
+    if (at(run.start) < to && from < at(run.end) && at(run.end) > at(run.start)) out.push(run)
+  }
+  return out
+}
+
+/** Its next run not over yet at `now` (the one on, or the next to come), looking up to four years ahead (a 29 February). */
+export const liveNextRun = (e: LiveEvent, now: number): LiveEvent | null => liveRuns(e, now, now + 4 * 366 * DAY, 1)[0] ?? null
+
+/** An event or a run by its id ("<id>@<YYYY-MM-DD>" for a recurring event's run), as it is now in the admin's list. */
+export function liveById(data: GameData, id: string): LiveEvent | null {
+  const [ruleId, key] = id.split('@')
+  const e = liveEvents(data).find((x) => x.id === ruleId)
+  if (!e) return null
+  if (key == null) return e.repeat ? null : e
+  const day = Date.parse(`${key}T00:00:00Z`)
+  return e.repeat && Number.isFinite(day) && repeatsOn(e.repeat, day) ? runOn(e, e.repeat, day) : null
 }
 const LISTS = new WeakMap<object, LiveEvent[]>()
 
@@ -35,32 +138,61 @@ export function liveEvents(data: GameData): LiveEvent[] {
   return list
 }
 
-/** Where an event stands at `now`: before its start, running (start included, end excluded) or over. */
-export function liveState(e: Pick<LiveEvent, 'start' | 'end'>, now: number): 'scheduled' | 'live' | 'ended' {
+/**
+ * Where an event stands at `now`: before its start, running (start included, end excluded) or over. A recurring
+ * event is live while one of its runs is, else scheduled (it comes back), ended only if it never runs again.
+ */
+export function liveState(e: Pick<LiveEvent, 'start' | 'end'> & Partial<LiveEvent>, now: number): 'scheduled' | 'live' | 'ended' {
+  if (e.repeat) {
+    const next = liveNextRun(e as LiveEvent, now)
+    return !next ? 'ended' : now < at(next.start) ? 'scheduled' : 'live'
+  }
   const s = at(e.start)
   const end = at(e.end)
   if (!Number.isFinite(s) || !Number.isFinite(end) || end <= s) return 'ended'
   return now < s ? 'scheduled' : now < end ? 'live' : 'ended'
 }
 
-/** The event running at that server time; null when none is, while the time is unknown, or when they're switched off. */
-export function liveEventAt(data: GameData, now: number | null): LiveEvent | null {
-  if (now == null || !eventOpenTo(data.config.liveEvents?.access, data)) return null
-  return liveEvents(data).find((e) => liveState(e, now) === 'live') ?? null
+/**
+ * The events (and recurring events' runs) running at that server time, the earliest started first; none while the
+ * time is unknown or when they're switched off.
+ */
+export function liveEventsAt(data: GameData, now: number | null): LiveEvent[] {
+  if (now == null || !eventOpenTo(data.config.liveEvents?.access, data)) return []
+  return liveEvents(data)
+    .flatMap((e) => liveRuns(e, now, now + 1))
+    .sort((a, b) => at(a.start) - at(b.start) || a.id.localeCompare(b.id))
+}
+
+/** The first of the events running at that server time (for one picture, as the push question's), or null. */
+export const liveEventAt = (data: GameData, now: number | null): LiveEvent | null => liveEventsAt(data, now)[0] ?? null
+
+/** Runs starting between `from` and `to` (ms), the soonest first: what reminders announce. */
+export function liveStartsBetween(data: GameData, from: number, to: number): LiveEvent[] {
+  return liveEvents(data)
+    .flatMap((e) => liveRuns(e, from, to))
+    .filter((e) => at(e.start) >= from && at(e.start) < to)
+    .sort((a, b) => at(a.start) - at(b.start) || a.id.localeCompare(b.id))
 }
 
 /** Badges held in every region: a live event shows from its own count of them. */
 export const badgesHeld = (save: SaveData, data: GameData): number => regionCases(save, data).reduce((n, r) => n + r.earned, 0)
 
 /**
- * The event running for this player: running, and they have its badges. Its effects follow the same rule. It stays
- * outside a small world (docs/21): while one is played, there's none.
+ * The events running for this player: running, and they have their badges. Their effects follow the same rule. They
+ * stay outside a small world (docs/21): while one is played, there's none.
  */
-export function liveFor(save: SaveData, data: GameData, now: number | null): LiveEvent | null {
-  if (inWorldRegion(save, data)) return null
-  const e = liveEventAt(data, now)
-  return e && badgesHeld(save, data) >= e.minBadges ? e : null
+export function livesFor(save: SaveData, data: GameData, now: number | null): LiveEvent[] {
+  if (inWorldRegion(save, data)) return []
+  const badges = badgesHeld(save, data)
+  return liveEventsAt(data, now).filter((e) => badges >= e.minBadges)
 }
+
+/** The live events in effect: one, several (they add up), or none. */
+export type LiveSet = LiveEvent | readonly LiveEvent[] | null | undefined
+const isList = (l: LiveSet): l is readonly LiveEvent[] => Array.isArray(l)
+/** The events of a set, as a list. */
+export const liveList = (l: LiveSet): readonly LiveEvent[] => (!l ? [] : isList(l) ? l : [l])
 
 /** Time left (ms), and the share of the event still to come (1 → 0), for the timer and its gauge. */
 export function liveLeft(e: Pick<LiveEvent, 'start' | 'end'>, now: number): { ms: number; share: number } {
@@ -72,8 +204,12 @@ export function liveLeft(e: Pick<LiveEvent, 'start' | 'end'>, now: number): { ms
 
 // ------------------------------------------------------------------ the pop-up (once per event)
 
-/** Its pop-up is due: running for this player, and not shown yet. */
-export const livePopupDue = (save: SaveData, live: LiveEvent | null): boolean => !!live && !(save.events?.liveSeen ?? []).includes(live.id)
+/** The first of these events whose pop-up is due: running for this player, and not shown yet. */
+export const livePopupNext = (save: SaveData, live: LiveSet): LiveEvent | null =>
+  liveList(live).find((e) => !(save.events?.liveSeen ?? []).includes(e.id)) ?? null
+
+/** A pop-up is due for one of these events. */
+export const livePopupDue = (save: SaveData, live: LiveSet): boolean => !!livePopupNext(save, live)
 
 /** The pop-up was shown. Only the last 50 ids are kept: an old event never comes back. */
 export function markLiveSeen(save: SaveData, live: LiveEvent): SaveData {
@@ -84,35 +220,38 @@ export function markLiveSeen(save: SaveData, live: LiveEvent): SaveData {
 
 // ------------------------------------------------------------------ Cash Flow
 
-/** × every ₽ earned while Cash Flow runs (never below 1). */
-export const cashMultiplier = (live: LiveEvent | null | undefined): number =>
-  live?.type === 'cash' ? Math.max(1, Number(live.cash?.multiplier) || 1) : 1
+/** × every ₽ earned while Cash Flow runs (never below 1); two at once add their bonuses (+50 % and +50 % = +100 %). */
+export const cashMultiplier = (live: LiveSet): number =>
+  liveList(live).reduce((m, e) => (e.type === 'cash' ? m + Math.max(0, (Number(e.cash?.multiplier) || 1) - 1) : m), 1)
 
 /** ₽ earned, with Cash Flow's share: `amount` is what's paid, `bonus` the part Cash Flow added (0 without it). */
-export function earnedGold(base: number, live: LiveEvent | null | undefined): { amount: number; bonus: number } {
+export function earnedGold(base: number, live: LiveSet): { amount: number; bonus: number } {
   const b = Math.max(0, Math.round(base))
   const amount = Math.round(b * cashMultiplier(live))
   return { amount, bonus: amount - b }
 }
 
 /** The Fortune Wheel's prize as paid: its ₽ under Cash Flow (an item stays as it is). */
-export const cashReward = (r: WheelReward, live: LiveEvent | null | undefined): WheelReward =>
+export const cashReward = (r: WheelReward, live: LiveSet): WheelReward =>
   r.kind === 'gold' ? { kind: 'gold', amount: earnedGold(r.amount, live).amount } : r
 
 // ------------------------------------------------------------------ Shiny Parade
 
-/** The Shiny Parade covers this area: every area, its region, or one of its areas. */
-export function liveCovers(live: LiveEvent | null | undefined, area: Area | undefined): boolean {
-  if (!live || live.type !== 'shiny' || !area || !live.shiny) return false
-  const s = live.shiny
+/** This Shiny Parade covers this area: every area, its region, or one of its areas. */
+function covers(e: LiveEvent, area: Area): boolean {
+  if (e.type !== 'shiny' || !e.shiny) return false
+  const s = e.shiny
   if (s.scope === 'all') return true
   if (s.scope === 'region') return !!s.regionId && regionOfArea(area) === s.regionId
   return s.areaIds.includes(area.id)
 }
 
-/** × the wild shiny odds in this area (1 when the parade doesn't cover it). */
-export const shinyBoost = (live: LiveEvent | null | undefined, area: Area | undefined): number =>
-  liveCovers(live, area) ? Math.max(1, Number(live!.shiny.multiplier) || 1) : 1
+/** A Shiny Parade covers this area. */
+export const liveCovers = (live: LiveSet, area: Area | undefined): boolean => !!area && liveList(live).some((e) => covers(e, area))
+
+/** × the wild shiny odds in this area (1 when no parade covers it); two parades add their boosts (×5 and ×5 = ×9). */
+export const shinyBoost = (live: LiveSet, area: Area | undefined): number =>
+  !area ? 1 : liveList(live).reduce((m, e) => (covers(e, area) ? m + Math.max(0, (Number(e.shiny.multiplier) || 1) - 1) : m), 1)
 
 // ------------------------------------------------------------------ Special Shop
 
@@ -185,19 +324,44 @@ export function buyLiveItem(
 
 // ------------------------------------------------------------------ the admin
 
-/** The event of the list that overlaps this one, if any: one runs at a time. */
-export function liveOverlap(list: readonly LiveEvent[], e: LiveEvent): LiveEvent | null {
-  const s = at(e.start)
-  const end = at(e.end)
-  return list.find((o) => o.id !== e.id && at(o.start) < end && s < at(o.end)) ?? null
+/** How far ahead the admin's checks look at a recurring event's runs. */
+const CHECK_YEARS = 2
+
+/**
+ * The run of another event that overlaps one of this event's, if any. Events may overlap (they add up), except two
+ * Undergrounds: a player digs one at a time, with one team (the server keeps one running too).
+ */
+export function liveOverlap(list: readonly LiveEvent[], e: LiveEvent, now: number): LiveEvent | null {
+  if (e.type !== 'underground') return null
+  const from = e.repeat ? now : Math.min(now, at(e.start))
+  const to = Math.max(now, e.repeat ? now : at(e.end)) + CHECK_YEARS * 366 * DAY
+  const mine = liveRuns(e, from, to)
+  for (const o of list) {
+    if (o.id === e.id || o.type !== 'underground') continue
+    for (const r of liveRuns(o, from, to)) if (mine.some((m) => at(r.start) < at(m.end) && at(m.start) < at(r.end))) return r
+  }
+  return null
 }
 
+const MONTH_DAYS = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+
 /** What stops the admin from saving an event (empty = fine). */
-export function liveProblems(list: readonly LiveEvent[], e: LiveEvent, data: GameData): string[] {
+export function liveProblems(list: readonly LiveEvent[], e: LiveEvent, data: GameData, now: number): string[] {
   const out: string[] = []
-  if (!(at(e.end) > at(e.start))) out.push('It ends before it starts.')
-  const clash = liveOverlap(list, e)
-  if (clash) out.push(`It overlaps another live event (${clash.start.slice(0, 16)} → ${clash.end.slice(0, 16)} UTC).`)
+  const r = e.repeat
+  if (!r && !(at(e.end) > at(e.start))) out.push('It ends before it starts.')
+  if (r) {
+    if (!/^([01]?\d|2[0-3]):[0-5]\d$/.test(r.time)) out.push('The start time isn’t a time (HH:MM).')
+    const max = LIVE_REPEAT_MAX_HOURS[r.kind]
+    if (!(r.hours >= 1 && r.hours <= max))
+      out.push(r.kind === 'weekly' ? `A weekly event lasts 1 to ${max} hours (a week).` : `A yearly event lasts 1 to ${max} hours (31 days).`)
+    if (r.kind === 'yearly' && !(r.month >= 1 && r.month <= 12 && r.day >= 1 && r.day <= (MONTH_DAYS[r.month - 1] ?? 0)))
+      out.push('That date doesn’t exist.')
+    if (r.kind === 'weekly' && !(r.weekday >= 0 && r.weekday <= 6)) out.push('No weekday picked.')
+  }
+  const clash = liveOverlap(list, e, now)
+  if (clash)
+    out.push(`It overlaps another Underground (${clash.start.slice(0, 16).replace('T', ' ')} → ${clash.end.slice(0, 16).replace('T', ' ')} UTC): one at a time.`)
   if (e.type === 'shiny') {
     if (!(e.shiny.multiplier >= 1)) out.push('The shiny multiplier is below 1.')
     if (e.shiny.scope === 'areas' && !e.shiny.areaIds.length) out.push('No area picked.')
@@ -219,6 +383,7 @@ export function newLiveEvent(id: string, start: string, end: string): LiveEvent 
     start,
     end,
     banner: '',
+    repeat: null,
     title: {},
     minBadges: 3,
     shiny: { multiplier: 5, scope: 'all', areaIds: [], regionId: null },

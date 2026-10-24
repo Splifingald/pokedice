@@ -95,9 +95,18 @@ export function trainerTitle(tr: { name: string; kind?: string; role?: string })
 
 const turns = (n: number) => tPlural('ui.status.turns', n, { n })
 
+/** A chance (0–1) as a whole percent: 1/3 → 33. */
+export const chancePercent = (chance: number) => Math.round(chance * 100)
+
 /** Each status in plain words, with the live numbers from game_config.status (Help table, Upgrades screen). */
 export function statusEffects(r: StatusRules): { status: StatusKind; icon: IconName; name: string; die: PokeType; when: string; what: string }[] {
   const faces = (n: number, status: StatusKind) => tPlural('ui.status.faces', n, { n, face: t(`ui.status.${status}.name`) })
+  // Freeze and Paralysis: a chance per face, sure from `sureAt` faces.
+  const chance = (sureAt: number, status: StatusKind) => {
+    const n = Math.max(1, sureAt)
+    return t('ui.status.chanceWhen', { pct: chancePercent(1 / n), face: t(`ui.status.${status}.name`), n })
+  }
+  const maxFaces = Math.max(1, r.confuse.maxFaces)
   return [
     {
       status: 'burn',
@@ -112,7 +121,7 @@ export function statusEffects(r: StatusRules): { status: StatusKind; icon: IconN
       icon: 'poison',
       die: 'poison',
       name: t('ui.status.poison.name'),
-      when: faces(r.poison.threshold, 'poison'),
+      when: faces(1, 'poison'),
       what: t('ui.status.poison.what', { percent: r.poison.percent, turns: turns(r.poison.duration) }),
     },
     {
@@ -120,7 +129,7 @@ export function statusEffects(r: StatusRules): { status: StatusKind; icon: IconN
       icon: 'frozen',
       die: 'ice',
       name: t('ui.status.frozen.name'),
-      when: faces(r.frozen.threshold, 'frozen'),
+      when: chance(r.frozen.sureAt, 'frozen'),
       what: t('ui.status.skip', { turns: turns(r.frozen.stunTurns) }),
     },
     {
@@ -128,7 +137,7 @@ export function statusEffects(r: StatusRules): { status: StatusKind; icon: IconN
       icon: 'paralyze',
       die: 'electric',
       name: t('ui.status.paralyze.name'),
-      when: faces(r.paralyze.threshold, 'paralyze'),
+      when: chance(r.paralyze.sureAt, 'paralyze'),
       what: t('ui.status.skip', { turns: turns(r.paralyze.stunTurns) }),
     },
     {
@@ -136,18 +145,20 @@ export function statusEffects(r: StatusRules): { status: StatusKind; icon: IconN
       icon: 'confuse',
       die: 'psychic',
       name: t('ui.status.confuse.name'),
-      when: faces(r.confuse.threshold, 'confuse'),
-      what: t('ui.status.confuse.what', { percent: r.confuse.recoilPercent }),
+      when: faces(1, 'confuse'),
+      what: t('ui.status.confuse.what', {
+        percent: r.confuse.recoilPercentPerFace,
+        max: r.confuse.recoilPercentPerFace * maxFaces,
+        n: maxFaces,
+      }),
     },
     {
       status: 'heal',
       icon: 'heal',
       die: 'grass',
       name: t('ui.status.heal.name'),
-      when: faces(r.heal.threshold, 'heal'),
-      what: t('ui.status.heal.what', {
-        source: t(r.heal.amount === 'healFaces' ? 'ui.status.heal.sourceFaces' : 'ui.status.heal.sourceTotal'),
-      }),
+      when: faces(1, 'heal'),
+      what: t('ui.status.heal.what'),
     },
   ]
 }

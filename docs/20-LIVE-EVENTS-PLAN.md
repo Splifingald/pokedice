@@ -12,8 +12,8 @@ and a pop-up.
 
 | Topic | Decision |
 |---|---|
-| Overlap | **One live event at a time.** The admin refuses to schedule two that overlap. |
-| Scheduling | **Start and end date-times, UTC**, set in the admin; it starts and ends by itself (after a Publish). You can end one early. |
+| Overlap | ~~One live event at a time.~~ **They may overlap** (2026-10-24, §9): each gets its square on Home; two of a kind add up. Two Undergrounds can't. |
+| Scheduling | **Start and end date-times, UTC**, set in the admin; it starts and ends by itself (after a Publish). You can end one early. **Or recurring** (2026-10-24, §9): every year on a date, or on a weekday, every week or on some weeks of the month. |
 | Strength | **Free numbers** (shiny ×5, ₽ +50 %…), shown as such to players. |
 | Audience | Shown **after a set number of badges** (admin; the events teaser's 3 by default). |
 | Pop-up | **Once per event per player**, the first time they're in the game while it runs: banner, title, what it does, time left. **OK**, plus **Go** for a Special Shop (to the shop). |
@@ -148,3 +148,52 @@ interface LiveEvent {
 ## 8. Integration phases (after validation)
 1. Engine + config + save + admin editor + tests.
 2. Home square, pop-up, in-game chips, shop section; strings in 10 languages; e2e + layout.
+
+## 9. Overlapping and recurring events (2026-10-24)
+
+The user's ask: *"I should be able to schedule overlapping live events. If that happens then each event gets their card
+on the home page. I should be able to schedule by date like today or by 'recurring' and select either a specific date
+(will happen every year) or day (every week) and specify which week of the month (like first only or second and
+fourth)."*
+
+### Overlapping
+- **Any events may overlap**, except **two Undergrounds** (a player digs one at a time, with one team, and the server's
+  `ug_live()` answers with one). The admin refuses only that overlap, looking two years ahead through recurring runs.
+- **Home**: a square per event running for the player (`LiveSquares`), the earliest started first, after the small
+  world's and before the other event squares.
+- **Pop-ups**: each event's once, one after the other, the earliest started first (`livePopupNext`); a square reopens
+  its own (`openLivePopup(id)`).
+- **Two of a kind add up** (`LiveSet`: the engine's effects take one event or a list): two Cash Flows add their bonuses
+  (+50 % and +50 % = +100 %, on the purse's chip too), two Shiny Parades their boosts where both cover an area
+  (×5 and ×3 = ×7). Two Special Shops: a section each in the Mart, each with its own limits (bought by event id).
+- Store: `useLive()` → `{ lives, now }`, `currentLive()` → the list, `buyLive(eventId, key, qty)`.
+
+### Recurring
+- `LiveEvent.repeat` (null = once, between `start` and `end`, as before):
+  - `{ kind: 'yearly', month, day, time, hours }`: every year on that date (a 29 February: leap years only);
+  - `{ kind: 'weekly', weekday, weeks, time, hours }`: on that weekday (0 = Sunday), every week (`weeks: []`) or on the
+    weeks of the month listed: `1`–`4` (the 1st to the 4th of that weekday in the month) and `'last'`.
+  - `time` is "HH:MM" UTC, `hours` its length: at most 168 for a weekly one (it never reaches the next week's), 744
+    (31 days) for a yearly one.
+- **Each run is an event of its own** for players: id `<id>@<YYYY-MM-DD>` (the UTC date it starts), so its pop-up,
+  its shop limits, its push notice, its Discord post and the Underground's team, kits and orbs start afresh each time.
+  The engine builds runs from the rule (`liveRuns`, `liveNextRun`, `liveById`, `liveStartsBetween`); the list holds only
+  the rule.
+- **End now** on a recurring event ends the running run only (`stops`: the run's date → when it ended); it comes back
+  next time.
+- **Admin**: the editor's **When**: *Once (dates)*, *Every year (a date)*: month, day; *Every week (a weekday)*: the
+  weekday and the weeks of the month (Every week, 1st, 2nd, 3rd, 4th, Last), then the start time (UTC) and how many
+  hours, with the next three runs (UTC and your time). The list shows each event's run on or next, and a **Comes back**
+  column ("The 1st and 3rd Saturday of each month, 20:00 UTC, for 6 h").
+- **Server**: `live_run_at(e, t)` (0072) is the engine's `liveRuns` in SQL, and `ug_live()` uses it, so a recurring
+  Underground's teams and orbs work as a one-off one's. `tests/live-recurring-sql.test.ts` compares the two over three
+  months of moments.
+- No new switch: it's the admin's scheduling of the live events, behind their own switch (`liveEvents.access`, §6c),
+  and players see nothing new to learn (a square and a pop-up per event, as before).
+
+### Setting it up
+1. Run in Supabase → SQL Editor (it redefines `ug_live()`; without it, a recurring Underground doesn't open its teams):
+   https://github.com/Splifingald/pokedice/blob/ccr-09f15ba6-0tg5ou/supabase/migrations/0072_live_recurring.sql
+   (`supabase/seed.sql` inlines it too, after 0071).
+2. Admin → Events → Live events → New live event → **When**, then Save & Publish.
+

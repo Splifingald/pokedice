@@ -367,7 +367,16 @@ function ListingFlow({
         </PixelButton>
         <PixelButton
           variant="primary"
-          onClick={() => setSharing({ code: l.code, dex: l.dex, visibility: l.visibility })}
+          onClick={() =>
+            setSharing({
+              code: l.code,
+              dex: l.dex,
+              level: l.level,
+              shiny: l.shiny,
+              want: l.want,
+              visibility: l.visibility,
+            })
+          }
         >
           {t('ui.trades.share.button')}
         </PixelButton>

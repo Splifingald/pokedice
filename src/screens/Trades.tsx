@@ -176,7 +176,7 @@ function Open() {
           setDrafting(false)
           setTab('mine')
           void loadBoard({}, true)
-          if (p.visibility === 'private') setSharing({ code: p.code, dex: p.dex, visibility: p.visibility })
+          if (p.visibility === 'private') setSharing(p)
         }}
       />
       <ShareListingModal listing={sharing} onClose={() => setSharing(null)} />
@@ -401,7 +401,16 @@ function Mine({
                 <PixelButton
                   size="sm"
                   disabled={!onShare}
-                  onClick={() => onShare?.({ code: o.code, dex: o.mon.dex, visibility: o.visibility })}
+                  onClick={() =>
+                    onShare?.({
+                      code: o.code,
+                      dex: o.mon.dex,
+                      level: o.mon.level,
+                      shiny: !!o.mon.shiny,
+                      want: o.want,
+                      visibility: o.visibility,
+                    })
+                  }
                 >
                   {t('ui.trades.share.button')}
                 </PixelButton>

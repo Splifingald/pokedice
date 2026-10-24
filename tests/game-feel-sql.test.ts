@@ -1,4 +1,4 @@
-// The game-feel pass, haptics and battle music (docs/38): migration 0072 against a real Postgres (PGlite, in process).
+// The game-feel pass, haptics and battle music (docs/38): migration 0074 against a real Postgres (PGlite, in process).
 // The three switches go in Off and the content version goes up; run again, an admin's switches are kept. seed.sql
 // carries the same file, inlined.
 import { readFileSync } from 'node:fs'
@@ -9,10 +9,10 @@ import { DEFAULT_CONFIG } from '@/engine'
 
 const ROOT = path.join(__dirname, '..', 'supabase')
 const sql = (file: string) => readFileSync(path.join(ROOT, 'migrations', file), 'utf8')
-const FILE = '0072_game_feel.sql'
+const FILE = '0074_game_feel.sql'
 const KEYS = ['gameFeel', 'haptics', 'music'] as const
 
-describe('0072: the game-feel pass, haptics and battle music', () => {
+describe('0074: the game-feel pass, haptics and battle music', () => {
   let db: PGlite
   const value = async (key: string) =>
     (await db.query<{ v: unknown }>('select value v from game_config where key = $1', [key])).rows[0]?.v

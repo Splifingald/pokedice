@@ -24,6 +24,7 @@ import {
   sameSave,
   SaveConflictError,
   schedulePush,
+  sendSaveOnLeave,
 } from '@/save/cloud'
 import { keepGeneralBought } from '@/engine'
 import type { SaveData, SaveMode } from '@/engine/types'
@@ -92,12 +93,6 @@ const realmOf = (save: SaveData): SaveMode => (save.mode === 'extreme' ? 'extrem
 function rememberCloud(user: string, realm: SaveMode, at: number | null, key: string, pushedAt?: number) {
   const known = readCloudMark(realm)
   writeCloudMark(realm, { user, at, key, pushedAt: pushedAt ?? (known?.user === user ? known.pushedAt : 0) })
-}
-
-/** This device may upload the signed-in player's save on its own now: its last upload is PUSH_GAP_MS behind. */
-const pushDue = () => {
-  const user = useGame.getState().auth.userId
-  return !user || pushGapLeft(readCloudMark(activeSlot()), user) === 0
 }
 
 /** A refused upload found mid-play tries again this much later, when the cloud copy may be loaded. */
@@ -262,7 +257,11 @@ export async function reconcile(client: SupabaseClient, id: string, manual = fal
   return outcome
 }
 
+/** The session's access token, kept at hand: a page closing can't wait for supabase-js to read it (uploadOnLeave). */
+let accessToken: string | null = null
+
 async function handleSession(client: SupabaseClient, session: Session | null) {
+  accessToken = session?.access_token ?? null
   if (!session) {
     syncedUser = null
     settleSync(false)
@@ -792,6 +791,40 @@ export function adoptStoredSave(raw?: string | null): boolean {
   return true
 }
 
+/**
+ * The page is hidden or closing: what was played since the last upload goes up now. It used to wait for the next
+ * automatic sync (cloudSyncMinutes after the last one), and the push tried as the page closed went through supabase-js,
+ * which reads its session asynchronously first, so it never left a closing page. A game added to the home screen keeps
+ * a save of its own, apart from the browser's (iPhone), so what it played stayed there and the browser opened on the
+ * older cloud copy (2026-10-23). Phones hide the page all the time: at most once per PUSH_GAP_MS, and only when the save
+ * changed, as for automatic uploads. A save too big for a request that outlives the page goes the usual way, which
+ * still gets through when the page is only hidden.
+ */
+export function uploadOnLeave() {
+  const { auth, save } = useGame.getState()
+  const user = auth.userId
+  if (!save || !pushAllowed || cloudMoved || auth.status !== 'signed_in' || !user) return
+  const realm = realmOf(save)
+  const mark = readCloudMark(realm)
+  const key = pushKey(save)
+  if (key === cloudKey || (mark?.user === user && key === mark.key) || pushGapLeft(mark, user) > 0) return
+  if (accessToken && sendSaveOnLeave(user, accessToken, save, knownAt(user, realm))) {
+    cancelPush()
+    lastTry = Date.now()
+    // Taken as written. If it wasn't (refused, lost), the cloud's stamp isn't this one: the next load or upload sees
+    // it and compares, as for any copy moved elsewhere.
+    cloudKey = key
+    rememberCloud(user, realm, save.updatedAt, key, Date.now())
+    return
+  }
+  void getSupabase().then((client) => {
+    if (!client) return
+    cancelPush()
+    schedulePush(() => pushLatest(client, user), 0)
+    flushPush()
+  })
+}
+
 let started = false
 export function startBackgroundServices() {
   if (started) return
@@ -824,14 +857,12 @@ export function startBackgroundServices() {
   window.addEventListener('storage', (e) => {
     if (e.key === saveKeyOf(activeSlot()) && e.newValue) adoptStoredSave(e.newValue)
   })
-  // Closing the page sends what the automatic sync hasn't yet. Merely switching away doesn't: on phones that happens
-  // all the time, and the local save keeps everything until the next sync. Nor does a close within PUSH_GAP_MS of the
-  // last upload — a page reloaded over and over would upload on every reload: it goes up at the next load instead.
+  // Hiding or closing the page sends what the automatic sync hasn't yet (uploadOnLeave).
   window.addEventListener('pagehide', () => {
     markAway()
     markOfflineAway()
     flushWrite()
-    if (pushDue()) flushPush()
+    uploadOnLeave()
   })
   document.addEventListener('visibilitychange', () => {
     clearTimeout(leaveTimer)
@@ -839,6 +870,7 @@ export function startBackgroundServices() {
       markAway()
       markOfflineAway()
       flushWrite()
+      uploadOnLeave()
       leaveTimer = setTimeout(leaveChannel, HIDDEN_LEAVE_MS)
     } else {
       // First: a frozen tab may not have heard another tab's writes, and what follows commits this tab's save.

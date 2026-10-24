@@ -11,7 +11,7 @@ import {
   type LogEntry,
   type RolledDie,
   type Side,
-  type StatusKind,
+  type StatusApplication,
 } from '@/engine'
 import { feelSound } from '@/audio/feel'
 import { sfx } from '@/audio/sfx'
@@ -25,7 +25,7 @@ import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { planScore, scoreLength, type ScoreBeat } from '@/fx/dice/score'
 import { useT } from '@/i18n/react'
-import { comboName, statusName } from '@/lib/format'
+import { chancePercent, comboName } from '@/lib/format'
 import { haptic } from '@/lib/haptics'
 import { useMotion } from '@/lib/motion'
 import { usePace } from '@/lib/pace'
@@ -331,16 +331,25 @@ export function useDamageReveal(
 
 export interface Preview {
   r: DamageResult
-  statuses: { status: StatusKind; stacks?: number }[]
-  almost: { status: StatusKind; have: number; need: number; value: number }[]
+  /** What the roll's status faces do (engine `statusesFromRoll`). */
+  statuses: StatusApplication[]
   recoil: number
+}
+
+/** A status chip's counter: Burn's stacks, a Freeze's or a Paralysis's chance short of sure, how confused, the heal. */
+function statusCount(s: StatusApplication): string | undefined {
+  if (s.status === 'burn') return s.stacks && s.stacks > 1 ? `×${s.stacks}` : undefined
+  if (s.chance != null) return s.chance < 1 ? `${chancePercent(s.chance)}%` : undefined
+  if (s.status === 'confuse') return s.level && s.level > 1 ? `×${s.level}` : undefined
+  if (s.status === 'heal') return s.amount ? `+${s.amount}` : undefined
+  return undefined
 }
 
 /**
  * Under the tray, one line led by the damage, big ("26 DMG": a button, the math behind it, shown once, under the
- * readout), the combo chip when there is one, how effective it is, and a chip per status face — lit once its threshold
- * is met. With the game feel on (`score`), the combo shows once it has landed and the damage counts up to the
- * engine's number.
+ * readout), the combo chip when there is one, how effective it is, and a chip per status the faces cause, with its
+ * stacks, chance, level or heal. With the game feel on (`score`), the combo shows once it has landed and the damage
+ * counts up to the engine's number.
  */
 export function Readout({
   preview,
@@ -399,19 +408,7 @@ export function Readout({
         </span>
       )}
       {preview.statuses.map((s) => (
-        <StatusChip
-          key={s.status}
-          status={s.status}
-          count={s.stacks && s.stacks > 1 ? `×${s.stacks}` : undefined}
-        />
-      ))}
-      {preview.almost.map((s) => (
-        <span
-          key={s.status}
-          title={t('ui.battle.almostStatus', { status: statusName(s.status), need: s.need })}
-        >
-          <StatusChip status={s.status} lit={false} count={`${s.have}/${s.need}`} />
-        </span>
+        <StatusChip key={s.status} status={s.status} count={statusCount(s)} />
       ))}
       {preview.recoil > 0 && (
         <span className="w-full text-center font-pixel-sm text-[15px] leading-tight text-danger">

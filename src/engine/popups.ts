@@ -14,7 +14,7 @@ import { eventUnlockDue } from './events'
 import { extremeRulesDue, isExtreme } from './extreme'
 import { generalRulesDue } from './general'
 import { inviteRulesDue } from './invites'
-import { liveFor, livePopupDue } from './liveEvents'
+import { livePopupDue, livesFor } from './liveEvents'
 import { powerRulesDue } from './powers'
 import { inWorldRegion, regionOfferDue } from './regions'
 import { badgeCase, portalRulesDue } from './run'
@@ -109,7 +109,7 @@ const QUEUE = {
   /** A world has closed. */
   worldBye: { due: (s, d, c) => !!worldByeDue(s, d, c.now) },
   /** A live event runs (the Underground's pop-up is its rules). */
-  live: { due: (s, d, c) => livePopupDue(s, liveFor(s, d, c.now)), away: under('/shop') },
+  live: { due: (s, d, c) => livePopupDue(s, livesFor(s, d, c.now)), away: under('/shop') },
   /** A listing the player posted was taken: its scene plays on Home. */
   tradeScene: {
     due: (s, d, c) => !!c.online && !isExtreme(s) && !inWorldRegion(s, d) && tradesToWatch(s).length > 0,

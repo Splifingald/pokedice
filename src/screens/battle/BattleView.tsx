@@ -11,10 +11,9 @@ import {
   catchTarget,
   comboDice,
   computeDamage,
+  confusionLevel,
   confusionRecoil,
   createRng,
-  faceOf,
-  facesOf,
   formChoices,
   canZMove,
   lockedTypeForms,
@@ -27,7 +26,6 @@ import {
   randomSeed,
   statusCounts,
   statusesFromRoll,
-  STATUS_KINDS,
   sureThrow,
   usableIn,
   type BattleEvent,
@@ -61,7 +59,7 @@ import { catchTimeline } from '@/fx/timelines/catch'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { useT } from '@/i18n/react'
 import { effectText, zMoveText } from '@/i18n/text'
-import { statusName, trainerTitle, typeName } from '@/lib/format'
+import { chancePercent, statusName, trainerTitle, typeName } from '@/lib/format'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { haptic } from '@/lib/haptics'
 import { capMotion, MotionCap, useMotion, type MotionLevel } from '@/lib/motion'
@@ -162,8 +160,8 @@ function useWidth(ref: RefObject<HTMLElement>) {
   return w
 }
 
-// Professor Oak explains thresholds the first time a status face lands short of one (per device).
-const STATUS_TIP_KEY = 'pokedice.tip.statusThreshold'
+// Professor Oak explains a Freeze's or a Paralysis's chance the first time one is short of sure (per device).
+const STATUS_TIP_KEY = 'pokedice.tip.statusChance'
 
 /** The trainer on the field before their Pokémon. */
 const TRAINER_INTRO_MS = 1100
@@ -378,25 +376,24 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const preview = useMemo<Preview | null>(() => {
     if (!rolling || !st.dice.length) return null
     const a = activeBattler(st)
-    const recoil = a.status.confused ? confusionRecoil(a.maxHp, data) : 0
+    const recoil = confusionRecoil(a.maxHp, confusionLevel(a.status), data)
     const r = computeDamage(st.dice, a.types, st.enemy.types, st.playerLevels, data)
-    const statuses = statusesFromRoll(st.dice, data)
-    // Every status the Pokémon's dice can land, short of its threshold (0 included): the faces only count as a number
-    // this roll, and the counter shows how close it is.
-    const counts = statusCounts(st.dice, data)
-    const rules = data.config.status
-    const possible = new Set(
-      a.dice.flatMap((ty) => facesOf(ty, data).flatMap((f) => (f.kind === 'status' ? [f.status] : []))),
-    )
-    const almost = STATUS_KINDS.filter((k) => possible.has(k) && counts[k] < rules[k].threshold).map((k) => ({
-      status: k,
-      have: counts[k],
-      need: rules[k].threshold,
-      value:
-        st.dice.map((d) => faceOf(d, data)).find((f) => f.kind === 'status' && f.status === k)?.value ?? 0,
-    }))
-    return { r, statuses, almost, recoil }
+    const statuses = statusesFromRoll(st.dice, data, st.playerLevels)
+    return { r, statuses, recoil }
   }, [rolling, st, data])
+  // A Freeze or a Paralysis short of sure: Professor Oak explains the chance once (per device).
+  const chanceTip = useMemo(() => {
+    const s = preview?.statuses.find((x) => x.chance != null && x.chance < 1)
+    if (!s || (s.status !== 'frozen' && s.status !== 'paralyze')) return null
+    const sureAt = Math.max(1, data.config.status[s.status].sureAt)
+    return {
+      status: statusName(s.status),
+      pct: chancePercent(1 / sureAt),
+      n: sureAt,
+      have: statusCounts(st.dice, data)[s.status],
+      total: chancePercent(s.chance ?? 0),
+    }
+  }, [preview, st.dice, data])
   const [statusTip, closeStatusTip] = useOneTimeTip(STATUS_TIP_KEY)
 
   const inventory = save?.inventory ?? {}
@@ -747,8 +744,6 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         : foeHand && { side: 'enemy' as const, dice: foeHand }
   const foeSize = feel ? Math.max(40, Math.round((dieSize * 0.75) / 2) * 2) : undefined
   const lastReroll = feel && rolling && active.rerollsLeft === 1
-  // Prof. Oak's threshold tip, about the dice once they're down.
-  const tipFor = settled && !auto && statusTip ? reveal.preview?.almost.find((x) => x.have > 0) : undefined
 
   const party = versus
     ? { count: versus.foeCount, index: versus.foeIndex }
@@ -1086,20 +1081,9 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                   )}
                 </div>
                 {reveal.preview && showBreakdown && <DamageRecap result={reveal.preview.r} />}
-                {tipFor && (
-                  <OakTip onClose={closeStatusTip}>
-                    {(() => {
-                      const s = tipFor
-                      return t('ui.battle.statusTip', {
-                        status: statusName(s.status),
-                        need: s.need,
-                        have: s.have,
-                        counts: t(s.have === 1 ? 'ui.battle.countsOne' : 'ui.battle.countsMany', {
-                          value: s.value,
-                        }),
-                      })
-                    })()}
-                  </OakTip>
+                {/* Prof. Oak's chance tip, about the dice once they're down (docs/38 F2d). */}
+                {settled && !auto && statusTip && chanceTip && (
+                  <OakTip onClose={closeStatusTip}>{t('ui.battle.chanceTip', chanceTip)}</OakTip>
                 )}
                 {extras && (
                   <div className="flex flex-wrap items-center justify-center gap-2">

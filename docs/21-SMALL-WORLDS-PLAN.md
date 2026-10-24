@@ -340,7 +340,8 @@ game makes to the save, as it always was; the server's own world rules (trades, 
 ## 12. The cloud sync and a world in progress (2026-10-22)
 
 Reported on Discord: a player nearly finished Haunted Hollow on their phone (all but Giratina), then opened the game on
-their PC and got the PC's older save back, SYNC ONLINE pressed or not. Three faults, all fixed:
+their PC and got the PC's older save back, SYNC ONLINE pressed or not. Four faults, all fixed (the fourth found the
+next day):
 
 - **The sync counted nothing in a world.** `progressTotals` left the world's block out (it closes with the world), so a
   world nearly finished tied with a save that never went in, and the tie went to the newer stamp — which a stale device
@@ -365,6 +366,18 @@ their PC and got the PC's older save back, SYNC ONLINE pressed or not. Three fau
   last stamp. `decideSync` breaks ties on it (`updatedAt` for a copy without it), Settings → backups shows it as "Last
   played", and it is no reason to upload (left out of `pushKey`, so older saves keep their key). The cost: raid gifts
   claimed at load on the device that then loses a tie stay in that device's backup.
+- **What was played on a page then closed never went up** (2026-10-23, the same player: "it breaks when the game is
+  on the home screen"). Uploads came `cloudSyncMinutes` (15) after the last sync; hiding the page sent nothing; and the
+  push tried as the page closed went through supabase-js, which reads its session asynchronously before sending, so it
+  never left. A browser tab got it back at its next load from the device's own save — but a game added to the iPhone's
+  home screen keeps a save apart from Safari's (and a PC shortcut made in another browser, apart from that browser's),
+  so the other one opened on the older cloud copy: progress, the Day Care, all back, while the shiny raid (kept on the
+  server) stayed. Now hiding or closing the page sends the save at once (`uploadOnLeave`): one request started right
+  there with the token kept at hand, which the browser finishes even once the page is gone (`keepalive`, up to 64 KiB:
+  a typical save fits; a bigger one goes the usual way, which gets through while the page is only hidden). It writes
+  only over the copy last matched, as every upload, at most once per PUSH_GAP_MS (phones hide the page all the time),
+  and only when the save changed. Its answer can't be read: the device takes it as written, and if it wasn't, the
+  cloud's stamp says so at the next load, which compares.
 
 ### Setting it up
 1. **No SQL to run**: the check is the upload's own filter, on the `saves` table as it is.

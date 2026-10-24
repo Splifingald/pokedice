@@ -7,7 +7,7 @@ import {
   createRng,
   drawPrize,
   inWorldRegion,
-  liveFor,
+  livesFor,
   payWheelPrize,
   randomSeed,
   sameReward,
@@ -53,7 +53,7 @@ export async function spinWheel(): Promise<Spin> {
   const day = utcDay(now)
   if (!canSpin(save, day)) return { ok: false, reason: 'spent' }
   // Cash Flow, if it runs: the wheel stops on its slice, the ₽ paid are boosted.
-  const live = liveFor(save, data, now)
+  const live = livesFor(save, data, now)
   const prizes = data.config.events.wheel.prizes
   const slices = wheelSlices(prizes)
   const rng = createRng(randomSeed())

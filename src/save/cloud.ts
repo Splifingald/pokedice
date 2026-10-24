@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { liveBlock, regionOf, worldRegionOf } from '@/engine/regions'
 import { missesTrades } from '@/engine/trade'
 import type { RegionSave, SaveData, SaveMode } from '@/engine/types'
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from '@/lib/supabase'
 import { parseSave } from './schema'
 import type { CloudMark } from './storage'
 
@@ -119,6 +120,44 @@ export async function pushCloudSave(
   const now = await cloudSaveAt(client, userId, realm)
   if (now != null && now === base) return now
   throw new SaveConflictError()
+}
+
+/**
+ * Browsers finish a request a closing page started (`keepalive`) only up to 64 KiB of body, all such requests together:
+ * a typical save (~50 kB) fits, a big one doesn't.
+ */
+export const KEEPALIVE_MAX_BYTES = 60_000
+
+/**
+ * The page is going away (hidden, closed): the save goes up in one request started right now, which the browser
+ * finishes even once the page is gone (keepalive). Through supabase-js it never left: the client reads its session
+ * asynchronously before sending, and a closing page doesn't wait. Written only over the copy stamped `base`, like
+ * pushCloudSave; no answer is read, nobody is left to read it. False when it can't go this way (too big for keepalive,
+ * no row known): the caller pushes as usual instead.
+ */
+export function sendSaveOnLeave(userId: string, token: string, save: SaveData, base: number | null): boolean {
+  if (base == null || !SUPABASE_URL || typeof fetch !== 'function') return false
+  const body = JSON.stringify({ data: save, updated_at: iso(save.updatedAt) })
+  if (new Blob([body]).size > KEEPALIVE_MAX_BYTES) return false
+  const realm: SaveMode = save.mode === 'extreme' ? 'extreme' : 'main'
+  const filter = [
+    `user_id=eq.${encodeURIComponent(userId)}`,
+    ...(noRealm ? [] : [`realm=eq.${realm}`]),
+    `updated_at=gte.${encodeURIComponent(iso(base))}`,
+    `updated_at=lt.${encodeURIComponent(iso(base + 1))}`,
+  ].join('&')
+  fetch(`${SUPABASE_URL}/rest/v1/saves?${filter}`, {
+    method: 'PATCH',
+    keepalive: true,
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal',
+    },
+    body,
+  }).catch(() => {})
+  return true
 }
 
 export type SyncWinner = 'local' | 'cloud' | 'none'

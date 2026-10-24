@@ -62,8 +62,13 @@ export function BattleBits() {
     const r = computeDamage(dice, own.types, foe.types, { comboLevels: {}, dieLevels: {} }, data)
     return {
       r,
-      statuses: statusesFromRoll(dice, data),
-      almost: [{ status: 'burn', have: 0, need: 1, value: 0 }],
+      // Every counter the chips can show: the roll's own (Burn's stacks), a Paralysis's chance, a confusion's level, a heal.
+      statuses: [
+        ...statusesFromRoll(dice, data),
+        { status: 'paralyze', chance: 0.5 },
+        { status: 'confuse', level: 2 },
+        { status: 'heal', amount: 7 },
+      ],
       recoil: 0,
     }
   }, [dice, own, foe, data])

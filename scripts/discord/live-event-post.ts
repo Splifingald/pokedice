@@ -9,7 +9,7 @@
  * each. A run GitHub starts late (it often does, by a few minutes) still owns its own hour, so each event is posted
  * once, on time. Nothing is posted while Admin → Events has live events Off or On for admin.
  */
-import { liveEvents, liveState, type GameData, type LiveEvent } from '@/engine'
+import { liveById, liveStartsBetween, liveState, type GameData, type LiveEvent } from '@/engine'
 import { postWebhook, type DEmbed } from './api'
 import { liveData } from './content'
 import { loadEnv } from './env'
@@ -31,14 +31,14 @@ const TYPE_NAME: Record<LiveEvent['type'], string> = {
 /**
  * The events this run announces, soonest first, each with when to post it: those whose start minus the lead falls in
  * the run's hour (from the latest scheduled :07 to the next). A moment already gone (a late run) is posted at once.
+ * A recurring event's runs are each announced, as their own event.
  */
 export function dueLiveEvents(data: GameData, now: number, lead = LIVE_LEAD_MS): { event: LiveEvent; postAt: number }[] {
   const offset = CRON_MINUTE * 60_000
   const slot = Math.floor((now - offset) / HOUR) * HOUR + offset
-  return liveEvents(data)
+  return liveStartsBetween(data, slot + lead, slot + lead + HOUR)
     .map((event) => ({ event, postAt: Date.parse(event.start) - lead }))
-    .filter(({ event, postAt }) => liveState(event, now) === 'scheduled' && postAt >= slot && postAt < slot + HOUR)
-    .sort((a, b) => a.postAt - b.postAt)
+    .filter(({ event }) => liveState(event, now) === 'scheduled')
 }
 
 /** Up to three names, then "+2 more". */
@@ -142,7 +142,7 @@ async function main() {
       // The admin may have moved or removed it meanwhile: post what players will get.
       ;({ data } = await liveData(env))
     }
-    const fresh = liveEvents(data).find((e) => e.id === event.id)
+    const fresh = liveById(data, event.id)
     if (!fresh || fresh.start !== event.start || liveState(fresh, Date.now()) !== 'scheduled') {
       console.log(`${event.id}: moved or removed meanwhile, nothing posted.`)
       continue

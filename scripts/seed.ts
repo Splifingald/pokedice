@@ -860,8 +860,10 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  * delete_my_data once more), then 0065 (raid teams at their own levels: 0039's and 0060's team writers
  * redefined), then 0066 (the small worlds on the leaderboard: it redefines 0054's leaderboard), then 0068 (idle mode,
  * docs/36: its switch's row, Off), then 0069 (recorded dice throws, docs/37: its switch's row, Off), then 0070 (the
- * Underground's solo price, docs/34: its row gains `soloShare`, so it comes after 0063), then 0072 (the game-feel
- * pass, haptics and battle music, docs/38: their switches' rows, Off). Folded into seed.sql
+ * Underground's solo price, docs/34: its row gains `soloShare`, so it comes after 0063), then 0072 (recurring live
+ * events, docs/20 §9: 0063's ug_live redefined, so it comes after it), then 0073 (the status faces' new rules,
+ * docs/01 §3.2: the `status` row rewritten), then 0074 (the game-feel pass, haptics and battle music, docs/38: their
+ * switches' rows, Off). Folded into seed.sql
  * so there is
  * one file to run rather than several in a particular order. The
  * migrations stay the single source of that SQL — they are written to be idempotent, so re-running them costs little.
@@ -895,7 +897,9 @@ export async function regionsPrelude(): Promise<string> {
       '0069_dice_throws.sql',
       '0070_underground_solo_sell.sql',
       '0071_kofi.sql',
-      '0072_game_feel.sql',
+      '0072_live_recurring.sql',
+      '0073_status_faces.sql',
+      '0074_game_feel.sql',
     ].map(async (name) => {
       const sql = (await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')).replace(/^(begin|commit);\n/gm, '')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`

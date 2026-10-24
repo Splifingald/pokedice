@@ -59,7 +59,7 @@ export interface AttackParams extends Fighters {
   type: DieType
   /** Shown as the damage number when the hit lands. */
   damage?: number | null
-  /** A status the hit causes (its threshold was met). */
+  /** A status the hit causes. */
   status?: StatusKind | null
   /** Short motion: one hit, no typed move. */
   short?: boolean

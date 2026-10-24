@@ -1,7 +1,7 @@
 // The two plates on the battle stage: the foe's (name, level, types, HP as a bar only, statuses, a trainer's party)
 // at the top left, yours (level, HP with numbers, statuses) at the bottom right. MEGA / G-MAX once a form changes.
 import type { ReactNode } from 'react'
-import { type Battler } from '@/engine'
+import { hasAnyStatus, type Battler } from '@/engine'
 import { Chip } from '@/components/Chip'
 import { HpBar } from '@/components/HpBar'
 import { PixelIcon } from '@/components/icons'
@@ -153,7 +153,7 @@ export function OwnPlate({
         </span>
       </span>
       <HpBar hp={hp} max={b.maxHp} compact height={8} />
-      {(b.status.burn || b.status.poison || b.status.frozen || b.status.paralyze || b.status.confused) && (
+      {hasAnyStatus(b.status) && (
         <StatusIcons status={b.status} />
       )}
     </PlateBox>

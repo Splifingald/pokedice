@@ -16,7 +16,7 @@ import { useGame } from '@/store/game'
 import { useTodayRaid } from '@/store/raid'
 import { HeadTag, Meter, Widget, WidgetBanner, WIDGET_BANNER_H, WidgetRows } from '@/screens/home/Widget'
 import { Medal, tierName } from './RebattlePage'
-import { LiveSquare } from './live'
+import { LiveSquares } from './live'
 import { WorldSlot } from './worldPreview'
 import { EVENT_ICON, EventPicture, RewardIcon, rewardName, useWheelDay } from './shared'
 
@@ -210,9 +210,9 @@ export function EventWidgets() {
   const open = activeEvents(save, data)
   // The rebattle only shows while the region being played has tiers left to fight.
   const onHome = open.filter((id) => id !== 'rebattle' || rebattleOnHome(save, data))
-  // A small world (docs/21, priority 1) comes first (or its preview before it starts, §9), then a live event (docs/20,
-  // priority 2), whatever else is open.
-  return [<WorldSlot key="world" />, <LiveSquare key="live" />, ...onHome.map((id) =>
+  // A small world (docs/21, priority 1) comes first (or its preview before it starts, §9), then the live events (docs/20,
+  // priority 2: a square each), whatever else is open. What's still to come is Home's "Coming up" line (docs/38 U3a).
+  return [<WorldSlot key="world" />, <LiveSquares key="live" />, ...onHome.map((id) =>
     id === 'wheel' ? (
       <WheelSquare key={id} />
     ) : id === 'rebattle' ? (

@@ -8,7 +8,7 @@
 import { DEFAULT_CONFIG } from './defaults'
 import { eventOpenTo } from './events'
 import { addFossil } from './fossils'
-import { liveEvents, liveFor, liveState } from './liveEvents'
+import { liveById, livesFor, liveState } from './liveEvents'
 import { regionOfSpecies, unlockedRegions } from './regions'
 import type { Rng } from './rng'
 import {
@@ -66,8 +66,8 @@ export const ugOn = (data: GameData): boolean => eventOpenTo(data.config.undergr
 /** The Underground running for this player: an `underground` live event, theirs by its badges, the switch on. */
 export function undergroundLive(save: SaveData, data: GameData, now: number | null): LiveEvent | null {
   if (!ugOn(data) || save.mode === 'extreme') return null
-  const live = liveFor(save, data, now)
-  return live?.type === 'underground' ? live : null
+  // One at a time (the admin refuses two that overlap); the earliest started, as the server's ug_live() picks.
+  return livesFor(save, data, now).find((e) => e.type === 'underground') ?? null
 }
 
 // ------------------------------------------------------------------ the admin's numbers, cleaned
@@ -188,7 +188,7 @@ export function settleUnderground(save: SaveData, data: GameData, now: number | 
     return next === u ? save : { ...save, underground: next }
   }
   if (!u) return save
-  const e = liveEvents(data).find((x) => x.id === u.eventId)
+  const e = liveById(data, u.eventId)
   if (e && liveState(e, now) !== 'ended') return save
   const { underground: _gone, ...rest } = save
   return rest

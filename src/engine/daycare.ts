@@ -2,7 +2,7 @@
 // the level cap and never evolve from it; friends' Pokémon visit; Eggs hatch on the spot into the first form of an
 // evolving line, favouring species the player doesn't have yet. The Egg-group checks that lay the Eggs are in
 // breeding.ts.
-import { earnedGold } from './liveEvents'
+import { earnedGold, type LiveSet } from './liveEvents'
 import { createInstance, gainXp, instanceMaxHp, xpToNext } from './progression'
 import { inWorldRegion, regionCases, regionOf, regionOfSpecies, unlockedRegions, worldRegionOf } from './regions'
 import { createRng, type Rng } from './rng'
@@ -12,7 +12,6 @@ import type {
   DayCareResident,
   DayCareState,
   GameData,
-  LiveEvent,
   PokemonInstance,
   RegionId,
   SaveData,
@@ -408,7 +407,7 @@ export function hatchEgg(
   rng: Rng,
   now: number,
   newId: () => string,
-  live: LiveEvent | null = null,
+  live: LiveSet = null,
 ): Hatch | null {
   const dc = dayCareOf(save)
   // A hatchling joins the region being played: never a small world's (its Egg waits outside).
