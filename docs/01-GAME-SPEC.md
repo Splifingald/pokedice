@@ -188,14 +188,20 @@ All face lists are data, editable in admin.
 
 All statuses **clear when the battle ends**. HP damage persists (§6).
 
+A single face is enough for every status (since 2026-10): no pairs or three of a kind to chase. A status face also counts as its number (its corner) for damage and combos. Every number below is `game_config.status`, set in Admin → Config.
+
 | Status | Trigger | Effect | Stacking |
 |---|---|---|---|
-| **Burn** | ≥1 Burn face | 4 % of the victim's max HP per stack (at least 1) at the start of its turn, 3 turns | **Stacks.** 3 Burn faces in one roll = 3 stacks. Duration refreshes. |
-| **Poison** | **≥2** Poison faces | 10 % of the victim's max HP (at least 1) at the start of its turn, 3 turns | **Does not stack.** Re-applying only refreshes the duration. Below the threshold the face is worth 1. |
-| **Frozen** | **≥3** Frozen faces in one roll | victim stunned 2 turns | Refreshes, doesn't stack. Below threshold the face is worth 1. |
-| **Paralyze** | **≥2** Paralyze faces | victim stunned 1 turn | Refreshes. Below threshold the face is worth 4. |
-| **Confuse** | **≥2** Confuse faces | the victim's **next attack** still hits its target normally, then the victim takes **recoil** equal to `status.confuse.recoilPercent`% (default 10%) of its own max HP (rounded, min 1), and confusion clears | Refreshes. Below threshold the face is worth 2. |
-| **Heal** | **≥2** Heal faces | a *self*-effect: the **attacker** heals HP equal to the total value of the dice rolled (fallbacks included, no upgrades/multipliers), on top of the damage it deals; capped at max HP. `status.heal.amount = 'healFaces'` heals only the Heal faces' values instead | Nothing to stack. Below threshold the face is worth 3. |
+| **Burn** | ≥1 Burn face | 4 % of the victim's max HP per stack (at least 1) at the start of its turn, 3 turns | **Stacks.** 3 Burn faces in one roll = 3 stacks. Duration refreshes. The face is worth 1. |
+| **Poison** | ≥1 Poison face | 5 % of the victim's max HP (at least 1) at the start of its turn, **5 turns** (`poison.percent`, `poison.duration`) | **Does not stack.** More faces, or a new poisoning, only bring the turns back up. The face is worth 1. |
+| **Frozen** | each Frozen face: a **1-in-3 chance** (`frozen.sureAt` = 3), so 3 faces in one roll freeze for sure | victim stunned 2 turns | Refreshes, doesn't stack. A missed chance is logged ("avoided being frozen! (33% chance)"). The face is worth 1. |
+| **Paralyze** | each Paralyze face: a **50 % chance** (`paralyze.sureAt` = 2), so 2 faces paralyze for sure | victim stunned 1 turn | Refreshes. A missed chance is logged too. The face is worth 4. |
+| **Confuse** | ≥1 Confuse face; the faces set how confused: 1 "a bit confused", 2 "confused", 3+ "very confused" (`confuse.maxFaces` = 3) | the victim's **next attack** still hits its target normally, then the victim takes **recoil** of `confuse.recoilPercentPerFace` % (10 %) of its own max HP per level, so 10 / 20 / 30 % (rounded, min 1), and confusion clears | The stronger confusion holds: a lighter one never lowers it. A Psychic Z-Move confuses at the top level. The face is worth 2. |
+| **Heal** | ≥1 Heal face | a *self*-effect: the **attacker** heals the **Heal faces' value plus their die's upgrade bonus** (Grass Lv.3: 3 + 2 a face), on top of the damage it deals; capped at max HP | Nothing to stack. The face is worth 3. |
+
+The chance draws come from the battle's own RNG, only when a chance is short of sure, so a roll with no Freeze or Paralysis face draws exactly as before. Battles saved before the rework stored confusion as `true`: `confusionLevel` reads it as level 1.
+
+**Setting it up:** run [`supabase/migrations/0072_status_faces.sql`](https://github.com/Splifingald/pokedice/blob/claude/dice-special-effects-rework-2cqbfb/supabase/migrations/0072_status_faces.sql) in the Supabase SQL editor (`supabase/seed.sql` carries it too, inlined). It rewrites the `status` row with the new rules (Burn keeps the admin's numbers) and bumps `configVersion`; until it runs, the stored Poison numbers (10 %, 3 turns) still apply.
 
 - DoT ticks at the **start of the victim's turn**, before the stun check, and can K.O.
 - A stunned Pokémon still ticks DoT and still burns down its stun counter.
@@ -483,7 +489,7 @@ Reroll heuristic, one pass per available reroll:
    reroll budget is spent for the whole battle (§2), so a reroll here is a reroll missing from a later turn. This is
    the one rule that looks at the target rather than the dice, so it needs the caller to say what the target's HP is;
    the measurements that have no target to kill — the per-roll turns-to-kill table above — do not, and skip it.
-3. Build candidate keep-sets: the largest matching group; any straight draw of ≥3 distinct consecutive values; all dice with face value ≥5; any status face that has already met its threshold (**always kept**).
+3. Build candidate keep-sets: the largest matching group; any straight draw of ≥3 distinct consecutive values; all dice with face value ≥5; any status face (each one already does something, so **always kept**).
 4. Estimate expected damage after rerolling the complement, via a cheap Monte-Carlo (200 samples, per-die-type face tables precomputed).
 5. Reroll the best candidate's complement if its expected damage beats the current damage by **>8 %**; otherwise attack now.
 

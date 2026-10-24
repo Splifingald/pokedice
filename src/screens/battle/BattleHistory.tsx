@@ -2,9 +2,6 @@
 // switches, items and heals. Only what the animation has already shown.
 import { useMemo, useState, type ReactNode } from 'react'
 import {
-  faceOf,
-  statusCounts,
-  STATUS_KINDS,
   type Battler,
   type DamageResult,
   type GameData,
@@ -20,7 +17,7 @@ import { useGame } from '@/store/game'
 import { BoosterChip } from '@/screens/events/world'
 import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
-import { comboName, statusName, typeName } from '@/lib/format'
+import { chancePercent, comboName, typeName } from '@/lib/format'
 import { cx } from '@/theme/util'
 
 /**
@@ -90,25 +87,7 @@ interface Row {
   icon?: Parameters<typeof PixelIcon>[0]['name']
   amount?: number
   heal?: boolean
-  /** Status faces that landed short of their threshold: "1/2 Poison faces — counted as 1". */
-  note?: string
   recap?: { result: DamageResult; dice: RolledDie[] }
-}
-
-/** Status faces in a roll that didn't reach their threshold, so they only counted as a number. */
-function nearMisses(dice: readonly RolledDie[], data: GameData): string | undefined {
-  const counts = statusCounts(dice, data)
-  const bits = STATUS_KINDS.filter((k) => counts[k] > 0 && counts[k] < data.config.status[k].threshold).map((k) => {
-    const value = dice.map((d) => faceOf(d, data)).find((f) => f.kind === 'status' && f.status === k)?.value ?? 0
-    return t('ui.hist.nearMiss', {
-      have: counts[k],
-      need: data.config.status[k].threshold,
-      status: statusName(k),
-      status2: statusName(k).toLowerCase(),
-      value,
-    })
-  })
-  return bits.length ? bits.join(' · ') : undefined
 }
 
 /** `foes`: the one foe, or a double battle's every foe (docs/33). */
@@ -147,7 +126,6 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: r
             : t('ui.hist.attacked', { target: target.name }),
           icon: 'sword',
           amount: e.amount,
-          note: nearMisses(e.dice, data),
           recap: { result: e.result, dice: e.dice },
         })
         return
@@ -164,7 +142,13 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: r
                     e.status === 'frozen'
                       ? t('ui.hist.statusFrozen')
                       : e.status === 'confuse'
-                        ? t('ui.hist.statusConfused')
+                        ? t(
+                            e.level === 1
+                              ? 'ui.hist.statusConfusedBit'
+                              : e.level && e.level >= 3
+                                ? 'ui.hist.statusConfusedVery'
+                                : 'ui.hist.statusConfused',
+                          )
                         : e.status === 'paralyze'
                           ? t('ui.hist.statusParalyzed')
                           : e.status === 'burn'
@@ -181,6 +165,14 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: r
           text: t('ui.hist.hurtBy', { source: t(e.status === 'burn' ? 'ui.hist.burnSource' : 'ui.hist.poisonSource') }),
           icon: STATUS_ICON[e.status],
           amount: e.amount,
+        })
+        return
+      case 'status_resisted':
+        rows.push({
+          key,
+          ...who(e.targetUid),
+          text: t(e.status === 'frozen' ? 'ui.hist.resistedFrozen' : 'ui.hist.resistedParalyze', { pct: chancePercent(e.chance) }),
+          icon: STATUS_ICON[e.status],
         })
         return
       case 'stunned':
@@ -282,7 +274,6 @@ function HistoryRow({ r }: { r: Row }) {
       <MiniSprite dex={r.dex} size={32} className="-my-1" />
       <span className="min-w-0 flex-1 leading-tight">
         <b className={r.foe ? 'text-danger' : undefined}>{r.foe ? t('ui.hist.foe', { name: r.name }) : r.name}</b> {r.text}
-        {r.note && <span className="block text-sm text-muted">{r.note}</span>}
       </span>
       {r.amount != null && (
         <span className={cx('flex shrink-0 items-center gap-1 font-mono', r.heal && 'text-good')}>

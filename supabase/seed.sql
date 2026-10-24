@@ -5844,6 +5844,26 @@ grant execute on function kofi_totals(timestamptz) to anon, authenticated;
 
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 
+-- ↓ supabase/migrations/0072_status_faces.sql, inlined so this file stands alone.
+-- Status faces, reworked (docs/01 §3.2): a single face is enough for every status, so the thresholds are gone.
+-- 1. game_config `status`: Poison 5 % for 5 turns; Freeze and Paralysis a chance per face (sure at 3 and at 2 faces);
+--    Confusion 10 % recoil per face, 3 faces at most; Heal the Heal faces' value plus their die's upgrade (nothing to
+--    set). The old keys (thresholds, `confuse.recoilPercent`, `heal`) mean nothing now, so the row is rewritten, kept
+--    equal to the game's defaults; only Burn, which works as before, keeps the admin's numbers. Battles run on the
+--    player's device, so no server function reads it.
+-- 2. configVersion + 1, so players fetch the new rules. Safe to run again: a row already reworked is left alone.
+insert into game_config (key, value) values ('status', '{}'::jsonb) on conflict (key) do nothing;
+update game_config
+set value = jsonb_build_object(
+  'burn', coalesce(value -> 'burn', '{"threshold": 1, "percentPerStack": 4, "duration": 3}'::jsonb),
+  'poison', '{"percent": 5, "duration": 5}'::jsonb,
+  'frozen', '{"sureAt": 3, "stunTurns": 2}'::jsonb,
+  'paralyze', '{"sureAt": 2, "stunTurns": 1}'::jsonb,
+  'confuse', '{"recoilPercentPerFace": 10, "maxFaces": 3}'::jsonb
+)
+where key = 'status' and not coalesce(value -> 'paralyze' ? 'sureAt', false);
+insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
+
 insert into type_chart (attacking, defending, multiplier) values
   ('bug', 'dark', 2),
   ('bug', 'fairy', 0.5),
@@ -16417,7 +16437,7 @@ insert into game_config (key, value) values
   ('starterLevel', '5'::jsonb),
   ('hpMultiplier', '1'::jsonb),
   ('goldMultiplier', '0.5'::jsonb),
-  ('status', '{"burn":{"duration":3,"threshold":1,"percentPerStack":4},"heal":{"amount":"rollTotal","threshold":2},"frozen":{"stunTurns":2,"threshold":3},"poison":{"percent":10,"duration":3,"threshold":2},"confuse":{"threshold":2,"recoilPercent":20},"paralyze":{"stunTurns":1,"threshold":2}}'::jsonb),
+  ('status', '{"burn":{"duration":3,"threshold":1,"percentPerStack":4},"poison":{"percent":5,"duration":5},"frozen":{"sureAt":3,"stunTurns":2},"paralyze":{"sureAt":2,"stunTurns":1},"confuse":{"recoilPercentPerFace":10,"maxFaces":3}}'::jsonb),
   ('dayCare', '{"unlockPokedex":20,"slots":2,"friendSlots":4,"xpPerTick":1,"tickMinutes":2,"breedHours":12,"breedDittoHours":24,"rushPrice":200,"notKeptGold":50,"shinyChance":0.01,"unownedWeight":4,"hatchRank":3,"hatchOffset":5,"hatchMinLevel":5}'::jsonb),
   ('xpCurve', '{"A":0.8,"B":1.25,"C":1}'::jsonb),
   ('gymGoldMultiplier', '2'::jsonb),

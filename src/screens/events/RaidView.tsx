@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNod
 import {
   comboDice,
   computeDamage,
+  confusionLevel,
   confusionRecoil,
   hasStatus,
   progressRaidOf,
@@ -337,7 +338,11 @@ export function RaidView({ run }: { run: RaidRun }) {
   const preview = useMemo<Preview | null>(() => {
     if (!rolling || !duel || !mine || !duel.dice.length) return null
     const r = computeDamage(duel.dice, mine.types, duel.enemy.types, duel.playerLevels, data)
-    return { r, statuses: statusesFromRoll(duel.dice, data), almost: [], recoil: mine.status.confused ? confusionRecoil(mine.maxHp, data) : 0 }
+    return {
+      r,
+      statuses: statusesFromRoll(duel.dice, data, duel.playerLevels),
+      recoil: confusionRecoil(mine.maxHp, confusionLevel(mine.status), data),
+    }
   }, [rolling, duel, mine, data])
   const ring = useMemo(
     () => (preview?.r.combo ? new Set(comboDice(preview.r.perDie.map((p) => p.value), preview.r.combo.key)) : new Set<number>()),

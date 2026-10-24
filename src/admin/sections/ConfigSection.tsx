@@ -1077,7 +1077,7 @@ function JsonField<K extends keyof GameConfig>({ k }: { k: K }) {
   )
 }
 
-/** Every status effect's numbers: how many faces trigger it, and what it does. Read live by battles and the help. */
+/** Every status effect's numbers: what its faces do. Read live by battles and the help. */
 function StatusRulesBox() {
   const [rules, setRules] = useConfigRow('status')
   // Per effect, so a stored row missing a newer field (e.g. burn.percentPerStack) shows the default.
@@ -1087,6 +1087,7 @@ function StatusRulesBox() {
   const patch = <K extends keyof StatusRules>(k: K, p: Partial<StatusRules[K]>) => setRules({ ...r, [k]: { ...r[k], ...p } })
   const num = (v: number | null | undefined, fallback: number, min = 0) => Math.max(min, v ?? fallback)
   const faces = 'faces needed in one roll'
+  const chance = 'faces for a sure hit: each face gives a 1-in-sureAt chance'
   return (
     <Box title="Status effects" icon="burn" hint="The dice faces that trigger each effect, and what it does. The help screen and the Upgrades screen quote these numbers.">
       <div className="grid gap-3 sm:grid-cols-2">
@@ -1098,31 +1099,28 @@ function StatusRulesBox() {
         </fieldset>
         <fieldset className="flex flex-col gap-1 border-2 border-edge p-2">
           <legend className="px-1 text-lg">Poison (Poison)</legend>
-          <Field label="threshold" hint={faces}><NumInput value={r.poison.threshold} min={1} onChange={(v) => patch('poison', { threshold: num(v, 2, 1) })} /></Field>
-          <Field label="percent" hint="% of the victim's max HP, each of its turns (min 1)"><NumInput value={r.poison.percent} min={0} onChange={(v) => patch('poison', { percent: num(v, 10) })} /></Field>
-          <Field label="duration" hint="turns"><NumInput value={r.poison.duration} min={1} onChange={(v) => patch('poison', { duration: num(v, 3, 1) })} /></Field>
+          <p className="text-base text-muted">One face poisons. It doesn&apos;t stack: another only brings its turns back up.</p>
+          <Field label="percent" hint="% of the victim's max HP, each of its turns (min 1)"><NumInput value={r.poison.percent} min={0} onChange={(v) => patch('poison', { percent: num(v, 5) })} /></Field>
+          <Field label="duration" hint="turns"><NumInput value={r.poison.duration} min={1} onChange={(v) => patch('poison', { duration: num(v, 5, 1) })} /></Field>
         </fieldset>
         <fieldset className="flex flex-col gap-1 border-2 border-edge p-2">
           <legend className="px-1 text-lg">Frozen (Ice)</legend>
-          <Field label="threshold" hint={faces}><NumInput value={r.frozen.threshold} min={1} onChange={(v) => patch('frozen', { threshold: num(v, 3, 1) })} /></Field>
+          <Field label="sureAt" hint={chance}><NumInput value={r.frozen.sureAt} min={1} onChange={(v) => patch('frozen', { sureAt: num(v, 3, 1) })} /></Field>
           <Field label="stunTurns" hint="turns the foe skips"><NumInput value={r.frozen.stunTurns} min={1} onChange={(v) => patch('frozen', { stunTurns: num(v, 2, 1) })} /></Field>
         </fieldset>
         <fieldset className="flex flex-col gap-1 border-2 border-edge p-2">
           <legend className="px-1 text-lg">Paralyze (Electric)</legend>
-          <Field label="threshold" hint={faces}><NumInput value={r.paralyze.threshold} min={1} onChange={(v) => patch('paralyze', { threshold: num(v, 2, 1) })} /></Field>
+          <Field label="sureAt" hint={chance}><NumInput value={r.paralyze.sureAt} min={1} onChange={(v) => patch('paralyze', { sureAt: num(v, 2, 1) })} /></Field>
           <Field label="stunTurns" hint="turns the foe skips"><NumInput value={r.paralyze.stunTurns} min={1} onChange={(v) => patch('paralyze', { stunTurns: num(v, 1, 1) })} /></Field>
         </fieldset>
         <fieldset className="flex flex-col gap-1 border-2 border-edge p-2">
           <legend className="px-1 text-lg">Confuse (Psychic)</legend>
-          <Field label="threshold" hint={`${faces}; the foe's next attack takes recoil`}><NumInput value={r.confuse.threshold} min={1} onChange={(v) => patch('confuse', { threshold: num(v, 2, 1) })} /></Field>
-          <Field label="recoilPercent" hint="% of the confused attacker's max HP it loses after its attack (min 1)"><NumInput value={r.confuse.recoilPercent} min={0} onChange={(v) => patch('confuse', { recoilPercent: num(v, 10, 0) })} /></Field>
+          <Field label="recoilPercentPerFace" hint="% of the confused attacker's max HP it loses after its attack, per Confuse face (min 1)"><NumInput value={r.confuse.recoilPercentPerFace} min={0} onChange={(v) => patch('confuse', { recoilPercentPerFace: num(v, 10, 0) })} /></Field>
+          <Field label="maxFaces" hint="faces that count at most: 1 a bit confused, 2 confused, 3+ very confused"><NumInput value={r.confuse.maxFaces} min={1} onChange={(v) => patch('confuse', { maxFaces: num(v, 3, 1) })} /></Field>
         </fieldset>
         <fieldset className="flex flex-col gap-1 border-2 border-edge p-2">
           <legend className="px-1 text-lg">Heal (Grass)</legend>
-          <Field label="threshold" hint={faces}><NumInput value={r.heal.threshold} min={1} onChange={(v) => patch('heal', { threshold: num(v, 2, 1) })} /></Field>
-          <Field label="amount" hint="rollTotal: the total of the dice rolled · healFaces: the Heal faces' values">
-            <Select value={r.heal.amount} options={['rollTotal', 'healFaces'] as const} onChange={(v) => patch('heal', { amount: v })} />
-          </Field>
+          <p className="text-base text-muted">Nothing to set: each Heal face heals its value plus its die&apos;s upgrade, on top of the damage.</p>
         </fieldset>
       </div>
     </Box>

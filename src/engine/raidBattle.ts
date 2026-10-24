@@ -308,7 +308,7 @@ function sideTurn(s: RaidState, sideIdx: number, data: GameData, rng: Rng, log: 
   let duel = duelOf(s, sideIdx)
   log.push({ kind: 'raid_front', ally: activeOf(side).uid, actor: 'ally' })
   const step: LogEntry[] = []
-  startDuelStep(duel, 'player', data, step)
+  startDuelStep(duel, 'player', data, step, rng)
   log.push(...step)
   if (side.kind === 'me' && !s.auto && duel.phase !== 'done') {
     s.duel = duel
@@ -335,7 +335,7 @@ function bossTurn(s: RaidState, after: number, data: GameData, rng: Rng, log: Ra
   let duel = duelOf(s, sideIdx)
   log.push({ kind: 'raid_front', ally: activeOf(s.sides[sideIdx]!).uid, actor: 'boss' })
   const step: LogEntry[] = []
-  startDuelStep(duel, 'enemy', data, step)
+  startDuelStep(duel, 'enemy', data, step, rng)
   if (duel.phase === 'enemy_turn') {
     const r = reduce(duel, { t: 'AI_TURN' }, data, rng)
     duel = r.state

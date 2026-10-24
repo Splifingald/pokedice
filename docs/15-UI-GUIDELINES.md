@@ -139,7 +139,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `Dialogue` | Narration, battle messages | Typewriter text (tap to finish), blinking ▼; two lines tall so nothing jumps |
 | `Chip` | A short label | `plain`, `gold`, `green` (ready), `done` (cleared), `red` (where you are), `blue` (open), `lock`, `dark` |
 | `NewTag`, `LevelTag` | NEW, "Lv.36" | |
-| `StatusChip` / `StatusIcons` | A status | Icon + short name (BRN, PAR…) + counter, ring in the status colour; `lit=false` before its threshold. **Status is never colour alone** |
+| `StatusChip` / `StatusIcons` | A status | Icon + short name (BRN, PAR…) + counter (Burn's stacks, a Freeze's or a Paralysis's chance short of sure, a confusion's ×2 / ×3, a heal's +HP, turns left), ring in the status colour; `lit=false` greys one that won't land. **Status is never colour alone** |
 | `Seg` | Two to four views of one thing (tabs) | `tabs` → `role=tablist`; otherwise a radio group. Counts after labels. Arrow keys move |
 | `FilterChips` | Narrowing a list | A radio group with counts; scrolls sideways when it runs out of room |
 | `SearchField` | Searching a list | 44 px, an ink ring, a top lip, a screen-reader label. The search ignores case and Latin accents (`searchFold`: "evoli" finds Évoli) |
@@ -304,7 +304,7 @@ read it. Sound off means no sound and no cry request at all.
   their descriptions, areas, badges, a die type's one-line nature (`diceDesc.*`), trainer classes and the named
   characters — gym leaders, Elite Four, champions, rivals, villains — under each language's official name (Brock is
   Pierre in French, Rocko in German); English in Portuguese, which the games never had.
-- **Numbers:** every number shown (damage, combos, multipliers, status thresholds, catch chance, XP, prices, unlocks)
+- **Numbers:** every number shown (damage, combos, multipliers, status chances, catch chance, XP, prices, unlocks)
   comes from the engine's helpers (`src/engine`). The UI never recomputes a rule.
 
 ## 11. Web requests
@@ -477,7 +477,7 @@ in view) and the battle history sits beside it from 1024 px.
   throw them again." is added on your turn), the dice tray (your dice up to 54 px and never under 44, lifted with a
   red outline when picked, the combo's dice in a gold ring; the foe's dice smaller, not buttons), the readout (combo
   chip or "No combo", the damage alone and big — a button: the math, `(sum + bonus) × mult = damage`, shows once,
-  under the readout — how effective it is, a `StatusChip` per status face, lit once its threshold is met), the extras (Mega, G-MAX,
+  under the readout — how effective it is, a `StatusChip` per status the faces cause, with its counter; Professor Oak explains a Freeze's or a Paralysis's chance the first time one is short of sure), the extras (Mega, G-MAX,
   Z-MOVE, Type, Run, AUTO-MODE) only when they exist — the battle powers gold, Z-MOVE's hint saying what this roll's type adds (docs/35) — the actions (REROLL with its count, ATTACK in red; SKIP TURN when stunned; the AUTO note
   with STOP, none in Versus), then the Bag, the team pips and the history.
 - **Auto battles** (auto-mode, Versus) play at the `short` motion level unless animations are off (`MotionCap`).
