@@ -1321,7 +1321,8 @@ Its switch is its own (`underground.access`, §20) on top of the live events' on
 - **Art, not theme**: the cave (`UgCave`), the crack gauge and the wall are drawn in code and stay the same in Daybreak
   and Dusk (§2 "Art stays art"). The cave keeps its size on a wide screen: a scene at most 320 px wide, centred, rock
   on both sides. With no picture picked by the admin, it is the live event's picture (Home's square, the Mart's section).
-- **Home's square** is the live square (§ docs/20) with the type's tag (a dark chip, the pickaxe, DIG) and the kits held
+- **Home's square** is the live square (§ docs/20; one per live event running, so it may sit beside a Cash Flow's or
+  a Shiny Parade's) with the type's tag (a dark chip, the pickaxe, DIG) and the kits held
   as its line ("Explorakits: 2 · +1 in 5h 12m"); a tap opens `/underground`. The Mart's tab wears KITS while it runs.
 - **Its pop-up is its rules** (`UgRulesModal`, the cave as banner): once per event (it also marks the live pop-up
   seen), Later / Let's go! to the page; INFO at the bottom of the page shows it again with OK.

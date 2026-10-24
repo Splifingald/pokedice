@@ -46,11 +46,11 @@ function useNavDot(n: NavItem): { text: string; label: string; gold?: boolean } 
   const { t } = useT()
   const upgrades = useGame((s) => (n === UPGRADES && s.save ? affordableUpgrades(s.save, s.data) : 0))
   const dexNew = useDexNew()
-  const { live } = useLive(15_000)
+  const { lives } = useLive(15_000)
   // The Underground's kits are sold while it runs for this player (its own switch on too).
   const ugOn = useGame((s) => !!s.save && !!undergroundLive(s.save, s.data, serverNow()))
-  if (n === SHOP && live?.type === 'shop') return { text: t('ui.live.sale'), label: t('ui.live.shopDot'), gold: true }
-  if (n === SHOP && live?.type === 'underground' && ugOn) return { text: t('ui.ug.kitsTag'), label: t('ui.ug.kitsDot'), gold: true }
+  if (n === SHOP && lives.some((e) => e.type === 'shop')) return { text: t('ui.live.sale'), label: t('ui.live.shopDot'), gold: true }
+  if (n === SHOP && ugOn) return { text: t('ui.ug.kitsTag'), label: t('ui.ug.kitsDot'), gold: true }
   if (n === UPGRADES && upgrades > 0) return { text: upgrades > 9 ? '9+' : String(upgrades), label: t('ui.nav.upgradesDot', { n: upgrades }) }
   if (n === DEX && dexNew > 0) return { text: t('ui.common.new'), label: t('ui.nav.dexDot', { n: dexNew }), gold: true }
   return null

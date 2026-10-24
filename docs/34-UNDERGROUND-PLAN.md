@@ -14,7 +14,7 @@ orb colour each; orbs sell for ₽ only in a full team.
 
 | Topic | Decision |
 |---|---|
-| What it is | A **live event type** ("Underground"), beside Shiny Parade, Special Shop and Cash Flow: scheduled in the admin, one live event at a time |
+| What it is | A **live event type** ("Underground"), beside Shiny Parade, Special Shop and Cash Flow: scheduled in the admin; other live events may run beside it, but only one Underground at a time (docs/20 §9) |
 | Admin numbers | **Everything that can be an admin parameter is one** (§2) |
 | Explorakits | One kit = one wall. Sold in **every Poké Mart** while the event runs (a Special section), never in a small world's World Mart. **Free kits on a timer**: 3 every 24 h by default, **one at a time** (one every 8 h), **up to a cap** of 3 waiting. Bought kits don't count toward the cap |
 | The wall | **6×6** by default. Each tile has **1, 2 or 3 layers**, unevenly spread. A **number of strikes** before it collapses, shown by a stylised crack gauge like the games' |
@@ -87,7 +87,7 @@ Assumed while planning (say if not):
 - `pickaxeUpgrade(save, cfg)`: pays the next level's price in ₽, level + 1, at most the table's last level.
 - `sellOrbs(save, cfg, teamFull)`: pays each orb's price into the live region's ₽ in a full team (the server says so,
   §3), and `soloShare` % of it (rounded down, `sellValue`) outside one; empties the bag. A solo share of 0 refuses to
-  sell until the team is full. Cash Flow can't stack with it (one live event at a time).
+  sell until the team is full. A Cash Flow running beside it (docs/20 §9) doesn't boost orb sales: selling never is.
 - `settleUnderground(save, live)`: when the save's event id is no longer the live Underground, kits, the orb bag,
   the pickaxe and any open wall go. Plates stay.
 
@@ -352,7 +352,8 @@ gives one or two. The admin sets the rate (the plate weight, the kit price, the 
    (`supabase/seed.sql` carries it too, inlined: a database built from it needs nothing else). Then the solo price's
    key: https://github.com/Splifingald/pokedice/blob/claude/awesome-mccarthy-cp64ef/supabase/migrations/0070_underground_solo_sell.sql
    (inlined into `seed.sql` too; without it, the game uses the default, 10 %).
-2. Admin → Live events → New: type **Underground**, its dates (one live event at a time), its badges and picture
+2. Admin → Live events → New: type **Underground**, its dates (once, or every year / every week: docs/20 §9; two
+   Undergrounds can't overlap, other events can), its badges and picture
    (empty: the cave drawn in code). Under it, the Underground's settings: tune the numbers, then the switch **On for
    admin** to try it, **On for everyone** to open it. Under "Teams and orb prices", the share orbs sell for outside a
    full team (10 %; 0 = not at all). Save & Publish.

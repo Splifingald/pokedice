@@ -7,14 +7,14 @@ import { trainerGoldFor } from './economy'
 import type { Encounter } from './encounters'
 import { areaProgressAnywhere } from './events'
 import { wipeHeals } from './extreme'
-import { earnedGold } from './liveEvents'
+import { earnedGold, type LiveSet } from './liveEvents'
 import { regionOf } from './regions'
 import { asSeenBy, playerSideOf } from './rival'
 import { awardBattleXp, getArea, type RunEvent } from './run'
 import { instanceMaxHp } from './progression'
 import type { Rng } from './rng'
 import { dealTrainerItems } from './trainerItems'
-import type { Area, GameData, LiveEvent, RebattleProgress, RebattleTier, SaveData, Trainer } from './types'
+import type { Area, GameData, RebattleProgress, RebattleTier, SaveData, Trainer } from './types'
 
 /**
  * The areas the rebattle replaced, and where a save standing in one goes back to: its region's League (docs/19 §5.4).
@@ -184,7 +184,7 @@ export function applyRebattleKO(
   ko: RebattleKO,
   data: GameData,
   rng: Rng,
-  live: LiveEvent | null = null,
+  live: LiveSet = null,
 ): { save: SaveData; events: RunEvent[] } {
   const league = leagueArea(data, ko.regionId)
   const events: RunEvent[] = []

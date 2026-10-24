@@ -262,6 +262,14 @@ describe('live events', () => {
     expect(dueLiveEvents(d, at('2026-12-24T19:07:00Z'))).toEqual([])
   })
 
+  it('posts each run of a recurring event, by its own id', () => {
+    const d = withEvents(event({ repeat: { kind: 'weekly', weekday: 6, weeks: [], time: '20:30', hours: 4 } }))
+    // Saturday 26 December 2026, 20:30: the 18:07 run posts it at 18:30; a week later, the next one.
+    expect(dueLiveEvents(d, at('2026-12-26T18:07:00Z')).map((x) => [x.event.id, x.postAt])).toEqual([['ev1@2026-12-26', at('2026-12-26T18:30:00Z')]])
+    expect(dueLiveEvents(d, at('2027-01-02T18:07:00Z')).map((x) => x.event.id)).toEqual(['ev1@2027-01-02'])
+    expect(dueLiveEvents(d, at('2026-12-27T18:07:00Z'))).toEqual([])
+  })
+
   it('leaves out events already running or over', () => {
     const d = withEvents(event({ start: '2026-12-24T20:00:00Z', end: '2026-12-24T20:00:00Z' }))
     expect(dueLiveEvents(d, at('2026-12-24T18:07:00Z'))).toEqual([])

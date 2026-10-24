@@ -37,7 +37,7 @@ import {
   isAreaUnlocked,
   isWorldRegion,
   leaveWorld,
-  liveFor,
+  livesFor,
   markWorldBye,
   markWorldSeen,
   markOfflineFrom,
@@ -468,11 +468,11 @@ describe('no event reaches inside', () => {
       areaProgress: Object.fromEntries(data.areas.filter((a) => (a.regionId ?? 'kanto') === 'kanto').map((a) => [a.id, { ...emptyProgress(), cleared: true }])),
     }
     expect(activeEvents(out, data).length).toBeGreaterThan(0)
-    expect(liveFor(out, data, NOW)?.id).toBe('l1')
+    expect(livesFor(out, data, NOW)[0]?.id).toBe('l1')
     const s = enterWorld(out, data, WORLD, 63, NOW, newId)!
     for (const id of ['wheel', 'raid', 'rebattle'] as const) expect(eventUnlocked(id, s, data)).toBe(false)
     expect(eventsTeaser(s, data)).toBeNull()
-    expect(liveFor(s, data, NOW)).toBeNull()
+    expect(livesFor(s, data, NOW)).toEqual([])
     expect(depositPokemon(s, s.box[0]!.id, data, NOW)).toBeNull()
   })
 

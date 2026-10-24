@@ -8,7 +8,7 @@ import { centersOn, healItemsOn, wipeHeals } from './extreme'
 import { addFossil, isReviving } from './fossils'
 import { LEGACY_GAUGE } from './legacyGauge'
 import { itemOnFor, MONEY, sellPrice, shopSells, usableIn } from './items'
-import { earnedGold } from './liveEvents'
+import { earnedGold, type LiveSet } from './liveEvents'
 import {
   canStartPortal,
   inPortalRun,
@@ -48,7 +48,6 @@ import {
   type AreaProgress,
   type ComboKey,
   type GameData,
-  type LiveEvent,
   type PokeType,
   type PlayerProfile,
   type PokemonInstance,
@@ -195,7 +194,7 @@ export function pickUpItem(
   data: GameData,
   now = Date.now(),
   newId: () => string = () => `fossil-${now}`,
-  live: LiveEvent | null = null,
+  live: LiveSet = null,
 ): SaveData {
   const qty = Math.max(0, Math.floor(find.qty))
   const item = data.items[find.itemKey]
@@ -474,7 +473,7 @@ export function applyVictory(
   now: number,
   newId: () => string,
   /** The live event running for this player (Cash Flow pays more). */
-  live: LiveEvent | null = null,
+  live: LiveSet = null,
 ): VictoryResult {
   const area = getArea(data, input.areaId)
   let progress = progressOf(save, area.id)

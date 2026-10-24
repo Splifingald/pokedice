@@ -1,6 +1,7 @@
-// Live events (docs/20), what players see: Home's square (first among the event squares), the pop-up once per event,
-// and the pieces other screens show while one runs: the Shiny Parade's chip where it applies, Cash Flow's "+50 %" on
-// the purse and on the ₽ won. The Special Shop's section is the Poké Mart's (screens/Shop.tsx).
+// Live events (docs/20), what players see: Home's squares (first among the event squares, one per event running), the
+// pop-up once per event, and the pieces other screens show while they run: the Shiny Parade's chip where it applies,
+// Cash Flow's "+50 %" on the purse and on the ₽ won (two at once add up). The Special Shop's sections are the Poké
+// Mart's (screens/Shop.tsx).
 import { type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { create } from 'zustand'
@@ -15,6 +16,7 @@ import {
   liveCovers,
   liveLeft,
   livePopupDue,
+  livePopupNext,
   liveShopRows,
   regionOfferDue,
   shinyBoost,
@@ -180,21 +182,32 @@ export function LiveFx({ e, data, big }: { e: LiveEvent; data: GameData; big?: b
   )
 }
 
-/** Asked from Home's square: the pop-up again. */
-const usePopupAsked = create<{ asked: boolean }>(() => ({ asked: false }))
-export const openLivePopup = () => usePopupAsked.setState({ asked: true })
+/** Asked from Home's square: that event's pop-up again (its id). */
+const usePopupAsked = create<{ asked: string | null }>(() => ({ asked: null }))
+export const openLivePopup = (id: string) => usePopupAsked.setState({ asked: id })
+
+/** Home's squares: one per live event running for this player, the earliest started first. */
+export function LiveSquares() {
+  const { lives, now } = useLive(1000)
+  if (now == null) return null
+  return (
+    <>
+      {lives.map((e) => (
+        <LiveSquare key={e.id} live={e} now={now} />
+      ))}
+    </>
+  )
+}
 
 /**
- * Home's square for the live event: the same frame and rows as the other squares, its picture behind all of it. A tap
+ * Home's square for a live event: the same frame and rows as the other squares, its picture behind all of it. A tap
  * opens the shop for a Special Shop, else its pop-up again.
  */
-export function LiveSquare() {
+export function LiveSquare({ live, now }: { live: LiveEvent; now: number }) {
   const { t } = useT()
   const navigate = useNavigate()
   const data = useGame((s) => s.data)
   const ug = useGame((s) => s.save?.underground)
-  const { live, now } = useLive(1000)
-  if (!live || now == null) return null
   const left = liveLeft(live, now)
   const name = liveName(live)
   const shop = live.type === 'shop'
@@ -212,8 +225,9 @@ export function LiveSquare() {
   return (
     <button
       type="button"
-      onClick={() => (shop ? navigate('/shop') : dig ? navigate('/underground') : openLivePopup())}
+      onClick={() => (shop ? navigate('/shop') : dig ? navigate('/underground') : openLivePopup(live.id))}
       aria-label={t(shop ? 'ui.live.labelShop' : dig ? 'ui.live.labelUnderground' : 'ui.live.label', { name, sub, time })}
+      data-testid="live-square"
       className="pixel-panel lv-square relative isolate flex min-w-0 flex-col gap-[5px] overflow-hidden px-2.5 pb-2.5 pt-2 text-left"
     >
       <LivePicture e={live} className="absolute inset-0 -z-10" />
@@ -297,8 +311,9 @@ function LiveRules({ e }: { e: LiveEvent }) {
 }
 
 /**
- * The live event's pop-up: once per event, the first time the player is between fights while it runs, after Prof.
- * Oak's tutorials and the other pop-ups; again from Home's square. OK; a Special Shop adds "Go to the shop".
+ * A live event's pop-up: once per event, the first time the player is between fights while it runs, after Prof.
+ * Oak's tutorials and the other pop-ups; again from Home's square. With several running, one after the other, the
+ * earliest started first. OK; a Special Shop adds "Go to the shop".
  */
 export function LivePopup() {
   const { t } = useT()
@@ -322,12 +337,15 @@ export function LivePopup() {
       (!inWorld(s.save, s.data) && worldPopupDue(s.save, worldFor(s.save, s.data, serverNow()))),
   )
   const idle = useGame((s) => s.run.phase === 'idle')
-  const { live, now } = useLive(asked ? 1000 : 5000)
-  if (!live || !save || now == null) return null
-  const due = livePopupDue(save, live) && !others && !gifts && !onShop
-  const open = idle && (asked || due)
+  const { lives, now } = useLive(asked ? 1000 : 5000)
+  if (!save || now == null) return null
+  const next = livePopupNext(save, lives)
+  const live = (asked && lives.find((e) => e.id === asked)) || next
+  if (!live) return null
+  const due = !!next && !others && !gifts && !onShop
+  const open = idle && (!!asked || due)
   const close = () => {
-    usePopupAsked.setState({ asked: false })
+    usePopupAsked.setState({ asked: null })
     if (livePopupDue(save, live)) markLivePopupSeen(live)
     if (live.type === 'underground') ugRulesSeen()
     // Push notifications' question, once (docs/27): the next live event can be announced as it starts.
@@ -337,6 +355,7 @@ export function LivePopup() {
   if (live.type === 'underground')
     return (
       <UgRulesModal
+        key={live.id}
         open={open}
         onClose={close}
         onGo={() => {
@@ -349,7 +368,7 @@ export function LivePopup() {
   const left = liveLeft(live, now)
   const big = live.type === 'shiny' ? `×${live.shiny.multiplier}` : live.type === 'cash' ? t('ui.live.pct', { pct: pct(cashMultiplier(live)) }) : null
   return (
-    <Modal open={open} onClose={close} title={liveName(live)} className="max-w-md">
+    <Modal key={live.id} open={open} onClose={close} title={liveName(live)} className="max-w-md">
       <div className="flex flex-col gap-3">
         <span className="relative -mx-4 block h-[128px] shadow-[0_3px_0_rgb(var(--c-edge)),0_-2px_0_rgb(var(--c-edge))]">
           <LivePicture e={live} className="absolute inset-0">
@@ -391,16 +410,16 @@ export function LivePopup() {
 /** " · Shiny odds ×5 here" for a label, where a Shiny Parade covers the area (a chip inside a button isn't read out). */
 export function useParadeLabel(area: Area | undefined): string {
   const { t } = useT()
-  const { live } = useLive(15_000)
-  return liveCovers(live, area) ? ` · ${t('ui.live.chip.shiny', { n: shinyBoost(live, area) })}` : ''
+  const { lives } = useLive(15_000)
+  return liveCovers(lives, area) ? ` · ${t('ui.live.chip.shiny', { n: shinyBoost(lives, area) })}` : ''
 }
 
 /** The Shiny Parade's chip where it applies: ×5 and a sparkle. */
 export function ShinyParadeChip({ area, className }: { area: Area | undefined; className?: string }) {
   const { t } = useT()
-  const { live } = useLive(15_000)
-  if (!liveCovers(live, area)) return null
-  const n = shinyBoost(live, area)
+  const { lives } = useLive(15_000)
+  if (!liveCovers(lives, area)) return null
+  const n = shinyBoost(lives, area)
   const label = t('ui.live.chip.shiny', { n })
   return (
     <span role="img" aria-label={label} title={label} className={cx('inline-flex shrink-0', className)}>
@@ -412,12 +431,12 @@ export function ShinyParadeChip({ area, className }: { area: Area | undefined; c
   )
 }
 
-/** Cash Flow's "+50%": on the purse, and beside ₽ just won. */
+/** Cash Flow's "+50%" (every one running, added up): on the purse, and beside ₽ just won. */
 export function CashChip({ className }: { className?: string }) {
   const { t } = useT()
-  const { live } = useLive(15_000)
-  if (live?.type !== 'cash') return null
-  const p = pct(cashMultiplier(live))
+  const { lives } = useLive(15_000)
+  if (!lives.some((e) => e.type === 'cash')) return null
+  const p = pct(cashMultiplier(lives))
   const label = t('ui.live.chip.cash', { pct: p })
   return (
     <span role="img" aria-label={label} title={label} className={cx('inline-flex shrink-0', className)}>
