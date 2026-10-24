@@ -184,9 +184,11 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
 **the page behind is inert** (`src/lib/inert.ts`: a screen reader's swipe can't leave the dialog either), **Esc closes
-the top dialog only**, focus returns to what opened it. Every dialog is portalled to `<body>`: what came before the top
-one (the game in `#root`, a dialog under it) is inert, what opened after it (a moment started from inside it) stays
-live, and so do the toasts (`data-stay-live`). The rotate cover holds everything, the toasts included.
+the top dialog only**, focus returns to what opened it. The top dialog is the one drawn on top: the highest z-index,
+the latest opened among equals (a pop-up that opens under the partner lab, z 90 under 100, waits under it, inert, and
+the focus stays up in the lab). Every dialog is portalled to `<body>`: what came before the top one (the game in
+`#root`) and every other dialog are inert, what opened after it that isn't a dialog (a moment started from inside it)
+stays live, and so do the toasts (`data-stay-live`). The rotate cover holds everything, the toasts included.
 
 ## 6. Layout
 

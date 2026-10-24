@@ -74,9 +74,11 @@ Fixes to the shell every screen sits in: no switch, no rules pop-up. The rules t
   unless a dialog or a field has it already. The first load leaves the focus alone.
 - **A9b The page sleeps behind a dialog.** `aria-modal` and the Tab trap kept a keyboard in a dialog, but TalkBack's
   and VoiceOver's swipe could walk out of it into the page. `useDialog` now makes the page behind `inert`
-  (`src/lib/inert.ts`): every dialog is portalled to `<body>`, so what comes before the top one (the game, a dialog
-  under it) sleeps, what opened after it stays live, and the toasts, now on `<body>` too (`data-stay-live`), stay
-  readable. The rotate cover uses the same layers and holds everything.
+  (`src/lib/inert.ts`): every dialog is portalled to `<body>`, so what comes before the top one (the game) and every
+  other dialog sleep, what opened after it that isn't a dialog stays live, and the toasts, now on `<body>` too
+  (`data-stay-live`), stay readable. The top dialog is the one drawn on top (the highest z-index, then the latest), and
+  it answers Esc and Tab: a pop-up that opens under the partner lab waits under it instead of taking the keyboard. The
+  rotate cover uses the same layers and holds everything.
 - **A9d The theme follows the device for new players.** A fresh install now starts on Auto (`DEFAULT_SETTINGS`), and
   `index.html` paints a first visit in the device's theme so a dark phone never flashes light. Stored settings without
   a theme stay Light: nobody who already plays sees the look change under them.

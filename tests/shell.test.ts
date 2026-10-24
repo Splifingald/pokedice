@@ -2,7 +2,7 @@
 // what each page is called in the tab's title.
 import { describe, expect, it } from 'vitest'
 import { hasKey } from '@/i18n'
-import { inertTargets } from '@/lib/inert'
+import { inertTargets, topOf } from '@/lib/inert'
 import { BRAND, pageTitle, pageTitleKey } from '@/lib/pageMeta'
 import { coversSideways, isTabletScreen } from '@/lib/orientation'
 
@@ -24,24 +24,41 @@ describe('the rotate cover', () => {
 
 describe('the page behind a dialog', () => {
   const live = (el: string) => el === 'toasts'
+  const layer = (host: string, z: number, all = false) => ({ host, z, all })
+  /** What sleeps under the layers open (oldest first): the rule `apply()` runs on the page. */
+  const asleep = (body: string[], layers: ReturnType<typeof layer>[]) => {
+    const top = topOf(layers)!
+    const others = layers.filter((l) => l !== top).map((l) => l.host)
+    return inertTargets(body, top, others, live)
+  }
 
   it('goes inert before the dialog; the toasts and what opened after it stay live', () => {
-    const body = ['root', 'toasts', 'sheet', 'gift-moment']
-    expect(inertTargets(body, 'sheet', false, live)).toEqual(['root'])
+    expect(asleep(['root', 'toasts', 'sheet', 'gift-moment'], [layer('sheet', 85)])).toEqual(['root'])
   })
 
   it('puts the dialog under a new one to sleep too', () => {
     const body = ['root', 'toasts', 'menu', 'settings']
-    expect(inertTargets(body, 'settings', false, live)).toEqual(['root', 'menu'])
+    expect(asleep(body, [layer('menu', 80), layer('settings', 90)])).toEqual(['root', 'menu'])
+    // Two of a kind: the latest is on top.
+    expect(asleep(body, [layer('menu', 90), layer('settings', 90)])).toEqual(['root', 'menu'])
+  })
+
+  it('keeps the dialog drawn on top on top, whatever opened after it under it', () => {
+    // The partner lab (z 100) and a pop-up opened after it but drawn under it (z 90): the lab stays live.
+    const body = ['root', 'toasts', 'lab', 'popup']
+    const layers = [layer('lab', 100), layer('popup', 90)]
+    expect(topOf(layers)!.host).toBe('lab')
+    expect(asleep(body, layers)).toEqual(['root', 'popup'])
   })
 
   it('holds everything under the rotate cover, the toasts and later dialogs included', () => {
     const body = ['root', 'toasts', 'cover', 'modal']
-    expect(inertTargets(body, 'cover', true, live)).toEqual(['root', 'toasts', 'modal'])
+    expect(asleep(body, [layer('cover', 200, true), layer('modal', 90)])).toEqual(['root', 'toasts', 'modal'])
   })
 
   it('puts nothing to sleep for a host that has left', () => {
-    expect(inertTargets(['root', 'toasts'], 'gone', false, live)).toEqual([])
+    expect(inertTargets(['root', 'toasts'], layer('gone', 90), [], live)).toEqual([])
+    expect(topOf([])).toBeUndefined()
   })
 })
 
