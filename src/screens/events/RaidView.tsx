@@ -768,7 +768,7 @@ function RaidResult({ run }: { run: RaidRun }) {
   const [offer, setOffer] = useState<RaidNpcOption[] | null>(null)
   const need = emptySlots(run.friends)
   const cap =
-    run.source.kind === 'progress' ? raidTeamCap(data, progressRaidOf(data, run.source.key)?.dex ?? run.raid.dex, 'progress', run.raid.areaId) : data.config.events.raid.teamCap
+    run.source.kind === 'progress' ? raidTeamCap(data, progressRaidOf(data, run.source.key)?.dex ?? run.raid.dex, 'progress', run.raid.areaId) : raidTeamCap(data, run.raid.dex, 'daily')
   const again = (npcs: RaidNpcOption[] = []) => {
     setOffer(null)
     if (!raidAgain(npcs)) leaveRaid()

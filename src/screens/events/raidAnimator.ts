@@ -3,7 +3,18 @@
 // moments added — an ally stepping up, a bar breaking, a side sending its next Pokémon or running out. The ally sides'
 // turns can play faster (the speed button). The UI never recomputes a rule.
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { BOSS_UID, type BattleState, type Battler, type LogEntry, type RaidLogEntry, type RaidSide } from '@/engine'
+import {
+  BOSS_UID,
+  type BattleState,
+  type Battler,
+  type LogEntry,
+  type RaidLogEntry,
+  type RaidMove,
+  type RaidSide,
+  type RaidTerrain,
+  type RaidWeather,
+} from '@/engine'
+import { typeName } from '@/lib/format'
 import { sfx } from '@/audio/sfx'
 import { t } from '@/i18n'
 import type { RaidRun } from '@/store/raidBattle'
@@ -18,12 +29,37 @@ export interface RaidFx extends Fx {
   barBreak: { id: number } | null
   /** The entry playing belongs to an ally side's turn: the ones the speed button plays faster. */
   fast: boolean
+  /** The raid overhaul (docs/39), as the log has played: the weather or terrain, a move charging, the shield. */
+  raidField: { weather: RaidWeather | null; terrain: RaidTerrain | null }
+  charge: { move: RaidMove; fires: number } | null
+  shield: { hp: number; max: number } | null
+  /** Its last bar's power has begun. */
+  final: boolean
 }
 
 let seq = 0
 const nextId = () => ++seq
 
-const RAID_ENTRIES = new Set(['raid_start', 'raid_front', 'raid_bar', 'raid_next', 'raid_out', 'raid_end'])
+const RAID_ENTRIES = new Set([
+  'raid_start',
+  'raid_front',
+  'raid_bar',
+  'raid_next',
+  'raid_out',
+  'raid_end',
+  'raid_field',
+  'raid_charge',
+  'raid_interrupt',
+  'raid_move',
+  'raid_skip',
+  'raid_tick',
+  'raid_heal',
+  'raid_shield',
+  'raid_bounce',
+  'raid_boost',
+  'raid_shift',
+  'raid_final',
+])
 const isRaidEntry = (e: RaidLogEntry): e is Exclude<RaidLogEntry, LogEntry> => RAID_ENTRIES.has(e.kind)
 
 function initFx(run: RaidRun): RaidFx {
@@ -55,6 +91,10 @@ function initFx(run: RaidRun): RaidFx {
     broken: 0,
     barBreak: null,
     fast: false,
+    raidField: { weather: null, terrain: null },
+    charge: null,
+    shield: null,
+    final: false,
   }
 }
 
@@ -189,6 +229,144 @@ function describeRaid(e: RaidLogEntry, run: RaidRun, f: RaidFx, ctx: AnimatorCon
             e.result === 'won'
               ? t('ui.raid.log.won', { boss })
               : t(e.reason === 'forfeit' ? 'ui.raid.log.forfeit' : e.reason === 'stalemate' ? 'ui.raid.log.stalemate' : 'ui.raid.log.lost'),
+        })),
+      }
+    default:
+      return describeSpecial(e, run, f)
+  }
+}
+
+type SpecialEntry = Extract<
+  RaidLogEntry,
+  {
+    kind:
+      | 'raid_field'
+      | 'raid_charge'
+      | 'raid_interrupt'
+      | 'raid_move'
+      | 'raid_skip'
+      | 'raid_tick'
+      | 'raid_heal'
+      | 'raid_shield'
+      | 'raid_bounce'
+      | 'raid_boost'
+      | 'raid_shift'
+      | 'raid_final'
+  }
+>
+
+/** The raid overhaul's moments (docs/39): what the engine decided, told and shown. */
+function describeSpecial(e: SpecialEntry, run: RaidRun, f: RaidFx): Step {
+  const boss = run.state.boss.name
+  const nameOf = (uid: string) => battlerOf(run, uid)?.name ?? t('ui.common.unknown')
+  const raid = (apply: (x: RaidFx) => RaidFx) => apply as unknown as Step['apply']
+  void f
+  switch (e.kind) {
+    case 'raid_field': {
+      const key = e.weather ? `ui.raid.x.weather.${e.weather}` : `ui.raid.x.terrain.${e.terrain}`
+      return {
+        delay: 1100,
+        apply: raid((x) => ({ ...x, raidField: { weather: e.weather, terrain: e.terrain }, message: t(`${key}.start`) })),
+      }
+    }
+    case 'raid_charge':
+      return {
+        delay: 1100,
+        sound: 'levelup',
+        apply: raid((x) => ({
+          ...x,
+          charge: { move: e.move, fires: e.fires },
+          message: t(`ui.raid.x.charge.${e.move}`, { boss }),
+          banner: { id: nextId(), text: t('ui.raid.x.chargeBanner'), tone: 'info' },
+        })),
+      }
+    case 'raid_interrupt':
+      return {
+        delay: 1200,
+        sound: 'super',
+        apply: raid((x) => ({
+          ...x,
+          charge: null,
+          message: t('ui.raid.x.interrupt', { boss }),
+          banner: { id: nextId(), text: t('ui.raid.x.interrupted'), tone: 'super' },
+          shake: { id: nextId(), power: 6 },
+        })),
+      }
+    case 'raid_move':
+      return {
+        delay: 1100,
+        apply: raid((x) => ({
+          ...x,
+          charge: null,
+          message: t(`ui.raid.x.move.${e.move}`, { boss }),
+          banner: { id: nextId(), text: t('ui.raid.x.moveBanner'), tone: 'weak' },
+          shake: { id: nextId(), power: 8 },
+          cry: { id: nextId(), dex: run.state.boss.dex },
+        })),
+      }
+    case 'raid_skip':
+      return { delay: 900, apply: raid((x) => ({ ...x, message: t(`ui.raid.x.skip.${e.reason}`, { boss }) })) }
+    case 'raid_tick':
+      return {
+        delay: 800,
+        sound: 'hit',
+        apply: raid((x) => ({
+          ...x,
+          hp: { ...x.hp, [e.uid]: e.hpAfter },
+          message: t(`ui.raid.x.tick.${e.cause}`, { name: nameOf(e.uid), boss }),
+        })),
+      }
+    case 'raid_heal':
+      return {
+        delay: 800,
+        sound: 'heal',
+        apply: raid((x) => ({
+          ...x,
+          hp: { ...x.hp, [e.uid]: e.hpAfter },
+          message: t(`ui.raid.x.heal.${e.cause}`, { name: nameOf(e.uid), boss }),
+        })),
+      }
+    case 'raid_shield':
+      return {
+        delay: e.hp === e.max ? 900 : e.hp === 0 ? 900 : 0,
+        ...(e.hp === 0 && { sound: 'super' as const }),
+        apply: raid((x) => ({
+          ...x,
+          shield: e.hp > 0 ? { hp: e.hp, max: e.max } : null,
+          ...(e.hp === e.max && { message: t('ui.raid.x.shieldUp', { boss }) }),
+          ...(e.hp === 0 && { message: t('ui.raid.x.shieldBroken', { boss }), banner: { id: nextId(), text: t('ui.raid.break'), tone: 'super' } }),
+        })),
+      }
+    case 'raid_bounce':
+      return { delay: 800, apply: raid((x) => ({ ...x, message: t('ui.raid.x.bounce') })) }
+    case 'raid_boost':
+      return {
+        delay: 900,
+        sound: 'levelup',
+        apply: raid((x) => ({
+          ...x,
+          message:
+            e.cause === 'charge'
+              ? t('ui.raid.x.boost.charge', { boss })
+              : t(`ui.raid.x.boost.${e.cause}`, { boss, type: typeName(e.dice[0] ?? 'base') }),
+        })),
+      }
+    case 'raid_shift':
+      return {
+        delay: 1000,
+        sound: 'levelup',
+        apply: raid((x) => ({ ...x, message: t('ui.raid.x.shift', { boss, type: typeName(e.type) }) })),
+      }
+    case 'raid_final':
+      return {
+        delay: 1400,
+        sound: 'super',
+        apply: raid((x) => ({
+          ...x,
+          final: true,
+          message: e.dice.length ? t('ui.raid.x.finalDice', { boss, n: e.dice.length }) : t('ui.raid.x.final', { boss }),
+          banner: { id: nextId(), text: t('ui.raid.x.finalBanner'), tone: 'super' },
+          shake: { id: nextId(), power: 8 },
         })),
       }
   }

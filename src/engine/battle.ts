@@ -1,4 +1,5 @@
 // The battle reducer. The UI dispatches events and renders the returned log — it never recomputes rules.
+import { adjustRaidHit, type RaidHit } from './raidHit'
 import { aiRerollMask } from './ai'
 import { getSpecies } from './data'
 import { attackMultiplier, attackType, computeDamage, type DamageResult, type UpgradeLevels } from './damage'
@@ -168,6 +169,8 @@ export interface BattleState {
    * the Pokémon whose turn it is and the one it targets — so every rule written for one against one applies to them.
    */
   double?: DoubleState
+  /** A raid step's own rules on its hits (docs/39, engine/raidHit.ts), set by the raid; read back once the step is done. */
+  raidHit?: RaidHit
 }
 
 /** A double battle's field (docs/33). */
@@ -478,7 +481,7 @@ export interface CreateBattleOptions {
 }
 
 /** Takes on a form's look and types (the dice are the caller's business). */
-function wearForm(b: Battler, form: Species) {
+export function wearForm(b: Battler, form: Species) {
   b.dex = form.dex
   b.name = b.nickname || form.name
   b.types = form.type2 ? [form.type1, form.type2] : [form.type1]
@@ -647,6 +650,20 @@ function foeTypeForm(s: BattleState, b: Battler, target: Battler, data: GameData
   const best = bestTypeForms(b, target, typeForms(b, data), data)
   if (!best.length) return null
   return s.auto ? rng.pick(best) : best[0]!
+}
+
+/**
+ * A raid Pokémon's type change (docs/39: Arceus's plates, Ogerpon's masks): the menu form whose type hits `target`
+ * hardest, when it beats what it rolls now; every die takes the type. Null when none does better (or it has none).
+ */
+export function raidFormShift(b: Battler, target: Battler, data: GameData): Extract<LogEntry, { kind: 'form' }> | null {
+  const form = bestTypeForms(b, target, typeForms(b, data), data)[0]
+  if (!form) return null
+  const fromDex = b.dex
+  const type = choiceFormDie(form)
+  wearForm(b, form)
+  b.dice = b.dice.map(() => type)
+  return { kind: 'form', side: 'enemy', uid: b.uid, fromDex, toDex: b.dex, reason: 'choice', dice: [...b.dice] }
 }
 
 /** Auto-mode's pick for the Pokémon in battle: a type form best against the foe, at random among equals. */
@@ -1428,6 +1445,8 @@ function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry
   const dice = s.dice
 
   let result = computeDamage(dice, atk.types, def.types, levels, data)
+  // A raid's own rules on this hit (docs/39): shields, halved hits, hits never resisted…
+  if (s.raidHit) result = adjustRaidHit(result, s.raidHit, levels.typeScale)
   const zMove = z === true && rng ? zMoveOf(result, data, rng) : null
   if (zMove) {
     result = zMove.result
@@ -1464,8 +1483,8 @@ function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry
     ...(z && { z: typeof z === 'string' ? { from: z } : {} }),
   })
   const all = statusesFromRoll(dice, data, levels)
-  // An attack with no effect inflicts nothing either.
-  if (def.hp > 0 && !result.immune) {
+  // An attack with no effect inflicts nothing either; nor one a raid's shield or terrain stopped (docs/39).
+  if (def.hp > 0 && !result.immune && !s.raidHit?.bounced && !s.raidHit?.noStatus) {
     // Freeze and Paralysis land on their chance (each face adds to it); a sure one draws nothing.
     const chanceRng = rng ?? createRng(s.turn)
     const apps: StatusApplication[] = []
@@ -1475,6 +1494,9 @@ function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry
       if (chance >= 1 || chanceRng.next() < chance) apps.push(a)
       else log.push({ kind: 'status_resisted', target: other(side), targetUid: def.uid, status: a.status, chance })
     }
+    // A raid Pokémon's burns that last longer (Beads of Ruin, docs/39).
+    const longer = s.raidHit?.burnLonger ?? 0
+    if (longer) for (const a of apps) if (a.status === 'burn' && a.turns != null) a.turns += longer
     def.status = applyStatuses(def.status, apps, data.config.status)
     for (const a of apps)
       log.push({

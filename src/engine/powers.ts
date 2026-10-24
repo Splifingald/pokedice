@@ -7,6 +7,7 @@
  */
 import type { CreateBattleOptions, EnemyPlan } from './battle'
 import { eventOpenTo } from './events'
+import { megaRaidGem } from './raidSpecials'
 import { choiceFormsOf, gmaxFormsOf, megaFormsOf, megaOptions } from './forms'
 import {
   getRegion,
@@ -190,7 +191,8 @@ export function gemShelf(save: SaveData, data: GameData): GemShelfRow[] | null {
   const rewards = rewardGems(data)
   const owned = new Set(ownedGems(save))
   return gemItems(data)
-    .filter((g) => !rewards.has(g.key) && gemRegions(data, g).includes(region))
+    // A Mega raid's gem or orb (docs/39) comes only from winning it, never from the Mart.
+    .filter((g) => !rewards.has(g.key) && !megaRaidGem(data, g.key) && gemRegions(data, g).includes(region))
     .flatMap((item) => {
       const mega = data.species[item.effect.mega]
       return mega ? [{ item, mega, owned: owned.has(item.key) }] : []

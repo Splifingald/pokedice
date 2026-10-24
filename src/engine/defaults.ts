@@ -356,6 +356,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   // Recorded dice throws (docs/37): off until the admin switches them on; the dice tumble as before meanwhile.
   // Migration 0069 inserts the same row.
   diceThrows: { access: 'off' },
+  raidOverhaul: { access: 'off' },
   // The game-feel pass, haptics and battle music (docs/38): off until the admin switches each on; everything plays as
   // before meanwhile. Migration 0074 inserts the same rows.
   gameFeel: { access: 'off' },

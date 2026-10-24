@@ -4,6 +4,7 @@
 import { areaProgressAnywhere } from './events'
 import { createInstance, instanceStats } from './progression'
 import { raidOfDay, raidRegion, raidRules, type RaidKindOf } from './raidCalendar'
+import { raidOverhaulOn } from './raidSpecials'
 import { regionOf, worldRegionOf } from './regions'
 import { typeMultiplier } from './typechart'
 import type { GameData, PokemonInstance, RaidLock, SaveData, TodayRaid } from './types'
@@ -42,7 +43,10 @@ export const raidLocked = (save: SaveData, data: GameData, areaId: string): bool
 // ---------------------------------------------------------------------------------------------------------------------
 // Fighting it: the team you bring, the tries, and where a caught raid Pokémon goes.
 
-/** The level a Pokémon needs to be recommended for a raid (the user's rule, 2026-10-16), or the raid's cap if lower. */
+/**
+ * The level a Pokémon needs to be recommended for a raid (the user's rule, 2026-10-16), or the raid's cap if lower. With
+ * the raid overhaul on (docs/39), the raid's own level instead: its team cap.
+ */
 export const RAID_RECOMMENDED_LEVEL = 50
 
 /**
@@ -58,7 +62,9 @@ export function raidRecommended(
   cap: number,
 ): boolean {
   const boss = data.species[bossDex]
-  if (!boss || !data.species[mon.dex] || mon.level < Math.min(RAID_RECOMMENDED_LEVEL, cap)) return false
+  // The raid overhaul (docs/39): at the raid's own level, its team cap.
+  const level = raidOverhaulOn(data) ? cap : Math.min(RAID_RECOMMENDED_LEVEL, cap)
+  if (!boss || !data.species[mon.dex] || mon.level < level) return false
   const foe = boss.type2 ? [boss.type1, boss.type2] : [boss.type1]
   const { dice } = instanceStats(mon, data)
   return dice.some(

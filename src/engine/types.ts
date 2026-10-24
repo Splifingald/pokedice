@@ -950,6 +950,11 @@ export interface GameConfig {
   haptics: { access: EventAccess }
   /** Battle music (docs/38): an original 8-bit loop under fights. Migration 0074 inserts the same row. */
   music: { access: EventAccess }
+  /**
+   * The raid overhaul (docs/39): each progression raid's own numbers, rules and last bar, Arceus's daily raid, the Mega
+   * raids after Kalos. Its switch; migration 0075 inserts the same row and the server reads it for the Mega raids.
+   */
+  raidOverhaul: { access: EventAccess }
   /** Double battles (docs/33): their switch, the regions that have them and the wild odds. */
   doubleBattles: DoubleBattlesConfig
   /**

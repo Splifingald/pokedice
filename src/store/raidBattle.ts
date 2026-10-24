@@ -4,6 +4,7 @@
 // where a catch goes are the raid's own.
 import { create } from 'zustand'
 import {
+  applyMegaRaidWin,
   applyProgressRaidCatch,
   applyRaidCatch,
   baitFaces,
@@ -82,6 +83,8 @@ export interface RaidRun {
   log: RaidLogEntry[]
   stage: RaidStage
   catch: RaidCatch | null
+  /** A Mega raid won (docs/39): the gem or orb it gave. No catch. */
+  gem?: string
 }
 
 export const useRaidRun = create<{ run: RaidRun | null }>(() => ({ run: null }))
@@ -290,7 +293,7 @@ export function startRaid(npcs: RaidNpcOption[] = [], friends: RaidFriend[] = gr
   const team = raidTeam(save, data)
   if (!team.length) return false
   mutateSave((s) => countRaidTry(s, raid.day))
-  startFight({ kind: 'daily' }, raid, team, friends, npcs, data.config.events.raid.teamCap)
+  startFight({ kind: 'daily' }, raid, team, friends, npcs, raidTeamCap(data, raid.dex, 'daily'))
   void syncRaidTeam()
   return true
 }
@@ -343,6 +346,15 @@ export function raidAct(e: RaidEvent) {
 export function raidFightOver() {
   const run = useRaidRun.getState().run
   if (!run || run.stage !== 'fight') return
+  // A Mega raid (docs/39): won, its gem or orb is the player's, and nothing is caught.
+  const { save, data } = useGame.getState()
+  const mega = run.source.kind === 'progress' ? progressRaidOf(data, run.source.key) : null
+  if (run.state.phase === 'won' && save && mega?.mega) {
+    commitSave(applyMegaRaidWin(save, mega))
+    void closeOnServer(run.source, run.friends.map((f) => f.userId))
+    useRaidRun.setState({ run: { ...run, stage: 'result', gem: mega.mega.gem } })
+    return
+  }
   if (run.state.phase === 'won') useRaidRun.setState({ run: { ...run, stage: 'catch', catch: { result: null } } })
   else if (run.state.phase === 'lost') useRaidRun.setState({ run: { ...run, stage: 'result' } })
 }

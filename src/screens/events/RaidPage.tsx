@@ -9,6 +9,7 @@ import {
   raidRegion,
   raidRules,
   raidTeam,
+  raidTeamCap,
   regionStarted,
   upcomingRaids,
   type RaidKindOf,
@@ -333,7 +334,7 @@ export function RaidPage() {
           offer={offer}
           need={need}
           group={group}
-          level={data.config.events.raid.teamCap}
+          level={raidTeamCap(data, raid.dex, 'daily')}
           boss={raid.dex}
           onBack={() => setOffer(null)}
           onStart={go}

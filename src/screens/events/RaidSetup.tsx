@@ -97,7 +97,7 @@ function teamSetup(
   boss?: number,
 ): TeamSetup | null {
   if (source.kind === 'daily') {
-    const cap = data.config.events.raid.teamCap
+    const cap = boss != null ? raidTeamCap(data, boss, 'daily') : data.config.events.raid.teamCap
     return {
       team: raidTeam(save, data),
       cap,
@@ -419,7 +419,7 @@ export function RaidGroupSection({
   // Friends' teams come at their own levels (0065), like yours: the fight caps them, all but their dice.
   const recommended = raid
     ? recommender(data, raid.dex, raidTeamCap(data, raid.dex, 'progress', raid.areaId))
-    : recommender(data, progress ? undefined : boss, data.config.events.raid.teamCap)
+    : recommender(data, progress ? undefined : boss, boss != null ? raidTeamCap(data, boss, 'daily') : data.config.events.raid.teamCap)
   const toggle = (f: RaidFriend) => toggleRaidFriend(f, key)
   const open = async () => {
     setPicking(true)

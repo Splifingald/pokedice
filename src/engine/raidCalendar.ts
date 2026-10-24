@@ -8,6 +8,7 @@ import { isLegendary } from './breeding'
 import { portalRaidRules } from './portalMode'
 import { nightmareRaidRules } from './nightmareMode'
 import { raidAllyAllowed } from './raidBattle'
+import { raidSpecialOf, type RaidSpecial } from './raidSpecials'
 import { regionOf, regionOfArea, regionOfSpecies } from './regions'
 import { createRng } from './rng'
 import type { Area, GameData, RaidMonRules, SaveData } from './types'
@@ -34,15 +35,29 @@ export type RaidRules = Required<RaidMonRules>
 export type RaidKindOf = 'daily' | 'progress'
 
 /**
- * A raid Pokémon's numbers: its own (Admin → Raids → Raid Pokémon) over the defaults. A progression raid reads its own
- * list (`raid.progress.perMon`), never the day's raid's.
+ * A raid's own rules with the raid overhaul on (docs/39): a progression raid of the main game (or a Mega raid), or
+ * Arceus's daily raid. Never a small world's, a portal's or a nightmare's raid: those keep their own (docs/26, 28, 30).
+ */
+export function raidSpecialFor(data: GameData, dex: number, kind: RaidKindOf = 'daily', areaId?: string): RaidSpecial | null {
+  if (kind === 'progress') {
+    if (portalRaidRules(data, areaId) ?? nightmareRaidRules(data, areaId)) return null
+    const area = areaId ? data.areas.find((a) => a.id === areaId) : undefined
+    if (area && worldOfArea(data, area)) return null
+  }
+  return raidSpecialOf(data, dex, kind)
+}
+
+/**
+ * A raid Pokémon's numbers: its own (Admin → Raids → Raid Pokémon) over the raid overhaul's (docs/39, when on) over the
+ * defaults. A progression raid reads its own list (`raid.progress.perMon`), never the day's raid's.
  */
 export function raidRules(data: GameData, dex: number, kind: RaidKindOf = 'daily', areaId?: string): RaidRules {
   const cfg = data.config.events.raid
   const own = (kind === 'progress' ? cfg.progress?.perMon?.[dex] : cfg.perMon?.[dex]) ?? {}
+  const special = raidSpecialFor(data, dex, kind, areaId)
   const pick = (k: keyof RaidMonRules) => {
     const v = Number(own[k])
-    return own[k] != null && Number.isFinite(v) ? v : (cfg[k] as number)
+    return own[k] != null && Number.isFinite(v) ? v : ((special?.[k] ?? cfg[k]) as number)
   }
   // A portal area's raid (docs/28: Distortion World's Giratina) has its own numbers, set on the area.
   // So has a nightmare area's (docs/30: Newmoon Island's Darkrai).
@@ -72,13 +87,15 @@ export function worldRaidLevel(data: GameData, dex: number, areaId: string | und
 /** The sides' level cap: the day's raid's, or a progression raid's (a world's at its level, its own, the default). */
 export function raidTeamCap(data: GameData, dex: number, kind: RaidKindOf = 'daily', areaId?: string): number {
   const cfg = data.config.events.raid
-  if (kind === 'daily') return cfg.teamCap
+  // The raid overhaul (docs/39): the sides fight up to the raid's own level.
+  const special = raidSpecialFor(data, dex, kind, areaId)
+  if (kind === 'daily') return special ? special.level : cfg.teamCap
   const portal = portalRaidRules(data, areaId) ?? nightmareRaidRules(data, areaId)
   if (portal) return portal.teamCap
   const world = worldRaidLevel(data, dex, areaId)
   if (world) return Math.max(1, Math.min(100, Math.round(world)))
   const own = Number(cfg.progress?.perMon?.[dex]?.teamCap)
-  const cap = Number.isFinite(own) && own > 0 ? own : (cfg.progress?.teamCap ?? cfg.teamCap)
+  const cap = Number.isFinite(own) && own > 0 ? own : (special?.level ?? cfg.progress?.teamCap ?? cfg.teamCap)
   return Math.max(1, Math.min(100, Math.round(cap)))
 }
 
