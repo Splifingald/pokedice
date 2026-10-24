@@ -201,7 +201,7 @@ A single face is enough for every status (since 2026-10): no pairs or three of a
 
 The chance draws come from the battle's own RNG, only when a chance is short of sure, so a roll with no Freeze or Paralysis face draws exactly as before. Battles saved before the rework stored confusion as `true`: `confusionLevel` reads it as level 1.
 
-**Setting it up:** run [`supabase/migrations/0073_status_faces.sql`](https://github.com/Splifingald/pokedice/blob/claude/dice-special-effects-rework-2cqbfb/supabase/migrations/0073_status_faces.sql) in the Supabase SQL editor (`supabase/seed.sql` carries it too, inlined). It rewrites the `status` row with the new rules (Burn keeps the admin's numbers) and bumps `configVersion`; until it runs, the stored Poison numbers (10 %, 3 turns) still apply.
+**Setting it up:** run [`supabase/migrations/0073_status_faces.sql`](https://github.com/Splifingald/pokedice/blob/feature/version_2_3/supabase/migrations/0073_status_faces.sql) in the Supabase SQL editor (`supabase/seed.sql` carries it too, inlined). It rewrites the `status` row with the new rules (Burn keeps the admin's numbers) and bumps `configVersion`; until it runs, the stored Poison numbers (10 %, 3 turns) still apply.
 
 - DoT ticks at the **start of the victim's turn**, before the stun check, and can K.O.
 - A stunned Pokémon still ticks DoT and still burns down its stun counter.
