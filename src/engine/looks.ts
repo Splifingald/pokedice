@@ -1,7 +1,8 @@
 // Trainer looks (docs/31): the look other trainers see on the leaderboard, in Versus and on a friend's card. Red and
 // Leaf are free; every other look belongs to a region and unlocks from that region's own progress: Pokémon caught in
 // its Pokédex, an area reached, its League beaten, its Pokédex complete. Unlocks are worked out from progress every
-// time, so nothing but the looks already seen is stored. The admin's switch (docs/15 §20) is Off by default; while
+// time, so nothing but the looks already seen is stored, and the looks granted outright (an event's, `looks.earned`).
+// An event's look is won there and kept for good (docs/31 §7). The admin's switch (docs/15 §20) is Off by default; while
 // it's off, the old free list of Kanto and Johto classes stays (src/lib/avatars.ts).
 import { eventOpenTo } from './events'
 import { getRegion, leagueDone, regionOf, regionSpecies, switchRegion } from './regions'
@@ -19,9 +20,14 @@ export type LookUnlock =
   | { kind: 'champion' }
   /** Every Pokémon of the region's Pokédex page caught. */
   | { kind: 'complete' }
+  /**
+   * An event's prize (docs/31 §7): one of these raids won there (`events.raidsDone`, which outlives the world it was
+   * won in), or the look granted in the save (`looks.earned`: the SQL that gave it to those holding the prize).
+   */
+  | { kind: 'event'; event: string; raids: string[] }
 
 export interface LookDef {
-  /** `red` / `green`, or `<region>/<sprite>`: the region is the id's prefix. */
+  /** `red` / `green`, `<region>/<sprite>` (the region is the id's prefix), or `events/<sprite>`, in no region. */
   id: string
   region: RegionId | null
   unlock: LookUnlock
@@ -185,11 +191,16 @@ const ROWS: [string, LookUnlock][] = [
   ['paldea/carmine', reach('cd6e3688-d7e8-509f-a438-abf66eea0692')], // The Land of Kitakami
   ['paldea/florian-bb', COMPLETE],
   ['paldea/juliana-bb', COMPLETE],
+  // Events (docs/31 §7): Haunted Hollow, Halloween 2026. Its shiny Giratina caught in the Distortion World's raid.
+  [
+    'events/halloween-2026-pokemaniac',
+    { kind: 'event', event: 'halloween-2026', raids: ['cfff57e0-5175-545c-9e68-a2e2e64d7d45:487'] },
+  ],
 ]
 
 export const LOOKS: LookDef[] = ROWS.map(([id, unlock]) => ({
   id,
-  region: id.includes('/') ? id.slice(0, id.indexOf('/')) : null,
+  region: id.includes('/') && !id.startsWith('events/') ? id.slice(0, id.indexOf('/')) : null,
   unlock,
 }))
 
@@ -239,8 +250,13 @@ function statesOf(save: SaveData, data: GameData): LookState[] {
     }
     return views.get(region)!
   }
-  return LOOKS.map((def): LookState => {
+  const states = LOOKS.map((def): LookState => {
     const u = def.unlock
+    if (u.kind === 'event') {
+      const open =
+        !!save.looks?.earned?.includes(def.id) || u.raids.some((k) => !!save.events?.raidsDone?.includes(k))
+      return { def, open, started: true }
+    }
     if (u.kind === 'start' || !def.region) return { def, open: true, started: true }
     const v = viewOf(def.region)
     if (!v) return { def, open: false, started: false }
@@ -269,6 +285,8 @@ function statesOf(save: SaveData, data: GameData): LookState[] {
       }
     }
   })
+  // An event's look is listed once won: after the event, nobody can work towards it any more.
+  return states.filter((s) => s.def.unlock.kind !== 'event' || s.open)
 }
 
 // The top bar reads these on every render: worked out once per save and content.
@@ -314,6 +332,17 @@ export const looksRulesSeen = (save: SaveData): boolean => !!save.looks?.rulesSe
 
 export function markLooksRulesSeen(save: SaveData): SaveData | null {
   return save.looks?.rulesSeen ? null : { ...save, looks: { ...save.looks, rulesSeen: true } }
+}
+
+/**
+ * Two copies of one player's save, one replacing the other (the cloud sync, another tab): a look granted to either
+ * (`looks.earned`, written into the cloud copy by SQL) stays granted. The same save back when there's nothing to add.
+ */
+export function keepLooksEarned(save: SaveData, other: SaveData | null | undefined): SaveData {
+  const mine = save.looks?.earned ?? []
+  const add = (other?.looks?.earned ?? []).filter((id) => !mine.includes(id))
+  if (!add.length) return save
+  return { ...save, looks: { ...save.looks, earned: [...mine, ...add] } }
 }
 
 /** Wear a look: only one that is unlocked (Red or Leaf always). */

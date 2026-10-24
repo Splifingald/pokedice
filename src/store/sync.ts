@@ -26,7 +26,7 @@ import {
   schedulePush,
   sendSaveOnLeave,
 } from '@/save/cloud'
-import { keepGeneralBought } from '@/engine'
+import { keepGeneralBought, keepLooksEarned } from '@/engine'
 import type { SaveData, SaveMode } from '@/engine/types'
 import {
   activeSlot,
@@ -86,6 +86,13 @@ const inFight = () => {
   const phase = useGame.getState().run.phase
   return phase === 'battle' || phase === 'catch' || phase === 'victory'
 }
+
+/**
+ * One copy replacing another keeps what either bought (General upgrades) or was granted (event looks, written into the
+ * cloud copy by SQL): neither is progress, so the copy that wins the compare may not have it.
+ */
+const keepBoth = (save: SaveData, other: SaveData | null | undefined): SaveData =>
+  keepLooksEarned(keepGeneralBought(save, other), other)
 
 const realmOf = (save: SaveData): SaveMode => (save.mode === 'extreme' ? 'extreme' : 'main')
 
@@ -220,8 +227,8 @@ export async function reconcile(client: SupabaseClient, id: string, manual = fal
   let outcome: 'loaded' | 'pushed' | 'same' = 'same'
   if (decision === 'cloud' && cloud && !(local && sameSave(local, cloud))) {
     if (local) backupSave(local, t('ui.sync.replacedByCloud'))
-    // What this device bought stays bought (keepGeneralBought): the cloud copy then gets it too, stamped past itself.
-    const merged = keepGeneralBought(cloud, local)
+    // What this device bought or was granted stays (keepBoth): the cloud copy then gets it too, stamped past itself.
+    const merged = keepBoth(cloud, local)
     const loaded = merged === cloud ? cloud : { ...merged, updatedAt: Math.max(Date.now(), cloud.updatedAt + 1) }
     commitSave(loaded, { silent: true, keepTimestamp: true })
     resetRun()
@@ -235,10 +242,10 @@ export async function reconcile(client: SupabaseClient, id: string, manual = fal
     // The copy just read is the one to write over (and none at all without a row): a device writing in between wins
     // the next compare instead of being overwritten.
     rememberCloud(id, realm, at, cloud ? pushKey(cloud) : '')
-    // What the cloud copy bought stays bought (keepGeneralBought). Kept over a copy stamped later: stamped past it, so
+    // What the cloud copy bought or was granted stays (keepBoth). Kept over a copy stamped later: stamped past it, so
     // the cloud row's stamp never goes back (an older page still lets the newest stamp win; another device's clock may
     // be ahead of this one).
-    const merged = keepGeneralBought(local, cloud)
+    const merged = keepBoth(local, cloud)
     const kept =
       cloud && cloud.updatedAt >= merged.updatedAt
         ? { ...merged, updatedAt: Math.max(Date.now(), cloud.updatedAt + 1) }
@@ -772,7 +779,7 @@ function checkFreshness(returning: boolean) {
  * Another tab of the game (or the installed app beside a browser tab) stored a newer save: this tab plays on from it.
  * Each tab keeps its own copy in memory, so an old tab brought back (its offline pay, a fossil, any tap) used to write
  * its stale copy over the newer one, here and in the cloud, and undo what was played in the other tab (General upgrades
- * lost, 2026-10-16). What either bought stays bought (keepGeneralBought). `raw`: a storage event's value.
+ * lost, 2026-10-16). What either bought or was granted stays (keepBoth). `raw`: a storage event's value.
  */
 export function adoptStoredSave(raw?: string | null): boolean {
   const { save } = useGame.getState()
@@ -780,7 +787,7 @@ export function adoptStoredSave(raw?: string | null): boolean {
   if (!stored || (save && stored.updatedAt <= save.updatedAt)) return false
   // Kept at the other tab's stamp: written back here unchanged, it is no news to that tab (it only takes a newer one).
   // With a level only this tab had, it is: stamped now, so that tab takes it in turn.
-  const merged = keepGeneralBought(stored, save)
+  const merged = keepBoth(stored, save)
   commitSave(merged === stored ? stored : { ...merged, updatedAt: Math.max(Date.now(), stored.updatedAt + 1) }, {
     silent: true,
     keepTimestamp: true,

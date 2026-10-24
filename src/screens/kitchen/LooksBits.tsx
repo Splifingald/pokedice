@@ -1,6 +1,6 @@
 // Kitchen sink (dev only): trainer looks (docs/31) — the row under the trainer card with and without its red dot,
-// the menu in each state (a new game, some new looks, its list on the unlocked looks, every look unlocked), a locked
-// look of each kind, an unlocked one with how it was won, and the rules pop-up (the unlock and INFO).
+// the menu in each state (a new game, some new looks, its list on the unlocked looks, an event's look won, every look
+// unlocked), a locked look of each kind, an unlocked one with how it was won, and the rules pop-up (the unlock and INFO).
 import { useState } from 'react'
 import { PixelButton } from '@/components/PixelButton'
 import {
@@ -17,10 +17,16 @@ import { useT } from '@/i18n/react'
 
 const kantoOnly = (l: LookState['def']) => l.region === 'kanto'
 
-/** Made-up progress: Kanto played to `kanto` (open or locked at 112 caught), Johto started or not. */
-function states(kanto: boolean, johto: boolean, all = false): LookState[] {
+const HALLOWEEN = 'events/halloween-2026-pokemaniac'
+
+/**
+ * Made-up progress: Kanto played to `kanto` (open or locked at 112 caught), Johto started or not, the event's look won
+ * or not (as the engine, an event's look not won isn't listed).
+ */
+function states(kanto: boolean, johto: boolean, all = false, event = false): LookState[] {
   return LOOKS.map((def): LookState => {
     if (all || def.unlock.kind === 'start') return { def, open: true, started: true }
+    if (def.unlock.kind === 'event') return { def, open: event, started: true }
     if (kantoOnly(def)) {
       if (kanto && def.unlock.kind !== 'complete') return { def, open: true, started: true }
       if (def.unlock.kind === 'catch' || def.unlock.kind === 'complete')
@@ -50,7 +56,7 @@ function states(kanto: boolean, johto: boolean, all = false): LookState[] {
       return { def, open, started: true }
     }
     return { def, open: false, started: false }
-  })
+  }).filter((s) => s.def.unlock.kind !== 'event' || s.open)
 }
 
 const MENUS: [string, LookState[], string, Set<string>, LooksListView?][] = [
@@ -62,6 +68,13 @@ const MENUS: [string, LookState[], string, Set<string>, LooksListView?][] = [
     new Set(['johto/firebreather', 'johto/schoolgirl']),
   ],
   ['Its list on the unlocked looks', states(true, true), 'johto/firebreather', new Set(), 'unlocked'],
+  [
+    "Halloween 2026's look won (new), on the unlocked looks",
+    states(true, true, false, true),
+    HALLOWEEN,
+    new Set([HALLOWEEN]),
+    'unlocked',
+  ],
   ['Every look unlocked', states(true, true, true), 'paldea/juliana-bb', new Set()],
 ]
 
@@ -69,7 +82,7 @@ export function LooksBits() {
   const { t } = useT()
   const [rules, setRules] = useState<'unlock' | 'info' | null>(null)
   const [wearing, setWearing] = useState<Record<string, string>>({})
-  const sample = states(true, true)
+  const sample = states(true, true, false, true)
   const one = (id: string) => sample.find((s) => s.def.id === id)!
   return (
     <div className="grid w-full gap-4">
@@ -104,6 +117,7 @@ export function LooksBits() {
           <OwnedLook s={one('kanto/cooltrainer-f')} />
           <OwnedLook s={one('johto/firebreather')} />
           <OwnedLook s={one('kanto/chase')} />
+          <OwnedLook s={one(HALLOWEEN)} />
         </ul>
       </div>
 

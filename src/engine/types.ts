@@ -1648,6 +1648,8 @@ export interface LooksSave {
   /** Unlocked looks already seen in the menu: the red dot counts the others. */
   seen?: string[]
   rulesSeen?: boolean
+  /** Event looks granted outright, for good (docs/31 §7): written by SQL into the cloud save, kept by every sync. */
+  earned?: string[]
 }
 
 /** The General upgrades bought (docs/25), and the offline earnings' clock. */

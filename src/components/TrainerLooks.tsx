@@ -2,7 +2,7 @@
 // grid to pick from, then the locked ones with what each takes) and its rules pop-up. What is unlocked, and how far
 // each goal stands, is the engine's (engine/looks); this only shows it.
 import { useState } from 'react'
-import { lookStates, LOOKS, newLooks, regionOf, type GameData, type LookState } from '@/engine'
+import { lookStates, newLooks, regionOf, type GameData, type LookState } from '@/engine'
 import { useT } from '@/i18n/react'
 import { avatarName, avatarOf, playerAvatarId } from '@/lib/avatars'
 import { looksProgress, markRulesSeen, markSeen, useNewLooks, wear } from '@/store/looks'
@@ -48,6 +48,8 @@ export function lookGoal(t: T, s: LookState, data: GameData): string {
       return t('ui.looks.goal.champion', { region })
     case 'complete':
       return t('ui.looks.goal.complete', { region })
+    case 'event':
+      return t(`ui.looks.goal.event.${u.event}`)
   }
 }
 
@@ -58,7 +60,9 @@ export function LooksRow({ onOpen }: { onOpen: () => void }) {
   const data = useGame((s) => s.data)
   const fresh = useNewLooks()
   if (!save) return null
-  const unlocked = lookStates(looksProgress(save), data).filter((s) => s.open).length
+  // The list's own length: an event's look counts once won (engine/looks).
+  const states = lookStates(looksProgress(save), data)
+  const unlocked = states.filter((s) => s.open).length
   const label = t('ui.looks.title')
   return (
     <button
@@ -74,7 +78,7 @@ export function LooksRow({ onOpen }: { onOpen: () => void }) {
       <span className="grid min-w-0 flex-1 gap-0.5">
         <b className="truncate text-[20px] font-normal leading-none">{label}</b>
         <small className="font-pixel-sm text-[14px] leading-[1.1] text-muted">
-          {t('ui.looks.count', { n: unlocked, total: LOOKS.length })}
+          {t('ui.looks.count', { n: unlocked, total: states.length })}
         </small>
       </span>
       {fresh > 0 && <LooksDot n={fresh} className="h-6 min-w-6 text-[15px]" />}
@@ -266,8 +270,11 @@ export function LooksMenu({
   const picks = listed.filter((g) => g.started)
   const pick = picks.some((g) => g.region.id === region) ? region : 'all'
   const shown = listed.filter((g) => pick === 'all' || g.region.id === pick)
-  // Red and Leaf belong to no region: first in the unlocked list, with every region only.
-  const starters = view === 'unlocked' && pick === 'all' ? unlocked.filter((s) => !s.def.region) : []
+  // Red and Leaf belong to no region: first in the unlocked list, with every region only. So do the event looks won,
+  // under their own heading after them (an event's look is never listed locked).
+  const loose = view === 'unlocked' && pick === 'all' ? unlocked.filter((s) => !s.def.region) : []
+  const starters = loose.filter((s) => s.def.unlock.kind !== 'event')
+  const events = loose.filter((s) => s.def.unlock.kind === 'event')
   return (
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-[64px_minmax(0,1fr)] items-center gap-2.5 bg-sky p-2 shadow-ring-line">
@@ -363,6 +370,18 @@ export function LooksMenu({
                 <OwnedLook key={s.def.id} s={s} />
               ))}
             </ul>
+          )}
+          {events.length > 0 && (
+            <section className="flex flex-col gap-1.5" aria-label={t('ui.looks.events')}>
+              <h4 className="m-0 font-pixel-sm text-[14px] uppercase tracking-[0.07em] text-muted">
+                {t('ui.looks.events')}
+              </h4>
+              <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+                {events.map((s) => (
+                  <OwnedLook key={s.def.id} s={s} />
+                ))}
+              </ul>
+            </section>
           )}
           {shown.map((g) =>
             g.started ? (

@@ -271,9 +271,14 @@ const LOOK_NAMES: Record<string, string | [labelKey: string, extra: string]> = {
   'paldea/carmine': 'trainerName.carmine',
   'paldea/florian-bb': ['trainerName.florian', 'ui.looks.outfit.blueberry'],
   'paldea/juliana-bb': ['trainerName.juliana', 'ui.looks.outfit.blueberry'],
+  // Event looks (docs/31 §7): drawn for the game, in their own folder.
+  'events/halloween-2026-pokemaniac': 'trainerName.halloween-2026-pokemaniac',
 }
 
-/** A look's sprite: Kanto's classes sit at the top of /trainers/classes, every other region's in its own folder. */
+/**
+ * A look's sprite: Kanto's classes sit at the top of /trainers/classes, every other region's in its own folder, and the
+ * event looks in `events/`.
+ */
 const lookSrc = (id: string): string => {
   if (!id.includes('/')) return `/characters/${id}.png`
   const [region, sprite] = id.split('/') as [string, string]

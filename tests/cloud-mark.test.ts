@@ -277,6 +277,28 @@ describe('a cloud copy written elsewhere', () => {
     expect(cloud.uploads.at(-1)!.updatedAt).toBeGreaterThan(T0 + 30_000)
   })
 
+  it('a look granted in the cloud copy by SQL (docs/31 §7) stays, whichever copy wins', async () => {
+    const LOOK = 'events/halloween-2026-pokemaniac'
+    const grant = (s: SaveData): SaveData => ({ ...s, looks: { earned: [LOOK] }, updatedAt: T0 + 30_000 })
+    // This device played further meanwhile: its copy wins the compare and goes up, the grant in it.
+    const cloud = fakeCloud([row(base)])
+    useGame.setState({ save: base })
+    await reconcile(cloud.client, USER)
+    cloud.rows[0] = row(grant(base))
+    useGame.setState({ save: { ...played(base), updatedAt: T0 - 1000 } })
+    expect(await reconcile(cloud.client, USER)).toBe('pushed')
+    expect(useGame.getState().save!.looks?.earned).toEqual([LOOK])
+    expect(cloud.uploads.at(-1)!.looks?.earned).toEqual([LOOK])
+    expect(cloud.uploads.at(-1)!.pokedex).toEqual(played(base).pokedex)
+    // An idle device: the grant comes down.
+    const idle = fakeCloud([row(base)])
+    useGame.setState({ save: base })
+    await reconcile(idle.client, USER)
+    idle.rows[0] = row(grant(base))
+    await reconcile(idle.client, USER)
+    expect(useGame.getState().save!.looks?.earned).toEqual([LOOK])
+  })
+
   it('another player signs in on the device: their save is read in full', async () => {
     const cloud = fakeCloud([row(base), row(played(base), 'misty')])
     useGame.setState({ save: base })

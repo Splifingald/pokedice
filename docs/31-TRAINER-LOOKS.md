@@ -8,7 +8,7 @@ is not the character (Red or Leaf), who throws the Poké Balls and decides the r
 
 Before this, the trainer card's Change opened a free list of 75 Kanto and Johto trainer classes. With the switch on,
 looks become a collection of **138**: Red and Leaf from the start, then 10 to 20 per region, each unlocked by playing
-that region.
+that region. On top of those, **event looks** (§7) are won in an event and kept for good: the first is Halloween 2026's.
 
 ## 1. The rules (`src/engine/looks.ts`)
 
@@ -28,8 +28,8 @@ that region.
   the generation's two heroes for the League, an older or alternate outfit for the full Pokédex. Size: about one look
   per 7.5 Pokémon of the region's own generation, kept between 10 and 20.
 - **No Gym Leader, Elite Four member, Champion or villain team** (as the free list had none); rivals and heroes are in.
-- **Nothing is stored but what was seen**: unlocks are worked out from progress every time (`lookStates`, memoized per
-  save object). Progress only grows, so a look never locks again. `save.looks.seen` lists the unlocked looks already
+- **Nothing is stored but what was seen** (and the event looks granted outright, §7): unlocks are worked out from
+  progress every time (`lookStates`, memoized per save object). Progress only grows, so a look never locks again. `save.looks.seen` lists the unlocked looks already
   seen in the menu (the red dot is the rest, `newLooks`); `save.looks.rulesSeen` the rules pop-up.
 - **Wearing** (`wearLook`): only an unlocked look. **A look not unlocked comes off** while the switch is on
   (`settleLook`, run on every save the store takes in): the avatar is dropped, so the player shows as their character,
@@ -81,7 +81,8 @@ other save field.
 ## 5. Setting it up
 
 1. Admin → Config → **Trainer looks**: On for admin, try it, then On for everyone. Save, then Publish.
-2. No SQL to run.
+2. No SQL to run for the looks themselves. Halloween 2026's look (§7) has one, to run once:
+   [`0072_halloween_2026_look.sql`](https://github.com/Splifingald/pokedice/blob/ccr-57978ca3-fag4wr/supabase/migrations/0072_halloween_2026_look.sql).
 
 ## 6. The sets
 
@@ -265,3 +266,32 @@ other save field.
 | Carmine | Reach The Land of Kitakami |
 | Florian (Blueberry) | Complete the Paldea Pokédex |
 | Juliana (Blueberry) | Complete the Paldea Pokédex |
+
+## 7. Event looks
+
+An event's prize, won there and **kept for good**, whatever happens to the event afterwards. The user's request of
+2026-10-24, for Haunted Hollow (docs/26).
+
+| Question | Answer |
+|---|---|
+| The first | **Halloween 26 Pokémaniac** (`events/halloween-2026-pokemaniac`): the Gen 3 Poké Maniac in a costume of **shiny Giratina** (Altered Forme: the gold body, the silver crest and claws, the black wings with teal spikes), drawn for the game from his sprite and the colours of Giratina's own shiny sprite. `public/trainers/classes/events/`, packed into its own sheet (`src/assets/trainers/events.png`, the `events` sheet of the atlas: one cell, as `pnpm showdown-sprites trainers` would pack it; it is not a Showdown sprite, so that script leaves the file alone). |
+| Who gets it | Whoever **catches Haunted Hollow's shiny Giratina**: its Distortion World raid won (`events.raidsDone` holds `cfff57e0…:487`, which stays in the save after the world closes). And, once, by SQL, **everyone already holding a shiny Giratina** (below). |
+| Its goal | "Completed Haunted Hollow Halloween 2026 event" (`ui.looks.goal.event.halloween-2026`), the user's words. |
+| In the menu | **Listed only once won**: under its own **Events** heading in the Unlocked list (with All regions, after Red and Leaf), in the unlocked grid, NEW and the red dot as any look just unlocked. Never in the Locked list, and not counted in "27 of 138" until won: after the event nobody can work towards it, so it isn't a goal. |
+| The switch | The Trainer looks one: it is a look like the others. Nothing else to switch on. |
+| The rules (engine) | An unlock of its own kind, `{ kind: 'event', event, raids }`: open when a raid it names is in `events.raidsDone`, or its id is in `looks.earned`. Read from the main save's progress, like every look (the Extreme save wears what the main one won). |
+
+### The SQL grant (0072)
+
+[`0072_halloween_2026_look.sql`](https://github.com/Splifingald/pokedice/blob/ccr-57978ca3-fag4wr/supabase/migrations/0072_halloween_2026_look.sql)
+adds the look to `looks.earned` in the **main** save of every player who, in either save, holds a shiny Giratina
+(the live Box or a parked region's, the Day Care, a closed world's homers or pending catches, a raid's locked prize,
+a trade still listed) or won the Distortion World's raid. Not today's raid boss, a friend's Day Care guest, a trade log
+or an encounter left half-way. It isn't in `seed.sql`: a fresh database has no players.
+
+- **Why it lasts**: the save it writes is stamped now (the row and `updatedAt`), so every device sees the cloud copy
+  moved and compares again; whichever copy wins, the look granted to either is kept (`keepLooksEarned`, beside
+  `keepGeneralBought`, in the sync and between tabs). A device played on meanwhile wins on progress and keeps it.
+- **Safe to run again**: whoever already has it is left alone. Run it once more after Haunted Hollow ends (1 Nov 2026)
+  for anyone who caught their Giratina in an Extreme save in the meantime (the game only reads the main save's raids).
+- Tests: `tests/halloween-look-sql.test.ts` (PGlite), `tests/engine/looks.test.ts`, `tests/cloud-mark.test.ts`.
