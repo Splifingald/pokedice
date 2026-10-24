@@ -1,6 +1,7 @@
-// What every dialog does (Modal, Sheet, SidePanel): focus moves in, Tab stays inside, Esc closes the top one only, and
-// focus goes back where it came from.
+// What every dialog does (Modal, Sheet, SidePanel): focus moves in, Tab stays inside, the page behind is inert, Esc
+// closes the top one only, and focus goes back where it came from.
 import { useEffect, useRef, useSyncExternalStore, type RefObject } from 'react'
+import { hasLayer, holdInert, isTopLayer } from './inert'
 
 /** Open dialogs, oldest first: only the last one answers the keyboard. */
 const stack: object[] = []
@@ -61,8 +62,14 @@ export function useDialog(ref: RefObject<HTMLElement>, open: boolean, onEscape?:
     const close = pushDialog(token)
     const prev = document.activeElement as HTMLElement | null
     ref.current?.focus()
+    // A screen reader's swipe stays in the dialog too, not only the Tab key (lib/inert.ts).
+    const wake = holdInert(ref.current)
+    // The dialog drawn on top answers the keyboard, which isn't always the last opened: a pop-up that opens under the
+    // partner lab (a lower z-index) waits under it, and the focus goes back up there.
+    const onTop = () => (hasLayer(ref.current) ? isTopLayer(ref.current) : stack[stack.length - 1] === token)
+    if (!onTop()) prev?.focus?.()
     const onKey = (e: KeyboardEvent) => {
-      if (stack[stack.length - 1] !== token) return
+      if (!onTop()) return
       const root = ref.current
       if (e.key === 'Escape') {
         if (!escape.current) return
@@ -91,6 +98,8 @@ export function useDialog(ref: RefObject<HTMLElement>, open: boolean, onEscape?:
     return () => {
       window.removeEventListener('keydown', onKey)
       close()
+      // Awake first: an inert element can't take the focus back.
+      wake()
       prev?.focus?.()
     }
   }, [open, ref])

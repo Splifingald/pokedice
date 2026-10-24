@@ -13,6 +13,7 @@ import { Sheet } from '@/components/Sheet'
 import { TrainerLook } from '@/components/TrainerLook'
 import { useT } from '@/i18n/react'
 import { avatarOf } from '@/lib/avatars'
+import { useOnline } from '@/lib/online'
 import { useFriends } from '@/lib/friends'
 import { useFriendsFilter } from '@/lib/useFriendsFilter'
 import {
@@ -64,6 +65,7 @@ export function LeaderboardScreen() {
 
 function Board() {
   const { t, tPlural } = useT()
+  const online = useOnline()
   const navigate = useNavigate()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)!
@@ -225,12 +227,15 @@ function Board() {
         {load.state === 'loading' && (
           <p className="m-0 p-4 text-center text-[20px] text-muted">{t('ui.common.loading')}</p>
         )}
-        {load.state === 'error' && (
-          <div className="flex flex-col items-center gap-1 p-4 text-center">
-            <p className="m-0 text-[20px] text-danger">{t('ui.board.failed')}</p>
-            <p className="m-0 font-pixel-sm text-[15px] text-muted">{load.why}</p>
-          </div>
-        )}
+        {load.state === 'error' &&
+          (online ? (
+            <div className="flex flex-col items-center gap-1 p-4 text-center">
+              <p className="m-0 text-[20px] text-danger">{t('ui.board.failed')}</p>
+              <p className="m-0 font-pixel-sm text-[15px] text-muted">{load.why}</p>
+            </div>
+          ) : (
+            <p className="m-0 p-4 text-center text-[20px] text-danger">{t('ui.common.offline')}</p>
+          ))}
         {load.state === 'offline' && (
           <p className="m-0 p-4 text-center text-[20px] text-muted">{t('ui.board.offline')}</p>
         )}

@@ -17,6 +17,7 @@ import { MiniSprite } from '@/components/SpriteImg'
 import { TrainerLook } from '@/components/TrainerLook'
 import { useT } from '@/i18n/react'
 import { avatarOf } from '@/lib/avatars'
+import { useOnline } from '@/lib/online'
 import {
   formatCode,
   friendError,
@@ -75,6 +76,7 @@ export function FriendsScreen() {
 function FriendsBody() {
   const { t, tPlural } = useT()
   const errorText = useAddText()
+  const online = useOnline()
   const code = useFriends((s) => s.code)
   const list = useFriends((s) => s.list)
   const listState = useFriends((s) => s.listState)
@@ -159,7 +161,7 @@ function FriendsBody() {
         {listState === 'loading' && !list && <p className="m-0 p-4 text-center text-[20px] text-muted">{t('ui.common.loading')}</p>}
         {listState === 'error' && !list && (
           <p className="m-0 p-4 text-center text-[20px] text-danger">
-            {listError === 'not_set_up' ? t('ui.friends.notSetUp') : t('ui.friends.failed')}
+            {listError === 'not_set_up' ? t('ui.friends.notSetUp') : t(online ? 'ui.friends.failed' : 'ui.common.offline')}
           </p>
         )}
         {list && list.length === 0 && (

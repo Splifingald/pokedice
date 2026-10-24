@@ -24,6 +24,7 @@ import {
 } from '@/engine'
 import { useT } from '@/i18n/react'
 import { useFullscreen } from '@/lib/fullscreen'
+import { offlineOr } from '@/lib/online'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { clearTradeLink, readTradeLink, TRADE_LINK_EVENT, viewListing, type TradeListing } from '@/lib/trades'
 import { pushToast, useGame } from '@/store/game'
@@ -186,7 +187,7 @@ function LinkHandler() {
       .catch(() => {
         clearTradeLink()
         setCode(null)
-        pushToast(t('ui.trades.error.failed'), 'bad')
+        pushToast(offlineOr(t('ui.trades.error.failed')), 'bad')
       })
       .finally(() => {
         busy.current = false

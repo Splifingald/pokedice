@@ -1,6 +1,7 @@
 // ADD BY FRIEND ID: type or paste a code, see who it is, add them at once (docs/16 §3.1).
 import { useEffect, useId, useState } from 'react'
 import { useT } from '@/i18n/react'
+import { offlineOr } from '@/lib/online'
 import {
   addFriend,
   formatCode,
@@ -43,7 +44,7 @@ export function useAddText() {
       case 'not_set_up':
         return t('ui.friends.notSetUp')
       default:
-        return t('ui.friends.error')
+        return offlineOr(t('ui.friends.error'))
     }
   }
 }

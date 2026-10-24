@@ -67,6 +67,7 @@ import { DayNightBits } from './kitchen/DayNightBits'
 import { IdleBits } from './kitchen/IdleBits'
 import { DiceThrowBits } from './kitchen/DiceThrowBits'
 import { PowersBits } from './kitchen/PowersBits'
+import { ShellBits } from './kitchen/ShellBits'
 import { RotateView } from '@/components/RotateCover'
 import { SettingsOverlay } from '@/screens/Settings'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
@@ -678,10 +679,14 @@ export function KitchenSink() {
         />
       </Section>
 
-      <Section title="RotateCover: a phone or a tablet held sideways (over the whole game, nothing to dismiss)">
+      <Section title="RotateCover: a phone held sideways (over the whole game, nothing to dismiss)">
         <div className="flex w-full justify-center bg-parchment p-3 shadow-ring">
           <RotateView />
         </div>
+      </Section>
+
+      <Section title="The shell: a page loading (wobbling, still), each toast (info, good, long, an error with its ✕)">
+        <ShellBits />
       </Section>
 
       <Section title="Extreme mode: rules, band, title card, K.O. rest, resting team, while you were away, switch">

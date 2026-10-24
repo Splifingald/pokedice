@@ -334,14 +334,55 @@ useGame.subscribe((s, prev) => {
 
 // ---------------------------------------------------------------- core actions
 
+/**
+ * How long a toast stays (docs/15 §7): long enough to read it, 4 s at least, then 70 ms a character over a 1.2 s
+ * start; `ms` from a caller only makes it longer. An error stays until the player closes it (null): a toast is often
+ * the only word on why something didn't happen.
+ */
+export function toastMs(text: string, tone: ToastTone = 'info', ms?: number): number | null {
+  if (tone === 'bad') return null
+  return Math.max(4000, 1200 + 70 * [...text].length, ms ?? 0)
+}
+
 let toastSeq = 0
-export function pushToast(text: string, tone: ToastTone = 'info', ms = 3200) {
+/** Each toast's countdown: what's left, and the timer running it (none while it's held). */
+const toastClocks = new Map<number, { left: number; since: number; timer: ReturnType<typeof setTimeout> | null }>()
+
+export function pushToast(text: string, tone: ToastTone = 'info', ms?: number) {
   const id = ++toastSeq
-  useGame.setState((s) => ({ toasts: [...s.toasts, { id, text, tone }].slice(-4) }))
-  setTimeout(() => dismissToast(id), ms)
+  useGame.setState((s) => {
+    const toasts = [...s.toasts, { id, text, tone }]
+    // Four at most: the oldest goes, and its countdown with it.
+    for (const old of toasts.slice(0, -4)) stopToastClock(old.id)
+    return { toasts: toasts.slice(-4) }
+  })
+  const left = toastMs(text, tone, ms)
+  if (left == null) return
+  toastClocks.set(id, { left, since: Date.now(), timer: setTimeout(() => dismissToast(id), left) })
+}
+
+function stopToastClock(id: number) {
+  const clock = toastClocks.get(id)
+  if (clock?.timer) clearTimeout(clock.timer)
+  toastClocks.delete(id)
+}
+
+/** A finger on it, the pointer over it or the focus in it: its countdown waits, and goes on from there once let go. */
+export function holdToast(id: number, held: boolean) {
+  const clock = toastClocks.get(id)
+  if (!clock) return
+  if (held && clock.timer) {
+    clearTimeout(clock.timer)
+    clock.timer = null
+    clock.left = Math.max(0, clock.left - (Date.now() - clock.since))
+  } else if (!held && !clock.timer) {
+    clock.since = Date.now()
+    clock.timer = setTimeout(() => dismissToast(id), clock.left)
+  }
 }
 
 export function dismissToast(id: number) {
+  stopToastClock(id)
   useGame.setState((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }))
 }
 

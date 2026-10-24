@@ -5,6 +5,7 @@ import { startAnalytics } from '@/analytics/ping'
 import { checkContentVersion } from '@/config/remote'
 import { AUTH_PROVIDERS, loadAuthProviders } from '@/lib/authProviders'
 import { loadFriendStatus } from '@/lib/friends'
+import { isOffline, offlineOr } from '@/lib/online'
 import { getSupabase } from '@/lib/supabase'
 import { disablePush, usePush } from '@/lib/push'
 import {
@@ -290,7 +291,7 @@ async function handleSession(client: SupabaseClient, session: Session | null) {
   } catch (err) {
     console.warn('[cloud] sync failed', err)
     syncedUser = null // try again on the next auth event or SYNC ONLINE; stay local-only meanwhile
-    pushToast(t('ui.toast.syncUnavailable'), 'bad')
+    pushToast(offlineOr(t('ui.toast.syncUnavailable')), 'bad')
   }
 }
 
@@ -325,7 +326,7 @@ export async function syncNow() {
     console.warn('[cloud] sync failed', err)
     settleSync(was.pushAllowed)
     syncedUser = was.syncedUser
-    pushToast(t('ui.toast.syncFailed'), 'bad')
+    pushToast(offlineOr(t('ui.toast.syncFailed')), 'bad')
   } finally {
     useCloudSync.setState({ busy: false })
   }
@@ -409,6 +410,8 @@ export async function signIn(provider: AuthProvider = 'google') {
     pushToast(t('ui.toast.cloudNotConfigured'), 'bad')
     return
   }
+  // Offline, the provider's page can't load: say so here rather than leave the game for a browser error.
+  if (isOffline()) return pushToast(t('ui.common.offline'), 'bad')
   flushWrite()
   const { error } = await client.auth.signInWithOAuth({ provider, options: { redirectTo: here() } })
   if (error) pushToast(authErrorText(errorCode(error), provider, error.message), 'bad')
@@ -421,6 +424,7 @@ export const signInWithGoogle = () => signIn('google')
 export async function linkProvider(provider: AuthProvider) {
   const client = await getSupabase()
   if (!client) return
+  if (isOffline()) return pushToast(t('ui.common.offline'), 'bad')
   flushWrite()
   try {
     sessionStorage.setItem(LINKING_KEY, provider)

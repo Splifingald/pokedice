@@ -45,6 +45,7 @@ import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { agoText } from '@/lib/ago'
 import { playerAvatarId } from '@/lib/avatars'
+import { useOnline } from '@/lib/online'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import type { TradeListing } from '@/lib/trades'
 import { pushToast, useGame } from '@/store/game'
@@ -185,6 +186,7 @@ function Open() {
 
 function Board() {
   const { t } = useT()
+  const online = useOnline()
   const data = useGame((s) => s.data)
   const board = useTrades((s) => s.board)
   const state = useTrades((s) => s.boardState)
@@ -270,7 +272,9 @@ function Board() {
         <p className="m-0 p-4 text-center text-[20px] text-muted">{t('ui.common.loading')}</p>
       )}
       {state === 'error' && !board && (
-        <p className="m-0 p-4 text-center text-[20px] text-danger">{t('ui.trades.error.failed')}</p>
+        <p className="m-0 p-4 text-center text-[20px] text-danger">
+          {t(online ? 'ui.trades.error.failed' : 'ui.common.offline')}
+        </p>
       )}
       {board && (
         <ul className="m-0 grid list-none gap-1.5 p-0" data-testid="trade-board">

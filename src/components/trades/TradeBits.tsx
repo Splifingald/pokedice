@@ -17,6 +17,7 @@ import {
 import { useT } from '@/i18n/react'
 import { timeLeft } from '@/lib/format'
 import { useFriends } from '@/lib/friends'
+import { offlineOr } from '@/lib/online'
 import { tradeError, type TradeListing } from '@/lib/trades'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
@@ -173,10 +174,10 @@ export function useMinWhy() {
   }
 }
 
-/** What the server (or the network) said no with, in a sentence. */
+/** What the server (or the network) said no with, in a sentence; "You're offline" when there's no connection. */
 export function useTradeErrorText() {
   const { t } = useT()
-  return (err: unknown) => t(`ui.trades.error.${tradeError(err)}`)
+  return (err: unknown) => offlineOr(t(`ui.trades.error.${tradeError(err)}`))
 }
 
 /** Why one of your Pokémon can't be listed or given: legendary, reviving, your last, the other side's region. */
