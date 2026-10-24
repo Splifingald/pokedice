@@ -67,6 +67,7 @@ import { UndergroundBits } from './kitchen/UndergroundBits'
 import { DayNightBits } from './kitchen/DayNightBits'
 import { IdleBits } from './kitchen/IdleBits'
 import { DiceThrowBits } from './kitchen/DiceThrowBits'
+import { FeelDiceBits } from './kitchen/FeelDiceBits'
 import { PowersBits } from './kitchen/PowersBits'
 import { ShellBits } from './kitchen/ShellBits'
 import { RewardBits } from './kitchen/RewardBits'
@@ -736,6 +737,9 @@ export function KitchenSink() {
       </Section>
       <Section title="Dice throws: a tray at each motion level (full, short, the OS's calm drop, off), reroll of the picked dice only, slow motion, frozen mid-throw, the status faces, the foe's size, at rest (docs/37)">
         <DiceThrowBits />
+      </Section>
+      <Section title="Game feel, the dice and the readout: the count-up at each combo tier (full, short, off), a pick's ↻ tag, the combo's brackets and rings, the last die's squash, the last reroll's jitter, dice in hand, the readout counting (docs/38)">
+        <FeelDiceBits />
       </Section>
 
       <Section title="StatusIcons · PixelIcon">

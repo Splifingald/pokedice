@@ -199,6 +199,143 @@
   filter: drop-shadow(2px 0 0 #f2553f) drop-shadow(-2px 0 0 #f2553f) drop-shadow(0 2px 0 #f2553f)
     drop-shadow(0 -2px 0 #f2553f);
 }
+/*
+ * The combo's tiers (docs/38 F2b, with the game feel on): a pair keeps the gold ring; a bigger combo, a bolder one.
+ * Tier 2 doubles it, tier 3 frames it in ink between two golds, tier 4's outer gold turns white and back twice a second
+ * (stilled, gold, by the reduced-motion rule).
+ */
+.die-wrap.combo.t2 {
+  filter: drop-shadow(2px 0 0 #ffbe2e) drop-shadow(-2px 0 0 #ffbe2e) drop-shadow(0 2px 0 #ffbe2e)
+    drop-shadow(0 -2px 0 #ffbe2e) drop-shadow(2px 0 0 #ffbe2e) drop-shadow(-2px 0 0 #ffbe2e)
+    drop-shadow(0 2px 0 #ffbe2e) drop-shadow(0 -2px 0 #ffbe2e);
+}
+.die-wrap.combo.t3,
+.die-wrap.combo.t4 {
+  filter: drop-shadow(2px 0 0 #ffbe2e) drop-shadow(-2px 0 0 #ffbe2e) drop-shadow(0 2px 0 #ffbe2e)
+    drop-shadow(0 -2px 0 #ffbe2e) drop-shadow(2px 0 0 #24304f) drop-shadow(-2px 0 0 #24304f)
+    drop-shadow(0 2px 0 #24304f) drop-shadow(0 -2px 0 #24304f) drop-shadow(2px 0 0 #ffbe2e)
+    drop-shadow(-2px 0 0 #ffbe2e) drop-shadow(0 2px 0 #ffbe2e) drop-shadow(0 -2px 0 #ffbe2e);
+}
+@keyframes die-t4 {
+  50% {
+    filter: drop-shadow(2px 0 0 #ffbe2e) drop-shadow(-2px 0 0 #ffbe2e) drop-shadow(0 2px 0 #ffbe2e)
+      drop-shadow(0 -2px 0 #ffbe2e) drop-shadow(2px 0 0 #24304f) drop-shadow(-2px 0 0 #24304f)
+      drop-shadow(0 2px 0 #24304f) drop-shadow(0 -2px 0 #24304f) drop-shadow(2px 0 0 #ffffff)
+      drop-shadow(-2px 0 0 #ffffff) drop-shadow(0 2px 0 #ffffff) drop-shadow(0 -2px 0 #ffffff);
+  }
+}
+.die-wrap.combo.t4 {
+  animation: die-t4 1s steps(1) infinite;
+}
+
+/* The last die of a throw to land (F8b): two frames of squash on its base, then back. */
+@keyframes die-squash {
+  0% {
+    transform: translateY(2px) scale(1.12, 0.84);
+  }
+  50% {
+    transform: translateY(1px) scale(1.06, 0.92);
+  }
+}
+.die-squash {
+  animation: die-squash 100ms steps(1);
+  transform-origin: 50% 100%;
+}
+
+/* A picked die before the last reroll (F9a): a nervous 1 px jitter. */
+@keyframes die-jitter {
+  25% {
+    transform: translate(1px, 0);
+  }
+  50% {
+    transform: translate(0, -1px);
+  }
+  75% {
+    transform: translate(-1px, 0);
+  }
+}
+.die-jitter {
+  animation: die-jitter 360ms steps(1) infinite;
+}
+
+/*
+ * The damage count-up (F2a): a scoring die's "+N" pops over it and rises, in steps, then fades; the screen takes it
+ * away after. When the screen should be calm it just stands there, still, until then.
+ */
+@keyframes score-pop {
+  0% {
+    transform: translate(-50%, 6px) scale(0.6);
+  }
+  15% {
+    transform: translate(-50%, -2px) scale(1.15);
+  }
+  30%,
+  70% {
+    transform: translate(-50%, -4px) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -12px);
+    opacity: 0;
+  }
+}
+.score-pop {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translate(-50%, -4px);
+  pointer-events: none;
+  white-space: nowrap;
+  color: #ffbe2e;
+  text-shadow:
+    2px 0 0 #24304f,
+    -2px 0 0 #24304f,
+    0 2px 0 #24304f,
+    0 -2px 0 #24304f,
+    2px 2px 0 #24304f,
+    -2px 2px 0 #24304f,
+    2px -2px 0 #24304f,
+    -2px -2px 0 #24304f;
+  animation: score-pop 700ms steps(3) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .score-pop {
+    animation: none;
+  }
+}
+
+/* A tier-4 combo (F2b): its name over the tray, popping in, and one white flash (none when calm). */
+@keyframes combo-banner {
+  0% {
+    transform: scale(0.4);
+  }
+  20% {
+    transform: scale(1.15);
+  }
+  35%,
+  100% {
+    transform: scale(1);
+  }
+}
+.combo-banner {
+  animation: combo-banner 600ms steps(2);
+}
+@keyframes tray-flash {
+  0% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.45;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.tray-flash {
+  background: #ffffff;
+  pointer-events: none;
+  animation: tray-flash 180ms steps(1) forwards;
+}
 
 .pixel-scroll::-webkit-scrollbar {
   width: 10px;

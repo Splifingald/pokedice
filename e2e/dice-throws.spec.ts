@@ -71,6 +71,8 @@ test('the switch on: the dice are thrown in, land as the resting dice, and a rer
   await expect(tray(page).nth(0).locator('.die, .die-mini')).toHaveCSS('visibility', 'hidden')
   await expect(tray(page).nth(1).locator('.die, .die-mini')).toHaveCSS('visibility', 'visible')
   await expect(tray(page).nth(0)).toBeAttached()
+  // The readout waits for the dice, and stays up through the throw with the roll before's numbers.
+  await expect(page.getByRole('button', { name: /damage — (show|hide) details$/ })).toBeVisible()
   // Down: the canvas goes, the face shows, the kept die's name is the same.
   await expect(canvases(page)).toHaveCount(0)
   await expect(tray(page).nth(0).locator('.die, .die-mini')).toHaveCSS('visibility', 'visible')
