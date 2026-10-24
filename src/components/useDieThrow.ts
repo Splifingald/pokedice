@@ -16,12 +16,16 @@ import { useMotion } from '@/lib/motion'
 import { usePace } from '@/lib/pace'
 import { useGame } from '@/store/game'
 
-/** The Kitchen Sink's controls: the throw on whatever the switch says, a motion level, slow motion, a frozen frame. */
+/**
+ * The Kitchen Sink's controls: the throw on whatever the switch says, a motion level, slow motion, a frozen frame.
+ * `quiet`: no bounce clicks (How to play's cards, docs/38 §8b), everything else as the switch and the motion say.
+ */
 export interface DiceLab {
   on?: boolean
   level?: ThrowLevel | 'off'
   speed?: number
   freeze?: number
+  quiet?: boolean
 }
 export const DiceLabContext = createContext<DiceLab | null>(null)
 
@@ -137,6 +141,7 @@ export function useDieThrow(a: DieThrowArgs): { active: boolean; flying: boolean
           pace: p,
           speed: l?.speed,
           freeze: l?.freeze,
+          quiet: l?.quiet,
           onLand: show,
         })
       },

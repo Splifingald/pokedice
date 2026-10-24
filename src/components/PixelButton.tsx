@@ -113,12 +113,52 @@ export interface PixelButtonProps extends ButtonHTMLAttributes<HTMLButtonElement
   shut?: string | null
 }
 
+const buttonClass = (variant: Variant, size: Size) =>
+  cx(
+    'pixel-btn inline-flex items-center justify-center gap-2 font-pixel uppercase leading-none tracking-[0.04em]',
+    // White under 24px needs the deeper red (pixel.css).
+    size === 'sm' && VARIANT[variant] === 'frame-primary' ? 'frame-deep' : VARIANT[variant],
+    SIZE[size],
+  )
+
+/**
+ * A picture of a button, for How to play's animated cards (docs/38 §8b): the same frame, label and fit as the real
+ * one, pressed while `down`, but a plain span, so a scene that shows the battle's REROLL and ATTACK has nothing to
+ * focus or press.
+ */
+export function ButtonLook({
+  variant = 'secondary',
+  size = 'md',
+  down,
+  className,
+  children,
+}: {
+  variant?: Variant
+  size?: Size
+  down?: boolean
+  className?: string
+  children: ReactNode
+}) {
+  const label = useFitText(children)
+  return (
+    <span className={cx(buttonClass(variant, size), className)} data-down={down ? '' : undefined}>
+      <span
+        ref={label}
+        className="inline-flex min-w-0 max-w-full items-center justify-center gap-2 overflow-hidden whitespace-nowrap"
+      >
+        {children}
+      </span>
+    </span>
+  )
+}
+
 export const PixelButton = forwardRef<HTMLButtonElement, PixelButtonProps>(function PixelButton(
   { variant = 'secondary', size = 'md', className, quiet, onClick, type = 'button', children, shut, ...rest },
   ref,
 ) {
   const label = useFitText(children)
   const primary = variant === 'primary'
+  const look = buttonClass(variant, size)
   // iOS's haptic on the primary buttons (lib/haptics). Never on a submit button: the tap would be the switch's click,
   // not the button's, and the form would not be sent. Nor on one that can't act now.
   const iosHaptic = useSwitchHaptics(primary && type === 'button' && !shut && !rest.disabled)
@@ -135,13 +175,7 @@ export const PixelButton = forwardRef<HTMLButtonElement, PixelButtonProps>(funct
     <button
       ref={ref}
       type={type}
-      className={cx(
-        'pixel-btn inline-flex items-center justify-center gap-2 font-pixel uppercase leading-none tracking-[0.04em]',
-        // White under 24px needs the deeper red (pixel.css).
-        size === 'sm' && VARIANT[variant] === 'frame-primary' ? 'frame-deep' : VARIANT[variant],
-        SIZE[size],
-        className,
-      )}
+      className={cx(look, className)}
       onClick={(e) => {
         if (shut) return pushToast(shut, 'info')
         // The action still waits for the click, so a press that turns into a scroll does nothing. A pointer's click has

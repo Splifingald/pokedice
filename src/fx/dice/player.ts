@@ -45,6 +45,8 @@ export interface ThrowRequest {
   speed?: number
   /** Kitchen Sink: hold the throw this many seconds in, instead of landing. */
   freeze?: number
+  /** No click on its bounces: How to play's cards are reading material (docs/38 §8b). */
+  quiet?: boolean
   onLand: () => void
 }
 
@@ -167,7 +169,7 @@ function step(f: Flight, now: number) {
   // A click per bounce, never more than one every 40 ms across the tray, so a full tray rattles rather than buzzes.
   while (f.heard < plan.contacts.length && plan.contacts[f.heard]! <= tt) {
     f.heard++
-    if (req.freeze == null && now - lastLand > 40) {
+    if (req.freeze == null && !req.quiet && now - lastLand > 40) {
       lastLand = now
       sfx('land')
     }
