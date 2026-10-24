@@ -2,7 +2,7 @@
 // after an encounter, the action bars pinned over the phone tab bar, and Home's way to the furthest open area.
 // Auto-mode switched on in the middle of a cleared area's battle.
 import { expect, test, type Page } from '@playwright/test'
-import { emptyProgress, linearAreas, regionOf, type SaveData } from '../src/engine'
+import { emptyProgress, instanceMaxHp, linearAreas, regionOf, type SaveData } from '../src/engine'
 import { FAST, gameData, makeSave, mockSupabase } from './helpers'
 
 const MOTION_ON = JSON.stringify({ sfx: false, sound: false, reducedMotion: false })
@@ -154,7 +154,45 @@ test("an area that isn't cleared has no AUTO-MODE in its battles", async ({ page
   await boot(page, { ...base, areaProgress: { ...base.areaProgress, [area]: { ...emptyProgress(), deck: ['wild'] } } })
   await page.goto('/home')
   await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+  // A team of one has no one to pick: no "Send out" (docs/38 U5c).
+  const preview = page.getByRole('dialog', { name: 'You encountered a wild Pokémon!' })
+  await expect(preview).toBeVisible()
+  await expect(preview.getByText('Send out:')).toHaveCount(0)
   await page.getByRole('button', { name: /FIGHT/ }).first().click()
   await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeVisible({ timeout: 20_000 })
   await expect(page.getByRole('button', { name: 'AUTO-MODE', exact: true })).toHaveCount(0)
+})
+
+test('the preview sends out the lead: a white SENT OUT, whole names at 360 px, SWITCH picks another', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 640 })
+  const base = makeSave(1)
+  const lead = base.box[0]!
+  // At full HP: a hurt team would open the round with a Pokémon Center.
+  const mons = [
+    { ...lead, id: 'e2e-charmander', dex: 4 },
+    { ...lead, id: 'e2e-butterfree', dex: 12 },
+  ].map((p) => ({ ...p, currentHp: instanceMaxHp(p, gameData()) }))
+  await boot(page, {
+    ...base,
+    box: [...base.box, ...mons],
+    team: [...base.team, ...mons.map((p) => p.id)],
+    areaProgress: { ...base.areaProgress, [base.currentAreaId]: { ...emptyProgress(), deck: ['wild'] } },
+  })
+  await page.goto('/home')
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+  const preview = page.getByRole('dialog', { name: 'You encountered a wild Pokémon!' })
+  await expect(preview.getByText('Send out:', { exact: true })).toBeVisible()
+  for (const name of ['Bulbasaur', 'Charmander', 'Butterfree']) {
+    const el = preview.getByText(name, { exact: true })
+    await expect(el).toBeVisible()
+    // Not cut: the whole name fits its box.
+    expect(await el.evaluate((e) => e.scrollWidth <= e.clientWidth + 1)).toBe(true)
+  }
+  const picked = preview.getByRole('button', { pressed: true })
+  await expect(picked).toHaveCount(1)
+  await expect(picked).toHaveText(/SENT OUT/i)
+  await expect(picked).not.toHaveClass(/frame-primary|frame-deep/)
+  await preview.getByRole('button', { name: 'Send out Charmander' }).click()
+  await expect(preview.getByRole('button', { name: 'Send out Charmander' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(preview.getByRole('button', { name: 'Send out Bulbasaur' })).toHaveText(/SWITCH/i)
 })

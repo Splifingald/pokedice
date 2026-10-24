@@ -16,6 +16,7 @@ import { avatarOf } from '@/lib/avatars'
 import { TrainerLook } from '@/components/TrainerLook'
 import { activeSlot } from '@/save/storage'
 import { useGame } from '@/store/game'
+import { useIsAdmin } from '@/store/hooks'
 import { takeResumeLanding } from '@/store/resume'
 import { AccountButton } from '@/components/AccountButton'
 import type { DieType } from '@/engine/types'
@@ -53,6 +54,7 @@ export function Title() {
   const data = useGame((s) => s.data)
   const auth = useGame((s) => s.auth)
   const corrupt = useGame((s) => s.corruptSaveArchived)
+  const isAdmin = useIsAdmin()
   const [confirmNew, setConfirmNew] = useState(false)
   const [toMain, setToMain] = useState(false)
   const lead = save ? teamOf(save)[0] : undefined
@@ -125,9 +127,12 @@ export function Title() {
       <footer className="copy mt-4 max-w-lg text-center text-muted">
         {t('ui.title.legal')}
         <div className="mt-2 flex justify-center gap-4">
-          <Link to="/setup" className="underline">
-            {t('ui.title.deployGuide')}
-          </Link>
+          {/* The deploy guide is for whoever runs the game, not for players: in dev and for the admin only. */}
+          {(import.meta.env.DEV || isAdmin) && (
+            <Link to="/setup" className="underline">
+              {t('ui.title.deployGuide')}
+            </Link>
+          )}
           {import.meta.env.DEV && (
             <Link to="/kitchen-sink" className="underline">
               {t('ui.title.kitchenSink')}

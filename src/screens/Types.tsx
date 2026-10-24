@@ -7,6 +7,7 @@ import { Toggle } from '@/components/Toggle'
 import { TypeBadge } from '@/components/TypeBadge'
 import { dieAbbr, typeName } from '@/lib/format'
 import { setSettings, useGame } from '@/store/game'
+import { useTypeHints } from '@/store/hooks'
 import { badgeColors, cx, typeColor } from '@/theme/util'
 
 /** `words` is a sheet key: the cell's meaning, read out in the player's language. */
@@ -139,10 +140,10 @@ export function TypeLookup() {
   )
 }
 
-/** Everything the type chart has to say — what the trainer menu opens. */
+/** Everything the type chart has to say — what the trainer menu opens. Its hints switch is Settings' one too. */
 export function TypesContent() {
   const { t } = useT()
-  const hints = useGame((s) => s.settings.typeHints) ?? false
+  const hints = useTypeHints()
   return (
     <div className="flex flex-col gap-3">
       <div className="pixel-panel px-3 py-1.5">

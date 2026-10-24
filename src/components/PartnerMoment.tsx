@@ -268,77 +268,81 @@ export function PartnerMoment({
           )}
         </div>
 
-        <p
-          className="pixel-dialogue mx-3 my-0 flex min-h-[64px] items-center px-3 py-1.5 text-[20px] leading-[1.15]"
-          aria-live="polite"
-        >
-          {message}
-        </p>
-
-        {phase === 'ask' && asking && facts && dex != null && (
-          <div className="mx-3 grid gap-2 bg-paper px-3 pb-3 pt-2.5 shadow-card">
-            <div className="flex items-center gap-2">
-              <MiniSprite dex={dex} size={56} className="-my-2" />
-              <span className="grid min-w-0 gap-1">
-                <b className="truncate text-[24px] font-normal leading-none">{name}</b>
-                <span className="flex gap-1">
-                  {facts.types.map((ty) => (
-                    <TypeBadge key={ty} type={ty} size="sm" />
-                  ))}
-                </span>
-              </span>
-            </div>
-            <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5">
-              <dt className="font-pixel-sm text-[15px] text-muted">{t('ui.partner.strong')}</dt>
-              <dd className="m-0 flex flex-wrap gap-1">
-                {facts.m.hits.length ? (
-                  facts.m.hits.map((ty) => <TypeBadge key={ty} type={ty} size="sm" />)
-                ) : (
-                  <span className="font-pixel-sm text-[15px]">{t('ui.partner.none')}</span>
-                )}
-              </dd>
-              <dt className="font-pixel-sm text-[15px] text-muted">{t('ui.partner.weak')}</dt>
-              <dd className="m-0 flex flex-wrap gap-1">
-                {facts.m.weak.length ? (
-                  facts.m.weak.map((ty) => <TypeBadge key={ty} type={ty} size="sm" />)
-                ) : (
-                  <span className="font-pixel-sm text-[15px]">{t('ui.partner.none')}</span>
-                )}
-              </dd>
-              <dt className="font-pixel-sm text-[15px] text-muted">{t('ui.partner.dice')}</dt>
-              <dd className="m-0 flex flex-wrap items-center gap-2">
-                <DiceSet dice={facts.stats.dice} size={24} />
-                <StatChip stat="rerolls" value={facts.stats.rerolls} />
-              </dd>
-            </dl>
-            {/* Side by side when they fit; when a long name doesn't, "Pick {name}" goes on top, full width. */}
-            <div className="flex flex-wrap-reverse gap-2.5">
-              <PixelButton className="min-w-0 flex-1 basis-[8rem] px-2" onClick={back}>
-                {t('ui.partner.no')}
-              </PixelButton>
-              <PixelButton
-                ref={yesRef}
-                variant="primary"
-                className="min-w-0 flex-[1.4_1_11rem] px-2"
-                onClick={yes}
-              >
-                {t('ui.partner.yes', { name })}
-              </PixelButton>
-            </div>
-          </div>
-        )}
-
-        {phase === 'done' && goShown && dex != null && (
-          <PixelButton
-            ref={goRef}
-            variant="primary"
-            size="lg"
-            className={cx('mx-3')}
-            onClick={() => onPick(dex)}
+        {/* The lab on top; the message, the starter's card and its buttons at the bottom, under the thumb (docs/38
+            P2b), above the home indicator. */}
+        <div className="mt-auto flex flex-col gap-3" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <p
+            className="pixel-dialogue mx-3 my-0 flex min-h-[64px] items-center px-3 py-1.5 text-[20px] leading-[1.15]"
+            aria-live="polite"
           >
-            {t('ui.partner.go')}
-          </PixelButton>
-        )}
+            {message}
+          </p>
+
+          {phase === 'ask' && asking && facts && dex != null && (
+            <div className="mx-3 grid gap-2 bg-paper px-3 pb-3 pt-2.5 shadow-card">
+              <div className="flex items-center gap-2">
+                <MiniSprite dex={dex} size={56} className="-my-2" />
+                <span className="grid min-w-0 gap-1">
+                  <b className="truncate text-[24px] font-normal leading-none">{name}</b>
+                  <span className="flex gap-1">
+                    {facts.types.map((ty) => (
+                      <TypeBadge key={ty} type={ty} size="sm" />
+                    ))}
+                  </span>
+                </span>
+              </div>
+              <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5">
+                <dt className="font-pixel-sm text-[15px] text-muted">{t('ui.partner.strong')}</dt>
+                <dd className="m-0 flex flex-wrap gap-1">
+                  {facts.m.hits.length ? (
+                    facts.m.hits.map((ty) => <TypeBadge key={ty} type={ty} size="sm" />)
+                  ) : (
+                    <span className="font-pixel-sm text-[15px]">{t('ui.partner.none')}</span>
+                  )}
+                </dd>
+                <dt className="font-pixel-sm text-[15px] text-muted">{t('ui.partner.weak')}</dt>
+                <dd className="m-0 flex flex-wrap gap-1">
+                  {facts.m.weak.length ? (
+                    facts.m.weak.map((ty) => <TypeBadge key={ty} type={ty} size="sm" />)
+                  ) : (
+                    <span className="font-pixel-sm text-[15px]">{t('ui.partner.none')}</span>
+                  )}
+                </dd>
+                <dt className="font-pixel-sm text-[15px] text-muted">{t('ui.partner.dice')}</dt>
+                <dd className="m-0 flex flex-wrap items-center gap-2">
+                  <DiceSet dice={facts.stats.dice} size={24} />
+                  <StatChip stat="rerolls" value={facts.stats.rerolls} />
+                </dd>
+              </dl>
+              {/* Side by side when they fit; when a long name doesn't, "Pick {name}" goes on top, full width. */}
+              <div className="flex flex-wrap-reverse gap-2.5">
+                <PixelButton className="min-w-0 flex-1 basis-[8rem] px-2" onClick={back}>
+                  {t('ui.partner.no')}
+                </PixelButton>
+                <PixelButton
+                  ref={yesRef}
+                  variant="primary"
+                  className="min-w-0 flex-[1.4_1_11rem] px-2"
+                  onClick={yes}
+                >
+                  {t('ui.partner.yes', { name })}
+                </PixelButton>
+              </div>
+            </div>
+          )}
+
+          {phase === 'done' && goShown && dex != null && (
+            <PixelButton
+              ref={goRef}
+              variant="primary"
+              size="lg"
+              className={cx('mx-3')}
+              onClick={() => onPick(dex)}
+            >
+              {t('ui.partner.go')}
+            </PixelButton>
+          )}
+        </div>
       </div>
     </div>,
     document.body,

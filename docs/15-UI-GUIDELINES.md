@@ -151,7 +151,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `Sheet` | Anything opened from a screen: details, lists, pickers | Phones: from the bottom, grab handle, ✕, 90 % tall at most, `head` (filters) pinned, body scrolls, `footer` pinned. Desktop: a centred panel |
 | `Modal` | A short decision or message | Centred framed panel; `dismissable={false}` for a choice that must be made |
 | `SidePanel` | The trainer menu drawer | From the right |
-| `SettingsOverlay` | Settings opened from the trainer menu under a lock (mid-fight, a portal run: §12) | A `Modal` titled Settings over the page: mid-fight a line saying the fight waits, Settings' panels with what would end the fight shut, BACK TO THE FIGHT pinned at its bottom (BACK under a portal run's lock alone); SUPPORT ME white there |
+| `SettingsOverlay` | Settings opened from the trainer menu under a lock (mid-fight, a portal run: §12) | A `Modal` titled Settings over the page: mid-fight a line saying the fight waits, Settings' panels with what would end the fight shut, BACK TO THE FIGHT pinned at its bottom (BACK under a portal run's lock alone); SUPPORT ME white, as on the page |
 | `HpBar` | HP | Track with ink ring; the fill drains over 700 ms, the trail waits 280 ms then follows over 900 ms; numbers for your own, words for a foe's (screen readers) |
 | `TypeBadge`, `TypeSwatch` | A type | `md` 20 px, `sm` 16 px (plates) |
 | `Die` | A die face | Square corners; pips on whole pixels (`pipLayout`: one even pip size, three fixed columns) at any size; ink pips on light dice, white on dark; status face = white + status ring and a round badge with its icon; `selected` = lifted 6 px with a red outline; `combo` = a gold ring; values without a pip layout (0, 7, 8…) show their number, centred on the face; with a `rollKey` it tumbles in, or, with the dice throws on (docs/37), is thrown in as a pixel cube and lands on its face (`useDieThrow`; on `/kitchen-sink` at every motion level, frozen mid-throw) |
@@ -394,13 +394,20 @@ Players shouldn't have to make many requests:
   "Finish the fight first".
   **Settings open mid-fight too, over it** (`SettingsOverlay`, a `Modal`; not their route, which would unmount the
   battle and play its entrance and log again on the way back): the battle stays mounted under them and waits (§14), so
-  BACK TO THE FIGHT (or ✕, Esc) is the very same fight, its dice and its message. Sound, animations, the theme, Multi
-  EXP, the play style, notifications, the language, copying the save and the rules work and apply at once (a play style
-  that plays the fight takes it over from its next move, once Settings close). What would end the fight or leave the
-  page stays listed and shut with the reason (`PixelButton shut`): signing in (it may load the cloud's save over this
-  one), disconnecting, linking or unlinking an account (linking leaves for the provider's page), deleting the save, the
-  Extreme save or all the data, checking for new content (it swaps the game's data under the fight)
-  and the deploy guide's link. The same under a portal run's lock, with its own reason.
+  BACK TO THE FIGHT (or ✕, Esc) is the very same fight, its dice and its message. Sound, animations, the theme, type
+  hints, Multi EXP, the play style, notifications, the language, copying the save and the rules work and apply at once
+  (a play style that plays the fight takes it over from its next move, once Settings close). What would end the fight
+  or leave the page stays listed and shut with the reason (`PixelButton shut`): signing in (it may load the cloud's save
+  over this one), disconnecting, linking or unlinking an account (linking leaves for the provider's page), the one
+  Delete (the save, the Extreme save or all the data), checking for new content (it swaps the game's data under the
+  fight) and the deploy guide's link. The same under a portal run's lock, with its own reason.
+  **Settings has one Disconnect and one Delete** (docs/38 U8b): Disconnect in Cloud backup, beside who is signed in;
+  the red Delete is the last thing on the page and asks what goes first (`DeleteChooser`: Delete save, Delete my
+  Extreme save while one exists, Delete all my data; white rows with red words and a line each), then each asks as it
+  always did (the save: one pop-up; the Extreme save and everything: two in a row). SUPPORT ME is white, here and over
+  a fight: red stays for the game's own actions. **Type hints** (`settings.typeHints`, `useTypeHints`) sit in the Game
+  panel, the same switch as the type chart's: unset, they are on until the first badge (`badgesHeld`), and a choice
+  made in either place always wins.
 - **Tab bar** (phones): Poké Mart, Upgrades, **Home** (in the middle, under the thumb: a tab like the others, its Poké Ball icon and label), Team,
   Pokédex. The side nav (desktop) has the same entries with Home first. A tab's hit area is the whole column, at
   least 60 px tall, even where the drawing is smaller.
@@ -544,6 +551,10 @@ in view) and the battle history sits beside it from 1024 px.
 - **Capture Luck** (docs/25): a wild Pokémon that broke free may stay: the message says it broke free but didn't run
   away, the stage shows it back on its platform, and the panel's button is THROW AGAIN (back to the ball picker, "Snorlax
   is still here! Pick a ball and throw again."). Once per encounter; never a legendary or a raid.
+- **Who goes out** (the encounter preview's `LeadPicker`, and between a trainer's Pokémon): "Send out:" and a card per
+  team member, its mini and level, then its **whole name** on a line of its own (a size smaller on a phone when long,
+  wrapping rather than "Bulba…"), types, HP, SWITCH and INFO. The one picked is ringed in gold and its button says
+  ✓ SENT OUT, **white**: the red is FIGHT's. A team of one has nothing to pick: no "Send out" at all (docs/38 U5c).
 - **The time of day** (§30): in a Johto area, a small sun or moon chip on the stage's top right corner.
 - **The fight waits while a pop-up is over it** (`useDialogOpen`: any `Modal`, `Sheet` or `SidePanel`, its own menus
   and the top bar's — the trainer menu, Settings, the guide): no throw of its own, no auto-mode move, no skipped turn,
@@ -659,8 +670,8 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   (`/f/<code>`, opening it makes you friends), or the game's own link while signed out (no friend ID then). With the
   invite rewards on (§25) it shows the gauge, signed in, or a line saying an account earns them, signed out.
 - **Support me** (while the admin has donations on, with a Ko-fi link): the SUPPORT ME button at the bottom of the
-  side menu and at the top of Settings, and once per region at its 5th badge. Three rows, most important first: join
-  the Discord, invite friends (the same link as INVITE), and support the developer on Ko-fi, under a plain line
+  side menu and at the top of Settings (white: red is for the game's actions), and once per region at its 5th badge.
+  Three rows, most important first: join the Discord, invite friends (the same link as INVITE), and support the developer on Ko-fi, under a plain line
   that Pokémon is a licence, so Pokédice is never monetized and a donation gives nothing in the game. Never "keep the
   game alive" or hosting costs: the money is for the developer, not the game.
 - **Look**: "How other trainers see you…" with Change opening a radio grid of every look, in one block (no region headings); picking one closes it. The same
@@ -675,9 +686,13 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   how it was won (the same goal words; Red and Leaf first, "From the start"). A region not started is one line;
   INFO at the bottom. Closing the sheet marks them seen. The top
   bar's avatar carries the red dot when no gold one is there.
-- **The menu** under the card: rows with an icon tile, a label and a one-line description (Leaderboard, Versus with
-  "0/3 at Lv.50" while locked, Settings, How to play, Type chart, Admin for admins, Cloud backup, Connect). The label
+- **The menu** under the card: rows with an icon tile, a label and a one-line description (Leaderboard, Friends,
+  Trades, **Inbox**, the other save, Settings, How to play, Type chart, Admin for admins, Cloud backup, Connect), then
+  pinned at the bottom the Discord and Contact the developer. Versus is not in it: it is Home's widget. The label
   alone names a row; the description is its `aria-describedby`.
+- **Inbox** (docs/38 U6b, `InboxModal`): the developer's messages and gifts on their own, the very My messages view
+  that Contact the developer has as a tab (§23); a gold count on the row for answers not seen and gifts not opened.
+  Contact the developer keeps its pencil, the Inbox the envelope.
 
 ## 18. Picking a partner (the lab)
 
@@ -691,9 +706,14 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
 - **The balls are the buttons**: three transparent buttons over the balls ("Poké Ball 2 of 3"); hover or focus lifts
   one. Opening one lets its Pokémon out (`starter.open`) and asks "Do you want to pick Charmander?" in the message
   box, with a card under it: its types, what it hits hard, what hits it hard, its dice and rerolls at the starting
-  level. Not this one puts it back; another ball swaps it.
+  level. Not this one puts it back; another ball swaps it. **The lab picture stays on top; the message box, the card
+  and its buttons sit at the bottom of the screen**, under the thumb, above the home indicator (docs/38 P2b).
 - **Before it, how to play** (§34): a new game first asks for a play style when the idle mode's switch is on for the
-  player; otherwise it starts with Prof. Oak, as always.
+  player; otherwise it starts with Prof. Oak, as always. **Prof. Oak's intro** is the Game Boy's: Oak in the room, the
+  text box with SKIP INTRO and NEXT at the bottom of the screen (safe area kept; docs/38 P2a). **Select your
+  character** fills the name in with the character's own (`trainerName.red` / `trainerName.leaf`: Red, Leaf, Rojo,
+  Hoja…), so NEXT works at once without a phone's keyboard; picking the other character changes it unless the player
+  has typed one (docs/38 U1f).
 - **Yes**: the partner hops with hearts, the other two balls sink away (`starter.fanfare`), "Charmander is your
   partner! Your Kanto journey begins." and one wide button, Let's go!, which starts the game or the region.
 - **Leaving**: a new region has ✕ (Not now) and Esc; a new game has nothing to go back to. With motion `off` the balls
@@ -932,7 +952,7 @@ pieces are in `src/components/Gifts.tsx`, every state on `/kitchen-sink` (`GiftB
   at once.
 - **My messages** keeps every message with its answer, the developer's own messages, and their gifts: opened ("Opened
   — it held:" and what), or the wrapped gift with OPEN IT (gold), or why it waits. The tab's count adds the gifts not
-  opened yet.
+  opened yet. The trainer menu's **Inbox** row opens it on its own, with the same count (§17).
 - **In the admin**, the same gift editor in both places (`GiftEditor`): an item and a quantity, a Pokémon, its level
   and Shiny, or an amount of ₽, each with its region (their latest, or one by name; on a profile, the regions they haven't started say
   where it would go). A message's card says whether its gifts were opened, and when; an opened gift can't be changed.

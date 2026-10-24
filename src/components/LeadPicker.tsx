@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { instanceMaxHp, instanceStats, teamOf, type PokeType } from '@/engine'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
+import { useTypeHints } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { PixelIcon } from './icons'
 import { PixelButton } from './PixelButton'
@@ -11,9 +12,10 @@ import { TypeBadge } from './TypeBadge'
 import { attackEdge } from './TypeMatchups'
 
 /**
- * "Before each fight the player picks which one to send." The team side by side, each with its essentials (mini, name,
- * level, types, HP) and two buttons: SWITCH picks it, INFO opens its details. With the type hint on and the foe known,
- * a thumb marks the ones whose dice hit it super effectively (up) or not very effectively (down).
+ * "Before each fight the player picks which one to send." The team side by side, each with its essentials (mini, level,
+ * its whole name, types, HP) and two buttons: SWITCH picks it (the one picked says SENT OUT, white: the red is FIGHT's),
+ * INFO opens its details. With the type hint on and the foe known, a thumb marks the ones whose dice hit it super
+ * effectively (up) or not very effectively (down). A team of one has nothing to pick: nothing shows (docs/38 U5c).
  */
 export function LeadPicker({
   value,
@@ -31,10 +33,11 @@ export function LeadPicker({
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
-  const hints = useGame((s) => !!s.settings.typeHints)
+  const hints = useTypeHints()
   const [info, setInfo] = useState<string | null>(null)
   if (!save) return null
   const team = teamOf(save)
+  if (team.length < 2) return null
   const current = value && team.some((p) => p.id === value && p.currentHp > 0) ? value : team.find((p) => p.currentHp > 0)?.id
   const picked = pair ? pickedPair(pair.value) : []
   const pick = (id: string) => {
@@ -61,9 +64,9 @@ export function LeadPicker({
                 fainted && 'hatched',
               )}
             >
-              <div className="flex min-w-0 items-center gap-0.5">
-                <MiniSprite dex={p.dex} size={32} className={cx('-my-1 -ml-1', fainted && 'grayscale')} />
-                <span className="truncate text-lg leading-none">{species.name}</span>
+              <div className="flex min-w-0 items-center gap-1">
+                <MiniSprite dex={p.dex} size={32} className={cx('-my-1 -ml-1 shrink-0', fainted && 'grayscale')} />
+                <span className="text-base leading-none">{t('ui.common.level.short', { n: p.level })}</span>
                 {p.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
                 {edge !== 1 && (
                   <PixelIcon
@@ -74,8 +77,17 @@ export function LeadPicker({
                   />
                 )}
               </div>
-              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-                <span className="text-base leading-none">{t('ui.common.level.short', { n: p.level })}</span>
+              {/* The whole name on a line of its own, never "Bulba…": a long one is a size smaller on a phone, and
+                  wraps if it must. */}
+              <span
+                className={cx(
+                  'leading-none [overflow-wrap:anywhere]',
+                  nameWidth(species.name) > 9 ? 'text-base sm:text-lg' : 'text-lg',
+                )}
+              >
+                {species.name}
+              </span>
+              <div className="flex flex-wrap items-center gap-1">
                 <TypeBadge type={species.type1} size="sm" />
                 {species.type2 && <TypeBadge type={species.type2} size="sm" />}
               </div>
@@ -85,14 +97,14 @@ export function LeadPicker({
               <div className="mt-auto flex flex-col gap-1 pt-0.5">
                 <PixelButton
                   size="sm"
-                  variant={selected ? 'primary' : 'secondary'}
                   className="w-full px-1"
                   disabled={fainted}
                   aria-pressed={selected}
                   aria-label={t('ui.lead.sendOutName', { name: species.name })}
                   onClick={() => pick(p.id)}
                 >
-                  {t('ui.lead.switch')}
+                  {selected && <PixelIcon name="check" size={14} />}
+                  {t(selected ? 'ui.lead.sentOut' : 'ui.lead.switch')}
                 </PixelButton>
                 <PixelButton
                   size="sm"
@@ -112,6 +124,9 @@ export function LeadPicker({
     </div>
   )
 }
+
+/** How wide a name runs, in Latin letters: a CJK character takes about two. */
+const nameWidth = (name: string) => [...name].reduce((n, ch) => n + ((ch.codePointAt(0) ?? 0) >= 0x2e80 ? 2 : 1), 0)
 
 /** A double battle's two leads: those picked still able, filled up with the first able ones, in team order. */
 export function pickedPair(value: readonly string[]): string[] {

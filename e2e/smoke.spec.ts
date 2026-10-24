@@ -20,8 +20,15 @@ test('new game → first battle → win', async ({ page }) => {
   await page.getByRole('button', { name: 'NEW GAME' }).click()
   await page.getByRole('button', { name: 'Skip intro' }).click()
   await expect(page.getByRole('heading', { name: 'Select your character' })).toBeVisible()
+  // The name is filled in with the character's own, and follows a switch until the player types one (docs/38 U1f).
+  await expect(page.getByLabel('Your name')).toHaveValue('Red')
+  await expect(page.getByRole('button', { name: 'NEXT ▸' })).toBeEnabled()
   await page.getByRole('radio', { name: 'Character 2' }).click()
+  await expect(page.getByLabel('Your name')).toHaveValue('Leaf')
   await page.getByLabel('Your name').fill('Sam')
+  await page.getByRole('radio', { name: 'Character 1' }).click()
+  await expect(page.getByLabel('Your name')).toHaveValue('Sam')
+  await page.getByRole('radio', { name: 'Character 2' }).click()
   await page.getByRole('button', { name: 'NEXT ▸' }).click()
   // The professor's lab: three Poké Balls on the table; the third holds Squirtle.
   await page.getByRole('button', { name: 'Poké Ball 3 of 3' }).click()
