@@ -10,28 +10,39 @@ import {
   buyGeneral,
   buyItem,
   captureLuck,
+  challengeEncounter,
+  charmChanceAt,
+  charmOn,
+  charmRulesOnly,
   collectOffline,
   createInstance,
   createRng,
   DEFAULT_CONFIG,
   generalLevel,
   generalRulesDue,
+  generalShown,
   getInstance,
   isRich,
   keepGeneralBought,
   itemOn,
+  linearAreas,
   lootPoolFor,
   markGeneralRulesSeen,
   markOfflineFrom,
   newSave,
   nextGeneralCost,
   offlineRate,
+  progressOf,
   rollBait,
+  rollWild,
   shopStock,
   type CatchRoll,
+  type EncounterContext,
   type GeneralConfig,
   type SaveData,
+  wildShinyChance,
 } from '@/engine'
+import { parseSave } from '@/save/schema'
 import { makeData, newId } from '../fixtures'
 
 const HOUR = 3_600_000
@@ -256,7 +267,7 @@ describe('the General upgrades', () => {
     expect(generalRulesDue(s, on)).toBe(false)
     expect(generalRulesDue(badged, on)).toBe(true)
     expect(generalRulesDue(badged, off)).toBe(false)
-    expect(generalRulesDue(markGeneralRulesSeen(badged), on)).toBe(false)
+    expect(generalRulesDue(markGeneralRulesSeen(badged, on), on)).toBe(false)
   })
 })
 
@@ -277,5 +288,115 @@ describe('keepGeneralBought: two copies of one save', () => {
     expect(keepGeneralBought(a, save)).toBe(a)
     expect(keepGeneralBought(a, null)).toBe(a)
     expect(keepGeneralBought(save, { ...save, general: { offline: 2 } }).general).toEqual({ offline: 2 })
+  })
+})
+
+describe('the Shiny Charm', () => {
+  const CHARM_ON: GeneralConfig = { ...GENERAL_ON, charmAccess: 'all' }
+  // The user's base odds for it: 1 in 1,000.
+  const charmed = makeData({ shinyChance: 0.001, general: CHARM_ON })
+  const at = (charm: number): SaveData => ({ ...fresh(), general: { charm } })
+
+  it('is off by default, on its own switch inside the tab’s', () => {
+    expect(DEFAULT_CONFIG.general.charmAccess).toBe('off')
+    expect(charmOn(on)).toBe(false)
+    expect(generalShown(on)).toEqual(['luck', 'offline', 'rich'])
+    expect(buyGeneral(fresh(1e6), on, 'charm')).toBeNull()
+    // The tab off hides it whatever its own switch says.
+    expect(charmOn(makeData({ general: { ...CHARM_ON, access: 'off' } }))).toBe(false)
+    expect(generalShown(charmed)).toEqual(['luck', 'offline', 'rich', 'charm'])
+    // Switched off, a level bought changes nothing.
+    expect(wildShinyChance(at(10), makeData({ shinyChance: 0.001, general: GENERAL_ON }))).toBe(0.001)
+  })
+
+  it('has the ten levels of the user’s table, ₽69,000 in all', () => {
+    const odds = [1000, 950, 900, 850, 800, 750, 700, 625, 550, 450, 333]
+    const costs = [1000, 1500, 2000, 3000, 4000, 5000, 7500, 10000, 15000, 20000]
+    odds.forEach((n, lv) => expect(wildShinyChance(at(lv), charmed)).toBeCloseTo(1 / n, 10))
+    let s: SaveData = { ...fresh(69_000), general: {} }
+    for (const cost of costs) {
+      expect(nextGeneralCost(s, charmed, 'charm')).toBe(cost)
+      s = buyGeneral(s, charmed, 'charm')!
+    }
+    expect(generalLevel(s, 'charm', charmed)).toBe(10)
+    expect(s.gold).toBe(0)
+    expect(nextGeneralCost(s, charmed, 'charm')).toBeNull()
+  })
+
+  it('never makes the odds worse than game_config’s', () => {
+    const generous = makeData({ shinyChance: 0.01, general: CHARM_ON })
+    expect(charmChanceAt(generous, 1)).toBe(0.01)
+    expect(charmChanceAt(generous, 10)).toBe(0.01)
+    expect(charmChanceAt(makeData({ shinyChance: 0.002, general: CHARM_ON }), 10)).toBeCloseTo(1 / 333)
+  })
+
+  it('is what the wild Pokémon and the bosses roll', () => {
+    const d = makeData({ shinyChance: 0, general: CHARM_ON })
+    const area = linearAreas(d)[0]!
+    const s = fresh()
+    const ctx = (shinyChance?: number): EncounterContext => ({
+      area,
+      progress: progressOf(s, area.id),
+      data: d,
+      teamAvgLevel: 5,
+      teamHurt: false,
+      isFirstInArea: false,
+      pokedex: s.pokedex,
+      shinyChance,
+    })
+    expect(rollWild(ctx(), createRng(3))).not.toHaveProperty('shiny')
+    expect(rollWild(ctx(1), createRng(3))).toMatchObject({ shiny: true })
+    const boss = { ...area, legendaryBoss: [{ dex: 16, level: 10 }] }
+    const ready = { ...progressOf(s, area.id), roundsDone: 99 }
+    expect(challengeEncounter(boss, ready, d, 10, null, createRng(1), 1)).toMatchObject({
+      kind: 'boss',
+      shiny: true,
+    })
+    expect(challengeEncounter(boss, ready, d, 10, null, createRng(1))).not.toHaveProperty('shiny')
+  })
+
+  it('its rules: in the tab’s pop-up, or once on their own for a player who read those already', () => {
+    const first = badgeCase(fresh(), charmed)[0]!
+    const s = fresh()
+    const badged: SaveData = {
+      ...s,
+      areaProgress: {
+        ...s.areaProgress,
+        [first.areaId]: {
+          roundsDone: 0,
+          cleared: false,
+          bossDefeated: false,
+          bossesDefeated: [],
+          gymsDefeated: [first.trainerId],
+        },
+      },
+    }
+    // Never seen: the tab's pop-up, the charm in it; once read, both are seen.
+    expect(charmRulesOnly(badged, charmed)).toBe(false)
+    expect(markGeneralRulesSeen(badged, charmed).general).toEqual({ rulesSeen: true, charmSeen: true })
+    // Read before the charm came: its own pop-up, once.
+    const read = markGeneralRulesSeen(badged, on)
+    expect(read.general).toEqual({ rulesSeen: true })
+    expect(generalRulesDue(read, on)).toBe(false)
+    expect(generalRulesDue(read, charmed)).toBe(true)
+    expect(charmRulesOnly(read, charmed)).toBe(true)
+    const both = markGeneralRulesSeen(read, charmed)
+    expect(generalRulesDue(both, charmed)).toBe(false)
+    expect(markGeneralRulesSeen(both, charmed)).toBe(both)
+  })
+
+  it('two copies of one save keep the higher level and the rules seen', () => {
+    const save = newSave(4, on, 1000, newId)
+    const kept = keepGeneralBought(
+      { ...save, general: { charm: 2 } },
+      { ...save, general: { charm: 7, charmSeen: true } },
+    )
+    expect(kept.general).toEqual({ charm: 7, charmSeen: true })
+  })
+
+  it('the save keeps it', () => {
+    const s: SaveData = { ...fresh(), general: { charm: 4, charmSeen: true, rulesSeen: true } }
+    const back = parseSave(JSON.parse(JSON.stringify(s)))
+    expect(back.ok && back.save.general).toEqual({ charm: 4, charmSeen: true, rulesSeen: true })
   })
 })

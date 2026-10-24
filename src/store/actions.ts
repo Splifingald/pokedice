@@ -179,7 +179,10 @@ export function upgradeGeneral(id: GeneralId): boolean {
 
 /** The General tab's rules have been shown (its pop-up, or the tab opened). */
 export function markGeneralRulesSeen(): void {
-  mutateSave((s) => (s.general?.rulesSeen ? null : markGeneralRulesSeenIn(s)))
+  mutateSave((s) => {
+    const next = markGeneralRulesSeenIn(s, useGame.getState().data)
+    return next === s ? null : next
+  })
 }
 
 export function markVersusRulesSeen(): void {

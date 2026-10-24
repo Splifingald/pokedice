@@ -94,6 +94,8 @@ export interface EncounterContext {
   noCenters?: boolean
   /** × the wild shiny odds here: a Shiny Parade live event covering the area (liveEvents shinyBoost). */
   shinyBoost?: number
+  /** The player's wild shiny odds, 0–1: the Shiny Charm's (general wildShinyChance). Unset = game_config's. */
+  shinyChance?: number
   /**
    * The player's local hour (0–23): in an area that keeps the time (docs/32), only its half's wild Pokémon come.
    * Unset = every one, as where time isn't kept.
@@ -163,9 +165,12 @@ export function dueBoss(area: Area, progress: AreaProgress, teamAvgLevel: number
   return null
 }
 
-/** One roll of the wild shiny odds (`shinyChance`), × a Shiny Parade's boost for wild Pokémon. */
-const rollShiny = (data: GameData, rng: Rng, boost = 1): boolean => {
-  const chance = Math.min(1, (data.config.shinyChance ?? 0) * Math.max(1, boost))
+/**
+ * One roll of the wild shiny odds — the player's (the Shiny Charm, `odds`) or game_config's `shinyChance` — × a Shiny
+ * Parade's boost for wild Pokémon.
+ */
+const rollShiny = (data: GameData, rng: Rng, boost = 1, odds?: number): boolean => {
+  const chance = Math.min(1, (odds ?? data.config.shinyChance ?? 0) * Math.max(1, boost))
   return chance > 0 && rng.next() < chance
 }
 
@@ -180,8 +185,10 @@ export const shinyLocked = (data: GameData, dex: number): boolean => isLegendary
  * declining the challenge, losing, or seeing it come back after the throw missed all roll again. Never for a
  * legendary or mythical (shinyLocked), but for a small world's mythical in its own area: that one is always shiny.
  */
-const legendShiny = (b: BossDef, area: Area, data: GameData, rng?: Rng): boolean =>
-  shinyLocked(data, b.dex) ? !!b.shiny && isWorldMythical(data, area.id, b.dex) : !!b.shiny || (!!rng && rollShiny(data, rng))
+const legendShiny = (b: BossDef, area: Area, data: GameData, rng?: Rng, odds?: number): boolean =>
+  shinyLocked(data, b.dex)
+    ? !!b.shiny && isWorldMythical(data, area.id, b.dex)
+    : !!b.shiny || (!!rng && rollShiny(data, rng, 1, odds))
 
 /**
  * This boss of this area has been caught. In a small world each boss is its own catch (docs/26 §2.5), noted in the
@@ -258,7 +265,7 @@ export function rollRoamer(ctx: EncounterContext, rng: Rng): Encounter | null {
         kind: 'boss',
         dex,
         level: clampLevel(roamers.level, ctx.data),
-        ...(!shinyLocked(ctx.data, dex) && rollShiny(ctx.data, rng) && { shiny: true }),
+        ...(!shinyLocked(ctx.data, dex) && rollShiny(ctx.data, rng, 1, ctx.shinyChance) && { shiny: true }),
       }
   }
   return null
@@ -298,7 +305,7 @@ export function rollWild(ctx: EncounterContext, rng: Rng): Encounter | null {
   const entry = rng.weighted(wildOdds(ctx), (o) => o.weight)?.entry
   if (!entry) return null
   const level = enemyLevel(rng.int(entry.minLevel, Math.max(entry.minLevel, entry.maxLevel)), ctx, rng)
-  const shiny = !shinyLocked(ctx.data, entry.dex) && rollShiny(ctx.data, rng, ctx.shinyBoost)
+  const shiny = !shinyLocked(ctx.data, entry.dex) && rollShiny(ctx.data, rng, ctx.shinyBoost, ctx.shinyChance)
   return { kind: 'wild', dex: entry.dex, level, isNew: !ctx.pokedex.includes(entry.dex), ...(shiny && { shiny }) }
 }
 
@@ -312,7 +319,7 @@ export function rollTrick(ctx: EncounterContext, rng: Rng): Encounter | null {
   const ghost = pickTrickGhost(ctx.data, ctx.area.id, rng)
   if (!ghost) return null
   const level = enemyLevel(rng.int(ctx.area.minLevel, Math.max(ctx.area.minLevel, ctx.area.maxLevel)), ctx, rng)
-  const shiny = !shinyLocked(ctx.data, ghost.dex) && rollShiny(ctx.data, rng, ctx.shinyBoost)
+  const shiny = !shinyLocked(ctx.data, ghost.dex) && rollShiny(ctx.data, rng, ctx.shinyBoost, ctx.shinyChance)
   return { kind: 'trick', dex: ghost.dex, level, tier: ghost.tier, isNew: !ctx.pokedex.includes(ghost.dex), ...(shiny && { shiny }) }
 }
 
@@ -457,7 +464,8 @@ export function nextEncounter(ctx: EncounterContext, rng: Rng): EncounterRoll {
 
 /**
  * The challenge waiting in this area, if any: the next gym / Elite battle once every round is done, else a legendary
- * that's due. The player picks it (CHALLENGE on the area screen) whenever they're ready, or keeps exploring.
+ * that's due. The player picks it (CHALLENGE on the area screen) whenever they're ready, or keeps exploring. A boss
+ * that isn't shiny-locked rolls `shinyOdds` (the player's, with the Shiny Charm), else game_config's.
  */
 export function challengeEncounter(
   area: Area,
@@ -466,11 +474,14 @@ export function challengeEncounter(
   teamAvgLevel: number,
   side?: PlayerSide | null,
   rng?: Rng,
+  shinyOdds?: number,
 ): Encounter | null {
   const gym = dueGym(area, progress, data, side)
   if (gym) return gymEncounter(area, gym, data, side)
   const boss = dueBoss(area, progress, teamAvgLevel, data)
-  return boss ? { kind: 'boss', dex: boss.dex, level: boss.level, ...(legendShiny(boss, area, data, rng) && { shiny: true }) } : null
+  return boss
+    ? { kind: 'boss', dex: boss.dex, level: boss.level, ...(legendShiny(boss, area, data, rng, shinyOdds) && { shiny: true }) }
+    : null
 }
 
 /** The next encounter alone, for callers that don't keep decks (each call deals from fresh ones). */
@@ -487,7 +498,7 @@ function findItem(ctx: EncounterContext, rng: Rng): { encounter: Encounter; loot
 
 function returningLegend(ctx: EncounterContext, rng: Rng): Encounter | null {
   const b = fledLegendary(ctx.area, ctx.progress, ctx.pokedex, ctx.data)
-  return b ? { kind: 'boss', dex: b.dex, level: b.level, returning: true, ...(legendShiny(b, ctx.area, ctx.data, rng) && { shiny: true }) } : null
+  return b ? { kind: 'boss', dex: b.dex, level: b.level, returning: true, ...(legendShiny(b, ctx.area, ctx.data, rng, ctx.shinyChance) && { shiny: true }) } : null
 }
 
 const cardEncounter = (card: 'wild' | 'trainer' | 'center' | 'casino' | 'trick', ctx: EncounterContext, rng: Rng): Encounter | null =>
@@ -593,7 +604,7 @@ function forcedEncounter(ctx: EncounterContext, kind: ForceKind, rng: Rng): Enco
       return rollTrick(ctx, rng)
     case 'boss': {
       const b = fightBosses(ctx.area, ctx.data).find((x) => !ctx.progress.bossesDefeated.includes(x.dex))
-      return b ? { kind: 'boss', dex: b.dex, level: b.level, ...(legendShiny(b, ctx.area, ctx.data, rng) && { shiny: true }) } : returningLegend(ctx, rng)
+      return b ? { kind: 'boss', dex: b.dex, level: b.level, ...(legendShiny(b, ctx.area, ctx.data, rng, ctx.shinyChance) && { shiny: true }) } : returningLegend(ctx, rng)
     }
     default:
       return null

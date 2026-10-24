@@ -1,5 +1,5 @@
 // Kitchen sink (dev only): the General upgrades (docs/25) — the tab's cards in each state, its rules pop-up and INFO,
-// the offline earnings' card, and golden names wherever a trainer's name shows.
+// the Shiny Charm's own pop-up, the offline earnings' card, and golden names wherever a trainer's name shows.
 import { useState } from 'react'
 import { BoardGap, BoardRow } from '@/components/BoardRow'
 import { GeneralRulesModal, OfflineReportModal } from '@/components/GeneralRules'
@@ -38,7 +38,7 @@ const card = (
 export function GeneralBits() {
   const { t } = useT()
   const gold = useGame((s) => s.save?.gold ?? 0)
-  const [rules, setRules] = useState<'unlock' | 'info' | null>(null)
+  const [rules, setRules] = useState<'unlock' | 'info' | 'charm' | null>(null)
   const cards: [string, Up][] = [
     [
       'Nothing bought, affordable',
@@ -65,6 +65,23 @@ export function GeneralBits() {
         visual: <TrainerName name="Erika" rich className="max-w-[45%] truncate text-[20px] leading-none" />,
       },
     ],
+    [
+      'Shiny Charm, nothing bought',
+      {
+        ...card('charm', 0, 10, t('ui.general.charm.odds', { n: '1,000' }), t('ui.general.charm.odds', { n: 950 }), 1000),
+        name: t('ui.general.charm.name'),
+        desc: t('ui.general.charm.desc'),
+        visual: <PixelIcon name="sparkle" size={24} />,
+      },
+    ],
+    [
+      'Shiny Charm, maxed',
+      {
+        ...card('charm', 10, 10, t('ui.general.charm.odds', { n: 333 }), null, null),
+        name: t('ui.general.charm.name'),
+        visual: <PixelIcon name="sparkle" size={24} />,
+      },
+    ],
   ]
   return (
     <div className="grid w-full max-w-md gap-3">
@@ -79,6 +96,9 @@ export function GeneralBits() {
       <div className="flex flex-wrap gap-2">
         <PixelButton size="sm" onClick={() => setRules('unlock')}>
           General opens
+        </PixelButton>
+        <PixelButton size="sm" onClick={() => setRules('charm')}>
+          Shiny Charm opens (tab read)
         </PixelButton>
         <PixelButton
           size="sm"
@@ -95,7 +115,8 @@ export function GeneralBits() {
       <GeneralRulesModal
         open={!!rules}
         onClose={() => setRules(null)}
-        onGo={rules === 'unlock' ? () => setRules(null) : undefined}
+        onGo={rules === 'unlock' || rules === 'charm' ? () => setRules(null) : undefined}
+        charmOnly={rules === 'charm'}
       />
       <OfflineReportModal show />
 

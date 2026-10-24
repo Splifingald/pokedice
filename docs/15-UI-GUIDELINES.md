@@ -1034,12 +1034,16 @@ pieces are in `src/components/Gifts.tsx`, every state on `/kitchen-sink` (`GiftB
 The Upgrades screen's third tab (docs/25), after Combos and Dice Types, there only while the admin has it on (§20).
 
 - **The tab**: one card each, the combos' and dice' `UpCard`: Capture Luck (10 % a level), Offline earnings (₽2 to
-  ₽20 an hour, in whole ₽), I am just rich (one level). The card says what it does now → at the next level ("None →
+  ₽20 an hour, in whole ₽), I am just rich (one level), the Shiny Charm (its own switch too; the sparkle, "1 in 1,000 →
+  1 in 950"). The card says what it does now → at the next level ("None →
   10% chance", "₽10/h → ₽12/h", "Plain name → Golden name"), the pips, the price button or MAX; "I am just rich" shows the player's
   own name, golden, as its picture. The note under the tabs says they're for every region. INFO at the bottom.
 - **Its rules pop-up** (`GeneralUnlockPopup`, the Battle Frontier's plaza as its banner): once, from the first badge,
   queued behind the other one-time pop-ups (the world's and the live event's wait for it); opening the tab counts as
-  seen. Four rows: Capture Luck, Offline earnings, I am just rich, For every region.
+  seen. Four rows: Capture Luck, Offline earnings, I am just rich, For every region; five while the Shiny Charm is on
+  (its row before the last). A player who read them before the charm was switched on gets the charm's own pop-up once
+  (same banner, its title "Shiny Charm", three rows: its odds, where it shines, for every region); opening the tab
+  counts as seen too.
 - **While you were away** (`OfflineReportModal`): an absence of an hour or more, between fights: the time away, +₽ on a
   warm card with the coin, the rate and the cap. Less than an hour: a toast. Inside a small world it waits.
 - **Golden names** (`TrainerName`): the leaderboard (and its Hall of Fame), Versus, friends (list, card, preview), raid

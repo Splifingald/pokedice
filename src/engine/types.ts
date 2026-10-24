@@ -1220,6 +1220,13 @@ export interface GeneralConfig {
   offlineMaxHours: number
   /** "I am just rich": its price. A golden name in every social feature, nothing else. */
   richCost: number
+  /** The Shiny Charm's own switch (docs/15 §20), inside the General tab's: off, on for the admin only, on for everyone. */
+  charmAccess: EventAccess
+  /**
+   * The Shiny Charm, one row per level: the wild shiny odds it gives, as "1 in `oneIn`", and its price. It never makes
+   * them worse than game_config's `shinyChance`.
+   */
+  charm: { oneIn: number; cost: number }[]
 }
 
 /** Trades (docs/23-TRADING-PLAN.md): listings, like the games' GTS. The server reads the same row. */
@@ -1637,12 +1644,16 @@ export interface GeneralSave {
   offline?: number
   /** "I am just rich": a golden name in the social features. */
   rich?: boolean
+  /** The Shiny Charm's level (0 = none). */
+  charm?: number
   /** The page went hidden or closed here (server time, ms): offline earnings run from then until the return. */
   awayFrom?: number
   /** Time (ms) the last absence spent towards a ₽ it didn't reach: it counts in the next one. */
   carryMs?: number
   /** The General tab's rules pop-up has been shown (once; INFO shows it again). */
   rulesSeen?: boolean
+  /** The Shiny Charm's rules have been shown: in the General tab's pop-up, or its own once that was seen already. */
+  charmSeen?: boolean
 }
 
 /** What a listing asks for (docs/23 §1.1): one species, any the poster doesn't own, or anything. */
