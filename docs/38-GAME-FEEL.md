@@ -88,10 +88,10 @@ switch; the haptics in `src/lib/haptics.ts` (`haptic(cue)`).
 - **U4a · CONTINUE becomes GO TO.** Behind in the region, Home showed a red CONTINUE that replayed a cleared area
   ("Cleared · free play") above a green GO TO {area} that moved the story on: the main button was the wrong one. Now,
   when the player is behind (`latestOpenArea`) and nothing of its own waits where they stand (a cleared area's free
-  play, or a closed one), the big red button itself reads **GO TO {area}** and travels there, its second line saying
-  what waits there (the round, the gym leader, the legend); **Stay here**, a 44 px link under it, keeps today's free
-  play. With something waiting here (a gym, a legend, a raid, a secret area's rounds, a portal or the nightmare),
-  CONTINUE stays, with the green GO TO under it. The victory card's forward button follows the same idea.
+  play), the big red button itself reads **GO TO {area}** and travels there, its second line saying what waits there
+  (the round, the gym leader, the legend); **Stay here**, a 44 px link under it, keeps today's free play. With
+  something else here (a gym, a legend, a raid, a secret area's rounds, a portal or the nightmare, or a closed or
+  sealed area, whose shut CONTINUE says why), CONTINUE stays, with the green GO TO under it. The victory card's forward button follows the same idea.
 - **U5a · One red GO in the Areas sheet.** Every area card's GO was red (five in view at once). Now only the GO of the
   area Home's big button leads to is red (the one being played, or the one the story goes on in when behind); the
   others are navy (`frame-dark`). In the Regions view the new region's button is the red one while a region is on

@@ -406,11 +406,11 @@ Players shouldn't have to make many requests:
   and the HOME buttons.
 - **Behind in the region** (the furthest open area of the region's main chain is elsewhere: `latestOpenArea`; secret
   areas don't count; not while an encounter is under way): with nothing of its own waiting where the player stands (a
-  cleared area's free play, or a closed one), **CONTINUE itself reads GO TO {area}** and travels there, its second line
-  saying what waits there (the round, the gym leader, the legend); **Stay here**, a link under it (44 px tall), keeps
-  the free play CONTINUE gave (`ContinueButton`, `StayHere`; docs/38 U4a). With something waiting here (a gym, a
-  legend, a raid, a secret area's rounds, a portal, the nightmare) CONTINUE stays, and a green GO TO {area} sits under
-  it. Until the player is there or the whole chain is cleared. On wide screens the scene gives up the height of what
+  cleared area's free play), **CONTINUE itself reads GO TO {area}** and travels there, its second line saying what
+  waits there (the round, the gym leader, the legend); **Stay here**, a link under it (44 px tall), keeps the free play
+  CONTINUE gave (`ContinueButton`, `StayHere`; docs/38 U4a). With something else here (a gym, a legend, a raid, a
+  secret area's rounds, a portal, the nightmare, or a closed area's shut CONTINUE saying why) CONTINUE stays, and a
+  green GO TO {area} sits under it. Until the player is there or the whole chain is cleared. On wide screens the scene gives up the height of what
   sits under the big button (Stay here, the green GO TO, Keep exploring), so the whole bar stays on screen without
   scrolling.
 - **A team on a widget banner** (Versus) spreads over the room up to what sits beside it (the VS, the

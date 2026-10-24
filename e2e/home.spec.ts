@@ -166,16 +166,16 @@ test("Home's squares are only for what's open, and one line says what opens next
   await expect(page.getByText('Special events')).toHaveCount(0)
   expect(await seriousAxe(page)).toEqual([])
 
-  // Twenty species caught: the Day Care's square, and the line moves on to Versus.
-  const save = makeSave(4)
-  await page.evaluate(
-    (s) => localStorage.setItem('pokedice.save', s),
-    JSON.stringify({ ...save, pokedex: Array.from({ length: 20 }, (_, i) => i + 1) }),
-  )
-  await page.reload()
-  await expect(page.getByText('Coming up: Versus · 0/3 at Lv.50')).toBeVisible()
-  await expect(squares).toHaveCount(1)
-  await expect(squares.first()).toHaveAccessibleName(/^Day Care/)
+  // Twenty species caught (the Day Care's rules already read): its square, and the line moves on to Versus.
+  const later = await page.context().newPage()
+  const caught = Array.from({ length: 20 }, (_, i) => i + 1)
+  const dayCare = { residents: [], guests: [], eggClaimed: false, visited: true }
+  await boot(later, makeSave(4, { pokedex: caught, dayCare }))
+  await later.goto('/home')
+  await expect(later.getByText('Coming up: Versus · 0/3 at Lv.50')).toBeVisible()
+  const open = later.getByRole('region', { name: 'Shortcuts' }).getByRole('button')
+  await expect(open).toHaveCount(1)
+  await expect(open.first()).toHaveAccessibleName(/^Day Care/)
 })
 
 test('a new region: its partner is picked in the lab, from three Poké Balls', async ({ page }) => {

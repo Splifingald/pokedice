@@ -159,10 +159,10 @@ export function useContinue(area: Area) {
   }
   // Behind in the region's main chain (not mid-encounter): the furthest open area, where the story goes on.
   const latest = useGame((s) => (busy || !s.save ? null : latestOpenArea(s.save, s.data, serverNow())))
-  // With nothing of its own waiting here (a cleared area's free play, or a closed one), CONTINUE itself becomes GO TO
-  // that area: the red button moved nothing on, and the green one under it did. "Stay here" keeps the free play.
-  // Anything else waiting here (a gym, a legend, a raid, a secret area's rounds, a portal, the nightmare) keeps CONTINUE,
-  // with the green GO TO under it. Home sizes its scene around what sits under the button.
+  // With nothing of its own waiting here (a cleared area's free play), CONTINUE itself becomes GO TO that area: the red
+  // button moved nothing on, and the green one under it did. "Stay here" keeps the free play. Anything else here (a gym,
+  // a legend, a raid, a secret area's rounds, a portal, the nightmare, or a closed area's shut CONTINUE saying why)
+  // keeps CONTINUE, with the green GO TO under it. Home sizes its scene around what sits under the button.
   const behind =
     !!latest &&
     !busy &&
@@ -174,14 +174,13 @@ export function useContinue(area: Area) {
     !struck &&
     !portal?.active &&
     !dream?.active &&
-    (progress.cleared || closed)
+    !closed &&
+    progress.cleared
   // GO TO's two lines: the area, and what waits for the player there (the gym, the legend, the round).
   const goTo =
     behind && latest
       ? { area: latest, label: t('ui.victory.goToArea', { name: latest.name }), sub: waitsIn(latest) }
       : null
-  // Free play stays a tap away under GO TO, unless the area has nothing left to play.
-  const stayHere = behind && !closed
   const keepExploring = !!(gym || boss || raid) && !closed && !busy && !resting
   const label = enterDream
     ? t('ui.nightmare.enter')
@@ -210,7 +209,6 @@ export function useContinue(area: Area) {
     cleared: progress.cleared,
     latest,
     goTo,
-    stayHere,
     keepExploring,
     enter,
   }
@@ -296,8 +294,7 @@ export function ContinueBar({
   onAreas: () => void
 }) {
   const { t } = useT()
-  const { label, sub, go, explore, off, gym, boss, raid, empty, resting, latest, goTo, stayHere, keepExploring } =
-    useContinue(area)
+  const { label, sub, go, explore, off, gym, boss, raid, empty, resting, latest, goTo, keepExploring } = useContinue(area)
   const lockId = useId()
   // Darkrai's nightmare holds the player in its area (docs/30): the Areas button is shut, and says why.
   const held = useGame((s) => nightmareLock(s.save, s.data))
@@ -344,7 +341,8 @@ export function ContinueBar({
           <ContinueButton label={label} sub={sub} icon={gym || boss || raid ? 'sword' : 'play'} off={off} onClick={go} />
         )}
       </div>
-      {ahead && stayHere && <StayHere sub={sub} onClick={go} />}
+      {/* The free play stays a tap away under GO TO. */}
+      {ahead && <StayHere sub={sub} onClick={go} />}
       {heldWhy && (
         <p
           id={lockId}

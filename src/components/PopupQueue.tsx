@@ -2,7 +2,7 @@
 // gathers what the engine can't know (the page, the account, the clock, what waits outside the save) and works the
 // turn out once for the whole game, and OneTimePopups mounts every pop-up and the services that bring them in. Each
 // pop-up opens only on its turn (popupTurn.ts), so they queue, one at a time, in one order.
-import type { ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { nextOneTimePopup } from '@/engine'
 import { useFullscreen } from '@/lib/fullscreen'
@@ -52,12 +52,36 @@ export function PopupQueue({ children }: { children: ReactNode }) {
   const inviteReward = useInviteRewardWaiting()
   const asking = usePush((s) => !!s.asking)
   const showing = usePopupOnScreen((s) => s.id)
-  const turn = useGame((s) =>
-    nextOneTimePopup(s.save, s.data, {
-      calm: s.run.phase === 'idle' && !s.battle && !full && !gifts,
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  const idle = useGame((s) => s.run.phase === 'idle' && !s.battle)
+  const signedIn = useGame((s) => s.auth.status === 'signed_in')
+  // Worked out again only when one of these changes, not on every change to the store (a toast, a fight's turn).
+  const turn = useMemo(
+    () =>
+      nextOneTimePopup(save, data, {
+        calm: idle && !full && !gifts,
+        path,
+        signedIn,
+        online: isSupabaseConfigured,
+        now,
+        shareSeen,
+        awayReport,
+        offlineReport,
+        replies,
+        raidGifts,
+        inviteReward,
+        pushAsking: asking && pushReady(data),
+        showing,
+      }),
+    [
+      save,
+      data,
+      idle,
+      full,
+      gifts,
       path,
-      signedIn: s.auth.status === 'signed_in',
-      online: isSupabaseConfigured,
+      signedIn,
       now,
       shareSeen,
       awayReport,
@@ -65,9 +89,9 @@ export function PopupQueue({ children }: { children: ReactNode }) {
       replies,
       raidGifts,
       inviteReward,
-      pushAsking: asking && pushReady(s.data),
+      asking,
       showing,
-    }),
+    ],
   )
   return <PopupTurnContext.Provider value={turn}>{children}</PopupTurnContext.Provider>
 }
