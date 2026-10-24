@@ -19,3 +19,7 @@
   (`https://github.com/Splifingald/pokedice/blob/<branch>/supabase/migrations/<file>.sql`), in the reply and in the
   feature's doc (its "Setting it up" steps). Say also that `supabase/seed.sql` carries it when the migration is inlined.
 - Never push to `main`.
+- **Patch note with every change bound for `main`** (a push the user asks for, or a PR into `main`): write
+  `patch-notes/YYYY-MM-DD-short-name.md` (format: `patch-notes/README.md`), show it to the user with
+  `pnpm discord:patch-notes <file> --dry`, and add it only once they approve it. Adding it to `main` posts it to Discord
+  as soon as the site is live, so leave out what players can't see yet (a feature still Off or On for admin).
