@@ -22,8 +22,12 @@ export function setSfxEnabled(on: boolean) {
   enabled = on
 }
 
-function audio(): AudioContext | null {
-  if (!enabled || typeof window === 'undefined') return null
+/**
+ * The one AudioContext every sound shares; null while sound is off. The battle music (src/audio/music.ts) asks
+ * `always`: it checks the Sound setting itself, and a fight resumed on load starts before App has applied it here.
+ */
+export function audio(always = false): AudioContext | null {
+  if ((!enabled && !always) || typeof window === 'undefined') return null
   try {
     const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
     if (!AC) return null

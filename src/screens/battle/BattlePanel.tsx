@@ -14,6 +14,7 @@ import {
   type StatusKind,
 } from '@/engine'
 import { feelSound } from '@/audio/feel'
+import { sfx } from '@/audio/sfx'
 import { Chip, StatusChip } from '@/components/Chip'
 import { PixelButton } from '@/components/PixelButton'
 import { DiceSet } from '@/components/DiceSet'
@@ -456,7 +457,7 @@ export function TeamPips({
           <button
             key={b.uid}
             type="button"
-            onClick={open ? () => onPick(b) : undefined}
+            onClick={open ? blip(() => onPick(b)) : undefined}
             aria-disabled={!open}
             aria-label={
               out
@@ -529,7 +530,7 @@ export function TeamColumn({
           <button
             key={b.uid}
             type="button"
-            onClick={open ? () => onPick(b) : undefined}
+            onClick={open ? blip(() => onPick(b)) : undefined}
             aria-disabled={!open}
             aria-label={
               out
@@ -561,6 +562,14 @@ export function TeamColumn({
   )
 }
 
+/** The button blip before the action, as a PixelButton plays it: the pips and the Bag aren't PixelButtons (docs/38). */
+function blip(act: () => void) {
+  return () => {
+    sfx('button')
+    act()
+  }
+}
+
 /** The Bag: one item a turn, and it doesn't end the turn. */
 export function BagButton({
   disabled,
@@ -577,7 +586,7 @@ export function BagButton({
       type="button"
       disabled={disabled}
       title={title}
-      onClick={onClick}
+      onClick={blip(onClick)}
       className="inline-flex min-h-[48px] items-center gap-1.5 bg-paper py-1 pl-2 pr-3 text-[18px] leading-none text-ink shadow-card disabled:opacity-50"
     >
       <PixelIcon name="potion" size={20} />

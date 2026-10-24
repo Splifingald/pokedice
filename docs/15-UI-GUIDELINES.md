@@ -136,7 +136,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 
 | Component | When | States |
 |---|---|---|
-| `PixelButton` | Any action | `primary` (red, the one main action), `secondary` (white), `gold` (one new thing to open: a new region, an Egg), `success` (green: collect), `danger` (destructive, red), `ghost`, `dark`; sizes `sm` (44 px on phones), `md`, `lg` (56 px), `xl` (72 px, the big CTA); disabled; **shut** (`shut={reason}`: a lock such as a fight under way; drawn as disabled but focusable, `aria-disabled`, the reason after its name and in its title, a tap says it in a toast and does nothing else). `.sheen` adds the passing light on a CTA |
+| `PixelButton` | Any action | `primary` (red, the one main action), `secondary` (white), `gold` (one new thing to open: a new region, an Egg), `success` (green: collect), `danger` (destructive, red), `ghost`, `dark`; sizes `sm` (44 px on phones), `md`, `lg` (56 px), `xl` (72 px, the big CTA); disabled; **shut** (`shut={reason}`: a lock such as a fight under way; drawn as disabled but focusable, `aria-disabled`, the reason after its name and in its title, a tap says it in a toast and does nothing else). `.sheen` adds the passing light on a CTA. **A press is felt as the finger lands** (docs/38 §5): the pressed look (`data-down`, as `:active`), the blip and, on `primary`, the haptic come on `pointerdown`; the action waits for the click, so a press that becomes a scroll does nothing; a keyboard's click plays the blip itself. With haptics on, a `primary` `type="button"` on an iPhone wears an invisible native switch over itself (`HapticSwitch`: `aria-hidden`, not focusable) for iOS's system tap |
 | `Panel` | A block of content | light, dark, dialogue; optional title row |
 | `Dialogue` | Narration, battle messages | Typewriter text (tap to finish), blinking ▼; two lines tall so nothing jumps |
 | `Chip` | A short label | `plain`, `gold`, `green` (ready), `done` (cleared), `red` (where you are), `blue` (open), `lock`, `dark` |
@@ -326,6 +326,14 @@ sound is off). Details in [docs/13 → Cries](13-SHOWDOWN-SPRITES.md#cries).
 **One switch for both**, Settings → Sound (`settings.sound`, read through `soundOn`): on by default, and on for
 saves from before it (unset = on). `settings.sfx` is the old effects-only switch, kept in step for older builds; don't
 read it. Sound off means no sound and no cry request at all.
+
+**Every tap is heard**: a button that isn't a `PixelButton` (the battle's Bag, team pips and history, Upgrades' buy)
+plays the same blip (`sfx('button')`), and `PixelButton` plays it as the finger lands (§5).
+
+**Battle music** (docs/38 §5, the admin's switch): an original 8-bit loop synthesised in `src/audio/music.ts` on the
+effects' AudioContext, booked ahead on its clock; a fight screen mounts it with `useBattleMusic(playing)`. It needs
+Sound, has its own switch and volume under it in Settings (`settings.music`, `settings.musicVolume`), fades out at
+the result card, pauses in a hidden tab.
 
 ## 10. Words and numbers
 

@@ -72,6 +72,7 @@ import { PowersBits } from './kitchen/PowersBits'
 import { ShellBits } from './kitchen/ShellBits'
 import { RewardBits } from './kitchen/RewardBits'
 import { HitFeelBits } from './kitchen/HitFeelBits'
+import { FeelBits } from './kitchen/FeelBits'
 import { RotateView } from '@/components/RotateCover'
 import { SettingsOverlay } from '@/screens/Settings'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
@@ -745,6 +746,9 @@ export function KitchenSink() {
       </Section>
       <Section title="Game feel, the dice and the readout: the count-up at each combo tier (full, short, off), a pick's ↻ tag, the combo's brackets and rings, the last die's squash, the last reroll's jitter, dice in hand, the readout counting (docs/38)">
         <FeelDiceBits />
+      </Section>
+      <Section title="Taps, haptics and music: a pressed button, the haptics test pad, Settings' music and vibration rows (each state), the battle loop (docs/38)">
+        <FeelBits />
       </Section>
 
       <Section title="StatusIcons · PixelIcon">

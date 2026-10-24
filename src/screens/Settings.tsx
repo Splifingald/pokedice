@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { SupportModal } from '@/components/SupportModal'
 import { Modal } from '@/components/Modal'
 import { Panel } from '@/components/Panel'
+import { FeelSettings } from '@/components/FeelSettings'
 import { PushSettingsPanel } from '@/components/PushSettings'
 import { PixelButton } from '@/components/PixelButton'
 import { Seg } from '@/components/Segmented'
@@ -118,6 +119,7 @@ function SettingsContent({ over = false, shut }: { over?: boolean; shut?: string
           on={soundOn(settings)}
           onChange={(v) => setSettings({ sound: v, sfx: v })}
         />
+        <FeelSettings />
         <Toggle
           label={t('ui.settings.multiExp')}
           hint={

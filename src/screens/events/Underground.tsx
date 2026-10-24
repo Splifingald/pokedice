@@ -141,7 +141,7 @@ export function UndergroundScreen() {
       )
       return
     }
-    sfx('button')
+    // No blip of its own: the PixelButton plays it as the finger lands (docs/38 F7a).
     navigate('/underground/dig')
   }
 

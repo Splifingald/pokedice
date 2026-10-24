@@ -224,6 +224,10 @@ export const saveSchema = z.object({
     raidFast: z.boolean().optional(),
     lang: z.enum(LANGS).optional(),
     theme: z.enum(['light', 'dark', 'auto']).optional(),
+    // The game-feel switches (docs/38). Without them here the save's settings, read first at boot, dropped them.
+    haptics: z.boolean().optional(),
+    music: z.boolean().optional(),
+    musicVolume: z.number().min(0).max(1).optional().catch(undefined),
   }),
   hpScale: z.number().positive().optional(),
   player: z.object({ name: z.string().max(12), character: z.enum(['red', 'green']), avatar: z.string().max(40).optional() }).optional(),

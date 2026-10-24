@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
-import { instanceMaxHp, monName, type Area, type PokemonInstance } from '@/engine'
+import { gameFeelOn, instanceMaxHp, monName, type Area, type PokemonInstance } from '@/engine'
+import { playCry } from '@/audio/cries'
 import { useT } from '@/i18n/react'
 import { HpBar } from '@/components/HpBar'
 import { LevelTag } from '@/components/Chip'
@@ -27,6 +28,8 @@ interface Member {
  */
 /** Two taps on the same Pokémon within this long open its sheet. */
 const DOUBLE_TAP_MS = 400
+/** A poked Pokémon's cry (docs/38): no closer than this to the last one. */
+const CRY_GAP_MS = 2000
 
 export function SceneStage({
   area,
@@ -48,6 +51,7 @@ export function SceneStage({
   const imgs = useRef<(HTMLImageElement | null)[]>([])
   const [card, setCard] = useState<{ uid: string; x: number; y: number } | null>(null)
   const lastTap = useRef<{ uid: string; t: number } | null>(null)
+  const lastCry = useRef(-Infinity)
 
   const members: Member[] = useMemo(
     () =>
@@ -102,9 +106,15 @@ export function SceneStage({
     return () => clearTimeout(id)
   }, [card])
 
-  const poke = (m: Mon) => {
+  const poke = (m: Mon, at: number) => {
     herd.poke(m)
     setCard({ uid: m.def.uid, x: m.x, y: m.y - m.sz.h })
+    // The game-feel pass (docs/38 F12d): it answers with its cry, at most one every 2 s however fast the taps come.
+    // `playCry` stays silent while Sound is off.
+    if (gameFeelOn(data) && at - lastCry.current >= CRY_GAP_MS) {
+      lastCry.current = at
+      playCry(m.def.dex)
+    }
   }
   const art = herd.world.art
   const names = members.map((m) => m.name).join(', ')
@@ -136,7 +146,7 @@ export function SceneStage({
           return onOpen(hit.def.uid)
         }
         lastTap.current = { uid: hit.def.uid, t: now }
-        poke(hit)
+        poke(hit, now)
       }}
     >
       <canvas

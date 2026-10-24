@@ -179,6 +179,8 @@ export function UpCard({
     step(0)
   }
   const buy = () => {
+    // The press, as a PixelButton sounds it; a buy adds its level-up after.
+    sfx('button')
     if (u.cost == null || u.locked) return
     if (!can) return pushToast(t('ui.upgrades.short', { amount: money(u.cost - gold) }), 'info')
     const level = u.level + 1
