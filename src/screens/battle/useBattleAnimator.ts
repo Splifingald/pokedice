@@ -10,7 +10,7 @@ import {
   type StatusKind,
 } from '@/engine'
 import { t } from '@/i18n'
-import { comboName, typeName } from '@/lib/format'
+import { chancePercent, comboName, typeName } from '@/lib/format'
 import { hasOwnCry } from '@/audio/cries'
 import { sfx, type SfxName } from '@/audio/sfx'
 import type { BattleSlice } from '@/store/game'
@@ -150,12 +150,13 @@ export interface Step {
   land?: (f: Fx, staged: boolean) => Fx
 }
 
-const STATUS_TEXT: Record<StatusKind, (n: string, stacks?: number) => string> = {
+/** `n`: Burn's stacks, or how confused (1 a bit, 2, 3 very). */
+const STATUS_TEXT: Record<StatusKind, (name: string, n?: number) => string> = {
   burn: (name, s) => t('ui.log.burned', { name, stacks: s && s > 1 ? t('ui.log.stacks', { n: s }) : '' }),
   poison: (name) => t('ui.log.poisoned', { name }),
   frozen: (name) => t('ui.log.frozen', { name }),
   paralyze: (name) => t('ui.log.paralyzed', { name }),
-  confuse: (name) => t('ui.log.confused', { name }),
+  confuse: (name, lv = 2) => t(lv <= 1 ? 'ui.log.confusedBit' : lv >= 3 ? 'ui.log.confusedVery' : 'ui.log.confused', { name }),
   heal: (name) => t('ui.log.healing', { name }),
 }
 
@@ -272,8 +273,19 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
         delay: 850,
         apply: (f) => ({
           ...f,
-          message: STATUS_TEXT[e.status](nameOf(e.targetUid), e.stacks),
+          message: STATUS_TEXT[e.status](nameOf(e.targetUid), e.status === 'confuse' ? e.level : e.stacks),
           status: { id: nextId(), target: e.target, status: e.status },
+        }),
+      }
+    case 'status_resisted':
+      return {
+        delay: 850,
+        apply: (f) => ({
+          ...f,
+          message: t(e.status === 'frozen' ? 'ui.log.resistedFrozen' : 'ui.log.resistedParalyze', {
+            name: nameOf(e.targetUid),
+            pct: chancePercent(e.chance),
+          }),
         }),
       }
     case 'status_tick':

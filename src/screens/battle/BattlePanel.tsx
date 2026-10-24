@@ -1,7 +1,7 @@
 // The battle panel under the stage: the dice tray, the readout under it (combo, damage math, effectiveness, statuses),
 // the team pips, the switch rows and the Bag. Every number comes from the engine (computeDamage, statusesFromRoll, comboDice).
 import type { ReactNode } from 'react'
-import { faceOf, type Battler, type DamageResult, type RolledDie, type Side, type StatusKind } from '@/engine'
+import { faceOf, type Battler, type DamageResult, type RolledDie, type Side, type StatusApplication } from '@/engine'
 import { Chip, StatusChip } from '@/components/Chip'
 import { PixelButton } from '@/components/PixelButton'
 import { DiceSet } from '@/components/DiceSet'
@@ -11,7 +11,7 @@ import { HpBar } from '@/components/HpBar'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { useT } from '@/i18n/react'
-import { comboName, statusName } from '@/lib/format'
+import { chancePercent, comboName } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { BoosterChip } from '@/screens/events/world'
 import { PALETTE } from '@/theme/colors'
@@ -83,14 +83,23 @@ export function DiceTray({
 
 export interface Preview {
   r: DamageResult
-  statuses: { status: StatusKind; stacks?: number }[]
-  almost: { status: StatusKind; have: number; need: number; value: number }[]
+  /** What the roll's status faces do (engine `statusesFromRoll`). */
+  statuses: StatusApplication[]
   recoil: number
+}
+
+/** A status chip's counter: Burn's stacks, a Freeze's or a Paralysis's chance short of sure, how confused, the heal. */
+function statusCount(s: StatusApplication): string | undefined {
+  if (s.status === 'burn') return s.stacks && s.stacks > 1 ? `×${s.stacks}` : undefined
+  if (s.chance != null) return s.chance < 1 ? `${chancePercent(s.chance)}%` : undefined
+  if (s.status === 'confuse') return s.level && s.level > 1 ? `×${s.level}` : undefined
+  if (s.status === 'heal') return s.amount ? `+${s.amount}` : undefined
+  return undefined
 }
 
 /**
  * Under the tray: the combo chip (or "No combo"), the damage, big (a button: the math behind it, shown once, under the
- * readout), how effective it is, and a chip per status face — lit once its threshold is met.
+ * readout), how effective it is, and a chip per status the faces cause, with its stacks, chance, level or heal.
  */
 export function Readout({
   preview,
@@ -145,19 +154,7 @@ export function Readout({
         </span>
       )}
       {preview.statuses.map((s) => (
-        <StatusChip
-          key={s.status}
-          status={s.status}
-          count={s.stacks && s.stacks > 1 ? `×${s.stacks}` : undefined}
-        />
-      ))}
-      {preview.almost.map((s) => (
-        <span
-          key={s.status}
-          title={t('ui.battle.almostStatus', { status: statusName(s.status), need: s.need })}
-        >
-          <StatusChip status={s.status} lit={false} count={`${s.have}/${s.need}`} />
-        </span>
+        <StatusChip key={s.status} status={s.status} count={statusCount(s)} />
       ))}
       {preview.recoil > 0 && (
         <span className="w-full text-center font-pixel-sm text-[15px] leading-tight text-danger">

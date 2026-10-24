@@ -41,11 +41,10 @@ export const DEFAULT_CONFIG: GameConfig = {
   energy: { enabled: true, max: 50, minutesPerEnergy: 30 },
   status: {
     burn: { threshold: 1, percentPerStack: 4, duration: 3 },
-    poison: { threshold: 2, percent: 10, duration: 3 },
-    frozen: { threshold: 3, stunTurns: 2 },
-    paralyze: { threshold: 2, stunTurns: 1 },
-    confuse: { threshold: 2, recoilPercent: 10 },
-    heal: { threshold: 2, amount: 'rollTotal' },
+    poison: { percent: 5, duration: 5 },
+    frozen: { sureAt: 3, stunTurns: 2 },
+    paralyze: { sureAt: 2, stunTurns: 1 },
+    confuse: { recoilPercentPerFace: 10, maxFaces: 3 },
   },
   ai: { samples: 200, rerollGainThreshold: 0.08 },
   // Game Corner: every spin shows something. Returns 8.5 ₽ per 10 ₽ on average, plus the Porygon jackpot; a jackpot

@@ -69,7 +69,7 @@ export function LevelTag({ level, className }: { level: number; className?: stri
 
 /**
  * A status as words and colour, never colour alone: its icon, its short name (BRN, PAR…) and an optional counter
- * ("1/2" toward its threshold, turns left). `lit`: the status will land (the threshold is met).
+ * (stacks, a chance, turns left). `lit`: off greys it, for a status that won't land.
  */
 export function StatusChip({
   status,

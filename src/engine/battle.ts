@@ -7,10 +7,11 @@ import { reviveHp } from './economy'
 import { ARCEUS_DEX, choiceFormDie, choiceFormsOf, gmaxFormsOf, lowHpFormOf, megaDie, megaFormsOf, megaOptions, swapOneDie } from './forms'
 import { effectiveStats } from './progression'
 import { potionHeal, shouldUsePotion } from './trainerItems'
-import type { Rng } from './rng'
+import { createRng, type Rng } from './rng'
 import {
   applyStatuses,
   clearStatuses,
+  confusionLevel,
   consumeStun,
   emptyStatus,
   hasAnyStatus,
@@ -18,6 +19,7 @@ import {
   statusesFromRoll,
   stunKind,
   tickDot,
+  type StatusApplication,
   type StatusState,
 } from './status'
 import type { CurableStatus, DieType, GameData, PokeType, PowerKind, RaidTypeScale, Species, StatusKind } from './types'
@@ -297,7 +299,19 @@ export type LogEntry =
       /** A Z-Move's hit (docs/35); `from`: the strike of one that went away a turn before. */
       z?: { from?: ZAway }
     }
-  | { kind: 'status'; target: Side; targetUid: string; status: StatusKind; stacks?: number; turns?: number }
+  /** `level`: how confused (1–3); `chance`: what a Freeze or a Paralysis had to land (0–1). */
+  | {
+      kind: 'status'
+      target: Side
+      targetUid: string
+      status: StatusKind
+      stacks?: number
+      turns?: number
+      level?: number
+      chance?: number
+    }
+  /** A Freeze or a Paralysis that missed its chance. */
+  | { kind: 'status_resisted'; target: Side; targetUid: string; status: StatusKind; chance: number }
   | { kind: 'status_tick'; target: Side; targetUid: string; status: 'burn' | 'poison'; amount: number; hpAfter: number }
   /** `pending`: the player may still cure it before the turn is lost. */
   | { kind: 'stunned'; side: Side; uid: string; status: 'frozen' | 'paralyze'; pending?: boolean }
@@ -885,7 +899,7 @@ function deadlocked(s: BattleState, data: GameData): boolean {
   const me = activeBattler(s)
   const foe = s.enemy
   if (me.hp <= 0 || foe.hp <= 0) return false
-  const pending = (b: Battler) => !!b.status.burn || !!b.status.poison || b.status.confused
+  const pending = (b: Battler) => !!b.status.burn || !!b.status.poison || confusionLevel(b.status) > 0
   if (pending(me) || pending(foe) || canHurt(foe, me, data)) return false
   return !s.player.some((p) => p.hp > 0 && canHurt(p, foe, data))
 }
@@ -901,15 +915,16 @@ function endStep(s: BattleState) {
  * A raid step: `side` takes one turn in this one-on-one duel. It starts like any turn (the DoT ticks, then the stun
  * check: the player may still cure it) and ends with phase 'done' after its one action.
  */
-export function startDuelStep(s: BattleState, side: Side, data: GameData, log: LogEntry[]) {
+export function startDuelStep(s: BattleState, side: Side, data: GameData, log: LogEntry[], rng?: Rng) {
   s.single = true
   copyFoeDice(s, log)
-  beginTurn(s, side, data, log)
+  beginTurn(s, side, data, log, rng)
 }
 
 /** Turn start: DoT tick (can K.O.), then the stun check (skips the turn), then the actor may act. */
-function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[]) {
-  if (s.double) return beginDoubleTurn(s, data, log)
+/** `rng`: for a chance status (Freeze, Paralysis) carried by a strike from a turn away; absent at a battle's start. */
+function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[], rng?: Rng) {
+  if (s.double) return beginDoubleTurn(s, data, log, rng)
   const rules = data.config.status
   for (let guard = 0; guard < 50; guard++) {
     // A raid keeps its own count of turns.
@@ -946,7 +961,7 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[]) 
       delete b.away
       s.dice = dice
       s.selected = dice.map(() => false)
-      return resolveAttack(s, side, data, log, undefined, how)
+      return resolveAttack(s, side, data, log, rng, how)
     }
 
     const stun = stunKind(b.status)
@@ -968,18 +983,18 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[]) 
   }
 }
 
-function afterAction(s: BattleState, side: Side, data: GameData, log: LogEntry[]) {
+function afterAction(s: BattleState, side: Side, data: GameData, log: LogEntry[], rng?: Rng) {
   tickGmax(s, side, data, log)
   if (s.single) return endStep(s)
   if (s.double) {
-    if (!doubleKnockouts(s, log)) beginDoubleTurn(s, data, log)
+    if (!doubleKnockouts(s, log)) beginDoubleTurn(s, data, log, rng)
     return
   }
   if (checkKnockouts(s, log)) {
     if (s.phase === 'player_switch') s.nextActor = other(side)
     return
   }
-  beginTurn(s, other(side), data, log)
+  beginTurn(s, other(side), data, log, rng)
 }
 
 // ---------------------------------------------------------------- Double battles (docs/33)
@@ -1136,7 +1151,7 @@ function doubleDeadlocked(s: BattleState, data: GameData): boolean {
   const own = ownOnField(s).filter((b) => b.hp > 0)
   const foes = foesOnField(s).filter((b) => b.hp > 0)
   if (!own.length || !foes.length) return false
-  const pending = (b: Battler) => !!b.status.burn || !!b.status.poison || b.status.confused
+  const pending = (b: Battler) => !!b.status.burn || !!b.status.poison || confusionLevel(b.status) > 0
   if ([...own, ...foes].some(pending)) return false
   if (foes.some((f) => own.some((o) => canHurt(f, o, data)))) return false
   return !s.player.some((p) => p.hp > 0 && d.foes.some((f) => f.hp > 0 && canHurt(p, f, data)))
@@ -1160,7 +1175,7 @@ function nextActor(s: BattleState): { side: Side; index: number } | null {
 }
 
 /** The next turn of the round: its actor moves to the front, then the DoT tick and the stun check as in any turn. */
-function beginDoubleTurn(s: BattleState, data: GameData, log: LogEntry[]) {
+function beginDoubleTurn(s: BattleState, data: GameData, log: LogEntry[], rng?: Rng) {
   const rules = data.config.status
   for (let guard = 0; guard < 50; guard++) {
     // Four Pokémon take turns: the cap counts every one of them, so it is twice a single battle's.
@@ -1203,7 +1218,7 @@ function beginDoubleTurn(s: BattleState, data: GameData, log: LogEntry[]) {
       delete b.away
       s.dice = dice
       s.selected = dice.map(() => false)
-      return resolveAttack(s, side, data, log, undefined, how)
+      return resolveAttack(s, side, data, log, rng, how)
     }
     const stun = stunKind(b.status)
     if (stun && side === 'player') {
@@ -1280,7 +1295,7 @@ function doubleKnockouts(s: BattleState, log: LogEntry[]): boolean {
  * A switch in a double battle: after a K.O., a free one into the empty spot; on your turn, the Pokémon whose turn it
  * is goes back for one from the bench (or, with a spot empty, the bench one joins it), and the turn ends.
  */
-function doubleSwitch(s: BattleState, uid: string, data: GameData, log: LogEntry[]): boolean {
+function doubleSwitch(s: BattleState, uid: string, data: GameData, log: LogEntry[], rng?: Rng): boolean {
   const d = s.double!
   const idx = s.player.findIndex((b) => b.uid === uid)
   const target = s.player[idx]
@@ -1298,7 +1313,7 @@ function doubleSwitch(s: BattleState, uid: string, data: GameData, log: LogEntry
     if (d.toReplace > 0 && s.player.some((b, k) => b.hp > 0 && !d.ownSlots.includes(k))) return true
     d.toReplace = 0
     if (!d.ownSlots.includes(s.activeIndex)) setFront(s, idx, d.foeIndex, log)
-    beginDoubleTurn(s, data, log)
+    beginDoubleTurn(s, data, log, rng)
     return true
   }
   if ((s.phase !== 'player_roll' && s.phase !== 'player_reroll') || !data.config.allowVoluntarySwitch) return false
@@ -1316,13 +1331,19 @@ function doubleSwitch(s: BattleState, uid: string, data: GameData, log: LogEntry
   s.dice = []
   s.selected = []
   // The outgoing one's turn is spent; the newcomer waits for the next round.
-  if (!doubleKnockouts(s, log)) beginDoubleTurn(s, data, log)
+  if (!doubleKnockouts(s, log)) beginDoubleTurn(s, data, log, rng)
   return true
 }
 
-/** Recoil a confused attacker takes after its attack: `status.confuse.recoilPercent` of its max HP, at least 1. */
-export function confusionRecoil(maxHp: number, data: GameData): number {
-  return Math.max(1, Math.round((maxHp * data.config.status.confuse.recoilPercent) / 100))
+/**
+ * Recoil a confused attacker takes after its attack: `status.confuse.recoilPercentPerFace` of its max HP per level of
+ * confusion (the Confuse faces that caused it, `maxFaces` at most), at least 1. 0 when not confused.
+ */
+export function confusionRecoil(maxHp: number, level: number, data: GameData): number {
+  const r = data.config.status.confuse
+  const lv = Math.min(Math.max(0, Math.floor(level)), Math.max(1, r.maxFaces))
+  if (lv <= 0) return 0
+  return Math.max(1, Math.round((maxHp * lv * r.recoilPercentPerFace) / 100))
 }
 
 /**
@@ -1364,26 +1385,36 @@ function applyZEffect(effect: ZEffect, atk: Battler, def: Battler, side: Side, d
   }
   if (def.hp <= 0) return
   const status: StatusKind = effect === 'freeze' ? 'frozen' : effect
-  const app = effect === 'burn' ? { status, stacks: cfg.burnStacks } : { status }
+  // A Psychic Z-Move confuses as much as a full hand of Confuse faces.
+  const level = effect === 'confuse' ? Math.max(1, data.config.status.confuse.maxFaces) : undefined
+  const app = effect === 'burn' ? { status, stacks: cfg.burnStacks } : { status, level }
   def.status = applyStatuses(def.status, [app], data.config.status)
-  log.push({ kind: 'status', target: other(side), targetUid: def.uid, status, ...(effect === 'burn' && { stacks: cfg.burnStacks }) })
+  log.push({
+    kind: 'status',
+    target: other(side),
+    targetUid: def.uid,
+    status,
+    ...(effect === 'burn' && { stacks: cfg.burnStacks }),
+    ...(level && { level }),
+  })
 }
 
 /** Confusion: the attack still lands (or misses), then the attacker takes recoil (a % of its max HP) and it clears. */
 function confusedRecoil(atk: Battler, side: Side, data: GameData, log: LogEntry[]) {
-  if (!atk.status.confused) return
-  atk.status = { ...atk.status, confused: false }
-  const amount = confusionRecoil(atk.maxHp, data)
+  const level = confusionLevel(atk.status)
+  if (!level) return
+  atk.status = { ...atk.status, confused: 0 }
+  const amount = confusionRecoil(atk.maxHp, level, data)
   atk.hp = Math.max(0, atk.hp - amount)
   log.push({ kind: 'recoil', side, uid: atk.uid, amount, hpAfter: atk.hp })
 }
 
 /** The attack's end: forms by HP, the hand cleared, the turn over. */
-function endAttack(s: BattleState, side: Side, data: GameData, log: LogEntry[]) {
+function endAttack(s: BattleState, side: Side, data: GameData, log: LogEntry[], rng?: Rng) {
   checkHpForms(s, data, log)
   s.dice = []
   s.selected = []
-  afterAction(s, side, data, log)
+  afterAction(s, side, data, log, rng)
 }
 
 /**
@@ -1405,7 +1436,7 @@ function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry
     if (isAway(zMove.effect)) {
       atk.away = { how: zMove.effect, dice: [...dice] }
       log.push({ kind: 'away', side, uid: atk.uid, how: zMove.effect })
-      return endAttack(s, side, data, log)
+      return endAttack(s, side, data, log, rng)
     }
     // Steel: every status shaken off before the blow (so a confusion costs nothing either).
     if (zMove.effect === 'cleanse' && hasAnyStatus(atk.status)) {
@@ -1417,7 +1448,7 @@ function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry
   if (def.away) {
     log.push({ kind: 'dodge', side: other(side), uid: def.uid, how: def.away.how })
     confusedRecoil(atk, side, data, log)
-    return endAttack(s, side, data, log)
+    return endAttack(s, side, data, log, rng)
   }
   def.hp = Math.max(0, def.hp - result.final)
   s.lastDamage = result
@@ -1432,13 +1463,30 @@ function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry
     result,
     ...(z && { z: typeof z === 'string' ? { from: z } : {} }),
   })
-  const all = statusesFromRoll(dice, data)
-  const apps = all.filter((a) => a.status !== 'heal')
+  const all = statusesFromRoll(dice, data, levels)
   // An attack with no effect inflicts nothing either.
-  if (def.hp > 0 && apps.length && !result.immune) {
+  if (def.hp > 0 && !result.immune) {
+    // Freeze and Paralysis land on their chance (each face adds to it); a sure one draws nothing.
+    const chanceRng = rng ?? createRng(s.turn)
+    const apps: StatusApplication[] = []
+    for (const a of all) {
+      if (a.status === 'heal') continue
+      const chance = a.chance ?? 1
+      if (chance >= 1 || chanceRng.next() < chance) apps.push(a)
+      else log.push({ kind: 'status_resisted', target: other(side), targetUid: def.uid, status: a.status, chance })
+    }
     def.status = applyStatuses(def.status, apps, data.config.status)
     for (const a of apps)
-      log.push({ kind: 'status', target: other(side), targetUid: def.uid, status: a.status, stacks: a.stacks, turns: a.turns })
+      log.push({
+        kind: 'status',
+        target: other(side),
+        targetUid: def.uid,
+        status: a.status,
+        stacks: a.stacks,
+        turns: a.turns,
+        ...(a.level && { level: a.level }),
+        ...(a.chance != null && { chance: a.chance }),
+      })
   }
   if (zMove?.landed) applyZEffect(zMove.effect, atk, def, side, result.final, data, log)
   // Heal faces: the attacker restores HP on top of the damage it dealt.
@@ -1449,7 +1497,7 @@ function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry
     log.push({ kind: 'heal', side, uid: atk.uid, amount: atk.hp - before, hpAfter: atk.hp })
   }
   confusedRecoil(atk, side, data, log)
-  endAttack(s, side, data, log)
+  endAttack(s, side, data, log, rng)
 }
 
 const NOOP = (state: BattleState) => ({ state, log: [] as LogEntry[] })
@@ -1494,7 +1542,7 @@ export function reduce(
     }
     case 'ATTACK': {
       if (s.phase !== 'player_reroll') return NOOP(state)
-      resolveAttack(s, 'player', data, log)
+      resolveAttack(s, 'player', data, log, rng)
       break
     }
     case 'ZMOVE': {
@@ -1589,13 +1637,13 @@ export function reduce(
       tickGmax(s, 'player', data, log)
       if (s.single) endStep(s)
       else if (s.double) {
-        if (!doubleKnockouts(s, log)) beginDoubleTurn(s, data, log)
-      } else beginTurn(s, 'enemy', data, log)
+        if (!doubleKnockouts(s, log)) beginDoubleTurn(s, data, log, rng)
+      } else beginTurn(s, 'enemy', data, log, rng)
       break
     }
     case 'SWITCH': {
       if (s.double) {
-        if (!doubleSwitch(s, e.instanceId, data, log)) return NOOP(state)
+        if (!doubleSwitch(s, e.instanceId, data, log, rng)) return NOOP(state)
         break
       }
       const idx = s.player.findIndex((b) => b.uid === e.instanceId)
@@ -1611,14 +1659,14 @@ export function reduce(
         if (!s.participants.includes(target.uid)) s.participants.push(target.uid)
         log.push({ kind: 'switch', uid: target.uid, free: true })
         copyFoeDice(s, log)
-        beginTurn(s, s.nextActor, data, log)
+        beginTurn(s, s.nextActor, data, log, rng)
       } else if ((s.phase === 'player_roll' || s.phase === 'player_reroll') && data.config.allowVoluntarySwitch) {
         // Before or after the roll (the UI rolls for you): the dice are dropped and the turn ends.
         s.activeIndex = idx
         if (!s.participants.includes(target.uid)) s.participants.push(target.uid)
         log.push({ kind: 'switch', uid: target.uid, free: false })
         copyFoeDice(s, log)
-        afterAction(s, 'player', data, log)
+        afterAction(s, 'player', data, log, rng)
       } else return NOOP(state)
       break
     }

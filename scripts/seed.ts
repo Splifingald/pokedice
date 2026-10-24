@@ -861,7 +861,8 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  * redefined), then 0066 (the small worlds on the leaderboard: it redefines 0054's leaderboard), then 0068 (idle mode,
  * docs/36: its switch's row, Off), then 0069 (recorded dice throws, docs/37: its switch's row, Off), then 0070 (the
  * Underground's solo price, docs/34: its row gains `soloShare`, so it comes after 0063), then 0072 (recurring live
- * events, docs/20 §9: 0063's ug_live redefined, so it comes after it). Folded into seed.sql
+ * events, docs/20 §9: 0063's ug_live redefined, so it comes after it), then 0073 (the status faces' new rules,
+ * docs/01 §3.2: the `status` row rewritten). Folded into seed.sql
  * so there is
  * one file to run rather than several in a particular order. The
  * migrations stay the single source of that SQL — they are written to be idempotent, so re-running them costs little.
@@ -896,6 +897,7 @@ export async function regionsPrelude(): Promise<string> {
       '0070_underground_solo_sell.sql',
       '0071_kofi.sql',
       '0072_live_recurring.sql',
+      '0073_status_faces.sql',
     ].map(async (name) => {
       const sql = (await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')).replace(/^(begin|commit);\n/gm, '')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`

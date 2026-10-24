@@ -268,7 +268,7 @@ export function KitchenSink() {
         </span>
         <div className="flex w-full flex-wrap gap-2">
           {STATUS_KINDS.map((s, i) => (
-            <StatusChip key={s} status={s} count={i % 2 ? '1/2' : undefined} lit={i % 3 !== 2} />
+            <StatusChip key={s} status={s} count={i % 2 ? '50%' : undefined} lit={i % 3 !== 2} />
           ))}
         </div>
         <Toggle label="A toggle" hint="Its hint, in Jersey 15" on={toggle} onChange={setToggle} className="w-full max-w-md" />
@@ -726,7 +726,7 @@ export function KitchenSink() {
 
       <Section title="StatusIcons · PixelIcon">
         <StatusIcons
-          status={{ ...emptyStatus(), burn: { stacks: 3, turns: 2 }, poison: { turns: 3 }, frozen: 2, paralyze: 1, confused: true }}
+          status={{ ...emptyStatus(), burn: { stacks: 3, turns: 2 }, poison: { turns: 3 }, frozen: 2, paralyze: 1, confused: 2 }}
         />
         <div className="flex flex-wrap gap-3">
           {(Object.keys(ICONS) as IconName[]).map((n) => (
