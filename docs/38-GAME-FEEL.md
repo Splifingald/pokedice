@@ -316,7 +316,9 @@ Every new piece (`DeleteChooser` in each set of choices, `InboxModal`, the defau
 ## 9. Setting it up
 
 1. Deploy the client. The three switches are Off: nothing changes for anyone until the admin turns them on.
-2. Run migration `supabase/migrations/0072_game_feel.sql` in the Supabase SQL editor (it adds the three switches' rows,
-   Off, and bumps `configVersion`). `supabase/seed.sql` carries it too, inlined. Safe to run again.
+2. Run migration `supabase/migrations/0072_game_feel.sql` in the Supabase SQL editor
+   (<https://github.com/Splifingald/pokedice/blob/ccr-0d03596c-nyhjr3/supabase/migrations/0072_game_feel.sql>): it adds
+   the three switches' rows, Off, and bumps `configVersion`. `supabase/seed.sql` carries it too, inlined. Safe to run
+   again.
 3. Admin → Config: try **Game feel**, **Haptics** and **Battle music** On for admin first, then On for everyone.
 4. The board also chose to turn the existing **Dice throws** On for everyone (F8a): Admin → Config → Dice throws.
