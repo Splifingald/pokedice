@@ -2,8 +2,11 @@
 // campaign progress, Pokédex, shinies caught or raids won. The rows come from the `leaderboard()` SQL function, which leaves inactive players out
 // (migration 0023), and a region's row out until the player holds a badge there (0024); ranking happens here, against
 // the game data. Level, Progression and Pokédex are one board per region; Shiny and Raids span every region (0054)
-// and hold only the trainers with at least one shiny / raid won.
+// and hold only the trainers with at least one shiny / raid won. Progression goes on past the region's last area into
+// its Elite Rebattle's tiers (0078).
 import { linearAreas } from '@/engine/data'
+import { eventOn } from '@/engine/events'
+import { leagueArea, rebattleRegions, rebattleTiers } from '@/engine/rebattle'
 import { regionSpecies } from '@/engine/regions'
 import type { GameData, RegionId } from '@/engine/types'
 import { avatarOf } from './avatars'
@@ -32,7 +35,8 @@ export interface LeaderboardRow {
    * from a database without 0054, whose boards stay per region.
    */
   lead?: boolean
-  progress: Record<string, { cleared: boolean; gyms: number }>
+  /** Per area; the League's entry also counts the Elite Rebattle tiers cleared (0078; absent = none, or an older card). */
+  progress: Record<string, { cleared: boolean; gyms: number; rebattle?: number }>
   /** One of the caller's friends (docs/16), with their id so the row can open their card; null for anyone else. */
   friendId: string | null
   /** Their name shines gold ("I am just rich", docs/25); the server says so only while the switch is on for you. */
@@ -46,15 +50,29 @@ export interface RankedRow extends LeaderboardRow {
   score: string
 }
 
-/** How far into this region: its main-route areas cleared, then gym / Elite Four battles won. */
-function progressKey(row: LeaderboardRow, data: GameData): [number, number] {
+/**
+ * How many Elite Rebattle tiers the Progression board counts in this region: all of them while the rebattle is on for
+ * the viewer and the region has one, else none (a board can't wait on tiers nobody can fight).
+ */
+export function rebattleOnBoard(data: GameData, region: RegionId): number {
+  return eventOn(data, 'rebattle') && rebattleRegions(data).includes(region) ? rebattleTiers(data).length : 0
+}
+
+/** The row's Elite Rebattle tiers cleared, as far as the board counts them. */
+function rebattleDone(row: LeaderboardRow, data: GameData): number {
+  const league = leagueArea(data, row.region)
+  return Math.min(league ? (row.progress[league.id]?.rebattle ?? 0) : 0, rebattleOnBoard(data, row.region))
+}
+
+/** How far into this region: its main-route areas cleared, then gym / Elite Four battles won, then rebattle tiers. */
+function progressKey(row: LeaderboardRow, data: GameData): [number, number, number] {
   let cleared = 0
   let gyms = 0
   for (const a of linearAreas(data, row.region)) {
     if (row.progress[a.id]?.cleared) cleared++
     gyms += row.progress[a.id]?.gyms ?? 0
   }
-  return [cleared, gyms]
+  return [cleared, gyms, rebattleDone(row, data)]
 }
 
 /** The area the player is working on: the first area of their region's chain not cleared yet. */
@@ -90,8 +108,12 @@ function boardRows(rows: LeaderboardRow[], tab: LeaderboardTab, region: RegionId
   return scored.filter((r) => r.region === region)
 }
 
+/** The whole region cleared and, where the board counts it, every tier of its Elite Rebattle too. */
+const progressDone = (row: LeaderboardRow, data: GameData) =>
+  clearedRegion(row, data) && rebattleDone(row, data) >= rebattleOnBoard(data, row.region)
+
 /**
- * Done with what this board measures: the level cap, the whole region cleared, or its Pokédex filled.
+ * Done with what this board measures: the level cap, the whole region and its rebattle cleared, or its Pokédex filled.
  * Such a player can't be passed and can't climb, so the board is no longer a race they're in — they
  * move to the Hall of Fame and the ranking below them closes up. Shinies have no ceiling: nobody leaves that board.
  */
@@ -99,17 +121,24 @@ export function atMax(row: LeaderboardRow, tab: LeaderboardTab, data: GameData, 
   if (tab === 'level') return row.maxLevel >= data.config.maxLevel
   if (tab === 'dex') return row.pokedex >= dexTotal(data, region)
   if (tab === 'shiny' || tab === 'raids') return false
-  return clearedRegion(row, data)
+  return progressDone(row, data)
 }
 
 function sortKey(row: LeaderboardRow, tab: LeaderboardTab, data: GameData): number[] {
-  const [cleared, gyms] = progressKey(row, data)
+  const progress = progressKey(row, data)
   // The tab's measure first, the others break ties.
-  if (tab === 'level') return [row.maxLevel, cleared, gyms, row.pokedex]
-  if (tab === 'dex') return [row.pokedex, cleared, gyms, row.maxLevel]
-  if (tab === 'shiny') return [row.shinies, row.pokedex, cleared, gyms, row.maxLevel]
-  if (tab === 'raids') return [row.raidsWon, row.pokedex, cleared, gyms, row.maxLevel]
-  return [cleared, gyms, row.maxLevel, row.pokedex]
+  if (tab === 'level') return [row.maxLevel, ...progress, row.pokedex]
+  if (tab === 'dex') return [row.pokedex, ...progress, row.maxLevel]
+  if (tab === 'shiny') return [row.shinies, row.pokedex, ...progress, row.maxLevel]
+  if (tab === 'raids') return [row.raidsWon, row.pokedex, ...progress, row.maxLevel]
+  return [...progress, row.maxLevel, row.pokedex]
+}
+
+/** Where the row stands on Progression: the area being worked on, then the rebattle tier being fought. */
+function progressLabel(row: LeaderboardRow, data: GameData): string {
+  if (!clearedRegion(row, data) || progressDone(row, data)) return frontierArea(row, data)
+  const tier = rebattleTiers(data)[rebattleDone(row, data)]!
+  return t('ui.board.rebattle', { tier: t(`ui.events.rebattle.tier.${tier.id}`) })
 }
 
 function scoreLabel(row: LeaderboardRow, tab: LeaderboardTab, data: GameData, total: number): string {
@@ -117,7 +146,7 @@ function scoreLabel(row: LeaderboardRow, tab: LeaderboardTab, data: GameData, to
   if (tab === 'dex') return `${row.pokedex}/${total}`
   if (tab === 'shiny') return tPlural('ui.board.shinies', row.shinies)
   if (tab === 'raids') return tPlural('ui.board.raids', row.raidsWon)
-  return frontierArea(row, data)
+  return progressLabel(row, data)
 }
 
 const compare = (a: number[], b: number[]) => {
@@ -171,7 +200,7 @@ interface RawRow {
   max_level: number | null
   /** Missing on a database that hasn't run 0032_leaderboard_shiny.sql. */
   shinies?: number | null
-  progress: Record<string, { cleared?: boolean; gyms?: number }> | null
+  progress: Record<string, { cleared?: boolean; gyms?: number; rebattle?: number }> | null
   /** Missing on a database that hasn't run 0035_events.sql. */
   raids_won?: number | null
   /** Missing on a database that hasn't run 0033_friends.sql. */
@@ -199,7 +228,10 @@ export function parseLeaderboard(raw: RawRow[]): LeaderboardRow[] {
     shinies: Number(r.shinies_all ?? r.shinies) || 0,
     raidsWon: Number(r.raids_won) || 0,
     progress: Object.fromEntries(
-      Object.entries(r.progress ?? {}).map(([id, p]) => [id, { cleared: !!p.cleared, gyms: Number(p.gyms) || 0 }]),
+      Object.entries(r.progress ?? {}).map(([id, p]) => [
+        id,
+        { cleared: !!p.cleared, gyms: Number(p.gyms) || 0, ...(Number(p.rebattle) > 0 && { rebattle: Number(p.rebattle) }) },
+      ]),
     ),
     friendId: r.is_friend && r.friend_id ? String(r.friend_id) : null,
     rich: !!r.rich,

@@ -865,7 +865,8 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  * docs/01 §3.2: the `status` row rewritten), then 0074 (the game-feel pass, haptics and battle music, docs/38: their
  * switches' rows, Off), then 0075 (the shiny Pokédex, docs/39: its switch's row, Off), then 0076 (the raid
  * overhaul, docs/40: its switch's row, Off, and raid_progress_dex taking the Mega raids' keys, so it comes after
- * 0045). Folded into seed.sql
+ * 0045), then 0078 (the Elite Rebattle on the Progression board: it redefines 0049's card writer, so it comes after
+ * it). Folded into seed.sql
  * so there is
  * one file to run rather than several in a particular order. The
  * migrations stay the single source of that SQL — they are written to be idempotent, so re-running them costs little.
@@ -904,6 +905,7 @@ export async function regionsPrelude(): Promise<string> {
       '0074_game_feel.sql',
       '0075_shiny_dex.sql',
       '0076_raid_overhaul.sql',
+      '0078_leaderboard_rebattle.sql',
     ].map(async (name) => {
       const sql = (await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')).replace(/^(begin|commit);\n/gm, '')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`

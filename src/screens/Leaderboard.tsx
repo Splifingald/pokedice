@@ -22,6 +22,7 @@ import {
   fetchLeaderboard,
   friendsOnly,
   leaderboardError,
+  rebattleOnBoard,
   splitLeaderboard,
   type LeaderboardRow,
   type LeaderboardTab,
@@ -99,6 +100,8 @@ function Board() {
   // Raids, which rank every region together.
   const region = regionOf(save)
   const regionName = getRegion(data, region)?.name ?? region
+  // Progression's texts name the Elite Rebattle where the board counts its tiers.
+  const textKey = tab === 'progress' && rebattleOnBoard(data, region) ? 'progressRebattle' : tab
   const scope = crossRegion(tab) ? t('ui.board.allRegions') : regionName
   // Whoever has maxed this tab out leaves the ranking for the Hall of Fame behind the button below.
   const { board, hall } = useMemo(
@@ -186,7 +189,7 @@ function Board() {
           <TrainerLook src={avatarOf(me.avatar).src} w={44} h={48} />
           <span className="grid min-w-0 flex-1 gap-0.5">
             <small className="font-pixel-sm text-[14px] leading-[1.1] text-muted">
-              {t(`ui.board.note.${tab}`, { region: regionName })}
+              {t(`ui.board.note.${textKey}`, { region: regionName })}
             </small>
             <b className="text-[21px] font-normal leading-none">
               {mine ? t('ui.board.mine', { rank: mine.rank, total: board.length }) : t('ui.board.mineHall')}
@@ -286,7 +289,7 @@ function Board() {
       >
         {tab !== 'shiny' && tab !== 'raids' && (
           <p className="m-0 mb-2 font-pixel-sm text-[15px] leading-[1.15] text-muted">
-            {t(`ui.board.hallBody.${tab}`)}
+            {t(`ui.board.hallBody.${textKey}`)}
           </p>
         )}
         <ul className="m-0 grid list-none gap-1.5 p-0">
