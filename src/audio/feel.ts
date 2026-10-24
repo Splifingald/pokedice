@@ -76,6 +76,12 @@ const FEEL_SOUNDS = {
 
   // ---------------------------------------------------------------- taps and Home
   'ui.press': () => tone(880, 0.025, { vol: 0.03 }),
+  /** The title's dice logo formed (docs/38 §9): a bright run up, a low note under its top, a sparkle. */
+  'title.chime': () => {
+    tune([[784, 0, 0.06], [1047, 0.06, 0.06], [1319, 0.12, 0.06], [1568, 0.18, 0.24]], 'square', 0.045)
+    tune([[523, 0.18, 0.24]], 'triangle', 0.06)
+    hiss(0.18, { freq: 5200, vol: 0.02, at: 0.18 })
+  },
 } satisfies Record<string, (n?: number) => void>
 
 export type FeelSound = keyof typeof FEEL_SOUNDS

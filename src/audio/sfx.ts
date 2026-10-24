@@ -39,6 +39,17 @@ export function audio(always = false): AudioContext | null {
   }
 }
 
+/**
+ * Whether the page's audio is open already: a tap or a key has happened (the browser's sticky user activation) or the
+ * context runs. A screen that may play before any gesture (the title's logo, docs/38 §9) asks first, so it never
+ * makes a context the browser would keep shut, nor warns about it.
+ */
+export function audioUnlocked(): boolean {
+  if (ctx?.state === 'running') return true
+  if (typeof navigator === 'undefined') return false
+  return !!(navigator as { userActivation?: { hasBeenActive?: boolean } }).userActivation?.hasBeenActive
+}
+
 type Note = { f: number; t: number; d: number; type?: OscillatorType; v?: number; slide?: number }
 
 function play(notes: Note[]) {

@@ -74,6 +74,7 @@ import { ShellBits } from './kitchen/ShellBits'
 import { RewardBits } from './kitchen/RewardBits'
 import { HitFeelBits } from './kitchen/HitFeelBits'
 import { FeelBits } from './kitchen/FeelBits'
+import { TitleLogoBits } from './kitchen/TitleLogoBits'
 import { RotateView } from '@/components/RotateCover'
 import { SettingsOverlay } from '@/screens/Settings'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
@@ -754,6 +755,9 @@ export function KitchenSink() {
       </Section>
       <Section title="Taps, haptics and music: a pressed button, the haptics test pad, Settings' music and vibration rows (each state), the battle loop (docs/38)">
         <FeelBits />
+      </Section>
+      <Section title="The title's dice logo (game feel): each motion level, the throw frozen mid-flight and at its flash, two rows or one (docs/38 §9)">
+        <TitleLogoBits />
       </Section>
 
       <Section title="StatusIcons · PixelIcon">

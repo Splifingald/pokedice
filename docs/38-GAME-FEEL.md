@@ -313,7 +313,53 @@ No switch for any of these: they change screens and words already there (docs/15
 Every new piece (`DeleteChooser` in each set of choices, `InboxModal`, the default name, the single lead picker) is on
 `/kitchen-sink` (`OnboardingBits`).
 
-## 9. Setting it up
+## 9. The title, thrown
+
+The user's ask: "the title should form with dice like in the trailer". With **Game feel** on, the title's wordmark and
+its row of five dice give way to the trailer's logo (docs/36 §2, `trailer/acts/title.ts` on the trailer branch): eight
+pixel-art dice, the word on their top faces, P O K É D I C E in the game's 5×7 font at three art pixels a dot (É with
+its accent; ink on light dice, white with an ink outline on dark ones), filled Fire, Water, Grass, Electric, Psychic,
+Ice, Dragon and Fairy, with the die's look (the ink edge, the light lip top and left, the shaded one bottom and right)
+and pips on the other faces. They are thrown in from past the screen's right edge, from the player's side, 0.04 s
+apart; each takes about 1.15 s (a fall, two bounces, a slide), its extra spin dies out first and its roll stops exactly
+at rest, a little crooked (the trailer's turns and steps off the line: thrown, not typeset); the last E rocks on an
+edge. At 1.5 s they flash white for two frames and keep a gold ring (the combo's, as `Die.tsx` draws it) while a gold
+ring spreads once over the floor; "Roll · Battle · Catch" (`ui.title.tagline`) comes in under the word at 2.0–2.3 s in
+four steps. Then it holds: nothing loops, and the canvas stops drawing. Two rows, POKÉ over DICE, under 768 px; one row
+from 768 px. A tap on the logo throws it again (a button over it, "Throw the dice again", `ui.title.throwAgain`). The
+page's `<h1>` holds the canvas, `role="img"` and named Pokédice.
+
+| Motion | The logo |
+|---|---|
+| `full` | The throw |
+| `short` | The trailer's end card: the dice drop in one after another, no rolling, then the flash and the rings |
+| The OS asks for less motion | Each die two art pixels up, one, down (the game's calm dice), one after another; no flash, no floor ring |
+| `off` | At rest at once, ringed in gold, the tagline shown |
+
+**Sound**: the rattle as the dice leave the hand, a click on each die's first two contacts (one every 40 ms at most),
+a chime once the word is formed (`feelSound('title.chime')`); calm, the chime alone; off, nothing. Only once the page's
+audio is open (`audioUnlocked()` in `sfx.ts`: a tap or a key has happened): the title loads before any gesture, so a
+first visit is silent and nothing forces the audio open; a tap's throw is heard.
+
+**How it's built**: `src/fx/dice/logo.ts` (pure: the trailer's throw — `throwAt`, `restOn` — the layouts, the beats and
+the sounds), `src/fx/dice/logoArt.ts` (pure: the renderer, into a pixel buffer at one pixel per art pixel, each face
+sampled per pixel as the battle's flying dice are, an ink outline round every silhouette, dithered shadows and smears),
+both one lazy chunk (`logoArt-*.js`, 9.6 kB, 4.6 kB gzipped) fetched only when the title shows the logo;
+`src/fx/dice/logoSize.ts` (the room it keeps, in numbers, so nothing jumps while the chunk loads) and
+`src/components/DiceLogo.tsx` (the canvas: a whole number of device pixels per art pixel — 2 at 1×, 4 at 2×, 5 at
+2.625× — scaled nearest-neighbour, as wide as the page so the dice come in from its edge; the main bundle grows by
+4 kB). What changed from the trailer, for whole, even pixels: its 60° camera squeezed the top faces to 87 % and left the
+letters' rows uneven; this one keeps the floor at one pixel per unit (the same view from 63°, stretched 12 % up the
+screen), and a die lying flat has its top face turned by three shears of whole pixels (Paeth's rotation) instead of
+sampled, so a crooked letter keeps every pixel once and its strokes stay three pixels wide. The floor is the page (Dusk
+gives the trailer's navy back), the shadows and smears are ordered-dithered, the floor ring lies flatter so it stays on
+the canvas, and there is no side swap.
+
+With the switch off the title is as before. Purely visual: no rules pop-up, no INFO. On `/kitchen-sink` → "The title's
+dice logo": each motion level with REPLAY, the throw frozen at 0.3, 0.7, 1.2, 1.51 (the flash) and 1.8 s, two rows or
+one. Tests: `tests/dice-logo.test.ts`, `e2e/title.spec.ts`. Setting it up: nothing new, the Game feel switch (§10).
+
+## 10. Setting it up
 
 1. Deploy the client. The three switches are Off: nothing changes for anyone until the admin turns them on.
 2. Run migration `supabase/migrations/0072_game_feel.sql` in the Supabase SQL editor

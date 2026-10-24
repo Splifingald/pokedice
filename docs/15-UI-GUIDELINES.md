@@ -168,6 +168,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `ContinueButton` / `StayHere` / `ComingUpView` / `LeaderboardTipModal` | Home (§12, docs/38 §6) | The big button: CONTINUE (the play arrow), a challenge waiting (the sword), greyed out (a tap says why), GO TO {area} behind in the region (the map) with Stay here, a 44 px link, under it; the "Coming up" line for the Day Care, the special events, Versus and a secret area (a level, the Pokédex); Prof. Oak's leaderboard tip with Later (✕ and Later end it for good) and SEE THE LEADERBOARD (`HomeBits`) |
 | `RotateCover` / `RotateView` | A phone held sideways (§6) | Over everything, not dismissable: the pixel phone tipping upright in steps (upright and still under reduced motion), the title and a line |
 | `ToastStack` / `ToastCard` | A short word on what just happened, or why something didn't (§7) | On `<body>`, beside the dialogs: under the top bar on phones, at the bottom on desktop; four at most. Info (panel) and good (green): a tap closes them, they go after 4 s or 1.2 s + 70 ms a character, waiting while touched, hovered or focused. Error (red): a ✕ (44 px), stays until closed |
+| `DiceLogo` | The title with the game feel on (docs/38 §9) | The word POKÉDICE as eight pixel-art dice on a canvas (`role="img"`, named Pokédice, inside the `<h1>`): thrown in and landing crooked on their letters (full), dropped in (short), two-step drops (calm), at rest (off); two rows under 768 px, one from 768; the white flash, the gold rings, the tagline; a tap throws it again. Off: the wordmark and its five dice |
 | `PageLoading` | A page split out of the main bundle loading (`Lazy` in `App.tsx`) | A Poké Ball drawn in code wobbling in pixel steps (`steps()`), still under calm; "Loading…" for screen readers (`role="status"`) |
 | `SupportModal` / `SupportView` | SUPPORT ME (side menu, Settings), and once per region at its 5th badge | A rules pop-up (the village banner) with a button per row: Join the Discord (left out with no link set), Share invite link, Support me on Ko-fi under the line saying Pokémon is a licence so the game is never for sale; a big OK |
 | `GiftPresent` / `GiftOpened` / `GiftResult` / `GiftMoment` | A gift from the developer (§23) | Under a message: the wrapped gift (wobbling, still when the OS asks for reduced motion), "3 things inside" and what happens next (close the message, OPEN IT in My messages, or why it waits); opened: what it held; the opening, full screen; what arrived and where |
@@ -287,6 +288,9 @@ House rules for every effect and timeline:
   in the same frame; its rings and its lift come with the landing. `short` plays the last bounce and settle (0.32 s);
   the OS's reduced motion, a two-step drop with no spin and no click; `off`, the die at rest at once. The animation
   never picks a face: it is turned to land on the one the engine rolled.
+- **The title** (docs/38 §9, the game feel): the logo's dice are thrown in (full), dropped in one after another
+  (short), dropped two pixels in two steps with no flash or ring (calm), at rest (off); its sounds wait for the page's
+  audio to be open (`audioUnlocked`), never forcing it before a tap.
 - Pixel motion steps (`steps()`), it doesn't glide, except HP bars and sheets.
 
 **Timelines** (`src/fx`, no React): a timeline is `setup / step / draw / cues` on a 240×160 stage. A screen plays one
