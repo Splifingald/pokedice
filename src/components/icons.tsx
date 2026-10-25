@@ -55,6 +55,20 @@ const GIFT_PAL: Record<string, string> = {
   o: '#e08e00',
 }
 
+/** The battle Bag: a red flap with a gold buckle over a tan backpack, its front pocket and brown straps. */
+const BAG_PAL: Record<string, string> = {
+  k: '#24304f',
+  r: '#f2553f',
+  R: '#c4382a',
+  p: '#ff9a85',
+  y: '#ffbe2e',
+  Y: '#ffe7a8',
+  o: '#e08e00',
+  F: '#f0a060',
+  f: '#d8783a',
+  H: '#a85a2a',
+}
+
 /** Trick or Treat (docs/29): a jack-o'-lantern, its glow and its stem. */
 const PUMPKIN_PAL: Record<string, string> = {
   k: '#24304f',
@@ -270,6 +284,25 @@ export const ICONS = {
     'kRRRRRRRRRRRRRRk',
     '.kkkkkkkkkkkkkk.',
   ],
+  // The battle's Bag: a backpack, its flap buckled shut, a pocket on the front, straps at its sides.
+  bag: [
+    '......kkkk......',
+    '.....kk..kk.....',
+    '....kkkkkkkk....',
+    '...krrrrrrrrk...',
+    '..krpprrrrrrRk..',
+    '..kprrrrrrrrRk..',
+    '.kkprrrrrrrrRkk.',
+    'kHkRRRkkkkRRRkHk',
+    'kHkFFFkYykFFfkHk',
+    'kHkFFFkyokFFfkHk',
+    'kHkFFFFkkFFFfkHk',
+    'kHkFrrrrrrrrfkHk',
+    'kHkFrprrrrrRfkHk',
+    'kHkFRRRRRRRRfkHk',
+    '.kkffffffffffkk.',
+    '..kkkkkkkkkkkk..',
+  ],
   // Extreme mode (docs/22): its emblem, and a Pokémon resting after a K.O.
   skull: ['..kkkkkk..', '.kwwwwwwk.', 'kwwwwwwwwk', 'kwkkwwkkwk', 'kwkkwwkkwk', 'kwwwkkwwwk', '.kwwwwwwk.', '..kwwwwk..', '..kwkkwk..', '...kkkk...'],
   moon: ['..kkkk..', '.kyykk..', 'kyyk....', 'kyk.....', 'kyk.....', 'kyyk....', '.kyykk..', '..kkkk..'],
@@ -474,6 +507,7 @@ const OWN_PALETTE: Partial<Record<IconName, Record<string, string>>> = {
   navFriends: NAV_PAL,
   trade: TRADE_PAL,
   gift: GIFT_PAL,
+  bag: BAG_PAL,
   pumpkin: PUMPKIN_PAL,
   pickaxe: DIG_PAL,
   pickaxeSm: DIG_PAL,
