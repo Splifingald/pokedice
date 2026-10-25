@@ -447,6 +447,8 @@ export interface SlotOutcome {
  * weights first, then the reels are laid out to show it (1, 2 or 3 balls — or 3 prize Pokémon, the jackpot).
  */
 export interface SlotMachineConfig {
+  /** Off (the default since 2026-10-25): no Game Corner card is dealt anywhere, the wheel gives Porygon instead. */
+  access: EventAccess
   /** Pokédollars per spin. */
   cost: number
   oneBall: SlotOutcome
@@ -649,13 +651,45 @@ export interface EventDef {
   rules: string[]
 }
 
-export type WheelReward = { kind: 'gold'; amount: number } | { kind: 'item'; key: string; qty: number }
+export type WheelReward =
+  | { kind: 'gold'; amount: number }
+  | { kind: 'item'; key: string; qty: number }
+  /** The jackpot's Pokémon: it joins as a catch does (team, or the Box). */
+  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean }
 
 /** One prize of the Fortune Wheel: it takes `count` equal slices, each won `odds` % of the time. */
 export interface WheelPrize {
   reward: WheelReward
   count: number
   odds: number
+}
+
+/**
+ * One stage of the wheel's jackpot slice (the user's design, 2026-10-25): its prize, won `odds` % of spins whatever the
+ * other slices add up to. A Pokémon stage gives way to the next once that Pokémon is caught (shiny: owned shiny); an
+ * item stage stays for good. `value` is the ₽ a Pokémon counts for in the wheel's average (an item counts its price).
+ */
+export interface WheelJackpot {
+  reward: WheelReward
+  odds: number
+  value: number
+}
+
+/** The wheel's tickets: one a spin, one free every `everyHours` up to `cap` held, `price` ₽ each while under it. */
+export interface WheelTickets {
+  everyHours: number
+  cap: number
+  price: number
+  /** What a spin may pay back on average, in ₽ (the admin is warned above it). */
+  maxAverage: number
+}
+
+export type WheelConfig = EventDef & {
+  /** The ordinary slices (the jackpot's slice comes on top of them). */
+  slices: WheelPrize[]
+  /** The jackpot's stages, in order. */
+  jackpot: WheelJackpot[]
+  tickets: WheelTickets
 }
 
 export const REBATTLE_TIER_IDS = ['bronze', 'silver', 'gold', 'diamond'] as const
@@ -757,7 +791,7 @@ export type RebattleLineups = Record<string, Partial<Record<RebattleTierId, stri
 export interface EventsConfig {
   /** Home shows a locked "Special events" square from this many Kanto badges until the first event opens. */
   teaserBadges: number
-  wheel: EventDef & { prizes: WheelPrize[] }
+  wheel: WheelConfig
   raid: EventDef & RaidConfig
   rebattle: EventDef & { tiers: RebattleTier[] }
 }
@@ -952,6 +986,11 @@ export interface GameConfig {
   music: { access: EventAccess }
   /** The shiny Pokédex (docs/39): each region's, once its league is beaten. Display only. Migration 0075. */
   shinyDex: { access: EventAccess }
+  /**
+   * The Unown Pokédex (docs/41): the 28 letters, once an area where Unown live is opened; `reward` ₽ for the last one.
+   * Migration 0080 inserts the same row.
+   */
+  unownDex: { access: EventAccess; reward: number }
   /**
    * The raid overhaul (docs/40): each progression raid's own numbers, rules and last bar, Arceus's daily raid, the Mega
    * raids after Kalos. Its switch; migration 0076 inserts the same row and the server reads it for the Mega raids.
@@ -1442,6 +1481,8 @@ export interface PokemonInstance {
   koAt?: number
   /** The name its trainer gave it (`engine/nickname.ts`). It goes with it in a trade; absent = its species' name. */
   nickname?: string
+  /** Unown only (docs/41): its letter, 'a'–'z', '!' or '?'. Absent = an A (`letterOf`). */
+  letter?: string
 }
 
 export interface AreaProgress {
@@ -1566,6 +1607,15 @@ export interface SaveData {
   shinyDex?: Partial<Record<RegionId, number[]>>
   /** The shiny Pokédex's rules pop-up has been shown (once, at the first league beaten; INFO shows it again). */
   shinyDexSeen?: boolean
+  /**
+   * The Unown Pokédex (docs/41): the letters found in each region, kept when the Unown leaves (one copy per species
+   * in the Box). Filled whatever the switch says.
+   */
+  unownDex?: Partial<Record<RegionId, string[]>>
+  /** The regions whose Unown Pokédex prize was paid (once each). */
+  unownDexPaid?: RegionId[]
+  /** The Unown Pokédex's rules pop-up has been shown (once, when it opens; INFO shows it again). */
+  unownDexSeen?: boolean
   /** Trades (docs/23): listed Pokémon, the trades already applied, the last ones done. Absent = never traded. */
   trades?: TradesSave
   /** Gifts from the developer (docs/15 §23): the ones opened, and the rules seen. Absent = none yet. */
@@ -1764,10 +1814,16 @@ export interface ExtremeSave {
 export interface EventsSave {
   /** Events whose unlock pop-up has been shown (or that opened alongside the one that was). */
   seen?: EventId[]
-  /** The UTC day (yyyy-mm-dd) of the last Fortune Wheel spin. */
+  /** The UTC day of the last spin while the wheel was free once a day (before its tickets): read by nothing now. */
   wheelDay?: string
   /** That spin's prize until it's paid (when the wheel stops, or on the next start if the page closed mid-spin). */
   wheelPending?: WheelReward
+  /** Fortune Wheel tickets held; none yet = a full stack (the cap). */
+  wheelTickets?: number
+  /** When the next free ticket comes (ms); null or absent while the stack is full. */
+  wheelTicketAt?: number | null
+  /** The wheel's rules pop-up, shown once on its page since it takes tickets. */
+  wheelRulesSeen?: boolean
   /** The Elite Rebattle, per region. */
   rebattle?: Record<string, RebattleProgress>
   /** Today's raid, and the last week's (the repeat window reads it). */

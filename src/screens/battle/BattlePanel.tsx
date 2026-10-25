@@ -640,7 +640,7 @@ export function BagButton({
       onClick={blip(onClick)}
       className="inline-flex min-h-[48px] items-center gap-1.5 bg-paper py-1 pl-2 pr-3 text-[18px] leading-none text-ink shadow-card disabled:opacity-50"
     >
-      <PixelIcon name="potion" size={20} />
+      <PixelIcon name="bag" size={20} />
       {t('ui.battle.bag')}
     </button>
   )

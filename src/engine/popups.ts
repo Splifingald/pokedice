@@ -20,6 +20,7 @@ import { inWorldRegion, regionOfferDue } from './regions'
 import { badgeCase, portalRulesDue } from './run'
 import { shinyDexRulesDue } from './shinyDex'
 import { tradeRulesDue, tradesToWatch } from './trade'
+import { unownDexRulesDue } from './unownDex'
 import { versusRulesDue } from './versus'
 import { inWorld, worldByeDue, worldFinishPopupDue, worldFor, worldPopupDue } from './worlds'
 import type { GameData, SaveData } from './types'
@@ -97,6 +98,8 @@ const QUEUE = {
   /** The shiny Pokédex, at the first league beaten. */
   shinyDex: { due: (s, d) => shinyDexRulesDue(s, d), away: under('/pokedex') },
   // The invite rewards' rules aren't queued: they open on the Friends page, the first time in (screens/Friends.tsx).
+  /** The Unown Pokédex, once an area where Unown live is opened. */
+  unownDex: { due: (s, d) => unownDexRulesDue(s, d), away: under('/pokedex') },
   inviteReward: { due: (_s, _d, c) => !!c.inviteReward, away: under('/friends') },
   portal: { due: (s, d) => !!portalRulesDue(s, d), away: (p) => p === '/area' },
   dayNight: { due: (s, d) => dayNightRulesDue(s, d) },

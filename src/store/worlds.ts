@@ -94,7 +94,7 @@ export function leaveSmallWorld(): boolean {
   if (!next) return false
   useGame.setState({ run: initialRun() })
   // What waited outside while the player was in (a wheel prize, friends' raid gifts) comes in now.
-  commitSave(payWheelPrize(next, data))
+  commitSave(payWheelPrize(next, data, Date.now(), newId))
   pushToast(t('ui.world.back', { region: getRegion(data, regionOf(next))?.name ?? '' }), 'good')
   void collectRaidGifts(true)
   return true
@@ -120,7 +120,7 @@ export function finishSmallWorld(): boolean {
   if (!next) return false
   useGame.setState({ run: initialRun() })
   // What waited outside while the player was in comes in now, as on the way out.
-  commitSave(payWheelPrize(next, data))
+  commitSave(payWheelPrize(next, data, Date.now(), newId))
   void collectRaidGifts(true)
   return true
 }

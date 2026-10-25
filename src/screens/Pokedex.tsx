@@ -14,6 +14,13 @@ import {
   type GameData,
   type SaveData,
   areaKeepsTime,
+  UNOWN_DEX,
+  UNOWN_LETTERS,
+  unownArea,
+  unownDexOf,
+  unownDexOpen,
+  unownDexPaid,
+  unownReward,
   wildPoolAt,
 } from '@/engine'
 import { searchFold } from '@/i18n'
@@ -25,9 +32,10 @@ import { InfoButton } from '@/components/RulesModal'
 import { FilterChips, SearchField } from '@/components/Segmented'
 import { DexViewSwitch, ShinyDexRulesModal, type DexView } from '@/components/ShinyDexRules'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
+import { UnownDexGrid, UnownDexRulesModal } from '@/components/UnownDex'
 import { markDexSeen, useDexNew } from '@/lib/dexSeen'
-import { dexNo } from '@/lib/format'
-import { markShinyDexSeen } from '@/store/actions'
+import { dexNo, money } from '@/lib/format'
+import { markShinyDexSeen, markUnownDexSeen } from '@/store/actions'
 import { useDayTime } from '@/store/dayTime'
 import { useGame } from '@/store/game'
 
@@ -48,6 +56,55 @@ function nextDexUnlock(save: SaveData, data: GameData): { name: string; more: nu
   return best
 }
 
+/**
+ * The Unown's page (docs/41): the letters found as the Pokédex's gauge, where they live (and the prize) or the complete
+ * card, then the 28 tiles. The Pokédex itself keeps one Unown.
+ */
+function UnownDexPage({ save, data, onOpen }: { save: SaveData; data: GameData; onOpen: () => void }) {
+  const { t } = useT()
+  const found = unownDexOf(save)
+  const total = UNOWN_LETTERS.length
+  const n = found.length
+  const reward = unownReward(data)
+  const area = unownArea(save, data)
+  return (
+    <>
+      <div className="grid gap-1">
+        <span
+          className="pixel-corners block h-2 bg-line shadow-ring"
+          role="img"
+          aria-label={t('ui.unown.count', { n, total })}
+        >
+          <i className="block h-full bg-gold" style={{ width: `${(n / total) * 100}%` }} />
+        </span>
+        {n < total && area && (
+          <small className="font-pixel-sm text-[15px] text-muted">
+            {reward > 0
+              ? t('ui.unown.wherePrize', { area: area.name, amount: money(reward) })
+              : t('ui.unown.where', { area: area.name })}
+          </small>
+        )}
+      </div>
+      {n >= total && (
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="pixel-panel-dark flex flex-col items-center gap-2 p-5 text-center"
+        >
+          <PixelIcon name="star" size={40} />
+          <div className="text-[40px] leading-none text-gold">{t('ui.unown.complete')}</div>
+          <div className="text-2xl">
+            {unownDexPaid(save) && reward > 0
+              ? t('ui.unown.completePaid', { total, amount: money(reward) })
+              : t('ui.unown.completeBody', { total })}
+          </div>
+        </motion.div>
+      )}
+      <UnownDexGrid found={found} onOpen={onOpen} />
+    </>
+  )
+}
+
 export function PokedexScreen() {
   const { t } = useT()
   const save = useGame((s) => s.save)
@@ -58,13 +115,20 @@ export function PokedexScreen() {
   const [info, setInfo] = useState(false)
   // The shiny page (docs/39): there once the region's league is beaten. `?view=shiny` opens on it (its pop-up's GO).
   const shinyOpen = useGame((s) => !!s.save && shinyDexOpen(s.save, s.data))
+  // The Unown's letters (docs/41): there once an area where Unown live is opened. `?view=unown` opens on it.
+  const unownOpen = useGame((s) => !!s.save && unownDexOpen(s.save, s.data))
+  const views = [...(shinyOpen ? (['shiny'] as const) : []), ...(unownOpen ? (['unown'] as const) : [])]
   const [params, setParams] = useSearchParams()
-  const dexView: DexView = shinyOpen && params.get('view') === 'shiny' ? 'shiny' : 'all'
-  const setDexView = (v: DexView) => setParams(v === 'shiny' ? { view: 'shiny' } : {}, { replace: true })
+  const asked = params.get('view')
+  const dexView: DexView =
+    asked === 'shiny' && shinyOpen ? 'shiny' : asked === 'unown' && unownOpen ? 'unown' : 'all'
+  const setDexView = (v: DexView) => setParams(v === 'all' ? {} : { view: v }, { replace: true })
   // Seeing the page is reading what it is: its pop-up won't open later.
   useEffect(() => {
     if (dexView === 'shiny') markShinyDexSeen()
+    if (dexView === 'unown') markUnownDexSeen()
   }, [dexView])
+  const [unownInfo, setUnownInfo] = useState(false)
   // What was new on arrival keeps its NEW tag while the screen is open; looking clears the tab bar's dot.
   const newCount = useDexNew()
   const [fresh] = useState(() => new Set(newCount > 0 ? (save?.pokedex.slice(-newCount) ?? []) : []))
@@ -87,6 +151,21 @@ export function PokedexScreen() {
   }, [save, data, now])
 
   if (!save) return null
+  if (dexView === 'unown')
+    return (
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-3">
+        <PageHead
+          icon="navDex"
+          title={t('ui.unown.title')}
+          count={`${unownDexOf(save).length}/${UNOWN_LETTERS.length}`}
+        />
+        <DexViewSwitch value={dexView} onChange={setDexView} views={views} />
+        <UnownDexPage save={save} data={data} onOpen={() => setView({ kind: 'dex', dex: UNOWN_DEX })} />
+        <InfoButton name={t('ui.unown.title')} onClick={() => setUnownInfo(true)} />
+        <UnownDexRulesModal open={unownInfo} onClose={() => setUnownInfo(false)} />
+        <SheetModal view={view} onClose={() => setView(null)} />
+      </div>
+    )
   const shiny = dexView === 'shiny'
   // Known by name: caught at all. Owned: on this page (caught, or owned shiny on the shiny page).
   const caught = new Set(save.pokedex)
@@ -141,7 +220,7 @@ export function PokedexScreen() {
         title={regionName ? t('ui.dex.titleRegion', { region: regionName }) : t('ui.dex.title')}
         count={`${n}/${total}`}
       />
-      {shinyOpen && <DexViewSwitch value={dexView} onChange={setDexView} />}
+      {views.length > 0 && <DexViewSwitch value={dexView} onChange={setDexView} views={views} />}
       <div className="grid gap-1">
         <span
           className="pixel-corners block h-2 bg-line shadow-ring"

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { cleanNickname } from '@/engine/nickname'
+import { isUnownLetter, UNOWN_LETTERS } from '@/engine/unownDex'
 import {
   COMBO_KEYS,
   EVENT_IDS,
@@ -30,6 +31,8 @@ const instanceSchema = z.object({
   koAt: z.number().optional(),
   // Kept as renaming keeps it: a bad one (an edited save) is dropped, never the save.
   nickname: z.unknown().transform(cleanNickname),
+  // Unown's letter (docs/41): a bad one (an edited save) is dropped, the Unown reads as an A.
+  letter: z.unknown().transform((v) => (isUnownLetter(v) ? v : undefined)),
 })
 
 // Trades (docs/23): a listing's want, and a Pokémon as the Done list remembers it.
@@ -248,8 +251,17 @@ export const saveSchema = z.object({
         .discriminatedUnion('kind', [
           z.object({ kind: z.literal('gold'), amount: z.number().min(0) }),
           z.object({ kind: z.literal('item'), key: z.string().min(1).max(60), qty: z.number().int().min(1) }),
+          z.object({
+            kind: z.literal('pokemon'),
+            dex: z.number().int().min(1),
+            level: z.number().int().min(1),
+            shiny: z.boolean().optional(),
+          }),
         ])
         .optional(),
+      wheelTickets: z.number().int().min(0).max(1000).optional(),
+      wheelTicketAt: z.number().nullable().optional(),
+      wheelRulesSeen: z.boolean().optional(),
       raid: z
         .object({
           day: z.string().max(10),
@@ -342,6 +354,10 @@ export const saveSchema = z.object({
   // The shiny Pokédex (docs/39): each region's species owned shiny, and its rules seen.
   shinyDex: z.record(z.array(z.number().int().min(1)).max(3000)).optional(),
   shinyDexSeen: z.boolean().optional(),
+  // The Unown Pokédex (docs/41): each region's letters, the prizes paid, its rules seen.
+  unownDex: z.record(z.array(z.string().max(1)).max(UNOWN_LETTERS.length)).optional(),
+  unownDexPaid: z.array(z.string().max(40)).max(40).optional(),
+  unownDexSeen: z.boolean().optional(),
   // The General upgrades (docs/25): their levels and the offline earnings' clock.
   general: z
     .object({

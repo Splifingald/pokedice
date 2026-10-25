@@ -6202,6 +6202,15 @@ insert into game_config (key, value) values
 on conflict (key) do update set value = excluded.value;
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 
+-- ↓ supabase/migrations/0080_unown_dex.sql, inlined so this file stands alone.
+-- The Unown Pokédex (docs/41).
+-- 1. game_config `unownDex`: the switch, Off, and the prize for the 28th letter, ₽1,000 (left alone when there). The
+--    page shows what the save already holds (the letters each region has found, noted on the player's device, as the
+--    Pokédex is) and its prize is paid into the save's own purse, so no server function acts for it and none reads it.
+-- 2. configVersion + 1, so players fetch the new content. Safe to run again.
+insert into game_config (key, value) values ('unownDex', '{"access": "off", "reward": 1000}'::jsonb) on conflict (key) do nothing;
+insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
+
 insert into type_chart (attacking, defending, multiplier) values
   ('bug', 'dark', 2),
   ('bug', 'fairy', 0.5),

@@ -70,8 +70,12 @@ function SlotMachineBox() {
   return (
     <Box
       title="Game Corner — slot machine" icon="coin"
-      hint="Played on the Game Corner cards (Areas → Encounter deck). The result is drawn from these weights, then the reels are laid out to show it."
+      hint="Played on the Game Corner cards (Areas → Encounter deck). The result is drawn from these weights, then the reels are laid out to show it. Off: no Game Corner card is dealt anywhere (the Fortune Wheel gives Porygon instead)."
     >
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xl">Game Corner</span>
+        <AccessSwitch value={cfg.access ?? 'off'} onChange={(access) => set({ access })} label="Game Corner: who meets its cards" />
+      </div>
       <div className="grid gap-3 sm:grid-cols-3">
         <Field label="Cost per spin (₽)">
           <NumInput min={0} value={cfg.cost} onChange={(v) => set({ cost: Math.max(0, v ?? 0) })} />
@@ -725,6 +729,40 @@ function ShinyDexBox() {
         <span className="text-base text-muted">
           {accessNote(access, 'Open to every player.', 'Off: the Pokédex has one page, as before.')}
         </span>
+      </div>
+    </Box>
+  )
+}
+
+/**
+ * The Unown Pokédex (docs/41): the 28 letters, once an area where Unown live is opened, and the ₽ the last one pays.
+ * The letters are noted on the device, so the game alone reads it.
+ */
+function UnownDexBox() {
+  const [raw, setRaw] = useConfigRow('unownDex')
+  const cfg = { ...DEFAULT_CONFIG.unownDex, ...(raw ?? {}) }
+  const access = cfg.access ?? 'off'
+  return (
+    <Box
+      title="Unown Pokédex"
+      icon="book"
+      hint="On: once the player opens an area where Unown live (Johto's Ruins of Alph), their Pokédex gets an Unown page with the 28 letters (A–Z, ! and ?), Home shows its banner while they stand in that area, and its rules come once as a pop-up with an INFO button. While a letter is missing, every Unown caught is a new one (even a weaker one can be caught). The last letter pays the prize below, once per region. The Pokédex itself keeps one Unown entry."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Unown Pokédex</span>
+        <AccessSwitch value={access} onChange={(a) => setRaw({ ...cfg, access: a })} label="Unown Pokédex: who has it" />
+        <span className="text-base text-muted">
+          {accessNote(access, 'Open to every player.', 'Off: no Unown page, no banner; Unown are caught as before.')}
+        </span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-4">
+        <Field label="Prize (₽)" hint="for all 28 letters, once">
+          <NumInput
+            min={0}
+            value={cfg.reward}
+            onChange={(v) => setRaw({ ...cfg, reward: Math.max(0, Math.floor(v ?? 0)) })}
+          />
+        </Field>
       </div>
     </Box>
   )
@@ -1490,6 +1528,8 @@ export function ConfigSection() {
       <MusicBox />
 
       <ShinyDexBox />
+
+      <UnownDexBox />
 
       <ExtremeBox />
 

@@ -162,7 +162,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `GoldCard` / `CoinFlight` / `XpBar` (`useXpFill`) / `Confetti` / `DexRegisteredCard` / `UpCard` | The rewards' game feel (docs/38 §4) | The gold counting up from 0; its coins flying to the top bar's gold (`data-hud-gold`; playing, none when calm or off); the XP bar in steps (filling, the level-up's white frame, rolled over); the pixel confetti (playing, frozen on frames); a species' first catch registered in the Pokédex; the Upgrades' buttons (navy, the best buy gold with its chip) and a purchase's pop frame by frame (`frozenPop`) |
 | `FaceDice` / `StatusLines` | What a die does | Its six faces as real dice, value under each; a status face keeps its ring and badge and gets its short name in a chip. One tinted line per status: when it triggers and what it does, with the live numbers (`statusEffects`) |
 | `ItemSprite` | An item's picture | From the item atlas (one request); falls back to the item's own URL for items added since the atlas was built |
-| `PixelIcon` | Every icon | Pixel maps drawn as SVG rects: the Pokémon ones hand-drawn in `icons.tsx` (balls, Pokédex, badges, status symbols), the generic UI ones (coin, heart, shop, trophy, settings…) from the "1-bit Pixel Icons" pack, recoloured into `packIcons.ts` by `scripts/import-icons.ts` (11–16 px squares; the tab bar's on 16×16). Draw them at 12 px or more. One shared palette (`ICON_PALETTE`); a map may have its own (`OWN_PALETTE`) |
+| `PixelIcon` | Every icon | Pixel maps drawn as SVG rects: the Pokémon ones hand-drawn in `icons.tsx` (balls, Pokédex, badges, status symbols, the battle Bag's backpack), the generic UI ones (coin, heart, shop, trophy, settings…) from the "1-bit Pixel Icons" pack, recoloured into `packIcons.ts` by `scripts/import-icons.ts` (11–16 px squares; the tab bar's on 16×16). Draw them at 12 px or more. One shared palette (`ICON_PALETTE`); a map may have its own (`OWN_PALETTE`) |
 | `TrainerName` / `NameIn` | Another trainer's name anywhere social (§24) | Plain; golden (`rich`: the `rich` token, a sparkle that twinkles, a stepped glint, still under reduced motion). Inline, so `truncate` around it still ends in "…". `NameIn` puts it in a translated sentence ("Misty's"), only the name golden |
 | `RulesModal` / `InfoButton` | A feature's rules: once when it unlocks, then from the blue INFO button at the bottom of its page | The special events' pop-up: its picture as a banner (`RulesBanner`), or a banner drawn in code (the gifts'), a NOW OPEN tag on the unlock, 2–4 `RuleList` rows (an icon, a short title, a line with the config's numbers, optionally a small button under it); Later and Let's go! on the unlock, OK from INFO. The Day Care and Versus use it (`FeatureRules.tsx`); the events have their own copies (`EventUnlockPopup`, `EventInfo`), with the same words |
 | `ContinueButton` / `StayHere` / `ComingUpView` / `LeaderboardTipModal` | Home (§12, docs/38 §6) | The big button: CONTINUE (the play arrow), a challenge waiting (the sword), greyed out (a tap says why), GO TO {area} behind in the region (the map) with Stay here, a 44 px link, under it; the "Coming up" line for the Day Care, the special events, Versus and a secret area (a level, the Pokédex); Prof. Oak's leaderboard tip with Later (✕ and Later end it for good) and SEE THE LEADERBOARD (`HomeBits`) |
@@ -822,7 +822,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
   taking its turn in the one-time pop-ups' queue, below), and an **INFO** button at the bottom of its page that shows
   the same rules again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the shiny Pokédex (§35), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **The one-time pop-ups take turns, in one queue** (`nextOneTimePopup`, src/engine/popups.ts; docs/38 U2a): one at a
   time, only between fights (`run.phase === 'idle'`, no battle, no full-screen moment, no gift being opened), never on
@@ -831,7 +831,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   the server's clock, what waits outside the save); `PopupQueue` (GameLayout) works it out once for the whole game, and
   each pop-up opens only on its own turn (`useMyTurn`). The order: the away reports (Extreme's, the General upgrades'),
   Prof. Oak's Day Care and leaderboard tutorials, the developer's answers, friends' raid gifts, Support me, a new
-  region's offer, a special event, Versus, Prof. Oak's invite, Extreme mode, Trades, the General upgrades, the shiny Pokédex, the invite
+  region's offer, a special event, Versus, Prof. Oak's invite, Extreme mode, Trades, the General upgrades, the shiny Pokédex, the Unown Pokédex, the invite
   rewards' rules then a reward ready, the portal run, day and night, the battle powers, a small world's opening, its
   finish and its goodbye, a live event (the Underground's rules), a taken trade's scene (Home only), and push
   notifications' question last. A new pop-up gets a place in that list, not a list of its own. The rules that open at
@@ -843,6 +843,10 @@ Two rules for every feature that adds something players can do (an event, a mode
 - **A purely visual change** (the dice throws, docs/37; the game-feel pass, haptics and battle music, docs/38): the
   switch, but no rules pop-up and no INFO: it only changes how something already there looks, sounds or feels, so
   there is nothing to learn or do.
+- **A reworked feature keeps its switch** (the Fortune Wheel's tickets, 2026-10-25): the user chose to rework it in
+  place, under the wheel's own switch. Its new rules show once on its page (`events.wheelRulesSeen`) for players who
+  had it already; a new player reads them in its unlock pop-up. The Game Corner's slot machine got a switch of its own
+  then (`slotMachine.access`, Off): the user took it out of the game for now.
 - **Items with a switch** (`game_config.itemSwitches`, `itemOn`): the Link Cable and the Bait (docs/25). Off: not sold,
   not found, not usable, never offered; bags keep theirs. An item is explained where it's met (its description in the
   Mart and the bag; the Bait's die and odds on the catch prompt), so items have no rules pop-up of their own.
@@ -1572,3 +1576,26 @@ and the screens tell them; every piece is on `/kitchen-sink` ("Raid overhaul") a
   rings. Pairs and trios share a place in their own colours. Skip shows from the second time; motion levels as §8.
 - **A Mega raid** is a progression raid with a MEGA RAID kicker; its lock says what opens it, its win shows the gem's
   sprite and name instead of the catch.
+
+## 37. The Unown Pokédex
+
+Where Unown live (Johto's Ruins of Alph), each one caught is one of 28 letters, and they fill a page of their own
+(docs/41), behind its switch (§20, Off: no page, no banner). The region's Pokédex keeps its one Unown. The pieces are in
+`src/components/UnownDex.tsx`, every state on `/kitchen-sink` (`UnownDexBits`).
+
+- **Pokédex / Shiny / Unown**: the Pokédex's `Seg` (`DexViewSwitch`) gains Unown once an area where Unown live is
+  opened, beside Shiny when that page is open too; the choice is the URL's (`?view=unown`).
+- **The page** is the Pokédex's grid of 28 tiles, in the games' order (A–Z, !, ?): each letter's own sprite
+  (`UnownSprite`, Showdown's animated forme, scaled to fit its box) once found, a silhouette (`missing`) until then, the
+  letter as its name ("Unown K, found" for screen readers). Over it the count, the gauge, and where to find them with
+  the prize; all found, the complete card. No filters or search: 28 tiles need none.
+- **Home's banner** (`UnownStripView`) sits above the scene, where a small world's strip does (§22), only while the
+  player stands in an area where Unown live: the ruins' picture under `lv-pic`, everything on it in `lv-ink`, the last
+  letter found, "Unown Pokédex", **one cell per letter** (`UnownLetterBar`, gold once found, never a colour alone: its
+  label says "7/28 letters"), the count and the prize in gold-light, and **See** to the page. Complete: a gold
+  COMPLETE chip and the prize earned.
+- **The result card**: after an Unown is caught, its line (`UnownLetterCard`): the letter's sprite, "Unown K: a new
+  letter!" (or "already on your page") over the count; the last one gold, with the prize.
+- Its rules: the pop-up once, in the queue after the shiny Pokédex's, never on the Pokédex; INFO at the bottom of the
+  Unown page. Opening the page counts as reading them.
+

@@ -1,92 +1,74 @@
-// The Fortune Wheel's spin (docs/18): signed-in players' prize is drawn by the server (wheel_spin(), one a UTC day),
-// guests' here on the server's day. Either way the day is spent and the prize saved before the wheel turns, and paid
-// when it stops: a reload can neither spin twice nor lose it.
+// The Fortune Wheel's spin (docs/18): a ticket a spin, drawn on the device on the server's clock (the tickets refill on
+// it, so changing the device's clock changes nothing). The ticket is spent and the prize saved before the wheel turns,
+// and paid when it stops: a reload can neither spin for free nor lose it.
 import {
+  buyTicket,
   canSpin,
   cashReward,
   createRng,
   drawPrize,
   inWorldRegion,
+  jackpotStage,
   livesFor,
   payWheelPrize,
   randomSeed,
-  sameReward,
+  roulettePrizes,
   sliceFor,
-  spinSpent,
   takeSpin,
-  utcDay,
+  ticketRules,
   wheelSlices,
+  wheelTickets,
   type WheelReward,
 } from '@/engine'
-import { getSupabase } from '@/lib/supabase'
 import { mutateSave, useGame } from './game'
-import { serverNow } from './serverTime'
-import { realmArgs } from '@/lib/realm'
+import { newId } from './run'
+import { serverNow, useServerNow } from './serverTime'
 
 export type Spin =
   | { ok: true; slice: number; reward: WheelReward }
-  /** spent: already spun today (maybe on another device) · time: the real time isn't known yet · error: the server said no. */
-  | { ok: false; reason: 'spent' | 'time' | 'error' }
+  /** tickets: none held · time: the real time isn't known yet. */
+  | { ok: false; reason: 'tickets' | 'time' }
 
-interface ServerSpin {
-  day: string
-  prize: number
-  reward: WheelReward
-  fresh: boolean
-}
-
-async function serverSpin(): Promise<ServerSpin> {
-  const client = await getSupabase()
-  if (!client) throw new Error('events_signed_out')
-  const { data, error } = await client.rpc('wheel_spin', realmArgs())
-  if (error) throw error
-  return data as ServerSpin
-}
-
-/** Takes today's spin. Returns where the wheel stops; the prize is paid by `collectWheelPrize` when it has. */
-export async function spinWheel(): Promise<Spin> {
-  const { save, data, auth } = useGame.getState()
+/** Spends a ticket on a spin. Returns where the wheel stops; the prize is paid by `collectWheelPrize` when it has. */
+export function spinWheel(): Spin {
+  const { save, data } = useGame.getState()
   const now = serverNow()
-  // Signed in or not isn't known yet: a guest's draw now could be a signed-in player's second spin. Inside a small
-  // world no event reaches (docs/21): its page says to leave first.
-  if (!save || now == null || auth.status === 'unknown' || inWorldRegion(save, data)) return { ok: false, reason: 'time' }
-  const day = utcDay(now)
-  if (!canSpin(save, day)) return { ok: false, reason: 'spent' }
-  // Cash Flow, if it runs: the wheel stops on its slice, the ₽ paid are boosted.
-  const live = livesFor(save, data, now)
-  const prizes = data.config.events.wheel.prizes
-  const slices = wheelSlices(prizes)
+  // Inside a small world no event reaches (docs/21): its page says to leave first.
+  if (!save || now == null || inWorldRegion(save, data)) return { ok: false, reason: 'time' }
+  if (!canSpin(save, data, now)) return { ok: false, reason: 'tickets' }
+  const wheel = data.config.events.wheel
+  const prizes = roulettePrizes(wheel, jackpotStage(save, wheel))
   const rng = createRng(randomSeed())
-  if (auth.status !== 'signed_in') {
-    const prize = drawPrize(prizes, rng)
-    const paid = cashReward(prizes[prize]!.reward, live)
-    mutateSave((s) => takeSpin(s, day, paid))
-    return { ok: true, slice: sliceFor(slices, prize, rng), reward: paid }
-  }
-  let res: ServerSpin
-  try {
-    res = await serverSpin()
-  } catch {
-    return { ok: false, reason: 'error' }
-  }
-  // Spun already today, on this account: the day is spent here too, and that prize was paid where it was won.
-  if (!res.fresh) {
-    mutateSave((s) => spinSpent(s, res.day))
-    return { ok: false, reason: 'spent' }
-  }
-  const paid = cashReward(res.reward, live)
-  mutateSave((s) => takeSpin(s, res.day, paid))
-  // The server's prize is the one paid; the wheel stops on one of its slices (by index, or by the same reward if the
-  // admin's list changed while this page was open).
-  const prize = prizes[res.prize] && sameReward(prizes[res.prize]!.reward, res.reward) ? res.prize : prizes.findIndex((p) => sameReward(p.reward, res.reward))
-  return { ok: true, slice: prize >= 0 ? sliceFor(slices, prize, rng) : 0, reward: paid }
+  const prize = drawPrize(prizes, rng)
+  // Cash Flow, if it runs: the wheel stops on its slice, the ₽ paid are boosted.
+  const paid = cashReward(prizes[prize]!.reward, livesFor(save, data, now))
+  if (!mutateSave((s) => takeSpin(s, data, now, paid))) return { ok: false, reason: 'tickets' }
+  return { ok: true, slice: sliceFor(wheelSlices(prizes), prize, rng), reward: paid }
+}
+
+/** Buys a ticket at its price. False when the stack is full, the purse short or the time unknown. */
+export function buyWheelTicket(): boolean {
+  const { data } = useGame.getState()
+  const now = serverNow()
+  if (now == null) return false
+  return mutateSave((s) => buyTicket(s, data, now))
 }
 
 /** Pays the waiting prize (the wheel has stopped, or the page closed while it turned). */
 export function collectWheelPrize(): void {
   const { data } = useGame.getState()
   mutateSave((s) => {
-    const next = payWheelPrize(s, data)
+    const next = payWheelPrize(s, data, Date.now(), newId)
     return next === s ? null : next
   })
+}
+
+/** The tickets on the server's clock, re-read every `ms`: `known` false while the real time isn't known yet. */
+export function useWheelTickets(ms = 1000): { known: false } | { known: true; tickets: number; cap: number; msLeft: number | null } {
+  const now = useServerNow(ms)
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  if (now == null || !save) return { known: false }
+  const { tickets, nextAt } = wheelTickets(save, data, now)
+  return { known: true, tickets, cap: ticketRules(data.config.events.wheel).cap, msLeft: nextAt == null ? null : Math.max(0, nextAt - now) }
 }

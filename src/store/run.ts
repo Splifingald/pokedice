@@ -66,6 +66,8 @@ import {
   teamAverageLevel,
   teamOf,
   uniformLevels,
+  UNOWN_DEX,
+  unownLetterFor,
   withWorldBoost,
   drawPortalCard,
   inPortalRun,
@@ -955,7 +957,9 @@ function settleThrow(save: SaveData, roll: CatchRoll, ballKey: string | null, ba
       next = mythical.save
       events = mythical.events
     } else {
-      const res = applyCatch(next, { dex: c.dex, level: c.level, shiny: c.shiny }, c.target, data, Date.now(), newId)
+      // An Unown's letter is drawn as it's caught (docs/41): one the page is missing.
+      const letter = c.dex === UNOWN_DEX ? unownLetterFor(next, runRng) : undefined
+      const res = applyCatch(next, { dex: c.dex, level: c.level, shiny: c.shiny, letter }, c.target, data, Date.now(), newId)
       // A boss is noted as caught in its area: a small world's goes by that, not the Pokédex (docs/26 §2.5).
       next = c.kind === 'boss' && run.areaId ? noteBossCaught(res.save, run.areaId, c.dex) : res.save
       events = res.events

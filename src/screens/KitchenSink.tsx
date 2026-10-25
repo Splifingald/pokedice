@@ -68,6 +68,7 @@ import { UndergroundBits } from './kitchen/UndergroundBits'
 import { DayNightBits } from './kitchen/DayNightBits'
 import { IdleBits } from './kitchen/IdleBits'
 import { ShinyDexBits } from './kitchen/ShinyDexBits'
+import { UnownDexBits } from './kitchen/UnownDexBits'
 import { DiceThrowBits } from './kitchen/DiceThrowBits'
 import { FeelDiceBits } from './kitchen/FeelDiceBits'
 import { HowToBits } from './kitchen/HowToBits'
@@ -666,6 +667,10 @@ export function KitchenSink() {
 
       <Section title="Shiny Pokédex: the Pokédex / Shiny switch, the shiny page's tiles (owned shiny, caught, unknown, nearby), complete, rules and INFO (docs/39)">
         <ShinyDexBits />
+      </Section>
+
+      <Section title="Unown Pokédex: the switch with its Unown page, Home's banner (none, under way, complete), the 28 letters, complete, the result card's line, rules and INFO (docs/41)">
+        <UnownDexBits />
       </Section>
 
       <Section title="Trainer looks: the row and its red dot, the menu in each state, locked looks, rules and INFO (docs/31)">
