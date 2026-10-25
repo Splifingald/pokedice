@@ -12,15 +12,9 @@ import { InfoButton, RulesModal, type RuleRow } from './RulesModal'
 
 const STYLE_ICON: Record<PlayStyle, IconName> = { explored: 'map', idle: 'dice' }
 
-/** Each style's name and its line, from the strings. */
-export function useStyleText() {
-  const { t } = useT()
-  return (s: PlayStyle) => ({ name: t(`ui.playStyle.${s}`), hint: t(`ui.playStyle.${s}Hint`) })
-}
-
 /**
- * The styles as a radio group of cards (an icon, the name, its line; the picked one ringed in gold with a check, so it
- * is never colour alone). Arrow keys move the pick.
+ * The styles as a radio group of cards (an icon and the name, no description line: INFO has the rules; the picked one
+ * ringed in gold with a check, so it is never colour alone). Arrow keys move the pick.
  */
 export function PlayStylePicker({
   value,
@@ -33,7 +27,7 @@ export function PlayStylePicker({
   styles?: PlayStyle[]
   label: string
 }) {
-  const text = useStyleText()
+  const { t } = useT()
   const refs = useRef<(HTMLButtonElement | null)[]>([])
   const move = (e: KeyboardEvent, i: number) => {
     const step =
@@ -52,7 +46,6 @@ export function PlayStylePicker({
     <div role="radiogroup" aria-label={label} className="grid gap-2">
       {styles.map((s, i) => {
         const on = value === s
-        const { name, hint } = text(s)
         return (
           <button
             key={s}
@@ -74,10 +67,7 @@ export function PlayStylePicker({
             >
               <PixelIcon name={STYLE_ICON[s]} size={24} />
             </span>
-            <span className="grid min-w-0 flex-1 gap-0.5 leading-tight">
-              <b className="text-[22px] font-normal leading-none">{name}</b>
-              <small className="font-pixel-sm text-[15px] text-muted">{hint}</small>
-            </span>
+            <b className="min-w-0 flex-1 text-[22px] font-normal leading-none">{t(`ui.playStyle.${s}`)}</b>
             {on && <PixelIcon name="check" size={20} className="shrink-0" />}
           </button>
         )
@@ -137,7 +127,6 @@ export function PlayStylePanel() {
         onChange={(s) => s !== style && choosePlayStyle(s)}
         label={t('ui.playStyle.title')}
       />
-      <p className="copy mb-0 mt-2 text-muted">{t('ui.playStyle.settingsHint')}</p>
       <InfoButton className="mt-3" name={t('ui.playStyle.idle')} onClick={() => setRules(true)} />
       <IdleRulesModal open={rules} onClose={() => setRules(false)} />
     </Panel>

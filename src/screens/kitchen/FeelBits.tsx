@@ -68,11 +68,8 @@ export function FeelBits() {
       <Frame name="Settings → Game: as the game shows them (the admin's switches)">
         <FeelSettings />
       </Frame>
-      <Frame name="Settings → Game: every row (Android's line)">
-        <FeelSettings always ios={false} />
-      </Frame>
-      <Frame name="Settings → Game: every row (an iPhone's line)">
-        <FeelSettings always ios />
+      <Frame name="Settings → Game: every row (music's only while Sound is on)">
+        <FeelSettings always />
       </Frame>
       <Frame name={`Battle music (needs Sound: ${sound ? 'on' : 'off'})`}>
         <div className="flex flex-wrap gap-3">

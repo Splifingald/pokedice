@@ -432,7 +432,10 @@ Players shouldn't have to make many requests:
   always did (the save: one pop-up; the Extreme save and everything: two in a row). SUPPORT ME is white, here and over
   a fight: red stays for the game's own actions. **Type hints** (`settings.typeHints`, `useTypeHints`) sit in the Game
   panel, the same switch as the type chart's: unset, they are on until the first badge (`badgesHeld`), and a choice
-  made in either place always wins.
+  made in either place always wins. **Settings' rows have titles only** (the user's call, 2026-10-25): no description
+  line under a switch, a choice or a panel, so each title says what it does ("Multi EXP (whole team)", "Animation
+  length", "Type matchup hints"); a row that would do nothing goes instead of explaining why (Battle music while Sound
+  is off, Multi EXP while the config has no bench share). A rule or a "how" belongs to the panel's INFO.
 - **Tab bar** (phones): Poké Mart, Upgrades, **Home** (in the middle, under the thumb: a tab like the others, its Poké Ball icon and label), Team,
   Pokédex. The side nav (desktop) has the same entries with Home first. A tab's hit area is the whole column, at
   least 60 px tall, even where the drawing is smaller.

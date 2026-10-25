@@ -69,7 +69,6 @@ test('switched on, a new game asks nothing: Prof. Oak first, on "Auto on explore
     'aria-checked',
     'true',
   )
-  await expect(styles.getByRole('radio', { name: /^Idle mode/ })).toContainText('never with the Master Ball')
 })
 
 /** The team's Pokémon, fully evolved so no evolution adds to the Pokédex. */

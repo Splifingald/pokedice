@@ -10,7 +10,6 @@ import { Seg } from '@/components/Segmented'
 import { Toggle } from '@/components/Toggle'
 import { donationEnabled, extremeOpen, isExtreme } from '@/engine'
 import { LANG_LABELS, LANGS, type Lang } from '@/i18n'
-import { multiExpText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { pushToast, setSettings, useGame } from '@/store/game'
@@ -112,61 +111,52 @@ function SettingsContent({ over = false, shut }: { over?: boolean; shut?: string
         support && <div className="flex justify-end">{support}</div>
       )}
 
+      {/* Titles only, no description lines (the user's call, 2026-10-25): each title says what it switches. */}
       <Panel title={t('ui.settings.game')}>
         <Toggle
           label={t('ui.settings.sound')}
-          hint={t('ui.settings.soundHint')}
           on={soundOn(settings)}
           onChange={(v) => setSettings({ sound: v, sfx: v })}
         />
         <FeelSettings />
-        <Toggle
-          label={t('ui.settings.multiExp')}
-          hint={
-            data.config.multiExpShare > 0
-              ? t('ui.settings.multiExpHint', { share: multiExpText(data) })
-              : t('ui.settings.multiExpOff')
-          }
-          on={settings.multiExp}
-          onChange={(v) => setSettings({ multiExp: v })}
-        />
-        <div className="flex flex-col gap-1.5 py-1">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-2xl">{t('ui.settings.animations')}</span>
-            <Seg
-              label={t('ui.settings.animations')}
-              value={settings.animations ?? 'full'}
-              onChange={(v) => setSettings({ animations: v })}
-              options={[
-                { id: 'full', label: t('ui.settings.animFull') },
-                { id: 'short', label: t('ui.settings.animShort') },
-              ]}
-              className="min-w-[12rem]"
-            />
-          </div>
-          <span className="copy block text-muted">{t('ui.settings.animationsHint')}</span>
+        {/* Switched off by the game's config (no bench share), it would do nothing: not shown. */}
+        {data.config.multiExpShare > 0 && (
+          <Toggle
+            label={t('ui.settings.multiExp')}
+            on={settings.multiExp}
+            onChange={(v) => setSettings({ multiExp: v })}
+          />
+        )}
+        <div className="flex flex-wrap items-center justify-between gap-2 py-1">
+          <span className="text-2xl">{t('ui.settings.animations')}</span>
+          <Seg
+            label={t('ui.settings.animations')}
+            value={settings.animations ?? 'full'}
+            onChange={(v) => setSettings({ animations: v })}
+            options={[
+              { id: 'full', label: t('ui.settings.animFull') },
+              { id: 'short', label: t('ui.settings.animShort') },
+            ]}
+            className="min-w-[12rem]"
+          />
         </div>
-        <div className="flex flex-col gap-1.5 py-1">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-2xl">{t('ui.settings.theme')}</span>
-            <Seg
-              label={t('ui.settings.theme')}
-              value={settings.theme ?? 'light'}
-              onChange={(v) => setSettings({ theme: v })}
-              options={[
-                { id: 'light', label: t('ui.settings.themeLight') },
-                { id: 'dark', label: t('ui.settings.themeDark') },
-                { id: 'auto', label: t('ui.settings.themeAuto') },
-              ]}
-              className="min-w-[15rem]"
-            />
-          </div>
-          <span className="copy block text-muted">{t('ui.settings.themeHint')}</span>
+        <div className="flex flex-wrap items-center justify-between gap-2 py-1">
+          <span className="text-2xl">{t('ui.settings.theme')}</span>
+          <Seg
+            label={t('ui.settings.theme')}
+            value={settings.theme ?? 'light'}
+            onChange={(v) => setSettings({ theme: v })}
+            options={[
+              { id: 'light', label: t('ui.settings.themeLight') },
+              { id: 'dark', label: t('ui.settings.themeDark') },
+              { id: 'auto', label: t('ui.settings.themeAuto') },
+            ]}
+            className="min-w-[15rem]"
+          />
         </div>
         {/* On until the first badge unless the player chose (docs/38 U1b); the type chart holds the same switch. */}
         <Toggle
           label={t('ui.settings.typeHints')}
-          hint={t('ui.settings.typeHintsHint')}
           on={typeHints}
           onChange={(v) => setSettings({ typeHints: v })}
         />
@@ -174,7 +164,6 @@ function SettingsContent({ over = false, shut }: { over?: boolean; shut?: string
         {(isAdmin || settings.reducedMotion) && (
           <Toggle
             label={t('ui.settings.reducedMotion')}
-            hint={t('ui.settings.reducedMotionHint')}
             on={settings.reducedMotion}
             onChange={(v) => setSettings({ reducedMotion: v })}
           />
@@ -432,8 +421,7 @@ function ExtremePanel() {
   if (!extreme && !hasSave && !extremeOpen(save, data)) return null
   return (
     <Panel title={t('ui.extreme.name')}>
-      <p className="copy text-muted">{t('ui.extreme.settings.hint')}</p>
-      <div className="mt-2 flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2">
         <PixelButton size="sm" onClick={() => setRules(true)} aria-label={t('ui.extreme.infoLabel')}>
           {t('ui.extreme.settings.rules')}
         </PixelButton>
@@ -489,7 +477,6 @@ function LanguagePanel() {
           </button>
         ))}
       </div>
-      <p className="copy mt-2 text-muted">{t('ui.settings.languageHint')}</p>
     </Panel>
   )
 }
