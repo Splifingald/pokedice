@@ -9,6 +9,7 @@
  * without knowing regions exist; switching region is a swap of those fields, and nothing else changes.
  */
 import { linearAreas } from './data'
+import { gameCornerOn } from './events'
 import { evolutionsIn } from './forms'
 import { isReviving } from './fossils'
 import type { BadgeInfo } from './run'
@@ -137,12 +138,13 @@ export function regionAreas(data: GameData, regionId: RegionId) {
 
 /**
  * Every species a region can give you, by any route: its wild pools, its legendaries, its starters, the Pokémon its
- * fossils revive into, the Game Corner prize where it has a Game Corner — and everything all of those evolve into.
+ * fossils revive into, the Game Corner prize where it has a Game Corner (while it's on), the Fortune Wheel's jackpot
+ * Pokémon where the wheel opens — and everything all of those evolve into.
  * This — not a dex number range — is what a region's Pokédex page counts, because a region's routes borrow freely
  * from earlier generations and a player should be able to see everything they can actually get here.
  *
  * Counting only the wild pools is what left holes in the page. Omanyte, Kabuto and Aerodactyl are wild nowhere (they
- * come out of a fossil, see engine/fossils.ts) and Porygon is won at the Game Corner, so #137, #138, #140 and #142
+ * come out of a fossil, see engine/fossils.ts) and Porygon is won on the Fortune Wheel, so #137, #138, #140 and #142
  * were missing from Kanto's Pokédex — and a revived Omanyte had nowhere to show up at all. Evolved forms went the
  * same way wherever the grass holds only the first stage: Cradily and Armaldo in Hoenn, and in Johto a long list of
  * Gen 1 finals — Pidgeot, Alakazam, Machamp, Gengar — whose families are all over the routes.
@@ -164,7 +166,11 @@ export function regionSpecies(data: GameData, regionId: RegionId): Set<number> {
     }
     if ((area.encounterWeights.casino ?? 0) > 0) hasGameCorner = true
   }
-  if (hasGameCorner && data.species[data.config.slotMachine.prizeDex]) out.add(data.config.slotMachine.prizeDex)
+  if (hasGameCorner && gameCornerOn(data) && data.species[data.config.slotMachine.prizeDex]) out.add(data.config.slotMachine.prizeDex)
+  // The Fortune Wheel's jackpot Pokémon belong to the region of the area that opens the wheel (Porygon: Kanto's).
+  const wheelArea = data.areas.find((a) => a.id === data.config.events.wheel.unlockAreaId)
+  if (wheelArea && regionOfArea(wheelArea) === regionId)
+    for (const j of data.config.events.wheel.jackpot ?? []) if (j.reward.kind === 'pokemon' && data.species[j.reward.dex]) out.add(j.reward.dex)
   // The roamers belong to their region without sitting in any one area (see engine/encounters.ts).
   for (const dex of data.config.roamers?.regionId === regionId ? (data.config.roamers?.dex ?? []) : []) out.add(dex)
   // So do the raid pool's mythicals: met in Raid Battles once their lair, an area of the region, is cleared.

@@ -248,8 +248,17 @@ export const saveSchema = z.object({
         .discriminatedUnion('kind', [
           z.object({ kind: z.literal('gold'), amount: z.number().min(0) }),
           z.object({ kind: z.literal('item'), key: z.string().min(1).max(60), qty: z.number().int().min(1) }),
+          z.object({
+            kind: z.literal('pokemon'),
+            dex: z.number().int().min(1),
+            level: z.number().int().min(1),
+            shiny: z.boolean().optional(),
+          }),
         ])
         .optional(),
+      wheelTickets: z.number().int().min(0).max(1000).optional(),
+      wheelTicketAt: z.number().nullable().optional(),
+      wheelRulesSeen: z.boolean().optional(),
       raid: z
         .object({
           day: z.string().max(10),

@@ -1,18 +1,18 @@
 // What the special events' screens share (docs/18): each event's icon and names, its banner picture, and the rules the
 // unlock pop-up lists. The rules read their numbers from the admin's config, so a rebalance shows up in the text.
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { canSpin, msToUtcMidnight, utcDay, type EventId, type GameData, type WheelReward } from '@/engine'
+import { ticketRules, type EventId, type GameData, type WheelReward } from '@/engine'
 import { PixelIcon, type IconName } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
+import { SpriteImg } from '@/components/SpriteImg'
 import { ART_CROP, ART_K, ART_PX, artUrl, horizonOf } from '@/fx/areaArt'
 import { ART_GEOMETRY } from '@/fx/areaArtMap'
-import { getLang } from '@/i18n'
+import { getLang, t as tr } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
 import { useGame } from '@/store/game'
-import { useServerNow } from '@/store/serverTime'
 import { cx } from '@/theme/util'
 
 /** A raid day ('YYYY-MM-DD', UTC) as the player reads dates: "Sat 22 Apr", in their language. */
@@ -56,15 +56,15 @@ type Params = Record<string, string | number>
 /** The numbers the rules of an event read, from the config (and the item names, already in the player's language). */
 export function ruleParams(id: EventId, data: GameData): Params {
   if (id === 'wheel') {
-    const prizes = data.config.events.wheel.prizes.filter((p) => p.count > 0 && p.odds > 0)
-    const total = prizes.reduce((n, p) => n + p.count * p.odds, 0) || 1
-    const name = (p: (typeof prizes)[number]) =>
-      p.reward.kind === 'gold' ? money(p.reward.amount) : (data.items[p.reward.key]?.name ?? p.reward.key)
-    const rarest = [...prizes].sort((a, b) => a.count * a.odds - b.count * b.odds)[0]
+    const wheel = data.config.events.wheel
+    const { everyMs, cap, price } = ticketRules(wheel)
+    const pct = (n: number) => `${+n.toFixed(2)} %`
     return {
-      prizes: prizes.map(name).join(', '),
-      rarest: rarest ? name(rarest) : '',
-      chance: rarest ? +((rarest.count * rarest.odds * 100) / total).toFixed(1) : 0,
+      hours: Math.round((everyMs / 3_600_000) * 10) / 10,
+      cap,
+      price: money(price),
+      prizes: wheel.slices.filter((p) => p.count > 0 && p.odds > 0).map((p) => rewardName(p.reward, data)).join(', '),
+      chain: (wheel.jackpot ?? []).map((j) => `${rewardName(j.reward, data)} ${pct(j.odds)}`).join(' → '),
     }
   }
   if (id === 'raid') {
@@ -97,13 +97,26 @@ export function EventRules({ id, data }: { id: EventId; data: GameData }) {
   )
 }
 
-/**
- * The Info button at the foot of an event's page (the wheel's look): its rules again, as the unlock pop-up showed
- * them, with the admin's numbers.
- */
-export function EventInfo({ id }: { id: EventId }) {
+/** An event's rules in a pop-up, as the unlock pop-up showed them, with the admin's numbers: INFO, or a page's first open. */
+export function EventRulesModal({ id, open, onClose }: { id: EventId; open: boolean; onClose: () => void }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
+  return (
+    <Modal open={open} onClose={onClose} title={t(`ui.events.${id}.name`)} className="max-w-md">
+      <div className="flex flex-col gap-3">
+        <EventPicture id={id} data={data} className="-mx-4 h-[124px] shadow-[0_3px_0_rgb(var(--c-edge)),0_-2px_0_rgb(var(--c-edge))]" />
+        <EventRules id={id} data={data} />
+        <PixelButton variant="primary" onClick={onClose}>
+          {t('ui.common.ok')}
+        </PixelButton>
+      </div>
+    </Modal>
+  )
+}
+
+/** The Info button at the foot of an event's page (the wheel's look): its rules again. */
+export function EventInfo({ id }: { id: EventId }) {
+  const { t } = useT()
   const [open, setOpen] = useState(false)
   const name = t(`ui.events.${id}.name`)
   return (
@@ -111,15 +124,7 @@ export function EventInfo({ id }: { id: EventId }) {
       <button type="button" className="ev-info w-full" onClick={() => setOpen(true)} aria-label={t('ui.events.infoLabel', { name })}>
         {t('ui.events.info')}
       </button>
-      <Modal open={open} onClose={() => setOpen(false)} title={name} className="max-w-md">
-        <div className="flex flex-col gap-3">
-          <EventPicture id={id} data={data} className="-mx-4 h-[124px] shadow-[0_3px_0_rgb(var(--c-edge)),0_-2px_0_rgb(var(--c-edge))]" />
-          <EventRules id={id} data={data} />
-          <PixelButton variant="primary" onClick={() => setOpen(false)}>
-            {t('ui.common.ok')}
-          </PixelButton>
-        </div>
-      </Modal>
+      <EventRulesModal id={id} open={open} onClose={() => setOpen(false)} />
     </>
   )
 }
@@ -156,30 +161,20 @@ export function EventPicture({ id, data, className, children }: { id: EventId; d
   )
 }
 
-/** A wheel prize in words: "₽10", "Poké Ball", "2 × Great Ball". */
+/** A wheel prize in words: "₽10", "Poké Ball", "2 × Great Ball", "Shiny Porygon". */
 export function rewardName(r: WheelReward, data: GameData): string {
   if (r.kind === 'gold') return money(r.amount)
+  if (r.kind === 'pokemon') {
+    const name = data.species[r.dex]?.name ?? `#${r.dex}`
+    return r.shiny ? tr('ui.events.raid.shinyName', { name }) : name
+  }
   const name = data.items[r.key]?.name ?? r.key
   return r.qty > 1 ? `${r.qty} × ${name}` : name
 }
 
-/** A wheel prize's picture: the item's, or a coin for ₽. */
+/** A wheel prize's picture: the item's, the Pokémon's (in its shiny colours), or a coin for ₽. */
 export function RewardIcon({ reward, data, size }: { reward: WheelReward; data: GameData; size: number }) {
-  return reward.kind === 'gold' ? (
-    <PixelIcon name="coin" size={Math.round(size * 0.7)} />
-  ) : (
-    <ItemSprite item={data.items[reward.key]} size={size} />
-  )
-}
-
-/**
- * Today's spin, on the server's clock: `known` false while the real time hasn't come back yet (offline), then whether
- * the free spin is there and how long until the next one. Re-read every `ms`.
- */
-export function useWheelDay(ms = 1000): { known: false } | { known: true; day: string; ready: boolean; msLeft: number } {
-  const now = useServerNow(ms)
-  const save = useGame((s) => s.save)
-  if (now == null || !save) return { known: false }
-  const day = utcDay(now)
-  return { known: true, day, ready: canSpin(save, day), msLeft: msToUtcMidnight(now) }
+  if (reward.kind === 'gold') return <PixelIcon name="coin" size={Math.round(size * 0.7)} />
+  if (reward.kind === 'pokemon') return <SpriteImg dex={reward.dex} shiny={!!reward.shiny} size={size} alt="" />
+  return <ItemSprite item={data.items[reward.key]} size={size} />
 }

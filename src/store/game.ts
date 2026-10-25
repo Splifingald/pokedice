@@ -278,7 +278,7 @@ function boot(): Pick<GameStore, 'data' | 'rawData' | 'save' | 'corruptSaveArchi
   if (!save) return { data, rawData, save: null, corruptSaveArchived: corrupt, settings, run: initialRun(), battle: null }
   // Settle the save (HP scale, XP curve, duplicates) before the first render. A Fortune Wheel prize still waiting (the
   // page closed while the wheel turned) is paid now.
-  const settled = settle(payWheelPrize(withoutResume(save), data), data).save
+  const settled = settle(payWheelPrize(withoutResume(save), data, Date.now(), raidId), data).save
   // Back into the encounter the page was left in, at the point it was left (store/resume.ts).
   const resumed = restoreSnapshot(save.resume, settled, data, initialRun())
   return {

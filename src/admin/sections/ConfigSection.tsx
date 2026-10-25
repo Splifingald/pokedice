@@ -70,8 +70,12 @@ function SlotMachineBox() {
   return (
     <Box
       title="Game Corner — slot machine" icon="coin"
-      hint="Played on the Game Corner cards (Areas → Encounter deck). The result is drawn from these weights, then the reels are laid out to show it."
+      hint="Played on the Game Corner cards (Areas → Encounter deck). The result is drawn from these weights, then the reels are laid out to show it. Off: no Game Corner card is dealt anywhere (the Fortune Wheel gives Porygon instead)."
     >
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xl">Game Corner</span>
+        <AccessSwitch value={cfg.access ?? 'off'} onChange={(access) => set({ access })} label="Game Corner: who meets its cards" />
+      </div>
       <div className="grid gap-3 sm:grid-cols-3">
         <Field label="Cost per spin (₽)">
           <NumInput min={0} value={cfg.cost} onChange={(v) => set({ cost: Math.max(0, v ?? 0) })} />

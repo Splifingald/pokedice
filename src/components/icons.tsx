@@ -459,6 +459,21 @@ export const ICONS = {
     'kBBBBBBBBBBk',
     'kkkkkkkkkkkk',
   ],
+  // A Fortune Wheel ticket: a gold stub, notched at the sides, torn along its perforation.
+  ticket: [
+    '............',
+    '............',
+    'kkkkkkkkkkkk',
+    'kYYYYYYYkYYk',
+    'kyyyyyyy.yyk',
+    '.kyrrryykyk.',
+    '.kyrrryy.yk.',
+    'kyyyyyyykyyk',
+    'kyyyyyyy.yyk',
+    'kkkkkkkkkkkk',
+    '............',
+    '............',
+  ],
   ...PACK_ICONS,
 } as const
 

@@ -840,6 +840,10 @@ Two rules for every feature that adds something players can do (an event, a mode
 - **A purely visual change** (the dice throws, docs/37; the game-feel pass, haptics and battle music, docs/38): the
   switch, but no rules pop-up and no INFO: it only changes how something already there looks, sounds or feels, so
   there is nothing to learn or do.
+- **A reworked feature keeps its switch** (the Fortune Wheel's tickets, 2026-10-25): the user chose to rework it in
+  place, under the wheel's own switch. Its new rules show once on its page (`events.wheelRulesSeen`) for players who
+  had it already; a new player reads them in its unlock pop-up. The Game Corner's slot machine got a switch of its own
+  then (`slotMachine.access`, Off): the user took it out of the game for now.
 - **Items with a switch** (`game_config.itemSwitches`, `itemOn`): the Link Cable and the Bait (docs/25). Off: not sold,
   not found, not usable, never offered; bags keep theirs. An item is explained where it's met (its description in the
   Mart and the bag; the Bait's die and odds on the catch prompt), so items have no rules pop-up of their own.

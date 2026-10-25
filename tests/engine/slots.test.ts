@@ -16,6 +16,7 @@ import {
 import { data, makeData, newId } from '../fixtures'
 
 const SLOTS: SlotMachineConfig = {
+  access: 'all',
   cost: 10,
   oneBall: { weight: 50, gold: 1 },
   twoBalls: { weight: 30, gold: 10 },
@@ -108,10 +109,10 @@ describe('Game Corner cards and the "area reached" condition', () => {
   const route1 = data.areas.find((a) => !a.hidden)!
   const second = data.areas.filter((a) => !a.hidden).sort((a, b) => a.orderIndex - b.orderIndex)[1]!
 
-  it('deals the Game Corner cards the area asks for', () => {
+  it('deals the Game Corner cards the area asks for while it’s on, and none while it’s off (the default)', () => {
     const area: Area = { ...route1, encounterWeights: { wild: 2, trainer: 0, center: 1, item: 0, casino: 3 } }
-    const deck = buildDeck(area, data, createRng(5))
-    expect(deck.filter((c) => c === 'casino')).toHaveLength(3)
+    expect(buildDeck(area, d, createRng(5)).filter((c) => c === 'casino')).toHaveLength(3)
+    expect(buildDeck(area, data, createRng(5)).filter((c) => c === 'casino')).toHaveLength(0)
   })
 
   it('opens a secret area once the area it names is reached', () => {
