@@ -168,39 +168,40 @@
 
 /*
  * Dice (Die.tsx): square corners, an ink edge, a light top-left and a shaded bottom-right, and a drop shadow under the
- * wrapper. Selected = lifted with a red outline; combo = a gold ring; a status face = a white then a status-coloured
- * ring (`--stc`).
+ * die. Selected = lifted with a red outline; combo = a gold ring; a status face = a white then a status-coloured ring
+ * (`--stc`).
+ *
+ * The rings are box-shadows on the die's body (`--ring`), 2 px each, the outer ones under the inner. They were chained
+ * `drop-shadow` filters on its wrapper, up to 12 a die: each filter a pass of its own on the GPU, done again whenever
+ * anything over the tray moved (the count-up's "+N", the damage counting), and a phone stopped drawing for seconds as
+ * the dice landed (Discord, 2026-10-25). Box-shadows draw the same squares in one go.
  */
-.die {
+.die,
+.die-mini {
   background: var(--c);
-  box-shadow:
-    inset 0 0 0 2px #24304f,
-    inset 2px 4px 0 0 rgba(255, 255, 255, 0.45),
+  box-shadow: var(--inset), var(--ring, 0 3px 0 0 rgba(36, 48, 79, 0.22));
+}
+.die {
+  --inset:
+    inset 0 0 0 2px #24304f, inset 2px 4px 0 0 rgba(255, 255, 255, 0.45),
     inset -2px -4px 0 0 rgba(20, 30, 60, 0.18);
 }
 .die-mini {
-  background: var(--c);
-  box-shadow:
-    inset 0 0 0 2px #24304f,
-    inset 1px 2px 0 0 rgba(255, 255, 255, 0.45),
+  --inset:
+    inset 0 0 0 2px #24304f, inset 1px 2px 0 0 rgba(255, 255, 255, 0.45),
     inset -1px -2px 0 0 rgba(20, 30, 60, 0.18);
 }
 .die-wrap {
   display: inline-block;
-  filter: drop-shadow(0 3px 0 rgba(36, 48, 79, 0.22));
 }
 .die-wrap.st {
-  filter: drop-shadow(2px 0 0 #ffffff) drop-shadow(-2px 0 0 #ffffff) drop-shadow(0 2px 0 #ffffff)
-    drop-shadow(0 -2px 0 #ffffff) drop-shadow(2px 0 0 var(--stc)) drop-shadow(-2px 0 0 var(--stc))
-    drop-shadow(0 2px 0 var(--stc)) drop-shadow(0 -2px 0 var(--stc));
+  --ring: 0 0 0 2px #ffffff, 0 0 0 4px var(--stc);
 }
 .die-wrap.combo {
-  filter: drop-shadow(2px 0 0 #ffbe2e) drop-shadow(-2px 0 0 #ffbe2e) drop-shadow(0 2px 0 #ffbe2e)
-    drop-shadow(0 -2px 0 #ffbe2e);
+  --ring: 0 0 0 2px #ffbe2e;
 }
 .die-wrap.sel {
-  filter: drop-shadow(2px 0 0 #f2553f) drop-shadow(-2px 0 0 #f2553f) drop-shadow(0 2px 0 #f2553f)
-    drop-shadow(0 -2px 0 #f2553f);
+  --ring: 0 0 0 2px #f2553f;
 }
 /*
  * The combo's tiers (docs/38 F2b, with the game feel on): a pair keeps the gold ring; a bigger combo, a bolder one.
@@ -208,26 +209,23 @@
  * (stilled, gold, by the reduced-motion rule).
  */
 .die-wrap.combo.t2 {
-  filter: drop-shadow(2px 0 0 #ffbe2e) drop-shadow(-2px 0 0 #ffbe2e) drop-shadow(0 2px 0 #ffbe2e)
-    drop-shadow(0 -2px 0 #ffbe2e) drop-shadow(2px 0 0 #ffbe2e) drop-shadow(-2px 0 0 #ffbe2e)
-    drop-shadow(0 2px 0 #ffbe2e) drop-shadow(0 -2px 0 #ffbe2e);
+  --ring: 0 0 0 4px #ffbe2e;
 }
 .die-wrap.combo.t3,
 .die-wrap.combo.t4 {
-  filter: drop-shadow(2px 0 0 #ffbe2e) drop-shadow(-2px 0 0 #ffbe2e) drop-shadow(0 2px 0 #ffbe2e)
-    drop-shadow(0 -2px 0 #ffbe2e) drop-shadow(2px 0 0 #24304f) drop-shadow(-2px 0 0 #24304f)
-    drop-shadow(0 2px 0 #24304f) drop-shadow(0 -2px 0 #24304f) drop-shadow(2px 0 0 #ffbe2e)
-    drop-shadow(-2px 0 0 #ffbe2e) drop-shadow(0 2px 0 #ffbe2e) drop-shadow(0 -2px 0 #ffbe2e);
+  --ring: 0 0 0 2px #ffbe2e, 0 0 0 4px #24304f, 0 0 0 6px #ffbe2e;
 }
 @keyframes die-t4 {
   50% {
-    filter: drop-shadow(2px 0 0 #ffbe2e) drop-shadow(-2px 0 0 #ffbe2e) drop-shadow(0 2px 0 #ffbe2e)
-      drop-shadow(0 -2px 0 #ffbe2e) drop-shadow(2px 0 0 #24304f) drop-shadow(-2px 0 0 #24304f)
-      drop-shadow(0 2px 0 #24304f) drop-shadow(0 -2px 0 #24304f) drop-shadow(2px 0 0 #ffffff)
-      drop-shadow(-2px 0 0 #ffffff) drop-shadow(0 2px 0 #ffffff) drop-shadow(0 -2px 0 #ffffff);
+    box-shadow:
+      var(--inset),
+      0 0 0 2px #ffbe2e,
+      0 0 0 4px #24304f,
+      0 0 0 6px #ffffff;
   }
 }
-.die-wrap.combo.t4 {
+.die-wrap.combo.t4 > .die,
+.die-wrap.combo.t4 > .die-mini {
   animation: die-t4 1s steps(1) infinite;
 }
 
@@ -243,6 +241,12 @@
 .die-squash {
   animation: die-squash 100ms steps(1);
   transform-origin: 50% 100%;
+}
+/* A tier-4 die squashing (a reroll that keeps the combo): both, as the ring's flash is on the same body. */
+.die-wrap.combo.t4 > .die-squash {
+  animation:
+    die-squash 100ms steps(1),
+    die-t4 1s steps(1) infinite;
 }
 
 /* A picked die before the last reroll (F9a): a nervous 1 px jitter. */

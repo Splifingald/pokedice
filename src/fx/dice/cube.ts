@@ -364,8 +364,8 @@ function drawRest(fb: Frame, dx: number, dy: number, art: DieArt, face: number, 
       if (fx >= 0 && fx < fb.w) fb.buf[fy * fb.w + fx] = src[y * S + x]!
     }
   }
-  // .die-wrap's drop-shadow(0 3px): what shows of it under the die. A status face has its rings there instead, which
-  // the DOM die brings on landing.
+  // The die's own shadow (pixel.css, 0 3px under its body): what shows of it under the die. A status face has its
+  // rings there instead, which the DOM die brings on landing.
   if (!art.status[face])
     for (let y = dy + S; y < dy + S + 3 && y < fb.h; y++)
       for (let x = dx; x < dx + S && x < fb.w; x++) if (!fb.buf[y * fb.w + x]) fb.buf[y * fb.w + x] = art.drop
