@@ -11,7 +11,7 @@ import { loadItemSprite, spriteFrame } from './sprites'
 
 export interface WheelSlice {
   reward: WheelReward
-  /** The item's picture (its `spriteUrl`); none for ₽. */
+  /** The item's picture (its `spriteUrl`) or the Pokémon's sprite; none for ₽. */
   sprite?: string
   /** What's written on the slice: the ₽ amount, or ×2 for two of an item. */
   label: string
@@ -27,12 +27,15 @@ const SLICE_COL: Record<string, [string, string]> = {
   'great-ball': ['#b8d4ff', '#8ab4ff'],
   'ultra-ball': ['#d6dbe6', '#aab4c8'],
   'master-ball': ['#e2c4ff', '#c58aff'],
+  // The jackpot's Pokémon: the brightest gold on the wheel.
+  pokemon: ['#fff4b0', '#ffd23a'],
 }
 const OTHER_COL: [string, string] = ['#e3e9f2', '#cfd8e6']
-const sliceCol = (r: WheelReward, i: number) => (SLICE_COL[r.kind === 'gold' ? 'gold' : r.key] ?? OTHER_COL)[i % 2]!
+const sliceCol = (r: WheelReward, i: number) => (SLICE_COL[r.kind === 'item' ? r.key : r.kind] ?? OTHER_COL)[i % 2]!
 
 /** The big prizes: a flash, a shower of coins and a fanfare. */
-export const isJackpot = (r: WheelReward) => r.kind === 'item' && (r.key === 'ultra-ball' || r.key === 'master-ball')
+export const isJackpot = (r: WheelReward) =>
+  r.kind === 'pokemon' || (r.kind === 'item' && (r.key === 'ultra-ball' || r.key === 'master-ball'))
 
 const NAVY = '#24304f'
 const FONT = "'Jersey 25', 'Jersey 15', sans-serif"
@@ -308,9 +311,10 @@ export class WheelStage {
       const x = Math.round(c + Math.sin(a) * ri)
       const y = Math.round(c - Math.cos(a) * ri)
       const label = sx.label
-      const art = sx.reward.kind === 'item' ? this.itemFrame(sx.sprite) : undefined
+      const art = sx.reward.kind !== 'gold' ? this.itemFrame(sx.sprite) : undefined
       if (art) {
-        const sz = art.width * k
+        // A Pokémon's 64 px sprite is drawn a step smaller than a 32 px item, so it fills its slice as items do.
+        const sz = art.width * (sx.reward.kind === 'pokemon' ? Math.max(1, k - 1) : k)
         g.imageSmoothingEnabled = false
         g.drawImage(art, Math.round(x - sz / 2), Math.round(y - sz / 2 - (label ? 6 * u : 0)), sz, sz)
         g.imageSmoothingEnabled = true
@@ -442,7 +446,7 @@ export class WheelStage {
       g.fill()
       if (art) {
         g.imageSmoothingEnabled = false
-        const d = this.pop.reward.kind === 'gold' ? Math.round(sz * 0.6) : sz
+        const d = this.pop.reward.kind === 'gold' ? Math.round(sz * 0.6) : this.pop.reward.kind === 'pokemon' ? sz * 2 : sz
         g.drawImage(art, Math.round(x - d / 2), Math.round(y + bob - d / 2), d, d)
         g.imageSmoothingEnabled = true
       }

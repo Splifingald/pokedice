@@ -30,6 +30,9 @@ export const hapticsOn = (data: GameData): boolean => eventOpenTo(data.config.ha
 /** Battle music (docs/38): sound only; the game alone reads it. */
 export const musicOn = (data: GameData): boolean => eventOpenTo(data.config.music?.access, data)
 
+/** The Game Corner's slot machine (its cards in area decks): off since 2026-10-25, the wheel gives Porygon instead. */
+export const gameCornerOn = (data: GameData): boolean => eventOpenTo(data.config.slotMachine?.access, data)
+
 /** This event is switched on for whoever is playing. */
 export const eventOn = (data: GameData, id: EventId): boolean => eventOpenTo(eventDef(data, id)?.access, data)
 
@@ -70,7 +73,12 @@ export function markEventsSeen(save: SaveData, data: GameData): SaveData {
   const before = seen.size
   for (const id of EVENT_IDS) if (eventUnlocked(id, save, data)) seen.add(id)
   if (seen.size === before) return save
-  return { ...save, events: { ...save.events, seen: EVENT_IDS.filter((id) => seen.has(id)) } }
+  // The wheel's unlock pop-up lists its rules: its page doesn't show them a second time.
+  const wheel = seen.has('wheel') && !save.events?.seen?.includes('wheel')
+  return {
+    ...save,
+    events: { ...save.events, seen: EVENT_IDS.filter((id) => seen.has(id)), ...(wheel && { wheelRulesSeen: true }) },
+  }
 }
 
 /** Kanto badges held (the teaser counts them, wherever the player is now). */

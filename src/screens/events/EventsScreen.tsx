@@ -8,12 +8,13 @@ import { useT } from '@/i18n/react'
 import { countdown } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { useTodayRaid } from '@/store/raid'
+import { useWheelTickets } from '@/store/wheel'
 import { currentTier, rebattleComplete, rebattleEncounter, regionOf } from '@/engine'
 import { useRaidRun } from '@/store/raidBattle'
 import { RaidPage } from './RaidPage'
 import { RaidView } from './RaidView'
 import { RebattlePage, tierName } from './RebattlePage'
-import { EventPicture, useWheelDay } from './shared'
+import { EventPicture } from './shared'
 import { WheelPage } from './WheelPage'
 import { WorldAwayPage } from './world'
 
@@ -37,17 +38,17 @@ export function EventBanner({ id, status }: { id: EventId; status?: ReactNode })
   )
 }
 
-/** The banner's live line: the wheel's free spin or its countdown. */
+/** The banner's live line: the wheel's next free ticket, the raid's time left, the rebattle's fight. */
 function useEventStatus(id: EventId): string | undefined {
   const { t } = useT()
-  const wheel = useWheelDay()
+  const wheel = useWheelTickets()
   const raid = useTodayRaid()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   if (id === 'raid' && raid.raid && raid.msLeft != null)
     return t(raid.raid.caught ? 'ui.events.raid.newIn' : 'ui.events.raid.endsIn', { time: countdown(raid.msLeft) })
   if (id === 'wheel' && wheel.known)
-    return wheel.ready ? t('ui.events.wheel.daily') : t('ui.events.wheel.nextSpin', { time: countdown(wheel.msLeft) })
+    return wheel.msLeft == null ? t('ui.events.wheel.full') : t('ui.events.wheel.nextTicket', { time: countdown(wheel.msLeft) })
   if (id === 'rebattle' && save) {
     const region = regionOf(save)
     if (rebattleComplete(save, data, region)) return t('ui.events.rebattle.medalTitle', { tier: tierName(t, data, 2) })

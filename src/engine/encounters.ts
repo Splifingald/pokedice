@@ -1,7 +1,7 @@
 import { isLegendary } from './breeding'
 import { areaDayTime, wildPoolAt } from './dayNight'
 import { shuffle } from './deal'
-import { eventOn } from './events'
+import { eventOn, gameCornerOn } from './events'
 import { regionOfArea } from './regions'
 import { drawLoot } from './items'
 import { pityChance } from './pity'
@@ -345,15 +345,19 @@ export type DeckCounts = Record<(typeof DECK_KINDS)[number], number>
 
 /**
  * Cards of each kind in one encounter deck. An area's encounter weight *is* its number of copies (v1.6): wild 8,
- * Center 1, item 1 → a 10-card deck. Kinds the area can't produce (no wild pool / no trainers / no loot / Trick or Treat
- * switched off or no ghosts) get none; an area with nothing at all gets a single Center.
+ * Center 1, item 1 → a 10-card deck. Kinds the area can't produce (no wild pool / no trainers / no loot / the Game Corner
+ * or Trick or Treat switched off, or no ghosts) get none; an area with nothing at all gets a single Center.
  */
 export function deckCounts(
   weights: Partial<Record<EncounterKind, number>>,
-  can: { wild: boolean; trainer: boolean; item?: boolean; trick?: boolean },
+  can: { wild: boolean; trainer: boolean; item?: boolean; casino?: boolean; trick?: boolean },
 ): DeckCounts {
   const copies = (k: (typeof DECK_KINDS)[number]) =>
-    (k === 'wild' && !can.wild) || (k === 'trainer' && !can.trainer) || (k === 'item' && !can.item) || (k === 'trick' && !can.trick)
+    (k === 'wild' && !can.wild) ||
+    (k === 'trainer' && !can.trainer) ||
+    (k === 'item' && !can.item) ||
+    (k === 'casino' && !can.casino) ||
+    (k === 'trick' && !can.trick)
       ? 0
       : Math.max(0, Math.round(Number(weights[k]) || 0))
   const c = Object.fromEntries(DECK_KINDS.map((k) => [k, copies(k)])) as DeckCounts
@@ -368,6 +372,7 @@ export const deckAbilities = (area: Area, data?: GameData) => ({
   wild: area.wildPool.length > 0,
   trainer: area.trainerPool.length > 0,
   item: area.lootPool.length > 0,
+  casino: !!data && gameCornerOn(data),
   trick: !!data && trickDealable(data, area),
 })
 
@@ -568,7 +573,7 @@ function rollWeighted(ctx: EncounterContext, rng: Rng): EncounterRoll {
     { kind: 'trainer', weight: can.trainer ? w.trainer : 0 },
     { kind: 'center', weight: ctx.noCenters ? 0 : w.center },
     { kind: 'item', weight: can.item ? (w.item ?? 0) : 0 },
-    { kind: 'casino', weight: w.casino ?? 0 },
+    { kind: 'casino', weight: can.casino ? (w.casino ?? 0) : 0 },
     { kind: 'trick', weight: can.trick ? (w.trick ?? 0) : 0 },
   ]
   for (let attempt = 0; attempt < 10; attempt++) {

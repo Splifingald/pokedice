@@ -47,8 +47,6 @@ export const DEFAULT_CONFIG: GameConfig = {
     confuse: { recoilPercentPerFace: 10, maxFaces: 3 },
   },
   ai: { samples: 200, rerollGainThreshold: 0.08 },
-  // Game Corner: every spin shows something. Returns 8.5 ₽ per 10 ₽ on average, plus the Porygon jackpot; a jackpot
-  // when Porygon Lv.30+ is already yours refunds the spin, so the machine never becomes a money printer.
   // Raikou, Entei and Suicune, once both tower legendaries are caught: ~2% each per Johto wild encounter.
   roamers: {
     regionId: 'johto',
@@ -57,7 +55,11 @@ export const DEFAULT_CONFIG: GameConfig = {
     level: 40,
     dex: [243, 244, 245],
   },
+  // Game Corner: every spin shows something. Returns 8.5 ₽ per 10 ₽ on average, plus the Porygon jackpot; a jackpot
+  // when Porygon Lv.30+ is already yours refunds the spin, so the machine never becomes a money printer. Off since
+  // 2026-10-25 (the user's call): the Fortune Wheel's jackpot gives Porygon now.
   slotMachine: {
+    access: 'off',
     cost: 10,
     oneBall: { weight: 50, gold: 1 },
     twoBalls: { weight: 30, gold: 10 },
@@ -207,13 +209,26 @@ export const DEFAULT_CONFIG: GameConfig = {
       // A carnival booth with the big wheel at dusk (349 × 144, the wheel on the right, clear of the title plate).
       banner: '/backgrounds/fortune-wheel.png',
       rules: ['wheel.daily', 'wheel.prizes', 'wheel.odds'],
-      // Nine equal slices: 4 × ₽10, 2 Poké Balls, a Great, an Ultra and a Master Ball. The odds add up to 100 %.
-      prizes: [
-        { reward: { kind: 'gold', amount: 10 }, count: 4, odds: 12.5 },
-        { reward: { kind: 'item', key: 'poke-ball', qty: 1 }, count: 2, odds: 12.5 },
-        { reward: { kind: 'item', key: 'great-ball', qty: 1 }, count: 1, odds: 12.5 },
-        { reward: { kind: 'item', key: 'ultra-ball', qty: 1 }, count: 1, odds: 10 },
-        { reward: { kind: 'item', key: 'master-ball', qty: 1 }, count: 1, odds: 2.5 },
+      // A ticket a spin (the user's design, 2026-10-25): one free every 12 h, 4 held at most, ₽200 each while under 4,
+      // and a spin pays back ₽150 at most on average (tests/engine/wheel.test.ts holds every stage to it).
+      tickets: { everyHours: 12, cap: 4, price: 200, maxAverage: 150 },
+      // Eleven slices, worth ₽118 a spin on average (items at their Mart price); the jackpot's slice makes twelve.
+      slices: [
+        { reward: { kind: 'gold', amount: 50 }, count: 3, odds: 13 },
+        { reward: { kind: 'gold', amount: 100 }, count: 2, odds: 12.5 },
+        { reward: { kind: 'item', key: 'great-ball', qty: 2 }, count: 1, odds: 10 },
+        { reward: { kind: 'gold', amount: 150 }, count: 1, odds: 10 },
+        { reward: { kind: 'item', key: 'ultra-ball', qty: 2 }, count: 1, odds: 8 },
+        { reward: { kind: 'item', key: 'rare-candy', qty: 1 }, count: 1, odds: 5 },
+        { reward: { kind: 'gold', amount: 500 }, count: 1, odds: 2.5 },
+        { reward: { kind: 'gold', amount: 1000 }, count: 1, odds: 0.5 },
+      ],
+      // Porygon at 10 %; once caught, a shiny Porygon at 1 %; once that's caught, a Master Ball at 0.25 % for good.
+      // Averages a spin: ₽136, ₽147, ₽120 (Porygon counted at ₽300, the shiny at ₽3,000).
+      jackpot: [
+        { reward: { kind: 'pokemon', dex: 137, level: 30 }, odds: 10, value: 300 },
+        { reward: { kind: 'pokemon', dex: 137, level: 30, shiny: true }, odds: 1, value: 3000 },
+        { reward: { kind: 'item', key: 'master-ball', qty: 1 }, odds: 0.25, value: 1000 },
       ],
     },
     raid: {

@@ -4,7 +4,7 @@
 // names the area that opens the first one (engine/comingUp.ts).
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { activeEvents, currentTier, rebattleEncounter, rebattleOnHome, regionOf, type EventId } from '@/engine'
+import { activeEvents, currentTier, jackpotStage, rebattleEncounter, rebattleOnHome, regionOf, ticketRules, type EventId } from '@/engine'
 import { AreaStrip } from '@/components/AreaStrip'
 import { Chip } from '@/components/Chip'
 import { PixelIcon } from '@/components/icons'
@@ -14,45 +14,45 @@ import { useT } from '@/i18n/react'
 import { countdown } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { useTodayRaid } from '@/store/raid'
+import { useWheelTickets } from '@/store/wheel'
 import { HeadTag, Meter, Widget, WidgetBanner, WIDGET_BANNER_H, WidgetRows } from '@/screens/home/Widget'
 import { Medal, tierName } from './RebattlePage'
 import { LiveSquares } from './live'
 import { WorldSlot } from './worldPreview'
-import { EVENT_ICON, EventPicture, RewardIcon, rewardName, useWheelDay } from './shared'
+import { EVENT_ICON, EventPicture, RewardIcon, rewardName } from './shared'
 
 const DAY = 24 * 60 * 60 * 1000
 
 /**
- * The Fortune Wheel's square: its prizes rolling by (pictures only: the amounts and odds are on its page), and whether
- * today's spin is still there. The carousel never re-mounts on a tick, so it doesn't jump.
+ * The Fortune Wheel's square: its prizes rolling by (pictures only: the amounts and odds are on its page), the jackpot
+ * of the moment first, and the tickets held. The carousel never re-mounts on a tick, so it doesn't jump.
  */
 function WheelSquare() {
   const { t } = useT()
   const navigate = useNavigate()
   const data = useGame((s) => s.data)
-  const day = useWheelDay(30_000)
+  const save = useGame((s) => s.save)
+  const tickets = useWheelTickets(30_000)
   const name = t('ui.events.wheel.name')
-  const prizes = data.config.events.wheel.prizes.filter((p) => p.count > 0 && p.odds > 0)
-  const ready = day.known && day.ready
-  const sub = !day.known ? '…' : ready ? t('ui.events.wheel.daily') : t('ui.events.wheel.nextSpin', { time: countdown(day.msLeft) })
-  const label = t(ready ? 'ui.events.wheel.labelReady' : 'ui.events.wheel.labelSpun', {
-    name,
-    prizes: prizes.map((p) => rewardName(p.reward, data)).join(', '),
-    sub,
-  })
-  const row = prizes.map((p, i) => (
+  const wheel = data.config.events.wheel
+  const jackpot = save ? wheel.jackpot?.[jackpotStage(save, wheel)] : undefined
+  const rewards = [...(jackpot ? [jackpot.reward] : []), ...wheel.slices.filter((p) => p.count > 0 && p.odds > 0).map((p) => p.reward)]
+  const ready = tickets.known && tickets.tickets > 0
+  const sub = !tickets.known
+    ? '…'
+    : tickets.msLeft == null
+      ? t('ui.events.wheel.full')
+      : t('ui.events.wheel.nextTicket', { time: countdown(tickets.msLeft) })
+  const held = tickets.known ? t('ui.events.wheel.ticketsHeld', { n: tickets.tickets, cap: tickets.cap }) : '…'
+  const label = t('ui.events.wheel.squareLabel', { name, tickets: held, prizes: rewards.map((r) => rewardName(r, data)).join(', '), sub })
+  const every = ticketRules(wheel).everyMs
+  const row = rewards.map((r, i) => (
     <span key={i} className="grid h-full w-[56px] place-items-center">
-      <RewardIcon reward={p.reward} data={data} size={48} />
+      <RewardIcon reward={r} data={data} size={48} />
     </span>
   ))
   return (
-    <Widget
-      title={name}
-      tag={<HeadTag />}
-      label={label}
-      onClick={() => navigate('/events/wheel')}
-      className={ready ? 'panel-gold' : undefined}
-    >
+    <Widget title={name} tag={<HeadTag />} label={label} onClick={() => navigate('/events/wheel')} className={ready ? 'panel-gold' : undefined}>
       <WidgetBanner>
         <span className="ev-car" aria-hidden>
           <span className="ev-car-track">
@@ -65,10 +65,15 @@ function WheelSquare() {
           </span>
         </span>
       </WidgetBanner>
-      {/* The gauge fills toward the next spin; full, and green, while today's is waiting. */}
+      {/* The gauge fills toward the next free ticket; full while the stack is. */}
       <WidgetRows
-        top={<span className="truncate text-[20px] leading-none">{ready ? t('ui.events.wheel.free') : t('ui.events.wheel.spun')}</span>}
-        meter={day.known && <Meter value={day.ready ? DAY : DAY - day.msLeft} max={DAY} />}
+        top={
+          <span className="flex min-w-0 items-center gap-1.5 text-[20px] leading-none">
+            <PixelIcon name="ticket" size={20} />
+            <span className="truncate">{held}</span>
+          </span>
+        }
+        meter={tickets.known && <Meter value={tickets.msLeft == null ? every : every - tickets.msLeft} max={every} />}
         bottom={sub}
       />
     </Widget>
