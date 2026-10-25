@@ -13,11 +13,9 @@ import {
   createRng,
   emptyProgress,
   linearAreas,
-  newGameAsksStyle,
   newSave,
   playStyleOf,
   reduce,
-  playStylesOffered,
   regionOf,
   retreatFrom,
   settingsForStyle,
@@ -31,7 +29,6 @@ import { makeData, newId } from '../fixtures'
 
 const OFF = makeData()
 const ON = makeData({ idleMode: { access: 'all' } })
-const ADMIN_ONLY = makeData({ idleMode: { access: 'admin' } })
 
 const fresh = (): SaveData => newSave(7, ON, 123, newId)
 const chain = linearAreas(ON, regionOf(fresh()))
@@ -72,19 +69,16 @@ describe('the play style setting', () => {
     expect(playStyleOf({ playStyle: 'nonsense' as never })).toBe('explored')
   })
 
-  it('starts Idle on, the other two off', () => {
+  it('starts Idle on, Explored off', () => {
     expect(settingsForStyle('idle')).toEqual({ playStyle: 'idle', autoMode: true })
     expect(settingsForStyle('explored')).toEqual({ playStyle: 'explored', autoMode: false })
-    expect(settingsForStyle('classic')).toEqual({ playStyle: 'classic', autoMode: false })
   })
 
-  it('asks a new game only while the switch is on for the player', () => {
-    expect(playStylesOffered(OFF)).toEqual([])
-    expect(newGameAsksStyle(OFF)).toBe(false)
-    expect(playStylesOffered(ON)).toEqual(['classic', 'explored', 'idle'])
-    expect(newGameAsksStyle(ON)).toBe(true)
-    expect(newGameAsksStyle(ADMIN_ONLY)).toBe(false)
-    expect(newGameAsksStyle({ ...ADMIN_ONLY, viewer: { admin: true } } as GameData)).toBe(true)
+  it('reads the dropped Classic as "Auto on explored areas", its switch as it was', () => {
+    const s = { playStyle: 'classic' as never, autoMode: false }
+    expect(playStyleOf(s)).toBe('explored')
+    expect(autoAvailable(at(A.id, 1), ON, s, A.id)).toBe(true)
+    expect(autoLevel(at(A.id, 1), ON, s, { areaId: A.id })).toBe('off')
   })
 })
 
@@ -94,16 +88,11 @@ describe('where auto plays', () => {
   const run = (areaId: string) => ({ areaId })
 
   it('switch off: auto-mode as it always was, fights only, in cleared areas, whatever the style', () => {
-    for (const playStyle of ['classic', 'explored', 'idle'] as const) {
+    for (const playStyle of ['explored', 'idle'] as const) {
       expect(autoLevel(cleared, OFF, { playStyle, autoMode: true }, run(A.id))).toBe('fights')
       expect(autoLevel(notCleared, OFF, { playStyle, autoMode: true }, run(B.id))).toBe('off')
     }
     expect(autoLevel(cleared, OFF, { autoMode: false }, run(A.id))).toBe('off')
-  })
-
-  it('Classic: nowhere', () => {
-    expect(autoAvailable(cleared, ON, { playStyle: 'classic' }, A.id)).toBe(false)
-    expect(autoLevel(cleared, ON, { playStyle: 'classic', autoMode: true }, run(A.id))).toBe('off')
   })
 
   it('Auto on explored areas: the whole run in a cleared area once switched on, nothing elsewhere', () => {

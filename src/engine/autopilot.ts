@@ -1,4 +1,4 @@
-// Play styles and the autopilot (docs/36): Classic, Auto on explored areas, Idle. Which areas play themselves, and
+// Play styles and the autopilot (docs/36): Auto on explored areas, Idle. Which areas play themselves, and
 // what the game does next while one does — every decision here, the screens only carry it out and pace it.
 import { catchChance, catchValueOf } from './catching'
 import { eventOpenTo } from './events'
@@ -33,26 +33,20 @@ export interface AutoSettings {
 export const idleModeOn = (data: GameData): boolean => eventOpenTo(data.config.idleMode?.access, data)
 
 /**
- * The player's style. Settings from before the styles have none: their auto-mode switch lived in cleared areas, which
- * is "Auto on explored areas", so that is what they keep (on or off as it was).
+ * The player's style, "Auto on explored areas" unless Idle was picked: a new game, settings from before the styles
+ * (their auto-mode switch lived in cleared areas, so on or off as it was) and the dropped Classic all read as it.
  */
 export const playStyleOf = (s: AutoSettings): PlayStyle =>
   isPlayStyle(s.playStyle) ? s.playStyle : 'explored'
 
 /**
- * The settings a style picks: Idle starts playing at once; the other two start with auto off (Explored waits for the
- * player to switch it on in a cleared area, Classic has none).
+ * The settings a style picks: Idle starts playing at once; Explored starts with auto off, waiting for the player to
+ * switch it on in a cleared area.
  */
 export const settingsForStyle = (style: PlayStyle): Required<AutoSettings> => ({
   playStyle: style,
   autoMode: style === 'idle',
 })
-
-/** The styles a new game asks about, in order: none while the switch is off (a new game starts as it always did). */
-export const playStylesOffered = (data: GameData): PlayStyle[] => (idleModeOn(data) ? [...PLAY_STYLES] : [])
-
-/** A new game asks first only when there is a choice to make. */
-export const newGameAsksStyle = (data: GameData): boolean => playStylesOffered(data).length > 1
 
 /** What a run is: its area, and whether it is an Elite Rebattle (fights only, never on auto). */
 export interface AutoRun {
@@ -66,7 +60,7 @@ const specialArea = (area: Area | undefined, data: GameData): boolean =>
 
 /**
  * Where the auto switch is offered (the area's header, a battle's extras). Off: cleared areas, as auto-mode always was.
- * On: Classic nowhere, Explored in cleared areas, Idle everywhere but the special areas.
+ * On: Explored in cleared areas, Idle everywhere but the special areas.
  */
 export function autoAvailable(
   save: SaveData,
@@ -78,7 +72,6 @@ export function autoAvailable(
   const cleared = progressOf(save, areaId).cleared
   if (!idleModeOn(data)) return cleared
   const style = playStyleOf(s)
-  if (style === 'classic') return false
   if (
     specialArea(
       data.areas.find((a) => a.id === areaId),

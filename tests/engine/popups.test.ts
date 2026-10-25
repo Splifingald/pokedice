@@ -5,6 +5,7 @@ import {
   createInstance,
   DEFAULT_CONFIG,
   giftRulesDue,
+  inviteRulesDue,
   newSave,
   nextOneTimePopup,
   ONE_TIME_POPUPS,
@@ -83,7 +84,6 @@ describe('the one-time pop-ups queue', () => {
       'trades',
       'general',
       'shinyDex',
-      'invite',
       'inviteReward',
       'portal',
       'dayNight',
@@ -192,17 +192,17 @@ describe('the one-time pop-ups queue', () => {
     expect(nextOneTimePopup(save, on, { ...HOME, calm: false, showing: 'powers' })).toBeNull()
   })
 
-  it('Trades’ and the invite rewards’ rules only for an account, Trades first', () => {
+  it('Trades’ rules only for an account; the invite rewards’ are never queued (the Friends page opens them)', () => {
     const social = makeData({
       inviteRewards: { ...D.inviteRewards, access: 'all' },
       trade: { ...D.trade, access: 'all', minBadges: 0 },
     })
     const save = start()
+    expect(inviteRulesDue(save, social)).toBe(true)
     expect(nextOneTimePopup(save, social, HOME)).toBeNull()
     expect(nextOneTimePopup(save, social, { ...HOME, signedIn: true })).toBe('trades')
     const traded = { ...save, trades: { out: [], done: [], rulesSeen: true } }
-    expect(nextOneTimePopup(traded, social, { ...HOME, signedIn: true })).toBe('invite')
-    // On the Friends page the rules wait (the page counts as seen).
+    expect(nextOneTimePopup(traded, social, { ...HOME, signedIn: true })).toBeNull()
     expect(nextOneTimePopup(traded, social, { ...HOME, signedIn: true, path: '/friends' })).toBeNull()
   })
 })

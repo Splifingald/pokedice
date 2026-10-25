@@ -76,7 +76,7 @@ export interface Settings {
    * styles on (docs/36), the autopilot runs where the style allows.
    */
   autoMode?: boolean
-  /** The play style (docs/36): Classic, Auto on explored areas, Idle. Unset = from before them (engine/autopilot). */
+  /** The play style (docs/36): Auto on explored areas, Idle. Unset = from before them (engine/autopilot). */
   playStyle?: PlayStyle
   /**
    * Type hints: matchups on a Pokémon's sheet, and on tapping one in battle. Unset = on until the first badge

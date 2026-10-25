@@ -6,11 +6,9 @@ import { Dialogue } from '@/components/Dialogue'
 import { PixelButton } from '@/components/PixelButton'
 import { PartnerMoment } from '@/components/PartnerMoment'
 import { PLAYER_CHARACTERS, TrainerSprite } from '@/components/TrainerArt'
-import { PlayStylePrompt } from '@/components/IdleMode'
-import { newGameAsksStyle, type PlayerCharacter, type PlayerProfile, type PlayStyle } from '@/engine'
+import type { PlayerCharacter, PlayerProfile } from '@/engine'
 import { cx } from '@/theme/util'
 import { useGame } from '@/store/game'
-import { choosePlayStyle } from '@/store/autopilot'
 import { enterArea, startNewGame } from '@/store/run'
 
 const INTRO = ['ui.newGame.intro1', 'ui.newGame.intro2', 'ui.newGame.intro3', 'ui.newGame.intro4']
@@ -24,9 +22,6 @@ export function NewGame() {
   const navigate = useNavigate()
   const [line, setLine] = useState(0)
   const [player, setPlayer] = useState<PlayerProfile | null>(null)
-  // How to play (docs/36), asked before everything else when there is a choice (the idle mode's switch is on).
-  const asks = newGameAsksStyle(data)
-  const [style, setStyle] = useState<PlayStyle | null>(null)
   const level = data.config.starterLevel
   const starters = data.config.starters.filter((d) => data.species[d])
   // A new game starts in the first region.
@@ -35,7 +30,6 @@ export function NewGame() {
 
   const begin = (dex: number) => {
     startNewGame(dex, player ?? undefined)
-    if (style) choosePlayStyle(style)
     const first = data.areas[0]
     if (first) enterArea(first.id)
     navigate('/home')
@@ -43,7 +37,7 @@ export function NewGame() {
 
   // Prof. Oak's intro: Oak in the room, the text box and its buttons at the bottom of the screen like the Game Boy's,
   // under the thumb (docs/38 P2a), above the home indicator.
-  if (!(asks && !style) && !picking)
+  if (!picking)
     return (
       <main
         className="scanlines flex min-h-[100dvh] flex-col px-3 pt-6"
@@ -77,9 +71,7 @@ export function NewGame() {
   return (
     <main className="scanlines min-h-screen px-3 py-8">
       <div className="mx-auto flex max-w-5xl flex-col gap-6">
-        {asks && !style ? (
-          <PlayStylePrompt onPick={setStyle} />
-        ) : !player ? (
+        {!player ? (
           <CharacterSelect onDone={setPlayer} />
         ) : (
           <>

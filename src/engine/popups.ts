@@ -13,7 +13,6 @@ import { dayNightRulesDue } from './dayNight'
 import { eventUnlockDue } from './events'
 import { extremeRulesDue, isExtreme } from './extreme'
 import { generalRulesDue } from './general'
-import { inviteRulesDue } from './invites'
 import { livePopupDue, livesFor } from './liveEvents'
 import { powerRulesDue } from './powers'
 import { raidOverhaulRulesDue } from './progressRaid'
@@ -97,7 +96,7 @@ const QUEUE = {
   general: { due: (s, d) => generalRulesDue(s, d), away: under('/upgrades') },
   /** The shiny Pokédex, at the first league beaten. */
   shinyDex: { due: (s, d) => shinyDexRulesDue(s, d), away: under('/pokedex') },
-  invite: { due: (s, d, c) => c.signedIn && inviteRulesDue(s, d), away: under('/friends') },
+  // The invite rewards' rules aren't queued: they open on the Friends page, the first time in (screens/Friends.tsx).
   inviteReward: { due: (_s, _d, c) => !!c.inviteReward, away: under('/friends') },
   portal: { due: (s, d) => !!portalRulesDue(s, d), away: (p) => p === '/area' },
   dayNight: { due: (s, d) => dayNightRulesDue(s, d) },

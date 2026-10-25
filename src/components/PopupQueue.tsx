@@ -24,7 +24,7 @@ import { EventUnlockPopup } from './EventUnlockPopup'
 import { AwayReportModal, ExtremeUnlockPopup } from './Extreme'
 import { VersusUnlockPopup } from './FeatureRules'
 import { FriendsService } from './friends/FriendsService'
-import { InviteRewardPopup, InviteRulesPopup, useInviteRewardWaiting } from './friends/InviteRewards'
+import { InviteRewardPopup, useInviteRewardWaiting } from './friends/InviteRewards'
 import { GeneralUnlockPopup, OfflineReportModal } from './GeneralRules'
 import { ShinyDexUnlockPopup } from './ShinyDexRules'
 import { GiftService } from './Gifts'
@@ -117,7 +117,6 @@ export function OneTimePopups() {
       <ExtremeUnlockPopup />
       <GeneralUnlockPopup />
       <ShinyDexUnlockPopup />
-      <InviteRulesPopup />
       <InviteRewardPopup />
       <PortalUnlockPopup />
       <DayNightRulesPopup />

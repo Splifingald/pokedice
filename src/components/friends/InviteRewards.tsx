@@ -1,8 +1,7 @@
 // Friend invite rewards (docs/15 §25): the gauge (at the top of the Friends page, in Prof. Oak's invite pop-up and in the
-// reward's own pop-up), its rules (once when the rewards open, then INFO at the bottom of the Friends page), and the
+// reward's own pop-up), its rules (once, the first time on the Friends page, then INFO at its bottom), and the
 // pop-up that says a reward is ready. Every number — the tiers, the fill, what each one holds — is the engine's
 // (engine/invites.ts); the opening is the developer's gifts' own (GiftMoment).
-import { useNavigate } from 'react-router-dom'
 import {
   inviteGauge,
   inviteTiers,
@@ -16,7 +15,7 @@ import { useFriends } from '@/lib/friends'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
 import { useGiftMoment } from '@/store/gifts'
-import { openInviteRewards, putOffInviteRewards, seeInviteRules, useInviteRewards } from '@/store/invites'
+import { openInviteRewards, putOffInviteRewards, useInviteRewards } from '@/store/invites'
 import { useCloudSync } from '@/store/sync'
 import { cx } from '@/theme/util'
 import { GiftIcon, useGiftText } from '../Gifts'
@@ -273,7 +272,7 @@ export function useInviteRules(): RuleRow[] {
   ]
 }
 
-/** The rewards' rules: once when they open (Later / Let's go!), and from INFO on the Friends page (OK). */
+/** The rewards' rules, on the Friends page: once the first time in, then from INFO (OK). */
 export function InviteRulesModal({
   open,
   onClose,
@@ -293,31 +292,6 @@ export function InviteRulesModal({
       icon="gift"
       rules={useInviteRules()}
       onGo={onGo}
-    />
-  )
-}
-
-/**
- * The rewards have opened to this player (signed in, the main game, the switch on): once, between fights, their
- * rules and a button to the Friends page, where the gauge is. It takes its turn in the one-time pop-ups' queue
- * (engine/popups.ts: after Prof. Oak's invite and the trades' rules). On the Friends page itself, the page counts as
- * seen.
- */
-export function InviteRulesPopup() {
-  const navigate = useNavigate()
-  const open = useMyTurn('invite')
-  useOnScreen('invite', open)
-  // Gone the moment its turn ends, as before the queue: its button leads to another page, which a fading pop-up
-  // would cover.
-  if (!open) return null
-  return (
-    <InviteRulesModal
-      open={open}
-      onClose={seeInviteRules}
-      onGo={() => {
-        seeInviteRules()
-        navigate('/friends')
-      }}
     />
   )
 }

@@ -184,7 +184,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `DoubleMons` (`BattleStage double`) / `DoublePlates` / `MiniPlate` / `TargetPicker` / `LeadPicker pair` | Double battles (§31) | The stage with four (the pair in front big on the usual spots, their partners smaller behind, each with a shadow; toggled, they change places), one K.O. on each side (greyed plates, 1 v 2); the name-less plates (icon, level, HP, statuses; the one in front ringed in gold; a fallen one greyed); the target picker (live, disabled); the lead picker sending two |
 | `UgCave` / `CrackGauge` / `UgWall` / `PickaxeDie` / `PickaxeFaces` / `OrbArt` / `PlateArt` / `ThingIcon` / `HaulList` / `PlateGrid` / `OrbBagTable` / `UgRulesModal` / `UgTeamSeats` | The Underground (§32) | The cave (a square's size; big); the gauge fresh, under way, its last three shaking or calm, collapsed; the wall fresh, half dug with a strike flashing, cleared (glinting), collapsing; the die unrolled and rolled; the faces with the one that came up, and the next level's with its raised face; orbs of every colour and size, plates; the haul with every outcome; the plates none and some; the orb bag; the team seats solo, two, full; the rules (once, INFO) |
 | `TeamSwapActions` | A Pokémon's sheet where the team can change (`teamSwapsOpen`: inside a Pokémon Center, at a portal's way in before READY!) | In the team: Make lead (not the lead), Send to the Box (not the last one); in the Box: Add to team, or, the team full, "swap it in for" each member (a button each: its still mini icon on the left, name and level, "goes to the Box" and the swap arrow, `reroll`, at the far right); still reviving from its fossil: a line saying so. It sits above Strengths and weaknesses in the sheet, whether type hints are on or not (`PokemonSheet`'s `beforeMatchups`, the user's call, 2026-10-15) |
-| `PlayStylePicker` / `PlayStylePrompt` / `PlayStylePanel` / `IdleRulesModal` / `AutoModeButton` / `AutopilotNote` | Idle mode and the play styles (§34, docs/36) | The three styles as a radio group of cards (an icon, the name, its line; the picked one on gold-pale with the gold ring and a check; none picked; arrow keys move the pick); a new game's question (NEXT disabled until one is picked); Settings' panel with INFO; the rules (INFO only: they never pop up); the area's switch (AUTO-MODE or Idle mode, off and on, with Prof. Oak's tip); the line standing in for a card the autopilot takes (each style's); the catch panel with Idle's pick (`BattleBits`) |
+| `PlayStylePicker` / `PlayStylePanel` / `IdleRulesModal` / `AutoModeButton` / `AutopilotNote` | Idle mode and the play styles (§34, docs/36) | The two styles as a radio group of cards (an icon, the name, its line; the picked one on gold-pale with the gold ring and a check; none picked; arrow keys move the pick); Settings' panel with INFO; the rules (INFO only: they never pop up); the area's switch (AUTO-MODE or Idle mode, off and on, with Prof. Oak's tip); the line standing in for a card the autopilot takes (each style's); the catch panel with Idle's pick (`BattleBits`) |
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
 **the page behind is inert** (`src/lib/inert.ts`: a screen reader's swipe can't leave the dialog either), **Esc closes
@@ -567,8 +567,8 @@ in view) and the battle history sits beside it from 1024 px.
 - **Auto battles** (auto-mode, Versus) play at the `short` motion level unless animations are off (`MotionCap`).
   Auto-mode is switched in the area (under its header), never from Home; a cleared area's battle also offers it among
   its extras (AUTO-MODE, ghost, last), which hands the rest of that fight to auto and turns the setting on, like the
-  area's switch. With the play styles on (§34), where it is offered follows the style (`autoAvailable`: Classic
-  nowhere, Auto on explored areas in cleared areas, Idle everywhere), and the catch's result moves on by itself while
+  area's switch. With the play styles on (§34), where it is offered follows the style (`autoAvailable`: Auto
+  on explored areas in cleared areas, Idle everywhere), and the catch's result moves on by itself while
   the autopilot runs (Idle throws the ball itself, §34). The fight keeps the rules it started with (its powers, `state.auto`); STOP gives it back. Prof. Oak's tip about it, the first time,
   takes the full width above the switch (never squeezed into a column beside it).
 - **Team pips**: menu icon + an HP bar, the one in battle ringed in gold, fainted ones grey. Tapping one switches
@@ -1070,9 +1070,10 @@ tiers, places the gauge and puts the gifts away (as `engine/gifts.ts` does a mes
 - **The switch and the rules** follow §20: Off, no gauge, pop-up or dot, and no invite is counted (what was counted
   and opened stays); On for admin, only the admin sees the gauge and opens rewards, and the players they invite count.
   The rules pop-up (`InviteRulesModal`, friends, a badge and the gift drawn in code as its banner; the tiers listed
-  from the config, "1 → Rare Candy · 2 → ₽1,000 …") opens once for a signed-in player in the main game, queued behind
-  Prof. Oak's invite and the other one-time pop-ups; Let's go! goes to the Friends page, and opening that page counts as
-  seen. INFO sits at the bottom of the Friends page.
+  from the config, "1 → Rare Candy · 2 → ₽1,000 …") opens once, and only on the Friends page: the first time a
+  signed-in player in the main game opens it with the gauge there (OK; marked seen as it opens). It is not in the
+  one-time pop-ups' queue and never opens over another page (the user's call, 2026-10-25). INFO sits at the bottom of
+  the Friends page.
 - **The gauge**: the tiers evenly spaced (the fill moves evenly between two of them, `inviteFill`), each tile right
   over the end of its stretch of track, the number of friends under it. Gold only for a tier ready to open; a check
   for one opened (it stays opened even if the count drops). The track is a `meter` ("3 of 4 friends with their first
@@ -1508,18 +1509,18 @@ and there are no Z-Moves. On:
 
 ## 34. Idle mode and the play styles
 
-One setting of the one save (docs/36): **Classic**, **Auto on explored areas**, **Idle**, behind its switch (§20, Off:
+One setting of the one save (docs/36): **Auto on explored areas** (the default) or **Idle**, behind its switch (§20, Off:
 none of this shows, auto-mode is a cleared area's fights as before). Every decision is the engine's
 (`engine/autopilot.ts`); the screens carry the steps out and pace them. The pieces are in `src/components/IdleMode.tsx`,
 every state on `/kitchen-sink` (`IdleBits`).
 
-- **The styles are cards** (`PlayStylePicker`): an icon (sword, map, dice), the name, one line; a radio group, the
-  picked one on `gold-pale` with `shadow-card-gold` and a check (never colour alone), arrow keys move it. The same cards
-  in a new game's question (`PlayStylePrompt`, before Prof. Oak, NEXT disabled until one is picked) and in Settings →
-  **Play style**, under Game (`PlayStylePanel`, its INFO under the cards). A pick there applies at once.
+- **The styles are cards** (`PlayStylePicker`): an icon (map, dice), the name, one line; a radio group, the picked one
+  on `gold-pale` with `shadow-card-gold` and a check (never colour alone), arrow keys move it. They are in Settings →
+  **Play style**, under Game (`PlayStylePanel`, its INFO under the cards), and nowhere else: a new game asks nothing
+  (the user's call, 2026-10-25). A pick there applies at once.
 - **The area's switch** says what runs: AUTO-MODE (auto-mode, Auto on explored areas) or **Idle mode** (Idle), ON in
   green, OFF ghost (`AutoModeButton`). Prof. Oak's tip is auto-mode's only. It sits where the style offers auto
-  (`autoAvailable`); Classic has none, and no AUTO-MODE in a battle's extras either.
+  (`autoAvailable`): Auto on explored areas in cleared areas, Idle everywhere but the special areas.
 - **While the autopilot runs, the cards it takes don't open**: the encounter preview, the Center's healing scene and its
   team section, the Game Corner. One `pixel-dialogue` line (`AutopilotNote`, `role="status"`) stands in for the moment
   it takes. What it shows for a moment and then closes itself: the area's page between encounters (~1 s), the result

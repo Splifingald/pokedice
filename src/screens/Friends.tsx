@@ -32,6 +32,7 @@ import {
 } from '@/lib/friends'
 import { copyText, shareOrCopy } from '@/lib/share'
 import { isSupabaseConfigured } from '@/lib/supabase'
+import { inviteRulesDue } from '@/engine'
 import { pushToast, useGame } from '@/store/game'
 import { openInviteRewards, seeInviteRules, useInviteRewards } from '@/store/invites'
 import { cx } from '@/theme/util'
@@ -89,6 +90,7 @@ function FriendsBody() {
   const gauge = useInviteGauge()
   const rewardsBusy = useInviteRewards((s) => s.busy)
   const shown = !!gauge
+  const rulesDue = useGame((s) => !!s.save && inviteRulesDue(s.save, s.data))
 
   useEffect(() => {
     void loadMyCode().catch((err) => console.warn('[friends] no friend ID:', err instanceof Error ? err.message : err))
@@ -96,10 +98,13 @@ function FriendsBody() {
     void loadFriendList(true).then(() => markFriendsSeen())
     void loadInviteStatus()
   }, [])
-  // The gauge is here: its rules pop-up has nothing left to announce (INFO below shows them).
+  // The rewards' rules pop up here and nowhere else, the first time the gauge shows (the user's call, 2026-10-25).
+  // Marked seen as they open, so leaving the page without closing them never shows them again; INFO keeps them.
   useEffect(() => {
-    if (shown) seeInviteRules()
-  }, [shown])
+    if (!shown || !rulesDue) return
+    seeInviteRules()
+    setRules(true)
+  }, [shown, rulesDue])
 
   const share = () => {
     if (!code) return

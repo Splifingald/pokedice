@@ -1595,8 +1595,11 @@ export interface SaveData {
   resume?: ResumeSnapshot
 }
 
-/** Classic: the player does everything. Explored: cleared areas play themselves when asked. Idle: every area does. */
-export const PLAY_STYLES = ['classic', 'explored', 'idle'] as const
+/**
+ * Explored (the default): cleared areas play themselves when asked. Idle: every area does. (Classic, auto nowhere, was
+ * dropped on 2026-10-25: a save that has it reads as unset, so Explored.)
+ */
+export const PLAY_STYLES = ['explored', 'idle'] as const
 export type PlayStyle = (typeof PLAY_STYLES)[number]
 
 /**

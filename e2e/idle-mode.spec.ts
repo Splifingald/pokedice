@@ -1,8 +1,7 @@
-// Idle mode and the play styles (docs/36): switched on, a new game asks how to play before anything else, and Idle
-// plays the area by itself, catches included — a new Pokémon with the cheapest ball sure to do it (never the Master
-// Ball), one already owned left — with no rules pop-up ever; switched off, a new game starts as it always did. An
-// existing save keeps its old auto-mode as "Auto on explored areas" and switches style in Settings (INFO shows the
-// rules); switched off, Settings has no such panel.
+// Idle mode and the play styles (docs/36): a new game never asks how to play (it starts on "Auto on explored areas"),
+// and Idle plays the area by itself, catches included — a new Pokémon with the cheapest ball sure to do it (never the
+// Master Ball), one already owned left — with no rules pop-up ever. An existing save keeps its old auto-mode as "Auto
+// on explored areas" and switches style in Settings (INFO shows the rules); switched off, Settings has no such panel.
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { emptyProgress, instanceMaxHp, linearAreas, type SaveData } from '../src/engine'
@@ -53,30 +52,24 @@ async function throughTheLab(page: Page) {
 const stored = (page: Page) =>
   page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}') as SaveData)
 
-test('switched on, a new game asks how to play first; Idle plays on and catches by itself', async ({
-  page,
-}) => {
+test('switched on, a new game asks nothing: Prof. Oak first, on "Auto on explored areas"', async ({ page }) => {
   await bootNew(page, IDLE_ON)
   await page.goto('/new')
-  await expect(page.getByRole('heading', { name: 'How do you want to play?' })).toBeVisible()
-  const styles = page.getByRole('radiogroup', { name: 'Play style' })
-  await expect(styles.getByRole('radio')).toHaveCount(3)
-  await expect(styles.getByRole('radio', { name: /^Idle mode/ })).toContainText('never with the Master Ball')
-  const next = page.getByRole('button', { name: 'NEXT ▸' })
-  await expect(next).toBeDisabled()
-  await styles.getByRole('radio', { name: /^Idle mode/ }).click()
-  await next.click()
+  await expect(page.getByRole('radiogroup', { name: 'Play style' })).toHaveCount(0)
   await throughTheLab(page)
 
-  expect(await settings(page)).toMatchObject({ playStyle: 'idle', autoMode: true })
+  expect((await settings(page)).playStyle).toBeUndefined()
   await expect(page.getByRole('dialog', { name: 'Idle mode' })).toHaveCount(0)
 
-  // One CONTINUE, then hands off: the area plays itself, and its first new Pokémon is caught with no tap.
-  await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
-  await expect(page).toHaveURL(/\/area$/)
-  await expect.poll(async () => (await stored(page)).pokedex?.length, { timeout: 90_000 }).toBeGreaterThan(1)
-  // Never a rules pop-up on the way.
-  await expect(page.getByRole('dialog', { name: 'Idle mode' })).toHaveCount(0)
+  // Settings has the two styles, the default picked.
+  await page.goto('/settings')
+  const styles = page.getByRole('radiogroup', { name: 'Play style' })
+  await expect(styles.getByRole('radio')).toHaveCount(2)
+  await expect(styles.getByRole('radio', { name: /^Auto on explored areas/ })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  )
+  await expect(styles.getByRole('radio', { name: /^Idle mode/ })).toContainText('never with the Master Ball')
 })
 
 /** The team's Pokémon, fully evolved so no evolution adds to the Pokédex. */
@@ -202,7 +195,7 @@ test('switched off, a new game starts with Prof. Oak, as always', async ({ page 
   await bootNew(page, EVENTS_ON)
   await page.goto('/new')
   await expect(page.getByRole('button', { name: 'Skip intro' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'How do you want to play?' })).toHaveCount(0)
+  await expect(page.getByRole('radiogroup', { name: 'Play style' })).toHaveCount(0)
 })
 
 test('an existing save: no rules pop-up, its auto-mode kept as explored areas, Settings switches the style', async ({

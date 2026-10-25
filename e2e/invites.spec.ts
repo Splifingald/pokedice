@@ -1,5 +1,6 @@
 // Friend invite rewards (docs/15 §25), against the mocked Supabase: the gauge at the top of the Friends page and in Prof.
-// Oak's invite, a reward opened with the gifts' own opening (into the save), the rules once and from INFO, the reward's
+// Oak's invite, a reward opened with the gifts' own opening (into the save), the rules once on the Friends page (never
+// elsewhere) and from INFO, the reward's
 // pop-up between fights, an invite link counting for its owner, and the switch off.
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
@@ -104,8 +105,12 @@ test('the Friends page: the gauge on top, a reward opened like a gift, then INFO
   const cardTop = (await card.boundingBox())!.y
   const idTop = (await page.getByTestId('friend-code').boundingBox())!.y
   expect(cardTop).toBeLessThan(idTop)
-  // On the page, the rules pop-up has nothing to announce.
+  // The first time on the page, the rules pop up (OK); never again after.
+  const first = page.getByRole('dialog', { name: 'Invite rewards' })
+  await expect(first).toContainText('Invite new players')
+  await first.getByRole('button', { name: 'OK' }).click()
   await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect.poll(async () => (await stored(page)).invites?.rulesSeen).toBe(true)
 
   await card.getByRole('button', { name: 'Open it' }).click()
   const moment = page.getByRole('dialog', { name: 'An invite reward' })
@@ -133,7 +138,9 @@ test('the Friends page: the gauge on top, a reward opened like a gift, then INFO
   await rules.getByRole('button', { name: 'OK' }).click()
 })
 
-test('between fights: the rules once, then the reward’s pop-up, opened from Home', async ({ page }) => {
+test('between fights: never the rules (the Friends page has them), the reward’s pop-up, opened from Home', async ({
+  page,
+}) => {
   const status = { count: 1, pending: 0, claimed: [] as number[], latest: { name: 'Misty', avatar: 'green' } }
   await boot(page, makeSave(4), {
     invite_status: () => status,
@@ -143,9 +150,7 @@ test('between fights: the rules once, then the reward’s pop-up, opened from Ho
     },
   })
   await page.goto('/home')
-  const rules = page.getByRole('dialog', { name: 'Invite rewards' })
-  await expect(rules).toContainText('Now open')
-  await rules.getByRole('button', { name: 'Later' }).click()
+  await expect(page.getByRole('dialog', { name: 'Invite rewards' })).toHaveCount(0)
 
   const ready = page.getByRole('dialog', { name: 'Invite reward!' })
   await expect(ready).toContainText('Misty won their first badge! Your invite gauge moved up.')
@@ -156,8 +161,8 @@ test('between fights: the rules once, then the reward’s pop-up, opened from Ho
   await expect(moment.getByText('Rare Candy')).toBeVisible()
   await moment.getByRole('button', { name: 'Done' }).click()
   await expect(page.getByRole('dialog')).toHaveCount(0)
-  // The save is written a moment later.
-  await expect.poll(async () => (await stored(page)).invites).toEqual({ done: [1], rulesSeen: true })
+  // The save is written a moment later; the rules still wait for the Friends page.
+  await expect.poll(async () => (await stored(page)).invites).toEqual({ done: [1] })
 })
 
 test('Later keeps the reward on the Friends page, with the menu’s dot', async ({ page }) => {

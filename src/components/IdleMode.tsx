@@ -1,5 +1,5 @@
-// Idle mode and the play styles (docs/36, docs/15 §20): the three styles as cards to pick from (a new game's question,
-// Settings), the Settings panel and its INFO. No rules pop-up ever opens by itself: the user's exception to §20.
+// Idle mode and the play styles (docs/36, docs/15 §20): the two styles as cards to pick from in Settings, its panel
+// and its INFO. No rules pop-up ever opens by itself: the user's exception to §20.
 import { useRef, useState, type KeyboardEvent } from 'react'
 import { idleModeOn, playStyleOf, PLAY_STYLES, type PlayStyle } from '@/engine'
 import { useT } from '@/i18n/react'
@@ -8,10 +8,9 @@ import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { PixelIcon, type IconName } from './icons'
 import { Panel } from './Panel'
-import { PixelButton } from './PixelButton'
 import { InfoButton, RulesModal, type RuleRow } from './RulesModal'
 
-const STYLE_ICON: Record<PlayStyle, IconName> = { classic: 'sword', explored: 'map', idle: 'dice' }
+const STYLE_ICON: Record<PlayStyle, IconName> = { explored: 'map', idle: 'dice' }
 
 /** Each style's name and its line, from the strings. */
 export function useStyleText() {
@@ -87,34 +86,6 @@ export function PlayStylePicker({
   )
 }
 
-/** A new game's first question (docs/36): how to play, before Prof. Oak's words. */
-export function PlayStylePrompt({
-  onPick,
-  initial = null,
-}: {
-  onPick: (s: PlayStyle) => void
-  initial?: PlayStyle | null
-}) {
-  const { t } = useT()
-  const [pick, setPick] = useState<PlayStyle | null>(initial)
-  return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
-      <h1 className="text-center text-[36px] leading-none">{t('ui.playStyle.prompt')}</h1>
-      <PlayStylePicker value={pick} onChange={setPick} label={t('ui.playStyle.title')} />
-      <p className="copy m-0 text-center text-muted">{t('ui.playStyle.promptHint')}</p>
-      <PixelButton
-        variant="primary"
-        size="lg"
-        className="self-center"
-        disabled={!pick}
-        onClick={() => pick && onPick(pick)}
-      >
-        {t('ui.newGame.next')}
-      </PixelButton>
-    </div>
-  )
-}
-
 /** The rules' banner, drawn in code: the trail, the dice that play it, the ball it throws for you. */
 function IdleBanner() {
   return (
@@ -152,7 +123,7 @@ export function IdleRulesModal({ open, onClose }: { open: boolean; onClose: () =
   )
 }
 
-/** Settings → Play style: the three cards, switched any time, and INFO. Nowhere while the switch is off. */
+/** Settings → Play style: the two cards, switched any time, and INFO. Nowhere while the switch is off. */
 export function PlayStylePanel() {
   const { t } = useT()
   const on = useGame((s) => idleModeOn(s.data))

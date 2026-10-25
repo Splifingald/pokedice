@@ -51,7 +51,7 @@ describe('the play style setting', () => {
     const base = newSave(7, data, 123, newId)
     // The rules pop-up is gone (docs/36), but saves from before it carry its flag: it still loads, kept as it was.
     const s = withDetour(
-      { ...base, settings: { ...base.settings, playStyle: 'classic' }, idle: { rulesSeen: true } },
+      { ...base, settings: { ...base.settings, playStyle: 'idle' }, idle: { rulesSeen: true } },
       {
         from: 'b',
         to: 'a',
@@ -61,16 +61,20 @@ describe('the play style setting', () => {
     const res = parseSave(JSON.parse(JSON.stringify(s)))
     expect(res.ok).toBe(true)
     if (!res.ok) return
-    expect(res.save.settings.playStyle).toBe('classic')
+    expect(res.save.settings.playStyle).toBe('idle')
     expect(res.save.idle).toEqual({ rulesSeen: true, detour: { from: 'b', to: 'a', rounds: 2 } })
   })
 
-  it('never fails a save over a style a newer build wrote: it reads as unset', () => {
+  it('never fails a save over a style a newer build wrote, or the dropped Classic: it reads as unset', () => {
     const base = newSave(7, data, 123, newId)
-    const res = parseSave(
-      JSON.parse(JSON.stringify({ ...base, settings: { ...base.settings, playStyle: 'turbo' } })),
-    )
-    expect(res.ok).toBe(true)
-    if (res.ok) expect(playStyleOf(res.save.settings)).toBe('explored')
+    for (const playStyle of ['turbo', 'classic']) {
+      const res = parseSave(
+        JSON.parse(JSON.stringify({ ...base, settings: { ...base.settings, playStyle } })),
+      )
+      expect(res.ok).toBe(true)
+      if (res.ok) expect(playStyleOf(res.save.settings)).toBe('explored')
+    }
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ playStyle: 'classic', autoMode: false }))
+    expect(readSettings().playStyle).toBeUndefined()
   })
 })
