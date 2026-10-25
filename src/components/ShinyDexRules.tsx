@@ -12,28 +12,41 @@ import { useMyTurn, useOnScreen } from './popupTurn'
 import { RulesModal, type RuleRow, type RulesPicture } from './RulesModal'
 import { Seg } from './Segmented'
 
-/** The region's Pokédex, or its shiny page. */
-export type DexView = 'all' | 'shiny'
+/** The region's Pokédex, its shiny page, or the Unown's letters (docs/41). */
+export type DexView = 'all' | 'shiny' | 'unown'
 
-/** The Pokédex's two pages, at its top once the shiny one is open. */
-export function DexViewSwitch({ value, onChange }: { value: DexView; onChange: (v: DexView) => void }) {
+/** The Pokédex's pages, at its top once another than the first is open (`views`: the ones open, besides it). */
+export function DexViewSwitch({
+  value,
+  onChange,
+  views = ['shiny'],
+}: {
+  value: DexView
+  onChange: (v: DexView) => void
+  views?: readonly Exclude<DexView, 'all'>[]
+}) {
   const { t } = useT()
   return (
-    <Seg
+    <Seg<DexView>
       label={t('ui.dex.view')}
       value={value}
       onChange={onChange}
       options={[
         { id: 'all', label: t('ui.dex.viewAll') },
-        {
-          id: 'shiny',
-          label: (
-            <>
-              <PixelIcon name="sparkle" size={14} />
-              {t('ui.dex.viewShiny')}
-            </>
-          ),
-        },
+        ...(views.includes('shiny')
+          ? [
+              {
+                id: 'shiny' as const,
+                label: (
+                  <>
+                    <PixelIcon name="sparkle" size={14} />
+                    {t('ui.dex.viewShiny')}
+                  </>
+                ),
+              },
+            ]
+          : []),
+        ...(views.includes('unown') ? [{ id: 'unown' as const, label: t('ui.dex.viewUnown') }] : []),
       ]}
     />
   )

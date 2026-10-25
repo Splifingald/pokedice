@@ -364,6 +364,9 @@ export const DEFAULT_CONFIG: GameConfig = {
   music: { access: 'all' },
   // The shiny Pokédex (docs/39): off until the admin switches it on. Migration 0075 inserts the same row.
   shinyDex: { access: 'off' },
+  // The Unown Pokédex (docs/41): off until the admin switches it on; ₽1,000 for the 28th letter. Migration 0080 inserts
+  // the same row.
+  unownDex: { access: 'off', reward: 1000 },
   // Double battles (docs/33): off until the admin switches them on; from Hoenn on, 10 % of the wild encounters.
   // Migration 0062 inserts the same row.
   doubleBattles: { access: 'off', regions: ['hoenn', 'sinnoh', 'unova', 'kalos', 'alola', 'galar', 'paldea'], wildChance: 10 },

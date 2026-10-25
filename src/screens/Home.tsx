@@ -5,6 +5,7 @@ import { heldWorld, linearAreas, regionOf, teamOf, type Area } from '@/engine'
 import { useT } from '@/i18n/react'
 import { RegionBar } from '@/components/RegionBar'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
+import { UnownStrip, useUnownStrip } from '@/components/UnownDex'
 import { useGame } from '@/store/game'
 import { closeVictoryLeftOpen, enterArea } from '@/store/run'
 import { takeResumeLanding } from '@/store/resume'
@@ -54,7 +55,9 @@ function HomeView({ area }: { area: Area }) {
   // Inside a small world only its own things show (docs/21): its strip (about 60px and the gap) above the scene, no
   // other region on offer, no region switcher.
   const inside = useInWorld().inside
-  const strip = inside ? 72 : 0
+  // Where Unown live (docs/41): the Unown Pokédex's banner sits there, as a world's strip does.
+  const unown = useUnownStrip()
+  const strip = inside || unown ? 72 : 0
   const below = (goTo ? 52 : latest ? 64 : 0) + (keepExploring ? 44 : 0) + strip
 
   // Opened on an encounter left under way (store/resume.ts; the installed app starts on Home): straight back into it.
@@ -105,8 +108,18 @@ function HomeView({ area }: { area: Area }) {
           <WorldStrip />
         </div>
       )}
+      {!inside && unown && (
+        <div className="-mx-3 -mt-4 md:m-0 lg:col-span-2">
+          <UnownStrip />
+        </div>
+      )}
       <section className="flex flex-col gap-3" aria-label={area.name}>
-        <div className={cx('-mx-3 overflow-hidden shadow-ledge md:pixel-panel md:m-0 md:p-0 md:shadow-none', !inside && '-mt-4')}>
+        <div
+          className={cx(
+            '-mx-3 overflow-hidden shadow-ledge md:pixel-panel md:m-0 md:p-0 md:shadow-none',
+            !inside && !unown && '-mt-4',
+          )}
+        >
           <SceneStage area={area} team={teamOf(save)} onOpen={(id) => setMon({ kind: 'inst', id })}>
             <AreaPlate area={area} onOpen={() => setDetails(area.id)} />
           </SceneStage>

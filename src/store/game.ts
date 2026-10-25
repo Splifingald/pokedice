@@ -19,6 +19,8 @@ import {
   settleLook,
   stampExtremeUnlock,
   noteShinyDex,
+  noteUnownDex,
+  payUnownDex,
   syncPowers,
   syncEggClocks,
   syncHpScale,
@@ -42,6 +44,7 @@ import { activeSlot, DEFAULT_SETTINGS, readSave, readSettings, scheduleWrite, wr
 import { trustedNow } from './clock'
 import { DEFAULT_LANG, setLangInternal, t, type Lang } from '@/i18n'
 import { localizeGameData } from '@/i18n/data'
+import { money } from '@/lib/format'
 import { isAdminEmail } from '@/lib/supabase'
 import { restoreSnapshot, snapshotOf } from './resume'
 
@@ -244,9 +247,13 @@ function settle(save: SaveData, data: GameData) {
   const powers = syncPowers(settleLook(ko.save, progress, data), data)
   // The shiny Pokédex (docs/39): every shiny held is noted under its region, kept when it leaves.
   const shinyDex = noteShinyDex(powers.save)
+  // The Unown Pokédex (docs/41): the letters held noted (a save from before it, a trade), and its prize once complete
+  // (a page finished while the switch was off is paid the day it opens).
+  const unown = payUnownDex(noteUnownDex(shinyDex), data)
   return {
     ...dup,
-    save: shinyDex,
+    save: unown.save,
+    unownPaid: unown.paid,
     gemsGiven: powers.given,
     revived: fossils.revived,
     raidsReleased: raids.released,
@@ -425,6 +432,7 @@ export function commitSave(next: SaveData | null, opts: { silent?: boolean; keep
     pushToast(t('ui.toast.revivedFossil', { name: data.species[p.dex]?.name ?? `#${p.dex}` }), 'good', 4500)
   for (const g of settled?.gemsGiven ?? [])
     pushToast(t('ui.powers.gemGiven', { leader: g.leader, gem: g.gem.name }), 'good', 5000)
+  if (settled?.unownPaid) pushToast(t('ui.unown.paidToast', { amount: money(settled.unownPaid) }), 'good', 5000)
   for (const id of settled?.back ?? []) {
     const inst = stamped?.box.find((p) => p.id === id)
     if (inst) pushToast(t('ui.extreme.backToast', { name: data.species[inst.dex]?.name ?? '' }), 'good', 4000)

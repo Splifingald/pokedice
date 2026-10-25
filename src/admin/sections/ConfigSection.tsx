@@ -730,6 +730,40 @@ function ShinyDexBox() {
   )
 }
 
+/**
+ * The Unown Pokédex (docs/41): the 28 letters, once an area where Unown live is opened, and the ₽ the last one pays.
+ * The letters are noted on the device, so the game alone reads it.
+ */
+function UnownDexBox() {
+  const [raw, setRaw] = useConfigRow('unownDex')
+  const cfg = { ...DEFAULT_CONFIG.unownDex, ...(raw ?? {}) }
+  const access = cfg.access ?? 'off'
+  return (
+    <Box
+      title="Unown Pokédex"
+      icon="book"
+      hint="On: once the player opens an area where Unown live (Johto's Ruins of Alph), their Pokédex gets an Unown page with the 28 letters (A–Z, ! and ?), Home shows its banner while they stand in that area, and its rules come once as a pop-up with an INFO button. While a letter is missing, every Unown caught is a new one (even a weaker one can be caught). The last letter pays the prize below, once per region. The Pokédex itself keeps one Unown entry."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Unown Pokédex</span>
+        <AccessSwitch value={access} onChange={(a) => setRaw({ ...cfg, access: a })} label="Unown Pokédex: who has it" />
+        <span className="text-base text-muted">
+          {accessNote(access, 'Open to every player.', 'Off: no Unown page, no banner; Unown are caught as before.')}
+        </span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-4">
+        <Field label="Prize (₽)" hint="for all 28 letters, once">
+          <NumInput
+            min={0}
+            value={cfg.reward}
+            onChange={(v) => setRaw({ ...cfg, reward: Math.max(0, Math.floor(v ?? 0)) })}
+          />
+        </Field>
+      </div>
+    </Box>
+  )
+}
+
 /** Trainer looks (docs/31): unlockable looks from every region in place of the free Kanto and Johto list. */
 function LooksBox() {
   const [raw, setRaw] = useConfigRow('looks')
@@ -1490,6 +1524,8 @@ export function ConfigSection() {
       <MusicBox />
 
       <ShinyDexBox />
+
+      <UnownDexBox />
 
       <ExtremeBox />
 
