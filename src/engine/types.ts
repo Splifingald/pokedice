@@ -953,6 +953,11 @@ export interface GameConfig {
   /** The shiny Pokédex (docs/39): each region's, once its league is beaten. Display only. Migration 0075. */
   shinyDex: { access: EventAccess }
   /**
+   * The Unown Pokédex (docs/41): the 28 letters, once an area where Unown live is opened; `reward` ₽ for the last one.
+   * Migration 0080 inserts the same row.
+   */
+  unownDex: { access: EventAccess; reward: number }
+  /**
    * The raid overhaul (docs/40): each progression raid's own numbers, rules and last bar, Arceus's daily raid, the Mega
    * raids after Kalos. Its switch; migration 0076 inserts the same row and the server reads it for the Mega raids.
    */
@@ -1442,6 +1447,8 @@ export interface PokemonInstance {
   koAt?: number
   /** The name its trainer gave it (`engine/nickname.ts`). It goes with it in a trade; absent = its species' name. */
   nickname?: string
+  /** Unown only (docs/41): its letter, 'a'–'z', '!' or '?'. Absent = an A (`letterOf`). */
+  letter?: string
 }
 
 export interface AreaProgress {
@@ -1566,6 +1573,15 @@ export interface SaveData {
   shinyDex?: Partial<Record<RegionId, number[]>>
   /** The shiny Pokédex's rules pop-up has been shown (once, at the first league beaten; INFO shows it again). */
   shinyDexSeen?: boolean
+  /**
+   * The Unown Pokédex (docs/41): the letters found in each region, kept when the Unown leaves (one copy per species
+   * in the Box). Filled whatever the switch says.
+   */
+  unownDex?: Partial<Record<RegionId, string[]>>
+  /** The regions whose Unown Pokédex prize was paid (once each). */
+  unownDexPaid?: RegionId[]
+  /** The Unown Pokédex's rules pop-up has been shown (once, when it opens; INFO shows it again). */
+  unownDexSeen?: boolean
   /** Trades (docs/23): listed Pokémon, the trades already applied, the last ones done. Absent = never traded. */
   trades?: TradesSave
   /** Gifts from the developer (docs/15 §23): the ones opened, and the rules seen. Absent = none yet. */

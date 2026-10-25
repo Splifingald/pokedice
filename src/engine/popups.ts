@@ -21,6 +21,7 @@ import { inWorldRegion, regionOfferDue } from './regions'
 import { badgeCase, portalRulesDue } from './run'
 import { shinyDexRulesDue } from './shinyDex'
 import { tradeRulesDue, tradesToWatch } from './trade'
+import { unownDexRulesDue } from './unownDex'
 import { versusRulesDue } from './versus'
 import { inWorld, worldByeDue, worldFinishPopupDue, worldFor, worldPopupDue } from './worlds'
 import type { GameData, SaveData } from './types'
@@ -97,6 +98,8 @@ const QUEUE = {
   general: { due: (s, d) => generalRulesDue(s, d), away: under('/upgrades') },
   /** The shiny Pokédex, at the first league beaten. */
   shinyDex: { due: (s, d) => shinyDexRulesDue(s, d), away: under('/pokedex') },
+  /** The Unown Pokédex, once an area where Unown live is opened. */
+  unownDex: { due: (s, d) => unownDexRulesDue(s, d), away: under('/pokedex') },
   invite: { due: (s, d, c) => c.signedIn && inviteRulesDue(s, d), away: under('/friends') },
   inviteReward: { due: (_s, _d, c) => !!c.inviteReward, away: under('/friends') },
   portal: { due: (s, d) => !!portalRulesDue(s, d), away: (p) => p === '/area' },

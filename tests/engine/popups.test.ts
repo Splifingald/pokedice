@@ -83,6 +83,7 @@ describe('the one-time pop-ups queue', () => {
       'trades',
       'general',
       'shinyDex',
+      'unownDex',
       'invite',
       'inviteReward',
       'portal',

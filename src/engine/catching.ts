@@ -7,6 +7,16 @@ import { createInstance, instanceMaxHp } from './progression'
 import type { Rng } from './rng'
 import { getInstance, progressOf, unlockedHiddenAreas, type RunEvent } from './run'
 import type { GameData, ItemDef, PokemonInstance, SaveData } from './types'
+import {
+  addUnownLetters,
+  isUnownLetter,
+  payUnownDex,
+  UNOWN_DEX,
+  UNOWN_LETTERS,
+  unownCatchOpen,
+  unownDexOf,
+  unownDexOpen,
+} from './unownDex'
 import { worldOfArea } from './worldList'
 
 export const CATCH_DIE = 6
@@ -44,6 +54,9 @@ export function catchTarget(
   if (!plain.length) return { mode: 'new' }
   const weakest = plain.sort((a, b) => a.level - b.level)[0]!
   if (weakest.level < level) return { mode: 'replace', uid: weakest.id, level: weakest.level }
+  // A letter missing from the Unown Pokédex (docs/41): every Unown caught is one, so a weaker one is still worth it. It
+  // joins as its own, the weaker copy is let go, and its letter stays on the page.
+  if (dex === UNOWN_DEX && unownCatchOpen(save, data)) return { mode: 'new' }
   return null
 }
 
@@ -162,10 +175,13 @@ export interface CatchResult {
   needsTeamChoice: boolean
 }
 
-/** Keep the catch: a new Pokémon joins the team (or waits in the Box); a stronger copy replaces the weaker one in place. */
+/**
+ * Keep the catch: a new Pokémon joins the team (or waits in the Box); a stronger copy replaces the weaker one in place.
+ * An Unown's letter (`unownLetterFor`, docs/41) goes on the region's Unown Pokédex, whose last letter pays its prize.
+ */
 export function applyCatch(
   save: SaveData,
-  caught: { dex: number; level: number; shiny?: boolean },
+  caught: { dex: number; level: number; shiny?: boolean; letter?: string },
   target: CatchTarget,
   data: GameData,
   now: number,
@@ -177,10 +193,18 @@ export function applyCatch(
   let caughtId: string
   let needsTeamChoice = false
   const old = target.mode === 'replace' ? getInstance(save, target.uid) : undefined
+  const letter = caught.dex === UNOWN_DEX && isUnownLetter(caught.letter) ? caught.letter : null
   if (old) {
-    // The stronger copy is the one just caught, colours included.
-    const { shiny: _oldShiny, ...rest } = old
-    const upgraded: PokemonInstance = { ...rest, level: caught.level, xp: 0, caughtAt: now, ...(caught.shiny && { shiny: true }) }
+    // The stronger copy is the one just caught, colours (and letter) included.
+    const { shiny: _oldShiny, letter: _oldLetter, ...rest } = old
+    const upgraded: PokemonInstance = {
+      ...rest,
+      level: caught.level,
+      xp: 0,
+      caughtAt: now,
+      ...(caught.shiny && { shiny: true }),
+      ...(letter && { letter }),
+    }
     upgraded.currentHp = instanceMaxHp(upgraded, data)
     next = { ...save, box: save.box.map((p) => (p.id === old.id ? upgraded : p)) }
     caughtId = old.id
@@ -188,6 +212,7 @@ export function applyCatch(
   } else {
     const inst = createInstance(caught.dex, caught.level, data, newId(), now)
     if (caught.shiny) inst.shiny = true
+    if (letter) inst.letter = letter
     const joined = save.team.length < data.config.maxTeamSize
     next = {
       ...save,
@@ -198,6 +223,22 @@ export function applyCatch(
     caughtId = inst.id
     needsTeamChoice = !joined
     events.push({ kind: 'caught', uid: inst.id, dex: inst.dex, level: inst.level, joinedTeam: joined, isNew: !save.pokedex.includes(caught.dex) })
+  }
+  // Noted here, whatever the switch says: the Box keeps one Unown, so a weaker one is let go once it settles.
+  if (letter) {
+    const isNew = !unownDexOf(next).includes(letter)
+    next = addUnownLetters(next, [letter])
+    const prize = payUnownDex(next, data)
+    next = prize.save
+    if (unownDexOpen(next, data))
+      events.push({
+        kind: 'unown_letter',
+        letter,
+        isNew,
+        found: unownDexOf(next).length,
+        total: UNOWN_LETTERS.length,
+        ...(prize.paid > 0 && { reward: prize.paid }),
+      })
   }
   // Secret areas whose Pokédex condition this catch just met.
   for (const id of unlockedHiddenAreas(next, data)) if (!hiddenBefore.has(id)) events.push({ kind: 'secret_unlocked', areaId: id })

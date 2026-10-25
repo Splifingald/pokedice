@@ -11,6 +11,7 @@ import {
   markPowerRulesSeen as markPowerRulesSeenIn,
   markGeneralRulesSeen as markGeneralRulesSeenIn,
   markShinyDexSeen as markShinyDexSeenIn,
+  markUnownDexSeen as markUnownDexSeenIn,
   sellItem,
   createRng,
   randomSeed,
@@ -193,6 +194,11 @@ export function markVersusRulesSeen(): void {
 /** The shiny Pokédex's rules have been shown (its pop-up). */
 export function markShinyDexSeen(): void {
   mutateSave((s) => (s.shinyDexSeen ? null : markShinyDexSeenIn(s)))
+}
+
+/** The Unown Pokédex's rules have been shown (its pop-up, or its page). */
+export function markUnownDexSeen(): void {
+  mutateSave((s) => (s.unownDexSeen ? null : markUnownDexSeenIn(s)))
 }
 
 /** The first visit ends the unlock tutorial. */

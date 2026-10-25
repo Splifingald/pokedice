@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   gameFeelOn,
   getInstance,
+  isUnownLetter,
   latestOpenArea,
   portalLock,
   instanceStats,
@@ -32,6 +33,7 @@ import { HpBar } from '@/components/HpBar'
 import { useXpFill, XpBar } from '@/components/MonCard'
 import { PixelButton } from '@/components/PixelButton'
 import { TrainerSprite } from '@/components/TrainerArt'
+import { UnownLetterCard } from '@/components/UnownDex'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { ItemSprite } from '@/components/ItemSprite'
 import { dexNo, milestoneText, money, trainerTitle, typeName } from '@/lib/format'
@@ -438,6 +440,17 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           })
           return
         }
+        case 'unown_letter':
+          // An Unown's letter for the Unown Pokédex (docs/41), and its prize when it was the last one.
+          if (!isUnownLetter(e.letter)) return
+          extras.push({
+            key: k,
+            ...(!!e.reward && { sound: 'gold' as const }),
+            node: (
+              <UnownLetterCard letter={e.letter} isNew={e.isNew} found={e.found} total={e.total} reward={e.reward} />
+            ),
+          })
+          return
         case 'world_mythical':
           // A small world's shiny mythical (docs/21): gone home to its region's Box, or waiting for it.
           extras.push({ key: k, sound: 'catch', node: <WorldMythicalCard dex={e.dex} region={e.region} waiting={e.waiting} /> })
