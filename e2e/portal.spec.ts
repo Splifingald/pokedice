@@ -186,7 +186,8 @@ async function clickAny(page: Page, names: (string | RegExp)[]): Promise<boolean
 /** Plays on (fights, results) until `until` shows. */
 async function playUntil(page: Page, until: ReturnType<Page['getByRole']>, ms = 60_000) {
   for (const end = Date.now() + ms; Date.now() < end && !(await until.isVisible().catch(() => false));) {
-    await clickAny(page, ['FIGHT', 'SKIP ▸▸', 'ATTACK', 'SKIP TURN', 'GOT IT', 'CONTINUE'])
+    // The rework: the send-out step's GO!, and the result's Next ▸ in the old card's CONTINUE's place.
+    await clickAny(page, ['FIGHT', 'SKIP ▸▸', /^Send out /, 'ATTACK', 'SKIP TURN', 'GOT IT', 'CONTINUE', 'Next ▸'])
     await page.waitForTimeout(120)
   }
   await expect(until).toBeVisible()
@@ -438,7 +439,7 @@ test('won and Giratina caught, the area is sealed: CONTINUE is shut, and CONTINU
   await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
-test('a 360×640 phone: a distortion’s boons fit, nothing scrolls sideways, and the menus say why they are shut', async ({
+test('a 360×640 phone: a distortion’s boons fit, nothing scrolls sideways, and no tab bar in the area', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 360, height: 640 })
@@ -455,7 +456,8 @@ test('a 360×640 phone: a distortion’s boons fit, nothing scrolls sideways, an
   await expect(page.getByRole('heading', { name: 'Distortion 1/2' })).toBeVisible({ timeout: 15_000 })
   await expect(page.getByRole('button', { name: 'Pick: Psychic +10' })).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
-  await expect(page.getByRole('link', { name: /^Team/ }).first()).toHaveAttribute('aria-disabled', 'true')
+  // A phone in the area: no tab bar at all (the rework), so nothing there to say why it's shut.
+  await expect(page.getByRole('navigation', { name: 'Menus' })).toHaveCount(0)
   // The confirm pop-up: Esc goes back with nothing spent; CONFIRM holds the focus and takes it.
   const confirm = page.getByRole('dialog', { name: 'Take this boon?' })
   await page.getByRole('button', { name: 'Pick: Psychic +10' }).click()

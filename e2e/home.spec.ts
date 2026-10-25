@@ -148,19 +148,16 @@ test('CONTINUE plays the area on /area, and an idle /area goes back Home', async
   await expect(page).toHaveURL(/\/home$/)
   await page.getByRole('button', { name: 'CONTINUE', exact: true }).click()
   await expect(page).toHaveURL(/\/area$/)
-  // Home stays lit in the menus while an encounter plays: it is where you are.
-  await expect(page.getByRole('link', { name: 'Home', exact: true }).first()).toHaveAttribute(
-    'aria-current',
-    'page',
-  )
+  // In an area the page's own buttons are the way out (the rework): no tab bar.
+  await expect(page.getByRole('navigation', { name: 'Menus' })).toHaveCount(0)
 })
 
-test("Home's squares are only for what's open, and one line says what opens next", async ({ page }) => {
+test("Home's squares are only for what's open, with no line about what opens next", async ({ page }) => {
   await boot(page, makeSave(4))
   await page.goto('/home')
-  // A new game: nothing is open yet, so no square at all (no locked Day Care, Versus or events placeholder); the line
-  // counts the Day Care's catches.
-  await expect(page.getByText('Coming up: Day Care · 1/20 caught')).toBeVisible()
+  // A new game: nothing is open yet, so no square at all (no locked Day Care, Versus or events placeholder), and no
+  // "Coming up" line either (the rework: less text).
+  await expect(page.getByText(/^Coming up:/)).toHaveCount(0)
   const squares = page.getByRole('region', { name: 'Shortcuts' }).getByRole('button')
   await expect(squares).toHaveCount(0)
   await expect(page.getByText('Special events')).toHaveCount(0)
@@ -172,7 +169,6 @@ test("Home's squares are only for what's open, and one line says what opens next
   const dayCare = { residents: [], guests: [], eggClaimed: false, visited: true }
   await boot(later, makeSave(4, { pokedex: caught, dayCare }))
   await later.goto('/home')
-  await expect(later.getByText('Coming up: Versus · 0/3 at Lv.50')).toBeVisible()
   const open = later.getByRole('region', { name: 'Shortcuts' }).getByRole('button')
   await expect(open).toHaveCount(1)
   await expect(open.first()).toHaveAccessibleName(/^Day Care/)
@@ -196,8 +192,8 @@ test('a new region: its partner is picked in the lab, from three Poké Balls', a
   await lab.getByRole('button', { name: 'Not this one' }).click()
   await lab.getByRole('button', { name: 'Poké Ball 2 of 3' }).click()
   await lab.getByRole('button', { name: 'Pick Cyndaquil' }).click()
-  await lab.getByRole('button', { name: /let's go/i }).click()
-  await expect(lab).toHaveCount(0)
-  // Johto begins at its first area.
-  await expect(page.getByRole('heading', { name: 'Exploring Route 29' })).toBeAttached()
+  // LET'S GO! loads and goes by itself: Johto begins in its first area, its first encounter under way (never Home).
+  await expect(lab).toHaveCount(0, { timeout: 15_000 })
+  await expect(page).toHaveURL(/\/area$/)
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}').region)).toBe('johto')
 })

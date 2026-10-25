@@ -2,6 +2,7 @@
 // starter.ts). Tap one and its Pokémon comes out; "Do you want to pick it?" with its types, what it hits hard, what
 // hits it hard and its dice. Yes makes it your partner; no sends it back. Used by a new game, by a new region and by a
 // small world's fresh start (in that world's colours).
+import { AutoButton } from './AutoButton'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { createInstance, getSpecies, instanceStats, type RegionId } from '@/engine'
@@ -332,7 +333,7 @@ export function PartnerMoment({
           )}
 
           {phase === 'done' && goShown && dex != null && (
-            <PixelButton
+            <AutoButton
               ref={goRef}
               variant="primary"
               size="lg"
@@ -340,7 +341,7 @@ export function PartnerMoment({
               onClick={() => onPick(dex)}
             >
               {t('ui.partner.go')}
-            </PixelButton>
+            </AutoButton>
           )}
         </div>
       </div>

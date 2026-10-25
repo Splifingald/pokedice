@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { App } from './App'
-import { useGame } from './store/game'
+import { setSettings, useGame } from './store/game'
 import { installFrames } from './theme/frames'
 import { applyTheme, resolveTheme } from './theme/theme'
 
@@ -18,6 +18,10 @@ useGame.subscribe((s, prev) => {
 // Safari pinch-zooms whatever touch-action says (index.css): its own gesture events are the way to stop it.
 for (const type of ['gesturestart', 'gesturechange'])
   document.addEventListener(type, (e) => e.preventDefault(), { passive: false })
+
+// The rework prototype: its test scripts reach the store (no effect on the real build, where VITE_PROTO is unset).
+if (import.meta.env.VITE_PROTO)
+  void import('./store/run').then((run) => Object.assign(window, { __pd: { useGame, run, setSettings } }))
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

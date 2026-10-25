@@ -3,6 +3,7 @@
 // None of this exists until a league has been won: with one region unlocked and nothing on offer, the bar renders
 // nothing at all, which is what keeps Johto unmentioned for a player still working through Kanto.
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { getRegion, regionOf, type Region } from '@/engine'
 import { useT } from '@/i18n/react'
@@ -12,6 +13,7 @@ import { PartnerMoment } from '@/components/PartnerMoment'
 import { useMyTurn, useOnScreen } from '@/components/popupTurn'
 import { availableRegions, closeRegionOffer, regionOnOffer, startRegion, switchRegion } from '@/store/regions'
 import { useGame } from '@/store/game'
+import { exploreFirstArea } from '@/store/run'
 import { cx } from '@/theme/util'
 import { TrainerSprite } from '@/components/TrainerArt'
 
@@ -27,6 +29,7 @@ export function RegionBar({ modalOnly = false }: { modalOnly?: boolean }) {
   const turn = useMyTurn('regionOffer')
   const [reopened, setReopened] = useState(false)
   const [picking, setPicking] = useState(false)
+  const navigate = useNavigate()
 
   const regions = availableRegions()
   const offer = regionOnOffer()
@@ -92,7 +95,8 @@ export function RegionBar({ modalOnly = false }: { modalOnly?: boolean }) {
           onLeave={() => setPicking(false)}
           onPick={(dex) => {
             setPicking(false)
-            startRegion(offer.id, dex)
+            // The rework: a region begun opens on its first area, not Home.
+            if (startRegion(offer.id, dex) && exploreFirstArea()) navigate('/area')
           }}
         />
       )}

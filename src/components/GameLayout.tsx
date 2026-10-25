@@ -21,7 +21,11 @@ export function GameLayout() {
   const noTop = useTopBarHidden()
   // Extreme mode's band (22 px) sits under the top bar.
   const extreme = useGame((s) => s.save?.mode === 'extreme')
-  const home = useLocation().pathname === '/home'
+  const path = useLocation().pathname
+  const home = path === '/home'
+  // In an area the page's own bars (HOME / CONTINUE, the Center's, LEAVE) are the way out: no tab bar on phones (the
+  // rework). They come down to the screen's foot, over the home indicator's room.
+  const area = path === '/area'
   // Over Home a full-screen moment is an overlay (a trade, the partner): the page keeps its padding, which Home's
   // scene bleeds into, rather than jumping and running off the side of a phone behind it.
   const bare = full && !home
@@ -42,6 +46,7 @@ export function GameLayout() {
         style={{
           ...(inside ? worldVars(world) : undefined),
           ['--top-bar' as string]: noTop ? '0px' : extreme ? '78px' : '56px',
+          ...(area && { ['--bottom-nav' as string]: '0px', ['--bottom-safe' as string]: 'env(safe-area-inset-bottom)' }),
         }}
       >
         {!noTop && <Header />}
@@ -53,13 +58,19 @@ export function GameLayout() {
               // keeps a reading width.
               'mx-auto w-full min-w-0 flex-1',
               bare ? 'max-w-none' : home ? 'max-w-[1760px]' : 'max-w-6xl',
-              bare ? 'p-0' : inFight ? 'px-3 pb-2 pt-2 md:pb-10 md:pt-4' : 'px-3 pb-24 pt-4 md:pb-10 md:pt-4',
+              bare
+                ? 'p-0'
+                : inFight
+                  ? 'px-3 pb-2 pt-2 md:pb-10 md:pt-4'
+                  : area
+                    ? 'px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-4 md:pb-10 md:pt-4'
+                    : 'px-3 pb-24 pt-4 md:pb-10 md:pt-4',
             )}
           >
             <Outlet />
           </main>
         </div>
-        {!full && <BottomNav />}
+        {!full && !area && <BottomNav />}
         <OneTimePopups />
         {/* A portal run under way (docs/28): the area is the only page, and the screen wears the distortion. */}
         <PortalGuard />

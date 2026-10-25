@@ -182,6 +182,12 @@ test('a battle fits a 360×640 phone', async ({ page }) => {
       await healing.getByRole('button', { name: 'SKIP ▸▸' }).click()
       continue
     }
+    // A team of several: the send-out step first (the rework), GO! sends the one picked.
+    const go = page.getByRole('button', { name: /^Send out / })
+    if (await go.isVisible().catch(() => false)) {
+      await go.click()
+      continue
+    }
     // Random fights: the lead may faint before the controls show — send in the next one (its pip pulses).
     if (await page.getByText('Choose your next Pokémon').isVisible().catch(() => false))
       await page.getByRole('group', { name: 'Switch Pokémon' }).getByRole('button', { name: /Switch in$/ }).first().click()

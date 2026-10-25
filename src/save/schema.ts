@@ -221,6 +221,7 @@ export const saveSchema = z.object({
     animations: z.enum(['full', 'short']).optional(),
     multiExp: z.boolean().default(true),
     autoMode: z.boolean().optional(),
+    advance: z.enum(['auto']).optional().catch(undefined),
     // A style this build doesn't know (a newer one's) reads as unset rather than failing the whole save.
     playStyle: z.enum(PLAY_STYLES).optional().catch(undefined),
     typeHints: z.boolean().optional(),

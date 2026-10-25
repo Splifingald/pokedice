@@ -6,7 +6,6 @@ import {
   nightmareModeOf,
   monName,
   POKE_TYPES,
-  regionBestLevel,
   regionOf,
   teamOf,
   type PokemonInstance,
@@ -28,6 +27,7 @@ import { countdown } from '@/lib/format'
 import { pushToast, useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
 import { TeamCards } from './team/TeamCards'
+import { SceneStage } from './home/SceneStage'
 
 type Sort = Exclude<BoxSort, 'type'>
 
@@ -77,10 +77,19 @@ export function TeamScreen() {
   const open = (p: PokemonInstance) => setView({ kind: 'inst', id: p.id })
   // A closed small world's Pokémon waiting here until this region's best reaches their level (docs/26 §1).
   const waiting = homersIn(save, regionOf(save))
-  const best = regionBestLevel(save, data, regionOf(save))
+
+  // The rework: a banner on top, the team roaming the area as on Home; the menu under it.
+  const area = data.areas.find((a) => a.id === save.currentAreaId)
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
+      {area && (
+        <div className="relative -mx-3 -mt-4 h-[168px] overflow-hidden shadow-ledge md:mx-0 md:mt-0 md:pixel-panel md:p-0">
+          <div className="absolute inset-x-0 bottom-0">
+            <SceneStage area={area} team={team} onOpen={(id) => setView({ kind: 'inst', id })} />
+          </div>
+        </div>
+      )}
       <PageHead icon="navTeam" title={t('ui.team.title')} count={`${team.length}/${data.config.maxTeamSize}`}>
         {!swaps && (
           <button
@@ -108,11 +117,6 @@ export function TeamScreen() {
       )}
 
       <TeamCards team={team} onOpen={open} />
-      {team.length > 1 && (
-        <p className="-mt-1 text-center font-pixel-sm text-[15px] leading-tight text-muted">
-          {t('ui.team.dragTip')}
-        </p>
-      )}
 
       <section className="flex flex-col gap-2" aria-labelledby="box-title">
         <div className="mt-1 flex items-baseline gap-2">
@@ -121,7 +125,6 @@ export function TeamScreen() {
           </h2>
           <span className="font-pixel-sm text-[17px] text-muted">{boxAll.length}</span>
         </div>
-        {boxAll.length === 0 && <p className="copy text-muted">{t('ui.team.boxEmpty')}</p>}
         {boxAll.length > 1 && (
           <>
             <div className="flex flex-wrap items-center gap-2">
@@ -198,7 +201,6 @@ export function TeamScreen() {
             </h2>
             <span className="font-pixel-sm text-[17px] text-muted">{waiting.length}</span>
           </div>
-          <p className="copy text-muted">{t('ui.team.waitingHint', { best })}</p>
           <ul className={TILE_GRID}>
             {waiting.map(({ inst: p }) => (
               <li key={p.id}>

@@ -94,6 +94,8 @@
 :root {
   /* The theme's colours (--c-*) and color-scheme come from tailwind.config.ts. Height of the phone bottom bar; sticky footers (the Pokémon Center's CONTINUE) sit on top of it. */
   --bottom-nav: 0px;
+  /* What a bar pinned to the screen's foot leaves under its buttons: the home indicator, once no tab bar is there to. */
+  --bottom-safe: 0px;
   /* The CJK pixel face, after Jersey in every font stack (tailwind.config.ts). Players' CJK names in a Latin UI use
      the Japanese build. */
   --font-cjk: 'Pokedice CJK ja';

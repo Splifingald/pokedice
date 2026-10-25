@@ -42,11 +42,14 @@ export function RoundGauge({
   area,
   progress,
   compact,
+  strip,
   className,
 }: {
   area: Area
   progress: AreaProgress
   compact?: boolean
+  /** A fight's: a thin bar along the stage's top edge, no label, taking no height of its own (a 360×640 phone). */
+  strip?: boolean
   className?: string
 }) {
   const { t } = useT()
@@ -83,7 +86,10 @@ export function RoundGauge({
       ? met.length
       : deckSize(area, data)
   const metCount = inRound ? total - remaining : justDone ? total : 0
-  const unknown = Math.max(0, metCount - met.length)
+  // Which round this is, of how many; every round done fills the gauge in green.
+  const need = area.roundsToClear || 1
+  const allDone = (progress.roundsDone ?? 0) >= need
+  const round = Math.min((progress.roundsDone ?? 0) + (justDone ? 0 : 1), need)
   // Preview (admin option): the deck is drawn from the end, so the next card is its last one.
   const ahead = cfg.showRoundPreview && inRound ? [...progress.deck!].reverse() : []
   const side = save ? playerSideOf(save) : null
@@ -102,6 +108,19 @@ export function RoundGauge({
     : boss
       ? (data.species[boss.dex]?.name ?? t('ui.area.aLegendary'))
       : null
+  const label = justDone
+    ? t('ui.area.roundComplete')
+    : t(`ui.area.roundProgress${metCount === 1 ? '.one' : ''}`, { done: metCount, total })
+  if (strip)
+    return (
+      <div role="img" aria-label={label} className={cx('pointer-events-none', className)}>
+        <ol className="flex h-[6px] gap-[2px] bg-night/80" aria-hidden>
+          {Array.from({ length: total }, (_, i) => (
+            <li key={i} className={cx('min-w-0 flex-1', allDone ? 'bg-hp-green' : i < metCount ? 'bg-gold' : 'bg-[#3d4a6b]')} />
+          ))}
+        </ol>
+      </div>
+    )
   const gauge = (
     <div
       className={cx('flex items-center gap-2', className)}
@@ -112,34 +131,14 @@ export function RoundGauge({
           : t(`ui.area.roundProgress${metCount === 1 ? '.one' : ''}`, { done: metCount, total })
       }
     >
-      <ol className="flex min-w-0 flex-1 gap-[2px]" aria-hidden>
-        {Array.from({ length: total }, (_, i) => {
-          const done = i < metCount
-          const next = !justDone && i === metCount
-          const card = done && i >= unknown ? met[i - unknown] : undefined
-          return (
-            <li
-              key={i}
-              title={
-                done
-                  ? card
-                    ? cardName(card)
-                    : t('ui.area.cardMet')
-                  : t(next ? 'ui.area.cardNext' : 'ui.area.cardToCome')
-              }
-              className={cx(
-                'flex h-6 min-w-0 flex-1 items-center justify-center border-2',
-                done ? 'border-edge bg-panel' : next ? 'border-gold bg-line' : 'border-edge bg-line',
-              )}
-              style={{ borderRadius: 2 }}
-            >
-              {card && <PixelIcon name={CARD_ICON[card]} size={14} />}
-            </li>
-          )
-        })}
+      {/* The rework: a plain gauge, a segment per card and no icons; the round beside it. */}
+      <ol className="flex h-3 min-w-0 flex-1 gap-[3px] bg-night p-[3px]" aria-hidden>
+        {Array.from({ length: total }, (_, i) => (
+          <li key={i} className={cx('min-w-0 flex-1', i < metCount || allDone ? (allDone ? 'bg-hp-green' : 'bg-gold') : 'bg-[#3d4a6b]')} />
+        ))}
       </ol>
-      <span className="min-w-[6ch] text-right font-mono text-xs tabular-nums leading-none" aria-hidden>
-        {justDone ? '✓' : `${metCount}/${total}`}
+      <span className="min-w-[3ch] text-right font-pixel-sm text-[15px] tabular-nums leading-none text-muted" aria-hidden>
+        {allDone ? '✓' : `${round}/${need}`}
       </span>
     </div>
   )
@@ -194,9 +193,9 @@ export function RoundGauge({
  * encounters, the Game Corner): where the round stands, without scrolling back up to the header. Nothing in an Elite
  * Rebattle, which has no rounds.
  */
-export function RunRoundGauge({ className }: { className?: string }) {
+export function RunRoundGauge({ className, strip }: { className?: string; strip?: boolean }) {
   const area = useGame((s) => (s.run.rebattle ? undefined : s.data.areas.find((a) => a.id === s.run.areaId)))
   const save = useGame((s) => s.save)
   if (!area || !save) return null
-  return <RoundGauge area={area} progress={progressOf(save, area.id)} compact className={className} />
+  return <RoundGauge area={area} progress={progressOf(save, area.id)} compact strip={strip} className={className} />
 }

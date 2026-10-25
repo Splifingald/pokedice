@@ -69,6 +69,8 @@ interface MenuRowProps {
 
 function MenuRowView({ icon, mark, label, desc, hint, dot, href, onClick, shut }: MenuRowProps & { shut?: boolean }) {
   const descId = useId()
+  // The rework: titles only; a line under one is the reason it's locked.
+  if (!shut) desc = undefined
   const className = cx(
     'flex min-h-[56px] w-full items-center gap-2.5 bg-paper pb-2 pl-2 pr-3 pt-1.5 text-left text-ink shadow-card',
     shut && 'opacity-60',

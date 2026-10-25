@@ -213,14 +213,27 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   `min-w-0`, or one long label would stretch it past the edge; a panel that scrolls is capped already.
 - **Two buttons side by side** share a grid of `minmax(0, …)` tracks (`grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]`), never
   plain `fr`: a plain track can't go narrower than its label, so a long translation ran off the edge and squeezed its
-  neighbour. In a shrinkable track `PixelButton` shrinks the label to fit.
+  neighbour. In a shrinkable track `PixelButton` shrinks the label to fit (down to 60 %), and when even that is too wide ("NEU
+  WERFEN (2)", "振り直す（2）") breaks it on two lines at the largest size that fits: a label is never cut.
 - **Action bars** (the Pokémon Center's and the area's HOME / CONTINUE, the Game Corner's LEAVE) are pinned
-  right above the tab bar on phones (`fixed`, `bottom: var(--bottom-nav)`, and room under the page for them), even
-  when the page is short; from 768 px they stick to the bottom of the content column.
-- **Every area step ends on the round gauge**: the result card's HOME / CONTINUE (and the stalemate's CONTINUE), the
-  Center's, the between-encounters bar and the Game Corner's LEAVE carry the area's round gauge right over their
-  buttons (`RunRoundGauge`, the gauge alone without the preview row), so where the round stands is in view without
-  scrolling back up. Nothing in an Elite Rebattle, which has no rounds.
+  at the foot of the screen on phones (`fixed`, `bottom: var(--bottom-nav)`, and room under the page for them), even
+  when the page is short; from 768 px they stick to the bottom of the content column. **An area has no tab bar on
+  phones** (the rework, 2026-10-25): its bars are the way out (HOME), so `GameLayout` drops the tab bar on `/area`,
+  `--bottom-nav` falls to 0 and `--bottom-safe` gives the bars the home indicator's room instead.
+- **The round gauge sits once, under the area's header** (and at the top of a fight, under the top bar): a plain bar,
+  a segment per card, no icons, the round beside it. Never again over an action bar (the rework, 2026-10-25).
+- **A step's buttons stay at the foot of the screen on phones** (the rework, 2026-10-25): in a battle's panel the
+  attack, the throw, CONTINUE, NEXT / BACK, NOT YET and the Bag-and-team row sit in a `BottomDock` (`sticky`, at the
+  screen's bottom whatever is above them, the content scrolling behind); the action bars above are pinned the same way.
+  From 1024 px they sit in the flow.
+- **No step is only a button** (the rework, 2026-10-25): where the one thing to do is press a single button (the catch's
+  CATCH or CONTINUE, a sure throw, the wipe's TRY AGAIN, the stalemate, an evolution revealed, the partner's LET'S GO),
+  the button is an `AutoButton`: it loads (a gold fill along its foot, as Idle mode's steps do) and presses itself; a
+  tap goes sooner, and it waits while a dialog covers it. **Never in a Pokémon Center**, which waits for the player's
+  CONTINUE so the Box can be used. A step with a real choice (BACK or NEXT, a pick) waits, unless the player turned
+  Auto on (Settings, "After a fight").
+- **A region begun opens on its first area**, its first encounter under way (`exploreFirstArea`): a new game's partner
+  and a new region's starter lead straight there, never to Home first.
 - Page gutter 12 px; gaps 8–12 px between cards; a panel's padding 12 px.
 - **Tap targets ≥ 44 px on phones** (inline links in a sentence excepted). From 768 px, tighter sizes are allowed.
 - One `<h1>` per route; headings in order; landmarks (`main`, `nav`).
@@ -449,10 +462,13 @@ Players shouldn't have to make many requests:
 - **Area screen**: its title opens the area's details (the same sheet as Home's plate, without the travel footer).
   Under the details' name: the levels, the rounds done over the rounds that clear the area ("3/5 rounds"; more can be
   played once it's cleared, "7/5") or "Secret area", and where it stands.
-- **Pokémon Center**: the healing scene (a Poké Ball per team member) at phone size (420 px at most on wide screens),
-  over everything (on `<body>`); SKIP (focused, so Enter, Space or Escape) just closes it, without playing the rest of
-  the jingle at once. It plays once: back from Home, the Center opens on the team (`run.healShown`). Then Home or
-  **Continue** (the next encounter), so a run through an area never needs a trip Home.
+- **Pokémon Center**, laid out as a battle (the rework, 2026-10-25): no area banner, the round's gauge under the top
+  bar, then the healing scene (a Poké Ball per team member) in its quick version (one flash, healed, about 1.6 s) with
+  nothing to press; once it ends it folds away, and the team and the Box have the screen, as cards three to a row
+  (`PokeCard`, the send-out step's card: a tap opens the details and the team moves). It plays once: back from Home,
+  the Center opens on the team (`run.healShown`). Then Home or
+  **Continue** (the next encounter), so a run through an area never needs a trip Home; the Center never moves on by
+  itself.
 - **Dots only for something you can act on**: the number of upgrades you can afford (9+ at most), a gold NEW for
   Pokédex entries you haven't looked at. The dot is in the link's accessible name, never colour alone.
 - **Home is the area hub** (`/home`; `/map` redirects there): the area's scene with your team roaming in it, the area

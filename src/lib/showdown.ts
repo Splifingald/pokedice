@@ -1,7 +1,8 @@
 // Pokémon Showdown's sprites: the one source for every Pokémon and trainer picture (docs/13-SHOWDOWN-SPRITES.md).
 // Shared by the components and by scripts/showdown-sprites.ts, which writes the tables these read.
 
-export const SHOWDOWN_SPRITES = 'https://play.pokemonshowdown.com/sprites'
+// The rework prototype carries the sprites it needs in its own files (an Artifact loads pictures from nowhere else).
+export const SHOWDOWN_SPRITES = import.meta.env?.VITE_PROTO ? './sd' : 'https://play.pokemonshowdown.com/sprites'
 /** Showdown's cries, one MP3 per Pokémon (`<id>.mp3`), loaded straight from its CDN like the sprites. */
 export const SHOWDOWN_CRIES = 'https://play.pokemonshowdown.com/audio/cries'
 

@@ -391,7 +391,7 @@ export function ComingUpView({ next }: { next: ComingUp }) {
 }
 
 /** The line under Home's squares, while something is still to open. */
-function ComingUpLine() {
+export function ComingUpLine() {
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
   const next = comingUp(save, data)
@@ -419,7 +419,7 @@ export function Widgets() {
         <VersusWidget />
         <EventWidgets />
       </div>
-      <ComingUpLine />
+      {/* The rework: no "Coming up" line; a thing shows here once it's open. */}
     </div>
   )
 }

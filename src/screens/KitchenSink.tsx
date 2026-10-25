@@ -78,6 +78,7 @@ import { RewardBits } from './kitchen/RewardBits'
 import { HitFeelBits } from './kitchen/HitFeelBits'
 import { FeelBits } from './kitchen/FeelBits'
 import { TitleLogoBits } from './kitchen/TitleLogoBits'
+import { ReworkBits } from './kitchen/ReworkBits'
 import { RotateView } from '@/components/RotateCover'
 import { SettingsOverlay } from '@/screens/Settings'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
@@ -636,6 +637,10 @@ export function KitchenSink() {
 
       <Section title="Game feel, hits (docs/38): a shiny's entrance, hits of each weight and their settle, the K.O.'s boss stop and drop">
         <HitFeelBits />
+      </Section>
+
+      <Section title="The area rework (docs/15 §6): AutoButton, PokeCard (Center, send-out), a label on two lines, BottomDock">
+        <ReworkBits />
       </Section>
 
       <Section title="PartnerMoment: the lab (new game, new region)">

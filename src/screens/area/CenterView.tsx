@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useEffect, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { teamOf, type PokemonInstance } from '@/engine'
 import { useT } from '@/i18n/react'
 import { BoxSortPicker, sortBox, type BoxSort } from '@/components/BoxSort'
 import { PixelIcon } from '@/components/icons'
-import { MonCard } from '@/components/MonCard'
+import { PokeCard } from '@/components/PokeCard'
 import { PixelButton } from '@/components/PixelButton'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { StageCanvas } from '@/components/StageCanvas'
@@ -13,8 +13,8 @@ import { loadSprite, spriteKey } from '@/fx/sprites'
 import { loadCenterArt } from '@/fx/scenes'
 import { centerTimeline } from '@/fx/timelines/center'
 import { useMotion } from '@/lib/motion'
-import { RunRoundGauge } from '@/screens/area/RoundGauge'
 import { TeamSwapActions } from '@/components/TeamSwapActions'
+import { RunRoundGauge } from '@/screens/area/RoundGauge'
 import { useGame } from '@/store/game'
 import { continueExploring, finishCenter, markHealShown } from '@/store/run'
 
@@ -28,23 +28,18 @@ export function CenterView() {
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const { level } = useMotion()
-  // Nothing to watch with animations off, or when it already played (back from Home): straight to the Center.
-  const [healed, setHealed] = useState(() => level === 'off' || !!useGame.getState().run.healShown)
-  const skip = useRef<HTMLButtonElement>(null)
+  // Already played (back from Home), or animations off: no scene, the team and the Box at once.
+  const [healing, setHealing] = useState(() => level !== 'off' && !useGame.getState().run.healShown)
   const [view, setView] = useState<SheetView | null>(null)
   const [sort, setSort] = useState<BoxSort>('dex')
   const teamSize = useGame((s) => s.save?.team.length ?? 1)
-  // The machine's jingle plays once, on arrival (short motion: the quick version).
+  // The machine plays once, on arrival, and quickly: always the short version (one flash, healed), on the page.
   const [scene] = useState(() => ({
     ready: Promise.all([loadSprite(NURSE, false), loadCenterArt()]),
-    timeline: centerTimeline({ balls: teamSize, nurse: spriteKey(NURSE, false), short: level !== 'full' }),
+    timeline: centerTimeline({ balls: teamSize, nurse: spriteKey(NURSE, false), short: true }),
   }))
   // The team is healed already (engage): once the jingle has started, leaving and coming back doesn't play it again.
   useEffect(() => markHealShown(), [])
-  // SKIP has the focus, so Enter, Space and Escape all end it.
-  useEffect(() => {
-    if (!healed) skip.current?.focus()
-  }, [healed])
 
   if (!save) return null
   const team = teamOf(save)
@@ -55,56 +50,46 @@ export function CenterView() {
   return (
     // Phones: room at the bottom for the action bar, which is pinned over the tab bar.
     <div className="flex flex-col gap-4 pb-[108px] md:pb-0">
-      {/* The healing plays over everything (on <body>, so nothing on the page can sit over it), as big as the screen
-          allows; it closes itself once done. SKIP just closes it: the team is already healed, and jumping the timeline
-          to its end would play every note left of the jingle at once. */}
-      {!healed &&
-        createPortal(
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label={t('ui.center.healing')}
-            className="fixed inset-0 z-[90] flex flex-col items-center justify-center gap-3 bg-night/80 p-3"
-            onKeyDown={(e) => e.key === 'Escape' && setHealed(true)}
+      {/* The rework, as a battle: the round's gauge under the top bar, no area banner; the healing on the page at
+          the top, quick, then gone, so the team and the Box get the screen. */}
+      <RunRoundGauge className="-mx-3 -mt-4 bg-panel px-3 py-1.5 shadow-[0_2px_0_rgb(var(--c-edge))] md:mx-0 md:mt-0" />
+      <AnimatePresence initial={false}>
+        {healing && (
+          <motion.div
+            key="heal"
+            className="-mx-3 -mt-4 overflow-hidden md:mx-0 md:mt-0"
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
           >
-            <div className="pixel-panel w-[min(100%,calc((100dvh-120px)*1.5))] overflow-hidden p-0">
+            <div className="shadow-ledge md:pixel-panel md:p-0">
               <StageCanvas
                 timeline={scene.timeline}
                 ready={scene.ready}
-                onEnd={() => setTimeout(() => setHealed(true), 400)}
+                onEnd={() => setTimeout(() => setHealing(false), 250)}
                 label={t('ui.center.healing')}
               />
             </div>
-            <PixelButton ref={skip} size="lg" className="min-w-[200px]" onClick={() => setHealed(true)}>
-              {t('ui.victory.skip')}
-            </PixelButton>
-          </div>,
-          document.body,
+          </motion.div>
         )}
-
-      {/* Then, before going on: where you are and what you can do here. */}
-      <p className="pixel-dialogue m-0 flex items-center gap-3 px-3 py-2.5 text-[20px] leading-[1.15]" aria-live="polite">
-        <PixelIcon name="heart" size={24} className="shrink-0" />
-        <span>{t('ui.center.restHere')}</span>
-      </p>
+      </AnimatePresence>
 
       <section className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-          <h2 className="text-3xl">{t('ui.center.teamCount', { count: team.length, max: data.config.maxTeamSize })}</h2>
-          <span className="text-base text-muted">{t('ui.center.tapTeam')}</span>
-        </div>
-        <ol className="grid gap-2 md:grid-cols-3">
+        <h2 className="text-3xl">{t('ui.center.teamCount', { count: team.length, max: data.config.maxTeamSize })}</h2>
+        <ol className="grid grid-cols-3 gap-1.5 sm:gap-2">
           {team.map((p, i) => (
-            <li key={p.id}>
-              <MonCard
-                inst={p}
-                onClick={() => open(p)}
-                badge={i === 0 ? <PixelIcon name="crown" size={20} title={t('ui.team.lead')} /> : null}
-              />
-            </li>
+            <PokeCard
+              key={p.id}
+              inst={p}
+              onOpen={() => open(p)}
+              openLabel={t('ui.newGame.monInfo', { name: p.nickname || data.species[p.dex]?.name || '' })}
+              badge={i === 0 ? <PixelIcon name="crown" size={16} title={t('ui.team.lead')} /> : null}
+            />
           ))}
           {Array.from({ length: Math.max(0, data.config.maxTeamSize - team.length) }, (_, i) => (
-            <li key={`empty-${i}`} className="flex min-h-[80px] items-center justify-center border-[3px] border-dashed border-shadow text-lg text-muted">
+            <li
+              key={`empty-${i}`}
+              className="flex min-h-[96px] items-center justify-center border-[3px] border-dashed border-shadow p-1 text-center text-base text-muted"
+            >
               {t('ui.center.emptySlot')}
             </li>
           ))}
@@ -114,15 +99,16 @@ export function CenterView() {
       <section className="flex flex-col gap-2">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1.5">
           <h2 className="text-3xl">{t('ui.team.box', { count: box.length })}</h2>
-          {box.length > 0 && <span className="text-base text-muted">{t('ui.center.tapBox')}</span>}
           {box.length > 1 && <BoxSortPicker sort={sort} onChange={setSort} />}
         </div>
-        {box.length === 0 && <p className="copy text-muted">{t('ui.center.boxEmpty')}</p>}
-        <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid grid-cols-3 gap-1.5 sm:gap-2">
           {box.map((p) => (
-            <li key={p.id}>
-              <MonCard inst={p} onClick={() => open(p)} />
-            </li>
+            <PokeCard
+              key={p.id}
+              inst={p}
+              onOpen={() => open(p)}
+              openLabel={t('ui.newGame.monInfo', { name: p.nickname || data.species[p.dex]?.name || '' })}
+            />
           ))}
         </ul>
       </section>
@@ -131,10 +117,9 @@ export function CenterView() {
           the content column (the side nav is there) and sticks to the bottom. */}
       <div
         className="fixed inset-x-0 z-30 border-t-[3px] border-edge bg-parchment px-3 py-2 md:sticky md:inset-x-auto md:-mx-3"
-        style={{ bottom: 'var(--bottom-nav)' }}
+        style={{ bottom: 'var(--bottom-nav)', paddingBottom: 'calc(0.5rem + var(--bottom-safe))' }}
       >
         <div className="flex flex-col gap-1.5 md:mx-auto md:max-w-md">
-          <RunRoundGauge />
           {/* Healed: back Home, or straight on to this area's next encounter. */}
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
             <PixelButton

@@ -91,7 +91,8 @@ test('a wild pair: no pop-up, two leads, four on the stage, a target, a throw at
 async function fightAndCatch(page: Page): Promise<number> {
   const attack = page.getByRole('button', { name: 'ATTACK', exact: true })
   const roll = page.getByRole('button', { name: /^(ROLL TO CATCH|CATCH)$/ })
-  const victory = page.getByRole('heading', { name: 'VICTORY!' })
+  // The result shows in the battle's panel (the rework): its region, named as the old card's title was.
+  const victory = page.getByRole('region', { name: 'VICTORY!' })
   let throws = 0
   const until = Date.now() + 180_000
   while (Date.now() < until && !(await victory.isVisible())) {
@@ -100,11 +101,12 @@ async function fightAndCatch(page: Page): Promise<number> {
       if (process.env.SHOTS && throws === 0) await page.screenshot({ path: `${process.env.SHOTS}/double-catch.png` })
       await roll.click()
       throws += 1
-      // The throw's result, then on: the other one's throw, or the rewards.
+      // The throw's result, then on: its CONTINUE loads and presses itself (or a tap goes sooner) to the other one's
+      // throw, or the rewards.
       const next = page.getByRole('button', { name: 'CONTINUE', exact: true })
-      await expect(next.first()).toBeVisible({ timeout: 15_000 })
+      await expect(next.first().or(victory)).toBeVisible({ timeout: 15_000 })
       if (throws === 1) await expect(victory).toHaveCount(0)
-      if (!(await victory.isVisible())) await next.first().click()
+      if (!(await victory.isVisible())) await next.first().click({ timeout: 3000 }).catch(() => {})
     } else if ((await attack.isVisible()) && (await attack.isEnabled())) await attack.click()
     await page.waitForTimeout(250)
   }
@@ -126,13 +128,13 @@ test('a wild pair with a full team: both throws, then "Add to team?" for each, o
   const [a, b] = title.replace(/^.* against /, '').split(' & ')
   const throws = await fightAndCatch(page)
 
-  const victory = page.getByRole('heading', { name: 'VICTORY!' })
+  const victory = page.getByRole('region', { name: 'VICTORY!' })
   const question = page.getByText(/^Add .+ to your team\?$/)
   await expect(question).toBeVisible({ timeout: 20_000 })
   if (a !== b) {
-    // Two species: the first catch's question, then (CONTINUE sends it to the Box) the second's, then on.
+    // Two species: the first catch's question, then (Next sends it to the Box) the second's, then on.
     expect(throws).toBe(2)
-    await page.getByRole('button', { name: 'CONTINUE', exact: true }).click()
+    await page.getByRole('button', { name: 'Next ▸', exact: true }).click()
     await expect(victory).toBeVisible()
     await expect(question).toBeVisible()
     await page.getByRole('button', { name: /^Swap out Charizard/ }).click()
@@ -150,7 +152,7 @@ test('a wild pair with a full team: both throws, then "Add to team?" for each, o
       .toBe(1)
   }
   await expect(question).toHaveCount(0)
-  await page.getByRole('button', { name: 'CONTINUE', exact: true }).click()
+  await page.getByRole('button', { name: 'Next ▸', exact: true }).click()
   await expect(victory).toHaveCount(0)
   expect(errors).toEqual([])
 })
@@ -159,10 +161,10 @@ test('switched off, the same card is one wild Pokémon', async ({ page }) => {
   await boot(page, strongSave(), EVENTS_ON)
   await page.goto('/home')
   await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
-  const preview = page.getByRole('dialog', { name: 'You encountered a wild Pokémon!' })
-  await expect(preview).toBeVisible()
-  await expect(preview.getByText('DOUBLE BATTLE')).toHaveCount(0)
-  await expect(preview.getByText('Send out:', { exact: true })).toBeVisible()
+  // One wild Pokémon goes straight into its fight (the rework): no pop-up, the send-out step for the team of two.
+  await expect(page.getByRole('button', { name: /^Send out / })).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.getByText('DOUBLE BATTLE')).toHaveCount(0)
 })
 
 test('the kitchen sink shows every double battle piece, with no error', async ({ page }) => {

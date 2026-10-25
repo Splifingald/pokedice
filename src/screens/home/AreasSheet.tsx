@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   enabledRegions,
   getRegion,
@@ -24,6 +25,7 @@ import { useGame } from '@/store/game'
 import { SCENE_W } from '@/fx/areaArt'
 import { regionPicture } from '@/fx/regionArt'
 import { availableRegions, regionOnOffer, startRegion, switchRegion } from '@/store/regions'
+import { exploreFirstArea } from '@/store/run'
 import { cx } from '@/theme/util'
 import { levelText, useLevelSpan } from './AreaPlate'
 import {
@@ -268,6 +270,7 @@ function OfferCard({ region, onStarted }: { region: Region; onStarted: () => voi
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)!
   const [picking, setPicking] = useState(false)
+  const navigate = useNavigate()
   const starters = region.starters.filter((d) => data.species[d])
   const here = getRegion(data, regionOf(save))?.name ?? ''
   return (
@@ -322,7 +325,10 @@ function OfferCard({ region, onStarted }: { region: Region; onStarted: () => voi
           onLeave={() => setPicking(false)}
           onPick={(dex) => {
             setPicking(false)
-            if (startRegion(region.id, dex)) onStarted()
+            if (!startRegion(region.id, dex)) return
+            onStarted()
+            // The rework: a region begun opens on its first area, not Home.
+            if (exploreFirstArea()) navigate('/area')
           }}
         />
       )}

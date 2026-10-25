@@ -120,9 +120,10 @@ test('a Trick or Treat card: the preview, the rules once, a Treat, Trick Balls, 
     )
     expect(saved.pokedex).toContain(92)
   } else await expect(page.getByText('Gastly fled')).toBeVisible()
-  // The card was the round's: its icon on the gauge over the bar.
+  // Back on the area's page (the rework: no line about it), its CONTINUE for the next card.
   await next.click()
-  await expect(page.getByText('Back on the trail')).toBeVisible()
+  await expect(page).toHaveURL(/\/area$/)
+  await expect(page.getByRole('button', { name: 'CONTINUE', exact: true })).toBeVisible()
 
   // A second ghost: no rules pop-up this time, and INFO shows them again.
   const later = await page.evaluate(
@@ -188,7 +189,8 @@ test('switched off, the card is never played: the next card comes instead', asyn
   await boot(page, withCard(), EVENTS_ON)
   await page.goto('/home')
   await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
-  await expect(page.getByRole('dialog', { name: /wild Pokémon/i })).toBeVisible()
+  // A wild Pokémon instead, straight into its fight (the rework: no preview).
+  await expect(page.getByRole('heading', { level: 1, name: /^Battle: .* against a wild / })).toBeAttached({ timeout: 15_000 })
   await expect(page.getByRole('dialog', { name: /trick or treat/i })).toHaveCount(0)
 })
 

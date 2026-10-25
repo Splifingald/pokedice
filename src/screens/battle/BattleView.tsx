@@ -1,6 +1,7 @@
 // The battle, full screen: the 240×160 stage on top (BattleStage) and the panel under it — the message, the dice tray
 // and its readout, the actions, the Bag and the team. It drives the engine through the store and plays the engine's
 // log (useBattleAnimator); the UI never recomputes a rule.
+import { BottomDock } from '@/components/BottomDock'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import {
@@ -24,7 +25,6 @@ import {
   megaDie,
   zEffectOf,
   randomSeed,
-  statusCounts,
   statusesFromRoll,
   sureThrow,
   usableIn,
@@ -45,7 +45,6 @@ import { ForfeitButton } from '@/components/ForfeitButton'
 import { PixelIcon } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
 import { Modal } from '@/components/Modal'
-import { OakTip, useOneTimeTip } from '@/components/OakTip'
 import { PixelButton } from '@/components/PixelButton'
 import { Sheet } from '@/components/Sheet'
 import { SpriteImg } from '@/components/SpriteImg'
@@ -59,7 +58,7 @@ import { catchTimeline } from '@/fx/timelines/catch'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { useT } from '@/i18n/react'
 import { effectText, zMoveText } from '@/i18n/text'
-import { chancePercent, statusName, trainerTitle, typeName } from '@/lib/format'
+import { trainerTitle, typeName } from '@/lib/format'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { haptic } from '@/lib/haptics'
 import { capMotion, MotionCap, useMotion, type MotionLevel } from '@/lib/motion'
@@ -68,7 +67,10 @@ import { useDialogOpen } from '@/lib/useDialog'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { pushToast, setSettings, useGame, type BattleSlice, type CatchThrow } from '@/store/game'
 import { autoStepNow } from '@/store/autopilot'
-import { answerBait, dispatchBattle, finishCatch, passCatch, retryCatch, throwBall } from '@/store/run'
+import { answerBait, dispatchBattle, canSkipCurrent, fleeAtSendOut, notYet, passCatch, retryCatch, sendOutLead, throwBall } from '@/store/run'
+import { LeadPicker } from '@/components/LeadPicker'
+import { RunRoundGauge } from '@/screens/area/RoundGauge'
+import { speciesTypes } from '@/components/TypeMatchups'
 import { useAreaDayTime } from '@/store/dayTime'
 import { useTypeHints } from '@/store/hooks'
 import { cx } from '@/theme/util'
@@ -79,7 +81,7 @@ import { CatchPanel, catchMessage } from './CatchPanel'
 import { DoublePlates, TargetPicker } from './DoublePlates'
 import { FoePlate, OwnPlate } from './Plates'
 import { useBattleAnimator } from './useBattleAnimator'
-import { StalemateView, VictoryView, WipeView } from './VictoryView'
+import { InlineCard, StalemateView, VictoryView, WipeView } from './VictoryView'
 
 /** The matchup pop-up over the stage: which side it belongs to decides which end it sits at. */
 function MatchupPopup({ b, side, onClose }: { b: Battler; side: Side; onClose: () => void }) {
@@ -161,7 +163,6 @@ function useWidth(ref: RefObject<HTMLElement>) {
 }
 
 // Professor Oak explains a Freeze's or a Paralysis's chance the first time one is short of sure (per device).
-const STATUS_TIP_KEY = 'pokedice.tip.statusChance'
 
 /** The trainer on the field before their Pokémon. */
 const TRAINER_INTRO_MS = 1100
@@ -273,8 +274,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   // The entrances: a legendary's timeline, or the trainer stepping onto the field; then the foe; then yours. A fight
   // picked up from the last visit (store/resume.ts) has had them: everyone is out already.
   const resumed = !!battle.resumed
-  const [bossIntro, setBossIntro] = useState(st.kind === 'boss' && level !== 'off' && !resumed)
-  const [trainerIntro, setTrainerIntro] = useState(isTrainerFight && !quick && !resumed)
+  // Another lead picked at the send-out step: the same fight again, its foe out already (no entrance twice).
+  const swapped = !!battle.sendLater
+  const [bossIntro, setBossIntro] = useState(st.kind === 'boss' && level !== 'off' && !resumed && !swapped)
+  const [trainerIntro, setTrainerIntro] = useState(isTrainerFight && !quick && !resumed && !swapped)
   const [foeOut, setFoeOut] = useState(!bossIntro && !trainerIntro)
   const [ownOut, setOwnOut] = useState(quick || resumed)
   const intro = bossIntro || trainerIntro || !ownOut
@@ -316,11 +319,13 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     }, TRAINER_INTRO_MS * pace)
     return () => clearTimeout(t)
   }, [trainerIntro, pace])
+  // The send-out step (the rework): the foe is out, yours waits for the player's pick; the fight starts once it's out.
+  const picking = !versus && !!run.pickLead
   useEffect(() => {
-    if (ownOut || !foeOut || bossIntro) return
+    if (ownOut || !foeOut || bossIntro || picking) return
     const t = setTimeout(() => setOwnOut(true), quick ? 0 : SEND_OUT_MS * pace)
     return () => clearTimeout(t)
-  }, [ownOut, foeOut, bossIntro, quick, pace])
+  }, [ownOut, foeOut, bossIntro, picking, quick, pace])
 
   // The enemy acts on its own once the log has caught up (sooner with the game-feel pass, docs/38 F1d).
   useEffect(() => {
@@ -381,20 +386,6 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     const statuses = statusesFromRoll(st.dice, data, st.playerLevels)
     return { r, statuses, recoil }
   }, [rolling, st, data])
-  // A Freeze or a Paralysis short of sure: Professor Oak explains the chance once (per device).
-  const chanceTip = useMemo(() => {
-    const s = preview?.statuses.find((x) => x.chance != null && x.chance < 1)
-    if (!s || (s.status !== 'frozen' && s.status !== 'paralyze')) return null
-    const sureAt = Math.max(1, data.config.status[s.status].sureAt)
-    return {
-      status: statusName(s.status),
-      pct: chancePercent(1 / sureAt),
-      n: sureAt,
-      have: statusCounts(st.dice, data)[s.status],
-      total: chancePercent(s.chance ?? 0),
-    }
-  }, [preview, st.dice, data])
-  const [statusTip, closeStatusTip] = useOneTimeTip(STATUS_TIP_KEY)
 
   const inventory = save?.inventory ?? {}
   const ownedItems = Object.entries(inventory).filter(([k, n]) => n > 0 && usableIn(data.items[k], 'battle'))
@@ -650,15 +641,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     // A wild pair's second Pokémon may get the same step as the first (two passes): its own uid starts it again.
   }, [idleCatch, covered, revealed, catchUid])
 
-  // The autopilot (docs/36): the throw's result, once read, moves on by itself (under Auto on explored areas the Bait's
-  // question and THROW AGAIN still wait for the player).
-  const caughtResult = catching ? run.catch?.result : null
-  const autoFinish = autoAt === 'full' && revealed && !!caughtResult && !caughtResult.baitOffer && !caughtResult.stays
-  useEffect(() => {
-    if (!autoFinish || covered) return
-    const t = setTimeout(finishCatch, AUTO_RESULT_MS)
-    return () => clearTimeout(t)
-  }, [autoFinish, covered])
+  // The throw's result moves on by itself for everyone now: CONTINUE loads and presses itself (AutoButton, the
+  // rework), so the autopilot needs no timer of its own here.
 
   // A legendary's entrance: the boss intro is its timeline (the foe and yours appear on its cues).
   const legend = useMemo<StageOverlay | null>(() => {
@@ -769,14 +753,13 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       })
 
   const over = !!versus && played && !!versus.end
+  const result = !versus && ready && (run.phase === 'victory' || run.phase === 'wipe' || run.phase === 'stalemate')
   useBattleMusic(!over && !(ready && !versus && ['victory', 'wipe', 'stalemate'].includes(run.phase)))
   const message = catching
     ? catchMessage(run.catch!, foeFront.name, { revealed })
     : forced && !auto
       ? t('ui.battle.chooseNext')
-      : canAct && rolling && !auto && active.rerollsLeft > 0
-        ? `${fx.message} ${t('ui.battle.tapToReroll')}`
-        : fx.message
+      : fx.message
 
   const tapMatchups = typeHints ? (side: Side) => setMatchups((v) => (v === side ? null : side)) : undefined
   const pickPip = (b: Battler) => {
@@ -900,7 +883,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   )
 
   const stage = (
-    <div ref={stageBox} className="shadow-ledge">
+    <div ref={stageBox} className="relative shadow-ledge">
+      {/* The area's round, right under the top bar (the rework): a thin strip on the stage's top edge, so the fight
+          still fits a 360×640 phone. */}
+      {!versus && !run.rebattle && <RunRoundGauge strip className="absolute inset-x-0 top-0 z-30" />}
       <BattleStage
         own={active}
         foe={foeFront}
@@ -1013,16 +999,27 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
           <div
             ref={panel}
             className="flex flex-1 flex-col gap-2 px-3 pt-3"
-            style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}
+            // Phones: the BottomDock at the foot of each step carries the padding (and the buttons).
+            style={wide ? { paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' } : undefined}
           >
+            {result ? (
+              // The fight's end, under the scene rather than over it (the rework): no card rises.
+              <InlineCard.Provider value={true}>
+                {run.phase === 'victory' ? <VictoryView /> : run.phase === 'wipe' ? <WipeView /> : <StalemateView />}
+              </InlineCard.Provider>
+            ) : picking ? (
+              <SendOutStep foe={foeFront.dex} lead={active.uid} />
+            ) : (
             <p
               className="pixel-dialogue m-0 flex min-h-[64px] items-center px-3 py-1.5 text-[20px] leading-[1.15]"
               aria-live="polite"
             >
               {message}
             </p>
-            {catching ? (
+            )}
+            {result || picking ? null : catching ? (
               <CatchPanel
+                docked
                 c={run.catch!}
                 picked={idlePick}
                 onThrow={onThrow}
@@ -1031,7 +1028,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                 onRetry={onRetry}
               />
             ) : over ? (
-              <div className="mt-auto">{actions}</div>
+              <BottomDock>{actions}</BottomDock>
             ) : (
               <>
                 {/* A tall phone: the dice come down a little, towards the thumb (P1b). */}
@@ -1081,10 +1078,6 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                   )}
                 </div>
                 {reveal.preview && showBreakdown && <DamageRecap result={reveal.preview.r} />}
-                {/* Prof. Oak's chance tip, about the dice once they're down (docs/38 F2d). */}
-                {settled && !auto && statusTip && chanceTip && (
-                  <OakTip onClose={closeStatusTip}>{t('ui.battle.chanceTip', chanceTip)}</OakTip>
-                )}
                 {extras && (
                   <div className="flex flex-wrap items-center justify-center gap-2">
                     {megaOpts.length > 0 && (
@@ -1156,9 +1149,11 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                 )}
                 {/* The room to spare goes above the actions, so they sit low, in the thumb's reach (P1b). */}
                 <div aria-hidden className="-mt-2 flex-1" />
-                <div className="min-h-[56px]">{actions}</div>
-                {/* Phones: the Bag, the team and the history at the foot of the panel; wide screens: at the side. */}
-                {!wide && teamRow}
+                <BottomDock>
+                  <div className="min-h-[56px]">{actions}</div>
+                  {/* Phones: the Bag, the team and the history at the foot of the panel; wide screens: at the side. */}
+                  {!wide && teamRow}
+                </BottomDock>
               </>
             )}
           </div>
@@ -1360,9 +1355,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         )}
       </Sheet>
 
-      {!versus && ready && run.phase === 'victory' && <VictoryView />}
-      {!versus && ready && run.phase === 'wipe' && <WipeView />}
-      {!versus && ready && run.phase === 'stalemate' && <StalemateView />}
+
     </BattleContexts>
   )
 }
@@ -1373,5 +1366,56 @@ function BattleContexts({ pace, motionCap, children }: { pace: number; motionCap
     <PaceContext.Provider value={pace}>
       <MotionCap.Provider value={motionCap}>{children}</MotionCap.Provider>
     </PaceContext.Provider>
+  )
+}
+
+/**
+ * The send-out step (the rework): the foe stands in the scene; under it, the team, and one tap on GO! sends that one. A
+ * challenge the player picked (a gym, a legendary met for the first time) can still wait: NOT YET.
+ */
+function SendOutStep({ foe, lead }: { foe: number; lead: string }) {
+  const { t } = useT()
+  const data = useGame((s) => s.data)
+  const enc = useGame((s) => s.run.encounter)
+  const types = speciesTypes(data, foe)
+  const canWait = enc?.kind === 'gym' || (enc?.kind === 'boss' && !enc.returning)
+  // FLEE / AVOID only where the game's config allows a way out (noEscape, skipPolicy), as on the old pop-up.
+  const canFlee = useGame(() => canSkipCurrent())
+  // The first able Pokémon is picked to begin with; a tap on another card picks it, GO! sends the one picked.
+  const [picked, setPicked] = useState(lead)
+  const name = useGame((s) => {
+    const inst = s.save?.box.find((p) => p.id === picked)
+    return inst ? inst.nickname || s.data.species[inst.dex]?.name || '' : ''
+  })
+  return (
+    <div className="flex flex-1 flex-col gap-3">
+      <LeadPicker value={picked} onChange={setPicked} foe={types} go />
+      <BottomDock>
+      <PixelButton
+        variant="primary"
+        size="lg"
+        className="w-full"
+        aria-label={t('ui.lead.sendOutName', { name })}
+        onClick={() => sendOutLead(picked)}
+      >
+        {t('ui.lead.go')}
+      </PixelButton>
+      {(canWait || canFlee) && (
+        <div className="flex justify-end gap-2">
+          {canFlee && (
+            <PixelButton size="md" variant="ghost" onClick={fleeAtSendOut}>
+              <PixelIcon name="run" size={18} />
+              {t(enc?.kind === 'trainer' ? 'ui.enc.avoid' : 'ui.enc.flee')}
+            </PixelButton>
+          )}
+          {canWait && (
+            <PixelButton size="md" variant="ghost" onClick={notYet}>
+              {t('ui.enc.notYet')}
+            </PixelButton>
+          )}
+        </div>
+      )}
+      </BottomDock>
+    </div>
   )
 }

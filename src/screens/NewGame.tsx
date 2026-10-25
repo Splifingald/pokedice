@@ -9,7 +9,7 @@ import { PLAYER_CHARACTERS, TrainerSprite } from '@/components/TrainerArt'
 import type { PlayerCharacter, PlayerProfile } from '@/engine'
 import { cx } from '@/theme/util'
 import { useGame } from '@/store/game'
-import { enterArea, startNewGame } from '@/store/run'
+import { exploreFirstArea, startNewGame } from '@/store/run'
 
 const INTRO = ['ui.newGame.intro1', 'ui.newGame.intro2', 'ui.newGame.intro3', 'ui.newGame.intro4']
 
@@ -20,8 +20,10 @@ export function NewGame() {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const navigate = useNavigate()
-  const [line, setLine] = useState(0)
-  const [player, setPlayer] = useState<PlayerProfile | null>(null)
+  // The rework: no monologue and no character screen first. The lab's Poké Balls at once, as Red (the look and the
+  // name change on the trainer card).
+  const [line, setLine] = useState(INTRO.length)
+  const [player, setPlayer] = useState<PlayerProfile | null>(() => ({ name: t(DEFAULT_NAMES.red), character: 'red' }))
   const level = data.config.starterLevel
   const starters = data.config.starters.filter((d) => data.species[d])
   // A new game starts in the first region.
@@ -30,9 +32,8 @@ export function NewGame() {
 
   const begin = (dex: number) => {
     startNewGame(dex, player ?? undefined)
-    const first = data.areas[0]
-    if (first) enterArea(first.id)
-    navigate('/home')
+    // The rework: into the first area at once, its first fight under way; Home comes later.
+    navigate(exploreFirstArea(data.areas[0]?.id) ? '/area' : '/home')
   }
 
   // Prof. Oak's intro: Oak in the room, the text box and its buttons at the bottom of the screen like the Game Boy's,

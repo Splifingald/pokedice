@@ -33,7 +33,7 @@ import { AutopilotNote } from './area/AutopilotNote'
 import { useAutopilot } from './area/useAutopilot'
 
 /**
- * Encounter types, a slim banner, then the name with its round (or a checkmark) and levels, the round gauge and, where
+ * Encounter types, a slim banner, then the name and levels, the round gauge (the round's only count: the rework) and, where
  * the play style offers it (a cleared area; with Idle, any: docs/36), the auto-mode switch.
  */
 function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaProgress; teamAvg: number }) {
@@ -41,16 +41,6 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
   const data = useGame((s) => s.data)
   const autoHere = useGame((s) => !!s.save && autoAvailable(s.save, s.data, s.settings, area.id))
   const span = area.scalesToTeam ? scaledLevelSpan(area, teamAvg, data) : { min: area.minLevel, max: area.maxLevel }
-  const notes = [
-    area.scalesToTeam && t('ui.area.foesScale'),
-    progress.cleared && t('ui.area.clearedNote', { multiplier: area.backtrackMultiplier }),
-  ].filter(Boolean)
-  // "Round 2/3" while rounds are still needed; a checkmark once they're all done (secret areas: nothing).
-  // 0 rounds: a league of fights only (docs/26), nothing to count.
-  // A portal run (docs/28) has no rounds: its gauge counts the portals closed; the nightmare's (docs/30), its rounds.
-  const portal = !!portalModeOf(area, data) || !!nightmareModeOf(area, data)
-  const need = portal ? null : area.roundsToClear || null
-  const done = progress.roundsDone ?? 0
   const [details, setDetails] = useState(false)
   return (
     <section className="pixel-panel overflow-hidden p-0" aria-labelledby="area-title">
@@ -74,21 +64,6 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
                 {area.name}
               </button>
             </h1>
-            {need != null &&
-              (done >= need ? (
-                <span
-                  className="self-center bg-hp-green px-1.5 text-xl leading-tight text-ink shadow-ring"
-                  style={{ borderRadius: 2 }}
-                  title={t(`ui.area.allRoundsDone.${need === 1 ? 'one' : 'other'}`, { n: need })}
-                  aria-label={t(`ui.area.allRoundsDone.${need === 1 ? 'one' : 'other'}`, { n: need })}
-                >
-                  ✓
-                </span>
-              ) : (
-                <span className="shrink-0 text-2xl leading-none text-muted">
-                  {t('ui.area.roundOf', { n: Math.min(done + 1, need), total: need })}
-                </span>
-              ))}
           </div>
           <span className="shrink-0 text-2xl leading-none">
             {span.min === span.max
@@ -96,7 +71,6 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
               : t('ui.map.levelRange', { min: span.min, max: span.max })}
           </span>
         </div>
-        {notes.length > 0 && <div className="text-lg leading-tight text-muted">{notes.join(' · ')}</div>}
         <RoundGauge area={area} progress={progress} />
         {/* A cleared area can play itself (with Idle, any area): switched here, between its encounters, without a
             trip Home. */}
@@ -148,7 +122,12 @@ export function AreaScreen() {
   const dream = !!nm && run.phase === 'idle' && nightmareStepDue(area, { save, data }, run)
   return (
     <div className="flex flex-col gap-4">
-      {run.rebattle ? <RebattleHeader /> : <AreaHeader area={area} progress={progress} teamAvg={teamAverageLevel(save)} />}
+      {/* The Center is laid out as a battle (the rework): its own gauge at the top, no area banner. */}
+      {run.rebattle ? (
+        <RebattleHeader />
+      ) : (
+        !(run.phase === 'center' && !pilot) && <AreaHeader area={area} progress={progress} teamAvg={teamAverageLevel(save)} />
+      )}
       {run.phase === 'preview' && run.encounter && !(pilot && run.encounter.kind !== 'trick') && (
         <EncounterPreview enc={run.encounter} />
       )}

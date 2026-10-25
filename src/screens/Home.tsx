@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useMediaQuery } from '@/lib/useMediaQuery'
 import { cx } from '@/theme/util'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { heldWorld, linearAreas, regionOf, teamOf, type Area } from '@/engine'
@@ -92,6 +93,18 @@ function HomeView({ area }: { area: Area }) {
     setDetails(null)
   }
   const detailArea = details ? (data.areas.find((a) => a.id === details) ?? null) : null
+  // Phones (the rework): the scene on top, then what's open (the Day Care…), and CONTINUE pinned at the bottom, in the
+  // thumb's reach above the tab bar. Wide screens keep it under the scene.
+  const wide = useMediaQuery('(min-width: 1024px)')
+  const bar = (
+    <ContinueBar
+      area={area}
+      areasState={areasState}
+      onAreas={() =>
+        setSheet({ view: areasState === 'region' ? 'regions' : 'areas', filter: 'all', key: Date.now() })
+      }
+    />
+  )
 
   return (
     // Wide screens: the scene takes all the room it can (same shape, never resized out of it) while the widgets keep
@@ -124,17 +137,16 @@ function HomeView({ area }: { area: Area }) {
             <AreaPlate area={area} onOpen={() => setDetails(area.id)} />
           </SceneStage>
         </div>
-        <ContinueBar
-          area={area}
-          areasState={areasState}
-          onAreas={() =>
-            setSheet({ view: areasState === 'region' ? 'regions' : 'areas', filter: 'all', key: Date.now() })
-          }
-        />
+        {wide && bar}
       </section>
       <section aria-label={t('ui.home.widgets')}>
         <Widgets />
       </section>
+      {!wide && (
+        <div className="sticky bottom-[calc(60px+env(safe-area-inset-bottom))] z-30 -mx-3 -mb-3 mt-auto bg-parchment px-3 pb-3 pt-2 md:bottom-0">
+          {bar}
+        </div>
+      )}
 
       <AreasSheet
         key={sheet?.key ?? 0}

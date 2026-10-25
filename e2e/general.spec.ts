@@ -102,7 +102,7 @@ test('the Shiny Charm: its own pop-up once, then a level bought', async ({ page 
   await page.goto('/home')
   const rules = page.getByRole('dialog', { name: 'Shiny Charm' })
   await expect(rules).toBeVisible()
-  await expect(rules).toContainText('from 1 in 1,000 to 1 in 333')
+  await expect(rules).toContainText('1 in 1,000 down to 1 in 333')
   await rules.getByRole('button', { name: /Let's go/i }).click()
   await expect(page).toHaveURL(/\/upgrades\?tab=general/)
 

@@ -160,7 +160,7 @@ async function clickAny(page: Page, names: (string | RegExp)[]): Promise<boolean
   for (const name of names) {
     const btn = page.getByRole('button', typeof name === 'string' ? { name, exact: true } : { name }).first()
     if ((await btn.isVisible().catch(() => false)) && (await btn.isEnabled().catch(() => false))) {
-      await btn.click()
+      await btn.click().catch(() => {})
       return true
     }
   }
@@ -343,7 +343,8 @@ test('the final fight: the shiny Mew, beaten and caught, goes to the Kanto Box',
   for (const until = Date.now() + 80_000; Date.now() < until && !(await won.isVisible()); ) {
     const master = page.getByRole('radio', { name: /^Master Ball/ })
     if (await master.isVisible().catch(() => false)) await master.check().catch(() => {})
-    await clickAny(page, ['FIGHT', 'SKIP ▸▸', 'ATTACK', 'SKIP TURN', 'GOT IT', 'CATCH', 'ROLL TO CATCH', 'CONTINUE'])
+    // The rework: the send-out step's GO! first (a team of two).
+    await clickAny(page, ['FIGHT', 'SKIP ▸▸', /^Send out /, 'ATTACK', 'SKIP TURN', 'GOT IT', 'CATCH', 'ROLL TO CATCH', 'CONTINUE'])
     await page.waitForTimeout(120)
   }
   await expect(won).toBeVisible()

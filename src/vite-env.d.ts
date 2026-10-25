@@ -5,6 +5,8 @@ declare const __BUILD_ID__: string
 
 interface ImportMetaEnv {
   readonly VITE_SUPABASE_URL?: string
+  /** The rework prototype's build (vite.proto.config.ts). */
+  readonly VITE_PROTO?: string
   readonly VITE_SUPABASE_ANON_KEY?: string
   readonly VITE_ADMIN_EMAIL?: string
   /** Push notifications' VAPID public key (docs/27); unset = no push. */

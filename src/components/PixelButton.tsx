@@ -63,6 +63,8 @@ function useFitText(label: ReactNode) {
     let width = 0
     const fit = () => {
       el.style.fontSize = ''
+      el.style.whiteSpace = ''
+      el.style.textAlign = ''
       const base = Number.parseFloat(getComputedStyle(el).fontSize)
       const room = roomOf()
       if (base && room) {
@@ -81,6 +83,19 @@ function useFitText(label: ReactNode) {
         el.style.flex = ''
         el.style.width = ''
         el.style.maxWidth = ''
+        // Still too wide at the smallest size (a long word in German, a full-width count in Japanese): two lines rather
+        // than a cut label, at the largest size where the longest word fits (the user, 2026-10-25: "RELANCER (0)" lost
+        // both ends).
+        if (el.scrollWidth > room + 1) {
+          el.style.whiteSpace = 'normal'
+          el.style.textAlign = 'center'
+          // Two lines at most (the labels are leading-none: a line is the font size high).
+          for (const k of [0.85, 0.75, 0.68, MIN_FIT_SCALE]) {
+            size = base * k
+            el.style.fontSize = `${size}px`
+            if (el.scrollWidth <= room + 1 && el.offsetHeight <= size * 2 + 2) break
+          }
+        }
         // A red button's white label under 24px needs the deeper red to stay readable (pixel.css).
         box.toggleAttribute('data-small', size < 24)
       }

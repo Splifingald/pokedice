@@ -4,10 +4,9 @@ import { nightmareLock, portalLock, teamOf, type Area } from '@/engine'
 import { useT } from '@/i18n/react'
 import { RestingPanel } from '@/components/Extreme'
 import { PixelIcon } from '@/components/icons'
-import { MonCard } from '@/components/MonCard'
+import { PokeCard } from '@/components/PokeCard'
 import { PixelButton } from '@/components/PixelButton'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
-import { RunRoundGauge } from '@/screens/area/RoundGauge'
 import { useContinue } from '@/screens/home/ContinueBar'
 import { useGame } from '@/store/game'
 
@@ -29,10 +28,6 @@ export function AreaIdle({ area }: { area: Area }) {
   return (
     // Phones: room at the bottom for the action bar, which is pinned over the tab bar.
     <div className="flex flex-col gap-4 pb-[128px] md:pb-0">
-      <p className="pixel-dialogue m-0 flex items-center gap-3 px-3 py-2.5 text-[20px] leading-[1.15]" aria-live="polite">
-        <PixelIcon name="map" size={24} className="shrink-0" />
-        <span>{t('ui.area.between')}</span>
-      </p>
 
       {resting && <RestingPanel />}
       {/* A gym, a legendary or a raid waits: the bar challenges it; this explores on instead, as on Home. */}
@@ -49,11 +44,9 @@ export function AreaIdle({ area }: { area: Area }) {
       {/* Always on screen: phones pin it right above the tab bar; from 768px it sticks to the content column. */}
       <div
         className="fixed inset-x-0 z-30 border-t-[3px] border-edge bg-parchment px-3 py-2 md:sticky md:inset-x-auto md:-mx-3"
-        style={{ bottom: 'var(--bottom-nav)' }}
+        style={{ bottom: 'var(--bottom-nav)', paddingBottom: 'calc(0.5rem + var(--bottom-safe))' }}
       >
         <div className="flex flex-col gap-1.5 md:mx-auto md:max-w-md">
-          {/* Where the round stands, over the buttons that carry it on. */}
-          <RunRoundGauge />
           {/* Why the next encounter can't start (no energy, the area closed, everyone resting): said next to it. */}
           {off && <p className="m-0 truncate text-center font-pixel-sm text-[15px] leading-none text-muted">{sub}</p>}
           {locked && <p className="m-0 text-center font-pixel-sm text-[15px] leading-tight text-muted">{t('ui.portal.locked')}</p>}
@@ -86,22 +79,24 @@ export function AreaIdle({ area }: { area: Area }) {
 export function AreaTeam() {
   const { t } = useT()
   const save = useGame((s) => s.save)
-  const max = useGame((s) => s.data.config.maxTeamSize)
+  const data = useGame((s) => s.data)
+  const max = data.config.maxTeamSize
   const [view, setView] = useState<SheetView | null>(null)
   if (!save) return null
   const team = teamOf(save)
   return (
     <section className="flex flex-col gap-2">
       <h2 className="text-3xl">{t('ui.center.teamCount', { count: team.length, max })}</h2>
-      <ol className="grid gap-2 md:grid-cols-3">
+      {/* Cards three to a row, as at the Center and the send-out step (the rework). */}
+      <ol className="grid grid-cols-3 gap-1.5 sm:gap-2">
         {team.map((p, i) => (
-          <li key={p.id}>
-            <MonCard
-              inst={p}
-              onClick={() => setView({ kind: 'inst', id: p.id })}
-              badge={i === 0 ? <PixelIcon name="crown" size={20} title={t('ui.team.lead')} /> : null}
-            />
-          </li>
+          <PokeCard
+            key={p.id}
+            inst={p}
+            onOpen={() => setView({ kind: 'inst', id: p.id })}
+            openLabel={t('ui.newGame.monInfo', { name: p.nickname || data.species[p.dex]?.name || '' })}
+            badge={i === 0 ? <PixelIcon name="crown" size={16} title={t('ui.team.lead')} /> : null}
+          />
         ))}
       </ol>
       <SheetModal view={view} onClose={() => setView(null)} manage />

@@ -3,11 +3,12 @@
 // plays the catch timeline on the stage (BattleView); the die and the result show here as it lands. A throw that fell
 // short with a Bait in the bag asks first (docs/25): its die, its odds, Keep it / Throw the Bait. Capture Luck's second
 // chance ends on Throw again instead of Continue.
-import { useState } from 'react'
+import { AutoButton } from '@/components/AutoButton'
+import { BottomDock } from '@/components/BottomDock'
+import { useState, type ReactNode } from 'react'
 import { baitChance, baitFaces, ballBonus, catchChance, catchValueOf, sureThrow } from '@/engine'
 import { Die } from '@/components/Die'
 import { ItemSprite } from '@/components/ItemSprite'
-import { OakTip, useOneTimeTip } from '@/components/OakTip'
 import { PixelButton } from '@/components/PixelButton'
 import { PixelIcon } from '@/components/icons'
 import { joinList, t as tr } from '@/i18n'
@@ -17,7 +18,6 @@ import { finishCatch } from '@/store/run'
 import { cx } from '@/theme/util'
 
 // Professor Oak's one-time tip on the first catch (per device).
-const CATCH_TIP_KEY = 'pokedice.tip.catch'
 
 type Catch = NonNullable<RunState['catch']>
 
@@ -56,6 +56,7 @@ export function CatchPanel({
   onContinue = finishCatch,
   onBait,
   onRetry,
+  docked = false,
 }: {
   c: Catch
   /** The ball Idle picked for this throw (docs/36; null: none): shown chosen, whatever was tapped. */
@@ -69,12 +70,14 @@ export function CatchPanel({
   onBait?: (use: boolean) => void
   /** THROW AGAIN, once Capture Luck has kept it on the spot. */
   onRetry?: () => void
+  /** In a battle's panel: the buttons go in its BottomDock (on phones, at the screen's foot). */
+  docked?: boolean
 }) {
+  const Dock = docked ? BottomDock : Plain
   const { t } = useT()
   const data = useGame((s) => s.data)
   const inventory = useGame((s) => s.save?.inventory)
   const [ball, setBall] = useState<string | null>(null)
-  const [tip, closeTip] = useOneTimeTip(CATCH_TIP_KEY)
   const result = c.result
   const value = catchValueOf(data, c.dex)
   const balls = Object.entries(inventory ?? {})
@@ -134,6 +137,7 @@ export function CatchPanel({
             </>
           )}
         </div>
+        <Dock>
         <div className="min-h-[56px]">
           {revealed && result.baitOffer ? (
             <div className="grid gap-1.5">
@@ -158,12 +162,14 @@ export function CatchPanel({
             </PixelButton>
           ) : (
             revealed && (
-              <PixelButton variant="primary" size="lg" className="w-full" onClick={onContinue}>
+              // The throw's only way on: it loads and goes by itself (the rework).
+              <AutoButton paused="byDialogs" variant="primary" size="lg" className="w-full" onClick={onContinue}>
                 {t('ui.common.continue')}
-              </PixelButton>
+              </AutoButton>
             )
           )}
         </div>
+        </Dock>
       </>
     )
   }
@@ -216,13 +222,7 @@ export function CatchPanel({
           })}
         </div>
       )}
-      <p
-        className="m-0 min-h-[30px] text-center font-pixel-sm text-[18px] leading-tight text-ink"
-        aria-live="polite"
-      >
-        {sure ? t('ui.catch.noBallNeeded') : t('ui.battle.catchMath', { bonus: chosen.bonus, need: value })}
-      </p>
-      {tip && <OakTip onClose={closeTip}>{t('ui.catch.tip')}</OakTip>}
+      {/* Each ball says its own chance: no formula line, no tip (the rework). */}
       {c.target.mode === 'replace' && (
         <p className="m-0 text-center font-pixel-sm text-[16px] leading-tight text-muted">
           {t('ui.catch.replaces', {
@@ -231,14 +231,24 @@ export function CatchPanel({
           })}
         </p>
       )}
-      <PixelButton
-        variant="primary"
-        size="lg"
-        className="w-full"
-        onClick={() => onThrow(sure ? null : chosen.key)}
-      >
-        {sure ? t('ui.catch.catch') : t('ui.catch.roll')}
-      </PixelButton>
+      <Dock>
+        {/* A sure catch, or no ball in the bag: nothing to pick, the throw is the only way on, so it loads and goes by
+            itself (the rework). */}
+        {sure || options.length === 1 ? (
+          <AutoButton paused="byDialogs" variant="primary" size="lg" className="w-full" onClick={() => onThrow(null)}>
+            {sure ? t('ui.catch.catch') : t('ui.catch.roll')}
+          </AutoButton>
+        ) : (
+          <PixelButton variant="primary" size="lg" className="w-full" onClick={() => onThrow(chosen.key)}>
+            {t('ui.catch.roll')}
+          </PixelButton>
+        )}
+      </Dock>
     </>
   )
+}
+
+/** Outside a battle's panel (a raid, the kitchen sink): the buttons in the flow, as before. */
+function Plain({ children }: { children?: ReactNode }) {
+  return <>{children}</>
 }

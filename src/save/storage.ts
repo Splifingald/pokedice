@@ -76,6 +76,8 @@ export interface Settings {
    * styles on (docs/36), the autopilot runs where the style allows.
    */
   autoMode?: boolean
+  /** After a fight: wait for NEXT (unset, the default) or go on by itself after a short countdown (the rework). */
+  advance?: 'auto'
   /** The play style (docs/36): Auto on explored areas, Idle. Unset = from before them (engine/autopilot). */
   playStyle?: PlayStyle
   /**
@@ -210,6 +212,7 @@ export function readSettings(): Settings {
       animations: s.animations === 'short' ? 'short' : 'full',
       multiExp: s.multiExp !== false,
       autoMode: !!s.autoMode,
+      ...(s.advance === 'auto' && { advance: 'auto' as const }),
       // Kept only when it is one of the styles; unset stays unset (playStyleOf reads it as the old auto-mode's).
       ...(PLAY_STYLES.includes(s.playStyle as PlayStyle) && { playStyle: s.playStyle }),
       // Kept only when the player chose; unset stays unset, so the badge decides (typeHintsOn).

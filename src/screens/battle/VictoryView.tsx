@@ -1,7 +1,8 @@
 // Result screens: victory (XP, level-ups, milestones, gold, catch, then evolutions), wipe and stalemate.
+import { BottomDock } from '@/components/BottomDock'
+import { AutoButton } from '@/components/AutoButton'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   gameFeelOn,
   getInstance,
@@ -22,7 +23,6 @@ import { sfx } from '@/audio/sfx'
 import { feelSound, type FeelSound } from '@/audio/feel'
 import { CoinFlight } from '@/components/CoinFlight'
 import { EvolutionQueue, type EvolutionShow } from '@/components/Evolution'
-import { RoundsCounter } from '@/components/RoundsCounter'
 import { useCountUp } from '@/components/GoldPill'
 import { Chip, NewTag } from '@/components/Chip'
 import { PixelIcon } from '@/components/icons'
@@ -36,14 +36,14 @@ import { TrainerSprite } from '@/components/TrainerArt'
 import { UnownLetterCard } from '@/components/UnownDex'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { ItemSprite } from '@/components/ItemSprite'
-import { dexNo, milestoneText, money, trainerTitle, typeName } from '@/lib/format'
-import { joinList, t } from '@/i18n'
+import { dexNo, milestoneText, money, typeName } from '@/lib/format'
+import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useMotion } from '@/lib/motion'
 import { usePace } from '@/lib/pace'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { Confetti } from '@/components/Confetti'
-import { useGame } from '@/store/game'
+import { setSettings, useGame } from '@/store/game'
 import { autoStepNow } from '@/store/autopilot'
 import { serverNow } from '@/store/serverTime'
 import {
@@ -51,23 +51,36 @@ import {
   afterWipe,
   continueAfterVictory,
   continueExploring,
-  enterArea,
+  exploreFirstArea,
   resolveCatch,
   trainerHasNext,
 } from '@/store/run'
 import { leaveRebattle, startRebattle } from '@/store/rebattle'
 import { Medal, tierName } from '@/screens/events/RebattlePage'
-import { RunRoundGauge } from '@/screens/area/RoundGauge'
 import { cx, shade, typeColor } from '@/theme/util'
 import { WorldMythicalCard } from '@/screens/events/world'
+
+/** How long NEXT fills before it goes by itself, with Auto on. */
+const ADVANCE_MS = 1800
 
 /**
  * A result card over the battle: it rises from the bottom over the panel (on every screen, wild or trainer fight), the
  * stage still in view above it; the content scrolls and the `footer` (the action buttons) stays pinned at the bottom,
  * never below the fold.
  */
+/** Inside the battle's panel (the rework): the result shows under the scene, in place of the dice, not over them. */
+export const InlineCard = createContext(false)
+
 export function Overlay({ children, footer, label }: { children: ReactNode; footer?: ReactNode; label?: string }) {
   const reduced = useGame((s) => s.settings.reducedMotion)
+  const inline = useContext(InlineCard)
+  if (inline)
+    return (
+      <section aria-label={label} className="flex min-h-0 flex-1 flex-col gap-3">
+        <div className="min-h-0 flex-1">{children}</div>
+        <BottomDock>{footer}</BottomDock>
+      </section>
+    )
   return (
     <motion.div
       className="fixed inset-0 z-[80] flex items-end justify-center bg-night/45 sm:px-3"
@@ -658,7 +671,6 @@ const AUTO_CARD_MS = 1600
  */
 export function VictoryView() {
   const { t } = useT()
-  const navigate = useNavigate()
   const run = useGame((s) => s.run)
   const battle = useGame((s) => s.battle)
   const data = useGame((s) => s.data)
@@ -707,7 +719,6 @@ export function VictoryView() {
     else action()
   }
 
-  const enemy = battle?.state.enemy
   // Between a trainer's Pokémon, the one that just fought stays selected unless the player picks another.
   const fought = battle ? battle.state.player[battle.state.activeIndex] : undefined
   const stillIn = fought && fought.hp > 0 ? fought.uid : undefined
@@ -715,7 +726,6 @@ export function VictoryView() {
   const enc = run.encounter
   const nextMon =
     hasNext && (enc?.kind === 'trainer' || enc?.kind === 'gym') && run.trainer ? enc.team[run.trainer.index + 1] : null
-  const trainerLabel = enc?.kind === 'gym' || enc?.kind === 'trainer' ? trainerTitle(enc) : t('ui.log.theTrainer')
   // This fight cleared the area and opened the story's way forward (the furthest open area of the region's chain, as
   // Home's CONTINUE offers it): GO TO it is the card's one way on, in CONTINUE's place (docs/15 §6).
   const clearedTo = run.events.flatMap((e) => (e.kind === 'area_cleared' && e.nextAreaId ? [e.nextAreaId] : []))[0]
@@ -744,102 +754,98 @@ export function VictoryView() {
 
   // Inside a portal run (docs/28) there is no way Home: CONTINUE alone.
   const locked = useGame((s) => !!portalLock(s.save, s.data))
-  if (then) return <EvolutionQueue items={evolutions} onDone={then} auto={closes} />
 
-  const footer = !allShown ? (
-    <PixelButton variant="primary" size="lg" className="w-full" onClick={() => setShown(Number.MAX_SAFE_INTEGER)}>
-      {t('ui.victory.skip')}
-    </PixelButton>
-  ) : hasNext && nextMon ? (
-    <PixelButton variant="primary" size="lg" className="w-full" onClick={go(() => continueAfterVictory(lead ?? stillIn ?? defaultLead()))}>
-      {t('ui.victory.nextBattle')}
-    </PixelButton>
+  // After a fight: NEXT waits for the player, unless Auto is on (Settings, or AUTO beside NEXT): then it fills and goes.
+  const sendNext = go(() => continueAfterVictory(lead ?? stillIn ?? defaultLead()))
+  // The way on to the next area goes straight into its first encounter (the rework: no stop on its page first).
+  const onwards = nextArea
+    ? go(() => {
+        continueAfterVictory()
+        exploreFirstArea(nextArea.id)
+      })
+    : go(() => {
+        continueAfterVictory()
+        continueExploring()
+      })
+  const autoNext = useGame((s) => s.settings.advance === 'auto') && !closes && !run.rebattle && !nextArea
+  const countdown = autoNext && allShown && !run.pendingCatchId && !then
+  const nextRef = useRef<() => void>(() => {})
+  nextRef.current = hasNext && nextMon ? sendNext : onwards
+  useEffect(() => {
+    if (!countdown) return
+    const timer = setTimeout(() => nextRef.current(), ADVANCE_MS * pace)
+    return () => clearTimeout(timer)
+  }, [countdown, pace])
+  if (then) return <EvolutionQueue items={evolutions} onDone={then} />
+  const autoSwitch = !run.rebattle && (
+    <div className="flex justify-end">
+      <PixelButton
+        size="sm"
+        variant={autoNext ? 'gold' : 'ghost'}
+        role="switch"
+        aria-checked={autoNext}
+        onClick={() => setSettings({ advance: autoNext ? undefined : 'auto' })}
+      >
+        <PixelIcon name="fastForward" size={14} /> {t('ui.settings.advanceAuto')}
+      </PixelButton>
+    </div>
+  )
+  const fill = countdown && (
+    <span aria-hidden className="absolute inset-x-0 bottom-0 h-[5px] bg-black/20">
+      <motion.span
+        className="block h-full bg-gold-light"
+        initial={{ width: 0 }}
+        animate={{ width: '100%' }}
+        transition={{ duration: (ADVANCE_MS * pace) / 1000, ease: 'linear' }}
+      />
+    </span>
+  )
+  const footer = hasNext && nextMon ? (
+    <div className="flex flex-col gap-2">
+      {autoSwitch}
+      <PixelButton variant="primary" size="lg" className="relative w-full overflow-hidden" onClick={sendNext}>
+        {t('ui.victory.next')} ▸{fill}
+      </PixelButton>
+    </div>
   ) : run.rebattle ? (
     <RebattleNext go={go} />
   ) : (
     <div className="flex flex-col gap-2">
-      {/* Where the area's round stands, right over the way on. */}
-      <RunRoundGauge className="px-1" />
-      {/* One way forward, HOME the quiet one beside it. */}
+      {!nextArea && autoSwitch}
+      {/* BACK: the area's page between encounters (its HOME, the team); NEXT: the next encounter. */}
       <div className={locked ? 'grid' : 'grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-2.5'}>
         {!locked && (
-          <PixelButton
-            size="lg"
-            className="whitespace-nowrap px-2"
-            onClick={go(() => {
-              // Closing the card keeps the player in the area; HOME is the one way out of it.
-              continueAfterVictory()
-              navigate('/home')
-            })}
-          >
-            {t('ui.nav.home')}
+          <PixelButton size="lg" className="whitespace-nowrap px-2" onClick={go(() => continueAfterVictory())}>
+            ◂ {t('ui.common.back')}
           </PixelButton>
         )}
-        {nextArea ? (
-          <PixelButton
-            variant="primary"
-            size="lg"
-            className="whitespace-nowrap px-2"
-            aria-label={t('ui.victory.goToArea', { name: nextArea.name })}
-            onClick={go(() => {
-              continueAfterVictory()
-              enterArea(nextArea.id)
-            })}
-          >
-            <PixelIcon name="map" size={20} />
-            {t('ui.victory.goToNewArea')}
-          </PixelButton>
-        ) : (
-          <PixelButton
-            variant="primary"
-            size="lg"
-            className="whitespace-nowrap px-2"
-            onClick={go(() => {
-              continueAfterVictory()
-              continueExploring()
-            })}
-          >
-            {t('ui.common.continue')}
-          </PixelButton>
-        )}
+        <PixelButton
+          variant="primary"
+          size="lg"
+          className="relative overflow-hidden whitespace-nowrap px-2"
+          aria-label={nextArea ? t('ui.victory.goToArea', { name: nextArea.name }) : undefined}
+          onClick={onwards}
+        >
+          {nextArea ? (
+            <>
+              <PixelIcon name="map" size={20} />
+              {nextArea.name} ▸
+            </>
+          ) : (
+            <>{t('ui.victory.next')} ▸</>
+          )}
+          {fill}
+        </PixelButton>
       </div>
     </div>
   )
 
   const title = t(battle?.state.kind === 'boss' ? 'ui.victory.legendaryVictory' : 'ui.victory.victory')
-  // Wild battles pay nothing: said, so a missing gold line isn't a mystery.
-  const noGold = battle?.state.kind === 'wild' && !run.events.some((e) => e.kind === 'gold')
   return (
     <Overlay footer={footer} label={title}>
-      <div className="flex items-baseline justify-between gap-2">
-        <h2 className="m-0 text-[28px] font-normal leading-none">{title}</h2>
-        {enemy && (
-          <div className="min-w-0 truncate text-lg text-muted">
-            {battle?.state.double
-              ? // A double battle (docs/33): every foe it had.
-                t('ui.victory.foesDefeated', { names: joinList(battle.state.double.foes.map((f) => f.name)) })
-              : t('ui.victory.foeDefeated', { name: enemy.name, level: enemy.level })}
-          </div>
-        )}
-      </div>
-      <div className="mt-2 flex flex-col gap-2">
-        <AnimatePresence initial={!reduced}>
-          {mons.slice(0, shown).map((m) => (
-            <motion.div key={m.uid} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-              <MonRow m={m} />
-            </motion.div>
-          ))}
-          {extras.slice(0, Math.max(0, shown - mons.length)).map((c) => (
-            <motion.div key={c.key} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-              {c.node}
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
-      {allShown && noGold && <p className="m-0 mt-2 font-pixel-sm text-[16px] text-muted">{t('ui.battle.wildNoGold')}</p>}
-      {allShown && run.pendingCatchId && <TeamChoice />}
+      {/* Between a trainer's Pokémon, who's next and the pick come first (the rework: the action on top). */}
       {allShown && !run.pendingCatchId && hasNext && nextMon && (
-        <div className="mt-3 flex flex-col gap-2">
+        <div className="mb-3 flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <motion.div className="shrink-0" initial={reduced ? false : { x: -30, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
               <TrainerSprite src={enc?.kind === 'trainer' || enc?.kind === 'gym' ? enc.spriteUrl : null} size={72} />
@@ -853,18 +859,28 @@ export function VictoryView() {
             >
               <SpriteImg dex={nextMon.dex} size={64} shiny={!!nextMon.shiny} />
             </motion.div>
-            <div className="text-lg leading-tight">
-              {t('ui.victory.aboutToSend', {
-                trainer: trainerLabel,
-                name: data.species[nextMon.dex]?.name ?? t('ui.common.unknown'),
-                level: nextMon.level,
-              })}
-            </div>
+            <span className="text-2xl leading-none">{t('ui.common.level.short', { n: nextMon.level })}</span>
           </div>
-          <LeadPicker value={lead ?? stillIn ?? null} onChange={setLead} foe={speciesTypes(data, nextMon.dex)} />
+          {/* The one that fought is picked to begin with; a tap picks another, NEXT sends the one picked. */}
+          <LeadPicker value={lead ?? stillIn ?? null} onChange={setLead} foe={speciesTypes(data, nextMon.dex)} go />
           <ForfeitButton />
         </div>
       )}
+      <div className="flex flex-col gap-2">
+        <AnimatePresence initial={!reduced}>
+          {mons.slice(0, shown).map((m) => (
+            <motion.div key={m.uid} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+              <MonRow m={m} />
+            </motion.div>
+          ))}
+          {extras.slice(0, Math.max(0, shown - mons.length)).map((c) => (
+            <motion.div key={c.key} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+              {c.node}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+      {allShown && run.pendingCatchId && <TeamChoice />}
     </Overlay>
   )
 }
@@ -968,13 +984,14 @@ function AreaWipe() {
     <Overlay
       label={t('ui.wipe.title')}
       footer={
-        <PixelButton variant="primary" size="lg" className="w-full" onClick={afterWipe}>
+        <AutoButton paused="byDialogs" variant="primary" size="lg" className="w-full" onClick={afterWipe}>
           {t('ui.wipe.tryAgain')}
-        </PixelButton>
+        </AutoButton>
       }
     >
       <h2 className="mb-2 text-center text-[32px] font-normal leading-none">{t('ui.wipe.title')}</h2>
-      <p className="copy mb-3 text-lg">
+      {/* The rework: what a wipe costs is said only where it differs from the usual (a portal, the nightmare, Extreme). */}
+      <p className="copy mb-3 text-lg" hidden={portalLost == null && nightmareLost == null && !!save && wipeHeals(save, data)}>
         {/* Extreme mode heals nobody after a lost round: the fainted ones rest (docs/22). */}
         {portalLost != null
           ? t('ui.portal.wipeBody', { n: portalLost })
@@ -988,7 +1005,6 @@ function AreaWipe() {
             })
           : t('ui.wipe.body', { area: area?.name ?? '', kept: done > 0 ? t('ui.wipe.keptRounds') : '' })}
       </p>
-      {area && p && portalLost == null && nightmareLost == null && <RoundsCounter area={area} progress={p} />}
     </Overlay>
   )
 }
@@ -1000,15 +1016,13 @@ export function StalemateView() {
       label={t('ui.stalemate.title')}
       footer={
         <div className="flex flex-col gap-2">
-          <RunRoundGauge className="px-1" />
-          <PixelButton variant="primary" size="lg" className="w-full" onClick={afterStalemate}>
+          <AutoButton paused="byDialogs" variant="primary" size="lg" className="w-full" onClick={afterStalemate}>
             {t('ui.common.continue')}
-          </PixelButton>
+          </AutoButton>
         </div>
       }
     >
       <h2 className="mb-2 text-center text-[32px] font-normal leading-none">{t('ui.stalemate.title')}</h2>
-      <p className="copy text-lg">{t('ui.stalemate.body')}</p>
     </Overlay>
   )
 }

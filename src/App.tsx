@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, type ReactNode } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, MemoryRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { MotionConfig } from 'framer-motion'
 import { setCriesEnabled, unlockCriesOnFirstTap } from '@/audio/cries'
 import { setSfxEnabled } from '@/audio/sfx'
@@ -33,12 +33,22 @@ import { soundOn } from '@/save/storage'
 import { useGame } from '@/store/game'
 import { startBackgroundServices } from '@/store/sync'
 
-// Route-split out of the main bundle.
-const AdminApp = lazy(() => import('@/admin/AdminApp'))
-const SetupPage = lazy(() => import('@/setup/SetupPage'))
+// Route-split out of the main bundle. The rework prototype (one page, no server) carries neither.
+const AdminApp = import.meta.env.VITE_PROTO ? () => null : lazy(() => import('@/admin/AdminApp'))
+const SetupPage = import.meta.env.VITE_PROTO ? () => null : lazy(() => import('@/setup/SetupPage'))
 const HelpPage = lazy(() => import('@/screens/Help').then((m) => ({ default: m.HelpPage })))
 const KitchenSink = lazy(() => import('@/screens/KitchenSink').then((m) => ({ default: m.KitchenSink })))
 const FxLab = lazy(() => import('@/screens/FxLab').then((m) => ({ default: m.FxLab })))
+
+/**
+ * The rework prototype (vite.proto.config.ts) runs inside an Artifact, whose address is not the game's: its pages live
+ * in memory, and it opens on Home (or a new game), not the title screen.
+ */
+const PROTO = !!import.meta.env.VITE_PROTO
+function Router({ children }: { children: ReactNode }) {
+  if (!PROTO) return <BrowserRouter>{children}</BrowserRouter>
+  return <MemoryRouter initialEntries={[useGame.getState().save ? '/home' : '/new']}>{children}</MemoryRouter>
+}
 
 function Lazy({ children }: { children: ReactNode }) {
   return <Suspense fallback={<PageLoading />}>{children}</Suspense>
@@ -59,7 +69,7 @@ export function App() {
   return (
     <MotionConfig reducedMotion={settings.reducedMotion ? 'always' : 'user'}>
       <ErrorBoundary>
-        <BrowserRouter>
+        <Router>
           {/* The tab's title per page, and the focus on its <h1> after a move (docs/15 §7). */}
           <PageMeta />
           <Routes>
@@ -95,7 +105,7 @@ export function App() {
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </BrowserRouter>
+        </Router>
         <ToastStack />
         {/* Phones and tablets play upright: turned sideways, the game waits behind it (docs/15 §6). */}
         <RotateCover />

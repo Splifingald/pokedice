@@ -427,10 +427,8 @@ export function UpgradesScreen() {
         ]}
       />
       <div role="tabpanel" aria-labelledby={`up-${tab}`} className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="min-w-0 flex-[1_1_180px] font-pixel-sm text-[15px] leading-tight text-muted">
-            {t(tab === 'combos' ? 'ui.upgrades.noteCombos' : tab === 'dice' ? 'ui.upgrades.noteDice' : 'ui.upgrades.noteGeneral')}
-          </p>
+        {/* The rework: no note on what a tab is; the filter alone, on the right. */}
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <button
             type="button"
             aria-pressed={affordOnly}

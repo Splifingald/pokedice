@@ -18,37 +18,27 @@ test('new game → first battle → win', async ({ page }) => {
   await page.addInitScript((s) => localStorage.setItem('pokedice.settings', s), FAST)
   await page.goto('/')
   await page.getByRole('button', { name: 'NEW GAME' }).click()
-  await page.getByRole('button', { name: 'Skip intro' }).click()
-  await expect(page.getByRole('heading', { name: 'Select your character' })).toBeVisible()
-  // The name is filled in with the character's own, and follows a switch until the player types one (docs/38 U1f).
-  await expect(page.getByLabel('Your name')).toHaveValue('Red')
-  await expect(page.getByRole('button', { name: 'NEXT ▸' })).toBeEnabled()
-  await page.getByRole('radio', { name: 'Character 2' }).click()
-  await expect(page.getByLabel('Your name')).toHaveValue('Leaf')
-  await page.getByLabel('Your name').fill('Sam')
-  await page.getByRole('radio', { name: 'Character 1' }).click()
-  await expect(page.getByLabel('Your name')).toHaveValue('Sam')
-  await page.getByRole('radio', { name: 'Character 2' }).click()
-  await page.getByRole('button', { name: 'NEXT ▸' }).click()
-  // The professor's lab: three Poké Balls on the table; the third holds Squirtle.
+  // The rework: no intro and no character screen (Red, whose look and name change on the trainer card): the lab at
+  // once, three Poké Balls on the table; the third holds Squirtle.
   await page.getByRole('button', { name: 'Poké Ball 3 of 3' }).click()
   await page.getByRole('button', { name: 'Pick Squirtle' }).click()
-  await page.getByRole('button', { name: /let's go/i }).click()
-  // A new game lands on Home, the area hub: CONTINUE plays the area you're in.
-  await expect(page).toHaveURL(/\/home$/)
-  await expect(page.getByRole('heading', { name: /^Exploring / })).toBeAttached()
+  // LET'S GO! loads and presses itself: into the first area, its first fight under way, never Home first.
+  await expect(page).toHaveURL(/\/area$/)
+  await expect(page.getByRole('button', { name: 'ATTACK' })).toBeVisible()
+
+  // The fight to its end; the result shows in the battle's panel, NEXT and BACK at its foot.
+  const next = page.getByRole('button', { name: 'Next ▸', exact: true })
+  const until = Date.now() + 90_000
+  while (Date.now() < until) {
+    if (await next.isVisible()) break
+    await clickAny(page, ['ATTACK', 'CATCH', 'CONTINUE', 'TRY AGAIN', 'SKIP TURN'])
+    await page.waitForTimeout(60)
+  }
+  await expect(next).toBeVisible()
+  await expect(page.getByText(/\+\d+ XP/).first()).toBeVisible()
   // No badge yet: the leaderboard is locked.
   await page.goto('/leaderboard')
   await expect(page.getByText('Win your first badge to open the leaderboard')).toBeVisible()
-  await page.goto('/home')
-
-  for (let i = 0; i < 400; i++) {
-    if (await page.getByText('VICTORY!').isVisible()) break
-    await clickAny(page, ['EXPLORE', 'ENTER', 'PICK IT UP', 'ROLL TO CATCH', 'CATCH', 'CONTINUE', 'TRY AGAIN', 'FIGHT', 'SKIP TURN', 'ATTACK'])
-    await page.waitForTimeout(60)
-  }
-  await expect(page.getByText('VICTORY!')).toBeVisible()
-  await expect(page.getByText(/\+\d+ XP/).first()).toBeVisible()
 })
 
 test('buy an upgrade', async ({ page }) => {

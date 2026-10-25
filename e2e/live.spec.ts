@@ -81,7 +81,7 @@ test('a Shiny Parade: its pop-up once, the square on Home, the ×5 on the area',
   const pop = page.getByRole('dialog', { name: 'Shiny Parade' })
   await expect(pop).toBeVisible({ timeout: 15_000 })
   await expect(pop.getByText('Shiny Pokémon ×5')).toBeVisible()
-  await expect(pop.getByText('Wild Pokémon are 5 times more likely to be shiny here: Kanto.')).toBeVisible()
+  await expect(pop.getByText('Shinies 5× likelier in Kanto.')).toBeVisible()
   await expect(pop.getByText(/^2d [56]h left · until /)).toBeVisible()
   await pop.getByRole('button', { name: 'OK' }).click()
   await expect(pop).toBeHidden()

@@ -129,7 +129,8 @@ async function clickAny(page: Page, names: (string | RegExp)[]): Promise<boolean
 
 /** The League area is cleared, so its fights can play themselves (auto mode): only the rewards' buttons to press. */
 const AUTO = JSON.stringify({ ...JSON.parse(FAST), autoMode: true })
-const FIGHT_ON = ['GOT IT', 'SKIP ▸▸', 'NEXT BATTLE']
+// Between a trainer's Pokémon the result's Next ▸ sends the next one (the rework; NEXT BATTLE before).
+const FIGHT_ON = ['GOT IT', 'SKIP ▸▸', 'NEXT BATTLE', 'Next ▸']
 
 /** The Kanto League won, and a team for the rebattle: three Lv.100s with every upgrade (`level` 5: a team to lose). */
 function leagueSave(level = 100): SaveData {
@@ -161,7 +162,7 @@ test('the Elite Rebattle: a gauntlet fight pays, the next trainer waits, and the
   // The rules, from the Info button at the foot of the page.
   await page.getByRole('button', { name: 'Info: how Elite Rebattle works' }).click()
   const rules = page.getByRole('dialog', { name: 'Elite Rebattle' })
-  await expect(rules.getByText(/^Five fights in a row with no Pokémon Center\./)).toBeVisible()
+  await expect(rules.getByText(/^Five fights in a row, no Center, items allowed\./)).toBeVisible()
   await rules.getByRole('button', { name: 'OK', exact: true }).click()
   await page.getByRole('button', { name: 'Start the Bronze tier' }).click()
   await expect(page.getByText('Each of their Pokémon pays ₽×1, once in this tier.')).toBeVisible()
@@ -291,9 +292,9 @@ test('a raid: the day’s raid, its lock, NPC trainers in the group, the fight t
   await expect(page.getByRole('button', { name: 'Calendar: the raids of the next two weeks' })).toBeVisible()
   await page.getByRole('button', { name: 'Info: how Raid Battles works' }).click()
   const rules = page.getByRole('dialog', { name: 'Raid Battles' })
-  await expect(rules.getByText(/^One raid a day, the same for everyone/)).toBeVisible()
+  await expect(rules.getByText(/^One raid a day for everyone/)).toBeVisible()
   // The raid's own type matchups, with the admin's numbers.
-  const matchups = /super-effective hits only do ×1\.3 to it; .* ×0\.7, and no type is immune to it \(×0\.5\)\.$/
+  const matchups = /Super-effective hits only do ×1\.3; resisted ones still do ×0\.7; nothing is immune \(×0\.5\)\.$/
   await expect(rules.getByText(matchups)).toBeVisible()
   await rules.getByRole('button', { name: 'OK', exact: true }).click()
   await page.getByRole('button', { name: 'Start the raid' }).click()

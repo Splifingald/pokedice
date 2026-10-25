@@ -37,22 +37,17 @@ const settings = (page: Page) =>
     () => JSON.parse(localStorage.getItem('pokedice.settings') ?? '{}') as Record<string, unknown>,
   )
 
-/** Prof. Oak's words skipped, a character named, the third ball's partner picked: the game starts on Home. */
+/** The lab at once (the rework), the third ball's partner picked: LET'S GO! goes by itself, into the first area. */
 async function throughTheLab(page: Page) {
-  await page.getByRole('button', { name: 'Skip intro' }).click()
-  await page.getByRole('radio', { name: 'Character 2' }).click()
-  await page.getByLabel('Your name').fill('Sam')
-  await page.getByRole('button', { name: 'NEXT ▸' }).click()
   await page.getByRole('button', { name: 'Poké Ball 3 of 3' }).click()
   await page.getByRole('button', { name: 'Pick Squirtle' }).click()
-  await page.getByRole('button', { name: /let's go/i }).click()
-  await expect(page).toHaveURL(/\/home$/)
+  await expect(page).toHaveURL(/\/area$/)
 }
 
 const stored = (page: Page) =>
   page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}') as SaveData)
 
-test('switched on, a new game asks nothing: Prof. Oak first, on "Auto on explored areas"', async ({ page }) => {
+test('switched on, a new game asks nothing: the lab first, on "Auto on explored areas"', async ({ page }) => {
   await bootNew(page, IDLE_ON)
   await page.goto('/new')
   await expect(page.getByRole('radiogroup', { name: 'Play style' })).toHaveCount(0)
@@ -113,7 +108,8 @@ async function oneWildFight(page: Page) {
   await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
   await expect(page).toHaveURL(/\/area$/)
   await expect(page.getByRole('button', { name: /^(ROLL TO CATCH|CATCH)$/ })).toBeVisible({ timeout: 60_000 })
-  const victory = page.getByRole('heading', { name: 'VICTORY!' })
+  // The result in the battle's panel (the rework), named as the old card's title was.
+  const victory = page.getByRole('region', { name: 'VICTORY!' })
   await expect(victory).toBeVisible({ timeout: 15_000 })
   await expect(victory).toBeHidden({ timeout: 15_000 })
   await page.getByRole('button', { name: /^Idle mode: ON$/i }).click()
@@ -190,10 +186,10 @@ test('Idle moves on by itself once the area is cleared', async ({ page }) => {
     .toBe(second!.id)
 })
 
-test('switched off, a new game starts with Prof. Oak, as always', async ({ page }) => {
+test('switched off, a new game starts in the lab, as always (the rework: no intro first)', async ({ page }) => {
   await bootNew(page, EVENTS_ON)
   await page.goto('/new')
-  await expect(page.getByRole('button', { name: 'Skip intro' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Poké Ball 1 of 3' })).toBeVisible()
   await expect(page.getByRole('radiogroup', { name: 'Play style' })).toHaveCount(0)
 })
 
