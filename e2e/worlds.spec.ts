@@ -392,7 +392,8 @@ test('the world closes: back in Kanto, its Pokémon gone home (one locked), the 
   await page.goto('/team')
   await expect(page.getByRole('heading', { name: 'Waiting to unlock' })).toBeVisible()
   await page.getByRole('button', { name: 'Haunter, Locked until Lv.40' }).click()
-  const sheet = page.getByRole('dialog', { name: 'Haunter' })
+  // A PC: the sheet stands docked beside the Box (docs/43 §5.4).
+  const sheet = page.getByRole('region', { name: 'Haunter' })
   await expect(sheet.getByText('Locked until Lv.40')).toBeVisible()
   await expect(sheet.getByText('Home from Mirage Island')).toBeVisible()
   await expect(sheet.getByText(/joins your Kanto Box once one of your Pokémon here reaches Lv\.40 \(your best: Lv\.5\)/)).toBeVisible()

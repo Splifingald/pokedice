@@ -233,11 +233,12 @@ test('the way in: the breach waits for a tap, its pop-up over its end; arriving 
   await tap.click()
   await dialog.getByRole('button', { name: 'Team' }).click()
   await expect(page).toHaveURL(/\/team$/)
-  await expect(page.getByText('Swaps at a Center')).toHaveCount(0)
+  // No Center rule to point at here: one from the Box has the Center's moves at its sheet's foot (below).
   await page
     .getByRole('button', { name: /^Pikachu/ })
     .first()
     .click()
+  await expect(page.getByText(/visit a Pokémon Center/)).toHaveCount(0)
   await page.getByRole('button', { name: 'Add to team' }).click()
   await expect.poll(async () => (await stored(page)).team).toEqual(['mon-0', 'mon-box'])
   // Back: the pop-up again at once, no breach to wait for.

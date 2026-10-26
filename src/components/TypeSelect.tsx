@@ -4,7 +4,7 @@ import { typeName } from '@/lib/format'
 import { cx, typeColor } from '@/theme/util'
 
 /** The dropdown's own arrow, drawn on the pixel grid like everything else. */
-const ARROW =
+export const ARROW =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 4' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h6v1H5v1H4v1H3v1H3V3H2V2H1V1H0z' fill='%2324304f'/%3E%3C/svg%3E\")"
 
 const SELECT_CLASS =
