@@ -85,33 +85,34 @@ test('a wild pair: no pop-up, two leads, four on the stage, a target, a throw at
 })
 
 /**
- * Attack until both are down, then throw at each one; returns how many throws were made. The rewards never show
- * between the two throws: the second follows the first at once.
+ * Attack until both are down, then the throw at each one; returns how many throws the rewards show (a catch or a flight
+ * each). A throw that can't miss goes on by itself, and its CATCH presses itself (the rework): throws are counted on
+ * the card, not by clicks. The rewards never show between the two throws: they come once, after the last.
  */
 async function fightAndCatch(page: Page): Promise<number> {
   const attack = page.getByRole('button', { name: 'ATTACK', exact: true })
   const roll = page.getByRole('button', { name: /^(ROLL TO CATCH|CATCH)$/ })
+  const next = page.getByRole('button', { name: 'CONTINUE', exact: true })
   // The result shows in the battle's panel (the rework): its region, named as the old card's title was.
   const victory = page.getByRole('region', { name: 'VICTORY!' })
-  let throws = 0
+  let shot = false
   const until = Date.now() + 180_000
   while (Date.now() < until && !(await victory.isVisible())) {
     // isVisible() first: isEnabled() would wait for a button that isn't there.
     if ((await roll.isVisible()) && (await roll.isEnabled())) {
-      if (process.env.SHOTS && throws === 0) await page.screenshot({ path: `${process.env.SHOTS}/double-catch.png` })
-      await roll.click()
-      throws += 1
-      // The throw's result, then on: its CONTINUE loads and presses itself (or a tap goes sooner) to the other one's
-      // throw, or the rewards.
-      const next = page.getByRole('button', { name: 'CONTINUE', exact: true })
-      await expect(next.first().or(victory)).toBeVisible({ timeout: 15_000 })
-      if (throws === 1) await expect(victory).toHaveCount(0)
-      if (!(await victory.isVisible())) await next.first().click({ timeout: 3000 }).catch(() => {})
-    } else if ((await attack.isVisible()) && (await attack.isEnabled())) await attack.click()
+      if (process.env.SHOTS && !shot) await page.screenshot({ path: `${process.env.SHOTS}/double-catch.png` })
+      shot = true
+      await roll.click({ timeout: 3000 }).catch(() => {})
+    } else if (await next.first().isVisible()) await next.first().click({ timeout: 3000 }).catch(() => {})
+    else if ((await attack.isVisible()) && (await attack.isEnabled())) await attack.click()
     await page.waitForTimeout(250)
   }
   await expect(victory).toBeVisible()
-  return throws
+  // The card shows its pieces one after another: the throws' once it has shown them all (a new catch keeps it up).
+  const throws = async () => (await victory.getByText('Gotcha!').count()) + (await victory.getByText(/ fled…$/).count())
+  await expect.poll(throws, { timeout: 15_000 }).toBeGreaterThan(0)
+  await page.waitForTimeout(2500)
+  return throws()
 }
 
 test('a wild pair with a full team: both throws, then "Add to team?" for each, one after the other', async ({ page }) => {

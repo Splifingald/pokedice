@@ -140,20 +140,6 @@ function SettingsContent({ over = false, shut }: { over?: boolean; shut?: string
             className="min-w-[12rem]"
           />
         </div>
-        {/* The rework: Next stops on every result, Auto moves on by itself (the result keeps a BACK button). */}
-        <div className="flex flex-wrap items-center justify-between gap-2 py-1">
-          <span className="text-2xl">{t('ui.settings.advance')}</span>
-          <Seg
-            label={t('ui.settings.advance')}
-            value={settings.advance ?? 'next'}
-            onChange={(v) => setSettings({ advance: v === 'auto' ? 'auto' : undefined })}
-            options={[
-              { id: 'next', label: t('ui.settings.advanceNext') },
-              { id: 'auto', label: t('ui.settings.advanceAuto') },
-            ]}
-            className="min-w-[12rem]"
-          />
-        </div>
         <div className="flex flex-wrap items-center justify-between gap-2 py-1">
           <span className="text-2xl">{t('ui.settings.theme')}</span>
           <Seg

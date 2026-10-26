@@ -5,7 +5,7 @@
 // chance ends on Throw again instead of Continue.
 import { AutoButton } from '@/components/AutoButton'
 import { BottomDock } from '@/components/BottomDock'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { baitChance, baitFaces, ballBonus, catchChance, catchValueOf, sureThrow } from '@/engine'
 import { Die } from '@/components/Die'
 import { ItemSprite } from '@/components/ItemSprite'
@@ -100,6 +100,15 @@ export function CatchPanel({
   const notNeeded = (o: (typeof options)[number]) =>
     o.key != null && options.some((w) => w.bonus < o.bonus && catchChance(value, w.bonus) >= 1)
 
+  // A throw that couldn't miss has no die and nothing to read once the ball has landed: on at once, no CONTINUE (the
+  // user's call, 2026-10-26). A throw with a die keeps its CONTINUE, which loads and goes by itself.
+  const sureDone = !!result && revealed && sureThrow(result) && !result.baitOffer && !result.stays
+  const onwards = useRef(onContinue)
+  onwards.current = onContinue
+  useEffect(() => {
+    if (sureDone) onwards.current()
+  }, [sureDone])
+
   if (result) {
     // A throw that couldn't miss has no die: only the ball is thrown.
     const certain = sureThrow(result)
@@ -161,7 +170,8 @@ export function CatchPanel({
               {t('ui.catch.throwAgain')}
             </PixelButton>
           ) : (
-            revealed && (
+            revealed &&
+            !sureDone && (
               // The throw's only way on: it loads and goes by itself (the rework).
               <AutoButton paused="byDialogs" variant="primary" size="lg" className="w-full" onClick={onContinue}>
                 {t('ui.common.continue')}

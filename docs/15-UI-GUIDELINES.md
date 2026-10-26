@@ -230,8 +230,13 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   CATCH or CONTINUE, a sure throw, the wipe's TRY AGAIN, the stalemate, an evolution revealed, the partner's LET'S GO),
   the button is an `AutoButton`: it loads (a gold fill along its foot, as Idle mode's steps do) and presses itself; a
   tap goes sooner, and it waits while a dialog covers it. **Never in a Pokémon Center**, which waits for the player's
-  CONTINUE so the Box can be used. A step with a real choice (BACK or NEXT, a pick) waits, unless the player turned
-  Auto on (Settings, "After a fight").
+  CONTINUE so the Box can be used. A throw that can't miss has no CONTINUE at all: once the ball has landed, the result
+  card comes (2026-10-26).
+- **A fight's result card follows itself and moves on** (2026-10-26): each piece (XP, a level-up, the Pokédex entry…)
+  scrolls into view as it comes, clear of the buttons at the foot; once all is shown, NEXT's gauge fills and goes,
+  BACK still in reach. It waits instead when a new species was caught (its card is looked at, and a full team's
+  replace choice, scrolled to, is made), when the area was cleared (the way on is the next area), and in a rebattle.
+  No AUTO switch on the card nor in Settings: AUTO-MODE is the fights' own.
 - **A region begun opens on its first area**, its first encounter under way (`exploreFirstArea`): a new game's partner
   and a new region's starter lead straight there, never to Home first.
 - Page gutter 12 px; gaps 8–12 px between cards; a panel's padding 12 px.

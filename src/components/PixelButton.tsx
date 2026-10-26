@@ -107,6 +107,10 @@ function useFitText(label: ReactNode) {
     // once they're in, measure again.
     let live = true
     void document.fonts?.ready.then(() => live && fit())
+    // `ready` can settle before the pixel face is even asked for (it loads on first use): any face that arrives later
+    // measures again too, or a label fitted on the fallback stays on two lines (the user's "◂ RETOUR", 2026-10-26).
+    const onFonts = () => live && fit()
+    document.fonts?.addEventListener?.('loadingdone', onFonts)
     // Re-fit when the button's width really changes (a rotation, a wrap), never on what our own fit did.
     const ro = new ResizeObserver((entries) => {
       if (Math.abs((entries[0]?.contentRect.width ?? 0) - width) < 1) return
@@ -115,6 +119,7 @@ function useFitText(label: ReactNode) {
     ro.observe(box)
     return () => {
       live = false
+      document.fonts?.removeEventListener?.('loadingdone', onFonts)
       ro.disconnect()
       refit.current = null
     }

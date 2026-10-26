@@ -43,7 +43,7 @@ import { useMotion } from '@/lib/motion'
 import { usePace } from '@/lib/pace'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { Confetti } from '@/components/Confetti'
-import { setSettings, useGame } from '@/store/game'
+import { useGame } from '@/store/game'
 import { autoStepNow } from '@/store/autopilot'
 import { serverNow } from '@/store/serverTime'
 import {
@@ -767,8 +767,28 @@ export function VictoryView() {
         continueAfterVictory()
         continueExploring()
       })
-  const autoNext = useGame((s) => s.settings.advance === 'auto') && !closes && !run.rebattle && !nextArea
+  // After a fight the card moves on by itself once everything is shown (the user's call, 2026-10-26): NEXT's gauge
+  // fills and goes, BACK still in reach. Not when a new Pokémon was caught (its card waits to be looked at, and a full
+  // team's choice to be made), nor when the area was cleared (the way on is the next area), nor in a rebattle.
+  const caughtNew = run.events.some((e) => e.kind === 'caught' && e.isNew)
+  const autoNext = !closes && !run.rebattle && !nextArea && !caughtNew
   const countdown = autoNext && allShown && !run.pendingCatchId && !then
+  // Each piece of the recap scrolls into view as it comes (a level-up, the Pokédex entry…), then a full team's choice
+  // or the trainer's next Pokémon: the player never scrolls to follow the card (the user's call, 2026-10-26). The
+  // scroll margin keeps it clear of the buttons pinned at the foot.
+  const list = useRef<HTMLDivElement>(null)
+  const follow = useRef<HTMLDivElement>(null)
+  const behavior: ScrollBehavior = reduced ? 'auto' : 'smooth'
+  useEffect(() => {
+    const last = list.current?.lastElementChild as HTMLElement | null
+    if (!last || shown <= 1) return
+    last.style.scrollMarginBottom = '160px'
+    last.scrollIntoView({ block: 'nearest', behavior })
+  }, [shown, behavior])
+  const choosing = allShown && (!!run.pendingCatchId || (hasNext && !!nextMon))
+  useEffect(() => {
+    if (choosing) follow.current?.scrollIntoView({ block: 'nearest', behavior })
+  }, [choosing, run.pendingCatchId, behavior])
   const nextRef = useRef<() => void>(() => {})
   nextRef.current = hasNext && nextMon ? sendNext : onwards
   useEffect(() => {
@@ -777,19 +797,6 @@ export function VictoryView() {
     return () => clearTimeout(timer)
   }, [countdown, pace])
   if (then) return <EvolutionQueue items={evolutions} onDone={then} />
-  const autoSwitch = !run.rebattle && (
-    <div className="flex justify-end">
-      <PixelButton
-        size="sm"
-        variant={autoNext ? 'gold' : 'ghost'}
-        role="switch"
-        aria-checked={autoNext}
-        onClick={() => setSettings({ advance: autoNext ? undefined : 'auto' })}
-      >
-        <PixelIcon name="fastForward" size={14} /> {t('ui.settings.advanceAuto')}
-      </PixelButton>
-    </div>
-  )
   const fill = countdown && (
     <span aria-hidden className="absolute inset-x-0 bottom-0 h-[5px] bg-black/20">
       <motion.span
@@ -802,7 +809,6 @@ export function VictoryView() {
   )
   const footer = hasNext && nextMon ? (
     <div className="flex flex-col gap-2">
-      {autoSwitch}
       <PixelButton variant="primary" size="lg" className="relative w-full overflow-hidden" onClick={sendNext}>
         {t('ui.victory.next')} ▸{fill}
       </PixelButton>
@@ -811,7 +817,6 @@ export function VictoryView() {
     <RebattleNext go={go} />
   ) : (
     <div className="flex flex-col gap-2">
-      {!nextArea && autoSwitch}
       {/* BACK: the area's page between encounters (its HOME, the team); NEXT: the next encounter. */}
       <div className={locked ? 'grid' : 'grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-2.5'}>
         {!locked && (
@@ -845,7 +850,7 @@ export function VictoryView() {
     <Overlay footer={footer} label={title}>
       {/* Between a trainer's Pokémon, who's next and the pick come first (the rework: the action on top). */}
       {allShown && !run.pendingCatchId && hasNext && nextMon && (
-        <div className="mb-3 flex flex-col gap-2">
+        <div ref={follow} className="mb-3 flex scroll-mb-[160px] flex-col gap-2">
           <div className="flex items-center gap-2">
             <motion.div className="shrink-0" initial={reduced ? false : { x: -30, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
               <TrainerSprite src={enc?.kind === 'trainer' || enc?.kind === 'gym' ? enc.spriteUrl : null} size={72} />
@@ -866,7 +871,7 @@ export function VictoryView() {
           <ForfeitButton />
         </div>
       )}
-      <div className="flex flex-col gap-2">
+      <div ref={list} className="flex flex-col gap-2">
         <AnimatePresence initial={!reduced}>
           {mons.slice(0, shown).map((m) => (
             <motion.div key={m.uid} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
@@ -880,7 +885,11 @@ export function VictoryView() {
           ))}
         </AnimatePresence>
       </div>
-      {allShown && run.pendingCatchId && <TeamChoice />}
+      {allShown && run.pendingCatchId && (
+        <div ref={follow} className="scroll-mb-[160px]">
+          <TeamChoice />
+        </div>
+      )}
     </Overlay>
   )
 }

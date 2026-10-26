@@ -24,7 +24,7 @@ test('new game → first battle → win', async ({ page }) => {
   await page.getByRole('button', { name: 'Pick Squirtle' }).click()
   // LET'S GO! loads and presses itself: into the first area, its first fight under way, never Home first.
   await expect(page).toHaveURL(/\/area$/)
-  await expect(page.getByRole('button', { name: 'ATTACK' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeVisible()
 
   // The fight to its end; the result shows in the battle's panel, NEXT and BACK at its foot.
   const next = page.getByRole('button', { name: 'Next ▸', exact: true })
