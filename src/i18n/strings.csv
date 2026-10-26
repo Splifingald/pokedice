@@ -2429,10 +2429,10 @@ ui.shop.needsBadges.other,{count} badges,{count} badges,{count} medallas,{count}
 ui.shop.needsArea,Reach {area},Atteindre {area},Llegar a {area},{area} erreichen,Raggiungi {area},Chega a {area},Chegue a {area},{area}にたどり着く,{area}에 도착하기,抵达{area}
 ui.shop.someNewArea,a new area,une nouvelle zone,una zona nueva,ein neues Gebiet,una nuova area,uma nova área,uma nova área,新しいエリア,새 지역,新的区域
 ui.board.title,Leaderboard,Classement,Clasificación,Bestenliste,Classifica,Classificação,Classificação,ランキング,랭킹,排行榜
-ui.board.tabLevel,Max level,Niveau max,Nivel máx.,Höchstlevel,Livello max,Nível máx.,Nível máx.,最高レベル,최고 레벨,最高等级
+ui.board.tabLevel,Level,Niveau,Nivel,Level,Livello,Nível,Nível,レベル,레벨,等级
 ui.board.tabProgress,Progression,Progression,Progreso,Fortschritt,Progressi,Progresso,Progresso,進み具合,진행도,进度
 ui.board.tabDex,Pokédex,Pokédex,Pokédex,Pokédex,Pokédex,Pokédex,Pokédex,図鑑,도감,图鉴
-ui.board.tabShiny,Shiny,Chromatiques,Variocolor,Schillernde,Cromatici,Brilhantes,Brilhantes,色違い,색이 다른 포켓몬,异色
+ui.board.tabShiny,Shiny,Chroma,Variocolor,Shiny,Cromatici,Brilhantes,Brilhantes,色違い,이로치,异色
 ui.board.shinies.one,{count} shiny,{count} chromatique,{count} variocolor,{count} schillerndes,{count} cromatico,{count} brilhante,{count} brilhante,色違い{count}匹,색이 다른 포켓몬 {count}마리,{count}只异色
 ui.board.shinies.other,{count} shinies,{count} chromatiques,{count} variocolor,{count} schillernde,{count} cromatici,{count} brilhantes,{count} brilhantes,色違い{count}匹,색이 다른 포켓몬 {count}마리,{count}只异色
 ui.board.sortBy,Sort by,Trier par,Ordenar por,Sortieren nach,Ordina per,Ordenar por,Ordenar por,並べ替え,정렬 기준,排序方式

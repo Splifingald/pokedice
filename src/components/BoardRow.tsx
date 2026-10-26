@@ -93,6 +93,20 @@ export function TeamIcons({
   )
 }
 
+/**
+ * A row's measure as a thin bar (docs/43 §5.8): how far towards the board's ceiling (the level cap, the region's
+ * areas, its Pokédex). Gold on its way, green once there. Decoration beside the number it shows, so hidden from
+ * screen readers.
+ */
+export function ScoreMeter({ value, className }: { value: number; className?: string }) {
+  const k = Math.max(0, Math.min(1, value))
+  return (
+    <span aria-hidden className={cx('relative block h-2 bg-line shadow-ring-line-thin', className)}>
+      <i className={cx('absolute inset-y-0 left-0 block', k >= 1 ? 'bg-hp-green' : 'bg-gold')} style={{ width: `${k * 100}%` }} />
+    </span>
+  )
+}
+
 /** Trainers a long board leaves out between two shown rows (`boardWindow`): how many, between dashed rules. */
 export function BoardGap({ count }: { count: number }) {
   const { tPlural } = useT()
@@ -121,6 +135,7 @@ export function BoardRow({
   rowRef,
   flash,
   dim,
+  compact,
   children,
 }: {
   rank?: number
@@ -143,6 +158,8 @@ export function BoardRow({
   flash?: boolean
   /** Done with (a team already beaten). */
   dim?: boolean
+  /** A narrow column (PC's side panel): the team's icons at their phone size. */
+  compact?: boolean
   /** In place of the value (a Fight button). */
   children?: ReactNode
 }) {
@@ -175,7 +192,13 @@ export function BoardRow({
       )}
       {lead ?? (rank != null && <RankMedal rank={rank} />)}
       <TrainerLook src={look} w={44} h={48} className={cx(dim && 'opacity-75 grayscale-[0.7]')} />
-      <span className="grid min-w-0 flex-1 gap-px">
+      {/* PC (a wide list, not the side column): the name, the team and its line side by side, so a row is one line. */}
+      <span
+        className={cx(
+          'grid min-w-0 flex-1 gap-px',
+          !compact && 'lg:grid-cols-[minmax(0,13rem)_auto_minmax(0,1fr)] lg:items-center lg:gap-x-4',
+        )}
+      >
         <b className="flex min-w-0 items-center gap-1 text-[20px] font-normal leading-none">
           <TrainerName name={name} rich={rich} className="truncate" />
           {isMe && (
@@ -187,7 +210,7 @@ export function BoardRow({
         </b>
         {/* Half again as big as elsewhere, and spaced out: the team is what a row is read for (a little smaller on
             phones, where the row has no room to spare). */}
-        <TeamIcons team={team} owner={name} size={wide ? 48 : 38} spaced />
+        <TeamIcons team={team} owner={name} size={wide && !compact ? 48 : 38} spaced />
         {sub}
       </span>
       {children ??
