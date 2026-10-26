@@ -20,6 +20,7 @@ export function HomeCard({
   tone,
   className,
   testId,
+  phase,
 }: {
   /** The strip: fills its box (an `AreaStrip`, an <img>, sprites on a ground). */
   picture: ReactNode
@@ -37,6 +38,8 @@ export function HomeCard({
   tone?: 'gold'
   className?: string
   testId?: string
+  /** A countdown's stage (a world's preview: normal, red, blink), for its styles and tests. */
+  phase?: string
 }) {
   return (
     <button
@@ -44,6 +47,7 @@ export function HomeCard({
       onClick={onClick}
       aria-label={label}
       data-testid={testId}
+      data-phase={phase}
       className={cx(
         'pixel-panel grid min-h-[76px] w-full min-w-0 grid-cols-[minmax(96px,34%)_minmax(0,1fr)] items-stretch gap-3 p-1.5 pr-3 text-left',
         tone === 'gold' && 'panel-gold',

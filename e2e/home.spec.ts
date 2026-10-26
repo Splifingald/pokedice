@@ -32,6 +32,8 @@ async function boot(page: Page, save: SaveData, config: object = {}) {
       if (!localStorage.getItem('pokedice.save')) localStorage.setItem('pokedice.save', s!)
       localStorage.setItem('pokedice.settings', f!)
       localStorage.setItem('pokedice.devConfig', c!)
+      // Prof. Oak's invite already closed: each test meets the notice it is about.
+      localStorage.setItem('pokedice.sharePrompt.kanto', '1')
     },
     [JSON.stringify(save), FAST, JSON.stringify(config)],
   )
@@ -241,10 +243,10 @@ test("a region's GO opens that region's areas, in the same sheet", async ({ page
 
   const regions = page.getByRole('dialog', { name: 'Regions' })
   await regions.getByRole('button', { name: 'Kanto: switch to this region and see its areas' }).click()
-  // The sheet stays open on Kanto's areas, focus on the list's tab.
+  // The toast first: it goes after a few seconds. The sheet stays open on Kanto's areas, focus on the list's tab.
+  await expect(page.getByText('Welcome back to Kanto')).toBeVisible()
   const sheet = page.getByRole('dialog', { name: 'Kanto' })
   await expect(sheet).toBeVisible()
-  await expect(page.getByText('Welcome back to Kanto')).toBeVisible()
   await expect(
     sheet.getByRole('button', { name: new RegExp(`^${escape(regionAreas(data, 'kanto')[0]!.name)}`) }),
   ).toBeVisible()
@@ -267,7 +269,10 @@ test('CONTINUE plays the area on /area, and an idle /area goes back Home', async
   await expect(page.getByRole('navigation', { name: 'Menus' })).toHaveCount(0)
 })
 
-test("Home's cards are only for what's open; the line under them names what opens next", async ({ page, browser }) => {
+test("Home's cards are only for what's open; the line under them names what opens next", async ({
+  page,
+  browser,
+}) => {
   await boot(page, makeSave(4))
   await page.goto('/home')
   // A new game: nothing is open yet, so no card at all (no locked Day Care, Versus or events placeholder), and one

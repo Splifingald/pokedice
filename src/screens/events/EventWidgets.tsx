@@ -31,7 +31,7 @@ import { PixelIcon } from '@/components/icons'
 import { MiniSprite } from '@/components/SpriteImg'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { useT } from '@/i18n/react'
-import { countdown, dayTime, timeLeft } from '@/lib/format'
+import { clockTo, countdown, dayTime, timeLeft } from '@/lib/format'
 import { pushToast, useGame } from '@/store/game'
 import { useLive } from '@/store/live'
 import { useTodayRaid } from '@/store/raid'
@@ -376,10 +376,12 @@ function WorldPreviewCard({ world, now }: { world: SmallWorld; now: number }) {
         </Chip>
       }
       status={
-        <span
-          className={hot ? 'text-danger' : undefined}
-        >{`${t('ui.world.preview.startsIn')} ${timeLeft(left)}`}</span>
+        // The clock ticking down to the start (the label says it in words).
+        <span className={hot ? 'text-danger' : undefined}>
+          {t('ui.world.preview.startsIn')} <span className="tabular-nums">{clockTo(left)}</span>
+        </span>
       }
+      phase={phase}
       meter={<PreviewGauge fill={fill} phase={phase} />}
       label={t('ui.world.preview.label', { name, time: timeLeft(left), date })}
       onClick={() => pushToast(t('ui.world.preview.toast', { name, time: timeLeft(left) }))}
