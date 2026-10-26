@@ -4,7 +4,7 @@
 // pop-up opens only on its turn (popupTurn.ts), so they queue, one at a time, in one order.
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
-import { nextOneTimePopup } from '@/engine'
+import { nextOneTimePopup, type OneTimePopup } from '@/engine'
 import { useFullscreen } from '@/lib/fullscreen'
 import { pushReady, usePush } from '@/lib/push'
 import { isSupabaseConfigured } from '@/lib/supabase'
@@ -39,6 +39,21 @@ import { ReplyPopup, useRepliesWaiting } from './ReplyPopup'
 import { ShareTutorial, useShareSeen } from './ShareTutorial'
 import { DonationPopup } from './SupportModal'
 import { TradesService } from './trades/TradesService'
+
+/**
+ * What the player is owed rather than told: the answer to what they just did (a world finished: its goodbye), a report
+ * or a gift waiting, the notifications' question a page asked. These come without the rest; the rules, the tutorials
+ * and the asks wait their minute.
+ */
+const FOLLOWS_AT_ONCE = new Set<OneTimePopup>([
+  'worldBye',
+  'away',
+  'offline',
+  'replies',
+  'raidGifts',
+  'inviteReward',
+  'push',
+])
 
 /** Works out whose turn it is, once, and hands it down to every pop-up (the pages' too: the region offer, push). */
 export function PopupQueue({ children }: { children: ReactNode }) {
@@ -111,7 +126,7 @@ export function PopupQueue({ children }: { children: ReactNode }) {
     const timer = setTimeout(() => wake((n) => n + 1), until - Date.now() + 50)
     return () => clearTimeout(timer)
   }, [resting, until])
-  const turn = closing || (resting && !showing) ? null : due
+  const turn = closing || (resting && !showing && !(due && FOLLOWS_AT_ONCE.has(due))) ? null : due
   return <PopupTurnContext.Provider value={turn}>{children}</PopupTurnContext.Provider>
 }
 

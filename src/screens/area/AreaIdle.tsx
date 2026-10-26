@@ -14,6 +14,7 @@ import { cx } from '@/theme/util'
 import { AreaDetails } from '@/screens/home/AreaDetails'
 import { AreaPlate } from '@/screens/home/AreaPlate'
 import { SceneStage } from '@/screens/home/SceneStage'
+import { RunRoundGauge } from './RoundGauge'
 
 /**
  * Between two encounters, the player stays in the area (only a full K.O. sends them Home): the team, each card opening
@@ -42,6 +43,8 @@ export function AreaIdle({ area, scene = false }: { area: Area; scene?: boolean 
     >
       {scene && <AreaSceneBox area={area} />}
       <div className="flex min-w-0 flex-col gap-4">
+      {/* The round, once, over the panel (the scene's plate counts the rounds won, not this round's encounters). */}
+      {scene && <RunRoundGauge />}
       {/* The area's banner held it before the scene took its place: a cleared area (any, with Idle) plays itself. */}
       {scene && autoHere && (
         <div className="flex justify-end">

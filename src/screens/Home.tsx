@@ -136,10 +136,12 @@ function HomeView({ area }: { area: Area }) {
       </section>
       {/* Wide screens (docs/42): the scene takes the whole height on the left; on the right, what to do — PLAY first,
           then what's open, under its headings. */}
-      <section aria-label={t('ui.home.widgets')} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
         {wide && bar}
-        <Widgets />
-      </section>
+        <section aria-label={t('ui.home.widgets')}>
+          <Widgets />
+        </section>
+      </div>
       {!wide && (
         <div className="sticky bottom-[calc(60px+env(safe-area-inset-bottom))] z-30 -mx-3 -mb-3 mt-auto bg-parchment px-3 pb-3 pt-2 md:bottom-0">
           {bar}
