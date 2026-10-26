@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { instanceMaxHp, instanceStats, type PokemonInstance, type PokeType } from '@/engine'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
-import { useTypeHints } from '@/store/hooks'
+import { useDetails, useTypeHints } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { KoTag } from './Extreme'
 import { HpBar } from './HpBar'
@@ -17,7 +17,8 @@ import { attackEdge } from './TypeMatchups'
  * A Pokémon as a card, three to a row (the rework: the send-out step, the Pokémon Center's team and Box): the mini and
  * level, its whole name, its types, its HP. `onOpen`: what a tap on the card does (the Center: its details; the send-out
  * step: picks it, `pressed`); `children` go under it, apart (the send-out step's INFO). `brief`: no types and the HP as a
- * gauge alone, the details being a tap away (the send-out step, the user's call). With the type hint on and `foe`
+ * gauge alone, the details being a tap away (the send-out step, the user's call; every card unless More details is on,
+ * docs/42). With the type hint on and `foe`
  * known, a thumb says how its dice fare against it.
  */
 export function PokeCard({
@@ -28,7 +29,7 @@ export function PokeCard({
   badge,
   selected,
   pressed,
-  brief = false,
+  brief: briefAsked = false,
   children,
 }: {
   inst: PokemonInstance
@@ -47,6 +48,9 @@ export function PokeCard({
   const { t } = useT()
   const data = useGame((s) => s.data)
   const hints = useTypeHints()
+  // Without More details (docs/42) every card is brief: the types and the HP's figures are a tap away, on its sheet.
+  const details = useDetails()
+  const brief = briefAsked || !details
   const species = data.species[inst.dex]
   if (!species) return null
   const reviving = inst.revivesAt != null
@@ -119,7 +123,7 @@ export function PokeCard({
           type="button"
           onClick={onOpen}
           aria-pressed={pressed}
-          disabled={brief && fainted}
+          disabled={briefAsked && fainted}
           className="-m-1.5 mb-0 flex min-w-0 flex-1 flex-col gap-1 p-1.5 text-left text-ink disabled:cursor-not-allowed"
         >
           {openLabel && <span className="sr-only">{openLabel}</span>}

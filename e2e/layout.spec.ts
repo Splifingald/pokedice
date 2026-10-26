@@ -211,14 +211,15 @@ test('a battle fits a 360×640 phone', async ({ page }) => {
   expect(box!.y + box!.height, 'ATTACK is on screen').toBeLessThanOrEqual(640)
   const dims = await page.evaluate(() => {
     const h = (sel: string) => Math.round(document.querySelector(sel)?.getBoundingClientRect().height ?? -1)
-    return { page: document.documentElement.scrollHeight, view: window.innerHeight, header: h('header'), dialogue: h('.pixel-dialogue') }
+    return { page: document.documentElement.scrollHeight, view: window.innerHeight, header: h('header'), line: h('.battle-line') }
   })
   // Full screen under the top bar (kept, so what's in it stays in reach), no tab bar, and the whole battle — down to the
-  // team and the history — fits.
+  // Bag and the team — fits. The history button is More details' (docs/42).
   expect(dims.header, 'the top bar in battle').toBe(56)
-  const history = await page.getByRole('button', { name: 'Battle history' }).boundingBox()
-  expect(history, 'the history button is there').not.toBeNull()
-  expect(history!.y + history!.height, 'the history button is on screen').toBeLessThanOrEqual(640)
+  const bag = await page.getByRole('button', { name: 'Bag' }).boundingBox()
+  expect(bag, 'the Bag is there').not.toBeNull()
+  expect(bag!.y + bag!.height, 'the Bag is on screen').toBeLessThanOrEqual(640)
+  await expect(page.getByRole('button', { name: 'Battle history' })).toHaveCount(0)
   expect(dims.page - dims.view, `the battle scrolls: ${JSON.stringify(dims)}`).toBeLessThanOrEqual(0)
   expect(await smallControls(page), 'battle controls under 44px').toEqual([])
 })

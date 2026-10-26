@@ -160,6 +160,12 @@ function SettingsContent({ over = false, shut }: { over?: boolean; shut?: string
           on={typeHints}
           onChange={(v) => setSettings({ typeHints: v })}
         />
+        {/* Off by default (docs/42): the battle history, the HP and XP figures, the cards' types, for those who read them. */}
+        <Toggle
+          label={t('ui.settings.details')}
+          on={settings.details === true}
+          onChange={(v) => setSettings({ details: v || undefined })}
+        />
         {/* No animations: admins only — but a player who already turned it on still sees it, so they can turn it off. */}
         {(isAdmin || settings.reducedMotion) && (
           <Toggle

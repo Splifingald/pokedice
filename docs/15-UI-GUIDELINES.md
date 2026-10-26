@@ -239,6 +239,19 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   No AUTO switch on the card nor in Settings: AUTO-MODE is the fights' own.
 - **A region begun opens on its first area**, its first encounter under way (`exploreFirstArea`): a new game's partner
   and a new region's starter lead straight there, never to Home first.
+- **Stage first** (docs/42, 2026-10-26): in an area the player acts where it matters (the dice, picking a Pokémon,
+  catching, a Center's Box) and otherwise watches the scene. A **wild** fight's GO! loads and sends the one picked by
+  itself (`SEND_OUT_AUTO_MS`, the count starting again on another pick, held while a sheet covers it); a trainer, a gym
+  or a boss waits for the tap. The battle's message is **one line under the stage** (`BattleLine`), not a dialogue
+  box, and keeps its height when empty; the waiting prompt ("What will … do?") shows only with More details.
+- **More details** (Settings, off by default, `useDetails`): what only an invested player reads is shown only to those
+  who switch it on — the battle history (its column on wide screens, its button on phones) and the key hints, the HP
+  and XP figures (bars alone otherwise), a card's type chips (every `PokeCard` is brief without it). A new screen asks
+  the same of each number it adds: does a player need it to act, or only to study? Studied things go behind it.
+- **Home: the team on top, then what's open, by heading** (docs/42): Events, Secret areas (every one open in the
+  region, the newest first), Features (the Day Care, Versus); a heading only shows with something under it.
+- **Wide screens use their width**: the battle's stage grows into the history's room when More details is off; the
+  Center's and the area's cards run six to a row from 1024 px.
 - Page gutter 12 px; gaps 8–12 px between cards; a panel's padding 12 px.
 - **Tap targets ≥ 44 px on phones** (inline links in a sentence excepted). From 768 px, tighter sizes are allowed.
 - One `<h1>` per route; headings in order; landmarks (`main`, `nav`).

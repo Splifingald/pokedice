@@ -47,13 +47,13 @@ async function toBattle(page: Page) {
   await expect(attack(page)).toBeEnabled()
 }
 
-/** What the fight shows: the dice thrown and the message box. */
+/** What the fight shows: the dice thrown and the battle's line. */
 async function fightNow(page: Page) {
   const dice = await page
     .getByRole('group', { name: 'Your dice' })
     .locator('[aria-label]')
     .evaluateAll((els) => els.map((e) => e.getAttribute('aria-label')))
-  const message = await page.locator('.pixel-dialogue').first().innerText()
+  const message = await page.locator('.battle-line').first().innerText()
   return { dice, message }
 }
 

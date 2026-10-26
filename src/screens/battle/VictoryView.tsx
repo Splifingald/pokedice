@@ -44,6 +44,7 @@ import { usePace } from '@/lib/pace'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { Confetti } from '@/components/Confetti'
 import { useGame } from '@/store/game'
+import { useDetails } from '@/store/hooks'
 import { autoStepNow } from '@/store/autopilot'
 import { serverNow } from '@/store/serverTime'
 import {
@@ -600,6 +601,7 @@ function MonRow({ m }: { m: MonRecap }) {
   const inst = useGame((s) => (s.save ? getInstance(s.save, m.uid) : undefined))
   const reduced = useGame((s) => s.settings.reducedMotion)
   const feel = useGame((s) => gameFeelOn(s.data))
+  const details = useDetails()
   // With the Game feel switch on, the XP bar fills from before the fight and the level-up lands as it rolls over.
   const [rolls, setRolls] = useState(0)
   const fill = useXpFill(inst, m.from, () => setRolls((n) => n + 1))
@@ -653,7 +655,7 @@ function MonRow({ m }: { m: MonRecap }) {
           {m.shared && <span className="text-sm text-muted">{t('ui.victory.multi')}</span>}
         </span>
       </div>
-      {inst && <XpBar inst={inst} className="mt-1" shown={fill} stepped={feel} />}
+      {inst && <XpBar inst={inst} className="mt-1" shown={fill} stepped={feel} numbers={details} />}
       {chips.length > 0 && (
         <div className={cx('mt-1.5 flex flex-wrap gap-1.5', leveled && waiting && 'invisible')}>{chips}</div>
       )}

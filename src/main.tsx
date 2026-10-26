@@ -19,8 +19,8 @@ useGame.subscribe((s, prev) => {
 for (const type of ['gesturestart', 'gesturechange'])
   document.addEventListener(type, (e) => e.preventDefault(), { passive: false })
 
-// The rework prototype: its test scripts reach the store (no effect on the real build, where VITE_PROTO is unset).
-if (import.meta.env.VITE_PROTO)
+// Test scripts (the prototype, the dev server) reach the store; the real build has neither.
+if (import.meta.env.VITE_PROTO || import.meta.env.DEV)
   void import('./store/run').then((run) => Object.assign(window, { __pd: { useGame, run, setSettings } }))
 
 createRoot(document.getElementById('root')!).render(

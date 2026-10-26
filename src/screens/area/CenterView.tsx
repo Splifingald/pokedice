@@ -75,7 +75,7 @@ export function CenterView() {
 
       <section className="flex flex-col gap-2">
         <h2 className="text-3xl">{t('ui.center.teamCount', { count: team.length, max: data.config.maxTeamSize })}</h2>
-        <ol className="grid grid-cols-3 gap-1.5 sm:gap-2">
+        <ol className="grid grid-cols-3 gap-1.5 sm:gap-2 lg:grid-cols-6">
           {team.map((p, i) => (
             <PokeCard
               key={p.id}
@@ -101,7 +101,7 @@ export function CenterView() {
           <h2 className="text-3xl">{t('ui.team.box', { count: box.length })}</h2>
           {box.length > 1 && <BoxSortPicker sort={sort} onChange={setSort} />}
         </div>
-        <ul className="grid grid-cols-3 gap-1.5 sm:gap-2">
+        <ul className="grid grid-cols-3 gap-1.5 sm:gap-2 lg:grid-cols-6">
           {box.map((p) => (
             <PokeCard
               key={p.id}

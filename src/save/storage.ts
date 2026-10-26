@@ -85,6 +85,11 @@ export interface Settings {
    * (`typeHintsOn`, docs/38 U1b), when a new player needs them most; a choice made in Settings or the type chart wins.
    */
   typeHints?: boolean
+  /**
+   * More details (docs/42): the numbers and logs only an invested player reads — the battle history, HP and XP figures,
+   * type chips on cards, the key hints. Unset = off: the game shows the action, a tap shows the rest.
+   */
+  details?: boolean
   /** Raids: the ally sides' turns at 1.5× speed (the speed button) — off by default. */
   raidFast?: boolean
   /** UI language. Unset on an older save: the browser's language decides, English if we don't speak it. */
@@ -218,6 +223,7 @@ export function readSettings(): Settings {
       // Kept only when the player chose; unset stays unset, so the badge decides (typeHintsOn).
       ...(typeof s.typeHints === 'boolean' && { typeHints: s.typeHints }),
       raidFast: !!s.raidFast,
+      ...(s.details === true && { details: true }),
       lang: isLang(s.lang) ? s.lang : detectLang(),
       theme: s.theme === 'dark' || s.theme === 'auto' ? s.theme : 'light',
       // The game-feel switches (docs/38): kept only once the player has set them; unset reads as on / the default.

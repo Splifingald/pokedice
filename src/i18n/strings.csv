@@ -1852,6 +1852,11 @@ ui.home.singing,Singing along,Chante en chœur,Cantando a coro,Singt mit,Canta i
 ui.home.plateLabel,"{area}, {levels}, {rounds}, {what}. Open the area details","{area}, {levels}, {rounds}, {what}. Voir les détails de la zone","{area}, {levels}, {rounds}, {what}. Ver los detalles de la zona","{area}, {levels}, {rounds}, {what}. Gebietsdetails öffnen","{area}, {levels}, {rounds}, {what}. Apri i dettagli dell'area","{area}, {levels}, {rounds}, {what}. Ver os detalhes da área","{area}, {levels}, {rounds}, {what}. Ver os detalhes da área",{area}、{levels}、{rounds}、{what}。エリアの詳細を開く,"{area}, {levels}, {rounds}, {what}. 지역 정보 열기",{area}，{levels}，{rounds}，{what}。打开区域详情
 ui.home.roundsDone,{done} of {total} rounds done,{done} manches sur {total} faites,{done} de {total} rondas hechas,{done} von {total} Runden geschafft,{done} round su {total} completati,{done} de {total} rondas feitas,{done} de {total} rodadas feitas,ラウンド{done}/{total}完了,라운드 {done}/{total} 완료,已完成 {done}/{total} 轮
 ui.home.secretArea,Secret area,Zone secrète,Zona secreta,Geheimes Gebiet,Area segreta,Área secreta,Área secreta,ひみつのエリア,비밀 지역,秘密区域
+ui.home.sectionEvents,Events,Événements,Eventos,Events,Eventi,Eventos,Eventos,イベント,이벤트,活动
+ui.home.sectionSecrets,Secret areas,Zones secrètes,Zonas secretas,Geheime Gebiete,Aree segrete,Áreas secretas,Áreas secretas,ひみつのエリア,비밀 지역,秘密区域
+ui.home.sectionFeatures,Features,Fonctions,Funciones,Funktionen,Funzioni,Funcionalidades,Recursos,きのう,기능,功能
+ui.home.here,Here,Ici,Aquí,Hier,Qui,Aqui,Aqui,ここ,여기,这里
+ui.home.secretOpenLabel,Secret area: {area}. Travel there,Zone secrète : {area}. Y aller,Zona secreta: {area}. Viajar allí,Geheimes Gebiet: {area}. Hinreisen,Area segreta: {area}. Vai lì,Área secreta: {area}. Viajar até lá,Área secreta: {area}. Viajar para lá,ひみつのエリア：{area}。いどうする,비밀 지역: {area}. 이동하기,秘密区域：{area}。前往
 ui.home.league,Pokémon League,Ligue Pokémon,Liga Pokémon,Pokémon-Liga,Lega Pokémon,Liga Pokémon,Liga Pokémon,ポケモンリーグ,포켓몬리그,宝可梦联盟
 ui.home.trainersOnly,Trainers only,Dresseurs seulement,Solo entrenadores,Nur Trainer,Solo Allenatori,Só Treinadores,Só Treinadores,トレーナーのみ,트레이너만,只有训练家
 ui.home.backToEncounter,Back to the encounter,Retour à la rencontre,Volver al encuentro,Zurück zur Begegnung,Torna all'incontro,Voltar ao encontro,Voltar ao encontro,出会いにもどる,조우로 돌아가기,返回遭遇
@@ -2161,6 +2166,7 @@ ui.settings.themeLight,Light,Clair,Claro,Hell,Chiaro,Claro,Claro,ライト,라�
 ui.settings.themeDark,Dark,Sombre,Oscuro,Dunkel,Scuro,Escuro,Escuro,ダーク,다크,深色
 ui.settings.themeAuto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,自動,자동,自动
 ui.settings.typeHints,Type matchup hints,Aide aux affinités de types,Pistas de efectividad de tipos,Hinweise zur Typ-Effektivität,Suggerimenti sull'efficacia dei tipi,Dicas de eficácia de tipos,Dicas de eficácia de tipos,タイプ相性のヒント,타입 상성 힌트,属性相克提示
+ui.settings.details,More details,Plus de détails,Más detalles,Mehr Details,Più dettagli,Mais detalhes,Mais detalhes,くわしい表示,자세히 보기,更多详情
 ui.settings.reducedMotion,No animations,Aucune animation,Sin animaciones,Keine Animationen,Nessuna animazione,Sem animações,Sem animações,アニメーションなし,애니메이션 없음,无动画
 ui.settings.language,Language,Langue,Idioma,Sprache,Lingua,Idioma,Idioma,言語,언어,语言
 ui.settings.character,Your character,Ton personnage,Tu personaje,Deine Figur,Il tuo personaggio,A tua personagem,Seu personagem,キャラクター,캐릭터,你的角色

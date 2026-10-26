@@ -1,6 +1,7 @@
 // The battle, full screen: the 240×160 stage on top (BattleStage) and the panel under it — the message, the dice tray
 // and its readout, the actions, the Bag and the team. It drives the engine through the store and plays the engine's
 // log (useBattleAnimator); the UI never recomputes a rule.
+import { AutoButton } from '@/components/AutoButton'
 import { BottomDock } from '@/components/BottomDock'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
@@ -72,9 +73,10 @@ import { LeadPicker } from '@/components/LeadPicker'
 import { RunRoundGauge } from '@/screens/area/RoundGauge'
 import { speciesTypes } from '@/components/TypeMatchups'
 import { useAreaDayTime } from '@/store/dayTime'
-import { useTypeHints } from '@/store/hooks'
+import { useDetails, useTypeHints } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { BattleHistory, BattleHistoryList, DamageRecap } from './BattleHistory'
+import { EncounterSwipe } from './EncounterSwipe'
 import { BagButton, DiceTray, Readout, SwitchRow, TeamColumn, TeamPips, trayKeyOf, turnInHand, useDamageReveal, ZMoveButton, type Preview, type TrayDice } from './BattlePanel'
 import { BattleStage, type StageOverlay } from './BattleStage'
 import { CatchPanel, catchMessage } from './CatchPanel'
@@ -171,6 +173,8 @@ const SEND_OUT_MS = 900
 
 // Auto-mode's picks sample rolls (like the enemy AI); its own stream keeps the battle's rolls untouched.
 const autoRng = createRng(randomSeed())
+/** A wild fight's GO! (docs/42): long enough to look at the cards and tap another. */
+const SEND_OUT_AUTO_MS = 2600
 /** How long auto-mode shows its dice selection before the reroll. */
 const AUTO_SELECT_MS = 450
 /** How long the autopilot leaves a throw's result on screen before moving on (docs/36). */
@@ -237,6 +241,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   // Type hints (Trainer menu → Type chart): tapping a Pokémon opens its matchups over the stage.
   // On until the first badge for a new player (docs/38 U1b), then the player's choice.
   const typeHints = useTypeHints()
+  // More details (docs/42): the history, its key hints and the waiting prompt are for the invested player.
+  const details = useDetails()
   const [matchups, setMatchups] = useState<Side | null>(null)
 
   // Auto-mode (cleared areas; with the play styles, where the style allows: docs/36): the player's side plays itself,
@@ -755,6 +761,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const over = !!versus && played && !!versus.end
   const result = !versus && ready && (run.phase === 'victory' || run.phase === 'wipe' || run.phase === 'stalemate')
   useBattleMusic(!over && !(ready && !versus && ['victory', 'wipe', 'stalemate'].includes(run.phase)))
+  // The player's own prompt, waiting on the dice (useBattleAnimator's 'turn' line).
+  const prompting = !catching && !(forced && !auto) && fx.message === t('ui.log.whatWillDo', { name: active.name })
   const message = catching
     ? catchMessage(run.catch!, foeFront.name, { revealed })
     : forced && !auto
@@ -866,6 +874,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       {bag}
       <div className="ml-auto flex items-center gap-1.5">
         {pips}
+        {details && (
         <button
           type="button"
           aria-label={t('ui.battle.history')}
@@ -878,6 +887,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         >
           <PixelIcon name="history" size={20} />
         </button>
+        )}
       </div>
     </div>
   )
@@ -887,6 +897,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       {/* The area's round, right under the top bar (the rework): a thin strip on the stage's top edge, so the fight
           still fits a 360×640 phone. */}
       {!versus && !run.rebattle && <RunRoundGauge strip className="absolute inset-x-0 top-0 z-30" />}
+      {/* Each new fight opens on its own beat (docs/42). */}
+      {!versus && <EncounterSwipe />}
       <BattleStage
         own={active}
         foe={foeFront}
@@ -987,9 +999,16 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   return (
     <BattleContexts pace={pace} motionCap={motionCap}>
-      {/* Wide screens: the stage as big as the height allows (3:2, with the message, dice and actions under it still in
-          view: ≈340px); the Bag and the team on its left, the history on its right. */}
-      <div className="mx-auto w-full lg:grid lg:grid-cols-[220px_minmax(0,calc((100dvh_-_340px_-_var(--top-bar,0px))_*_1.5))_300px] lg:items-start lg:justify-center lg:gap-4 lg:p-4">
+      {/* Wide screens: the stage as big as the height allows (3:2, with the line, dice and actions under it still in
+          view: ≈300px); the Bag and the team on its left, and with More details the history on its right (docs/42). */}
+      <div
+        className={cx(
+          'mx-auto w-full lg:grid lg:items-start lg:justify-center lg:gap-4 lg:p-4',
+          details
+            ? 'lg:grid-cols-[220px_minmax(0,calc((100dvh_-_300px_-_var(--top-bar,0px))_*_1.5))_300px]'
+            : 'lg:grid-cols-[220px_minmax(0,calc((100dvh_-_300px_-_var(--top-bar,0px))_*_1.5))_220px]',
+        )}
+      >
         <section
           aria-label={heading}
           className="mx-auto flex min-h-[calc(100dvh_-_var(--top-bar,0px))] w-full max-w-[max(300px,min(560px,calc((100dvh_-_330px_-_var(--top-bar,0px))_*_1.5)))] flex-col lg:min-h-0 lg:max-w-none"
@@ -1010,12 +1029,9 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             ) : picking ? (
               <SendOutStep foe={foeFront.dex} lead={active.uid} />
             ) : (
-            <p
-              className="pixel-dialogue m-0 flex min-h-[64px] items-center px-3 py-1.5 text-[20px] leading-[1.15]"
-              aria-live="polite"
-            >
-              {message}
-            </p>
+              // One line, not a dialogue box (docs/42): what just happened, under the scene it happened in. The
+              // waiting prompt ("What will … do?") is for More details only; the dice say it already.
+              <BattleLine text={!details && prompting ? '' : message} />
             )}
             {result || picking ? null : catching ? (
               <CatchPanel
@@ -1176,7 +1192,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             )}
           </aside>
         )}
-        {wide && (
+        {wide && details && (
           // The history runs the page's whole height, and stays there while the page scrolls.
           <aside className="sticky top-[calc(var(--top-bar,0px)_+_1rem)] flex h-[calc(100dvh_-_2rem_-_var(--top-bar,0px))] flex-col gap-2">
             <BattleHistory battle={battle} cursor={fx.cursor} defaultOpen fill />
@@ -1370,6 +1386,21 @@ function BattleContexts({ pace, motionCap, children }: { pace: number; motionCap
 }
 
 /**
+ * The battle's line (docs/42): what just happened, in one line under the stage, where the dialogue box was. It keeps
+ * its height when empty, so the dice never jump as lines come and go; a long line (a catch's) wraps to a second.
+ */
+function BattleLine({ text }: { text: string }) {
+  return (
+    <p
+      className="battle-line m-0 flex min-h-[44px] items-center justify-center px-2 text-center text-[20px] leading-[1.1]"
+      aria-live="polite"
+    >
+      {text}
+    </p>
+  )
+}
+
+/**
  * The send-out step (the rework): the foe stands in the scene; under it, the team, and one tap on GO! sends that one. A
  * challenge the player picked (a gym, a legendary met for the first time) can still wait: NOT YET.
  */
@@ -1379,6 +1410,8 @@ function SendOutStep({ foe, lead }: { foe: number; lead: string }) {
   const enc = useGame((s) => s.run.encounter)
   const types = speciesTypes(data, foe)
   const canWait = enc?.kind === 'gym' || (enc?.kind === 'boss' && !enc.returning)
+  // Only a wild Pokémon's send-out goes by itself: a trainer, a gym or a boss is a pick worth waiting for.
+  const wild = enc?.kind === 'wild'
   // FLEE / AVOID only where the game's config allows a way out (noEscape, skipPolicy), as on the old pop-up.
   const canFlee = useGame(() => canSkipCurrent())
   // The first able Pokémon is picked to begin with; a tap on another card picks it, GO! sends the one picked.
@@ -1391,15 +1424,32 @@ function SendOutStep({ foe, lead }: { foe: number; lead: string }) {
     <div className="flex flex-1 flex-col gap-3">
       <LeadPicker value={picked} onChange={setPicked} foe={types} go />
       <BottomDock>
-      <PixelButton
-        variant="primary"
-        size="lg"
-        className="w-full"
-        aria-label={t('ui.lead.sendOutName', { name })}
-        onClick={() => sendOutLead(picked)}
-      >
-        {t('ui.lead.go')}
-      </PixelButton>
+      {wild ? (
+        // A wild Pokémon (docs/42): GO! loads and sends the one picked by itself; a tap on another card picks it and
+        // starts the count again (the key), a sheet open over it holds it.
+        <AutoButton
+          key={picked}
+          variant="primary"
+          size="lg"
+          className="w-full"
+          ms={SEND_OUT_AUTO_MS}
+          paused="byDialogs"
+          aria-label={t('ui.lead.sendOutName', { name })}
+          onClick={() => sendOutLead(picked)}
+        >
+          {t('ui.lead.go')}
+        </AutoButton>
+      ) : (
+        <PixelButton
+          variant="primary"
+          size="lg"
+          className="w-full"
+          aria-label={t('ui.lead.sendOutName', { name })}
+          onClick={() => sendOutLead(picked)}
+        >
+          {t('ui.lead.go')}
+        </PixelButton>
+      )}
       {(canWait || canFlee) && (
         <div className="flex justify-end gap-2">
           {canFlee && (

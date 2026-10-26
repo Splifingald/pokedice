@@ -87,8 +87,8 @@ export function AreaTeam() {
   return (
     <section className="flex flex-col gap-2">
       <h2 className="text-3xl">{t('ui.center.teamCount', { count: team.length, max })}</h2>
-      {/* Cards three to a row, as at the Center and the send-out step (the rework). */}
-      <ol className="grid grid-cols-3 gap-1.5 sm:gap-2">
+      {/* Cards three to a row (six on a wide screen), as at the Center and the send-out step (the rework). */}
+      <ol className="grid grid-cols-3 gap-1.5 sm:gap-2 lg:grid-cols-6">
         {team.map((p, i) => (
           <PokeCard
             key={p.id}

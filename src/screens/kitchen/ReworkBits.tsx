@@ -1,6 +1,7 @@
 // Kitchen sink: the area rework's pieces (docs/15 §6). The button that loads and presses itself (loading, held, its
 // restart), the bottom dock, the Pokémon card three to a row (the Center's, the send-out step's brief one, picked,
-// fainted, with the lead's crown and a thumb) and a label too long for its button even at its smallest size.
+// fainted, with the lead's crown and a thumb) and a label too long for its button even at its smallest size. Then
+// docs/42's: the way into a fight (its bars, played again on a tap) and More details switched from here.
 import { useState } from 'react'
 import { AutoButton } from '@/components/AutoButton'
 import { BottomDock } from '@/components/BottomDock'
@@ -8,6 +9,8 @@ import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { PokeCard } from '@/components/PokeCard'
 import type { PokemonInstance } from '@/engine'
+import { EncounterSwipe } from '@/screens/battle/EncounterSwipe'
+import { setSettings, useGame } from '@/store/game'
 
 const mon = (over: Partial<PokemonInstance>): PokemonInstance => ({
   id: 'ks-card',
@@ -29,8 +32,27 @@ export function ReworkBits() {
   const [presses, setPresses] = useState(0)
   const [round, setRound] = useState(0)
   const [picked, setPicked] = useState(TEAM[0]!.id)
+  const [swipe, setSwipe] = useState(0)
+  const details = useGame((s) => s.settings.details === true)
   return (
     <div className="grid w-full gap-4">
+      <div className="grid max-w-md gap-2">
+        <b className="text-lg">EncounterSwipe: a new fight opens (Game feel on, motion full or short; none when calm)</b>
+        <div className="relative aspect-[3/2] overflow-hidden bg-gradient-to-b from-sky-300 to-green-500 shadow-ring">
+          <EncounterSwipe key={swipe} />
+        </div>
+        <PixelButton size="sm" className="self-start" onClick={() => setSwipe((n) => n + 1)}>
+          Play it again
+        </PixelButton>
+      </div>
+
+      <div className="grid max-w-md gap-2">
+        <b className="text-lg">More details (docs/42): {details ? 'on' : 'off'}. Off, every card below is brief</b>
+        <PixelButton size="sm" className="self-start" onClick={() => setSettings({ details: !details || undefined })}>
+          {details ? 'Switch details off' : 'Switch details on'}
+        </PixelButton>
+      </div>
+
       <div className="grid max-w-md gap-2">
         <b className="text-lg">AutoButton: loading (pressed {presses}×), held, and again</b>
         <AutoButton key={round} variant="primary" size="lg" className="w-full" onClick={() => setPresses((n) => n + 1)}>

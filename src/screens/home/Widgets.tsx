@@ -2,6 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { useNavigate } from 'react-router-dom'
 import {
   comingUp,
+  regionOf,
+  regionOfArea,
   dayCareLevelProgress,
   dayCareOf,
   isDayCareOpen,
@@ -22,7 +24,7 @@ import { isSupabaseConfigured } from '@/lib/supabase'
 import { rememberedVersus, versusBoardCached, type VersusEntry } from '@/lib/versus'
 import { useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
-import { featuredSecret } from './areas'
+import { areaStatus } from './areas'
 import { AreaStrip } from '@/components/AreaStrip'
 import { dayCarePicture } from '@/fx/areaArt'
 import { travelTo } from '@/store/travel'
@@ -31,31 +33,48 @@ import { useInWorld, WorldWidgets } from '@/screens/events/world'
 import { HeadTag, Meter, Widget, WidgetBanner, WIDGET_BANNER_H, WidgetRows as DayCareRows } from './Widget'
 
 /**
- * The newest secret area: opened and never played, one tap to travel there. The next one still to open is a goal, not a
- * square: the "Coming up" line says it once nothing else is closer (comingUp).
+ * Every secret area open in this region (docs/42: Home lists them under their own heading): the newest first, a NEW tag
+ * on one never played, one tap to travel there. Still-closed ones stay a surprise.
  */
-function SecretWidget() {
+function SecretAreaWidgets() {
   const { t } = useT()
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
-  const f = featuredSecret(save, data)
-  if (!f?.fresh) return null
-  const cond = f.area.unlockConditions?.[0]
+  const open = data.areas
+    .filter((a) => a.hidden && regionOfArea(a) === regionOf(save))
+    .map((a) => ({ area: a, status: areaStatus(save, data, a) }))
+    .filter((x) => x.status !== 'locked')
+    .sort((a, b) => Number(b.status === 'new') - Number(a.status === 'new'))
+  return open.map(({ area, status }) => {
+    const cond = area.unlockConditions?.[0]
+    const here = status === 'here'
+    return (
+      <Widget
+        key={area.id}
+        title={t('ui.home.secretArea')}
+        tag={status === 'new' ? <NewTag /> : here ? <Chip tone="gold">{t('ui.home.here')}</Chip> : undefined}
+        label={t(status === 'new' ? 'ui.home.secretNewLabel' : 'ui.home.secretOpenLabel', { area: area.name })}
+        onClick={() => !here && travelTo(area)}
+      >
+        <WidgetBanner>
+          <AreaStrip area={area} h={BANNER.h} className="absolute inset-0 h-full w-full" />
+        </WidgetBanner>
+        <DayCareRows
+          top={<span className="truncate text-[20px] leading-none">{area.name}</span>}
+          bottom={cond ? conditionLabel(cond, data) : ''}
+        />
+      </Widget>
+    )
+  })
+}
+
+/** A heading and its widgets two by two; the whole section goes when nothing in it is showing. */
+function HomeSection({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Widget
-      title={t('ui.home.secretArea')}
-      tag={<NewTag />}
-      label={t('ui.home.secretNewLabel', { area: f.area.name })}
-      onClick={() => travelTo(f.area)}
-    >
-      <WidgetBanner>
-        <AreaStrip area={f.area} h={BANNER.h} className="absolute inset-0 h-full w-full" />
-      </WidgetBanner>
-      <DayCareRows
-        top={<span className="truncate text-[20px] leading-none">{f.area.name}</span>}
-        bottom={cond ? conditionLabel(cond, data) : ''}
-      />
-    </Widget>
+    <section className="flex flex-col gap-2 [&:not(:has(>div>*))]:hidden" aria-label={title}>
+      <h2 className="m-0 text-[24px] font-normal leading-none">{title}</h2>
+      <div className="grid grid-cols-2 content-start gap-2.5">{children}</div>
+    </section>
   )
 }
 
@@ -404,6 +423,7 @@ export function ComingUpLine() {
  * its mythical and its Mart (the main game's wait outside, docs/21).
  */
 export function Widgets() {
+  const { t } = useT()
   const inside = useInWorld().inside
   if (inside)
     return (
@@ -411,15 +431,20 @@ export function Widgets() {
         <WorldWidgets />
       </div>
     )
+  // Under the team (docs/42): what's on now, the secret areas found, then the features; each heading only once
+  // something is under it. No "Coming up" line: a thing shows here once it's open.
   return (
-    <div className="flex flex-col gap-2.5">
-      <div className="grid grid-cols-2 content-start gap-2.5 empty:hidden">
-        <SecretWidget />
+    <div className="flex flex-col gap-4">
+      <HomeSection title={t('ui.home.sectionEvents')}>
+        <EventWidgets />
+      </HomeSection>
+      <HomeSection title={t('ui.home.sectionSecrets')}>
+        <SecretAreaWidgets />
+      </HomeSection>
+      <HomeSection title={t('ui.home.sectionFeatures')}>
         <DayCareWidget />
         <VersusWidget />
-        <EventWidgets />
-      </div>
-      {/* The rework: no "Coming up" line; a thing shows here once it's open. */}
+      </HomeSection>
     </div>
   )
 }

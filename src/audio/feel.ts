@@ -49,6 +49,15 @@ const FEEL_SOUNDS = {
   },
   'ko.sting': () => tune([[784, 0, 0.08], [659, 0.08, 0.08], [523, 0.16, 0.08], [784, 0.26, 0.18]], 'triangle', 0.07),
 
+  // ---------------------------------------------------------------- the area's flow (docs/42)
+  /** A new encounter: the stage's bars pulling away, a rush of air and a low hit. */
+  'encounter.swipe': () => {
+    hiss(0.22, { freq: 900, vol: 0.06, slide: 1400 })
+    tone(147, 0.12, { type: 'triangle', vol: 0.07, slide: 60, at: 0.04 })
+  },
+  /** A round of the area done: its pip on the gauge fills. */
+  'round.fill': () => tune([[784, 0, 0.05], [1175, 0.05, 0.1]], 'square', 0.04),
+
   // ---------------------------------------------------------------- rewards and moments
   'win.jingle': () =>
     tune([[523, 0, 0.1], [659, 0.1, 0.1], [784, 0.2, 0.1], [1047, 0.3, 0.12], [988, 0.44, 0.08], [1047, 0.52, 0.3]], 'square', 0.05),

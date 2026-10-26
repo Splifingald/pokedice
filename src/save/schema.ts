@@ -226,6 +226,7 @@ export const saveSchema = z.object({
     playStyle: z.enum(PLAY_STYLES).optional().catch(undefined),
     typeHints: z.boolean().optional(),
     raidFast: z.boolean().optional(),
+    details: z.boolean().optional(),
     lang: z.enum(LANGS).optional(),
     theme: z.enum(['light', 'dark', 'auto']).optional(),
     // The game-feel switches (docs/38). Without them here the save's settings, read first at boot, dropped them.

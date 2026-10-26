@@ -2,6 +2,7 @@ import {
   asSeenBy,
   deckSize,
   fightBosses,
+  gameFeelOn,
   gymsFor,
   playerSideOf,
   nightmareModeOf,
@@ -11,10 +12,14 @@ import {
   type AreaProgress,
   type DeckCard,
 } from '@/engine'
+import { motion } from 'framer-motion'
+import { useEffect, useState } from 'react'
+import { feelSound } from '@/audio/feel'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { PixelIcon, type IconName } from '@/components/icons'
 import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
+import { useMotion } from '@/lib/motion'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { DistortionGauge } from '@/components/Portal'
@@ -116,7 +121,9 @@ export function RoundGauge({
       <div role="img" aria-label={label} className={cx('pointer-events-none', className)}>
         <ol className="flex h-[6px] gap-[2px] bg-night/80" aria-hidden>
           {Array.from({ length: total }, (_, i) => (
-            <li key={i} className={cx('min-w-0 flex-1', allDone ? 'bg-hp-green' : i < metCount ? 'bg-gold' : 'bg-[#3d4a6b]')} />
+            <li key={i} className={cx('min-w-0 flex-1', allDone ? 'bg-hp-green' : i < metCount ? 'bg-gold' : 'bg-[#3d4a6b]')}>
+              {i === metCount - 1 && !allDone && <FreshPip areaId={area.id} met={metCount} />}
+            </li>
           ))}
         </ol>
       </div>
@@ -185,6 +192,42 @@ export function RoundGauge({
         </span>
       </div>
     </>
+  )
+}
+
+/** The last count each area's strip showed this session, and the count it last found new (docs/42). */
+const shownMet = new Map<string, number>()
+const freshMet = new Map<string, number>()
+
+/**
+ * The pip a new encounter just filled (docs/42): it flashes white, stands tall and settles to gold in steps, with a
+ * chime, so every step of the area is felt. Once per pip; game feel only, and not when the screen should be calm.
+ */
+function FreshPip({ areaId, met }: { areaId: string; met: number }) {
+  const { level, calm } = useMotion()
+  const feel = useGame((s) => gameFeelOn(s.data))
+  // Decided as the strip first draws, the same however many times React asks (StrictMode draws twice).
+  const [isNew] = useState(() => {
+    const before = shownMet.get(areaId)
+    if (before !== met) {
+      shownMet.set(areaId, met)
+      freshMet.set(areaId, before != null && met > before ? met : -1)
+    }
+    return freshMet.get(areaId) === met
+  })
+  const fresh = isNew && feel && level !== 'off' && !calm
+  useEffect(() => {
+    if (fresh) feelSound('round.fill')
+  }, [fresh])
+  if (!fresh) return null
+  return (
+    <motion.span
+      className="block h-full origin-top bg-white"
+      initial={{ opacity: 1, scaleY: 2 }}
+      animate={{ opacity: [1, 1, 0], scaleY: [2, 1.5, 1] }}
+      // Held a beat for the stage's swipe to open, then three steps.
+      transition={{ duration: 0.75, delay: 0.35, times: [0, 0.5, 1], ease: (p: number) => (p < 1 ? 0 : 1) }}
+    />
   )
 }
 
