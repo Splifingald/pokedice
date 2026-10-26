@@ -42,6 +42,7 @@ import { useT } from '@/i18n/react'
 import { useMotion } from '@/lib/motion'
 import { usePace } from '@/lib/pace'
 import { BadgeIcon } from '@/components/BadgeIcon'
+import { Stamp } from './Stamp'
 import { Confetti } from '@/components/Confetti'
 import { useGame } from '@/store/game'
 import { useDetails } from '@/store/hooks'
@@ -193,13 +194,19 @@ export function CatchCard({
   const name = useGame((s) => s.data.species[dex]?.name) ?? t('ui.common.unknown')
   const saved = useGame((s) => !!uid && !!s.save?.box.find((p) => p.id === uid)?.shiny)
   const shiny = shinyIs ?? saved
+  const feel = useGame((s) => gameFeelOn(s.data))
+  const { level: motionLevel, calm } = useMotion()
+  // With the game feel, the ball rocks in held steps (pixel motion steps, docs/15 §8); calm or off, it rests.
+  const rock = !calm && motionLevel !== 'off'
   return (
     <div className="flex items-center gap-3 bg-gold-pale p-2 shadow-ring">
       <motion.div
         className="shrink-0"
-        initial={{ rotate: -30, y: -20 }}
+        initial={rock ? { rotate: -30, y: -20 } : false}
         animate={{ rotate: [0, -15, 15, -8, 0], y: 0 }}
-        transition={{ duration: 0.9 }}
+        transition={
+          feel ? { duration: 0.9, ease: (p: number) => Math.floor(p * 6) / 6 } : { duration: rock ? 0.9 : 0 }
+        }
       >
         {ball ?? <PixelIcon name="ball" size={36} />}
       </motion.div>
@@ -400,7 +407,16 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
             key: k,
             sound: 'catch',
             node: (
-              <CatchCard uid={e.uid} dex={e.dex} level={e.level} joined={e.joinedTeam} replacedLevel={e.replacedLevel} isNew={e.isNew} />
+              <Stamp weight="small">
+                <CatchCard
+                  uid={e.uid}
+                  dex={e.dex}
+                  level={e.level}
+                  joined={e.joinedTeam}
+                  replacedLevel={e.replacedLevel}
+                  isNew={e.isNew}
+                />
+              </Stamp>
             ),
           })
           // Its first catch: registered in the Pokédex, a moment of its own.
@@ -432,16 +448,19 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
             key: k,
             sound: 'levelup',
             feel: e.role === 'champion' ? 'champion.fanfare' : 'badge.fanfare',
+            // A badge is the biggest moment of a run: it stamps down with the confetti (docs/43 §5.3).
             node: (
-              <div className="flex items-center justify-center gap-3 bg-gold p-2 text-center shadow-ring">
-                {e.badge && <BadgeIcon badge={e.badge} earned size={36} />}
-                <div>
-                  <div className="text-2xl leading-none">
-                    {e.role === 'champion' ? t('ui.victory.champion') : t('ui.victory.trainerDefeated', { name: e.name })}
+              <Stamp weight="big">
+                <div className="flex items-center justify-center gap-3 bg-gold p-2 text-center shadow-ring">
+                  {e.badge && <BadgeIcon badge={e.badge} earned size={36} />}
+                  <div>
+                    <div className="text-2xl leading-none">
+                      {e.role === 'champion' ? t('ui.victory.champion') : t('ui.victory.trainerDefeated', { name: e.name })}
+                    </div>
+                    {e.badge && <div className="text-lg">{t('ui.victory.earnedBadge', { badge: e.badge })}</div>}
                   </div>
-                  {e.badge && <div className="text-lg">{t('ui.victory.earnedBadge', { badge: e.badge })}</div>}
                 </div>
-              </div>
+              </Stamp>
             ),
           })
           return
@@ -450,7 +469,11 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           extras.push({
             key: k,
             sound: 'catch',
-            node: <SecretAreaCard name={a?.name ?? t('ui.common.unknown')} />,
+            node: (
+              <Stamp weight="small">
+                <SecretAreaCard name={a?.name ?? t('ui.common.unknown')} />
+              </Stamp>
+            ),
           })
           return
         }
@@ -475,10 +498,14 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
             sound: 'levelup',
             feel: 'badge.fanfare',
             node: (
-              <div className="flex items-center justify-center gap-3 bg-gold p-2 text-center shadow-ring">
-                <Medal tier={e.tier} />
-                <div className="text-2xl leading-none">{t('ui.events.rebattle.medalTitle', { tier: tierName(t, data, e.tier) })}</div>
-              </div>
+              <Stamp weight="big">
+                <div className="flex items-center justify-center gap-3 bg-gold p-2 text-center shadow-ring">
+                  <Medal tier={e.tier} />
+                  <div className="text-2xl leading-none">
+                    {t('ui.events.rebattle.medalTitle', { tier: tierName(t, data, e.tier) })}
+                  </div>
+                </div>
+              </Stamp>
             ),
           })
           return
@@ -489,12 +516,14 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
             sound: 'levelup',
             feel: 'area.fanfare',
             node: (
-              <div className="bg-hp-green p-2 text-center shadow-ring">
-                <div className="text-2xl">{t('ui.victory.areaCleared')}</div>
-                <div className="text-lg">
-                  {next ? t('ui.victory.nextOpen', { name: next.name }) : t('ui.victory.allCleared')}
+              <Stamp weight="big">
+                <div className="bg-hp-green p-2 text-center shadow-ring">
+                  <div className="text-2xl">{t('ui.victory.areaCleared')}</div>
+                  <div className="text-lg">
+                    {next ? t('ui.victory.nextOpen', { name: next.name }) : t('ui.victory.allCleared')}
+                  </div>
                 </div>
-              </div>
+              </Stamp>
             ),
           })
           return
@@ -884,10 +913,12 @@ export function VictoryView() {
     </span>
   )
   const footer = hasNext && nextMon ? (
-    <div className="flex flex-col gap-2">
+    // The send-out's row (docs/43 §5.3): NEXT sends the one picked; giving up is the flag at its side.
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2.5">
       <PixelButton variant="primary" size="lg" className="relative w-full overflow-hidden" onClick={sendNext}>
         {t('ui.victory.next')} ▸{fill}
       </PixelButton>
+      <ForfeitButton flag />
     </div>
   ) : run.rebattle ? (
     <RebattleNext go={go} />
@@ -924,6 +955,10 @@ export function VictoryView() {
   const title = t(battle?.state.kind === 'boss' ? 'ui.victory.legendaryVictory' : 'ui.victory.victory')
   return (
     <Overlay footer={footer} label={title}>
+      {/* The battle's live region says the fight is won (the line under the stage gives way to the card). */}
+      <p className="sr-only" role="status">
+        {title}
+      </p>
       {/* Between a trainer's Pokémon, who's next and the pick come first (the rework: the action on top). */}
       {allShown && !run.pendingCatchId && hasNext && nextMon && (
         <div ref={follow} className="mb-3 flex scroll-mb-[160px] flex-col gap-2">
@@ -944,7 +979,6 @@ export function VictoryView() {
           </div>
           {/* The one that fought is picked to begin with; a tap picks another, NEXT sends the one picked. */}
           <LeadPicker value={lead ?? stillIn ?? null} onChange={setLead} foe={speciesTypes(data, nextMon.dex)} go />
-          <ForfeitButton />
         </div>
       )}
       <div ref={list} className="flex flex-col gap-2">
@@ -1047,7 +1081,7 @@ function RebattleWipe() {
         </div>
       }
     >
-      <h2 className="mb-2 text-center text-[32px] font-normal leading-none">{t('ui.wipe.title')}</h2>
+      <h2 className="mb-2 text-center text-[32px] font-normal leading-none" aria-live="polite">{t('ui.wipe.title')}</h2>
       <p className="copy text-lg">{t('ui.events.rebattle.lostBody', { name: first?.name ?? '' })}</p>
     </Overlay>
   )
@@ -1081,7 +1115,7 @@ function AreaWipe() {
         </AutoButton>
       }
     >
-      <h2 className="mb-2 text-center text-[32px] font-normal leading-none">{t('ui.wipe.title')}</h2>
+      <h2 className="mb-2 text-center text-[32px] font-normal leading-none" aria-live="polite">{t('ui.wipe.title')}</h2>
       {/* The rework: what a wipe costs is said only where it differs from the usual (a portal, the nightmare, Extreme). */}
       <p className="copy mb-3 text-lg" hidden={portalLost == null && nightmareLost == null && !!save && wipeHeals(save, data)}>
         {/* Extreme mode heals nobody after a lost round: the fainted ones rest (docs/22). */}
@@ -1114,7 +1148,7 @@ export function StalemateView() {
         </div>
       }
     >
-      <h2 className="mb-2 text-center text-[32px] font-normal leading-none">{t('ui.stalemate.title')}</h2>
+      <h2 className="mb-2 text-center text-[32px] font-normal leading-none" aria-live="polite">{t('ui.stalemate.title')}</h2>
     </Overlay>
   )
 }

@@ -1513,7 +1513,7 @@ function usePickKeys(ids: readonly string[], pick: (id: string) => void) {
  * it must be made; on your turn it costs the turn (the line says so) and BACK gives the dice back. Giving up is a
  * small button at the side, never a second full-width one.
  */
-function SwitchStep({
+export function SwitchStep({
   options,
   first,
   foe,
