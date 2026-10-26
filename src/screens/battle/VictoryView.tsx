@@ -772,7 +772,8 @@ export function VictoryView() {
   // After a fight the card moves on by itself once everything is shown (the user's call, 2026-10-26): NEXT's gauge
   // fills and goes, BACK still in reach. Not when a new Pokémon was caught (its card waits to be looked at, and a full
   // team's choice to be made), nor when the area was cleared (the way on is the next area), nor in a rebattle.
-  const caughtNew = run.events.some((e) => e.kind === 'caught' && e.isNew)
+  // A new species, or a small world's mythical gone home (its finale): the card is looked at, so it waits for NEXT.
+  const caughtNew = run.events.some((e) => (e.kind === 'caught' && e.isNew) || e.kind === 'world_mythical')
   const autoNext = !closes && !run.rebattle && !nextArea && !caughtNew
   const countdown = autoNext && allShown && !run.pendingCatchId && !then
   // Each piece of the recap scrolls into view as it comes (a level-up, the Pokédex entry…), then a full team's choice

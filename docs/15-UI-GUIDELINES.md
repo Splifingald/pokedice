@@ -234,7 +234,7 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   card comes (2026-10-26).
 - **A fight's result card follows itself and moves on** (2026-10-26): each piece (XP, a level-up, the Pokédex entry…)
   scrolls into view as it comes, clear of the buttons at the foot; once all is shown, NEXT's gauge fills and goes,
-  BACK still in reach. It waits instead when a new species was caught (its card is looked at, and a full team's
+  BACK still in reach. It waits instead when a new species was caught or a small world's mythical won (its card is looked at, and a full team's
   replace choice, scrolled to, is made), when the area was cleared (the way on is the next area), and in a rebattle.
   No AUTO switch on the card nor in Settings: AUTO-MODE is the fights' own.
 - **A region begun opens on its first area**, its first encounter under way (`exploreFirstArea`): a new game's partner
