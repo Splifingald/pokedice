@@ -161,7 +161,9 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `PageHead` / `Wallet` | A tab's title row | Tab icon, the one `<h1>` (`as="h2"` where the page has its own), a count ("3/3", "81/151") or the gold as a navy plate |
 | `SheetSection` | A titled block inside a sheet | 22 px heading, a muted hint on the same row, extra controls |
 | `NicknameButton` / `NicknameModal` | Giving one of your Pokémon a nickname (its sheet's title) | The name and a pencil, 44 px tall on phones; the dialog with the field (empty: the species as placeholder; named: selected), the 0/12 counter, the trade line only where trades exist, Cancel / SAVE (§13) |
-| `MonTile` / `TileTag` | A grid of Pokémon (Box, Pokédex) | Menu icon from the atlas, number, name, a line under it; `missing` = grey tile + silhouette; corner tags NEW (gold) and Nearby (green). `TILE_GRID` = ~84 px columns |
+| `PokeCard` | The one card for a team member everywhere (Team, send-out, Center, between encounters, K.O. switch; docs/43 §4) | `lead` (gold crown tag, said "Lead: sent out first"), `selected` (gold outline: picked, or shown in a docked sheet), fainted (hatched), resting after a K.O. (`KoTag`), a fossil reviving (its gauge), shiny (star), `xp` (a thin XP line under the HP, the Team), `brief`, `label`, `buttonProps` (drag handlers), `className` (a drop target's dashed red outline) |
+| `BoxFilter` | The Box's one Sort & filter control | A button beside the search (a gold count of what is set). Phones: a bottom sheet with the order (`Seg`) and the type (a radio grid of named swatches), SHOW n and Clear filters. From 768 px: a panel under the button (focus on the current choice, Esc and a click outside close it). A pick applies at once |
+| `MonTile` / `TileTag` | A grid of Pokémon (Box, Pokédex) | Menu icon from the atlas, number, name (16 px), a line under it; `level` (a navy 14 px corner tag, top right); `selected` (gold outline, `aria-current`); `missing` = grey tile + silhouette; corner tags NEW (gold) and Nearby (green). `TILE_GRID` = ~84 px columns |
 | `GoldCard` / `CoinFlight` / `XpBar` (`useXpFill`) / `Confetti` / `DexRegisteredCard` / `UpCard` | The rewards' game feel (docs/38 §4) | The gold counting up from 0; its coins flying to the top bar's gold (`data-hud-gold`; playing, none when calm or off); the XP bar in steps (filling, the level-up's white frame, rolled over); the pixel confetti (playing, frozen on frames); a species' first catch registered in the Pokédex; the Upgrades' buttons (navy, the best buy gold with its chip) and a purchase's pop frame by frame (`frozenPop`) |
 | `FaceDice` / `StatusLines` | What a die does | Its six faces as real dice, value under each; a status face keeps its ring and badge and gets its short name in a chip. One tinted line per status: when it triggers and what it does, with the live numbers (`statusEffects`) |
 | `ItemSprite` | An item's picture | From the item atlas (one request); falls back to the item's own URL for items added since the atlas was built |
@@ -186,7 +188,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `DayNightButton` / `DayNightChip` / `BattleDayTime` / `DayNightTag` / `DayNightPill` / `DayNightRulesModal` | Day and night in Johto (§30, docs/32) | The top bar's chip by day and by night; the fights' indicator on a stage (day, night); a list's tag (its own half, greyed in the other); the Pokédex places' chip (day only, night only); the rules (the first time, INFO) |
 | `DoubleMons` (`BattleStage double`) / `DoublePlates` / `MiniPlate` / `TargetPicker` / `LeadPicker pair` | Double battles (§31) | The stage with four (the pair in front big on the usual spots, their partners smaller behind, each with a shadow; toggled, they change places), one K.O. on each side (greyed plates, 1 v 2); the name-less plates (icon, level, HP, statuses; the one in front ringed in gold; a fallen one greyed); the target picker (live, disabled); the lead picker sending two |
 | `UgCave` / `CrackGauge` / `UgWall` / `PickaxeDie` / `PickaxeFaces` / `OrbArt` / `PlateArt` / `ThingIcon` / `HaulList` / `PlateGrid` / `OrbBagTable` / `UgRulesModal` / `UgTeamSeats` | The Underground (§32) | The cave (a square's size; big); the gauge fresh, under way, its last three shaking or calm, collapsed; the wall fresh, half dug with a strike flashing, cleared (glinting), collapsing; the die unrolled and rolled; the faces with the one that came up, and the next level's with its raised face; orbs of every colour and size, plates; the haul with every outcome; the plates none and some; the orb bag; the team seats solo, two, full; the rules (once, INFO) |
-| `TeamSwapActions` | A Pokémon's sheet where the team can change (`teamSwapsOpen`: inside a Pokémon Center, at a portal's way in before READY!) | In the team: Make lead (not the lead), Send to the Box (not the last one); in the Box: Add to team, or, the team full, "swap it in for" each member (a button each: its still mini icon on the left, name and level, "goes to the Box" and the swap arrow, `reroll`, at the far right); still reviving from its fossil: a line saying so. It sits above Strengths and weaknesses in the sheet, whether type hints are on or not (`PokemonSheet`'s `beforeMatchups`, the user's call, 2026-10-15) |
+| `TeamSwapActions` / `TeamSwapDock` / `SheetActionRow` | The Center's moves (`teamSwapsOpen`: inside a Pokémon Center, at a portal's way in before READY!) | `TeamSwapDock` is the Team sheet's footer where swaps are open: Make lead (red) beside Use an item, Send to the Box a small link; Add to team (red); a full team: "swap X in for:" and the members as one-tap buttons (mini, swap arrow, name); a fossil still reviving: a line saying so. `TeamSwapActions` (the body version) stays for the Center's own sheet. `SheetActionRow`: a quiet button and the main one sharing a `minmax(0,1fr)_minmax(0,1.4fr)` row |
 | `PlayStylePicker` / `PlayStylePanel` / `IdleRulesModal` / `AutoModeButton` / `AutopilotNote` | Idle mode and the play styles (§34, docs/36) | The two styles as a radio group of cards (an icon, the name, its line; the picked one on gold-pale with the gold ring and a check; none picked; arrow keys move the pick); Settings' panel with INFO; the rules (INFO only: they never pop up); the area's switch (AUTO-MODE or Idle mode, off and on, with Prof. Oak's tip); the line standing in for a card the autopilot takes (each style's); the catch panel with Idle's pick (`BattleBits`) |
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
@@ -552,14 +554,17 @@ Players shouldn't have to make many requests:
 
 ## 13. Lists, sheets and buying
 
-- **A Pokémon's sheet** (`SheetModal`, a `Sheet`): the title is the name, the line under it says number · level · where
-  it is (Lead, Team slot 2, In the Box). The footer holds what you can do: Make lead and Use an item for a team member,
-  the Center rule (with a lock) and Use an item for one in the Box. Use an item opens a list in the same sheet, with
-  Back. The body leads with what matters now: HP and XP, Speed / Rerolls / Catch value, every die as real dice, then
-  **What's next** (milestones still ahead, the next one tagged NEXT, each with how close it is); milestones already
-  reached fold away under a summary. Where the team can change (`teamSwapsOpen`: inside a Pokémon Center, at a portal's
-  way in before READY!), the Team screen's sheet has the Center's Team section in its body (`TeamSwapActions`) and no
-  Center rule in its footer.
+- **A Pokémon's sheet** (`SheetModal`, a `Sheet`; docs/43 §5.4): the title is the name (a nickname button), the line
+  under it number · level · where it is (Lead, Team slot 2, In the Box). The body leads with a hero (the sprite, types,
+  HP and XP as gauges; figures with More details), then what matters now (a waiting Pokémon's lock, Evolve now in gold),
+  the dice as real dice with their status lines, **What's next** (upcoming first; the reached ones folded under
+  "Reached (n)"), the matchups, the rare moves (Send to region, Trade: quiet, small), and last a folded **Stats** section
+  (Speed, Rerolls, Catch value; open with More details). The footer holds the actions: one red at most (Make lead, Add to
+  team), Use an item quiet beside it; a Box Pokémon outside a Center has the lock line; where swaps are open,
+  `TeamSwapDock`. Let it go is a plain-size danger button at the footer's end, asked twice. Use an item opens a list in
+  the same sheet, with Back.
+- **The Team on PC**: from 1024 px the Team is a `SplitView`: the selected Pokémon's sheet stands docked at the right,
+  always open (the lead's on arrival); a card or tile swaps it and is outlined in gold. On phones it is the bottom sheet.
 - **A small world's Pokémon waiting to unlock** (§22, docs/26 §1) opens the same sheet, its line saying "Waiting to
   unlock", the lock first in its body, and **Let it go** as the only footer action; no Make lead, no item, no Send on.
 - **Nicknames**: on one of your own Pokémon's sheets (not a Pokédex entry, not a fossil still reviving) the title is a

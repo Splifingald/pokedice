@@ -157,14 +157,32 @@ Each entry: before (from the audit), after on a phone, after on PC, and what was
   B the Bag, S switch, Esc closes, shown discreetly with More details.
 - **Kept**: the send-out (the user's decision), the result's auto-advance, the Center's wait.
 
-### 5.4 Team
+### 5.4 Team and the Pokémon sheet
 
-- **Before**: a banner, three tall cards (sprite 80 px, order tag, HP figures, XP), the Box's tiles (13 px levels), the
-  search, a sort, a type list, the sheet as a modal on PC; content 768 px wide in 1152.
-- **After, phone**: the banner (the user's decision); the team as `PokeCard`s (the one design); the Box as tiles with one
-  filter row (search, then sort and type in one menu); a Pokémon opens its sheet.
-- **After, PC**: `SplitView` — left: the banner, the team, the Box (8 columns); right, docked: the Pokémon picked (the lead
-  by default), its whole sheet, always open.
+- **Before** (team-mid / team-late): a 168 px banner, a title row ("Team 3/3") with a big "Swaps at a Center" chip,
+  three tall `TeamCards` (80 px sprite, order tag, HP figures, XP strip, dice squares), then the Box: a search, a 3-way
+  sort and a type dropdown on separate rows, tiles with 13 px levels; on PC the sheet a modal, the content a 768 px
+  column in 1152. 1.8 / 2.8 screens tall at 390 (mid / late).
+- **After, phone**: the banner (the team roaming, the user's decision) carries the page's `<h1>` as a plate in its
+  corner — no title row, no "3/3", no swaps chip. The team as three `PokeCard`s (the one card: the lead's crown tag, a
+  thin XP line, the HP gauge; drag to reorder kept). The Box's heading counts it ("Box 28", "Box 2 of 60" narrowed),
+  one filter row (the search, then **Sort & filter**: a sheet with the order and the type as named swatches, SHOW n;
+  a gold count on the button says what's set). Tiles: 16 px names, the level a corner tag. Empty states say what to do
+  (an empty Box says where catches go; no match offers Clear filters).
+- **After, PC**: `SplitView` — left, the banner (232 px, the whole team in view), the cards, the Box 8+ columns wide;
+  right, docked and always open, the selected Pokémon's sheet (the lead's on arrival); a card or tile swaps it in place,
+  outlined in gold. Sort & filter is a panel under its button (keyboard: arrows, Esc).
+- **The sheet**: a hero (sprite, types, HP and XP as gauges; figures with More details), then what matters now (a
+  waiting Pokémon's lock; Evolve now in gold, no longer a second red), the dice, What's next (the reached milestones
+  folded under "Reached (n)"), matchups, the rare moves (Send to region, Trade: quiet), and a folded **Stats** section
+  (open with More details). The footer: one red at most (Make lead / Add to team), Use an item quiet beside it; at a
+  Center `TeamSwapDock` (a full team: "swap X in for:" and the members as one-tap buttons). Let it go a plain-size
+  danger button at the end, still asked twice.
+- **Removed**: the title row, the count, the swaps chip (the rule sits at a Box Pokémon's sheet foot), `TeamCards`' own
+  look, the sort bar and the type row, the "Leads the team" line. **Merged**: sort and type; the title into the banner.
+  **Added**: the docked sheet on PC, Clear filters.
+- **Taps**: a Pokémon's details on PC 2 → 0 (the lead is open), the next one 2 → 1 (no close); sorting 1 → 2 (one menu
+  for sort and type); a Center swap stays 2.
 
 ### 5.5 Mart (with Upgrades)
 
