@@ -513,7 +513,7 @@ Players shouldn't have to make many requests:
   played, or, behind in the region, the one the story goes on in, `AreasSheet`'s `lead`); every other GO is navy
   (`frame-dark`). In the Regions view the new region's own button is the red one while one is on offer, else the GO of
   the region being played.
-- **Area screen**: its title opens the area's details (the same sheet as Home's plate, without the travel footer).
+- **Area screen**: its title opens the area's details (the same details as the Areas sheet's first view, without the travel footer).
   Under the details' name: the levels, the rounds done over the rounds that clear the area ("3/5 rounds"; more can be
   played once it's cleared, "7/5") or "Secret area", and where it stands.
 - **Pokémon Center**, laid out as a battle (the rework, 2026-10-25): no area banner, the round's gauge under the top
@@ -525,11 +525,22 @@ Players shouldn't have to make many requests:
   itself.
 - **Dots only for something you can act on**: the number of upgrades you can afford (9+ at most), a gold NEW for
   Pokédex entries you haven't looked at. The dot is in the link's accessible name, never colour alone.
-- **Home is the area hub** (`/home`; `/map` redirects there): the area's scene with your team roaming in it, the area
-  plate (name, levels, rounds, caught → the area's details), AREAS (the area list, its search also finds Pokémon,
-  filters and the Regions view in the same sheet) and one big CONTINUE whose second line says what comes next
-  (round n of m, the gym leader, the legend, a new region). The encounter itself plays on `/area`, and Home stays
+- **Home** (docs/43 §5.2): the area's scene with the team roaming it, no plate over it; under it one notice, then Events,
+  Secret areas and Features as Home's one card (`HomeCard`: the picture as a strip on the left, the name, one status
+  line, a thin gauge where time or progress runs; gold for one new thing), then the "Coming up" line. The **PLAY dock**
+  is the area button (`AreaButton`: the map, the area's name, its rounds as pips with "done/total", its levels; NEW when
+  a secret area opened; shut by the nightmare with its reason) over CONTINUE. Phones: pinned over the tab bar, the page
+  scrolling behind it; 768–1023 px: sticky at the column's foot; from 1024 px: the scene as tall as the window on the
+  left (`SceneStage fill`, a box at most 1.15× as tall as wide), and on the right (clamp(380px, 34%, 520px)) the dock,
+  the area's Pokémon (`HereCard`), the notice and the sections. The encounter itself plays on `/area`, and Home stays
   lit in the menus while it does.
+- **The Areas sheet** opens from the area button on the area's details (tabs Details · All areas · Regions); a row opens
+  its details in the same sheet. From 1024 px it is one wide sheet: the list or the regions on the left, the picked
+  area's details on the right, their CONTINUE HERE / TRAVEL HERE navy so the lead GO stays the one red. Area rows have
+  Home's card shape: strip, name, one status line (levels · caught · to catch, or why it's locked), GO at the right.
+- **Notices** (`NoticeCard`, `homeNotices`): what never needs a pop-up over Home is a card in the page, one at a time: a
+  feature with a page opening ("Versus is open!", SEE VERSUS; ✕ hides it for the visit, the page's `RulesCard` ends
+  it), Prof. Oak's leaderboard tip, his invite, Support me, a region on offer once its pop-up was seen. Never red.
 - **After an encounter the player stays in the area** (a trainer, a wild Pokémon, a find, the Center, the Game
   Corner, fleeing): `/area` between encounters (`AreaIdle`) is the area's header, "Back on the trail…", the team (each
   card opens its sheet) and the action bar, HOME or CONTINUE, the next encounter (or the gym or legend waiting, with Keep exploring);
@@ -547,7 +558,7 @@ Players shouldn't have to make many requests:
 - **A team on a widget banner** (Versus) spreads over the room up to what sits beside it (the VS, the
   lock): its usual spacing when there is room, tighter on a phone's half-width widget, and only past 60 % of an icon do
   the icons get smaller (`TeamFan`). It never runs under the VS.
-- **Home's squares are only for what is open** (docs/38 U3a): a secret area found and never played (one tap travels
+- **Home's cards are only for what is open** (docs/38 U3a): a secret area found and never played (one tap travels
   there), the Day Care, Versus, each open special event, a small world and a live event; each is a button that leads
   somewhere. Nothing locked gets a square: under them **one "Coming up" line** names the next thing to open and how
   close the player is ("Coming up: Day Care · 7/20 caught", `ComingUpView`, from the engine's `comingUp`), in the order
@@ -910,14 +921,16 @@ Two rules for every feature that adds something players can do (an event, a mode
   due. The engine decides whose turn it is from the save and what it can't know (`PopupContext`: the page, signed in,
   the server's clock, what waits outside the save); `PopupQueue` (GameLayout) works it out once for the whole game, and
   each pop-up opens only on its own turn (`useMyTurn`). The order: the away reports (Extreme's, the General upgrades'),
-  Prof. Oak's Day Care and leaderboard tutorials, the developer's answers, friends' raid gifts, Support me, a new
-  region's offer, a special event, Versus, Prof. Oak's invite, Extreme mode, Trades, the General upgrades, the shiny Pokédex, the Unown Pokédex, the invite
-  rewards' rules then a reward ready, the portal run, day and night, the battle powers, a small world's opening, its
-  finish and its goodbye, a live event (the Underground's rules), a taken trade's scene (Home only), and push
-  notifications' question last. A new pop-up gets a place in that list, not a list of its own. The rules that open at
+  the offline report, the developer's answers, friends' raid gifts, a new region's offer, Extreme mode, an invite reward
+  ready, the portal run, day and night, the battle powers, a small world's opening, its finish and its goodbye, a live
+  event (but the Underground: `queuedLives`), a taken trade's scene (Home only), and push
+notifications' question last. A new pop-up gets a place in that list, not a list of its own. The rules that open at
   their own moment (the gifts' before the first gift, Trick or Treat's at the first ghost, the portal's and the
   nightmare's on their way in, the looks' at the first open, a world's finish or a live event asked for from Home) stay
-  there, and being due holds nothing back. Every "seen" flag stays where it was in the save.
+  there, and being due holds nothing back. Every "seen" flag stays where it was in the save. What left the queue
+  (docs/43 §7: the Day Care, the events, Versus, Trades, the General upgrades, the Shiny and Unown dexes, the invite
+  rewards' rules, the raids' overhaul, the Underground, Prof. Oak's tip and invite, Support me) is a Home notice
+  (`homeNotices`) and, for a feature with a page, its `RulesCard` there.
 - **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
 - **A purely visual change** (the dice throws, docs/37; the game-feel pass, haptics and battle music, docs/38): the

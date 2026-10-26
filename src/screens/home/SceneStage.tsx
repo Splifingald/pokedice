@@ -10,6 +10,7 @@ import { useGame } from '@/store/game'
 import { clamp, type G } from '@/fx/pixel'
 import { artPlacement, homeWindow } from '@/fx/areaArt'
 import { AreaArt } from '@/components/AreaArt'
+import { cx } from '@/theme/util'
 import { H, W, worldOf } from './scene'
 import { Herd, type Mon } from './team'
 
@@ -24,7 +25,7 @@ interface Member {
  * The area's scene with the team roaming it: a canvas under the sprites (scenery, shadows, motes), the sprites
  * themselves as <img>s the browser animates, and a canvas over them (tall grass, bubbles, hearts and notes). Tapping a
  * Pokémon makes it hop and shows its card; the card (and the team list, for keyboards) opens its sheet. With calm
- * motion the team stands still. `children` sit on top of the scene (the area plate).
+ * motion the team stands still. `children` sit on top of the scene (the area screen's plate between encounters).
  */
 /** Two taps on the same Pokémon within this long open its sheet. */
 const DOUBLE_TAP_MS = 400
@@ -36,11 +37,18 @@ export function SceneStage({
   team,
   onOpen,
   children,
+  fill = false,
 }: {
   area: Area
   team: PokemonInstance[]
   onOpen: (uid: string) => void
   children?: ReactNode
+  /**
+   * Fill the box it is given rather than take the scene's shape (Home on PC, docs/43 §5.2: the scene as tall as the
+   * window): the scene keeps its shape, scaled to cover the box and centred in it, so a little of its sides (or sky)
+   * goes rather than leave the box half empty. The box decides how much: Home keeps it close to the scene's shape.
+   */
+  fill?: boolean
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
@@ -130,10 +138,17 @@ export function SceneStage({
           : ''
     : ''
 
-  return (
+  const stage = (
     <div
-      className="relative isolate z-0 w-full select-none overflow-hidden"
-      style={{ aspectRatio: `${W} / ${H}`, containerType: 'inline-size' }}
+      className={cx(
+        'relative isolate z-0 select-none overflow-hidden',
+        fill ? 'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2' : 'w-full',
+      )}
+      style={{
+        aspectRatio: `${W} / ${H}`,
+        containerType: 'inline-size',
+        ...(fill && { width: `max(100cqw, calc(100cqh * ${W} / ${H}))` }),
+      }}
       onPointerDown={(e) => {
         if ((e.target as HTMLElement).closest('button')) return
         const r = e.currentTarget.getBoundingClientRect()
@@ -237,6 +252,12 @@ export function SceneStage({
           </li>
         ))}
       </ul>
+    </div>
+  )
+  if (!fill) return stage
+  return (
+    <div className="relative h-full w-full overflow-hidden" style={{ containerType: 'size' }}>
+      {stage}
     </div>
   )
 }

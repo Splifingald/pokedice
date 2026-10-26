@@ -14,16 +14,17 @@ async function signedIn(page: Page, save: object) {
   )
 }
 
-test('Prof. Oak’s leaderboard tip comes with the first badge, and Later (or ✕) ends it for good', async ({ page }) => {
+test('Prof. Oak’s leaderboard tip comes with the first badge as a note on Home, and ✕ ends it for good', async ({ page }) => {
   await mockSupabase(page)
   await signedIn(page, withBadge(makeSave(4, { leaderboardVisited: false })))
   await page.goto('/home')
-  const tip = page.getByRole('dialog', { name: 'The leaderboard' })
+  // A note in the page (docs/43 §7), not a pop-up over Home.
+  const tip = page.getByRole('region', { name: 'The leaderboard' })
   await expect(tip).toBeVisible()
-  // A tip, not a choice to make: it can be closed, and SEE THE LEADERBOARD is still there.
-  await expect(tip.getByRole('button', { name: 'Close' })).toBeVisible()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  // A tip, not a choice to make: it can be closed, and SEE THE LEADERBOARD is there.
   await expect(tip.getByRole('button', { name: 'SEE THE LEADERBOARD' })).toBeVisible()
-  await tip.getByRole('button', { name: 'Later' }).click()
+  await tip.getByRole('button', { name: 'Close: The leaderboard' }).click()
   await expect(tip).toHaveCount(0)
   await expect(page).toHaveURL(/\/home$/)
   // Saved in the save: a reload doesn't bring it back.
@@ -31,6 +32,15 @@ test('Prof. Oak’s leaderboard tip comes with the first badge, and Later (or �
   await page.reload()
   await expect(page.getByRole('button', { name: 'CONTINUE', exact: true })).toBeVisible()
   await expect(tip).toHaveCount(0)
+})
+
+test('SEE THE LEADERBOARD on Prof. Oak’s note opens it, and that visit ends the note', async ({ page }) => {
+  await mockSupabase(page)
+  await signedIn(page, withBadge(makeSave(4, { leaderboardVisited: false })))
+  await page.goto('/home')
+  await page.getByRole('region', { name: 'The leaderboard' }).getByRole('button', { name: 'SEE THE LEADERBOARD' }).click()
+  await expect(page).toHaveURL(/\/leaderboard$/)
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!).leaderboardVisited)).toBe(true)
 })
 
 test('five tabs, named only when open; the Shiny board ranks shinies caught, the Raids board raids won', async ({ page }) => {

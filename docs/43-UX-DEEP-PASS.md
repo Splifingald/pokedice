@@ -134,17 +134,31 @@ Each entry: before (from the audit), after on a phone, after on PC, and what was
 - **Removed**: the cup, Upgrades' tab, the drawer's Leaderboard, Friends and Trades rows. **Added**: Social. **Moved**:
   SUPPORT ME to the drawer.
 
-### 5.2 Home
+### 5.2 Home, the Areas sheet, notices
 
-- **Before**: the scene with its plate (name, levels, rounds, caught), a CONTINUE bar with AREAS, squares under
-  headings; a Support me modal on arrival for a late save.
-- **After, phone**: the scene; under it the sections as rows; the PLAY dock pinned at the bottom (CONTINUE with what comes
-  next, and the area button with its name and round pips, which opens the Areas sheet). The plate's details are the
-  area button's (no second plate on the scene). Notices (Oak's tips, Support me, an invite) are a card above the
-  sections, dismissable.
-- **After, PC**: the scene as tall as the window on the left; on the right the PLAY dock first, then the sections.
-- **Removed**: the plate over the scene (duplicated the area button and the Areas sheet), the Support me / leaderboard /
-  invite modals. **Merged**: the area details into the Areas sheet's first view.
+- **Before**: a plate over the scene (name, levels, rounds, caught), squares of mixed sizes under headings, CONTINUE in a
+  bar with a 76 px AREAS button; a late save opened under a Support me modal; dead space on PC.
+- **After, phone**: the scene full width, no plate; under it one notice card, then Events, Secret areas and Features as
+  one row card each (`HomeCard`: a strip picture, the name and a tag, one status line, a thin gauge where something
+  runs; gold for one new thing), then the "Coming up" line. The **PLAY dock** is pinned over the tab bar: the area
+  button (≥56 px: the map, the area's name, its rounds as pips with "0/1", its levels; NEW when a secret area opened;
+  shut by the nightmare with its reason) over CONTINUE (red, its second line). At 390×844 the scene and the dock are the
+  first screen.
+- **After, PC**: the scene sticky and as tall as the window on the left (cropped at most ~8 % a side); on the right
+  (380–520 px) the dock, the area's Pokémon (`HereCard`, uncaught first, opening the details), the notice, the sections.
+- **The Areas sheet** absorbs the area details: tabs Details · All areas · Regions; it opens on the current area's
+  details (CONTINUE HERE / TRAVEL HERE in its footer); a row (strip, name, "Lv · caught/total · n to catch" or why it's
+  locked, GO) shows its details in place. PC: one 1080 px sheet, the list left and the details right (their footer navy,
+  so the lead GO stays the one red). Each Pokémon's odds % and the round mix are More details'.
+- **Notices** (`NoticeCard`, `homeNotices` in the engine): one at a time, never red, ✕ 44 px — a feature with a page
+  opening ("Versus is open!" → its page, where the `RulesCard` ends it), Prof. Oak's leaderboard tip, his invite,
+  Support me, a region on offer once its pop-up was seen. The rules modals of the Day Care, the events, Versus, Trades,
+  the General upgrades, the Shiny and Unown dexes, the invite rewards, the raids' overhaul and the Underground left the
+  queue; nothing opens on arrival any more.
+- **Removed**: the plate on Home, the AREAS square, the arrival modals (Support me, the tip, the invite), RegionBar's
+  banner and switcher. **Merged**: the details into the Areas sheet; every square into one card.
+- **Taps**: Home → dice 1 → 1; the area's details 1 → 1; the area list 1 → 2 on phones (1 on PC, side by side); a modal
+  to dismiss on arrival 1 → 0.
 
 ### 5.3 The area loop
 

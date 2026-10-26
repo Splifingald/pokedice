@@ -301,7 +301,8 @@ test('a battle inside: the booster on a psychic hit; an area waits for its date'
   await expect(page.getByRole('heading', { name: 'Exploring Mirage Marsh' })).toBeAttached({ timeout: 15_000 })
   await expect(page.getByRole('button', { name: 'Back to Kanto' })).toBeVisible()
   // Twilight Path is next in the chain, but waits for its date.
-  await page.getByRole('button', { name: /^Areas/ }).first().click()
+  // Home's area button opens the Areas sheet (docs/43 §5.2).
+  await page.locator('[data-area-button]').click()
   await expect(page.getByText(/^Opens .*May/).first()).toBeVisible()
   await page.keyboard.press('Escape')
 
