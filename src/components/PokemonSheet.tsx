@@ -31,7 +31,7 @@ import { typeName } from '@/lib/format'
 import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
-import { useTypeHints } from '@/store/hooks'
+import { useDetails, useTypeHints } from '@/store/hooks'
 import { cx, typeColor } from '@/theme/util'
 import { Chip } from './Chip'
 import { CryButton } from './CryButton'
@@ -106,7 +106,7 @@ function EvoLink({ toDex, how, onOpenDex }: { toDex: number; how: string; onOpen
   return (
     <button
       type="button"
-      className="inline-flex items-center gap-0.5 align-middle hover:bg-paper"
+      className="inline-flex min-h-[44px] items-center gap-0.5 align-middle hover:bg-paper md:min-h-[32px]"
       onClick={() => onOpenDex(toDex)}
       aria-label={t('ui.sheet.openDex', { name, how })}
     >
@@ -360,11 +360,10 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
       </details>
     )
 
-  // Still growing: every milestone in order, the reached ones ticked off above what's ahead.
+  // Still growing: what's ahead, the next one first; the reached ones fold away under a line of their own.
   return (
     <SheetSection title={t('ui.sheet.whatsNext')}>
       <ol className="grid gap-2">
-        {reachedRows}
         {ahead.map((row, i) => (
           <MilestoneRow
             key={i}
@@ -400,6 +399,17 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
         ))}
       </ol>
       {notes}
+      {reachedRows.length > 0 && (
+        <details className="group">
+          <summary className="flex min-h-[44px] cursor-pointer list-none items-center gap-2 font-pixel-sm text-[18px] leading-none text-muted md:min-h-[36px] [&::-webkit-details-marker]:hidden">
+            <span className="inline-block text-[16px] transition-transform group-open:rotate-90" aria-hidden>
+              ▶
+            </span>
+            {t('ui.sheet.reachedCount', { n: reachedRows.length })}
+          </summary>
+          <ol className="mt-1 grid gap-2 opacity-80">{reachedRows}</ol>
+        </details>
+      )}
     </SheetSection>
   )
 }
@@ -423,6 +433,7 @@ export function PokemonSheet({
   inst,
   children,
   beforeMatchups,
+  top,
   onOpenDex,
   shiny: shinyAsked,
 }: {
@@ -433,9 +444,12 @@ export function PokemonSheet({
   children?: ReactNode
   /** Shown above Strengths and weaknesses, whether type hints are on or not: the team's moves at a Center. */
   beforeMatchups?: ReactNode
+  /** Right under the hero, before the dice: what matters now (a waiting Pokémon's lock, an evolution to take). */
+  top?: ReactNode
   onOpenDex?: (dex: number) => void
 }) {
   const { t } = useT()
+  const details = useDetails()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
   const plates = save ? plateTypes(save, data) : undefined
@@ -456,11 +470,12 @@ export function PokemonSheet({
 
   return (
     <div className="flex flex-col gap-4">
+      {/* The hero: the Pokémon big, its types, its HP and XP as gauges (their figures are More details'). */}
       <div className="flex items-center gap-3">
-        <div className="grid h-[104px] w-[112px] shrink-0 place-items-center bg-sky shadow-ring">
+        <div className="grid h-[112px] w-[120px] shrink-0 place-items-center bg-sky shadow-ring">
           <SpriteImg dex={dex} size={96} shiny={shiny} />
         </div>
-        <div className="grid min-w-0 flex-1 gap-1.5">
+        <div className="grid min-w-0 flex-1 gap-2">
           <div className="flex flex-wrap items-center gap-1">
             {types.map((ty) => (
               <TypeBadge key={ty} type={ty} />
@@ -476,8 +491,8 @@ export function PokemonSheet({
             <RevivalBar inst={inst} />
           ) : inst ? (
             <>
-              <HpBar hp={inst.currentHp} max={stats.maxHp} />
-              <XpBar inst={inst} />
+              <HpBar hp={inst.currentHp} max={stats.maxHp} showNumbers={details} height={10} />
+              <XpBar inst={inst} numbers={details} />
               {/* Extreme mode: resting after a K.O., and until when (docs/22). */}
               {inst.currentHp <= 0 && <KoPanel inst={inst} />}
             </>
@@ -495,11 +510,7 @@ export function PokemonSheet({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-1.5">
-        <StatTile stat="speed" value={species.speed} />
-        <StatTile stat="rerolls" value={stats.rerolls} />
-        <StatTile stat="catch" value={species.catchValue} />
-      </div>
+      {top}
 
       <SheetSection
         title={t('ui.sheet.dice')}
@@ -537,7 +548,7 @@ export function PokemonSheet({
                 <span className="flex flex-wrap items-baseline gap-x-2">
                   <b className="text-[18px] font-normal leading-none">{typeName(type)}</b>
                   <em className="font-pixel-sm not-italic text-muted">×{n}</em>
-                  {data.diceTypes[type]?.description && (
+                  {details && data.diceTypes[type]?.description && (
                     <small className="ml-auto font-pixel-sm text-[16px] text-muted">{data.diceTypes[type]!.description}</small>
                   )}
                 </span>
@@ -560,6 +571,22 @@ export function PokemonSheet({
       )}
 
       {children}
+
+      {/* The studied numbers, folded (open with More details): what a fight shows anyway, or only a Pokédex reader
+          compares. */}
+      <details className="group" open={details}>
+        <summary className="flex min-h-[44px] cursor-pointer list-none items-center gap-2 text-[22px] leading-none md:min-h-[36px] [&::-webkit-details-marker]:hidden">
+          <span className="inline-block text-[16px] transition-transform group-open:rotate-90" aria-hidden>
+            ▶
+          </span>
+          {t('ui.sheet.stats')}
+        </summary>
+        <div className="mt-1 grid grid-cols-3 gap-1.5">
+          <StatTile stat="speed" value={species.speed} />
+          <StatTile stat="rerolls" value={stats.rerolls} />
+          <StatTile stat="catch" value={species.catchValue} />
+        </div>
+      </details>
     </div>
   )
 }
