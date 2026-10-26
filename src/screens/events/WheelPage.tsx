@@ -22,12 +22,12 @@ import { isJackpot, WheelStage, type WheelMotion, type WheelSlice } from '@/fx/w
 import { useT } from '@/i18n/react'
 import { countdown, money } from '@/lib/format'
 import { useMotion } from '@/lib/motion'
-import { mutateSave, pushToast, useGame } from '@/store/game'
+import { pushToast, useGame } from '@/store/game'
 import { buyWheelTicket, collectWheelPrize, spinWheel, useWheelTickets } from '@/store/wheel'
 import { InfoButton } from '@/components/RulesModal'
 import { CashChip } from './live'
-import { StagePanel, usePageRules } from './layout'
-import { EventRules, EventRulesModal, RewardIcon, rewardName } from './shared'
+import { StagePanel } from './layout'
+import { EventRules, RewardIcon, rewardName } from './shared'
 
 const toSlice = (p: WheelPrize, data: GameData): WheelSlice => {
   const r = p.reward
@@ -57,9 +57,6 @@ export function WheelPage({ head }: { head?: ReactNode }) {
   const [won, setWon] = useState<WheelReward | null>(null)
   const [odds, setOdds] = useState(false)
   // Its rules once, the first time the page opens since the wheel takes tickets (a new player saw them on unlocking).
-  // Never chained onto a queued pop-up (docs/43 §7): if one takes this visit, the rules wait for the next.
-  const [rulesDone, setRulesDone] = useState(false)
-  const rulesOpen = usePageRules(!save?.events?.wheelRulesSeen && !rulesDone)
 
   const box = useRef<HTMLDivElement>(null)
   const disc = useRef<HTMLCanvasElement>(null)
@@ -92,11 +89,6 @@ export function WheelPage({ head }: { head?: ReactNode }) {
   useEffect(() => {
     if (pending && !spinning) collectWheelPrize()
   }, [pending, spinning])
-
-  const closeRules = () => {
-    setRulesDone(true)
-    mutateSave((s) => (s.events?.wheelRulesSeen ? null : { ...s, events: { ...s.events, wheelRulesSeen: true } }))
-  }
 
   const spin = async () => {
     if (spinning || !stageRef.current) return
@@ -228,7 +220,6 @@ export function WheelPage({ head }: { head?: ReactNode }) {
         slices={order.length}
       />
       <RewardCard reward={won} data={data} onClose={() => setWon(null)} calm={motion === 'off'} />
-      <EventRulesModal id="wheel" open={rulesOpen && !won} onClose={closeRules} />
     </>
   )
 }

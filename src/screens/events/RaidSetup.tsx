@@ -387,7 +387,7 @@ function TeamEditor({
                     <SpriteImg dex={p.dex} size={56} shiny={p.shiny} />
                     {recommended.has(p.id) && <RecommendedThumb overlay />}
                   </span>
-                  <span className="max-w-full truncate text-[18px] leading-none">{name}</span>
+                  <b className="max-w-full truncate text-[18px] font-normal leading-none">{name}</b>
                   <span className="text-[16px] leading-none text-muted">
                     {t('ui.common.level.short', { n: Math.min(p.level, cap) })}
                     {manyRegions && <span className="block truncate">{getRegion(data, region)?.name ?? region}</span>}

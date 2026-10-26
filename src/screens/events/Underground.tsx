@@ -20,6 +20,8 @@ import {
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
 import { InfoButton } from '@/components/RulesModal'
+import { RulesCard } from '@/components/RulesCard'
+import { markLivePopupSeen } from '@/store/live'
 import { BackButton } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
 import { PixelIcon } from '@/components/icons'
@@ -32,13 +34,14 @@ import {
   UgRulesModal,
   UgSellModal,
   UgSoloWarning,
+  ugRuleRows,
 } from '@/components/Underground'
 import { useT } from '@/i18n/react'
 import { countdown, money, typeName } from '@/lib/format'
 import { pushToast, useGame } from '@/store/game'
 import { useDetails } from '@/store/hooks'
 import { useMediaQuery } from '@/lib/useMediaQuery'
-import { ugOpenWall, ugUpgrade, useUgTeam, useUnderground } from '@/store/underground'
+import { ugOpenWall, ugRulesSeen, ugUpgrade, useUgTeam, useUnderground } from '@/store/underground'
 import { ugSellOrbs, useUgTeamSync } from '@/store/ugTeams'
 import { cx } from '@/theme/util'
 import { liveTime } from './live'
@@ -216,17 +219,31 @@ export function UndergroundScreen() {
     // and the plates in the panel, DIG A WALL pinned at the foot with BUY KITS and INFO.
     <StagePanel
       head={
-        <div className="relative -mx-3 -mt-4 min-h-[96px] shadow-[0_2px_0_rgb(var(--c-edge))] [@media(min-height:740px)]:min-h-[132px] lg:mx-0 lg:mt-0 lg:min-h-[120px] lg:shadow-card">
-          <UgCave big className="absolute inset-0" />
-          <div className="pixel-plate absolute left-2 top-2 z-[1] flex max-w-[calc(100%-16px)] items-center gap-0.5 pb-1.5 pl-1 pr-2.5 pt-0.5">
-            <BackButton onClick={() => navigate('/home')} />
-            <span className="grid min-w-0 gap-0.5">
-              <h1 className="m-0 text-[24px] font-normal leading-none">{t('ui.live.underground.name')}</h1>
-              <small className="truncate text-[16px] leading-none text-muted">
-                {t('ui.live.endsIn', { time: liveTime(left.ms) })}
-              </small>
-            </span>
+        <div className="flex flex-col gap-3">
+          <div className="relative -mx-3 -mt-4 min-h-[96px] shadow-[0_2px_0_rgb(var(--c-edge))] [@media(min-height:740px)]:min-h-[132px] lg:mx-0 lg:mt-0 lg:min-h-[120px] lg:shadow-card">
+            <UgCave big className="absolute inset-0" />
+            <div className="pixel-plate absolute left-2 top-2 z-[1] flex max-w-[calc(100%-16px)] items-center gap-0.5 pb-1.5 pl-1 pr-2.5 pt-0.5">
+              <BackButton onClick={() => navigate('/home')} />
+              <span className="grid min-w-0 gap-0.5">
+                <h1 className="m-0 text-[24px] font-normal leading-none">{t('ui.live.underground.name')}</h1>
+                <small className="truncate text-[16px] leading-none text-muted">
+                  {t('ui.live.endsIn', { time: liveTime(left.ms) })}
+                </small>
+              </span>
+            </div>
           </div>
+          {/* Its rules where they apply (docs/43 §7): a card at the top until GOT IT; INFO at the foot again. */}
+          {!u.rulesSeen && (
+            <RulesCard
+              title={t('ui.live.underground.name')}
+              icon="pickaxe"
+              rules={ugRuleRows(data)}
+              onDone={() => {
+                ugRulesSeen()
+                markLivePopupSeen(live)
+              }}
+            />
+          )}
         </div>
       }
       stage={

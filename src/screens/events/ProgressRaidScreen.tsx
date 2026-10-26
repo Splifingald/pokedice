@@ -158,21 +158,18 @@ export function ProgressRaidPanel({ raidKey, title }: { raidKey: string; title?:
                 { area: area.name, name: data.species[raid.mega?.base ?? 0]?.name ?? '' },
               )}
             </b>
-            {/* The why, for the invested (the title says what to do). */}
-            {details && (
-              <small className="text-[16px] text-ink">
-                {t(
-                  megaLock
-                    ? `ui.raid.mega.lock.${megaLock}.text`
-                    : portal
-                      ? 'ui.portal.raidLockText'
-                      : nightmare
-                        ? 'ui.nightmare.raidLockText'
-                        : 'ui.raid.progress.lockText',
-                  { name, gem: gemName },
-                )}
-              </small>
-            )}
+            <small className="text-[16px] text-ink">
+              {t(
+                megaLock
+                  ? `ui.raid.mega.lock.${megaLock}.text`
+                  : portal
+                    ? 'ui.portal.raidLockText'
+                    : nightmare
+                      ? 'ui.nightmare.raidLockText'
+                      : 'ui.raid.progress.lockText',
+                { name, gem: gemName },
+              )}
+            </small>
           </span>
         </div>
       )}
@@ -186,7 +183,7 @@ export function ProgressRaidPanel({ raidKey, title }: { raidKey: string; title?:
       {state === 'open' && <RaidGroupSection source={source} portal={portal} nightmare={nightmare} />}
       <RaidRulesPanel dex={raid.dex} kind="progress" areaId={raid.areaId} />
       {state === 'open' && !raid.mega && details && <BallOdds dex={raid.dex} />}
-      {state === 'open' && details && <p className="m-0 text-[16px] text-muted">{t('ui.raid.progress.tries')}</p>}
+      {state === 'open' && <p className="m-0 text-[16px] text-muted">{t('ui.raid.progress.tries')}</p>}
 
       {state === 'open' && (
         <EventDock className="mt-auto">

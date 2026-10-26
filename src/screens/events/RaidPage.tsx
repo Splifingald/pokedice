@@ -179,7 +179,6 @@ export function BallOdds({ dex }: { dex: number }) {
  */
 function LockNotice({ raid }: { raid: TodayRaid }) {
   const { t } = useT()
-  const details = useDetails()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   if (!save || !raidLocked(save, data, raid.areaId)) return null
@@ -194,12 +193,10 @@ function LockNotice({ raid }: { raid: TodayRaid }) {
       </span>
       <span className="grid gap-0.5 leading-tight">
         <b className="text-[19px] font-normal leading-none">{t('ui.raid.lockTitle', { name })}</b>
-        {/* The title says it; the why is for the invested (More details). */}
-        {details && (
-          <small className="text-[16px] text-ink">
-            {t(regionStarted(save, regionId) ? 'ui.raid.lockText' : 'ui.raid.lockTextNew', { name, area: area?.name ?? '', region })}
-          </small>
-        )}
+        {/* Where and when it joins you: what decides whether to fight it today. */}
+        <small className="text-[16px] text-ink">
+          {t(regionStarted(save, regionId) ? 'ui.raid.lockText' : 'ui.raid.lockTextNew', { name, area: area?.name ?? '', region })}
+        </small>
       </span>
     </div>
   )
