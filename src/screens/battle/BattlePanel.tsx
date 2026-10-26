@@ -30,7 +30,6 @@ import { haptic } from '@/lib/haptics'
 import { useMotion } from '@/lib/motion'
 import { usePace } from '@/lib/pace'
 import { useGame } from '@/store/game'
-import { useDetails } from '@/store/hooks'
 import { BoosterChip } from '@/screens/events/world'
 import { PALETTE } from '@/theme/colors'
 import { cx } from '@/theme/util'
@@ -661,7 +660,8 @@ export function ZMoveButton({ hint, disabled, onClick }: { hint: string; disable
  * carry the same keys as `aria-keyshortcuts`, so the line itself is only for the eye.
  */
 export function KeyHints({ keys, className }: { keys: readonly (readonly [string, string])[]; className?: string }) {
-  const details = useDetails()
+  // More details' own flag, read straight from the store (the hooks module pulls the canvas code into tests).
+  const details = useGame((s) => s.settings.details === true)
   if (!keys.length) return null
   return (
     <p

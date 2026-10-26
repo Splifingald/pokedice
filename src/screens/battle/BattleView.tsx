@@ -744,12 +744,12 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const diceCount = Math.max(1, active.dice.length)
   // A tall phone (P1a, P1b) has room to spare under the stage: bigger dice, and the actions down in the thumb's reach.
   const tall = useMediaQuery('(max-width: 767px) and (min-height: 740px)')
-  // Your dice fill the tray: up to 54px (72 on a tall phone, 64 in a wide screen's docked panel), never under a 44px
+  // Your dice fill the tray: up to 54px (72 on a tall phone and in a wide screen's tall docked panel), never under a 44px
   // tap target.
   const dieSize = panelWidth
     ? Math.max(
         44,
-        Math.min(tall ? 72 : wide ? 64 : 54, Math.floor((panelWidth - 24 - (diceCount - 1) * 8) / diceCount)),
+        Math.min(tall || wide ? 72 : 54, Math.floor((panelWidth - 24 - (diceCount - 1) * 8) / diceCount)),
       )
     : 54
 

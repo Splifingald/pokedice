@@ -129,7 +129,7 @@ export function AreaTeam() {
             inst={p}
             onOpen={() => setView({ kind: 'inst', id: p.id })}
             openLabel={t('ui.newGame.monInfo', { name: p.nickname || data.species[p.dex]?.name || '' })}
-            badge={i === 0 ? <PixelIcon name="crown" size={16} title={t('ui.team.lead')} /> : null}
+            lead={i === 0}
           />
         ))}
       </ol>

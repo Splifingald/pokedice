@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { teamOf, type PokemonInstance } from '@/engine'
+import { POKE_TYPES, teamOf, type PokemonInstance, type PokeType } from '@/engine'
 import { useT } from '@/i18n/react'
-import { BoxSortPicker, sortBox, type BoxSort } from '@/components/BoxSort'
-import { PixelIcon } from '@/components/icons'
+import { BoxFilter, sortBox, type BoxSort } from '@/components/BoxSort'
 import { PokeCard } from '@/components/PokeCard'
 import { PixelButton } from '@/components/PixelButton'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
@@ -15,11 +14,12 @@ import { centerTimeline } from '@/fx/timelines/center'
 import { useMotion } from '@/lib/motion'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { AreaSceneBox } from '@/screens/area/AreaIdle'
-import { TeamSwapActions } from '@/components/TeamSwapActions'
 import { RunRoundGauge } from '@/screens/area/RoundGauge'
 import { StagePanel } from '@/screens/area/StagePanel'
 import { useGame } from '@/store/game'
 import { continueExploring, finishCenter, markHealShown } from '@/store/run'
+
+const BOX_SORTS: readonly BoxSort[] = ['dex', 'level', 'type', 'newest']
 
 /** Chansey, behind the healing machine's counter. */
 const NURSE = 113
@@ -35,6 +35,7 @@ export function CenterView() {
   const [healing, setHealing] = useState(() => level !== 'off' && !useGame.getState().run.healShown)
   const [view, setView] = useState<SheetView | null>(null)
   const [sort, setSort] = useState<BoxSort>('dex')
+  const [type, setType] = useState<PokeType | 'all'>('all')
   const teamSize = useGame((s) => s.save?.team.length ?? 1)
   const wide = useMediaQuery('(min-width: 1024px)')
   const area = useGame((s) => s.data.areas.find((a) => a.id === s.run.areaId))
@@ -48,8 +49,15 @@ export function CenterView() {
 
   if (!save) return null
   const team = teamOf(save)
+  // The Box under the Team screen's one filter control (its order and a type), so the two never disagree.
+  const typesOf = (p: PokemonInstance) => {
+    const sp = data.species[p.dex]
+    return sp ? [sp.type1, ...(sp.type2 ? [sp.type2] : [])] : []
+  }
+  const boxAll = save.box.filter((p) => !save.team.includes(p.id))
+  const boxTypes = POKE_TYPES.filter((ty) => boxAll.some((p) => typesOf(p).includes(ty)))
   const box = sortBox(
-    save.box.filter((p) => !save.team.includes(p.id)),
+    boxAll.filter((p) => type === 'all' || typesOf(p).includes(type)),
     sort,
     data,
   )
@@ -135,7 +143,7 @@ export function CenterView() {
                 inst={p}
                 onOpen={() => open(p)}
                 openLabel={t('ui.newGame.monInfo', { name: p.nickname || data.species[p.dex]?.name || '' })}
-                badge={i === 0 ? <PixelIcon name="crown" size={16} title={t('ui.team.lead')} /> : null}
+                lead={i === 0}
               />
             ))}
             {Array.from({ length: Math.max(0, data.config.maxTeamSize - team.length) }, (_, i) => (
@@ -152,7 +160,17 @@ export function CenterView() {
         <section className="flex flex-col gap-2">
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1.5">
             <h2 className="text-3xl">{t('ui.team.box', { count: box.length })}</h2>
-            {box.length > 1 && <BoxSortPicker sort={sort} onChange={setSort} />}
+            {boxAll.length > 1 && (
+            <BoxFilter
+              sort={sort}
+              onSort={setSort}
+              sorts={BOX_SORTS}
+              type={type}
+              onType={setType}
+              types={boxTypes}
+              shown={box.length}
+            />
+          )}
           </div>
           <ul className="grid grid-cols-3 gap-1.5 sm:gap-2">
             {box.map((p) => (
@@ -166,11 +184,8 @@ export function CenterView() {
           </ul>
         </section>
       </StagePanel>
-      <SheetModal
-        view={view}
-        onClose={done}
-        instExtra={(inst) => <TeamSwapActions inst={inst} onDone={done} />}
-      />
+      {/* The Center is where the team changes: the sheet's swap dock (one tap swaps one in). */}
+      <SheetModal view={view} onClose={done} manage swaps />
     </>
   )
 }

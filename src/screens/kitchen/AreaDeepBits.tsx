@@ -17,7 +17,15 @@ import { CatchCard } from '@/screens/battle/VictoryView'
 import { useGame } from '@/store/game'
 
 /** A grid of the fight (outlined) with its sky above, in a frame taller than it, as on a tall phone. */
-function SkyFrame({ label, art, world }: { label: string; art?: string; world?: 'distortion' | 'nightmare' }) {
+function SkyFrame({
+  label,
+  art,
+  world,
+}: {
+  label: string
+  art?: string
+  world?: 'distortion' | 'nightmare'
+}) {
   return (
     <figure className="m-0 flex flex-col gap-1">
       <div className="relative flex h-[300px] w-[260px] flex-col justify-end overflow-clip shadow-ring">
@@ -104,7 +112,9 @@ export function AreaDeepBits() {
 
       {area && (
         <div className="grid gap-2">
-          <b className="text-lg">The page between encounters: the scene and its panel (PC: docked, as tall)</b>
+          <b className="text-lg">
+            The page between encounters: the scene and its panel (PC: docked, as tall)
+          </b>
           <StagePanel
             scene={<AreaSceneBox area={area} />}
             bar={

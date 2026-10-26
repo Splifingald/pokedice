@@ -7,34 +7,16 @@
 // mid-field.
 import { useEffect, useRef, useState } from 'react'
 import { AreaArt } from '@/components/AreaArt'
-import {
-  artPlacement,
-  BATTLE_H,
-  BATTLE_W,
-  battleTop,
-  loadArt,
-  SCENE_W,
-  type AreaPicture,
-  type ArtGeometry,
-} from '@/fx/areaArt'
+import { artPlacement, BATTLE_H, BATTLE_W, loadArt, type AreaPicture } from '@/fx/areaArt'
 import { bayer, cached, clamp, ellipse, mix, rng, shade, type Canvas } from '@/fx/pixel'
 import { DAYBREAK } from '@/fx/scenes'
 import { NM } from '@/fx/timelines/nightmare'
 import { voidBackdrop } from '@/fx/timelines/portal'
+import { SKY_H, skyWindow } from './skyWindow'
 
-/** Art pixels of sky drawn above the grid: a 430 × 932 phone needs ~170, a 1440 × 900 window ~35. */
-export const SKY_H = 200
 const W = BATTLE_W
 const H = BATTLE_H
 const INK = '#24304f'
-
-/** The picture's window behind the sky and the grid together, in Home scene pixels: the grid's own, grown upward. */
-export const skyWindow = (p: ArtGeometry) => ({
-  x: (SCENE_W - W) / 2,
-  y: battleTop(p) - SKY_H,
-  w: W,
-  h: SKY_H + H,
-})
 
 /** Deeper towards the top, in ordered dither: a sky (or a cave's ceiling) that goes on, not a band of paint. */
 const deepen = (base: string, x: number, y: number, until: number) => {
