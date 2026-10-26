@@ -118,11 +118,27 @@ test('B opens the Bag, and its "on whom" is the send-out\'s cards with why an it
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 })
-  const save = threeTeam()
-  // The lead is hurt, the others full: the Potion helps one.
-  save.box = save.box.map((p, i) => (i === 0 ? { ...p, currentHp: 3 } : p))
-  await boot(page, save)
+  await boot(page, threeTeam())
   await toDice(page)
+  // The lead is hurt mid-fight, the others full: the Potion helps one. (A hurt team would open the area with a Center.)
+  await page.evaluate(() => {
+    type B = { hp: number }
+    type S = { battle: { state: { player: B[] } } | null }
+    const pd = (window as unknown as { __pd: { useGame: { setState: (f: (s: S) => object) => void } } }).__pd
+    pd.useGame.setState((s) =>
+      s.battle
+        ? {
+            battle: {
+              ...s.battle,
+              state: {
+                ...s.battle.state,
+                player: s.battle.state.player.map((b, i) => (i ? b : { ...b, hp: 3 })),
+              },
+            },
+          }
+        : {},
+    )
+  })
   await page.keyboard.press('b')
   const bag = page.getByRole('dialog', { name: 'Items (one per turn)' })
   await expect(bag).toBeVisible()
