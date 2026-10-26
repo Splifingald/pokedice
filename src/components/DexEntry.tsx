@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   badgeCase,
@@ -30,11 +30,14 @@ import {
   speciesTime,
   wildShare,
   type DayTime,
+  nationalDex,
 } from '@/engine'
 import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useDayTime } from '@/store/dayTime'
 import { useGame } from '@/store/game'
+import { useDetails } from '@/store/hooks'
+import { dexNo } from '@/lib/format'
 import { useServerNow } from '@/store/serverTime'
 import { progressRaidPath } from '@/screens/events/progressRaids'
 import { raidDate } from '@/screens/events/shared'
@@ -42,7 +45,11 @@ import { cx } from '@/theme/util'
 import { PixelIcon } from './icons'
 import { ItemSprite } from './ItemSprite'
 import { evolutionHow, PokemonSheet, useVisibleEvolutions } from './PokemonSheet'
-import { MiniSprite } from './SpriteImg'
+import { MiniSprite, SpriteImg } from './SpriteImg'
+import { Chip } from './Chip'
+import { CryButton } from './CryButton'
+import { Sheet } from './Sheet'
+import { TypeBadge } from './TypeBadge'
 import { areaStatus, lockReason } from '@/screens/home/areas'
 import { AreaStrip } from './AreaStrip'
 import { DayNightPill } from './DayNight'
@@ -255,7 +262,7 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
                 ? t('ui.home.playHere', { area: area.name })
                 : t('ui.home.goTo', { area: area.name })
           }
-          className="pixel-btn frame-primary absolute right-2.5 top-1/2 h-11 w-[60px] -translate-y-1/2 text-[24px] uppercase leading-none tracking-[0.06em]"
+          className="pixel-btn frame-dark absolute right-2.5 top-1/2 h-11 w-[60px] -translate-y-1/2 text-[24px] uppercase leading-none tracking-[0.06em]"
         >
           {t('ui.home.go')}
         </button>
@@ -320,7 +327,7 @@ function RaidSpot({ dex, onTravel }: { dex: number; onTravel?: () => void }) {
             navigate('/events/raid')
           }}
           aria-label={t('ui.events.open', { name: t('ui.events.raid.name') })}
-          className="pixel-btn frame-primary absolute right-2.5 top-1/2 h-11 w-[60px] -translate-y-1/2 text-[24px] uppercase leading-none tracking-[0.06em]"
+          className="pixel-btn frame-dark absolute right-2.5 top-1/2 h-11 w-[60px] -translate-y-1/2 text-[24px] uppercase leading-none tracking-[0.06em]"
         >
           {t('ui.home.go')}
         </button>
@@ -352,6 +359,48 @@ function SpotList({ spots, onTravel }: { spots: Spot[]; onTravel?: () => void })
   )
 }
 
+/**
+ * A fold: a 44 px summary row with a pixel chevron, its content under it once opened. The entry's studied parts (the
+ * dice and stats, where a stone is found) wait in one, so the hero and where to find it come first (docs/43 §5.6).
+ */
+export function Fold({
+  summary,
+  open,
+  onToggle,
+  children,
+  testId,
+}: {
+  summary: ReactNode
+  open?: boolean
+  onToggle?: (open: boolean) => void
+  children: ReactNode
+  testId?: string
+}) {
+  // Its content is built only once opened: a closed <details> still lays out what it hides in Chrome, and the sheet's
+  // dice are the entry's heaviest part.
+  const [shown, setShown] = useState(!!open)
+  return (
+    <details
+      className="group shadow-ring-line"
+      open={shown}
+      onToggle={(e) => {
+        setShown(e.currentTarget.open)
+        onToggle?.(e.currentTarget.open)
+      }}
+      data-testid={testId}
+    >
+      <summary className="flex min-h-[44px] cursor-pointer list-none items-center gap-2 px-2 py-1 text-[20px] leading-none hover:bg-paper [&::-webkit-details-marker]:hidden">
+        <span
+          aria-hidden
+          className="block h-[10px] w-[8px] shrink-0 bg-ink [clip-path:polygon(0_0,100%_50%,0_100%)] group-open:rotate-90"
+        />
+        <span className="flex min-w-0 flex-1 items-center gap-1.5">{summary}</span>
+      </summary>
+      {shown && <div className="flex flex-col gap-2 px-2 pb-2 pt-1">{children}</div>}
+    </details>
+  )
+}
+
 /** Where the item an evolution needs comes from: the areas that drop it, and the Poké Mart if it sells it here. */
 function ItemSources({ itemKey, onTravel }: { itemKey: string; onTravel?: () => void }) {
   const { t } = useT()
@@ -369,23 +418,28 @@ function ItemSources({ itemKey, onTravel }: { itemKey: string; onTravel?: () => 
     : badges < item.shopBadges
       ? t(`ui.shop.needsBadges.${item.shopBadges === 1 ? 'one' : 'other'}`, { count: item.shopBadges })
       : item.shopArea && !isAreaUnlocked(save, item.shopArea, data)
-        ? t('ui.shop.needsArea', { area: data.areas.find((a) => a.id === item.shopArea)?.name ?? t('ui.shop.someNewArea') })
+        ? t('ui.shop.needsArea', {
+            area: data.areas.find((a) => a.id === item.shopArea)?.name ?? t('ui.shop.someNewArea'),
+          })
         : null
   return (
-    <div className="flex flex-col gap-2 border-l-[3px] border-edge/30 pl-2">
-      <h4 className="flex items-center gap-1.5 text-xl leading-none">
-        <ItemSprite item={item} size={24} />
-        {t('ui.dex.whereToFindItem', { item: item.name })}
-      </h4>
+    <Fold
+      summary={
+        <>
+          <ItemSprite item={item} size={24} />
+          <span className="min-w-0">{t('ui.dex.whereToFindItem', { item: item.name })}</span>
+        </>
+      }
+    >
       {spots.length > 0 && <SpotList spots={spots} onTravel={onTravel} />}
       {inShop && (
-        <p className="pixel-panel p-2 text-lg leading-tight">
+        <p className="bg-paper p-2 text-lg leading-tight shadow-ring">
           {t('ui.dex.itemInShop')}
           {shopNeeds && <span className="text-muted"> · {shopNeeds}</span>}
         </p>
       )}
       {spots.length === 0 && !inShop && <p className="copy text-muted">{t('ui.dex.itemNowhere')}</p>}
-    </div>
+    </Fold>
   )
 }
 
@@ -396,7 +450,7 @@ const EVOLVES_TEXT = {
 
 /**
  * One evolution step as a card naming the other species (a silhouette until it is caught) that opens its entry — and,
- * for a stone, where to find that stone. "From" on the evolved species' entry, "into" on the one that evolves.
+ * for a stone, where to find that stone (folded). "From" on the evolved species' entry, "into" on the one that evolves.
  */
 function EvolutionStep({
   dex,
@@ -422,7 +476,7 @@ function EvolutionStep({
     <button
       type="button"
       onClick={() => onOpenDex?.(dex)}
-      className="flex min-h-[52px] w-full items-center gap-2 bg-paper px-2 py-1.5 text-left shadow-ring hover:bg-paper"
+      className="flex min-h-[52px] w-full items-center gap-2 bg-paper px-2 py-1.5 text-left shadow-ring hover:shadow-card-gold"
     >
       <MiniSprite dex={dex} size={40} silhouette={!known} />
       <span className="text-[18px] leading-tight">
@@ -433,87 +487,78 @@ function EvolutionStep({
       </span>
     </button>
   )
-  if (!evo.item || how === 'trade') return button
+  if (!evo.item || how === 'trade') return <li>{button}</li>
   return (
-    <div className="flex flex-col gap-2">
+    <li className="flex flex-col gap-1.5">
       {button}
       <ItemSources itemKey={evo.item} onTravel={onTravel} />
-    </div>
+    </li>
   )
 }
 
 /**
- * What an uncaught species evolves into (the branches this save may see), and for a stone where to find it. A caught
- * one's sheet already lists its evolutions, so it only gets the stones' sources (EvolutionItems).
+ * Its evolutions, both ways: what it evolves from and into (the branches this save may see), each a card that opens
+ * that entry, a stone's sources folded under its card. Nothing when it neither evolves nor comes from anything.
  */
-function EvolvesInto({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (dex: number) => void; onTravel?: () => void }) {
+function Evolutions({
+  dex,
+  onOpenDex,
+  onTravel,
+}: {
+  dex: number
+  onOpenDex?: (dex: number) => void
+  onTravel?: () => void
+}) {
   const { t } = useT()
   const data = useGame((s) => s.data)
-  const evolutions = useVisibleEvolutions(data.species[dex]!)
-  if (evolutions.length === 0) return null
+  const into = useVisibleEvolutions(data.species[dex]!)
+  const from = useMemo(
+    () =>
+      data.speciesList.flatMap((s) => {
+        const evo = s.evolutions.find((e) => e.toDex === dex)
+        return evo ? [{ species: s, evo }] : []
+      }),
+    [data, dex],
+  )
+  if (!into.length && !from.length) return null
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="text-[22px] leading-none">{t('ui.sheet.evolvesInto')}</h3>
-      {evolutions.map((e) => (
-        <EvolutionStep
-          key={`${e.toDex}-${e.item ?? e.level}`}
-          dex={e.toDex}
-          evo={e}
-          direction="into"
-          from={dex}
-          onOpenDex={onOpenDex}
-          onTravel={onTravel}
-        />
-      ))}
+      <h3 className="text-[22px] leading-none">{t('ui.dex.evolutions')}</h3>
+      <ul className="grid gap-1.5">
+        {from.map(({ species, evo }) => (
+          <EvolutionStep
+            key={`f-${species.dex}`}
+            dex={species.dex}
+            evo={evo}
+            direction="from"
+            from={species.dex}
+            onOpenDex={onOpenDex}
+            onTravel={onTravel}
+          />
+        ))}
+        {into.map((e) => (
+          <EvolutionStep
+            key={`i-${e.toDex}-${e.item ?? e.level}`}
+            dex={e.toDex}
+            evo={e}
+            direction="into"
+            from={dex}
+            onOpenDex={onOpenDex}
+            onTravel={onTravel}
+          />
+        ))}
+      </ul>
     </section>
   )
 }
 
-/** An uncaught species: its silhouette, where it can be found (or what it evolves from), and what it evolves into. */
-function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (dex: number) => void; onTravel?: () => void }) {
-  const { t } = useT()
-  const data = useGame((s) => s.data)
-  const { spots, travelHint } = useSpots(dex)
-  const raid = useRaidRole(dex)
-  const from = data.speciesList.flatMap((s) => {
-    const evo = s.evolutions.find((e) => e.toDex === dex)
-    return evo ? [{ species: s, evo }] : []
-  })
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-3">
-        <div className="grid h-[104px] w-[112px] shrink-0 place-items-center bg-sky shadow-ring">
-          <MiniSprite dex={dex} size={80} silhouette />
-        </div>
-        <p className="font-pixel-sm text-[16px] leading-tight text-muted">{t('ui.dex.catchToLearn')}</p>
-      </div>
-      <section className="flex flex-col gap-2">
-        <h3 className="text-[22px] leading-none">{t('ui.dex.whereToFindHeading')}</h3>
-        {spots.length > 0 && <SpotList spots={spots} onTravel={onTravel} />}
-        {raid && (
-          <ul className="grid gap-1.5">
-            <RaidSpot dex={dex} onTravel={onTravel} />
-          </ul>
-        )}
-        {from.map(({ species, evo }) => (
-          <EvolutionStep key={species.dex} dex={species.dex} evo={evo} direction="from" from={species.dex} onOpenDex={onOpenDex} onTravel={onTravel} />
-        ))}
-        {spots.length === 0 && from.length === 0 && !raid && <p className="copy text-muted">{t('ui.dex.notSpotted')}</p>}
-        {travelHint && <p className="font-pixel-sm text-[16px] text-muted">{t('ui.home.finishFirst')}</p>}
-      </section>
-      <EvolvesInto dex={dex} onOpenDex={onOpenDex} onTravel={onTravel} />
-    </div>
-  )
-}
-
-/** A caught species' spots, under its sheet — so the player can go back for another (or a shiny). */
-function CaughtSpots({ dex, onTravel }: { dex: number; onTravel?: () => void }) {
+/** Where to find it: its areas, its raid days, or a word that nobody has seen it (unless it only comes by evolving). */
+function WhereToFind({ dex, evolvesFrom, onTravel }: { dex: number; evolvesFrom: boolean; onTravel?: () => void }) {
   const { t } = useT()
   const { spots, travelHint } = useSpots(dex)
   const raid = useRaidRole(dex)
-  // Evolved-only species: the sheet's evolution track already says where they come from.
-  if (spots.length === 0 && !raid) return null
+  // Evolved-only species: the Evolutions under it say where they come from.
+  if (spots.length === 0 && !raid && evolvesFrom) return null
   return (
     <section className="flex flex-col gap-2">
       <h3 className="text-[22px] leading-none">{t('ui.dex.whereToFindHeading')}</h3>
@@ -523,27 +568,54 @@ function CaughtSpots({ dex, onTravel }: { dex: number; onTravel?: () => void }) 
           <RaidSpot dex={dex} onTravel={onTravel} />
         </ul>
       )}
+      {spots.length === 0 && !raid && <p className="copy text-muted">{t('ui.dex.notSpotted')}</p>}
       {travelHint && <p className="font-pixel-sm text-[16px] text-muted">{t('ui.home.finishFirst')}</p>}
     </section>
   )
 }
 
-/** A caught species that evolves with an item: where to get that item. */
-function EvolutionItems({ dex, onTravel }: { dex: number; onTravel?: () => void }) {
-  const data = useGame((s) => s.data)
-  const evolutions = useVisibleEvolutions(data.species[dex]!)
-  const items = [...new Set(evolutions.flatMap((e) => (e.item ? [e.item] : [])))]
-  if (items.length === 0) return null
+/**
+ * The entry's hero: the sprite on the sky (a silhouette until caught), its types, its cry and the shiny star once
+ * caught; uncaught, the one line saying what a catch reveals.
+ */
+function DexHero({ dex, caught, shiny }: { dex: number; caught: boolean; shiny?: boolean }) {
+  const { t } = useT()
+  const species = useGame((s) => s.data.species[dex])
+  if (!species) return null
+  const types = species.type2 ? [species.type1, species.type2] : [species.type1]
   return (
-    <section className="flex flex-col gap-3">
-      {items.map((key) => (
-        <ItemSources key={key} itemKey={key} onTravel={onTravel} />
-      ))}
-    </section>
+    <div className="flex items-center gap-3">
+      <div className="grid h-[104px] w-[112px] shrink-0 place-items-center bg-sky shadow-ring">
+        {caught ? <SpriteImg dex={dex} size={96} shiny={shiny} /> : <MiniSprite dex={dex} size={64} silhouette />}
+      </div>
+      {caught ? (
+        <div className="grid min-w-0 flex-1 justify-items-start gap-2">
+          <div className="flex flex-wrap items-center gap-1">
+            {types.map((ty) => (
+              <TypeBadge key={ty} type={ty} />
+            ))}
+            {shiny && (
+              <Chip tone="gold">
+                <PixelIcon name="star" size={12} /> {t('ui.mon.shinyTag')}
+              </Chip>
+            )}
+          </div>
+          <CryButton dex={dex} name={species.name} />
+        </div>
+      ) : (
+        <p className="font-pixel-sm text-[18px] leading-tight text-muted">{t('ui.dex.catchToLearn')}</p>
+      )}
+    </div>
   )
 }
 
-/** A Pokédex entry: the full sheet (and where to find it) once caught, otherwise just where to find it. */
+/** The dice and stats stay open from one entry to the next once opened: a PC walking the grid compares them. */
+let statsOpen = false
+
+/**
+ * A Pokédex entry (docs/43 §5.6): the hero, where to find it, its evolutions; once caught, its dice and stats folded
+ * under them (open from the start with More details on).
+ */
 export function DexEntry({
   dex,
   shiny,
@@ -556,15 +628,76 @@ export function DexEntry({
   onOpenDex?: (dex: number) => void
   onTravel?: () => void
 }) {
+  const { t } = useT()
   const save = useGame((s) => s.save)
-  if (!save) return null
-  if (!save.pokedex.includes(dex)) return <MissingEntry dex={dex} onOpenDex={onOpenDex} onTravel={onTravel} />
+  const data = useGame((s) => s.data)
+  const details = useDetails()
+  const evolvesFrom = useMemo(
+    () => data.speciesList.some((s) => s.evolutions.some((e) => e.toDex === dex)),
+    [data, dex],
+  )
+  if (!save || !data.species[dex]) return null
+  const caught = save.pokedex.includes(dex)
   const mine = save.box.filter((p) => p.dex === dex && (!shiny || p.shiny))
   const best = (mine.length ? mine : save.box.filter((p) => p.dex === dex)).sort((a, b) => b.level - a.level)[0]
   return (
-    <PokemonSheet dex={dex} inst={best} shiny={shiny || undefined} onOpenDex={onOpenDex}>
-      <EvolutionItems dex={dex} onTravel={onTravel} />
-      <CaughtSpots dex={dex} onTravel={onTravel} />
-    </PokemonSheet>
+    <div className="flex flex-col gap-4">
+      <DexHero dex={dex} caught={caught} shiny={shiny} />
+      <WhereToFind dex={dex} evolvesFrom={evolvesFrom} onTravel={onTravel} />
+      <Evolutions dex={dex} onOpenDex={onOpenDex} onTravel={onTravel} />
+      {caught && (
+        <Fold
+          summary={t('ui.dex.diceStats')}
+          open={details || statsOpen}
+          onToggle={(o) => (statsOpen = o)}
+          testId="dex-details"
+        >
+          <PokemonSheet dex={dex} inst={best} shiny={shiny || undefined} onOpenDex={onOpenDex} hero={false} />
+        </Fold>
+      )}
+    </div>
+  )
+}
+
+/**
+ * The Pokédex's entry as a sheet (docs/43 §5.6): from the bottom on a phone, docked beside the grid in a `SplitView`
+ * on a PC. Named by the species once caught, by its number until then. `onBack` while an evolution's entry was opened
+ * from another.
+ */
+export function DexSheet({
+  dex,
+  shiny,
+  open,
+  onClose,
+  onOpenDex,
+  onBack,
+}: {
+  dex: number
+  shiny?: boolean
+  open: boolean
+  onClose: () => void
+  onOpenDex: (dex: number) => void
+  onBack?: () => void
+}) {
+  const { t } = useT()
+  const data = useGame((s) => s.data)
+  const caught = useGame((s) => !!s.save?.pokedex.includes(dex))
+  const no = dexNo(nationalDex(data, dex))
+  return (
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title={caught ? (data.species[dex]?.name ?? no) : no}
+      sub={caught ? no : t('ui.sheet.notCaughtYet')}
+    >
+      <div className="flex flex-col gap-3" data-dex-entry={dex} tabIndex={-1}>
+        {onBack && (
+          <button type="button" className="min-h-[44px] self-start text-[20px] underline" onClick={onBack}>
+            {t('ui.sheet.backStack')}
+          </button>
+        )}
+        <DexEntry key={dex} dex={dex} shiny={shiny} onOpenDex={onOpenDex} onTravel={onClose} />
+      </div>
+    </Sheet>
   )
 }

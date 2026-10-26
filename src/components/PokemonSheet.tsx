@@ -425,8 +425,11 @@ export function PokemonSheet({
   beforeMatchups,
   onOpenDex,
   shiny: shinyAsked,
+  hero = true,
 }: {
   dex: number
+  /** False where the screen draws the sprite and types itself (the Pokédex entry's hero, docs/43 §5.6). */
+  hero?: boolean
   inst?: PokemonInstance
   /** Shiny colours whatever `inst` is: the shiny Pokédex's entry, owned shiny once (docs/39). */
   shiny?: boolean
@@ -456,6 +459,7 @@ export function PokemonSheet({
 
   return (
     <div className="flex flex-col gap-4">
+      {hero && (
       <div className="flex items-center gap-3">
         <div className="grid h-[104px] w-[112px] shrink-0 place-items-center bg-sky shadow-ring">
           <SpriteImg dex={dex} size={96} shiny={shiny} />
@@ -494,6 +498,7 @@ export function PokemonSheet({
           )}
         </div>
       </div>
+      )}
 
       <div className="grid grid-cols-3 gap-1.5">
         <StatTile stat="speed" value={species.speed} />
