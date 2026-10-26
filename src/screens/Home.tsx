@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { cx } from '@/theme/util'
 import { Navigate, useNavigate } from 'react-router-dom'
@@ -11,19 +11,21 @@ import { useGame } from '@/store/game'
 import { closeVictoryLeftOpen, enterArea } from '@/store/run'
 import { takeResumeLanding } from '@/store/resume'
 import { regionOnOffer } from '@/store/regions'
-import { AreaDetails } from './home/AreaDetails'
-import { AreaPlate } from './home/AreaPlate'
-import { AreasSheet, type AreasFilter } from './home/AreasSheet'
-import { ContinueBar, useContinue } from './home/ContinueBar'
+import { AreasSheet, type AreasView } from './home/AreasSheet'
+import { PlayDock, useContinue, type AreasState } from './home/ContinueBar'
 import { hasNewSecret, playable } from './home/areas'
+import { HereCard } from './home/HereCard'
+import { HomeNotices } from './home/Notices'
 import { SceneStage } from './home/SceneStage'
 import { travelTo } from '@/store/travel'
 import { Widgets } from './home/Widgets'
 import { useInWorld, WorldStrip, WorldWaiting } from '@/screens/events/world'
 
 /**
- * Home: the area hub and the landing screen. The current area's scenery with the team roaming it, the area plate (its
- * details), CONTINUE (the next encounter, or the challenge waiting), the Areas sheet, and the widgets two by two.
+ * Home (docs/43 §5.2): the area's scene with the team roaming it on top, then the notices and what's open (Events,
+ * Secret areas, Features) as one list of cards; the PLAY dock — the area button (its name and rounds, opening the Areas
+ * sheet) and CONTINUE — pinned at the bottom on phones. On PC the scene stands as tall as the window on the left and
+ * the dock heads the column beside it.
  */
 export function HomeScreen() {
   const save = useGame((s) => s.save)
@@ -38,22 +40,35 @@ export function HomeScreen() {
   return <HomeView area={area} />
 }
 
+/** An element's height, kept up to date: the room the pinned dock covers, given back under the page. */
+function useHeight<T extends HTMLElement>() {
+  const ref = useRef<T>(null)
+  const [h, setH] = useState(0)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    setH(el.getBoundingClientRect().height)
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => setH(el.getBoundingClientRect().height))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  return [ref, h] as const
+}
+
 function HomeView({ area }: { area: Area }) {
   const { t } = useT()
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
   const runArea = useGame((s) => s.run.areaId)
   const runPhase = useGame((s) => s.run.phase)
-  const [details, setDetails] = useState<string | null>(null)
-  const [sheet, setSheet] = useState<{ view: 'areas' | 'regions'; filter: AreasFilter; key: number } | null>(
-    null,
-  )
+  const [sheet, setSheet] = useState<{ view: AreasView; key: number } | null>(null)
   const [mon, setMon] = useState<SheetView | null>(null)
   const { go, goTo } = useContinue(area)
-  // Inside a small world only its own things show (docs/21): its strip (about 60px and the gap) above the scene, no
-  // other region on offer, no region switcher. Wide screens take its room off the scene, so the scene stays in view.
+  // Inside a small world only its own things show (docs/21): its strip above the scene, no other region on offer, no
+  // region switcher. Where Unown live (docs/41) the Unown Pokédex's banner sits there the same way. Wide screens take
+  // its room off the scene, so the scene stays in view.
   const inside = useInWorld().inside
-  // Where Unown live (docs/41): the Unown Pokédex's banner sits there, as a world's strip does.
   const unown = useUnownStrip()
   const strip = inside || unown ? 72 : 0
 
@@ -75,94 +90,103 @@ function HomeView({ area }: { area: Area }) {
   }, [runPhase])
 
   const offer = inside ? null : regionOnOffer()
-  const areasState = offer ? 'region' : hasNewSecret(save, data) ? 'new' : 'plain'
+  const areasState: AreasState = offer ? 'region' : hasNewSecret(save, data) ? 'new' : 'plain'
 
-  // GO / CONTINUE HERE: close the sheets and play the area you're in.
+  // CONTINUE HERE / GO in the sheet: close it and play the area you're in.
   const play = () => {
     setSheet(null)
-    setDetails(null)
     go()
   }
   const travel = (a: Area) => {
     if (!travelTo(a)) return
     setSheet(null)
-    setDetails(null)
   }
-  const detailArea = details ? (data.areas.find((a) => a.id === details) ?? null) : null
-  // Phones (the rework): the scene on top, then what's open (the Day Care…), and CONTINUE pinned at the bottom, in the
-  // thumb's reach above the tab bar. Wide screens keep it under the scene.
+  const openSheet = (view: AreasView) => setSheet({ view, key: Date.now() })
   const wide = useMediaQuery('(min-width: 1024px)')
-  const bar = (
-    <ContinueBar
-      area={area}
-      areasState={areasState}
-      onAreas={() =>
-        setSheet({ view: areasState === 'region' ? 'regions' : 'areas', filter: 'all', key: Date.now() })
-      }
-    />
-  )
+  const dock = <PlayDock area={area} areasState={areasState} onAreas={() => openSheet('details')} />
+  const [dockRef, dockH] = useHeight<HTMLDivElement>()
 
   return (
-    // Wide screens: the scene takes all the room it can (same shape, never resized out of it) while the widgets keep
-    // their two columns and CONTINUE stays above the fold: its height is the viewport less the top bar, the page's
-    // padding and the Continue bar (≈184px, plus what sits under it: --below), its width follows from the scene's
-    // 288:276 shape, and it never takes more than 58% of the row (on a 1024px screen the widgets would be squeezed out).
     <div
-      className="flex flex-col gap-3 md:gap-4 lg:grid lg:grid-cols-[minmax(320px,min(calc((100dvh-112px-var(--below))*288/276),58%))_minmax(0,1fr)] lg:items-start lg:gap-5"
+      className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_clamp(380px,34%,520px)] lg:items-start lg:gap-5"
       style={{ ['--below' as string]: `${strip}px` }}
     >
       <h1 className="sr-only">{t('ui.home.heading', { area: area.name })}</h1>
-      {inside && (
-        <div className="-mx-3 -mt-4 md:m-0 lg:col-span-2">
-          <WorldStrip />
-        </div>
-      )}
-      {!inside && unown && (
-        <div className="-mx-3 -mt-4 md:m-0 lg:col-span-2">
-          <UnownStrip />
-        </div>
-      )}
-      <section className="flex flex-col gap-3" aria-label={area.name}>
+      {/* The scene: full width on a phone, bleeding to the edges; on PC as tall as the window (less the top bar and
+          the page's padding), kept close to its own shape (at most 1.15 times as tall as wide) and pinned while the
+          column beside it scrolls. */}
+      <section
+        aria-label={area.name}
+        className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-[calc(var(--top-bar,56px)+1rem)]"
+        style={{ containerType: 'inline-size' }}
+      >
+        {inside && (
+          <div className="-mx-3 -mt-4 md:m-0">
+            <WorldStrip />
+          </div>
+        )}
+        {!inside && unown && (
+          <div className="-mx-3 -mt-4 md:m-0">
+            <UnownStrip />
+          </div>
+        )}
         <div
           className={cx(
             '-mx-3 overflow-hidden shadow-ledge md:pixel-panel md:m-0 md:p-0 md:shadow-none',
-            !inside && !unown && '-mt-4',
+            !inside && !unown && '-mt-4 md:mt-0',
           )}
+          style={
+            wide
+              ? { height: 'min(calc(100dvh - var(--top-bar, 56px) - 3.5rem - var(--below)), 115cqw)' }
+              : undefined
+          }
         >
-          <SceneStage area={area} team={teamOf(save)} onOpen={(id) => setMon({ kind: 'inst', id })}>
-            <AreaPlate area={area} onOpen={() => setDetails(area.id)} />
-          </SceneStage>
+          <SceneStage
+            area={area}
+            team={teamOf(save)}
+            onOpen={(id) => setMon({ kind: 'inst', id })}
+            fill={wide}
+          />
         </div>
       </section>
-      {/* Wide screens (docs/42): the scene takes the whole height on the left; on the right, what to do — PLAY first,
-          then what's open, under its headings. */}
-      <div className="flex flex-col gap-4">
-        {wide && bar}
+      <div className="flex min-w-0 flex-col gap-4">
+        {/* PC: PLAY heads the column beside the scene. */}
+        {wide && dock}
+        {wide && <HereCard area={area} onOpen={() => openSheet('details')} />}
+        <HomeNotices onRegions={() => openSheet('regions')} />
         <section aria-label={t('ui.home.widgets')}>
           <Widgets />
         </section>
       </div>
       {!wide && (
-        <div className="sticky bottom-[calc(60px+env(safe-area-inset-bottom))] z-30 -mx-3 -mb-3 mt-auto bg-parchment px-3 pb-3 pt-2 md:bottom-0">
-          {bar}
-        </div>
+        <>
+          {/* Phones: pinned over the tab bar, in the thumb's reach, the page scrolling behind it; from 768 px (no tab
+              bar) it sticks to the foot of the column. The spacer gives its room back under the page. */}
+          <div aria-hidden className="md:hidden" style={{ height: Math.max(0, dockH - 28) }} />
+          <div
+            ref={dockRef}
+            className="fixed inset-x-0 z-30 border-t-[3px] border-edge bg-parchment px-3 pb-2.5 pt-2 md:sticky md:inset-x-auto md:-mx-3 md:mt-auto md:border-t-0"
+            style={{ bottom: 'var(--bottom-nav)' }}
+          >
+            {dock}
+          </div>
+        </>
       )}
 
       <AreasSheet
         key={sheet?.key ?? 0}
         open={!!sheet}
         onClose={() => setSheet(null)}
-        view={sheet?.view ?? 'areas'}
-        filter={sheet?.filter ?? 'all'}
+        view={sheet?.view ?? 'details'}
+        filter="all"
+        area={area.id}
         lead={goTo?.area.id ?? area.id}
-        onDetails={(id) => setDetails(id)}
         onPlay={play}
         onTravel={travel}
       />
-      <AreaDetails area={detailArea} onClose={() => setDetails(null)} onPlay={play} onTravel={travel} />
       <SheetModal view={mon} onClose={() => setMon(null)} manage />
       {/* The next region's offer opens by itself once, when a league is won. */}
-      {!inside && <RegionBar modalOnly />}
+      {!inside && <RegionBar />}
     </div>
   )
 }

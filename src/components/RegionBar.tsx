@@ -1,89 +1,43 @@
-// The region strip at the top of the Map: where you are, where else you have been, and the offer of somewhere new.
-//
-// None of this exists until a league has been won: with one region unlocked and nothing on offer, the bar renders
-// nothing at all, which is what keeps Johto unmentioned for a player still working through Kanto.
+// The next region's offer, once a league is won: Prof. Oak's terms in a pop-up, then the professor's lab. It opens by
+// itself once per region, on its turn in the one-time pop-ups' queue (engine/popups.ts); once closed it is saved as
+// seen, and the offer waits on Home as a notice (home/Notices.tsx) and in the Areas sheet's Regions view, which start the
+// region themselves. Nothing of this exists until a league has been won, which keeps Johto unmentioned for a player
+// still working through Kanto.
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { getRegion, regionOf, type Region } from '@/engine'
 import { useT } from '@/i18n/react'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
 import { PartnerMoment } from '@/components/PartnerMoment'
 import { useMyTurn, useOnScreen } from '@/components/popupTurn'
-import { availableRegions, closeRegionOffer, regionOnOffer, startRegion, switchRegion } from '@/store/regions'
+import { closeRegionOffer, regionOnOffer, startRegion } from '@/store/regions'
 import { useGame } from '@/store/game'
 import { exploreFirstArea } from '@/store/run'
-import { cx } from '@/theme/util'
 import { TrainerSprite } from '@/components/TrainerArt'
 
-/** `modalOnly`: just the offer's pop-up (Home shows the regions in its Areas sheet). */
-export function RegionBar({ modalOnly = false }: { modalOnly?: boolean }) {
+export function RegionBar() {
   const { t } = useT()
-  const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
   const busy = useGame((s) => s.run.phase !== 'idle')
-  // The pop-up opens by itself once per region, on its turn in the one-time pop-ups' queue (engine/popups.ts: after
-  // Prof. Oak's tutorials and the donation pop-up; the banner keeps it on screen meanwhile). Once closed, it is saved as
-  // seen and only the banner reopens it.
-  const turn = useMyTurn('regionOffer')
-  const [reopened, setReopened] = useState(false)
+  const open = useMyTurn('regionOffer')
   const [picking, setPicking] = useState(false)
   const navigate = useNavigate()
-
-  const regions = availableRegions()
   const offer = regionOnOffer()
-  const current = regionOf(save)
-  const offerOpen = (turn || reopened) && !busy && !picking
-  useOnScreen('regionOffer', offerOpen && turn)
-  const closeOffer = () => {
-    setReopened(false)
-    closeRegionOffer()
-  }
-  if (regions.length < 2 && !offer) return null
+  const offerOpen = open && !busy && !picking
+  useOnScreen('regionOffer', offerOpen)
+  if (!offer) return null
 
   return (
     <>
-      {!modalOnly && regions.length > 1 && (
-        <nav aria-label={t('ui.region.label')} className="flex flex-wrap items-center gap-2">
-          <span className="text-lg text-muted">{t('ui.region.label')}</span>
-          {regions.map((r) => (
-            <button
-              key={r.id}
-              type="button"
-              aria-current={r.id === current ? 'page' : undefined}
-              onClick={() => switchRegion(r.id)}
-              className={cx(
-                'min-h-[34px] border-2 border-edge px-2 text-xl leading-tight',
-                r.id === current ? 'bg-gold text-ink' : 'bg-panel hover:bg-paper',
-              )}
-            >
-              {r.name}
-            </button>
-          ))}
-        </nav>
-      )}
-
-      {!modalOnly && offer && (
-        <motion.div
-          className="pixel-panel flex flex-wrap items-center gap-3 border-gold p-3"
-          initial={{ y: -8, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-        >
-          <div className="min-w-0 flex-1 basis-64">
-            <div className="text-2xl leading-tight text-gold">{t('ui.region.newOpen')}</div>
-            <p className="text-lg leading-tight text-muted">{t('ui.region.newBody', { region: offer.name })}</p>
-          </div>
-          <PixelButton variant="primary" onClick={() => setReopened(true)}>
-            {t('ui.region.see', { region: offer.name })}
-          </PixelButton>
-        </motion.div>
-      )}
-
       {/* The terms, then the professor's lab: the three balls drop onto the table and one becomes the partner. */}
       {offer && (
-        <Modal open={offerOpen} onClose={closeOffer} title={t('ui.region.awaits', { region: offer.name })}>
-          <RegionTerms region={offer} onClose={closeOffer} onAccept={() => setPicking(true)} />
+        <Modal
+          open={offerOpen}
+          onClose={closeRegionOffer}
+          title={t('ui.region.awaits', { region: offer.name })}
+        >
+          <RegionTerms region={offer} onClose={closeRegionOffer} onAccept={() => setPicking(true)} />
         </Modal>
       )}
       {offer && picking && (

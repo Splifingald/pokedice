@@ -29,15 +29,12 @@ import { GeneralUnlockPopup, OfflineReportModal } from './GeneralRules'
 import { ShinyDexUnlockPopup } from './ShinyDexRules'
 import { UnownDexUnlockPopup } from './UnownDex'
 import { GiftService } from './Gifts'
-import { LeaderboardTutorial } from './LeaderboardTutorial'
 import { POPUP_GAP_MS, PopupTurnContext, usePopupOnScreen } from './popupTurn'
 import { PowersUnlockPopup } from './PowersRules'
 import { RaidRulesPopup } from '@/screens/events/RaidRules'
 import { PushService } from './PushService'
 import { RaidGiftPopup } from './RaidGiftPopup'
 import { ReplyPopup, useRepliesWaiting } from './ReplyPopup'
-import { ShareTutorial, useShareSeen } from './ShareTutorial'
-import { DonationPopup } from './SupportModal'
 import { TradesService } from './trades/TradesService'
 
 /**
@@ -62,7 +59,6 @@ export function PopupQueue({ children }: { children: ReactNode }) {
   const full = useFullscreen()
   const gifts = useGiftMoment((s) => s.busy || !!s.rulesFor || !!s.opening)
   const now = useServerNow(5000)
-  const shareSeen = useShareSeen()
   const awayReport = useAwayReport((s) => !!s.report)
   const offlineReport = useOfflineReport((s) => !!s.report)
   const replies = useRepliesWaiting()
@@ -83,7 +79,6 @@ export function PopupQueue({ children }: { children: ReactNode }) {
         signedIn,
         online: isSupabaseConfigured,
         now,
-        shareSeen,
         awayReport,
         offlineReport,
         replies,
@@ -101,7 +96,6 @@ export function PopupQueue({ children }: { children: ReactNode }) {
       path,
       signedIn,
       now,
-      shareSeen,
       awayReport,
       offlineReport,
       replies,
@@ -138,14 +132,11 @@ export function OneTimePopups() {
       <OfflineReportModal />
       <DayCareTutorial />
       <DayCareNotice />
-      <LeaderboardTutorial />
       <ReplyPopup />
       <RaidGiftPopup />
       <GiftService />
-      <DonationPopup />
       <EventUnlockPopup />
       <VersusUnlockPopup />
-      <ShareTutorial />
       <ExtremeUnlockPopup />
       <GeneralUnlockPopup />
       <ShinyDexUnlockPopup />

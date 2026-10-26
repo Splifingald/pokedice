@@ -7,6 +7,9 @@
 // The rules that open at their own moment (the gifts' before the first gift, Trick or Treat's at the first ghost, the
 // portal's and the nightmare's on their way in, the looks' at the first open) aren't in the queue, and being due holds
 // nothing back.
+//
+// What asks nothing of the player (Prof. Oak's leaderboard tip, Support me, Prof. Oak's invite) is no pop-up any more
+// (docs/43 §7): Home shows it as a card in the page (`homeNotices`, below), once, with the same "seen" flags.
 import { dayCareTutorialDue, leaderboardTutorialDue } from './daycare'
 import { donationDue } from './donation'
 import { dayNightRulesDue } from './dayNight'
@@ -40,7 +43,7 @@ export interface PopupContext {
   online?: boolean
   /** The server's time, null until known: the small worlds and live events run on it. */
   now: number | null
-  /** Prof. Oak's invite was closed already in this region, on this device (it's kept on the device, not the save). */
+  /** Prof. Oak's invite was closed already in this region, on this device (kept on the device): `homeNotices`. */
   shareSeen?: boolean
   /** Extreme mode's "while you were away" report is waiting. */
   awayReport?: boolean
@@ -77,21 +80,14 @@ const QUEUE = {
   /** The General upgrades: the gold earned while away. */
   offline: { due: (_s, _d, c) => !!c.offlineReport },
   dayCare: { due: (s, d) => dayCareTutorialDue(s, d), away: (p) => p === '/daycare' },
-  leaderboard: { due: (s, d) => leaderboardTutorialDue(s, d), away: (p) => p === '/leaderboard' },
   /** The developer's answers (and the gifts they carry). */
   replies: { due: (_s, _d, c) => !!c.replies },
   /** What friends' raids left the player. */
   raidGifts: { due: (_s, _d, c) => !!c.raidGifts },
-  /** Support me, once per region at its 5th badge. */
-  donation: { due: (s, d) => donationDue(s, d) },
   /** The next region, once its league is won: only Home shows it (the Areas sheet's regions are there). */
   regionOffer: { due: (s, d) => !!regionOfferDue(s, d), away: (p) => p !== '/home' },
   event: { due: (s, d) => !!eventUnlockDue(s, d), away: under('/events') },
   versus: { due: (s, d) => versusRulesDue(s, d), away: under('/versus') },
-  /** Prof. Oak's invite, at a region's 2nd badge. */
-  share: {
-    due: (s, d, c) => !c.shareSeen && badgeCase(s, d).filter((b) => b.earned).length >= SHARE_PROMPT_BADGES,
-  },
   extreme: { due: (s, d) => extremeRulesDue(s, d), away: under('/settings') },
   trades: { due: (s, d, c) => c.signedIn && tradeRulesDue(s, d), away: under('/trades') },
   general: { due: (s, d) => generalRulesDue(s, d), away: under('/shop') },
@@ -149,4 +145,32 @@ export function nextOneTimePopup(
   if (!save || !ctx.calm) return null
   if (ctx.showing && ready(ctx.showing, save, data, ctx)) return ctx.showing
   return ONE_TIME_POPUPS.find((id) => ready(id, save, data, ctx)) ?? null
+}
+
+type NoticeContext = Pick<PopupContext, 'shareSeen'>
+
+/**
+ * Home's notices (docs/43 §7): what used to be a one-time pop-up but asks nothing of the player. Each is a card on Home
+ * until it is closed or acted on, in this order; the flags are the pop-ups' own (`leaderboardVisited`, `donationSeen`,
+ * the invite's per-region mark on the device).
+ */
+const NOTICES = {
+  /** Prof. Oak's leaderboard tip, from the first badge (after the Day Care's tutorial). */
+  leaderboard: (s: SaveData, d: GameData) => leaderboardTutorialDue(s, d),
+  /** Support me, once per region at its 5th badge. */
+  donation: (s: SaveData, d: GameData) => donationDue(s, d),
+  /** Prof. Oak's invite, at a region's 2nd badge. */
+  share: (s: SaveData, d: GameData, c: NoticeContext) =>
+    !c.shareSeen && badgeCase(s, d).filter((b) => b.earned).length >= SHARE_PROMPT_BADGES,
+} satisfies Record<string, (s: SaveData, d: GameData, c: NoticeContext) => boolean>
+
+export type HomeNotice = keyof typeof NOTICES
+
+/** Every notice in the order Home shows them. */
+export const HOME_NOTICES = Object.keys(NOTICES) as HomeNotice[]
+
+/** The notices due now, first to show first. A card in the page interrupts nothing, so none waits for a calm moment. */
+export function homeNotices(save: SaveData | null, data: GameData, ctx: NoticeContext): HomeNotice[] {
+  if (!save) return []
+  return HOME_NOTICES.filter((id) => NOTICES[id](save, data, ctx))
 }

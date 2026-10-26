@@ -1,11 +1,14 @@
 // The one-time pop-ups' queue (engine/popups.ts, docs/15 §20): one at a time, only between fights, in one order, never
-// on the page a pop-up leads to; the battle powers' rules no longer wait on the gifts' and Trick or Treat's.
+// on the page a pop-up leads to; the battle powers' rules no longer wait on the gifts' and Trick or Treat's. Home's notices
+// (docs/43 §7): Prof. Oak's leaderboard tip, his invite and Support me left the queue for cards on Home, same flags.
 import { describe, expect, it } from 'vitest'
 import {
   createInstance,
   DEFAULT_CONFIG,
   giftRulesDue,
+  homeNotices,
   inviteRulesDue,
+  markDonationSeen,
   newSave,
   nextOneTimePopup,
   ONE_TIME_POPUPS,
@@ -72,14 +75,11 @@ describe('the one-time pop-ups queue', () => {
       'away',
       'offline',
       'dayCare',
-      'leaderboard',
       'replies',
       'raidGifts',
-      'donation',
       'regionOffer',
       'event',
       'versus',
-      'share',
       'extreme',
       'trades',
       'general',
@@ -126,38 +126,29 @@ describe('the one-time pop-ups queue', () => {
     let save: SaveData = { ...megaWon(versusOpen(dayCareOpen(start()))), leaderboardVisited: false }
     const ctx: PopupContext = { ...HOME, shareSeen: false, replies: true, pushAsking: true }
     const seen: string[] = []
-    let shareSeen = false
     let replies = true
     let asking = true
     for (let i = 0; i < 10; i++) {
-      const id = nextOneTimePopup(save, on, { ...ctx, shareSeen, replies, pushAsking: asking })
+      const id = nextOneTimePopup(save, on, { ...ctx, replies, pushAsking: asking })
       if (!id) break
       seen.push(id)
       // Closing each one: what its own close does.
       if (id === 'dayCare')
         save = { ...save, dayCare: { ...save.dayCare!, visited: true } as SaveData['dayCare'] }
-      else if (id === 'leaderboard') save = { ...save, leaderboardVisited: true }
       else if (id === 'replies') replies = false
       else if (id === 'versus') save = { ...save, versusRulesSeen: true }
-      else if (id === 'share') shareSeen = true
       else if (id === 'powers') save = { ...save, powers: { ...save.powers, seen: ['mega'] } }
       else if (id === 'push') asking = false
     }
-    // The leaderboard's waits for a badge in the region being played: the Kalos ones are parked.
     expect(seen).toEqual(['dayCare', 'replies', 'versus', 'powers', 'push'])
   })
 
-  it('Prof. Oak’s tutorials go first: the Day Care’s, then the leaderboard’s', () => {
-    const save = withBadges(dayCareOpen({ ...start(), leaderboardVisited: false }), 'kanto', 2)
-    const ctx = { ...HOME, shareSeen: false }
-    expect(nextOneTimePopup(save, on, ctx)).toBe('dayCare')
-    const visited = { ...save, dayCare: { ...save.dayCare!, visited: true } as SaveData['dayCare'] }
-    expect(nextOneTimePopup(visited, on, ctx)).toBe('leaderboard')
-    // Then Prof. Oak's invite, at the region's 2nd badge.
-    expect(nextOneTimePopup({ ...visited, leaderboardVisited: true }, on, ctx)).toBe('share')
-    expect(
-      nextOneTimePopup({ ...visited, leaderboardVisited: true }, on, { ...ctx, shareSeen: true }),
-    ).toBeNull()
+  it('Prof. Oak’s leaderboard tip, his invite and Support me are no pop-ups: Home’s notices instead', () => {
+    const donating = makeData({ donation: { ...D.donation, enabled: true, kofiUrl: 'https://ko-fi.com/x' } })
+    // Five badges, the Day Care's tutorial done, nothing seen: none of the three ever takes the queue's turn.
+    const save = withBadges({ ...start(), leaderboardVisited: false }, 'kanto', 5)
+    expect(nextOneTimePopup(save, donating, { ...HOME, shareSeen: false })).toBeNull()
+    expect(homeNotices(save, donating, { shareSeen: false })).toEqual(['leaderboard', 'donation', 'share'])
   })
 
   it('what you came back to goes first, the question about notifications last', () => {
@@ -205,5 +196,38 @@ describe('the one-time pop-ups queue', () => {
     const traded = { ...save, trades: { out: [], done: [], rulesSeen: true } }
     expect(nextOneTimePopup(traded, social, { ...HOME, signedIn: true })).toBeNull()
     expect(nextOneTimePopup(traded, social, { ...HOME, signedIn: true, path: '/friends' })).toBeNull()
+  })
+})
+
+describe('Home’s notices', () => {
+  it('Prof. Oak’s leaderboard tip from the first badge, after the Day Care’s tutorial; seen, it goes', () => {
+    const save = withBadges(dayCareOpen({ ...start(), leaderboardVisited: false }), 'kanto', 1)
+    // The Day Care's own pop-up goes first: the tip waits for it, as it always did.
+    expect(homeNotices(save, on, HOME)).toEqual([])
+    const visited = { ...save, dayCare: { ...save.dayCare!, visited: true } as SaveData['dayCare'] }
+    expect(homeNotices(visited, on, HOME)).toEqual(['leaderboard'])
+    expect(homeNotices({ ...visited, leaderboardVisited: true }, on, HOME)).toEqual([])
+    expect(homeNotices(withBadges(start(), 'kanto', 0), on, HOME)).toEqual([])
+  })
+
+  it('Prof. Oak’s invite at the region’s 2nd badge, until closed on this device', () => {
+    const one = withBadges(start(), 'kanto', 1)
+    const two = withBadges(start(), 'kanto', 2)
+    expect(homeNotices(one, on, { shareSeen: false })).toEqual([])
+    expect(homeNotices(two, on, { shareSeen: false })).toEqual(['share'])
+    expect(homeNotices(two, on, { shareSeen: true })).toEqual([])
+  })
+
+  it('Support me once per region at its 5th badge, only switched on with a link; its flag ends it', () => {
+    const save = withBadges(start(), 'kanto', 5)
+    expect(homeNotices(save, on, HOME)).toEqual([])
+    const donating = makeData({ donation: { ...D.donation, enabled: true, kofiUrl: 'https://ko-fi.com/x' } })
+    expect(homeNotices(save, donating, HOME)).toEqual(['donation'])
+    expect(homeNotices(withBadges(start(), 'kanto', 4), donating, HOME)).toEqual([])
+    expect(homeNotices(markDonationSeen(save, donating), donating, HOME)).toEqual([])
+  })
+
+  it('has nothing without a save', () => {
+    expect(homeNotices(null, on, { shareSeen: false })).toEqual([])
   })
 })
