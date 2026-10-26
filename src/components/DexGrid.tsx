@@ -62,7 +62,7 @@ export function DexTile({
       onClick={(e) => onClick(e.detail === 0)}
       onFocus={onFocus}
       className={cx(
-        'relative grid h-[72px] w-full grid-rows-[1fr_auto] justify-items-center px-0.5 pb-1 pt-0.5 lg:h-[80px]',
+        'relative grid h-[72px] w-full grid-cols-[minmax(0,1fr)] grid-rows-[1fr_auto] justify-items-center px-0.5 pb-1 pt-0.5 lg:h-[80px]',
         missing ? 'bg-well' : 'bg-paper',
         selected ? 'z-[1] shadow-card-gold' : 'shadow-ring-line hover:shadow-ring',
       )}
@@ -71,15 +71,15 @@ export function DexTile({
         {icon ?? <MiniSprite dex={dex} size={iconSize} silhouette={missing} />}
       </span>
       {/* The line under the icon keeps its height empty, so every row of the grid lines up. */}
-      <span className="flex h-[18px] max-w-full items-center">
+      <span className="flex h-[18px] w-full min-w-0 items-center justify-center">
         {name != null ? (
-          <b className={cx('truncate text-[16px] font-normal leading-none', missing && 'text-muted')}>
+          <b className={cx('min-w-0 truncate text-[16px] font-normal leading-none', missing && 'text-muted')}>
             {name}
           </b>
         ) : near ? (
           <em
             aria-hidden
-            className="max-w-full truncate bg-good-pale px-1 font-pixel-sm text-[16px] not-italic leading-[18px] text-good shadow-[inset_0_0_0_1px_#34c97a]"
+            className="min-w-0 max-w-full truncate bg-good-pale px-1 font-pixel-sm text-[16px] not-italic leading-[18px] text-good shadow-[inset_0_0_0_1px_#34c97a]"
           >
             {nearLabel}
           </em>

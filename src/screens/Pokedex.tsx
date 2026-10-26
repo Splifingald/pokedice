@@ -31,10 +31,11 @@ import { DexSheet } from '@/components/DexEntry'
 import { PageHead } from '@/components/PageHead'
 import { InfoButton } from '@/components/RulesModal'
 import { SearchField } from '@/components/Segmented'
-import { DexViewSwitch, ShinyDexRulesModal, type DexView } from '@/components/ShinyDexRules'
+import { RulesCard } from '@/components/RulesCard'
+import { DexViewSwitch, ShinyDexRulesModal, useShinyDexRules, type DexView } from '@/components/ShinyDexRules'
 import { SplitView } from '@/components/SplitView'
 import { SortSelect } from '@/components/TypeSelect'
-import { UnownDexRulesModal, UnownSprite } from '@/components/UnownDex'
+import { UnownDexRulesModal, UnownSprite, useUnownDexRules } from '@/components/UnownDex'
 import { markDexSeen, useDexNew } from '@/lib/dexSeen'
 import { dexNo, money } from '@/lib/format'
 import { useMediaQuery } from '@/lib/useMediaQuery'
@@ -101,11 +102,12 @@ export function PokedexScreen() {
   const dexView: DexView =
     asked === 'shiny' && shinyOpen ? 'shiny' : asked === 'unown' && unownOpen ? 'unown' : 'all'
   const setDexView = (v: DexView) => setParams(v === 'all' ? {} : { view: v }, { replace: true })
-  // Seeing the page is reading what it is: its pop-up won't open later.
-  useEffect(() => {
-    if (dexView === 'shiny') markShinyDexSeen()
-    if (dexView === 'unown') markUnownDexSeen()
-  }, [dexView])
+  // Their rules where they apply (docs/43 §7): a card at the top of the view until GOT IT, then INFO at its foot. The
+  // rows are the INFO pop-up's own, one source each.
+  const shinySeen = useGame((s) => !!s.save?.shinyDexSeen)
+  const unownSeen = useGame((s) => !!s.save?.unownDexSeen)
+  const shinyRules = useShinyDexRules()
+  const unownRules = useUnownDexRules()
   // What was new on arrival keeps its NEW tag while the screen is open; looking clears the tab bar's dot.
   const newCount = useDexNew()
   const [fresh] = useState(() => new Set(newCount > 0 ? (save?.pokedex.slice(-newCount) ?? []) : []))
@@ -341,6 +343,17 @@ export function PokedexScreen() {
         {views.length > 0 && <DexViewSwitch value={dexView} onChange={setDexView} views={views} />}
         {under && <p className="font-pixel-sm text-[18px] leading-tight text-muted">{under}</p>}
       </div>
+      {shiny && !shinySeen && (
+        <RulesCard
+          title={t('ui.dex.shinyTitle')}
+          icon="sparkle"
+          rules={shinyRules}
+          onDone={markShinyDexSeen}
+        />
+      )}
+      {unown && !unownSeen && (
+        <RulesCard title={t('ui.unown.title')} icon="navDex" rules={unownRules} onDone={markUnownDexSeen} />
+      )}
       {counts && (
         <div className="flex items-center gap-2">
           <SearchField
