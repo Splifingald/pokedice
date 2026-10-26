@@ -1,7 +1,9 @@
 // The one-time pop-ups on screen. The engine decides whose turn it is (engine/popups.ts, `nextOneTimePopup`); PopupQueue
 // gathers what the engine can't know (the page, the account, the clock, what waits outside the save) and works the
 // turn out once for the whole game, and OneTimePopups mounts every pop-up and the services that bring them in. Each
-// pop-up opens only on its turn (popupTurn.ts), so they queue, one at a time, in one order.
+// pop-up opens only on its turn (popupTurn.ts), so they queue, one at a time, in one order. The rules of a feature with
+// a page of its own, Prof. Oak's tips and Support me aren't here: they are notices on Home (docs/43 §7,
+// screens/home/Notices.tsx), the rules a card on the feature's page.
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { nextOneTimePopup, type OneTimePopup } from '@/engine'
@@ -18,16 +20,12 @@ import { LivePopup } from '@/screens/events/live'
 import { WorldByePopup, WorldFinishPopup, WorldPopup } from '@/screens/events/world'
 import { WorldPick } from '@/screens/events/worldPick'
 import { PortalUnlockPopup } from '@/screens/area/PortalRun'
-import { DayCareNotice, DayCareTutorial } from './DayCareTutorial'
+import { DayCareNotice } from './DayCareTutorial'
 import { DayNightRulesPopup } from './DayNight'
-import { EventUnlockPopup } from './EventUnlockPopup'
 import { AwayReportModal, ExtremeUnlockPopup } from './Extreme'
-import { VersusUnlockPopup } from './FeatureRules'
 import { FriendsService } from './friends/FriendsService'
 import { InviteRewardPopup, useInviteRewardWaiting } from './friends/InviteRewards'
-import { GeneralUnlockPopup, OfflineReportModal } from './GeneralRules'
-import { ShinyDexUnlockPopup } from './ShinyDexRules'
-import { UnownDexUnlockPopup } from './UnownDex'
+import { OfflineReportModal } from './GeneralRules'
 import { GiftService } from './Gifts'
 import { POPUP_GAP_MS, PopupTurnContext, usePopupOnScreen } from './popupTurn'
 import { PowersUnlockPopup } from './PowersRules'
@@ -130,17 +128,11 @@ export function OneTimePopups() {
     <>
       <AwayReportModal />
       <OfflineReportModal />
-      <DayCareTutorial />
       <DayCareNotice />
       <ReplyPopup />
       <RaidGiftPopup />
       <GiftService />
-      <EventUnlockPopup />
-      <VersusUnlockPopup />
       <ExtremeUnlockPopup />
-      <GeneralUnlockPopup />
-      <ShinyDexUnlockPopup />
-      <UnownDexUnlockPopup />
       <InviteRewardPopup />
       <PortalUnlockPopup />
       <DayNightRulesPopup />

@@ -74,17 +74,10 @@ describe('the one-time pop-ups queue', () => {
     expect(ONE_TIME_POPUPS).toEqual([
       'away',
       'offline',
-      'dayCare',
       'replies',
       'raidGifts',
       'regionOffer',
-      'event',
-      'versus',
       'extreme',
-      'trades',
-      'general',
-      'shinyDex',
-      'unownDex',
       'inviteReward',
       'portal',
       'dayNight',
@@ -105,8 +98,8 @@ describe('the one-time pop-ups queue', () => {
   })
 
   it('only between fights: nothing mid-encounter, mid-battle or over a full-screen moment', () => {
-    const save = versusOpen(start())
-    expect(nextOneTimePopup(save, on, HOME)).toBe('versus')
+    const save = megaWon(start())
+    expect(nextOneTimePopup(save, on, HOME)).toBe('powers')
     expect(nextOneTimePopup(save, on, { ...HOME, calm: false })).toBeNull()
     expect(
       nextOneTimePopup(save, on, { ...HOME, calm: false, awayReport: true, pushAsking: true }),
@@ -133,14 +126,25 @@ describe('the one-time pop-ups queue', () => {
       if (!id) break
       seen.push(id)
       // Closing each one: what its own close does.
-      if (id === 'dayCare')
-        save = { ...save, dayCare: { ...save.dayCare!, visited: true } as SaveData['dayCare'] }
-      else if (id === 'replies') replies = false
-      else if (id === 'versus') save = { ...save, versusRulesSeen: true }
+      if (id === 'replies') replies = false
       else if (id === 'powers') save = { ...save, powers: { ...save.powers, seen: ['mega'] } }
       else if (id === 'push') asking = false
     }
-    expect(seen).toEqual(['dayCare', 'replies', 'versus', 'powers', 'push'])
+    // The Day Care's and Versus's openings are Home's notices now, their rules on their pages.
+    expect(seen).toEqual(['replies', 'powers', 'push'])
+  })
+
+  it('a feature with a page of its own never opens its rules over Home: its opening is a notice', () => {
+    const save = versusOpen(dayCareOpen(start()))
+    expect(nextOneTimePopup(save, on, HOME)).toBeNull()
+    expect(homeNotices(save, on, HOME)).toEqual(['dayCare', 'versus'])
+    // Its page's rules card read: its flag, as the pop-up set it, ends the notice.
+    const read = {
+      ...save,
+      versusRulesSeen: true,
+      dayCare: { ...save.dayCare!, visited: true } as SaveData['dayCare'],
+    }
+    expect(homeNotices(read, on, HOME)).toEqual([])
   })
 
   it('Prof. Oak’s leaderboard tip, his invite and Support me are no pop-ups: Home’s notices instead', () => {
@@ -148,11 +152,13 @@ describe('the one-time pop-ups queue', () => {
     // Five badges, the Day Care's tutorial done, nothing seen: none of the three ever takes the queue's turn.
     const save = withBadges({ ...start(), leaderboardVisited: false }, 'kanto', 5)
     expect(nextOneTimePopup(save, donating, { ...HOME, shareSeen: false })).toBeNull()
-    expect(homeNotices(save, donating, { shareSeen: false })).toEqual(['leaderboard', 'donation', 'share'])
+    expect(homeNotices(save, donating, { shareSeen: false })).toEqual(
+      expect.arrayContaining(['leaderboard', 'share', 'donation']),
+    )
   })
 
   it('what you came back to goes first, the question about notifications last', () => {
-    const save = versusOpen(start())
+    const save = megaWon(start())
     expect(nextOneTimePopup(save, on, { ...HOME, awayReport: true, pushAsking: true })).toBe('away')
     expect(nextOneTimePopup(save, on, { ...HOME, offlineReport: true })).toBe('offline')
     expect(nextOneTimePopup(save, on, { ...HOME, raidGifts: true })).toBe('raidGifts')
@@ -163,13 +169,10 @@ describe('the one-time pop-ups queue', () => {
   })
 
   it('never opens on the page it leads to: the next one due takes the turn there', () => {
-    const save = megaWon(versusOpen(start()))
-    expect(nextOneTimePopup(save, on, HOME)).toBe('versus')
-    expect(nextOneTimePopup(save, on, { ...HOME, path: '/versus' })).toBe('powers')
-    expect(nextOneTimePopup(save, on, { ...HOME, path: '/versus/fight' })).toBe('powers')
-    const dc = dayCareOpen(start())
-    expect(nextOneTimePopup(dc, on, { ...HOME, path: '/daycare' })).toBeNull()
-    // The invite reward waits off the Friends page, where its gauge already is.
+    // The invite reward waits off the Friends page, where its gauge already is: the next one due goes first there.
+    const ctx = { ...HOME, inviteReward: true, pushAsking: true }
+    expect(nextOneTimePopup(start(), on, ctx)).toBe('inviteReward')
+    expect(nextOneTimePopup(start(), on, { ...ctx, path: '/friends' })).toBe('push')
     expect(nextOneTimePopup(start(), on, { ...HOME, path: '/friends', inviteReward: true })).toBeNull()
   })
 
@@ -182,28 +185,34 @@ describe('the one-time pop-ups queue', () => {
     expect(nextOneTimePopup(closed, on, { ...HOME, raidGifts: true, showing: 'powers' })).toBe('raidGifts')
     // Mid-fight even the one on screen waits.
     expect(nextOneTimePopup(save, on, { ...HOME, calm: false, showing: 'powers' })).toBeNull()
+    // A retired pop-up said to be showing never keeps a turn.
+    expect(nextOneTimePopup(closed, on, { ...HOME, raidGifts: true, showing: 'versus' })).toBe('raidGifts')
   })
 
-  it('Trades’ rules only for an account; the invite rewards’ are never queued (the Friends page opens them)', () => {
+  it('Trades and the invite rewards: notices on Home, never queued; Trades only for an account', () => {
     const social = makeData({
       inviteRewards: { ...D.inviteRewards, access: 'all' },
       trade: { ...D.trade, access: 'all', minBadges: 0 },
     })
     const save = start()
     expect(inviteRulesDue(save, social)).toBe(true)
-    expect(nextOneTimePopup(save, social, HOME)).toBeNull()
-    expect(nextOneTimePopup(save, social, { ...HOME, signedIn: true })).toBe('trades')
-    const traded = { ...save, trades: { out: [], done: [], rulesSeen: true } }
-    expect(nextOneTimePopup(traded, social, { ...HOME, signedIn: true })).toBeNull()
-    expect(nextOneTimePopup(traded, social, { ...HOME, signedIn: true, path: '/friends' })).toBeNull()
+    expect(nextOneTimePopup(save, social, { ...HOME, signedIn: true })).toBeNull()
+    expect(homeNotices(save, social, { signedIn: false })).toEqual(['invites'])
+    expect(homeNotices(save, social, { signedIn: true })).toEqual(['trades', 'invites'])
+    const read = {
+      ...save,
+      trades: { out: [], done: [], rulesSeen: true },
+      invites: { done: [], rulesSeen: true },
+    }
+    expect(homeNotices(read, social, { signedIn: true })).toEqual([])
   })
 })
 
 describe('Home’s notices', () => {
   it('Prof. Oak’s leaderboard tip from the first badge, after the Day Care’s tutorial; seen, it goes', () => {
     const save = withBadges(dayCareOpen({ ...start(), leaderboardVisited: false }), 'kanto', 1)
-    // The Day Care's own pop-up goes first: the tip waits for it, as it always did.
-    expect(homeNotices(save, on, HOME)).toEqual([])
+    // The Day Care's notice goes first: the tip waits for it, as it always did.
+    expect(homeNotices(save, on, HOME)).toEqual(['dayCare'])
     const visited = { ...save, dayCare: { ...save.dayCare!, visited: true } as SaveData['dayCare'] }
     expect(homeNotices(visited, on, HOME)).toEqual(['leaderboard'])
     expect(homeNotices({ ...visited, leaderboardVisited: true }, on, HOME)).toEqual([])

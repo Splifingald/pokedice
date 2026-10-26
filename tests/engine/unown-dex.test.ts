@@ -10,6 +10,7 @@ import {
   isAreaUnlocked,
   markUnownDexSeen,
   newSave,
+  homeNotices,
   nextOneTimePopup,
   noteUnownDex,
   payUnownDex,
@@ -233,12 +234,11 @@ describe('its rules', () => {
     expect(unownDexRulesDue(atRuins(OFF), OFF)).toBe(false)
   })
 
-  it('take their turn in the queue, never on the Pokédex, the page they lead to', () => {
+  it('open as a notice on Home (their rules on the Pokédex), never a pop-up; once seen it goes', () => {
     const save = atRuins()
     const ctx: PopupContext = { calm: true, path: '/home', signedIn: false, now: null, shareSeen: true }
-    // On screen, it keeps its turn while it's due; on the Pokédex it gives it up, and once seen it's gone.
-    expect(nextOneTimePopup(save, ON, { ...ctx, showing: 'unownDex' })).toBe('unownDex')
-    expect(nextOneTimePopup(save, ON, { ...ctx, path: '/pokedex', showing: 'unownDex' })).not.toBe('unownDex')
-    expect(nextOneTimePopup(markUnownDexSeen(save), ON, { ...ctx, showing: 'unownDex' })).not.toBe('unownDex')
+    expect(nextOneTimePopup(save, ON, { ...ctx, showing: 'unownDex' })).not.toBe('unownDex')
+    expect(homeNotices(save, ON, ctx)).toContain('unownDex')
+    expect(homeNotices(markUnownDexSeen(save), ON, ctx)).not.toContain('unownDex')
   })
 })
