@@ -29,7 +29,12 @@ const H = BATTLE_H
 const INK = '#24304f'
 
 /** The picture's window behind the sky and the grid together, in Home scene pixels: the grid's own, grown upward. */
-export const skyWindow = (p: ArtGeometry) => ({ x: (SCENE_W - W) / 2, y: battleTop(p) - SKY_H, w: W, h: SKY_H + H })
+export const skyWindow = (p: ArtGeometry) => ({
+  x: (SCENE_W - W) / 2,
+  y: battleTop(p) - SKY_H,
+  w: W,
+  h: SKY_H + H,
+})
 
 /** Deeper towards the top, in ordered dither: a sky (or a cave's ceiling) that goes on, not a band of paint. */
 const deepen = (base: string, x: number, y: number, until: number) => {
@@ -46,7 +51,8 @@ export const daybreakSky = (): Canvas =>
       // same dither, so it reads as one sun across the seam.
       const gy = y - SKY_H
       const d = Math.hypot(x - W * 0.86, gy - H * 0.06) / (H * 0.2)
-      if (d < 0.55 || (d < 0.8 && ((x + gy) & 1) === 0) || (d < 1 && (x & 1) === 0 && (gy & 1) === 0)) return P.sun
+      if (d < 0.55 || (d < 0.8 && ((x + gy) & 1) === 0) || (d < 1 && (x & 1) === 0 && (gy & 1) === 0))
+        return P.sun
       return deepen(P.sky[0], x, y, SKY_H * 0.7)
     })
     for (const [cx, cy, s] of [
@@ -62,7 +68,8 @@ export const daybreakSky = (): Canvas =>
       ].map(([dx, dy, r]) => [cx + dx! * s, cy + dy! * s, Math.max(2, Math.round(r! * s))] as const)
       for (const [bx, by, br] of blobs) ellipse(c.g, bx, by + 1, br, Math.round(br * 0.8), P.cloud[2])
       for (const [bx, by, br] of blobs) ellipse(c.g, bx, by, br, Math.round(br * 0.8), P.cloud[1])
-      for (const [bx, by, br] of blobs) ellipse(c.g, bx - 1, by - 1, br - 1, Math.round(br * 0.8) - 1, P.cloud[0])
+      for (const [bx, by, br] of blobs)
+        ellipse(c.g, bx - 1, by - 1, br - 1, Math.round(br * 0.8) - 1, P.cloud[0])
     }
     return c
   })
@@ -105,7 +112,10 @@ export function artTone(url: string): Promise<string | null> {
           gg += d[i + 1]!
           bb += d[i + 2]!
         }
-        const hex = (v: number) => Math.round(v / n).toString(16).padStart(2, '0')
+        const hex = (v: number) =>
+          Math.round(v / n)
+            .toString(16)
+            .padStart(2, '0')
         return `#${hex(rr)}${hex(gg)}${hex(bb)}`
       } catch {
         return null

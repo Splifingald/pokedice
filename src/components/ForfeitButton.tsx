@@ -33,7 +33,12 @@ export function ForfeitButton({
           <PixelIcon name="flag" size={22} />
         </PixelButton>
       ) : (
-        <PixelButton size="sm" variant="ghost" className={cx('w-full', className)} onClick={() => setConfirm(true)}>
+        <PixelButton
+          size="sm"
+          variant="ghost"
+          className={cx('w-full', className)}
+          onClick={() => setConfirm(true)}
+        >
           <PixelIcon name="flag" size={14} /> {t('ui.battle.forfeit')}
         </PixelButton>
       )}

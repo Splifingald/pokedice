@@ -17,6 +17,7 @@ import { useMediaQuery } from '@/lib/useMediaQuery'
 import { AreaSceneBox } from '@/screens/area/AreaIdle'
 import { TeamSwapActions } from '@/components/TeamSwapActions'
 import { RunRoundGauge } from '@/screens/area/RoundGauge'
+import { StagePanel } from '@/screens/area/StagePanel'
 import { useGame } from '@/store/game'
 import { continueExploring, finishCenter, markHealShown } from '@/store/run'
 
@@ -38,7 +39,7 @@ export function CenterView() {
   const wide = useMediaQuery('(min-width: 1024px)')
   const area = useGame((s) => s.data.areas.find((a) => a.id === s.run.areaId))
   // The machine plays once, on arrival, and quickly: always the short version (one flash, healed), on the page.
-  const [scene] = useState(() => ({
+  const [machine] = useState(() => ({
     ready: Promise.all([loadSprite(NURSE, false), loadCenterArt()]),
     timeline: centerTimeline({ balls: teamSize, nurse: spriteKey(NURSE, false), short: true }),
   }))
@@ -47,37 +48,44 @@ export function CenterView() {
 
   if (!save) return null
   const team = teamOf(save)
-  const box = sortBox(save.box.filter((p) => !save.team.includes(p.id)), sort, data)
+  const box = sortBox(
+    save.box.filter((p) => !save.team.includes(p.id)),
+    sort,
+    data,
+  )
   const open = (p: PokemonInstance) => setView({ kind: 'inst', id: p.id })
   const done = () => setView(null)
 
   const heal = (
     <StageCanvas
-      timeline={scene.timeline}
-      ready={scene.ready}
+      timeline={machine.timeline}
+      ready={machine.ready}
       onEnd={() => setTimeout(() => setHealing(false), 250)}
       label={t('ui.center.healing')}
     />
   )
-  return (
-    // Phones: room at the bottom for the action bar, which is pinned over the tab bar. Wide screens (docs/42), as a
-    // fight: the scene on the left — the healing, then the area with the team, healed — and the panel beside it.
-    <div className="flex flex-col gap-4 pb-[108px] md:pb-0 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-5">
-      {wide &&
-        (healing ? (
-          <div className="sticky top-[calc(var(--top-bar,0px)_+_1rem)] overflow-hidden shadow-ledge">{heal}</div>
-        ) : (
-          area && <AreaSceneBox area={area} />
-        ))}
-      <div className="flex min-w-0 flex-col gap-4">
-      {/* The rework, as a battle: the round's gauge under the top bar, no area banner; the healing on the page at
-          the top, quick, then gone, so the team and the Box get the screen. */}
-      <RunRoundGauge className="-mx-3 -mt-4 bg-panel px-3 py-1.5 shadow-[0_2px_0_rgb(var(--c-edge))] md:mx-0 md:mt-0" />
+  // The scene (docs/43 §5.3, as a fight): wide screens keep it on the left — the healing, then the area with the team,
+  // healed; phones play the healing at the top, then fold it away so the team and the Box get the screen (the user's
+  // rule), the round's strip staying under the top bar.
+  const stage = wide ? (
+    healing ? (
+      <div className="relative overflow-hidden shadow-ledge">
+        <RunRoundGauge strip className="absolute inset-x-0 top-0 z-30" />
+        {heal}
+      </div>
+    ) : (
+      area && <AreaSceneBox area={area} />
+    )
+  ) : (
+    <div className="relative">
+      <RunRoundGauge strip className="absolute inset-x-0 top-0 z-30" />
+      {/* Its height kept by the strip when the healing has gone. */}
+      <div aria-hidden className="h-[6px]" />
       <AnimatePresence initial={false}>
-        {healing && !wide && (
+        {healing && (
           <motion.div
             key="heal"
-            className="-mx-3 -mt-4 overflow-hidden md:mx-0 md:mt-0"
+            className="-mt-[6px] overflow-hidden"
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25 }}
           >
@@ -85,83 +93,84 @@ export function CenterView() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      <section className="flex flex-col gap-2">
-        <h2 className="text-3xl">{t('ui.center.teamCount', { count: team.length, max: data.config.maxTeamSize })}</h2>
-        <ol className="grid grid-cols-3 gap-1.5 sm:gap-2">
-          {team.map((p, i) => (
-            <PokeCard
-              key={p.id}
-              inst={p}
-              onOpen={() => open(p)}
-              openLabel={t('ui.newGame.monInfo', { name: p.nickname || data.species[p.dex]?.name || '' })}
-              badge={i === 0 ? <PixelIcon name="crown" size={16} title={t('ui.team.lead')} /> : null}
-            />
-          ))}
-          {Array.from({ length: Math.max(0, data.config.maxTeamSize - team.length) }, (_, i) => (
-            <li
-              key={`empty-${i}`}
-              className="flex min-h-[96px] items-center justify-center border-[3px] border-dashed border-shadow p-1 text-center text-base text-muted"
-            >
-              {t('ui.center.emptySlot')}
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <section className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1.5">
-          <h2 className="text-3xl">{t('ui.team.box', { count: box.length })}</h2>
-          {box.length > 1 && <BoxSortPicker sort={sort} onChange={setSort} />}
-        </div>
-        <ul className="grid grid-cols-3 gap-1.5 sm:gap-2">
-          {box.map((p) => (
-            <PokeCard
-              key={p.id}
-              inst={p}
-              onOpen={() => open(p)}
-              openLabel={t('ui.newGame.monInfo', { name: p.nickname || data.species[p.dex]?.name || '' })}
-            />
-          ))}
-        </ul>
-      </section>
-
-      {/* Always on screen: phones pin it right above the tab bar, even when the page is short; from 768px it follows
-          the content column (the side nav is there) and sticks to the bottom. */}
-      <div
-        className="fixed inset-x-0 z-30 border-t-[3px] border-edge bg-parchment px-3 py-2 md:sticky md:inset-x-auto md:-mx-3"
-        style={{ bottom: 'var(--bottom-nav)', paddingBottom: 'calc(0.5rem + var(--bottom-safe))' }}
-      >
-        <div className="flex flex-col gap-1.5 md:mx-auto md:max-w-md">
-          {/* Healed: back Home, or straight on to this area's next encounter. */}
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
-            <PixelButton
-              size="lg"
-              className="whitespace-nowrap px-2"
-              onClick={() => {
-                finishCenter()
-                navigate('/home')
-              }}
-            >
-              {t('ui.nav.home')}
-            </PixelButton>
-            <PixelButton
-              variant="primary"
-              size="lg"
-              className="whitespace-nowrap px-2"
-              onClick={() => {
-                finishCenter()
-                continueExploring()
-              }}
-            >
-              {t('ui.common.continue')}
-            </PixelButton>
-          </div>
-        </div>
-      </div>
-
-      </div>
-      <SheetModal view={view} onClose={done} instExtra={(inst) => <TeamSwapActions inst={inst} onDone={done} />} />
     </div>
+  )
+  const bar = (
+    // Healed: back Home, or straight on to this area's next encounter. Never by itself: the Center waits for the Box.
+    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
+      <PixelButton
+        size="lg"
+        className="whitespace-nowrap px-2"
+        onClick={() => {
+          finishCenter()
+          navigate('/home')
+        }}
+      >
+        {t('ui.nav.home')}
+      </PixelButton>
+      <PixelButton
+        variant="primary"
+        size="lg"
+        className="whitespace-nowrap px-2"
+        onClick={() => {
+          finishCenter()
+          continueExploring()
+        }}
+      >
+        {t('ui.common.continue')}
+      </PixelButton>
+    </div>
+  )
+  return (
+    <>
+      <StagePanel scene={stage} bar={bar}>
+        <section className="flex flex-col gap-2">
+          <h2 className="text-3xl">
+            {t('ui.center.teamCount', { count: team.length, max: data.config.maxTeamSize })}
+          </h2>
+          <ol className="grid grid-cols-3 gap-1.5 sm:gap-2">
+            {team.map((p, i) => (
+              <PokeCard
+                key={p.id}
+                inst={p}
+                onOpen={() => open(p)}
+                openLabel={t('ui.newGame.monInfo', { name: p.nickname || data.species[p.dex]?.name || '' })}
+                badge={i === 0 ? <PixelIcon name="crown" size={16} title={t('ui.team.lead')} /> : null}
+              />
+            ))}
+            {Array.from({ length: Math.max(0, data.config.maxTeamSize - team.length) }, (_, i) => (
+              <li
+                key={`empty-${i}`}
+                className="flex min-h-[96px] items-center justify-center border-[3px] border-dashed border-shadow p-1 text-center text-base text-muted"
+              >
+                {t('ui.center.emptySlot')}
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1.5">
+            <h2 className="text-3xl">{t('ui.team.box', { count: box.length })}</h2>
+            {box.length > 1 && <BoxSortPicker sort={sort} onChange={setSort} />}
+          </div>
+          <ul className="grid grid-cols-3 gap-1.5 sm:gap-2">
+            {box.map((p) => (
+              <PokeCard
+                key={p.id}
+                inst={p}
+                onOpen={() => open(p)}
+                openLabel={t('ui.newGame.monInfo', { name: p.nickname || data.species[p.dex]?.name || '' })}
+              />
+            ))}
+          </ul>
+        </section>
+      </StagePanel>
+      <SheetModal
+        view={view}
+        onClose={done}
+        instExtra={(inst) => <TeamSwapActions inst={inst} onDone={done} />}
+      />
+    </>
   )
 }
