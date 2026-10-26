@@ -21,7 +21,9 @@
 - Never push to `main`.
 - **Testing is on Netlify Deploy Previews**, not Artifacts (the user's rule, 2026-10-26): push the work to its branch, keep
   a pull request open for it (into the version branch), and give the user its preview link
-  (`https://deploy-preview-<PR>--poke-dice.netlify.app`) once Netlify has built the latest commit.
+  (`https://deploy-preview-<PR>--poke-dice.netlify.app`) once Netlify has built the latest commit. Netlify builds
+  previews only for PRs into `main` or a branch-deploy branch (Project configuration › Build & deploy › Branches and
+  deploy contexts): a new version branch goes in that list first.
 - **Patch note with every change bound for `main`** (a push the user asks for, or a PR into `main`): write
   `patch-notes/YYYY-MM-DD-short-name.md` (format: `patch-notes/README.md`), show it to the user with
   `pnpm discord:patch-notes <file> --dry`, and add it only once they approve it. Adding it to `main` posts it to Discord
