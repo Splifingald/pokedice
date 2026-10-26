@@ -49,32 +49,7 @@ import {
   type Offer,
 } from './mart/offers'
 import { cx } from '@/theme/util'
-
-type Kind = ItemDef['effect']['kind']
-type GroupId = 'ball' | 'heal' | 'battle' | 'cure' | 'stone' | 'fossil' | 'gem'
-
-/**
- * The Mart's categories, Balls first. Both tabs list items by group, so an item whose effect kind is in no group would
- * silently vanish the moment it unlocked. Every kind of `ItemEffect` must appear here; `groupOf` and its test are what
- * keep that true as kinds are added.
- */
-const GROUPS: { id: GroupId; chip: string; title: string; kinds: Kind[] }[] = [
-  { id: 'ball', chip: 'ui.shop.catBalls', title: 'ui.shop.groupCatch', kinds: ['ball', 'bait'] },
-  { id: 'heal', chip: 'ui.shop.groupHealing', title: 'ui.shop.groupHealing', kinds: ['heal', 'revive'] },
-  { id: 'battle', chip: 'ui.shop.groupBattle', title: 'ui.shop.groupBattle', kinds: ['rerolls', 'level'] },
-  { id: 'cure', chip: 'ui.shop.groupCures', title: 'ui.shop.groupCures', kinds: ['cure'] },
-  { id: 'stone', chip: 'ui.shop.groupEvolution', title: 'ui.shop.groupEvolution', kinds: ['stone', 'link'] },
-  { id: 'fossil', chip: 'ui.shop.groupFossils', title: 'ui.shop.groupFossils', kinds: ['fossil'] },
-  // Mega Gems have a shelf of their own (GemShelf), never the Mart's stock; the bag lists the ones held.
-  { id: 'gem', chip: 'ui.shop.groupGems', title: 'ui.shop.groupGems', kinds: ['megaGem'] },
-]
-
-/** The group an item is listed under (its title key), or null when no group claims its kind. */
-export const groupOf = (kind: Kind): string | null =>
-  GROUPS.find((g) => g.kinds.includes(kind))?.title ?? null
-const groupIndex = (it: ItemDef) => GROUPS.findIndex((g) => g.kinds.includes(it.effect.kind))
-
-type Cat = GroupId | 'all'
+import { GROUPS, groupIndex, inCat, type Cat } from './mart/groups'
 
 /** The category chips, one row (it scrolls sideways on a phone): All, then each group that has something here. */
 function CatChips({ items, value, onChange }: { items: ItemDef[]; value: Cat; onChange: (c: Cat) => void }) {
@@ -94,9 +69,6 @@ function CatChips({ items, value, onChange }: { items: ItemDef[]; value: Cat; on
     />
   )
 }
-
-const inCat = (cat: Cat) => (it: ItemDef) =>
-  cat === 'all' || GROUPS.find((g) => g.id === cat)!.kinds.includes(it.effect.kind)
 
 /** What the shelves need from the screen: which offer is open, and each tile's purchase count (its coins' flight). */
 interface ShelfProps {

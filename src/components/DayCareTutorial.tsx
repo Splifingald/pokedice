@@ -17,15 +17,7 @@ export function DayCareTutorial() {
   // Gone the moment its turn ends, as before the queue: its button leads to another page, which a fading pop-up
   // would cover.
   if (!open) return null
-  // Let's go! says it came from the rules: the page then keeps its own question (push) for the next visit, so two
-  // pop-ups never follow each other on arrival (docs/43 §7).
-  return (
-    <DayCareRulesModal
-      open={open}
-      onClose={visitDayCare}
-      onGo={() => navigate('/daycare', { state: { fromRules: true } })}
-    />
-  )
+  return <DayCareRulesModal open={open} onClose={visitDayCare} onGo={() => navigate('/daycare')} />
 }
 
 /**

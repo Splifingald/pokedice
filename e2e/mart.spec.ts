@@ -27,12 +27,17 @@ const serious = async (page: Page) =>
     .filter((v) => v.impact === 'serious' || v.impact === 'critical')
     .map((v) => `${v.id}: ${v.nodes[0]?.target}`)
 
-test('a phone: the price buys one, the tile opens ×1 / ×5 / ×10 as purchases, the Bag sells', async ({ page }) => {
+test('a phone: the price buys one, the tile opens ×1 / ×5 / ×10 as purchases, the Bag sells', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await boot(page, save())
   // Home → the Mart's tab → the price: two taps to a Poké Ball.
   await page.goto('/home')
-  await page.getByRole('link', { name: /^Mart|^Shop/ }).first().click()
+  await page
+    .getByRole('link', { name: /^Mart|^Shop/ })
+    .first()
+    .click()
   await expect(page).toHaveURL(/\/shop$/)
   const tile = page.locator('[data-item-tile="poke-ball"]')
   await tile.getByRole('button', { name: /^Buy one Poké Ball, ₽/ }).click()
@@ -50,7 +55,11 @@ test('a phone: the price buys one, the tile opens ×1 / ×5 / ×10 as purchases,
   expect((await stored(page)).gold).toBe(gold - 5 * 20)
   // Short of ₽ a quantity stays focusable, says what's missing, and buys nothing.
   await page.evaluate(() => {
-    const pd = (window as unknown as { __pd: { useGame: { setState: (f: (s: { save: SaveData }) => unknown) => void } } }).__pd
+    const pd = (
+      window as unknown as {
+        __pd: { useGame: { setState: (f: (s: { save: SaveData }) => unknown) => void } }
+      }
+    ).__pd
     pd.useGame.setState((s) => ({ save: { ...s.save, gold: 30 } }))
   })
   await sheet.getByRole('button', { name: /Poké Ball ×5: Need/ }).click({ force: true })
@@ -67,7 +76,10 @@ test('a phone: the price buys one, the tile opens ×1 / ×5 / ×10 as purchases,
   // The Bag: the same tiles; one opens and sells.
   await page.getByRole('tab', { name: 'Bag' }).click()
   await page.locator('[data-item-tile="potion"] [data-open]').click()
-  await page.getByRole('dialog', { name: 'Potion' }).getByRole('button', { name: /^Sell 1 Potion for ₽/ }).click()
+  await page
+    .getByRole('dialog', { name: 'Potion' })
+    .getByRole('button', { name: /^Sell 1 Potion for ₽/ })
+    .click()
   await expect.poll(async () => (await stored(page)).inventory['potion']).toBe(1)
 })
 
@@ -80,9 +92,9 @@ test('PC: the shelf in columns, the Bag docked beside it, the item opened in its
   const bag = page.getByRole('region', { name: 'Bag' })
   await expect(bag.getByRole('button', { name: /Poké Ball/ })).toBeVisible()
   // Four tiles to a row.
-  const tops = await page.locator('main ul [data-item-tile]').evaluateAll((els) =>
-    els.slice(0, 4).map((e) => Math.round(e.getBoundingClientRect().top)),
-  )
+  const tops = await page
+    .locator('main ul [data-item-tile]')
+    .evaluateAll((els) => els.slice(0, 4).map((e) => Math.round(e.getBoundingClientRect().top)))
   expect(new Set(tops).size).toBe(1)
   // A tile opens its details in the pane, not over the page.
   await page.locator('[data-item-tile="potion"] [data-open]').first().click()

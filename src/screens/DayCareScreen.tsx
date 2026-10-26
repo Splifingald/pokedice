@@ -11,6 +11,7 @@ import {
   compatible,
   dayCareLevelProgress,
   dayCareOf,
+  dayCareTutorialDue,
   boxedDepositError,
   everyRegionBox,
   friendMonLevel,
@@ -30,7 +31,7 @@ import {
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
 import { AccountButton } from '@/components/AccountButton'
-import { DayCareRulesModal } from '@/components/FeatureRules'
+import { DayCareRulesCard, DayCareRulesModal } from '@/components/FeatureRules'
 import { SmallInfo } from '@/components/SmallInfo'
 import { Chip, NewTag } from '@/components/Chip'
 import { bumpGold } from '@/components/GoldPill'
@@ -53,7 +54,7 @@ import { isSupabaseConfigured } from '@/lib/supabase'
 import { money } from '@/lib/format'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { useMotion } from '@/lib/motion'
-import { hatchDayCareEgg, leaveAtDayCare, pickUpFromDayCare, rushDayCareEgg, visitDayCare } from '@/store/actions'
+import { hatchDayCareEgg, leaveAtDayCare, pickUpFromDayCare, rushDayCareEgg } from '@/store/actions'
 import { inviteFriendMon, parentName, sendGuestBack, syncFriendDayCares, tickDayCare } from '@/store/daycare'
 import { pushToast, useGame } from '@/store/game'
 import { useDetails } from '@/store/hooks'
@@ -676,17 +677,16 @@ function DayCareScreenMain() {
   const auth = useGame((s) => s.auth.status)
   const caresError = useFriendCares((s) => s.error)
   const location = useLocation()
-  const arrived = location.state as { hatch?: boolean; fromRules?: boolean } | null
   // From Home's gold widget: the page opens, and the Egg starts hatching a moment later.
-  const wantsHatch = !!arrived?.hatch
-  // Push notifications' question, once (docs/27): an Egg can be announced while the game is closed. Never straight
-  // after the rules' Let's go! led here: one pop-up at a time (docs/43 §7), so it waits for the next visit.
-  const [fromRules] = useState(() => !!arrived?.fromRules)
-  usePushAsk('egg', open && !fromRules)
+  const wantsHatch = !!(location.state as { hatch?: boolean } | null)?.hatch
+  // The rules where they apply (docs/43 §7): on the first visit they are a card at the top of the page until GOT IT
+  // (the "visited" flag); opening the page no longer counts as having read them.
+  const rulesDue = useGame((s) => !!s.save && dayCareTutorialDue(s.save, s.data))
+  // Push notifications' question, once (docs/27): an Egg can be announced while the game is closed. It waits while
+  // the rules card is up: one thing to read at a time, never a modal over the rules.
+  usePushAsk('egg', open && !rulesDue)
   useEffect(() => {
-    if (!open) return
-    visitDayCare()
-    tickDayCare()
+    if (open) tickDayCare()
   }, [open])
   // Friends' Day Cares, read when the page opens (at most once a minute), refresh the visitors.
   useEffect(() => {
@@ -785,6 +785,8 @@ function DayCareScreenMain() {
       </div>
 
       <div className="flex flex-col gap-3 lg:pixel-panel lg:sticky lg:top-[calc(var(--top-bar,56px)+1rem)] lg:max-h-[calc(100dvh-var(--top-bar,56px)-2rem)] lg:overflow-y-auto lg:bg-panel lg:p-3">
+        {/* The first visit: the rules first, right under the yard they explain (the panel's top on PC). */}
+        {rulesDue && <DayCareRulesCard />}
         {dc.egg ? (
           <EggCardView
             from={
