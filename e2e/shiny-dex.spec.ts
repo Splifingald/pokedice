@@ -72,11 +72,17 @@ test('the rules once, Let’s go! to the shiny page, a shiny counted, INFO again
 
   // Pidgey owned shiny: starred and counted. Rattata caught, never shiny: a silhouette with its name.
   await expect(page.getByRole('button', { name: /^Pidgey, #016, Shiny/ })).toBeVisible()
-  await expect(
-    page.getByRole('radiogroup', { name: 'Show' }).getByRole('radio', { name: 'Shiny 1' }),
-  ).toBeVisible()
+  // The filter (one dropdown beside the search) counts the shinies; the head's gauge says it once.
+  await expect(page.getByRole('combobox', { name: 'Show' }).locator('option[value="caught"]')).toHaveText(
+    'Shiny (1)',
+  )
   await expect(page.getByRole('img', { name: /^1 of \d+ owned shiny$/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /^Rattata, #019/ })).not.toContainText('Shiny')
+  // Picking the filter leaves the shiny one alone on the grid.
+  await page.getByRole('combobox', { name: 'Show' }).selectOption('caught')
+  await expect(page.locator('[data-tile]')).toHaveCount(1)
+  await expect(page.getByRole('button', { name: /^Pidgey, #016, Shiny/ })).toBeVisible()
+  await page.getByRole('combobox', { name: 'Show' }).selectOption('all')
 
   // The Pokédex page counts every catch.
   await page

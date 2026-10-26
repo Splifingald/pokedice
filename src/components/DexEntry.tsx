@@ -652,7 +652,8 @@ export function DexEntry({
           onToggle={(o) => (statsOpen = o)}
           testId="dex-details"
         >
-          <PokemonSheet dex={dex} inst={best} shiny={shiny || undefined} onOpenDex={onOpenDex} hero={false} />
+          {/* No onOpenDex: the Evolutions above are the way to an evolution's entry, so its track names them only. */}
+          <PokemonSheet dex={dex} inst={best} shiny={shiny || undefined} hero={false} />
         </Fold>
       )}
     </div>

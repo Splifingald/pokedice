@@ -408,7 +408,8 @@ export function PokedexScreen() {
           </li>
         ))}
       </DexGridList>
-      {shiny && <InfoButton name={t('ui.dex.shinyTitle')} onClick={() => setInfo('shiny')} />}
+      {/* The shiny page's INFO sits under the Pokédex and its Shiny view while that page is open (docs/15 §35). */}
+      {shinyOpen && !unown && <InfoButton name={t('ui.dex.shinyTitle')} onClick={() => setInfo('shiny')} />}
       {unown && <InfoButton name={t('ui.unown.title')} onClick={() => setInfo('unown')} />}
     </>
   )
