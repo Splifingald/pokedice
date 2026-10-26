@@ -263,21 +263,18 @@ function MyTeamCard({ me, onChange, editing }: { me: VersusEntry | null; onChang
           </PixelButton>
         )}
       </div>
-      {me ? (
-        <ul className="m-0 grid list-none grid-cols-3 gap-1.5 p-0">
-          {me.team.map((m, i) => (
+      {/* No team yet: three open slots (the opponents' column asks for one, with its button). */}
+      <ul className="m-0 grid list-none grid-cols-3 gap-1.5 p-0">
+        {Array.from({ length: VERSUS_TEAM_SIZE }, (_, i) => me?.team[i]).map((m, i) =>
+          m ? (
             <li key={i} className="grid justify-items-center bg-paper pb-1 pt-1.5 shadow-ring-line">
               <SpriteImg dex={m.dex} size={64} shiny={m.shiny} />
             </li>
-          ))}
-        </ul>
-      ) : (
-        !editing && (
-          <PixelButton variant="primary" onClick={onChange}>
-            {t('ui.versus.setTeam')}
-          </PixelButton>
-        )
-      )}
+          ) : (
+            <li key={i} aria-hidden className="h-[74px] border-2 border-dashed border-shadow" />
+          ),
+        )}
+      </ul>
     </section>
   )
 }
