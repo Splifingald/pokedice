@@ -1856,6 +1856,7 @@ ui.nav.upgradesDot,{n} you can afford,{n} à ta portée,{n} a tu alcance,{n} bez
 ui.nav.dexDot,{n} new,{n} nouveaux,{n} nuevos,{n} neu,{n} nuovi,{n} novos,{n} novos,新しく{n}匹,새로 {n}마리,新增 {n} 只
 ui.nav.social,Social,Social,Social,Community,Social,Social,Social,ソーシャル,소셜,社交
 ui.nav.socialDot,{n} new,{n} nouveautés,{n} novedades,{n} neu,{n} novità,{n} novidades,{n} novidades,新着{n}件,새 소식 {n}개,{n} 条新消息
+ui.rules.cardTitle,How {name} works,Comment marche : {name},Cómo funciona: {name},So funktioniert: {name},Come funziona: {name},Como funciona: {name},Como funciona: {name},{name}の遊び方,{name} 이용 방법,{name}玩法
 ui.home.heading,Exploring {area},Exploration : {area},Explorando: {area},Erkundung: {area},In esplorazione: {area},A explorar: {area},Explorando: {area},{area}を探索中,{area} 탐험 중,正在探索：{area}
 ui.home.widgets,Shortcuts,Raccourcis,Accesos directos,Schnellzugriff,Scorciatoie,Atalhos,Atalhos,ショートカット,바로가기,快捷入口
 ui.home.comingUp,Coming up: {what},Bientôt : {what},Próximamente: {what},Demnächst: {what},Prossimamente: {what},A seguir: {what},Em breve: {what},もうすぐ：{what},곧 열림: {what},即将开放：{what}
