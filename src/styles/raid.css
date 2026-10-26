@@ -336,3 +336,11 @@
     animation: none;
   }
 }
+
+/* A raid's rules folded on its page (docs/43 §5.11): the summary is the row, the chevron turns when open. */
+.raid-rules > summary::-webkit-details-marker {
+  display: none;
+}
+.raid-rules[open] .raid-rules-chev {
+  transform: rotate(180deg);
+}

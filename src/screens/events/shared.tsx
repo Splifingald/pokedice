@@ -6,6 +6,7 @@ import { PixelIcon, type IconName } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
+import { InfoButton } from '@/components/RulesModal'
 import { SpriteImg } from '@/components/SpriteImg'
 import { ART_CROP, ART_K, ART_PX, artUrl, horizonOf } from '@/fx/areaArt'
 import { ART_GEOMETRY } from '@/fx/areaArtMap'
@@ -115,15 +116,12 @@ export function EventRulesModal({ id, open, onClose }: { id: EventId; open: bool
 }
 
 /** The Info button at the foot of an event's page (the wheel's look): its rules again. */
-export function EventInfo({ id }: { id: EventId }) {
+export function EventInfo({ id, compact = false }: { id: EventId; compact?: boolean }) {
   const { t } = useT()
   const [open, setOpen] = useState(false)
-  const name = t(`ui.events.${id}.name`)
   return (
     <>
-      <button type="button" className="ev-info w-full" onClick={() => setOpen(true)} aria-label={t('ui.events.infoLabel', { name })}>
-        {t('ui.events.info')}
-      </button>
+      <InfoButton name={t(`ui.events.${id}.name`)} onClick={() => setOpen(true)} compact={compact} />
       <EventRulesModal id={id} open={open} onClose={() => setOpen(false)} />
     </>
   )

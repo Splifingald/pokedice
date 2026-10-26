@@ -15,6 +15,7 @@ import { RaidPage } from './RaidPage'
 import { RaidView } from './RaidView'
 import { RebattlePage, tierName } from './RebattlePage'
 import { EventPicture } from './shared'
+import { cx } from '@/theme/util'
 import { WheelPage } from './WheelPage'
 import { WorldAwayPage } from './world'
 
@@ -26,7 +27,11 @@ export function EventBanner({ id, status }: { id: EventId; status?: ReactNode })
   const data = useGame((s) => s.data)
   const navigate = useNavigate()
   return (
-    <EventPicture id={id} data={data} className="-mx-3 -mt-4 min-h-[132px] shadow-[0_2px_0_rgb(var(--c-edge))]">
+    <EventPicture id={id} data={data} className={cx(
+        // Shorter on a short phone, so the stage and its dock fit under it (360×640).
+        '-mx-3 -mt-4 min-h-[96px] shadow-[0_2px_0_rgb(var(--c-edge))] [@media(min-height:740px)]:min-h-[132px]',
+        'lg:mx-0 lg:mt-0 lg:min-h-[120px] lg:shadow-card',
+      )}>
       <div className="pixel-plate absolute left-2 top-2 z-[1] flex max-w-[calc(100%-16px)] items-center gap-0.5 pb-1.5 pl-1 pr-2.5 pt-0.5">
         <BackButton onClick={() => navigate('/home')} />
         <span className="grid min-w-0 gap-0.5">
@@ -59,13 +64,11 @@ function useEventStatus(id: EventId): string | undefined {
   return undefined
 }
 
-/** Each event's page (docs/19 builds them one by one). */
-function EventBody({ id }: { id: EventId }) {
-  const { t } = useT()
-  if (id === 'wheel') return <WheelPage />
-  if (id === 'rebattle') return <RebattlePage />
-  if (id === 'raid') return <RaidPage />
-  return <p className="m-0 font-pixel-sm text-[16px] text-muted">{t('ui.events.building', { name: t(`ui.events.${id}.name`) })}</p>
+/** Each event's page lays itself out (stage and panel, docs/43 §5.11), its banner on top. */
+function EventBody({ id, head }: { id: EventId; head: ReactNode }) {
+  if (id === 'wheel') return <WheelPage head={head} />
+  if (id === 'rebattle') return <RebattlePage head={head} />
+  return <RaidPage head={head} />
 }
 
 export function EventsScreen() {
@@ -86,10 +89,5 @@ export function EventsScreen() {
 
 function EventPage({ id }: { id: EventId }) {
   const status = useEventStatus(id)
-  return (
-    <div className="flex flex-col gap-3">
-      <EventBanner id={id} status={status} />
-      <EventBody id={id} />
-    </div>
-  )
+  return <EventBody id={id} head={<EventBanner id={id} status={status} />} />
 }
