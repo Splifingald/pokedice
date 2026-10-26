@@ -11,8 +11,8 @@
 // Home's notices (`homeNotices`, below; docs/43 §7) took what never needed a pop-up over Home: what asks nothing of the
 // player (Prof. Oak's leaderboard tip, his invite, Support me) and the opening of every feature with a page of its own
 // (the Day Care, Versus, the special events, Trades, the General upgrades, the shiny and Unown Pokédexes, the invite
-// rewards, the Underground), whose rules are now a card at the top of that page (`RulesCard`). Every "seen" flag stays
-// where it was in the save.
+// rewards, the raid overhaul, the Underground), whose rules are now a card at the top of that page (`RulesCard`).
+// Every "seen" flag stays where it was in the save.
 import { dayCareTutorialDue, leaderboardTutorialDue } from './daycare'
 import { donationDue } from './donation'
 import { dayNightRulesDue } from './dayNight'
@@ -102,8 +102,6 @@ const QUEUE = {
   dayNight: { due: (s, d) => dayNightRulesDue(s, d) },
   /** Mega Evolution, Gigantamax and Z-Moves, each once its badge is won. */
   powers: { due: (s, d) => !!powerRulesDue(s, d) },
-  /** The raid overhaul's rules (docs/40), once a raid is open with it on. */
-  raidRules: { due: (s, d) => raidOverhaulRulesDue(s, d) },
   /** A small world has opened (the player outside it). */
   world: {
     due: (s, d, c) => !inWorld(s, d) && worldPopupDue(s, worldFor(s, d, c.now)),
@@ -139,6 +137,7 @@ export type RetiredPopup =
   | 'general'
   | 'shinyDex'
   | 'unownDex'
+  | 'raidRules'
 
 export type OneTimePopup = keyof typeof QUEUE | RetiredPopup
 
@@ -175,8 +174,8 @@ export interface NoticeContext {
  * Home's notices (docs/43 §7), in the order Home shows them: each feature with a page of its own as it opens (until its
  * page's rules card is read: the feature's own "seen" flag), then what asks nothing of the player. The flags are the
  * pop-ups' own (`dayCare.visited`, `versusRulesSeen`, `events.seen`, `trades.rulesSeen`, `general.rulesSeen`,
- * `shinyDexSeen`, `unownDexSeen`, `invites.rulesSeen`, `underground.rulesSeen`, `leaderboardVisited`, `donationSeen`,
- * the invite's per-region mark on the device).
+ * `shinyDexSeen`, `unownDexSeen`, `invites.rulesSeen`, `events.raidRulesSeen`, `underground.rulesSeen`,
+ * `leaderboardVisited`, `donationSeen`, the invite's per-region mark on the device).
  */
 const NOTICES = {
   /** The Day Care, at its catches (Prof. Oak's tutorial was its rules). → /daycare */
@@ -195,6 +194,8 @@ const NOTICES = {
   unownDex: (s: SaveData, d: GameData) => unownDexRulesDue(s, d),
   /** The invite rewards. → /friends */
   invites: (s: SaveData, d: GameData) => inviteRulesDue(s, d),
+  /** The raid overhaul's rules (docs/40), once a raid is open with it on. → /events/raid */
+  raidRules: (s: SaveData, d: GameData) => raidOverhaulRulesDue(s, d),
   /** The Underground, while its live event runs. → /underground */
   underground: (s: SaveData, d: GameData, c: NoticeContext) => ugRulesDue(s, d, c.now ?? null),
   /** Prof. Oak's leaderboard tip, from the first badge (after the Day Care's). → /leaderboard */

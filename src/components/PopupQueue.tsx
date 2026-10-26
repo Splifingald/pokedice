@@ -29,7 +29,6 @@ import { OfflineReportModal } from './GeneralRules'
 import { GiftService } from './Gifts'
 import { POPUP_GAP_MS, PopupTurnContext, usePopupOnScreen } from './popupTurn'
 import { PowersUnlockPopup } from './PowersRules'
-import { RaidRulesPopup } from '@/screens/events/RaidRules'
 import { PushService } from './PushService'
 import { RaidGiftPopup } from './RaidGiftPopup'
 import { ReplyPopup, useRepliesWaiting } from './ReplyPopup'
@@ -137,7 +136,6 @@ export function OneTimePopups() {
       <PortalUnlockPopup />
       <DayNightRulesPopup />
       <PowersUnlockPopup />
-      <RaidRulesPopup />
       <WorldPopup />
       <WorldPick />
       <WorldFinishPopup />
