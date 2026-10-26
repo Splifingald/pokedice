@@ -637,7 +637,8 @@ export function RaidView({ run }: { run: RaidRun }) {
           ) : catching && catchState ? (
             <CatchPanel c={catchState} onThrow={onThrow} revealed={revealed} onContinue={raidCatchShown} onBait={onBait} />
           ) : (
-            <>
+            // The dice, the actions and the team in the thumb's reach at the foot; the line stays under the stage.
+            <div className="mt-auto flex flex-col gap-2">
               <DiceTray
                 tray={tray}
                 live={rolling}
@@ -653,7 +654,7 @@ export function RaidView({ run }: { run: RaidRun }) {
                 )}
               </div>
               <div className="min-h-[56px]">{actions}</div>
-              <div className="mt-auto flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 {ownedItems.length > 0 && (
                   <BagButton
                     disabled={!canItem || usefulItems.length === 0}
@@ -683,7 +684,7 @@ export function RaidView({ run }: { run: RaidRun }) {
                   </button>
                 </div>
               </div>
-            </>
+            </div>
           )}
         </div>
       </section>
