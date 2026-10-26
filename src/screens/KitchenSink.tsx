@@ -77,6 +77,7 @@ import { ShellBits } from './kitchen/ShellBits'
 import { DeepShellBits } from './kitchen/DeepShellBits'
 import { TeamDeepBits } from './kitchen/TeamDeepBits'
 import { PokedexDeepBits } from './kitchen/PokedexDeepBits'
+import { EventsDeepBits } from './kitchen/EventsDeepBits'
 import { RewardBits } from './kitchen/RewardBits'
 import { HitFeelBits } from './kitchen/HitFeelBits'
 import { FeelBits } from './kitchen/FeelBits'
@@ -740,6 +741,10 @@ export function KitchenSink() {
 
       <Section title="Pokédex (docs/43 §5.6): the head's gauge, every tile, the grid's keys, the fold, the entry as a sheet and docked">
         <PokedexDeepBits />
+      </Section>
+
+      <Section title="Events and onboarding (docs/43 §5.10–5.11): StagePanel, the dock, tickets, the hall, How to play's folds">
+        <EventsDeepBits />
       </Section>
 
       <Section title="Extreme mode: rules, band, title card, K.O. rest, resting team, while you were away, switch">

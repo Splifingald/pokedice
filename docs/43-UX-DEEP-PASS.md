@@ -230,16 +230,39 @@ Each entry: before (from the audit), after on a phone, after on PC, and what was
 - **After, PC**: Settings in two columns (Game and Language | Cloud, Save, Content); phone: unchanged order, 16 px floor.
   The drawer: the card, then about-you rows, then help, then the foot (Discord, Contact, Support me).
 
-### 5.10 Title, new game, How to play
+### 5.10 Title, new game, How to play, the type chart
 
-- **Title**: kept (the audit's cleanest screen); the logo's tagline 16 px.
-- **How to play**: 8.3 screens of text become the four animated cards and the rules as collapsed sections (one open at a
-  time): 1.6 screens.
+- **Title**: kept — the audit's cleanest screen (one screen, nothing under 16 px); only its footer links grew to 44 px.
+- **New game (the lab)**: Prof. Oak is in the lab's message box (his portrait, his welcome while the balls drop, SKIP
+  INTRO beside it), so his separate monologue screen is gone; on PC the lab on the left, the message, card and buttons
+  on the right. Taps stay NEW GAME → a ball → PICK → the dice (3): PICK stays because the partner is for good and its
+  card is what the choice is made on.
+- **How to play**: from 8.3 screens at 390 to 1.3 — the four animated cards swipe sideways in their own box (2×2 from
+  640 px), then "All the rules" as seven folded sections, one open at a time, each opening on one to three short lines;
+  the full text and tables behind "Every detail". PC: the cards and the rules side by side. The chip nav is gone.
+- **The type chart**: two tabs — Pick a type (18 type buttons, the answer as an attack card and a defence card) and the
+  chart (36×44 px cells at 16–18 px, scrolling in its own box with its first row and column pinned).
 
 ### 5.11 Events
 
-The wheel, raids, the rebattle, the Underground, Trick or Treat, the portal and the nightmare keep their screens; their
-pages adopt the shell's floor (16 px), and their PC pages use `StageView` where they have a stage (the wheel, the dig).
+- **One shape** (`StagePanel`): on phones the stage, the panel, and a dock pinned above the tab bar (one red action); from
+  1024 px the stage on the left and the panel and dock docked at its right in one frame. INFO became a quiet 48 px
+  button with an "i" (it was a 64 px blue block competing with the page's action), everywhere it appears.
+- **Fortune Wheel**: tickets as stubs, the jackpot beside them, the wheel sized to the screen; SPIN red in the dock with
+  BUY A TICKET and INFO; PC the wheel left, Tickets and Jackpot cards right. INFO is one sheet with the rules and the
+  odds (the tip line went into the rules).
+- **Raids**: 2.1 → 1.6 screens at 390, 47 → 1 small text. The boss card; the team as three cards (they are the picker's
+  button); the group as three seats; "This raid" rules folded; START red in the dock. PC: the raids in two columns with
+  the picked one's panel docked (a legendary raid set up in place: 2 taps and a page change → 1 tap). Ball odds, tries
+  and hints are More details'. The team picker's candidates are cards.
+- **Raid battle**: on PC the stage as large as the window allows and the panel docked at 400 px; on phones the dice,
+  actions and team row at the foot.
+- **Elite Rebattle**: the gauntlet is a hall — five trainers on the League's carpet, the next one forward and ringed,
+  the beaten greyed with a check; the panel holds the next trainer and the medal track; levels and ₽ are More details'.
+- **The Underground**: the kits and the pickaxe as the stage, the team, orb bag and plates as the panel, DIG A WALL red
+  in the dock; the dig on PC: the wall as tall as the window, the gauge, the buried list and the die docked beside it.
+- **Rules**: the wheel, raids, the rebattle and the Underground show their `RulesCard` at the top of their page until
+  GOT IT; opening the page no longer counts.
 
 ### 5.12 Pop-ups and toasts
 
