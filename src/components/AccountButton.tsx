@@ -141,7 +141,8 @@ export function DisconnectButton({ size = 'md', className, shut }: AccountButton
   if (status !== 'signed_in') return null
   return (
     <>
-      <PixelButton size={size} variant="danger" className={className} onClick={() => setConfirm(true)} shut={shut}>
+      {/* White: signing out is undone by signing in again; red is for the one Delete (one red per screen). */}
+      <PixelButton size={size} className={className} onClick={() => setConfirm(true)} shut={shut}>
         {t('ui.account.disconnect')}
       </PixelButton>
       <DisconnectModal open={confirm} onClose={() => setConfirm(false)} />

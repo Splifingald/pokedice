@@ -39,7 +39,7 @@ export function FeelSettings({ always }: { always?: boolean }) {
                   { id: 'mid', label: t('ui.settings.volMid') },
                   { id: 'high', label: t('ui.settings.volHigh') },
                 ]}
-                className="min-w-[12rem]"
+                className="min-w-[11rem]"
               />
             </div>
           )}

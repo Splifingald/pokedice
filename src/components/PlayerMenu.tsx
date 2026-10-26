@@ -57,13 +57,14 @@ function MenuRowView({ icon, mark, label, desc, hint, dot, href, onClick, shut }
   const descId = useId()
   // The rework: titles only; a line under one is the reason it's locked.
   if (!shut) desc = undefined
+  // 48 px rows (44 is the floor): the menu's main rows fit a 360×640 phone under the compact card.
   const className = cx(
-    'flex min-h-[56px] w-full items-center gap-2.5 bg-paper pb-2 pl-2 pr-3 pt-1.5 text-left text-ink shadow-card',
+    'flex min-h-[48px] w-full items-center gap-2.5 bg-paper pb-1.5 pl-2 pr-3 pt-1 text-left text-ink shadow-card',
     shut && 'opacity-60',
   )
   const body = (
     <>
-      <span className="grid h-8 w-8 shrink-0 place-items-center bg-sky shadow-ring">
+      <span className="grid h-7 w-7 shrink-0 place-items-center bg-sky shadow-ring">
         {mark ? <ConnectMarks size={14} /> : icon && <PixelIcon name={icon} size={18} />}
       </span>
       <span className="grid min-w-0 flex-1 gap-0.5">
@@ -93,6 +94,30 @@ function MenuRowView({ icon, mark, label, desc, hint, dot, href, onClick, shut }
     </a>
   ) : (
     <button type="button" onClick={onClick} className={className} {...a11y}>
+      {body}
+    </button>
+  )
+}
+
+/**
+ * One tile of the menu's foot (Discord, Support me, Contact): its icon over its name, three to a row — rare actions,
+ * kept small and out of the way (docs/43 §3), where they were three full rows.
+ */
+function FootTile({ icon, label, href, onClick }: { icon: IconName; label: string; href?: string; onClick?: () => void }) {
+  const className =
+    'flex min-h-[56px] w-full flex-col items-center justify-center gap-1 bg-paper px-1 pb-1 pt-1.5 text-center text-[16px] leading-none text-ink shadow-card'
+  const body = (
+    <>
+      <PixelIcon name={icon} size={20} />
+      <span className="break-words">{label}</span>
+    </>
+  )
+  return href ? (
+    <a href={href} target="_blank" rel="noopener noreferrer" onClick={onClick} className={className}>
+      {body}
+    </a>
+  ) : (
+    <button type="button" onClick={onClick} className={className}>
       {body}
     </button>
   )
@@ -190,34 +215,36 @@ export function PlayerMenu() {
             {(!isSupabaseConfigured || auth.status === 'unavailable') && (
               <p className="copy text-sm text-muted">{t('ui.nav.saveInBrowser')}</p>
             )}
-            {discord && <MenuRow icon="discord" label={t('ui.nav.discord')} href={discord} onClick={() => setOpen(false)} />}
-            {/* SUPPORT ME left the side rail for here (docs/43 §3): a rare action, at the foot of the menu. */}
-            {canDonate && (
-              <MenuRow
-                icon="heart"
-                label={t('ui.support.button')}
-                onClick={() => {
-                  setOpen(false)
-                  setDonating(true)
-                }}
-              />
-            )}
-            {/* Messages go to Supabase, so a deployment without it has no one to send them to. */}
-            {isSupabaseConfigured && (
-              <MenuRow
-                icon="pencil"
-                label={t('ui.contact.button')}
-                onClick={() => {
-                  setOpen(false)
-                  setContact(true)
-                }}
-              />
-            )}
+            <div className="grid auto-cols-fr grid-flow-col gap-1.5">
+              {discord && <FootTile icon="discord" label={t('ui.nav.discord')} href={discord} onClick={() => setOpen(false)} />}
+              {/* SUPPORT ME left the side rail for here (docs/43 §3): a rare action, at the foot of the menu. */}
+              {canDonate && (
+                <FootTile
+                  icon="heart"
+                  label={t('ui.support.button')}
+                  onClick={() => {
+                    setOpen(false)
+                    setDonating(true)
+                  }}
+                />
+              )}
+              {/* Messages go to Supabase, so a deployment without it has no one to send them to. */}
+              {isSupabaseConfigured && (
+                <FootTile
+                  icon="pencil"
+                  label={t('ui.contact.button')}
+                  onClick={() => {
+                    setOpen(false)
+                    setContact(true)
+                  }}
+                />
+              )}
+            </div>
           </div>
         }
       >
         <TrainerCard />
-        <nav aria-label={t('ui.profile.menuLabel')} className="mt-3 flex flex-col gap-1.5">
+        <nav aria-label={t('ui.profile.menuLabel')} className="mt-2 flex flex-col gap-1.5">
           {/* Messages and gifts from the developer, a row of their own (docs/38 U6b); the count is what's new there. */}
           {isSupabaseConfigured && (
             <MenuRow
