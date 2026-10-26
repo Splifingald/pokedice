@@ -50,6 +50,8 @@ import { mutateSave, useGame, type TrickRun } from '@/store/game'
 import { fleeTrick, giveTreat, leaveTrick, throwTrickBall } from '@/store/run'
 import { CatchCard, Overlay, SecretAreaCard } from '@/screens/battle/VictoryView'
 import { cx } from '@/theme/util'
+import { pictureOf } from '@/fx/areaArt'
+import { StageSky } from '@/screens/battle/StageSky'
 import { PlateBox } from '@/screens/battle/Plates'
 import { RunRoundGauge } from './RoundGauge'
 
@@ -177,12 +179,21 @@ export function TrickScreen(p: TrickScreenProps) {
       <section
         aria-label={t('ui.trick.title')}
         className={cx(
-          'mx-auto flex w-full max-w-[max(300px,min(560px,calc((100dvh_-_330px)_*_1.5)))] flex-col lg:max-w-[max(560px,min(700px,calc((100dvh_-_380px)_*_1.5)))]',
+          'mx-auto flex w-full max-w-[max(300px,min(560px,calc((100dvh_-_330px)_*_1.5)))] flex-col [container-type:inline-size] lg:max-w-[max(560px,min(700px,calc((100dvh_-_380px)_*_1.5)))]',
           p.fill && 'min-h-[100dvh] lg:min-h-0',
         )}
       >
         {p.fill && <h1 className="sr-only">{t('ui.trick.title')}</h1>}
-        <div className="shadow-ledge">
+        {/* As the battle's (docs/43 §5.3): on a tall phone the stage grows upward, the area's sky (or the night) over
+            the 3:2 grid, so the panel sits right under it instead of a gap. */}
+        <div
+          className={cx(
+            'relative flex shrink-0 flex-col justify-end overflow-clip shadow-ledge',
+            p.fill && 'h-[max(66.667cqw,calc(100dvh_-_var(--top-bar,0px)_-_380px))] lg:h-auto',
+          )}
+        >
+          <div className="relative shrink-0">
+          {p.fill && <StageSky art={pictureOf(p.areaId)} world={pictureOf(p.areaId) ? undefined : 'nightmare'} />}
           <TrickStage
             areaId={p.areaId}
             dex={p.dex}
@@ -194,6 +205,7 @@ export function TrickScreen(p: TrickScreenProps) {
           >
             {p.rest !== 'fled' && <TrickPlate dex={p.dex} level={p.level} tier={p.tier} shiny={p.shiny} />}
           </TrickStage>
+          </div>
         </div>
         <div
           className="flex flex-1 flex-col gap-2 px-3 pt-3"
