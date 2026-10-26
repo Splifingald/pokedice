@@ -19,7 +19,11 @@ export function useSocial() {
   const tradesUnseen = save && !isExtreme(save) ? tradesToWatch(save).length : 0
   const tradesOut = save ? tradesOf(save).out.length : 0
   const trades =
-    isSupabaseConfigured && !!save && !isExtreme(save) && !inWorldRegion(save, data) && (tradesOn(data) || tradesOut > 0)
+    isSupabaseConfigured &&
+    !!save &&
+    !isExtreme(save) &&
+    !inWorldRegion(save, data) &&
+    (tradesOn(data) || tradesOut > 0)
   return {
     friends: isSupabaseConfigured,
     trades,

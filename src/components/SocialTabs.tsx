@@ -25,12 +25,22 @@ export const SOCIAL_PATHS = ['/social', ...VIEWS.map((v) => v.to)]
  * the view's own `<h1>` is the strip's current tab, read by screen readers, so the title isn't written twice. A view
  * that isn't open yet stays listed with a lock (its page says what opens it).
  */
-export function SocialTabs({ current, title, aside }: { current: SocialView; title: string; aside?: ReactNode }) {
+export function SocialTabs({
+  current,
+  title,
+  aside,
+}: {
+  current: SocialView
+  title: string
+  aside?: ReactNode
+}) {
   const { t } = useT()
   const social = useSocial()
   const boardOpen = useGame((s) => !!s.save && leaderboardUnlocked(s.save, s.data))
   const versusOpen = useGame((s) => !!s.save && versusUnlocked(s.save, s.data))
-  const shown = VIEWS.filter((v) => (v.id === 'friends' ? social.friends : v.id === 'trades' ? social.trades : true))
+  const shown = VIEWS.filter((v) =>
+    v.id === 'friends' ? social.friends : v.id === 'trades' ? social.trades : true,
+  )
   const locked = (v: SocialView) => (v === 'board' && !boardOpen) || (v === 'versus' && !versusOpen)
   const dot = (v: SocialView) => (v === 'friends' ? social.friendsNew : v === 'trades' ? social.tradesNew : 0)
   return (

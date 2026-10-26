@@ -74,6 +74,7 @@ import { FeelDiceBits } from './kitchen/FeelDiceBits'
 import { HowToBits } from './kitchen/HowToBits'
 import { PowersBits } from './kitchen/PowersBits'
 import { ShellBits } from './kitchen/ShellBits'
+import { DeepShellBits } from './kitchen/DeepShellBits'
 import { RewardBits } from './kitchen/RewardBits'
 import { HitFeelBits } from './kitchen/HitFeelBits'
 import { FeelBits } from './kitchen/FeelBits'
@@ -725,6 +726,10 @@ export function KitchenSink() {
 
       <Section title="The shell: a page loading (wobbling, still), each toast (info, good, long, an error with its ✕)">
         <ShellBits />
+      </Section>
+
+      <Section title="Deep pass: Social's views · SplitView (docs/43)">
+        <DeepShellBits />
       </Section>
 
       <Section title="Extreme mode: rules, band, title card, K.O. rest, resting team, while you were away, switch">
