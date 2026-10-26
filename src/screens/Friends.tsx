@@ -135,7 +135,7 @@ function FriendsBody({ counter }: { counter?: string }) {
   const main = (
     <>
       {gaugeOn && rulesDue && (
-        <RulesCard title={t('ui.invite.title')} icon="gift" rules={inviteRules} onDone={seeInviteRules} />
+        <RulesCard title={t('ui.invite.infoName')} icon="gift" rules={inviteRules} onDone={seeInviteRules} />
       )}
       {gauge && <InviteRewardsCard gauge={gauge} busy={rewardsBusy} onOpen={() => void openInviteRewards()} />}
 
