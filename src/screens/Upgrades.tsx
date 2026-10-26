@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import {
   COMBO_KEYS,
@@ -30,17 +30,16 @@ import { Chip } from '@/components/Chip'
 import { Die } from '@/components/Die'
 import { FaceDice, facesStatuses, StatusLines } from '@/components/FaceDice'
 import { PixelIcon } from '@/components/icons'
-
-import { Seg } from '@/components/Segmented'
 import { COMBO_EXAMPLES, comboExampleText, comboName, money, oneInText, typeName } from '@/lib/format'
 import { bestBuy, dieCarriers, maxDiceOwned } from '@/lib/upgrades'
 import { useMotion } from '@/lib/motion'
 import { useT } from '@/i18n/react'
 import { GeneralRulesModal } from '@/components/GeneralRules'
-import { InfoButton } from '@/components/RulesModal'
+import { SmallInfo } from '@/components/SmallInfo'
 import { TrainerName } from '@/components/TrainerName'
 import { markGeneralRulesSeen, upgradeCombo, upgradeDie, upgradeGeneral } from '@/store/actions'
 import { pushToast, useGame } from '@/store/game'
+import { useDetails } from '@/store/hooks'
 import { useInWorld } from '@/screens/events/world'
 import { cx } from '@/theme/util'
 
@@ -60,7 +59,7 @@ export interface Up {
   /** Why nobody you own would benefit yet. */
   locked: string | null
   visual: ReactNode
-  /** Under the name: what a die is (dice only). */
+  /** Under the name: what it is (a die, a General upgrade). */
   desc?: string
   /** The die's six faces and what its status faces do (dice only). */
   faces?: ReactNode
@@ -149,6 +148,12 @@ function PopText({ pop }: { pop: UpPop }) {
   )
 }
 
+/**
+ * An upgrade (docs/43 §5.5), in two columns: on the left its name, what it does now → at the next level (the line the
+ * eye goes to, 22 px) and its track; on the right the price is the button, the card's whole height — the choice and
+ * the purchase in one tap. Navy, the best buy gold (with its chip), grey short of ₽ (saying what's missing), MAX at
+ * the top, a lock with its reason when nobody you own would use it.
+ */
 export function UpCard({
   u,
   gold,
@@ -195,36 +200,29 @@ export function UpCard({
     pushToast(t('ui.upgrades.bought', { name: u.name, level, bonus: gained }), 'good')
   }
   const shownPop = frozenPop ?? pop
+  const side =
+    'grid min-h-[56px] min-w-[88px] place-items-center content-center gap-1 self-stretch px-2 leading-none'
   return (
     <li
       className={cx(
-        'grid gap-1.5 px-2.5 pb-2.5 pt-2',
+        'grid grid-cols-[minmax(0,1fr)_auto] gap-x-2.5 py-2 pl-2.5 pr-2',
         u.locked
-          ? 'bg-well text-muted shadow-ring-line'
+          ? 'bg-well text-ink shadow-ring-line'
           : can
             ? 'bg-cream shadow-card-warm'
             : 'bg-paper shadow-card',
       )}
     >
-      <div className="flex min-h-[30px] items-center gap-2">
-        <span className="grid min-w-0 flex-1 leading-[1.05]">
+      <div className="grid min-w-0 content-start gap-1.5">
+        <div className="flex min-h-[28px] flex-wrap items-center gap-x-2 gap-y-1">
           <b className="text-[20px] font-normal leading-none">{u.name}</b>
-          {u.desc && <small className="font-pixel-sm text-[16px] text-muted">{u.desc}</small>}
-        </span>
-        {u.visual}
-      </div>
-      {u.faces}
-      <div className="relative flex items-center gap-2">
-        <Pips level={u.level} max={u.max} pop={shownPop} />
-        {/* The best buy says so in words too, never by its gold alone. */}
-        {best && can && <Chip tone="gold">{t('ui.upgrades.bestBuy')}</Chip>}
-        <span className="font-pixel-sm text-[16px] text-muted">
-          {t('ui.common.level.short', { n: u.level })}
-        </span>
-        {shownPop && <PopText pop={shownPop} />}
-      </div>
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[18px]">
+          {/* The best buy says so in words too, never by its gold alone. */}
+          {best && can && <Chip tone="gold">{t('ui.upgrades.bestBuy')}</Chip>}
+          {u.visual && <span className="ml-auto">{u.visual}</span>}
+        </div>
+        {u.desc && <small className="font-pixel-sm text-[16px] leading-tight text-muted">{u.desc}</small>}
+        {u.faces}
+        <p className="m-0 text-[22px] leading-none">
           {now}
           {then != null && (
             <>
@@ -236,63 +234,137 @@ export function UpCard({
               <em className="not-italic text-good">{then}</em>
             </>
           )}
-        </span>
-        {u.locked ? (
-          <span className="inline-flex min-h-[46px] min-w-[96px] items-center justify-center gap-1.5 bg-well-deep px-2.5 font-pixel-sm text-[16px] text-ink">
-            <PixelIcon name="lock" size={16} />
-            {t('ui.upgrades.lockedWord')}
+        </p>
+        <div className="relative flex items-center gap-2">
+          <Pips level={u.level} max={u.max} pop={shownPop} />
+          <span className="font-pixel-sm text-[16px] tabular-nums text-ink">
+            {t('ui.common.level.short', { n: u.level })}
           </span>
-        ) : u.cost == null ? (
-          <span className="inline-flex min-h-[46px] min-w-[96px] items-center justify-center bg-gold text-[18px] text-ink shadow-ring">
-            {t('ui.upgrades.max')}
-          </span>
-        ) : (
-          <button
-            type="button"
-            onClick={buy}
-            aria-disabled={!can || undefined}
-            className={cx(
-              'grid min-h-[46px] min-w-[96px] place-items-center px-2.5 pb-2 pt-1 leading-none',
-              // Navy, the best buy gold: a list of red buttons was a screen of "main" actions (docs/15 §13).
-              can
-                ? best
-                  ? 'pixel-btn frame-gold'
-                  : 'pixel-btn frame-dark'
-                : 'bg-well-deep text-ink shadow-ring-line',
-            )}
-          >
-            <b className="text-[20px] font-normal">{money(u.cost)}</b>
-            <small className="font-pixel-sm text-[16px]">
-              {can ? t('ui.upgrades.upgrade') : t('ui.upgrades.needShort', { amount: money(u.cost - gold) })}
-            </small>
-          </button>
-        )}
+          {shownPop && <PopText pop={shownPop} />}
+        </div>
+        {u.locked && <p className="m-0 font-pixel-sm text-[16px] leading-tight text-ink">{u.locked}</p>}
       </div>
-      {u.locked && <p className="font-pixel-sm text-[16px] text-muted">{u.locked}</p>}
+      {u.locked ? (
+        <span className={cx(side, 'bg-well-deep font-pixel-sm text-[16px] text-ink')}>
+          <PixelIcon name="lock" size={16} />
+          {t('ui.upgrades.lockedWord')}
+        </span>
+      ) : u.cost == null ? (
+        <span className={cx(side, 'bg-gold text-[20px] text-ink shadow-ring')}>{t('ui.upgrades.max')}</span>
+      ) : (
+        <button
+          type="button"
+          onClick={buy}
+          aria-disabled={!can || undefined}
+          className={cx(
+            side,
+            'pb-2 pt-1',
+            // Navy, the best buy gold: a list of red buttons was a screen of "main" actions (docs/15 §13).
+            can
+              ? best
+                ? 'pixel-btn frame-gold'
+                : 'pixel-btn frame-dark'
+              : 'bg-well-deep text-ink shadow-ring-line',
+          )}
+        >
+          <b className="text-[24px] font-normal tabular-nums">{money(u.cost)}</b>
+          <small className="font-pixel-sm text-[16px]">
+            {can ? t('ui.upgrades.upgrade') : t('ui.upgrades.needShort', { amount: money(u.cost - gold) })}
+          </small>
+        </button>
+      )}
     </li>
   )
 }
 
 type Tab = 'combos' | 'dice' | 'general'
 
+/**
+ * Upgrades' views as one compact row of chips under the Mart's tabs (docs/43 §5.5): two stacked full-width tab bars
+ * read as two levels of the same weight. Still a tab list (arrow keys move), each with how many you can afford.
+ */
+function SubTabs({
+  value,
+  onChange,
+  options,
+  label,
+}: {
+  value: Tab
+  onChange: (v: Tab) => void
+  options: { id: Tab; label: string; count?: number }[]
+  label: string
+}) {
+  const move = (e: KeyboardEvent<HTMLDivElement>) => {
+    const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0
+    if (!step) return
+    e.preventDefault()
+    const i = options.findIndex((o) => o.id === value)
+    const next = options[(i + step + options.length) % options.length]!
+    onChange(next.id)
+    const list = e.currentTarget
+    requestAnimationFrame(() => list.querySelector<HTMLElement>(`[data-id="${next.id}"]`)?.focus())
+  }
+  return (
+    <div role="tablist" aria-label={label} onKeyDown={move} className="flex flex-wrap gap-1.5">
+      {options.map((o) => {
+        const on = o.id === value
+        return (
+          <button
+            key={o.id}
+            type="button"
+            role="tab"
+            id={`up-${o.id}`}
+            data-id={o.id}
+            aria-selected={on}
+            tabIndex={on ? 0 : -1}
+            onClick={() => onChange(o.id)}
+            className={cx(
+              'inline-flex min-h-[44px] items-center gap-1.5 whitespace-nowrap px-3 text-[19px] leading-none md:min-h-[40px]',
+              on ? 'bg-ink text-panel' : 'bg-paper text-ink shadow-ring-line hover:shadow-ring',
+            )}
+          >
+            {o.label}
+            {o.count != null && (
+              <span className={cx('font-pixel-sm text-[16px]', on ? 'text-gold-light' : 'text-muted')}>
+                {o.count}
+              </span>
+            )}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 /** `/upgrades` (old links, the General's pop-up): the Mart, on its Upgrades tab (docs/43 §3). */
 export function UpgradesScreen() {
   const [params] = useSearchParams()
-  return <Navigate to={`/shop?tab=upgrades${params.get('tab') === 'general' ? '&up=general' : ''}`} replace />
+  const sub = params.get('tab')
+  return (
+    <Navigate to={`/shop?tab=upgrades${sub === 'general' || sub === 'dice' ? `&up=${sub}` : ''}`} replace />
+  )
 }
 
-/** The Mart's Upgrades tab: combos, dice types and the General upgrades, each a sub-view. */
+/** The cards: one column on a phone, two on a tablet, three on PC (docs/43 §5.5). */
+const UP_GRID = 'grid gap-2 md:grid-cols-2 xl:grid-cols-3'
+
+/** The Mart's Upgrades tab: combos, dice types and the General upgrades, each a view. */
 export function UpgradesPanel() {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
-  const [params] = useSearchParams()
+  const details = useDetails()
+  const [params, setParams] = useSearchParams()
   const inside = useInWorld().inside
-  // The General tab is the admin's to switch on (docs/15 §20); its pop-up's Let's go! opens it (`?tab=general`). Its
+  // The General tab is the admin's to switch on (docs/15 §20); its pop-up's Let's go! opens it (`&up=general`). Its
   // levels hold in every region, so a small world, whose ₽ are its own, has its combos and dice only (docs/26).
   const generalOpen = generalOn(data) && !inside
-  const [picked, setTab] = useState<Tab>(params.get('up') === 'general' ? 'general' : 'combos')
+  const asked = params.get('up')
+  const picked: Tab = asked === 'general' || asked === 'dice' ? asked : 'combos'
   const tab: Tab = picked === 'general' && !generalOpen ? 'combos' : picked
+  // The view lives in the address (deep links, Back), next to the Mart's own tab.
+  const setTab = (next: Tab) =>
+    setParams(next === 'combos' ? { tab: 'upgrades' } : { tab: 'upgrades', up: next }, { replace: true })
   const [affordOnly, setAffordOnly] = useState(false)
   const [rules, setRules] = useState(false)
   // Opening the tab counts as having seen its rules.
@@ -346,10 +418,12 @@ export function UpgradesPanel() {
             {t(`ui.upgrades.onMons.${n === 1 ? 'one' : 'other'}`, { n })}
           </small>
         ) : null,
+        // The faces show what the die is at a glance; what each status face does, line by line, is for the invested
+        // player (More details), the faces' rings and badges already saying which status.
         faces: (
           <>
-            <FaceDice type={type} faces={faces} size={36} />
-            <StatusLines statuses={facesStatuses(faces)} />
+            <FaceDice type={type} faces={faces} size={30} />
+            {details && <StatusLines statuses={facesStatuses(faces)} />}
           </>
         ),
         buy: () => upgradeDie(type),
@@ -397,7 +471,7 @@ export function UpgradesPanel() {
               <TrainerName
                 name={save.player?.name || t('ui.settings.noName')}
                 rich
-                className="max-w-[45%] truncate text-[20px] leading-none"
+                className="max-w-[160px] truncate text-[20px] leading-none"
               />
             ) : (
               <PixelIcon name={id === 'luck' ? 'ball' : id === 'charm' ? 'sparkle' : 'moon'} size={24} />
@@ -417,43 +491,43 @@ export function UpgradesPanel() {
 
   return (
     <div className="flex flex-col gap-3">
-      <Seg
-        tabs
-        idPrefix="up"
-        label={t('ui.upgrades.title')}
-        value={tab}
-        onChange={setTab}
-        className="w-full"
-        options={[
-          { id: 'combos', label: t('ui.upgrades.tabCombos'), count: tabCount(combos) },
-          { id: 'dice', label: t('ui.upgrades.tabDice'), count: tabCount(dice) },
-          ...(generalOpen ? [{ id: 'general' as const, label: t('ui.upgrades.tabGeneral'), count: tabCount(general) }] : []),
-        ]}
-      />
-      <div role="tabpanel" aria-labelledby={`up-${tab}`} className="flex flex-col gap-2">
-        {/* The rework: no note on what a tab is; the filter alone, on the right. */}
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <button
-            type="button"
-            aria-pressed={affordOnly}
-            onClick={() => setAffordOnly((v) => !v)}
+      {/* One row under the Mart's tabs: the views, and the filter at its end. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <SubTabs
+          label={t('ui.upgrades.title')}
+          value={tab}
+          onChange={setTab}
+          options={[
+            { id: 'combos', label: t('ui.upgrades.tabCombos'), count: tabCount(combos) },
+            { id: 'dice', label: t('ui.upgrades.tabDice'), count: tabCount(dice) },
+            ...(generalOpen
+              ? [{ id: 'general' as const, label: t('ui.upgrades.tabGeneral'), count: tabCount(general) }]
+              : []),
+          ]}
+        />
+        <button
+          type="button"
+          aria-pressed={affordOnly}
+          onClick={() => setAffordOnly((v) => !v)}
+          className={cx(
+            'ml-auto inline-flex min-h-[44px] items-center gap-1.5 whitespace-nowrap px-2.5 text-[18px] md:min-h-[40px]',
+            affordOnly ? 'bg-ink text-panel' : 'bg-paper shadow-ring-line',
+          )}
+        >
+          <PixelIcon name="coin" size={14} />
+          {t('ui.upgrades.affordable')}
+          <i
             className={cx(
-              'inline-flex min-h-[44px] items-center gap-1.5 whitespace-nowrap px-2.5 text-[17px] md:min-h-[38px]',
-              affordOnly ? 'bg-ink text-panel' : 'bg-paper shadow-ring-line',
+              'font-pixel-sm text-[16px] not-italic',
+              affordOnly ? 'text-gold-light' : 'text-muted',
             )}
           >
-            {t('ui.upgrades.affordable')}
-            <i
-              className={cx(
-                'font-pixel-sm text-[16px] not-italic',
-                affordOnly ? 'text-gold-light' : 'text-muted',
-              )}
-            >
-              {canCount}
-            </i>
-          </button>
-        </div>
-        <ul className="grid gap-2">
+            {canCount}
+          </i>
+        </button>
+      </div>
+      <div role="tabpanel" aria-labelledby={`up-${tab}`} className="flex flex-col gap-2">
+        <ul className={UP_GRID}>
           {open.map((u) => (
             <UpCard key={u.id} u={u} gold={save.gold} best={u.id === best} />
           ))}
@@ -461,13 +535,13 @@ export function UpgradesPanel() {
         </ul>
         {locked.length > 0 && (
           <details className="group">
-            <summary className="flex min-h-[44px] cursor-pointer items-center gap-1.5 font-pixel-sm text-[16px] text-muted">
+            <summary className="flex min-h-[44px] cursor-pointer items-center gap-1.5 font-pixel-sm text-[18px] text-muted">
               <span className="inline-block transition-transform group-open:rotate-90" aria-hidden>
                 ▶
               </span>
               {t(`ui.upgrades.lockedCount.${locked.length === 1 ? 'one' : 'other'}`, { n: locked.length })}
             </summary>
-            <ul className="grid gap-2">
+            <ul className={UP_GRID}>
               {locked.map((u) => (
                 <UpCard key={u.id} u={u} gold={save.gold} />
               ))}
@@ -476,7 +550,11 @@ export function UpgradesPanel() {
         )}
         {tab === 'general' && (
           <>
-            <InfoButton name={t('ui.upgrades.tabGeneral')} onClick={() => setRules(true)} className="mt-1" />
+            <SmallInfo
+              name={t('ui.upgrades.tabGeneral')}
+              onClick={() => setRules(true)}
+              className="mt-1 self-start"
+            />
             <GeneralRulesModal open={rules} onClose={() => setRules(false)} />
           </>
         )}

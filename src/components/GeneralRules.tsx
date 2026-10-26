@@ -126,7 +126,7 @@ export function GeneralUnlockPopup() {
       onClose={markGeneralRulesSeen}
       onGo={() => {
         markGeneralRulesSeen()
-        navigate('/upgrades?tab=general')
+        navigate('/shop?tab=upgrades&up=general')
       }}
     />
   )
