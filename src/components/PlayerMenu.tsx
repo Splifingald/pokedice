@@ -103,7 +103,7 @@ function MenuRowView({ icon, mark, label, desc, hint, dot, href, onClick, shut }
  * One tile of the menu's foot (Discord, Support me, Contact): its icon over its name, three to a row — rare actions,
  * kept small and out of the way (docs/43 §3), where they were three full rows.
  */
-function FootTile({ icon, label, href, onClick }: { icon: IconName; label: string; href?: string; onClick?: () => void }) {
+export function FootTile({ icon, label, href, onClick }: { icon: IconName; label: string; href?: string; onClick?: () => void }) {
   const className =
     'flex min-h-[56px] w-full flex-col items-center justify-center gap-1 bg-paper px-1 pb-1 pt-1.5 text-center text-[16px] leading-none text-ink shadow-card'
   const body = (

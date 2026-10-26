@@ -129,14 +129,17 @@ function Board() {
   const filtering = signedIn && hasFriends && onlyFriends
   const shown = filtering ? friendsOnly(board).map((row) => ({ row })) : boardWindow(board)
   const friendRows = board.filter((r) => r.friendId).length
-  const open = (r: LeaderboardRow) => (r.friendId ? () => setCard({ id: r.friendId!, name: r.name }) : undefined)
+  const open = (r: LeaderboardRow) =>
+    r.friendId ? () => setCard({ id: r.friendId!, name: r.name }) : undefined
   const meRef = useSnapToMe(`${tab}:${board.findIndex((r) => r.isMe)}:${found}:${filtering}`)
   const mine = board.find((r) => r.isMe)
   const mineHall = hall.find((r) => r.isMe)
   const me = mine ?? mineHall
   const tabLabel = t(TABS.find((entry) => entry.id === tab)!.label)
   const note = t(`ui.board.note.${textKey}`, { region: regionName })
-  const placeText = mine ? t('ui.board.mine', { rank: mine.rank, total: board.length }) : t('ui.board.mineHall')
+  const placeText = mine
+    ? t('ui.board.mine', { rank: mine.rank, total: board.length })
+    : t('ui.board.mineHall')
   // In the Hall of Fame: on a phone its sheet opens; on PC it is beside the board already.
   const findMe = () => (mine ? setFound((n) => n + 1) : !wide && setHallOpen(true))
 
@@ -158,7 +161,10 @@ function Board() {
         value: (
           <span
             role="img"
-            aria-label={tPlural(tab === 'shiny' ? 'ui.board.shinies' : 'ui.board.raids', tab === 'shiny' ? row.shinies : row.raidsWon)}
+            aria-label={tPlural(
+              tab === 'shiny' ? 'ui.board.shinies' : 'ui.board.raids',
+              tab === 'shiny' ? row.shinies : row.raidsWon,
+            )}
             className="inline-flex items-center gap-1.5"
           >
             {tab === 'shiny' ? row.shinies : row.raidsWon}
@@ -180,7 +186,9 @@ function Board() {
 
   // Phones: a row of five, each its icon over its name. PC: the side column's list of boards, each with what it counts.
   const noteOf = (id: LeaderboardTab) =>
-    t(`ui.board.note.${id === 'progress' && rebattleOnBoard(data, region) ? 'progressRebattle' : id}`, { region: regionName })
+    t(`ui.board.note.${id === 'progress' && rebattleOnBoard(data, region) ? 'progressRebattle' : id}`, {
+      region: regionName,
+    })
   const boardTabs = (
     <Seg
       tabs
@@ -261,7 +269,9 @@ function Board() {
     </ul>
   )
   const hallBody = tab !== 'shiny' && tab !== 'raids' && (
-    <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{t(`ui.board.hallBody.${textKey}`)}</p>
+    <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">
+      {t(`ui.board.hallBody.${textKey}`)}
+    </p>
   )
 
   /** The Hall of Fame's head: the crown, its name, how many and their faces. A button on a phone (its sheet). */
@@ -277,7 +287,13 @@ function Board() {
         </span>
         <span className="flex shrink-0 pl-1.5" aria-hidden>
           {hall.slice(0, 4).map((r, i) => (
-            <TrainerLook key={i} src={avatarOf(r.avatar).src} w={32} h={32} className="-ml-1.5 bg-[#3a4a72] shadow-halo" />
+            <TrainerLook
+              key={i}
+              src={avatarOf(r.avatar).src}
+              w={32}
+              h={32}
+              className="-ml-1.5 bg-[#3a4a72] shadow-halo"
+            />
           ))}
         </span>
       </>
@@ -313,7 +329,9 @@ function Board() {
         )}
       </div>
       {!wide && hall.length > 0 && hallHead(true)}
-      {load.state === 'loading' && <p className="m-0 p-4 text-center text-[20px] text-muted">{t('ui.common.loading')}</p>}
+      {load.state === 'loading' && (
+        <p className="m-0 p-4 text-center text-[20px] text-muted">{t('ui.common.loading')}</p>
+      )}
       {load.state === 'error' &&
         (online ? (
           <div className="flex flex-col items-center gap-1 p-4 text-center">
@@ -323,7 +341,9 @@ function Board() {
         ) : (
           <p className="m-0 p-4 text-center text-[20px] text-danger">{t('ui.common.offline')}</p>
         ))}
-      {load.state === 'offline' && <p className="m-0 p-4 text-center text-[20px] text-muted">{t('ui.board.offline')}</p>}
+      {load.state === 'offline' && (
+        <p className="m-0 p-4 text-center text-[20px] text-muted">{t('ui.board.offline')}</p>
+      )}
       {load.state === 'ready' && board.length === 0 && (
         <p className="m-0 p-4 text-center text-[20px] text-muted">
           {t(hall.length > 0 ? 'ui.board.allDone' : 'ui.board.empty')}
