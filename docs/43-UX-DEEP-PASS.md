@@ -234,8 +234,13 @@ Today ~28 one-time pop-ups take turns (`PopupQueue`). This pass:
 - **Moves to the page** what asks nothing of the player: Support me (its 5th-badge pop-up → a Home notice card), Prof.
   Oak's leaderboard tip and the invite (→ Home notice cards). They stay once-only and keep their "seen" flags.
 - **Keeps** the feature rules pop-ups as modals (CLAUDE.md, the user's rule) and the region offer.
-- **Proposes** (not built; the user decides): rules as a card at the top of the feature's own page the first time it is
-  opened, with the same INFO afterwards — the rule is read where it applies, and Home never opens under a modal.
+- **Rules where they apply** (proposed here, approved by the user on 2026-10-26): a feature with a page of its own shows
+  its rules the first time that page opens, as a card at its top (`RulesCard`: the same rows as its pop-up, GOT IT puts
+  it away for good, setting the same "seen" flag), and its INFO button afterwards. Home no longer opens under a rules
+  modal: the feature's opening is a notice card on Home with a button to its page. Features with no page of their own
+  (day and night, the battle powers, a small world's opening, Extreme mode, the push question) and the rules shown at
+  their own moment (the portal's and the nightmare's way in, Trick or Treat's first ghost, the gifts', the looks') keep
+  their pop-ups.
 
 ## 8. Not in this pass
 

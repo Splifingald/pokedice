@@ -3,6 +3,7 @@
 // usual bottom sheet, so this shows the docked shape only on a wide window.
 import { useState } from 'react'
 import { PixelButton } from '@/components/PixelButton'
+import { RulesCard } from '@/components/RulesCard'
 import { Sheet } from '@/components/Sheet'
 import { SocialTabs, type SocialView } from '@/components/SocialTabs'
 import { SplitView } from '@/components/SplitView'
@@ -13,6 +14,19 @@ export function DeepShellBits() {
   const [open, setOpen] = useState<number | null>(1)
   return (
     <div className="flex w-full flex-col gap-4">
+      <RulesCard
+        title="Versus"
+        icon="vs"
+        rules={[
+          {
+            icon: 'navTeam',
+            title: 'Three Pokémon at Lv.50',
+            text: 'Everyone fights at Lv.50, whatever their level.',
+          },
+          { icon: 'vs', title: 'It plays itself', text: 'Your team fights theirs on auto, to the end.' },
+        ]}
+        onDone={() => undefined}
+      />
       {VIEWS.map((v) => (
         <SocialTabs key={v} current={v} title={v} />
       ))}
