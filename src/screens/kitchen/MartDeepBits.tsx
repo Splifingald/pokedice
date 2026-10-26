@@ -3,7 +3,16 @@
 // in the Mart's PC pane, and the small INFO.
 import { Chip } from '@/components/Chip'
 import { PixelIcon } from '@/components/icons'
-import { DetailButton, ItemDetail, ItemTile, PriceButton, PricePlate, TILE_GRID } from '@/components/ItemTile'
+import {
+  DetailButton,
+  ItemDetail,
+  ItemTile,
+  PriceButton,
+  PricePlate,
+  QtyButton,
+  QtyRow,
+  TILE_GRID,
+} from '@/components/ItemTile'
 import { ItemSprite } from '@/components/ItemSprite'
 import { SheetDock } from '@/components/Sheet'
 import { SmallInfo } from '@/components/SmallInfo'
@@ -137,11 +146,22 @@ export function MartDeepBits() {
               effect="+2 to the catch die"
               description={great?.description}
               held={5}
-              choices={['1', '5', '10'].map((q) => ({ id: q, label: `×${q}` }))}
-              qty="5"
-              onQty={noop}
               onClose={noop}
-              button={<DetailButton mode="buy" can label="Buy ₽250" onClick={noop} />}
+              actions={
+                <QtyRow>
+                  <QtyButton mode="buy" can qty="×1" total={50} label="Buy 1, ₽50" onClick={noop} />
+                  <QtyButton mode="buy" can qty="×5" total={250} label="Buy 5, ₽250" onClick={noop} />
+                  <QtyButton
+                    mode="buy"
+                    can={false}
+                    qty="×10"
+                    total={500}
+                    short="need ₽120"
+                    label="Need ₽120 more"
+                    onClick={noop}
+                  />
+                </QtyRow>
+              }
             />
           </SheetDock.Provider>
         </div>
@@ -153,15 +173,14 @@ export function MartDeepBits() {
               effect="+20 HP"
               held={6}
               note="₽7 each"
-              choices={[
-                { id: '1', label: '×1' },
-                { id: '5', label: '×5' },
-                { id: 'all', label: 'All ×6' },
-              ]}
-              qty="1"
-              onQty={noop}
               onClose={noop}
-              button={<DetailButton mode="sell" can label="Sell +₽7" onClick={noop} />}
+              actions={
+                <QtyRow>
+                  <QtyButton mode="sell" can qty="×1" total={7} label="Sell 1 for ₽7" onClick={noop} />
+                  <QtyButton mode="sell" can qty="×5" total={35} label="Sell 5 for ₽35" onClick={noop} />
+                  <QtyButton mode="sell" can qty="All ×6" total={42} label="Sell 6 for ₽42" onClick={noop} />
+                </QtyRow>
+              }
             />
           </SheetDock.Provider>
         </div>

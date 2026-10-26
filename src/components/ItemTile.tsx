@@ -12,7 +12,6 @@ import { CoinFlight, HUD_GOLD_ATTR } from './CoinFlight'
 import { PixelIcon } from './icons'
 import { CloseButton } from './Modal'
 import { PixelButton } from './PixelButton'
-import { Seg } from './Segmented'
 import { Sheet, SheetDock } from './Sheet'
 
 /** The shelf's grid: three to a row on a phone (a 360 px one included), four from a tablet. */
@@ -209,9 +208,10 @@ export function PricePlate({
 }
 
 /**
- * An item opened: its picture, what it does, its description, how many you hold, then the quantity and the one button
- * (buy or sell) at the foot, in the thumb's reach. A `Sheet`: from the bottom on phones, docked in SplitView's pane on
- * PC (where it gets its own ✕, the pane having none).
+ * An item opened: its picture, what it does, its description, how many you hold, and at the foot (in the thumb's
+ * reach) the purchases themselves — ×1, ×5, ×10 each a button with its total, so choosing how many is buying them (one
+ * tap, docs/43 §2). A `Sheet`: from the bottom on phones, docked in SplitView's pane on PC (where it gets its own ✕,
+ * the pane having none).
  */
 export function ItemDetail({
   title,
@@ -221,11 +221,7 @@ export function ItemDetail({
   held,
   note,
   tags,
-  choices,
-  qty,
-  onQty,
-  qtyLabel,
-  button,
+  actions,
   onClose,
 }: {
   title: string
@@ -235,12 +231,8 @@ export function ItemDetail({
   held: number
   note?: ReactNode
   tags?: ReactNode
-  /** ×1 / ×5 / ×10 (or All): none when there's one choice. */
-  choices?: { id: string; label: string }[]
-  qty?: string
-  onQty?: (q: string) => void
-  qtyLabel?: string
-  button: ReactNode
+  /** The footer: `QtyButton`s, or one `DetailButton`. */
+  actions: ReactNode
   onClose: () => void
 }) {
   const { t } = useT()
@@ -251,14 +243,7 @@ export function ItemDetail({
       onClose={onClose}
       title={title}
       titleExtra={docked ? <CloseButton onClick={onClose} className="ml-auto" /> : undefined}
-      footer={
-        <div className="flex items-center gap-2">
-          {choices && choices.length > 1 && qty != null && onQty && (
-            <Seg label={qtyLabel ?? title} value={qty} onChange={onQty} options={choices} />
-          )}
-          <div className="min-w-0 flex-1">{button}</div>
-        </div>
-      }
+      footer={actions}
     >
       <div className="flex flex-col gap-3 pt-1">
         <div className="flex items-center gap-3">
@@ -278,7 +263,55 @@ export function ItemDetail({
   )
 }
 
-/** The detail's button: buy (red, the screen's one main action) or sell (green), saying the total or what's missing. */
+/** The quantities side by side, each its own purchase (or sale). */
+export function QtyRow({ children }: { children: ReactNode }) {
+  return <div className="grid auto-cols-fr grid-flow-col gap-2">{children}</div>
+}
+
+/**
+ * One quantity and its total, as a button: "×5" over "₽100". Navy to buy, green to sell; short of ₽ it stays
+ * focusable, greyed, saying what's missing, and a tap says it in a toast.
+ */
+export function QtyButton({
+  qty,
+  total,
+  mode,
+  can,
+  short,
+  label,
+  onClick,
+}: {
+  qty: string
+  total: number
+  mode: 'buy' | 'sell'
+  can: boolean
+  /** What's missing, in words ("need ₽40"), shown in place of the total when it can't be bought. */
+  short?: string
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-disabled={!can || undefined}
+      onClick={onClick}
+      className={cx(
+        'grid min-h-[56px] min-w-0 place-items-center content-center gap-1 px-1 pb-2 pt-1 leading-none',
+        !can
+          ? 'bg-well-deep text-ink shadow-ring-line'
+          : mode === 'sell'
+            ? 'pixel-btn frame-green text-white'
+            : 'pixel-btn frame-dark',
+      )}
+    >
+      <b className="text-[22px] font-normal">{qty}</b>
+      <small className="font-pixel-sm text-[16px] tabular-nums">{can || !short ? money(total) : short}</small>
+    </button>
+  )
+}
+
+/** One button for the detail (one choice only, a limit of one): buy (red) or sell (green), the total in its label. */
 export function DetailButton({
   mode,
   can,

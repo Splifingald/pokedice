@@ -52,7 +52,8 @@ test('buy an upgrade', async ({ page }) => {
     [JSON.stringify(save), FAST],
   )
   await page.goto('/upgrades')
-  await expect(page.getByRole('heading', { name: 'Upgrades' })).toBeVisible()
+  // The Mart, on its Upgrades tab (docs/43 §3): one place to spend gold.
+  await expect(page.getByRole('tab', { name: /^Upgrades/ })).toHaveAttribute('aria-selected', 'true')
   await page.getByRole('button', { name: /^₽5 Upgrade/ }).first().click() // Pair → Lv.2 costs 5
   await expect(page.getByLabel('495 Pokédollars').first()).toBeVisible()
   await expect(page.getByText(/\+3 damage.*\+4/).first()).toBeVisible()

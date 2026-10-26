@@ -1,7 +1,7 @@
 // Everything the Mart sells or buys back, as one shape (an `Offer`), so the shelf, the Bag, a Special Shop, the
 // Underground's kits, a small world's Mart and the Mega Gems share one tile (`ItemTile`) and one detail (`ItemDetail`).
 // The engine prices and limits everything; an offer only carries what it said and the store action that acts on it.
-import { useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import {
   kitPrice,
   kitsHeld,
@@ -20,7 +20,15 @@ import {
 import { sfx } from '@/audio/sfx'
 import { Chip } from '@/components/Chip'
 import { PixelIcon } from '@/components/icons'
-import { DetailButton, ItemDetail, ItemTile, PricePlate, PriceButton } from '@/components/ItemTile'
+import {
+  DetailButton,
+  ItemDetail,
+  ItemTile,
+  PricePlate,
+  PriceButton,
+  QtyButton,
+  QtyRow,
+} from '@/components/ItemTile'
 import { ItemSprite } from '@/components/ItemSprite'
 import { MiniSprite } from '@/components/SpriteImg'
 import { t } from '@/i18n'
@@ -293,9 +301,12 @@ export function OfferTile({
   )
 }
 
-const STEPS = ['1', '5', '10'] as const
+const STEPS = [1, 5, 10] as const
 
-/** An offer opened: what it is, then the quantity and the one button at the foot. */
+/**
+ * An offer opened: what it is, then the quantities as buttons at the foot, each one its purchase (×1, ×5, ×10 — fewer
+ * under a limit); a limit of one, a single red BUY. Selling: ×1, ×5 and All, in green.
+ */
 export function OfferDetail({
   o,
   gold,
@@ -308,14 +319,14 @@ export function OfferDetail({
   onBought: () => void
 }) {
   useT()
-  const [qty, setQty] = useState('1')
+  const act = (n: number) => {
+    if (!perform(o, n)) return
+    onBought()
+    if (o.room != null && o.room - n <= 0) onClose()
+  }
   if (o.mode === 'sell') {
-    const choices = [
-      ...(['1', '5'] as const).filter((q) => Number(q) < o.held).map((q) => ({ id: q, label: `×${q}` })),
-      { id: 'all', label: t('ui.shop.all', { count: o.held }) },
-    ]
-    const n = qty === 'all' ? o.held : Math.min(Number(qty), o.held)
     const unit = o.price ?? 0
+    const counts = [...[1, 5].filter((q) => q < o.held), o.held]
     return (
       <ItemDetail
         title={o.name}
@@ -324,33 +335,48 @@ export function OfferDetail({
         description={o.description}
         held={o.held}
         note={t('ui.shop.each', { price: money(unit) })}
-        choices={choices}
-        qty={choices.some((c) => c.id === qty) ? qty : '1'}
-        onQty={setQty}
-        qtyLabel={t('ui.shop.howManyToSell', { item: o.name })}
         onClose={onClose}
-        button={
-          <DetailButton
-            mode="sell"
-            can
-            label={t('ui.shop.sellFor', { price: money(unit * n) })}
-            aria={t('ui.shop.sellLabel', { count: n, item: o.name, price: money(unit * n) })}
-            onClick={() => {
-              if (!perform(o, n)) return
-              onBought()
-              if (n >= o.held) onClose()
-              setQty('1')
-            }}
-          />
+        actions={
+          <QtyRow>
+            {counts.map((n, i) => (
+              <QtyButton
+                key={i}
+                mode="sell"
+                can
+                qty={i === counts.length - 1 && counts.length > 1 ? t('ui.shop.all', { count: n }) : `×${n}`}
+                total={unit * n}
+                label={t('ui.shop.sellLabel', { count: n, item: o.name, price: money(unit * n) })}
+                onClick={() => act(n)}
+              />
+            ))}
+          </QtyRow>
         }
       />
     )
   }
-  const steps = o.owned ? [] : STEPS.filter((q) => o.room == null || Number(q) <= o.room)
-  const pick = steps.includes(qty as (typeof STEPS)[number]) ? qty : '1'
-  const n = Math.min(Number(pick), o.room ?? Infinity)
-  const total = (o.price ?? 0) * n
-  const can = !o.owned && o.room !== 0 && total <= gold
+  const price = o.price ?? 0
+  const steps = o.owned ? [] : STEPS.filter((q) => o.room == null || q <= o.room)
+  const short = (n: number) => Math.max(0, price * n - gold)
+  const one = (
+    <DetailButton
+      mode="buy"
+      can={!o.owned && o.room !== 0 && price <= gold}
+      label={
+        o.owned
+          ? t('ui.shop.gemOwned')
+          : o.room === 0
+            ? t('ui.live.shop.soldOut')
+            : price <= gold
+              ? t('ui.shop.buyFor', { price: money(price) })
+              : t('ui.shop.needMore', { price: money(short(1)) })
+      }
+      onClick={() => {
+        if (o.owned || o.room === 0) return
+        if (price > gold) return pushToast(t('ui.shop.needMore', { price: money(short(1)) }), 'info')
+        act(1)
+      }}
+    />
+  )
   return (
     <ItemDetail
       title={o.name}
@@ -360,32 +386,35 @@ export function OfferDetail({
       held={o.held}
       tags={o.tags}
       note={o.note}
-      choices={steps.map((q) => ({ id: q, label: `×${q}` }))}
-      qty={pick}
-      onQty={setQty}
-      qtyLabel={t('ui.shop.howMany', { item: o.name })}
       onClose={onClose}
-      button={
-        <DetailButton
-          mode="buy"
-          can={can}
-          label={
-            o.owned
-              ? t('ui.shop.gemOwned')
-              : o.room === 0
-                ? t('ui.live.shop.soldOut')
-                : can
-                  ? t('ui.shop.buyFor', { price: money(total) })
-                  : t('ui.shop.needMore', { price: money(total - gold) })
-          }
-          onClick={() => {
-            if (!can)
-              return pushToast(t('ui.shop.needMore', { price: money(Math.max(0, total - gold)) }), 'info')
-            if (!perform(o, n)) return
-            onBought()
-            if (o.room != null && o.room - n <= 0) onClose()
-          }}
-        />
+      actions={
+        steps.length < 2 ? (
+          one
+        ) : (
+          <QtyRow>
+            {steps.map((n) => {
+              const can = price * n <= gold
+              return (
+                <QtyButton
+                  key={n}
+                  mode="buy"
+                  can={can}
+                  qty={`×${n}`}
+                  total={price * n}
+                  short={t('ui.upgrades.needShort', { amount: money(short(n)) })}
+                  label={
+                    can
+                      ? t('ui.shop.buyManyLabel', { n, item: o.name, price: money(price * n) })
+                      : `${o.name} ×${n}: ${t('ui.shop.needMore', { price: money(short(n)) })}`
+                  }
+                  onClick={() =>
+                    can ? act(n) : pushToast(t('ui.shop.needMore', { price: money(short(n)) }), 'info')
+                  }
+                />
+              )
+            })}
+          </QtyRow>
+        )
       }
     />
   )

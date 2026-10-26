@@ -2393,6 +2393,7 @@ ui.dex.raidSpot,Legendary raid · {levels},Raid légendaire · {levels},Incursi�
 ui.dex.raidDoneSuffix, · caught, · capturé, · atrapado, · gefangen, · catturato, · capturado, · capturado,・ゲット済み, · 포획 완료, · 已捕获
 ui.dex.raidLockedSuffix, · opens when the area is completed, · s’ouvre quand la zone est terminée, · se abre al completar la zona," · öffnet, wenn das Gebiet abgeschlossen ist", · si apre quando completi l’area, · abre quando concluíres a área, · abre quando você concluir a área,・エリアをクリアすると開きます, · 지역을 클리어하면 열려요, · 完成区域后开放
 ui.shop.title,Poké Mart,Poké Market,Tienda Poké,Pokémon-Markt,Pokémon Market,Poké Mart,Poké Mart,フレンドリィショップ,프렌들리숍,友好商店
+ui.shop.buyManyLabel,"Buy {n} {item}, {price}","Acheter {n} {item}, {price}","Comprar {n} {item}, {price}","{n} {item} kaufen, {price}","Compra {n} {item}, {price}","Comprar {n} {item}, {price}","Comprar {n} {item}, {price}","{item}を{n}個買う（{price}）","{item} {n}개 사기, {price}","购买 {n} 个{item}，{price}"
 ui.shop.groupHealing,Healing,Soins,Curación,Heilung,Cure,Cura,Cura,回復,회복,回复
 ui.shop.groupCures,Status cures,Soins de statut,Curación de estados,Statusheilung,Cure di stato,Curas de estado,Curas de status,状態異常の回復,상태 이상 회복,状态治疗
 ui.shop.groupBattle,Battle,Combat,Combate,Kampf,Lotta,Batalha,Batalha,戦闘用,배틀용,战斗

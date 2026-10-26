@@ -69,6 +69,23 @@ async function boot(page: Page, save: SaveData, settings = FAST) {
   return sent
 }
 
+test("the Day Care's rules, then its question: never one straight after the other (docs/43 §7)", async ({ page }) => {
+  // Twenty species and never been in: the rules are due on Home; their Let's go! leads to the page that asks.
+  await boot(page, { ...player(), dayCare: undefined })
+  await page.goto('/home')
+  await page.getByRole('dialog', { name: 'Day Care' }).getByRole('button', { name: "Let's go!" }).click()
+  await expect(page).toHaveURL(/\/daycare$/)
+  await page.waitForTimeout(2000)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  // The next visit asks, as any visit does (once the first visit's gift Egg, opened from Home, has hatched).
+  await page.getByRole('link', { name: 'Home', exact: true }).first().click()
+  await page.getByRole('button', { name: /^Day Care/ }).first().click()
+  const moment = page.getByRole('dialog', { name: 'Egg hatching' })
+  await moment.getByRole('button', { name: 'SKIP ▸▸' }).click()
+  await moment.getByRole('button', { name: 'Done' }).click()
+  await expect(page.getByRole('dialog', { name: 'Notifications' })).toBeVisible()
+})
+
 test('each feature asks once; No thanks is for good there; Enable subscribes and sends the schedule', async ({
   page,
 }) => {

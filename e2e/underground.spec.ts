@@ -248,7 +248,8 @@ test('the Mart sells Explorakits while it runs', async ({ page }) => {
   const section = page.getByRole('region', { name: 'The Underground' })
   await expect(section).toBeVisible({ timeout: 15_000 })
   await expect(section.getByText('Explorakit', { exact: true })).toBeVisible()
-  await section.getByRole('button', { name: 'Buy ₽1,000' }).click()
+  // The kit is a tile like any item: its price is the purchase, one tap.
+  await section.getByRole('button', { name: 'Buy one Explorakit, ₽1,000' }).click()
   await expect.poll(async () => (await stored(page)).underground?.boughtKits).toBe(1)
   expect((await stored(page)).gold).toBe(4_000)
   await shot(page, 'mart')

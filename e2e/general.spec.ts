@@ -43,7 +43,8 @@ test('switched off, the General tab is nowhere: two tabs, no pop-up', async ({ p
   await page.waitForTimeout(600)
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await page.goto('/upgrades')
-  await expect(page.getByRole('tab')).toHaveCount(2)
+  // Upgrades' own views (the Mart's tabs are another list): Combos and Dice Types only.
+  await expect(page.getByRole('tablist', { name: 'Upgrades' }).getByRole('tab')).toHaveCount(2)
   await expect(page.getByRole('tab', { name: /General/ })).toHaveCount(0)
 })
 
@@ -55,7 +56,7 @@ test('the rules once, Capture Luck bought with the region’s ₽, INFO shows th
   await expect(rules).toContainText('Capture Luck')
   await expect(rules).toContainText('I am just rich')
   await rules.getByRole('button', { name: /Let's go/i }).click()
-  await expect(page).toHaveURL(/\/upgrades\?tab=general/)
+  await expect(page).toHaveURL(/\/shop\?tab=upgrades&up=general/)
   await expect(page.getByRole('tab', { name: /General/ })).toHaveAttribute('aria-selected', 'true')
 
   const luck = page.getByRole('listitem').filter({ hasText: 'Capture Luck' })
@@ -104,7 +105,7 @@ test('the Shiny Charm: its own pop-up once, then a level bought', async ({ page 
   await expect(rules).toBeVisible()
   await expect(rules).toContainText('1 in 1,000 down to 1 in 333')
   await rules.getByRole('button', { name: /Let's go/i }).click()
-  await expect(page).toHaveURL(/\/upgrades\?tab=general/)
+  await expect(page).toHaveURL(/\/shop\?tab=upgrades&up=general/)
 
   const charm = page.getByRole('listitem').filter({ hasText: 'Shiny Charm' })
   await expect(charm).toContainText('1 in 1,000')
