@@ -24,7 +24,7 @@ import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { Chip } from './Chip'
 import { PixelIcon } from './icons'
-import { MonTile, TILE_GRID } from './MonTile'
+import { DexGridList, DexTile } from './DexGrid'
 import { PixelButton } from './PixelButton'
 import { useMyTurn, useOnScreen } from './popupTurn'
 import { RulesModal, type RuleRow, type RulesPicture } from './RulesModal'
@@ -98,29 +98,35 @@ export function UnownSprite({
   )
 }
 
-/** The page: the 28 letters in the games' order, each in its colours once found, a silhouette until then. */
+/**
+ * The page's grid on its own (the kitchen sink; the Pokédex builds the same tiles into its own grid): the 28 letters in
+ * the games' order, each in its colours once found, a silhouette until then, as the Pokédex's tiles (`DexTile`).
+ */
 export function UnownDexGrid({ found, onOpen }: { found: readonly UnownLetter[]; onOpen: () => void }) {
   const { t } = useT()
   const has = new Set(found)
   return (
-    <ul className={TILE_GRID}>
-      {UNOWN_LETTERS.map((l) => {
+    <DexGridList label={t('ui.unown.title')}>
+      {UNOWN_LETTERS.map((l, i) => {
         const got = has.has(l)
         const name = t('ui.unown.name', { letter: letterText(l) })
         return (
           <li key={l}>
-            <MonTile
+            <DexTile
               dex={UNOWN_DEX}
-              icon={<UnownSprite letter={l} size={60} silhouette={!got} />}
+              icon={<UnownSprite letter={l} size={48} silhouette={!got} />}
               name={letterText(l)}
               missing={!got}
               label={`${name}, ${t(got ? 'ui.unown.found' : 'ui.unown.missing')}`}
+              nearLabel=""
+              newLabel=""
+              tabIndex={i === 0 ? 0 : -1}
               onClick={onOpen}
             />
           </li>
         )
       })}
-    </ul>
+    </DexGridList>
   )
 }
 

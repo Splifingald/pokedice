@@ -436,8 +436,11 @@ export function PokemonSheet({
   top,
   onOpenDex,
   shiny: shinyAsked,
+  hero = true,
 }: {
   dex: number
+  /** False where the screen draws the sprite and types itself (the Pokédex entry's hero, docs/43 §5.6). */
+  hero?: boolean
   inst?: PokemonInstance
   /** Shiny colours whatever `inst` is: the shiny Pokédex's entry, owned shiny once (docs/39). */
   shiny?: boolean
@@ -470,7 +473,9 @@ export function PokemonSheet({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* The hero: the Pokémon big, its types, its HP and XP as gauges (their figures are More details'). */}
+      {/* The hero: the Pokémon big, its types, its HP and XP as gauges (their figures are More details'). Off where
+          the screen draws its own (the Pokédex entry's hero, docs/43 §5.6). */}
+      {hero && (
       <div className="flex items-center gap-3">
         <div className="grid h-[112px] w-[120px] shrink-0 place-items-center bg-sky shadow-ring">
           <SpriteImg dex={dex} size={96} shiny={shiny} />
@@ -509,6 +514,7 @@ export function PokemonSheet({
           )}
         </div>
       </div>
+      )}
 
       {top}
 

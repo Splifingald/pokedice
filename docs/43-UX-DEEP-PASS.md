@@ -190,11 +190,27 @@ Each entry: before (from the audit), after on a phone, after on PC, and what was
 - **After**: one Mart: Buy · Upgrades · Bag. A price is the purchase (×1, one tap); a long press or the item's details
   give ×5 / ×10. No page gold (the top bar's). PC: the shelf in four columns, the Bag docked at the right.
 
-### 5.6 Pokédex
+### 5.6 Pokédex, the Shiny and Unown Pokédex
 
-- **Before**: a 5.3-screen grid at 390 px with "#012 ???" under every silhouette, the entry a modal.
-- **After**: the grid's tiles are the icon and a name only for what was caught (a silhouette alone, numbered for
-  screen readers, otherwise), five to a row on phones; PC: the grid left, the entry docked right.
+- **Before**: at 390 px a grid 5.3 screens tall (9.1 at 360), 328 pieces of text under 16 px ("#012 ???" under every
+  silhouette); the progress twice ("32/151" and a bar); a search, then four filter chips on a row of their own; the entry
+  a modal holding the whole Pokémon sheet before "where to find it"; on PC a modal over a 1024 px grid; the Shiny and
+  Unown dexes page variants with heads and gauges of their own, their rules pop-ups in the queue.
+- **After, phone**: the head says it once, as a gauge ("32 of 151 caught"); a `Seg` switches Pokédex / Shiny / Unown
+  (only the views open); one row holds the search and the filter (a dropdown with counts). The grid is five to a row: an
+  uncaught species is its silhouette alone (its number for screen readers), a caught one its icon and name; NEW gold,
+  Nearby a green word. 2.7 screens at 390 (was 5.3); text under 16 px: none but the tab's badge (was 328). The entry is a
+  sheet: a hero (sprite, types, cry), **where to find it** (area strips with a navy GO, raid days), **evolutions both
+  ways** (cards that open that entry), and "Dice and stats" folded (open with More details).
+- **After, PC**: `SplitView` — the grid nine columns wide, the entry docked (the last viewed or the first caught open).
+  The grid is one Tab stop: arrows move by tile and row, Home/End, the pane follows the focus, Enter moves into it.
+- **Shiny and Unown**: views of the same screen with the same tile and gauge; their rules a `RulesCard` at the top of
+  the view until GOT IT, INFO at the foot.
+- **Removed**: the "#NNN ???" lines, the second progress, the chips row, the modal on PC, the big "complete" card.
+  **Merged**: three views into one layout and one tile (`DexTile`). **Moved**: the studied numbers and a stone's sources
+  into folds.
+- **Taps**: an entry on PC 2 → 1 (one is open), the next 2 → 1 (a click or an arrow); the Nearby filter 1 → 2 (a
+  dropdown, so search and filter share one row).
 
 ### 5.7 Day Care
 

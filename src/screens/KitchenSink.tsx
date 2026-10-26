@@ -76,6 +76,7 @@ import { PowersBits } from './kitchen/PowersBits'
 import { ShellBits } from './kitchen/ShellBits'
 import { DeepShellBits } from './kitchen/DeepShellBits'
 import { TeamDeepBits } from './kitchen/TeamDeepBits'
+import { PokedexDeepBits } from './kitchen/PokedexDeepBits'
 import { RewardBits } from './kitchen/RewardBits'
 import { HitFeelBits } from './kitchen/HitFeelBits'
 import { FeelBits } from './kitchen/FeelBits'
@@ -735,6 +736,10 @@ export function KitchenSink() {
 
       <Section title="Team deep pass (docs/43 §5.4): PokeCard states, MonTile level tag, BoxFilter, TeamSwapDock">
         <TeamDeepBits />
+      </Section>
+
+      <Section title="Pokédex (docs/43 §5.6): the head's gauge, every tile, the grid's keys, the fold, the entry as a sheet and docked">
+        <PokedexDeepBits />
       </Section>
 
       <Section title="Extreme mode: rules, band, title card, K.O. rest, resting team, while you were away, switch">

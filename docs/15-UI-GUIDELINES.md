@@ -162,8 +162,9 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `SheetSection` | A titled block inside a sheet | 22 px heading, a muted hint on the same row, extra controls |
 | `NicknameButton` / `NicknameModal` | Giving one of your Pokémon a nickname (its sheet's title) | The name and a pencil, 44 px tall on phones; the dialog with the field (empty: the species as placeholder; named: selected), the 0/12 counter, the trade line only where trades exist, Cancel / SAVE (§13) |
 | `PokeCard` | The one card for a team member everywhere (Team, send-out, Center, between encounters, K.O. switch; docs/43 §4) | `lead` (gold crown tag, said "Lead: sent out first"), `selected` (gold outline: picked, or shown in a docked sheet), fainted (hatched), resting after a K.O. (`KoTag`), a fossil reviving (its gauge), shiny (star), `xp` (a thin XP line under the HP, the Team), `brief`, `label`, `buttonProps` (drag handlers), `className` (a drop target's dashed red outline) |
+| `DexTile` / `DexGridList` / `DexGauge` / `DexCompleteCard` / `DexSheet` / `Fold` | The Pokédex and its Shiny and Unown views (docs/43 §5.6) | A dense tile (~64 px phones, ~76 px PC): uncaught = the silhouette alone (number and "Not caught yet" for screen readers only), caught = icon + name (16 px, "…"), NEW gold tag, Nearby as a green word in an uncaught tile's empty line or a map tag on a named one, the shiny star, picked = gold ring + `aria-current`. The grid is one Tab stop; arrows by tile and row, Home/End. The gauge sits in the page head, once. The entry: hero (sprite, types, cry), where to find it, evolutions both ways, "Dice and stats" folded (`Fold`, open with More details) |
 | `BoxFilter` | The Box's one Sort & filter control | A button beside the search (a gold count of what is set). Phones: a bottom sheet with the order (`Seg`) and the type (a radio grid of named swatches), SHOW n and Clear filters. From 768 px: a panel under the button (focus on the current choice, Esc and a click outside close it). A pick applies at once |
-| `MonTile` / `TileTag` | A grid of Pokémon (Box, Pokédex) | Menu icon from the atlas, number, name (16 px), a line under it; `level` (a navy 14 px corner tag, top right); `selected` (gold outline, `aria-current`); `missing` = grey tile + silhouette; corner tags NEW (gold) and Nearby (green). `TILE_GRID` = ~84 px columns |
+| `MonTile` / `TileTag` | A grid of Pokémon (the Box) | Menu icon from the atlas, number, name (16 px), a line under it; `level` (a navy 14 px corner tag, top right); `selected` (gold outline, `aria-current`); `missing` = grey tile + silhouette; corner tags NEW (gold) and Nearby (green). `TILE_GRID` = ~84 px columns |
 | `GoldCard` / `CoinFlight` / `XpBar` (`useXpFill`) / `Confetti` / `DexRegisteredCard` / `UpCard` | The rewards' game feel (docs/38 §4) | The gold counting up from 0; its coins flying to the top bar's gold (`data-hud-gold`; playing, none when calm or off); the XP bar in steps (filling, the level-up's white frame, rolled over); the pixel confetti (playing, frozen on frames); a species' first catch registered in the Pokédex; the Upgrades' buttons (navy, the best buy gold with its chip) and a purchase's pop frame by frame (`frozenPop`) |
 | `FaceDice` / `StatusLines` | What a die does | Its six faces as real dice, value under each; a status face keeps its ring and badge and gets its short name in a chip. One tinted line per status: when it triggers and what it does, with the live numbers (`statusEffects`) |
 | `ItemSprite` | An item's picture | From the item atlas (one request); falls back to the item's own URL for items added since the atlas was built |
@@ -265,6 +266,9 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   who switch it on — the battle history (a button by the Bag) and the key hints, the HP and XP figures (bars alone
   otherwise), a card's type chips (every `PokeCard` is brief without it), the result's rows. A new screen asks the same
   of each number it adds: does a player need it to act, or only to study? Studied things go behind it.
+- **Pokédex** (docs/43 §5.6): the progress once, as a gauge in the page head; the search and the filter share one row
+  (the filter a dropdown); on PC the entry stands docked (`SplitView`), the first caught or the last viewed open, the pane
+  following the grid's keyboard focus.
 - **Home: the team on top, then what's open, by heading** (docs/42): Events, Secret areas (every one open in the
   region, the newest first), Features (the Day Care, Versus); a heading only shows with something under it.
 - **One pop-up at a time, then a rest**: once a one-time pop-up is done the queue waits a minute (`POPUP_GAP_MS`) before
@@ -1625,11 +1629,11 @@ Pokédex has one page as before). The pieces are in `src/components/ShinyDexRule
 
 - **Pokédex / Shiny** is a `Seg` under the page head (`DexViewSwitch`), the shiny option with the sparkle icon; the
   choice is the URL's (`?view=shiny`), so the pop-up's Let's go! lands on it and Back leaves it.
-- **The shiny page is the Pokédex's grid**, counting what's owned shiny: the count, the gauge (its label "n of N owned
-  shiny"), the filters (All, Shiny, Missing, Nearby). A tile owned shiny wears the Box's star (top left, "Shiny" in its
-  name); the others are silhouettes (`missing`), named once caught, never a colour alone. No NEW tags there.
-- Its rules: the pop-up once, in the queue after the General upgrades', never on the Pokédex; INFO at the bottom of
-  the Pokédex while the page is open. Opening the page counts as reading them.
+- **The shiny view is the Pokédex's own grid and layout** (`DexTile`, docs/43 §5.6), counting what's owned shiny: the
+  head's gauge ("n of N owned shiny"), the filter dropdown (All, Shiny, Missing, Nearby). A tile owned shiny wears the
+  star; the others are silhouettes, named once caught, never a colour alone. No NEW tags there.
+- Its rules: a `RulesCard` at the top of the view until GOT IT (`shinyDexSeen`, §20); INFO at the bottom of the Pokédex
+  while the view is open. Opening the view no longer counts as reading them.
 
 ## 36. The raid overhaul
 
@@ -1657,7 +1661,7 @@ Where Unown live (Johto's Ruins of Alph), each one caught is one of 28 letters, 
 
 - **Pokédex / Shiny / Unown**: the Pokédex's `Seg` (`DexViewSwitch`) gains Unown once an area where Unown live is
   opened, beside Shiny when that page is open too; the choice is the URL's (`?view=unown`).
-- **The page** is the Pokédex's grid of 28 tiles, in the games' order (A–Z, !, ?): each letter's own sprite
+- **The page** is the Pokédex's grid of 28 tiles (`DexTile`, docs/43 §5.6), in the games' order (A–Z, !, ?): each letter's own sprite
   (`UnownSprite`, Showdown's animated forme, scaled to fit its box) once found, a silhouette (`missing`) until then, the
   letter as its name ("Unown K, found" for screen readers). Over it the count, the gauge, and where to find them with
   the prize; all found, the complete card. No filters or search: 28 tiles need none.
@@ -1668,6 +1672,6 @@ Where Unown live (Johto's Ruins of Alph), each one caught is one of 28 letters, 
   COMPLETE chip and the prize earned.
 - **The result card**: after an Unown is caught, its line (`UnownLetterCard`): the letter's sprite, "Unown K: a new
   letter!" (or "already on your page") over the count; the last one gold, with the prize.
-- Its rules: the pop-up once, in the queue after the shiny Pokédex's, never on the Pokédex; INFO at the bottom of the
-  Unown page. Opening the page counts as reading them.
+- Its rules: a `RulesCard` at the top of the Unown view until GOT IT (`unownDexSeen`, §20); INFO at the bottom of the
+  Unown view. Opening the view no longer counts as reading them.
 

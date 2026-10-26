@@ -2,8 +2,7 @@
 // tiles (owned shiny with the Box's star, caught but not shiny, never caught, nearby), its complete card, and the
 // rules: the unlock pop-up (Later / Let's go!) and the INFO copy (OK).
 import { useState, type ReactNode } from 'react'
-import { PixelIcon } from '@/components/icons'
-import { MonTile, TILE_GRID, TileTag } from '@/components/MonTile'
+import { DexCompleteCard, DexGridList, DexTile } from '@/components/DexGrid'
 import { PixelButton } from '@/components/PixelButton'
 import { InfoButton } from '@/components/RulesModal'
 import { DexViewSwitch, ShinyDexRulesModal, type DexView } from '@/components/ShinyDexRules'
@@ -18,12 +17,11 @@ function Frame({ name, children }: { name: string; children: ReactNode }) {
   )
 }
 
-const STAR = <PixelIcon name="star" size={12} className="absolute left-[5px] top-[5px]" />
-
 export function ShinyDexBits() {
   const { t } = useT()
   const [view, setView] = useState<DexView>('shiny')
   const [rules, setRules] = useState<'unlock' | 'info' | null>(null)
+  const tag = { nearLabel: t('ui.dex.fNearby'), newLabel: t('ui.common.new'), onClick: () => {} }
   return (
     <>
       <Frame name={`DexViewSwitch · live (${view})`}>
@@ -35,48 +33,57 @@ export function ShinyDexBits() {
       <Frame name="DexViewSwitch · Shiny">
         <DexViewSwitch value="shiny" onChange={() => {}} />
       </Frame>
-      <Frame name="Shiny page tiles · owned shiny, caught not shiny, never caught, nearby">
-        <ul className={TILE_GRID}>
+      <Frame name="Shiny view tiles · owned shiny, caught not shiny, caught not shiny nearby, never caught, never caught nearby">
+        <DexGridList label="Shiny tiles">
           <li>
-            <MonTile
+            <DexTile
+              {...tag}
               dex={25}
-              number="#025"
               name="Pikachu"
-              label="Pikachu, Shiny"
-              onClick={() => {}}
-              tags={STAR}
+              missing={false}
+              star
+              label="Pikachu, #025, Shiny"
+              tabIndex={0}
             />
           </li>
           <li>
-            <MonTile dex={4} number="#004" name="Charmander" missing label="Charmander" onClick={() => {}} />
+            <DexTile {...tag} dex={4} name="Charmander" missing label="Charmander, #004" tabIndex={-1} />
           </li>
           <li>
-            <MonTile dex={1} number="#001" name="???" missing label="???" onClick={() => {}} />
-          </li>
-          <li>
-            <MonTile
+            <DexTile
+              {...tag}
               dex={16}
-              number="#016"
               name="Pidgey"
               missing
-              label="Pidgey, Nearby"
-              onClick={() => {}}
-              tags={<TileTag tone="near">{t('ui.dex.fNearby')}</TileTag>}
+              near
+              label="Pidgey, #016, Nearby"
+              tabIndex={-1}
             />
           </li>
-        </ul>
+          <li>
+            <DexTile {...tag} dex={1} name={null} missing label="#001, Not caught yet" tabIndex={-1} />
+          </li>
+          <li>
+            <DexTile
+              {...tag}
+              dex={19}
+              name={null}
+              missing
+              near
+              label="#019, Not caught yet, Nearby"
+              tabIndex={-1}
+            />
+          </li>
+        </DexGridList>
       </Frame>
       <Frame name="Shiny Pokédex complete">
-        <div className="pixel-panel-dark flex flex-col items-center gap-2 p-5 text-center">
-          <PixelIcon name="star" size={40} />
-          <div className="text-[40px] leading-none text-gold">{t('ui.dex.shinyComplete')}</div>
-          <div className="text-2xl">
-            {t('ui.dex.shinyCompleteBody', {
-              total: 151,
-              where: t('ui.dex.completeIn', { region: 'Kanto' }),
-            })}
-          </div>
-        </div>
+        <DexCompleteCard
+          title={t('ui.dex.shinyComplete')}
+          body={t('ui.dex.shinyCompleteBody', {
+            total: 151,
+            where: t('ui.dex.completeIn', { region: 'Kanto' }),
+          })}
+        />
       </Frame>
       <Frame name="Rules · the unlock pop-up (Later / Let's go!), INFO (OK)">
         <PixelButton onClick={() => setRules('unlock')}>Shiny Pokédex: its pop-up, once</PixelButton>
