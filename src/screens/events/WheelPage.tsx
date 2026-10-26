@@ -225,7 +225,7 @@ export function WheelPage({ head }: { head?: ReactNode }) {
 }
 
 /** The tickets held, one stub each, the missing ones dimmed: a count you see rather than read. */
-function TicketsMeter({ held, cap, known }: { held: number; cap: number; known: boolean }) {
+export function TicketsMeter({ held, cap, known }: { held: number; cap: number; known: boolean }) {
   const { t } = useT()
   if (!known) return <span>…</span>
   return (
