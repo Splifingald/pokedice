@@ -97,12 +97,15 @@ Rules:
 |---|---|---|---|
 | Page title (`h1`) | Jersey 25 | 30–40 px (`text-title`, `text-display`) | One `<h1>` per route |
 | Section title | Jersey 25 | 24 px | |
-| Body, names | Jersey 25 | 20 px (`text-body`); 17 small; 22 large | |
+| Body, names | Jersey 25 | 20 px (`text-body`); 18 small; 22 large | |
 | Buttons | Jersey 25 | 24 px (md), 18 (sm), 26 (lg), 30 (xl) | Uppercase, 0.04em tracking |
-| Labels, numbers, captions | Jersey 15 (`font-pixel-sm`) | 15 px (`text-label`) | `tabular-nums` for counters |
+| Labels, numbers, captions | Jersey 15 (`font-pixel-sm`) | 16 px (`text-label`) | `tabular-nums` for counters |
+| Tags (NEW, a count on a tab) | Jersey 15 | 14 px (`text-tag`) | Never a sentence |
 | Paragraphs (2+ lines) | Jersey 15 (`.copy`) | 20 px, line-height 1.35 | |
 
-- Floor: **no text under 12 px** on any game screen.
+- Floor (docs/43 §4): **no text under 16 px** on any game screen, tags excepted (14 px); body text 18 px or more.
+  Tailwind's own `text-xs` and `text-sm` are 16 px and `text-base` 18 px here, so no stray class goes under the floor.
+  A grey caption that only repeats what's beside it goes rather than grows.
 - Only the Jersey faces ship (plus the Fusion Pixel CJK subsets). `e2e/layout.spec.ts` fails on any other font.
 - CJK: the font stack ends in `var(--font-cjk)`, which follows the element's `lang`. After editing a ja, ko or zh-Hans
   string, run `pnpm i18n:fonts`.
@@ -451,12 +454,11 @@ Players shouldn't have to make many requests:
 ## 12. Navigation, Home and stages
 
 - **Top bar** (`Header` in `src/components/Hud.tsx`): in Johto, the day's sun or the night's moon first (§30); energy on the left; on the right the gold as a navy pill (a tap
-  opens the Poké Mart, no "+"), the cup (→ the leaderboard; greyed until the first badge, or in a small world its
-  first area cleared, and a tap says what opens it) and, last, you (name and badge count, then your trainer look →
-  the trainer menu, which slides in from that side).
+  opens the Poké Mart, no "+") and, last, you (name and badge count, then your trainer look → the trainer menu, which
+  slides in from that side). The leaderboard's cup left it for the Social tab (docs/43: one way to each place).
   **It stays up in battle, every part of it in reach** (`useHoldFullscreen(true, true)`): nothing is hidden, covered or
   `pointer-events-none`. Mid-fight (and in a portal run) what would leave the fight is shut and says why
-  (`useLockReason`): the gold and the cup stay focusable (`aria-disabled`), the reason in their name, and a tap says it
+  (`useLockReason`): the gold stays focusable (`aria-disabled`), the reason in their name, and a tap says it
   in a toast. The sun or moon and the energy work as ever, and so does the trainer menu: the guide, the type chart,
   Contact and Discord open; the rows that would leave the page or the save (the leaderboard, Friends, Trades, Admin,
   the other save, signing in) stay listed, greyed with a lock and the reason as their line; SYNC ONLINE says
@@ -480,9 +482,20 @@ Players shouldn't have to make many requests:
   line under a switch, a choice or a panel, so each title says what it does ("Multi EXP (whole team)", "Animation
   length", "Type matchup hints"); a row that would do nothing goes instead of explaining why (Battle music while Sound
   is off, Multi EXP while the config has no bench share). A rule or a "how" belongs to the panel's INFO.
-- **Tab bar** (phones): Poké Mart, Upgrades, **Home** (in the middle, under the thumb: a tab like the others, its Poké Ball icon and label), Team,
-  Pokédex. The side nav (desktop) has the same entries with Home first. A tab's hit area is the whole column, at
-  least 60 px tall, even where the drawing is smaller.
+- **Five places** (docs/43 §3). **Tab bar** (phones): Team, Shop (the Mart: Buy · Upgrades · Bag), **Home** (in the
+  middle, under the thumb: a tab like the others, its Poké Ball icon and label), Pokédex, **Social** (the leaderboard,
+  Versus, Friends, Trades). The side rail (desktop) has the same five with Home first, SYNC ONLINE at its foot. A tab's
+  hit area is the whole column, at least 60 px tall, even where the drawing is smaller. A tab stays lit on each of its
+  views (`/upgrades` is the Mart's; `/leaderboard`, `/versus`, `/friends`, `/trades` are Social's). Its dot: a sale or
+  the Underground's kits, else the upgrades you can afford (the Mart); NEW (the Pokédex); what's new with friends and
+  trades (Social). `/upgrades` opens the Mart on Upgrades (`?tab=upgrades`, the General's `&up=general`).
+- **Social's views** (`SocialTabs`, through `PageHead social="…"`): a strip of the four views on top of each, the
+  current one named as the page's `<h1>` (screen readers) so the title isn't written twice; a view not open yet keeps
+  its tab with a lock and its page says what opens it. `/social` opens the view with something new, else the
+  leaderboard once open, else Friends.
+- **List and detail** (`SplitView`, docs/43 §2): from 1024 px a screen with a list and a detail docks the detail at
+  the list's right (440 px, as tall as the screen, scrolling inside itself); a `Sheet` passed as the detail draws
+  itself in the pane (`SheetDock`: no scrim, no focus trap). Phones keep the bottom sheet.
 - **Region cards** (Areas sheet → regions): each region's own picture (`public/region-art/<id>.png`, from the Visual
   Lab's region prompts; its first area's strip until it has one), name, counts and GO. A tap moves there and shows
   its areas in the same sheet, from the top (the region you're in just goes back to its areas).
@@ -1219,7 +1232,7 @@ full-screen flash).
   top a dialogue line saying so with **BACK TO THE DISTORTION**. Back on the area (that button, Home's ENTER THE
   DISTORTION), the pop-up is up at once over the breach's end, with no breach or tap to wait for (`run.portalPopup`).
   READY! shuts it all: the run's lock below, and no team changes inside.
-- **Inside, there is no way out**: the menus, the gold pill, the cup and the avatar are disabled and say "You can't leave
+- **Inside, there is no way out**: the menus, the gold pill and the avatar are disabled and say "You can't leave
   the distortion until you win or your party is K.O." (`useNavLock`); any other page sends back to the area
   (`PortalGuard`), so does a reload. The area's action bar and the result card have CONTINUE alone, no HOME, the line
   over it. Nothing else changes: the team's sheets, items between fights.
