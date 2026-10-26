@@ -179,7 +179,7 @@ export function UndergroundDig() {
           />
 
           <div className="grid gap-1">
-            <span className="flex items-center justify-between gap-2 font-pixel-sm text-[15px] text-gold-light">
+            <span className="flex items-center justify-between gap-2 font-pixel-sm text-[16px] text-gold-light">
               <span>{t('ui.ug.buried', { n: wall.things.length, found })}</span>
               <span className="inline-flex shrink-0 items-center gap-1">
                 <PixelIcon name="kit" size={14} />
@@ -193,7 +193,7 @@ export function UndergroundDig() {
                   <li
                     key={k}
                     className={cx(
-                      'flex min-w-0 items-center gap-1.5 px-1.5 py-0.5 font-pixel-sm text-[14px]',
+                      'flex min-w-0 items-center gap-1.5 px-1.5 py-0.5 font-pixel-sm text-[16px]',
                       done
                         ? 'bg-paper text-ink shadow-ring-thin'
                         : 'bg-well-deep text-ink shadow-[inset_0_0_0_2px_rgb(var(--c-shadow))]',
@@ -228,7 +228,7 @@ export function UndergroundDig() {
                 <span className="text-[19px] leading-tight" aria-live="polite">
                   {message}
                 </span>
-                <span className="font-pixel-sm text-[14px] text-muted">
+                <span className="font-pixel-sm text-[16px] text-muted">
                   {t('ui.ug.dieLabel', { level: u.pickaxe })}
                 </span>
                 <PickaxeFaces faces={faces} face={roll?.face} size={26} />

@@ -225,7 +225,7 @@ function DayCareWidget() {
             {slots.map((r, i) => {
               if (!r)
                 return (
-                  <span key={`free-${i}`} className="truncate text-center font-pixel-sm text-[14px] leading-none text-muted">
+                  <span key={`free-${i}`} className="truncate text-center font-pixel-sm text-[16px] leading-none text-muted">
                     {t('ui.home.freeSlot')}
                   </span>
                 )

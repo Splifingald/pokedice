@@ -114,7 +114,7 @@ export function FriendProfileSheet({
                     <TrainerName name={profile.name} rich={profile.rich} />
                   </b>
                   {!profile.region ? (
-                    <p className="m-0 font-pixel-sm text-[15px] text-muted">{t('ui.friends.noGame')}</p>
+                    <p className="m-0 font-pixel-sm text-[16px] text-muted">{t('ui.friends.noGame')}</p>
                   ) : (
                     <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2.5 gap-y-0.5">
                       <Stat

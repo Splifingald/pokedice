@@ -1841,6 +1841,8 @@ ui.nav.home,Home,Accueil,Inicio,Start,Home,Início,Início,ホーム,홈,主页
 ui.nav.goldShop,{amount} Pokédollars. Open the Poké Mart,{amount} Pokédollars. Ouvrir le Poké Market,{amount} Pokédólares. Abrir la Tienda Poké,{amount} Pokédollar. Pokémon-Markt öffnen,{amount} Pokédollari. Apri il Pokémon Market,{amount} Pokédólares. Abrir a Poké Mart,{amount} Pokédólares. Abrir a Poké Mart,₽{amount}。フレンドリィショップを開く,₽{amount}. 프렌들리숍 열기,₽{amount}。打开友好商店
 ui.nav.upgradesDot,{n} you can afford,{n} à ta portée,{n} a tu alcance,{n} bezahlbar,{n} alla tua portata,{n} ao teu alcance,{n} ao seu alcance,{n}件 買える,{n}개 구매 가능,可购买 {n} 项
 ui.nav.dexDot,{n} new,{n} nouveaux,{n} nuevos,{n} neu,{n} nuovi,{n} novos,{n} novos,新しく{n}匹,새로 {n}마리,新增 {n} 只
+ui.nav.social,Social,Social,Social,Community,Social,Social,Social,ソーシャル,소셜,社交
+ui.nav.socialDot,{n} new,{n} nouveautés,{n} novedades,{n} neu,{n} novità,{n} novidades,{n} novidades,新着{n}件,새 소식 {n}개,{n} 条新消息
 ui.home.heading,Exploring {area},Exploration : {area},Explorando: {area},Erkundung: {area},In esplorazione: {area},A explorar: {area},Explorando: {area},{area}を探索中,{area} 탐험 중,正在探索：{area}
 ui.home.widgets,Shortcuts,Raccourcis,Accesos directos,Schnellzugriff,Scorciatoie,Atalhos,Atalhos,ショートカット,바로가기,快捷入口
 ui.home.comingUp,Coming up: {what},Bientôt : {what},Próximamente: {what},Demnächst: {what},Prossimamente: {what},A seguir: {what},Em breve: {what},もうすぐ：{what},곧 열림: {what},即将开放：{what}
@@ -2400,6 +2402,8 @@ ui.shop.groupCatch,Poké Balls & Bait,Poké Balls et Appât,Poké Balls y Cebo,P
 ui.shop.tabs,Buy or sell,Acheter ou vendre,Comprar o vender,Kaufen oder verkaufen,Compra o vendi,Comprar ou vender,Comprar ou vender,買う・売る,사기 · 팔기,购买或出售
 ui.shop.buy,Buy,Acheter,Comprar,Kaufen,Compra,Comprar,Comprar,買う,사기,购买
 ui.shop.sell,Sell · Bag,Vendre · Sac,Vender · Mochila,Verkaufen · Beutel,Vendi · Borsa,Vender · Mochila,Vender · Mochila,売る・バッグ,팔기 · 가방,出售 · 包包
+ui.shop.bagTab,Bag,Sac,Mochila,Beutel,Borsa,Mochila,Mochila,バッグ,가방,包包
+ui.shop.buyOneLabel,"Buy one {item}, {price}","Acheter un(e) {item}, {price}","Comprar un {item}, {price}","Ein(e) {item} kaufen, {price}","Compra un {item}, {price}","Comprar um {item}, {price}","Comprar um {item}, {price}","{item}を1つ買う（{price}）","{item} 1개 사기, {price}","购买 1 个{item}，{price}"
 ui.shop.fossilBought,Your fossil has been added to your Box. A Pokémon will emerge from it in {hours} hours.,Ton fossile a été ajouté à ta Boîte. Un Pokémon en sortira dans {hours} heures.,Tu fósil se ha añadido a tu Caja. De él saldrá un Pokémon dentro de {hours} horas.,Dein Fossil wurde deiner Box hinzugefügt. In {hours} Stunden schlüpft ein Pokémon daraus.,Il tuo fossile è stato aggiunto al Box. Ne uscirà un Pokémon tra {hours} ore.,O teu fóssil foi adicionado à Caixa. Vai sair dele um Pokémon daqui a {hours} horas.,Seu fóssil foi adicionado à Caixa. Um Pokémon vai sair dele em {hours} horas.,化石をボックスに入れました。{hours}時間後にポケモンが復元されます。,화석을 박스에 넣었어요. {hours}시간 후에 포켓몬이 복원돼요.,化石已放入盒子。{hours}小时后会有宝可梦从中复活。
 ui.shop.howMany,How many {item},Combien de {item},Cuántos {item},Wie viele {item},Quanti {item},Quantos {item},Quantos {item},{item}をいくつ？,{item} 몇 개?,{item}要几个？
 ui.shop.howManyToSell,How many {item} to sell,Combien de {item} à vendre,Cuántos {item} vender,Wie viele {item} verkaufen,Quanti {item} vendere,Quantos {item} vender,Quantos {item} vender,{item}をいくつ売る？,{item}을(를) 몇 개 팔까요?,{item}要卖几个？

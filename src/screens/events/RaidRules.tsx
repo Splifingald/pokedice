@@ -247,7 +247,7 @@ export function RaidRulesPanel({ dex, kind, areaId }: { dex: number; kind: RaidK
         </h2>
         <button
           type="button"
-          className="grid h-11 min-w-11 place-items-center px-2 font-pixel-sm text-[15px] text-muted"
+          className="grid h-11 min-w-11 place-items-center px-2 font-pixel-sm text-[16px] text-muted"
           onClick={() => setInfo(true)}
           aria-label={t('ui.raid.rules.infoLabel')}
         >

@@ -210,7 +210,7 @@ function ChecksSection({ now }: { now: number }) {
       <h2 id="dc-checks" className="m-0 text-[21px] font-normal leading-none">
         {t('ui.dayCare.checks')}
       </h2>
-      <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2.5 gap-y-0.5 font-pixel-sm text-[15px] text-ink">
+      <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2.5 gap-y-0.5 font-pixel-sm text-[16px] text-ink">
         <dt className="text-muted">{t('ui.dayCare.clockGroups')}</dt>
         <dd className="m-0">{line('breed', cfg.breedHours)}</dd>
         <dt className="text-muted">{ditto}</dt>
@@ -225,7 +225,7 @@ function ChecksSection({ now }: { now: number }) {
               <span aria-hidden>+</span>
               <b className="font-normal">{nameOf(p.b)}</b>
               {p.b.guest && (
-                <small className="font-pixel-sm text-[14px] text-muted">
+                <small className="font-pixel-sm text-[16px] text-muted">
                   {t('ui.dayCare.ownerTag', { name: p.b.guest.ownerName })}
                 </small>
               )}
@@ -243,7 +243,7 @@ function ChecksSection({ now }: { now: number }) {
           ))}
         </ul>
       ) : (
-        <p className="m-0 font-pixel-sm text-[15px] leading-[1.2] text-muted">{t('ui.dayCare.noPairYet')}</p>
+        <p className="m-0 font-pixel-sm text-[16px] leading-[1.2] text-muted">{t('ui.dayCare.noPairYet')}</p>
       )}
     </section>
   )
@@ -324,7 +324,7 @@ function LeaveSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
                 aria-pressed={only}
                 onClick={() => setOnly((v) => !v)}
                 className={cx(
-                  'ml-auto min-h-[44px] shrink-0 px-3 font-pixel-sm text-[15px] leading-none shadow-ring',
+                  'ml-auto min-h-[44px] shrink-0 px-3 font-pixel-sm text-[16px] leading-none shadow-ring',
                   only ? 'bg-gold text-night' : 'bg-paper text-ink',
                 )}
               >
@@ -377,12 +377,12 @@ function LeaveSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
                   <span className="grid min-w-0 flex-1 leading-[1.05]">
                     <b className="truncate text-[18px] font-normal">
                       {name}{' '}
-                      <small className="font-pixel-sm text-[13px] text-muted">
+                      <small className="font-pixel-sm text-[16px] text-muted">
                         {t('ui.common.level.short', { n: p.level })}
                         {manyRegions && ` · ${getRegion(data, region)?.name ?? region}`}
                       </small>
                     </b>
-                    <small className="font-pixel-sm text-[14px] text-ink">{why ? t(REFUSED[why]) : groups}</small>
+                    <small className="font-pixel-sm text-[16px] text-ink">{why ? t(REFUSED[why]) : groups}</small>
                     {!why && tag && <span className="mt-1">{tag}</span>}
                   </span>
                   {inTeam && <Chip tone="dark">{t('ui.dayCare.teamTag')}</Chip>}
@@ -466,7 +466,7 @@ function FriendSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
             aria-pressed={only}
             onClick={() => setOnly((v) => !v)}
             className={cx(
-              'min-h-[44px] shrink-0 px-3 font-pixel-sm text-[15px] leading-none shadow-ring',
+              'min-h-[44px] shrink-0 px-3 font-pixel-sm text-[16px] leading-none shadow-ring',
               only ? 'bg-gold text-night' : 'bg-paper text-ink',
             )}
           >
@@ -484,7 +484,7 @@ function FriendSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
               <h3 className="m-0 flex items-center gap-1.5 text-[19px] font-normal leading-none">
                 <TrainerLook src={avatarOf(f.avatar).src} w={26} h={26} />
                 <TrainerName name={f.name} rich={f.rich} className="min-w-0 truncate" />
-                <small className="ml-auto font-pixel-sm text-[13px] text-muted">
+                <small className="ml-auto font-pixel-sm text-[16px] text-muted">
                   {tPlural('ui.dayCare.atDayCare', f.mons.length, { n: f.mons.length })}
                 </small>
               </h3>
@@ -525,11 +525,11 @@ function FriendSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
                         <span className="grid min-w-0 flex-1 leading-[1.05]">
                           <b className="truncate text-[18px] font-normal">
                             {name}{' '}
-                            <small className="font-pixel-sm text-[13px] text-muted">
+                            <small className="font-pixel-sm text-[16px] text-muted">
                               {t('ui.common.level.short', { n: friendMonLevel(m, now, data) })}
                             </small>
                           </b>
-                          <small className="font-pixel-sm text-[14px] text-ink">{groupsLine}</small>
+                          <small className="font-pixel-sm text-[16px] text-ink">{groupsLine}</small>
                           <span className="mt-1">{tag}</span>
                         </span>
                       </button>
@@ -649,7 +649,7 @@ function YardPlate({ count, onBack }: { count: number; onBack: () => void }) {
       <BackButton onClick={onBack} />
       <span className="grid min-w-0 gap-0.5">
         <h1 className="m-0 text-[24px] font-normal leading-none">{t('ui.home.dayCare')}</h1>
-        <small className="truncate font-pixel-sm text-[14px] leading-none text-muted">
+        <small className="truncate font-pixel-sm text-[16px] leading-none text-muted">
           {tPlural('ui.dayCare.plateSub', count, { n: count })}
         </small>
       </span>

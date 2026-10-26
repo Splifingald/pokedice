@@ -77,7 +77,7 @@ export function PowersBits() {
         ].map(([label, b]) => (
           <div key={label as string} className="relative h-[86px] bg-night">
             <OwnPlate b={b as typeof megaTimed} hp={(b as typeof megaTimed).hp} />
-            <span className="absolute left-1 top-1 font-pixel-sm text-[13px] text-white">
+            <span className="absolute left-1 top-1 font-pixel-sm text-[16px] text-white">
               {label as string}
             </span>
           </div>
@@ -96,7 +96,7 @@ export function PowersBits() {
         ))}
         <ZMoveButton hint={zMoveText('power', typeName('water'), data)} disabled onClick={() => {}} />
       </div>
-      <p className="m-0 font-pixel-sm text-[14px] text-muted">
+      <p className="m-0 font-pixel-sm text-[16px] text-muted">
         {Z_SAMPLES.map((ty) => zMoveText(zEffectOf(ty), ty ? typeName(ty) : null, data)).join(' · ')}
       </p>
       <div className="grid gap-3">

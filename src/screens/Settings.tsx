@@ -294,7 +294,7 @@ export function DeleteChooser({
               className="flex min-h-[56px] w-full flex-col items-start gap-1 bg-paper px-3 pb-2.5 pt-2 text-left shadow-card"
             >
               <b className="text-[22px] font-normal leading-none text-danger">{t(CHOICES[c].label)}</b>
-              <small id={`${id}-${c}`} className="font-pixel-sm text-[15px] leading-tight text-muted">
+              <small id={`${id}-${c}`} className="font-pixel-sm text-[16px] leading-tight text-muted">
                 {t(CHOICES[c].desc)}
               </small>
             </button>

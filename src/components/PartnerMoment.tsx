@@ -293,23 +293,23 @@ export function PartnerMoment({
                 </span>
               </div>
               <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5">
-                <dt className="font-pixel-sm text-[15px] text-muted">{t('ui.partner.strong')}</dt>
+                <dt className="font-pixel-sm text-[16px] text-muted">{t('ui.partner.strong')}</dt>
                 <dd className="m-0 flex flex-wrap gap-1">
                   {facts.m.hits.length ? (
                     facts.m.hits.map((ty) => <TypeBadge key={ty} type={ty} size="sm" />)
                   ) : (
-                    <span className="font-pixel-sm text-[15px]">{t('ui.partner.none')}</span>
+                    <span className="font-pixel-sm text-[16px]">{t('ui.partner.none')}</span>
                   )}
                 </dd>
-                <dt className="font-pixel-sm text-[15px] text-muted">{t('ui.partner.weak')}</dt>
+                <dt className="font-pixel-sm text-[16px] text-muted">{t('ui.partner.weak')}</dt>
                 <dd className="m-0 flex flex-wrap gap-1">
                   {facts.m.weak.length ? (
                     facts.m.weak.map((ty) => <TypeBadge key={ty} type={ty} size="sm" />)
                   ) : (
-                    <span className="font-pixel-sm text-[15px]">{t('ui.partner.none')}</span>
+                    <span className="font-pixel-sm text-[16px]">{t('ui.partner.none')}</span>
                   )}
                 </dd>
-                <dt className="font-pixel-sm text-[15px] text-muted">{t('ui.partner.dice')}</dt>
+                <dt className="font-pixel-sm text-[16px] text-muted">{t('ui.partner.dice')}</dt>
                 <dd className="m-0 flex flex-wrap items-center gap-2">
                   <DiceSet dice={facts.stats.dice} size={24} />
                   <StatChip stat="rerolls" value={facts.stats.rerolls} />

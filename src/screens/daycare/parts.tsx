@@ -44,7 +44,7 @@ export function PairTag({ tone = 'ok', children }: { tone?: 'ok' | 'plain' | 'sl
   return (
     <em
       className={cx(
-        'inline-flex items-center gap-1 px-1.5 pb-[3px] pt-0.5 font-pixel-sm text-[13px] not-italic leading-[1.1]',
+        'inline-flex items-center gap-1 px-1.5 pb-[3px] pt-0.5 font-pixel-sm text-[16px] not-italic leading-[1.1]',
         tone === 'ok' && 'bg-[#fff0f3] text-[#8a1f3d] shadow-[inset_0_0_0_1px_#ff9ab5] dark:bg-[#3a1822] dark:text-[#ffc2d1]',
         tone === 'slow' && 'bg-[#f4efff] text-[#4a3486] shadow-[inset_0_0_0_1px_#b9a6e8] dark:bg-[#2a2140] dark:text-[#d7c9ff]',
         tone === 'plain' && 'bg-well text-ink shadow-ring-line-thin',
@@ -111,7 +111,7 @@ export function SlotCard({
   return (
     <li className="relative flex min-w-0 flex-col gap-1 bg-paper px-2 pb-2 pt-2.5 shadow-card">
       <i aria-hidden className="absolute inset-x-[2px] top-[2px] block h-1" style={{ background: band }} />
-      <span className="flex min-h-[22px] items-center gap-1 font-pixel-sm text-[15px] leading-none text-muted">
+      <span className="flex min-h-[22px] items-center gap-1 font-pixel-sm text-[16px] leading-none text-muted">
         {head}
         {tag && <span className="ml-auto">{tag}</span>}
       </span>
@@ -123,7 +123,7 @@ export function SlotCard({
       </span>
       <span className="mt-0.5 flex flex-wrap items-baseline gap-x-1.5">
         <b className="text-[20px] font-normal leading-none [overflow-wrap:anywhere]">{name}</b>
-        <span className="font-pixel-sm text-[15px] leading-none text-muted">{level}</span>
+        <span className="font-pixel-sm text-[16px] leading-none text-muted">{level}</span>
       </span>
       {children}
       <PixelButton size="sm" className="mt-auto w-full px-1" aria-label={action.aria} onClick={action.onClick}>
@@ -136,8 +136,8 @@ export function SlotCard({
 /** The partners, each with its heart (the hearts say "pairs with"), or a short line when there are none. */
 export function MatesLine({ lead, mates }: { lead?: string; mates?: ReactNode }) {
   return (
-    <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 font-pixel-sm text-[14px] leading-[1.15] text-ink">
-      {lead && <small className="text-[13px] text-muted">{lead}</small>}
+    <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 font-pixel-sm text-[16px] leading-[1.15] text-ink">
+      {lead && <small className="text-[16px] text-muted">{lead}</small>}
       {mates}
     </span>
   )
@@ -188,7 +188,7 @@ export function EmptySlot({
           +
         </span>
         <b className="text-[18px] font-normal leading-none">{title}</b>
-        {sub && <small className="font-pixel-sm text-[13px] leading-[1.15] text-muted">{sub}</small>}
+        {sub && <small className="font-pixel-sm text-[16px] leading-[1.15] text-muted">{sub}</small>}
       </button>
     </li>
   )
@@ -204,7 +204,7 @@ export function SectionHead({ title, count, note, id }: { title: string; count?:
         </h2>
         {count && <span className="font-pixel-sm text-[17px] tabular-nums text-muted">{count}</span>}
       </div>
-      {note && <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">{note}</p>}
+      {note && <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{note}</p>}
     </div>
   )
 }
@@ -219,7 +219,7 @@ export function EggCardView({ from, onHatch }: { from: string; onHatch: () => vo
       </span>
       <span className="grid min-w-0 gap-[3px]">
         <b className="text-[22px] font-normal leading-none">{t('ui.dayCare.eggWaiting')}</b>
-        <small className="font-pixel-sm text-[15px] leading-[1.15] text-ink">
+        <small className="font-pixel-sm text-[16px] leading-[1.15] text-ink">
           {from}
         </small>
       </span>
@@ -256,11 +256,11 @@ export function RushBarView({
     <div className="flex items-center gap-2.5 bg-paper py-2 pl-3 pr-2.5 shadow-card">
       {/* Never narrower than the countdown, kept on one line: the button gives way first. */}
       <span className="grid flex-1 gap-px">
-        <small className="font-pixel-sm text-[14px] leading-none text-muted">{t('ui.dayCare.nextCheck')}</small>
+        <small className="font-pixel-sm text-[16px] leading-none text-muted">{t('ui.dayCare.nextCheck')}</small>
         <b className="whitespace-nowrap text-[24px] font-normal leading-none">
           {wait == null ? t('ui.dayCare.onHold') : t('ui.dayCare.inTime', { time: wait })}
         </b>
-        <small className="font-pixel-sm text-[14px] leading-tight text-muted">
+        <small className="font-pixel-sm text-[16px] leading-tight text-muted">
           {pairs ? tPlural('ui.dayCare.pairsCan', pairs, { n: pairs }) : t('ui.dayCare.noPairYet')}
         </small>
       </span>

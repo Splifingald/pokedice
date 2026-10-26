@@ -179,7 +179,7 @@ export function RaidNpcPicker({
             )
           })}
         </ul>
-        <p className="m-0 font-pixel-sm text-[14px] leading-tight text-muted">
+        <p className="m-0 font-pixel-sm text-[16px] leading-tight text-muted">
           {t('ui.raid.npcPick.note', { level })}
         </p>
         <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">

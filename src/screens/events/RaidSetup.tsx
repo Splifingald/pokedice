@@ -180,11 +180,11 @@ export function RaidTeamSection({
               {recommended(m) && <RecommendedThumb overlay />}
             </span>
             <span className="max-w-full truncate text-[17px] leading-none">{data.species[m.dex]?.name}</span>
-            <small className="font-pixel-sm text-[14px] leading-none text-muted">{t('ui.common.level.short', { n: m.level })}</small>
+            <small className="font-pixel-sm text-[16px] leading-none text-muted">{t('ui.common.level.short', { n: m.level })}</small>
           </li>
         ))}
       </ul>
-      <p className="m-0 font-pixel-sm text-[14px] leading-tight text-muted">{setup.hint}</p>
+      <p className="m-0 font-pixel-sm text-[16px] leading-tight text-muted">{setup.hint}</p>
       {editing && (
         <TeamEditor
           setup={setup}
@@ -282,7 +282,7 @@ function TeamEditor({
       }
     >
       <div className="grid gap-2">
-        <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">{setup.pick}</p>
+        <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{setup.pick}</p>
         <ol className="m-0 grid list-none grid-cols-3 gap-1.5 p-0" aria-label={setup.title}>
           {Array.from({ length: TEAM_SIZE }, (_, i) => {
             const c = candidates.find((x) => x.inst.id === valid[i])
@@ -291,10 +291,10 @@ function TeamEditor({
                 key={i}
                 className={cx(
                   'relative grid min-h-[96px] place-items-center px-1 pb-1.5 pt-[18px] text-center',
-                  c ? 'bg-paper shadow-card' : 'bg-well font-pixel-sm text-[14px] text-ink shadow-ring-line',
+                  c ? 'bg-paper shadow-card' : 'bg-well font-pixel-sm text-[16px] text-ink shadow-ring-line',
                 )}
               >
-                <span className="light-scope absolute left-1.5 top-[5px] bg-night px-[5px] pb-0.5 pt-px font-pixel-sm text-[14px] leading-none text-gold-light">
+                <span className="light-scope absolute left-1.5 top-[5px] bg-night px-[5px] pb-0.5 pt-px font-pixel-sm text-[16px] leading-none text-gold-light">
                   {i + 1}
                 </span>
                 {c ? (
@@ -303,7 +303,7 @@ function TeamEditor({
                       <SpriteImg dex={c.inst.dex} size={48} shiny={c.inst.shiny} />
                       {recommended.has(c.inst.id) && <RecommendedThumb overlay />}
                     </span>
-                    <small className="font-pixel-sm text-[13px] text-muted">{t('ui.common.level.short', { n: Math.min(c.inst.level, cap) })}</small>
+                    <small className="font-pixel-sm text-[16px] text-muted">{t('ui.common.level.short', { n: Math.min(c.inst.level, cap) })}</small>
                   </span>
                 ) : (
                   t('ui.versus.slotEmpty')
@@ -333,7 +333,7 @@ function TeamEditor({
           </div>
         )}
         {setup.boss != null && (
-          <p className="m-0 flex items-start gap-1.5 font-pixel-sm text-[14px] leading-tight text-muted">
+          <p className="m-0 flex items-start gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted">
             <RecommendedThumb />
             {t('ui.raid.recommendedNote', {
               level: Math.min(RAID_RECOMMENDED_LEVEL, cap),
@@ -360,7 +360,7 @@ function TeamEditor({
                   <MiniSprite dex={p.dex} size={40} className="-my-1" />
                   <span className="grid min-w-0 flex-1 leading-[1.05]">
                     <b className="truncate text-[18px] font-normal">{name}</b>
-                    <small className="font-pixel-sm text-[14px] text-muted">
+                    <small className="font-pixel-sm text-[16px] text-muted">
                       {t('ui.common.level.short', { n: Math.min(p.level, cap) })}
                       {p.level > cap && ` (${p.level})`}
                       {manyRegions && ` · ${getRegion(data, region)?.name ?? region}`}
@@ -448,7 +448,7 @@ export function RaidGroupSection({
                   <b className="truncate text-[18px] font-normal">
                     <TrainerName name={f.name} rich={f.rich} />
                   </b>
-                  <small className="font-pixel-sm text-[13px] text-muted">{tPlural('ui.raid.helped', f.helped)}</small>
+                  <small className="font-pixel-sm text-[16px] text-muted">{tPlural('ui.raid.helped', f.helped)}</small>
                 </span>
                 <Minis team={f.team} recommended={recommended} />
                 <button
@@ -473,7 +473,7 @@ export function RaidGroupSection({
                 </span>
                 <span className="grid min-w-0 flex-1 leading-[1.05]">
                   <b className="truncate text-[18px] font-normal">{t('ui.raid.addFriend')}</b>
-                  <small className="font-pixel-sm text-[13px] text-muted">{t('ui.raid.slotNpc')}</small>
+                  <small className="font-pixel-sm text-[16px] text-muted">{t('ui.raid.slotNpc')}</small>
                 </span>
               </button>
             </li>
@@ -487,7 +487,7 @@ export function RaidGroupSection({
         className={portal ? 'dw-scope dw-modal' : nightmare ? 'nm-scope nm-modal' : undefined}
       >
         <div className="grid gap-2">
-          <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">{t(progress ? 'ui.raid.progress.friendsHint' : 'ui.raid.friendsHint')}</p>
+          <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{t(progress ? 'ui.raid.progress.friendsHint' : 'ui.raid.friendsHint')}</p>
           {load.state === 'loading' && <p className="m-0 text-center font-pixel-sm text-[16px] text-muted">{t('ui.common.loading')}</p>}
           {load.state === 'offline' && <p className="m-0 text-center font-pixel-sm text-[16px] text-muted">{t('ui.raid.friendsOffline')}</p>}
           {load.state === 'ready' && load.rows.length === 0 && (
@@ -515,7 +515,7 @@ export function RaidGroupSection({
                         <b className="truncate text-[18px] font-normal">
                     <TrainerName name={f.name} rich={f.rich} />
                   </b>
-                        <small className="font-pixel-sm text-[13px] text-muted">{tPlural('ui.raid.helped', f.helped)}</small>
+                        <small className="font-pixel-sm text-[16px] text-muted">{tPlural('ui.raid.helped', f.helped)}</small>
                       </span>
                       <Minis team={f.team} recommended={recommended} />
                     </button>

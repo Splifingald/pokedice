@@ -120,12 +120,12 @@ function AreaCard({
             {levelText(span)}
           </span>
           {locked ? (
-            <span className="inline-flex min-w-0 items-center gap-1 font-pixel-sm text-[15px] leading-tight text-muted">
+            <span className="inline-flex min-w-0 items-center gap-1 font-pixel-sm text-[16px] leading-tight text-muted">
               <PixelIcon name="lock" size={14} />
               {why}
             </span>
           ) : species.length ? (
-            <span className="inline-flex items-center gap-1 font-pixel-sm text-[15px] leading-none text-muted">
+            <span className="inline-flex items-center gap-1 font-pixel-sm text-[16px] leading-none text-muted">
               <PixelIcon name="ball" size={12} />
               {species.length - left.length}/{species.length} ·{' '}
               {left.length ? (
@@ -135,7 +135,7 @@ function AreaCard({
               )}
             </span>
           ) : (
-            <span className="font-pixel-sm text-[15px] leading-none text-muted">
+            <span className="font-pixel-sm text-[16px] leading-none text-muted">
               {t('ui.home.trainersOnly')}
             </span>
           )}
@@ -148,7 +148,7 @@ function AreaCard({
                 <span
                   key={d}
                   className={cx(
-                    'inline-flex items-center font-pixel-sm text-[15px]',
+                    'inline-flex items-center font-pixel-sm text-[16px]',
                     got ? 'text-ink' : 'text-danger',
                   )}
                 >
@@ -246,7 +246,7 @@ function RegionCard({ region, lead, onDone }: { region: Region; lead: boolean; o
           {t('ui.home.go')}
         </span>
       </span>
-      <span className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 font-pixel-sm text-[15px] text-muted">
+      <span className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 font-pixel-sm text-[16px] text-muted">
         <span>{t('ui.home.regionAreas', { n: regionAreaList(data, region.id).length })}</span>
         <span className="inline-flex items-center gap-1">
           <PixelIcon name="ball" size={12} />
@@ -280,7 +280,7 @@ function OfferCard({ region, onStarted }: { region: Region; onStarted: () => voi
     >
       <span className="flex flex-wrap items-center gap-2 px-1 pt-1">
         <Chip tone="gold">{t('ui.home.newRegionTag')}</Chip>
-        <span className="ml-auto font-pixel-sm text-[15px] text-muted">
+        <span className="ml-auto font-pixel-sm text-[16px] text-muted">
           {t('ui.home.regionAreas', { n: regionAreaList(data, region.id).length })} ·{' '}
           {t('ui.home.newPokemon', { n: regionSpecies(data, region.id).size })}
         </span>
@@ -304,7 +304,7 @@ function OfferCard({ region, onStarted }: { region: Region; onStarted: () => voi
           )
         })}
       </ul>
-      <p className="m-0 px-1 font-pixel-sm text-[15px] leading-tight text-muted">
+      <p className="m-0 px-1 font-pixel-sm text-[16px] leading-tight text-muted">
         {t('ui.home.offerNote', { region: here })}
       </p>
       {/* The choice itself happens in the professor's lab: the three balls drop onto the table. */}
@@ -477,7 +477,7 @@ export function AreasSheet({
             <SearchField id="areas-q" label={t('ui.home.searchAreas')} value={q} onChange={setQ} />
             <FilterChips label={t('ui.home.show')} value={filter} onChange={setFilter} options={filters} />
             <div className="flex items-center gap-1.5 pb-1 shadow-[0_2px_0_rgb(var(--c-lip))]">
-              <span className="font-pixel-sm text-[15px] text-muted" aria-hidden>
+              <span className="font-pixel-sm text-[16px] text-muted" aria-hidden>
                 {t('ui.home.sort')}
               </span>
               <FilterChips label={t('ui.home.sort')} value={sort} onChange={setSort} options={sorts} />
@@ -522,14 +522,14 @@ export function AreasSheet({
                 </span>
                 <span className="grid min-w-0 gap-1">
                   <b className="text-[22px] font-normal leading-none">{t('ui.home.regionTeaser')}</b>
-                  <small className="font-pixel-sm text-[15px] leading-tight text-muted">
+                  <small className="font-pixel-sm text-[16px] leading-tight text-muted">
                     {t('ui.home.regionTeaserBody')}
                   </small>
                 </span>
               </div>
             )
           )}
-          <p className="px-3 text-center font-pixel-sm text-[15px] text-muted">{t('ui.home.regionsFoot')}</p>
+          <p className="px-3 text-center font-pixel-sm text-[16px] text-muted">{t('ui.home.regionsFoot')}</p>
         </div>
       )}
     </Sheet>

@@ -60,7 +60,7 @@ export function WidgetRows({ top, meter, bottom }: { top: ReactNode; meter?: Rea
     <span className="grid w-full grid-rows-[22px_6px_15px] gap-[5px]">
       <span className="flex min-w-0 items-center">{top}</span>
       <span>{meter}</span>
-      <span className="truncate font-pixel-sm text-[15px] leading-none text-muted">{bottom}</span>
+      <span className="truncate font-pixel-sm text-[16px] leading-none text-muted">{bottom}</span>
     </span>
   )
 }

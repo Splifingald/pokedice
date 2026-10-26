@@ -184,10 +184,10 @@ function Draft({
                   )}
                 >
                   <MiniSprite dex={m.inst.dex} size={40} className={cx(why && 'opacity-60 grayscale')} />
-                  <b className="max-w-full truncate text-[15px] font-normal leading-none">
+                  <b className="max-w-full truncate text-[16px] font-normal leading-none">
                     {name(m.inst.dex)}
                   </b>
-                  <span className="font-pixel-sm text-[13px] leading-none text-muted">
+                  <span className="font-pixel-sm text-[16px] leading-none text-muted">
                     {lv(m.inst.level)}
                   </span>
                   {m.inst.shiny && (
@@ -196,12 +196,12 @@ function Draft({
                     </span>
                   )}
                   {m.inTeam && (
-                    <span className="light-scope absolute left-[3px] top-[3px] bg-night px-[3px] pb-[2px] pt-px font-pixel-sm text-[11px] leading-none text-gold-light">
+                    <span className="light-scope absolute left-[3px] top-[3px] bg-night px-[3px] pb-[2px] pt-px font-pixel-sm text-tag leading-none text-gold-light">
                       {t('ui.trades.teamTag')}
                     </span>
                   )}
                   {why && (
-                    <small className="font-pixel-sm text-[12px] leading-[1.05] text-ink">
+                    <small className="font-pixel-sm text-tag leading-[1.05] text-ink">
                       {blockText(why, m.inst.dex)}
                     </small>
                   )}
@@ -310,16 +310,16 @@ function Draft({
                   }`}
                   className="relative grid h-full w-full justify-items-center gap-0.5 bg-paper px-1 pb-1.5 pt-1 text-center shadow-ring-line hover:shadow-ring"
                 >
-                  <span className="font-pixel-sm text-[12px] leading-none text-muted">{dexNo(d)}</span>
+                  <span className="font-pixel-sm text-tag leading-none text-muted">{dexNo(d)}</span>
                   <MiniSprite dex={d} size={40} />
-                  <b className="max-w-full truncate text-[15px] font-normal leading-none">{name(d)}</b>
+                  <b className="max-w-full truncate text-[16px] font-normal leading-none">{name(d)}</b>
                   {has && (
-                    <span className="absolute right-[3px] top-[3px] bg-good-pale px-[3px] pb-[2px] pt-px font-pixel-sm text-[11px] leading-none text-good shadow-[inset_0_0_0_1px_#34c97a]">
+                    <span className="absolute right-[3px] top-[3px] bg-good-pale px-[3px] pb-[2px] pt-px font-pixel-sm text-tag leading-none text-good shadow-[inset_0_0_0_1px_#34c97a]">
                       {t('ui.trades.new.owned')}
                     </span>
                   )}
                   {fresh && (
-                    <span className="absolute right-[3px] top-[3px] bg-gold px-[3px] pb-[2px] pt-px font-pixel-sm text-[11px] leading-none text-ink shadow-ring-thin">
+                    <span className="absolute right-[3px] top-[3px] bg-gold px-[3px] pb-[2px] pt-px font-pixel-sm text-tag leading-none text-ink shadow-ring-thin">
                       {t('ui.common.new')}
                     </span>
                   )}
@@ -471,7 +471,7 @@ function Picked({
       <MiniSprite dex={dex} size={40} className="-my-1 shrink-0" />
       <span className="grid min-w-0 flex-1 gap-0.5">
         <b className="flex min-w-0 items-center gap-1 text-[19px] font-normal leading-none">{title}</b>
-        <small className="font-pixel-sm text-[14px] leading-tight text-muted">{line}</small>
+        <small className="font-pixel-sm text-[16px] leading-tight text-muted">{line}</small>
       </span>
       <PixelButton size="sm" variant="ghost" onClick={onChange}>
         {t('ui.trades.new.change')}

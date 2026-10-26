@@ -75,7 +75,7 @@ export function InviteBits() {
   const [open, setOpen] = useState<Open>(null)
   const close = () => setOpen(null)
   const g = (s: InviteStatus, d = data) => inviteGauge(s, d)
-  const label = 'font-pixel-sm text-[14px] text-muted'
+  const label = 'font-pixel-sm text-[16px] text-muted'
   return (
     <div className="grid w-full max-w-md gap-3">
       <p className={label}>Nothing yet · on the way (1 pending)</p>

@@ -211,7 +211,7 @@ export function SceneStage({
             <LevelTag level={shown.inst.level} />
           </span>
           <HpBar hp={Math.max(0, shown.inst.currentHp)} max={shown.maxHp} height={10} />
-          {note && <span className="font-pixel-sm text-[15px] leading-tight text-danger">{note}</span>}
+          {note && <span className="font-pixel-sm text-[16px] leading-tight text-danger">{note}</span>}
         </button>
       )}
       {children}

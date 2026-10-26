@@ -203,7 +203,7 @@ export function KitchenSink() {
             <span className="text-[24px] leading-none">Safari Zone</span>
             <LevelTag level={24} className="ml-auto" />
           </div>
-          <span className="font-pixel-sm text-[15px] text-muted">Plate: flat ring, clipped corners</span>
+          <span className="font-pixel-sm text-[16px] text-muted">Plate: flat ring, clipped corners</span>
         </div>
         <div className="hatched w-56 p-3">Unavailable (dotted)</div>
       </Section>
@@ -788,7 +788,7 @@ export function KitchenSink() {
         />
         <div className="flex flex-wrap gap-3">
           {(Object.keys(ICONS) as IconName[]).map((n) => (
-            <span key={n} className="flex flex-col items-center gap-1 font-pixel-sm text-[12px]">
+            <span key={n} className="flex flex-col items-center gap-1 font-pixel-sm text-tag">
               <PixelIcon name={n} size={n.startsWith('nav') ? 32 : 24} />
               {n}
             </span>

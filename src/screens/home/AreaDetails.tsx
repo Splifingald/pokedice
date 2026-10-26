@@ -85,9 +85,9 @@ function Fact({
     >
       <span className="flex shrink-0 items-center">{icon}</span>
       <span className="grid min-w-0 flex-1 gap-0.5 leading-[1.05]">
-        <small className="font-pixel-sm text-[13px] uppercase tracking-[0.08em] text-muted">{small}</small>
+        <small className="font-pixel-sm text-[16px] uppercase tracking-[0.08em] text-muted">{small}</small>
         <b className="text-[20px] font-normal">{title}</b>
-        {note && <em className="font-pixel-sm text-[15px] not-italic text-muted">{note}</em>}
+        {note && <em className="font-pixel-sm text-[16px] not-italic text-muted">{note}</em>}
       </span>
       {tag}
     </div>
@@ -407,7 +407,7 @@ function DetailsBody({ area }: { area: Area }) {
                   )}
                   <span className="grid min-w-0 flex-1 leading-[1.05]">
                     <b className="text-[19px] font-normal">{itemName(e.itemKey, e.maxQty)}</b>
-                    <small className="font-pixel-sm text-[14px] text-muted">
+                    <small className="font-pixel-sm text-[16px] text-muted">
                       {e.itemKey === MONEY
                         ? t('ui.home.moneyStash')
                         : g.length > 1
@@ -485,7 +485,7 @@ function DetailsBody({ area }: { area: Area }) {
                     </b>
                     <span
                       className={cx(
-                        'whitespace-nowrap px-1 pb-0.5 font-pixel-sm text-[13px] leading-none',
+                        'whitespace-nowrap px-1 pb-0.5 font-pixel-sm text-[16px] leading-none',
                         r === 'rare'
                           ? 'bg-gold text-ink shadow-ring-thin'
                           : r === 'unc'
@@ -527,7 +527,7 @@ function DetailsBody({ area }: { area: Area }) {
               <i key={k} className="block min-w-1" style={{ flex: n, background: MIX[k] }} />
             ))}
           </div>
-          <ul className="flex flex-wrap gap-x-3.5 gap-y-1 font-pixel-sm text-[15px] text-muted" aria-hidden>
+          <ul className="flex flex-wrap gap-x-3.5 gap-y-1 font-pixel-sm text-[16px] text-muted" aria-hidden>
             {pct.map(([k, n]) => (
               <li key={k} className="inline-flex items-center gap-1">
                 <i className="block h-2.5 w-2.5 shadow-ring-thin" style={{ background: MIX[k] }} />
@@ -545,7 +545,7 @@ function DetailsBody({ area }: { area: Area }) {
             {common.map((e) => (
               <li key={e.id}>
                 {e.itemKey === MONEY ? (
-                  <span className="flex min-h-[44px] items-center gap-1 px-1 font-pixel-sm text-[15px] leading-tight">
+                  <span className="flex min-h-[44px] items-center gap-1 px-1 font-pixel-sm text-[16px] leading-tight">
                     <PixelIcon name="coin" size={16} />
                     {t('ui.home.pokedollars')}
                   </span>
@@ -553,7 +553,7 @@ function DetailsBody({ area }: { area: Area }) {
                   <button
                     type="button"
                     onClick={() => setItemKey(e.itemKey)}
-                    className="flex min-h-[44px] w-full min-w-0 items-center gap-1 bg-paper px-1 text-left font-pixel-sm text-[15px] leading-tight shadow-ring-line"
+                    className="flex min-h-[44px] w-full min-w-0 items-center gap-1 bg-paper px-1 text-left font-pixel-sm text-[16px] leading-tight shadow-ring-line"
                   >
                     <ItemSprite item={data.items[e.itemKey]} size={26} />
                     <span className="min-w-0">{itemName(e.itemKey)}</span>

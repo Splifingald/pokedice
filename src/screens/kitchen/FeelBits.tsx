@@ -12,7 +12,7 @@ import { useGame } from '@/store/game'
 function Frame({ name, children }: { name: string; children: ReactNode }) {
   return (
     <div className="flex w-full max-w-md flex-col gap-1.5">
-      <span className="font-pixel-sm text-[13px] text-muted">{name}</span>
+      <span className="font-pixel-sm text-[16px] text-muted">{name}</span>
       {children}
     </div>
   )
@@ -38,7 +38,7 @@ function HapticPad() {
           className={`pixel-btn flex min-h-[56px] flex-col items-center justify-center px-1 leading-none ${last === cue ? 'frame-gold' : ''}`}
         >
           <span className="text-[18px]">{cue}</span>
-          <span className="font-pixel-sm text-[12px]">{JSON.stringify(HAPTICS[cue])} ms</span>
+          <span className="font-pixel-sm text-tag">{JSON.stringify(HAPTICS[cue])} ms</span>
           {IOS_SWITCH && <HapticSwitch />}
         </button>
       ))}
@@ -90,7 +90,7 @@ export function FeelBits() {
           >
             Fade out
           </PixelButton>
-          <span className="self-center font-pixel-sm text-[14px]">
+          <span className="self-center font-pixel-sm text-[16px]">
             {musicPlaying() ? 'playing' : 'stopped'}
           </span>
         </div>

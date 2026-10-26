@@ -144,7 +144,7 @@ export function RoundGauge({
           <li key={i} className={cx('min-w-0 flex-1', i < metCount || allDone ? (allDone ? 'bg-hp-green' : 'bg-gold') : 'bg-[#3d4a6b]')} />
         ))}
       </ol>
-      <span className="min-w-[3ch] text-right font-pixel-sm text-[15px] tabular-nums leading-none text-muted" aria-hidden>
+      <span className="min-w-[3ch] text-right font-pixel-sm text-[16px] tabular-nums leading-none text-muted" aria-hidden>
         {allDone ? '✓' : `${round}/${need}`}
       </span>
     </div>

@@ -48,11 +48,11 @@ export function ProgressRaidList() {
         <h2 id="raid-progress-h" className="m-0 text-[22px] font-normal leading-none">
           {t('ui.raid.progress.listTitle')}
         </h2>
-        <small className="font-pixel-sm text-[15px] text-muted">
+        <small className="font-pixel-sm text-[16px] text-muted">
           {t('ui.raid.progress.listCount', { open: count('open'), done: count('done') })}
         </small>
       </div>
-      <p className="m-0 font-pixel-sm text-[14px] leading-tight text-muted">
+      <p className="m-0 font-pixel-sm text-[16px] leading-tight text-muted">
         {t('ui.raid.progress.listHint')}
       </p>
       {regions.length > 1 && (
@@ -90,7 +90,7 @@ export function ProgressRaidList() {
                 />
                 <span className="grid min-w-0 flex-1 leading-[1.05]">
                   <b className="truncate text-[19px] font-normal">{name}</b>
-                  <small className="truncate font-pixel-sm text-[14px] text-muted">
+                  <small className="truncate font-pixel-sm text-[16px] text-muted">
                     {megaLock
                       ? t(`ui.raid.mega.lock.${megaLock}.title`, { name: data.species[raid.mega!.base]?.name ?? '' })
                       : state === 'locked'
@@ -99,7 +99,7 @@ export function ProgressRaidList() {
                   </small>
                   <small
                     className={cx(
-                      'truncate font-pixel-sm text-[14px]',
+                      'truncate font-pixel-sm text-[16px]',
                       left.length ? 'text-good' : 'text-muted',
                     )}
                   >

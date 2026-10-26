@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Navigate, useSearchParams } from 'react-router-dom'
 import {
   COMBO_KEYS,
   COMBO_MIN_DICE,
@@ -30,7 +30,7 @@ import { Chip } from '@/components/Chip'
 import { Die } from '@/components/Die'
 import { FaceDice, facesStatuses, StatusLines } from '@/components/FaceDice'
 import { PixelIcon } from '@/components/icons'
-import { PageHead, Wallet } from '@/components/PageHead'
+
 import { Seg } from '@/components/Segmented'
 import { COMBO_EXAMPLES, comboExampleText, comboName, money, oneInText, typeName } from '@/lib/format'
 import { bestBuy, dieCarriers, maxDiceOwned } from '@/lib/upgrades'
@@ -141,7 +141,7 @@ function PopText({ pop }: { pop: UpPop }) {
   return (
     <span
       aria-hidden
-      className="light-scope pointer-events-none absolute -top-6 right-0 whitespace-nowrap bg-night px-1.5 py-0.5 font-pixel-sm text-[15px] leading-none text-gold-light"
+      className="light-scope pointer-events-none absolute -top-6 right-0 whitespace-nowrap bg-night px-1.5 py-0.5 font-pixel-sm text-[16px] leading-none text-gold-light"
       style={{ transform: `translateY(${-2 * Math.min(6, pop.frame - 2)}px)` }}
     >
       {pop.text}
@@ -209,7 +209,7 @@ export function UpCard({
       <div className="flex min-h-[30px] items-center gap-2">
         <span className="grid min-w-0 flex-1 leading-[1.05]">
           <b className="text-[20px] font-normal leading-none">{u.name}</b>
-          {u.desc && <small className="font-pixel-sm text-[14px] text-muted">{u.desc}</small>}
+          {u.desc && <small className="font-pixel-sm text-[16px] text-muted">{u.desc}</small>}
         </span>
         {u.visual}
       </div>
@@ -218,7 +218,7 @@ export function UpCard({
         <Pips level={u.level} max={u.max} pop={shownPop} />
         {/* The best buy says so in words too, never by its gold alone. */}
         {best && can && <Chip tone="gold">{t('ui.upgrades.bestBuy')}</Chip>}
-        <span className="font-pixel-sm text-[15px] text-muted">
+        <span className="font-pixel-sm text-[16px] text-muted">
           {t('ui.common.level.short', { n: u.level })}
         </span>
         {shownPop && <PopText pop={shownPop} />}
@@ -238,7 +238,7 @@ export function UpCard({
           )}
         </span>
         {u.locked ? (
-          <span className="inline-flex min-h-[46px] min-w-[96px] items-center justify-center gap-1.5 bg-well-deep px-2.5 font-pixel-sm text-[15px] text-ink">
+          <span className="inline-flex min-h-[46px] min-w-[96px] items-center justify-center gap-1.5 bg-well-deep px-2.5 font-pixel-sm text-[16px] text-ink">
             <PixelIcon name="lock" size={16} />
             {t('ui.upgrades.lockedWord')}
           </span>
@@ -262,20 +262,27 @@ export function UpCard({
             )}
           >
             <b className="text-[20px] font-normal">{money(u.cost)}</b>
-            <small className="font-pixel-sm text-[13px]">
+            <small className="font-pixel-sm text-[16px]">
               {can ? t('ui.upgrades.upgrade') : t('ui.upgrades.needShort', { amount: money(u.cost - gold) })}
             </small>
           </button>
         )}
       </div>
-      {u.locked && <p className="font-pixel-sm text-[14px] text-muted">{u.locked}</p>}
+      {u.locked && <p className="font-pixel-sm text-[16px] text-muted">{u.locked}</p>}
     </li>
   )
 }
 
 type Tab = 'combos' | 'dice' | 'general'
 
+/** `/upgrades` (old links, the General's pop-up): the Mart, on its Upgrades tab (docs/43 §3). */
 export function UpgradesScreen() {
+  const [params] = useSearchParams()
+  return <Navigate to={`/shop?tab=upgrades${params.get('tab') === 'general' ? '&up=general' : ''}`} replace />
+}
+
+/** The Mart's Upgrades tab: combos, dice types and the General upgrades, each a sub-view. */
+export function UpgradesPanel() {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
@@ -284,7 +291,7 @@ export function UpgradesScreen() {
   // The General tab is the admin's to switch on (docs/15 §20); its pop-up's Let's go! opens it (`?tab=general`). Its
   // levels hold in every region, so a small world, whose ₽ are its own, has its combos and dice only (docs/26).
   const generalOpen = generalOn(data) && !inside
-  const [picked, setTab] = useState<Tab>(params.get('tab') === 'general' ? 'general' : 'combos')
+  const [picked, setTab] = useState<Tab>(params.get('up') === 'general' ? 'general' : 'combos')
   const tab: Tab = picked === 'general' && !generalOpen ? 'combos' : picked
   const [affordOnly, setAffordOnly] = useState(false)
   const [rules, setRules] = useState(false)
@@ -335,7 +342,7 @@ export function UpgradesScreen() {
         cost,
         locked: n ? null : t('ui.upgrades.noCarrier'),
         visual: n ? (
-          <small className="font-pixel-sm text-[14px] text-muted">
+          <small className="font-pixel-sm text-[16px] text-muted">
             {t(`ui.upgrades.onMons.${n === 1 ? 'one' : 'other'}`, { n })}
           </small>
         ) : null,
@@ -409,10 +416,7 @@ export function UpgradesScreen() {
   const tabCount = (l: Up[]) => l.filter(affordable).length || undefined
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
-      <PageHead icon="navUpgrades" title={t('ui.upgrades.title')}>
-        <Wallet />
-      </PageHead>
+    <div className="flex flex-col gap-3">
       <Seg
         tabs
         idPrefix="up"
@@ -441,7 +445,7 @@ export function UpgradesScreen() {
             {t('ui.upgrades.affordable')}
             <i
               className={cx(
-                'font-pixel-sm text-[14px] not-italic',
+                'font-pixel-sm text-[16px] not-italic',
                 affordOnly ? 'text-gold-light' : 'text-muted',
               )}
             >

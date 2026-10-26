@@ -1,7 +1,6 @@
 // The leaderboard (the cup in the top bar): Max level, Progression and Pokédex for the region being played, Shiny and
 // Raids over every region — your place on top, and the Hall of Fame for whoever has maxed a board out.
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { getRegion, leaderboardUnlocked, regionOf } from '@/engine'
 import { BoardGap, BoardRow, Crown } from '@/components/BoardRow'
 import { FriendProfileSheet } from '@/components/friends/FriendProfileSheet'
@@ -50,12 +49,11 @@ type Load =
 /** The board opens with the first badge; until then the screen only says so (a typed-in /leaderboard included). */
 export function LeaderboardScreen() {
   const { t } = useT()
-  const navigate = useNavigate()
   const open = useGame((s) => !!s.save && leaderboardUnlocked(s.save, s.data))
   if (open) return <Board />
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-3">
-      <PageHead icon="navRanks" title={t('ui.board.title')} onBack={() => navigate('/home')} />
+      <PageHead icon="navRanks" title={t('ui.board.title')} social="board" />
       <p className="m-0 grid justify-items-center gap-2 bg-paper px-3.5 py-4 text-center text-[21px] leading-[1.1] shadow-card">
         <PixelIcon name="lock" size={36} />
         {t('ui.nav.boardLocked')}
@@ -67,7 +65,6 @@ export function LeaderboardScreen() {
 function Board() {
   const { t, tPlural } = useT()
   const online = useOnline()
-  const navigate = useNavigate()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)!
   const auth = useGame((s) => s.auth)
@@ -128,7 +125,7 @@ function Board() {
         icon="navRanks"
         title={t('ui.board.title')}
         count={scope}
-        onBack={() => navigate('/home')}
+        social="board"
       />
 
       {!signedIn && (
@@ -188,7 +185,7 @@ function Board() {
         >
           <TrainerLook src={avatarOf(me.avatar).src} w={44} h={48} />
           <span className="grid min-w-0 flex-1 gap-0.5">
-            <small className="font-pixel-sm text-[14px] leading-[1.1] text-muted">
+            <small className="font-pixel-sm text-[16px] leading-[1.1] text-muted">
               {t(`ui.board.note.${textKey}`, { region: regionName })}
             </small>
             <b className="text-[21px] font-normal leading-none">
@@ -208,7 +205,7 @@ function Board() {
           <Crown />
           <span className="grid min-w-0 flex-1 gap-0.5">
             <b className="text-[21px] font-normal leading-none">{t('ui.board.hall')}</b>
-            <small className="font-pixel-sm text-[14px] leading-[1.1] text-[#b6c3d9]">
+            <small className="font-pixel-sm text-[16px] leading-[1.1] text-[#b6c3d9]">
               {tPlural('ui.board.hallSub', hall.length)}
             </small>
           </span>
@@ -234,7 +231,7 @@ function Board() {
           (online ? (
             <div className="flex flex-col items-center gap-1 p-4 text-center">
               <p className="m-0 text-[20px] text-danger">{t('ui.board.failed')}</p>
-              <p className="m-0 font-pixel-sm text-[15px] text-muted">{load.why}</p>
+              <p className="m-0 font-pixel-sm text-[16px] text-muted">{load.why}</p>
             </div>
           ) : (
             <p className="m-0 p-4 text-center text-[20px] text-danger">{t('ui.common.offline')}</p>
@@ -271,7 +268,7 @@ function Board() {
                   value={scoreAside ? item.row.score : undefined}
                   sub={
                     !scoreAside && (
-                      <small className="truncate font-pixel-sm text-[14px] text-muted">{item.row.score}</small>
+                      <small className="truncate font-pixel-sm text-[16px] text-muted">{item.row.score}</small>
                     )
                   }
                 />
@@ -288,7 +285,7 @@ function Board() {
         sub={`${tabLabel} · ${tPlural('ui.board.hallCount', hall.length)}`}
       >
         {tab !== 'shiny' && tab !== 'raids' && (
-          <p className="m-0 mb-2 font-pixel-sm text-[15px] leading-[1.15] text-muted">
+          <p className="m-0 mb-2 font-pixel-sm text-[16px] leading-[1.15] text-muted">
             {t(`ui.board.hallBody.${textKey}`)}
           </p>
         )}
@@ -311,7 +308,7 @@ function Board() {
                 value={scoreAside ? item.row.score : undefined}
                 sub={
                   !scoreAside && (
-                    <small className="truncate font-pixel-sm text-[14px] text-muted">{item.row.score}</small>
+                    <small className="truncate font-pixel-sm text-[16px] text-muted">{item.row.score}</small>
                   )
                 }
               />

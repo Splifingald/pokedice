@@ -27,8 +27,7 @@ import { useT } from '@/i18n/react'
 import { sfx } from '@/audio/sfx'
 import { ItemSprite } from '@/components/ItemSprite'
 import { PixelIcon } from '@/components/icons'
-import { Modal } from '@/components/Modal'
-import { PageHead, Wallet } from '@/components/PageHead'
+import { PageHead } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
 import { FilterChips, Seg } from '@/components/Segmented'
 import { money } from '@/lib/format'
@@ -44,7 +43,9 @@ import { useServerNow } from '@/store/serverTime'
 import { buyWorld, worldName } from '@/store/worlds'
 import { pushToast, useGame } from '@/store/game'
 import { ugBuyKits, useUnderground } from '@/store/underground'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { affordableUpgrades } from '@/lib/upgrades'
+import { UpgradesPanel } from './Upgrades'
 import { cx } from '@/theme/util'
 
 type Kind = ItemDef['effect']['kind']
@@ -122,31 +123,32 @@ function Row({
   return (
     <li
       className={cx(
+        'flex flex-col',
         open
           ? 'col-span-full bg-cream shadow-[inset_0_0_0_3px_rgb(var(--c-edge)),inset_0_-4px_0_rgb(var(--c-gold-light))]'
           : 'bg-paper shadow-card',
       )}
     >
+      {/* Two targets (docs/43 §5.5): the tile opens its details (×5, ×10, what it does), and its price, when it is a
+          button, is the purchase itself — one tap, never a pick then a BUY. */}
       <button
         type="button"
         onClick={onToggle}
         disabled={!onToggle}
         aria-expanded={onToggle ? open : undefined}
         aria-controls={onToggle && open ? id : undefined}
-        // Closed, the tile fills its row (its neighbours line up); open, it takes its own height and the picker sits
-        // under it inside the tile, not over the next row.
-        className={cx('flex min-h-[54px] w-full flex-col gap-1 pb-[9px] pl-1.5 pr-1.5 pt-1.5 text-left', !open && 'h-full')}
+        className="flex min-h-[54px] w-full flex-1 flex-col gap-1 px-2 pt-2 text-left"
       >
         <span className="flex w-full min-w-0 items-center gap-1.5">
           <ItemSprite item={it} size={32} />
-          <b className="line-clamp-2 min-w-0 flex-1 text-[18px] font-normal leading-[1.05]">{it.name}</b>
+          <b className="line-clamp-2 min-w-0 flex-1 text-[20px] font-normal leading-[1.05]">{it.name}</b>
         </span>
-        <small className="flex flex-wrap items-center gap-1 font-pixel-sm text-[13px] leading-tight text-muted">{sub}</small>
-        <span className="mt-auto flex w-full items-end justify-between gap-1">
-          <em className="font-pixel-sm text-[15px] not-italic text-muted">{owned > 0 ? `×${owned}` : ''}</em>
-          {pill}
-        </span>
+        <small className="flex flex-wrap items-center gap-1 font-pixel-sm text-[17px] leading-tight text-muted">{sub}</small>
       </button>
+      <span className="flex w-full items-end justify-between gap-1 px-2 pb-[10px] pt-1">
+        <em className="font-pixel-sm text-[17px] not-italic text-muted">{owned > 0 ? `×${owned}` : ''}</em>
+        {pill}
+      </span>
       {open && children && (
         <div id={id} className="grid gap-2 px-2.5 pb-3">
           {children}
@@ -247,7 +249,7 @@ function LiveShopSection({ live, now }: { live: LiveEvent; now: number }) {
                   )}
                 >
                   {sale && !out && (
-                    <s className="text-[14px] opacity-70" aria-label={t('ui.live.shop.usually', { price: money(r.usual!) })}>
+                    <s className="text-[16px] opacity-70" aria-label={t('ui.live.shop.usually', { price: money(r.usual!) })}>
                       {money(r.usual!)}
                     </s>
                   )}
@@ -257,7 +259,7 @@ function LiveShopSection({ live, now }: { live: LiveEvent; now: number }) {
               owned={save.inventory[r.item.key] ?? 0}
             >
               {r.item.description && (
-                <p className="copy font-pixel-sm text-[15px] leading-tight text-muted">{r.item.description}</p>
+                <p className="copy font-pixel-sm text-[16px] leading-tight text-muted">{r.item.description}</p>
               )}
               <div className="flex items-center gap-2">
                 {steps.length > 1 ? (
@@ -268,7 +270,7 @@ function LiveShopSection({ live, now }: { live: LiveEvent; now: number }) {
                     options={steps.map((q) => ({ id: q, label: `×${q}` }))}
                   />
                 ) : (
-                  <span className="font-pixel-sm text-[15px] text-muted">{t('ui.live.shop.onePer')}</span>
+                  <span className="font-pixel-sm text-[16px] text-muted">{t('ui.live.shop.onePer')}</span>
                 )}
                 <PixelButton
                   variant={can ? 'primary' : 'secondary'}
@@ -288,7 +290,7 @@ function LiveShopSection({ live, now }: { live: LiveEvent; now: number }) {
           )
         })}
       </ul>
-      <p className="m-0 px-3 font-pixel-sm text-[14px] leading-tight text-muted">{t('ui.live.shop.note')}</p>
+      <p className="m-0 px-3 font-pixel-sm text-[16px] leading-tight text-muted">{t('ui.live.shop.note')}</p>
     </section>
   )
 }
@@ -334,11 +336,11 @@ function UgKitSection() {
           <PixelIcon name="kit" size={36} />
           <span className="grid min-w-0 flex-1 gap-0.5 leading-tight">
             <b className="text-[20px] font-normal leading-none">{t('ui.ug.kit')}</b>
-            <small className="font-pixel-sm text-[15px] text-muted">{t('ui.ug.kitDesc')}</small>
+            <small className="font-pixel-sm text-[16px] text-muted">{t('ui.ug.kitDesc')}</small>
           </span>
           <span className="light-scope bg-night px-2 pb-2 pt-1.5 text-[18px] leading-none text-gold-light">{money(price)}</span>
         </div>
-        <span className={cx('font-pixel-sm text-[15px]', room != null && room <= 2 ? 'text-danger' : 'text-muted')}>
+        <span className={cx('font-pixel-sm text-[16px]', room != null && room <= 2 ? 'text-danger' : 'text-muted')}>
           {t('ui.ug.held', { n: kitsHeld(u) })} ·{' '}
           {room == null ? t('ui.live.shop.noLimit') : room === 0 ? t('ui.live.shop.soldOut') : t('ui.live.shop.left', { left: room, limit })}
         </span>
@@ -371,7 +373,7 @@ function UgKitSection() {
           {t('ui.ug.toUnderground')}
         </PixelButton>
       </div>
-      <p className="m-0 px-3 font-pixel-sm text-[14px] leading-tight text-muted">{t('ui.ug.kitNote')}</p>
+      <p className="m-0 px-3 font-pixel-sm text-[16px] leading-tight text-muted">{t('ui.ug.kitNote')}</p>
     </section>
   )
 }
@@ -453,7 +455,7 @@ function WorldShop() {
               owned={save.inventory[r.item.key] ?? 0}
             >
               {r.item.description && (
-                <p className="copy font-pixel-sm text-[15px] leading-tight text-muted">{r.item.description}</p>
+                <p className="copy font-pixel-sm text-[16px] leading-tight text-muted">{r.item.description}</p>
               )}
               <div className="flex items-center gap-2">
                 {steps.length > 1 ? (
@@ -464,7 +466,7 @@ function WorldShop() {
                     options={steps.map((q) => ({ id: q, label: `×${q}` }))}
                   />
                 ) : (
-                  <span className="font-pixel-sm text-[15px] text-muted">{t('ui.live.shop.onePer')}</span>
+                  <span className="font-pixel-sm text-[16px] text-muted">{t('ui.live.shop.onePer')}</span>
                 )}
                 <PixelButton
                   variant={can ? 'primary' : 'secondary'}
@@ -484,7 +486,7 @@ function WorldShop() {
           )
         })}
       </ul>
-      <p className="m-0 px-3 font-pixel-sm text-[14px] leading-tight text-muted">{t('ui.world.mart.note')}</p>
+      <p className="m-0 px-3 font-pixel-sm text-[16px] leading-tight text-muted">{t('ui.world.mart.note')}</p>
     </section>
   )
 }
@@ -508,9 +510,9 @@ export function GemShelfView({
         {t('ui.shop.groupGems')}
       </h2>
       {!rows ? (
-        <p className="copy m-0 font-pixel-sm text-[15px] text-muted">{t('ui.shop.gemsAfterLeague')}</p>
+        <p className="copy m-0 font-pixel-sm text-[16px] text-muted">{t('ui.shop.gemsAfterLeague')}</p>
       ) : rows.length === 0 ? (
-        <p className="copy m-0 font-pixel-sm text-[15px] text-muted">{t('ui.shop.gemsNone')}</p>
+        <p className="copy m-0 font-pixel-sm text-[16px] text-muted">{t('ui.shop.gemsNone')}</p>
       ) : (
         <ul className="grid grid-cols-2 gap-1.5 md:grid-cols-3">
           {rows.map((row) => {
@@ -545,7 +547,7 @@ export function GemShelfView({
                 }
                 owned={0}
               >
-                <p className="copy font-pixel-sm text-[15px] leading-tight text-muted">
+                <p className="copy font-pixel-sm text-[16px] leading-tight text-muted">
                   {t('ui.shop.gemNote', { mega: mega.name })}
                 </p>
                 <PixelButton
@@ -587,9 +589,6 @@ function GemShelf() {
 
 function BuyTab({ badges }: { badges: number }) {
   const { t } = useT()
-  // Held here, not in the row: a unique item leaves the shelf the moment it is bought, and a pop-up owned by the
-  // row would be unmounted along with it before anyone read a word of it.
-  const [dug, setDug] = useState<ItemDef | null>(null)
   const [cat, setCat] = useState<Cat>('all')
   const [open, setOpen] = useState<string | null>(null)
   const [qty, setQty] = useState<'1' | '5' | '10'>('1')
@@ -620,20 +619,23 @@ function BuyTab({ badges }: { badges: number }) {
     .filter(inCat(cat))
     .sort((a, b) => a.shopBadges - b.shopBadges || byShelf(a, b))
   const n = Number(qty)
+  const purchase = (it: ItemDef, count: number) => {
+    if (!buy(it.key, count)) return
+    sfx('gold')
+    // A fossil never reaches the bag: where it went, and that it is on a clock, is said in the toast (no pop-up for
+    // news that asks nothing, docs/43 §2).
+    if (it.effect.kind === 'fossil') {
+      setOpen(null)
+      pushToast(t('ui.shop.fossilBought', { hours: it.effect.hours }), 'good')
+    } else
+      pushToast(
+        t('ui.shop.bought', { n: count, item: it.name, left: money(useGame.getState().save?.gold ?? 0) }),
+        'good',
+      )
+  }
 
   return (
     <>
-      <Modal open={!!dug} onClose={() => setDug(null)} title={dug?.name}>
-        <div className="flex flex-col items-center gap-3 text-center">
-          <ItemSprite item={dug ?? undefined} size={96} />
-          <p className="copy text-xl leading-snug">
-            {t('ui.shop.fossilBought', { hours: dug?.effect.kind === 'fossil' ? dug.effect.hours : 0 })}
-          </p>
-          <PixelButton variant="primary" onClick={() => setDug(null)}>
-            {t('ui.common.continue')}
-          </PixelButton>
-        </div>
-      </Modal>
       <LiveShopSections />
       <UgKitSection />
       <CatChips
@@ -644,10 +646,11 @@ function BuyTab({ badges }: { badges: number }) {
           setOpen(null)
         }}
       />
-      <ul className="grid grid-cols-2 gap-1.5 md:grid-cols-3">
+      <ul className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-4">
         {shelf.map((it) => {
           const total = it.price * n
           const can = total <= gold
+          const one = it.price <= gold
           return (
             <Row
               key={it.key}
@@ -660,19 +663,30 @@ function BuyTab({ badges }: { badges: number }) {
               }}
               sub={effectText(it)}
               pill={
-                <span
+                // The price is the purchase (×1): one tap. Short of ₽ it stays focusable and says what's missing.
+                <button
+                  type="button"
+                  aria-disabled={!one || undefined}
+                  aria-label={
+                    one
+                      ? t('ui.shop.buyOneLabel', { item: it.name, price: money(it.price) })
+                      : `${it.name}: ${t('ui.shop.needMore', { price: money(it.price - gold) })}`
+                  }
+                  onClick={() => (one ? purchase(it, 1) : pushToast(t('ui.shop.needMore', { price: money(it.price - gold) }), 'info'))}
                   className={cx(
-                    'min-w-[62px] px-2 pb-2 pt-1.5 text-center text-[18px] leading-none',
-                    it.price > gold ? 'bg-well-deep text-ink' : 'light-scope bg-night text-gold-light',
+                    'min-h-[44px] min-w-[72px] px-2.5 pb-1 pt-0.5 text-center text-[20px] leading-none active:translate-y-[2px]',
+                    one
+                      ? 'light-scope bg-night text-gold-light shadow-[inset_0_-3px_0_rgb(0_0_0/0.35)] hover:bg-ink'
+                      : 'bg-well-deep text-ink',
                   )}
                 >
                   {money(it.price)}
-                </span>
+                </button>
               }
               owned={save?.inventory[it.key] ?? 0}
             >
               {it.description && (
-                <p className="copy font-pixel-sm text-[15px] leading-tight text-muted">{it.description}</p>
+                <p className="copy font-pixel-sm text-[18px] leading-tight text-muted">{it.description}</p>
               )}
               <div className="flex items-center gap-2">
                 <Seg
@@ -685,24 +699,7 @@ function BuyTab({ badges }: { badges: number }) {
                   variant={can ? 'primary' : 'secondary'}
                   className="min-h-[50px] flex-1"
                   disabled={!can}
-                  onClick={() => {
-                    if (!buy(it.key, n)) return
-                    sfx('gold')
-                    // A fossil never reaches the bag, so a bag count ticking up would be the wrong feedback — and
-                    // where it actually went, and that it is on a clock, is not something the shelf can say.
-                    if (it.effect.kind === 'fossil') {
-                      setOpen(null)
-                      setDug(it)
-                    } else
-                      pushToast(
-                        t('ui.shop.bought', {
-                          n,
-                          item: it.name,
-                          left: money(useGame.getState().save?.gold ?? 0),
-                        }),
-                        'good',
-                      )
-                  }}
+                  onClick={() => purchase(it, n)}
                 >
                   {can
                     ? t('ui.shop.buyFor', { price: money(total) })
@@ -734,8 +731,8 @@ function BuyTab({ badges }: { badges: number }) {
                   <ItemSprite item={it} size={32} className="opacity-55 grayscale" />
                   <b className="line-clamp-2 min-w-0 flex-1 text-[18px] font-normal leading-[1.05]">{it.name}</b>
                 </span>
-                <small className="font-pixel-sm text-[13px] leading-tight">{effectText(it)}</small>
-                <span className="mt-auto inline-flex items-center gap-1 self-end bg-well-deep px-1.5 pb-1 pt-[3px] font-pixel-sm text-[14px] text-ink">
+                <small className="font-pixel-sm text-[16px] leading-tight">{effectText(it)}</small>
+                <span className="mt-auto inline-flex items-center gap-1 self-end bg-well-deep px-1.5 pb-1 pt-[3px] font-pixel-sm text-[16px] text-ink">
                   {badges < it.shopBadges && <PixelIcon name="badge" size={8} />}
                   {needs(it)}
                 </span>
@@ -799,7 +796,7 @@ function SellTab() {
     )
   return (
     <>
-      <p className="font-pixel-sm text-[15px] leading-tight text-muted">{t('ui.shop.sellIntro')}</p>
+      <p className="font-pixel-sm text-[16px] leading-tight text-muted">{t('ui.shop.sellIntro')}</p>
       <CatChips
         items={bag.map((r) => r.it)}
         value={cat}
@@ -878,32 +875,46 @@ export function ShopScreen() {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
-  const [tab, setTab] = useState<'buy' | 'sell'>('buy')
+  const [params, setParams] = useSearchParams()
+  const asked = params.get('tab')
+  const tab: MartTab = asked === 'upgrades' || asked === 'sell' ? asked : 'buy'
+  const setTab = (next: MartTab) => setParams(next === 'buy' ? {} : { tab: next }, { replace: true })
   const inside = useInWorld().inside
+  const upgrades = useGame((s) => (s.save ? affordableUpgrades(s.save, s.data) : 0))
   if (!save) return null
   const badges = badgeCase(save, data).filter((b) => b.earned).length
+  // One place to spend gold (docs/43 §3): Buy, Upgrades, the Bag. The gold is the top bar's; no second wallet here.
   // Inside a small world the Mart is the world's (docs/21): its list to buy from, and the world's bag sold back for
   // the world's ₽ (its prices are never below the buy-back, so that can't pay).
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
-      <PageHead icon="navShop" title={t(inside ? 'ui.world.mart.title' : 'ui.shop.title')}>
-        <Wallet />
-      </PageHead>
+    <div className="flex w-full flex-col gap-3">
+      <PageHead icon="navShop" title={t(inside ? 'ui.world.mart.title' : 'ui.shop.title')} />
       <Seg
         tabs
         idPrefix="mart"
         label={t('ui.shop.tabs')}
         value={tab}
         onChange={setTab}
-        className="w-full"
+        className="w-full lg:max-w-xl"
         options={[
           { id: 'buy', label: t('ui.shop.buy') },
-          { id: 'sell', label: t('ui.shop.sell') },
+          { id: 'upgrades', label: t('ui.upgrades.title'), count: upgrades || undefined },
+          { id: 'sell', label: t('ui.shop.bagTab') },
         ]}
       />
       <div role="tabpanel" aria-labelledby={`mart-${tab}`} className="flex flex-col gap-3">
-        {tab === 'sell' ? <SellTab /> : inside ? <WorldShop /> : <BuyTab badges={badges} />}
+        {tab === 'sell' ? (
+          <SellTab />
+        ) : tab === 'upgrades' ? (
+          <UpgradesPanel />
+        ) : inside ? (
+          <WorldShop />
+        ) : (
+          <BuyTab badges={badges} />
+        )}
       </div>
     </div>
   )
 }
+
+type MartTab = 'buy' | 'upgrades' | 'sell'

@@ -71,10 +71,10 @@ export function AreaIdle({ area, scene = false }: { area: Area; scene?: boolean 
       >
         <div className="flex flex-col gap-1.5 md:mx-auto md:max-w-md">
           {/* Why the next encounter can't start (no energy, the area closed, everyone resting): said next to it. */}
-          {off && <p className="m-0 truncate text-center font-pixel-sm text-[15px] leading-none text-muted">{sub}</p>}
-          {locked && <p className="m-0 text-center font-pixel-sm text-[15px] leading-tight text-muted">{t('ui.portal.locked')}</p>}
+          {off && <p className="m-0 truncate text-center font-pixel-sm text-[16px] leading-none text-muted">{sub}</p>}
+          {locked && <p className="m-0 text-center font-pixel-sm text-[16px] leading-tight text-muted">{t('ui.portal.locked')}</p>}
           {held && (
-            <p className="m-0 text-center font-pixel-sm text-[15px] leading-tight text-muted">
+            <p className="m-0 text-center font-pixel-sm text-[16px] leading-tight text-muted">
               {t('ui.nightmare.locked', { area: held.name })}
             </p>
           )}

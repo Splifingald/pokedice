@@ -157,7 +157,7 @@ export function WheelPage() {
         {empty && !spinning ? (
           <p className="m-0 grid content-center gap-[3px] bg-well p-2 text-center shadow-ring-line">
             <b className="text-[20px] font-normal leading-none">{t('ui.events.wheel.noTickets')}</b>
-            <small className="font-pixel-sm text-[15px] leading-none text-muted">{nextLine}</small>
+            <small className="font-pixel-sm text-[16px] leading-none text-muted">{nextLine}</small>
           </p>
         ) : (
           <PixelButton
@@ -174,7 +174,7 @@ export function WheelPage() {
         <PixelIcon name="ticket" size={20} />
         {t('ui.events.wheel.buy', { price: money(price) })}
       </PixelButton>
-      <p className="m-0 text-center font-pixel-sm text-[15px] text-muted">
+      <p className="m-0 text-center font-pixel-sm text-[16px] text-muted">
         {t('ui.events.wheel.tip', { hours: Math.round((everyMs / 3_600_000) * 10) / 10, cap: tickets.known ? tickets.cap : '' })}
       </p>
       <OddsSheet open={odds} onClose={() => setOdds(false)} prizes={prizes} jackpot={jackpotIndex(wheel, stage)} data={data} slices={order.length} />
@@ -210,7 +210,7 @@ function OddsSheet({
         <p className="copy m-0 text-[17px] text-muted">{t('ui.events.wheel.oddsNote', { n: slices })}</p>
         <table className="w-full border-collapse text-[18px]">
           <thead>
-            <tr className="font-pixel-sm text-[15px] text-muted">
+            <tr className="font-pixel-sm text-[16px] text-muted">
               <th scope="col" className="px-1.5 py-1 text-left font-normal">{t('ui.events.wheel.oddsPrize')}</th>
               <th scope="col" className="px-1.5 py-1 text-left font-normal">{t('ui.events.wheel.oddsSlices')}</th>
               <th scope="col" className="px-1.5 py-1 text-left font-normal">{t('ui.events.wheel.oddsChance')}</th>
@@ -232,7 +232,7 @@ function OddsSheet({
                 <td className="px-1.5 py-1 tabular-nums">
                   {pct(chances[i]!)}
                   {p.count > 1 && (
-                    <small className="block font-pixel-sm text-[13px] text-muted">
+                    <small className="block font-pixel-sm text-[16px] text-muted">
                       {t('ui.events.wheel.oddsEach', { chance: pct(chances[i]! / p.count) })}
                     </small>
                   )}

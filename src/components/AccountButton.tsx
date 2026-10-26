@@ -67,7 +67,7 @@ export function ConnectModal({ open, onClose }: { open: boolean; onClose: () => 
             </PixelButton>
           ))}
         </div>
-        <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">{t('ui.account.chooseNote')}</p>
+        <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{t('ui.account.chooseNote')}</p>
       </div>
     </Modal>
   )
@@ -216,7 +216,7 @@ export function ConnectedAccounts({ shut }: { shut?: string | null }) {
               <span className="grid min-w-0 flex-1 gap-0.5">
                 <b className="truncate text-[20px] font-normal leading-none">{providerName(p)}</b>
                 {on && p === auth.provider && auth.email && (
-                  <small className="truncate font-pixel-sm text-[14px] leading-none text-muted">{auth.email}</small>
+                  <small className="truncate font-pixel-sm text-[16px] leading-none text-muted">{auth.email}</small>
                 )}
               </span>
               <Chip tone={on ? 'done' : 'lock'}>{t(on ? 'ui.account.linked' : 'ui.account.notLinked')}</Chip>
@@ -247,7 +247,7 @@ export function ConnectedAccounts({ shut }: { shut?: string | null }) {
           )
         })}
       </ul>
-      <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">{t('ui.account.linkHint')}</p>
+      <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{t('ui.account.linkHint')}</p>
     </section>
   )
 }

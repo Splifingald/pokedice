@@ -201,7 +201,7 @@ function SheetStack({
         useItem && <div className="flex">{useItem}</div>
       ) : (
         <div className="flex flex-col gap-2">
-          <p className="flex items-center gap-1.5 font-pixel-sm text-[15px] leading-tight text-muted">
+          <p className="flex items-center gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted">
             <PixelIcon name="lock" size={16} className="shrink-0" />
             {t('ui.team.boxAtCenter', { name: monName(inst, data) })}
           </p>

@@ -19,7 +19,7 @@ import type { DayTime } from '@/engine'
 function Frame({ name, children }: { name: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="font-pixel-sm text-[13px] text-muted">{name}</span>
+      <span className="font-pixel-sm text-[16px] text-muted">{name}</span>
       {children}
     </div>
   )
@@ -60,7 +60,7 @@ function Tile({ dex, time, now }: { dex: number; time: DayTime; now: DayTime }) 
           <DayNightTag time={time} now={now} size={12} />
         </span>
         <MiniSprite dex={dex} size={40} />
-        <span className="whitespace-nowrap bg-sky px-1 pb-0.5 font-pixel-sm text-[13px] leading-none text-ink">
+        <span className="whitespace-nowrap bg-sky px-1 pb-0.5 font-pixel-sm text-[16px] leading-none text-ink">
           Common · 25%
         </span>
       </div>

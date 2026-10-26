@@ -1,7 +1,6 @@
 // Versus: leave a team of three Lv.50 clones for other players to fight, fight theirs, and climb two boards — teams
 // beaten in attack, fights won in defense. Every fight is decided and recorded before it plays (engine/versus).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
   cloneForVersus,
   versusClosest,
@@ -74,7 +73,6 @@ const errorText = (t: (k: string) => string, err: unknown) => offlineOr(t(`ui.ve
 
 function VersusScreenMain() {
   const { t } = useT()
-  const navigate = useNavigate()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)!
   const auth = useGame((s) => s.auth)
@@ -155,10 +153,10 @@ function VersusScreenMain() {
   const toBeat = opponentsOf(rows).filter((r) => !r.beaten).length
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-3">
-      <PageHead title={t('ui.versus.title')} onBack={() => navigate('/home')}>
+      <PageHead title={t('ui.versus.title')} social="versus">
         <Chip tone="dark">{t('ui.versus.auto')}</Chip>
       </PageHead>
-      <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">{t('ui.versus.intro')}</p>
+      <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{t('ui.versus.intro')}</p>
 
       {!signedIn && (
         <div className="flex flex-wrap items-center justify-between gap-2 bg-gold-pale p-3 shadow-card-gold">
@@ -230,21 +228,20 @@ function Meter({ value, className }: { value: number; className?: string }) {
 function Locked() {
   const { t } = useT()
   const [rules, setRules] = useState(false)
-  const navigate = useNavigate()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)!
   const count = Math.min(versusReadyCount(save, data), VERSUS_TEAM_SIZE)
   const closest = versusClosest(save, data)
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-3">
-      <PageHead title={t('ui.versus.title')} onBack={() => navigate('/home')}>
+      <PageHead title={t('ui.versus.title')} social="versus">
         <Chip tone="dark">{t('ui.versus.auto')}</Chip>
       </PageHead>
       <div className="grid justify-items-center gap-2 bg-paper px-3.5 py-4 text-center shadow-card">
         <PixelIcon name="lock" size={36} />
         <b className="text-[21px] font-normal leading-[1.1]">{t('ui.versus.locked')}</b>
         <Meter value={count / VERSUS_TEAM_SIZE} className="h-2.5 w-[70%]" />
-        <small className="font-pixel-sm text-[15px] text-muted">
+        <small className="font-pixel-sm text-[16px] text-muted">
           {t('ui.versus.lockedCount', { n: count })}
         </small>
       </div>
@@ -263,7 +260,7 @@ function Locked() {
                   <MiniSprite dex={inst.dex} size={40} />
                   <b className="text-[18px] font-normal">{name}</b>
                   <Meter value={inst.level / VERSUS_LEVEL} />
-                  <small className="font-pixel-sm text-[15px] text-muted">
+                  <small className="font-pixel-sm text-[16px] text-muted">
                     {ready
                       ? t('ui.home.ready')
                       : t('ui.versus.toGo', {
@@ -277,7 +274,7 @@ function Locked() {
           </ul>
         </>
       )}
-      <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">{t('ui.versus.intro')}</p>
+      <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{t('ui.versus.intro')}</p>
       <InfoButton name={t('ui.versus.title')} onClick={() => setRules(true)} />
       <VersusRulesModal open={rules} onClose={() => setRules(false)} />
     </div>
@@ -331,7 +328,7 @@ function Opponents({
     <>
       {me && (
         <div className="flex items-center gap-2 bg-paper py-1 pl-2.5 pr-1.5 shadow-ring-line">
-          <span className="font-pixel-sm text-[15px] text-muted">{t('ui.versus.yourTeam')}</span>
+          <span className="font-pixel-sm text-[16px] text-muted">{t('ui.versus.yourTeam')}</span>
           <TeamIcons team={me.team} owner={me.name} />
           <PixelButton size="sm" variant="ghost" className="ml-auto" onClick={onSetTeam}>
             {t('ui.versus.change')}
@@ -385,7 +382,7 @@ function Opponents({
                     me && (
                       <small
                         className={cx(
-                          'font-pixel-sm text-[13px] leading-[1.1]',
+                          'font-pixel-sm text-[16px] leading-[1.1]',
                           edge >= 2 ? 'text-good' : edge === 0 ? 'text-danger' : 'text-muted',
                         )}
                       >
@@ -494,7 +491,7 @@ function TeamEditor({
 
   return (
     <>
-      <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">
+      <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">
         {t('ui.versus.pickHint')} {t('ui.versus.rules')}
       </p>
       {!me && <p className="m-0 text-[18px] text-muted">{t('ui.versus.noTeam')}</p>}
@@ -502,7 +499,7 @@ function TeamEditor({
         {Array.from({ length: VERSUS_TEAM_SIZE }, (_, i) => {
           const c = candidates.find((x) => x.inst.id === valid[i])
           const n = (
-            <span className="light-scope absolute left-1.5 top-[5px] bg-night px-[5px] pb-0.5 pt-px font-pixel-sm text-[14px] leading-none text-gold-light">
+            <span className="light-scope absolute left-1.5 top-[5px] bg-night px-[5px] pb-0.5 pt-px font-pixel-sm text-[16px] leading-none text-gold-light">
               {i + 1}
             </span>
           )
@@ -510,7 +507,7 @@ function TeamEditor({
             return (
               <li
                 key={i}
-                className="relative grid min-h-[118px] place-content-center bg-well px-1 text-center font-pixel-sm text-[14px] text-ink shadow-ring-line"
+                className="relative grid min-h-[118px] place-content-center bg-well px-1 text-center font-pixel-sm text-[16px] text-ink shadow-ring-line"
               >
                 {n}
                 {t('ui.versus.slotEmpty')}
@@ -526,7 +523,7 @@ function TeamEditor({
               {n}
               <SpriteImg dex={c.inst.dex} size={64} shiny={c.inst.shiny} />
               <b className="max-w-full truncate text-[17px] font-normal leading-none">{name}</b>
-              <small className="font-pixel-sm text-[13px] text-muted">
+              <small className="font-pixel-sm text-[16px] text-muted">
                 {c.inst.level > clone.level
                   ? `${t('ui.common.level.short', { n: c.inst.level })} → ${clone.level}`
                   : t('ui.common.level.short', { n: clone.level })}
@@ -641,7 +638,7 @@ function Board({ rows }: { rows: VersusEntry[] }) {
           { id: 'defense', label: t('ui.versus.tabDefense') },
         ]}
       />
-      <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">
+      <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">
         {t(tab === 'attack' ? 'ui.versus.boardAttack' : 'ui.versus.boardDefense')}
       </p>
       {friends.size > 0 && (

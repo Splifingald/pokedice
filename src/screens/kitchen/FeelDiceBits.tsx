@@ -39,7 +39,7 @@ function usePreview(faces: number[]): { dice: RolledDie[]; preview: Preview } {
 function Row({ name, children }: { name: string; children: ReactNode }) {
   return (
     <div className="flex w-full flex-col gap-1">
-      <span className="font-pixel-sm text-[13px] text-muted">{name}</span>
+      <span className="font-pixel-sm text-[16px] text-muted">{name}</span>
       <div className="flex flex-wrap items-end gap-4 pt-4">{children}</div>
     </div>
   )

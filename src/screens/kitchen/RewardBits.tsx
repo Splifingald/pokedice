@@ -39,7 +39,7 @@ function useReplay(n: number, ms: number): [number, () => void] {
 }
 
 const Label = ({ children }: { children: string }) => (
-  <small className="font-pixel-sm text-[14px] text-muted">{children}</small>
+  <small className="font-pixel-sm text-[16px] text-muted">{children}</small>
 )
 
 export function RewardBits() {

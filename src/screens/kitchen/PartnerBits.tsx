@@ -17,7 +17,7 @@ export function PartnerBits() {
           {r.name} lab
         </PixelButton>
       ))}
-      {picked && <span className="font-pixel-sm text-[15px] text-muted">Picked: {picked}</span>}
+      {picked && <span className="font-pixel-sm text-[16px] text-muted">Picked: {picked}</span>}
       {region && (
         <PartnerMoment
           starters={region.starters.filter((d) => data.species[d])}

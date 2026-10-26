@@ -77,7 +77,7 @@ export function RebattlePage() {
             {regionName(live)}
             {complete && <Medal tier={tiers.length - 1} size="sm" />}
           </span>
-          <p className="m-0 min-w-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">{t('ui.events.rebattle.thisRegion')}</p>
+          <p className="m-0 min-w-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{t('ui.events.rebattle.thisRegion')}</p>
         </div>
       )}
       {!here ? (
@@ -99,12 +99,12 @@ export function RebattlePage() {
                 >
                   <Medal tier={i} className={st === 'locked' ? 'grayscale opacity-50' : undefined} />
                   <b className="text-[17px] font-normal">{tierName(t, data, i)}</b>
-                  <small className="font-pixel-sm text-[14px] text-muted">
+                  <small className="font-pixel-sm text-[16px] text-muted">
                     {lv && (lv.min === lv.max ? t('ui.common.level.short', { n: lv.min }) : t('ui.map.levelRange', { min: lv.min, max: lv.max }))}
                     {' · '}₽×{x.gold}
                   </small>
-                  {st === 'done' && <em className="bg-hp-green px-1.5 pb-0.5 font-pixel-sm text-[13px] not-italic text-ink">{t('ui.events.rebattle.cleared')}</em>}
-                  {st === 'locked' && <em className="bg-well-deep px-1.5 pb-0.5 font-pixel-sm text-[13px] not-italic text-ink">{t('ui.events.rebattle.locked')}</em>}
+                  {st === 'done' && <em className="bg-hp-green px-1.5 pb-0.5 font-pixel-sm text-[16px] not-italic text-ink">{t('ui.events.rebattle.cleared')}</em>}
+                  {st === 'locked' && <em className="bg-well-deep px-1.5 pb-0.5 font-pixel-sm text-[16px] not-italic text-ink">{t('ui.events.rebattle.locked')}</em>}
                 </li>
               )
             })}
@@ -142,7 +142,7 @@ export function RebattlePage() {
                         <b className="truncate text-[18px] font-normal leading-none">
                           {m.name}
                           {m.role === 'champion' && (
-                            <em className="ml-1 bg-gold px-1 pb-px align-[2px] font-pixel-sm text-[12px] not-italic text-ink">{t('ui.events.rebattle.championTag')}</em>
+                            <em className="ml-1 bg-gold px-1 pb-px align-[2px] font-pixel-sm text-tag not-italic text-ink">{t('ui.events.rebattle.championTag')}</em>
                           )}
                         </b>
                         <span className="flex gap-0.5" role="img" aria-label={m.team.map((x) => data.species[x.dex]?.name ?? '').join(', ')}>
@@ -150,7 +150,7 @@ export function RebattlePage() {
                             <MiniSprite key={k} dex={x.dex} size={20} />
                           ))}
                         </span>
-                        <small className="font-pixel-sm text-[14px] leading-none text-muted">
+                        <small className="font-pixel-sm text-[16px] leading-none text-muted">
                           {t('ui.map.levelRange', { min: Math.min(...levels), max: Math.max(...levels) })}
                           {' · '}
                           {owed > 0 ? money(owed) : t('ui.events.rebattle.paid')}
@@ -199,7 +199,7 @@ export function RebattleHeader() {
         <Medal tier={run.rebattle.tier} size="sm" />
         <span className="grid min-w-0 gap-0.5">
           <span className="text-[22px] leading-none">{t('ui.events.rebattle.name')}</span>
-          <small className="truncate font-pixel-sm text-[14px] leading-none text-muted">{status}</small>
+          <small className="truncate font-pixel-sm text-[16px] leading-none text-muted">{status}</small>
         </span>
       </div>
     </EventPicture>

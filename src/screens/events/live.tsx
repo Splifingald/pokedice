@@ -291,7 +291,7 @@ function LiveRules({ e }: { e: LiveEvent }) {
           </span>
           <span className="grid gap-0.5 leading-tight">
             <b className="text-[19px] font-normal leading-none">{r.title}</b>
-            <small className="font-pixel-sm text-[15px] text-muted">{r.text}</small>
+            <small className="font-pixel-sm text-[16px] text-muted">{r.text}</small>
           </span>
         </li>
       ))}

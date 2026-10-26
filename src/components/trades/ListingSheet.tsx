@@ -214,7 +214,7 @@ function ListingFlow({
                         {c.at.inTeam && <Chip tone="dark">{t('ui.trades.teamTag')}</Chip>}
                         {several && <Chip tone="lock">{regionName(data, c.at.region)}</Chip>}
                       </span>
-                      <small className="font-pixel-sm text-[14px] leading-tight text-muted">{line}</small>
+                      <small className="font-pixel-sm text-[16px] leading-tight text-muted">{line}</small>
                     </span>
                     {r && (
                       <span className="flex shrink-0 flex-col items-end gap-1">
@@ -332,7 +332,7 @@ function ListingFlow({
             </div>
           )}
           {facts.length > 0 && (
-            <ul className="m-0 grid list-disc gap-1 pl-5 font-pixel-sm text-[15px] leading-tight text-muted">
+            <ul className="m-0 grid list-disc gap-1 pl-5 font-pixel-sm text-[16px] leading-tight text-muted">
               {facts.map((f) => (
                 <li key={f}>{f}</li>
               ))}
@@ -469,19 +469,19 @@ function ListingFlow({
           </div>
 
           <div className="grid gap-1 bg-paper px-2.5 py-2 shadow-ring-line">
-            <span className="font-pixel-sm text-[14px] uppercase tracking-[0.06em] text-muted">
+            <span className="font-pixel-sm text-[16px] uppercase tracking-[0.06em] text-muted">
               {l.isMe ? t('ui.trades.youWant') : t('ui.trades.theyWant')}
             </span>
             <WantTile want={l.want} big />
             {!l.isMe && l.want.kind === 'species' && signedIn && (
-              <small className="font-pixel-sm text-[14px] text-muted">
+              <small className="font-pixel-sm text-[16px] text-muted">
                 {haveCount
                   ? tPlural('ui.trades.youHave', haveCount, { name: name(l.want.dex) })
                   : t('ui.trades.why.noSpecies', { name: name(l.want.dex) })}
               </small>
             )}
             {!l.isMe && l.want.kind === 'notOwned' && (
-              <small className="font-pixel-sm text-[14px] text-muted">
+              <small className="font-pixel-sm text-[16px] text-muted">
                 {t('ui.trades.notOwnedNote', { name: who })}
               </small>
             )}
@@ -494,7 +494,7 @@ function ListingFlow({
               <b className="text-[18px] font-normal leading-tight">
                 {l.isMe ? t('ui.trades.fact.ownLevel') : t('ui.trades.fact.level')}
               </b>
-              <small className="font-pixel-sm text-[14px] leading-tight text-muted">
+              <small className="font-pixel-sm text-[16px] leading-tight text-muted">
                 {l.isMe
                   ? t('ui.trades.fact.ownLevelNote', { level: lv(Math.min(l.level, cfg.levelCap)) })
                   : t('ui.trades.fact.levelNote', {
@@ -507,7 +507,7 @@ function ListingFlow({
             {evo != null && !l.isMe && (
               <li className="grid gap-0.5">
                 <b className="text-[18px] font-normal leading-tight">{t('ui.trades.fact.evolves')}</b>
-                <small className="font-pixel-sm text-[14px] leading-tight text-muted">
+                <small className="font-pixel-sm text-[16px] leading-tight text-muted">
                   {t('ui.trades.fact.evolvesNote', { name: mon, to: name(evo) })}
                 </small>
               </li>
@@ -519,7 +519,7 @@ function ListingFlow({
                     regions: lands.map((id) => regionName(data, id)).join(t('ui.common.listSep')),
                   })}
                 </b>
-                <small className="font-pixel-sm text-[14px] leading-tight text-muted">
+                <small className="font-pixel-sm text-[16px] leading-tight text-muted">
                   {t('ui.trades.fact.landsPickNote')}
                 </small>
               </li>
@@ -530,7 +530,7 @@ function ListingFlow({
                   <b className="text-[18px] font-normal leading-tight">
                     {t('ui.trades.fact.lands', { region: regionName(data, home) })}
                   </b>
-                  <small className="font-pixel-sm text-[14px] leading-tight text-muted">
+                  <small className="font-pixel-sm text-[16px] leading-tight text-muted">
                     {t(l.shiny ? 'ui.trades.fact.landsShiny' : 'ui.trades.fact.landsNote')}
                   </small>
                 </li>
@@ -539,7 +539,7 @@ function ListingFlow({
             {!l.isMe && (
               <li className="grid gap-0.5">
                 <b className="text-[18px] font-normal leading-tight">{t('ui.trades.fact.lock')}</b>
-                <small className="font-pixel-sm text-[14px] leading-tight text-muted">
+                <small className="font-pixel-sm text-[16px] leading-tight text-muted">
                   {t('ui.trades.fact.lockNote')}
                 </small>
               </li>

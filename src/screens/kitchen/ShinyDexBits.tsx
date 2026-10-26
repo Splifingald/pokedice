@@ -12,7 +12,7 @@ import { useT } from '@/i18n/react'
 function Frame({ name, children }: { name: string; children: ReactNode }) {
   return (
     <div className="flex w-[340px] max-w-full flex-col gap-1">
-      <span className="font-pixel-sm text-[13px] text-muted">{name}</span>
+      <span className="font-pixel-sm text-[16px] text-muted">{name}</span>
       {children}
     </div>
   )

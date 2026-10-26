@@ -1191,7 +1191,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                   {teamRow}
                   {/* The keys, for a keyboard: More details' (docs/42). */}
                   {wide && details && canAct && !auto && (
-                    <p className="m-0 text-center font-pixel-sm text-[15px] text-muted">
+                    <p className="m-0 text-center font-pixel-sm text-[16px] text-muted">
                       {t('ui.battle.keys', { action: t(rolling ? 'ui.battle.keyAttack' : 'ui.battle.keyRoll') })}
                     </p>
                   )}
@@ -1294,11 +1294,11 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                   <PixelIcon name="lock" size={12} />
                   <TypeBadge type={f.type1} size="sm" />
                 </span>
-                <small className="font-pixel-sm text-[12px] leading-tight">{t(`plate.${f.type1}`)}</small>
+                <small className="font-pixel-sm text-tag leading-tight">{t(`plate.${f.type1}`)}</small>
               </span>
             ))}
           </div>
-          {lockedOpts.length > 0 && <p className="copy font-pixel-sm text-[15px] text-muted">{t('ui.ug.typeLockedNote')}</p>}
+          {lockedOpts.length > 0 && <p className="copy font-pixel-sm text-[16px] text-muted">{t('ui.ug.typeLockedNote')}</p>}
         </div>
       </Modal>
 
@@ -1340,7 +1340,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                   <ItemSprite item={it} size={32} />
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="text-[20px] leading-none">{it.name}</span>
-                    <span className="font-pixel-sm text-[15px] leading-tight text-muted">
+                    <span className="font-pixel-sm text-[16px] leading-tight text-muted">
                       {st.noHealItems && (it.effect.kind === 'heal' || it.effect.kind === 'revive')
                         ? t('ui.extreme.noItems')
                         : effectText(it)}

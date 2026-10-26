@@ -194,7 +194,7 @@ export function BattleBits() {
       {/* Idle (docs/36): the ball it picked, shown chosen a moment before it flies. */}
       <div className="flex w-full max-w-[400px] flex-col gap-2">
         <CatchPanel c={CATCH_WILD} picked="poke-ball" onThrow={() => {}} revealed={false} />
-        <small className="font-pixel-sm text-[14px] text-muted">Idle&apos;s pick: Poké Ball</small>
+        <small className="font-pixel-sm text-[16px] text-muted">Idle&apos;s pick: Poké Ball</small>
       </div>
       {/* The Bait and Capture Luck (docs/25): asked after a short throw, the bait die added, kept on the spot. */}
       {CATCH_AFTER.map(([label, result]) => (
@@ -209,7 +209,7 @@ export function BattleBits() {
             onBait={() => {}}
             onRetry={() => {}}
           />
-          <small className="font-pixel-sm text-[14px] text-muted">{label}</small>
+          <small className="font-pixel-sm text-[16px] text-muted">{label}</small>
         </div>
       ))}
     </>

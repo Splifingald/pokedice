@@ -24,6 +24,7 @@ import { TeamScreen } from '@/screens/Team'
 import { Title } from '@/screens/Title'
 import { UpgradesScreen } from '@/screens/Upgrades'
 import { VersusScreen } from '@/screens/Versus'
+import { SocialScreen } from '@/components/SocialTabs'
 import { EventsScreen } from '@/screens/events/EventsScreen'
 import { UndergroundScreen } from '@/screens/events/Underground'
 import { UndergroundDig } from '@/screens/events/UndergroundDig'
@@ -93,6 +94,7 @@ export function App() {
               <Route path="/shop" element={<ShopScreen />} />
               <Route path="/upgrades" element={<UpgradesScreen />} />
               <Route path="/pokedex" element={<PokedexScreen />} />
+              <Route path="/social" element={<SocialScreen />} />
               <Route path="/leaderboard" element={<LeaderboardScreen />} />
               <Route path="/friends" element={<FriendsScreen />} />
               <Route path="/versus" element={<VersusScreen />} />

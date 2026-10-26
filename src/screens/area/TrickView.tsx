@@ -94,7 +94,7 @@ export function TrickPlate({
       <span className="flex min-w-0 items-center gap-1.5">
         <b className="min-w-0 truncate text-[20px] font-normal leading-none">{name}</b>
         {shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
-        <span className="shrink-0 font-pixel-sm text-[15px] leading-none">{lv}</span>
+        <span className="shrink-0 font-pixel-sm text-[16px] leading-none">{lv}</span>
       </span>
       <span className="flex flex-wrap items-center gap-1">
         {sp && <TypeBadge type={sp.type1} size="sm" />}
@@ -226,7 +226,7 @@ export function TrickScreen(p: TrickScreenProps) {
               </PixelButton>
               <span
                 id={`${id}-treat`}
-                className="text-center font-pixel-sm text-[15px] leading-tight text-muted"
+                className="text-center font-pixel-sm text-[16px] leading-tight text-muted"
               >
                 {t('ui.trick.treatNote', { min, max })}
               </span>
@@ -245,7 +245,7 @@ export function TrickScreen(p: TrickScreenProps) {
               </PixelButton>
               <span
                 id={`${id}-ball`}
-                className="flex items-center justify-center gap-1.5 font-pixel-sm text-[15px] leading-tight text-muted"
+                className="flex items-center justify-center gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted"
               >
                 {here && (
                   <>

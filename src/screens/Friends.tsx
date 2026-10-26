@@ -1,7 +1,6 @@
 // The Friends page (docs/16), from the trainer menu: your friend ID with COPY and SHARE INVITE LINK, ADD BY FRIEND ID,
 // and your friends — new ones first, then the last played — each opening their trainer card.
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { AccountButton } from '@/components/AccountButton'
 import { NewTag } from '@/components/Chip'
 import { AddFriendModal, useAddText } from '@/components/friends/AddFriendModal'
@@ -43,7 +42,6 @@ const AWAY_MS = 72 * 3_600_000
 
 export function FriendsScreen() {
   const { t } = useT()
-  const navigate = useNavigate()
   const auth = useGame((s) => s.auth)
   const max = useGame((s) => s.data.config.maxFriends)
   const count = useFriends((s) => (s.list ? s.list.length : null))
@@ -55,7 +53,7 @@ export function FriendsScreen() {
         icon="navFriends"
         title={t('ui.friends.title')}
         count={signedIn && count != null ? `${count}/${max}` : undefined}
-        onBack={() => navigate('/home')}
+        social="friends"
       />
       {!isSupabaseConfigured || auth.status === 'unavailable' ? (
         <p className="m-0 bg-paper px-3.5 py-4 text-center text-[20px] leading-[1.15] shadow-card">{t('ui.friends.offline')}</p>
@@ -133,7 +131,7 @@ function FriendsBody() {
         aria-label={t('ui.friends.yourId')}
         className="grid gap-2.5 bg-[linear-gradient(rgb(var(--c-sky)),rgb(var(--c-paper))_70%)] px-3 pb-3 pt-2 shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_0_0_5px_#5b8def,inset_0_0_0_7px_rgb(var(--c-edge)),inset_0_-10px_0_rgb(var(--c-sky-line))]"
       >
-        <span className="px-1 pt-1 font-pixel-sm text-[14px] uppercase tracking-[0.06em] text-[#2f5fb8] dark:text-[#8fb4ff]">
+        <span className="px-1 pt-1 font-pixel-sm text-[16px] uppercase tracking-[0.06em] text-[#2f5fb8] dark:text-[#8fb4ff]">
           {t('ui.friends.yourId')}
         </span>
         <div className="flex items-center gap-2 px-1">
@@ -243,7 +241,7 @@ function FriendListRow({ friend: f, onOpen }: { friend: FriendRow; onOpen: () =>
               ))}
             </span>
           )}
-          <small className={cx('truncate font-pixel-sm text-[14px] leading-tight', away ? 'text-ink' : 'text-muted')}>{summary}</small>
+          <small className={cx('truncate font-pixel-sm text-[16px] leading-tight', away ? 'text-ink' : 'text-muted')}>{summary}</small>
         </span>
         {elsewhere ? (
           <PixelIcon name="skull" size={14} className="shrink-0 opacity-60" />

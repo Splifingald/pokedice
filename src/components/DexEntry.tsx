@@ -217,7 +217,7 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
       />
       <span className="grid min-w-0 gap-[3px]">
         <b className="truncate text-[18px] font-normal leading-none">{name}</b>
-        <small className="font-pixel-sm text-[14px] leading-tight text-muted">
+        <small className="font-pixel-sm text-[16px] leading-tight text-muted">
           {spot.loot
             ? spot.loot.unique
               ? lootOnceLine(spot.loot.entryIds, progressOf(save, area.id).uniqueFound ?? [])
@@ -307,7 +307,7 @@ function RaidSpot({ dex, onTravel }: { dex: number; onTravel?: () => void }) {
       )}
       <span className="grid min-w-0 gap-[3px]">
         <b className="truncate text-[18px] font-normal leading-none">{t('ui.events.raid.name')}</b>
-        <small className="font-pixel-sm text-[14px] leading-tight text-muted">
+        <small className="font-pixel-sm text-[16px] leading-tight text-muted">
           {live ? t('ui.raid.dexToday') : t('ui.raid.dexNext', { dates: when })}
           {locked && area && ` ${t('ui.raid.dexLocked', { area: area.name, region })}`}
         </small>
@@ -500,7 +500,7 @@ function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (
           <EvolutionStep key={species.dex} dex={species.dex} evo={evo} direction="from" from={species.dex} onOpenDex={onOpenDex} onTravel={onTravel} />
         ))}
         {spots.length === 0 && from.length === 0 && !raid && <p className="copy text-muted">{t('ui.dex.notSpotted')}</p>}
-        {travelHint && <p className="font-pixel-sm text-[15px] text-muted">{t('ui.home.finishFirst')}</p>}
+        {travelHint && <p className="font-pixel-sm text-[16px] text-muted">{t('ui.home.finishFirst')}</p>}
       </section>
       <EvolvesInto dex={dex} onOpenDex={onOpenDex} onTravel={onTravel} />
     </div>
@@ -523,7 +523,7 @@ function CaughtSpots({ dex, onTravel }: { dex: number; onTravel?: () => void }) 
           <RaidSpot dex={dex} onTravel={onTravel} />
         </ul>
       )}
-      {travelHint && <p className="font-pixel-sm text-[15px] text-muted">{t('ui.home.finishFirst')}</p>}
+      {travelHint && <p className="font-pixel-sm text-[16px] text-muted">{t('ui.home.finishFirst')}</p>}
     </section>
   )
 }

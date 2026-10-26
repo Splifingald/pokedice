@@ -134,7 +134,7 @@ export function TeamCards({
             >
               <span
                 className={cx(
-                  'absolute left-1.5 top-1.5 inline-flex items-center gap-0.5 px-[5px] pb-[2px] pt-px font-pixel-sm text-[14px] leading-none text-ink',
+                  'absolute left-1.5 top-1.5 inline-flex items-center gap-0.5 px-[5px] pb-[2px] pt-px font-pixel-sm text-[16px] leading-none text-ink',
                   lead ? 'bg-gold shadow-ring-thin' : 'bg-well-deep',
                 )}
                 aria-hidden
@@ -151,7 +151,7 @@ export function TeamCards({
               {fainted && p.koAt != null ? (
                 <KoTag inst={p} />
               ) : (
-                <span className="font-pixel-sm text-[15px] leading-none text-muted">
+                <span className="font-pixel-sm text-[16px] leading-none text-muted">
                   {fainted ? t('ui.mon.fainted') : t('ui.common.level.short', { n: p.level })}
                 </span>
               )}

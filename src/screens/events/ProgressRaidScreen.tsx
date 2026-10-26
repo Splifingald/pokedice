@@ -120,7 +120,7 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
       </button>
       <span className="grid min-w-0 gap-0.5">
         <h1 className="m-0 text-[24px] font-normal leading-none">{t(raid.mega ? 'ui.raid.mega.kicker' : 'ui.raid.progress.kicker')}</h1>
-        <small className="truncate font-pixel-sm text-[14px] leading-none text-muted">
+        <small className="truncate font-pixel-sm text-[16px] leading-none text-muted">
           {t('ui.raid.progress.where', { area: area.name, region })}
         </small>
       </span>
@@ -183,7 +183,7 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
                 { area: area.name, name: data.species[raid.mega?.base ?? 0]?.name ?? '' },
               )}
             </b>
-            <small className="font-pixel-sm text-[15px] text-ink">
+            <small className="font-pixel-sm text-[16px] text-ink">
               {t(
                 megaLock
                   ? `ui.raid.mega.lock.${megaLock}.text`
@@ -211,7 +211,7 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
           <PixelButton variant="primary" size="lg" className={cx('w-full', (portal || nightmare) && 'sheen')} onClick={start}>
             {t('ui.events.raid.start')}
           </PixelButton>
-          <p className="m-0 text-center font-pixel-sm text-[15px] text-muted">
+          <p className="m-0 text-center font-pixel-sm text-[16px] text-muted">
             {t('ui.raid.progress.tries')}
           </p>
         </>

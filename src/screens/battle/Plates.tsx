@@ -80,7 +80,7 @@ export function FoePlate({
       <span className="flex min-w-0 items-center gap-1.5">
         <b className="min-w-0 truncate text-[20px] font-normal leading-none">{b.name}</b>
         {b.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
-        <span className="shrink-0 font-pixel-sm text-[15px] leading-none">
+        <span className="shrink-0 font-pixel-sm text-[16px] leading-none">
           {t('ui.common.level.short', { n: b.level })}
         </span>
         <span className="ml-auto flex shrink-0 items-center gap-1">
@@ -145,7 +145,7 @@ export function OwnPlate({
     >
       <span className="flex min-w-0 items-center gap-1.5">
         <b className="min-w-0 truncate text-[18px] font-normal leading-none">{b.name}</b>
-        <span className="shrink-0 font-pixel-sm text-[15px] leading-none">
+        <span className="shrink-0 font-pixel-sm text-[16px] leading-none">
           {t('ui.common.level.short', { n: b.level })}
         </span>
         <span className="ml-auto flex shrink-0 items-center gap-1">

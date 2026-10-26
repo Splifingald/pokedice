@@ -107,7 +107,7 @@ export function TimeLeft({
   const hot = left < 6 * 3_600_000
   return (
     <span className={cx('flex items-center gap-2', className)}>
-      <span className="whitespace-nowrap font-pixel-sm text-[15px] text-muted">
+      <span className="whitespace-nowrap font-pixel-sm text-[16px] text-muted">
         {prefix ? t('ui.trades.endsIn', { time: timeLeft(left) }) : timeLeft(left)}
       </span>
       <span className="relative block h-1.5 min-w-[40px] flex-1 bg-line shadow-ring-line-thin" aria-hidden>
@@ -270,10 +270,10 @@ export function ListingRow({
               {l.shiny && <ShinyStar />}
               {fresh && <NewTag className="shrink-0" />}
             </b>
-            <small className="flex min-w-0 items-center gap-1 font-pixel-sm text-[14px] leading-tight text-muted">
+            <small className="flex min-w-0 items-center gap-1 font-pixel-sm text-[16px] leading-tight text-muted">
               <RegionTag dex={l.dex} />
               {l.isMe ? (
-                <span className="shrink-0 bg-gold px-[5px] pb-px text-[13px] leading-tight text-ink">
+                <span className="shrink-0 bg-gold px-[5px] pb-px text-[16px] leading-tight text-ink">
                   {t('ui.trades.yoursTag')}
                 </span>
               ) : (
@@ -284,13 +284,13 @@ export function ListingRow({
           </span>
         </span>
         <span className="flex max-w-[42vw] items-center gap-1.5 sm:max-w-[240px]" aria-hidden>
-          <span className="font-pixel-sm text-[13px] text-muted">{t('ui.trades.for')}</span>
+          <span className="font-pixel-sm text-[16px] text-muted">{t('ui.trades.for')}</span>
           <WantTile want={l.want} />
         </span>
         {/* Why (or "You can trade") on the left, the time left on the right: the trainer's name keeps its room. */}
         <span
           aria-hidden
-          className="col-span-2 flex items-baseline gap-2 font-pixel-sm text-[14px] leading-tight"
+          className="col-span-2 flex items-baseline gap-2 font-pixel-sm text-[16px] leading-tight"
         >
           {!guest && !l.isMe && (
             <span className={cx('min-w-0 flex-1', ok ? 'text-good' : 'text-ink')}>
@@ -374,7 +374,7 @@ export function LandingPick({
             </span>
             <span className="grid min-w-0 flex-1 gap-0.5">
               <b className="truncate text-[19px] font-normal leading-none">{regionName(data, o.region)}</b>
-              <small className="font-pixel-sm text-[14px] leading-tight text-muted">{line(o)}</small>
+              <small className="font-pixel-sm text-[16px] leading-tight text-muted">{line(o)}</small>
             </span>
             <span className="flex shrink-0 flex-col items-end gap-1">
               {o.outcome === 'locked' ? (

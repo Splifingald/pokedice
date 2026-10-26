@@ -48,7 +48,7 @@ function useVersusRecord(enabled: boolean): { won: number; held: number } | null
 export function Stat({ label, value }: { label: string; value: string }) {
   return (
     <>
-      <dt className="font-pixel-sm text-[15px] text-muted">{label}</dt>
+      <dt className="font-pixel-sm text-[16px] text-muted">{label}</dt>
       <dd className="m-0 truncate border-b border-dotted border-shadow text-right text-[17px] leading-[1.1]">
         {value}
       </dd>
@@ -60,7 +60,7 @@ export function Stat({ label, value }: { label: string; value: string }) {
 export function CardFrame({ label, note, children }: { label: string; note?: string; children: ReactNode }) {
   return (
     <div className="grid gap-2 bg-[linear-gradient(rgb(var(--c-sky)),rgb(var(--c-paper))_60%)] px-2.5 pb-3 pt-2 shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_0_0_5px_#5b8def,inset_0_0_0_7px_rgb(var(--c-edge)),inset_0_-10px_0_rgb(var(--c-sky-line))]">
-      <div className="flex justify-between gap-2 px-1.5 pt-1 font-pixel-sm text-[14px] uppercase tracking-[0.06em] text-[#2f5fb8] dark:text-[#8fb4ff]">
+      <div className="flex justify-between gap-2 px-1.5 pt-1 font-pixel-sm text-[16px] uppercase tracking-[0.06em] text-[#2f5fb8] dark:text-[#8fb4ff]">
         <span>{label}</span>
         {note && <span className="truncate">{note}</span>}
       </div>
@@ -78,7 +78,7 @@ export function CardTeam({ team, label }: { team: { dex: number; level: number }
       {team.map((p, i) => (
         <li key={i} className="grid justify-items-center">
           <MiniSprite dex={p.dex} size={40} alt={species[p.dex]?.name ?? ''} />
-          <small className="-mt-1 font-pixel-sm text-[13px] text-muted">{t('ui.common.level.short', { n: p.level })}</small>
+          <small className="-mt-1 font-pixel-sm text-[16px] text-muted">{t('ui.common.level.short', { n: p.level })}</small>
         </li>
       ))}
     </ul>
@@ -184,7 +184,7 @@ export function TrainerCard() {
             <span role="img" aria-label={lookName} className="shrink-0">
               <TrainerLook src={look.src} w={44} h={48} />
             </span>
-            <p className="m-0 min-w-0 flex-1 font-pixel-sm text-[15px] leading-[1.15] text-muted">
+            <p className="m-0 min-w-0 flex-1 font-pixel-sm text-[16px] leading-[1.15] text-muted">
               {t('ui.card.lookIs', { look: lookName })}
             </p>
             <PixelButton

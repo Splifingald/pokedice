@@ -1,29 +1,15 @@
 import { lazy, Suspense, useId, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  badgeCase,
-  discordUrl,
-  extremeOn,
-  extremeOpen,
-  inWorldRegion,
-  isExtreme,
-  leaderboardUnlocked,
-  tradeCfg,
-  tradeClosed,
-  tradesOf,
-  tradesToWatch,
-  tradesOn,
-} from '@/engine'
+import { badgeCase, discordUrl, donationEnabled, extremeOn, extremeOpen, isExtreme } from '@/engine'
 import { otherSave } from '@/store/extreme'
 import { useNewLooks } from '@/store/looks'
 import { useT } from '@/i18n/react'
-import { useFriends } from '@/lib/friends'
-import { useInviteGauge } from './friends/InviteRewards'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { pushToast, useGame } from '@/store/game'
 import { useIsAdmin, useLockReason } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { CloudSyncButton } from './CloudSyncButton'
+import { SupportModal } from './SupportModal'
 import { ExtremeMark, SwitchSaveModal } from './Extreme'
 import { ContactModal, InboxModal, useInboxUnseen } from './ContactModal'
 import { ConnectMarks, useConnect } from './AccountButton'
@@ -83,17 +69,17 @@ function MenuRowView({ icon, mark, label, desc, hint, dot, href, onClick, shut }
       <span className="grid min-w-0 flex-1 gap-0.5">
         <b className="truncate text-[20px] font-normal leading-none">{label}</b>
         {desc && (
-          <small id={descId} className="font-pixel-sm text-[14px] leading-[1.1] text-muted">
+          <small id={descId} className="font-pixel-sm text-[16px] leading-[1.1] text-muted">
             {desc}
           </small>
         )}
       </span>
       {!!dot && (
-        <em aria-hidden className="grid h-6 min-w-6 shrink-0 place-items-center bg-gold px-1 font-pixel-sm text-[15px] not-italic text-ink shadow-ring">
+        <em aria-hidden className="grid h-6 min-w-6 shrink-0 place-items-center bg-gold px-1 font-pixel-sm text-[16px] not-italic text-ink shadow-ring">
           {dot > 9 ? '9+' : dot}
         </em>
       )}
-      {hint && <em className="light-scope shrink-0 bg-night px-2 pb-[3px] pt-0.5 text-[15px] not-italic text-gold-light">{hint}</em>}
+      {hint && <em className="light-scope shrink-0 bg-night px-2 pb-[3px] pt-0.5 text-[16px] not-italic text-gold-light">{hint}</em>}
     </>
   )
   const a11y = {
@@ -138,26 +124,17 @@ export function PlayerMenu() {
   const [settingsOver, setSettingsOver] = useState(false)
   const [switching, setSwitching] = useState(false)
   const { connect, chooser } = useConnect()
-  const newFriends = useFriends((s) => (s.userId && s.userId === auth.userId ? s.unseen.length : 0))
-  // Invite rewards ready to open (docs/15 §25) wait on the Friends page: its dot counts them too.
-  const rewardsReady = useInviteGauge()?.ready.length ?? 0
-  const friendCount = useFriends((s) => s.ids.size)
-  // Trades (docs/23): a trade of yours went through while you were away and you haven't looked yet, or a traded
-  // Pokémon waits for you to pick its Box.
-  const tradesUnseen = save && !isExtreme(save) ? tradesToWatch(save).length : 0
-  const tradesOut = save ? tradesOf(save).out.length : 0
-  // The row is there once the admin's switch is on for this player (and while something is listed, so it can come back).
-  // Not inside a small world: no trade reaches one (docs/21).
-  const tradesRow =
-    isSupabaseConfigured && !!save && !isExtreme(save) && !inWorldRegion(save, data) && (tradesOn(data) || tradesOut > 0)
-  const news = newFriends + rewardsReady + tradesUnseen
+  // What's new with friends and trades shows on the Social tab now (docs/43 §3); the avatar's dot is about you: the
+  // developer's messages and gifts.
+  const news = inboxNew
+  const canDonate = useGame((s) => donationEnabled(s.data))
+  const [donating, setDonating] = useState(false)
   // Trainer looks unlocked since the menu was last opened (docs/31): their own red dot, under the gold one.
   const looksNew = useNewLooks()
 
   const name = playerOf(save).name
   const badges = save ? badgeCase(save, data) : []
   const earned = badges.filter((b) => b.earned).length
-  const boardOpen = !!save && leaderboardUnlocked(save, data)
   // The Connect row only makes sense when cloud backup exists on this deployment and nobody is signed in.
   const canConnect = isSupabaseConfigured && auth.status === 'signed_out'
   // Extreme mode (docs/22): from the main save once it's open (or an Extreme save exists); back from Extreme always.
@@ -188,7 +165,7 @@ export function PlayerMenu() {
           {news > 0 && (
             <span
               aria-hidden
-              className="absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center bg-gold px-0.5 font-pixel-sm text-[13px] leading-none text-ink shadow-ring"
+              className="absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center bg-gold px-0.5 font-pixel-sm text-[16px] leading-none text-ink shadow-ring"
             >
               {news > 9 ? '9+' : news}
             </span>
@@ -197,7 +174,7 @@ export function PlayerMenu() {
         </span>
         <span className="grid min-w-0 leading-none">
           <b className="truncate text-[20px] font-normal">{name || t('ui.profile.title')}</b>
-          <small className="flex items-center justify-end gap-[3px] font-pixel-sm text-[15px] text-muted">
+          <small className="flex items-center justify-end gap-[3px] font-pixel-sm text-[16px] text-muted">
             <PixelIcon name="badge" size={8} />
             {earned}/{badges.length}
           </small>
@@ -214,6 +191,17 @@ export function PlayerMenu() {
               <p className="copy text-sm text-muted">{t('ui.nav.saveInBrowser')}</p>
             )}
             {discord && <MenuRow icon="discord" label={t('ui.nav.discord')} href={discord} onClick={() => setOpen(false)} />}
+            {/* SUPPORT ME left the side rail for here (docs/43 §3): a rare action, at the foot of the menu. */}
+            {canDonate && (
+              <MenuRow
+                icon="heart"
+                label={t('ui.support.button')}
+                onClick={() => {
+                  setOpen(false)
+                  setDonating(true)
+                }}
+              />
+            )}
             {/* Messages go to Supabase, so a deployment without it has no one to send them to. */}
             {isSupabaseConfigured && (
               <MenuRow
@@ -230,41 +218,6 @@ export function PlayerMenu() {
       >
         <TrainerCard />
         <nav aria-label={t('ui.profile.menuLabel')} className="mt-3 flex flex-col gap-1.5">
-          <MenuRow
-            icon={boardOpen ? 'trophy' : 'lock'}
-            label={t('ui.board.title')}
-            desc={boardOpen ? t('ui.menu.board') : t('ui.nav.boardLocked')}
-            onClick={go('/leaderboard')}
-            shut={shut}
-          />
-          {isSupabaseConfigured && (
-            <MenuRow
-              icon="friends"
-              label={t('ui.friends.title')}
-              desc={t('ui.menu.friends')}
-              dot={newFriends + rewardsReady}
-              hint={!newFriends && !rewardsReady && friendCount ? String(friendCount) : undefined}
-              onClick={go('/friends')}
-              shut={shut}
-            />
-          )}
-          {tradesRow && (
-            <MenuRow
-              icon="trade"
-              label={t('ui.trades.title')}
-              desc={
-                auth.status !== 'signed_in'
-                  ? t('ui.menu.tradesConnect')
-                  : save && tradeClosed(save, data) === 'badges'
-                    ? t('ui.trades.locked', { n: tradeCfg(data).minBadges })
-                    : t('ui.menu.trades')
-              }
-              dot={tradesUnseen}
-              hint={!tradesUnseen && tradesOut ? `${tradesOut}/${tradeCfg(data).maxListings}` : undefined}
-              onClick={go('/trades')}
-              shut={shut}
-            />
-          )}
           {/* Messages and gifts from the developer, a row of their own (docs/38 U6b); the count is what's new there. */}
           {isSupabaseConfigured && (
             <MenuRow
@@ -341,6 +294,7 @@ export function PlayerMenu() {
       </SidePanel>
 
       <ContactModal open={contact} onClose={() => setContact(false)} />
+      <SupportModal open={donating} onClose={() => setDonating(false)} />
       <InboxModal open={inbox} onClose={() => setInbox(false)} />
       <SettingsOverlay open={settingsOver} onClose={() => setSettingsOver(false)} />
       <SwitchSaveModal to={extreme ? 'main' : 'extreme'} open={switching} onClose={() => setSwitching(false)} />

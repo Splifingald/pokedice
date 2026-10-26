@@ -99,12 +99,12 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
           <StatChip stat="rerolls" value={stats.rerolls} size={18} className="text-lg" />
         </div>
         {distorted ? (
-          <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[15px] leading-tight text-muted">
+          <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted">
             <PixelIcon name="sparkle" size={14} />
             {t('ui.portal.noCatch')}
           </p>
         ) : dream ? (
-          <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[15px] leading-tight text-muted">
+          <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted">
             <PixelIcon name="moon" size={14} />
             {t('ui.nightmare.noCatch')}
           </p>

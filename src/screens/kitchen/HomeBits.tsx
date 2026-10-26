@@ -13,7 +13,7 @@ import { ComingUpView } from '@/screens/home/Widgets'
 function Frame({ name, children }: { name: string; children: ReactNode }) {
   return (
     <div className="flex w-full max-w-sm flex-col gap-1">
-      <span className="font-pixel-sm text-[13px] text-muted">{name}</span>
+      <span className="font-pixel-sm text-[16px] text-muted">{name}</span>
       {children}
     </div>
   )

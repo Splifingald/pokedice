@@ -41,7 +41,7 @@ export function UgTeamSeats({ team }: { team: UgTeam | null }) {
               <span className="max-w-full truncate text-[18px] leading-none">
                 {me ? t('ui.ug.you') : (seat?.name ?? (team ? t('ui.ug.freeSeat') : '—'))}
               </span>
-              <span className="font-pixel-sm text-[14px] text-muted">{t(`ui.ug.colour.${c}`)}</span>
+              <span className="font-pixel-sm text-[16px] text-muted">{t(`ui.ug.colour.${c}`)}</span>
             </li>
           )
         })}
@@ -111,7 +111,7 @@ export function UgTeamSheet({ open, onClose }: { open: boolean; onClose: () => v
                   <li key={i.team} className="flex items-center gap-2 bg-cream p-1.5 shadow-card-gold">
                     <span className="grid min-w-0 flex-1 gap-0.5 leading-tight">
                       <b className="truncate text-[19px] font-normal leading-none">{i.name}</b>
-                      <small className="font-pixel-sm text-[14px] text-muted">
+                      <small className="font-pixel-sm text-[16px] text-muted">
                         {t('ui.ug.wantsYou', { n: i.seats })}
                       </small>
                     </span>
@@ -151,7 +151,7 @@ export function UgTeamSheet({ open, onClose }: { open: boolean; onClose: () => v
                       <TrainerLook src={avatarOf(f.avatar).src} w={36} h={40} />
                       <span className="grid min-w-0 flex-1 gap-0.5 leading-tight">
                         <b className="truncate text-[19px] font-normal leading-none">{f.name}</b>
-                        <small className="font-pixel-sm text-[14px] text-muted">
+                        <small className="font-pixel-sm text-[16px] text-muted">
                           {inTeam
                             ? t('ui.ug.inYourTeam')
                             : waiting

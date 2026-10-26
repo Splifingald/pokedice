@@ -465,7 +465,7 @@ export function Readout({
         <StatusChip key={s.status} status={s.status} count={statusCount(s)} />
       ))}
       {preview.recoil > 0 && (
-        <span className="w-full text-center font-pixel-sm text-[15px] leading-tight text-danger">
+        <span className="w-full text-center font-pixel-sm text-[16px] leading-tight text-danger">
           {t('ui.battle.confusedRecoil', { name: activeName, amount: preview.recoil })}
         </span>
       )}
@@ -600,7 +600,7 @@ export function TeamColumn({
             <span className="flex min-w-0 flex-1 flex-col gap-1">
               <span className="flex items-baseline justify-between gap-1">
                 <b className="truncate text-[19px] font-normal leading-none">{b.name}</b>
-                <span className="shrink-0 font-pixel-sm text-[14px] leading-none">
+                <span className="shrink-0 font-pixel-sm text-[16px] leading-none">
                   {t('ui.common.level.short', { n: b.level })}
                 </span>
               </span>
@@ -684,7 +684,7 @@ export function SwitchRow({
               ))}
             </span>
             <DiceSet dice={b.dice} size={20} />
-            <span className="ml-auto font-pixel-sm text-[15px] leading-none tabular-nums text-muted">
+            <span className="ml-auto font-pixel-sm text-[16px] leading-none tabular-nums text-muted">
               {b.hp}/{b.maxHp}
             </span>
           </div>

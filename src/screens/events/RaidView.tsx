@@ -114,7 +114,7 @@ function BossPlate({ b, hp, fx, bars, colors, aimed }: { b: Battler; hp: number;
       <span className="flex min-w-0 items-center gap-1.5">
         <b className="min-w-0 truncate text-[20px] font-normal leading-none">{b.name}</b>
         {b.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
-        <span className="shrink-0 font-pixel-sm text-[15px] leading-none">{t('ui.common.level.short', { n: b.level })}</span>
+        <span className="shrink-0 font-pixel-sm text-[16px] leading-none">{t('ui.common.level.short', { n: b.level })}</span>
       </span>
       <span className="flex flex-wrap items-center gap-1">
         {b.types.map((ty) => (
@@ -133,7 +133,7 @@ function BossPlate({ b, hp, fx, bars, colors, aimed }: { b: Battler; hp: number;
           className="absolute bottom-0.5 left-0.5 top-0.5 block transition-[width] duration-500"
           style={{ width: `calc(${pct * 100}% - ${pct * 4}px)`, background: `linear-gradient(#ffffff70 0 3px, transparent 3px), ${color}` }}
         />
-        <b className="absolute -right-0.5 -top-[9px] bg-ink px-[5px] pb-px text-[15px] font-normal leading-none text-gold-pale">×{left}</b>
+        <b className="absolute -right-0.5 -top-[9px] bg-ink px-[5px] pb-px text-[16px] font-normal leading-none text-gold-pale">×{left}</b>
       </span>
     </div>
   )
@@ -164,13 +164,13 @@ export function RaidMarks({ fx }: { fx: Pick<RaidFx, 'charge' | 'shield' | 'fina
         </span>
       )}
       {fx.charge && (
-        <span className="rd-charge bg-accent px-1 pb-px font-pixel-sm text-[13px] leading-[16px] text-white shadow-ring-line">
+        <span className="rd-charge bg-accent px-1 pb-px font-pixel-sm text-[16px] leading-[16px] text-white shadow-ring-line">
           {t('ui.raid.x.chargeBanner')}
         </span>
       )}
       {fx.shield && (
         <span
-          className="flex items-center gap-0.5 bg-paper px-1 font-pixel-sm text-[13px] leading-[16px] shadow-ring-line"
+          className="flex items-center gap-0.5 bg-paper px-1 font-pixel-sm text-[16px] leading-[16px] shadow-ring-line"
           aria-label={t('ui.raid.x.shieldLabel', { hp: fx.shield.hp, max: fx.shield.max })}
         >
           <PixelIcon name="shield" size={12} />
@@ -210,7 +210,7 @@ function AllyPlate({
       <span className="flex min-w-0 items-baseline gap-1.5">
         <span
           className={cx(
-            'shrink-0 px-[5px] pb-px font-pixel-sm text-[12px] leading-tight',
+            'shrink-0 px-[5px] pb-px font-pixel-sm text-tag leading-tight',
             mine ? 'bg-crimson text-paper' : 'bg-[#dde5f0] text-ink',
             // The light chip keeps a golden name's daylight gold at dusk too.
             !mine && rich && 'light-scope',
@@ -219,7 +219,7 @@ function AllyPlate({
           {mine ? t('ui.raid.you') : <TrainerName name={owner} rich={rich} />}
         </span>
         <b className="min-w-0 truncate text-[18px] font-normal leading-none">{b.name}</b>
-        <span className="ml-auto shrink-0 font-pixel-sm text-[15px] leading-none">{t('ui.common.level.short', { n: b.level })}</span>
+        <span className="ml-auto shrink-0 font-pixel-sm text-[16px] leading-none">{t('ui.common.level.short', { n: b.level })}</span>
       </span>
       <HpBar hp={hp} max={b.maxHp} compact height={8} />
       <span className="flex items-center gap-1.5">
@@ -280,7 +280,7 @@ export function RaidSpeedButton({ on, onChange }: { on: boolean; onChange: (on: 
       )}
     >
       <PixelIcon name="fastForward" size={16} />
-      <span className="font-pixel-sm text-[14px] tabular-nums">
+      <span className="font-pixel-sm text-[16px] tabular-nums">
         {t('ui.raid.speedTag', { n: (on ? RAID_FAST_SPEED : 1).toLocaleString(getLang()) })}
       </span>
     </button>
@@ -759,7 +759,7 @@ export function RaidView({ run }: { run: RaidRun }) {
                   <ItemSprite item={it} size={32} />
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="text-[20px] leading-none">{it.name}</span>
-                    <span className="font-pixel-sm text-[15px] leading-tight text-muted">{effectText(it)}</span>
+                    <span className="font-pixel-sm text-[16px] leading-tight text-muted">{effectText(it)}</span>
                   </span>
                   <span className="font-pixel-sm text-[16px] tabular-nums">×{n}</span>
                 </button>

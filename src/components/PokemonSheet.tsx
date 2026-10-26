@@ -55,7 +55,7 @@ function StatTile({ stat, value }: { stat: StatKind; value: ReactNode }) {
   return (
     <div className="grid justify-items-center bg-paper px-1 pb-2 pt-1.5 shadow-ring-line" title={statHint(stat)}>
       <b className="text-[26px] font-normal leading-none tabular-nums">{value}</b>
-      <small className="font-pixel-sm text-[13px] text-muted">{statLabel(stat)}</small>
+      <small className="font-pixel-sm text-[16px] text-muted">{statLabel(stat)}</small>
     </div>
   )
 }
@@ -189,7 +189,7 @@ function MilestoneRow({
 const LevelChip = ({ level, reached }: { level: number; reached?: boolean }) => (
   <span
     className={cx(
-      'px-1.5 pb-[3px] pt-0.5 text-center font-pixel-sm text-[14px] leading-none',
+      'px-1.5 pb-[3px] pt-0.5 text-center font-pixel-sm text-[16px] leading-none',
       reached ? 'bg-line text-muted' : 'light-scope bg-night text-gold-light',
     )}
   >
@@ -285,14 +285,14 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
   }
   const notes = (
     <>
-      {byLevel.length > 1 && <p className="font-pixel-sm text-[15px] text-muted">{t('ui.sheet.oneAtRandom')}</p>}
-      {megas.length > 0 && !gems && <p className="copy font-pixel-sm text-[15px] text-muted">{t('ui.sheet.megaNote')}</p>}
+      {byLevel.length > 1 && <p className="font-pixel-sm text-[16px] text-muted">{t('ui.sheet.oneAtRandom')}</p>}
+      {megas.length > 0 && !gems && <p className="copy font-pixel-sm text-[16px] text-muted">{t('ui.sheet.megaNote')}</p>}
       {megas.length > 0 && gems && (
         <div className="flex flex-col gap-1">
           {megas.map((x) => {
             const gem = gemOf(data, x.dex)
             return (
-              <p key={x.dex} className="copy flex flex-wrap items-center gap-1 font-pixel-sm text-[15px]">
+              <p key={x.dex} className="copy flex flex-wrap items-center gap-1 font-pixel-sm text-[16px]">
                 <MiniSprite dex={x.dex} size={28} className="-my-2" />
                 <b className="font-normal">{x.name}</b>({t('ui.sheet.msAddDie', { to: typeName(megaDie(species, x)) })})
                 {gem && (
@@ -303,14 +303,14 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
               </p>
             )
           })}
-          <p className="copy font-pixel-sm text-[15px] text-muted">
+          <p className="copy font-pixel-sm text-[16px] text-muted">
             {t('ui.sheet.megaGemNote', { n: data.config.megaEvolution.gems.turns })}
           </p>
           <PowerInfo kind="mega" />
         </div>
       )}
       {gmax && (
-        <p className="copy flex items-center gap-1 font-pixel-sm text-[15px]">
+        <p className="copy flex items-center gap-1 font-pixel-sm text-[16px]">
           <MiniSprite dex={gmax.dex} size={28} className="-my-2" />
           <span>
             {boost
@@ -330,7 +330,7 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
       {gmax && boost && <PowerInfo kind="gmax" />}
       {zOpen && (
         <>
-          <p className="copy font-pixel-sm text-[15px] text-muted">{t('ui.sheet.zNote')}</p>
+          <p className="copy font-pixel-sm text-[16px] text-muted">{t('ui.sheet.zNote')}</p>
           <PowerInfo kind="z" />
         </>
       )}
@@ -349,7 +349,7 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
         <summary className="pixel-btn frame-gold flex min-h-[44px] w-full cursor-pointer list-none items-center justify-center gap-2 px-3 text-[22px] uppercase leading-none tracking-[0.04em] [&::-webkit-details-marker]:hidden">
           <PixelIcon name="crown" size={18} />
           {t('ui.sheet.maxedOut')}
-          <span className="inline-block text-[14px] transition-transform group-open:rotate-90" aria-hidden>
+          <span className="inline-block text-[16px] transition-transform group-open:rotate-90" aria-hidden>
             ▶
           </span>
         </summary>
@@ -506,12 +506,12 @@ export function PokemonSheet({
         hint={t(`ui.sheet.perRoll.${stats.dice.length === 1 ? 'one' : 'other'}`, { n: stats.dice.length })}
       >
         {COPIES_FOE_DICE.has(species.dex) && (
-          <p className="copy font-pixel-sm text-[15px]">
+          <p className="copy font-pixel-sm text-[16px]">
             <b className="font-pixel font-normal">{t('ui.sheet.transformTitle')}</b> {t('ui.sheet.transformBody')}
           </p>
         )}
         {lowHp?.form?.swapDie && (
-          <p className="copy font-pixel-sm text-[15px]">
+          <p className="copy font-pixel-sm text-[16px]">
             {t('ui.sheet.lowHpForm', {
               from: typeName(lowHp.form.swapDie.from),
               to: typeName(lowHp.form.swapDie.to),
@@ -519,11 +519,11 @@ export function PokemonSheet({
           </p>
         )}
         {choiceFormsOf(data, species.dex).length > 0 && (
-          <p className="copy font-pixel-sm text-[15px]">{t('ui.sheet.choiceForm', { n: data.config.formChangesPerBattle })}</p>
+          <p className="copy font-pixel-sm text-[16px]">{t('ui.sheet.choiceForm', { n: data.config.formChangesPerBattle })}</p>
         )}
         {/* Arceus's plates (docs/34): the types it may take, while the Underground is on. */}
         {plates && species.dex === ARCEUS_DEX && (
-          <p className="copy font-pixel-sm text-[15px]" data-testid="arceus-plates">
+          <p className="copy font-pixel-sm text-[16px]" data-testid="arceus-plates">
             {plates.length
               ? t('ui.ug.sheetPlates', { types: plates.map((p) => typeName(p)).join(', '), n: plates.length, total: 17 })
               : t('ui.ug.sheetNoPlates')}
@@ -538,7 +538,7 @@ export function PokemonSheet({
                   <b className="text-[18px] font-normal leading-none">{typeName(type)}</b>
                   <em className="font-pixel-sm not-italic text-muted">×{n}</em>
                   {data.diceTypes[type]?.description && (
-                    <small className="ml-auto font-pixel-sm text-[14px] text-muted">{data.diceTypes[type]!.description}</small>
+                    <small className="ml-auto font-pixel-sm text-[16px] text-muted">{data.diceTypes[type]!.description}</small>
                   )}
                 </span>
                 <FaceDice type={type} faces={faces} />

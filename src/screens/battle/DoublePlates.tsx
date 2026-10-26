@@ -48,7 +48,7 @@ export function MiniPlate({
       <MiniSprite dex={b.dex} size={28} className={cx('-my-1 shrink-0', fainted && 'grayscale')} />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="flex items-center gap-1">
-          <span className="font-pixel-sm text-[14px] leading-none">{level}</span>
+          <span className="font-pixel-sm text-[16px] leading-none">{level}</span>
           {b.shiny && <PixelIcon name="star" size={10} title={t('ui.mon.shiny')} className="shrink-0" />}
           <StatusIcons status={b.status} />
           <span className="ml-auto shrink-0">

@@ -52,11 +52,11 @@ export function MonTile({
           <MiniSprite dex={dex} size={40} silhouette={missing} />
         </span>
       )}
-      {number && <span className="font-pixel-sm text-[12px] leading-none text-muted">{number}</span>}
-      <b className={cx('max-w-full truncate text-[15px] font-normal leading-none', missing && 'text-muted')}>
+      {number && <span className="font-pixel-sm text-tag leading-none text-muted">{number}</span>}
+      <b className={cx('max-w-full truncate text-[16px] font-normal leading-none', missing && 'text-muted')}>
         {name}
       </b>
-      {sub && <span className="font-pixel-sm text-[13px] leading-none text-muted">{sub}</span>}
+      {sub && <span className="font-pixel-sm text-[16px] leading-none text-muted">{sub}</span>}
       {locked && <PixelIcon name="lock" size={12} className="absolute right-[5px] top-[5px]" />}
       {tags}
     </button>
@@ -68,7 +68,7 @@ export function TileTag({ tone, children }: { tone: 'new' | 'near'; children: Re
   return (
     <em
       className={cx(
-        'absolute top-[3px] px-[3px] pb-[2px] pt-px font-pixel-sm text-[12px] not-italic leading-none',
+        'absolute top-[3px] px-[3px] pb-[2px] pt-px font-pixel-sm text-tag not-italic leading-none',
         tone === 'new'
           ? 'right-[3px] bg-gold text-ink shadow-ring-thin'
           : 'left-[3px] bg-good-pale text-good shadow-[inset_0_0_0_1px_#34c97a]',

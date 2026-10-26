@@ -87,7 +87,7 @@ function TierTile({ tier, size }: { tier: InviteGaugeTier; size: number }) {
         <PixelIcon name="sparkle" size={12} className="absolute left-0.5 top-0.5" />
       )}
       {tier.gifts.length > 1 && (
-        <span className="absolute bottom-0 left-0 bg-paper px-0.5 font-pixel-sm text-[12px] leading-none text-ink shadow-ring-line">
+        <span className="absolute bottom-0 left-0 bg-paper px-0.5 font-pixel-sm text-tag leading-none text-ink shadow-ring-line">
           +{tier.gifts.length - 1}
         </span>
       )}
@@ -147,7 +147,7 @@ export function InviteGaugeBar({ gauge, compact = false }: { gauge: InviteGauge;
           />
         ))}
       </div>
-      <div className="grid font-pixel-sm text-[14px] leading-none text-muted" style={cols} aria-hidden>
+      <div className="grid font-pixel-sm text-[16px] leading-none text-muted" style={cols} aria-hidden>
         {gauge.tiers.map((tier) => (
           <span key={tier.friends} className="flex items-center justify-end gap-1 tabular-nums">
             <PixelIcon name="friends" size={12} />
@@ -221,7 +221,7 @@ export function InviteRewardsCard({
           {tPlural('ui.invite.pending', gauge.pending, { n: gauge.pending })}
         </p>
       )}
-      <p className="m-0 font-pixel-sm text-[15px] leading-tight text-muted">{t('ui.invite.how')}</p>
+      <p className="m-0 font-pixel-sm text-[16px] leading-tight text-muted">{t('ui.invite.how')}</p>
     </section>
   )
 }
@@ -235,7 +235,7 @@ export function InviteGaugeCompact({ gauge }: { gauge: InviteGauge }) {
       <p className="m-0 flex items-center gap-1.5 text-[19px] leading-none">
         <PixelIcon name="gift" size={18} />
         <span className="min-w-0 flex-1">{t('ui.invite.title')}</span>
-        <span className="font-pixel-sm text-[15px] tabular-nums text-muted">
+        <span className="font-pixel-sm text-[16px] tabular-nums text-muted">
           {Math.min(gauge.count, gauge.goal)}/{gauge.goal}
         </span>
       </p>

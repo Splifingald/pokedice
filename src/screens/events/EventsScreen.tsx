@@ -31,7 +31,7 @@ export function EventBanner({ id, status }: { id: EventId; status?: ReactNode })
         <BackButton onClick={() => navigate('/home')} />
         <span className="grid min-w-0 gap-0.5">
           <h1 className="m-0 text-[24px] font-normal leading-none">{t(`ui.events.${id}.name`)}</h1>
-          {status && <small className="truncate font-pixel-sm text-[14px] leading-none text-muted">{status}</small>}
+          {status && <small className="truncate font-pixel-sm text-[16px] leading-none text-muted">{status}</small>}
         </span>
       </div>
     </EventPicture>

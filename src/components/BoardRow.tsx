@@ -97,7 +97,7 @@ export function TeamIcons({
 export function BoardGap({ count }: { count: number }) {
   const { tPlural } = useT()
   return (
-    <li className="flex items-center gap-2 px-2 py-0.5 font-pixel-sm text-[14px] leading-none text-muted">
+    <li className="flex items-center gap-2 px-2 py-0.5 font-pixel-sm text-[16px] leading-none text-muted">
       <span aria-hidden className="flex-1 border-t-[3px] border-dashed border-shadow/40" />
       {tPlural('ui.board.gap', count)}
       <span aria-hidden className="flex-1 border-t-[3px] border-dashed border-shadow/40" />
@@ -179,7 +179,7 @@ export function BoardRow({
         <b className="flex min-w-0 items-center gap-1 text-[20px] font-normal leading-none">
           <TrainerName name={name} rich={rich} className="truncate" />
           {isMe && (
-            <span className="shrink-0 bg-gold px-[5px] pb-px font-pixel-sm text-[13px] leading-tight text-ink">
+            <span className="shrink-0 bg-gold px-[5px] pb-px font-pixel-sm text-[16px] leading-tight text-ink">
               {t('ui.board.youTag')}
             </span>
           )}

@@ -89,12 +89,12 @@ export function NightmareRaidCard({
         }}
       />
       {areaName && (
-        <span className="absolute left-2 top-2 bg-panel/90 px-1.5 pb-0.5 font-pixel-sm text-[15px] text-ink shadow-ring-line">
+        <span className="absolute left-2 top-2 bg-panel/90 px-1.5 pb-0.5 font-pixel-sm text-[16px] text-ink shadow-ring-line">
           {areaName}
         </span>
       )}
       <span
-        className="absolute left-2 top-[34px] flex items-center gap-1 bg-paper/95 px-1.5 pb-0.5 font-pixel-sm text-[15px] text-ink shadow-ring-line"
+        className="absolute left-2 top-[34px] flex items-center gap-1 bg-paper/95 px-1.5 pb-0.5 font-pixel-sm text-[16px] text-ink shadow-ring-line"
         title={statHint('catch')}
       >
         <PixelIcon name="ball" size={14} />
@@ -112,7 +112,7 @@ export function NightmareRaidCard({
         <b className="text-[28px] font-normal">
           {raid.shiny ? t('ui.events.raid.shinyName', { name }) : name}
         </b>
-        <small className="font-pixel-sm text-[15px] text-[#c8f4ff]">
+        <small className="font-pixel-sm text-[16px] text-[#c8f4ff]">
           {t('ui.events.raid.sub', { level: rules.level, bars: rules.bars })}
         </small>
       </span>

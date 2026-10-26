@@ -94,7 +94,7 @@ const QUEUE = {
   },
   extreme: { due: (s, d) => extremeRulesDue(s, d), away: under('/settings') },
   trades: { due: (s, d, c) => c.signedIn && tradeRulesDue(s, d), away: under('/trades') },
-  general: { due: (s, d) => generalRulesDue(s, d), away: under('/upgrades') },
+  general: { due: (s, d) => generalRulesDue(s, d), away: under('/shop') },
   /** The shiny Pokédex, at the first league beaten. */
   shinyDex: { due: (s, d) => shinyDexRulesDue(s, d), away: under('/pokedex') },
   // The invite rewards' rules aren't queued: they open on the Friends page, the first time in (screens/Friends.tsx).

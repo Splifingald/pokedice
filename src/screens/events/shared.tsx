@@ -89,7 +89,7 @@ export function EventRules({ id, data }: { id: EventId; data: GameData }) {
           </span>
           <span className="grid gap-0.5 leading-tight">
             <b className="text-[19px] font-normal leading-none">{t(`ui.events.rules.${rule}.title`)}</b>
-            <small className="font-pixel-sm text-[15px] text-muted">{t(`ui.events.rules.${rule}.text`, params)}</small>
+            <small className="font-pixel-sm text-[16px] text-muted">{t(`ui.events.rules.${rule}.text`, params)}</small>
           </span>
         </li>
       ))}

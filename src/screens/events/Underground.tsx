@@ -64,7 +64,7 @@ function Section({
         <h2 id={id} className="m-0 text-[24px] font-normal leading-none">
           {title}
         </h2>
-        {hint && <span className="font-pixel-sm text-[15px] text-muted">{hint}</span>}
+        {hint && <span className="font-pixel-sm text-[16px] text-muted">{hint}</span>}
       </div>
       {children}
     </section>
@@ -153,7 +153,7 @@ export function UndergroundScreen() {
           <BackButton onClick={() => navigate('/home')} />
           <span className="grid min-w-0 gap-0.5">
             <h1 className="m-0 text-[24px] font-normal leading-none">{t('ui.live.underground.name')}</h1>
-            <small className="truncate font-pixel-sm text-[14px] leading-none text-muted">
+            <small className="truncate font-pixel-sm text-[16px] leading-none text-muted">
               {t('ui.live.endsIn', { time: liveTime(left.ms) })}
             </small>
           </span>
@@ -167,10 +167,10 @@ export function UndergroundScreen() {
             <span className="text-[34px] leading-none" data-testid="ug-kits">
               {held} <small className="font-pixel-sm text-[16px] text-muted">{t('ui.ug.kitsWord')}</small>
             </span>
-            <span className="font-pixel-sm text-[15px] text-muted">
+            <span className="font-pixel-sm text-[16px] text-muted">
               {t('ui.ug.kitsSplit', { free: u.freeKits, cap: free.cap, bought: u.boughtKits })}
             </span>
-            <span className="font-pixel-sm text-[14px] text-muted">
+            <span className="font-pixel-sm text-[16px] text-muted">
               {tillFree != null ? t('ui.ug.nextFree', { time: countdown(tillFree) }) : t('ui.ug.freeFull')}
             </span>
           </div>

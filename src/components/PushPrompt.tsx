@@ -82,7 +82,7 @@ export function PushAskModal({
             className="pixelated absolute inset-0 h-full w-full object-cover"
             style={{ objectPosition: picture.focus ?? '50% 50%' }}
           />
-          <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 bg-gold px-1.5 pb-0.5 pt-px font-pixel-sm text-[14px] tracking-[0.08em] text-ink shadow-ring-line">
+          <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 bg-gold px-1.5 pb-0.5 pt-px font-pixel-sm text-[16px] tracking-[0.08em] text-ink shadow-ring-line">
             <PixelIcon name="bell" size={16} />
             {t('ui.push.tag')}
           </span>

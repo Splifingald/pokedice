@@ -78,7 +78,7 @@ function UnownDexPage({ save, data, onOpen }: { save: SaveData; data: GameData; 
           <i className="block h-full bg-gold" style={{ width: `${(n / total) * 100}%` }} />
         </span>
         {n < total && area && (
-          <small className="font-pixel-sm text-[15px] text-muted">
+          <small className="font-pixel-sm text-[16px] text-muted">
             {reward > 0
               ? t('ui.unown.wherePrize', { area: area.name, amount: money(reward) })
               : t('ui.unown.where', { area: area.name })}
@@ -230,7 +230,7 @@ export function PokedexScreen() {
           <i className="block h-full bg-gold" style={{ width: `${(n / Math.max(1, total)) * 100}%` }} />
         </span>
         {unlock && (
-          <small className="font-pixel-sm text-[15px] text-muted">
+          <small className="font-pixel-sm text-[16px] text-muted">
             {t(`ui.dex.moreOpens.${unlock.more === 1 ? 'one' : 'other'}`, {
               n: unlock.more,
               area: unlock.name,

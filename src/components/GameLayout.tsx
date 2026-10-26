@@ -57,7 +57,7 @@ export function GameLayout() {
               // Home and the battle spread over wide screens (the scene and the stage grow with them); every other screen
               // keeps a reading width.
               'mx-auto w-full min-w-0 flex-1',
-              bare ? 'max-w-none' : home ? 'max-w-[1760px]' : 'max-w-6xl',
+              bare ? 'max-w-none' : home ? 'max-w-[1760px]' : 'max-w-[1400px]',
               bare
                 ? 'p-0'
                 : inFight

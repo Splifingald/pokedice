@@ -239,7 +239,7 @@ export function CatchPanel({
                       {item ? <ItemSprite item={item} size={28} /> : <PixelIcon name="dice" size={22} />}
                     </span>
                     <b className="font-pixel text-[22px] font-normal leading-none tabular-nums">{pct(o.bonus)}%</b>
-                    <small className="font-pixel-sm text-[14px] leading-none text-muted">
+                    <small className="font-pixel-sm text-[16px] leading-none text-muted">
                       {useless ? t('ui.catch.notNeeded') : o.n != null ? `×${o.n}` : t('ui.catch.noBall')}
                     </small>
                   </button>

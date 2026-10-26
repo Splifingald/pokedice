@@ -152,7 +152,7 @@ export function AddFriendModal({
             aria-invalid={notFound || undefined}
             className="h-12 w-full bg-paper px-3 text-[26px] uppercase tracking-[0.08em] shadow-field placeholder:text-faint"
           />
-          <small id={hintId} className="font-pixel-sm text-[15px] leading-tight text-muted">
+          <small id={hintId} className="font-pixel-sm text-[16px] leading-tight text-muted">
             {t('ui.friends.idHint')}
           </small>
         </div>

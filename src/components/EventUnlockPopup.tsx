@@ -30,7 +30,7 @@ export function EventUnlockPopup() {
     <Modal open={open} onClose={markEventsSeen} title={name} className="max-w-md">
       <div className="flex flex-col gap-3">
         <EventPicture id={due} data={data} className="-mx-4 h-[124px] shadow-[0_3px_0_rgb(var(--c-edge)),0_-2px_0_rgb(var(--c-edge))]">
-          <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 bg-gold px-1.5 pb-0.5 pt-px font-pixel-sm text-[14px] tracking-[0.08em] text-ink shadow-ring-line">
+          <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 bg-gold px-1.5 pb-0.5 pt-px font-pixel-sm text-[16px] tracking-[0.08em] text-ink shadow-ring-line">
             <PixelIcon name={EVENT_ICON[due]} size={16} />
             {t('ui.events.newEvent')}
           </span>

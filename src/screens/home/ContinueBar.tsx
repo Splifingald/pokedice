@@ -326,11 +326,11 @@ export function ContinueBar({
           )}
         >
           <PixelIcon name={heldWhy ? 'lock' : 'map'} size={24} />
-          <span className="whitespace-normal text-center font-pixel-sm text-[15px] uppercase leading-none tracking-[0.04em]">
+          <span className="whitespace-normal text-center font-pixel-sm text-[16px] uppercase leading-none tracking-[0.04em]">
             {heldWhy ? t('ui.home.areas') : areasState === 'region' ? t('ui.home.newRegion') : t('ui.home.areas')}
           </span>
           {!heldWhy && areasState === 'new' && (
-            <span className="absolute -right-2 -top-2 z-[1] bg-gold px-1 pb-0.5 font-pixel-sm text-[13px] leading-none text-ink shadow-ring">
+            <span className="absolute -right-2 -top-2 z-[1] bg-gold px-1 pb-0.5 font-pixel-sm text-[16px] leading-none text-ink shadow-ring">
               {t('ui.common.new')}
             </span>
           )}
@@ -346,7 +346,7 @@ export function ContinueBar({
       {heldWhy && (
         <p
           id={lockId}
-          className="m-0 flex items-start gap-2 bg-well p-2 font-pixel-sm text-[15px] leading-tight text-muted shadow-ring-line"
+          className="m-0 flex items-start gap-2 bg-well p-2 font-pixel-sm text-[16px] leading-tight text-muted shadow-ring-line"
         >
           <PixelIcon name="lock" size={16} className="mt-px shrink-0" />
           <span>{heldWhy}</span>

@@ -92,18 +92,18 @@ export function RaidCard({
         style={{ background: 'radial-gradient(circle at 50% 58%, #ffbe2e55 0 22%, transparent 48%), linear-gradient(#f2553f20, #24304fa0)' }}
       />
       {area && (
-        <span className="absolute left-2 top-2 bg-panel/90 px-1.5 pb-0.5 font-pixel-sm text-[15px] text-ink shadow-ring-line">{area.name}</span>
+        <span className="absolute left-2 top-2 bg-panel/90 px-1.5 pb-0.5 font-pixel-sm text-[16px] text-ink shadow-ring-line">{area.name}</span>
       )}
       {/* Its catch value, to get the balls ready before the fight. */}
       <span
-        className="absolute left-2 top-[34px] flex items-center gap-1 bg-paper/95 px-1.5 pb-0.5 font-pixel-sm text-[15px] text-ink shadow-ring-line"
+        className="absolute left-2 top-[34px] flex items-center gap-1 bg-paper/95 px-1.5 pb-0.5 font-pixel-sm text-[16px] text-ink shadow-ring-line"
         title={statHint('catch')}
       >
         <PixelIcon name="ball" size={14} />
         {statLabel('catch')} <b className="font-normal tabular-nums">{catchValueOf(data, raid.dex)}</b>
       </span>
       {msLeft != null && (
-        <span className="absolute right-2 top-2 bg-night px-1.5 pb-0.5 font-pixel-sm text-[15px] text-gold-light">
+        <span className="absolute right-2 top-2 bg-night px-1.5 pb-0.5 font-pixel-sm text-[16px] text-gold-light">
           {t(raid.caught ? 'ui.events.raid.newIn' : 'ui.events.raid.endsIn', { time: countdown(msLeft) })}
         </span>
       )}
@@ -112,7 +112,7 @@ export function RaidCard({
       </span>
       <span className="absolute bottom-2 left-2.5 grid gap-0.5 leading-none text-white [text-shadow:0_2px_0_#24304f]">
         <b className="text-[28px] font-normal">{raid.shiny ? t('ui.events.raid.shinyName', { name }) : name}</b>
-        <small className="font-pixel-sm text-[15px] text-gold-light">{t('ui.events.raid.sub', { level: rules.level, bars: rules.bars })}</small>
+        <small className="font-pixel-sm text-[16px] text-gold-light">{t('ui.events.raid.sub', { level: rules.level, bars: rules.bars })}</small>
       </span>
       <span className="absolute bottom-3 right-2.5 flex gap-[3px]" aria-hidden>
         {Array.from({ length: rules.bars }, (_, i) => (
@@ -147,7 +147,7 @@ export function BallOdds({ dex }: { dex: number }) {
             <PixelIcon name="dice" size={20} />
           </span>
           <b className="font-pixel text-[20px] font-normal leading-none tabular-nums">{pct(0)}%</b>
-          <small className="font-pixel-sm text-[13px] leading-none text-muted">{t('ui.catch.noBall')}</small>
+          <small className="font-pixel-sm text-[16px] leading-none text-muted">{t('ui.catch.noBall')}</small>
         </li>
         {balls.map((it) => (
           <li key={it.key} className="grid justify-items-center gap-0.5 bg-paper px-1 pb-1.5 pt-1 shadow-ring" title={it.name}>
@@ -155,7 +155,7 @@ export function BallOdds({ dex }: { dex: number }) {
               <ItemSprite item={it} size={26} />
             </span>
             <b className="font-pixel text-[20px] font-normal leading-none tabular-nums">{pct(ballBonus(it))}%</b>
-            <small className="font-pixel-sm text-[13px] leading-none text-muted">
+            <small className="font-pixel-sm text-[16px] leading-none text-muted">
               <span className="sr-only">{it.name} </span>×{inventory?.[it.key] ?? 0}
             </small>
           </li>
@@ -185,7 +185,7 @@ function LockNotice({ raid }: { raid: TodayRaid }) {
       </span>
       <span className="grid gap-0.5 leading-tight">
         <b className="text-[19px] font-normal leading-none">{t('ui.raid.lockTitle', { name })}</b>
-        <small className="font-pixel-sm text-[15px] text-ink">
+        <small className="font-pixel-sm text-[16px] text-ink">
           {t(regionStarted(save, regionId) ? 'ui.raid.lockText' : 'ui.raid.lockTextNew', { name, area: area?.name ?? '', region })}
         </small>
       </span>
@@ -207,7 +207,7 @@ function RaidCalendar({ today, day }: { today: TodayRaid; day: string }) {
       </PixelButton>
       <Modal open={open} onClose={() => setOpen(false)} title={t('ui.raid.calendarTitle')} className="max-w-md">
         <div className="grid gap-3">
-          <p role="note" className="m-0 flex items-start gap-2 bg-gold-pale p-2.5 font-pixel-sm text-[15px] leading-tight text-ink shadow-[inset_0_0_0_2px_#d99a1e]">
+          <p role="note" className="m-0 flex items-start gap-2 bg-gold-pale p-2.5 font-pixel-sm text-[16px] leading-tight text-ink shadow-[inset_0_0_0_2px_#d99a1e]">
             <PixelIcon name="warning" size={18} className="mt-px" />
             {t('ui.raid.calendarNote')}
           </p>
@@ -223,19 +223,19 @@ function RaidCalendar({ today, day }: { today: TodayRaid; day: string }) {
                   <span className="sr-only">{raidDate(d)}</span>
                   {/* A calendar page: the weekday on its red strip, the day, the month. */}
                   <span className="grid w-[50px] shrink-0 bg-well text-center leading-none shadow-ring-line" aria-hidden>
-                    <small className={cx('px-0.5 pb-0.5 pt-px font-pixel-sm text-[13px]', i === 0 ? 'bg-gold text-night' : 'bg-crimson text-white')}>
+                    <small className={cx('px-0.5 pb-0.5 pt-px font-pixel-sm text-[16px]', i === 0 ? 'bg-gold text-night' : 'bg-crimson text-white')}>
                       {date.weekday}
                     </small>
                     <b className="pt-0.5 text-[22px] font-normal tabular-nums">{date.date}</b>
-                    <small className="pb-1 font-pixel-sm text-[13px] text-muted">{date.month}</small>
+                    <small className="pb-1 font-pixel-sm text-[16px] text-muted">{date.month}</small>
                   </span>
                   <SpriteImg dex={r.dex} size={48} shiny={r.shiny} alt="" />
                   <span className="grid min-w-0 flex-1 gap-0.5 leading-none">
                     <b className="truncate text-[20px] font-normal">{data.species[r.dex]?.name ?? `#${r.dex}`}</b>
-                    {i === 0 && <small className="font-pixel-sm text-[14px] text-muted">{t('ui.raid.today')}</small>}
+                    {i === 0 && <small className="font-pixel-sm text-[16px] text-muted">{t('ui.raid.today')}</small>}
                   </span>
                   {r.shiny && (
-                    <span className="flex shrink-0 items-center gap-1 bg-gold-pale px-1.5 pb-0.5 font-pixel-sm text-[14px] text-ink shadow-ring-line">
+                    <span className="flex shrink-0 items-center gap-1 bg-gold-pale px-1.5 pb-0.5 font-pixel-sm text-[16px] text-ink shadow-ring-line">
                       <PixelIcon name="star" size={12} />
                       {t('ui.mon.shiny')}
                     </span>
@@ -277,7 +277,7 @@ function Waiting() {
                 <b className="truncate text-[18px] font-normal">
                   {l.shiny ? t('ui.events.raid.shinyName', { name: data.species[l.dex]?.name ?? '' }) : data.species[l.dex]?.name}
                 </b>
-                <small className="font-pixel-sm text-[14px] text-muted">{t('ui.raid.waitingFor', { area: area?.name ?? '', region })}</small>
+                <small className="font-pixel-sm text-[16px] text-muted">{t('ui.raid.waitingFor', { area: area?.name ?? '', region })}</small>
               </span>
               <PixelIcon name="lock" size={16} />
             </li>
@@ -321,7 +321,7 @@ export function RaidPage() {
           {t('ui.events.raid.start')}
         </PixelButton>
       )}
-      <p className="m-0 text-center font-pixel-sm text-[15px] text-muted">{tPlural('ui.events.raid.tries', raid.tries, { n: raid.tries })}</p>
+      <p className="m-0 text-center font-pixel-sm text-[16px] text-muted">{tPlural('ui.events.raid.tries', raid.tries, { n: raid.tries })}</p>
       <RaidTeamSection boss={raid.dex} />
       {!raid.caught && <RaidGroupSection boss={raid.dex} />}
       <RaidRulesPanel dex={raid.dex} kind="daily" />

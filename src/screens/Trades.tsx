@@ -59,7 +59,6 @@ type Sort = 'tradable' | 'soon' | 'newest'
 
 export function TradesScreen() {
   const { t } = useT()
-  const navigate = useNavigate()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
   const auth = useGame((s) => s.auth)
@@ -108,7 +107,7 @@ export function TradesScreen() {
             ? t('ui.trades.today', { n: Math.max(0, cfg.tradesPerDay - used), max: cfg.tradesPerDay })
             : undefined
         }
-        onBack={() => navigate('/home')}
+        social="trades"
       />
       {body}
       {on && <InfoButton name={t('ui.trades.title')} onClick={() => setRules(true)} />}
@@ -365,7 +364,7 @@ function Mine({
   const slots = Array.from({ length: Math.max(cfg.maxListings, tr.out.length) }, (_, i) => tr.out[i] ?? null)
   return (
     <>
-      <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">
+      <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">
         {offNote
           ? t('ui.trades.offNote')
           : t('ui.trades.mineNote', { days: tPlural('ui.trades.days', cfg.listingDays) })}
@@ -386,14 +385,14 @@ function Mine({
                     {o.mon.shiny && <ShinyStar />}
                     <LevelTag level={o.mon.level} />
                   </b>
-                  <small className="font-pixel-sm text-[13px] leading-tight text-muted">
+                  <small className="font-pixel-sm text-[16px] leading-tight text-muted">
                     {t('ui.trades.frozen')}
                   </small>
                 </span>
                 <VisChip visibility={o.visibility} />
               </button>
               <span className="flex min-w-0 items-center gap-1.5">
-                <span className="font-pixel-sm text-[13px] text-muted">{t('ui.trades.for')}</span>
+                <span className="font-pixel-sm text-[16px] text-muted">{t('ui.trades.for')}</span>
                 <WantTile want={o.want} />
               </span>
               <TimeLeft endsAt={o.endsAt} days={cfg.listingDays} now={now} prefix />
@@ -468,7 +467,7 @@ function Mine({
                     }
                   />
                 </b>
-                <small className="font-pixel-sm text-[13px] leading-tight text-muted">
+                <small className="font-pixel-sm text-[16px] leading-tight text-muted">
                   {[
                     t('ui.trades.log.gave', { mon: `${name(e.gave.dex)} ${lv(e.gave.level)}` }),
                     t('ui.trades.log.got', { mon: `${name(e.got.dex)} ${lv(e.got.level)}` }),
@@ -548,11 +547,11 @@ function Locked() {
             style={{ width: `${Math.min(1, have / Math.max(1, need)) * 100}%` }}
           />
         </span>
-        <small className="font-pixel-sm text-[15px] text-muted">
+        <small className="font-pixel-sm text-[16px] text-muted">
           {t('ui.trades.lockedCount', { n: have, max: need })}
         </small>
       </div>
-      <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">{t('ui.trades.lockedWhy')}</p>
+      <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{t('ui.trades.lockedWhy')}</p>
     </>
   )
 }

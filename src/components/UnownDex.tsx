@@ -189,7 +189,7 @@ export function UnownStripView({
           )}
         </span>
         <UnownLetterBar found={found} className="max-w-[360px]" />
-        <small className="lv-ink truncate font-pixel-sm text-[15px] text-gold-light">
+        <small className="lv-ink truncate font-pixel-sm text-[16px] text-gold-light">
           {done
             ? paid && reward > 0
               ? t('ui.unown.stripPaid', { amount: money(reward) })
@@ -260,7 +260,7 @@ export function UnownLetterCard({
         <span className="text-xl">
           {isNew ? t('ui.unown.newLetter', { name }) : t('ui.unown.knownLetter', { name })}
         </span>
-        <span className="font-pixel-sm text-[15px]">
+        <span className="font-pixel-sm text-[16px]">
           {reward
             ? t('ui.unown.completeReward', { amount: money(reward) })
             : t('ui.unown.count', { n: found, total })}
