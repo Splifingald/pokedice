@@ -1,5 +1,12 @@
-import { inWorldRegion, isExtreme, tradesOf, tradesOn, tradesToWatch } from '@/engine'
-import { useInviteGauge } from '@/components/friends/InviteRewards'
+import {
+  inviteGauge,
+  invitesWait,
+  inWorldRegion,
+  isExtreme,
+  tradesOf,
+  tradesOn,
+  tradesToWatch,
+} from '@/engine'
 import { useFriends } from '@/lib/friends'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
@@ -14,8 +21,18 @@ export function useSocial() {
   const data = useGame((s) => s.data)
   const userId = useGame((s) => s.auth.userId)
   const newFriends = useFriends((s) => (s.userId && s.userId === userId ? s.unseen.length : 0))
-  // Invite rewards ready to open (docs/15 §25) wait on the Friends page: its dot counts them too.
-  const rewardsReady = useInviteGauge()?.ready.length ?? 0
+  // Invite rewards ready to open (docs/15 §25) wait on the Friends page: its dot counts them too. The gauge is read
+  // here from the engine, not through InviteRewards' hook, so the shell doesn't pull the gifts' art into every page
+  // (and into the unit tests' node, where it has no canvas).
+  const gaugeHere = useGame(
+    (s) =>
+      isSupabaseConfigured &&
+      s.auth.status === 'signed_in' &&
+      !!s.save &&
+      invitesWait(s.save, s.data) === null,
+  )
+  const invites = useFriends((s) => (s.userId && s.userId === userId ? s.invites : null))
+  const rewardsReady = gaugeHere && invites ? inviteGauge(invites, data).ready.length : 0
   const tradesUnseen = save && !isExtreme(save) ? tradesToWatch(save).length : 0
   const tradesOut = save ? tradesOf(save).out.length : 0
   const trades =
