@@ -184,54 +184,11 @@ export function CatchPanel({
     )
   }
 
+  // One ball or none in the bag, or a catch that can't miss: nothing to pick, the throw is the only way on, so it
+  // loads and goes by itself (the rework).
+  const single = sure || options.length === 1
   return (
     <>
-      {!sure && (
-        <div
-          role="radiogroup"
-          aria-label={t('ui.catch.ballLegend')}
-          className="grid grid-cols-[repeat(auto-fit,minmax(60px,1fr))] gap-1.5"
-        >
-          {options.map((o) => {
-            const item = o.key ? data.items[o.key] : null
-            const useless = notNeeded(o)
-            const on = chosen.key === o.key
-            return (
-              <button
-                key={o.key ?? 'none'}
-                type="button"
-                role="radio"
-                aria-checked={on}
-                aria-label={t('ui.catch.ballLabel', {
-                  label: o.label,
-                  left: o.n != null ? t('ui.catch.ballLeft', { n: o.n }) : '',
-                  pct: pct(o.bonus),
-                  useless: useless ? t('ui.catch.notNeededSuffix') : '',
-                })}
-                title={useless ? t('ui.catch.notNeededTitle', { label: o.label }) : o.label}
-                onClick={() => setBall(o.key)}
-                className={cx(
-                  'relative grid min-h-[72px] content-start justify-items-center gap-0.5 px-0.5 pb-1.5 pt-1.5 text-ink',
-                  on
-                    ? 'bg-gold-pale shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_0_0_4px_#f07a2a]'
-                    : 'bg-paper shadow-card',
-                  useless && !on && 'opacity-60',
-                )}
-              >
-                <span className="grid h-[26px] w-[26px] place-items-center">
-                  {item ? <ItemSprite item={item} size={26} /> : <PixelIcon name="dice" size={20} />}
-                </span>
-                <b className="font-pixel text-[20px] font-normal leading-none tabular-nums">
-                  {pct(o.bonus)}%
-                </b>
-                <small className="font-pixel-sm text-[14px] leading-none text-muted">
-                  {useless ? t('ui.catch.notNeeded') : o.n != null ? `×${o.n}` : t('ui.catch.noBall')}
-                </small>
-              </button>
-            )
-          })}
-        </div>
-      )}
       {/* Each ball says its own chance: no formula line, no tip (the rework). */}
       {c.target.mode === 'replace' && (
         <p className="m-0 text-center font-pixel-sm text-[16px] leading-tight text-muted">
@@ -242,16 +199,54 @@ export function CatchPanel({
         </p>
       )}
       <Dock>
-        {/* A sure catch, or no ball in the bag: nothing to pick, the throw is the only way on, so it loads and goes by
-            itself (the rework). */}
-        {sure || options.length === 1 ? (
+        {single ? (
           <AutoButton paused="byDialogs" variant="primary" size="lg" className="w-full" onClick={() => onThrow(null)}>
             {sure ? t('ui.catch.catch') : t('ui.catch.roll')}
           </AutoButton>
         ) : (
-          <PixelButton variant="primary" size="lg" className="w-full" onClick={() => onThrow(chosen.key)}>
-            {t('ui.catch.roll')}
-          </PixelButton>
+          // A choice of balls (docs/42): each one is the throw, in the thumb's reach. No ball picked first and a
+          // ROLL TO CATCH after it: the tap that chooses is the tap that throws.
+          <div className="grid gap-1.5" role="group" aria-label={t('ui.catch.ballLegend')}>
+            <p className="m-0 text-center font-pixel-sm text-[16px] leading-none text-muted">{t('ui.catch.tapBall')}</p>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(64px,1fr))] gap-1.5">
+              {options.map((o) => {
+                const item = o.key ? data.items[o.key] : null
+                const useless = notNeeded(o)
+                // Idle's pick (docs/36), shown chosen while it waits to throw it.
+                const on = picked !== undefined && chosen.key === o.key
+                return (
+                  <button
+                    key={o.key ?? 'none'}
+                    type="button"
+                    aria-label={t('ui.catch.throwLabel', {
+                      label: o.label,
+                      left: o.n != null ? t('ui.catch.ballLeft', { n: o.n }) : '',
+                      pct: pct(o.bonus),
+                      useless: useless ? t('ui.catch.notNeededSuffix') : '',
+                    })}
+                    title={useless ? t('ui.catch.notNeededTitle', { label: o.label }) : o.label}
+                    onClick={() => {
+                      setBall(o.key)
+                      onThrow(o.key)
+                    }}
+                    className={cx(
+                      'pixel-btn relative grid min-h-[84px] content-center justify-items-center gap-1 px-0.5 py-1.5 text-ink',
+                      on ? 'bg-gold-pale outline outline-[3px] outline-offset-2 outline-gold' : 'bg-paper',
+                      useless && !on && 'opacity-60',
+                    )}
+                  >
+                    <span className="grid h-[28px] w-[28px] place-items-center">
+                      {item ? <ItemSprite item={item} size={28} /> : <PixelIcon name="dice" size={22} />}
+                    </span>
+                    <b className="font-pixel text-[22px] font-normal leading-none tabular-nums">{pct(o.bonus)}%</b>
+                    <small className="font-pixel-sm text-[14px] leading-none text-muted">
+                      {useless ? t('ui.catch.notNeeded') : o.n != null ? `×${o.n}` : t('ui.catch.noBall')}
+                    </small>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         )}
       </Dock>
     </>

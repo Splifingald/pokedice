@@ -2,7 +2,7 @@
 // gathers what the engine can't know (the page, the account, the clock, what waits outside the save) and works the
 // turn out once for the whole game, and OneTimePopups mounts every pop-up and the services that bring them in. Each
 // pop-up opens only on its turn (popupTurn.ts), so they queue, one at a time, in one order.
-import { useMemo, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { nextOneTimePopup } from '@/engine'
 import { useFullscreen } from '@/lib/fullscreen'
@@ -30,7 +30,7 @@ import { ShinyDexUnlockPopup } from './ShinyDexRules'
 import { UnownDexUnlockPopup } from './UnownDex'
 import { GiftService } from './Gifts'
 import { LeaderboardTutorial } from './LeaderboardTutorial'
-import { PopupTurnContext, usePopupOnScreen } from './popupTurn'
+import { POPUP_GAP_MS, PopupTurnContext, usePopupOnScreen } from './popupTurn'
 import { PowersUnlockPopup } from './PowersRules'
 import { RaidRulesPopup } from '@/screens/events/RaidRules'
 import { PushService } from './PushService'
@@ -60,7 +60,7 @@ export function PopupQueue({ children }: { children: ReactNode }) {
   const idle = useGame((s) => s.run.phase === 'idle' && !s.battle)
   const signedIn = useGame((s) => s.auth.status === 'signed_in')
   // Worked out again only when one of these changes, not on every change to the store (a toast, a fight's turn).
-  const turn = useMemo(
+  const due = useMemo(
     () =>
       nextOneTimePopup(save, data, {
         calm: idle && !full && !gifts,
@@ -96,6 +96,22 @@ export function PopupQueue({ children }: { children: ReactNode }) {
       showing,
     ],
   )
+  // Pacing (docs/42): the moment the pop-up on screen is done (no longer due), the queue rests a minute rather than hand
+  // the screen straight to the next — the Day Care's rules then the invite, one after the other on arrival, was the
+  // heaviest moment of a visit. In memory: a page loaded afresh starts without a wait.
+  const closing = showing != null && due !== showing
+  // Set in the very render that sees it close: the next render (the pop-up gone from the screen) must already rest.
+  const restUntil = useRef(0)
+  if (closing) restUntil.current = Date.now() + POPUP_GAP_MS
+  const until = restUntil.current
+  const resting = until > Date.now()
+  const [, wake] = useState(0)
+  useEffect(() => {
+    if (!resting) return
+    const timer = setTimeout(() => wake((n) => n + 1), until - Date.now() + 50)
+    return () => clearTimeout(timer)
+  }, [resting, until])
+  const turn = closing || (resting && !showing) ? null : due
   return <PopupTurnContext.Provider value={turn}>{children}</PopupTurnContext.Provider>
 }
 

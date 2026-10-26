@@ -284,7 +284,7 @@ test('ENTER plays the intro at once, held for a tap, then its pop-up with the sh
     .click()
   const strike = page.getByRole('heading', { name: 'Round 1/2: Darkrai strikes!' })
   await playUntil(page, strike)
-  await expect(page.getByRole('button', { name: /^Catch|ROLL TO CATCH/ })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /^Catch|ROLL TO CATCH|Throw it$/ })).toHaveCount(0)
   await expect.poll(async () => (await stored(page)).inventory.revive).toBe(1)
   // The strike lands: 10 % of max HP, rounded, never a K.O.
   await expect(page.getByText('Every Pokémon on your team lost 10% of its max HP.')).toBeVisible()

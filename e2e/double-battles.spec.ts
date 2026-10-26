@@ -91,7 +91,8 @@ test('a wild pair: no pop-up, two leads, four on the stage, a target, a throw at
  */
 async function fightAndCatch(page: Page): Promise<number> {
   const attack = page.getByRole('button', { name: 'ATTACK', exact: true })
-  const roll = page.getByRole('button', { name: /^(ROLL TO CATCH|CATCH)$/ })
+  // A choice of balls is a row of throws (docs/42): the first one throws.
+  const roll = page.getByRole('button', { name: /^(ROLL TO CATCH|CATCH)$|Throw it$/ }).first()
   const next = page.getByRole('button', { name: 'CONTINUE', exact: true })
   // The result shows in the battle's panel (the rework): its region, named as the old card's title was.
   const victory = page.getByRole('region', { name: 'VICTORY!' })

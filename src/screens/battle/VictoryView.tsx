@@ -307,7 +307,7 @@ function TeamChoice() {
 }
 
 /** The Pokémon a victory touched, in order: XP, level-ups, milestones and a pending evolution, one entry each. */
-interface MonRecap {
+export interface MonRecap {
   uid: string
   /** The form it fought as (an evolution plays after the recap). */
   dex: number
@@ -663,6 +663,78 @@ function MonRow({ m }: { m: MonRecap }) {
   )
 }
 
+/**
+ * The team's XP in one strip (docs/42), a column each, side by side: the sprite, its level, the bar filling, the XP won.
+ * A level-up turns its column gold, the level green, the sprite hops and the confetti flies as the bar rolls over; a
+ * milestone or an evolution to come is a chip under it. Each column comes as the recap reaches it, in its own place,
+ * so nothing reflows. With More details, a row each instead (MonRow): names, figures, Multi XP.
+ */
+export function TeamXpStrip({ mons, shown }: { mons: MonRecap[]; shown: number }) {
+  return (
+    <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.max(1, mons.length)}, minmax(0, 1fr))` }}>
+      {mons.map((m, i) => (i < shown ? <MonColumn key={m.uid} m={m} /> : <div key={m.uid} aria-hidden />))}
+    </div>
+  )
+}
+
+function MonColumn({ m }: { m: MonRecap }) {
+  const { t } = useT()
+  const data = useGame((s) => s.data)
+  const inst = useGame((s) => (s.save ? getInstance(s.save, m.uid) : undefined))
+  const reduced = useGame((s) => s.settings.reducedMotion)
+  const feel = useGame((s) => gameFeelOn(s.data))
+  const [rolls, setRolls] = useState(0)
+  const fill = useXpFill(inst, m.from, () => setRolls((n) => n + 1))
+  const species = data.species[m.dex]
+  if (!species) return null
+  const leveled = m.toLevel != null
+  const level = fill?.level ?? inst?.level ?? m.toLevel ?? 0
+  // Still filling toward its level-up: the celebration waits for the roll.
+  const waiting = !!fill && rolls === 0
+  const up = leveled && !waiting
+  const name = inst?.nickname || species.name
+  const chips: ReactNode[] = []
+  m.milestones
+    .filter((ms) => ms.effect !== 'EVOLVE')
+    .forEach((ms, i) => chips.push(<MilestoneChip key={`m${i}`} m={ms} type1={species.type1} />))
+  if (m.evolvesTo != null)
+    chips.push(
+      <span key="evo" className="bg-ink px-1 py-0.5 text-sm leading-none text-panel">
+        {t('ui.victory.evolvingInto', { name: data.species[m.evolvesTo]?.name ?? t('ui.common.unknown') })}
+      </span>,
+    )
+  return (
+    <div
+      className={cx('flex min-w-0 flex-col items-center gap-1 p-1.5 shadow-ring', up ? 'bg-gold-pale' : 'bg-paper')}
+      role="group"
+      aria-label={`${name}: ${t('ui.victory.xpGain', { amount: m.xp })}${leveled ? `, ${t('ui.victory.levelUp', { level: m.toLevel ?? 0 })}` : ''}`}
+    >
+      <motion.span
+        className="relative"
+        initial={false}
+        animate={up && !reduced ? { y: [0, -10, 0, -5, 0], scale: [1, 1.25, 1, 1.1, 1] } : undefined}
+        transition={{ duration: 0.8, ease: (p: number) => Math.round(p * 8) / 8 }}
+      >
+        <MiniSprite dex={m.dex} size={48} className="-my-1" />
+        {up && <Confetti key={rolls} />}
+      </motion.span>
+      <span className="w-full truncate text-center text-base leading-none">{name}</span>
+      <span
+        className={cx(
+          'inline-flex items-center gap-0.5 px-1 py-0.5 text-lg leading-none',
+          up ? 'bg-hp-green text-ink shadow-ring' : 'text-ink',
+        )}
+      >
+        {up && <PixelIcon name="up" size={14} />}
+        {t('ui.common.level.short', { n: level })}
+      </span>
+      {inst && <XpBar inst={inst} className="w-full" shown={fill} stepped={feel} numbers={false} />}
+      <span className="text-base leading-none text-muted">{t('ui.victory.xpGain', { amount: m.xp })}</span>
+      {chips.length > 0 && <div className={cx('flex flex-wrap justify-center gap-1', !up && leveled && 'invisible')}>{chips}</div>}
+    </div>
+  )
+}
+
 /** How long the autopilot leaves a result card up before closing it (docs/36). */
 const AUTO_CARD_MS = 1600
 
@@ -678,6 +750,7 @@ export function VictoryView() {
   const data = useGame((s) => s.data)
   const reduced = useGame((s) => s.settings.reducedMotion)
   const feel = useGame((s) => gameFeelOn(s.data))
+  const details = useDetails()
   const { mons, extras, evolutions } = useRecap(run.events)
   const pace = usePace()
   // The win's jingle as the card rises (docs/38 F5a), once the fight is over: not between a trainer's Pokémon.
@@ -876,11 +949,18 @@ export function VictoryView() {
       )}
       <div ref={list} className="flex flex-col gap-2">
         <AnimatePresence initial={!reduced}>
-          {mons.slice(0, shown).map((m) => (
-            <motion.div key={m.uid} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-              <MonRow m={m} />
+          {details ? (
+            mons.slice(0, shown).map((m) => (
+              <motion.div key={m.uid} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+                <MonRow m={m} />
+              </motion.div>
+            ))
+          ) : mons.length > 0 ? (
+            // The team's XP in one strip (docs/42): a phone sees the rest of the result without scrolling.
+            <motion.div key="team" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+              <TeamXpStrip mons={mons} shown={shown} />
             </motion.div>
-          ))}
+          ) : null}
           {extras.slice(0, Math.max(0, shown - mons.length)).map((c) => (
             <motion.div key={c.key} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
               {c.node}

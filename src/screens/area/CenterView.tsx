@@ -13,6 +13,8 @@ import { loadSprite, spriteKey } from '@/fx/sprites'
 import { loadCenterArt } from '@/fx/scenes'
 import { centerTimeline } from '@/fx/timelines/center'
 import { useMotion } from '@/lib/motion'
+import { useMediaQuery } from '@/lib/useMediaQuery'
+import { AreaSceneBox } from '@/screens/area/AreaIdle'
 import { TeamSwapActions } from '@/components/TeamSwapActions'
 import { RunRoundGauge } from '@/screens/area/RoundGauge'
 import { useGame } from '@/store/game'
@@ -33,6 +35,8 @@ export function CenterView() {
   const [view, setView] = useState<SheetView | null>(null)
   const [sort, setSort] = useState<BoxSort>('dex')
   const teamSize = useGame((s) => s.save?.team.length ?? 1)
+  const wide = useMediaQuery('(min-width: 1024px)')
+  const area = useGame((s) => s.data.areas.find((a) => a.id === s.run.areaId))
   // The machine plays once, on arrival, and quickly: always the short version (one flash, healed), on the page.
   const [scene] = useState(() => ({
     ready: Promise.all([loadSprite(NURSE, false), loadCenterArt()]),
@@ -47,35 +51,44 @@ export function CenterView() {
   const open = (p: PokemonInstance) => setView({ kind: 'inst', id: p.id })
   const done = () => setView(null)
 
+  const heal = (
+    <StageCanvas
+      timeline={scene.timeline}
+      ready={scene.ready}
+      onEnd={() => setTimeout(() => setHealing(false), 250)}
+      label={t('ui.center.healing')}
+    />
+  )
   return (
-    // Phones: room at the bottom for the action bar, which is pinned over the tab bar.
-    <div className="flex flex-col gap-4 pb-[108px] md:pb-0">
+    // Phones: room at the bottom for the action bar, which is pinned over the tab bar. Wide screens (docs/42), as a
+    // fight: the scene on the left — the healing, then the area with the team, healed — and the panel beside it.
+    <div className="flex flex-col gap-4 pb-[108px] md:pb-0 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-5">
+      {wide &&
+        (healing ? (
+          <div className="sticky top-[calc(var(--top-bar,0px)_+_1rem)] overflow-hidden shadow-ledge">{heal}</div>
+        ) : (
+          area && <AreaSceneBox area={area} />
+        ))}
+      <div className="flex min-w-0 flex-col gap-4">
       {/* The rework, as a battle: the round's gauge under the top bar, no area banner; the healing on the page at
           the top, quick, then gone, so the team and the Box get the screen. */}
       <RunRoundGauge className="-mx-3 -mt-4 bg-panel px-3 py-1.5 shadow-[0_2px_0_rgb(var(--c-edge))] md:mx-0 md:mt-0" />
       <AnimatePresence initial={false}>
-        {healing && (
+        {healing && !wide && (
           <motion.div
             key="heal"
             className="-mx-3 -mt-4 overflow-hidden md:mx-0 md:mt-0"
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25 }}
           >
-            <div className="shadow-ledge md:pixel-panel md:p-0">
-              <StageCanvas
-                timeline={scene.timeline}
-                ready={scene.ready}
-                onEnd={() => setTimeout(() => setHealing(false), 250)}
-                label={t('ui.center.healing')}
-              />
-            </div>
+            <div className="shadow-ledge">{heal}</div>
           </motion.div>
         )}
       </AnimatePresence>
 
       <section className="flex flex-col gap-2">
         <h2 className="text-3xl">{t('ui.center.teamCount', { count: team.length, max: data.config.maxTeamSize })}</h2>
-        <ol className="grid grid-cols-3 gap-1.5 sm:gap-2 lg:grid-cols-6">
+        <ol className="grid grid-cols-3 gap-1.5 sm:gap-2">
           {team.map((p, i) => (
             <PokeCard
               key={p.id}
@@ -101,7 +114,7 @@ export function CenterView() {
           <h2 className="text-3xl">{t('ui.team.box', { count: box.length })}</h2>
           {box.length > 1 && <BoxSortPicker sort={sort} onChange={setSort} />}
         </div>
-        <ul className="grid grid-cols-3 gap-1.5 sm:gap-2 lg:grid-cols-6">
+        <ul className="grid grid-cols-3 gap-1.5 sm:gap-2">
           {box.map((p) => (
             <PokeCard
               key={p.id}
@@ -147,6 +160,7 @@ export function CenterView() {
         </div>
       </div>
 
+      </div>
       <SheetModal view={view} onClose={done} instExtra={(inst) => <TeamSwapActions inst={inst} onDone={done} />} />
     </div>
   )

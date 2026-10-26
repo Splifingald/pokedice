@@ -341,9 +341,10 @@ test('the final fight: the shiny Mew, beaten and caught, goes to the Kanto Box',
   await page.getByRole('button', { name: /^FACE IT/ }).first().click({ timeout: 15_000 })
   const won = page.getByText('The shiny Mew is yours!')
   for (const until = Date.now() + 80_000; Date.now() < until && !(await won.isVisible()); ) {
-    // The Master Ball picked before any throw: a throw with another ball can miss, and Mew flees (a slow machine raced it).
-    const master = page.getByRole('radio', { name: /^Master Ball/ })
-    if ((await master.isVisible().catch(() => false)) && (await master.getAttribute('aria-checked')) !== 'true') {
+    // The Master Ball thrown, never another: a throw with another ball can miss, and Mew flees (a slow machine raced
+    // it). Each ball is its own throw (docs/42).
+    const master = page.getByRole('button', { name: /^Master Ball.*Throw it$/ })
+    if (await master.isVisible().catch(() => false)) {
       await master.click().catch(() => {})
       continue
     }

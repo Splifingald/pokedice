@@ -263,7 +263,7 @@ test('the way in: the breach waits for a tap, its pop-up over its end; arriving 
   // Win the fight (no throw comes), then the distortion's boons.
   const choice = page.getByRole('heading', { name: 'Distortion 1/2' })
   await playUntil(page, choice)
-  await expect(page.getByRole('button', { name: /^Catch|ROLL TO CATCH/ })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /^Catch|ROLL TO CATCH|Throw it$/ })).toHaveCount(0)
   const picks = page.getByRole('button', { name: /^Pick: / })
   expect(await picks.count()).toBeGreaterThan(0)
   // A pick asks first: BACK spends nothing; another one, CONFIRM takes it.

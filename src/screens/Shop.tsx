@@ -716,10 +716,14 @@ function BuyTab({ badges }: { badges: number }) {
       {shelf.length === 0 && <p className="copy text-muted">{t('ui.shop.nothingHere')}</p>}
       <GemShelf />
       {later.length > 0 && (
-        <section className="flex flex-col gap-1.5" aria-labelledby="mart-later">
-          <h2 id="mart-later" className="mt-1 text-[24px] leading-none">
-            {t('ui.shop.comingLater')}
-          </h2>
+        // Folded, as Upgrades' locked ones are (docs/42): what can't be bought yet doesn't fill the shelf.
+        <details className="group flex flex-col gap-1.5">
+          <summary className="flex min-h-[44px] cursor-pointer items-center gap-1.5 font-pixel-sm text-[16px] text-muted">
+            <span className="inline-block transition-transform group-open:rotate-90" aria-hidden>
+              ▶
+            </span>
+            {t('ui.shop.comingLaterCount', { title: t('ui.shop.comingLater'), n: later.length })}
+          </summary>
           <ul className="grid grid-cols-2 gap-1.5 md:grid-cols-3">
             {later.map((it) => (
               <li
@@ -738,7 +742,7 @@ function BuyTab({ badges }: { badges: number }) {
               </li>
             ))}
           </ul>
-        </section>
+        </details>
       )}
     </>
   )

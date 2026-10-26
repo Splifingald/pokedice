@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { teamOf, type PokeType } from '@/engine'
+import { teamOf, type PokemonInstance, type PokeType } from '@/engine'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { PixelIcon } from './icons'
@@ -19,6 +19,7 @@ export function LeadPicker({
   foe,
   pair,
   go = false,
+  members,
 }: {
   value: string | null
   onChange: (uid: string) => void
@@ -28,14 +29,19 @@ export function LeadPicker({
   pair?: { value: string[]; onChange: (uids: string[]) => void }
   /** The rework's send-out step: no heading; a tap on a card picks it, its INFO opens it, the caller's GO! sends it. */
   go?: boolean
+  /**
+   * Who to show instead of the team: a fight's switch after a K.O. (docs/42) offers those able to come in, at the fight's
+   * HP. Even one is shown (it is what GO! sends).
+   */
+  members?: PokemonInstance[]
 }) {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const [info, setInfo] = useState<string | null>(null)
   if (!save) return null
-  const team = teamOf(save)
-  if (team.length < 2) return null
+  const team = members ?? teamOf(save)
+  if (team.length < (members ? 1 : 2)) return null
   const current = value && team.some((p) => p.id === value && p.currentHp > 0) ? value : team.find((p) => p.currentHp > 0)?.id
   const picked = pair ? pickedPair(pair.value) : []
   const pick = (id: string) => {

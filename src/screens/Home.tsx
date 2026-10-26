@@ -49,17 +49,13 @@ function HomeView({ area }: { area: Area }) {
     null,
   )
   const [mon, setMon] = useState<SheetView | null>(null)
-  const { go, latest, goTo, keepExploring } = useContinue(area)
-  // What sits under CONTINUE takes its height off the scene on wide screens, so the whole bar stays on screen: the
-  // green GO TO (a 56px button and its gap), or "Stay here" under GO TO (44px and its gap), and "keep exploring" (36px
-  // and its gap).
+  const { go, goTo } = useContinue(area)
   // Inside a small world only its own things show (docs/21): its strip (about 60px and the gap) above the scene, no
-  // other region on offer, no region switcher.
+  // other region on offer, no region switcher. Wide screens take its room off the scene, so the scene stays in view.
   const inside = useInWorld().inside
   // Where Unown live (docs/41): the Unown Pokédex's banner sits there, as a world's strip does.
   const unown = useUnownStrip()
   const strip = inside || unown ? 72 : 0
-  const below = (goTo ? 52 : latest ? 64 : 0) + (keepExploring ? 44 : 0) + strip
 
   // Opened on an encounter left under way (store/resume.ts; the installed app starts on Home): straight back into it.
   const navigate = useNavigate()
@@ -112,8 +108,8 @@ function HomeView({ area }: { area: Area }) {
     // padding and the Continue bar (≈184px, plus what sits under it: --below), its width follows from the scene's
     // 288:276 shape, and it never takes more than 58% of the row (on a 1024px screen the widgets would be squeezed out).
     <div
-      className="flex flex-col gap-3 md:gap-4 lg:grid lg:grid-cols-[minmax(320px,min(calc((100dvh-184px-var(--below))*288/276),58%))_minmax(0,1fr)] lg:items-start lg:gap-5"
-      style={{ ['--below' as string]: `${below}px` }}
+      className="flex flex-col gap-3 md:gap-4 lg:grid lg:grid-cols-[minmax(320px,min(calc((100dvh-112px-var(--below))*288/276),58%))_minmax(0,1fr)] lg:items-start lg:gap-5"
+      style={{ ['--below' as string]: `${strip}px` }}
     >
       <h1 className="sr-only">{t('ui.home.heading', { area: area.name })}</h1>
       {inside && (
@@ -137,9 +133,11 @@ function HomeView({ area }: { area: Area }) {
             <AreaPlate area={area} onOpen={() => setDetails(area.id)} />
           </SceneStage>
         </div>
-        {wide && bar}
       </section>
-      <section aria-label={t('ui.home.widgets')}>
+      {/* Wide screens (docs/42): the scene takes the whole height on the left; on the right, what to do — PLAY first,
+          then what's open, under its headings. */}
+      <section aria-label={t('ui.home.widgets')} className="flex flex-col gap-4">
+        {wide && bar}
         <Widgets />
       </section>
       {!wide && (

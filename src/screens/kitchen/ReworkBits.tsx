@@ -9,7 +9,11 @@ import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { PokeCard } from '@/components/PokeCard'
 import type { PokemonInstance } from '@/engine'
+import { LeadPicker } from '@/components/LeadPicker'
+import { teamOf } from '@/engine'
+import { AreaSceneBox } from '@/screens/area/AreaIdle'
 import { EncounterSwipe } from '@/screens/battle/EncounterSwipe'
+import { TeamXpStrip, type MonRecap } from '@/screens/battle/VictoryView'
 import { setSettings, useGame } from '@/store/game'
 
 const mon = (over: Partial<PokemonInstance>): PokemonInstance => ({
@@ -34,8 +38,49 @@ export function ReworkBits() {
   const [picked, setPicked] = useState(TEAM[0]!.id)
   const [swipe, setSwipe] = useState(0)
   const details = useGame((s) => s.settings.details === true)
+  const [strip, setStrip] = useState(0)
+  const [switchPick, setSwitchPick] = useState(TEAM[1]!.id)
+  // The result strip and the area scene read the save: shown with the save this browser holds, if any.
+  const save = useGame((s) => s.save)
+  const area = useGame((s) => s.data.areas.find((a) => a.id === s.save?.currentAreaId))
+  const team = save ? teamOf(save) : []
+  const mons: MonRecap[] = team.map((p, i) => ({
+    uid: p.id,
+    dex: p.dex,
+    xp: 12 + i * 5,
+    from: i === 0 ? { level: Math.max(1, p.level - 1), xp: 0 } : { level: p.level, xp: 0 },
+    shared: i > 0,
+    fromLevel: i === 0 ? p.level - 1 : null,
+    toLevel: i === 0 ? p.level : null,
+    milestones: [],
+    evolvesTo: null,
+  }))
   return (
     <div className="grid w-full gap-4">
+      <div className="grid max-w-md gap-2">
+        <b className="text-lg">TeamXpStrip: the result's team (the first levels up), shown one by one</b>
+        {mons.length ? (
+          <TeamXpStrip key={strip} mons={mons} shown={mons.length} />
+        ) : (
+          <p className="copy text-muted">Start a game: the strip shows the save's team.</p>
+        )}
+        <PixelButton size="sm" className="self-start" onClick={() => setStrip((n) => n + 1)}>
+          Fill it again
+        </PixelButton>
+      </div>
+
+      <div className="grid max-w-md gap-2">
+        <b className="text-lg">The K.O.'s switch: those able to come in, as cards (LeadPicker members)</b>
+        <LeadPicker members={TEAM.slice(0, 2)} value={switchPick} onChange={setSwitchPick} go />
+      </div>
+
+      {area && (
+        <div className="grid max-w-md gap-2">
+          <b className="text-lg">AreaSceneBox: the area and its team, over the page between encounters</b>
+          <AreaSceneBox area={area} />
+        </div>
+      )}
+
       <div className="grid max-w-md gap-2">
         <b className="text-lg">EncounterSwipe: a new fight opens (Game feel on, motion full or short; none when calm)</b>
         <div className="relative aspect-[3/2] overflow-hidden bg-gradient-to-b from-sky-300 to-green-500 shadow-ring">

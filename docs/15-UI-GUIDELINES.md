@@ -244,14 +244,27 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   itself (`SEND_OUT_AUTO_MS`, the count starting again on another pick, held while a sheet covers it); a trainer, a gym
   or a boss waits for the tap. The battle's message is **one line under the stage** (`BattleLine`), not a dialogue
   box, and keeps its height when empty; the waiting prompt ("What will … do?") shows only with More details.
+- **The stage, and the phone's panel beside it** (docs/42 §2): on a phone the stage is on top and the panel under it;
+  **from 1024 px the stage takes the screen and the very same panel stands docked at its right** (380 px, as tall as
+  the stage, scrolling inside itself), so everything built for a phone's width is right on PC. Nothing under the stage,
+  nothing shown twice. The fight's every step (dice, send-out, catch, switch, result) lives in that panel; the Center
+  and the page between encounters put the area's scene (`AreaSceneBox`, or the healing) on the left and their panel
+  on the right; Home puts the scene on the left and PLAY with what's open on the right. A new full-screen step follows
+  the same shape.
+- **One tap per decision** (docs/42): where choosing is acting, the choice is the button — a catch's balls are each a
+  throw (no radio, no ROLL TO CATCH). Where a pick then GO! is the user's design (the send-out), a K.O.'s switch uses
+  the same cards (`LeadPicker members`), not a different list. A rare way out (forfeit) is a small button at the side,
+  never a second full-width one.
+- **The result is short**: the team's XP in one strip (`TeamXpStrip`), a column each; the rows are More details'.
 - **More details** (Settings, off by default, `useDetails`): what only an invested player reads is shown only to those
-  who switch it on — the battle history (its column on wide screens, its button on phones) and the key hints, the HP
-  and XP figures (bars alone otherwise), a card's type chips (every `PokeCard` is brief without it). A new screen asks
-  the same of each number it adds: does a player need it to act, or only to study? Studied things go behind it.
+  who switch it on — the battle history (a button by the Bag) and the key hints, the HP and XP figures (bars alone
+  otherwise), a card's type chips (every `PokeCard` is brief without it), the result's rows. A new screen asks the same
+  of each number it adds: does a player need it to act, or only to study? Studied things go behind it.
 - **Home: the team on top, then what's open, by heading** (docs/42): Events, Secret areas (every one open in the
   region, the newest first), Features (the Day Care, Versus); a heading only shows with something under it.
-- **Wide screens use their width**: the battle's stage grows into the history's room when More details is off; the
-  Center's and the area's cards run six to a row from 1024 px.
+- **One pop-up at a time, then a rest**: once a one-time pop-up is done the queue waits a minute (`POPUP_GAP_MS`) before
+  the next; two never chain.
+- **What can't be had yet is folded** (the Mart's locked items, Upgrades' locked ones): one line, opened on a tap.
 - Page gutter 12 px; gaps 8–12 px between cards; a panel's padding 12 px.
 - **Tap targets ≥ 44 px on phones** (inline links in a sentence excepted). From 768 px, tighter sizes are allowed.
 - One `<h1>` per route; headings in order; landmarks (`main`, `nav`).
@@ -571,8 +584,9 @@ Players shouldn't have to make many requests:
 The battle (`src/screens/battle/BattleView.tsx`) is **full screen under the top bar**: `useHoldFullscreen(true, true)`
 puts the side nav and the tab bar away while it is mounted and keeps the top bar (§12); the battle takes the rest of
 the height (`calc(100dvh - var(--top-bar))`). It must fit a 360×640 phone, top bar included, with nothing to scroll
-(`e2e/layout.spec.ts`). On desktop the column is at most 560 px wide (narrower on short screens, so the actions stay
-in view) and the battle history sits beside it from 1024 px.
+(`e2e/layout.spec.ts`). From 1024 px the stage takes the screen, as large as the window's height allows, and the
+panel stands docked at its right (380 px, framed, as tall as the stage, scrolling inside itself): the line, the dice,
+the actions, the Bag and the team as rows with their HP (docs/42 §3). The history is More details' button by the Bag.
 
 - **Stage** (`BattleStage`): 240×160 art pixels, scaled. The background is the area's picture (its middle 240 × 160,
   the horizon halfway down) with two translucent zones on its ground; Versus and areas without a picture keep the
@@ -600,7 +614,7 @@ in view) and the battle history sits beside it from 1024 px.
   game feel it counts up, docs/38 §3), the extras (Mega, G-MAX,
   Z-MOVE, Type, Run, AUTO-MODE) only when they exist — the battle powers gold, Z-MOVE's hint saying what this roll's type adds (docs/35) — the actions (REROLL with its count — LAST REROLL in gold with the game feel — ATTACK in
   red; SKIP TURN when stunned; the AUTO note with STOP, none in Versus), low in the panel with the room to spare above
-  them (in the thumb's reach), then the Bag, the team pips and the history.
+  them (in the thumb's reach), then the Bag and the team pips (the history with More details).
 - **Auto battles** (auto-mode, Versus) play at the `short` motion level unless animations are off (`MotionCap`).
   Auto-mode is switched in the area (under its header), never from Home; a cleared area's battle also offers it among
   its extras (AUTO-MODE, ghost, last), which hands the rest of that fight to auto and turns the setting on, like the
@@ -623,9 +637,10 @@ in view) and the battle history sits beside it from 1024 px.
   A side's next Pokémon after a K.O. goes to the front only when it's the next to act (`frontsNext`); when another
   side plays first, it waits beside the ally in front for its turn, never sent out only to step straight back.
   Giratina's raid, its area in portal mode, plays in the Distortion World (§27): its stage, its look, its entrance.
-- **The catch happens on the stage**: the worn-out foe stays on its platform, greyed; the panel shows a radio group
-  of balls (each with its chance from `catchChance`, how many you have, "not needed" when a weaker one is already
-  certain), the catch math (`d6 + bonus ≥ need`), and one throw. The catch timeline plays; the die and the
+- **The catch happens on the stage**: the worn-out foe stays on its platform, greyed; the panel shows the balls as a
+  row of throws in the dock (each with its chance from `catchChance`, how many you have, "not needed" when a weaker one
+  is already certain): one tap on a ball throws it (docs/42 §4). A sure catch or no ball has one button that loads and
+  presses itself. The catch timeline plays; the die and the
   result show together on `catchResult`, never before (the die would spoil the wobbles). A throw that can't miss
   (`sureThrow`: its bonus alone reaches the need) has no die and no animation: the stage jumps to the catch's end
   (`StageOverlay.instant`), only the "Gotcha!" sounds, and the result shows at once.

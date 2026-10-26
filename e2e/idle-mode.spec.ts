@@ -107,7 +107,7 @@ async function oneWildFight(page: Page) {
   await page.goto('/home')
   await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
   await expect(page).toHaveURL(/\/area$/)
-  await expect(page.getByRole('button', { name: /^(ROLL TO CATCH|CATCH)$/ })).toBeVisible({ timeout: 60_000 })
+  await expect(page.getByRole('button', { name: /^(ROLL TO CATCH|CATCH)$|Throw it$/ }).first()).toBeVisible({ timeout: 60_000 })
   // The result in the battle's panel (the rework), named as the old card's title was.
   const victory = page.getByRole('region', { name: 'VICTORY!' })
   await expect(victory).toBeVisible({ timeout: 15_000 })

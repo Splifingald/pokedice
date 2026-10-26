@@ -120,13 +120,16 @@ export function AreaScreen() {
   // The nightmare's area (docs/30): its way in, its intro, Darkrai's strike after a round, the waking.
   const nm = run.rebattle ? null : nightmareModeOf(area, data)
   const dream = !!nm && run.phase === 'idle' && nightmareStepDue(area, { save, data }, run)
+  // The plain page between encounters (docs/42): the area's scene with the team, as on Home, in the banner's place.
+  const sceneIdle = run.phase === 'idle' && !own && !dream && !mode && !nm && !run.rebattle
   return (
     <div className="flex flex-col gap-4">
       {/* The Center is laid out as a battle (the rework): its own gauge at the top, no area banner. */}
       {run.rebattle ? (
         <RebattleHeader />
       ) : (
-        !(run.phase === 'center' && !pilot) && <AreaHeader area={area} progress={progress} teamAvg={teamAverageLevel(save)} />
+        !(run.phase === 'center' && !pilot) &&
+        !sceneIdle && <AreaHeader area={area} progress={progress} teamAvg={teamAverageLevel(save)} />
       )}
       {run.phase === 'preview' && run.encounter && !(pilot && run.encounter.kind !== 'trick') && (
         <EncounterPreview enc={run.encounter} />
@@ -144,7 +147,7 @@ export function AreaScreen() {
       {run.phase === 'idle' && !own && !dream && (
         <>
           {mode && <PortalBonuses area={area} />}
-          <AreaIdle area={area} />
+          <AreaIdle area={area} scene={sceneIdle} />
         </>
       )}
       {mode && run.phase === 'idle' && <PortalInfo mode={mode} />}

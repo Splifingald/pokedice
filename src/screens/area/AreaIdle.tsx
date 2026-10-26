@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { nightmareLock, portalLock, teamOf, type Area } from '@/engine'
+import { autoAvailable, nightmareLock, portalLock, teamOf, type Area } from '@/engine'
 import { useT } from '@/i18n/react'
+import { AutoModeToggle } from '@/components/AutoModeToggle'
 import { RestingPanel } from '@/components/Extreme'
 import { PixelIcon } from '@/components/icons'
 import { PokeCard } from '@/components/PokeCard'
@@ -9,12 +10,16 @@ import { PixelButton } from '@/components/PixelButton'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { useContinue } from '@/screens/home/ContinueBar'
 import { useGame } from '@/store/game'
+import { cx } from '@/theme/util'
+import { AreaDetails } from '@/screens/home/AreaDetails'
+import { AreaPlate } from '@/screens/home/AreaPlate'
+import { SceneStage } from '@/screens/home/SceneStage'
 
 /**
  * Between two encounters, the player stays in the area (only a full K.O. sends them Home): the team, each card opening
  * its sheet (lead, items), and the action bar — HOME, or what Home's CONTINUE would start next.
  */
-export function AreaIdle({ area }: { area: Area }) {
+export function AreaIdle({ area, scene = false }: { area: Area; scene?: boolean }) {
   const { t } = useT()
   const navigate = useNavigate()
   const save = useGame((s) => s.save)
@@ -23,11 +28,26 @@ export function AreaIdle({ area }: { area: Area }) {
   const locked = useGame((s) => !!portalLock(s.save, s.data))
   // The nightmare (docs/30) shuts travel only: HOME stays, the reason is said over the bar.
   const held = useGame((s) => nightmareLock(s.save, s.data))
+  const autoHere = useGame((s) => !!s.save && autoAvailable(s.save, s.data, s.settings, area.id))
   if (!save) return null
 
   return (
-    // Phones: room at the bottom for the action bar, which is pinned over the tab bar.
-    <div className="flex flex-col gap-4 pb-[128px] md:pb-0">
+    // Phones: room at the bottom for the action bar, which is pinned over the tab bar. With the scene (docs/42): the
+    // area and its team on top, as on Home; wide screens put it on the left, the team and the bar beside it.
+    <div
+      className={cx(
+        'flex flex-col gap-4 pb-[128px] md:pb-0',
+        scene && 'lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-5',
+      )}
+    >
+      {scene && <AreaSceneBox area={area} />}
+      <div className="flex min-w-0 flex-col gap-4">
+      {/* The area's banner held it before the scene took its place: a cleared area (any, with Idle) plays itself. */}
+      {scene && autoHere && (
+        <div className="flex justify-end">
+          <AutoModeToggle />
+        </div>
+      )}
 
       {resting && <RestingPanel />}
       {/* A gym, a legendary or a raid waits: the bar challenges it; this explores on instead, as on Home. */}
@@ -68,6 +88,27 @@ export function AreaIdle({ area }: { area: Area }) {
           </div>
         </div>
       </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The area with the team roaming it (docs/42: the action on top), as on Home: its plate opens the area's details, a
+ * Pokémon its sheet. Under the top bar on phones; on wide screens the left column, held in view as the page scrolls.
+ */
+export function AreaSceneBox({ area }: { area: Area }) {
+  const save = useGame((s) => s.save)
+  const [details, setDetails] = useState(false)
+  const [mon, setMon] = useState<SheetView | null>(null)
+  if (!save) return null
+  return (
+    <div className="-mx-3 -mt-4 min-w-0 overflow-hidden shadow-ledge md:m-0 lg:sticky lg:top-[calc(var(--top-bar,0px)_+_1rem)]">
+      <SceneStage area={area} team={teamOf(save)} onOpen={(id) => setMon({ kind: 'inst', id })}>
+        <AreaPlate area={area} onOpen={() => setDetails(true)} />
+      </SceneStage>
+      <AreaDetails area={details ? area : null} onClose={() => setDetails(false)} />
+      <SheetModal view={mon} onClose={() => setMon(null)} manage />
     </div>
   )
 }
@@ -87,8 +128,9 @@ export function AreaTeam() {
   return (
     <section className="flex flex-col gap-2">
       <h2 className="text-3xl">{t('ui.center.teamCount', { count: team.length, max })}</h2>
-      {/* Cards three to a row (six on a wide screen), as at the Center and the send-out step (the rework). */}
-      <ol className="grid grid-cols-3 gap-1.5 sm:gap-2 lg:grid-cols-6">
+      {/* Cards three to a row, as at the Center and the send-out step (the rework); a wide screen keeps them in the
+          panel beside the scene (docs/42). */}
+      <ol className="grid grid-cols-3 gap-1.5 sm:gap-2">
         {team.map((p, i) => (
           <PokeCard
             key={p.id}

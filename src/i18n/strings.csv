@@ -1321,6 +1321,8 @@ ui.catch.catch,CATCH,CAPTURER,CAPTURAR,FANGEN,CATTURA,CAPTURAR,CAPTURAR,つか�
 ui.catch.ballLegend,Ball,Ball,Ball,Ball,Ball,Bola,Bola,ボール,볼,球
 ui.catch.noBall,No ball,Sans Ball,Sin Ball,Kein Ball,Nessuna Ball,Sem bola,Sem bola,ボールなし,볼 없음,不用球
 ui.catch.ballLabel,{label}{left}: {pct}% chance{useless},{label}{left} : {pct} % de chance{useless},{label}{left}: {pct} % de probabilidad{useless},{label}{left}: {pct} % Chance{useless},{label}{left}: {pct}% di probabilità{useless},{label}{left}: {pct}% de probabilidade{useless},{label}{left}: {pct}% de chance{useless},{label}{left}：確率{pct}%{useless},{label}{left}: 확률 {pct}%{useless},{label}{left}：几率{pct}%{useless}
+ui.catch.throwLabel,{label}{left}: {pct}% chance{useless}. Throw it,{label}{left} : {pct} % de chance{useless}. La lancer,{label}{left}: {pct} % de probabilidad{useless}. Lanzarla,{label}{left}: {pct} % Chance{useless}. Werfen,{label}{left}: {pct}% di probabilità{useless}. Lanciala,{label}{left}: {pct}% de probabilidade{useless}. Lançar,{label}{left}: {pct}% de chance{useless}. Lançar,{label}{left}：確率{pct}%{useless}。投げる,{label}{left}: 확률 {pct}%{useless}. 던지기,{label}{left}：几率{pct}%{useless}。投出
+ui.catch.tapBall,Tap a ball to throw it,Touche une Ball pour la lancer,Toca una Ball para lanzarla,"Tippe auf einen Ball, um ihn zu werfen",Tocca una Ball per lanciarla,Toca numa bola para a lançar,Toque em uma bola para lançá-la,ボールをタップして投げよう,볼을 탭해서 던지세요,点按精灵球即可投出
 ui.catch.ballLeft,", {n} left",", {n} restantes",", quedan {n}",", noch {n}",", ne restano {n}",", restam {n}",", restam {n}",（残り{n}個）,(남은 수 {n}개),（剩余{n}个）
 ui.catch.notNeededSuffix,", not needed",", inutile",", innecesaria",", nicht nötig",", non serve",", não é precisa",", não precisa",（不要）,(필요 없음),（不需要）
 ui.catch.notNeeded,not needed,inutile,innecesaria,nicht nötig,non serve,não é precisa,não precisa,不要,필요 없음,不需要
@@ -2417,6 +2419,7 @@ ui.shop.each,{price} each,{price} l’unité,{price} cada uno,{price} pro Stück
 ui.shop.sellFor,Sell +{price},Vendre +{price},Vender +{price},Verkaufen +{price},Vendi +{price},Vender +{price},Vender +{price},売る +{price},팔기 +{price},卖出 +{price}
 ui.shop.nothingHere,Nothing in this category yet.,Rien dans cette catégorie pour l’instant.,Aún no hay nada en esta categoría.,In dieser Kategorie gibt es noch nichts.,Ancora niente in questa categoria.,Ainda nada nesta categoria.,Ainda nada nesta categoria.,このカテゴリーにはまだ何もない。,이 분류에는 아직 아무것도 없어요.,这个分类里还没有东西。
 ui.shop.comingLater,Coming later,Plus tard,Más adelante,Kommt später,In arrivo più avanti,Chega mais tarde,Chega mais tarde,あとで入荷,나중에 입고,以后上架
+ui.shop.comingLaterCount,{title} ({n}),{title} ({n}),{title} ({n}),{title} ({n}),{title} ({n}),{title} ({n}),{title} ({n}),{title}（{n}）,{title} ({n}),{title}（{n}）
 ui.shop.needsBadges.one,{count} badge,{count} badge,{count} medalla,{count} Orden,{count} medaglia,{count} insígnia,{count} insígnia,バッジ{count}個,배지 {count}개,{count}枚徽章
 ui.shop.needsBadges.other,{count} badges,{count} badges,{count} medallas,{count} Orden,{count} medaglie,{count} insígnias,{count} insígnias,バッジ{count}個,배지 {count}개,{count}枚徽章
 ui.shop.needsArea,Reach {area},Atteindre {area},Llegar a {area},{area} erreichen,Raggiungi {area},Chega a {area},Chegue a {area},{area}にたどり着く,{area}에 도착하기,抵达{area}

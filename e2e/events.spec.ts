@@ -323,7 +323,7 @@ test('a raid: the day’s raid, its lock, NPC trainers in the group, the fight t
 
   // The fight (animations off): you play first, the attack is yours, until the raid is won or lost.
   await expect(page.getByRole('heading', { name: 'Raid battle: Celebi' })).toBeAttached()
-  const caught = page.getByRole('button', { name: /ROLL TO CATCH|CATCH/ })
+  const caught = page.getByRole('button', { name: /ROLL TO CATCH|CATCH|Throw it$/ }).first()
   const lost = page.getByRole('heading', { name: 'The raid is lost' })
   for (let i = 0; i < 400 && !(await caught.isVisible()) && !(await lost.isVisible()); i++) {
     await clickAny(page, ['ATTACK', 'SKIP TURN'])
@@ -337,8 +337,8 @@ test('a raid: the day’s raid, its lock, NPC trainers in the group, the fight t
     await expect(page.getByRole('button', { name: 'Start the raid' })).toBeVisible()
     return
   }
-  await page.getByRole('radio', { name: /Ultra Ball/ }).click()
-  await caught.click()
+  // The Ultra Ball's tile is its throw (docs/42).
+  await page.getByRole('button', { name: /^Ultra Ball.*Throw it$/ }).click()
   const result = page.getByRole('button', { name: 'CONTINUE' })
   await expect(result).toBeVisible()
   await result.click()

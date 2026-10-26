@@ -10,6 +10,7 @@ import {
   autoAvailable,
   autoLevel,
   autoEvents,
+  instanceMaxHp,
   catchTarget,
   comboDice,
   computeDamage,
@@ -75,7 +76,7 @@ import { speciesTypes } from '@/components/TypeMatchups'
 import { useAreaDayTime } from '@/store/dayTime'
 import { useDetails, useTypeHints } from '@/store/hooks'
 import { cx } from '@/theme/util'
-import { BattleHistory, BattleHistoryList, DamageRecap } from './BattleHistory'
+import { BattleHistoryList, DamageRecap } from './BattleHistory'
 import { EncounterSwipe } from './EncounterSwipe'
 import { BagButton, DiceTray, Readout, SwitchRow, TeamColumn, TeamPips, trayKeyOf, turnInHand, useDamageReveal, ZMoveButton, type Preview, type TrayDice } from './BattlePanel'
 import { BattleStage, type StageOverlay } from './BattleStage'
@@ -684,9 +685,13 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const diceCount = Math.max(1, active.dice.length)
   // A tall phone (P1a, P1b) has room to spare under the stage: bigger dice, and the actions down in the thumb's reach.
   const tall = useMediaQuery('(max-width: 767px) and (min-height: 740px)')
-  // Your dice fill the tray: up to 54px (72 on a tall phone), never under a 44px tap target.
+  // Your dice fill the tray: up to 54px (72 on a tall phone, 64 in a wide screen's docked panel), never under a 44px
+  // tap target.
   const dieSize = panelWidth
-    ? Math.max(44, Math.min(tall ? 72 : 54, Math.floor((panelWidth - 24 - (diceCount - 1) * 8) / diceCount)))
+    ? Math.max(
+        44,
+        Math.min(tall ? 72 : wide ? 64 : 54, Math.floor((panelWidth - 24 - (diceCount - 1) * 8) / diceCount)),
+      )
     : 54
 
   // Tray: the animated roll while the log plays; the live, selectable roll once caught up.
@@ -804,18 +809,6 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         {t('ui.battle.skipTurn')}
       </PixelButton>
     )
-  else if (forced)
-    // After a K.O. the choice sits right under the battle, with what each one brings against this foe.
-    actions = (
-      <div className="flex flex-col gap-2">
-        {st.player
-          .filter((p) => p.hp > 0 && !onField(p))
-          .map((p) => (
-            <SwitchRow key={p.uid} b={p} detailed onPick={() => dispatch({ t: 'SWITCH', instanceId: p.uid })} />
-          ))}
-        <ForfeitButton />
-      </div>
-    )
   else if (rolling && !terminal)
     actions = (
       <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
@@ -869,7 +862,28 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       onPick={pickPip}
     />
   )
-  const teamRow = (
+  // A wide screen's panel has the room for the team as rows, each with its HP (the phone's pips otherwise).
+  const teamRow = wide ? (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        {bag}
+        {details && (
+          <PixelButton size="sm" className="ml-auto" onClick={() => setMenu('history')}>
+            <PixelIcon name="history" size={16} />
+            {t('ui.battle.history')}
+          </PixelButton>
+        )}
+      </div>
+      <TeamColumn
+        team={st.player}
+        activeUid={active.uid}
+        hpOf={(b) => fx.hp[b.uid] ?? b.hp}
+        canSwitch={!auto && (forced || (canAct && showSwitch))}
+        calling={forced && !auto}
+        onPick={pickPip}
+      />
+    </div>
+  ) : (
     <div className="mt-auto flex items-center gap-2">
       {bag}
       <div className="ml-auto flex items-center gap-1.5">
@@ -999,27 +1013,26 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   return (
     <BattleContexts pace={pace} motionCap={motionCap}>
-      {/* Wide screens: the stage as big as the height allows (3:2, with the line, dice and actions under it still in
-          view: ≈300px); the Bag and the team on its left, and with More details the history on its right (docs/42). */}
-      <div
-        className={cx(
-          'mx-auto w-full lg:grid lg:items-start lg:justify-center lg:gap-4 lg:p-4',
-          details
-            ? 'lg:grid-cols-[220px_minmax(0,calc((100dvh_-_300px_-_var(--top-bar,0px))_*_1.5))_300px]'
-            : 'lg:grid-cols-[220px_minmax(0,calc((100dvh_-_300px_-_var(--top-bar,0px))_*_1.5))_220px]',
-        )}
-      >
+      {/* Phones: the stage on top, the panel under it. Wide screens (docs/42): the stage takes the screen, as big as
+          its height allows (3:2), and the panel — the very same one, a phone's width — stands docked at its right with
+          everything the player does in it: the line, the dice, the actions, the team, the send-out, the catch, the
+          result. Nothing under the stage, nothing twice. */}
+      <div className="mx-auto w-full">
         <section
           aria-label={heading}
-          className="mx-auto flex min-h-[calc(100dvh_-_var(--top-bar,0px))] w-full max-w-[max(300px,min(560px,calc((100dvh_-_330px_-_var(--top-bar,0px))_*_1.5)))] flex-col lg:min-h-0 lg:max-w-none"
+          className="mx-auto flex min-h-[calc(100dvh_-_var(--top-bar,0px))] w-full max-w-[max(300px,min(560px,calc((100dvh_-_330px_-_var(--top-bar,0px))_*_1.5)))] flex-col lg:grid lg:min-h-0 lg:max-w-none lg:grid-cols-[minmax(0,calc((100dvh_-_2rem_-_var(--top-bar,0px))_*_1.5))_380px] lg:justify-center lg:gap-4 lg:p-4"
         >
           <h1 className="sr-only">{heading}</h1>
           {stage}
+          {/* Wide screens: the panel stands as tall as the stage beside it, and scrolls inside itself when it holds more
+              (a long result). */}
+          <div className="flex flex-1 flex-col lg:relative">
           <div
             ref={panel}
-            className="flex flex-1 flex-col gap-2 px-3 pt-3"
-            // Phones: the BottomDock at the foot of each step carries the padding (and the buttons).
-            style={wide ? { paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' } : undefined}
+            className={cx(
+              'flex flex-1 flex-col gap-2 px-3 pt-3',
+              wide && 'pixel-panel absolute inset-0 overflow-y-auto pb-3',
+            )}
           >
             {result ? (
               // The fight's end, under the scene rather than over it (the rework): no card rises.
@@ -1045,6 +1058,13 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
               />
             ) : over ? (
               <BottomDock>{actions}</BottomDock>
+            ) : forced && !auto ? (
+              // After a K.O. (docs/42): the cards of the send-out step, those able to come in, GO! sends the one picked.
+              <SwitchStep
+                options={st.player.filter((p) => p.hp > 0 && !onField(p))}
+                foe={foeFront.dex}
+                onPick={(uid) => dispatch({ t: 'SWITCH', instanceId: uid })}
+              />
             ) : (
               <>
                 {/* A tall phone: the dice come down a little, towards the thumb (P1b). */}
@@ -1167,42 +1187,20 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                 <div aria-hidden className="-mt-2 flex-1" />
                 <BottomDock>
                   <div className="min-h-[56px]">{actions}</div>
-                  {/* Phones: the Bag, the team and the history at the foot of the panel; wide screens: at the side. */}
-                  {!wide && teamRow}
+                  {/* The Bag and the team at the foot of the panel, on every screen (docs/42: the panel is the phone's). */}
+                  {teamRow}
+                  {/* The keys, for a keyboard: More details' (docs/42). */}
+                  {wide && details && canAct && !auto && (
+                    <p className="m-0 text-center font-pixel-sm text-[15px] text-muted">
+                      {t('ui.battle.keys', { action: t(rolling ? 'ui.battle.keyAttack' : 'ui.battle.keyRoll') })}
+                    </p>
+                  )}
                 </BottomDock>
               </>
             )}
           </div>
+          </div>
         </section>
-        {/* Wide screens, left of the stage: the Bag and the team, bigger than the pips. */}
-        {wide && (
-          <aside className="flex flex-col gap-2 lg:order-first" aria-label={t('ui.battle.switchGroup')}>
-            {!catching && !over && (
-              <>
-                {bag}
-                <TeamColumn
-                  team={st.player}
-                  activeUid={active.uid}
-                  hpOf={(b) => fx.hp[b.uid] ?? b.hp}
-                  canSwitch={!auto && (forced || (canAct && showSwitch))}
-                  calling={forced && !auto}
-                  onPick={pickPip}
-                />
-              </>
-            )}
-          </aside>
-        )}
-        {wide && details && (
-          // The history runs the page's whole height, and stays there while the page scrolls.
-          <aside className="sticky top-[calc(var(--top-bar,0px)_+_1rem)] flex h-[calc(100dvh_-_2rem_-_var(--top-bar,0px))] flex-col gap-2">
-            <BattleHistory battle={battle} cursor={fx.cursor} defaultOpen fill />
-            {canAct && !auto && (
-              <p className="m-0 font-pixel-sm text-[15px] text-muted">
-                {t('ui.battle.keys', { action: t(rolling ? 'ui.battle.keyAttack' : 'ui.battle.keyRoll') })}
-              </p>
-            )}
-          </aside>
-        )}
       </div>
 
       <Sheet open={menu === 'history'} onClose={() => setMenu(null)} title={t('ui.battle.history')}>
@@ -1397,6 +1395,45 @@ function BattleLine({ text }: { text: string }) {
     >
       {text}
     </p>
+  )
+}
+
+/**
+ * A K.O.'s switch (docs/42), laid out as the send-out step: the cards of those able to come in (the fight's HP on each),
+ * the first picked, a tap picks another, GO! sends it in. Giving up stays beside it.
+ */
+function SwitchStep({ options, foe, onPick }: { options: Battler[]; foe: number; onPick: (uid: string) => void }) {
+  const { t } = useT()
+  const data = useGame((s) => s.data)
+  const box = useGame((s) => s.save?.box)
+  const [picked, setPicked] = useState(options[0]?.uid ?? '')
+  const members = options.flatMap((b) => {
+    const inst = box?.find((p) => p.id === b.uid)
+    if (!inst) return []
+    // The card's HP bar reads the instance: the fight's share of it, on the instance's own scale.
+    const max = instanceMaxHp(inst, data)
+    return [{ ...inst, currentHp: Math.max(1, Math.round((b.hp / Math.max(1, b.maxHp)) * max)) }]
+  })
+  const name = options.find((b) => b.uid === picked)?.name ?? ''
+  return (
+    <div className="flex flex-1 flex-col gap-3">
+      <LeadPicker members={members} value={picked} onChange={setPicked} foe={speciesTypes(data, foe)} go />
+      <BottomDock>
+        <PixelButton
+          variant="primary"
+          size="lg"
+          className="w-full"
+          aria-label={t('ui.lead.sendOutName', { name })}
+          onClick={() => onPick(picked)}
+        >
+          {t('ui.lead.go')}
+        </PixelButton>
+        <div className="flex justify-end">
+          {/* A rare way out, so a quiet one: beside GO!'s row, not a second full-width button. */}
+          <ForfeitButton className="!w-auto px-3" />
+        </div>
+      </BottomDock>
+    </div>
   )
 }
 
