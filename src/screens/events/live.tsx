@@ -3,7 +3,7 @@
 // Cash Flow's "+50 %" on the purse and on the ₽ won (two at once add up). The Special Shop's sections are the Poké
 // Mart's (screens/Shop.tsx).
 import { type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { create } from 'zustand'
 import {
   cashMultiplier,
@@ -315,7 +315,10 @@ export function LivePopup() {
   const { lives, now } = useLive(asked ? 1000 : 5000)
   const next = save ? livePopupNext(save, lives) : null
   const live = (asked && lives.find((e) => e.id === asked)) || next
-  const open = !!live && !!save && now != null && ((idle && !!asked) || (turn && !!next))
+  // The Underground's page shows its rules itself, as a card at its top (docs/43 §7): never this pop-up over it.
+  const path = useLocation().pathname
+  const onItsPage = live?.type === 'underground' && path.startsWith('/underground')
+  const open = !!live && !!save && now != null && !onItsPage && ((idle && !!asked) || (turn && !!next))
   useOnScreen('live', open)
   if (!live || !save || now == null) return null
   const close = () => {

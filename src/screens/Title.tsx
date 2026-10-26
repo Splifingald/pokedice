@@ -139,12 +139,12 @@ export function Title() {
         <div className="mt-2 flex justify-center gap-4">
           {/* The deploy guide is for whoever runs the game, not for players: in dev and for the admin only. */}
           {(import.meta.env.DEV || isAdmin) && (
-            <Link to="/setup" className="underline">
+            <Link to="/setup" className="inline-flex min-h-[44px] items-center underline">
               {t('ui.title.deployGuide')}
             </Link>
           )}
           {import.meta.env.DEV && (
-            <Link to="/kitchen-sink" className="underline">
+            <Link to="/kitchen-sink" className="inline-flex min-h-[44px] items-center underline">
               {t('ui.title.kitchenSink')}
             </Link>
           )}

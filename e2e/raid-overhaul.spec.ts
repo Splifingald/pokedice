@@ -53,6 +53,8 @@ test('a legendary raid lists its own rules, and its rules pop-up shows once', as
   await pop.getByRole('button', { name: 'Later', exact: true }).click()
   await expect(pop).toHaveCount(0)
   const rules = page.getByRole('region', { name: 'This raid' })
+  // Folded on the page (docs/43 §5.11): its summary opens it.
+  await rules.getByText('This raid').click()
   await expect(rules.getByText('Lv.50', { exact: true })).toBeVisible()
   await expect(rules.getByText('Snow', { exact: true })).toBeVisible()
   await expect(rules.getByText('Its last bar')).toBeVisible()
@@ -74,6 +76,7 @@ test("Mewtwo's raid fights at its own level: the NPC partners come at Lv.70", as
   await boot(page, kantoSave({ raidRulesSeen: true }))
   await page.goto(`/raid/${areaId('Cerulean Cave')}/150`)
   const rules = page.getByRole('region', { name: 'This raid' })
+  await rules.getByText('This raid').click()
   await expect(rules.getByText('Lv.70', { exact: true })).toBeVisible()
   await expect(rules.getByText('Combo shield')).toBeVisible()
   await expect(rules.getByText('Charged attack')).toBeVisible()

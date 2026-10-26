@@ -610,14 +610,14 @@ export function PlateGrid({ held }: { held: readonly PokeType[] }) {
             title={has ? name : undefined}
             aria-label={has ? name : t('ui.ug.plateMissing')}
             className={cx(
-              'grid justify-items-center gap-0.5 px-0.5 pb-0.5 pt-1 font-pixel-sm text-tag leading-none',
+              'grid min-h-[40px] place-items-center px-0.5 py-1',
               has ? 'bg-paper text-ink shadow-ring-thin' : 'bg-well-deep text-ink shadow-[inset_0_0_0_2px_rgb(var(--c-shadow))]',
             )}
           >
             <span className="relative block aspect-[4/3] w-full max-w-[40px]">
               <UgSprite id={`plate.${type}`} fit={{ w: 4, h: 3 }} className={cx(!has && 'opacity-30 grayscale')} />
             </span>
-            <span className="max-w-full truncate">{has ? typeName(type) : '?'}</span>
+            {/* The plate's picture says which: its name is the tile's label (and its tooltip), never 14 px print. */}
           </li>
         )
       })}

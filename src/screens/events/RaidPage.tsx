@@ -5,6 +5,7 @@ import {
   ballBonus,
   catchChance,
   catchValueOf,
+  progressRaidOf,
   raidLocked,
   raidRegion,
   raidRules,
@@ -28,11 +29,15 @@ import { useT } from '@/i18n/react'
 import { countdown } from '@/lib/format'
 import { pushToast, useGame } from '@/store/game'
 import { useTodayRaid } from '@/store/raid'
+import { useDetails } from '@/store/hooks'
+import { useMediaQuery } from '@/lib/useMediaQuery'
 import { avatarOf, playerAvatarId } from '@/lib/avatars'
 import { emptySlots, ensureNpcOffer, groupOf, startRaid, useRaidGroup } from '@/store/raidBattle'
 import { PortalRaidCard } from './PortalRaid'
 import { NightmareRaidCard } from './NightmareRaid'
 import { ProgressRaidList } from './ProgressRaidList'
+import { ProgressRaidPanel, ProgressRaidStage, progressRaidLook } from './ProgressRaidScreen'
+import { EventDock } from './layout'
 import { RaidNpcPicker } from './RaidNpcPicker'
 import { RaidRulesPanel } from './RaidRules'
 import { RaidGroupSection, RaidTeamSection } from './RaidSetup'
@@ -78,6 +83,7 @@ export function RaidCard({
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
+  const details = useDetails()
   const cfg = data.config.events.raid
   // This raid Pokémon's own numbers (Admin → Raids), over the defaults.
   const rules = raidRules(data, raid.dex, kind, raid.areaId)
@@ -94,14 +100,16 @@ export function RaidCard({
       {area && (
         <span className="absolute left-2 top-2 bg-panel/90 px-1.5 pb-0.5 font-pixel-sm text-[16px] text-ink shadow-ring-line">{area.name}</span>
       )}
-      {/* Its catch value, to get the balls ready before the fight. */}
-      <span
-        className="absolute left-2 top-[34px] flex items-center gap-1 bg-paper/95 px-1.5 pb-0.5 font-pixel-sm text-[16px] text-ink shadow-ring-line"
-        title={statHint('catch')}
-      >
-        <PixelIcon name="ball" size={14} />
-        {statLabel('catch')} <b className="font-normal tabular-nums">{catchValueOf(data, raid.dex)}</b>
-      </span>
+      {/* Its catch value, to get the balls ready before the fight: a number for the invested (More details). */}
+      {details && (
+        <span
+          className="absolute left-2 top-[34px] flex items-center gap-1 bg-paper/95 px-1.5 pb-0.5 text-[16px] text-ink shadow-ring-line"
+          title={statHint('catch')}
+        >
+          <PixelIcon name="ball" size={14} />
+          {statLabel('catch')} <b className="font-normal tabular-nums">{catchValueOf(data, raid.dex)}</b>
+        </span>
+      )}
       {msLeft != null && (
         <span className="absolute right-2 top-2 bg-night px-1.5 pb-0.5 font-pixel-sm text-[16px] text-gold-light">
           {t(raid.caught ? 'ui.events.raid.newIn' : 'ui.events.raid.endsIn', { time: countdown(msLeft) })}
@@ -185,7 +193,8 @@ function LockNotice({ raid }: { raid: TodayRaid }) {
       </span>
       <span className="grid gap-0.5 leading-tight">
         <b className="text-[19px] font-normal leading-none">{t('ui.raid.lockTitle', { name })}</b>
-        <small className="font-pixel-sm text-[16px] text-ink">
+        {/* Where and when it joins you: what decides whether to fight it today. */}
+        <small className="text-[16px] text-ink">
           {t(regionStarted(save, regionId) ? 'ui.raid.lockText' : 'ui.raid.lockTextNew', { name, area: area?.name ?? '', region })}
         </small>
       </span>
@@ -201,7 +210,7 @@ function RaidCalendar({ today, day }: { today: TodayRaid; day: string }) {
   const days = open ? [{ day, raid: today }, ...upcomingRaids(data, day, 13)] : []
   return (
     <>
-      <PixelButton size="lg" className="w-full" onClick={() => setOpen(true)} aria-label={t('ui.raid.calendarLabel')}>
+      <PixelButton className="w-full min-w-0 px-2" onClick={() => setOpen(true)} aria-label={t('ui.raid.calendarLabel')}>
         <PixelIcon name="calendar" size={22} />
         {t('ui.raid.calendar')}
       </PixelButton>
@@ -288,17 +297,71 @@ function Waiting() {
   )
 }
 
-export function RaidPage() {
-  const { t, tPlural } = useT()
-  const { raid, msLeft, day } = useTodayRaid()
+/**
+ * The Raids page (docs/43 §5.11). Phones: today's raid on top, its panel (the team as cards, the group as seats, this
+ * raid's rules folded) with START pinned at the foot, then the legendary raids, each opening its own page. PC: a list
+ * and its detail — today's raid big with every raid in columns under it on the left, the picked raid's panel docked at
+ * the right (today's by default), so a legendary raid is set up without leaving the page.
+ */
+export function RaidPage({ head }: { head?: ReactNode }) {
+  const { t } = useT()
+  const { raid } = useTodayRaid()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
+  const wide = useMediaQuery('(min-width: 1024px)')
+  // A legendary raid picked on PC: its card and panel take today's place.
+  const [picked, setPicked] = useState<string | null>(null)
+  // Push notifications' question, once (docs/27): each day's raid can be announced.
+  usePushAsk('raid', !!raid)
+  if (!raid || !save)
+    return (
+      <div className="flex flex-col gap-3">
+        {head}
+        <p className="m-0 text-center text-[18px] text-muted">{t('ui.events.raid.loading')}</p>
+      </div>
+    )
+  const docked = wide && picked && progressRaidOf(data, picked) ? picked : null
+  const scope = docked ? progressRaidLook(data, progressRaidOf(data, docked)!, false).scope : undefined
+  return (
+    <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(360px,420px)] lg:items-start lg:gap-x-5 lg:gap-y-4">
+      <div className="lg:col-span-2">{head}</div>
+      <div className="flex min-w-0 flex-col gap-3 lg:col-start-1 lg:row-start-2">
+        {docked ? <ProgressRaidStage raidKey={docked} /> : <RaidCard raid={raid} msLeft={null} />}
+      </div>
+      <aside
+        // Docked from 1024 px, as tall as the screen and scrolling inside itself; a phone's is the page's column.
+        className={cx(
+          'flex min-w-0 flex-col gap-3',
+          wide && 'pixel-panel',
+          'lg:sticky lg:top-[calc(var(--top-bar,56px)+1rem)] lg:col-start-2 lg:row-span-2 lg:row-start-2 lg:max-h-[calc(100dvh-var(--top-bar,56px)-2rem)] lg:overflow-y-auto lg:p-3',
+          scope,
+        )}
+        aria-label={docked ? data.species[progressRaidOf(data, docked)!.dex]?.name : t('ui.events.raid.name')}
+      >
+        {docked ? <ProgressRaidPanel key={docked} raidKey={docked} title /> : <DailyRaidPanel raid={raid} />}
+      </aside>
+      <div className="flex min-w-0 flex-col gap-3 lg:col-start-1 lg:row-start-3">
+        <Waiting />
+        <ProgressRaidList
+          today={wide ? raid : undefined}
+          picked={wide ? (docked ?? 'today') : undefined}
+          onPick={wide ? (key) => setPicked(key === 'today' ? null : key) : undefined}
+        />
+      </div>
+    </div>
+  )
+}
+
+/** Today's raid's panel: the lock if any, the team, the group, the rules folded; START, the calendar and INFO. */
+function DailyRaidPanel({ raid }: { raid: TodayRaid }) {
+  const { t, tPlural } = useT()
+  const save = useGame((s) => s.save)!
+  const data = useGame((s) => s.data)
+  const { day } = useTodayRaid()
+  const details = useDetails()
   // START with empty slots: the four NPC trainers on offer (kept in the save, the same after a reload).
   const [offer, setOffer] = useState<RaidNpcOption[] | null>(null)
   const friends = groupOf('daily', useRaidGroup())
-  // Push notifications' question, once (docs/27): each day's raid can be announced.
-  usePushAsk('raid', !!raid)
-  if (!raid || !save) return <p className="m-0 text-center font-pixel-sm text-[16px] text-muted">{t('ui.events.raid.loading')}</p>
   const need = emptySlots(friends)
   const go = (npcs: RaidNpcOption[] = []) => {
     setOffer(null)
@@ -307,29 +370,30 @@ export function RaidPage() {
   const me = { name: t('ui.raid.you'), look: avatarOf(playerAvatarId(save.player)).src }
   const group = [me, ...friends.filter((f) => f.team.length > 0).map((f) => ({ name: f.name, look: avatarOf(f.avatar).src }))]
   return (
-    <div className="mx-auto flex w-full max-w-[560px] flex-col gap-3">
-      <RaidCard raid={raid} msLeft={msLeft} />
+    <>
       {!raid.caught && <LockNotice raid={raid} />}
-      {!raid.caught && (
-        <PixelButton
-          variant="primary"
-          size="lg"
-          className="w-full"
-          // Empty slots in the group: pick NPC trainers to fill them first.
-          onClick={() => (need ? (raidTeam(save, data).length ? setOffer(ensureNpcOffer({ kind: 'daily' })) : go()) : go())}
-        >
-          {t('ui.events.raid.start')}
-        </PixelButton>
-      )}
-      <p className="m-0 text-center font-pixel-sm text-[16px] text-muted">{tPlural('ui.events.raid.tries', raid.tries, { n: raid.tries })}</p>
       <RaidTeamSection boss={raid.dex} />
       {!raid.caught && <RaidGroupSection boss={raid.dex} />}
       <RaidRulesPanel dex={raid.dex} kind="daily" />
-      {!raid.caught && <BallOdds dex={raid.dex} />}
-      <Waiting />
-      <ProgressRaidList />
-      <EventInfo id="raid" />
-      {day && <RaidCalendar today={raid} day={day} />}
+      {!raid.caught && details && <BallOdds dex={raid.dex} />}
+      {details && <p className="m-0 text-[16px] text-muted">{tPlural('ui.events.raid.tries', raid.tries, { n: raid.tries })}</p>}
+      <EventDock className="mt-auto">
+        {!raid.caught && (
+          <PixelButton
+            variant="primary"
+            size="lg"
+            className="w-full"
+            // Empty slots in the group: pick NPC trainers to fill them first.
+            onClick={() => (need ? (raidTeam(save, data).length ? setOffer(ensureNpcOffer({ kind: 'daily' })) : go()) : go())}
+          >
+            {t('ui.events.raid.start')}
+          </PixelButton>
+        )}
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+          {day ? <RaidCalendar today={raid} day={day} /> : <span />}
+          <EventInfo id="raid" compact />
+        </div>
+      </EventDock>
       {offer && (
         <RaidNpcPicker
           open
@@ -342,6 +406,6 @@ export function RaidPage() {
           onStart={go}
         />
       )}
-    </div>
+    </>
   )
 }

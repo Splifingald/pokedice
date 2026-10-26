@@ -9,14 +9,32 @@ import { useGame } from '@/store/game'
 export function PartnerBits() {
   const data = useGame((s) => s.data)
   const [region, setRegion] = useState<Region | null>(null)
+  // A new game's lab: Prof. Oak on its message box, SKIP INTRO while the balls drop (docs/43 §5.10).
+  const [oak, setOak] = useState(false)
   const [picked, setPicked] = useState('')
   return (
     <div className="flex flex-wrap items-center gap-2">
       {data.regions.slice(0, 4).map((r) => (
-        <PixelButton key={r.id} size="sm" onClick={() => setRegion(r)}>
+        <PixelButton
+          key={r.id}
+          size="sm"
+          onClick={() => {
+            setOak(false)
+            setRegion(r)
+          }}
+        >
           {r.name} lab
         </PixelButton>
       ))}
+      <PixelButton
+        size="sm"
+        onClick={() => {
+          setOak(true)
+          setRegion(data.regions[0] ?? null)
+        }}
+      >
+        New game (Prof. Oak)
+      </PixelButton>
       {picked && <span className="font-pixel-sm text-[16px] text-muted">Picked: {picked}</span>}
       {region && (
         <PartnerMoment
@@ -24,10 +42,15 @@ export function PartnerBits() {
           regionId={region.id}
           regionName={region.name}
           level={data.config.starterLevel}
-          onLeave={() => setRegion(null)}
+          oak={oak}
+          onLeave={() => {
+            setRegion(null)
+            setOak(false)
+          }}
           onPick={(dex) => {
             setPicked(data.species[dex]?.name ?? String(dex))
             setRegion(null)
+            setOak(false)
           }}
         />
       )}

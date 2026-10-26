@@ -20,6 +20,7 @@ import { DiceSet } from './DiceSet'
 import { PixelButton } from './PixelButton'
 import { MiniSprite } from './SpriteImg'
 import { StatChip } from './StatChip'
+import { TrainerSprite } from './TrainerArt'
 import { matchupsOf, speciesTypes } from './TypeMatchups'
 import { TypeBadge } from './TypeBadge'
 
@@ -33,6 +34,7 @@ export function PartnerMoment({
   onPick,
   onLeave,
   theme,
+  oak = false,
 }: {
   /** The region's three starters, in ball order. */
   starters: readonly number[]
@@ -45,6 +47,11 @@ export function PartnerMoment({
   onLeave?: () => void
   /** A small world's colours (docs/21): the lab is drawn in them, and its picture wears a veil of its main colour. */
   theme?: { main: string; accent: string; ground: string }
+  /**
+   * A new game: Prof. Oak speaks in the lab (docs/43 §5.10) — his portrait and name on the message box, his welcome
+   * while the balls drop, SKIP INTRO beside it to land them at once. His intro costs no tap of its own.
+   */
+  oak?: boolean
 }) {
   const { t } = useT()
   useHoldFullscreen()
@@ -178,7 +185,9 @@ export function PartnerMoment({
   const name = dex != null ? getSpecies(data, dex).name : ''
   const message =
     phase === 'intro'
-      ? t('ui.partner.sayWelcome', { region: regionName })
+      ? oak
+        ? t('ui.newGame.intro1')
+        : t('ui.partner.sayWelcome', { region: regionName })
       : phase === 'choose'
         ? t('ui.partner.sayChoose')
         : phase === 'ask'
@@ -200,7 +209,8 @@ export function PartnerMoment({
       tabIndex={-1}
       className="fixed inset-0 z-[100] overflow-y-auto bg-paper text-ink outline-none"
     >
-      <div className="mx-auto flex min-h-full w-full max-w-[560px] flex-col gap-3 pb-4">
+      {/* PC (docs/43 §5.10): the lab large on the left, the message, the card and its buttons beside it. */}
+      <div className="mx-auto flex min-h-full w-full max-w-[560px] flex-col gap-3 pb-4 lg:grid lg:max-w-[1360px] lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center lg:gap-6 lg:p-6">
         <div
           className="relative shadow-ledge"
           onClick={() => {
@@ -271,13 +281,41 @@ export function PartnerMoment({
 
         {/* The lab on top; the message, the starter's card and its buttons at the bottom, under the thumb (docs/38
             P2b), above the home indicator. */}
-        <div className="mt-auto flex flex-col gap-3" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-          <p
-            className="pixel-dialogue mx-3 my-0 flex min-h-[64px] items-center px-3 py-1.5 text-[20px] leading-[1.15]"
-            aria-live="polite"
-          >
-            {message}
-          </p>
+        <div className="mt-auto flex flex-col gap-3 lg:mt-0" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          {oak ? (
+            // Prof. Oak's box: his portrait, his name on its tag, his line; SKIP INTRO while the balls are still falling.
+            <div className="relative mx-3 mt-3">
+              <span className="light-scope absolute -top-3 left-2 z-[1] bg-ink px-2 pb-0.5 text-[16px] leading-tight text-parchment">
+                {t('ui.newGame.oakTag')}
+              </span>
+              <div className="pixel-dialogue flex min-h-[72px] items-center gap-2.5 py-1.5 pl-1.5 pr-2">
+                <TrainerSprite src="/characters/prof-oak.png" alt={t('ui.newGame.oak')} size={56} className="shrink-0" />
+                <p className="m-0 min-w-0 flex-1 text-[20px] leading-[1.15]" aria-live="polite">
+                  {message}
+                </p>
+                {phase === 'intro' && scene && (
+                  <PixelButton
+                    size="sm"
+                    variant="ghost"
+                    className="shrink-0"
+                    onClick={() => {
+                      clock.current = Math.max(clock.current, scene.landed)
+                      scene.land()
+                    }}
+                  >
+                    {t('ui.newGame.skipIntro')}
+                  </PixelButton>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p
+              className="pixel-dialogue mx-3 my-0 flex min-h-[64px] items-center px-3 py-1.5 text-[20px] leading-[1.15]"
+              aria-live="polite"
+            >
+              {message}
+            </p>
+          )}
 
           {phase === 'ask' && asking && facts && dex != null && (
             <div className="mx-3 grid gap-2 bg-paper px-3 pb-3 pt-2.5 shadow-card">

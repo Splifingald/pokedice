@@ -14,10 +14,12 @@
   --spin: 0;
   position: relative;
   align-self: center;
-  width: 288px;
+  /* As big as the screen leaves it: under the banner and over the dock on a phone (288 px at most), the stage's height
+     on PC (docs/43 §5.11). The canvas redraws at its size (src/fx/wheel.ts). */
+  width: clamp(200px, calc(100dvh - 420px), 320px);
   max-width: 100%;
   aspect-ratio: 1;
-  margin: 14px 0 6px;
+  margin: 18px 0 10px;
   isolation: isolate;
 }
 .ev-wheel::before {
@@ -119,28 +121,57 @@
   }
 }
 
-/* The blue Info button under the wheel. */
+@media (min-width: 1024px) {
+  .ev-wheel {
+    width: clamp(288px, calc(100dvh - 360px), 520px);
+  }
+}
+
+/* The INFO button at the foot of a feature's page (docs/43 §5.11): a quiet 48 px button on the blue tint with the blue
+   "i" mark, so it reads as INFO everywhere without competing with the page's one red action. */
 .ev-info {
-  display: grid;
-  min-height: 64px;
-  place-items: center;
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
   border: 0;
-  background: #5b8def;
-  color: #fbfdff;
+  background: rgb(var(--c-sky));
+  color: rgb(var(--c-ink));
   font-family: 'Jersey 25', 'Jersey 15', var(--font-cjk);
-  font-size: 24px;
+  font-size: 22px;
   letter-spacing: 0.04em;
-  text-shadow: 0 2px 0 #2f5fb8;
+  text-transform: uppercase;
   box-shadow:
-    inset 0 0 0 2px #24304f,
-    inset 0 -5px 0 #3a6fd0,
-    inset 0 3px 0 #9dbdff;
+    inset 0 0 0 2px rgb(var(--c-edge)),
+    inset 0 -4px 0 rgb(var(--c-sky-line));
+}
+.ev-info::before {
+  content: 'i';
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  background: #2f5fb8;
+  color: #fbfdff;
+  font-family: 'Jersey 25', 'Jersey 15';
+  font-size: 18px;
+  line-height: 1;
+  text-transform: none;
+  box-shadow: inset 0 0 0 2px #24304f;
+}
+.ev-info:hover {
+  background: rgb(var(--c-sky-line));
 }
 .ev-info:active {
   padding-top: 3px;
-  box-shadow:
-    inset 0 0 0 2px #24304f,
-    inset 0 3px 0 #3a6fd0;
+  box-shadow: inset 0 0 0 2px rgb(var(--c-edge));
+}
+
+/* The Elite Rebattle's hall: the trainers stand on the League's red carpet. */
+.rb-hall {
+  background: linear-gradient(to top, #c4382a 0 10px, #8e2318 10px 12px, transparent 12px);
 }
 
 /* ---------------------------------------------------------------- the reward card */

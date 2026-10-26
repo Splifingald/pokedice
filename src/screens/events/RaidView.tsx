@@ -42,6 +42,7 @@ import { loadSprite, spriteKey } from '@/fx/sprites'
 import { catchTimeline } from '@/fx/timelines/catch'
 import { getLang } from '@/i18n'
 import { useT } from '@/i18n/react'
+import { useMediaQuery } from '@/lib/useMediaQuery'
 import { effectText } from '@/i18n/text'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { useMotion } from '@/lib/motion'
@@ -288,6 +289,7 @@ export function RaidSpeedButton({ on, onChange }: { on: boolean; onChange: (on: 
 }
 
 export function RaidView({ run }: { run: RaidRun }) {
+  const wide = useMediaQuery('(min-width: 1024px)')
   const { t } = useT()
   useHoldFullscreen()
   useBattleMusic(run.stage !== 'result')
@@ -609,6 +611,9 @@ export function RaidView({ run }: { run: RaidRun }) {
         aria-label={heading}
         className={cx(
           'mx-auto flex min-h-[100dvh] w-full max-w-[max(300px,min(560px,calc((100dvh_-_330px)_*_1.5)))] flex-col',
+          // PC (docs/42 §2, docs/43 §5.11): the stage as large as the window allows on the left, the very same panel
+          // docked at its right, scrolling inside itself — not a phone column in the middle of the screen.
+          'lg:grid lg:max-w-[1440px] lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-5 lg:px-5 lg:pt-4',
           portal && 'dw-scope',
           nightmare && 'nm-scope',
         )}
@@ -616,8 +621,14 @@ export function RaidView({ run }: { run: RaidRun }) {
         data-nightmare-raid={nightmare || undefined}
       >
         <h1 className="sr-only">{heading}</h1>
-        {stage}
-        <div className="flex flex-1 flex-col gap-2 px-3 pt-3" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}>
+        <div className="w-full lg:sticky lg:top-4 lg:max-w-[calc((100dvh-2rem)*1.5)] lg:justify-self-center">{stage}</div>
+        <div
+          className={cx(
+            'flex flex-1 flex-col gap-2 px-3 pt-3',
+            wide && 'pixel-panel sticky top-4 max-h-[calc(100dvh-2rem)] overflow-y-auto pb-3',
+          )}
+          style={wide ? undefined : { paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}
+        >
           <p className="pixel-dialogue m-0 flex min-h-[64px] items-center px-3 py-1.5 text-[20px] leading-[1.15]" aria-live="polite">
             {message}
           </p>
@@ -626,7 +637,8 @@ export function RaidView({ run }: { run: RaidRun }) {
           ) : catching && catchState ? (
             <CatchPanel c={catchState} onThrow={onThrow} revealed={revealed} onContinue={raidCatchShown} onBait={onBait} />
           ) : (
-            <>
+            // The dice, the actions and the team in the thumb's reach at the foot; the line stays under the stage.
+            <div className="mt-auto flex flex-col gap-2">
               <DiceTray
                 tray={tray}
                 live={rolling}
@@ -642,7 +654,7 @@ export function RaidView({ run }: { run: RaidRun }) {
                 )}
               </div>
               <div className="min-h-[56px]">{actions}</div>
-              <div className="mt-auto flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 {ownedItems.length > 0 && (
                   <BagButton
                     disabled={!canItem || usefulItems.length === 0}
@@ -672,7 +684,7 @@ export function RaidView({ run }: { run: RaidRun }) {
                   </button>
                 </div>
               </div>
-            </>
+            </div>
           )}
         </div>
       </section>
