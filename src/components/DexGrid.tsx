@@ -1,13 +1,15 @@
 // The Pokédex's grid (docs/43 §5.6): one dense tile per species (or Unown letter), the same on the Pokédex, its Shiny
 // view and its Unown view. An uncaught species is its silhouette alone (its number and "not caught" for screen readers
 // only); a caught one its icon and its name. The whole grid is one stop for Tab; the arrow keys move through it.
+import { motion } from 'framer-motion'
 import { useRef, type KeyboardEvent, type ReactNode } from 'react'
 import { cx } from '@/theme/util'
 import { PixelIcon } from './icons'
 import { MiniSprite } from './SpriteImg'
 
 /** As many ~64 px columns as fit: five on a 360 px phone, ten beside the docked entry on a PC. */
-export const DEX_GRID = 'grid grid-cols-[repeat(auto-fill,minmax(64px,1fr))] gap-1 lg:grid-cols-[repeat(auto-fill,minmax(76px,1fr))]'
+export const DEX_GRID =
+  'grid grid-cols-[repeat(auto-fill,minmax(64px,1fr))] gap-1 lg:grid-cols-[repeat(auto-fill,minmax(76px,1fr))]'
 
 /**
  * One tile. `name` is shown under the icon only for what was caught (null: the silhouette alone); `near` puts the green
@@ -71,7 +73,9 @@ export function DexTile({
       {/* The line under the icon keeps its height empty, so every row of the grid lines up. */}
       <span className="flex h-[18px] max-w-full items-center">
         {name != null ? (
-          <b className={cx('truncate text-[16px] font-normal leading-none', missing && 'text-muted')}>{name}</b>
+          <b className={cx('truncate text-[16px] font-normal leading-none', missing && 'text-muted')}>
+            {name}
+          </b>
         ) : near ? (
           <em
             aria-hidden
@@ -122,7 +126,12 @@ export function DexGridList({
     const i = tiles.indexOf(document.activeElement as HTMLElement)
     if (i < 0 || !tiles.length) return
     const top = tiles[0]!.offsetTop
-    const cols = Math.max(1, tiles.findIndex((t) => t.offsetTop !== top) === -1 ? tiles.length : tiles.findIndex((t) => t.offsetTop !== top))
+    const cols = Math.max(
+      1,
+      tiles.findIndex((t) => t.offsetTop !== top) === -1
+        ? tiles.length
+        : tiles.findIndex((t) => t.offsetTop !== top),
+    )
     const to =
       e.key === 'ArrowRight'
         ? i + 1
@@ -150,8 +159,35 @@ export function DexGridList({
   )
 }
 
+/** The card once a page is full (the Pokédex, its Shiny or its Unown view): gold words on the night panel. */
+export function DexCompleteCard({ title, body }: { title: string; body: string }) {
+  return (
+    <motion.div
+      initial={{ scale: 0.8, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      className="pixel-panel-dark flex items-center gap-3 p-3"
+    >
+      <PixelIcon name="star" size={32} className="shrink-0" />
+      <div className="grid gap-1">
+        <div className="text-[28px] leading-none text-gold">{title}</div>
+        <div className="text-[20px] leading-tight">{body}</div>
+      </div>
+    </motion.div>
+  )
+}
+
 /** Progress as a gauge in the page's head: the bar and "32/151", named for screen readers ("32 of 151 caught"). */
-export function DexGauge({ n, total, label, className }: { n: number; total: number; label: string; className?: string }) {
+export function DexGauge({
+  n,
+  total,
+  label,
+  className,
+}: {
+  n: number
+  total: number
+  label: string
+  className?: string
+}) {
   return (
     <span role="img" aria-label={label} className={cx('flex min-w-0 items-center gap-2', className)}>
       <span className="pixel-corners relative block h-3 min-w-[72px] flex-1 bg-line shadow-ring" aria-hidden>

@@ -4,7 +4,7 @@
 // (Later / Let's go!) and the INFO copy (OK).
 import { useState, type ReactNode } from 'react'
 import { UNOWN_LETTERS, type UnownLetter } from '@/engine'
-import { PixelIcon } from '@/components/icons'
+import { DexCompleteCard } from '@/components/DexGrid'
 import { PixelButton } from '@/components/PixelButton'
 import { InfoButton } from '@/components/RulesModal'
 import { DexViewSwitch, type DexView } from '@/components/ShinyDexRules'
@@ -70,11 +70,10 @@ export function UnownDexBits() {
         <UnownDexGrid found={[...new Set(SOME)]} onOpen={noop} />
       </Frame>
       <Frame name="Unown Pokédex complete (the prize paid)">
-        <div className="pixel-panel-dark flex flex-col items-center gap-2 p-5 text-center">
-          <PixelIcon name="star" size={40} />
-          <div className="text-[40px] leading-none text-gold">{t('ui.unown.complete')}</div>
-          <div className="text-2xl">{t('ui.unown.completePaid', { total: 28, amount: money(1000) })}</div>
-        </div>
+        <DexCompleteCard
+          title={t('ui.unown.complete')}
+          body={t('ui.unown.completePaid', { total: 28, amount: money(1000) })}
+        />
       </Frame>
       <Frame name="Result card · a new letter, one already found, the last with the prize">
         <UnownLetterCard letter="k" isNew found={12} total={28} />

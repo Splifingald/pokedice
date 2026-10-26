@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
@@ -27,9 +26,8 @@ import {
 } from '@/engine'
 import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
-import { DexGauge, DexGridList, DexTile } from '@/components/DexGrid'
+import { DexCompleteCard, DexGauge, DexGridList, DexTile } from '@/components/DexGrid'
 import { DexSheet } from '@/components/DexEntry'
-import { PixelIcon } from '@/components/icons'
 import { PageHead } from '@/components/PageHead'
 import { InfoButton } from '@/components/RulesModal'
 import { SearchField } from '@/components/Segmented'
@@ -62,23 +60,6 @@ function nextDexUnlock(save: SaveData, data: GameData): { name: string; more: nu
     if (more > 0 && (!best || more < best.more)) best = { name: a.name, more }
   }
   return best
-}
-
-/** The big card once a page is full: gold words on the night panel. */
-function CompleteCard({ title, body }: { title: string; body: string }) {
-  return (
-    <motion.div
-      initial={{ scale: 0.8, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      className="pixel-panel-dark flex items-center gap-3 p-3"
-    >
-      <PixelIcon name="star" size={32} className="shrink-0" />
-      <div className="grid gap-1">
-        <div className="text-[28px] leading-none text-gold">{title}</div>
-        <div className="text-[20px] leading-tight">{body}</div>
-      </div>
-    </motion.div>
-  )
 }
 
 /** One tile as the screen sees it: what it shows, and the entry it opens. */
@@ -196,7 +177,7 @@ export function PokedexScreen() {
           : t('ui.unown.where', { area: area.name })
     if (n >= total)
       complete = (
-        <CompleteCard
+        <DexCompleteCard
           title={t('ui.unown.complete')}
           body={
             unownDexPaid(save) && reward > 0
@@ -229,10 +210,13 @@ export function PokedexScreen() {
     gaugeLabel = t(shiny ? 'ui.dex.shinyOf' : 'ui.dex.caughtOf', { n, total })
     const unlock = shiny ? null : nextDexUnlock(save, data)
     if (unlock)
-      under = t(`ui.dex.moreOpens.${unlock.more === 1 ? 'one' : 'other'}`, { n: unlock.more, area: unlock.name })
+      under = t(`ui.dex.moreOpens.${unlock.more === 1 ? 'one' : 'other'}`, {
+        n: unlock.more,
+        area: unlock.name,
+      })
     if (n >= total)
       complete = (
-        <CompleteCard
+        <DexCompleteCard
           title={t(shiny ? 'ui.dex.shinyComplete' : 'ui.dex.complete')}
           body={t(shiny ? 'ui.dex.shinyCompleteBody' : 'ui.dex.completeBody', {
             total,
@@ -309,7 +293,8 @@ export function PokedexScreen() {
     return first ? { dex: first.dex, shiny: first.shiny, tile: first.key } : null
   })()
   const current = picked ?? (wide ? fallback : null)
-  const tabKey = focusKey && tiles.some((x) => x.key === focusKey) ? focusKey : (current?.tile ?? tiles[0]?.key)
+  const tabKey =
+    focusKey && tiles.some((x) => x.key === focusKey) ? focusKey : (current?.tile ?? tiles[0]?.key)
 
   const pick = (x: TileModel) => {
     const p = { dex: x.dex, shiny: x.shiny, tile: x.key }
@@ -346,7 +331,12 @@ export function PokedexScreen() {
         {/* The gauge stands beside the title where there's room, and takes the whole row under it on a phone. */}
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
           <PageHead icon="navDex" title={title} />
-          <DexGauge n={n} total={total} label={gaugeLabel} className="min-w-[160px] flex-1 lg:max-w-[340px]" />
+          <DexGauge
+            n={n}
+            total={total}
+            label={gaugeLabel}
+            className="min-w-[160px] flex-1 lg:max-w-[340px]"
+          />
         </div>
         {views.length > 0 && <DexViewSwitch value={dexView} onChange={setDexView} views={views} />}
         {under && <p className="font-pixel-sm text-[18px] leading-tight text-muted">{under}</p>}
@@ -372,7 +362,10 @@ export function PokedexScreen() {
             className="w-[42%] max-w-[220px] shrink-0"
             options={[
               { id: 'all', label: `${t('ui.dex.fAll')} (${counts.all})` },
-              { id: 'caught', label: `${t(shiny ? 'ui.dex.viewShiny' : 'ui.dex.fCaught')} (${counts.caught})` },
+              {
+                id: 'caught',
+                label: `${t(shiny ? 'ui.dex.viewShiny' : 'ui.dex.fCaught')} (${counts.caught})`,
+              },
               { id: 'missing', label: `${t('ui.dex.fMissing')} (${counts.missing})` },
               { id: 'nearby', label: `${t('ui.dex.fNearby')} (${counts.nearby})` },
             ]}
@@ -407,7 +400,9 @@ export function PokedexScreen() {
                 pick(x)
                 // Enter on a PC moves into the entry beside the grid; a phone's sheet takes the focus itself.
                 if (wide && keyboard)
-                  requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-dex-entry]')?.focus())
+                  requestAnimationFrame(() =>
+                    document.querySelector<HTMLElement>('[data-dex-entry]')?.focus(),
+                  )
               }}
             />
           </li>
