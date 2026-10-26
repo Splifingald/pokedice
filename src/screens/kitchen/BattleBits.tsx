@@ -12,7 +12,7 @@ import {
 } from '@/engine'
 import { Toggle } from '@/components/Toggle'
 import { useGame, type CatchState, type CatchThrow } from '@/store/game'
-import { BagButton, DiceTray, Readout, TeamColumn, TeamPips, type Preview } from '../battle/BattlePanel'
+import { BagButton, DiceTray, Readout, KeyHints, TeamPips, type Preview } from '../battle/BattlePanel'
 import { BattleStage } from '../battle/BattleStage'
 import { CatchPanel, catchMessage } from '../battle/CatchPanel'
 import { FoePlate, OwnPlate } from '../battle/Plates'
@@ -171,15 +171,16 @@ export function BattleBits() {
             <RaidSpeedButton on onChange={() => {}} />
           </div>
         </div>
-        {/* Wide screens: the same team as a column of cards, left of the stage. */}
-        <div className="w-[220px]">
-          <TeamColumn
-            team={team}
-            activeUid={own.uid}
-            hpOf={(b) => b.hp}
-            canSwitch
-            calling={calling}
-            onPick={() => {}}
+        {/* The keys' line (docs/43 §5.3): on a computer, faint until the panel is hovered or focused. */}
+        <div className="group/panel">
+          <KeyHints
+            keys={[
+              ['1–6', 'dice'],
+              ['R', 'reroll'],
+              ['Space', 'attack'],
+              ['B', 'Bag'],
+              ['S', 'switch'],
+            ]}
           />
         </div>
         <Toggle label="Who goes out next? (pips call)" on={calling} onChange={setCalling} />

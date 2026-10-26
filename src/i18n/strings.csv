@@ -1216,7 +1216,14 @@ ui.battle.selectDice,Select dice to reroll,Sélectionne les dés à relancer,Sel
 ui.battle.attack,ATTACK,ATTAQUER,ATACAR,ANGRIFF,ATTACCA,ATACAR,ATACAR,こうげき,공격,攻击
 ui.battle.oneItemPerTurn,One item per turn,Un objet par tour,Un objeto por turno,Ein Item pro Runde,Uno strumento per turno,Um objeto por turno,Um item por turno,どうぐは1ターンに1回,도구는 턴마다 1번,每回合只能用1次道具
 ui.battle.run,RUN,FUIR,HUIR,FLIEHEN,FUGA,FUGIR,FUGIR,にげる,도망,逃跑
-ui.battle.keys,Keys: 1–6 select · R reroll · Space {action},Touches : 1–6 sélection · R relance · Espace {action},Teclas: 1-6 seleccionar · R retirar · Espacio {action},Tasten: 1–6 auswählen · R neu werfen · Leertaste {action},Tasti: 1–6 selezionano · R rilancia · Spazio {action},Teclas: 1–6 selecionam · R relança · Espaço {action},Teclas: 1–6 selecionam · R relança · Espaço {action},キー：1〜6で選択・Rで振り直し・スペースで{action},키: 1–6 선택 · R 다시 굴리기 · 스페이스 {action},按键：1–6选择 · R重掷 · 空格{action}
+ui.battle.keyDice,dice,dés,dados,Würfel,dadi,dados,dados,ダイス,주사위,骰子
+ui.battle.keyReroll,reroll,relance,relanzar,neu werfen,rilancia,relançar,relançar,ふりなおす,다시 굴리기,重掷
+ui.battle.keySpace,Space,Espace,Espacio,Leertaste,Spazio,Espaço,Espaço,スペース,스페이스,空格
+ui.battle.keySwitch,switch,changer,cambiar,wechseln,cambia,trocar,trocar,こうたい,교체,替换
+ui.battle.keyPick,pick,choisir,elegir,wählen,scegli,escolher,escolher,えらぶ,선택,选择
+ui.battle.keyEnter,Enter,Entrée,Intro,Eingabe,Invio,Enter,Enter,エンター,엔터,回车
+ui.battle.keyEsc,Esc,Échap,Esc,Esc,Esc,Esc,Esc,Esc,Esc,Esc
+ui.battle.useOn,Use {item} on {name},Utiliser {item} sur {name},Usar {item} en {name},{item} bei {name} anwenden,Usa {item} su {name},Usar {item} em {name},Usar {item} em {name},{name}に {item}を つかう,{name}에게 {item} 사용,对{name}使用{item}
 ui.battle.keyAttack,attack,attaque,atacar,Angriff,attacca,ataca,ataca,こうげき,공격,攻击
 ui.battle.keyRoll,roll,lancer,tirar,Wurf,lancia,lança,lança,ダイスを振る,굴리기,掷骰子
 ui.battle.history,Battle history,Historique du combat,Historial del combate,Kampfverlauf,Cronologia della lotta,Histórico da batalha,Histórico da batalha,戦闘の記録,배틀 기록,战斗记录
