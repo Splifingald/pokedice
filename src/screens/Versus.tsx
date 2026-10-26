@@ -16,6 +16,7 @@ import {
   versusChoices,
   versusMoveAt,
   versusReadyCount,
+  versusRulesDue,
   versusUnlocked,
   VERSUS_TEAM_SIZE,
   POKE_TYPES,
@@ -27,7 +28,8 @@ import { BoardGap, BoardRow, TeamIcons } from '@/components/BoardRow'
 import { FriendProfileSheet } from '@/components/friends/FriendProfileSheet'
 import { Chip } from '@/components/Chip'
 import { AccountButton } from '@/components/AccountButton'
-import { VersusRulesModal } from '@/components/FeatureRules'
+import { useVersusRules, VersusRulesModal } from '@/components/FeatureRules'
+import { RulesCard } from '@/components/RulesCard'
 import { InfoButton } from '@/components/RulesModal'
 import { PixelIcon } from '@/components/icons'
 import { PageHead } from '@/components/PageHead'
@@ -87,11 +89,10 @@ function VersusScreenMain() {
   const [busy, setBusy] = useState(false)
   const [rules, setRules] = useState(false)
   const wide = useMediaQuery('(min-width: 1024px)')
-  const open = versusUnlocked(save, data)
-  // Opening Versus is as good as its rules pop-up: it won't open by itself afterwards (the INFO button stays).
-  useEffect(() => {
-    if (open) markVersusRulesSeen()
-  }, [open])
+  // Its rules where they apply (docs/43 §7): a card at the top of the page until GOT IT, which sets the flag. Opening
+  // the page no longer counts as reading them.
+  const rulesDue = versusRulesDue(save, data)
+  const versusRules = useVersusRules()
 
   const refresh = useCallback(() => {
     let live = true
@@ -175,6 +176,9 @@ function VersusScreenMain() {
   return (
     <div className="flex flex-col gap-3">
       <PageHead title={t('ui.versus.title')} social="versus" />
+      {rulesDue && (
+        <RulesCard title={t('ui.versus.title')} icon="vs" rules={versusRules} onDone={markVersusRulesSeen} />
+      )}
       <SocialColumns
         main={
           <>

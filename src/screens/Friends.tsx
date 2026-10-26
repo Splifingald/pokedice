@@ -8,7 +8,8 @@ import { NewTag } from '@/components/Chip'
 import { AddFriendForm, useAddText } from '@/components/friends/AddFriendModal'
 import { FriendProfileSheet } from '@/components/friends/FriendProfileSheet'
 import { useFriendLine } from '@/components/friends/FriendBits'
-import { InviteRewardsCard, InviteRulesModal, useInviteGauge } from '@/components/friends/InviteRewards'
+import { InviteRewardsCard, InviteRulesModal, useInviteGauge, useInviteRules } from '@/components/friends/InviteRewards'
+import { RulesCard } from '@/components/RulesCard'
 import { PixelIcon } from '@/components/icons'
 import { Modal } from '@/components/Modal'
 import { PageHead } from '@/components/PageHead'
@@ -102,13 +103,9 @@ function FriendsBody({ counter }: { counter?: string }) {
     void loadFriendList(true).then(() => markFriendsSeen())
     void loadInviteStatus()
   }, [])
-  // The rewards' rules pop up here and nowhere else, the first time the gauge shows (the user's call, 2026-10-25).
-  // Marked seen as they open, so leaving the page without closing them never shows them again; INFO keeps them.
-  useEffect(() => {
-    if (!gaugeOn || !rulesDue) return
-    seeInviteRules()
-    setRules(true)
-  }, [gaugeOn, rulesDue])
+  // The rewards' rules sit at the top of this page, and nowhere else, while the gauge shows and until GOT IT (docs/43
+  // §7: rules where they apply); INFO keeps them.
+  const inviteRules = useInviteRules()
 
   const share = () => {
     if (!code) return
@@ -137,6 +134,9 @@ function FriendsBody({ counter }: { counter?: string }) {
 
   const main = (
     <>
+      {gaugeOn && rulesDue && (
+        <RulesCard title={t('ui.invite.title')} icon="gift" rules={inviteRules} onDone={seeInviteRules} />
+      )}
       {gauge && <InviteRewardsCard gauge={gauge} busy={rewardsBusy} onOpen={() => void openInviteRewards()} />}
 
       <section className="flex flex-col gap-1.5" aria-labelledby="friends-list-title">

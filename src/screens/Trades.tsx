@@ -15,6 +15,7 @@ import {
   tradesOf,
   tradesToWatch,
   tradesOn,
+  tradeRulesDue,
   tradesTakenToday,
   tradeSnapshot,
   type TradeOut,
@@ -44,7 +45,8 @@ import {
   VisChip,
   WantTile,
 } from '@/components/trades/TradeBits'
-import { TradesRulesModal } from '@/components/trades/TradeRules'
+import { TradesRulesModal, useTradesRules } from '@/components/trades/TradeRules'
+import { RulesCard } from '@/components/RulesCard'
 import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { agoText } from '@/lib/ago'
@@ -70,10 +72,10 @@ export function TradesScreen() {
   const on = tradesOn(data)
   const out = save ? tradesOf(save).out.length : 0
   const closed = save ? tradeClosed(save, data) : 'off'
-  // Opening the page is as good as its rules pop-up: it won't open by itself afterwards (INFO stays).
-  useEffect(() => {
-    if (!closed && auth.status === 'signed_in') seeTradeRules()
-  }, [closed, auth.status])
+  // Its rules where they apply (docs/43 §7): a card at the top of the page, for a signed-in player who can trade, until
+  // GOT IT sets the flag. Opening the page no longer counts as reading them.
+  const tradesRules = useTradesRules()
+  const rulesDue = !!save && auth.status === 'signed_in' && tradeRulesDue(save, data)
   // Mine says what the server says: a listing taken since the last check shows up (and its scene waits for Home).
   useEffect(() => {
     if (auth.status === 'signed_in') void checkListings()
@@ -113,6 +115,9 @@ export function TradesScreen() {
         }
         social="trades"
       />
+      {rulesDue && (
+        <RulesCard title={t('ui.trades.title')} icon="trade" rules={tradesRules} onDone={seeTradeRules} />
+      )}
       {body}
       {on && <InfoButton name={t('ui.trades.title')} onClick={() => setRules(true)} />}
       <TradesRulesModal open={rules} onClose={() => setRules(false)} />
