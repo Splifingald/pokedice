@@ -154,7 +154,7 @@ export function FriendProfileSheet({
               <section className="flex flex-col gap-1.5">
                 <h3 className="m-0 text-[24px] font-normal leading-none">{t('ui.friends.versusTeam')}</h3>
                 <div className="flex items-center gap-2 bg-paper py-1.5 pl-3 pr-2 shadow-ring-line">
-                  <TeamIcons team={profile.versus.team} owner={profile.name} size={40} />
+                  <TeamIcons team={profile.versus.team} owner={profile.name} size={40} spaced />
                 </div>
               </section>
             )}

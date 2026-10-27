@@ -70,9 +70,9 @@ export function LooksRow({ onOpen }: { onOpen: () => void }) {
       onClick={onOpen}
       aria-haspopup="dialog"
       aria-label={fresh ? t('ui.looks.rowNew', { name: label, n: fresh }) : label}
-      className="flex min-h-[56px] w-full items-center gap-2.5 bg-paper pb-2 pl-2 pr-3 pt-1.5 text-left text-ink shadow-card"
+      className="flex min-h-[48px] w-full items-center gap-2.5 bg-paper pb-1.5 pl-2 pr-3 pt-1 text-left text-ink shadow-card"
     >
-      <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden bg-sky shadow-ring">
+      <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden bg-sky shadow-ring">
         <TrainerLook src={avatarOf(playerAvatarId(save.player)).src} w={36} h={38} above={2} />
       </span>
       <span className="grid min-w-0 flex-1 gap-0.5">

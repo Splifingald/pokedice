@@ -1,5 +1,6 @@
-// The leaderboard tabs: an icon each, and only the open one spells out its name. Five: Max level, Progression,
-// Pokédex, Shiny and Raids.
+// The leaderboard's five boards, each its icon and its name (docs/43 §5.8): Level, Progression, Pokédex, Shiny and
+// Raids — on a 360 px phone too. PC: the boards, your place and the Hall of Fame beside the ranking; a phone pins your
+// place at the foot.
 import { expect, test, type Page } from '@playwright/test'
 import { FAST, fakeSession, makeSave, mockSupabase, STORAGE_KEY, withBadge } from './helpers'
 
@@ -43,33 +44,56 @@ test('SEE THE LEADERBOARD on Prof. Oak’s note opens it, and that visit ends th
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!).leaderboardVisited)).toBe(true)
 })
 
-test('five tabs, named only when open; the Shiny board ranks shinies caught, the Raids board raids won', async ({ page }) => {
+test('five boards, each named; the Shiny board ranks shinies caught, the Raids board raids won', async ({ page }) => {
   await mockSupabase(page)
   await signedIn(page, withBadge(makeSave(4, { player: { name: 'Sam', character: 'red' } })))
   await page.goto('/leaderboard')
   const tabs = page.getByRole('tab')
   await expect(tabs).toHaveCount(5)
-  // Max level is open: its name shows, the others are icons with a label for screen readers.
-  await expect(page.getByRole('tab', { name: 'Max level' })).toHaveAttribute('aria-selected', 'true')
-  await expect(page.getByRole('tablist')).toContainText('Max level')
-  await expect(page.getByRole('tablist')).not.toContainText('Shiny')
+  // Every board says its name (PC adds what it counts under it), the open one marked.
+  await expect(page.getByRole('tab', { name: /^Level/ })).toHaveAttribute('aria-selected', 'true')
+  for (const name of ['Level', 'Progression', 'Pokédex', 'Shiny', 'Raids'])
+    await expect(page.getByRole('tablist')).toContainText(name)
+  await expect(page.getByRole('tab', { name: /^Level/ })).toContainText('Your highest-level Pokémon.')
+  // PC: your place beside the ranking.
+  await expect(page.getByRole('complementary').getByRole('button', { name: /You're #2 of 3/ })).toBeVisible()
 
-  await page.getByRole('tab', { name: 'Shiny' }).click()
-  await expect(page.getByRole('tab', { name: 'Shiny' })).toHaveAttribute('aria-selected', 'true')
-  await expect(page.getByRole('tablist')).toContainText('Shiny')
-  await expect(page.getByRole('tablist')).not.toContainText('Max level')
+  await page.getByRole('tab', { name: /^Shiny/ }).click()
+  await expect(page.getByRole('tab', { name: /^Shiny/ })).toHaveAttribute('aria-selected', 'true')
   const rows = page.getByRole('tabpanel').getByRole('listitem').filter({ has: page.locator('[aria-label^="Rank"]') })
   await expect(rows.first()).toContainText('Blue')
-  await expect(rows.first()).toContainText('3 shinies')
+  // The count and the star, its words for screen readers.
+  await expect(rows.first().getByRole('img', { name: '3 shinies' })).toBeVisible()
   await expect(rows.nth(1)).toContainText('Sam')
-  await expect(rows.nth(1)).toContainText('1 shiny')
+  await expect(rows.nth(1).getByRole('img', { name: '1 shiny' })).toBeVisible()
 
   // Raids: a count from the board (a database before 0035 says 0 for everyone); nobody here has won one, and a trainer
   // with none isn't on the board.
-  await page.getByRole('tab', { name: 'Raids' }).click()
-  await expect(page.getByRole('tab', { name: 'Raids' })).toHaveAttribute('aria-selected', 'true')
+  await page.getByRole('tab', { name: /^Raids/ }).click()
+  await expect(page.getByRole('tab', { name: /^Raids/ })).toHaveAttribute('aria-selected', 'true')
   await expect(rows).toHaveCount(0)
   await expect(page.getByText('No trainers yet — be the first!')).toBeVisible()
+})
+
+test('a phone: the five boards fit 360 px, named at 16 px, and your place is pinned at the foot', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 640 })
+  await mockSupabase(page)
+  await signedIn(page, withBadge(makeSave(4, { player: { name: 'Sam', character: 'red' } })))
+  await page.goto('/leaderboard')
+  await expect(page.getByRole('tab')).toHaveCount(5)
+  for (const name of ['Level', 'Progression', 'Pokédex', 'Shiny', 'Raids'])
+    await expect(page.getByRole('tab', { name })).toBeVisible()
+  // No board's name under 16 px, and nothing scrolls sideways.
+  const sizes = await page.getByRole('tab').evaluateAll((els) => els.map((el) => parseFloat(getComputedStyle(el.querySelector('span')!).fontSize)))
+  expect(Math.min(...sizes)).toBeGreaterThanOrEqual(16)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360)
+  const strip = await page.getByRole('tablist').boundingBox()
+  expect(strip!.x + strip!.width).toBeLessThanOrEqual(360)
+  // Your place, pinned over the tab bar: a tap finds your row.
+  const place = page.getByRole('button', { name: /You're #2 of 3/ })
+  await expect(place).toBeInViewport()
+  await place.click()
+  await expect(page.locator('li[aria-current="true"]')).toBeInViewport()
 })
 
 test('Shiny and Raids rank every region together, each trainer once; Max level stays the region’s', async ({ page }) => {
@@ -104,17 +128,17 @@ test('Shiny and Raids rank every region together, each trainer once; Max level s
   await expect(rows).toHaveCount(2)
   await expect(page.getByRole('tabpanel')).not.toContainText('Gold')
 
-  await page.getByRole('tab', { name: 'Shiny' }).click()
-  await expect(page.getByText('All regions')).toBeVisible()
+  await page.getByRole('tab', { name: /^Shiny/ }).click()
+  await expect(page.getByRole('tabpanel').getByText('All regions')).toBeVisible()
   await expect(rows).toHaveCount(3)
   await expect(rows.nth(0)).toContainText('Gold')
-  await expect(rows.nth(0)).toContainText('5 shinies')
+  await expect(rows.nth(0).getByRole('img', { name: '5 shinies' })).toBeVisible()
   await expect(rows.nth(1)).toContainText('Blue')
-  await expect(rows.nth(1)).toContainText('3 shinies')
+  await expect(rows.nth(1).getByRole('img', { name: '3 shinies' })).toBeVisible()
   await expect(rows.nth(2)).toContainText('Sam')
 
   // Blue has won no raid: he isn't on the Raids board.
-  await page.getByRole('tab', { name: 'Raids' }).click()
+  await page.getByRole('tab', { name: /^Raids/ }).click()
   await expect(rows).toHaveCount(2)
   await expect(rows.nth(0)).toContainText('Gold')
   await expect(rows.nth(1)).toContainText('Sam')

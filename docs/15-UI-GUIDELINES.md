@@ -485,8 +485,11 @@ Players shouldn't have to make many requests:
   **Settings has one Disconnect and one Delete** (docs/38 U8b): Disconnect in Cloud backup, beside who is signed in;
   the red Delete is the last thing on the page and asks what goes first (`DeleteChooser`: Delete save, Delete my
   Extreme save while one exists, Delete all my data; white rows with red words and a line each), then each asks as it
-  always did (the save: one pop-up; the Extreme save and everything: two in a row). SUPPORT ME is white, here and over
-  a fight: red stays for the game's own actions. **Type hints** (`settings.typeHints`, `useTypeHints`) sit in the Game
+  always did (the save: one pop-up; the Extreme save and everything: two in a row). SUPPORT ME is the trainer menu's (its
+  foot); Settings keeps a quiet white row at the end of its Content panel. From 1024 px Settings is two columns (Game,
+  Play style, Notifications | Language, Cloud backup, Extreme, Content, Delete); over a fight it stays one column. The
+  language is one dropdown, each option in its own script and `lang`. Disconnect is white (reversible); the one red is
+  Delete. **Type hints** (`settings.typeHints`, `useTypeHints`) sit in the Game
   panel, the same switch as the type chart's: unset, they are on until the first badge (`badgesHeld`), and a choice
   made in either place always wins. **Settings' rows have titles only** (the user's call, 2026-10-25): no description
   line under a switch, a choice or a panel, so each title says what it does ("Multi EXP (whole team)", "Animation
@@ -503,6 +506,14 @@ Players shouldn't have to make many requests:
   current one named as the page's `<h1>` (screen readers) so the title isn't written twice; a view not open yet keeps
   its tab with a lock and its page says what opens it. `/social` opens the view with something new, else the
   leaderboard once open, else Friends.
+  On phones the strip is one row that never scrolls sideways, each view its icon over its name at 16 px, as wide as its
+  name needs; a locked view that isn't the current one shrinks to its icon with a lock (named "X · Locked"). From 1024 px
+  each view is two columns (`SocialColumns`): its list on the left and, sticky beside it, what goes with it — your place,
+  the boards and the Hall of Fame (leaderboard); your team and the attack/defense board (Versus); the friend picked, the
+  first one at first (Friends, `SplitView`); Mine with NEW LISTING (Trades). A view's actions are pinned over the tab bar
+  on phones (`SocialDock`): your place (leaderboard), SAVE TEAM (Versus' My team), SHARE INVITE LINK (Friends), NEW
+  LISTING · n/4 (Trades), CONNECT signed out. Adding a friend happens in the page (`AddFriendForm`: the field, the
+  preview of who it is, ADD), not a dialog.
 - **List and detail** (`SplitView`, docs/43 §2): from 1024 px a screen with a list and a detail docks the detail at
   the list's right (440 px, as tall as the screen, scrolling inside itself); a `Sheet` passed as the detail draws
   itself in the pane (`SheetDock`: no scrim, no focus trap). Phones keep the bottom sheet.
@@ -793,19 +804,24 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   list holds each species once, its shiny apart (`versusChoices`: they fight alike at Lv.50, from whichever region), a
   row its name, ✦ and types (no level: everyone is Lv.50 here); a search, No. / A–Z and a `TypeSelect` order and narrow
   it, and picks they hide stay picked.
-- **The leaderboard**: the region's name as the head's count, or "All regions" on Shiny and Raids (one board over
-  every region, each trainer on it once: 0054; a trainer with no shiny / no raid won isn't on that board, and without a row there your gold card isn't shown); five tabs that are icons, only the open one spelling out its name
-  (five names don't fit a phone in every language); a gold card with your look, the board's one-line
-  note and "You're #N of M" (tap: your row scrolls into view and blinks) or "You're in the Hall of Fame"; a navy
-  **Hall of Fame** button with the crown, how many maxed the board out and their faces, opening a sheet with the
-  board's `ui.board.hallBody.*` text and their rows (a crown in place of the rank). Locked until the first badge.
+- **The leaderboard** (docs/43 §5.8): one board over every region on Shiny and Raids (each trainer on it once: 0054; a
+  trainer with no shiny / no raid won isn't on that board); five boards, each its icon over a short name (Level,
+  Progression, Pokédex, Shiny, Raids) at 16 px in every language. A heading names the board and its region ("Level ·
+  Kanto"). Rows show their measure with a `ScoreMeter` bar where the board has a ceiling (the level cap, the region's
+  areas or Pokédex: the count alone, its total said once), and a count with its icon for Shiny and Raids (the words for
+  screen readers). Phones pin your place at the foot ("You're #N of M", a tap scrolls to your row and blinks it); PC
+  puts your place, the boards (each with what it counts) and the Hall of Fame (its rows inline, a crown in place of the
+  rank) beside the ranking, a row one line (name, team, measure side by side). Locked until the first badge.
+- **Versus's FIGHT**: one red, the opponent your team hits hardest (`versusEdge`), the others navy (`frame-dark`). PC:
+  your team and the board beside the opponents (no Leaderboard tab there); the team editor's Clear / SAVE TEAM sit in a
+  `SocialDock`.
 
 ## 17. The trainer card and the menu
 
-- **The avatar opens the trainer card** (the drawer, titled "Trainer card"): a blue-framed card with "TRAINER CARD"
-  and an ID number, your look at 2×, your name with Change, then Money, Pokédex, Best level, Areas, Badges (every
-  region's together, `badgesHeld`; the top bar counts the region being played), Shinies and your Versus record (or
-  Locked) as a dotted list, and your team's icons with levels.
+- **The avatar opens the trainer card** (the drawer, titled "Trainer card", docs/43 §5.9): the card is compact — the
+  look (64 px), the name with a pencil (rename), a badge chip and the team's icons; Money, Pokédex, Best level, Areas,
+  Shinies and Versus fold behind "Stats ▾", open by themselves with More details. Menu rows are 48 px, titles only. The
+  foot is one row of three tiles (Discord, Support me, Contact). The main rows fit a 360×640 phone without scrolling.
 - **A friend's card** is drawn the same way, with their badges as the same one count across every region (no badge
   cases).
 - **Invite a friend**: Prof. Oak's pop-up once per region at its 2nd badge; INVITE shares the friend invite link

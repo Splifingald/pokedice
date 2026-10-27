@@ -234,15 +234,36 @@ Each entry: before (from the audit), after on a phone, after on PC, and what was
 
 ### 5.8 Social
 
-- **Before**: four pages in three places.
-- **After**: one tab, four views (Leaderboard, Versus, Friends, Trades) with a `Seg` at the top on phones and a left list
-  on PC, each view laid out over the width (the board and your card side by side).
+- **Before**: four pages in three places (the cup, the drawer, a Home square); each a 672 px column on PC; the
+  leaderboard's five tabs icons only but the open one; a red FIGHT on every Versus row; adding a friend through a dialog.
+- **The strip** (`SocialTabs`): one row that never scrolls sideways, each view its icon over its name at 16 px; a locked
+  view shrinks to its icon with a lock. Links with `aria-current` (each view is its own route), not a tablist. On PC it
+  stays a row (the rail is already the list of places). `SocialColumns` gives each view two columns from 1024 px;
+  `SocialDock` pins a view's action over the tab bar on phones.
+- **Leaderboard**: five boards, each named (Level, Progression, Pokédex, Shiny, Raids) in every language; a heading names
+  the board and its region; rows carry a `ScoreMeter` where the board has a ceiling, a count and its icon for Shiny and
+  Raids. Phones pin your place at the foot (a tap scrolls to your row; CONNECT signed out). PC: the ranking one line a
+  row (85 → 64 px), and beside it your place, the boards (each with what it counts) and the Hall of Fame inline.
+  Removed: the score repeated in your card, "/151" on every row, the words on every count.
+- **Versus**: one red FIGHT — the opponent your team hits hardest; the others navy. PC: your team and the board beside
+  the opponents, always in view; phones: Clear / SAVE TEAM pinned. The intro and the editor's rules sentence went to
+  INFO; the rules a `RulesCard` until GOT IT.
+- **Friends**: the list first; your ID with COPY; adding a friend in the page (the field, who the code is, ADD: one dialog
+  less); SHARE INVITE LINK the one red, pinned. PC: `SplitView`, the picked friend's card docked (the first one open).
+- **Trades**: the search and a sort dropdown on one row, empty slots quiet dashed placeholders, NEW LISTING · n/4 the
+  one red (pinned on phones, on top of Mine docked beside the board on PC).
+- **Taps**: add a friend 2 → 1; a friend's card on PC 1 → 0; your row on the board scroll → 1; a new listing on phones 2 → 1;
+  the Versus board on PC 1 → 0; the language 1 → 2 (a dropdown: a rare choice).
 
 ### 5.9 Settings and the trainer menu
 
-- **Before**: one 672 px column of panels; the drawer of nine rows.
-- **After, PC**: Settings in two columns (Game and Language | Cloud, Save, Content); phone: unchanged order, 16 px floor.
-  The drawer: the card, then about-you rows, then help, then the foot (Discord, Contact, Support me).
+- **Settings, PC**: two columns (Game, Play style, Notifications | Language, Cloud backup, Extreme, Content, Delete),
+  the whole page in 1440×900. **Phone**: the same groups in one column, the Animation and Theme rows on one line each.
+  Language is one dropdown (each option in its own script); Save file and Content merged into one panel; DISCONNECT white
+  (reversible), the one red is Delete; SUPPORT ME a quiet row at the end (its home is the trainer menu's foot).
+- **The trainer menu**: the card compact (a 64 px look, the name with a pencil, a badge chip, the team's icons; the
+  stats behind "Stats ▾", open with More details), 48 px rows, the foot one row of three tiles (Discord, Support me,
+  Contact). At 360×640 the main rows fit above the foot.
 
 ### 5.10 Title, new game, How to play, the type chart
 

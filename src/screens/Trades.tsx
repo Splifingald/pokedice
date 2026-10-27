@@ -1,7 +1,8 @@
-// The Trades page (docs/23 §2), from the trainer menu: the board (public and friends' listings, search, chips, sort,
-// rows greyed with why) and Mine (your slots, each with SHARE and CANCEL, + New listing, and the trades done, each
-// playing its scene again). A guest sees the connect prompt and the four newest listings; before the second badge,
-// the lock. INFO opens the rules.
+// The Trades page (docs/23 §2), Social's fourth view (docs/43 §5.8): the board (public and friends' listings, search,
+// sort, chips, rows greyed with why) and Mine (your slots, each with SHARE and CANCEL, + New listing, and the trades
+// done, each playing its scene again). Phones: Board and Mine as two tabs, NEW LISTING pinned at the foot. PC: the
+// board on the left, your listings beside it. A guest sees the connect prompt and the four newest listings; before the
+// second badge, the lock. INFO opens the rules.
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import {
@@ -14,6 +15,7 @@ import {
   tradesOf,
   tradesToWatch,
   tradesOn,
+  tradeRulesDue,
   tradesTakenToday,
   tradeSnapshot,
   type TradeOut,
@@ -22,6 +24,9 @@ import { AccountButton } from '@/components/AccountButton'
 import { Chip, LevelTag, NewTag } from '@/components/Chip'
 import { PixelIcon } from '@/components/icons'
 import { PageHead } from '@/components/PageHead'
+import { SocialColumns, SocialDock } from '@/components/SocialTabs'
+import { SortSelect } from '@/components/TypeSelect'
+import { useMediaQuery } from '@/lib/useMediaQuery'
 import { PixelButton } from '@/components/PixelButton'
 import { InfoButton } from '@/components/RulesModal'
 import { FilterChips, SearchField, Seg } from '@/components/Segmented'
@@ -40,7 +45,8 @@ import {
   VisChip,
   WantTile,
 } from '@/components/trades/TradeBits'
-import { TradesRulesModal } from '@/components/trades/TradeRules'
+import { TradesRulesModal, useTradesRules } from '@/components/trades/TradeRules'
+import { RulesCard } from '@/components/RulesCard'
 import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { agoText } from '@/lib/ago'
@@ -66,10 +72,10 @@ export function TradesScreen() {
   const on = tradesOn(data)
   const out = save ? tradesOf(save).out.length : 0
   const closed = save ? tradeClosed(save, data) : 'off'
-  // Opening the page is as good as its rules pop-up: it won't open by itself afterwards (INFO stays).
-  useEffect(() => {
-    if (!closed && auth.status === 'signed_in') seeTradeRules()
-  }, [closed, auth.status])
+  // Its rules where they apply (docs/43 §7): a card at the top of the page, for a signed-in player who can trade, until
+  // GOT IT sets the flag. Opening the page no longer counts as reading them.
+  const tradesRules = useTradesRules()
+  const rulesDue = !!save && auth.status === 'signed_in' && tradeRulesDue(save, data)
   // Mine says what the server says: a listing taken since the last check shows up (and its scene waits for Home).
   useEffect(() => {
     if (auth.status === 'signed_in') void checkListings()
@@ -98,7 +104,7 @@ export function TradesScreen() {
   else body = <Open />
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-3">
+    <div className="flex flex-col gap-3">
       <PageHead
         icon="trade"
         title={t('ui.trades.title')}
@@ -109,6 +115,9 @@ export function TradesScreen() {
         }
         social="trades"
       />
+      {rulesDue && (
+        <RulesCard title={t('ui.trades.title')} icon="trade" rules={tradesRules} onDone={seeTradeRules} />
+      )}
       {body}
       {on && <InfoButton name={t('ui.trades.title')} onClick={() => setRules(true)} />}
       <TradesRulesModal open={rules} onClose={() => setRules(false)} />
@@ -131,11 +140,60 @@ function Open() {
   const unseen = tradesToWatch(save).length
   const board = useTrades((s) => s.board)
   const cfg = tradeCfg(data)
+  const wide = useMediaQuery('(min-width: 1024px)')
 
   // The location's ask is used once: going back to the page later doesn't reopen the draft.
   useEffect(() => {
     if (asked) navigate('.', { replace: true, state: null })
   }, [asked, navigate])
+
+  const out = tradesOf(save).out.length
+  const full = out >= cfg.maxListings
+  const newListing = (
+    <PixelButton variant="primary" className="w-full" disabled={full} onClick={() => setDrafting(null)}>
+      {t('ui.trades.newListing')} · {out}/{cfg.maxListings}
+    </PixelButton>
+  )
+  const sheets = (
+    <>
+      <NewListingSheet
+        open={drafting !== false}
+        initial={drafting || null}
+        onClose={() => setDrafting(false)}
+        onPosted={(p) => {
+          setDrafting(false)
+          setTab('mine')
+          void loadBoard({}, true)
+          if (p.visibility === 'private') setSharing(p)
+        }}
+      />
+      <ShareListingModal listing={sharing} onClose={() => setSharing(null)} />
+    </>
+  )
+
+  // PC: the board, and your listings beside it with NEW LISTING on top.
+  if (wide)
+    return (
+      <>
+        <SocialColumns
+          main={<Board />}
+          side={
+            <section aria-labelledby="tr-mine-title" className="flex flex-col gap-2.5 bg-panel p-2.5 shadow-card">
+              <h2 id="tr-mine-title" className="m-0 flex items-center gap-2 text-[24px] font-normal leading-none">
+                <PixelIcon name="trade" size={24} />
+                {t('ui.trades.tabMine')}
+                {unseen > 0 && (
+                  <span aria-label={t('ui.trades.dotLabel')} className="h-2.5 w-2.5 bg-gold shadow-ring-thin" />
+                )}
+              </h2>
+              {newListing}
+              <Mine onShare={setSharing} narrow />
+            </section>
+          }
+        />
+        {sheets}
+      </>
+    )
 
   return (
     <>
@@ -160,25 +218,16 @@ function Open() {
                 )}
               </span>
             ),
-            count: `${tradesOf(save).out.length}/${cfg.maxListings}`,
+            count: `${out}/${cfg.maxListings}`,
           },
         ]}
       />
       <div role="tabpanel" aria-labelledby={`tr-${tab}`} className="flex flex-col gap-2.5">
-        {tab === 'board' ? <Board /> : <Mine onNew={() => setDrafting(null)} onShare={setSharing} />}
+        {tab === 'board' ? <Board /> : <Mine onShare={setSharing} />}
       </div>
-      <NewListingSheet
-        open={drafting !== false}
-        initial={drafting || null}
-        onClose={() => setDrafting(false)}
-        onPosted={(p) => {
-          setDrafting(false)
-          setTab('mine')
-          void loadBoard({}, true)
-          if (p.visibility === 'private') setSharing(p)
-        }}
-      />
-      <ShareListingModal listing={sharing} onClose={() => setSharing(null)} />
+      {/* The page's one red action, in the thumb's reach on both tabs. */}
+      <SocialDock>{newListing}</SocialDock>
+      {sheets}
     </>
   )
 }
@@ -244,7 +293,20 @@ function Board() {
 
   return (
     <>
-      <SearchField id="tr-q" value={q} onChange={setQ} label={t('ui.trades.search')} />
+      <div className="flex flex-wrap items-center gap-2">
+        <SearchField id="tr-q" value={q} onChange={setQ} label={t('ui.trades.search')} className="min-w-0 flex-[1_1_140px]" />
+        <SortSelect
+          label={t('ui.trades.sort')}
+          value={sort}
+          onChange={setSort}
+          className="flex-[0_1_auto]"
+          options={[
+            { id: 'tradable', label: t('ui.trades.sortTradable') },
+            { id: 'soon', label: t('ui.trades.sortSoon') },
+            { id: 'newest', label: t('ui.trades.sortNewest') },
+          ]}
+        />
+      </div>
       <FilterChips
         label={t('ui.trades.show')}
         value={show}
@@ -256,17 +318,6 @@ function Board() {
           { id: 'can', label: t('ui.trades.chipCan'), count: counts.can },
         ]}
       />
-      <Seg
-        label={t('ui.trades.sort')}
-        value={sort}
-        onChange={setSort}
-        options={[
-          { id: 'tradable', label: t('ui.trades.sortTradable') },
-          { id: 'soon', label: t('ui.trades.sortSoon') },
-          { id: 'newest', label: t('ui.trades.sortNewest') },
-        ]}
-        className="overflow-x-auto"
-      />
       {state === 'loading' && !board && (
         <p className="m-0 p-4 text-center text-[20px] text-muted">{t('ui.common.loading')}</p>
       )}
@@ -276,7 +327,7 @@ function Board() {
         </p>
       )}
       {board && (
-        <ul className="m-0 grid list-none gap-1.5 p-0" data-testid="trade-board">
+        <ul className="m-0 grid list-none gap-1.5 p-0 xl:grid-cols-2" data-testid="trade-board">
           {shown.length === 0 && (
             <li className="bg-paper px-3.5 py-4 text-center font-pixel-sm text-[17px] leading-[1.2] text-muted shadow-ring-line">
               {needle
@@ -302,15 +353,16 @@ function Board() {
 
 /** Your slots, then the trades done. `offNote`: trades were switched off with something still listed. */
 function Mine({
-  onNew,
   onShare,
   offNote,
+  narrow,
 }: {
-  onNew?: () => void
   onShare?: (s: Shared) => void
   offNote?: boolean
+  /** PC's side column: one listing a row. */
+  narrow?: boolean
 }) {
-  const { t, tPlural } = useT()
+  const { t } = useT()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)!
   const errorText = useTradeErrorText()
@@ -364,12 +416,9 @@ function Mine({
   const slots = Array.from({ length: Math.max(cfg.maxListings, tr.out.length) }, (_, i) => tr.out[i] ?? null)
   return (
     <>
-      <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">
-        {offNote
-          ? t('ui.trades.offNote')
-          : t('ui.trades.mineNote', { days: tPlural('ui.trades.days', cfg.listingDays) })}
-      </p>
-      <ul className="m-0 grid list-none gap-1.5 p-0 sm:grid-cols-2" data-testid="trade-slots">
+      {/* How a listing lives is the rules' (INFO); only the switched-off note stays, as it explains the page. */}
+      {offNote && <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{t('ui.trades.offNote')}</p>}
+      <ul className={cx('m-0 grid list-none gap-1.5 p-0', !narrow && 'sm:grid-cols-2')} data-testid="trade-slots">
         {slots.map((o, i) =>
           o ? (
             <li key={o.listing} className="grid gap-1.5 bg-paper p-2 shadow-card">
@@ -419,18 +468,12 @@ function Mine({
               </span>
             </li>
           ) : (
-            <li key={`empty-${i}`}>
-              <button
-                type="button"
-                disabled={!onNew}
-                onClick={onNew}
-                className="grid h-full min-h-[96px] w-full place-content-center justify-items-center gap-1 bg-well text-ink shadow-ring-line hover:shadow-ring disabled:opacity-60"
-              >
-                <span className="text-[28px] leading-none" aria-hidden>
-                  +
-                </span>
-                <b className="text-[19px] font-normal leading-none">{t('ui.trades.newListing')}</b>
-              </button>
+            // An open slot: a dashed outline, its number (NEW LISTING, pinned at the foot or on top of the column, fills it).
+            <li
+              key={`empty-${i}`}
+              className="grid min-h-[52px] place-content-center border-2 border-dashed border-shadow font-pixel-sm text-[18px] text-muted"
+            >
+              {t('ui.home.freeSlot')}
             </li>
           ),
         )}

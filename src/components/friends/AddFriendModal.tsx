@@ -1,4 +1,4 @@
-// ADD BY FRIEND ID: type or paste a code, see who it is, add them at once (docs/16 §3.1).
+// Adding by friend ID: type or paste a code, see who it is, add them at once (docs/16 §3.1), in the page.
 import { useEffect, useId, useState } from 'react'
 import { useT } from '@/i18n/react'
 import { offlineOr } from '@/lib/online'
@@ -14,7 +14,6 @@ import {
   type FriendNotice,
 } from '@/lib/friends'
 import { pushToast, useGame } from '@/store/game'
-import { Modal } from '../Modal'
 import { PixelButton } from '../PixelButton'
 import { FriendPreview } from './FriendBits'
 
@@ -49,15 +48,12 @@ export function useAddText() {
   }
 }
 
-export function AddFriendModal({
-  open,
-  onClose,
-  onAdded,
-}: {
-  open: boolean
-  onClose: () => void
-  onAdded?: (friend: FriendNotice) => void
-}) {
+/**
+ * Adding a friend, in the Friends page itself (docs/43 §5.8): the field, who the code belongs to as soon as it's
+ * whole, and ADD. Typing is the choice and ADD the one tap that acts — no dialog to open first (it was ADD BY FRIEND ID,
+ * then the dialog's ADD). A friend added is announced in a toast and handed to `onAdded`; the field empties.
+ */
+export function AddFriendForm({ onAdded }: { onAdded?: (friend: FriendNotice) => void }) {
   const { t } = useT()
   const text = useAddText()
   const inputId = useId()
@@ -69,17 +65,9 @@ export function AddFriendModal({
   const code = normalizeCode(typed)
   const valid = isCode(code)
 
-  useEffect(() => {
-    if (!open) {
-      setTyped('')
-      setLookup({ state: 'idle' })
-      setProblem(null)
-    }
-  }, [open])
-
   // Who it is, once 8 good characters are in (a short wait, so pasting or typing fast asks once).
   useEffect(() => {
-    if (!open || !valid) {
+    if (!valid) {
       setLookup({ state: 'idle' })
       return
     }
@@ -100,7 +88,7 @@ export function AddFriendModal({
     }
     // `text` changes identity every render; the lookup only depends on the code.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, valid, code])
+  }, [valid, code])
 
   const add = async () => {
     if (!valid || busy) return
@@ -110,8 +98,8 @@ export function AddFriendModal({
       const { status, friend } = await addFriend(code)
       if (status === 'added' && friend) {
         pushToast(text('added', friend.name), 'good')
+        setTyped('')
         onAdded?.(friend)
-        onClose()
       } else {
         setProblem(text(status, friend?.name ?? (lookup.state === 'found' ? lookup.who.name : null)))
       }
@@ -124,54 +112,51 @@ export function AddFriendModal({
 
   const notFound = lookup.state === 'none'
   return (
-    <Modal open={open} onClose={onClose} title={t('ui.friends.addTitle')}>
-      <form
-        className="flex flex-col gap-3"
-        onSubmit={(e) => {
-          e.preventDefault()
-          void add()
-        }}
-      >
-        <div className="flex flex-col gap-1">
-          <label htmlFor={inputId} className="text-[20px] leading-none">
-            {t('ui.friends.idLabel')}
-          </label>
-          <input
-            id={inputId}
-            value={valid ? formatCode(code) : typed.toUpperCase()}
-            onChange={(e) => {
-              setTyped(e.target.value)
-              setProblem(null)
-            }}
-            autoComplete="off"
-            autoCapitalize="characters"
-            spellCheck={false}
-            maxLength={14}
-            placeholder="K7QM-4XD9"
-            aria-describedby={hintId}
-            aria-invalid={notFound || undefined}
-            className="h-12 w-full bg-paper px-3 text-[26px] uppercase tracking-[0.08em] shadow-field placeholder:text-faint"
-          />
-          <small id={hintId} className="font-pixel-sm text-[16px] leading-tight text-muted">
-            {t('ui.friends.idHint')}
-          </small>
-        </div>
-
-        {lookup.state === 'looking' && <p className="m-0 text-[18px] text-muted">{t('ui.common.loading')}</p>}
-        {lookup.state === 'found' && <FriendPreview {...lookup.who} />}
-        {(notFound || problem) && (
-          <p role="alert" className="m-0 text-[18px] leading-tight text-danger">
-            {problem ?? t('ui.friends.notFound')}
-          </p>
-        )}
-
-        <div className="flex justify-end gap-2">
-          <PixelButton onClick={onClose}>{t('ui.common.cancel')}</PixelButton>
-          <PixelButton type="submit" variant="primary" disabled={!valid || busy || notFound}>
-            {t('ui.friends.addButton')}
-          </PixelButton>
-        </div>
-      </form>
-    </Modal>
+    <form
+      aria-labelledby={`${inputId}-title`}
+      className="flex flex-col gap-2 bg-paper p-2.5 shadow-card"
+      onSubmit={(e) => {
+        e.preventDefault()
+        void add()
+      }}
+    >
+      <h2 id={`${inputId}-title`} className="m-0 text-[22px] font-normal leading-none">
+        {t('ui.friends.addTitle')}
+      </h2>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+        <input
+          id={inputId}
+          value={valid ? formatCode(code) : typed.toUpperCase()}
+          onChange={(e) => {
+            setTyped(e.target.value)
+            setProblem(null)
+          }}
+          autoComplete="off"
+          autoCapitalize="characters"
+          spellCheck={false}
+          maxLength={14}
+          placeholder="K7QM-4XD9"
+          aria-label={t('ui.friends.idLabel')}
+          aria-describedby={hintId}
+          aria-invalid={notFound || undefined}
+          className="h-12 w-full min-w-0 bg-paper px-3 text-[24px] uppercase tracking-[0.08em] shadow-field placeholder:text-faint"
+        />
+        <PixelButton type="submit" variant={valid && !notFound ? 'primary' : 'secondary'} disabled={!valid || busy || notFound}>
+          {t('ui.friends.addButton')}
+        </PixelButton>
+      </div>
+      {lookup.state === 'found' ? (
+        <FriendPreview {...lookup.who} />
+      ) : (
+        <small id={hintId} className="font-pixel-sm text-[16px] leading-tight text-muted">
+          {lookup.state === 'looking' ? t('ui.common.loading') : t('ui.friends.idHint')}
+        </small>
+      )}
+      {(notFound || problem) && (
+        <p role="alert" className="m-0 text-[18px] leading-tight text-danger">
+          {problem ?? t('ui.friends.notFound')}
+        </p>
+      )}
+    </form>
   )
 }

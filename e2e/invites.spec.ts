@@ -1,6 +1,6 @@
 // Friend invite rewards (docs/15 §25), against the mocked Supabase: the gauge at the top of the Friends page and in Prof.
-// Oak's invite, a reward opened with the gifts' own opening (into the save), the rules once on the Friends page (never
-// elsewhere) and from INFO, the reward's
+// Oak's invite, a reward opened with the gifts' own opening (into the save), the rules at the top of the Friends page
+// until GOT IT (never elsewhere) and from INFO, the reward's
 // pop-up between fights, an invite link counting for its owner, and the switch off.
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
@@ -91,7 +91,7 @@ test('the Friends page: the gauge on top, a reward opened like a gift, then INFO
   })
   await page.goto('/friends')
 
-  const card = page.getByRole('region', { name: 'Invite rewards' })
+  const card = page.getByRole('region', { name: /^Invite rewards/ })
   await expect(card).toBeVisible()
   await expect(card).toContainText('3/4')
   await expect(card).toContainText('2 rewards are ready to open!')
@@ -105,11 +105,14 @@ test('the Friends page: the gauge on top, a reward opened like a gift, then INFO
   const cardTop = (await card.boundingBox())!.y
   const idTop = (await page.getByTestId('friend-code').boundingBox())!.y
   expect(cardTop).toBeLessThan(idTop)
-  // The first time on the page, the rules pop up (OK); never again after.
-  const first = page.getByRole('dialog', { name: 'Invite rewards' })
+  // The first time on the page, the rules sit at its top (docs/43 §7: where they apply), not in a pop-up; GOT IT puts
+  // them away for good.
+  const first = page.getByRole('region', { name: 'How invite rewards works' })
   await expect(first).toContainText('Invite new players')
-  await first.getByRole('button', { name: 'OK' }).click()
   await expect(page.getByRole('dialog')).toHaveCount(0)
+  expect((await first.boundingBox())!.y).toBeLessThan(cardTop)
+  await first.getByRole('button', { name: 'GOT IT' }).click()
+  await expect(first).toHaveCount(0)
   await expect.poll(async () => (await stored(page)).invites?.rulesSeen).toBe(true)
 
   await card.getByRole('button', { name: 'Open it' }).click()
@@ -173,8 +176,11 @@ test('Later keeps the reward on the Friends page, with the Social tab’s dot', 
   await expect(ready).toContainText('A friend you invited won their first badge!')
   await ready.getByRole('button', { name: 'Later' }).click()
   await expect(ready).toHaveCount(0)
-  // Friends live in Social now (docs/43 §3): its tab's dot counts it, in its name too.
-  await expect(page.getByRole('navigation', { name: 'Menus' }).getByRole('link', { name: 'Social · 1 new' })).toBeVisible()
+  // The Social tab's dot counts it, and opens on Friends, whose strip tab counts it too (docs/43 §3).
+  await page.getByRole('link', { name: 'Social · 1 new' }).click()
+  await expect(page).toHaveURL(/\/friends$/)
+  await expect(page.getByRole('link', { name: 'Friends (1)' })).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByRole('region', { name: /^Invite rewards/ }).getByRole('button', { name: 'Open it' })).toBeVisible()
 })
 
 test('Prof. Oak’s invite is a note on Home, with the gauge', async ({ page }) => {
@@ -217,7 +223,7 @@ test('switched off: no gauge, no pop-up, nothing asked', async ({ page }) => {
   )
   await page.goto('/friends')
   await expect(page.getByTestId('friend-code')).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Invite rewards' })).toHaveCount(0)
+  await expect(page.getByRole('region', { name: /^Invite rewards/ })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Info: how invite rewards works' })).toHaveCount(0)
   expect(calls.filter((c) => c.includes('invite_'))).toEqual([])
 })
@@ -233,7 +239,7 @@ for (const theme of ['light', 'dark'] as const) {
     }
     await boot(page, save, { invite_status: { count: 3, pending: 2, claimed: [1], latest: null } })
     await page.goto('/friends')
-    await expect(page.getByRole('region', { name: 'Invite rewards' })).toContainText(
+    await expect(page.getByRole('region', { name: /^Invite rewards/ })).toContainText(
       '2 rewards are ready to open!',
     )
     expect(
