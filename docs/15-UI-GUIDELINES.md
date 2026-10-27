@@ -132,6 +132,8 @@ Rules:
   paper over a scene) and `shadow-card` (a 2 px ink ring + lip, for list items on a panel).
 - **Clipped corners** (`.pixel-corners`) for chips, pills, tracks and badges.
 - Circles only where the thing is round: the avatar, a status badge on a die, the Home ball in the tab bar.
+- **One Egg** (the user's call, 2026-10-27): the games' own (Black and White's, 28×30, `components/eggMap.ts`) in the
+  Day Care, its hatching, the pop-ups and the app icon; never one drawn for the game.
 - **One check mark** (the user's call, 2026-10-27): `PixelIcon name="check"`, a rounded green square with a thick white
   tick, the same in both themes; never a text ✓ (a gauge's cleared round, a gem held, a picked card).
 
