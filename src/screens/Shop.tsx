@@ -427,23 +427,27 @@ function MartTabs({
         <PixelIcon name="navShop" size={32} className="hidden shrink-0 lg:block" />
         {title}
       </h1>
-      <Seg
-        tabs
-        idPrefix="mart"
-        label={t('ui.shop.tabs')}
-        value={tab}
-        onChange={onTab}
-        className="w-full lg:w-auto lg:min-w-[520px]"
-        options={[
-          { id: 'buy', label: label('navShop', t('ui.shop.buy')) },
-          {
-            id: 'upgrades',
-            label: label('navUpgrades', t('ui.upgrades.title')),
-            count: upgrades || undefined,
-          },
-          { id: 'sell', label: label('bag', t('ui.shop.bagTab')) },
-        ]}
-      />
+      {/* A tab never squeezes under its label: where a translation outgrows the narrowest phone, the bar scrolls
+          inside itself (as the category chips do), never the page. */}
+      <div className="-m-1.5 min-w-0 overflow-x-auto p-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <Seg
+          tabs
+          idPrefix="mart"
+          label={t('ui.shop.tabs')}
+          value={tab}
+          onChange={onTab}
+          className="w-full min-w-max lg:w-auto lg:min-w-[520px]"
+          options={[
+            { id: 'buy', label: label('navShop', t('ui.shop.buy')) },
+            {
+              id: 'upgrades',
+              label: label('navUpgrades', t('ui.upgrades.title')),
+              count: upgrades || undefined,
+            },
+            { id: 'sell', label: label('bag', t('ui.shop.bagTab')) },
+          ]}
+        />
+      </div>
     </div>
   )
 }
