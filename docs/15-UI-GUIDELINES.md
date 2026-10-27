@@ -802,8 +802,8 @@ window, sticky), the panel under it (PC: framed at its right, scrolling inside i
 card on the first visit (`DayCareRulesCard`, GOT IT sets `dayCare.visited`); the Egg card (one row, HATCH IT at its end)
 or the Egg-now bar; your two slots (`SlotCard`, compact: a 60 px sprite beside the name, level and gain, the XP bar, the
 partners, TAKE BACK); friends' Pokémon one line each (`GuestTile`, Send back a 44 px ✕); the free friend slots as one
-"+ Add from a friend" line; signed out, one line and a small CONNECT. At its foot the Egg checks folded (open with More
-details) and a small INFO (`SmallInfo`). The push question waits while the rules card is up. What follows describes the
+"+ Add from a friend" line; signed out, one line and a small CONNECT. At its foot the Egg checks, always open (the user's
+call, 2026-10-27: no toggle), then INFO the panel's width (`InfoButton`). The push question waits while the rules card is up. What follows describes the
 pieces.
 
 - **The yard** (`YardStage`) takes the place and size of Home's scene: its picture (`public/area-art/daycare.png`,
@@ -828,7 +828,7 @@ pieces.
   minute). Signed out, the friend list's connect prompt takes their place; without the online service, or on a
   database without migration 0034, they are greyed and say why.
 - **Hearts mean "can make an Egg with it"**, always next to a name: a heart is never the only sign.
-- **Egg checks** (folded at the panel's foot; open with More details) list the rule, the two clocks (Egg groups, Ditto) with their next time ("waiting for a pair" for a
+- **Egg checks** (open at the panel's foot) list the rule, the two clocks (Egg groups, Ditto) with their next time ("waiting for a pair" for a
   clock with none), and every pair with a tag: the shared group and its pace ("Field · every 12 h"), or Ditto's slower
   pace in purple.
 - **Pickers** (the shared `Sheet`): Leave which Pokémon? lists every region's Box (the region after the level once

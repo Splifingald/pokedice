@@ -1,6 +1,6 @@
 // The Pokémon Day Care, one for every region (docs/15): a stage and its panel (docs/43 §5.7). The yard on top (everyone
 // at the Day Care roaming, pairs seeking each other out, the Egg in its nest); the panel beside or under it: the Egg card
-// or the Egg-now bar, your two, your friends', the Egg checks folded. Eggs hatch full screen. Numbers: src/engine.
+// or the Egg-now bar, your two, your friends', the Egg checks, open. Eggs hatch full screen. Numbers: src/engine.
 import { motion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -32,7 +32,7 @@ import {
 import { sfx } from '@/audio/sfx'
 import { AccountButton } from '@/components/AccountButton'
 import { DayCareRulesCard, DayCareRulesModal } from '@/components/FeatureRules'
-import { SmallInfo } from '@/components/SmallInfo'
+import { InfoButton } from '@/components/RulesModal'
 import { Chip, NewTag } from '@/components/Chip'
 import { bumpGold } from '@/components/GoldPill'
 import { BackButton } from '@/components/PageHead'
@@ -57,7 +57,6 @@ import { useMotion } from '@/lib/motion'
 import { hatchDayCareEgg, leaveAtDayCare, pickUpFromDayCare, rushDayCareEgg } from '@/store/actions'
 import { inviteFriendMon, parentName, sendGuestBack, syncFriendDayCares, tickDayCare } from '@/store/daycare'
 import { pushToast, useGame } from '@/store/game'
-import { useDetails } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import {
   EggCardView,
@@ -193,7 +192,6 @@ function ChecksSection({ now }: { now: number }) {
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
   const nameOf = useNameOf()
-  const details = useDetails()
   const cfg = data.config.dayCare
   const ditto = data.species[132]?.name ?? 'Ditto'
   const ps = pairs(save, data)
@@ -202,18 +200,12 @@ function ChecksSection({ now }: { now: number }) {
     const at = clockDueAt(save, data, clock, now)
     return at == null ? t('ui.dayCare.clockIdle', { h }) : t('ui.dayCare.clockLine', { h, time: waitText(at - now) })
   }
-  // Folded (docs/43 §5.7): the Egg-now bar already says when the next check comes and how many pairs could leave an
-  // Egg; the clocks and each pair's group are for whoever wants them (open at once with More details).
+  // Always open (the user's call, 2026-10-27: no toggle): the clocks and each pair's group, under their title.
   return (
-    <details open={details || undefined} className="group grid gap-2 bg-paper px-3 pb-1 pt-1 shadow-ring-line open:pb-3">
-      <summary className="flex min-h-[44px] cursor-pointer items-center gap-1.5">
-        <span className="inline-block text-[16px] text-muted transition-transform group-open:rotate-90" aria-hidden>
-          ▶
-        </span>
-        <h2 id="dc-checks" className="m-0 text-[20px] font-normal leading-none">
-          {t('ui.dayCare.checks')}
-        </h2>
-      </summary>
+    <section aria-labelledby="dc-checks" className="grid gap-2 bg-paper px-3 pb-3 pt-1 shadow-ring-line">
+      <h2 id="dc-checks" className="m-0 flex min-h-[44px] items-center text-[20px] font-normal leading-none">
+        {t('ui.dayCare.checks')}
+      </h2>
       <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2.5 gap-y-0.5 font-pixel-sm text-[16px] text-ink">
         <dt className="text-muted">{t('ui.dayCare.clockGroups')}</dt>
         <dd className="m-0">{line('breed', cfg.breedHours)}</dd>
@@ -249,7 +241,7 @@ function ChecksSection({ now }: { now: number }) {
       ) : (
         <p className="m-0 font-pixel-sm text-[16px] leading-[1.2] text-muted">{t('ui.dayCare.noPairYet')}</p>
       )}
-    </details>
+    </section>
   )
 }
 
@@ -852,13 +844,9 @@ function DayCareScreenMain() {
           )}
         </section>
 
-        {/* The panel's foot: the Egg checks folded, and the rules as the unlock pop-up gave them, a small INFO. */}
-        <div className="flex items-start gap-2">
-          <div className="min-w-0 flex-1">
-            <ChecksSection now={now} />
-          </div>
-          <SmallInfo name={t('ui.home.dayCare')} onClick={() => setRules(true)} className="shrink-0" />
-        </div>
+        {/* The panel's foot: the Egg checks, open, then INFO the panel's width (the user's call, 2026-10-27). */}
+        <ChecksSection now={now} />
+        <InfoButton name={t('ui.home.dayCare')} onClick={() => setRules(true)} />
       </div>
 
       <DayCareRulesModal open={rules} onClose={() => setRules(false)} />
