@@ -1,8 +1,8 @@
 // Kitchen sink (dev only): the weekly Versus league (docs/44) — its header (no group yet, ranked), the 3 opponents
 // (one red FIGHT; the admin's BOT tag; none on offer), the group's board (this week, the top 10's rewards, the admin's
 // view with bots; empty; last week empty), the result card (a win, a loss under the safe line, a loss above it, a leave,
-// waiting on the server, not recorded), the reward message's words, the Raid Ball and its throw's ball, and the rules
-// card and INFO.
+// waiting on the server, not recorded), the reward message's words, the Raid Ball, its throw's ball and the raid catch
+// that offers it, and the rules card and INFO.
 import { useState, type ReactNode } from 'react'
 import {
   BotTag,
@@ -15,6 +15,7 @@ import {
 } from '@/screens/versus/League'
 import { useVersusRules, VersusRulesModal } from '@/components/FeatureRules'
 import { ItemSprite } from '@/components/ItemSprite'
+import { CatchPanel } from '@/screens/battle/CatchPanel'
 import { ReplyBox } from '@/components/ContactModal'
 import { PixelButton } from '@/components/PixelButton'
 import { RulesCard } from '@/components/RulesCard'
@@ -111,6 +112,13 @@ const ROWS: LeagueRow[] = NAMES.map((name, i) => ({
   rich: i === 2,
   bot: null,
 }))
+const RAID_CATCH = {
+  dex: 150,
+  level: 70,
+  kind: 'boss' as const,
+  target: { mode: 'new' as const },
+  result: null,
+}
 const ADMIN_ROWS = ROWS.map((r, i) => ({ ...r, bot: i === 0 || i === 6 || i === 9 }))
 
 export function LeagueBits() {
@@ -152,8 +160,8 @@ export function LeagueBits() {
       <Frame name="LeagueRows · the admin's view (BOT on bots)" wide>
         <LeagueRows rows={ADMIN_ROWS.slice(0, 7)} empty="" />
       </Frame>
-      <Frame name="LeagueRows · compact (PC's side column)">
-        <LeagueRows rows={ROWS.slice(0, 5)} compact empty="" />
+      <Frame name="LeagueRows · in PC's side column (the same rows, narrower)">
+        <LeagueRows rows={ROWS.slice(0, 5)} empty="" />
       </Frame>
       <Frame name="LeagueRows · no group yet / last week not played">
         <LeagueRows rows={[]} empty={t('ui.league.boardEmpty')} />
@@ -243,6 +251,9 @@ export function LeagueBits() {
           {ball && <ItemSprite item={ball} size={64} />}
           <span className="font-pixel-sm text-[16px] text-muted">{t('itemDesc.raid-ball')}</span>
         </div>
+      </Frame>
+      <Frame name="CatchPanel in a raid: the Raid Ball offered with the other balls (the bag's, here the kitchen save's)">
+        <CatchPanel c={RAID_CATCH} onThrow={noop} revealed={false} raid />
       </Frame>
       <Frame name="A live league match, offline (dev page: the fight is real, the result can't be sent)">
         <a className="text-[18px] underline" href="/kitchen-sink/league-fight">

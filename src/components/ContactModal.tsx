@@ -46,7 +46,7 @@ export function ReplyBox({ reply, at, fromDev }: { reply: string; at: string | n
   return (
     <div className="bg-gold-pale p-2 shadow-ring">
       <p className="flex flex-wrap items-baseline justify-between gap-x-2 text-lg leading-none">
-        <b>{t(fromDev ? 'ui.contact.fromDev' : 'ui.contact.answer')}</b>
+        <b>{t(league ? 'ui.league.title' : fromDev ? 'ui.contact.fromDev' : 'ui.contact.answer')}</b>
         {at && <span className="text-base text-muted">{when(at)}</span>}
       </p>
       <p className="copy mt-1 whitespace-pre-wrap break-words text-lg leading-snug">{words}</p>

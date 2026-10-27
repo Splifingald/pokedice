@@ -249,7 +249,7 @@ export function LeagueScreen() {
                   <PixelIcon name="trophy" size={24} />
                   {t('ui.league.group')}
                 </h2>
-                {status(home) ?? (h && <LeagueBoard home={h} compact />)}
+                {status(home) ?? (h && <LeagueBoard home={h} />)}
               </section>
             </>
           )
@@ -433,7 +433,7 @@ export function RewardMark({ rank }: { rank: number }) {
 }
 
 /** Your group of 20, this week or last: rank, trainer, team, trophies, and what each place wins. */
-export function LeagueBoard({ home, compact }: { home: LeagueHome; compact?: boolean }) {
+export function LeagueBoard({ home }: { home: LeagueHome }) {
   const { t } = useT()
   const [week, setWeek] = useState<'this' | 'last'>('this')
   const [last, setLast] = useState<Load<LeagueHome>>({ state: 'loading' })
@@ -468,7 +468,6 @@ export function LeagueBoard({ home, compact }: { home: LeagueHome; compact?: boo
       {shown && (
         <LeagueRows
           rows={shown.rows}
-          compact={compact}
           empty={t(week === 'this' ? 'ui.league.boardEmpty' : 'ui.league.lastEmpty')}
         />
       )}
@@ -477,15 +476,7 @@ export function LeagueBoard({ home, compact }: { home: LeagueHome; compact?: boo
 }
 
 /** The ranked rows themselves (Home's kitchen shows them too). */
-export function LeagueRows({
-  rows,
-  compact,
-  empty,
-}: {
-  rows: LeagueRow[]
-  compact?: boolean
-  empty: string
-}) {
+export function LeagueRows({ rows, empty }: { rows: LeagueRow[]; empty: string }) {
   const { t } = useT()
   const friends = useFriends((s) => s.ids)
   if (!rows.length) return <p className="m-0 p-4 text-center text-[19px] text-muted">{empty}</p>
@@ -501,7 +492,8 @@ export function LeagueRows({
           isMe={r.isMe}
           isFriend={friends.has(r.id)}
           team={r.team}
-          compact={compact}
+          // Stacked always: the line of rewards under the team would run into the trophies on PC's one-line row.
+          compact
           sub={
             (r.bot || r.rank <= 10) && (
               <span className="flex items-center gap-2">
