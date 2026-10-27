@@ -440,6 +440,11 @@ Today ~28 one-time pop-ups take turns (`PopupQueue`). This pass:
 | Trades: INFO out of reach under NEW LISTING | A Social dock's room is at the page's very end (`main:has([data-social-dock])`) |
 | PC Home: CONTINUE under the scene, always in sight | The dock under the scene, pinned with it |
 | The trainer card: Stats over the team | The row wraps; the team keeps its width |
+| Auto-mode changes area on its own | Never: only Idle moves on (and falls back) |
+| Stay here looked like a link | A secondary button, the dock's width |
+| One check mark | `PixelIcon check`: a rounded green square, a thick white tick |
+| A real Pokémon Egg | Black and White's sprite, one map for the Day Care, the hatching and the app icon |
+| The Day Care's Egg checks: no toggle, INFO full width | Open at the panel's foot, `InfoButton` under them |
 
 ## 8. Not in this pass
 

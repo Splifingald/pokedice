@@ -51,9 +51,8 @@ test('the gold widget opens the Day Care straight into the hatching of the gift 
   await expect(page.getByText('Next Egg check')).toBeVisible()
   await expect(page.getByText('On hold')).toBeVisible()
   await expect(page.getByText('No pair can make an Egg yet').first()).toBeVisible()
-  // The Egg checks are folded at the panel's foot (docs/43 §5.7): the clocks show once opened.
-  await expect(page.getByText('every 12 h · waiting for a pair')).toBeHidden()
-  await page.getByText('Egg checks', { exact: true }).click()
+  // The Egg checks are open at the panel's foot (the user's call, 2026-10-27: no toggle), INFO under them.
+  await expect(page.getByRole('heading', { name: 'Egg checks' })).toBeVisible()
   await expect(page.getByText('every 12 h · waiting for a pair')).toBeVisible()
 })
 
@@ -246,9 +245,8 @@ test("friends' Pokémon: invite a friend's Ditto, it pairs with yours, then goes
   await sheet.getByRole('button', { name: /Ditto/ }).click()
   await expect(page.getByText("Ditto is visiting from Misty's Day Care · pairs with Eevee")).toBeVisible()
 
-  // Its line says whose it is; the checks (folded, opened here) find the pair, on Ditto's slower clock.
+  // Its line says whose it is; the checks (always open) find the pair, on Ditto's slower clock.
   await expect(page.getByText("Misty's").first()).toBeVisible()
-  await page.getByText('Egg checks', { exact: true }).click()
   await expect(page.getByText('Ditto · every 24 h')).toBeVisible()
   // Send back: one tap on its line's button.
   await page.getByRole('button', { name: "Send Ditto back to Misty's Day Care" }).click()

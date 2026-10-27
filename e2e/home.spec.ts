@@ -9,6 +9,7 @@ import {
   badgeCase,
   createInstance,
   DEFAULT_CONFIG,
+  emptyProgress,
   linearAreas,
   newRegionBlock,
   progressOf,
@@ -270,7 +271,12 @@ test("a region's GO opens that region's areas, in the same sheet", async ({ page
 })
 
 test('CONTINUE plays the area on /area, and an idle /area goes back Home', async ({ page }) => {
-  await boot(page, makeSave(4))
+  // Mid-round, so CONTINUE meets a fight (a new round opens with its Pokémon Center).
+  const base = makeSave(4)
+  await boot(page, {
+    ...base,
+    areaProgress: { ...base.areaProgress, [base.currentAreaId]: { ...emptyProgress(), deck: ['wild', 'wild'] } },
+  })
   await page.goto('/area')
   await expect(page).toHaveURL(/\/home$/)
   await page.getByRole('button', { name: 'CONTINUE', exact: true }).click()
