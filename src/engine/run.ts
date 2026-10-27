@@ -3,7 +3,8 @@ import { getSpecies, linearAreas } from './data'
 import { KANTO, evolutionGate, inWorldRegion, regionOf, regionOfArea } from './regions'
 import { asSeenBy, gymsFor, playerSideOf } from './rival'
 import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount, multiExpShareFor } from './economy'
-import { bossCaught, deckAbilities, deckCounts, fightBosses, roundsComplete } from './encounters'
+import { bossCaught, deckAbilities, deckCounts, dueGym, fightBosses, roundsComplete } from './encounters'
+import { eventOpenTo } from './events'
 import { centersOn, healItemsOn, wipeHeals } from './extreme'
 import { addFossil, isReviving } from './fossils'
 import { LEGACY_GAUGE } from './legacyGauge'
@@ -385,6 +386,8 @@ export type RunEvent =
   | { kind: 'secret_unlocked'; areaId: string }
   /** An Elite Rebattle tier won: every trainer of its gauntlet beaten in a row. */
   | { kind: 'rebattle_cleared'; regionId: string; tier: number }
+  /** A League battle won with another still to fight: the team healed for it (docs/42). */
+  | { kind: 'league_healed' }
   /**
    * A small world's shiny mythical caught (docs/21): it left the world for its home region's Box (`region`), or waits
    * for that region to be started (`waiting`).
@@ -520,6 +523,12 @@ export function applyVictory(
 
   next = withProgress(next, area.id, progress)
 
+  // The League heals between its battles (docs/42): one won with the next still waiting.
+  if (input.kind === 'gym' && input.gymComplete && leagueHealsAfter(next, data, area)) {
+    next = centerHeal(next, data)
+    events.push({ kind: 'league_healed' })
+  }
+
   // Secret areas whose conditions just came true (a catch, a level-up…)
   for (const id of unlockedHiddenAreas(next, data)) if (!hiddenBefore.has(id)) events.push({ kind: 'secret_unlocked', areaId: id })
 
@@ -630,6 +639,18 @@ export function applyWipe(save: SaveData, areaId: string, data: GameData): SaveD
     ...withProgress(save, areaId, { ...p, deck: [], drawn: [] }),
     box: save.box.map((inst) => (healed.has(inst.id) ? { ...inst, currentHp: instanceMaxHp(inst, data) } : inst)),
   }
+}
+
+/** The League's heal between its battles is open (docs/42). */
+export const leagueHealOn = (data: GameData): boolean => eventOpenTo(data.config.leagueHeal?.access, data)
+
+/**
+ * A League battle just won heals the team (docs/42): the switch is on, the area is a region's League, another of its
+ * battles waits, and a Pokémon Center would heal here (none in Extreme mode, as its Centers).
+ */
+function leagueHealsAfter(save: SaveData, data: GameData, area: Area): boolean {
+  if (!leagueHealOn(data) || !centersOn(save, data) || !data.regions.some((r) => r.leagueAreaId === area.id)) return false
+  return !!dueGym(area, progressOf(save, area.id), data, playerSideOf(save))
 }
 
 /**

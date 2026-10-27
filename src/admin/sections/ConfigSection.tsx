@@ -735,6 +735,30 @@ function ShinyDexBox() {
 }
 
 /**
+ * The League's heal between its battles (docs/42): each one won with the next still waiting heals the team, as a
+ * Pokémon Center would. It changes the save on the player's device alone, so the game alone reads it.
+ */
+function LeagueHealBox() {
+  const [raw, setRaw] = useConfigRow('leagueHeal')
+  const access = raw?.access ?? 'off'
+  return (
+    <Box
+      title="League heal"
+      icon="heart"
+      hint="On: in a region's League area, every League battle won (an Elite Four member…) with another still to fight heals the team and the Box, as a Pokémon Center would; the result card says so. The last battle doesn't heal, nor does the Elite Rebattle (a gauntlet), nor Extreme mode while its Centers are off."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">League heal</span>
+        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="League heal: who has it" />
+        <span className="text-base text-muted">
+          {accessNote(access, 'Open to every player.', 'Off: the team keeps its damage between League battles, as before.')}
+        </span>
+      </div>
+    </Box>
+  )
+}
+
+/**
  * The Unown Pokédex (docs/41): the 28 letters, once an area where Unown live is opened, and the ₽ the last one pays.
  * The letters are noted on the device, so the game alone reads it.
  */
@@ -1528,6 +1552,8 @@ export function ConfigSection() {
       <MusicBox />
 
       <ShinyDexBox />
+
+      <LeagueHealBox />
 
       <UnownDexBox />
 

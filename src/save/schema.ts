@@ -6,11 +6,13 @@ import {
   EVENT_IDS,
   PLAY_STYLES,
   POKE_TYPES,
+  POWER_KINDS,
   TRADE_VISIBILITY,
   type ComboKey,
   type DayCareResident,
   type DayCareState,
   type PokeType,
+  type PowerKind,
   type RegionSave,
   type SaveData,
 } from '@/engine/types'
@@ -49,6 +51,10 @@ const tradeMonSchema = z.object({
 })
 
 const typeEnum = z.enum(POKE_TYPES as unknown as [PokeType, ...PokeType[]])
+const powerKinds = z
+  .array(z.string().max(20))
+  .max(20)
+  .transform((ks) => ks.filter((k): k is PowerKind => (POWER_KINDS as readonly string[]).includes(k)))
 
 // The Underground (docs/34): one event's kits, pickaxe, orb bag and open wall.
 const count = z.number().int().min(0)
@@ -360,6 +366,15 @@ export const saveSchema = z.object({
   unownDex: z.record(z.array(z.string().max(1)).max(UNOWN_LETTERS.length)).optional(),
   unownDexPaid: z.array(z.string().max(40)).max(40).optional(),
   unownDexSeen: z.boolean().optional(),
+  // The battle powers (docs/35): the Mega Gems held, bought ones included, which nothing else gives back. A power kind
+  // this build doesn't know is dropped rather than failing the save, so an odd one never costs the gems.
+  powers: z
+    .object({
+      gems: z.array(z.string().min(1).max(60)).max(400).optional(),
+      seen: powerKinds.optional(),
+      earned: powerKinds.optional(),
+    })
+    .optional(),
   // The General upgrades (docs/25): their levels and the offline earnings' clock.
   general: z
     .object({

@@ -1019,6 +1019,8 @@ notifications' question last. A new pop-up gets a place in that list, not a list
   (`homeNotices`) and, for a feature with a page, its `RulesCard` there.
 - **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
+- **A rule explained where it happens** (the League's heal between its battles, docs/42): the switch, but no rules
+  pop-up and no INFO: it adds nothing to do and no page, and the result card says so the moment it heals.
 - **A purely visual change** (the dice throws, docs/37; the game-feel pass, haptics and battle music, docs/38): the
   switch, but no rules pop-up and no INFO: it only changes how something already there looks, sounds or feels, so
   there is nothing to learn or do.

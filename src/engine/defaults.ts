@@ -379,6 +379,9 @@ export const DEFAULT_CONFIG: GameConfig = {
   music: { access: 'all' },
   // The shiny Pokédex (docs/39): off until the admin switches it on. Migration 0075 inserts the same row.
   shinyDex: { access: 'off' },
+  // The League's heal between its battles (docs/42): off until the admin switches it on. Migration 0081 inserts the
+  // same row.
+  leagueHeal: { access: 'off' },
   // The Unown Pokédex (docs/41): off until the admin switches it on; ₽1,000 for the 28th letter. Migration 0080 inserts
   // the same row.
   unownDex: { access: 'off', reward: 1000 },
