@@ -249,7 +249,9 @@ export function Die({
   const wrap = cx('die-wrap', special && 'st', ring && 'combo', ring && tier > 1 && `t${tier}`, selected && 'sel')
   const motionProps = {
     className: cx(wrap, 'relative select-none', interactive && 'cursor-pointer', className),
-    style: { ['--stc' as string]: special ?? undefined, transformStyle: 'preserve-3d' as const },
+    // Flat, never preserve-3d: the tumble never needed it (the old drop-shadow filters flattened it all along), and
+    // live it left phones not drawing a die whose throw had just landed until it was tapped (Discord, 2026-10-25).
+    style: { ['--stc' as string]: special ?? undefined },
     initial:
       rollKey !== undefined && !thrown ? { rotateX: 540, rotateZ: 200, y: -size * 1.2, scale: 0.6, opacity: 0 } : (false as const),
     // A thrown die lands flat; a pick or a combo lifts it once it's down.
