@@ -43,15 +43,28 @@ async function boot(page: Page, save: SaveData) {
 
 const areaId = (name: string) => gameData().areas.find((a) => a.name === name)!.id
 
-test('a legendary raid lists its own rules, and its rules pop-up shows once', async ({ page }) => {
+test('the overhaul’s rules on the Raids page until GOT IT, never a pop-up there', async ({ page }) => {
   await boot(page, kantoSave())
+  await page.goto('/events/raid')
+  // The overhaul's rules where they apply (docs/43 §7): a card at the top of the Raids page, never a pop-up there.
+  const card = page.getByRole('region', { name: 'How Raid Battles works' })
+  await expect(card.getByText('Learn its pattern')).toBeVisible()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  // Opening the page isn't reading them.
+  await page.waitForTimeout(500)
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!).events?.raidRulesSeen)).toBeFalsy()
+  await card.getByRole('button', { name: 'Got it' }).click()
+  await expect(card).toHaveCount(0)
+  // Seen: kept in the save, so it doesn't come back.
+  await expect
+    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!).events?.raidRulesSeen))
+    .toBe(true)
+})
+
+test('a legendary raid lists its own rules, folded; the book shows the overhaul’s rules again', async ({ page }) => {
+  // Read already (a page load seeds the save afresh, so the flag comes with it).
+  await boot(page, kantoSave({ raidRulesSeen: true }))
   await page.goto(`/raid/${areaId('Seafoam Islands')}/144`)
-  // The overhaul's rules, once: Later closes it, and it doesn't come back.
-  const pop = page.getByRole('dialog', { name: 'Raids, now' })
-  await expect(pop).toBeVisible()
-  await expect(pop.getByText('Learn its pattern')).toBeVisible()
-  await pop.getByRole('button', { name: 'Later', exact: true }).click()
-  await expect(pop).toHaveCount(0)
   const rules = page.getByRole('region', { name: 'This raid' })
   // Folded on the page (docs/43 §5.11): its summary opens it.
   await rules.getByText('This raid').click()
@@ -61,15 +74,12 @@ test('a legendary raid lists its own rules, and its rules pop-up shows once', as
   await expect(rules.getByText('Gains dice: Ice')).toBeVisible()
   const axe = await new AxeBuilder({ page }).include('section[aria-labelledby="raid-rules-title"]').analyze()
   expect(axe.violations).toEqual([])
-  // INFO shows the rules again.
+  // INFO (the book) shows the overhaul's rules again, in their pop-up.
   await rules.getByRole('button', { name: 'How raids work now' }).click()
-  await expect(page.getByRole('dialog', { name: 'Raids, now' })).toBeVisible()
+  const info = page.getByRole('dialog', { name: 'Raids, now' })
+  await expect(info.getByText('Learn its pattern')).toBeVisible()
   await page.getByRole('button', { name: 'OK', exact: true }).click()
-  // Seen: kept in the save, so it doesn't come back.
-  await expect
-    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!).events?.raidRulesSeen))
-    .toBe(true)
-  await expect(page.getByRole('dialog', { name: 'Raids, now' })).toHaveCount(0)
+  await expect(info).toHaveCount(0)
 })
 
 test("Mewtwo's raid fights at its own level: the NPC partners come at Lv.70", async ({ page }) => {

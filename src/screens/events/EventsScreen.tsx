@@ -15,6 +15,7 @@ import { RaidPage } from './RaidPage'
 import { RaidView } from './RaidView'
 import { RebattlePage, tierName } from './RebattlePage'
 import { EventPicture, EventRulesCard } from './shared'
+import { RaidRulesCard } from './RaidRules'
 import { cx } from '@/theme/util'
 import { WheelPage } from './WheelPage'
 import { WorldAwayPage } from './world'
@@ -109,6 +110,7 @@ function EventPage({ id }: { id: EventId }) {
         <div className="flex flex-col gap-3">
           <EventBanner id={id} status={status} />
           <EventRulesCard id={id} />
+          {id === 'raid' && <RaidRulesCard />}
         </div>
       }
     />
