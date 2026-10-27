@@ -37,6 +37,7 @@ import { GiftEditor, giftName } from '../GiftEditor'
 import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
 import { AccessSwitch, Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 import { PushBox } from './PushBox'
+import { VersusLeagueBox } from './VersusLeagueBox'
 
 export function useConfigRow<K extends keyof GameConfig>(key: K): [GameConfig[K], (v: GameConfig[K]) => void] {
   const rows = useAdmin((st) => st.rows.game_config)
@@ -573,7 +574,7 @@ const accessNote = (access: EventAccess, all: string, off: string) =>
   access === 'all' ? all : access === 'admin' ? 'Only you see it (to try it first). Players see nothing yet.' : off
 
 /**
- * Idle mode and the play styles (docs/36): Classic, Auto on explored areas, Idle. Off: auto-mode stays as it always was
+ * Idle mode and the play styles (docs/36): Auto on explored areas (the default), Idle. Off: auto-mode stays as it always was
  * (a cleared area's fights only). The game reads it on the player's device; no server function acts for it.
  */
 function IdleModeBox() {
@@ -583,7 +584,7 @@ function IdleModeBox() {
     <Box
       title="Idle mode"
       icon="dice"
-      hint="On: a new game first asks how to play (Classic, Auto on explored areas, Idle), Settings switches it any time, and auto-mode becomes the autopilot: it plays the whole area (fights, finds, Centers without team swaps, no items but Idle's Poké Balls, no Game Corner), moves on to the next area once one is cleared, and after a lost round plays one round of the area before, then goes back. Idle catches by itself (a new Pokémon with the cheapest ball at the best chance, never the Master Ball; one already owned is left); under Auto on explored areas catches wait for the player. Off: auto-mode as before, fights only, in cleared areas. Players' choices are kept either way."
+      hint="On: Settings has the play style (Auto on explored areas, the default, or Idle), switched any time, and auto-mode becomes the autopilot: it plays the whole area (fights, finds, Centers without team swaps, no items but Idle's Poké Balls, no Game Corner), moves on to the next area once one is cleared, and after a lost round plays one round of the area before, then goes back. Idle catches by itself (a new Pokémon with the cheapest ball at the best chance, never the Master Ball; one already owned is left); under Auto on explored areas catches wait for the player. Off: auto-mode as before, fights only, in cleared areas. Players' choices are kept either way."
     >
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-lg">Idle mode</span>
@@ -728,6 +729,30 @@ function ShinyDexBox() {
         <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="Shiny Pokédex: who has it" />
         <span className="text-base text-muted">
           {accessNote(access, 'Open to every player.', 'Off: the Pokédex has one page, as before.')}
+        </span>
+      </div>
+    </Box>
+  )
+}
+
+/**
+ * The League's heal between its battles (docs/42): each one won with the next still waiting heals the team, as a
+ * Pokémon Center would. It changes the save on the player's device alone, so the game alone reads it.
+ */
+function LeagueHealBox() {
+  const [raw, setRaw] = useConfigRow('leagueHeal')
+  const access = raw?.access ?? 'off'
+  return (
+    <Box
+      title="League heal"
+      icon="heart"
+      hint="On: in a region's League area, every League battle won (an Elite Four member…) with another still to fight heals the team and the Box, as a Pokémon Center would; the result card says so. The last battle doesn't heal, nor does the Elite Rebattle (a gauntlet), nor Extreme mode while its Centers are off."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">League heal</span>
+        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="League heal: who has it" />
+        <span className="text-base text-muted">
+          {accessNote(access, 'Open to every player.', 'Off: the team keeps its damage between League battles, as before.')}
         </span>
       </div>
     </Box>
@@ -1528,6 +1553,10 @@ export function ConfigSection() {
       <MusicBox />
 
       <ShinyDexBox />
+
+      <LeagueHealBox />
+
+      <VersusLeagueBox />
 
       <UnownDexBox />
 

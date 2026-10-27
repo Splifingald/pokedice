@@ -24,6 +24,8 @@ purely sensory, so they have **no rules pop-up and no INFO button** (docs/15 §2
 The bug fixes, the accessibility fixes and the simplifications of existing screens have no switch: they change
 features already there.
 
+Later passes put their juice under the same **Game feel** switch: the way into a fight and the round's pip (docs/42 §6).
+
 The new sounds live in `src/audio/feel.ts` (`feelSound`), built from `sfx.ts`'s `tone` and `hiss` on the same Sound
 switch; the haptics in `src/lib/haptics.ts` (`haptic(cue)`).
 

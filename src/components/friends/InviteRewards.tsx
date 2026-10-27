@@ -1,8 +1,7 @@
 // Friend invite rewards (docs/15 §25): the gauge (at the top of the Friends page, in Prof. Oak's invite pop-up and in the
-// reward's own pop-up), its rules (once when the rewards open, then INFO at the bottom of the Friends page), and the
+// reward's own pop-up), its rules (once, the first time on the Friends page, then INFO at its bottom), and the
 // pop-up that says a reward is ready. Every number — the tiers, the fill, what each one holds — is the engine's
 // (engine/invites.ts); the opening is the developer's gifts' own (GiftMoment).
-import { useNavigate } from 'react-router-dom'
 import {
   inviteGauge,
   inviteTiers,
@@ -16,7 +15,7 @@ import { useFriends } from '@/lib/friends'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
 import { useGiftMoment } from '@/store/gifts'
-import { openInviteRewards, putOffInviteRewards, seeInviteRules, useInviteRewards } from '@/store/invites'
+import { openInviteRewards, putOffInviteRewards, useInviteRewards } from '@/store/invites'
 import { useCloudSync } from '@/store/sync'
 import { cx } from '@/theme/util'
 import { GiftIcon, useGiftText } from '../Gifts'
@@ -88,7 +87,7 @@ function TierTile({ tier, size }: { tier: InviteGaugeTier; size: number }) {
         <PixelIcon name="sparkle" size={12} className="absolute left-0.5 top-0.5" />
       )}
       {tier.gifts.length > 1 && (
-        <span className="absolute bottom-0 left-0 bg-paper px-0.5 font-pixel-sm text-[12px] leading-none text-ink shadow-ring-line">
+        <span className="absolute bottom-0 left-0 bg-paper px-0.5 font-pixel-sm text-tag leading-none text-ink shadow-ring-line">
           +{tier.gifts.length - 1}
         </span>
       )}
@@ -148,7 +147,7 @@ export function InviteGaugeBar({ gauge, compact = false }: { gauge: InviteGauge;
           />
         ))}
       </div>
-      <div className="grid font-pixel-sm text-[14px] leading-none text-muted" style={cols} aria-hidden>
+      <div className="grid font-pixel-sm text-[16px] leading-none text-muted" style={cols} aria-hidden>
         {gauge.tiers.map((tier) => (
           <span key={tier.friends} className="flex items-center justify-end gap-1 tabular-nums">
             <PixelIcon name="friends" size={12} />
@@ -222,7 +221,7 @@ export function InviteRewardsCard({
           {tPlural('ui.invite.pending', gauge.pending, { n: gauge.pending })}
         </p>
       )}
-      <p className="m-0 font-pixel-sm text-[15px] leading-tight text-muted">{t('ui.invite.how')}</p>
+      <p className="m-0 font-pixel-sm text-[16px] leading-tight text-muted">{t('ui.invite.how')}</p>
     </section>
   )
 }
@@ -236,7 +235,7 @@ export function InviteGaugeCompact({ gauge }: { gauge: InviteGauge }) {
       <p className="m-0 flex items-center gap-1.5 text-[19px] leading-none">
         <PixelIcon name="gift" size={18} />
         <span className="min-w-0 flex-1">{t('ui.invite.title')}</span>
-        <span className="font-pixel-sm text-[15px] tabular-nums text-muted">
+        <span className="font-pixel-sm text-[16px] tabular-nums text-muted">
           {Math.min(gauge.count, gauge.goal)}/{gauge.goal}
         </span>
       </p>
@@ -273,7 +272,7 @@ export function useInviteRules(): RuleRow[] {
   ]
 }
 
-/** The rewards' rules: once when they open (Later / Let's go!), and from INFO on the Friends page (OK). */
+/** The rewards' rules, on the Friends page: once the first time in, then from INFO (OK). */
 export function InviteRulesModal({
   open,
   onClose,
@@ -293,31 +292,6 @@ export function InviteRulesModal({
       icon="gift"
       rules={useInviteRules()}
       onGo={onGo}
-    />
-  )
-}
-
-/**
- * The rewards have opened to this player (signed in, the main game, the switch on): once, between fights, their
- * rules and a button to the Friends page, where the gauge is. It takes its turn in the one-time pop-ups' queue
- * (engine/popups.ts: after Prof. Oak's invite and the trades' rules). On the Friends page itself, the page counts as
- * seen.
- */
-export function InviteRulesPopup() {
-  const navigate = useNavigate()
-  const open = useMyTurn('invite')
-  useOnScreen('invite', open)
-  // Gone the moment its turn ends, as before the queue: its button leads to another page, which a fading pop-up
-  // would cover.
-  if (!open) return null
-  return (
-    <InviteRulesModal
-      open={open}
-      onClose={seeInviteRules}
-      onGo={() => {
-        seeInviteRules()
-        navigate('/friends')
-      }}
     />
   )
 }

@@ -577,12 +577,12 @@ export function HaulList({ lines, data }: { lines: HaulLine[]; data: GameData })
               <b className="truncate text-[20px] font-normal leading-none">
                 {l.outcome === 'lost' ? t('ui.ug.out.lost') : thingName(l.thing, data)}
               </b>
-              <small className="font-pixel-sm text-[15px] text-muted">{sub}</small>
+              <small className="font-pixel-sm text-[16px] text-muted">{sub}</small>
             </span>
             {l.outcome !== 'lost' && (
               <span
                 className={cx(
-                  'shrink-0 whitespace-nowrap px-1.5 pb-0.5 pt-px font-pixel-sm text-[14px]',
+                  'shrink-0 whitespace-nowrap px-1.5 pb-0.5 pt-px font-pixel-sm text-[16px]',
                   OUTCOME_TONE[l.outcome],
                 )}
               >
@@ -610,14 +610,14 @@ export function PlateGrid({ held }: { held: readonly PokeType[] }) {
             title={has ? name : undefined}
             aria-label={has ? name : t('ui.ug.plateMissing')}
             className={cx(
-              'grid justify-items-center gap-0.5 px-0.5 pb-0.5 pt-1 font-pixel-sm text-[12px] leading-none',
+              'grid min-h-[40px] place-items-center px-0.5 py-1',
               has ? 'bg-paper text-ink shadow-ring-thin' : 'bg-well-deep text-ink shadow-[inset_0_0_0_2px_rgb(var(--c-shadow))]',
             )}
           >
             <span className="relative block aspect-[4/3] w-full max-w-[40px]">
               <UgSprite id={`plate.${type}`} fit={{ w: 4, h: 3 }} className={cx(!has && 'opacity-30 grayscale')} />
             </span>
-            <span className="max-w-full truncate">{has ? typeName(type) : '?'}</span>
+            {/* The plate's picture says which: its name is the tile's label (and its tooltip), never 14 px print. */}
           </li>
         )
       })}
@@ -643,7 +643,7 @@ export function OrbBagTable({
         <tr>
           <th />
           {sizes.map((s) => (
-            <th key={s} scope="col" className="font-pixel-sm text-[15px] font-normal text-muted">
+            <th key={s} scope="col" className="font-pixel-sm text-[16px] font-normal text-muted">
               {t(`ui.ug.size.${s}`)}
             </th>
           ))}
@@ -815,5 +815,5 @@ export function UgRulesModal({
 
 /** A short line under a section title, muted. */
 export function UgNote({ children, className }: { children: ReactNode; className?: string }) {
-  return <p className={cx('m-0 font-pixel-sm text-[15px] leading-snug text-muted', className)}>{children}</p>
+  return <p className={cx('m-0 font-pixel-sm text-[16px] leading-snug text-muted', className)}>{children}</p>
 }

@@ -59,13 +59,12 @@ test('the league opens it: the rules, then a new Extreme game beside the main sa
   expect(await page.evaluate(() => localStorage.getItem('pokedice.slot'))).toBe('extreme')
   await expect(page.getByRole('button', { name: 'Continue the main game' })).toBeVisible()
   await page.getByRole('button', { name: 'NEW GAME' }).click()
-  await page.getByRole('button', { name: 'Skip intro' }).click()
-  await page.getByRole('radio', { name: 'Character 2' }).click()
-  await page.getByLabel('Your name').fill('Sam')
-  await page.getByRole('button', { name: 'NEXT ▸' }).click()
+  // The lab at once (the rework), then the first area.
   await page.getByRole('button', { name: 'Poké Ball 3 of 3' }).click()
   await page.getByRole('button', { name: 'Pick Squirtle' }).click()
-  await page.getByRole('button', { name: /let's go/i }).click()
+  // LET'S GO! waits for the tap (no button presses itself, 2026-10-27), then the first area.
+  await page.getByRole('button', { name: /^let's go/i }).click()
+  await expect(page).toHaveURL(/\/area$/)
 
   await expect(page.getByText('Extreme mode · no Pokémon Centers')).toBeVisible()
   // Written a moment later (saves are written after a short pause).
@@ -108,7 +107,8 @@ test('the whole team resting: CONTINUE waits, says when, and points to the Team 
   // Its sheet: the rest on a 12-hour track.
   await page.getByRole('main').getByRole('button', { name: 'Team' }).click()
   await expect(page).toHaveURL(/\/team$/)
-  await page.getByRole('button', { name: /Squirtle/ }).first().click()
+  // The team's card (the banner over it lists the same Pokémon for screen readers, first): the last match.
+  await page.getByRole('button', { name: /Squirtle/ }).last().click()
   await expect(page.getByText('Resting after a K.O.')).toBeVisible()
   await expect(page.getByText(/Back at 1 HP in 9h 5\dm/)).toBeVisible()
 })

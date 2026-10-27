@@ -2,11 +2,12 @@
 // starter.ts). Tap one and its Pokémon comes out; "Do you want to pick it?" with its types, what it hits hard, what
 // hits it hard and its dice. Yes makes it your partner; no sends it back. Used by a new game, by a new region and by a
 // small world's fresh start (in that world's colours).
+import { AutoButton } from './AutoButton'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { createInstance, getSpecies, instanceStats, type RegionId } from '@/engine'
 import { LAB_ART, loadArt } from '@/fx/areaArt'
-import { loadSprite, spriteKey } from '@/fx/sprites'
+import { loadSprite, spriteFrame, spriteKey } from '@/fx/sprites'
 import { labColors, starterSeats, StarterScene, type LabColors } from '@/fx/timelines/starter'
 import { H, setCalm, W } from '@/fx/timeline'
 import { useT } from '@/i18n/react'
@@ -17,8 +18,9 @@ import { useGame } from '@/store/game'
 import { cx, mix } from '@/theme/util'
 import { DiceSet } from './DiceSet'
 import { PixelButton } from './PixelButton'
-import { MiniSprite } from './SpriteImg'
+import { MiniSprite, SpriteImg } from './SpriteImg'
 import { StatChip } from './StatChip'
+import { TrainerSprite } from './TrainerArt'
 import { matchupsOf, speciesTypes } from './TypeMatchups'
 import { TypeBadge } from './TypeBadge'
 
@@ -32,6 +34,7 @@ export function PartnerMoment({
   onPick,
   onLeave,
   theme,
+  oak = false,
 }: {
   /** The region's three starters, in ball order. */
   starters: readonly number[]
@@ -44,6 +47,11 @@ export function PartnerMoment({
   onLeave?: () => void
   /** A small world's colours (docs/21): the lab is drawn in them, and its picture wears a veil of its main colour. */
   theme?: { main: string; accent: string; ground: string }
+  /**
+   * A new game: Prof. Oak speaks in the lab (docs/43 §5.10) — his portrait and name on the message box, his welcome
+   * while the balls drop, SKIP INTRO beside it to land them at once. His intro costs no tap of its own.
+   */
+  oak?: boolean
 }) {
   const { t } = useT()
   useHoldFullscreen()
@@ -97,6 +105,25 @@ export function PartnerMoment({
       live = false
     }
   }, [starters])
+
+  // The Pokémon out of its ball is drawn on the canvas from its loaded sprite. A phone that dropped or delayed that
+  // request would show an open ball and nobody: until the canvas has it, the page's own sprite stands on the cradle,
+  // and the load is tried again.
+  const shown = pick
+  const [late, setLate] = useState(false)
+  useEffect(() => {
+    if (shown == null) return setLate(false)
+    const key = spriteKey(starters[shown]!, false)
+    const check = () => {
+      const missing = !spriteFrame(key)
+      setLate(missing)
+      if (missing) void loadSprite(starters[shown]!, false)
+      return missing
+    }
+    if (!check()) return
+    const id = setInterval(() => !check() && clearInterval(id), 700)
+    return () => clearInterval(id)
+  }, [shown, starters])
 
   // The clock and the drawing: 60 frames a second while the moment is open.
   useEffect(() => {
@@ -177,7 +204,9 @@ export function PartnerMoment({
   const name = dex != null ? getSpecies(data, dex).name : ''
   const message =
     phase === 'intro'
-      ? t('ui.partner.sayWelcome', { region: regionName })
+      ? oak
+        ? t('ui.newGame.intro1')
+        : t('ui.partner.sayWelcome', { region: regionName })
       : phase === 'choose'
         ? t('ui.partner.sayChoose')
         : phase === 'ask'
@@ -199,7 +228,8 @@ export function PartnerMoment({
       tabIndex={-1}
       className="fixed inset-0 z-[100] overflow-y-auto bg-paper text-ink outline-none"
     >
-      <div className="mx-auto flex min-h-full w-full max-w-[560px] flex-col gap-3 pb-4">
+      {/* PC (docs/43 §5.10): the lab large on the left, the message, the card and its buttons beside it. */}
+      <div className="mx-auto flex min-h-full w-full max-w-[560px] flex-col gap-3 pb-4 lg:grid lg:max-w-[1360px] lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center lg:gap-6 lg:p-6">
         <div
           className="relative shadow-ledge"
           onClick={() => {
@@ -253,7 +283,16 @@ export function PartnerMoment({
               style={{ left: `${(x / W) * 100}%`, top: `${((y - 24) / H) * 100}%` }}
             />
           ))}
-          {onLeave && phase !== 'done' && (
+          {late && shown != null && seats[shown] && (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute w-[22%] -translate-x-1/2 -translate-y-full"
+              style={{ left: `${(seats[shown]!.x / W) * 100}%`, top: `${((seats[shown]!.y + 6) / H) * 100}%` }}
+            >
+              <SpriteImg dex={starters[shown]!} size={96} className="h-auto w-full" />
+            </span>
+          )}
+                    {onLeave && phase !== 'done' && (
             <button
               type="button"
               onClick={(e) => {
@@ -270,13 +309,41 @@ export function PartnerMoment({
 
         {/* The lab on top; the message, the starter's card and its buttons at the bottom, under the thumb (docs/38
             P2b), above the home indicator. */}
-        <div className="mt-auto flex flex-col gap-3" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-          <p
-            className="pixel-dialogue mx-3 my-0 flex min-h-[64px] items-center px-3 py-1.5 text-[20px] leading-[1.15]"
-            aria-live="polite"
-          >
-            {message}
-          </p>
+        <div className="mt-auto flex flex-col gap-3 lg:mt-0" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          {oak ? (
+            // Prof. Oak's box: his portrait, his name on its tag, his line; SKIP INTRO while the balls are still falling.
+            <div className="relative mx-3 mt-3">
+              <span className="light-scope absolute -top-3 left-2 z-[1] bg-ink px-2 pb-0.5 text-[16px] leading-tight text-parchment">
+                {t('ui.newGame.oakTag')}
+              </span>
+              <div className="pixel-dialogue flex min-h-[72px] items-center gap-2.5 py-1.5 pl-1.5 pr-2">
+                <TrainerSprite src="/characters/prof-oak.png" alt={t('ui.newGame.oak')} size={56} className="shrink-0" />
+                <p className="m-0 min-w-0 flex-1 text-[20px] leading-[1.15]" aria-live="polite">
+                  {message}
+                </p>
+                {phase === 'intro' && scene && (
+                  <PixelButton
+                    size="sm"
+                    variant="ghost"
+                    className="shrink-0"
+                    onClick={() => {
+                      clock.current = Math.max(clock.current, scene.landed)
+                      scene.land()
+                    }}
+                  >
+                    {t('ui.newGame.skipIntro')}
+                  </PixelButton>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p
+              className="pixel-dialogue mx-3 my-0 flex min-h-[64px] items-center px-3 py-1.5 text-[20px] leading-[1.15]"
+              aria-live="polite"
+            >
+              {message}
+            </p>
+          )}
 
           {phase === 'ask' && asking && facts && dex != null && (
             <div className="mx-3 grid gap-2 bg-paper px-3 pb-3 pt-2.5 shadow-card">
@@ -292,23 +359,23 @@ export function PartnerMoment({
                 </span>
               </div>
               <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5">
-                <dt className="font-pixel-sm text-[15px] text-muted">{t('ui.partner.strong')}</dt>
+                <dt className="font-pixel-sm text-[16px] text-muted">{t('ui.partner.strong')}</dt>
                 <dd className="m-0 flex flex-wrap gap-1">
                   {facts.m.hits.length ? (
                     facts.m.hits.map((ty) => <TypeBadge key={ty} type={ty} size="sm" />)
                   ) : (
-                    <span className="font-pixel-sm text-[15px]">{t('ui.partner.none')}</span>
+                    <span className="font-pixel-sm text-[16px]">{t('ui.partner.none')}</span>
                   )}
                 </dd>
-                <dt className="font-pixel-sm text-[15px] text-muted">{t('ui.partner.weak')}</dt>
+                <dt className="font-pixel-sm text-[16px] text-muted">{t('ui.partner.weak')}</dt>
                 <dd className="m-0 flex flex-wrap gap-1">
                   {facts.m.weak.length ? (
                     facts.m.weak.map((ty) => <TypeBadge key={ty} type={ty} size="sm" />)
                   ) : (
-                    <span className="font-pixel-sm text-[15px]">{t('ui.partner.none')}</span>
+                    <span className="font-pixel-sm text-[16px]">{t('ui.partner.none')}</span>
                   )}
                 </dd>
-                <dt className="font-pixel-sm text-[15px] text-muted">{t('ui.partner.dice')}</dt>
+                <dt className="font-pixel-sm text-[16px] text-muted">{t('ui.partner.dice')}</dt>
                 <dd className="m-0 flex flex-wrap items-center gap-2">
                   <DiceSet dice={facts.stats.dice} size={24} />
                   <StatChip stat="rerolls" value={facts.stats.rerolls} />
@@ -332,7 +399,7 @@ export function PartnerMoment({
           )}
 
           {phase === 'done' && goShown && dex != null && (
-            <PixelButton
+            <AutoButton
               ref={goRef}
               variant="primary"
               size="lg"
@@ -340,7 +407,7 @@ export function PartnerMoment({
               onClick={() => onPick(dex)}
             >
               {t('ui.partner.go')}
-            </PixelButton>
+            </AutoButton>
           )}
         </div>
       </div>

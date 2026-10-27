@@ -71,6 +71,11 @@ describe('encounter deck', () => {
     const expected = Object.fromEntries(Object.entries(counts).filter(([, n]) => n > 0))
     for (let d = 0; d < 5; d++) {
       const seen: Record<string, number> = {}
+      // Each round opens with its Center, outside the deck: the deck is dealt whole.
+      const opening = nextEncounter(ctx(save, ROUTE1), rng)
+      expect(opening.encounter).toMatchObject({ kind: 'center', reason: 'round' })
+      expect(opening.deck).toHaveLength(size)
+      save = setAreaDeck(save, ROUTE1.id, opening.deck!)
       for (let i = 0; i < size; i++) {
         const { encounter, deck } = nextEncounter(ctx(save, ROUTE1), rng)
         expect(deck).toHaveLength(size - 1 - i)
@@ -100,7 +105,9 @@ describe('encounter deck', () => {
   it('forced encounters do not use up a card', () => {
     const base = newSave(4, data, 0, newId)
     const hurt = { ...base, box: base.box.map((p) => ({ ...p, currentHp: 1 })) }
-    expect(nextEncounter(ctx(hurt, ROUTE1, { isFirstInArea: true, teamHurt: true }), createRng(1))).toEqual({
+    // Mid-round: a fresh round would open with its own Center.
+    const mid = { ...progressOf(hurt, ROUTE1.id), deck: ['wild' as const] }
+    expect(nextEncounter(ctx(hurt, ROUTE1, { isFirstInArea: true, teamHurt: true, progress: mid }), createRng(1))).toEqual({
       encounter: { kind: 'center', forced: true },
       deck: null,
       lootDeck: null,
@@ -128,30 +135,30 @@ describe('rounds', () => {
     const base = newSave(4, data, 0, newId)
     let save: SaveData = { ...base, areaProgress: { ...base.areaProgress, [ROUTE1.id]: { ...progressOf(base, ROUTE1.id), roundsDone: 1 } } }
     const rng = createRng(21)
-    const first = nextEncounter(ctx(save, ROUTE1, { centerUseful: true }), rng)
+    const first = nextEncounter(ctx(save, ROUTE1), rng)
     expect(first.encounter).toEqual({ kind: 'center', forced: true, reason: 'round' })
     expect(first.newRound).toBe(true)
     save = recordDraws(save, ROUTE1.id, first)
     const size = deckSize(ROUTE1)
-    expect(progressOf(save, ROUTE1.id)).toMatchObject({ round: 1, drawn: [], roundCounted: false, roundsDone: 1 })
-    expect(progressOf(save, ROUTE1.id).deck).toHaveLength(size) // the Center was outside the deck
-    for (let i = 0; i < size; i++) save = recordDraws(save, ROUTE1.id, nextEncounter(ctx(save, ROUTE1, { centerUseful: true }), rng))
-    expect(progressOf(save, ROUTE1.id).drawn).toHaveLength(size)
+    // The opening Center is the round's first step, in its record; it was outside the deck.
+    expect(progressOf(save, ROUTE1.id)).toMatchObject({ round: 1, drawn: ['center'], roundCounted: false, roundsDone: 1 })
+    expect(progressOf(save, ROUTE1.id).deck).toHaveLength(size)
+    for (let i = 0; i < size; i++) save = recordDraws(save, ROUTE1.id, nextEncounter(ctx(save, ROUTE1), rng))
+    expect(progressOf(save, ROUTE1.id).drawn).toHaveLength(size + 1)
     expect(progressOf(save, ROUTE1.id).deck).toEqual([])
-    // Round 2 opens with a Center again — unless it would do nothing, then the deck is dealt straight away.
-    expect(nextEncounter(ctx(save, ROUTE1, { centerUseful: true }), rng).encounter).toMatchObject({ kind: 'center', reason: 'round' })
-    const useless = nextEncounter(ctx(save, ROUTE1, { centerUseful: false }), rng)
-    expect(useless.newRound).toBe(true)
-    const after = progressOf(recordDraws(save, ROUTE1.id, useless), ROUTE1.id)
+    // Round 2 opens with a Center again, even with the whole team at full HP (the user's call, 2026-10-27).
+    const next = nextEncounter(ctx(save, ROUTE1), rng)
+    expect(next.encounter).toMatchObject({ kind: 'center', reason: 'round' })
+    const after = progressOf(recordDraws(save, ROUTE1.id, next), ROUTE1.id)
     expect(after.round).toBe(2)
-    expect(after.drawn).toHaveLength(1)
+    expect(after.drawn).toEqual(['center'])
   })
 
   it('a cleared area still opens with a Pokémon Center', () => {
     const base = newSave(4, data, 0, newId)
     const hurt = { ...base, box: base.box.map((p) => ({ ...p, currentHp: 1 })) }
     const cleared: SaveData = { ...hurt, areaProgress: { ...hurt.areaProgress, [ROUTE1.id]: { ...progressOf(hurt, ROUTE1.id), cleared: true } } }
-    const roll = nextEncounter(ctx(cleared, ROUTE1, { centerUseful: true, teamHurt: true, isFirstInArea: true }), createRng(21))
+    const roll = nextEncounter(ctx(cleared, ROUTE1, { teamHurt: true, isFirstInArea: true }), createRng(21))
     expect(roll.newRound).toBe(true)
     expect(roll.encounter).toMatchObject({ kind: 'center', forced: true, reason: 'round' })
   })
@@ -172,7 +179,8 @@ describe('easy areas', () => {
     expect(hasFaintedMember(ko)).toBe(true)
     expect(hasFaintedMember(base)).toBe(false)
     const easy = { ...ROUTE1, easyMode: true }
-    expect(nextEncounter(ctx(ko, easy, { teamFainted: true }), createRng(1))).toEqual({
+    const mid = { ...progressOf(ko, easy.id), deck: ['wild' as const] }
+    expect(nextEncounter(ctx(ko, easy, { teamFainted: true, progress: mid }), createRng(1))).toEqual({
       encounter: { kind: 'center', forced: true, reason: 'fainted' },
       deck: null,
       lootDeck: null,
@@ -201,7 +209,7 @@ describe('never two Pokémon Centers in a row', () => {
     let prev = ''
     for (let i = 0; i < 400; i++) {
       const roll = nextEncounter(
-        ctx(save, CENTERY, { centerUseful: rng.next() < 0.7, teamHurt: rng.next() < 0.5, isFirstInArea: rng.next() < 0.2 }),
+        ctx(save, CENTERY, { teamHurt: rng.next() < 0.5, isFirstInArea: rng.next() < 0.2 }),
         rng,
       )
       const kind = roll.encounter.kind
@@ -263,7 +271,7 @@ describe('a legendary lair: mostly Centers and a few finds (Ultra Megalopolis, t
   /** One encounter as the store plays it: settle the round, draw, note the draw, take a find. */
   const play = (save: SaveData, area: Area, rng: ReturnType<typeof createRng>) => {
     const settled = finishRound(save, area.id, data)
-    const roll = nextEncounter(ctx(settled.save, area, { centerUseful: true }), rng)
+    const roll = nextEncounter(ctx(settled.save, area, {}), rng)
     let next = recordDraws(settled.save, area.id, roll)
     if (roll.encounter.kind === 'item') next = pickUpItem(next, area.id, roll.encounter, data, 0)
     return { save: next, roll, roundDone: settled.roundDone }
@@ -330,7 +338,7 @@ describe('every area', () => {
         let seen = 0
         for (let i = 0; i < 3 * (deckSize(area) + 1); i++) {
           const settled = finishRound(save, area.id, data)
-          const roll = nextEncounter(ctx(settled.save, area, { centerUseful: rng.next() < 0.5 }), rng)
+          const roll = nextEncounter(ctx(settled.save, area, {}), rng)
           if (roll.newRound && seen > 0 && !settled.roundDone && !progressOf(settled.save, area.id).roundCounted)
             broken.push(`${area.name} (seed ${seed}, encounter ${i + 1})`)
           save = recordDraws(settled.save, area.id, roll)

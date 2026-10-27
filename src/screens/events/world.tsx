@@ -98,7 +98,7 @@ export function worldVars(w: Pick<SmallWorld, 'theme'> | null | undefined): CSSP
 /** WORLD, in the world's main colour. */
 export function WorldTag({ className }: { className?: string }) {
   const { t } = useT()
-  return <span className={cx('w-tag font-pixel-sm text-[13px]', className)}>{t('ui.world.tag')}</span>
+  return <span className={cx('w-tag font-pixel-sm text-[16px]', className)}>{t('ui.world.tag')}</span>
 }
 
 /** SHINY MEW, gold with a sparkle: what the world is for. */
@@ -316,7 +316,7 @@ export function WorldRules({ world }: { world: SmallWorld }) {
           </span>
           <span className="grid gap-0.5 leading-tight">
             <b className="text-[19px] font-normal leading-none">{r.title}</b>
-            <small className="font-pixel-sm text-[15px] text-muted">{r.text}</small>
+            <small className="font-pixel-sm text-[16px] text-muted">{r.text}</small>
           </span>
         </li>
       ))}
@@ -348,7 +348,7 @@ function WorldBanner({
           <MythicalArt dex={prize.dex} caught={caught} size={96} sparkles={6} />
         </span>
       )}
-      <span className="w-tag absolute left-2.5 top-2.5 z-[2] font-pixel-sm text-[15px]">{tag}</span>
+      <span className="w-tag absolute left-2.5 top-2.5 z-[2] font-pixel-sm text-[16px]">{tag}</span>
     </span>
   )
 }
@@ -470,7 +470,7 @@ export function WorldByeView({ bye, open, onOk }: { bye: WorldBye; open: boolean
                 <b className="text-[19px] font-normal leading-none">
                   {bye.caught ? t('ui.world.bye.kept', { name: myth }) : t('ui.world.bye.gone', { name: myth })}
                 </b>
-                <small className="font-pixel-sm text-[15px] text-muted">
+                <small className="font-pixel-sm text-[16px] text-muted">
                   {bye.caught ? t('ui.world.myth.home', { region: home }) : t('ui.world.bye.goneText')}
                 </small>
               </span>
@@ -483,7 +483,7 @@ export function WorldByeView({ bye, open, onOk }: { bye: WorldBye; open: boolean
               </span>
               <span className="grid gap-0.5 leading-tight">
                 <b className="text-[19px] font-normal leading-none">{t('ui.world.bye.home')}</b>
-                <small className="font-pixel-sm text-[15px] text-muted">{t('ui.world.bye.homeText', { list: homeList })}</small>
+                <small className="font-pixel-sm text-[16px] text-muted">{t('ui.world.bye.homeText', { list: homeList })}</small>
               </span>
             </li>
           )}
@@ -493,7 +493,7 @@ export function WorldByeView({ bye, open, onOk }: { bye: WorldBye; open: boolean
             </span>
             <span className="grid gap-0.5 leading-tight">
               <b className="text-[19px] font-normal leading-none">{t('ui.world.bye.rest')}</b>
-              <small className="font-pixel-sm text-[15px] text-muted">
+              <small className="font-pixel-sm text-[16px] text-muted">
                 {bye.entered ? t('ui.world.bye.restText') : t('ui.world.bye.notEntered')}
               </small>
             </span>
@@ -559,7 +559,7 @@ export function WorldFinishRowView({
       <span className="mt-1 flex min-w-0 flex-wrap items-end justify-between gap-2">
         <span className="grid min-w-0 gap-1 leading-none">
           <b className="lv-ink truncate text-[22px] font-normal">{t('ui.world.finish.rowTitle')}</b>
-          <small className="lv-ink truncate font-pixel-sm text-[15px] text-gold-light">
+          <small className="lv-ink truncate font-pixel-sm text-[16px] text-gold-light">
             {t('ui.world.finish.progress', { areas: done.areas.total, dex: done.dex.total })}
           </small>
         </span>
@@ -624,7 +624,7 @@ export function WorldFinishView({
               </span>
               <span className="grid gap-0.5 leading-tight">
                 <b className="text-[19px] font-normal leading-none">{r.title}</b>
-                <small className="font-pixel-sm text-[15px] text-muted">{r.text}</small>
+                <small className="font-pixel-sm text-[16px] text-muted">{r.text}</small>
               </span>
             </li>
           ))}
@@ -726,7 +726,7 @@ export function WorldStripView({
           <b className="lv-ink truncate text-[22px] font-normal">{worldName(world, data)}</b>
         </span>
         {left && (
-          <small className={cx('lv-ink font-pixel-sm text-[15px]', hot ? 'text-[#ffb3a8]' : 'text-gold-light')}>
+          <small className={cx('lv-ink font-pixel-sm text-[16px]', hot ? 'text-[#ffb3a8]' : 'text-gold-light')}>
             {t('ui.live.endsIn', { time: liveTime(left.ms) })}
           </small>
         )}
@@ -875,7 +875,7 @@ export function SecretRowView({
       <span className="mt-auto grid w-full max-w-[calc(100%-76px)] grid-rows-[22px_6px_15px] gap-[5px]">
         <span className="lv-ink truncate text-[22px] leading-none">{area.name}</span>
         <span>{locked && cond && cond.target > 1 && <Meter value={cond.current} max={cond.target} />}</span>
-        <span className="lv-ink truncate font-pixel-sm text-[15px] leading-none text-gold-light">{bottom}</span>
+        <span className="lv-ink truncate font-pixel-sm text-[16px] leading-none text-gold-light">{bottom}</span>
       </span>
     </button>
   )
@@ -1000,7 +1000,7 @@ export function WorldMythicalCard({ dex, region, waiting }: { dex: number; regio
       <SpriteImg dex={dex} shiny size={72} className="relative shrink-0" />
       <span className="relative grid gap-1 text-left">
         <b className="text-[22px] font-normal leading-none">{t('ui.world.won.title', { name })}</b>
-        <small className="font-pixel-sm text-[15px] leading-tight">
+        <small className="font-pixel-sm text-[16px] leading-tight">
           {waiting ? t('ui.world.won.waits', { region: home }) : t('ui.world.won.home', { region: home })}
         </small>
       </span>

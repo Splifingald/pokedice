@@ -116,7 +116,7 @@ export function KoTag({ inst, className }: { inst: Pick<PokemonInstance, 'koAt'>
   const left = koLeft(inst, now, data)
   if (left == null) return null
   return (
-    <span className={cx('inline-flex items-center gap-1 font-pixel-sm text-[14px] leading-none text-danger', className)}>
+    <span className={cx('inline-flex items-center gap-1 font-pixel-sm text-[16px] leading-none text-danger', className)}>
       <PixelIcon name="moon" size={10} />
       {t('ui.extreme.koShort', { time: countdown(left) })}
     </span>
@@ -197,7 +197,7 @@ export function RestingPanel({ className, demo }: { className?: string; demo?: S
       <div className="grid grid-cols-2 gap-2">
         <PixelButton onClick={() => navigate('/team')}>
           {t('ui.nav.team')}
-          {able > 0 && <span className="font-pixel-sm text-[15px] normal-case">({able})</span>}
+          {able > 0 && <span className="font-pixel-sm text-[16px] normal-case">({able})</span>}
         </PixelButton>
         <PixelButton onClick={() => navigate('/shop')}>{t('ui.nav.shop')}</PixelButton>
       </div>
@@ -233,7 +233,7 @@ export function AwayReportModal({ show }: { show?: boolean }) {
                   <div className="grid min-w-0 flex-1 gap-1">
                     <div className="flex items-baseline justify-between gap-2">
                       <b className="truncate text-[19px] font-normal leading-none">{name}</b>
-                      <span className={cx('shrink-0 font-pixel-sm text-[15px] leading-none', c.resting ? 'text-danger' : 'text-good')}>
+                      <span className={cx('shrink-0 font-pixel-sm text-[16px] leading-none', c.resting ? 'text-danger' : 'text-good')}>
                         {c.resting
                           ? resting
                             ? t('ui.extreme.koShort', { time: countdown(koLeft(resting, now, data) ?? 0) })
@@ -341,7 +341,7 @@ export function ExtremeTitleCard({ save }: { save: SaveData | null }) {
           <p className="copy m-0 text-[17px] text-panel">{t('ui.extreme.settings.hint')}</p>
         )}
         {resting && (
-          <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[15px] leading-tight text-panel">
+          <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[16px] leading-tight text-panel">
             <PixelIcon name="moon" size={12} />
             {t('ui.extreme.card.resting', { name: data.species[resting.inst.dex]?.name ?? '', time: countdown(resting.at - now) })}
           </p>

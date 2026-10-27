@@ -1,5 +1,5 @@
-// Idle mode and the play styles (docs/36, docs/15 §20): the three styles as cards to pick from (a new game's question,
-// Settings), the Settings panel and its INFO. No rules pop-up ever opens by itself: the user's exception to §20.
+// Idle mode and the play styles (docs/36, docs/15 §20): the two styles as cards to pick from in Settings, its panel
+// and its INFO. No rules pop-up ever opens by itself: the user's exception to §20.
 import { useRef, useState, type KeyboardEvent } from 'react'
 import { idleModeOn, playStyleOf, PLAY_STYLES, type PlayStyle } from '@/engine'
 import { useT } from '@/i18n/react'
@@ -8,20 +8,13 @@ import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { PixelIcon, type IconName } from './icons'
 import { Panel } from './Panel'
-import { PixelButton } from './PixelButton'
 import { InfoButton, RulesModal, type RuleRow } from './RulesModal'
 
-const STYLE_ICON: Record<PlayStyle, IconName> = { classic: 'sword', explored: 'map', idle: 'dice' }
-
-/** Each style's name and its line, from the strings. */
-export function useStyleText() {
-  const { t } = useT()
-  return (s: PlayStyle) => ({ name: t(`ui.playStyle.${s}`), hint: t(`ui.playStyle.${s}Hint`) })
-}
+const STYLE_ICON: Record<PlayStyle, IconName> = { explored: 'map', idle: 'dice' }
 
 /**
- * The styles as a radio group of cards (an icon, the name, its line; the picked one ringed in gold with a check, so it
- * is never colour alone). Arrow keys move the pick.
+ * The styles as a radio group of cards (an icon and the name, no description line: INFO has the rules; the picked one
+ * ringed in gold with a check, so it is never colour alone). Arrow keys move the pick.
  */
 export function PlayStylePicker({
   value,
@@ -34,7 +27,7 @@ export function PlayStylePicker({
   styles?: PlayStyle[]
   label: string
 }) {
-  const text = useStyleText()
+  const { t } = useT()
   const refs = useRef<(HTMLButtonElement | null)[]>([])
   const move = (e: KeyboardEvent, i: number) => {
     const step =
@@ -53,7 +46,6 @@ export function PlayStylePicker({
     <div role="radiogroup" aria-label={label} className="grid gap-2">
       {styles.map((s, i) => {
         const on = value === s
-        const { name, hint } = text(s)
         return (
           <button
             key={s}
@@ -75,42 +67,11 @@ export function PlayStylePicker({
             >
               <PixelIcon name={STYLE_ICON[s]} size={24} />
             </span>
-            <span className="grid min-w-0 flex-1 gap-0.5 leading-tight">
-              <b className="text-[22px] font-normal leading-none">{name}</b>
-              <small className="font-pixel-sm text-[15px] text-muted">{hint}</small>
-            </span>
+            <b className="min-w-0 flex-1 text-[22px] font-normal leading-none">{t(`ui.playStyle.${s}`)}</b>
             {on && <PixelIcon name="check" size={20} className="shrink-0" />}
           </button>
         )
       })}
-    </div>
-  )
-}
-
-/** A new game's first question (docs/36): how to play, before Prof. Oak's words. */
-export function PlayStylePrompt({
-  onPick,
-  initial = null,
-}: {
-  onPick: (s: PlayStyle) => void
-  initial?: PlayStyle | null
-}) {
-  const { t } = useT()
-  const [pick, setPick] = useState<PlayStyle | null>(initial)
-  return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
-      <h1 className="text-center text-[36px] leading-none">{t('ui.playStyle.prompt')}</h1>
-      <PlayStylePicker value={pick} onChange={setPick} label={t('ui.playStyle.title')} />
-      <p className="copy m-0 text-center text-muted">{t('ui.playStyle.promptHint')}</p>
-      <PixelButton
-        variant="primary"
-        size="lg"
-        className="self-center"
-        disabled={!pick}
-        onClick={() => pick && onPick(pick)}
-      >
-        {t('ui.newGame.next')}
-      </PixelButton>
     </div>
   )
 }
@@ -152,7 +113,7 @@ export function IdleRulesModal({ open, onClose }: { open: boolean; onClose: () =
   )
 }
 
-/** Settings → Play style: the three cards, switched any time, and INFO. Nowhere while the switch is off. */
+/** Settings → Play style: the two cards, switched any time, and INFO. Nowhere while the switch is off. */
 export function PlayStylePanel() {
   const { t } = useT()
   const on = useGame((s) => idleModeOn(s.data))
@@ -166,7 +127,6 @@ export function PlayStylePanel() {
         onChange={(s) => s !== style && choosePlayStyle(s)}
         label={t('ui.playStyle.title')}
       />
-      <p className="copy mb-0 mt-2 text-muted">{t('ui.playStyle.settingsHint')}</p>
       <InfoButton className="mt-3" name={t('ui.playStyle.idle')} onClick={() => setRules(true)} />
       <IdleRulesModal open={rules} onClose={() => setRules(false)} />
     </Panel>

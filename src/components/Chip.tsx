@@ -37,7 +37,7 @@ export function Chip({
     <span
       title={title}
       className={cx(
-        'pixel-corners inline-flex items-center gap-1 whitespace-nowrap px-1.5 pb-[3px] pt-[2px] font-pixel-sm text-[14px] leading-none',
+        'pixel-corners inline-flex items-center gap-1 whitespace-nowrap px-1.5 pb-[3px] pt-[2px] font-pixel-sm text-[16px] leading-none',
         TONE[tone],
         className,
       )}
@@ -88,7 +88,7 @@ export function StatusChip({
     <span
       title={t(`ui.status.${status}.name`)}
       className={cx(
-        'pixel-corners inline-flex items-center gap-1 whitespace-nowrap px-1.5 pb-[3px] pt-[2px] font-pixel-sm text-[14px] leading-none text-ink',
+        'pixel-corners inline-flex items-center gap-1 whitespace-nowrap px-1.5 pb-[3px] pt-[2px] font-pixel-sm text-[16px] leading-none text-ink',
         lit ? 'bg-paper' : 'bg-panel text-muted',
         className,
       )}

@@ -50,7 +50,7 @@ export function ToastCard({ toast, motionProps }: { toast: Toast; motionProps?: 
       {...motionProps}
       {...handlers}
       onClick={() => dismissToast(toast.id)}
-      className={`pixel-btn pointer-events-auto max-w-md px-4 py-1.5 text-xl ${TONE[toast.tone]}`}
+      className={`pixel-btn pointer-events-auto min-h-11 max-w-md px-4 py-1.5 text-xl ${TONE[toast.tone]}`}
     >
       {toast.text}
     </motion.button>

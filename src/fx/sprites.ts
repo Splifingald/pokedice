@@ -6,6 +6,7 @@ import {
   showdownView,
   SPRITE_CANVAS,
   SPRITE_METRICS,
+  SPRITE_PATIENCE_MS,
   spriteUrlFor,
 } from '@/components/SpriteImg'
 import itemSheet from '@/assets/item-icons.png'
@@ -120,16 +121,27 @@ export function loadSprite(dex: number, back: boolean, shiny = false): Promise<s
     const img = new Image()
     let fallback = false
     img.onload = () => {
+      window.clearTimeout(wait)
       frames.set(key, crop(img, s, fallback))
       res(key)
     }
-    img.onerror = () => {
+    let wait = 0
+    const next = () => {
+      window.clearTimeout(wait)
       if (!fallback && s.fallback) {
         fallback = true
         img.src = s.fallback
-      } else res(key)
+        wait = window.setTimeout(next, SPRITE_PATIENCE_MS)
+      } else {
+        // Nothing came (a phone dropping a request): forget the try, so the next call asks again.
+        loading.delete(key)
+        res(key)
+      }
     }
+    img.onerror = next
     img.src = s.url
+    // A request left hanging (neither loaded nor failed) moves on to the local sprite too.
+    wait = window.setTimeout(next, SPRITE_PATIENCE_MS)
   })
   loading.set(key, p)
   return p
@@ -186,8 +198,77 @@ export interface SpriteLook {
 
 const scratch = canvas(160, 160)
 
+/**
+ * A Pokémon the page keeps animated while a timeline plays (a move in a fight): a canvas can only draw a GIF's first
+ * frame, so the copy froze mid-breath at every attack (the user, 2026-10-27). Its look moves the page's sprite instead,
+ * and the canvas draws only what lies on it (a tint, an outline); a look it can't take (a wave, a silhouette, coloured
+ * copies) draws the still copy for that frame, the page's sprite hidden.
+ */
+export interface LiveSprite {
+  /** The box around the page's sprite, moved and faded (React leaves its style alone). */
+  el: HTMLElement
+  /** Its feet on the stage (art pixels), where the timeline's offsets start from. */
+  at: { x: number; y: number }
+  /** Page pixels per art pixel. */
+  scale: number
+  /** Drawn this frame. */
+  used?: boolean
+}
+
+let live: Map<string, LiveSprite> | null = null
+
+/** Draw one frame with these sprites kept on the page; one the frame didn't draw is hidden. */
+export function drawWithLive(map: Map<string, LiveSprite> | null, draw: () => void) {
+  if (!map?.size) return draw()
+  for (const l of map.values()) l.used = false
+  live = map
+  try {
+    draw()
+  } finally {
+    live = null
+    for (const l of map.values()) if (!l.used) l.el.style.opacity = '0'
+  }
+}
+
+/** Back where the page put it, as it was. */
+export function resetLive(l: LiveSprite) {
+  l.el.style.transform = ''
+  l.el.style.opacity = ''
+  l.el.style.filter = ''
+}
+
 /** Draw a Pokémon with its feet at (x, y), centred on x. */
 export function drawSprite(g: G, key: string, x: number, y: number, o: SpriteLook = {}) {
+  const l = live?.get(key)
+  if (l) {
+    if (!o.wave && !o.sil && !o.ghost?.length) {
+      l.used = true
+      const sx = o.sx ?? 1
+      const sy = o.sy ?? 1
+      // (x, y) already carry the look's offsets; it scales about its feet (the box's transform-origin).
+      l.el.style.transform = `translate(${(x - l.at.x) * l.scale}px, ${(y - l.at.y) * l.scale}px) scale(${o.flip ? -sx : sx}, ${sy})`
+      l.el.style.opacity = String(o.alpha ?? 1)
+      // A hit's white, on the animated sprite itself: invert, darken by the flash, invert back (c → c + (1 − c)·f).
+      l.el.style.filter =
+        o.flash && o.flash > 0 ? `invert(1) brightness(${1 - clamp(o.flash)}) invert(1)` : ''
+      if (!o.outline && !(o.tint && o.tint.a > 0)) return
+      // The rest on the canvas, over it (the first frame's shape: close enough for a glow).
+      return drawStill(
+        g,
+        key,
+        x,
+        y,
+        { ...o, flash: 0, sil: undefined, wave: undefined, ghost: undefined },
+        true,
+      )
+    }
+    l.el.style.opacity = '0'
+    l.used = true
+  }
+  drawStill(g, key, x, y, o, false)
+}
+
+function drawStill(g: G, key: string, x: number, y: number, o: SpriteLook, overlayOnly: boolean) {
   const frame = frames.get(key)
   if (!frame) return
   const fw = frame.width
@@ -214,7 +295,7 @@ export function drawSprite(g: G, key: string, x: number, y: number, o: SpriteLoo
     ] as const)
       s.drawImage(silhouette(key, o.outline)!, ox, oy)
   if (o.sil) s.drawImage(silhouette(key, o.sil)!, 1, 1)
-  else s.drawImage(frame, 1, 1)
+  else if (!overlayOnly) s.drawImage(frame, 1, 1)
   if (o.tint && o.tint.a > 0) {
     s.globalAlpha = clamp(o.tint.a)
     s.drawImage(silhouette(key, o.tint.color)!, 1, 1)

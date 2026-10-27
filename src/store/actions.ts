@@ -37,6 +37,7 @@ import {
   type PokeType,
   type PowerKind,
   type RushRefusal,
+  versusLeagueOn,
 } from '@/engine'
 import { tickDayCare } from './daycare'
 import { currentLive } from './live'
@@ -188,7 +189,13 @@ export function markGeneralRulesSeen(): void {
 }
 
 export function markVersusRulesSeen(): void {
-  mutateSave((s) => (s.versusRulesSeen ? null : { ...s, versusRulesSeen: true }))
+  // With the weekly league on (docs/44), its card read is both flags: Versus's own rules are inside it.
+  const league = versusLeagueOn(useGame.getState().data)
+  mutateSave((s) =>
+    s.versusRulesSeen && (!league || s.versusLeagueRulesSeen)
+      ? null
+      : { ...s, versusRulesSeen: true, ...(league && { versusLeagueRulesSeen: true }) },
+  )
 }
 
 /** The shiny Pokédex's rules have been shown (its pop-up). */

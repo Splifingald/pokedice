@@ -224,6 +224,20 @@ export function catchTimeline(p: CatchParams): Timeline<S> {
       if (!s.step(t, dt)) return
       const r = s.r
       const bp = ballPos(s, t)
+      // The Raid Ball (docs/44) flies in a trail of raid-pink and gold sparks.
+      if (bp && kind === 'raid' && t >= T_THROW && t < T_HIT)
+        for (let i = 0; i < 2; i++)
+          s.fx.add({
+            x: bp.x + r.range(-3, 3),
+            y: bp.y + r.range(-3, 3),
+            vx: r.range(-12, 12),
+            vy: r.range(-12, 12),
+            drag: 2,
+            life: 0.35,
+            size: 1,
+            shape: i ? 'plus' : 'sq',
+            colors: ['#fff6c2', '#ffd23f', '#ff5fae', '#e8336b'],
+          })
       if (bp && within(t, T_ABS, T_CLOSE - 0.05)) {
         const k = 1 - span(t, T_ABS, T_CLOSE)
         const fs = s.fs

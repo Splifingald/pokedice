@@ -49,7 +49,7 @@ export function ShareListingModal({ listing, onClose }: { listing: Shared | null
               <p className="copy m-0 whitespace-pre-line text-[17px]" data-testid="trade-share-text">
                 {text}
               </p>
-              <code className="truncate font-pixel-sm text-[15px]" data-testid="trade-link">
+              <code className="truncate font-pixel-sm text-[16px]" data-testid="trade-link">
                 {url.replace(/^https?:\/\//, '')}
               </code>
             </div>

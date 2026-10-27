@@ -287,7 +287,7 @@ export function TrickGauge({
           aria-hidden
         />
       </div>
-      <div className="relative h-[28px] font-pixel-sm text-[15px] leading-none" aria-hidden>
+      <div className="relative h-[28px] font-pixel-sm text-[16px] leading-none" aria-hidden>
         {band.zones.map((z) => {
           const lit = here?.zone.from === z.from
           const room = px(z.from, z.to)

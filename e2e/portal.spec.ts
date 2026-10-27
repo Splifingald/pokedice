@@ -186,7 +186,8 @@ async function clickAny(page: Page, names: (string | RegExp)[]): Promise<boolean
 /** Plays on (fights, results) until `until` shows. */
 async function playUntil(page: Page, until: ReturnType<Page['getByRole']>, ms = 60_000) {
   for (const end = Date.now() + ms; Date.now() < end && !(await until.isVisible().catch(() => false));) {
-    await clickAny(page, ['FIGHT', 'SKIP ▸▸', 'ATTACK', 'SKIP TURN', 'GOT IT', 'CONTINUE'])
+    // The rework: the send-out step's GO!, and the result's Next ▸ in the old card's CONTINUE's place.
+    await clickAny(page, ['FIGHT', 'SKIP ▸▸', /^Send out /, 'ATTACK', 'SKIP TURN', 'GOT IT', 'CONTINUE', 'Next ▸'])
     await page.waitForTimeout(120)
   }
   await expect(until).toBeVisible()
@@ -232,11 +233,12 @@ test('the way in: the breach waits for a tap, its pop-up over its end; arriving 
   await tap.click()
   await dialog.getByRole('button', { name: 'Team' }).click()
   await expect(page).toHaveURL(/\/team$/)
-  await expect(page.getByText('Swaps at a Center')).toHaveCount(0)
+  // No Center rule to point at here: one from the Box has the Center's moves at its sheet's foot (below).
   await page
     .getByRole('button', { name: /^Pikachu/ })
     .first()
     .click()
+  await expect(page.getByText(/visit a Pokémon Center/)).toHaveCount(0)
   await page.getByRole('button', { name: 'Add to team' }).click()
   await expect.poll(async () => (await stored(page)).team).toEqual(['mon-0', 'mon-box'])
   // Back: the pop-up again at once, no breach to wait for.
@@ -262,7 +264,7 @@ test('the way in: the breach waits for a tap, its pop-up over its end; arriving 
   // Win the fight (no throw comes), then the distortion's boons.
   const choice = page.getByRole('heading', { name: 'Distortion 1/2' })
   await playUntil(page, choice)
-  await expect(page.getByRole('button', { name: /^Catch|ROLL TO CATCH/ })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /^Catch|ROLL TO CATCH|Throw it$/ })).toHaveCount(0)
   const picks = page.getByRole('button', { name: /^Pick: / })
   expect(await picks.count()).toBeGreaterThan(0)
   // A pick asks first: BACK spends nothing; another one, CONFIRM takes it.
@@ -430,15 +432,18 @@ test('won and Giratina caught, the area is sealed: CONTINUE is shut, and CONTINU
   const shut = page.getByRole('button', { name: /^CONTINUE/ }).first()
   await expect(shut).toBeDisabled()
   await expect(page.getByText('The distortion is sealed').first()).toBeVisible()
+  // The area button opens the Areas sheet on the area's details (docs/43 §5.2).
   await page.getByRole('button', { name: /^Torn Rift/ }).first().click()
-  await page.getByRole('dialog', { name: 'Torn Rift' }).getByRole('button', { name: 'CONTINUE HERE' }).click()
+  const sheet = page.getByRole('dialog')
+  await expect(sheet.getByRole('heading', { name: 'Torn Rift', level: 3 })).toBeVisible()
+  await sheet.getByRole('button', { name: 'CONTINUE HERE' }).click()
   await expect(page.getByRole('button', { name: 'The distortion is sealed', exact: true })).toBeVisible()
   // No card dealt: still Home, no preview over it.
   await expect(page).toHaveURL(/\/home$/)
   await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
-test('a 360×640 phone: a distortion’s boons fit, nothing scrolls sideways, and the menus say why they are shut', async ({
+test('a 360×640 phone: a distortion’s boons fit, nothing scrolls sideways, and no tab bar in the area', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 360, height: 640 })
@@ -455,7 +460,8 @@ test('a 360×640 phone: a distortion’s boons fit, nothing scrolls sideways, an
   await expect(page.getByRole('heading', { name: 'Distortion 1/2' })).toBeVisible({ timeout: 15_000 })
   await expect(page.getByRole('button', { name: 'Pick: Psychic +10' })).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
-  await expect(page.getByRole('link', { name: /^Team/ }).first()).toHaveAttribute('aria-disabled', 'true')
+  // A phone in the area: no tab bar at all (the rework), so nothing there to say why it's shut.
+  await expect(page.getByRole('navigation', { name: 'Menus' })).toHaveCount(0)
   // The confirm pop-up: Esc goes back with nothing spent; CONFIRM holds the focus and takes it.
   const confirm = page.getByRole('dialog', { name: 'Take this boon?' })
   await page.getByRole('button', { name: 'Pick: Psychic +10' }).click()

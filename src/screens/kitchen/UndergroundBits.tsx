@@ -32,7 +32,7 @@ const CFG = DEFAULT_CONFIG.underground
 function Frame({ name, children }: { name: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="font-pixel-sm text-[13px] text-muted">{name}</span>
+      <span className="font-pixel-sm text-[16px] text-muted">{name}</span>
       <div className="w-full max-w-[390px] overflow-hidden bg-[#2b211a] p-2 shadow-ring">{children}</div>
     </div>
   )
@@ -157,19 +157,19 @@ export function UndergroundBits() {
       <div className="flex flex-wrap items-end gap-4 bg-panel p-3 shadow-ring">
         <span className="grid justify-items-center gap-1">
           <PickaxeDie roll={null} />
-          <small className="font-pixel-sm text-[13px] text-muted">not rolled</small>
+          <small className="font-pixel-sm text-[16px] text-muted">not rolled</small>
         </span>
         <span className="grid justify-items-center gap-1">
           <PickaxeDie roll={2} rollKey={flash} />
-          <small className="font-pixel-sm text-[13px] text-muted">rolled 2</small>
+          <small className="font-pixel-sm text-[16px] text-muted">rolled 2</small>
         </span>
         <span className="grid gap-1">
           <PickaxeFaces faces={CFG.pickaxe[3]!.faces} face={2} />
-          <small className="font-pixel-sm text-[13px] text-muted">faces, the one that came up</small>
+          <small className="font-pixel-sm text-[16px] text-muted">faces, the one that came up</small>
         </span>
         <span className="grid gap-1">
           <PickaxeFaces faces={CFG.pickaxe[4]!.faces} next={CFG.pickaxe[3]!.faces} />
-          <small className="font-pixel-sm text-[13px] text-muted">
+          <small className="font-pixel-sm text-[16px] text-muted">
             the next level, its raised face ringed
           </small>
         </span>

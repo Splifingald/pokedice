@@ -34,7 +34,7 @@ const LEVELS: { level: ThrowLevel | 'off'; name: string }[] = [
 function Frame({ name, children }: { name: string; children: ReactNode }) {
   return (
     <div className="flex w-full flex-col gap-1">
-      <span className="font-pixel-sm text-[13px] text-muted">{name}</span>
+      <span className="font-pixel-sm text-[16px] text-muted">{name}</span>
       {children}
     </div>
   )
@@ -93,7 +93,7 @@ function Recordings({ roll, level }: { roll: number[]; level: ThrowLevel }) {
       live = false
     }
   }, [roll, level, data])
-  return <p className="font-pixel-sm text-[13px] text-muted">{line}</p>
+  return <p className="font-pixel-sm text-[16px] text-muted">{line}</p>
 }
 
 export function DiceThrowBits() {

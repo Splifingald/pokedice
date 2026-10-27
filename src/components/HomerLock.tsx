@@ -36,16 +36,16 @@ export function HomerLockView({
         {t('ui.sheet.lockTitle', { n: level })}
       </h3>
       {world ? (
-        <p className="font-pixel-sm text-[15px] leading-tight text-muted">
+        <p className="font-pixel-sm text-[16px] leading-tight text-muted">
           {t('ui.sheet.lockFrom', { world })}
         </p>
       ) : from ? (
-        <p className="font-pixel-sm text-[15px] leading-tight text-muted">
+        <p className="font-pixel-sm text-[16px] leading-tight text-muted">
           {t('ui.sheet.lockSentFrom', { region: from })}
         </p>
       ) : (
         tradedBy && (
-          <p className="font-pixel-sm text-[15px] leading-tight text-muted">
+          <p className="font-pixel-sm text-[16px] leading-tight text-muted">
             {t('ui.sheet.lockTradedBy', { name: tradedBy })}
           </p>
         )

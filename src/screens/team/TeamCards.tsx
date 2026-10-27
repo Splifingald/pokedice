@@ -1,13 +1,10 @@
 import { useRef, useState, type PointerEvent } from 'react'
-import { effectiveStats, getSpecies, monName, xpToNext, type PokemonInstance } from '@/engine'
+import { instanceMaxHp, monName, type PokemonInstance } from '@/engine'
 import { useT } from '@/i18n/react'
-import { HpBar } from '@/components/HpBar'
-import { KoTag } from '@/components/Extreme'
-import { PixelIcon } from '@/components/icons'
-import { SpriteImg } from '@/components/SpriteImg'
+import { PokeCard } from '@/components/PokeCard'
 import { reorderTeam } from '@/store/actions'
 import { pushToast, useGame } from '@/store/game'
-import { cx, typeColor } from '@/theme/util'
+import { cx } from '@/theme/util'
 
 /** How far a press must travel before it is a drag rather than a tap. */
 const DRAG_FROM = 8
@@ -22,15 +19,18 @@ interface Drag {
 }
 
 /**
- * The team as cards in send-out order, the lead in gold. Drag a card onto another to swap them (a tap opens the
- * Pokémon's sheet, whose "Make lead" is the keyboard and screen-reader way to reorder).
+ * The team as the one Pokémon card (`PokeCard`, docs/43 §4), in send-out order, the lead with its crown. Drag a card
+ * onto another to swap them; a tap opens the Pokémon's sheet (docked beside the list on a PC), whose Make lead is the
+ * keyboard and screen-reader way to reorder. `selected`: the one shown in the docked sheet (PC).
  */
 export function TeamCards({
   team,
   onOpen,
+  selected,
 }: {
   team: PokemonInstance[]
   onOpen: (p: PokemonInstance) => void
+  selected?: string | null
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
@@ -59,7 +59,9 @@ export function TeamCards({
 
   const down = (i: number) => (e: PointerEvent<HTMLButtonElement>) => {
     if (e.button > 0) return
-    drag.current = { i, x: e.clientX, y: e.clientY, on: false, over: null, el: e.currentTarget }
+    // The card (the list item) travels, not just its button.
+    const el = (e.currentTarget.closest('li') as HTMLElement | null) ?? e.currentTarget
+    drag.current = { i, x: e.clientX, y: e.clientY, on: false, over: null, el }
     e.currentTarget.setPointerCapture(e.pointerId)
   }
   const move = (e: PointerEvent<HTMLButtonElement>) => {
@@ -94,82 +96,45 @@ export function TeamCards({
   }
 
   return (
-    <ol className="grid grid-cols-3 gap-2" aria-label={t('ui.team.order')}>
+    <ol className="grid grid-cols-3 gap-1.5 sm:gap-2" aria-label={t('ui.team.order')}>
       {team.map((p, i) => {
-        const species = getSpecies(data, p.dex)
-        const stats = effectiveStats(species, p.level, data)
-        const need = xpToNext(p.level, data.config)
-        const xp = p.level >= data.config.maxLevel ? 1 : Math.min(1, p.xp / need)
-        const fainted = p.currentHp <= 0
         const lead = i === 0
         return (
-          <li key={p.id}>
-            <button
-              type="button"
-              data-tm={i}
-              onPointerDown={down(i)}
-              onPointerMove={move}
-              onPointerUp={end(false)}
-              onPointerCancel={end(true)}
-              onClick={() => {
-                if (dragged.current) {
-                  dragged.current = false
-                  return
-                }
-                onOpen(p)
-              }}
-              aria-label={t('ui.team.cardLabel', {
-                name: name(p),
-                level: p.level,
-                hp: p.currentHp,
-                max: stats.maxHp,
-                order: lead ? t('ui.team.orderLead') : t('ui.team.orderN', { n: i + 1 }),
-              })}
-              className={cx(
-                'relative grid w-full cursor-grab touch-pan-y select-none justify-items-center gap-1 px-1.5 pb-[9px] pt-[22px]',
-                lead ? 'bg-cream shadow-card-gold-lip' : 'bg-paper shadow-card',
-                lifted === i && 'z-10 cursor-grabbing',
-                over === i && 'outline-dashed outline-[3px] outline-offset-2 outline-danger',
-              )}
-            >
-              <span
-                className={cx(
-                  'absolute left-1.5 top-1.5 inline-flex items-center gap-0.5 px-[5px] pb-[2px] pt-px font-pixel-sm text-[14px] leading-none text-ink',
-                  lead ? 'bg-gold shadow-ring-thin' : 'bg-well-deep',
-                )}
-                aria-hidden
-              >
-                {lead && <PixelIcon name="crown" size={14} />}
-                {lead ? t('ui.team.leadTag') : i + 1}
-              </span>
-              <span
-                className={cx('grid h-[84px] w-full place-items-center', fainted && 'opacity-60 grayscale')}
-              >
-                <SpriteImg dex={p.dex} size={80} shiny={p.shiny} />
-              </span>
-              <b className="max-w-full truncate text-[18px] font-normal leading-none">{name(p)}</b>
-              {fainted && p.koAt != null ? (
-                <KoTag inst={p} />
-              ) : (
-                <span className="font-pixel-sm text-[15px] leading-none text-muted">
-                  {fainted ? t('ui.mon.fainted') : t('ui.common.level.short', { n: p.level })}
-                </span>
-              )}
-              <HpBar hp={p.currentHp} max={stats.maxHp} compact height={8} className="w-full" />
-              <span className="block h-1 w-full bg-well-deep" aria-hidden>
-                <i className="block h-full bg-type-water" style={{ width: `${xp * 100}%` }} />
-              </span>
-              <span className="flex flex-wrap justify-center gap-0.5" aria-hidden>
-                {stats.dice.map((d, k) => (
-                  <i
-                    key={k}
-                    className="h-2.5 w-2.5 shadow-ring-thin"
-                    style={{ background: d === 'base' ? '#f4f6fb' : typeColor(d) }}
-                  />
-                ))}
-              </span>
-            </button>
-          </li>
+          <PokeCard
+            key={p.id}
+            inst={p}
+            lead={lead}
+            xp
+            selected={selected === p.id}
+            onOpen={() => {
+              if (dragged.current) {
+                dragged.current = false
+                return
+              }
+              onOpen(p)
+            }}
+            label={t('ui.team.cardLabel', {
+              name: name(p),
+              level: p.level,
+              hp: p.currentHp,
+              max: instanceMaxHp(p, data),
+              order: lead ? t('ui.team.orderLead') : t('ui.team.orderN', { n: i + 1 }),
+            })}
+            className={cx(
+              'touch-pan-y select-none',
+              lifted === i && 'relative z-10',
+              over === i && 'outline-dashed outline-[3px] outline-offset-2 outline-danger',
+            )}
+            buttonProps={{
+              'data-tm': i,
+              title: t('ui.team.dragTip'),
+              className: cx('cursor-grab', lifted === i && 'cursor-grabbing'),
+              onPointerDown: down(i),
+              onPointerMove: move,
+              onPointerUp: end(false),
+              onPointerCancel: end(true),
+            }}
+          />
         )
       })}
     </ol>

@@ -115,9 +115,14 @@ for (const lang of LANGS.filter((l) => l !== 'en')) {
       expect(await smallControls(page), `${route}: controls under 44px`).toEqual([])
       const cjk = await cjkFacesLoaded(page)
       if (CJK_LANGS.includes(lang)) expect(cjk, `${route}: CJK font`).toContain(cjkFamily(lang))
-      // The language picker names 日本語, 한국어 and 简体中文 in their own scripts — each in its own face.
-      else if (route === '/settings') expect(cjk.sort(), `${route}: CJK font`).toEqual(CJK_LANGS.map(cjkFamily).sort())
+      // The language dropdown (docs/43 §5.9) names 日本語, 한국어 and 简体中文 in their own scripts, each option carrying
+      // its `lang`; the browser draws the closed list's options as it sees fit (Chrome loads the Japanese face only).
+      // Settings is the one Latin page that may load a CJK face, and only for that.
+      else if (route === '/settings')
+        for (const face of cjk) expect(CJK_LANGS.map(cjkFamily), `${route}: CJK font`).toContain(face)
       else expect(cjk, `${route}: CJK font`).toEqual([])
+      if (route === '/settings')
+        expect(await page.locator('select option[lang="ja"]').textContent(), 'Japanese named in Japanese').toBe('日本語')
     }
   })
 }
@@ -182,6 +187,12 @@ test('a battle fits a 360×640 phone', async ({ page }) => {
       await healing.getByRole('button', { name: 'SKIP ▸▸' }).click()
       continue
     }
+    // A team of several: the send-out step first (the rework), GO! sends the one picked.
+    const go = page.getByRole('button', { name: /^Send out / })
+    if (await go.isVisible().catch(() => false)) {
+      await go.click()
+      continue
+    }
     // Random fights: the lead may faint before the controls show — send in the next one (its pip pulses).
     if (await page.getByText('Choose your next Pokémon').isVisible().catch(() => false))
       await page.getByRole('group', { name: 'Switch Pokémon' }).getByRole('button', { name: /Switch in$/ }).first().click()
@@ -205,14 +216,15 @@ test('a battle fits a 360×640 phone', async ({ page }) => {
   expect(box!.y + box!.height, 'ATTACK is on screen').toBeLessThanOrEqual(640)
   const dims = await page.evaluate(() => {
     const h = (sel: string) => Math.round(document.querySelector(sel)?.getBoundingClientRect().height ?? -1)
-    return { page: document.documentElement.scrollHeight, view: window.innerHeight, header: h('header'), dialogue: h('.pixel-dialogue') }
+    return { page: document.documentElement.scrollHeight, view: window.innerHeight, header: h('header'), line: h('.battle-line') }
   })
   // Full screen under the top bar (kept, so what's in it stays in reach), no tab bar, and the whole battle — down to the
-  // team and the history — fits.
+  // Bag and the team — fits. The history button is More details' (docs/42).
   expect(dims.header, 'the top bar in battle').toBe(56)
-  const history = await page.getByRole('button', { name: 'Battle history' }).boundingBox()
-  expect(history, 'the history button is there').not.toBeNull()
-  expect(history!.y + history!.height, 'the history button is on screen').toBeLessThanOrEqual(640)
+  const bag = await page.getByRole('button', { name: 'Bag' }).boundingBox()
+  expect(bag, 'the Bag is there').not.toBeNull()
+  expect(bag!.y + bag!.height, 'the Bag is on screen').toBeLessThanOrEqual(640)
+  await expect(page.getByRole('button', { name: 'Battle history' })).toHaveCount(0)
   expect(dims.page - dims.view, `the battle scrolls: ${JSON.stringify(dims)}`).toBeLessThanOrEqual(0)
   expect(await smallControls(page), 'battle controls under 44px').toEqual([])
 })

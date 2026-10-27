@@ -1,7 +1,8 @@
-// The trainer card, opened from the avatar in the top bar: your look at 2×, your name (Change), an ID number (your
-// friend ID once you have one), the numbers that say how far you are (the badges counted across every region), your
-// team, and the look other trainers see on the leaderboard and in Versus. A friend's card (docs/16) is drawn with the
-// same pieces: CardFrame, Stat and CardTeam.
+// The trainer card, opened from the avatar in the top bar (docs/43 §5.9): compact — your look, your name (a pencil to
+// change it), an ID number (your friend ID once you have one), your badges and your team; the numbers that say how far
+// you are (money, Pokédex, best level, areas, shinies, Versus) fold behind Stats, open by themselves with More details.
+// Under it, the look other trainers see. A friend's card (docs/16) is drawn with the same pieces: CardFrame, Stat and
+// CardTeam.
 import { useEffect, useState, type ReactNode } from 'react'
 import { badgesHeld, isRich, linearAreas, looksOn, regionOf, regionSpecies, teamOf, versusUnlocked } from '@/engine'
 import { useT } from '@/i18n/react'
@@ -11,6 +12,8 @@ import { formatCode, useFriends } from '@/lib/friends'
 import { fetchVersusBoard } from '@/lib/versus'
 import { CharacterSelect } from '@/screens/NewGame'
 import { mutateSave, useGame } from '@/store/game'
+import { useDetails } from '@/store/hooks'
+import { PixelIcon } from './icons'
 import { cx } from '@/theme/util'
 import { PixelButton } from './PixelButton'
 import { MiniSprite } from './SpriteImg'
@@ -48,7 +51,7 @@ function useVersusRecord(enabled: boolean): { won: number; held: number } | null
 export function Stat({ label, value }: { label: string; value: string }) {
   return (
     <>
-      <dt className="font-pixel-sm text-[15px] text-muted">{label}</dt>
+      <dt className="font-pixel-sm text-[16px] text-muted">{label}</dt>
       <dd className="m-0 truncate border-b border-dotted border-shadow text-right text-[17px] leading-[1.1]">
         {value}
       </dd>
@@ -60,7 +63,7 @@ export function Stat({ label, value }: { label: string; value: string }) {
 export function CardFrame({ label, note, children }: { label: string; note?: string; children: ReactNode }) {
   return (
     <div className="grid gap-2 bg-[linear-gradient(rgb(var(--c-sky)),rgb(var(--c-paper))_60%)] px-2.5 pb-3 pt-2 shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_0_0_5px_#5b8def,inset_0_0_0_7px_rgb(var(--c-edge)),inset_0_-10px_0_rgb(var(--c-sky-line))]">
-      <div className="flex justify-between gap-2 px-1.5 pt-1 font-pixel-sm text-[14px] uppercase tracking-[0.06em] text-[#2f5fb8] dark:text-[#8fb4ff]">
+      <div className="flex justify-between gap-2 px-1.5 pt-1 font-pixel-sm text-[16px] uppercase tracking-[0.06em] text-[#2f5fb8] dark:text-[#8fb4ff]">
         <span>{label}</span>
         {note && <span className="truncate">{note}</span>}
       </div>
@@ -78,7 +81,7 @@ export function CardTeam({ team, label }: { team: { dex: number; level: number }
       {team.map((p, i) => (
         <li key={i} className="grid justify-items-center">
           <MiniSprite dex={p.dex} size={40} alt={species[p.dex]?.name ?? ''} />
-          <small className="-mt-1 font-pixel-sm text-[13px] text-muted">{t('ui.common.level.short', { n: p.level })}</small>
+          <small className="-mt-1 font-pixel-sm text-[16px] text-muted">{t('ui.common.level.short', { n: p.level })}</small>
         </li>
       ))}
     </ul>
@@ -92,6 +95,10 @@ export function TrainerCard() {
   const auth = useGame((s) => s.auth)
   const [renaming, setRenaming] = useState(false)
   const [picking, setPicking] = useState(false)
+  const details = useDetails()
+  const [statsOpen, setStatsOpen] = useState<boolean | null>(null)
+  // Folded unless More details is on, until the player opens or folds them here.
+  const stats = statsOpen ?? details
   const versusOpen = !!save && versusUnlocked(save, data)
   const record = useVersusRecord(versusOpen && auth.status === 'signed_in')
   // Your friend ID stands in for the ID number once this device knows it (docs/16).
@@ -129,64 +136,95 @@ export function TrainerCard() {
             : t('ui.card.idNo', { n: idNumber(auth.userId ?? `${me.name}|${me.character}`) })
         }
       >
-        <div className="grid grid-cols-[96px_minmax(0,1fr)] items-start gap-2.5 px-1">
-          <TrainerLook src={look.src} w={96} h={124} zoom={2} className="bg-paper shadow-ring" />
-          <div className="grid min-w-0 gap-1.5">
-            <p className="m-0 flex min-w-0 items-center gap-2">
+        {/* Who you are at a glance: the look, the name (the pencil renames), the badges and the team. */}
+        <div className="grid grid-cols-[64px_minmax(0,1fr)] items-center gap-2.5 px-1">
+          <TrainerLook src={look.src} w={64} h={80} zoom={1.3} className="bg-paper shadow-ring" />
+          <div className="grid min-w-0 gap-1">
+            <p className="m-0 flex min-w-0 items-center gap-1">
               <b className="min-w-0 truncate text-[26px] font-normal leading-none">
                 <TrainerName name={me.name || t('ui.settings.noName')} rich={!!save && isRich(save, data)} />
               </b>
-              <PixelButton
-                size="sm"
-                className="ml-auto shrink-0"
+              <button
+                type="button"
                 aria-label={t('ui.card.rename')}
+                title={t('ui.card.rename')}
                 onClick={() => setRenaming(true)}
+                className="grid h-11 w-11 shrink-0 place-items-center hover:bg-sky"
               >
-                {t('ui.settings.change')}
-              </PixelButton>
+                <PixelIcon name="pencil" size={18} />
+              </button>
             </p>
-            <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2.5 gap-y-0.5">
-              <Stat label={t('ui.card.money')} value={money(save.gold)} />
-              <Stat
-                label={t('ui.card.dex')}
-                value={`${save.pokedex.filter((d) => species.has(d)).length}/${species.size}`}
-              />
-              <Stat label={t('ui.card.best')} value={t('ui.common.level.short', { n: best })} />
-              <Stat
-                label={t('ui.card.areas')}
-                value={`${areas.filter((a) => save.areaProgress[a.id]?.cleared).length}/${areas.length}`}
-              />
-              <Stat label={t('ui.card.badges')} value={String(badgesHeld(save, data))} />
-              <Stat label={t('ui.card.shinies')} value={String(save.box.filter((p) => p.shiny).length)} />
-              <Stat
-                label={t('ui.card.versus')}
-                value={
-                  !versusOpen
-                    ? t('ui.card.locked')
-                    : record
-                      ? t('ui.card.versusRecord', { won: record.won, held: record.held })
-                      : '—'
-                }
-              />
-            </dl>
+            {/* The team keeps its width; Stats goes under it when the row is short (it covered the minis, 2026-10-27). */}
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2">
+              <span
+                className="light-scope inline-flex shrink-0 items-center gap-1 bg-night px-2 pb-[3px] pt-0.5 text-[18px] leading-none text-gold-light"
+                aria-label={`${t('ui.card.badges')}: ${badgesHeld(save, data)}`}
+                role="img"
+              >
+                <PixelIcon name="badge" size={14} />
+                {badgesHeld(save, data)}
+              </span>
+              <ul className="m-0 flex max-w-full flex-wrap list-none items-center p-0 pr-1" aria-label={t('ui.team.title')}>
+                {teamOf(save).map((p, i) => (
+                  <li key={i} className="-my-1.5 -mr-1">
+                    <MiniSprite dex={p.dex} size={32} alt={data.species[p.dex]?.name ?? ''} />
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                aria-expanded={stats}
+                aria-controls="card-stats"
+                onClick={() => setStatsOpen(!stats)}
+                className="ml-auto flex min-h-[44px] shrink-0 items-center gap-1.5 pl-1 text-[18px] leading-none hover:underline"
+              >
+                {t('ui.card.stats')}
+                <span
+                  aria-hidden
+                  className={cx('block h-[8px] w-[12px] bg-ink [clip-path:polygon(0_0,100%_0,50%_100%)]', stats && 'rotate-180')}
+                />
+              </button>
+            </div>
           </div>
         </div>
-        <CardTeam team={teamOf(save)} label={t('ui.team.title')} />
+        {/* The numbers are for the invested: a tap away, open at once with More details (docs/42). */}
+        {stats && (
+          <dl id="card-stats" className="m-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2.5 gap-y-0.5 border-t-2 border-sky-line px-1 pb-1 pt-1.5">
+            <Stat label={t('ui.card.money')} value={money(save.gold)} />
+            <Stat label={t('ui.card.dex')} value={`${save.pokedex.filter((d) => species.has(d)).length}/${species.size}`} />
+            <Stat label={t('ui.card.best')} value={t('ui.common.level.short', { n: best })} />
+            <Stat
+              label={t('ui.card.areas')}
+              value={`${areas.filter((a) => save.areaProgress[a.id]?.cleared).length}/${areas.length}`}
+            />
+            <Stat label={t('ui.card.shinies')} value={String(save.box.filter((p) => p.shiny).length)} />
+            <Stat
+              label={t('ui.card.versus')}
+              value={
+                !versusOpen
+                  ? t('ui.card.locked')
+                  : record
+                    ? t('ui.card.versusRecord', { won: record.won, held: record.held })
+                    : '—'
+              }
+            />
+          </dl>
+        )}
       </CardFrame>
 
       {/* Trainer looks (docs/31) take the free picker's place while the admin's switch is on. */}
       {looksOn(data) ? (
         <TrainerLooks />
       ) : (
-        <section className="flex flex-col gap-2">
-          <h3 className="m-0 text-[24px] font-normal leading-none">{t('ui.profile.look')}</h3>
-          <div className="flex items-center gap-2.5 bg-paper py-1 pl-1 pr-2 shadow-ring-line">
+        <section className="flex flex-col gap-2" aria-label={t('ui.profile.look')}>
+          <div className="flex items-center gap-2.5 bg-paper py-1 pl-1 pr-2 shadow-card">
             <span role="img" aria-label={lookName} className="shrink-0">
               <TrainerLook src={look.src} w={44} h={48} />
             </span>
-            <p className="m-0 min-w-0 flex-1 font-pixel-sm text-[15px] leading-[1.15] text-muted">
-              {t('ui.card.lookIs', { look: lookName })}
-            </p>
+            <span className="grid min-w-0 flex-1 gap-0.5">
+              <b className="truncate text-[20px] font-normal leading-none">{t('ui.profile.look')}</b>
+              <small className="truncate font-pixel-sm text-[16px] leading-tight text-muted">{lookName}</small>
+            </span>
             <PixelButton
               size="sm"
               className="shrink-0"

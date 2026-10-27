@@ -55,6 +55,13 @@ export const itemOnFor = (save: Pick<SaveData, 'region'>, data: GameData, key: s
 
 export const usableIn = (item: ItemDef | undefined, use: ItemUse): boolean => !!item && itemUses(item).includes(use)
 
+/**
+ * A ball that can be thrown at this catch: any ball in a raid, every ball but the raids' own elsewhere (the Raid Ball,
+ * docs/44, is thrown in raids alone).
+ */
+export const isBallFor = (item: ItemDef | undefined, raid: boolean): boolean =>
+  item?.effect.kind === 'ball' && (raid || !item.effect.raidOnly)
+
 /** What a ball adds to the catch die (0 for anything else). */
 export const ballBonus = (item: ItemDef | undefined): number => (item?.effect.kind === 'ball' ? item.effect.bonus : 0)
 

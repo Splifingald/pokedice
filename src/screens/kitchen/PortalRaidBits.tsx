@@ -80,7 +80,7 @@ export function PortalRaidBits() {
           <PortalRaidBanner className="-mx-3 -mt-3 h-[132px]">
             <div className="pixel-plate absolute left-2 top-2 z-[1] grid gap-0.5 px-2.5 pb-1.5 pt-1 leading-normal">
               <b className="text-[24px] font-normal leading-none">Legendary raid</b>
-              <small className="font-pixel-sm text-[14px] leading-none text-muted">
+              <small className="font-pixel-sm text-[16px] leading-none text-muted">
                 Distortion World · Haunted Hollow
               </small>
             </div>
@@ -95,7 +95,7 @@ export function PortalRaidBits() {
             </span>
             <span className="grid gap-0.5 leading-tight">
               <b className="text-[19px] font-normal leading-none">Close every portal of Distortion World</b>
-              <small className="font-pixel-sm text-[15px] text-ink">The lock, before the run is won.</small>
+              <small className="font-pixel-sm text-[16px] text-ink">The lock, before the run is won.</small>
             </span>
           </div>
           <PixelButton variant="primary" size="lg" className="sheen w-full" onClick={() => setPicker(true)}>

@@ -1,11 +1,11 @@
 // The Day Care page's pieces (docs/15, the Visual Lab's daycare.js), drawn from props so /kitchen-sink can show each
-// state: the hearts, a slot's card, an empty slot, the Egg card and the Egg-now bar.
+// state: the hearts, a slot's card, a friend's tile, an empty slot, the Egg card and the Egg-now bar.
 import type { ReactNode } from 'react'
 import { Chip } from '@/components/Chip'
 import { EggSprite } from '@/components/EggSprite'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
-import { showdownView, SpriteImg } from '@/components/SpriteImg'
+import { MiniSprite, showdownView, SpriteImg } from '@/components/SpriteImg'
 import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
 import { artBox } from '@/lib/showdown'
@@ -44,9 +44,11 @@ export function PairTag({ tone = 'ok', children }: { tone?: 'ok' | 'plain' | 'sl
   return (
     <em
       className={cx(
-        'inline-flex items-center gap-1 px-1.5 pb-[3px] pt-0.5 font-pixel-sm text-[13px] not-italic leading-[1.1]',
-        tone === 'ok' && 'bg-[#fff0f3] text-[#8a1f3d] shadow-[inset_0_0_0_1px_#ff9ab5] dark:bg-[#3a1822] dark:text-[#ffc2d1]',
-        tone === 'slow' && 'bg-[#f4efff] text-[#4a3486] shadow-[inset_0_0_0_1px_#b9a6e8] dark:bg-[#2a2140] dark:text-[#d7c9ff]',
+        'inline-flex items-center gap-1 px-1.5 pb-[3px] pt-0.5 font-pixel-sm text-[16px] not-italic leading-[1.1]',
+        tone === 'ok' &&
+          'bg-[#fff0f3] text-[#8a1f3d] shadow-[inset_0_0_0_1px_#ff9ab5] dark:bg-[#3a1822] dark:text-[#ffc2d1]',
+        tone === 'slow' &&
+          'bg-[#f4efff] text-[#4a3486] shadow-[inset_0_0_0_1px_#b9a6e8] dark:bg-[#2a2140] dark:text-[#d7c9ff]',
         tone === 'plain' && 'bg-well text-ink shadow-ring-line-thin',
       )}
     >
@@ -66,7 +68,7 @@ export function Mate({ name, slot }: { name: string; slot: number | null }) {
 }
 
 /** The card's sprite tile: its height, and how much of it the art may take (clear of the edges and the lip). */
-const TILE = { h: 76, artH: 62, artW: 132 }
+const TILE = { h: 60, artH: 48, artW: 60 }
 
 /**
  * The SpriteImg box that shows a Pokémon's art at ×1.17 on the tile, or smaller when that wouldn't fit (Lugia, Onix).
@@ -83,9 +85,9 @@ function tileSpriteSize(dex: number, shiny?: boolean): number {
 }
 
 /**
- * One Pokémon at the Day Care, in a two-column grid: a 4 px band in its slot's colour (grey for a friend's), the head
- * (whose it is, and a tag), the animated sprite on a pale tile, the name and level, `children` (the XP bar, who it
- * pairs with) and its button at the bottom, so both cards' buttons line up.
+ * One of your Pokémon at the Day Care, in a two-column grid (docs/43 §5.7, compact): a 4 px band in its slot's colour,
+ * the sprite on a pale tile beside whose it is, its name and level and a tag, then `children` (the XP bar, who it pairs
+ * with) and its button at the bottom, so both cards' buttons line up.
  */
 export function SlotCard({
   band,
@@ -109,26 +111,79 @@ export function SlotCard({
   action: { label: string; aria: string; onClick: () => void }
 }) {
   return (
-    <li className="relative flex min-w-0 flex-col gap-1 bg-paper px-2 pb-2 pt-2.5 shadow-card">
+    <li className="relative flex min-w-0 flex-col gap-1.5 bg-paper px-2 pb-2 pt-2.5 shadow-card">
       <i aria-hidden className="absolute inset-x-[2px] top-[2px] block h-1" style={{ background: band }} />
-      <span className="flex min-h-[22px] items-center gap-1 font-pixel-sm text-[15px] leading-none text-muted">
-        {head}
-        {tag && <span className="ml-auto">{tag}</span>}
-      </span>
-      <span className="relative block h-[76px] overflow-hidden bg-sky shadow-[inset_0_-6px_0_rgb(var(--c-sky-line))]">
-        {/* Centred on the tile above its 6 px lip, whatever the box's size (a grid would start an oversized box at the top). */}
-        <span className="absolute left-1/2 top-[calc(50%-3px)] -translate-x-1/2 -translate-y-1/2">
-          <SpriteImg dex={dex} size={tileSpriteSize(dex, shiny)} shiny={shiny} />
+      <span className="flex min-w-0 items-center gap-2">
+        <span className="relative block h-[60px] w-[60px] shrink-0 overflow-hidden bg-sky shadow-[inset_0_-5px_0_rgb(var(--c-sky-line))]">
+          {/* Centred on the tile above its lip, whatever the box's size (a grid would start an oversized box at the top). */}
+          <span className="absolute left-1/2 top-[calc(50%-2px)] -translate-x-1/2 -translate-y-1/2">
+            <SpriteImg dex={dex} size={tileSpriteSize(dex, shiny)} shiny={shiny} />
+          </span>
+        </span>
+        <span className="grid min-w-0 flex-1 gap-1">
+          <span className="flex min-h-[18px] min-w-0 items-center gap-1 font-pixel-sm text-[16px] leading-none text-muted">
+            {head}
+          </span>
+          <b className="text-[20px] font-normal leading-none [overflow-wrap:anywhere]">{name}</b>
+          <span className="flex flex-wrap items-center gap-1 font-pixel-sm text-[16px] leading-none text-ink">
+            {level}
+            {tag}
+          </span>
         </span>
       </span>
-      <span className="mt-0.5 flex flex-wrap items-baseline gap-x-1.5">
-        <b className="text-[20px] font-normal leading-none [overflow-wrap:anywhere]">{name}</b>
-        <span className="font-pixel-sm text-[15px] leading-none text-muted">{level}</span>
-      </span>
       {children}
-      <PixelButton size="sm" className="mt-auto w-full px-1" aria-label={action.aria} onClick={action.onClick}>
+      <PixelButton
+        size="sm"
+        className="mt-auto w-full px-1"
+        aria-label={action.aria}
+        onClick={action.onClick}
+      >
         {action.label}
       </PixelButton>
+    </li>
+  )
+}
+
+/**
+ * A friend's Pokémon visiting (docs/43 §5.7): one line, smaller than yours — the grey band, its sprite, its name and
+ * level, whose it is and who of yours it pairs with — and Send back as a 44 px button at its end, one tap.
+ */
+export function GuestTile({
+  dex,
+  name,
+  level,
+  owner,
+  mates,
+  action,
+}: {
+  dex: number
+  name: string
+  level: string
+  owner: ReactNode
+  mates?: ReactNode
+  action: { aria: string; onClick: () => void }
+}) {
+  const { t } = useT()
+  return (
+    <li className="relative flex min-h-[60px] min-w-0 items-center gap-2 bg-paper py-1.5 pl-3 pr-1.5 shadow-card">
+      <i aria-hidden className="absolute inset-y-[2px] left-[2px] block w-1 bg-shadow" />
+      <MiniSprite dex={dex} size={40} className="-my-1 shrink-0" />
+      <span className="grid min-w-0 flex-1 gap-0.5 leading-none">
+        <b className="truncate text-[18px] font-normal">
+          {name} <small className="font-pixel-sm text-[16px] text-muted">{level}</small>
+        </b>
+        <span className="truncate font-pixel-sm text-[16px] text-ink">{owner}</span>
+        {mates}
+      </span>
+      <button
+        type="button"
+        aria-label={action.aria}
+        title={t('ui.dayCare.sendBack')}
+        onClick={action.onClick}
+        className="grid h-11 w-11 shrink-0 place-items-center bg-panel shadow-ring-line hover:shadow-ring"
+      >
+        <PixelIcon name="close" size={14} />
+      </button>
     </li>
   )
 }
@@ -136,8 +191,8 @@ export function SlotCard({
 /** The partners, each with its heart (the hearts say "pairs with"), or a short line when there are none. */
 export function MatesLine({ lead, mates }: { lead?: string; mates?: ReactNode }) {
   return (
-    <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 font-pixel-sm text-[14px] leading-[1.15] text-ink">
-      {lead && <small className="text-[13px] text-muted">{lead}</small>}
+    <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 font-pixel-sm text-[16px] leading-[1.15] text-ink">
+      {lead && <small className="text-[16px] text-muted">{lead}</small>}
       {mates}
     </span>
   )
@@ -147,23 +202,31 @@ export function MatesLine({ lead, mates }: { lead?: string; mates?: ReactNode })
 export function XpBar({ k, line }: { k: number; line: string }) {
   return (
     <span className="relative block h-2 bg-line shadow-ring-thin" role="img" aria-label={line}>
-      <i className="absolute inset-y-px left-px block bg-[#5b8def]" style={{ width: `calc(${Math.min(1, k) * 100}% - 2px)` }} />
+      <i
+        className="absolute inset-y-px left-px block bg-[#5b8def]"
+        style={{ width: `calc(${Math.min(1, k) * 100}% - 2px)` }}
+      />
     </span>
   )
 }
 
-/** A free slot: a dashed card with a blue +, what it does and where from. Disabled ones say why under it. */
+/**
+ * A free slot: a dashed card with a blue +, what it does. Disabled ones say why under it. `mini`: a friend's slot,
+ * one line, the height of a friend's Pokémon.
+ */
 export function EmptySlot({
   title,
   sub,
   onClick,
   disabled,
+  mini,
 }: {
   title: string
   /** A disabled slot's reason (an enabled one needs none). */
   sub?: string
   onClick?: () => void
   disabled?: boolean
+  mini?: boolean
 }) {
   return (
     <li className="flex min-w-0">
@@ -172,7 +235,10 @@ export function EmptySlot({
         onClick={onClick}
         disabled={disabled}
         className={cx(
-          'grid min-h-[168px] w-full flex-1 place-items-center content-center gap-1 px-2 py-2.5 text-center outline-dashed outline-2 -outline-offset-[6px] outline-shadow',
+          'w-full flex-1 gap-1 px-2 outline-dashed outline-2 -outline-offset-[6px] outline-shadow',
+          mini
+            ? 'flex min-h-[60px] items-center py-1.5 text-left'
+            : 'grid min-h-[150px] place-items-center content-center py-2.5 text-center',
           disabled
             ? 'cursor-not-allowed bg-well text-muted shadow-ring-line'
             : 'bg-well text-ink shadow-[inset_0_0_0_2px_rgb(var(--c-faint))] hover:bg-paper',
@@ -181,21 +247,34 @@ export function EmptySlot({
         <span
           aria-hidden
           className={cx(
-            'mb-1 grid h-9 w-9 place-items-center text-[26px] leading-none text-white shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_-4px_0_#3c6cc8]',
+            'grid shrink-0 place-items-center leading-none text-white shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_-4px_0_#3c6cc8]',
+            mini ? 'ml-1 mr-1 h-8 w-8 text-[22px]' : 'mb-1 h-9 w-9 text-[26px]',
             disabled ? 'bg-faint' : 'bg-[#5b8def]',
           )}
         >
           +
         </span>
-        <b className="text-[18px] font-normal leading-none">{title}</b>
-        {sub && <small className="font-pixel-sm text-[13px] leading-[1.15] text-muted">{sub}</small>}
+        <span className={cx('grid min-w-0 gap-0.5', !mini && 'justify-items-center')}>
+          <b className="text-[18px] font-normal leading-none">{title}</b>
+          {sub && <small className="font-pixel-sm text-[16px] leading-[1.15] text-muted">{sub}</small>}
+        </span>
       </button>
     </li>
   )
 }
 
 /** A section's title row: the title and its count ("2/2"), then the note under it. */
-export function SectionHead({ title, count, note, id }: { title: string; count?: string; note?: string; id?: string }) {
+export function SectionHead({
+  title,
+  count,
+  note,
+  id,
+}: {
+  title: string
+  count?: string
+  note?: string
+  id?: string
+}) {
   return (
     <div className="grid gap-1">
       <div className="flex items-baseline gap-2">
@@ -204,7 +283,7 @@ export function SectionHead({ title, count, note, id }: { title: string; count?:
         </h2>
         {count && <span className="font-pixel-sm text-[17px] tabular-nums text-muted">{count}</span>}
       </div>
-      {note && <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">{note}</p>}
+      {note && <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{note}</p>}
     </div>
   )
 }
@@ -213,17 +292,16 @@ export function SectionHead({ title, count, note, id }: { title: string; count?:
 export function EggCardView({ from, onHatch }: { from: string; onHatch: () => void }) {
   const { t } = useT()
   return (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 bg-gold-pale px-3 pb-3 pt-2.5 shadow-card-gold-lip">
-      <span className="grid h-12 w-12 place-items-center">
+    // One row, the Egg-now bar's height (docs/43 §5.7): the Egg, who left it, and Hatch it at the end.
+    <div className="grid grid-cols-[auto_minmax(0,1fr)_minmax(0,auto)] items-center gap-x-2.5 bg-gold-pale py-2 pl-2 pr-2.5 shadow-card-gold-lip">
+      <span className="grid h-11 w-11 place-items-center">
         <EggSprite size={28} shake />
       </span>
       <span className="grid min-w-0 gap-[3px]">
         <b className="text-[22px] font-normal leading-none">{t('ui.dayCare.eggWaiting')}</b>
-        <small className="font-pixel-sm text-[15px] leading-[1.15] text-ink">
-          {from}
-        </small>
+        <small className="font-pixel-sm text-[16px] leading-[1.15] text-ink">{from}</small>
       </span>
-      <PixelButton variant="gold" className="col-span-2 w-full" onClick={onHatch}>
+      <PixelButton variant="gold" className="min-h-[56px] max-w-[48vw] px-3" onClick={onHatch}>
         {t('ui.dayCare.hatchIt')}
       </PixelButton>
     </div>
@@ -256,11 +334,13 @@ export function RushBarView({
     <div className="flex items-center gap-2.5 bg-paper py-2 pl-3 pr-2.5 shadow-card">
       {/* Never narrower than the countdown, kept on one line: the button gives way first. */}
       <span className="grid flex-1 gap-px">
-        <small className="font-pixel-sm text-[14px] leading-none text-muted">{t('ui.dayCare.nextCheck')}</small>
+        <small className="font-pixel-sm text-[16px] leading-none text-muted">
+          {t('ui.dayCare.nextCheck')}
+        </small>
         <b className="whitespace-nowrap text-[24px] font-normal leading-none">
           {wait == null ? t('ui.dayCare.onHold') : t('ui.dayCare.inTime', { time: wait })}
         </b>
-        <small className="font-pixel-sm text-[14px] leading-tight text-muted">
+        <small className="font-pixel-sm text-[16px] leading-tight text-muted">
           {pairs ? tPlural('ui.dayCare.pairsCan', pairs, { n: pairs }) : t('ui.dayCare.noPairYet')}
         </small>
       </span>
@@ -280,7 +360,7 @@ export function RushBarView({
           {/* The button stays gold in both themes, so the "short" red is a fixed one that reads on gold. */}
           <span
             className={cx(
-              'inline-flex items-center gap-1 font-pixel-sm text-[0.625em] leading-none',
+              'inline-flex items-center gap-1 font-pixel-sm text-[max(16px,0.625em)] leading-none',
               short > 0 && 'text-[#9b2416]',
             )}
           >

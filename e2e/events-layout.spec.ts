@@ -91,13 +91,12 @@ test('nothing of the wheel covers its buttons', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 640 })
   await boot(page)
   await page.goto('/events/wheel')
-  await page.getByRole('dialog').getByRole('button', { name: 'OK' }).click()
-  await expect(page.getByRole('dialog')).toHaveCount(0)
   const buttons = [
-    page.getByRole('button', { name: 'Info: every prize and its odds' }),
+    page.getByRole('button', { name: 'Info: how Fortune Wheel works' }),
     page.getByRole('button', { name: 'Spin!', exact: true }),
     page.getByRole('button', { name: /^Buy a ticket/ }),
   ]
+  await expect(buttons[1]!).toBeVisible()
   for (const pass of ['taps', 'drawn']) {
     if (pass === 'drawn')
       await page.addStyleTag({

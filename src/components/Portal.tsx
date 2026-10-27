@@ -558,7 +558,7 @@ export function BoonConfirm({
             <OfferIcon icon={shown.icon} />
             <span className="grid min-w-0 gap-0.5">
               <b className="text-[21px] font-normal leading-none">{shown.title}</b>
-              <small className="font-pixel-sm text-[15px] leading-tight text-muted">{shown.text}</small>
+              <small className="font-pixel-sm text-[16px] leading-tight text-muted">{shown.text}</small>
             </span>
           </div>
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
@@ -619,7 +619,7 @@ export function DistortionChoiceView({
               <OfferIcon icon={v.icon} />
               <span className="grid min-w-0 gap-0.5">
                 <b className="text-[21px] font-normal leading-none">{v.title}</b>
-                <small className="font-pixel-sm text-[15px] leading-tight text-muted">{v.text}</small>
+                <small className="font-pixel-sm text-[16px] leading-tight text-muted">{v.text}</small>
               </span>
             </button>
           </li>
@@ -655,13 +655,13 @@ export function RunBonuses({
         {t('ui.portal.bonuses')}
       </h2>
       {none ? (
-        <p className="m-0 font-pixel-sm text-[15px] text-muted">{t('ui.portal.noBonus')}</p>
+        <p className="m-0 font-pixel-sm text-[16px] text-muted">{t('ui.portal.noBonus')}</p>
       ) : (
         <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
           {list.map(([type, n]) => (
             <li key={type} className="inline-flex items-center gap-1.5 bg-paper px-2 py-1 shadow-ring-line">
               <TypeBadge type={type} size="sm" />
-              <span className="font-pixel-sm text-[15px]">{t('ui.portal.boostChip', { n })}</span>
+              <span className="font-pixel-sm text-[16px]">{t('ui.portal.boostChip', { n })}</span>
             </li>
           ))}
           {dice
@@ -672,7 +672,7 @@ export function RunBonuses({
                 className="inline-flex items-center gap-1.5 bg-paper px-2 py-1 shadow-ring-line"
               >
                 <MiniSprite dex={d.dex} size={24} />
-                <span className="font-pixel-sm text-[15px]">
+                <span className="font-pixel-sm text-[16px]">
                   {t('ui.portal.diceChip', {
                     name: d.name,
                     dice: d.types.map((x) => typeName(x)).join(', '),

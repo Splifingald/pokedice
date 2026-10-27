@@ -48,7 +48,7 @@ export function MiniPlate({
       <MiniSprite dex={b.dex} size={28} className={cx('-my-1 shrink-0', fainted && 'grayscale')} />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="flex items-center gap-1">
-          <span className="font-pixel-sm text-[14px] leading-none">{level}</span>
+          <span className="font-pixel-sm text-[16px] leading-none">{level}</span>
           {b.shiny && <PixelIcon name="star" size={10} title={t('ui.mon.shiny')} className="shrink-0" />}
           <StatusIcons status={b.status} />
           <span className="ml-auto shrink-0">
@@ -91,7 +91,7 @@ export function DoublePlates({
   const { t } = useT()
   return (
     <>
-      <div className="absolute left-1.5 top-1.5 flex w-[46%] flex-col gap-1">
+      <div className="absolute left-1.5 top-[calc(var(--strip,0px)+6px)] flex w-[46%] flex-col gap-1">
         {foes.map((b) => (
           <MiniPlate key={b.uid} b={b} hp={hpOf(b)} foe front={b.uid === frontFoe} fainted={faintedOf(b)} />
         ))}
