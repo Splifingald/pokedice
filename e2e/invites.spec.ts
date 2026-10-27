@@ -183,11 +183,13 @@ test('Later keeps the reward on the Friends page, with the Social tab’s dot', 
   await expect(page.getByRole('region', { name: /^Invite rewards/ }).getByRole('button', { name: 'Open it' })).toBeVisible()
 })
 
-test('Prof. Oak’s invite is a note on Home, with the gauge', async ({ page }) => {
-  // Two badges in Kanto: Prof. Oak asks to invite a friend, in a note in the page (docs/43 §7), not a pop-up.
+test('Prof. Oak’s invite is a note on the friends list, with the gauge; not on Home', async ({ page }) => {
+  // Prof. Oak asks to invite a friend in a note at the top of Friends (the user's call, 2026-10-27), not a pop-up.
   const save = { ...withBadges(makeSave(4), 2), invites: { done: [], rulesSeen: true } }
   await boot(page, save, { invite_status: { count: 0, pending: 1, claimed: [], latest: null } })
   await page.goto('/home')
+  await expect(page.getByRole('region', { name: 'Invite a friend' })).toHaveCount(0)
+  await page.goto('/friends')
   const oak = page.getByRole('region', { name: 'Invite a friend' })
   await expect(oak).toBeVisible()
   await expect(page.getByRole('dialog')).toHaveCount(0)

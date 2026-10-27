@@ -167,7 +167,7 @@ test('All areas lists the region, and its search finds areas by Pokémon; Region
   await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
-test('PC: the scene as tall as the window on the left, PLAY on the right; the sheet shows the list and the details side by side', async ({
+test('PC: the scene as tall as the window on the left, CONTINUE under it in sight; the sheet shows the list and the details side by side', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
@@ -177,8 +177,10 @@ test('PC: the scene as tall as the window on the left, PLAY on the right; the sh
   await page.goto('/home')
   const scene = (await page.getByRole('region', { name: area.name }).boundingBox())!
   const go = (await page.getByRole('button', { name: 'CONTINUE', exact: true }).boundingBox())!
-  expect(go.x).toBeGreaterThan(scene.x + scene.width)
-  expect(go.y).toBeLessThan(300)
+  // Under the scene, in its column, and within the window (the user's call, 2026-10-27).
+  expect(go.x).toBeGreaterThanOrEqual(scene.x)
+  expect(go.x + go.width).toBeLessThanOrEqual(scene.x + scene.width + 1)
+  expect(go.y + go.height).toBeLessThanOrEqual(900)
   // As tall as the window, less the top bar and the page's padding.
   expect(scene.height).toBeGreaterThan(900 - 56 - 80)
   expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(0)

@@ -138,7 +138,10 @@ test('Stay here keeps the free play of a cleared area when the story goes on els
   const data = gameData()
   const base = makeSave(4)
   const chain = linearAreas(data, regionOf(base))
-  const areaProgress = Object.fromEntries(chain.slice(0, 2).map((a) => [a.id, { ...emptyProgress(), cleared: true }]))
+  // Mid-round (a new round opens with its Pokémon Center).
+  const areaProgress = Object.fromEntries(
+    chain.slice(0, 2).map((a) => [a.id, { ...emptyProgress(), cleared: true, deck: ['wild' as const, 'wild' as const] }]),
+  )
   await boot(page, { ...base, areaProgress, currentAreaId: chain[0]!.id })
   await page.goto('/home')
   await page.getByRole('button', { name: /^Stay here/ }).click()
@@ -162,14 +165,14 @@ test("the area's details count the rounds done over the rounds that clear it, pa
   await expect(sheet).toContainText(`${need + 1}/${need} round`)
 })
 
-test("a cleared area's battle can go on auto midway, and STOP hands it back", async ({
+test("a cleared area's battle can go on auto midway, and the same switch hands it back", async ({
   page,
 }) => {
   const base = makeSave(4)
   const area = base.currentAreaId
   const progress = (cleared: boolean) => ({ ...emptyProgress(), cleared, deck: ['wild' as const, 'wild' as const] })
-  const autoMode = page.getByRole('button', { name: 'AUTO-MODE', exact: true })
-  const stop = page.getByRole('button', { name: 'STOP', exact: true })
+  // One switch in the same place, on or off (the user's call, 2026-10-27).
+  const autoMode = page.getByRole('button', { name: /^AUTO-MODE: (ON|OFF)$/ })
   const attack = page.getByRole('button', { name: 'ATTACK', exact: true })
 
   await boot(page, { ...base, areaProgress: { ...base.areaProgress, [area]: progress(true) } })
@@ -178,16 +181,18 @@ test("a cleared area's battle can go on auto midway, and STOP hands it back", as
   await page.getByRole('button', { name: /^Stay here/ }).click()
   // Your turn, played by hand: the dice wait for ATTACK, and AUTO-MODE sits among the extras.
   await expect(attack).toBeVisible({ timeout: 20_000 })
-  await expect(stop).toHaveCount(0)
+  await expect(autoMode).toHaveText(/OFF/)
+  await expect(autoMode).toHaveAttribute('aria-pressed', 'false')
   await autoMode.click()
-  // On auto: the note and STOP instead of the controls, the setting kept for the next fights.
-  await expect(page.getByText('Both sides fight on their own.')).toBeVisible()
-  await expect(autoMode).toHaveCount(0)
+  // On auto: the same button, lit, no note and no STOP; the setting kept for the next fights.
+  await expect(page.getByText('Both sides fight on their own.')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'STOP', exact: true })).toHaveCount(0)
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.settings')!).autoMode)).toBe(true)
-  // STOP, if the fight is still on, gives the controls back (and AUTO-MODE again).
-  if (await stop.isVisible()) {
-    await stop.click()
-    await expect(autoMode).toBeVisible()
+  // Pressed again while the fight is on, it gives the controls back.
+  if (await autoMode.isVisible()) {
+    await expect(autoMode).toHaveAttribute('aria-pressed', 'true')
+    await autoMode.click()
+    await expect(autoMode).toHaveAttribute('aria-pressed', 'false')
   }
 })
 
@@ -200,7 +205,7 @@ test("an area that isn't cleared has no AUTO-MODE in its battles", async ({ page
   // A team of one has no one to pick: straight into the fight, no send-out step (docs/38 U5c).
   await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeVisible({ timeout: 20_000 })
   await expect(page.getByRole('button', { name: /^Send out/ })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'AUTO-MODE', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /^AUTO-MODE/ })).toHaveCount(0)
 })
 
 test('the send-out step: the foe out, the first picked, whole names at 360 px, a tap picks, GO! sends it', async ({
