@@ -142,7 +142,18 @@ export function EventRulesCard({ id }: { id: EventId }) {
 }
 
 /** An event's rules in a pop-up, as the unlock pop-up showed them, with the admin's numbers: INFO, or a page's first open. */
-export function EventRulesModal({ id, open, onClose }: { id: EventId; open: boolean; onClose: () => void }) {
+export function EventRulesModal({
+  id,
+  open,
+  onClose,
+  extra,
+}: {
+  id: EventId
+  open: boolean
+  onClose: () => void
+  /** More rules after the event's own (the raids': how a raid's own rules work). */
+  extra?: ReactNode
+}) {
   const { t } = useT()
   const data = useGame((s) => s.data)
   return (
@@ -154,6 +165,7 @@ export function EventRulesModal({ id, open, onClose }: { id: EventId; open: bool
           className="-mx-4 h-[124px] shadow-[0_3px_0_rgb(var(--c-edge)),0_-2px_0_rgb(var(--c-edge))]"
         />
         <EventRules id={id} data={data} />
+        {extra}
         <PixelButton variant="primary" onClick={onClose}>
           {t('ui.common.ok')}
         </PixelButton>
@@ -163,13 +175,21 @@ export function EventRulesModal({ id, open, onClose }: { id: EventId; open: bool
 }
 
 /** The Info button at the foot of an event's page (the wheel's look): its rules again. */
-export function EventInfo({ id, compact = false }: { id: EventId; compact?: boolean }) {
+export function EventInfo({
+  id,
+  compact = false,
+  extra,
+}: {
+  id: EventId
+  compact?: boolean
+  extra?: ReactNode
+}) {
   const { t } = useT()
   const [open, setOpen] = useState(false)
   return (
     <>
       <InfoButton name={t(`ui.events.${id}.name`)} onClick={() => setOpen(true)} compact={compact} />
-      <EventRulesModal id={id} open={open} onClose={() => setOpen(false)} />
+      <EventRulesModal id={id} open={open} onClose={() => setOpen(false)} extra={extra} />
     </>
   )
 }

@@ -8,7 +8,7 @@ import { useGame } from '@/store/game'
 import { PixelButton } from '../PixelButton'
 import { useBlockText } from './TradeBits'
 
-/** The button and the line under it, or null when trades aren't open to this player. */
+/** The button and the line under it (only when it can't be listed), or null when trades aren't open to this player. */
 export function useTradeThis(inst: PokemonInstance, primary: boolean, onGone: () => void) {
   const { t } = useT()
   const navigate = useNavigate()
@@ -35,8 +35,7 @@ export function useTradeThis(inst: PokemonInstance, primary: boolean, onGone: ()
         {t('ui.trades.trade')}
       </PixelButton>
     ),
-    note: why
-      ? t('ui.trades.sheet.cant', { name, why: blockText(why, inst.dex) })
-      : t('ui.trades.sheet.hint', { name }),
+    // Only a reason it can't be listed (the user, 2026-10-27: TRADE explains itself on the Trades page).
+    note: why ? t('ui.trades.sheet.cant', { name, why: blockText(why, inst.dex) }) : null,
   }
 }

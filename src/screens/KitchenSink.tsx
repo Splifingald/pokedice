@@ -116,12 +116,24 @@ function RoundGaugeStates() {
   if (!area) return null
   const n = deckSize(area)
   const mid: AreaProgress = { ...emptyProgress(), drawn: ['wild', 'center'], deck: Array<DeckCard>(n - 2).fill('wild') }
+  const ahead: AreaProgress = {
+    ...emptyProgress(),
+    drawn: ['wild', 'trainer', 'wild'],
+    deck: ['center', ...Array<DeckCard>(n - 4).fill('wild')],
+  }
   const done: AreaProgress = { ...emptyProgress(), drawn: Array.from({ length: n }, (_, i) => (i % 3 ? 'wild' : 'trainer')) }
   return (
     <div className="flex w-full max-w-md flex-col gap-3">
       <RoundGauge area={area} progress={mid} />
       <RoundGauge area={area} progress={emptyProgress()} />
       <RoundGauge area={area} progress={done} />
+      {/* A fight's strip (the card being played white) and Home's banner (the rest grey, a Center ahead). */}
+      <div className="relative h-[14px] bg-panel">
+        <RoundGauge area={area} progress={ahead} strip className="absolute inset-x-0 top-0" />
+      </div>
+      <div className="pixel-btn px-3 py-2">
+        <RoundGauge area={area} progress={ahead} banner />
+      </div>
       <div className="flex flex-col gap-1.5 border-t-[3px] border-edge bg-parchment px-3 py-2">
         <RoundGauge area={area} progress={mid} compact />
         <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">

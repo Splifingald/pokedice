@@ -1,7 +1,6 @@
 // A raid's own rules on its page (docs/40, the raid overhaul): its level and bars, its weather, each rule and its last
 // bar, so players can learn the pattern before going in; INFO tells how the overhaul works. The engine decides every
 // rule and number (engine/raidSpecials.ts); this only words them.
-import { useState } from 'react'
 import { PixelIcon, type IconName } from '@/components/icons'
 import { RuleList, RulesModal, type RuleRow } from '@/components/RulesModal'
 import {
@@ -240,35 +239,19 @@ export function raidRuleRows(
 export function RaidRulesPanel({ dex, kind, areaId }: { dex: number; kind: RaidKindOf; areaId?: string }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
-  const [info, setInfo] = useState(false)
   const rows = raidRuleRows(data, dex, kind, areaId, t)
   if (!rows) return null
+  // Always open, and no book beside it (the user's call, 2026-10-27): this raid's rules are what the page is read for;
+  // how raids work in general is the Raids page's rules card and INFO.
   return (
-    <section aria-labelledby="raid-rules-title" className="flex items-start gap-1.5">
-      <details className="raid-rules min-w-0 flex-1 bg-paper shadow-card">
-        <summary className="flex min-h-[48px] cursor-pointer list-none items-center gap-2 px-3">
-          <PixelIcon name="warning" size={20} />
-          <h2 id="raid-rules-title" className="m-0 flex-1 text-[22px] font-normal leading-none">
-            {t('ui.raid.rules.title')}
-          </h2>
-          <span className="light-scope bg-night px-1.5 text-[16px] tabular-nums text-gold-light">{rows.length}</span>
-          <span aria-hidden className="raid-rules-chev text-[18px]">
-            ▾
-          </span>
-        </summary>
-        <div className="px-3 pb-3">
-          <RuleList rules={rows} />
-        </div>
-      </details>
-      <button
-        type="button"
-        className="grid h-12 w-12 shrink-0 place-items-center bg-paper text-muted shadow-card"
-        onClick={() => setInfo(true)}
-        aria-label={t('ui.raid.rules.infoLabel')}
-      >
-        <PixelIcon name="book" size={20} />
-      </button>
-      <RaidRulesInfo open={info} onClose={() => setInfo(false)} />
+    <section aria-labelledby="raid-rules-title" className="grid gap-1 bg-paper px-3 pb-3 shadow-card">
+      <div className="flex min-h-[48px] items-center gap-2">
+        <PixelIcon name="warning" size={20} />
+        <h2 id="raid-rules-title" className="m-0 flex-1 text-[22px] font-normal leading-none">
+          {t('ui.raid.rules.title')}
+        </h2>
+      </div>
+      <RuleList rules={rows} />
     </section>
   )
 }
@@ -293,7 +276,7 @@ export function raidOverhaulRows(t: T): RuleRow[] {
 
 /**
  * The overhaul's rules where they apply (docs/43 §7): a card at the top of the Raids page while unread, GOT IT sets
- * `raidRulesSeen`; the book in "This raid" shows them again. It waits while the raids' own card is up (one at a time).
+ * `raidRulesSeen`; the Raids page's INFO shows them again. It waits while the raids' own card is up (one at a time).
  */
 export function RaidRulesCard() {
   const { t } = useT()

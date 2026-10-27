@@ -39,15 +39,16 @@ const cardName = (card: DeckCard) => t(`ui.card.${card}`)
 
 /**
  * The round gauge, under the area name (no label): one tile per card of the current round's deck · n/total.
- * Met cards show their icon, the next one has a gold edge, the rest stay dark (nothing ahead is given away). A lost
- * round (wipe) or a finished one leaves the next round waiting, empty. Hidden with game_config.showRoundGauge, or when
- * encounters aren't dealt from a deck. `compact` (the action bars) keeps the gauge alone, without the preview row.
+ * Met cards fill in, the one in play is white (a fight's strip) or the next has a white edge (the page), the rest stay
+ * grey (nothing ahead is given away but the Pokémon Centers). A lost round (wipe) or a finished one leaves the next
+ * round waiting, empty. Hidden with game_config.showRoundGauge, or when encounters aren't dealt from a deck. `compact` (the action bars) keeps the gauge alone, without the preview row.
  */
 export function RoundGauge({
   area,
   progress,
   compact,
   strip,
+  banner,
   className,
 }: {
   area: Area
@@ -55,6 +56,8 @@ export function RoundGauge({
   compact?: boolean
   /** A fight's: a thin bar along the stage's top edge, no label, taking no height of its own (a 360×640 phone). */
   strip?: boolean
+  /** Home's area banner: the round's steps across its width on a light ground, the ones still ahead grey. */
+  banner?: boolean
   className?: string
 }) {
   const { t } = useT()
@@ -119,7 +122,11 @@ export function RoundGauge({
   // Where the round's Pokémon Centers are (the user's call, 2026-10-27): a heart on their segments, met or still to come,
   // so a hurt team knows how far its next heal is. The deck is drawn from its end.
   const order: (DeckCard | undefined)[] = inRound ? [...met, ...[...progress.deck!].reverse()] : met
-  const isCenter = (i: number) => !allDone && order[i] === 'center'
+  const isCenter = (i: number) => order[i] === 'center'
+  // Where the player is (the user, 2026-10-27): the cards met fill in (green once the area is cleared, the free play's
+  // rounds), the one being played is white on a fight's strip, the next one has a white edge on the page's gauge, and
+  // the rest stay grey.
+  const passed = allDone ? 'bg-hp-green' : 'bg-gold'
   const centersLabel = order.slice(0, total).some((c, i) => c === 'center' && i >= metCount)
     ? ` ${t('ui.area.centerAhead', { n: order.slice(metCount, total).indexOf('center') + 1 })}`
     : ''
@@ -132,14 +139,36 @@ export function RoundGauge({
               key={i}
               className={cx(
                 'relative grid min-w-0 flex-1 place-items-center',
-                allDone ? 'bg-hp-green' : i < metCount ? 'bg-gold' : 'bg-[#3d4a6b]',
+                i === metCount - 1 ? 'bg-white' : i < metCount ? passed : 'bg-[#3d4a6b]',
               )}
             >
               {isCenter(i) && <PixelIcon name="heart" size={12} />}
-              {i === metCount - 1 && !allDone && <FreshPip areaId={area.id} met={metCount} />}
+              {i === metCount - 1 && <FreshPip areaId={area.id} met={metCount} />}
             </li>
           ))}
         </ol>
+      </div>
+    )
+  if (banner)
+    return (
+      <div className={cx('flex items-center gap-2', className)} role="img" aria-label={label + centersLabel}>
+        <ol className="flex h-[14px] min-w-0 flex-1 gap-[3px]" aria-hidden>
+          {Array.from({ length: total }, (_, i) => (
+            <li
+              key={i}
+              className={cx(
+                'grid min-w-0 flex-1 place-items-center',
+                i < metCount ? `${passed} shadow-ring` : 'bg-line shadow-ring-line',
+                i === metCount && inRound && 'shadow-ring',
+              )}
+            >
+              {isCenter(i) && <PixelIcon name="heart" size={12} />}
+            </li>
+          ))}
+        </ol>
+        <span className="whitespace-nowrap font-pixel-sm text-[16px] leading-none tabular-nums" aria-hidden>
+          {allDone ? '✓' : `${round}/${need}`}
+        </span>
       </div>
     )
   const gauge = (
@@ -155,7 +184,8 @@ export function RoundGauge({
             key={i}
             className={cx(
               'grid min-w-0 flex-1 place-items-center',
-              i < metCount || allDone ? (allDone ? 'bg-hp-green' : 'bg-gold') : 'bg-[#3d4a6b]',
+              i < metCount ? passed : 'bg-[#3d4a6b]',
+              i === metCount && inRound && 'outline outline-2 -outline-offset-2 outline-white',
             )}
           >
             {isCenter(i) && <PixelIcon name="heart" size={12} />}

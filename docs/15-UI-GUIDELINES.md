@@ -273,9 +273,12 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   of each number it adds: does a player need it to act, or only to study? Studied things go behind it.
 - **The fight's stage keeps its 3:2 picture** (the user's call, 2026-10-27: the sky added above it in docs/43 §5.3 went
   again). On a tall phone the dice come down a little towards the thumb instead (`tall`'s spacer).
-- **The round's gauge** (`RoundGauge`; the fight's `strip` on the stage's top edge, 14 px; the page's gauge 20 px): a
-  segment per card of the round, gold once met; a **heart on each Pokémon Center's segment**, met or still to come (the
-  user's call, 2026-10-27), and the next one said to screen readers ("Pokémon Center in 2").
+- **The round's gauge** (`RoundGauge`; the fight's `strip` on the stage's top edge, 14 px; the page's gauge 20 px; Home's
+  `banner`): a segment per card of the round, gold once met (green once the area is cleared), **where you are marked**
+  (the user's call, 2026-10-27: on the strip the card being played is white; on the page's gauge the next has a white
+  edge), the rest grey; a **heart on each Pokémon Center's segment**, met or still to come, and the next one said to
+  screen readers ("Pokémon Center in 2"). The strip lies over the stage's top: the plates and the matchups pop-up start
+  under it (`--strip` on the stage), never hidden by it.
 - **One stage-and-panel shape everywhere**: an area's steps outside a fight (`src/screens/area/StagePanel`: no tab bar on
   `/area`, the bar pinned over the home indicator) and the events' pages (`src/screens/events/layout` `StagePanel`, the
   dock pinned over the tab bar): phones the scene on top and the bar pinned; from 1024 px the panel framed beside the
@@ -551,7 +554,9 @@ Players shouldn't have to make many requests:
 - **Dots only for something you can act on**: the number of upgrades you can afford (9+ at most), a gold NEW for
   Pokédex entries you haven't looked at. The dot is in the link's accessible name, never colour alone.
 - **Home** (docs/43 §5.2, the user's feedback of 2026-10-27): the area's scene with the team roaming it and, **on its top,
-  the area's banner** (`AreaButton`: the map, the area's name, its rounds as pips with "done/total", its levels; NEW when
+  the area's banner** (`AreaButton`: the map, the area's name and its levels in the top right corner, then **the round's
+  steps across its whole width** (`RoundGauge banner`: met gold, the rest grey, the hearts, "round/total"; the rounds as
+  pips where encounters aren't dealt from a deck); NEW when
   a secret area opened; shut by the nightmare with its reason), which opens the Areas sheet. On a phone the scene shows
   **about 70 % of its height** (`SCENE_SHOWN`), its window kept on where the team walks. Under it one notice, then
   Events (the region's **legendary raids open now first**, as cards of their own, then a small world, the live events
@@ -607,7 +612,8 @@ Players shouldn't have to make many requests:
   under it number · level · where it is (Lead, Team slot 2, In the Box). The body leads with a hero (the sprite, types,
   HP and XP as gauges; figures with More details), then what matters now (a waiting Pokémon's lock, Evolve now in gold),
   the dice as real dice with their status lines, **What's next** (upcoming first; the reached ones folded under
-  "Reached (n)"), the matchups, the rare moves (Send to region, Trade: quiet, small), and last a folded **Stats** section
+  "Reached (n)"), the matchups, the rare moves (Send to region, Trade: quiet, small, with no line under TRADE unless it
+  can't be listed), and last a folded **Stats** section
   (Speed, Rerolls, Catch value; open with More details). The footer holds the actions: one red at most (Make lead, Add to
   team), Use an item quiet beside it; a Box Pokémon outside a Center has the lock line; where swaps are open,
   `TeamSwapDock`. Let it go is a plain-size danger button at the footer's end, asked twice. Use an item opens a list in
@@ -647,7 +653,8 @@ Players shouldn't have to make many requests:
   it on Buy: any purchase is two taps from Home.
 - **Upgrades** (the Mart's second tab): its views (Combos, Dice Types, General) are a compact chip tab list on one row
   with Affordable (on phones its coin and count), the view in the URL (`&up=`). A card is two columns: the name and its
-  "Best buy" chip, **now → next at 22 px**, the track; on the right **the price is the button, the card's full height**:
+  "Best buy" chip, **now → next at 22 px**, the track; at its foot **the price is the button, a row the card's full width**
+  as the Buy tab's (the user's call, 2026-10-27: a column the card's height read oddly):
   navy (`frame-dark`, never red), the best buy gold (`bestBuy`), grey "need ₽X" when short, MAX, or a lock with its
   reason. Dice cards show their faces; what each status face does is More details'. PC: three columns.
 - **Search resets filters**: typing in a search shows everything that matches (the Pokédex's filter goes back to All).
@@ -1713,8 +1720,12 @@ One switch (docs/40, §20), Off: raids as before. On, the engine decides each ra
 and the screens tell them; every piece is on `/kitchen-sink` ("Raid overhaul") and every entrance in the FX lab.
 
 - **The pattern before the fight**: each raid page has a "This raid" card (`RaidRulesPanel`, the `RuleList` rows of
-  the events' pop-ups): its level and bars first, then the weather or terrain, each rule, its last bar (crown) last.
-  The book icon opens the overhaul's rules (`RaidRulesInfo`), the pop-up shown once in the queue (§20).
+  the events' pop-ups), **always open, with no book beside it** (the user's call, 2026-10-27): its level and bars first,
+  then the weather or terrain, each rule, its last bar (crown) last. How the overhaul works is its rules card on the
+  Raids page, then the Raids page's INFO (the raids' rules, then the overhaul's rows).
+- **A progression raid's page has no banner** (the user's call, 2026-10-27: the card is already the area's picture):
+  its plate (back, the kicker, the area · region) lies on the card's top left, the raid Pokémon in its middle. Giratina's
+  and Darkrai's keep their worlds' banners.
 - **In the fight, the boss plate carries the state** (`RaidMarks`, after its types and statuses): the weather's or
   terrain's icon on `sky`, a CHARGING tag on `accent` that blinks in two steps (still with reduced motion), the shield's
   HP on `paper` with the shield icon, the last bar's crown on `gold`. The log line says what happened; banners only for

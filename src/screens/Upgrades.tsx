@@ -152,7 +152,7 @@ function PopText({ pop }: { pop: UpPop }) {
 
 /**
  * An upgrade (docs/43 §5.5), in two columns: on the left its name, what it does now → at the next level (the line the
- * eye goes to, 22 px) and its track; on the right the price is the button, the card's whole height — the choice and
+ * eye goes to, 22 px) and its track; at its foot the price is the button, the card's whole width — the choice and
  * the purchase in one tap. Navy, the best buy gold (with its chip), grey short of ₽ (saying what's missing), MAX at
  * the top, a lock with its reason when nobody you own would use it.
  */
@@ -202,12 +202,13 @@ export function UpCard({
     pushToast(t('ui.upgrades.bought', { name: u.name, level, bonus: gained }), 'good')
   }
   const shownPop = frozenPop ?? pop
-  const side =
-    'grid min-h-[56px] min-w-[88px] place-items-center content-center gap-1 self-stretch px-2 leading-none'
+  // The price is a row at the card's foot, as the Buy tab's (the user's call, 2026-10-27: a column the card's height
+  // read oddly): the text keeps the whole width.
+  const side = 'flex min-h-[48px] w-full items-center justify-center gap-x-2.5 px-3 leading-none'
   return (
     <li
       className={cx(
-        'grid grid-cols-[minmax(0,1fr)_auto] gap-x-2.5 py-2 pl-2.5 pr-2',
+        'grid content-start gap-2 px-2.5 py-2',
         u.locked
           ? 'bg-well text-ink shadow-ring-line'
           : can
@@ -260,7 +261,7 @@ export function UpCard({
           aria-disabled={!can || undefined}
           className={cx(
             side,
-            'pb-2 pt-1',
+            'pb-1.5 pt-1',
             // Navy, the best buy gold: a list of red buttons was a screen of "main" actions (docs/15 §13).
             can
               ? best
@@ -270,7 +271,7 @@ export function UpCard({
           )}
         >
           <b className="text-[24px] font-normal tabular-nums">{money(u.cost)}</b>
-          <small className="font-pixel-sm text-[16px]">
+          <small className="font-pixel-sm text-[18px]">
             {can ? t('ui.upgrades.upgrade') : t('ui.upgrades.needShort', { amount: money(u.cost - gold) })}
           </small>
         </button>

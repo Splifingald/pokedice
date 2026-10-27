@@ -75,7 +75,7 @@ export function FoePlate({
           ? t('ui.types.tap', { name: b.name })
           : t('ui.battle.foePlate', { name: b.name, level: t('ui.common.level.short', { n: b.level }) })
       }
-      className="left-1.5 top-1.5"
+      className="left-1.5 top-[calc(var(--strip,0px)+6px)]"
     >
       <span className="flex min-w-0 items-center gap-1.5">
         <b className="min-w-0 truncate text-[20px] font-normal leading-none">{b.name}</b>

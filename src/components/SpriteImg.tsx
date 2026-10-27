@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import iconSheet from '@/assets/pokemon-icons.png'
 import showdownSprites from '@/data/showdown-sprites.json'
 import spriteMetrics from '@/data/sprite-metrics.json'
@@ -110,6 +110,9 @@ export function preloadSprites(dexes: number[]) {
  * Showdown unreachable (offline) → the local sprite → the species' own sprite_url (one added in admin) → "?". Only a
  * view Showdown really has is ever asked for, so no request is spent on a miss.
  */
+/** How long a big sprite waits for its picture before trying the next one (the local sprite). */
+export const SPRITE_PATIENCE_MS = 6000
+
 export function SpriteImg({
   dex,
   size = 96,
@@ -148,6 +151,15 @@ export function SpriteImg({
   const step = state.key === key ? state.step : 0
   const loaded = state.key === key && state.loaded
   const src = chain[step]
+  // A big sprite is the screen's subject (a raid's Pokémon, the lab's starters): asked for at once, and a request that
+  // neither comes nor fails (a phone's network left it hanging, the user's 2026-10-27 raid) moves on to the next
+  // picture after a few seconds rather than leaving an empty card.
+  const hero = size >= 96
+  useEffect(() => {
+    if (!hero || loaded || !src || step >= chain.length - 1) return
+    const id = window.setTimeout(() => setState({ key, step: step + 1, loaded: false }), SPRITE_PATIENCE_MS)
+    return () => window.clearTimeout(id)
+  }, [hero, loaded, src, step, chain.length, key])
   const place =
     sd && src === sd.url
       ? showdownPlacement(sd.box, size, !fit)
@@ -177,7 +189,7 @@ export function SpriteImg({
           alt={alt ?? species?.name ?? `#${dex}`}
           width={size}
           height={size}
-          loading="lazy"
+          loading={hero ? 'eager' : 'lazy'}
           decoding="async"
           draggable={false}
           onLoad={() => setState({ key, step, loaded: true })}

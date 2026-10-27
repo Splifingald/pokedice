@@ -91,7 +91,7 @@ export function DoublePlates({
   const { t } = useT()
   return (
     <>
-      <div className="absolute left-1.5 top-1.5 flex w-[46%] flex-col gap-1">
+      <div className="absolute left-1.5 top-[calc(var(--strip,0px)+6px)] flex w-[46%] flex-col gap-1">
         {foes.map((b) => (
           <MiniPlate key={b.uid} b={b} hp={hpOf(b)} foe front={b.uid === frontFoe} fainted={faintedOf(b)} />
         ))}

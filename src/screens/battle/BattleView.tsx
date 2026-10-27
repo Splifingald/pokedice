@@ -117,8 +117,8 @@ function MatchupPopup({ b, side, onClose }: { b: Battler; side: Side; onClose: (
         role="dialog"
         aria-label={t('ui.types.tap', { name: b.name })}
         className={cx(
-          'pixel-panel absolute inset-x-2 z-30 max-h-[calc(100%-1rem)] overflow-y-auto p-2',
-          side === 'enemy' ? 'top-2' : 'bottom-2',
+          'pixel-panel absolute inset-x-2 z-30 max-h-[calc(100%-1rem-var(--strip,0px))] overflow-y-auto p-2',
+          side === 'enemy' ? 'top-[calc(var(--strip,0px)+0.5rem)]' : 'bottom-2',
         )}
       >
         <div className="mb-1 flex items-center gap-2">
@@ -956,7 +956,13 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   const stage = (
     // The stage keeps its 3:2 picture (the user's call, 2026-10-27: no sky added above it).
-    <div ref={stageBox} className="relative shadow-ledge">
+    // The round's strip lies along its top edge: --strip moves the plates under it (the user, 2026-10-27: it hid the
+    // top of the foe's plate).
+    <div
+      ref={stageBox}
+      className="relative shadow-ledge"
+      style={{ '--strip': !versus && !run.rebattle ? '14px' : '0px' } as CSSProperties}
+    >
       {!versus && !run.rebattle && <RunRoundGauge strip className="absolute inset-x-0 top-0 z-30" />}
       {/* Each new fight opens on its own beat (docs/42). */}
       {!versus && <EncounterSwipe />}

@@ -2,6 +2,7 @@
 // unlocked it, the time left, the tries, a CAUGHT stamp once it's caught, and START right under it.
 import { useState, type ReactNode } from 'react'
 import {
+  raidOverhaulOn,
   ballBonus,
   catchChance,
   catchValueOf,
@@ -39,7 +40,8 @@ import { ProgressRaidList } from './ProgressRaidList'
 import { ProgressRaidPanel, ProgressRaidStage, progressRaidLook } from './ProgressRaidScreen'
 import { EventDock } from './layout'
 import { RaidNpcPicker } from './RaidNpcPicker'
-import { RaidRulesPanel } from './RaidRules'
+import { RaidRulesPanel, raidOverhaulRows } from './RaidRules'
+import { RuleList } from '@/components/RulesModal'
 import { RaidGroupSection, RaidTeamSection } from './RaidSetup'
 import { EventInfo, raidDate, raidDateParts } from './shared'
 import { cx } from '@/theme/util'
@@ -72,10 +74,13 @@ export function RaidCard({
   kind = 'daily',
   portal = false,
   nightmare = false,
+  plated = false,
 }: {
   raid: TodayRaid
   msLeft: number | null
   kind?: RaidKindOf
+  /** Its page's title plate (back, the raid, where) lies on its top left: the area's name is in it. */
+  plated?: boolean
   /** Giratina's raid in an area in portal mode (docs/15 §27): on the Distortion World, distorted. */
   portal?: boolean
   /** Darkrai's raid in an area in nightmare mode (docs/15 §29): under the full moon. */
@@ -97,13 +102,16 @@ export function RaidCard({
         className="pointer-events-none absolute inset-0"
         style={{ background: 'radial-gradient(circle at 50% 58%, #ffbe2e55 0 22%, transparent 48%), linear-gradient(#f2553f20, #24304fa0)' }}
       />
-      {area && (
+      {area && !plated && (
         <span className="absolute left-2 top-2 bg-panel/90 px-1.5 pb-0.5 font-pixel-sm text-[16px] text-ink shadow-ring-line">{area.name}</span>
       )}
       {/* Its catch value, to get the balls ready before the fight: a number for the invested (More details). */}
       {details && (
         <span
-          className="absolute left-2 top-[34px] flex items-center gap-1 bg-paper/95 px-1.5 pb-0.5 text-[16px] text-ink shadow-ring-line"
+          className={cx(
+            'absolute flex items-center gap-1 bg-paper/95 px-1.5 pb-0.5 text-[16px] text-ink shadow-ring-line',
+            plated ? 'right-2 top-2' : 'left-2 top-[34px]',
+          )}
           title={statHint('catch')}
         >
           <PixelIcon name="ball" size={14} />
@@ -391,7 +399,12 @@ function DailyRaidPanel({ raid }: { raid: TodayRaid }) {
         )}
         <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
           {day ? <RaidCalendar today={raid} day={day} /> : <span />}
-          <EventInfo id="raid" compact />
+          {/* How a raid's own rules work rides with the raids' INFO (the raid pages lost their book, 2026-10-27). */}
+          <EventInfo
+            id="raid"
+            compact
+            extra={raidOverhaulOn(data) ? <RuleList rules={raidOverhaulRows(t)} /> : undefined}
+          />
         </div>
       </EventDock>
       {offer && (

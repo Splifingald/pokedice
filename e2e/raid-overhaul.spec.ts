@@ -61,24 +61,30 @@ test('the overhaul’s rules on the Raids page until GOT IT, never a pop-up ther
     .toBe(true)
 })
 
-test('a legendary raid lists its own rules, folded; the book shows the overhaul’s rules again', async ({ page }) => {
+test('a legendary raid lists its own rules, always open, with no book; the Raids page’s INFO shows the overhaul’s rules again', async ({
+  page,
+}) => {
   // Read already (a page load seeds the save afresh, so the flag comes with it).
   await boot(page, kantoSave({ raidRulesSeen: true }))
   await page.goto(`/raid/${areaId('Seafoam Islands')}/144`)
   const rules = page.getByRole('region', { name: 'This raid' })
-  // Folded on the page (docs/43 §5.11): its summary opens it.
-  await rules.getByText('This raid').click()
+  // Open on the page (the user's call, 2026-10-27), nothing to unfold.
   await expect(rules.getByText('Lv.50', { exact: true })).toBeVisible()
   await expect(rules.getByText('Snow', { exact: true })).toBeVisible()
   await expect(rules.getByText('Its last bar')).toBeVisible()
   await expect(rules.getByText('Gains dice: Ice')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'How raids work now' })).toHaveCount(0)
   const axe = await new AxeBuilder({ page }).include('section[aria-labelledby="raid-rules-title"]').analyze()
   expect(axe.violations).toEqual([])
-  // INFO (the book) shows the overhaul's rules again, in their pop-up.
-  await rules.getByRole('button', { name: 'How raids work now' }).click()
-  const info = page.getByRole('dialog', { name: 'Raids, now' })
+  // No banner over the card: the plate (back, the kicker) lies on the card, Articuno in its middle.
+  await expect(page.getByRole('heading', { name: 'Legendary raid', level: 1 })).toBeVisible()
+  await expect(page.getByRole('img', { name: 'Articuno' })).toBeVisible()
+  // The Raids page's INFO carries the overhaul's rules after the raids' own.
+  await page.goto('/events/raid')
+  await page.getByRole('button', { name: 'Info: how Raid Battles works' }).click()
+  const info = page.getByRole('dialog', { name: 'Raid Battles' })
   await expect(info.getByText('Learn its pattern')).toBeVisible()
-  await page.getByRole('button', { name: 'OK', exact: true }).click()
+  await info.getByRole('button', { name: 'OK', exact: true }).click()
   await expect(info).toHaveCount(0)
 })
 
@@ -86,7 +92,6 @@ test("Mewtwo's raid fights at its own level: the NPC partners come at Lv.70", as
   await boot(page, kantoSave({ raidRulesSeen: true }))
   await page.goto(`/raid/${areaId('Cerulean Cave')}/150`)
   const rules = page.getByRole('region', { name: 'This raid' })
-  await rules.getByText('This raid').click()
   await expect(rules.getByText('Lv.70', { exact: true })).toBeVisible()
   await expect(rules.getByText('Combo shield')).toBeVisible()
   await expect(rules.getByText('Charged attack')).toBeVisible()

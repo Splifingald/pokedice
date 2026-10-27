@@ -411,6 +411,18 @@ Today ~28 one-time pop-ups take turns (`PopupQueue`). This pass:
 | The round's strip: thicker, an icon on the Pokémon Centers | 14 px (20 px on the page's gauge), a heart on each Center's segment, met or still to come |
 | No self-pressing buttons | Every `AutoButton` (GO!, CATCH/CONTINUE, TRY AGAIN, LET'S GO, an evolution…) and the result's NEXT wait for the tap; they press themselves only while auto-mode or Idle mode plays the area |
 
+### The second round (2026-10-27)
+
+| Feedback | Done |
+|---|---|
+| The fight: the round's strip hid the top of the foe's plate | The plates (and the matchups pop-up) start under the strip (`--strip` on the stage) |
+| The round's gauge should say where you are | The card being played is white on the strip; the next has a white edge on the page's gauge; met gold (green once cleared), the rest grey |
+| A Pokémon's sheet: no line under TRADE | Gone; a line stays only when it can't be listed, saying why |
+| Home's banner: the round's steps across its width, grey ahead, the levels top right | `RoundGauge banner` under the name, the levels in the top right corner |
+| The raid page: no banner over the card, the back on the picture; the Pokémon in the middle | The plate lies on the card; big sprites load at once and move on to the local sprite when a request hangs (`SPRITE_PATIENCE_MS`, the card and the canvas's) |
+| The raid page: no book, "This raid" always open | Done; the overhaul's rows ride with the Raids page's INFO |
+| Upgrades: the price as a tall column read oddly | The price is a row at the card's foot, as the Buy tab's |
+
 ## 8. Not in this pass
 
 | Left | Why |

@@ -322,7 +322,7 @@ function SendOnPanel({ inst, onSent }: { inst: PokemonInstance; onSent: () => vo
                 : t('ui.sheet.sendOnPick', { name, n: inst.level })}
         </p>
       )}
-      {trade && <p className="copy text-base text-muted">{trade.note}</p>}
+      {trade?.note && <p className="copy text-base text-muted">{trade.note}</p>}
     </section>
   )
 }

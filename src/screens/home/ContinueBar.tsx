@@ -36,6 +36,7 @@ import { cx } from '@/theme/util'
 import { progressRaidPath } from '../events/progressRaids'
 import { ShinyParadeChip, useParadeLabel } from '../events/live'
 import { levelText, useLevelSpan } from './AreaPlate'
+import { RoundGauge } from '@/screens/area/RoundGauge'
 
 /** The run must be in this area before anything is rolled: arriving from another one starts it afresh. */
 function ensureRun(area: Area) {
@@ -320,6 +321,8 @@ export function AreaButton({
 }) {
   const { t } = useT()
   const save = useGame((s) => s.save)!
+  // The round's own steps when the encounters are dealt from a deck (the area's gauge), its rounds as pips otherwise.
+  const steps = useGame((s) => s.data.config.showRoundGauge && s.data.config.encounterMode === 'deck')
   const p = progressOf(save, area.id)
   const span = useLevelSpan(area)
   const need = area.roundsToClear || null
@@ -359,21 +362,22 @@ export function AreaButton({
           <ShinyParadeChip area={area} />
           {/* A new region on offer has its notice on Home; the button only says so to screen readers. */}
           {!heldWhy && areasState === 'new' && <NewTag />}
+          {/* The levels in the top right corner, the round's steps across the width under them (the user, 2026-10-27). */}
+          <span className="whitespace-nowrap font-pixel-sm text-[16px] leading-none text-muted">{levels}</span>
         </span>
-        <span className="flex min-w-0 items-center gap-2.5">
-          {need != null ? (
-            <>
-              <RoundPips need={need} done={done} className="max-w-[180px] flex-1" />
-              {/* The pips in words too: colour is never alone. */}
-              <span className="whitespace-nowrap font-pixel-sm text-[16px] leading-none tabular-nums" aria-hidden>
-                {done}/{need}
-              </span>
-            </>
-          ) : (
-            <span className="truncate font-pixel-sm text-[16px] leading-none text-muted">{rounds}</span>
-          )}
-          <span className="ml-auto whitespace-nowrap font-pixel-sm text-[16px] leading-none text-muted">{levels}</span>
-        </span>
+        {need != null && steps ? (
+          <RoundGauge area={area} progress={p} banner />
+        ) : need != null ? (
+          <span className="flex min-w-0 items-center gap-2.5">
+            <RoundPips need={need} done={done} className="flex-1" />
+            {/* The pips in words too: colour is never alone. */}
+            <span className="whitespace-nowrap font-pixel-sm text-[16px] leading-none tabular-nums" aria-hidden>
+              {done}/{need}
+            </span>
+          </span>
+        ) : (
+          <span className="truncate font-pixel-sm text-[16px] leading-none text-muted">{rounds}</span>
+        )}
       </span>
     </button>
   )

@@ -6,6 +6,7 @@ import {
   showdownView,
   SPRITE_CANVAS,
   SPRITE_METRICS,
+  SPRITE_PATIENCE_MS,
   spriteUrlFor,
 } from '@/components/SpriteImg'
 import itemSheet from '@/assets/item-icons.png'
@@ -120,20 +121,27 @@ export function loadSprite(dex: number, back: boolean, shiny = false): Promise<s
     const img = new Image()
     let fallback = false
     img.onload = () => {
+      window.clearTimeout(wait)
       frames.set(key, crop(img, s, fallback))
       res(key)
     }
-    img.onerror = () => {
+    let wait = 0
+    const next = () => {
+      window.clearTimeout(wait)
       if (!fallback && s.fallback) {
         fallback = true
         img.src = s.fallback
+        wait = window.setTimeout(next, SPRITE_PATIENCE_MS)
       } else {
         // Nothing came (a phone dropping a request): forget the try, so the next call asks again.
         loading.delete(key)
         res(key)
       }
     }
+    img.onerror = next
     img.src = s.url
+    // A request left hanging (neither loaded nor failed) moves on to the local sprite too.
+    wait = window.setTimeout(next, SPRITE_PATIENCE_MS)
   })
   loading.set(key, p)
   return p

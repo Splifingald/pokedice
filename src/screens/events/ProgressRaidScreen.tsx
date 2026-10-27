@@ -3,7 +3,7 @@
 // its area's picture as the stage; the panel — the lock or what's done, your team for it (from its region's Box, left
 // on it for your friends), your group, this raid's rules folded — with START pinned at its foot. On PC the Raids page
 // docks the same panel beside its list (`ProgressRaidPanel`). Giratina's and Darkrai's wear their worlds.
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
   getRegion,
@@ -22,7 +22,6 @@ import {
   type RaidNpcOption,
   type TodayRaid,
 } from '@/engine'
-import { AreaStrip } from '@/components/AreaStrip'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { useT } from '@/i18n/react'
@@ -83,12 +82,28 @@ export function progressRaidLook(data: GameData, raid: ProgressRaid, caught: boo
 }
 
 /** A progression raid's card on its area, in its world. */
-export function ProgressRaidStage({ raidKey }: { raidKey: string }) {
+export function ProgressRaidStage({ raidKey, plate }: { raidKey: string; plate?: ReactNode }) {
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)!
   const raid = progressRaidOf(data, raidKey)!
   const look = progressRaidLook(data, raid, progressRaidState(save, data, raid) === 'done')
-  return <RaidCard raid={look.card} msLeft={null} kind="progress" portal={look.portal} nightmare={look.nightmare} />
+  const card = (
+    <RaidCard
+      raid={look.card}
+      msLeft={null}
+      kind="progress"
+      portal={look.portal}
+      nightmare={look.nightmare}
+      plated={!!plate}
+    />
+  )
+  if (!plate) return card
+  return (
+    <div className="relative">
+      {card}
+      {plate}
+    </div>
+  )
 }
 
 /**
@@ -272,14 +287,11 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
             <PortalRaidBanner className={bannerH}>{plate}</PortalRaidBanner>
           ) : nightmare ? (
             <NightmareRaidBanner className={bannerH}>{plate}</NightmareRaidBanner>
-          ) : (
-            <div className={cx('relative overflow-hidden bg-night leading-[0] shadow-[0_2px_0_rgb(var(--c-edge))]', bannerH)}>
-              <AreaStrip area={area} h={132} className="h-full w-full" />
-              {plate}
-            </div>
-          )
+          ) : // Any other raid has no banner: its card is already the area's picture, and the plate lies on it (the
+          // user's call, 2026-10-27).
+          undefined
         }
-        stage={<ProgressRaidStage raidKey={raidKey} />}
+        stage={<ProgressRaidStage raidKey={raidKey} plate={portal || nightmare ? undefined : plate} />}
         panel={<ProgressRaidPanel raidKey={raidKey} />}
       />
     </div>
