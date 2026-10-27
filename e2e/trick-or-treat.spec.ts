@@ -213,15 +213,10 @@ test('a 360 × 640 phone: the stage, the gauge and both buttons fit, nothing scr
     expect(box!.y + box!.height).toBeLessThanOrEqual(640)
     if (!name.endsWith('gauge')) expect(box!.height).toBeGreaterThanOrEqual(44)
   }
-  // The stage on top, as wide as the screen, as the battle's: its frame from the top (the sky over the 3:2 grid where
-  // the phone has room, docs/43 §5.3), the grid at the frame's foot, right over the panel.
+  // The stage on top, as wide as the screen, as the battle's: its 3:2 picture from the top (no sky added over it).
   const stage = await page.getByRole('img', { name: /floats over the area/ }).boundingBox()
-  const frame = await page.evaluate(() => {
-    const r = document.querySelector('[data-stage-sky]')!.parentElement!.parentElement!.getBoundingClientRect()
-    return { top: r.top, bottom: r.bottom }
-  })
-  expect(frame.top).toBeLessThan(4)
-  expect(Math.abs(stage!.y + stage!.height - frame.bottom)).toBeLessThan(2)
+  expect(stage!.y).toBeLessThan(4)
+  expect(Math.abs(stage!.height - (stage!.width * 2) / 3)).toBeLessThan(4)
   expect(stage!.width).toBeGreaterThanOrEqual(355)
   // INFO at the foot, still on screen.
   const info = await page.getByRole('button', { name: /Info/ }).last().boundingBox()

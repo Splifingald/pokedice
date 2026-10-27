@@ -81,7 +81,13 @@ test('a phone: the area\'s banner on the scene, the scene at 70 %, CONTINUE pinn
   await expect(scene.getByRole('img')).toBeVisible()
   const button = areaButton(page, area.name)
   const go = page.getByRole('button', { name: 'CONTINUE', exact: true })
-  const sceneBox = (await scene.boundingBox())!
+  // The scene's box: the frame around the picture that crops it (it bleeds up under the top bar's edge on a phone).
+  const sceneBox = await button.evaluate((el) => {
+    let box = el.parentElement!
+    while (getComputedStyle(box).overflow !== 'hidden') box = box.parentElement!
+    const r = box.getBoundingClientRect()
+    return { y: r.top, width: r.width, height: r.height }
+  })
   const buttonBox = (await button.boundingBox())!
   const goBox = (await go.boundingBox())!
   expect(buttonBox.y).toBeGreaterThanOrEqual(sceneBox.y - 1)
