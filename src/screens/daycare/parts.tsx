@@ -360,7 +360,7 @@ export function RushBarView({
           {/* The button stays gold in both themes, so the "short" red is a fixed one that reads on gold. */}
           <span
             className={cx(
-              'inline-flex items-center gap-1 font-pixel-sm text-[0.625em] leading-none',
+              'inline-flex items-center gap-1 font-pixel-sm text-[max(16px,0.625em)] leading-none',
               short > 0 && 'text-[#9b2416]',
             )}
           >
