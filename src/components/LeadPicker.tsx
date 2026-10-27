@@ -51,7 +51,10 @@ export function LeadPicker({
   }
   return (
     <div>
-      {!go && <div className="mb-1 text-lg text-muted">{t(pair ? 'ui.lead.sendOutTwo' : 'ui.lead.sendOut')}</div>}
+      {/* A pair is two picks: said, even on the send-out's cards. */}
+      {(!go || pair) && (
+        <div className="mb-1 text-lg text-ink">{t(pair ? 'ui.lead.sendOutTwo' : 'ui.lead.sendOut')}</div>
+      )}
       <ul className="grid grid-cols-3 gap-1.5 sm:gap-2">
         {team.map((p) => {
           const species = data.species[p.dex]

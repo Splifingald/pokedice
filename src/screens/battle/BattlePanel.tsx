@@ -21,7 +21,7 @@ import { DiceSet } from '@/components/DiceSet'
 import { Die } from '@/components/Die'
 import { PixelIcon } from '@/components/icons'
 import { HpBar } from '@/components/HpBar'
-import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
+import { MiniSprite } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { planScore, scoreLength, type ScoreBeat } from '@/fx/dice/score'
 import { useT } from '@/i18n/react'
@@ -549,70 +549,6 @@ export function TeamPips({
   )
 }
 
-/**
- * Wide screens: the team as a column of cards (sprite, name, level, HP), the same choices as the pips — tap one to send
- * it in; after a K.O. the ones that can go out pulse.
- */
-export function TeamColumn({
-  team,
-  activeUid,
-  hpOf,
-  canSwitch,
-  calling,
-  onPick,
-}: {
-  team: Battler[]
-  activeUid: string
-  hpOf: (b: Battler) => number
-  canSwitch: boolean
-  calling: boolean
-  onPick: (b: Battler) => void
-}) {
-  const { t } = useT()
-  const reduced = useGame((s) => s.settings.reducedMotion)
-  return (
-    <div role="group" aria-label={t('ui.battle.switchGroup')} className="flex flex-col gap-2">
-      {team.map((b) => {
-        const hp = hpOf(b)
-        const active = b.uid === activeUid
-        const out = hp <= 0
-        const open = canSwitch && !active && !out
-        return (
-          <button
-            key={b.uid}
-            type="button"
-            onClick={open ? blip(() => onPick(b)) : undefined}
-            aria-disabled={!open}
-            aria-label={
-              out
-                ? t('ui.battle.pipFainted', { name: b.name })
-                : t(active ? 'ui.battle.pipActive' : 'ui.battle.pipSwitch', { name: b.name, hp, max: b.maxHp })
-            }
-            className={cx(
-              'flex w-full items-center gap-2 p-1.5 text-left',
-              active ? 'bg-gold-pale shadow-card-gold' : 'bg-paper shadow-ring',
-              out && 'opacity-55 grayscale',
-              !open && 'cursor-default',
-              calling && open && !reduced && 'bt-call',
-            )}
-          >
-            <SpriteImg dex={b.dex} size={80} shiny={b.shiny} className="-my-2 shrink-0" />
-            <span className="flex min-w-0 flex-1 flex-col gap-1">
-              <span className="flex items-baseline justify-between gap-1">
-                <b className="truncate text-[19px] font-normal leading-none">{b.name}</b>
-                <span className="shrink-0 font-pixel-sm text-[16px] leading-none">
-                  {t('ui.common.level.short', { n: b.level })}
-                </span>
-              </span>
-              <HpBar hp={hp} max={b.maxHp} height={8} />
-            </span>
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
 /** The button blip before the action, as a PixelButton plays it: the pips and the Bag aren't PixelButtons (docs/38). */
 function blip(act: () => void) {
   return () => {
@@ -625,10 +561,13 @@ function blip(act: () => void) {
 export function BagButton({
   disabled,
   title,
+  keys,
   onClick,
 }: {
   disabled: boolean
   title?: string
+  /** Its keyboard shortcut, said to screen readers (the battle's B). */
+  keys?: string
   onClick: () => void
 }) {
   const { t } = useT()
@@ -637,6 +576,7 @@ export function BagButton({
       type="button"
       disabled={disabled}
       title={title}
+      aria-keyshortcuts={keys}
       onClick={blip(onClick)}
       className="inline-flex min-h-[48px] items-center gap-1.5 bg-paper py-1 pl-2 pr-3 text-[18px] leading-none text-ink shadow-card disabled:opacity-50"
     >
@@ -711,5 +651,36 @@ export function ZMoveButton({ hint, disabled, onClick }: { hint: string; disable
     >
       <PixelIcon name="sword" size={14} /> {t('ui.battle.zMove')}
     </PixelButton>
+  )
+}
+
+/**
+ * The battle's keys, shown discreetly on a computer (docs/43 §5.3): a line of key chips at the panel's foot, faint until
+ * the pointer or the focus is in the panel, always there with More details. Not on phones (no keyboard). The buttons
+ * carry the same keys as `aria-keyshortcuts`, so the line itself is only for the eye.
+ */
+export function KeyHints({ keys, className }: { keys: readonly (readonly [string, string])[]; className?: string }) {
+  // More details' own flag, read straight from the store (the hooks module pulls the canvas code into tests).
+  const details = useGame((s) => s.settings.details === true)
+  if (!keys.length) return null
+  return (
+    <p
+      aria-hidden
+      data-key-hints
+      className={cx(
+        'm-0 hidden flex-wrap items-center justify-center gap-x-3 gap-y-1 font-pixel-sm text-[16px] leading-none text-ink transition-opacity duration-150 lg:flex',
+        details ? 'opacity-100' : 'opacity-0 group-focus-within/panel:opacity-100 group-hover/panel:opacity-100',
+        className,
+      )}
+    >
+      {keys.map(([key, what]) => (
+        <span key={key} className="inline-flex items-center gap-1 whitespace-nowrap">
+          <kbd className="min-w-[22px] bg-paper px-1 py-0.5 text-center font-pixel-sm text-[16px] leading-none shadow-ring">
+            {key}
+          </kbd>
+          {what}
+        </span>
+      ))}
+    </p>
   )
 }
