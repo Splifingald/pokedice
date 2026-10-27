@@ -348,21 +348,37 @@ Each entry: before (from the audit), after on a phone, after on PC, and what was
 
 See §7.
 
-## 6. Tap counts
+## 6. Tap counts and the measures, before → after
 
 | Task | Before | After |
 |---|---|---|
-| Home → dice (wild) | 1 | 1 |
-| Home → dice (trainer) | 2 (CONTINUE, GO!) | 2 (GO! is the decision) |
+| Home → dice (wild / trainer) | 1 / 2 | 1 / 2 (GO! is the decision) |
 | Between encounters (non-decision taps) | 0 | 0 |
-| Buy a Poké Ball | 3 (Shop, row, BUY) | 2 (Mart, its price) |
-| Buy an upgrade | 2 | 2 |
-| Leaderboard | 1 (cup) | 1 (Social) |
-| Friends | 3 (you, Friends) — 2 | 1 (Social, Friends) |
-| Trades | 2 (you, Trades) | 2 (Social, Trades) |
-| Versus | 1 (its square, once open) | 1 |
-| A Pokémon's details (PC) | 2 (Team, the card) | 1 (Team: the lead is open) |
-| Settings | 2 | 2 |
+| First ATTACK from Home (loop script, early save) | 8.2 s | 6.6 s |
+| Buy a Poké Ball | 3 (Shop, row, BUY) | 2 (the gold, its price) |
+| Buy ×5 | 4 | 3 |
+| Buy an upgrade | 2 | 2 (the Mart's tab opens on Upgrades while one is affordable) |
+| The leaderboard / Versus | 1 / 1 | 1 / 1 (Social) |
+| Friends / Trades | 2 (you, the row) | 1–2 (Social, the view) |
+| Add a friend | 2 (ADD BY ID, ADD) | 1 (ADD in the page) |
+| A Pokémon's details on PC (the lead / the next) | 2 / 2 | 0 / 1 |
+| A Pokédex entry on PC (one / the next) | 2 / 2 | 1 / 1 (or an arrow) |
+| A modal to dismiss on arriving Home (late save) | 1 | 0 |
+| A feature opening (its rules) | 1 forced modal | 0 (a notice; its page's card) |
+| The Game Corner with nothing to skip | 1 | 0 |
+| Title → first dice | 3 | 3 (PICK kept: the partner is for good) |
+
+| Measure (390×844 unless said) | Before | After |
+|---|---|---|
+| Text under 16 px, Home / Team / Mart / Pokédex | 11 / 73 / 42 / 328 | 1 / 29 / 1 / 1 (only 14 px tags: "9+", the Box's levels) |
+| Pokédex page height (390 / 360) | 5.3 / 9.1 screens | 3.2 / 4.2 |
+| How to play (390 / 360) | 8.3 / 11.9 screens | 1.3 / 1.8 |
+| Team (late) at 390 / 360 | 2.8 / 4.6 | 2.3 / 3.8 |
+| Raids at 390 | 2.1, 47 small texts | 1.6, 1 |
+| Content width on PC (Team, Mart, Settings, Friends, the board, Versus) | 672–768 px of 1152 | the whole 1192 px main, in columns or a docked pane |
+| axe serious/critical, all toured screens and sizes | 2 (the tab's red dot) | 0 |
+| Pop-ups opening on arrival (late save) | Support me | none |
+| The battle at 390×844 | ~200 px between the stage and the dice | none: the stage's sky fills it |
 
 ## 7. Pop-ups
 
@@ -381,4 +397,12 @@ Today ~28 one-time pop-ups take turns (`PopupQueue`). This pass:
 
 ## 8. Not in this pass
 
-Listed in the PR with each screen's before/after; anything left is written here as it is found.
+| Left | Why |
+|---|---|
+| Two `StagePanel`s (the area's, with no tab bar, and the events') | The same shape, two docks (over the home indicator in an area, over the tab bar elsewhere); one component is the next step |
+| A double battle's preview before the fight | Moving it into the fight's send-out needs the run's pair send-out (`store/run.ts`) |
+| The Dice Types view on a phone is long (17 cards) | Its cards are one each; a fold by "carried by your team" is the next idea |
+| The docked item detail on PC doesn't take the focus or close on Esc | The pane isn't a dialog; a keyboard reaches it by Tab |
+| A friend's card keeps its stats grid | Only your own card was made compact |
+| The rules pop-up components of the features that moved to cards (`VersusUnlockPopup`, `TradesUnlockPopup`, …) | Still exported, never queued (`RetiredPopup`): removed once nothing imports them |
+| The Center on a phone, a small Box: room under it | The user's rule folds the healing away; the scene stays off |
