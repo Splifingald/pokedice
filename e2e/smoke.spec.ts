@@ -25,7 +25,10 @@ test('new game → first battle → win', async ({ page }) => {
   // LET'S GO! waits for the tap (no button presses itself, 2026-10-27), then the first area.
   await page.getByRole('button', { name: /^let's go/i }).click()
   await expect(page).toHaveURL(/\/area$/)
-  await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeVisible()
+  // Every round opens with its Pokémon Center, even at full HP (the user's call, 2026-10-27): CONTINUE moves on.
+  await expect(page.getByText('Pokémon Center', { exact: true })).toBeVisible({ timeout: 15_000 })
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeVisible({ timeout: 20_000 })
 
   // The fight to its end; the result shows in the battle's panel, NEXT and BACK at its foot.
   const next = page.getByRole('button', { name: 'Next ▸', exact: true })
