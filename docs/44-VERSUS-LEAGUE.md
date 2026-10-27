@@ -101,8 +101,9 @@ Migration `0082_versus_league.sql`.
   - The result card: VICTORY! / DEFEAT, the trophies won or lost (+6 🏆), "You have 46 trophies." (or "Below 100
     trophies, a loss costs you nothing."); if the result couldn't be sent, it says the match counts as left.
 - **Home's Versus card** shows your trophies and your rank in place of the wins.
-- **Monday**: the week's gift message ("Your Versus league week": "You finished #2 of 20 in your group with 152
-  trophies. Here are your rewards."), opened like every gift.
+- **Monday**: the week's gift message, opened like every gift. Its pop-up is the league's own, not the developer's:
+  "Your Versus league week", "Your place in your group and your rewards…", then the message signed **Versus league**
+  ("You finished #2 of 20 in your group with 152 trophies. Here are your rewards.") and OPEN THE GIFT.
 - **The Raid Ball** in raid catches and on a raid's odds; its own picture (`public/items/raid-ball.png`) and a pink and
   gold trail on its throw.
 

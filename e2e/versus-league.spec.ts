@@ -199,3 +199,59 @@ test('a match: recorded as it starts, fought (here on AUTO, no Bag), its result 
   await page.getByRole('button', { name: 'BACK TO VERSUS' }).click()
   await expect(page.getByRole('button', { name: 'Fight Blue' })).toBeVisible()
 })
+
+test("Monday: the week's rewards pop up as the league's, in its own words, and open as a gift", async ({
+  page,
+}) => {
+  const gifts = [
+    { kind: 'gold', amount: 169, region: 'current' },
+    { kind: 'item', key: 'raid-ball', qty: 2, region: 'current' },
+  ]
+  await mockSupabase(page, {
+    rpc: {
+      my_feedback: [
+        {
+          id: 9001,
+          created_at: new Date().toISOString(),
+          title: 'versus_league',
+          message: '',
+          reply: `@versus_league:${JSON.stringify({ week: '2026-10-19', rank: 2, trophies: 169, size: 20 })}`,
+          replied_at: new Date().toISOString(),
+          reply_seen: false,
+          from_admin: true,
+          gifts,
+          gifts_claimed: false,
+        },
+      ],
+      feedback_claim_gifts: [{ id: 9001, gifts }],
+    },
+  })
+  await page.addInitScript(
+    ([key, session, s, f, cfg]) => {
+      localStorage.setItem(key!, session!)
+      localStorage.setItem('pokedice.save', s!)
+      localStorage.setItem('pokedice.settings', f!)
+      localStorage.setItem('pokedice.devConfig', cfg!)
+    },
+    [
+      STORAGE_KEY,
+      JSON.stringify(fakeSession()),
+      JSON.stringify({ ...readySave(), versusLeagueRulesSeen: true, gifts: { done: [], rulesSeen: true } }),
+      FAST,
+      JSON.stringify({ ...EVENTS_ON, versusLeague: { access: 'all' }, gifts: { access: 'all' } }),
+    ],
+  )
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/home')
+  const popup = page.getByRole('dialog', { name: 'Your Versus league week' })
+  await expect(popup).toBeVisible({ timeout: 20_000 })
+  await expect(popup.getByText('Your place in your group and your rewards.', { exact: false })).toBeVisible()
+  await expect(
+    popup.getByText('You finished #2 of 20 in your group with 169 trophies.', { exact: false }),
+  ).toBeVisible()
+  // Not the developer's words.
+  await expect(page.getByText('A message from the developer!')).toHaveCount(0)
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/league-reward-popup.png` })
+  await popup.getByRole('button', { name: /open the gift/i }).click()
+  await expect(page.getByText('Raid Ball', { exact: true }).first()).toBeVisible({ timeout: 20_000 })
+})
