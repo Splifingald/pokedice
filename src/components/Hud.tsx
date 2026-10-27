@@ -184,8 +184,11 @@ function AreaTitle() {
   const { t } = useT()
   const inArea = useLocation().pathname === '/area'
   const area = useGame((s) => (s.run.rebattle ? undefined : s.data.areas.find((a) => a.id === s.run.areaId)))
-  const progress = useGame((s) => (s.save && area ? progressOf(s.save, area.id) : null))
-  if (!inArea || !area || !progress) return <span className="flex-1" />
+  // The save itself, not progressOf's result: that is a fresh object for an area not played yet, and a selector
+  // returning a new object every time re-renders forever (React #185).
+  const save = useGame((s) => s.save)
+  if (!inArea || !area || !save) return <span className="flex-1" />
+  const progress = progressOf(save, area.id)
   const need = area.roundsToClear || 0
   const done = progress.cleared || (need > 0 && (progress.roundsDone ?? 0) >= need)
   const round = Math.min((progress.roundsDone ?? 0) + 1, need)
