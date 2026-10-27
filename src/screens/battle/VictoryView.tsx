@@ -232,6 +232,17 @@ export function DexRegisteredCard({ dex }: { dex: number }) {
   )
 }
 
+/** A League battle won with another still to fight: the team was healed for it (docs/42). */
+export function LeagueHealedCard() {
+  const { t } = useT()
+  return (
+    <div className="flex items-center justify-center gap-2 bg-sky p-2 text-center shadow-ring">
+      <PixelIcon name="heal" size={24} className="shrink-0" />
+      <span className="text-xl leading-tight">{t('ui.victory.leagueHealed')}</span>
+    </div>
+  )
+}
+
 /** A secret area a catch or a win opened: on the Map now. */
 export function SecretAreaCard({ name }: { name: string }) {
   const { t } = useT()
@@ -311,7 +322,7 @@ interface MonRecap {
  * A recap card and its sound as it appears; with the Game feel switch on, `feel` in its place (null: none, the card
  * makes its own).
  */
-type Extra = { key: string; node: ReactNode; sound?: 'levelup' | 'catch' | 'gold'; feel?: FeelSound | null }
+type Extra = { key: string; node: ReactNode; sound?: 'levelup' | 'catch' | 'gold' | 'heal'; feel?: FeelSound | null }
 
 function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evolutions: EvolutionShow[] } {
   const data = useGame((s) => s.data)
@@ -454,6 +465,9 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
         case 'world_mythical':
           // A small world's shiny mythical (docs/21): gone home to its region's Box, or waiting for it.
           extras.push({ key: k, sound: 'catch', node: <WorldMythicalCard dex={e.dex} region={e.region} waiting={e.waiting} /> })
+          return
+        case 'league_healed':
+          extras.push({ key: k, sound: 'heal', node: <LeagueHealedCard /> })
           return
         case 'rebattle_cleared':
           extras.push({

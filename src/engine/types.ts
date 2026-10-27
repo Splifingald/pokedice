@@ -987,6 +987,11 @@ export interface GameConfig {
   /** The shiny Pokédex (docs/39): each region's, once its league is beaten. Display only. Migration 0075. */
   shinyDex: { access: EventAccess }
   /**
+   * The League heals the team between its battles (docs/42): each one won with another still to fight heals as a
+   * Pokémon Center would. Migration 0081 inserts the same row.
+   */
+  leagueHeal: { access: EventAccess }
+  /**
    * The Unown Pokédex (docs/41): the 28 letters, once an area where Unown live is opened; `reward` ₽ for the last one.
    * Migration 0080 inserts the same row.
    */
