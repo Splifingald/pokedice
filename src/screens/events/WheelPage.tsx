@@ -126,9 +126,10 @@ export function WheelPage() {
       ? t('ui.events.wheel.full')
       : t('ui.events.wheel.nextTicket', { time: countdown(tickets.msLeft) })
   return (
-    // The rays and the sparks reach past the wheel: clipped at the sides so a phone never scrolls sideways.
+    // The rays and the sparks reach past the wheel: clipped at the sides so a phone never scrolls sideways, and the
+    // rows above and below it stacked over them (`relative z-[1]`) so they never cover a button.
     <div className="mx-auto flex w-full max-w-[440px] flex-col gap-1.5 overflow-x-clip">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="relative z-[1] flex flex-wrap items-center justify-between gap-2">
         <Chip tone="dark" className="gap-1.5 text-[17px]">
           <PixelIcon name="ticket" size={20} />
           <span className="tabular-nums" aria-label={t('ui.events.wheel.ticketsLabel', { n: tickets.known ? tickets.tickets : 0, cap: tickets.known ? tickets.cap : 0 })}>
@@ -150,7 +151,7 @@ export function WheelPage() {
         <canvas ref={disc} className="ev-wheel-disc" width={288} height={288} role="img" aria-label={wheelLabel} />
         <canvas ref={fx} className="ev-wfx" aria-hidden />
       </div>
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2.2fr)] items-stretch gap-2.5">
+      <div className="relative z-[1] grid grid-cols-[minmax(0,1fr)_minmax(0,2.2fr)] items-stretch gap-2.5">
         <button type="button" className="ev-info" onClick={() => setOdds(true)} aria-label={t('ui.events.wheel.infoLabel')}>
           {t('ui.events.wheel.info')}
         </button>
@@ -170,7 +171,7 @@ export function WheelPage() {
           </PixelButton>
         )}
       </div>
-      <PixelButton disabled={!canBuy} onClick={buy}>
+      <PixelButton className="relative z-[1]" disabled={!canBuy} onClick={buy}>
         <PixelIcon name="ticket" size={20} />
         {t('ui.events.wheel.buy', { price: money(price) })}
       </PixelButton>

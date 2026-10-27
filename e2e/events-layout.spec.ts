@@ -85,6 +85,44 @@ for (const size of [
   })
 }
 
+// The wheel's rays and glow reach past it: they never take a tap, and the buttons are drawn over them, resting or
+// landed (the second pass makes the rays catch taps, so a hit on them there means they are drawn on top).
+test('nothing of the wheel covers its buttons', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 640 })
+  await boot(page)
+  await page.goto('/events/wheel')
+  await page.getByRole('dialog').getByRole('button', { name: 'OK' }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  const buttons = [
+    page.getByRole('button', { name: 'Info: every prize and its odds' }),
+    page.getByRole('button', { name: 'Spin!', exact: true }),
+    page.getByRole('button', { name: /^Buy a ticket/ }),
+  ]
+  for (const pass of ['taps', 'drawn']) {
+    if (pass === 'drawn')
+      await page.addStyleTag({
+        content: '.ev-wheel-rays, .ev-wheel::before { pointer-events: auto !important }',
+      })
+    for (const phase of ['', 'landed']) {
+      await page.evaluate((p) => document.querySelector('.ev-wheel')?.setAttribute('data-phase', p), phase)
+      for (const button of buttons) {
+        // Its corners and its middle, a few pixels in.
+        const covered = await button.evaluate((el) => {
+          el.scrollIntoView({ block: 'center' })
+          const r = el.getBoundingClientRect()
+          const xs = [r.left + 4, r.left + r.width / 2, r.right - 4]
+          const ys = [r.top + 3, r.top + r.height / 2, r.bottom - 3]
+          return xs
+            .flatMap((x) => ys.map((y) => document.elementFromPoint(x, y)))
+            .filter((hit) => !hit || !el.contains(hit))
+            .map((hit) => `${hit?.tagName}.${hit?.getAttribute('class') ?? ''}`)
+        })
+        expect(covered, `${pass}, ${phase || 'resting'}: ${await button.textContent()}`).toEqual([])
+      }
+    }
+  }
+})
+
 test('the raid calendar lists the next two weeks under its note', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 640 })
   await boot(page)

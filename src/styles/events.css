@@ -28,6 +28,7 @@
   border-radius: 50%;
   background: radial-gradient(circle, rgba(255, 214, 102, calc(0.25 + var(--spin) * 0.5)) 0 45%, transparent 70%);
   transition: background 300ms;
+  pointer-events: none;
 }
 .ev-wheel-rays {
   position: absolute;
@@ -38,6 +39,7 @@
   -webkit-mask: radial-gradient(circle, #000 35%, transparent 70%);
   mask: radial-gradient(circle, #000 35%, transparent 70%);
   animation: ev-spin 24s linear infinite;
+  pointer-events: none;
 }
 .ev-wheel[data-phase='spinning'] .ev-wheel-rays {
   animation-duration: 3s;

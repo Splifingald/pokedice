@@ -485,7 +485,9 @@ Players shouldn't have to make many requests:
 - **Stages** (a canvas scene: Home, the battle, a hatching) are a background canvas, the Pokémon as DOM `<img>`s
   (Showdown's animated sprites, no extra request) and an effects canvas on top. A stage root is its own stacking
   context (`isolate`), so its internal z-indexes never rise above sheets and dialogs. The canvas has `role="img"` and a
-  label; whatever you can tap on it (a Pokémon) also exists as a button in a hidden list.
+  label; whatever you can tap on it (a Pokémon) also exists as a button in a hidden list. Its glow, rays and sparks
+  may reach past it but never cover a control: they take no tap (`pointer-events: none`) and the rows around the stage
+  are drawn over them (`relative z-[1]`), as on the Fortune Wheel.
 
 ## 13. Lists, sheets and buying
 
