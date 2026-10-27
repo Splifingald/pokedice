@@ -508,9 +508,29 @@ export const ICONS = {
     '............',
   ],
   ...PACK_ICONS,
+  // Every check mark: a rounded green square, a thick white tick (the user's call, 2026-10-27), over the pack's tick.
+  check: [
+    '..GGGGGGGGGG..',
+    '.GGGGGGGGGGGG.',
+    'GGGGGGGGGGGGGG',
+    'GGGGGGGGGGwwGG',
+    'GGGGGGGGGwwwGG',
+    'GGGGGGGGwwwGGG',
+    'GGwwGGGwwwGGGG',
+    'GGwwwGwwwGGGGG',
+    'GGGwwwwwGGGGGG',
+    'GGGGwwwGGGGGGG',
+    'GGGGGwGGGGGGGG',
+    'GGGGGGGGGGGGGG',
+    '.GGGGGGGGGGGG.',
+    '..GGGGGGGGGG..',
+  ],
 } as const
 
 export type IconName = keyof typeof ICONS
+
+/** The check mark's green square and white tick: the same in both themes. */
+const CHECK_PAL: Record<string, string> = { G: '#24a05c', w: '#ffffff' }
 
 /** Icons drawn in their own palette rather than the shared one. */
 const OWN_PALETTE: Partial<Record<IconName, Record<string, string>>> = {
@@ -529,6 +549,7 @@ const OWN_PALETTE: Partial<Record<IconName, Record<string, string>>> = {
   kit: DIG_PAL,
   daySun: NAV_PAL,
   nightMoon: NAV_PAL,
+  check: CHECK_PAL,
 }
 
 export function PixelIcon({

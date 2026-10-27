@@ -29,6 +29,9 @@ interface Member {
  */
 /** Two taps on the same Pokémon within this long open its sheet. */
 const DOUBLE_TAP_MS = 400
+/** The scene's height when it fills a box (`fill`): its width is the box's, or more to cover the box's height. */
+const FILL_H = `max(calc(100cqw * ${H} / ${W}), 100cqh)`
+
 /** A poked Pokémon's cry (docs/38): no closer than this to the last one. */
 const CRY_GAP_MS = 2000
 
@@ -38,6 +41,7 @@ export function SceneStage({
   onOpen,
   children,
   fill = false,
+  focus = 0.5,
 }: {
   area: Area
   team: PokemonInstance[]
@@ -49,6 +53,11 @@ export function SceneStage({
    * goes rather than leave the box half empty. The box decides how much: Home keeps it close to the scene's shape.
    */
   fill?: boolean
+  /**
+   * With `fill`, the height (0–1 of the scene) kept in the box's middle when the box crops its top and bottom: where the
+   * team walks, so a short box never cuts them off (the user, 2026-10-27).
+   */
+  focus?: number
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
@@ -142,12 +151,16 @@ export function SceneStage({
     <div
       className={cx(
         'relative isolate z-0 select-none overflow-hidden',
-        fill ? 'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2' : 'w-full',
+        fill ? 'absolute left-1/2 -translate-x-1/2' : 'w-full',
       )}
       style={{
         aspectRatio: `${W} / ${H}`,
         containerType: 'inline-size',
-        ...(fill && { width: `max(100cqw, calc(100cqh * ${W} / ${H}))` }),
+        ...(fill && {
+          width: `max(100cqw, calc(100cqh * ${W} / ${H}))`,
+          // Its focus in the box's middle, never leaving a gap above or below.
+          top: `clamp(calc(100cqh - ${FILL_H}), calc(50cqh - ${FILL_H} * ${focus.toFixed(3)}), 0px)`,
+        }),
       }}
       onPointerDown={(e) => {
         if ((e.target as HTMLElement).closest('button')) return

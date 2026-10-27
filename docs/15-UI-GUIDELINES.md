@@ -132,6 +132,8 @@ Rules:
   paper over a scene) and `shadow-card` (a 2 px ink ring + lip, for list items on a panel).
 - **Clipped corners** (`.pixel-corners`) for chips, pills, tracks and badges.
 - Circles only where the thing is round: the avatar, a status badge on a die, the Home ball in the tab bar.
+- **One check mark** (the user's call, 2026-10-27): `PixelIcon name="check"`, a rounded green square with a thick white
+  tick, the same in both themes; never a text ✓ (a gauge's cleared round, a gem held, a picked card).
 
 ## 5. Components
 
@@ -572,7 +574,7 @@ Players shouldn't have to make many requests:
   one status line, a thin gauge where time or progress runs; gold for one new thing), then the "Coming up" line. The
   **PLAY dock** is CONTINUE (and Stay here, Keep exploring, a green GO TO when they apply). Phones: pinned over the tab
   bar, the page scrolling behind it; 768–1023 px: sticky at the column's foot; from 1024 px: the scene as tall as the
-  window on the left (`SceneStage fill`, a box at most 1.15× as tall as wide) with **the dock under it, pinned with it,
+  window on the left (`SceneStage fill`, a box at most 1.15× as tall as wide, kept on where the team walks: `focus`) with **the dock under it, pinned with it,
   always in sight** (the user's call, 2026-10-27; the scene gives it its room), and on the right (clamp(380px, 34%,
   520px)) the area's Pokémon (`HereCard`), the notice and the sections. The encounter itself plays on
   `/area`, and Home stays lit in the menus while it does.

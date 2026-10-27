@@ -165,7 +165,7 @@ function HomeView({ area }: { area: Area }) {
             <AreaButton area={area} areasState={areasState} heldWhy={heldWhy} onOpen={() => openSheet('details')} />
           </div>
           {wide ? (
-            <SceneStage area={area} team={teamOf(save)} onOpen={(id) => setMon({ kind: 'inst', id })} fill />
+            <SceneStage area={area} team={teamOf(save)} onOpen={(id) => setMon({ kind: 'inst', id })} fill focus={walkMid} />
           ) : (
             // Phones: the scene at about 70 % of its height (the user's call), the window kept on where the team walks.
             <div style={{ marginTop: `calc(-100cqw * ${(SCENE_H / SCENE_W).toFixed(4)} * ${cropTop.toFixed(3)})` }}>

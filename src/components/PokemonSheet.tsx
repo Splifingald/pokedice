@@ -297,7 +297,15 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
                 <b className="font-normal">{x.name}</b>({t('ui.sheet.msAddDie', { to: typeName(megaDie(species, x)) })})
                 {gem && (
                   <Chip tone={held.has(gem.key) ? 'gold' : 'plain'}>
-                    {t(held.has(gem.key) ? 'ui.sheet.gemHeld' : 'ui.sheet.gemNeeded', { gem: gem.name })}
+                    {held.has(gem.key) ? (
+                      // Held: its name and the game's one check mark.
+                      <span className="inline-flex items-center gap-1">
+                        {gem.name}
+                        <PixelIcon name="check" size={14} />
+                      </span>
+                    ) : (
+                      t('ui.sheet.gemNeeded', { gem: gem.name })
+                    )}
                   </Chip>
                 )}
               </p>

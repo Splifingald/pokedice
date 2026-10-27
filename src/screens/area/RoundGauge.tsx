@@ -176,7 +176,7 @@ export function RoundGauge({
           ))}
         </ol>
         <span className="whitespace-nowrap font-pixel-sm text-[16px] leading-none tabular-nums" aria-hidden>
-          {allDone ? '✓' : `${round}/${need}`}
+          {allDone ? <PixelIcon name="check" size={16} className="align-middle" /> : `${round}/${need}`}
         </span>
       </div>
     )
@@ -202,7 +202,7 @@ export function RoundGauge({
         ))}
       </ol>
       <span className="min-w-[3ch] text-right font-pixel-sm text-[16px] tabular-nums leading-none text-muted" aria-hidden>
-        {allDone ? '✓' : `${round}/${need}`}
+        {allDone ? <PixelIcon name="check" size={16} className="align-middle" /> : `${round}/${need}`}
       </span>
     </div>
   )
