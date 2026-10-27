@@ -13,6 +13,7 @@ import {
   regionOf,
   regionStarted,
   type ProgressRaidState,
+  type TodayRaid,
 } from '@/engine'
 import { Chip } from '@/components/Chip'
 import { PixelIcon } from '@/components/icons'
@@ -21,11 +22,26 @@ import { MiniSprite } from '@/components/SpriteImg'
 import { joinList } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
+import { useDetails } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { progressRaidPath } from './progressRaids'
 
-export function ProgressRaidList() {
+/**
+ * The legendary raids of a region, in columns on PC. A row opens the raid's page (phones), or with `onPick` docks it
+ * beside the list (PC, the Raids page), today's raid as the first row (`today`) to come back to.
+ */
+export function ProgressRaidList({
+  today,
+  picked,
+  onPick,
+}: {
+  today?: TodayRaid
+  /** The raid docked ('today' for the day's). */
+  picked?: string
+  onPick?: (key: string) => void
+} = {}) {
   const { t } = useT()
+  const details = useDetails()
   const navigate = useNavigate()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
@@ -48,13 +64,11 @@ export function ProgressRaidList() {
         <h2 id="raid-progress-h" className="m-0 text-[22px] font-normal leading-none">
           {t('ui.raid.progress.listTitle')}
         </h2>
-        <small className="font-pixel-sm text-[15px] text-muted">
+        <small className="font-pixel-sm text-[16px] text-muted">
           {t('ui.raid.progress.listCount', { open: count('open'), done: count('done') })}
         </small>
       </div>
-      <p className="m-0 font-pixel-sm text-[14px] leading-tight text-muted">
-        {t('ui.raid.progress.listHint')}
-      </p>
+      {details && <p className="m-0 text-[16px] leading-tight text-muted">{t('ui.raid.progress.listHint')}</p>}
       {regions.length > 1 && (
         <FilterChips
           label={t('ui.raid.progress.regions')}
@@ -63,7 +77,27 @@ export function ProgressRaidList() {
           options={regions.map((r) => ({ id: r.id, label: r.name, count: progressRaids(data, r.id).length }))}
         />
       )}
-      <ul className="m-0 grid list-none gap-1.5 p-0">
+      <ul className="m-0 grid list-none gap-1.5 p-0 lg:grid-cols-2">
+        {today && onPick && (
+          <li>
+            <button
+              type="button"
+              aria-pressed={picked === 'today'}
+              onClick={() => onPick('today')}
+              className={cx(
+                'flex min-h-[60px] w-full items-center gap-2 py-1 pl-1 pr-2.5 text-left',
+                picked === 'today' ? 'bg-gold-pale shadow-card-gold' : 'bg-paper shadow-card',
+              )}
+            >
+              <MiniSprite dex={today.dex} size={40} className="-my-1" />
+              <span className="grid min-w-0 flex-1 leading-[1.05]">
+                <b className="truncate text-[20px] font-normal">{data.species[today.dex]?.name}</b>
+                <small className="truncate text-[16px] text-muted">{t('ui.events.raid.name')}</small>
+              </span>
+              <Chip tone={today.caught ? 'done' : 'gold'}>{today.caught ? t('ui.raid.progress.stDone') : t('ui.raid.today')}</Chip>
+            </button>
+          </li>
+        )}
         {raids.map(({ raid, state }) => {
           const area = data.areas.find((a) => a.id === raid.areaId)
           // A Mega raid (docs/40): known once its Pokémon is; locked, it says what opens it.
@@ -76,10 +110,17 @@ export function ProgressRaidList() {
             <li key={raid.key}>
               <button
                 type="button"
-                onClick={() => navigate(progressRaidPath(raid), { state: { from: '/events/raid' } })}
+                aria-pressed={onPick ? picked === raid.key : undefined}
+                onClick={() =>
+                  onPick ? onPick(raid.key) : navigate(progressRaidPath(raid), { state: { from: '/events/raid' } })
+                }
                 className={cx(
                   'flex min-h-[60px] w-full items-center gap-2 py-1 pl-1 pr-2.5 text-left',
-                  state === 'locked' ? 'bg-well shadow-ring-line' : 'bg-paper shadow-card',
+                  picked === raid.key
+                    ? 'bg-gold-pale shadow-card-gold'
+                    : state === 'locked'
+                      ? 'bg-well shadow-ring-line'
+                      : 'bg-paper shadow-card',
                 )}
               >
                 <MiniSprite
@@ -90,25 +131,22 @@ export function ProgressRaidList() {
                 />
                 <span className="grid min-w-0 flex-1 leading-[1.05]">
                   <b className="truncate text-[19px] font-normal">{name}</b>
-                  <small className="truncate font-pixel-sm text-[14px] text-muted">
+                  <small className="truncate font-pixel-sm text-[16px] text-muted">
                     {megaLock
                       ? t(`ui.raid.mega.lock.${megaLock}.title`, { name: data.species[raid.mega!.base]?.name ?? '' })
                       : state === 'locked'
                         ? t('ui.raid.progress.clearArea', { area: area?.name ?? '' })
                         : (area?.name ?? '')}
                   </small>
-                  <small
-                    className={cx(
-                      'truncate font-pixel-sm text-[14px]',
-                      left.length ? 'text-good' : 'text-muted',
-                    )}
-                  >
-                    {left.length
-                      ? t('ui.raid.progress.teamLeft', {
-                          names: joinList(left.map((m) => data.species[m.dex]?.name ?? '')),
-                        })
-                      : t('ui.raid.progress.noTeamLeft')}
-                  </small>
+                  {(details || left.length > 0) && (
+                    <small className={cx('truncate text-[16px]', left.length ? 'text-good' : 'text-muted')}>
+                      {left.length
+                        ? t('ui.raid.progress.teamLeft', {
+                            names: joinList(left.map((m) => data.species[m.dex]?.name ?? '')),
+                          })
+                        : t('ui.raid.progress.noTeamLeft')}
+                    </small>
+                  )}
                 </span>
                 {state === 'done' ? (
                   <Chip tone="done">{t('ui.raid.progress.stDone')}</Chip>

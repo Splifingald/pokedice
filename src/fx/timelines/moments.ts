@@ -28,6 +28,7 @@ import {
   type Rng,
 } from '../pixel'
 import { drawSprite } from '../sprites'
+import { EGG_COLORS, EGG_MAP } from '@/components/eggMap'
 import { H, screenFlash, screenShake, STEP, W, within, type Cue, type Timeline } from '../timeline'
 import { drawRays } from './legend'
 
@@ -239,50 +240,8 @@ export function evolveTimeline(p: EvolveParams): Timeline<EvoState> {
 }
 
 // ---------------------------------------------------------------- the Egg
-const EGG_MAP = [
-  '............aaaa............',
-  '..........aabbbbaa..........',
-  '........aabbbbbbbbaa........',
-  '.......acbbbbbbbbbbca.......',
-  '......deebbbbbbbbbbeed......',
-  '.....deeeebbbbbbbbeeeed.....',
-  '....deeeeeeebbbbeeeeeeed....',
-  '...aceeeeeeeeeeeeeeeeeeca...',
-  '...deeeeeeeeeeeeeeeeeeeed...',
-  '..dffgeeeeeeeeeeeeeeeeeeha..',
-  '..dffffeeeeeeeeeeeeeeeeeed..',
-  '.affffffeeeeeeeeeeeeeeeeeha.',
-  '.dfffffffeeeeeeffgeeeeeeeed.',
-  '.dfffffffeeeeeffffeeeeeeeed.',
-  'afffffffgeeeeeffffeeegfgeeha',
-  'dfffffffeeeeeegffeeeffffgehd',
-  'dhgfffgeeeeeeeeeeeegfffffehd',
-  'dheeeeeeeeeeeeeeeeeffffffghd',
-  'dceeeeeeeeeeeeeeeegfffffffcd',
-  '.deeeeeeeeeeeeeeeegfffffffd.',
-  '.dheeeeeeeeeeeeeeegffffffid.',
-  '.dchheeeeeeeeeeeeeeffffiicd.',
-  '..dcccchheeeeeeeeeehiiiiid..',
-  '..dccciiicchhhhhhcccciiicd..',
-  '...dciiiiiccccccccccccccd...',
-  '....diiiiiiccccccccccccd....',
-  '.....diiiiicccccccccccd.....',
-  '......ddiiicccccccccdd......',
-  '........ddccccccccdd........',
-  '..........dddddddd..........',
-]
-const EGG_PAL: Record<string, string> = {
-  a: '#5a5241',
-  b: '#ffffff',
-  c: '#cdbd83',
-  d: '#24304f',
-  e: '#fff6de',
-  f: '#9ccd83',
-  g: '#cde6b4',
-  h: '#e6deb4',
-  i: '#83b46a',
-}
-const egg = () => cached('egg', () => shade(28, 30, (x, y) => EGG_PAL[EGG_MAP[y]![x]!] ?? null))
+// The one Egg (components/eggMap.ts: the games' own, 28×30).
+const egg = () => cached('egg', () => shade(28, 30, (x, y) => EGG_COLORS[EGG_MAP[y]![x]!] ?? null))
 
 /** Each stage adds lines (egg-local pixels; the egg is 28×30). */
 const CRACKS: [number, number][][][] = [

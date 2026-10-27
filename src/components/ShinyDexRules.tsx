@@ -1,14 +1,11 @@
 // The shiny Pokédex's rules (docs/39, docs/15 §20): once, at the first league beaten, then from the INFO button at
 // the bottom of the Pokédex. The odds come from the save and the config, so the Shiny Charm shows up in the text.
-import { useNavigate } from 'react-router-dom'
 import { wildShinyChance } from '@/engine'
 import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
 import { oneInText } from '@/lib/format'
-import { markShinyDexSeen } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { PixelIcon } from './icons'
-import { useMyTurn, useOnScreen } from './popupTurn'
 import { RulesModal, type RuleRow, type RulesPicture } from './RulesModal'
 import { Seg } from './Segmented'
 
@@ -90,28 +87,6 @@ export function ShinyDexRulesModal({
       icon="sparkle"
       rules={rules}
       onGo={onGo}
-    />
-  )
-}
-
-/**
- * The shiny Pokédex has opened (the switch, a league beaten): once, between fights, its rules and a button straight to
- * its page. It takes its turn in the one-time pop-ups' queue (engine/popups.ts), never on the Pokédex itself.
- */
-export function ShinyDexUnlockPopup() {
-  const navigate = useNavigate()
-  const open = useMyTurn('shinyDex')
-  useOnScreen('shinyDex', open)
-  // Gone the moment its turn ends: its button leads to another page, which a fading pop-up would cover.
-  if (!open) return null
-  return (
-    <ShinyDexRulesModal
-      open={open}
-      onClose={markShinyDexSeen}
-      onGo={() => {
-        markShinyDexSeen()
-        navigate('/pokedex?view=shiny')
-      }}
     />
   )
 }

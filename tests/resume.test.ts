@@ -63,27 +63,30 @@ async function reload(stored: Map<string, string>): Promise<Page> {
   return load()
 }
 
-/** A new game, rolled on in its first area until a wild Pokémon or a trainer is previewed. */
-function toFightPreview(page: Page, seed: number) {
+/** A new game, rolled on in its first area until a fight with a wild Pokémon or a trainer begins. */
+function toFight(page: Page, seed: number) {
   page.seedRun(seed)
   page.startNewGame(7)
   rollToFight(page)
 }
 
-/** In the save's first area, rolled on (through Centers, finds and the Game Corner) until a fight is previewed. */
+/**
+ * In the save's first area, rolled on (through Centers, finds and the Game Corner) until a fight begins: a wild
+ * Pokémon or a trainer goes straight into battle (the rework: no preview first).
+ */
 function rollToFight(page: Page) {
   const { data } = page.useGame.getState()
   page.enterArea(data.areas[0]!.id)
   for (let i = 0; i < 80; i++) {
-    const { run } = page.useGame.getState()
-    if (run.phase === 'preview' && (run.encounter?.kind === 'wild' || run.encounter?.kind === 'trainer'))
+    const { run, battle } = page.useGame.getState()
+    if (run.phase === 'battle' && battle && (run.encounter?.kind === 'wild' || run.encounter?.kind === 'trainer'))
       return
     if (run.phase === 'center') page.finishCenter()
     else if (run.phase === 'preview') page.engage()
     else if (run.phase === 'casino') page.leaveCasino()
     else page.rollNext()
   }
-  throw new Error('no fight previewed')
+  throw new Error('no fight began')
 }
 
 /** One step of the player's side, as the battle screen would send it (enemy turns included). */
@@ -137,19 +140,20 @@ afterEach(() => {
 })
 
 describe('an encounter under way survives a reload', () => {
-  it('a previewed encounter is still there after a reload: the round has not moved on', async () => {
+  it('a fight just begun is still there after a reload: the round has not moved on', async () => {
     const page = await load()
-    toFightPreview(page, 31)
+    toFight(page, 31)
     const before = page.useGame.getState()
     const stored = leave(page)
     // Stored beside the save on the device; the save in play and the cloud's never carry it.
-    expect(storedSave(stored).resume?.run).toMatchObject({ phase: 'preview', areaId: before.run.areaId })
+    expect(storedSave(stored).resume?.run).toMatchObject({ phase: 'battle', areaId: before.run.areaId })
     expect(before.save).not.toHaveProperty('resume')
 
     const back = await reload(stored)
     const after = back.useGame.getState()
-    expect(after.run.phase).toBe('preview')
+    expect(after.run.phase).toBe('battle')
     expect(after.run.encounter).toEqual(before.run.encounter)
+    expect(after.battle!.state).toEqual(before.battle!.state)
     expect(after.run.areaId).toBe(before.run.areaId)
     // Nothing was dealt or counted meanwhile: the area's deck and rounds are as they were.
     expect(after.save!.areaProgress).toEqual(before.save!.areaProgress)
@@ -158,8 +162,7 @@ describe('an encounter under way survives a reload', () => {
 
   it('a fight picks up at the same point and rolls exactly what staying would have', async () => {
     const page = await load()
-    toFightPreview(page, 47)
-    page.engage()
+    toFight(page, 47)
     play(page, 3)
     const mid = page.useGame.getState()
     expect(mid.run.phase).toBe('battle')
@@ -182,8 +185,7 @@ describe('an encounter under way survives a reload', () => {
     // A battle's stream is seeded afresh from Math.random: pinned, so this fight ends on a catch every time.
     vi.spyOn(Math, 'random').mockReturnValue(0.25)
     const page = await load()
-    toFightPreview(page, 5)
-    page.engage()
+    toFight(page, 5)
     for (let i = 0; i < 400 && page.useGame.getState().run.phase === 'battle'; i++) play(page, 1)
     expect(page.useGame.getState().run.phase).toBe('catch')
     const before = page.useGame.getState()
@@ -204,8 +206,7 @@ describe('an encounter under way survives a reload', () => {
 
   it('nothing is kept once the encounter is over', async () => {
     const page = await load()
-    toFightPreview(page, 47)
-    page.engage()
+    toFight(page, 47)
     page.forfeit()
     page.afterWipe()
     expect(page.useGame.getState().run.phase).toBe('idle')
@@ -218,22 +219,19 @@ describe('an encounter under way survives a reload', () => {
 
   it('the next battle after a picked-up one is a new screen (a new id)', async () => {
     const page = await load()
-    toFightPreview(page, 47)
-    page.engage()
+    toFight(page, 47)
     play(page, 2)
     const back = await reload(leave(page))
     const old = back.useGame.getState().battle!.id
     back.forfeit()
     back.afterWipe()
     rollToFight(back)
-    back.engage()
     expect(back.useGame.getState().battle!.id).toBeGreaterThan(old)
   })
 
   it("a snapshot that doesn't fit the save any more is dropped, never the save", async () => {
     const page = await load()
-    toFightPreview(page, 47)
-    page.engage()
+    toFight(page, 47)
     const stored = leave(page)
     const save = storedSave(stored)
     // The Pokémon fighting is no longer in this save (another device's copy came in, say): its place taken by another.
@@ -251,10 +249,10 @@ describe('an encounter under way survives a reload', () => {
 describe('the stored snapshot in the save format', () => {
   it('is kept when it has the right outline, and an odd one is dropped without losing the save', async () => {
     const page = await load()
-    toFightPreview(page, 31)
+    toFight(page, 31)
     const save = storedSave(leave(page))
     const ok = parseSave(save)
-    expect(ok.ok && ok.save.resume?.run).toMatchObject({ phase: 'preview' })
+    expect(ok.ok && ok.save.resume?.run).toMatchObject({ phase: 'battle' })
     const odd = parseSave({ ...save, resume: { v: 2, run: 'nope' } })
     expect(odd.ok).toBe(true)
     expect(odd.ok && odd.save.resume).toBeUndefined()

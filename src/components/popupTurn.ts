@@ -16,6 +16,12 @@ export const useMyTurn = (id: OneTimePopup): boolean => usePopupTurn() === id
 /** The pop-up actually on screen: it keeps its turn while it's due, so one that comes in later can't snatch the screen. */
 export const usePopupOnScreen = create<{ id: OneTimePopup | null }>(() => ({ id: null }))
 
+/**
+ * After a one-time pop-up closes, the next one waits this long (docs/42): two of them never chain on arrival (the Day
+ * Care's rules, then the invite), each comes on its own visit. In memory: a fresh page load starts with no wait.
+ */
+export const POPUP_GAP_MS = 60_000
+
 /** A queued pop-up says when it's open (its turn may come before it can open: a sync still under way). */
 export function useOnScreen(id: OneTimePopup, open: boolean) {
   useEffect(() => {

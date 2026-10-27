@@ -47,9 +47,14 @@ export default {
         mono: ['"Jersey 15"', '"Jersey 25"', 'var(--font-cjk)'],
       },
       fontSize: {
-        // Daybreak's scale: labels 15, small 17, base 20, large 22, button 22, titles 30–40.
-        label: ['15px', '1.2'],
-        small: ['17px', '1.2'],
+        // Daybreak's scale (docs/43 §4): 16 px is the floor, 18 the body. Tailwind's own xs/sm/base are raised so no stray
+        // class goes under it; tags (NEW, a count) may be 14 (`text-tag`).
+        xs: ['16px', '1.2'],
+        sm: ['16px', '1.25'],
+        base: ['18px', '1.3'],
+        tag: ['14px', '1'],
+        label: ['16px', '1.2'],
+        small: ['18px', '1.2'],
         body: ['20px', '1.2'],
         large: ['22px', '1.15'],
         btn: ['22px', '1'],

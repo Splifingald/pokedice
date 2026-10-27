@@ -116,7 +116,7 @@ export function DayNightPill({ time }: { time: DayTime }) {
   return (
     <span
       className={cx(
-        'inline-flex items-center gap-1 px-1.5 pb-0.5 pt-px font-pixel-sm text-[13px] leading-none',
+        'inline-flex items-center gap-1 px-1.5 pb-0.5 pt-px font-pixel-sm text-[16px] leading-none',
         time === 'day' ? 'bg-sky text-ink shadow-ring-line' : 'light-scope bg-night text-gold-light',
       )}
       data-day-time={time}

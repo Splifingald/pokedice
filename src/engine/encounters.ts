@@ -83,11 +83,6 @@ export interface EncounterContext {
   pokedex: readonly number[]
   /** Dev tools: force the next encounter type. */
   forceKind?: ForceKind | null
-  /**
-   * A Pokémon Center would do something (someone hurt, or a Pokémon in the Box to swap in) — then every new round
-   * opens with one. Unset = no round Center.
-   */
-  centerUseful?: boolean
   /** The player's starter and character: picks the rival version of a trainer. */
   player?: PlayerSide | null
   /** Extreme mode: no Pokémon Center is ever dealt or sent. */
@@ -425,8 +420,9 @@ export interface EncounterRoll {
 export function dueCenter(ctx: EncounterContext): 'round' | 'hurt' | 'fainted' | null {
   const { area, data } = ctx
   if (ctx.noCenters || ctx.progress.lastCenter) return null
-  // A round is one full deck. A new one opens with a Pokémon Center, outside the deck — unless it would do nothing.
-  if (data.config.encounterMode !== 'random' && !ctx.progress.deck?.length && ctx.centerUseful) return 'round'
+  // A round is one full deck. A new one opens with a Pokémon Center, outside the deck, even with nothing to heal (the
+  // user's call, 2026-10-27: a step of every round, on its gauge).
+  if (data.config.encounterMode !== 'random' && !ctx.progress.deck?.length) return 'round'
   if (ctx.isFirstInArea && ctx.teamHurt && data.config.forcedCenterWhenHurt) return 'hurt'
   if (area.easyMode && ctx.teamFainted) return 'fainted'
   return null
@@ -460,7 +456,8 @@ export function nextEncounter(ctx: EncounterContext, rng: Rng): EncounterRoll {
   const due = dueCenter(ctx)
   if (due === 'round') {
     const deck = buildDeck(area, data, rng, legendCards(ctx), { noCenterFirst: true })
-    return { encounter: { kind: 'center', forced: true, reason: 'round' }, deck, lootDeck: null, drawn: [], newRound: true }
+    // The opening Center is the round's first step: it is in the round's record, so its gauge shows it met.
+    return { encounter: { kind: 'center', forced: true, reason: 'round' }, deck, lootDeck: null, drawn: ['center'], newRound: true }
   }
   if (due === 'hurt') return fixed({ kind: 'center', forced: true })
   if (due === 'fainted') return fixed({ kind: 'center', forced: true, reason: 'fainted' })

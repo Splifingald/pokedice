@@ -19,7 +19,6 @@ import {
   buyComboUpgrade,
   buyDieUpgrade,
   centerHeal,
-  centerWouldHelp,
   consumeItem,
   finishRound,
   hasFaintedMember,
@@ -377,7 +376,6 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
         pokedex: save.pokedex,
         // Nobody able to fight (e.g. after a stalemate) → the Center is the only sensible next stop.
         forceKind: healFirst || teamOf(save).every((p) => p.currentHp <= 0) ? 'center' : null,
-        centerUseful: centerWouldHelp(save, data),
         player: playerSideOf(save),
       },
       rng,

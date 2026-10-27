@@ -14,3 +14,4 @@ test-results
 .idea
 *.tsbuildinfo
 .claude/settings.local.json
+.claude/worktrees/

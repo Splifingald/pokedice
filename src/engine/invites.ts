@@ -139,7 +139,10 @@ export function applyInviteReward(
   return { save: { ...next, invites: { ...inv, done: [friends, ...inv.done].slice(0, DONE_KEPT) } }, landed }
 }
 
-/** The rules pop-up opens by itself once, when the rewards are open to this save (docs/15 §20). */
+/**
+ * The rules pop-up opens by itself once, the first time the player opens the Friends page with the rewards open to
+ * this save (docs/15 §20; never over another page: the user's call, 2026-10-25).
+ */
 export const inviteRulesDue = (save: SaveData, data: GameData): boolean =>
   invitesWait(save, data) === null && !invitesOf(save).rulesSeen
 

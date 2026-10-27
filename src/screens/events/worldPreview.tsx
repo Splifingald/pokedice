@@ -107,7 +107,7 @@ export function WorldPreviewSquareView({
         style={{ aspectRatio: `288 / ${WIDGET_BANNER_H}` }}
         aria-hidden
       >
-        <span className="lv-ink font-pixel-sm text-[15px] leading-none">
+        <span className="lv-ink font-pixel-sm text-[16px] leading-none">
           {t('ui.world.preview.startsIn')}
         </span>
         <span

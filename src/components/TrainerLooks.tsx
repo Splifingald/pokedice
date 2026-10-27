@@ -24,7 +24,7 @@ export function LooksDot({ n, className }: { n: number; className?: string }) {
     <span
       aria-hidden
       className={cx(
-        'grid h-[18px] min-w-[18px] place-items-center bg-crimson px-0.5 font-pixel-sm text-[13px] leading-none text-white shadow-ring',
+        'grid h-[18px] min-w-[18px] place-items-center bg-crimson px-0.5 font-pixel-sm text-[16px] leading-none text-white shadow-ring',
         className,
       )}
     >
@@ -70,18 +70,18 @@ export function LooksRow({ onOpen }: { onOpen: () => void }) {
       onClick={onOpen}
       aria-haspopup="dialog"
       aria-label={fresh ? t('ui.looks.rowNew', { name: label, n: fresh }) : label}
-      className="flex min-h-[56px] w-full items-center gap-2.5 bg-paper pb-2 pl-2 pr-3 pt-1.5 text-left text-ink shadow-card"
+      className="flex min-h-[48px] w-full items-center gap-2.5 bg-paper pb-1.5 pl-2 pr-3 pt-1 text-left text-ink shadow-card"
     >
-      <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden bg-sky shadow-ring">
+      <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden bg-sky shadow-ring">
         <TrainerLook src={avatarOf(playerAvatarId(save.player)).src} w={36} h={38} above={2} />
       </span>
       <span className="grid min-w-0 flex-1 gap-0.5">
         <b className="truncate text-[20px] font-normal leading-none">{label}</b>
-        <small className="font-pixel-sm text-[14px] leading-[1.1] text-muted">
+        <small className="font-pixel-sm text-[16px] leading-[1.1] text-muted">
           {t('ui.looks.count', { n: unlocked, total: states.length })}
         </small>
       </span>
-      {fresh > 0 && <LooksDot n={fresh} className="h-6 min-w-6 text-[15px]" />}
+      {fresh > 0 && <LooksDot n={fresh} className="h-6 min-w-6 text-[16px]" />}
     </button>
   )
 }
@@ -156,7 +156,7 @@ export function LockedLook({ s }: { s: LookState }) {
       </span>
       <span className="grid min-w-0 gap-0.5">
         <b className="truncate text-[19px] font-normal leading-none">{avatarName(a, t)}</b>
-        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 font-pixel-sm text-[15px] leading-tight text-muted">
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 font-pixel-sm text-[16px] leading-tight text-muted">
           <span>{goal}</span>
           {s.need != null && s.have != null && (
             <span className="flex min-w-[96px] flex-1 items-center gap-1.5">
@@ -175,7 +175,7 @@ export function LockedLook({ s }: { s: LookState }) {
             </span>
           )}
           {s.areasAway != null && (
-            <span className="bg-sky px-1.5 text-[13px] text-ink shadow-ring-line-thin">
+            <span className="bg-sky px-1.5 text-[16px] text-ink shadow-ring-line-thin">
               {t(s.areasAway === 1 ? 'ui.looks.away.one' : 'ui.looks.away.other', { n: s.areasAway })}
             </span>
           )}
@@ -197,7 +197,7 @@ export function OwnedLook({ s }: { s: LookState }) {
       </span>
       <span className="grid min-w-0 gap-0.5">
         <b className="truncate text-[19px] font-normal leading-none">{avatarName(a, t)}</b>
-        <span className="flex min-w-0 items-center gap-1.5 font-pixel-sm text-[15px] leading-tight text-muted">
+        <span className="flex min-w-0 items-center gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted">
           <PixelIcon name="check" size={14} className="shrink-0" />
           <span>{lookGoal(t, s, data)}</span>
         </span>
@@ -281,7 +281,7 @@ export function LooksMenu({
         <TrainerLook src={look.src} w={64} h={72} zoom={1.25} className="bg-paper shadow-ring" />
         <span className="grid min-w-0 gap-1">
           <b className="truncate text-[24px] font-normal leading-none">{avatarName(look, t)}</b>
-          <small className="font-pixel-sm text-[15px] leading-tight text-muted">
+          <small className="font-pixel-sm text-[16px] leading-tight text-muted">
             {t('ui.looks.wearing')}
           </small>
         </span>
@@ -289,7 +289,7 @@ export function LooksMenu({
 
       <div className="flex items-baseline justify-between gap-2">
         <h3 className="m-0 text-[22px] font-normal leading-none">{t('ui.looks.unlocked')}</h3>
-        <span className="font-pixel-sm text-[15px] tabular-nums text-muted">
+        <span className="font-pixel-sm text-[16px] tabular-nums text-muted">
           {t('ui.looks.progress', { have: unlocked.length, need: states.length })}
         </span>
       </div>
@@ -318,7 +318,7 @@ export function LooksMenu({
               )}
             >
               <TrainerLook src={a.src} w={44} h={52} />
-              {isNew && <NewTag className="absolute -right-1 -top-1.5 px-1 text-[11px]" />}
+              {isNew && <NewTag className="absolute -right-1 -top-1.5 px-1 text-tag" />}
             </button>
           )
         })}
@@ -373,7 +373,7 @@ export function LooksMenu({
           )}
           {events.length > 0 && (
             <section className="flex flex-col gap-1.5" aria-label={t('ui.looks.events')}>
-              <h4 className="m-0 font-pixel-sm text-[14px] uppercase tracking-[0.07em] text-muted">
+              <h4 className="m-0 font-pixel-sm text-[16px] uppercase tracking-[0.07em] text-muted">
                 {t('ui.looks.events')}
               </h4>
               <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
@@ -386,7 +386,7 @@ export function LooksMenu({
           {shown.map((g) =>
             g.started ? (
               <section key={g.region.id} className="flex flex-col gap-1.5" aria-label={g.region.name}>
-                <h4 className="m-0 font-pixel-sm text-[14px] uppercase tracking-[0.07em] text-muted">
+                <h4 className="m-0 font-pixel-sm text-[16px] uppercase tracking-[0.07em] text-muted">
                   {g.region.id === liveRegion
                     ? t('ui.looks.playing', { region: g.region.name })
                     : g.region.name}
@@ -404,7 +404,7 @@ export function LooksMenu({
                 className="m-0 flex flex-wrap items-baseline gap-x-2 bg-well px-2.5 py-2 shadow-ring-line"
               >
                 <b className="text-[19px] font-normal leading-none">{g.region.name}</b>
-                <small className="font-pixel-sm text-[15px] text-muted">
+                <small className="font-pixel-sm text-[16px] text-muted">
                   {t('ui.looks.notStarted', { n: g.total, region: g.region.name })}
                 </small>
               </p>

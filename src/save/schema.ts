@@ -227,10 +227,12 @@ export const saveSchema = z.object({
     animations: z.enum(['full', 'short']).optional(),
     multiExp: z.boolean().default(true),
     autoMode: z.boolean().optional(),
+    advance: z.enum(['auto']).optional().catch(undefined),
     // A style this build doesn't know (a newer one's) reads as unset rather than failing the whole save.
     playStyle: z.enum(PLAY_STYLES).optional().catch(undefined),
     typeHints: z.boolean().optional(),
     raidFast: z.boolean().optional(),
+    details: z.boolean().optional(),
     lang: z.enum(LANGS).optional(),
     theme: z.enum(['light', 'dark', 'auto']).optional(),
     // The game-feel switches (docs/38). Without them here the save's settings, read first at boot, dropped them.

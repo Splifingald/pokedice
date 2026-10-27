@@ -671,7 +671,7 @@ function reloadWhenSafe(tell = false) {
 /** Is a newer build out? Quiet on failure (offline, dev server without version.json). */
 async function checkForNewBuild() {
   lastVersionCheck = Date.now()
-  if (import.meta.env.DEV) return
+  if (import.meta.env.DEV || import.meta.env.VITE_PROTO) return
   try {
     const res = await fetch('/version.json', { cache: 'no-store' })
     if (!res.ok) return

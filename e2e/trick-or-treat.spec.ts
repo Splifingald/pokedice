@@ -120,9 +120,10 @@ test('a Trick or Treat card: the preview, the rules once, a Treat, Trick Balls, 
     )
     expect(saved.pokedex).toContain(92)
   } else await expect(page.getByText('Gastly fled')).toBeVisible()
-  // The card was the round's: its icon on the gauge over the bar.
+  // Back on the area's page (the rework: no line about it), its CONTINUE for the next card.
   await next.click()
-  await expect(page.getByText('Back on the trail')).toBeVisible()
+  await expect(page).toHaveURL(/\/area$/)
+  await expect(page.getByRole('button', { name: 'CONTINUE', exact: true })).toBeVisible()
 
   // A second ghost: no rules pop-up this time, and INFO shows them again.
   const later = await page.evaluate(
@@ -188,7 +189,8 @@ test('switched off, the card is never played: the next card comes instead', asyn
   await boot(page, withCard(), EVENTS_ON)
   await page.goto('/home')
   await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
-  await expect(page.getByRole('dialog', { name: /wild Pokémon/i })).toBeVisible()
+  // A wild Pokémon instead, straight into its fight (the rework: no preview).
+  await expect(page.getByRole('heading', { level: 1, name: /^Battle: .* against a wild / })).toBeAttached({ timeout: 15_000 })
   await expect(page.getByRole('dialog', { name: /trick or treat/i })).toHaveCount(0)
 })
 
@@ -211,9 +213,10 @@ test('a 360 × 640 phone: the stage, the gauge and both buttons fit, nothing scr
     expect(box!.y + box!.height).toBeLessThanOrEqual(640)
     if (!name.endsWith('gauge')) expect(box!.height).toBeGreaterThanOrEqual(44)
   }
-  // The stage on top, as wide as the screen, as the battle's.
+  // The stage on top, as wide as the screen, as the battle's: its 3:2 picture from the top (no sky added over it).
   const stage = await page.getByRole('img', { name: /floats over the area/ }).boundingBox()
   expect(stage!.y).toBeLessThan(4)
+  expect(Math.abs(stage!.height - (stage!.width * 2) / 3)).toBeLessThan(4)
   expect(stage!.width).toBeGreaterThanOrEqual(355)
   // INFO at the foot, still on screen.
   const info = await page.getByRole('button', { name: /Info/ }).last().boundingBox()

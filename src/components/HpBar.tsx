@@ -69,7 +69,7 @@ export function HpBar({
         />
       </div>
       {showNumbers && (
-        <span className={cx('text-right font-mono tabular-nums leading-none', compact ? 'text-[13px]' : 'min-w-[4.5ch] text-[15px]')}>
+        <span className={cx('text-right font-mono tabular-nums leading-none', compact ? 'text-[16px]' : 'min-w-[4.5ch] text-[16px]')}>
           {Math.max(0, Math.round(hp))}/{max}
         </span>
       )}

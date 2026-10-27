@@ -74,10 +74,18 @@ import { FeelDiceBits } from './kitchen/FeelDiceBits'
 import { HowToBits } from './kitchen/HowToBits'
 import { PowersBits } from './kitchen/PowersBits'
 import { ShellBits } from './kitchen/ShellBits'
+import { DeepShellBits } from './kitchen/DeepShellBits'
+import { TeamDeepBits } from './kitchen/TeamDeepBits'
+import { PokedexDeepBits } from './kitchen/PokedexDeepBits'
+import { EventsDeepBits } from './kitchen/EventsDeepBits'
+import { SocialDeepBits } from './kitchen/SocialDeepBits'
+import { AreaDeepBits } from './kitchen/AreaDeepBits'
+import { MartDeepBits } from './kitchen/MartDeepBits'
 import { RewardBits } from './kitchen/RewardBits'
 import { HitFeelBits } from './kitchen/HitFeelBits'
 import { FeelBits } from './kitchen/FeelBits'
 import { TitleLogoBits } from './kitchen/TitleLogoBits'
+import { ReworkBits } from './kitchen/ReworkBits'
 import { RotateView } from '@/components/RotateCover'
 import { SettingsOverlay } from '@/screens/Settings'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
@@ -108,12 +116,24 @@ function RoundGaugeStates() {
   if (!area) return null
   const n = deckSize(area)
   const mid: AreaProgress = { ...emptyProgress(), drawn: ['wild', 'center'], deck: Array<DeckCard>(n - 2).fill('wild') }
+  const ahead: AreaProgress = {
+    ...emptyProgress(),
+    drawn: ['wild', 'trainer', 'wild'],
+    deck: ['center', ...Array<DeckCard>(n - 4).fill('wild')],
+  }
   const done: AreaProgress = { ...emptyProgress(), drawn: Array.from({ length: n }, (_, i) => (i % 3 ? 'wild' : 'trainer')) }
   return (
     <div className="flex w-full max-w-md flex-col gap-3">
       <RoundGauge area={area} progress={mid} />
       <RoundGauge area={area} progress={emptyProgress()} />
       <RoundGauge area={area} progress={done} />
+      {/* A fight's strip (the card being played white) and Home's banner (the rest grey, a Center ahead). */}
+      <div className="relative h-[14px] bg-panel">
+        <RoundGauge area={area} progress={ahead} strip className="absolute inset-x-0 top-0" />
+      </div>
+      <div className="pixel-btn px-3 py-2">
+        <RoundGauge area={area} progress={ahead} banner />
+      </div>
       <div className="flex flex-col gap-1.5 border-t-[3px] border-edge bg-parchment px-3 py-2">
         <RoundGauge area={area} progress={mid} compact />
         <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
@@ -202,7 +222,7 @@ export function KitchenSink() {
             <span className="text-[24px] leading-none">Safari Zone</span>
             <LevelTag level={24} className="ml-auto" />
           </div>
-          <span className="font-pixel-sm text-[15px] text-muted">Plate: flat ring, clipped corners</span>
+          <span className="font-pixel-sm text-[16px] text-muted">Plate: flat ring, clipped corners</span>
         </div>
         <div className="hatched w-56 p-3">Unavailable (dotted)</div>
       </Section>
@@ -638,6 +658,10 @@ export function KitchenSink() {
         <HitFeelBits />
       </Section>
 
+      <Section title="The area rework (docs/15 §6): AutoButton, PokeCard (Center, send-out), a label on two lines, BottomDock">
+        <ReworkBits />
+      </Section>
+
       <Section title="PartnerMoment: the lab (new game, new region)">
         <PartnerBits />
       </Section>
@@ -722,6 +746,34 @@ export function KitchenSink() {
         <ShellBits />
       </Section>
 
+      <Section title="Deep pass: Social's views · SplitView (docs/43)">
+        <DeepShellBits />
+      </Section>
+
+      <Section title="Team deep pass (docs/43 §5.4): PokeCard states, MonTile level tag, BoxFilter, TeamSwapDock">
+        <TeamDeepBits />
+      </Section>
+
+      <Section title="Pokédex (docs/43 §5.6): the head's gauge, every tile, the grid's keys, the fold, the entry as a sheet and docked">
+        <PokedexDeepBits />
+      </Section>
+
+      <Section title="Events and onboarding (docs/43 §5.10–5.11): StagePanel, the dock, tickets, the hall, How to play's folds">
+        <EventsDeepBits />
+      </Section>
+
+      <Section title="Deep pass: Social and Settings (board rows and meters, FIGHT, SocialColumns, SocialDock, adding a friend, the compact trainer card, the menu's foot)">
+        <SocialDeepBits />
+      </Section>
+
+      <Section title="The area loop's deep pass (docs/43 §5.3): StagePanel, Stamp, KeyHints, the switch's cards, the forfeit flag">
+        <AreaDeepBits />
+      </Section>
+
+      <Section title="Mart deep pass (docs/43 §5.5): ItemTile in every state, ItemDetail as a sheet and docked, the quantity buttons, SmallInfo">
+        <MartDeepBits />
+      </Section>
+
       <Section title="Extreme mode: rules, band, title card, K.O. rest, resting team, while you were away, switch">
         <ExtremeBits />
       </Section>
@@ -783,7 +835,7 @@ export function KitchenSink() {
         />
         <div className="flex flex-wrap gap-3">
           {(Object.keys(ICONS) as IconName[]).map((n) => (
-            <span key={n} className="flex flex-col items-center gap-1 font-pixel-sm text-[12px]">
+            <span key={n} className="flex flex-col items-center gap-1 font-pixel-sm text-tag">
               <PixelIcon name={n} size={n.startsWith('nav') ? 32 : 24} />
               {n}
             </span>

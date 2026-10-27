@@ -20,7 +20,6 @@ import { checkListings, checkTrades, clearReturned, endTrade, playTrade, useTrad
 import { useMyTurn, usePopupTurn } from '../popupTurn'
 import { ListingSheet } from './ListingSheet'
 import { TradeScene } from './TradeScene'
-import { TradesUnlockPopup } from './TradeRules'
 
 export function TradesService() {
   const userId = useGame((s) => (s.auth.status === 'signed_in' ? s.auth.userId : null))
@@ -51,7 +50,6 @@ export function TradesService() {
     <>
       <Comebacks />
       <LinkHandler />
-      <TradesUnlockPopup />
       <TradeScene show={scene} onDone={endTrade} />
     </>
   )

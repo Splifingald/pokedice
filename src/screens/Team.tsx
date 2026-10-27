@@ -6,7 +6,6 @@ import {
   nightmareModeOf,
   monName,
   POKE_TYPES,
-  regionBestLevel,
   regionOf,
   teamOf,
   type PokemonInstance,
@@ -14,29 +13,37 @@ import {
 } from '@/engine'
 import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
-import { sortBox, type BoxSort } from '@/components/BoxSort'
-import { TypeSelect } from '@/components/TypeSelect'
+import { BoxFilter, sortBox, type BoxSort } from '@/components/BoxSort'
 import { PixelIcon } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
 import { MonTile, TILE_GRID } from '@/components/MonTile'
 import { PageHead } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
-import { TeamSwapActions } from '@/components/TeamSwapActions'
-import { SearchField, Seg } from '@/components/Segmented'
+import { SearchField } from '@/components/Segmented'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
+import { SplitView } from '@/components/SplitView'
 import { countdown } from '@/lib/format'
-import { pushToast, useGame } from '@/store/game'
+import { useMediaQuery } from '@/lib/useMediaQuery'
+import { useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
+import { cx } from '@/theme/util'
 import { TeamCards } from './team/TeamCards'
 
 type Sort = Exclude<BoxSort, 'type'>
+const SORTS: readonly Sort[] = ['dex', 'level', 'newest']
 
+/**
+ * The Team (docs/43 §5.4): its title, the team as the one Pokémon
+ * card, the Box as tiles under one filter row. A Pokémon opens its sheet: a bottom sheet on a phone; on a PC
+ * (`SplitView`) the sheet stands docked at the right, always open — the lead's until another card or tile is picked —
+ * with its actions at the pane's foot.
+ */
 export function TeamScreen() {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
-  // Inside a Pokémon Center, or at a portal's way in (docs/28), the team can change (the engine says where): the rule
-  // has nothing to warn about, and a Pokémon's sheet has the Center's moves.
+  // Inside a Pokémon Center, or at a portal's way in (docs/28), the team can change (the engine says where): a
+  // Pokémon's sheet then has the Center's moves at its foot.
   const swaps = useGame((s) => !!s.save && teamSwapsOpen(s.save, s.data, s.run))
   const atPortal = useGame((s) => swaps && s.run.phase === 'idle')
   // …or the nightmare's way in (docs/30): its own words.
@@ -50,6 +57,7 @@ export function TeamScreen() {
   )
   const navigate = useNavigate()
   const now = useNow(30_000)
+  const wide = useMediaQuery('(min-width: 1024px)')
   const [view, setView] = useState<SheetView | null>(null)
   const [sort, setSort] = useState<Sort>('dex')
   const [type, setType] = useState<PokeType | 'all'>('all')
@@ -74,25 +82,31 @@ export function TeamScreen() {
     sort,
     data,
   )
+  const narrowed = !!needle || type !== 'all'
+  const clear = () => {
+    setQ('')
+    setType('all')
+  }
   const open = (p: PokemonInstance) => setView({ kind: 'inst', id: p.id })
   // A closed small world's Pokémon waiting here until this region's best reaches their level (docs/26 §1).
   const waiting = homersIn(save, regionOf(save))
-  const best = regionBestLevel(save, data, regionOf(save))
+  // The one on view still exists (one sent away, traded or let go is gone): else, on a PC, the lead's.
+  const live =
+    view &&
+    (view.kind === 'inst'
+      ? save.box.some((p) => p.id === view.id)
+      : view.kind === 'homer'
+        ? waiting.some((h) => h.inst.id === view.id)
+        : true)
+      ? view
+      : null
+  const shown: SheetView | null = live ?? (wide && team[0] ? { kind: 'inst', id: team[0].id } : null)
+  const current = wide && shown && (shown.kind === 'inst' || shown.kind === 'homer') ? shown.id : null
 
-  return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
-      <PageHead icon="navTeam" title={t('ui.team.title')} count={`${team.length}/${data.config.maxTeamSize}`}>
-        {!swaps && (
-          <button
-            type="button"
-            onClick={() => pushToast(t('ui.team.swapsRule'), 'info')}
-            className="inline-flex min-h-[44px] items-center gap-1.5 bg-well px-2.5 font-pixel-sm text-[15px] text-muted shadow-ring-line md:min-h-[36px]"
-          >
-            <PixelIcon name="lock" size={16} />
-            {t('ui.team.swapsHint')}
-          </button>
-        )}
-      </PageHead>
+  const main = (
+    <>
+      {/* No scene here (the user's call, 2026-10-27): Home already shows the team roaming; the Team is for managing it. */}
+      <PageHead icon="navTeam" title={t('ui.team.title')} />
 
       {/* At a portal's way in: healed, the Box open, and the way back to its pop-up. */}
       {atPortal && (
@@ -107,75 +121,73 @@ export function TeamScreen() {
         </div>
       )}
 
-      <TeamCards team={team} onOpen={open} />
-      {team.length > 1 && (
-        <p className="-mt-1 text-center font-pixel-sm text-[15px] leading-tight text-muted">
-          {t('ui.team.dragTip')}
-        </p>
-      )}
+      <TeamCards team={team} onOpen={open} selected={current} />
 
       <section className="flex flex-col gap-2" aria-labelledby="box-title">
-        <div className="mt-1 flex items-baseline gap-2">
-          <h2 id="box-title" className="text-[24px] leading-none">
-            {t('ui.team.boxHeading')}
-          </h2>
-          <span className="font-pixel-sm text-[17px] text-muted">{boxAll.length}</span>
-        </div>
-        {boxAll.length === 0 && <p className="copy text-muted">{t('ui.team.boxEmpty')}</p>}
+        <h2 id="box-title" className="mt-1 flex items-baseline gap-2 text-[24px] leading-none">
+          {t('ui.team.boxHeading')}
+          <span className="font-pixel-sm text-[18px] text-muted">
+            {narrowed ? t('ui.team.boxShown', { shown: box.length, total: boxAll.length }) : boxAll.length}
+          </span>
+        </h2>
         {boxAll.length > 1 && (
-          <>
-            <div className="flex flex-wrap items-center gap-2">
-              <SearchField
-                id="box-search"
-                value={q}
-                onChange={setQ}
-                label={t('ui.team.searchBoxLabel')}
-                placeholder={t('ui.team.searchBox')}
-                className="min-w-0 flex-[1_1_150px]"
-              />
-              <Seg
-                label={t('ui.team.sortBox')}
-                value={sort}
-                onChange={setSort}
-                options={[
-                  { id: 'dex', label: t('ui.team.sortDex') },
-                  { id: 'level', label: t('ui.team.sortLevel') },
-                  { id: 'newest', label: t('ui.team.sortNewest') },
-                ]}
-              />
-            </div>
-            {boxTypes.length > 1 && <TypeSelect value={type} onChange={setType} types={boxTypes} />}
-          </>
+          // One filter row: the search, then the order and the type in one menu.
+          <div className="flex items-center gap-2">
+            <SearchField
+              id="box-search"
+              value={q}
+              onChange={setQ}
+              label={t('ui.team.searchBoxLabel')}
+              placeholder={t('ui.team.searchBox')}
+              className="min-w-0 flex-1 lg:max-w-[360px]"
+            />
+            <BoxFilter
+              sort={sort}
+              onSort={setSort}
+              sorts={SORTS}
+              type={type}
+              onType={setType}
+              types={boxTypes}
+              shown={box.length}
+            />
+          </div>
         )}
-        {boxAll.length > 0 && box.length === 0 && (
-          <p className="copy text-muted">
-            {q ? t('ui.team.boxNoMatch', { query: q }) : t('ui.team.boxNoType')}
+        {boxAll.length === 0 ? (
+          <p className="copy flex items-center gap-2 bg-well px-3 py-2.5 shadow-ring-line">
+            <PixelIcon name="box" size={20} className="shrink-0" />
+            {t('ui.team.boxEmpty')}
           </p>
+        ) : (
+          box.length === 0 && (
+            <div className="flex flex-col items-start gap-1 bg-well px-3 py-2.5 shadow-ring-line">
+              <p className="copy">{q ? t('ui.team.boxNoMatch', { query: q }) : t('ui.team.boxNoType')}</p>
+              <button type="button" className="min-h-[44px] text-[20px] underline md:min-h-[36px]" onClick={clear}>
+                {t('ui.team.clearFilters')}
+              </button>
+            </div>
+          )
         )}
-        <ul className={TILE_GRID}>
+        <ul className={cx(TILE_GRID, 'lg:grid-cols-[repeat(auto-fill,minmax(80px,1fr))]')}>
           {box.map((p) => {
             const fossil = p.revivesAt != null && p.fossil ? data.items[p.fossil] : undefined
             const reviving = p.revivesAt != null
             const left = reviving ? Math.max(0, p.revivesAt! - now) : 0
-            const sub = reviving
-              ? left > 0
-                ? countdown(left)
-                : t('ui.mon.soon')
-              : t('ui.common.level.short', { n: p.level })
+            const until = left > 0 ? countdown(left) : t('ui.mon.soon')
+            const level = t('ui.common.level.short', { n: p.level })
             return (
               <li key={p.id}>
                 <MonTile
                   dex={p.dex}
                   name={name(p)}
-                  sub={sub}
+                  level={reviving ? undefined : level}
+                  sub={reviving ? until : undefined}
+                  selected={current === p.id}
                   icon={reviving ? <ItemSprite item={fossil} size={40} /> : undefined}
                   label={[
                     name(p),
                     p.nickname ? speciesName(p) : null,
                     p.shiny ? t('ui.mon.shiny') : null,
-                    reviving
-                      ? t('ui.mon.revivesIn', { time: sub })
-                      : t('ui.common.level.short', { n: p.level }),
+                    reviving ? t('ui.mon.revivesIn', { time: until }) : level,
                   ]
                     .filter(Boolean)
                     .join(', ')}
@@ -192,21 +204,19 @@ export function TeamScreen() {
 
       {waiting.length > 0 && (
         <section className="flex flex-col gap-2" aria-labelledby="waiting-title">
-          <div className="mt-1 flex items-baseline gap-2">
-            <h2 id="waiting-title" className="text-[24px] leading-none">
-              {t('ui.team.waitingHeading')}
-            </h2>
-            <span className="font-pixel-sm text-[17px] text-muted">{waiting.length}</span>
-          </div>
-          <p className="copy text-muted">{t('ui.team.waitingHint', { best })}</p>
-          <ul className={TILE_GRID}>
+          <h2 id="waiting-title" className="mt-1 flex items-baseline gap-2 text-[24px] leading-none">
+            {t('ui.team.waitingHeading')}
+            <span className="font-pixel-sm text-[18px] text-muted">{waiting.length}</span>
+          </h2>
+          <ul className={cx(TILE_GRID, 'lg:grid-cols-[repeat(auto-fill,minmax(80px,1fr))]')}>
             {waiting.map(({ inst: p }) => (
               <li key={p.id}>
                 <MonTile
                   dex={p.dex}
                   name={name(p)}
-                  sub={t('ui.common.level.short', { n: p.level })}
+                  level={t('ui.common.level.short', { n: p.level })}
                   locked
+                  selected={current === p.id}
                   label={[
                     name(p),
                     p.nickname ? speciesName(p) : null,
@@ -225,13 +235,14 @@ export function TeamScreen() {
           </ul>
         </section>
       )}
+    </>
+  )
 
-      <SheetModal
-        view={view}
-        onClose={() => setView(null)}
-        manage
-        swaps={swaps}
-        instExtra={swaps ? (inst) => <TeamSwapActions inst={inst} onDone={() => setView(null)} /> : undefined}
+  return (
+    <div className="mx-auto w-full max-w-3xl lg:max-w-none">
+      <SplitView
+        main={main}
+        detail={<SheetModal view={shown} onClose={() => setView(null)} manage swaps={swaps} />}
       />
     </div>
   )

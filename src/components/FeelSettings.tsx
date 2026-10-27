@@ -4,17 +4,14 @@
 import { musicOn } from '@/engine'
 import { MUSIC_VOLUMES, volumeStep } from '@/audio/music'
 import { useT } from '@/i18n/react'
-import { haptic, IOS_SWITCH, useHapticsOffered } from '@/lib/haptics'
+import { haptic, useHapticsOffered } from '@/lib/haptics'
 import { soundOn } from '@/save/storage'
 import { setSettings, useGame } from '@/store/game'
 import { Seg } from './Segmented'
 import { Toggle } from './Toggle'
 
-/**
- * `always`: shown whatever the admin's switches say, and `ios`: the iPhone's hint (the kitchen sink's, to show every
- * state on any device).
- */
-export function FeelSettings({ always, ios = IOS_SWITCH }: { always?: boolean; ios?: boolean }) {
+/** `always`: shown whatever the admin's switches say (the kitchen sink's, to show every row on any device). */
+export function FeelSettings({ always }: { always?: boolean }) {
   const { t } = useT()
   const settings = useGame((s) => s.settings)
   const musicShown = useGame((s) => !!s.data && musicOn(s.data)) || !!always
@@ -22,12 +19,11 @@ export function FeelSettings({ always, ios = IOS_SWITCH }: { always?: boolean; i
   const music = settings.music !== false
   return (
     <>
-      {musicShown && (
+      {/* Music needs Sound: with Sound off, its rows go rather than a switch that would do nothing. */}
+      {musicShown && soundOn(settings) && (
         <>
           <Toggle
             label={t('ui.settings.music')}
-            // Music needs Sound: with Sound off, the line says so rather than the switch pretending to work.
-            hint={t(soundOn(settings) ? 'ui.settings.musicHint' : 'ui.settings.musicNeedsSound')}
             on={music}
             onChange={(v) => setSettings({ music: v })}
           />
@@ -43,7 +39,7 @@ export function FeelSettings({ always, ios = IOS_SWITCH }: { always?: boolean; i
                   { id: 'mid', label: t('ui.settings.volMid') },
                   { id: 'high', label: t('ui.settings.volHigh') },
                 ]}
-                className="min-w-[12rem]"
+                className="min-w-[11rem]"
               />
             </div>
           )}
@@ -52,8 +48,6 @@ export function FeelSettings({ always, ios = IOS_SWITCH }: { always?: boolean; i
       {hapticsShown && (
         <Toggle
           label={t('ui.settings.haptics')}
-          // iOS only has the primary buttons' tap (lib/haptics): the line says what this device gets.
-          hint={t(ios ? 'ui.settings.hapticsHintIos' : 'ui.settings.hapticsHint')}
           on={settings.haptics !== false}
           onChange={(v) => {
             setSettings({ haptics: v })

@@ -28,7 +28,7 @@ export function RuleList({ rules }: { rules: RuleRow[] }) {
           </span>
           <span className="grid gap-0.5 leading-tight">
             <b className="text-[19px] font-normal leading-none">{r.title}</b>
-            {r.text && <small className="font-pixel-sm text-[15px] text-muted">{r.text}</small>}
+            {r.text && <small className="font-pixel-sm text-[16px] text-muted">{r.text}</small>}
             {r.action && <span className="mt-1.5 flex">{r.action}</span>}
           </span>
         </li>
@@ -88,7 +88,7 @@ export function RulesModal({
       <div className="flex flex-col gap-3">
         <RulesBanner picture={picture}>
           {onGo && (
-            <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 bg-gold px-1.5 pb-0.5 pt-px font-pixel-sm text-[14px] tracking-[0.08em] text-ink shadow-ring-line">
+            <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 bg-gold px-1.5 pb-0.5 pt-px font-pixel-sm text-[16px] tracking-[0.08em] text-ink shadow-ring-line">
               <PixelIcon name={icon} size={16} />
               {t('ui.rules.nowOpen')}
             </span>
@@ -114,10 +114,26 @@ export function RulesModal({
 }
 
 /** The blue INFO button at the bottom of a feature's page (the events' EventInfo, the same words), opening its rules. */
-export function InfoButton({ name, onClick, className }: { name: string; onClick: () => void; className?: string }) {
+export function InfoButton({
+  name,
+  onClick,
+  className,
+  compact = false,
+}: {
+  name: string
+  onClick: () => void
+  className?: string
+  /** Beside another button (a dock's row): as wide as its label, not the row. */
+  compact?: boolean
+}) {
   const { t } = useT()
   return (
-    <button type="button" className={cx('ev-info w-full', className)} onClick={onClick} aria-label={t('ui.events.infoLabel', { name })}>
+    <button
+      type="button"
+      className={cx('ev-info', !compact && 'w-full', className)}
+      onClick={onClick}
+      aria-label={t('ui.events.infoLabel', { name })}
+    >
       {t('ui.events.info')}
     </button>
   )

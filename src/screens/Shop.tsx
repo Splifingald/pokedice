@@ -5,75 +5,53 @@ import {
   gemShelf,
   isAreaUnlocked,
   isGem,
-  kitPrice,
-  kitsHeld,
-  kitsLeftToBuy,
   liveLeft,
-  liveShopRows,
   ownedGems,
   powerEarned,
   regionOf,
-  sellPrice,
   shopStock,
   ugCfg,
   worldLeft,
-  worldShopRows,
   type GemShelfRow,
   type ItemDef,
   type LiveEvent,
 } from '@/engine'
 import { effectText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
-import { sfx } from '@/audio/sfx'
 import { ItemSprite } from '@/components/ItemSprite'
+import { ItemTile, PricePlate, TILE_GRID } from '@/components/ItemTile'
 import { PixelIcon } from '@/components/icons'
-import { Modal } from '@/components/Modal'
-import { PageHead, Wallet } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
 import { FilterChips, Seg } from '@/components/Segmented'
-import { money } from '@/lib/format'
-import { buy, buyGem, sell } from '@/store/actions'
-import { MiniSprite } from '@/components/SpriteImg'
+import { SplitView } from '@/components/SplitView'
+import { buyGem } from '@/store/actions'
 import { PowerInfo } from '@/components/PowersRules'
-import { buyLive, useLive } from '@/store/live'
-import { Chip } from '@/components/Chip'
+import { useLive } from '@/store/live'
 import { LiveBadge, LiveGauge, LivePicture, liveName, liveTime } from '@/screens/events/live'
 import { bannerUrl } from '@/screens/events/shared'
 import { useInWorld, worldVars, WorldTag } from '@/screens/events/world'
 import { useServerNow } from '@/store/serverTime'
-import { buyWorld, worldName } from '@/store/worlds'
-import { pushToast, useGame } from '@/store/game'
-import { ugBuyKits, useUnderground } from '@/store/underground'
-import { useNavigate } from 'react-router-dom'
+import { worldName } from '@/store/worlds'
+import { useGame } from '@/store/game'
+import { useUnderground } from '@/store/underground'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { affordableUpgrades } from '@/lib/upgrades'
+import { UpgradesPanel } from './Upgrades'
+import {
+  bagOffers,
+  gemOffer,
+  kitOffer,
+  liveOffers,
+  OfferDetail,
+  OfferTile,
+  shopOffer,
+  worldOffers,
+  type Offer,
+} from './mart/offers'
 import { cx } from '@/theme/util'
+import { GROUPS, groupIndex, inCat, type Cat } from './mart/groups'
 
-type Kind = ItemDef['effect']['kind']
-type GroupId = 'ball' | 'heal' | 'battle' | 'cure' | 'stone' | 'fossil' | 'gem'
-
-/**
- * The Mart's categories, Balls first. Both tabs list items by group, so an item whose effect kind is in no group would
- * silently vanish the moment it unlocked. Every kind of `ItemEffect` must appear here; `groupOf` and its test are what
- * keep that true as kinds are added.
- */
-const GROUPS: { id: GroupId; chip: string; title: string; kinds: Kind[] }[] = [
-  { id: 'ball', chip: 'ui.shop.catBalls', title: 'ui.shop.groupCatch', kinds: ['ball', 'bait'] },
-  { id: 'heal', chip: 'ui.shop.groupHealing', title: 'ui.shop.groupHealing', kinds: ['heal', 'revive'] },
-  { id: 'battle', chip: 'ui.shop.groupBattle', title: 'ui.shop.groupBattle', kinds: ['rerolls', 'level'] },
-  { id: 'cure', chip: 'ui.shop.groupCures', title: 'ui.shop.groupCures', kinds: ['cure'] },
-  { id: 'stone', chip: 'ui.shop.groupEvolution', title: 'ui.shop.groupEvolution', kinds: ['stone', 'link'] },
-  { id: 'fossil', chip: 'ui.shop.groupFossils', title: 'ui.shop.groupFossils', kinds: ['fossil'] },
-  // Mega Gems have a shelf of their own (GemShelf), never the Mart's stock; the bag lists the ones held.
-  { id: 'gem', chip: 'ui.shop.groupGems', title: 'ui.shop.groupGems', kinds: ['megaGem'] },
-]
-
-/** The group an item is listed under (its title key), or null when no group claims its kind. */
-export const groupOf = (kind: Kind): string | null =>
-  GROUPS.find((g) => g.kinds.includes(kind))?.title ?? null
-const groupIndex = (it: ItemDef) => GROUPS.findIndex((g) => g.kinds.includes(it.effect.kind))
-
-type Cat = GroupId | 'all'
-
-/** The category chips: All, then each group that has something on this tab. */
+/** The category chips, one row (it scrolls sideways on a phone): All, then each group that has something here. */
 function CatChips({ items, value, onChange }: { items: ItemDef[]; value: Cat; onChange: (c: Cat) => void }) {
   const { t } = useT()
   const present = GROUPS.filter((g) => items.some((it) => g.kinds.includes(it.effect.kind)))
@@ -83,6 +61,7 @@ function CatChips({ items, value, onChange }: { items: ItemDef[]; value: Cat; on
       label={t('ui.shop.category')}
       value={value}
       onChange={onChange}
+      className="-mx-3 px-3 md:mx-0 md:px-0"
       options={[
         { id: 'all', label: t('ui.shop.catAll') },
         ...present.map((g) => ({ id: g.id, label: t(g.chip) })),
@@ -91,515 +70,243 @@ function CatChips({ items, value, onChange }: { items: ItemDef[]; value: Cat; on
   )
 }
 
-const inCat = (cat: Cat) => (it: ItemDef) =>
-  cat === 'all' || GROUPS.find((g) => g.id === cat)!.kinds.includes(it.effect.kind)
+/** What the shelves need from the screen: which offer is open, and each tile's purchase count (its coins' flight). */
+interface ShelfProps {
+  gold: number
+  open: string | null
+  onOpen: (id: string) => void
+  flights: Record<string, number>
+  onBought: (id: string) => void
+}
 
-/**
- * A shelf tile (two to a row on phones, three on wider screens): the item, what it does, how many you hold and its
- * price; tapping opens the quantity picker, and the open tile takes the whole row so the picker keeps its room.
- */
-function Row({
-  it,
-  open,
-  onToggle,
-  side,
-  sub,
-  pill,
-  owned,
-  children,
+/** A grid of offers, one design for every shelf. */
+function OfferGrid({ offers, shelf, label }: { offers: Offer[]; shelf: ShelfProps; label?: string }) {
+  return (
+    <ul className={TILE_GRID} aria-label={label}>
+      {offers.map((o) => (
+        <OfferTile
+          key={o.id}
+          o={o}
+          gold={shelf.gold}
+          open={shelf.open === o.id}
+          onOpen={() => shelf.onOpen(o.id)}
+          flight={shelf.flights[o.id]}
+          onBought={() => shelf.onBought(o.id)}
+        />
+      ))}
+    </ul>
+  )
+}
+
+/** An event's banner over its shelf: its picture, its name, the time left. */
+function EventBanner({
+  id,
+  picture,
+  tag,
+  name,
+  left,
+  hot,
 }: {
-  it: ItemDef
-  open: boolean
-  onToggle?: () => void
-  side: 'buy' | 'sell' | 'live'
-  sub: ReactNode
-  /** The price plate at the end of the row. */
-  pill?: ReactNode
-  owned: number
-  children?: ReactNode
+  id: string
+  picture: ReactNode
+  tag: ReactNode
+  name: string
+  left: { ms: number; share: number } | null
+  hot: number
 }) {
-  const id = `${side}-${it.key}`
-  return (
-    <li
-      className={cx(
-        open
-          ? 'col-span-full bg-cream shadow-[inset_0_0_0_3px_rgb(var(--c-edge)),inset_0_-4px_0_rgb(var(--c-gold-light))]'
-          : 'bg-paper shadow-card',
-      )}
-    >
-      <button
-        type="button"
-        onClick={onToggle}
-        disabled={!onToggle}
-        aria-expanded={onToggle ? open : undefined}
-        aria-controls={onToggle && open ? id : undefined}
-        // Closed, the tile fills its row (its neighbours line up); open, it takes its own height and the picker sits
-        // under it inside the tile, not over the next row.
-        className={cx('flex min-h-[54px] w-full flex-col gap-1 pb-[9px] pl-1.5 pr-1.5 pt-1.5 text-left', !open && 'h-full')}
-      >
-        <span className="flex w-full min-w-0 items-center gap-1.5">
-          <ItemSprite item={it} size={32} />
-          <b className="line-clamp-2 min-w-0 flex-1 text-[18px] font-normal leading-[1.05]">{it.name}</b>
-        </span>
-        <small className="flex flex-wrap items-center gap-1 font-pixel-sm text-[13px] leading-tight text-muted">{sub}</small>
-        <span className="mt-auto flex w-full items-end justify-between gap-1">
-          <em className="font-pixel-sm text-[15px] not-italic text-muted">{owned > 0 ? `×${owned}` : ''}</em>
-          {pill}
-        </span>
-      </button>
-      {open && children && (
-        <div id={id} className="grid gap-2 px-2.5 pb-3">
-          {children}
-        </div>
-      )}
-    </li>
-  )
-}
-
-/** Every Special Shop running (docs/20), a section each, the earliest started first. */
-function LiveShopSections() {
-  const { lives, now } = useLive(1000)
-  if (now == null) return null
-  return (
-    <>
-      {lives
-        .filter((e) => e.type === 'shop')
-        .map((e) => (
-          <LiveShopSection key={e.id} live={e} now={now} />
-        ))}
-    </>
-  )
-}
-
-/**
- * A live event's Special Shop (docs/20), over the Mart's own shelves: its picture, the time left, then its items — at
- * their event price (the usual one struck out), the ones the Mart never sells, and what's left of each player's limit.
- */
-function LiveShopSection({ live, now }: { live: LiveEvent; now: number }) {
   const { t } = useT()
-  const save = useGame((s) => s.save)
-  const data = useGame((s) => s.data)
-  const [open, setOpen] = useState<string | null>(null)
-  const [qty, setQty] = useState<'1' | '5' | '10'>('1')
-  if (!save) return null
-  const rows = liveShopRows(save, data, live)
-  if (!rows.length) return null
-  const left = liveLeft(live, now)
+  return (
+    <header className="lv-shop-head relative isolate grid min-h-[76px] content-end gap-1.5 overflow-hidden px-3 pb-2.5 pt-2">
+      {picture}
+      <span className="flex min-w-0 items-center gap-2">
+        {tag}
+        <h2 id={id} className="lv-ink m-0 min-w-0 truncate text-[26px] leading-none">
+          {name}
+        </h2>
+      </span>
+      {left && (
+        <span className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2.5 font-pixel-sm text-[16px] leading-none">
+          <span className="lv-ink text-gold-light">{t('ui.live.endsIn', { time: liveTime(left.ms) })}</span>
+          <LiveGauge share={left.share} hot={left.ms < hot} />
+        </span>
+      )}
+    </header>
+  )
+}
+
+/** A live event's Special Shop (docs/20), over the Mart's own shelves: the same tiles, at the event's prices. */
+function LiveShopSection({
+  live,
+  now,
+  offers,
+  shelf,
+}: {
+  live: LiveEvent
+  now: number
+  offers: Offer[]
+  shelf: ShelfProps
+}) {
+  const { t } = useT()
+  if (!offers.length) return null
   const headId = `live-shop-${live.id}`
   return (
-    <section aria-labelledby={headId} className="lv-shop flex flex-col gap-2 pb-2.5">
-      <header className="lv-shop-head relative isolate grid min-h-[92px] content-end gap-1.5 overflow-hidden px-3 pb-3 pt-2.5">
-        <LivePicture e={live} className="absolute inset-0 -z-10" />
-        <span className="flex min-w-0 items-center gap-2">
-          <LiveBadge />
-          <h2 id={headId} className="lv-ink m-0 min-w-0 truncate text-[28px] leading-none">
-            {liveName(live)}
-          </h2>
-        </span>
-        <span className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2.5 font-pixel-sm text-[16px] leading-none">
-          <span className="lv-ink text-gold-light">{t('ui.live.endsIn', { time: liveTime(left.ms) })}</span>
-          <LiveGauge share={left.share} hot={left.ms < 3 * 3_600_000} />
-        </span>
-      </header>
-      <ul className="grid grid-cols-2 gap-1.5 px-2 md:grid-cols-3">
-        {rows.map((r) => {
-          const out = r.left === 0
-          const sale = r.usual != null && r.price < r.usual
-          const steps = (['1', '5', '10'] as const).filter((q) => r.left == null || Number(q) <= r.left)
-          const n = Math.min(Number(qty), r.left ?? Infinity)
-          const total = r.price * n
-          const can = total <= save.gold
-          return (
-            <Row
-              key={r.item.key}
-              it={r.item}
-              side="live"
-              open={open === r.item.key && !out}
-              onToggle={
-                out
-                  ? undefined
-                  : () => {
-                      setOpen(open === r.item.key ? null : r.item.key)
-                      setQty('1')
-                    }
-              }
-              sub={
-                <>
-                  {r.usual == null ? (
-                    <Chip tone="dark">{t('ui.live.shop.never')}</Chip>
-                  ) : (
-                    sale && <Chip tone="red">{t('ui.live.shop.off', { pct: Math.round((1 - r.price / r.usual) * 100) })}</Chip>
-                  )}
-                  <span className={cx(r.left != null && r.left <= 2 && 'text-danger')}>
-                    {r.limit == null
-                      ? t('ui.live.shop.noLimit')
-                      : out
-                        ? t('ui.live.shop.soldOut')
-                        : t('ui.live.shop.left', { left: r.left!, limit: r.limit })}
-                  </span>
-                </>
-              }
-              pill={
-                <span
-                  className={cx(
-                    'grid min-w-[62px] justify-items-center gap-0.5 px-2 pb-2 pt-1.5 text-center text-[18px] leading-none',
-                    out || r.price > save.gold ? 'bg-well-deep text-ink' : 'light-scope bg-night text-gold-light',
-                  )}
-                >
-                  {sale && !out && (
-                    <s className="text-[14px] opacity-70" aria-label={t('ui.live.shop.usually', { price: money(r.usual!) })}>
-                      {money(r.usual!)}
-                    </s>
-                  )}
-                  {out ? t('ui.live.shop.soldOut') : money(r.price)}
-                </span>
-              }
-              owned={save.inventory[r.item.key] ?? 0}
-            >
-              {r.item.description && (
-                <p className="copy font-pixel-sm text-[15px] leading-tight text-muted">{r.item.description}</p>
-              )}
-              <div className="flex items-center gap-2">
-                {steps.length > 1 ? (
-                  <Seg
-                    label={t('ui.shop.howMany', { item: r.item.name })}
-                    value={steps.includes(qty) ? qty : '1'}
-                    onChange={setQty}
-                    options={steps.map((q) => ({ id: q, label: `×${q}` }))}
-                  />
-                ) : (
-                  <span className="font-pixel-sm text-[15px] text-muted">{t('ui.live.shop.onePer')}</span>
-                )}
-                <PixelButton
-                  variant={can ? 'primary' : 'secondary'}
-                  className="min-h-[50px] flex-1"
-                  disabled={!can}
-                  onClick={() => {
-                    if (!buyLive(live.id, r.item.key, n)) return
-                    sfx('gold')
-                    if (r.left != null && r.left - n <= 0) setOpen(null)
-                    pushToast(t('ui.shop.bought', { n, item: r.item.name, left: money(useGame.getState().save?.gold ?? 0) }), 'good')
-                  }}
-                >
-                  {can ? t('ui.shop.buyFor', { price: money(total) }) : t('ui.shop.needMore', { price: money(total - save.gold) })}
-                </PixelButton>
-              </div>
-            </Row>
-          )
-        })}
-      </ul>
-      <p className="m-0 px-3 font-pixel-sm text-[14px] leading-tight text-muted">{t('ui.live.shop.note')}</p>
+    <section aria-labelledby={headId} className="lv-shop flex flex-col gap-2 pb-2">
+      <EventBanner
+        id={headId}
+        picture={<LivePicture e={live} className="absolute inset-0 -z-10" />}
+        tag={<LiveBadge />}
+        name={liveName(live)}
+        left={liveLeft(live, now)}
+        hot={3 * 3_600_000}
+      />
+      <div className="px-2">
+        <OfferGrid offers={offers} shelf={shelf} />
+      </div>
+      <p className="m-0 px-3 font-pixel-sm text-[16px] leading-tight text-muted">{t('ui.live.shop.note')}</p>
     </section>
   )
 }
 
 /**
- * The Underground's Explorakits (docs/34), over the Mart's shelves while it runs: its cave, the time left, the kit at
- * its price, what's left of the player's limit. Never in a small world's Mart (the event doesn't reach one).
+ * The Underground's Explorakits (docs/34), over the Mart's shelves while it runs: the kit as a tile like any item, and
+ * the way to the dig. Never in a small world's Mart (the event doesn't reach one).
  */
-function UgKitSection() {
+function UgKitSection({
+  live,
+  now,
+  offer,
+  shelf,
+}: {
+  live: LiveEvent
+  now: number
+  offer: Offer
+  shelf: ShelfProps
+}) {
   const { t } = useT()
   const navigate = useNavigate()
-  const { live, now, u } = useUnderground(1000)
-  const save = useGame((s) => s.save)
-  const data = useGame((s) => s.data)
-  const [qty, setQty] = useState<'1' | '5' | '10'>('1')
-  if (!live || !u || !save || now == null) return null
-  const cfg = ugCfg(data)
-  const price = kitPrice(cfg)
-  const room = kitsLeftToBuy(u, cfg)
-  const limit = cfg.kits.limit
-  const steps = (['1', '5', '10'] as const).filter((q) => room == null || Number(q) <= room)
-  const n = Math.min(Number(steps.includes(qty) ? qty : '1'), room ?? Infinity)
-  const total = price * n
-  const can = room !== 0 && total <= save.gold
-  const left = liveLeft(live, now)
   return (
-    <section aria-labelledby="ug-shop" className="lv-shop flex flex-col gap-2 pb-2.5" data-testid="ug-shop">
-      <header className="lv-shop-head relative isolate grid min-h-[92px] content-end gap-1.5 overflow-hidden px-3 pb-3 pt-2.5">
-        <LivePicture e={live} className="absolute inset-0 -z-10" />
-        <span className="flex min-w-0 items-center gap-2">
-          <LiveBadge />
-          <h2 id="ug-shop" className="lv-ink m-0 min-w-0 truncate text-[28px] leading-none">
-            {liveName(live)}
-          </h2>
-        </span>
-        <span className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2.5 font-pixel-sm text-[16px] leading-none">
-          <span className="lv-ink text-gold-light">{t('ui.live.endsIn', { time: liveTime(left.ms) })}</span>
-          <LiveGauge share={left.share} hot={left.ms < 3 * 3_600_000} />
-        </span>
-      </header>
-      <div className="mx-2 flex flex-col gap-2 bg-cream p-2.5 shadow-[inset_0_0_0_3px_rgb(var(--c-edge)),inset_0_-4px_0_rgb(var(--c-gold-light))]">
-        <div className="flex items-center gap-2.5">
-          <PixelIcon name="kit" size={36} />
-          <span className="grid min-w-0 flex-1 gap-0.5 leading-tight">
-            <b className="text-[20px] font-normal leading-none">{t('ui.ug.kit')}</b>
-            <small className="font-pixel-sm text-[15px] text-muted">{t('ui.ug.kitDesc')}</small>
-          </span>
-          <span className="light-scope bg-night px-2 pb-2 pt-1.5 text-[18px] leading-none text-gold-light">{money(price)}</span>
+    <section aria-labelledby="ug-shop" className="lv-shop flex flex-col gap-2 pb-2" data-testid="ug-shop">
+      <EventBanner
+        id="ug-shop"
+        picture={<LivePicture e={live} className="absolute inset-0 -z-10" />}
+        tag={<LiveBadge />}
+        name={liveName(live)}
+        left={liveLeft(live, now)}
+        hot={3 * 3_600_000}
+      />
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-stretch gap-2 px-2 md:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]">
+        <ul className="grid">
+          <OfferTile
+            o={offer}
+            gold={shelf.gold}
+            open={shelf.open === offer.id}
+            onOpen={() => shelf.onOpen(offer.id)}
+            flight={shelf.flights[offer.id]}
+            onBought={() => shelf.onBought(offer.id)}
+          />
+        </ul>
+        <div className="flex flex-col justify-between gap-2">
+          <p className="m-0 font-pixel-sm text-[16px] leading-tight text-ink">{t('ui.ug.kitDesc')}</p>
+          <PixelButton size="sm" onClick={() => navigate('/underground')}>
+            {t('ui.ug.toUnderground')}
+          </PixelButton>
         </div>
-        <span className={cx('font-pixel-sm text-[15px]', room != null && room <= 2 ? 'text-danger' : 'text-muted')}>
-          {t('ui.ug.held', { n: kitsHeld(u) })} ·{' '}
-          {room == null ? t('ui.live.shop.noLimit') : room === 0 ? t('ui.live.shop.soldOut') : t('ui.live.shop.left', { left: room, limit })}
-        </span>
-        {room !== 0 && (
-          <div className="flex items-center gap-2">
-            {steps.length > 1 && (
-              <Seg
-                label={t('ui.shop.howMany', { item: t('ui.ug.kit') })}
-                value={steps.includes(qty) ? qty : '1'}
-                onChange={setQty}
-                options={steps.map((q) => ({ id: q, label: `×${q}` }))}
-              />
-            )}
-            <PixelButton
-              variant={can ? 'primary' : 'secondary'}
-              className="min-h-[50px] flex-1"
-              aria-disabled={!can}
-              onClick={() => {
-                if (!can) return pushToast(t('ui.shop.needMore', { price: money(total - save.gold) }), 'bad')
-                if (!ugBuyKits(n)) return
-                sfx('gold')
-                pushToast(t('ui.shop.bought', { n, item: t('ui.ug.kit'), left: money(useGame.getState().save?.gold ?? 0) }), 'good')
-              }}
-            >
-              {can ? t('ui.shop.buyFor', { price: money(total) }) : t('ui.shop.needMore', { price: money(total - save.gold) })}
-            </PixelButton>
-          </div>
-        )}
-        <PixelButton size="sm" onClick={() => navigate('/underground')}>
-          {t('ui.ug.toUnderground')}
-        </PixelButton>
       </div>
-      <p className="m-0 px-3 font-pixel-sm text-[14px] leading-tight text-muted">{t('ui.ug.kitNote')}</p>
+      <p className="m-0 px-3 font-pixel-sm text-[16px] leading-tight text-muted">{t('ui.ug.kitNote')}</p>
     </section>
   )
 }
 
-/**
- * A small world's Mart (docs/21): the admin's list and nothing else, for the world's own ₽ — each item's limit and
- * what's left of it, the world's picture and time left over it. Nothing bought here leaves the world.
- */
-function WorldShop() {
+/** A small world's Mart (docs/21): the admin's list and nothing else, for the world's own ₽, under its banner. */
+function WorldShopSection({ offers, shelf }: { offers: Offer[]; shelf: ShelfProps }) {
   const { t } = useT()
-  const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const { world } = useInWorld()
   const now = useServerNow(1000)
-  const [open, setOpen] = useState<string | null>(null)
-  const [qty, setQty] = useState<'1' | '5' | '10'>('1')
-  if (!save) return null
-  const rows = worldShopRows(save, data)
   const left = world && now != null ? worldLeft(world, now) : null
   return (
-    <section aria-labelledby="world-shop" className="lv-shop flex flex-col gap-2 pb-2.5" style={worldVars(world)}>
-      <header className="lv-shop-head relative isolate grid min-h-[92px] content-end gap-1.5 overflow-hidden px-3 pb-3 pt-2.5">
-        <span className="lv-pic absolute inset-0 -z-10 block overflow-hidden bg-night" aria-hidden>
-          {world?.banner && <img src={bannerUrl(world.banner)} alt="" className="pixelated absolute inset-0 h-full w-full object-cover" />}
-        </span>
-        <span className="flex min-w-0 items-center gap-2">
-          <WorldTag />
-          <h2 id="world-shop" className="lv-ink m-0 min-w-0 truncate text-[28px] leading-none">
-            {worldName(world, data)}
-          </h2>
-        </span>
-        {left && (
-          <span className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2.5 font-pixel-sm text-[16px] leading-none">
-            <span className="lv-ink text-gold-light">{t('ui.live.endsIn', { time: liveTime(left.ms) })}</span>
-            <LiveGauge share={left.share} hot={left.ms < 24 * 3_600_000} />
+    <section
+      aria-labelledby="world-shop"
+      className="lv-shop flex flex-col gap-2 pb-2"
+      style={worldVars(world)}
+    >
+      <EventBanner
+        id="world-shop"
+        picture={
+          <span className="lv-pic absolute inset-0 -z-10 block overflow-hidden bg-night" aria-hidden>
+            {world?.banner && (
+              <img
+                src={bannerUrl(world.banner)}
+                alt=""
+                className="pixelated absolute inset-0 h-full w-full object-cover"
+              />
+            )}
           </span>
-        )}
-      </header>
-      <ul className="grid grid-cols-2 gap-1.5 px-2 md:grid-cols-3">
-        {rows.map((r) => {
-          const out = r.left === 0
-          const steps = (['1', '5', '10'] as const).filter((q) => r.left == null || Number(q) <= r.left)
-          const n = Math.min(Number(qty), r.left ?? Infinity)
-          const total = r.price * n
-          const can = total <= save.gold
-          return (
-            <Row
-              key={r.item.key}
-              it={r.item}
-              side="live"
-              open={open === r.item.key && !out}
-              onToggle={
-                out
-                  ? undefined
-                  : () => {
-                      setOpen(open === r.item.key ? null : r.item.key)
-                      setQty('1')
-                    }
-              }
-              sub={
-                <span className={cx(r.left != null && r.left <= 2 && 'text-danger')}>
-                  {r.limit == null
-                    ? t('ui.live.shop.noLimit')
-                    : out
-                      ? t('ui.live.shop.soldOut')
-                      : t('ui.live.shop.left', { left: r.left!, limit: r.limit })}
-                </span>
-              }
-              pill={
-                <span
-                  className={cx(
-                    'grid min-w-[62px] justify-items-center gap-0.5 px-2 pb-2 pt-1.5 text-center text-[18px] leading-none',
-                    out || r.price > save.gold ? 'bg-well-deep text-ink' : 'light-scope bg-night text-gold-light',
-                  )}
-                >
-                  {out ? t('ui.live.shop.soldOut') : money(r.price)}
-                </span>
-              }
-              owned={save.inventory[r.item.key] ?? 0}
-            >
-              {r.item.description && (
-                <p className="copy font-pixel-sm text-[15px] leading-tight text-muted">{r.item.description}</p>
-              )}
-              <div className="flex items-center gap-2">
-                {steps.length > 1 ? (
-                  <Seg
-                    label={t('ui.shop.howMany', { item: r.item.name })}
-                    value={steps.includes(qty) ? qty : '1'}
-                    onChange={setQty}
-                    options={steps.map((q) => ({ id: q, label: `×${q}` }))}
-                  />
-                ) : (
-                  <span className="font-pixel-sm text-[15px] text-muted">{t('ui.live.shop.onePer')}</span>
-                )}
-                <PixelButton
-                  variant={can ? 'primary' : 'secondary'}
-                  className="min-h-[50px] flex-1"
-                  disabled={!can}
-                  onClick={() => {
-                    if (!buyWorld(r.item.key, n)) return
-                    sfx('gold')
-                    if (r.left != null && r.left - n <= 0) setOpen(null)
-                    pushToast(t('ui.shop.bought', { n, item: r.item.name, left: money(useGame.getState().save?.gold ?? 0) }), 'good')
-                  }}
-                >
-                  {can ? t('ui.shop.buyFor', { price: money(total) }) : t('ui.shop.needMore', { price: money(total - save.gold) })}
-                </PixelButton>
-              </div>
-            </Row>
-          )
-        })}
-      </ul>
-      <p className="m-0 px-3 font-pixel-sm text-[14px] leading-tight text-muted">{t('ui.world.mart.note')}</p>
+        }
+        tag={<WorldTag />}
+        name={worldName(world, data)}
+        left={left}
+        hot={24 * 3_600_000}
+      />
+      <div className="px-2">
+        <OfferGrid offers={offers} shelf={shelf} />
+      </div>
+      <p className="m-0 px-3 font-pixel-sm text-[16px] leading-tight text-muted">{t('ui.world.mart.note')}</p>
     </section>
   )
 }
 
-/** The Mart's Mega Gems as shown (docs/35): its rows, or null while the shelf is shut here (`gemShelf`). */
+/**
+ * The Mart's Mega Gems as shown (docs/35): the gems as tiles (each bought once, HELD once it is), or a line while the
+ * shelf is shut here (`gemShelf` null). Inside the Mart, its open tile is the screen's; on its own (the kitchen sink)
+ * it opens its own sheet.
+ */
 export function GemShelfView({
   rows,
   gold,
   onBuy,
+  shelf,
 }: {
   rows: GemShelfRow[] | null
   gold: number
   /** Buys one: true when it went through. */
   onBuy: (row: GemShelfRow) => boolean
+  shelf?: ShelfProps
 }) {
   const { t } = useT()
-  const [open, setOpen] = useState<string | null>(null)
+  const [own, setOwn] = useState<string | null>(null)
+  const offers = (rows ?? []).map((r) => gemOffer(r, onBuy))
+  const local: ShelfProps = shelf ?? {
+    gold,
+    open: own,
+    onOpen: (id) => setOwn(own === id ? null : id),
+    flights: {},
+    onBought: () => {},
+  }
+  const opened = !shelf && offers.find((o) => o.id === own)
   return (
     <section aria-labelledby="mart-gems" className="flex flex-col gap-1.5">
       <h2 id="mart-gems" className="mt-1 text-[24px] leading-none">
         {t('ui.shop.groupGems')}
       </h2>
       {!rows ? (
-        <p className="copy m-0 font-pixel-sm text-[15px] text-muted">{t('ui.shop.gemsAfterLeague')}</p>
+        <p className="copy m-0 font-pixel-sm text-[16px] text-muted">{t('ui.shop.gemsAfterLeague')}</p>
       ) : rows.length === 0 ? (
-        <p className="copy m-0 font-pixel-sm text-[15px] text-muted">{t('ui.shop.gemsNone')}</p>
+        <p className="copy m-0 font-pixel-sm text-[16px] text-muted">{t('ui.shop.gemsNone')}</p>
       ) : (
-        <ul className="grid grid-cols-2 gap-1.5 md:grid-cols-3">
-          {rows.map((row) => {
-            const { item, mega, owned } = row
-            const can = item.price <= gold
-            return (
-              <Row
-                key={item.key}
-                it={item}
-                side="buy"
-                open={open === item.key && !owned}
-                onToggle={owned ? undefined : () => setOpen(open === item.key ? null : item.key)}
-                sub={
-                  <span className="inline-flex items-center gap-1">
-                    <MiniSprite dex={mega.dex} size={24} className="-my-1.5" />
-                    {mega.name}
-                  </span>
-                }
-                pill={
-                  owned ? (
-                    <Chip tone="dark">{t('ui.shop.gemOwned')}</Chip>
-                  ) : (
-                    <span
-                      className={cx(
-                        'min-w-[62px] px-2 pb-2 pt-1.5 text-center text-[18px] leading-none',
-                        can ? 'light-scope bg-night text-gold-light' : 'bg-well-deep text-ink',
-                      )}
-                    >
-                      {money(item.price)}
-                    </span>
-                  )
-                }
-                owned={0}
-              >
-                <p className="copy font-pixel-sm text-[15px] leading-tight text-muted">
-                  {t('ui.shop.gemNote', { mega: mega.name })}
-                </p>
-                <PixelButton
-                  variant={can ? 'primary' : 'secondary'}
-                  className="min-h-[50px]"
-                  disabled={!can}
-                  onClick={() => {
-                    if (!onBuy(row)) return
-                    sfx('gold')
-                    setOpen(null)
-                    pushToast(t('ui.shop.gemBought', { gem: item.name, mega: mega.name }), 'good')
-                  }}
-                >
-                  {can
-                    ? t('ui.shop.buyFor', { price: money(item.price) })
-                    : t('ui.shop.needMore', { price: money(item.price - gold) })}
-                </PixelButton>
-              </Row>
-            )
-          })}
-        </ul>
+        <OfferGrid offers={offers} shelf={{ ...local, gold }} />
       )}
-      <PowerInfo kind="mega" />
+      <PowerInfo kind="mega" small className="self-start" />
+      {opened && <OfferDetail o={opened} gold={gold} onClose={() => setOwn(null)} onBought={() => {}} />}
     </section>
   )
 }
 
-/**
- * The Mart's Mega Gems (docs/35): the gems of the Pokémon found in this region, at their price, each bought once and
- * never sold; the ones held say so. While the shelf is shut here (its League not beaten yet) a line says when it
- * opens. Nothing at all before Korrina's badge, or with the gem rules off.
- */
-function GemShelf() {
-  const data = useGame((s) => s.data)
-  const save = useGame((s) => s.save)
-  if (!save || !gemRulesOn(data) || !powerEarned(save, data, 'mega')) return null
-  return <GemShelfView rows={gemShelf(save, data)} gold={save.gold} onBuy={(r) => buyGem(r.item.key)} />
-}
-
-function BuyTab({ badges }: { badges: number }) {
+/** What can't be had yet, folded under one line (docs/42): the same tile, greyed, with what it waits for. */
+function ComingLater({ items, badges }: { items: ItemDef[]; badges: number }) {
   const { t } = useT()
-  // Held here, not in the row: a unique item leaves the shelf the moment it is bought, and a pop-up owned by the
-  // row would be unmounted along with it before anyone read a word of it.
-  const [dug, setDug] = useState<ItemDef | null>(null)
-  const [cat, setCat] = useState<Cat>('all')
-  const [open, setOpen] = useState<string | null>(null)
-  const [qty, setQty] = useState<'1' | '5' | '10'>('1')
   const data = useGame((s) => s.data)
-  const save = useGame((s) => s.save)
-  const gold = save?.gold ?? 0
-  const stock = shopStock(data, badges, (id) => !!save && isAreaUnlocked(save, id, data), {
-    region: save ? regionOf(save) : undefined,
-    bought: save?.boughtUnique,
-  })
+  if (!items.length) return null
   // What a locked item waits for: badges first, then reaching its area.
   const needs = (it: ItemDef) =>
     badges < it.shopBadges
@@ -607,266 +314,141 @@ function BuyTab({ badges }: { badges: number }) {
       : t('ui.shop.needsArea', {
           area: data.areas.find((a) => a.id === it.shopArea)?.name ?? t('ui.shop.someNewArea'),
         })
-  const byShelf = (a: ItemDef, b: ItemDef) => groupIndex(a) - groupIndex(b) || a.price - b.price
-  const all = stock.map((s) => s.item)
-  const shelf = stock
-    .filter((s) => s.unlocked)
-    .map((s) => s.item)
-    .filter(inCat(cat))
-    .sort(byShelf)
-  const later = stock
-    .filter((s) => !s.unlocked)
-    .map((s) => s.item)
-    .filter(inCat(cat))
-    .sort((a, b) => a.shopBadges - b.shopBadges || byShelf(a, b))
-  const n = Number(qty)
-
   return (
-    <>
-      <Modal open={!!dug} onClose={() => setDug(null)} title={dug?.name}>
-        <div className="flex flex-col items-center gap-3 text-center">
-          <ItemSprite item={dug ?? undefined} size={96} />
-          <p className="copy text-xl leading-snug">
-            {t('ui.shop.fossilBought', { hours: dug?.effect.kind === 'fossil' ? dug.effect.hours : 0 })}
-          </p>
-          <PixelButton variant="primary" onClick={() => setDug(null)}>
-            {t('ui.common.continue')}
-          </PixelButton>
-        </div>
-      </Modal>
-      <LiveShopSections />
-      <UgKitSection />
-      <CatChips
-        items={all}
-        value={cat}
-        onChange={(c) => {
-          setCat(c)
-          setOpen(null)
-        }}
-      />
-      <ul className="grid grid-cols-2 gap-1.5 md:grid-cols-3">
-        {shelf.map((it) => {
-          const total = it.price * n
-          const can = total <= gold
-          return (
-            <Row
-              key={it.key}
-              it={it}
-              side="buy"
-              open={open === it.key}
-              onToggle={() => {
-                setOpen(open === it.key ? null : it.key)
-                setQty('1')
-              }}
-              sub={effectText(it)}
-              pill={
-                <span
-                  className={cx(
-                    'min-w-[62px] px-2 pb-2 pt-1.5 text-center text-[18px] leading-none',
-                    it.price > gold ? 'bg-well-deep text-ink' : 'light-scope bg-night text-gold-light',
-                  )}
-                >
-                  {money(it.price)}
-                </span>
-              }
-              owned={save?.inventory[it.key] ?? 0}
-            >
-              {it.description && (
-                <p className="copy font-pixel-sm text-[15px] leading-tight text-muted">{it.description}</p>
-              )}
-              <div className="flex items-center gap-2">
-                <Seg
-                  label={t('ui.shop.howMany', { item: it.name })}
-                  value={qty}
-                  onChange={setQty}
-                  options={(['1', '5', '10'] as const).map((q) => ({ id: q, label: `×${q}` }))}
-                />
-                <PixelButton
-                  variant={can ? 'primary' : 'secondary'}
-                  className="min-h-[50px] flex-1"
-                  disabled={!can}
-                  onClick={() => {
-                    if (!buy(it.key, n)) return
-                    sfx('gold')
-                    // A fossil never reaches the bag, so a bag count ticking up would be the wrong feedback — and
-                    // where it actually went, and that it is on a clock, is not something the shelf can say.
-                    if (it.effect.kind === 'fossil') {
-                      setOpen(null)
-                      setDug(it)
-                    } else
-                      pushToast(
-                        t('ui.shop.bought', {
-                          n,
-                          item: it.name,
-                          left: money(useGame.getState().save?.gold ?? 0),
-                        }),
-                        'good',
-                      )
-                  }}
-                >
-                  {can
-                    ? t('ui.shop.buyFor', { price: money(total) })
-                    : t('ui.shop.needMore', { price: money(total - gold) })}
-                </PixelButton>
-              </div>
-            </Row>
-          )
-        })}
-      </ul>
-      {shelf.length === 0 && <p className="copy text-muted">{t('ui.shop.nothingHere')}</p>}
-      <GemShelf />
-      {later.length > 0 && (
-        <section className="flex flex-col gap-1.5" aria-labelledby="mart-later">
-          <h2 id="mart-later" className="mt-1 text-[24px] leading-none">
-            {t('ui.shop.comingLater')}
-          </h2>
-          <ul className="grid grid-cols-2 gap-1.5 md:grid-cols-3">
-            {later.map((it) => (
-              <li
-                key={it.key}
-                className="flex min-h-[54px] flex-col gap-1 bg-well px-1.5 py-1.5 text-muted shadow-ring-line"
-              >
-                <span className="flex min-w-0 items-center gap-1.5">
-                  <ItemSprite item={it} size={32} className="opacity-55 grayscale" />
-                  <b className="line-clamp-2 min-w-0 flex-1 text-[18px] font-normal leading-[1.05]">{it.name}</b>
-                </span>
-                <small className="font-pixel-sm text-[13px] leading-tight">{effectText(it)}</small>
-                <span className="mt-auto inline-flex items-center gap-1 self-end bg-well-deep px-1.5 pb-1 pt-[3px] font-pixel-sm text-[14px] text-ink">
-                  {badges < it.shopBadges && <PixelIcon name="badge" size={8} />}
-                  {needs(it)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-    </>
-  )
-}
-
-/** The Sell tab doubles as the bag: every item you hold, grouped like the Mart; the Mart buys back its own stock. */
-function SellTab() {
-  const { t } = useT()
-  const data = useGame((s) => s.data)
-  const inventory = useGame((s) => s.save?.inventory)
-  const [cat, setCat] = useState<Cat>('all')
-  const [open, setOpen] = useState<string | null>(null)
-  const [qty, setQty] = useState<string>('1')
-  // The list as the save holds it (a stable reference); a gem the admin removed since is skipped.
-  const held = useGame((s) => s.save?.powers?.gems)
-  const gems = ownedGems({ powers: { gems: held } })
-    .map((k) => data.items[k])
-    .filter(isGem)
-  const bag = Object.entries(inventory ?? {})
-    .filter(([k, n]) => n > 0 && data.items[k])
-    .map(([k, n]) => ({ it: data.items[k]!, owned: n }))
-  // Mega Gems are held, never in the bag's counts: listed apart, and never sold (docs/35).
-  const gemList = gems.length > 0 && (
-    <section aria-labelledby="bag-gems" className="flex flex-col gap-1.5">
-      <h2 id="bag-gems" className="mt-1 text-[24px] leading-none">
-        {t('ui.shop.groupGems')}
-      </h2>
-      <ul className="grid grid-cols-2 gap-1.5 md:grid-cols-3">
-        {gems.map((it) => (
-          <Row
+    <details className="group flex flex-col gap-1.5">
+      <summary className="flex min-h-[44px] cursor-pointer items-center gap-1.5 font-pixel-sm text-[18px] text-muted">
+        <span className="inline-block transition-transform group-open:rotate-90" aria-hidden>
+          ▶
+        </span>
+        {t('ui.shop.comingLaterCount', { title: t('ui.shop.comingLater'), n: items.length })}
+      </summary>
+      <ul className={TILE_GRID}>
+        {items.map((it) => (
+          <ItemTile
             key={it.key}
-            it={it}
-            side="sell"
-            open={false}
-            sub={t('ui.shop.cantSell')}
-            owned={0}
+            id={it.key}
+            name={it.name}
+            picture={<ItemSprite item={it} size={40} />}
+            sub={effectText(it)}
+            locked
+            action={
+              <PricePlate>
+                {badges < it.shopBadges && <PixelIcon name="badge" size={12} />}
+                <span className="font-pixel-sm text-[16px] leading-tight">{needs(it)}</span>
+              </PricePlate>
+            }
           />
         ))}
       </ul>
+    </details>
+  )
+}
+
+/**
+ * PC, nothing open on Buy: the Bag stands in the pane, so what you hold sits beside what you can buy. A row opens its
+ * details there (to sell it).
+ */
+function BagPane({
+  offers,
+  gems,
+  onOpen,
+}: {
+  offers: Offer[]
+  gems: ItemDef[]
+  onOpen: (id: string) => void
+}) {
+  const { t } = useT()
+  return (
+    <section aria-labelledby="bag-pane" className="flex min-h-0 flex-1 flex-col">
+      <h2 id="bag-pane" className="flex items-center gap-2 px-3.5 pb-2 pt-3 text-title leading-none">
+        <PixelIcon name="bag" size={24} />
+        {t('ui.shop.bagTab')}
+      </h2>
+      <div className="pixel-scroll min-h-0 flex-1 overflow-y-auto px-3.5 pb-4">
+        {offers.length === 0 && gems.length === 0 ? (
+          <p className="copy m-0 text-muted">{t('ui.shop.bagEmpty')}</p>
+        ) : (
+          <ul className="m-0 grid list-none gap-1 p-0">
+            {offers.map((o) => (
+              <li key={o.id}>
+                <button
+                  type="button"
+                  onClick={() => onOpen(o.id)}
+                  className="flex min-h-[44px] w-full items-center gap-2 bg-paper px-2 text-left shadow-ring-line hover:shadow-ring"
+                >
+                  {o.picture(28)}
+                  <span className="min-w-0 flex-1 truncate text-[18px]">{o.name}</span>
+                  <span className="font-pixel-sm text-[18px] tabular-nums text-ink">×{o.held}</span>
+                </button>
+              </li>
+            ))}
+            {gems.map((it) => (
+              <li key={it.key} className="flex min-h-[44px] items-center gap-2 bg-well px-2 shadow-ring-line">
+                <ItemSprite item={it} size={28} />
+                <span className="min-w-0 flex-1 truncate text-[18px]">{it.name}</span>
+                <span className="font-pixel-sm text-[16px] text-ink">{t('ui.shop.cantSell')}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   )
-  if (!bag.length)
-    return (
-      <>
-        <p className="copy text-muted">{t('ui.shop.bagEmpty')}</p>
-        {gemList}
-      </>
-    )
-  const rows = bag
-    .filter((r) => inCat(cat)(r.it))
-    .sort(
-      (a, b) =>
-        groupIndex(a.it) - groupIndex(b.it) || b.it.price - a.it.price || a.it.name.localeCompare(b.it.name),
-    )
-  return (
+}
+
+type MartTab = 'buy' | 'upgrades' | 'sell'
+
+/**
+ * The tabs are the page's title on a phone (the h1 is for screen readers there, as Social's views do): Buy, Upgrades,
+ * the Bag, each with its icon. On PC the title stands at their left.
+ */
+function MartTabs({
+  tab,
+  onTab,
+  title,
+  upgrades,
+}: {
+  tab: MartTab
+  onTab: (t: MartTab) => void
+  title: string
+  upgrades: number
+}) {
+  const { t } = useT()
+  const label = (icon: 'navShop' | 'navUpgrades' | 'bag', text: string) => (
     <>
-      <p className="font-pixel-sm text-[15px] leading-tight text-muted">{t('ui.shop.sellIntro')}</p>
-      <CatChips
-        items={bag.map((r) => r.it)}
-        value={cat}
-        onChange={(c) => {
-          setCat(c)
-          setOpen(null)
-        }}
-      />
-      <ul className="grid grid-cols-2 gap-1.5 md:grid-cols-3">
-        {rows.map(({ it, owned }) => {
-          const unit = sellPrice(it)
-          const sellable = unit > 0
-          const n = qty === 'all' ? owned : Math.min(Number(qty), owned)
-          const choices = [
-            ...(['1', '5'] as const).filter((q) => Number(q) < owned).map((q) => ({ id: q, label: `×${q}` })),
-            { id: 'all', label: t('ui.shop.all', { count: owned }) },
-          ]
-          return (
-            <Row
-              key={it.key}
-              it={it}
-              side="sell"
-              open={open === it.key}
-              onToggle={
-                sellable
-                  ? () => {
-                      setOpen(open === it.key ? null : it.key)
-                      setQty('1')
-                    }
-                  : undefined
-              }
-              sub={sellable ? t('ui.shop.each', { price: money(unit) }) : t('ui.shop.cantSell')}
-              pill={
-                sellable && (
-                  <span className="min-w-[62px] bg-forest px-2 pb-2 pt-1.5 text-center text-[18px] leading-none text-white">
-                    +{money(unit)}
-                  </span>
-                )
-              }
-              owned={owned}
-            >
-              <div className="flex items-center gap-2">
-                {choices.length > 1 && (
-                  <Seg
-                    label={t('ui.shop.howManyToSell', { item: it.name })}
-                    value={qty}
-                    onChange={setQty}
-                    options={choices}
-                  />
-                )}
-                <PixelButton
-                  variant="success"
-                  className="min-h-[50px] flex-1"
-                  aria-label={t('ui.shop.sellLabel', { count: n, item: it.name, price: money(unit * n) })}
-                  onClick={() => {
-                    if (!sell(it.key, n)) return
-                    sfx('gold')
-                    pushToast(t('ui.shop.sold', { n, item: it.name, gain: money(unit * n) }), 'good')
-                    if (n >= owned) setOpen(null)
-                    setQty('1')
-                  }}
-                >
-                  {t('ui.shop.sellFor', { price: money(unit * n) })}
-                </PixelButton>
-              </div>
-            </Row>
-          )
-        })}
-      </ul>
-      {gemList}
+      {/* Icons from 420 px: on a phone a long word (Améliorations, Potenziamenti) needs the room. */}
+      <PixelIcon name={icon} size={20} className="hidden shrink-0 min-[420px]:block" />
+      {text}
     </>
+  )
+  return (
+    <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-4">
+      <h1 className="sr-only lg:not-sr-only lg:flex lg:items-center lg:gap-2.5 lg:text-[32px] lg:leading-none">
+        <PixelIcon name="navShop" size={32} className="hidden shrink-0 lg:block" />
+        {title}
+      </h1>
+      {/* A tab never squeezes under its label: where a translation outgrows the narrowest phone, the bar scrolls
+          inside itself (as the category chips do), never the page. */}
+      <div className="-m-1.5 min-w-0 overflow-x-auto p-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <Seg
+          tabs
+          idPrefix="mart"
+          label={t('ui.shop.tabs')}
+          value={tab}
+          onChange={onTab}
+          className="w-full min-w-max lg:w-auto lg:min-w-[520px]"
+          options={[
+            { id: 'buy', label: label('navShop', t('ui.shop.buy')) },
+            {
+              id: 'upgrades',
+              label: label('navUpgrades', t('ui.upgrades.title')),
+              count: upgrades || undefined,
+            },
+            { id: 'sell', label: label('bag', t('ui.shop.bagTab')) },
+          ]}
+        />
+      </div>
+    </div>
   )
 }
 
@@ -874,31 +456,179 @@ export function ShopScreen() {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
-  const [tab, setTab] = useState<'buy' | 'sell'>('buy')
+  const [params, setParams] = useSearchParams()
+  const asked = params.get('tab')
+  const tab: MartTab = asked === 'upgrades' || asked === 'sell' ? asked : 'buy'
+  const [open, setOpen] = useState<string | null>(null)
+  const [cat, setCat] = useState<Cat>('all')
+  const [flights, setFlights] = useState<Record<string, number>>({})
+  const setTab = (next: MartTab) => {
+    setOpen(null)
+    setCat('all')
+    setParams(next === 'buy' ? {} : { tab: next }, { replace: true })
+  }
   const inside = useInWorld().inside
+  const upgrades = useGame((s) => (s.save ? affordableUpgrades(s.save, s.data) : 0))
+  const { lives, now: liveNow } = useLive(1000)
+  const ug = useUnderground(1000)
   if (!save) return null
   const badges = badgeCase(save, data).filter((b) => b.earned).length
+  const gold = save.gold
+  const shelf: ShelfProps = {
+    gold,
+    open,
+    onOpen: (id) => setOpen(open === id ? null : id),
+    flights,
+    onBought: (id) => setFlights((f) => ({ ...f, [id]: (f[id] ?? 0) + 1 })),
+  }
+
+  // Every offer on the page, so the one open is found whichever shelf it sits on.
+  const stock = inside
+    ? []
+    : shopStock(data, badges, (id) => isAreaUnlocked(save, id, data), {
+        region: regionOf(save),
+        bought: save.boughtUnique,
+      })
+  const byShelf = (a: ItemDef, b: ItemDef) => groupIndex(a) - groupIndex(b) || a.price - b.price
+  const forSale = stock.filter((s) => s.unlocked).map((s) => s.item)
+  const shelfOffers = forSale
+    .filter(inCat(cat))
+    .sort(byShelf)
+    .map((it) => shopOffer(it, save))
+  const later = stock
+    .filter((s) => !s.unlocked)
+    .map((s) => s.item)
+    .filter(inCat(cat))
+    .sort((a, b) => a.shopBadges - b.shopBadges || byShelf(a, b))
+  const liveShops =
+    inside || liveNow == null
+      ? []
+      : lives.filter((e) => e.type === 'shop').map((e) => ({ live: e, offers: liveOffers(save, data, e) }))
+  const kit = !inside && ug.live && ug.u && ug.now != null ? kitOffer(ug.u, ugCfg(data)) : null
+  const gemRows =
+    !inside && gemRulesOn(data) && powerEarned(save, data, 'mega') ? gemShelf(save, data) : undefined
+  const gems = (gemRows ?? []).map((r) => gemOffer(r, (row) => buyGem(row.item.key)))
+  const world = inside ? worldOffers(save, data) : []
+  const bag = bagOffers(save, data).sort(
+    (a, b) =>
+      groupIndex(data.items[a.key]!) - groupIndex(data.items[b.key]!) ||
+      (b.price ?? 0) - (a.price ?? 0) ||
+      a.name.localeCompare(b.name),
+  )
+  // Mega Gems are held, never in the bag's counts: listed apart, and never sold (docs/35).
+  const gemsHeld = ownedGems(save)
+    .map((k) => data.items[k])
+    .filter(isGem)
+  const all = [
+    ...shelfOffers,
+    ...liveShops.flatMap((s) => s.offers),
+    ...(kit ? [kit] : []),
+    ...gems,
+    ...world,
+    ...bag,
+  ]
+  const opened = open ? all.find((o) => o.id === open) : undefined
+  const detail = opened && (
+    <OfferDetail
+      key={opened.id}
+      o={opened}
+      gold={gold}
+      onClose={() => setOpen(null)}
+      onBought={() => shelf.onBought(opened.id)}
+    />
+  )
+
+  // One place to spend gold (docs/43 §3): Buy, Upgrades, the Bag. The gold is the top bar's; no second wallet here.
   // Inside a small world the Mart is the world's (docs/21): its list to buy from, and the world's bag sold back for
   // the world's ₽ (its prices are never below the buy-back, so that can't pay).
+  const head = (
+    <MartTabs
+      tab={tab}
+      onTab={setTab}
+      title={t(inside ? 'ui.world.mart.title' : 'ui.shop.title')}
+      upgrades={upgrades}
+    />
+  )
+  if (tab === 'upgrades')
+    return (
+      <div className="flex w-full flex-col gap-3">
+        {head}
+        <div role="tabpanel" aria-labelledby="mart-upgrades" className="flex flex-col gap-3">
+          <UpgradesPanel />
+        </div>
+      </div>
+    )
+
+  const bagTab = tab === 'sell'
+  const bagRows = bag.filter((o) => inCat(cat)(data.items[o.key]!))
+  const main = bagTab ? (
+    <>
+      {bag.length === 0 ? (
+        <p className="copy m-0 text-muted">{t('ui.shop.bagEmpty')}</p>
+      ) : (
+        <>
+          <CatChips items={bag.map((o) => data.items[o.key]!)} value={cat} onChange={setCat} />
+          <OfferGrid offers={bagRows} shelf={shelf} />
+        </>
+      )}
+      {gemsHeld.length > 0 && (
+        <section aria-labelledby="bag-gems" className="flex flex-col gap-1.5">
+          <h2 id="bag-gems" className="mt-1 text-[24px] leading-none">
+            {t('ui.shop.groupGems')}
+          </h2>
+          <ul className={TILE_GRID}>
+            {gemsHeld.map((it) => (
+              <ItemTile
+                key={it.key}
+                id={it.key}
+                name={it.name}
+                picture={<ItemSprite item={it} size={40} />}
+                sub={effectText(it)}
+                action={<PricePlate>{t('ui.shop.cantSell')}</PricePlate>}
+              />
+            ))}
+          </ul>
+        </section>
+      )}
+    </>
+  ) : inside ? (
+    <WorldShopSection offers={world} shelf={shelf} />
+  ) : (
+    <>
+      {liveNow != null &&
+        liveShops.map((s) => (
+          <LiveShopSection key={s.live.id} live={s.live} now={liveNow} offers={s.offers} shelf={shelf} />
+        ))}
+      {kit && ug.live && ug.now != null && (
+        <UgKitSection live={ug.live} now={ug.now} offer={kit} shelf={shelf} />
+      )}
+      <CatChips items={forSale} value={cat} onChange={setCat} />
+      <OfferGrid offers={shelfOffers} shelf={shelf} label={t('ui.shop.buy')} />
+      {shelfOffers.length === 0 && <p className="copy m-0 text-muted">{t('ui.shop.nothingHere')}</p>}
+      {gemRows !== undefined && (
+        <GemShelfView rows={gemRows} gold={gold} onBuy={(r) => buyGem(r.item.key)} shelf={shelf} />
+      )}
+      <ComingLater items={later} badges={badges} />
+    </>
+  )
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
-      <PageHead icon="navShop" title={t(inside ? 'ui.world.mart.title' : 'ui.shop.title')}>
-        <Wallet />
-      </PageHead>
-      <Seg
-        tabs
-        idPrefix="mart"
-        label={t('ui.shop.tabs')}
-        value={tab}
-        onChange={setTab}
-        className="w-full"
-        options={[
-          { id: 'buy', label: t('ui.shop.buy') },
-          { id: 'sell', label: t('ui.shop.sell') },
-        ]}
-      />
-      <div role="tabpanel" aria-labelledby={`mart-${tab}`} className="flex flex-col gap-3">
-        {tab === 'sell' ? <SellTab /> : inside ? <WorldShop /> : <BuyTab badges={badges} />}
+    <div className="flex w-full flex-col gap-3">
+      {head}
+      <div role="tabpanel" aria-labelledby={`mart-${tab}`} className={cx('flex flex-col gap-3')}>
+        <SplitView
+          main={main}
+          detail={detail || undefined}
+          empty={
+            bagTab ? (
+              <div className="grid flex-1 place-content-center gap-2 p-6 text-center">
+                <PixelIcon name="bag" size={40} className="mx-auto" />
+                <p className="copy m-0 text-[20px]">{t('ui.shop.sellIntro')}</p>
+              </div>
+            ) : (
+              <BagPane offers={bag} gems={gemsHeld} onOpen={(id) => setOpen(id)} />
+            )
+          }
+        />
       </div>
     </div>
   )

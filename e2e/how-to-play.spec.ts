@@ -157,12 +157,23 @@ test("the trainer menu's guide opens on the cards too", async ({ page }) => {
   expect(overflow).toBeLessThanOrEqual(0)
 })
 
-test('with the Game feel off, the guide is the text it was', async ({ page }) => {
+test('with the Game feel off, the guide is the rules alone, folded one at a time', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await boot(page, { feel: false })
   await page.goto('/help')
-  await expect(page.getByRole('heading', { name: 'The goal', level: 2 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'The goal', level: 3 })).toBeVisible()
   await expect(cards(page)).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'The basics' })).toHaveCount(0)
-  await expect(page.getByRole('heading', { name: 'All the rules' })).toHaveCount(0)
+  // One section open at a time: opening Battles closes The goal.
+  const goal = page.getByRole('button', { name: 'The goal' })
+  const battles = page.getByRole('button', { name: 'Battles' })
+  await goal.click()
+  await expect(goal).toHaveAttribute('aria-expanded', 'true')
+  await battles.click()
+  await expect(battles).toHaveAttribute('aria-expanded', 'true')
+  await expect(goal).toHaveAttribute('aria-expanded', 'false')
+  await expect(page.getByText('The faster Pokémon acts first.')).toBeVisible()
+  // Every detail, one tap further.
+  await page.getByRole('button', { name: 'Every detail' }).click()
+  await expect(page.getByText(/^Keyboard: 1–6 pick dice/)).toBeVisible()
 })

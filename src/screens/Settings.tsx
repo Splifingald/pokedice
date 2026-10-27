@@ -10,7 +10,6 @@ import { Seg } from '@/components/Segmented'
 import { Toggle } from '@/components/Toggle'
 import { donationEnabled, extremeOpen, isExtreme } from '@/engine'
 import { LANG_LABELS, LANGS, type Lang } from '@/i18n'
-import { multiExpText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { pushToast, setSettings, useGame } from '@/store/game'
@@ -23,6 +22,7 @@ import { PlayStylePanel } from '@/components/IdleMode'
 import { AccountButton, ConnectedAccounts, DisconnectButton } from '@/components/AccountButton'
 import { soundOn } from '@/save/storage'
 import { cx } from '@/theme/util'
+import { PixelIcon } from '@/components/icons'
 
 export function SettingsScreen() {
   return <SettingsContent />
@@ -84,9 +84,11 @@ function SettingsContent({ over = false, shut }: { over?: boolean; shut?: string
   // Only when the admin has it switched on, with a Ko-fi link.
   const canDonate = donationEnabled(data)
   const [donating, setDonating] = useState(false)
-  // White, here and over the fight: red stays for the game's own actions (docs/38 U5d).
+  // SUPPORT ME is the trainer menu's (its foot, docs/43 §3): here only a quiet row in the last panel, white — red stays
+  // for the game's own actions (docs/38 U5d).
   const support = canDonate && (
     <PixelButton size="sm" onClick={() => setDonating(true)}>
+      <PixelIcon name="heart" size={16} />
       {t('ui.support.button')}
     </PixelButton>
   )
@@ -101,80 +103,72 @@ function SettingsContent({ over = false, shut }: { over?: boolean; shut?: string
     }
   }
 
+  // On its page from 1024 px: two columns, how the game plays and looks (left) and who you are and your data (right).
+  // Over a fight it stays one column in its dialog.
   return (
-    <div className="flex max-w-2xl flex-col gap-4">
-      {!over ? (
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h1 className="text-[32px] leading-none">{t('ui.settings.title')}</h1>
-          {support}
-        </div>
-      ) : (
-        support && <div className="flex justify-end">{support}</div>
-      )}
-
+    <div className="flex flex-col gap-4">
+      {!over && <h1 className="text-[32px] leading-none">{t('ui.settings.title')}</h1>}
+      <div className={cx('grid gap-4', !over && 'lg:grid-cols-2 lg:items-start')}>
+      <div className="flex min-w-0 flex-col gap-4">
+      {/* Titles only, no description lines (the user's call, 2026-10-25): each title says what it switches. */}
       <Panel title={t('ui.settings.game')}>
         <Toggle
           label={t('ui.settings.sound')}
-          hint={t('ui.settings.soundHint')}
           on={soundOn(settings)}
           onChange={(v) => setSettings({ sound: v, sfx: v })}
         />
         <FeelSettings />
-        <Toggle
-          label={t('ui.settings.multiExp')}
-          hint={
-            data.config.multiExpShare > 0
-              ? t('ui.settings.multiExpHint', { share: multiExpText(data) })
-              : t('ui.settings.multiExpOff')
-          }
-          on={settings.multiExp}
-          onChange={(v) => setSettings({ multiExp: v })}
-        />
-        <div className="flex flex-col gap-1.5 py-1">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-2xl">{t('ui.settings.animations')}</span>
-            <Seg
-              label={t('ui.settings.animations')}
-              value={settings.animations ?? 'full'}
-              onChange={(v) => setSettings({ animations: v })}
-              options={[
-                { id: 'full', label: t('ui.settings.animFull') },
-                { id: 'short', label: t('ui.settings.animShort') },
-              ]}
-              className="min-w-[12rem]"
-            />
-          </div>
-          <span className="copy block text-muted">{t('ui.settings.animationsHint')}</span>
+        {/* Switched off by the game's config (no bench share), it would do nothing: not shown. */}
+        {data.config.multiExpShare > 0 && (
+          <Toggle
+            label={t('ui.settings.multiExp')}
+            on={settings.multiExp}
+            onChange={(v) => setSettings({ multiExp: v })}
+          />
+        )}
+        <div className="flex flex-wrap items-center justify-between gap-2 py-1">
+          <span className="text-2xl">{t('ui.settings.animations')}</span>
+          <Seg
+            label={t('ui.settings.animations')}
+            value={settings.animations ?? 'full'}
+            onChange={(v) => setSettings({ animations: v })}
+            options={[
+              { id: 'full', label: t('ui.settings.animFull') },
+              { id: 'short', label: t('ui.settings.animShort') },
+            ]}
+            className="min-w-[8rem]"
+          />
         </div>
-        <div className="flex flex-col gap-1.5 py-1">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-2xl">{t('ui.settings.theme')}</span>
-            <Seg
-              label={t('ui.settings.theme')}
-              value={settings.theme ?? 'light'}
-              onChange={(v) => setSettings({ theme: v })}
-              options={[
-                { id: 'light', label: t('ui.settings.themeLight') },
-                { id: 'dark', label: t('ui.settings.themeDark') },
-                { id: 'auto', label: t('ui.settings.themeAuto') },
-              ]}
-              className="min-w-[15rem]"
-            />
-          </div>
-          <span className="copy block text-muted">{t('ui.settings.themeHint')}</span>
+        <div className="flex flex-wrap items-center justify-between gap-2 py-1">
+          <span className="text-2xl">{t('ui.settings.theme')}</span>
+          <Seg
+            label={t('ui.settings.theme')}
+            value={settings.theme ?? 'light'}
+            onChange={(v) => setSettings({ theme: v })}
+            options={[
+              { id: 'light', label: t('ui.settings.themeLight') },
+              { id: 'dark', label: t('ui.settings.themeDark') },
+              { id: 'auto', label: t('ui.settings.themeAuto') },
+            ]}
+            className="min-w-[13rem]"
+          />
         </div>
         {/* On until the first badge unless the player chose (docs/38 U1b); the type chart holds the same switch. */}
         <Toggle
           label={t('ui.settings.typeHints')}
-          hint={t('ui.settings.typeHintsHint')}
           on={typeHints}
           onChange={(v) => setSettings({ typeHints: v })}
+        />
+        {/* Off by default (docs/42): the battle history, the HP and XP figures, the cards' types, for those who read them. */}
+        <Toggle
+          label={t('ui.settings.details')}
+          on={settings.details === true}
+          onChange={(v) => setSettings({ details: v || undefined })}
         />
         {/* No animations: admins only — but a player who already turned it on still sees it, so they can turn it off. */}
         {(isAdmin || settings.reducedMotion) && (
           <Toggle
             label={t('ui.settings.reducedMotion')}
-            hint={t('ui.settings.reducedMotionHint')}
             on={settings.reducedMotion}
             onChange={(v) => setSettings({ reducedMotion: v })}
           />
@@ -185,7 +179,9 @@ function SettingsContent({ over = false, shut }: { over?: boolean; shut?: string
       <PlayStylePanel />
 
       <PushSettingsPanel />
+      </div>
 
+      <div className="flex min-w-0 flex-col gap-4">
       <LanguagePanel />
 
       <Panel title={t('ui.settings.cloud')}>
@@ -219,41 +215,44 @@ function SettingsContent({ over = false, shut }: { over?: boolean; shut?: string
         )}
       </Panel>
 
-      <Panel title={t('ui.settings.saveFile')}>
-        <details>
-          <summary className="flex min-h-[44px] cursor-pointer items-center text-xl">{t('ui.settings.saveAdvanced')}</summary>
-        {/* Deleting it is the one Delete at the bottom of the page, with the other deletions (docs/38 U8b). */}
-        <div className="mt-2 flex flex-wrap gap-2">
-          <PixelButton size="sm" onClick={() => void copySave()} disabled={!save}>
-            {t('ui.settings.copySave')}
-          </PixelButton>
-        </div>
-        {/* No import here: the cloud save is what the trade server reads, so a pasted save would be a cheat that
-            reaches other players (docs/23). Admins keep theirs in Dev Tools. */}
-        </details>
-      </Panel>
-
       <ExtremePanel />
 
+      {/* The game's data and your save file, one panel (they were two): the version and its check, then the save's
+          copy behind its disclosure; the legal line and the quiet SUPPORT ME close it. */}
       <Panel title={t('ui.settings.content')}>
-        <p className="text-lg">
-          {t('ui.settings.gameData', {
-            source: t(source === 'remote' ? 'ui.settings.sourceLive' : 'ui.settings.sourceBundled'),
-            version: data.config.configVersion,
-          })}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="m-0 text-lg">
+            {t('ui.settings.gameData', {
+              source: t(source === 'remote' ? 'ui.settings.sourceLive' : 'ui.settings.sourceBundled'),
+              version: data.config.configVersion,
+            })}
+          </p>
+          {/* New content swaps the game's data under the fight (an area, a species may go): after it. */}
+          <PixelButton size="sm" onClick={() => void checkContent()} shut={why}>
+            {t('ui.settings.checkUpdates')}
+          </PixelButton>
+        </div>
+        <details className="mt-1">
+          <summary className="flex min-h-[44px] cursor-pointer items-center text-xl">{t('ui.settings.saveAdvanced')}</summary>
+          {/* Deleting it is the one Delete at the bottom of the page, with the other deletions (docs/38 U8b). */}
+          <div className="mt-1 flex flex-wrap gap-2">
+            <PixelButton size="sm" onClick={() => void copySave()} disabled={!save}>
+              {t('ui.settings.copySave')}
+            </PixelButton>
+          </div>
+          {/* No import here: the cloud save is what the trade server reads, so a pasted save would be a cheat that
+              reaches other players (docs/23). Admins keep theirs in Dev Tools. */}
+        </details>
+        <p className="copy mb-0 mt-2 text-muted">
+          {t('ui.settings.legal')} <SetupLink shut={why}>{t('ui.title.deployGuide')}</SetupLink>
         </p>
-        {/* New content swaps the game's data under the fight (an area, a species may go): after it. */}
-        <PixelButton size="sm" className="mt-1" onClick={() => void checkContent()} shut={why}>
-          {t('ui.settings.checkUpdates')}
-        </PixelButton>
+        {support && <div className="mt-2">{support}</div>}
       </Panel>
-
-      <p className="copy text-muted">
-        {t('ui.settings.legal')} <SetupLink shut={why}>{t('ui.title.deployGuide')}</SetupLink>
-      </p>
 
       {/* One Disconnect (Cloud backup's, beside who is signed in) and, at the very bottom, one Delete that asks what. */}
       <DeleteData shut={why} />
+      </div>
+      </div>
 
       <SupportModal open={donating} onClose={() => setDonating(false)} />
     </div>
@@ -299,7 +298,7 @@ export function DeleteChooser({
               className="flex min-h-[56px] w-full flex-col items-start gap-1 bg-paper px-3 pb-2.5 pt-2 text-left shadow-card"
             >
               <b className="text-[22px] font-normal leading-none text-danger">{t(CHOICES[c].label)}</b>
-              <small id={`${id}-${c}`} className="font-pixel-sm text-[15px] leading-tight text-muted">
+              <small id={`${id}-${c}`} className="font-pixel-sm text-[16px] leading-tight text-muted">
                 {t(CHOICES[c].desc)}
               </small>
             </button>
@@ -432,8 +431,7 @@ function ExtremePanel() {
   if (!extreme && !hasSave && !extremeOpen(save, data)) return null
   return (
     <Panel title={t('ui.extreme.name')}>
-      <p className="copy text-muted">{t('ui.extreme.settings.hint')}</p>
-      <div className="mt-2 flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2">
         <PixelButton size="sm" onClick={() => setRules(true)} aria-label={t('ui.extreme.infoLabel')}>
           {t('ui.extreme.settings.rules')}
         </PixelButton>
@@ -466,30 +464,35 @@ function SetupLink({ shut, children }: { shut?: string | null; children: string 
   )
 }
 
-/** The whole game — menus, Pokémon, trainers, items — follows this. */
+/**
+ * The whole game — menus, Pokémon, trainers, items — follows this. One dropdown, each language in its own words (was
+ * ten buttons, four rows of a phone, for a choice made once).
+ */
 function LanguagePanel() {
   const { t } = useT()
   const lang = useGame((s) => s.settings.lang)
+  const id = useId()
   return (
-    <Panel title={t('ui.settings.language')}>
-      <div role="radiogroup" aria-label={t('ui.settings.language')} className="flex flex-wrap gap-2">
+    <Panel title={<label htmlFor={id}>{t('ui.settings.language')}</label>}>
+      <select
+        id={id}
+        value={lang}
+        lang={lang}
+        onChange={(e) => setSettings({ lang: e.target.value as Lang })}
+        // font-pixel re-reads --font-cjk here, so the language shown draws in its own CJK face.
+        className="h-12 w-full appearance-none rounded-none bg-paper bg-[length:12px] bg-[right_14px_center] bg-no-repeat px-3 pr-10 font-pixel text-[22px] text-ink shadow-field"
+        style={{ backgroundImage: ARROW }}
+      >
         {LANGS.map((l) => (
-          <button
-            key={l}
-            type="button"
-            role="radio"
-            aria-checked={lang === l}
-            lang={l}
-            onClick={() => setSettings({ lang: l as Lang })}
-            // font-pixel re-reads --font-cjk here, so each label draws in its own language's CJK face (`lang` alone
-            // would inherit the page's: a font stack is resolved once, on <body>).
-            className={`pixel-btn font-pixel min-h-[44px] px-3 py-1 text-2xl leading-none ${lang === l ? 'bg-gold' : 'bg-parchment'}`}
-          >
+          <option key={l} value={l} lang={l}>
             {LANG_LABELS[l]}
-          </button>
+          </option>
         ))}
-      </div>
-      <p className="copy mt-2 text-muted">{t('ui.settings.languageHint')}</p>
+      </select>
     </Panel>
   )
 }
+
+// The dropdown's arrow, in the ink of the theme (currentColor can't reach a background image).
+const ARROW =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 4' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h6v1H5v1H4v1H3v1H3V3H2V2H1V1H0z' fill='%238592ad'/%3E%3C/svg%3E\")"

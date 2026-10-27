@@ -24,6 +24,7 @@ import {
 import { useT } from '@/i18n/react'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { useMotion } from '@/lib/motion'
+import { useMediaQuery } from '@/lib/useMediaQuery'
 import { pushToast, useGame } from '@/store/game'
 import { ugOpenWall, ugStrike, ugTakeHaul, useUnderground } from '@/store/underground'
 import { cx } from '@/theme/util'
@@ -38,6 +39,7 @@ export function UndergroundDig() {
   const navigate = useNavigate()
   const data = useGame((s) => s.data)
   const { level, calm } = useMotion()
+  const wide = useMediaQuery('(min-width: 1024px)')
   const { live, now, u } = useUnderground(5000)
   const [fx, setFx] = useState<StrikeFx | null>(null)
   const [freed, setFreed] = useState<FoundFx | null>(null)
@@ -141,9 +143,16 @@ export function UndergroundDig() {
         )}
       </header>
 
-      {wall && (
-        <main className="mx-auto flex w-full max-w-[440px] flex-1 flex-col gap-2.5 px-3 pt-2.5">
-          <div className="grid gap-1.5">
+      {/* Phones: the gauge, the wall, what's buried, the die pinned at the foot. PC (docs/43 §5.11): the wall large on
+          the left, as tall as the screen allows; the gauge, what's buried and the die docked at its right. */}
+      <main
+        className={cx(
+          'mx-auto flex w-full max-w-[440px] flex-1 flex-col gap-2.5 px-3 pt-2.5',
+          'lg:grid lg:max-w-[1240px] lg:grid-cols-[minmax(0,1fr)_400px] lg:grid-rows-[auto_auto_1fr] lg:items-start lg:gap-x-8 lg:gap-y-4 lg:px-6 lg:pt-6',
+        )}
+      >
+        {wall && (
+          <div className="grid gap-1.5 lg:col-start-2 lg:row-start-1">
             <div className="flex items-end justify-between gap-2">
               <span className={cx('text-[19px] leading-none', hot ? 'text-[#ff9a6a]' : 'text-[#fbfdff]')}>
                 {status === 'collapsed'
@@ -165,21 +174,31 @@ export function UndergroundDig() {
             </div>
             <CrackGauge strikes={wall.strikes} used={wall.used} calm={calm} hitKey={fx?.key} motion={level} />
           </div>
+        )}
 
-          <UgWall
-            wall={wall}
-            data={data}
-            onStrike={onStrike}
-            disabled={status !== 'digging'}
-            fx={fx}
-            found={freed}
-            motion={level}
-            calm={calm}
-            collapsing={status === 'collapsed'}
-          />
+        {wall && (
+          <div
+            className="w-full lg:col-start-1 lg:row-span-3 lg:row-start-1 lg:justify-self-center"
+            // As wide as the window's height allows for the wall's shape, so it's never cut by the fold.
+            style={wide ? { maxWidth: `calc((100dvh - 150px) * ${wall.cols / wall.rows})` } : undefined}
+          >
+            <UgWall
+              wall={wall}
+              data={data}
+              onStrike={onStrike}
+              disabled={status !== 'digging'}
+              fx={fx}
+              found={freed}
+              motion={level}
+              calm={calm}
+              collapsing={status === 'collapsed'}
+            />
+          </div>
+        )}
 
-          <div className="grid gap-1">
-            <span className="flex items-center justify-between gap-2 font-pixel-sm text-[15px] text-gold-light">
+        {wall && (
+          <div className="grid gap-1 lg:col-start-2 lg:row-start-2">
+            <span className="flex items-center justify-between gap-2 font-pixel-sm text-[16px] text-gold-light">
               <span>{t('ui.ug.buried', { n: wall.things.length, found })}</span>
               <span className="inline-flex shrink-0 items-center gap-1">
                 <PixelIcon name="kit" size={14} />
@@ -193,7 +212,7 @@ export function UndergroundDig() {
                   <li
                     key={k}
                     className={cx(
-                      'flex min-w-0 items-center gap-1.5 px-1.5 py-0.5 font-pixel-sm text-[14px]',
+                      'flex min-w-0 items-center gap-1.5 px-1.5 py-0.5 font-pixel-sm text-[16px]',
                       done
                         ? 'bg-paper text-ink shadow-ring-thin'
                         : 'bg-well-deep text-ink shadow-[inset_0_0_0_2px_rgb(var(--c-shadow))]',
@@ -216,11 +235,10 @@ export function UndergroundDig() {
               })}
             </ul>
           </div>
-        </main>
-      )}
+        )}
 
-      <footer className="mt-auto border-t-2 border-edge bg-panel px-3 pb-4 pt-2.5">
-        <div className="mx-auto max-w-[440px]">
+        {/* The die and its line, or the end: pinned at a phone's foot, the panel's last card on PC. */}
+        <footer className="sticky bottom-0 z-10 -mx-3 mt-auto border-t-2 border-edge bg-panel px-3 pb-4 pt-2.5 lg:static lg:col-start-2 lg:row-start-3 lg:mx-0 lg:mt-0 lg:border-0 lg:p-3 lg:shadow-card">
           {status === 'digging' || !wall ? (
             <div className="flex items-center gap-3">
               <PickaxeDie roll={roll?.roll ?? null} rollKey={fx?.key} />
@@ -228,7 +246,7 @@ export function UndergroundDig() {
                 <span className="text-[19px] leading-tight" aria-live="polite">
                   {message}
                 </span>
-                <span className="font-pixel-sm text-[14px] text-muted">
+                <span className="font-pixel-sm text-[16px] text-muted">
                   {t('ui.ug.dieLabel', { level: u.pickaxe })}
                 </span>
                 <PickaxeFaces faces={faces} face={roll?.face} size={26} />
@@ -247,8 +265,8 @@ export function UndergroundDig() {
               </PixelButton>
             </div>
           )}
-        </div>
-      </footer>
+        </footer>
+      </main>
 
       <Modal
         open={!!haul}

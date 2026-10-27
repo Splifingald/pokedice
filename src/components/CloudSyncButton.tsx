@@ -51,8 +51,10 @@ export function CloudSyncButton() {
       <PixelIcon name="cloud" size={20} className={cx(busy && 'animate-pulse')} />
       <span className="flex min-w-0 flex-col gap-0.5">
         <span className="text-2xl leading-none">{t('ui.sync.button')}</span>
-        <span className="font-pixel-sm truncate text-sm leading-none text-muted">{last}</span>
-        {status && <span className="font-pixel-sm truncate text-sm leading-none text-muted">{status}</span>}
+        {/* One line (it was two): when it last matched, and why it waits. */}
+        <span className="font-pixel-sm truncate text-sm leading-none text-muted">
+          {status ? `${last} · ${status}` : last}
+        </span>
       </span>
     </button>
   )
