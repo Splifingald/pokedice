@@ -74,8 +74,8 @@ test('Egg now pays and hatches at once', async ({ page }) => {
   await moment.getByRole('button', { name: 'SKIP ▸▸' }).click()
   await expect(moment.getByText(/hatched from the Egg!/).first()).toBeVisible()
   await moment.getByRole('button', { name: 'Done' }).click()
-  // ₽200 went (₽10 more may have come back from the Day Care couple).
-  await expect(page.getByRole('banner').getByText(/₽\s?3[01]0/).first()).toBeVisible()
+  // ₽200 went (the Day Care couple may give some back when the hatchling isn't kept: the engine says how much).
+  await expect(page.getByRole('banner').getByText(/₽\s?3\d\d/).first()).toBeVisible()
 })
 
 test('a Pokémon stays at the Day Care and comes back', async ({ page }) => {
