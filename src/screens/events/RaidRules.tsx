@@ -2,9 +2,7 @@
 // bar, so players can learn the pattern before going in; INFO tells how the overhaul works. The engine decides every
 // rule and number (engine/raidSpecials.ts); this only words them.
 import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
 import { PixelIcon, type IconName } from '@/components/icons'
-import { useMyTurn, useOnScreen } from '@/components/popupTurn'
 import { RuleList, RulesModal, type RuleRow } from '@/components/RulesModal'
 import {
   lowHpFormOf,
@@ -335,25 +333,3 @@ export function RaidRulesInfo({
 }
 
 const seen = () => mutateSave((s) => (s.events?.raidRulesSeen ? null : markRaidRulesSeen(s)))
-
-/**
- * Once, between fights, the first time a progression raid is open with the overhaul on. It takes its turn in the
- * one-time pop-ups' queue (engine/popups.ts), after the battle powers'. Let's go! leads to the Raids page.
- */
-export function RaidRulesPopup() {
-  // Never over the Raids page, whose card says it there (docs/43 §7).
-  const path = useLocation().pathname
-  const open = useMyTurn('raidRules') && path !== '/events/raid'
-  useOnScreen('raidRules', open)
-  const navigate = useNavigate()
-  return (
-    <RaidRulesInfo
-      open={open}
-      onClose={seen}
-      onGo={() => {
-        seen()
-        navigate('/events/raid')
-      }}
-    />
-  )
-}

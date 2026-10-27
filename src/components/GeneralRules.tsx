@@ -1,8 +1,7 @@
 // The General upgrades' rules (docs/15 §20, docs/25): the special events' pop-up, once when the tab opens to the
 // player, then from the INFO button at the bottom of the tab. The numbers come from the config, so a rebalance shows
 // up in the text.
-import { useNavigate } from 'react-router-dom'
-import { charmChanceAt, charmOn, charmRulesOnly, generalCfg, generalMax } from '@/engine'
+import { charmChanceAt, charmOn, generalCfg, generalMax } from '@/engine'
 import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
 import { countdown, money, oneInText } from '@/lib/format'
@@ -121,32 +120,6 @@ export function GeneralRulesModal({
       icon="navUpgrades"
       rules={charmOnly ? charm : all}
       onGo={onGo}
-    />
-  )
-}
-
-/**
- * The General tab has opened (the admin's switch, a first badge): once, between fights, its rules and a button straight
- * to it. It takes its turn in the one-time pop-ups' queue (engine/popups.ts), never on the Upgrades page. The same
- * once for the Shiny Charm, on its own, when its switch comes on after the tab's rules were read.
- */
-export function GeneralUnlockPopup() {
-  const navigate = useNavigate()
-  const open = useMyTurn('general')
-  useOnScreen('general', open)
-  const charmOnly = useGame((s) => !!s.save && charmRulesOnly(s.save, s.data))
-  // Gone the moment its turn ends, as before the queue: its button leads to another page, which a fading pop-up
-  // would cover.
-  if (!open) return null
-  return (
-    <GeneralRulesModal
-      charmOnly={charmOnly}
-      open={open}
-      onClose={markGeneralRulesSeen}
-      onGo={() => {
-        markGeneralRulesSeen()
-        navigate('/shop?tab=upgrades&up=general')
-      }}
     />
   )
 }

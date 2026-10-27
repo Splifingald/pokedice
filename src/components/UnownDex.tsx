@@ -19,14 +19,12 @@ import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
 import { SHOWDOWN_SPRITES } from '@/lib/showdown'
-import { markUnownDexSeen } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { Chip } from './Chip'
 import { PixelIcon } from './icons'
 import { DexGridList, DexTile } from './DexGrid'
 import { PixelButton } from './PixelButton'
-import { useMyTurn, useOnScreen } from './popupTurn'
 import { RulesModal, type RuleRow, type RulesPicture } from './RulesModal'
 import { spriteUrlFor } from './SpriteImg'
 
@@ -319,28 +317,6 @@ export function UnownDexRulesModal({
       icon="navDex"
       rules={rules}
       onGo={onGo}
-    />
-  )
-}
-
-/**
- * The Unown Pokédex has opened (the switch, an area where Unown live): once, between fights, its rules and a button
- * straight to its page. It takes its turn in the one-time pop-ups' queue (engine/popups.ts), never on the Pokédex.
- */
-export function UnownDexUnlockPopup() {
-  const navigate = useNavigate()
-  const open = useMyTurn('unownDex')
-  useOnScreen('unownDex', open)
-  // Gone the moment its turn ends: its button leads to another page, which a fading pop-up would cover.
-  if (!open) return null
-  return (
-    <UnownDexRulesModal
-      open={open}
-      onClose={markUnownDexSeen}
-      onGo={() => {
-        markUnownDexSeen()
-        navigate('/pokedex?view=unown')
-      }}
     />
   )
 }

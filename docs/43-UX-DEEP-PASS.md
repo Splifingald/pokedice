@@ -404,5 +404,4 @@ Today ~28 one-time pop-ups take turns (`PopupQueue`). This pass:
 | The Dice Types view on a phone is long (17 cards) | Its cards are one each; a fold by "carried by your team" is the next idea |
 | The docked item detail on PC doesn't take the focus or close on Esc | The pane isn't a dialog; a keyboard reaches it by Tab |
 | A friend's card keeps its stats grid | Only your own card was made compact |
-| The rules pop-up components of the features that moved to cards (`VersusUnlockPopup`, `TradesUnlockPopup`, …) | Still exported, never queued (`RetiredPopup`): removed once nothing imports them |
 | The Center on a phone, a small Box: room under it | The user's rule folds the healing away; the scene stays off |

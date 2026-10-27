@@ -1,14 +1,12 @@
 // The Day Care's and Versus's rules (docs/15), in the special events' pop-up: once when each opens, then from the INFO
 // button at the bottom of its page. The numbers come from the config, so a rebalance shows up in the text.
-import { useNavigate } from 'react-router-dom'
 import { VERSUS_LEVEL, VERSUS_TEAM_SIZE } from '@/engine'
 import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
-import { markVersusRulesSeen, visitDayCare } from '@/store/actions'
+import { visitDayCare } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { EggSprite } from './EggSprite'
-import { useMyTurn, useOnScreen } from './popupTurn'
 import { RulesCard } from './RulesCard'
 import { RulesModal, type RuleRow, type RulesPicture } from './RulesModal'
 
@@ -128,29 +126,6 @@ export function VersusRulesModal({
       icon="vs"
       rules={rules}
       onGo={onGo}
-    />
-  )
-}
-
-/**
- * Versus has opened (three Pokémon at Lv.50): once, between fights, its rules and a button straight to it. It takes its
- * turn in the one-time pop-ups' queue (engine/popups.ts), never on Versus's own page.
- */
-export function VersusUnlockPopup() {
-  const navigate = useNavigate()
-  const open = useMyTurn('versus')
-  useOnScreen('versus', open)
-  // Gone the moment its turn ends, as before the queue: its button leads to another page, which a fading pop-up
-  // would cover.
-  if (!open) return null
-  return (
-    <VersusRulesModal
-      open={open}
-      onClose={markVersusRulesSeen}
-      onGo={() => {
-        markVersusRulesSeen()
-        navigate('/versus')
-      }}
     />
   )
 }
