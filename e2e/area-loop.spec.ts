@@ -1,5 +1,4 @@
-// The area loop's deep pass (docs/43 §5.3): the stage that grows upward on a tall phone (the panel right under the
-// grid, nothing to scroll), the turn's switch on the send-out's cards (no dialog, BACK, the forfeit flag), the battle's
+// The area loop's deep pass (docs/43 §5.3): the stage's 3:2 picture on a tall phone and GO! waiting for the tap, the turn's switch on the send-out's cards (no dialog, BACK, the forfeit flag), the battle's
 // keys (S, Esc, B, Enter), the Bag's "on whom" as cards, and the PC's discreet key line with the pips as the team row.
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
@@ -50,27 +49,25 @@ async function toDice(page: Page) {
   await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeEnabled({ timeout: 20_000 })
 }
 
-test('a tall phone: the stage grows upward, the panel sits right under the grid, nothing to scroll', async ({
-  page,
-}) => {
+test('a tall phone: the stage keeps its 3:2 picture, GO! waits for the tap, nothing to scroll', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await boot(page, threeTeam())
-  await toDice(page)
+  await page.goto('/home')
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+  // No button presses itself (the user's call, 2026-10-27): a wild fight's GO! is still there after its old count.
+  const go = page.getByRole('button', { name: /^Send out / })
+  await expect(go).toBeVisible()
+  await page.waitForTimeout(4000)
+  await expect(go).toBeVisible()
+  await go.click()
+  await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeEnabled({ timeout: 20_000 })
   const m = await page.evaluate(() => {
-    const sky = document.querySelector('[data-stage-sky]') as HTMLElement
-    const grid = sky.parentElement!.getBoundingClientRect()
-    const frame = sky.parentElement!.parentElement!.getBoundingClientRect()
-    const line = document.querySelector('.battle-line')!.getBoundingClientRect()
-    return {
-      frame: frame.height,
-      grid: grid.height,
-      gap: line.top - grid.bottom,
-      scroll: document.documentElement.scrollHeight - innerHeight,
-    }
+    const stage = document.querySelector('main section .shadow-ledge') as HTMLElement
+    const r = stage.getBoundingClientRect()
+    return { w: r.width, h: r.height, scroll: document.documentElement.scrollHeight - innerHeight }
   })
-  // The frame is taller than the 3:2 grid (the sky fills the rest), and the line follows the grid at once.
-  expect(m.frame).toBeGreaterThan(m.grid + 100)
-  expect(m.gap).toBeLessThan(24)
+  // The stage is its picture's 3:2 again (no sky added above it).
+  expect(Math.abs(m.h - (m.w * 2) / 3)).toBeLessThan(6)
   expect(m.scroll).toBeLessThanOrEqual(0)
   // The dice and the actions are in the lower half: in the thumb's reach.
   const attack = await page.getByRole('button', { name: 'ATTACK', exact: true }).boundingBox()
@@ -165,11 +162,11 @@ test('PC: the pips are the team row, and the keys show discreetly on the panel',
   const attack = await page.getByRole('button', { name: 'ATTACK', exact: true }).boundingBox()
   await page.mouse.move(attack!.x + 5, attack!.y - 40)
   await expect(keys).toHaveCSS('opacity', '1')
-  // The stage fills the window's height beside the panel.
-  const frame = await page.evaluate(
-    () =>
-      document.querySelector('[data-stage-sky]')!.parentElement!.parentElement!.getBoundingClientRect()
-        .height,
-  )
-  expect(frame).toBeGreaterThan(780)
+  // The stage, its 3:2 picture as large as the window allows beside the panel (docs/42).
+  const stage = await page.evaluate(() => {
+    const r = document.querySelector('main section .shadow-ledge')!.getBoundingClientRect()
+    return { w: r.width, h: r.height }
+  })
+  expect(stage.w).toBeGreaterThan(900)
+  expect(Math.abs(stage.h - (stage.w * 2) / 3)).toBeLessThan(6)
 })

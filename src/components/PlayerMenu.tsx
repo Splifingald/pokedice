@@ -14,7 +14,7 @@ import { ExtremeMark, SwitchSaveModal } from './Extreme'
 import { ContactModal, InboxModal, useInboxUnseen } from './ContactModal'
 import { ConnectMarks, useConnect } from './AccountButton'
 import { PixelIcon, type IconName } from './icons'
-import { Modal } from './Modal'
+import { Sheet } from './Sheet'
 import { TrainerLook } from './TrainerLook'
 import { avatarOf, playerAvatarId } from '@/lib/avatars'
 import { SidePanel } from './SidePanel'
@@ -328,17 +328,18 @@ export function PlayerMenu() {
 
       {chooser}
 
-      <Modal open={guide} onClose={() => setGuide(false)} title={t('ui.settings.howToPlay')} className="max-w-3xl">
+      {/* The menu's own pop-ups are sheets, the full width of a phone as every other one (the user's call, 2026-10-27). */}
+      <Sheet open={guide} onClose={() => setGuide(false)} title={t('ui.settings.howToPlay')} wide>
         <Suspense fallback={<p className="text-xl">{t('ui.common.loading')}</p>}>
           <HelpContent />
         </Suspense>
-      </Modal>
+      </Sheet>
 
-      <Modal open={types} onClose={() => setTypes(false)} title={t('ui.help.navTypes')} className="max-w-3xl">
+      <Sheet open={types} onClose={() => setTypes(false)} title={t('ui.help.navTypes')} wide>
         <Suspense fallback={<p className="text-xl">{t('ui.common.loading')}</p>}>
           <TypesContent />
         </Suspense>
-      </Modal>
+      </Sheet>
     </>
   )
 }

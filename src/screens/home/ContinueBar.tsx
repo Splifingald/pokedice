@@ -386,15 +386,7 @@ export function AreaButton({
  * one row. Phones pin it over the tab bar; on PC it heads the column beside the scene. (Auto-mode is switched in the
  * area itself, on the encounter screens.)
  */
-export function PlayDock({
-  area,
-  areasState,
-  onAreas,
-}: {
-  area: Area
-  areasState: AreasState
-  onAreas: () => void
-}) {
+export function PlayDock({ area }: { area: Area }) {
   const { t } = useT()
   const { label, sub, go, explore, off, gym, boss, raid, empty, resting, latest, goTo, keepExploring } = useContinue(area)
   // Darkrai's nightmare holds the player in its area (docs/30): the area button is shut, and says why.
@@ -405,7 +397,7 @@ export function PlayDock({
 
   return (
     <div className="flex flex-col gap-2">
-      <AreaButton area={area} areasState={areasState} heldWhy={heldWhy} onOpen={onAreas} />
+      {/* The area's banner stands on the scene (the user's call, 2026-10-27); the dock keeps what is played. */}
       {heldWhy && (
         <p
           className="m-0 flex items-start gap-2 bg-well p-2 font-pixel-sm text-[16px] leading-tight text-muted shadow-ring-line"

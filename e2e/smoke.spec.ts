@@ -22,7 +22,8 @@ test('new game → first battle → win', async ({ page }) => {
   // once, three Poké Balls on the table; the third holds Squirtle.
   await page.getByRole('button', { name: 'Poké Ball 3 of 3' }).click()
   await page.getByRole('button', { name: 'Pick Squirtle' }).click()
-  // LET'S GO! loads and presses itself: into the first area, its first fight under way, never Home first.
+  // LET'S GO! waits for the tap (no button presses itself, 2026-10-27), then the first area.
+  await page.getByRole('button', { name: /^let's go/i }).click()
   await expect(page).toHaveURL(/\/area$/)
   await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeVisible()
 

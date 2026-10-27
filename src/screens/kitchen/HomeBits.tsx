@@ -170,11 +170,11 @@ export function HomeBits() {
           onClose={noop}
         />
       </Frame>
-      <Frame name="Notice: a new region on offer (no ✕: it waits)">
-        <RegionOfferNotice name="Johto" picture="/region-art/johto.png" onSee={noop} />
+      <Frame name="Notice: a new region on offer (GO, Not now)">
+        <RegionOfferNotice name="Johto" picture="/region-art/johto.png" onGo={noop} onDismiss={noop} />
       </Frame>
       <Frame name="Notice: a new region without its picture">
-        <RegionOfferNotice name="Hoenn" onSee={noop} />
+        <RegionOfferNotice name="Hoenn" onGo={noop} onDismiss={noop} />
       </Frame>
       {lines.map(([name, next]) => (
         <Frame key={name} name={`Coming up: ${name}`}>

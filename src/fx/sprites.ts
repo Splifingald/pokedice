@@ -127,7 +127,11 @@ export function loadSprite(dex: number, back: boolean, shiny = false): Promise<s
       if (!fallback && s.fallback) {
         fallback = true
         img.src = s.fallback
-      } else res(key)
+      } else {
+        // Nothing came (a phone dropping a request): forget the try, so the next call asks again.
+        loading.delete(key)
+        res(key)
+      }
     }
     img.src = s.url
   })

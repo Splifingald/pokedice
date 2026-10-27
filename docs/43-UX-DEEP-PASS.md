@@ -395,6 +395,22 @@ Today ~28 one-time pop-ups take turns (`PopupQueue`). This pass:
   their own moment (the portal's and the nightmare's way in, Trick or Treat's first ghost, the gifts', the looks') keep
   their pop-ups.
 
+## 7b. The user's feedback on the preview (2026-10-27)
+
+| Feedback | Done |
+|---|---|
+| The lab: the Pokémon didn't appear out of its ball | Not reproduced here (dark theme, reduced motion, slow or failed sprites all draw it). Made robust: a sprite whose download failed is asked again, and until the canvas has it the page's own sprite stands on the cradle |
+| The fight: your Pokémon didn't appear | In the screenshot it had fainted (0 HP): a K.O.'d Pokémon sinks off its platform, by design |
+| The fight: the sky added above the stage was unused room — keep the background as before | The stage is its 3:2 picture again (`StageSky` removed), Trick or Treat's too; the tall phone's small spacer brings the dice towards the thumb as before |
+| Team: no scene with the team roaming | Removed: the title, the cards, the Box. (It replaces the brief's "banner with the team roaming" on the Team) |
+| Home: the area's banner on top of the scene, as before | The area button stands on the scene's top and opens the Areas sheet; the dock is CONTINUE |
+| Home: the team's scene about 70 % | On phones the scene shows 70 % of its height, its window kept on where the team walks |
+| Home: the new region's card simpler | The region's picture as the card, "Johto is available", NOT NOW and GO (GO opens the lab) |
+| Home: legendary raids in Events, first | Each legendary raid open in the region is its own card, first in Events |
+| The trainer menu's pop-ups full width | How to play, the type chart, the Inbox and Contact are sheets |
+| The round's strip: thicker, an icon on the Pokémon Centers | 14 px (20 px on the page's gauge), a heart on each Center's segment, met or still to come |
+| No self-pressing buttons | Every `AutoButton` (GO!, CATCH/CONTINUE, TRY AGAIN, LET'S GO, an evolution…) and the result's NEXT wait for the tap; they press themselves only while auto-mode or Idle mode plays the area |
+
 ## 8. Not in this pass
 
 | Left | Why |

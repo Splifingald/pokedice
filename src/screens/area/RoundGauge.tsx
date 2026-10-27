@@ -116,12 +116,26 @@ export function RoundGauge({
   const label = justDone
     ? t('ui.area.roundComplete')
     : t(`ui.area.roundProgress${metCount === 1 ? '.one' : ''}`, { done: metCount, total })
+  // Where the round's Pokémon Centers are (the user's call, 2026-10-27): a heart on their segments, met or still to come,
+  // so a hurt team knows how far its next heal is. The deck is drawn from its end.
+  const order: (DeckCard | undefined)[] = inRound ? [...met, ...[...progress.deck!].reverse()] : met
+  const isCenter = (i: number) => !allDone && order[i] === 'center'
+  const centersLabel = order.slice(0, total).some((c, i) => c === 'center' && i >= metCount)
+    ? ` ${t('ui.area.centerAhead', { n: order.slice(metCount, total).indexOf('center') + 1 })}`
+    : ''
   if (strip)
     return (
-      <div role="img" aria-label={label} className={cx('pointer-events-none', className)}>
-        <ol className="flex h-[6px] gap-[2px] bg-night/80" aria-hidden>
+      <div role="img" aria-label={label + centersLabel} className={cx('pointer-events-none', className)}>
+        <ol className="flex h-[14px] gap-[2px] bg-night/80" aria-hidden>
           {Array.from({ length: total }, (_, i) => (
-            <li key={i} className={cx('min-w-0 flex-1', allDone ? 'bg-hp-green' : i < metCount ? 'bg-gold' : 'bg-[#3d4a6b]')}>
+            <li
+              key={i}
+              className={cx(
+                'relative grid min-w-0 flex-1 place-items-center',
+                allDone ? 'bg-hp-green' : i < metCount ? 'bg-gold' : 'bg-[#3d4a6b]',
+              )}
+            >
+              {isCenter(i) && <PixelIcon name="heart" size={12} />}
               {i === metCount - 1 && !allDone && <FreshPip areaId={area.id} met={metCount} />}
             </li>
           ))}
@@ -132,16 +146,20 @@ export function RoundGauge({
     <div
       className={cx('flex items-center gap-2', className)}
       role="img"
-      aria-label={
-        justDone
-          ? t('ui.area.roundComplete')
-          : t(`ui.area.roundProgress${metCount === 1 ? '.one' : ''}`, { done: metCount, total })
-      }
+      aria-label={label + centersLabel}
     >
       {/* The rework: a plain gauge, a segment per card and no icons; the round beside it. */}
-      <ol className="flex h-3 min-w-0 flex-1 gap-[3px] bg-night p-[3px]" aria-hidden>
+      <ol className="flex h-[20px] min-w-0 flex-1 gap-[3px] bg-night p-[3px]" aria-hidden>
         {Array.from({ length: total }, (_, i) => (
-          <li key={i} className={cx('min-w-0 flex-1', i < metCount || allDone ? (allDone ? 'bg-hp-green' : 'bg-gold') : 'bg-[#3d4a6b]')} />
+          <li
+            key={i}
+            className={cx(
+              'grid min-w-0 flex-1 place-items-center',
+              i < metCount || allDone ? (allDone ? 'bg-hp-green' : 'bg-gold') : 'bg-[#3d4a6b]',
+            )}
+          >
+            {isCenter(i) && <PixelIcon name="heart" size={12} />}
+          </li>
         ))}
       </ol>
       <span className="min-w-[3ch] text-right font-pixel-sm text-[16px] tabular-nums leading-none text-muted" aria-hidden>

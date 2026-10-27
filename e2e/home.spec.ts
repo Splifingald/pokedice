@@ -66,7 +66,7 @@ function withBadges(save: SaveData, n: number): SaveData {
 const areaButton = (page: Page, name: string) =>
   page.getByRole('button', { name: new RegExp(`^${escape(name)}, `) })
 
-test('a phone: the scene with no plate, the PLAY dock pinned over the tab bar, every target 44 px', async ({
+test('a phone: the area\'s banner on the scene, the scene at 70 %, CONTINUE pinned over the tab bar, every target 44 px', async ({
   page,
 }) => {
   await page.setViewportSize(PHONE)
@@ -76,18 +76,20 @@ test('a phone: the scene with no plate, the PLAY dock pinned over the tab bar, e
   await page.goto('/home')
   await expect(page.getByRole('heading', { name: `Exploring ${area.name}` })).toBeAttached()
 
-  // No plate over the scene any more: the area button is in the dock, under the scene.
+  // The area's banner stands on top of the scene, as before (the user's call, 2026-10-27).
   const scene = page.getByRole('region', { name: area.name })
   await expect(scene.getByRole('img')).toBeVisible()
-  await expect(scene.getByRole('button', { name: /Open the area details/ })).toHaveCount(0)
   const button = areaButton(page, area.name)
   const go = page.getByRole('button', { name: 'CONTINUE', exact: true })
   const sceneBox = (await scene.boundingBox())!
   const buttonBox = (await button.boundingBox())!
   const goBox = (await go.boundingBox())!
-  // The visual on top, the actions at the foot: CONTINUE ends right over the 60 px tab bar, the area button over it.
-  expect(buttonBox.y).toBeGreaterThanOrEqual(sceneBox.y + sceneBox.height - 1)
-  expect(goBox.y).toBeGreaterThan(buttonBox.y)
+  expect(buttonBox.y).toBeGreaterThanOrEqual(sceneBox.y - 1)
+  expect(buttonBox.y + buttonBox.height).toBeLessThanOrEqual(sceneBox.y + sceneBox.height / 2)
+  // The scene shows about 70 % of its height (its full shape is 288:276).
+  expect(sceneBox.height).toBeLessThan(sceneBox.width * (276 / 288) * 0.75)
+  expect(sceneBox.height).toBeGreaterThan(sceneBox.width * (276 / 288) * 0.65)
+  // CONTINUE ends right over the 60 px tab bar.
   expect(goBox.y + goBox.height).toBeLessThanOrEqual(PHONE.height - 60)
   expect(goBox.y + goBox.height).toBeGreaterThan(PHONE.height - 60 - 24)
   expect(buttonBox.height).toBeGreaterThanOrEqual(44)
@@ -314,7 +316,9 @@ test('a new region: its partner is picked in the lab, from three Poké Balls', a
   await lab.getByRole('button', { name: 'Not this one' }).click()
   await lab.getByRole('button', { name: 'Poké Ball 2 of 3' }).click()
   await lab.getByRole('button', { name: 'Pick Cyndaquil' }).click()
-  // LET'S GO! loads and goes by itself: Johto begins in its first area, its first encounter under way (never Home).
+  // LET'S GO! waits for the tap (no button presses itself, 2026-10-27); Johto begins in its first area, its first
+  // encounter under way (never Home).
+  await lab.getByRole('button', { name: /^let's go/i }).click()
   await expect(lab).toHaveCount(0, { timeout: 15_000 })
   await expect(page).toHaveURL(/\/area$/)
   await expect
@@ -322,19 +326,26 @@ test('a new region: its partner is picked in the lab, from three Poké Balls', a
     .toBe('johto')
 })
 
-test('a region put off waits on Home as a notice, which opens the regions', async ({ page }) => {
+test('a region put off waits on Home as its picture: GO opens the lab, NOT NOW puts it away', async ({ page }) => {
   const league = 'bbe7e459-a138-5106-bd01-fce7ff422e7f'
   const save = makeSave(4)
   const won = { roundsDone: 1, cleared: true, bossDefeated: true, bossesDefeated: [], gymsDefeated: [] }
   await boot(page, { ...save, areaProgress: { ...save.areaProgress, [league]: won } })
   await page.goto('/home')
   await page.getByRole('dialog', { name: 'Johto awaits' }).getByRole('button', { name: 'Not yet' }).click()
-  const notice = page.getByRole('region', { name: 'A new region is open' })
+  const notice = page.getByRole('region', { name: 'Johto is available' })
   await expect(notice).toBeVisible()
-  await notice.getByRole('button', { name: 'See Johto' }).click()
-  await expect(
-    page.getByRole('dialog', { name: 'Regions' }).getByText('Johto', { exact: true }),
-  ).toBeVisible()
+  // GO: the professor's lab for Johto, at once.
+  await notice.getByRole('button', { name: 'GO', exact: true }).click()
+  const lab = page.getByRole('dialog', { name: 'Pick your partner in Johto' })
+  await expect(lab).toBeVisible()
+  await lab.getByRole('button', { name: 'Not now' }).click()
+  // NOT NOW: the notice goes for good on this device (the Regions view keeps the offer).
+  await notice.getByRole('button', { name: 'Not now', exact: true }).click()
+  await expect(notice).toHaveCount(0)
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'CONTINUE', exact: true })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Johto is available' })).toHaveCount(0)
 })
 
 test('Support me is a notice on Home at the 5th badge, never a pop-up; its flag keeps it away', async ({

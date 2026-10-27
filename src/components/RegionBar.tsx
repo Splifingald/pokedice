@@ -3,7 +3,7 @@
 // seen, and the offer waits on Home as a notice (home/Notices.tsx) and in the Areas sheet's Regions view, which start the
 // region themselves. Nothing of this exists until a league has been won, which keeps Johto unmentioned for a player
 // still working through Kanto.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getRegion, regionOf, type Region } from '@/engine'
 import { useT } from '@/i18n/react'
@@ -16,7 +16,8 @@ import { useGame } from '@/store/game'
 import { exploreFirstArea } from '@/store/run'
 import { TrainerSprite } from '@/components/TrainerArt'
 
-export function RegionBar() {
+/** `go`: a count bumped by Home's region notice's GO, which opens the lab straight away. */
+export function RegionBar({ go = 0 }: { go?: number }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const busy = useGame((s) => s.run.phase !== 'idle')
@@ -25,6 +26,9 @@ export function RegionBar() {
   const navigate = useNavigate()
   const offer = regionOnOffer()
   const offerOpen = open && !busy && !picking
+  useEffect(() => {
+    if (go > 0) setPicking(true)
+  }, [go])
   useOnScreen('regionOffer', offerOpen)
   if (!offer) return null
 

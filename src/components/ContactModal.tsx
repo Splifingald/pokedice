@@ -19,7 +19,7 @@ import { pushToast, useGame } from '@/store/game'
 import { useCloudSync } from '@/store/sync'
 import { cx } from '@/theme/util'
 import { GiftOpened, GiftPresent, GiftRulesModal } from './Gifts'
-import { Modal } from './Modal'
+import { Sheet } from './Sheet'
 import { PixelButton } from './PixelButton'
 import { InfoButton } from './RulesModal'
 
@@ -144,9 +144,9 @@ export function useInboxUnseen(): number {
 export function InboxModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useT()
   return (
-    <Modal open={open} onClose={onClose} title={t('ui.contact.historyTab')}>
+    <Sheet open={open} onClose={onClose} title={t('ui.contact.historyTab')}>
       <History onClose={onClose} />
-    </Modal>
+    </Sheet>
   )
 }
 
@@ -181,7 +181,7 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={t('ui.contact.title')}>
+    <Sheet open={open} onClose={onClose} title={t('ui.contact.title')}>
       <div className="mb-3 flex gap-1" role="group" aria-label={t('ui.contact.title')}>
         {(
           [
@@ -247,6 +247,6 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
           </div>
         </form>
       )}
-    </Modal>
+    </Sheet>
   )
 }

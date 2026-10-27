@@ -37,10 +37,12 @@ const settings = (page: Page) =>
     () => JSON.parse(localStorage.getItem('pokedice.settings') ?? '{}') as Record<string, unknown>,
   )
 
-/** The lab at once (the rework), the third ball's partner picked: LET'S GO! goes by itself, into the first area. */
+/** The lab at once (the rework), the third ball's partner picked, LET'S GO!: into the first area. */
 async function throughTheLab(page: Page) {
   await page.getByRole('button', { name: 'Poké Ball 3 of 3' }).click()
   await page.getByRole('button', { name: 'Pick Squirtle' }).click()
+  // LET'S GO! waits for the tap (no button presses itself, 2026-10-27), then the first area.
+  await page.getByRole('button', { name: /^let's go/i }).click()
   await expect(page).toHaveURL(/\/area$/)
 }
 

@@ -44,6 +44,7 @@ import { usePace } from '@/lib/pace'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { Stamp } from './Stamp'
 import { Confetti } from '@/components/Confetti'
+import { useAutoLevel } from '@/store/autopilot'
 import { useGame } from '@/store/game'
 import { useDetails } from '@/store/hooks'
 import { autoStepNow } from '@/store/autopilot'
@@ -877,7 +878,9 @@ export function VictoryView() {
   // A new species, or a small world's mythical gone home (its finale): the card is looked at, so it waits for NEXT.
   const caughtNew = run.events.some((e) => (e.kind === 'caught' && e.isNew) || e.kind === 'world_mythical')
   const autoNext = !closes && !run.rebattle && !nextArea && !caughtNew
-  const countdown = autoNext && allShown && !run.pendingCatchId && !then
+  // Only while auto-mode or Idle mode plays the area (the user's call, 2026-10-27: otherwise NEXT waits for a tap).
+  const autoOn = useAutoLevel() !== 'off'
+  const countdown = autoOn && autoNext && allShown && !run.pendingCatchId && !then
   // Each piece of the recap scrolls into view as it comes (a level-up, the Pokédex entry…), then a full team's choice
   // or the trainer's next Pokémon: the player never scrolls to follow the card (the user's call, 2026-10-26). The
   // scroll margin keeps it clear of the buttons pinned at the foot.

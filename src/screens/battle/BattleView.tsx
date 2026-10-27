@@ -96,7 +96,6 @@ import {
   type TrayDice,
 } from './BattlePanel'
 import { BattleStage, type StageOverlay } from './BattleStage'
-import { StageSky } from './StageSky'
 import { CatchPanel, catchMessage } from './CatchPanel'
 import { DoublePlates, TargetPicker } from './DoublePlates'
 import { FoePlate, OwnPlate } from './Plates'
@@ -956,20 +955,11 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   )
 
   const stage = (
-    // The frame (docs/43 §5.3): as tall as the room the panel leaves, the fight's 3:2 grid anchored at its foot, right
-    // over the panel, and the sky above it (StageSky) filling the rest — a tall phone's gap became more of the scene.
-    // On PC it fills the window's height beside the panel the same way.
-    <div
-      ref={stageBox}
-      className="relative flex h-[max(66.667cqw,calc(100dvh_-_var(--top-bar,0px)_-_var(--battle-panel)))] shrink-0 flex-col justify-end overflow-clip shadow-ledge lg:h-[calc(100dvh_-_2rem_-_var(--top-bar,0px))]"
-    >
-      {/* The area's round, right under the top bar (the rework): a thin strip on the stage's top edge, so the fight
-          still fits a 360×640 phone. */}
+    // The stage keeps its 3:2 picture (the user's call, 2026-10-27: no sky added above it).
+    <div ref={stageBox} className="relative shadow-ledge">
       {!versus && !run.rebattle && <RunRoundGauge strip className="absolute inset-x-0 top-0 z-30" />}
       {/* Each new fight opens on its own beat (docs/42). */}
       {!versus && <EncounterSwipe />}
-      <div className="relative shrink-0">
-      <StageSky art={art} world={dream ? 'nightmare' : undefined} />
       <BattleStage
         own={active}
         foe={foeFront}
@@ -1065,7 +1055,6 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
           )}
         </AnimatePresence>
       </BattleStage>
-      </div>
     </div>
   )
 
@@ -1141,6 +1130,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
               <>
                 {/* A wide screen's tall panel: the dice in its middle, between the line and the actions. */}
                 {wide && <div aria-hidden className="flex-1" />}
+                {/* A tall phone: the dice come down a little, towards the thumb (P1b). */}
+                {tall && <div aria-hidden className="h-[clamp(0px,calc((100dvh-740px)*0.6),72px)] shrink-0" />}
                 <DiceTray
                   tray={tray}
                   live={ready && rolling}

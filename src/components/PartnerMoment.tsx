@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { createInstance, getSpecies, instanceStats, type RegionId } from '@/engine'
 import { LAB_ART, loadArt } from '@/fx/areaArt'
-import { loadSprite, spriteKey } from '@/fx/sprites'
+import { loadSprite, spriteFrame, spriteKey } from '@/fx/sprites'
 import { labColors, starterSeats, StarterScene, type LabColors } from '@/fx/timelines/starter'
 import { H, setCalm, W } from '@/fx/timeline'
 import { useT } from '@/i18n/react'
@@ -18,7 +18,7 @@ import { useGame } from '@/store/game'
 import { cx, mix } from '@/theme/util'
 import { DiceSet } from './DiceSet'
 import { PixelButton } from './PixelButton'
-import { MiniSprite } from './SpriteImg'
+import { MiniSprite, SpriteImg } from './SpriteImg'
 import { StatChip } from './StatChip'
 import { TrainerSprite } from './TrainerArt'
 import { matchupsOf, speciesTypes } from './TypeMatchups'
@@ -105,6 +105,25 @@ export function PartnerMoment({
       live = false
     }
   }, [starters])
+
+  // The Pokémon out of its ball is drawn on the canvas from its loaded sprite. A phone that dropped or delayed that
+  // request would show an open ball and nobody: until the canvas has it, the page's own sprite stands on the cradle,
+  // and the load is tried again.
+  const shown = pick
+  const [late, setLate] = useState(false)
+  useEffect(() => {
+    if (shown == null) return setLate(false)
+    const key = spriteKey(starters[shown]!, false)
+    const check = () => {
+      const missing = !spriteFrame(key)
+      setLate(missing)
+      if (missing) void loadSprite(starters[shown]!, false)
+      return missing
+    }
+    if (!check()) return
+    const id = setInterval(() => !check() && clearInterval(id), 700)
+    return () => clearInterval(id)
+  }, [shown, starters])
 
   // The clock and the drawing: 60 frames a second while the moment is open.
   useEffect(() => {
@@ -264,7 +283,16 @@ export function PartnerMoment({
               style={{ left: `${(x / W) * 100}%`, top: `${((y - 24) / H) * 100}%` }}
             />
           ))}
-          {onLeave && phase !== 'done' && (
+          {late && shown != null && seats[shown] && (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute w-[22%] -translate-x-1/2 -translate-y-full"
+              style={{ left: `${(seats[shown]!.x / W) * 100}%`, top: `${((seats[shown]!.y + 6) / H) * 100}%` }}
+            >
+              <SpriteImg dex={starters[shown]!} size={96} className="h-auto w-full" />
+            </span>
+          )}
+                    {onLeave && phase !== 'done' && (
             <button
               type="button"
               onClick={(e) => {

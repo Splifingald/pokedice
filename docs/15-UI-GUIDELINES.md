@@ -237,23 +237,23 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   attack, the throw, CONTINUE, NEXT / BACK, NOT YET and the Bag-and-team row sit in a `BottomDock` (`sticky`, at the
   screen's bottom whatever is above them, the content scrolling behind); the action bars above are pinned the same way.
   From 1024 px they sit in the flow.
-- **No step is only a button** (the rework, 2026-10-25): where the one thing to do is press a single button (the catch's
-  CATCH or CONTINUE, a sure throw, the wipe's TRY AGAIN, the stalemate, an evolution revealed, the partner's LET'S GO),
-  the button is an `AutoButton`: it loads (a gold fill along its foot, as Idle mode's steps do) and presses itself; a
-  tap goes sooner, and it waits while a dialog covers it. **Never in a Pokémon Center**, which waits for the player's
-  CONTINUE so the Box can be used. A throw that can't miss has no CONTINUE at all: once the ball has landed, the result
+- **No button presses itself** (the user's call, 2026-10-27, replacing "no step is only a button"): a step whose one
+  thing to do is a single button (the catch's CATCH or CONTINUE, a sure throw, the wipe's TRY AGAIN, the stalemate, an
+  evolution revealed, the partner's LET'S GO, a wild fight's GO!) waits for the player's tap. Only while auto-mode or
+  Idle mode plays the area (`autoLevel` not off) does its `AutoButton` load (a gold fill along its foot) and press
+  itself; a tap goes sooner, and it waits while a dialog covers it. **Never in a Pokémon Center**, which waits for the
+  player's CONTINUE so the Box can be used. A throw that can't miss has no CONTINUE at all: once the ball has landed, the result
   card comes (2026-10-26).
 - **A fight's result card follows itself and moves on** (2026-10-26): each piece (XP, a level-up, the Pokédex entry…)
-  scrolls into view as it comes, clear of the buttons at the foot; once all is shown, NEXT's gauge fills and goes,
-  BACK still in reach. It waits instead when a new species was caught or a small world's mythical won (its card is looked at, and a full team's
+  scrolls into view as it comes, clear of the buttons at the foot; once all is shown, NEXT waits for the tap (its gauge
+  fills and goes only while auto-mode or Idle mode plays the area, the user's call of 2026-10-27), BACK still in reach. It waits instead when a new species was caught or a small world's mythical won (its card is looked at, and a full team's
   replace choice, scrolled to, is made), when the area was cleared (the way on is the next area), and in a rebattle.
   No AUTO switch on the card nor in Settings: AUTO-MODE is the fights' own.
 - **A region begun opens on its first area**, its first encounter under way (`exploreFirstArea`): a new game's partner
   and a new region's starter lead straight there, never to Home first.
 - **Stage first** (docs/42, 2026-10-26): in an area the player acts where it matters (the dice, picking a Pokémon,
-  catching, a Center's Box) and otherwise watches the scene. A **wild** fight's GO! loads and sends the one picked by
-  itself (`SEND_OUT_AUTO_MS`, the count starting again on another pick, held while a sheet covers it); a trainer, a gym
-  or a boss waits for the tap. The battle's message is **one line under the stage** (`BattleLine`), not a dialogue
+  catching, a Center's Box) and otherwise watches the scene. The send-out's GO! waits for the tap, wild or trainer (under
+  auto-mode or Idle mode a wild fight's loads and sends the one picked by itself, `SEND_OUT_AUTO_MS`). The battle's message is **one line under the stage** (`BattleLine`), not a dialogue
   box, and keeps its height when empty; the waiting prompt ("What will … do?") shows only with More details.
 - **The stage, and the phone's panel beside it** (docs/42 §2): on a phone the stage is on top and the panel under it;
   **from 1024 px the stage takes the screen and the very same panel stands docked at its right** (380 px, as tall as
@@ -271,12 +271,11 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   who switch it on — the battle history (a button by the Bag) and the key hints, the HP and XP figures (bars alone
   otherwise), a card's type chips (every `PokeCard` is brief without it), the result's rows. A new screen asks the same
   of each number it adds: does a player need it to act, or only to study? Studied things go behind it.
-- **The stage grows upward** (docs/43 §5.3): a fight's frame is as tall as the room the panel leaves
-  (`max(3:2, 100dvh − top bar − 330px)` on phones, the window's height beside the panel on PC). The 240×160 grid stays
-  anchored at its foot, over the panel, and `StageSky` fills above it: the area picture's own rows, then its top colour
-  deepening in dither (Daybreak, the night and the Distortion World paint their own). Never below the grid: your
-  Pokémon stands on its bottom edge. The fixed height means the stage never jumps between steps. Trick or Treat does
-  the same.
+- **The fight's stage keeps its 3:2 picture** (the user's call, 2026-10-27: the sky added above it in docs/43 §5.3 went
+  again). On a tall phone the dice come down a little towards the thumb instead (`tall`'s spacer).
+- **The round's gauge** (`RoundGauge`; the fight's `strip` on the stage's top edge, 14 px; the page's gauge 20 px): a
+  segment per card of the round, gold once met; a **heart on each Pokémon Center's segment**, met or still to come (the
+  user's call, 2026-10-27), and the next one said to screen readers ("Pokémon Center in 2").
 - **One stage-and-panel shape everywhere**: an area's steps outside a fight (`src/screens/area/StagePanel`: no tab bar on
   `/area`, the bar pinned over the home indicator) and the events' pages (`src/screens/events/layout` `StagePanel`, the
   dock pinned over the tab bar): phones the scene on top and the bar pinned; from 1024 px the panel framed beside the
@@ -551,22 +550,27 @@ Players shouldn't have to make many requests:
   itself.
 - **Dots only for something you can act on**: the number of upgrades you can afford (9+ at most), a gold NEW for
   Pokédex entries you haven't looked at. The dot is in the link's accessible name, never colour alone.
-- **Home** (docs/43 §5.2): the area's scene with the team roaming it, no plate over it; under it one notice, then Events,
-  Secret areas and Features as Home's one card (`HomeCard`: the picture as a strip on the left, the name, one status
-  line, a thin gauge where time or progress runs; gold for one new thing), then the "Coming up" line. The **PLAY dock**
-  is the area button (`AreaButton`: the map, the area's name, its rounds as pips with "done/total", its levels; NEW when
-  a secret area opened; shut by the nightmare with its reason) over CONTINUE. Phones: pinned over the tab bar, the page
-  scrolling behind it; 768–1023 px: sticky at the column's foot; from 1024 px: the scene as tall as the window on the
-  left (`SceneStage fill`, a box at most 1.15× as tall as wide), and on the right (clamp(380px, 34%, 520px)) the dock,
-  the area's Pokémon (`HereCard`), the notice and the sections. The encounter itself plays on `/area`, and Home stays
-  lit in the menus while it does.
-- **The Areas sheet** opens from the area button on the area's details (tabs Details · All areas · Regions); a row opens
+- **Home** (docs/43 §5.2, the user's feedback of 2026-10-27): the area's scene with the team roaming it and, **on its top,
+  the area's banner** (`AreaButton`: the map, the area's name, its rounds as pips with "done/total", its levels; NEW when
+  a secret area opened; shut by the nightmare with its reason), which opens the Areas sheet. On a phone the scene shows
+  **about 70 % of its height** (`SCENE_SHOWN`), its window kept on where the team walks. Under it one notice, then
+  Events (the region's **legendary raids open now first**, as cards of their own, then a small world, the live events
+  and the rest), Secret areas and Features as Home's one card (`HomeCard`: the picture as a strip on the left, the name,
+  one status line, a thin gauge where time or progress runs; gold for one new thing), then the "Coming up" line. The
+  **PLAY dock** is CONTINUE (and Stay here, Keep exploring, a green GO TO when they apply). Phones: pinned over the tab
+  bar, the page scrolling behind it; 768–1023 px: sticky at the column's foot; from 1024 px: the scene as tall as the
+  window on the left (`SceneStage fill`, a box at most 1.15× as tall as wide), and on the right (clamp(380px, 34%,
+  520px)) the dock, the area's Pokémon (`HereCard`), the notice and the sections. The encounter itself plays on
+  `/area`, and Home stays lit in the menus while it does.
+- **The Areas sheet** opens from the area's banner on the area's details (tabs Details · All areas · Regions); a row opens
   its details in the same sheet. From 1024 px it is one wide sheet: the list or the regions on the left, the picked
   area's details on the right, their CONTINUE HERE / TRAVEL HERE navy so the lead GO stays the one red. Area rows have
   Home's card shape: strip, name, one status line (levels · caught · to catch, or why it's locked), GO at the right.
 - **Notices** (`NoticeCard`, `homeNotices`): what never needs a pop-up over Home is a card in the page, one at a time: a
   feature with a page opening ("Versus is open!", SEE VERSUS; ✕ hides it for the visit, the page's `RulesCard` ends
-  it), Prof. Oak's leaderboard tip, his invite, Support me, a region on offer once its pop-up was seen. Never red.
+  it), Prof. Oak's leaderboard tip, his invite, Support me, a region on offer once its pop-up was seen. Never red. **A
+  region on offer** is its own picture as the card, "{region} is available", and two buttons: NOT NOW (put away on this
+  device for good; the Regions view keeps it) and GO (gold: the professor's lab for that region).
 - **After an encounter the player stays in the area** (a trainer, a wild Pokémon, a find, the Center, the Game
   Corner, fleeing): `/area` between encounters (`AreaIdle`) is the area's header, "Back on the trail…", the team (each
   card opens its sheet) and the action bar, HOME or CONTINUE, the next encounter (or the gym or legend waiting, with Keep exploring);
@@ -608,6 +612,8 @@ Players shouldn't have to make many requests:
   team), Use an item quiet beside it; a Box Pokémon outside a Center has the lock line; where swaps are open,
   `TeamSwapDock`. Let it go is a plain-size danger button at the footer's end, asked twice. Use an item opens a list in
   the same sheet, with Back.
+- **The Team has no scene** (the user's call, 2026-10-27): its title, the team's cards, the Box. Home is where the team
+  roams.
 - **The Team on PC**: from 1024 px the Team is a `SplitView`: the selected Pokémon's sheet stands docked at the right,
   always open (the lead's on arrival); a card or tile swaps it and is outlined in gold. On phones it is the bottom sheet.
 - **A small world's Pokémon waiting to unlock** (§22, docs/26 §1) opens the same sheet, its line saying "Waiting to
@@ -880,7 +886,9 @@ pieces.
   Trades, **Inbox**, the other save, Settings, How to play, Type chart, Admin for admins, Cloud backup, Connect), then
   pinned at the bottom the Discord and Contact the developer. Versus is not in it: it is Home's widget. The label
   alone names a row; the description is its `aria-describedby`.
-- **How to play** (the menu's row, a `Modal`; also the `/help` page): `HelpContent`, the rules in words with the live
+- **The menu's pop-ups are sheets** (the user's call, 2026-10-27): How to play, the type chart, the Inbox and Contact the
+  developer open as `Sheet`s, the full width of a phone like every other pop-up (wide on PC).
+- **How to play** (the menu's row, a `Sheet`; also the `/help` page): `HelpContent`, the rules in words with the live
   numbers (the combos' bonuses, the statuses), its sections linked from a row of chips at the top. With the Game feel
   on (docs/38 §8b) it opens on "The basics", four animated cards (throw the dice, reroll, deal damage, catch: one
   column on phones, 2 × 2 from 1024 px), then the same text under "All the rules", its section titles a level down.

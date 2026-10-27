@@ -24,6 +24,10 @@ import {
   type EventId,
   type LiveEvent,
   type SmallWorld,
+  progressRaidReachable,
+  progressRaids,
+  progressRaidState,
+  type ProgressRaid,
 } from '@/engine'
 import { AreaStrip } from '@/components/AreaStrip'
 import { Chip } from '@/components/Chip'
@@ -44,6 +48,7 @@ import { LiveFx, LiveGauge, LivePicture, LiveTag, liveName, liveSub, liveTime, o
 import { goIntoWorld, MythicalArt, ShinyTag, WorldTag, worldVars } from './world'
 import { PreviewGauge } from './worldPreview'
 import { bannerUrl, EVENT_ICON, EventPicture, RewardIcon, rewardName } from './shared'
+import { progressRaidPath } from './progressRaids'
 
 const HOUR = 3_600_000
 const DAY = 24 * HOUR
@@ -404,6 +409,56 @@ function WorldCards() {
   )
 }
 
+/**
+ * A legendary raid of the region being played that can be fought now (docs/24): its own card, first among the events
+ * (the user's call, 2026-10-27) — the game's progress is the raid to take on next.
+ */
+function ProgressRaidCard({ raid }: { raid: ProgressRaid }) {
+  const { t } = useT()
+  const navigate = useNavigate()
+  const data = useGame((s) => s.data)
+  const name = data.species[raid.dex]?.name ?? ''
+  const area = data.areas.find((a) => a.id === raid.areaId)?.name ?? ''
+  const kicker = t('ui.raid.progress.kicker')
+  return (
+    <HomeCard
+      picture={
+        <>
+          <AreaStrip area={{ id: raid.areaId }} h={CARD_STRIP_H} className="absolute inset-0 h-full w-full object-cover" />
+          <span className="absolute inset-0 flex items-center justify-center">
+            <MiniSprite dex={raid.dex} size={36} />
+          </span>
+        </>
+      }
+      name={name}
+      tag={
+        <Chip tone="gold" className="tracking-[0.04em]">
+          {kicker}
+        </Chip>
+      }
+      status={area}
+      label={`${kicker}: ${name}, ${area}`}
+      onClick={() => navigate(progressRaidPath(raid), { state: { from: '/home' } })}
+    />
+  )
+}
+
+function ProgressRaidCards() {
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  if (!save) return null
+  const open = progressRaids(data, regionOf(save)).filter(
+    (r) => progressRaidReachable(save, data, r) && progressRaidState(save, data, r) === 'open',
+  )
+  return (
+    <>
+      {open.map((r) => (
+        <ProgressRaidCard key={r.key} raid={r} />
+      ))}
+    </>
+  )
+}
+
 export function EventWidgets() {
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
@@ -411,9 +466,10 @@ export function EventWidgets() {
   const open = activeEvents(save, data)
   // The rebattle only shows while the region being played has tiers left to fight.
   const onHome = open.filter((id) => id !== 'rebattle' || rebattleOnHome(save, data))
-  // A small world (docs/21, priority 1) comes first (or its preview before it starts, §9), then the live events (docs/20,
-  // priority 2), whatever else is open.
+  // The legendary raids open in this region come first (the game's own progress, the user's call), while raids are on;
+  // then a small world (docs/21; or its preview before it starts, §9), the live events (docs/20), whatever else is open.
   return [
+    ...(open.includes('raid') ? [<ProgressRaidCards key="progress" />] : []),
     <WorldCards key="world" />,
     <LiveCards key="live" />,
     ...onHome.map((id) =>

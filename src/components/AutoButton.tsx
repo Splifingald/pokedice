@@ -3,6 +3,7 @@ import { forwardRef, useEffect, useRef, type ComponentProps } from 'react'
 import { PixelButton } from '@/components/PixelButton'
 import { usePace } from '@/lib/pace'
 import { useDialogOpen } from '@/lib/useDialog'
+import { useAutoLevel } from '@/store/autopilot'
 import { cx } from '@/theme/util'
 
 /** How long a one-button step stays before it presses itself (times the battle pace). */
@@ -19,15 +20,17 @@ type Props = Omit<ComponentProps<typeof PixelButton>, 'onClick'> & {
 }
 
 /**
- * A step whose only way on is one button doesn't wait for a tap (the rework, docs/15 §6): the button loads, as Idle
- * mode's do, and presses itself; a tap goes sooner. Never for a Pokémon Center, which waits for the Box.
+ * A step whose only way on is one button. It waits for the player's tap (the user's call, 2026-10-27: no button presses
+ * itself any more), except while auto-mode or Idle mode plays the area: then it loads, as the autopilot's steps do, and
+ * presses itself; a tap goes sooner. Never for a Pokémon Center, which waits for the Box.
  */
 export const AutoButton = forwardRef<HTMLButtonElement, Props>(function AutoButton(
   { onClick, ms = AUTO_STEP_MS, hold: held = false, paused, className, children, ...rest },
   ref,
 ) {
   const covered = useDialogOpen()
-  const hold = held || (paused === 'byDialogs' && covered)
+  const auto = useAutoLevel() !== 'off'
+  const hold = held || !auto || (paused === 'byDialogs' && covered)
   const pace = usePace()
   const wait = ms * pace
   const timer = useRef<ReturnType<typeof setTimeout>>()

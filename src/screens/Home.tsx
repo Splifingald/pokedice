@@ -12,11 +12,14 @@ import { closeVictoryLeftOpen, enterArea } from '@/store/run'
 import { takeResumeLanding } from '@/store/resume'
 import { regionOnOffer } from '@/store/regions'
 import { AreasSheet, type AreasView } from './home/AreasSheet'
-import { PlayDock, useContinue, type AreasState } from './home/ContinueBar'
+import { AreaButton, PlayDock, useContinue, type AreasState } from './home/ContinueBar'
 import { hasNewSecret, playable } from './home/areas'
 import { HereCard } from './home/HereCard'
 import { HomeNotices } from './home/Notices'
+import { H as SCENE_H, W as SCENE_W } from './home/scene'
 import { SceneStage } from './home/SceneStage'
+import { pictureOf } from '@/fx/areaArt'
+import { nightmareLock } from '@/engine'
 import { travelTo } from '@/store/travel'
 import { Widgets } from './home/Widgets'
 import { useInWorld, WorldStrip, WorldWaiting } from '@/screens/events/world'
@@ -27,6 +30,9 @@ import { useInWorld, WorldStrip, WorldWaiting } from '@/screens/events/world'
  * sheet) and CONTINUE — pinned at the bottom on phones. On PC the scene stands as tall as the window on the left and
  * the dock heads the column beside it.
  */
+/** How much of the scene's height a phone shows (the user's call, 2026-10-27: about 70 %). */
+const SCENE_SHOWN = 0.7
+
 export function HomeScreen() {
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
@@ -64,6 +70,8 @@ function HomeView({ area }: { area: Area }) {
   const runPhase = useGame((s) => s.run.phase)
   const [sheet, setSheet] = useState<{ view: AreasView; key: number } | null>(null)
   const [mon, setMon] = useState<SheetView | null>(null)
+  // The region notice's GO: the professor's lab for the new region (RegionBar holds it).
+  const [regionGo, setRegionGo] = useState(0)
   const { go, goTo } = useContinue(area)
   // Inside a small world only its own things show (docs/21): its strip above the scene, no other region on offer, no
   // region switcher. Where Unown live (docs/41) the Unown Pokédex's banner sits there the same way. Wide screens take
@@ -103,7 +111,14 @@ function HomeView({ area }: { area: Area }) {
   }
   const openSheet = (view: AreasView) => setSheet({ view, key: Date.now() })
   const wide = useMediaQuery('(min-width: 1024px)')
-  const dock = <PlayDock area={area} areasState={areasState} onAreas={() => openSheet('details')} />
+  // Darkrai's nightmare holds the player in its area (docs/30): the banner is shut, and says why.
+  const held = useGame((s) => nightmareLock(s.save, s.data))
+  const heldWhy = held ? t('ui.nightmare.locked', { area: held.name }) : null
+  // What the phone's shorter scene keeps: a window of SCENE_SHOWN of its height, centred on where the team walks.
+  const walk = pictureOf(area.id)?.walk
+  const walkMid = walk ? (walk[1] + walk[3]) / 2 / SCENE_H : 0.62
+  const cropTop = Math.min(1 - SCENE_SHOWN, Math.max(0, walkMid - SCENE_SHOWN / 2))
+  const dock = <PlayDock area={area} />
   const [dockRef, dockH] = useHeight<HTMLDivElement>()
 
   return (
@@ -132,28 +147,34 @@ function HomeView({ area }: { area: Area }) {
         )}
         <div
           className={cx(
-            '-mx-3 overflow-hidden shadow-ledge md:pixel-panel md:m-0 md:p-0 md:shadow-none',
+            'relative -mx-3 overflow-hidden shadow-ledge md:pixel-panel md:m-0 md:p-0 md:shadow-none',
             !inside && !unown && '-mt-4 md:mt-0',
           )}
           style={
             wide
               ? { height: 'min(calc(100dvh - var(--top-bar, 56px) - 3.5rem - var(--below)), 115cqw)' }
-              : undefined
+              : { height: `calc(100cqw * ${(SCENE_H / SCENE_W).toFixed(4)} * ${SCENE_SHOWN})` }
           }
         >
-          <SceneStage
-            area={area}
-            team={teamOf(save)}
-            onOpen={(id) => setMon({ kind: 'inst', id })}
-            fill={wide}
-          />
+          {/* The area's banner on top of the scene, as before (the user's call, 2026-10-27): it opens the areas. */}
+          <div className="absolute inset-x-3 top-3 z-10">
+            <AreaButton area={area} areasState={areasState} heldWhy={heldWhy} onOpen={() => openSheet('details')} />
+          </div>
+          {wide ? (
+            <SceneStage area={area} team={teamOf(save)} onOpen={(id) => setMon({ kind: 'inst', id })} fill />
+          ) : (
+            // Phones: the scene at about 70 % of its height (the user's call), the window kept on where the team walks.
+            <div style={{ marginTop: `calc(-100cqw * ${(SCENE_H / SCENE_W).toFixed(4)} * ${cropTop.toFixed(3)})` }}>
+              <SceneStage area={area} team={teamOf(save)} onOpen={(id) => setMon({ kind: 'inst', id })} />
+            </div>
+          )}
         </div>
       </section>
       <div className="flex min-w-0 flex-col gap-4">
         {/* PC: PLAY heads the column beside the scene. */}
         {wide && dock}
         {wide && <HereCard area={area} onOpen={() => openSheet('details')} />}
-        <HomeNotices onRegions={() => openSheet('regions')} />
+        <HomeNotices onRegionGo={() => setRegionGo((n) => n + 1)} />
         <section aria-label={t('ui.home.widgets')}>
           <Widgets />
         </section>
@@ -186,7 +207,7 @@ function HomeView({ area }: { area: Area }) {
       />
       <SheetModal view={mon} onClose={() => setMon(null)} manage />
       {/* The next region's offer opens by itself once, when a league is won. */}
-      {!inside && <RegionBar />}
+      {!inside && <RegionBar go={regionGo} />}
     </div>
   )
 }

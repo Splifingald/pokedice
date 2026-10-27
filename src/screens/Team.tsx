@@ -28,13 +28,12 @@ import { useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { TeamCards } from './team/TeamCards'
-import { SceneStage } from './home/SceneStage'
 
 type Sort = Exclude<BoxSort, 'type'>
 const SORTS: readonly Sort[] = ['dex', 'level', 'newest']
 
 /**
- * The Team (docs/43 §5.4): the banner with the team roaming and the page's title on it, the team as the one Pokémon
+ * The Team (docs/43 §5.4): its title, the team as the one Pokémon
  * card, the Box as tiles under one filter row. A Pokémon opens its sheet: a bottom sheet on a phone; on a PC
  * (`SplitView`) the sheet stands docked at the right, always open — the lead's until another card or tile is picked —
  * with its actions at the pane's foot.
@@ -104,29 +103,10 @@ export function TeamScreen() {
   const shown: SheetView | null = live ?? (wide && team[0] ? { kind: 'inst', id: team[0].id } : null)
   const current = wide && shown && (shown.kind === 'inst' || shown.kind === 'homer') ? shown.id : null
 
-  // The rework: a banner on top, the team roaming the area as on Home, the page's title on it.
-  const area = data.areas.find((a) => a.id === save.currentAreaId)
-  const title = (
-    <h1 className="flex items-center gap-2 text-[30px] leading-none">
-      <PixelIcon name="navTeam" size={24} />
-      {t('ui.team.title')}
-    </h1>
-  )
-
   const main = (
     <>
-      {area ? (
-        // A strip of the scene where the team walks: its foot on a phone; on a PC, where the scene is taller than the
-        // strip, a little higher so the team stays whole in it.
-        <div className="relative -mx-3 -mt-4 h-[156px] overflow-hidden shadow-ledge md:mx-0 md:mt-0 md:pixel-panel md:p-0 lg:h-[232px]">
-          <div className="absolute inset-x-0 bottom-0 lg:-bottom-12">
-            <SceneStage area={area} team={team} onOpen={(id) => setView({ kind: 'inst', id })} />
-          </div>
-          <div className="pixel-plate absolute left-3 top-3 px-2.5 pb-1.5 pt-1">{title}</div>
-        </div>
-      ) : (
-        <PageHead icon="navTeam" title={t('ui.team.title')} />
-      )}
+      {/* No scene here (the user's call, 2026-10-27): Home already shows the team roaming; the Team is for managing it. */}
+      <PageHead icon="navTeam" title={t('ui.team.title')} />
 
       {/* At a portal's way in: healed, the Box open, and the way back to its pop-up. */}
       {atPortal && (

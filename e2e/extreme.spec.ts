@@ -59,9 +59,11 @@ test('the league opens it: the rules, then a new Extreme game beside the main sa
   expect(await page.evaluate(() => localStorage.getItem('pokedice.slot'))).toBe('extreme')
   await expect(page.getByRole('button', { name: 'Continue the main game' })).toBeVisible()
   await page.getByRole('button', { name: 'NEW GAME' }).click()
-  // The lab at once (the rework); LET'S GO! goes by itself, into the first area.
+  // The lab at once (the rework), then the first area.
   await page.getByRole('button', { name: 'Poké Ball 3 of 3' }).click()
   await page.getByRole('button', { name: 'Pick Squirtle' }).click()
+  // LET'S GO! waits for the tap (no button presses itself, 2026-10-27), then the first area.
+  await page.getByRole('button', { name: /^let's go/i }).click()
   await expect(page).toHaveURL(/\/area$/)
 
   await expect(page.getByText('Extreme mode · no Pokémon Centers')).toBeVisible()

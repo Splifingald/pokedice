@@ -1,5 +1,4 @@
-// Kitchen sink: the area loop's deep pass (docs/43 §5.3). The sky over the fight's grid (Daybreak, an area picture, the
-// night, the Distortion World), a result's moment stamping down (big, small, replayed), the switch on the send-out's
+// Kitchen sink: the area loop's deep pass (docs/43 §5.3). A result's moment stamping down (big, small, replayed), the switch on the send-out's
 // cards (the turn's, with BACK; a K.O.'s), the forfeit flag, and the scene-and-panel shape of the page between
 // encounters with its bar.
 import { useState } from 'react'
@@ -7,37 +6,12 @@ import { instanceMaxHp, monName, teamOf, type Battler } from '@/engine'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { ForfeitButton } from '@/components/ForfeitButton'
 import { PixelButton } from '@/components/PixelButton'
-import { pictureOf } from '@/fx/areaArt'
 import { AreaSceneBox, AreaTeam } from '@/screens/area/AreaIdle'
 import { StagePanel } from '@/screens/area/StagePanel'
 import { SwitchStep } from '@/screens/battle/BattleView'
-import { StageSky } from '@/screens/battle/StageSky'
 import { Stamp } from '@/screens/battle/Stamp'
 import { CatchCard } from '@/screens/battle/VictoryView'
 import { useGame } from '@/store/game'
-
-/** A grid of the fight (outlined) with its sky above, in a frame taller than it, as on a tall phone. */
-function SkyFrame({
-  label,
-  art,
-  world,
-}: {
-  label: string
-  art?: string
-  world?: 'distortion' | 'nightmare'
-}) {
-  return (
-    <figure className="m-0 flex flex-col gap-1">
-      <div className="relative flex h-[300px] w-[260px] flex-col justify-end overflow-clip shadow-ring">
-        <div className="relative aspect-[3/2] w-full shrink-0 bg-paper/40 outline-dashed outline-2 outline-ink">
-          <StageSky art={art ? pictureOf(art) : null} world={world} />
-          <span className="absolute inset-0 grid place-items-center text-lg text-ink">240 × 160</span>
-        </div>
-      </div>
-      <figcaption className="text-base">{label}</figcaption>
-    </figure>
-  )
-}
 
 export function AreaDeepBits() {
   const save = useGame((s) => s.save)
@@ -58,16 +32,8 @@ export function AreaDeepBits() {
         level: p.level,
       }) as Battler,
   )
-  const areaId = area?.id
   return (
     <div className="grid w-full gap-6">
-      <div className="flex flex-wrap gap-4">
-        <SkyFrame label="Daybreak (drawn): the sun's top half, two clouds" />
-        <SkyFrame label="An area picture: its own rows, then its sky colour" art={areaId} />
-        <SkyFrame label="The nightmare's night" world="nightmare" />
-        <SkyFrame label="The Distortion World" world="distortion" />
-      </div>
-
       <div className="grid max-w-md gap-3">
         <PixelButton size="sm" onClick={() => setReplay((n) => n + 1)}>
           Stamp again

@@ -3,7 +3,7 @@
 // whose rules card explains it), Prof. Oak's leaderboard tip, Support me, his invite, and a new region on offer once
 // its own pop-up has been seen. One at a time, the first due (engine/popups.ts `homeNotices`): Home stays a place to
 // play, not a board of messages. A feature's ✕ puts its notice away for this visit only; its page's GOT IT for good.
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   eventUnlockDue,
@@ -31,37 +31,39 @@ import { useInWorld } from '@/screens/events/world'
 export function RegionOfferNotice({
   name,
   picture,
-  onSee,
+  onGo,
+  onDismiss,
 }: {
   name: string
   picture?: string
-  onSee: () => void
+  onGo: () => void
+  onDismiss: () => void
 }) {
   const { t } = useT()
+  const titleId = useId()
+  // The region's own picture is the card (the user's call, 2026-10-27): its name, and GO or not now. Nothing to read.
   return (
-    <NoticeCard
-      tone="gold"
-      picture={
-        picture ? (
-          <img src={picture} alt="" className="pixelated h-14 w-14 object-cover shadow-ring-thin" />
-        ) : (
-          <span
-            className="grid h-14 w-14 place-items-center bg-well text-[34px] leading-none shadow-ring-thin"
-            aria-hidden
-          >
-            ?
-          </span>
-        )
-      }
-      title={t('ui.region.newOpen')}
-      action={
-        <PixelButton size="sm" onClick={onSee}>
-          {t('ui.region.see', { region: name })}
-        </PixelButton>
-      }
+    <section
+      aria-labelledby={titleId}
+      className="pixel-panel panel-gold relative min-h-[132px] overflow-hidden p-0"
     >
-      {t('ui.home.offerLine', { region: name })}
-    </NoticeCard>
+      {picture && (
+        <img src={picture} alt="" className="pixelated absolute inset-0 h-full w-full object-cover" draggable={false} />
+      )}
+      <div className="relative flex min-h-[132px] flex-col justify-end gap-2.5 bg-gradient-to-t from-night/85 via-night/40 to-transparent p-3">
+        <h2 id={titleId} className="m-0 text-[26px] font-normal leading-none text-panel [text-shadow:0_2px_0_rgb(0_0_0/0.6)]">
+          {t('ui.home.regionAvailable', { region: name })}
+        </h2>
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2">
+          <PixelButton size="sm" onClick={onDismiss}>
+            {t('ui.friends.notNow')}
+          </PixelButton>
+          <PixelButton size="sm" variant="gold" onClick={onGo}>
+            {t('ui.home.go')}
+          </PixelButton>
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -140,10 +142,30 @@ export function FeatureNotice({
   )
 }
 
+/**
+ * A region's notice put away with Not now: on this device, for good (the region stays in the Areas sheet's Regions
+ * view, where it can be started any time).
+ */
+const regionNoticeKey = (id: string) => `pokedice.regionNotice.${id}`
+function regionNoticeHidden(id: string) {
+  try {
+    return localStorage.getItem(regionNoticeKey(id)) === '1'
+  } catch {
+    return false
+  }
+}
+function hideRegionNotice(id: string) {
+  try {
+    localStorage.setItem(regionNoticeKey(id), '1')
+  } catch {
+    // Private mode: it comes back next visit.
+  }
+}
+
 /** Feature notices put away with ✕ this visit (in memory: they come back next time, until the page's rules are read). */
 const putAway = new Set<HomeNotice>()
 
-export function HomeNotices({ onRegions }: { onRegions: () => void }) {
+export function HomeNotices({ onRegionGo }: { onRegionGo: () => void }) {
   const { t } = useT()
   const navigate = useNavigate()
   const save = useGame((s) => s.save)
@@ -160,9 +182,19 @@ export function HomeNotices({ onRegions }: { onRegions: () => void }) {
   // The region's own pop-up opens first, once (RegionBar); afterwards the offer waits here, at the top of the page.
   // Not inside a small world, where no other region is offered (docs/21).
   const offer = inside ? null : regionOnOffer()
-  if (offer && save && !regionOfferDue(save, data)) {
+  if (offer && save && !regionOfferDue(save, data) && !regionNoticeHidden(offer.id)) {
     const picture = regionPicture(offer.id)?.url
-    return <RegionOfferNotice name={offer.name} picture={picture} onSee={onRegions} />
+    return (
+      <RegionOfferNotice
+        name={offer.name}
+        picture={picture}
+        onGo={onRegionGo}
+        onDismiss={() => {
+          hideRegionNotice(offer.id)
+          rerender((n) => n + 1)
+        }}
+      />
+    )
   }
   const first = due[0]
   if (!first || !save) return null

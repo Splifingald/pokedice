@@ -754,7 +754,7 @@ export function KitchenSink() {
         <SocialDeepBits />
       </Section>
 
-      <Section title="The area loop's deep pass (docs/43 §5.3): StageSky, StagePanel, Stamp, KeyHints, the switch's cards, the forfeit flag">
+      <Section title="The area loop's deep pass (docs/43 §5.3): StagePanel, Stamp, KeyHints, the switch's cards, the forfeit flag">
         <AreaDeepBits />
       </Section>
 
