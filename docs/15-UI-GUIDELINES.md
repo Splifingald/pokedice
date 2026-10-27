@@ -165,6 +165,9 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `DexTile` / `DexGridList` / `DexGauge` / `DexCompleteCard` / `DexSheet` / `Fold` | The Pokédex and its Shiny and Unown views (docs/43 §5.6) | A dense tile (~64 px phones, ~76 px PC): uncaught = the silhouette alone (number and "Not caught yet" for screen readers only), caught = icon + name (16 px, "…"), NEW gold tag, Nearby as a green word in an uncaught tile's empty line or a map tag on a named one, the shiny star, picked = gold ring + `aria-current`. The grid is one Tab stop; arrows by tile and row, Home/End. The gauge sits in the page head, once. The entry: hero (sprite, types, cry), where to find it, evolutions both ways, "Dice and stats" folded (`Fold`, open with More details) |
 | `StagePanel` / `EventDock` / `TicketsMeter` | The events' pages (docs/43 §5.11) | The stage on top and the dock pinned above the tab bar on phones; from 1024 px the stage left (sticky) and the panel and dock docked right in one frame. `TicketsMeter`: tickets as stubs (missing ones dimmed), `role=img` "n of cap tickets" |
 | `StageSky` / `Stamp` / `KeyHints` / `SwitchStep` / `ForfeitButton flag` | The area loop (docs/43 §5.3) | `StageSky`: the sky over a fight's grid (Daybreak drawn, the area picture's rows, night, distortion). `Stamp`: a result's moment (big: three held steps from 2×, two white frames, a stepped ring, confetti; small: one step; short: one step; calm/off: at rest). `KeyHints`: the keys at the panel's foot on PC. `SwitchStep`: the send-out's cards for a turn's switch (BACK, GO!, the flag) and a K.O.'s (GO!, the flag). `ForfeitButton flag`: a 56 px flag named FORFEIT |
+| `ItemTile` / `PriceButton` / `PricePlate` / `ItemDetail` / `QtyRow` / `QtyButton` / `DetailButton` | An item anywhere in the Mart (docs/43 §5.5) | Price (affordable, short, a sale struck), plates (sold out, held, sell +₽, can't sell, what it waits for), open, disabled, locked, the count's hop, the coin flight |
+| `SmallInfo` | A panel's INFO, small and quiet | The same name as the big INFO |
+| `GuestTile` | A friend's Pokémon at the Day Care, one line | Send back a 44 px ✕ |
 | `BoxFilter` | The Box's one Sort & filter control | A button beside the search (a gold count of what is set). Phones: a bottom sheet with the order (`Seg`) and the type (a radio grid of named swatches), SHOW n and Clear filters. From 768 px: a panel under the button (focus on the current choice, Esc and a click outside close it). A pick applies at once |
 | `MonTile` / `TileTag` | A grid of Pokémon (the Box) | Menu icon from the atlas, number, name (16 px), a line under it; `level` (a navy 14 px corner tag, top right); `selected` (gold outline, `aria-current`); `missing` = grey tile + silhouette; corner tags NEW (gold) and Nearby (green). `TILE_GRID` = ~84 px columns |
 | `GoldCard` / `CoinFlight` / `XpBar` (`useXpFill`) / `Confetti` / `DexRegisteredCard` / `UpCard` | The rewards' game feel (docs/38 §4) | The gold counting up from 0; its coins flying to the top bar's gold (`data-hud-gold`; playing, none when calm or off); the XP bar in steps (filling, the level-up's white frame, rolled over); the pixel confetti (playing, frozen on frames); a species' first catch registered in the Pokédex; the Upgrades' buttons (navy, the best buy gold with its chip) and a purchase's pop frame by frame (`frozenPop`) |
@@ -625,16 +628,22 @@ Players shouldn't have to make many requests:
   stay focusable (`aria-disabled`) and say what's missing ("need ₽14"); a tap explains in a toast.
 - **Reordering**: drag a card onto another to swap them (pointer events, 8 px before a press becomes a drag; a tap
   still opens the card). Every drag has a button twin for keyboards and screen readers (Make lead).
-- **Shelves** (the Poké Mart): one row open at a time; an open row shows the description, a ×1 / ×5 / ×10 segmented
-  picker and one button that names the total ("Buy ₽500") or what's missing ("Need ₽40 more"). Category chips put the
-  most-used group first (Balls). What isn't sold yet waits under "Coming later" with what it waits for. The Bait sits
-  with the balls ("Poké Balls & Bait"), the Link Cable with the stones ("Evolution items"); an item switched off in the
-  admin (§20) is not on the shelf at all. **Mega Gems** (docs/35) have a shelf of their own under the stock
-  (`GemShelfView`): each once, the Mega's icon and name under the gem, ₽ or HELD, a line while it's shut here, INFO at
-  its foot; the bag lists the gems held, "Can't sell".
-- **Upgrades** (each row's buy button): navy (`frame-dark`), never red — a list of red buttons was a screen of main
-  actions. The **best buy** of the list shown, the cheapest upgrade within your gold (`bestBuy`; the first listed on a
-  tie), is gold with a "Best buy" chip by its level. One you can't afford stays grey and says what's missing.
+- **Shelves** (the Poké Mart, docs/43 §5.5): one `ItemTile` for every item the Mart shows: the shelf, the Bag, held gems,
+  a Special Shop, the Explorakits, a small world's Mart, the Mega Gems, Coming later. Three to a row on phones
+  (`TILE_GRID`), four from 768 px. **The price button is the purchase** (×1, one tap; short of ₽ it stays focusable,
+  greyed, a tap says what's missing). A tap on the tile opens `ItemDetail`: a bottom sheet on phones, docked in
+  `SplitView`'s pane on PC (the Bag stands there while nothing is open). Its foot holds the quantities, each its own
+  purchase (`QtyButton`: ×1 / ×5 / ×10 with its total, fewer under a limit; a limit of one is a single red BUY). Selling
+  is ×1 / ×5 / All in green. A purchase is felt: coins from the top bar's gold to the tile (`CoinFlight`, Game feel on,
+  never calm/off) and the tile's count hops. Categories are one scrolling chip row; the Mart's tab bar scrolls inside
+  itself rather than squeeze a long translation. What isn't sold yet folds under "Coming later", the same tiles greyed
+  with what they wait for. The Mart's tab opens on Upgrades while one is affordable (its dot); the top bar's gold opens
+  it on Buy: any purchase is two taps from Home.
+- **Upgrades** (the Mart's second tab): its views (Combos, Dice Types, General) are a compact chip tab list on one row
+  with Affordable (on phones its coin and count), the view in the URL (`&up=`). A card is two columns: the name and its
+  "Best buy" chip, **now → next at 22 px**, the track; on the right **the price is the button, the card's full height**:
+  navy (`frame-dark`, never red), the best buy gold (`bestBuy`), grey "need ₽X" when short, MAX, or a lock with its
+  reason. Dice cards show their faces; what each status face does is More details'. PC: three columns.
 - **Search resets filters**: typing in a search shows everything that matches (the Pokédex's filter goes back to All).
   A Pokédex number finds any entry; a name only finds what has been caught.
 - **Grey plates** (`#e3e8f0`, `#f1f4f9`) take ink text: muted grey on them is under 4.5:1.
@@ -751,7 +760,14 @@ the actions, the Bag and the team as rows with their HP (docs/42 §3). The histo
 ## 15. Day Care and Eggs
 
 One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/screens/DayCareScreen.tsx`, its pieces in
-`src/screens/daycare/`) is laid out like Home, with no CONTINUE and no Areas button; its name shows once.
+`src/screens/daycare/`) is a stage and its panel (docs/42, docs/43 §5.7): the yard on top (PC: left, as tall as the
+window, sticky), the panel under it (PC: framed at its right, scrolling inside itself). The panel, in order: the rules
+card on the first visit (`DayCareRulesCard`, GOT IT sets `dayCare.visited`); the Egg card (one row, HATCH IT at its end)
+or the Egg-now bar; your two slots (`SlotCard`, compact: a 60 px sprite beside the name, level and gain, the XP bar, the
+partners, TAKE BACK); friends' Pokémon one line each (`GuestTile`, Send back a 44 px ✕); the free friend slots as one
+"+ Add from a friend" line; signed out, one line and a small CONNECT. At its foot the Egg checks folded (open with More
+details) and a small INFO (`SmallInfo`). The push question waits while the rules card is up. What follows describes the
+pieces.
 
 - **The yard** (`YardStage`) takes the place and size of Home's scene: its picture (`public/area-art/daycare.png`,
   measured in `ART_GEOMETRY.daycare`; the drawn meadow and cottage stand in while it loads, `dayCareWorld()`), everyone at the Day Care roaming with Home's herd. Pairs that could make an Egg
@@ -765,7 +781,7 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   stays on one line and the button's label shrinks first). Without a pair no clock runs: "On hold" takes the
   countdown's place and the button is disabled. Short of ₽ it stays focusable, the price turns red and a tap says
   what's missing.
-- **Slots are cards in two columns** (`SlotCard`): a 4 px band in the slot's colour (pink `#ff5a7a` for your first,
+- **Slots are compact cards in two columns** (`SlotCard`, the sprite 60 px beside the name): a 4 px band in the slot's colour (pink `#ff5a7a` for your first,
   blue `#5b8def` for your second, grey for a friend's), the head (that colour's heart and "Yours", or the friend's
   trainer head and "Lea's"; a green tag with the levels gained here or New), the animated sprite on a pale tile, the
   name and level, then for yours the XP bar to the next level ("To Lv.25 · came at Lv.22", "Lv.100: it can't grow
@@ -775,7 +791,7 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   minute). Signed out, the friend list's connect prompt takes their place; without the online service, or on a
   database without migration 0034, they are greyed and say why.
 - **Hearts mean "can make an Egg with it"**, always next to a name: a heart is never the only sign.
-- **Egg checks** list the rule, the two clocks (Egg groups, Ditto) with their next time ("waiting for a pair" for a
+- **Egg checks** (folded at the panel's foot; open with More details) list the rule, the two clocks (Egg groups, Ditto) with their next time ("waiting for a pair" for a
   clock with none), and every pair with a tag: the shared group and its pace ("Field · every 12 h"), or Ditto's slower
   pace in purple.
 - **Pickers** (the shared `Sheet`): Leave which Pokémon? lists every region's Box (the region after the level once

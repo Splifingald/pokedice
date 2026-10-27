@@ -13,6 +13,7 @@ import { PixelIcon } from './icons'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
 import { useMyTurn, useOnScreen } from './popupTurn'
+import { RulesCard } from './RulesCard'
 import { RulesModal, type RuleRow, type RulesPicture } from './RulesModal'
 
 /** The Battle Frontier's plaza at sunset: the grand, golden end of the game. */
@@ -78,6 +79,24 @@ export function useCharmRules(): RuleRow[] {
   ]
 }
 
+/**
+ * The General upgrades' rules where they apply (docs/43 §7): a card at the top of the Mart's General view until GOT
+ * IT, the same rows as INFO's pop-up (the Shiny Charm's alone for one who read the rest before it came).
+ */
+export function GeneralRulesCard({ charmOnly = false }: { charmOnly?: boolean }) {
+  const { t } = useT()
+  const all = useGeneralRules()
+  const charm = useCharmRules()
+  return (
+    <RulesCard
+      title={t(charmOnly ? 'ui.general.charm.name' : 'ui.upgrades.tabGeneral')}
+      icon={charmOnly ? 'sparkle' : 'navUpgrades'}
+      rules={charmOnly ? charm : all}
+      onDone={markGeneralRulesSeen}
+    />
+  )
+}
+
 export function GeneralRulesModal({
   open,
   onClose,
@@ -126,7 +145,7 @@ export function GeneralUnlockPopup() {
       onClose={markGeneralRulesSeen}
       onGo={() => {
         markGeneralRulesSeen()
-        navigate('/upgrades?tab=general')
+        navigate('/shop?tab=upgrades&up=general')
       }}
     />
   )
@@ -144,12 +163,7 @@ export function OfflineReportModal({ show }: { show?: boolean }) {
   const open = (useMyTurn('offline') || !!show) && !!report
   useOnScreen('offline', open)
   return (
-    <Modal
-      open={open}
-      onClose={closeOfflineReport}
-      title={t('ui.extreme.away.title')}
-      className="max-w-md"
-    >
+    <Modal open={open} onClose={closeOfflineReport} title={t('ui.extreme.away.title')} className="max-w-md">
       {report && (
         <div className="flex flex-col gap-3">
           <p className="copy m-0 text-muted">{t('ui.extreme.away.for', { time: countdown(report.ms) })}</p>

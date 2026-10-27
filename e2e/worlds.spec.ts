@@ -202,7 +202,7 @@ test('the world opens: its pop-up, the partner pick, Home inside, its Mart and U
   await page.goto('/shop')
   await expect(page.getByRole('heading', { name: 'World Mart', level: 1 })).toBeVisible()
   await expect(page.getByText('10 of 10 left')).toBeVisible()
-  await page.getByRole('tab', { name: 'Sell' }).click()
+  await page.getByRole('tab', { name: 'Bag' }).click()
   const kantoGold = s.parked?.kanto?.gold
   await page.getByRole('button', { name: /^Potion/ }).click()
   await page.getByRole('button', { name: 'Sell 1 Potion for ₽7' }).click()

@@ -80,6 +80,7 @@ import { PokedexDeepBits } from './kitchen/PokedexDeepBits'
 import { EventsDeepBits } from './kitchen/EventsDeepBits'
 import { SocialDeepBits } from './kitchen/SocialDeepBits'
 import { AreaDeepBits } from './kitchen/AreaDeepBits'
+import { MartDeepBits } from './kitchen/MartDeepBits'
 import { RewardBits } from './kitchen/RewardBits'
 import { HitFeelBits } from './kitchen/HitFeelBits'
 import { FeelBits } from './kitchen/FeelBits'
@@ -755,6 +756,10 @@ export function KitchenSink() {
 
       <Section title="The area loop's deep pass (docs/43 §5.3): StageSky, StagePanel, Stamp, KeyHints, the switch's cards, the forfeit flag">
         <AreaDeepBits />
+      </Section>
+
+      <Section title="Mart deep pass (docs/43 §5.5): ItemTile in every state, ItemDetail as a sheet and docked, the quantity buttons, SmallInfo">
+        <MartDeepBits />
       </Section>
 
       <Section title="Extreme mode: rules, band, title card, K.O. rest, resting team, while you were away, switch">

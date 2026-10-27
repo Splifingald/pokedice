@@ -219,11 +219,28 @@ Each entry: before (from the audit), after on a phone, after on PC, and what was
 - **Taps**: a Pokémon's details on PC 2 → 0 (the lead is open), the next one 2 → 1 (no close); sorting 1 → 2 (one menu
   for sort and type); a Center swap stays 2.
 
-### 5.5 Mart (with Upgrades)
+### 5.5 The Mart (Buy · Upgrades · Bag)
 
-- **Before**: two tabs; the Mart's rows open then BUY (3 taps from Home); effect lines at 13 px; gold shown twice.
-- **After**: one Mart: Buy · Upgrades · Bag. A price is the purchase (×1, one tap); a long press or the item's details
-  give ×5 / ×10. No page gold (the top bar's). PC: the shelf in four columns, the Bag docked at the right.
+- **Before**: two tabs (the Poké Mart, Upgrades), each repeating the top bar's gold; a 2-up shelf whose rows opened then
+  BUY (3 taps from Home); effect lines at 13 px; each live sale, kit, world shelf and gem shelf its own expander; on PC a
+  768 px column in 1152; Upgrades' cards with the now → next line small and the button small.
+- **After, phone**: one Mart, its tabs Buy · Upgrades · Bag (the page title for screen readers, the tabs say where you
+  are). Categories one scrolling chip row; the shelf three to a row (the mid save's whole shelf on one 390×844 screen).
+  **One `ItemTile`** for the shelf, the Bag, held gems, Special Shops (struck price, −%, NEVER SOLD, "x of y left"), the
+  Explorakit, a small world's Mart, the Mega Gems and Coming later: the sprite, the name, one effect line, a ×N tag and
+  **the price, which is the purchase** (×1, one tap; short of ₽ it says what's missing). The tile opens `ItemDetail` with
+  ×1 / ×5 / ×10, **each a purchase** with its total (pick-then-BUY is gone). A purchase is felt: coins fly from the top
+  bar's gold to the tile, its count hops.
+- **After, PC**: `SplitView` — the shelf four columns wide, the Bag docked at its right; an opened item's details and
+  quantities take the pane.
+- **Upgrades**: Combos / Dice Types / General a compact chip tab list on the row with Affordable (not a second
+  full-width tab bar); a card in two columns — the name and Best buy, **now → next at 22 px**, the track; the price the
+  card's full-height button (navy, the best buy gold, "need ₽X" grey, MAX, a lock). The status faces' lines are More
+  details'. PC: three columns.
+- **Removed**: the page wallet, the per-section expanders, the inline segmented + BUY, a fossil's pop-up (a toast).
+  **Merged**: the Mart and Upgrades; seven tile designs into one.
+- **Taps**: a Poké Ball 3 → 2 (the gold, its price); ×5 4 → 3; an upgrade 2 → 2 (the Mart's tab opens on Upgrades while
+  one is affordable, its dot saying so).
 
 ### 5.6 Pokédex, the Shiny and Unown Pokédex
 
@@ -249,9 +266,16 @@ Each entry: before (from the audit), after on a phone, after on PC, and what was
 
 ### 5.7 Day Care
 
-- **Before**: the yard, the egg bar, slots, the friends' connect panel, Egg checks, a big blue INFO.
-- **After**: `StageView` — the yard on top (PC: left), the panel with the egg bar, your two slots and friends' (PC: right).
-  Egg checks fold under More details; INFO is the panel's foot button, small.
+- **Before**: the yard, the Egg bar, tall slot cards (76 px tiles), a big gold connect panel, Egg checks always open, a
+  big blue INFO; on arrival its rules pop-up, then the invite, one after the other.
+- **After, phone**: the yard on top, then the panel: the rules card on the first visit; the Egg card (one row, HATCH IT at
+  its end) or the Egg-now bar; your two slots compact (a 60 px sprite beside the name, level and "+N Lv", the XP bar,
+  the partners, TAKE BACK); friends' Pokémon one line each, Send back a 44 px ✕ (one tap); the free friend slots one
+  "+ Add from a friend" line; signed out, one line and a small CONNECT; at the foot the Egg checks folded (open with More
+  details) beside a small INFO. At 390×844 the yard, the Egg bar and both TAKE BACKs are on the first screen.
+- **After, PC**: the yard on the left, as tall as the window allows, sticky; the panel framed on the right, scrolling
+  inside itself.
+- **No chain**: nothing pops up on arrival (the rules are the card; the push question waits while it's up).
 
 ### 5.8 Social
 

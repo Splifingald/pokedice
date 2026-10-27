@@ -69,6 +69,21 @@ async function boot(page: Page, save: SaveData, settings = FAST) {
   return sent
 }
 
+test("the Day Care's first visit: its question waits while the rules card is up, then comes (docs/43 §7)", async ({
+  page,
+}) => {
+  // Twenty species and never been in: the rules are a card on the page; the question would be a modal over them.
+  await boot(page, { ...player(), dayCare: undefined })
+  await page.goto('/daycare')
+  const card = page.getByRole('region', { name: 'How Day Care works' })
+  await expect(card).toBeVisible()
+  await page.waitForTimeout(2000)
+  await expect(page.getByRole('dialog', { name: 'Notifications' })).toHaveCount(0)
+  // Read: then the page asks, once.
+  await card.getByRole('button', { name: 'GOT IT' }).click()
+  await expect(page.getByRole('dialog', { name: 'Notifications' })).toBeVisible()
+})
+
 test('each feature asks once; No thanks is for good there; Enable subscribes and sends the schedule', async ({
   page,
 }) => {

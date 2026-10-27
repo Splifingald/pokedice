@@ -54,7 +54,7 @@ const isActive = (n: NavItem, pathname: string) =>
  * Dots only for what you can act on: a sale or the Underground's kits, else the upgrades you can afford (9+ at most), on
  * the Mart; a gold NEW for new Pokédex entries; what's new with friends and trades on Social.
  */
-function useNavDot(n: NavItem): { text: string; label: string; gold?: boolean } | null {
+function useNavDot(n: NavItem): { text: string; label: string; gold?: boolean; to?: string } | null {
   const { t } = useT()
   const upgrades = useGame((s) => (n === MART && s.save ? affordableUpgrades(s.save, s.data) : 0))
   const dexNew = useDexNew()
@@ -64,7 +64,9 @@ function useNavDot(n: NavItem): { text: string; label: string; gold?: boolean } 
   const ugOn = useGame((s) => !!s.save && !!undergroundLive(s.save, s.data, serverNow()))
   if (n === MART && lives.some((e) => e.type === 'shop')) return { text: t('ui.live.sale'), label: t('ui.live.shopDot'), gold: true }
   if (n === MART && ugOn) return { text: t('ui.ug.kitsTag'), label: t('ui.ug.kitsDot'), gold: true }
-  if (n === MART && upgrades > 0) return { text: upgrades > 9 ? '9+' : String(upgrades), label: t('ui.nav.upgradesDot', { n: upgrades }) }
+  // The dot is where the tab leads: upgrades to afford open the Mart on Upgrades, so an upgrade stays 2 taps from Home.
+  if (n === MART && upgrades > 0)
+    return { text: upgrades > 9 ? '9+' : String(upgrades), label: t('ui.nav.upgradesDot', { n: upgrades }), to: '/shop?tab=upgrades' }
   if (n === DEX && dexNew > 0) return { text: t('ui.common.new'), label: t('ui.nav.dexDot', { n: dexNew }), gold: true }
   if (n === SOCIAL && social.news > 0) return { text: social.news > 9 ? '9+' : String(social.news), label: t('ui.nav.socialDot', { n: social.news }), gold: true }
   return null
@@ -95,7 +97,7 @@ function NavEntry({ n, variant }: { n: NavItem; variant: 'side' | 'bottom' }) {
   const dot = useNavDot(n)
   const label = t(n.label)
   const common = {
-    to: inFight ? '#' : n.to,
+    to: inFight ? '#' : (dot?.to ?? n.to),
     'aria-current': active ? ('page' as const) : undefined,
     'aria-disabled': inFight || undefined,
     'aria-label': dot ? `${label} · ${dot.label}` : label,

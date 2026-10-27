@@ -3,7 +3,18 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { createInstance, type SaveData } from '../src/engine'
-import { FAST, fakeSession, gameData, makeSave, mockSupabase, STORAGE_KEY, SUPABASE, type SupabaseMock } from './helpers'
+import {
+  FAST,
+  fakeSession,
+  gameData,
+  makeSave,
+  mockSupabase,
+  nonJerseyText,
+  smallControls,
+  STORAGE_KEY,
+  SUPABASE,
+  type SupabaseMock,
+} from './helpers'
 
 const open = (patch: Partial<SaveData> = {}) =>
   makeSave(4, {
@@ -40,6 +51,9 @@ test('the gold widget opens the Day Care straight into the hatching of the gift 
   await expect(page.getByText('Next Egg check')).toBeVisible()
   await expect(page.getByText('On hold')).toBeVisible()
   await expect(page.getByText('No pair can make an Egg yet').first()).toBeVisible()
+  // The Egg checks are folded at the panel's foot (docs/43 §5.7): the clocks show once opened.
+  await expect(page.getByText('every 12 h · waiting for a pair')).toBeHidden()
+  await page.getByText('Egg checks', { exact: true }).click()
   await expect(page.getByText('every 12 h · waiting for a pair')).toBeVisible()
 })
 
@@ -60,8 +74,8 @@ test('Egg now pays and hatches at once', async ({ page }) => {
   await moment.getByRole('button', { name: 'SKIP ▸▸' }).click()
   await expect(moment.getByText(/hatched from the Egg!/).first()).toBeVisible()
   await moment.getByRole('button', { name: 'Done' }).click()
-  // ₽200 went (₽10 more may have come back from the Day Care couple).
-  await expect(page.getByRole('banner').getByText(/₽\s?3[01]0/).first()).toBeVisible()
+  // ₽200 went (the Day Care couple may give some back when the hatchling isn't kept: the engine says how much).
+  await expect(page.getByRole('banner').getByText(/₽\s?3\d\d/).first()).toBeVisible()
 })
 
 test('a Pokémon stays at the Day Care and comes back', async ({ page }) => {
@@ -232,9 +246,11 @@ test("friends' Pokémon: invite a friend's Ditto, it pairs with yours, then goes
   await sheet.getByRole('button', { name: /Ditto/ }).click()
   await expect(page.getByText("Ditto is visiting from Misty's Day Care · pairs with Eevee")).toBeVisible()
 
-  // Its card says whose it is; the checks find the pair, on Ditto's slower clock.
+  // Its line says whose it is; the checks (folded, opened here) find the pair, on Ditto's slower clock.
   await expect(page.getByText("Misty's").first()).toBeVisible()
+  await page.getByText('Egg checks', { exact: true }).click()
   await expect(page.getByText('Ditto · every 24 h')).toBeVisible()
+  // Send back: one tap on its line's button.
   await page.getByRole('button', { name: "Send Ditto back to Misty's Day Care" }).click()
   await expect(page.getByText("Ditto went back to Misty's Day Care")).toBeVisible()
   await expect(page.getByText('Ditto · every 24 h')).toHaveCount(0)
@@ -271,19 +287,28 @@ test('signed out, the friend slots are the friend list’s connect prompt', asyn
   await expect(page.getByRole('button', { name: /Add from a friend/ })).toHaveCount(0)
 })
 
-// ---------------------------------------------------------------- the rules (the special events' pop-up)
+// ---------------------------------------------------------------- the rules, where they apply (docs/43 §7)
 
-test('the Day Care opening: its rules pop up once, then live behind the INFO button', async ({ page }) => {
-  // Twenty species and never been in: the unlock pop-up is due.
+test('the first visit: the rules are a card at the top of the panel until GOT IT, then live behind INFO', async ({
+  page,
+}) => {
+  // Twenty species and never been in.
   await boot(page, open())
-  await page.goto('/home')
-  const pop = page.getByRole('dialog', { name: 'Day Care' })
-  await expect(pop.getByText('Now open')).toBeVisible()
-  for (const rule of ['Training', 'Eggs', "Friends' Pokémon", 'Egg now']) await expect(pop.getByText(rule, { exact: true })).toBeVisible()
-  await pop.getByRole('button', { name: "Let's go!" }).click()
-  await expect(page).toHaveURL(/\/daycare$/)
+  await page.goto('/daycare')
+  const card = page.getByRole('region', { name: 'How Day Care works' })
+  await expect(card).toBeVisible()
+  for (const rule of ['Training', 'Eggs', "Friends' Pokémon", 'Egg now']) await expect(card.getByText(rule, { exact: true })).toBeVisible()
+  // Opening the page doesn't count as reading them; the push question waits while they're up (one thing at a time).
+  await page.waitForTimeout(1500)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}').dayCare?.visited)).toBeFalsy()
+  await card.getByRole('button', { name: 'GOT IT' }).click()
+  await expect(card).toHaveCount(0)
+  await expect
+    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}').dayCare?.visited))
+    .toBe(true)
 
-  // The same rules from the INFO button at the bottom of the page.
+  // The same rules from the small INFO at the panel's foot.
   await page.getByRole('button', { name: 'Info: how Day Care works' }).click()
   const info = page.getByRole('dialog', { name: 'Day Care' })
   await expect(info.getByText('Training', { exact: true })).toBeVisible()
@@ -292,17 +317,23 @@ test('the Day Care opening: its rules pop up once, then live behind the INFO but
   await expect(info).toHaveCount(0)
 })
 
-test('Later closes the Day Care pop-up for good', async ({ page }) => {
-  await boot(page, open())
-  await page.goto('/home')
-  await page.getByRole('dialog', { name: 'Day Care' }).getByRole('button', { name: 'Later' }).click()
-  await expect(page.getByRole('dialog', { name: 'Day Care' })).toHaveCount(0)
-  // Saved as visited (the boot above re-seeds the save on a reload, so the save itself is read).
-  await expect
-    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}').dayCare?.visited))
-    .toBe(true)
-  await page.getByRole('link', { name: 'Team', exact: true }).first().click()
-  await page.getByRole('link', { name: 'Home', exact: true }).first().click()
-  await page.waitForTimeout(600)
-  await expect(page.getByRole('dialog', { name: 'Day Care' })).toHaveCount(0)
+test('a visit before: no rules card', async ({ page }) => {
+  await boot(page, withEevee())
+  await page.goto('/daycare')
+  await expect(page.getByRole('heading', { level: 1, name: 'Day Care' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'How Day Care works' })).toHaveCount(0)
+})
+
+test('a phone: the yard, the Egg-now bar and your two fit the screen; nothing sideways; 44 px; Jersey', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await boot(page, withEevee())
+  await page.goto('/daycare')
+  const take = page.getByRole('button', { name: 'Take back Eevee' })
+  await expect(take).toBeVisible()
+  // The primary task fits without scrolling: your slots' buttons above the tab bar.
+  const box = await take.boundingBox()
+  expect(box!.y + box!.height).toBeLessThanOrEqual(844 - 64)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
+  expect(await smallControls(page)).toEqual([])
+  expect(await nonJerseyText(page)).toEqual([])
 })
