@@ -134,17 +134,31 @@ Each entry: before (from the audit), after on a phone, after on PC, and what was
 - **Removed**: the cup, Upgrades' tab, the drawer's Leaderboard, Friends and Trades rows. **Added**: Social. **Moved**:
   SUPPORT ME to the drawer.
 
-### 5.2 Home
+### 5.2 Home, the Areas sheet, notices
 
-- **Before**: the scene with its plate (name, levels, rounds, caught), a CONTINUE bar with AREAS, squares under
-  headings; a Support me modal on arrival for a late save.
-- **After, phone**: the scene; under it the sections as rows; the PLAY dock pinned at the bottom (CONTINUE with what comes
-  next, and the area button with its name and round pips, which opens the Areas sheet). The plate's details are the
-  area button's (no second plate on the scene). Notices (Oak's tips, Support me, an invite) are a card above the
-  sections, dismissable.
-- **After, PC**: the scene as tall as the window on the left; on the right the PLAY dock first, then the sections.
-- **Removed**: the plate over the scene (duplicated the area button and the Areas sheet), the Support me / leaderboard /
-  invite modals. **Merged**: the area details into the Areas sheet's first view.
+- **Before**: a plate over the scene (name, levels, rounds, caught), squares of mixed sizes under headings, CONTINUE in a
+  bar with a 76 px AREAS button; a late save opened under a Support me modal; dead space on PC.
+- **After, phone**: the scene full width, no plate; under it one notice card, then Events, Secret areas and Features as
+  one row card each (`HomeCard`: a strip picture, the name and a tag, one status line, a thin gauge where something
+  runs; gold for one new thing), then the "Coming up" line. The **PLAY dock** is pinned over the tab bar: the area
+  button (≥56 px: the map, the area's name, its rounds as pips with "0/1", its levels; NEW when a secret area opened;
+  shut by the nightmare with its reason) over CONTINUE (red, its second line). At 390×844 the scene and the dock are the
+  first screen.
+- **After, PC**: the scene sticky and as tall as the window on the left (cropped at most ~8 % a side); on the right
+  (380–520 px) the dock, the area's Pokémon (`HereCard`, uncaught first, opening the details), the notice, the sections.
+- **The Areas sheet** absorbs the area details: tabs Details · All areas · Regions; it opens on the current area's
+  details (CONTINUE HERE / TRAVEL HERE in its footer); a row (strip, name, "Lv · caught/total · n to catch" or why it's
+  locked, GO) shows its details in place. PC: one 1080 px sheet, the list left and the details right (their footer navy,
+  so the lead GO stays the one red). Each Pokémon's odds % and the round mix are More details'.
+- **Notices** (`NoticeCard`, `homeNotices` in the engine): one at a time, never red, ✕ 44 px — a feature with a page
+  opening ("Versus is open!" → its page, where the `RulesCard` ends it), Prof. Oak's leaderboard tip, his invite,
+  Support me, a region on offer once its pop-up was seen. The rules modals of the Day Care, the events, Versus, Trades,
+  the General upgrades, the Shiny and Unown dexes, the invite rewards, the raids' overhaul and the Underground left the
+  queue; nothing opens on arrival any more.
+- **Removed**: the plate on Home, the AREAS square, the arrival modals (Support me, the tip, the invite), RegionBar's
+  banner and switcher. **Merged**: the details into the Areas sheet; every square into one card.
+- **Taps**: Home → dice 1 → 1; the area's details 1 → 1; the area list 1 → 2 on phones (1 on PC, side by side); a modal
+  to dismiss on arrival 1 → 0.
 
 ### 5.3 The area loop
 
@@ -157,14 +171,32 @@ Each entry: before (from the audit), after on a phone, after on PC, and what was
   B the Bag, S switch, Esc closes, shown discreetly with More details.
 - **Kept**: the send-out (the user's decision), the result's auto-advance, the Center's wait.
 
-### 5.4 Team
+### 5.4 Team and the Pokémon sheet
 
-- **Before**: a banner, three tall cards (sprite 80 px, order tag, HP figures, XP), the Box's tiles (13 px levels), the
-  search, a sort, a type list, the sheet as a modal on PC; content 768 px wide in 1152.
-- **After, phone**: the banner (the user's decision); the team as `PokeCard`s (the one design); the Box as tiles with one
-  filter row (search, then sort and type in one menu); a Pokémon opens its sheet.
-- **After, PC**: `SplitView` — left: the banner, the team, the Box (8 columns); right, docked: the Pokémon picked (the lead
-  by default), its whole sheet, always open.
+- **Before** (team-mid / team-late): a 168 px banner, a title row ("Team 3/3") with a big "Swaps at a Center" chip,
+  three tall `TeamCards` (80 px sprite, order tag, HP figures, XP strip, dice squares), then the Box: a search, a 3-way
+  sort and a type dropdown on separate rows, tiles with 13 px levels; on PC the sheet a modal, the content a 768 px
+  column in 1152. 1.8 / 2.8 screens tall at 390 (mid / late).
+- **After, phone**: the banner (the team roaming, the user's decision) carries the page's `<h1>` as a plate in its
+  corner — no title row, no "3/3", no swaps chip. The team as three `PokeCard`s (the one card: the lead's crown tag, a
+  thin XP line, the HP gauge; drag to reorder kept). The Box's heading counts it ("Box 28", "Box 2 of 60" narrowed),
+  one filter row (the search, then **Sort & filter**: a sheet with the order and the type as named swatches, SHOW n;
+  a gold count on the button says what's set). Tiles: 16 px names, the level a corner tag. Empty states say what to do
+  (an empty Box says where catches go; no match offers Clear filters).
+- **After, PC**: `SplitView` — left, the banner (232 px, the whole team in view), the cards, the Box 8+ columns wide;
+  right, docked and always open, the selected Pokémon's sheet (the lead's on arrival); a card or tile swaps it in place,
+  outlined in gold. Sort & filter is a panel under its button (keyboard: arrows, Esc).
+- **The sheet**: a hero (sprite, types, HP and XP as gauges; figures with More details), then what matters now (a
+  waiting Pokémon's lock; Evolve now in gold, no longer a second red), the dice, What's next (the reached milestones
+  folded under "Reached (n)"), matchups, the rare moves (Send to region, Trade: quiet), and a folded **Stats** section
+  (open with More details). The footer: one red at most (Make lead / Add to team), Use an item quiet beside it; at a
+  Center `TeamSwapDock` (a full team: "swap X in for:" and the members as one-tap buttons). Let it go a plain-size
+  danger button at the end, still asked twice.
+- **Removed**: the title row, the count, the swaps chip (the rule sits at a Box Pokémon's sheet foot), `TeamCards`' own
+  look, the sort bar and the type row, the "Leads the team" line. **Merged**: sort and type; the title into the banner.
+  **Added**: the docked sheet on PC, Clear filters.
+- **Taps**: a Pokémon's details on PC 2 → 0 (the lead is open), the next one 2 → 1 (no close); sorting 1 → 2 (one menu
+  for sort and type); a Center swap stays 2.
 
 ### 5.5 Mart (with Upgrades)
 
@@ -172,11 +204,27 @@ Each entry: before (from the audit), after on a phone, after on PC, and what was
 - **After**: one Mart: Buy · Upgrades · Bag. A price is the purchase (×1, one tap); a long press or the item's details
   give ×5 / ×10. No page gold (the top bar's). PC: the shelf in four columns, the Bag docked at the right.
 
-### 5.6 Pokédex
+### 5.6 Pokédex, the Shiny and Unown Pokédex
 
-- **Before**: a 5.3-screen grid at 390 px with "#012 ???" under every silhouette, the entry a modal.
-- **After**: the grid's tiles are the icon and a name only for what was caught (a silhouette alone, numbered for
-  screen readers, otherwise), five to a row on phones; PC: the grid left, the entry docked right.
+- **Before**: at 390 px a grid 5.3 screens tall (9.1 at 360), 328 pieces of text under 16 px ("#012 ???" under every
+  silhouette); the progress twice ("32/151" and a bar); a search, then four filter chips on a row of their own; the entry
+  a modal holding the whole Pokémon sheet before "where to find it"; on PC a modal over a 1024 px grid; the Shiny and
+  Unown dexes page variants with heads and gauges of their own, their rules pop-ups in the queue.
+- **After, phone**: the head says it once, as a gauge ("32 of 151 caught"); a `Seg` switches Pokédex / Shiny / Unown
+  (only the views open); one row holds the search and the filter (a dropdown with counts). The grid is five to a row: an
+  uncaught species is its silhouette alone (its number for screen readers), a caught one its icon and name; NEW gold,
+  Nearby a green word. 2.7 screens at 390 (was 5.3); text under 16 px: none but the tab's badge (was 328). The entry is a
+  sheet: a hero (sprite, types, cry), **where to find it** (area strips with a navy GO, raid days), **evolutions both
+  ways** (cards that open that entry), and "Dice and stats" folded (open with More details).
+- **After, PC**: `SplitView` — the grid nine columns wide, the entry docked (the last viewed or the first caught open).
+  The grid is one Tab stop: arrows move by tile and row, Home/End, the pane follows the focus, Enter moves into it.
+- **Shiny and Unown**: views of the same screen with the same tile and gauge; their rules a `RulesCard` at the top of
+  the view until GOT IT, INFO at the foot.
+- **Removed**: the "#NNN ???" lines, the second progress, the chips row, the modal on PC, the big "complete" card.
+  **Merged**: three views into one layout and one tile (`DexTile`). **Moved**: the studied numbers and a stone's sources
+  into folds.
+- **Taps**: an entry on PC 2 → 1 (one is open), the next 2 → 1 (a click or an arrow); the Nearby filter 1 → 2 (a
+  dropdown, so search and filter share one row).
 
 ### 5.7 Day Care
 
@@ -196,16 +244,39 @@ Each entry: before (from the audit), after on a phone, after on PC, and what was
 - **After, PC**: Settings in two columns (Game and Language | Cloud, Save, Content); phone: unchanged order, 16 px floor.
   The drawer: the card, then about-you rows, then help, then the foot (Discord, Contact, Support me).
 
-### 5.10 Title, new game, How to play
+### 5.10 Title, new game, How to play, the type chart
 
-- **Title**: kept (the audit's cleanest screen); the logo's tagline 16 px.
-- **How to play**: 8.3 screens of text become the four animated cards and the rules as collapsed sections (one open at a
-  time): 1.6 screens.
+- **Title**: kept — the audit's cleanest screen (one screen, nothing under 16 px); only its footer links grew to 44 px.
+- **New game (the lab)**: Prof. Oak is in the lab's message box (his portrait, his welcome while the balls drop, SKIP
+  INTRO beside it), so his separate monologue screen is gone; on PC the lab on the left, the message, card and buttons
+  on the right. Taps stay NEW GAME → a ball → PICK → the dice (3): PICK stays because the partner is for good and its
+  card is what the choice is made on.
+- **How to play**: from 8.3 screens at 390 to 1.3 — the four animated cards swipe sideways in their own box (2×2 from
+  640 px), then "All the rules" as seven folded sections, one open at a time, each opening on one to three short lines;
+  the full text and tables behind "Every detail". PC: the cards and the rules side by side. The chip nav is gone.
+- **The type chart**: two tabs — Pick a type (18 type buttons, the answer as an attack card and a defence card) and the
+  chart (36×44 px cells at 16–18 px, scrolling in its own box with its first row and column pinned).
 
 ### 5.11 Events
 
-The wheel, raids, the rebattle, the Underground, Trick or Treat, the portal and the nightmare keep their screens; their
-pages adopt the shell's floor (16 px), and their PC pages use `StageView` where they have a stage (the wheel, the dig).
+- **One shape** (`StagePanel`): on phones the stage, the panel, and a dock pinned above the tab bar (one red action); from
+  1024 px the stage on the left and the panel and dock docked at its right in one frame. INFO became a quiet 48 px
+  button with an "i" (it was a 64 px blue block competing with the page's action), everywhere it appears.
+- **Fortune Wheel**: tickets as stubs, the jackpot beside them, the wheel sized to the screen; SPIN red in the dock with
+  BUY A TICKET and INFO; PC the wheel left, Tickets and Jackpot cards right. INFO is one sheet with the rules and the
+  odds (the tip line went into the rules).
+- **Raids**: 2.1 → 1.6 screens at 390, 47 → 1 small text. The boss card; the team as three cards (they are the picker's
+  button); the group as three seats; "This raid" rules folded; START red in the dock. PC: the raids in two columns with
+  the picked one's panel docked (a legendary raid set up in place: 2 taps and a page change → 1 tap). Ball odds, tries
+  and hints are More details'. The team picker's candidates are cards.
+- **Raid battle**: on PC the stage as large as the window allows and the panel docked at 400 px; on phones the dice,
+  actions and team row at the foot.
+- **Elite Rebattle**: the gauntlet is a hall — five trainers on the League's carpet, the next one forward and ringed,
+  the beaten greyed with a check; the panel holds the next trainer and the medal track; levels and ₽ are More details'.
+- **The Underground**: the kits and the pickaxe as the stage, the team, orb bag and plates as the panel, DIG A WALL red
+  in the dock; the dig on PC: the wall as tall as the window, the gauge, the buried list and the die docked beside it.
+- **Rules**: the wheel, raids, the rebattle and the Underground show their `RulesCard` at the top of their page until
+  GOT IT; opening the page no longer counts.
 
 ### 5.12 Pop-ups and toasts
 
@@ -234,8 +305,13 @@ Today ~28 one-time pop-ups take turns (`PopupQueue`). This pass:
 - **Moves to the page** what asks nothing of the player: Support me (its 5th-badge pop-up → a Home notice card), Prof.
   Oak's leaderboard tip and the invite (→ Home notice cards). They stay once-only and keep their "seen" flags.
 - **Keeps** the feature rules pop-ups as modals (CLAUDE.md, the user's rule) and the region offer.
-- **Proposes** (not built; the user decides): rules as a card at the top of the feature's own page the first time it is
-  opened, with the same INFO afterwards — the rule is read where it applies, and Home never opens under a modal.
+- **Rules where they apply** (proposed here, approved by the user on 2026-10-26): a feature with a page of its own shows
+  its rules the first time that page opens, as a card at its top (`RulesCard`: the same rows as its pop-up, GOT IT puts
+  it away for good, setting the same "seen" flag), and its INFO button afterwards. Home no longer opens under a rules
+  modal: the feature's opening is a notice card on Home with a button to its page. Features with no page of their own
+  (day and night, the battle powers, a small world's opening, Extreme mode, the push question) and the rules shown at
+  their own moment (the portal's and the nightmare's way in, Trick or Treat's first ghost, the gifts', the looks') keep
+  their pop-ups.
 
 ## 8. Not in this pass
 

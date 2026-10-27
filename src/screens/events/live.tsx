@@ -3,7 +3,7 @@
 // Cash Flow's "+50 %" on the purse and on the ₽ won (two at once add up). The Special Shop's sections are the Poké
 // Mart's (screens/Shop.tsx).
 import { type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { create } from 'zustand'
 import {
   cashMultiplier,
@@ -12,6 +12,7 @@ import {
   liveLeft,
   livePopupDue,
   livePopupNext,
+  queuedLives,
   liveShopRows,
   shinyBoost,
   type Area,
@@ -313,9 +314,14 @@ export function LivePopup() {
   const turn = useMyTurn('live')
   const idle = useGame((s) => s.run.phase === 'idle')
   const { lives, now } = useLive(asked ? 1000 : 5000)
-  const next = save ? livePopupNext(save, lives) : null
+  // The queue's turn is for the live events still announced by a pop-up: the Underground's rules are its page's card
+  // now (docs/43 §7), so it never takes another event's turn.
+  const next = save ? livePopupNext(save, queuedLives(lives)) : null
   const live = (asked && lives.find((e) => e.id === asked)) || next
-  const open = !!live && !!save && now != null && ((idle && !!asked) || (turn && !!next))
+  // The Underground's page shows its rules itself, as a card at its top (docs/43 §7): never this pop-up over it.
+  const path = useLocation().pathname
+  const onItsPage = live?.type === 'underground' && path.startsWith('/underground')
+  const open = !!live && !!save && now != null && !onItsPage && ((idle && !!asked) || (turn && !!next))
   useOnScreen('live', open)
   if (!live || !save || now == null) return null
   const close = () => {

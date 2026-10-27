@@ -97,12 +97,15 @@ Rules:
 |---|---|---|---|
 | Page title (`h1`) | Jersey 25 | 30–40 px (`text-title`, `text-display`) | One `<h1>` per route |
 | Section title | Jersey 25 | 24 px | |
-| Body, names | Jersey 25 | 20 px (`text-body`); 17 small; 22 large | |
+| Body, names | Jersey 25 | 20 px (`text-body`); 18 small; 22 large | |
 | Buttons | Jersey 25 | 24 px (md), 18 (sm), 26 (lg), 30 (xl) | Uppercase, 0.04em tracking |
-| Labels, numbers, captions | Jersey 15 (`font-pixel-sm`) | 15 px (`text-label`) | `tabular-nums` for counters |
+| Labels, numbers, captions | Jersey 15 (`font-pixel-sm`) | 16 px (`text-label`) | `tabular-nums` for counters |
+| Tags (NEW, a count on a tab) | Jersey 15 | 14 px (`text-tag`) | Never a sentence |
 | Paragraphs (2+ lines) | Jersey 15 (`.copy`) | 20 px, line-height 1.35 | |
 
-- Floor: **no text under 12 px** on any game screen.
+- Floor (docs/43 §4): **no text under 16 px** on any game screen, tags excepted (14 px); body text 18 px or more.
+  Tailwind's own `text-xs` and `text-sm` are 16 px and `text-base` 18 px here, so no stray class goes under the floor.
+  A grey caption that only repeats what's beside it goes rather than grows.
 - Only the Jersey faces ship (plus the Fusion Pixel CJK subsets). `e2e/layout.spec.ts` fails on any other font.
 - CJK: the font stack ends in `var(--font-cjk)`, which follows the element's `lang`. After editing a ja, ko or zh-Hans
   string, run `pnpm i18n:fonts`.
@@ -158,13 +161,17 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `PageHead` / `Wallet` | A tab's title row | Tab icon, the one `<h1>` (`as="h2"` where the page has its own), a count ("3/3", "81/151") or the gold as a navy plate |
 | `SheetSection` | A titled block inside a sheet | 22 px heading, a muted hint on the same row, extra controls |
 | `NicknameButton` / `NicknameModal` | Giving one of your Pokémon a nickname (its sheet's title) | The name and a pencil, 44 px tall on phones; the dialog with the field (empty: the species as placeholder; named: selected), the 0/12 counter, the trade line only where trades exist, Cancel / SAVE (§13) |
-| `MonTile` / `TileTag` | A grid of Pokémon (Box, Pokédex) | Menu icon from the atlas, number, name, a line under it; `missing` = grey tile + silhouette; corner tags NEW (gold) and Nearby (green). `TILE_GRID` = ~84 px columns |
+| `PokeCard` | The one card for a team member everywhere (Team, send-out, Center, between encounters, K.O. switch; docs/43 §4) | `lead` (gold crown tag, said "Lead: sent out first"), `selected` (gold outline: picked, or shown in a docked sheet), fainted (hatched), resting after a K.O. (`KoTag`), a fossil reviving (its gauge), shiny (star), `xp` (a thin XP line under the HP, the Team), `brief`, `label`, `buttonProps` (drag handlers), `className` (a drop target's dashed red outline) |
+| `DexTile` / `DexGridList` / `DexGauge` / `DexCompleteCard` / `DexSheet` / `Fold` | The Pokédex and its Shiny and Unown views (docs/43 §5.6) | A dense tile (~64 px phones, ~76 px PC): uncaught = the silhouette alone (number and "Not caught yet" for screen readers only), caught = icon + name (16 px, "…"), NEW gold tag, Nearby as a green word in an uncaught tile's empty line or a map tag on a named one, the shiny star, picked = gold ring + `aria-current`. The grid is one Tab stop; arrows by tile and row, Home/End. The gauge sits in the page head, once. The entry: hero (sprite, types, cry), where to find it, evolutions both ways, "Dice and stats" folded (`Fold`, open with More details) |
+| `StagePanel` / `EventDock` / `TicketsMeter` | The events' pages (docs/43 §5.11) | The stage on top and the dock pinned above the tab bar on phones; from 1024 px the stage left (sticky) and the panel and dock docked right in one frame. `TicketsMeter`: tickets as stubs (missing ones dimmed), `role=img` "n of cap tickets" |
+| `BoxFilter` | The Box's one Sort & filter control | A button beside the search (a gold count of what is set). Phones: a bottom sheet with the order (`Seg`) and the type (a radio grid of named swatches), SHOW n and Clear filters. From 768 px: a panel under the button (focus on the current choice, Esc and a click outside close it). A pick applies at once |
+| `MonTile` / `TileTag` | A grid of Pokémon (the Box) | Menu icon from the atlas, number, name (16 px), a line under it; `level` (a navy 14 px corner tag, top right); `selected` (gold outline, `aria-current`); `missing` = grey tile + silhouette; corner tags NEW (gold) and Nearby (green). `TILE_GRID` = ~84 px columns |
 | `GoldCard` / `CoinFlight` / `XpBar` (`useXpFill`) / `Confetti` / `DexRegisteredCard` / `UpCard` | The rewards' game feel (docs/38 §4) | The gold counting up from 0; its coins flying to the top bar's gold (`data-hud-gold`; playing, none when calm or off); the XP bar in steps (filling, the level-up's white frame, rolled over); the pixel confetti (playing, frozen on frames); a species' first catch registered in the Pokédex; the Upgrades' buttons (navy, the best buy gold with its chip) and a purchase's pop frame by frame (`frozenPop`) |
 | `FaceDice` / `StatusLines` | What a die does | Its six faces as real dice, value under each; a status face keeps its ring and badge and gets its short name in a chip. One tinted line per status: when it triggers and what it does, with the live numbers (`statusEffects`) |
 | `ItemSprite` | An item's picture | From the item atlas (one request); falls back to the item's own URL for items added since the atlas was built |
 | `PixelIcon` | Every icon | Pixel maps drawn as SVG rects: the Pokémon ones hand-drawn in `icons.tsx` (balls, Pokédex, badges, status symbols, the battle Bag's backpack), the generic UI ones (coin, heart, shop, trophy, settings…) from the "1-bit Pixel Icons" pack, recoloured into `packIcons.ts` by `scripts/import-icons.ts` (11–16 px squares; the tab bar's on 16×16). Draw them at 12 px or more. One shared palette (`ICON_PALETTE`); a map may have its own (`OWN_PALETTE`) |
 | `TrainerName` / `NameIn` | Another trainer's name anywhere social (§24) | Plain; golden (`rich`: the `rich` token, a sparkle that twinkles, a stepped glint, still under reduced motion). Inline, so `truncate` around it still ends in "…". `NameIn` puts it in a translated sentence ("Misty's"), only the name golden |
-| `RulesModal` / `InfoButton` | A feature's rules: once when it unlocks, then from the blue INFO button at the bottom of its page | The special events' pop-up: its picture as a banner (`RulesBanner`), or a banner drawn in code (the gifts'), a NOW OPEN tag on the unlock, 2–4 `RuleList` rows (an icon, a short title, a line with the config's numbers, optionally a small button under it); Later and Let's go! on the unlock, OK from INFO. The Day Care and Versus use it (`FeatureRules.tsx`); the events have their own copies (`EventUnlockPopup`, `EventInfo`), with the same words |
+| `RulesModal` / `InfoButton` | A feature's rules: once when it unlocks, then from the blue INFO button at the bottom of its page | The special events' pop-up: its picture as a banner (`RulesBanner`), or a banner drawn in code (the gifts'), a NOW OPEN tag on the unlock, 2–4 `RuleList` rows (an icon, a short title, a line with the config's numbers, optionally a small button under it); Later and Let's go! on the unlock, OK from INFO. The Day Care and Versus use it (`FeatureRules.tsx`); the events have their own copies (`EventUnlockPopup`, `EventInfo`), with the same words. INFO is a quiet 48 px button on the sky tint with a blue "i" mark (`.ev-info`), never a competing block; `compact` when it shares a dock row. `RulesCard`: the rules at the top of a feature's page the first time (§20) |
 | `ContinueButton` / `StayHere` / `ComingUpView` / `LeaderboardTipModal` | Home (§12, docs/38 §6) | The big button: CONTINUE (the play arrow), a challenge waiting (the sword), greyed out (a tap says why), GO TO {area} behind in the region (the map) with Stay here, a 44 px link, under it; the "Coming up" line for the Day Care, the special events, Versus and a secret area (a level, the Pokédex); Prof. Oak's leaderboard tip with Later (✕ and Later end it for good) and SEE THE LEADERBOARD (`HomeBits`) |
 | `RotateCover` / `RotateView` | A phone held sideways (§6) | Over everything, not dismissable: the pixel phone tipping upright in steps (upright and still under reduced motion), the title and a line |
 | `ToastStack` / `ToastCard` | A short word on what just happened, or why something didn't (§7) | On `<body>`, beside the dialogs: under the top bar on phones, at the bottom on desktop; four at most. Info (panel) and good (green): a tap closes them, they go after 4 s or 1.2 s + 70 ms a character, waiting while touched, hovered or focused. Error (red): a ✕ (44 px), stays until closed |
@@ -183,7 +190,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `DayNightButton` / `DayNightChip` / `BattleDayTime` / `DayNightTag` / `DayNightPill` / `DayNightRulesModal` | Day and night in Johto (§30, docs/32) | The top bar's chip by day and by night; the fights' indicator on a stage (day, night); a list's tag (its own half, greyed in the other); the Pokédex places' chip (day only, night only); the rules (the first time, INFO) |
 | `DoubleMons` (`BattleStage double`) / `DoublePlates` / `MiniPlate` / `TargetPicker` / `LeadPicker pair` | Double battles (§31) | The stage with four (the pair in front big on the usual spots, their partners smaller behind, each with a shadow; toggled, they change places), one K.O. on each side (greyed plates, 1 v 2); the name-less plates (icon, level, HP, statuses; the one in front ringed in gold; a fallen one greyed); the target picker (live, disabled); the lead picker sending two |
 | `UgCave` / `CrackGauge` / `UgWall` / `PickaxeDie` / `PickaxeFaces` / `OrbArt` / `PlateArt` / `ThingIcon` / `HaulList` / `PlateGrid` / `OrbBagTable` / `UgRulesModal` / `UgTeamSeats` | The Underground (§32) | The cave (a square's size; big); the gauge fresh, under way, its last three shaking or calm, collapsed; the wall fresh, half dug with a strike flashing, cleared (glinting), collapsing; the die unrolled and rolled; the faces with the one that came up, and the next level's with its raised face; orbs of every colour and size, plates; the haul with every outcome; the plates none and some; the orb bag; the team seats solo, two, full; the rules (once, INFO) |
-| `TeamSwapActions` | A Pokémon's sheet where the team can change (`teamSwapsOpen`: inside a Pokémon Center, at a portal's way in before READY!) | In the team: Make lead (not the lead), Send to the Box (not the last one); in the Box: Add to team, or, the team full, "swap it in for" each member (a button each: its still mini icon on the left, name and level, "goes to the Box" and the swap arrow, `reroll`, at the far right); still reviving from its fossil: a line saying so. It sits above Strengths and weaknesses in the sheet, whether type hints are on or not (`PokemonSheet`'s `beforeMatchups`, the user's call, 2026-10-15) |
+| `TeamSwapActions` / `TeamSwapDock` / `SheetActionRow` | The Center's moves (`teamSwapsOpen`: inside a Pokémon Center, at a portal's way in before READY!) | `TeamSwapDock` is the Team sheet's footer where swaps are open: Make lead (red) beside Use an item, Send to the Box a small link; Add to team (red); a full team: "swap X in for:" and the members as one-tap buttons (mini, swap arrow, name); a fossil still reviving: a line saying so. `TeamSwapActions` (the body version) stays for the Center's own sheet. `SheetActionRow`: a quiet button and the main one sharing a `minmax(0,1fr)_minmax(0,1.4fr)` row |
 | `PlayStylePicker` / `PlayStylePanel` / `IdleRulesModal` / `AutoModeButton` / `AutopilotNote` | Idle mode and the play styles (§34, docs/36) | The two styles as a radio group of cards (an icon, the name, its line; the picked one on gold-pale with the gold ring and a check; none picked; arrow keys move the pick); Settings' panel with INFO; the rules (INFO only: they never pop up); the area's switch (AUTO-MODE or Idle mode, off and on, with Prof. Oak's tip); the line standing in for a card the autopilot takes (each style's); the catch panel with Idle's pick (`BattleBits`) |
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
@@ -260,6 +267,12 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   who switch it on — the battle history (a button by the Bag) and the key hints, the HP and XP figures (bars alone
   otherwise), a card's type chips (every `PokeCard` is brief without it), the result's rows. A new screen asks the same
   of each number it adds: does a player need it to act, or only to study? Studied things go behind it.
+- **Event pages** use `StagePanel` (docs/43 §5.11): phones stack the stage, the panel and a pinned dock (one red action); PC
+  docks the panel beside the stage. A list of things to set up (the raids) docks the picked one's panel beside the list on
+  PC and opens its own page on a phone.
+- **Pokédex** (docs/43 §5.6): the progress once, as a gauge in the page head; the search and the filter share one row
+  (the filter a dropdown); on PC the entry stands docked (`SplitView`), the first caught or the last viewed open, the pane
+  following the grid's keyboard focus.
 - **Home: the team on top, then what's open, by heading** (docs/42): Events, Secret areas (every one open in the
   region, the newest first), Features (the Day Care, Versus); a heading only shows with something under it.
 - **One pop-up at a time, then a rest**: once a one-time pop-up is done the queue waits a minute (`POPUP_GAP_MS`) before
@@ -451,12 +464,11 @@ Players shouldn't have to make many requests:
 ## 12. Navigation, Home and stages
 
 - **Top bar** (`Header` in `src/components/Hud.tsx`): in Johto, the day's sun or the night's moon first (§30); energy on the left; on the right the gold as a navy pill (a tap
-  opens the Poké Mart, no "+"), the cup (→ the leaderboard; greyed until the first badge, or in a small world its
-  first area cleared, and a tap says what opens it) and, last, you (name and badge count, then your trainer look →
-  the trainer menu, which slides in from that side).
+  opens the Poké Mart, no "+") and, last, you (name and badge count, then your trainer look → the trainer menu, which
+  slides in from that side). The leaderboard's cup left it for the Social tab (docs/43: one way to each place).
   **It stays up in battle, every part of it in reach** (`useHoldFullscreen(true, true)`): nothing is hidden, covered or
   `pointer-events-none`. Mid-fight (and in a portal run) what would leave the fight is shut and says why
-  (`useLockReason`): the gold and the cup stay focusable (`aria-disabled`), the reason in their name, and a tap says it
+  (`useLockReason`): the gold stays focusable (`aria-disabled`), the reason in their name, and a tap says it
   in a toast. The sun or moon and the energy work as ever, and so does the trainer menu: the guide, the type chart,
   Contact and Discord open; the rows that would leave the page or the save (the leaderboard, Friends, Trades, Admin,
   the other save, signing in) stay listed, greyed with a lock and the reason as their line; SYNC ONLINE says
@@ -480,9 +492,20 @@ Players shouldn't have to make many requests:
   line under a switch, a choice or a panel, so each title says what it does ("Multi EXP (whole team)", "Animation
   length", "Type matchup hints"); a row that would do nothing goes instead of explaining why (Battle music while Sound
   is off, Multi EXP while the config has no bench share). A rule or a "how" belongs to the panel's INFO.
-- **Tab bar** (phones): Poké Mart, Upgrades, **Home** (in the middle, under the thumb: a tab like the others, its Poké Ball icon and label), Team,
-  Pokédex. The side nav (desktop) has the same entries with Home first. A tab's hit area is the whole column, at
-  least 60 px tall, even where the drawing is smaller.
+- **Five places** (docs/43 §3). **Tab bar** (phones): Team, Shop (the Mart: Buy · Upgrades · Bag), **Home** (in the
+  middle, under the thumb: a tab like the others, its Poké Ball icon and label), Pokédex, **Social** (the leaderboard,
+  Versus, Friends, Trades). The side rail (desktop) has the same five with Home first, SYNC ONLINE at its foot. A tab's
+  hit area is the whole column, at least 60 px tall, even where the drawing is smaller. A tab stays lit on each of its
+  views (`/upgrades` is the Mart's; `/leaderboard`, `/versus`, `/friends`, `/trades` are Social's). Its dot: a sale or
+  the Underground's kits, else the upgrades you can afford (the Mart); NEW (the Pokédex); what's new with friends and
+  trades (Social). `/upgrades` opens the Mart on Upgrades (`?tab=upgrades`, the General's `&up=general`).
+- **Social's views** (`SocialTabs`, through `PageHead social="…"`): a strip of the four views on top of each, the
+  current one named as the page's `<h1>` (screen readers) so the title isn't written twice; a view not open yet keeps
+  its tab with a lock and its page says what opens it. `/social` opens the view with something new, else the
+  leaderboard once open, else Friends.
+- **List and detail** (`SplitView`, docs/43 §2): from 1024 px a screen with a list and a detail docks the detail at
+  the list's right (440 px, as tall as the screen, scrolling inside itself); a `Sheet` passed as the detail draws
+  itself in the pane (`SheetDock`: no scrim, no focus trap). Phones keep the bottom sheet.
 - **Region cards** (Areas sheet → regions): each region's own picture (`public/region-art/<id>.png`, from the Visual
   Lab's region prompts; its first area's strip until it has one), name, counts and GO. A tap moves there and shows
   its areas in the same sheet, from the top (the region you're in just goes back to its areas).
@@ -490,7 +513,7 @@ Players shouldn't have to make many requests:
   played, or, behind in the region, the one the story goes on in, `AreasSheet`'s `lead`); every other GO is navy
   (`frame-dark`). In the Regions view the new region's own button is the red one while one is on offer, else the GO of
   the region being played.
-- **Area screen**: its title opens the area's details (the same sheet as Home's plate, without the travel footer).
+- **Area screen**: its title opens the area's details (the same details as the Areas sheet's first view, without the travel footer).
   Under the details' name: the levels, the rounds done over the rounds that clear the area ("3/5 rounds"; more can be
   played once it's cleared, "7/5") or "Secret area", and where it stands.
 - **Pokémon Center**, laid out as a battle (the rework, 2026-10-25): no area banner, the round's gauge under the top
@@ -502,11 +525,22 @@ Players shouldn't have to make many requests:
   itself.
 - **Dots only for something you can act on**: the number of upgrades you can afford (9+ at most), a gold NEW for
   Pokédex entries you haven't looked at. The dot is in the link's accessible name, never colour alone.
-- **Home is the area hub** (`/home`; `/map` redirects there): the area's scene with your team roaming in it, the area
-  plate (name, levels, rounds, caught → the area's details), AREAS (the area list, its search also finds Pokémon,
-  filters and the Regions view in the same sheet) and one big CONTINUE whose second line says what comes next
-  (round n of m, the gym leader, the legend, a new region). The encounter itself plays on `/area`, and Home stays
+- **Home** (docs/43 §5.2): the area's scene with the team roaming it, no plate over it; under it one notice, then Events,
+  Secret areas and Features as Home's one card (`HomeCard`: the picture as a strip on the left, the name, one status
+  line, a thin gauge where time or progress runs; gold for one new thing), then the "Coming up" line. The **PLAY dock**
+  is the area button (`AreaButton`: the map, the area's name, its rounds as pips with "done/total", its levels; NEW when
+  a secret area opened; shut by the nightmare with its reason) over CONTINUE. Phones: pinned over the tab bar, the page
+  scrolling behind it; 768–1023 px: sticky at the column's foot; from 1024 px: the scene as tall as the window on the
+  left (`SceneStage fill`, a box at most 1.15× as tall as wide), and on the right (clamp(380px, 34%, 520px)) the dock,
+  the area's Pokémon (`HereCard`), the notice and the sections. The encounter itself plays on `/area`, and Home stays
   lit in the menus while it does.
+- **The Areas sheet** opens from the area button on the area's details (tabs Details · All areas · Regions); a row opens
+  its details in the same sheet. From 1024 px it is one wide sheet: the list or the regions on the left, the picked
+  area's details on the right, their CONTINUE HERE / TRAVEL HERE navy so the lead GO stays the one red. Area rows have
+  Home's card shape: strip, name, one status line (levels · caught · to catch, or why it's locked), GO at the right.
+- **Notices** (`NoticeCard`, `homeNotices`): what never needs a pop-up over Home is a card in the page, one at a time: a
+  feature with a page opening ("Versus is open!", SEE VERSUS; ✕ hides it for the visit, the page's `RulesCard` ends
+  it), Prof. Oak's leaderboard tip, his invite, Support me, a region on offer once its pop-up was seen. Never red.
 - **After an encounter the player stays in the area** (a trainer, a wild Pokémon, a find, the Center, the Game
   Corner, fleeing): `/area` between encounters (`AreaIdle`) is the area's header, "Back on the trail…", the team (each
   card opens its sheet) and the action bar, HOME or CONTINUE, the next encounter (or the gym or legend waiting, with Keep exploring);
@@ -524,7 +558,7 @@ Players shouldn't have to make many requests:
 - **A team on a widget banner** (Versus) spreads over the room up to what sits beside it (the VS, the
   lock): its usual spacing when there is room, tighter on a phone's half-width widget, and only past 60 % of an icon do
   the icons get smaller (`TeamFan`). It never runs under the VS.
-- **Home's squares are only for what is open** (docs/38 U3a): a secret area found and never played (one tap travels
+- **Home's cards are only for what is open** (docs/38 U3a): a secret area found and never played (one tap travels
   there), the Day Care, Versus, each open special event, a small world and a live event; each is a button that leads
   somewhere. Nothing locked gets a square: under them **one "Coming up" line** names the next thing to open and how
   close the player is ("Coming up: Day Care · 7/20 caught", `ComingUpView`, from the engine's `comingUp`), in the order
@@ -539,14 +573,17 @@ Players shouldn't have to make many requests:
 
 ## 13. Lists, sheets and buying
 
-- **A Pokémon's sheet** (`SheetModal`, a `Sheet`): the title is the name, the line under it says number · level · where
-  it is (Lead, Team slot 2, In the Box). The footer holds what you can do: Make lead and Use an item for a team member,
-  the Center rule (with a lock) and Use an item for one in the Box. Use an item opens a list in the same sheet, with
-  Back. The body leads with what matters now: HP and XP, Speed / Rerolls / Catch value, every die as real dice, then
-  **What's next** (milestones still ahead, the next one tagged NEXT, each with how close it is); milestones already
-  reached fold away under a summary. Where the team can change (`teamSwapsOpen`: inside a Pokémon Center, at a portal's
-  way in before READY!), the Team screen's sheet has the Center's Team section in its body (`TeamSwapActions`) and no
-  Center rule in its footer.
+- **A Pokémon's sheet** (`SheetModal`, a `Sheet`; docs/43 §5.4): the title is the name (a nickname button), the line
+  under it number · level · where it is (Lead, Team slot 2, In the Box). The body leads with a hero (the sprite, types,
+  HP and XP as gauges; figures with More details), then what matters now (a waiting Pokémon's lock, Evolve now in gold),
+  the dice as real dice with their status lines, **What's next** (upcoming first; the reached ones folded under
+  "Reached (n)"), the matchups, the rare moves (Send to region, Trade: quiet, small), and last a folded **Stats** section
+  (Speed, Rerolls, Catch value; open with More details). The footer holds the actions: one red at most (Make lead, Add to
+  team), Use an item quiet beside it; a Box Pokémon outside a Center has the lock line; where swaps are open,
+  `TeamSwapDock`. Let it go is a plain-size danger button at the footer's end, asked twice. Use an item opens a list in
+  the same sheet, with Back.
+- **The Team on PC**: from 1024 px the Team is a `SplitView`: the selected Pokémon's sheet stands docked at the right,
+  always open (the lead's on arrival); a card or tile swaps it and is outlined in gold. On phones it is the bottom sheet.
 - **A small world's Pokémon waiting to unlock** (§22, docs/26 §1) opens the same sheet, its line saying "Waiting to
   unlock", the lock first in its body, and **Let it go** as the only footer action; no Make lead, no item, no Send on.
 - **Nicknames**: on one of your own Pokémon's sheets (not a Pokédex entry, not a fossil still reviving) the title is a
@@ -867,10 +904,15 @@ Two rules for every feature that adds something players can do (an event, a mode
   one helper (`eventOpenTo(access, data)`); **the server checks it too** in every function that acts for a player
   (as `wheel_spin` does), so an old build or a hand-made call can't use a feature that's off. Turning it off keeps
   every player's data as it is.
-- **Its rules, once and on demand**: a rules pop-up (`RulesModal`: its picture as a banner, 2–4 `RuleList` rows with
-  the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
-  taking its turn in the one-time pop-ups' queue, below), and an **INFO** button at the bottom of its page that shows
-  the same rules again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
+- **Its rules, once and on demand — where they apply** (docs/43 §7, the user's call of 2026-10-26): a feature with a
+  page of its own shows its rules the first time that page opens, as a card at its top (`RulesCard`: an icon, "How
+  {name} works", 2–4 `RuleList` rows with the config's numbers, GOT IT, which sets its "seen" flag in the save for
+  good), and an **INFO** button at the bottom of its page shows the same rules again (`RulesModal`, OK). Its opening
+  is announced on Home as a notice card with a button to its page, never a modal over Home. A feature **with no page**
+  of its own (day and night, the battle powers, a small world's opening, Extreme mode, the push question) keeps its
+  rules pop-up (`RulesModal`, Later / Let's go!), taking its turn in the one-time pop-ups' queue, below; so do the
+  rules shown at their own moment (the portal's and the nightmare's way in, Trick or Treat's first ghost, the gifts',
+  the looks'). The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
   the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **The one-time pop-ups take turns, in one queue** (`nextOneTimePopup`, src/engine/popups.ts; docs/38 U2a): one at a
@@ -879,14 +921,16 @@ Two rules for every feature that adds something players can do (an event, a mode
   due. The engine decides whose turn it is from the save and what it can't know (`PopupContext`: the page, signed in,
   the server's clock, what waits outside the save); `PopupQueue` (GameLayout) works it out once for the whole game, and
   each pop-up opens only on its own turn (`useMyTurn`). The order: the away reports (Extreme's, the General upgrades'),
-  Prof. Oak's Day Care and leaderboard tutorials, the developer's answers, friends' raid gifts, Support me, a new
-  region's offer, a special event, Versus, Prof. Oak's invite, Extreme mode, Trades, the General upgrades, the shiny Pokédex, the Unown Pokédex, the invite
-  rewards' rules then a reward ready, the portal run, day and night, the battle powers, a small world's opening, its
-  finish and its goodbye, a live event (the Underground's rules), a taken trade's scene (Home only), and push
-  notifications' question last. A new pop-up gets a place in that list, not a list of its own. The rules that open at
+  the offline report, the developer's answers, friends' raid gifts, a new region's offer, Extreme mode, an invite reward
+  ready, the portal run, day and night, the battle powers, a small world's opening, its finish and its goodbye, a live
+  event (but the Underground: `queuedLives`), a taken trade's scene (Home only), and push
+notifications' question last. A new pop-up gets a place in that list, not a list of its own. The rules that open at
   their own moment (the gifts' before the first gift, Trick or Treat's at the first ghost, the portal's and the
   nightmare's on their way in, the looks' at the first open, a world's finish or a live event asked for from Home) stay
-  there, and being due holds nothing back. Every "seen" flag stays where it was in the save.
+  there, and being due holds nothing back. Every "seen" flag stays where it was in the save. What left the queue
+  (docs/43 §7: the Day Care, the events, Versus, Trades, the General upgrades, the Shiny and Unown dexes, the invite
+  rewards' rules, the raids' overhaul, the Underground, Prof. Oak's tip and invite, Support me) is a Home notice
+  (`homeNotices`) and, for a feature with a page, its `RulesCard` there.
 - **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
 - **A purely visual change** (the dice throws, docs/37; the game-feel pass, haptics and battle music, docs/38): the
@@ -1219,7 +1263,7 @@ full-screen flash).
   top a dialogue line saying so with **BACK TO THE DISTORTION**. Back on the area (that button, Home's ENTER THE
   DISTORTION), the pop-up is up at once over the breach's end, with no breach or tap to wait for (`run.portalPopup`).
   READY! shuts it all: the run's lock below, and no team changes inside.
-- **Inside, there is no way out**: the menus, the gold pill, the cup and the avatar are disabled and say "You can't leave
+- **Inside, there is no way out**: the menus, the gold pill and the avatar are disabled and say "You can't leave
   the distortion until you win or your party is K.O." (`useNavLock`); any other page sends back to the area
   (`PortalGuard`), so does a reload. The area's action bar and the result card have CONTINUE alone, no HOME, the line
   over it. Nothing else changes: the team's sheets, items between fights.
@@ -1602,11 +1646,11 @@ Pokédex has one page as before). The pieces are in `src/components/ShinyDexRule
 
 - **Pokédex / Shiny** is a `Seg` under the page head (`DexViewSwitch`), the shiny option with the sparkle icon; the
   choice is the URL's (`?view=shiny`), so the pop-up's Let's go! lands on it and Back leaves it.
-- **The shiny page is the Pokédex's grid**, counting what's owned shiny: the count, the gauge (its label "n of N owned
-  shiny"), the filters (All, Shiny, Missing, Nearby). A tile owned shiny wears the Box's star (top left, "Shiny" in its
-  name); the others are silhouettes (`missing`), named once caught, never a colour alone. No NEW tags there.
-- Its rules: the pop-up once, in the queue after the General upgrades', never on the Pokédex; INFO at the bottom of
-  the Pokédex while the page is open. Opening the page counts as reading them.
+- **The shiny view is the Pokédex's own grid and layout** (`DexTile`, docs/43 §5.6), counting what's owned shiny: the
+  head's gauge ("n of N owned shiny"), the filter dropdown (All, Shiny, Missing, Nearby). A tile owned shiny wears the
+  star; the others are silhouettes, named once caught, never a colour alone. No NEW tags there.
+- Its rules: a `RulesCard` at the top of the view until GOT IT (`shinyDexSeen`, §20); INFO at the bottom of the Pokédex
+  while the view is open. Opening the view no longer counts as reading them.
 
 ## 36. The raid overhaul
 
@@ -1634,7 +1678,7 @@ Where Unown live (Johto's Ruins of Alph), each one caught is one of 28 letters, 
 
 - **Pokédex / Shiny / Unown**: the Pokédex's `Seg` (`DexViewSwitch`) gains Unown once an area where Unown live is
   opened, beside Shiny when that page is open too; the choice is the URL's (`?view=unown`).
-- **The page** is the Pokédex's grid of 28 tiles, in the games' order (A–Z, !, ?): each letter's own sprite
+- **The page** is the Pokédex's grid of 28 tiles (`DexTile`, docs/43 §5.6), in the games' order (A–Z, !, ?): each letter's own sprite
   (`UnownSprite`, Showdown's animated forme, scaled to fit its box) once found, a silhouette (`missing`) until then, the
   letter as its name ("Unown K, found" for screen readers). Over it the count, the gauge, and where to find them with
   the prize; all found, the complete card. No filters or search: 28 tiles need none.
@@ -1645,6 +1689,6 @@ Where Unown live (Johto's Ruins of Alph), each one caught is one of 28 letters, 
   COMPLETE chip and the prize earned.
 - **The result card**: after an Unown is caught, its line (`UnownLetterCard`): the letter's sprite, "Unown K: a new
   letter!" (or "already on your page") over the count; the last one gold, with the prize.
-- Its rules: the pop-up once, in the queue after the shiny Pokédex's, never on the Pokédex; INFO at the bottom of the
-  Unown page. Opening the page counts as reading them.
+- Its rules: a `RulesCard` at the top of the Unown view until GOT IT (`unownDexSeen`, §20); INFO at the bottom of the
+  Unown view. Opening the view no longer counts as reading them.
 

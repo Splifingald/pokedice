@@ -232,7 +232,11 @@ export function raidRuleRows(
   return rows
 }
 
-/** The raid page's section: this raid's rules, and INFO for how the overhaul works. Nothing with the overhaul off. */
+/**
+ * The raid page's section: this raid's rules, folded (docs/43 §5.11: a page shows what's needed to act; the pattern is
+ * one tap away for whoever wants to learn it), its summary saying how many there are; the book for how the overhaul
+ * works. Nothing with the overhaul off.
+ */
 export function RaidRulesPanel({ dex, kind, areaId }: { dex: number; kind: RaidKindOf; areaId?: string }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
@@ -240,21 +244,30 @@ export function RaidRulesPanel({ dex, kind, areaId }: { dex: number; kind: RaidK
   const rows = raidRuleRows(data, dex, kind, areaId, t)
   if (!rows) return null
   return (
-    <section aria-labelledby="raid-rules-title" className="grid gap-2.5 bg-paper p-3 shadow-card">
-      <div className="flex items-center justify-between gap-2">
-        <h2 id="raid-rules-title" className="m-0 text-[22px] font-normal leading-none">
-          {t('ui.raid.rules.title')}
-        </h2>
-        <button
-          type="button"
-          className="grid h-11 min-w-11 place-items-center px-2 font-pixel-sm text-[16px] text-muted"
-          onClick={() => setInfo(true)}
-          aria-label={t('ui.raid.rules.infoLabel')}
-        >
-          <PixelIcon name="book" size={20} />
-        </button>
-      </div>
-      <RuleList rules={rows} />
+    <section aria-labelledby="raid-rules-title" className="flex items-start gap-1.5">
+      <details className="raid-rules min-w-0 flex-1 bg-paper shadow-card">
+        <summary className="flex min-h-[48px] cursor-pointer list-none items-center gap-2 px-3">
+          <PixelIcon name="warning" size={20} />
+          <h2 id="raid-rules-title" className="m-0 flex-1 text-[22px] font-normal leading-none">
+            {t('ui.raid.rules.title')}
+          </h2>
+          <span className="light-scope bg-night px-1.5 text-[16px] tabular-nums text-gold-light">{rows.length}</span>
+          <span aria-hidden className="raid-rules-chev text-[18px]">
+            ▾
+          </span>
+        </summary>
+        <div className="px-3 pb-3">
+          <RuleList rules={rows} />
+        </div>
+      </details>
+      <button
+        type="button"
+        className="grid h-12 w-12 shrink-0 place-items-center bg-paper text-muted shadow-card"
+        onClick={() => setInfo(true)}
+        aria-label={t('ui.raid.rules.infoLabel')}
+      >
+        <PixelIcon name="book" size={20} />
+      </button>
       <RaidRulesInfo open={info} onClose={() => setInfo(false)} />
     </section>
   )

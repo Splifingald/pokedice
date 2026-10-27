@@ -114,10 +114,26 @@ export function RulesModal({
 }
 
 /** The blue INFO button at the bottom of a feature's page (the events' EventInfo, the same words), opening its rules. */
-export function InfoButton({ name, onClick, className }: { name: string; onClick: () => void; className?: string }) {
+export function InfoButton({
+  name,
+  onClick,
+  className,
+  compact = false,
+}: {
+  name: string
+  onClick: () => void
+  className?: string
+  /** Beside another button (a dock's row): as wide as its label, not the row. */
+  compact?: boolean
+}) {
   const { t } = useT()
   return (
-    <button type="button" className={cx('ev-info w-full', className)} onClick={onClick} aria-label={t('ui.events.infoLabel', { name })}>
+    <button
+      type="button"
+      className={cx('ev-info', !compact && 'w-full', className)}
+      onClick={onClick}
+      aria-label={t('ui.events.infoLabel', { name })}
+    >
       {t('ui.events.info')}
     </button>
   )

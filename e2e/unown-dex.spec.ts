@@ -1,7 +1,7 @@
 // The Unown Pokédex (docs/41) against the mocked Supabase, on a phone: switched off, nothing (no banner in the Ruins of
-// Alph, no Unown page); on, its rules pop up once (Let's go! opens the page), the page shows the 28 letters with the
-// ones found, INFO shows the rules again, Home's banner sits above the scene in the ruins and leads to the page; a page
-// finished while the switch was off pays its prize the day it opens, once.
+// Alph, no Unown page); on, its rules stand as a card at the top of its view until GOT IT (docs/43 §7), the page shows
+// the 28 letters with the ones found, INFO shows the rules again, Home's banner sits above the scene in the ruins and
+// leads to the page; a page finished while the switch was off pays its prize the day it opens, once.
 import { expect, test, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import {
@@ -89,17 +89,23 @@ test('switched off: no banner in the ruins, no Unown page, nothing pops up', asy
   await expect(page.getByRole('radio', { name: 'Unown' })).toHaveCount(0)
 })
 
-test('the rules once, Let’s go! to the page, the letters found, INFO, then the banner on Home', async ({ page }) => {
+test('the rules on the page until GOT IT, the letters found, INFO, then the banner on Home', async ({ page }) => {
   await boot(page, atRuins())
-  await page.goto('/home')
-  const rules = page.getByRole('dialog', { name: 'Unown Pokédex' })
-  await expect(rules).toBeVisible()
-  await expect(rules).toContainText('28 letters')
-  await expect(rules).toContainText('Always a new one')
-  await expect(rules).toContainText('₽1,000')
-  await rules.getByRole('button', { name: /Let's go/i }).click()
-
+  await page.goto('/pokedex')
+  await page.getByRole('radiogroup', { name: 'Which Pokédex' }).getByRole('radio', { name: 'Unown' }).click()
   await expect(page).toHaveURL(/\/pokedex\?view=unown/)
+  // Its rules where they apply (docs/43 §7): a card at the top of the view, not a pop-up.
+  const card = page.getByRole('region', { name: 'How Unown Pokédex works' })
+  await expect(card).toBeVisible()
+  await expect(card).toContainText('28 letters')
+  await expect(card).toContainText('Always a new one')
+  await expect(card).toContainText('₽1,000')
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}'))
+  await card.getByRole('button', { name: 'GOT IT' }).click()
+  await expect(card).toHaveCount(0)
+  await expect.poll(async () => (await stored()).unownDexSeen).toBe(true)
+
   await expect(
     page.getByRole('radiogroup', { name: 'Which Pokédex' }).getByRole('radio', { name: 'Unown' }),
   ).toHaveAttribute('aria-checked', 'true')
@@ -130,12 +136,13 @@ test('the rules once, Let’s go! to the page, the letters found, INFO, then the
 test('a page finished while it was off pays its prize the day it opens, once', async ({ page }) => {
   const done = atRuins({ unownDex: { johto: [...UNOWN_LETTERS] } })
   await boot(page, done)
-  // Its page (where the rules don't pop up): seeing it is reading them, which writes the save.
+  // Its page: the prize is paid as the save loads; GOT IT on its rules' card writes the save.
   await page.goto('/pokedex?view=unown')
   await expect(page.getByText('UNOWN POKÉDEX COMPLETE!')).toBeVisible()
   await expect(page.getByText('All 28 letters found: ₽1,000 earned.')).toBeVisible()
   await expect(page.getByRole('button', { name: /, found$/ })).toHaveCount(28)
   const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}'))
+  await page.getByRole('region', { name: 'How Unown Pokédex works' }).getByRole('button', { name: 'GOT IT' }).click()
   await expect.poll(async () => (await stored()).unownDexSeen).toBe(true)
   expect((await stored()).gold).toBe(done.gold + 1000)
   expect((await stored()).unownDexPaid).toEqual(['johto'])

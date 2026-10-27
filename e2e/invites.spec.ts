@@ -165,7 +165,7 @@ test('between fights: never the rules (the Friends page has them), the reward’
   await expect.poll(async () => (await stored(page)).invites).toEqual({ done: [1] })
 })
 
-test('Later keeps the reward on the Friends page, with the menu’s dot', async ({ page }) => {
+test('Later keeps the reward on the Friends page, with the Social tab’s dot', async ({ page }) => {
   const save = { ...makeSave(4), invites: { done: [], rulesSeen: true } }
   await boot(page, save, { invite_status: { count: 1, pending: 0, claimed: [], latest: null } })
   await page.goto('/home')
@@ -173,18 +173,18 @@ test('Later keeps the reward on the Friends page, with the menu’s dot', async 
   await expect(ready).toContainText('A friend you invited won their first badge!')
   await ready.getByRole('button', { name: 'Later' }).click()
   await expect(ready).toHaveCount(0)
-  // The avatar's dot and the trainer menu's Friends row count it.
-  await page.getByRole('button', { name: 'Trainer menu, something new: 1' }).click()
-  await expect(page.getByRole('navigation').getByRole('button', { name: 'Friends' })).toContainText('1')
+  // Friends live in Social now (docs/43 §3): its tab's dot counts it, in its name too.
+  await expect(page.getByRole('navigation', { name: 'Menus' }).getByRole('link', { name: 'Social · 1 new' })).toBeVisible()
 })
 
-test('Prof. Oak’s invite shows the gauge', async ({ page }) => {
-  // Two badges in Kanto: Prof. Oak asks to invite a friend.
+test('Prof. Oak’s invite is a note on Home, with the gauge', async ({ page }) => {
+  // Two badges in Kanto: Prof. Oak asks to invite a friend, in a note in the page (docs/43 §7), not a pop-up.
   const save = { ...withBadges(makeSave(4), 2), invites: { done: [], rulesSeen: true } }
   await boot(page, save, { invite_status: { count: 0, pending: 1, claimed: [], latest: null } })
   await page.goto('/home')
-  const oak = page.getByRole('dialog', { name: 'Invite a friend' })
+  const oak = page.getByRole('region', { name: 'Invite a friend' })
   await expect(oak).toBeVisible()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
   await expect(oak.getByTestId('invite-gauge')).toBeVisible()
   await expect(oak).toContainText('1 more friend for Rare Candy')
 })

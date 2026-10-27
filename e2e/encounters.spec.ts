@@ -155,8 +155,11 @@ test("the area's details count the rounds done over the rounds that clear it, pa
   const areaProgress = { ...base.areaProgress, [route.id]: { ...emptyProgress(), roundsDone: need + 1, cleared: true } }
   await boot(page, { ...base, areaProgress, currentAreaId: route.id })
   await page.goto('/home')
-  await page.getByRole('button', { name: /Open the area details/ }).click()
-  await expect(page.getByRole('dialog', { name: route.name })).toContainText(`${need + 1}/${need} round`)
+  // Home's area button opens the Areas sheet on the area's details (docs/43 §5.2).
+  await page.locator('[data-area-button]').click()
+  const sheet = page.getByRole('dialog', { name: 'Kanto' })
+  await expect(sheet.getByRole('heading', { name: route.name, level: 3 })).toBeVisible()
+  await expect(sheet).toContainText(`${need + 1}/${need} round`)
 })
 
 test("a cleared area's battle can go on auto midway, and STOP hands it back", async ({
