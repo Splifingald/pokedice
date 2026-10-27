@@ -115,9 +115,14 @@ for (const lang of LANGS.filter((l) => l !== 'en')) {
       expect(await smallControls(page), `${route}: controls under 44px`).toEqual([])
       const cjk = await cjkFacesLoaded(page)
       if (CJK_LANGS.includes(lang)) expect(cjk, `${route}: CJK font`).toContain(cjkFamily(lang))
-      // The language picker names 日本語, 한국어 and 简体中文 in their own scripts — each in its own face.
-      else if (route === '/settings') expect(cjk.sort(), `${route}: CJK font`).toEqual(CJK_LANGS.map(cjkFamily).sort())
+      // The language dropdown (docs/43 §5.9) names 日本語, 한국어 and 简体中文 in their own scripts, each option carrying
+      // its `lang`; the browser draws the closed list's options as it sees fit (Chrome loads the Japanese face only).
+      // Settings is the one Latin page that may load a CJK face, and only for that.
+      else if (route === '/settings')
+        for (const face of cjk) expect(CJK_LANGS.map(cjkFamily), `${route}: CJK font`).toContain(face)
       else expect(cjk, `${route}: CJK font`).toEqual([])
+      if (route === '/settings')
+        expect(await page.locator('select option[lang="ja"]').textContent(), 'Japanese named in Japanese').toBe('日本語')
     }
   })
 }
