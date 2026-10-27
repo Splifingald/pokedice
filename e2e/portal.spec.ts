@@ -432,8 +432,11 @@ test('won and Giratina caught, the area is sealed: CONTINUE is shut, and CONTINU
   const shut = page.getByRole('button', { name: /^CONTINUE/ }).first()
   await expect(shut).toBeDisabled()
   await expect(page.getByText('The distortion is sealed').first()).toBeVisible()
+  // The area button opens the Areas sheet on the area's details (docs/43 §5.2).
   await page.getByRole('button', { name: /^Torn Rift/ }).first().click()
-  await page.getByRole('dialog', { name: 'Torn Rift' }).getByRole('button', { name: 'CONTINUE HERE' }).click()
+  const sheet = page.getByRole('dialog')
+  await expect(sheet.getByRole('heading', { name: 'Torn Rift', level: 3 })).toBeVisible()
+  await sheet.getByRole('button', { name: 'CONTINUE HERE' }).click()
   await expect(page.getByRole('button', { name: 'The distortion is sealed', exact: true })).toBeVisible()
   // No card dealt: still Home, no preview over it.
   await expect(page).toHaveURL(/\/home$/)
