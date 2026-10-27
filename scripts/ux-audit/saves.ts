@@ -1,7 +1,7 @@
 // Audit saves: fresh, early (1 badge), mid (3 badges, Day Care, full Box), late (League, events, Versus).
 import { writeFileSync } from 'node:fs'
-import { createInstance, linearAreas, progressOf, type SaveData } from '/home/user/pokedice/src/engine'
-import { gameData, makeSave } from '/home/user/pokedice/e2e/helpers'
+import { createInstance, linearAreas, progressOf, type SaveData } from '../../src/engine'
+import { gameData, makeSave } from '../../e2e/helpers'
 
 const data = gameData()
 const chain = linearAreas(data, 'kanto')

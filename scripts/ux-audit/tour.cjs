@@ -3,7 +3,7 @@
 const { chromium } = require('playwright')
 const fs = require('fs')
 const path = require('path')
-const { default: AxeBuilder } = require('/home/user/pokedice/node_modules/@axe-core/playwright')
+const { default: AxeBuilder } = require('@axe-core/playwright')
 
 const SP = __dirname
 const OUT = process.argv[2] || path.join(SP, 'before')
