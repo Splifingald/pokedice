@@ -25,6 +25,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   scaleLevelSpread: 3,
   enemyUpgradeLevel: 1,
   versusUpgradeLevel: 5,
+  // The weekly Versus league (docs/44): off until the admin switches it on (the numbers: engine/versusLeague.ts).
+  versusLeague: { access: 'off' },
   allowVoluntarySwitch: true,
   maxBattleTurns: 150,
   multiExpShare: 0.3,

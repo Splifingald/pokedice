@@ -194,6 +194,11 @@ const autoRng = createRng(randomSeed())
 const SEND_OUT_AUTO_MS = 2600
 /** How long auto-mode shows its dice selection before the reroll. */
 const AUTO_SELECT_MS = 450
+/**
+ * The weekly league's live fights (docs/44): an auto move never comes sooner than this, animations off included, so a
+ * fight on AUTO always takes the time the server expects of one played (versus_league_finish's too-fast check).
+ */
+const LIVE_AUTO_MIN_MS = 300
 /** How long the autopilot leaves a throw's result on screen before moving on (docs/36). */
 const AUTO_RESULT_MS = 1400
 /** How long Idle shows the ball it picked on the catch panel before throwing it (or passing): long enough to read. */
@@ -214,7 +219,9 @@ const BANNER_TONE = {
 
 /**
  * A Versus fight, replayed: the whole fight was computed (and its result recorded) before it started, so the screen
- * plays it on auto and every move comes from that script instead of the run store.
+ * plays it on auto and every move comes from that script instead of the run store. With `live` (the weekly league,
+ * docs/44), the player fights it: their moves go to `dispatch`, AUTO hands them to `nextMove`, and the battle powers
+ * are theirs to use; never an item.
  */
 export interface VersusReplay {
   /** Plays the script's next step, if it is this event. */
@@ -230,6 +237,8 @@ export interface VersusReplay {
   onPlayed: () => void | (() => void)
   /** The result card, once the whole fight is over. */
   end?: ReactNode
+  /** Fought by the player (the weekly league): AUTO is their switch, off at the start. */
+  live?: { auto: boolean; onAuto: (on: boolean) => void }
 }
 
 export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: VersusReplay }) {
@@ -276,9 +285,12 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const settings = useGame((s) => s.settings)
   const autoOpen = !versus && !!save && autoAvailable(save, data, settings, run.areaId)
   const autoAt = !versus && save ? autoLevel(save, data, settings, run) : 'off'
-  const auto = !!versus || autoAt !== 'off'
+  // A replayed Versus fight (decided already) always plays itself; a live one (docs/44) when the player says so.
+  const live = versus?.live
+  const scripted = !!versus && !live
+  const auto = live ? live.auto : !!versus || autoAt !== 'off'
   // Auto-mode plays the whole fight faster: animations, dice and timers.
-  const pace = versus ? VERSUS_PACE : auto ? AUTO_PACE : 1
+  const pace = scripted ? VERSUS_PACE : auto ? AUTO_PACE : 1
   // A fight that plays itself is watched, not played: short animations unless the player turned them off altogether.
   const motionCap: MotionLevel | null = auto ? 'short' : null
   const level = capMotion(chosenLevel, motionCap)
@@ -502,13 +514,13 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         if (events.length && !quick) inner = setTimeout(() => dispatch(last), AUTO_SELECT_MS * pace)
         else dispatch(last)
       },
-      quick ? 0 : (st.phase === 'player_reroll' ? 350 : 400) * pace,
+      Math.max(live ? LIVE_AUTO_MIN_MS : 0, quick ? 0 : (st.phase === 'player_reroll' ? 350 : 400) * pace),
     )
     return () => {
       clearTimeout(t)
       clearTimeout(inner)
     }
-  }, [auto, ready, intro, held, autoPhase, st.phase, data, quick, pace, battle.log.length, dispatch])
+  }, [auto, ready, intro, held, autoPhase, st.phase, data, quick, pace, battle.log.length, dispatch, live])
 
   const usefulItems = ownedItems.filter(([k]) => st.player.some((p) => itemHelps(k, p)))
   const showSwitch = data.config.allowVoluntarySwitch
@@ -561,8 +573,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     return () => window.removeEventListener('keydown', onKey)
   }, [canAct, stunned, auto, covered, menu, switching, matchups, rolling, bagOpen, switchOpen, st.phase, dispatch])
   // Mega Evolution (once per battle, Lv.50+, from Kalos on), Gigantamax and Arceus's types.
-  const megaOpts = versus ? [] : megaChoices(st, data)
-  const gmaxOpts = versus ? [] : gmaxChoices(st, data)
+  const megaOpts = scripted ? [] : megaChoices(st, data)
+  const gmaxOpts = scripted ? [] : gmaxChoices(st, data)
   // Primal Reversion and Ultra Burst use the same button under their own name.
   const megaMechanic = megaOpts[0]?.form?.mechanic
   const megaLabel =
@@ -571,9 +583,9 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       : megaMechanic === 'ultra'
         ? 'ui.battle.ultra'
         : 'ui.battle.mega'
-  const formOpts = versus ? [] : formChoices(st, data)
+  const formOpts = scripted ? [] : formChoices(st, data)
   // Arceus's types still waiting for their plate (docs/34): listed, locked, in the same menu.
-  const lockedOpts = versus ? [] : lockedTypeForms(st, data)
+  const lockedOpts = scripted ? [] : lockedTypeForms(st, data)
   const formsLeft = data.config.formChangesPerBattle - (activeBattler(st).formChanges ?? 0)
   const typeMenu =
     formOpts.length > 0 ||
@@ -584,7 +596,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     dispatch({ t: 'MEGA', toDex })
   }
   // A Z-Move (docs/35): after the roll, the attack as the dice stand, with its type's effect.
-  const zOpen = !versus && canZMove(st, data)
+  const zOpen = !scripted && canZMove(st, data)
   const zType = preview?.r.attackType ?? null
   // Stunned, only a Steel-type has it: it shakes the stun off (no roll yet to name a type).
   const zHint = !zOpen
@@ -602,8 +614,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       })
     : t(`ui.battle.gmaxHint.${data.config.gigantamax.turns === 1 ? 'one' : 'other'}`, { n: data.config.gigantamax.turns })
 
-  // Stunned with no item that could help: nothing to do but lose the turn.
-  const stunChoice = (canItem && usefulItems.length > 0) || zOpen
+  // Stunned with no item that could help: nothing to do but lose the turn. Versus takes no item (docs/44).
+  const stunChoice = (!versus && canItem && usefulItems.length > 0) || zOpen
   useEffect(() => {
     if (auto || !stunned || held || stunChoice) return
     const t = setTimeout(() => dispatch({ t: 'PASS' }), 900)
@@ -852,7 +864,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   }, [canAct])
   // A cleared area's fight can be handed to auto-mode midway, as the area's switch would have from its start.
   // One switch, in the same place on or off (the user's call, 2026-10-27): no note and STOP while it plays.
-  const autoToggle = autoOpen && !versus && !catching
+  const autoToggle = (autoOpen && !versus && !catching) || !!live
   const extras =
     !terminal &&
     ((!auto && (megaOpts.length > 0 || gmaxOpts.length > 0 || zOpen || typeMenu || st.canRun)) || autoToggle)
@@ -861,7 +873,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   if (over) actions = versus!.end
   else if (auto && !terminal)
     // A Versus fight is decided already: it plays to its end, and says so. Auto-mode's own switch stays lit above.
-    actions = versus ? (
+    actions = scripted ? (
       <p className="m-0 flex items-center gap-2 font-pixel-sm text-[16px] leading-[1.1] text-muted" role="status">
         <Chip tone="plain">{t('ui.battle.autoMode')}</Chip>
         {t('ui.battle.autoNote')}
@@ -1245,7 +1257,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                         aria-pressed={auto}
                         onClick={() => {
                           setMenu(null)
-                          setSettings({ autoMode: !auto })
+                          if (live) live.onAuto(!auto)
+                          else setSettings({ autoMode: !auto })
                         }}
                       >
                         <PixelIcon name="dice" size={14} />{' '}

@@ -14,7 +14,7 @@ import { useCloudSync } from '@/store/sync'
 import { GiftPresent } from './Gifts'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
-import { ReplyBox } from './ContactModal'
+import { messageTitle, ReplyBox } from './ContactModal'
 import { useMyTurn, useOnScreen } from './popupTurn'
 
 /** Coming back to the tab asks again, at most this often. */
@@ -97,7 +97,7 @@ export function ReplyPopup() {
             const gifts = giftOf(m)
             return (
               <li key={m.id} className="flex flex-col gap-1">
-                <p className="break-words text-xl leading-tight">{m.title}</p>
+                <p className="break-words text-xl leading-tight">{messageTitle(t, m.title)}</p>
                 {m.reply && <ReplyBox reply={m.reply} at={m.replied_at} fromDev={m.from_admin} />}
                 {gifts.length > 0 && <GiftPresent count={gifts.length} wait={wait} className="mt-1" />}
               </li>

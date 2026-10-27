@@ -151,6 +151,20 @@
   "shopBadges": 0
  },
  {
+  "key": "raid-ball",
+  "name": "Raid Ball",
+  "description": "A ball made for raids: adds 5 to the catch die. It can only be thrown in a raid.",
+  "spriteUrl": "/items/raid-ball.png",
+  "price": 500,
+  "effect": {
+   "kind": "ball",
+   "bonus": 5,
+   "raidOnly": true
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
   "key": "potion",
   "name": "Potion",
   "description": "Restores 20 HP to one Pokémon.",

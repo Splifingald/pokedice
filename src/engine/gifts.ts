@@ -10,6 +10,8 @@ import type { GameData, Gift, GiftRegion, GiftsSave, RegionId, SaveData } from '
 
 /** The admin's "the player's latest region" (the newest region they've started), as stored on a gift. */
 export const GIFT_LATEST: GiftRegion = 'latest'
+/** The region being played when the gift is opened (the weekly league's ₽, docs/44). */
+export const GIFT_CURRENT: GiftRegion = 'current'
 /** At most this many gifts on one message, this many of one item, this many ₽ at once (the server checks the same: 0048). */
 export const GIFT_MAX = 20
 export const GIFT_QTY_MAX = 999
@@ -83,6 +85,8 @@ export function latestRegion(save: SaveData, data: GameData): RegionId {
  * region that no longer exists) their latest one. Never a small world's: it closes with everything in it.
  */
 export function giftLanding(save: SaveData, data: GameData, region: GiftRegion): RegionId {
+  if (region === GIFT_CURRENT)
+    return started(save, data, regionOf(save)) ? regionOf(save) : latestRegion(save, data)
   return region !== GIFT_LATEST && started(save, data, region) ? region : latestRegion(save, data)
 }
 
@@ -121,7 +125,7 @@ export function placeGifts(
   const landed: GiftLanded[] = []
   for (const gift of gifts) {
     const region = giftLanding(next, data, gift.region)
-    const moved = gift.region !== GIFT_LATEST && gift.region !== region
+    const moved = gift.region !== GIFT_LATEST && gift.region !== GIFT_CURRENT && gift.region !== region
     if (gift.kind === 'item') {
       if (!data.items[gift.key]) continue
       next = addToBag(next, region, gift.key, Math.min(GIFT_QTY_MAX, gift.qty))

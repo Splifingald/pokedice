@@ -549,8 +549,8 @@ export type ItemEffect =
   | { kind: 'fossil'; dex: number; level: number; hours: number }
   /** Rare Candy: levels, from the Team screen. */
   | { kind: 'level'; amount: number }
-  /** Poké Balls: added to the catch die. */
-  | { kind: 'ball'; bonus: number }
+  /** Poké Balls: added to the catch die. `raidOnly`: thrown in raids alone (the Raid Ball, docs/44). */
+  | { kind: 'ball'; bonus: number; raidOnly?: boolean }
   /** The Link Cable: evolves a Pokémon that only evolves by trade (`trade.evolveOnTrade`), from the Team screen. */
   | { kind: 'link' }
   /**
@@ -633,6 +633,40 @@ export type EventId = (typeof EVENT_IDS)[number]
  */
 export const EVENT_ACCESS = ['off', 'admin', 'all'] as const
 export type EventAccess = (typeof EVENT_ACCESS)[number]
+
+/** One place band of the week's rewards: ranks up to `upTo` (after the band before) get these. */
+export interface LeagueRewardBand {
+  upTo: number
+  raidBalls: number
+  rareCandies: number
+}
+
+export interface VersusLeagueConfig {
+  access: EventAccess
+  /** Trophies for a win with 1, 2 or 3 Pokémon left; a loss costs what the opponent had left, the same way. */
+  trophies: [number, number, number]
+  /** Below this many trophies, a loss costs nothing. */
+  safeBelow: number
+  /** A group's places. */
+  groupSize: number
+  /** Players each group is made for on Monday: the rest of its places wait for late players and bots. */
+  groupFill: number
+  /** Bots seated in each group with room, on each bot day. */
+  botsPerDay: number
+  /** The days bots are seated (1 = Monday … 7 = Sunday, UTC). */
+  botDays: number[]
+  /** Opponents are offered within this share of your trophies, and at least `rangeMin` either way. */
+  range: number
+  rangeMin: number
+  /** A win is refused under this many seconds, or under `secondsPerMove` for each of the player's moves. */
+  minWinSeconds: number
+  secondsPerMove: number
+  /** The trophies from which a bot's team gets stronger: a tier each (the last brings all three powers). */
+  botTiers: number[]
+  /** ₽ for each trophy at the end of the week. */
+  goldPerTrophy: number
+  rewards: LeagueRewardBand[]
+}
 
 /** What every event has, whatever it does (Admin → Events). */
 export interface EventDef {
@@ -891,6 +925,8 @@ export interface GameConfig {
   enemyUpgradeLevel: number
   /** Versus: every combo and die track of both sides is at this level; nobody brings their own upgrades. */
   versusUpgradeLevel: number
+  /** The weekly Versus league (docs/44): its switch and numbers. Migration 0082 inserts the same row; the server reads it. */
+  versusLeague?: Partial<VersusLeagueConfig>
   /** Switching the active Pokémon on your own turn (costs the turn). Switching after a faint is always free. */
   allowVoluntarySwitch: boolean
   /** Safety valve: two Pokémon immune to each other's every die would otherwise fight forever. Ends in a stalemate. */
@@ -1579,6 +1615,8 @@ export interface SaveData {
   leaderboardVisited?: boolean
   /** Versus's rules pop-up has been shown (once, when Versus opens; its INFO button shows them again). */
   versusRulesSeen?: boolean
+  /** The weekly Versus league's rules card has been read (docs/44): its own flag, as players who had Versus see it too. */
+  versusLeagueRulesSeen?: boolean
   /** The portal run's rules pop-up (docs/28) has been shown (once; INFO shows them again). */
   portalRulesSeen?: boolean
   /** The nightmare's rules pop-up (docs/30) has been shown (once; INFO shows them again). */

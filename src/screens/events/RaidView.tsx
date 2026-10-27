@@ -37,7 +37,7 @@ import { MiniSprite } from '@/components/SpriteImg'
 import { StatusIcons } from '@/components/StatusIcons'
 import { TypeBadge } from '@/components/TypeBadge'
 import { pictureOf } from '@/fx/areaArt'
-import { ballOfItem } from '@/fx/scenes'
+import { ballOfItem, loadRaidBall } from '@/fx/scenes'
 import { loadSprite, spriteKey } from '@/fx/sprites'
 import { catchTimeline } from '@/fx/timelines/catch'
 import { getLang } from '@/i18n'
@@ -475,7 +475,11 @@ export function RaidView({ run }: { run: RaidRun }) {
       bait: r.baited === 'used',
       instant: sureThrow(r),
     }),
-    ready: Promise.all([loadSprite(own.dex, true, own.shiny), loadSprite(st.boss.dex, false, st.boss.shiny)]),
+    ready: Promise.all([
+      loadSprite(own.dex, true, own.shiny),
+      loadSprite(st.boss.dex, false, st.boss.shiny),
+      ...(r.ballKey === 'raid-ball' ? [loadRaidBall()] : []),
+    ]),
     label:
       r.baited === 'used'
         ? t('ui.catch.baitThrown', { name: st.boss.name })
@@ -635,7 +639,7 @@ export function RaidView({ run }: { run: RaidRun }) {
           {run.stage === 'result' ? (
             <RaidResult run={run} />
           ) : catching && catchState ? (
-            <CatchPanel c={catchState} onThrow={onThrow} revealed={revealed} onContinue={raidCatchShown} onBait={onBait} />
+            <CatchPanel c={catchState} onThrow={onThrow} revealed={revealed} onContinue={raidCatchShown} onBait={onBait} raid />
           ) : (
             // The dice, the actions and the team in the thumb's reach at the foot; the line stays under the stage.
             <div className="mt-auto flex flex-col gap-2">

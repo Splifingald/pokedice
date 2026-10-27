@@ -37,6 +37,7 @@ import { GiftEditor, giftName } from '../GiftEditor'
 import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
 import { AccessSwitch, Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 import { PushBox } from './PushBox'
+import { VersusLeagueBox } from './VersusLeagueBox'
 
 export function useConfigRow<K extends keyof GameConfig>(key: K): [GameConfig[K], (v: GameConfig[K]) => void] {
   const rows = useAdmin((st) => st.rows.game_config)
@@ -1554,6 +1555,8 @@ export function ConfigSection() {
       <ShinyDexBox />
 
       <LeagueHealBox />
+
+      <VersusLeagueBox />
 
       <UnownDexBox />
 

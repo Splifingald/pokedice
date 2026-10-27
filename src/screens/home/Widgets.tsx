@@ -9,6 +9,7 @@ import {
   isDayCareOpen,
   nextCheckProgress,
   teamOf,
+  versusLeagueFor,
   versusUnlocked,
   VERSUS_TEAM_SIZE,
   type Area,
@@ -23,6 +24,7 @@ import { PixelIcon } from '@/components/icons'
 import { MINI_SCALE, MiniSprite } from '@/components/SpriteImg'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { rememberedVersus, versusBoardCached, type VersusEntry } from '@/lib/versus'
+import { leagueHomeCached, type LeagueHome } from '@/lib/versusLeague'
 import { useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
 import { areaStatus } from './areas'
@@ -250,17 +252,24 @@ function VersusWidget() {
   const signedIn = useGame((s) => s.auth.status === 'signed_in')
   const userId = useGame((s) => s.auth.userId)
   const open = versusUnlocked(save, data)
+  const league = versusLeagueFor(save, data)
   const [board, setBoard] = useState<VersusEntry[] | null>(null)
+  // The weekly league (docs/44): your trophies and place, in place of the wins.
+  const [home, setHome] = useState<LeagueHome | null>(null)
   useEffect(() => {
     if (!open || !signedIn || !isSupabaseConfigured) return
     let live = true
     versusBoardCached()
       .then((rows) => live && setBoard(rows))
       .catch(() => live && setBoard(null))
+    if (league)
+      leagueHomeCached()
+        .then((h) => live && setHome(h))
+        .catch(() => live && setHome(null))
     return () => {
       live = false
     }
-  }, [open, signedIn])
+  }, [open, signedIn, league])
 
   if (!open) return null
   // The board decides once it has answered; until then (or when it can't be reached) your row as it last gave it, so
@@ -293,7 +302,20 @@ function VersusWidget() {
       name={t('ui.versus.title')}
       tag={!set ? <NewTag /> : undefined}
       status={
-        set ? (
+        set && league && home ? (
+          <span
+            className="inline-flex items-center gap-1.5"
+            aria-label={t('ui.league.trophiesLabel', { n: home.trophies })}
+          >
+            {home.trophies}
+            <PixelIcon name="trophy" size={16} />
+            {home.joined && (
+              <span className="text-muted">
+                {t('ui.league.rankShort', { rank: home.rows.find((r) => r.isMe)?.rank ?? 1 })}
+              </span>
+            )}
+          </span>
+        ) : set ? (
           // Attack wins (sword) / defense wins (shield).
           <span
             className="inline-flex items-center gap-1.5"
@@ -310,7 +332,11 @@ function VersusWidget() {
         )
       }
       label={
-        set ? t('ui.home.vsSetLabel', { wins: me!.defenseWins, n: me!.attackWins }) : t('ui.home.vsOpenLabel')
+        set && league && home
+          ? t('ui.league.trophiesLabel', { n: home.trophies })
+          : set
+            ? t('ui.home.vsSetLabel', { wins: me!.defenseWins, n: me!.attackWins })
+            : t('ui.home.vsOpenLabel')
       }
       onClick={() => navigate('/versus')}
     />

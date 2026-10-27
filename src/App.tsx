@@ -40,6 +40,9 @@ const SetupPage = import.meta.env.VITE_PROTO ? () => null : lazy(() => import('@
 const HelpPage = lazy(() => import('@/screens/Help').then((m) => ({ default: m.HelpPage })))
 const KitchenSink = lazy(() => import('@/screens/KitchenSink').then((m) => ({ default: m.KitchenSink })))
 const FxLab = lazy(() => import('@/screens/FxLab').then((m) => ({ default: m.FxLab })))
+const LeagueFightLab = lazy(() =>
+  import('@/screens/kitchen/LeagueFightLab').then((m) => ({ default: m.LeagueFightLab })),
+)
 
 /**
  * The rework prototype (vite.proto.config.ts) runs inside an Artifact, whose address is not the game's: its pages live
@@ -85,6 +88,9 @@ export function App() {
             {import.meta.env.DEV && <Route path="/kitchen-sink" element={<Lazy><KitchenSink /></Lazy>} />}
             {import.meta.env.DEV && <Route path="/kitchen-sink/fx" element={<Lazy><FxLab /></Lazy>} />}
             <Route element={<GameLayout />}>
+              {import.meta.env.DEV && (
+                <Route path="/kitchen-sink/league-fight" element={<Lazy><LeagueFightLab /></Lazy>} />
+              )}
               <Route path="/home" element={<HomeScreen />} />
               {/* Home replaced the Map as the landing screen: old links land there. */}
               <Route path="/map" element={<Navigate to="/home" replace />} />

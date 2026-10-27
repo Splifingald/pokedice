@@ -8,6 +8,7 @@ import { regionOf, worldRegionOf } from './regions'
 import { autoEvents } from './sim'
 import { createRng } from './rng'
 import { typeMultiplier } from './typechart'
+import { versusLeagueFor } from './versusLeague'
 import type { GameData, PokeType, PokemonInstance, PowerKind, RegionId, SaveData } from './types'
 
 /** Every Pokémon of a Versus team fights at this level: higher ones are brought down to it, lower ones can't enter. */
@@ -102,9 +103,14 @@ export function versusUnlocked(save: SaveData, data: GameData): boolean {
   return versusReadyCount(save, data) >= VERSUS_TEAM_SIZE
 }
 
-/** Versus is open and its rules pop-up hasn't been shown yet (the other one-time pop-ups queue ahead of it). */
+/**
+ * Versus is open and its rules haven't been read yet (its page's card, Home's notice). With the weekly league on
+ * (docs/44), the league's rules, read once more by players who knew Versus before.
+ */
 export const versusRulesDue = (save: SaveData, data: GameData): boolean =>
-  !save.versusRulesSeen && versusUnlocked(save, data)
+  versusLeagueFor(save, data)
+    ? !save.versusLeagueRulesSeen && versusUnlocked(save, data)
+    : !save.versusRulesSeen && versusUnlocked(save, data)
 
 /** The clone that fights for `p`: the same species and colours, at Lv.50 at most. */
 export function cloneForVersus(p: Pick<PokemonInstance, 'dex' | 'level' | 'shiny'>): VersusMon {
@@ -179,15 +185,163 @@ function attackerPowers(powers: VersusPowers | undefined, data: GameData) {
 }
 
 /**
- * The whole fight, decided by `seed` alone: the attacker's three go out in their order against each of the
- * defender's in turn, carrying their HP from one battle to the next, both sides played by the auto-mode AI.
+ * A Versus fight in progress, as plain data: the battle being fought and what the earlier ones left. The two random
+ * streams are kept as their states, so a match can be stepped by the player (the weekly league, docs/44) or played out
+ * by the auto player (`simulateVersus`) and come out the same for the same seed and moves.
+ */
+export interface VersusMatch {
+  seed: number
+  attacker: VersusMon[]
+  defender: VersusMon[]
+  sides: VersusSides
+  /** Which defender is out (0-based). */
+  round: number
+  state: BattleState
+  /** The battle's own rolls, and the auto player's choices. */
+  battleRng: number
+  choiceRng: number
+  /** The attacker's HP as the finished battles left it, by uid. */
+  hp: Record<string, number>
+  lead?: string
+  /** The powers spent so far, and by which of the attacker's Pokémon: they carry from one battle to the next. */
+  used: Spent
+  powered: Record<string, PowerKind>
+  foeSpent: Spent
+  /** Set once the fight is over: the attacker knocked out all three, or not. */
+  winner?: 'attacker' | 'defender'
+}
+
+/** A battle of the match, opened against defender `d`: its start, or null when the attacker has nobody left. */
+function openRound(m: Omit<VersusMatch, 'state'>, d: number, data: GameData): { state: BattleState; log: LogEntry[] } | null {
+  const team = m.attacker.map((p, i) => ({
+    uid: attackerUid(i),
+    dex: p.dex,
+    level: p.level,
+    // Full health for the first battle; afterwards, whatever the last one left.
+    hp: m.hp[attackerUid(i)] ?? Number.MAX_SAFE_INTEGER,
+    shiny: p.shiny,
+    ...(m.powered[attackerUid(i)] && { powered: m.powered[attackerUid(i)] }),
+  }))
+  // A mutual K.O. — the attacker's last Pokémon falling as it wins — leaves nobody to face the next one.
+  if (!team.some((p) => p.hp > 0)) return null
+  const foe = m.defender[d]!
+  const levels = uniformLevels(data.config.versusUpgradeLevel)
+  return createBattle(
+    {
+      kind: 'trainer',
+      team,
+      leadUid: m.lead,
+      enemy: { dex: foe.dex, level: foe.level, shiny: foe.shiny },
+      playerLevels: levels,
+      enemyLevels: levels,
+      ...attackerPowers(m.sides.attacker, data),
+      used: m.used,
+      enemyPlan: defenderPlan(foe.dex, m.sides.defender, m.foeSpent, data),
+    },
+    data,
+  )
+}
+
+/**
+ * A Versus fight, opened: the attacker's three go out in their order against each of the defender's in turn, carrying
+ * their HP from one battle to the next.
  *
  * Nobody brings their own upgrades: both sides fight with every combo and die track at `versusUpgradeLevel` (admin).
  * Each side brings its battle powers (`sides`, docs/35 §5): the whole fight counts as one battle, so each power is
- * used once per side, and one per Pokémon.
- *
- * The attacker wins by knocking out all three defenders. Anything else — the attacker's team knocked out, or a
- * stalemate neither side can break — is the defender's win.
+ * used once per side, and one per Pokémon. No item is ever used (`versusStep` ignores them).
+ */
+export function startVersus(
+  attacker: VersusMon[],
+  defender: VersusMon[],
+  data: GameData,
+  seed: number,
+  sides: VersusSides = {},
+): { match: VersusMatch; log: LogEntry[] } {
+  // The battle's own rolls and the auto player's choices draw from separate streams, like on the battle screen.
+  const base = {
+    seed,
+    attacker,
+    defender,
+    sides,
+    round: 0,
+    battleRng: createRng(seed).getState(),
+    choiceRng: createRng(seed ^ 0x5bd1e995).getState(),
+    hp: {},
+    used: {},
+    powered: {},
+    foeSpent: {},
+  }
+  const start = defender.length ? openRound(base, 0, data) : null
+  if (!start) throw new Error('versus_empty_team')
+  return { match: { ...base, state: start.state }, log: start.log }
+}
+
+/** Events the fight never takes: no item, no running from a trainer. */
+const refused = (e: BattleEvent) => e.t === 'USE_ITEM' || e.t === 'RUN'
+
+/** One event of the battle being fought. A refused or impossible one changes nothing. */
+export function versusStep(
+  match: VersusMatch,
+  event: BattleEvent,
+  data: GameData,
+): { match: VersusMatch; log: LogEntry[] } {
+  if (match.winner || terminal(match.state) || refused(event)) return { match, log: [] }
+  const rng = createRng(match.battleRng)
+  const r = reduce(match.state, event, data, rng)
+  return { match: { ...match, state: r.state, battleRng: rng.getState() }, log: r.log }
+}
+
+/** The auto player's next move in the battle being fought (die toggles, then the REROLL or ATTACK they lead to). */
+export function versusAutoMove(match: VersusMatch, data: GameData): { match: VersusMatch; events: BattleEvent[] } {
+  const s = match.state
+  if (match.winner || terminal(s)) return { match, events: [] }
+  if (s.phase === 'enemy_turn') return { match, events: [{ t: 'AI_TURN' }] }
+  const rng = createRng(match.choiceRng)
+  const events = autoEvents(s, data, rng)
+  return { match: { ...match, choiceRng: rng.getState() }, events }
+}
+
+/**
+ * The battle being fought is over: the next one opens (the winner stays out), or the fight ends. Before then, nothing
+ * changes. `log` is the next battle's opening.
+ */
+export function versusNextRound(match: VersusMatch, data: GameData): { match: VersusMatch; log: LogEntry[] } {
+  const s = match.state
+  if (match.winner || !terminal(s)) return { match, log: [] }
+  const out = battleOutcome(s)
+  const hp = { ...match.hp, ...out.hp }
+  const used = { mega: s.megaUsed ?? 0, gmax: s.gmaxUsed ?? 0, z: s.zUsed ?? 0 }
+  const powered = { ...match.powered }
+  for (const b of s.player) if (b.powered) powered[b.uid] = b.powered
+  const foeSpent = { ...match.foeSpent, ...(s.enemy.powered && { [s.enemy.powered]: 1 }) }
+  const carried = { ...match, hp, used, powered, foeSpent }
+  // Anything but a win — the attacker's team knocked out, a forfeit, a stalemate neither side can break — is the
+  // defender's win.
+  if (out.result !== 'won') return { match: { ...carried, winner: 'defender' }, log: [] }
+  const d = match.round + 1
+  if (d >= match.defender.length) return { match: { ...carried, winner: 'attacker' }, log: [] }
+  const lead = out.fighterUid
+  const next = openRound({ ...carried, lead }, d, data)
+  if (!next) return { match: { ...carried, lead, winner: 'defender' }, log: [] }
+  return { match: { ...carried, lead, round: d, state: next.state }, log: next.log }
+}
+
+/**
+ * How the fight ended, in Pokémon still standing: the attacker's when it won (1–3), the defender's when it lost (the one
+ * out, if it still stands, and those it never reached). The weekly league's trophies read these (docs/44).
+ */
+export function versusStanding(match: VersusMatch): { left: number; foeLeft: number } {
+  const s = match.state
+  const hp = { ...match.hp, ...Object.fromEntries(s.player.map((b) => [b.uid, b.hp])) }
+  const left = match.attacker.filter((_, i) => (hp[attackerUid(i)] ?? 0) > 0).length
+  const foeOut = s.enemy.hp > 0 || !terminal(s) ? 1 : 0
+  const foeLeft = Math.max(0, match.defender.length - match.round - 1) + foeOut
+  return match.winner === 'attacker' ? { left, foeLeft: 0 } : { left: 0, foeLeft: Math.max(1, foeLeft) }
+}
+
+/**
+ * The whole fight, decided by `seed` alone, both sides played by the auto-mode AI (see `startVersus`). The attacker
+ * wins by knocking out all three defenders.
  */
 export function simulateVersus(
   attacker: VersusMon[],
@@ -197,70 +351,29 @@ export function simulateVersus(
   sides: VersusSides = {},
   maxSteps = 5000,
 ): VersusFight {
-  // The battle's own rolls and the auto player's choices draw from separate streams, like on the battle screen.
-  const battleRng = createRng(seed)
-  const choiceRng = createRng(seed ^ 0x5bd1e995)
   const rounds: VersusRound[] = []
-  const hp: Record<string, number> = {}
-  let lead: string | undefined
+  if (!attacker.length || !defender.length) return { seed, rounds, winner: 'defender' }
   let group = 0
-  const levels = uniformLevels(data.config.versusUpgradeLevel)
-  const powers = attackerPowers(sides.attacker, data)
-  // The powers spent so far, and by which of the attacker's Pokémon: they carry from one battle to the next.
-  const used: Spent = {}
-  const powered: Record<string, PowerKind> = {}
-  const foeSpent: Spent = {}
-
-  for (let d = 0; d < defender.length; d++) {
-    const team = attacker.map((m, i) => ({
-      uid: attackerUid(i),
-      dex: m.dex,
-      level: m.level,
-      // Full health for the first battle; afterwards, whatever the last one left.
-      hp: hp[attackerUid(i)] ?? Number.MAX_SAFE_INTEGER,
-      shiny: m.shiny,
-      ...(powered[attackerUid(i)] && { powered: powered[attackerUid(i)] }),
-    }))
-    // A mutual K.O. — the attacker's last Pokémon falling as it wins — leaves nobody to face the next one.
-    if (!team.some((p) => p.hp > 0)) return { seed, rounds, winner: 'defender' }
-    const foe = defender[d]!
-    const start = createBattle(
-      {
-        kind: 'trainer',
-        team,
-        leadUid: lead,
-        enemy: { dex: foe.dex, level: foe.level, shiny: foe.shiny },
-        playerLevels: levels,
-        enemyLevels: levels,
-        ...powers,
-        used,
-        enemyPlan: defenderPlan(foe.dex, sides.defender, foeSpent, data),
-      },
-      data,
-    )
-    const round: VersusRound = { defenderIndex: d, start, steps: [] }
+  let { match, log } = startVersus(attacker, defender, data, seed, sides)
+  while (!match.winner) {
+    const round: VersusRound = { defenderIndex: match.round, start: { state: match.state, log }, steps: [] }
     rounds.push(round)
-    let state = start.state
-    for (let guard = 0; guard < maxSteps && !terminal(state); guard++) {
-      const events: BattleEvent[] = state.phase === 'enemy_turn' ? [{ t: 'AI_TURN' }] : autoEvents(state, data, choiceRng)
-      if (!events.length) break
+    for (let guard = 0; guard < maxSteps && !terminal(match.state); guard++) {
+      const move = versusAutoMove(match, data)
+      match = move.match
+      if (!move.events.length) break
       group++
-      for (const event of events) {
-        const r = reduce(state, event, data, battleRng)
-        state = r.state
-        round.steps.push({ event, group, state, log: r.log })
+      for (const event of move.events) {
+        const r = versusStep(match, event, data)
+        match = r.match
+        round.steps.push({ event, group, state: match.state, log: r.log })
       }
     }
-    const out = battleOutcome(state)
-    Object.assign(hp, out.hp)
-    Object.assign(used, { mega: state.megaUsed ?? 0, gmax: state.gmaxUsed ?? 0, z: state.zUsed ?? 0 })
-    for (const b of state.player) if (b.powered) powered[b.uid] = b.powered
-    if (state.enemy.powered) foeSpent[state.enemy.powered] = 1
-    if (out.result !== 'won') return { seed, rounds, winner: 'defender' }
-    // The Pokémon that won stays out for the next one, when it's still standing.
-    lead = out.fighterUid
+    // A battle stuck short of its end (the guard) is a stalemate: the defender's.
+    if (!terminal(match.state)) return { seed, rounds, winner: 'defender' }
+    ;({ match, log } = versusNextRound(match, data))
   }
-  return { seed, rounds, winner: rounds.length ? 'attacker' : 'defender' }
+  return { seed, rounds, winner: rounds.length ? match.winner : 'defender' }
 }
 
 /** The events of the next auto move from `cursor` on (one group), for the battle screen to dispatch. */

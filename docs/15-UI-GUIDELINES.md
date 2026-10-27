@@ -883,6 +883,16 @@ pieces.
 - **Versus's FIGHT**: one red, the opponent your team hits hardest (`versusEdge`), the others navy (`frame-dark`). PC:
   your team and the board beside the opponents (no Leaderboard tab there); the team editor's Clear / SAVE TEAM sit in a
   `SocialDock`.
+- **The weekly league** (docs/44, its own switch): Versus's page keeps its tabs and columns.
+  - A header (`LeagueHeader`): your trophies, your place in your group, and a dark chip "Ends in 3d 5h".
+  - The 3 opponents offered as stacked `BoardRow`s: the trophies (`TrophyCount`, the trophy icon after the number) and
+    the matchup line under the team; one red FIGHT.
+  - The group: `LeagueRows` under a This week / Last week `Seg`, tied places sharing a rank, each top-10 place with its
+    rewards' pictures under the team (`RewardMark`).
+  - The admin alone sees `BotTag` (BOT) on a bot.
+  - The fight is the battle screen with `versus.live`: the player's own controls and powers, AUTO-MODE as the panel's
+    switch, never the Bag. Its result card (`LeagueResultCard`) shows the trophies won or lost, green or red, beside
+    VICTORY! / DEFEAT.
 
 ## 17. The trainer card and the menu
 
@@ -1024,6 +1034,9 @@ notifications' question last. A new pop-up gets a place in that list, not a list
 - **A purely visual change** (the dice throws, docs/37; the game-feel pass, haptics and battle music, docs/38): the
   switch, but no rules pop-up and no INFO: it only changes how something already there looks, sounds or feels, so
   there is nothing to learn or do.
+- **A rework with a switch of its own** (the weekly Versus league, docs/44): Off, the feature is what it was. On, its
+  page's rules card shows the new rules once more, under their own "seen" flag, to players who knew the feature, and
+  Home's notice names the rework.
 - **A reworked feature keeps its switch** (the Fortune Wheel's tickets, 2026-10-25): the user chose to rework it in
   place, under the wheel's own switch. Its new rules show once on its page (`events.wheelRulesSeen`) for players who
   had it already; a new player reads them in its unlock pop-up. The Game Corner's slot machine got a switch of its own

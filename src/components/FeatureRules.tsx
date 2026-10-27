@@ -1,6 +1,6 @@
 // The Day Care's and Versus's rules (docs/15), in the special events' pop-up: once when each opens, then from the INFO
 // button at the bottom of its page. The numbers come from the config, so a rebalance shows up in the text.
-import { VERSUS_LEVEL, VERSUS_TEAM_SIZE } from '@/engine'
+import { leagueConfig, versusLeagueFor, VERSUS_LEVEL, VERSUS_TEAM_SIZE, winTrophies } from '@/engine'
 import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
@@ -58,7 +58,38 @@ export function useDayCareRules(): RuleRow[] {
 
 export function useVersusRules(): RuleRow[] {
   const { t } = useT()
+  const league = useGame((s) => !!s.save && versusLeagueFor(s.save, s.data))
+  const data = useGame((s) => s.data)
   const level = t('ui.common.level.short', { n: VERSUS_LEVEL })
+  if (league) {
+    // The weekly league (docs/44): its numbers from the config.
+    const cfg = leagueConfig(data)
+    const a = winTrophies(1, cfg)
+    const b = winTrophies(2, cfg)
+    const c = winTrophies(3, cfg)
+    return [
+      {
+        icon: 'calendar',
+        title: t('ui.rules.league.week.title'),
+        text: t('ui.rules.league.week.text', { size: cfg.groupSize }),
+      },
+      {
+        icon: 'sword',
+        title: t('ui.rules.league.fight.title'),
+        text: t('ui.rules.league.fight.text', { level }),
+      },
+      {
+        icon: 'trophy',
+        title: t('ui.rules.league.trophies.title'),
+        text: t('ui.rules.league.trophies.text', { a, b, c, safe: cfg.safeBelow }),
+      },
+      {
+        icon: 'gift',
+        title: t('ui.rules.league.rewards.title'),
+        text: t('ui.rules.league.rewards.text', { gold: cfg.goldPerTrophy }),
+      },
+    ]
+  }
   return [
     {
       icon: 'shield',
@@ -117,11 +148,12 @@ export function VersusRulesModal({
 }) {
   const { t } = useT()
   const rules = useVersusRules()
+  const league = useGame((s) => !!s.save && versusLeagueFor(s.save, s.data))
   return (
     <RulesModal
       open={open}
       onClose={onClose}
-      title={t('ui.versus.title')}
+      title={t(league ? 'ui.league.title' : 'ui.versus.title')}
       picture={VERSUS_PICTURE}
       icon="vs"
       rules={rules}

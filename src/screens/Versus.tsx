@@ -17,6 +17,7 @@ import {
   versusMoveAt,
   versusReadyCount,
   versusRulesDue,
+  versusLeagueFor,
   versusUnlocked,
   VERSUS_TEAM_SIZE,
   POKE_TYPES,
@@ -66,6 +67,7 @@ import { holdReload, pushSaveNow } from '@/store/sync'
 import { cx } from '@/theme/util'
 import { BattleView, type VersusReplay } from './battle/BattleView'
 import { useInWorld, WorldAwayPage } from '@/screens/events/world'
+import { LeagueScreen } from './versus/League'
 
 type Tab = 'fight' | 'team' | 'board'
 type Load =
@@ -245,7 +247,7 @@ function VersusScreenMain() {
 }
 
 /** PC's side column: your Versus team, the rules' one line (auto, Lv.50) and Change. */
-function MyTeamCard({ me, onChange, editing }: { me: VersusEntry | null; onChange: () => void; editing: boolean }) {
+export function MyTeamCard({ me, onChange, editing }: { me: VersusEntry | null; onChange: () => void; editing: boolean }) {
   const { t } = useT()
   return (
     <section
@@ -293,7 +295,7 @@ function Meter({ value, className }: { value: number; className?: string }) {
 }
 
 /** Versus is closed: how far the player is from opening it, and the three Pokémon closest to Lv.50. */
-function Locked() {
+export function Locked() {
   const { t } = useT()
   const [rules, setRules] = useState(false)
   const data = useGame((s) => s.data)
@@ -497,7 +499,7 @@ function Opponents({
 }
 
 /** Three numbered slots in fight order, the eligible Pokémon (Lv.50+, every region's Box), Clear and Save. */
-function TeamEditor({
+export function TeamEditor({
   me,
   signedIn,
   reload,
@@ -858,5 +860,8 @@ function VersusFightView({
 export function VersusScreen() {
   const { t } = useT()
   const inside = useInWorld().inside
-  return inside ? <WorldAwayPage title={t('ui.versus.title')} kind="main" /> : <VersusScreenMain />
+  // The weekly league (docs/44), when it's on: Versus's matches, fought, and a group to climb.
+  const league = useGame((s) => !!s.save && versusLeagueFor(s.save, s.data))
+  if (inside) return <WorldAwayPage title={t('ui.versus.title')} kind="main" />
+  return league ? <LeagueScreen /> : <VersusScreenMain />
 }

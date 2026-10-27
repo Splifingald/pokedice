@@ -8,7 +8,7 @@ import { getRegion, newRegionBlock, regionOf, regionOfArea, startRegion } from '
 import { maxComboLevel, maxDieLevel, nextComboCost, nextDieCost } from './economy'
 import { challengeEncounter, enemyUpgradeLevelFor, nextEncounter, type EncounterRoll } from './encounters'
 import { applyCatch, catchChance, catchTarget, catchValueOf, rollCatch } from './catching'
-import { ballBonus } from './items'
+import { ballBonus, isBallFor } from './items'
 import { createInstance, instanceStats } from './progression'
 import { playerSideOf } from './rival'
 import { createRng } from './rng'
@@ -154,7 +154,7 @@ function startingSave(data: GameData, opts: CampaignOptions, newId: () => string
 function pickBall(save: SaveData, data: GameData, value: number): ItemDef | null {
   if (catchChance(value, 0) >= 0.5) return null
   const owned = Object.entries(save.inventory)
-    .filter(([k, q]) => q > 0 && data.items[k]?.effect.kind === 'ball')
+    .filter(([k, q]) => q > 0 && isBallFor(data.items[k], false))
     .map(([k]) => data.items[k]!)
     .sort((a, b) => ballBonus(a) - ballBonus(b))
   return owned.find((b) => catchChance(value, ballBonus(b)) >= 0.5) ?? owned[owned.length - 1] ?? null
@@ -174,7 +174,7 @@ function stockWorldBag(save: SaveData, data: GameData): SaveData {
   let s = save
   const rows = worldShopRows(s, data)
   const balls = rows
-    .filter((r) => r.item.effect.kind === 'ball' && r.limit == null)
+    .filter((r) => isBallFor(r.item, false) && r.limit == null)
     .sort((a, b) => ballBonus(b.item) - ballBonus(a.item))
   const ball = balls.find((r) => r.price * 4 <= s.gold) ?? balls.at(-1)
   const have = (k: string) => s.inventory[k] ?? 0

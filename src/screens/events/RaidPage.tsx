@@ -4,6 +4,7 @@ import { useState, type ReactNode } from 'react'
 import {
   raidOverhaulOn,
   ballBonus,
+  isBallFor,
   catchChance,
   catchValueOf,
   progressRaidOf,
@@ -151,7 +152,7 @@ export function BallOdds({ dex }: { dex: number }) {
   const inventory = useGame((s) => s.save?.inventory)
   const value = catchValueOf(data, dex)
   const balls = Object.values(data.items)
-    .filter((it) => it.effect.kind === 'ball')
+    .filter((it) => isBallFor(it, true))
     .sort((a, b) => ballBonus(a) - ballBonus(b))
   const pct = (bonus: number) => Math.round(catchChance(value, bonus) * 100)
   return (

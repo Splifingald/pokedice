@@ -3,7 +3,7 @@
 import { catchChance, catchValueOf } from './catching'
 import { eventOpenTo } from './events'
 import { centersOn } from './extreme'
-import { ballBonus } from './items'
+import { ballBonus, isBallFor } from './items'
 import { linearAreas } from './data'
 import { nightmareModeOf } from './nightmareMode'
 import { nightmareLock } from './nightmare'
@@ -202,7 +202,7 @@ export function chooseIdleBall(
   const bare = catchChance(value, 0)
   if (bare >= 1) return { ball: null, chance: bare }
   const balls = Object.entries(save.inventory)
-    .filter(([k, n]) => k !== MASTER_BALL && n > 0 && data.items[k]?.effect.kind === 'ball')
+    .filter(([k, n]) => k !== MASTER_BALL && n > 0 && isBallFor(data.items[k], false))
     .map(([k]) => {
       const item = data.items[k]!
       return { k, price: item.price, bonus: ballBonus(item), chance: catchChance(value, ballBonus(item)) }

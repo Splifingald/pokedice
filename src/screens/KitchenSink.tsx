@@ -69,6 +69,7 @@ import { DayNightBits } from './kitchen/DayNightBits'
 import { IdleBits } from './kitchen/IdleBits'
 import { ShinyDexBits } from './kitchen/ShinyDexBits'
 import { UnownDexBits } from './kitchen/UnownDexBits'
+import { LeagueBits } from './kitchen/LeagueBits'
 import { DiceThrowBits } from './kitchen/DiceThrowBits'
 import { FeelDiceBits } from './kitchen/FeelDiceBits'
 import { HowToBits } from './kitchen/HowToBits'
@@ -695,6 +696,10 @@ export function KitchenSink() {
 
       <Section title="Unown Pokédex: the switch with its Unown page, Home's banner (none, under way, complete), the 28 letters, complete, the result card's line, rules and INFO (docs/41)">
         <UnownDexBits />
+      </Section>
+
+      <Section title="Versus league: the header, the 3 opponents (the admin's BOT tag), the group's board and its rewards, the result card in each state, the week's reward message, the Raid Ball, rules and INFO (docs/44)">
+        <LeagueBits />
       </Section>
 
       <Section title="Trainer looks: the row and its red dot, the menu in each state, locked looks, rules and INFO (docs/31)">

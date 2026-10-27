@@ -249,6 +249,7 @@ export const saveSchema = z.object({
   playedAt: z.number().optional(),
   leaderboardVisited: z.boolean().optional(),
   versusRulesSeen: z.boolean().optional(),
+  versusLeagueRulesSeen: z.boolean().optional(),
   portalRulesSeen: z.boolean().optional(),
   nightmareRulesSeen: z.boolean().optional(),
   events: z

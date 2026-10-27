@@ -9,6 +9,7 @@ import {
   eventUnlockDue,
   homeNotices,
   regionOfferDue,
+  versusLeagueFor,
   type GameData,
   type HomeNotice,
   type SaveData,
@@ -89,7 +90,10 @@ export function featureTarget(
       return ev ? { name: t(`ui.events.${ev}.name`), icon: EVENT_ICON[ev], to: `/events/${ev}` } : null
     }
     case 'versus':
-      return { name: t('ui.versus.title'), icon: 'vs', to: '/versus' }
+      // The weekly league (docs/44) is announced under its own name, to players who knew Versus before too.
+      return versusLeagueFor(save, data)
+        ? { name: t('ui.league.title'), icon: 'trophy', to: '/versus' }
+        : { name: t('ui.versus.title'), icon: 'vs', to: '/versus' }
     case 'trades':
       return { name: t('ui.trades.title'), icon: 'trade', to: '/trades' }
     case 'general':

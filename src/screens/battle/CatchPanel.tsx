@@ -6,7 +6,7 @@
 import { AutoButton } from '@/components/AutoButton'
 import { BottomDock } from '@/components/BottomDock'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { baitChance, baitFaces, ballBonus, catchChance, catchValueOf, sureThrow } from '@/engine'
+import { baitChance, baitFaces, ballBonus, catchChance, catchValueOf, isBallFor, sureThrow } from '@/engine'
 import { Die } from '@/components/Die'
 import { ItemSprite } from '@/components/ItemSprite'
 import { PixelButton } from '@/components/PixelButton'
@@ -57,6 +57,7 @@ export function CatchPanel({
   onBait,
   onRetry,
   docked = false,
+  raid = false,
 }: {
   c: Catch
   /** The ball Idle picked for this throw (docs/36; null: none): shown chosen, whatever was tapped. */
@@ -72,6 +73,8 @@ export function CatchPanel({
   onRetry?: () => void
   /** In a battle's panel: the buttons go in its BottomDock (on phones, at the screen's foot). */
   docked?: boolean
+  /** A raid's catch: the Raid Ball (docs/44) is offered too. */
+  raid?: boolean
 }) {
   const Dock = docked ? BottomDock : Plain
   const { t } = useT()
@@ -82,7 +85,7 @@ export function CatchPanel({
   const value = catchValueOf(data, c.dex)
   const balls = Object.entries(inventory ?? {})
     .map(([k, n]) => ({ item: data.items[k], n }))
-    .filter((b) => b.n > 0 && b.item?.effect.kind === 'ball')
+    .filter((b) => b.n > 0 && isBallFor(b.item, !!raid))
     .sort((a, b) => ballBonus(a.item) - ballBonus(b.item))
   const options = [
     { key: null as string | null, label: t('ui.catch.noBall'), bonus: 0, n: null as number | null },

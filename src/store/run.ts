@@ -18,6 +18,7 @@ import {
   applyVictory,
   applyWipe,
   ballBonus,
+  isBallFor,
   battleOutcome,
   canSkip,
   catchTarget,
@@ -979,7 +980,7 @@ export function throwBall(ballKey: string | null) {
   const c = run.catch
   if (!c || c.result || !save) return
   const ball = ballKey ? data.items[ballKey] : undefined
-  if (ballKey && (!ball || ball.effect.kind !== 'ball' || (save.inventory[ballKey] ?? 0) <= 0)) return
+  if (ballKey && (!ball || !isBallFor(ball, false) || (save.inventory[ballKey] ?? 0) <= 0)) return
   const next = ballKey ? (consumeItem(save, ballKey) ?? save) : save
   const roll = rollCatch(catchValueOf(data, c.dex), ballBonus(ball), runRng)
   const bait = baitFor(roll, next, data)
