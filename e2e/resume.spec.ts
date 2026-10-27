@@ -115,11 +115,13 @@ test('the top bar stays in reach in battle: what would leave the fight says why'
   await page.getByRole('button', { name: /trainer menu/i }).click()
   const menu = page.getByRole('dialog', { name: 'Trainer card' })
   await expect(menu).toBeVisible()
-  const board = menu.getByRole('button', { name: 'Leaderboard', exact: true })
-  await expect(board).toHaveAttribute('aria-disabled', 'true')
-  await expect(board).toHaveAccessibleDescription('Finish the fight first')
+  // The leaderboard went to the Social tab (docs/43 §3); signing in is the menu's way out of the fight (it may load
+  // the cloud's save over this one).
+  const connect = menu.getByRole('button', { name: 'CONNECT', exact: true })
+  await expect(connect).toHaveAttribute('aria-disabled', 'true')
+  await expect(connect).toHaveAccessibleDescription('Finish the fight first')
   // (Playwright won't tap what says it's disabled: the tap is forced, as a finger would.)
-  await board.click({ force: true })
+  await connect.click({ force: true })
   await expect(page.getByText('Finish the fight first').first()).toBeVisible()
   await expect(page).toHaveURL(/\/area$/)
   await menu.getByRole('button', { name: 'How to play' }).click()

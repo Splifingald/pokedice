@@ -79,6 +79,7 @@ import { TeamDeepBits } from './kitchen/TeamDeepBits'
 import { PokedexDeepBits } from './kitchen/PokedexDeepBits'
 import { EventsDeepBits } from './kitchen/EventsDeepBits'
 import { SocialDeepBits } from './kitchen/SocialDeepBits'
+import { AreaDeepBits } from './kitchen/AreaDeepBits'
 import { RewardBits } from './kitchen/RewardBits'
 import { HitFeelBits } from './kitchen/HitFeelBits'
 import { FeelBits } from './kitchen/FeelBits'
@@ -750,6 +751,10 @@ export function KitchenSink() {
 
       <Section title="Deep pass: Social and Settings (board rows and meters, FIGHT, SocialColumns, SocialDock, adding a friend, the compact trainer card, the menu's foot)">
         <SocialDeepBits />
+      </Section>
+
+      <Section title="The area loop's deep pass (docs/43 §5.3): StageSky, StagePanel, Stamp, KeyHints, the switch's cards, the forfeit flag">
+        <AreaDeepBits />
       </Section>
 
       <Section title="Extreme mode: rules, band, title card, K.O. rest, resting team, while you were away, switch">

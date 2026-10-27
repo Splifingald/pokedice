@@ -162,14 +162,35 @@ Each entry: before (from the audit), after on a phone, after on PC, and what was
 
 ### 5.3 The area loop
 
-- **Before**: on tall phones a ~200 px gap between the stage and the dice; on PC the stage and a 380 px panel (docs/42).
-- **After, phone**: the stage grows with the screen: the area's picture is shown taller than the 240×160 grid (sky above,
-  ground below; the code-drawn background extends its own sky and ground), the fight's grid fixed in its middle, so the
-  dice sit right under it, in the thumb's reach. The fight's switch modal (`SwitchRow` rows) becomes the send-out's
-  cards. The team row at the foot is the pips on every screen (PC's rows went: the same panel, docs/42).
-- **After, PC**: unchanged in shape (docs/42 already made it a layout); keyboard: 1–6 dice, R reroll, Space attack, and now
-  B the Bag, S switch, Esc closes, shown discreetly with More details.
-- **Kept**: the send-out (the user's decision), the result's auto-advance, the Center's wait.
+- **Before**: on a 390×844 phone ~200 px of nothing between the 3:2 stage and the dice; on PC the stage 1012×675 with
+  room under it, the panel's team as rows; a turn's switch a modal of `SwitchRow` rows with a full-width FORFEIT; the
+  Bag's "on whom" the same rows; the page between encounters with two gauges (the plate's and the round's).
+- **The stage grows upward** (`StageSky`): the frame is as tall as the panel leaves (`max(3:2, 100dvh − top bar −
+  330 px)`; at 390×844 a 458 px frame for the 260 px grid), the 240×160 grid anchored at its foot, untouched (same
+  timelines, plates, sprites), and above it the area picture's own rows, then its top colour deepening in dither (the
+  drawn Daybreak paints its sun and clouds, the nightmare its stars, the Distortion World its void). Never below: your
+  Pokémon stands on the grid's bottom edge. Fixed per screen, so the stage never jumps between steps. ATTACK sits in the
+  lower half; 360×640 still fits with nothing to scroll. Trick or Treat grows the same way.
+- **PC**: the stage as tall as the window (812 px at 1440×900); the panel's team is the pips as on phones (one design,
+  `TeamColumn` gone); dice up to 72 px; a discreet key line at the panel's foot (on hover or focus; always with More
+  details; never on phones).
+- **One way to pick a Pokémon**: the turn's switch is the send-out's cards in the panel (the tapped pip picked, "Switch
+  (costs your turn)", BACK | GO! | the forfeit flag), no dialog; the K.O.'s the same without BACK; the Bag's "on whom"
+  the same cards, one that can't be helped saying why.
+- **Keys**: 1–6 dice, R reroll, Space attack, and now B the Bag, S switch, Esc back, Enter the step's red button, 1–n a
+  card (`aria-keyshortcuts` on the buttons).
+- **Game feel**: a result's big moments stamp down (`Stamp`: a badge, Champion, an area cleared, a medal — held steps,
+  two white frames, a stepped ring, confetti; a catch or a secret area one step); short one step, calm at rest; never
+  blocking. The catch card's ball rocks in steps. Screen readers hear "Victory!".
+- **No single-button screen**: the Game Corner's and Trick or Treat's preview with nothing to choose loads and goes
+  (`AutoButton`); a double battle's preview picks on the send-out's cards.
+- **Between encounters and the Center** (`StagePanel` for `/area`): phones the scene on top and the bar pinned; from
+  1024 px the panel framed beside the scene, as tall, scrolling inside, the bar at its foot. One gauge: the fight's strip
+  on the scene's top edge. The Center's Box uses the Team's Sort & filter, its sheet the Team's swap dock.
+- **Kept** (the user's decisions): the send-out's cards and GO!, wild fights going by themselves, the result moving on
+  (but after a new species and an area cleared), the Center waiting, no tab bar in an area.
+- **Taps**: Home → dice 1 (wild) / 2 (trainer); between encounters 0 non-decision taps; the Game Corner with nothing to
+  skip 1 → 0; a switch 2 (pip, GO!) or S, Enter. First ATTACK at 6.6 s from Home (was 8.2 s, the loop script, early save).
 
 ### 5.4 Team and the Pokémon sheet
 

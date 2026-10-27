@@ -164,6 +164,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `PokeCard` | The one card for a team member everywhere (Team, send-out, Center, between encounters, K.O. switch; docs/43 §4) | `lead` (gold crown tag, said "Lead: sent out first"), `selected` (gold outline: picked, or shown in a docked sheet), fainted (hatched), resting after a K.O. (`KoTag`), a fossil reviving (its gauge), shiny (star), `xp` (a thin XP line under the HP, the Team), `brief`, `label`, `buttonProps` (drag handlers), `className` (a drop target's dashed red outline) |
 | `DexTile` / `DexGridList` / `DexGauge` / `DexCompleteCard` / `DexSheet` / `Fold` | The Pokédex and its Shiny and Unown views (docs/43 §5.6) | A dense tile (~64 px phones, ~76 px PC): uncaught = the silhouette alone (number and "Not caught yet" for screen readers only), caught = icon + name (16 px, "…"), NEW gold tag, Nearby as a green word in an uncaught tile's empty line or a map tag on a named one, the shiny star, picked = gold ring + `aria-current`. The grid is one Tab stop; arrows by tile and row, Home/End. The gauge sits in the page head, once. The entry: hero (sprite, types, cry), where to find it, evolutions both ways, "Dice and stats" folded (`Fold`, open with More details) |
 | `StagePanel` / `EventDock` / `TicketsMeter` | The events' pages (docs/43 §5.11) | The stage on top and the dock pinned above the tab bar on phones; from 1024 px the stage left (sticky) and the panel and dock docked right in one frame. `TicketsMeter`: tickets as stubs (missing ones dimmed), `role=img` "n of cap tickets" |
+| `StageSky` / `Stamp` / `KeyHints` / `SwitchStep` / `ForfeitButton flag` | The area loop (docs/43 §5.3) | `StageSky`: the sky over a fight's grid (Daybreak drawn, the area picture's rows, night, distortion). `Stamp`: a result's moment (big: three held steps from 2×, two white frames, a stepped ring, confetti; small: one step; short: one step; calm/off: at rest). `KeyHints`: the keys at the panel's foot on PC. `SwitchStep`: the send-out's cards for a turn's switch (BACK, GO!, the flag) and a K.O.'s (GO!, the flag). `ForfeitButton flag`: a 56 px flag named FORFEIT |
 | `BoxFilter` | The Box's one Sort & filter control | A button beside the search (a gold count of what is set). Phones: a bottom sheet with the order (`Seg`) and the type (a radio grid of named swatches), SHOW n and Clear filters. From 768 px: a panel under the button (focus on the current choice, Esc and a click outside close it). A pick applies at once |
 | `MonTile` / `TileTag` | A grid of Pokémon (the Box) | Menu icon from the atlas, number, name (16 px), a line under it; `level` (a navy 14 px corner tag, top right); `selected` (gold outline, `aria-current`); `missing` = grey tile + silhouette; corner tags NEW (gold) and Nearby (green). `TILE_GRID` = ~84 px columns |
 | `GoldCard` / `CoinFlight` / `XpBar` (`useXpFill`) / `Confetti` / `DexRegisteredCard` / `UpCard` | The rewards' game feel (docs/38 §4) | The gold counting up from 0; its coins flying to the top bar's gold (`data-hud-gold`; playing, none when calm or off); the XP bar in steps (filling, the level-up's white frame, rolled over); the pixel confetti (playing, frozen on frames); a species' first catch registered in the Pokédex; the Upgrades' buttons (navy, the best buy gold with its chip) and a purchase's pop frame by frame (`frozenPop`) |
@@ -267,6 +268,17 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   who switch it on — the battle history (a button by the Bag) and the key hints, the HP and XP figures (bars alone
   otherwise), a card's type chips (every `PokeCard` is brief without it), the result's rows. A new screen asks the same
   of each number it adds: does a player need it to act, or only to study? Studied things go behind it.
+- **The stage grows upward** (docs/43 §5.3): a fight's frame is as tall as the room the panel leaves
+  (`max(3:2, 100dvh − top bar − 330px)` on phones, the window's height beside the panel on PC). The 240×160 grid stays
+  anchored at its foot, over the panel, and `StageSky` fills above it: the area picture's own rows, then its top colour
+  deepening in dither (Daybreak, the night and the Distortion World paint their own). Never below the grid: your
+  Pokémon stands on its bottom edge. The fixed height means the stage never jumps between steps. Trick or Treat does
+  the same.
+- **One stage-and-panel shape everywhere**: an area's steps outside a fight (`src/screens/area/StagePanel`: no tab bar on
+  `/area`, the bar pinned over the home indicator) and the events' pages (`src/screens/events/layout` `StagePanel`, the
+  dock pinned over the tab bar): phones the scene on top and the bar pinned; from 1024 px the panel framed beside the
+  scene, scrolling inside, its actions at its foot. The round's gauge is the fight's strip on the scene's top edge; the
+  plate counts rounds.
 - **Event pages** use `StagePanel` (docs/43 §5.11): phones stack the stage, the panel and a pinned dock (one red action); PC
   docks the panel beside the stage. A list of things to set up (the raids) docks the picked one's panel beside the list on
   PC and opens its own page on a phone.
@@ -670,10 +682,13 @@ the actions, the Bag and the team as rows with their HP (docs/42 §3). The histo
   on explored areas in cleared areas, Idle everywhere), and the catch's result moves on by itself while
   the autopilot runs (Idle throws the ball itself, §34). The fight keeps the rules it started with (its powers, `state.auto`); STOP gives it back. Prof. Oak's tip about it, the first time,
   takes the full width above the switch (never squeezed into a column beside it).
-- **Team pips**: menu icon + an HP bar, the one in battle ringed in gold, fainted ones grey. Tapping one switches
-  (it costs the turn; the dialog also holds Forfeit). After a K.O. the message asks "Choose your next Pokémon",
-  the pips that can go out pulse (two steps, not a glide; still when the OS asks for reduced motion), and the actions
-  become a list right under the stage: each Pokémon that can go out with its level, HP, types and dice, then Forfeit.
+- **Team pips** on every screen size (the wide rows went, docs/43 §5.3): menu icon + an HP bar, the one in battle ringed
+  in gold, fainted ones grey. Tapping one opens the switch **in the panel**: the send-out's cards of those able to come
+  in (the tapped one picked), BACK | GO! | the forfeit flag; it costs the turn (the line says so). After a K.O. the same
+  cards, GO! and the flag. The Bag's "on whom" is the same cards; one that can't be helped says why.
+- **Keys**: 1–6 dice, R reroll, Space attack, B Bag, S switch, Esc back, Enter the step's red button, 1–n pick a card;
+  `aria-keyshortcuts` on the buttons. `KeyHints` on PC only, faint until the panel is hovered or focused, always with
+  More details.
 - **The Bag** is a `Sheet`: every item usable in battle with what it does and how many you have; one that can't help
   anyone is greyed. One item a turn, and it doesn't end the turn.
 - **Raids** (`src/screens/events/RaidView.tsx`) keep the battle's layout and its 360×640 fit. Their bottom row: the

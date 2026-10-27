@@ -51,8 +51,10 @@ test('buy an upgrade', async ({ page }) => {
     },
     [JSON.stringify(save), FAST],
   )
+  // Upgrades is the Mart's tab now (docs/43 §3): the old address opens it there.
   await page.goto('/upgrades')
-  await expect(page.getByRole('heading', { name: 'Upgrades' })).toBeVisible()
+  await expect(page).toHaveURL(/\/shop\?tab=upgrades/)
+  await expect(page.getByRole('tab', { name: /^Upgrades/ })).toHaveAttribute('aria-selected', 'true')
   await page.getByRole('button', { name: /^₽5 Upgrade/ }).first().click() // Pair → Lv.2 costs 5
   await expect(page.getByLabel('495 Pokédollars').first()).toBeVisible()
   await expect(page.getByText(/\+3 damage.*\+4/).first()).toBeVisible()
@@ -135,7 +137,8 @@ test('the avatar drawer opens the profile, the guide and the settings', async ({
 
   // The card: the player's name and, among its numbers, the badges won in every region (none yet).
   await expect(card.getByText('Sam', { exact: true })).toBeVisible()
-  await expect(card.getByRole('term').filter({ hasText: 'Badges' })).toBeVisible()
+  // The card is compact (docs/43 §5.9): the badges as a chip beside the name; the other numbers fold behind Stats.
+  await expect(card.getByRole('img', { name: 'Badges: 0' })).toBeVisible()
   await expect(card.getByRole('heading', { name: 'Badge case' })).toHaveCount(0)
   await page.keyboard.press('Escape')
 
