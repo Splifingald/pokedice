@@ -34,7 +34,7 @@ switch (docs/15 §20), Off by default.
 1. Deploy the client (the switch is Off: League battles keep their damage between them, as before).
 2. Run `supabase/migrations/0081_league_heal.sql` (the switch's row, Off, and the content version + 1; safe to run
    again):
-   https://github.com/Splifingald/pokedice/blob/claude/dreamy-ritchie-elme3x/supabase/migrations/0081_league_heal.sql
+   https://github.com/Splifingald/pokedice/blob/version/2_4/supabase/migrations/0081_league_heal.sql
    `supabase/seed.sql` carries it too (inlined). Without it, the admin's switch still saves (it inserts the row).
 3. Admin → Config → **League heal**: **On for admin** to try it signed in, **On for everyone** to open it. Publish.
 
