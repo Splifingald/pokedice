@@ -151,8 +151,9 @@ export function RoundGauge({
     )
   if (banner)
     return (
-      <div className={cx('flex items-center gap-2', className)} role="img" aria-label={label + centersLabel}>
-        <ol className="flex h-[14px] min-w-0 flex-1 gap-[3px]" aria-hidden>
+      // Inside the area's button, whose name already says where the area stands: drawn only.
+      <div className={cx('flex items-center gap-2', className)} aria-hidden>
+        <ol className="flex h-[14px] min-w-0 flex-1 gap-[3px]">
           {Array.from({ length: total }, (_, i) => (
             <li
               key={i}
