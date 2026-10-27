@@ -442,6 +442,11 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   // Out on the field already: not one to switch in (a double battle has two out).
   const onField = (p: Battler) => (dbl ? dbl.ownSlots.some((i) => st.player[i]!.uid === p.uid) : p.uid === activeBattler(st).uid)
   const switchTargets = st.player.filter((p) => p.hp > 0 && !onField(p))
+  // After a K.O. with one Pokémon left to come in, it comes in: nothing to choose (the user, 2026-10-27).
+  const lastOne = forced && !auto && switchTargets.length === 1 ? switchTargets[0]!.uid : null
+  useEffect(() => {
+    if (lastOne) dispatch({ t: 'SWITCH', instanceId: lastOne })
+  }, [lastOne, dispatch])
 
   // The game feel (docs/38): the dice and the readout's sounds and touches. Off, everything plays as before.
   const feel = useGame((s) => gameFeelOn(s.data))
@@ -509,8 +514,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const showSwitch = data.config.allowVoluntarySwitch
   // What the B and S keys (and the pips) can open right now: the same rules as their buttons.
   const bagOpen = !versus && !auto && canItem && usefulItems.length > 0
-  const switchOpen = !auto && canAct && showSwitch && switchTargets.length > 0
-  const openSwitch = (uid?: string) => setSwitching(uid ?? switchTargets[0]?.uid ?? null)
+  // With nobody to send in, the team's pips still open the step: its BACK and its flag, the fight's way out (the user,
+  // 2026-10-27).
+  const switchOpen = !auto && canAct && showSwitch
+  const openSwitch = (uid?: string) => setSwitching(uid ?? switchTargets[0]?.uid ?? active.uid)
 
   // Keyboard (docs/43 §5.3): 1–6 pick dice, R rerolls, Space (or Enter) throws or attacks, B opens the Bag, S the
   // switch, Esc goes back; on every other step Enter presses the step's one red button (GO!, CONTINUE, NEXT…).
@@ -844,29 +851,22 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     if (!canAct) setSwitching(null)
   }, [canAct])
   // A cleared area's fight can be handed to auto-mode midway, as the area's switch would have from its start.
-  const autoStart = autoOpen && !auto && !catching
+  // One switch, in the same place on or off (the user's call, 2026-10-27): no note and STOP while it plays.
+  const autoToggle = autoOpen && !versus && !catching
   const extras =
-    !auto &&
     !terminal &&
-    (megaOpts.length > 0 || gmaxOpts.length > 0 || zOpen || typeMenu || st.canRun || autoStart)
+    ((!auto && (megaOpts.length > 0 || gmaxOpts.length > 0 || zOpen || typeMenu || st.canRun)) || autoToggle)
 
   let actions: ReactNode = null
   if (over) actions = versus!.end
   else if (auto && !terminal)
-    actions = (
-      <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] items-center gap-2.5" role="status">
-        <p className="m-0 flex items-center gap-2 font-pixel-sm text-[16px] leading-[1.1] text-muted">
-          <Chip tone="plain">{t('ui.battle.autoMode')}</Chip>
-          {t('ui.battle.autoNote')}
-        </p>
-        {/* A Versus fight is decided already: it plays to its end. */}
-        {!versus && (
-          <PixelButton size="md" onClick={() => setSettings({ autoMode: false })}>
-            {t('ui.battle.stop')}
-          </PixelButton>
-        )}
-      </div>
-    )
+    // A Versus fight is decided already: it plays to its end, and says so. Auto-mode's own switch stays lit above.
+    actions = versus ? (
+      <p className="m-0 flex items-center gap-2 font-pixel-sm text-[16px] leading-[1.1] text-muted" role="status">
+        <Chip tone="plain">{t('ui.battle.autoMode')}</Chip>
+        {t('ui.battle.autoNote')}
+      </p>
+    ) : null
   else if (stunned)
     actions = (
       <PixelButton variant="primary" size="lg" className="w-full" onClick={() => dispatch({ t: 'PASS' })}>
@@ -1112,7 +1112,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
               />
             ) : over ? (
               <BottomDock>{actions}</BottomDock>
-            ) : forced && !auto ? (
+            ) : forced && !auto && !lastOne ? (
               // After a K.O. (docs/42): the cards of the send-out step, those able to come in, GO! sends the one picked.
               <SwitchStep
                 options={st.player.filter((p) => p.hp > 0 && !onField(p))}
@@ -1185,7 +1185,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                 {reveal.preview && showBreakdown && <DamageRecap result={reveal.preview.r} />}
                 {extras && (
                   <div className="flex flex-wrap items-center justify-center gap-2">
-                    {megaOpts.length > 0 && (
+                    {!auto && megaOpts.length > 0 && (
                       <PixelButton
                         size="sm"
                         variant="gold"
@@ -1199,7 +1199,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                         <PixelIcon name="up" size={14} /> {t(megaLabel)}
                       </PixelButton>
                     )}
-                    {gmaxOpts.length > 0 && (
+                    {!auto && gmaxOpts.length > 0 && (
                       <PixelButton
                         size="sm"
                         variant="gold"
@@ -1213,7 +1213,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                         <PixelIcon name="up" size={14} /> {t('ui.battle.gmax')}
                       </PixelButton>
                     )}
-                    {zOpen && (
+                    {!auto && zOpen && (
                       <ZMoveButton
                         hint={zHint}
                         disabled={!canAct && !stunned}
@@ -1223,12 +1223,12 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                         }}
                       />
                     )}
-                    {typeMenu && (
+                    {!auto && typeMenu && (
                       <PixelButton size="sm" disabled={!canAct} onClick={() => setMenu('form')}>
                         <PixelIcon name="dice" size={14} /> {t('ui.battle.type', { left: formsLeft })}
                       </PixelButton>
                     )}
-                    {st.canRun && (
+                    {!auto && st.canRun && (
                       <PixelButton
                         size="sm"
                         variant="ghost"
@@ -1238,16 +1238,18 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                         <PixelIcon name="run" size={14} /> {t('ui.battle.run')}
                       </PixelButton>
                     )}
-                    {autoStart && (
+                    {autoToggle && (
                       <PixelButton
                         size="sm"
-                        variant="ghost"
+                        variant={auto ? 'success' : 'ghost'}
+                        aria-pressed={auto}
                         onClick={() => {
                           setMenu(null)
-                          setSettings({ autoMode: true })
+                          setSettings({ autoMode: !auto })
                         }}
                       >
-                        <PixelIcon name="dice" size={14} /> {t('ui.battle.autoMode')}
+                        <PixelIcon name="dice" size={14} />{' '}
+                        {t('ui.area.autoMode', { state: t(auto ? 'ui.common.on' : 'ui.common.off') })}
                       </PixelButton>
                     )}
                   </div>
@@ -1538,6 +1540,23 @@ export function SwitchStep({
     setPicked,
   )
   const name = options.find((b) => b.uid === picked)?.name ?? ''
+  // Nobody to send in (the last one standing): the step is BACK and the flag.
+  if (!members.length)
+    return (
+      <div className="flex flex-1 flex-col gap-3">
+        <p className="my-auto text-center text-[20px] leading-tight text-muted">{t('ui.battle.noneToSend')}</p>
+        <BottomDock>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2.5">
+            {onBack && (
+              <PixelButton size="lg" className="px-2" aria-keyshortcuts="Escape" onClick={onBack}>
+                {t('ui.common.back')}
+              </PixelButton>
+            )}
+            <ForfeitButton flag />
+          </div>
+        </BottomDock>
+      </div>
+    )
   const go = (
     <PixelButton
       variant="primary"

@@ -230,7 +230,9 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   at the foot of the screen on phones (`fixed`, `bottom: var(--bottom-nav)`, and room under the page for them), even
   when the page is short; from 768 px they stick to the bottom of the content column. **An area has no tab bar on
   phones** (the rework, 2026-10-25): its bars are the way out (HOME), so `GameLayout` drops the tab bar on `/area`,
-  `--bottom-nav` falls to 0 and `--bottom-safe` gives the bars the home indicator's room instead.
+  `--bottom-nav` falls to 0 and `--bottom-safe` gives the bars the home indicator's room instead. **The top bar says
+  where you are** on `/area` (the user's call, 2026-10-27): the area's name and its round, "2/3", or a check once it's
+  cleared, in the bar's empty side (`AreaTitle`).
 - **The round gauge sits once, under the area's header** (and at the top of a fight, under the top bar): a plain bar,
   a segment per card, no icons, the round beside it. Never again over an action bar (the rework, 2026-10-25).
 - **A step's buttons stay at the foot of the screen on phones** (the rework, 2026-10-25): in a battle's panel the
@@ -512,7 +514,8 @@ Players shouldn't have to make many requests:
   line under a switch, a choice or a panel, so each title says what it does ("Multi EXP (whole team)", "Animation
   length", "Type matchup hints"); a row that would do nothing goes instead of explaining why (Battle music while Sound
   is off, Multi EXP while the config has no bench share). A rule or a "how" belongs to the panel's INFO.
-- **Five places** (docs/43 §3). **Tab bar** (phones): Team, Shop (the Mart: Buy · Upgrades · Bag), **Home** (in the
+- **Five places** (docs/43 §3). **Tab bar** (phones; the user's order, 2026-10-27): Shop (the Mart: Buy · Upgrades ·
+  Bag), Team, **Home** (in the
   middle, under the thumb: a tab like the others, its Poké Ball icon and label), Pokédex, **Social** (the leaderboard,
   Versus, Friends, Trades). The side rail (desktop) has the same five with Home first, SYNC ONLINE at its foot. A tab's
   hit area is the whole column, at least 60 px tall, even where the drawing is smaller. A tab stays lit on each of its
@@ -529,7 +532,8 @@ Players shouldn't have to make many requests:
   the boards and the Hall of Fame (leaderboard); your team and the attack/defense board (Versus); the friend picked, the
   first one at first (Friends, `SplitView`); Mine with NEW LISTING (Trades). A view's actions are pinned over the tab bar
   on phones (`SocialDock`): your place (leaderboard), SAVE TEAM (Versus' My team), SHARE INVITE LINK (Friends), NEW
-  LISTING · n/4 (Trades), CONNECT signed out. Adding a friend happens in the page (`AddFriendForm`: the field, the
+  LISTING · n/4 (Trades), CONNECT signed out. Its room is at the very end of the page (`main:has([data-social-dock])`
+  in index.css), so nothing the page lays after its body — an INFO — ends up under it. Adding a friend happens in the page (`AddFriendForm`: the field, the
   preview of who it is, ADD), not a dialog.
 - **List and detail** (`SplitView`, docs/43 §2): from 1024 px a screen with a list and a detail docks the detail at
   the list's right (440 px, as tall as the screen, scrolling inside itself); a `Sheet` passed as the detail draws
@@ -545,12 +549,16 @@ Players shouldn't have to make many requests:
   Under the details' name: the levels, the rounds done over the rounds that clear the area ("3/5 rounds"; more can be
   played once it's cleared, "7/5") or "Secret area", and where it stands.
 - **Pokémon Center**, laid out as a battle (the rework, 2026-10-25): no area banner, the round's gauge under the top
-  bar, then the healing scene (a Poké Ball per team member) in its quick version (one flash, healed, about 1.6 s) with
-  nothing to press; once it ends it folds away, and the team and the Box have the screen, as cards three to a row
+  bar, then the healing scene (a Poké Ball per team member) — the full scene, the balls set down and the jingle, at
+  2.4× (about 2.7 s, the user's call, 2026-10-27) — with nothing to press; once it ends it folds away, **its sign
+  stays under the strip** (`CenterSign`: the heart and "Pokémon Center") while you're inside, and the team and the Box
+  have the screen, as cards three to a row
   (`PokeCard`, the send-out step's card: a tap opens the details and the team moves). It plays once: back from Home,
   the Center opens on the team (`run.healShown`). Then Home or
   **Continue** (the next encounter), so a run through an area never needs a trip Home; the Center never moves on by
-  itself.
+  itself. **Every round opens with a Center**, outside its deck, even with the whole team at full HP (the user's call,
+  2026-10-27; not right after one, nor in Extreme mode without Centers): it is the round's first step, on its gauge
+  with a heart, met or still to come.
 - **Dots only for something you can act on**: the number of upgrades you can afford (9+ at most), a gold NEW for
   Pokédex entries you haven't looked at. The dot is in the link's accessible name, never colour alone.
 - **Home** (docs/43 §5.2, the user's feedback of 2026-10-27): the area's scene with the team roaming it and, **on its top,
@@ -564,8 +572,9 @@ Players shouldn't have to make many requests:
   one status line, a thin gauge where time or progress runs; gold for one new thing), then the "Coming up" line. The
   **PLAY dock** is CONTINUE (and Stay here, Keep exploring, a green GO TO when they apply). Phones: pinned over the tab
   bar, the page scrolling behind it; 768–1023 px: sticky at the column's foot; from 1024 px: the scene as tall as the
-  window on the left (`SceneStage fill`, a box at most 1.15× as tall as wide), and on the right (clamp(380px, 34%,
-  520px)) the dock, the area's Pokémon (`HereCard`), the notice and the sections. The encounter itself plays on
+  window on the left (`SceneStage fill`, a box at most 1.15× as tall as wide) with **the dock under it, pinned with it,
+  always in sight** (the user's call, 2026-10-27; the scene gives it its room), and on the right (clamp(380px, 34%,
+  520px)) the area's Pokémon (`HereCard`), the notice and the sections. The encounter itself plays on
   `/area`, and Home stays lit in the menus while it does.
 - **The Areas sheet** opens from the area's banner on the area's details (tabs Details · All areas · Regions); a row opens
   its details in the same sheet. From 1024 px it is one wide sheet: the list or the regions on the left, the picked
@@ -573,7 +582,8 @@ Players shouldn't have to make many requests:
   Home's card shape: strip, name, one status line (levels · caught · to catch, or why it's locked), GO at the right.
 - **Notices** (`NoticeCard`, `homeNotices`): what never needs a pop-up over Home is a card in the page, one at a time: a
   feature with a page opening ("Versus is open!", SEE VERSUS; ✕ hides it for the visit, the page's `RulesCard` ends
-  it), Prof. Oak's leaderboard tip, his invite, Support me, a region on offer once its pop-up was seen. Never red. **A
+  it), Prof. Oak's leaderboard tip, Support me, a region on offer once its pop-up was seen. **His invite is the
+  friends list's**, at the top of Friends until ✕ or a share (the user's call, 2026-10-27: not on Home). Never red. **A
   region on offer** is its own picture as the card, "{region} is available", and two buttons: NOT NOW (put away on this
   device for good; the Regions view keeps it) and GO (gold: the professor's lab for that region).
 - **After an encounter the player stays in the area** (a trainer, a wild Pokémon, a find, the Center, the Game
@@ -615,7 +625,7 @@ Players shouldn't have to make many requests:
   "Reached (n)"), the matchups, the rare moves (Send to region, Trade: quiet, small, with no line under TRADE unless it
   can't be listed), and last a folded **Stats** section
   (Speed, Rerolls, Catch value; open with More details). The footer holds the actions: one red at most (Make lead, Add to
-  team), Use an item quiet beside it; a Box Pokémon outside a Center has the lock line; where swaps are open,
+  team), Use an item quiet beside it (the Bag's icon); a Box Pokémon outside a Center has the lock line; where swaps are open,
   `TeamSwapDock`. Let it go is a plain-size danger button at the footer's end, asked twice. Use an item opens a list in
   the same sheet, with Back.
 - **The Team has no scene** (the user's call, 2026-10-27): its title, the team's cards, the Box. Home is where the team
@@ -695,19 +705,28 @@ the actions, the Bag and the team as rows with their HP (docs/42 §3). The histo
   Oak explains a Freeze's or a Paralysis's chance the first time one is short of sure, once the dice are down; with the
   game feel it counts up, docs/38 §3), the extras (Mega, G-MAX,
   Z-MOVE, Type, Run, AUTO-MODE) only when they exist — the battle powers gold, Z-MOVE's hint saying what this roll's type adds (docs/35) — the actions (REROLL with its count — LAST REROLL in gold with the game feel — ATTACK in
-  red; SKIP TURN when stunned; the AUTO note with STOP, none in Versus), low in the panel with the room to spare above
+  red; SKIP TURN when stunned; Versus's AUTO note), low in the panel with the room to spare above
   them (in the thumb's reach), then the Bag and the team pips (the history with More details).
 - **Auto battles** (auto-mode, Versus) play at the `short` motion level unless animations are off (`MotionCap`).
-  Auto-mode is switched in the area (under its header), never from Home; a cleared area's battle also offers it among
-  its extras (AUTO-MODE, ghost, last), which hands the rest of that fight to auto and turns the setting on, like the
-  area's switch. With the play styles on (§34), where it is offered follows the style (`autoAvailable`: Auto
+  Auto-mode is switched in the area (under its header), never from Home; a cleared area's battle has **one switch,
+  AUTO-MODE: ON / OFF, in the same place whichever it is** (its extras' row, last; green and pressed while on, ghost
+  off; the user's call, 2026-10-27: no note and STOP), which hands the rest of that fight to auto or takes it back and
+  sets the setting, like the area's switch. With the play styles on (§34), where it is offered follows the style (`autoAvailable`: Auto
   on explored areas in cleared areas, Idle everywhere), and the catch's result moves on by itself while
-  the autopilot runs (Idle throws the ball itself, §34). The fight keeps the rules it started with (its powers, `state.auto`); STOP gives it back. Prof. Oak's tip about it, the first time,
-  takes the full width above the switch (never squeezed into a column beside it).
+  the autopilot runs (Idle throws the ball itself, §34). The fight keeps the rules it started with (its powers, `state.auto`); the switch gives it back. Prof. Oak's tip about it, the first time,
+  one line ("Auto mode unlocked: you can play completed areas automatically."), takes the full width above the switch
+  (never squeezed into a column beside it).
 - **Team pips** on every screen size (the wide rows went, docs/43 §5.3): menu icon + an HP bar, the one in battle ringed
   in gold, fainted ones grey. Tapping one opens the switch **in the panel**: the send-out's cards of those able to come
   in (the tapped one picked), BACK | GO! | the forfeit flag; it costs the turn (the line says so). After a K.O. the same
-  cards, GO! and the flag. The Bag's "on whom" is the same cards; one that can't be helped says why.
+  cards, GO! and the flag — **with one Pokémon left to come in, it comes in by itself** (the user's call, 2026-10-27).
+  With nobody to send in, a pip still opens the step: "No other Pokémon can come in.", BACK and the flag, the fight's
+  way out. The Bag's "on whom" is the same cards; one that can't be helped says why.
+- **The Pokémon stay animated while a move plays** (`LiveSprite`, the user's call, 2026-10-27): a canvas can draw only
+  a GIF's first frame, so the timeline moves and fades the page's own sprites (and whitens a hit with a CSS filter)
+  instead of drawing still copies, and draws only what lies on them (a tint, an outline); a look it can't take (a
+  wave, a silhouette, coloured copies) draws the still copy for that frame. Over a picture or a world, single battles,
+  attacks (a form change keeps its still copies).
 - **Keys**: 1–6 dice, R reroll, Space attack, B Bag, S switch, Esc back, Enter the step's red button, 1–n pick a card;
   `aria-keyshortcuts` on the buttons. `KeyHints` on PC only, faint until the panel is hovered or focused, always with
   More details.

@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useT } from '@/i18n/react'
 import { getLang } from '@/i18n'
-import { undergroundLive } from '@/engine'
+import { progressOf, undergroundLive } from '@/engine'
 import { useDexNew } from '@/lib/dexSeen'
 import { affordableUpgrades } from '@/lib/upgrades'
 import { pushToast, useGame } from '@/store/game'
@@ -35,10 +35,10 @@ const DEX: NavItem = { to: '/pokedex', label: 'ui.nav.pokedex', icon: 'navDex' }
 // The other trainers in one tab (docs/43 §3): the leaderboard, Versus, Friends, Trades.
 const SOCIAL: NavItem = { to: '/social', label: 'ui.nav.social', icon: 'navFriends' }
 
-/** Side rail (desktop): Home first. */
-const SIDE_NAV = [HOME, TEAM, MART, DEX, SOCIAL]
-/** Bottom bar (phones): Home in the middle, under the thumb, a tab like the others. */
-const BOTTOM_NAV = [TEAM, MART, HOME, DEX, SOCIAL]
+/** Side rail (desktop): Home first, then the bar's order. */
+const SIDE_NAV = [HOME, MART, TEAM, DEX, SOCIAL]
+/** Bottom bar (phones): Home in the middle, under the thumb, a tab like the others; the Mart first (the user, 2026-10-27). */
+const BOTTOM_NAV = [MART, TEAM, HOME, DEX, SOCIAL]
 
 /** Home stays lit while an encounter plays on /area: it is where you are. A tab stays lit on each of its views. */
 const isActive = (n: NavItem, pathname: string) =>
@@ -176,6 +176,39 @@ function GoldButton() {
  * battle: mid-fight the way out (the Mart) is shut and says why, the rest (the sun or moon, the energy, the trainer
  * menu) works.
  */
+/**
+ * Inside an area, the top bar's empty side says where you are (the user's call, 2026-10-27): the area's name and its
+ * round, "2/3", or a check once it's cleared. Elsewhere it is the bar's room.
+ */
+function AreaTitle() {
+  const { t } = useT()
+  const inArea = useLocation().pathname === '/area'
+  const area = useGame((s) => (s.run.rebattle ? undefined : s.data.areas.find((a) => a.id === s.run.areaId)))
+  const progress = useGame((s) => (s.save && area ? progressOf(s.save, area.id) : null))
+  if (!inArea || !area || !progress) return <span className="flex-1" />
+  const need = area.roundsToClear || 0
+  const done = progress.cleared || (need > 0 && (progress.roundsDone ?? 0) >= need)
+  const round = Math.min((progress.roundsDone ?? 0) + 1, need)
+  return (
+    <p className="m-0 flex min-w-0 flex-1 items-center gap-2 leading-none" data-area-title>
+      <span className="min-w-0 truncate text-[20px]">{area.name}</span>
+      {done ? (
+        <span className="flex shrink-0 items-center" title={t('ui.home.stTitle.cleared')}>
+          <PixelIcon name="check" size={16} />
+          <span className="sr-only">{t('ui.home.stTitle.cleared')}</span>
+        </span>
+      ) : need > 0 ? (
+        <span className="shrink-0 font-pixel-sm text-[16px] tabular-nums text-muted">
+          <span aria-hidden>
+            {round}/{need}
+          </span>
+          <span className="sr-only">{t('ui.home.roundOf', { n: round, total: need })}</span>
+        </span>
+      ) : null}
+    </p>
+  )
+}
+
 export function Header() {
   const save = useGame((s) => s.save)
   if (!save) return null
@@ -185,7 +218,7 @@ export function Header() {
         {/* Day and night (docs/32): the sun or the moon, far left, while in Johto. */}
         <DayNightButton />
         <EnergyPill />
-        <span className="flex-1" />
+        <AreaTitle />
         <CashChip />
         <GoldButton />
         <PlayerMenu />

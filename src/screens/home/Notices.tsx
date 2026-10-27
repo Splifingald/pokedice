@@ -18,7 +18,7 @@ import { PixelIcon, type IconName } from '@/components/icons'
 import { LeaderboardNotice } from '@/components/LeaderboardTutorial'
 import { NoticeCard } from '@/components/NoticeCard'
 import { PixelButton } from '@/components/PixelButton'
-import { ShareNotice, useShareSeen } from '@/components/ShareTutorial'
+import { useShareSeen } from '@/components/ShareTutorial'
 import { SupportNotice, useDonationReady } from '@/components/SupportModal'
 import { regionPicture } from '@/fx/regionArt'
 import { useGame } from '@/store/game'
@@ -176,8 +176,9 @@ export function HomeNotices({ onRegionGo }: { onRegionGo: () => void }) {
   const donationReady = useDonationReady()
   const [, rerender] = useState(0)
   const inside = useInWorld().inside
+  // Prof. Oak's invite waits on the friends list, not here (the user's call, 2026-10-27).
   const due = homeNotices(save, data, { shareSeen, signedIn, now }).filter(
-    (n) => !putAway.has(n) && (n !== 'donation' || donationReady),
+    (n) => n !== 'share' && !putAway.has(n) && (n !== 'donation' || donationReady),
   )
   // The region's own pop-up opens first, once (RegionBar); afterwards the offer waits here, at the top of the page.
   // Not inside a small world, where no other region is offered (docs/21).
@@ -200,7 +201,6 @@ export function HomeNotices({ onRegionGo }: { onRegionGo: () => void }) {
   if (!first || !save) return null
   if (first === 'leaderboard') return <LeaderboardNotice />
   if (first === 'donation') return <SupportNotice />
-  if (first === 'share') return <ShareNotice />
   const target = featureTarget(first, save, data, t)
   if (!target) return null
   return (

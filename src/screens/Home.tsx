@@ -120,11 +120,15 @@ function HomeView({ area }: { area: Area }) {
   const cropTop = Math.min(1 - SCENE_SHOWN, Math.max(0, walkMid - SCENE_SHOWN / 2))
   const dock = <PlayDock area={area} />
   const [dockRef, dockH] = useHeight<HTMLDivElement>()
+  // PC: CONTINUE under the scene, in the pinned column, always in sight (the user's call, 2026-10-27); the scene gives it
+  // its room in the window's height.
+  const [wideDockRef, wideDockH] = useHeight<HTMLDivElement>()
+  const below = strip + (wide && wideDockH ? wideDockH + 12 : 0)
 
   return (
     <div
       className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_clamp(380px,34%,520px)] lg:items-start lg:gap-5"
-      style={{ ['--below' as string]: `${strip}px` }}
+      style={{ ['--below' as string]: `${below}px` }}
     >
       <h1 className="sr-only">{t('ui.home.heading', { area: area.name })}</h1>
       {/* The scene: full width on a phone, bleeding to the edges; on PC as tall as the window (less the top bar and
@@ -169,10 +173,9 @@ function HomeView({ area }: { area: Area }) {
             </div>
           )}
         </div>
+        {wide && <div ref={wideDockRef}>{dock}</div>}
       </section>
       <div className="flex min-w-0 flex-col gap-4">
-        {/* PC: PLAY heads the column beside the scene. */}
-        {wide && dock}
         {wide && <HereCard area={area} onOpen={() => openSheet('details')} />}
         <HomeNotices onRegionGo={() => setRegionGo((n) => n + 1)} />
         <section aria-label={t('ui.home.widgets')}>

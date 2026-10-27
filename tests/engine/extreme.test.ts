@@ -131,7 +131,6 @@ describe('no Pokémon Centers', () => {
     teamFainted: true,
     isFirstInArea: true,
     pokedex: save.pokedex,
-    centerUseful: true,
     ...over,
   })
 

@@ -165,7 +165,8 @@ function SheetStack({
     const at = save.team.indexOf(inst.id)
     const useItem = hasItems && inst.revivesAt == null && (
       <PixelButton size="lg" className="min-w-0" onClick={() => push({ kind: 'items', id: inst.id })}>
-        <PixelIcon name="potion" size={20} />
+        {/* The Bag, as in a fight (the user, 2026-10-27): what opens is the bag's items, not a potion. */}
+        <PixelIcon name="bag" size={20} />
         {t('ui.itemPanel.title')}
       </PixelButton>
     )

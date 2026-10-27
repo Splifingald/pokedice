@@ -154,7 +154,8 @@ export function TrainerCard() {
                 <PixelIcon name="pencil" size={18} />
               </button>
             </p>
-            <div className="flex min-w-0 items-center gap-2">
+            {/* The team keeps its width; Stats goes under it when the row is short (it covered the minis, 2026-10-27). */}
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2">
               <span
                 className="light-scope inline-flex shrink-0 items-center gap-1 bg-night px-2 pb-[3px] pt-0.5 text-[18px] leading-none text-gold-light"
                 aria-label={`${t('ui.card.badges')}: ${badgesHeld(save, data)}`}
@@ -163,7 +164,7 @@ export function TrainerCard() {
                 <PixelIcon name="badge" size={14} />
                 {badgesHeld(save, data)}
               </span>
-              <ul className="m-0 flex min-w-0 list-none items-center p-0" aria-label={t('ui.team.title')}>
+              <ul className="m-0 flex max-w-full flex-wrap list-none items-center p-0 pr-1" aria-label={t('ui.team.title')}>
                 {teamOf(save).map((p, i) => (
                   <li key={i} className="-my-1.5 -mr-1">
                     <MiniSprite dex={p.dex} size={32} alt={data.species[p.dex]?.name ?? ''} />

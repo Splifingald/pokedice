@@ -7,6 +7,7 @@ import { BadgeIcon } from '@/components/BadgeIcon'
 import { ForfeitButton } from '@/components/ForfeitButton'
 import { PixelButton } from '@/components/PixelButton'
 import { AreaSceneBox, AreaTeam } from '@/screens/area/AreaIdle'
+import { CenterSign } from '@/screens/area/CenterView'
 import { StagePanel } from '@/screens/area/StagePanel'
 import { SwitchStep } from '@/screens/battle/BattleView'
 import { Stamp } from '@/screens/battle/Stamp'
@@ -71,9 +72,19 @@ export function AreaDeepBits() {
         <p className="text-lg">The switch shows with a save of two Pokémon or more.</p>
       )}
 
+      <div className="flex w-[380px] max-w-full flex-col gap-2">
+        <b className="text-lg">The last one standing taps its pip: nobody to send in, BACK and the flag</b>
+        <SwitchStep options={[]} foe={19} onPick={() => {}} onBack={() => {}} />
+      </div>
+
       <div className="flex items-center gap-3">
         <span className="text-lg">The forfeit flag, at the side of a GO! row:</span>
         <ForfeitButton flag />
+      </div>
+
+      <div className="grid max-w-md gap-2">
+        <b className="text-lg">Inside a Pokémon Center: its sign under the round&apos;s strip</b>
+        <CenterSign />
       </div>
 
       {area && (

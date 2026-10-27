@@ -42,6 +42,7 @@ import { pushToast, useGame } from '@/store/game'
 import { openInviteRewards, seeInviteRules, useInviteRewards } from '@/store/invites'
 import { cx } from '@/theme/util'
 import { TrainerName } from '@/components/TrainerName'
+import { ShareNotice, useShareSeen } from '@/components/ShareTutorial'
 
 /** Off the boards after 72 hours without playing: shown, but quieter. */
 const AWAY_MS = 72 * 3_600_000
@@ -52,10 +53,17 @@ export function FriendsScreen() {
   const max = useGame((s) => s.data.config.maxFriends)
   const count = useFriends((s) => (s.list ? s.list.length : null))
   const signedIn = auth.status === 'signed_in'
+  // Prof. Oak's invite lives here, where friends are made, until ✕ or a share (the user's call, 2026-10-27: not Home).
+  const shareSeen = useShareSeen()
 
   return (
     <div className="flex flex-col gap-3">
       <PageHead icon="navFriends" title={t('ui.friends.title')} social="friends" />
+      {!shareSeen && (
+        <div className="mx-auto w-full max-w-xl">
+          <ShareNotice />
+        </div>
+      )}
       {!isSupabaseConfigured || auth.status === 'unavailable' ? (
         <p className="m-0 mx-auto w-full max-w-xl bg-paper px-3.5 py-4 text-center text-[20px] leading-[1.15] shadow-card">
           {t('ui.friends.offline')}

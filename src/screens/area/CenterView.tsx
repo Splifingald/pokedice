@@ -6,10 +6,12 @@ import { useT } from '@/i18n/react'
 import { BoxFilter, sortBox, type BoxSort } from '@/components/BoxSort'
 import { PokeCard } from '@/components/PokeCard'
 import { PixelButton } from '@/components/PixelButton'
+import { PixelIcon } from '@/components/icons'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { StageCanvas } from '@/components/StageCanvas'
 import { loadSprite, spriteKey } from '@/fx/sprites'
 import { loadCenterArt } from '@/fx/scenes'
+import { quicken } from '@/fx/timeline'
 import { centerTimeline } from '@/fx/timelines/center'
 import { useMotion } from '@/lib/motion'
 import { useMediaQuery } from '@/lib/useMediaQuery'
@@ -23,6 +25,8 @@ const BOX_SORTS: readonly BoxSort[] = ['dex', 'level', 'type', 'newest']
 
 /** Chansey, behind the healing machine's counter. */
 const NURSE = 113
+/** How much faster than the full scene (6.4 s) the Center's healing plays. */
+const CENTER_PACE = 2.4
 
 /** Pokémon Center: heal jingle, then team management — tap any Pokémon for its sheet and team actions. */
 export function CenterView() {
@@ -39,10 +43,11 @@ export function CenterView() {
   const teamSize = useGame((s) => s.save?.team.length ?? 1)
   const wide = useMediaQuery('(min-width: 1024px)')
   const area = useGame((s) => s.data.areas.find((a) => a.id === s.run.areaId))
-  // The machine plays once, on arrival, and quickly: always the short version (one flash, healed), on the page.
+  // The machine plays once, on arrival: the full scene (the balls set down, the jingle) at a brisk pace, a little longer
+  // than the one flash it was (the user's call, 2026-10-27: about 2.7 s).
   const [machine] = useState(() => ({
     ready: Promise.all([loadSprite(NURSE, false), loadCenterArt()]),
-    timeline: centerTimeline({ balls: teamSize, nurse: spriteKey(NURSE, false), short: true }),
+    timeline: quicken(centerTimeline({ balls: teamSize, nurse: spriteKey(NURSE, false) }), CENTER_PACE),
   }))
   // The team is healed already (engage): once the jingle has started, leaving and coming back doesn't play it again.
   useEffect(() => markHealShown(), [])
@@ -75,6 +80,9 @@ export function CenterView() {
   // The scene (docs/43 §5.3, as a fight): wide screens keep it on the left — the healing, then the area with the team,
   // healed; phones play the healing at the top, then fold it away so the team and the Box get the screen (the user's
   // rule), the round's strip staying under the top bar.
+  // Inside, a small banner says where you are, under the round's strip, for as long as you stay (the user's call,
+  // 2026-10-27).
+  const sign = <CenterSign />
   const stage = wide ? (
     healing ? (
       <div className="relative overflow-hidden shadow-ledge">
@@ -82,18 +90,24 @@ export function CenterView() {
         {heal}
       </div>
     ) : (
-      area && <AreaSceneBox area={area} />
+      area && (
+        <div className="flex flex-col gap-2">
+          {sign}
+          <AreaSceneBox area={area} />
+        </div>
+      )
     )
   ) : (
     <div className="relative">
       <RunRoundGauge strip className="absolute inset-x-0 top-0 z-30" />
       {/* Its height kept by the strip when the healing has gone. */}
-      <div aria-hidden className="h-[6px]" />
+      <div aria-hidden className="h-[14px]" />
+      {!healing && sign}
       <AnimatePresence initial={false}>
         {healing && (
           <motion.div
             key="heal"
-            className="-mt-[6px] overflow-hidden"
+            className="-mt-[14px] overflow-hidden"
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25 }}
           >
@@ -187,5 +201,17 @@ export function CenterView() {
       {/* The Center is where the team changes: the sheet's swap dock (one tap swaps one in). */}
       <SheetModal view={view} onClose={done} manage swaps />
     </>
+  )
+}
+
+/** The Pokémon Center's sign while you're inside: its heart and its name. */
+export function CenterSign() {
+  const { t } = useT()
+  return (
+    // The panel's colours (both themes), a Center's pink rule under it.
+    <p className="m-0 flex min-h-[40px] items-center justify-center gap-2 bg-panel px-3 text-[20px] leading-none text-ink shadow-[inset_0_-3px_0_#f2829f]">
+      <PixelIcon name="heart" size={18} />
+      {t('ui.home.kind.center')}
+    </p>
   )
 }

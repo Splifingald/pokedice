@@ -1,5 +1,6 @@
 import {
   asSeenBy,
+  centersOn,
   deckSize,
   fightBosses,
   gameFeelOn,
@@ -85,6 +86,9 @@ export function RoundGauge({
   const met = progress.drawn ?? []
   const inRound = remaining > 0
   const justDone = !inRound && met.length > 0 // the round's last card was just met
+  // A round not dealt yet opens with its Pokémon Center, outside the deck (never right after one, nor in Extreme mode
+  // without Centers): its first step, shown ahead (the user's call, 2026-10-27).
+  const opening = !inRound && !justDone && !progress.lastCenter && (!save || centersOn(save, data))
   // Saves from before rounds were tracked know how many cards are left, not which were met.
   const total = inRound
     ? progress.drawn
@@ -92,7 +96,7 @@ export function RoundGauge({
       : Math.max(deckSize(area, data), remaining)
     : justDone
       ? met.length
-      : deckSize(area, data)
+      : deckSize(area, data) + (opening ? 1 : 0)
   const metCount = inRound ? total - remaining : justDone ? total : 0
   // Which round this is, of how many; every round done fills the gauge in green.
   const need = area.roundsToClear || 1
@@ -121,7 +125,11 @@ export function RoundGauge({
     : t(`ui.area.roundProgress${metCount === 1 ? '.one' : ''}`, { done: metCount, total })
   // Where the round's Pokémon Centers are (the user's call, 2026-10-27): a heart on their segments, met or still to come,
   // so a hurt team knows how far its next heal is. The deck is drawn from its end.
-  const order: (DeckCard | undefined)[] = inRound ? [...met, ...[...progress.deck!].reverse()] : met
+  const order: (DeckCard | undefined)[] = inRound
+    ? [...met, ...[...progress.deck!].reverse()]
+    : opening
+      ? ['center']
+      : met
   const isCenter = (i: number) => order[i] === 'center'
   // Where the player is (the user, 2026-10-27): the cards met fill in (green once the area is cleared, the free play's
   // rounds), the one being played is white on a fight's strip, the next one has a white edge on the page's gauge, and

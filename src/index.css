@@ -120,6 +120,13 @@
   :root {
     --bottom-nav: calc(60px + env(safe-area-inset-bottom));
   }
+  /* A Social page's pinned dock (SocialDock): its room at the very end of the page, under everything (the user,
+     2026-10-27: the Trades' INFO, laid after an in-page spacer, sat under the dock out of reach). */
+  main:has([data-social-dock])::after {
+    content: '';
+    display: block;
+    height: 76px;
+  }
 }
 
 html,

@@ -79,8 +79,8 @@ What it shows, beyond the numbers:
 ## 3. The map
 
 ```
-Phone tab bar:       Team · Mart · ( Home ) · Pokédex · Social
-PC rail (left):      Home · Team · Mart · Pokédex · Social
+Phone tab bar:       Mart · Team · ( Home ) · Pokédex · Social   (the user's order, 2026-10-27)
+PC rail (left):      Home · Mart · Team · Pokédex · Social
 Top bar:             [sun/moon] [energy] ……………… [₽ gold → Mart] [you → trainer menu]
 
 Home ─ the area's scene, the team roaming
@@ -422,6 +422,24 @@ Today ~28 one-time pop-ups take turns (`PopupQueue`). This pass:
 | The raid page: no banner over the card, the back on the picture; the Pokémon in the middle | The plate lies on the card; big sprites load at once and move on to the local sprite when a request hangs (`SPRITE_PATIENCE_MS`, the card and the canvas's) |
 | The raid page: no book, "This raid" always open | Done; the overhaul's rows ride with the Raids page's INFO |
 | Upgrades: the price as a tall column read oddly | The price is a row at the card's foot, as the Buy tab's |
+
+### The third round (2026-10-27)
+
+| Feedback | Done |
+|---|---|
+| A fight's Pokémon switched between animated and still at each attack | The move moves the page's animated sprites (`LiveSprite`); the canvas draws only what lies on them |
+| Inside areas, the top bar: the area's name and its round | `AreaTitle`: the name, "2/3" or a check once cleared |
+| The Centers on the gauge, even the one outside the deck; a Center even at full HP | Every round opens with its Center, recorded as the round's first step; the gauge shows it ahead |
+| The Center's animation a bit longer, a banner while inside | The full scene at 2.4× (about 2.7 s); `CenterSign` under the strip |
+| The friend invite only on the friends list | Off Home; at the top of Friends until ✕ or a share |
+| The tab bar: Shop, Team, Home, Pokédex, Social | Done (the PC rail: Home, Shop, Team, Pokédex, Social) |
+| Use an item: the Bag's icon | Done |
+| Auto-mode in a fight: one button with its states | AUTO-MODE: ON / OFF in the same place; no note and STOP |
+| The last Pokémon after a K.O. comes in by itself; the forfeit still a tap away | Sent at once; a pip opens BACK and the flag even with nobody to send |
+| Prof. Oak's auto-mode tip: one line | "Auto mode unlocked: you can play completed areas automatically." |
+| Trades: INFO out of reach under NEW LISTING | A Social dock's room is at the page's very end (`main:has([data-social-dock])`) |
+| PC Home: CONTINUE under the scene, always in sight | The dock under the scene, pinned with it |
+| The trainer card: Stats over the team | The row wraps; the team keeps its width |
 
 ## 8. Not in this pass
 

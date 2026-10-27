@@ -24,7 +24,6 @@ import {
   catchValueOf,
   centerHeal,
   centersOn,
-  centerWouldHelp,
   challengeEncounter,
   centerIsNext,
   encounterEnergyCost,
@@ -257,7 +256,6 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
     isFirstInArea: run.firstInArea,
     pokedex: save.pokedex,
     forceKind,
-    centerUseful: centerWouldHelp(save, data),
     player: playerSideOf(save),
     noCenters: !centersOn(save, data),
     // A Shiny Parade covering this area: wild Pokémon are more often shiny.

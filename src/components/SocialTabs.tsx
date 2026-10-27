@@ -141,23 +141,22 @@ export function SocialColumns({
 
 /**
  * A Social view's actions at the foot (docs/43 §2): on a phone pinned over the tab bar, the page scrolling behind it
- * (a spacer keeps the last row clear of it); from 768 px it sticks to the bottom of the content; `wideHidden` leaves
+ * (the room under the page's last row is index.css's); from 768 px it sticks to the bottom of the content; `wideHidden` leaves
  * it to the PC layout's side column from 1024 px, where the same actions sit in the flow.
  */
 export function SocialDock({ children, wideHidden }: { children: ReactNode; wideHidden?: boolean }) {
   return (
-    <>
-      <div aria-hidden className={cx('h-[76px] md:hidden', wideHidden && 'lg:hidden')} />
-      <div
-        className={cx(
-          'fixed inset-x-0 z-30 border-t-[3px] border-edge bg-parchment px-3 py-2 md:sticky md:inset-x-auto md:-mx-3',
-          wideHidden && 'lg:hidden',
-        )}
-        style={{ bottom: 'var(--bottom-nav)', paddingBottom: 'calc(0.5rem + var(--bottom-safe))' }}
-      >
-        <div className="mx-auto flex max-w-xl flex-col gap-1.5">{children}</div>
-      </div>
-    </>
+    <div
+      // Its room at the page's foot is index.css's (`main:has([data-social-dock])`), after everything on the page.
+      data-social-dock=""
+      className={cx(
+        'fixed inset-x-0 z-30 border-t-[3px] border-edge bg-parchment px-3 py-2 md:sticky md:inset-x-auto md:-mx-3',
+        wideHidden && 'lg:hidden',
+      )}
+      style={{ bottom: 'var(--bottom-nav)', paddingBottom: 'calc(0.5rem + var(--bottom-safe))' }}
+    >
+      <div className="mx-auto flex max-w-xl flex-col gap-1.5">{children}</div>
+    </div>
   )
 }
 
