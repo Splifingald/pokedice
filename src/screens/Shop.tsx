@@ -416,7 +416,8 @@ function MartTabs({
   const { t } = useT()
   const label = (icon: 'navShop' | 'navUpgrades' | 'bag', text: string) => (
     <>
-      <PixelIcon name={icon} size={20} className="shrink-0" />
+      {/* Icons from 420 px: on a phone a long word (Améliorations, Potenziamenti) needs the room. */}
+      <PixelIcon name={icon} size={20} className="hidden shrink-0 min-[420px]:block" />
       {text}
     </>
   )

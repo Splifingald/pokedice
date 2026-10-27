@@ -507,17 +507,20 @@ export function UpgradesPanel() {
               : []),
           ]}
         />
+        {/* On a phone the coin and the count (its name for screen readers), so the views and the filter share a row. */}
         <button
           type="button"
           aria-pressed={affordOnly}
+          aria-label={`${t('ui.upgrades.affordable')} ${canCount}`}
+          title={t('ui.upgrades.affordable')}
           onClick={() => setAffordOnly((v) => !v)}
           className={cx(
-            'ml-auto inline-flex min-h-[44px] items-center gap-1.5 whitespace-nowrap px-2.5 text-[18px] md:min-h-[40px]',
+            'ml-auto inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 whitespace-nowrap px-2.5 text-[18px] md:min-h-[40px]',
             affordOnly ? 'bg-ink text-panel' : 'bg-paper shadow-ring-line',
           )}
         >
           <PixelIcon name="coin" size={14} />
-          {t('ui.upgrades.affordable')}
+          <span className="hidden sm:inline">{t('ui.upgrades.affordable')}</span>
           <i
             className={cx(
               'font-pixel-sm text-[16px] not-italic',
