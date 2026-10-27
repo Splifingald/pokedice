@@ -270,14 +270,10 @@ export function ContinueButton({
 export function StayHere({ sub, onClick }: { sub: string; onClick: () => void }) {
   const { t } = useT()
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={`${t('ui.home.stayHere')} · ${sub}`}
-      className="min-h-[44px] self-center px-3 text-[20px] leading-none underline decoration-2 underline-offset-4"
-    >
+    // A real button, the secondary beside GO TO's red (the user's call, 2026-10-27: an underlined word read as a link).
+    <PixelButton size="md" className="w-full" onClick={onClick} aria-label={`${t('ui.home.stayHere')} · ${sub}`}>
       {t('ui.home.stayHere')}
-    </button>
+    </PixelButton>
   )
 }
 

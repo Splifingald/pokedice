@@ -103,10 +103,10 @@ throw plays on the stage.
 
 `autoTravel` and `retreatFrom`, along the region's main chain (secret areas aren't in it):
 
-- **On**: between encounters, once the area is **cleared** and the next area of the chain is **open** (unlocked, not
-  closed, its date come), it goes there. Auto on explored areas only goes into a **cleared** next area (it plays
-  nowhere else), so switched on behind the front, it walks forward to the last explored area and plays there.
-- **A round lost** (a full K.O.): the wipe card is skipped and it goes to **the area before** in the chain for **exactly
+- **Idle, on**: between encounters, once the area is **cleared** and the next area of the chain is **open** (unlocked,
+  not closed, its date come), it goes there. **Auto on explored areas never changes area on its own** (the user's call,
+  2026-10-27): it plays the area the player chose, and a round lost there is tried again there.
+- **A round lost** (a full K.O., Idle): the wipe card is skipped and it goes to **the area before** in the chain for **exactly
   one round** — the detour, `save.idle.detour = { from, to, rounds }`, `rounds` being what that area had done — then,
   the round counted, **back to the area lost**. The first area of a region, or a secret one, has nothing before it: the
   same area again.

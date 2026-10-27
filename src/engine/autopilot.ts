@@ -133,9 +133,9 @@ export function retreatFrom(
 }
 
 /**
- * Between encounters, where the autopilot should be instead of `hereId`: back from a detour whose round is done, or on
- * to the next area of the chain once this one is cleared and the next is open (Explored: only into a cleared one, as
- * it plays nowhere else). Null: stay.
+ * Between encounters, where the autopilot should be instead of `hereId`: back from a detour whose round is done, or (Idle
+ * only) on to the next area of the chain once this one is cleared and the next is open. Auto on explored areas never
+ * moves: it plays the area the player chose. Null: stay.
  */
 export function autoTravel(
   save: SaveData,
@@ -150,11 +150,11 @@ export function autoTravel(
     const back = data.areas.find((a) => a.id === d.from)
     return { areaId: back && enterable(save, data, back, now) ? back.id : hereId, detour: null }
   }
-  if (!progressOf(save, hereId).cleared) return null
+  // Auto-mode stays in the area the player put it in (the user's call, 2026-10-27); only Idle moves on.
+  if (style !== 'idle' || !progressOf(save, hereId).cleared) return null
   const { chain, idx } = chainOf(data, hereId)
   const next = idx >= 0 ? chain[idx + 1] : undefined
   if (!next || !enterable(save, data, next, now)) return null
-  if (style === 'explored' && !progressOf(save, next.id).cleared) return null
   return { areaId: next.id, detour: null }
 }
 
@@ -293,7 +293,11 @@ export function autopilotStep(
     case 'stalemate':
       return { do: 'leave' }
     case 'wipe':
-      return { do: 'retreat', ...retreatFrom(save, data, v.areaId, now) }
+      // Idle falls back a step to level up; auto-mode tries again where it is.
+      return {
+        do: 'retreat',
+        ...(style === 'idle' ? retreatFrom(save, data, v.areaId, now) : { areaId: v.areaId, detour: null }),
+      }
     case 'idle': {
       if (v.held) return { do: 'wait', why: 'held' }
       const d = save.idle?.detour

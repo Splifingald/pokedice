@@ -121,10 +121,11 @@ describe('the way between areas', () => {
     expect(autoTravel(at(B.id, 1), ON, 'idle', B.id)).toBeNull()
   })
 
-  it('Auto on explored areas only moves into areas it plays: cleared ones', () => {
-    expect(autoTravel(at(A.id, 2), ON, 'explored', A.id)).toEqual({ areaId: B.id, detour: null })
-    // B is cleared, C is open but not cleared: B is the last explored area, it stays.
+  it('Auto on explored areas never changes area on its own (the user, 2026-10-27)', () => {
+    // A is cleared and B, cleared too, is next: it stays in A all the same.
+    expect(autoTravel(at(A.id, 2), ON, 'explored', A.id)).toBeNull()
     expect(autoTravel(at(B.id, 2), ON, 'explored', B.id)).toBeNull()
+    expect(autoTravel(at(A.id, 2), ON, 'idle', A.id)).toEqual({ areaId: B.id, detour: null })
   })
 
   it('a lost round sends it one area back, for exactly one round, then home again', () => {

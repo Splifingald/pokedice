@@ -598,7 +598,8 @@ Players shouldn't have to make many requests:
 - **Behind in the region** (the furthest open area of the region's main chain is elsewhere: `latestOpenArea`; secret
   areas don't count; not while an encounter is under way): with nothing of its own waiting where the player stands (a
   cleared area's free play), **CONTINUE itself reads GO TO {area}** and travels there, its second line saying what
-  waits there (the round, the gym leader, the legend); **Stay here**, a link under it (44 px tall), keeps the free play
+  waits there (the round, the gym leader, the legend); **Stay here**, a secondary button under it, the dock's width (the
+  user's call, 2026-10-27: an underlined word read as a link), keeps the free play
   CONTINUE gave (`ContinueButton`, `StayHere`; docs/38 U4a). With something else here (a gym, a legend, a raid, a
   secret area's rounds, a portal, the nightmare, or a closed area's shut CONTINUE saying why) CONTINUE stays, and a
   green GO TO {area} sits under it. Until the player is there or the whole chain is cleared. On wide screens the scene gives up the height of what
