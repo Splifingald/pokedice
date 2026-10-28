@@ -88,9 +88,10 @@ test('the hand walks a new player to the Fire die and back to Route 1, once', as
   await expect(page).toHaveURL(/\/home$/)
   await expect(page.getByRole('button', { name: 'CONTINUE', exact: true }).first()).toBeVisible()
   await expect(bubble(page)).toHaveCount(0)
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}'))
-  expect(saved.diceTutorial).toBe('done')
-  expect(saved.dieLevels.fire).toBe(2)
+  // The save's write is debounced: wait for it rather than read it at once.
+  const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}'))
+  await expect.poll(async () => (await saved()).diceTutorial).toBe('done')
+  expect((await saved()).dieLevels.fire).toBe(2)
 })
 
 test('on PC the hand points the same way, and the bubble keeps out of the way', async ({ page }) => {
