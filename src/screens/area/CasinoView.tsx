@@ -177,7 +177,7 @@ export function CasinoView() {
 
         <p
           className={cx(
-            'min-h-[2.5rem] text-center text-2xl leading-tight',
+            'light-scope min-h-[2.5rem] text-center text-2xl leading-tight',
             win ? 'text-gold' : 'text-panel',
           )}
           aria-live="polite"
@@ -195,7 +195,7 @@ export function CasinoView() {
         >
           {t('ui.casino.spin', { cost })}
         </PixelButton>
-        {!canPay && !spinning && <p className="text-lg text-danger-light">{t('ui.casino.tooPoor')}</p>}
+        {!canPay && !spinning && <p className="light-scope text-lg text-danger-light">{t('ui.casino.tooPoor')}</p>}
       </section>
 
       <section className="pixel-panel mx-auto w-full max-w-lg p-3" aria-label={t('ui.casino.payouts')}>

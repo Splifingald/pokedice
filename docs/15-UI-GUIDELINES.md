@@ -68,6 +68,12 @@ Rules:
 - **Bright fills keep Daybreak's colours for what's on them**: `bg-gold`, `bg-hp-green`, `bg-hp-yellow` and anything
   with `light-scope` bring the light variables back (navy text and outlines). Put `light-scope` on any other bright
   fill (medals, type-coloured cells).
+- **A fixed fill under a themed text colour needs `light-scope`.** `panel`, `paper`, `gold-light`, `gold-pale` and
+  `danger-light` are pale at daybreak but dark at dusk: as text on something that keeps its colour in both themes
+  (`bg-night`, a hex fill such as `bg-[#dde5f0]`, a picture, `.pixel-panel-dark`) they read at daybreak and vanish at
+  dusk ("Very rare" in gold-light on a night chip: 2:1). Put `light-scope` on the chip or the line, or use a fixed
+  colour (`text-white`). White text on a picture (`.lv-ink`) is a light scope by itself, so its `text-gold-light`
+  stays a light gold.
 - **Night chips**: a chip that is dark in both themes (the wallet, energy, prices, a hint, the Hall of Fame card) is
   `light-scope bg-night` with `text-gold-light` (or `text-gold`, `text-panel`). Selected tabs and table headers are
   `bg-ink text-panel` and invert in Dusk. Scrims are `bg-night/55`; HP and gauge tracks are `bg-night`.
@@ -88,7 +94,8 @@ Rules:
   (`SCOPES.nightmare`), on Darkrai's area raid's (§29). Bright fills inside them keep Daybreak's navy, as at dusk;
   `tests/daybreak.test.ts` holds their text to 4.5:1 and their outlines to 3:1.
 - **Tests**: `tests/daybreak.test.ts` keeps Dusk's text at 4.5:1 on every surface and outlines at 3:1;
-  `e2e/theme.spec.ts` runs axe colour-contrast on every main screen in Dusk. Check a new screen in both
+  `e2e/theme.spec.ts` runs axe colour-contrast on every main screen in Dusk, and on `/kitchen-sink` in both themes,
+  where no text may fail at dusk that passes at daybreak. Check a new screen in both
   (`/kitchen-sink` has the theme switch).
 
 ## 3. Type

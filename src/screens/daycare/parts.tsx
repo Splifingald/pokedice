@@ -277,11 +277,11 @@ export function RushBarView({
       >
         <span className="grid justify-items-center gap-0.5">
           <span className="text-[0.8em] leading-none">{t('ui.dayCare.eggNow')}</span>
-          {/* The button stays gold in both themes, so the "short" red is a fixed one that reads on gold. */}
+          {/* Short of ₽ the button is drawn unavailable (hatched, the theme's fill), so the theme's red. */}
           <span
             className={cx(
               'inline-flex items-center gap-1 font-pixel-sm text-[0.625em] leading-none',
-              short > 0 && 'text-[#9b2416]',
+              short > 0 && 'text-danger',
             )}
           >
             <PixelIcon name="coin" size={12} />

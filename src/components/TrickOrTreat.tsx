@@ -517,7 +517,7 @@ export function TierChip({ tier }: { tier: TrickTier }) {
       ? 'bg-paper text-ink'
       : tier === 'rare'
         ? 'light-scope bg-gold-light text-ink'
-        : 'bg-night text-gold-light'
+        : 'light-scope bg-night text-gold-light'
   return (
     <span className={cx('inline-flex items-center gap-1 px-1.5 text-lg leading-tight shadow-ring', tone)}>
       {tier !== 'common' && <PixelIcon name="sparkle" size={12} />}

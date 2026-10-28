@@ -155,7 +155,7 @@ export function UndergroundDig() {
               <span
                 key={wall.used}
                 className={cx(
-                  'ug-count font-pixel-sm text-[20px] leading-none tabular-nums',
+                  'ug-count light-scope font-pixel-sm text-[20px] leading-none tabular-nums',
                   hot ? 'text-[#ff9a6a]' : 'text-gold-light',
                   fx && level === 'full' && !calm && 'bump',
                 )}
@@ -179,7 +179,7 @@ export function UndergroundDig() {
           />
 
           <div className="grid gap-1">
-            <span className="flex items-center justify-between gap-2 font-pixel-sm text-[15px] text-gold-light">
+            <span className="light-scope flex items-center justify-between gap-2 font-pixel-sm text-[15px] text-gold-light">
               <span>{t('ui.ug.buried', { n: wall.things.length, found })}</span>
               <span className="inline-flex shrink-0 items-center gap-1">
                 <PixelIcon name="kit" size={14} />

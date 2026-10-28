@@ -103,14 +103,14 @@ export function RaidCard({
         {statLabel('catch')} <b className="font-normal tabular-nums">{catchValueOf(data, raid.dex)}</b>
       </span>
       {msLeft != null && (
-        <span className="absolute right-2 top-2 bg-night px-1.5 pb-0.5 font-pixel-sm text-[15px] text-gold-light">
+        <span className="light-scope absolute right-2 top-2 bg-night px-1.5 pb-0.5 font-pixel-sm text-[15px] text-gold-light">
           {t(raid.caught ? 'ui.events.raid.newIn' : 'ui.events.raid.endsIn', { time: countdown(msLeft) })}
         </span>
       )}
       <span className={cx('absolute left-1/2 top-[18%] -translate-x-1/2', !raid.caught && 'ev-bob')}>
         <SpriteImg dex={raid.dex} size={128} shiny={raid.shiny} className={raid.caught ? 'grayscale-[0.4]' : undefined} />
       </span>
-      <span className="absolute bottom-2 left-2.5 grid gap-0.5 leading-none text-white [text-shadow:0_2px_0_#24304f]">
+      <span className="light-scope absolute bottom-2 left-2.5 grid gap-0.5 leading-none text-white [text-shadow:0_2px_0_#24304f]">
         <b className="text-[28px] font-normal">{raid.shiny ? t('ui.events.raid.shinyName', { name }) : name}</b>
         <small className="font-pixel-sm text-[15px] text-gold-light">{t('ui.events.raid.sub', { level: rules.level, bars: rules.bars })}</small>
       </span>

@@ -211,9 +211,8 @@ function AllyPlate({
         <span
           className={cx(
             'shrink-0 px-[5px] pb-px font-pixel-sm text-[12px] leading-tight',
-            mine ? 'bg-crimson text-paper' : 'bg-[#dde5f0] text-ink',
-            // The light chip keeps a golden name's daylight gold at dusk too.
-            !mine && rich && 'light-scope',
+            // A fixed pale chip: light-scope keeps its navy (and a golden name's daylight gold) at dusk.
+            mine ? 'bg-crimson text-white' : 'light-scope bg-[#dde5f0] text-ink',
           )}
         >
           {mine ? t('ui.raid.you') : <TrainerName name={owner} rich={rich} />}
