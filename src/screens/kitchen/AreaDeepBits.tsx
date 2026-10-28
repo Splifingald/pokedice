@@ -1,18 +1,35 @@
 // Kitchen sink: the area loop's deep pass (docs/43 §5.3). A result's moment stamping down (big, small, replayed), the switch on the send-out's
 // cards (the turn's, with BACK; a K.O.'s), the forfeit flag, and the scene-and-panel shape of the page between
-// encounters with its bar.
+// encounters with its bar; a find on the stage, of each kind.
 import { useState } from 'react'
-import { instanceMaxHp, monName, teamOf, type Battler } from '@/engine'
+import {
+  instanceMaxHp,
+  MONEY,
+  monName,
+  teamOf,
+  type Battler,
+  type Encounter,
+  type FindRarity,
+} from '@/engine'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { ForfeitButton } from '@/components/ForfeitButton'
 import { PixelButton } from '@/components/PixelButton'
 import { AreaSceneBox, AreaTeam } from '@/screens/area/AreaIdle'
 import { CenterSign } from '@/screens/area/CenterView'
+import { FoundThing, RarityTag } from '@/screens/area/FindView'
 import { StagePanel } from '@/screens/area/StagePanel'
+import { StageBackground } from '@/screens/battle/BattleStage'
 import { SwitchStep } from '@/screens/battle/BattleView'
 import { Stamp } from '@/screens/battle/Stamp'
 import { CatchCard } from '@/screens/battle/VictoryView'
 import { useGame } from '@/store/game'
+
+/** The three kinds of find a step shows (an item from the bag, Pokédollars, a fossil), one of each rarity. */
+const FINDS: (Extract<Encounter, { kind: 'item' }> & { rarity: FindRarity })[] = [
+  { kind: 'item', entryId: 'ks-potion', itemKey: 'super-potion', qty: 2, rarity: 'common' },
+  { kind: 'item', entryId: 'ks-money', itemKey: MONEY, qty: 120, rarity: 'uncommon' },
+  { kind: 'item', entryId: 'ks-fossil', itemKey: 'helix-fossil', qty: 1, rarity: 'rare' },
+]
 
 export function AreaDeepBits() {
   const save = useGame((s) => s.save)
@@ -20,6 +37,7 @@ export function AreaDeepBits() {
   const area = useGame((s) => s.data.areas.find((a) => a.id === s.save?.currentAreaId))
   const [replay, setReplay] = useState(0)
   const [switchKey, setSwitchKey] = useState(0)
+  const [drop, setDrop] = useState(0)
   // The switch reads the team from the save this browser holds: its Pokémon as a fight's, at their own HP.
   const team = save ? teamOf(save) : []
   const fighters = team.map(
@@ -80,6 +98,28 @@ export function AreaDeepBits() {
       <div className="flex items-center gap-3">
         <span className="text-lg">The forfeit flag, at the side of a GO! row:</span>
         <ForfeitButton flag />
+      </div>
+
+      <div className="grid gap-2">
+        <b className="text-lg">
+          A find dropping on the stage (FindView), with its rarity: common, uncommon, rare
+        </b>
+        <div className="grid gap-2 md:grid-cols-3">
+          {FINDS.map(({ rarity, ...f }) => (
+            <div key={f.itemKey} className="grid gap-1.5">
+              <div className="relative isolate aspect-[3/2] overflow-hidden shadow-ledge">
+                <StageBackground art={null} zones={false} />
+                <FoundThing key={drop} enc={f} isMoney={f.itemKey === MONEY} rarity={rarity} />
+              </div>
+              <div className="flex justify-center">
+                <RarityTag rarity={rarity} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <PixelButton size="sm" className="self-start" onClick={() => setDrop((n) => n + 1)}>
+          Drop them again
+        </PixelButton>
       </div>
 
       <div className="grid max-w-md gap-2">

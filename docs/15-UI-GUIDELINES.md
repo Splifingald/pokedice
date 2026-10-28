@@ -250,6 +250,15 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   itself; a tap goes sooner, and it waits while a dialog covers it. **Never in a Pokémon Center**, which waits for the
   player's CONTINUE so the Box can be used. A throw that can't miss has no CONTINUE at all: once the ball has landed, the result
   card comes (2026-10-26).
+- **A find is a step of its own** (`FindView`, the user's call, 2026-10-28: a toast the trail ran past looked skipped):
+  the fight's 3:2 stage with the area's ground and no Pokémon spots on it (`StageBackground zones={false}`), the
+  round's strip on its top edge, and the find dropping into its middle — it falls turning, lands squashed with a thud
+  and a puff of dust, bounces, then bobs and twinkles (short motion: one bounce; no motion or calm: it lies there). Its
+  rarity is a small chip over its name, **Common / Uncommon / Rare find**, from its share of the area's loot deck
+  (`findRarity`, the engine's: 12 % and up common, 5 % and up uncommon, less rare; a once-only find always rare); a rare
+  one glows, twinkles more and has its own fanfare. Then what it is ("You found …!", a fossil's revival) and what it
+  does, and PICK IT UP (`pickUpFind`: into the bag, and the next encounter at once; a portal run goes back to its page).
+  No toast. Under the autopilot it shows too, its PICK IT UP loading.
 - **A fight's result card follows itself and moves on** (2026-10-26): each piece (XP, a level-up, the Pokédex entry…)
   scrolls into view as it comes, clear of the buttons at the foot; once all is shown, NEXT waits for the tap (its gauge
   fills and goes only while auto-mode or Idle mode plays the area, the user's call of 2026-10-27), BACK still in reach. It waits instead when a new species was caught or a small world's mythical won (its card is looked at, and a full team's

@@ -55,6 +55,19 @@ const FEEL_SOUNDS = {
     hiss(0.22, { freq: 900, vol: 0.06, slide: 1400 })
     tone(147, 0.12, { type: 'triangle', vol: 0.07, slide: 60, at: 0.04 })
   },
+  /** A find lands on the stage (docs/43): a quick rising sparkle. */
+  'find.item': () => tune([[988, 0, 0.05], [1319, 0.05, 0.05], [1760, 0.1, 0.12]], 'square', 0.04),
+  /** It falls: a short rising whistle, then the thud of its landing (`die.landHeavy`'s weight, lighter). */
+  'find.fall': () => tone(1400, 0.22, { type: 'triangle', vol: 0.035, slide: -900 }),
+  'find.land': () => {
+    hiss(0.05, { freq: 420, vol: 0.07 })
+    tone(150, 0.07, { type: 'triangle', vol: 0.07, slide: -40 })
+  },
+  /** A rare find: the sparkle, then a held high note over it. */
+  'find.rare': () => {
+    tune([[1047, 0, 0.06], [1319, 0.06, 0.06], [1568, 0.12, 0.06], [2093, 0.18, 0.22]], 'square', 0.045)
+    hiss(0.18, { freq: 3200, vol: 0.03, at: 0.18 })
+  },
   /** A round of the area done: its pip on the gauge fills. */
   'round.fill': () => tune([[784, 0, 0.05], [1175, 0.05, 0.1]], 'square', 0.04),
 

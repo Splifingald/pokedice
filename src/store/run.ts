@@ -35,8 +35,6 @@ import {
   type EncounterContext,
   playerSideOf,
   consumeItem,
-  earnedGold,
-  MONEY,
   pickUpItem,
   shinyBoost,
   wildShinyChance,
@@ -125,7 +123,6 @@ import { useRebattleMedal } from './rebattle'
 import { serverNow } from './serverTime'
 import { trickAllowed } from './trick'
 import { t } from '@/i18n'
-import { money } from '@/lib/format'
 
 // An encounter picked up from the last visit (store/resume.ts) rolls on from where both streams stood, so a reload
 // throws the same dice staying would have; its ids carry on too, so the next battle or ghost is a new screen.
@@ -525,11 +522,10 @@ export function rollNext() {
   setRun({ phase: 'preview', encounter, firstInArea: false, forceNext: forceKind === run.forceNext ? null : run.forceNext })
   // A Pokémon Center is never a choice (no skipping it, nothing to pick): straight in, no preview card.
   if (encounter.kind === 'center') engage()
-  // A find is picked up as it's found (its toast says what), and the trail goes on.
-  else if (encounter.kind === 'item') {
-    engage()
-    if (useGame.getState().run.phase === 'idle') rollNext()
-  } else if (directFight(encounter)) beginFight()
+  // A find is a step of its own (FindView: the item on the stage, PICK IT UP loading and pressing itself), not a toast
+  // the trail runs past (the user's call, 2026-10-28): it waits in 'preview' for pickUpFind.
+  else if (encounter.kind === 'item') return
+  else if (directFight(encounter)) beginFight()
 }
 
 /**
@@ -745,27 +741,27 @@ export function engage(lead?: string | string[], staged?: boolean) {
       setRun({ trainer: { index: 0, gold: 0 } })
       return startBattle('trainer', first, leadUid)
     }
-    case 'item': {
+    case 'item':
+      // Its step said what it is (FindView): into the bag, quietly, and back on the trail.
       if (!run.areaId) return
-      const live = currentLive()
-      commitSave(pickUpItem(save, run.areaId, enc, data, Date.now(), newId, live))
-      const item = data.items[enc.itemKey]
-      const what = enc.itemKey === MONEY ? money(earnedGold(enc.qty, live).amount) : `${item?.name ?? enc.itemKey}${enc.qty > 1 ? ` ×${enc.qty}` : ''}`
-      if (item?.effect.kind === 'fossil')
-        pushToast(
-          t('ui.toast.foundFossil', {
-            item: item.name,
-            name: data.species[item.effect.dex]?.name ?? t('ui.toast.itsPokemon'),
-            hours: item.effect.hours,
-          }),
-          'good',
-          6000,
-        )
-      else pushToast(t('ui.toast.found', { what }), 'good')
+      commitSave(pickUpItem(save, run.areaId, enc, data, Date.now(), newId, currentLive()))
       backToArea()
       return
-    }
   }
+}
+
+/**
+ * PICK IT UP on a find's step (docs/43): the item goes in the bag (the gold in the purse, a fossil to the lab) and the
+ * next encounter comes at once, as after a fight.
+ */
+export function pickUpFind() {
+  const { run } = useGame.getState()
+  if (run.phase !== 'preview' || run.encounter?.kind !== 'item') return
+  engage()
+  // A portal run (docs/28) goes back to its own page between cards, as it always did after a find.
+  const after = useGame.getState()
+  if (after.run.phase === 'idle' && after.save && after.run.areaId && !inPortalRun(after.save, after.data, after.run.areaId))
+    rollNext()
 }
 
 /** Every battle input goes through the engine reducer; rewards are settled the moment the battle ends. */

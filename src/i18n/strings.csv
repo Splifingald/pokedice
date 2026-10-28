@@ -1145,6 +1145,9 @@ ui.enc.theLegendary,The legendary,Le légendaire,El legendario,Das Legendäre,Il
 ui.enc.legendaryBlocks,The air crackles… a legendary Pokémon blocks the way!,L'air crépite… un Pokémon légendaire barre la route !,El aire crepita… ¡un Pokémon legendario bloquea el paso!,Die Luft knistert … ein legendäres Pokémon versperrt den Weg!,L'aria crepita… un Pokémon leggendario sbarra la strada!,O ar crepita… um Pokémon lendário bloqueia o caminho!,O ar crepita… um Pokémon lendário bloqueia o caminho!,空気がはりつめる… 伝説のポケモンが道をふさいでいる！,공기가 팽팽하다… 전설의 포켓몬이 길을 막고 있다!,空气凝固了… 传说的宝可梦挡住了去路！
 ui.enc.enter,ENTER,ENTRER,ENTRAR,BETRETEN,ENTRA,ENTRAR,ENTRAR,入る,들어간다,进入
 ui.enc.pickUp,PICK IT UP,LE RAMASSER,RECOGERLO,AUFHEBEN,RACCOGLI,APANHAR,PEGAR,拾う,줍는다,捡起
+ui.find.common,Common find,Trouvaille commune,Hallazgo común,Häufiger Fund,Ritrovamento comune,Achado comum,Achado comum,よくある見つけもの,흔한 발견,常见发现
+ui.find.uncommon,Uncommon find,Trouvaille peu commune,Hallazgo poco común,Ungewöhnlicher Fund,Ritrovamento non comune,Achado pouco comum,Achado incomum,めずらしい見つけもの,드문 발견,少见发现
+ui.find.rare,Rare find,Trouvaille rare,Hallazgo raro,Seltener Fund,Ritrovamento raro,Achado raro,Achado raro,レアな見つけもの,희귀한 발견,稀有发现
 ui.enc.fight,FIGHT,COMBATTRE,LUCHAR,KÄMPFEN,LOTTA,LUTAR,LUTAR,たたかう,싸운다,战斗
 ui.enc.avoid,AVOID,ÉVITER,EVITAR,AUSWEICHEN,EVITA,EVITAR,EVITAR,さける,피한다,避开
 ui.enc.flee,FLEE,FUIR,HUIR,FLIEHEN,FUGGI,FUGIR,FUGIR,にげる,도망친다,逃跑

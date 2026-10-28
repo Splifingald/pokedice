@@ -456,6 +456,7 @@ Today ~28 one-time pop-ups take turns (`PopupQueue`). This pass:
 |---|---|
 | On PC, the Center showed the area with the team behind the cards: taller than the window, and unneeded | The Center is stacked on PC too: the healing at the top, then the team and the Box over the page's width, six to a row (`StagePanel stacked`) |
 | (The same overflow between encounters) | The scene in the fight's 3:2 box on PC (`SceneStage fill`, its focus on where the team walks); the strip and the plate over the box |
+| A find looked skipped: only a toast | A step of its own (`FindView`): the area's ground, the find dropping into the middle (falling, a thud and dust, bounces, a twinkle), its rarity ("Common / Uncommon / Rare find", `findRarity`), what it is and does, PICK IT UP |
 
 ## 8. Not in this pass
 

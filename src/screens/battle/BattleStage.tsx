@@ -100,6 +100,23 @@ function Backdrop({ calm }: { calm: boolean }) {
   )
 }
 
+/**
+ * The fight's ground without a fight: the drawn background, the area's picture over it once loaded, filling the 3:2
+ * box it is put in (an area step on the stage: a find, docs/43). `zones`: the two Pokémon's translucent spots on the
+ * picture's ground, as in a fight; a step with no Pokémon on it leaves them out.
+ */
+export function StageBackground({ art, zones = true }: { art: AreaPicture | null; zones?: boolean }) {
+  const { calm } = useMotion()
+  const [shown, setShown] = useState(false)
+  return (
+    <>
+      <Backdrop calm={calm || shown} />
+      {art && <AreaArt key={art.id} src={art.url} place={artPlacement(battleWindow(art))} onShown={() => setShown(true)} />}
+      {shown && zones && <Zones />}
+    </>
+  )
+}
+
 /** Five key frames round the orbit; star `i` starts a third of a turn after the one before. */
 const ORBIT = [0, 1, 2, 3, 4]
 const angle = (j: number, i: number) => ((j / 4) * 2 + (i * 2) / 3) * Math.PI

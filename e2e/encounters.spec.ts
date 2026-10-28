@@ -70,7 +70,7 @@ test('the Pokémon Center: the healing plays at the top and folds away, nothing 
   await expect(page.getByRole('navigation', { name: 'Menus' }).last()).toBeVisible()
 })
 
-test('a find on the way is a toast, and the fight after it starts at once', async ({ page }) => {
+test('a find on the way is a step of its own: on the stage, PICK IT UP, then the fight', async ({ page }) => {
   const data = gameData()
   const base = makeSave(4)
   const chain = linearAreas(data, regionOf(base))
@@ -83,7 +83,14 @@ test('a find on the way is a toast, and the fight after it starts at once', asyn
   await boot(page, strong({ ...base, areaProgress, currentAreaId: area.id }))
   await page.goto('/home')
   await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+  // Its own step (the user's call, 2026-10-28): what it is, said once, and nothing goes on until it is picked up.
   await expect(page.getByText(/^You found /)).toBeVisible()
+  const pick = page.getByRole('button', { name: 'PICK IT UP' })
+  await expect(pick).toBeVisible()
+  await page.waitForTimeout(2500)
+  await expect(pick).toBeVisible()
+  await expect(page.getByText(/^You found /)).toHaveCount(1)
+  await pick.click()
   await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeVisible({ timeout: 20_000 })
 })
 

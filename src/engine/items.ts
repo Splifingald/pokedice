@@ -163,6 +163,26 @@ export function uniqueFindChances(area: Area, progress: AreaProgress, data: Game
   return new Map(uniques.map((e) => [e.id, extra / uniques.length + ((1 - extra) * lootCopies(e)) / size]))
 }
 
+/** How rare a find is (docs/43), for its step to say: "Common find", "Uncommon find", "Rare find". */
+export type FindRarity = 'common' | 'uncommon' | 'rare'
+/** A find is common from this share of the area's loot deck, uncommon from the next, rare under it. */
+export const FIND_COMMON_SHARE = 0.12
+export const FIND_UNCOMMON_SHARE = 0.05
+
+/**
+ * A find's rarity, from its share of the area's loot deck as the deck is dealt (its copies over all the copies of
+ * what's still to be found): 12 % and up is common, 5 % and up uncommon, less is rare. A once-only find is always rare.
+ * An entry no longer on the table (a unique just struck off, content edited since the draw) reads as rare.
+ */
+export function findRarity(area: Area, progress: AreaProgress, data: GameData, entryId: string): FindRarity {
+  const pool = lootPoolFor(area, progress, data)
+  const entry = pool.find((e) => e.id === entryId)
+  if (!entry || entry.unique) return 'rare'
+  const size = pool.reduce((sum, e) => sum + lootCopies(e), 0)
+  const share = size > 0 ? lootCopies(entry) / size : 0
+  return share >= FIND_COMMON_SHARE ? 'common' : share >= FIND_UNCOMMON_SHARE ? 'uncommon' : 'rare'
+}
+
 /**
  * Draw the next find from the area's loot deck (dealt afresh when empty), after the pity roll for once-only finds.
  * Null when the area has nothing to find.

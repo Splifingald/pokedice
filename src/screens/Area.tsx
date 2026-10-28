@@ -22,6 +22,7 @@ import { TrickView } from './area/TrickView'
 import { AreaIdle } from './area/AreaIdle'
 import { CenterView } from './area/CenterView'
 import { EncounterPreview } from './area/EncounterPreview'
+import { FindView } from './area/FindView'
 import { RoundGauge } from './area/RoundGauge'
 import { AreaDetails } from './home/AreaDetails'
 import { RebattleHeader } from './events/RebattlePage'
@@ -122,6 +123,8 @@ export function AreaScreen() {
   const dream = !!nm && run.phase === 'idle' && nightmareStepDue(area, { save, data }, run)
   // The plain page between encounters (docs/42): the area's scene with the team, as on Home, in the banner's place.
   const sceneIdle = run.phase === 'idle' && !own && !dream && !mode && !nm && !run.rebattle
+  // A find is a step on the stage of its own (FindView), with or without the autopilot: no banner, no card.
+  const finding = run.phase === 'preview' && run.encounter?.kind === 'item'
   return (
     <div className="flex flex-col gap-4">
       {/* The Center is laid out as a battle (the rework): its own gauge at the top, no area banner. */}
@@ -129,9 +132,11 @@ export function AreaScreen() {
         <RebattleHeader />
       ) : (
         !(run.phase === 'center' && !pilot) &&
-        !sceneIdle && <AreaHeader area={area} progress={progress} teamAvg={teamAverageLevel(save)} />
+        !sceneIdle &&
+        !finding && <AreaHeader area={area} progress={progress} teamAvg={teamAverageLevel(save)} />
       )}
-      {run.phase === 'preview' && run.encounter && !(pilot && run.encounter.kind !== 'trick') && (
+      {finding && <FindView />}
+      {run.phase === 'preview' && run.encounter && !finding && !(pilot && run.encounter.kind !== 'trick') && (
         <EncounterPreview enc={run.encounter} />
       )}
       {run.phase === 'center' && !pilot && <CenterView />}
@@ -139,7 +144,7 @@ export function AreaScreen() {
       {pilot &&
         (run.phase === 'center' ||
           run.phase === 'casino' ||
-          (run.phase === 'preview' && run.encounter?.kind !== 'trick')) && <AutopilotNote />}
+          (run.phase === 'preview' && !finding && run.encounter?.kind !== 'trick')) && <AutopilotNote />}
       {/* A run that ended outside a fight (nobody left standing): its wipe card. */}
       {run.phase === 'wipe' && <WipeView />}
       {run.phase === 'idle' && own && step}
