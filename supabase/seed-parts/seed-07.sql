@@ -2,6 +2,7 @@
 -- Run the parts in order (1 first: it carries the schema changes). Together they are supabase/seed.sql.
 begin;
 insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, battle_background, rival_of, items, duo) values
+  ('8107b864-bab0-576d-9f5a-fd20e149b8f2', 'Picnicker Irene', '/trainers/classes/hoenn/picnicker.png', '[{"dex":37,"level":32},{"dex":77,"level":32}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('92ad6325-68ac-5174-adc8-c1716d23899a', 'Flannery', '/trainers/classes/hoenn/flannery.png', '[{"dex":218,"level":24},{"dex":322,"level":24},{"dex":324,"level":29}]'::jsonb, 'leader', 'Heat Badge', null, 'default', null, '[]'::jsonb, false),
   ('be9431af-f9e9-56ea-94d5-1eb7688ae034', 'Ace Trainer Quinn', '/trainers/classes/hoenn/collector.png', '[{"dex":338,"level":33},{"dex":337,"level":33}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('f1c98447-7e7c-5a80-ab0e-7b40b6db1088', 'Dragon Tamer Nicolas', '/trainers/classes/hoenn/dragon-tamer.png', '[{"dex":371,"level":34},{"dex":333,"level":34}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
@@ -250,11 +251,11 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('1e7705e9-5322-5017-acf5-5d5160779554', 'Elite Four Bruno', '/trainers/classes/elite-bruno.png', '[{"dex":95,"level":83},{"dex":107,"level":84},{"dex":68,"level":86}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb, false),
   ('be14b8d9-5b20-5aa2-9c79-3d6435b54423', 'Elite Four Agatha', '/trainers/classes/elite-agatha.png', '[{"dex":93,"level":84},{"dex":24,"level":86},{"dex":94,"level":88}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb, false),
   ('562057d5-01da-5ea1-8171-acb91d3ac899', 'Elite Four Lance', '/trainers/classes/elite-lance.png', '[{"dex":130,"level":84},{"dex":148,"level":88},{"dex":149,"level":90}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb, false),
-  ('d8dbd2da-79c2-594f-9106-097c8c3e8fb1', 'Champion Rival', '/characters/green.png', '[{"dex":130,"level":89},{"dex":103,"level":91},{"dex":6,"level":93}]'::jsonb, 'champion', null, null, 'default', 1, '["hyper-potion"]'::jsonb, false),
-  ('e8eed7e6-97e3-594c-941f-0dac877f1d6a', 'Champion Rival', '/characters/green.png', '[{"dex":103,"level":89},{"dex":59,"level":91},{"dex":9,"level":93}]'::jsonb, 'champion', null, null, 'default', 4, '["hyper-potion"]'::jsonb, false)
+  ('d8dbd2da-79c2-594f-9106-097c8c3e8fb1', 'Champion Rival', '/characters/green.png', '[{"dex":130,"level":89},{"dex":103,"level":91},{"dex":6,"level":93}]'::jsonb, 'champion', null, null, 'default', 1, '["hyper-potion"]'::jsonb, false)
 on conflict (id) do update set name = excluded.name, sprite_url = excluded.sprite_url, team = excluded.team, role = excluded.role, badge = excluded.badge, upgrade_level = excluded.upgrade_level, battle_background = excluded.battle_background, rival_of = excluded.rival_of, items = excluded.items, duo = excluded.duo;
 
 insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, battle_background, rival_of, items, duo) values
+  ('e8eed7e6-97e3-594c-941f-0dac877f1d6a', 'Champion Rival', '/characters/green.png', '[{"dex":103,"level":89},{"dex":59,"level":91},{"dex":9,"level":93}]'::jsonb, 'champion', null, null, 'default', 4, '["hyper-potion"]'::jsonb, false),
   ('39b7635c-efbd-5ca1-a7b8-f1e6cf4bf71c', 'Champion Rival', '/characters/green.png', '[{"dex":26,"level":89},{"dex":112,"level":91},{"dex":3,"level":93}]'::jsonb, 'champion', null, null, 'default', 7, '["hyper-potion"]'::jsonb, false),
   ('ec78dee7-168c-5b1c-baa2-cdc56396166e', 'Elite Four Lorelei', '/trainers/classes/elite-lorelei.png', '[{"dex":87,"level":100},{"dex":80,"level":100},{"dex":124,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb, false),
   ('ffd2cd5a-91c6-5630-ba6e-f65b077e4505', 'Elite Four Bruno', '/trainers/classes/elite-bruno.png', '[{"dex":106,"level":100},{"dex":95,"level":100},{"dex":68,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb, false),

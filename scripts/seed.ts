@@ -868,7 +868,8 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  * 0045), then 0078 (the Elite Rebattle on the Progression board: it redefines 0049's card writer, so it comes after
  * it), then 0079 (game feel, haptics and battle music on for everyone: 0074's rows, so it comes after it), then 0080
  * (the Unown Pokédex, docs/41: its switch's row, Off, and its prize), then 0081 (the League's heal, docs/42: its
- * switch's row, Off). Folded into
+ * switch's row, Off), then 0083 (Route 1's set opening, docs/46: its switch's
+ * row, Off, Youngster Joey and Oddish on Route 1, which the upserts below then write again). Folded into
  * seed.sql
  * so there is
  * one file to run rather than several in a particular order. The
@@ -912,6 +913,7 @@ export async function regionsPrelude(): Promise<string> {
       '0079_game_feel_on.sql',
       '0080_unown_dex.sql',
       '0081_league_heal.sql',
+      '0083_route_1_opening.sql',
     ].map(async (name) => {
       const sql = (await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')).replace(/^(begin|commit);\n/gm, '')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`

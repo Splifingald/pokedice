@@ -148,7 +148,14 @@ export function setAreaDeck(save: SaveData, areaId: string, deck: DeckCard[]): S
 export function recordDraws(
   save: SaveData,
   areaId: string,
-  roll: { encounter?: { kind: string }; deck: DeckCard[] | null; lootDeck?: string[] | null; drawn?: DeckCard[]; newRound?: boolean },
+  roll: {
+    encounter?: { kind: string }
+    deck: DeckCard[] | null
+    lootDeck?: string[] | null
+    drawn?: DeckCard[]
+    newRound?: boolean
+    opening?: number | null
+  },
 ): SaveData {
   const p = progressOf(save, areaId)
   const lastCenter = roll.encounter ? roll.encounter.kind === 'center' : p.lastCenter
@@ -157,9 +164,13 @@ export function recordDraws(
   }
   const round = roll.newRound ? (p.round ?? 0) + 1 : p.round
   const drawn = roll.newRound ? (roll.drawn ?? []) : roll.drawn ? [...(p.drawn ?? []), ...roll.drawn] : p.drawn
+  // A fresh deck notes whether it is a set opening's round (docs/46); a shuffled one drops the note.
+  const { opening: _was, ...rest } = p
+  const kept = roll.newRound ? rest : p
   return spendLoneCenters(
     withProgress(save, areaId, {
-      ...p,
+      ...kept,
+      ...(roll.newRound && roll.opening != null ? { opening: roll.opening } : {}),
       ...(roll.deck ? { deck: roll.deck } : {}),
       ...(roll.lootDeck ? { lootDeck: roll.lootDeck } : {}),
       ...(round != null ? { round } : {}),
@@ -414,6 +425,8 @@ export interface VictoryInput {
   /** Gym battles: the trainer, and whether this K.O. was their last Pokémon. */
   gymTrainerId?: string
   gymComplete?: boolean
+  /** A set opening's trainer (docs/46): this K.O. pays these ₽ instead of its level's (`trainerPrize` says how many). */
+  prize?: number
 }
 
 export interface VictoryResult {
@@ -492,9 +505,11 @@ export function applyVictory(
   const fighters = input.fighterUids?.length ? input.fighterUids : input.fighterUid
   let next = awardBattleXp(save, input.enemyLevel, fighters, area, progress.cleared, data, rng, events)
 
-  // Gold — trainers only (gym leaders, the Elite Four and the Champion pay extra), more under Cash Flow
-  if (input.kind === 'trainer' || input.kind === 'gym') {
-    const { amount, bonus } = earnedGold(trainerGoldFor(input.enemyLevel, area, progress.cleared, data, input.kind === 'gym'), live)
+  // Gold — trainers only (gym leaders, the Elite Four and the Champion pay extra; a set trainer its prize, with its
+  // last K.O.), more under Cash Flow
+  if ((input.kind === 'trainer' || input.kind === 'gym') && input.prize !== 0) {
+    const due = input.prize ?? trainerGoldFor(input.enemyLevel, area, progress.cleared, data, input.kind === 'gym')
+    const { amount, bonus } = earnedGold(due, live)
     next = { ...next, gold: next.gold + amount }
     events.push(bonus ? { kind: 'gold', amount, bonus } : { kind: 'gold', amount })
   }

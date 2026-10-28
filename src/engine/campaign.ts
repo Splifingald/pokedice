@@ -9,6 +9,7 @@ import { maxComboLevel, maxDieLevel, nextComboCost, nextDieCost } from './econom
 import { challengeEncounter, enemyUpgradeLevelFor, nextEncounter, type EncounterRoll } from './encounters'
 import { applyCatch, catchChance, catchTarget, catchValueOf, rollCatch } from './catching'
 import { ballBonus, isBallFor } from './items'
+import { starterFainted, trainerPrize } from './opening'
 import { createInstance, instanceStats } from './progression'
 import { playerSideOf } from './rival'
 import { createRng } from './rng'
@@ -286,6 +287,8 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
     enemy: { dex: number; level: number; item?: string },
     upgradeLevel: number,
     gym?: { trainerId: string; last: boolean },
+    /** A set opening's trainer (docs/46): this K.O.'s share of the prize. */
+    prize?: number,
   ) => {
     const created = createBattle(
       {
@@ -322,6 +325,7 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
           fighterUid: out.fighterUid,
           gymTrainerId: gym?.trainerId,
           gymComplete: gym?.last,
+          prize,
         },
         data,
         rng,
@@ -372,6 +376,7 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
         teamAvgLevel: teamAverageLevel(save),
         teamHurt: isTeamHurt(save, data),
         teamFainted: hasFaintedMember(save),
+        starterFainted: starterFainted(save),
         isFirstInArea: firstInArea,
         pokedex: save.pokedex,
         // Nobody able to fight (e.g. after a stalemate) → the Center is the only sensible next stop.
@@ -399,7 +404,8 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
     else if (enc.kind === 'trainer' || enc.kind === 'gym') {
       for (let k = 0; k < enc.team.length; k++) {
         const gym = enc.kind === 'gym' ? { trainerId: enc.trainerId, last: k === enc.team.length - 1 } : undefined
-        if (fight(area, r, 'trainer', enc.team[k]!, enemyUpgradeLevelFor(enc, area, data), gym) !== 'won') break
+        const prize = trainerPrize(enc, k === enc.team.length - 1)
+        if (fight(area, r, 'trainer', enc.team[k]!, enemyUpgradeLevelFor(enc, area, data), gym, prize) !== 'won') break
         // A mutual K.O. — the last Pokémon faints as it wins — ends the gauntlet: there is nobody left to send out.
         if (teamOf(save).every((p) => p.currentHp <= 0)) break
       }
