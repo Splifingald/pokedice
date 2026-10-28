@@ -1,6 +1,6 @@
-// The raid overhaul (docs/40): each progression raid's own numbers, rules and last bar, behind its switch. Off: raids
-// as before. On: the numbers, the weather, telegraphed moves and their interrupt, the shield, the type changes, the
-// last bar's power, Mega raids; every raid plays to its end without throwing, the same for a given seed.
+// The raid overhaul (docs/40): each progression raid's own numbers, the weather, telegraphed moves and their
+// interrupt, the shield, the type changes, the last bar's power, Mega raids; every raid plays to its end without
+// throwing, the same for a given seed.
 import { describe, expect, it } from 'vitest'
 import {
   adjustRaidHit,
@@ -21,11 +21,10 @@ import {
 } from '@/engine'
 import { makeData } from '../fixtures'
 
-const off = makeData()
-const on: GameData = { ...off, config: { ...off.config, raidOverhaul: { access: 'all' } } }
-const regions = off.regions.map((r) => r.id)
+const on = makeData()
+const regions = on.regions.map((r) => r.id)
 const areaOf = (dex: number) =>
-  off.areas.find((a) => a.legendaryBoss?.some((b) => b.dex === dex && b.raid))?.id
+  on.areas.find((a) => a.legendaryBoss?.some((b) => b.dex === dex && b.raid))?.id
 
 function sides(d: GameData, seed: number, cap: number): RaidSideSeed[] {
   const rng = createRng(seed)
@@ -52,16 +51,8 @@ function raid(
 }
 const kinds = (log: RaidLogEntry[]) => log.map((e) => e.kind)
 
-describe('the switch', () => {
-  it('off: the old numbers and no rules', () => {
-    expect(raidSpecialFor(off, 150, 'progress', areaOf(150))).toBeNull()
-    expect(raidRules(off, 150, 'progress', areaOf(150)).level).toBe(off.config.events.raid.level)
-    expect(raidTeamCap(off, 150, 'progress', areaOf(150))).toBe(off.config.events.raid.progress.teamCap)
-    const { state, log } = raid(off, 144)
-    expect(state.special).toBeUndefined()
-    expect(kinds(log)).not.toContain('raid_field')
-  })
-  it('on: its own level, bars, HP per bar and dice level; the team cap is its level', () => {
+describe('its numbers', () => {
+  it('its own level, bars, HP per bar and dice level; the team cap is its level', () => {
     const r = raidRules(on, 150, 'progress', areaOf(150))
     expect(r).toEqual({ level: 70, bars: 5, barHp: RAID_SPECIALS[150]!.barHp, upgradeLevel: 9 })
     expect(raidTeamCap(on, 150, 'progress', areaOf(150))).toBe(70)

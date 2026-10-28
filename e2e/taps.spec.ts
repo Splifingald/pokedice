@@ -1,21 +1,16 @@
 // Taps, haptics and music (docs/38 §5). A PixelButton is heard once a press, as the finger lands (and from the
-// keyboard); Settings' Battle music and Vibration rows are there only with the admin's switches on and keep what the
-// player picks; the battle music plays under a fight, pauses in a hidden tab, and stops with its switch.
+// keyboard); Settings' Battle music and Vibration rows keep what the player picks; the battle music plays under a
+// fight, pauses in a hidden tab, and stops with its switch.
 // Every 8-bit note is an oscillator: the page counts them.
 import { expect, test, type Page } from '@playwright/test'
 import { EVENTS_ON, makeSave, mockSupabase } from './helpers'
 
-async function boot(page: Page, feel: boolean) {
+async function boot(page: Page) {
   await page.setViewportSize({ width: 360, height: 640 })
   await mockSupabase(page)
   const base = makeSave(4)
   const save = { ...base, settings: { ...base.settings, sound: true, sfx: true, reducedMotion: true } }
-  const config = JSON.stringify({
-    ...EVENTS_ON,
-    // On by default now (0079): the switches-off case asks for Off itself.
-    haptics: { access: feel ? 'all' : 'off' },
-    music: { access: feel ? 'all' : 'off' },
-  })
+  const config = JSON.stringify(EVENTS_ON)
   await page.addInitScript(
     ([s, c]) => {
       // Once: a reload keeps what the page saved.
@@ -38,7 +33,7 @@ async function boot(page: Page, feel: boolean) {
 const notes = (page: Page) => page.evaluate(() => (window as unknown as { notes: number }).notes)
 
 test('a PixelButton sounds as the finger lands, once a press, and from the keyboard', async ({ page }) => {
-  await boot(page, false)
+  await boot(page)
   // A quiet page: Settings' one Delete only asks what to delete.
   await page.goto('/settings')
   const button = page.getByRole('button', { name: 'Delete a save or my data', exact: true })
@@ -64,17 +59,8 @@ test('a PixelButton sounds as the finger lands, once a press, and from the keybo
   expect(await notes(page)).toBe(before + 2)
 })
 
-test('Settings: no music or vibration rows while the switches are off', async ({ page }) => {
-  await boot(page, false)
-  await page.goto('/settings')
-  await expect(page.getByRole('switch', { name: /^Sound/ })).toBeVisible()
-  await expect(page.getByRole('switch', { name: /^Battle music/ })).toHaveCount(0)
-  await expect(page.getByRole('radiogroup', { name: 'Music volume' })).toHaveCount(0)
-  await expect(page.getByRole('switch', { name: /^Vibration/ })).toHaveCount(0)
-})
-
 test('Settings: the music, its volume and the vibrations, kept after a reload', async ({ page }) => {
-  await boot(page, true)
+  await boot(page)
   await page.goto('/settings')
   const music = page.getByRole('switch', { name: /^Battle music/ })
   const volume = page.getByRole('radiogroup', { name: 'Music volume' })
@@ -138,7 +124,7 @@ async function heard(page: Page, ms: number) {
 test('the battle music plays under a fight, pauses in a hidden tab, and stops with its switch', async ({
   page,
 }) => {
-  await boot(page, true)
+  await boot(page)
   await toBattle(page)
   await page.waitForTimeout(500)
   // The loop's arpeggio alone is ten notes a second.

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   DEFAULT_CONFIG,
+  EVENT_ACCESS,
   eggSpecies,
   eggsPerWeek,
   extremeRules,
@@ -13,7 +15,6 @@ import {
   type DayCareConfig,
   type DoubleBattlesConfig,
   type DonationConfig,
-  type EnergyConfig,
   type EventAccess,
   type ExtremeConfig,
   type GameConfig,
@@ -72,10 +73,6 @@ function SlotMachineBox() {
       title="Game Corner — slot machine" icon="coin"
       hint="Played on the Game Corner cards (Areas → Encounter deck). The result is drawn from these weights, then the reels are laid out to show it. Off: no Game Corner card is dealt anywhere (the Fortune Wheel gives Porygon instead)."
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xl">Game Corner</span>
-        <AccessSwitch value={cfg.access ?? 'off'} onChange={(access) => set({ access })} label="Game Corner: who meets its cards" />
-      </div>
       <div className="grid gap-3 sm:grid-cols-3">
         <Field label="Cost per spin (₽)">
           <NumInput min={0} value={cfg.cost} onChange={(v) => set({ cost: Math.max(0, v ?? 0) })} />
@@ -127,35 +124,6 @@ function SlotMachineBox() {
         Pays back <b>₽{back.toFixed(2)}</b> per ₽{cfg.cost} spin on average ({cfg.cost ? pct(back / cfg.cost) : '—'}
         ){odds.jackpot > 0 && <> · {prize} about every {Math.round(1 / odds.jackpot)} spins</>}
         {back >= cfg.cost && ' · players make money on this machine!'}
-      </p>
-    </Box>
-  )
-}
-
-/** Energy: the cost of exploring. 1 per encounter discovered; gyms, legendaries and Pokémon Centers are free. */
-function EnergyBox() {
-  const [raw, setRaw] = useConfigRow('energy')
-  const cfg: EnergyConfig = { ...DEFAULT_CONFIG.energy, ...raw }
-  const set = (patch: Partial<EnergyConfig>) => setRaw({ ...cfg, ...patch })
-  const perDay = cfg.minutesPerEnergy > 0 ? (24 * 60) / cfg.minutesPerEnergy : 0
-  return (
-    <Box
-      title="Energy" icon="energy"
-      hint="Each encounter discovered costs 1 (not gym / Elite / Champion battles, legendaries or Pokémon Centers). Refills in real time, offline too."
-    >
-      <div className="grid gap-3 sm:grid-cols-3">
-        <label className="flex items-center gap-2 text-lg">
-          <input type="checkbox" checked={!!cfg.enabled} onChange={(e) => set({ enabled: e.target.checked })} /> enabled
-        </label>
-        <Field label="Max (and start)">
-          <NumInput min={1} value={cfg.max} onChange={(v) => set({ max: Math.max(1, v ?? 50) })} />
-        </Field>
-        <Field label="Minutes per energy">
-          <NumInput min={1} value={cfg.minutesPerEnergy} onChange={(v) => set({ minutesPerEnergy: Math.max(1, v ?? 30) })} />
-        </Field>
-      </div>
-      <p className="text-lg">
-        {perDay.toFixed(1)} energy per day · empty to full in {((cfg.max * cfg.minutesPerEnergy) / 60).toFixed(1)} h
       </p>
     </Box>
   )
@@ -296,41 +264,9 @@ function DiscordBox() {
 }
 
 /**
- * Pokémon Day Care, one for every region: when it opens, how fast residents train, the friend slots, the two Egg
- * checks, Egg now and what Eggs hatch into.
- */
-/**
  * Extreme mode (docs/22): the second save that a league opens, with no Pokémon Centers, K.O.s that rest for hours and
  * healing only while the player is away. Every number here is read by the game's engine (engine/extreme).
  */
-/**
- * Day and night in Johto (docs/32): its switch. Each wild row's time is set in Areas → its wild pool (Time); the tags
- * from the real games came with migration 0061.
- */
-function DayNightBox() {
-  const [cfg, set] = useConfigRow('dayNight')
-  const access = cfg?.access ?? 'off'
-  return (
-    <Box
-      title="Day and night"
-      icon="moon"
-      hint="Johto keeps the time (docs/32): 6:00–17:59 is the day and 18:00–5:59 the night, on the player's clock. A wild Pokémon whose Time says day or night (Areas → wild pool) comes only then, as in the real games; the top bar shows the sun or the moon, and so do the fights."
-    >
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-lg">Who has it</span>
-        <AccessSwitch value={access} onChange={(a) => set({ access: a })} label="Day and night: who has it" />
-        <span className="text-base text-muted">
-          {access === 'all'
-            ? 'Every player: Johto’s wild Pokémon follow the time, and the sun or the moon shows.'
-            : access === 'admin'
-              ? 'Only you (signed in) have it; other players meet every Pokémon at any hour.'
-              : 'Off: every Pokémon at any hour, no sun or moon anywhere. The tags stay in the pools.'}
-        </span>
-      </div>
-    </Box>
-  )
-}
-
 function ExtremeBox() {
   const data = useAdminData()
   const [raw, setRaw] = useConfigRow('extreme')
@@ -352,17 +288,6 @@ function ExtremeBox() {
       title="Extreme mode" icon="skull"
       hint="A second save, opened by a league of the main one: a world of its own (its own board, Versus and events; the same friends), with no Pokémon Centers."
     >
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-lg">Who can play it</span>
-        <AccessSwitch value={cfg.access ?? 'off'} onChange={(access) => set({ access })} label="Extreme mode: who can play it" />
-        <span className="text-base text-muted">
-          {cfg.access === 'all'
-            ? 'Open to every player who has beaten the league.'
-            : cfg.access === 'admin'
-              ? 'Only you see it (to try it first). Players see nothing yet.'
-              : 'Off: no way in anywhere in the game. Extreme saves already made are kept.'}
-        </span>
-      </div>
       <div className="grid gap-3 sm:grid-cols-3">
         {check('centers', 'Pokémon Centers')}
         {check('wipeHeals', 'a lost round heals')}
@@ -401,7 +326,7 @@ function ExtremeBox() {
 }
 
 /**
- * Double battles (docs/33): the switch, the regions where they happen and how often a wild Pokémon comes with a
+ * Double battles (docs/33): the regions where they happen and how often a wild Pokémon comes with a
  * partner. Duo trainers are ticked in Trainers (Duo); Elite Four and Champions never fight 2 v 2.
  */
 function DoubleBattlesBox() {
@@ -417,17 +342,6 @@ function DoubleBattlesBox() {
       icon="vs"
       hint="Two of yours against two foes. Wild Pokémon sometimes come in pairs; duo trainers (Trainers → Duo) and Tate & Liza always fight 2 v 2. Never in Extreme mode, small worlds, the portal run or the nightmare."
     >
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-lg">Who gets them</span>
-        <AccessSwitch value={cfg.access ?? 'off'} onChange={(access) => set({ access })} label="Double battles: who gets them" />
-        <span className="text-base text-muted">
-          {cfg.access === 'all'
-            ? 'On for every player, in the regions ticked below.'
-            : cfg.access === 'admin'
-              ? 'Only you get them (to try them first). Players fight one on one.'
-              : 'Off: every battle is one on one.'}
-        </span>
-      </div>
       <Field label="Regions" hint="where double battles happen">
         <div className="flex flex-wrap gap-x-4 gap-y-1">
           {(data?.regions ?? []).map((reg) => (
@@ -453,7 +367,7 @@ function DoubleBattlesBox() {
 }
 
 /**
- * Trades (docs/23): the three-way switch, the numbers, the trade evolutions (a pair taken off evolves by level again)
+ * Trades (docs/23): the numbers, the trade evolutions (a pair taken off evolves by level again)
  * and the species that can never be traded (the Ultra Beasts; legendaries and mythicals always are out).
  */
 function TradesBox() {
@@ -473,17 +387,6 @@ function TradesBox() {
       title="Trades" icon="trade"
       hint="Listings, like the games' GTS: a player puts a Pokémon up and says what they want; anyone allowed takes it while they're away. The server checks the switch too."
     >
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-lg">Who can trade</span>
-        <AccessSwitch value={cfg.access ?? 'off'} onChange={(access) => set({ access })} label="Trades: who can trade" />
-        <span className="text-base text-muted">
-          {cfg.access === 'all'
-            ? 'Open to every signed-in player with enough badges.'
-            : cfg.access === 'admin'
-              ? 'Only you see it (to try it first). Players see nothing yet.'
-              : 'Off: no row, no pop-up, no link that works. Open listings still end and come back.'}
-        </span>
-      </div>
       <div className="grid gap-3 sm:grid-cols-5">
         <Field label="Open listings at most" hint="per player">{num('maxListings', 1, 20)}</Field>
         <Field label="A listing lasts (days)" hint="then its Pokémon comes back">{num('listingDays', 1, 30)}</Field>
@@ -568,172 +471,6 @@ function TradesBox() {
   )
 }
 
-/** What each state of a switch means, for the line beside it. */
-const accessNote = (access: EventAccess, all: string, off: string) =>
-  access === 'all' ? all : access === 'admin' ? 'Only you see it (to try it first). Players see nothing yet.' : off
-
-/**
- * Idle mode and the play styles (docs/36): Classic, Auto on explored areas, Idle. Off: auto-mode stays as it always was
- * (a cleared area's fights only). The game reads it on the player's device; no server function acts for it.
- */
-function IdleModeBox() {
-  const [raw, setRaw] = useConfigRow('idleMode')
-  const access = raw?.access ?? 'off'
-  return (
-    <Box
-      title="Idle mode"
-      icon="dice"
-      hint="On: a new game first asks how to play (Classic, Auto on explored areas, Idle), Settings switches it any time, and auto-mode becomes the autopilot: it plays the whole area (fights, finds, Centers without team swaps, no items but Idle's Poké Balls, no Game Corner), moves on to the next area once one is cleared, and after a lost round plays one round of the area before, then goes back. Idle catches by itself (a new Pokémon with the cheapest ball at the best chance, never the Master Ball; one already owned is left); under Auto on explored areas catches wait for the player. Off: auto-mode as before, fights only, in cleared areas. Players' choices are kept either way."
-    >
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-lg">Idle mode</span>
-        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="Idle mode: who has it" />
-        <span className="text-base text-muted">
-          {accessNote(access, 'Open to every player.', 'Off: no play styles, auto-mode as before (fights only).')}
-        </span>
-      </div>
-    </Box>
-  )
-}
-
-/**
- * Recorded dice throws (docs/37): the dice land as replayed physics throws, a pixel cube turned to land on the engine's
- * face. Purely visual, so the game alone reads it. Off: the dice tumble as they always have.
- */
-function DiceThrowsBox() {
-  const [raw, setRaw] = useConfigRow('diceThrows')
-  const access = raw?.access ?? 'off'
-  return (
-    <Box
-      title="Dice throws"
-      icon="dice"
-      hint="On: every thrown die (battles, catches, the Bait, the pickaxe, Trick or Treat, the title) is a little pixel cube thrown into its spot, bouncing and settling on the face the game rolled. Short animations play only its last bounce; a device asking for less motion gets a small drop with no spin. Off: the dice tumble as before. It changes how dice look, never what they roll."
-    >
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-lg">Dice throws</span>
-        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="Dice throws: who has them" />
-        <span className="text-base text-muted">
-          {accessNote(access, 'Open to every player.', 'Off: the dice tumble as before.')}
-        </span>
-      </div>
-    </Box>
-  )
-}
-
-/**
- * The raid overhaul (docs/40): each progression raid's own level, bars, rules and last bar, Arceus's daily raid, and
- * the Mega raids after Kalos (their gems no longer on the Mart's shelves). The server reads it for the Mega raids' keys.
- */
-function RaidOverhaulBox() {
-  const [raw, setRaw] = useConfigRow('raidOverhaul')
-  const access = raw?.access ?? 'off'
-  return (
-    <Box
-      title="Raid overhaul"
-      icon="star"
-      hint="On: every progression raid fights at its own level (its team cap too) with its own bars, weather, rules (telegraphed attacks to interrupt, combo-only shields, type changes…) and a power on its last bar; Arceus's daily raid changes plate; and after Kalos, the raids of Mewtwo, Gyarados, Latias, Latios, Rayquaza, Kyogre, Groudon and Heatran get a Mega (or Primal) raid whose win is the only way to get their gem or orb (no longer sold). Admin → Raids' own numbers still win. Off: raids play exactly as before."
-    >
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-lg">Raid overhaul</span>
-        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="Raid overhaul: who has it" />
-        <span className="text-base text-muted">
-          {accessNote(access, 'Open to every player.', 'Off: raids as before.')}
-        </span>
-      </div>
-    </Box>
-  )
-}
-
-/**
- * The game-feel pass (docs/38): count-ups, combo tiers, hits that scale with what they do, the KO beat, the victory
- * payoff, the catch moments. Purely visual and audible, so the game alone reads it. Off: everything plays as before.
- */
-function GameFeelBox() {
-  const [raw, setRaw] = useConfigRow('gameFeel')
-  const access = raw?.access ?? 'off'
-  return (
-    <Box
-      title="Game feel"
-      icon="dice"
-      hint="On: the damage counts up die by die, combos have four tiers, hits scale with how much they matter, the final blow lands harder, victories, badges, catches and upgrades are celebrated, and fights move faster between hits. Off: everything plays as before. It changes how things look and sound, never what happens."
-    >
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-lg">Game feel</span>
-        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="Game feel: who has it" />
-        <span className="text-base text-muted">
-          {accessNote(access, 'Open to every player.', 'Off: everything plays as before.')}
-        </span>
-      </div>
-    </Box>
-  )
-}
-
-/** Haptics (docs/38): short vibrations on dice, hits and catches. Android only; iOS browsers can't vibrate. */
-function HapticsBox() {
-  const [raw, setRaw] = useConfigRow('haptics')
-  const access = raw?.access ?? 'off'
-  return (
-    <Box
-      title="Haptics"
-      icon="energy"
-      hint="On: short vibrations when a die is picked or lands, on hits (stronger for bigger ones), a KO, each catch wobble and a catch, with a switch in Settings. Android browsers only: iOS Safari can't vibrate. Calm devices (reduce motion) get none."
-    >
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-lg">Haptics</span>
-        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="Haptics: who has it" />
-        <span className="text-base text-muted">
-          {accessNote(access, 'Open to every player.', 'Off: no vibrations, no Settings row.')}
-        </span>
-      </div>
-    </Box>
-  )
-}
-
-/** Battle music (docs/38): an original 8-bit loop under fights, synthesised like the effects. */
-function MusicBox() {
-  const [raw, setRaw] = useConfigRow('music')
-  const access = raw?.access ?? 'off'
-  return (
-    <Box
-      title="Battle music"
-      icon="sound"
-      hint="On: an original 8-bit loop plays under fights, synthesised on the device like the effects (no download), with a switch in Settings. It follows Sound: no sound, no music. Off: fights are silent between effects, as before."
-    >
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-lg">Battle music</span>
-        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="Battle music: who has it" />
-        <span className="text-base text-muted">
-          {accessNote(access, 'Open to every player.', 'Off: no music, no Settings row.')}
-        </span>
-      </div>
-    </Box>
-  )
-}
-
-/**
- * The shiny Pokédex (docs/39): each region's Pokédex gets a Shiny page once its league is beaten. It shows what the
- * save already holds, so the game alone reads it.
- */
-function ShinyDexBox() {
-  const [raw, setRaw] = useConfigRow('shinyDex')
-  const access = raw?.access ?? 'off'
-  return (
-    <Box
-      title="Shiny Pokédex"
-      icon="book"
-      hint="On: once a region's League is beaten, its Pokédex has a Pokédex / Shiny switch. The Shiny page lists every species of the region the player has owned shiny there (caught, hatched, traded for or evolved), kept when it leaves, with its rules once as a pop-up and an INFO button. Saves note their shinies whatever the switch says, so the page is whole the day it opens."
-    >
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-lg">Shiny Pokédex</span>
-        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="Shiny Pokédex: who has it" />
-        <span className="text-base text-muted">
-          {accessNote(access, 'Open to every player.', 'Off: the Pokédex has one page, as before.')}
-        </span>
-      </div>
-    </Box>
-  )
-}
-
 /**
  * The Unown Pokédex (docs/41): the 28 letters, once an area where Unown live is opened, and the ₽ the last one pays.
  * The letters are noted on the device, so the game alone reads it.
@@ -741,20 +478,12 @@ function ShinyDexBox() {
 function UnownDexBox() {
   const [raw, setRaw] = useConfigRow('unownDex')
   const cfg = { ...DEFAULT_CONFIG.unownDex, ...(raw ?? {}) }
-  const access = cfg.access ?? 'off'
   return (
     <Box
       title="Unown Pokédex"
       icon="book"
-      hint="On: once the player opens an area where Unown live (Johto's Ruins of Alph), their Pokédex gets an Unown page with the 28 letters (A–Z, ! and ?), Home shows its banner while they stand in that area, and its rules come once as a pop-up with an INFO button. While a letter is missing, every Unown caught is a new one (even a weaker one can be caught). The last letter pays the prize below, once per region. The Pokédex itself keeps one Unown entry."
+      hint="Once the player opens an area where Unown live (Johto's Ruins of Alph), their Pokédex gets an Unown page with the 28 letters (A–Z, ! and ?), Home shows its banner while they stand in that area, and its rules come once as a pop-up with an INFO button. While a letter is missing, every Unown caught is a new one (even a weaker one can be caught). The last letter pays the prize below, once per region. The Pokédex itself keeps one Unown entry."
     >
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-lg">Unown Pokédex</span>
-        <AccessSwitch value={access} onChange={(a) => setRaw({ ...cfg, access: a })} label="Unown Pokédex: who has it" />
-        <span className="text-base text-muted">
-          {accessNote(access, 'Open to every player.', 'Off: no Unown page, no banner; Unown are caught as before.')}
-        </span>
-      </div>
       <div className="grid gap-3 sm:grid-cols-4">
         <Field label="Prize (₽)" hint="for all 28 letters, once">
           <NumInput
@@ -768,82 +497,24 @@ function UnownDexBox() {
   )
 }
 
-/** Trainer looks (docs/31): unlockable looks from every region in place of the free Kanto and Johto list. */
-function LooksBox() {
-  const [raw, setRaw] = useConfigRow('looks')
-  const access = raw?.access ?? 'off'
-  return (
-    <Box
-      title="Trainer looks"
-      icon="user"
-      hint="The look other trainers see (leaderboard, Versus, friends). On: Red and Leaf are free and every other look unlocks by playing its region (Pokémon caught, an area reached, the League, the full Pokédex), from the row under the trainer card. A look worn but not unlocked comes off (back to Red or Leaf). Off: the old free list of Kanto and Johto classes."
-    >
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-lg">Trainer looks</span>
-        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="Trainer looks: who sees them" />
-        <span className="text-base text-muted">
-          {accessNote(access, 'Open to every player.', 'Off: the free list as before. Seen looks are kept in saves.')}
-        </span>
-      </div>
-    </Box>
-  )
-}
-
 /**
- * The General upgrades and the two items that came with them (docs/25): each its own three-way switch, Off by default
- * (the server reads the General one too, for the golden names), then the levels' numbers.
+ * The General upgrades (docs/25): the levels' numbers. Their switches (the tab, the Shiny Charm, and the Link Cable and
+ * Bait that came with them) are on the Switches tab; the server reads the General one too, for the golden names.
  */
 function GeneralBox() {
   const data = useAdminData()
   const wild = data?.config.shinyChance ?? 0
   const wildOdds = wild > 0 ? `1 in ${Math.round(1 / wild)}` : 'never'
   const [raw, setRaw] = useConfigRow('general')
-  const [items, setItems] = useConfigRow('itemSwitches')
   const cfg: GeneralConfig = { ...DEFAULT_CONFIG.general, ...(raw ?? {}) }
-  const switches = { ...DEFAULT_CONFIG.itemSwitches, ...(items ?? {}) }
   const set = (patch: Partial<GeneralConfig>) => setRaw({ ...cfg, ...patch })
   const row = <K extends 'luck' | 'offline' | 'charm'>(k: K, i: number, patch: Partial<GeneralConfig[K][number]>) =>
     set({ [k]: cfg[k].map((r, j) => (j === i ? { ...r, ...patch } : r)) })
-  const ITEMS: [string, string, string][] = [
-    ['link-cable', 'Link Cable', 'Used from the Team screen on a trade evolution. Not sold unless the item says so.'],
-    ['bait', 'Bait', 'Offered at the catch when a ball falls short and its die could still make it.'],
-  ]
   return (
     <Box
-      title="General upgrades & catch items" icon="navUpgrades"
-      hint="The Upgrades screen's third tab (Capture Luck, offline earnings, I am just rich, the Shiny Charm) and the Link Cable and Bait items. Each switch is Off by default; the server checks the General one for the golden names."
+      title="General upgrades" icon="navUpgrades"
+      hint={`The Upgrades screen's third tab: Capture Luck, offline earnings, I am just rich, the Shiny Charm (level 0 is the wild odds, now ${wildOdds}; a level never makes them worse).`}
     >
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-lg">General tab</span>
-        <AccessSwitch value={cfg.access ?? 'off'} onChange={(access) => set({ access })} label="General upgrades: who sees them" />
-        <span className="text-base text-muted">
-          {accessNote(cfg.access ?? 'off', 'Open to every player.', 'Off: no tab, no pop-up, no effect. Levels already bought are kept.')}
-        </span>
-      </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-lg">Shiny Charm</span>
-        <AccessSwitch value={cfg.charmAccess ?? 'off'} onChange={(charmAccess) => set({ charmAccess })} label="Shiny Charm: who sees it" />
-        <span className="text-base text-muted">
-          {accessNote(
-            cfg.charmAccess ?? 'off',
-            `In the General tab (itself on). Level 0 is the wild odds, now ${wildOdds}; a level never makes them worse.`,
-            'Off: no card, no pop-up, no effect. Levels already bought are kept.',
-          )}
-        </span>
-      </div>
-      {ITEMS.map(([key, label, hint]) => (
-        <div key={key} className="flex flex-wrap items-center gap-3">
-          <span className="text-lg">{label}</span>
-          <AccessSwitch
-            value={switches[key] ?? 'off'}
-            onChange={(access) => setItems({ ...switches, [key]: access })}
-            label={`${label}: who can use it`}
-          />
-          <span className="text-base text-muted">
-            {accessNote(switches[key] ?? 'off', hint, 'Off: not sold, not found, not usable. Bags keep theirs.')}
-          </span>
-        </div>
-      ))}
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Offline earnings count up to (hours)" hint="per absence, on the server's clock">
           <NumInput min={1} max={168} value={cfg.offlineMaxHours} onChange={(v) => set({ offlineMaxHours: Math.max(1, v ?? 24) })} />
@@ -897,13 +568,9 @@ function GeneralBox() {
 }
 
 /**
- * Friend invite rewards (docs/15 §25): the three-way switch and the gauge's tiers — each a number of invited new players
- * who have won their first badge, and the gifts it gives (the same editor as a message's gifts). The server reads the
- * same row (0051): it counts the invites only while the switch isn't off, and hands each tier over once.
- */
-/**
- * The battle powers (docs/35): Mega Evolution's gem rules, Gigantamax's newer rules and Z-Moves, each with its switch
- * (Off: Mega Evolution and Gigantamax as before, no Z-Moves; the server checks them for Versus), then their numbers.
+ * The battle powers (docs/35): the numbers of Mega Evolution's gem rules, Gigantamax's newer rules and Z-Moves. Their
+ * switches are on the Switches tab (Off: Mega Evolution and Gigantamax as before, no Z-Moves; the server checks them
+ * for Versus).
  */
 function BattlePowersBox() {
   const [megaRaw, setMega] = useConfigRow('megaEvolution')
@@ -922,13 +589,6 @@ function BattlePowersBox() {
       title="Battle powers: Mega Gems, Gigantamax, Z-Moves" icon="up"
       hint="docs/35. Each switch is Off by default. Off, Mega Evolution and Gigantamax keep their older rules (Kalos / Galar reached, one shared use) and there are no Z-Moves. On: each opens at its region's badge, elsewhere after that region's League, never in a small world."
     >
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-lg">Mega Gems</span>
-        <AccessSwitch value={mega.gems.access} onChange={(access) => setGems({ access })} label="Mega gem rules: who plays by them" />
-        <span className="text-base text-muted">
-          {accessNote(mega.gems.access, 'A Mega needs its gem and lasts its turns.', 'Off: Mega Evolution as before (Lv.50, the whole battle). Gems held are kept.')}
-        </span>
-      </div>
       <div className="grid gap-3 sm:grid-cols-3">
         <Field label="Opens at this badge of Kalos" hint="3 = Korrina's">
           <NumInput min={1} max={8} value={mega.gems.badges} onChange={(v) => setGems({ badges: num(v, 1, 8, 3) })} />
@@ -952,13 +612,6 @@ function BattlePowersBox() {
           />
         </Field>
       </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-lg">Gigantamax</span>
-        <AccessSwitch value={gmax.boost.access} onChange={(access) => setBoost({ access })} label="Gigantamax newer rules: who plays by them" />
-        <span className="text-base text-muted">
-          {accessNote(gmax.boost.access, 'More dice, a heal, a use of its own.', 'Off: Gigantamax as before (Galar reached, one die, shared with the Mega).')}
-        </span>
-      </div>
       <div className="grid gap-3 sm:grid-cols-3">
         <Field label="Opens at this badge of Galar" hint="3 = Kabu's">
           <NumInput min={1} max={8} value={gmax.boost.badges} onChange={(v) => setBoost({ badges: num(v, 1, 8, 3) })} />
@@ -969,11 +622,6 @@ function BattlePowersBox() {
         <Field label="Heals (% of max HP)" hint="kept after it shrinks back">
           <NumInput min={0} max={100} value={gmax.boost.healPercent} onChange={(v) => setBoost({ healPercent: num(v, 0, 100, 30) })} />
         </Field>
-      </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-lg">Z-Moves</span>
-        <AccessSwitch value={z.access} onChange={(access) => setZOne({ access })} label="Z-Moves: who can use them" />
-        <span className="text-base text-muted">{accessNote(z.access, 'Once per battle, from Alola.', 'Off: no Z-Moves anywhere.')}</span>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
         <Field label="Opens at this badge of Alola" hint="3 = Lana's Waterium Z">
@@ -1005,6 +653,11 @@ function BattlePowersBox() {
   )
 }
 
+/**
+ * Friend invite rewards (docs/15 §25): the gauge's tiers — each a number of invited new players who have won their first
+ * badge, and the gifts it gives (the same editor as a message's gifts). The server reads the same row (0051): it counts
+ * the invites only while the switch isn't off, and hands each tier over once.
+ */
 function InviteRewardsBox() {
   const data = useAdminData()
   const [raw, setRaw] = useConfigRow('inviteRewards')
@@ -1021,17 +674,6 @@ function InviteRewardsBox() {
       title="Friend invite rewards" icon="gift"
       hint="Each new player a player invites with their invite link, once they win their first badge, fills that player's gauge (Friends page, Prof. Oak's invite). Each tier gives its gifts once, opened like a message's gifts. The server checks the switch too."
     >
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-lg">Who gets them</span>
-        <AccessSwitch value={cfg.access ?? 'off'} onChange={(access) => set({ access })} label="Invite rewards: who gets them" />
-        <span className="text-base text-muted">
-          {cfg.access === 'all'
-            ? 'Every signed-in player: invites count, the gauge shows, rewards open.'
-            : cfg.access === 'admin'
-              ? 'Only you see the gauge and open rewards (to try it first). Players you invite count; other players see nothing.'
-              : 'Off: no gauge, no pop-up, no invite counted. What was counted and opened stays.'}
-        </span>
-      </div>
       <ol className="m-0 flex list-none flex-col gap-2 p-0">
         {tiers.map((t, i) => (
           <li key={i} className="flex flex-col gap-2 border-2 border-shadow p-2">
@@ -1085,6 +727,10 @@ function InviteRewardsBox() {
   )
 }
 
+/**
+ * Pokémon Day Care, one for every region: when it opens, how fast residents train, the friend slots, the two Egg
+ * checks, Egg now and what Eggs hatch into.
+ */
 function DayCareBox() {
   const data = useAdminData()
   const [raw, setRaw] = useConfigRow('dayCare')
@@ -1301,7 +947,8 @@ function StatusRulesBox() {
   )
 }
 
-export function ConfigSection() {
+/** The Game tab: pacing, encounters, XP, battles, saves, friends, the player's help, the XP curve and the starters. */
+function GameSettings() {
   const data = useAdminData()
   const [encounterMode, setEncounterMode] = useConfigRow('encounterMode')
   const [hpMultiplier, setHpMultiplier] = useConfigRow('hpMultiplier')
@@ -1319,7 +966,6 @@ export function ConfigSection() {
   const [spread, setSpread] = useConfigRow('scaleLevelSpread')
   const [voluntary, setVoluntary] = useConfigRow('allowVoluntarySwitch')
   const [forced, setForced] = useConfigRow('forcedCenterWhenHurt')
-  const [version] = useConfigRow('configVersion')
   const [multiExp, setMultiExp] = useConfigRow('multiExpShare')
   const [multiGap, setMultiGap] = useConfigRow('multiExpGapBonus')
   const [multiMax, setMultiMax] = useConfigRow('multiExpMaxShare')
@@ -1333,135 +979,124 @@ export function ConfigSection() {
   const curve = useMemo(() => ({ ...DEFAULT_CONFIG.xpCurve, ...xpCurve }), [xpCurve])
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex items-baseline justify-between">
-        <h2 className="flex items-center gap-2 text-3xl">
-          <PixelIcon name="gear" size={26} />
-          Config
-        </h2>
-        <span className="text-lg">content version {String(version)} (bumped by Publish)</span>
-      </div>
+    <div className="grid gap-4 xl:grid-cols-2">
+      <Box title="Pacing & rewards" icon="trophy" hint="Fight length, levelling speed and money. Damage always equals the dice.">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="hpMultiplier" hint="× every Pokémon's HP, yours and foes' — the fight-length knob">
+            <NumInput step={0.05} value={hpMultiplier} min={0.1} onChange={(v) => setHpMultiplier(Math.max(0.1, v ?? 1))} />
+          </Field>
+          <Field label="xpMultiplier" hint="× the XP a K.O. gives (foe's level × this) — to the Pokémon and to the area's exploration alike">
+            <NumInput step={0.25} value={xpMult} min={0.1} onChange={(v) => setXpMult(Math.max(0.1, v ?? 1))} />
+          </Field>
+          <Field label="goldMultiplier" hint="× trainer gold — the economy knob">
+            <NumInput step={0.1} value={goldMultiplier} onChange={(v) => setGold(v ?? 1)} />
+          </Field>
+        </div>
+      </Box>
 
-      <div className="grid gap-4 xl:grid-cols-2">
-        <Box title="Pacing & rewards" icon="trophy" hint="Fight length, levelling speed and money. Damage always equals the dice.">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="hpMultiplier" hint="× every Pokémon's HP, yours and foes' — the fight-length knob">
-              <NumInput step={0.05} value={hpMultiplier} min={0.1} onChange={(v) => setHpMultiplier(Math.max(0.1, v ?? 1))} />
-            </Field>
-            <Field label="xpMultiplier" hint="× the XP a K.O. gives (foe's level × this) — to the Pokémon and to the area's exploration alike">
-              <NumInput step={0.25} value={xpMult} min={0.1} onChange={(v) => setXpMult(Math.max(0.1, v ?? 1))} />
-            </Field>
-            <Field label="goldMultiplier" hint="× trainer gold — the economy knob">
-              <NumInput step={0.1} value={goldMultiplier} onChange={(v) => setGold(v ?? 1)} />
-            </Field>
-          </div>
-        </Box>
+      <Box title="Encounters" icon="ball" hint="How much each card counts is set per area (Areas → Encounter deck).">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="encounterMode" hint="deck: each area deals a shuffled deck (exact mix, no long droughts) · random: independent rolls">
+            <Select value={encounterMode} options={['deck', 'random'] as const} onChange={setEncounterMode} />
+          </Field>
+          <Field label="skipPolicy" hint="FLEE on the encounter pop-up: free, once per encounter, or never">
+            <Select value={skip} options={['free', 'once', 'none'] as const} onChange={setSkip} />
+          </Field>
+          <Field label="scaleLevelSpread" hint="areas that scale to the team: its average ± this">
+            <NumInput value={spread} onChange={(v) => setSpread(v ?? 3)} />
+          </Field>
+          <Field label="shinyChance" hint={`chance a wild Pokémon is shiny (only its sprites change) · 0.01 = 1 in 100${Number(shiny) > 0 ? ` · now 1 in ${Math.round(1 / Number(shiny))}` : ' · now off'}`}>
+            <NumInput step={0.005} value={shiny} min={0} max={1} onChange={(v) => setShiny(Math.max(0, Math.min(1, v ?? 0)))} />
+          </Field>
+          <label className="flex items-center gap-2 text-lg" title="Players can't FLEE / AVOID an encounter or RUN from a battle (overrides skipPolicy)">
+            <input type="checkbox" checked={!!noEscape} onChange={(e) => setNoEscape(e.target.checked)} /> noEscape
+          </label>
+          <label className="flex items-center gap-2 text-lg" title="The first encounter of an area is a Center when anyone is hurt">
+            <input type="checkbox" checked={!!forced} onChange={(e) => setForced(e.target.checked)} /> forcedCenterWhenHurt
+          </label>
+        </div>
+      </Box>
 
-        <Box title="Encounters" icon="ball" hint="How much each card counts is set per area (Areas → Encounter deck).">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="encounterMode" hint="deck: each area deals a shuffled deck (exact mix, no long droughts) · random: independent rolls">
-              <Select value={encounterMode} options={['deck', 'random'] as const} onChange={setEncounterMode} />
-            </Field>
-            <Field label="skipPolicy" hint="FLEE on the encounter pop-up: free, once per encounter, or never">
-              <Select value={skip} options={['free', 'once', 'none'] as const} onChange={setSkip} />
-            </Field>
-            <Field label="scaleLevelSpread" hint="areas that scale to the team: its average ± this">
-              <NumInput value={spread} onChange={(v) => setSpread(v ?? 3)} />
-            </Field>
-            <Field label="shinyChance" hint={`chance a wild Pokémon is shiny (only its sprites change) · 0.01 = 1 in 100${Number(shiny) > 0 ? ` · now 1 in ${Math.round(1 / Number(shiny))}` : ' · now off'}`}>
-              <NumInput step={0.005} value={shiny} min={0} max={1} onChange={(v) => setShiny(Math.max(0, Math.min(1, v ?? 0)))} />
-            </Field>
-            <label className="flex items-center gap-2 text-lg" title="Players can't FLEE / AVOID an encounter or RUN from a battle (overrides skipPolicy)">
-              <input type="checkbox" checked={!!noEscape} onChange={(e) => setNoEscape(e.target.checked)} /> noEscape
-            </label>
-            <label className="flex items-center gap-2 text-lg" title="The first encounter of an area is a Center when anyone is hurt">
-              <input type="checkbox" checked={!!forced} onChange={(e) => setForced(e.target.checked)} /> forcedCenterWhenHurt
-            </label>
-          </div>
-        </Box>
-
-        <Box title="XP sharing" icon="up">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="xpShareMode" hint="fighter: the Pokémon that fought · team: all three">
-              <Select value={share} options={['fighter', 'team'] as const} onChange={setShare} />
-            </Field>
-            <Field label="multiExpShare" hint="Multi EXP: bench share of K.O. XP (0 = off; players can toggle)">
-              <NumInput step={0.05} value={multiExp} min={0} max={1} onChange={(v) => setMultiExp(Math.max(0, Math.min(1, v ?? 0)))} />
-            </Field>
-            <Field label="multiExpGapBonus" hint="+ this share per level the bench Pokémon is below the fighter (catch-up)">
-              <NumInput step={0.01} value={multiGap} min={0} max={1} onChange={(v) => setMultiGap(Math.max(0, Math.min(1, v ?? 0)))} />
-            </Field>
-            <Field
-              label="multiExpMaxShare"
-              hint={`cap on the bench share (1 = as much as the fighter)${Number(multiGap) > 0 ? ` · reached ${Math.ceil(Math.max(0, Number(multiMax) - Number(multiExp)) / Number(multiGap))} levels behind` : ''}`}
-            >
-              <NumInput step={0.05} value={multiMax} min={0} max={1} onChange={(v) => setMultiMax(Math.max(0, Math.min(1, v ?? 1)))} />
-            </Field>
-          </div>
-        </Box>
-
-        <Box title="Battle" icon="sword">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="comboPayoutMode">
-              <Select value={payout} options={['highestDamage', 'highestRank'] as const} onChange={setPayout} />
-            </Field>
-            <Field label="enemyUpgradeLevel" hint="foes' dice/combo upgrade level where the area (and the trainer / legendary) sets none">
-              <NumInput value={enemyLv} min={1} max={10} onChange={(v) => setEnemyLv(v ?? 1)} />
-            </Field>
-            <Field label="versusUpgradeLevel" hint="Versus: every dice/combo track of both teams, whatever their owners bought">
-              <NumInput value={versusLv} min={1} max={10} onChange={(v) => setVersusLv(v ?? 5)} />
-            </Field>
-            <Field label="maxBattleTurns" hint="stalemate safety valve">
-              <NumInput value={maxTurns} onChange={(v) => setMaxTurns(v ?? 150)} />
-            </Field>
-            <label className="flex items-center gap-2 text-lg" title="Switching on your own turn (it costs the turn)">
-              <input type="checkbox" checked={!!voluntary} onChange={(e) => setVoluntary(e.target.checked)} /> allowVoluntarySwitch
-            </label>
-          </div>
-        </Box>
-
-        <Box title="Cloud save" icon="cloud" hint="How often signed-in players' saves go to Supabase. Fewer pushes = less database load.">
+      <Box title="XP sharing" icon="up">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="xpShareMode" hint="fighter: the Pokémon that fought · team: all three">
+            <Select value={share} options={['fighter', 'team'] as const} onChange={setShare} />
+          </Field>
+          <Field label="multiExpShare" hint="Multi EXP: bench share of K.O. XP (0 = off; players can toggle)">
+            <NumInput step={0.05} value={multiExp} min={0} max={1} onChange={(v) => setMultiExp(Math.max(0, Math.min(1, v ?? 0)))} />
+          </Field>
+          <Field label="multiExpGapBonus" hint="+ this share per level the bench Pokémon is below the fighter (catch-up)">
+            <NumInput step={0.01} value={multiGap} min={0} max={1} onChange={(v) => setMultiGap(Math.max(0, Math.min(1, v ?? 0)))} />
+          </Field>
           <Field
-            label="cloudSyncMinutes"
-            hint="a signed-in player's save is pushed at most once every this many minutes while they play (and when the page closes) · players can still press SYNC ONLINE, once per 5 min"
+            label="multiExpMaxShare"
+            hint={`cap on the bench share (1 = as much as the fighter)${Number(multiGap) > 0 ? ` · reached ${Math.ceil(Math.max(0, Number(multiMax) - Number(multiExp)) / Number(multiGap))} levels behind` : ''}`}
           >
-            <NumInput value={cloudSync} min={1} max={240} onChange={(v) => setCloudSync(Math.max(1, Math.min(240, v ?? 15)))} />
+            <NumInput step={0.05} value={multiMax} min={0} max={1} onChange={(v) => setMultiMax(Math.max(0, Math.min(1, v ?? 1)))} />
           </Field>
-        </Box>
+        </div>
+      </Box>
 
-        <Box title="Friends" icon="friends" hint="The friend list (docs/16). The database reads this key too: friend_add() refuses past it, on both sides.">
-          <Field label="maxFriends" hint="friends per player; lowering it removes nobody, it only stops new friends past the cap">
-            <NumInput value={maxFriends} min={1} max={500} onChange={(v) => setMaxFriends(Math.max(1, Math.min(500, v ?? 100)))} />
+      <Box title="Battle" icon="sword">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="comboPayoutMode">
+            <Select value={payout} options={['highestDamage', 'highestRank'] as const} onChange={setPayout} />
           </Field>
-        </Box>
-
-        <Box title="Player help" icon="book" hint="What the game shows players while they plan.">
-          <label className="flex items-start gap-2 text-lg">
-            <input type="checkbox" className="mt-1.5" checked={!!showRound} onChange={(e) => setShowRound(e.target.checked)} />
-            <span>
-              showRoundGauge
-              <span className="block text-sm text-muted">
-                The round gauge on the area screen: one segment per card of the area's deck, with an icon for each encounter
-                already met this round. Rounds (and their opening Pokémon Center) happen either way.
-              </span>
-            </span>
+          <Field label="enemyUpgradeLevel" hint="foes' dice/combo upgrade level where the area (and the trainer / legendary) sets none">
+            <NumInput value={enemyLv} min={1} max={10} onChange={(v) => setEnemyLv(v ?? 1)} />
+          </Field>
+          <Field label="versusUpgradeLevel" hint="Versus: every dice/combo track of both teams, whatever their owners bought">
+            <NumInput value={versusLv} min={1} max={10} onChange={(v) => setVersusLv(v ?? 5)} />
+          </Field>
+          <Field label="maxBattleTurns" hint="stalemate safety valve">
+            <NumInput value={maxTurns} onChange={(v) => setMaxTurns(v ?? 150)} />
+          </Field>
+          <label className="flex items-center gap-2 text-lg" title="Switching on your own turn (it costs the turn)">
+            <input type="checkbox" checked={!!voluntary} onChange={(e) => setVoluntary(e.target.checked)} /> allowVoluntarySwitch
           </label>
-          <label className="flex items-start gap-2 text-lg">
-            <input type="checkbox" className="mt-1.5" checked={!!showAhead} onChange={(e) => setShowAhead(e.target.checked)} />
-            <span>
-              showRoundPreview
-              <span className="block text-sm text-muted">
-                Under the round gauge, show what's ahead: an icon for each card still in the deck (battle, find, wild
-                Pokémon, Center, legendary) and the gym badge or legendary waiting once every round is done. Needs showRoundGauge.
-              </span>
-            </span>
-          </label>
-        </Box>
-      </div>
+        </div>
+      </Box>
 
-      <section>
-        <h3 className="text-2xl">XP curve — xpToNext(L) = ⌈A·L^B⌉ + C</h3>
-        <div className="mb-2 flex flex-wrap gap-3">
+      <Box title="Cloud save" icon="cloud" hint="How often signed-in players' saves go to Supabase. Fewer pushes = less database load.">
+        <Field
+          label="cloudSyncMinutes"
+          hint="a signed-in player's save is pushed at most once every this many minutes while they play (and when the page closes) · players can still press SYNC ONLINE, once per 5 min"
+        >
+          <NumInput value={cloudSync} min={1} max={240} onChange={(v) => setCloudSync(Math.max(1, Math.min(240, v ?? 15)))} />
+        </Field>
+      </Box>
+
+      <Box title="Friends" icon="friends" hint="The friend list (docs/16). The database reads this key too: friend_add() refuses past it, on both sides.">
+        <Field label="maxFriends" hint="friends per player; lowering it removes nobody, it only stops new friends past the cap">
+          <NumInput value={maxFriends} min={1} max={500} onChange={(v) => setMaxFriends(Math.max(1, Math.min(500, v ?? 100)))} />
+        </Field>
+      </Box>
+
+      <Box title="Player help" icon="book" hint="What the game shows players while they plan.">
+        <label className="flex items-start gap-2 text-lg">
+          <input type="checkbox" className="mt-1.5" checked={!!showRound} onChange={(e) => setShowRound(e.target.checked)} />
+          <span>
+            showRoundGauge
+            <span className="block text-sm text-muted">
+              The round gauge on the area screen: one segment per card of the area's deck, with an icon for each encounter
+              already met this round. Rounds (and their opening Pokémon Center) happen either way.
+            </span>
+          </span>
+        </label>
+        <label className="flex items-start gap-2 text-lg">
+          <input type="checkbox" className="mt-1.5" checked={!!showAhead} onChange={(e) => setShowAhead(e.target.checked)} />
+          <span>
+            showRoundPreview
+            <span className="block text-sm text-muted">
+              Under the round gauge, show what's ahead: an icon for each card still in the deck (battle, find, wild
+              Pokémon, Center, legendary) and the gym badge or legendary waiting once every round is done. Needs showRoundGauge.
+            </span>
+          </span>
+        </label>
+      </Box>
+
+      <Box title="XP curve" icon="up" hint="xpToNext(L) = ⌈A·L^B⌉ + C">
+        <div className="flex flex-wrap gap-3">
           {(['A', 'B', 'C'] as const).map((k) => (
             <Field key={k} label={k}>
               <NumInput className="w-24" step={k === 'B' ? 0.05 : 1} value={curve[k]} onChange={(v) => setXpCurve({ ...curve, [k]: v ?? 0 })} />
@@ -1472,10 +1107,9 @@ export function ConfigSection() {
           </Field>
         </div>
         <XpPlot A={curve.A} B={curve.B} C={curve.C} fightsPerHour={fph} mult={xpMult ?? 1} />
-      </section>
+      </Box>
 
-      <section>
-        <h3 className="text-2xl">Starters</h3>
+      <Box title="Starters" icon="ball">
         <div className="flex flex-wrap items-center gap-2">
           {data &&
             starters.map((d, i) => (
@@ -1488,81 +1122,236 @@ export function ConfigSection() {
             <NumInput className="w-20" value={starterLevel} onChange={(v) => setStarterLevel(v ?? 5)} />
           </Field>
         </div>
-      </section>
+      </Box>
+    </div>
+  )
+}
 
-      <EnergyBox />
+const TABS = [
+  { id: 'switches', label: 'Switches', icon: 'gear' },
+  { id: 'game', label: 'Game', icon: 'trophy' },
+  { id: 'odds', label: 'Pity & status', icon: 'burn' },
+  { id: 'dayCare', label: 'Day Care', icon: 'heal' },
+  { id: 'extreme', label: 'Extreme mode', icon: 'skull' },
+  { id: 'doubles', label: 'Double battles', icon: 'vs' },
+  { id: 'trades', label: 'Trades', icon: 'trade' },
+  { id: 'general', label: 'General upgrades', icon: 'navUpgrades' },
+  { id: 'powers', label: 'Battle powers', icon: 'up' },
+  { id: 'invites', label: 'Invite rewards', icon: 'gift' },
+  { id: 'push', label: 'Push', icon: 'bell' },
+  { id: 'gameCorner', label: 'Game Corner', icon: 'coin' },
+  { id: 'unown', label: 'Unown Pokédex', icon: 'book' },
+  { id: 'support', label: 'Support & Discord', icon: 'heart' },
+  { id: 'rows', label: 'All rows', icon: 'wrench' },
+] as const satisfies readonly { id: string; label: string; icon: IconName }[]
+type TabId = (typeof TABS)[number]['id']
 
-      <PityBox
-        configKey="uniquePity"
-        title="Once-only finds — pity"
-        icon="crown"
-        hint="The more rounds a player has done in an area, the likelier its once-only finds (Areas → Loot): × their odds per item find, never past 100 %."
-      />
+/** A config row as stored: any shape, so a feature can say where in it its switch is. */
+type Row = Record<string, unknown> | null | undefined
 
-      <PityBox
-        configKey="newPokemonPity"
-        title="New Pokémon — pity"
-        icon="ball"
-        hint="The more rounds a player has done in an area, the likelier its wild Pokémon they haven't caught (Areas → Wild pool): × their odds per wild Pokémon, never past 100 %."
-      />
+/**
+ * A feature's Off / On for admin / On for everyone (docs/15 §20): its config row, where in the row the switch is, and
+ * the tab with its numbers if it has any.
+ */
+interface Feature {
+  name: string
+  tab?: TabId
+  row: keyof GameConfig
+  get: (row: Row) => unknown
+  put: (row: Row, access: EventAccess) => Row
+}
 
-      <DonationBox />
+const D = DEFAULT_CONFIG as unknown as Record<keyof GameConfig, Row>
 
-      <DiscordBox />
+/** The switch is the row's own `access`. */
+const own = (name: string, row: keyof GameConfig, tab?: TabId): Feature => ({
+  name,
+  tab,
+  row,
+  get: (r) => r?.access,
+  put: (r, access) => ({ ...D[row], ...r, access }),
+})
 
-      <SlotMachineBox />
+/** The switch is `part.access` in the row (the Mega gems', Gigantamax's newer rules). */
+const inPart = (name: string, row: keyof GameConfig, part: string, tab?: TabId): Feature => ({
+  name,
+  tab,
+  row,
+  get: (r) => (r?.[part] as Row)?.access,
+  put: (r, access) => ({ ...D[row], ...r, [part]: { ...(D[row]?.[part] as Row), ...(r?.[part] as Row), access } }),
+})
 
-      <DayCareBox />
+/** The switch is one field of the row (the Shiny Charm's, an item's). */
+const field = (name: string, row: keyof GameConfig, key: string, tab?: TabId): Feature => ({
+  name,
+  tab,
+  row,
+  get: (r) => r?.[key],
+  put: (r, access) => ({ ...D[row], ...r, [key]: access }),
+})
 
-      <DayNightBox />
+const FEATURES: Feature[] = [
+  own('Day and night (Johto)', 'dayNight'),
+  own('Idle mode', 'idleMode'),
+  own('Trainer looks', 'looks'),
+  own('Unown Pokédex', 'unownDex', 'unown'),
+  own('Extreme mode', 'extreme', 'extreme'),
+  own('Double battles', 'doubleBattles', 'doubles'),
+  own('Trades', 'trade', 'trades'),
+  own('Game Corner', 'slotMachine', 'gameCorner'),
+  own('General upgrades', 'general', 'general'),
+  field('Shiny Charm', 'general', 'charmAccess', 'general'),
+  field('Link Cable', 'itemSwitches', 'link-cable'),
+  field('Bait', 'itemSwitches', 'bait'),
+  inPart('Mega Gems', 'megaEvolution', 'gems', 'powers'),
+  inPart('Gigantamax', 'gigantamax', 'boost', 'powers'),
+  own('Z-Moves', 'zMove', 'powers'),
+  own('Friend invite rewards', 'inviteRewards', 'invites'),
+  own('Push notifications', 'push', 'push'),
+]
 
-      <IdleModeBox />
+const isAccess = (v: unknown): v is EventAccess => (EVENT_ACCESS as readonly unknown[]).includes(v)
 
-      <DiceThrowsBox />
-
-      <GameFeelBox />
-      <RaidOverhaulBox />
-
-      <HapticsBox />
-
-      <MusicBox />
-
-      <ShinyDexBox />
-
-      <UnownDexBox />
-
-      <ExtremeBox />
-
-      <DoubleBattlesBox />
-
-      <TradesBox />
-
-      <PushBox />
-      <GeneralBox />
-      <BattlePowersBox />
-
-      <LooksBox />
-
-      <InviteRewardsBox />
-
-      <StatusRulesBox />
-
-      <section className="grid gap-3 md:grid-cols-2">
-        <JsonField k="ai" />
-        <JsonField k="startInventory" />
-      </section>
-
-      <section>
-        <DataTable
-          table="game_config"
-          title="All game_config rows"
-          newRow={() => ({ key: `newKey${Date.now().toString(36)}`, value: null })}
-          columns={[
-            { key: 'key', label: 'Key', kind: 'text' },
-            { key: 'value', label: 'Value (JSON)', kind: 'json', nullable: true },
-          ]}
+function FeatureRow({ feature, open }: { feature: Feature; open: (tab: TabId) => void }) {
+  const [raw, setRaw] = useConfigRow(feature.row)
+  const row = raw as unknown as Row
+  // A row from before its switch has none: the default's, else Off.
+  const stored = feature.get(row)
+  const fallback = feature.get(D[feature.row])
+  const access = isAccess(stored) ? stored : isAccess(fallback) ? fallback : 'off'
+  const { tab } = feature
+  return (
+    <tr className="border-t-2 border-line">
+      <th scope="row" className="py-1.5 pr-3 text-left text-lg font-normal">
+        {tab ? (
+          <button type="button" className="min-h-[34px] text-left underline" onClick={() => open(tab)}>
+            {feature.name}
+          </button>
+        ) : (
+          feature.name
+        )}
+      </th>
+      <td className="py-1.5 text-right">
+        <AccessSwitch
+          value={access}
+          onChange={(a) => setRaw(feature.put(row, a) as unknown as GameConfig[typeof feature.row])}
+          label={`${feature.name}: who has it`}
         />
-      </section>
+      </td>
+    </tr>
+  )
+}
+
+/** The switches, split in two tables side by side on a wide screen. */
+function SwitchesTable({ open }: { open: (tab: TabId) => void }) {
+  const half = Math.ceil(FEATURES.length / 2)
+  return (
+    <Box
+      title="Feature switches" icon="gear"
+      hint="Off: nowhere in the game. On for admin: only you, signed in, to try it first. On for everyone: open. A name opens its numbers. Save, then Publish."
+    >
+      <div className="grid gap-x-6 lg:grid-cols-2">
+        {[FEATURES.slice(0, half), FEATURES.slice(half)].map((list, i) => (
+          <table key={i} className="w-full">
+            <tbody>
+              {list.map((f) => (
+                <FeatureRow key={f.name} feature={f} open={open} />
+              ))}
+            </tbody>
+          </table>
+        ))}
+      </div>
+    </Box>
+  )
+}
+
+/**
+ * Admin → Config: sub-tabs at the top, the feature switches first, then one tab per feature with its numbers. The tab
+ * is in the address (?tab=trades), so a reload stays on it.
+ */
+export function ConfigSection() {
+  const [version] = useConfigRow('configVersion')
+  const [params, setParams] = useSearchParams()
+  const tab: TabId = TABS.some((t) => t.id === params.get('tab')) ? (params.get('tab') as TabId) : 'switches'
+  const open = (id: TabId) => setParams({ tab: id }, { replace: true })
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="flex items-center gap-2 text-3xl">
+          <PixelIcon name="gear" size={26} />
+          Config
+        </h2>
+        <span className="text-lg">content version {String(version)} (bumped by Publish)</span>
+      </div>
+      <nav aria-label="Config" className="flex flex-wrap gap-1.5">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            aria-current={tab === t.id ? 'page' : undefined}
+            onClick={() => open(t.id)}
+            className={cx(
+              'flex min-h-[44px] items-center gap-2 px-3 text-xl leading-none shadow-card',
+              tab === t.id ? 'bg-gold-pale shadow-card-gold' : 'bg-panel',
+            )}
+          >
+            <PixelIcon name={t.icon} size={20} />
+            {t.label}
+          </button>
+        ))}
+      </nav>
+      {tab === 'switches' && <SwitchesTable open={open} />}
+      {tab === 'game' && <GameSettings />}
+      {tab === 'odds' && (
+        <div className="grid gap-4 xl:grid-cols-2">
+          <PityBox
+            configKey="uniquePity"
+            title="Once-only finds — pity"
+            icon="crown"
+            hint="The more rounds a player has done in an area, the likelier its once-only finds (Areas → Loot): × their odds per item find, never past 100 %."
+          />
+          <PityBox
+            configKey="newPokemonPity"
+            title="New Pokémon — pity"
+            icon="ball"
+            hint="The more rounds a player has done in an area, the likelier its wild Pokémon they haven't caught (Areas → Wild pool): × their odds per wild Pokémon, never past 100 %."
+          />
+          <StatusRulesBox />
+        </div>
+      )}
+      {tab === 'dayCare' && <DayCareBox />}
+      {tab === 'extreme' && <ExtremeBox />}
+      {tab === 'doubles' && <DoubleBattlesBox />}
+      {tab === 'trades' && <TradesBox />}
+      {tab === 'general' && <GeneralBox />}
+      {tab === 'powers' && <BattlePowersBox />}
+      {tab === 'invites' && <InviteRewardsBox />}
+      {tab === 'push' && <PushBox />}
+      {tab === 'gameCorner' && <SlotMachineBox />}
+      {tab === 'unown' && <UnownDexBox />}
+      {tab === 'support' && (
+        <div className="grid gap-4 xl:grid-cols-2">
+          <DonationBox />
+          <DiscordBox />
+        </div>
+      )}
+      {tab === 'rows' && (
+        <>
+          <section className="grid gap-3 md:grid-cols-2">
+            <JsonField k="ai" />
+            <JsonField k="startInventory" />
+          </section>
+          <DataTable
+            table="game_config"
+            title="All game_config rows"
+            newRow={() => ({ key: `newKey${Date.now().toString(36)}`, value: null })}
+            columns={[
+              { key: 'key', label: 'Key', kind: 'text' },
+              { key: 'value', label: 'Value (JSON)', kind: 'json', nullable: true },
+            ]}
+          />
+        </>
+      )}
     </div>
   )
 }

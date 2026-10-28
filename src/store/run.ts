@@ -26,11 +26,7 @@ import {
   centersOn,
   centerWouldHelp,
   challengeEncounter,
-  centerIsNext,
-  encounterEnergyCost,
   finishRound,
-  energyNow,
-  spendEnergy,
   type EncounterContext,
   playerSideOf,
   consumeItem,
@@ -257,22 +253,6 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
 }
 
 /**
- * The next encounter (CONTINUE) needs energy, unless what comes next is free anyway (a Pokémon Center, or nobody can fight).
- * False when the energy system is off.
- */
-export function outOfEnergy(): boolean {
-  const { save, data, run } = useGame.getState()
-  if (!save || !data.config.energy.enabled || energyNow(save, data.config.energy, Date.now()).value >= 1) return false
-  if (!hasAbleTeam(save) || !run.areaId) return false
-  // A portal run deals no Center: only a distortion waiting to be picked is free.
-  if (inPortalRun(save, data, run.areaId)) return !portalStateOf(save, run.areaId).offers?.length
-  // Nor does the nightmare (docs/30): only Darkrai's strike, due after a round, is free.
-  if (inNightmare(save, data, run.areaId)) return !nightmareStateOf(save, run.areaId).strike
-  const ctx = encounterContext(save, run.areaId, null)
-  return !ctx || !centerIsNext(ctx)
-}
-
-/**
  * The next card of a portal run (docs/28): a wild Pokémon or a find (its preview, as anywhere), or the distortion that
  * ends the cycle — its boons wait in the save for the pick (the area shows them), or, the last one, the run is won.
  */
@@ -296,10 +276,7 @@ function rollPortal(save: SaveData, areaId: string) {
   const ctx = encounterContext(drawn.save, areaId, null)
   const roll = ctx ? portalEncounter(ctx, drawn.card, runRng) : null
   if (!roll) return commitSave(drawn.save)
-  let recorded = recordDraws(drawn.save, areaId, { encounter: roll.encounter, deck: null, lootDeck: roll.lootDeck })
-  const cost = data.config.energy.enabled ? encounterEnergyCost(roll.encounter) : 0
-  if (cost > 0) recorded = spendEnergy(recorded, data.config.energy, Date.now(), cost) ?? recorded
-  commitSave(recorded)
+  commitSave(recordDraws(drawn.save, areaId, { encounter: roll.encounter, deck: null, lootDeck: roll.lootDeck }))
   setRun({ phase: 'preview', encounter: roll.encounter, firstInArea: false })
 }
 
@@ -380,8 +357,6 @@ function rollNightmare(save: SaveData, areaId: string) {
   }
   const encounter = nightmareEncounter(save, data, areaId)
   if (!encounter) return setRun({ phase: 'idle', encounter: null, nightmareStruck: false })
-  const cost = data.config.energy.enabled ? encounterEnergyCost(encounter) : 0
-  if (cost > 0) commitSave(spendEnergy(save, data.config.energy, Date.now(), cost) ?? save)
   setRun({ phase: 'preview', encounter, firstInArea: false, nightmareStruck: false })
 }
 
@@ -468,27 +443,8 @@ export function rollNext() {
   // A won portal run or nightmare leaves only its raid: whatever asked (the map's CONTINUE HERE, a result card's
   // CONTINUE), no card is dealt there, or the next stop on its page would find CONTINUE shut (a player’s report, 2026-10-21).
   if (isAreaSealed(save, data, run.areaId)) return setRun({ phase: 'idle', encounter: null })
-  if (inNightmare(save, data, run.areaId)) {
-    if (outOfEnergy()) {
-      setRun({ phase: 'idle', encounter: null })
-      pushToast(t('ui.toast.outOfEnergy'), 'bad')
-      return
-    }
-    return rollNightmare(save, run.areaId)
-  }
-  if (inPortalRun(save, data, run.areaId)) {
-    if (outOfEnergy()) {
-      setRun({ phase: 'idle', encounter: null })
-      pushToast(t('ui.toast.outOfEnergy'), 'bad')
-      return
-    }
-    return rollPortal(save, run.areaId)
-  }
-  if (outOfEnergy()) {
-    setRun({ phase: 'idle', encounter: null })
-    pushToast(t('ui.toast.outOfEnergy'), 'bad')
-    return
-  }
+  if (inNightmare(save, data, run.areaId)) return rollNightmare(save, run.areaId)
+  if (inPortalRun(save, data, run.areaId)) return rollPortal(save, run.areaId)
   // Nobody able to fight (e.g. after a stalemate) → the Center is the only sensible next stop. Extreme mode has none:
   // the team rests (Home and the area say until when).
   const noneAble = !hasAbleTeam(save)
@@ -506,9 +462,7 @@ export function rollNext() {
   const encounter = asDouble(roll.encounter, ctx, save, runRng)
   // The decks live in the save, so reloading the page can't reshuffle them.
   // Always recorded: besides the decks, the area notes whether this was a Center (never two in a row).
-  let recorded = recordDraws(save, area.id, roll)
-  const cost = data.config.energy.enabled && !noneAble ? encounterEnergyCost(encounter) : 0
-  if (cost > 0) recorded = spendEnergy(recorded, data.config.energy, Date.now(), cost) ?? recorded
+  const recorded = recordDraws(save, area.id, roll)
   if (recorded !== save) commitSave(recorded)
   setRun({ phase: 'preview', encounter, firstInArea: false, forceNext: forceKind === run.forceNext ? null : run.forceNext })
   // A Pokémon Center is never a choice (no skipping it, nothing to pick): straight in, no preview card.

@@ -106,7 +106,7 @@ const TRAY_JITTER = [step(-2), step(2), { transform: 'none' }]
 /**
  * Your dice land on their own; tap one to lift it for the reroll (red outline, ↻ tag), the combo's dice wear a gold
  * ring and gold corner brackets. The foe's dice are smaller and can't be pressed. The tray knows when the last die of
- * a throw is down (`onSettled`): with the game feel on it lands heavy; the readout waits for it.
+ * a throw is down (`onSettled`): it lands heavy; the readout waits for it.
  */
 export function DiceTray({
   tray,
@@ -118,7 +118,6 @@ export function DiceTray({
   foeName,
   children,
   onSettled,
-  feel = false,
   score: scoreIn,
   hand,
   anticipate = 0,
@@ -139,8 +138,6 @@ export function DiceTray({
   children?: ReactNode
   /** Every die of this throw is down: its trayKeyOf. */
   onSettled?: (key: string) => void
-  /** The game feel's touches (docs/38): the last die lands heavy. */
-  feel?: boolean
   /** The count-up under way: the dice's "+N", the combo's ring tier, a tier 3's shake, a tier 4's banner. */
   score?: ScoreFeed | ScoreView | null
   /** No throw on the tray yet: whose turn it is, its dice waiting in hand, face down (F8c, P1c). */
@@ -162,8 +159,8 @@ export function DiceTray({
 
   // Which of this throw's dice are down. Read through a ref: a die calls back long after the render that made it.
   const keys = tray ? tray.keys.slice(0, tray.dice.length) : []
-  const latest = useRef({ keys, foe, feel, level, onSettled })
-  latest.current = { keys, foe, feel, level, onSettled }
+  const latest = useRef({ keys, foe, level, onSettled })
+  latest.current = { keys, foe, level, onSettled }
   const down = useRef(new Set<string>())
   const [squash, setSquash] = useState<string | null>(null)
   const land = (key: string) => {
@@ -172,7 +169,7 @@ export function DiceTray({
     if (!now.keys.includes(key) || !now.keys.every((k) => down.current.has(k))) return
     down.current = new Set(now.keys)
     // The last one down lands heavy (F8b): a thud and a squash; your own dice buzz too (the haptics' own switch).
-    if (now.feel && now.level !== 'off') {
+    if (now.level !== 'off') {
       feelSound('die.landHeavy')
       setSquash(key)
     }
@@ -277,15 +274,14 @@ let runs = 0
 
 /**
  * The readout follows the dice (F2d): it shows once the last die of a throw is down (`settled`) and stays through a
- * reroll, with the roll before's numbers, until the new dice land. With the game feel on (F2a), each landing then plays
- * the count-up (fx/dice/score.ts): the scoring dice's "+N" a semitone apart, the combo's own beat, then the total
- * counting to the engine's damage. Nothing here decides a number: they all come from `preview`.
+ * reroll, with the roll before's numbers, until the new dice land. Each landing then plays the count-up (F2a,
+ * fx/dice/score.ts): the scoring dice's "+N" a semitone apart, the combo's own beat, then the total counting to the
+ * engine's damage. Nothing here decides a number: they all come from `preview`.
  */
 export function useDamageReveal(
   preview: Preview | null,
   settled: boolean,
   throwKey: string,
-  feel: boolean,
 ): {
   preview: Preview | null
   score: ScoreFeed | null
@@ -319,11 +315,6 @@ export function useDamageReveal(
   useEffect(() => {
     if (!preview || !settled || !sig || shown?.sig === sig) return
     setShown({ sig, preview })
-    if (!feel) {
-      setRun(null)
-      setScore(null)
-      return
-    }
     // A reroll counts on from what showed before; a fresh throw from nothing.
     const res = preview.r
     const from = shown?.preview.r.final ?? 0
@@ -401,8 +392,8 @@ function statusCount(s: StatusApplication): string | undefined {
 /**
  * Under the tray, one line led by the damage, big ("26 DMG": a button, the math behind it, shown once, under the
  * readout), the combo chip when there is one, how effective it is, and a chip per status the faces cause, with its
- * stacks, chance, level or heal. With the game feel on (`score`), the combo shows once it has landed and the damage
- * counts up to the engine's number.
+ * stacks, chance, level or heal. With a count-up under way (`score`), the combo shows once it has landed and the
+ * damage counts up to the engine's number.
  */
 export function Readout({
   preview,

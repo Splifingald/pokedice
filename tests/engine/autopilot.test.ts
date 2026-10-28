@@ -172,15 +172,11 @@ describe('the way between areas', () => {
 describe('each step of a run', () => {
   const s = at(B.id, 1)
 
-  it('between encounters: on to the next one, unless a pop-up, the energy or a resting team holds it', () => {
+  it('between encounters: on to the next one, unless a pop-up or a resting team holds it', () => {
     expect(autopilotStep(s, ON, 'idle', view('idle', B.id))).toEqual({ do: 'continue' })
     expect(autopilotStep(s, ON, 'idle', view('idle', B.id, { held: true }))).toEqual({
       do: 'wait',
       why: 'held',
-    })
-    expect(autopilotStep(s, ON, 'idle', view('idle', B.id, { noEnergy: true }))).toEqual({
-      do: 'wait',
-      why: 'energy',
     })
     const ko = { ...s, box: s.box.map((p) => ({ ...p, currentHp: 0 })), mode: 'extreme' as const }
     expect(autopilotStep(ko, ON, 'idle', view('idle', B.id))).toEqual({ do: 'wait', why: 'resting' })

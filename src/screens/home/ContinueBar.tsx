@@ -27,9 +27,9 @@ import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { countdown, trainerTitle } from '@/lib/format'
 import { pushToast, useGame } from '@/store/game'
-import { useEnergy } from '@/store/hooks'
+import { useNow } from '@/store/hooks'
 import { serverNow } from '@/store/serverTime'
-import { challenge, enterArea, outOfEnergy, rollNext } from '@/store/run'
+import { challenge, enterArea, rollNext } from '@/store/run'
 import { travelTo } from '@/store/travel'
 import { cx } from '@/theme/util'
 import { progressRaidPath } from '../events/progressRaids'
@@ -43,7 +43,7 @@ function ensureRun(area: Area) {
 /**
  * What CONTINUE does and says in an area: the next encounter (rollNext → its preview on /area), or the gym or legendary
  * waiting at the end of the rounds, or the area's progression raid once it's completed (docs/24: its page, like a gym
- * leader's challenge); back to the encounter when one is under way; nothing when the area is closed or the energy is out.
+ * leader's challenge); back to the encounter when one is under way; nothing when the area is closed.
  */
 export function useContinue(area: Area) {
   const { t } = useT()
@@ -52,7 +52,7 @@ export function useContinue(area: Area) {
   const data = useGame((s) => s.data)
   const run = useGame((s) => s.run)
   const battle = useGame((s) => !!s.battle)
-  const energy = useEnergy()
+  const now = useNow()
 
   const progress = progressOf(save, area.id)
   const side = playerSideOf(save)
@@ -69,8 +69,6 @@ export function useContinue(area: Area) {
   const busy = (run.areaId === area.id && run.phase !== 'idle') || battle
   const raid = gym || boss || busy ? null : openRaidIn(save, data, area)
   const raidName = raid ? (data.species[raid.dex]?.name ?? '') : ''
-  // Re-checked every second (useEnergy ticks): a Center the game sends next is free even at 0.
-  const empty = !!energy && energy.value < 1 && run.areaId === area.id && outOfEnergy()
   const need = area.roundsToClear || null
   const done = progress.roundsDone ?? 0
   // Extreme mode (docs/22): nobody can fight and no Center will come — the team rests.
@@ -104,7 +102,7 @@ export function useContinue(area: Area) {
       ? back
         ? t('ui.extreme.card.resting', {
             name: data.species[back.inst.dex]?.name ?? '',
-            time: countdown(back.at - (energy?.now ?? Date.now())),
+            time: countdown(back.at - now),
           })
         : t('ui.extreme.resting.title')
       : gym
@@ -115,15 +113,13 @@ export function useContinue(area: Area) {
           ? t('ui.raid.progress.continueSub', { level: raidRules(data, raid.dex, 'progress', raid.areaId).level })
         : closed
           ? t('ui.home.closed')
-          : empty && energy?.nextAt != null
-            ? t('ui.area.outOfEnergy', { time: countdown(energy.nextAt - energy.now) })
-            : progress.cleared
-              ? t('ui.home.freePlay')
-              : need != null
-                ? t('ui.home.roundOf', { n: Math.min(done + 1, need), total: need })
-                : t('ui.home.secretArea')
+          : progress.cleared
+            ? t('ui.home.freePlay')
+            : need != null
+              ? t('ui.home.roundOf', { n: Math.min(done + 1, need), total: need })
+              : t('ui.home.secretArea')
 
-  const off = !busy && !raid && !enter && (resting || (!gym && !boss && (closed || empty)))
+  const off = !busy && !raid && !enter && (resting || (!gym && !boss && closed))
   /** What waits in another area of the chain: its gym leader, its legend, or the round to play. */
   const waitsIn = (to: Area) => {
     const p = progressOf(save, to.id)
@@ -142,7 +138,7 @@ export function useContinue(area: Area) {
   }
   const go = () => {
     if (busy) return navigate('/area')
-    // Shut (sealed, no energy, resting): CONTINUE is greyed out, and the map's CONTINUE HERE says why instead.
+    // Shut (sealed, resting): CONTINUE is greyed out, and the map's CONTINUE HERE says why instead.
     if (off) return pushToast(sub, 'info')
     if (raid) return navigate(progressRaidPath(raid))
     if (enter || (portal?.active && portal.offers?.length) || struck) {
@@ -203,7 +199,6 @@ export function useContinue(area: Area) {
     boss,
     raid,
     closed,
-    empty,
     busy,
     resting,
     cleared: progress.cleared,
@@ -294,7 +289,7 @@ export function ContinueBar({
   onAreas: () => void
 }) {
   const { t } = useT()
-  const { label, sub, go, explore, off, gym, boss, raid, empty, resting, latest, goTo, keepExploring } = useContinue(area)
+  const { label, sub, go, explore, off, gym, boss, raid, resting, latest, goTo, keepExploring } = useContinue(area)
   const lockId = useId()
   // Darkrai's nightmare holds the player in its area (docs/30): the Areas button is shut, and says why.
   const held = useGame((s) => nightmareLock(s.save, s.data))
@@ -361,7 +356,7 @@ export function ContinueBar({
       )}
       {keepExploring && (
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <PixelButton size="sm" onClick={explore} disabled={empty}>
+          <PixelButton size="sm" onClick={explore}>
             {t('ui.home.keepExploring')}
           </PixelButton>
         </div>

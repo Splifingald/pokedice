@@ -6,7 +6,7 @@ import path from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { beforeAll, describe, expect, it } from 'vitest'
 import areasJson from '@/data/areas.json'
-import { DEFAULT_CONFIG, MEGA_RAIDS, type Area } from '@/engine'
+import { MEGA_RAIDS, type Area } from '@/engine'
 
 const ROOT = path.join(__dirname, '..', 'supabase')
 const sql = (file: string) => readFileSync(path.join(ROOT, 'migrations', file), 'utf8')
@@ -44,9 +44,8 @@ describe('0076: the raid overhaul', () => {
     await db.exec(`set test.admin = '${admin ? 'yes' : 'no'}'`)
   }
 
-  it('puts the switch in Off, as the game defaults it, and bumps the content version', async () => {
+  it('puts the switch in Off and bumps the content version', async () => {
     expect(await value('raidOverhaul')).toEqual({ access: 'off' })
-    expect(DEFAULT_CONFIG.raidOverhaul).toEqual({ access: 'off' })
     expect(await value('configVersion')).toBe(42)
   })
 

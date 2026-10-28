@@ -1,9 +1,8 @@
 // The raid overhaul (docs/40, the user's answers of 2026-10-24): every progression raid gets its own numbers, its own
-// rules and a last bar of its own, and Arceus's daily raid too. Behind its switch (`raidOverhaulOn`): off, raids play
-// exactly as before. This file is the content (which raid has what); engine/raidBattle.ts plays it.
+// rules and a last bar of its own, and Arceus's daily raid too. This file is the content (which raid has what);
+// engine/raidBattle.ts plays it.
 // Mega Evolution and Primal Reversion stay out of the raids of the regions before Kalos (the user's rule): those forms
 // are Mega raids of their own, opened after Kalos (MEGA_RAIDS), the only way to get their gem or orb.
-import { eventOpenTo } from './events'
 import { megaDie } from './forms'
 import type { DieType, GameData, PokeType } from './types'
 
@@ -437,19 +436,14 @@ export const MEGA_RAIDS: Readonly<Record<number, MegaRaid>> = Object.fromEntries
   ].map((m) => [m.form, m]),
 )
 
-/** The raid overhaul's switch (docs/40): Off, On for admin, On for everyone. The server reads the same row (0076). */
-export const raidOverhaulOn = (data: GameData): boolean => eventOpenTo(data.config.raidOverhaul?.access, data)
-
-/** A raid's rules with the overhaul on: a progression raid's (or a Mega raid's) by its dex, Arceus's daily raid. */
-export function raidSpecialOf(data: GameData, dex: number, kind: 'daily' | 'progress'): RaidSpecial | null {
-  if (!raidOverhaulOn(data)) return null
+/** A raid's own rules: a progression raid's (or a Mega raid's) by its dex, Arceus's daily raid. */
+export function raidSpecialOf(dex: number, kind: 'daily' | 'progress'): RaidSpecial | null {
   if (kind === 'daily') return dex === 493 ? (RAID_SPECIALS[493] ?? null) : null
   return MEGA_RAIDS[dex]?.special ?? RAID_SPECIALS[dex] ?? null
 }
 
-/** A Mega raid's gem or orb, with the overhaul on: never sold, the raid's win is the only way to get it. */
-export const megaRaidGem = (data: GameData, key: string): boolean =>
-  raidOverhaulOn(data) && Object.values(MEGA_RAIDS).some((m) => m.gem === key)
+/** A Mega raid's gem or orb: never sold, the raid's win is the only way to get it. */
+export const megaRaidGem = (key: string): boolean => Object.values(MEGA_RAIDS).some((m) => m.gem === key)
 
 /** The die a Mega raid's Pokémon starts with on top of its own, the one Mega Evolving gives (Mega Mewtwo X: Fighting). */
 export function megaRaidDie(data: GameData, form: number): DieType | null {

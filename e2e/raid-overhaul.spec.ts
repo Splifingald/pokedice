@@ -1,5 +1,4 @@
-// The raid overhaul (docs/40), its switch on through the dev config: a legendary raid's own rules on its page and
-// its rules pop-up once, its own level for the NPC partners, and a Mega raid locked until its Pokémon is caught.
+// The raid overhaul (docs/40): a legendary raid's own rules on its page and its rules pop-up once, its own level for the NPC partners, and a Mega raid locked until its Pokémon is caught.
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { DEFAULT_CONFIG, linearAreas, type SaveData } from '../src/engine'
@@ -24,20 +23,21 @@ function kantoSave(patch: Partial<SaveData['events']> = {}): SaveData {
     currentAreaId: linearAreas(data, 'kanto').at(-1)!.id,
     areaProgress: { ...base.areaProgress, ...done, [DEFAULT_CONFIG.events.raid.unlockAreaId!]: cleared },
     events: { seen: ['wheel', 'raid', 'rebattle'], ...patch },
+    // Kanto's League beaten: the shiny Pokédex's rules (docs/39) are read, so only the raid's pop up.
+    shinyDexSeen: true,
     settings: { ...base.settings, reducedMotion: true },
   }
 }
 
 async function boot(page: Page, save: SaveData) {
   await mockSupabase(page, { rpc: { event_time: raidTime } })
-  // The overhaul on for everyone, over the events (it ships off).
   await page.addInitScript(
     ([cfg, s, f]) => {
       localStorage.setItem('pokedice.devConfig', cfg!)
       localStorage.setItem('pokedice.save', s!)
       localStorage.setItem('pokedice.settings', f!)
     },
-    [JSON.stringify({ ...EVENTS_ON, raidOverhaul: { access: 'all' } }), JSON.stringify(save), FAST],
+    [JSON.stringify(EVENTS_ON), JSON.stringify(save), FAST],
   )
 }
 

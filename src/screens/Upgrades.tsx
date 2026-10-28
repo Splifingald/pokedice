@@ -5,7 +5,6 @@ import {
   COMBO_MIN_DICE,
   comboBonusAt,
   dieBonusAt,
-  gameFeelOn,
   generalCfg,
   generalLevel,
   generalMax,
@@ -161,14 +160,13 @@ export function UpCard({
   frozenPop?: UpPop
 }) {
   const { t } = useT()
-  const feel = useGame((s) => gameFeelOn(s.data))
   const { level: motion, calm } = useMotion()
   const can = !u.locked && u.cost != null && u.cost <= gold
   const bonus = (n: number) =>
     t(u.kind === 'combo' ? 'ui.upgrades.comboBonus' : 'ui.upgrades.dieBonus', { n })
   const now = u.now ?? bonus(u.bonus)
   const then = u.then !== undefined ? u.then : u.next != null ? `+${u.next}` : null
-  // With the Game feel switch on, a purchase pops (docs/38 F12a); the toast says it either way.
+  // A purchase pops (docs/38 F12a), and the toast says it.
   const [pop, setPop] = useState<UpPop | null>(null)
   const popTimer = useRef(0)
   useEffect(() => () => window.clearTimeout(popTimer.current), [])
@@ -188,10 +186,8 @@ export function UpCard({
     const level = u.level + 1
     const gained = u.then ?? bonus(u.next ?? u.bonus)
     if (!u.buy()) return
-    if (feel) {
-      feelSound('upgrade.pop')
-      if (motion !== 'off') playPop(level, gained)
-    } else sfx('levelup')
+    feelSound('upgrade.pop')
+    if (motion !== 'off') playPop(level, gained)
     pushToast(t('ui.upgrades.bought', { name: u.name, level, bonus: gained }), 'good')
   }
   const shownPop = frozenPop ?? pop

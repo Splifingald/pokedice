@@ -354,7 +354,10 @@ Each item has `in_shop` and `shop_badges` (admin-editable, with its effect and p
 - **Selling** (v1.9): the Mart's **Sell · Bag** tab lists every item held (it doubles as the bag) and buys back anything the Mart stocks (`in_shop`, whatever the badges) for **half its price, rounded down**. Found-only items (Rare Candy, Master Ball) can't be sold.
 - **Revives in battle** go on a K.O.'d teammate on the bench (it can be sent in afterwards); like any item, no turn is used.
 
-### 5.5 Energy (v1.9)
+### 5.5 Energy (v1.9, removed 2026-10-28)
+
+Energy is gone for good (the user's call: it was Off and will never be used): no cost, no counter, no Config box;
+migration 0081 deletes its row and saves drop their `energy` on load. What it was:
 
 - `game_config.energy = { enabled, max, minutesPerEnergy }`, default **on, 50, 30 min** (admin: Config → Energy). Off = no cost and no counter.
 - **Discovering an encounter costs 1 energy** (NEXT ENCOUNTER / EXPLORE). Free: gym / Elite Four / Champion battles and legendaries (CHALLENGE / FACE IT, or a fled legendary's card), and **every Pokémon Center** (round-opening, forced or from the deck), as is any encounter when nobody can fight.

@@ -1,7 +1,6 @@
-// Kitchen sink (dev only): the battle stage with the game-feel pass on (docs/38 §2), whatever the admin's switch says —
-// a shiny's entrance, hits of each weight (the damage number, the shake, the settle that hands the stage back while the
-// particles fade), the K.O.'s boss stop and its drop through the platform. Made-up battlers; the timelines frame by
-// frame are on /kitchen-sink/fx.
+// Kitchen sink (dev only): the battle stage's game feel (docs/38 §2) — a shiny's entrance, hits of each weight (the
+// damage number, the shake, the settle that hands the stage back while the particles fade), the K.O.'s boss stop and
+// its drop through the platform. Made-up battlers; the timelines frame by frame are on /kitchen-sink/fx.
 import { useMemo, useState } from 'react'
 import { hitPower, makeBattler } from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
@@ -81,7 +80,6 @@ export function HitFeelBits() {
         {/* A new take: the shiny comes out again. */}
         <BattleStage
           key={take}
-          feel
           own={own}
           foe={foe}
           fx={fx}
@@ -96,7 +94,7 @@ export function HitFeelBits() {
             setScene(null)
           }}
           tapLabel={(b) => b.name}
-          label="Battle stage, game feel on"
+          label="Battle stage, game feel"
         >
           <FoePlate b={foe} hp={down.foe ? 0 : foe.hp} />
           <OwnPlate b={own} hp={down.own ? 0 : own.hp} />

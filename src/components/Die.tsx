@@ -1,6 +1,5 @@
 import { useContext, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { motion } from 'framer-motion'
-import { gameFeelOn } from '@/engine'
 import type { DieType, Face } from '@/engine/types'
 import { numberPx, pipLayout, PIPS } from '@/fx/dice/pips'
 import { MotionCap } from '@/lib/motion'
@@ -122,7 +121,7 @@ export interface DieProps {
   selected?: boolean
   /** One of the dice that make the combo: a gold ring and gold corner brackets. */
   combo?: boolean
-  /** With the game feel on (docs/38 F2b): how big the combo is (1–4), each tier its own ring. */
+  /** How big the combo is (1–4), each tier its own ring (docs/38 F2b). */
   tier?: 0 | 1 | 2 | 3 | 4
   /** The last die of a throw to land (F8b): a two-frame squash. */
   squash?: boolean
@@ -167,8 +166,7 @@ export function Die({
 }: DieProps) {
   const fill = typeColor(type, color)
   const pace = usePace()
-  const feel = useGame((s) => gameFeelOn(s.data))
-  // Nothing animates (the admin's switch, or a screen capped at off): down at once. Read cheaply: dice come by the dozen.
+  // Nothing animates (reduced motion, or a screen capped at off): down at once. Read cheaply: dice come by the dozen.
   const stillAll = useGame((s) => s.settings.reducedMotion)
   const cap = useContext(MotionCap)
   const off = stillAll || cap === 'off'
@@ -187,7 +185,7 @@ export function Die({
         })
       : t('ui.die.name', { type: typeName(type) }))
   const tag = Math.max(14, Math.round(size * 0.3))
-  // With the recorded throws on (docs/37), the face hides while a canvas throws the die onto it.
+  // A recorded throw (docs/37): the face hides while a canvas throws the die onto it.
   const bodyRef = useRef<HTMLSpanElement>(null)
   const { active: thrown, flying } = useDieThrow({
     rollKey,
@@ -258,11 +256,11 @@ export function Die({
     animate: { rotateX: 0, rotateZ: 0, y: flying ? 0 : selected ? -6 : combo ? -5 : 0, scale: 1, opacity: 1 },
     transition: {
       default: { duration: 0.6 * pace, delay, ease: [0.2, 0.9, 0.3, 1.2] },
-      // With the game feel on (F7b), a pick lifts in two steps over 60 ms, like a button press; else a 120 ms glide
-      // (the tumble's own drop too, untouched).
-      y: feel && down ? { duration: 0.06 * pace, ease: twoSteps } : { duration: 0.12 * pace, ease: 'linear' },
+      // Once the die is down, a pick lifts in two steps over 60 ms, like a button press (F7b); before, a 120 ms glide
+      // (the tumble's own drop, untouched).
+      y: down ? { duration: 0.06 * pace, ease: twoSteps } : { duration: 0.12 * pace, ease: 'linear' },
       // The press under a finger too, once the die is down (else it rides the tumble's 0.6 s).
-      ...(feel && down && { scale: { duration: 0.06 * pace, ease: twoSteps } }),
+      ...(down && { scale: { duration: 0.06 * pace, ease: twoSteps } }),
     },
   }
 

@@ -33,7 +33,6 @@ import {
   type Side,
   inPortalRun,
   inNightmare,
-  gameFeelOn,
 } from '@/engine'
 import { playCry } from '@/audio/cries'
 import { feelSound } from '@/audio/feel'
@@ -167,6 +166,8 @@ const STATUS_TIP_KEY = 'pokedice.tip.statusChance'
 const TRAINER_INTRO_MS = 1100
 /** From the foe's arrival to yours popping out of its ball. */
 const SEND_OUT_MS = 900
+/** How long the dice wait in hand before your turn's throw (docs/38 F1d). */
+const ROLL_WAIT_MS = 250
 
 // Auto-mode's picks sample rolls (like the enemy AI); its own stream keeps the battle's rolls untouched.
 const autoRng = createRng(randomSeed())
@@ -287,7 +288,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     !!save &&
     !!catchTarget(save, b.baseDex ?? b.dex, b.level, st.kind, data, b.shiny)
   const catchable = dbl ? (uid: string) => dbl.foes.some((f) => f.uid === uid && canCatch(f)) : canCatch(st.enemy)
-  const { fx, ready, sceneContact, sceneDone, feel: feelOn } = useBattleAnimator(
+  const { fx, ready, sceneContact, sceneDone } = useBattleAnimator(
     battle,
     quick,
     {
@@ -322,12 +323,12 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     return () => clearTimeout(t)
   }, [ownOut, foeOut, bossIntro, quick, pace])
 
-  // The enemy acts on its own once the log has caught up (sooner with the game-feel pass, docs/38 F1d).
+  // The enemy acts on its own once the log has caught up (docs/38 F1d).
   useEffect(() => {
     if (!ready || intro || st.phase !== 'enemy_turn') return
-    const t = setTimeout(() => dispatch({ t: 'AI_TURN' }), quick ? 0 : (feelOn ? 250 : 450) * pace)
+    const t = setTimeout(() => dispatch({ t: 'AI_TURN' }), quick ? 0 : 250 * pace)
     return () => clearTimeout(t)
-  }, [ready, intro, st.phase, quick, pace, battle.log.length, dispatch, feelOn])
+  }, [ready, intro, st.phase, quick, pace, battle.log.length, dispatch])
 
   const active = st.player.find((p) => p.uid === fx.activeUid) ?? activeBattler(st)
   // The catch, once the log has played the last K.O. (before that, the fight's own pair stays in front).
@@ -414,16 +415,14 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const onField = (p: Battler) => (dbl ? dbl.ownSlots.some((i) => st.player[i]!.uid === p.uid) : p.uid === activeBattler(st).uid)
   const switchTargets = st.player.filter((p) => p.hp > 0 && !onField(p))
 
-  // The game feel (docs/38): the dice and the readout's sounds and touches. Off, everything plays as before.
-  const feel = useGame((s) => gameFeelOn(s.data))
-  // Your hand: picking a die clicks (and buzzes), and the last reroll sounds its own warning (F7b, F9a).
+  // Your hand: picking a die clicks (and buzzes), and the last reroll sounds its own warning (docs/38 F7b, F9a).
   const toggleDie = (i: number) => {
-    if (feel) feelSound(st.selected[i] ? 'die.unpick' : 'die.pick')
+    feelSound(st.selected[i] ? 'die.unpick' : 'die.pick')
     haptic('diePick')
     dispatch({ t: 'TOGGLE_DIE', i })
   }
   const reroll = () => {
-    if (feel && active.rerollsLeft === 1) feelSound('reroll.last')
+    if (active.rerollsLeft === 1) feelSound('reroll.last')
     dispatch({ t: 'REROLL' })
   }
 
@@ -446,25 +445,24 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   }, [canAct, stunned, auto, held, rolling, st.phase, dispatch])
 
   // Every turn starts with the throw, so the dice roll themselves (items, switching and running still work after it).
-  // With the game feel on (F8c, F1d) it comes sooner, after the dice in hand jitter for two frames.
+  // It comes after the dice in hand jitter for two frames (docs/38 F8c, F1d).
   const [anticipate, setAnticipate] = useState(0)
   const handReady = !auto && ready && !intro && st.phase === 'player_roll'
   useEffect(() => {
     if (!handReady || held) return
-    const wait = quick ? 0 : feel ? 250 : 400
-    const jitter =
-      feel && !quick
-        ? setTimeout(() => {
-            setAnticipate((n) => n + 1)
-            feelSound('die.jitter')
-          }, wait - 100)
-        : undefined
+    const wait = quick ? 0 : ROLL_WAIT_MS
+    const jitter = quick
+      ? undefined
+      : setTimeout(() => {
+          setAnticipate((n) => n + 1)
+          feelSound('die.jitter')
+        }, wait - 100)
     const t = setTimeout(() => dispatch({ t: 'ROLL' }), wait)
     return () => {
       clearTimeout(jitter)
       clearTimeout(t)
     }
-  }, [handReady, held, quick, feel, battle.log.length, dispatch])
+  }, [handReady, held, quick, battle.log.length, dispatch])
 
   // Auto-mode: every player move once the log has caught up. A reroll shows its selected dice for a moment first.
   const autoPhase =
@@ -712,13 +710,13 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         }
       : fx.tray
   // The readout waits for the last die of the throw to be down, and keeps the roll before's numbers through a reroll
-  // (F2d); with the game feel on, each landing plays the damage count-up (F2a).
+  // (F2d); each landing plays the damage count-up (F2a).
   const throwKey = trayKeyOf(tray)
   const [landedKey, setLandedKey] = useState('')
   const settled = ready && rolling && tray?.side === 'player' && (!throwKey || landedKey === throwKey)
-  const reveal = useDamageReveal(preview, settled, throwKey, feel)
+  const reveal = useDamageReveal(preview, settled, throwKey)
   const shownR = reveal.preview?.r
-  // The combo's ring, once its dice are down (with the game feel, once its beat has landed).
+  // The combo's ring, once its dice are down and its beat has landed.
   const comboIn = settled && !!shownR?.combo && reveal.combo
   const ring = useMemo(
     () =>
@@ -736,14 +734,13 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   // line, face down until they're thrown, then landing (P1c), a size up where the panel has room.
   const foeTurn = fx.tray ? null : turnInHand(battle.log, fx.cursor)
   const foeHand = foeTurn?.side === 'enemy' ? (dbl?.foes ?? [st.enemy]).find((f) => f.uid === foeTurn.uid)?.dice : undefined
-  const hand =
-    !feel || quick
-      ? undefined
-      : handReady
-        ? { side: 'player' as const, dice: active.dice }
-        : foeHand && { side: 'enemy' as const, dice: foeHand }
-  const foeSize = feel ? Math.max(40, Math.round((dieSize * 0.75) / 2) * 2) : undefined
-  const lastReroll = feel && rolling && active.rerollsLeft === 1
+  const hand = quick
+    ? undefined
+    : handReady
+      ? { side: 'player' as const, dice: active.dice }
+      : foeHand && { side: 'enemy' as const, dice: foeHand }
+  const foeSize = Math.max(40, Math.round((dieSize * 0.75) / 2) * 2)
+  const lastReroll = rolling && active.rerollsLeft === 1
 
   const party = versus
     ? { count: versus.foeCount, index: versus.foeIndex }
@@ -830,7 +827,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
         <PixelButton
           size="lg"
-          // The last one says so, in gold (F9a, game feel).
+          // The last one says so, in gold (F9a).
           variant={lastReroll ? 'gold' : undefined}
           className="whitespace-nowrap px-2"
           disabled={!canAct || active.rerollsLeft <= 0 || !st.selected.some(Boolean)}
@@ -966,23 +963,15 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             <motion.div
               key={fx.banner.id}
               className="pointer-events-none absolute inset-x-0 top-[38%] flex justify-center"
-              // The game-feel pass stamps it down in three steps, held, then gone (docs/38 F3b); else it swells in.
-              initial={feelOn ? { scale: 1.8, opacity: 1 } : { scale: 0.3, opacity: 0 }}
-              animate={
-                feelOn
-                  ? { scale: [1.8, 1.4, 1, 1], opacity: [1, 1, 1, 0] }
-                  : { scale: [0.3, 1.2, 1], opacity: [0, 1, 1, 0] }
-              }
-              transition={
-                feelOn
-                  ? {
-                      duration: (quick ? 0.6 : 1.2) * pace,
-                      times: [0, 0.07, 0.14, 1],
-                      // Each keyframe held until the next: steps, never a glide.
-                      ease: (p: number) => (p < 1 ? 0 : 1),
-                    }
-                  : { duration: (quick ? 0.6 : 1.2) * pace, times: [0, 0.2, 0.8, 1] }
-              }
+              // Stamped down in three steps, held, then gone (docs/38 F3b).
+              initial={{ scale: 1.8, opacity: 1 }}
+              animate={{ scale: [1.8, 1.4, 1, 1], opacity: [1, 1, 1, 0] }}
+              transition={{
+                duration: (quick ? 0.6 : 1.2) * pace,
+                times: [0, 0.07, 0.14, 1],
+                // Each keyframe held until the next: steps, never a glide.
+                ease: (p: number) => (p < 1 ? 0 : 1),
+              }}
             >
               <span
                 className={cx(
@@ -1045,7 +1034,6 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                   size={dieSize}
                   foeName={foeFront.name}
                   onSettled={setLandedKey}
-                  feel={feel}
                   score={reveal.score}
                   hand={hand}
                   anticipate={anticipate}

@@ -11,7 +11,6 @@ import {
   raidRecommended,
   raidTeam,
   raidTeamCap,
-  RAID_RECOMMENDED_LEVEL,
   regionBox,
   setProgressRaidTeam,
   setRaidTeamIds,
@@ -336,7 +335,7 @@ function TeamEditor({
           <p className="m-0 flex items-start gap-1.5 font-pixel-sm text-[14px] leading-tight text-muted">
             <RecommendedThumb />
             {t('ui.raid.recommendedNote', {
-              level: Math.min(RAID_RECOMMENDED_LEVEL, cap),
+              level: cap,
               name: data.species[setup.boss]?.name ?? '',
             })}
           </p>

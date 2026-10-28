@@ -1,9 +1,5 @@
-import { motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
-import { gameFeelOn } from '@/engine'
 import { useGame } from '@/store/game'
-
-const COLORS = ['#ffbe2e', '#f2553f', '#547acc', '#34c97a', '#d44873', '#fbfdff']
 
 /** The pixel confetti's colour ramp (docs/15 §8: particles step through a fixed ramp), hot to cooling. */
 const RAMP = ['#ffffff', '#ffe066', '#ffbe2e', '#f2553f', '#b8352a']
@@ -15,52 +11,24 @@ const PIECE = 4
 const snap = (v: number) => Math.round(v / 2) * 2
 
 /**
- * A burst of pixel confetti from the middle of its (positioned) box — a level-up, an evolution. Skipped entirely with
- * reduced motion. `count` pieces fly out to about `spread` pixels, then fall. With the Game feel switch on (docs/38
- * F5e) it is drawn on the pixel grid instead: square pieces stepping frame by frame through a fixed colour ramp, no
- * rotation, no fade (each piece drops out on its own frame). `pixel` picks the look whatever the switch, and `frame`
- * holds it still on one frame (the kitchen sink).
+ * A burst of pixel confetti from the middle of its (positioned) box — a level-up, an evolution (docs/38 F5e). Skipped
+ * entirely with reduced motion. `count` pieces fly out to about `spread` pixels, then fall, on the pixel grid: square
+ * pieces stepping frame by frame through a fixed colour ramp, no rotation, no fade (each piece drops out on its own
+ * frame). `frame` holds it still on one frame (the kitchen sink).
  */
-export function Confetti({
-  count = 20,
-  spread = 34,
-  size = 10,
-  pixel,
-  frame,
-}: {
-  count?: number
-  spread?: number
-  size?: number
-  pixel?: boolean
-  frame?: number
-}) {
+export function Confetti({ count = 20, spread = 34, frame }: { count?: number; spread?: number; frame?: number }) {
   const reduced = useGame((s) => s.settings.reducedMotion)
-  const feel = useGame((s) => gameFeelOn(s.data))
   const bits = useMemo(
     () =>
       Array.from({ length: count }, (_, i) => {
         const a = (i / count) * Math.PI * 2 + Math.random() * 0.4
         const r = spread + Math.random() * spread * 0.9
-        return { x: Math.cos(a) * r, y: Math.sin(a) * r - spread * 0.4, rot: Math.random() * 360, color: COLORS[i % COLORS.length]! }
+        return { x: Math.cos(a) * r, y: Math.sin(a) * r - spread * 0.4 }
       }),
     [count, spread],
   )
   if (reduced) return null
-  if (pixel ?? feel) return <PixelConfetti bits={bits} spread={spread} frame={frame} />
-  return (
-    <span className="pointer-events-none absolute inset-0 overflow-visible" aria-hidden>
-      {bits.map((b, i) => (
-        <motion.span
-          key={i}
-          className="absolute left-1/2 top-1/2"
-          style={{ width: size, height: size, background: b.color, boxShadow: '0 0 0 1px #24304f' }}
-          initial={{ x: 0, y: 0, opacity: 1, rotate: 0 }}
-          animate={{ x: b.x, y: [0, b.y, b.y + spread * 0.8], opacity: [1, 1, 0], rotate: b.rot }}
-          transition={{ duration: 1.3, ease: 'easeOut' }}
-        />
-      ))}
-    </span>
-  )
+  return <PixelConfetti bits={bits} spread={spread} frame={frame} />
 }
 
 function PixelConfetti({

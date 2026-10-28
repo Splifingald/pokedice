@@ -600,15 +600,6 @@ export interface StatusRules {
 
 export type SkipPolicy = 'free' | 'once' | 'none'
 
-export interface EnergyConfig {
-  /** Off = encounters are free and the counter is hidden. */
-  enabled: boolean
-  /** The cap, and what a new save starts with. */
-  max: number
-  /** Real-time minutes per point regained (offline too). */
-  minutesPerEnergy: number
-}
-
 /** "Support me": the developer's pop-up and its Ko-fi button (Admin → Config). */
 export interface DonationConfig {
   /** Off = the pop-up never shows. It also stays hidden while `kofiUrl` is empty. */
@@ -913,8 +904,6 @@ export interface GameConfig {
   cloudSyncMinutes: number
   /** Friends each player can have (both sides of a friendship count it). The database reads the same key. */
   maxFriends: number
-  /** Energy: 1 per encounter discovered (not gyms, legendaries or Pokémon Centers), refilled over time. */
-  energy: EnergyConfig
   status: StatusRules
   ai: { samples: number; rerollGainThreshold: number }
   slotMachine: SlotMachineConfig
@@ -973,29 +962,11 @@ export interface GameConfig {
   dayNight: { access: EventAccess }
   /** Idle mode and the play styles (docs/36): its switch. Migration 0068 inserts the same row. */
   idleMode: { access: EventAccess }
-  /** Recorded dice throws (docs/37): its switch. Purely visual. Migration 0069 inserts the same row. */
-  diceThrows: { access: EventAccess }
-  /**
-   * The game-feel pass (docs/38): count-ups, combo tiers, hits that scale, the KO beat, the victory payoff, the catch
-   * moments. Purely visual and audible. Migration 0074 inserts the same row.
-   */
-  gameFeel: { access: EventAccess }
-  /** Haptics (docs/38): short vibrations on dice, hits and catches, where the device can. Migration 0074. */
-  haptics: { access: EventAccess }
-  /** Battle music (docs/38): an original 8-bit loop under fights. Migration 0074 inserts the same row. */
-  music: { access: EventAccess }
-  /** The shiny Pokédex (docs/39): each region's, once its league is beaten. Display only. Migration 0075. */
-  shinyDex: { access: EventAccess }
   /**
    * The Unown Pokédex (docs/41): the 28 letters, once an area where Unown live is opened; `reward` ₽ for the last one.
    * Migration 0080 inserts the same row.
    */
   unownDex: { access: EventAccess; reward: number }
-  /**
-   * The raid overhaul (docs/40): each progression raid's own numbers, rules and last bar, Arceus's daily raid, the Mega
-   * raids after Kalos. Its switch; migration 0076 inserts the same row and the server reads it for the Mega raids.
-   */
-  raidOverhaul: { access: EventAccess }
   /** Double battles (docs/33): their switch, the regions that have them and the wild odds. */
   doubleBattles: DoubleBattlesConfig
   /**
@@ -1568,8 +1539,6 @@ export interface SaveData {
    * (`decideSync`). Absent on saves from before it: `updatedAt` stands in.
    */
   playedAt?: number
-  /** Energy held at `at` (ms); it refills from there (see engine/energy). Absent = full. */
-  energy?: { value: number; at: number }
   /** The player has opened the leaderboard (Prof. Oak sends them there once). */
   leaderboardVisited?: boolean
   /** Versus's rules pop-up has been shown (once, when Versus opens; its INFO button shows them again). */

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
-import { gameFeelOn, instanceMaxHp, monName, type Area, type PokemonInstance } from '@/engine'
+import { instanceMaxHp, monName, type Area, type PokemonInstance } from '@/engine'
 import { playCry } from '@/audio/cries'
 import { useT } from '@/i18n/react'
 import { HpBar } from '@/components/HpBar'
@@ -109,9 +109,9 @@ export function SceneStage({
   const poke = (m: Mon, at: number) => {
     herd.poke(m)
     setCard({ uid: m.def.uid, x: m.x, y: m.y - m.sz.h })
-    // The game-feel pass (docs/38 F12d): it answers with its cry, at most one every 2 s however fast the taps come.
+    // It answers with its cry (docs/38 F12d), at most one every 2 s however fast the taps come.
     // `playCry` stays silent while Sound is off.
-    if (gameFeelOn(data) && at - lastCry.current >= CRY_GAP_MS) {
+    if (at - lastCry.current >= CRY_GAP_MS) {
       lastCry.current = at
       playCry(m.def.dex)
     }

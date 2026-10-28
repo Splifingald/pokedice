@@ -1,4 +1,4 @@
-// Kitchen sink (dev only): How to play's animated cards (docs/38 §8b), whatever the Game feel switch says — playing (a
+// Kitchen sink (dev only): How to play's animated cards (docs/38 §8b) — playing (a
 // loop), as a calm screen draws them (a still with PLAY, which plays once) and with animations off (PLAY shows the
 // end); the button pictures they're drawn with, up and pressed.
 import { ButtonLook } from '@/components/PixelButton'

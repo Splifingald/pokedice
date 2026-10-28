@@ -1,4 +1,4 @@
-// Kitchen sink (dev only): taps, haptics and music (docs/38 §5), whatever the admin's switches say. A PixelButton
+// Kitchen sink (dev only): taps, haptics and music (docs/38 §5), whatever this device can do. A PixelButton
 // pressed (the look it takes the moment a finger lands); the haptics test pad, a tile per cue (Android vibrates it, an
 // iPhone gives its system tap through the invisible switch); Settings' rows in every state; the battle loop.
 import { useState, type ReactNode } from 'react'

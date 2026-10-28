@@ -1,5 +1,5 @@
-// How to play, animated (docs/38 §8b): four small cards at the top of the guide while the Game feel switch is on —
-// throw the dice, reroll, deal damage, catch. Each is drawn with the battle's own pieces (Die, the buttons, the combo
+// How to play, animated (docs/38 §8b): four small cards at the top of the guide — throw the dice, reroll, deal damage,
+// catch. Each is drawn with the battle's own pieces (Die, the buttons, the combo
 // chip, the foe's plate and its HpBar, the menu icons, the Poké Ball drawn in code) and played by a clock in 50 ms
 // steps (howTo.ts): looping at full motion, a still with PLAY when the OS asks for less motion, the end state on
 // PLAY with animations off. A loop sleeps off screen and in a hidden tab; nothing makes a sound (it's reading
@@ -524,7 +524,7 @@ function CatchScene({ f, demo }: SceneProps) {
   )
 }
 
-/** The dice in these cards are thrown without a sound, whatever the dice throws' switch draws (docs/38 §8b). */
+/** The dice in these cards are thrown without a sound (docs/38 §8b). */
 const QUIET: DiceLab = { quiet: true }
 
 /** The four cards (`mode` forces one way of running them: the Kitchen Sink). */

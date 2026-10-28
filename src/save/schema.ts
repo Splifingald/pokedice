@@ -242,7 +242,6 @@ export const saveSchema = z.object({
   player: z.object({ name: z.string().max(12), character: z.enum(['red', 'green']), avatar: z.string().max(40).optional() }).optional(),
   dayCare: dayCareSchema.optional(),
   dayCareNotice: z.object({ dex: z.array(z.number().int().min(1)) }).optional(),
-  energy: z.object({ value: z.number().min(0), at: z.number() }).optional(),
   adminEditAt: z.number().optional(),
   playedAt: z.number().optional(),
   leaderboardVisited: z.boolean().optional(),

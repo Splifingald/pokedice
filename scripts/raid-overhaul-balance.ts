@@ -40,10 +40,7 @@ const shard = Number(process.argv[3] ?? 0)
 const shards = Number(process.argv[4] ?? 1)
 const only = process.env.ONLY?.split(',').map(Number)
 
-const base = compileGameData({
-  ...BUNDLE,
-  config: { ...BUNDLE.config, raidOverhaul: { access: 'all' } } as typeof BUNDLE.config,
-})
+const base = compileGameData(BUNDLE)
 const regions = base.regions.map((r) => r.id)
 const pool = base.speciesList.map((s) => s.dex).filter(raidAllyAllowed(base))
 const areaOf = (dex: number) =>

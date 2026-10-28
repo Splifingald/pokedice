@@ -232,8 +232,6 @@ export interface AutoView {
   pendingCatch?: boolean
   /** A pop-up is open (a rules pop-up, a sheet the player opened): it has the player's attention. */
   held?: boolean
-  /** The next encounter needs energy the player hasn't got (the run's outOfEnergy). */
-  noEnergy?: boolean
   /**
    * The catch on the panel: the K.O.'d Pokémon (its species) and where its throw stands — none yet, a Bait offered,
    * kept by Capture Luck for another throw, or done (caught or fled).
@@ -248,10 +246,10 @@ export interface AutoView {
  */
 export type AutopilotStep =
   /**
-   * Nothing to do now: a fight playing, the player's choice, a pop-up, no energy, everyone resting; 'result': a throw's
+   * Nothing to do now: a fight playing, the player's choice, a pop-up, everyone resting; 'result': a throw's
    * result on the panel, which the battle screen closes once it has been seen.
    */
-  | { do: 'wait'; why: 'fight' | 'player' | 'held' | 'energy' | 'resting' | 'closed' | 'result' }
+  | { do: 'wait'; why: 'fight' | 'player' | 'held' | 'resting' | 'closed' | 'result' }
   /** Idle: throw this ball (null: none, the catch is certain without one). */
   | { do: 'throw'; ball: string | null }
   /** Idle: no throw (owned, or no ball held that could catch it): on to the result card, as a catch not on offer. */
@@ -311,7 +309,6 @@ export function autopilotStep(
       if (!hasAbleTeam(save) && !centersOn(save, data)) return { do: 'wait', why: 'resting' }
       // A lair with nothing left in it (every legendary caught) and nowhere open past it.
       if (isAreaClosed(save, v.areaId, data)) return { do: 'wait', why: 'closed' }
-      if (v.noEnergy) return { do: 'wait', why: 'energy' }
       return { do: 'continue' }
     }
   }

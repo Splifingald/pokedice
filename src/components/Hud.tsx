@@ -13,7 +13,6 @@ import { ExtremeBand } from './Extreme'
 import { PlayerMenu } from './PlayerMenu'
 import { cx } from '@/theme/util'
 import { useCountUp, useGoldBump } from './GoldPill'
-import { EnergyPill } from './EnergyPill'
 import { DayNightButton } from './DayNight'
 import { PixelIcon, type IconName } from './icons'
 import { CashChip } from '@/screens/events/live'
@@ -178,9 +177,9 @@ function RoundLink({ to, label, children, blocked, current, onBlocked }: { to: s
 }
 
 /**
- * Top bar: energy on the left; on the right your gold (→ Poké Mart), the cup (→ the leaderboard, locked until the
+ * Top bar: on the right your gold (→ Poké Mart), the cup (→ the leaderboard, locked until the
  * first badge) and, last, you (your look, name and badges: the trainer menu). It stays up in battle: mid-fight the
- * ways out (the Mart, the cup) are shut and say why, the rest (the sun or moon, the energy, the trainer menu) works.
+ * ways out (the Mart, the cup) are shut and say why, the rest (the sun or moon, the trainer menu) works.
  */
 export function Header() {
   const { t } = useT()
@@ -196,7 +195,6 @@ export function Header() {
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-2.5 md:max-w-none">
         {/* Day and night (docs/32): the sun or the moon, far left, while in Johto. */}
         <DayNightButton />
-        <EnergyPill />
         <span className="flex-1" />
         <CashChip />
         <GoldButton />

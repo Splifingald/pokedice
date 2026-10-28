@@ -44,7 +44,7 @@ export function raidSpecialFor(data: GameData, dex: number, kind: RaidKindOf = '
     const area = areaId ? data.areas.find((a) => a.id === areaId) : undefined
     if (area && worldOfArea(data, area)) return null
   }
-  return raidSpecialOf(data, dex, kind)
+  return raidSpecialOf(dex, kind)
 }
 
 /**

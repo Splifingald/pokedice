@@ -1,7 +1,7 @@
-// Kitchen sink (dev only): the dice and the readout's game feel (docs/38 §3), whatever the admin's switch says. A
-// tray thrown at each combo tier, its count-up played at full, short or off; the dice's states (a pick's ↻ tag, the
-// combo's brackets and its four rings, the last die's squash, the last reroll's jitter, dice in hand, the foe's); the
-// readout before its combo lands, counting, and done.
+// Kitchen sink (dev only): the dice and the readout's game feel (docs/38 §3). A tray thrown at each combo tier, its
+// count-up played at full, short or off; the dice's states (a pick's ↻ tag, the combo's brackets and its four rings, the
+// last die's squash, the last reroll's jitter, dice in hand, the foe's); the readout before its combo lands, counting,
+// and done.
 import { useMemo, useState, type ReactNode } from 'react'
 import { comboDice, computeDamage, statusesFromRoll, type RolledDie } from '@/engine'
 import { Die } from '@/components/Die'
@@ -51,7 +51,7 @@ function Played({ hand, roll }: { hand: number[]; roll: number }) {
   const [landed, setLanded] = useState('')
   const tray = { side: 'player' as const, dice, keys: dice.map((_, i) => `kf${roll}-${i}`) }
   const key = trayKeyOf(tray)
-  const reveal = useDamageReveal(preview, landed === key, key, true)
+  const reveal = useDamageReveal(preview, landed === key, key)
   const r = reveal.preview?.r
   const ring = new Set(
     r?.combo && reveal.combo
@@ -71,7 +71,6 @@ function Played({ hand, roll }: { hand: number[]; roll: number }) {
         size={54}
         foeName="Rattata"
         onSettled={setLanded}
-        feel
         score={reveal.score}
       />
       <div className="flex min-h-[30px] flex-wrap items-center justify-center gap-x-2 gap-y-1">

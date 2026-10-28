@@ -3,58 +3,17 @@ import {
   applyFieldItem,
   createBattle,
   createRng,
-  encounterEnergyCost,
-  energyNow,
   getInstance,
   newSave,
   reduce,
   sellItem,
   sellPrice,
   shopStock,
-  spendEnergy,
   uniformLevels,
-  type EnergyConfig,
 } from '@/engine'
 import { data, newId } from '../fixtures'
 
 const fresh = () => newSave(4, data, 0, newId)
-const CFG: EnergyConfig = { enabled: true, max: 50, minutesPerEnergy: 30 }
-const MIN = 60_000
-
-describe('energy', () => {
-  it('a new save is full', () => {
-    expect(energyNow(fresh(), CFG, 123)).toEqual({ value: 50, max: 50, nextAt: null })
-  })
-
-  it('spending from full starts the clock; a point comes back every 30 minutes, up to the cap', () => {
-    const s = spendEnergy(fresh(), CFG, 1000)!
-    expect(energyNow(s, CFG, 1000)).toEqual({ value: 49, max: 50, nextAt: 1000 + 30 * MIN })
-    expect(energyNow(s, CFG, 1000 + 30 * MIN).value).toBe(50)
-    expect(energyNow(s, CFG, 1000 + 999 * MIN).value).toBe(50)
-  })
-
-  it('keeps the time already put towards the next point', () => {
-    let s = spendEnergy(fresh(), CFG, 0, 10)! // 40, clock from 0
-    s = spendEnergy(s, CFG, 20 * MIN)! // 39, still due at 30 min
-    expect(energyNow(s, CFG, 30 * MIN).value).toBe(40)
-    expect(energyNow(s, CFG, 29 * MIN).nextAt).toBe(30 * MIN)
-  })
-
-  it("can't go below 0", () => {
-    const empty = spendEnergy(fresh(), CFG, 0, 50)!
-    expect(energyNow(empty, CFG, 0).value).toBe(0)
-    expect(spendEnergy(empty, CFG, 0)).toBeNull()
-    expect(spendEnergy(empty, CFG, 30 * MIN)).not.toBeNull()
-  })
-
-  it('gyms, legendaries and Pokémon Centers are free; everything else costs 1', () => {
-    expect(encounterEnergyCost({ kind: 'wild', dex: 16, level: 3, isNew: true })).toBe(1)
-    expect(encounterEnergyCost({ kind: 'casino' })).toBe(1)
-    expect(encounterEnergyCost({ kind: 'center', forced: false })).toBe(0)
-    expect(encounterEnergyCost({ kind: 'center', forced: true, reason: 'round' })).toBe(0)
-    expect(encounterEnergyCost({ kind: 'boss', dex: 144, level: 50 })).toBe(0)
-  })
-})
 
 describe('selling', () => {
   it('the Mart buys its own stock back at half price, rounded down', () => {

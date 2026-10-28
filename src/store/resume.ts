@@ -1,6 +1,6 @@
 // An encounter under way outlives the page: a reload, the app closed, a phone's browser dropping the tab. The run and
 // the battle used to live only in memory, so a reload lost the encounter its card had already been drawn for (the deck
-// and the energy are in the save) and the next CONTINUE dealt the following one: the round moved on without being
+// is in the save) and the next CONTINUE dealt the following one: the round moved on without being
 // played. Now they are written with the save on this device (game.ts `onDisk`) and the next load plays on from them.
 //
 // Both dice streams are kept with them: a fight picked up after a reload rolls exactly what it would have rolled had

@@ -4,7 +4,6 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { DEFAULT_CONFIG } from '@/engine'
 
 const ROOT = path.join(__dirname, '..', 'supabase')
 const sql = (file: string) => readFileSync(path.join(ROOT, 'migrations', file), 'utf8')
@@ -22,9 +21,8 @@ describe('0075: the shiny Pokédex', () => {
     await db.exec(sql(FILE))
   })
 
-  it('puts the switch in Off, as the game defaults it, and bumps the content version', async () => {
+  it('puts the switch in Off and bumps the content version', async () => {
     expect(await value('shinyDex')).toEqual({ access: 'off' })
-    expect(DEFAULT_CONFIG.shinyDex).toEqual({ access: 'off' })
     expect(await value('configVersion')).toBe(42)
   })
 

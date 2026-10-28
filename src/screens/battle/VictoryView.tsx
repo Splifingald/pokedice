@@ -3,7 +3,6 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  gameFeelOn,
   getInstance,
   isUnownLetter,
   latestOpenArea,
@@ -95,15 +94,14 @@ export function Overlay({ children, footer, label }: { children: ReactNode; foot
   )
 }
 
-/** A card's sound once as it rises, with the Game feel switch on (docs/38): the victory and the defeat jingles. */
+/** A card's sound once as it rises (docs/38): the victory and the defeat jingles. */
 function useFeelOnce(name: FeelSound, when = true) {
-  const feel = useGame((s) => gameFeelOn(s.data))
   const played = useRef(false)
   useEffect(() => {
-    if (!feel || !when || played.current) return
+    if (!when || played.current) return
     played.current = true
     feelSound(name)
-  }, [feel, when, name])
+  }, [when, name])
 }
 
 /** How often the gold's count-up ticks (docs/38 F5b). */
@@ -111,17 +109,16 @@ const COIN_TICK_MS = 50
 
 export function GoldCard({ amount, bonus = 0 }: { amount: number; bonus?: number }) {
   const { t } = useT()
-  const feel = useGame((s) => gameFeelOn(s.data))
   const { level, calm } = useMotion()
   // From 0 as it appears: it used to start at its total, so the count-up never ran (docs/38 B1).
   const n = useCountUp(amount, 800, 0)
   const counted = n >= amount
   const box = useRef<HTMLDivElement>(null)
   const tick = useRef(0)
-  // With the Game feel switch on: a coin's tick as it counts and the till at the end, then its coins fly into the top
-  // bar's gold (not under calm, nor with animations off).
+  // A coin's tick as it counts and the till at the end, then its coins fly into the top bar's gold (not under calm, nor
+  // with animations off; docs/38 F5b).
   useEffect(() => {
-    if (!feel || n <= 0) return
+    if (n <= 0) return
     if (counted) {
       sfx('gold')
       return
@@ -130,8 +127,8 @@ export function GoldCard({ amount, bonus = 0 }: { amount: number; bonus?: number
     if (now - tick.current < COIN_TICK_MS) return
     tick.current = now
     feelSound('coin.tick')
-  }, [feel, n, counted])
-  const fly = feel && counted && amount > 0 && level !== 'off' && !calm
+  }, [n, counted])
+  const fly = counted && amount > 0 && level !== 'off' && !calm
   // Cash Flow (docs/20): what it added, as a share of the usual pay.
   const pct = bonus > 0 && amount > bonus ? Math.round((bonus / (amount - bonus)) * 100) : 0
   return (
@@ -212,8 +209,8 @@ export function CatchCard({
 }
 
 /**
- * A species' first catch, registered in the Pokédex as in the main games (docs/38 F10a): with the Game feel switch on,
- * right under its catch card, with its own jingle.
+ * A species' first catch, registered in the Pokédex as in the main games (docs/38 F10a): right under its catch card,
+ * with its own jingle.
  */
 export function DexRegisteredCard({ dex }: { dex: number }) {
   const { t } = useT()
@@ -307,16 +304,12 @@ interface MonRecap {
   evolvesTo: number | null
 }
 
-/**
- * A recap card and its sound as it appears; with the Game feel switch on, `feel` in its place (null: none, the card
- * makes its own).
- */
-type Extra = { key: string; node: ReactNode; sound?: 'levelup' | 'catch' | 'gold'; feel?: FeelSound | null }
+/** A recap card and its sound as it appears: an effect (`sound`) or a jingle of the game feel's (`feel`). */
+type Extra = { key: string; node: ReactNode; sound?: 'catch' | 'gold'; feel?: FeelSound }
 
 function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evolutions: EvolutionShow[] } {
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
-  const feel = useGame((s) => gameFeelOn(s.data))
   return useMemo(() => {
     const byUid = new Map<string, MonRecap>()
     // The form it fought as: the first level-up / milestone / evolution names it; before that, its current form.
@@ -374,12 +367,8 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           return
         }
         case 'gold':
-          extras.push({
-            key: k,
-            sound: 'gold',
-            feel: null,
-            node: <GoldCard amount={e.amount} bonus={e.bonus} />,
-          })
+          // The card counts and sounds its own gold.
+          extras.push({ key: k, node: <GoldCard amount={e.amount} bonus={e.bonus} /> })
           return
         case 'caught':
           extras.push({
@@ -390,7 +379,7 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
             ),
           })
           // Its first catch: registered in the Pokédex, a moment of its own.
-          if (feel && e.isNew)
+          if (e.isNew)
             extras.push({ key: `${k}-dex`, feel: 'dex.registered', node: <DexRegisteredCard dex={e.dex} /> })
           return
         case 'fled':
@@ -416,7 +405,6 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
         case 'gym_defeated':
           extras.push({
             key: k,
-            sound: 'levelup',
             feel: e.role === 'champion' ? 'champion.fanfare' : 'badge.fanfare',
             node: (
               <div className="flex items-center justify-center gap-3 bg-gold p-2 text-center shadow-ring">
@@ -458,7 +446,6 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
         case 'rebattle_cleared':
           extras.push({
             key: k,
-            sound: 'levelup',
             feel: 'badge.fanfare',
             node: (
               <div className="flex items-center justify-center gap-3 bg-gold p-2 text-center shadow-ring">
@@ -472,7 +459,6 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           const next = data.areas.find((a) => a.id === e.nextAreaId)
           extras.push({
             key: k,
-            sound: 'levelup',
             feel: 'area.fanfare',
             node: (
               <div className="bg-hp-green p-2 text-center shadow-ring">
@@ -522,7 +508,7 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
     })
     return { mons: [...byUid.values()].filter((m) => m.dex), extras, evolutions }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [events, data, feel])
+  }, [events, data])
 }
 
 /** A blank die in its type's colour, small enough to sit in a chip (the colour is the type; a number would confuse). */
@@ -586,8 +572,7 @@ function MonRow({ m }: { m: MonRecap }) {
   const data = useGame((s) => s.data)
   const inst = useGame((s) => (s.save ? getInstance(s.save, m.uid) : undefined))
   const reduced = useGame((s) => s.settings.reducedMotion)
-  const feel = useGame((s) => gameFeelOn(s.data))
-  // With the Game feel switch on, the XP bar fills from before the fight and the level-up lands as it rolls over.
+  // The XP bar fills from before the fight and the level-up lands as it rolls over (docs/38 F5c).
   const [rolls, setRolls] = useState(0)
   const fill = useXpFill(inst, m.from, () => setRolls((n) => n + 1))
   const species = data.species[m.dex]
@@ -628,7 +613,7 @@ function MonRow({ m }: { m: MonRecap }) {
               ? { scale: [1, 1.4, 1, 1.3, 1], x: [0, -3, 3, -2, 2, 0], rotate: [0, -4, 4, -3, 0] }
               : undefined
           }
-          transition={{ duration: 1, delay: feel ? 0 : 0.15 }}
+          transition={{ duration: 1 }}
         >
           <MiniSprite dex={m.dex} size={40} className="-my-2" />
           {leveled && !waiting && <Confetti key={rolls} />}
@@ -640,7 +625,7 @@ function MonRow({ m }: { m: MonRecap }) {
           {m.shared && <span className="text-sm text-muted">{t('ui.victory.multi')}</span>}
         </span>
       </div>
-      {inst && <XpBar inst={inst} className="mt-1" shown={fill} stepped={feel} />}
+      {inst && <XpBar inst={inst} className="mt-1" shown={fill} />}
       {chips.length > 0 && (
         <div className={cx('mt-1.5 flex flex-wrap gap-1.5', leveled && waiting && 'invisible')}>{chips}</div>
       )}
@@ -663,7 +648,6 @@ export function VictoryView() {
   const battle = useGame((s) => s.battle)
   const data = useGame((s) => s.data)
   const reduced = useGame((s) => s.settings.reducedMotion)
-  const feel = useGame((s) => gameFeelOn(s.data))
   const { mons, extras, evolutions } = useRecap(run.events)
   const pace = usePace()
   // The win's jingle as the card rises (docs/38 F5a), once the fight is over: not between a trainer's Pokémon.
@@ -680,21 +664,13 @@ export function VictoryView() {
     const t = setTimeout(() => {
       setShown((s) => s + 1)
       const next = shown < mons.length ? mons[shown] : extras[shown - mons.length]
-      // With the Game feel switch on, a level-up sounds as its XP bar rolls over, and a card has its own fanfare.
-      if (next && !('uid' in next) && feel && next.feel !== undefined) {
-        if (next.feel) feelSound(next.feel)
-        return
-      }
-      const levelUp = !feel && next && 'uid' in next && next.toLevel != null
-      const sound = next && 'uid' in next ? (levelUp ? 'levelup' : undefined) : next?.sound
-      if (sound) sfx(sound)
+      // A level-up sounds as its XP bar rolls over (useXpFill); a card has its own sound or fanfare.
+      if (!next || 'uid' in next) return
+      if (next.feel) feelSound(next.feel)
+      else if (next.sound) sfx(next.sound)
     }, 650 * pace)
     return () => clearTimeout(t)
-  }, [shown, allShown, mons, extras, pace, feel])
-  // The first row's level-up sound (it appears without waiting).
-  useEffect(() => {
-    if (mons[0]?.toLevel != null && !feel) sfx('levelup')
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [shown, allShown, mons, extras, pace])
 
   // CONTINUE answers a pending "add to your team?" by sending the catch to the Box, then plays any evolution. After a
   // wild pair (docs/33), the other catch's question comes next: CONTINUE stays here for it.

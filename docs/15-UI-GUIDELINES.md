@@ -68,7 +68,7 @@ Rules:
 - **Bright fills keep Daybreak's colours for what's on them**: `bg-gold`, `bg-hp-green`, `bg-hp-yellow` and anything
   with `light-scope` bring the light variables back (navy text and outlines). Put `light-scope` on any other bright
   fill (medals, type-coloured cells).
-- **Night chips**: a chip that is dark in both themes (the wallet, energy, prices, a hint, the Hall of Fame card) is
+- **Night chips**: a chip that is dark in both themes (the wallet, prices, a hint, the Hall of Fame card) is
   `light-scope bg-night` with `text-gold-light` (or `text-gold`, `text-panel`). Selected tabs and table headers are
   `bg-ink text-panel` and invert in Dusk. Scrims are `bg-night/55`; HP and gauge tracks are `bg-night`.
 - **`dark:`** (bound to `data-theme`) is for the rare one-off that needs its own dusk value; tokens come first.
@@ -306,7 +306,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 
 | Timeline | full | short |
 |---|---|---|
-| Attacks: one move per type (Flamethrower, Hydro Pump, Razor Leaf, Thunderbolt, Psychic in `attacks.ts`; Tackle, jabs and a fist, gusts and a wing slash, Sludge Bomb, earth spikes, Rock Slide, a swarm and X-Scissor, Shadow Ball, Metal Claw, Ice Beam, Dragon Breath, Dark Pulse and Crunch, Moonblast in `attacks-types.ts`); a generic impact for typeless dice. With the game-feel pass (docs/38 §2): every hit scaled by its power (`hitPower`: shake, stop, particles), the damage number at 2× (gold super effective, grey 1× resisted), a settle 0.5 s after the last hit, the K.O.'s boss stop | the typed move | one generic hit |
+| Attacks: one move per type (Flamethrower, Hydro Pump, Razor Leaf, Thunderbolt, Psychic in `attacks.ts`; Tackle, jabs and a fist, gusts and a wing slash, Sludge Bomb, earth spikes, Rock Slide, a swarm and X-Scissor, Shadow Ball, Metal Claw, Ice Beam, Dragon Breath, Dark Pulse and Crunch, Moonblast in `attacks-types.ts`); a generic impact for typeless dice. With the game-feel pass (docs/38 §2, always on): every hit scaled by its power (`hitPower`: shake, stop, particles), the damage number at 2× (gold super effective, grey 1× resisted), a settle 0.5 s after the last hit, the K.O.'s boss stop | the typed move | one generic hit |
 | A shiny's entrance (game-feel pass, `shiny.ts`): on a clear canvas over the page's sprite, two rings of stars as it lands, twinkles, the shiny chime | in full | in full |
 | A Z-Move (§33, `zmove.ts`): the power gathering, then the strike — the type's own move as its Z variant (`z`: more of it, bigger, harder, on a dimmed field, the attacker outlined in gold and the type's light) with the Z's mark on its last hit (a golden Z on the target, rings, a white flash); a Flying, Ground or Water one goes away first and comes back before its strike | the gathering, the Z variant | a flash of the type's colour; the one generic hit with the Z's mark |
 | Catch | throw, beam, drop, wobbles, result — the engine's count of wobbles (`catchShakes`): 3 for a catch, for a miss 3, 2, 1 or none as it fell 1, 2, 3 or 4+ short, so the third never gives it away; a buzz with each (`haptic`); with a Bait to offer it holds on the ball lying still (`hold`) and the answer plays on from that frame (`from: 'ground'`: the Bait tossed beside the ball, a heart, its last wobbles, 2 or fewer by the same rule; or straight to the break-free); Capture Luck's stay (`stays`): out of the ball, a "!" and two hops, no flight | throw and drop, result at once (the Bait still lands); a throw that can't miss jumps to its end at every level |
@@ -406,14 +406,14 @@ Players shouldn't have to make many requests:
 
 ## 12. Navigation, Home and stages
 
-- **Top bar** (`Header` in `src/components/Hud.tsx`): in Johto, the day's sun or the night's moon first (§30); energy on the left; on the right the gold as a navy pill (a tap
+- **Top bar** (`Header` in `src/components/Hud.tsx`): in Johto, the day's sun or the night's moon first (§30); on the right the gold as a navy pill (a tap
   opens the Poké Mart, no "+"), the cup (→ the leaderboard; greyed until the first badge, or in a small world its
   first area cleared, and a tap says what opens it) and, last, you (name and badge count, then your trainer look →
   the trainer menu, which slides in from that side).
   **It stays up in battle, every part of it in reach** (`useHoldFullscreen(true, true)`): nothing is hidden, covered or
   `pointer-events-none`. Mid-fight (and in a portal run) what would leave the fight is shut and says why
   (`useLockReason`): the gold and the cup stay focusable (`aria-disabled`), the reason in their name, and a tap says it
-  in a toast. The sun or moon and the energy work as ever, and so does the trainer menu: the guide, the type chart,
+  in a toast. The sun or moon works as ever, and so does the trainer menu: the guide, the type chart,
   Contact and Discord open; the rows that would leave the page or the save (the leaderboard, Friends, Trades, Admin,
   the other save, signing in) stay listed, greyed with a lock and the reason as their line; SYNC ONLINE says
   "Finish the fight first".
@@ -624,7 +624,7 @@ in view) and the battle history sits beside it from 1024 px.
   the species is new to the Pokédex), "Wild battles pay no ₽" when that is why no money came; the gold counts up from
   0. **One way forward**: CONTINUE (what Home's CONTINUE would start), or GO TO NEW AREA in its place when this fight
   cleared the area and opened the story's way forward (`latestOpenArea`), with **Home** the quiet white button beside
-  it. With the Game feel switch on (docs/38 §4) the card has its jingles, the XP bars fill in steps and the coins fly to
+  it. With the game-feel pass (docs/38 §4) the card has its jingles, the XP bars fill in steps and the coins fly to
   the top bar. Between a trainer's Pokémon, the card shows the trainer and the
   sprite of the one about to come out. Versus ends on its own card in the panel: Victory / Defeat and Back to
   Versus — once a fight is done, it's done (no rematch).
@@ -837,9 +837,19 @@ Two rules for every feature that adds something players can do (an event, a mode
   there, and being due holds nothing back. Every "seen" flag stays where it was in the save.
 - **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
-- **A purely visual change** (the dice throws, docs/37; the game-feel pass, haptics and battle music, docs/38): the
-  switch, but no rules pop-up and no INFO: it only changes how something already there looks, sounds or feels, so
-  there is nothing to learn or do.
+- **A purely visual change** (as the dice throws, docs/37, and the game-feel pass, haptics and battle music, docs/38,
+  were): the switch, but no rules pop-up and no INFO: it only changes how something already there looks, sounds or
+  feels, so there is nothing to learn or do.
+- **A feature kept on for good loses its switch** (the user's call, 2026-10-28): the dice throws, the game-feel pass,
+  haptics, battle music, the shiny Pokédex and the raid overhaul stay on for everyone. The code keeps only the on path
+  (no helper, no `config` key), and a migration deletes the row (0081, which removed energy too). A switch the server
+  reads is answered for everyone there (`raid_overhaul_open()` is true).
+- **Admin → Config** (`src/admin/sections/ConfigSection.tsx`): sub-tabs at the top, in the address (`?tab=`), the
+  Events section's look. The first, **Switches**, is one table of every Config feature: its name (a link to its tab when
+  it has numbers) and its `AccessSwitch`, nothing else, in two columns on a wide screen. Each other tab holds one
+  feature's numbers (or the game's own: Game, Pity & status, All rows), boxes two to a row on a wide screen; the
+  switches stay on the Switches tab only. A new feature in Config adds its row to `FEATURES` and, with numbers, a tab.
+  The events, the areas' special modes and the gifts keep their switches in their own sections.
 - **A reworked feature keeps its switch** (the Fortune Wheel's tickets, 2026-10-25): the user chose to rework it in
   place, under the wheel's own switch. Its new rules show once on its page (`events.wheelRulesSeen`) for players who
   had it already; a new player reads them in its unlock pop-up. The Game Corner's slot machine got a switch of its own
@@ -1388,7 +1398,7 @@ Pokémon met only in one half comes only then. The pieces are in `src/components
   sun beside the night's sky and moon as its banner; three rows: day from 6:00 to 18:00, night from 18:00 to 6:00,
   they stay in their areas; the hours in the player's language, `hourOfDay`) shows once, the first time in Johto with
   it on, queued behind the other one-time pop-ups. **Its INFO is the top bar's chip**: the feature has no page.
-- **The top bar** (`DayNightButton`): far left, before the energy, only in Johto. A 44 px-tall button around a chip:
+- **The top bar** (`DayNightButton`): far left, only in Johto. A 44 px-tall button around a chip:
   `bg-sky` with the sun by day, `light-scope bg-night` with the moon by night (`DayNightChip`, the `daySun` /
   `nightMoon` icons, 16×16 in the tab bar's palette). Its name says the time and its turn ("It's day in Johto until
   18:00. Tap for the rules."). Re-read every 30 s.
@@ -1543,8 +1553,8 @@ every state on `/kitchen-sink` (`IdleBits`).
 
 ## 35. The shiny Pokédex
 
-Each region's Pokédex gets a **Shiny** page once its League is beaten (docs/39), behind its switch (§20, Off: the
-Pokédex has one page as before). The pieces are in `src/components/ShinyDexRules.tsx`, every state on `/kitchen-sink`
+Each region's Pokédex gets a **Shiny** page once its League is beaten (docs/39), for everyone (its switch retired on
+2026-10-28, §20). The pieces are in `src/components/ShinyDexRules.tsx`, every state on `/kitchen-sink`
 (`ShinyDexBits`).
 
 - **Pokédex / Shiny** is a `Seg` under the page head (`DexViewSwitch`), the shiny option with the sparkle icon; the
@@ -1557,8 +1567,8 @@ Pokédex has one page as before). The pieces are in `src/components/ShinyDexRule
 
 ## 36. The raid overhaul
 
-One switch (docs/40, §20), Off: raids as before. On, the engine decides each raid's rules (`engine/raidSpecials.ts`)
-and the screens tell them; every piece is on `/kitchen-sink` ("Raid overhaul") and every entrance in the FX lab.
+For everyone (docs/40; its switch retired on 2026-10-28, §20): the engine decides each raid's rules
+(`engine/raidSpecials.ts`) and the screens tell them; every piece is on `/kitchen-sink` ("Raid overhaul") and every entrance in the FX lab.
 
 - **The pattern before the fight**: each raid page has a "This raid" card (`RaidRulesPanel`, the `RuleList` rows of
   the events' pop-ups): its level and bars first, then the weather or terrain, each rule, its last bar (crown) last.

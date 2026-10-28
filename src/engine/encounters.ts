@@ -433,16 +433,6 @@ export function dueCenter(ctx: EncounterContext): 'round' | 'hurt' | 'fainted' |
 }
 
 /**
- * The next encounter is a Pokémon Center, known without drawing: one the game sends (`dueCenter`), or a Center card
- * on top of the deck (none right after a Center). Centers cost no energy, so this is what 0 energy still allows.
- */
-export function centerIsNext(ctx: EncounterContext): boolean {
-  if (dueCenter(ctx)) return true
-  const deck = ctx.progress.deck
-  return ctx.data.config.encounterMode !== 'random' && !ctx.progress.lastCenter && !!deck?.length && deck[deck.length - 1] === 'center'
-}
-
-/**
  * Dev-forced type → a new round's opening Center (when one would help) → forced Center (entering hurt; a K.O. in an
  * easy area) → the area's encounter deck (or, in 'random' mode, a weighted roll over {wild, trainer, center, item}).
  * A due gym battle or legendary is never dealt here: the player takes it on when ready (`challengeEncounter`).

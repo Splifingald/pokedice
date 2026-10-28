@@ -38,7 +38,6 @@ export const DEFAULT_CONFIG: GameConfig = {
   shinyChance: 0.01,
   cloudSyncMinutes: 15,
   maxFriends: 100,
-  energy: { enabled: true, max: 50, minutesPerEnergy: 30 },
   status: {
     burn: { threshold: 1, percentPerStack: 4, duration: 3 },
     poison: { percent: 5, duration: 5 },
@@ -368,17 +367,6 @@ export const DEFAULT_CONFIG: GameConfig = {
   // Idle mode and the play styles (docs/36): off until the admin switches it on; auto-mode stays as it was meanwhile.
   // Migration 0068 inserts the same row.
   idleMode: { access: 'off' },
-  // Recorded dice throws (docs/37): off until the admin switches them on; the dice tumble as before meanwhile.
-  // Migration 0069 inserts the same row.
-  diceThrows: { access: 'off' },
-  raidOverhaul: { access: 'off' },
-  // The game-feel pass, haptics and battle music (docs/38): on for everyone, as the user chose for 2.3; the admin can
-  // still switch each off. Migration 0079 sets the same rows (0074 had put them in Off).
-  gameFeel: { access: 'all' },
-  haptics: { access: 'all' },
-  music: { access: 'all' },
-  // The shiny Pokédex (docs/39): off until the admin switches it on. Migration 0075 inserts the same row.
-  shinyDex: { access: 'off' },
   // The Unown Pokédex (docs/41): off until the admin switches it on; ₽1,000 for the 28th letter. Migration 0080 inserts
   // the same row.
   unownDex: { access: 'off', reward: 1000 },

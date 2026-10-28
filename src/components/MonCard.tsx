@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { gameFeelOn, instanceStats, xpToNext, type PokemonInstance } from '@/engine'
+import { instanceStats, xpToNext, type PokemonInstance } from '@/engine'
 import { feelSound } from '@/audio/feel'
 import { useT } from '@/i18n/react'
 import { countdown } from '@/lib/format'
@@ -42,10 +42,10 @@ const XP_START_MS = 300
 let lastXpTick = 0
 
 /**
- * The result card's XP bar filling in steps from where it stood before the battle (`from`, the engine's), with the
- * Game feel switch on (docs/38 F5c): a rising tick per step; a level-up rolls over with two white frames (not when
- * calm), its sound and a buzz, and calls `onRoll` with the new level. The frame to draw, or null once it is done (or
- * when there's nothing to play: the switch off, animations off, no `from`).
+ * The result card's XP bar filling in steps from where it stood before the battle (`from`, the engine's; docs/38
+ * F5c): a rising tick per step; a level-up rolls over with two white frames (not when calm), its sound and a buzz, and
+ * calls `onRoll` with the new level. The frame to draw, or null once it is done (or when there's nothing to play:
+ * animations off, no `from`).
  */
 export function useXpFill(
   inst: PokemonInstance | undefined,
@@ -53,7 +53,6 @@ export function useXpFill(
   onRoll?: (level: number) => void,
 ): XpFrame | null {
   const cfg = useGame((s) => s.data.config)
-  const feel = useGame((s) => gameFeelOn(s.data))
   const { level: motion, calm } = useMotion()
   const roll = useRef(onRoll)
   roll.current = onRoll
@@ -61,12 +60,12 @@ export function useXpFill(
   const xp = inst?.xp
   const frames = useMemo(
     () =>
-      feel && from && lv != null && xp != null && motion !== 'off'
+      from && lv != null && xp != null && motion !== 'off'
         ? xpFillFrames(from, { level: lv, xp }, cfg, !calm)
         : [],
     // Played once: a later change to the Pokémon (the next K.O.) doesn't replay the old fill.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [feel, from, motion === 'off', calm, cfg],
+    [from, motion === 'off', calm, cfg],
   )
   const [at, setAt] = useState(-1)
   useEffect(() => {
@@ -98,19 +97,17 @@ export function useXpFill(
 }
 
 /**
- * The XP bar. `shown` draws a step of `useXpFill` in place of the Pokémon's own level and XP; `stepped` (the Game feel
- * fill) moves it frame by frame instead of gliding.
+ * The XP bar. `shown` draws a step of `useXpFill` in place of the Pokémon's own level and XP; given (the result card's
+ * fill, null once it's done), the bar moves frame by frame instead of gliding.
  */
 export function XpBar({
   inst,
   className,
   shown,
-  stepped,
 }: {
   inst: PokemonInstance
   className?: string
   shown?: XpFrame | null
-  stepped?: boolean
 }) {
   const { t } = useT()
   const cfg = useGame((s) => s.data.config)
@@ -124,7 +121,7 @@ export function XpBar({
       <div className="h-1.5 flex-1 border border-edge bg-night" style={{ borderRadius: 1 }}>
         <div
           className={shown?.white ? 'h-full bg-white' : 'h-full bg-type-water'}
-          style={{ width: `${pct * 100}%`, transition: stepped ? 'none' : 'width 700ms ease-out' }}
+          style={{ width: `${pct * 100}%`, transition: shown !== undefined ? 'none' : 'width 700ms ease-out' }}
         />
       </div>
       <span className="min-w-[4.5ch] text-right font-mono text-xs tabular-nums leading-none">

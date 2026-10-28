@@ -62,7 +62,7 @@ export function RewardBits() {
     <div className="grid w-full max-w-md gap-4">
       <div className="grid gap-1">
         <GoldCard key={gold} amount={1250} />
-        <Label>The victory's gold: it counts up from 0 (the coin ticks need the Game feel switch)</Label>
+        <Label>The victory's gold: it counts up from 0 (a coin's tick as it counts)</Label>
         <PixelButton size="sm" onClick={() => setGold((n) => n + 1)}>
           Count again
         </PixelButton>
@@ -91,16 +91,16 @@ export function RewardBits() {
 
       {inst && (
         <div className="grid gap-1">
-          <XpBar inst={inst} shown={frames[Math.min(xpAt, frames.length - 1)]} stepped />
+          <XpBar inst={inst} shown={frames[Math.min(xpAt, frames.length - 1)]} />
           <Label>The XP bar in steps, Lv.11 → Lv.12 (playing)</Label>
           <PixelButton size="sm" onClick={replayXp}>
             Fill again
           </PixelButton>
-          <XpBar inst={inst} shown={frames[0]} stepped />
+          <XpBar inst={inst} shown={frames[0]} />
           <Label>Filling: its first step</Label>
-          <XpBar inst={inst} shown={frames[white]} stepped />
+          <XpBar inst={inst} shown={frames[white]} />
           <Label>The level-up's white frame</Label>
-          <XpBar inst={inst} shown={frames[white + 2]} stepped />
+          <XpBar inst={inst} shown={frames[white + 2]} />
           <Label>Rolled over to Lv.12, empty</Label>
         </div>
       )}
@@ -112,7 +112,7 @@ export function RewardBits() {
               key={`${frame}-${burst}`}
               className="relative inline-block h-10 w-10 bg-well shadow-ring-line"
             >
-              <Confetti pixel frame={frame} spread={18} />
+              <Confetti frame={frame} spread={18} />
             </span>
           ))}
         </div>

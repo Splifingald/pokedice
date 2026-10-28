@@ -1,4 +1,4 @@
-// Kitchen sink (dev only): the title's dice logo (docs/38 §9), whatever the Game feel switch says. Each motion level
+// Kitchen sink (dev only): the title's dice logo (docs/38 §9). Each motion level
 // (the throw, the drop, the calm drop, at rest) with REPLAY, the throw frozen at a few moments (the white flash at
 // 1.51 s), in two rows (a phone) or one (from 768 px). A tap on a logo throws it again, as on the title.
 import { useState } from 'react'

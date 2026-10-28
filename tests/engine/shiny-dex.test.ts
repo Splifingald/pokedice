@@ -21,9 +21,7 @@ import {
 } from '@/engine'
 import { makeData, newId } from '../fixtures'
 
-const OFF = makeData()
-const ON = makeData({ shinyDex: { access: 'all' } })
-const ADMIN_ONLY = makeData({ shinyDex: { access: 'admin' } })
+const ON = makeData()
 
 const fresh = (): SaveData => ({
   ...newSave(7, ON, 123, newId),
@@ -82,17 +80,10 @@ describe('noteShinyDex', () => {
 })
 
 describe('the page and its rules', () => {
-  it('opens with the switch on and the region’s league beaten', () => {
+  it('opens with the region’s league beaten', () => {
     const save = fresh()
     expect(shinyDexOpen(save, ON)).toBe(false)
     expect(shinyDexOpen(leagueBeaten(save), ON)).toBe(true)
-    expect(shinyDexOpen(leagueBeaten(save, OFF), OFF)).toBe(false)
-  })
-
-  it('opens for the admin alone while it is On for admin', () => {
-    const save = leagueBeaten(fresh(), ADMIN_ONLY)
-    expect(shinyDexOpen(save, ADMIN_ONLY)).toBe(false)
-    expect(shinyDexOpen(save, { ...ADMIN_ONLY, viewer: { admin: true } })).toBe(true)
   })
 
   it('shows its rules once, in the queue, never on the Pokédex', () => {

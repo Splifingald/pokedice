@@ -28,7 +28,7 @@ export function useAutopilot(): boolean {
   const phase = useGame((s) => s.run.phase)
   const areaId = useGame((s) => s.run.areaId)
   const encounter = useGame((s) => s.run.encounter)
-  // Re-checked after every step, so a wait (no energy yet, a pop-up) picks up again by itself.
+  // Re-checked after every step, so a wait (a pop-up, a rest) picks up again by itself.
   const [beat, setBeat] = useState(0)
   useEffect(() => {
     if (!full) return

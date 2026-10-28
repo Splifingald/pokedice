@@ -8,7 +8,7 @@ import { portalModeOf } from './portalMode'
 import { nightmareModeOf } from './nightmareMode'
 import { powerEarned } from './powers'
 import { addRaidMon, type RaidMon } from './raid'
-import { MEGA_RAIDS, raidOverhaulOn } from './raidSpecials'
+import { MEGA_RAIDS } from './raidSpecials'
 import { raidRules } from './raidCalendar'
 import { inWorldRegion, isWorldRegion, regionOf, regionOfArea } from './regions'
 import type { Area, BossDef, GameData, PokemonInstance, RegionId, SaveData } from './types'
@@ -42,9 +42,9 @@ const raidOf = (area: Area, boss: BossDef): ProgressRaid => ({
 export const progressRaidsIn = (data: GameData, area: Area): ProgressRaid[] =>
   raidBosses(area, data).flatMap((b) => [raidOf(area, b), ...megaRaidsOf(data, area, b)])
 
-/** The Mega raids of an area's raid boss (docs/40): with the overhaul on, never in a small world. */
+/** The Mega raids of an area's raid boss (docs/40): never in a small world. */
 function megaRaidsOf(data: GameData, area: Area, boss: BossDef): ProgressRaid[] {
-  if (!raidOverhaulOn(data) || isWorldRegion(data, regionOfArea(area))) return []
+  if (isWorldRegion(data, regionOfArea(area))) return []
   return Object.values(MEGA_RAIDS)
     .filter((m) => m.base === boss.dex && !!data.species[m.form] && !!data.items[m.gem])
     .map((m) => ({ ...raidOf(area, boss), key: progressRaidKey(area.id, m.form), dex: m.form, mega: { base: m.base, gem: m.gem } }))
@@ -198,11 +198,11 @@ export function applyMegaRaidWin(save: SaveData, raid: ProgressRaid): SaveData {
 }
 
 /**
- * The raid overhaul's rules pop-up is due (docs/40): once, with the overhaul on and a progression raid open (or done)
- * for the player, outside a small world.
+ * The raid overhaul's rules pop-up is due (docs/40): once, with a progression raid open (or done) for the player,
+ * outside a small world.
  */
 export function raidOverhaulRulesDue(save: SaveData, data: GameData): boolean {
-  if (save.events?.raidRulesSeen || !raidOverhaulOn(data) || inWorldRegion(save, data)) return false
+  if (save.events?.raidRulesSeen || inWorldRegion(save, data)) return false
   return progressRaids(data).some((r) => !r.mega && progressRaidState(save, data, r) !== 'locked')
 }
 

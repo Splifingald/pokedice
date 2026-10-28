@@ -19,7 +19,7 @@ export function AreaIdle({ area }: { area: Area }) {
   const { t } = useT()
   const navigate = useNavigate()
   const save = useGame((s) => s.save)
-  const { label, sub, go, explore, off, gym, boss, raid, closed, empty, resting } = useContinue(area)
+  const { label, sub, go, explore, off, gym, boss, raid, closed, resting } = useContinue(area)
   // Inside a portal run (docs/28) there is no way Home: CONTINUE alone.
   const locked = useGame((s) => !!portalLock(s.save, s.data))
   // The nightmare (docs/30) shuts travel only: HOME stays, the reason is said over the bar.
@@ -38,7 +38,7 @@ export function AreaIdle({ area }: { area: Area }) {
       {/* A gym, a legendary or a raid waits: the bar challenges it; this explores on instead, as on Home. */}
       {(gym || boss || raid) && !closed && !resting && (
         <div className="flex justify-end">
-          <PixelButton size="sm" onClick={explore} disabled={empty}>
+          <PixelButton size="sm" onClick={explore}>
             {t('ui.home.keepExploring')}
           </PixelButton>
         </div>
@@ -54,7 +54,7 @@ export function AreaIdle({ area }: { area: Area }) {
         <div className="flex flex-col gap-1.5 md:mx-auto md:max-w-md">
           {/* Where the round stands, over the buttons that carry it on. */}
           <RunRoundGauge />
-          {/* Why the next encounter can't start (no energy, the area closed, everyone resting): said next to it. */}
+          {/* Why the next encounter can't start (the area closed, everyone resting): said next to it. */}
           {off && <p className="m-0 truncate text-center font-pixel-sm text-[15px] leading-none text-muted">{sub}</p>}
           {locked && <p className="m-0 text-center font-pixel-sm text-[15px] leading-tight text-muted">{t('ui.portal.locked')}</p>}
           {held && (

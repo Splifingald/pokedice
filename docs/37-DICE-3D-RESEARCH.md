@@ -282,6 +282,10 @@ battles, capped at `short` (`MotionCap`), so its dice play only their last 0.32 
 
 ### 7.4 The switch, and no rules pop-up
 
+**Always on since 2026-10-28** (the user's call, when Admin → Config was made simpler): the switch is gone, the game
+keeps only the "on" path, and [`supabase/migrations/0081_switches_retired.sql`](https://github.com/Splifingald/pokedice/blob/claude/beautiful-hopper-t3trh9/supabase/migrations/0081_switches_retired.sql) deletes its row
+(`supabase/seed.sql` carries it inlined). What follows is how it was gated until then.
+
 Admin → Config → **Dice throws**: Off / On for admin / On for everyone, **Off by default** (`config.diceThrows`,
 `diceThrowsOn`). Off: the dice tumble as before (the framer tween, untouched). It changes how dice look, never what they
 roll, so the game alone reads it: no server function acts for it, and there is nothing for the server to check.
@@ -304,6 +308,8 @@ the cube's box (at most about 1,600 for a 54 px die, against three faces) and al
 own `DOMRect`s.
 
 ### 7.7 Setting it up
+
+Now: run 0081 (above) once the client is deployed; nothing to switch. Before it:
 
 1. Deploy the client (the switch is Off: nothing changes for anyone).
 2. Run `supabase/migrations/0069_dice_throws.sql` (the switch's row, Off, and the content version + 1; safe to run

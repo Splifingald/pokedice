@@ -1,6 +1,6 @@
-// The battle log with the game-feel pass (docs/38): a hit carries how hard it lands to the stage and how it sounds when
-// it lands (B2: with a scene too), the foe pauses less between rerolls, and a K.O. is heard — a sting when it opens the
-// catch, the fainting Pokémon's cry slower and lower. Without the pass, every step is as it was.
+// The battle log's game feel (docs/38): a hit carries how hard it lands to the stage and how it sounds when it lands
+// (B2: with a scene too), the foe pauses less between rerolls, and a K.O. is heard — a sting when it opens the catch,
+// the fainting Pokémon's cry slower and lower.
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { BattleState, DamageResult, LogEntry } from '@/engine'
 
@@ -25,8 +25,8 @@ const {
   describe: step,
   landHit,
   finalBlow,
-  FOE_REROLL_FEEL_MS,
   FOE_REROLL_MS,
+  REROLL_MS,
 } = await import('@/screens/battle/useBattleAnimator')
 import type { AnimatorContext } from '@/screens/battle/useBattleAnimator'
 
@@ -95,18 +95,10 @@ describe('a hit, read for the stage', () => {
 })
 
 describe('landing a hit (B2: heard with a scene too)', () => {
-  it('without the pass: the old sounds', () => {
-    landHit(step(hit(60, 40, 2), st, ctx()).hit!, false)
-    landHit(step(hit(1, 99, 0.5), st, ctx()).hit!, false)
-    landHit(step(hit(10, 90), st, ctx()).hit!, false)
-    expect(sounds.sfx).toEqual(['super', 'hit', 'hit'])
-    expect(sounds.feel).toEqual([])
-  })
-
-  it('with it: super effective and resisted have their own; a vibration by weight', () => {
-    landHit(step(hit(60, 40, 2, 'full_house'), st, ctx()).hit!, true)
-    landHit(step(hit(1, 99, 0.5), st, ctx()).hit!, true)
-    landHit(step(hit(10, 90), st, ctx()).hit!, true)
+  it('super effective and resisted have their own sound; a vibration by weight', () => {
+    landHit(step(hit(60, 40, 2, 'full_house'), st, ctx()).hit!)
+    landHit(step(hit(1, 99, 0.5), st, ctx()).hit!)
+    landHit(step(hit(10, 90), st, ctx()).hit!)
     expect(sounds.feel).toEqual(['hit.super', 'hit.resisted'])
     expect(sounds.sfx).toEqual(['hit'])
     expect(sounds.buzz).toEqual(['hit3', 'hit1', 'hit1'])
@@ -128,22 +120,18 @@ describe('the pace and the K.O.', () => {
     rerollsLeft: 0,
   })
 
-  it("the foe's reroll pause is shorter with the pass; yours never changes", () => {
+  it("the foe's reroll pause is shorter than yours", () => {
     expect(step(reroll('enemy'), st, ctx()).delay).toBe(FOE_REROLL_MS)
-    expect(step(reroll('enemy'), st, ctx({ feel: true })).delay).toBe(FOE_REROLL_FEEL_MS)
-    expect(step(reroll('player'), st, ctx({ feel: true })).delay).toBe(FOE_REROLL_MS)
-    expect(FOE_REROLL_FEEL_MS).toBeLessThan(FOE_REROLL_MS)
+    expect(step(reroll('player'), st, ctx()).delay).toBe(REROLL_MS)
+    expect(FOE_REROLL_MS).toBeLessThan(REROLL_MS)
   })
 
-  it('a K.O. that opens the catch stings; one that faints cries slower and lower; none of it without the pass', () => {
+  it('a K.O. that opens the catch stings; one that faints cries slower and lower', () => {
     const faint: LogEntry = { kind: 'faint', side: 'enemy', uid: 'enemy', dex: 130 }
     step(faint, st, ctx({ catchable: true })).effect?.()
-    step(faint, st, ctx()).effect?.()
-    expect(sounds.feel).toEqual([])
-    expect(sounds.cries).toEqual([])
-    step(faint, st, ctx({ catchable: true, feel: true })).effect?.()
     expect(sounds.feel).toEqual(['ko.sting'])
-    step(faint, st, ctx({ feel: true })).effect?.()
+    expect(sounds.cries).toEqual([])
+    step(faint, st, ctx()).effect?.()
     expect(sounds.cries).toEqual([[130, { rate: 0.75 }]])
   })
 })

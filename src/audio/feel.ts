@@ -1,6 +1,5 @@
-// The game-feel pass's sounds (docs/38), synthesised from sfx.ts's tone and hiss, on the same Sound switch. Callers
-// check `gameFeelOn` first: with the pass off, none of these plays. Each part of the pass keeps its sounds in its own
-// block below, so they can grow apart.
+// The game-feel pass's sounds (docs/38), synthesised from sfx.ts's tone and hiss, on the same Sound switch. Each part
+// of the pass keeps its sounds in its own block below, so they can grow apart.
 import { hiss, tone } from './sfx'
 
 /** `f` raised by `n` semitones: a run of ticks climbs the scale. */
