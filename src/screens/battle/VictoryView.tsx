@@ -967,7 +967,13 @@ export function VictoryView() {
             <span className="text-2xl leading-none">{t('ui.common.level.short', { n: nextMon.level })}</span>
           </div>
           {/* The one that fought is picked to begin with; a tap picks another, NEXT sends the one picked. */}
-          <LeadPicker value={lead ?? stillIn ?? null} onChange={setLead} foe={speciesTypes(data, nextMon.dex)} go />
+          <LeadPicker
+            value={lead ?? stillIn ?? null}
+            onChange={setLead}
+            foe={speciesTypes(data, nextMon.dex)}
+            go
+            fight
+          />
         </div>
       )}
       <div ref={list} className="flex flex-col gap-2">

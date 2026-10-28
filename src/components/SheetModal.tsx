@@ -38,8 +38,7 @@ import { useTradeThis } from './trades/TradeThis'
  */
 export type SheetView =
   | { kind: 'inst'; id: string }
-  /** `known`: one of yours from another region's Pokédex (a Versus clone): its entry as caught. */
-  | { kind: 'dex'; dex: number; shiny?: boolean; known?: boolean }
+  | { kind: 'dex'; dex: number; shiny?: boolean }
   | { kind: 'area'; areaId: string }
   | { kind: 'homer'; id: string }
 /** Views reached from inside the sheet: also the "Use an item" list for one of your Pokémon. */
@@ -120,7 +119,7 @@ function SheetStack({
   let sub: string | undefined
   if (top.kind === 'area') title = data.areas.find((a) => a.id === top.areaId)?.name ?? ''
   else if (top.kind === 'dex') {
-    const caught = !!top.known || !!save?.pokedex.includes(top.dex)
+    const caught = !!save?.pokedex.includes(top.dex)
     title = caught ? species(top.dex) : t('ui.common.unknown')
     sub = caught ? no(top.dex) : `${no(top.dex)} · ${t('ui.sheet.notCaughtYet')}`
   } else if (inst && top.kind === 'items') {
@@ -218,14 +217,7 @@ function SheetStack({
           {top.kind === 'area' ? (
             <AreaDex areaId={top.areaId} onOpenDex={openDex} />
           ) : top.kind === 'dex' ? (
-            <DexEntry
-              key={top.dex}
-              dex={top.dex}
-              shiny={top.shiny}
-              known={top.known}
-              onOpenDex={openDex}
-              onTravel={onClose}
-            />
+            <DexEntry key={top.dex} dex={top.dex} shiny={top.shiny} onOpenDex={openDex} onTravel={onClose} />
           ) : top.kind === 'items' && inst ? (
             <ItemPanel inst={inst} onUsed={back} />
           ) : homer ? (
