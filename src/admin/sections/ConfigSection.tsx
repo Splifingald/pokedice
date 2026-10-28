@@ -802,9 +802,9 @@ function OpeningRoundsBox() {
   const access = raw?.access ?? 'off'
   return (
     <Box
-      title="Route 1 opening"
+      title="Route 1 opening & tutorial"
       icon="map"
-      hint="On: a new player's first two rounds on Route 1 come in a set order. Round 1: Rattata Lv 2, Pidgey Lv 2, 2 Poké Balls, a Pokémon Center, Rattata Lv 3, Youngster Joey (Rattata Lv 4, ₽10). Round 2 (after the usual round Center; round 1 has none, the game starts with the Rattata): Pidgey Lv 4, Rattata Lv 3, a Potion, Oddish Lv 4, Pidgey Lv 5. A wipe replays the round from its start; the easy area's extra Center comes only when the starter is K.O. Rounds after these are shuffled as before. Off: Route 1 deals at random from the start."
+      hint="On: a new player's first two rounds on Route 1 come in a set order. Round 1: Rattata Lv 2, Pidgey Lv 2, 2 Poké Balls, a Pokémon Center, Rattata Lv 3, Youngster Joey (Rattata Lv 4, ₽10). Round 2 (after the usual round Center; round 1 has none, the game starts with the Rattata): Pidgey Lv 4, Rattata Lv 3, a Potion, Oddish Lv 4, Pidgey Lv 5. A wipe replays the round from its start; the easy area's extra Center comes only when the starter is K.O. Rounds after these are shuffled as before. Then, once, the dice tutorial: a pointing hand walks the player from their ₽10 to the Mart's Upgrades, Dice Types and their starter's type die (₽10 at Lv.2), and back to Route 1. Off: Route 1 deals at random from the start."
     >
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-lg">Route 1 opening</span>

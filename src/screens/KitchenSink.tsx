@@ -69,6 +69,7 @@ import { DayNightBits } from './kitchen/DayNightBits'
 import { IdleBits } from './kitchen/IdleBits'
 import { ShinyDexBits } from './kitchen/ShinyDexBits'
 import { UnownDexBits } from './kitchen/UnownDexBits'
+import { TutorialBits } from './kitchen/TutorialBits'
 import { LeagueBits } from './kitchen/LeagueBits'
 import { DiceThrowBits } from './kitchen/DiceThrowBits'
 import { FeelDiceBits } from './kitchen/FeelDiceBits'
@@ -697,6 +698,10 @@ export function KitchenSink() {
 
       <Section title="Unown Pokédex: the switch with its Unown page, Home's banner (none, under way, complete), the 28 letters, complete, the result card's line, rules and INFO (docs/41)">
         <UnownDexBits />
+      </Section>
+
+      <Section title="Dice tutorial: the pixel hand (up, down, still), Prof. Oak's bubble (a step, SHOW ME, the way back), a step framed high and low (docs/46 §5)">
+        <TutorialBits />
       </Section>
 
       <Section title="Versus league: the header, the 3 opponents (the admin's BOT tag), the group's board and its rewards, the result card in each state, the week's reward message, the Raid Ball, rules and INFO (docs/44)">

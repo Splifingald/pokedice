@@ -265,3 +265,38 @@ html.reduce-motion *::after {
   animation-iteration-count: 1 !important;
   transition-duration: 0.001ms !important;
 }
+
+/* The tutorial's hand (TutorialHand, docs/46 §5): it taps toward its target in 2-pixel steps, then rests. Calm leaves
+   the class off. */
+@keyframes guide-hand-bob {
+  0%,
+  50%,
+  100% {
+    transform: translateY(0);
+  }
+  65% {
+    transform: translateY(-4px);
+  }
+  80% {
+    transform: translateY(-8px);
+  }
+}
+.guide-hand-bob {
+  animation: guide-hand-bob 1.1s steps(1, end) infinite;
+}
+@keyframes guide-hand-bob-down {
+  0%,
+  50%,
+  100% {
+    transform: translateY(0);
+  }
+  65% {
+    transform: translateY(4px);
+  }
+  80% {
+    transform: translateY(8px);
+  }
+}
+.guide-hand-bob-down {
+  animation: guide-hand-bob-down 1.1s steps(1, end) infinite;
+}

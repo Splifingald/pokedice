@@ -259,6 +259,8 @@ export function UpCard({
           type="button"
           onClick={buy}
           aria-disabled={!can || undefined}
+          // The dice tutorial (docs/46 §5) points at its die's button.
+          data-guide={`buy-${u.kind}-${u.id}`}
           className={cx(
             side,
             'pb-1.5 pt-1',

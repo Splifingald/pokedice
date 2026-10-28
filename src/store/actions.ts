@@ -12,6 +12,8 @@ import {
   markGeneralRulesSeen as markGeneralRulesSeenIn,
   markShinyDexSeen as markShinyDexSeenIn,
   markUnownDexSeen as markUnownDexSeenIn,
+  startDiceTutorial,
+  finishDiceTutorial,
   sellItem,
   createRng,
   randomSeed,
@@ -206,6 +208,16 @@ export function markShinyDexSeen(): void {
 /** The Unown Pokédex's rules have been shown (its pop-up, or its page). */
 export function markUnownDexSeen(): void {
   mutateSave((s) => (s.unownDexSeen ? null : markUnownDexSeenIn(s)))
+}
+
+/** The dice tutorial has shown (docs/46 §5): it comes back until it's finished. */
+export function startDiceTutorialNow(): void {
+  mutateSave((s) => (s.diceTutorial ? null : startDiceTutorial(s)))
+}
+
+/** BACK TO the area: the dice tutorial is done, for good. */
+export function finishDiceTutorialNow(): void {
+  mutateSave((s) => (s.diceTutorial === 'done' ? null : finishDiceTutorial(s)))
 }
 
 /** The first visit ends the unlock tutorial. */

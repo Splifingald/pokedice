@@ -1684,6 +1684,8 @@ export interface SaveData {
   unownDexPaid?: RegionId[]
   /** The Unown Pokédex's rules pop-up has been shown (once, when it opens; INFO shows it again). */
   unownDexSeen?: boolean
+  /** The dice tutorial after Route 1's first round (docs/46 §5): shown and not finished, or finished for good. */
+  diceTutorial?: 'started' | 'done'
   /** Trades (docs/23): listed Pokémon, the trades already applied, the last ones done. Absent = never traded. */
   trades?: TradesSave
   /** Gifts from the developer (docs/15 §23): the ones opened, and the rules seen. Absent = none yet. */
