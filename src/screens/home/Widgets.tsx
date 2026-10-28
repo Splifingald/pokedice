@@ -29,7 +29,7 @@ import { useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
 import { areaStatus } from './areas'
 import { AreaStrip } from '@/components/AreaStrip'
-import { dayCarePicture } from '@/fx/areaArt'
+import { artUrl, dayCarePicture } from '@/fx/areaArt'
 import { travelTo } from '@/store/travel'
 import { EventWidgets } from '@/screens/events/EventWidgets'
 import { useInWorld, WorldWidgets } from '@/screens/events/world'
@@ -183,11 +183,11 @@ function DayCareWidget() {
 }
 
 /**
- * The Versus card's picture (public/backgrounds/versus.png, 478 × 265, from the Visual Lab's prompt): a stadium at
- * night, red against blue; framed on the crowd and the centre circle (VS_FOCUS is its object-position).
+ * The Versus card's picture: the Pokémon League's (public/area-art/league.png, 400 × 400), the same as its fights and
+ * its rules; framed on the temple and its steps (VS_FOCUS is its object-position).
  */
-const VS_BANNER = '/backgrounds/versus.png'
-const VS_FOCUS = '50% 75%'
+const VS_BANNER = artUrl('league')
+const VS_FOCUS = '50% 60%'
 
 /** The tightest a team gets before its icons shrink: a step of 60 % of an icon's box (the art has room around it). */
 const FAN_MIN_STEP = 0.6

@@ -55,7 +55,7 @@ import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { TypeMatchups } from '@/components/TypeMatchups'
 import { BattleDayTime } from '@/components/DayNight'
-import { pictureOf } from '@/fx/areaArt'
+import { pictureOf, versusPicture } from '@/fx/areaArt'
 import { ballOfItem } from '@/fx/scenes'
 import { loadSprite, spriteKey } from '@/fx/sprites'
 import { catchTimeline } from '@/fx/timelines/catch'
@@ -316,8 +316,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   // A Versus fight has nothing to do with the area the player may be standing in.
   const enc = versus ? null : run.encounter
-  // The area's picture is the battle's background; Versus keeps the drawn one.
-  const art = useMemo(() => (versus ? null : pictureOf(run.areaId)), [versus, run.areaId])
+  // The area's picture is the battle's background; Versus is fought at the Pokémon League.
+  const art = useMemo(() => (versus ? versusPicture() : pictureOf(run.areaId)), [versus, run.areaId])
   // Day and night (docs/32): in Johto, the stage's corner says which half of the day the fight is in.
   const dayTime = useAreaDayTime(versus ? null : run.areaId)
   const isTrainerFight = !!versus || enc?.kind === 'trainer' || enc?.kind === 'gym'
@@ -1609,6 +1609,24 @@ function atFightHp(inst: PokemonInstance, b: Battler, data: GameData): PokemonIn
   return { ...inst, currentHp: b.hp <= 0 ? 0 : Math.max(1, Math.round((b.hp / Math.max(1, b.maxHp)) * max)) }
 }
 
+/**
+ * A fighter's card, at the fight's HP: its instance in the Box, or one made from the fighter itself. A Versus league
+ * match's Pokémon (docs/44) are clones, in no Box: looked up there only, nobody could come in after a K.O.
+ */
+function fightInst(b: Battler, box: readonly PokemonInstance[] | undefined, data: GameData): PokemonInstance {
+  const inst = box?.find((p) => p.id === b.uid) ?? {
+    id: b.uid,
+    dex: b.dex,
+    level: b.level,
+    xp: 0,
+    currentHp: 0,
+    caughtAt: 0,
+    shiny: b.shiny,
+    ...(b.nickname && { nickname: b.nickname }),
+  }
+  return atFightHp(inst, b, data)
+}
+
 /** Why an item can't be used on this one, in the Pokémon sheet's words. */
 function itemWhyNot(kind: string | undefined, b: Battler, noHeal: boolean): string {
   if (noHeal && (kind === 'heal' || kind === 'revive')) return 'ui.extreme.noItems'
@@ -1673,10 +1691,7 @@ export function SwitchStep({
       : (options[0]?.uid ?? '')
     : own
   const setPicked = chosen ? chosen.onChange : setOwn
-  const members = options.flatMap((b) => {
-    const inst = box?.find((p) => p.id === b.uid)
-    return inst ? [atFightHp(inst, b, data)] : []
-  })
+  const members = options.map((b) => fightInst(b, box, data))
   usePickKeys(
     members.map((m) => m.id),
     setPicked,
@@ -1717,7 +1732,7 @@ export function SwitchStep({
       {/* In the middle of the room there is, the buttons at the foot. */}
       <div className="my-auto">
         {chosen && one ? (
-          <PickedOne uid={one.uid} />
+          <PickedOne inst={members.find((m) => m.id === one.uid)} />
         ) : (
           <LeadPicker members={members} value={picked} onChange={setPicked} foe={speciesTypes(data, foe)} go />
         )}
@@ -1751,9 +1766,8 @@ export function SwitchStep({
 }
 
 /** The one a computer's team column picked, for GO! to send: its sprite, name and level, as big as the panel allows. */
-function PickedOne({ uid }: { uid: string }) {
+function PickedOne({ inst }: { inst: PokemonInstance | undefined }) {
   const { t } = useT()
-  const inst = useGame((s) => s.save?.box.find((p) => p.id === uid))
   const name = useGame((s) => (inst ? inst.nickname || s.data.species[inst.dex]?.name || '' : ''))
   if (!inst) return null
   return (
@@ -1807,7 +1821,7 @@ function SendOutStep({
       {/* In the middle of the room there is (a tall PC panel's too), GO! at the foot. */}
       <div className="my-auto">
         {chosen ? (
-          <PickedOne uid={picked} />
+          <PickedOne inst={save?.box.find((p) => p.id === picked)} />
         ) : (
           <LeadPicker value={picked} onChange={setPicked} foe={types} go />
         )}

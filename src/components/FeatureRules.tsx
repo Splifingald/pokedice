@@ -12,8 +12,8 @@ import { RulesModal, type RuleRow, type RulesPicture } from './RulesModal'
 
 /** The Day Care's yard, framed on the whole cottage, chimney to fence. */
 export const DAY_CARE_PICTURE: RulesPicture = { src: artUrl('daycare'), focus: '50% 27%' }
-/** Versus's stadium at night, framed like Home's widget (on the crowd and the centre circle). */
-export const VERSUS_PICTURE: RulesPicture = { src: '/backgrounds/versus.png', focus: '50% 75%' }
+/** Versus's picture, the Pokémon League's, framed like Home's widget (on the temple and its steps). */
+export const VERSUS_PICTURE: RulesPicture = { src: artUrl('league'), focus: '50% 60%' }
 
 export function useDayCareRules(): RuleRow[] {
   const { t } = useT()
