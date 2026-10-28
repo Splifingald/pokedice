@@ -327,11 +327,14 @@ describe('the league', () => {
       `update versus_league_members set joined_at = now() - interval '30 days' where bot_id is not null`,
     )
     await as(null, 'select versus_league_tick()')
+    // Only the bots sent back 30 days: on a bot day (Wednesday to Friday) the tick seats fresh ones too, at 0.
     const climbed = (
       await db.query<{ t: number; target: number }>(
-        `select trophies t, bot_target target from versus_league_members where bot_id is not null`,
+        `select trophies t, bot_target target from versus_league_members
+         where bot_id is not null and joined_at < now() - interval '1 day'`,
       )
     ).rows
+    expect(climbed.length).toBeGreaterThan(0)
     // Most of the way, after 30 days out of the 30 and the rest of this week; all of it by Sunday 22:00.
     expect(climbed.every((b) => b.t > b.target / 2 && b.t <= b.target)).toBe(true)
   })
