@@ -793,6 +793,30 @@ function UnownDexBox() {
   )
 }
 
+/**
+ * Route 1's set opening (docs/46): a new player's first two rounds there met in a set order. Encounters are dealt on the
+ * player's device, so the game alone reads it. Only the switch is written: the rounds stay the game's own.
+ */
+function OpeningRoundsBox() {
+  const [raw, setRaw] = useConfigRow('openingRounds')
+  const access = raw?.access ?? 'off'
+  return (
+    <Box
+      title="Route 1 opening"
+      icon="map"
+      hint="On: a new player's first two rounds on Route 1 come in a set order. Round 1: Rattata Lv 2, Pidgey Lv 2, 2 Poké Balls, a Pokémon Center, Rattata Lv 3, Youngster Joey (Rattata Lv 4, ₽10). Round 2 (after the usual round Center; round 1 has none, the game starts with the Rattata): Pidgey Lv 4, Rattata Lv 3, a Potion, Oddish Lv 4, Pidgey Lv 5. A wipe replays the round from its start; the easy area's extra Center comes only when the starter is K.O. Rounds after these are shuffled as before. Off: Route 1 deals at random from the start."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Route 1 opening</span>
+        <AccessSwitch value={access} onChange={(a) => setRaw({ ...raw, access: a })} label="Route 1 opening: who has it" />
+        <span className="text-base text-muted">
+          {accessNote(access, 'Every new player.', 'Off: Route 1 is shuffled from the start.')}
+        </span>
+      </div>
+    </Box>
+  )
+}
+
 /** Trainer looks (docs/31): unlockable looks from every region in place of the free Kanto and Johto list. */
 function LooksBox() {
   const [raw, setRaw] = useConfigRow('looks')
@@ -1559,6 +1583,8 @@ export function ConfigSection() {
       <VersusLeagueBox />
 
       <UnownDexBox />
+
+      <OpeningRoundsBox />
 
       <ExtremeBox />
 

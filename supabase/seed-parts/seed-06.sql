@@ -464,6 +464,7 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('dc1252ba-591c-5634-a129-115319e6c40a', 'Scientist Braydon', '/trainers/classes/scientist.png', '[{"dex":81,"level":34},{"dex":82,"level":34},{"dex":101,"level":34}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('bbbfef06-aa68-549e-81e3-77edd255f1ec', 'Burglar Ramon', '/trainers/classes/burglar.png', '[{"dex":77,"level":34},{"dex":58,"level":34},{"dex":37,"level":34}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('106bbb38-247f-546f-9211-a376b511429c', 'Youngster Calvin', '/trainers/classes/youngster.png', '[{"dex":21,"level":14}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
+  ('251c41f0-3e55-56a0-bb95-7a33ea96b68f', 'Youngster Joey', '/trainers/classes/youngster.png', '[{"dex":19,"level":4}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('608754e4-1e20-5d85-a9eb-fe1d53d563b4', 'Bug Catcher Rick', '/trainers/classes/bug-catcher.png', '[{"dex":13,"level":6},{"dex":10,"level":6}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('19f323fc-708c-5d07-b22b-ddebbab57197', 'Bug Catcher Doug', '/trainers/classes/bug-catcher.png', '[{"dex":13,"level":7},{"dex":14,"level":7},{"dex":13,"level":7}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('b8d32997-8c71-5d03-8de4-dfd53cd59e13', 'Bug Catcher Anthony', '/trainers/classes/bug-catcher.png', '[{"dex":10,"level":7},{"dex":10,"level":8}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
@@ -503,11 +504,11 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('e4c66a54-cfb7-5836-a8e7-ef24fe03ad5b', 'Giacomo', '/trainers/classes/paldea/giacomo.png', '[{"dex":624,"level":21},{"dex":966,"level":20}]'::jsonb, 'leader', null, null, 'default', null, '[]'::jsonb, false),
   ('112342fa-ed70-5e7e-be61-c5537d9c72ae', 'Office Worker Sergio', '/trainers/classes/paldea/office-worker-m.png', '[{"dex":81,"level":22},{"dex":922,"level":22}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('0d006135-b5e4-506a-be1e-019e69b49145', 'Office Worker Lucia', '/trainers/classes/paldea/office-worker-f.png', '[{"dex":417,"level":22},{"dex":702,"level":22}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
-  ('a752a468-7dbd-5f02-b15c-d369c34a2242', 'Cabbie Diego', '/trainers/classes/paldea/cabbie.png', '[{"dex":965,"level":22},{"dex":100,"level":22}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
-  ('62c917a3-a796-588e-a666-2bd117535fd1', 'Iono', '/trainers/classes/paldea/iono.png', '[{"dex":940,"level":23},{"dex":939,"level":23},{"dex":429,"level":24}]'::jsonb, 'leader', 'Electric Badge', null, 'default', null, '[]'::jsonb, false)
+  ('a752a468-7dbd-5f02-b15c-d369c34a2242', 'Cabbie Diego', '/trainers/classes/paldea/cabbie.png', '[{"dex":965,"level":22},{"dex":100,"level":22}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false)
 on conflict (id) do update set name = excluded.name, sprite_url = excluded.sprite_url, team = excluded.team, role = excluded.role, badge = excluded.badge, upgrade_level = excluded.upgrade_level, battle_background = excluded.battle_background, rival_of = excluded.rival_of, items = excluded.items, duo = excluded.duo;
 
 insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, battle_background, rival_of, items, duo) values
+  ('62c917a3-a796-588e-a666-2bd117535fd1', 'Iono', '/trainers/classes/paldea/iono.png', '[{"dex":940,"level":23},{"dex":939,"level":23},{"dex":429,"level":24}]'::jsonb, 'leader', 'Electric Badge', null, 'default', null, '[]'::jsonb, false),
   ('4a8814b6-2b1a-535c-b296-44f981b9774c', 'Team Star Grunt', '/trainers/classes/paldea/star-grunt-m.png', '[{"dex":228,"level":26},{"dex":58,"level":26}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('afd4ad01-de05-5d70-bba9-1aa599b785c8', 'Team Star Grunt', '/trainers/classes/paldea/star-grunt-m.png', '[{"dex":218,"level":26},{"dex":667,"level":26}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('48891afb-74d7-5426-8396-e5a87f996544', 'Mela', '/trainers/classes/paldea/mela.png', '[{"dex":324,"level":27},{"dex":966,"level":27}]'::jsonb, 'leader', null, null, 'default', null, '[]'::jsonb, false),
@@ -756,7 +757,6 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('d325b8e1-69cc-56ed-a3cf-19e70e4275b7', 'Ace Trainer Randall', '/trainers/classes/hoenn/collector.png', '[{"dex":365,"level":47},{"dex":369,"level":47}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('21e21757-b0c5-56a1-ad98-6da105e5f7ec', 'Psychic Blake', '/trainers/classes/hoenn/psychic-m.png', '[{"dex":282,"level":48},{"dex":326,"level":48}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('52b087f8-7477-58a9-a9e8-da517d50e866', 'Psychic Samantha', '/trainers/classes/hoenn/psychic-m.png', '[{"dex":344,"level":48},{"dex":337,"level":48}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
-  ('1ff5e2c5-0182-5339-b3ed-ccaa3bd44729', 'Battle Girl Danielle', '/trainers/classes/hoenn/battle-girl.png', '[{"dex":297,"level":32},{"dex":307,"level":32}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
-  ('8107b864-bab0-576d-9f5a-fd20e149b8f2', 'Picnicker Irene', '/trainers/classes/hoenn/picnicker.png', '[{"dex":37,"level":32},{"dex":77,"level":32}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false)
+  ('1ff5e2c5-0182-5339-b3ed-ccaa3bd44729', 'Battle Girl Danielle', '/trainers/classes/hoenn/battle-girl.png', '[{"dex":297,"level":32},{"dex":307,"level":32}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false)
 on conflict (id) do update set name = excluded.name, sprite_url = excluded.sprite_url, team = excluded.team, role = excluded.role, badge = excluded.badge, upgrade_level = excluded.upgrade_level, battle_background = excluded.battle_background, rival_of = excluded.rival_of, items = excluded.items, duo = excluded.duo;
 commit;

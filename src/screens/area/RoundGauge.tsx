@@ -7,6 +7,8 @@ import {
   gymsFor,
   playerSideOf,
   nightmareModeOf,
+  nextRoundSize,
+  opensWithoutCenter,
   portalModeOf,
   progressOf,
   type Area,
@@ -88,7 +90,13 @@ export function RoundGauge({
   const justDone = !inRound && met.length > 0 // the round's last card was just met
   // A round not dealt yet opens with its Pokémon Center, outside the deck (never right after one, nor in Extreme mode
   // without Centers): its first step, shown ahead (the user's call, 2026-10-27).
-  const opening = !inRound && !justDone && !progress.lastCenter && (!save || centersOn(save, data))
+  // Route 1's set opening (docs/46) starts its first round without one.
+  const opening =
+    !inRound &&
+    !justDone &&
+    !progress.lastCenter &&
+    (!save || centersOn(save, data)) &&
+    !opensWithoutCenter(area, progress, data)
   // Saves from before rounds were tracked know how many cards are left, not which were met.
   const total = inRound
     ? progress.drawn
@@ -96,7 +104,7 @@ export function RoundGauge({
       : Math.max(deckSize(area, data), remaining)
     : justDone
       ? met.length
-      : deckSize(area, data) + (opening ? 1 : 0)
+      : nextRoundSize(area, progress, data) + (opening ? 1 : 0)
   const metCount = inRound ? total - remaining : justDone ? total : 0
   // Which round this is, of how many; every round done fills the gauge in green.
   const need = area.roundsToClear || 1
