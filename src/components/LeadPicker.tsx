@@ -5,7 +5,8 @@ import { useGame } from '@/store/game'
 import { PixelIcon } from './icons'
 import { PixelButton } from './PixelButton'
 import { PokeCard } from './PokeCard'
-import { SheetModal, type SheetView } from './SheetModal'
+import { FightMonSheet } from './FightMonSheet'
+import { SheetModal } from './SheetModal'
 
 /**
  * "Before each fight the player picks which one to send." The team side by side, each with its essentials (mini, level,
@@ -20,6 +21,7 @@ export function LeadPicker({
   pair,
   go = false,
   members,
+  fight = false,
 }: {
   value: string | null
   onChange: (uid: string) => void
@@ -34,6 +36,8 @@ export function LeadPicker({
    * HP. Even one is shown (it is what GO! sends).
    */
   members?: PokemonInstance[]
+  /** In a fight (its send-out, a switch, the next one after a K.O.): INFO shows the one as it fights, a sheet to read only. */
+  fight?: boolean
 }) {
   const { t } = useT()
   const save = useGame((s) => s.save)
@@ -44,12 +48,6 @@ export function LeadPicker({
   if (team.length < (members ? 1 : 2)) return null
   const current = value && team.some((p) => p.id === value && p.currentHp > 0) ? value : team.find((p) => p.currentHp > 0)?.id
   const picked = pair ? pickedPair(pair.value) : []
-  // A Versus clone (a league match's switch) is in no Box: its INFO is its species' entry.
-  const infoView = (id: string): SheetView | null => {
-    if (save.box.some((p) => p.id === id)) return { kind: 'inst', id }
-    const p = team.find((m) => m.id === id)
-    return p ? { kind: 'dex', dex: p.dex, shiny: !!p.shiny, known: true } : null
-  }
   const pick = (id: string) => {
     if (!pair) return onChange(id)
     if (picked.includes(id)) return
@@ -116,7 +114,12 @@ export function LeadPicker({
           )
         })}
       </ul>
-      <SheetModal view={info ? infoView(info) : null} onClose={() => setInfo(null)} />
+      {fight ? (
+        // The card's own instance: the fight's HP, and a Versus clone too (in no Box).
+        <FightMonSheet inst={team.find((p) => p.id === info) ?? null} onClose={() => setInfo(null)} />
+      ) : (
+        <SheetModal view={info ? { kind: 'inst', id: info } : null} onClose={() => setInfo(null)} />
+      )}
     </div>
   )
 }

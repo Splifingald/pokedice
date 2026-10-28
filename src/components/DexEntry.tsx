@@ -619,15 +619,12 @@ let statsOpen = false
 export function DexEntry({
   dex,
   shiny,
-  known,
   onOpenDex,
   onTravel,
 }: {
   dex: number
   /** From the shiny Pokédex (docs/39): its shiny colours, and the best shiny one owned if there's one. */
   shiny?: boolean
-  /** Shown as caught whatever this region's Pokédex says (a Versus clone, from another region's Box). */
-  known?: boolean
   onOpenDex?: (dex: number) => void
   onTravel?: () => void
 }) {
@@ -640,7 +637,7 @@ export function DexEntry({
     [data, dex],
   )
   if (!save || !data.species[dex]) return null
-  const caught = known || save.pokedex.includes(dex)
+  const caught = save.pokedex.includes(dex)
   const mine = save.box.filter((p) => p.dex === dex && (!shiny || p.shiny))
   const best = (mine.length ? mine : save.box.filter((p) => p.dex === dex)).sort((a, b) => b.level - a.level)[0]
   return (

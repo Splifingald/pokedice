@@ -227,11 +227,14 @@ test('a match by hand: after a K.O. with two left, the two come up as cards and 
   await expect(go).toBeVisible()
   await expect(page.getByRole('button', { name: 'INFO' })).toHaveCount(2)
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/league-ko-switch.png` })
-  // A clone's INFO is its species' entry, known even when this region's Pokédex hasn't it (this save's hasn't).
+  // INFO is the clone as it fights (its HP, dice, stats), with nowhere to go from there.
   await page.getByRole('button', { name: 'Blastoise info' }).click()
-  const sheet = page.getByRole('dialog')
-  await expect(sheet.getByText('Blastoise').first()).toBeVisible()
-  await expect(sheet.getByText('Not caught yet', { exact: false })).toHaveCount(0)
+  const sheet = page.getByRole('dialog', { name: 'Blastoise' })
+  await expect(sheet.getByText(/Lv\.50 · HP \d+\/\d+/)).toBeVisible()
+  await expect(sheet.getByText('Dice', { exact: true })).toBeVisible()
+  await expect(sheet.getByText('Where to find it')).toHaveCount(0)
+  await expect(sheet.getByRole('button', { name: /Pokédex entry|nickname/i })).toHaveCount(0)
+  await expect(sheet.getByRole('link')).toHaveCount(0)
   await page.keyboard.press('Escape')
   await expect(sheet).toHaveCount(0)
   await go.click()

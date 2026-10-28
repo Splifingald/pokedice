@@ -112,6 +112,29 @@ test("the turn's switch: the send-out's cards (no dialog), BACK, the flag, S and
   await expect(page.getByRole('button', { name: /^Send out / })).toHaveCount(0)
 })
 
+test("the switch's INFO: the one as it fights, its HP in the fight, nowhere to go from there", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  const save = threeTeam()
+  await boot(page, { ...save, box: save.box.map((p) => (p.id === 'e2e-squirtle' ? { ...p, currentHp: 10 } : p)) })
+  // Squirtle comes in hurt: no Center sent first.
+  await page.addInitScript(
+    (cfg) => localStorage.setItem('pokedice.devConfig', cfg),
+    JSON.stringify({ forcedCenterWhenHurt: false }),
+  )
+  await toDice(page)
+  await page.keyboard.press('s')
+  await page.getByRole('button', { name: 'Squirtle info' }).click()
+  const sheet = page.getByRole('dialog', { name: 'Squirtle' })
+  await expect(sheet.getByText(/Lv\.12 · HP 10\/\d+/)).toBeVisible()
+  await expect(sheet.getByText('Dice', { exact: true })).toBeVisible()
+  await expect(sheet.getByText('Where to find it')).toHaveCount(0)
+  await expect(sheet.getByRole('button', { name: /Pokédex entry|nickname/i })).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await expect(sheet).toHaveCount(0)
+  // The switch is still open under it.
+  await expect(page.getByRole('button', { name: /^Send out / })).toBeVisible()
+})
+
 test('B opens the Bag, and its "on whom" is the send-out\'s cards with why an item can\'t help', async ({
   page,
 }) => {

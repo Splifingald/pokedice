@@ -99,7 +99,8 @@ function EvoLink({ toDex, how, onOpenDex }: { toDex: number; how: string; onOpen
   const body = (
     <>
       <MiniSprite dex={toDex} size={28} className="-my-2" />
-      <b className="underline">{name}</b>
+      {/* Underlined only where it opens the entry: a fight's INFO names it, nothing more. */}
+      <b className={cx(onOpenDex && 'underline')}>{name}</b>
     </>
   )
   if (!onOpenDex) return <span className="inline-flex items-center gap-0.5 align-middle">{body}</span>
@@ -445,10 +446,13 @@ export function PokemonSheet({
   onOpenDex,
   shiny: shinyAsked,
   hero = true,
+  xp = true,
 }: {
   dex: number
   /** False where the screen draws the sprite and types itself (the Pokédex entry's hero, docs/43 §5.6). */
   hero?: boolean
+  /** False in a fight's INFO (FightMonSheet): its HP is what counts there. */
+  xp?: boolean
   inst?: PokemonInstance
   /** Shiny colours whatever `inst` is: the shiny Pokédex's entry, owned shiny once (docs/39). */
   shiny?: boolean
@@ -505,7 +509,7 @@ export function PokemonSheet({
           ) : inst ? (
             <>
               <HpBar hp={inst.currentHp} max={stats.maxHp} showNumbers={details} height={10} />
-              <XpBar inst={inst} numbers={details} />
+              {xp && <XpBar inst={inst} numbers={details} />}
               {/* Extreme mode: resting after a K.O., and until when (docs/22). */}
               {inst.currentHp <= 0 && <KoPanel inst={inst} />}
             </>

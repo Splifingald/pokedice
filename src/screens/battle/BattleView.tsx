@@ -1734,7 +1734,7 @@ export function SwitchStep({
         {chosen && one ? (
           <PickedOne inst={members.find((m) => m.id === one.uid)} />
         ) : (
-          <LeadPicker members={members} value={picked} onChange={setPicked} foe={speciesTypes(data, foe)} go />
+          <LeadPicker members={members} value={picked} onChange={setPicked} foe={speciesTypes(data, foe)} go fight />
         )}
       </div>
       <BottomDock>
@@ -1823,7 +1823,7 @@ function SendOutStep({
         {chosen ? (
           <PickedOne inst={save?.box.find((p) => p.id === picked)} />
         ) : (
-          <LeadPicker value={picked} onChange={setPicked} foe={types} go />
+          <LeadPicker value={picked} onChange={setPicked} foe={types} go fight />
         )}
       </div>
       <BottomDock>
