@@ -227,7 +227,7 @@ export function Die({
       {face ? (
         <FaceArt face={face} size={size} ink={ink} />
       ) : (
-        <span className="absolute inset-0 flex items-center justify-center font-pixel leading-none text-muted" style={{ fontSize: size * 0.5 }} aria-hidden>
+        <span className="absolute inset-0 flex items-center justify-center font-pixel leading-none" style={{ fontSize: size * 0.5, color: ink }} aria-hidden>
           ?
         </span>
       )}

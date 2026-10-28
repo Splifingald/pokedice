@@ -52,7 +52,7 @@ export function RegionOfferNotice({
         <img src={picture} alt="" className="pixelated absolute inset-0 h-full w-full object-cover" draggable={false} />
       )}
       <div className="relative flex min-h-[132px] flex-col justify-end gap-2.5 bg-gradient-to-t from-night/85 via-night/40 to-transparent p-3">
-        <h2 id={titleId} className="m-0 text-[26px] font-normal leading-none text-panel [text-shadow:0_2px_0_rgb(0_0_0/0.6)]">
+        <h2 id={titleId} className="light-scope m-0 text-[26px] font-normal leading-none text-panel [text-shadow:0_2px_0_rgb(0_0_0/0.6)]">
           {t('ui.home.regionAvailable', { region: name })}
         </h2>
         <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2">

@@ -93,7 +93,8 @@ export default {
   plugins: [
     // The theme's variables: light on :root, dark under [data-theme=dark] (src/theme/theme.ts sets it). A bright fill
     // (gold, the HP colours, `.light-scope`) brings the light values back for what is drawn on it, so its text stays
-    // navy in both themes. :where() keeps all of it at zero specificity: any text-* utility still wins.
+    // navy in both themes; so does white text on a picture (`.lv-ink`), so its gold-light stays a light gold.
+    // :where() keeps all of it at zero specificity: any text-* utility still wins.
     plugin(({ addBase }) =>
       addBase({
         // An uncaught Pokémon: a dark shape on a light card, a pale one on a dark card.
@@ -103,7 +104,7 @@ export default {
           '--silhouette': SILHOUETTE.dark,
           'color-scheme': 'dark',
         },
-        ':where([data-theme="dark"]) :where(.light-scope, .bg-gold, .bg-hp-green, .bg-hp-yellow)': {
+        ':where([data-theme="dark"]) :where(.light-scope, .lv-ink, .bg-gold, .bg-hp-green, .bg-hp-yellow)': {
           ...vars(THEMES.light),
           '--silhouette': SILHOUETTE.light,
           color: `rgb(var(--c-ink))`,
@@ -123,12 +124,12 @@ export default {
           'color-scheme': 'dark',
           color: `rgb(var(--c-ink))`,
         },
-        ':where(.nm-scope) :where(.light-scope, .bg-gold, .bg-hp-green, .bg-hp-yellow)': {
+        ':where(.nm-scope) :where(.light-scope, .lv-ink, .bg-gold, .bg-hp-green, .bg-hp-yellow)': {
           ...vars(THEMES.light),
           '--silhouette': SILHOUETTE.light,
           color: `rgb(var(--c-ink))`,
         },
-        ':where(.dw-scope) :where(.light-scope, .bg-gold, .bg-hp-green, .bg-hp-yellow)': {
+        ':where(.dw-scope) :where(.light-scope, .lv-ink, .bg-gold, .bg-hp-green, .bg-hp-yellow)': {
           ...vars(THEMES.light),
           '--silhouette': SILHOUETTE.light,
           color: `rgb(var(--c-ink))`,

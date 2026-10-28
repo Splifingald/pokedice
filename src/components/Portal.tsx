@@ -756,7 +756,7 @@ export function PortalVictoryView({
         )}
       >
         <div className={cx(LINE_CARD, 'grid gap-2')}>
-          <h2 id="portal-won" className="m-0 text-[30px] font-normal leading-none text-gold-light">
+          <h2 id="portal-won" className="light-scope m-0 text-[30px] font-normal leading-none text-gold-light">
             {t('ui.portal.victoryTitle')}
           </h2>
           <p className="m-0 text-[20px] leading-tight" aria-live="polite">
