@@ -185,9 +185,9 @@ Each entry: before (from the audit), after on a phone, after on PC, and what was
 - **No single-button screen**: the Game Corner's and Trick or Treat's preview with nothing to choose loads and goes
   (`AutoButton`); a double battle's preview picks on the send-out's cards.
 - **Between encounters and the Center** (`StagePanel` for `/area`): phones the scene on top and the bar pinned; from
-  1024 px, between encounters, the panel framed beside the scene, as tall, scrolling inside, the bar at its foot, the
-  scene in the fight's 3:2 box (`SceneStage fill`), so it fits the window. **The Center is stacked on every screen**
-  (`StagePanel stacked`, the user's call, 2026-10-28): its healing plays at the top (on PC at a size the window holds)
+  1024 px (since 2026-10-28, the fifth round) the scene on top too, in the fight's 3:2 box (`SceneStage fill`) as wide
+  as the window's height leaves room for the panel under it, the bar sticky at its foot. **The Center is stacked on every screen**
+  (`StagePanel room={null}`, the user's call, 2026-10-28): its healing plays at the top (on PC at a size the window holds)
   and folds away, and the team and the Box take the page's width, six to a row; no picture of the area beside them.
   One gauge: the fight's strip on the scene's top edge. The Center's Box uses the Team's Sort & filter, its sheet the
   Team's swap dock.
@@ -454,9 +454,16 @@ Today ~28 one-time pop-ups take turns (`PopupQueue`). This pass:
 
 | Feedback | Done |
 |---|---|
-| On PC, the Center showed the area with the team behind the cards: taller than the window, and unneeded | The Center is stacked on PC too: the healing at the top, then the team and the Box over the page's width, six to a row (`StagePanel stacked`) |
+| On PC, the Center showed the area with the team behind the cards: taller than the window, and unneeded | The Center is stacked on PC too: the healing at the top, then the team and the Box over the page's width, six to a row (`StagePanel stacked`, now `room={null}`) |
 | (The same overflow between encounters) | The scene in the fight's 3:2 box on PC (`SceneStage fill`, its focus on where the team walks); the strip and the plate over the box |
 | A find looked skipped: only a toast | A step of its own (`FindView`): the area's ground, the find dropping into the middle (falling, a thud and dust, bounces, a twinkle), its rarity ("Common / Uncommon / Rare find", `findRarity`), what it is and does, PICK IT UP |
+
+### The fifth round (2026-10-28)
+
+| Feedback | Done |
+|---|---|
+| "Even on PC I'd rather have the battle scene at the top and the dice section below, same for Pokémon Centers and items, it's a general rule" | The fight on PC is a middle column: the stage on top as wide as the height leaves room for the panel (268 px) under it, the panel framed under it (`STAGE_W`, `PC_PANEL`); a long step scrolls inside it, its buttons pinned at its foot. The page between encounters and a find are the same column (`StagePanel room`); the Center keeps the page's width (`room={null}`). docs/15 §6 has the rule |
+| "In battles you can put the bag content on the left and the Pokémon team on the right (with a bit more info displayed)" | `BagColumn` (the Bag open: what each item does, ×n, one a turn) and `TeamColumn` (a row each: the whole name, level, HP with figures, IN BATTLE, statuses, the hint's thumb, types with More details), from the send-out to the catch. The columns are where a Pokémon is picked: tap an item, then who gets it; a row opens the switch and picks who goes in, the panel showing the one picked and GO!; the send-out and a K.O.'s call the same. The phone keeps the Bag button and the pips |
 
 ## 8. Not in this pass
 

@@ -9,6 +9,8 @@ import { cx } from '@/theme/util'
 export function BottomDock({ children, className }: { children?: ReactNode; className?: string }) {
   return (
     <div
+      // A computer's battle panel pins it at its own foot when a long step scrolls (BattleView).
+      data-dock
       className={cx(
         // No top padding: the panel's gap already sets it apart, and a 360×640 fight has no pixel to spare.
         'sticky bottom-0 z-20 -mx-3 mt-auto flex flex-col gap-2 bg-parchment px-3 pb-[calc(12px+env(safe-area-inset-bottom))]',
