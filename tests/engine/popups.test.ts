@@ -70,8 +70,9 @@ const dayCareOpen = (save: SaveData): SaveData => ({
 const megaWon = (save: SaveData): SaveData => withBadges(save, 'kalos', 3)
 
 describe('the one-time pop-ups queue', () => {
-  it('keeps one order, from what you came back to, to the question about notifications', () => {
+  it('keeps one order, from the dice tutorial and what you came back to, to the question about notifications', () => {
     expect(ONE_TIME_POPUPS).toEqual([
+      'diceTutorial',
       'away',
       'offline',
       'replies',

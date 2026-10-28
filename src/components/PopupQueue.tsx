@@ -4,6 +4,7 @@
 // pop-up opens only on its turn (popupTurn.ts), so they queue, one at a time, in one order. The rules of a feature with
 // a page of its own, Prof. Oak's tips and Support me aren't here: they are notices on Home (docs/43 §7,
 // screens/home/Notices.tsx), the rules a card on the feature's page.
+import { DiceTutorial } from './DiceTutorial'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { nextOneTimePopup, type OneTimePopup } from '@/engine'
@@ -125,6 +126,7 @@ export function PopupQueue({ children }: { children: ReactNode }) {
 export function OneTimePopups() {
   return (
     <>
+      <DiceTutorial />
       <AwayReportModal />
       <OfflineReportModal />
       <DayCareNotice />

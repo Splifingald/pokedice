@@ -27,6 +27,7 @@ import { inWorldRegion, regionOfferDue } from './regions'
 import { badgeCase, portalRulesDue } from './run'
 import { shinyDexRulesDue } from './shinyDex'
 import { tradeRulesDue, tradesToWatch } from './trade'
+import { diceTutorialDue } from './tutorial'
 import { ugRulesDue } from './underground'
 import { unownDexRulesDue } from './unownDex'
 import { versusRulesDue } from './versus'
@@ -86,6 +87,11 @@ export const queuedLives = (lives: LiveSet): LiveEvent[] =>
  * then the rules of what has no page of its own as it opens, and the question about notifications last.
  */
 const QUEUE = {
+  /**
+   * The dice tutorial (docs/46 §5), a new player's first steps: first, and it keeps the turn on every page it walks
+   * them through, so nothing comes between its steps.
+   */
+  diceTutorial: { due: (s, d) => diceTutorialDue(s, d) },
   /** Extreme mode: what the team healed while the player was away. */
   away: { due: (_s, _d, c) => !!c.awayReport },
   /** The General upgrades: the gold earned while away. */

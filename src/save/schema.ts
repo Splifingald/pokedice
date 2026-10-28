@@ -369,6 +369,8 @@ export const saveSchema = z.object({
   unownDex: z.record(z.array(z.string().max(1)).max(UNOWN_LETTERS.length)).optional(),
   unownDexPaid: z.array(z.string().max(40)).max(40).optional(),
   unownDexSeen: z.boolean().optional(),
+  // The dice tutorial (docs/46 §5): an odd value starts it afresh, never fails the save.
+  diceTutorial: z.enum(['started', 'done']).optional().catch(undefined),
   // The battle powers (docs/35): the Mega Gems held, bought ones included, which nothing else gives back. A power kind
   // this build doesn't know is dropped rather than failing the save, so an odd one never costs the gems.
   powers: z

@@ -69,3 +69,33 @@ about 1 in 35, Lv 3–5).
    in the Supabase SQL editor: Youngster Joey, Oddish on Route 1, the switch's row (Off) and configVersion + 1.
    `supabase/seed.sql` carries it too (inlined).
 2. Admin → Config → **Route 1 opening**: On for admin to try it on a fresh save, then On for everyone.
+
+## 5. The dice tutorial
+
+Beating Youngster Joey ends the opening's first round with **₽10** in the purse: the wild K.O.s pay nothing and a new
+save starts at ₽0, so it is exactly the price of the starter's type die at Lv.2 (Grass, Fire or Water: ₽10 each in the
+bundled tables). Right then, a **pointing hand** walks the player to it, step by step, **once** (the user's request,
+2026-10-28). It follows the set opening's switch: it is the opening's last step, not a feature of its own.
+
+1. **The money** in the top bar ("You won ₽10! Spend it to make Charmander stronger…"): it opens the Poké Mart, on a
+   phone and on PC alike, from any page.
+2. The Mart's **Upgrades** tab.
+3. Upgrades' **Dice Types** view.
+4. The starter's **type die**'s ₽10 button ("Charmander rolls Fire dice. Upgrade the Fire die for ₽10…").
+5. Bought: "Well done! Your Fire die is Lv.2 now…" and **BACK TO Route 1**, which ends it for good and returns to the area.
+
+- **Fully guided**: the screen dims but for the one button to tap (a gold ring around it), the hand points at it (from
+  below, or from above when it sits low on the screen) and taps toward it, and Prof. Oak's bubble says why on the
+  other half of the screen. Every other tap goes nowhere; the button does its own job, which is what moves the step on.
+  Keyboard: the button takes the focus. Calm devices get the hand still.
+- **The step comes from the page** (`diceTutorialStep`): wherever the player is, the next tap is pointed at; a reload
+  picks it up where it was. Should a step's button not be on screen (a page laid out otherwise), SHOW ME goes straight
+  to where it lives.
+- **When**: between fights, as the one-time pop-ups' first (`popups.ts`): it keeps the turn on every page it walks
+  through, so nothing comes between its steps. Due once the opening's first round is won while the die is Lv.1 and the
+  purse holds its price (`diceTutorialDue`); once shown (`save.diceTutorial: 'started'`) it comes back until BACK TO
+  (`'done'`), the die bought or not. A player who upgraded the die on their own never sees it.
+- **No rules card, no INFO**: it is the explanation (docs/15 §20).
+- **The pieces**: `src/engine/tutorial.ts` (the starter, its die and price, due, the step), `DiceTutorial`
+  (`GuideFrame`, `GuideBubble`) and `TutorialHand` (the hand, drawn pixel by pixel), on the kitchen sink. Upgrades'
+  buy buttons carry `data-guide="buy-{kind}-{id}"`.
