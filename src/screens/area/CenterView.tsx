@@ -129,7 +129,7 @@ export function CenterView() {
   )
   return (
     <>
-      <StagePanel scene={stage} bar={bar} stacked>
+      <StagePanel scene={stage} bar={bar} room={null}>
         <section className="flex flex-col gap-2">
           <h2 className="text-3xl">
             {t('ui.center.teamCount', { count: team.length, max: data.config.maxTeamSize })}

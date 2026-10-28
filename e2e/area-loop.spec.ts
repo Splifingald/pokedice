@@ -1,5 +1,6 @@
 // The area loop's deep pass (docs/43 §5.3): the stage's 3:2 picture on a tall phone and GO! waiting for the tap, the turn's switch on the send-out's cards (no dialog, BACK, the forfeit flag), the battle's
-// keys (S, Esc, B, Enter), the Bag's "on whom" as cards, and the PC's discreet key line with the pips as the team row.
+// keys (S, Esc, B, Enter), the Bag's "on whom" as cards, and on PC the stage on top with the Bag and the team in columns
+// at its sides (the item's Pokémon and the switch picked in the team's), the keys' line discreet.
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { emptyProgress, instanceMaxHp, type SaveData } from '../src/engine'
@@ -117,7 +118,20 @@ test('B opens the Bag, and its "on whom" is the send-out\'s cards with why an it
   await page.setViewportSize({ width: 390, height: 844 })
   await boot(page, threeTeam())
   await toDice(page)
-  // The lead is hurt mid-fight, the others full: the Potion helps one. (A hurt team would open the area with a Center.)
+  await hurtLead(page)
+  await page.keyboard.press('b')
+  const bag = page.getByRole('dialog', { name: 'Items (one per turn)' })
+  await expect(bag).toBeVisible()
+  await bag.getByRole('button', { name: /Potion/ }).click()
+  const pick = page.getByRole('dialog', { name: /Use Potion on/ })
+  await expect(pick.getByText('Already full')).toHaveCount(2)
+  await pick.getByRole('button', { name: /Use Potion on Bulbasaur/ }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  expect(await nonJerseyText(page)).toEqual([])
+})
+
+/** The lead hurt mid-fight, the others full: the Potion helps one. (A hurt team would open the area with a Center.) */
+async function hurtLead(page: Page) {
   await page.evaluate(() => {
     type B = { hp: number }
     type S = { battle: { state: { player: B[] } } | null }
@@ -136,37 +150,76 @@ test('B opens the Bag, and its "on whom" is the send-out\'s cards with why an it
         : {},
     )
   })
-  await page.keyboard.press('b')
-  const bag = page.getByRole('dialog', { name: 'Items (one per turn)' })
-  await expect(bag).toBeVisible()
-  await bag.getByRole('button', { name: /Potion/ }).click()
-  const pick = page.getByRole('dialog', { name: /Use Potion on/ })
-  await expect(pick.getByText('Already full')).toHaveCount(2)
-  await pick.getByRole('button', { name: /Use Potion on Bulbasaur/ }).click()
-  await expect(page.getByRole('dialog')).toHaveCount(0)
-  expect(await nonJerseyText(page)).toEqual([])
-})
+}
 
-test('PC: the pips are the team row, and the keys show discreetly on the panel', async ({ page }) => {
+test('PC: the stage on top, the Bag open at its left, the team at its right, the keys discreet', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await boot(page, threeTeam())
   await toDice(page)
-  const pips = page.getByRole('group', { name: 'Switch Pokémon' }).getByRole('button')
-  await expect(pips).toHaveCount(3)
-  expect((await pips.first().boundingBox())!.width).toBeLessThan(60)
+  const team = page.getByRole('region', { name: 'Switch Pokémon' })
+  await expect(team.getByRole('button')).toHaveCount(3)
+  await expect(team.getByText('IN BATTLE')).toBeVisible()
+  const bag = page.getByRole('region', { name: 'Items (one per turn)' })
+  await expect(bag.getByRole('button', { name: /^Potion/ })).toBeVisible()
+  // The columns are the Bag button and the pips of a phone: neither shows twice.
+  await expect(page.getByRole('button', { name: 'Bag', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('group', { name: 'Switch Pokémon' })).toHaveCount(0)
   const keys = page.locator('[data-key-hints]').first()
   await expect(keys).toContainText('reroll')
   // Faint until the pointer is in the panel.
-  await page.mouse.move(10, 450)
+  await page.mouse.move(720, 120)
   await expect(keys).toHaveCSS('opacity', '0')
   const attack = await page.getByRole('button', { name: 'ATTACK', exact: true }).boundingBox()
   await page.mouse.move(attack!.x + 5, attack!.y - 40)
   await expect(keys).toHaveCSS('opacity', '1')
-  // The stage, its 3:2 picture as large as the window allows beside the panel (docs/42).
-  const stage = await page.evaluate(() => {
+  // The stage on top of the middle column, its 3:2 picture as large as the window's height leaves room for the dice
+  // under it (the user's call, 2026-10-28); the columns at its sides; nothing to scroll.
+  const m = await page.evaluate(() => {
     const r = document.querySelector('main section .shadow-ledge')!.getBoundingClientRect()
-    return { w: r.width, h: r.height }
+    return { w: r.width, h: r.height, left: r.left, right: r.right, bottom: r.bottom, scroll: document.documentElement.scrollHeight - innerHeight }
   })
-  expect(stage.w).toBeGreaterThan(900)
-  expect(Math.abs(stage.h - (stage.w * 2) / 3)).toBeLessThan(6)
+  expect(m.w).toBeGreaterThan(700)
+  expect(Math.abs(m.h - (m.w * 2) / 3)).toBeLessThan(6)
+  expect(attack!.y).toBeGreaterThan(m.bottom)
+  const b = (await bag.boundingBox())!
+  const tm = (await team.boundingBox())!
+  expect(b.x + b.width).toBeLessThanOrEqual(m.left)
+  expect(tm.x).toBeGreaterThanOrEqual(m.right)
+  expect(m.scroll).toBeLessThanOrEqual(0)
+})
+
+test("PC: an item's Pokémon and the switch are picked in the team's column", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await boot(page, threeTeam())
+  await toDice(page)
+  await hurtLead(page)
+  const bag = page.getByRole('region', { name: 'Items (one per turn)' })
+  await bag.getByRole('button', { name: /^Potion/ }).click()
+  // The team's column asks who: the ones it can't help say why; no dialog over the fight.
+  const on = page.getByRole('region', { name: 'Use Potion on…' })
+  await expect(on.getByText('Already full')).toHaveCount(2)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  // Esc drops the pick; a second tap picks it again.
+  await page.keyboard.press('Escape')
+  await expect(on).toHaveCount(0)
+  await bag.getByRole('button', { name: /^Potion/ }).click()
+  await on.getByRole('button', { name: 'Use Potion on Bulbasaur' }).click()
+  await expect(on).toHaveCount(0)
+  await expect(bag.getByRole('button', { name: /^Potion/ })).toContainText('×1')
+  // The switch: a row opens it, the panel says what it costs and shows the one picked; another row picks another.
+  const team = page.getByRole('region', { name: 'Switch Pokémon' })
+  await team.getByRole('button', { name: /^Charmander, .*Switch in$/ }).click()
+  await expect(page.getByText('Switch (costs your turn)')).toBeVisible()
+  await expect(team.getByRole('button', { pressed: true })).toContainText('Charmander')
+  await team.getByRole('button', { name: /^Squirtle, .*Switch in$/ }).click()
+  await expect(team.getByRole('button', { pressed: true })).toContainText('Squirtle')
+  await expect(page.getByRole('button', { name: /^forfeit$/i })).toBeVisible()
+  // (The 44 px rule is a phone's: the PC's top bar has smaller chips.)
+  const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
+  expect(
+    axe.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id),
+  ).toEqual([])
+  // GO! sends the one picked, and the turn is spent.
+  await page.getByRole('button', { name: 'Send out Squirtle' }).click()
+  await expect(team.getByRole('button', { name: /^Squirtle, .*in battle$/ })).toBeVisible({ timeout: 20_000 })
 })

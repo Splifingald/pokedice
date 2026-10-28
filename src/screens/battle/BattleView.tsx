@@ -52,7 +52,7 @@ import { ItemSprite } from '@/components/ItemSprite'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
 import { Sheet } from '@/components/Sheet'
-import { SpriteImg } from '@/components/SpriteImg'
+import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { TypeMatchups } from '@/components/TypeMatchups'
 import { BattleDayTime } from '@/components/DayNight'
@@ -100,6 +100,7 @@ import { CatchPanel, catchMessage } from './CatchPanel'
 import { DoublePlates, TargetPicker } from './DoublePlates'
 import { FoePlate, OwnPlate } from './Plates'
 import { useBattleAnimator } from './useBattleAnimator'
+import { BagColumn, TeamColumn, type BagEntry, type TeamAim } from './BattleSides'
 import { InlineCard, StalemateView, VictoryView, WipeView } from './VictoryView'
 
 /** The matchup pop-up over the stage: which side it belongs to decides which end it sits at. */
@@ -209,6 +210,14 @@ const AUTO_THROW_MS = 900
  * scrolls instead.
  */
 const BATTLE_PANEL = '330px'
+/**
+ * A computer's fight (the user's call, 2026-10-28): the stage on top of the middle column, the panel under it at this
+ * height (the line, the dice, the readout, a row of powers, the actions), the Bag and the team in columns at its sides.
+ * The stage is as wide as the height left allows (3:2), and leaves each side column 220 px at the least.
+ */
+const PC_PANEL = '268px'
+const STAGE_W =
+  'max(360px, min(calc((100dvh - var(--top-bar, 0px) - 2rem - 0.75rem - var(--pc-panel)) * 1.5), calc(100vw - 4rem - 440px)))'
 
 const BANNER_TONE = {
   super: 'bg-gold text-ink',
@@ -267,10 +276,17 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   // Switching in on your turn (docs/43 §5.3): the panel shows the send-out's cards instead of the dice (no dialog over
   // the fight), the one tapped picked first; BACK returns to the dice. Holds the fight like a menu.
   const [switching, setSwitching] = useState<string | null>(null)
+  // A computer's Bag column (BattleSides): the item picked, waiting for the team's column to say who gets it. Holds
+  // the fight as the Sheet's menu does.
+  const [aim, setAim] = useState<string | null>(null)
+  // A computer's switch after a K.O.: the one picked in the team's column (the first able one until a tap).
+  const [forcedPick, setForcedPick] = useState<string | null>(null)
+  // …and the send-out's, before the fight (the lead until a tap).
+  const [leadPick, setLeadPick] = useState<string | null>(null)
   // The fight waits while a pop-up is over it: one of its own menus, or one from the top bar (the trainer menu,
   // Settings, the guide). No throw, no auto move and no key press plays behind it; closing it picks up from there.
   const covered = useDialogOpen()
-  const held = !!menu || !!switching || covered
+  const held = !!menu || !!switching || !!aim || covered
   const [itemKey, setItemKey] = useState<string | null>(null)
   const [showBreakdown, setShowBreakdown] = useState(false)
   // Type hints (Trainer menu → Type chart): tapping a Pokémon opens its matchups over the stage.
@@ -530,6 +546,43 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   // 2026-10-27).
   const switchOpen = !auto && canAct && showSwitch
   const openSwitch = (uid?: string) => setSwitching(uid ?? switchTargets[0]?.uid ?? active.uid)
+  // The Bag's items, the ones that would do something right now first: the Sheet's list, and a computer's column.
+  const bagList = [...ownedItems].sort(
+    ([a], [b]) => Number(st.player.some((p) => itemHelps(b, p))) - Number(st.player.some((p) => itemHelps(a, p))),
+  )
+  const doesText = (it: (typeof data.items)[string]) =>
+    st.noHealItems && (it.effect.kind === 'heal' || it.effect.kind === 'revive') ? t('ui.extreme.noItems') : effectText(it)
+  const bagEntries: BagEntry[] = bagList.map(([k, n]) => ({
+    key: k,
+    item: data.items[k]!,
+    count: n,
+    useful: st.player.some((p) => itemHelps(k, p)),
+    does: doesText(data.items[k]!),
+  }))
+  // A computer's Bag: an Ether goes to the one in battle; anything else waits for the team's column to say who.
+  const pickItem = (k: string) => {
+    if (data.items[k]?.effect.kind === 'rerolls') {
+      setAim(null)
+      dispatch({ t: 'USE_ITEM', key: k, targetUid: activeBattler(st).uid })
+    } else setAim((v) => (v === k ? null : k))
+  }
+  const teamAim: TeamAim | null = aim
+    ? {
+        item: aim,
+        helps: (b) => itemHelps(aim, b),
+        whyNot: (b) => itemWhyNot(data.items[aim]?.effect.kind, b, !!st.noHealItems),
+        onUse: (b) => {
+          setAim(null)
+          dispatch({ t: 'USE_ITEM', key: aim, targetUid: b.uid })
+        },
+        onCancel: () => setAim(null),
+      }
+    : null
+  // The turn moved on (the foe's, an item used), or the window narrowed to a phone's panel: the pick is dropped.
+  useEffect(() => {
+    if (!bagOpen || !wide) setAim(null)
+  }, [bagOpen, wide])
+  const bagBox = useRef<HTMLDivElement>(null)
 
   // Keyboard (docs/43 §5.3): 1–6 pick dice, R rerolls, Space (or Enter) throws or attacks, B opens the Bag, S the
   // switch, Esc goes back; on every other step Enter presses the step's one red button (GO!, CONTINUE, NEXT…).
@@ -541,10 +594,12 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       if (e.ctrlKey || e.metaKey || e.altKey || el?.closest?.('input, textarea, select, [contenteditable="true"]')) return
       if (e.key === 'Escape') {
         if (matchups) setMatchups(null)
+        else if (aim && !covered) setAim(null)
         else if (switching && !covered) setSwitching(null)
         return
       }
-      if (auto || covered || menu) return
+      // An item picked in a computer's Bag waits for its Pokémon (a tap in the team's column) or Esc.
+      if (auto || covered || menu || aim) return
       // A focused button or link answers Enter/Space itself (the top bar's too, which stays up in battle).
       const onControl = !!el?.closest?.('button, a[href]')
       const key = e.key.toLowerCase()
@@ -555,7 +610,11 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
           dispatch(stunned ? { t: 'PASS' } : st.phase === 'player_roll' ? { t: 'ROLL' } : { t: 'ATTACK' })
         } else if (key === 'r' && rolling) keyAct.current.reroll()
         else if (/^[1-6]$/.test(e.key) && rolling) keyAct.current.toggleDie(Number(e.key) - 1)
-        else if (key === 'b' && bagOpen) setMenu('item')
+        else if (key === 'b' && bagOpen) {
+          // A computer's Bag is open at the side already: B goes to its first item.
+          if (wide) bagBox.current?.querySelector<HTMLButtonElement>('button:not([disabled])')?.focus()
+          else setMenu('item')
+        }
         else if (key === 's' && switchOpen) keyAct.current.openSwitch()
         return
       }
@@ -571,7 +630,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [canAct, stunned, auto, covered, menu, switching, matchups, rolling, bagOpen, switchOpen, st.phase, dispatch])
+  }, [canAct, stunned, auto, covered, menu, aim, switching, matchups, rolling, bagOpen, switchOpen, wide, st.phase, dispatch])
   // Mega Evolution (once per battle, Lv.50+, from Kalos on), Gigantamax and Arceus's types.
   const megaOpts = scripted ? [] : megaChoices(st, data)
   const gmaxOpts = scripted ? [] : gmaxChoices(st, data)
@@ -862,6 +921,12 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   useEffect(() => {
     if (!canAct) setSwitching(null)
   }, [canAct])
+  useEffect(() => {
+    if (!forced) setForcedPick(null)
+  }, [forced])
+  useEffect(() => {
+    if (!picking) setLeadPick(null)
+  }, [picking])
   // A cleared area's fight can be handed to auto-mode midway, as the area's switch would have from its start.
   // One switch, in the same place on or off (the user's call, 2026-10-27): no note and STOP while it plays.
   const autoToggle = (autoOpen && !versus && !catching) || !!live
@@ -941,30 +1006,62 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       onPick={pickPip}
     />
   )
-  // The Bag and the team's pips at the panel's foot, on every screen (docs/43 §5.3: one team display, the pips; the
-  // wide screens' rows went, the panel being the phone's). The history is More details'.
-  const teamRow = (
+  const history = details && (
+    <button
+      type="button"
+      aria-label={t('ui.battle.history')}
+      title={t('ui.battle.history')}
+      onClick={() => {
+        sfx('button')
+        setMenu('history')
+      }}
+      className="grid min-h-[48px] min-w-[44px] place-items-center bg-paper shadow-ring"
+    >
+      <PixelIcon name="history" size={20} />
+    </button>
+  )
+  // The Bag and the team's pips at the panel's foot on a phone (docs/43 §5.3: one team display, the pips). A computer
+  // has them open in the columns at the sides: the row keeps only who you're up against (Versus) and the history
+  // (More details').
+  const teamRow = wide ? (
+    (versus || history) && (
+      <div className="flex items-center gap-2">
+        {versus && bag}
+        <div className="ml-auto">{history}</div>
+      </div>
+    )
+  ) : (
     <div className="mt-auto flex items-center gap-2">
       {bag}
       <div className="ml-auto flex items-center gap-1.5">
         {pips}
-        {details && (
-          <button
-            type="button"
-            aria-label={t('ui.battle.history')}
-            title={t('ui.battle.history')}
-            onClick={() => {
-              sfx('button')
-              setMenu('history')
-            }}
-            className="grid min-h-[48px] min-w-[44px] place-items-center bg-paper shadow-ring"
-          >
-            <PixelIcon name="history" size={20} />
-          </button>
-        )}
+        {history}
       </div>
     </div>
   )
+  // A computer's side columns, from the send-out to the catch (the result has the middle alone): the team's is where a
+  // Pokémon is picked — the send-out's lead, a switch's, a K.O.'s — the panel showing the one picked and GO!.
+  const forcedStep = forced && !auto && !lastOne
+  const switchStep = !!switching && canAct
+  const sides = wide && !result && !over
+  const forcedOptions = st.player.filter((p) => p.hp > 0 && !onField(p))
+  const teamPick = !wide
+    ? null
+    : picking
+      ? {
+          value: leadPick ?? active.uid,
+          able: new Set(st.player.filter((p) => p.hp > 0).map((b) => b.uid)),
+          onChange: setLeadPick,
+        }
+      : forcedStep
+      ? {
+          value: forcedPick ?? forcedOptions[0]?.uid ?? '',
+          able: new Set(forcedOptions.map((b) => b.uid)),
+          onChange: setForcedPick,
+        }
+      : switchStep
+        ? { value: switching!, able: new Set(switchTargets.map((b) => b.uid)), onChange: setSwitching }
+        : null
 
   const stage = (
     // The stage keeps its 3:2 picture (the user's call, 2026-10-27: no sky added above it).
@@ -1078,26 +1175,43 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   return (
     <BattleContexts pace={pace} motionCap={motionCap}>
-      {/* Phones: the stage on top, the panel under it. Wide screens (docs/42): the stage takes the screen, as big as
-          its height allows (3:2), and the panel — the very same one, a phone's width — stands docked at its right with
-          everything the player does in it: the line, the dice, the actions, the team, the send-out, the catch, the
-          result. Nothing under the stage, nothing twice. */}
+      {/* The stage on top and the panel under it, on every screen (the user's call, 2026-10-28). A computer's middle
+          column: the stage as wide as the height left allows (3:2), the panel framed under it, scrolling inside itself
+          when it holds more (a long result); on its sides, from the send-out to the catch, the Bag open (left) and the
+          team on rows (right) — what a phone keeps behind the Bag button and in the pips. */}
       <div className="mx-auto w-full">
         <section
           aria-label={heading}
-          className="mx-auto flex min-h-[calc(100dvh_-_var(--top-bar,0px))] w-full max-w-[max(300px,min(560px,calc((100dvh_-_var(--battle-panel)_-_var(--top-bar,0px))_*_1.5)))] flex-col [container-type:inline-size] lg:grid lg:min-h-0 lg:max-w-none lg:grid-cols-[minmax(0,calc((100dvh_-_2rem_-_var(--top-bar,0px))_*_1.5))_380px] lg:justify-center lg:gap-4 lg:p-4"
-          style={{ '--battle-panel': BATTLE_PANEL } as CSSProperties}
+          className="mx-auto flex min-h-[calc(100dvh_-_var(--top-bar,0px))] w-full max-w-[max(300px,min(560px,calc((100dvh_-_var(--battle-panel)_-_var(--top-bar,0px))_*_1.5)))] flex-col [container-type:inline-size] lg:grid lg:h-[calc(100dvh_-_var(--top-bar,0px))] lg:min-h-0 lg:max-w-none lg:grid-cols-[minmax(0,340px)_var(--stage-w)_minmax(0,340px)] lg:justify-center lg:gap-4 lg:p-4"
+          style={{ '--battle-panel': BATTLE_PANEL, '--pc-panel': PC_PANEL, '--stage-w': STAGE_W } as CSSProperties}
         >
           <h1 className="sr-only">{heading}</h1>
+          {wide && (
+            <div ref={bagBox} className="flex min-h-0 flex-col">
+              {sides && !versus && (
+                <BagColumn
+                  entries={bagEntries}
+                  open={bagOpen && !teamPick}
+                  used={!!st.itemUsedThisTurn}
+                  aim={aim}
+                  onPick={pickItem}
+                  className="flex-1"
+                />
+              )}
+            </div>
+          )}
+          <div className="flex flex-1 flex-col lg:min-h-0 lg:gap-3">
           {stage}
-          {/* Wide screens: the panel stands as tall as the stage beside it, and scrolls inside itself when it holds more
-              (a long result). */}
-          <div className="flex flex-1 flex-col lg:relative">
+          <div className="flex flex-1 flex-col lg:relative lg:min-h-0">
           <div
             ref={panel}
             className={cx(
               'group/panel flex flex-1 flex-col gap-2 px-3 pt-3',
-              wide && 'pixel-panel absolute inset-0 overflow-y-auto pb-3',
+              // The foot's padding is the BottomDock's, which every step ends with; a step taller than the panel (a
+              // result with a catch) keeps its height and scrolls, the buttons pinned at the panel's foot as on a
+              // phone's screen.
+              wide &&
+                'pixel-panel absolute inset-0 overflow-y-auto [&>*]:min-h-fit [&_[data-dock]]:sticky [&_[data-dock]]:bottom-0 [&_[data-dock]]:-mx-3 [&_[data-dock]]:bg-panel [&_[data-dock]]:px-3',
             )}
           >
             {result ? (
@@ -1106,7 +1220,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                 {run.phase === 'victory' ? <VictoryView /> : run.phase === 'wipe' ? <WipeView /> : <StalemateView />}
               </InlineCard.Provider>
             ) : picking ? (
-              <SendOutStep foe={foeFront.dex} lead={active.uid} />
+              <SendOutStep foe={foeFront.dex} lead={active.uid} chosen={teamPick ?? undefined} />
             ) : (
               // One line, not a dialogue box (docs/42): what just happened, under the scene it happened in. The
               // waiting prompt ("What will … do?") is for More details only; the dice say it already.
@@ -1124,30 +1238,33 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
               />
             ) : over ? (
               <BottomDock>{actions}</BottomDock>
-            ) : forced && !auto && !lastOne ? (
-              // After a K.O. (docs/42): the cards of the send-out step, those able to come in, GO! sends the one picked.
+            ) : forcedStep ? (
+              // After a K.O. (docs/42): the cards of the send-out step, those able to come in, GO! sends the one picked
+              // (a computer picks in the team's column).
               <SwitchStep
-                options={st.player.filter((p) => p.hp > 0 && !onField(p))}
+                options={forcedOptions}
                 foe={foeFront.dex}
                 onPick={(uid) => dispatch({ t: 'SWITCH', instanceId: uid })}
+                chosen={teamPick ?? undefined}
               />
-            ) : switching && canAct ? (
+            ) : switchStep ? (
               // Switching on your turn (docs/43 §5.3): the same cards, the one tapped picked; it costs the turn (the
               // line says so); BACK gives the dice back.
               <SwitchStep
                 options={switchTargets}
-                first={switching}
+                first={switching!}
                 foe={foeFront.dex}
                 onPick={(uid) => {
                   setSwitching(null)
                   dispatch({ t: 'SWITCH', instanceId: uid })
                 }}
                 onBack={() => setSwitching(null)}
+                chosen={teamPick ?? undefined}
               />
             ) : (
               <>
                 {/* A wide screen's tall panel: the dice in its middle, between the line and the actions. */}
-                {wide && <div aria-hidden className="flex-1" />}
+                {wide && <div aria-hidden className="-mt-2 flex-1" />}
                 {/* A tall phone: the dice come down a little, towards the thumb (P1b). */}
                 {tall && <div aria-hidden className="h-[clamp(0px,calc((100dvh-740px)*0.6),72px)] shrink-0" />}
                 <DiceTray
@@ -1289,6 +1406,26 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             )}
           </div>
           </div>
+          </div>
+          {wide && (
+            <div className="flex min-h-0 flex-col">
+              {sides && (
+                <TeamColumn
+                  team={st.player}
+                  hpOf={(b) => fx.hp[b.uid] ?? b.hp}
+                  // Before the send-out nobody is on the field yet.
+                  onField={picking ? () => false : onField}
+                  canSwitch={!auto && (forced || switchOpen)}
+                  calling={forced && !auto}
+                  onPick={pickPip}
+                  aim={teamAim}
+                  pick={teamPick}
+                  foe={foeFront.types}
+                  className="flex-1"
+                />
+              )}
+            </div>
+          )}
         </section>
       </div>
 
@@ -1389,9 +1526,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         {!itemKey ? (
           <div className="flex flex-col gap-2">
             {/* The ones that would do something right now first. */}
-            {[...ownedItems]
-              .sort(([a], [b]) => Number(st.player.some((p) => itemHelps(b, p))) - Number(st.player.some((p) => itemHelps(a, p))))
-              .map(([k, n]) => {
+            {bagList.map(([k, n]) => {
               const it = data.items[k]!
               const useful = st.player.some((p) => itemHelps(k, p))
               return (
@@ -1411,11 +1546,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                   <ItemSprite item={it} size={32} />
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="text-[20px] leading-none">{it.name}</span>
-                    <span className="font-pixel-sm text-[16px] leading-tight text-muted">
-                      {st.noHealItems && (it.effect.kind === 'heal' || it.effect.kind === 'revive')
-                        ? t('ui.extreme.noItems')
-                        : effectText(it)}
-                    </span>
+                    <span className="font-pixel-sm text-[16px] leading-tight text-muted">{doesText(it)}</span>
                   </span>
                   <span className="font-pixel-sm text-[16px] tabular-nums">×{n}</span>
                 </button>
@@ -1476,7 +1607,7 @@ function BattleContexts({ pace, motionCap, children }: { pace: number; motionCap
 function BattleLine({ text }: { text: string }) {
   return (
     <p
-      className="battle-line m-0 flex min-h-[44px] items-center justify-center px-2 text-center text-[20px] leading-[1.1]"
+      className="battle-line m-0 flex min-h-[44px] items-center justify-center px-2 text-center text-[20px] leading-[1.1] lg:min-h-[36px]"
       aria-live="polite"
     >
       {text}
@@ -1531,19 +1662,29 @@ export function SwitchStep({
   foe,
   onPick,
   onBack,
+  chosen,
 }: {
   options: Battler[]
   first?: string
   foe: number
   onPick: (uid: string) => void
   onBack?: () => void
+  /**
+   * A computer's fight (BattleSides): the team's column at the side is where the pick is made, so the step shows the
+   * one picked, not the cards, and the caller holds the pick.
+   */
+  chosen?: { value: string | null; onChange: (uid: string) => void }
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const box = useGame((s) => s.save?.box)
-  const [picked, setPicked] = useState(
-    first && options.some((b) => b.uid === first) ? first : (options[0]?.uid ?? ''),
-  )
+  const [own, setOwn] = useState(first && options.some((b) => b.uid === first) ? first : (options[0]?.uid ?? ''))
+  const picked = chosen
+    ? chosen.value && options.some((b) => b.uid === chosen.value)
+      ? chosen.value
+      : (options[0]?.uid ?? '')
+    : own
+  const setPicked = chosen ? chosen.onChange : setOwn
   const members = options.flatMap((b) => {
     const inst = box?.find((p) => p.id === b.uid)
     return inst ? [atFightHp(inst, b, data)] : []
@@ -1552,7 +1693,8 @@ export function SwitchStep({
     members.map((m) => m.id),
     setPicked,
   )
-  const name = options.find((b) => b.uid === picked)?.name ?? ''
+  const one = options.find((b) => b.uid === picked)
+  const name = one?.name ?? ''
   // Nobody to send in (the last one standing): the step is BACK and the flag.
   if (!members.length)
     return (
@@ -1584,9 +1726,13 @@ export function SwitchStep({
   )
   return (
     <div className="flex flex-1 flex-col gap-3">
-      {/* In the middle of the room there is (a tall PC panel's too), the buttons at the foot. */}
+      {/* In the middle of the room there is, the buttons at the foot. */}
       <div className="my-auto">
-        <LeadPicker members={members} value={picked} onChange={setPicked} foe={speciesTypes(data, foe)} go />
+        {chosen && one ? (
+          <PickedOne uid={one.uid} />
+        ) : (
+          <LeadPicker members={members} value={picked} onChange={setPicked} foe={speciesTypes(data, foe)} go />
+        )}
       </div>
       <BottomDock>
         {/* A rare way out, so a quiet one: the flag at the side of GO!'s row, not a second full-width button. */}
@@ -1616,11 +1762,35 @@ export function SwitchStep({
   )
 }
 
+/** The one a computer's team column picked, for GO! to send: its sprite, name and level, as big as the panel allows. */
+function PickedOne({ uid }: { uid: string }) {
+  const { t } = useT()
+  const inst = useGame((s) => s.save?.box.find((p) => p.id === uid))
+  const name = useGame((s) => (inst ? inst.nickname || s.data.species[inst.dex]?.name || '' : ''))
+  if (!inst) return null
+  return (
+    <p className="m-0 flex items-center justify-center gap-3 text-[26px] leading-none" aria-live="polite">
+      <MiniSprite dex={inst.dex} size={56} className="-my-2" />
+      {name}
+      <span className="font-pixel-sm text-[18px]">{t('ui.common.level.short', { n: inst.level })}</span>
+    </p>
+  )
+}
+
 /**
  * The send-out step (the rework): the foe stands in the scene; under it, the team, and one tap on GO! sends that one. A
  * challenge the player picked (a gym, a legendary met for the first time) can still wait: NOT YET.
  */
-function SendOutStep({ foe, lead }: { foe: number; lead: string }) {
+function SendOutStep({
+  foe,
+  lead,
+  chosen,
+}: {
+  foe: number
+  lead: string
+  /** A computer's fight: picked in the team's column at the side (SwitchStep's `chosen`). */
+  chosen?: { value: string | null; onChange: (uid: string) => void }
+}) {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const enc = useGame((s) => s.run.encounter)
@@ -1631,7 +1801,9 @@ function SendOutStep({ foe, lead }: { foe: number; lead: string }) {
   // FLEE / AVOID only where the game's config allows a way out (noEscape, skipPolicy), as on the old pop-up.
   const canFlee = useGame(() => canSkipCurrent())
   // The first able Pokémon is picked to begin with; a tap on another card picks it, GO! sends the one picked.
-  const [picked, setPicked] = useState(lead)
+  const [own, setOwn] = useState(lead)
+  const picked = chosen ? (chosen.value ?? lead) : own
+  const setPicked = chosen ? chosen.onChange : setOwn
   const save = useGame((s) => s.save)
   const team = save ? teamOf(save) : []
   usePickKeys(
@@ -1646,7 +1818,11 @@ function SendOutStep({ foe, lead }: { foe: number; lead: string }) {
     <div className="flex flex-1 flex-col gap-3">
       {/* In the middle of the room there is (a tall PC panel's too), GO! at the foot. */}
       <div className="my-auto">
-        <LeadPicker value={picked} onChange={setPicked} foe={types} go />
+        {chosen ? (
+          <PickedOne uid={picked} />
+        ) : (
+          <LeadPicker value={picked} onChange={setPicked} foe={types} go />
+        )}
       </div>
       <BottomDock>
       {wild ? (

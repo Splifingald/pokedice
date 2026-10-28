@@ -64,8 +64,8 @@ export function AreaIdle({ area, scene = false }: { area: Area; scene?: boolean 
     </>
   )
   return (
-    // The scene and its panel (docs/43 §5.3): the area and its team on top (PC: on the left), the round's strip on its
-    // top edge as in a fight, its plate naming the area once; the panel holds the team's cards and the bar.
+    // The scene and its panel (docs/43 §5.3): the area and its team on top (PC too), the round's strip on its top edge
+    // as in a fight, its plate naming the area once; the panel under it holds the team's cards and the bar.
     <StagePanel scene={scene ? <AreaSceneBox area={area} /> : null} bar={bar}>
       {/* The area's banner held it before the scene took its place: a cleared area (any, with Idle) plays itself. */}
       {scene && autoHere && (
@@ -89,14 +89,14 @@ export function AreaIdle({ area, scene = false }: { area: Area; scene?: boolean 
 
 /**
  * The area with the team roaming it (docs/42: the action on top), as on Home: its plate opens the area's details, a
- * Pokémon its sheet. Under the top bar on phones; on wide screens the left column, held in view as the page scrolls.
+ * Pokémon its sheet. Under the top bar on phones; on wide screens a 3:2 box over the panel, as a fight's stage.
  */
 export function AreaSceneBox({ area }: { area: Area }) {
   const save = useGame((s) => s.save)
   const [details, setDetails] = useState(false)
   const [mon, setMon] = useState<SheetView | null>(null)
-  // Wide screens: the fight's 3:2 box, the scene filling it around where the team walks, so it fits the window beside
-  // the panel (the square scene, a column wide, ran past the window's foot: the user's report, 2026-10-28).
+  // Wide screens: the fight's 3:2 box, the scene filling it around where the team walks, so it fits the window with the
+  // panel under it (the square scene, a column wide, ran past the window's foot: the user's report, 2026-10-28).
   const wide = useMediaQuery('(min-width: 1024px)')
   const walk = pictureOf(area.id)?.walk
   const walkMid = walk ? (walk[1] + walk[3]) / 2 / SCENE_H : 0.62
@@ -135,8 +135,7 @@ export function AreaTeam() {
   return (
     <section className="flex flex-col gap-2">
       <h2 className="text-3xl">{t('ui.center.teamCount', { count: team.length, max })}</h2>
-      {/* Cards three to a row, as at the Center and the send-out step (the rework); a wide screen keeps them in the
-          panel beside the scene (docs/42). */}
+      {/* Cards three to a row, as at the Center and the send-out step (the rework), under the scene on every screen. */}
       <ol className="grid grid-cols-3 gap-1.5 sm:gap-2">
         {team.map((p, i) => (
           <PokeCard

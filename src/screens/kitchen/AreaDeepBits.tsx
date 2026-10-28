@@ -130,7 +130,8 @@ export function AreaDeepBits() {
       {area && (
         <div className="grid gap-2">
           <b className="text-lg">
-            The page between encounters: the scene and its panel (PC: docked, as tall)
+            The page between encounters: the scene on top and its panel under it (PC too, the scene as wide as the
+            window&apos;s height allows)
           </b>
           <StagePanel
             scene={<AreaSceneBox area={area} />}
@@ -146,10 +147,10 @@ export function AreaDeepBits() {
             <AreaTeam />
           </StagePanel>
           <b className="text-lg">
-            The Center&apos;s: stacked on every screen (its sign on top, the team the page&apos;s width)
+            The Center&apos;s: no 3:2 picture, so the page&apos;s width (its sign on top, the team and the Box under it)
           </b>
           <StagePanel
-            stacked
+            room={null}
             scene={<CenterSign />}
             bar={
               <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">

@@ -44,10 +44,16 @@ The same shape everywhere the player plays: the fight (all its steps), the Poké
 with the team, healed), the page between encounters (the area with its team), Home (the scene, and PLAY with what's
 open beside it).
 
+*Since replaced (the user's rule, 2026-10-28, docs/43 §7b's fifth round): the stage on top and the panel under it on
+every screen. On PC the fight's middle column is the stage over its framed panel, the Bag open at its left and the
+team on rows at its right; the Center, a find and the page between encounters are that middle column. docs/15 §6 has
+the rule.*
+
 ## 3. The fight
 
-- **PC**: the stage as large as the window's height allows (3:2: 1012×675 on 1440×900), the panel beside it in its
-  frame; the team as rows with their HP at its foot (the phone keeps its pips), the Bag above them, the dice up to 64 px.
+- **PC** (*since replaced, 2026-10-28: the stage on top of the middle column, 798×532 on 1440×900, the panel under
+  it, the Bag and the team in columns at its sides; §2's note*): the stage as large as the window's height allows (3:2:
+  1012×675 on 1440×900), the panel beside it in its frame; the team as rows with their HP at its foot (the phone keeps its pips), the Bag above them, the dice up to 64 px.
   The left team column and the history column are gone; the history is a button by the Bag with More details.
 - **The battle's line**: one line under the stage (on PC, at the panel's top) for what just happened; the waiting
   prompt only with More details.

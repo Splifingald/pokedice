@@ -464,6 +464,24 @@
   }
 }
 
+/* Battle on a computer: the Bag's and the team's columns come back with the dice in four quick steps. */
+@keyframes bt-side {
+  from {
+    opacity: 0;
+  }
+}
+.bt-side {
+  animation: bt-side 160ms steps(4) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bt-side {
+    animation: none;
+  }
+}
+html.reduce-motion .bt-side {
+  animation: none;
+}
+
 /* A board row found with "show my row": three steps of gold. */
 @keyframes so-flash {
   0%,

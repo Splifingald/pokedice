@@ -167,6 +167,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `NicknameButton` / `NicknameModal` | Giving one of your Pokémon a nickname (its sheet's title) | The name and a pencil, 44 px tall on phones; the dialog with the field (empty: the species as placeholder; named: selected), the 0/12 counter, the trade line only where trades exist, Cancel / SAVE (§13) |
 | `PokeCard` | The one card for a team member everywhere (Team, send-out, Center, between encounters, K.O. switch; docs/43 §4) | `lead` (gold crown tag, said "Lead: sent out first"), `selected` (gold outline: picked, or shown in a docked sheet), fainted (hatched), resting after a K.O. (`KoTag`), a fossil reviving (its gauge), shiny (star), `xp` (a thin XP line under the HP, the Team), `brief`, `label`, `buttonProps` (drag handlers), `className` (a drop target's dashed red outline) |
 | `DexTile` / `DexGridList` / `DexGauge` / `DexCompleteCard` / `DexSheet` / `Fold` | The Pokédex and its Shiny and Unown views (docs/43 §5.6) | A dense tile (~64 px phones, ~76 px PC): uncaught = the silhouette alone (number and "Not caught yet" for screen readers only), caught = icon + name (16 px, "…"), NEW gold tag, Nearby as a green word in an uncaught tile's empty line or a map tag on a named one, the shiny star, picked = gold ring + `aria-current`. The grid is one Tab stop; arrows by tile and row, Home/End. The gauge sits in the page head, once. The entry: hero (sprite, types, cry), where to find it, evolutions both ways, "Dice and stats" folded (`Fold`, open with More details) |
+| `BagColumn` / `TeamColumn` | A fight from 1024 px, at the sides of the stage and its panel (docs/42 §3, 2026-10-28) | `BagColumn`: the Bag open (the items, what each does, ×n; greyed when it can't help or it isn't your turn; the one picked gold; "One item per turn" ink once used; empty: "Your bag is empty."). `TeamColumn`: a row per Pokémon (mini, name, level, HP with figures, IN BATTLE, statuses, types with More details, the hint's thumb); `aim` turns it into the item's "on whom" (why not on the others, ✕), `pick` into a switch's or a send-out's pick (`aria-pressed`), `calling` pulses the ones a K.O. calls for |
 | `StagePanel` / `EventDock` / `TicketsMeter` | The events' pages (docs/43 §5.11) | The stage on top and the dock pinned above the tab bar on phones; from 1024 px the stage left (sticky) and the panel and dock docked right in one frame. `TicketsMeter`: tickets as stubs (missing ones dimmed), `role=img` "n of cap tickets" |
 | `StageSky` / `Stamp` / `KeyHints` / `SwitchStep` / `ForfeitButton flag` | The area loop (docs/43 §5.3) | `StageSky`: the sky over a fight's grid (Daybreak drawn, the area picture's rows, night, distortion). `Stamp`: a result's moment (big: three held steps from 2×, two white frames, a stepped ring, confetti; small: one step; short: one step; calm/off: at rest). `KeyHints`: the keys at the panel's foot on PC. `SwitchStep`: the send-out's cards for a turn's switch (BACK, GO!, the flag) and a K.O.'s (GO!, the flag). `ForfeitButton flag`: a 56 px flag named FORFEIT |
 | `ItemTile` / `PriceButton` / `PricePlate` / `ItemDetail` / `QtyRow` / `QtyButton` / `DetailButton` | An item anywhere in the Mart (docs/43 §5.5) | Price (affordable, short, a sale struck), plates (sold out, held, sell +₽, can't sell, what it waits for), open, disabled, locked, the count's hop, the coin flight |
@@ -242,7 +243,7 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
 - **A step's buttons stay at the foot of the screen on phones** (the rework, 2026-10-25): in a battle's panel the
   attack, the throw, CONTINUE, NEXT / BACK, NOT YET and the Bag-and-team row sit in a `BottomDock` (`sticky`, at the
   screen's bottom whatever is above them, the content scrolling behind); the action bars above are pinned the same way.
-  From 1024 px they sit in the flow.
+  From 1024 px they sit at the foot of the fight's panel, pinned there when a long step (a result) scrolls inside it.
 - **No button presses itself** (the user's call, 2026-10-27, replacing "no step is only a button"): a step whose one
   thing to do is a single button (the catch's CATCH or CONTINUE, a sure throw, the wipe's TRY AGAIN, the stalemate, an
   evolution revealed, the partner's LET'S GO, a wild fight's GO!) waits for the player's tap. Only while auto-mode or
@@ -270,13 +271,20 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   catching, a Center's Box) and otherwise watches the scene. The send-out's GO! waits for the tap, wild or trainer (under
   auto-mode or Idle mode a wild fight's loads and sends the one picked by itself, `SEND_OUT_AUTO_MS`). The battle's message is **one line under the stage** (`BattleLine`), not a dialogue
   box, and keeps its height when empty; the waiting prompt ("What will … do?") shows only with More details.
-- **The stage, and the phone's panel beside it** (docs/42 §2): on a phone the stage is on top and the panel under it;
-  **from 1024 px the stage takes the screen and the very same panel stands docked at its right** (380 px, as tall as
-  the stage, scrolling inside itself), so everything built for a phone's width is right on PC. Nothing under the stage,
-  nothing shown twice. The fight's every step (dice, send-out, catch, switch, result) lives in that panel; the Center
-  and the page between encounters put the area's scene (`AreaSceneBox`, or the healing) on the left and their panel
-  on the right; Home puts the scene on the left and PLAY with what's open on the right. A new full-screen step follows
-  the same shape.
+- **The stage on top, the panel under it, on every screen** (the user's rule, 2026-10-28, a general rule: it replaced
+  docs/42 §2's panel docked at the stage's right). A phone stacks them as before. **From 1024 px the fight's middle
+  column is the phone's**: the stage as wide as the window's height leaves for the panel under it (3:2, `STAGE_W`,
+  `PC_PANEL`), the panel framed under it with the step (the line, the dice, the actions; the send-out, the catch, a
+  switch, the result), and **at its sides the room a wide screen has: the Bag open on the left, the team on rows on
+  the right** (`BagColumn`, `TeamColumn`: what a phone keeps behind the Bag button and in the pips, with a bit more
+  on each). The team's column is where a Pokémon is picked: the send-out's, a switch's and a K.O.'s pick (the panel
+  shows the one picked and GO!), and an item's "on whom" (tap the item, then the Pokémon). The columns stand from
+  the send-out to the catch; the result has the middle alone. A step taller than the panel (a result with a catch)
+  scrolls inside it, its buttons pinned at its foot. The area's other steps (the page between encounters, a find,
+  the Center) are the same middle column (`StagePanel`): a 3:2 scene as wide as the height leaves room for the panel
+  under it; the Center, whose scene is no picture, the page's width. Home keeps its shape: the scene with PLAY under
+  it, what's open in the column at its right. The events' pages still dock their panel beside the stage: they follow
+  this rule when they are next reworked. A new full-screen step follows it.
 - **One tap per decision** (docs/42): where choosing is acting, the choice is the button — a catch's balls are each a
   throw (no radio, no ROLL TO CATCH). Where a pick then GO! is the user's design (the send-out), a K.O.'s switch uses
   the same cards (`LeadPicker members`), not a different list. A rare way out (forfeit) is a small button at the side,
@@ -295,10 +303,11 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   screen readers ("Pokémon Center in 2"). The strip lies over the stage's top: the plates and the matchups pop-up start
   under it (`--strip` on the stage), never hidden by it.
 - **One stage-and-panel shape everywhere**: an area's steps outside a fight (`src/screens/area/StagePanel`: no tab bar on
-  `/area`, the bar pinned over the home indicator) and the events' pages (`src/screens/events/layout` `StagePanel`, the
-  dock pinned over the tab bar): phones the scene on top and the bar pinned; from 1024 px the panel framed beside the
-  scene, scrolling inside, its actions at its foot. The round's gauge is the fight's strip on the scene's top edge; the
-  plate counts rounds.
+  `/area`, the bar pinned over the home indicator; the scene on top on every screen, the bar sticky at the column's foot
+  from 768 px) and the events' pages (`src/screens/events/layout` `StagePanel`, the dock pinned over the tab bar):
+  phones the scene on top and the bar pinned; the events' from 1024 px still the panel framed beside the scene,
+  scrolling inside, its actions at its foot (until their rework, above). The round's gauge is the fight's strip on the
+  scene's top edge; the plate counts rounds.
 - **Event pages** use `StagePanel` (docs/43 §5.11): phones stack the stage, the panel and a pinned dock (one red action); PC
   docks the panel beside the stage. A list of things to set up (the raids) docks the picked one's panel beside the list on
   PC and opens its own page on a phone.
@@ -696,9 +705,11 @@ Players shouldn't have to make many requests:
 The battle (`src/screens/battle/BattleView.tsx`) is **full screen under the top bar**: `useHoldFullscreen(true, true)`
 puts the side nav and the tab bar away while it is mounted and keeps the top bar (§12); the battle takes the rest of
 the height (`calc(100dvh - var(--top-bar))`). It must fit a 360×640 phone, top bar included, with nothing to scroll
-(`e2e/layout.spec.ts`). From 1024 px the stage takes the screen, as large as the window's height allows, and the
-panel stands docked at its right (380 px, framed, as tall as the stage, scrolling inside itself): the line, the dice,
-the actions, the Bag and the team as rows with their HP (docs/42 §3). The history is More details' button by the Bag.
+(`e2e/layout.spec.ts`). From 1024 px (the user's call, 2026-10-28) the middle column holds the stage, as wide as the
+window's height leaves room for the panel under it (`PC_PANEL`, 268 px: the line, the dice, the readout, the actions,
+the keys), and the panel framed under it, scrolling inside itself when a step holds more, its `BottomDock` pinned at its
+foot; at its sides, from the send-out to the catch, the Bag open (`BagColumn`) and the team on rows (`TeamColumn`),
+each at most 340 px (docs/42 §3). The history is More details' button at the panel's foot.
 
 - **Stage** (`BattleStage`): 240×160 art pixels, scaled. The background is the area's picture (its middle 240 × 160,
   the horizon halfway down) with two translucent zones on its ground; Versus and areas without a picture keep the
@@ -726,7 +737,8 @@ the actions, the Bag and the team as rows with their HP (docs/42 §3). The histo
   game feel it counts up, docs/38 §3), the extras (Mega, G-MAX,
   Z-MOVE, Type, Run, AUTO-MODE) only when they exist — the battle powers gold, Z-MOVE's hint saying what this roll's type adds (docs/35) — the actions (REROLL with its count — LAST REROLL in gold with the game feel — ATTACK in
   red; SKIP TURN when stunned; Versus's AUTO note), low in the panel with the room to spare above
-  them (in the thumb's reach), then the Bag and the team pips (the history with More details).
+  them (in the thumb's reach), then the Bag and the team pips (the history with More details); from 1024 px the Bag and
+  the team are the columns at the sides, and the row keeps only Versus's "vs …" and the history.
 - **Auto battles** (auto-mode, Versus) play at the `short` motion level unless animations are off (`MotionCap`).
   Auto-mode is switched in the area (under its header), never from Home; a cleared area's battle has **one switch,
   AUTO-MODE: ON / OFF, in the same place whichever it is** (its extras' row, last; green and pressed while on, ghost
@@ -736,8 +748,11 @@ the actions, the Bag and the team as rows with their HP (docs/42 §3). The histo
   the autopilot runs (Idle throws the ball itself, §34). The fight keeps the rules it started with (its powers, `state.auto`); the switch gives it back. Prof. Oak's tip about it, the first time,
   one line ("Auto mode unlocked: you can play completed areas automatically."), takes the full width above the switch
   (never squeezed into a column beside it).
-- **Team pips** on every screen size (the wide rows went, docs/43 §5.3): menu icon + an HP bar, the one in battle ringed
-  in gold, fainted ones grey. Tapping one opens the switch **in the panel**: the send-out's cards of those able to come
+- **Team pips** on phones and tablets (docs/43 §5.3): menu icon + an HP bar, the one in battle ringed
+  in gold, fainted ones grey. **From 1024 px the team's column** (`TeamColumn`) stands for them: a row each (the mini,
+  the whole name, the level, the HP with its figures, IN BATTLE on the one out, its statuses, its types with More
+  details, the type hint's thumb), the same taps; in a switch the row tapped is the one picked (gold outline,
+  `aria-pressed`) and the panel shows it with BACK | GO! | the flag; the K.O.'s call pulses the ones that can come in. Tapping one opens the switch **in the panel**: the send-out's cards of those able to come
   in (the tapped one picked), BACK | GO! | the forfeit flag; it costs the turn (the line says so). After a K.O. the same
   cards, GO! and the flag — **with one Pokémon left to come in, it comes in by itself** (the user's call, 2026-10-27).
   With nobody to send in, a pip still opens the step: "No other Pokémon can come in.", BACK and the flag, the fight's
@@ -750,8 +765,11 @@ the actions, the Bag and the team as rows with their HP (docs/42 §3). The histo
 - **Keys**: 1–6 dice, R reroll, Space attack, B Bag, S switch, Esc back, Enter the step's red button, 1–n pick a card;
   `aria-keyshortcuts` on the buttons. `KeyHints` on PC only, faint until the panel is hovered or focused, always with
   More details.
-- **The Bag** is a `Sheet`: every item usable in battle with what it does and how many you have; one that can't help
-  anyone is greyed. One item a turn, and it doesn't end the turn.
+- **The Bag** is a `Sheet` on phones and tablets: every item usable in battle with what it does and how many you have;
+  one that can't help anyone is greyed. One item a turn, and it doesn't end the turn. **From 1024 px it is open in the
+  left column** (`BagColumn`, the same list, "One item per turn" in its head): an Ether goes to the one in battle; any
+  other item is picked (gold) and the team's column asks "Use … on…", those it can't help saying why, ✕ or Esc
+  dropping it; B focuses its first item.
 - **Raids** (`src/screens/events/RaidView.tsx`) keep the battle's layout and its 360×640 fit. Their bottom row: the
   Bag, **your raid team** as compact pips (`TeamPips compact`, 44 px) — tap one on your turn to switch, which costs the
   turn as in a battle (the dialog lists who can go in) — then the **speed button** and **Give up** (a flag, its name in
