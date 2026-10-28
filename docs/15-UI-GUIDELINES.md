@@ -559,7 +559,8 @@ Players shouldn't have to make many requests:
   bar, then the healing scene (a Poké Ball per team member) — the full scene, the balls set down and the jingle, at
   2.4× (about 2.7 s, the user's call, 2026-10-27) — with nothing to press; once it ends it folds away, **its sign
   stays under the strip** (`CenterSign`: the heart and "Pokémon Center") while you're inside, and the team and the Box
-  have the screen, as cards three to a row
+  have the screen, as cards three to a row (six from 1024 px: the Center is stacked on every screen, no picture of the
+  area beside the cards, the user's call, 2026-10-28)
   (`PokeCard`, the send-out step's card: a tap opens the details and the team moves). It plays once: back from Home,
   the Center opens on the team (`run.healShown`). Then Home or
   **Continue** (the next encounter), so a run through an area never needs a trip Home; the Center never moves on by

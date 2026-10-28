@@ -12,7 +12,11 @@ import { useContinue } from '@/screens/home/ContinueBar'
 import { useGame } from '@/store/game'
 import { AreaDetails } from '@/screens/home/AreaDetails'
 import { AreaPlate } from '@/screens/home/AreaPlate'
+import { H as SCENE_H } from '@/screens/home/scene'
 import { SceneStage } from '@/screens/home/SceneStage'
+import { pictureOf } from '@/fx/areaArt'
+import { useMediaQuery } from '@/lib/useMediaQuery'
+import { cx } from '@/theme/util'
 import { RunRoundGauge } from './RoundGauge'
 import { StagePanel } from './StagePanel'
 
@@ -91,14 +95,25 @@ export function AreaSceneBox({ area }: { area: Area }) {
   const save = useGame((s) => s.save)
   const [details, setDetails] = useState(false)
   const [mon, setMon] = useState<SheetView | null>(null)
+  // Wide screens: the fight's 3:2 box, the scene filling it around where the team walks, so it fits the window beside
+  // the panel (the square scene, a column wide, ran past the window's foot: the user's report, 2026-10-28).
+  const wide = useMediaQuery('(min-width: 1024px)')
+  const walk = pictureOf(area.id)?.walk
+  const walkMid = walk ? (walk[1] + walk[3]) / 2 / SCENE_H : 0.62
   if (!save) return null
   return (
-    <div className="relative min-w-0 overflow-hidden shadow-ledge">
-      <SceneStage area={area} team={teamOf(save)} onOpen={(id) => setMon({ kind: 'inst', id })}>
-        {/* The round's encounters, as the fight's strip: the plate under it counts the rounds (no second gauge). */}
-        <RunRoundGauge strip className="absolute inset-x-0 top-0 z-[480]" />
-        <AreaPlate area={area} onOpen={() => setDetails(true)} />
-      </SceneStage>
+    <div className={cx('relative min-w-0 overflow-hidden shadow-ledge', wide && 'aspect-[3/2]')}>
+      <SceneStage
+        area={area}
+        team={teamOf(save)}
+        onOpen={(id) => setMon({ kind: 'inst', id })}
+        fill={wide}
+        focus={walkMid}
+      />
+      {/* Over the box, not the scene (which a wide box crops at its sides): the round's encounters as the fight's strip,
+          and the plate under it counting the rounds (no second gauge). */}
+      <RunRoundGauge strip className="absolute inset-x-0 top-0 z-[480]" />
+      <AreaPlate area={area} onOpen={() => setDetails(true)} />
       <AreaDetails area={details ? area : null} onClose={() => setDetails(false)} />
       <SheetModal view={mon} onClose={() => setMon(null)} manage />
     </div>

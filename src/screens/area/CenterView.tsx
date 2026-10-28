@@ -14,8 +14,6 @@ import { loadCenterArt } from '@/fx/scenes'
 import { quicken } from '@/fx/timeline'
 import { centerTimeline } from '@/fx/timelines/center'
 import { useMotion } from '@/lib/motion'
-import { useMediaQuery } from '@/lib/useMediaQuery'
-import { AreaSceneBox } from '@/screens/area/AreaIdle'
 import { RunRoundGauge } from '@/screens/area/RoundGauge'
 import { StagePanel } from '@/screens/area/StagePanel'
 import { useGame } from '@/store/game'
@@ -41,8 +39,6 @@ export function CenterView() {
   const [sort, setSort] = useState<BoxSort>('dex')
   const [type, setType] = useState<PokeType | 'all'>('all')
   const teamSize = useGame((s) => s.save?.team.length ?? 1)
-  const wide = useMediaQuery('(min-width: 1024px)')
-  const area = useGame((s) => s.data.areas.find((a) => a.id === s.run.areaId))
   // The machine plays once, on arrival: the full scene (the balls set down, the jingle) at a brisk pace, a little longer
   // than the one flash it was (the user's call, 2026-10-27: about 2.7 s).
   const [machine] = useState(() => ({
@@ -77,27 +73,12 @@ export function CenterView() {
       label={t('ui.center.healing')}
     />
   )
-  // The scene (docs/43 §5.3, as a fight): wide screens keep it on the left — the healing, then the area with the team,
-  // healed; phones play the healing at the top, then fold it away so the team and the Box get the screen (the user's
-  // rule), the round's strip staying under the top bar.
-  // Inside, a small banner says where you are, under the round's strip, for as long as you stay (the user's call,
-  // 2026-10-27).
+  // The healing plays at the top, then folds away so the team and the Box get the screen (the user's rule), the round's
+  // strip staying under the top bar. On every screen: a wide one keeps no picture beside the panel once healed (the
+  // user's call, 2026-10-28: the area with the team behind the Center was "completely unnecessary", and taller than the
+  // window). Inside, a small banner says where you are, under the round's strip, for as long as you stay (2026-10-27).
   const sign = <CenterSign />
-  const stage = wide ? (
-    healing ? (
-      <div className="relative overflow-hidden shadow-ledge">
-        <RunRoundGauge strip className="absolute inset-x-0 top-0 z-30" />
-        {heal}
-      </div>
-    ) : (
-      area && (
-        <div className="flex flex-col gap-2">
-          {sign}
-          <AreaSceneBox area={area} />
-        </div>
-      )
-    )
-  ) : (
+  const stage = (
     <div className="relative">
       <RunRoundGauge strip className="absolute inset-x-0 top-0 z-30" />
       {/* Its height kept by the strip when the healing has gone. */}
@@ -111,7 +92,10 @@ export function CenterView() {
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25 }}
           >
-            <div className="shadow-ledge">{heal}</div>
+            {/* A wide screen: the machine at a size the window holds, centred over the cards. */}
+            <div className="shadow-ledge lg:mx-auto lg:max-w-[min(720px,calc((100dvh-var(--top-bar,0px)-12rem)*1.5))]">
+              {heal}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -145,12 +129,13 @@ export function CenterView() {
   )
   return (
     <>
-      <StagePanel scene={stage} bar={bar}>
+      <StagePanel scene={stage} bar={bar} stacked>
         <section className="flex flex-col gap-2">
           <h2 className="text-3xl">
             {t('ui.center.teamCount', { count: team.length, max: data.config.maxTeamSize })}
           </h2>
-          <ol className="grid grid-cols-3 gap-1.5 sm:gap-2">
+          {/* Three to a row on a phone; a wide screen's whole width, six to a row, the team's cards the Box's size. */}
+          <ol className="grid grid-cols-3 gap-1.5 sm:gap-2 lg:grid-cols-6">
             {team.map((p, i) => (
               <PokeCard
                 key={p.id}
@@ -186,7 +171,7 @@ export function CenterView() {
             />
           )}
           </div>
-          <ul className="grid grid-cols-3 gap-1.5 sm:gap-2">
+          <ul className="grid grid-cols-3 gap-1.5 sm:gap-2 lg:grid-cols-6">
             {box.map((p) => (
               <PokeCard
                 key={p.id}

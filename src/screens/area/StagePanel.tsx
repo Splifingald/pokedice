@@ -12,16 +12,22 @@ import { cx } from '@/theme/util'
 export function StagePanel({
   scene,
   bar,
+  stacked = false,
   children,
 }: {
   /** The scene (null on a phone that folded it away: the Center's healing once played). */
   scene: ReactNode
   /** The step's buttons: pinned on phones, at the panel's foot on wide screens. */
   bar: ReactNode
+  /**
+   * The scene stays on top on every screen, the panel under it as the page (the Pokémon Center: its healing plays at
+   * the top and goes; a wide screen gives the team and the Box its width, not a picture to look at).
+   */
+  stacked?: boolean
   children: ReactNode
 }) {
   // Docked beside a scene from 1024 px; without one (a portal's or the nightmare's page) the panel is the page.
-  const wide = useMediaQuery('(min-width: 1024px)') && scene != null
+  const wide = useMediaQuery('(min-width: 1024px)') && scene != null && !stacked
   return (
     <div
       className={cx(

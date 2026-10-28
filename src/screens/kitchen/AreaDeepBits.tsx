@@ -105,6 +105,23 @@ export function AreaDeepBits() {
           >
             <AreaTeam />
           </StagePanel>
+          <b className="text-lg">
+            The Center&apos;s: stacked on every screen (its sign on top, the team the page&apos;s width)
+          </b>
+          <StagePanel
+            stacked
+            scene={<CenterSign />}
+            bar={
+              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
+                <PixelButton size="lg">HOME</PixelButton>
+                <PixelButton size="lg" variant="primary">
+                  CONTINUE
+                </PixelButton>
+              </div>
+            }
+          >
+            <AreaTeam />
+          </StagePanel>
         </div>
       )}
     </div>

@@ -185,8 +185,12 @@ Each entry: before (from the audit), after on a phone, after on PC, and what was
 - **No single-button screen**: the Game Corner's and Trick or Treat's preview with nothing to choose loads and goes
   (`AutoButton`); a double battle's preview picks on the send-out's cards.
 - **Between encounters and the Center** (`StagePanel` for `/area`): phones the scene on top and the bar pinned; from
-  1024 px the panel framed beside the scene, as tall, scrolling inside, the bar at its foot. One gauge: the fight's strip
-  on the scene's top edge. The Center's Box uses the Team's Sort & filter, its sheet the Team's swap dock.
+  1024 px, between encounters, the panel framed beside the scene, as tall, scrolling inside, the bar at its foot, the
+  scene in the fight's 3:2 box (`SceneStage fill`), so it fits the window. **The Center is stacked on every screen**
+  (`StagePanel stacked`, the user's call, 2026-10-28): its healing plays at the top (on PC at a size the window holds)
+  and folds away, and the team and the Box take the page's width, six to a row; no picture of the area beside them.
+  One gauge: the fight's strip on the scene's top edge. The Center's Box uses the Team's Sort & filter, its sheet the
+  Team's swap dock.
 - **Kept** (the user's decisions): the send-out's cards and GO!, wild fights going by themselves, the result moving on
   (but after a new species and an area cleared), the Center waiting, no tab bar in an area.
 - **Taps**: Home → dice 1 (wild) / 2 (trainer); between encounters 0 non-decision taps; the Game Corner with nothing to
@@ -445,6 +449,13 @@ Today ~28 one-time pop-ups take turns (`PopupQueue`). This pass:
 | One check mark | `PixelIcon check`: a rounded green square, a thick white tick |
 | A real Pokémon Egg | Black and White's sprite, one map for the Day Care, the hatching and the app icon |
 | The Day Care's Egg checks: no toggle, INFO full width | Open at the panel's foot, `InfoButton` under them |
+
+### The fourth round (2026-10-28)
+
+| Feedback | Done |
+|---|---|
+| On PC, the Center showed the area with the team behind the cards: taller than the window, and unneeded | The Center is stacked on PC too: the healing at the top, then the team and the Box over the page's width, six to a row (`StagePanel stacked`) |
+| (The same overflow between encounters) | The scene in the fight's 3:2 box on PC (`SceneStage fill`, its focus on where the team walks); the strip and the plate over the box |
 
 ## 8. Not in this pass
 

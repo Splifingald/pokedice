@@ -77,7 +77,8 @@ fits under the stage whole: the strip, the catch, NEXT.
   details, a Pokémon its sheet), the team's cards and HOME / CONTINUE under it; on PC the scene on the left and the
   panel beside it. The auto-mode switch the banner carried sits over the cards.
 - **The Center on PC**: the healing plays on the left, then the area with the team, healed; the team, the Box and its
-  bar in the panel. Phones keep the healing at the top, then gone (the user's rule).
+  bar in the panel. Phones keep the healing at the top, then gone (the user's rule). *Since replaced (2026-10-28,
+  docs/43 §5.3): the Center is stacked on PC too, no picture beside the cards.*
 
 ## 7. Home
 
