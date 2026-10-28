@@ -6211,7 +6211,38 @@ insert into game_config (key, value) values ('configVersion', '1'::jsonb) on con
 insert into game_config (key, value) values ('unownDex', '{"access": "off", "reward": 1000}'::jsonb) on conflict (key) do nothing;
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 
--- ↓ supabase/migrations/0081_switches_retired.sql, inlined so this file stands alone.
+-- ↓ supabase/migrations/0081_league_heal.sql, inlined so this file stands alone.
+-- The League's heal between its battles (docs/42).
+-- 1. game_config `leagueHeal`: the switch, Off (left alone when there). The heal is written into the save on the
+--    player's device, as a Pokémon Center's is, so no server function acts for it and none reads it.
+-- 2. configVersion + 1, so players fetch the new content. Safe to run again.
+insert into game_config (key, value) values ('leagueHeal', '{"access": "off"}'::jsonb) on conflict (key) do nothing;
+insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
+
+-- ↓ supabase/migrations/0083_route_1_opening.sql, inlined so this file stands alone.
+-- Route 1's set opening (docs/46).
+-- 1. Youngster Joey (Rattata Lv 4), the kid trainer the opening's first round ends with. In no area's trainer pool:
+--    only the opening deals him. Left alone when there, so an admin's later edit is kept.
+-- 2. Oddish in Route 1's wild pool: weight 3 (about 1 wild Pokémon in 35 next to Pidgey's and Rattata's 50), Lv 3–5.
+--    Only where Route 1 exists (a fresh database gets it from the seed's own rows, after this file).
+-- 3. game_config `openingRounds`: the switch, Off (left alone when there). The rounds themselves are the game's own
+--    (src/engine/defaults.ts). Encounters are dealt on the player's device, so no server function reads it.
+-- 4. configVersion + 1, so players fetch the new content. Safe to run again.
+
+insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, battle_background, rival_of, items, duo)
+values ('251c41f0-3e55-56a0-bb95-7a33ea96b68f', 'Youngster Joey', '/trainers/classes/youngster.png',
+        '[{"dex":19,"level":4}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false)
+on conflict (id) do nothing;
+
+insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level)
+select 'bc17445e-5dec-5c85-8ec0-ae46500c579f', a.id, 43, 3, 3, 5
+from areas a where a.id = '3585c2a5-43bc-50c9-9818-e148404cabf8'
+on conflict (id) do nothing;
+
+insert into game_config (key, value) values ('openingRounds', '{"access": "off"}'::jsonb) on conflict (key) do nothing;
+insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
+
+-- ↓ supabase/migrations/0084_switches_retired.sql, inlined so this file stands alone.
 -- The admin's Config made simpler (2026-10-28): energy is gone for good, and six switches are gone with it because their
 -- features now stay on for everyone: the dice throws (docs/37), the game-feel pass, haptics and battle music (docs/38),
 -- the shiny Pokédex (docs/39) and the raid overhaul (docs/40). The game no longer reads any of these rows.
@@ -8408,6 +8439,7 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('dc1252ba-591c-5634-a129-115319e6c40a', 'Scientist Braydon', '/trainers/classes/scientist.png', '[{"dex":81,"level":34},{"dex":82,"level":34},{"dex":101,"level":34}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('bbbfef06-aa68-549e-81e3-77edd255f1ec', 'Burglar Ramon', '/trainers/classes/burglar.png', '[{"dex":77,"level":34},{"dex":58,"level":34},{"dex":37,"level":34}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('106bbb38-247f-546f-9211-a376b511429c', 'Youngster Calvin', '/trainers/classes/youngster.png', '[{"dex":21,"level":14}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
+  ('251c41f0-3e55-56a0-bb95-7a33ea96b68f', 'Youngster Joey', '/trainers/classes/youngster.png', '[{"dex":19,"level":4}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('608754e4-1e20-5d85-a9eb-fe1d53d563b4', 'Bug Catcher Rick', '/trainers/classes/bug-catcher.png', '[{"dex":13,"level":6},{"dex":10,"level":6}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('19f323fc-708c-5d07-b22b-ddebbab57197', 'Bug Catcher Doug', '/trainers/classes/bug-catcher.png', '[{"dex":13,"level":7},{"dex":14,"level":7},{"dex":13,"level":7}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('b8d32997-8c71-5d03-8de4-dfd53cd59e13', 'Bug Catcher Anthony', '/trainers/classes/bug-catcher.png', '[{"dex":10,"level":7},{"dex":10,"level":8}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
@@ -8447,11 +8479,11 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('e4c66a54-cfb7-5836-a8e7-ef24fe03ad5b', 'Giacomo', '/trainers/classes/paldea/giacomo.png', '[{"dex":624,"level":21},{"dex":966,"level":20}]'::jsonb, 'leader', null, null, 'default', null, '[]'::jsonb, false),
   ('112342fa-ed70-5e7e-be61-c5537d9c72ae', 'Office Worker Sergio', '/trainers/classes/paldea/office-worker-m.png', '[{"dex":81,"level":22},{"dex":922,"level":22}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('0d006135-b5e4-506a-be1e-019e69b49145', 'Office Worker Lucia', '/trainers/classes/paldea/office-worker-f.png', '[{"dex":417,"level":22},{"dex":702,"level":22}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
-  ('a752a468-7dbd-5f02-b15c-d369c34a2242', 'Cabbie Diego', '/trainers/classes/paldea/cabbie.png', '[{"dex":965,"level":22},{"dex":100,"level":22}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
-  ('62c917a3-a796-588e-a666-2bd117535fd1', 'Iono', '/trainers/classes/paldea/iono.png', '[{"dex":940,"level":23},{"dex":939,"level":23},{"dex":429,"level":24}]'::jsonb, 'leader', 'Electric Badge', null, 'default', null, '[]'::jsonb, false)
+  ('a752a468-7dbd-5f02-b15c-d369c34a2242', 'Cabbie Diego', '/trainers/classes/paldea/cabbie.png', '[{"dex":965,"level":22},{"dex":100,"level":22}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false)
 on conflict (id) do update set name = excluded.name, sprite_url = excluded.sprite_url, team = excluded.team, role = excluded.role, badge = excluded.badge, upgrade_level = excluded.upgrade_level, battle_background = excluded.battle_background, rival_of = excluded.rival_of, items = excluded.items, duo = excluded.duo;
 
 insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, battle_background, rival_of, items, duo) values
+  ('62c917a3-a796-588e-a666-2bd117535fd1', 'Iono', '/trainers/classes/paldea/iono.png', '[{"dex":940,"level":23},{"dex":939,"level":23},{"dex":429,"level":24}]'::jsonb, 'leader', 'Electric Badge', null, 'default', null, '[]'::jsonb, false),
   ('4a8814b6-2b1a-535c-b296-44f981b9774c', 'Team Star Grunt', '/trainers/classes/paldea/star-grunt-m.png', '[{"dex":228,"level":26},{"dex":58,"level":26}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('afd4ad01-de05-5d70-bba9-1aa599b785c8', 'Team Star Grunt', '/trainers/classes/paldea/star-grunt-m.png', '[{"dex":218,"level":26},{"dex":667,"level":26}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('48891afb-74d7-5426-8396-e5a87f996544', 'Mela', '/trainers/classes/paldea/mela.png', '[{"dex":324,"level":27},{"dex":966,"level":27}]'::jsonb, 'leader', null, null, 'default', null, '[]'::jsonb, false),
@@ -8700,11 +8732,11 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('d325b8e1-69cc-56ed-a3cf-19e70e4275b7', 'Ace Trainer Randall', '/trainers/classes/hoenn/collector.png', '[{"dex":365,"level":47},{"dex":369,"level":47}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('21e21757-b0c5-56a1-ad98-6da105e5f7ec', 'Psychic Blake', '/trainers/classes/hoenn/psychic-m.png', '[{"dex":282,"level":48},{"dex":326,"level":48}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('52b087f8-7477-58a9-a9e8-da517d50e866', 'Psychic Samantha', '/trainers/classes/hoenn/psychic-m.png', '[{"dex":344,"level":48},{"dex":337,"level":48}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
-  ('1ff5e2c5-0182-5339-b3ed-ccaa3bd44729', 'Battle Girl Danielle', '/trainers/classes/hoenn/battle-girl.png', '[{"dex":297,"level":32},{"dex":307,"level":32}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
-  ('8107b864-bab0-576d-9f5a-fd20e149b8f2', 'Picnicker Irene', '/trainers/classes/hoenn/picnicker.png', '[{"dex":37,"level":32},{"dex":77,"level":32}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false)
+  ('1ff5e2c5-0182-5339-b3ed-ccaa3bd44729', 'Battle Girl Danielle', '/trainers/classes/hoenn/battle-girl.png', '[{"dex":297,"level":32},{"dex":307,"level":32}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false)
 on conflict (id) do update set name = excluded.name, sprite_url = excluded.sprite_url, team = excluded.team, role = excluded.role, badge = excluded.badge, upgrade_level = excluded.upgrade_level, battle_background = excluded.battle_background, rival_of = excluded.rival_of, items = excluded.items, duo = excluded.duo;
 
 insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, battle_background, rival_of, items, duo) values
+  ('8107b864-bab0-576d-9f5a-fd20e149b8f2', 'Picnicker Irene', '/trainers/classes/hoenn/picnicker.png', '[{"dex":37,"level":32},{"dex":77,"level":32}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('92ad6325-68ac-5174-adc8-c1716d23899a', 'Flannery', '/trainers/classes/hoenn/flannery.png', '[{"dex":218,"level":24},{"dex":322,"level":24},{"dex":324,"level":29}]'::jsonb, 'leader', 'Heat Badge', null, 'default', null, '[]'::jsonb, false),
   ('be9431af-f9e9-56ea-94d5-1eb7688ae034', 'Ace Trainer Quinn', '/trainers/classes/hoenn/collector.png', '[{"dex":338,"level":33},{"dex":337,"level":33}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('f1c98447-7e7c-5a80-ab0e-7b40b6db1088', 'Dragon Tamer Nicolas', '/trainers/classes/hoenn/dragon-tamer.png', '[{"dex":371,"level":34},{"dex":333,"level":34}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
@@ -8953,11 +8985,11 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('1e7705e9-5322-5017-acf5-5d5160779554', 'Elite Four Bruno', '/trainers/classes/elite-bruno.png', '[{"dex":95,"level":83},{"dex":107,"level":84},{"dex":68,"level":86}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb, false),
   ('be14b8d9-5b20-5aa2-9c79-3d6435b54423', 'Elite Four Agatha', '/trainers/classes/elite-agatha.png', '[{"dex":93,"level":84},{"dex":24,"level":86},{"dex":94,"level":88}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb, false),
   ('562057d5-01da-5ea1-8171-acb91d3ac899', 'Elite Four Lance', '/trainers/classes/elite-lance.png', '[{"dex":130,"level":84},{"dex":148,"level":88},{"dex":149,"level":90}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb, false),
-  ('d8dbd2da-79c2-594f-9106-097c8c3e8fb1', 'Champion Rival', '/characters/green.png', '[{"dex":130,"level":89},{"dex":103,"level":91},{"dex":6,"level":93}]'::jsonb, 'champion', null, null, 'default', 1, '["hyper-potion"]'::jsonb, false),
-  ('e8eed7e6-97e3-594c-941f-0dac877f1d6a', 'Champion Rival', '/characters/green.png', '[{"dex":103,"level":89},{"dex":59,"level":91},{"dex":9,"level":93}]'::jsonb, 'champion', null, null, 'default', 4, '["hyper-potion"]'::jsonb, false)
+  ('d8dbd2da-79c2-594f-9106-097c8c3e8fb1', 'Champion Rival', '/characters/green.png', '[{"dex":130,"level":89},{"dex":103,"level":91},{"dex":6,"level":93}]'::jsonb, 'champion', null, null, 'default', 1, '["hyper-potion"]'::jsonb, false)
 on conflict (id) do update set name = excluded.name, sprite_url = excluded.sprite_url, team = excluded.team, role = excluded.role, badge = excluded.badge, upgrade_level = excluded.upgrade_level, battle_background = excluded.battle_background, rival_of = excluded.rival_of, items = excluded.items, duo = excluded.duo;
 
 insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, battle_background, rival_of, items, duo) values
+  ('e8eed7e6-97e3-594c-941f-0dac877f1d6a', 'Champion Rival', '/characters/green.png', '[{"dex":103,"level":89},{"dex":59,"level":91},{"dex":9,"level":93}]'::jsonb, 'champion', null, null, 'default', 4, '["hyper-potion"]'::jsonb, false),
   ('39b7635c-efbd-5ca1-a7b8-f1e6cf4bf71c', 'Champion Rival', '/characters/green.png', '[{"dex":26,"level":89},{"dex":112,"level":91},{"dex":3,"level":93}]'::jsonb, 'champion', null, null, 'default', 7, '["hyper-potion"]'::jsonb, false),
   ('ec78dee7-168c-5b1c-baa2-cdc56396166e', 'Elite Four Lorelei', '/trainers/classes/elite-lorelei.png', '[{"dex":87,"level":100},{"dex":80,"level":100},{"dex":124,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb, false),
   ('ffd2cd5a-91c6-5630-ba6e-f65b077e4505', 'Elite Four Bruno', '/trainers/classes/elite-bruno.png', '[{"dex":106,"level":100},{"dex":95,"level":100},{"dex":68,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb, false),
@@ -11977,6 +12009,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time
   ('f6e65094-8f8f-581e-9e63-7431c042f216', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 82, 10, 50, 70, null),
   ('f0b7ffb6-9450-593d-a791-dbe190537122', '3585c2a5-43bc-50c9-9818-e148404cabf8', 16, 50, 2, 5, null),
   ('506f1166-489e-50f6-9203-e56826c4aab2', '3585c2a5-43bc-50c9-9818-e148404cabf8', 19, 50, 2, 4, null),
+  ('bc17445e-5dec-5c85-8ec0-ae46500c579f', '3585c2a5-43bc-50c9-9818-e148404cabf8', 43, 3, 3, 5, null),
   ('c8139cfa-3063-5ea7-bc61-e905f5ec3d81', '9cd5143b-e280-5a1f-85d4-d7f9933616b1', 19, 20, 3, 5, null),
   ('b9eedc0b-3477-57f4-aca2-4d09e75f3f53', '9cd5143b-e280-5a1f-85d4-d7f9933616b1', 21, 18, 3, 6, null),
   ('6bd76367-acb2-549c-89d5-3fdca557525e', '9cd5143b-e280-5a1f-85d4-d7f9933616b1', 56, 12, 3, 6, null),
@@ -12196,11 +12229,11 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time
   ('dd21f36b-0d37-52fb-a79e-f9a2355c3def', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 865, 10, 60, 76, null),
   ('b1e1f0c4-f629-59f8-a850-d638f1eaf563', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 866, 10, 60, 76, null),
   ('f2db7c2b-a12f-5b78-8e6b-4d79aa20b084', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 867, 10, 60, 76, null),
-  ('0c262968-65da-5b73-b00a-808eeb280cea', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 868, 10, 60, 76, null),
-  ('33087447-6180-55de-8677-e84f89df33fb', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 869, 10, 60, 76, null)
+  ('0c262968-65da-5b73-b00a-808eeb280cea', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 868, 10, 60, 76, null)
 on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level, time_of_day = excluded.time_of_day;
 
 insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time_of_day) values
+  ('33087447-6180-55de-8677-e84f89df33fb', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 869, 10, 60, 76, null),
   ('1ad26a40-f873-50a2-975d-487a29a30af2', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 870, 10, 60, 76, null),
   ('02ba22c1-e1e9-51f3-95b9-afa497fb12b1', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 871, 10, 60, 76, null),
   ('ede8856d-cc04-577f-8724-952071a0c307', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 872, 10, 60, 76, null),
@@ -12449,11 +12482,11 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time
   ('abe999ad-be3c-5c4e-bf8e-67b139fe04dc', '329c3ea6-7942-5784-b1bf-adc6f7ced8dd', 996, 2, 30, 34, null),
   ('0add1fa3-cc38-5e56-96f3-09bc6b2d59d5', '329c3ea6-7942-5784-b1bf-adc6f7ced8dd', 873, 4, 42, 48, null),
   ('42bb2d13-a045-517d-ac09-8d7d214371d5', '329c3ea6-7942-5784-b1bf-adc6f7ced8dd', 614, 6, 42, 48, null),
-  ('e368dca0-95f6-527f-9d1c-c07ad8a60b54', '329c3ea6-7942-5784-b1bf-adc6f7ced8dd', 613, 4, 35, 36, null),
-  ('aeff428b-6517-5b72-aa32-776341649635', '329c3ea6-7942-5784-b1bf-adc6f7ced8dd', 459, 6, 38, 39, null)
+  ('e368dca0-95f6-527f-9d1c-c07ad8a60b54', '329c3ea6-7942-5784-b1bf-adc6f7ced8dd', 613, 4, 35, 36, null)
 on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level, time_of_day = excluded.time_of_day;
 
 insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time_of_day) values
+  ('aeff428b-6517-5b72-aa32-776341649635', '329c3ea6-7942-5784-b1bf-adc6f7ced8dd', 459, 6, 38, 39, null),
   ('82fb27b9-fe2c-5b48-ab7d-8f9bcbf5a3ee', '329c3ea6-7942-5784-b1bf-adc6f7ced8dd', 460, 4, 42, 48, null),
   ('2d5869fa-e117-55b0-9515-65d9062df565', '329c3ea6-7942-5784-b1bf-adc6f7ced8dd', 215, 6, 38, 39, null),
   ('d2b0cec9-d4fa-518b-9264-28a25967f827', '329c3ea6-7942-5784-b1bf-adc6f7ced8dd', 473, 4, 42, 48, null),
@@ -12702,11 +12735,11 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time
   ('93af55e6-b697-5652-9b0a-b19a7469c88b', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 907, 10, 60, 80, null),
   ('dfe87e48-b9d4-51dc-a160-a4e6f2dbbbb8', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 908, 10, 60, 80, null),
   ('15214709-b569-5315-b4d1-66b6733b5fca', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 909, 3, 60, 80, null),
-  ('d93c7e21-b747-504e-960c-454f33c1a23a', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 910, 10, 60, 80, null),
-  ('111a0cee-85bf-5ca3-b56e-7b553be5f203', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 911, 10, 60, 80, null)
+  ('d93c7e21-b747-504e-960c-454f33c1a23a', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 910, 10, 60, 80, null)
 on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level, time_of_day = excluded.time_of_day;
 
 insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time_of_day) values
+  ('111a0cee-85bf-5ca3-b56e-7b553be5f203', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 911, 10, 60, 80, null),
   ('0611ac1c-5094-5dd0-b1dc-fd5deee528a0', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 912, 3, 60, 80, null),
   ('42ba7dad-2780-594c-9a2e-eb801a97eb11', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 913, 10, 60, 80, null),
   ('fe332184-bea5-5ad0-8a45-df1090aff279', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 914, 10, 60, 80, null),
@@ -12955,11 +12988,11 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time
   ('173a935b-3719-5b0e-8e0c-45af9bb6f10b', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 543, 10, 60, 76, null),
   ('dee6b6a2-c1e3-50de-8957-2bb3ea3130cb', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 544, 10, 60, 76, null),
   ('2180d779-72ad-5db2-baba-f866a0224b93', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 545, 10, 60, 76, null),
-  ('b6a4955f-701a-5d43-a9af-1b0682264604', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 546, 10, 60, 76, null),
-  ('999bca18-b24d-5a74-8d06-eee704792f83', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 547, 10, 60, 76, null)
+  ('b6a4955f-701a-5d43-a9af-1b0682264604', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 546, 10, 60, 76, null)
 on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level, time_of_day = excluded.time_of_day;
 
 insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time_of_day) values
+  ('999bca18-b24d-5a74-8d06-eee704792f83', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 547, 10, 60, 76, null),
   ('80f28553-f10f-5e78-8a6f-94cadf8216cd', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 548, 10, 60, 76, null),
   ('778d8f1c-2c54-5b83-b080-cab4a4435854', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 549, 10, 60, 76, null),
   ('03a822a1-e66a-551c-95e3-33d1ecc2b7d1', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 550, 10, 60, 76, null),
@@ -16635,6 +16668,7 @@ insert into items (key, name, description, sprite_url, price, effect, in_shop, s
   ('great-ball', 'Great Ball', 'A good ball: adds 2 to the catch die.', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/great-ball.png', 50, '{"kind":"ball","bonus":2}'::jsonb, true, 2, null, null, false),
   ('ultra-ball', 'Ultra Ball', 'A high-performance ball: adds 3 to the catch die.', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png', 100, '{"kind":"ball","bonus":3}'::jsonb, true, 4, null, null, false),
   ('master-ball', 'Master Ball', 'The best ball there is. It never misses.', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png', 1000, '{"kind":"ball","bonus":10}'::jsonb, false, 0, null, null, false),
+  ('raid-ball', 'Raid Ball', 'A ball made for raids: adds 5 to the catch die. It can only be thrown in a raid.', '/items/raid-ball.png', 500, '{"kind":"ball","bonus":5,"raidOnly":true}'::jsonb, false, 0, null, null, false),
   ('potion', 'Potion', 'Restores 20 HP to one Pokémon.', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/potion.png', 15, '{"kind":"heal","amount":20}'::jsonb, true, 0, null, null, false),
   ('super-potion', 'Super Potion', 'Restores 50 HP to one Pokémon.', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/super-potion.png', 35, '{"kind":"heal","amount":50}'::jsonb, true, 1, null, null, false),
   ('hyper-potion', 'Hyper Potion', 'Restores 120 HP to one Pokémon.', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/hyper-potion.png', 80, '{"kind":"heal","amount":120}'::jsonb, true, 4, null, null, false),

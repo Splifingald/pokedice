@@ -24,6 +24,11 @@ export function useTypeHints(): boolean {
   )
 }
 
+/** More details (docs/42): the invested player's numbers and logs, off unless switched on in Settings. */
+export function useDetails(): boolean {
+  return useGame((s) => s.settings.details === true)
+}
+
 /**
  * Why the menus are shut right now: a fight under way, or a portal run (docs/28: no way out of the area until it's won
  * or the party is K.O.). Null when they're open.

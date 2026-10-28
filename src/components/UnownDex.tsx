@@ -18,24 +18,19 @@ import {
 import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
-import { SHOWDOWN_SPRITES } from '@/lib/showdown'
-import { markUnownDexSeen } from '@/store/actions'
+import { SHOWDOWN_SPRITES, unownShowdownId } from '@/lib/showdown'
+import { showdownMissed, useShowdownDown, watchShowdown } from '@/lib/showdownReach'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { Chip } from './Chip'
 import { PixelIcon } from './icons'
-import { MonTile, TILE_GRID } from './MonTile'
+import { DexGridList, DexTile } from './DexGrid'
 import { PixelButton } from './PixelButton'
-import { useMyTurn, useOnScreen } from './popupTurn'
 import { RulesModal, type RuleRow, type RulesPicture } from './RulesModal'
 import { spriteUrlFor } from './SpriteImg'
 
-/** Showdown's id for a letter: the A is plain Unown, the others its formes (`unown-b`, `unown-exclamation`). */
-const showdownId = (l: UnownLetter) =>
-  l === 'a' ? 'unown' : `unown-${l === '!' ? 'exclamation' : l === '?' ? 'question' : l}`
-
 /** A letter's animated sprite (Black and White drew all 28), on Showdown's CDN like every other Pokémon. */
-export const unownSpriteUrl = (l: UnownLetter) => `${SHOWDOWN_SPRITES}/gen5ani/${showdownId(l)}.gif`
+export const unownSpriteUrl = (l: UnownLetter) => `${SHOWDOWN_SPRITES}/gen5ani/${unownShowdownId(l)}.gif`
 
 /**
  * One letter of Unown. Showdown trims its GIFs to the art, so each is scaled to fit the box (never past ×2): a slim I
@@ -53,13 +48,16 @@ export function UnownSprite({
   className?: string
 }) {
   const { t } = useT()
-  const chain = [unownSpriteUrl(letter), spriteUrlFor(UNOWN_DEX)]
-  const [state, setState] = useState<{ letter: UnownLetter; step: number; dims: [number, number] | null }>({
-    letter,
+  // Showdown failing or stalling (src/lib/showdownReach.ts): straight to the local sprite.
+  const down = useShowdownDown()
+  const chain = down ? [spriteUrlFor(UNOWN_DEX)] : [unownSpriteUrl(letter), spriteUrlFor(UNOWN_DEX)]
+  const key = `${letter}:${chain[0]}`
+  const [state, setState] = useState<{ key: string; step: number; dims: [number, number] | null }>({
+    key,
     step: 0,
     dims: null,
   })
-  const s = state.letter === letter ? state : { letter, step: 0, dims: null }
+  const s = state.key === key ? state : { key, step: 0, dims: null }
   const src = chain[s.step]
   const k = s.dims ? Math.min(2, size / Math.max(s.dims[0], s.dims[1], 1)) : 1
   return (
@@ -70,6 +68,7 @@ export function UnownSprite({
       {src ? (
         <img
           key={src}
+          ref={watchShowdown}
           src={src}
           alt={t('ui.unown.name', { letter: letterText(letter) })}
           loading="lazy"
@@ -77,12 +76,15 @@ export function UnownSprite({
           draggable={false}
           onLoad={(e) =>
             setState({
-              letter,
+              key,
               step: s.step,
               dims: [e.currentTarget.naturalWidth, e.currentTarget.naturalHeight],
             })
           }
-          onError={() => setState({ letter, step: s.step + 1, dims: null })}
+          onError={() => {
+            if (s.step === 0 && !down) showdownMissed()
+            setState({ key, step: s.step + 1, dims: null })
+          }}
           className="pixelated max-w-none select-none"
           style={{
             ...(s.dims && { width: s.dims[0] * k, height: s.dims[1] * k }),
@@ -98,29 +100,35 @@ export function UnownSprite({
   )
 }
 
-/** The page: the 28 letters in the games' order, each in its colours once found, a silhouette until then. */
+/**
+ * The page's grid on its own (the kitchen sink; the Pokédex builds the same tiles into its own grid): the 28 letters in
+ * the games' order, each in its colours once found, a silhouette until then, as the Pokédex's tiles (`DexTile`).
+ */
 export function UnownDexGrid({ found, onOpen }: { found: readonly UnownLetter[]; onOpen: () => void }) {
   const { t } = useT()
   const has = new Set(found)
   return (
-    <ul className={TILE_GRID}>
-      {UNOWN_LETTERS.map((l) => {
+    <DexGridList label={t('ui.unown.title')}>
+      {UNOWN_LETTERS.map((l, i) => {
         const got = has.has(l)
         const name = t('ui.unown.name', { letter: letterText(l) })
         return (
           <li key={l}>
-            <MonTile
+            <DexTile
               dex={UNOWN_DEX}
-              icon={<UnownSprite letter={l} size={60} silhouette={!got} />}
+              icon={<UnownSprite letter={l} size={48} silhouette={!got} />}
               name={letterText(l)}
               missing={!got}
               label={`${name}, ${t(got ? 'ui.unown.found' : 'ui.unown.missing')}`}
+              nearLabel=""
+              newLabel=""
+              tabIndex={i === 0 ? 0 : -1}
               onClick={onOpen}
             />
           </li>
         )
       })}
-    </ul>
+    </DexGridList>
   )
 }
 
@@ -189,7 +197,7 @@ export function UnownStripView({
           )}
         </span>
         <UnownLetterBar found={found} className="max-w-[360px]" />
-        <small className="lv-ink truncate font-pixel-sm text-[15px] text-gold-light">
+        <small className="lv-ink truncate font-pixel-sm text-[16px] text-gold-light">
           {done
             ? paid && reward > 0
               ? t('ui.unown.stripPaid', { amount: money(reward) })
@@ -260,7 +268,7 @@ export function UnownLetterCard({
         <span className="text-xl">
           {isNew ? t('ui.unown.newLetter', { name }) : t('ui.unown.knownLetter', { name })}
         </span>
-        <span className="font-pixel-sm text-[15px]">
+        <span className="font-pixel-sm text-[16px]">
           {reward
             ? t('ui.unown.completeReward', { amount: money(reward) })
             : t('ui.unown.count', { n: found, total })}
@@ -313,28 +321,6 @@ export function UnownDexRulesModal({
       icon="navDex"
       rules={rules}
       onGo={onGo}
-    />
-  )
-}
-
-/**
- * The Unown Pokédex has opened (the switch, an area where Unown live): once, between fights, its rules and a button
- * straight to its page. It takes its turn in the one-time pop-ups' queue (engine/popups.ts), never on the Pokédex.
- */
-export function UnownDexUnlockPopup() {
-  const navigate = useNavigate()
-  const open = useMyTurn('unownDex')
-  useOnScreen('unownDex', open)
-  // Gone the moment its turn ends: its button leads to another page, which a fading pop-up would cover.
-  if (!open) return null
-  return (
-    <UnownDexRulesModal
-      open={open}
-      onClose={markUnownDexSeen}
-      onGo={() => {
-        markUnownDexSeen()
-        navigate('/pokedex?view=unown')
-      }}
     />
   )
 }

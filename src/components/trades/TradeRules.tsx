@@ -1,11 +1,8 @@
 // Trades' rules (docs/15 §20, docs/23): the special events' pop-up, once when trades open to the player, then from
 // the INFO button at the bottom of the Trades page. The numbers come from the config, so a rebalance shows up here.
-import { useNavigate } from 'react-router-dom'
 import { tradeCfg } from '@/engine'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
-import { seeTradeRules } from '@/store/trades'
-import { useMyTurn, useOnScreen } from '../popupTurn'
 import { RulesModal, type RuleRow } from '../RulesModal'
 import { MiniSprite } from '../SpriteImg'
 import { TRADES_PICTURE } from './TradeBits'
@@ -70,30 +67,6 @@ export function TradesRulesModal({
       icon="trade"
       rules={rules}
       onGo={onGo}
-    />
-  )
-}
-
-/**
- * Trades have opened to this player (signed in, the switch on, enough badges): once, between fights, the rules and a
- * button straight to them. It takes its turn in the one-time pop-ups' queue (engine/popups.ts: after Prof. Oak's
- * invite, which comes at the same 2nd badge), never on the Trades page.
- */
-export function TradesUnlockPopup() {
-  const navigate = useNavigate()
-  const open = useMyTurn('trades')
-  useOnScreen('trades', open)
-  // Gone the moment its turn ends, as before the queue: its button leads to another page, which a fading pop-up
-  // would cover.
-  if (!open) return null
-  return (
-    <TradesRulesModal
-      open={open}
-      onClose={seeTradeRules}
-      onGo={() => {
-        seeTradeRules()
-        navigate('/trades')
-      }}
     />
   )
 }

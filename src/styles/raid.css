@@ -239,7 +239,7 @@
 }
 .rd-i-t small {
   font-family: 'Jersey 15', var(--font-cjk);
-  font-size: 15px;
+  font-size: 16px;
   color: #fff3d6;
   overflow: hidden;
   text-overflow: ellipsis;

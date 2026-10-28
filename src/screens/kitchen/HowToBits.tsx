@@ -19,7 +19,7 @@ export function HowToBits() {
       </div>
       {MODES.map((m) => (
         <div key={m} className="flex w-full flex-col gap-1">
-          <span className="font-pixel-sm text-[13px] text-muted">{m}</span>
+          <span className="font-pixel-sm text-[16px] text-muted">{m}</span>
           <HowToPlay mode={m} />
         </div>
       ))}

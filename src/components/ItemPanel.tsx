@@ -126,9 +126,9 @@ export function ItemPanel({ inst, onUsed }: { inst: PokemonInstance; onUsed?: ()
                 <ItemSprite item={data.items[k]} size={32} className={cx(why && 'opacity-60 grayscale')} />
                 <span className="grid min-w-0 flex-1 leading-[1.05]">
                   <b className="truncate text-[19px] font-normal">{data.items[k]!.name}</b>
-                  <small className="font-pixel-sm text-[14px] text-muted">{why ?? what(k)}</small>
+                  <small className="font-pixel-sm text-[16px] text-muted">{why ?? what(k)}</small>
                 </span>
-                <em className="font-pixel-sm text-[15px] not-italic text-muted">×{n}</em>
+                <em className="font-pixel-sm text-[16px] not-italic text-muted">×{n}</em>
               </button>
             </li>
           )

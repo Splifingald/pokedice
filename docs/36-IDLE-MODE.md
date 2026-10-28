@@ -13,9 +13,13 @@ The user's ask of the same day, later: "Actually in full idle we should catch to
 is not owned, take the lowest value ball that will give me the highest % of catch, never take master ball. If it's
 owned, don't use a ball. And don't show a rules pop up for this mode." (§3.1; the pop-up: §2.)
 
+The user's ask of 2026-10-25, on a new game's question: "Let's remove this screen completely, second option is the
+default and first option shouldn't exist." A new game asks nothing and starts on Auto on explored areas; Classic is
+gone (§2).
+
 **Status: built.** Engine `src/engine/autopilot.ts` (every decision); glue `src/store/autopilot.ts` (each step carried
 out through the run store's own actions); the clock `src/screens/area/useAutopilot.ts` (mounted by the area's page);
-UI `src/components/IdleMode.tsx` (the style cards, a new game's question, Settings' panel and its INFO),
+UI `src/components/IdleMode.tsx` (the style cards, Settings' panel and its INFO),
 `src/components/AutoModeToggle.tsx` (the area's switch), `src/screens/area/AutopilotNote.tsx`; admin Config →
 **Idle mode**; migration `supabase/migrations/0068_idle_mode.sql`. Rules for the screens: docs/15 §34.
 
@@ -32,14 +36,14 @@ preview, the result cards, the Center, catches, travel — waited for the player
 
 | Question | Answer |
 |---|---|
-| One save | **A setting, not a save**: `settings.playStyle` (`'classic' \| 'explored' \| 'idle'`), kept like every setting on the device and in the save. `settings.autoMode` stays and means "auto engaged now". The autopilot's own state is in the save: `save.idle` (a lost round's `detour`; `rulesSeen`, written by the builds that had the rules pop-up, is no longer read and stays only so those saves load as ever). |
-| Settings from before | **No style = "Auto on explored areas"** (`playStyleOf`): every player had auto-mode in cleared areas, so nothing changes for them; their switch stays on or off as it was. Nothing is rewritten. A style a newer build wrote that this one doesn't know reads as unset (the save never fails over it). |
-| Switch | **Off / On for admin / On for everyone**, Off by default (`game_config.idleMode`, docs/15 §20). **Off: the whole feature is nowhere** — no question at a new game, no Settings panel — and auto-mode is exactly what it was (§1: a cleared area's fights only, `autoLevel` = `'fights'`). The styles and the autopilot run on the player's device, and the choice lives in the save's settings, so no server function acts for this feature and none reads the switch (as day and night, docs/32). Turning it off keeps every player's choice. |
-| Where auto plays | `autoAvailable` / `autoLevel`: **Classic** nowhere (no switch in the area, none in battle). **Auto on explored areas**: cleared areas, once the player switches it on there (as before). **Idle**: every area, on from the moment it's picked; the area's switch (Idle mode: ON/OFF) or STOP in a fight pauses it, the switch resumes it. Never in a portal run's or the nightmare's area (their own steps, docs/28, docs/30); an Elite Rebattle only has its fights on auto. |
+| One save | **A setting, not a save**: `settings.playStyle` (`'explored' \| 'idle'`), kept like every setting on the device and in the save. `settings.autoMode` stays and means "auto engaged now". The autopilot's own state is in the save: `save.idle` (a lost round's `detour`; `rulesSeen`, written by the builds that had the rules pop-up, is no longer read and stays only so those saves load as ever). |
+| Settings from before | **No style = "Auto on explored areas"** (`playStyleOf`): every player had auto-mode in cleared areas, so nothing changes for them; their switch stays on or off as it was. Nothing is rewritten. A style a newer build wrote that this one doesn't know reads as unset (the save never fails over it), and so does Classic (auto nowhere), dropped on 2026-10-25: those players are on Auto on explored areas, auto off as Classic had it. |
+| Switch | **Off / On for admin / On for everyone**, Off by default (`game_config.idleMode`, docs/15 §20). **Off: the whole feature is nowhere** — no Settings panel — and auto-mode is exactly what it was (§1: a cleared area's fights only, `autoLevel` = `'fights'`). The styles and the autopilot run on the player's device, and the choice lives in the save's settings, so no server function acts for this feature and none reads the switch (as day and night, docs/32). Turning it off keeps every player's choice. |
+| Where auto plays | `autoAvailable` / `autoLevel`: **Auto on explored areas**: cleared areas, once the player switches it on there (as before). **Idle**: every area, on from the moment it's picked; the area's switch (Idle mode: ON/OFF) or STOP in a fight pauses it, the switch resumes it. Never in a portal run's or the nightmare's area (their own steps, docs/28, docs/30); an Elite Rebattle only has its fights on auto. |
 | What runs | `autoLevel` = `'full'`: **the autopilot** (§3) — the whole run, not only the fights. |
-| A new game | **The question comes before Prof. Oak** (`PlayStylePrompt`): the three styles as cards, NEXT once one is picked, "You can change it any time in Settings". Only when there is a choice (`newGameAsksStyle`: the switch on for the player; Classic and Auto on explored areas alone would be the old game). Its answer is the style's settings (`settingsForStyle`: Idle starts on, the others off). |
-| Settings | **Play style** under Game (`PlayStylePanel`): the same cards, switched any time (the next step follows the new style), and INFO with the rules. |
-| Its rules | **No rules pop-up, ever** — the user's explicit exception to docs/15 §20's "once" rule ("don't show a rules pop up for this mode"). The rules are **INFO's only**, in Settings → Play style (`IdleRulesModal`, OK): a banner drawn in code (the trail, the dice, the ball), four rows (three ways to play; it catches by itself, §3.1; on to the next area, one round back after a lost one; no other items, no swaps). The style cards say the gist on their face (Idle: "catches too: new Pokémon, never with the Master Ball"). |
+| A new game | **Asks nothing** (the user's call, 2026-10-25; until then a question before Prof. Oak offered the three styles): it starts with Prof. Oak and leaves the device's style as it is, so a first game is on Auto on explored areas. |
+| Settings | **Play style** under Game (`PlayStylePanel`): the two style cards, switched any time (`settingsForStyle`: Idle starts on, Explored off; the next step follows the new style), and INFO with the rules. |
+| Its rules | **No rules pop-up, ever** — the user's explicit exception to docs/15 §20's "once" rule ("don't show a rules pop up for this mode"). The rules are **INFO's only**, in Settings → Play style (`IdleRulesModal`, OK): a banner drawn in code (the trail, the dice, the ball), four rows (two ways to play; it catches by itself, §3.1; on to the next area, one round back after a lost one; no other items, no swaps). The style cards say the gist on their face (Idle: "catches too: new Pokémon, never with the Master Ball"). |
 
 ## 3. The autopilot
 
@@ -99,10 +103,10 @@ throw plays on the stage.
 
 `autoTravel` and `retreatFrom`, along the region's main chain (secret areas aren't in it):
 
-- **On**: between encounters, once the area is **cleared** and the next area of the chain is **open** (unlocked, not
-  closed, its date come), it goes there. Auto on explored areas only goes into a **cleared** next area (it plays
-  nowhere else), so switched on behind the front, it walks forward to the last explored area and plays there.
-- **A round lost** (a full K.O.): the wipe card is skipped and it goes to **the area before** in the chain for **exactly
+- **Idle, on**: between encounters, once the area is **cleared** and the next area of the chain is **open** (unlocked,
+  not closed, its date come), it goes there. **Auto on explored areas never changes area on its own** (the user's call,
+  2026-10-27): it plays the area the player chose, and a round lost there is tried again there.
+- **A round lost** (a full K.O., Idle): the wipe card is skipped and it goes to **the area before** in the chain for **exactly
   one round** — the detour, `save.idle.detour = { from, to, rounds }`, `rounds` being what that area had done — then,
   the round counted, **back to the area lost**. The first area of a region, or a secret one, has nothing before it: the
   same area again.
@@ -124,8 +128,8 @@ throw plays on the stage.
 
 ## 6. Tests
 
-- `tests/engine/autopilot.test.ts`: the styles and the switch (where auto plays, 'fights' while off), a new game's
-  question; on to the next area, Explored only into cleared ones; the retreat for exactly one round
+- `tests/engine/autopilot.test.ts`: the styles and the switch (where auto plays, 'fights' while off), the dropped
+  Classic read as Explored; on to the next area, Explored only into cleared ones; the retreat for exactly one round
   and the way back, further back when lost again, nothing before the first area, a stale detour forgotten; every
   step (cards taken but Trick or Treat, catches and "Add to team?" waiting under Auto on explored areas, Idle throwing,
   passing, keeping the Bait, throwing again and answering no; the Center left with no swap, no item in a whole auto
@@ -133,11 +137,11 @@ throw plays on the stage.
   or the only one; owned → none; no ball, or none with a chance → none; no ball needed → none thrown; a stock of 0
   skipped.
 - `tests/play-style-setting.test.ts`: old settings read as Auto on explored areas, the style on the device and in the
-  save with the detour, an unknown style never failing a save.
+  save with the detour, an unknown style (or the dropped Classic) never failing a save.
 - `tests/idle-mode-sql.test.ts`: 0068 against PGlite (Off, the version bumped, the admin's switch kept on a re-run),
   inlined in seed.sql.
-- `e2e/idle-mode.spec.ts`: the new game's question (on), none (off); Idle playing from CONTINUE and catching by
-  itself; Idle catching a new Pokémon with no tap (a Poké Ball where one is needed, none where none is, the Great and
+- `e2e/idle-mode.spec.ts`: a new game asks nothing, on or off, and starts on Auto on explored areas (Settings: the two
+  cards, it picked); Idle catching a new Pokémon with no tap (a Poké Ball where one is needed, none where none is, the Great and
   Master Balls untouched, the catch to the Box with a full team) and leaving one it owns (no ball, the weaker copy
   kept); Idle moving on to the next area by itself; an existing save with no rules pop-up, its old auto-mode as Auto
   on explored areas, Settings switching (and arrow keys), INFO with the catch rule; nothing in Settings when off;

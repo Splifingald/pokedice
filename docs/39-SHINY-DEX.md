@@ -5,7 +5,7 @@ the player has owned shiny there. A collection to finish after the credits, as t
 behind its own admin switch (docs/15 §20), Off by default, until 2026-10-28.
 
 **Always on since 2026-10-28** (the user's call, when Admin → Config was made simpler): the switch is gone, the game
-keeps only the "on" path, and [`supabase/migrations/0081_switches_retired.sql`](https://github.com/Splifingald/pokedice/blob/claude/beautiful-hopper-t3trh9/supabase/migrations/0081_switches_retired.sql) deletes its row
+keeps only the "on" path, and [`supabase/migrations/0084_switches_retired.sql`](https://github.com/Splifingald/pokedice/blob/version/2_4/supabase/migrations/0084_switches_retired.sql) deletes its row
 (`supabase/seed.sql` carries it inlined).
 
 ## 1. Decisions
@@ -49,7 +49,7 @@ Every state is on `/kitchen-sink` (`ShinyDexBits`).
 
 ## 4. Setting it up
 
-Now: run 0081 (above) once the client is deployed; nothing to switch. Before it:
+Now: run 0084 (above) once the client is deployed; nothing to switch. Before it:
 
 1. Deploy the client (the switch is Off: the Pokédex has one page; saves start noting their shinies).
 2. Run `supabase/migrations/0075_shiny_dex.sql` (the switch's row, Off, and the content version + 1; safe to run again):

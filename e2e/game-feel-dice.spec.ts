@@ -71,8 +71,8 @@ test('a tall phone: bigger dice, the count-up to the engine damage, a pick, LAST
   expect(box!.width).toBeGreaterThanOrEqual(64)
   // The actions sit low, right over the Bag row.
   const atk = await attack(page).boundingBox()
-  const history = await page.getByRole('button', { name: 'Battle history' }).boundingBox()
-  expect(history!.y - (atk!.y + atk!.height)).toBeLessThan(40)
+  const bag = await page.getByRole('button', { name: 'Bag' }).boundingBox()
+  expect(bag!.y - (atk!.y + atk!.height)).toBeLessThan(40)
 
   await tray(page).nth(0).click()
   await expect(tray(page).nth(0)).toHaveAttribute('aria-pressed', 'true')
@@ -92,8 +92,8 @@ test('a 360×640 phone: the battle still fits', async ({ page }) => {
   if (await gotIt.isVisible().catch(() => false)) await gotIt.click()
   const box = await attack(page).boundingBox()
   expect(box!.y + box!.height).toBeLessThanOrEqual(640)
-  const history = await page.getByRole('button', { name: 'Battle history' }).boundingBox()
-  expect(history!.y + history!.height).toBeLessThanOrEqual(640)
+  const bag = await page.getByRole('button', { name: 'Bag' }).boundingBox()
+  expect(bag!.y + bag!.height).toBeLessThanOrEqual(640)
   const scroll = await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight)
   expect(scroll).toBeLessThanOrEqual(0)
   expect(await smallControls(page)).toEqual([])

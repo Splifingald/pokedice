@@ -74,7 +74,7 @@ test('Config: the tabs, the switches in two columns, a name opens its numbers', 
   )
 
   // One row per feature: its name and its switch, nothing else; energy and the retired switches are gone.
-  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(17)
+  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(20)
   for (const gone of [
     'Energy',
     'Dice throws',

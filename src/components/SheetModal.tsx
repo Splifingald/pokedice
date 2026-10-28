@@ -29,6 +29,7 @@ import { NicknameButton, NicknameModal } from './Nickname'
 import { PixelButton } from './PixelButton'
 import { PokemonSheet } from './PokemonSheet'
 import { Sheet } from './Sheet'
+import { SheetActionRow, TeamSwapDock } from './TeamSwapActions'
 import { useTradeThis } from './trades/TradeThis'
 
 /**
@@ -160,54 +161,48 @@ function SheetStack({
       </PixelButton>
     )
   } else if (manage && top.kind === 'inst' && inst && save) {
+    // The footer is the sheet's actions (docs/43 §5.4): one red at most, Use an item a quiet button beside it.
     const at = save.team.indexOf(inst.id)
     const useItem = hasItems && inst.revivesAt == null && (
-      <PixelButton
-        variant="primary"
-        size="lg"
-        className="min-w-0 flex-1"
-        onClick={() => push({ kind: 'items', id: inst.id })}
-      >
+      <PixelButton size="lg" className="min-w-0" onClick={() => push({ kind: 'items', id: inst.id })}>
+        {/* The Bag, as in a fight (the user, 2026-10-27): what opens is the bag's items, not a potion. */}
+        <PixelIcon name="bag" size={20} />
         {t('ui.itemPanel.title')}
       </PixelButton>
     )
-    footer =
-      at >= 0 ? (
-        <div className="flex items-center gap-2">
-          {at > 0 ? (
-            // A square crown: its label ran the row off the screen in French, so the name lives in aria-label.
+    footer = swaps ? (
+      // The team can change here (a Center, a portal's way in): its moves are the footer's.
+      <TeamSwapDock inst={inst} useItem={useItem} onDone={onClose} />
+    ) : at >= 0 ? (
+      <SheetActionRow
+        quiet={useItem}
+        main={
+          at > 0 && (
             <PixelButton
+              variant="primary"
               size="lg"
-              className="w-[56px] shrink-0 !px-0"
-              aria-label={t('ui.team.makeLead')}
-              title={t('ui.team.makeLead')}
+              className="min-w-0"
               onClick={() => {
                 reorderTeam([inst.id, ...save.team.filter((x) => x !== inst.id)])
                 pushToast(t('ui.team.leadsNow', { name: monName(inst, data) }), 'good')
                 onClose()
               }}
             >
-              <PixelIcon name="crown" size={28} />
+              <PixelIcon name="crown" size={20} />
+              {t('ui.team.makeLead')}
             </PixelButton>
-          ) : (
-            <span className="grid min-w-0 flex-1 place-items-center text-center font-pixel-sm text-[16px] text-muted">
-              {t('ui.sheet.leadsTeam')}
-            </span>
-          )}
-          {useItem}
-        </div>
-      ) : swaps ? (
-        // The team can change here: the sheet's body has the moves (instExtra), so no rule to point at.
-        useItem && <div className="flex">{useItem}</div>
-      ) : (
-        <div className="flex flex-col gap-2">
-          <p className="flex items-center gap-1.5 font-pixel-sm text-[15px] leading-tight text-muted">
-            <PixelIcon name="lock" size={16} className="shrink-0" />
-            {t('ui.team.boxAtCenter', { name: monName(inst, data) })}
-          </p>
-          {useItem && <div className="flex">{useItem}</div>}
-        </div>
-      )
+          )
+        }
+      />
+    ) : (
+      <div className="flex flex-col gap-2">
+        <p className="flex items-center gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted">
+          <PixelIcon name="lock" size={16} className="shrink-0" />
+          {t('ui.team.boxAtCenter', { name: monName(inst, data) })}
+        </p>
+        <SheetActionRow quiet={useItem} />
+      </div>
+    )
   }
 
   return (
@@ -226,14 +221,19 @@ function SheetStack({
           ) : top.kind === 'items' && inst ? (
             <ItemPanel inst={inst} onUsed={back} />
           ) : homer ? (
-            <PokemonSheet dex={homer.inst.dex} inst={homer.inst} onOpenDex={openDex}>
-              <HomerLock homer={homer} />
-            </PokemonSheet>
+            // Its lock first: why it waits is what matters about it now.
+            <PokemonSheet dex={homer.inst.dex} inst={homer.inst} onOpenDex={openDex} top={<HomerLock homer={homer} />} />
           ) : inst ? (
-            // The team's moves (instExtra) above Strengths and weaknesses, always (the user's call, 2026-10-15).
-            <PokemonSheet dex={inst.dex} inst={inst} onOpenDex={openDex} beforeMatchups={instExtra?.(inst)}>
+            // The team's moves (instExtra) above Strengths and weaknesses, always (the user's call, 2026-10-15); an
+            // evolution waiting at the level cap right under the hero; the rare moves (send on, trade) last.
+            <PokemonSheet
+              dex={inst.dex}
+              inst={inst}
+              onOpenDex={openDex}
+              beforeMatchups={instExtra?.(inst)}
+              top={<LevelCapEvolvePanel inst={inst} />}
+            >
               <SendOnPanel inst={inst} onSent={onClose} />
-              <LevelCapEvolvePanel inst={inst} />
             </PokemonSheet>
           ) : null}
         </div>
@@ -253,8 +253,8 @@ function LetGoButton({ id, name, onGone }: { id: string; name: string; onGone: (
   return (
     <PixelButton
       variant="danger"
-      size="lg"
-      className="w-full"
+      // The one thing it can do, yet for good: a plain size at the footer's end, never a big red bar.
+      className="ml-auto flex"
       onClick={() => {
         if (!asked) return setAsked(true)
         if (letHomerGo(id)) {
@@ -281,7 +281,8 @@ function SendOnPanel({ inst, onSent }: { inst: PokemonInstance; onSent: () => vo
   // Not one of a region's own Pokémon: it has no business there, and offering it would only be noise.
   const targets = save ? sendTargets(save, data).filter((r) => regionSpecies(data, r.id).has(inst.dex)) : []
   // TRADE (docs/23) sits beside the Send buttons: the main button when there's nowhere to send it.
-  const trade = useTradeThis(inst, !targets.length, onSent)
+  // Never red: the sheet's main action is at its foot, and sending away is a rare one.
+  const trade = useTradeThis(inst, false, onSent)
   if (!save || (!targets.length && !trade)) return null
   // With the species settled, what is left ('last', 'reviving') is about this Pokémon, the same for every region.
   const why = targets.length ? sendOnBlocked(save, data, inst, targets[0]!) : null
@@ -294,7 +295,8 @@ function SendOnPanel({ inst, onSent }: { inst: PokemonInstance; onSent: () => vo
         {targets.map((r) => (
           <PixelButton
             key={r.id}
-            variant="primary"
+            // Rare and for good: a quiet button at the sheet's end, confirmed by a second tap.
+            size="sm"
             disabled={!!why}
             onClick={() => (asked === r.id ? (sendPokemonOn(inst.id, r.id), onSent()) : setAsked(r.id))}
           >
@@ -321,7 +323,7 @@ function SendOnPanel({ inst, onSent }: { inst: PokemonInstance; onSent: () => vo
                 : t('ui.sheet.sendOnPick', { name, n: inst.level })}
         </p>
       )}
-      {trade && <p className="copy text-base text-muted">{trade.note}</p>}
+      {trade?.note && <p className="copy text-base text-muted">{trade.note}</p>}
     </section>
   )
 }
@@ -345,9 +347,10 @@ function LevelCapEvolvePanel({ inst }: { inst: PokemonInstance }) {
   const name = monName(inst, data)
   const names = ready.map((e) => data.species[e.toDex]?.name ?? `#${e.toDex}`).join(' / ')
   return (
-    <section className="flex flex-col items-start gap-1 border-t-[3px] border-dashed border-shadow/40 pt-2">
+    // Right under the hero, gold: something new to take (the footer keeps the one red action).
+    <section className="flex flex-col items-start gap-1 bg-gold-pale p-2.5 shadow-ring-line">
       <PixelButton
-        variant="primary"
+        variant="gold"
         onClick={() => {
           const evolved = evolveAtLevelCap(inst.id)
           if (evolved) setEvolving(evolved)

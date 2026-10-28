@@ -1,5 +1,6 @@
 // The evolution cut-scene on the pixel stage (src/fx/timelines/moments.ts: silhouette, a flicker that speeds up,
 // rays, burst, reveal; a stone floats down first), and a full-screen queue that plays several in a row.
+import { AutoButton } from './AutoButton'
 import { motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -9,7 +10,6 @@ import { evolveTimeline } from '@/fx/timelines/moments'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { DiceSet } from './DiceSet'
-import { PixelButton } from './PixelButton'
 import { StageCanvas } from './StageCanvas'
 import { StatChip } from './StatChip'
 
@@ -91,22 +91,20 @@ export function EvolutionSequence({
   )
 }
 
-/** How long the autopilot leaves an evolution's reveal up before the next (docs/36). */
+/** How long an evolution's reveal stays up before its button moves on by itself (the autopilot's pace, docs/36). */
 const AUTO_EVOLVED_MS = 1800
 
 /**
- * Evolutions one after another, full screen: each plays, then CONTINUE moves to the next; after the last, `onDone`.
+ * Evolutions one after another, full screen: each plays, then CONTINUE (loading by itself, for everyone since the
+ * rework) moves to the next; after the last, `onDone`.
  * The button is always in view (bottom of the card).
  */
 export function EvolutionQueue({
   items,
   onDone,
-  auto = false,
 }: {
   items: EvolutionShow[]
   onDone: () => void
-  /** The autopilot (docs/36): each evolution plays in full, stays a moment once revealed, then moves on by itself. */
-  auto?: boolean
 }) {
   const { t } = useT()
   const [i, setI] = useState(0)
@@ -115,14 +113,6 @@ export function EvolutionQueue({
   useEffect(() => {
     if (!cur) onDone()
   }, [cur]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (!auto || !ready) return
-    const timer = setTimeout(() => {
-      setReady(false)
-      setI((n) => n + 1)
-    }, AUTO_EVOLVED_MS)
-    return () => clearTimeout(timer)
-  }, [auto, ready])
   if (!cur) return null
   // On the page itself, above any sheet it was opened from (a fixed box inside a transformed modal would be clipped).
   return createPortal(
@@ -136,17 +126,20 @@ export function EvolutionQueue({
     >
       <div className="pixel-panel flex max-h-full w-full max-w-md flex-col gap-3 overflow-auto p-3">
         <EvolutionSequence key={`${cur.uid}-${i}`} {...cur} onDone={() => setReady(true)} />
-        <PixelButton
+        {/* Revealed, it loads and moves on by itself (the rework); until then a tap skips the animation. */}
+        <AutoButton
           variant="primary"
           size="lg"
           className="w-full"
+          hold={!ready}
+          ms={AUTO_EVOLVED_MS}
           onClick={() => {
             setReady(false)
             setI((n) => n + 1)
           }}
         >
           {ready ? t(i + 1 < items.length ? 'ui.evolution.next' : 'ui.common.continue') : t('ui.evolution.skip')}
-        </PixelButton>
+        </AutoButton>
       </div>
     </motion.div>,
     document.body,

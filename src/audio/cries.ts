@@ -33,7 +33,7 @@ export function setCriesEnabled(on: boolean) {
 export function cryUrl(dex: number): string | null {
   const e = ENTRIES[dex]
   const id = e && cryId(e)
-  return id ? `${SHOWDOWN_CRIES}/${id}.mp3` : null
+  return id && !import.meta.env.VITE_PROTO ? `${SHOWDOWN_CRIES}/${id}.mp3` : null
 }
 
 /** Whether this species or form has a cry of its own (a Mega's, rather than its species'). */

@@ -114,7 +114,7 @@ export function FriendProfileSheet({
                     <TrainerName name={profile.name} rich={profile.rich} />
                   </b>
                   {!profile.region ? (
-                    <p className="m-0 font-pixel-sm text-[15px] text-muted">{t('ui.friends.noGame')}</p>
+                    <p className="m-0 font-pixel-sm text-[16px] text-muted">{t('ui.friends.noGame')}</p>
                   ) : (
                     <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2.5 gap-y-0.5">
                       <Stat
@@ -154,7 +154,7 @@ export function FriendProfileSheet({
               <section className="flex flex-col gap-1.5">
                 <h3 className="m-0 text-[24px] font-normal leading-none">{t('ui.friends.versusTeam')}</h3>
                 <div className="flex items-center gap-2 bg-paper py-1.5 pl-3 pr-2 shadow-ring-line">
-                  <TeamIcons team={profile.versus.team} owner={profile.name} size={40} />
+                  <TeamIcons team={profile.versus.team} owner={profile.name} size={40} spaced />
                 </div>
               </section>
             )}

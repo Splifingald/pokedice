@@ -85,7 +85,7 @@ export function Seg<T extends string>({
           >
             {o.label}
             {o.count != null && (
-              <span className={cx('font-pixel-sm text-[14px]', on ? 'text-gold-light' : 'text-muted')}>
+              <span className={cx('font-pixel-sm text-[16px]', on ? 'text-gold-light' : 'text-muted')}>
                 {o.count}
               </span>
             )}
@@ -141,7 +141,7 @@ export function FilterChips<T extends string>({
           >
             {o.label}
             {o.count != null && (
-              <span className={cx('font-pixel-sm text-[15px]', on ? 'text-gold-light' : 'text-muted')}>
+              <span className={cx('font-pixel-sm text-[16px]', on ? 'text-gold-light' : 'text-muted')}>
                 {o.count}
               </span>
             )}

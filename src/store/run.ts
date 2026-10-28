@@ -18,20 +18,19 @@ import {
   applyVictory,
   applyWipe,
   ballBonus,
+  isBallFor,
   battleOutcome,
   canSkip,
   catchTarget,
   catchValueOf,
   centerHeal,
   centersOn,
-  centerWouldHelp,
   challengeEncounter,
   finishRound,
+  type Encounter,
   type EncounterContext,
   playerSideOf,
   consumeItem,
-  earnedGold,
-  MONEY,
   pickUpItem,
   shinyBoost,
   wildShinyChance,
@@ -61,6 +60,8 @@ import {
   swapIntoTeam,
   teamAverageLevel,
   teamOf,
+  starterFainted,
+  trainerPrize,
   uniformLevels,
   UNOWN_DEX,
   unownLetterFor,
@@ -120,7 +121,6 @@ import { useRebattleMedal } from './rebattle'
 import { serverNow } from './serverTime'
 import { trickAllowed } from './trick'
 import { t } from '@/i18n'
-import { money } from '@/lib/format'
 
 // An encounter picked up from the last visit (store/resume.ts) rolls on from where both streams stood, so a reload
 // throws the same dice staying would have; its ids carry on too, so the next battle or ghost is a new screen.
@@ -174,6 +174,18 @@ export function enterArea(areaId: string): boolean {
       areaProgress: visited ? save.areaProgress : { ...save.areaProgress, [areaId]: emptyProgress() },
     })
   useGame.setState({ run: { ...initialRun(), areaId, firstInArea: true, forceNext: useGame.getState().run.forceNext }, battle: null })
+  return true
+}
+
+/**
+ * A region begun (a new game, or a new region on its starter): straight into its first area and the first encounter,
+ * never Home first (the rework). False when the area can't be entered; the caller then stays where it is.
+ */
+export function exploreFirstArea(areaId?: string): boolean {
+  const { save } = useGame.getState()
+  const id = areaId ?? save?.currentAreaId
+  if (!id || !enterArea(id)) return false
+  rollNext()
   return true
 }
 
@@ -237,10 +249,10 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
     teamAvgLevel: teamAverageLevel(save),
     teamHurt: isTeamHurt(save, data),
     teamFainted: hasFaintedMember(save),
+    starterFainted: starterFainted(save),
     isFirstInArea: run.firstInArea,
     pokedex: save.pokedex,
     forceKind,
-    centerUseful: centerWouldHelp(save, data),
     player: playerSideOf(save),
     noCenters: !centersOn(save, data),
     // A Shiny Parade covering this area: wild Pokémon are more often shiny.
@@ -467,6 +479,49 @@ export function rollNext() {
   setRun({ phase: 'preview', encounter, firstInArea: false, forceNext: forceKind === run.forceNext ? null : run.forceNext })
   // A Pokémon Center is never a choice (no skipping it, nothing to pick): straight in, no preview card.
   if (encounter.kind === 'center') engage()
+  // A find is a step of its own (FindView: the item on the stage, PICK IT UP loading and pressing itself), not a toast
+  // the trail runs past (the user's call, 2026-10-28): it waits in 'preview' for pickUpFind.
+  else if (encounter.kind === 'item') return
+  else if (directFight(encounter)) beginFight()
+}
+
+/**
+ * The rework: a fight starts on the battle screen itself, with no preview card. The foe is out, the player's side not
+ * yet: one tap on a Pokémon sends it (BattleView's send-out step). A team with one Pokémon able, or a fight on auto, goes
+ * in at once. A double battle keeps its preview (two to pick).
+ */
+const directFight = (enc: Encounter) =>
+  (enc.kind === 'wild' || enc.kind === 'boss' || enc.kind === 'trainer' || enc.kind === 'gym') && !isDoubleEncounter(enc)
+function beginFight() {
+  const { save, data, settings, run } = useGame.getState()
+  if (!save) return
+  const able = teamOf(save).filter((p) => p.currentHp > 0)
+  const auto = autoLevel(save, data, settings, run) !== 'off'
+  const pick = able.length > 1 && !auto
+  setRun({ pickLead: pick })
+  engage(able[0]?.id, pick)
+}
+/** A Pokémon picked at the send-out step: out it goes. Another than the lead: the same untouched fight, it in front. */
+export function sendOutLead(uid: string) {
+  const { battle } = useGame.getState()
+  const lead = battle?.state.player[battle.state.activeIndex]?.uid
+  setRun({ pickLead: false })
+  if (!battle) return
+  if (uid === lead) return commitEngage()
+  engage(uid)
+  useGame.setState((s) => (s.battle ? { battle: { ...s.battle, sendLater: true } } : {}))
+}
+/** FLEE / AVOID at the send-out step: the staged fight is put away, then the usual skip. */
+export function fleeAtSendOut() {
+  useGame.setState({ battle: null })
+  setRun({ pickLead: false })
+  skipEncounter()
+}
+/** NOT YET on a challenge, at the send-out step: back on the trail, nothing used up. */
+export function notYet() {
+  useGame.setState({ battle: null })
+  setRun({ pickLead: false })
+  declineChallenge()
 }
 
 /** CHALLENGE: bring on the gym battle (or legendary) waiting at the full gauge — only when the player chooses to. */
@@ -493,6 +548,7 @@ export function challenge() {
   const ctx = found && run.areaId ? encounterContext(save, run.areaId, null) : null
   const encounter = found && ctx ? asDouble(found, ctx, save, runRng) : found
   if (encounter) setRun({ phase: 'preview', encounter, firstInArea: false, skipsUsed: 0 })
+  if (encounter && directFight(encounter)) beginFight()
 }
 
 /** NOT YET: back out of a challenge you picked. Nothing is used up; the gauge stays full. */
@@ -588,11 +644,9 @@ function startBattle(
   useGame.setState((s) => ({ battle: { state, log, id: ++battleSeq }, run: { ...s.run, phase: 'battle' } }))
 }
 
-/** ENGAGE the previewed encounter (with the chosen lead for fights, or a double battle's two). */
-export function engage(lead?: string | string[]) {
-  const leadUids = typeof lead === 'string' ? [lead] : (lead ?? [])
-  const leadUid = leadUids[0]
-  const { run, save, data } = useGame.getState()
+/** What ENGAGE settles once the fight is really on: the skips start over, a challenge goes on the area's record. */
+function commitEngage() {
+  const { run, save } = useGame.getState()
   const enc = run.encounter
   if (!enc || !save) return
   setRun({ skipsUsed: 0 })
@@ -601,6 +655,19 @@ export function engage(lead?: string | string[]) {
     const recorded = recordDraws(save, run.areaId, { encounter: enc, deck: null })
     if (recorded !== save) commitSave(recorded)
   }
+}
+
+/**
+ * ENGAGE the previewed encounter (with the chosen lead for fights, or a double battle's two). `staged`: the fight is
+ * only shown, at the send-out step (the rework); nothing is settled until a Pokémon goes out (sendOutLead).
+ */
+export function engage(lead?: string | string[], staged?: boolean) {
+  const leadUids = typeof lead === 'string' ? [lead] : (lead ?? [])
+  const leadUid = leadUids[0]
+  const { run, save, data } = useGame.getState()
+  const enc = run.encounter
+  if (!enc || !save) return
+  if (!staged) commitEngage()
   switch (enc.kind) {
     case 'center':
       commitSave(centerHeal(save, data))
@@ -631,27 +698,27 @@ export function engage(lead?: string | string[]) {
       setRun({ trainer: { index: 0, gold: 0 } })
       return startBattle('trainer', first, leadUid)
     }
-    case 'item': {
+    case 'item':
+      // Its step said what it is (FindView): into the bag, quietly, and back on the trail.
       if (!run.areaId) return
-      const live = currentLive()
-      commitSave(pickUpItem(save, run.areaId, enc, data, Date.now(), newId, live))
-      const item = data.items[enc.itemKey]
-      const what = enc.itemKey === MONEY ? money(earnedGold(enc.qty, live).amount) : `${item?.name ?? enc.itemKey}${enc.qty > 1 ? ` ×${enc.qty}` : ''}`
-      if (item?.effect.kind === 'fossil')
-        pushToast(
-          t('ui.toast.foundFossil', {
-            item: item.name,
-            name: data.species[item.effect.dex]?.name ?? t('ui.toast.itsPokemon'),
-            hours: item.effect.hours,
-          }),
-          'good',
-          6000,
-        )
-      else pushToast(t('ui.toast.found', { what }), 'good')
+      commitSave(pickUpItem(save, run.areaId, enc, data, Date.now(), newId, currentLive()))
       backToArea()
       return
-    }
   }
+}
+
+/**
+ * PICK IT UP on a find's step (docs/43): the item goes in the bag (the gold in the purse, a fossil to the lab) and the
+ * next encounter comes at once, as after a fight.
+ */
+export function pickUpFind() {
+  const { run } = useGame.getState()
+  if (run.phase !== 'preview' || run.encounter?.kind !== 'item') return
+  engage()
+  // A portal run (docs/28) goes back to its own page between cards, as it always did after a find.
+  const after = useGame.getState()
+  if (after.run.phase === 'idle' && after.save && after.run.areaId && !inPortalRun(after.save, after.data, after.run.areaId))
+    rollNext()
 }
 
 /** Every battle input goes through the engine reducer; rewards are settled the moment the battle ends. */
@@ -724,6 +791,7 @@ function settleBattle(stalemate: boolean) {
         fighterUid: out.fighterUid,
         gymTrainerId: gym ? enc.trainerId : undefined,
         gymComplete: gym && !!run.trainer && run.trainer.index + 1 >= enc.team.length,
+        prize: trainerPrize(enc, enc?.kind !== 'trainer' || !run.trainer || run.trainer.index + 1 >= enc.team.length),
       },
       data,
       runRng,
@@ -807,6 +875,7 @@ function settleDouble(save: SaveData, result: 'won' | 'lost' | 'fled' | 'ongoing
         fighterUids: ko.fighters,
         gymTrainerId: gym ? enc.trainerId : undefined,
         gymComplete: gym && result === 'won' && i === kos.length - 1,
+        prize: trainerPrize(enc, result === 'won' && i === kos.length - 1),
       },
       data,
       runRng,
@@ -866,7 +935,7 @@ export function throwBall(ballKey: string | null) {
   const c = run.catch
   if (!c || c.result || !save) return
   const ball = ballKey ? data.items[ballKey] : undefined
-  if (ballKey && (!ball || ball.effect.kind !== 'ball' || (save.inventory[ballKey] ?? 0) <= 0)) return
+  if (ballKey && (!ball || !isBallFor(ball, false) || (save.inventory[ballKey] ?? 0) <= 0)) return
   const next = ballKey ? (consumeItem(save, ballKey) ?? save) : save
   const roll = rollCatch(catchValueOf(data, c.dex), ballBonus(ball), runRng)
   const bait = baitFor(roll, next, data)

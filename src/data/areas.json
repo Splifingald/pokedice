@@ -47037,6 +47037,13 @@
     "weight": 50,
     "minLevel": 2,
     "maxLevel": 4
+   },
+   {
+    "id": "bc17445e-5dec-5c85-8ec0-ae46500c579f",
+    "dex": 43,
+    "weight": 3,
+    "minLevel": 3,
+    "maxLevel": 5
    }
   ],
   "trainerPool": [],

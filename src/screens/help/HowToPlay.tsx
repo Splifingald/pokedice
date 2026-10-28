@@ -138,7 +138,7 @@ function HowToCard({
   const ref = useRef<HTMLDivElement>(null)
   const { clock, play } = useClock(length, still, mode, ref)
   return (
-    <figure className="flex min-w-0 flex-col gap-2 bg-paper p-2 shadow-card">
+    <figure className="flex min-w-0 shrink-0 snap-start flex-col gap-2 bg-paper p-2 shadow-card [.htp-row_&]:w-[min(300px,82vw)] sm:[.htp-row_&]:w-auto">
       <div
         ref={ref}
         role="img"
@@ -528,7 +528,17 @@ function CatchScene({ f, demo }: SceneProps) {
 const QUIET: DiceLab = { quiet: true }
 
 /** The four cards (`mode` forces one way of running them: the Kitchen Sink). */
-export function HowToPlay({ mode: forced }: { mode?: HowToMode }) {
+export function HowToPlay({
+  mode: forced,
+  carousel = false,
+}: {
+  mode?: HowToMode
+  /**
+   * On a phone, the four cards in a row that swipes sideways inside itself, the next one peeking (docs/43 §5.10): the
+   * basics in one screen, not four. From 640 px they stand two by two.
+   */
+  carousel?: boolean
+}) {
   const { t } = useT()
   const id = useId()
   const data = useGame((s) => s.data)
@@ -545,7 +555,17 @@ export function HowToPlay({ mode: forced }: { mode?: HowToMode }) {
         <h2 id={id} className="text-[34px] leading-none">
           {t('ui.help.howBasics')}
         </h2>
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <div
+          className={
+            carousel
+              ? 'htp-row -mx-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-3 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0'
+              : 'grid grid-cols-1 gap-3 lg:grid-cols-2'
+          }
+          // A row that scrolls is a stop for the keyboard, so its arrows can move it (axe: scrollable-region-focusable).
+          tabIndex={carousel ? 0 : undefined}
+          role={carousel ? 'group' : undefined}
+          aria-label={carousel ? t('ui.help.howBasics') : undefined}
+        >
           <HowToCard
             title={t('ui.help.howThrow')}
             text={t('ui.help.howThrowText')}

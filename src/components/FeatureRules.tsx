@@ -1,14 +1,13 @@
 // The Day Care's and Versus's rules (docs/15), in the special events' pop-up: once when each opens, then from the INFO
 // button at the bottom of its page. The numbers come from the config, so a rebalance shows up in the text.
-import { useNavigate } from 'react-router-dom'
-import { VERSUS_LEVEL, VERSUS_TEAM_SIZE } from '@/engine'
+import { leagueConfig, versusLeagueFor, VERSUS_LEVEL, VERSUS_TEAM_SIZE, winTrophies } from '@/engine'
 import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
-import { markVersusRulesSeen } from '@/store/actions'
+import { visitDayCare } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { EggSprite } from './EggSprite'
-import { useMyTurn, useOnScreen } from './popupTurn'
+import { RulesCard } from './RulesCard'
 import { RulesModal, type RuleRow, type RulesPicture } from './RulesModal'
 
 /** The Day Care's yard, framed on the whole cottage, chimney to fence. */
@@ -59,17 +58,70 @@ export function useDayCareRules(): RuleRow[] {
 
 export function useVersusRules(): RuleRow[] {
   const { t } = useT()
+  const league = useGame((s) => !!s.save && versusLeagueFor(s.save, s.data))
+  const data = useGame((s) => s.data)
   const level = t('ui.common.level.short', { n: VERSUS_LEVEL })
+  if (league) {
+    // The weekly league (docs/44): its numbers from the config.
+    const cfg = leagueConfig(data)
+    const a = winTrophies(1, cfg)
+    const b = winTrophies(2, cfg)
+    const c = winTrophies(3, cfg)
+    return [
+      {
+        icon: 'calendar',
+        title: t('ui.rules.league.week.title'),
+        text: t('ui.rules.league.week.text', { size: cfg.groupSize }),
+      },
+      {
+        icon: 'sword',
+        title: t('ui.rules.league.fight.title'),
+        text: t('ui.rules.league.fight.text', { level }),
+      },
+      {
+        icon: 'trophy',
+        title: t('ui.rules.league.trophies.title'),
+        text: t('ui.rules.league.trophies.text', { a, b, c, safe: cfg.safeBelow }),
+      },
+      {
+        icon: 'gift',
+        title: t('ui.rules.league.rewards.title'),
+        text: t('ui.rules.league.rewards.text', { gold: cfg.goldPerTrophy }),
+      },
+    ]
+  }
   return [
-    { icon: 'shield', title: t('ui.rules.vs.team.title'), text: t('ui.rules.vs.team.text', { n: VERSUS_TEAM_SIZE, level }) },
+    {
+      icon: 'shield',
+      title: t('ui.rules.vs.team.title'),
+      text: t('ui.rules.vs.team.text', { n: VERSUS_TEAM_SIZE, level }),
+    },
     { icon: 'vs', title: t('ui.rules.vs.fair.title'), text: t('ui.rules.vs.fair.text', { level }) },
     { icon: 'sword', title: t('ui.rules.vs.auto.title'), text: t('ui.rules.vs.auto.text') },
     { icon: 'trophy', title: t('ui.rules.vs.board.title'), text: t('ui.rules.vs.board.text') },
   ]
 }
 
-/** The Day Care's rules, from its page's INFO button (the unlock copy is DayCareTutorial). */
-export function DayCareRulesModal({ open, onClose, onGo }: { open: boolean; onClose: () => void; onGo?: () => void }) {
+/**
+ * The Day Care's rules where they apply (docs/43 §7): a card at the top of its panel on the first visit, the same rows
+ * as the INFO button's pop-up; GOT IT marks the Day Care visited, for good.
+ */
+export function DayCareRulesCard() {
+  const { t } = useT()
+  const rules = useDayCareRules()
+  return <RulesCard title={t('ui.home.dayCare')} icon="heart" rules={rules} onDone={visitDayCare} />
+}
+
+/** The Day Care's rules, from its page's INFO button (the same rows as the first visit's card). */
+export function DayCareRulesModal({
+  open,
+  onClose,
+  onGo,
+}: {
+  open: boolean
+  onClose: () => void
+  onGo?: () => void
+}) {
   const { t } = useT()
   const rules = useDayCareRules()
   return (
@@ -85,41 +137,27 @@ export function DayCareRulesModal({ open, onClose, onGo }: { open: boolean; onCl
   )
 }
 
-export function VersusRulesModal({ open, onClose, onGo }: { open: boolean; onClose: () => void; onGo?: () => void }) {
+export function VersusRulesModal({
+  open,
+  onClose,
+  onGo,
+}: {
+  open: boolean
+  onClose: () => void
+  onGo?: () => void
+}) {
   const { t } = useT()
   const rules = useVersusRules()
+  const league = useGame((s) => !!s.save && versusLeagueFor(s.save, s.data))
   return (
     <RulesModal
       open={open}
       onClose={onClose}
-      title={t('ui.versus.title')}
+      title={t(league ? 'ui.league.title' : 'ui.versus.title')}
       picture={VERSUS_PICTURE}
       icon="vs"
       rules={rules}
       onGo={onGo}
-    />
-  )
-}
-
-/**
- * Versus has opened (three Pokémon at Lv.50): once, between fights, its rules and a button straight to it. It takes its
- * turn in the one-time pop-ups' queue (engine/popups.ts), never on Versus's own page.
- */
-export function VersusUnlockPopup() {
-  const navigate = useNavigate()
-  const open = useMyTurn('versus')
-  useOnScreen('versus', open)
-  // Gone the moment its turn ends, as before the queue: its button leads to another page, which a fading pop-up
-  // would cover.
-  if (!open) return null
-  return (
-    <VersusRulesModal
-      open={open}
-      onClose={markVersusRulesSeen}
-      onGo={() => {
-        markVersusRulesSeen()
-        navigate('/versus')
-      }}
     />
   )
 }

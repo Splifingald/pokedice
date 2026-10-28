@@ -95,13 +95,36 @@ test('fight a team: the result is recorded before the fight plays', async ({ pag
   await page.getByRole('button', { name: 'BACK TO VERSUS' }).click()
   await expect(page.getByRole('heading', { name: 'Versus' })).toBeVisible()
 
-  // The boards: attack wins, then defense wins.
-  await page.getByRole('tab', { name: 'Leaderboard' }).click()
-  const ranks = page.getByRole('tabpanel').getByRole('listitem').filter({ has: page.getByLabel(/^Rank/) })
+  // PC: the boards beside the opponents (docs/43 §5.8) — attack wins, then defense wins — and your team above them.
+  const side = page.getByRole('complementary')
+  await expect(side.getByRole('heading', { name: 'Your team' })).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Leaderboard' })).toHaveCount(0)
+  const ranks = side.getByRole('listitem').filter({ has: page.getByLabel(/^Rank/) })
   await expect(ranks.first()).toContainText('Leaf')
-  await page.getByRole('tab', { name: 'Defense' }).click()
+  await side.getByRole('tab', { name: 'Defense' }).click()
   await expect(ranks.first()).toContainText('Blue')
   await expect(ranks.nth(1)).toContainText('Sam')
+
+  // A phone: the board is the third tab.
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.getByRole('tab', { name: 'Leaderboard' }).click()
+  const phoneRanks = page.getByRole('tabpanel').getByRole('listitem').filter({ has: page.getByLabel(/^Rank/) })
+  await expect(phoneRanks.first()).toContainText('Leaf')
+})
+
+test('one red FIGHT: the opponent your team hits hardest; the others navy', async ({ page }) => {
+  await mockSupabase(page)
+  const board = [...BOARD, entry('Erika', { team: [mon(1), mon(2), mon(3)] }), entry('Brock', { team: [mon(74), mon(95), mon(76)] })]
+  await page.route('**/rest/v1/rpc/versus_board', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(board) }),
+  )
+  await signedIn(page, readySave())
+  await page.goto('/versus')
+  const fights = page.getByRole('button', { name: /^Fight / })
+  await expect(fights).toHaveCount(3)
+  // One red (primary, its deep red at this size), the rest navy (docs/15 §6, as the Areas sheet's GOs).
+  await expect(page.locator('button.frame-deep', { hasText: 'FIGHT' })).toHaveCount(1)
+  await expect(page.locator('button.frame-dark', { hasText: 'FIGHT' })).toHaveCount(2)
 })
 
 /** A fake Versus server that keeps what it is sent: the board shows the team you set, as the real one does. */
@@ -201,18 +224,23 @@ test("a team the server doesn't show back is not called saved", async ({ page })
   await expect(page.getByText('Team saved!')).toHaveCount(0)
 })
 
-test('Versus opening: its rules pop up once, then live behind the INFO button', async ({ page }) => {
+test('Versus opening: its rules at the top of its page until GOT IT, then behind the INFO button', async ({ page }) => {
   await mockSupabase(page)
   await page.route('**/rest/v1/rpc/versus_board', (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(BOARD) }),
   )
   await signedIn(page, { ...readySave(), versusRulesSeen: false })
-  await page.goto('/home')
-  const pop = page.getByRole('dialog', { name: 'Versus' })
-  await expect(pop.getByText('Now open')).toBeVisible()
-  await expect(pop.getByText('Same for everyone')).toBeVisible()
-  await pop.getByRole('button', { name: "Let's go!" }).click()
-  await expect(page).toHaveURL(/\/versus$/)
+  await page.goto('/versus')
+  // Rules where they apply (docs/43 §7): a card on the page, not a pop-up.
+  const card = page.getByRole('region', { name: 'How Versus works' })
+  await expect(card.getByText('Same for everyone')).toBeVisible()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  // Opening the page doesn't count as reading them: the flag stays unset until GOT IT.
+  const seen = () => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}').versusRulesSeen)
+  await page.waitForTimeout(800)
+  expect(await seen()).toBeFalsy()
+  await card.getByRole('button', { name: 'GOT IT' }).click()
+  await expect(card).toHaveCount(0)
 
   // The same rules from the page's INFO button, without the "now open" tag.
   await page.getByRole('button', { name: 'Info: how Versus works' }).click()
@@ -222,12 +250,7 @@ test('Versus opening: its rules pop up once, then live behind the INFO button', 
   await info.getByRole('button', { name: 'OK', exact: true }).click()
   await expect(info).toHaveCount(0)
 
-  // Seen, and saved: it doesn't open by itself again.
-  await expect
-    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}').versusRulesSeen))
-    .toBe(true)
-  await page.getByRole('button', { name: 'Back to Home' }).click()
-  await expect(page).toHaveURL(/\/home$/)
-  await page.waitForTimeout(600)
-  await expect(page.getByRole('dialog', { name: 'Versus' })).toHaveCount(0)
+  // Seen, and saved: the card doesn't come back.
+  await expect.poll(seen).toBe(true)
+  await expect(card).toHaveCount(0)
 })

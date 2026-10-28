@@ -12,6 +12,8 @@ import {
   markGeneralRulesSeen as markGeneralRulesSeenIn,
   markShinyDexSeen as markShinyDexSeenIn,
   markUnownDexSeen as markUnownDexSeenIn,
+  startDiceTutorial,
+  finishDiceTutorial,
   sellItem,
   createRng,
   randomSeed,
@@ -37,6 +39,7 @@ import {
   type PokeType,
   type PowerKind,
   type RushRefusal,
+  versusLeagueOn,
 } from '@/engine'
 import { tickDayCare } from './daycare'
 import { currentLive } from './live'
@@ -188,7 +191,13 @@ export function markGeneralRulesSeen(): void {
 }
 
 export function markVersusRulesSeen(): void {
-  mutateSave((s) => (s.versusRulesSeen ? null : { ...s, versusRulesSeen: true }))
+  // With the weekly league on (docs/44), its card read is both flags: Versus's own rules are inside it.
+  const league = versusLeagueOn(useGame.getState().data)
+  mutateSave((s) =>
+    s.versusRulesSeen && (!league || s.versusLeagueRulesSeen)
+      ? null
+      : { ...s, versusRulesSeen: true, ...(league && { versusLeagueRulesSeen: true }) },
+  )
 }
 
 /** The shiny Pokédex's rules have been shown (its pop-up). */
@@ -199,6 +208,16 @@ export function markShinyDexSeen(): void {
 /** The Unown Pokédex's rules have been shown (its pop-up, or its page). */
 export function markUnownDexSeen(): void {
   mutateSave((s) => (s.unownDexSeen ? null : markUnownDexSeenIn(s)))
+}
+
+/** The dice tutorial has shown (docs/46 §5): it comes back until it's finished. */
+export function startDiceTutorialNow(): void {
+  mutateSave((s) => (s.diceTutorial ? null : startDiceTutorial(s)))
+}
+
+/** BACK TO the area: the dice tutorial is done, for good. */
+export function finishDiceTutorialNow(): void {
+  mutateSave((s) => (s.diceTutorial === 'done' ? null : finishDiceTutorial(s)))
 }
 
 /** The first visit ends the unlock tutorial. */

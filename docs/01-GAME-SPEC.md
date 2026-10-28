@@ -357,7 +357,7 @@ Each item has `in_shop` and `shop_badges` (admin-editable, with its effect and p
 ### 5.5 Energy (v1.9, removed 2026-10-28)
 
 Energy is gone for good (the user's call: it was Off and will never be used): no cost, no counter, no Config box;
-migration 0081 deletes its row and saves drop their `energy` on load. What it was:
+migration 0084 deletes its row and saves drop their `energy` on load. What it was:
 
 - `game_config.energy = { enabled, max, minutesPerEnergy }`, default **on, 50, 30 min** (admin: Config → Energy). Off = no cost and no counter.
 - **Discovering an encounter costs 1 energy** (NEXT ENCOUNTER / EXPLORE). Free: gym / Elite Four / Champion battles and legendaries (CHALLENGE / FACE IT, or a fled legendary's card), and **every Pokémon Center** (round-opening, forced or from the deck), as is any encounter when nobody can fight.

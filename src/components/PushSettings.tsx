@@ -65,7 +65,6 @@ export function PushSettingsView({
         <>
           <Toggle
             label={t('ui.push.settings.toggle')}
-            hint={t('ui.push.settings.hint')}
             on={push.on}
             onChange={onToggle}
           />

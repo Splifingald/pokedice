@@ -12,7 +12,7 @@ import { useGame } from '@/store/game'
 function Frame({ name, children }: { name: string; children: ReactNode }) {
   return (
     <div className="flex w-full max-w-md flex-col gap-1.5">
-      <span className="font-pixel-sm text-[13px] text-muted">{name}</span>
+      <span className="font-pixel-sm text-[16px] text-muted">{name}</span>
       {children}
     </div>
   )
@@ -38,7 +38,7 @@ function HapticPad() {
           className={`pixel-btn flex min-h-[56px] flex-col items-center justify-center px-1 leading-none ${last === cue ? 'frame-gold' : ''}`}
         >
           <span className="text-[18px]">{cue}</span>
-          <span className="font-pixel-sm text-[12px]">{JSON.stringify(HAPTICS[cue])} ms</span>
+          <span className="font-pixel-sm text-tag">{JSON.stringify(HAPTICS[cue])} ms</span>
           {IOS_SWITCH && <HapticSwitch />}
         </button>
       ))}
@@ -68,11 +68,8 @@ export function FeelBits() {
       <Frame name="Settings → Game: as the game shows them (the admin's switches)">
         <FeelSettings />
       </Frame>
-      <Frame name="Settings → Game: every row (Android's line)">
-        <FeelSettings always ios={false} />
-      </Frame>
-      <Frame name="Settings → Game: every row (an iPhone's line)">
-        <FeelSettings always ios />
+      <Frame name="Settings → Game: every row (music's only while Sound is on)">
+        <FeelSettings always />
       </Frame>
       <Frame name={`Battle music (needs Sound: ${sound ? 'on' : 'off'})`}>
         <div className="flex flex-wrap gap-3">
@@ -93,7 +90,7 @@ export function FeelBits() {
           >
             Fade out
           </PixelButton>
-          <span className="self-center font-pixel-sm text-[14px]">
+          <span className="self-center font-pixel-sm text-[16px]">
             {musicPlaying() ? 'playing' : 'stopped'}
           </span>
         </div>

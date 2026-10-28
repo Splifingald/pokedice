@@ -148,6 +148,8 @@ const progressSchema = z.object({
   round: z.number().int().min(0).optional(),
   drawn: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'legend'])).optional(),
   lastCenter: z.boolean().optional(),
+  // Route 1's set opening (docs/46): the deck in play is its round of this index. An odd value: a shuffled deck's cards.
+  opening: z.number().int().min(0).optional().catch(undefined),
   // The portal run (docs/28): an odd value in an edited save drops the run, never the save.
   portal: portalSchema.optional().catch(undefined),
   // The nightmare (docs/30): the same, an odd value drops it, never the save.
@@ -227,10 +229,12 @@ export const saveSchema = z.object({
     animations: z.enum(['full', 'short']).optional(),
     multiExp: z.boolean().default(true),
     autoMode: z.boolean().optional(),
+    advance: z.enum(['auto']).optional().catch(undefined),
     // A style this build doesn't know (a newer one's) reads as unset rather than failing the whole save.
     playStyle: z.enum(PLAY_STYLES).optional().catch(undefined),
     typeHints: z.boolean().optional(),
     raidFast: z.boolean().optional(),
+    details: z.boolean().optional(),
     lang: z.enum(LANGS).optional(),
     theme: z.enum(['light', 'dark', 'auto']).optional(),
     // The game-feel switches (docs/38). Without them here the save's settings, read first at boot, dropped them.
@@ -246,6 +250,7 @@ export const saveSchema = z.object({
   playedAt: z.number().optional(),
   leaderboardVisited: z.boolean().optional(),
   versusRulesSeen: z.boolean().optional(),
+  versusLeagueRulesSeen: z.boolean().optional(),
   portalRulesSeen: z.boolean().optional(),
   nightmareRulesSeen: z.boolean().optional(),
   events: z
@@ -363,6 +368,8 @@ export const saveSchema = z.object({
   unownDex: z.record(z.array(z.string().max(1)).max(UNOWN_LETTERS.length)).optional(),
   unownDexPaid: z.array(z.string().max(40)).max(40).optional(),
   unownDexSeen: z.boolean().optional(),
+  // The dice tutorial (docs/46 §5): an odd value starts it afresh, never fails the save.
+  diceTutorial: z.enum(['started', 'done']).optional().catch(undefined),
   // The battle powers (docs/35): the Mega Gems held, bought ones included, which nothing else gives back. A power kind
   // this build doesn't know is dropped rather than failing the save, so an odd one never costs the gems.
   powers: z

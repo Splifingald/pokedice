@@ -92,9 +92,10 @@ test('dark: the Pokémon sheet and the Pokédex entry keep their contrast', asyn
   await page.setViewportSize({ width: 390, height: 844 })
   await boot(page, save('dark'))
   await page.goto('/team')
+  // The team's card (the banner over it lists the same Pokémon for screen readers, first): the last match.
   await page
     .getByRole('button', { name: /Pikachu/ })
-    .first()
+    .last()
     .click()
   await expect(page.getByRole('dialog', { name: /Pikachu/ })).toBeVisible()
   const sheet = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze()

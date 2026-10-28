@@ -245,14 +245,14 @@ export function TradeKitBits() {
       <div className="grid gap-3 sm:grid-cols-3">
         {RESULTS.map((r) => (
           <div key={r.label} className="grid gap-1 bg-panel p-2 shadow-ring-line">
-            <small className="font-pixel-sm text-[13px] text-muted">{r.label}</small>
+            <small className="font-pixel-sm text-[16px] text-muted">{r.label}</small>
             <TradeResult show={r.show} />
           </div>
         ))}
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="grid gap-1 bg-panel p-2 shadow-ring-line">
-          <small className="font-pixel-sm text-[13px] text-muted">Pick its Box (the scene's last step)</small>
+          <small className="font-pixel-sm text-[16px] text-muted">Pick its Box (the scene's last step)</small>
           <LandingStepView
             name="Pikachu"
             dex={25}
@@ -265,7 +265,7 @@ export function TradeKitBits() {
           />
         </div>
         <div className="grid content-start gap-2 bg-panel p-2 shadow-ring-line">
-          <small className="font-pixel-sm text-[13px] text-muted">
+          <small className="font-pixel-sm text-[16px] text-muted">
             A shiny, nothing picked; disabled (trading)
           </small>
           <LandingPick name="Eevee" level={25} options={SHINY_LANDINGS} value={null} onChange={() => {}} />

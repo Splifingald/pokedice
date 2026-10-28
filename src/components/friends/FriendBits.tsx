@@ -14,7 +14,7 @@ export function FriendTag({ className }: { className?: string }) {
   return (
     <span
       className={cx(
-        'shrink-0 bg-sky px-[5px] pb-px font-pixel-sm text-[13px] leading-tight text-ink shadow-[inset_0_0_0_2px_#5b8def]',
+        'shrink-0 bg-sky px-[5px] pb-px font-pixel-sm text-[16px] leading-tight text-ink shadow-[inset_0_0_0_2px_#5b8def]',
         className,
       )}
     >
@@ -62,7 +62,7 @@ export function FriendPreview({
           <TrainerName name={name} rich={rich} />
         </b>
         {region !== undefined && (
-          <small className="truncate font-pixel-sm text-[14px] leading-none text-muted">
+          <small className="truncate font-pixel-sm text-[16px] leading-none text-muted">
             {line({ region, maxLevel }, Date.now())}
           </small>
         )}

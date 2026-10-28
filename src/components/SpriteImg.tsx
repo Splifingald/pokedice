@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import iconSheet from '@/assets/pokemon-icons.png'
 import showdownSprites from '@/data/showdown-sprites.json'
 import spriteMetrics from '@/data/sprite-metrics.json'
@@ -12,6 +12,13 @@ import {
   type ShowdownBox,
   type ShowdownEntry,
 } from '@/lib/showdown'
+import {
+  isShowdownUrl,
+  showdownDown,
+  showdownMissed,
+  useShowdownDown,
+  watchShowdown,
+} from '@/lib/showdownReach'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 
@@ -38,14 +45,17 @@ export interface SpriteMetric {
 export const SPRITE_METRICS = spriteMetrics as unknown as Record<string, SpriteMetric | undefined>
 export const SHOWDOWN = showdownSprites as unknown as Record<string, ShowdownEntry | undefined>
 
-/** The Showdown sprite of one view, when Showdown has one: its URL and box. Shiny boxes fall back to the plain ones. */
+/**
+ * The Showdown sprite of one view, when Showdown has one and is answering (src/lib/showdownReach.ts): its URL and box.
+ * Shiny boxes fall back to the plain ones.
+ */
 export function showdownView(
   dex: number,
   back: boolean,
   shiny: boolean,
 ): { url: string; box: ShowdownBox } | null {
   const e = SHOWDOWN[dex]
-  if (!e) return null
+  if (!e || showdownDown()) return null
   const v = (back ? 1 : 0) + (shiny ? 2 : 0)
   const kind = e.v[v]
   const box = shiny ? (back ? (e.bs ?? e.b) : (e.fs ?? e.f)) : back ? e.b : e.f
@@ -107,9 +117,13 @@ export function preloadSprites(dexes: number[]) {
 
 /**
  * A Pokémon by dex number: Showdown's animated sprite, with a skeleton while loading and a silhouette mode for uncaught.
- * Showdown unreachable (offline) → the local sprite → the species' own sprite_url (one added in admin) → "?". Only a
- * view Showdown really has is ever asked for, so no request is spent on a miss.
+ * Showdown unreachable (offline, failing, or still loading after a few seconds: src/lib/showdownReach.ts) → the local
+ * sprite → the species' own sprite_url (one added in admin) → "?". Only a view Showdown really has is ever asked for,
+ * so no request is spent on a miss.
  */
+/** How long a big sprite waits for its picture before trying the next one (the local sprite). */
+export const SPRITE_PATIENCE_MS = 6000
+
 export function SpriteImg({
   dex,
   size = 96,
@@ -134,6 +148,8 @@ export function SpriteImg({
   fit?: boolean
 }) {
   const species = useGame((s) => s.data.species[dex])
+  // Showdown failing or stalling (here or anywhere) brings the local sprite at once.
+  useShowdownDown()
   const sd = showdownView(dex, back, shiny)
   const local = spriteUrlFor(dex, back ? 'back' : 'front', shiny)
   // A species added in admin without a local sprite falls back to its own sprite_url.
@@ -148,6 +164,15 @@ export function SpriteImg({
   const step = state.key === key ? state.step : 0
   const loaded = state.key === key && state.loaded
   const src = chain[step]
+  // A big sprite is the screen's subject (a raid's Pokémon, the lab's starters): asked for at once, and a request that
+  // neither comes nor fails (a phone's network left it hanging, the user's 2026-10-27 raid) moves on to the next
+  // picture after a few seconds rather than leaving an empty card.
+  const hero = size >= 96
+  useEffect(() => {
+    if (!hero || loaded || !src || step >= chain.length - 1) return
+    const id = window.setTimeout(() => setState({ key, step: step + 1, loaded: false }), SPRITE_PATIENCE_MS)
+    return () => window.clearTimeout(id)
+  }, [hero, loaded, src, step, chain.length, key])
   const place =
     sd && src === sd.url
       ? showdownPlacement(sd.box, size, !fit)
@@ -173,15 +198,19 @@ export function SpriteImg({
       ) : (
         <img
           key={src}
+          ref={watchShowdown}
           src={src}
           alt={alt ?? species?.name ?? `#${dex}`}
           width={size}
           height={size}
-          loading="lazy"
+          loading={hero ? 'eager' : 'lazy'}
           decoding="async"
           draggable={false}
           onLoad={() => setState({ key, step, loaded: true })}
-          onError={() => setState({ key, step: step + 1, loaded: false })}
+          onError={() => {
+            if (isShowdownUrl(src)) showdownMissed()
+            setState({ key, step: step + 1, loaded: false })
+          }}
           className={cx('pixelated select-none', place ? 'absolute max-w-none' : 'h-full w-full')}
           style={{
             ...(place && { width: place.width, height: place.height, left: place.left, top: place.top }),

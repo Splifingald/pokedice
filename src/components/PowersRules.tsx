@@ -18,6 +18,7 @@ import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
 import { markPowerRulesSeen } from '@/store/actions'
 import { useGame } from '@/store/game'
+import { SmallInfo } from './SmallInfo'
 import { useMyTurn, useOnScreen } from './popupTurn'
 import { InfoButton, RulesModal, type RuleRow, type RulesPicture } from './RulesModal'
 
@@ -145,13 +146,17 @@ export function PowerRulesModal({
   )
 }
 
-/** INFO under a power (the Mart's Mega Gems, the Pokémon sheet): its rules again. */
-export function PowerInfo({ kind, className }: { kind: PowerKind; className?: string }) {
+/**
+ * INFO under a power (the Mart's Mega Gems, the Pokémon sheet): its rules again. `small` at the foot of a shelf (the
+ * Mart's gems), where the big blue button would outweigh what it sits under.
+ */
+export function PowerInfo({ kind, className, small }: { kind: PowerKind; className?: string; small?: boolean }) {
   const { t } = useT()
   const [open, setOpen] = useState(false)
+  const Info = small ? SmallInfo : InfoButton
   return (
     <>
-      <InfoButton name={t(TITLE[kind])} onClick={() => setOpen(true)} className={className} />
+      <Info name={t(TITLE[kind])} onClick={() => setOpen(true)} className={className} />
       <PowerRulesModal kind={kind} open={open} onClose={() => setOpen(false)} />
     </>
   )

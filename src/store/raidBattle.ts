@@ -10,6 +10,7 @@ import {
   baitFaces,
   baitFor,
   ballBonus,
+  isBallFor,
   catchValueOf,
   consumeItem,
   countRaidTry,
@@ -392,7 +393,7 @@ export function throwRaidBall(ballKey: string | null) {
   const { save, data } = useGame.getState()
   if (!run || run.stage !== 'catch' || run.catch?.result || !save) return
   const ball = ballKey ? data.items[ballKey] : undefined
-  if (ballKey && (!ball || ball.effect.kind !== 'ball' || (save.inventory[ballKey] ?? 0) <= 0)) return
+  if (ballKey && (!ball || !isBallFor(ball, true) || (save.inventory[ballKey] ?? 0) <= 0)) return
   const next = ballKey ? (consumeItem(save, ballKey) ?? save) : save
   const roll = rollCatch(catchValueOf(data, run.raid.dex), ballBonus(ball), rng)
   // Short, with a Bait that could still make it: the player is asked first (docs/25).

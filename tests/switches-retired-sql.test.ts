@@ -1,4 +1,4 @@
-// The retired switches (2026-10-28): migration 0081 against a real Postgres (PGlite, in process), after 0076. Energy's row
+// The retired switches (2026-10-28): migration 0084 against a real Postgres (PGlite, in process), after 0076. Energy's row
 // and the six switches whose features stay on go, a Mega raid's key works for every player, and the content version
 // goes up; run again, nothing changes but the version. seed.sql carries the file, inlined.
 import { readFileSync } from 'node:fs'
@@ -10,12 +10,12 @@ import type { Area } from '@/engine'
 
 const ROOT = path.join(__dirname, '..', 'supabase')
 const sql = (file: string) => readFileSync(path.join(ROOT, 'migrations', file), 'utf8')
-const FILE = '0081_switches_retired.sql'
+const FILE = '0084_switches_retired.sql'
 const GONE = ['energy', 'diceThrows', 'gameFeel', 'haptics', 'music', 'shinyDex', 'raidOverhaul']
 const areas = areasJson as Area[]
 const areaOf = (dex: number) => areas.find((a) => a.legendaryBoss?.some((b) => b.dex === dex && b.raid))!
 
-describe('0081: the retired switches', () => {
+describe('0084: the retired switches', () => {
   let db: PGlite
   const value = async (key: string) =>
     (await db.query<{ v: unknown }>('select value v from game_config where key = $1', [key])).rows[0]?.v

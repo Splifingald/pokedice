@@ -104,10 +104,13 @@ export function XpBar({
   inst,
   className,
   shown,
+  numbers = true,
 }: {
   inst: PokemonInstance
   className?: string
   shown?: XpFrame | null
+  /** The "12/30" after the bar (the result card shows it with More details only, docs/42). */
+  numbers?: boolean
 }) {
   const { t } = useT()
   const cfg = useGame((s) => s.data.config)
@@ -124,9 +127,11 @@ export function XpBar({
           style={{ width: `${pct * 100}%`, transition: shown !== undefined ? 'none' : 'width 700ms ease-out' }}
         />
       </div>
-      <span className="min-w-[4.5ch] text-right font-mono text-xs tabular-nums leading-none">
-        {level >= cfg.maxLevel ? t('ui.mon.xpMax') : `${xp}/${need}`}
-      </span>
+      {numbers && (
+        <span className="min-w-[4.5ch] text-right font-mono text-xs tabular-nums leading-none">
+          {level >= cfg.maxLevel ? t('ui.mon.xpMax') : `${xp}/${need}`}
+        </span>
+      )}
     </div>
   )
 }

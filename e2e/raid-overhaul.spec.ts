@@ -43,31 +43,49 @@ async function boot(page: Page, save: SaveData) {
 
 const areaId = (name: string) => gameData().areas.find((a) => a.name === name)!.id
 
-test('a legendary raid lists its own rules, and its rules pop-up shows once', async ({ page }) => {
+test('the overhaul’s rules on the Raids page until GOT IT, never a pop-up there', async ({ page }) => {
   await boot(page, kantoSave())
-  await page.goto(`/raid/${areaId('Seafoam Islands')}/144`)
-  // The overhaul's rules, once: Later closes it, and it doesn't come back.
-  const pop = page.getByRole('dialog', { name: 'Raids, now' })
-  await expect(pop).toBeVisible()
-  await expect(pop.getByText('Learn its pattern')).toBeVisible()
-  await pop.getByRole('button', { name: 'Later', exact: true }).click()
-  await expect(pop).toHaveCount(0)
-  const rules = page.getByRole('region', { name: 'This raid' })
-  await expect(rules.getByText('Lv.50', { exact: true })).toBeVisible()
-  await expect(rules.getByText('Snow', { exact: true })).toBeVisible()
-  await expect(rules.getByText('Its last bar')).toBeVisible()
-  await expect(rules.getByText('Gains dice: Ice')).toBeVisible()
-  const axe = await new AxeBuilder({ page }).include('section[aria-labelledby="raid-rules-title"]').analyze()
-  expect(axe.violations).toEqual([])
-  // INFO shows the rules again.
-  await rules.getByRole('button', { name: 'How raids work now' }).click()
-  await expect(page.getByRole('dialog', { name: 'Raids, now' })).toBeVisible()
-  await page.getByRole('button', { name: 'OK', exact: true }).click()
+  await page.goto('/events/raid')
+  // The overhaul's rules where they apply (docs/43 §7): a card at the top of the Raids page, never a pop-up there.
+  const card = page.getByRole('region', { name: 'How Raid Battles works' })
+  await expect(card.getByText('Learn its pattern')).toBeVisible()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  // Opening the page isn't reading them.
+  await page.waitForTimeout(500)
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!).events?.raidRulesSeen)).toBeFalsy()
+  await card.getByRole('button', { name: 'Got it' }).click()
+  await expect(card).toHaveCount(0)
   // Seen: kept in the save, so it doesn't come back.
   await expect
     .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!).events?.raidRulesSeen))
     .toBe(true)
-  await expect(page.getByRole('dialog', { name: 'Raids, now' })).toHaveCount(0)
+})
+
+test('a legendary raid lists its own rules, always open, with no book; the Raids page’s INFO shows the overhaul’s rules again', async ({
+  page,
+}) => {
+  // Read already (a page load seeds the save afresh, so the flag comes with it).
+  await boot(page, kantoSave({ raidRulesSeen: true }))
+  await page.goto(`/raid/${areaId('Seafoam Islands')}/144`)
+  const rules = page.getByRole('region', { name: 'This raid' })
+  // Open on the page (the user's call, 2026-10-27), nothing to unfold.
+  await expect(rules.getByText('Lv.50', { exact: true })).toBeVisible()
+  await expect(rules.getByText('Snow', { exact: true })).toBeVisible()
+  await expect(rules.getByText('Its last bar')).toBeVisible()
+  await expect(rules.getByText('Gains dice: Ice')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'How raids work now' })).toHaveCount(0)
+  const axe = await new AxeBuilder({ page }).include('section[aria-labelledby="raid-rules-title"]').analyze()
+  expect(axe.violations).toEqual([])
+  // No banner over the card: the plate (back, the kicker) lies on the card, Articuno in its middle.
+  await expect(page.getByRole('heading', { name: 'Legendary raid', level: 1 })).toBeVisible()
+  await expect(page.getByRole('img', { name: 'Articuno' })).toBeVisible()
+  // The Raids page's INFO carries the overhaul's rules after the raids' own.
+  await page.goto('/events/raid')
+  await page.getByRole('button', { name: 'Info: how Raid Battles works' }).click()
+  const info = page.getByRole('dialog', { name: 'Raid Battles' })
+  await expect(info.getByText('Learn its pattern')).toBeVisible()
+  await info.getByRole('button', { name: 'OK', exact: true }).click()
+  await expect(info).toHaveCount(0)
 })
 
 test("Mewtwo's raid fights at its own level: the NPC partners come at Lv.70", async ({ page }) => {

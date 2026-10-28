@@ -32,6 +32,7 @@ export function pageTitleKey(path: string): string | 'area' | null {
     '/versus': 'ui.versus.title',
     '/trades': 'ui.trades.title',
     '/settings': 'ui.settings.title',
+    '/social': 'ui.nav.social',
   }
   if (exact[p]) return exact[p]
   if (p === '/area') return 'area'

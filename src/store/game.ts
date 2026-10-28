@@ -138,6 +138,8 @@ export interface RunState {
   nightmareStruck?: boolean
   /** Trick or Treat under way (docs/29). */
   trick?: TrickRun | null
+  /** The fight is on the screen, the player's side not out yet: one tap on a Pokémon sends it (the rework). */
+  pickLead?: boolean
 }
 
 export interface BattleSlice {
@@ -151,6 +153,8 @@ export interface BattleSlice {
    * no replay of the log so far.
    */
   resumed?: boolean
+  /** The same fight with another lead picked before anything happened: the foe is out already, no entrance again. */
+  sendLater?: boolean
 }
 
 /** The ways in: Supabase Auth providers the game offers (docs/17). */

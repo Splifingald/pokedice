@@ -39,14 +39,14 @@ export function FaceDice({
             <Die type={type} face={f} size={size} />
             {tone && f.kind === 'status' ? (
               <span
-                className="max-w-[56px] truncate px-1 pb-px font-pixel-sm text-[13px] leading-[1.1]"
+                className="max-w-[56px] truncate px-1 pb-px font-pixel-sm text-[16px] leading-[1.1]"
                 style={{ background: tone.bg, color: tone.fg, boxShadow: `inset 0 0 0 1px ${tone.ring}` }}
                 aria-hidden
               >
                 {t(`ui.status.${f.status}.short`)}
               </span>
             ) : (
-              <span className="font-pixel-sm text-[13px] leading-none text-muted" aria-hidden>
+              <span className="font-pixel-sm text-[16px] leading-none text-muted" aria-hidden>
                 {f.value}
               </span>
             )}
@@ -72,7 +72,7 @@ export function StatusLines({ statuses }: { statuses: readonly StatusKind[] }) {
         return (
           <li
             key={s}
-            className="flex items-start gap-2 px-2 pb-1.5 pt-1 font-pixel-sm text-[15px] leading-tight text-ink"
+            className="flex items-start gap-2 px-2 pb-1.5 pt-1 font-pixel-sm text-[16px] leading-tight text-ink"
             style={{
               background: `color-mix(in oklab, ${c} 14%, rgb(var(--c-paper)))`,
               boxShadow: `inset 4px 0 0 ${c}`,

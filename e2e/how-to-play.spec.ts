@@ -1,7 +1,7 @@
 // How to play, animated (docs/38 §8b): the guide opens on four animated cards (throw the dice, reroll, deal damage,
 // catch) that fit a phone and loop; under the OS's reduced motion each one is a still with a PLAY that plays it once,
 // and with animations off PLAY shows its end; axe finds nothing serious in either theme; the trainer menu's guide has
-// them too.
+// them too; the rules under them fold one at a time.
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { EVENTS_ON, makeSave, mockSupabase, smallControls } from './helpers'
@@ -151,4 +151,23 @@ test("the trainer menu's guide opens on the cards too", async ({ page }) => {
   await expect(guide.locator('figure')).toHaveCount(4)
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
   expect(overflow).toBeLessThanOrEqual(0)
+})
+
+test('the rules under the cards fold one at a time', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await boot(page)
+  await page.goto('/help')
+  await expect(page.getByRole('heading', { name: 'The goal', level: 3 })).toBeVisible()
+  // One section open at a time: opening Battles closes The goal.
+  const goal = page.getByRole('button', { name: 'The goal' })
+  const battles = page.getByRole('button', { name: 'Battles' })
+  await goal.click()
+  await expect(goal).toHaveAttribute('aria-expanded', 'true')
+  await battles.click()
+  await expect(battles).toHaveAttribute('aria-expanded', 'true')
+  await expect(goal).toHaveAttribute('aria-expanded', 'false')
+  await expect(page.getByText('The faster Pokémon acts first.')).toBeVisible()
+  // Every detail, one tap further.
+  await page.getByRole('button', { name: 'Every detail' }).click()
+  await expect(page.getByText(/^Keyboard: 1–6 pick dice/)).toBeVisible()
 })

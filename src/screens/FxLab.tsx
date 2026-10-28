@@ -800,7 +800,7 @@ export function FxLab() {
         onChange={(v) => setOpts((o) => ({ ...o, power: v }))}
         options={(Object.keys(POWERS) as Opts['power'][]).map((id) => ({ id, label: id }))}
       />
-      <pre className="pixel-panel min-h-[120px] whitespace-pre-wrap p-2 font-pixel-sm text-[15px]">
+      <pre className="pixel-panel min-h-[120px] whitespace-pre-wrap p-2 font-pixel-sm text-[16px]">
         {log.join('\n')}
       </pre>
     </div>

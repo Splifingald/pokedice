@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import {
   DEFAULT_CONFIG,
   EVENT_ACCESS,
+  VERSUS_LEAGUE_DEFAULTS,
   eggSpecies,
   eggsPerWeek,
   extremeRules,
@@ -38,6 +39,7 @@ import { GiftEditor, giftName } from '../GiftEditor'
 import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
 import { AccessSwitch, Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 import { PushBox } from './PushBox'
+import { VersusLeagueBox } from './VersusLeagueBox'
 
 export function useConfigRow<K extends keyof GameConfig>(key: K): [GameConfig[K], (v: GameConfig[K]) => void] {
   const rows = useAdmin((st) => st.rows.game_config)
@@ -1135,6 +1137,7 @@ const TABS = [
   { id: 'extreme', label: 'Extreme mode', icon: 'skull' },
   { id: 'doubles', label: 'Double battles', icon: 'vs' },
   { id: 'trades', label: 'Trades', icon: 'trade' },
+  { id: 'versus', label: 'Versus league', icon: 'trophy' },
   { id: 'general', label: 'General upgrades', icon: 'navUpgrades' },
   { id: 'powers', label: 'Battle powers', icon: 'up' },
   { id: 'invites', label: 'Invite rewards', icon: 'gift' },
@@ -1163,13 +1166,21 @@ interface Feature {
 
 const D = DEFAULT_CONFIG as unknown as Record<keyof GameConfig, Row>
 
-/** The switch is the row's own `access`. */
-const own = (name: string, row: keyof GameConfig, tab?: TabId): Feature => ({
+/** The switch is the row's own `access`; the row is written whole, over its defaults (`defaults`: the row's own). */
+const own = (name: string, row: keyof GameConfig, tab?: TabId, defaults: Row = D[row]): Feature => ({
   name,
   tab,
   row,
+  get: (r) => r?.access ?? defaults?.access,
+  put: (r, access) => ({ ...defaults, ...r, access }),
+})
+
+/** The switch alone is written: the rest of the row stays the game's own (Route 1's rounds). */
+const bare = (name: string, row: keyof GameConfig): Feature => ({
+  name,
+  row,
   get: (r) => r?.access,
-  put: (r, access) => ({ ...D[row], ...r, access }),
+  put: (r, access) => ({ ...r, access }),
 })
 
 /** The switch is `part.access` in the row (the Mega gems', Gigantamax's newer rules). */
@@ -1194,10 +1205,13 @@ const FEATURES: Feature[] = [
   own('Day and night (Johto)', 'dayNight'),
   own('Idle mode', 'idleMode'),
   own('Trainer looks', 'looks'),
+  bare('League heal', 'leagueHeal'),
+  bare('Route 1 opening & tutorial', 'openingRounds'),
   own('Unown Pokédex', 'unownDex', 'unown'),
   own('Extreme mode', 'extreme', 'extreme'),
   own('Double battles', 'doubleBattles', 'doubles'),
   own('Trades', 'trade', 'trades'),
+  own('Versus league', 'versusLeague', 'versus', VERSUS_LEAGUE_DEFAULTS as unknown as Row),
   own('Game Corner', 'slotMachine', 'gameCorner'),
   own('General upgrades', 'general', 'general'),
   field('Shiny Charm', 'general', 'charmAccess', 'general'),
@@ -1323,6 +1337,7 @@ export function ConfigSection() {
       {tab === 'extreme' && <ExtremeBox />}
       {tab === 'doubles' && <DoubleBattlesBox />}
       {tab === 'trades' && <TradesBox />}
+      {tab === 'versus' && <VersusLeagueBox />}
       {tab === 'general' && <GeneralBox />}
       {tab === 'powers' && <BattlePowersBox />}
       {tab === 'invites' && <InviteRewardsBox />}

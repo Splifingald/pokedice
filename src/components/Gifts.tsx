@@ -73,7 +73,7 @@ export function GiftPresent({
       </span>
       <span className="grid min-w-0 flex-1 gap-0.5 leading-tight">
         <b className="text-[20px] font-normal leading-none">{t('ui.gift.attached')}</b>
-        <small className="font-pixel-sm text-[15px] text-muted">
+        <small className="font-pixel-sm text-[16px] text-muted">
           {tPlural('ui.gift.count', count, { n: count })} ·{' '}
           {waitLine ?? t(onOpen ? 'ui.gift.openHere' : 'ui.gift.openOnClose')}
         </small>

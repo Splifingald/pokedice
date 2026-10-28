@@ -42,7 +42,7 @@ function useLoop(make: () => Omit<TrickOverlay, 'onEnd'>): TrickOverlay {
 function Frame({ name, children }: { name: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="font-pixel-sm text-[13px] text-muted">{name}</span>
+      <span className="font-pixel-sm text-[16px] text-muted">{name}</span>
       <div className="w-full max-w-[390px] overflow-hidden bg-parchment shadow-ring">{children}</div>
     </div>
   )
@@ -217,7 +217,7 @@ export function TrickBits() {
         {TRICK_TIERS.flatMap((tier: TrickTier) =>
           [0, 45, 78, 100].map((v, i) => (
             <div key={`${tier}-${v}`} className="flex flex-col gap-1">
-              <span className="font-pixel-sm text-[13px] text-muted">
+              <span className="font-pixel-sm text-[16px] text-muted">
                 {tier} · gauge {v}
               </span>
               <TrickGauge
