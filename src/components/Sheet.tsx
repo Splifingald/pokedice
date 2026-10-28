@@ -1,11 +1,17 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useId, useRef, type ReactNode } from 'react'
+import { createContext, useContext, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useDialog } from '@/lib/useDialog'
 import { useIsDesktop } from '@/lib/useMediaQuery'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { CloseButton } from './Modal'
+
+/**
+ * Inside a `SplitView`'s docked pane on a wide screen (docs/43 §2): a sheet opened there is drawn in the pane, beside
+ * the list it was opened from, rather than over the page — no scrim, no focus trap, nothing made inert.
+ */
+export const SheetDock = createContext(false)
 
 /**
  * A sheet: on phones it rises from the bottom (a grab handle on top, ✕ in its corner, 90 % of the screen at most); on
@@ -41,7 +47,29 @@ export function Sheet({
   const titleId = useId()
   const desktop = useIsDesktop()
   const reduced = useGame((s) => s.settings.reducedMotion)
-  useDialog(ref, open, onClose)
+  const docked = useContext(SheetDock)
+  useDialog(ref, open && !docked, onClose)
+  if (docked)
+    return open ? (
+      <section aria-labelledby={titleId} className={cx('flex min-h-0 w-full min-w-0 flex-1 flex-col', className)}>
+        <header className="flex shrink-0 items-start gap-2 px-3.5 pb-2 pt-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 id={titleId} className="min-w-0 text-title leading-none">
+                {title}
+              </h2>
+              {titleExtra}
+            </div>
+            {sub && <p className="mt-0.5 font-pixel-sm text-[17px] leading-tight text-muted">{sub}</p>}
+          </div>
+        </header>
+        {head && <div className="flex shrink-0 flex-col gap-2 px-3.5 pb-2">{head}</div>}
+        <div className="pixel-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-3.5 pb-4">{children}</div>
+        {footer && (
+          <div className="shrink-0 bg-panel px-3.5 py-2.5 shadow-[0_-2px_0_rgb(var(--c-lip))]">{footer}</div>
+        )}
+      </section>
+    ) : null
   if (typeof document === 'undefined') return null
   return createPortal(
     <AnimatePresence>
@@ -88,7 +116,7 @@ export function Sheet({
                   </h2>
                   {titleExtra}
                 </div>
-                {sub && <p className="mt-0.5 font-pixel-sm text-[15px] leading-tight text-muted">{sub}</p>}
+                {sub && <p className="mt-0.5 font-pixel-sm text-[16px] leading-tight text-muted">{sub}</p>}
               </div>
               <CloseButton onClick={onClose} />
             </header>

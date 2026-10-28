@@ -10,6 +10,11 @@ per family of raids; the framework's 18 choices). **Status (2026-10-24): built**
 `claude/raid-improvements-balancing-7h2x2h`, merged into `feature/version_2_3`, behind its switch, Off. (Numbered 40
 and migration 0076: the shiny Pokédex took docs/39 and 0075 the same day.)
 
+**Always on since 2026-10-28** (the user's call, when Admin → Config was made simpler): the switch is gone, the game
+keeps only the "on" path, and [`supabase/migrations/0084_switches_retired.sql`](https://github.com/Splifingald/pokedice/blob/version/2_4/supabase/migrations/0084_switches_retired.sql) deletes its row
+(`supabase/seed.sql` carries it inlined). `raid_overhaul_open()` now
+answers true for everyone, so the server takes a Mega raid's key from every player.
+
 ## 1. Decisions
 
 | Question | Answer |
@@ -225,6 +230,8 @@ Gyarados 71, Articuno 62, Zapdos 53, Moltres 67, Mewtwo 34, Lugia 38, Ho-Oh 55, 
 - `tests/raid-overhaul-sql.test.ts` (PGlite). `supabase/seed.sql` carries it inlined.
 
 ## 7. Setting it up
+
+Now: run 0084 (above) once the client is deployed; nothing to switch. Before it:
 
 1. Merge and deploy the client.
 2. Run [`supabase/migrations/0076_raid_overhaul.sql`](https://github.com/Splifingald/pokedice/blob/feature/version_2_3/supabase/migrations/0076_raid_overhaul.sql)

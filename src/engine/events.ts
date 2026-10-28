@@ -18,18 +18,6 @@ export const eventDef = (data: GameData, id: EventId): EventDef => data.config.e
 export const eventOpenTo = (access: EventAccess | undefined, data: GameData): boolean =>
   access === 'all' || (access === 'admin' && !!data.viewer?.admin)
 
-/** Recorded dice throws (docs/37): the dice's look only, so the game alone reads it (no server function acts for it). */
-export const diceThrowsOn = (data: GameData): boolean => eventOpenTo(data.config.diceThrows?.access, data)
-
-/** The game-feel pass (docs/38): how things look and sound only, so the game alone reads it. */
-export const gameFeelOn = (data: GameData): boolean => eventOpenTo(data.config.gameFeel?.access, data)
-
-/** Haptics (docs/38): the device's vibrations only; the game alone reads it. */
-export const hapticsOn = (data: GameData): boolean => eventOpenTo(data.config.haptics?.access, data)
-
-/** Battle music (docs/38): sound only; the game alone reads it. */
-export const musicOn = (data: GameData): boolean => eventOpenTo(data.config.music?.access, data)
-
 /** The Game Corner's slot machine (its cards in area decks): off since 2026-10-25, the wheel gives Porygon instead. */
 export const gameCornerOn = (data: GameData): boolean => eventOpenTo(data.config.slotMachine?.access, data)
 

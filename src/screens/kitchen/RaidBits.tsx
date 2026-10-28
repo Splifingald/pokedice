@@ -106,8 +106,7 @@ const MARKS: { label: string; fx: Parameters<typeof RaidMarks>[0]['fx'] }[] = [
 
 export function RaidOverhaulBits() {
   const { t } = useT()
-  const base = useGame((s) => s.data)
-  const data = useMemo(() => ({ ...base, config: { ...base.config, raidOverhaul: { access: 'all' as const } } }), [base])
+  const data = useGame((s) => s.data)
   const [info, setInfo] = useState(false)
   const areaOf = (dex: number) =>
     data.areas.find((a) => a.legendaryBoss?.some((b) => b.dex === (MEGA_RAIDS[dex]?.base ?? dex) && b.raid))?.id

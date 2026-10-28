@@ -1,47 +1,27 @@
-// The rules in plain words. Numbers come from the live game data; the type chart has its own screen.
-import { type ReactNode } from 'react'
+// How to play (docs/43 §5.10): the four animated cards (the basics, shown by doing), then the rules as folded sections,
+// one open at a time, each a few short lines; every detail one tap further for whoever wants it. Numbers come from the
+// live game data; the type chart has its own screen.
+import { useId, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { COMBO_KEYS, comboBonus, gameFeelOn, getRegion, regionOf, unlockedRegions } from '@/engine'
+import { COMBO_KEYS, comboBonus, getRegion, regionOf, unlockedRegions } from '@/engine'
 import { multiExpText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
 import { DieFaces } from '@/components/Die'
-import { PixelIcon } from '@/components/icons'
+import { PixelIcon, type IconName } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { TypeBadge } from '@/components/TypeBadge'
 import { comboExampleText, comboName, statusEffects } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { HowToPlay } from '@/screens/help/HowToPlay'
-
-/** A block of the rules; under "All the rules" (the animated cards above them), its title is one level down. */
-function Section({
-  id,
-  title,
-  sub,
-  children,
-}: {
-  id: string
-  title: string
-  sub?: boolean
-  children: ReactNode
-}) {
-  const Heading = sub ? 'h3' : 'h2'
-  return (
-    <section id={id} aria-labelledby={`${id}-h`} className="flex flex-col gap-2">
-      <Heading id={`${id}-h`} className="border-b-[3px] border-edge text-3xl leading-tight">
-        {title}
-      </Heading>
-      <div className="copy flex flex-col gap-2">{children}</div>
-    </section>
-  )
-}
+import { cx } from '@/theme/util'
 
 function StatusTable() {
   const { t } = useT()
   const r = useGame((s) => s.data.config.status)
   const rows = statusEffects(r)
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-lg">
+    <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={t('ui.help.navStatus')}>
+      <table className="w-full border-collapse text-[18px]">
         <thead>
           <tr className="bg-ink text-panel">
             <th scope="col" className="px-2 py-1 text-left font-normal">{t('ui.help.statusCol')}</th>
@@ -64,12 +44,115 @@ function StatusTable() {
           ))}
         </tbody>
       </table>
-      <p className="mt-1 text-lg text-muted">{t('ui.help.statusNote')}</p>
+      <p className="mt-1 text-[18px] text-muted">{t('ui.help.statusNote')}</p>
     </div>
   )
 }
 
-export function HelpContent() {
+function ComboTable() {
+  const { t } = useT()
+  const data = useGame((s) => s.data)
+  return (
+    <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={t('ui.help.navCombos')}>
+      <table className="w-full border-collapse text-[18px]">
+        <thead>
+          <tr className="bg-ink text-panel">
+            <th scope="col" className="px-2 py-1 text-left font-normal">{t('ui.help.comboCol')}</th>
+            <th scope="col" className="px-2 py-1 text-left font-normal">{t('ui.help.exampleCol')}</th>
+            <th scope="col" className="px-2 py-1 text-left font-normal">{t('ui.help.bonusCol')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {COMBO_KEYS.map((k) => (
+            <tr key={k} className="border-b-2 border-shadow/40">
+              <th scope="row" className="px-2 py-1 text-left font-normal">{comboName(k)}</th>
+              <td className="px-2 py-1 tabular-nums">{comboExampleText(k)}</td>
+              <td className="px-2 py-1">+{comboBonus(k, 1, data)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+interface Rule {
+  id: string
+  icon: IconName
+  title: string
+  /** What a player needs: two or three short lines. */
+  short: ReactNode[]
+  /** Everything else, one tap further. */
+  more?: ReactNode
+}
+
+/**
+ * The rules, folded: one section open at a time (opening one closes the other), so the page is a list of titles a
+ * newcomer reads in a glance. Each opens on its short lines; "Every detail" shows the rest.
+ */
+function RulesAccordion({ rules }: { rules: Rule[] }) {
+  const { t } = useT()
+  const uid = useId()
+  const [open, setOpen] = useState<string | null>(null)
+  const [more, setMore] = useState(false)
+  return (
+    <div className="flex flex-col gap-1.5">
+      {rules.map((r) => {
+        const on = open === r.id
+        const body = `${uid}-${r.id}`
+        return (
+          <section key={r.id} id={r.id} className={cx('bg-paper', on ? 'shadow-card-gold' : 'shadow-card')}>
+            <h3 className="m-0">
+              <button
+                type="button"
+                aria-expanded={on}
+                aria-controls={body}
+                onClick={() => {
+                  setOpen(on ? null : r.id)
+                  setMore(false)
+                }}
+                className="flex min-h-[52px] w-full items-center gap-2.5 px-3 text-left text-[24px] leading-none"
+              >
+                <PixelIcon name={r.icon} size={20} />
+                <span className="flex-1">{r.title}</span>
+                <span aria-hidden className={cx('text-[18px]', on && 'rotate-180')}>
+                  ▾
+                </span>
+              </button>
+            </h3>
+            {on && (
+              <div id={body} className="flex flex-col gap-2 px-3 pb-3">
+                <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+                  {r.short.map((line, i) => (
+                    <li key={i} className="flex gap-2 text-[20px] leading-[1.25]">
+                      <span aria-hidden className="mt-[9px] h-1.5 w-1.5 shrink-0 bg-accent" />
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+                {r.more && (
+                  <>
+                    {more && <div className="copy flex flex-col gap-2 text-[18px]">{r.more}</div>}
+                    <button
+                      type="button"
+                      aria-expanded={more}
+                      onClick={() => setMore((m) => !m)}
+                      className="min-h-[44px] self-start text-[18px] text-muted underline underline-offset-4"
+                    >
+                      {t(more ? 'ui.help.lessDetail' : 'ui.help.everyDetail')}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </section>
+        )
+      })}
+    </div>
+  )
+}
+
+export function HelpContent({ columns = false }: { columns?: boolean }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
@@ -78,34 +161,26 @@ export function HelpContent() {
   const regions = save ? unlockedRegions(save, data) : []
   const regionName = (save && getRegion(data, regionOf(save))?.name) ?? 'Kanto'
   const manyRegions = regions.length > 1
-  // With the Game feel on (docs/38 §8b) the basics come first as animated cards, the rules below them.
-  const feel = gameFeelOn(data)
-  return (
-    <div className="flex flex-col gap-6">
-      {feel && <HowToPlay />}
-      {feel && <h2 className="text-[34px] leading-none">{t('ui.help.howRules')}</h2>}
-      <nav aria-label={t('ui.help.sections')} className="flex flex-wrap gap-2 text-lg">
-        {[
-          ['goal', 'ui.help.navGoal'],
-          ['explore', 'ui.help.navExplore'],
-          ['battle', 'ui.help.navBattle'],
-          ['damage', 'ui.help.navDamage'],
-          ['combos', 'ui.help.navCombos'],
-          ['status', 'ui.help.navStatus'],
-          ['grow', 'ui.help.navGrow'],
-        ].map(([id, label]) => (
-          <a key={id} href={`#${id}`} className="pixel-btn flex min-h-[44px] items-center bg-panel px-2 md:min-h-[32px]">
-            {t(label!)}
-          </a>
-        ))}
-      </nav>
-
-      <Section id="goal" sub={feel} title={t('ui.help.navGoal')}>
-        <p>{t('ui.help.goalBody', { region: regionName })}</p>
-        {manyRegions && <p>{t('ui.help.goalRegions')}</p>}
-      </Section>
-
-      <Section id="explore" sub={feel} title={t('ui.help.navExplore')}>
+  // The basics come first as animated cards (docs/38 §8b), the rules beside (PC) or below them.
+  const rules: Rule[] = [
+    {
+      id: 'goal',
+      icon: 'star',
+      title: t('ui.help.navGoal'),
+      short: [t('ui.help.short.goal', { region: regionName })],
+      more: (
+        <>
+          <p>{t('ui.help.goalBody', { region: regionName })}</p>
+          {manyRegions && <p>{t('ui.help.goalRegions')}</p>}
+        </>
+      ),
+    },
+    {
+      id: 'explore',
+      icon: 'map',
+      title: t('ui.help.navExplore'),
+      short: [t('ui.help.short.explore1'), t('ui.help.short.explore2'), t('ui.help.short.explore3')],
+      more: (
         <ul className="ml-5 list-disc">
           <li>{t('ui.help.explore1')}</li>
           <li>{t('ui.help.explore2')}</li>
@@ -118,60 +193,57 @@ export function HelpContent() {
           <li>{t('ui.help.explore9')}</li>
           <li>{t('ui.help.explore10')}</li>
         </ul>
-      </Section>
-
-      <Section id="battle" sub={feel} title={t('ui.help.navBattle')}>
-        <ol className="ml-5 list-decimal">
-          <li>{t('ui.help.battle1')}</li>
-          <li>{t('ui.help.battle2')}</li>
-          <li>{t('ui.help.battle3')}</li>
-        </ol>
-        <p>
-          {t('ui.help.battleBody')}{' '}
-          {t('ui.help.keyboard', { k1: '1', k6: '6', r: 'R', space: 'Space' })}
-        </p>
-      </Section>
-
-      <Section id="damage" sub={feel} title={t('ui.help.navDamage')}>
-        <p>{t('ui.help.damageBody')}</p>
-        <div className="flex flex-col gap-1">
+      ),
+    },
+    {
+      id: 'battle',
+      icon: 'sword',
+      title: t('ui.help.navBattle'),
+      short: [t('ui.help.battle1'), t('ui.help.short.battle2'), t('ui.help.battle3')],
+      more: (
+        <>
+          <p>{t('ui.help.battle2')}</p>
+          <p>{t('ui.help.battleBody')}</p>
+          <p>{t('ui.help.keyboard', { k1: '1', k6: '6', r: 'R', space: 'Space' })}</p>
+        </>
+      ),
+    },
+    {
+      id: 'damage',
+      icon: 'dice',
+      title: t('ui.help.navDamage'),
+      short: [t('ui.help.short.damage1'), t('ui.help.short.damage2')],
+      more: (
+        <>
+          <p>{t('ui.help.damageBody')}</p>
           <div className="flex items-center gap-2">
-            <span className="w-16 text-lg">{t('ui.help.baseLabel')}</span>
+            <span className="w-16">{t('ui.help.baseLabel')}</span>
             <DieFaces type="base" faces={data.diceTypes.base?.faces ?? []} size={28} />
           </div>
-          <p className="copy text-muted">{t('ui.help.baseBody')}</p>
-        </div>
-      </Section>
-
-      <Section id="combos" sub={feel} title={t('ui.help.navCombos')}>
-        <p>{t('ui.help.combosBody')}</p>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-lg">
-            <thead>
-              <tr className="bg-ink text-panel">
-                <th scope="col" className="px-2 py-1 text-left font-normal">{t('ui.help.comboCol')}</th>
-                <th scope="col" className="px-2 py-1 text-left font-normal">{t('ui.help.exampleCol')}</th>
-                <th scope="col" className="px-2 py-1 text-left font-normal">{t('ui.help.bonusCol')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {COMBO_KEYS.map((k) => (
-                <tr key={k} className="border-b-2 border-shadow/40">
-                  <th scope="row" className="px-2 py-1 text-left font-normal">{comboName(k)}</th>
-                  <td className="px-2 py-1 font-mono text-base">{comboExampleText(k)}</td>
-                  <td className="px-2 py-1">+{comboBonus(k, 1, data)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Section>
-
-      <Section id="status" sub={feel} title={t('ui.help.navStatus')}>
-        <StatusTable />
-      </Section>
-
-      <Section id="grow" sub={feel} title={t('ui.help.navGrow')}>
+          <p className="text-muted">{t('ui.help.baseBody')}</p>
+        </>
+      ),
+    },
+    {
+      id: 'combos',
+      icon: 'sparkle',
+      title: t('ui.help.navCombos'),
+      short: [t('ui.help.combosBody')],
+      more: <ComboTable />,
+    },
+    {
+      id: 'status',
+      icon: 'burn',
+      title: t('ui.help.navStatus'),
+      short: [t('ui.help.short.status')],
+      more: <StatusTable />,
+    },
+    {
+      id: 'grow',
+      icon: 'up',
+      title: t('ui.help.navGrow'),
+      short: [t('ui.help.short.grow1'), t('ui.help.short.grow2'), t('ui.help.short.grow3')],
+      more: (
         <ul className="ml-5 list-disc">
           <li>{t('ui.help.grow1')}</li>
           <li>{t('ui.help.grow2', { share: multiExpText(data) })}</li>
@@ -180,7 +252,23 @@ export function HelpContent() {
           <li>{t('ui.help.grow5')}</li>
           <li>{t('ui.help.grow6')}</li>
         </ul>
-      </Section>
+      ),
+    },
+  ]
+  return (
+    <div
+      className={cx(
+        'flex flex-col gap-6',
+        columns && 'lg:grid lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:items-start lg:gap-8',
+      )}
+    >
+      <HowToPlay carousel />
+      <section aria-labelledby="help-rules" className="flex flex-col gap-3">
+        <h2 id="help-rules" className="text-[34px] leading-none">
+          {t('ui.help.howRules')}
+        </h2>
+        <RulesAccordion rules={rules} />
+      </section>
     </div>
   )
 }
@@ -189,15 +277,15 @@ export function HelpPage() {
   const { t } = useT()
   const navigate = useNavigate()
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-4 px-3 py-6">
+    <main className="mx-auto flex w-full max-w-[1200px] flex-col gap-4 px-3 py-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-[32px] leading-none">{t('ui.help.title')}</h1>
         <PixelButton onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}>{t('ui.help.back')}</PixelButton>
       </div>
-      <div className="pixel-panel p-4">
-        <HelpContent />
+      <div className="pixel-panel p-3 sm:p-4">
+        <HelpContent columns />
       </div>
-      <Link to="/" className="self-center underline">
+      <Link to="/" className="flex min-h-[44px] items-center self-center underline">
         {t('ui.help.titleScreen')}
       </Link>
     </main>

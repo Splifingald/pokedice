@@ -1,13 +1,11 @@
 // Haptics (docs/38): short vibrations on dice, hits and catches. One call per moment, `haptic(cue)`, from anywhere.
-// They play only where the admin has switched them on (`hapticsOn`), the player hasn't turned them off in Settings,
-// the device isn't asking for less motion, and the browser can vibrate: Android's Chrome can, iOS Safari can't, and
+// They play unless the player has turned them off in Settings, the device isn't asking for less motion, and the browser can vibrate: Android's Chrome can, iOS Safari can't, and
 // Chrome ignores a vibration before the player's first tap.
 //
 // iOS gets one thing instead (`useSwitchHaptics`): Safari plays the system's haptic when a native switch
 // (`<input type="checkbox" switch>`, Safari 17.4+, felt from iOS 18) is toggled by a real tap, so a primary button
 // lays an invisible one over itself (PixelButton's `HapticSwitch`) and the tap goes through it. Only a real tap counts:
 // toggling it from code stopped working in iOS 26.5, so dice, hits and catches stay silent on an iPhone.
-import { hapticsOn, type GameData } from '@/engine'
 import { useGame } from '@/store/game'
 import type { Settings } from '@/save/storage'
 
@@ -30,9 +28,8 @@ export type HapticCue = keyof typeof HAPTICS
 const calmDevice = () =>
   typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
-/** The switch, the player's setting and the game's own "no animations": what every haptic needs, whatever the device. */
-const allowed = (data: GameData | null | undefined, settings: Settings) =>
-  !!data && hapticsOn(data) && settings.haptics !== false && !settings.reducedMotion
+/** The player's setting and the game's own "no animations": what every haptic needs, whatever the device. */
+const allowed = (settings: Settings) => settings.haptics !== false && !settings.reducedMotion
 
 /** The browser can vibrate (Android's Chrome; a desktop's says it can and does nothing). */
 export const canVibrate = () => typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function'
@@ -49,8 +46,7 @@ export const IOS_SWITCH =
 
 /** Whether a haptic would play now: the switch, the player's setting, a calm device, a browser that can vibrate. */
 export function hapticsReady(): boolean {
-  const { data, settings } = useGame.getState()
-  return allowed(data, settings) && !calmDevice() && canVibrate()
+  return allowed(useGame.getState().settings) && !calmDevice() && canVibrate()
 }
 
 export function haptic(cue: HapticCue) {
@@ -67,11 +63,11 @@ export function haptic(cue: HapticCue) {
  * button). Off everywhere else, so no other device ever gets the extra element.
  */
 export function useSwitchHaptics(wanted: boolean): boolean {
-  const on = useGame((s) => wanted && IOS_SWITCH && allowed(s.data, s.settings))
+  const on = useGame((s) => wanted && IOS_SWITCH && allowed(s.settings))
   return on && !calmDevice()
 }
 
-/** Whether Settings should offer the Vibration switch: the admin's switch is on and this device can feel something. */
-export function useHapticsOffered(): boolean {
-  return useGame((s) => !!s.data && hapticsOn(s.data)) && (IOS_SWITCH || canVibrate())
+/** Whether Settings should offer the Vibration switch: this device can feel something. */
+export function hapticsOffered(): boolean {
+  return IOS_SWITCH || canVibrate()
 }

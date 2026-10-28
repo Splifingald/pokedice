@@ -107,7 +107,7 @@ export function WorldPreviewSquareView({
         style={{ aspectRatio: `288 / ${WIDGET_BANNER_H}` }}
         aria-hidden
       >
-        <span className="lv-ink font-pixel-sm text-[15px] leading-none">
+        <span className="lv-ink font-pixel-sm text-[16px] leading-none">
           {t('ui.world.preview.startsIn')}
         </span>
         <span
@@ -122,9 +122,9 @@ export function WorldPreviewSquareView({
       <WidgetRows
         top={<span className="lv-ink truncate text-[20px] leading-none">{name}</span>}
         meter={<PreviewGauge fill={fill} phase={phase} still={still} />}
-        // On the picture, art in both themes: the gold stays Daybreak's light gold at dusk too (light-scope).
+        // On the picture, art in both themes: the gold stays Daybreak's light gold at dusk too (`.lv-ink`).
         bottom={
-          <span className={cx('light-scope lv-ink', hot ? 'text-[#ffb3a8]' : 'text-gold-light')}>
+          <span className={cx('lv-ink', hot ? 'text-[#ffb3a8]' : 'text-gold-light')}>
             {t('ui.world.opens', { date })}
           </span>
         }

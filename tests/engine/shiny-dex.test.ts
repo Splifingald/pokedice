@@ -7,6 +7,7 @@ import {
   markEventsSeen,
   markShinyDexSeen,
   newSave,
+  homeNotices,
   nextOneTimePopup,
   noteShinyDex,
   progressOf,
@@ -21,9 +22,7 @@ import {
 } from '@/engine'
 import { makeData, newId } from '../fixtures'
 
-const OFF = makeData()
-const ON = makeData({ shinyDex: { access: 'all' } })
-const ADMIN_ONLY = makeData({ shinyDex: { access: 'admin' } })
+const ON = makeData()
 
 const fresh = (): SaveData => ({
   ...newSave(7, ON, 123, newId),
@@ -82,31 +81,24 @@ describe('noteShinyDex', () => {
 })
 
 describe('the page and its rules', () => {
-  it('opens with the switch on and the region’s league beaten', () => {
+  it('opens with the region’s league beaten', () => {
     const save = fresh()
     expect(shinyDexOpen(save, ON)).toBe(false)
     expect(shinyDexOpen(leagueBeaten(save), ON)).toBe(true)
-    expect(shinyDexOpen(leagueBeaten(save, OFF), OFF)).toBe(false)
   })
 
-  it('opens for the admin alone while it is On for admin', () => {
-    const save = leagueBeaten(fresh(), ADMIN_ONLY)
-    expect(shinyDexOpen(save, ADMIN_ONLY)).toBe(false)
-    expect(shinyDexOpen(save, { ...ADMIN_ONLY, viewer: { admin: true } })).toBe(true)
-  })
-
-  it('shows its rules once, in the queue, never on the Pokédex', () => {
+  it('opens as a notice on Home (its rules on its page), never a pop-up; its flag ends it', () => {
     const save = leagueBeaten(fresh())
     expect(shinyDexRulesDue(save, ON)).toBe(true)
     const ctx: PopupContext = { calm: true, path: '/home', signedIn: false, now: null, shareSeen: true }
-    // A league beaten also opens the next region's offer and the rebattle event, ahead of it in the queue.
+    // A league beaten also opens the next region's offer, the one pop-up left in the queue for it.
     expect(nextOneTimePopup(save, ON, ctx)).toBe('regionOffer')
     const ahead = markEventsSeen({ ...save, regionOfferSeen: ['johto'] }, ON)
-    expect(nextOneTimePopup(ahead, ON, ctx)).toBe('shinyDex')
-    expect(nextOneTimePopup(ahead, ON, { ...ctx, path: '/pokedex' })).toBeNull()
+    expect(nextOneTimePopup(ahead, ON, ctx)).toBeNull()
+    expect(homeNotices(ahead, ON, ctx)).toContain('shinyDex')
     const seen = markShinyDexSeen(ahead)
     expect(shinyDexRulesDue(seen, ON)).toBe(false)
-    expect(nextOneTimePopup(seen, ON, ctx)).toBeNull()
+    expect(homeNotices(seen, ON, ctx)).not.toContain('shinyDex')
     expect(markShinyDexSeen(seen)).toBe(seen)
   })
 })

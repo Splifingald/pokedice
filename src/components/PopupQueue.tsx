@@ -1,10 +1,13 @@
 // The one-time pop-ups on screen. The engine decides whose turn it is (engine/popups.ts, `nextOneTimePopup`); PopupQueue
 // gathers what the engine can't know (the page, the account, the clock, what waits outside the save) and works the
 // turn out once for the whole game, and OneTimePopups mounts every pop-up and the services that bring them in. Each
-// pop-up opens only on its turn (popupTurn.ts), so they queue, one at a time, in one order.
-import { useMemo, type ReactNode } from 'react'
+// pop-up opens only on its turn (popupTurn.ts), so they queue, one at a time, in one order. The rules of a feature with
+// a page of its own, Prof. Oak's tips and Support me aren't here: they are notices on Home (docs/43 §7,
+// screens/home/Notices.tsx), the rules a card on the feature's page.
+import { DiceTutorial } from './DiceTutorial'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
-import { nextOneTimePopup } from '@/engine'
+import { nextOneTimePopup, type OneTimePopup } from '@/engine'
 import { useFullscreen } from '@/lib/fullscreen'
 import { pushReady, usePush } from '@/lib/push'
 import { isSupabaseConfigured } from '@/lib/supabase'
@@ -18,27 +21,34 @@ import { LivePopup } from '@/screens/events/live'
 import { WorldByePopup, WorldFinishPopup, WorldPopup } from '@/screens/events/world'
 import { WorldPick } from '@/screens/events/worldPick'
 import { PortalUnlockPopup } from '@/screens/area/PortalRun'
-import { DayCareNotice, DayCareTutorial } from './DayCareTutorial'
+import { DayCareNotice } from './DayCareTutorial'
 import { DayNightRulesPopup } from './DayNight'
-import { EventUnlockPopup } from './EventUnlockPopup'
 import { AwayReportModal, ExtremeUnlockPopup } from './Extreme'
-import { VersusUnlockPopup } from './FeatureRules'
 import { FriendsService } from './friends/FriendsService'
-import { InviteRewardPopup, InviteRulesPopup, useInviteRewardWaiting } from './friends/InviteRewards'
-import { GeneralUnlockPopup, OfflineReportModal } from './GeneralRules'
-import { ShinyDexUnlockPopup } from './ShinyDexRules'
-import { UnownDexUnlockPopup } from './UnownDex'
+import { InviteRewardPopup, useInviteRewardWaiting } from './friends/InviteRewards'
+import { OfflineReportModal } from './GeneralRules'
 import { GiftService } from './Gifts'
-import { LeaderboardTutorial } from './LeaderboardTutorial'
-import { PopupTurnContext, usePopupOnScreen } from './popupTurn'
+import { POPUP_GAP_MS, PopupTurnContext, usePopupOnScreen } from './popupTurn'
 import { PowersUnlockPopup } from './PowersRules'
-import { RaidRulesPopup } from '@/screens/events/RaidRules'
 import { PushService } from './PushService'
 import { RaidGiftPopup } from './RaidGiftPopup'
 import { ReplyPopup, useRepliesWaiting } from './ReplyPopup'
-import { ShareTutorial, useShareSeen } from './ShareTutorial'
-import { DonationPopup } from './SupportModal'
 import { TradesService } from './trades/TradesService'
+
+/**
+ * What the player is owed rather than told: the answer to what they just did (a world finished: its goodbye), a report
+ * or a gift waiting, the notifications' question a page asked. These come without the rest; the rules, the tutorials
+ * and the asks wait their minute.
+ */
+const FOLLOWS_AT_ONCE = new Set<OneTimePopup>([
+  'worldBye',
+  'away',
+  'offline',
+  'replies',
+  'raidGifts',
+  'inviteReward',
+  'push',
+])
 
 /** Works out whose turn it is, once, and hands it down to every pop-up (the pages' too: the region offer, push). */
 export function PopupQueue({ children }: { children: ReactNode }) {
@@ -47,7 +57,6 @@ export function PopupQueue({ children }: { children: ReactNode }) {
   const full = useFullscreen()
   const gifts = useGiftMoment((s) => s.busy || !!s.rulesFor || !!s.opening)
   const now = useServerNow(5000)
-  const shareSeen = useShareSeen()
   const awayReport = useAwayReport((s) => !!s.report)
   const offlineReport = useOfflineReport((s) => !!s.report)
   const replies = useRepliesWaiting()
@@ -60,7 +69,7 @@ export function PopupQueue({ children }: { children: ReactNode }) {
   const idle = useGame((s) => s.run.phase === 'idle' && !s.battle)
   const signedIn = useGame((s) => s.auth.status === 'signed_in')
   // Worked out again only when one of these changes, not on every change to the store (a toast, a fight's turn).
-  const turn = useMemo(
+  const due = useMemo(
     () =>
       nextOneTimePopup(save, data, {
         calm: idle && !full && !gifts,
@@ -68,7 +77,6 @@ export function PopupQueue({ children }: { children: ReactNode }) {
         signedIn,
         online: isSupabaseConfigured,
         now,
-        shareSeen,
         awayReport,
         offlineReport,
         replies,
@@ -86,7 +94,6 @@ export function PopupQueue({ children }: { children: ReactNode }) {
       path,
       signedIn,
       now,
-      shareSeen,
       awayReport,
       offlineReport,
       replies,
@@ -96,6 +103,22 @@ export function PopupQueue({ children }: { children: ReactNode }) {
       showing,
     ],
   )
+  // Pacing (docs/42): the moment the pop-up on screen is done (no longer due), the queue rests a minute rather than hand
+  // the screen straight to the next — the Day Care's rules then the invite, one after the other on arrival, was the
+  // heaviest moment of a visit. In memory: a page loaded afresh starts without a wait.
+  const closing = showing != null && due !== showing
+  // Set in the very render that sees it close: the next render (the pop-up gone from the screen) must already rest.
+  const restUntil = useRef(0)
+  if (closing) restUntil.current = Date.now() + POPUP_GAP_MS
+  const until = restUntil.current
+  const resting = until > Date.now()
+  const [, wake] = useState(0)
+  useEffect(() => {
+    if (!resting) return
+    const timer = setTimeout(() => wake((n) => n + 1), until - Date.now() + 50)
+    return () => clearTimeout(timer)
+  }, [resting, until])
+  const turn = closing || (resting && !showing && !(due && FOLLOWS_AT_ONCE.has(due))) ? null : due
   return <PopupTurnContext.Provider value={turn}>{children}</PopupTurnContext.Provider>
 }
 
@@ -103,28 +126,18 @@ export function PopupQueue({ children }: { children: ReactNode }) {
 export function OneTimePopups() {
   return (
     <>
+      <DiceTutorial />
       <AwayReportModal />
       <OfflineReportModal />
-      <DayCareTutorial />
       <DayCareNotice />
-      <LeaderboardTutorial />
       <ReplyPopup />
       <RaidGiftPopup />
       <GiftService />
-      <DonationPopup />
-      <EventUnlockPopup />
-      <VersusUnlockPopup />
-      <ShareTutorial />
       <ExtremeUnlockPopup />
-      <GeneralUnlockPopup />
-      <ShinyDexUnlockPopup />
-      <UnownDexUnlockPopup />
-      <InviteRulesPopup />
       <InviteRewardPopup />
       <PortalUnlockPopup />
       <DayNightRulesPopup />
       <PowersUnlockPopup />
-      <RaidRulesPopup />
       <WorldPopup />
       <WorldPick />
       <WorldFinishPopup />

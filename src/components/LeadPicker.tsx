@@ -1,20 +1,16 @@
 import { useState } from 'react'
-import { instanceMaxHp, instanceStats, teamOf, type PokeType } from '@/engine'
+import { teamOf, type PokemonInstance, type PokeType } from '@/engine'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
-import { useTypeHints } from '@/store/hooks'
-import { cx } from '@/theme/util'
 import { PixelIcon } from './icons'
 import { PixelButton } from './PixelButton'
+import { PokeCard } from './PokeCard'
 import { SheetModal } from './SheetModal'
-import { MiniSprite } from './SpriteImg'
-import { TypeBadge } from './TypeBadge'
-import { attackEdge } from './TypeMatchups'
 
 /**
  * "Before each fight the player picks which one to send." The team side by side, each with its essentials (mini, level,
  * its whole name, types, HP) and two buttons: SWITCH picks it (the one picked says SENT OUT, white: the red is FIGHT's),
- * INFO opens its details. With the type hint on and the foe known, a thumb marks the ones whose dice hit it super
+ * INFO opens its details (in the rework's send-out step the card itself does, and GO! sends it). With the type hint on and the foe known, a thumb marks the ones whose dice hit it super
  * effectively (up) or not very effectively (down). A team of one has nothing to pick: nothing shows (docs/38 U5c).
  */
 export function LeadPicker({
@@ -22,6 +18,8 @@ export function LeadPicker({
   onChange,
   foe,
   pair,
+  go = false,
+  members,
 }: {
   value: string | null
   onChange: (uid: string) => void
@@ -29,15 +27,21 @@ export function LeadPicker({
   foe?: readonly PokeType[]
   /** A double battle (docs/33): two go out. SWITCH picks one, the earlier pick making way when two are picked. */
   pair?: { value: string[]; onChange: (uids: string[]) => void }
+  /** The rework's send-out step: no heading; a tap on a card picks it, its INFO opens it, the caller's GO! sends it. */
+  go?: boolean
+  /**
+   * Who to show instead of the team: a fight's switch after a K.O. (docs/42) offers those able to come in, at the fight's
+   * HP. Even one is shown (it is what GO! sends).
+   */
+  members?: PokemonInstance[]
 }) {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
-  const hints = useTypeHints()
   const [info, setInfo] = useState<string | null>(null)
   if (!save) return null
-  const team = teamOf(save)
-  if (team.length < 2) return null
+  const team = members ?? teamOf(save)
+  if (team.length < (members ? 1 : 2)) return null
   const current = value && team.some((p) => p.id === value && p.currentHp > 0) ? value : team.find((p) => p.currentHp > 0)?.id
   const picked = pair ? pickedPair(pair.value) : []
   const pick = (id: string) => {
@@ -47,76 +51,62 @@ export function LeadPicker({
   }
   return (
     <div>
-      <div className="mb-1 text-lg text-muted">{t(pair ? 'ui.lead.sendOutTwo' : 'ui.lead.sendOut')}</div>
+      {/* A pair is two picks: said, even on the send-out's cards. */}
+      {(!go || pair) && (
+        <div className="mb-1 text-lg text-ink">{t(pair ? 'ui.lead.sendOutTwo' : 'ui.lead.sendOut')}</div>
+      )}
       <ul className="grid grid-cols-3 gap-1.5 sm:gap-2">
         {team.map((p) => {
           const species = data.species[p.dex]
           if (!species) return null
           const fainted = p.currentHp <= 0
           const selected = pair ? picked.includes(p.id) : p.id === current
-          const edge = hints && foe?.length ? attackEdge(data, instanceStats(p, data).dice, foe) : 1
-          return (
-            <li
-              key={p.id}
-              className={cx(
-                'pixel-panel flex min-w-0 flex-col gap-1 p-1.5',
-                selected && 'outline outline-[3px] outline-offset-2 outline-gold',
-                fainted && 'hatched',
-              )}
-            >
-              <div className="flex min-w-0 items-center gap-1">
-                <MiniSprite dex={p.dex} size={32} className={cx('-my-1 -ml-1 shrink-0', fainted && 'grayscale')} />
-                <span className="text-base leading-none">{t('ui.common.level.short', { n: p.level })}</span>
-                {p.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
-                {edge !== 1 && (
-                  <PixelIcon
-                    name={edge > 1 ? 'thumbUp' : 'thumbDown'}
-                    size={16}
-                    title={t(edge > 1 ? 'ui.lead.strong' : 'ui.lead.weak')}
-                    className="ml-auto shrink-0"
-                  />
-                )}
-              </div>
-              {/* The whole name on a line of its own, never "Bulba…": a long one is a size smaller on a phone, and
-                  wraps if it must. */}
-              <span
-                className={cx(
-                  'leading-none [overflow-wrap:anywhere]',
-                  nameWidth(species.name) > 9 ? 'text-base sm:text-lg' : 'text-lg',
-                )}
+          // The rework's send-out step: a tap on the card picks it (outlined; the first able one to begin with), its
+          // white INFO opens its details, and one GO! under the cards sends the one picked (the user's call).
+          if (go)
+            return (
+              <PokeCard
+                key={p.id}
+                inst={p}
+                foe={foe}
+                brief
+                selected={selected}
+                pressed={selected}
+                onOpen={() => pick(p.id)}
               >
-                {species.name}
-              </span>
-              <div className="flex flex-wrap items-center gap-1">
-                <TypeBadge type={species.type1} size="sm" />
-                {species.type2 && <TypeBadge type={species.type2} size="sm" />}
-              </div>
-              <div className={cx('font-mono text-sm leading-none', fainted && 'text-danger')}>
-                {fainted ? t('ui.mon.fainted') : t('ui.lead.hp', { hp: p.currentHp, max: instanceMaxHp(p, data) })}
-              </div>
-              <div className="mt-auto flex flex-col gap-1 pt-0.5">
                 <PixelButton
                   size="sm"
-                  className="w-full px-1"
-                  disabled={fainted}
-                  aria-pressed={selected}
-                  aria-label={t('ui.lead.sendOutName', { name: species.name })}
-                  onClick={() => pick(p.id)}
-                >
-                  {selected && <PixelIcon name="check" size={14} />}
-                  {t(selected ? 'ui.lead.sentOut' : 'ui.lead.switch')}
-                </PixelButton>
-                <PixelButton
-                  size="sm"
-                  variant="ghost"
                   className="w-full px-1"
                   aria-label={t('ui.newGame.monInfo', { name: species.name })}
                   onClick={() => setInfo(p.id)}
                 >
                   {t('ui.lead.info')}
                 </PixelButton>
-              </div>
-            </li>
+              </PokeCard>
+            )
+          return (
+            <PokeCard key={p.id} inst={p} foe={foe} selected={selected}>
+              <PixelButton
+                size="sm"
+                className="w-full px-1"
+                disabled={fainted}
+                aria-pressed={selected}
+                aria-label={t('ui.lead.sendOutName', { name: species.name })}
+                onClick={() => pick(p.id)}
+              >
+                {selected && <PixelIcon name="check" size={14} />}
+                {t(selected ? 'ui.lead.sentOut' : 'ui.lead.switch')}
+              </PixelButton>
+              <PixelButton
+                size="sm"
+                variant="ghost"
+                className="w-full px-1"
+                aria-label={t('ui.newGame.monInfo', { name: species.name })}
+                onClick={() => setInfo(p.id)}
+              >
+                {t('ui.lead.info')}
+              </PixelButton>
+            </PokeCard>
           )
         })}
       </ul>
@@ -124,9 +114,6 @@ export function LeadPicker({
     </div>
   )
 }
-
-/** How wide a name runs, in Latin letters: a CJK character takes about two. */
-const nameWidth = (name: string) => [...name].reduce((n, ch) => n + ((ch.codePointAt(0) ?? 0) >= 0x2e80 ? 2 : 1), 0)
 
 /** A double battle's two leads: those picked still able, filled up with the first able ones, in team order. */
 export function pickedPair(value: readonly string[]): string[] {

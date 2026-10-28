@@ -2,7 +2,7 @@
 // roll key always plays the same throw; the dice of one roll each get their own; and the last frame drawn is the
 // resting die, pixel for pixel.
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_CONFIG, diceThrowsOn, type Face } from '@/engine'
+import type { Face } from '@/engine'
 import { buildDieArt, drawDie, emptyBox, type Box, type Frame } from '@/fx/dice/cube'
 import { mApply, mMirror, mMul, qToMat } from '@/fx/dice/math'
 import {
@@ -22,7 +22,6 @@ import {
   type ThrowFile,
 } from '@/fx/dice/solve'
 import file from '@/fx/dice/throws.json'
-import { makeData } from './fixtures'
 
 const SET = decodeThrows(file as ThrowFile)
 const close = (a: ArrayLike<number>, b: ArrayLike<number>, eps = 1e-9) =>
@@ -207,16 +206,5 @@ describe('the cube renderer', () => {
     expect(ink).toBeGreaterThan(20)
     expect(box.x0).toBeGreaterThanOrEqual(0)
     expect(box.x1).toBeLessThanOrEqual(fb.w + 2)
-  })
-})
-
-describe('the switch', () => {
-  it('is off by default, open to the admin alone, then to everyone', () => {
-    expect(DEFAULT_CONFIG.diceThrows).toEqual({ access: 'off' })
-    expect(diceThrowsOn(makeData())).toBe(false)
-    const admin = makeData({ diceThrows: { access: 'admin' } })
-    expect(diceThrowsOn(admin)).toBe(false)
-    expect(diceThrowsOn({ ...admin, viewer: { admin: true } })).toBe(true)
-    expect(diceThrowsOn(makeData({ diceThrows: { access: 'all' } }))).toBe(true)
   })
 })

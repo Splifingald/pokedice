@@ -5,6 +5,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { getLang } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { offlineOr } from '@/lib/online'
+import { LEAGUE_REWARD_TITLE, leagueRewardNote } from '@/lib/versusLeague'
 import { giftsWait, parseGifts } from '@/engine'
 import {
   FEEDBACK_MESSAGE_MAX,
@@ -19,7 +20,7 @@ import { pushToast, useGame } from '@/store/game'
 import { useCloudSync } from '@/store/sync'
 import { cx } from '@/theme/util'
 import { GiftOpened, GiftPresent, GiftRulesModal } from './Gifts'
-import { Modal } from './Modal'
+import { Sheet } from './Sheet'
 import { PixelButton } from './PixelButton'
 import { InfoButton } from './RulesModal'
 
@@ -32,16 +33,30 @@ const when = (iso: string) =>
  */
 export function ReplyBox({ reply, at, fromDev }: { reply: string; at: string | null; fromDev?: boolean }) {
   const { t } = useT()
+  // The weekly league's rewards (docs/44): the server sends their numbers, the game says them in the player's language.
+  const league = leagueRewardNote(reply)
+  const words = league
+    ? t('ui.league.reward.body', {
+        rank: league.rank,
+        size: league.size,
+        trophies: league.trophies,
+        week: league.week,
+      })
+    : reply
   return (
     <div className="bg-gold-pale p-2 shadow-ring">
       <p className="flex flex-wrap items-baseline justify-between gap-x-2 text-lg leading-none">
-        <b>{t(fromDev ? 'ui.contact.fromDev' : 'ui.contact.answer')}</b>
+        <b>{t(league ? 'ui.league.title' : fromDev ? 'ui.contact.fromDev' : 'ui.contact.answer')}</b>
         {at && <span className="text-base text-muted">{when(at)}</span>}
       </p>
-      <p className="copy mt-1 whitespace-pre-wrap break-words text-lg leading-snug">{reply}</p>
+      <p className="copy mt-1 whitespace-pre-wrap break-words text-lg leading-snug">{words}</p>
     </div>
   )
 }
+
+/** A message's title; the weekly league's reward message (docs/44) has its own, in the player's language. */
+export const messageTitle = (t: (k: string) => string, title: string) =>
+  title === LEAGUE_REWARD_TITLE ? t('ui.league.reward.title') : title
 
 /**
  * Everything the player sent, newest first, each with its answer, and what the developer wrote first; the gifts any of
@@ -99,7 +114,7 @@ function History({ onClose }: { onClose: () => void }) {
               className="flex flex-col gap-1 border-b-2 border-edge/20 pb-3 last:border-b-0 last:pb-0"
             >
               <div className="flex flex-wrap items-baseline justify-between gap-x-2">
-                <p className="min-w-0 break-words text-xl leading-tight">{m.title}</p>
+                <p className="min-w-0 break-words text-xl leading-tight">{messageTitle(t, m.title)}</p>
                 <span className="text-base text-muted">{when(m.created_at)}</span>
               </div>
               {!m.from_admin && <p className="copy whitespace-pre-wrap break-words text-lg leading-snug">{m.message}</p>}
@@ -144,9 +159,9 @@ export function useInboxUnseen(): number {
 export function InboxModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useT()
   return (
-    <Modal open={open} onClose={onClose} title={t('ui.contact.historyTab')}>
+    <Sheet open={open} onClose={onClose} title={t('ui.contact.historyTab')}>
       <History onClose={onClose} />
-    </Modal>
+    </Sheet>
   )
 }
 
@@ -181,7 +196,7 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={t('ui.contact.title')}>
+    <Sheet open={open} onClose={onClose} title={t('ui.contact.title')}>
       <div className="mb-3 flex gap-1" role="group" aria-label={t('ui.contact.title')}>
         {(
           [
@@ -247,6 +262,6 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
           </div>
         </form>
       )}
-    </Modal>
+    </Sheet>
   )
 }

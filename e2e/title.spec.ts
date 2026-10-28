@@ -1,6 +1,5 @@
-// The title with the game feel on (docs/38 §9): the word forms from eight thrown dice on a canvas, an <h1> named
-// Pokédice, the tagline after the landing, a tap on the logo throws it again; the buttons still fit a 360×640 phone
-// and work while the dice fly. With the switch off, the old wordmark and its row of dice.
+// The title (docs/38 §9): the word forms from eight thrown dice on a canvas, an <h1> named Pokédice, the tagline after
+// the landing, a tap on the logo throws it again; the buttons still fit a 360×640 phone and work while the dice fly.
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { makeSave, mockSupabase, smallControls } from './helpers'
@@ -8,16 +7,14 @@ import { makeSave, mockSupabase, smallControls } from './helpers'
 const MOTION_ON = JSON.stringify({ sfx: false, sound: false, reducedMotion: false })
 const MOTION_OFF = JSON.stringify({ sfx: false, sound: false, reducedMotion: true })
 
-async function boot(page: Page, { feel = true, save = true, settings = MOTION_ON } = {}) {
+async function boot(page: Page, { save = true, settings = MOTION_ON } = {}) {
   await mockSupabase(page)
-  const config = JSON.stringify({ gameFeel: { access: feel ? 'all' : 'off' } })
   await page.addInitScript(
-    ([s, f, c]) => {
+    ([s, f]) => {
       if (s) localStorage.setItem('pokedice.save', s)
       localStorage.setItem('pokedice.settings', f!)
-      localStorage.setItem('pokedice.devConfig', c!)
     },
-    [save ? JSON.stringify(makeSave(4)) : '', settings, config],
+    [save ? JSON.stringify(makeSave(4)) : '', settings],
   )
 }
 
@@ -54,8 +51,6 @@ test('a phone: the dice form the word, the tagline follows, and everything fits 
   // Down, flashed and ringed: the tagline comes in last.
   await expect(tagline(page)).toHaveCSS('opacity', '1', { timeout: 6000 })
   expect(await inked(page, true)).toBeGreaterThan(20_000)
-  // The old wordmark and its dice are gone.
-  await expect(page.getByText('POKÉDICE')).toHaveCount(0)
 
   for (const name of [/^Continue with /, /^NEW GAME$/, /^HOW TO PLAY$/]) {
     const box = (await page.getByRole('button', { name }).boundingBox())!
@@ -95,14 +90,4 @@ test('one row from 768 px; with animations off the logo is at rest at once', asy
   // One row: much wider than tall.
   expect(box.width).toBeGreaterThan(box.height * 4)
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(1280)
-})
-
-test('the switch off: the old title, no canvas', async ({ page }) => {
-  await page.setViewportSize({ width: 360, height: 640 })
-  await boot(page, { feel: false })
-  await page.goto('/')
-  await expect(page.getByRole('heading', { level: 1, name: 'POKÉDICE' })).toBeVisible()
-  await expect(logo(page)).toHaveCount(0)
-  await expect(tagline(page)).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Throw the dice again' })).toHaveCount(0)
 })

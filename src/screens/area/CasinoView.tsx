@@ -7,7 +7,6 @@ import { useT } from '@/i18n/react'
 import { GoldPill } from '@/components/GoldPill'
 import { useMotion } from '@/lib/motion'
 import { CashChip } from '@/screens/events/live'
-import { RunRoundGauge } from '@/screens/area/RoundGauge'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
@@ -177,7 +176,7 @@ export function CasinoView() {
 
         <p
           className={cx(
-            'min-h-[2.5rem] text-center text-2xl leading-tight',
+            'light-scope min-h-[2.5rem] text-center text-2xl leading-tight',
             win ? 'text-gold' : 'text-panel',
           )}
           aria-live="polite"
@@ -195,7 +194,7 @@ export function CasinoView() {
         >
           {t('ui.casino.spin', { cost })}
         </PixelButton>
-        {!canPay && !spinning && <p className="text-lg text-danger-light">{t('ui.casino.tooPoor')}</p>}
+        {!canPay && !spinning && <p className="light-scope text-lg text-danger-light">{t('ui.casino.tooPoor')}</p>}
       </section>
 
       <section className="pixel-panel mx-auto w-full max-w-lg p-3" aria-label={t('ui.casino.payouts')}>
@@ -232,10 +231,9 @@ export function CasinoView() {
       {/* Always on screen: pinned right above the phone tab bar, even when the page is short (as in the Center). */}
       <div
         className="fixed inset-x-0 z-30 border-t-[3px] border-edge bg-parchment px-3 py-2 md:sticky md:inset-x-auto md:-mx-3"
-        style={{ bottom: 'var(--bottom-nav)' }}
+        style={{ bottom: 'var(--bottom-nav)', paddingBottom: 'calc(0.5rem + var(--bottom-safe))' }}
       >
         <div className="flex flex-col gap-1.5 md:mx-auto md:w-80">
-          <RunRoundGauge />
           <PixelButton size="lg" className="w-full" disabled={spinning} onClick={leaveCasino}>
             {t('ui.casino.leave')}
           </PixelButton>

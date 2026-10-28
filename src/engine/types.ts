@@ -189,6 +189,24 @@ export type EncounterKind = (typeof ENCOUNTER_KINDS)[number]
 /** Cards in an area's encounter deck; 'legend' is a fled legendary coming back (one per deck until it's caught). */
 export type DeckCard = EncounterKind | 'legend'
 
+/** One card of a set opening round (docs/46): what it is, decided in advance. */
+export type OpeningCard =
+  | { kind: 'wild'; dex: number; level: number }
+  /** A trainer from the trainers table; `prize` ₽ for the win, in place of the usual Σ levels. */
+  | { kind: 'trainer'; trainerId: string; prize?: number }
+  /** A find: `qty` of an item, or Pokédollars (itemKey 'money'). */
+  | { kind: 'item'; itemKey: string; qty: number }
+  | { kind: 'center' }
+
+/** An area's first rounds, set (docs/46): Route 1's opening. */
+export interface OpeningRoundsConfig {
+  access: EventAccess
+  /** The area they're played in. */
+  areaId: string
+  /** Its first rounds in order, each card in the order it's met. The rounds after them are shuffled decks as before. */
+  rounds: OpeningCard[][]
+}
+
 /** Day and night (docs/32): the half of the day an area's wild Pokémon is met in, where the region keeps the time. */
 export const DAY_TIMES = ['day', 'night'] as const
 export type DayTime = (typeof DAY_TIMES)[number]
@@ -549,8 +567,8 @@ export type ItemEffect =
   | { kind: 'fossil'; dex: number; level: number; hours: number }
   /** Rare Candy: levels, from the Team screen. */
   | { kind: 'level'; amount: number }
-  /** Poké Balls: added to the catch die. */
-  | { kind: 'ball'; bonus: number }
+  /** Poké Balls: added to the catch die. `raidOnly`: thrown in raids alone (the Raid Ball, docs/44). */
+  | { kind: 'ball'; bonus: number; raidOnly?: boolean }
   /** The Link Cable: evolves a Pokémon that only evolves by trade (`trade.evolveOnTrade`), from the Team screen. */
   | { kind: 'link' }
   /**
@@ -600,15 +618,6 @@ export interface StatusRules {
 
 export type SkipPolicy = 'free' | 'once' | 'none'
 
-export interface EnergyConfig {
-  /** Off = encounters are free and the counter is hidden. */
-  enabled: boolean
-  /** The cap, and what a new save starts with. */
-  max: number
-  /** Real-time minutes per point regained (offline too). */
-  minutesPerEnergy: number
-}
-
 /** "Support me": the developer's pop-up and its Ko-fi button (Admin → Config). */
 export interface DonationConfig {
   /** Off = the pop-up never shows. It also stays hidden while `kofiUrl` is empty. */
@@ -633,6 +642,40 @@ export type EventId = (typeof EVENT_IDS)[number]
  */
 export const EVENT_ACCESS = ['off', 'admin', 'all'] as const
 export type EventAccess = (typeof EVENT_ACCESS)[number]
+
+/** One place band of the week's rewards: ranks up to `upTo` (after the band before) get these. */
+export interface LeagueRewardBand {
+  upTo: number
+  raidBalls: number
+  rareCandies: number
+}
+
+export interface VersusLeagueConfig {
+  access: EventAccess
+  /** Trophies for a win with 1, 2 or 3 Pokémon left; a loss costs what the opponent had left, the same way. */
+  trophies: [number, number, number]
+  /** Below this many trophies, a loss costs nothing. */
+  safeBelow: number
+  /** A group's places. */
+  groupSize: number
+  /** Players each group is made for on Monday: the rest of its places wait for late players and bots. */
+  groupFill: number
+  /** Bots seated in each group with room, on each bot day. */
+  botsPerDay: number
+  /** The days bots are seated (1 = Monday … 7 = Sunday, UTC). */
+  botDays: number[]
+  /** Opponents are offered within this share of your trophies, and at least `rangeMin` either way. */
+  range: number
+  rangeMin: number
+  /** A win is refused under this many seconds, or under `secondsPerMove` for each of the player's moves. */
+  minWinSeconds: number
+  secondsPerMove: number
+  /** The trophies from which a bot's team gets stronger: a tier each (the last brings all three powers). */
+  botTiers: number[]
+  /** ₽ for each trophy at the end of the week. */
+  goldPerTrophy: number
+  rewards: LeagueRewardBand[]
+}
 
 /** What every event has, whatever it does (Admin → Events). */
 export interface EventDef {
@@ -891,6 +934,8 @@ export interface GameConfig {
   enemyUpgradeLevel: number
   /** Versus: every combo and die track of both sides is at this level; nobody brings their own upgrades. */
   versusUpgradeLevel: number
+  /** The weekly Versus league (docs/44): its switch and numbers. Migration 0082 inserts the same row; the server reads it. */
+  versusLeague?: Partial<VersusLeagueConfig>
   /** Switching the active Pokémon on your own turn (costs the turn). Switching after a faint is always free. */
   allowVoluntarySwitch: boolean
   /** Safety valve: two Pokémon immune to each other's every die would otherwise fight forever. Ends in a stalemate. */
@@ -913,8 +958,6 @@ export interface GameConfig {
   cloudSyncMinutes: number
   /** Friends each player can have (both sides of a friendship count it). The database reads the same key. */
   maxFriends: number
-  /** Energy: 1 per encounter discovered (not gyms, legendaries or Pokémon Centers), refilled over time. */
-  energy: EnergyConfig
   status: StatusRules
   ai: { samples: number; rerollGainThreshold: number }
   slotMachine: SlotMachineConfig
@@ -973,29 +1016,21 @@ export interface GameConfig {
   dayNight: { access: EventAccess }
   /** Idle mode and the play styles (docs/36): its switch. Migration 0068 inserts the same row. */
   idleMode: { access: EventAccess }
-  /** Recorded dice throws (docs/37): its switch. Purely visual. Migration 0069 inserts the same row. */
-  diceThrows: { access: EventAccess }
   /**
-   * The game-feel pass (docs/38): count-ups, combo tiers, hits that scale, the KO beat, the victory payoff, the catch
-   * moments. Purely visual and audible. Migration 0074 inserts the same row.
+   * The League heals the team between its battles (docs/42): each one won with another still to fight heals as a
+   * Pokémon Center would. Migration 0081 inserts the same row.
    */
-  gameFeel: { access: EventAccess }
-  /** Haptics (docs/38): short vibrations on dice, hits and catches, where the device can. Migration 0074. */
-  haptics: { access: EventAccess }
-  /** Battle music (docs/38): an original 8-bit loop under fights. Migration 0074 inserts the same row. */
-  music: { access: EventAccess }
-  /** The shiny Pokédex (docs/39): each region's, once its league is beaten. Display only. Migration 0075. */
-  shinyDex: { access: EventAccess }
+  leagueHeal: { access: EventAccess }
   /**
    * The Unown Pokédex (docs/41): the 28 letters, once an area where Unown live is opened; `reward` ₽ for the last one.
    * Migration 0080 inserts the same row.
    */
   unownDex: { access: EventAccess; reward: number }
   /**
-   * The raid overhaul (docs/40): each progression raid's own numbers, rules and last bar, Arceus's daily raid, the Mega
-   * raids after Kalos. Its switch; migration 0076 inserts the same row and the server reads it for the Mega raids.
+   * Route 1's set opening (docs/46): its first rounds dealt in a set order, card by card, the rounds after them at
+   * random as before. Migration 0081 inserts the same row.
    */
-  raidOverhaul: { access: EventAccess }
+  openingRounds: OpeningRoundsConfig
   /** Double battles (docs/33): their switch, the regions that have them and the wild odds. */
   doubleBattles: DoubleBattlesConfig
   /**
@@ -1515,6 +1550,8 @@ export interface AreaProgress {
   drawn?: DeckCard[]
   /** The last encounter here was a Pokémon Center: the next one can't be (no two Centers in a row). */
   lastCenter?: boolean
+  /** The deck in play is the set opening's round of this index (docs/46), not a shuffled one. */
+  opening?: number
   /** A portal run here (docs/28): where it stands, its bonuses, whether it's won. */
   portal?: PortalState
   /** The nightmare here (docs/30): its round, Darkrai's strike due, the gifts given, whether it's over. */
@@ -1568,12 +1605,12 @@ export interface SaveData {
    * (`decideSync`). Absent on saves from before it: `updatedAt` stands in.
    */
   playedAt?: number
-  /** Energy held at `at` (ms); it refills from there (see engine/energy). Absent = full. */
-  energy?: { value: number; at: number }
   /** The player has opened the leaderboard (Prof. Oak sends them there once). */
   leaderboardVisited?: boolean
   /** Versus's rules pop-up has been shown (once, when Versus opens; its INFO button shows them again). */
   versusRulesSeen?: boolean
+  /** The weekly Versus league's rules card has been read (docs/44): its own flag, as players who had Versus see it too. */
+  versusLeagueRulesSeen?: boolean
   /** The portal run's rules pop-up (docs/28) has been shown (once; INFO shows them again). */
   portalRulesSeen?: boolean
   /** The nightmare's rules pop-up (docs/30) has been shown (once; INFO shows them again). */
@@ -1616,6 +1653,8 @@ export interface SaveData {
   unownDexPaid?: RegionId[]
   /** The Unown Pokédex's rules pop-up has been shown (once, when it opens; INFO shows it again). */
   unownDexSeen?: boolean
+  /** The dice tutorial after Route 1's first round (docs/46 §5): shown and not finished, or finished for good. */
+  diceTutorial?: 'started' | 'done'
   /** Trades (docs/23): listed Pokémon, the trades already applied, the last ones done. Absent = never traded. */
   trades?: TradesSave
   /** Gifts from the developer (docs/15 §23): the ones opened, and the rules seen. Absent = none yet. */
@@ -1645,8 +1684,11 @@ export interface SaveData {
   resume?: ResumeSnapshot
 }
 
-/** Classic: the player does everything. Explored: cleared areas play themselves when asked. Idle: every area does. */
-export const PLAY_STYLES = ['classic', 'explored', 'idle'] as const
+/**
+ * Explored (the default): cleared areas play themselves when asked. Idle: every area does. (Classic, auto nowhere, was
+ * dropped on 2026-10-25: a save that has it reads as unset, so Explored.)
+ */
+export const PLAY_STYLES = ['explored', 'idle'] as const
 export type PlayStyle = (typeof PLAY_STYLES)[number]
 
 /**

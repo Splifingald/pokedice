@@ -14,6 +14,7 @@ import { DiceSet } from '@/components/DiceSet'
 import { ItemSprite } from '@/components/ItemSprite'
 import { PixelIcon } from '@/components/icons'
 import { LeadPicker, defaultLead, pickedPair } from '@/components/LeadPicker'
+import { AutoButton } from '@/components/AutoButton'
 import { PixelButton } from '@/components/PixelButton'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { StatChip } from '@/components/StatChip'
@@ -99,12 +100,12 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
           <StatChip stat="rerolls" value={stats.rerolls} size={18} className="text-lg" />
         </div>
         {distorted ? (
-          <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[15px] leading-tight text-muted">
+          <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted">
             <PixelIcon name="sparkle" size={14} />
             {t('ui.portal.noCatch')}
           </p>
         ) : dream ? (
-          <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[15px] leading-tight text-muted">
+          <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted">
             <PixelIcon name="moon" size={14} />
             {t('ui.nightmare.noCatch')}
           </p>
@@ -190,7 +191,8 @@ function TrainerCard({ enc }: { enc: Extract<Encounter, { kind: 'trainer' }> }) 
           ))}
         </div>
         <div className="text-base leading-tight text-muted">
-          {t('ui.enc.paysPerKo')}
+          {/* A set opening's trainer (docs/46) pays a set prize for the win. */}
+          {enc.prize != null ? t('ui.enc.paysPrize', { gold: enc.prize }) : t('ui.enc.paysPerKo')}
           {/* Only worth saying when wild battles can be fled. */}
           {!data.config.noEscape && t('ui.enc.noRunning')}
         </div>
@@ -324,6 +326,10 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
   const skippable = canSkipCurrent()
   const fight = enc.kind !== 'center' && enc.kind !== 'item' && enc.kind !== 'casino' && enc.kind !== 'trick'
   const dark = enc.kind === 'boss' || enc.kind === 'gym'
+  // A card whose one way on is its button (the Game Corner, Trick or Treat with no skipping it): it loads and presses
+  // itself (the user's rule: no step that is only a button). A fight, or a card with a second choice, waits.
+  const waits = enc.kind === 'gym' || (enc.kind === 'boss' && !enc.returning)
+  const Primary = !fight && !skippable && !waits ? AutoButton : PixelButton
   if (typeof document === 'undefined') return null
 
   return createPortal(
@@ -370,10 +376,13 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
           {/* A team of one has no one to pick: no "Send out" at all (LeadPicker draws nothing either). */}
           {fight && save && teamOf(save).length > 1 && (
             <div className={dark ? 'bg-panel p-2 text-ink' : undefined}>
+              {/* The send-out's cards (one design for "pick a Pokémon", docs/43 §5.3): a tap picks (two, a double
+                  battle's pair), INFO opens one. */}
               <LeadPicker
                 value={lead}
                 onChange={setLead}
                 foe={foeTypes(data, enc)}
+                go
                 {...(double && { pair: { value: leads, onChange: setLeads } })}
               />
             </div>
@@ -384,7 +393,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
           className={cx('flex gap-2 border-t-[3px] p-3', dark ? 'border-shadow' : 'border-edge')}
           style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
         >
-          <PixelButton
+          <Primary
             variant="primary"
             size="lg"
             className="flex-1"
@@ -402,7 +411,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
                     ? 'ui.trick.start'
                     : 'ui.enc.fight',
             )}
-          </PixelButton>
+          </Primary>
           {skippable && (
             <PixelButton size="lg" className="flex-1" onClick={skipEncounter}>
               {fight && <PixelIcon name="run" size={20} />}

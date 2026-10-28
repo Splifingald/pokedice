@@ -7,6 +7,12 @@ Each item keeps its board id (F2a, U3a…), so a change can be traced to the dec
 
 ## 1. The switches
 
+**Always on since 2026-10-28** (the user's call, when Admin → Config was made simpler): the switch is gone, the game
+keeps only the "on" path, and [`supabase/migrations/0084_switches_retired.sql`](https://github.com/Splifingald/pokedice/blob/version/2_4/supabase/migrations/0084_switches_retired.sql) deletes their three rows
+(`supabase/seed.sql` carries it inlined). Settings keeps
+the player's own Music and Vibration rows (Vibration where the device can vibrate). What follows is how they were
+gated until then.
+
 Three admin switches (Admin → Config), each **Off / On for admin / On for everyone** (docs/15 §20). Unlike other
 features they ship **On for everyone**: the user chose to release 2.3 with them on (migration 0079, `DEFAULT_CONFIG`).
 The admin can still switch each off.
@@ -23,6 +29,8 @@ purely sensory, so they have **no rules pop-up and no INFO button** (docs/15 §2
 
 The bug fixes, the accessibility fixes and the simplifications of existing screens have no switch: they change
 features already there.
+
+Later passes put their juice under the same **Game feel** switch: the way into a fight and the round's pip (docs/42 §6).
 
 The new sounds live in `src/audio/feel.ts` (`feelSound`), built from `sfx.ts`'s `tone` and `hiss` on the same Sound
 switch; the haptics in `src/lib/haptics.ts` (`haptic(cue)`).
@@ -409,6 +417,8 @@ dice logo": each motion level with REPLAY, the throw frozen at 0.3, 0.7, 1.2, 1.
 one. Tests: `tests/dice-logo.test.ts`, `e2e/title.spec.ts`. Setting it up: nothing new, the Game feel switch (§10).
 
 ## 10. Setting it up
+
+Now: run 0084 (§1) once the client is deployed; nothing to switch. Before it:
 
 1. Run migration `supabase/migrations/0074_game_feel.sql` in the Supabase SQL editor
    (<https://github.com/Splifingald/pokedice/blob/ccr-dea77ca0-k5idj5/supabase/migrations/0074_game_feel.sql>): it adds

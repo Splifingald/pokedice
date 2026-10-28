@@ -85,31 +85,35 @@ test('a wild pair: no pop-up, two leads, four on the stage, a target, a throw at
 })
 
 /**
- * Attack until both are down, then throw at each one; returns how many throws were made. The rewards never show
- * between the two throws: the second follows the first at once.
+ * Attack until both are down, then the throw at each one; returns how many throws the rewards show (a catch or a flight
+ * each). A throw that can't miss goes on by itself, and its CATCH presses itself (the rework): throws are counted on
+ * the card, not by clicks. The rewards never show between the two throws: they come once, after the last.
  */
 async function fightAndCatch(page: Page): Promise<number> {
   const attack = page.getByRole('button', { name: 'ATTACK', exact: true })
-  const roll = page.getByRole('button', { name: /^(ROLL TO CATCH|CATCH)$/ })
-  const victory = page.getByRole('heading', { name: 'VICTORY!' })
-  let throws = 0
+  // A choice of balls is a row of throws (docs/42): the first one throws.
+  const roll = page.getByRole('button', { name: /^(ROLL TO CATCH|CATCH)$|Throw it$/ }).first()
+  const next = page.getByRole('button', { name: 'CONTINUE', exact: true })
+  // The result shows in the battle's panel (the rework): its region, named as the old card's title was.
+  const victory = page.getByRole('region', { name: 'VICTORY!' })
+  let shot = false
   const until = Date.now() + 180_000
   while (Date.now() < until && !(await victory.isVisible())) {
     // isVisible() first: isEnabled() would wait for a button that isn't there.
     if ((await roll.isVisible()) && (await roll.isEnabled())) {
-      if (process.env.SHOTS && throws === 0) await page.screenshot({ path: `${process.env.SHOTS}/double-catch.png` })
-      await roll.click()
-      throws += 1
-      // The throw's result, then on: the other one's throw, or the rewards.
-      const next = page.getByRole('button', { name: 'CONTINUE', exact: true })
-      await expect(next.first()).toBeVisible({ timeout: 15_000 })
-      if (throws === 1) await expect(victory).toHaveCount(0)
-      if (!(await victory.isVisible())) await next.first().click()
-    } else if ((await attack.isVisible()) && (await attack.isEnabled())) await attack.click()
+      if (process.env.SHOTS && !shot) await page.screenshot({ path: `${process.env.SHOTS}/double-catch.png` })
+      shot = true
+      await roll.click({ timeout: 3000 }).catch(() => {})
+    } else if (await next.first().isVisible()) await next.first().click({ timeout: 3000 }).catch(() => {})
+    else if ((await attack.isVisible()) && (await attack.isEnabled())) await attack.click()
     await page.waitForTimeout(250)
   }
   await expect(victory).toBeVisible()
-  return throws
+  // The card shows its pieces one after another: the throws' once it has shown them all (a new catch keeps it up).
+  const throws = async () => (await victory.getByText('Gotcha!').count()) + (await victory.getByText(/ fled…$/).count())
+  await expect.poll(throws, { timeout: 15_000 }).toBeGreaterThan(0)
+  await page.waitForTimeout(2500)
+  return throws()
 }
 
 test('a wild pair with a full team: both throws, then "Add to team?" for each, one after the other', async ({ page }) => {
@@ -126,13 +130,13 @@ test('a wild pair with a full team: both throws, then "Add to team?" for each, o
   const [a, b] = title.replace(/^.* against /, '').split(' & ')
   const throws = await fightAndCatch(page)
 
-  const victory = page.getByRole('heading', { name: 'VICTORY!' })
+  const victory = page.getByRole('region', { name: 'VICTORY!' })
   const question = page.getByText(/^Add .+ to your team\?$/)
   await expect(question).toBeVisible({ timeout: 20_000 })
   if (a !== b) {
-    // Two species: the first catch's question, then (CONTINUE sends it to the Box) the second's, then on.
+    // Two species: the first catch's question, then (Next sends it to the Box) the second's, then on.
     expect(throws).toBe(2)
-    await page.getByRole('button', { name: 'CONTINUE', exact: true }).click()
+    await page.getByRole('button', { name: 'Next ▸', exact: true }).click()
     await expect(victory).toBeVisible()
     await expect(question).toBeVisible()
     await page.getByRole('button', { name: /^Swap out Charizard/ }).click()
@@ -150,7 +154,7 @@ test('a wild pair with a full team: both throws, then "Add to team?" for each, o
       .toBe(1)
   }
   await expect(question).toHaveCount(0)
-  await page.getByRole('button', { name: 'CONTINUE', exact: true }).click()
+  await page.getByRole('button', { name: 'Next ▸', exact: true }).click()
   await expect(victory).toHaveCount(0)
   expect(errors).toEqual([])
 })
@@ -159,10 +163,10 @@ test('switched off, the same card is one wild Pokémon', async ({ page }) => {
   await boot(page, strongSave(), EVENTS_ON)
   await page.goto('/home')
   await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
-  const preview = page.getByRole('dialog', { name: 'You encountered a wild Pokémon!' })
-  await expect(preview).toBeVisible()
-  await expect(preview.getByText('DOUBLE BATTLE')).toHaveCount(0)
-  await expect(preview.getByText('Send out:', { exact: true })).toBeVisible()
+  // One wild Pokémon goes straight into its fight (the rework): no pop-up, the send-out step for the team of two.
+  await expect(page.getByRole('button', { name: /^Send out / })).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.getByText('DOUBLE BATTLE')).toHaveCount(0)
 })
 
 test('the kitchen sink shows every double battle piece, with no error', async ({ page }) => {

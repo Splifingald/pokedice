@@ -1,7 +1,7 @@
 // Rewards flying to the top bar (docs/38 F5f): a few pixel coins leave the result card's gold and land in the top
 // bar's gold counter one after another, the way a match-3 sends its coins home; each lands with a tick, the last bumps
-// the counter. Only with the Game feel switch on, never under calm or with animations off (the caller checks), and
-// only when the counter is on screen to land in.
+// the counter. Never under calm or with animations off (the caller checks), and only when the counter is on screen
+// to land in.
 import { useEffect, useLayoutEffect, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { feelSound } from '@/audio/feel'

@@ -1,8 +1,7 @@
 // The General upgrades' rules (docs/15 §20, docs/25): the special events' pop-up, once when the tab opens to the
 // player, then from the INFO button at the bottom of the tab. The numbers come from the config, so a rebalance shows
 // up in the text.
-import { useNavigate } from 'react-router-dom'
-import { charmChanceAt, charmOn, charmRulesOnly, generalCfg, generalMax } from '@/engine'
+import { charmChanceAt, charmOn, generalCfg, generalMax } from '@/engine'
 import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
 import { countdown, money, oneInText } from '@/lib/format'
@@ -13,6 +12,7 @@ import { PixelIcon } from './icons'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
 import { useMyTurn, useOnScreen } from './popupTurn'
+import { RulesCard } from './RulesCard'
 import { RulesModal, type RuleRow, type RulesPicture } from './RulesModal'
 
 /** The Battle Frontier's plaza at sunset: the grand, golden end of the game. */
@@ -78,6 +78,24 @@ export function useCharmRules(): RuleRow[] {
   ]
 }
 
+/**
+ * The General upgrades' rules where they apply (docs/43 §7): a card at the top of the Mart's General view until GOT
+ * IT, the same rows as INFO's pop-up (the Shiny Charm's alone for one who read the rest before it came).
+ */
+export function GeneralRulesCard({ charmOnly = false }: { charmOnly?: boolean }) {
+  const { t } = useT()
+  const all = useGeneralRules()
+  const charm = useCharmRules()
+  return (
+    <RulesCard
+      title={t(charmOnly ? 'ui.general.charm.name' : 'ui.upgrades.tabGeneral')}
+      icon={charmOnly ? 'sparkle' : 'navUpgrades'}
+      rules={charmOnly ? charm : all}
+      onDone={markGeneralRulesSeen}
+    />
+  )
+}
+
 export function GeneralRulesModal({
   open,
   onClose,
@@ -107,32 +125,6 @@ export function GeneralRulesModal({
 }
 
 /**
- * The General tab has opened (the admin's switch, a first badge): once, between fights, its rules and a button straight
- * to it. It takes its turn in the one-time pop-ups' queue (engine/popups.ts), never on the Upgrades page. The same
- * once for the Shiny Charm, on its own, when its switch comes on after the tab's rules were read.
- */
-export function GeneralUnlockPopup() {
-  const navigate = useNavigate()
-  const open = useMyTurn('general')
-  useOnScreen('general', open)
-  const charmOnly = useGame((s) => !!s.save && charmRulesOnly(s.save, s.data))
-  // Gone the moment its turn ends, as before the queue: its button leads to another page, which a fading pop-up
-  // would cover.
-  if (!open) return null
-  return (
-    <GeneralRulesModal
-      charmOnly={charmOnly}
-      open={open}
-      onClose={markGeneralRulesSeen}
-      onGo={() => {
-        markGeneralRulesSeen()
-        navigate('/upgrades?tab=general')
-      }}
-    />
-  )
-}
-
-/**
  * "While you were away": what an absence of an hour or more earned (less is a toast). It waits for a fight to end, and
  * takes its turn in the one-time pop-ups' queue (engine/popups.ts: what you came back to goes first). `show`: the
  * kitchen sink's, which has no queue.
@@ -144,12 +136,7 @@ export function OfflineReportModal({ show }: { show?: boolean }) {
   const open = (useMyTurn('offline') || !!show) && !!report
   useOnScreen('offline', open)
   return (
-    <Modal
-      open={open}
-      onClose={closeOfflineReport}
-      title={t('ui.extreme.away.title')}
-      className="max-w-md"
-    >
+    <Modal open={open} onClose={closeOfflineReport} title={t('ui.extreme.away.title')} className="max-w-md">
       {report && (
         <div className="flex flex-col gap-3">
           <p className="copy m-0 text-muted">{t('ui.extreme.away.for', { time: countdown(report.ms) })}</p>

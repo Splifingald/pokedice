@@ -21,7 +21,7 @@ import { DiceSet } from '@/components/DiceSet'
 import { Die } from '@/components/Die'
 import { PixelIcon } from '@/components/icons'
 import { HpBar } from '@/components/HpBar'
-import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
+import { MiniSprite } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { planScore, scoreLength, type ScoreBeat } from '@/fx/dice/score'
 import { useT } from '@/i18n/react'
@@ -106,7 +106,7 @@ const TRAY_JITTER = [step(-2), step(2), { transform: 'none' }]
 /**
  * Your dice land on their own; tap one to lift it for the reroll (red outline, ↻ tag), the combo's dice wear a gold
  * ring and gold corner brackets. The foe's dice are smaller and can't be pressed. The tray knows when the last die of
- * a throw is down (`onSettled`): with the game feel on it lands heavy; the readout waits for it.
+ * a throw is down (`onSettled`): it lands heavy; the readout waits for it.
  */
 export function DiceTray({
   tray,
@@ -118,7 +118,6 @@ export function DiceTray({
   foeName,
   children,
   onSettled,
-  feel = false,
   score: scoreIn,
   hand,
   anticipate = 0,
@@ -139,8 +138,6 @@ export function DiceTray({
   children?: ReactNode
   /** Every die of this throw is down: its trayKeyOf. */
   onSettled?: (key: string) => void
-  /** The game feel's touches (docs/38): the last die lands heavy. */
-  feel?: boolean
   /** The count-up under way: the dice's "+N", the combo's ring tier, a tier 3's shake, a tier 4's banner. */
   score?: ScoreFeed | ScoreView | null
   /** No throw on the tray yet: whose turn it is, its dice waiting in hand, face down (F8c, P1c). */
@@ -162,8 +159,8 @@ export function DiceTray({
 
   // Which of this throw's dice are down. Read through a ref: a die calls back long after the render that made it.
   const keys = tray ? tray.keys.slice(0, tray.dice.length) : []
-  const latest = useRef({ keys, foe, feel, level, onSettled })
-  latest.current = { keys, foe, feel, level, onSettled }
+  const latest = useRef({ keys, foe, level, onSettled })
+  latest.current = { keys, foe, level, onSettled }
   const down = useRef(new Set<string>())
   const [squash, setSquash] = useState<string | null>(null)
   const land = (key: string) => {
@@ -172,7 +169,7 @@ export function DiceTray({
     if (!now.keys.includes(key) || !now.keys.every((k) => down.current.has(k))) return
     down.current = new Set(now.keys)
     // The last one down lands heavy (F8b): a thud and a squash; your own dice buzz too (the haptics' own switch).
-    if (now.feel && now.level !== 'off') {
+    if (now.level !== 'off') {
       feelSound('die.landHeavy')
       setSquash(key)
     }
@@ -277,15 +274,14 @@ let runs = 0
 
 /**
  * The readout follows the dice (F2d): it shows once the last die of a throw is down (`settled`) and stays through a
- * reroll, with the roll before's numbers, until the new dice land. With the game feel on (F2a), each landing then plays
- * the count-up (fx/dice/score.ts): the scoring dice's "+N" a semitone apart, the combo's own beat, then the total
- * counting to the engine's damage. Nothing here decides a number: they all come from `preview`.
+ * reroll, with the roll before's numbers, until the new dice land. Each landing then plays the count-up (F2a,
+ * fx/dice/score.ts): the scoring dice's "+N" a semitone apart, the combo's own beat, then the total counting to the
+ * engine's damage. Nothing here decides a number: they all come from `preview`.
  */
 export function useDamageReveal(
   preview: Preview | null,
   settled: boolean,
   throwKey: string,
-  feel: boolean,
 ): {
   preview: Preview | null
   score: ScoreFeed | null
@@ -319,11 +315,6 @@ export function useDamageReveal(
   useEffect(() => {
     if (!preview || !settled || !sig || shown?.sig === sig) return
     setShown({ sig, preview })
-    if (!feel) {
-      setRun(null)
-      setScore(null)
-      return
-    }
     // A reroll counts on from what showed before; a fresh throw from nothing.
     const res = preview.r
     const from = shown?.preview.r.final ?? 0
@@ -401,8 +392,8 @@ function statusCount(s: StatusApplication): string | undefined {
 /**
  * Under the tray, one line led by the damage, big ("26 DMG": a button, the math behind it, shown once, under the
  * readout), the combo chip when there is one, how effective it is, and a chip per status the faces cause, with its
- * stacks, chance, level or heal. With the game feel on (`score`), the combo shows once it has landed and the damage
- * counts up to the engine's number.
+ * stacks, chance, level or heal. With a count-up under way (`score`), the combo shows once it has landed and the
+ * damage counts up to the engine's number.
  */
 export function Readout({
   preview,
@@ -465,7 +456,7 @@ export function Readout({
         <StatusChip key={s.status} status={s.status} count={statusCount(s)} />
       ))}
       {preview.recoil > 0 && (
-        <span className="w-full text-center font-pixel-sm text-[15px] leading-tight text-danger">
+        <span className="w-full text-center font-pixel-sm text-[16px] leading-tight text-danger">
           {t('ui.battle.confusedRecoil', { name: activeName, amount: preview.recoil })}
         </span>
       )}
@@ -549,70 +540,6 @@ export function TeamPips({
   )
 }
 
-/**
- * Wide screens: the team as a column of cards (sprite, name, level, HP), the same choices as the pips — tap one to send
- * it in; after a K.O. the ones that can go out pulse.
- */
-export function TeamColumn({
-  team,
-  activeUid,
-  hpOf,
-  canSwitch,
-  calling,
-  onPick,
-}: {
-  team: Battler[]
-  activeUid: string
-  hpOf: (b: Battler) => number
-  canSwitch: boolean
-  calling: boolean
-  onPick: (b: Battler) => void
-}) {
-  const { t } = useT()
-  const reduced = useGame((s) => s.settings.reducedMotion)
-  return (
-    <div role="group" aria-label={t('ui.battle.switchGroup')} className="flex flex-col gap-2">
-      {team.map((b) => {
-        const hp = hpOf(b)
-        const active = b.uid === activeUid
-        const out = hp <= 0
-        const open = canSwitch && !active && !out
-        return (
-          <button
-            key={b.uid}
-            type="button"
-            onClick={open ? blip(() => onPick(b)) : undefined}
-            aria-disabled={!open}
-            aria-label={
-              out
-                ? t('ui.battle.pipFainted', { name: b.name })
-                : t(active ? 'ui.battle.pipActive' : 'ui.battle.pipSwitch', { name: b.name, hp, max: b.maxHp })
-            }
-            className={cx(
-              'flex w-full items-center gap-2 p-1.5 text-left',
-              active ? 'bg-gold-pale shadow-card-gold' : 'bg-paper shadow-ring',
-              out && 'opacity-55 grayscale',
-              !open && 'cursor-default',
-              calling && open && !reduced && 'bt-call',
-            )}
-          >
-            <SpriteImg dex={b.dex} size={80} shiny={b.shiny} className="-my-2 shrink-0" />
-            <span className="flex min-w-0 flex-1 flex-col gap-1">
-              <span className="flex items-baseline justify-between gap-1">
-                <b className="truncate text-[19px] font-normal leading-none">{b.name}</b>
-                <span className="shrink-0 font-pixel-sm text-[14px] leading-none">
-                  {t('ui.common.level.short', { n: b.level })}
-                </span>
-              </span>
-              <HpBar hp={hp} max={b.maxHp} height={8} />
-            </span>
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
 /** The button blip before the action, as a PixelButton plays it: the pips and the Bag aren't PixelButtons (docs/38). */
 function blip(act: () => void) {
   return () => {
@@ -625,10 +552,13 @@ function blip(act: () => void) {
 export function BagButton({
   disabled,
   title,
+  keys,
   onClick,
 }: {
   disabled: boolean
   title?: string
+  /** Its keyboard shortcut, said to screen readers (the battle's B). */
+  keys?: string
   onClick: () => void
 }) {
   const { t } = useT()
@@ -637,6 +567,7 @@ export function BagButton({
       type="button"
       disabled={disabled}
       title={title}
+      aria-keyshortcuts={keys}
       onClick={blip(onClick)}
       className="inline-flex min-h-[48px] items-center gap-1.5 bg-paper py-1 pl-2 pr-3 text-[18px] leading-none text-ink shadow-card disabled:opacity-50"
     >
@@ -684,7 +615,7 @@ export function SwitchRow({
               ))}
             </span>
             <DiceSet dice={b.dice} size={20} />
-            <span className="ml-auto font-pixel-sm text-[15px] leading-none tabular-nums text-muted">
+            <span className="ml-auto font-pixel-sm text-[16px] leading-none tabular-nums text-muted">
               {b.hp}/{b.maxHp}
             </span>
           </div>
@@ -711,5 +642,36 @@ export function ZMoveButton({ hint, disabled, onClick }: { hint: string; disable
     >
       <PixelIcon name="sword" size={14} /> {t('ui.battle.zMove')}
     </PixelButton>
+  )
+}
+
+/**
+ * The battle's keys, shown discreetly on a computer (docs/43 §5.3): a line of key chips at the panel's foot, faint until
+ * the pointer or the focus is in the panel, always there with More details. Not on phones (no keyboard). The buttons
+ * carry the same keys as `aria-keyshortcuts`, so the line itself is only for the eye.
+ */
+export function KeyHints({ keys, className }: { keys: readonly (readonly [string, string])[]; className?: string }) {
+  // More details' own flag, read straight from the store (the hooks module pulls the canvas code into tests).
+  const details = useGame((s) => s.settings.details === true)
+  if (!keys.length) return null
+  return (
+    <p
+      aria-hidden
+      data-key-hints
+      className={cx(
+        'm-0 hidden flex-wrap items-center justify-center gap-x-3 gap-y-1 font-pixel-sm text-[16px] leading-none text-ink transition-opacity duration-150 lg:flex',
+        details ? 'opacity-100' : 'opacity-0 group-focus-within/panel:opacity-100 group-hover/panel:opacity-100',
+        className,
+      )}
+    >
+      {keys.map(([key, what]) => (
+        <span key={key} className="inline-flex items-center gap-1 whitespace-nowrap">
+          <kbd className="min-w-[22px] bg-paper px-1 py-0.5 text-center font-pixel-sm text-[16px] leading-none shadow-ring">
+            {key}
+          </kbd>
+          {what}
+        </span>
+      ))}
+    </p>
   )
 }

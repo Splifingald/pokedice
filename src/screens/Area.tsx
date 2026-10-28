@@ -22,6 +22,7 @@ import { TrickView } from './area/TrickView'
 import { AreaIdle } from './area/AreaIdle'
 import { CenterView } from './area/CenterView'
 import { EncounterPreview } from './area/EncounterPreview'
+import { FindView } from './area/FindView'
 import { RoundGauge } from './area/RoundGauge'
 import { AreaDetails } from './home/AreaDetails'
 import { RebattleHeader } from './events/RebattlePage'
@@ -33,7 +34,7 @@ import { AutopilotNote } from './area/AutopilotNote'
 import { useAutopilot } from './area/useAutopilot'
 
 /**
- * Encounter types, a slim banner, then the name with its round (or a checkmark) and levels, the round gauge and, where
+ * Encounter types, a slim banner, then the name and levels, the round gauge (the round's only count: the rework) and, where
  * the play style offers it (a cleared area; with Idle, any: docs/36), the auto-mode switch.
  */
 function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaProgress; teamAvg: number }) {
@@ -41,16 +42,6 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
   const data = useGame((s) => s.data)
   const autoHere = useGame((s) => !!s.save && autoAvailable(s.save, s.data, s.settings, area.id))
   const span = area.scalesToTeam ? scaledLevelSpan(area, teamAvg, data) : { min: area.minLevel, max: area.maxLevel }
-  const notes = [
-    area.scalesToTeam && t('ui.area.foesScale'),
-    progress.cleared && t('ui.area.clearedNote', { multiplier: area.backtrackMultiplier }),
-  ].filter(Boolean)
-  // "Round 2/3" while rounds are still needed; a checkmark once they're all done (secret areas: nothing).
-  // 0 rounds: a league of fights only (docs/26), nothing to count.
-  // A portal run (docs/28) has no rounds: its gauge counts the portals closed; the nightmare's (docs/30), its rounds.
-  const portal = !!portalModeOf(area, data) || !!nightmareModeOf(area, data)
-  const need = portal ? null : area.roundsToClear || null
-  const done = progress.roundsDone ?? 0
   const [details, setDetails] = useState(false)
   return (
     <section className="pixel-panel overflow-hidden p-0" aria-labelledby="area-title">
@@ -74,21 +65,6 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
                 {area.name}
               </button>
             </h1>
-            {need != null &&
-              (done >= need ? (
-                <span
-                  className="self-center bg-hp-green px-1.5 text-xl leading-tight text-ink shadow-ring"
-                  style={{ borderRadius: 2 }}
-                  title={t(`ui.area.allRoundsDone.${need === 1 ? 'one' : 'other'}`, { n: need })}
-                  aria-label={t(`ui.area.allRoundsDone.${need === 1 ? 'one' : 'other'}`, { n: need })}
-                >
-                  ✓
-                </span>
-              ) : (
-                <span className="shrink-0 text-2xl leading-none text-muted">
-                  {t('ui.area.roundOf', { n: Math.min(done + 1, need), total: need })}
-                </span>
-              ))}
           </div>
           <span className="shrink-0 text-2xl leading-none">
             {span.min === span.max
@@ -96,7 +72,6 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
               : t('ui.map.levelRange', { min: span.min, max: span.max })}
           </span>
         </div>
-        {notes.length > 0 && <div className="text-lg leading-tight text-muted">{notes.join(' · ')}</div>}
         <RoundGauge area={area} progress={progress} />
         {/* A cleared area can play itself (with Idle, any area): switched here, between its encounters, without a
             trip Home. */}
@@ -146,10 +121,22 @@ export function AreaScreen() {
   // The nightmare's area (docs/30): its way in, its intro, Darkrai's strike after a round, the waking.
   const nm = run.rebattle ? null : nightmareModeOf(area, data)
   const dream = !!nm && run.phase === 'idle' && nightmareStepDue(area, { save, data }, run)
+  // The plain page between encounters (docs/42): the area's scene with the team, as on Home, in the banner's place.
+  const sceneIdle = run.phase === 'idle' && !own && !dream && !mode && !nm && !run.rebattle
+  // A find is a step on the stage of its own (FindView), with or without the autopilot: no banner, no card.
+  const finding = run.phase === 'preview' && run.encounter?.kind === 'item'
   return (
     <div className="flex flex-col gap-4">
-      {run.rebattle ? <RebattleHeader /> : <AreaHeader area={area} progress={progress} teamAvg={teamAverageLevel(save)} />}
-      {run.phase === 'preview' && run.encounter && !(pilot && run.encounter.kind !== 'trick') && (
+      {/* The Center is laid out as a battle (the rework): its own gauge at the top, no area banner. */}
+      {run.rebattle ? (
+        <RebattleHeader />
+      ) : (
+        !(run.phase === 'center' && !pilot) &&
+        !sceneIdle &&
+        !finding && <AreaHeader area={area} progress={progress} teamAvg={teamAverageLevel(save)} />
+      )}
+      {finding && <FindView />}
+      {run.phase === 'preview' && run.encounter && !finding && !(pilot && run.encounter.kind !== 'trick') && (
         <EncounterPreview enc={run.encounter} />
       )}
       {run.phase === 'center' && !pilot && <CenterView />}
@@ -157,7 +144,7 @@ export function AreaScreen() {
       {pilot &&
         (run.phase === 'center' ||
           run.phase === 'casino' ||
-          (run.phase === 'preview' && run.encounter?.kind !== 'trick')) && <AutopilotNote />}
+          (run.phase === 'preview' && !finding && run.encounter?.kind !== 'trick')) && <AutopilotNote />}
       {/* A run that ended outside a fight (nobody left standing): its wipe card. */}
       {run.phase === 'wipe' && <WipeView />}
       {run.phase === 'idle' && own && step}
@@ -165,7 +152,7 @@ export function AreaScreen() {
       {run.phase === 'idle' && !own && !dream && (
         <>
           {mode && <PortalBonuses area={area} />}
-          <AreaIdle area={area} />
+          <AreaIdle area={area} scene={sceneIdle} />
         </>
       )}
       {mode && run.phase === 'idle' && <PortalInfo mode={mode} />}

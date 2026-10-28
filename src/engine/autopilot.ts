@@ -1,9 +1,9 @@
-// Play styles and the autopilot (docs/36): Classic, Auto on explored areas, Idle. Which areas play themselves, and
+// Play styles and the autopilot (docs/36): Auto on explored areas, Idle. Which areas play themselves, and
 // what the game does next while one does — every decision here, the screens only carry it out and pace it.
 import { catchChance, catchValueOf } from './catching'
 import { eventOpenTo } from './events'
 import { centersOn } from './extreme'
-import { ballBonus } from './items'
+import { ballBonus, isBallFor } from './items'
 import { linearAreas } from './data'
 import { nightmareModeOf } from './nightmareMode'
 import { nightmareLock } from './nightmare'
@@ -33,26 +33,20 @@ export interface AutoSettings {
 export const idleModeOn = (data: GameData): boolean => eventOpenTo(data.config.idleMode?.access, data)
 
 /**
- * The player's style. Settings from before the styles have none: their auto-mode switch lived in cleared areas, which
- * is "Auto on explored areas", so that is what they keep (on or off as it was).
+ * The player's style, "Auto on explored areas" unless Idle was picked: a new game, settings from before the styles
+ * (their auto-mode switch lived in cleared areas, so on or off as it was) and the dropped Classic all read as it.
  */
 export const playStyleOf = (s: AutoSettings): PlayStyle =>
   isPlayStyle(s.playStyle) ? s.playStyle : 'explored'
 
 /**
- * The settings a style picks: Idle starts playing at once; the other two start with auto off (Explored waits for the
- * player to switch it on in a cleared area, Classic has none).
+ * The settings a style picks: Idle starts playing at once; Explored starts with auto off, waiting for the player to
+ * switch it on in a cleared area.
  */
 export const settingsForStyle = (style: PlayStyle): Required<AutoSettings> => ({
   playStyle: style,
   autoMode: style === 'idle',
 })
-
-/** The styles a new game asks about, in order: none while the switch is off (a new game starts as it always did). */
-export const playStylesOffered = (data: GameData): PlayStyle[] => (idleModeOn(data) ? [...PLAY_STYLES] : [])
-
-/** A new game asks first only when there is a choice to make. */
-export const newGameAsksStyle = (data: GameData): boolean => playStylesOffered(data).length > 1
 
 /** What a run is: its area, and whether it is an Elite Rebattle (fights only, never on auto). */
 export interface AutoRun {
@@ -66,7 +60,7 @@ const specialArea = (area: Area | undefined, data: GameData): boolean =>
 
 /**
  * Where the auto switch is offered (the area's header, a battle's extras). Off: cleared areas, as auto-mode always was.
- * On: Classic nowhere, Explored in cleared areas, Idle everywhere but the special areas.
+ * On: Explored in cleared areas, Idle everywhere but the special areas.
  */
 export function autoAvailable(
   save: SaveData,
@@ -78,7 +72,6 @@ export function autoAvailable(
   const cleared = progressOf(save, areaId).cleared
   if (!idleModeOn(data)) return cleared
   const style = playStyleOf(s)
-  if (style === 'classic') return false
   if (
     specialArea(
       data.areas.find((a) => a.id === areaId),
@@ -140,9 +133,9 @@ export function retreatFrom(
 }
 
 /**
- * Between encounters, where the autopilot should be instead of `hereId`: back from a detour whose round is done, or on
- * to the next area of the chain once this one is cleared and the next is open (Explored: only into a cleared one, as
- * it plays nowhere else). Null: stay.
+ * Between encounters, where the autopilot should be instead of `hereId`: back from a detour whose round is done, or (Idle
+ * only) on to the next area of the chain once this one is cleared and the next is open. Auto on explored areas never
+ * moves: it plays the area the player chose. Null: stay.
  */
 export function autoTravel(
   save: SaveData,
@@ -157,11 +150,11 @@ export function autoTravel(
     const back = data.areas.find((a) => a.id === d.from)
     return { areaId: back && enterable(save, data, back, now) ? back.id : hereId, detour: null }
   }
-  if (!progressOf(save, hereId).cleared) return null
+  // Auto-mode stays in the area the player put it in (the user's call, 2026-10-27); only Idle moves on.
+  if (style !== 'idle' || !progressOf(save, hereId).cleared) return null
   const { chain, idx } = chainOf(data, hereId)
   const next = idx >= 0 ? chain[idx + 1] : undefined
   if (!next || !enterable(save, data, next, now)) return null
-  if (style === 'explored' && !progressOf(save, next.id).cleared) return null
   return { areaId: next.id, detour: null }
 }
 
@@ -209,7 +202,7 @@ export function chooseIdleBall(
   const bare = catchChance(value, 0)
   if (bare >= 1) return { ball: null, chance: bare }
   const balls = Object.entries(save.inventory)
-    .filter(([k, n]) => k !== MASTER_BALL && n > 0 && data.items[k]?.effect.kind === 'ball')
+    .filter(([k, n]) => k !== MASTER_BALL && n > 0 && isBallFor(data.items[k], false))
     .map(([k]) => {
       const item = data.items[k]!
       return { k, price: item.price, bonus: ballBonus(item), chance: catchChance(value, ballBonus(item)) }
@@ -232,8 +225,6 @@ export interface AutoView {
   pendingCatch?: boolean
   /** A pop-up is open (a rules pop-up, a sheet the player opened): it has the player's attention. */
   held?: boolean
-  /** The next encounter needs energy the player hasn't got (the run's outOfEnergy). */
-  noEnergy?: boolean
   /**
    * The catch on the panel: the K.O.'d Pokémon (its species) and where its throw stands — none yet, a Bait offered,
    * kept by Capture Luck for another throw, or done (caught or fled).
@@ -248,10 +239,10 @@ export interface AutoView {
  */
 export type AutopilotStep =
   /**
-   * Nothing to do now: a fight playing, the player's choice, a pop-up, no energy, everyone resting; 'result': a throw's
+   * Nothing to do now: a fight playing, the player's choice, a pop-up, everyone resting; 'result': a throw's
    * result on the panel, which the battle screen closes once it has been seen.
    */
-  | { do: 'wait'; why: 'fight' | 'player' | 'held' | 'energy' | 'resting' | 'closed' | 'result' }
+  | { do: 'wait'; why: 'fight' | 'player' | 'held' | 'resting' | 'closed' | 'result' }
   /** Idle: throw this ball (null: none, the catch is certain without one). */
   | { do: 'throw'; ball: string | null }
   /** Idle: no throw (owned, or no ball held that could catch it): on to the result card, as a catch not on offer. */
@@ -300,7 +291,11 @@ export function autopilotStep(
     case 'stalemate':
       return { do: 'leave' }
     case 'wipe':
-      return { do: 'retreat', ...retreatFrom(save, data, v.areaId, now) }
+      // Idle falls back a step to level up; auto-mode tries again where it is.
+      return {
+        do: 'retreat',
+        ...(style === 'idle' ? retreatFrom(save, data, v.areaId, now) : { areaId: v.areaId, detour: null }),
+      }
     case 'idle': {
       if (v.held) return { do: 'wait', why: 'held' }
       const d = save.idle?.detour
@@ -311,7 +306,6 @@ export function autopilotStep(
       if (!hasAbleTeam(save) && !centersOn(save, data)) return { do: 'wait', why: 'resting' }
       // A lair with nothing left in it (every legendary caught) and nowhere open past it.
       if (isAreaClosed(save, v.areaId, data)) return { do: 'wait', why: 'closed' }
-      if (v.noEnergy) return { do: 'wait', why: 'energy' }
       return { do: 'continue' }
     }
   }

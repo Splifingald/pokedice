@@ -1,4 +1,4 @@
-// The title's logo with the game feel on (docs/38 §9): POKÉDICE as eight pixel-art dice that form as in the trailer —
+// The title's logo (docs/38 §9): POKÉDICE as eight pixel-art dice that form as in the trailer —
 // thrown in, rolling right to left, landing crooked on their letters, a white flash, gold rings — then hold. The maths
 // and the renderer (fx/dice/logo.ts, logoArt.ts) are a chunk of their own, fetched when the title shows it; this draws
 // their frames on a canvas at whole device pixels per art pixel and plays the sounds once the page's audio is open.

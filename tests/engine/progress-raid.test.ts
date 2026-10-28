@@ -3,6 +3,7 @@
 // START with empty slots offers four NPC trainers, the same four until the try starts.
 import { describe, expect, it } from 'vitest'
 import {
+  RAID_SPECIALS,
   applyProgressRaidCatch,
   createInstance,
   createRng,
@@ -52,7 +53,8 @@ const playing = (s: SaveData, id: string): SaveData => {
 describe('which bosses are raids', () => {
   it('every boss flagged Raid, while Raid Battles are on; off, every boss is fought as before', () => {
     const flagged = data.areas.flatMap((a) => (a.legendaryBoss ?? []).filter((b) => b.raid))
-    expect(progressRaids(data)).toHaveLength(flagged.length)
+    // Besides, the Mega raids (docs/40) come after their raid boss's.
+    expect(progressRaids(data).filter((r) => !r.mega)).toHaveLength(flagged.length)
     expect(progressRaids(data, 'kanto').map((r) => r.dex)).toEqual(
       expect.arrayContaining([144, 145, 146, 150]),
     )
@@ -165,7 +167,8 @@ describe('your team for a raid', () => {
     expect(raidRules(d, 144, 'progress')).toMatchObject({ level: 60, bars: 4 })
     expect(raidRules(d, 144)).toMatchObject({ level: 99 })
     expect(raidTeamCap(d, 144, 'progress')).toBe(30)
-    expect(raidTeamCap(d, 145, 'progress')).toBe(45)
+    // Without numbers of its own in Admin, a raid fights at the overhaul's (docs/40), its cap with it.
+    expect(raidTeamCap(d, 145, 'progress')).toBe(RAID_SPECIALS[145]!.level)
     expect(raidTeamCap(d, 144)).toBe(d.config.events.raid.teamCap)
   })
 })

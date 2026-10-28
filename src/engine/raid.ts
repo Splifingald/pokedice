@@ -4,7 +4,6 @@
 import { areaProgressAnywhere } from './events'
 import { createInstance, instanceStats } from './progression'
 import { raidOfDay, raidRegion, raidRules, type RaidKindOf } from './raidCalendar'
-import { raidOverhaulOn } from './raidSpecials'
 import { regionOf, worldRegionOf } from './regions'
 import { typeMultiplier } from './typechart'
 import type { GameData, PokemonInstance, RaidLock, SaveData, TodayRaid } from './types'
@@ -44,16 +43,9 @@ export const raidLocked = (save: SaveData, data: GameData, areaId: string): bool
 // Fighting it: the team you bring, the tries, and where a caught raid Pokémon goes.
 
 /**
- * The level a Pokémon needs to be recommended for a raid (the user's rule, 2026-10-16), or the raid's cap if lower. With
- * the raid overhaul on (docs/40), the raid's own level instead: its team cap.
- */
-export const RAID_RECOMMENDED_LEVEL = 50
-
-/**
- * A Pokémon worth bringing to this raid (the green thumb, docs/18 §3): at Lv.50 or more (a raid capped lower: at
- * its cap, so the rule still means "at full strength"), and one of its typed dice, at its own level (the cap leaves
- * its dice alone), hits the raid Pokémon super effectively on the type chart. The raid's own matchups
- * (`sideTypes`) only scale how much.
+ * A Pokémon worth bringing to this raid (the green thumb, docs/18 §3): at the raid's own level, its team cap (the raid
+ * overhaul, docs/40), and one of its typed dice, at its own level (the cap leaves its dice alone), hits the raid
+ * Pokémon super effectively on the type chart. The raid's own matchups (`sideTypes`) only scale how much.
  */
 export function raidRecommended(
   data: GameData,
@@ -62,9 +54,7 @@ export function raidRecommended(
   cap: number,
 ): boolean {
   const boss = data.species[bossDex]
-  // The raid overhaul (docs/40): at the raid's own level, its team cap.
-  const level = raidOverhaulOn(data) ? cap : Math.min(RAID_RECOMMENDED_LEVEL, cap)
-  if (!boss || !data.species[mon.dex] || mon.level < level) return false
+  if (!boss || !data.species[mon.dex] || mon.level < cap) return false
   const foe = boss.type2 ? [boss.type1, boss.type2] : [boss.type1]
   const { dice } = instanceStats(mon, data)
   return dice.some(

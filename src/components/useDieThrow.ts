@@ -1,5 +1,5 @@
 // A die thrown as a recorded throw (docs/37): the resting die hides (its place and its focus kept) while a decorative
-// canvas plays the throw over it, then shows again. Behind the admin's switch; with it off the die tumbles as before.
+// canvas plays the throw over it, then shows again. With motion off, or no face to land on, the die tumbles instead.
 import {
   createContext,
   useContext,
@@ -9,7 +9,7 @@ import {
   useState,
   type RefObject,
 } from 'react'
-import { diceThrowsOn, type Face } from '@/engine'
+import type { Face } from '@/engine'
 import type { DieLook } from '@/fx/dice/cube'
 import type { ThrowLevel } from '@/fx/dice/solve'
 import { useMotion } from '@/lib/motion'
@@ -17,11 +17,10 @@ import { usePace } from '@/lib/pace'
 import { useGame } from '@/store/game'
 
 /**
- * The Kitchen Sink's controls: the throw on whatever the switch says, a motion level, slow motion, a frozen frame.
- * `quiet`: no bounce clicks (How to play's cards, docs/38 §8b), everything else as the switch and the motion say.
+ * The Kitchen Sink's controls: a motion level, slow motion, a frozen frame. `quiet`: no bounce clicks (How to play's
+ * cards, docs/38 §8b), everything else as the motion says.
  */
 export interface DiceLab {
-  on?: boolean
   level?: ThrowLevel | 'off'
   speed?: number
   freeze?: number
@@ -31,7 +30,7 @@ export const DiceLabContext = createContext<DiceLab | null>(null)
 
 type Player = typeof import('@/fx/dice/player')
 let player: Promise<Player> | null = null
-/** The throws, their renderer and their player: one lazy chunk, fetched once the switch is on. */
+/** The throws, their renderer and their player: one lazy chunk, fetched once a die is on screen. */
 export function loadDicePlayer(): Promise<Player> {
   player ??= import('@/fx/dice/player').catch((e: unknown) => {
     player = null
@@ -68,7 +67,6 @@ export interface DieThrowArgs {
  */
 export function useDieThrow(a: DieThrowArgs): { active: boolean; flying: boolean } {
   const lab = useContext(DiceLabContext)
-  const on = useGame((s) => diceThrowsOn(s.data))
   const faces = useGame((s) => s.data.diceTypes[a.type as keyof typeof s.data.diceTypes]?.faces)
   const { level, calm } = useMotion()
   const pace = usePace()
@@ -82,7 +80,7 @@ export function useDieThrow(a: DieThrowArgs): { active: boolean; flying: boolean
       : calm
         ? 'calm'
         : level
-  const active = (lab?.on ?? on) && a.rollKey !== undefined && !!a.face && throwLevel !== null
+  const active = a.rollKey !== undefined && !!a.face && throwLevel !== null
   const [landed, setLanded] = useState<string | number | undefined>(undefined)
   const flying = active && landed !== a.rollKey
 
@@ -91,8 +89,8 @@ export function useDieThrow(a: DieThrowArgs): { active: boolean; flying: boolean
   now.current = { a, faces, throwLevel, pace, lab }
 
   useEffect(() => {
-    if (on || lab?.on) void loadDicePlayer().catch(() => {})
-  }, [on, lab?.on])
+    void loadDicePlayer().catch(() => {})
+  }, [])
 
   useLayoutEffect(() => {
     if (!active) return

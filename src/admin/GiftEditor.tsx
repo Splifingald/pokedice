@@ -9,6 +9,7 @@ import { PixelButton } from '@/components/PixelButton'
 import { SearchSelect } from '@/components/SearchSelect'
 import { SpriteImg } from '@/components/SpriteImg'
 import {
+  GIFT_CURRENT,
   GIFT_GOLD_MAX,
   GIFT_LATEST,
   GIFT_MAX,
@@ -26,7 +27,11 @@ import { useConfigRow } from './sections/ConfigSection'
 import { AccessSwitch, inputCls, NumInput, PokemonPicker } from './widgets'
 
 export const regionLabel = (data: GameData, r: GiftRegion) =>
-  r === GIFT_LATEST ? 'their latest region' : (data.regions.find((x) => x.id === r)?.name ?? r)
+  r === GIFT_LATEST
+    ? 'their latest region'
+    : r === GIFT_CURRENT
+      ? 'the region they play when they open it'
+      : (data.regions.find((x) => x.id === r)?.name ?? r)
 
 /** "Rare Candy ×5" / "Pikachu Lv.20 ✦ shiny" / "₽5,000". */
 export const giftName = (data: GameData, g: Gift) =>
@@ -111,6 +116,7 @@ function RegionSelect({
   return (
     <select className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
       <option value={GIFT_LATEST}>Their latest region</option>
+      <option value={GIFT_CURRENT}>The region they play</option>
       {realRegions(data).map((r) => (
         <option key={r.id} value={r.id}>
           {r.name}

@@ -18,37 +18,31 @@ test('new game → first battle → win', async ({ page }) => {
   await page.addInitScript((s) => localStorage.setItem('pokedice.settings', s), FAST)
   await page.goto('/')
   await page.getByRole('button', { name: 'NEW GAME' }).click()
-  await page.getByRole('button', { name: 'Skip intro' }).click()
-  await expect(page.getByRole('heading', { name: 'Select your character' })).toBeVisible()
-  // The name is filled in with the character's own, and follows a switch until the player types one (docs/38 U1f).
-  await expect(page.getByLabel('Your name')).toHaveValue('Red')
-  await expect(page.getByRole('button', { name: 'NEXT ▸' })).toBeEnabled()
-  await page.getByRole('radio', { name: 'Character 2' }).click()
-  await expect(page.getByLabel('Your name')).toHaveValue('Leaf')
-  await page.getByLabel('Your name').fill('Sam')
-  await page.getByRole('radio', { name: 'Character 1' }).click()
-  await expect(page.getByLabel('Your name')).toHaveValue('Sam')
-  await page.getByRole('radio', { name: 'Character 2' }).click()
-  await page.getByRole('button', { name: 'NEXT ▸' }).click()
-  // The professor's lab: three Poké Balls on the table; the third holds Squirtle.
+  // The rework: no intro and no character screen (Red, whose look and name change on the trainer card): the lab at
+  // once, three Poké Balls on the table; the third holds Squirtle.
   await page.getByRole('button', { name: 'Poké Ball 3 of 3' }).click()
   await page.getByRole('button', { name: 'Pick Squirtle' }).click()
-  await page.getByRole('button', { name: /let's go/i }).click()
-  // A new game lands on Home, the area hub: CONTINUE plays the area you're in.
-  await expect(page).toHaveURL(/\/home$/)
-  await expect(page.getByRole('heading', { name: /^Exploring / })).toBeAttached()
+  // LET'S GO! waits for the tap (no button presses itself, 2026-10-27), then the first area.
+  await page.getByRole('button', { name: /^let's go/i }).click()
+  await expect(page).toHaveURL(/\/area$/)
+  // Every round opens with its Pokémon Center, even at full HP (the user's call, 2026-10-27): CONTINUE moves on.
+  await expect(page.getByText('Pokémon Center', { exact: true })).toBeVisible({ timeout: 15_000 })
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeVisible({ timeout: 20_000 })
+
+  // The fight to its end; the result shows in the battle's panel, NEXT and BACK at its foot.
+  const next = page.getByRole('button', { name: 'Next ▸', exact: true })
+  const until = Date.now() + 90_000
+  while (Date.now() < until) {
+    if (await next.isVisible()) break
+    await clickAny(page, ['ATTACK', 'CATCH', 'CONTINUE', 'TRY AGAIN', 'SKIP TURN'])
+    await page.waitForTimeout(60)
+  }
+  await expect(next).toBeVisible()
+  await expect(page.getByText(/\+\d+ XP/).first()).toBeVisible()
   // No badge yet: the leaderboard is locked.
   await page.goto('/leaderboard')
   await expect(page.getByText('Win your first badge to open the leaderboard')).toBeVisible()
-  await page.goto('/home')
-
-  for (let i = 0; i < 400; i++) {
-    if (await page.getByText('VICTORY!').isVisible()) break
-    await clickAny(page, ['EXPLORE', 'ENTER', 'PICK IT UP', 'ROLL TO CATCH', 'CATCH', 'CONTINUE', 'TRY AGAIN', 'FIGHT', 'SKIP TURN', 'ATTACK'])
-    await page.waitForTimeout(60)
-  }
-  await expect(page.getByText('VICTORY!')).toBeVisible()
-  await expect(page.getByText(/\+\d+ XP/).first()).toBeVisible()
 })
 
 test('buy an upgrade', async ({ page }) => {
@@ -61,8 +55,10 @@ test('buy an upgrade', async ({ page }) => {
     },
     [JSON.stringify(save), FAST],
   )
+  // Upgrades is the Mart's tab now (docs/43 §3): the old address opens it there.
   await page.goto('/upgrades')
-  await expect(page.getByRole('heading', { name: 'Upgrades' })).toBeVisible()
+  await expect(page).toHaveURL(/\/shop\?tab=upgrades/)
+  await expect(page.getByRole('tab', { name: /^Upgrades/ })).toHaveAttribute('aria-selected', 'true')
   await page.getByRole('button', { name: /^₽5 Upgrade/ }).first().click() // Pair → Lv.2 costs 5
   await expect(page.getByLabel('495 Pokédollars').first()).toBeVisible()
   await expect(page.getByText(/\+3 damage.*\+4/).first()).toBeVisible()
@@ -145,7 +141,8 @@ test('the avatar drawer opens the profile, the guide and the settings', async ({
 
   // The card: the player's name and, among its numbers, the badges won in every region (none yet).
   await expect(card.getByText('Sam', { exact: true })).toBeVisible()
-  await expect(card.getByRole('term').filter({ hasText: 'Badges' })).toBeVisible()
+  // The card is compact (docs/43 §5.9): the badges as a chip beside the name; the other numbers fold behind Stats.
+  await expect(card.getByRole('img', { name: 'Badges: 0' })).toBeVisible()
   await expect(card.getByRole('heading', { name: 'Badge case' })).toHaveCount(0)
   await page.keyboard.press('Escape')
 

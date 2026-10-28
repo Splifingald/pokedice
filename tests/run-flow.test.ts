@@ -81,7 +81,10 @@ describe('run flow', () => {
       } else if (run.phase === 'center') finishCenter()
       else if (run.phase === 'wipe') {
         wipes++
+        // Battles reseed from a random number, so a seeded run can still lose one; TRY AGAIN leaves the area and the
+        // player walks back in.
         afterWipe()
+        enterArea(a1!.id)
       } else if (run.phase === 'stalemate') throw new Error('unexpected stalemate')
     }
     const save = useGame.getState().save!
@@ -238,7 +241,11 @@ describe('run flow', () => {
         if (run.pendingCatchId) resolveCatch(null)
         continueAfterVictory()
       } else if (run.phase === 'center') finishCenter()
-      else if (run.phase === 'wipe') afterWipe()
+      else if (run.phase === 'wipe') {
+        // As above: a lost fight leaves the area, and the player walks back in.
+        afterWipe()
+        enterArea(a1!.id)
+      }
     }
     expect(useGame.getState().run.phase).toBe('victory')
     expect(isAreaUnlocked(useGame.getState().save!, a2!.id, data)).toBe(true)

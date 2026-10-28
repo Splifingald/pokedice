@@ -1,6 +1,6 @@
 // The game feel's dice and readout (docs/38 §3) in a real battle: on a tall phone the dice are bigger, the readout
 // counts up to the engine's damage once the dice are down ("N DMG", no grey NO COMBO), a picked die wears its ↻ tag,
-// the last reroll says so in gold; and on a 360×640 phone the battle still fits with the switch on.
+// the last reroll says so in gold; and on a 360×640 phone the battle still fits.
 import { expect, test, type Page } from '@playwright/test'
 import { EVENTS_ON, makeSave, mockSupabase, smallControls } from './helpers'
 
@@ -9,7 +9,7 @@ const MOTION_ON = JSON.stringify({ sfx: false, sound: false, reducedMotion: fals
 async function boot(page: Page, width: number, height: number) {
   await page.setViewportSize({ width, height })
   await mockSupabase(page)
-  const config = JSON.stringify({ ...EVENTS_ON, gameFeel: { access: 'all' } })
+  const config = JSON.stringify(EVENTS_ON)
   await page.addInitScript(
     ([s, f, c]) => {
       localStorage.setItem('pokedice.save', s!)
@@ -71,8 +71,8 @@ test('a tall phone: bigger dice, the count-up to the engine damage, a pick, LAST
   expect(box!.width).toBeGreaterThanOrEqual(64)
   // The actions sit low, right over the Bag row.
   const atk = await attack(page).boundingBox()
-  const history = await page.getByRole('button', { name: 'Battle history' }).boundingBox()
-  expect(history!.y - (atk!.y + atk!.height)).toBeLessThan(40)
+  const bag = await page.getByRole('button', { name: 'Bag' }).boundingBox()
+  expect(bag!.y - (atk!.y + atk!.height)).toBeLessThan(40)
 
   await tray(page).nth(0).click()
   await expect(tray(page).nth(0)).toHaveAttribute('aria-pressed', 'true')
@@ -84,7 +84,7 @@ test('a tall phone: bigger dice, the count-up to the engine damage, a pick, LAST
   await expect(page.getByRole('button', { name: 'LAST REROLL' })).toBeVisible()
 })
 
-test('a 360×640 phone: the battle still fits with the game feel on', async ({ page }) => {
+test('a 360×640 phone: the battle still fits', async ({ page }) => {
   await boot(page, 360, 640)
   await toBattle(page)
   await page.waitForTimeout(1200)
@@ -92,8 +92,8 @@ test('a 360×640 phone: the battle still fits with the game feel on', async ({ p
   if (await gotIt.isVisible().catch(() => false)) await gotIt.click()
   const box = await attack(page).boundingBox()
   expect(box!.y + box!.height).toBeLessThanOrEqual(640)
-  const history = await page.getByRole('button', { name: 'Battle history' }).boundingBox()
-  expect(history!.y + history!.height).toBeLessThanOrEqual(640)
+  const bag = await page.getByRole('button', { name: 'Bag' }).boundingBox()
+  expect(bag!.y + bag!.height).toBeLessThanOrEqual(640)
   const scroll = await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight)
   expect(scroll).toBeLessThanOrEqual(0)
   expect(await smallControls(page)).toEqual([])

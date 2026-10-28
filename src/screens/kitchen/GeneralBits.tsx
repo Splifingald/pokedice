@@ -90,7 +90,7 @@ export function GeneralBits() {
           <ul className="m-0 grid list-none p-0">
             <UpCard u={u} gold={gold} />
           </ul>
-          <small className="font-pixel-sm text-[14px] text-muted">{label}</small>
+          <small className="font-pixel-sm text-[16px] text-muted">{label}</small>
         </div>
       ))}
       <div className="flex flex-wrap gap-2">
@@ -134,10 +134,10 @@ export function GeneralBits() {
         <span className="bg-gold-pale px-1.5">
           <TrainerName name="Sabrina" rich />
         </span>
-        <span className="light-scope w-fit bg-[#dde5f0] px-[5px] font-pixel-sm text-[12px] text-ink">
+        <span className="light-scope w-fit bg-[#dde5f0] px-[5px] font-pixel-sm text-tag text-ink">
           <TrainerName name="Koga" rich />
         </span>
-        <span className="font-pixel-sm text-[15px] text-muted">
+        <span className="font-pixel-sm text-[16px] text-muted">
           <NameIn name="Misty" rich text={(name) => t('ui.trades.whose', { name })} />
         </span>
       </div>

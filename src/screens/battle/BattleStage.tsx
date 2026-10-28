@@ -4,7 +4,7 @@
 import { AnimatePresence, motion, steps } from 'framer-motion'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { flushSync } from 'react-dom'
-import { gameFeelOn, type Battler, type Side } from '@/engine'
+import type { Battler, Side } from '@/engine'
 import { AreaArt } from '@/components/AreaArt'
 import { PixelIcon, STATUS_ICON } from '@/components/icons'
 import { RaidStageArt, useStageDistortion } from '@/components/PortalFx'
@@ -13,7 +13,15 @@ import { StageCanvas } from '@/components/StageCanvas'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { artPlacement, battleWindow, type AreaPicture } from '@/fx/areaArt'
 import { background, setArtUnderStage, zones } from '@/fx/scenes'
-import { loadSprite, placeSprite, spriteKey, stageSprite } from '@/fx/sprites'
+import {
+  loadSprite,
+  placeSprite,
+  resetLive,
+  spriteError,
+  spriteKey,
+  stageSprite,
+  type LiveSprite,
+} from '@/fx/sprites'
 import { H, quicken, W, type Hud, type Timeline } from '@/fx/timeline'
 import { attackTimeline } from '@/fx/timelines/attacks'
 import { gmaxEndTimeline, gmaxFor, megaFor, unleashTimeline } from '@/fx/timelines/forms'
@@ -21,6 +29,7 @@ import { shinyTimeline } from '@/fx/timelines/shiny'
 import { zAwayTimeline, zMoveTimeline, zStrikeTimeline } from '@/fx/timelines/zmove'
 import { usePace } from '@/lib/pace'
 import { useMotion } from '@/lib/motion'
+import { useShowdownDown, watchShowdown } from '@/lib/showdownReach'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { finalBlow, landHit, type Fx, type Scene } from './useBattleAnimator'
@@ -88,6 +97,23 @@ function Backdrop({ calm }: { calm: boolean }) {
   }, [calm])
   return (
     <canvas ref={ref} width={W} height={H} aria-hidden className="pixelated absolute inset-0 h-full w-full" />
+  )
+}
+
+/**
+ * The fight's ground without a fight: the drawn background, the area's picture over it once loaded, filling the 3:2
+ * box it is put in (an area step on the stage: a find, docs/43). `zones`: the two Pokémon's translucent spots on the
+ * picture's ground, as in a fight; a step with no Pokémon on it leaves them out.
+ */
+export function StageBackground({ art, zones = true }: { art: AreaPicture | null; zones?: boolean }) {
+  const { calm } = useMotion()
+  const [shown, setShown] = useState(false)
+  return (
+    <>
+      <Backdrop calm={calm || shown} />
+      {art && <AreaArt key={art.id} src={art.url} place={artPlacement(battleWindow(art))} onShown={() => setShown(true)} />}
+      {shown && zones && <Zones />}
+    </>
   )
 }
 
@@ -164,13 +190,13 @@ function Mon({
   hostClass = 'portal-glitch-host',
   place,
   front = true,
-  feel = false,
+  live,
 }: {
   b: Battler
   side: Side
   scale: number
-  /** The game-feel pass (docs/38): a K.O. drops it through its platform in four steps. */
-  feel?: boolean
+  /** A move is playing and moves this sprite, kept animated (`LiveSprite`), instead of a still copy on the canvas. */
+  live?: Map<string, LiveSprite>
   /** A double battle's spot for it (docs/33); it slides there when the pair in front changes. */
   place?: Place
   /** The fx aimed at its side (a hit, a status, a number) play on it: the one in front of a double battle. */
@@ -196,15 +222,30 @@ function Mon({
   const { level } = useMotion()
   const still = level === 'off'
   const back = side === 'player'
-  const s = useMemo(() => stageSprite(b.dex, back, b.shiny), [b.dex, back, b.shiny])
+  // Showdown failing or stalling brings the local sprite, placed as it stands (src/lib/showdownReach.ts).
+  const down = useShowdownDown()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const s = useMemo(() => stageSprite(b.dex, back, b.shiny), [b.dex, back, b.shiny, down])
   const at = place ?? (back ? LAYOUT.own : LAYOUT.foe)
   const raw = placeSprite(s, at.x, at.y)
   // Scaled about its feet, so it stands on the same spot.
   const k = place?.k ?? 1
   const box = { left: at.x + (raw.left - at.x) * k, top: at.y + (raw.top - at.y) * k, w: raw.w * k, h: raw.h * k }
   const flash = useFlash(fx.flash?.target === side && front ? fx.flash.id : null, still)
+  const liveBox = useRef<HTMLSpanElement>(null)
+  const liveKey = spriteKey(b.dex, back, b.shiny)
+  useLayoutEffect(() => {
+    const el = liveBox.current
+    if (!live || !el) return
+    const entry: LiveSprite = { el, at, scale }
+    live.set(liveKey, entry)
+    return () => {
+      live.delete(liveKey)
+      resetLive(entry)
+    }
+  }, [live, liveKey, at, scale])
   // Worn out, waiting for the ball: the animated sprite stops on the frame it was showing (a still copy on a canvas).
-  const img = useRef<HTMLImageElement>(null)
+  const img = useRef<HTMLImageElement | null>(null)
   const frozen = useRef<HTMLCanvasElement>(null)
   useEffect(() => {
     const im = img.current
@@ -240,21 +281,19 @@ function Mon({
         initial={still ? false : back ? { opacity: 0, scale: 0 } : { opacity: 0, x: 60 * scale }}
         animate={
           fainted
-            ? feel
-              ? // Down through its platform in four steps, its bottom cut away as it goes (the games' fall).
-                {
-                  opacity: 1,
-                  y: [0, box.h * scale],
-                  clipPath: [UNCUT, SUNK],
-                  transition: { duration: still ? 0 : 0.4 * pace, ease: steps(4) },
-                }
-              : { opacity: 0, y: box.h * scale * 0.4, transition: { duration: still ? 0 : 0.6 * pace } }
+            ? // Down through its platform in four steps, its bottom cut away as it goes (the games' fall, docs/38).
+              {
+                opacity: 1,
+                y: [0, box.h * scale],
+                clipPath: [UNCUT, SUNK],
+                transition: { duration: still ? 0 : 0.4 * pace, ease: steps(4) },
+              }
             : !shown
               ? {
                   opacity: 0,
                   scale: back ? 0 : 1,
                   x: back ? 0 : 60 * scale,
-                  ...(feel && { clipPath: UNCUT }),
+                  clipPath: UNCUT,
                   transition: { duration: 0 },
                 }
               : worn
@@ -265,7 +304,7 @@ function Mon({
                     y: box.h * scale * 0.05,
                     rotate: 8,
                     scale: 1,
-                    ...(feel && { clipPath: UNCUT }),
+                    clipPath: UNCUT,
                     transition: { duration: still ? 0 : 0.6 * pace },
                   }
               : {
@@ -274,20 +313,26 @@ function Mon({
                   y: 0,
                   scale: 1,
                   // Whole again (sent back out, revived): a K.O.'s drop cut it away.
-                  ...(feel && { clipPath: UNCUT }),
+                  clipPath: UNCUT,
                   transition: { duration: still ? 0 : (back ? 0.25 : 0.45) * pace, ease: 'backOut' },
                 }
         }
       >
+        {/* Moved by a move's timeline while it plays (`live`), about its feet. */}
+        <span
+          ref={liveBox}
+          className="absolute inset-0 block"
+          style={{ transformOrigin: `${((s.artX + s.artW / 2) / s.w) * 100}% ${((s.h - s.below) / s.h) * 100}%` }}
+        >
         <img
-          ref={img}
+          ref={(el) => {
+            img.current = el
+            watchShowdown(el)
+          }}
           src={s.url}
           alt=""
           draggable={false}
-          onError={(e) => {
-            if (s.fallback && e.currentTarget.src !== new URL(s.fallback, location.href).href)
-              e.currentTarget.src = s.fallback
-          }}
+          onError={spriteError(s)}
           className="pixelated absolute inset-0 h-full w-full max-w-none"
           // A flash (a faint, a form change with no timeline) turns the sprite into a white silhouette for a moment.
           style={{
@@ -296,6 +341,7 @@ function Mon({
             opacity: worn ? 0 : 1,
           }}
         />
+        </span>
         {/* Worn out: the frozen frame, all grey. */}
         <canvas
           ref={frozen}
@@ -367,9 +413,7 @@ function DoubleMons({
   tapLabel,
   onAim,
   aimLabel,
-  feel,
 }: {
-  feel: boolean
   own: Battler
   foe: Battler
   ownBack: Battler | null
@@ -428,7 +472,6 @@ function DoubleMons({
             hidden={front ? playing : overlay && !wornBack}
             worn={wornHere}
             fx={fx}
-            feel={feel}
             place={place}
             front={front}
             onTap={
@@ -450,10 +493,10 @@ const asShown = (b: Battler, fx: Fx): Battler => {
 }
 
 /**
- * The timeline for a scene of the log, and the sprites it needs loaded first. With the game-feel pass (docs/38) a hit
- * lands as hard as the log says (`power`) and settles half a second after its last hit (`trim`).
+ * The timeline for a scene of the log, and the sprites it needs loaded first. A hit lands as hard as the log says
+ * (`power`) and settles half a second after its last hit (`trim`, docs/38).
  */
-function useSceneTimeline(scene: Scene | null, own: Battler, foe: Battler, short: boolean, feel: boolean) {
+function useSceneTimeline(scene: Scene | null, own: Battler, foe: Battler, short: boolean) {
   const data = useGame((s) => s.data)
   return useMemo(() => {
     if (!scene) return null
@@ -472,8 +515,8 @@ function useSceneTimeline(scene: Scene | null, own: Battler, foe: Battler, short
         type: scene.type ?? 'base',
         damage: scene.damage,
         short,
-        power: feel ? scene.hit?.power : undefined,
-        trim: feel,
+        power: scene.hit?.power,
+        trim: true,
       })
     } else if (scene.kind === 'zstrike') {
       timeline = zStrikeTimeline({
@@ -484,8 +527,8 @@ function useSceneTimeline(scene: Scene | null, own: Battler, foe: Battler, short
         damage: scene.damage,
         from: scene.how,
         short,
-        power: feel ? scene.hit?.power : undefined,
-        trim: feel,
+        power: scene.hit?.power,
+        trim: true,
       })
     } else if (scene.kind === 'zaway') {
       timeline = zAwayTimeline({ own: key(own, true), foe: key(foe, false), side: mine ? 'own' : 'foe', how: scene.how ?? 'fly', short })
@@ -570,7 +613,6 @@ export function BattleStage({
   double,
   onAim,
   aimLabel,
-  feel: feelShown,
 }: {
   /**
    * A double battle (docs/33): every Pokémon out is on the stage, the pair in front (`own`, `foe`: whose turn it is and
@@ -614,8 +656,6 @@ export function BattleStage({
   label: string
   /** Plates and pop-ups over the stage. */
   children?: ReactNode
-  /** The game-feel pass (docs/38), when a page shows it whatever the switch says (the kitchen sink). */
-  feel?: boolean
 }) {
   // Each in the form the log has reached, not the state's (which may already be past a form change).
   const own = asShown(ownNow, fx)
@@ -624,9 +664,7 @@ export function BattleStage({
   const [scale, setScale] = useState(0)
   const pace = usePace()
   const { level, calm } = useMotion()
-  const feelOn = useGame((s) => gameFeelOn(s.data))
-  const feel = feelShown ?? feelOn
-  const scene = useSceneTimeline(fx.scene, own, foe, level === 'short', feel)
+  const scene = useSceneTimeline(fx.scene, own, foe, level === 'short')
   const playing = !!scene || !!overlay
   // A move that has settled (docs/38 F1a): the log has moved on and the page's sprites are back, but its canvas stays
   // until it ends (or another scene, or an overlay, takes the stage), drawing only the particles still flying.
@@ -639,7 +677,7 @@ export function BattleStage({
   // Read live by the canvas: each cue sees this render's scene.
   const sceneHud: Hud = {
     contact: () => {
-      if (fx.scene?.hit) landHit(fx.scene.hit, feel)
+      if (fx.scene?.hit) landHit(fx.scene.hit)
       onContact()
     },
     // Committed before the canvas draws this frame without its sprites: the page's must already be back.
@@ -657,7 +695,7 @@ export function BattleStage({
   const [sparkle, setSparkle] = useState<Sparkle | null>(null)
   const sparkled = useRef(new Set<string>())
   useEffect(() => {
-    if (!feel || !foe.shiny || !foeShown || foeOut || scale === 0 || sparkled.current.has(foe.uid)) return
+    if (!foe.shiny || !foeShown || foeOut || scale === 0 || sparkled.current.has(foe.uid)) return
     sparkled.current.add(foe.uid)
     setSparkle({
       uid: foe.uid,
@@ -665,7 +703,7 @@ export function BattleStage({
       ready: loadSprite(foe.dex, false, true),
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [feel, foe.shiny, foe.uid, foeShown, foeOut, scale])
+  }, [foe.shiny, foe.uid, foeShown, foeOut, scale])
   const distortion = useStageDistortion(
     foeBox,
     key(foe, false),
@@ -688,6 +726,12 @@ export function BattleStage({
   // Which picture has loaded and shows (the drawn background stands in until then).
   const [shownArt, setShownArt] = useState<string | null>(null)
   const artShown = !!artId && shownArt === artId
+  // A move keeps both Pokémon animated on the page and moves them (`LiveSprite`); the canvas drew still copies, which
+  // froze them at every attack (the user, 2026-10-27). Over a picture or a world only (the drawn background is the
+  // canvas's own, under them), in a single battle, and not for a form change (two sprites swap).
+  const liveSprites = useMemo(() => new Map<string, LiveSprite>(), [])
+  const liveOn =
+    !!live && !overlay && !double && fx.scene?.kind === 'attack' && level !== 'off' && (artShown || !!world)
   // Over a picture (or the Distortion World) the timelines draw no background of their own (before a picture loads,
   // the drawn one shows through).
   // A double battle too: the Pokémon behind stay on the page under the timeline, so it must not paint over them.
@@ -746,7 +790,6 @@ export function BattleStage({
           )}
           {double && (
             <DoubleMons
-              feel={feel}
               own={own}
               foe={foe}
               ownBack={ownBack ?? null}
@@ -771,10 +814,10 @@ export function BattleStage({
               scale={scale}
               shown={foeShown}
               fainted={(!!fx.fainted[foe.uid] || !!fx.wornOut[foe.uid]) && !worn}
-              hidden={playing || !!fx.away?.[foe.uid]}
+              hidden={(playing && !liveOn) || !!fx.away?.[foe.uid]}
+              live={liveOn ? liveSprites : undefined}
               worn={worn}
               fx={fx}
-              feel={feel}
               onTap={onTap && (() => onTap('enemy'))}
               tapLabel={tapLabel(foe)}
               host={distorted || haunted ? foeBox : undefined}
@@ -818,9 +861,9 @@ export function BattleStage({
               scale={scale}
               shown={ownShown}
               fainted={!!fx.fainted[own.uid]}
-              hidden={playing || !!fx.away?.[own.uid]}
+              hidden={(playing && !liveOn) || !!fx.away?.[own.uid]}
+              live={liveOn ? liveSprites : undefined}
               fx={fx}
-              feel={feel}
               onTap={onTap && (() => onTap('player'))}
               tapLabel={tapLabel(own)}
             />
@@ -845,6 +888,7 @@ export function BattleStage({
             timeline={canvas.timeline}
             ready={canvas.ready}
             hud={live ? sceneHud : undefined}
+            live={liveOn ? liveSprites : undefined}
             onEnd={live ? onSceneDone : () => setLinger(null)}
             label={label}
             className={cx('absolute inset-0', !live && 'pointer-events-none', double && 'z-[4]')}

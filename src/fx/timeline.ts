@@ -5,7 +5,7 @@
 import type { HitPower } from '@/engine/hitPower'
 import { stageBackground, type Background, type Layout, type Point } from './scenes'
 import { clamp, ease, Particles, rng, span, text, textWidth, wash, type G, type Rng } from './pixel'
-import { drawSprite, spriteSize, type SpriteLook } from './sprites'
+import { drawSprite, drawWithLive, spriteSize, type LiveSprite, type SpriteLook } from './sprites'
 
 export const W = 240
 export const H = 160
@@ -441,6 +441,8 @@ export class Player<S = unknown> {
   private ended = false
   onTick: ((t: number) => void) | null = null
   onEnd: (() => void) | null = null
+  /** The page's sprites this timeline moves instead of drawing still copies (sprites.ts `LiveSprite`). */
+  live: Map<string, LiveSprite> | null = null
   constructor(cv: HTMLCanvasElement, hud: Hud = {}) {
     this.g = cv.getContext('2d')!
     this.g.imageSmoothingEnabled = false
@@ -543,7 +545,9 @@ export class Player<S = unknown> {
     this.g.clearRect(0, 0, this.g.canvas.width, this.g.canvas.height)
     // A canvas resized since (a full-screen scene on a turned phone) has lost this setting.
     this.g.imageSmoothingEnabled = false
-    this.def.draw(this.g, this.s, this.def.hold ? this.t : Math.min(this.t, this.def.dur))
+    const def = this.def
+    const s = this.s
+    drawWithLive(this.live, () => def.draw(this.g, s, def.hold ? this.t : Math.min(this.t, def.dur)))
     this.onTick?.(this.t)
   }
 }

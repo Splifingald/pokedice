@@ -25,8 +25,7 @@ const D = DEFAULT_CONFIG
 const gemsOn = {
   megaEvolution: { ...D.megaEvolution, gems: { ...D.megaEvolution.gems, access: 'all' as const } },
 }
-const off: GameData = makeData(gemsOn)
-const on: GameData = makeData({ ...gemsOn, raidOverhaul: { access: 'all' } })
+const on: GameData = makeData(gemsOn)
 
 let n = 0
 const newId = () => `id${++n}`
@@ -50,8 +49,7 @@ const start = (): SaveData => newSave(7, on, 1, newId)
 const caught = (s: SaveData): SaveData => ({ ...s, events: { ...s.events, raidsDone: [MEWTWO] } })
 
 describe('Mega raids', () => {
-  it('one per Mega or Primal form of an earlier region’s raid Pokémon, only with the overhaul on', () => {
-    expect(progressRaids(off).some((r) => r.mega)).toBe(false)
+  it('one per Mega or Primal form of an earlier region’s raid Pokémon', () => {
     const megas = progressRaids(on).filter((r) => r.mega)
     expect(megas.map((r) => r.dex).sort()).toEqual(Object.keys(MEGA_RAIDS).map(Number).sort())
     for (const r of megas) {
@@ -63,7 +61,6 @@ describe('Mega raids', () => {
       areaId: cave.id,
       mega: { base: 150, gem: 'mewtwonite-x' },
     })
-    expect(progressRaidOf(off, MEGA_X)).toBeNull()
   })
 
   it('locked until its raid Pokémon is caught, then until Mega Evolution is earned in Kalos', () => {
@@ -87,11 +84,9 @@ describe('Mega raids', () => {
     expect(progressRaidState(won, on, raid)).toBe('done')
   })
 
-  it('its gem is never on a Mart’s shelf with the overhaul on', () => {
+  it('its gem is never on a Mart’s shelf', () => {
     const kanto = withBadges(withBadges(start(), 'kalos', 3), 'kanto', 8, true)
-    const shelfOff = gemShelf(kanto, off)!.map((r) => r.item.key)
     const shelfOn = gemShelf(kanto, on)!.map((r) => r.item.key)
-    expect(shelfOff).toContain('mewtwonite-x')
     expect(shelfOn).not.toContain('mewtwonite-x')
     expect(shelfOn.some((k) => Object.values(MEGA_RAIDS).some((m) => m.gem === k))).toBe(false)
   })

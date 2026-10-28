@@ -8,13 +8,14 @@ import { giftsWait, parseGifts } from '@/engine'
 import { useT } from '@/i18n/react'
 import { unopenedGifts, unseenReplies, useInbox, type MyMessage } from '@/lib/feedback'
 import { isSupabaseConfigured } from '@/lib/supabase'
+import { LEAGUE_REWARD_TITLE } from '@/lib/versusLeague'
 import { requestGifts, useGiftMoment } from '@/store/gifts'
 import { useGame } from '@/store/game'
 import { useCloudSync } from '@/store/sync'
 import { GiftPresent } from './Gifts'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
-import { ReplyBox } from './ContactModal'
+import { messageTitle, ReplyBox } from './ContactModal'
 import { useMyTurn, useOnScreen } from './popupTurn'
 
 /** Coming back to the tab asks again, at most this often. */
@@ -80,6 +81,8 @@ export function ReplyPopup() {
   const open = shown.length > 0 && turn && !giftsBusy && !(toOpen.length > 0 && syncWait)
   useOnScreen('replies', open)
   const fromDev = shown.length > 0 && shown.every((m) => m.from_admin)
+  // The weekly league's rewards (docs/44), alone: the pop-up is the league's, not the developer's.
+  const league = shown.length > 0 && shown.every((m) => m.title === LEAGUE_REWARD_TITLE)
 
   const close = () => {
     markSeen(unseen.map((m) => m.id))
@@ -87,17 +90,30 @@ export function ReplyPopup() {
   }
 
   return (
-    <Modal open={open} onClose={close} title={t(fromDev ? 'ui.contact.newsTitle' : 'ui.contact.replyTitle')}>
+    <Modal
+      open={open}
+      onClose={close}
+      title={t(
+        league ? 'ui.league.reward.popupTitle' : fromDev ? 'ui.contact.newsTitle' : 'ui.contact.replyTitle',
+      )}
+    >
       <div className="flex flex-col gap-3">
         <p className="text-xl leading-snug">
-          {t(fromDev ? 'ui.contact.newsIntro' : 'ui.contact.replyIntro')}
+          {t(
+            league
+              ? 'ui.league.reward.popupIntro'
+              : fromDev
+                ? 'ui.contact.newsIntro'
+                : 'ui.contact.replyIntro',
+          )}
         </p>
         <ul className="flex flex-col gap-3">
           {shown.map((m) => {
             const gifts = giftOf(m)
             return (
               <li key={m.id} className="flex flex-col gap-1">
-                <p className="break-words text-xl leading-tight">{m.title}</p>
+                {/* The league's pop-up says its title already. */}
+                {!league && <p className="break-words text-xl leading-tight">{messageTitle(t, m.title)}</p>}
                 {m.reply && <ReplyBox reply={m.reply} at={m.replied_at} fromDev={m.from_admin} />}
                 {gifts.length > 0 && <GiftPresent count={gifts.length} wait={wait} className="mt-1" />}
               </li>

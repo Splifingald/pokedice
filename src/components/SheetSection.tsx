@@ -16,7 +16,7 @@ export function SheetSection({
     <section className="grid gap-2">
       <div className="flex min-h-[36px] flex-wrap items-center gap-2">
         <h3 className="flex-1 text-[22px] leading-none">{title}</h3>
-        {hint && <span className="font-pixel-sm text-[15px] text-muted">{hint}</span>}
+        {hint && <span className="font-pixel-sm text-[16px] text-muted">{hint}</span>}
         {extra}
       </div>
       {children}

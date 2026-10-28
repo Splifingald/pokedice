@@ -1,4 +1,4 @@
-// Kitchen sink (dev only): the title's dice logo (docs/38 §9), whatever the Game feel switch says. Each motion level
+// Kitchen sink (dev only): the title's dice logo (docs/38 §9). Each motion level
 // (the throw, the drop, the calm drop, at rest) with REPLAY, the throw frozen at a few moments (the white flash at
 // 1.51 s), in two rows (a phone) or one (from 768 px). A tap on a logo throws it again, as on the title.
 import { useState } from 'react'
@@ -29,7 +29,7 @@ export function TitleLogoBits() {
   const [layout, setLayout] = useState<LogoLayout>('tall')
   const sample = (name: string, logo: JSX.Element) => (
     <div key={name} className="flex w-full flex-col gap-1">
-      <span className="font-pixel-sm text-[13px] text-muted">{name}</span>
+      <span className="font-pixel-sm text-[16px] text-muted">{name}</span>
       {/* One row is 542 px wide: on a phone it scrolls here rather than the page. */}
       <div className="w-full overflow-x-auto bg-parchment shadow-ring">{logo}</div>
     </div>

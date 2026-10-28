@@ -1,5 +1,4 @@
-// Kitchen sink (dev only): the recorded dice throws (docs/37), shown whatever the admin's switch says. A tray thrown at
-// each motion level (full, short, the OS's calm drop, off), with slow motion and a reroll of the picked dice only;
+// Kitchen sink (dev only): the recorded dice throws (docs/37). A tray thrown at each motion level (full, short, the OS's calm drop, off), with slow motion and a reroll of the picked dice only;
 // frozen frames mid-throw; every status face; the dice at rest; and which recording each die plays.
 import { useEffect, useState, type ReactNode } from 'react'
 import { Die } from '@/components/Die'
@@ -34,7 +33,7 @@ const LEVELS: { level: ThrowLevel | 'off'; name: string }[] = [
 function Frame({ name, children }: { name: string; children: ReactNode }) {
   return (
     <div className="flex w-full flex-col gap-1">
-      <span className="font-pixel-sm text-[13px] text-muted">{name}</span>
+      <span className="font-pixel-sm text-[16px] text-muted">{name}</span>
       {children}
     </div>
   )
@@ -93,7 +92,7 @@ function Recordings({ roll, level }: { roll: number[]; level: ThrowLevel }) {
       live = false
     }
   }, [roll, level, data])
-  return <p className="font-pixel-sm text-[13px] text-muted">{line}</p>
+  return <p className="font-pixel-sm text-[16px] text-muted">{line}</p>
 }
 
 export function DiceThrowBits() {
@@ -101,7 +100,6 @@ export function DiceThrowBits() {
   const [picked, setPicked] = useState([false, false, false, false])
   const [slow, setSlow] = useState(false)
   const lab = (level: ThrowLevel | 'off', extra?: DiceLab): DiceLab => ({
-    on: true,
     level,
     speed: slow ? 0.25 : 1,
     ...extra,

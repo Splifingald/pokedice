@@ -1,11 +1,9 @@
-// The shiny Pokédex (docs/39) against the mocked Supabase, on a phone: switched off, the Pokédex has one page; on, with
-// the League beaten, its rules pop up once (Let's go! opens the shiny page), a shiny owned is starred and counted, a
-// species caught but never shiny is a silhouette, and INFO shows the rules again.
+// The shiny Pokédex (docs/39) against the mocked Supabase, on a phone: with the League beaten, its rules stand as a
+// card at the top of its view until GOT IT (docs/43 §7), a shiny owned is starred and counted, a species caught but
+// never shiny is a silhouette, and INFO shows the rules again.
 import { expect, test, type Page } from '@playwright/test'
 import { EVENT_IDS, getRegion, progressOf, regionOf, type SaveData } from '../src/engine'
 import { EVENTS_ON, FAST, fakeSession, gameData, makeSave, mockSupabase, STORAGE_KEY } from './helpers'
-
-const SHINY_ON = { ...EVENTS_ON, shinyDex: { access: 'all' } }
 
 /** Kanto's League beaten, with everything else a League opens already read, a shiny Pidgey and a plain Rattata. */
 function champion(patch: Partial<SaveData> = {}): SaveData {
@@ -33,7 +31,7 @@ function champion(patch: Partial<SaveData> = {}): SaveData {
   }
 }
 
-async function boot(page: Page, save: SaveData, config: object = SHINY_ON) {
+async function boot(page: Page, save: SaveData) {
   await page.setViewportSize({ width: 390, height: 844 })
   await mockSupabase(page)
   await page.addInitScript(
@@ -43,40 +41,47 @@ async function boot(page: Page, save: SaveData, config: object = SHINY_ON) {
       sessionStorage.setItem('booted', '1')
       localStorage.setItem('pokedice.devConfig', cfg!)
     },
-    [STORAGE_KEY, JSON.stringify(fakeSession()), JSON.stringify(save), JSON.stringify(config)],
+    [STORAGE_KEY, JSON.stringify(fakeSession()), JSON.stringify(save), JSON.stringify(EVENTS_ON)],
   )
 }
 
-test('switched off, the Pokédex has one page and nothing pops up', async ({ page }) => {
-  await boot(page, champion(), EVENTS_ON)
-  await page.goto('/home')
-  await page.waitForTimeout(600)
-  await expect(page.getByRole('dialog', { name: 'Shiny Pokédex' })).toHaveCount(0)
-  await page.goto('/pokedex?view=shiny')
-  await expect(page.getByRole('radiogroup', { name: 'Which Pokédex' })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: /Shiny Pokédex/ })).toHaveCount(0)
-})
-
-test('the rules once, Let’s go! to the shiny page, a shiny counted, INFO again', async ({ page }) => {
+test('the rules on the shiny view until GOT IT, a shiny counted, INFO again', async ({ page }) => {
   await boot(page, champion())
-  await page.goto('/home')
-  const rules = page.getByRole('dialog', { name: 'Shiny Pokédex' })
-  await expect(rules).toBeVisible()
-  await expect(rules).toContainText('A page for shinies')
-  await expect(rules).toContainText('1 in')
-  await rules.getByRole('button', { name: /Let's go/i }).click()
+  await page.goto('/pokedex')
+  // The Pokédex's view switch leads to it.
+  await page
+    .getByRole('radiogroup', { name: 'Which Pokédex' })
+    .getByRole('radio', { name: 'Shiny' })
+    .click()
   await expect(page).toHaveURL(/\/pokedex\?view=shiny/)
   await expect(
     page.getByRole('radiogroup', { name: 'Which Pokédex' }).getByRole('radio', { name: 'Shiny' }),
   ).toHaveAttribute('aria-checked', 'true')
+  // Its rules where they apply (docs/43 §7): a card at the top of the view, not a pop-up.
+  const card = page.getByRole('region', { name: 'How Shiny Pokédex works' })
+  await expect(card).toBeVisible()
+  await expect(card).toContainText('A page for shinies')
+  await expect(card).toContainText('1 in')
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}'))
+  expect((await stored()).shinyDexSeen).toBeFalsy()
+  await card.getByRole('button', { name: 'GOT IT' }).click()
+  await expect(card).toHaveCount(0)
+  await expect.poll(async () => (await stored()).shinyDexSeen).toBe(true)
 
   // Pidgey owned shiny: starred and counted. Rattata caught, never shiny: a silhouette with its name.
   await expect(page.getByRole('button', { name: /^Pidgey, #016, Shiny/ })).toBeVisible()
-  await expect(
-    page.getByRole('radiogroup', { name: 'Show' }).getByRole('radio', { name: 'Shiny 1' }),
-  ).toBeVisible()
+  // The filter (one dropdown beside the search) counts the shinies; the head's gauge says it once.
+  await expect(page.getByRole('combobox', { name: 'Show' }).locator('option[value="caught"]')).toHaveText(
+    'Shiny (1)',
+  )
   await expect(page.getByRole('img', { name: /^1 of \d+ owned shiny$/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /^Rattata, #019/ })).not.toContainText('Shiny')
+  // Picking the filter leaves the shiny one alone on the grid.
+  await page.getByRole('combobox', { name: 'Show' }).selectOption('caught')
+  await expect(page.locator('[data-tile]')).toHaveCount(1)
+  await expect(page.getByRole('button', { name: /^Pidgey, #016, Shiny/ })).toBeVisible()
+  await page.getByRole('combobox', { name: 'Show' }).selectOption('all')
 
   // The Pokédex page counts every catch.
   await page
@@ -92,7 +97,10 @@ test('the rules once, Let’s go! to the shiny page, a shiny counted, INFO again
     .getByRole('dialog', { name: 'Shiny Pokédex' })
     .getByRole('button', { name: 'OK', exact: true })
     .click()
-  // Seen: not again on Home.
+  // Seen: the card stays away, and no pop-up on Home.
+  await page.goto('/pokedex?view=shiny')
+  await expect(page.getByRole('img', { name: /owned shiny$/ })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'How Shiny Pokédex works' })).toHaveCount(0)
   await page.goto('/home')
   await page.waitForTimeout(600)
   await expect(page.getByRole('dialog', { name: 'Shiny Pokédex' })).toHaveCount(0)

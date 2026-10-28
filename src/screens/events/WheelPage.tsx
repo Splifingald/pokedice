@@ -1,7 +1,7 @@
 // The Fortune Wheel's page (docs/18, the Visual Lab's mockup): the tickets held and the next free one, the jackpot of
 // the moment, the wheel, the blue Info button with every prize's real odds, SPIN (a ticket) and a ticket to buy. The
 // prize is drawn before the wheel turns (store/wheel.ts) and paid when it stops, then a card says what it was.
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   jackpotIndex,
   jackpotStage,
@@ -22,10 +22,12 @@ import { isJackpot, WheelStage, type WheelMotion, type WheelSlice } from '@/fx/w
 import { useT } from '@/i18n/react'
 import { countdown, money } from '@/lib/format'
 import { useMotion } from '@/lib/motion'
-import { mutateSave, pushToast, useGame } from '@/store/game'
+import { pushToast, useGame } from '@/store/game'
 import { buyWheelTicket, collectWheelPrize, spinWheel, useWheelTickets } from '@/store/wheel'
+import { InfoButton } from '@/components/RulesModal'
 import { CashChip } from './live'
-import { EventRulesModal, RewardIcon, rewardName } from './shared'
+import { StagePanel } from './layout'
+import { EventRules, RewardIcon, rewardName } from './shared'
 
 const toSlice = (p: WheelPrize, data: GameData): WheelSlice => {
   const r = p.reward
@@ -36,7 +38,7 @@ const toSlice = (p: WheelPrize, data: GameData): WheelSlice => {
 
 const pct = (n: number) => `${+n.toFixed(2)} %`
 
-export function WheelPage() {
+export function WheelPage({ head }: { head?: ReactNode }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
@@ -47,7 +49,7 @@ export function WheelPage() {
   const order = useMemo(() => wheelSlices(prizes), [prizes])
   const slices = useMemo(() => order.map((i) => toSlice(prizes[i]!, data)), [order, prizes, data])
   const jackpot = wheel.jackpot?.[stage]
-  const { price, everyMs } = ticketRules(wheel)
+  const { price } = ticketRules(wheel)
   const { level, calm } = useMotion()
   const motion: WheelMotion = calm ? 'off' : level
   const tickets = useWheelTickets()
@@ -55,7 +57,6 @@ export function WheelPage() {
   const [won, setWon] = useState<WheelReward | null>(null)
   const [odds, setOdds] = useState(false)
   // Its rules once, the first time the page opens since the wheel takes tickets (a new player saw them on unlocking).
-  const [rules, setRules] = useState(() => !save?.events?.wheelRulesSeen)
 
   const box = useRef<HTMLDivElement>(null)
   const disc = useRef<HTMLCanvasElement>(null)
@@ -89,11 +90,6 @@ export function WheelPage() {
     if (pending && !spinning) collectWheelPrize()
   }, [pending, spinning])
 
-  const closeRules = () => {
-    setRules(false)
-    mutateSave((s) => (s.events?.wheelRulesSeen ? null : { ...s, events: { ...s.events, wheelRulesSeen: true } }))
-  }
-
   const spin = async () => {
     if (spinning || !stageRef.current) return
     setSpinning(true)
@@ -125,62 +121,125 @@ export function WheelPage() {
     : tickets.msLeft == null
       ? t('ui.events.wheel.full')
       : t('ui.events.wheel.nextTicket', { time: countdown(tickets.msLeft) })
+  const ticketsMeter = (
+    <TicketsMeter held={tickets.known ? tickets.tickets : 0} cap={tickets.known ? tickets.cap : 0} known={tickets.known} />
+  )
+  const jackpotChip = jackpot && (
+    <Chip tone="gold" className="min-w-0 gap-1 text-[16px]">
+      <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden" aria-hidden>
+        <RewardIcon reward={jackpot.reward} data={data} size={jackpot.reward.kind === 'pokemon' ? 32 : 24} />
+      </span>
+      <span className="truncate">
+        {t('ui.events.wheel.jackpotNow', { prize: rewardName(jackpot.reward, data), chance: pct(jackpot.odds) })}
+      </span>
+    </Chip>
+  )
   return (
-    // The rays and the sparks reach past the wheel: clipped at the sides so a phone never scrolls sideways.
-    <div className="mx-auto flex w-full max-w-[440px] flex-col gap-1.5 overflow-x-clip">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Chip tone="dark" className="gap-1.5 text-[17px]">
-          <PixelIcon name="ticket" size={20} />
-          <span className="tabular-nums" aria-label={t('ui.events.wheel.ticketsLabel', { n: tickets.known ? tickets.tickets : 0, cap: tickets.known ? tickets.cap : 0 })}>
-            {tickets.known ? `${tickets.tickets}/${tickets.cap}` : '…'}
-          </span>
-        </Chip>
-        {jackpot && (
-          <Chip tone="gold" className="gap-1 text-[16px]">
-            <span className="grid h-6 w-6 place-items-center overflow-hidden" aria-hidden>
-              <RewardIcon reward={jackpot.reward} data={data} size={jackpot.reward.kind === 'pokemon' ? 32 : 24} />
-            </span>
-            {t('ui.events.wheel.jackpotNow', { prize: rewardName(jackpot.reward, data), chance: pct(jackpot.odds) })}
-          </Chip>
-        )}
-      </div>
-      <div ref={box} className="ev-wheel">
-        <span className="ev-wheel-rays" aria-hidden />
-        <span ref={pointer} className="ev-pointer" aria-hidden />
-        <canvas ref={disc} className="ev-wheel-disc" width={288} height={288} role="img" aria-label={wheelLabel} />
-        <canvas ref={fx} className="ev-wfx" aria-hidden />
-      </div>
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2.2fr)] items-stretch gap-2.5">
-        <button type="button" className="ev-info" onClick={() => setOdds(true)} aria-label={t('ui.events.wheel.infoLabel')}>
-          {t('ui.events.wheel.info')}
-        </button>
-        {empty && !spinning ? (
-          <p className="m-0 grid content-center gap-[3px] bg-well p-2 text-center shadow-ring-line">
-            <b className="text-[20px] font-normal leading-none">{t('ui.events.wheel.noTickets')}</b>
-            <small className="font-pixel-sm text-[15px] leading-none text-muted">{nextLine}</small>
-          </p>
-        ) : (
-          <PixelButton
-            variant="primary"
-            className="min-h-[64px] text-[26px]"
-            disabled={spinning || !tickets.known}
-            onClick={() => void spin()}
-          >
-            {tickets.known ? t('ui.events.wheel.spin') : t('ui.events.wheel.waitTime')}
-          </PixelButton>
-        )}
-      </div>
-      <PixelButton disabled={!canBuy} onClick={buy}>
-        <PixelIcon name="ticket" size={20} />
-        {t('ui.events.wheel.buy', { price: money(price) })}
-      </PixelButton>
-      <p className="m-0 text-center font-pixel-sm text-[15px] text-muted">
-        {t('ui.events.wheel.tip', { hours: Math.round((everyMs / 3_600_000) * 10) / 10, cap: tickets.known ? tickets.cap : '' })}
-      </p>
-      <OddsSheet open={odds} onClose={() => setOdds(false)} prizes={prizes} jackpot={jackpotIndex(wheel, stage)} data={data} slices={order.length} />
+    <>
+      <StagePanel
+        head={head}
+        stage={
+          // The rays and the sparks reach past the wheel: clipped at the sides so a phone never scrolls sideways, and
+          // drawn under what sits around it (the chips here, `relative z-[1]`; the dock is pinned over everything).
+          <div className="flex flex-col items-center overflow-x-clip lg:min-h-[calc(100dvh-var(--top-bar,56px)-15.5rem)] lg:justify-center">
+            {/* Phones: what the panel says on PC, as two chips over the wheel. */}
+            <div className="relative z-[1] flex w-full max-w-[440px] items-center justify-between gap-2 lg:hidden">
+              <Chip tone="dark" className="shrink-0 gap-1.5 text-[17px]">
+                {ticketsMeter}
+              </Chip>
+              {jackpotChip}
+            </div>
+            <div ref={box} className="ev-wheel">
+              <span className="ev-wheel-rays" aria-hidden />
+              <span ref={pointer} className="ev-pointer" aria-hidden />
+              <canvas ref={disc} className="ev-wheel-disc" width={288} height={288} role="img" aria-label={wheelLabel} />
+              <canvas ref={fx} className="ev-wfx" aria-hidden />
+            </div>
+          </div>
+        }
+        panel={
+          // PC: the tickets and the jackpot as the panel's two cards.
+          <div className="hidden flex-col gap-3 lg:flex">
+            <section className="grid gap-2 bg-paper p-3 shadow-card" aria-labelledby="wheel-tickets">
+              <h2 id="wheel-tickets" className="m-0 text-[24px] font-normal leading-none">
+                {t('ui.events.wheel.ticketsTitle')}
+              </h2>
+              <span className="flex items-center gap-2 text-[22px]">{ticketsMeter}</span>
+              <p className="m-0 text-[18px] text-muted">{nextLine}</p>
+            </section>
+            {jackpot && (
+              <section className="flex items-center gap-3 bg-gold-pale p-3 shadow-card-gold" aria-labelledby="wheel-jackpot">
+                <span className="grid h-16 w-16 shrink-0 place-items-center" aria-hidden>
+                  <RewardIcon reward={jackpot.reward} data={data} size={jackpot.reward.kind === 'pokemon' ? 72 : 48} />
+                </span>
+                <span className="grid min-w-0 gap-1">
+                  <h2 id="wheel-jackpot" className="m-0 text-[24px] font-normal leading-none">
+                    {t('ui.events.wheel.jackpotTag')}
+                  </h2>
+                  <span className="text-[20px] leading-tight">
+                    {rewardName(jackpot.reward, data)} · {pct(jackpot.odds)}
+                  </span>
+                </span>
+              </section>
+            )}
+          </div>
+        }
+        dock={
+          <>
+            {empty && !spinning ? (
+              <p className="m-0 grid min-h-[64px] content-center gap-1 bg-well p-2 text-center shadow-ring-line">
+                <b className="text-[22px] font-normal leading-none">{t('ui.events.wheel.noTickets')}</b>
+                <small className="text-[18px] leading-none text-muted">{nextLine}</small>
+              </p>
+            ) : (
+              <PixelButton
+                variant="primary"
+                size="lg"
+                className="min-h-[64px] w-full text-[28px]"
+                disabled={spinning || !tickets.known}
+                onClick={() => void spin()}
+              >
+                {tickets.known ? t('ui.events.wheel.spin') : t('ui.events.wheel.waitTime')}
+              </PixelButton>
+            )}
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+              <PixelButton disabled={!canBuy} onClick={buy} className="min-w-0 px-2">
+                <PixelIcon name="ticket" size={20} />
+                {t('ui.events.wheel.buy', { price: money(price) })}
+              </PixelButton>
+              <InfoButton name={t('ui.events.wheel.name')} onClick={() => setOdds(true)} compact />
+            </div>
+          </>
+        }
+      />
+      <OddsSheet
+        open={odds}
+        onClose={() => setOdds(false)}
+        prizes={prizes}
+        jackpot={jackpotIndex(wheel, stage)}
+        data={data}
+        slices={order.length}
+      />
       <RewardCard reward={won} data={data} onClose={() => setWon(null)} calm={motion === 'off'} />
-      <EventRulesModal id="wheel" open={rules && !won} onClose={closeRules} />
-    </div>
+    </>
+  )
+}
+
+/** The tickets held, one stub each, the missing ones dimmed: a count you see rather than read. */
+export function TicketsMeter({ held, cap, known }: { held: number; cap: number; known: boolean }) {
+  const { t } = useT()
+  if (!known) return <span>…</span>
+  return (
+    <span role="img" className="inline-flex items-center gap-1" aria-label={t('ui.events.wheel.ticketsLabel', { n: held, cap })}>
+      {Array.from({ length: cap }, (_, i) => (
+        <span key={i} className={i < held ? 'flex' : 'flex opacity-30 grayscale'}>
+          <PixelIcon name="ticket" size={20} />
+        </span>
+      ))}
+      <span className="ml-0.5 tabular-nums" aria-hidden>
+        {held}/{cap}
+      </span>
+    </span>
   )
 }
 
@@ -205,12 +264,15 @@ function OddsSheet({
   const chances = prizeChances(prizes)
   const rows = prizes.map((p, i) => ({ p, i })).filter(({ p }) => p.count > 0 && p.odds > 0)
   return (
-    <Modal open={open} onClose={onClose} title={t('ui.events.wheel.oddsTitle')} className="max-w-md">
+    <Modal open={open} onClose={onClose} title={t('ui.events.wheel.name')} className="max-w-md">
       <div className="flex flex-col gap-2.5">
-        <p className="copy m-0 text-[17px] text-muted">{t('ui.events.wheel.oddsNote', { n: slices })}</p>
+        {/* INFO is one place: the rules, then every prize's real odds. */}
+        <EventRules id="wheel" data={data} />
+        <h3 className="m-0 mt-2 text-[22px] font-normal leading-none">{t('ui.events.wheel.oddsTitle')}</h3>
+        <p className="copy m-0 text-[18px] text-muted">{t('ui.events.wheel.oddsNote', { n: slices })}</p>
         <table className="w-full border-collapse text-[18px]">
           <thead>
-            <tr className="font-pixel-sm text-[15px] text-muted">
+            <tr className="font-pixel-sm text-[16px] text-muted">
               <th scope="col" className="px-1.5 py-1 text-left font-normal">{t('ui.events.wheel.oddsPrize')}</th>
               <th scope="col" className="px-1.5 py-1 text-left font-normal">{t('ui.events.wheel.oddsSlices')}</th>
               <th scope="col" className="px-1.5 py-1 text-left font-normal">{t('ui.events.wheel.oddsChance')}</th>
@@ -232,7 +294,7 @@ function OddsSheet({
                 <td className="px-1.5 py-1 tabular-nums">
                   {pct(chances[i]!)}
                   {p.count > 1 && (
-                    <small className="block font-pixel-sm text-[13px] text-muted">
+                    <small className="block font-pixel-sm text-[16px] text-muted">
                       {t('ui.events.wheel.oddsEach', { chance: pct(chances[i]! / p.count) })}
                     </small>
                   )}

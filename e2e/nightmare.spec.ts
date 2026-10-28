@@ -193,7 +193,8 @@ async function clickAny(page: Page, names: (string | RegExp)[]): Promise<boolean
 /** Plays on (fights, results) until `until` shows. */
 async function playUntil(page: Page, until: ReturnType<Page['getByRole']>, ms = 60_000) {
   for (const end = Date.now() + ms; Date.now() < end && !(await until.isVisible().catch(() => false));) {
-    await clickAny(page, ['FIGHT', 'SKIP ▸▸', 'ATTACK', 'SKIP TURN', 'GOT IT', 'CONTINUE'])
+    // The rework: the send-out step's GO!, and the result's Next ▸ in the old card's CONTINUE's place.
+    await clickAny(page, ['FIGHT', 'SKIP ▸▸', /^Send out /, 'ATTACK', 'SKIP TURN', 'GOT IT', 'CONTINUE', 'Next ▸'])
     await page.waitForTimeout(120)
   }
   await expect(until).toBeVisible()
@@ -283,7 +284,7 @@ test('ENTER plays the intro at once, held for a tap, then its pop-up with the sh
     .click()
   const strike = page.getByRole('heading', { name: 'Round 1/2: Darkrai strikes!' })
   await playUntil(page, strike)
-  await expect(page.getByRole('button', { name: /^Catch|ROLL TO CATCH/ })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /^Catch|ROLL TO CATCH|Throw it$/ })).toHaveCount(0)
   await expect.poll(async () => (await stored(page)).inventory.revive).toBe(1)
   // The strike lands: 10 % of max HP, rounded, never a K.O.
   await expect(page.getByText('Every Pokémon on your team lost 10% of its max HP.')).toBeVisible()

@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
-import { gameFeelOn, instanceMaxHp, monName, type Area, type PokemonInstance } from '@/engine'
+import { instanceMaxHp, monName, type Area, type PokemonInstance } from '@/engine'
 import { playCry } from '@/audio/cries'
 import { useT } from '@/i18n/react'
 import { HpBar } from '@/components/HpBar'
 import { LevelTag } from '@/components/Chip'
-import { placeSprite, stageSprite, type StageSprite } from '@/fx/sprites'
+import { placeSprite, spriteError, stageSprite, type StageSprite } from '@/fx/sprites'
 import { useMotion } from '@/lib/motion'
+import { useShowdownDown, watchShowdown } from '@/lib/showdownReach'
 import { useGame } from '@/store/game'
 import { clamp, type G } from '@/fx/pixel'
 import { artPlacement, homeWindow } from '@/fx/areaArt'
 import { AreaArt } from '@/components/AreaArt'
+import { cx } from '@/theme/util'
 import { H, W, worldOf } from './scene'
 import { Herd, type Mon } from './team'
 
@@ -24,10 +26,13 @@ interface Member {
  * The area's scene with the team roaming it: a canvas under the sprites (scenery, shadows, motes), the sprites
  * themselves as <img>s the browser animates, and a canvas over them (tall grass, bubbles, hearts and notes). Tapping a
  * Pokémon makes it hop and shows its card; the card (and the team list, for keyboards) opens its sheet. With calm
- * motion the team stands still. `children` sit on top of the scene (the area plate).
+ * motion the team stands still. `children` sit on top of the scene (the area screen's plate between encounters).
  */
 /** Two taps on the same Pokémon within this long open its sheet. */
 const DOUBLE_TAP_MS = 400
+/** The scene's height when it fills a box (`fill`): its width is the box's, or more to cover the box's height. */
+const FILL_H = `max(calc(100cqw * ${H} / ${W}), 100cqh)`
+
 /** A poked Pokémon's cry (docs/38): no closer than this to the last one. */
 const CRY_GAP_MS = 2000
 
@@ -36,11 +41,24 @@ export function SceneStage({
   team,
   onOpen,
   children,
+  fill = false,
+  focus = 0.5,
 }: {
   area: Area
   team: PokemonInstance[]
   onOpen: (uid: string) => void
   children?: ReactNode
+  /**
+   * Fill the box it is given rather than take the scene's shape (Home on PC, docs/43 §5.2: the scene as tall as the
+   * window): the scene keeps its shape, scaled to cover the box and centred in it, so a little of its sides (or sky)
+   * goes rather than leave the box half empty. The box decides how much: Home keeps it close to the scene's shape.
+   */
+  fill?: boolean
+  /**
+   * With `fill`, the height (0–1 of the scene) kept in the box's middle when the box crops its top and bottom: where the
+   * team walks, so a short box never cuts them off (the user, 2026-10-27).
+   */
+  focus?: number
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
@@ -52,6 +70,8 @@ export function SceneStage({
   const [card, setCard] = useState<{ uid: string; x: number; y: number } | null>(null)
   const lastTap = useRef<{ uid: string; t: number } | null>(null)
   const lastCry = useRef(-Infinity)
+  // Showdown failing or stalling brings the local sprites (src/lib/showdownReach.ts).
+  const down = useShowdownDown()
 
   const members: Member[] = useMemo(
     () =>
@@ -61,7 +81,8 @@ export function SceneStage({
         maxHp: instanceMaxHp(inst, data),
         sprite: stageSprite(inst.dex, false, !!inst.shiny),
       })),
-    [team, data],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [team, data, down],
   )
   // A new herd for a new area or a new team; HP changes keep the herd (they only change who is tired).
   const teamKey = team
@@ -109,9 +130,9 @@ export function SceneStage({
   const poke = (m: Mon, at: number) => {
     herd.poke(m)
     setCard({ uid: m.def.uid, x: m.x, y: m.y - m.sz.h })
-    // The game-feel pass (docs/38 F12d): it answers with its cry, at most one every 2 s however fast the taps come.
+    // It answers with its cry (docs/38 F12d), at most one every 2 s however fast the taps come.
     // `playCry` stays silent while Sound is off.
-    if (gameFeelOn(data) && at - lastCry.current >= CRY_GAP_MS) {
+    if (at - lastCry.current >= CRY_GAP_MS) {
       lastCry.current = at
       playCry(m.def.dex)
     }
@@ -130,10 +151,21 @@ export function SceneStage({
           : ''
     : ''
 
-  return (
+  const stage = (
     <div
-      className="relative isolate z-0 w-full select-none overflow-hidden"
-      style={{ aspectRatio: `${W} / ${H}`, containerType: 'inline-size' }}
+      className={cx(
+        'relative isolate z-0 select-none overflow-hidden',
+        fill ? 'absolute left-1/2 -translate-x-1/2' : 'w-full',
+      )}
+      style={{
+        aspectRatio: `${W} / ${H}`,
+        containerType: 'inline-size',
+        ...(fill && {
+          width: `max(100cqw, calc(100cqh * ${W} / ${H}))`,
+          // Its focus in the box's middle, never leaving a gap above or below.
+          top: `clamp(calc(100cqh - ${FILL_H}), calc(50cqh - ${FILL_H} * ${focus.toFixed(3)}), 0px)`,
+        }),
+      }}
       onPointerDown={(e) => {
         if ((e.target as HTMLElement).closest('button')) return
         const r = e.currentTarget.getBoundingClientRect()
@@ -172,14 +204,12 @@ export function SceneStage({
           key={m.inst.id}
           ref={(el) => {
             imgs.current[i] = el
+            watchShowdown(el)
           }}
           src={m.sprite.url}
           alt=""
           draggable={false}
-          onError={(e) => {
-            const fb = m.sprite.fallback
-            if (fb && e.currentTarget.src !== new URL(fb, location.href).href) e.currentTarget.src = fb
-          }}
+          onError={spriteError(m.sprite)}
           className="pointer-events-none absolute max-w-none"
           style={{
             imageRendering: 'pixelated',
@@ -211,7 +241,7 @@ export function SceneStage({
             <LevelTag level={shown.inst.level} />
           </span>
           <HpBar hp={Math.max(0, shown.inst.currentHp)} max={shown.maxHp} height={10} />
-          {note && <span className="font-pixel-sm text-[15px] leading-tight text-danger">{note}</span>}
+          {note && <span className="font-pixel-sm text-[16px] leading-tight text-danger">{note}</span>}
         </button>
       )}
       {children}
@@ -237,6 +267,12 @@ export function SceneStage({
           </li>
         ))}
       </ul>
+    </div>
+  )
+  if (!fill) return stage
+  return (
+    <div className="relative h-full w-full overflow-hidden" style={{ containerType: 'size' }}>
+      {stage}
     </div>
   )
 }

@@ -87,19 +87,19 @@ export function LooksBits() {
   return (
     <div className="grid w-full gap-4">
       <div className="grid max-w-md gap-2">
-        <small className="font-pixel-sm text-[14px] text-muted">
+        <small className="font-pixel-sm text-[16px] text-muted">
           The row under the trainer card (live save)
         </small>
         <LooksRow onOpen={() => setRules('info')} />
         <div className="flex items-center gap-3">
-          <small className="font-pixel-sm text-[14px] text-muted">The red dot:</small>
+          <small className="font-pixel-sm text-[16px] text-muted">The red dot:</small>
           <LooksDot n={2} />
           <LooksDot n={14} />
         </div>
       </div>
 
       <div className="grid max-w-md gap-1.5">
-        <small className="font-pixel-sm text-[14px] text-muted">A locked look of each kind</small>
+        <small className="font-pixel-sm text-[16px] text-muted">A locked look of each kind</small>
         <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
           <LockedLook s={one('johto/pokefan')} />
           <LockedLook s={one('johto/black-belt')} />
@@ -110,7 +110,7 @@ export function LooksBits() {
       </div>
 
       <div className="grid max-w-md gap-1.5">
-        <small className="font-pixel-sm text-[14px] text-muted">An unlocked look, with how it was won</small>
+        <small className="font-pixel-sm text-[16px] text-muted">An unlocked look, with how it was won</small>
         <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
           <OwnedLook s={one('red')} />
           <OwnedLook s={one('kanto/lass')} />
@@ -124,7 +124,7 @@ export function LooksBits() {
       <div className="flex flex-wrap items-start gap-4">
         {MENUS.map(([label, list, worn, fresh, view]) => (
           <div key={label} className="grid w-full max-w-[380px] gap-1 bg-panel p-3 shadow-card">
-            <small className="font-pixel-sm text-[14px] text-muted">{label}</small>
+            <small className="font-pixel-sm text-[16px] text-muted">{label}</small>
             <LooksMenu
               states={list}
               liveRegion="johto"

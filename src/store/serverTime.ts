@@ -27,6 +27,7 @@ async function fromDatabase(): Promise<number | null> {
 
 /** The web server's clock, from the `Date` header of a tiny request to the site itself (to the second). */
 async function fromSite(): Promise<number | null> {
+  if (import.meta.env.VITE_PROTO) return null // the prototype page has no site of its own
   const res = await fetch(`/?t=${Date.now()}`, { method: 'HEAD', cache: 'no-store' })
   const at = Date.parse(res.headers.get('date') ?? '')
   return Number.isNaN(at) ? null : at

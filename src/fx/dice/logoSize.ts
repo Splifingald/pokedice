@@ -1,5 +1,5 @@
 // The title's dice logo (logo.ts) in numbers the page needs before the logo's chunk has loaded: the room it keeps, in
-// art pixels. Tiny on purpose: the title imports this, and fetches the maths and the renderer only with the game feel on.
+// art pixels. Tiny on purpose: the title imports this, and fetches the maths and the renderer as a chunk of their own.
 
 /** One row from 768 px; two rows, POKÉ over DICE, on a phone. */
 export type LogoLayout = 'wide' | 'tall'

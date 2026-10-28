@@ -22,17 +22,21 @@ import {
   type Area,
 } from '@/engine'
 import { useT } from '@/i18n/react'
+import { NewTag } from '@/components/Chip'
 import { RestingPanel } from '@/components/Extreme'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { countdown, trainerTitle } from '@/lib/format'
 import { pushToast, useGame } from '@/store/game'
-import { useEnergy } from '@/store/hooks'
+import { useNow } from '@/store/hooks'
 import { serverNow } from '@/store/serverTime'
-import { challenge, enterArea, outOfEnergy, rollNext } from '@/store/run'
+import { challenge, enterArea, rollNext } from '@/store/run'
 import { travelTo } from '@/store/travel'
 import { cx } from '@/theme/util'
 import { progressRaidPath } from '../events/progressRaids'
+import { ShinyParadeChip, useParadeLabel } from '../events/live'
+import { levelText, useLevelSpan } from './AreaPlate'
+import { RoundGauge } from '@/screens/area/RoundGauge'
 
 /** The run must be in this area before anything is rolled: arriving from another one starts it afresh. */
 function ensureRun(area: Area) {
@@ -43,7 +47,7 @@ function ensureRun(area: Area) {
 /**
  * What CONTINUE does and says in an area: the next encounter (rollNext → its preview on /area), or the gym or legendary
  * waiting at the end of the rounds, or the area's progression raid once it's completed (docs/24: its page, like a gym
- * leader's challenge); back to the encounter when one is under way; nothing when the area is closed or the energy is out.
+ * leader's challenge); back to the encounter when one is under way; nothing when the area is closed.
  */
 export function useContinue(area: Area) {
   const { t } = useT()
@@ -52,7 +56,7 @@ export function useContinue(area: Area) {
   const data = useGame((s) => s.data)
   const run = useGame((s) => s.run)
   const battle = useGame((s) => !!s.battle)
-  const energy = useEnergy()
+  const now = useNow()
 
   const progress = progressOf(save, area.id)
   const side = playerSideOf(save)
@@ -69,8 +73,6 @@ export function useContinue(area: Area) {
   const busy = (run.areaId === area.id && run.phase !== 'idle') || battle
   const raid = gym || boss || busy ? null : openRaidIn(save, data, area)
   const raidName = raid ? (data.species[raid.dex]?.name ?? '') : ''
-  // Re-checked every second (useEnergy ticks): a Center the game sends next is free even at 0.
-  const empty = !!energy && energy.value < 1 && run.areaId === area.id && outOfEnergy()
   const need = area.roundsToClear || null
   const done = progress.roundsDone ?? 0
   // Extreme mode (docs/22): nobody can fight and no Center will come — the team rests.
@@ -104,7 +106,7 @@ export function useContinue(area: Area) {
       ? back
         ? t('ui.extreme.card.resting', {
             name: data.species[back.inst.dex]?.name ?? '',
-            time: countdown(back.at - (energy?.now ?? Date.now())),
+            time: countdown(back.at - now),
           })
         : t('ui.extreme.resting.title')
       : gym
@@ -115,15 +117,13 @@ export function useContinue(area: Area) {
           ? t('ui.raid.progress.continueSub', { level: raidRules(data, raid.dex, 'progress', raid.areaId).level })
         : closed
           ? t('ui.home.closed')
-          : empty && energy?.nextAt != null
-            ? t('ui.area.outOfEnergy', { time: countdown(energy.nextAt - energy.now) })
-            : progress.cleared
-              ? t('ui.home.freePlay')
-              : need != null
-                ? t('ui.home.roundOf', { n: Math.min(done + 1, need), total: need })
-                : t('ui.home.secretArea')
+          : progress.cleared
+            ? t('ui.home.freePlay')
+            : need != null
+              ? t('ui.home.roundOf', { n: Math.min(done + 1, need), total: need })
+              : t('ui.home.secretArea')
 
-  const off = !busy && !raid && !enter && (resting || (!gym && !boss && (closed || empty)))
+  const off = !busy && !raid && !enter && (resting || (!gym && !boss && closed))
   /** What waits in another area of the chain: its gym leader, its legend, or the round to play. */
   const waitsIn = (to: Area) => {
     const p = progressOf(save, to.id)
@@ -142,7 +142,7 @@ export function useContinue(area: Area) {
   }
   const go = () => {
     if (busy) return navigate('/area')
-    // Shut (sealed, no energy, resting): CONTINUE is greyed out, and the map's CONTINUE HERE says why instead.
+    // Shut (sealed, resting): CONTINUE is greyed out, and the map's CONTINUE HERE says why instead.
     if (off) return pushToast(sub, 'info')
     if (raid) return navigate(progressRaidPath(raid))
     if (enter || (portal?.active && portal.offers?.length) || struck) {
@@ -203,7 +203,6 @@ export function useContinue(area: Area) {
     boss,
     raid,
     closed,
-    empty,
     busy,
     resting,
     cleared: progress.cleared,
@@ -266,104 +265,163 @@ export function ContinueButton({
 export function StayHere({ sub, onClick }: { sub: string; onClick: () => void }) {
   const { t } = useT()
   return (
+    // A real button, the secondary beside GO TO's red (the user's call, 2026-10-27: an underlined word read as a link).
+    <PixelButton size="md" className="w-full" onClick={onClick} aria-label={`${t('ui.home.stayHere')} · ${sub}`}>
+      {t('ui.home.stayHere')}
+    </PixelButton>
+  )
+}
+
+
+/** What the area button's tag says: nothing, a secret area opened (NEW), or a new region open. */
+export type AreasState = 'plain' | 'new' | 'region'
+
+/** The area's rounds as pips: done gold, the next one pale gold, the rest empty (none for a secret area or a league). */
+export function RoundPips({ need, done, className }: { need: number; done: number; className?: string }) {
+  return (
+    <span className={cx('flex min-w-0 gap-[3px]', className)} aria-hidden>
+      {Array.from({ length: Math.min(need, 12) }, (_, i) => (
+        <i
+          key={i}
+          className={cx(
+            'h-2 max-w-[28px] flex-1',
+            i < done ? 'bg-gold shadow-ring' : i === done ? 'bg-gold-light shadow-ring' : 'bg-line shadow-ring-line',
+          )}
+        />
+      ))}
+    </span>
+  )
+}
+
+/**
+ * The area button (docs/43 §5.2): where the player is — the area's name, its levels and its rounds as pips — and the
+ * way to the Areas sheet (the area's details first, then the region's list). It took the plate's place over the scene.
+ * Shut by Darkrai's nightmare: a tap says why.
+ */
+export function AreaButton({
+  area,
+  areasState,
+  heldWhy,
+  onOpen,
+}: {
+  area: Area
+  areasState: AreasState
+  /** Why the player can't leave (the nightmare), or null. */
+  heldWhy: string | null
+  onOpen: () => void
+}) {
+  const { t } = useT()
+  const save = useGame((s) => s.save)!
+  // The round's own steps when the encounters are dealt from a deck (the area's gauge), its rounds as pips otherwise.
+  const steps = useGame((s) => s.data.config.showRoundGauge && s.data.config.encounterMode === 'deck')
+  const p = progressOf(save, area.id)
+  const span = useLevelSpan(area)
+  const need = area.roundsToClear || null
+  const done = p.cleared && need != null ? need : Math.min(p.roundsDone ?? 0, need ?? 0)
+  const levels = levelText(span)
+  const rounds =
+    need != null
+      ? t('ui.home.roundsDone', { done, total: need })
+      : area.roundsToClear === 0
+        ? t('ui.home.league')
+        : t('ui.home.secretArea')
+  const parade = useParadeLabel(area)
+  const news =
+    areasState === 'region' ? t('ui.home.areasNewRegion') : areasState === 'new' ? t('ui.home.areasNew') : ''
+  return (
     <button
       type="button"
-      onClick={onClick}
-      aria-label={`${t('ui.home.stayHere')} · ${sub}`}
-      className="min-h-[44px] self-center px-3 text-[20px] leading-none underline decoration-2 underline-offset-4"
+      // Shut by the nightmare: a tap says why instead of opening the sheet (still a button, for its reason).
+      onClick={heldWhy ? () => pushToast(heldWhy, 'info') : onOpen}
+      aria-haspopup={heldWhy ? undefined : 'dialog'}
+      aria-disabled={heldWhy ? true : undefined}
+      aria-label={
+        heldWhy
+          ? `${area.name} · ${t('ui.nightmare.areasLocked')}`
+          : [t('ui.home.areaButton', { area: area.name, levels, rounds }), news].filter(Boolean).join('. ') + parade
+      }
+      data-area-button
+      className={cx(
+        'pixel-btn relative flex min-h-[56px] w-full min-w-0 items-center gap-2.5 py-1.5 pl-2.5 pr-3 text-left',
+        heldWhy && 'hatched',
+      )}
     >
-      {t('ui.home.stayHere')}
+      <PixelIcon name={heldWhy ? 'lock' : 'map'} size={24} className="shrink-0" />
+      <span className="grid min-w-0 flex-1 gap-1.5">
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="min-w-0 flex-1 truncate text-[22px] leading-none">{area.name}</span>
+          <ShinyParadeChip area={area} />
+          {/* A new region on offer has its notice on Home; the button only says so to screen readers. */}
+          {!heldWhy && areasState === 'new' && <NewTag />}
+          {/* The levels in the top right corner, the round's steps across the width under them (the user, 2026-10-27). */}
+          <span className="whitespace-nowrap font-pixel-sm text-[16px] leading-none text-muted">{levels}</span>
+        </span>
+        {need != null && steps ? (
+          <RoundGauge area={area} progress={p} banner />
+        ) : need != null ? (
+          <span className="flex min-w-0 items-center gap-2.5">
+            <RoundPips need={need} done={done} className="flex-1" />
+            {/* The pips in words too: colour is never alone. */}
+            <span className="whitespace-nowrap font-pixel-sm text-[16px] leading-none tabular-nums" aria-hidden>
+              {done}/{need}
+            </span>
+          </span>
+        ) : (
+          <span className="truncate font-pixel-sm text-[16px] leading-none text-muted">{rounds}</span>
+        )}
+      </span>
     </button>
   )
 }
 
 /**
- * The Areas button and the one big action (useContinue). Behind in the region's main chain with nothing waiting here, it
- * is GO TO the furthest open area, with "Stay here" (the free play) under it; otherwise CONTINUE, with the green GO TO
- * under it while behind, and "keep exploring" when a gym or a legendary waits. (Auto-mode is switched in the area
- * itself, on the encounter screens.)
+ * Home's PLAY dock (docs/43 §5.2): the area button, then the one big action (useContinue). Behind in the region's main
+ * chain with nothing waiting here, the big action is GO TO the furthest open area, with "Stay here" (the free play)
+ * under it; otherwise CONTINUE, with the green GO TO and "keep exploring" (when a gym or a legendary waits) under it in
+ * one row. Phones pin it over the tab bar; on PC it heads the column beside the scene. (Auto-mode is switched in the
+ * area itself, on the encounter screens.)
  */
-export function ContinueBar({
-  area,
-  areasState,
-  onAreas,
-}: {
-  area: Area
-  /** plain, a NEW dot (a secret area opened), or gold: a new region is open. */
-  areasState: 'plain' | 'new' | 'region'
-  onAreas: () => void
-}) {
+export function PlayDock({ area }: { area: Area }) {
   const { t } = useT()
-  const { label, sub, go, explore, off, gym, boss, raid, empty, resting, latest, goTo, keepExploring } = useContinue(area)
-  const lockId = useId()
-  // Darkrai's nightmare holds the player in its area (docs/30): the Areas button is shut, and says why.
+  const { label, sub, go, explore, off, gym, boss, raid, resting, latest, goTo, keepExploring } = useContinue(area)
+  // Darkrai's nightmare holds the player in its area (docs/30): the area button is shut, and says why.
   const held = useGame((s) => nightmareLock(s.save, s.data))
   const heldWhy = held ? t('ui.nightmare.locked', { area: held.name }) : null
   const ahead = heldWhy ? null : goTo
+  const green = latest && !heldWhy && !ahead ? latest : null
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="grid grid-cols-[76px_minmax(0,1fr)] gap-2.5">
-        <button
-          type="button"
-          // Shut by the nightmare: a tap says why instead of opening the map (still a button, for its reason).
-          onClick={heldWhy ? () => pushToast(heldWhy, 'info') : onAreas}
-          aria-haspopup={heldWhy ? undefined : 'dialog'}
-          aria-disabled={heldWhy ? true : undefined}
-          aria-describedby={heldWhy ? lockId : undefined}
-          aria-label={
-            heldWhy
-              ? t('ui.nightmare.areasLocked')
-              : areasState === 'region'
-                ? t('ui.home.areasNewRegion')
-                : areasState === 'new'
-                  ? t('ui.home.areasNew')
-                  : t('ui.home.areasLabel')
-          }
-          className={cx(
-            'pixel-btn relative flex min-h-[72px] flex-col items-center justify-center gap-0.5 px-0.5',
-            heldWhy ? 'hatched' : areasState === 'region' && 'frame-gold sheen',
-          )}
-        >
-          <PixelIcon name={heldWhy ? 'lock' : 'map'} size={24} />
-          <span className="whitespace-normal text-center font-pixel-sm text-[15px] uppercase leading-none tracking-[0.04em]">
-            {heldWhy ? t('ui.home.areas') : areasState === 'region' ? t('ui.home.newRegion') : t('ui.home.areas')}
-          </span>
-          {!heldWhy && areasState === 'new' && (
-            <span className="absolute -right-2 -top-2 z-[1] bg-gold px-1 pb-0.5 font-pixel-sm text-[13px] leading-none text-ink shadow-ring">
-              {t('ui.common.new')}
-            </span>
-          )}
-        </button>
-        {ahead ? (
-          <ContinueButton label={ahead.label} sub={ahead.sub} icon="map" onClick={() => travelTo(ahead.area)} />
-        ) : (
-          <ContinueButton label={label} sub={sub} icon={gym || boss || raid ? 'sword' : 'play'} off={off} onClick={go} />
-        )}
-      </div>
-      {/* The free play stays a tap away under GO TO. */}
-      {ahead && <StayHere sub={sub} onClick={go} />}
+      {/* The area's banner stands on the scene (the user's call, 2026-10-27); the dock keeps what is played. */}
       {heldWhy && (
         <p
-          id={lockId}
-          className="m-0 flex items-start gap-2 bg-well p-2 font-pixel-sm text-[15px] leading-tight text-muted shadow-ring-line"
+          className="m-0 flex items-start gap-2 bg-well p-2 font-pixel-sm text-[16px] leading-tight text-muted shadow-ring-line"
         >
           <PixelIcon name="lock" size={16} className="mt-px shrink-0" />
           <span>{heldWhy}</span>
         </p>
       )}
       {resting && <RestingPanel />}
-      {latest && !heldWhy && !ahead && (
-        <PixelButton variant="success" size="lg" className="w-full" onClick={() => travelTo(latest)}>
-          <PixelIcon name="map" size={20} />
-          {t('ui.victory.goToArea', { name: latest.name })}
-        </PixelButton>
+      {ahead ? (
+        <ContinueButton label={ahead.label} sub={ahead.sub} icon="map" onClick={() => travelTo(ahead.area)} />
+      ) : (
+        <ContinueButton label={label} sub={sub} icon={gym || boss || raid ? 'sword' : 'play'} off={off} onClick={go} />
       )}
-      {keepExploring && (
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <PixelButton size="sm" onClick={explore} disabled={empty}>
-            {t('ui.home.keepExploring')}
-          </PixelButton>
+      {/* The free play stays a tap away under GO TO. */}
+      {ahead && <StayHere sub={sub} onClick={go} />}
+      {(green || keepExploring) && (
+        <div className={cx('grid gap-2', green && keepExploring && 'grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]')}>
+          {keepExploring && (
+            <PixelButton size="sm" className="w-full" onClick={explore}>
+              {t('ui.home.keepExploring')}
+            </PixelButton>
+          )}
+          {green && (
+            <PixelButton variant="success" size="sm" className="w-full" onClick={() => travelTo(green)}>
+              <PixelIcon name="map" size={18} />
+              {t('ui.victory.goToArea', { name: green.name })}
+            </PixelButton>
+          )}
         </div>
       )}
     </div>

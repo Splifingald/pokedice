@@ -2,7 +2,11 @@
 
 Each region's Pokédex gets a second page once that region's League is beaten: **Shiny**, every species of the region
 the player has owned shiny there. A collection to finish after the credits, as the Pokédex is before them. It sits
-behind its own admin switch (docs/15 §20), Off by default.
+behind its own admin switch (docs/15 §20), Off by default, until 2026-10-28.
+
+**Always on since 2026-10-28** (the user's call, when Admin → Config was made simpler): the switch is gone, the game
+keeps only the "on" path, and [`supabase/migrations/0084_switches_retired.sql`](https://github.com/Splifingald/pokedice/blob/version/2_4/supabase/migrations/0084_switches_retired.sql) deletes its row
+(`supabase/seed.sql` carries it inlined).
 
 ## 1. Decisions
 
@@ -20,8 +24,7 @@ behind its own admin switch (docs/15 §20), Off by default.
 
 ## 2. The engine (`src/engine/shinyDex.ts`)
 
-- `shinyDexOn(data)`: the switch (`game_config.shinyDex.access`, read through `eventOpenTo`).
-- `shinyDexOpen(save, data)`: the switch, a real region, its League beaten.
+- `shinyDexOpen(save, data)`: a real region, its League beaten.
 - `noteShinyDex(save)`: notes every shiny in the live Box, the parked regions' Boxes and the Day Care's residents
   under their own region (`save.shinyDex[region]`), never taking one off. The same save back when nothing is new. The
   store runs it as every save settles (`settle`, `store/game.ts`), so nothing that adds a Pokémon has to remember it.
@@ -45,6 +48,8 @@ behind its own admin switch (docs/15 §20), Off by default.
 Every state is on `/kitchen-sink` (`ShinyDexBits`).
 
 ## 4. Setting it up
+
+Now: run 0084 (above) once the client is deployed; nothing to switch. Before it:
 
 1. Deploy the client (the switch is Off: the Pokédex has one page; saves start noting their shinies).
 2. Run `supabase/migrations/0075_shiny_dex.sql` (the switch's row, Off, and the content version + 1; safe to run again):

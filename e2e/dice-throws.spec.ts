@@ -1,15 +1,14 @@
-// Recorded dice throws (docs/37): with the admin's switch on, a battle's dice are thrown in on a canvas each and land
-// as the resting dice, their names (the engine's faces) unchanged; a reroll throws only the picked dice. Off, no
-// canvas ever appears: the dice tumble as before.
+// Recorded dice throws (docs/37): a battle's dice are thrown in on a canvas each and land as the resting dice, their
+// names (the engine's faces) unchanged; a reroll throws only the picked dice.
 import { expect, test, type Page } from '@playwright/test'
 import { EVENTS_ON, makeSave, mockSupabase } from './helpers'
 
 const MOTION_ON = JSON.stringify({ sfx: false, sound: false, reducedMotion: false })
 
-async function boot(page: Page, throws: boolean) {
+async function boot(page: Page) {
   await page.setViewportSize({ width: 360, height: 640 })
   await mockSupabase(page)
-  const config = JSON.stringify({ ...EVENTS_ON, ...(throws ? { diceThrows: { access: 'all' } } : {}) })
+  const config = JSON.stringify(EVENTS_ON)
   await page.addInitScript(
     ([s, f, c]) => {
       localStorage.setItem('pokedice.save', s!)
@@ -53,10 +52,10 @@ async function toBattle(page: Page) {
 
 const labels = (page: Page) => tray(page).evaluateAll((els) => els.map((e) => e.getAttribute('aria-label')))
 
-test('the switch on: the dice are thrown in, land as the resting dice, and a reroll throws only the picked one', async ({
+test('the dice are thrown in, land as the resting dice, and a reroll throws only the picked one', async ({
   page,
 }) => {
-  await boot(page, true)
+  await boot(page)
   await toBattle(page)
   // Landed: no canvas left, every face showing.
   await expect(canvases(page)).toHaveCount(0)
@@ -78,17 +77,5 @@ test('the switch on: the dice are thrown in, land as the resting dice, and a rer
   await expect(tray(page).nth(0).locator('.die, .die-mini')).toHaveCSS('visibility', 'visible')
   const after = await labels(page)
   expect(after.slice(1)).toEqual(before.slice(1))
-  await expect(attack(page)).toBeEnabled()
-})
-
-test('the switch off: no canvas, the dice tumble as before', async ({ page }) => {
-  await boot(page, false)
-  await toBattle(page)
-  await tray(page).nth(0).click()
-  await page.getByRole('button', { name: /^REROLL/ }).click()
-  for (let i = 0; i < 8; i++) {
-    expect(await canvases(page).count()).toBe(0)
-    await page.waitForTimeout(80)
-  }
   await expect(attack(page)).toBeEnabled()
 })

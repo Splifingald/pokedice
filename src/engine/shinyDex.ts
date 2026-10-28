@@ -1,16 +1,12 @@
 // The shiny Pokédex (docs/39): each region's Pokédex has a second page, the species owned shiny there, once that
 // region's league is beaten. It only shows what the save holds; no server function acts for it.
-import { eventOpenTo } from './events'
 import { inWorldRegion, leagueDone, regionOf } from './regions'
 import type { GameData, PokemonInstance, RegionId, SaveData } from './types'
 
-export const shinyDexOn = (data: GameData): boolean => eventOpenTo(data.config.shinyDex?.access, data)
+/** The page is there: a real region (not a small world), and its league beaten. */
+export const shinyDexOpen = (save: SaveData, data: GameData): boolean => !inWorldRegion(save, data) && leagueDone(save, data)
 
-/** The page is there: the switch, a real region (not a small world), and its league beaten. */
-export const shinyDexOpen = (save: SaveData, data: GameData): boolean =>
-  shinyDexOn(data) && !inWorldRegion(save, data) && leagueDone(save, data)
-
-/** Its rules, once: at the first league beaten while it's on. */
+/** Its rules, once: at the first league beaten. */
 export const shinyDexRulesDue = (save: SaveData, data: GameData): boolean =>
   !save.shinyDexSeen && shinyDexOpen(save, data)
 

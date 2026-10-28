@@ -1,6 +1,6 @@
 // Kitchen sink (dev only): the rewards' game feel (docs/38 §4) — the gold counting up from 0, its coins flying to the
-// top bar's gold, the XP bar's steps and level-up flash, the pixel confetti, the Pokédex registration card, and the
-// Upgrades' navy and best-buy buttons with a purchase's pop, frozen on its frames.
+// top bar's gold, the XP bar's steps and level-up flash, the pixel confetti, the Pokédex registration card, the
+// League's heal card (docs/42), and the Upgrades' navy and best-buy buttons with a purchase's pop, frozen on its frames.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { xpToNext } from '@/engine'
 import { Confetti } from '@/components/Confetti'
@@ -10,7 +10,7 @@ import { PixelButton } from '@/components/PixelButton'
 import { PixelIcon } from '@/components/icons'
 import { xpFillFrames } from '@/lib/xpFill'
 import { useGame } from '@/store/game'
-import { DexRegisteredCard, GoldCard } from '../battle/VictoryView'
+import { DexRegisteredCard, GoldCard, LeagueHealedCard } from '../battle/VictoryView'
 import { UpCard, type Up, type UpPop } from '../Upgrades'
 
 const PAIR: Up = {
@@ -39,7 +39,7 @@ function useReplay(n: number, ms: number): [number, () => void] {
 }
 
 const Label = ({ children }: { children: string }) => (
-  <small className="font-pixel-sm text-[14px] text-muted">{children}</small>
+  <small className="font-pixel-sm text-[16px] text-muted">{children}</small>
 )
 
 export function RewardBits() {
@@ -62,7 +62,7 @@ export function RewardBits() {
     <div className="grid w-full max-w-md gap-4">
       <div className="grid gap-1">
         <GoldCard key={gold} amount={1250} />
-        <Label>The victory's gold: it counts up from 0 (the coin ticks need the Game feel switch)</Label>
+        <Label>The victory's gold: it counts up from 0 (a coin's tick as it counts)</Label>
         <PixelButton size="sm" onClick={() => setGold((n) => n + 1)}>
           Count again
         </PixelButton>
@@ -91,16 +91,16 @@ export function RewardBits() {
 
       {inst && (
         <div className="grid gap-1">
-          <XpBar inst={inst} shown={frames[Math.min(xpAt, frames.length - 1)]} stepped />
+          <XpBar inst={inst} shown={frames[Math.min(xpAt, frames.length - 1)]} />
           <Label>The XP bar in steps, Lv.11 → Lv.12 (playing)</Label>
           <PixelButton size="sm" onClick={replayXp}>
             Fill again
           </PixelButton>
-          <XpBar inst={inst} shown={frames[0]} stepped />
+          <XpBar inst={inst} shown={frames[0]} />
           <Label>Filling: its first step</Label>
-          <XpBar inst={inst} shown={frames[white]} stepped />
+          <XpBar inst={inst} shown={frames[white]} />
           <Label>The level-up's white frame</Label>
-          <XpBar inst={inst} shown={frames[white + 2]} stepped />
+          <XpBar inst={inst} shown={frames[white + 2]} />
           <Label>Rolled over to Lv.12, empty</Label>
         </div>
       )}
@@ -112,7 +112,7 @@ export function RewardBits() {
               key={`${frame}-${burst}`}
               className="relative inline-block h-10 w-10 bg-well shadow-ring-line"
             >
-              <Confetti pixel frame={frame} spread={18} />
+              <Confetti frame={frame} spread={18} />
             </span>
           ))}
         </div>
@@ -125,6 +125,11 @@ export function RewardBits() {
       <div className="grid gap-1">
         <DexRegisteredCard dex={16} />
         <Label>A species' first catch, under its catch card</Label>
+      </div>
+
+      <div className="grid gap-1">
+        <LeagueHealedCard />
+        <Label>A League battle won with another still to fight (docs/42)</Label>
       </div>
 
       <ul className="m-0 grid list-none gap-2 p-0">

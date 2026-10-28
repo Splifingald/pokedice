@@ -99,11 +99,6 @@
  },
  "shinyChance": 0.00375,
  "configVersion": 77,
- "energy": {
-  "max": 50,
-  "enabled": false,
-  "minutesPerEnergy": 30
- },
  "roamers": {
   "dex": [
    243,

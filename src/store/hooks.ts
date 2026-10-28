@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { badgesHeld, energyNow, portalLock, type EnergyView } from '@/engine'
+import { badgesHeld, portalLock } from '@/engine'
 import { useT } from '@/i18n/react'
 import { isAdminEmail } from '@/lib/supabase'
 import { typeHintsOn } from '@/save/storage'
@@ -22,6 +22,11 @@ export function useTypeHints(): boolean {
   return useGame((s) =>
     typeHintsOn(s.settings, s.settings.typeHints == null && s.save ? badgesHeld(s.save, s.data) : 0),
   )
+}
+
+/** More details (docs/42): the invested player's numbers and logs, off unless switched on in Settings. */
+export function useDetails(): boolean {
+  return useGame((s) => s.settings.details === true)
 }
 
 /**
@@ -52,13 +57,4 @@ export function useNow(ms = 1000): number {
     return () => clearInterval(t)
   }, [ms])
   return now
-}
-
-/** The player's energy, ticking every second; null when the energy system is off (or there's no save). */
-export function useEnergy(): (EnergyView & { now: number }) | null {
-  const save = useGame((s) => s.save)
-  const cfg = useGame((s) => s.data.config.energy)
-  const now = useNow()
-  if (!save || !cfg.enabled) return null
-  return { ...energyNow(save, cfg, now), now }
 }

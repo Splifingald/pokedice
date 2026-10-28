@@ -23,7 +23,6 @@ import {
   enterArea,
   finishCenter,
   leaveCasino,
-  outOfEnergy,
 } from './run'
 import { serverNow } from './serverTime'
 
@@ -46,7 +45,6 @@ export function autoStepNow(held = false): AutopilotStep | null {
       encounter: run.encounter?.kind ?? null,
       pendingCatch: !!run.pendingCatchId,
       held,
-      noEnergy: run.phase === 'idle' && outOfEnergy(),
       catch: run.catch
         ? { dex: run.catch.dex, shiny: !!run.catch.shiny, throw: throwOf(run.catch.result) }
         : undefined,

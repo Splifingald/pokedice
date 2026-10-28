@@ -18,6 +18,9 @@ const PACE: Record<RunPhase, number> = {
   trick: 1000,
 }
 
+/** A find's step (FindView): long enough to see it land; its PICK IT UP, loading under the autopilot, goes first. */
+const FIND_MS = 2000
+
 /** A pop-up is open (a feature's rules, a sheet the player opened): the autopilot waits for it to close. */
 const heldByPopup = () =>
   typeof document !== 'undefined' && !!document.querySelector('[aria-modal="true"],[role="dialog"]')
@@ -28,7 +31,7 @@ export function useAutopilot(): boolean {
   const phase = useGame((s) => s.run.phase)
   const areaId = useGame((s) => s.run.areaId)
   const encounter = useGame((s) => s.run.encounter)
-  // Re-checked after every step, so a wait (no energy yet, a pop-up) picks up again by itself.
+  // Re-checked after every step, so a wait (a pop-up, a rest) picks up again by itself.
   const [beat, setBeat] = useState(0)
   useEffect(() => {
     if (!full) return
@@ -36,7 +39,7 @@ export function useAutopilot(): boolean {
       const step = autoStepNow(heldByPopup())
       if (step) runAutoStep(step)
       setBeat((n) => n + 1)
-    }, PACE[phase])
+    }, phase === 'preview' && encounter?.kind === 'item' ? FIND_MS : PACE[phase])
     return () => clearTimeout(timer)
   }, [full, phase, areaId, encounter, beat])
   return full

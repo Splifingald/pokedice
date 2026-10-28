@@ -1,15 +1,13 @@
 // A raid's own rules on its page (docs/40, the raid overhaul): its level and bars, its weather, each rule and its last
 // bar, so players can learn the pattern before going in; INFO tells how the overhaul works. The engine decides every
 // rule and number (engine/raidSpecials.ts); this only words them.
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { PixelIcon, type IconName } from '@/components/icons'
-import { useMyTurn, useOnScreen } from '@/components/popupTurn'
 import { RuleList, RulesModal, type RuleRow } from '@/components/RulesModal'
 import {
   lowHpFormOf,
   markRaidRulesSeen,
   megaRaidDie,
+  raidOverhaulRulesDue,
   raidRules,
   raidSpecialFor,
   type GameData,
@@ -21,7 +19,8 @@ import {
 import { useT } from '@/i18n/react'
 import { typeName } from '@/lib/format'
 import { mutateSave, useGame } from '@/store/game'
-import { bannerUrl } from './shared'
+import { RulesCard } from '@/components/RulesCard'
+import { bannerUrl, eventRulesDue } from './shared'
 
 type T = (key: string, vars?: Record<string, string | number>) => string
 
@@ -232,32 +231,59 @@ export function raidRuleRows(
   return rows
 }
 
-/** The raid page's section: this raid's rules, and INFO for how the overhaul works. Nothing with the overhaul off. */
+/**
+ * The raid page's section: this raid's rules, folded (docs/43 §5.11: a page shows what's needed to act; the pattern is
+ * one tap away for whoever wants to learn it), its summary saying how many there are; the book for how the overhaul
+ * works. Nothing with the overhaul off.
+ */
 export function RaidRulesPanel({ dex, kind, areaId }: { dex: number; kind: RaidKindOf; areaId?: string }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
-  const [info, setInfo] = useState(false)
   const rows = raidRuleRows(data, dex, kind, areaId, t)
   if (!rows) return null
+  // Always open, and no book beside it (the user's call, 2026-10-27): this raid's rules are what the page is read for;
+  // how raids work in general is the Raids page's rules card and INFO.
   return (
-    <section aria-labelledby="raid-rules-title" className="grid gap-2.5 bg-paper p-3 shadow-card">
-      <div className="flex items-center justify-between gap-2">
-        <h2 id="raid-rules-title" className="m-0 text-[22px] font-normal leading-none">
+    <section aria-labelledby="raid-rules-title" className="grid gap-1 bg-paper px-3 pb-3 shadow-card">
+      <div className="flex min-h-[48px] items-center gap-2">
+        <PixelIcon name="warning" size={20} />
+        <h2 id="raid-rules-title" className="m-0 flex-1 text-[22px] font-normal leading-none">
           {t('ui.raid.rules.title')}
         </h2>
-        <button
-          type="button"
-          className="grid h-11 min-w-11 place-items-center px-2 font-pixel-sm text-[15px] text-muted"
-          onClick={() => setInfo(true)}
-          aria-label={t('ui.raid.rules.infoLabel')}
-        >
-          <PixelIcon name="book" size={20} />
-        </button>
       </div>
       <RuleList rules={rows} />
-      <RaidRulesInfo open={info} onClose={() => setInfo(false)} />
     </section>
   )
+}
+
+/** How the overhaul works, as rows: the one source for its card, its INFO and its pop-up. */
+export function raidOverhaulRows(t: T): RuleRow[] {
+  return [
+    { icon: 'star', title: t('ui.raid.rules.info.level.title'), text: t('ui.raid.rules.info.level.text') },
+    {
+      icon: 'warning',
+      title: t('ui.raid.rules.info.pattern.title'),
+      text: t('ui.raid.rules.info.pattern.text'),
+    },
+    { icon: 'crown', title: t('ui.raid.rules.info.final.title'), text: t('ui.raid.rules.info.final.text') },
+    {
+      icon: 'masterball',
+      title: t('ui.raid.rules.info.mega.title'),
+      text: t('ui.raid.rules.info.mega.text'),
+    },
+  ]
+}
+
+/**
+ * The overhaul's rules where they apply (docs/43 §7): a card at the top of the Raids page while unread, GOT IT sets
+ * `raidRulesSeen`; the Raids page's INFO shows them again. It waits while the raids' own card is up (one at a time).
+ */
+export function RaidRulesCard() {
+  const { t } = useT()
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  if (!save || !raidOverhaulRulesDue(save, data) || eventRulesDue('raid', save)) return null
+  return <RulesCard title={t('ui.events.raid.name')} icon="star" rules={raidOverhaulRows(t)} onDone={seen} />
 }
 
 /**
@@ -275,20 +301,7 @@ export function RaidRulesInfo({
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
-  const rows: RuleRow[] = [
-    { icon: 'star', title: t('ui.raid.rules.info.level.title'), text: t('ui.raid.rules.info.level.text') },
-    {
-      icon: 'warning',
-      title: t('ui.raid.rules.info.pattern.title'),
-      text: t('ui.raid.rules.info.pattern.text'),
-    },
-    { icon: 'crown', title: t('ui.raid.rules.info.final.title'), text: t('ui.raid.rules.info.final.text') },
-    {
-      icon: 'masterball',
-      title: t('ui.raid.rules.info.mega.title'),
-      text: t('ui.raid.rules.info.mega.text'),
-    },
-  ]
+  const rows = raidOverhaulRows(t)
   return (
     <RulesModal
       open={open}
@@ -303,23 +316,3 @@ export function RaidRulesInfo({
 }
 
 const seen = () => mutateSave((s) => (s.events?.raidRulesSeen ? null : markRaidRulesSeen(s)))
-
-/**
- * Once, between fights, the first time a progression raid is open with the overhaul on. It takes its turn in the
- * one-time pop-ups' queue (engine/popups.ts), after the battle powers'. Let's go! leads to the Raids page.
- */
-export function RaidRulesPopup() {
-  const open = useMyTurn('raidRules')
-  useOnScreen('raidRules', open)
-  const navigate = useNavigate()
-  return (
-    <RaidRulesInfo
-      open={open}
-      onClose={seen}
-      onGo={() => {
-        seen()
-        navigate('/events/raid')
-      }}
-    />
-  )
-}

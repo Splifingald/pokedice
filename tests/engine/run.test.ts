@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  buildDeck,
   applyCatch,
   applyHp,
   applyVictory,
@@ -98,7 +99,12 @@ describe('encounters', () => {
   it('forces a Center first when anyone is hurt', () => {
     const base = fresh()
     const hurt = { ...base, box: base.box.map((p) => ({ ...p, currentHp: 1 })) }
-    expect(rollEncounter(ctx(hurt, { isFirstInArea: true }), createRng(1))).toEqual({ kind: 'center', forced: true })
+    // Mid-round (a fresh round opens with its own Center anyway).
+    const midRound = { ...progressOf(hurt, A1.id), deck: ['wild' as const] }
+    expect(rollEncounter(ctx(hurt, { isFirstInArea: true, progress: midRound }), createRng(1))).toEqual({
+      kind: 'center',
+      forced: true,
+    })
     expect(rollEncounter(ctx(fresh(), { isFirstInArea: true }), createRng(1)).kind).not.toBe('boss')
   })
 
@@ -106,7 +112,8 @@ describe('encounters', () => {
     const seen = new Set<string>()
     const rng = createRng(3)
     for (let i = 0; i < 200; i++) {
-      const e = rollEncounter(ctx(fresh()), rng)
+      // A card off the top of a deck mid-round (a fresh round opens with its Center).
+      const e = rollEncounter(ctx(fresh(), { progress: { ...emptyProgress(), deck: buildDeck(A1, data, rng) } }), rng)
       seen.add(e.kind)
       if (e.kind === 'wild') {
         expect(A1.wildPool.some((w) => w.dex === e.dex)).toBe(true)
@@ -121,7 +128,9 @@ describe('encounters', () => {
 
   it('offers trainers in Viridian Forest', () => {
     const rng = createRng(8)
-    const kinds = Array.from({ length: 100 }, () => rollEncounter(ctx(fresh(), { area: FOREST, progress: emptyProgress() }), rng))
+    const kinds = Array.from({ length: 100 }, () =>
+      rollEncounter(ctx(fresh(), { area: FOREST, progress: { ...emptyProgress(), deck: buildDeck(FOREST, data, rng) } }), rng),
+    )
     const t = kinds.find((k): k is Extract<Encounter, { kind: 'trainer' }> => k.kind === 'trainer')
     expect(t).toBeDefined()
     expect(t!.team.length).toBeGreaterThanOrEqual(1)

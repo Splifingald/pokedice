@@ -25,6 +25,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   scaleLevelSpread: 3,
   enemyUpgradeLevel: 1,
   versusUpgradeLevel: 5,
+  // The weekly Versus league (docs/44): off until the admin switches it on (the numbers: engine/versusLeague.ts).
+  versusLeague: { access: 'off' },
   allowVoluntarySwitch: true,
   maxBattleTurns: 150,
   multiExpShare: 0.3,
@@ -38,7 +40,6 @@ export const DEFAULT_CONFIG: GameConfig = {
   shinyChance: 0.01,
   cloudSyncMinutes: 15,
   maxFriends: 100,
-  energy: { enabled: true, max: 50, minutesPerEnergy: 30 },
   status: {
     burn: { threshold: 1, percentPerStack: 4, duration: 3 },
     poison: { percent: 5, duration: 5 },
@@ -368,20 +369,35 @@ export const DEFAULT_CONFIG: GameConfig = {
   // Idle mode and the play styles (docs/36): off until the admin switches it on; auto-mode stays as it was meanwhile.
   // Migration 0068 inserts the same row.
   idleMode: { access: 'off' },
-  // Recorded dice throws (docs/37): off until the admin switches them on; the dice tumble as before meanwhile.
-  // Migration 0069 inserts the same row.
-  diceThrows: { access: 'off' },
-  raidOverhaul: { access: 'off' },
-  // The game-feel pass, haptics and battle music (docs/38): on for everyone, as the user chose for 2.3; the admin can
-  // still switch each off. Migration 0079 sets the same rows (0074 had put them in Off).
-  gameFeel: { access: 'all' },
-  haptics: { access: 'all' },
-  music: { access: 'all' },
-  // The shiny Pokédex (docs/39): off until the admin switches it on. Migration 0075 inserts the same row.
-  shinyDex: { access: 'off' },
+  // The League's heal between its battles (docs/42): off until the admin switches it on. Migration 0081 inserts the
+  // same row.
+  leagueHeal: { access: 'off' },
   // The Unown Pokédex (docs/41): off until the admin switches it on; ₽1,000 for the 28th letter. Migration 0080 inserts
   // the same row.
   unownDex: { access: 'off', reward: 1000 },
+  // Route 1's set opening (docs/46): off until the admin switches it on. Two rounds met in a set order, ending with
+  // Youngster Joey's Rattata (₽10); the rounds after them are shuffled as before. Migration 0081 inserts the switch's row.
+  openingRounds: {
+    access: 'off',
+    areaId: '3585c2a5-43bc-50c9-9818-e148404cabf8',
+    rounds: [
+      [
+        { kind: 'wild', dex: 19, level: 2 },
+        { kind: 'wild', dex: 16, level: 2 },
+        { kind: 'item', itemKey: 'poke-ball', qty: 2 },
+        { kind: 'center' },
+        { kind: 'wild', dex: 19, level: 3 },
+        { kind: 'trainer', trainerId: '251c41f0-3e55-56a0-bb95-7a33ea96b68f', prize: 10 },
+      ],
+      [
+        { kind: 'wild', dex: 16, level: 4 },
+        { kind: 'wild', dex: 19, level: 3 },
+        { kind: 'item', itemKey: 'potion', qty: 1 },
+        { kind: 'wild', dex: 43, level: 4 },
+        { kind: 'wild', dex: 16, level: 5 },
+      ],
+    ],
+  },
   // Double battles (docs/33): off until the admin switches them on; from Hoenn on, 10 % of the wild encounters.
   // Migration 0062 inserts the same row.
   doubleBattles: { access: 'off', regions: ['hoenn', 'sinnoh', 'unova', 'kalos', 'alola', 'galar', 'paldea'], wildChance: 10 },

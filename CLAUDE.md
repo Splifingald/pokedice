@@ -4,7 +4,8 @@
   accessibility, motion levels, sound, strings and web requests. Read it before changing any screen; update it when a
   rule changes. Every new component goes on `/kitchen-sink` in every state.
 - **Every new feature** gets the admin's Off / On for admin / On for everyone switch (Off by default, checked by the
-  server too) and its rules pop-up once plus an INFO button: `docs/15-UI-GUIDELINES.md` §20.
+  server too) and its rules once plus an INFO button: a `RulesCard` at the top of its page the first time it opens (a
+  pop-up only for a feature with no page of its own): `docs/15-UI-GUIDELINES.md` §20.
 - The engine (`src/engine`) is pure (no React, store, DOM or fetch; eslint enforces it) and decides every rule and
   number. The UI presents the battle state and its log; it never decides an outcome.
 - Text lives only in `src/i18n/strings.csv`, all ten languages filled; run `pnpm i18n:fonts` after editing a CJK column.
@@ -19,6 +20,11 @@
   (`https://github.com/Splifingald/pokedice/blob/<branch>/supabase/migrations/<file>.sql`), in the reply and in the
   feature's doc (its "Setting it up" steps). Say also that `supabase/seed.sql` carries it when the migration is inlined.
 - Never push to `main`.
+- **Testing is on Netlify Deploy Previews**, not Artifacts (the user's rule, 2026-10-26): push the work to its branch, keep
+  a pull request open for it (into the version branch), and give the user its preview link
+  (`https://deploy-preview-<PR>--poke-dice.netlify.app`) once Netlify has built the latest commit. Netlify builds
+  previews only for PRs into `main` or a branch-deploy branch (Project configuration › Build & deploy › Branches and
+  deploy contexts): a new version branch goes in that list first.
 - **Patch note with every change bound for `main`** (a push the user asks for, or a PR into `main`): write
   `patch-notes/YYYY-MM-DD-short-name.md` (format: `patch-notes/README.md`), show it to the user with
   `pnpm discord:patch-notes <file> --dry`, and add it only once they approve it. Adding it to `main` posts it to Discord

@@ -92,9 +92,10 @@ test('dark: the Pokémon sheet and the Pokédex entry keep their contrast', asyn
   await page.setViewportSize({ width: 390, height: 844 })
   await boot(page, save('dark'))
   await page.goto('/team')
+  // The team's card (the banner over it lists the same Pokémon for screen readers, first): the last match.
   await page
     .getByRole('button', { name: /Pikachu/ })
-    .first()
+    .last()
     .click()
   await expect(page.getByRole('dialog', { name: /Pikachu/ })).toBeVisible()
   const sheet = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze()
@@ -107,4 +108,26 @@ test('dark: the Pokémon sheet and the Pokédex entry keep their contrast', asyn
   await expect(page.getByRole('dialog', { name: /Charmander/ })).toBeVisible()
   const dex = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze()
   expect(dex.violations.flatMap((v) => v.nodes.map((n) => n.target.join(' ')))).toEqual([])
+})
+
+// Every component in every state: whatever reads at daybreak reads at dusk too. A few states are dim on
+// purpose in both themes (a fainted card), so the dusk list is held to the daybreak one, not to nothing.
+test('dark /kitchen-sink: no text reads worse at dusk than at daybreak', async ({ browser }) => {
+  test.setTimeout(240_000)
+  const failing = async (theme: 'light' | 'dark') => {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
+    const page = await context.newPage()
+    await boot(page, save(theme))
+    await page.goto('/kitchen-sink')
+    await expect(page.getByRole('heading', { name: 'StatusIcons · PixelIcon' })).toBeAttached({
+      timeout: 90_000,
+    })
+    await page.waitForTimeout(400)
+    const { violations } = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze()
+    await context.close()
+    return violations.flatMap((v) => v.nodes.map((n) => `${n.target.join(' ')} ${n.html.slice(0, 120)}`))
+  }
+  const light = await failing('light')
+  const dark = await failing('dark')
+  expect(dark.filter((n) => !light.includes(n))).toEqual([])
 })

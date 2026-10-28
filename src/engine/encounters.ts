@@ -4,6 +4,7 @@ import { shuffle } from './deal'
 import { eventOn, gameCornerOn } from './events'
 import { regionOfArea } from './regions'
 import { drawLoot } from './items'
+import { openingCardAt, openingDeck, openingRound, openingRoundDue } from './opening'
 import { pityChance } from './pity'
 import { asSeenBy, gymsFor, type PlayerSide } from './rival'
 import type { Rng } from './rng'
@@ -19,6 +20,7 @@ import type {
   EncounterKind,
   GameData,
   LevelOffsetRange,
+  OpeningCard,
   SkipPolicy,
   Trainer,
   TrainerMon,
@@ -30,8 +32,19 @@ import type {
 export type Encounter =
   /** `partner`: a second wild Pokémon, for a double battle (docs/33). */
   | { kind: 'wild'; dex: number; level: number; isNew: boolean; shiny?: boolean; partner?: WildPartner }
-  /** `double`: fought 2 v 2, two of the team out at once (docs/33). */
-  | { kind: 'trainer'; trainerId: string; name: string; spriteUrl: string | null; team: TrainerMon[]; double?: boolean }
+  /**
+   * `double`: fought 2 v 2, two of the team out at once (docs/33). `prize`: a set opening's trainer (docs/46) pays these
+   * ₽ for the win instead of the usual amount per K.O.
+   */
+  | {
+      kind: 'trainer'
+      trainerId: string
+      name: string
+      spriteUrl: string | null
+      team: TrainerMon[]
+      double?: boolean
+      prize?: number
+    }
   | {
       kind: 'gym'
       trainerId: string
@@ -79,15 +92,12 @@ export interface EncounterContext {
   teamHurt: boolean
   /** Anyone on the team at 0 HP — easy areas send a Center next. */
   teamFainted?: boolean
+  /** The starter on the team at 0 HP: during the set opening (docs/46), only this sends an easy area's Center. */
+  starterFainted?: boolean
   isFirstInArea: boolean
   pokedex: readonly number[]
   /** Dev tools: force the next encounter type. */
   forceKind?: ForceKind | null
-  /**
-   * A Pokémon Center would do something (someone hurt, or a Pokémon in the Box to swap in) — then every new round
-   * opens with one. Unset = no round Center.
-   */
-  centerUseful?: boolean
   /** The player's starter and character: picks the rival version of a trainer. */
   player?: PlayerSide | null
   /** Extreme mode: no Pokémon Center is ever dealt or sent. */
@@ -368,6 +378,16 @@ export function deckCounts(
 export const deckSize = (area: Area, data?: GameData) =>
   Object.values(deckCounts(area.encounterWeights, deckAbilities(area, data))).reduce((a, b) => a + b, 0)
 
+/** The next round dealt here is the set opening's first (docs/42): no Pokémon Center opens it. */
+export const opensWithoutCenter = (area: Area, progress: AreaProgress, data: GameData): boolean =>
+  openingRoundDue(area, progress, data) === 0
+
+/** Cards in the next round dealt here: the set opening's round when one is due (docs/46), else a fresh deck's. */
+export function nextRoundSize(area: Area, progress: AreaProgress, data: GameData): number {
+  const due = openingRoundDue(area, progress, data)
+  return (due == null ? null : openingRound(area, data, due))?.length ?? deckSize(area, data)
+}
+
 export const deckAbilities = (area: Area, data?: GameData) => ({
   wild: area.wildPool.length > 0,
   trainer: area.trainerPool.length > 0,
@@ -416,6 +436,8 @@ export interface EncounterRoll {
   drawn?: DeckCard[]
   /** A fresh deck was dealt: a new round began. */
   newRound?: boolean
+  /** With `newRound`: the set opening's round the fresh deck is (docs/46), or null for a shuffled one. */
+  opening?: number | null
 }
 
 /**
@@ -425,21 +447,16 @@ export interface EncounterRoll {
 export function dueCenter(ctx: EncounterContext): 'round' | 'hurt' | 'fainted' | null {
   const { area, data } = ctx
   if (ctx.noCenters || ctx.progress.lastCenter) return null
-  // A round is one full deck. A new one opens with a Pokémon Center, outside the deck — unless it would do nothing.
-  if (data.config.encounterMode !== 'random' && !ctx.progress.deck?.length && ctx.centerUseful) return 'round'
+  // A round is one full deck. A new one opens with a Pokémon Center, outside the deck, even with nothing to heal (the
+  // user's call, 2026-10-27: a step of every round, on its gauge).
+  // The set opening's first round (docs/46) starts straight with its first card: the game begins with a fight.
+  if (data.config.encounterMode !== 'random' && !ctx.progress.deck?.length && !opensWithoutCenter(area, ctx.progress, data))
+    return 'round'
   if (ctx.isFirstInArea && ctx.teamHurt && data.config.forcedCenterWhenHurt) return 'hurt'
-  if (area.easyMode && ctx.teamFainted) return 'fainted'
+  // During the set opening (docs/46), only the starter's K.O. sends one.
+  const opening = openingRoundDue(area, ctx.progress, data) != null
+  if (area.easyMode && (opening ? ctx.starterFainted : ctx.teamFainted)) return 'fainted'
   return null
-}
-
-/**
- * The next encounter is a Pokémon Center, known without drawing: one the game sends (`dueCenter`), or a Center card
- * on top of the deck (none right after a Center). Centers cost no energy, so this is what 0 energy still allows.
- */
-export function centerIsNext(ctx: EncounterContext): boolean {
-  if (dueCenter(ctx)) return true
-  const deck = ctx.progress.deck
-  return ctx.data.config.encounterMode !== 'random' && !ctx.progress.lastCenter && !!deck?.length && deck[deck.length - 1] === 'center'
 }
 
 /**
@@ -448,7 +465,7 @@ export function centerIsNext(ctx: EncounterContext): boolean {
  * A due gym battle or legendary is never dealt here: the player takes it on when ready (`challengeEncounter`).
  */
 export function nextEncounter(ctx: EncounterContext, rng: Rng): EncounterRoll {
-  const { area, data } = ctx
+  const { data } = ctx
   const fixed = (encounter: Encounter): EncounterRoll => ({ encounter, deck: null, lootDeck: null })
   if (ctx.forceKind === 'item') {
     const found = findItem(ctx, rng)
@@ -459,8 +476,9 @@ export function nextEncounter(ctx: EncounterContext, rng: Rng): EncounterRoll {
   }
   const due = dueCenter(ctx)
   if (due === 'round') {
-    const deck = buildDeck(area, data, rng, legendCards(ctx), { noCenterFirst: true })
-    return { encounter: { kind: 'center', forced: true, reason: 'round' }, deck, lootDeck: null, drawn: [], newRound: true }
+    const { deck, opening } = dealRound(ctx, rng, true)
+    // The opening Center is the round's first step: it is in the round's record, so its gauge shows it met.
+    return { encounter: { kind: 'center', forced: true, reason: 'round' }, deck, lootDeck: null, drawn: ['center'], newRound: true, opening }
   }
   if (due === 'hurt') return fixed({ kind: 'center', forced: true })
   if (due === 'fainted') return fixed({ kind: 'center', forced: true, reason: 'fainted' })
@@ -520,12 +538,61 @@ const cardEncounter = (card: 'wild' | 'trainer' | 'center' | 'casino' | 'trick',
 /** The extra card a fled legendary adds to every deck dealt until it's caught. */
 const legendCards = (ctx: EncounterContext): DeckCard[] => (fledLegendary(ctx.area, ctx.progress, ctx.pokedex, ctx.data) ? ['legend'] : [])
 
+/** A new round's deck: the set opening's round when one is due here (docs/46), else a freshly shuffled one. */
+function dealRound(ctx: EncounterContext, rng: Rng, noCenterFirst: boolean): { deck: DeckCard[]; opening: number | null } {
+  const opening = openingRoundDue(ctx.area, ctx.progress, ctx.data)
+  const round = opening == null ? null : openingRound(ctx.area, ctx.data, opening)
+  if (round) return { deck: openingDeck(round, ctx.noCenters), opening }
+  const deck = buildDeck(ctx.area, ctx.data, rng, legendCards(ctx), { noCenterFirst, noCenters: ctx.noCenters })
+  return { deck, opening: null }
+}
+
+/**
+ * The set opening's card for a draw from its round's deck (docs/46): a wild Pokémon at its level (the wild shiny odds
+ * still roll), a trainer with their prize, a find. Null when the content no longer has it: the card is discarded.
+ */
+function openingEncounter(card: OpeningCard, ctx: EncounterContext, rng: Rng, id: string): Encounter | null {
+  const { data } = ctx
+  if (card.kind === 'wild') {
+    if (!data.species[card.dex]) return null
+    const shiny = !shinyLocked(data, card.dex) && rollShiny(data, rng, ctx.shinyBoost, ctx.shinyChance)
+    return { kind: 'wild', dex: card.dex, level: enemyLevel(card.level, ctx, rng), isNew: !ctx.pokedex.includes(card.dex), ...(shiny && { shiny }) }
+  }
+  if (card.kind === 'item')
+    return card.itemKey === 'money' || data.items[card.itemKey]
+      ? { kind: 'item', entryId: id, itemKey: card.itemKey, qty: Math.max(1, Math.round(card.qty)) }
+      : null
+  if (card.kind === 'trainer') {
+    const t = data.trainers[card.trainerId]
+    if (!t?.team.length) return null
+    return {
+      kind: 'trainer',
+      trainerId: t.id,
+      name: t.name,
+      spriteUrl: t.spriteUrl,
+      team: dealTrainerItems(
+        t.team.map((m) => ({ dex: m.dex, level: enemyLevel(m.level, ctx, rng, 'trainer'), ...(m.shiny && { shiny: true }) })),
+        t.items,
+        data,
+      ),
+      ...(card.prize != null && { prize: Math.max(0, Math.round(card.prize)) }),
+    }
+  }
+  return { kind: 'center', forced: false }
+}
+
 function drawFromDeck(ctx: EncounterContext, rng: Rng): EncounterRoll {
   const afterCenter = !!ctx.progress.lastCenter
-  const deal = () => buildDeck(ctx.area, ctx.data, rng, legendCards(ctx), { noCenterFirst: afterCenter, noCenters: ctx.noCenters })
   let newRound = !ctx.progress.deck?.length
+  let opening: number | null = newRound ? null : (ctx.progress.opening ?? null)
+  const deal = () => {
+    const dealt = dealRound(ctx, rng, afterCenter)
+    opening = dealt.opening
+    return dealt.deck
+  }
   let deck = newRound ? deal() : [...ctx.progress.deck!]
   let drawn: DeckCard[] = []
+  const roll = (r: Omit<EncounterRoll, 'opening'>): EncounterRoll => (r.newRound ? { ...r, opening } : r)
   // A card the area can no longer produce (content edited since the deal, a legendary caught) is discarded.
   const tries = 2 * (deck.length + deckSize(ctx.area, ctx.data) + 1)
   for (let i = 0; i < tries; i++) {
@@ -553,16 +620,26 @@ function drawFromDeck(ctx: EncounterContext, rng: Rng): EncounterRoll {
         deck.push('center')
       }
     }
+    // A set opening's round (docs/46): the card is its next one (switched off since the deal: as any deck's card).
+    const set = opening == null ? null : openingRound(ctx.area, ctx.data, opening)
+    if (set && card !== 'center') {
+      const turnedOver = [...(newRound ? [] : (ctx.progress.drawn ?? [])), ...drawn]
+      const planned = openingCardAt(set, turnedOver)
+      drawn.push(card)
+      const encounter = planned?.kind === card ? openingEncounter(planned, ctx, rng, `opening:${opening}:${turnedOver.length}`) : null
+      if (encounter) return roll({ encounter, deck, lootDeck: null, drawn, newRound })
+      continue
+    }
     drawn.push(card)
     if (card === 'item') {
       const found = findItem(ctx, rng)
-      if (found) return { encounter: found.encounter, deck, lootDeck: found.lootDeck, drawn, newRound }
+      if (found) return roll({ encounter: found.encounter, deck, lootDeck: found.lootDeck, drawn, newRound })
       continue
     }
     const encounter = card === 'legend' ? returningLegend(ctx, rng) : cardEncounter(card, ctx, rng)
-    if (encounter) return { encounter, deck, lootDeck: null, drawn, newRound }
+    if (encounter) return roll({ encounter, deck, lootDeck: null, drawn, newRound })
   }
-  return { encounter: { kind: 'center', forced: false }, deck, lootDeck: null, drawn, newRound }
+  return roll({ encounter: { kind: 'center', forced: false }, deck, lootDeck: null, drawn, newRound })
 }
 
 function rollWeighted(ctx: EncounterContext, rng: Rng): EncounterRoll {
