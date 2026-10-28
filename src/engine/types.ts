@@ -189,6 +189,24 @@ export type EncounterKind = (typeof ENCOUNTER_KINDS)[number]
 /** Cards in an area's encounter deck; 'legend' is a fled legendary coming back (one per deck until it's caught). */
 export type DeckCard = EncounterKind | 'legend'
 
+/** One card of a set opening round (docs/42): what it is, decided in advance. */
+export type OpeningCard =
+  | { kind: 'wild'; dex: number; level: number }
+  /** A trainer from the trainers table; `prize` ₽ for the win, in place of the usual Σ levels. */
+  | { kind: 'trainer'; trainerId: string; prize?: number }
+  /** A find: `qty` of an item, or Pokédollars (itemKey 'money'). */
+  | { kind: 'item'; itemKey: string; qty: number }
+  | { kind: 'center' }
+
+/** An area's first rounds, set (docs/42): Route 1's opening. */
+export interface OpeningRoundsConfig {
+  access: EventAccess
+  /** The area they're played in. */
+  areaId: string
+  /** Its first rounds in order, each card in the order it's met. The rounds after them are shuffled decks as before. */
+  rounds: OpeningCard[][]
+}
+
 /** Day and night (docs/32): the half of the day an area's wild Pokémon is met in, where the region keeps the time. */
 export const DAY_TIMES = ['day', 'night'] as const
 export type DayTime = (typeof DAY_TIMES)[number]
@@ -992,6 +1010,11 @@ export interface GameConfig {
    */
   unownDex: { access: EventAccess; reward: number }
   /**
+   * Route 1's set opening (docs/42): its first rounds dealt in a set order, card by card, the rounds after them at
+   * random as before. Migration 0081 inserts the same row.
+   */
+  openingRounds: OpeningRoundsConfig
+  /**
    * The raid overhaul (docs/40): each progression raid's own numbers, rules and last bar, Arceus's daily raid, the Mega
    * raids after Kalos. Its switch; migration 0076 inserts the same row and the server reads it for the Mega raids.
    */
@@ -1515,6 +1538,8 @@ export interface AreaProgress {
   drawn?: DeckCard[]
   /** The last encounter here was a Pokémon Center: the next one can't be (no two Centers in a row). */
   lastCenter?: boolean
+  /** The deck in play is the set opening's round of this index (docs/42), not a shuffled one. */
+  opening?: number
   /** A portal run here (docs/28): where it stands, its bonuses, whether it's won. */
   portal?: PortalState
   /** The nightmare here (docs/30): its round, Darkrai's strike due, the gifts given, whether it's over. */

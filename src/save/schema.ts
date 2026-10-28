@@ -148,6 +148,8 @@ const progressSchema = z.object({
   round: z.number().int().min(0).optional(),
   drawn: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'legend'])).optional(),
   lastCenter: z.boolean().optional(),
+  // Route 1's set opening (docs/42): the deck in play is its round of this index. An odd value: a shuffled deck's cards.
+  opening: z.number().int().min(0).optional().catch(undefined),
   // The portal run (docs/28): an odd value in an edited save drops the run, never the save.
   portal: portalSchema.optional().catch(undefined),
   // The nightmare (docs/30): the same, an odd value drops it, never the save.

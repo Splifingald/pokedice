@@ -9296,6 +9296,21 @@
   "battleBackground": null
  },
  {
+  "id": "251c41f0-3e55-56a0-bb95-7a33ea96b68f",
+  "name": "Youngster Joey",
+  "spriteUrl": "/trainers/classes/youngster.png",
+  "team": [
+   {
+    "dex": 19,
+    "level": 4
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
   "id": "608754e4-1e20-5d85-a9eb-fe1d53d563b4",
   "name": "Bug Catcher Rick",
   "spriteUrl": "/trainers/classes/bug-catcher.png",

@@ -262,6 +262,7 @@ export const AREAS: AreaPlan[] = [
     wild: [
       [16, 50, 2, 5], // Pidgey
       [19, 50, 2, 4], // Rattata
+      [43, 3, 3, 5], // Oddish: rare here, met for sure in the set opening's second round (docs/42)
     ],
     trainers: [],
   }),

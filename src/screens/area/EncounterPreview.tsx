@@ -190,7 +190,8 @@ function TrainerCard({ enc }: { enc: Extract<Encounter, { kind: 'trainer' }> }) 
           ))}
         </div>
         <div className="text-base leading-tight text-muted">
-          {t('ui.enc.paysPerKo')}
+          {/* A set opening's trainer (docs/42) pays a set prize for the win. */}
+          {enc.prize != null ? t('ui.enc.paysPrize', { gold: enc.prize }) : t('ui.enc.paysPerKo')}
           {/* Only worth saying when wild battles can be fled. */}
           {!data.config.noEscape && t('ui.enc.noRunning')}
         </div>

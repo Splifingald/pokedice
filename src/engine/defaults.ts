@@ -382,6 +382,29 @@ export const DEFAULT_CONFIG: GameConfig = {
   // The Unown Pokédex (docs/41): off until the admin switches it on; ₽1,000 for the 28th letter. Migration 0080 inserts
   // the same row.
   unownDex: { access: 'off', reward: 1000 },
+  // Route 1's set opening (docs/42): off until the admin switches it on. Two rounds met in a set order, ending with
+  // Youngster Joey's Rattata (₽10); the rounds after them are shuffled as before. Migration 0081 inserts the switch's row.
+  openingRounds: {
+    access: 'off',
+    areaId: '3585c2a5-43bc-50c9-9818-e148404cabf8',
+    rounds: [
+      [
+        { kind: 'wild', dex: 19, level: 2 },
+        { kind: 'wild', dex: 16, level: 2 },
+        { kind: 'item', itemKey: 'poke-ball', qty: 2 },
+        { kind: 'center' },
+        { kind: 'wild', dex: 19, level: 3 },
+        { kind: 'trainer', trainerId: '251c41f0-3e55-56a0-bb95-7a33ea96b68f', prize: 10 },
+      ],
+      [
+        { kind: 'wild', dex: 16, level: 4 },
+        { kind: 'wild', dex: 19, level: 3 },
+        { kind: 'item', itemKey: 'potion', qty: 1 },
+        { kind: 'wild', dex: 43, level: 4 },
+        { kind: 'wild', dex: 16, level: 5 },
+      ],
+    ],
+  },
   // Double battles (docs/33): off until the admin switches them on; from Hoenn on, 10 % of the wild encounters.
   // Migration 0062 inserts the same row.
   doubleBattles: { access: 'off', regions: ['hoenn', 'sinnoh', 'unova', 'kalos', 'alola', 'galar', 'paldea'], wildChance: 10 },

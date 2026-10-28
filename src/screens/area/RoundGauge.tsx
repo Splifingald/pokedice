@@ -5,6 +5,7 @@ import {
   gymsFor,
   playerSideOf,
   nightmareModeOf,
+  nextRoundSize,
   portalModeOf,
   progressOf,
   type Area,
@@ -81,7 +82,7 @@ export function RoundGauge({
       : Math.max(deckSize(area, data), remaining)
     : justDone
       ? met.length
-      : deckSize(area, data)
+      : nextRoundSize(area, progress, data)
   const metCount = inRound ? total - remaining : justDone ? total : 0
   const unknown = Math.max(0, metCount - met.length)
   // Preview (admin option): the deck is drawn from the end, so the next card is its last one.
