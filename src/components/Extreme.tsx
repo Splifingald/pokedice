@@ -5,6 +5,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   badgeCase,
+  boonCenters,
+  buffLeft,
   extremeRules,
   firstComeback,
   getRegion,
@@ -23,6 +25,7 @@ import { closeAwayReport, markExtremeRulesSeen, useAwayReport } from '@/store/ex
 import { useGame } from '@/store/game'
 import { useServerNow } from '@/store/serverTime'
 import { switchSave } from '@/store/sync'
+import { typeName } from '@/lib/format'
 import { cx } from '@/theme/util'
 import { PixelIcon } from './icons'
 import { Modal } from './Modal'
@@ -36,10 +39,15 @@ export const EXTREME_PICTURE: RulesPicture = { src: artUrl('champion'), focus: '
 
 export function useExtremeRules(): RuleRow[] {
   const { t } = useT()
-  const r = extremeRules(useGame((s) => s.data))
+  const data = useGame((s) => s.data)
+  const r = extremeRules(data)
+  // Its boon Centers (docs/47) say so: Centers there are, only they don't heal.
+  const boons = boonCenters({ mode: 'extreme' }, data)
   return [
     { icon: 'map', title: t('ui.extreme.rules.world.title'), text: t('ui.extreme.rules.world.text') },
-    { icon: 'warning', title: t('ui.extreme.rules.centers.title'), text: t('ui.extreme.rules.centers.text') },
+    boons
+      ? { icon: 'warning', title: t('ui.extreme.rules.centers.boonTitle'), text: t('ui.extreme.rules.centers.boonText') }
+      : { icon: 'warning', title: t('ui.extreme.rules.centers.title'), text: t('ui.extreme.rules.centers.text') },
     {
       icon: 'moon',
       title: t('ui.extreme.rules.ko.title', { h: r.koHours }),
@@ -85,11 +93,12 @@ export function ExtremeUnlockPopup() {
 export function ExtremeBand({ show }: { show?: boolean }) {
   const { t } = useT()
   const extreme = useGame((s) => s.save?.mode === 'extreme')
+  const boons = useGame((s) => boonCenters({ mode: 'extreme' }, s.data))
   if (!extreme && !show) return null
   return (
     <div className="light-scope flex h-[22px] items-center justify-center gap-1.5 bg-crimson px-2 text-[16px] uppercase leading-none tracking-[0.06em] text-panel">
       <PixelIcon name="skull" size={12} color="#ffffff" />
-      <span className="truncate">{t('ui.extreme.band')}</span>
+      <span className="truncate">{t(boons ? 'ui.extreme.bandBoons' : 'ui.extreme.band')}</span>
     </div>
   )
 }
@@ -119,6 +128,24 @@ export function KoTag({ inst, className }: { inst: Pick<PokemonInstance, 'koAt'>
     <span className={cx('inline-flex items-center gap-1 font-pixel-sm text-[16px] leading-none text-danger', className)}>
       <PixelIcon name="moon" size={10} />
       {t('ui.extreme.koShort', { time: countdown(left) })}
+    </span>
+  )
+}
+
+/** "+1 die · 23h 10m": a Pokébuff running (docs/47), for cards and sheets. Nothing when it has none. */
+export function BuffTag({ inst, className }: { inst: Pick<PokemonInstance, 'buff'>; className?: string }) {
+  const { t } = useT()
+  const now = useClock()
+  const left = buffLeft(inst, now)
+  if (left == null || !inst.buff) return null
+  const time = countdown(left)
+  return (
+    <span
+      className={cx('inline-flex items-center gap-1 font-pixel-sm text-[16px] leading-none text-good', className)}
+      title={t('ui.xcenter.buffLabel', { type: typeName(inst.buff.type), time })}
+    >
+      <PixelIcon name="dice" size={10} />
+      {t('ui.xcenter.buffShort', { time })}
     </span>
   )
 }

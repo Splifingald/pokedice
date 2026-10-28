@@ -3,6 +3,7 @@
 import { catchChance, catchValueOf } from './catching'
 import { eventOpenTo } from './events'
 import { centersOn } from './extreme'
+import { boonCenters } from './extremeCenters'
 import { ballBonus, isBallFor } from './items'
 import { linearAreas } from './data'
 import { nightmareModeOf } from './nightmareMode'
@@ -69,6 +70,9 @@ export function autoAvailable(
   areaId: string | null,
 ): boolean {
   if (!areaId) return false
+  // Extreme mode's boon Centers (docs/47): every Center is a choice, so nothing plays itself there (the user's call,
+  // 2026-10-28: no idle mode in Extreme).
+  if (boonCenters(save, data)) return false
   const cleared = progressOf(save, areaId).cleared
   if (!idleModeOn(data)) return cleared
   const style = playStyleOf(s)

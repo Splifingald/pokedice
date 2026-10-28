@@ -52,6 +52,7 @@ import { LooksBits } from './kitchen/LooksBits'
 import { RulesBits } from './kitchen/RulesBits'
 import { HomeBits } from './kitchen/HomeBits'
 import { ExtremeBits } from './kitchen/ExtremeBits'
+import { ExtremeCenterBits } from './kitchen/ExtremeCenterBits'
 import { PartnerBits } from './kitchen/PartnerBits'
 import { OnboardingBits } from './kitchen/OnboardingBits'
 import { RaidBits, RaidOverhaulBits } from './kitchen/RaidBits'
@@ -791,6 +792,10 @@ export function KitchenSink() {
 
       <Section title="Extreme mode: rules, band, title card, K.O. rest, resting team, while you were away, switch">
         <ExtremeBits />
+      </Section>
+
+      <Section title="Extreme Pokémon Centers (docs/47): the boons, a pick's confirm, who for, Team Rocket's reveal, the Center a K.O. sends, the Pokébuff">
+        <ExtremeCenterBits />
       </Section>
 
       <Section title="Raids: the NPC partners pop-up (each state), a legendary raid's card open and caught">

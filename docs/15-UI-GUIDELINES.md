@@ -1028,6 +1028,14 @@ switched it on (Off by default; Off / On for admin / On for everyone, like the e
   resting and until when.
 - **Friends** are the same in both worlds; in Extreme, a friend without an Extreme save is listed greyed with "Not in
   Extreme mode" and the skull, and doesn't open.
+- **Its Pokémon Centers give a boon, not a heal** (docs/47, its own switch, Off by default; pieces in
+  `src/components/ExtremeCenter.tsx`, on `/kitchen-sink` as `ExtremeCenterBits`): no healing machine, the Center's sign
+  then the boons (`BoonChoiceView`, the Center's pink rule on its top, the boons as the portal's big buttons, INFO under
+  them). A tap always asks first: who for (`BoonTargetPicker`, a full heal or Team Rocket's trade) or Take this boon?
+  (`CenterBoonConfirm`). While they wait there's no action bar and no Box, and the team can't change; then a toast, or
+  Team Rocket's reveal (`RocketReveal`). The Center a K.O. sends says it gives nothing (`WipeCenterNote`). A Pokébuff
+  shows on cards and sheets as "+1 die · 23h 10m" in green (`BuffTag`). Its rules pop up once over the first boon
+  Center (`CenterRulesModal`, a feature with no page: §20). The band then says "Extreme mode · Centers don't heal".
 
 ## 20. Every new feature: its switch and its rules
 

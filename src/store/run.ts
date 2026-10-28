@@ -25,6 +25,16 @@ import {
   catchValueOf,
   centerHeal,
   centersOn,
+  boonCenters,
+  boonCentersHere,
+  buffDiceFor,
+  dropBoons,
+  markCenterRulesSeen,
+  openBoonCenter,
+  pendingBoons,
+  pickCenterBoon,
+  wipeCenterDue,
+  type BoonPicked,
   challengeEncounter,
   finishRound,
   type Encounter,
@@ -254,7 +264,10 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
     pokedex: save.pokedex,
     forceKind,
     player: playerSideOf(save),
-    noCenters: !centersOn(save, data),
+    // Extreme mode (docs/22): none, unless its boon Centers are on (docs/47) and this area still has some.
+    noCenters: !centersOn(save, data) && !boonCentersHere(save, area, data),
+    boonCenters: boonCenters(save, data),
+    wipeCenter: wipeCenterDue(save, area.id, data),
     // A Shiny Parade covering this area: wild Pokémon are more often shiny.
     shinyBoost: shinyBoost(currentLive(), area),
     // The Shiny Charm (docs/25): the player's own wild odds.
@@ -457,16 +470,24 @@ export function rollNext() {
   if (isAreaSealed(save, data, run.areaId)) return setRun({ phase: 'idle', encounter: null })
   if (inNightmare(save, data, run.areaId)) return rollNightmare(save, run.areaId)
   if (inPortalRun(save, data, run.areaId)) return rollPortal(save, run.areaId)
+  // A Center's boons still waiting (a reload, HOME before the pick: docs/47): back in that Center. Boons drawn in
+  // another area go: the player walked out without picking.
+  if (pendingBoons(save, run.areaId)) {
+    setRun({ phase: 'center', encounter: { kind: 'center', forced: true, reason: 'round' }, healShown: true })
+    return
+  }
+  if (save.extreme?.center) commitSave(dropBoons(save))
   // Nobody able to fight (e.g. after a stalemate) → the Center is the only sensible next stop. Extreme mode has none:
-  // the team rests (Home and the area say until when).
+  // the team rests (Home and the area say until when); with its boon Centers, a K.O. here sends the one that swaps.
   const noneAble = !hasAbleTeam(save)
-  if (noneAble && !centersOn(save, data)) {
+  const wipeCenter = wipeCenterDue(save, run.areaId, data)
+  if (noneAble && !centersOn(save, data) && !wipeCenter) {
     setRun({ phase: 'idle', encounter: null })
     pushToast(t('ui.extreme.restingToast'), 'bad')
     return
   }
-  const forceKind = noneAble ? 'center' : run.forceNext
-  const ctx = encounterContext(save, run.areaId, forceKind)
+  const forceKind = noneAble && !wipeCenter ? 'center' : run.forceNext
+  const ctx = encounterContext(useGame.getState().save!, run.areaId, forceKind)
   if (!ctx) return
   const area = ctx.area
   const roll = nextEncounter(ctx, runRng)
@@ -474,8 +495,9 @@ export function rollNext() {
   const encounter = asDouble(roll.encounter, ctx, save, runRng)
   // The decks live in the save, so reloading the page can't reshuffle them.
   // Always recorded: besides the decks, the area notes whether this was a Center (never two in a row).
-  const recorded = recordDraws(save, area.id, roll)
-  if (recorded !== save) commitSave(recorded)
+  const before = useGame.getState().save!
+  const recorded = recordDraws(before, area.id, roll)
+  if (recorded !== before) commitSave(recorded)
   setRun({ phase: 'preview', encounter, firstInArea: false, forceNext: forceKind === run.forceNext ? null : run.forceNext })
   // A Pokémon Center is never a choice (no skipping it, nothing to pick): straight in, no preview card.
   if (encounter.kind === 'center') engage()
@@ -592,8 +614,8 @@ function startBattle(
     hp: p.currentHp,
     shiny: p.shiny,
     nickname: p.nickname,
-    // A portal run's extra dice (docs/28).
-    ...portalDiceFor(save, data, run.areaId, p.id),
+    // A portal run's extra dice (docs/28), or an Extreme Pokébuff's die (docs/47).
+    ...(portalDiceFor(save, data, run.areaId, p.id) ?? buffDiceFor(save, data, p.id, serverNow() ?? Date.now())),
   }))
   // Auto-mode (a cleared area; with the play styles, where the style allows: docs/36) fights without Mega Evolution or
   // Gigantamax under their older rules, on both sides — with the powers whose newer rules are on (docs/35); type
@@ -670,7 +692,8 @@ export function engage(lead?: string | string[], staged?: boolean) {
   if (!staged) commitEngage()
   switch (enc.kind) {
     case 'center':
-      commitSave(centerHeal(save, data))
+      // Extreme mode's boon Centers (docs/47) heal nobody: their boons are drawn instead, waiting for the pick.
+      commitSave(run.areaId ? openBoonCenter(centerHeal(save, data), data, run.areaId, enc.reason, runRng) : centerHeal(save, data))
       setRun({ phase: 'center', healShown: false })
       return
     case 'casino':
@@ -1148,6 +1171,25 @@ export function afterStalemate() {
 
 export function finishCenter() {
   backToArea()
+}
+
+/**
+ * The player takes one of the Center's boons (docs/47): `target` names who a full heal or Team Rocket's trade is for.
+ * Null when it can't be taken (nothing on offer, a target it can't go to).
+ */
+export function pickBoon(index: number, target: string | null = null): BoonPicked | null {
+  const { save, data, run } = useGame.getState()
+  if (!save || !run.areaId) return null
+  const res = pickCenterBoon(save, data, run.areaId, index, target, runRng, serverNow() ?? Date.now(), newId, wildShinyChance(save, data))
+  if (!res) return null
+  commitSave(res.save)
+  return res
+}
+
+/** The Centers' rules pop-up has been shown (docs/47). */
+export function seeCenterRules() {
+  const { save } = useGame.getState()
+  if (save && !save.extreme?.centerRulesSeen) commitSave(markCenterRulesSeen(save))
 }
 
 /** The healing has started playing: leaving for Home and coming back won't play it again. */
