@@ -30,6 +30,7 @@
     "art": "tsx scripts/art.ts",
     "unpixel": "tsx scripts/unpixel.ts",
     "showdown-sprites": "tsx scripts/showdown-sprites.ts",
+    "sprites-mirror": "tsx scripts/sprites-mirror.ts",
     "egg-groups": "tsx scripts/egg-groups.ts",
     "trainer-sprites": "tsx scripts/trainer-sprites.ts",
     "region-trainers": "tsx scripts/region-trainers.ts",

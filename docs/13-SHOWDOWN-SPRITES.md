@@ -5,6 +5,9 @@
 > set and Showdown's Gen 6–9 trainers. Each region looked different, at a different canvas size. `pnpm showdown-sprites`
 > rebuilds everything below.
 
+**Our own copy** (docs/42-SPRITE-MIRROR.md): set `VITE_SPRITES_HOST` and the game reads the same files, at the same
+paths, from a copy on Cloudflare Pages (`pnpm sprites-mirror` builds it) instead of Showdown's server.
+
 ## What the game shows
 
 | Picture | Source | Where it lives | Requests per player |

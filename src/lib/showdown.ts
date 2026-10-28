@@ -1,9 +1,20 @@
 // Pokémon Showdown's sprites: the one source for every Pokémon and trainer picture (docs/13-SHOWDOWN-SPRITES.md).
 // Shared by the components and by scripts/showdown-sprites.ts, which writes the tables these read.
 
-export const SHOWDOWN_SPRITES = 'https://play.pokemonshowdown.com/sprites'
+export const SHOWDOWN_HOST = 'https://play.pokemonshowdown.com'
+/**
+ * Where the game reads Showdown's files: Showdown itself, or our own copy of them at the same paths when the build sets
+ * `VITE_SPRITES_HOST` (docs/42-SPRITE-MIRROR.md). `import.meta.env` is undefined in Node scripts, which keep Showdown.
+ */
+export const SPRITES_HOST =
+  (import.meta.env ?? ({} as ImportMetaEnv)).VITE_SPRITES_HOST?.trim().replace(/\/+$/, '') || SHOWDOWN_HOST
+export const SHOWDOWN_SPRITES = `${SPRITES_HOST}/sprites`
 /** Showdown's cries, one MP3 per Pokémon (`<id>.mp3`), loaded straight from its CDN like the sprites. */
-export const SHOWDOWN_CRIES = 'https://play.pokemonshowdown.com/audio/cries'
+export const SHOWDOWN_CRIES = `${SPRITES_HOST}/audio/cries`
+
+/** Showdown's id for a letter of Unown: the A is plain Unown, the others its formes (`unown-b`, `unown-exclamation`). */
+export const unownShowdownId = (l: string) =>
+  l === 'a' ? 'unown' : `unown-${l === '!' ? 'exclamation' : l === '?' ? 'question' : l}`
 
 /** A sprite's views, in the order `ShowdownEntry.v` lists them. */
 export const SHOWDOWN_VIEWS = ['front', 'back', 'front-shiny', 'back-shiny'] as const

@@ -18,7 +18,7 @@ import {
 import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
-import { SHOWDOWN_SPRITES } from '@/lib/showdown'
+import { SHOWDOWN_SPRITES, unownShowdownId } from '@/lib/showdown'
 import { showdownMissed, useShowdownDown, watchShowdown } from '@/lib/showdownReach'
 import { markUnownDexSeen } from '@/store/actions'
 import { useGame } from '@/store/game'
@@ -31,12 +31,8 @@ import { useMyTurn, useOnScreen } from './popupTurn'
 import { RulesModal, type RuleRow, type RulesPicture } from './RulesModal'
 import { spriteUrlFor } from './SpriteImg'
 
-/** Showdown's id for a letter: the A is plain Unown, the others its formes (`unown-b`, `unown-exclamation`). */
-const showdownId = (l: UnownLetter) =>
-  l === 'a' ? 'unown' : `unown-${l === '!' ? 'exclamation' : l === '?' ? 'question' : l}`
-
 /** A letter's animated sprite (Black and White drew all 28), on Showdown's CDN like every other Pokémon. */
-export const unownSpriteUrl = (l: UnownLetter) => `${SHOWDOWN_SPRITES}/gen5ani/${showdownId(l)}.gif`
+export const unownSpriteUrl = (l: UnownLetter) => `${SHOWDOWN_SPRITES}/gen5ani/${unownShowdownId(l)}.gif`
 
 /**
  * One letter of Unown. Showdown trims its GIFs to the art, so each is scaled to fit the box (never past ×2): a slim I

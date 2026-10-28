@@ -370,9 +370,9 @@ Players shouldn't have to make many requests:
 - **Grids use icons, not sprites**: the Box and the Pokédex show menu icons from the atlas (a 151-entry Pokédex costs
   one request). Showdown's animated sprites are for the places where one Pokémon is the subject: team cards, a
   Pokémon's sheet, the scene.
-- **Pokémon sprites** come from Pokémon Showdown's CDN: one request per sprite actually shown, cached by the browser;
-  never a request for a view Showdown doesn't have (`src/data/showdown-sprites.json`); only the current area's fronts
-  are preloaded. A Showdown sprite that fails or is still loading after 4 s on screen sends every sprite to the local
+- **Pokémon sprites** come from Pokémon Showdown's CDN (or our copy of it when the build sets `VITE_SPRITES_HOST`,
+  docs/42): one request per sprite actually shown, cached by the browser; never a request for a view Showdown doesn't
+  have (`src/data/showdown-sprites.json`); only the current area's fronts are preloaded. A Showdown sprite that fails or is still loading after 4 s on screen sends every sprite to the local
   copies for 10 minutes (`src/lib/showdownReach.ts`, docs/13 "Offline and misses"): a new `<img>` of a Showdown sprite
   calls `watchShowdown` from its ref and reports its failure, and a component that places a sprite re-renders on
   `useShowdownDown`.
