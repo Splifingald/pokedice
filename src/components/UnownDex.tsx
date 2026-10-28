@@ -19,6 +19,7 @@ import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
 import { SHOWDOWN_SPRITES } from '@/lib/showdown'
+import { showdownMissed, useShowdownDown, watchShowdown } from '@/lib/showdownReach'
 import { markUnownDexSeen } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
@@ -53,13 +54,16 @@ export function UnownSprite({
   className?: string
 }) {
   const { t } = useT()
-  const chain = [unownSpriteUrl(letter), spriteUrlFor(UNOWN_DEX)]
-  const [state, setState] = useState<{ letter: UnownLetter; step: number; dims: [number, number] | null }>({
-    letter,
+  // Showdown failing or stalling (src/lib/showdownReach.ts): straight to the local sprite.
+  const down = useShowdownDown()
+  const chain = down ? [spriteUrlFor(UNOWN_DEX)] : [unownSpriteUrl(letter), spriteUrlFor(UNOWN_DEX)]
+  const key = `${letter}:${chain[0]}`
+  const [state, setState] = useState<{ key: string; step: number; dims: [number, number] | null }>({
+    key,
     step: 0,
     dims: null,
   })
-  const s = state.letter === letter ? state : { letter, step: 0, dims: null }
+  const s = state.key === key ? state : { key, step: 0, dims: null }
   const src = chain[s.step]
   const k = s.dims ? Math.min(2, size / Math.max(s.dims[0], s.dims[1], 1)) : 1
   return (
@@ -70,6 +74,7 @@ export function UnownSprite({
       {src ? (
         <img
           key={src}
+          ref={watchShowdown}
           src={src}
           alt={t('ui.unown.name', { letter: letterText(letter) })}
           loading="lazy"
@@ -77,12 +82,15 @@ export function UnownSprite({
           draggable={false}
           onLoad={(e) =>
             setState({
-              letter,
+              key,
               step: s.step,
               dims: [e.currentTarget.naturalWidth, e.currentTarget.naturalHeight],
             })
           }
-          onError={() => setState({ letter, step: s.step + 1, dims: null })}
+          onError={() => {
+            if (s.step === 0 && !down) showdownMissed()
+            setState({ key, step: s.step + 1, dims: null })
+          }}
           className="pixelated max-w-none select-none"
           style={{
             ...(s.dims && { width: s.dims[0] * k, height: s.dims[1] * k }),

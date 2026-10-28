@@ -11,6 +11,8 @@ import {
 import itemSheet from '@/assets/item-icons.png'
 import itemAtlas from '@/data/item-atlas.json'
 import { artBox } from '@/lib/showdown'
+import { isShowdownUrl, PATIENCE_MS, showdownMissed } from '@/lib/showdownReach'
+import type { SyntheticEvent } from 'react'
 import { cached, canvas, clamp, type Canvas, type G } from './pixel'
 
 /** The tallest or widest a Pokémon may stand on a stage (art pixels); bigger art is shrunk. */
@@ -71,6 +73,18 @@ export function stageSprite(dex: number, back: boolean, shiny: boolean): StageSp
   }
 }
 
+/**
+ * A stage <img>'s onError: its local copy takes the sprite's place, and Showdown counts as down for every sprite
+ * (src/lib/showdownReach.ts: the components re-render with the local sprite, placed as it should be). The <img>'s ref
+ * calls `watchShowdown` for a Showdown that stalls rather than fails.
+ */
+export const spriteError = (s: StageSprite) => (e: SyntheticEvent<HTMLImageElement>) => {
+  const img = e.currentTarget
+  if (!s.fallback || img.src === new URL(s.fallback, location.href).href) return
+  if (isShowdownUrl(img.src)) showdownMissed()
+  img.src = s.fallback
+}
+
 /** Where to put the image (art pixels) so its art is centred on x and stands on the line y. */
 export function placeSprite(s: StageSprite, x: number, y: number) {
   const w = s.w * s.k
@@ -119,17 +133,30 @@ export function loadSprite(dex: number, back: boolean, shiny = false): Promise<s
   p = new Promise<string>((res) => {
     const img = new Image()
     let fallback = false
+    const toFallback = () => {
+      if (fallback || !s.fallback) return false
+      fallback = true
+      img.src = s.fallback
+      return true
+    }
     img.onload = () => {
       frames.set(key, crop(img, s, fallback))
       res(key)
     }
     img.onerror = () => {
-      if (!fallback && s.fallback) {
-        fallback = true
-        img.src = s.fallback
-      } else res(key)
+      if (!fallback && isShowdownUrl(img.src)) showdownMissed()
+      if (!toFallback()) res(key)
     }
+    // Showdown stalling: our own copy after PATIENCE_MS (of a shown tab), and Showdown down for every sprite.
+    const wait = () =>
+      setTimeout(() => {
+        if (fallback || img.complete) return
+        if (document.visibilityState === 'hidden') return void wait()
+        showdownMissed()
+        toFallback()
+      }, PATIENCE_MS)
     img.src = s.url
+    if (s.fallback) wait()
   })
   loading.set(key, p)
   return p

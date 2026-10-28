@@ -76,6 +76,21 @@ they cost our host nothing either: 1,123 cries, about 10 MB, none of it in the r
 kept as the offline fallback) → the species' own `sprite_url` (one added in admin) → `?`. A view Showdown doesn't have
 starts at the local sprite, so that miss costs no request either.
 
+**Showdown down** (`src/lib/showdownReach.ts`). Showdown's server can stall rather than fail: the request hangs, the
+`<img>` neither loads nor errors, and nothing ever falls back. Players saw battles with the HP plates over no Pokémon
+(Discord, 2026-10-27). So:
+
+- a Showdown sprite that fails, or is **still loading after 4 s on screen** (`PATIENCE_MS`; a hidden tab or a lazy
+  image below the fold doesn't count), marks Showdown **down for 10 minutes** (`DOWN_MS`);
+- while it is down, `showdownView` answers null, so every sprite (`SpriteImg`, the battle, Home's scene, the Day Care,
+  the canvas stills, the Unown letters, the preloads) is the local one, placed as the local set is, at once and without
+  asking Showdown; the components re-render as it goes down (`useShowdownDown`), and come back to Showdown after;
+- it is kept in `localStorage` (`pokedice.showdownDown`), so a reload doesn't wait 4 s again.
+
+One failure is enough: the game never asks for a file Showdown doesn't have, so a failure means Showdown isn't serving
+this player. Every `<img>` of a Showdown sprite calls `watchShowdown` from its ref and reports a failure (`spriteError`
+on the stages, `showdownMissed` elsewhere); `loadSprite` watches its own off-page image the same way.
+
 Showdown has no sprite at all for 17 of the newest Megas (Heatran, Darkrai, Magearna, Zeraora, Meowstic, Raichu X
 and Y, Staraptor, Scolipede, Scrafty, Eelektross, Pyroar, Malamar, Barbaracle, Dragalge, Falinks, Curly Tatsugiri),
 and no back for 5 others. Those views show the local sprite. The script lists them when it

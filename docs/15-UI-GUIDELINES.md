@@ -372,7 +372,10 @@ Players shouldn't have to make many requests:
   Pokémon's sheet, the scene.
 - **Pokémon sprites** come from Pokémon Showdown's CDN: one request per sprite actually shown, cached by the browser;
   never a request for a view Showdown doesn't have (`src/data/showdown-sprites.json`); only the current area's fronts
-  are preloaded.
+  are preloaded. A Showdown sprite that fails or is still loading after 4 s on screen sends every sprite to the local
+  copies for 10 minutes (`src/lib/showdownReach.ts`, docs/13 "Offline and misses"): a new `<img>` of a Showdown sprite
+  calls `watchShowdown` from its ref and reports its failure, and a component that places a sprite re-renders on
+  `useShowdownDown`.
 - **Cries** come from Showdown's CDN too: one request per cry actually played (~9 KB), cached by the browser; never
   preloaded, never one for a cry Showdown doesn't have (a form without its own plays its species'), none while sound
   is off.
