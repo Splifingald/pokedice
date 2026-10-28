@@ -45,6 +45,12 @@ export function dayCarePicture(): AreaPicture | null {
   return g ? { id: 'daycare', url: artUrl('daycare'), ...g } : null
 }
 
+/** Versus isn't an area either: it's fought at the Pokémon League (the user's call: the stadium picture read as football). */
+export function versusPicture(): AreaPicture | null {
+  const g = ART_GEOMETRY.league
+  return g ? { id: 'league', url: artUrl('league'), ...g } : null
+}
+
 /** An area's picture, or null: not mapped, or its picture isn't made yet. */
 export function pictureOf(areaId: string | null | undefined): AreaPicture | null {
   const id = areaId ? AREA_ART[areaId] : undefined
