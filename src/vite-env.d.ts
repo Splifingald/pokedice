@@ -11,6 +11,8 @@ interface ImportMetaEnv {
   readonly VITE_ADMIN_EMAIL?: string
   /** Push notifications' VAPID public key (docs/27); unset = no push. */
   readonly VITE_VAPID_PUBLIC_KEY?: string
+  /** Our own copy of Showdown's sprites and cries (docs/45), e.g. https://pokedice-sprites.pages.dev; unset = Showdown. */
+  readonly VITE_SPRITES_HOST?: string
 }
 
 interface ImportMeta {

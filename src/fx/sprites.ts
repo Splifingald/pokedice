@@ -12,6 +12,8 @@ import {
 import itemSheet from '@/assets/item-icons.png'
 import itemAtlas from '@/data/item-atlas.json'
 import { artBox } from '@/lib/showdown'
+import { isShowdownUrl, PATIENCE_MS, showdownMissed } from '@/lib/showdownReach'
+import type { SyntheticEvent } from 'react'
 import { cached, canvas, clamp, type Canvas, type G } from './pixel'
 
 /** The tallest or widest a Pokémon may stand on a stage (art pixels); bigger art is shrunk. */
@@ -72,6 +74,18 @@ export function stageSprite(dex: number, back: boolean, shiny: boolean): StageSp
   }
 }
 
+/**
+ * A stage <img>'s onError: its local copy takes the sprite's place, and Showdown counts as down for every sprite
+ * (src/lib/showdownReach.ts: the components re-render with the local sprite, placed as it should be). The <img>'s ref
+ * calls `watchShowdown` for a Showdown that stalls rather than fails.
+ */
+export const spriteError = (s: StageSprite) => (e: SyntheticEvent<HTMLImageElement>) => {
+  const img = e.currentTarget
+  if (!s.fallback || img.src === new URL(s.fallback, location.href).href) return
+  if (isShowdownUrl(img.src)) showdownMissed()
+  img.src = s.fallback
+}
+
 /** Where to put the image (art pixels) so its art is centred on x and stands on the line y. */
 export function placeSprite(s: StageSprite, x: number, y: number) {
   const w = s.w * s.k
@@ -120,28 +134,34 @@ export function loadSprite(dex: number, back: boolean, shiny = false): Promise<s
   p = new Promise<string>((res) => {
     const img = new Image()
     let fallback = false
+    let wait = 0
     img.onload = () => {
       window.clearTimeout(wait)
       frames.set(key, crop(img, s, fallback))
       res(key)
     }
-    let wait = 0
     const next = () => {
       window.clearTimeout(wait)
+      // Showdown failing or stalling: Showdown down for every sprite (src/lib/showdownReach.ts).
+      if (!fallback && isShowdownUrl(img.src)) showdownMissed()
       if (!fallback && s.fallback) {
         fallback = true
         img.src = s.fallback
-        wait = window.setTimeout(next, SPRITE_PATIENCE_MS)
+        wait = window.setTimeout(stall, SPRITE_PATIENCE_MS)
       } else {
         // Nothing came (a phone dropping a request): forget the try, so the next call asks again.
         loading.delete(key)
         res(key)
       }
     }
+    // A request left hanging (neither loaded nor failed) moves on too, judged only while the tab is shown.
+    const stall = () => {
+      if (document.visibilityState === 'hidden') wait = window.setTimeout(stall, PATIENCE_MS)
+      else next()
+    }
     img.onerror = next
     img.src = s.url
-    // A request left hanging (neither loaded nor failed) moves on to the local sprite too.
-    wait = window.setTimeout(next, SPRITE_PATIENCE_MS)
+    wait = window.setTimeout(stall, s.fallback ? PATIENCE_MS : SPRITE_PATIENCE_MS)
   })
   loading.set(key, p)
   return p

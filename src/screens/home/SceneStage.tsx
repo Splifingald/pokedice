@@ -4,8 +4,9 @@ import { playCry } from '@/audio/cries'
 import { useT } from '@/i18n/react'
 import { HpBar } from '@/components/HpBar'
 import { LevelTag } from '@/components/Chip'
-import { placeSprite, stageSprite, type StageSprite } from '@/fx/sprites'
+import { placeSprite, spriteError, stageSprite, type StageSprite } from '@/fx/sprites'
 import { useMotion } from '@/lib/motion'
+import { useShowdownDown, watchShowdown } from '@/lib/showdownReach'
 import { useGame } from '@/store/game'
 import { clamp, type G } from '@/fx/pixel'
 import { artPlacement, homeWindow } from '@/fx/areaArt'
@@ -69,6 +70,8 @@ export function SceneStage({
   const [card, setCard] = useState<{ uid: string; x: number; y: number } | null>(null)
   const lastTap = useRef<{ uid: string; t: number } | null>(null)
   const lastCry = useRef(-Infinity)
+  // Showdown failing or stalling brings the local sprites (src/lib/showdownReach.ts).
+  const down = useShowdownDown()
 
   const members: Member[] = useMemo(
     () =>
@@ -78,7 +81,8 @@ export function SceneStage({
         maxHp: instanceMaxHp(inst, data),
         sprite: stageSprite(inst.dex, false, !!inst.shiny),
       })),
-    [team, data],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [team, data, down],
   )
   // A new herd for a new area or a new team; HP changes keep the herd (they only change who is tired).
   const teamKey = team
@@ -200,14 +204,12 @@ export function SceneStage({
           key={m.inst.id}
           ref={(el) => {
             imgs.current[i] = el
+            watchShowdown(el)
           }}
           src={m.sprite.url}
           alt=""
           draggable={false}
-          onError={(e) => {
-            const fb = m.sprite.fallback
-            if (fb && e.currentTarget.src !== new URL(fb, location.href).href) e.currentTarget.src = fb
-          }}
+          onError={spriteError(m.sprite)}
           className="pointer-events-none absolute max-w-none"
           style={{
             imageRendering: 'pixelated',

@@ -25,10 +25,11 @@ import {
 import { artPlacement, artUrl, battleWindow, pictureOf } from '@/fx/areaArt'
 import { softEllipse, canvas } from '@/fx/pixel'
 import { setArtUnderStage, TRICK_BALL_URL } from '@/fx/scenes'
-import { placeSprite, stageSprite } from '@/fx/sprites'
+import { placeSprite, spriteError, stageSprite } from '@/fx/sprites'
 import { H, W, type Hud, type Timeline } from '@/fx/timeline'
 import { TREAT_URL } from '@/fx/timelines/trick'
 import { useT } from '@/i18n/react'
+import { useShowdownDown, watchShowdown } from '@/lib/showdownReach'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { AreaArt } from './AreaArt'
@@ -380,7 +381,10 @@ export function TrickStage({
   const box = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0)
   const pic = pictureOf(areaId)
-  const s = useMemo(() => stageSprite(dex, false, !!shiny), [dex, shiny])
+  // Showdown failing or stalling brings the local sprite (src/lib/showdownReach.ts).
+  const down = useShowdownDown()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const s = useMemo(() => stageSprite(dex, false, !!shiny), [dex, shiny, down])
   const at = placeSprite(s, TRICK_AT.x, TRICK_AT.y)
   // The timelines draw no background of their own: the picture (or the night) shows through the canvas.
   useLayoutEffect(() => {
@@ -420,13 +424,11 @@ export function TrickStage({
           }}
         >
           <img
+            ref={watchShowdown}
             src={s.url}
             alt=""
             draggable={false}
-            onError={(e) => {
-              if (s.fallback && e.currentTarget.src !== new URL(s.fallback, location.href).href)
-                e.currentTarget.src = s.fallback
-            }}
+            onError={spriteError(s)}
             className="pixelated absolute inset-0 h-full w-full max-w-none"
           />
         </div>

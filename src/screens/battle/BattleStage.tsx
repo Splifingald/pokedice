@@ -13,7 +13,15 @@ import { StageCanvas } from '@/components/StageCanvas'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { artPlacement, battleWindow, type AreaPicture } from '@/fx/areaArt'
 import { background, setArtUnderStage, zones } from '@/fx/scenes'
-import { loadSprite, placeSprite, resetLive, spriteKey, stageSprite, type LiveSprite } from '@/fx/sprites'
+import {
+  loadSprite,
+  placeSprite,
+  resetLive,
+  spriteError,
+  spriteKey,
+  stageSprite,
+  type LiveSprite,
+} from '@/fx/sprites'
 import { H, quicken, W, type Hud, type Timeline } from '@/fx/timeline'
 import { attackTimeline } from '@/fx/timelines/attacks'
 import { gmaxEndTimeline, gmaxFor, megaFor, unleashTimeline } from '@/fx/timelines/forms'
@@ -21,6 +29,7 @@ import { shinyTimeline } from '@/fx/timelines/shiny'
 import { zAwayTimeline, zMoveTimeline, zStrikeTimeline } from '@/fx/timelines/zmove'
 import { usePace } from '@/lib/pace'
 import { useMotion } from '@/lib/motion'
+import { useShowdownDown, watchShowdown } from '@/lib/showdownReach'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { finalBlow, landHit, type Fx, type Scene } from './useBattleAnimator'
@@ -199,7 +208,10 @@ function Mon({
   const { level } = useMotion()
   const still = level === 'off'
   const back = side === 'player'
-  const s = useMemo(() => stageSprite(b.dex, back, b.shiny), [b.dex, back, b.shiny])
+  // Showdown failing or stalling brings the local sprite, placed as it stands (src/lib/showdownReach.ts).
+  const down = useShowdownDown()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const s = useMemo(() => stageSprite(b.dex, back, b.shiny), [b.dex, back, b.shiny, down])
   const at = place ?? (back ? LAYOUT.own : LAYOUT.foe)
   const raw = placeSprite(s, at.x, at.y)
   // Scaled about its feet, so it stands on the same spot.
@@ -219,7 +231,7 @@ function Mon({
     }
   }, [live, liveKey, at, scale])
   // Worn out, waiting for the ball: the animated sprite stops on the frame it was showing (a still copy on a canvas).
-  const img = useRef<HTMLImageElement>(null)
+  const img = useRef<HTMLImageElement | null>(null)
   const frozen = useRef<HTMLCanvasElement>(null)
   useEffect(() => {
     const im = img.current
@@ -301,14 +313,14 @@ function Mon({
           style={{ transformOrigin: `${((s.artX + s.artW / 2) / s.w) * 100}% ${((s.h - s.below) / s.h) * 100}%` }}
         >
         <img
-          ref={img}
+          ref={(el) => {
+            img.current = el
+            watchShowdown(el)
+          }}
           src={s.url}
           alt=""
           draggable={false}
-          onError={(e) => {
-            if (s.fallback && e.currentTarget.src !== new URL(s.fallback, location.href).href)
-              e.currentTarget.src = s.fallback
-          }}
+          onError={spriteError(s)}
           className="pixelated absolute inset-0 h-full w-full max-w-none"
           // A flash (a faint, a form change with no timeline) turns the sprite into a white silhouette for a moment.
           style={{
