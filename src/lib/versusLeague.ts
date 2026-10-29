@@ -209,6 +209,103 @@ export async function leagueAdmin(action: 'tick' | 'seat_bots'): Promise<number>
   return Number(data) || 0
 }
 
+// ---------------------------------------------------------------- the admin's view of every group
+
+/** One member of a group as the admin sees it (0086 versus_league_admin_board): a player or a bot, told apart. */
+export interface LeagueAdminMember {
+  userId: string | null
+  botId: number | null
+  name: string
+  avatar: string
+  team: VersusMon[]
+  trophies: number
+  /** In their group; tied trophies share a rank. */
+  rank: number
+  /** Where a bot's trophies are headed by Sunday night. */
+  botTarget: number | null
+  joinedAt: number
+  /** A player's matches this week: won, lost, left, and `open` (started, not finished: a leave until it is). */
+  matches: number
+  won: number
+  lost: number
+  leaves: number
+  open: number
+  lastMatchAt: number | null
+  /** How often others fought them this week. */
+  faced: number
+}
+
+export interface LeagueAdminBoard {
+  week: string
+  endsAt: number
+  /** The groups the week opened with (more are made when they fill); null before its first match. */
+  opened: number | null
+  closed: boolean
+  groups: { n: number; members: LeagueAdminMember[] }[]
+}
+
+const num = (v: unknown) => Number(v) || 0
+const time = (v: unknown) => {
+  const t = Date.parse(String(v ?? ''))
+  return Number.isFinite(t) ? t : null
+}
+
+export function parseLeagueAdminBoard(raw: unknown): LeagueAdminBoard {
+  const o = (raw ?? {}) as Record<string, unknown>
+  const groups = Array.isArray(o.groups) ? (o.groups as Record<string, unknown>[]) : []
+  return {
+    week: String(o.week ?? ''),
+    endsAt: time(o.endsAt) ?? 0,
+    opened: o.opened == null ? null : num(o.opened),
+    closed: o.closed === true,
+    groups: groups.map((g) => ({
+      n: num(g.n),
+      members: (Array.isArray(g.members) ? (g.members as Record<string, unknown>[]) : []).map((m) => ({
+        userId: m.userId == null ? null : String(m.userId),
+        botId: m.botId == null ? null : num(m.botId),
+        name: String(m.name || 'Trainer'),
+        avatar: avatarOf(m.avatar as string).id,
+        team: mons(m.team),
+        trophies: num(m.trophies),
+        rank: num(m.rank) || 1,
+        botTarget: m.botTarget == null ? null : num(m.botTarget),
+        joinedAt: time(m.joinedAt) ?? 0,
+        matches: num(m.matches),
+        won: num(m.won),
+        lost: num(m.lost),
+        leaves: num(m.leaves),
+        open: num(m.open),
+        lastMatchAt: time(m.lastMatchAt),
+        faced: num(m.faced),
+      })),
+    })),
+  }
+}
+
+/** The week's totals: its groups, who's in them (players and bots), the players who have fought, and the matches. */
+export function leagueAdminTotals(board: LeagueAdminBoard) {
+  const members = board.groups.flatMap((g) => g.members)
+  const players = members.filter((m) => m.botId == null)
+  return {
+    groups: board.groups.length,
+    members: members.length,
+    players: players.length,
+    bots: members.length - players.length,
+    fought: players.filter((m) => m.matches > 0).length,
+    matches: players.reduce((sum, m) => sum + m.matches, 0),
+    open: players.reduce((sum, m) => sum + m.open, 0),
+  }
+}
+
+/** Every group of this week (or last week), as it is now: the admin's alone (0086). */
+export async function fetchLeagueAdminBoard(last = false): Promise<LeagueAdminBoard> {
+  const client = await getSupabase()
+  if (!client) throw new Error('versus_signed_out')
+  const { data, error } = await client.rpc('versus_league_admin_board', { p_last: last })
+  if (error) throw error
+  return parseLeagueAdminBoard(data)
+}
+
 // ---------------------------------------------------------------- the week's reward message
 
 /** The server's words for a league reward message (0082 versus_league_close_week): the game says them in its language. */

@@ -118,6 +118,16 @@ Admin → Config → **Versus league**:
   the fastest win and seconds a move, the bot tiers, ₽ a trophy, the reward bands.
 - **Run the hourly tick now** and **Seat bots now**.
 - A warning while Gifts aren't on for everyone (the rewards wait on their messages until they are).
+- **The week's groups** (migration 0086, `versus_league_admin_board`, the admin's alone): nothing loads until
+  **Fetch the groups** (or **Last week**) is pressed, then the league as it is at that moment:
+  - the week, when it ends (or that its rewards are sent), and when it was fetched;
+  - the totals: groups (and how many the week opened with), members, players, bots, the players who have fought, the
+    matches and those still being fought;
+  - each group, "5/20 · 2 players · 3 bots · 5 matches", its members ranked as their board: the look, PLAYER or BOT,
+    the name, the team and the trophies; under them a player's matches this week (won, lost, left, being fought, the
+    last one), a bot's trophies by Sunday night, how often each was fought and when they joined.
+
+  An admin tool, so no switch of its own: the server answers the admin alone, and it only reads.
 
 The admin sees **BOT** on the bots, before their names, in the opponents and the group.
 
@@ -130,6 +140,9 @@ The admin sees **BOT** on the bots, before their names, in the opponents and the
    calls run the tick when it's over 20 minutes late.
 3. Admin → Messages: **Gifts** on for everyone (the rewards are gift messages).
 4. Admin → Config → Versus league: **On for admin**, try it (Seat bots now fills your group), then **On for everyone**.
+5. For **The week's groups**, run
+   <https://github.com/Splifingald/pokedice/blob/ccr-1727200f-jjadrr/supabase/migrations/0086_versus_league_admin_board.sql>
+   (after 0082; safe to run again). `supabase/seed.sql` doesn't inline it either.
 
 After a change to the species, their forms or the gems, run `pnpm versus-bots` and the migration again.
 
@@ -145,7 +158,11 @@ After a change to the species, their forms or the gems, run `pnpm versus-bots` a
   - bots seated, hidden from players and climbing;
   - the week's gift messages;
   - a player can't write one;
-  - deleting your data.
+  - deleting your data;
+  - the admin's groups (0086): refused to players, every member of the week once, bots told apart, ranked as the
+    boards, a player's matches adding up.
+- `tests/versus-league-admin-board.test.ts`: the admin's groups read into players and bots, and the week's totals.
 - `e2e/versus-league.spec.ts`: the page (header, opponents, the group and last week, phone and PC), and a match
   fought on AUTO against a fake server.
+- `e2e/admin-config.spec.ts`: Admin → Config → Versus league's groups, fetched only when asked (this week and last).
 - The kitchen sink's **Versus league** section, and `/kitchen-sink/league-fight` (a real fight, offline).
