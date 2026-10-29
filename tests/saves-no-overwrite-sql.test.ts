@@ -20,23 +20,28 @@ async function as(user: string, q: string, params: unknown[] = []) {
   return (await db.query(q, params)).rows
 }
 
-const save = (tag: string, extra: object = {}) => ({ version: 1, player: { name: tag, character: 'red' }, box: [], ...extra })
+const save = (tag: string, extra: object = {}) => ({
+  version: 1,
+  player: { name: tag, character: 'red' },
+  box: [],
+  ...extra,
+})
 
 /** The game today, a first upload: an insert, only when it knows of no row (src/save/cloud.ts pushCloudSave). */
 const insert = (user: string, data: unknown, realm = 'main') =>
-  as(user, `insert into saves (user_id, data, updated_at, realm) values ($1, $2, now(), $3) returning updated_at`, [
+  as(
     user,
-    JSON.stringify(data),
-    realm,
-  ])
+    `insert into saves (user_id, data, updated_at, realm) values ($1, $2, now(), $3) returning updated_at`,
+    [user, JSON.stringify(data), realm],
+  )
 
 /** The game today, every later upload: an update of the row it last matched. */
 const update = (user: string, data: unknown, realm = 'main') =>
-  as(user, `update saves set data = $2, updated_at = now() where user_id = $1 and realm = $3 returning updated_at`, [
+  as(
     user,
-    JSON.stringify(data),
-    realm,
-  ])
+    `update saves set data = $2, updated_at = now() where user_id = $1 and realm = $3 returning updated_at`,
+    [user, JSON.stringify(data), realm],
+  )
 
 /** A page from before 2026-10-22: supabase-js `upsert(row)`, as PostgREST runs it. */
 const oldUpsert = (user: string, data: unknown, realm = 'main') =>
@@ -48,8 +53,12 @@ const oldUpsert = (user: string, data: unknown, realm = 'main') =>
   )
 
 const stored = async (user: string, realm = 'main') =>
-  (await db.query<{ data: { player: { name: string } } }>(`select data from saves where user_id = $1 and realm = $2`, [user, realm]))
-    .rows[0]?.data.player.name
+  (
+    await db.query<{ data: { player: { name: string } } }>(
+      `select data from saves where user_id = $1 and realm = $2`,
+      [user, realm],
+    )
+  ).rows[0]?.data.player.name
 
 beforeAll(async () => {
   db = new PGlite()
