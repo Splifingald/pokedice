@@ -64,7 +64,7 @@ export type Encounter =
       double?: boolean
     }
   /** `reason`: 'round' opens a new round; 'fainted' follows a K.O. in an easy area. */
-  | { kind: 'center'; forced: boolean; reason?: 'fainted' | 'round' }
+  | { kind: 'center'; forced: boolean; reason?: 'fainted' | 'round' | 'wipe' }
   /** `returning`: beaten before, fled the catch, back for another try. */
   | { kind: 'boss'; dex: number; level: number; returning?: boolean; shiny?: boolean }
   /** Something on the ground: `qty` of an item, or Pokédollars (itemKey 'money', qty = ₽). */
@@ -102,6 +102,13 @@ export interface EncounterContext {
   player?: PlayerSide | null
   /** Extreme mode: no Pokémon Center is ever dealt or sent. */
   noCenters?: boolean
+  /**
+   * Extreme mode's boon Centers (docs/47): only a round's opening Center and the deck's Center cards; none sent for a
+   * hurt or fainted team.
+   */
+  boonCenters?: boolean
+  /** Extreme mode's boon Centers: the team was K.O. here, so the next round opens with a Center that only swaps. */
+  wipeCenter?: boolean
   /** × the wild shiny odds here: a Shiny Parade live event covering the area (liveEvents shinyBoost). */
   shinyBoost?: number
   /** The player's wild shiny odds, 0–1: the Shiny Charm's (general wildShinyChance). Unset = game_config's. */
@@ -446,12 +453,15 @@ export interface EncounterRoll {
  */
 export function dueCenter(ctx: EncounterContext): 'round' | 'hurt' | 'fainted' | null {
   const { area, data } = ctx
+  // After a K.O. of the whole team in Extreme mode (docs/47) the round starts over at a Center, wherever this is.
+  if (ctx.wipeCenter && !ctx.progress.deck?.length) return 'round'
   if (ctx.noCenters || ctx.progress.lastCenter) return null
   // A round is one full deck. A new one opens with a Pokémon Center, outside the deck, even with nothing to heal (the
   // user's call, 2026-10-27: a step of every round, on its gauge).
   // The set opening's first round (docs/46) starts straight with its first card: the game begins with a fight.
   if (data.config.encounterMode !== 'random' && !ctx.progress.deck?.length && !opensWithoutCenter(area, ctx.progress, data))
     return 'round'
+  if (ctx.boonCenters) return null
   if (ctx.isFirstInArea && ctx.teamHurt && data.config.forcedCenterWhenHurt) return 'hurt'
   // During the set opening (docs/46), only the starter's K.O. sends one.
   const opening = openingRoundDue(area, ctx.progress, data) != null
@@ -478,7 +488,8 @@ export function nextEncounter(ctx: EncounterContext, rng: Rng): EncounterRoll {
   if (due === 'round') {
     const { deck, opening } = dealRound(ctx, rng, true)
     // The opening Center is the round's first step: it is in the round's record, so its gauge shows it met.
-    return { encounter: { kind: 'center', forced: true, reason: 'round' }, deck, lootDeck: null, drawn: ['center'], newRound: true, opening }
+    const reason = ctx.wipeCenter ? 'wipe' : 'round'
+    return { encounter: { kind: 'center', forced: true, reason }, deck, lootDeck: null, drawn: ['center'], newRound: true, opening }
   }
   if (due === 'hurt') return fixed({ kind: 'center', forced: true })
   if (due === 'fainted') return fixed({ kind: 'center', forced: true, reason: 'fainted' })

@@ -197,6 +197,28 @@ export const DEFAULT_CONFIG: GameConfig = {
     awayMinMinutes: 2,
     items: true,
   },
+  // Extreme mode's Pokémon Centers (docs/47): a boon to pick instead of a heal, the team heal always on offer. The
+  // user's numbers of 2026-10-28.
+  extremeCenters: {
+    access: 'off',
+    offers: 3,
+    heal: { percent: 30 },
+    full: { weight: 30 },
+    item: {
+      weight: 30,
+      potion: 82,
+      revive: 15,
+      maxRevive: 3,
+      potions: [
+        { key: 'potion', badges: 0 },
+        { key: 'super-potion', badges: 3 },
+        { key: 'hyper-potion', badges: 6 },
+      ],
+    },
+    buff: { weight: 20, hours: 24, maxDice: 8 },
+    donor: { weight: 10, trainers: 3 },
+    rocket: { weight: 10, levels: 3, band: 10 },
+  },
   // The special events (docs/18). Each is off until the admin switches it on, for the admin alone or for everyone;
   // before the first opens, Home keeps a locked square from the 3rd Kanto badge. Banners: an event's own picture, or an
   // area picture until it has one.

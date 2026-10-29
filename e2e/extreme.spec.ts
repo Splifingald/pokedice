@@ -66,7 +66,8 @@ test('the league opens it: the rules, then a new Extreme game beside the main sa
   await page.getByRole('button', { name: /^let's go/i }).click()
   await expect(page).toHaveURL(/\/area$/)
 
-  await expect(page.getByText('Extreme mode · no Pokémon Centers')).toBeVisible()
+  // The band under the top bar: the mode's name alone.
+  await expect(page.locator('.bg-crimson', { hasText: 'Extreme mode' }).first()).toBeVisible()
   // Written a moment later (saves are written after a short pause).
   await expect.poll(async () => (await stored(page, 'pokedice.save.extreme'))?.mode).toBe('extreme')
   // The main save is as it was: its own starter, the rules seen.

@@ -44,7 +44,8 @@ export function StagePanel({
       {scene != null && <div className="-mx-3 -mt-4 min-w-0 md:m-0">{scene}</div>}
       <div className="flex min-w-0 flex-col gap-4">
         {children}
-        <ActionBar>{bar}</ActionBar>
+        {/* A step with nothing to press but its own content (a boon Center's choice) has no bar. */}
+        {bar != null && <ActionBar>{bar}</ActionBar>}
       </div>
     </div>
   )

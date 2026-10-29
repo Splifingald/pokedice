@@ -1,7 +1,21 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { POKE_TYPES, teamOf, type PokemonInstance, type PokeType } from '@/engine'
+import {
+  boonCenters,
+  centerRulesDue,
+  monName,
+  pendingBoons,
+  POKE_TYPES,
+  teamOf,
+  type CenterBoon,
+  type PokemonInstance,
+  type PokeType,
+  type SaveData,
+} from '@/engine'
+import { sfx } from '@/audio/sfx'
+import { BoonChoiceView, CenterRulesModal, describeBoon, RocketReveal, WipeCenterNote } from '@/components/ExtremeCenter'
+import { money, typeName } from '@/lib/format'
 import { useT } from '@/i18n/react'
 import { BoxFilter, sortBox, type BoxSort } from '@/components/BoxSort'
 import { PokeCard } from '@/components/PokeCard'
@@ -17,7 +31,8 @@ import { useMotion } from '@/lib/motion'
 import { RunRoundGauge } from '@/screens/area/RoundGauge'
 import { StagePanel } from '@/screens/area/StagePanel'
 import { useGame } from '@/store/game'
-import { continueExploring, finishCenter, markHealShown } from '@/store/run'
+import { pushToast } from '@/store/game'
+import { continueExploring, finishCenter, markHealShown, pickBoon, seeCenterRules } from '@/store/run'
 
 const BOX_SORTS: readonly BoxSort[] = ['dex', 'level', 'type', 'newest']
 
@@ -33,8 +48,15 @@ export function CenterView() {
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const { level } = useMotion()
+  // Extreme mode's boon Centers (docs/47): no healing machine. Its boons wait for the pick, or (after a K.O.) none.
+  const boon = useGame((s) => !!s.save && boonCenters(s.save, s.data))
+  const offers = useGame((s) => (s.save && s.run.areaId ? pendingBoons(s.save, s.run.areaId) : null))
+  const wipe = useGame((s) => s.run.encounter?.kind === 'center' && s.run.encounter.reason === 'wipe')
+  const rulesDue = useGame((s) => !!offers && centerRulesDue(s.save, s.data))
+  const [info, setInfo] = useState(false)
+  const [trade, setTrade] = useState<{ gave: PokemonInstance; got: PokemonInstance } | null>(null)
   // Already played (back from Home), or animations off: no scene, the team and the Box at once.
-  const [healing, setHealing] = useState(() => level !== 'off' && !useGame.getState().run.healShown)
+  const [healing, setHealing] = useState(() => !boon && level !== 'off' && !useGame.getState().run.healShown)
   const [view, setView] = useState<SheetView | null>(null)
   const [sort, setSort] = useState<BoxSort>('dex')
   const [type, setType] = useState<PokeType | 'all'>('all')
@@ -64,6 +86,12 @@ export function CenterView() {
   )
   const open = (p: PokemonInstance) => setView({ kind: 'inst', id: p.id })
   const done = () => setView(null)
+  const take = (index: number, target: string | null) => {
+    const res = pickBoon(index, target)
+    if (!res) return
+    if (res.rocket) setTrade(res.rocket)
+    else boonToast(res.boon, res.save, target, t)
+  }
 
   const heal = (
     <StageCanvas
@@ -101,7 +129,7 @@ export function CenterView() {
       </AnimatePresence>
     </div>
   )
-  const bar = (
+  const bar = offers ? null : (
     // Healed: back Home, or straight on to this area's next encounter. Never by itself: the Center waits for the Box.
     <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
       <PixelButton
@@ -130,6 +158,15 @@ export function CenterView() {
   return (
     <>
       <StagePanel scene={stage} bar={bar} room={null}>
+        {offers && (
+          <BoonChoiceView
+            views={offers.map((o) => describeBoon(o, save, data, t))}
+            save={save}
+            onPick={take}
+            onInfo={() => setInfo(true)}
+          />
+        )}
+        {boon && wipe && !offers && <WipeCenterNote />}
         <section className="flex flex-col gap-2">
           <h2 className="text-3xl">
             {t('ui.center.teamCount', { count: team.length, max: data.config.maxTeamSize })}
@@ -156,37 +193,87 @@ export function CenterView() {
           </ol>
         </section>
 
-        <section className="flex flex-col gap-2">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1.5">
-            <h2 className="text-3xl">{t('ui.team.box', { count: box.length })}</h2>
-            {boxAll.length > 1 && (
-            <BoxFilter
-              sort={sort}
-              onSort={setSort}
-              sorts={BOX_SORTS}
-              type={type}
-              onType={setType}
-              types={boxTypes}
-              shown={box.length}
-            />
-          )}
-          </div>
-          <ul className="grid grid-cols-3 gap-1.5 sm:gap-2 lg:grid-cols-6">
-            {box.map((p) => (
-              <PokeCard
-                key={p.id}
-                inst={p}
-                onOpen={() => open(p)}
-                openLabel={t('ui.newGame.monInfo', { name: p.nickname || data.species[p.dex]?.name || '' })}
+        {/* The Box once the boon is picked: the team changes after it (engine teamSwapsOpen). */}
+        {!offers && (
+          <section className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1.5">
+              <h2 className="text-3xl">{t('ui.team.box', { count: box.length })}</h2>
+              {boxAll.length > 1 && (
+              <BoxFilter
+                sort={sort}
+                onSort={setSort}
+                sorts={BOX_SORTS}
+                type={type}
+                onType={setType}
+                types={boxTypes}
+                shown={box.length}
               />
-            ))}
-          </ul>
-        </section>
+            )}
+            </div>
+            <ul className="grid grid-cols-3 gap-1.5 sm:gap-2 lg:grid-cols-6">
+              {box.map((p) => (
+                <PokeCard
+                  key={p.id}
+                  inst={p}
+                  onOpen={() => open(p)}
+                  openLabel={t('ui.newGame.monInfo', { name: p.nickname || data.species[p.dex]?.name || '' })}
+                />
+              ))}
+            </ul>
+          </section>
+        )}
       </StagePanel>
-      {/* The Center is where the team changes: the sheet's swap dock (one tap swaps one in). */}
-      <SheetModal view={view} onClose={done} manage swaps />
+      {/* The Center is where the team changes: the sheet's swap dock (one tap swaps one in), once a boon is picked. */}
+      <SheetModal view={view} onClose={done} manage swaps={!offers} />
+      {/* Its rules once, at the first boon Center, and from its INFO. */}
+      <CenterRulesModal
+        open={rulesDue || info}
+        onClose={() => {
+          seeCenterRules()
+          setInfo(false)
+        }}
+      />
+      <RocketReveal trade={trade} onClose={() => setTrade(null)} />
     </>
   )
+}
+
+/** What a boon just did, said once (Team Rocket's has its own reveal). */
+function boonToast(
+  boon: CenterBoon,
+  save: SaveData,
+  target: string | null,
+  t: (key: string, vars?: Record<string, string | number>) => string,
+) {
+  const { data } = useGame.getState()
+  switch (boon.kind) {
+    case 'heal':
+      sfx('heal')
+      return pushToast(t('ui.xcenter.got.heal'), 'good')
+    case 'full': {
+      sfx('heal')
+      const p = save.box.find((x) => x.id === target)
+      return pushToast(t('ui.xcenter.got.full', { name: p ? monName(p, data) : '?' }), 'good')
+    }
+    case 'item':
+      return pushToast(t('ui.portal.gotItem', { item: data.items[boon.itemKey]?.name ?? boon.itemKey }), 'good')
+    case 'donor':
+      sfx('gold')
+      return pushToast(t('ui.xcenter.got.donor', { amount: money(boon.gold) }), 'good')
+    case 'buff': {
+      const p = save.box.find((x) => x.id === boon.uid)
+      return pushToast(
+        t('ui.xcenter.got.buff', {
+          name: p ? monName(p, data) : '?',
+          type: typeName(boon.type),
+          h: data.config.extremeCenters.buff.hours,
+        }),
+        'good',
+      )
+    }
+    case 'rocket':
+      return
+  }
 }
 
 /** The Pokémon Center's sign while you're inside: its heart and its name. */

@@ -41,6 +41,10 @@ Asked in the Q&A of 2026-10-11 (§9), unless marked *plan*:
 
 ### 1.2 No Pokémon Centers
 
+*Since docs/47 (behind its own switch, Off by default): Centers come back without their heal. A round opens with one
+and the deck's Center cards are dealt, each offering boons to pick one from; a completed area has none, a secret area
+only its first; a lost round starts over at a Center that only swaps. With that switch off, this section holds.*
+
 - The encounter deck never deals a `center` card (`buildDeck` takes `center: 0` in Extreme; `encounterDue` never
   returns `'hurt'`, `'fainted'` or `'round'` → center). The "easy areas send a Center next" rule is off.
 - **A wipe no longer heals.** The round is lost as today (back to the area's start, deck dropped, levels/items/₽

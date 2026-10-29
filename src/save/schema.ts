@@ -31,11 +31,27 @@ const instanceSchema = z.object({
   revivesAt: z.number().optional(),
   fossil: z.string().optional(),
   koAt: z.number().optional(),
+  // Extreme mode's Pokébuff (docs/47): an odd one (an edited save) is dropped, never the Pokémon.
+  buff: z
+    .object({ type: z.enum(POKE_TYPES as unknown as [PokeType, ...PokeType[]]), until: z.number() })
+    .optional()
+    .catch(undefined),
   // Kept as renaming keeps it: a bad one (an edited save) is dropped, never the save.
   nickname: z.unknown().transform(cleanNickname),
   // Unown's letter (docs/41): a bad one (an edited save) is dropped, the Unown reads as an A.
   letter: z.unknown().transform((v) => (isUnownLetter(v) ? v : undefined)),
 })
+
+// Extreme mode's Centers (docs/47): the boons waiting for the pick.
+const centerBoonSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('heal'), percent: z.number() }),
+  z.object({ kind: z.literal('full') }),
+  z.object({ kind: z.literal('item'), itemKey: z.string().min(1) }),
+  z.object({ kind: z.literal('buff'), uid: z.string().min(1), type: z.enum(POKE_TYPES as unknown as [PokeType, ...PokeType[]]) }),
+  z.object({ kind: z.literal('donor'), gold: z.number().min(0) }),
+  z.object({ kind: z.literal('rocket') }),
+])
+const centerBoonsSchema = z.object({ areaId: z.string().min(1), offers: z.array(centerBoonSchema).max(10) })
 
 // Trades (docs/23): a listing's want, and a Pokémon as the Done list remembers it.
 const tradeWantSchema = z.discriminatedUnion('kind', [
@@ -154,6 +170,9 @@ const progressSchema = z.object({
   portal: portalSchema.optional().catch(undefined),
   // The nightmare (docs/30): the same, an odd value drops it, never the save.
   nightmare: nightmareSchema.optional().catch(undefined),
+  // Extreme mode's Centers (docs/47): a secret area's first one met, and a round to start over at a Center.
+  centerMet: z.boolean().optional(),
+  wiped: z.boolean().optional(),
 })
 
 /** One parked region's block: the same fields the live region keeps at the top level of the save. */
@@ -357,6 +376,9 @@ export const saveSchema = z.object({
     .object({
       awayFrom: z.number().optional(),
       pending: z.array(z.tuple([z.number(), z.number()])).max(20).optional(),
+      // A Center's boons waiting for the pick (docs/47): an odd value drops them, never the save.
+      center: centerBoonsSchema.optional().catch(undefined),
+      centerRulesSeen: z.boolean().optional(),
     })
     .optional(),
   extremeUnlockedAt: z.number().optional(),
