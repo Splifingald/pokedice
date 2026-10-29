@@ -1,6 +1,6 @@
 // The team's changes where they are open (engine/run.ts teamSwapsOpen): inside a Pokémon Center, and at a portal
 // area's way in before READY! (docs/28). In a Pokémon's sheet: make it lead or send it to the Box, or bring one from
-// the Box in (in place of whom, when the team is full).
+// the Box in (in place of whom, when the team is full). At the Team screen's top: whether they are open here.
 import type { ReactNode } from 'react'
 import { monName, teamOf, type PokemonInstance } from '@/engine'
 import { useT } from '@/i18n/react'
@@ -9,6 +9,43 @@ import { pushToast, useGame } from '@/store/game'
 import { PixelIcon } from './icons'
 import { PixelButton } from './PixelButton'
 import { MiniSprite } from './SpriteImg'
+
+/** Where the Team screen stands on team changes: open at a Center or a way in, or waiting for a Center. */
+export type TeamSwapPlace = 'center' | 'portal' | 'nightmare' | 'closed'
+
+const PLACE_TEXT: Record<Exclude<TeamSwapPlace, 'closed'>, { hint: string; back: string }> = {
+  center: { hint: 'ui.team.centerHint', back: 'ui.team.backToCenter' },
+  portal: { hint: 'ui.portal.teamHint', back: 'ui.portal.backToPortal' },
+  nightmare: { hint: 'ui.nightmare.teamHint', back: 'ui.nightmare.backToWayIn' },
+}
+
+/**
+ * The Team screen's top: where the team can change (a Center, a portal's or the nightmare's way in) a panel says so,
+ * with the way back there; elsewhere a small line says it waits for a Pokémon Center. A player at a Center changes
+ * the team here as before 2.5, the Team's search and filters included (the user's call, 2026-10-29).
+ */
+export function TeamSwapsNote({ at, onBack }: { at: TeamSwapPlace; onBack: () => void }) {
+  const { t } = useT()
+  if (at === 'closed')
+    return (
+      <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted">
+        <PixelIcon name="lock" size={16} className="shrink-0" />
+        {t('ui.team.centersOnly')}
+      </p>
+    )
+  const text = PLACE_TEXT[at]
+  return (
+    <div className="pixel-dialogue flex flex-col gap-2.5 px-3 py-2.5 sm:flex-row sm:items-center">
+      <p className="m-0 flex flex-1 items-center gap-3 text-[20px] leading-[1.15]">
+        <PixelIcon name="heart" size={24} className="shrink-0" />
+        <span>{t(text.hint)}</span>
+      </p>
+      <PixelButton variant="primary" className="shrink-0" onClick={onBack}>
+        {t(text.back)}
+      </PixelButton>
+    </div>
+  )
+}
 
 /** Two buttons side by side, a quiet one and the main one, sharing the row without either running off it. */
 export function SheetActionRow({ quiet, main }: { quiet?: ReactNode; main?: ReactNode }) {
