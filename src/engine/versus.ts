@@ -11,16 +11,27 @@ import { typeMultiplier } from './typechart'
 import { versusLeagueFor } from './versusLeague'
 import type { GameData, PokeType, PokemonInstance, PowerKind, RegionId, SaveData } from './types'
 
-/** Every Pokémon of a Versus team fights at this level: higher ones are brought down to it, lower ones can't enter. */
+/**
+ * Every Pokémon of a Versus team fights at this level (its HP, the level shown): higher ones are brought down to it,
+ * lower ones can't enter. Like a raid's team cap, it keeps the dice and rerolls of its own level (the user's rule,
+ * 2026-10-29).
+ */
 export const VERSUS_LEVEL = 50
 export const VERSUS_TEAM_SIZE = 3
 
 /** A Pokémon cloned into a Versus team: what the fight needs of it, frozen when the team is registered. */
 export interface VersusMon {
   dex: number
+  /** Its own level (50 or more; teams registered before migration 0090 say 50): the fight caps it (`versusSeedLevels`). */
   level: number
   shiny: boolean
 }
+
+/** A Versus Pokémon in a battle: at Lv.50 at most (its HP, the level shown), with the dice and rerolls of its own level. */
+export const versusSeedLevels = (level: number): { level: number; diceLevel: number } => ({
+  level: Math.min(level, VERSUS_LEVEL),
+  diceLevel: level,
+})
 
 const eligible = (p: PokemonInstance, data: GameData) => p.level >= VERSUS_LEVEL && p.revivesAt == null && !!data.species[p.dex]
 
@@ -40,15 +51,17 @@ export function versusCandidates(save: SaveData, data: GameData): VersusCandidat
 
 /**
  * The team picker's list: one Pokémon per species, and one more for its shiny. Two of them fight exactly alike in
- * Versus (cloneForVersus keeps only the species, Lv.50 and the shine), so a species owned in several regions shows
- * once, the region being played first. Picked ones (`keep`) are always listed and take their species' place.
+ * Versus but for their dice (cloneForVersus keeps the species, the level and the shine), so a species owned in
+ * several regions shows once: the highest level, the region being played first on a tie. Picked ones (`keep`) are
+ * always listed and take their species' place.
  */
 export function versusChoices(save: SaveData, data: GameData, keep: readonly string[] = []): VersusCandidate[] {
   const all = versusCandidates(save, data)
   const kind = (c: VersusCandidate) => `${c.inst.dex}:${c.inst.shiny ? 'shiny' : ''}`
   const out = all.filter((c) => keep.includes(c.inst.id))
   const listed = new Set(out.map(kind))
-  for (const c of all)
+  // Highest level first: its dice are the best of the species (a stable sort keeps the region order on a tie).
+  for (const c of [...all].sort((a, b) => b.inst.level - a.inst.level))
     if (!listed.has(kind(c))) {
       out.push(c)
       listed.add(kind(c))
@@ -114,9 +127,9 @@ export const versusRulesDue = (save: SaveData, data: GameData): boolean =>
     ? !save.versusLeagueRulesSeen && versusUnlocked(save, data)
     : !save.versusRulesSeen && versusUnlocked(save, data)
 
-/** The clone that fights for `p`: the same species and colours, at Lv.50 at most. */
+/** The clone that fights for `p`: the same species, colours and level (the fight shows it at Lv.50 at most). */
 export function cloneForVersus(p: Pick<PokemonInstance, 'dex' | 'level' | 'shiny'>): VersusMon {
-  return { dex: p.dex, level: Math.min(p.level, VERSUS_LEVEL), shiny: !!p.shiny }
+  return { dex: p.dex, level: p.level, shiny: !!p.shiny }
 }
 
 /** One engine call of the fight, with what it produced: the replay feeds these back to the battle screen in order. */
@@ -218,7 +231,7 @@ function openRound(m: Omit<VersusMatch, 'state'>, d: number, data: GameData): { 
   const team = m.attacker.map((p, i) => ({
     uid: attackerUid(i),
     dex: p.dex,
-    level: p.level,
+    ...versusSeedLevels(p.level),
     // Full health for the first battle; afterwards, whatever the last one left.
     hp: m.hp[attackerUid(i)] ?? Number.MAX_SAFE_INTEGER,
     shiny: p.shiny,
@@ -233,7 +246,7 @@ function openRound(m: Omit<VersusMatch, 'state'>, d: number, data: GameData): { 
       kind: 'trainer',
       team,
       leadUid: m.lead,
-      enemy: { dex: foe.dex, level: foe.level, shiny: foe.shiny },
+      enemy: { dex: foe.dex, ...versusSeedLevels(foe.level), shiny: foe.shiny },
       playerLevels: levels,
       enemyLevels: levels,
       ...attackerPowers(m.sides.attacker, data),

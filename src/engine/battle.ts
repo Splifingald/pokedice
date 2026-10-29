@@ -440,6 +440,8 @@ export function copyFoeDice(s: BattleState, log: LogEntry[]) {
 export interface FoeSeed {
   dex: number
   level: number
+  /** As a `BattlerSeed`'s: a Versus defender fights (and shows) at Lv.50 with the dice of its own level. */
+  diceLevel?: number
   hp?: number
   shiny?: boolean
   item?: string
@@ -863,7 +865,15 @@ export function createBattle(opts: CreateBattleOptions, data: GameData): { state
   if (activeIndex < 0) throw new Error('No able Pokémon to send out')
   const enemyMax = effectiveStats(getSpecies(data, opts.enemy.dex), opts.enemy.level, data).maxHp
   const enemy = makeBattler(
-    { uid: 'enemy', dex: opts.enemy.dex, level: opts.enemy.level, hp: opts.enemy.hp ?? enemyMax, shiny: opts.enemy.shiny, item: opts.enemy.item },
+    {
+      uid: 'enemy',
+      dex: opts.enemy.dex,
+      level: opts.enemy.level,
+      diceLevel: opts.enemy.diceLevel,
+      hp: opts.enemy.hp ?? enemyMax,
+      shiny: opts.enemy.shiny,
+      item: opts.enemy.item,
+    },
     data,
   )
   const lead = player[activeIndex]!
@@ -1074,7 +1084,7 @@ function createDouble(
   if (!ownSlots.length) throw new Error('No able Pokémon to send out')
   const foes = double.foes.map((f, i) => {
     const max = effectiveStats(getSpecies(data, f.dex), f.level, data).maxHp
-    return makeBattler({ uid: foeUid(i), dex: f.dex, level: f.level, hp: f.hp ?? max, shiny: f.shiny, item: f.item }, data)
+    return makeBattler({ uid: foeUid(i), dex: f.dex, level: f.level, diceLevel: f.diceLevel, hp: f.hp ?? max, shiny: f.shiny, item: f.item }, data)
   })
   const plans: Record<string, EnemyPlan> = {}
   double.plans?.forEach((p, i) => {

@@ -170,9 +170,15 @@ function useFlash(id: number | null, still: boolean) {
 
 const POP_COLOR = { super: '#ffbe2e', weak: '#fbfdff', immune: '#9c9caf', normal: '#fbfdff', heal: '#34c97a' }
 
-/** Whole, then (docs/38 F4a) cut away from the bottom as it sinks: the games' fall into the ground, never a fade. */
-const UNCUT = 'inset(0% 0% 0% 0%)'
-const SUNK = 'inset(0% 0% 100% 0%)'
+/**
+ * Whole, then (docs/38 F4a) cut away from the bottom as it sinks: the games' fall into the ground, never a fade. Whole
+ * means room on every side: a move's timeline lunges and grows the sprite past its box, and a cut at the box's edges
+ * sliced it off in a straight line, an invisible wall level with its plate (a player's report, 2026-10-29). The fall
+ * starts cut at its feet.
+ */
+const UNCUT = 'inset(-100% -100% -100% -100%)'
+const SINKING = 'inset(-100% -100% 0% -100%)'
+const SUNK = 'inset(-100% -100% 100% -100%)'
 
 /** One Pokémon as the page's animated sprite, standing on its platform. */
 function Mon({
@@ -285,7 +291,7 @@ function Mon({
               {
                 opacity: 1,
                 y: [0, box.h * scale],
-                clipPath: [UNCUT, SUNK],
+                clipPath: [SINKING, SUNK],
                 transition: { duration: still ? 0 : 0.4 * pace, ease: steps(4) },
               }
             : !shown

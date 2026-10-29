@@ -1,6 +1,7 @@
 // Run flow: map → area → encounter preview → battle → rewards → next. Thin glue over the pure engine.
 import {
   autoLevel,
+  autoOffersLead,
   noteBossCaught,
   arriveAtPortal,
   applyCatch,
@@ -509,8 +510,9 @@ export function rollNext() {
 
 /**
  * The rework: a fight starts on the battle screen itself, with no preview card. The foe is out, the player's side not
- * yet: one tap on a Pokémon sends it (BattleView's send-out step). A team with one Pokémon able, or a fight on auto, goes
- * in at once. A double battle keeps its preview (two to pick).
+ * yet: one tap on a Pokémon sends it (BattleView's send-out step). A team with one Pokémon able, or a wild fight on auto,
+ * goes in at once; a trainer's on auto loads GO! and sends the first able by itself unless a Pokémon is tapped. A
+ * double battle keeps its preview (two to pick).
  */
 const directFight = (enc: Encounter) =>
   (enc.kind === 'wild' || enc.kind === 'boss' || enc.kind === 'trainer' || enc.kind === 'gym') && !isDoubleEncounter(enc)
@@ -519,7 +521,8 @@ function beginFight() {
   if (!save) return
   const able = teamOf(save).filter((p) => p.currentHp > 0)
   const auto = autoLevel(save, data, settings, run) !== 'off'
-  const pick = able.length > 1 && !auto
+  // On auto, a trainer's send-out still waits a moment for a pick (autoOffersLead); a wild Pokémon's goes in at once.
+  const pick = able.length > 1 && (!auto || autoOffersLead(run.encounter?.kind))
   setRun({ pickLead: pick })
   engage(able[0]?.id, pick)
 }
