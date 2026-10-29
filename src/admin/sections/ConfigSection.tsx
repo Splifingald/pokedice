@@ -1306,6 +1306,7 @@ const FEATURES: Feature[] = [
   own('Double battles', 'doubleBattles', 'doubles'),
   own('Trades', 'trade', 'trades'),
   own('Versus league', 'versusLeague', 'versus', VERSUS_LEAGUE_DEFAULTS as unknown as Row),
+  field('Versus global board', 'versusLeague', 'globalAccess', 'versus'),
   own('Game Corner', 'slotMachine', 'gameCorner'),
   own('General upgrades', 'general', 'general'),
   field('Shiny Charm', 'general', 'charmAccess', 'general'),

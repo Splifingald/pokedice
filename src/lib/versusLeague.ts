@@ -1,6 +1,7 @@
-// The weekly Versus league, the cloud side (docs/44): this week's (or last week's) group, the 3 opponents offered,
-// starting a match (recorded as a leave before it's fought) and its result. The rows come from the SQL functions of
-// supabase/migrations/0082_versus_league.sql; the rules and the fight are the engine's (engine/versusLeague).
+// The weekly Versus league, the cloud side (docs/44): this week's (or last week's) group, the global board, the 3
+// opponents offered, starting a match (recorded as a leave before it's fought) and its result. The rows come from the
+// SQL functions of supabase/migrations/0082_versus_league.sql (the global board: 0088); the rules and the fight are the
+// engine's (engine/versusLeague).
 import type { VersusMon, VersusPowers } from '@/engine'
 import { avatarOf } from './avatars'
 import { getSupabase } from './supabase'
@@ -65,29 +66,47 @@ const mons = (raw: unknown): VersusMon[] =>
 
 const bool = (v: unknown): boolean | null => (typeof v === 'boolean' ? v : null)
 
+const parseRows = (raw: unknown): LeagueRow[] =>
+  (Array.isArray(raw) ? (raw as Record<string, unknown>[]) : []).map((r) => ({
+    id: String(r.id ?? ''),
+    isMe: r.isMe === true,
+    name: String(r.name || 'Trainer'),
+    avatar: avatarOf(r.avatar as string).id,
+    team: mons(r.team),
+    trophies: Number(r.trophies) || 0,
+    rank: Number(r.rank) || 1,
+    rich: r.rich === true,
+    bot: bool(r.bot),
+  }))
+
+const endsAt = (raw: unknown) => {
+  const ends = Date.parse(String(raw ?? ''))
+  return Number.isFinite(ends) ? ends : 0
+}
+
 export function parseLeagueHome(raw: unknown): LeagueHome {
   const o = (raw ?? {}) as Record<string, unknown>
-  const rows = Array.isArray(o.rows) ? (o.rows as Record<string, unknown>[]) : []
-  const ends = Date.parse(String(o.endsAt ?? ''))
   return {
     week: String(o.week ?? ''),
-    endsAt: Number.isFinite(ends) ? ends : 0,
+    endsAt: endsAt(o.endsAt),
     joined: o.joined === true,
     trophies: Number(o.trophies) || 0,
     closed: o.closed === true,
     pending: o.pending == null ? null : Number(o.pending),
-    rows: rows.map((r) => ({
-      id: String(r.id ?? ''),
-      isMe: r.isMe === true,
-      name: String(r.name || 'Trainer'),
-      avatar: avatarOf(r.avatar as string).id,
-      team: mons(r.team),
-      trophies: Number(r.trophies) || 0,
-      rank: Number(r.rank) || 1,
-      rich: r.rich === true,
-      bot: bool(r.bot),
-    })),
+    rows: parseRows(o.rows),
   }
+}
+
+/** The global board (docs/44 §8): every player of every group this week, bots left out. It wins nothing. */
+export interface LeagueGlobal {
+  week: string
+  endsAt: number
+  rows: LeagueRow[]
+}
+
+export function parseLeagueGlobal(raw: unknown): LeagueGlobal {
+  const o = (raw ?? {}) as Record<string, unknown>
+  return { week: String(o.week ?? ''), endsAt: endsAt(o.endsAt), rows: parseRows(o.rows) }
 }
 
 interface RawChoice {
@@ -150,6 +169,15 @@ export async function fetchLeagueHome(last = false): Promise<LeagueHome | null> 
   const home = parseLeagueHome(data)
   if (!last) lastHome = { at: Date.now(), home }
   return home
+}
+
+/** This week's global board (migration 0088): null when the cloud isn't configured on this site. */
+export async function fetchLeagueGlobal(): Promise<LeagueGlobal | null> {
+  const client = await getSupabase()
+  if (!client) return null
+  const { data, error } = await client.rpc('versus_league_global')
+  if (error) throw error
+  return parseLeagueGlobal(data)
 }
 
 /** This week's league, fetched at most once every `maxAgeMs` (the Versus screen always fetches it fresh). */

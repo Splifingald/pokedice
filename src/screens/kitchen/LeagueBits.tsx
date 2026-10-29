@@ -1,6 +1,7 @@
 // Kitchen sink (dev only): the weekly Versus league (docs/44) — its header (no group yet, ranked), the 3 opponents
 // (one red FIGHT; the admin's BOT tag; a phone's width; none on offer), the matchup mark, the group's board (this
-// week, the top 10's rewards, the admin's view with bots, a phone's width; empty; last week empty), the result card
+// week, the top 10's rewards, the admin's view with bots, a phone's width; empty; last week empty; the global board,
+// its switch and line, long and empty), the result card
 // (a win, a loss under the safe line, a loss above it, a leave, waiting on the server, not recorded), the reward
 // message's words, the Raid Ball, its throw's ball and the raid catch that offers it, and the rules card and INFO.
 import { useState, type ReactNode } from 'react'
@@ -20,6 +21,7 @@ import { CatchPanel } from '@/screens/battle/CatchPanel'
 import { ReplyBox } from '@/components/ContactModal'
 import { PixelButton } from '@/components/PixelButton'
 import { RulesCard } from '@/components/RulesCard'
+import { Seg } from '@/components/Segmented'
 import { InfoButton } from '@/components/RulesModal'
 import { ballOfItem } from '@/fx/scenes'
 import { useT } from '@/i18n/react'
@@ -121,6 +123,18 @@ const RAID_CATCH = {
   result: null,
 }
 const ADMIN_ROWS = ROWS.map((r, i) => ({ ...r, bot: i === 0 || i === 6 || i === 9 }))
+// The global board: 130 players of every group, you at #121 (its top 100, you and the 10 either side).
+const GLOBAL_ROWS: LeagueRow[] = Array.from({ length: 130 }, (_, i) => ({
+  id: `global-${i}`,
+  isMe: i === 120,
+  name: i === 120 ? 'RED' : `${NAMES[i % NAMES.length]}${i}`,
+  avatar: i % 3 ? 'red' : 'green',
+  team: [mon(1 + (i % 150)), mon(152 + (i % 99)), mon(252 + (i % 134))],
+  trophies: 400 - i * 3,
+  rank: i + 1,
+  rich: i === 4,
+  bot: null,
+}))
 
 export function LeagueBits() {
   const { t } = useT()
@@ -175,9 +189,29 @@ export function LeagueBits() {
       <Frame name="LeagueRows · a phone's width, the admin's view (the rewards wrap before the team does)">
         <LeagueRows rows={ADMIN_ROWS.slice(0, 5)} empty="" />
       </Frame>
-      <Frame name="LeagueRows · no group yet / last week not played">
+      <Frame name="LeagueRows · no group yet / last week not played / nobody this week (global)">
         <LeagueRows rows={[]} empty={t('ui.league.boardEmpty')} />
         <LeagueRows rows={[]} empty={t('ui.league.lastEmpty')} />
+        <LeagueRows rows={[]} empty={t('ui.league.globalEmpty')} global />
+      </Frame>
+      <Frame name="LeagueBoard's switch · This week / Last week / Global, and the global board's line">
+        <Seg
+          label={t('ui.league.whichWeek')}
+          value="global"
+          onChange={noop}
+          options={[
+            { id: 'this', label: t('ui.league.thisWeek') },
+            { id: 'last', label: t('ui.league.lastWeek') },
+            { id: 'global', label: t('ui.league.global') },
+          ]}
+        />
+        <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{t('ui.league.globalNote')}</p>
+      </Frame>
+      <Frame
+        name="LeagueRows · global: every group's players, no rewards; its top 100, then you among yours"
+        wide
+      >
+        <LeagueRows rows={GLOBAL_ROWS} empty="" global />
       </Frame>
       <Frame name="RewardMark · 1st, 2nd, 3rd, 4th, 6th, 11th (nothing)">
         <div className="flex flex-wrap items-center gap-3">

@@ -16,6 +16,7 @@ import {
   teamCoverage,
   trophyChange,
   versusAutoMove,
+  versusGlobalOn,
   versusNextRound,
   versusPower,
   versusStanding,
@@ -120,6 +121,16 @@ describe('the ranking and the rewards', () => {
     expect(r.save.gold).toBe(save.gold + 40)
     expect(r.save.inventory['raid-ball']).toBe(2)
     expect(r.landed.every((l) => l.region === (save.region ?? 'kanto') && !l.moved)).toBe(true)
+  })
+})
+
+describe('the global board', () => {
+  const withLeague = (versusLeague: object) => ({ ...data, config: { ...data.config, versusLeague } })
+
+  it('is off until its own switch is on, and only with the league', () => {
+    expect(versusGlobalOn(withLeague({ access: 'all' }))).toBe(false)
+    expect(versusGlobalOn(withLeague({ access: 'all', globalAccess: 'all' }))).toBe(true)
+    expect(versusGlobalOn(withLeague({ access: 'off', globalAccess: 'all' }))).toBe(false)
   })
 })
 

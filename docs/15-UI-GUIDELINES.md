@@ -938,6 +938,11 @@ pieces.
   - The group: `LeagueRows` under a This week / Last week `Seg`, tied places sharing a rank, the trophies on the name's
     line and, under them beside the team, each top-10 place's rewards (`RewardMark`: their pictures at their own 30 px,
     the Raid Ball the Ultra Ball's shape in gold with pink bars, so it never reads as a Poké Ball).
+  - **Global** (docs/44 §8, its own switch): a third option in that `Seg`, every group's players this week (no bots),
+    ranked by trophies. It wins nothing, so no `RewardMark`; a muted line over the rows says so ("No rewards here: just
+    the glory."), and that line is its rules (a rule explained where it happens, §20: no pop-up, the league's INFO
+    stays the league's). Long, it is windowed as the leaderboard is (`boardWindow`: its top 100, you with the 10 either
+    side, your friends; `BoardGap` between). With it on, PC's board panel is headed "Leaderboard", not "Your group".
   - The admin alone sees `BotTag` (BOT) on a bot, before its name.
   - The fight is the battle screen with `versus.live`: the player's own controls and powers, AUTO-MODE as the panel's
     switch, never the Bag. Its result card (`LeagueResultCard`) shows the trophies won or lost, green or red, beside
@@ -1095,7 +1100,9 @@ notifications' question last. A new pop-up gets a place in that list, not a list
 - **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
 - **A rule explained where it happens** (the League's heal between its battles, docs/42): the switch, but no rules
-  pop-up and no INFO: it adds nothing to do and no page, and the result card says so the moment it heals.
+  pop-up and no INFO: it adds nothing to do and no page, and the result card says so the moment it heals. The Versus
+  league's global board (docs/44 §8) too: a tab of the league's board, whose line over its rows is its whole rule (no
+  rewards, for the glory).
 - **A set order** (Route 1's opening, docs/46): the switch, but no rules pop-up and no INFO: it only sets the order of
   cards the area already deals, so there is nothing new to learn or do. Its **dice tutorial** (docs/46 §5) rides the
   same switch and has no rules either: it is the explanation, a pointing hand over a dimmed screen (`GuideFrame`), one

@@ -7,7 +7,8 @@ the **Raid Ball**, is one of the rewards. All of it sits behind its own admin sw
 while it's Off, Versus is what it was (every team, the attack and defense boards, fights on auto).
 
 **Status (2026-10-27): built** on `claude/quirky-maxwell-ilueyw` (from `version/2_4`), behind its switch, Off.
-Migration `0082_versus_league.sql`.
+Migration `0082_versus_league.sql`. The global board (§8, 2026-10-29): migration `0088_versus_league_global.sql`, its
+own switch, Off.
 
 ## 1. Decisions (the user's answers)
 
@@ -91,8 +92,9 @@ Migration `0082_versus_league.sql`.
     the matchup ("2 / 3" and a thumb up: how many of theirs your team hits super effectively); one red FIGHT (the one
     your team hits hardest). A match left before its end says so.
   - **My team**: Versus's own team editor.
-  - **Leaderboard** (PC: beside the opponents): **This week / Last week**, ranks shared on ties, the trophies on the
-    name's line and each top-10 place's Raid Balls and Rare Candies drawn under them, beside the team.
+  - **Leaderboard** (PC: beside the opponents): **This week / Last week** (and **Global**, §8), ranks shared on ties,
+    the trophies on the name's line and each top-10 place's Raid Balls and Rare Candies drawn under them, beside the
+    team.
 - **The fight**:
   - The battle screen, **played by you**: dice, rerolls, switches, Mega Evolution, Gigantamax and Z-Moves (your own
     powers).
@@ -144,6 +146,11 @@ The admin sees **BOT** on the bots, before their names, in the opponents and the
    <https://github.com/Splifingald/pokedice/blob/ccr-1727200f-jjadrr/supabase/migrations/0086_versus_league_admin_board.sql>
    (after 0082; safe to run again). `supabase/seed.sql` doesn't inline it either.
 
+6. For **the global board** (§8), run
+   <https://github.com/Splifingald/pokedice/blob/claude/modest-tesla-bggrd4/supabase/migrations/0088_versus_league_global.sql>
+   (after 0082; safe to run again; `supabase/seed.sql` doesn't inline it), then Admin → Config → Switches → **Versus
+   global board**: On for admin, look, then On for everyone.
+
 After a change to the species, their forms or the gems, run `pnpm versus-bots` and the migration again.
 
 ## 7. Tests
@@ -160,9 +167,36 @@ After a change to the species, their forms or the gems, run `pnpm versus-bots` a
   - a player can't write one;
   - deleting your data;
   - the admin's groups (0086): refused to players, every member of the week once, bots told apart, ranked as the
-    boards, a player's matches adding up.
-- `tests/versus-league-admin-board.test.ts`: the admin's groups read into players and bots, and the week's totals.
-- `e2e/versus-league.spec.ts`: the page (header, opponents, the group and last week, phone and PC), and a match
-  fought on AUTO against a fake server.
+    boards, a player's matches adding up;
+  - the global board (0088): its own switch (and the league's), every group's players ranked together with ties
+    shared, no bots, the banned left out but for themselves, readable signed out.
+- `tests/versus-league-admin-board.test.ts`: the admin's groups read into players and bots, and the week's totals;
+  the global board's rows read.
+- `tests/engine/versus-league.test.ts` also: `versusGlobalOn`, its switch only with the league's.
+- `e2e/versus-league.spec.ts`: the page (header, opponents, the group and last week, phone and PC; no Global while
+  its switch is off), the global board (its line, no rewards, phone and PC), and a match fought on AUTO against a fake
+  server.
 - `e2e/admin-config.spec.ts`: Admin → Config → Versus league's groups, fetched only when asked (this week and last).
 - The kitchen sink's **Versus league** section, and `/kitchen-sink/league-fight` (a real fight, offline).
+
+## 8. The global board (2026-10-29)
+
+The user's ask: "a global leaderboard next to this week and last week. It only counts real players and doesn't give
+rewards, for the fame only."
+
+- **What it ranks**: **this week's trophies of every player in every group**, together. The trophies start again every
+  Monday, so the global board does too. Ties share a rank, as in a group.
+- **Real players only**: the bots are left out (they're group fillers), and so are the players the admin banned from the
+  leaderboard (0011's `leaderboard_bans`), but for their own row.
+- **No rewards**: the week's gifts are still the groups' alone (§1). The board draws no Raid Balls or Rare Candies, and a
+  line over its rows says "Every player of every group, this week. No rewards here: just the glory."
+- **Where**: a third option, **Global**, beside This week and Last week (`LeagueBoard`), on PC's side panel (headed
+  "Leaderboard" then, not "Your group") and phones' Leaderboard tab. Fetched the first time it's opened. Long, it shows
+  its top 100, you with the 10 either side and your friends (`boardWindow`), as the leaderboard does.
+- **Its switch**: Admin → Config → Switches → **Versus global board** (`versusLeague.globalAccess`), Off by default, and
+  only with the league on (`versusGlobalOn`). The server checks both (`versus_league_global_open`).
+- **Its rules**: the line over its rows (a rule explained where it happens, docs/15 §20): no pop-up, and the league's
+  INFO stays the league's.
+- **The server**: `versus_league_global()` (0088), readable signed out like `versus_league_home`: `{week, endsAt,
+  rows}`, the rows as a group's (id, isMe, name, avatar, team, trophies, rank, rich) without `bot`.
+

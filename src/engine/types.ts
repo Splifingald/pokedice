@@ -652,6 +652,8 @@ export interface LeagueRewardBand {
 
 export interface VersusLeagueConfig {
   access: EventAccess
+  /** The global board's own switch (docs/44 §8): every player of the week, no rewards. Off when missing. */
+  globalAccess?: EventAccess
   /** Trophies for a win with 1, 2 or 3 Pokémon left; a loss costs what the opponent had left, the same way. */
   trophies: [number, number, number]
   /** Below this many trophies, a loss costs nothing. */

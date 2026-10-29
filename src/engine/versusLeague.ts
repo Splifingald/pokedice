@@ -56,6 +56,10 @@ export const leagueConfig = (data: GameData): VersusLeagueConfig => ({
 /** The admin's switch (docs/15 §20). Off: Versus as it was (every team, two boards, fights on auto). */
 export const versusLeagueOn = (data: GameData): boolean => eventOpenTo(data.config.versusLeague?.access, data)
 
+/** The global board's switch (docs/44 §8): every player of every group this week, for the glory. Only with the league. */
+export const versusGlobalOn = (data: GameData): boolean =>
+  versusLeagueOn(data) && eventOpenTo(data.config.versusLeague?.globalAccess, data)
+
 /** The league is this save's Versus: switched on, in the main game (Extreme mode keeps Versus as it was). */
 export const versusLeagueFor = (save: SaveData, data: GameData): boolean =>
   versusLeagueOn(data) && !isExtreme(save)
