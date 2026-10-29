@@ -26,7 +26,10 @@ const NURSE = 113
 /** How much faster than the full scene (6.4 s) the Center's healing plays. */
 const CENTER_PACE = 2.4
 
-/** Pokémon Center: heal jingle, then team management — tap any Pokémon for its sheet and team actions. */
+/**
+ * Pokémon Center: heal jingle, then team management — tap any Pokémon for its sheet and team actions, or open the Team
+ * screen, where the same moves stay open until you leave.
+ */
 export function CenterView() {
   const { t } = useT()
   const navigate = useNavigate()
@@ -131,9 +134,17 @@ export function CenterView() {
     <>
       <StagePanel scene={stage} bar={bar} room={null}>
         <section className="flex flex-col gap-2">
-          <h2 className="text-3xl">
-            {t('ui.center.teamCount', { count: team.length, max: data.config.maxTeamSize })}
-          </h2>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1.5">
+            <h2 className="text-3xl">
+              {t('ui.center.teamCount', { count: team.length, max: data.config.maxTeamSize })}
+            </h2>
+            {/* The Team screen keeps the Center's moves while you're inside, its search and filters too: a phone has
+                no tab bar in an area, so this is its way there (the user's call, 2026-10-29). */}
+            <PixelButton size="sm" onClick={() => navigate('/team')}>
+              <PixelIcon name="navTeam" size={20} />
+              {t('ui.center.teamMenu')}
+            </PixelButton>
+          </div>
           {/* Three to a row on a phone; a wide screen's whole width, six to a row, the team's cards the Box's size. */}
           <ol className="grid grid-cols-3 gap-1.5 sm:gap-2 lg:grid-cols-6">
             {team.map((p, i) => (

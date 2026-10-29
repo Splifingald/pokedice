@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  centersOn,
   homersIn,
   teamSwapsOpen,
   nightmareModeOf,
@@ -18,10 +19,10 @@ import { PixelIcon } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
 import { MonTile, TILE_GRID } from '@/components/MonTile'
 import { PageHead } from '@/components/PageHead'
-import { PixelButton } from '@/components/PixelButton'
 import { SearchField } from '@/components/Segmented'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { SplitView } from '@/components/SplitView'
+import { TeamSwapsNote } from '@/components/TeamSwapActions'
 import { countdown } from '@/lib/format'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { useGame } from '@/store/game'
@@ -55,6 +56,9 @@ export function TeamScreen() {
         s.data,
       ),
   )
+  // Extreme mode without Centers (docs/22) has none to point to.
+  const centers = useGame((s) => !!s.save && centersOn(s.save, s.data))
+  const place = atNightmare ? 'nightmare' : atPortal ? 'portal' : swaps ? 'center' : centers ? 'closed' : null
   const navigate = useNavigate()
   const now = useNow(30_000)
   const wide = useMediaQuery('(min-width: 1024px)')
@@ -108,18 +112,8 @@ export function TeamScreen() {
       {/* No scene here (the user's call, 2026-10-27): Home already shows the team roaming; the Team is for managing it. */}
       <PageHead icon="navTeam" title={t('ui.team.title')} />
 
-      {/* At a portal's way in: healed, the Box open, and the way back to its pop-up. */}
-      {atPortal && (
-        <div className="pixel-dialogue flex flex-col gap-2.5 px-3 py-2.5 sm:flex-row sm:items-center">
-          <p className="m-0 flex flex-1 items-center gap-3 text-[20px] leading-[1.15]">
-            <PixelIcon name="heart" size={24} className="shrink-0" />
-            <span>{t(atNightmare ? 'ui.nightmare.teamHint' : 'ui.portal.teamHint')}</span>
-          </p>
-          <PixelButton variant="primary" className="shrink-0" onClick={() => navigate('/area')}>
-            {t(atNightmare ? 'ui.nightmare.backToWayIn' : 'ui.portal.backToPortal')}
-          </PixelButton>
-        </div>
-      )}
+      {/* At a Center or a way in: the Box open, and the way back there. Elsewhere: changes wait for a Center. */}
+      {place && <TeamSwapsNote at={place} onBack={() => navigate('/area')} />}
 
       <TeamCards team={team} onOpen={open} selected={current} />
 
