@@ -653,7 +653,7 @@ export function KitchenSink() {
         <DoubleBits />
       </Section>
 
-      <Section title="Battle powers: Mega plates (timed, last turn, older rules), G-MAX, Z-MOVE hints, the Mart's Mega Gems (open, poor, shut, empty), rules and INFO (docs/35)">
+      <Section title="Battle powers: Mega plates (timed, last turn, older rules), G-MAX, Z-MOVE hints, a dual-type's Z-Move type pick, the Mart's Mega Gems (open, poor, shut, empty), rules and INFO (docs/35)">
         <PowersBits />
       </Section>
 

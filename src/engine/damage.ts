@@ -130,6 +130,7 @@ export interface DamageResult {
  * 01-GAME-SPEC §2.3 — (Σ (face + upgrade) + best combo) × the attack type's multiplier (the dice type that hits the
  * defender hardest); rounded, floored at 1 unless immune. No global multiplier and no level term: what the dice show is what hits.
  * In a small world, a booster of the attack's type multiplies that too (`boost`, shown in the recap: never hidden).
+ * `chosen`: the type the attack takes instead of the dice's pick (a dual-type's Z-Move, docs/35).
  */
 export function computeDamage(
   dice: readonly RolledDie[],
@@ -137,8 +138,9 @@ export function computeDamage(
   defenderTypes: readonly PokeType[],
   levels: UpgradeLevels,
   data: GameData,
+  chosen?: PokeType,
 ): DamageResult {
-  const type = attackType(dice, attackerTypes, defenderTypes, data)
+  const type = chosen ?? attackType(dice, attackerTypes, defenderTypes, data)
   const multiplier = attackMultiplier(type, defenderTypes, data, levels.typeScale)
   const perDie: DieBreakdown[] = dice.map((d) => {
     const value = dieValue(d, data)
