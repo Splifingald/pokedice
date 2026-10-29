@@ -6,6 +6,9 @@ import {
   fitDayCare,
   isExtreme,
   migrateLeagueII,
+  raceData,
+  runsWon,
+  settleRuns,
   migrateRounds,
   monName,
   settleClears,
@@ -242,7 +245,8 @@ function settle(save: SaveData, data: GameData) {
   const dup = releaseDuplicates(syncXpCurve(syncHpScale(home.save, data), data))
   // Extreme mode (docs/22): the main save beat the league that opens it (noted once, so it stays open); an Extreme
   // save's K.O. clocks, on the real time.
-  const ko = settleKo(stampExtremeUnlock(dup.save, data, Date.now()), data, trustedNow())
+  // Its runs (docs/48): a League just won stops its timer; a region from before the runs gets one.
+  const ko = settleKo(settleRuns(stampExtremeUnlock(dup.save, data, Date.now()), data, trustedNow()), data, trustedNow())
   // Trainer looks (docs/31): while the switch is on, a look not unlocked comes off. The Extreme save wears the looks
   // the main save has earned.
   const progress = isExtreme(ko.save) ? (mainForLooks() ?? ko.save) : ko.save
@@ -257,6 +261,7 @@ function settle(save: SaveData, data: GameData) {
   return {
     ...dup,
     save: unown.save,
+    won: runsWon(save, unown.save),
     unownPaid: unown.paid,
     gemsGiven: powers.given,
     revived: fossils.revived,
@@ -285,7 +290,9 @@ function boot(): Pick<GameStore, 'data' | 'rawData' | 'save' | 'corruptSaveArchi
   const stored = readSettings()
   const settings = save?.settings ? { ...save.settings, lang: save.settings.lang ?? stored.lang } : stored
   setLangInternal(settings.lang ?? DEFAULT_LANG)
-  const data = localizeGameData(rawData, settings.lang ?? DEFAULT_LANG)
+  // The Extreme save's page is a race (docs/48): its online features off from the first render.
+  const localized = localizeGameData(rawData, settings.lang ?? DEFAULT_LANG)
+  const data = activeSlot() === 'extreme' ? raceData(localized) : localized
   if (!save) return { data, rawData, save: null, corruptSaveArchived: corrupt, settings, run: initialRun(), battle: null }
   // Settle the save (HP scale, XP curve, duplicates) before the first render. A Fortune Wheel prize still waiting (the
   // page closed while the wheel turned) is paid now.
@@ -333,7 +340,9 @@ export const useGame = create<GameStore>()(() => ({
  */
 function withViewer(data: GameData, auth: AuthState): GameData {
   const admin = auth.status === 'signed_in' && isAdminEmail(auth.email)
-  return !!data.viewer?.admin === admin ? data : { ...data, viewer: { admin } }
+  const viewed = !!data.viewer?.admin === admin ? data : { ...data, viewer: { ...data.viewer, admin } }
+  // The Extreme save's page is a race (docs/48): new content or a new language gets its online features off again.
+  return activeSlot() === 'extreme' ? raceData(viewed) : viewed
 }
 // The encounter moves on (a roll, a K.O., the rewards) without the save always changing: stored with it each time, so
 // a reload finds it as it stood (onDisk). The write is the save's own debounced one, flushed when the page goes.
@@ -436,6 +445,8 @@ export function commitSave(next: SaveData | null, opts: { silent?: boolean; keep
     pushToast(t('ui.toast.revivedFossil', { name: data.species[p.dex]?.name ?? `#${p.dex}` }), 'good', 4500)
   for (const g of settled?.gemsGiven ?? [])
     pushToast(t('ui.powers.gemGiven', { leader: g.leader, gem: g.gem.name }), 'good', 5000)
+  for (const region of settled?.won ?? [])
+    pushToast(t('ui.xrun.wonToast', { region: data.regions.find((r) => r.id === region)?.name ?? region }), 'good', 6000)
   if (settled?.unownPaid) pushToast(t('ui.unown.paidToast', { amount: money(settled.unownPaid) }), 'good', 5000)
   for (const id of settled?.back ?? []) {
     const inst = stamped?.box.find((p) => p.id === id)

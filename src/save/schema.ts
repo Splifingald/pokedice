@@ -51,6 +51,13 @@ const centerBoonSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('donor'), gold: z.number().min(0) }),
   z.object({ kind: z.literal('rocket') }),
 ])
+const runSchema = z.object({
+  id: z.string().min(1).max(80),
+  startedAt: z.number(),
+  finishedAt: z.number().optional(),
+  best: z.number().min(0).optional(),
+  untimed: z.boolean().optional(),
+})
 const centerBoonsSchema = z.object({ areaId: z.string().min(1), offers: z.array(centerBoonSchema).max(10) })
 
 // Trades (docs/23): a listing's want, and a Pokémon as the Done list remembers it.
@@ -379,10 +386,13 @@ export const saveSchema = z.object({
       // A Center's boons waiting for the pick (docs/47): an odd value drops them, never the save.
       center: centerBoonsSchema.optional().catch(undefined),
       centerRulesSeen: z.boolean().optional(),
+      // Each region's run (docs/48): an odd one (an edited save) is dropped, never the save.
+      runs: z.record(runSchema.optional().catch(undefined)).optional().catch(undefined),
     })
     .optional(),
   extremeUnlockedAt: z.number().optional(),
   extremeRulesSeen: z.boolean().optional(),
+  extremePageSeen: z.boolean().optional(),
   // The shiny Pokédex (docs/39): each region's species owned shiny, and its rules seen.
   shinyDex: z.record(z.array(z.number().int().min(1)).max(3000)).optional(),
   shinyDexSeen: z.boolean().optional(),

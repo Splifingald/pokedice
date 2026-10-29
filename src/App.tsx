@@ -10,6 +10,7 @@ import { RotateCover } from '@/components/RotateCover'
 import { ToastStack } from '@/components/Toast'
 import { AreaScreen } from '@/screens/Area'
 import { DayCareScreen } from '@/screens/DayCareScreen'
+import { ExtremeScreen } from '@/screens/Extreme'
 import { FriendInvite } from '@/screens/FriendInvite'
 import { TradeLink } from '@/screens/TradeLink'
 import { TradesScreen } from '@/screens/Trades'
@@ -33,6 +34,13 @@ import { PageMeta } from '@/lib/pageMeta'
 import { soundOn } from '@/save/storage'
 import { useGame } from '@/store/game'
 import { startBackgroundServices } from '@/store/sync'
+import { useRunIntent } from '@/store/extremeRuns'
+
+/** A run chosen on the main save's Extreme page, carried out once this page plays the Extreme save (docs/48). */
+function RunIntent() {
+  useRunIntent()
+  return null
+}
 
 // Route-split out of the main bundle. The rework prototype (one page, no server) carries neither.
 const AdminApp = import.meta.env.VITE_PROTO ? () => null : lazy(() => import('@/admin/AdminApp'))
@@ -76,6 +84,7 @@ export function App() {
         <Router>
           {/* The tab's title per page, and the focus on its <h1> after a move (docs/15 §7). */}
           <PageMeta />
+          <RunIntent />
           <Routes>
             <Route path="/" element={<Title />} />
             <Route path="/new" element={<NewGame />} />
@@ -95,6 +104,7 @@ export function App() {
               {/* Home replaced the Map as the landing screen: old links land there. */}
               <Route path="/map" element={<Navigate to="/home" replace />} />
               <Route path="/daycare" element={<DayCareScreen />} />
+              <Route path="/extreme" element={<ExtremeScreen />} />
               <Route path="/area" element={<AreaScreen />} />
               <Route path="/team" element={<TeamScreen />} />
               <Route path="/shop" element={<ShopScreen />} />

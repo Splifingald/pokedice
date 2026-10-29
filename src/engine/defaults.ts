@@ -188,7 +188,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   },
   extreme: {
     access: 'off',
-    unlockRegion: 'johto',
+    // The speedrun (docs/48): Kanto's League opens it, and each region's League its run.
+    unlockRegion: 'kanto',
     centers: false,
     wipeHeals: false,
     koHours: 12,

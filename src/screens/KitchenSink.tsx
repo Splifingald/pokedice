@@ -53,6 +53,7 @@ import { RulesBits } from './kitchen/RulesBits'
 import { HomeBits } from './kitchen/HomeBits'
 import { ExtremeBits } from './kitchen/ExtremeBits'
 import { ExtremeCenterBits } from './kitchen/ExtremeCenterBits'
+import { ExtremeRunBits } from './kitchen/ExtremeRunBits'
 import { PartnerBits } from './kitchen/PartnerBits'
 import { OnboardingBits } from './kitchen/OnboardingBits'
 import { RaidBits, RaidOverhaulBits } from './kitchen/RaidBits'
@@ -796,6 +797,10 @@ export function KitchenSink() {
 
       <Section title="Extreme Pokémon Centers (docs/47): the boons, a pick's confirm, who for, Team Rocket's reveal, the Center a K.O. sends, the Pokébuff">
         <ExtremeCenterBits />
+      </Section>
+
+      <Section title="Extreme as a speedrun (docs/48): a region's card in every state, the restart that asks twice, the board">
+        <ExtremeRunBits />
       </Section>
 
       <Section title="Raids: the NPC partners pop-up (each state), a legendary raid's card open and caught">

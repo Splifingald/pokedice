@@ -44,7 +44,8 @@ export function useExtremeRules(): RuleRow[] {
   // Its boon Centers (docs/47) say so: Centers there are, only they don't heal.
   const boons = boonCenters({ mode: 'extreme' }, data)
   return [
-    { icon: 'map', title: t('ui.extreme.rules.world.title'), text: t('ui.extreme.rules.world.text') },
+    // A race per region (docs/48): what Extreme mode is now, first.
+    { icon: 'trophy', title: t('ui.xrun.rules.race.title'), text: t('ui.xrun.rules.race.text') },
     boons
       ? { icon: 'warning', title: t('ui.extreme.rules.centers.boonTitle'), text: t('ui.extreme.rules.centers.boonText') }
       : { icon: 'warning', title: t('ui.extreme.rules.centers.title'), text: t('ui.extreme.rules.centers.text') },
@@ -76,6 +77,7 @@ export function ExtremeRulesModal({ open, onClose, onGo }: { open: boolean; onCl
  */
 export function ExtremeUnlockPopup() {
   const open = useMyTurn('extreme')
+  const navigate = useNavigate()
   useOnScreen('extreme', open)
   return (
     <ExtremeRulesModal
@@ -83,7 +85,8 @@ export function ExtremeUnlockPopup() {
       onClose={markExtremeRulesSeen}
       onGo={() => {
         markExtremeRulesSeen()
-        void switchSave('extreme')
+        // Its page (docs/48): the regions open, their runs, the board; a run starts from there.
+        navigate('/extreme')
       }}
     />
   )
@@ -332,6 +335,7 @@ export function SwitchSaveModal({ to, open, onClose }: { to: SaveMode; open: boo
  */
 export function ExtremeTitleCard({ save }: { save: SaveData | null }) {
   const { t } = useT()
+  const navigate = useNavigate()
   const data = useGame((s) => s.data)
   const now = useClock()
   const [rules, setRules] = useState<'info' | 'start' | null>(null)
@@ -389,7 +393,8 @@ export function ExtremeTitleCard({ save }: { save: SaveData | null }) {
           rules === 'start'
             ? () => {
                 markExtremeRulesSeen()
-                void switchSave('extreme')
+                // Its page (docs/48), where a region's run starts: the main save plays it, so the game's pages.
+                navigate('/extreme')
               }
             : undefined
         }

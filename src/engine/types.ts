@@ -1677,6 +1677,8 @@ export interface SaveData {
   extremeUnlockedAt?: number
   /** Main save: Extreme mode's rules pop-up has been shown (once, when it opens; INFO shows it again). */
   extremeRulesSeen?: boolean
+  /** The Extreme page's rules card has been read in this save (docs/48; INFO shows them again). */
+  extremePageSeen?: boolean
   /**
    * The shiny Pokédex (docs/39): every species owned shiny in each region, kept when it leaves (a trade, a release)
    * as the Pokédex keeps its catches. Filled whatever the switch says, so it's whole the day it opens.
@@ -1891,6 +1893,21 @@ export interface ExtremeSave {
   center?: { areaId: string; offers: CenterBoon[] }
   /** The Centers' rules pop-up has been shown (docs/47; INFO shows it again). */
   centerRulesSeen?: boolean
+  /** Each region's run (docs/48): its id, when it started and was won (ms, real time), the best time ever (ms). */
+  runs?: Partial<Record<RegionId, ExtremeRun>>
+}
+
+/** One region's run in Extreme mode (docs/48): a race from its starter to its League. */
+export interface ExtremeRun {
+  /** A new id at every start, so the server can tell a restart from the same run. */
+  id: string
+  startedAt: number
+  /** The League won: the timer stopped here. */
+  finishedAt?: number
+  /** The fastest League ever won in this region (ms), kept through restarts. */
+  best?: number
+  /** A region played before runs existed whose League was already won: no time to count until it's restarted. */
+  untimed?: boolean
 }
 
 /** One boon a Pokémon Center offers in Extreme mode (docs/47). Each names what it gives, but the Rocket Trade. */
@@ -2181,5 +2198,6 @@ export interface GameData {
   /** Breeding data by dex (engine/daycare.ts): empty when a bundle came without it, and then nothing pairs. */
   eggGroups: Record<number, EggGroupEntry>
   /** Who's playing, set by the store: the admin sees the events switched on for the admin only. Absent = a player. */
-  viewer?: { admin: boolean }
+  /** Who's playing: the admin (signed in), and the Extreme save's race (docs/48: its online features off). */
+  viewer?: { admin: boolean; race?: boolean }
 }

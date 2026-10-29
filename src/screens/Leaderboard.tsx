@@ -2,7 +2,19 @@
 // Shiny and Raids over every region. Phones: the boards, the ranking, your place pinned at the foot (a tap finds your
 // row). PC: the ranking on the left; your place and the Hall of Fame beside it, always in view.
 import { useEffect, useMemo, useState } from 'react'
-import { getRegion, leaderboardUnlocked, linearAreas, regionOf, regionSpecies, type GameData } from '@/engine'
+import {
+  extremeRegionList,
+  extremeRegions,
+  getRegion,
+  isExtreme,
+  leaderboardUnlocked,
+  linearAreas,
+  regionOf,
+  regionSpecies,
+  type GameData,
+} from '@/engine'
+import { ExtremeBoard } from '@/components/ExtremeBoard'
+import { otherSave } from '@/store/extreme'
 import { BoardGap, BoardRow, Crown, ScoreMeter } from '@/components/BoardRow'
 import { FriendProfileSheet } from '@/components/friends/FriendProfileSheet'
 import { Seg } from '@/components/Segmented'
@@ -56,6 +68,22 @@ type Load =
 export function LeaderboardScreen() {
   const { t } = useT()
   const open = useGame((s) => !!s.save && leaderboardUnlocked(s.save, s.data))
+  const extreme = useGame((s) => isExtreme(s.save))
+  const data = useGame((s) => s.data)
+  // Extreme mode is a race (docs/48): its one board is the best times, region by region (the regions the main save
+  // opened, the one being played first).
+  if (extreme) {
+    const live = regionOf(useGame.getState().save!)
+    const opened = new Set(extremeRegions(otherSave(), data).map((r) => r.id))
+    const regions = extremeRegionList(data).filter((r) => opened.has(r.id) || r.id === live)
+    regions.sort((a, b) => (a.id === live ? -1 : b.id === live ? 1 : 0))
+    return (
+      <div className="flex flex-col gap-3">
+        <PageHead icon="navRanks" title={t('ui.board.title')} social="board" />
+        <ExtremeBoard regions={regions} />
+      </div>
+    )
+  }
   if (open) return <Board />
   return (
     <div className="flex flex-col gap-3">
