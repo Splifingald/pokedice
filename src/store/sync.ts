@@ -827,11 +827,10 @@ export function adoptStoredSave(raw?: string | null): boolean {
   const stored = peekSave(raw)
   if (!stored || (save && stored.updatedAt <= save.updatedAt)) return false
   // A page left open from before 2026-10-22 wrote it: the same save with every part its build never knew gone, stamped
-  // now. This tab's copy goes back on the device instead, so a reload starts from it (2026-10-29).
-  if (save && writtenSincePlayedAt(save) && !writtenSincePlayedAt(stored)) {
-    commitSave(save, { silent: true, keepTimestamp: true })
-    return false
-  }
+  // now (2026-10-29). This tab plays on from its own, which its next change stores again; writing it back at once
+  // would also undo a page that is only just starting on the copy it stored. A reload in between starts from that
+  // copy, and the sign-in's sync then prefers the cloud's (decideSync).
+  if (save && writtenSincePlayedAt(save) && !writtenSincePlayedAt(stored)) return false
   // Kept at the other tab's stamp: written back here unchanged, it is no news to that tab (it only takes a newer one).
   // With a level only this tab had, it is: stamped now, so that tab takes it in turn.
   const merged = keepBoth(stored, save)
