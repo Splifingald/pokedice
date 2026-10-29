@@ -871,7 +871,7 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  * switch's row, Off), then 0083 (Route 1's set opening, docs/46: its switch's
  * row, Off, Youngster Joey and Oddish on Route 1, which the upserts below then write again), then 0084, 0085 and
  * 0087 (their headers say what), then 0088 (an old page's plain upsert refused over an existing save) and 0089 (a
- * player's raids won, read back). Folded into
+ * player's raids won, read back), then 0090 (Versus teams at their own levels: 0039's team writer redefined). Folded into
  * seed.sql
  * so there is
  * one file to run rather than several in a particular order. The
@@ -921,6 +921,7 @@ export async function regionsPrelude(): Promise<string> {
       '0087_extreme_speedrun.sql',
       '0088_saves_no_overwrite.sql',
       '0089_raids_done_mine.sql',
+      '0090_versus_true_levels.sql',
     ].map(async (name) => {
       const sql = (await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')).replace(/^(begin|commit);\n/gm, '')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`

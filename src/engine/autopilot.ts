@@ -218,6 +218,17 @@ export function chooseIdleBall(
 
 // ---------------------------------------------------------------- what to do next
 
+/**
+ * On auto, the fights that still offer the choice of who goes out: a trainer's and a gym leader's (a player's
+ * feedback, 2026-10-29: on auto there was no time to pick a Pokémon against a trainer). Their send-out step (a double
+ * battle's card) shows, and its button loads and goes by itself after a moment with the first able Pokémon; a Pokémon
+ * tapped holds it for the player's own tap. A wild Pokémon goes straight in.
+ */
+export const autoOffersLead = (kind: string | null | undefined): boolean => kind === 'trainer' || kind === 'gym'
+
+/** The cards the autopilot leaves on the table: Trick or Treat (the player plays it), and a trainer's (`autoOffersLead`). */
+export const pilotShowsCard = (kind: string | null | undefined): boolean => kind === 'trick' || autoOffersLead(kind)
+
 /** What the run stands at, as the screens see it. */
 export interface AutoView {
   phase:
@@ -285,8 +296,8 @@ export function autopilotStep(
     case 'trick':
       return { do: 'wait', why: 'player' }
     case 'preview':
-      // Trick or Treat is a catch of its own: the player plays it.
-      return v.encounter === 'trick' ? { do: 'wait', why: 'player' } : { do: 'engage' }
+      // Trick or Treat is a catch of its own: the player plays it. A trainer's card is the page's (pilotShowsCard).
+      return pilotShowsCard(v.encounter) ? { do: 'wait', why: 'player' } : { do: 'engage' }
     case 'victory':
       // Idle changes no team: "Add to team?" is answered as CONTINUE answers it, to the Box.
       return v.pendingCatch && style !== 'idle' ? { do: 'wait', why: 'player' } : { do: 'close' }

@@ -1,7 +1,7 @@
 // The battle, full screen: the 240×160 stage on top (BattleStage) and the panel under it — the message, the dice tray
 // and its readout, the actions, the Bag and the team. It drives the engine through the store and plays the engine's
 // log (useBattleAnimator); the UI never recomputes a rule.
-import { AutoButton } from '@/components/AutoButton'
+import { AutoButton, PILOT_PICK_MS } from '@/components/AutoButton'
 import { BottomDock } from '@/components/BottomDock'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
@@ -9,6 +9,7 @@ import {
   activeBattler,
   autoAvailable,
   autoLevel,
+  autoOffersLead,
   autoEvents,
   instanceMaxHp,
   catchTarget,
@@ -68,11 +69,11 @@ import { trainerTitle, typeName } from '@/lib/format'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { haptic } from '@/lib/haptics'
 import { capMotion, MotionCap, useMotion, type MotionLevel } from '@/lib/motion'
-import { AUTO_PACE, PaceContext, VERSUS_PACE } from '@/lib/pace'
+import { AUTO_PACE, PaceContext, usePace, VERSUS_PACE } from '@/lib/pace'
 import { useDialogOpen } from '@/lib/useDialog'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { pushToast, setSettings, useGame, type BattleSlice, type CatchThrow } from '@/store/game'
-import { autoStepNow } from '@/store/autopilot'
+import { autoStepNow, useAutoLevel } from '@/store/autopilot'
 import { answerBait, dispatchBattle, canSkipCurrent, fleeAtSendOut, notYet, passCatch, retryCatch, sendOutLead, throwBall } from '@/store/run'
 import { LeadPicker } from '@/components/LeadPicker'
 import { PokeCard } from '@/components/PokeCard'
@@ -219,7 +220,15 @@ const BATTLE_PANEL = '330px'
  * height (the line, the dice, the readout, a row of powers, the actions), the Bag and the team in columns at its sides.
  * The stage is as wide as the height left allows (3:2), and leaves each side column 220 px at the least.
  */
-const PC_PANEL = '268px'
+const PC_PANEL = 268
+/**
+ * …and as tall as this at most: a fight's step that needs more room (the line on two rows, a row of powers, the AUTO
+ * switch, the key hints) takes it from the stage, up to here, rather than scrolling under its pinned buttons (a
+ * player's feedback, 2026-10-29: the damage hidden behind REROLL and ATTACK). What it grew to stays for the session,
+ * so the stage doesn't change size from one turn or fight to the next.
+ */
+const PC_PANEL_MAX = 440
+let pcPanelSeen = PC_PANEL
 const STAGE_W =
   'max(360px, min(calc((100dvh - var(--top-bar, 0px) - 2rem - 0.75rem - var(--pc-panel)) * 1.5), calc(100vw - 4rem - 440px)))'
 
@@ -344,7 +353,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const [trainerIntro, setTrainerIntro] = useState(isTrainerFight && !quick && !resumed && !swapped)
   const [foeOut, setFoeOut] = useState(!bossIntro && !trainerIntro)
   const [ownOut, setOwnOut] = useState(quick || resumed)
-  const intro = bossIntro || trainerIntro || !ownOut
+  // The send-out step (the rework): the foe is out, yours waits for the player's pick; the fight starts once it's out.
+  // Until then nothing moves, on auto either (a trainer's send-out waits on auto too: engine autoOffersLead).
+  const picking = !versus && !!run.pickLead
+  const intro = bossIntro || trainerIntro || !ownOut || picking
 
   // A wild or legendary foe the player can still catch isn't knocked out of the scene: the catch throw comes next. A
   // wild pair's first K.O. waits worn out on its spot until the other is down too, then each gets its throw (docs/33).
@@ -383,8 +395,6 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     }, TRAINER_INTRO_MS * pace)
     return () => clearTimeout(t)
   }, [trainerIntro, pace])
-  // The send-out step (the rework): the foe is out, yours waits for the player's pick; the fight starts once it's out.
-  const picking = !versus && !!run.pickLead
   useEffect(() => {
     if (ownOut || !foeOut || bossIntro || picking) return
     const t = setTimeout(() => setOwnOut(true), quick ? 0 : SEND_OUT_MS * pace)
@@ -1172,6 +1182,34 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     </div>
   )
 
+  // A computer's fight step fits its panel: whatever it would scroll by goes to the panel, from the stage (PC_PANEL_MAX).
+  // A result, the send-out and the catch keep the panel as it is and scroll, their buttons pinned at its foot.
+  const [pcPanel, setPcPanel] = useState(pcPanelSeen)
+  const fitting = wide && !result && !picking && !catching
+  useEffect(() => {
+    const el = panel.current
+    if (!fitting || !el || typeof ResizeObserver === 'undefined') return
+    const fit = () => {
+      const over = el.scrollHeight - el.clientHeight
+      if (over <= 1 || pcPanelSeen >= PC_PANEL_MAX) return
+      pcPanelSeen = Math.min(PC_PANEL_MAX, pcPanelSeen + Math.ceil(over))
+      setPcPanel(pcPanelSeen)
+    }
+    const sizes = new ResizeObserver(fit)
+    const watch = () => {
+      sizes.disconnect()
+      sizes.observe(el)
+      for (const c of Array.from(el.children)) sizes.observe(c)
+    }
+    watch()
+    const kids = new MutationObserver(watch)
+    kids.observe(el, { childList: true })
+    return () => {
+      sizes.disconnect()
+      kids.disconnect()
+    }
+  }, [fitting])
+
   return (
     <BattleContexts pace={pace} motionCap={motionCap}>
       {/* The stage on top and the panel under it, on every screen (the user's call, 2026-10-28). A computer's middle
@@ -1182,7 +1220,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         <section
           aria-label={heading}
           className="mx-auto flex min-h-[calc(100dvh_-_var(--top-bar,0px))] w-full max-w-[max(300px,min(560px,calc((100dvh_-_var(--battle-panel)_-_var(--top-bar,0px))_*_1.5)))] flex-col [container-type:inline-size] lg:grid lg:h-[calc(100dvh_-_var(--top-bar,0px))] lg:min-h-0 lg:max-w-none lg:grid-cols-[minmax(0,340px)_var(--stage-w)_minmax(0,340px)] lg:justify-center lg:gap-4 lg:p-4"
-          style={{ '--battle-panel': BATTLE_PANEL, '--pc-panel': PC_PANEL, '--stage-w': STAGE_W } as CSSProperties}
+          style={{ '--battle-panel': BATTLE_PANEL, '--pc-panel': `${pcPanel}px`, '--stage-w': STAGE_W } as CSSProperties}
         >
           <h1 className="sr-only">{heading}</h1>
           {wide && (
@@ -1825,14 +1863,22 @@ function SendOutStep({
   const enc = useGame((s) => s.run.encounter)
   const types = speciesTypes(data, foe)
   const canWait = enc?.kind === 'gym' || (enc?.kind === 'boss' && !enc.returning)
-  // Only a wild Pokémon's send-out goes by itself: a trainer, a gym or a boss is a pick worth waiting for.
+  // Only a wild Pokémon's send-out goes by itself: a trainer, a gym or a boss is a pick worth waiting for…
   const wild = enc?.kind === 'wild'
+  // …but on auto a trainer's goes by itself too, after time to pick (PILOT_PICK_MS, whatever the pace), unless a
+  // Pokémon is tapped: then GO! waits for the player (engine autoOffersLead).
+  const pace = usePace()
+  const auto = useAutoLevel() !== 'off' && autoOffersLead(enc?.kind)
+  const [touched, setTouched] = useState(false)
   // FLEE / AVOID only where the game's config allows a way out (noEscape, skipPolicy), as on the old pop-up.
   const canFlee = useGame(() => canSkipCurrent())
   // The first able Pokémon is picked to begin with; a tap on another card picks it, GO! sends the one picked.
   const [own, setOwn] = useState(lead)
   const picked = chosen ? (chosen.value ?? lead) : own
-  const setPicked = chosen ? chosen.onChange : setOwn
+  const setPicked = (uid: string) => {
+    setTouched(true)
+    ;(chosen ? chosen.onChange : setOwn)(uid)
+  }
   const save = useGame((s) => s.save)
   const team = save ? teamOf(save) : []
   usePickKeys(
@@ -1854,7 +1900,26 @@ function SendOutStep({
         )}
       </div>
       <BottomDock>
-      {wild ? (
+      {auto && !touched && (
+        <p className="m-0 text-center font-pixel-sm text-[16px] leading-[1.15] text-muted" role="status">
+          {t('ui.idle.pickLead')}
+        </p>
+      )}
+      {auto ? (
+        <AutoButton
+          variant="primary"
+          size="lg"
+          className="w-full"
+          ms={PILOT_PICK_MS / pace}
+          hold={touched || (chosen?.value != null && chosen.value !== lead)}
+          paused="byDialogs"
+          aria-keyshortcuts="Enter"
+          aria-label={t('ui.lead.sendOutName', { name })}
+          onClick={() => sendOutLead(picked)}
+        >
+          {t('ui.lead.go')}
+        </AutoButton>
+      ) : wild ? (
         // A wild Pokémon (docs/42): GO! loads and sends the one picked by itself; a tap on another card picks it and
         // starts the count again (the key), a sheet open over it holds it.
         <AutoButton

@@ -15,6 +15,7 @@ Migration `0082_versus_league.sql`.
 |---|---|
 | Week | **Monday 00:00 to Sunday 24:00, UTC**. Everyone starts again from 0 |
 | Gameplay | **The player fights** (active by default), **AUTO** if they like. The opponent always plays on auto |
+| Levels | **Lv.50, like a raid's team cap** (the user's rule, 2026-10-29): every Pokémon shows Lv.50 and has its Lv.50 HP, but **keeps the dice and rerolls of its own level** (`versusSeedLevels`, as `raidSeedLevels`). A team stores each Pokémon's real level (migration 0090); one saved before keeps Lv.50 until it is saved again, and the team editor offers SAVE while a level differs. The bots stay at Lv.50 |
 | Items | **None at all**: no Bag in a league fight, and the server refuses a result with an item used |
 | Trophies | A win: **+3 / +6 / +10** with 1 / 2 / 3 of your Pokémon left. A loss: **−3 / −6 / −10** by the opponent's Pokémon left. **Leaving** a fight (closing it, losing the connection, the flag) is the full **−10** |
 | Safe line | **Below 100 trophies a loss costs nothing.** There's no floor at 100: 104 can fall to 94, and is safe again from there |
@@ -90,7 +91,9 @@ Migration `0082_versus_league.sql`.
   - **Opponents**: the 3 offers, each with its look, name and trophies on one line, its team with FIGHT beside it, and
     the matchup ("2 / 3" and a thumb up: how many of theirs your team hits super effectively); one red FIGHT (the one
     your team hits hardest). A match left before its end says so.
-  - **My team**: Versus's own team editor.
+  - **My team**: Versus's own team editor: the three slots in fight order (drag one onto another, or tap one then the
+    other, to swap them), the list sorted by **Level** (highest first, the default), Pokédex No. or name, each row
+    with its level; each species once, its highest level. A slot shows "Lv.72 → 50".
   - **Leaderboard** (PC: beside the opponents): **This week / Last week**, ranks shared on ties, the trophies on the
     name's line and each top-10 place's Raid Balls and Rare Candies drawn under them, beside the team.
 - **The fight**:
@@ -140,7 +143,11 @@ The admin sees **BOT** on the bots, before their names, in the opponents and the
    calls run the tick when it's over 20 minutes late.
 3. Admin → Messages: **Gifts** on for everyone (the rewards are gift messages).
 4. Admin → Config → Versus league: **On for admin**, try it (Seat bots now fills your group), then **On for everyone**.
-5. For **The week's groups**, run
+5. For the teams at their own levels (dice and rerolls of their level, Lv.50 HP), run
+   <https://github.com/Splifingald/pokedice/blob/claude/new-session-aiwjy4/supabase/migrations/0090_versus_true_levels.sql>
+   (after 0039; safe to run again). `supabase/seed.sql` inlines it. Without it the game still runs: teams are saved
+   at Lv.50 as before.
+6. For **The week's groups**, run
    <https://github.com/Splifingald/pokedice/blob/ccr-1727200f-jjadrr/supabase/migrations/0086_versus_league_admin_board.sql>
    (after 0082; safe to run again). `supabase/seed.sql` doesn't inline it either.
 
@@ -161,6 +168,8 @@ After a change to the species, their forms or the gems, run `pnpm versus-bots` a
   - deleting your data;
   - the admin's groups (0086): refused to players, every member of the week once, bots told apart, ranked as the
     boards, a player's matches adding up.
+- `tests/versus-true-levels-sql.test.ts` (PGlite): 0090 keeps each Pokémon's own level, Lv.50 or more only.
+- `tests/engine/versus.test.ts`: a Versus Pokémon fights at Lv.50 with its own level's dice and rerolls, both sides.
 - `tests/versus-league-admin-board.test.ts`: the admin's groups read into players and bots, and the week's totals.
 - `e2e/versus-league.spec.ts`: the page (header, opponents, the group and last week, phone and PC), and a match
   fought on AUTO against a fake server.

@@ -3,11 +3,14 @@ import {
   battleOutcome,
   cloneForVersus,
   createRng,
+  effectiveStats,
+  getSpecies,
   liveBlock,
   newSave,
   reduce,
   sameEvent,
   simulateVersus,
+  startVersus,
   versusCandidates,
   versusChoices,
   versusClosest,
@@ -27,9 +30,22 @@ const MAGIKARPS = side([129, 129, 129])
 const MIXED = side([6, 9, 3])
 
 describe('Versus teams', () => {
-  it('clones a Pokémon at Lv.50 at most, keeping its species and colours', () => {
-    expect(cloneForVersus({ dex: 25, level: 87, shiny: true })).toEqual({ dex: 25, level: 50, shiny: true })
+  it('clones a Pokémon with its species, colours and own level', () => {
+    expect(cloneForVersus({ dex: 25, level: 87, shiny: true })).toEqual({ dex: 25, level: 87, shiny: true })
     expect(cloneForVersus({ dex: 25, level: 50 })).toEqual({ dex: 25, level: 50, shiny: false })
+  })
+
+  it('fights at Lv.50 (its HP, the level shown) with the dice and rerolls of its own level, on both sides', () => {
+    // Dragonite earns a die and a reroll past Lv.50, as in the raid's test.
+    const own = effectiveStats(getSpecies(data, 149), 80, data)
+    const capped = effectiveStats(getSpecies(data, 149), 50, data)
+    expect(own.dice.length).toBeGreaterThan(capped.dice.length)
+    const { match } = startVersus(side([149], 80), side([149], 80), data, 7)
+    for (const b of [match.state.player[0]!, match.state.enemy])
+      expect(b).toMatchObject({ level: 50, maxHp: capped.maxHp, dice: own.dice, rerolls: own.rerolls })
+    // A team registered before (Lv.50 stored) fights as it always did.
+    const old = startVersus(side([149]), side([149]), data, 7).match.state.player[0]!
+    expect(old).toMatchObject({ level: 50, dice: capped.dice, rerolls: capped.rerolls })
   })
 
   it('opens with three Pokémon at Lv.50 or more in the Box', () => {
@@ -57,14 +73,17 @@ describe('Versus teams', () => {
     ])
   })
 
-  it('lists each species once in the picker, its shiny apart, the region being played first', () => {
+  it('lists each species once in the picker, its shiny apart, the highest level (its dice) first', () => {
     const save = newSave(1, data, 0, () => 'x')
     const at = (id: string, dex: number, level: number, shiny = false) => ({ id, dex, level, xp: 0, currentHp: 1, caughtAt: 0, shiny })
     const live = { ...save, box: [at('pk', 25, 60), at('pks', 25, 52, true), at('cz', 6, 51)] }
     const parked = { ...live, parked: { johto: { ...liveBlock(save), box: [at('pk2', 25, 80), at('cz2', 6, 70)] } } }
-    expect(versusChoices(parked, data).map((c) => c.inst.id)).toEqual(['pk', 'pks', 'cz'])
-    // A pick keeps its place in the list, even one from another region.
-    expect(versusChoices(parked, data, ['pk2']).map((c) => c.inst.id)).toEqual(['pk2', 'pks', 'cz'])
+    expect(versusChoices(parked, data).map((c) => c.inst.id).sort()).toEqual(['cz2', 'pk2', 'pks'])
+    // A pick keeps its place in the list, a lower level too.
+    expect(versusChoices(parked, data, ['pk']).map((c) => c.inst.id).sort()).toEqual(['cz2', 'pk', 'pks'])
+    // On a tie, the region being played.
+    const tie = { ...live, parked: { johto: { ...liveBlock(save), box: [at('pk3', 25, 60)] } } }
+    expect(versusChoices(tie, data).map((c) => c.inst.id)).toContain('pk')
   })
 
   it('while locked, lists the three closest to Lv.50 from every Box, highest first, fossils left out', () => {

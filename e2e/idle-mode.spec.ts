@@ -258,3 +258,50 @@ test('the cards keep their contrast in dusk, and the page no serious issue', asy
   const bad = violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
   expect(bad.flatMap((v) => v.nodes.map((n) => `${v.id} ${n.target.join(' ')}`))).toEqual([])
 })
+
+/** Idle in Viridian Forest (Routes 22 & 2 have no trainers), a trainer's card on top of its deck. */
+function trainerAhead(): SaveData {
+  const [, route2, forest] = linearAreas(gameData(), 'kanto')
+  const start = idleAt(forest!.id)
+  start.areaProgress[route2!.id] = { ...emptyProgress(), cleared: true, roundsDone: 3 }
+  start.areaProgress[forest!.id]!.deck = ['trainer', 'trainer']
+  return start
+}
+
+test("on auto a trainer's send-out waits 4 s, time to pick who goes out; a Pokémon tapped holds GO! for the player", async ({
+  page,
+}) => {
+  test.setTimeout(90_000)
+
+  // A phone: the send-out's cards in the panel (a computer picks in the team's column).
+  await page.setViewportSize({ width: 390, height: 844 })
+  await bootSave(page, trainerAhead(), IDLE_ON)
+  await page.goto('/home')
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+
+  // The send-out step under the trainer's Pokémon, and the line saying it goes on by itself.
+  const hint = page.getByText('On auto, the fight goes on by itself.', { exact: false })
+  await expect(hint).toBeVisible({ timeout: 15_000 })
+  await page.getByRole('main').getByRole('button', { name: /Blastoise/, pressed: false }).first().click()
+  await expect(page.getByRole('main').getByRole('button', { pressed: true })).toContainText('Blastoise')
+  await expect(hint).toBeHidden()
+  // Held: nothing goes by itself any more.
+  await page.waitForTimeout(5000)
+  const go = page.getByRole('button', { name: 'Send out Blastoise' })
+  await expect(go).toBeVisible()
+  await go.click()
+  await expect(page.getByRole('heading', { name: /^Battle: Blastoise against/ })).toBeVisible({ timeout: 15_000 })
+})
+
+test("left alone, a trainer's send-out on auto sends the first able Pokémon after its gauge", async ({ page }) => {
+  test.setTimeout(90_000)
+  await bootSave(page, trainerAhead(), IDLE_ON)
+  await page.goto('/home')
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+  const go = page.getByRole('button', { name: 'Send out Charizard' })
+  await expect(page.getByText('On auto, the fight goes on by itself.', { exact: false })).toBeVisible({ timeout: 15_000 })
+  await expect(go).toBeVisible()
+  // GO! goes by itself 4 s later; the same line comes back on the result card, before the trainer's next Pokémon.
+  await expect(go).toBeHidden({ timeout: 8000 })
+  await expect(page.getByRole('region', { name: 'VICTORY!' })).toBeVisible({ timeout: 15_000 })
+})
