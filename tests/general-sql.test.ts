@@ -60,13 +60,19 @@ async function as<T = Record<string, unknown>>(
   }
 }
 
+/** An upload as the game makes it: an update of the save, an insert only when there is none (0088 refuses upserts). */
 async function putSave(user: string, data: unknown, realm = 'main') {
   await db.query(`select set_config('request.jwt.claim.sub', '', false)`)
-  await db.query(
-    `insert into saves (user_id, realm, data, updated_at) values ($1, $2, $3, now())
-     on conflict (user_id, realm) do update set data = excluded.data, updated_at = excluded.updated_at`,
+  const updated = await db.query(
+    `update saves set data = $3, updated_at = now() where user_id = $1 and realm = $2`,
     [user, realm, JSON.stringify(data)],
   )
+  if (updated.affectedRows) return
+  await db.query(`insert into saves (user_id, realm, data, updated_at) values ($1, $2, $3, now())`, [
+    user,
+    realm,
+    JSON.stringify(data),
+  ])
 }
 const card = async (user: string, realm = 'main') =>
   (

@@ -76,6 +76,17 @@ export function worldFor(save: SaveData, data: GameData, now: number | null): Sm
 export const worldFinished = (save: Pick<SaveData, 'events'>, id: string): boolean =>
   !!save.events?.worldDone?.includes(id)
 
+/**
+ * Two copies of one save, one replacing the other (the cloud sync, another tab): a world finished in either stays
+ * finished, so it can't be started again from scratch. The same save back when there's nothing to add.
+ */
+export function keepWorldsDone(save: SaveData, other: SaveData | null | undefined): SaveData {
+  const mine = save.events?.worldDone ?? []
+  const add = (other?.events?.worldDone ?? []).filter((id) => !mine.includes(id))
+  if (!add.length) return save
+  return { ...save, events: { ...save.events, worldDone: [...mine, ...add].slice(-20) } }
+}
+
 // ------------------------------------------------------------------ the world a save holds
 
 /** The world this save holds (entered, not closed), whatever the clock says. */

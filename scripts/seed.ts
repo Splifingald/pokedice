@@ -869,7 +869,9 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  * it), then 0079 (game feel, haptics and battle music on for everyone: 0074's rows, so it comes after it), then 0080
  * (the Unown Pokédex, docs/41: its switch's row, Off, and its prize), then 0081 (the League's heal, docs/42: its
  * switch's row, Off), then 0083 (Route 1's set opening, docs/46: its switch's
- * row, Off, Youngster Joey and Oddish on Route 1, which the upserts below then write again). Folded into
+ * row, Off, Youngster Joey and Oddish on Route 1, which the upserts below then write again), then 0084, 0085 and
+ * 0087 (their headers say what), then 0088 (an old page's plain upsert refused over an existing save) and 0089 (a
+ * player's raids won, read back). Folded into
  * seed.sql
  * so there is
  * one file to run rather than several in a particular order. The
@@ -917,6 +919,8 @@ export async function regionsPrelude(): Promise<string> {
       '0084_switches_retired.sql',
       '0085_extreme_centers.sql',
       '0087_extreme_speedrun.sql',
+      '0088_saves_no_overwrite.sql',
+      '0089_raids_done_mine.sql',
     ].map(async (name) => {
       const sql = (await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')).replace(/^(begin|commit);\n/gm, '')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`
