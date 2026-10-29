@@ -5,7 +5,7 @@ a roguelike choice instead of a full heal; no Center at all once an area is comp
 to go back to easy areas to get healed"); the healing while away stays as it is. It sits behind its own admin switch
 (docs/15 §20), Off by default.
 
-**Status: built** on `claude/charming-bohr-kbvip4` (from `version/2_4`), for `version/2_5`. Engine
+**Status: built** on `claude/charming-bohr-kbvip4` (from `version/2_4`), for `version/2_6`. Engine
 `src/engine/extremeCenters.ts`; UI `src/components/ExtremeCenter.tsx` and `src/screens/area/CenterView.tsx`; admin
 Config → Extreme mode → **Extreme Pokémon Centers**; migration `supabase/migrations/0085_extreme_centers.sql`. Rules
 for the screens: docs/15 §19.
@@ -87,7 +87,7 @@ for the screens: docs/15 §19.
 1. Deploy the client (the switch is Off: Extreme mode keeps having no Centers, as before).
 2. Run `supabase/migrations/0085_extreme_centers.sql` (the switch's row, Off, and the content version + 1; safe to run
    again):
-   https://github.com/Splifingald/pokedice/blob/version/2_5/supabase/migrations/0085_extreme_centers.sql
+   https://github.com/Splifingald/pokedice/blob/version/2_6/supabase/migrations/0085_extreme_centers.sql
    `supabase/seed.sql` carries it too (inlined). Without it, the admin's switch still saves (it inserts the row).
 3. Admin → Config → **Extreme Pokémon Centers**: **On for admin** to try it signed in, **On for everyone** to open
    it. Its numbers are on the Extreme mode tab. Publish.

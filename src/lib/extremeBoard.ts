@@ -1,6 +1,6 @@
 // Extreme mode's board (docs/48): one per region. First every player whose League has been won there, fastest best
 // time first; then the runs still going, most badges first, the earliest started first among equals. The rows come
-// from `extreme_board()` (migration 0086), which keeps the best times for good and the runs going of players seen in the
+// from `extreme_board()` (migration 0087), which keeps the best times for good and the runs going of players seen in the
 // last 72 hours; the ranking happens here.
 import type { RegionId } from '@/engine/types'
 import { avatarOf } from './avatars'

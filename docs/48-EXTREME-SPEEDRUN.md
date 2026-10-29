@@ -7,11 +7,11 @@ the score. Runs can be restarted to beat it. Extreme mode's page, from the train
 its clock and best time, and the board. The only board in Extreme is time and progress: no level, Pokédex, shiny or
 raid boards.
 
-**Status: built** on `claude/charming-bohr-kbvip4`, for `version/2_5`, under Extreme mode's own switch
+**Status: built** on `claude/charming-bohr-kbvip4`, for `version/2_6`, under Extreme mode's own switch
 (`extreme.access`; Off, nothing of it shows). Engine `src/engine/extremeRuns.ts`; the page `src/screens/Extreme.tsx`
 with `src/components/ExtremeRuns.tsx` and `src/components/ExtremeBoard.tsx`; the choice across the save switch
 `src/store/extremeRuns.ts`; the board `src/lib/extremeBoard.ts`; migration
-`supabase/migrations/0086_extreme_speedrun.sql`. Rules for the screens: docs/15 §19.
+`supabase/migrations/0087_extreme_speedrun.sql`. Rules for the screens: docs/15 §19.
 
 ## 1. Decisions (the questions asked on 2026-10-29)
 
@@ -57,7 +57,7 @@ with `src/components/ExtremeRuns.tsx` and `src/components/ExtremeBoard.tsx`; the
   Extreme save holds (Box, parked regions, Day Care); `shinyDexOpen` is false there. The Extreme board shows no golden
   names.
 
-## 3. The board (migration 0086, `src/lib/extremeBoard.ts`)
+## 3. The board (migration 0087, `src/lib/extremeBoard.ts`)
 
 - Each Extreme region's card row keeps its run as the server saw it: `run_id`, `run_seen` (the first upload of that
   run), `run_claimed` (the start the save claims), `run_won` (the first upload with its League won) and `best_ms`.
@@ -89,9 +89,9 @@ with `src/components/ExtremeRuns.tsx` and `src/components/ExtremeBoard.tsx`; the
 ## 5. Setting it up
 
 1. Deploy the client.
-2. Run `supabase/migrations/0086_extreme_speedrun.sql` (the run columns, the server's clock for runs, the board's
+2. Run `supabase/migrations/0087_extreme_speedrun.sql` (the run columns, the server's clock for runs, the board's
    function, Kanto as the unlock; safe to run again):
-   https://github.com/Splifingald/pokedice/blob/version/2_5/supabase/migrations/0086_extreme_speedrun.sql
+   https://github.com/Splifingald/pokedice/blob/version/2_6/supabase/migrations/0087_extreme_speedrun.sql
    `supabase/seed.sql` carries it too (inlined).
 3. Admin → Config → Switches → **Extreme mode**: On for admin to try it, On for everyone to open it.
 
@@ -102,7 +102,7 @@ with `src/components/ExtremeRuns.tsx` and `src/components/ExtremeBoard.tsx`; the
   best; a restart wipes the run, keeps the best, beats it only when faster; a region from before gets its run (no time
   when its League was won); the save keeps the runs; no region offer, nothing sent, no Day Care, no Versus; the race
   data.
-- `tests/extreme-speedrun-sql.test.ts`: 0086 on PGlite: Kanto as the unlock, a run on the board, its time, a restart
+- `tests/extreme-speedrun-sql.test.ts`: 0087 on PGlite: Kanto as the unlock, a run on the board, its time, a restart
   keeping the best, a save that claims a faster run than the server watched, an untimed League, a main save writing no
   run, the ranking, inlined in `seed.sql`.
 - `e2e/extreme.spec.ts`: the unlock's Let's go! opens the page; START in the lab plays the run.

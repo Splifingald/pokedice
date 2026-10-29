@@ -1,4 +1,4 @@
-// Migration 0086 against a real Postgres (PGlite, in process): Extreme mode's runs on the cards, timed by the server
+// Migration 0087 against a real Postgres (PGlite, in process): Extreme mode's runs on the cards, timed by the server
 // as well as by the save, and extreme_board() with its ranking (src/lib/extremeBoard.ts). Supabase's own pieces are
 // stood in for at the top, as in leaderboard-rebattle-sql.test.ts.
 import { readFileSync } from 'node:fs'
@@ -109,16 +109,16 @@ beforeAll(async () => {
     insert into game_config (key, value) values ('extreme', '{"access": "all", "unlockRegion": "johto"}')
       on conflict (key) do update set value = excluded.value;
   `)
-  await db.exec(sql('0086_extreme_speedrun.sql'))
+  await db.exec(sql('0087_extreme_speedrun.sql'))
   // Safe to run again.
-  await db.exec(sql('0086_extreme_speedrun.sql'))
+  await db.exec(sql('0087_extreme_speedrun.sql'))
 }, 60_000)
 
 afterAll(async () => {
   await db?.close()
 })
 
-describe('0086: Extreme mode as a speedrun', () => {
+describe('0087: Extreme mode as a speedrun', () => {
   it('moves the unlock from Johto to Kanto', async () => {
     const v = (
       await db.query<{ v: { unlockRegion: string } }>(`select value v from game_config where key = 'extreme'`)
@@ -189,7 +189,7 @@ describe('0086: Extreme mode as a speedrun', () => {
   it('is inlined in seed.sql', () => {
     const seed = readFileSync(path.join(MIG, '..', 'seed.sql'), 'utf8')
     expect(seed).toContain(
-      '-- ↓ supabase/migrations/0086_extreme_speedrun.sql, inlined so this file stands alone.',
+      '-- ↓ supabase/migrations/0087_extreme_speedrun.sql, inlined so this file stands alone.',
     )
   })
 })

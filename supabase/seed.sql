@@ -6271,7 +6271,7 @@ insert into game_config (key, value) values ('configVersion', '1'::jsonb) on con
 insert into game_config (key, value) values ('extremeCenters', '{"access": "off"}'::jsonb) on conflict (key) do nothing;
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 
--- ↓ supabase/migrations/0086_extreme_speedrun.sql, inlined so this file stands alone.
+-- ↓ supabase/migrations/0087_extreme_speedrun.sql, inlined so this file stands alone.
 -- Extreme mode as a speedrun (docs/48). Each region whose League the main save has beaten is a run in the Extreme save,
 -- from its starter to its League on a clock that never stops; the board ranks each region's best times, then the runs
 -- still going by badges. Extreme mode now opens with Kanto's League.
