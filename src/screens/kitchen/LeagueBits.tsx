@@ -163,6 +163,9 @@ export function LeagueBits() {
       <Frame name="LeagueRows · in PC's side column (the same rows, narrower)">
         <LeagueRows rows={ROWS.slice(0, 5)} empty="" />
       </Frame>
+      <Frame name="LeagueRows · a phone's width, the admin's view (the rewards wrap before the team does)">
+        <LeagueRows rows={ADMIN_ROWS.slice(0, 5)} empty="" />
+      </Frame>
       <Frame name="LeagueRows · no group yet / last week not played">
         <LeagueRows rows={[]} empty={t('ui.league.boardEmpty')} />
         <LeagueRows rows={[]} empty={t('ui.league.lastEmpty')} />

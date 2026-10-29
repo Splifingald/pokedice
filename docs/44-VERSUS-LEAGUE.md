@@ -90,8 +90,8 @@ Migration `0082_versus_league.sql`.
   - **Opponents**: the 3 offers, each with its look, name, trophies, team and the matchup line; one red FIGHT (the one
     your team hits hardest). A match left before its end says so.
   - **My team**: Versus's own team editor.
-  - **Leaderboard** (PC: beside the opponents): **This week / Last week**, ranks shared on ties, each top-10 place
-    with its Raid Balls and Rare Candies drawn under the team.
+  - **Leaderboard** (PC: beside the opponents): **This week / Last week**, ranks shared on ties, the trophies on the
+    name's line and each top-10 place's Raid Balls and Rare Candies drawn under them, beside the team.
 - **The fight**:
   - The battle screen, **played by you**: dice, rerolls, switches, Mega Evolution, Gigantamax and Z-Moves (your own
     powers).
@@ -104,8 +104,9 @@ Migration `0082_versus_league.sql`.
 - **Monday**: the week's gift message, opened like every gift. Its pop-up is the league's own, not the developer's:
   "Your Versus league week", "Your place in your group and your rewards…", then the message signed **Versus league**
   ("You finished #2 of 20 in your group with 152 trophies. Here are your rewards.") and OPEN THE GIFT.
-- **The Raid Ball** in raid catches and on a raid's odds; its own picture (`public/items/raid-ball.png`) and a pink and
-  gold trail on its throw.
+- **The Raid Ball** in raid catches and on a raid's odds; its own picture (`public/items/raid-ball.png`: the Ultra
+  Ball's shape, gold with pink bars, so it never reads as a Poké Ball; `tsx scripts/raid-ball-sprite.ts` draws it) and
+  a pink and gold trail on its throw.
 
 ## 5. The admin
 
@@ -117,7 +118,7 @@ Admin → Config → **Versus league**:
 - **Run the hourly tick now** and **Seat bots now**.
 - A warning while Gifts aren't on for everyone (the rewards wait on their messages until they are).
 
-The admin sees **BOT** on the bots, in the opponents and the group.
+The admin sees **BOT** on the bots, before their names, in the opponents and the group.
 
 ## 6. Setting it up
 

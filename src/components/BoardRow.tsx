@@ -1,6 +1,7 @@
 // Ranked rows, as on the leaderboard and Versus boards: a rank (gold, silver and bronze squares for 1–3), the
 // trainer's look, their name (and "you", or "Friend" for a friend: docs/16), their team as menu icons, and the value at
-// the end. A friend's row is sky blue with a blue edge, and can open their card.
+// the end (or on the name's line, with what the place wins under it: the Versus league). A friend's row is sky blue
+// with a blue edge, and can open their card.
 import type { ReactNode, Ref } from 'react'
 import { useT } from '@/i18n/react'
 import { useMediaQuery } from '@/lib/useMediaQuery'
@@ -126,11 +127,13 @@ export function BoardRow({
   look,
   name,
   rich,
+  tag,
   isMe,
   isFriend,
   onOpen,
   team,
   value,
+  aside,
   sub,
   rowRef,
   flash,
@@ -145,6 +148,8 @@ export function BoardRow({
   name: string
   /** A golden name ("I am just rich", docs/25). */
   rich?: boolean
+  /** Before the name (the admin's BOT). */
+  tag?: ReactNode
   isMe?: boolean
   /** One of your friends: the blue row and tag. */
   isFriend?: boolean
@@ -152,6 +157,11 @@ export function BoardRow({
   onOpen?: () => void
   team: { dex: number; level: number; shiny?: boolean }[]
   value?: ReactNode
+  /**
+   * Given (even empty): the value moves up to the name's line, and this sits under it at the right, beside the team
+   * (the league's rewards), wrapping onto a second line before the team gives up any room.
+   */
+  aside?: ReactNode
   sub?: ReactNode
   rowRef?: Ref<HTMLLIElement>
   /** Just found with "show my row": it blinks three times. */
@@ -165,6 +175,23 @@ export function BoardRow({
 }) {
   const { t } = useT()
   const wide = useMediaQuery('(min-width: 640px)')
+  const stacked = aside !== undefined
+  const shown = value != null && <span className="shrink-0 text-right text-[20px] leading-none">{value}</span>
+  const nameLine = (
+    <b className="flex min-w-0 items-center gap-1 text-[20px] font-normal leading-none">
+      {tag}
+      <TrainerName name={name} rich={rich} className="truncate" />
+      {isMe && (
+        <span className="shrink-0 bg-gold px-[5px] pb-px font-pixel-sm text-[16px] leading-tight text-ink">
+          {t('ui.board.youTag')}
+        </span>
+      )}
+      {isFriend && !isMe && <FriendTag />}
+    </b>
+  )
+  // Half again as big as elsewhere, and spaced out: the team is what a row is read for (a little smaller on phones,
+  // where the row has no room to spare).
+  const icons = <TeamIcons team={team} owner={name} size={wide && !compact ? 48 : 38} spaced />
   return (
     <li
       ref={rowRef}
@@ -196,25 +223,32 @@ export function BoardRow({
       <span
         className={cx(
           'grid min-w-0 flex-1 gap-px',
-          !compact && 'lg:grid-cols-[minmax(0,13rem)_auto_minmax(0,1fr)] lg:items-center lg:gap-x-4',
+          !compact &&
+            !stacked &&
+            'lg:grid-cols-[minmax(0,13rem)_auto_minmax(0,1fr)] lg:items-center lg:gap-x-4',
         )}
       >
-        <b className="flex min-w-0 items-center gap-1 text-[20px] font-normal leading-none">
-          <TrainerName name={name} rich={rich} className="truncate" />
-          {isMe && (
-            <span className="shrink-0 bg-gold px-[5px] pb-px font-pixel-sm text-[16px] leading-tight text-ink">
-              {t('ui.board.youTag')}
+        {stacked ? (
+          <>
+            <span className="flex min-w-0 items-center justify-between gap-2">
+              {nameLine}
+              {shown}
             </span>
-          )}
-          {isFriend && !isMe && <FriendTag />}
-        </b>
-        {/* Half again as big as elsewhere, and spaced out: the team is what a row is read for (a little smaller on
-            phones, where the row has no room to spare). */}
-        <TeamIcons team={team} owner={name} size={wide && !compact ? 48 : 38} spaced />
+            {/* The aside grows from nothing but never below its widest piece: it wraps, the team keeps its line. */}
+            <span className="flex min-w-0 items-center gap-2">
+              {icons}
+              <span className="flex flex-1 justify-end">{aside}</span>
+            </span>
+          </>
+        ) : (
+          <>
+            {nameLine}
+            {icons}
+          </>
+        )}
         {sub}
       </span>
-      {children ??
-        (value != null && <span className="shrink-0 text-right text-[20px] leading-none">{value}</span>)}
+      {children ?? (!stacked && shown)}
     </li>
   )
 }

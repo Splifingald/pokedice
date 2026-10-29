@@ -341,13 +341,13 @@ export function Choices({
               look={avatarOf(c.avatar).src}
               name={c.name}
               rich={c.rich}
+              tag={c.bot && <BotTag />}
               team={c.team}
               // Stacked (name, team, then trophies and the matchup): the line under the team needs the row's width.
               compact
               sub={
                 <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                   <TrophyCount n={c.trophies} />
-                  {c.bot && <BotTag />}
                   {mine && (
                     <small
                       className={cx(
@@ -405,7 +405,10 @@ export function BotTag() {
   )
 }
 
-/** What a place wins at the end of the week: the Raid Balls and Rare Candies of its band, as their pictures. */
+/**
+ * What a place wins at the end of the week: the Raid Balls and Rare Candies of its band, as their pictures at their own
+ * 30 px (crisp; their empty edges tucked in). Each stays whole, so a narrow row puts the candies under the balls.
+ */
 export function RewardMark({ rank }: { rank: number }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
@@ -415,18 +418,18 @@ export function RewardMark({ rank }: { rank: number }) {
   const candy = data.items['rare-candy']
   return (
     <span
-      className="inline-flex items-center gap-1 font-pixel-sm text-[15px] leading-none text-muted"
+      className="inline-flex flex-wrap items-center justify-end gap-x-2.5 font-pixel-sm text-[19px] leading-none tabular-nums"
       aria-label={t('ui.league.rewardLabel', { balls: r.raidBalls, candies: r.rareCandies })}
     >
       {r.raidBalls > 0 && ball && (
-        <>
-          <ItemSprite item={ball} size={18} />×{r.raidBalls}
-        </>
+        <span className="inline-flex items-center whitespace-nowrap">
+          <ItemSprite item={ball} size={30} className="-my-1 -ml-1.5 -mr-1" />×{r.raidBalls}
+        </span>
       )}
       {r.rareCandies > 0 && candy && (
-        <>
-          <ItemSprite item={candy} size={18} />×{r.rareCandies}
-        </>
+        <span className="inline-flex items-center whitespace-nowrap">
+          <ItemSprite item={candy} size={30} className="-my-1 -ml-1.5 -mr-1" />×{r.rareCandies}
+        </span>
       )}
     </span>
   )
@@ -491,18 +494,12 @@ export function LeagueRows({ rows, empty }: { rows: LeagueRow[]; empty: string }
           rich={r.rich}
           isMe={r.isMe}
           isFriend={friends.has(r.id)}
+          tag={r.bot && <BotTag />}
           team={r.team}
-          // Stacked always: the line of rewards under the team would run into the trophies on PC's one-line row.
+          // Stacked always (the team under the name, even on PC); the trophies on the name's line, the rewards under them.
           compact
-          sub={
-            (r.bot || r.rank <= 10) && (
-              <span className="flex items-center gap-2">
-                {r.bot && <BotTag />}
-                <RewardMark rank={r.rank} />
-              </span>
-            )
-          }
           value={<TrophyCount n={r.trophies} size={20} />}
+          aside={<RewardMark rank={r.rank} />}
         />
       ))}
     </ol>

@@ -903,7 +903,9 @@ pieces.
   (the `TrainerLook` crop, the same crop everywhere a trainer appears), the name with a gold "you" tag, their team as
   menu icons (`TeamIcons`, one atlas), the value at the end. Your row is gold-ringed. A row can carry a line under
   the team (Versus: how many of their Pokémon your team hits super effectively, green at 2+, red at 0) and an action
-  in place of the value (FIGHT, or a green Beaten tag that says when you can fight them again).
+  in place of the value (FIGHT, or a green Beaten tag that says when you can fight them again). A tag can sit before
+  the name (the admin's BOT). With an `aside`, the value moves up to the name's line and the aside sits under it at the
+  right, beside the team (the league's rewards): it wraps onto a second line before the team gives up its room.
 - **A long board is cut** (`boardWindow`, every board: the leaderboard's five tabs, its Hall of Fame and Versus's
   board): it always shows its real top 100, every friend wherever they are, and you with the 10 trainers ahead of you
   and the 10 behind, all with their real ranks ("You're #N of M" counts the whole board). Each run of rows left out is
@@ -931,9 +933,10 @@ pieces.
   - A header (`LeagueHeader`): your trophies, your place in your group, and a dark chip "Ends in 3d 5h".
   - The 3 opponents offered as stacked `BoardRow`s: the trophies (`TrophyCount`, the trophy icon after the number) and
     the matchup line under the team; one red FIGHT.
-  - The group: `LeagueRows` under a This week / Last week `Seg`, tied places sharing a rank, each top-10 place with its
-    rewards' pictures under the team (`RewardMark`).
-  - The admin alone sees `BotTag` (BOT) on a bot.
+  - The group: `LeagueRows` under a This week / Last week `Seg`, tied places sharing a rank, the trophies on the name's
+    line and, under them beside the team, each top-10 place's rewards (`RewardMark`: their pictures at their own 30 px,
+    the Raid Ball the Ultra Ball's shape in gold with pink bars, so it never reads as a Poké Ball).
+  - The admin alone sees `BotTag` (BOT) on a bot, before its name.
   - The fight is the battle screen with `versus.live`: the player's own controls and powers, AUTO-MODE as the panel's
     switch, never the Bag. Its result card (`LeagueResultCard`) shows the trophies won or lost, green or red, beside
     VICTORY! / DEFEAT.
