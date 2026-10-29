@@ -298,12 +298,20 @@ export type SyncDecision = 'none' | 'local' | 'cloud'
 export const playedOf = (s: SaveData): number => s.playedAt ?? s.updatedAt
 
 /**
+ * Written by a page from 2026-10-22 on: every commit since stamps `playedAt`. A page left open from before then, resumed
+ * on a phone or a PC, reads a save through its own old schema and writes it back without `playedAt` — and without every
+ * other part it never knew (raids won, rebattles, small worlds, General upgrades: 46 players, 25–29 Oct 2026).
+ */
+export const writtenSincePlayedAt = (s: SaveData): boolean => s.playedAt != null
+
+/**
  * The sync, with no question asked: the save further along in its areas wins, then the one with the bigger Pokédex
  * (`compareProgress`). A stamp is easy to move, progress isn't, so progress decides first. Level on both, the one
  * played last: ₽, levels, rematches and upgrades don't count as progress, and keeping this device's own on a tie let
  * an idle device's older save undo all of them on another (players lost their General upgrades and the ₽ spent on
  * them that way, 2026-10-16). Played, not changed: a stale device's own clocks (its offline pay at load) stamp its
- * save "now" before the sync compares, and used to win it the tie that way (2026-10-22).
+ * save "now" before the sync compares, and used to win it the tie that way (2026-10-22). Before that, a copy an old
+ * page wrote loses to one this game wrote, however recent its stamp: it is the same save with parts missing.
  */
 export function decideSync(local: SaveData | null, cloud: SaveData | null): SyncDecision {
   if (!local && !cloud) return 'none'
@@ -313,6 +321,8 @@ export function decideSync(local: SaveData | null, cloud: SaveData | null): Sync
   if (cloud.updatedAt > local.updatedAt && (cloud.adminEditAt ?? 0) > local.updatedAt) return 'cloud'
   const ahead = compareProgress(local, cloud)
   if (ahead !== 0) return ahead > 0 ? 'local' : 'cloud'
+  const localKnown = writtenSincePlayedAt(local)
+  if (localKnown !== writtenSincePlayedAt(cloud)) return localKnown ? 'local' : 'cloud'
   // Level, but one copy never saw a trade the other did: keeping it would bring back the Pokémon traded away while the
   // other trainer keeps it too (docs/23).
   if (missesTrades(local, cloud)) return 'cloud'

@@ -33,6 +33,13 @@ async function fromSite(): Promise<number | null> {
   return Number.isNaN(at) ? null : at
 }
 
+/**
+ * The longest round trip a reading is kept from. Longer (the page frozen in the background, the device asleep, its
+ * clock moved meanwhile), the halfway guess below could be off by half of it — days, for a page left a week — and a
+ * small world could close early on it (2026-10-25).
+ */
+export const MAX_ROUND_TRIP_MS = 20_000
+
 /** Reads the real time and keeps how far the device's clock is from it. Failures leave the last value. */
 export async function syncServerTime(): Promise<void> {
   const before = Date.now()
@@ -51,9 +58,14 @@ export async function syncServerTime(): Promise<void> {
     }
   }
   if (server == null) return
+  const after = Date.now()
+  const perfAfter = performance.now()
+  // Too long a wait to tell when the server read its clock, on either clock: the last reading stays.
+  const wall = after - before
+  if (wall < 0 || wall > MAX_ROUND_TRIP_MS || perfAfter - perfBefore > MAX_ROUND_TRIP_MS) return
   // Halfway through the round trip is the best guess for when the server read its clock.
-  anchorClock(server, (perfBefore + performance.now()) / 2)
-  useServerTime.setState({ offset: server - (before + Date.now()) / 2 })
+  anchorClock(server, (perfBefore + perfAfter) / 2)
+  useServerTime.setState({ offset: server - (before + after) / 2 })
 }
 
 /** The real time now, or null while unknown. */

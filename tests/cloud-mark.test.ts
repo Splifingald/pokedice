@@ -14,7 +14,15 @@ import {
   pushKey,
   SaveConflictError,
 } from '@/save/cloud'
-import { readCloudMark, saveKeyOf, wipePlayerData, wipeSlot, writeCloudMark } from '@/save/storage'
+import {
+  flushWrite,
+  peekSave,
+  readCloudMark,
+  saveKeyOf,
+  wipePlayerData,
+  wipeSlot,
+  writeCloudMark,
+} from '@/save/storage'
 import { commitSave, useGame } from '@/store/game'
 import { adoptStoredSave, reconcile } from '@/store/sync'
 import { data, newId } from './fixtures'
@@ -502,6 +510,18 @@ describe('General upgrades across devices and tabs (lost on 2026-10-16)', () => 
     expect(adoptStoredSave(JSON.stringify(base))).toBe(false)
     expect(adoptStoredSave(JSON.stringify(useGame.getState().save))).toBe(false)
     expect(adoptStoredSave('not a save')).toBe(false)
+  })
+
+  it('never takes in a copy an old page stored (no playedAt), and puts its own back (2026-10-29)', () => {
+    const mine = { ...bought(base, { luck: 3 }, 1), playedAt: base.updatedAt + 1 }
+    useGame.setState({ save: mine })
+    // Stamped later, but every part its build never knew is gone: here the General upgrades.
+    const stripped: SaveData = { ...base, updatedAt: base.updatedAt + 60_000 }
+    delete stripped.general
+    expect(adoptStoredSave(JSON.stringify(stripped))).toBe(false)
+    expect(useGame.getState().save!.general?.luck).toBe(3)
+    flushWrite()
+    expect(peekSave()?.general?.luck).toBe(3)
   })
 
   it('reads the stored save itself when no value is handed over (the tab coming back)', () => {

@@ -6262,6 +6262,70 @@ $$;
 
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 
+-- ↓ supabase/migrations/0088_saves_no_overwrite.sql, inlined so this file stands alone.
+-- An upload never writes over a save it wasn't based on (2026-10-29).
+--
+-- Since 2026-10-22 the game uploads a save only over the copy it last matched (src/save/cloud.ts pushCloudSave: an
+-- update filtered on the row's stamp) and inserts only when it knows of no row at all. Pages still running a build from
+-- before that upload with a plain upsert (insert … on conflict do update), written over whatever the row holds. Such a
+-- page, left open on a phone or a PC for days, resumes on its old code for a few minutes before it reloads, and its
+-- uploads drop every part of the save its build never knew (raids won, rebattles, small worlds, General upgrades, Mega
+-- Gems…) or put back a copy days old. The API logs of 25–29 Oct 2026 show 46 players overwritten that way.
+--
+-- Those pages can't be updated, so the database refuses them: an insert where the player's save already exists fails
+-- with unique_violation (23505), before the upsert can turn into an update. The game today never inserts over a row
+-- (it reads that error as "another device saved first" and compares again), so only the old pages are refused. A
+-- player's first upload, and the first one of an Extreme save beside the main one, insert as before.
+--
+-- Run after 0039 (the realm column). Safe to run again. seed.sql inlines it (scripts/seed.ts).
+
+
+create or replace function saves_no_overwrite()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if exists (select 1 from saves s where s.user_id = new.user_id and s.realm = new.realm) then
+    raise exception 'save already exists for %', new.user_id using errcode = '23505';
+  end if;
+  return new;
+end
+$$;
+
+revoke all on function saves_no_overwrite() from public, anon, authenticated;
+
+drop trigger if exists saves_no_overwrite on saves;
+create trigger saves_no_overwrite before insert on saves for each row execute function saves_no_overwrite();
+
+
+-- ↓ supabase/migrations/0089_raids_done_mine.sql, inlined so this file stands alone.
+-- A player's progression raids won, read back from the server (2026-10-29).
+--
+-- raid_progress_done (0045) records each raid a player wins, keyed as the save keys it (`events.raidsDone`, area id and
+-- Pokédex number). No page can write over it, unlike the save: pages left open from a build before 2026-10-22 wrote
+-- saves back without every part their build never knew, `raidsDone` among them (0088 refuses those writes now), and
+-- the raids they had won opened again. The game reads this list at sign-in and adds back any raid its save lost
+-- (engine/progressRaid.ts keepRaidsDone); it only ever adds.
+--
+-- raid_progress_mine(p_realm): the caller's own raid keys in that realm, oldest first; none when signed out.
+--
+-- Run after 0045. Safe to run again. seed.sql inlines it (scripts/seed.ts).
+
+
+create or replace function raid_progress_mine(p_realm text default 'main')
+returns text[]
+language sql stable security definer set search_path = public as $$
+  select coalesce(array_agg(d.raid_key order by d.done_at, d.raid_key), '{}')
+  from raid_progress_done d
+  where d.user_id = auth.uid() and d.realm = p_realm
+$$;
+
+revoke all on function raid_progress_mine(text) from public, anon;
+grant execute on function raid_progress_mine(text) to authenticated;
+
+
 insert into type_chart (attacking, defending, multiplier) values
   ('bug', 'dark', 2),
   ('bug', 'fairy', 0.5),
