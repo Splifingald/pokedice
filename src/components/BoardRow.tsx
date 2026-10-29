@@ -159,7 +159,7 @@ export function BoardRow({
   value?: ReactNode
   /**
    * Given (even empty): the value moves up to the name's line, and this sits under it at the right, beside the team
-   * (the league's rewards), wrapping onto a second line before the team gives up any room.
+   * (the league's rewards, an opponent's FIGHT), wrapping or going under the team before the team gives up any room.
    */
   aside?: ReactNode
   sub?: ReactNode
@@ -234,8 +234,9 @@ export function BoardRow({
               {nameLine}
               {shown}
             </span>
-            {/* The aside grows from nothing but never below its widest piece: it wraps, the team keeps its line. */}
-            <span className="flex min-w-0 items-center gap-2">
+            {/* The aside grows from nothing but never below its widest piece: it wraps first, and if even that won't fit
+                beside the team (FIGHT in French on a narrow phone) it goes under it. The team keeps its line. */}
+            <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
               {icons}
               <span className="flex flex-1 justify-end">{aside}</span>
             </span>

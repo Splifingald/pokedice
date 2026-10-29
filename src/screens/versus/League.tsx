@@ -309,7 +309,7 @@ export function Choices({
   busy: boolean
   onFight: (c: LeagueChoice) => void
 }) {
-  const { t, tPlural } = useT()
+  const { t } = useT()
   const data = useGame((s) => s.data)
   const cfg = leagueConfig(data)
   const mineDex = mine?.team.map((m) => m.dex) ?? []
@@ -343,41 +343,50 @@ export function Choices({
               rich={c.rich}
               tag={c.bot && <BotTag />}
               team={c.team}
-              // Stacked (name, team, then trophies and the matchup): the line under the team needs the row's width.
+              // As the group's rows: the trophies on the name's line, FIGHT under them beside the team, the matchup
+              // under the team (it needs the row's width).
               compact
-              sub={
-                <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                  <TrophyCount n={c.trophies} />
-                  {mine && (
-                    <small
-                      className={cx(
-                        'font-pixel-sm text-[16px] leading-[1.1]',
-                        edge >= 2 ? 'text-good' : edge === 0 ? 'text-danger' : 'text-muted',
-                      )}
-                    >
-                      {edge
-                        ? tPlural('ui.versus.edge', edge, { total: c.team.length })
-                        : t('ui.versus.edgeNone')}
-                    </small>
-                  )}
-                </span>
+              value={<TrophyCount n={c.trophies} size={20} />}
+              aside={
+                <PixelButton
+                  variant={c === best ? 'primary' : 'dark'}
+                  size="sm"
+                  className="shrink-0 px-3"
+                  disabled={!mine || busy}
+                  aria-label={t('ui.versus.fightName', { name: c.name })}
+                  onClick={() => onFight(c)}
+                >
+                  {t('ui.versus.fight')}
+                </PixelButton>
               }
-            >
-              <PixelButton
-                variant={c === best ? 'primary' : 'dark'}
-                size="sm"
-                className="shrink-0 px-3"
-                disabled={!mine || busy}
-                aria-label={t('ui.versus.fightName', { name: c.name })}
-                onClick={() => onFight(c)}
-              >
-                {t('ui.versus.fight')}
-              </PixelButton>
-            </BoardRow>
+              sub={mine && <EdgeMark edge={edge} total={c.team.length} />}
+            />
           )
         })}
       </ul>
     </>
+  )
+}
+
+/**
+ * How many of their Pokémon your team hits super effectively, as "2 / 3" and a thumb up: green at 2+, red at 0. The
+ * sentence for screen readers and on hover.
+ */
+export function EdgeMark({ edge, total }: { edge: number; total: number }) {
+  const { t, tPlural } = useT()
+  const words = edge ? tPlural('ui.versus.edge', edge, { total }) : t('ui.versus.edgeNone')
+  return (
+    <span
+      className={cx(
+        'inline-flex items-center gap-1 font-pixel-sm text-[18px] leading-none tabular-nums',
+        edge >= 2 ? 'text-good' : edge === 0 ? 'text-danger' : 'text-muted',
+      )}
+      aria-label={words}
+      title={words}
+    >
+      {edge} / {total}
+      <PixelIcon name="thumbUp" size={16} />
+    </span>
   )
 }
 

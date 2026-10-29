@@ -87,7 +87,8 @@ Migration `0082_versus_league.sql`.
   - Home's notice says **Versus league**.
   - A header: your trophies, "#2 of 20 in your group" (or "Your first match of the week puts you in a group"), and
     "Ends in 3d 5h".
-  - **Opponents**: the 3 offers, each with its look, name, trophies, team and the matchup line; one red FIGHT (the one
+  - **Opponents**: the 3 offers, each with its look, name and trophies on one line, its team with FIGHT beside it, and
+    the matchup ("2 / 3" and a thumb up: how many of theirs your team hits super effectively); one red FIGHT (the one
     your team hits hardest). A match left before its end says so.
   - **My team**: Versus's own team editor.
   - **Leaderboard** (PC: beside the opponents): **This week / Last week**, ranks shared on ties, the trophies on the

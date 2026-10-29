@@ -931,8 +931,10 @@ pieces.
   `SocialDock`.
 - **The weekly league** (docs/44, its own switch): Versus's page keeps its tabs and columns.
   - A header (`LeagueHeader`): your trophies, your place in your group, and a dark chip "Ends in 3d 5h".
-  - The 3 opponents offered as stacked `BoardRow`s: the trophies (`TrophyCount`, the trophy icon after the number) and
-    the matchup line under the team; one red FIGHT.
+  - The 3 opponents offered as stacked `BoardRow`s, laid out as the group's: the trophies (`TrophyCount`, the trophy
+    icon after the number) on the name's line, FIGHT under them beside the team (one red; under the team if it can't
+    fit beside it), the matchup under the team as `EdgeMark`: "2 / 3" and a thumb up, green at 2+, red at 0, the
+    sentence for screen readers and on hover.
   - The group: `LeagueRows` under a This week / Last week `Seg`, tied places sharing a rank, the trophies on the name's
     line and, under them beside the team, each top-10 place's rewards (`RewardMark`: their pictures at their own 30 px,
     the Raid Ball the Ultra Ball's shape in gold with pink bars, so it never reads as a Poké Ball).
