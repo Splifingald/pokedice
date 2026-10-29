@@ -124,9 +124,10 @@ export function runsWon(before: SaveData, after: SaveData): RegionId[] {
 
 /**
  * The game as an Extreme page plays it (docs/48, a pure race): the special events (the wheel, the raids, the
- * rebattle) and the live events are off, whatever their switches say. (Gifts and invite rewards never open in Extreme:
- * they wait for the main game and say so.) Applied to the whole page's game data while the Extreme save is played; the
- * same data when it is already.
+ * rebattle), the live events, Trick or Treat and the General upgrades are off, whatever their switches say, and no Pokémon is ever
+ * shiny (the user, 2026-10-29: "absolutely no shiny Pokémon anywhere"): the wild odds are 0, and the trainers' and
+ * bosses' set shinies are plain. (Gifts and invite rewards never open in Extreme: they wait for the main game and say
+ * so.) Applied to the whole page's game data while the Extreme save is played; the same data when it is already.
  */
 export function raceData(data: GameData): GameData {
   if (data.viewer?.race) return data
@@ -143,7 +144,48 @@ export function raceData(data: GameData): GameData {
       ...data.config,
       events,
       liveEvents: off(data.config.liveEvents),
+      trickOrTreat: off(data.config.trickOrTreat),
+      general: { ...data.config.general, access: 'off', charmAccess: 'off' },
+      shinyChance: 0,
     },
+    trainers: Object.fromEntries(
+      Object.entries(data.trainers).map(([id, tr]) => [
+        id,
+        tr.team.some((m) => m.shiny) ? { ...tr, team: tr.team.map(({ shiny: _s, ...m }) => m) } : tr,
+      ]),
+    ),
+    areas: data.areas.map((a) =>
+      a.legendaryBoss?.some((b) => b.shiny)
+        ? { ...a, legendaryBoss: a.legendaryBoss.map(({ shiny: _s, ...b }) => b) }
+        : a,
+    ),
     viewer: { admin: !!data.viewer?.admin, race: true },
   }
+}
+
+/**
+ * No Pokémon of an Extreme save is shiny (docs/48): one from before the rule, or come by any other way, loses its
+ * colours. The same save when there is none (and any main save as it is).
+ */
+export function noShinies(save: SaveData): SaveData {
+  if (!isExtreme(save)) return save
+  const plain = <T extends { shiny?: boolean }>(p: T): T => {
+    if (!p.shiny) return p
+    const { shiny: _s, ...rest } = p
+    return rest as T
+  }
+  const box = (b: SaveData['box']) => (b.some((p) => p.shiny) ? b.map(plain) : b)
+  const live = box(save.box)
+  let parked = save.parked
+  for (const [id, block] of Object.entries(save.parked ?? {})) {
+    if (!block || !block.box.some((p) => p.shiny)) continue
+    parked = { ...parked, [id]: { ...block, box: box(block.box) } }
+  }
+  const dc = save.dayCare
+  const dayCare = dc?.residents.some((r) => r.inst.shiny)
+    ? { ...dc, residents: dc.residents.map((r) => ({ ...r, inst: plain(r.inst) })) }
+    : dc
+  return live === save.box && parked === save.parked && dayCare === dc
+    ? save
+    : { ...save, box: live, parked, dayCare }
 }

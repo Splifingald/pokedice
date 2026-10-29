@@ -6,6 +6,7 @@ import {
   fitDayCare,
   isExtreme,
   migrateLeagueII,
+  noShinies,
   raceData,
   runsWon,
   settleRuns,
@@ -246,7 +247,12 @@ function settle(save: SaveData, data: GameData) {
   // Extreme mode (docs/22): the main save beat the league that opens it (noted once, so it stays open); an Extreme
   // save's K.O. clocks, on the real time.
   // Its runs (docs/48): a League just won stops its timer; a region from before the runs gets one.
-  const ko = settleKo(settleRuns(stampExtremeUnlock(dup.save, data, Date.now()), data, trustedNow()), data, trustedNow())
+  // No shiny Pokémon in Extreme (docs/48), whatever brought one.
+  const ko = settleKo(
+    settleRuns(noShinies(stampExtremeUnlock(dup.save, data, Date.now())), data, trustedNow()),
+    data,
+    trustedNow(),
+  )
   // Trainer looks (docs/31): while the switch is on, a look not unlocked comes off. The Extreme save wears the looks
   // the main save has earned.
   const progress = isExtreme(ko.save) ? (mainForLooks() ?? ko.save) : ko.save

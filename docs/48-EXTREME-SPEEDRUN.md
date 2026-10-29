@@ -25,6 +25,8 @@ with `src/components/ExtremeRuns.tsx` and `src/components/ExtremeBoard.tsx`; the
 | Rules that stay | The **12-hour K.O.**, **healing while away**, the **boon Centers** (docs/47) and **Potions and Revives**. |
 | The menu | **The trainer menu, in both saves** (the side panel from the avatar): "Extreme mode · Your runs, their times, the board", once Kanto's League is beaten. |
 | Restart | **Erased, best time kept**: the run's team, Box, items and ₽ go, its clock starts over; asked twice. |
+| General upgrades | **None in Extreme** (the user, 2026-10-29): no Capture Luck, Offline earnings, golden name or Shiny Charm there; ones bought before do nothing. |
+| Shiny Pokémon | **Absolutely none anywhere in Extreme** (the user, 2026-10-29): no wild shiny, the trainers' and bosses' set shinies come plain, a shiny held from before loses its colours, and there is no shiny Pokédex. |
 | Unlock | **Kanto's League** opens Extreme mode (was Johto's; the admin's `extreme.unlockRegion`). Each region's run opens with that region's League beaten in the main save. |
 
 ## 2. The rules (all in `src/engine/extremeRuns.ts`)
@@ -49,6 +51,11 @@ with `src/components/ExtremeRuns.tsx` and `src/components/ExtremeBoard.tsx`; the
   boot and with every new content or language, `withViewer`). Gifts and invite rewards never open in Extreme already
   (they wait for the main game and say so), and trades are main-save only. The Social tab has no Versus there, and its
   board is the Extreme one.
+- No General upgrades and no shinies: `raceData` also switches the General upgrades (and the Shiny Charm) off, Trick
+  or Treat off, sets the wild shiny odds to 0 and takes the shiny off the trainers' and bosses' set Pokémon; `applyCatch`
+  never makes an Extreme catch shiny; `noShinies(save)` (in the store's `settle`) takes the colours off any Pokémon an
+  Extreme save holds (Box, parked regions, Day Care); `shinyDexOpen` is false there. The Extreme board shows no golden
+  names.
 
 ## 3. The board (migration 0086, `src/lib/extremeBoard.ts`)
 

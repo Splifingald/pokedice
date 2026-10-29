@@ -2,7 +2,13 @@
 // timer, restarts that keep the best time, and a race with no online features.
 import { describe, expect, it } from 'vitest'
 import {
+  applyCatch,
   beginRun,
+  charmOn,
+  generalOn,
+  noShinies,
+  shinyDexOpen,
+  wildShinyChance,
   DEFAULT_CONFIG,
   eventOn,
   extremeOpen,
@@ -192,5 +198,30 @@ describe('a pure race', () => {
     expect(raceData(race)).toBe(race)
     // Extreme mode itself stays on.
     expect(race.config.extreme.access).toBe('all')
+  })
+
+  it('no General upgrades and no shiny Pokémon anywhere', () => {
+    const all = makeData({
+      extreme: { ...DEFAULT_CONFIG.extreme, access: 'all' },
+      general: { ...DEFAULT_CONFIG.general, access: 'all', charmAccess: 'all' },
+    })
+    expect(generalOn(all)).toBe(true)
+    const race = raceData(all)
+    expect(generalOn(race)).toBe(false)
+    expect(charmOn(race)).toBe(false)
+    const x = beginRun(null, race, 'kanto', starter('kanto'), 0, newId)!
+    expect(wildShinyChance({ ...x, general: { charm: 10 } }, race)).toBe(0)
+    // The trainers' and bosses' set shinies are plain.
+    expect(Object.values(race.trainers).some((tr) => tr.team.some((m) => m.shiny))).toBe(false)
+    expect(race.areas.some((a) => a.legendaryBoss?.some((b) => b.shiny))).toBe(false)
+    // A shiny caught or held anyway loses its colours.
+    const caught = applyCatch(x, { dex: 16, level: 3, shiny: true }, { mode: 'new' }, race, 0, newId).save
+    expect(caught.box.some((p) => p.shiny)).toBe(false)
+    const held = { ...x, box: x.box.map((p) => ({ ...p, shiny: true })) }
+    expect(noShinies(held).box.some((p) => p.shiny)).toBe(false)
+    expect(noShinies(x)).toBe(x)
+    expect(noShinies({ ...held, mode: undefined })).toEqual({ ...held, mode: undefined })
+    // No shiny Pokédex either.
+    expect(shinyDexOpen(leagueWon(x, race, 'kanto'), race)).toBe(false)
   })
 })

@@ -1037,7 +1037,8 @@ switched it on (Off by default; Off / On for admin / On for everyone, like the e
   green, the best time with a trophy, the run played now outlined in crimson), then the board (`ExtremeBoard`: one per
   region, best times then runs going), its rules card once and INFO at the bottom. START and RESTART open the lab on the
   region's starters; RESTART asks twice (`RestartRunModal`). Times read "1d 04:12:33" (`raceTime`). In Extreme the
-  Social tab has no Versus and its board is this one; no events, Day Care or gifts show there. On `/kitchen-sink` as
+  Social tab has no Versus and its board is this one; no events, Day Care, gifts, General upgrades, shiny Pokémon or
+  shiny Pokédex show there. On `/kitchen-sink` as
   `ExtremeRunBits`.
 - **Its Pokémon Centers give a boon, not a heal** (docs/47, its own switch, Off by default; pieces in
   `src/components/ExtremeCenter.tsx`, on `/kitchen-sink` as `ExtremeCenterBits`): no healing machine, the Center's sign

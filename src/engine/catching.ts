@@ -187,6 +187,8 @@ export function applyCatch(
   now: number,
   newId: () => string,
 ): CatchResult {
+  // Extreme mode (docs/48): no Pokémon is ever shiny there, however it was met.
+  if (save.mode === 'extreme' && caught.shiny) caught = { ...caught, shiny: false }
   const hiddenBefore = new Set(unlockedHiddenAreas(save, data))
   const events: RunEvent[] = []
   let next: SaveData

@@ -70,7 +70,7 @@ export function ExtremeBoard({ regions, rows: given }: { regions: Region[]; rows
               rank={r.rank}
               look={avatarOf(r.avatar).src}
               name={r.name}
-              rich={r.rich}
+              // No General upgrades in Extreme (docs/48): no golden names on its board.
               isMe={r.isMe}
               isFriend={!!r.friendId}
               team={r.team}
