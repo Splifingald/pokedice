@@ -215,7 +215,8 @@ export const DEFAULT_CONFIG: GameConfig = {
         { key: 'hyper-potion', badges: 6 },
       ],
     },
-    buff: { weight: 20, hours: 24, maxDice: 8 },
+    // Never before the region's 2nd badge (the user, 2026-10-29).
+    buff: { weight: 20, hours: 24, maxDice: 8, badges: 2 },
     donor: { weight: 10, trainers: 3 },
     rocket: { weight: 10, levels: 3, band: 10 },
   },

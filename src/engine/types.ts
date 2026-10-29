@@ -1427,8 +1427,11 @@ export interface ExtremeCentersConfig {
    * Revive, by these weights.
    */
   item: { weight: number; potion: number; revive: number; maxRevive: number; potions: { key: string; badges: number }[] }
-  /** +1 die of one of its types for a team member, for `hours` of real time; never past `maxDice` dice. */
-  buff: { weight: number; hours: number; maxDice: number }
+  /**
+   * +1 die of one of its types for a team member, for `hours` of real time; never past `maxDice` dice, and only once
+   * `badges` badges are won in the region being played.
+   */
+  buff: { weight: number; hours: number; maxDice: number; badges: number }
   /** ₽: `trainers` × what an average trainer of the area pays. */
   donor: { weight: number; trainers: number }
   /**

@@ -399,6 +399,9 @@ function ExtremeCentersBox() {
         <Field label="Pokébuff lasts (hours)" hint="real time; +1 die of one of its types">
           {num(cfg.buff.hours, (v) => set({ buff: { ...cfg.buff, hours: v } }), 0)}
         </Field>
+        <Field label="Pokébuff from badge" hint="never before this many badges in the region">
+          {num(cfg.buff.badges ?? 0, (v) => set({ buff: { ...cfg.buff, badges: v } }), 0, 18)}
+        </Field>
         <Field label="Pokébuff dice cap" hint="never past this many dice">
           {num(cfg.buff.maxDice, (v) => set({ buff: { ...cfg.buff, maxDice: v } }), 1, 12)}
         </Field>
