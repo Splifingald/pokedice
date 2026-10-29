@@ -14,7 +14,8 @@ import { DiceSet } from '@/components/DiceSet'
 import { ItemSprite } from '@/components/ItemSprite'
 import { PixelIcon } from '@/components/icons'
 import { LeadPicker, defaultLead, pickedPair } from '@/components/LeadPicker'
-import { AutoButton } from '@/components/AutoButton'
+import { AutoButton, PILOT_PICK_MS } from '@/components/AutoButton'
+import { useAutoLevel } from '@/store/autopilot'
 import { PixelButton } from '@/components/PixelButton'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { StatChip } from '@/components/StatChip'
@@ -329,7 +330,11 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
   // A card whose one way on is its button (the Game Corner, Trick or Treat with no skipping it): it loads and presses
   // itself (the user's rule: no step that is only a button). A fight, or a card with a second choice, waits.
   const waits = enc.kind === 'gym' || (enc.kind === 'boss' && !enc.returning)
-  const Primary = !fight && !skippable && !waits ? AutoButton : PixelButton
+  // The autopilot leaves a trainer's card on the table (engine pilotShowsCard): FIGHT loads and goes by itself with the
+  // lead it would pick, and a Pokémon tapped holds it for the player's own FIGHT.
+  const pilot = useAutoLevel() === 'full' && (enc.kind === 'trainer' || enc.kind === 'gym')
+  const picked = lead != null || leads.length > 0
+  const Primary = pilot || (!fight && !skippable && !waits) ? AutoButton : PixelButton
   if (typeof document === 'undefined') return null
 
   return createPortal(
@@ -375,7 +380,12 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
 
           {/* A team of one has no one to pick: no "Send out" at all (LeadPicker draws nothing either). */}
           {fight && save && teamOf(save).length > 1 && (
-            <div className={dark ? 'bg-panel p-2 text-ink' : undefined}>
+            <div className={cx(dark && 'bg-panel p-2 text-ink', pilot && 'grid gap-1.5')}>
+              {pilot && !picked && (
+                <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted" role="status">
+                  {t('ui.idle.pickLead')}
+                </p>
+              )}
               {/* The send-out's cards (one design for "pick a Pokémon", docs/43 §5.3): a tap picks (two, a double
                   battle's pair), INFO opens one. */}
               <LeadPicker
@@ -398,6 +408,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
             size="lg"
             className="flex-1"
             autoFocus
+            {...(pilot && { ms: PILOT_PICK_MS, hold: picked })}
             onClick={() => engage(!fight ? undefined : double ? pickedPair(leads) : (lead ?? defaultLead()))}
           >
             {fight && <PixelIcon name="sword" size={22} />}

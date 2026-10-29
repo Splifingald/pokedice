@@ -1,6 +1,6 @@
 // Result screens: victory (XP, level-ups, milestones, gold, catch, then evolutions), wipe and stalemate.
 import { BottomDock } from '@/components/BottomDock'
-import { AutoButton } from '@/components/AutoButton'
+import { AutoButton, PILOT_PICK_MS } from '@/components/AutoButton'
 import { AnimatePresence, motion } from 'framer-motion'
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
@@ -837,11 +837,15 @@ export function VictoryView() {
   useEffect(() => {
     if (closes) setShown(Number.MAX_SAFE_INTEGER)
   }, [closes])
+  // Between a trainer's Pokémon the card stays long enough to pick who faces the next one (a player's feedback,
+  // 2026-10-29), and a Pokémon tapped holds it for the player's NEXT.
+  const picking = hasNext && !!nextMon
+  const pickWait = picking && lead == null
   useEffect(() => {
-    if (!closes || !allShown || then) return
-    const timer = setTimeout(() => closeRef.current(), AUTO_CARD_MS)
+    if (!closes || !allShown || then || (picking && lead != null)) return
+    const timer = setTimeout(() => closeRef.current(), picking ? PILOT_PICK_MS : AUTO_CARD_MS)
     return () => clearTimeout(timer)
-  }, [closes, allShown, then])
+  }, [closes, allShown, then, picking, lead])
 
   // Inside a portal run (docs/28) there is no way Home: CONTINUE alone.
   const locked = useGame((s) => !!portalLock(s.save, s.data))
@@ -866,7 +870,7 @@ export function VictoryView() {
   const autoNext = !closes && !run.rebattle && !nextArea && !caughtNew
   // Only while auto-mode or Idle mode plays the area (the user's call, 2026-10-27: otherwise NEXT waits for a tap).
   const autoOn = useAutoLevel() !== 'off'
-  const countdown = autoOn && autoNext && allShown && !run.pendingCatchId && !then
+  const countdown = autoOn && autoNext && allShown && !run.pendingCatchId && !then && !(picking && lead != null)
   // Each piece of the recap scrolls into view as it comes (a level-up, the Pokédex entry…), then a full team's choice
   // or the trainer's next Pokémon: the player never scrolls to follow the card (the user's call, 2026-10-26). The
   // scroll margin keeps it clear of the buttons pinned at the foot.
@@ -885,19 +889,23 @@ export function VictoryView() {
   }, [choosing, run.pendingCatchId, behavior])
   const nextRef = useRef<() => void>(() => {})
   nextRef.current = hasNext && nextMon ? sendNext : onwards
+  // The trainer's next Pokémon: the same time to pick as under the autopilot, whatever the pace.
+  const advance = picking ? PILOT_PICK_MS : ADVANCE_MS * pace
   useEffect(() => {
     if (!countdown) return
-    const timer = setTimeout(() => nextRef.current(), ADVANCE_MS * pace)
+    const timer = setTimeout(() => nextRef.current(), advance)
     return () => clearTimeout(timer)
-  }, [countdown, pace])
+  }, [countdown, advance])
   if (then) return <EvolutionQueue items={evolutions} onDone={then} />
-  const fill = countdown && (
+  // NEXT's gauge: its countdown, or the autopilot's wait before the trainer's next Pokémon.
+  const filling = countdown || (closes && allShown && !then && pickWait)
+  const fill = filling && (
     <span aria-hidden className="absolute inset-x-0 bottom-0 h-[5px] bg-black/20">
       <motion.span
         className="block h-full bg-gold-light"
         initial={{ width: 0 }}
         animate={{ width: '100%' }}
-        transition={{ duration: (ADVANCE_MS * pace) / 1000, ease: 'linear' }}
+        transition={{ duration: (countdown ? advance : PILOT_PICK_MS) / 1000, ease: 'linear' }}
       />
     </span>
   )
@@ -966,7 +974,11 @@ export function VictoryView() {
             </motion.div>
             <span className="text-2xl leading-none">{t('ui.common.level.short', { n: nextMon.level })}</span>
           </div>
-          {/* The one that fought is picked to begin with; a tap picks another, NEXT sends the one picked. */}
+          {/* The one that fought is picked to begin with; a tap picks another, NEXT sends the one picked. On auto it goes
+              by itself unless a Pokémon is tapped. */}
+          {filling && pickWait && (
+            <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{t('ui.idle.pickLead')}</p>
+          )}
           <LeadPicker
             value={lead ?? stillIn ?? null}
             onChange={setLead}

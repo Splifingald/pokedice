@@ -180,15 +180,17 @@ describe('each step of a run', () => {
     })
   })
 
-  it('takes every card by itself but Trick or Treat, which is a catch of its own', () => {
-    for (const kind of ['wild', 'trainer', 'gym', 'boss', 'item', 'center', 'casino'])
+  it("takes every card by itself but Trick or Treat and a trainer's, which wait on the page", () => {
+    for (const kind of ['wild', 'boss', 'item', 'center', 'casino'])
       expect(autopilotStep(s, ON, 'idle', view('preview', B.id, { encounter: kind }))).toEqual({
         do: 'engage',
       })
-    expect(autopilotStep(s, ON, 'idle', view('preview', B.id, { encounter: 'trick' }))).toEqual({
-      do: 'wait',
-      why: 'player',
-    })
+    // Trick or Treat, and a trainer's card: its FIGHT presses itself after a moment, a lead tapped holds it.
+    for (const kind of ['trick', 'trainer', 'gym'])
+      expect(autopilotStep(s, ON, 'idle', view('preview', B.id, { encounter: kind }))).toEqual({
+        do: 'wait',
+        why: 'player',
+      })
   })
 
   it('Auto on explored areas stops at catches: the throw, and "Add to team?"', () => {

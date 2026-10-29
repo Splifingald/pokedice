@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom'
 import {
   autoAvailable,
   nightmareModeOf,
+  pilotShowsCard,
   portalModeOf,
   portalStateOf,
   progressOf,
@@ -136,7 +137,8 @@ export function AreaScreen() {
         !finding && <AreaHeader area={area} progress={progress} teamAvg={teamAverageLevel(save)} />
       )}
       {finding && <FindView />}
-      {run.phase === 'preview' && run.encounter && !finding && !(pilot && run.encounter.kind !== 'trick') && (
+      {/* Under the autopilot, the cards it leaves on the table (Trick or Treat, a trainer's: pilotShowsCard) still open. */}
+      {run.phase === 'preview' && run.encounter && !finding && !(pilot && !pilotShowsCard(run.encounter.kind)) && (
         <EncounterPreview enc={run.encounter} />
       )}
       {run.phase === 'center' && !pilot && <CenterView />}
@@ -144,7 +146,7 @@ export function AreaScreen() {
       {pilot &&
         (run.phase === 'center' ||
           run.phase === 'casino' ||
-          (run.phase === 'preview' && !finding && run.encounter?.kind !== 'trick')) && <AutopilotNote />}
+          (run.phase === 'preview' && !finding && !pilotShowsCard(run.encounter?.kind))) && <AutopilotNote />}
       {/* A run that ended outside a fight (nobody left standing): its wipe card. */}
       {run.phase === 'wipe' && <WipeView />}
       {run.phase === 'idle' && own && step}
