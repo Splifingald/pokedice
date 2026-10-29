@@ -290,7 +290,7 @@ function ExtremeBox() {
   return (
     <Box
       title="Extreme mode" icon="skull"
-      hint="A second save, opened by a league of the main one: a world of its own (its own board, Versus and events; the same friends), with no Pokémon Centers."
+      hint="A second save, opened by a league of the main one: a world of its own (its own board, Versus and events; the same friends). Its Pokémon Centers: none, unless “Extreme Pokémon Centers” (below, its switch on the Switches tab) gives them a boon to pick instead of the heal, or “Pokémon Centers” here brings back the classic heal."
     >
       <div className="grid gap-3 sm:grid-cols-3">
         {check('centers', 'Pokémon Centers')}

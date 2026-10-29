@@ -93,12 +93,12 @@ export function ExtremeUnlockPopup() {
 export function ExtremeBand({ show }: { show?: boolean }) {
   const { t } = useT()
   const extreme = useGame((s) => s.save?.mode === 'extreme')
-  const boons = useGame((s) => boonCenters({ mode: 'extreme' }, s.data))
   if (!extreme && !show) return null
   return (
     <div className="light-scope flex h-[22px] items-center justify-center gap-1.5 bg-crimson px-2 text-[16px] uppercase leading-none tracking-[0.06em] text-panel">
       <PixelIcon name="skull" size={12} color="#ffffff" />
-      <span className="truncate">{t(boons ? 'ui.extreme.bandBoons' : 'ui.extreme.band')}</span>
+      {/* The mode's name alone (the user's call, 2026-10-29): its rules say what it changes. */}
+      <span className="truncate">{t('ui.extreme.name')}</span>
     </div>
   )
 }

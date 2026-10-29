@@ -42,7 +42,6 @@ test("the round's Center: its rules once, three boons, a pick asked first, then 
   const base = extreme()
   await seed(page, { ...base, box: base.box.map((p) => ({ ...p, currentHp: 2 })) })
   await page.goto('/home')
-  await expect(page.getByText("Extreme mode · Centers don't heal")).toBeVisible()
   await page.getByRole('button', { name: 'CONTINUE' }).click()
 
   // The first boon Center: its rules over it, once.

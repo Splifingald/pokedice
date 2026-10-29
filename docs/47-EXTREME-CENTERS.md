@@ -78,8 +78,8 @@ for the screens: docs/15 §19.
   (docs/15 §20) at its own moment, over the first boon Center's choice, once (`extreme.centerRulesSeen`); INFO under
   the boons shows it again. Four rows: one boon per Center (the heal always among them), Centers run out, a lost round,
   the rarer boons.
-- **Extreme mode's own rules** say "Centers don't heal" instead of "No Pokémon Centers", and its band "Extreme mode ·
-  Centers don't heal".
+- **Extreme mode's own rules** say "Centers don't heal" instead of "No Pokémon Centers". Its band names the mode alone
+  ("Extreme mode", the user's call of 2026-10-29), whichever Centers are on.
 - Every piece is on `/kitchen-sink` (`ExtremeCenterBits`).
 
 ## 4. Setting it up
