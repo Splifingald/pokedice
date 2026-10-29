@@ -1,12 +1,13 @@
 // Kitchen sink (dev only): the weekly Versus league (docs/44) — its header (no group yet, ranked), the 3 opponents
-// (one red FIGHT; the admin's BOT tag; none on offer), the group's board (this week, the top 10's rewards, the admin's
-// view with bots; empty; last week empty), the result card (a win, a loss under the safe line, a loss above it, a leave,
-// waiting on the server, not recorded), the reward message's words, the Raid Ball, its throw's ball and the raid catch
-// that offers it, and the rules card and INFO.
+// (one red FIGHT; the admin's BOT tag; a phone's width; none on offer), the matchup mark, the group's board (this
+// week, the top 10's rewards, the admin's view with bots, a phone's width; empty; last week empty), the result card
+// (a win, a loss under the safe line, a loss above it, a leave, waiting on the server, not recorded), the reward
+// message's words, the Raid Ball, its throw's ball and the raid catch that offers it, and the rules card and INFO.
 import { useState, type ReactNode } from 'react'
 import {
   BotTag,
   Choices,
+  EdgeMark,
   LeagueHeader,
   LeagueResultCard,
   LeagueRows,
@@ -148,6 +149,14 @@ export function LeagueBits() {
           onFight={noop}
         />
       </Frame>
+      <Frame name="Choices · a phone's width, the admin's view">
+        <Choices
+          choices={CHOICES.map((c, i) => ({ ...c, bot: i === 2 }))}
+          mine={ME}
+          busy={false}
+          onFight={noop}
+        />
+      </Frame>
       <Frame name="Choices · starting a match (busy)" wide>
         <Choices choices={CHOICES} mine={ME} busy onFight={noop} />
       </Frame>
@@ -163,6 +172,9 @@ export function LeagueBits() {
       <Frame name="LeagueRows · in PC's side column (the same rows, narrower)">
         <LeagueRows rows={ROWS.slice(0, 5)} empty="" />
       </Frame>
+      <Frame name="LeagueRows · a phone's width, the admin's view (the rewards wrap before the team does)">
+        <LeagueRows rows={ADMIN_ROWS.slice(0, 5)} empty="" />
+      </Frame>
       <Frame name="LeagueRows · no group yet / last week not played">
         <LeagueRows rows={[]} empty={t('ui.league.boardEmpty')} />
         <LeagueRows rows={[]} empty={t('ui.league.lastEmpty')} />
@@ -173,6 +185,13 @@ export function LeagueBits() {
             <span key={r} className="flex items-center gap-1">
               #{r} <RewardMark rank={r} />
             </span>
+          ))}
+        </div>
+      </Frame>
+      <Frame name="EdgeMark · 3, 2 (green), 1, 0 (red) of 3">
+        <div className="flex items-center gap-4">
+          {[3, 2, 1, 0].map((e) => (
+            <EdgeMark key={e} edge={e} total={3} />
           ))}
         </div>
       </Frame>

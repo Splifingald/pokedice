@@ -42,6 +42,7 @@ import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
 import { AccessSwitch, Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 import { PushBox } from './PushBox'
 import { VersusLeagueBox } from './VersusLeagueBox'
+import { VersusLeagueGroups } from './VersusLeagueGroups'
 
 export function useConfigRow<K extends keyof GameConfig>(key: K): [GameConfig[K], (v: GameConfig[K]) => void] {
   const rows = useAdmin((st) => st.rows.game_config)
@@ -1435,7 +1436,12 @@ export function ConfigSection() {
       )}
       {tab === 'doubles' && <DoubleBattlesBox />}
       {tab === 'trades' && <TradesBox />}
-      {tab === 'versus' && <VersusLeagueBox />}
+      {tab === 'versus' && (
+        <div className="grid items-start gap-4">
+          <VersusLeagueBox />
+          <VersusLeagueGroups />
+        </div>
+      )}
       {tab === 'general' && <GeneralBox />}
       {tab === 'powers' && <BattlePowersBox />}
       {tab === 'invites' && <InviteRewardsBox />}

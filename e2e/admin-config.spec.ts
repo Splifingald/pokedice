@@ -5,7 +5,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import { bundleToRows } from '../src/config/mapping'
 import type { BundleRaw } from '../src/engine'
-import { fakeSession, makeSave, mockSupabase, STORAGE_KEY, SUPABASE } from './helpers'
+import { fakeSession, makeSave, mockSupabase, STORAGE_KEY, SUPABASE, type SupabaseMock } from './helpers'
 
 const load = (f: string) => JSON.parse(readFileSync(new URL(`../src/data/${f}`, import.meta.url), 'utf8'))
 const FILES = [
@@ -35,8 +35,8 @@ const KEYS = [
 const bundle = Object.fromEntries(FILES.map((f, i) => [KEYS[i], load(`${f}.json`)])) as unknown as BundleRaw
 const rows = bundleToRows(bundle) as unknown as Record<string, unknown[]>
 
-async function admin(page: Page) {
-  await mockSupabase(page)
+async function admin(page: Page, mock: SupabaseMock = {}) {
+  const calls = await mockSupabase(page, mock)
   await page.route(`${SUPABASE}/rest/v1/**`, async (route) => {
     const req = route.request()
     const url = new URL(req.url())
@@ -57,6 +57,7 @@ async function admin(page: Page) {
     },
     [STORAGE_KEY, JSON.stringify(fakeSession()), JSON.stringify(makeSave(4))],
   )
+  return calls
 }
 
 test('Config: the tabs, the switches in two columns, a name opens its numbers', async ({ page }) => {
@@ -73,8 +74,9 @@ test('Config: the tabs, the switches in two columns, a name opens its numbers', 
     'page',
   )
 
-  // One row per feature: its name and its switch, nothing else; energy and the retired switches are gone.
-  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(20)
+  // One row per feature (21 with Extreme Pokémon Centers): its name and its switch, nothing else; energy and the
+  // retired switches are gone.
+  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(21)
   for (const gone of [
     'Energy',
     'Dice throws',
@@ -108,4 +110,97 @@ test('Config: the tabs, the switches in two columns, a name opens its numbers', 
   await expect(page.getByRole('heading', { name: 'Pacing & rewards' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'XP curve' })).toBeVisible()
   await page.screenshot({ path: 'test-results/admin-config-game.png', fullPage: true })
+})
+
+/** A member of a league group as versus_league_admin_board (0086) answers. */
+const member = (
+  name: string,
+  trophies: number,
+  rank: number,
+  o: { bot?: number; matches?: [number, number, number, number]; target?: number; faced?: number } = {},
+) => ({
+  userId: o.bot ? null : `00000000-0000-4000-8000-${String(rank).padStart(12, '0')}`,
+  botId: o.bot ?? null,
+  name,
+  avatar: 'red',
+  team: [
+    { dex: 94, level: 50, shiny: false },
+    { dex: 6, level: 50, shiny: false },
+    { dex: 445, level: 50, shiny: false },
+  ],
+  trophies,
+  rank,
+  botTarget: o.target ?? null,
+  joinedAt: new Date(Date.now() - 2 * 86_400_000).toISOString(),
+  matches: o.matches ? o.matches.reduce((a, b) => a + b, 0) : 0,
+  won: o.matches?.[0] ?? 0,
+  lost: o.matches?.[1] ?? 0,
+  leaves: o.matches?.[2] ?? 0,
+  open: o.matches?.[3] ?? 0,
+  lastMatchAt: o.matches ? new Date(Date.now() - 3 * 3_600_000).toISOString() : null,
+  faced: o.faced ?? 0,
+})
+const BOARD = {
+  week: '2026-10-26',
+  endsAt: new Date(Date.now() + 3 * 86_400_000).toISOString(),
+  opened: 1,
+  closed: false,
+  groups: [
+    {
+      n: 1,
+      members: [
+        member('Gengar50', 13, 1, { bot: 3, target: 160, faced: 4 }),
+        member('Tom', 11, 2, { bot: 8, target: 120, faced: 2 }),
+        member('Splifou', 9, 3, { matches: [3, 1, 0, 1], faced: 1 }),
+        member('Eevee51', 7, 4, { bot: 12, target: 90 }),
+        member('Ella09', 0, 5, {}),
+      ],
+    },
+    { n: 2, members: [member('MISTY', 24, 1, { matches: [4, 0, 0, 0] })] },
+  ],
+}
+
+test("Versus league: the week's groups, fetched when the admin asks", async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  const asked: boolean[] = []
+  const calls = await admin(page, {
+    rpc: {
+      versus_league_admin_board: (body: { p_last?: boolean }) => {
+        asked.push(!!body.p_last)
+        return body.p_last ? { ...BOARD, week: '2026-10-19', opened: null, closed: true, groups: [] } : BOARD
+      },
+    },
+  })
+  await page.goto('/admin/config?tab=versus')
+  const box = page.locator('section', { has: page.getByRole('heading', { name: "The week's groups" }) })
+  await expect(box).toBeVisible({ timeout: 30_000 })
+  // Nothing fetched until the button is pressed.
+  await expect(box.getByText('Not fetched yet.')).toBeVisible()
+  expect(calls.some((c) => c.includes('versus_league_admin_board'))).toBe(false)
+
+  await box.getByRole('button', { name: 'Fetch the groups' }).click()
+  for (const chip of ['2 groups (opened with 1)', '6 in them', '3 players', '3 bots', '2 fought this week'])
+    await expect(box.getByText(chip, { exact: true })).toBeVisible()
+  await expect(box.getByText('9 matches, 1 being fought')).toBeVisible()
+  await expect(box.getByRole('heading', { name: /^Group 1/ })).toContainText(
+    '5/20 · 2 players · 3 bots · 5 matches',
+  )
+  await expect(box.getByRole('heading', { name: /^Group 2/ })).toBeVisible()
+  const gengar = box.getByRole('listitem').filter({ hasText: 'Gengar50' })
+  await expect(gengar).toContainText('BOT')
+  await expect(gengar).toContainText('headed to 160 by Sunday night · fought 4×')
+  const me = box.getByRole('listitem').filter({ hasText: 'Splifou' })
+  await expect(me).toContainText('PLAYER')
+  await expect(me).toContainText('5 matches: 3 won · 1 lost · 0 left · 1 being fought · last 3 h ago')
+  await expect(box.getByRole('listitem').filter({ hasText: 'Ella09' })).toContainText(
+    'no match this week yet',
+  )
+  expect(asked).toEqual([false])
+  await box.screenshot({ path: 'test-results/admin-versus-groups.png' })
+
+  await box.getByRole('button', { name: 'Last week' }).click()
+  await expect(box.getByText('No group that week', { exact: false })).toBeVisible()
+  await expect(box.getByText(/Last week, from Monday 2026-10-19 · rewards sent/)).toBeVisible()
+  expect(asked).toEqual([false, true])
 })

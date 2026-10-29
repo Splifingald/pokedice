@@ -63,6 +63,25 @@ type Home = {
   rows: { id: string; isMe: boolean; name: string; trophies: number; rank: number; bot: boolean | null }[]
 }
 type Choice = { slot: number; name: string; trophies: number; is_bot: boolean | null }
+type AdminBoard = {
+  week: string
+  groups: {
+    n: number
+    members: {
+      userId: string | null
+      botId: number | null
+      name: string
+      trophies: number
+      rank: number
+      matches: number
+      won: number
+      lost: number
+      leaves: number
+      open: number
+      faced: number
+    }[]
+  }[]
+}
 
 /** A match started on slot 1 and backdated, so a win isn't refused as too fast. */
 async function startMatch(user: string): Promise<number> {
@@ -112,10 +131,12 @@ beforeAll(async () => {
     '0053_push.sql',
     '0064_battle_powers.sql',
     '0082_versus_league.sql',
+    '0086_versus_league_admin_board.sql',
   ])
     await db.exec(sql(f))
   // Safe to run again.
   await db.exec(sql('0082_versus_league.sql'))
+  await db.exec(sql('0086_versus_league_admin_board.sql'))
   await db.exec(
     `insert into auth.users (id) values ${Object.values(U)
       .map((u) => `('${u}')`)
@@ -337,6 +358,47 @@ describe('the league', () => {
     expect(climbed.length).toBeGreaterThan(0)
     // Most of the way, after 30 days out of the 30 and the rest of this week; all of it by Sunday 22:00.
     expect(climbed.every((b) => b.t > b.target / 2 && b.t <= b.target)).toBe(true)
+  })
+
+  it('shows the admin every group of the week: players and bots told apart, ranked, with their matches', async () => {
+    expect(await fails(U.ash, 'select versus_league_admin_board()')).toContain('not_admin')
+    const board = (await as<{ b: AdminBoard }>(U.admin, 'select versus_league_admin_board() b'))[0]!.b
+    const wk = (await db.query<{ w: string }>('select versus_league_week()::text w')).rows[0]!.w
+    expect(board.week).toBe(wk)
+    const seated = (
+      await db.query<{ user_id: string | null; bot_id: number | null }>(
+        `select user_id, bot_id from versus_league_members where week = $1::date`,
+        [wk],
+      )
+    ).rows
+    const members = board.groups.flatMap((g) => g.members)
+    expect(members).toHaveLength(seated.length)
+    expect(members.filter((m) => m.botId != null)).toHaveLength(seated.filter((r) => r.bot_id != null).length)
+    expect(members.filter((m) => m.botId != null).length).toBeGreaterThan(0)
+    expect(board.groups.map((g) => g.n)).toEqual([...board.groups.map((g) => g.n)].sort((a, b) => a - b))
+    // Each group ranked as its board: ties share a rank.
+    for (const g of board.groups)
+      for (const m of g.members)
+        expect(m.rank).toBe(1 + g.members.filter((o) => o.trophies > m.trophies).length)
+    // Ash's matches this week, each one won, lost, left or still being fought.
+    const ash = members.find((m) => m.userId === U.ash)!
+    expect(ash.name).toBe('ASH')
+    const [{ n }] = (
+      await db.query<{ n: number }>(
+        `select count(*)::int n from versus_league_matches where user_id = $1 and week = $2::date`,
+        [U.ash, wk],
+      )
+    ).rows as [{ n: number }]
+    expect(n).toBeGreaterThan(0)
+    expect(ash.matches).toBe(n)
+    expect(ash.won + ash.lost + ash.leaves + ash.open).toBe(n)
+    // How often each was fought adds up to the week's matches.
+    expect(members.reduce((sum, m) => sum + m.faced, 0)).toBeLessThanOrEqual(
+      members.reduce((sum, m) => sum + m.matches, 0),
+    )
+    // Last week: its own groups (none were made here).
+    const last = (await as<{ b: AdminBoard }>(U.admin, 'select versus_league_admin_board(true) b'))[0]!.b
+    expect(last.groups).toEqual([])
   })
 
   it('sends the week’s rewards as gift messages: ₽ a trophy, the rank’s Raid Balls and Rare Candies', async () => {
