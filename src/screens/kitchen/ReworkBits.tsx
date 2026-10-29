@@ -70,8 +70,11 @@ export function ReworkBits() {
       </div>
 
       <div className="grid max-w-md gap-2">
-        <b className="text-lg">The K.O.'s switch: those able to come in, as cards (LeadPicker members)</b>
-        <LeadPicker members={TEAM.slice(0, 2)} value={switchPick} onChange={setSwitchPick} go />
+        <b className="text-lg">
+          The K.O.'s switch: those able to come in, as cards (LeadPicker members); INFO is the fight's sheet
+          (FightMonSheet: its HP, dice and stats, no links)
+        </b>
+        <LeadPicker members={TEAM.slice(0, 2)} value={switchPick} onChange={setSwitchPick} go fight />
       </div>
 
       {area && (

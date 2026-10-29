@@ -5,6 +5,7 @@ import { useGame } from '@/store/game'
 import { PixelIcon } from './icons'
 import { PixelButton } from './PixelButton'
 import { PokeCard } from './PokeCard'
+import { FightMonSheet } from './FightMonSheet'
 import { SheetModal } from './SheetModal'
 
 /**
@@ -20,6 +21,7 @@ export function LeadPicker({
   pair,
   go = false,
   members,
+  fight = false,
 }: {
   value: string | null
   onChange: (uid: string) => void
@@ -34,6 +36,8 @@ export function LeadPicker({
    * HP. Even one is shown (it is what GO! sends).
    */
   members?: PokemonInstance[]
+  /** In a fight (its send-out, a switch, the next one after a K.O.): INFO shows the one as it fights, a sheet to read only. */
+  fight?: boolean
 }) {
   const { t } = useT()
   const save = useGame((s) => s.save)
@@ -110,7 +114,12 @@ export function LeadPicker({
           )
         })}
       </ul>
-      <SheetModal view={info ? { kind: 'inst', id: info } : null} onClose={() => setInfo(null)} />
+      {fight ? (
+        // The card's own instance: the fight's HP, and a Versus clone too (in no Box).
+        <FightMonSheet inst={team.find((p) => p.id === info) ?? null} onClose={() => setInfo(null)} />
+      ) : (
+        <SheetModal view={info ? { kind: 'inst', id: info } : null} onClose={() => setInfo(null)} />
+      )}
     </div>
   )
 }

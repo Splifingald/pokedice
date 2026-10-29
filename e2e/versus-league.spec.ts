@@ -200,6 +200,49 @@ test('a match: recorded as it starts, fought (here on AUTO, no Bag), its result 
   await expect(page.getByRole('button', { name: 'Fight Blue' })).toBeVisible()
 })
 
+test('a match by hand: after a K.O. with two left, the two come up as cards and GO! sends the one picked', async ({
+  page,
+}) => {
+  await fakeLeague(page)
+  await leagueOn(page, { ...readySave(), versusLeagueRulesSeen: true })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/versus')
+  // Kenta07's Mewtwo, Mew and Dragonite: the first of yours falls before their three do.
+  await page.getByRole('button', { name: 'Fight Kenta07' }).click()
+  const next = page.getByText('Choose your next Pokémon')
+  for (let i = 0; i < 300 && !(await next.isVisible()); i++) {
+    for (const name of ['ATTACK', 'SKIP TURN']) {
+      const b = page.getByRole('button', { name, exact: true })
+      if ((await b.isVisible().catch(() => false)) && (await b.isEnabled().catch(() => false))) {
+        await b.click()
+        break
+      }
+    }
+    await page.waitForTimeout(80)
+  }
+  await expect(next).toBeVisible()
+  // The league's Pokémon are clones, in no Box: the step still finds them.
+  await expect(page.getByText('No other Pokémon can come in.')).toHaveCount(0)
+  const go = page.getByRole('button', { name: /^Send out / })
+  await expect(go).toBeVisible()
+  await expect(page.getByRole('button', { name: 'INFO' })).toHaveCount(2)
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/league-ko-switch.png` })
+  // INFO is the clone as it fights (its HP, dice, stats), with nowhere to go from there.
+  await page.getByRole('button', { name: 'Blastoise info' }).click()
+  const sheet = page.getByRole('dialog', { name: 'Blastoise' })
+  await expect(sheet.getByText(/Lv\.50 · HP \d+\/\d+/)).toBeVisible()
+  await expect(sheet.getByText('Dice', { exact: true })).toBeVisible()
+  await expect(sheet.getByText('Where to find it')).toHaveCount(0)
+  await expect(sheet.getByRole('button', { name: /Pokédex entry|nickname/i })).toHaveCount(0)
+  await expect(sheet.getByRole('link')).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await expect(sheet).toHaveCount(0)
+  await go.click()
+  await expect(next).toHaveCount(0)
+  // Blastoise is out, and the fight goes on.
+  await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeVisible({ timeout: 30_000 })
+})
+
 test("Monday: the week's rewards pop up as the league's, in its own words, and open as a gift", async ({
   page,
 }) => {
