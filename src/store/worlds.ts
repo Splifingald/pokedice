@@ -27,6 +27,7 @@ import {
 } from '@/engine'
 import { getLang, t } from '@/i18n'
 import { commitSave, initialRun, mutateSave, pushToast, useGame } from './game'
+import { trustedNow } from './clock'
 import { collectRaidGifts } from './raidGifts'
 import { newId } from './run'
 import { serverNow, useServerNow, useServerTime } from './serverTime'
@@ -185,7 +186,10 @@ function settleOnce(): void {
   const inside = regionOf(save) === held.regionId
   if (inside && !calm()) return
   const now = serverNow()
-  if (worldOver(save, data, now, contentChecked)) {
+  // Closing deletes the world's block, so its end is read on the page's own steady clock since the last reading of the
+  // server's (store/clock.ts), never on the device's, which can move between two readings: a world closed a week early
+  // on a player's phone (2026-10-25). Sending a player out (below) loses nothing, and keeps the usual clock.
+  if (worldOver(save, data, trustedNow(), contentChecked)) {
     const next = closeWorld(save, data)
     if (next === save) return
     commitSave(next, { auto: true })

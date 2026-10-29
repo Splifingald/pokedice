@@ -16,6 +16,7 @@ import {
   type SmallWorld,
 } from '@/engine'
 import { BUNDLE } from '@/config/bundle'
+import { anchorClock } from '@/store/clock'
 import { initialRun, useGame } from '@/store/game'
 import { useServerTime } from '@/store/serverTime'
 import { settleWorlds } from '@/store/worlds'
@@ -46,8 +47,12 @@ const WORLD: SmallWorld = {
 const dataWith = (access: 'off' | 'all'): GameData =>
   makeDataWith({ regions: [REGION], areas: [AREA] }, { smallWorlds: { access, list: [WORLD] } })
 
-/** Inside the world, a run going in its area, the content known to be the latest, the server's clock at `now`. */
-function inside(data: GameData, now: number): SaveData {
+/**
+ * Inside the world, a run going in its area, the content known to be the latest, the server's clock at `now` — read
+ * through the device's clock (`offset`) and carried on the page's own steady one (`trusted`, the same unless a test
+ * moves the device's clock between two readings).
+ */
+function inside(data: GameData, now: number, trusted = now): SaveData {
   const kanto = newSave(4, data, 0, newId)
   const save = enterWorld(kanto, data, WORLD, 63, T0 + DAY, newId)!
   useGame.setState({
@@ -58,6 +63,7 @@ function inside(data: GameData, now: number): SaveData {
     run: { ...initialRun(), areaId: AREA.id },
   })
   useServerTime.setState({ offset: now - Date.now() })
+  anchorClock(trusted, performance.now())
   return save
 }
 
@@ -81,6 +87,17 @@ describe("the small world's clock", () => {
     expect(save!.events?.world).toMatchObject({ id: 'clock', closed: true })
     expect(heldWorld(save!)).toBeNull()
     expect(run.areaId).toBeNull()
+  })
+
+  it("never closes it on the device's clock moved past its end between two readings (2026-10-25)", () => {
+    // The device says the world is over; the page's own clock since the server's last reading says it isn't.
+    inside(dataWith('all'), T0 + 11 * DAY, T0 + 2 * DAY)
+    listen()
+    settleWorlds()
+    const { save } = useGame.getState()
+    expect(regionOf(save!)).toBe(REGION.id)
+    expect(heldWorld(save!)).toMatchObject({ id: 'clock' })
+    expect(save!.parked?.kanto).toBeDefined()
   })
 
   it('sends the player out of a world switched off, and keeps their place', () => {

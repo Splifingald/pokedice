@@ -183,6 +183,18 @@ export function applyProgressRaidCatch(
 }
 
 /**
+ * Raids won elsewhere stay won: another copy of the save (the cloud sync, another tab) or the server's own record of
+ * the player's raids (`raid_progress_done`, 0089), which no page can overwrite. A raid is never undone, so this only
+ * adds. The same save back when there's nothing to add.
+ */
+export function keepRaidsDone(save: SaveData, done: readonly string[] | null | undefined): SaveData {
+  const mine = save.events?.raidsDone ?? []
+  const add = (done ?? []).filter((key) => !mine.includes(key))
+  if (!add.length) return save
+  return { ...save, events: { ...save.events, raidsDone: [...mine, ...add] } }
+}
+
+/**
  * A Mega raid is won (docs/40): its gem or orb is the player's (for every region, like any gem), the raid closes for
  * good, and the count of raids won goes up. Nothing to catch.
  */

@@ -130,6 +130,17 @@ export const gemOf = (data: GameData, megaDex: number) =>
 /** The gems a save holds (item keys). */
 export const ownedGems = (save: Pick<SaveData, 'powers'>): string[] => save.powers?.gems ?? []
 
+/**
+ * Two copies of one save, one replacing the other (the cloud sync, another tab): a gem either holds stays held — a gem
+ * is bought or won once and never used up. The same save back when there's nothing to add.
+ */
+export function keepGemsHeld(save: SaveData, other: SaveData | null | undefined): SaveData {
+  const mine = ownedGems(save)
+  const add = (other ? ownedGems(other) : []).filter((key) => !mine.includes(key))
+  if (!add.length) return save
+  return { ...save, powers: { ...save.powers, gems: [...mine, ...add] } }
+}
+
 /** The Mega forms a list of gems opens. */
 export function megaFormsOfGems(data: GameData, gems: readonly string[]): number[] {
   return gems.flatMap((k) => {
