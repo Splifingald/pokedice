@@ -107,6 +107,12 @@ const ctx = (
   wipeCenter: wipeCenterDue(save, area.id, data),
   ...over,
 })
+/** Kanto's first `n` gym badges won. */
+function withBadges(s: SaveData, n: number): SaveData {
+  const region = ON.regions.find((r) => r.id === 'kanto')!
+  const gyms = linearAreas(ON, 'kanto').filter((a) => a.gyms.length && a.id !== region.leagueAreaId)
+  return gyms.slice(0, n).reduce((x, a) => at(x, a, { gymsDefeated: a.gyms }), s)
+}
 /** The save with these boons waiting in AREA. */
 const offering = (s: SaveData, offers: CenterBoon[]): SaveData => ({
   ...s,
@@ -215,7 +221,7 @@ describe('a K.O. of the whole team', () => {
 
 describe('the boons on offer', () => {
   it('the team heal always first, then distinct kinds that can do something now', () => {
-    const s = hp(team(extreme(), [1, 4, 7]), 't1', 3)
+    const s = withBadges(hp(team(extreme(), [1, 4, 7]), 't1', 3), 2)
     for (let seed = 1; seed <= 40; seed++) {
       const offers = drawCenterBoons(s, ON, AREA, createRng(seed))
       expect(offers).toHaveLength(3)
@@ -238,14 +244,28 @@ describe('the boons on offer', () => {
     }
   })
 
+  it('no Pokébuff before the region’s 2nd badge', () => {
+    const s = team(extreme(), [1, 4, 7])
+    const offered = (save: SaveData) =>
+      Array.from({ length: 60 }, (_, i) => drawCenterBoons(save, ON, AREA, createRng(i + 1))).some((o) =>
+        o.some((b) => b.kind === 'buff'),
+      )
+    expect(offered(s)).toBe(false)
+    expect(offered(withBadges(s, 1))).toBe(false)
+    expect(offered(withBadges(s, 2))).toBe(true)
+    // The admin's number: from the start.
+    const early = withCfg({ buff: { ...DEFAULT_CONFIG.extremeCenters.buff, badges: 0 } })
+    expect(
+      Array.from({ length: 60 }, (_, i) => drawCenterBoons(s, early, AREA, createRng(i + 1)))
+        .flat()
+        .some((b) => b.kind === 'buff'),
+    ).toBe(true)
+  })
+
   it('the potion gets better with the badges', () => {
     expect(centerPotion(extreme(), ON)).toBe('potion')
-    const region = ON.regions.find((r) => r.id === 'kanto')!
-    const gyms = linearAreas(ON, 'kanto').filter((a) => a.gyms.length && a.id !== region.leagueAreaId)
-    const withBadges = (n: number) =>
-      gyms.slice(0, n).reduce((s, a) => at(s, a, { gymsDefeated: a.gyms }), extreme())
-    expect(centerPotion(withBadges(3), ON)).toBe('super-potion')
-    expect(centerPotion(withBadges(6), ON)).toBe('hyper-potion')
+    expect(centerPotion(withBadges(extreme(), 3), ON)).toBe('super-potion')
+    expect(centerPotion(withBadges(extreme(), 6), ON)).toBe('hyper-potion')
   })
 
   it("a donor gives 3 × an average trainer's pay", () => {

@@ -23,7 +23,7 @@ for the screens: docs/15 §19.
 | Heals and K.O. | The **full heal on one** can pick a K.O. Pokémon: it is back at full HP, its rest over. The **30 % heal** only reaches Pokémon still standing. |
 | What the cards show | **Everything but the Rocket Trade**: "Hyper Potion", "+1 Water die for Wartortle", "₽540". The Rocket Trade's Pokémon is a surprise until the trade is done. |
 | Team changes | At a boon Center, **after the pick** (the boons are drawn for the team that walked in). |
-| Pokébuff | **+1 die of one of its types for 24 h of real time** (the user: "the 5 battles might lead to abuse"). A second Pokébuff on the same Pokémon puts its clock back to 24 h; never two dice. A Pokémon at the dice cap is never the one picked. It works alongside a Mega Evolution or a Z-Move. |
+| Pokébuff | **+1 die of one of its types for 24 h of real time** (the user: "the 5 battles might lead to abuse"). A second Pokébuff on the same Pokémon puts its clock back to 24 h; never two dice. A Pokémon at the dice cap is never the one picked. It works alongside a Mega Evolution or a Z-Move. **Never before the region's 2nd badge** (the user, 2026-10-29; `buff.badges`). |
 | Healing item | **One item**: the potion of the badges won in the region (Potion, Super Potion from the 3rd, Hyper Potion from the 6th), a Revive or a Max Revive. Weights 82 / 15 / 3. None when the Extreme admin has Potions and Revives off. |
 | Generous donor | **₽ = 3 × what an average trainer of the area pays**, so it grows with the game. |
 | Rocket Trade | **The region being played, the same evolution stage**, never a legendary or a mythical; full HP, 3 levels higher; counts in the Pokédex; normal shiny odds. A K.O. Pokémon can be given. |
@@ -101,6 +101,6 @@ always was, and the Extreme save syncs as before.
   with one, a completed area has none, none sent for a hurt or fainted team, a secret area's first only; a K.O. sends
   the Center that swaps, even in a completed area, with no boon, spent once met; the boons on offer (the heal first,
   distinct kinds, no full heal with nobody hurt, no item with items off, the potion by badges, the donor's ₽); each boon
-  taken (the heal skips K.O. ones, the full heal on a K.O. one, the item, the ₽, the Pokébuff's 24 h and its reset,
+  taken (no Pokébuff before the 2nd badge; the heal skips K.O. ones, the full heal on a K.O. one, the item, the ₽, the Pokébuff's 24 h and its reset,
   Team Rocket's trade); the save keeps it all through a reload and drops an odd boon list.
 - `tests/extreme-centers-sql.test.ts`: migration 0085 on PGlite and inlined in `seed.sql`.

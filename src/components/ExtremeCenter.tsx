@@ -6,7 +6,6 @@ import {
   boonTargets,
   centerBoonRules,
   instanceMaxHp,
-  instanceStats,
   monName,
   type CenterBoon,
   type GameData,
@@ -112,13 +111,7 @@ export function describeBoon(
         boon,
         icon: <ExtraDie type={boon.type} />,
         title: t('ui.xcenter.buff.title', { name }),
-        text: t('ui.xcenter.buff.text', {
-          name,
-          type: typeName(boon.type),
-          h: r.buffHours,
-          dice: p && data.species[p.dex] ? instanceStats(p, data).dice.length + 1 : 0,
-          max: data.config.extremeCenters.buff.maxDice,
-        }),
+        text: t('ui.xcenter.buff.text', { type: typeName(boon.type), h: r.buffHours }),
       }
     }
     case 'donor':

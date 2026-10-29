@@ -25,12 +25,15 @@ import {
   simulateVersus,
   syncPowers,
   uniformLevels,
+  zMovePreview,
+  zTypeChoices,
   zUnlocked,
   type BattleEvent,
   type BattleState,
   type CreateBattleOptions,
   type GameData,
   type LogEntry,
+  type PokeType,
   type RegionId,
   type SaveData,
 } from '@/engine'
@@ -406,6 +409,64 @@ describe('Z-Moves', () => {
     let q = zFight(25, 7, on)
     if (q.phase !== 'player_roll') q = reduce(q, { t: 'AI_TURN' }, on, rng).state
     expect(canZMove({ ...q, phase: 'player_stunned' }, on)).toBe(false)
+  })
+
+  /** The fight up to the player's roll. */
+  const rolled = (dex: number, foe: number) => {
+    let s = zFight(dex, foe, on)
+    if (s.phase !== 'player_roll') s = reduce(s, { t: 'AI_TURN' }, on, rng).state
+    return reduce(s, { t: 'ROLL' }, on, rng).state
+  }
+  const asType = (s: BattleState, type: PokeType) =>
+    computeDamage(s.dice, s.player[0]!.types, s.enemy.types, s.playerLevels, on, type)
+
+  it('a dual-type picks which of its types the Z-Move takes: what it adds, and the hit as that type', () => {
+    // Charizard on Machamp: the dice would attack as Flying (×2); its Fire Z-Move burns, and hits as Fire.
+    const s = rolled(6, 68)
+    expect(zTypeChoices(s, on)).toEqual(['fire', 'flying'])
+    expect(computeDamage(s.dice, s.player[0]!.types, s.enemy.types, s.playerLevels, on).attackType).toBe(
+      'flying',
+    )
+    const { log } = reduce(s, { t: 'ZMOVE', type: 'fire' }, on, rng)
+    expect(log.find((e) => e.kind === 'zmove')).toMatchObject({ type: 'fire', effect: 'burn', landed: true })
+    const hit = log.find((e) => e.kind === 'damage')
+    expect(hit && hit.kind === 'damage' && hit.result.attackType).toBe('fire')
+    expect(hit && hit.kind === 'damage' && hit.amount).toBe(asType(s, 'fire').final)
+    expect(zMovePreview(s, on, 'fire')).toMatchObject({
+      effect: 'burn',
+      result: { final: asType(s, 'fire').final },
+    })
+    expect(log.some((e) => e.kind === 'status' && e.status === 'burn')).toBe(true)
+    // A type it doesn't have does nothing; neither does a pick for a single-type, whose dice decide as before.
+    expect(reduce(s, { t: 'ZMOVE', type: 'water' }, on, rng).log).toEqual([])
+    const pikachu = rolled(25, 7)
+    expect(zTypeChoices(pikachu, on)).toEqual([])
+    expect(reduce(pikachu, { t: 'ZMOVE', type: 'electric' }, on, rng).log).toEqual([])
+  })
+
+  it('a Flying pick goes up, and its strike comes back as Flying', () => {
+    // Gyarados on Charizard: the dice would pick Water (×2).
+    const s = rolled(130, 6)
+    const { state, log } = reduce(s, { t: 'ZMOVE', type: 'flying' }, on, rng)
+    expect(log.find((e) => e.kind === 'zmove')).toMatchObject({ type: 'flying', effect: 'fly' })
+    expect(state.player[0]!.away).toMatchObject({ how: 'fly', type: 'flying' })
+    const strike = reduce(state, { t: 'AI_TURN' }, on, rng).log.find(
+      (e) => e.kind === 'damage' && e.side === 'player',
+    )
+    expect(strike && strike.kind === 'damage' && strike.result.attackType).toBe('flying')
+    expect(strike && strike.kind === 'damage' && strike.amount).toBe(asType(s, 'flying').final)
+  })
+
+  it('stunned, a Steel dual-type has only its Steel Z-Move, which shakes the stun off', () => {
+    let s = zFight(227, 25, on)
+    if (s.phase !== 'player_roll') s = reduce(s, { t: 'AI_TURN' }, on, rng).state
+    const p = s.player[0]!
+    s = { ...s, phase: 'player_stunned', player: [{ ...p, status: { ...p.status, paralyze: 1 } }] }
+    expect(zTypeChoices(s, on)).toEqual([])
+    expect(reduce(s, { t: 'ZMOVE', type: 'flying' }, on, rng).log).toEqual([])
+    const r = reduce(s, { t: 'ZMOVE' }, on, rng)
+    expect(r.log.find((e) => e.kind === 'zmove')).toMatchObject({ type: 'steel', effect: 'cleanse' })
+    expect(r.state.player[0]!.status.paralyze).toBe(0)
   })
 
   it('an Alola ace uses one on its first attack', () => {

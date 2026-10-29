@@ -187,7 +187,11 @@ export function eligibleBoons(save: SaveData, data: GameData): Exclude<CenterBoo
         healItemsOn(save, data) &&
         (!!centerPotion(save, data) || !!data.items.revive || !!data.items['max-revive'])
       )
-    if (k === 'buff') return c.buff.hours > 0 && buffable(save, data).length > 0
+    // An extra die is too much this early: never before the region's `buff.badges`-th badge (2 by default).
+    if (k === 'buff')
+      return (
+        c.buff.hours > 0 && badgesHere(save, data) >= (c.buff.badges ?? 0) && buffable(save, data).length > 0
+      )
     return true
   })
 }
@@ -386,6 +390,7 @@ export function centerBoonRules(data: GameData) {
     offers: Math.max(1, c.offers),
     heal: c.heal.percent,
     buffHours: c.buff.hours,
+    buffBadges: c.buff.badges ?? 0,
     rocketLevels: c.rocket.levels,
     /** Each drawn kind's share of the draw, in % (rounded), in the order of `DRAWN`. */
     odds: Object.fromEntries(DRAWN.map((k, i) => [k, Math.round((100 * weights[i]!) / total)])) as Record<
