@@ -1769,7 +1769,9 @@ and there are no Z-Moves. On:
   open at their own moment, no longer hold it back); Mega Evolution's Let's go! opens the Mart. INFO (`PowerInfo`)
   under the Mart's Mega Gems and on the Pokémon sheet, beside each power's line.
 - **In battle**: MEGA, G-MAX and Z-MOVE (`ZMoveButton`) are gold, in the extras row; Z-MOVE comes after the roll and
-  ends the turn as ATTACK does. The Z-Move timeline plays before the attack's own (`src/fx/timelines/zmove.ts`; short
+  ends the turn as ATTACK does. A dual-type's Z-MOVE opens its pick first (`ZTypePicker` in a Modal, like the choice of
+  two Megas): a row per type, its badge and what it adds, then the damage as that type and how effective it is, big
+  on the right; a note under them says the pick is the attack's type. One tap throws it. The Z-Move timeline plays before the attack's own (`src/fx/timelines/zmove.ts`; short
   motion: a flash of the type's colour), and the attack's own is the type's move as its Z variant (§9's table). A timed Mega changing back is a flash, no scene.
 - **A gem from a badge** is a toast ("Korrina gave you the Lucarionite!"), however long after the badge it comes.
 - Never inside a small world: no button, no shelf, no pop-up.

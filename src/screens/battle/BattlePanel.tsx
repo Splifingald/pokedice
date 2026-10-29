@@ -9,6 +9,7 @@ import {
   type DamageResult,
   type DieType,
   type LogEntry,
+  type PokeType,
   type RolledDie,
   type Side,
   type StatusApplication,
@@ -413,7 +414,6 @@ export function Readout({
   const { t } = useT()
   const score = useScore(scoreIn)
   const { r } = preview
-  const eff = r.immune ? 'none' : r.effectiveness > 1 ? 'up' : r.effectiveness < 1 ? 'down' : null
   const combo = r.combo && (!score || score.combo) ? r.combo : null
   return (
     <>
@@ -442,16 +442,7 @@ export function Readout({
         </Chip>
       )}
       {r.boost && <BoosterChip type={r.boost.type} n={r.boost.multiplier} />}
-      {eff && (
-        <span
-          className={cx(
-            'font-pixel-sm text-[16px] leading-none',
-            eff === 'up' ? 'text-good' : eff === 'down' ? 'text-[#8a5a2f] dark:text-[#e8b080]' : 'text-muted',
-          )}
-        >
-          {eff === 'up' ? t('ui.lead.strong') : eff === 'down' ? t('ui.lead.weak') : t('ui.battle.effNone')}
-        </span>
-      )}
+      <Effectiveness r={r} />
       {preview.statuses.map((s) => (
         <StatusChip key={s.status} status={s.status} count={statusCount(s)} />
       ))}
@@ -622,6 +613,71 @@ export function SwitchRow({
         )}
       </div>
     </button>
+  )
+}
+
+/** How effective a hit is, in a word (nothing when neutral): green when super effective, brown when resisted. */
+function Effectiveness({ r }: { r: DamageResult }) {
+  const { t } = useT()
+  const eff = r.immune ? 'none' : r.effectiveness > 1 ? 'up' : r.effectiveness < 1 ? 'down' : null
+  if (!eff) return null
+  return (
+    <span
+      className={cx(
+        'font-pixel-sm text-[16px] leading-none',
+        eff === 'up' ? 'text-good' : eff === 'down' ? 'text-[#8a5a2f] dark:text-[#e8b080]' : 'text-muted',
+      )}
+    >
+      {eff === 'up' ? t('ui.lead.strong') : eff === 'down' ? t('ui.lead.weak') : t('ui.battle.effNone')}
+    </span>
+  )
+}
+
+/** One type a dual-type's Z-Move may take: what it adds (`zMoveText`) and its hit as that type (`zMovePreview`). */
+export interface ZTypeOption {
+  type: PokeType
+  hint: string
+  result: DamageResult
+}
+
+/**
+ * A dual-type's Z-Move (docs/35): its two types side by side, each with what it adds, its damage and how effective it
+ * is against this foe — the pick is the attack's type. Tapping one throws it.
+ */
+export function ZTypePicker({
+  name,
+  options,
+  onPick,
+}: {
+  name: string
+  options: readonly ZTypeOption[]
+  onPick: (type: PokeType) => void
+}) {
+  const { t } = useT()
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="copy text-lg">{t('ui.battle.zPick', { name })}</p>
+      {options.map((o) => (
+        <button
+          key={o.type}
+          type="button"
+          onClick={() => onPick(o.type)}
+          className="pixel-panel flex w-full items-center gap-3 p-2 text-left enabled:hover:bg-paper"
+        >
+          <span className="flex min-w-0 flex-1 flex-col items-start gap-1">
+            <TypeBadge type={o.type} />
+            <span className="copy text-lg leading-tight">{o.hint}</span>
+          </span>
+          <span className="flex shrink-0 flex-col items-end gap-1">
+            <b className="font-pixel text-[24px] font-normal leading-none tabular-nums">
+              {t('ui.battle.dmg', { amount: o.result.final })}
+            </b>
+            <Effectiveness r={o.result} />
+          </span>
+        </button>
+      ))}
+      <p className="copy text-base text-muted">{t('ui.battle.zPickNote')}</p>
+    </div>
   )
 }
 

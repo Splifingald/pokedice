@@ -26,6 +26,8 @@ import {
   megaChoices,
   megaDie,
   zEffectOf,
+  zMovePreview,
+  zTypeChoices,
   randomSeed,
   statusesFromRoll,
   sureThrow,
@@ -91,6 +93,7 @@ import {
   turnInHand,
   useDamageReveal,
   ZMoveButton,
+  ZTypePicker,
   type Preview,
   type TrayDice,
 } from './BattlePanel'
@@ -273,7 +276,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const dream = !versus && st.kind === 'wild' && !!save && inNightmare(save, data, run.areaId)
   const stageBox = useRef<HTMLDivElement>(null)
   const panel = useRef<HTMLDivElement>(null)
-  const [menu, setMenu] = useState<null | 'item' | 'history' | 'mega' | 'form'>(null)
+  const [menu, setMenu] = useState<null | 'item' | 'history' | 'mega' | 'form' | 'z'>(null)
   // Switching in on your turn (docs/43 §5.3): the panel shows the send-out's cards instead of the dice (no dialog over
   // the fight), the one tapped picked first; BACK returns to the dice. Holds the fight like a menu.
   const [switching, setSwitching] = useState<string | null>(null)
@@ -655,12 +658,19 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   // A Z-Move (docs/35): after the roll, the attack as the dice stand, with its type's effect.
   const zOpen = !scripted && canZMove(st, data)
   const zType = preview?.r.attackType ?? null
+  // Two types: the player picks the one it takes, each with what it adds and its hit as that type (the engine's).
+  const zOptions = (zOpen ? zTypeChoices(st, data) : []).map((type) => {
+    const { effect, result } = zMovePreview(st, data, type)
+    return { type, hint: zMoveText(effect, typeName(type), data), result }
+  })
   // Stunned, only a Steel-type has it: it shakes the stun off (no roll yet to name a type).
   const zHint = !zOpen
     ? ''
     : st.phase === 'player_stunned'
       ? zMoveText('cleanse', typeName('steel'), data)
-      : zMoveText(zEffectOf(zType), zType ? typeName(zType) : null, data)
+      : zOptions.length
+        ? zOptions.map((o) => o.hint).join(' · ')
+        : zMoveText(zEffectOf(zType), zType ? typeName(zType) : null, data)
   // The newer rules (docs/35) say how long a Mega lasts and what a Gigantamax brings.
   const megaHint = st.megaTurns ? t('ui.battle.megaTimed', { n: st.megaTurns }) : t('ui.battle.megaOnce')
   const gmaxHint = st.gmaxBoost
@@ -1335,6 +1345,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                         hint={zHint}
                         disabled={!canAct && !stunned}
                         onClick={() => {
+                          if (zOptions.length > 1) return setMenu('z')
                           setMenu(null)
                           dispatch({ t: 'ZMOVE' })
                         }}
@@ -1454,6 +1465,22 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
           })}
           <p className="copy text-base text-muted">{megaHint}</p>
         </div>
+      </Modal>
+
+      {/* A dual-type's Z-Move: which of its types it takes. */}
+      <Modal
+        open={menu === 'z' && zOptions.length > 1}
+        onClose={() => setMenu(null)}
+        title={t('ui.battle.zMoveName')}
+      >
+        <ZTypePicker
+          name={active.name}
+          options={zOptions}
+          onPick={(type) => {
+            setMenu(null)
+            dispatch({ t: 'ZMOVE', type })
+          }}
+        />
       </Modal>
 
       {/* Arceus: its type, picked from a menu, a few times per battle. */}
