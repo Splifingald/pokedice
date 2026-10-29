@@ -69,8 +69,9 @@ function johtoLeagueDone(save: SaveData): SaveData {
 }
 
 describe('opening Extreme mode', () => {
-  // Off by default: these switch it on for everyone.
-  const on = extremeData({ access: 'all' })
+  // Off by default: these switch it on for everyone. Kanto's League opens it by default (docs/48); these read the
+  // admin's other choice of region, Johto (its first default).
+  const on = extremeData({ access: 'all', unlockRegion: 'johto' })
 
   it('opens once the Johto League is beaten, in any region of the main save, and stays open', () => {
     const fresh = main()
@@ -93,8 +94,8 @@ describe('opening Extreme mode', () => {
     const done = stampExtremeUnlock(johtoLeagueDone(main()), on, 5)
     expect(DEFAULT_CONFIG.extreme.access).toBe('off')
     expect(extremeOn(data)).toBe(false)
-    expect(extremeOpen(done, data)).toBe(false)
-    const admin = extremeData({ access: 'admin' })
+    expect(extremeOpen(done, extremeData({ unlockRegion: 'johto' }))).toBe(false)
+    const admin = extremeData({ access: 'admin', unlockRegion: 'johto' })
     expect(extremeOpen(done, admin)).toBe(false)
     expect(extremeOpen(done, { ...admin, viewer: { admin: true } })).toBe(true)
     expect(extremeOpen(done, on)).toBe(true)

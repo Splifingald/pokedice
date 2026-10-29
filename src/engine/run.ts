@@ -5,7 +5,8 @@ import { asSeenBy, gymsFor, playerSideOf } from './rival'
 import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount, multiExpShareFor } from './economy'
 import { bossCaught, deckAbilities, deckCounts, dueGym, fightBosses, roundsComplete } from './encounters'
 import { eventOpenTo } from './events'
-import { centersOn, healItemsOn, wipeHeals } from './extreme'
+import { centersOn, healItemsOn, isExtreme, wipeHeals } from './extreme'
+import { boonCenters, pendingBoons } from './extremeCenters'
 import { addFossil, isReviving } from './fossils'
 import { LEGACY_GAUGE } from './legacyGauge'
 import { itemOnFor, MONEY, sellPrice, shopSells, usableIn } from './items'
@@ -149,7 +150,7 @@ export function recordDraws(
   save: SaveData,
   areaId: string,
   roll: {
-    encounter?: { kind: string }
+    encounter?: { kind: string; reason?: string }
     deck: DeckCard[] | null
     lootDeck?: string[] | null
     drawn?: DeckCard[]
@@ -157,10 +158,12 @@ export function recordDraws(
     opening?: number | null
   },
 ): SaveData {
-  const p = progressOf(save, areaId)
+  const was = progressOf(save, areaId)
+  const p = extremeCenterNotes(was, save, roll.encounter)
   const lastCenter = roll.encounter ? roll.encounter.kind === 'center' : p.lastCenter
   if (!roll.deck && !roll.lootDeck) {
-    return spendLoneCenters(!!lastCenter === !!p.lastCenter ? save : withProgress(save, areaId, { ...p, lastCenter }), areaId)
+    const same = !!lastCenter === !!p.lastCenter && p === was
+    return spendLoneCenters(same ? save : withProgress(save, areaId, { ...p, lastCenter }), areaId)
   }
   const round = roll.newRound ? (p.round ?? 0) + 1 : p.round
   const drawn = roll.newRound ? (roll.drawn ?? []) : roll.drawn ? [...(p.drawn ?? []), ...roll.drawn] : p.drawn
@@ -180,6 +183,17 @@ export function recordDraws(
     }),
     areaId,
   )
+}
+
+/**
+ * Extreme mode's Centers (docs/47), noted as they are met: a secret area has only its first, and the Center a K.O. sent
+ * is the one the round starts over at. The same progress object when there is nothing to note.
+ */
+function extremeCenterNotes(p: AreaProgress, save: SaveData, enc?: { kind: string; reason?: string }): AreaProgress {
+  if (!isExtreme(save) || enc?.kind !== 'center') return p
+  if (p.centerMet && !(enc.reason === 'wipe' && p.wiped)) return p
+  const { wiped: _w, ...rest } = p
+  return { ...(enc.reason === 'wipe' ? rest : p), centerMet: true }
 }
 
 /**
@@ -650,8 +664,10 @@ export function applyWipe(save: SaveData, areaId: string, data: GameData): SaveD
   if (inNightmare(save, data, areaId)) return nightmareWipe(save, data, areaId)
   const p = progressOf(save, areaId)
   const healed = new Set(wipeHeals(save, data) ? save.team : [])
+  // Extreme mode's boon Centers (docs/47): the round starts over at a Center that only swaps.
+  const wiped = boonCenters(save, data) ? { wiped: true } : {}
   return {
-    ...withProgress(save, areaId, { ...p, deck: [], drawn: [] }),
+    ...withProgress(save, areaId, { ...p, deck: [], drawn: [], ...wiped }),
     box: save.box.map((inst) => (healed.has(inst.id) ? { ...inst, currentHp: instanceMaxHp(inst, data) } : inst)),
   }
 }
@@ -740,7 +756,8 @@ export interface SwapPlace {
  * Center inside the run. The order of the team can change anywhere (setTeam).
  */
 export function teamSwapsOpen(save: SaveData, data: GameData, at: SwapPlace): boolean {
-  if (at.phase === 'center') return true
+  // An Extreme boon Center (docs/47): the team changes once its boon is picked, so the boons fit the team they met.
+  if (at.phase === 'center') return !(at.areaId && pendingBoons(save, at.areaId))
   // The nightmare's way in too (docs/30), before it begins: there is no Center inside it either.
   return (
     at.phase === 'idle' &&

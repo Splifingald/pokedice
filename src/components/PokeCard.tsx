@@ -4,7 +4,7 @@ import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { useDetails, useTypeHints } from '@/store/hooks'
 import { cx } from '@/theme/util'
-import { KoTag } from './Extreme'
+import { BuffTag, KoTag } from './Extreme'
 import { HpBar } from './HpBar'
 import { PixelIcon } from './icons'
 import { ItemSprite } from './ItemSprite'
@@ -119,6 +119,8 @@ export function PokeCard({
           {species.type2 && <TypeBadge type={species.type2} size="sm" />}
         </div>
       )}
+      {/* Extreme mode's Pokébuff (docs/47): its extra die, and for how long. */}
+      <BuffTag inst={inst} />
       {reviving ? (
         <RevivalBar inst={inst} />
       ) : brief && !fainted ? (

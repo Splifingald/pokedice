@@ -203,6 +203,8 @@ export function leagueDone(save: SaveData, data: GameData, regionId = regionOf(s
  * Null the rest of the time — including before the first league, which is why nothing names Johto until then.
  */
 export function offeredRegion(save: SaveData, data: GameData): Region | null {
+  // Extreme mode's regions are runs of their own, started from its page (docs/48): no League offers the next one.
+  if (save.mode === 'extreme') return null
   const started = new Set<RegionId>([regionOf(save), ...Object.keys(save.parked ?? {})])
   for (const region of enabledRegions(data)) {
     if (!region.nextRegion || started.has(region.nextRegion)) continue
@@ -325,6 +327,8 @@ export function startRegion(save: SaveData, region: Region, block: RegionSave): 
  */
 export function sendTargets(save: SaveData, data: GameData): Region[] {
   const here = regionOf(save)
+  // Extreme mode's runs race apart (docs/48): nothing goes from one to another.
+  if (save.mode === 'extreme') return []
   // Nothing leaves a small world but its mythical (and nothing goes into one).
   if (isWorldRegion(data, here)) return []
   // It has to be a region being played: its parked block is the Box the Pokémon arrives in.

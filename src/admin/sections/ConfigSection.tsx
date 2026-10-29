@@ -6,6 +6,7 @@ import {
   VERSUS_LEAGUE_DEFAULTS,
   eggSpecies,
   eggsPerWeek,
+  centerBoonRules,
   extremeRules,
   isDonationUrl,
   enabledRegions,
@@ -17,6 +18,7 @@ import {
   type DoubleBattlesConfig,
   type DonationConfig,
   type EventAccess,
+  type ExtremeCentersConfig,
   type ExtremeConfig,
   type GameConfig,
   type GeneralConfig,
@@ -40,6 +42,7 @@ import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
 import { AccessSwitch, Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 import { PushBox } from './PushBox'
 import { VersusLeagueBox } from './VersusLeagueBox'
+import { VersusLeagueGroups } from './VersusLeagueGroups'
 
 export function useConfigRow<K extends keyof GameConfig>(key: K): [GameConfig[K], (v: GameConfig[K]) => void] {
   const rows = useAdmin((st) => st.rows.game_config)
@@ -288,7 +291,7 @@ function ExtremeBox() {
   return (
     <Box
       title="Extreme mode" icon="skull"
-      hint="A second save, opened by a league of the main one: a world of its own (its own board, Versus and events; the same friends), with no Pokémon Centers."
+      hint="A second save, opened by a league of the main one: a world of its own (its own board, Versus and events; the same friends). Its Pokémon Centers: none, unless “Extreme Pokémon Centers” (below, its switch on the Switches tab) gives them a boon to pick instead of the heal, or “Pokémon Centers” here brings back the classic heal."
     >
       <div className="grid gap-3 sm:grid-cols-3">
         {check('centers', 'Pokémon Centers')}
@@ -323,6 +326,96 @@ function ExtremeBox() {
           playing: never.{!cfg.centers && ' No Pokémon Center is ever dealt.'}
         </p>
       )}
+    </Box>
+  )
+}
+
+/**
+ * Extreme mode's Pokémon Centers (docs/47): a boon to pick instead of the heal. The team heal is always on offer; the
+ * other kinds are drawn by these weights. Every number is read by the game's engine (engine/extremeCenters).
+ */
+function ExtremeCentersBox() {
+  const data = useAdminData()
+  const [raw, setRaw] = useConfigRow('extremeCenters')
+  const d = DEFAULT_CONFIG.extremeCenters
+  const r = (raw ?? {}) as Partial<ExtremeCentersConfig>
+  const cfg: ExtremeCentersConfig = {
+    ...d,
+    ...r,
+    heal: { ...d.heal, ...r.heal },
+    full: { ...d.full, ...r.full },
+    item: { ...d.item, ...r.item },
+    buff: { ...d.buff, ...r.buff },
+    donor: { ...d.donor, ...r.donor },
+    rocket: { ...d.rocket, ...r.rocket },
+  }
+  const set = (patch: Partial<ExtremeCentersConfig>) => setRaw({ ...cfg, ...patch })
+  const num = (value: number, put: (v: number) => void, min = 0, max?: number) => (
+    <NumInput min={min} max={max} value={value} onChange={(v) => put(Math.max(min, Math.min(max ?? Infinity, v ?? min)))} />
+  )
+  const odds = data ? centerBoonRules({ ...data, config: { ...data.config, extremeCenters: cfg } }).odds : null
+  return (
+    <Box
+      title="Extreme Pokémon Centers"
+      icon="heart"
+      hint="Extreme mode's Centers heal nobody: each offers boons to pick one from. A round opens with one, the deck's Center cards are boons too; a completed area has none, a secret area only its first. A round lost to a K.O. starts over at a Center that only swaps. With Extreme mode's “Pokémon Centers” ticked, Centers heal as in the main game and none of this applies; no Idle mode while it's on."
+    >
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Boons on offer" hint="the team heal included">
+          {num(cfg.offers, (v) => set({ offers: v }), 1, 6)}
+        </Field>
+        <Field label="Team heal (%)" hint="always on offer: everyone standing, team and Box">
+          {num(cfg.heal.percent, (v) => set({ heal: { percent: v } }), 0, 100)}
+        </Field>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-5">
+        <Field label="Full heal on one" hint={`weight · ${odds?.full ?? 0} % of draws`}>
+          {num(cfg.full.weight, (v) => set({ full: { weight: v } }))}
+        </Field>
+        <Field label="Healing item" hint={`weight · ${odds?.item ?? 0} %`}>
+          {num(cfg.item.weight, (v) => set({ item: { ...cfg.item, weight: v } }))}
+        </Field>
+        <Field label="Pokébuff" hint={`weight · ${odds?.buff ?? 0} %`}>
+          {num(cfg.buff.weight, (v) => set({ buff: { ...cfg.buff, weight: v } }))}
+        </Field>
+        <Field label="Generous donor" hint={`weight · ${odds?.donor ?? 0} %`}>
+          {num(cfg.donor.weight, (v) => set({ donor: { ...cfg.donor, weight: v } }))}
+        </Field>
+        <Field label="Rocket Trade" hint={`weight · ${odds?.rocket ?? 0} %`}>
+          {num(cfg.rocket.weight, (v) => set({ rocket: { ...cfg.rocket, weight: v } }))}
+        </Field>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Item: the potion" hint="weight; Potion, Super Potion from 3 badges, Hyper Potion from 6">
+          {num(cfg.item.potion, (v) => set({ item: { ...cfg.item, potion: v } }))}
+        </Field>
+        <Field label="Item: Revive" hint="weight">
+          {num(cfg.item.revive, (v) => set({ item: { ...cfg.item, revive: v } }))}
+        </Field>
+        <Field label="Item: Max Revive" hint="weight">
+          {num(cfg.item.maxRevive, (v) => set({ item: { ...cfg.item, maxRevive: v } }))}
+        </Field>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Pokébuff lasts (hours)" hint="real time; +1 die of one of its types">
+          {num(cfg.buff.hours, (v) => set({ buff: { ...cfg.buff, hours: v } }), 0)}
+        </Field>
+        <Field label="Pokébuff from badge" hint="never before this many badges in the region">
+          {num(cfg.buff.badges ?? 0, (v) => set({ buff: { ...cfg.buff, badges: v } }), 0, 18)}
+        </Field>
+        <Field label="Pokébuff dice cap" hint="never past this many dice">
+          {num(cfg.buff.maxDice, (v) => set({ buff: { ...cfg.buff, maxDice: v } }), 1, 12)}
+        </Field>
+        <Field label="Donor (× a trainer)" hint="× what an average trainer of the area pays">
+          {num(cfg.donor.trainers, (v) => set({ donor: { ...cfg.donor, trainers: v } }), 0)}
+        </Field>
+        <Field label="Rocket: levels higher" hint="the mystery Pokémon's level over the one given">
+          {num(cfg.rocket.levels, (v) => set({ rocket: { ...cfg.rocket, levels: v } }), 0, 20)}
+        </Field>
+        <Field label="Rocket: strength band (%)" hint="max HP × dice, same stage; else the 5 closest">
+          {num(cfg.rocket.band, (v) => set({ rocket: { ...cfg.rocket, band: v } }), 0, 100)}
+        </Field>
+      </div>
     </Box>
   )
 }
@@ -1209,6 +1302,7 @@ const FEATURES: Feature[] = [
   bare('Route 1 opening & tutorial', 'openingRounds'),
   own('Unown Pokédex', 'unownDex', 'unown'),
   own('Extreme mode', 'extreme', 'extreme'),
+  own('Extreme Pokémon Centers', 'extremeCenters', 'extreme'),
   own('Double battles', 'doubleBattles', 'doubles'),
   own('Trades', 'trade', 'trades'),
   own('Versus league', 'versusLeague', 'versus', VERSUS_LEAGUE_DEFAULTS as unknown as Row),
@@ -1334,10 +1428,20 @@ export function ConfigSection() {
         </div>
       )}
       {tab === 'dayCare' && <DayCareBox />}
-      {tab === 'extreme' && <ExtremeBox />}
+      {tab === 'extreme' && (
+        <div className="grid items-start gap-4 xl:grid-cols-2">
+          <ExtremeBox />
+          <ExtremeCentersBox />
+        </div>
+      )}
       {tab === 'doubles' && <DoubleBattlesBox />}
       {tab === 'trades' && <TradesBox />}
-      {tab === 'versus' && <VersusLeagueBox />}
+      {tab === 'versus' && (
+        <div className="grid items-start gap-4">
+          <VersusLeagueBox />
+          <VersusLeagueGroups />
+        </div>
+      )}
       {tab === 'general' && <GeneralBox />}
       {tab === 'powers' && <BattlePowersBox />}
       {tab === 'invites' && <InviteRewardsBox />}

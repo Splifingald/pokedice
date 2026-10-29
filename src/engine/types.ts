@@ -981,6 +981,8 @@ export interface GameConfig {
   rebattleLineups: RebattleLineups
   /** Extreme mode (docs/22): the second save's rules. */
   extreme: ExtremeConfig
+  /** Extreme mode's Pokémon Centers with a boon to pick instead of a heal (docs/47). Migration 0085 inserts its switch. */
+  extremeCenters: ExtremeCentersConfig
   /** Live events (docs/20): their switch, and the admin's list, past, running and to come; one runs at a time. */
   liveEvents: { access: EventAccess; list: LiveEvent[] }
   /** Trades (docs/23): their switch and numbers, a game_config row of its own that seeding never writes. */
@@ -1408,6 +1410,38 @@ export interface ExtremeConfig {
 }
 
 /**
+ * Extreme mode's Pokémon Centers (docs/47): no healing machine, a boon to pick out of `offers`, the team heal always one
+ * of them, the others drawn by weight as distinct kinds. Every number is the admin's.
+ */
+export interface ExtremeCentersConfig {
+  /** Off / On for admin / On for everyone; off by default. Off (or with `extreme.centers` on), Centers are as before. */
+  access: EventAccess
+  /** Boons on offer at each Center, the team heal included. */
+  offers: number
+  /** Always on offer: every Pokémon still standing, team and Box, heals this % of its max HP. */
+  heal: { percent: number }
+  /** One Pokémon the player picks back to full HP; a K.O. one is back at once. */
+  full: { weight: number }
+  /**
+   * One healing item into the bag: a potion (the best of `potions` the badges in the region allow), a Revive or a Max
+   * Revive, by these weights.
+   */
+  item: { weight: number; potion: number; revive: number; maxRevive: number; potions: { key: string; badges: number }[] }
+  /**
+   * +1 die of one of its types for a team member, for `hours` of real time; never past `maxDice` dice, and only once
+   * `badges` badges are won in the region being played.
+   */
+  buff: { weight: number; hours: number; maxDice: number; badges: number }
+  /** ₽: `trainers` × what an average trainer of the area pays. */
+  donor: { weight: number; trainers: number }
+  /**
+   * A team member for a random Pokémon of the region, `levels` higher, at full HP: the same evolution stage, its fight
+   * value (max HP × dice at that level) within `band` % when any is. Never a legendary or a mythical.
+   */
+  rocket: { weight: number; levels: number; band: number }
+}
+
+/**
  * Pity for what a player hasn't got from an area yet: past `startRounds` rounds done there, the chance that an item
  * find is one of its once-only finds (`uniquePity`), or that a wild Pokémon is one not caught yet (`newPokemonPity`),
  * rises linearly to `maxMultiplier` × its usual odds at `fullRounds`, and stays there. It never passes 100 %.
@@ -1514,6 +1548,8 @@ export interface PokemonInstance {
   fossil?: string
   /** Extreme mode: when it was K.O. (ms, server time). It rests until `koHours` later. Absent = not on the clock. */
   koAt?: number
+  /** Extreme mode's Pokébuff (docs/47): one more die of this type in its battles until `until` (ms, real time). */
+  buff?: { type: PokeType; until: number }
   /** The name its trainer gave it (`engine/nickname.ts`). It goes with it in a trade; absent = its species' name. */
   nickname?: string
   /** Unown only (docs/41): its letter, 'a'–'z', '!' or '?'. Absent = an A (`letterOf`). */
@@ -1556,6 +1592,10 @@ export interface AreaProgress {
   portal?: PortalState
   /** The nightmare here (docs/30): its round, Darkrai's strike due, the gifts given, whether it's over. */
   nightmare?: NightmareState
+  /** Extreme mode (docs/47): a Pokémon Center has been met here (a secret area has only its first). */
+  centerMet?: boolean
+  /** Extreme mode (docs/47): the team was K.O. here; the round starts over at a Center that only swaps. */
+  wiped?: boolean
 }
 
 export interface SaveData {
@@ -1637,6 +1677,8 @@ export interface SaveData {
   extremeUnlockedAt?: number
   /** Main save: Extreme mode's rules pop-up has been shown (once, when it opens; INFO shows it again). */
   extremeRulesSeen?: boolean
+  /** The Extreme page's rules card has been read in this save (docs/48; INFO shows them again). */
+  extremePageSeen?: boolean
   /**
    * The shiny Pokédex (docs/39): every species owned shiny in each region, kept when it leaves (a trade, a release)
    * as the Pokédex keeps its catches. Filled whatever the switch says, so it's whole the day it opens.
@@ -1847,7 +1889,36 @@ export interface ExtremeSave {
   awayFrom?: number
   /** Absences already over but not healed yet (the player came back mid-fight, or the real time wasn't known). */
   pending?: [number, number][]
+  /** A Pokémon Center's boons waiting for the pick (docs/47), so a reload can't draw them again. */
+  center?: { areaId: string; offers: CenterBoon[] }
+  /** The Centers' rules pop-up has been shown (docs/47; INFO shows it again). */
+  centerRulesSeen?: boolean
+  /** Each region's run (docs/48): its id, when it started and was won (ms, real time), the best time ever (ms). */
+  runs?: Partial<Record<RegionId, ExtremeRun>>
 }
+
+/** One region's run in Extreme mode (docs/48): a race from its starter to its League. */
+export interface ExtremeRun {
+  /** A new id at every start, so the server can tell a restart from the same run. */
+  id: string
+  startedAt: number
+  /** The League won: the timer stopped here. */
+  finishedAt?: number
+  /** The fastest League ever won in this region (ms), kept through restarts. */
+  best?: number
+  /** A region played before runs existed whose League was already won: no time to count until it's restarted. */
+  untimed?: boolean
+}
+
+/** One boon a Pokémon Center offers in Extreme mode (docs/47). Each names what it gives, but the Rocket Trade. */
+export type CenterBoon =
+  | { kind: 'heal'; percent: number }
+  | { kind: 'full' }
+  | { kind: 'item'; itemKey: string }
+  | { kind: 'buff'; uid: string; type: PokeType }
+  | { kind: 'donor'; gold: number }
+  | { kind: 'rocket' }
+export type CenterBoonKind = CenterBoon['kind']
 
 /** The special events' state in a save. Every field is optional: absent means "never". */
 export interface EventsSave {
@@ -2127,5 +2198,6 @@ export interface GameData {
   /** Breeding data by dex (engine/daycare.ts): empty when a bundle came without it, and then nothing pairs. */
   eggGroups: Record<number, EggGroupEntry>
   /** Who's playing, set by the store: the admin sees the events switched on for the admin only. Absent = a player. */
-  viewer?: { admin: boolean }
+  /** Who's playing: the admin (signed in), and the Extreme save's race (docs/48: its online features off). */
+  viewer?: { admin: boolean; race?: boolean }
 }

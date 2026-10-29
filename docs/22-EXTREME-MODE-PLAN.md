@@ -1,5 +1,9 @@
 # Extreme mode — plan (for validation)
 
+*Since docs/48 (2026-10-29), Extreme mode is a speedrun: Kanto's League opens it, each region beaten in the main game
+opens its own run, and a run races from its starter to its League on a real-time clock. Its online features (events,
+raids, Versus, the Day Care, gifts) are off. What follows is how it was first built; docs/48 says what changed.*
+
 Status: **built** on branch `feature/extreme-mode` (from `feature/version_2`), not merged yet. Mockups: a design
 canvas, https://claude.ai/artifact/Vq8m9ru7sxYC3HEr27RgRz. Online, it needs migration `0039_extreme_realm.sql` (until it
 runs, the Extreme save stays on the device and the main game syncs as before).
@@ -40,6 +44,10 @@ Asked in the Q&A of 2026-10-11 (§9), unless marked *plan*:
   arrives with the sign-in), and its way back to the main game stays.
 
 ### 1.2 No Pokémon Centers
+
+*Since docs/47 (behind its own switch, Off by default): Centers come back without their heal. A round opens with one
+and the deck's Center cards are dealt, each offering boons to pick one from; a completed area has none, a secret area
+only its first; a lost round starts over at a Center that only swaps. With that switch off, this section holds.*
 
 - The encounter deck never deals a `center` card (`buildDeck` takes `center: 0` in Extreme; `encounterDue` never
   returns `'hurt'`, `'fainted'` or `'round'` → center). The "easy areas send a Center next" rule is off.

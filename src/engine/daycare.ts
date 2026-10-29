@@ -39,7 +39,8 @@ export function speciesCaughtEverywhere(save: SaveData): number {
 
 /** The Day Care opens once enough species are caught, all regions counted. Pokédexes only grow: open for good. */
 export const isDayCareOpen = (save: SaveData, data: GameData) =>
-  speciesCaughtEverywhere(save) >= data.config.dayCare.unlockPokedex
+  // Extreme mode is a race (docs/48): no Day Care.
+  save.mode !== 'extreme' && speciesCaughtEverywhere(save) >= data.config.dayCare.unlockPokedex
 
 /**
  * The unlock tutorial is due: the Day Care is open and the player has never been in. Saves that already used it

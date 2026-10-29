@@ -100,6 +100,8 @@ export function versusReadyCount(save: SaveData, data: GameData): number {
 
 /** Versus opens once three Pokémon reach Lv.50, in any region. */
 export function versusUnlocked(save: SaveData, data: GameData): boolean {
+  // Extreme mode is a race (docs/48): no Versus.
+  if (save.mode === 'extreme') return false
   return versusReadyCount(save, data) >= VERSUS_TEAM_SIZE
 }
 

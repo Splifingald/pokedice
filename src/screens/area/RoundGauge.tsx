@@ -1,6 +1,7 @@
 import {
   asSeenBy,
   centersOn,
+  roundCenterHere,
   deckSize,
   fightBosses,
   gymsFor,
@@ -94,7 +95,7 @@ export function RoundGauge({
     !inRound &&
     !justDone &&
     !progress.lastCenter &&
-    (!save || centersOn(save, data)) &&
+    (!save || centersOn(save, data) || roundCenterHere(save, area, data)) &&
     !opensWithoutCenter(area, progress, data)
   // Saves from before rounds were tracked know how many cards are left, not which were met.
   const total = inRound

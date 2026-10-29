@@ -76,9 +76,9 @@ export interface Battler {
   powered?: PowerKind
   /**
    * Up high, under ground or under water after a Flying, Ground or Water Z-Move (docs/35): every attack misses it, and
-   * at the start of its next turn it strikes with the roll it kept.
+   * at the start of its next turn it strikes with the roll it kept, as the type its Z-Move took when one was picked.
    */
-  away?: { how: ZAway; dice: RolledDie[] }
+  away?: { how: ZAway; dice: RolledDie[]; type?: PokeType }
   /** A form taken below half HP (Giratina's Origin Forme…): how it looked and rolled before, for above half again. */
   preForm?: FormSnapshot
   /** A raid Pokémon: its below-half-HP form waits for its last bar (`unleashForm`), whatever its HP does. */
@@ -272,8 +272,11 @@ export type BattleEvent =
   | { t: 'MEGA'; toDex: number }
   /** Gigantamax the Pokémon in battle. It doesn't end the turn. */
   | { t: 'GMAX'; toDex: number }
-  /** Attack with a Z-Move (docs/35): the roll as it stands, plus its type's effect. Ends the turn like ATTACK. */
-  | { t: 'ZMOVE' }
+  /**
+   * Attack with a Z-Move (docs/35): the roll as it stands, plus its type's effect. Ends the turn like ATTACK. `type`:
+   * a dual-type's pick, one of `zTypeChoices` (absent: the dice's pick).
+   */
+  | { t: 'ZMOVE'; type?: PokeType }
   /** Arceus, Silvally, Ogerpon: take this form (a type). It doesn't end the turn. */
   | { t: 'CHANGE_FORM'; toDex: number }
   /** A double battle: the foe your Pokémon will attack (docs/33). It doesn't end the turn. */
@@ -771,6 +774,34 @@ export function canZMove(s: BattleState, data: GameData): boolean {
   return when && canPower(a)
 }
 
+/**
+ * The types the player may give the Z-Move (docs/35): a Pokémon with two types picks either (the user's ask of
+ * 2026-10-29), whatever the dice show; with one, the dice pick as for ATTACK (empty: nothing to pick). Stunned, only
+ * its Steel one shakes the stun off, so there is nothing to pick either.
+ */
+export function zTypeChoices(s: BattleState, data: GameData): PokeType[] {
+  if (!canZMove(s, data) || s.phase !== 'player_reroll') return []
+  const types = activeBattler(s).types
+  return types.length > 1 ? [...types] : []
+}
+
+/**
+ * What the Z-Move would do with the roll on the table, as `type` (one of `zTypeChoices`; absent, the dice's pick): its
+ * effect and its hit, before any chance is rolled — for the player to compare the types before picking one.
+ */
+export function zMovePreview(
+  s: BattleState,
+  data: GameData,
+  type?: PokeType,
+): { effect: ZEffect; result: DamageResult } {
+  const a = activeBattler(s)
+  let result = computeDamage(s.dice, a.types, s.enemy.types, s.playerLevels, data, type)
+  // A copy of the raid's rules: running a hit through them marks them (absorbed, bounced).
+  if (s.raidHit) result = adjustRaidHit(result, { ...s.raidHit }, s.playerLevels.typeScale)
+  const effect = zEffectOf(result.attackType)
+  return { effect, result: zForce(result, effect, data) }
+}
+
 /** The types the Pokémon in battle could take right now (empty when it has none, or the change is spent). */
 export function formChoices(s: BattleState, data: GameData): Species[] {
   if (s.phase !== 'player_roll' && s.phase !== 'player_reroll') return []
@@ -974,11 +1005,11 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[], 
 
     // Back from up high, under ground or under water (a Z-Move, docs/35): it strikes with the roll it kept.
     if (b.away) {
-      const { how, dice } = b.away
+      const { how, dice, type } = b.away
       delete b.away
       s.dice = dice
       s.selected = dice.map(() => false)
-      return resolveAttack(s, side, data, log, rng, how)
+      return resolveAttack(s, side, data, log, rng, how, type)
     }
 
     const stun = stunKind(b.status)
@@ -1231,11 +1262,11 @@ function beginDoubleTurn(s: BattleState, data: GameData, log: LogEntry[], rng?: 
     }
     // Back from a Z-Move's turn away (docs/35): it strikes the one in front with the roll it kept.
     if (b.away) {
-      const { how, dice } = b.away
+      const { how, dice, type } = b.away
       delete b.away
       s.dice = dice
       s.selected = dice.map(() => false)
-      return resolveAttack(s, side, data, log, rng, how)
+      return resolveAttack(s, side, data, log, rng, how, type)
     }
     const stun = stunKind(b.status)
     if (stun && side === 'player') {
@@ -1372,10 +1403,16 @@ function zMoveOf(result: DamageResult, data: GameData, rng: Rng): { effect: ZEff
   const effect = zEffectOf(result.attackType)
   const chance = effect === 'freeze' ? cfg.freezeChance : effect === 'paralyze' ? cfg.paralyzeChance : 100
   const landed = !result.immune && rng.next() * 100 < chance
+  return { effect, landed, result: zForce(result, effect, data) }
+}
+
+/** A Z-Move's own force on its hit: `damagePercent` % more for a type with no effect of its own, Fighting's more. */
+function zForce(result: DamageResult, effect: ZEffect, data: GameData): DamageResult {
+  const cfg = data.config.zMove
   const more = effect === 'power' ? cfg.damagePercent : effect === 'reckless' ? cfg.recklessPercent : 0
-  if (!more || result.immune) return { effect, landed, result }
+  if (!more || result.immune) return result
   const final = Math.max(1, Math.round((result.final * (100 + more)) / 100))
-  return { effect, landed, result: { ...result, final, zPercent: more } }
+  return { ...result, final, zPercent: more }
 }
 
 /**
@@ -1436,15 +1473,23 @@ function endAttack(s: BattleState, side: Side, data: GameData, log: LogEntry[], 
 
 /**
  * An attack with the hand on the table. `z`: true for a Z-Move (docs/35), or where a Flying, Ground or Water one went
- * — the strike it comes back with, from the roll it kept.
+ * — the strike it comes back with, from the roll it kept. `zType`: the type the player picked for it.
  */
-function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry[], rng?: Rng, z: boolean | ZAway = false) {
+function resolveAttack(
+  s: BattleState,
+  side: Side,
+  data: GameData,
+  log: LogEntry[],
+  rng?: Rng,
+  z: boolean | ZAway = false,
+  zType?: PokeType,
+) {
   const atk = side === 'player' ? activeBattler(s) : s.enemy
   const def = side === 'player' ? s.enemy : activeBattler(s)
   const levels = side === 'player' ? s.playerLevels : s.enemyLevels
   const dice = s.dice
 
-  let result = computeDamage(dice, atk.types, def.types, levels, data)
+  let result = computeDamage(dice, atk.types, def.types, levels, data, z ? zType : undefined)
   // A raid's own rules on this hit (docs/40): shields, halved hits, hits never resisted…
   if (s.raidHit) result = adjustRaidHit(result, s.raidHit, levels.typeScale)
   const zMove = z === true && rng ? zMoveOf(result, data, rng) : null
@@ -1453,7 +1498,7 @@ function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry
     log.push({ kind: 'zmove', side, uid: atk.uid, type: result.attackType, effect: zMove.effect, landed: zMove.landed })
     // Up, down or under: out of reach for a turn, the roll kept for the strike at the start of its next one.
     if (isAway(zMove.effect)) {
-      atk.away = { how: zMove.effect, dice: [...dice] }
+      atk.away = { how: zMove.effect, dice: [...dice], ...(zType && { type: zType }) }
       log.push({ kind: 'away', side, uid: atk.uid, how: zMove.effect })
       return endAttack(s, side, data, log, rng)
     }
@@ -1569,7 +1614,10 @@ export function reduce(
     }
     case 'ZMOVE': {
       if (!canZMove(s, data)) return NOOP(state)
+      if (e.type && !zTypeChoices(s, data).includes(e.type)) return NOOP(state)
       const a = activeBattler(s)
+      // Stunned, it is a Steel-type's own Z-Move that shakes the stun off, whatever its other type.
+      const type = s.phase === 'player_stunned' ? 'steel' : e.type
       // A Steel-type frozen or paralyzed: its Z-Move shakes off the stun and every status, then it throws and strikes.
       if (s.phase === 'player_stunned') {
         a.status = emptyStatus()
@@ -1580,7 +1628,7 @@ export function reduce(
       }
       s.zUsed = (s.zUsed ?? 0) + 1
       a.powered = 'z'
-      resolveAttack(s, 'player', data, log, rng, true)
+      resolveAttack(s, 'player', data, log, rng, true, type)
       break
     }
     case 'USE_ITEM': {

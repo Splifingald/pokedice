@@ -903,7 +903,9 @@ pieces.
   (the `TrainerLook` crop, the same crop everywhere a trainer appears), the name with a gold "you" tag, their team as
   menu icons (`TeamIcons`, one atlas), the value at the end. Your row is gold-ringed. A row can carry a line under
   the team (Versus: how many of their Pokémon your team hits super effectively, green at 2+, red at 0) and an action
-  in place of the value (FIGHT, or a green Beaten tag that says when you can fight them again).
+  in place of the value (FIGHT, or a green Beaten tag that says when you can fight them again). A tag can sit before
+  the name (the admin's BOT). With an `aside`, the value moves up to the name's line and the aside sits under it at the
+  right, beside the team (the league's rewards): it wraps onto a second line before the team gives up its room.
 - **A long board is cut** (`boardWindow`, every board: the leaderboard's five tabs, its Hall of Fame and Versus's
   board): it always shows its real top 100, every friend wherever they are, and you with the 10 trainers ahead of you
   and the 10 behind, all with their real ranks ("You're #N of M" counts the whole board). Each run of rows left out is
@@ -929,11 +931,14 @@ pieces.
   `SocialDock`.
 - **The weekly league** (docs/44, its own switch): Versus's page keeps its tabs and columns.
   - A header (`LeagueHeader`): your trophies, your place in your group, and a dark chip "Ends in 3d 5h".
-  - The 3 opponents offered as stacked `BoardRow`s: the trophies (`TrophyCount`, the trophy icon after the number) and
-    the matchup line under the team; one red FIGHT.
-  - The group: `LeagueRows` under a This week / Last week `Seg`, tied places sharing a rank, each top-10 place with its
-    rewards' pictures under the team (`RewardMark`).
-  - The admin alone sees `BotTag` (BOT) on a bot.
+  - The 3 opponents offered as stacked `BoardRow`s, laid out as the group's: the trophies (`TrophyCount`, the trophy
+    icon after the number) on the name's line, FIGHT under them beside the team (one red; under the team if it can't
+    fit beside it), the matchup under the team as `EdgeMark`: "2 / 3" and a thumb up, green at 2+, red at 0, the
+    sentence for screen readers and on hover.
+  - The group: `LeagueRows` under a This week / Last week `Seg`, tied places sharing a rank, the trophies on the name's
+    line and, under them beside the team, each top-10 place's rewards (`RewardMark`: their pictures at their own 30 px,
+    the Raid Ball the Ultra Ball's shape in gold with pink bars, so it never reads as a Poké Ball).
+  - The admin alone sees `BotTag` (BOT) on a bot, before its name.
   - The fight is the battle screen with `versus.live`: the player's own controls and powers, AUTO-MODE as the panel's
     switch, never the Bag. Its result card (`LeagueResultCard`) shows the trophies won or lost, green or red, beside
     VICTORY! / DEFEAT.
@@ -1013,7 +1018,7 @@ A second save in a world of its own (docs/22-EXTREME-MODE-PLAN.md), opened by th
 switched it on (Off by default; Off / On for admin / On for everyone, like the events). The pieces are in
 `src/components/Extreme.tsx`, every state of them on `/kitchen-sink` (`ExtremeBits`).
 
-- **Which world is in play is never in doubt**: a crimson band under the top bar ("Extreme mode · no Pokémon Centers",
+- **Which world is in play is never in doubt**: a crimson band under the top bar ("Extreme mode", the name alone since 2026-10-29,
   22 px, `ExtremeBand`) and a skull on the trainer's avatar (`ExtremeMark`). Crimson (`bg-crimson`, under `light-scope`)
   and the skull are Extreme mode's only marks; nothing else in the game uses the skull.
 - **Its rules** are the rules pop-up (`ExtremeRulesModal`, Mt. Silver's champion hall as its banner): once when it opens
@@ -1032,6 +1037,22 @@ switched it on (Off by default; Off / On for admin / On for everyone, like the e
   resting and until when.
 - **Friends** are the same in both worlds; in Extreme, a friend without an Extreme save is listed greyed with "Not in
   Extreme mode" and the skull, and doesn't open.
+- **A speedrun since docs/48**: the Extreme page (`/extreme`, from the trainer menu in either save) shows every region as
+  a card (`RunCard`: locked, START, on the clock with its team, badges and ticking clock, League won with its time in
+  green, the best time with a trophy, the run played now outlined in crimson), then the board (`ExtremeBoard`: one per
+  region, best times then runs going), its rules card once and INFO at the bottom. START and RESTART open the lab on the
+  region's starters; RESTART asks twice (`RestartRunModal`). Times read "1d 04:12:33" (`raceTime`). In Extreme the
+  Social tab has no Versus and its board is this one; no events, Day Care, gifts, General upgrades, shiny Pokémon or
+  shiny Pokédex show there. On `/kitchen-sink` as
+  `ExtremeRunBits`.
+- **Its Pokémon Centers give a boon, not a heal** (docs/47, its own switch, Off by default; pieces in
+  `src/components/ExtremeCenter.tsx`, on `/kitchen-sink` as `ExtremeCenterBits`): no healing machine, the Center's sign
+  then the boons (`BoonChoiceView`, the Center's pink rule on its top, the boons as the portal's big buttons, INFO under
+  them). A tap always asks first: who for (`BoonTargetPicker`, a full heal or Team Rocket's trade) or Take this boon?
+  (`CenterBoonConfirm`). While they wait there's no action bar and no Box, and the team can't change; then a toast, or
+  Team Rocket's reveal (`RocketReveal`). The Center a K.O. sends says it gives nothing (`WipeCenterNote`). A Pokébuff
+  shows on cards and sheets as "+1 die · 23h 10m" in green (`BuffTag`). Its rules pop up once over the first boon
+  Center (`CenterRulesModal`, a feature with no page: §20).
 
 ## 20. Every new feature: its switch and its rules
 
@@ -1761,7 +1782,9 @@ and there are no Z-Moves. On:
   open at their own moment, no longer hold it back); Mega Evolution's Let's go! opens the Mart. INFO (`PowerInfo`)
   under the Mart's Mega Gems and on the Pokémon sheet, beside each power's line.
 - **In battle**: MEGA, G-MAX and Z-MOVE (`ZMoveButton`) are gold, in the extras row; Z-MOVE comes after the roll and
-  ends the turn as ATTACK does. The Z-Move timeline plays before the attack's own (`src/fx/timelines/zmove.ts`; short
+  ends the turn as ATTACK does. A dual-type's Z-MOVE opens its pick first (`ZTypePicker` in a Modal, like the choice of
+  two Megas): a row per type, its badge and what it adds, then the damage as that type and how effective it is, big
+  on the right; a note under them says the pick is the attack's type. One tap throws it. The Z-Move timeline plays before the attack's own (`src/fx/timelines/zmove.ts`; short
   motion: a flash of the type's colour), and the attack's own is the type's move as its Z variant (§9's table). A timed Mega changing back is a flash, no scene.
 - **A gem from a badge** is a toast ("Korrina gave you the Lucarionite!"), however long after the badge it comes.
 - Never inside a small world: no button, no shelf, no pop-up.

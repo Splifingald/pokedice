@@ -2,6 +2,7 @@ import { useId } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   centersOn,
+  wipeCenterDue,
   dueBoss,
   dueGym,
   firstComeback,
@@ -76,7 +77,8 @@ export function useContinue(area: Area) {
   const need = area.roundsToClear || null
   const done = progress.roundsDone ?? 0
   // Extreme mode (docs/22): nobody can fight and no Center will come — the team rests.
-  const resting = !busy && !hasAbleTeam(save) && !centersOn(save, data)
+  // With its boon Centers (docs/47), a K.O. here sends the Center that swaps instead.
+  const resting = !busy && !hasAbleTeam(save) && !centersOn(save, data) && !wipeCenterDue(save, area.id, data)
   const back = resting ? firstComeback(save, data) : null
 
   const enterPortal = !!mode && !portal?.active && !portal?.won && !busy

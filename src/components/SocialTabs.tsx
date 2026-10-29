@@ -42,8 +42,10 @@ export function SocialTabs({
   const social = useSocial()
   const boardOpen = useGame((s) => !!s.save && leaderboardUnlocked(s.save, s.data))
   const versusOpen = useGame((s) => !!s.save && versusUnlocked(s.save, s.data))
+  // Extreme mode is a race (docs/48): no Versus there.
+  const extreme = useGame((s) => s.save?.mode === 'extreme')
   const shown = VIEWS.filter((v) =>
-    v.id === 'friends' ? social.friends : v.id === 'trades' ? social.trades : true,
+    v.id === 'friends' ? social.friends : v.id === 'trades' ? social.trades : v.id === 'versus' ? !extreme : true,
   )
   const locked = (v: SocialView) => (v === 'board' && !boardOpen) || (v === 'versus' && !versusOpen)
   const dot = (v: SocialView) => (v === 'friends' ? social.friendsNew : v === 'trades' ? social.tradesNew : 0)

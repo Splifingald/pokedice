@@ -72,8 +72,12 @@ The user's request, and the answers to the questions asked before building it:
   | Steel | every status of the user shaken off before the blow (`cleansed`); a Steel-type may use its Z-Move **while frozen or paralyzed**: the stun and every status go, it throws its dice and strikes |
   | any other, or base dice only | `damagePercent` (20) % more damage on the Z-Move itself |
 
-  (The user's additions of 2026-10-18 for Flying, Ground, Water, Fighting and Steel.) An attack with no effect (an
-  immunity) lands nothing. The log says it first (`zmove` entry: type, effect, landed). On the stage, every Z-Move has
+  (The user's additions of 2026-10-18 for Flying, Ground, Water, Fighting and Steel.) **A Pokémon with two types picks
+  which one its Z-Move takes** (the user's ask of 2026-10-29; `zTypeChoices`, `ZMOVE`'s `type`), whatever its dice
+  show: the pick is the attack's type, for its effect and for its matchup (`computeDamage`'s `chosen`), and a Flying,
+  Ground or Water one's strike comes back as that type (`Battler.away.type`). A single-type's Z-Move, a foe's and the
+  auto player's keep the dice's pick; a stunned Steel-type's is its Steel one, whatever its other type. An attack with
+  no effect (an immunity) lands nothing. The log says it first (`zmove` entry: type, effect, landed). On the stage, every Z-Move has
   animations of its own (`src/fx/timelines/zmove.ts`): the power gathering (the stage dims, light of the type rises, a
   golden Z draws itself and blazes), then **the Z strike** in place of the move's usual one: one per type, a more
   powerful variant of that type's own move (the user's ask of 2026-10-18; `AttackParams.z`) — Flamethrower with a
@@ -104,7 +108,9 @@ The user's request, and the answers to the questions asked before building it:
 
 - **The battle**: a gold **Z-MOVE** button with MEGA and G-MAX (after the roll; a Steel-type's also while it's
   stunned, when the turn then waits for the player instead of passing), its hint saying what this roll's type adds
-  ("Electric: 50% chance to paralyze the foe"). MEGA's and G-MAX's hints say the newer rules' numbers.
+  ("Electric: 50% chance to paralyze the foe"). A dual-type's Z-MOVE opens the pick (`ZTypePicker`, like Charizard's
+  two Megas): each of its types with what it adds, the damage this roll does as that type and how effective it is
+  (`zMovePreview`, the engine's numbers); tapping one throws it. MEGA's and G-MAX's hints say the newer rules' numbers.
 - **The Mart** (Buy): a **Mega Gems** shelf under the stock — the gem, its Mega's icon and name, ₽1,000 or HELD; a line
   instead while the shelf is shut here ("…once you have beaten this region's League"); INFO at its foot. The bag (Sell)
   lists the gems held, "Can't sell".
@@ -112,7 +118,8 @@ The user's request, and the answers to the questions asked before building it:
   its gem, held ✓ or needed — with INFO; the Gigantamax line says the boost; a Z-Move line (once open) with INFO.
 - **Rules**: each power's pop-up once its badge is won with its switch on (`powerRulesDue`, Mega first), queued behind
   every other one-time pop-up; Mega's Let's go! opens the Mart. Its picture is the leader's area.
-- `/kitchen-sink`: "Battle powers" (plates, Z-MOVE hints, the shelf open / poor / shut / empty, the rules);
+- `/kitchen-sink`: "Battle powers" (plates, Z-MOVE hints, a dual-type's type pick — super effective, resisted, no
+  effect — the shelf open / poor / shut / empty, the rules);
   `/kitchen-sink/fx`: the Z-Move's power gathering (yours and a trainer's), its strike for every type ("Foe attacks"
   for a trainer's, "Short motion" for the short one), and each going away with its strike back.
 
