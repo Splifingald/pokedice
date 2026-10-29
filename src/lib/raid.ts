@@ -95,6 +95,22 @@ export async function fetchProgressRaidFriends(key: string): Promise<RaidFriend[
   return (data as RawFriend[]).map(parseFriend)
 }
 
+/**
+ * The progression raids you won, as the server recorded them (0089): no page can write over that record, unlike the
+ * save. Null when it can't be read (signed out, offline, a database before 0089).
+ */
+export async function fetchRaidsDone(): Promise<string[] | null> {
+  try {
+    const client = await getSupabase()
+    if (!client) return null
+    const { data, error } = await client.rpc('raid_progress_mine', realmArgs())
+    if (error || !Array.isArray(data)) return null
+    return data.map(String)
+  } catch {
+    return null
+  }
+}
+
 /** A progression raid's Pokémon is caught: the server counts it once, and the friends who helped get a gift each. */
 export async function closeProgressRaid(key: string, helpers: string[]): Promise<void> {
   const client = await getSupabase()

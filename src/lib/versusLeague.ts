@@ -1,6 +1,6 @@
 // The weekly Versus league, the cloud side (docs/44): this week's (or last week's) group, the global board, the 3
 // opponents offered, starting a match (recorded as a leave before it's fought) and its result. The rows come from the
-// SQL functions of supabase/migrations/0082_versus_league.sql (the global board: 0088); the rules and the fight are the
+// SQL functions of supabase/migrations/0082_versus_league.sql (the global board: 0091); the rules and the fight are the
 // engine's (engine/versusLeague).
 import type { VersusMon, VersusPowers } from '@/engine'
 import { avatarOf } from './avatars'
@@ -171,7 +171,7 @@ export async function fetchLeagueHome(last = false): Promise<LeagueHome | null> 
   return home
 }
 
-/** This week's global board (migration 0088): null when the cloud isn't configured on this site. */
+/** This week's global board (migration 0091): null when the cloud isn't configured on this site. */
 export async function fetchLeagueGlobal(): Promise<LeagueGlobal | null> {
   const client = await getSupabase()
   if (!client) return null

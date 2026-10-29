@@ -5,6 +5,7 @@ import { startAnalytics } from '@/analytics/ping'
 import { checkContentVersion } from '@/config/remote'
 import { AUTH_PROVIDERS, loadAuthProviders } from '@/lib/authProviders'
 import { loadFriendStatus } from '@/lib/friends'
+import { fetchRaidsDone } from '@/lib/raid'
 import { isOffline, offlineOr } from '@/lib/online'
 import { getSupabase } from '@/lib/supabase'
 import { disablePush, usePush } from '@/lib/push'
@@ -25,8 +26,16 @@ import {
   SaveConflictError,
   schedulePush,
   sendSaveOnLeave,
+  writtenSincePlayedAt,
 } from '@/save/cloud'
-import { keepGeneralBought, keepLooksEarned } from '@/engine'
+import {
+  keepGemsHeld,
+  keepGeneralBought,
+  keepLooksEarned,
+  keepRaidsDone,
+  keepRebattleTiers,
+  keepWorldsDone,
+} from '@/engine'
 import type { SaveData, SaveMode } from '@/engine/types'
 import {
   activeSlot,
@@ -41,7 +50,17 @@ import {
   writeCloudMark,
   writeSlot,
 } from '@/save/storage'
-import { commitSave, initialRun, onSaveCommitted, pushToast, setContent, tickFossils, useGame, type AuthProvider } from './game'
+import {
+  commitSave,
+  initialRun,
+  mutateSave,
+  onSaveCommitted,
+  pushToast,
+  setContent,
+  tickFossils,
+  useGame,
+  type AuthProvider,
+} from './game'
 import { t } from '@/i18n'
 import { rescueIfRegionDisabled } from './regions'
 import { startWorldClock } from './worlds'
@@ -88,11 +107,14 @@ const inFight = () => {
 }
 
 /**
- * One copy replacing another keeps what either bought (General upgrades) or was granted (event looks, written into the
- * cloud copy by SQL): neither is progress, so the copy that wins the compare may not have it.
+ * One copy replacing another keeps what either bought (General upgrades, Mega Gems), was granted (event looks, written
+ * into the cloud copy by SQL) or won for good (raids, rebattle tiers, small worlds finished): none of it is progress
+ * the compare counts, so the copy that wins it may not have it.
  */
-const keepBoth = (save: SaveData, other: SaveData | null | undefined): SaveData =>
-  keepLooksEarned(keepGeneralBought(save, other), other)
+const keepBoth = (save: SaveData, other: SaveData | null | undefined): SaveData => {
+  const bought = keepGemsHeld(keepLooksEarned(keepGeneralBought(save, other), other), other)
+  return keepWorldsDone(keepRebattleTiers(keepRaidsDone(bought, other?.events?.raidsDone), other), other)
+}
 
 const realmOf = (save: SaveData): SaveMode => (save.mode === 'extreme' ? 'extreme' : 'main')
 
@@ -298,7 +320,26 @@ async function handleSession(client: SupabaseClient, session: Session | null) {
     console.warn('[cloud] sync failed', err)
     syncedUser = null // try again on the next auth event or SYNC ONLINE; stay local-only meanwhile
     pushToast(offlineOr(t('ui.toast.syncUnavailable')), 'bad')
+    return
   }
+  void restoreRaidsDone()
+}
+
+/**
+ * Raids the server saw this player win and the save lost come back into it (0089). Pages left open from a build
+ * before 2026-10-22 wrote saves back without them (2026-10-29), and the raids opened again. Only ever adds; goes up with
+ * the next upload like any change.
+ */
+export async function restoreRaidsDone(): Promise<void> {
+  const done = await fetchRaidsDone()
+  if (!done?.length) return
+  mutateSave(
+    (s) => {
+      const next = keepRaidsDone(s, done)
+      return next === s ? null : next
+    },
+    { auto: true },
+  )
 }
 
 /** Why SYNC ONLINE can't be pressed right now, or null when it can. */
@@ -785,6 +826,11 @@ export function adoptStoredSave(raw?: string | null): boolean {
   const { save } = useGame.getState()
   const stored = peekSave(raw)
   if (!stored || (save && stored.updatedAt <= save.updatedAt)) return false
+  // A page left open from before 2026-10-22 wrote it: the same save with every part its build never knew gone, stamped
+  // now (2026-10-29). This tab plays on from its own, which its next change stores again; writing it back at once
+  // would also undo a page that is only just starting on the copy it stored. A reload in between starts from that
+  // copy, and the sign-in's sync then prefers the cloud's (decideSync).
+  if (save && writtenSincePlayedAt(save) && !writtenSincePlayedAt(stored)) return false
   // Kept at the other tab's stamp: written back here unchanged, it is no news to that tab (it only takes a newer one).
   // With a level only this tab had, it is: stamped now, so that tab takes it in turn.
   const merged = keepBoth(stored, save)

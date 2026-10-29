@@ -7,7 +7,7 @@ the **Raid Ball**, is one of the rewards. All of it sits behind its own admin sw
 while it's Off, Versus is what it was (every team, the attack and defense boards, fights on auto).
 
 **Status (2026-10-27): built** on `claude/quirky-maxwell-ilueyw` (from `version/2_4`), behind its switch, Off.
-Migration `0082_versus_league.sql`. The global board (§8, 2026-10-29): migration `0088_versus_league_global.sql`, its
+Migration `0082_versus_league.sql`. The global board (§8, 2026-10-29): migration `0091_versus_league_global.sql`, its
 own switch, Off.
 
 ## 1. Decisions (the user's answers)
@@ -16,6 +16,7 @@ own switch, Off.
 |---|---|
 | Week | **Monday 00:00 to Sunday 24:00, UTC**. Everyone starts again from 0 |
 | Gameplay | **The player fights** (active by default), **AUTO** if they like. The opponent always plays on auto |
+| Levels | **Lv.50, like a raid's team cap** (the user's rule, 2026-10-29): every Pokémon shows Lv.50 and has its Lv.50 HP, but **keeps the dice and rerolls of its own level** (`versusSeedLevels`, as `raidSeedLevels`). A team stores each Pokémon's real level (migration 0090); one saved before keeps Lv.50 until it is saved again, and the team editor offers SAVE while a level differs. The bots stay at Lv.50 |
 | Items | **None at all**: no Bag in a league fight, and the server refuses a result with an item used |
 | Trophies | A win: **+3 / +6 / +10** with 1 / 2 / 3 of your Pokémon left. A loss: **−3 / −6 / −10** by the opponent's Pokémon left. **Leaving** a fight (closing it, losing the connection, the flag) is the full **−10** |
 | Safe line | **Below 100 trophies a loss costs nothing.** There's no floor at 100: 104 can fall to 94, and is safe again from there |
@@ -91,7 +92,9 @@ own switch, Off.
   - **Opponents**: the 3 offers, each with its look, name and trophies on one line, its team with FIGHT beside it, and
     the matchup ("2 / 3" and a thumb up: how many of theirs your team hits super effectively); one red FIGHT (the one
     your team hits hardest). A match left before its end says so.
-  - **My team**: Versus's own team editor.
+  - **My team**: Versus's own team editor: the three slots in fight order (drag one onto another, or tap one then the
+    other, to swap them), the list sorted by **Level** (highest first, the default), Pokédex No. or name, each row
+    with its level; each species once, its highest level. A slot shows "Lv.72 → 50".
   - **Leaderboard** (PC: beside the opponents): **This week / Last week** (and **Global**, §8), ranks shared on ties,
     the trophies on the name's line and each top-10 place's Raid Balls and Rare Candies drawn under them, beside the
     team.
@@ -142,13 +145,17 @@ The admin sees **BOT** on the bots, before their names, in the opponents and the
    calls run the tick when it's over 20 minutes late.
 3. Admin → Messages: **Gifts** on for everyone (the rewards are gift messages).
 4. Admin → Config → Versus league: **On for admin**, try it (Seat bots now fills your group), then **On for everyone**.
-5. For **The week's groups**, run
+5. For the teams at their own levels (dice and rerolls of their level, Lv.50 HP), run
+   <https://github.com/Splifingald/pokedice/blob/claude/new-session-aiwjy4/supabase/migrations/0090_versus_true_levels.sql>
+   (after 0039; safe to run again). `supabase/seed.sql` inlines it. Without it the game still runs: teams are saved
+   at Lv.50 as before.
+6. For **The week's groups**, run
    <https://github.com/Splifingald/pokedice/blob/ccr-1727200f-jjadrr/supabase/migrations/0086_versus_league_admin_board.sql>
    (after 0082; safe to run again). `supabase/seed.sql` doesn't inline it either.
 
 6. For **the global board** (§8), run
-   <https://github.com/Splifingald/pokedice/blob/claude/modest-tesla-bggrd4/supabase/migrations/0088_versus_league_global.sql>
-   (after 0082; safe to run again; `supabase/seed.sql` doesn't inline it), then Admin → Config → Switches → **Versus
+   <https://github.com/Splifingald/pokedice/blob/main/supabase/migrations/0091_versus_league_global.sql>
+   (after 0090; safe to run again; `supabase/seed.sql` doesn't inline it), then Admin → Config → Switches → **Versus
    global board**: On for admin, look, then On for everyone.
 
 After a change to the species, their forms or the gems, run `pnpm versus-bots` and the migration again.
@@ -168,8 +175,10 @@ After a change to the species, their forms or the gems, run `pnpm versus-bots` a
   - deleting your data;
   - the admin's groups (0086): refused to players, every member of the week once, bots told apart, ranked as the
     boards, a player's matches adding up;
-  - the global board (0088): its own switch (and the league's), every group's players ranked together with ties
+  - the global board (0091): its own switch (and the league's), every group's players ranked together with ties
     shared, no bots, the banned left out but for themselves, readable signed out.
+- `tests/versus-true-levels-sql.test.ts` (PGlite): 0090 keeps each Pokémon's own level, Lv.50 or more only.
+- `tests/engine/versus.test.ts`: a Versus Pokémon fights at Lv.50 with its own level's dice and rerolls, both sides.
 - `tests/versus-league-admin-board.test.ts`: the admin's groups read into players and bots, and the week's totals;
   the global board's rows read.
 - `tests/engine/versus-league.test.ts` also: `versusGlobalOn`, its switch only with the league's.
@@ -197,6 +206,6 @@ rewards, for the fame only."
   only with the league on (`versusGlobalOn`). The server checks both (`versus_league_global_open`).
 - **Its rules**: the line over its rows (a rule explained where it happens, docs/15 §20): no pop-up, and the league's
   INFO stays the league's.
-- **The server**: `versus_league_global()` (0088), readable signed out like `versus_league_home`: `{week, endsAt,
+- **The server**: `versus_league_global()` (0091), readable signed out like `versus_league_home`: `{week, endsAt,
   rows}`, the rows as a group's (id, isMe, name, avatar, team, trophies, rank, rich) without `bot`.
 

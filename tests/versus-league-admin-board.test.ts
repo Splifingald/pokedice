@@ -1,5 +1,5 @@
 // The admin's view of the league's groups (0086 versus_league_admin_board, docs/44 §5): the server's rows read into
-// players and bots, and the week's totals the admin box shows. And the players' global board (0088, docs/44 §8).
+// players and bots, and the week's totals the admin box shows. And the players' global board (0091, docs/44 §8).
 import { describe, expect, it } from 'vitest'
 import { leagueAdminTotals, parseLeagueAdminBoard, parseLeagueGlobal } from '@/lib/versusLeague'
 
@@ -105,7 +105,7 @@ describe('the admin board of the league', () => {
   })
 })
 
-describe('the global board (0088)', () => {
+describe('the global board (0091)', () => {
   it('reads every player of the week, ranked, with no bot mark', () => {
     const g = parseLeagueGlobal({
       week: '2026-10-26',

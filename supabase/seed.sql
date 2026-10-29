@@ -6529,6 +6529,137 @@ where s.realm = 'extreme' and s.updated_at > now() - interval '72 hours';
 
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 
+-- ↓ supabase/migrations/0088_saves_no_overwrite.sql, inlined so this file stands alone.
+-- An upload never writes over a save it wasn't based on (2026-10-29).
+--
+-- Since 2026-10-22 the game uploads a save only over the copy it last matched (src/save/cloud.ts pushCloudSave: an
+-- update filtered on the row's stamp) and inserts only when it knows of no row at all. Pages still running a build from
+-- before that upload with a plain upsert (insert … on conflict do update), written over whatever the row holds. Such a
+-- page, left open on a phone or a PC for days, resumes on its old code for a few minutes before it reloads, and its
+-- uploads drop every part of the save its build never knew (raids won, rebattles, small worlds, General upgrades, Mega
+-- Gems…) or put back a copy days old. The API logs of 25–29 Oct 2026 show 46 players overwritten that way.
+--
+-- Those pages can't be updated, so the database refuses them: an insert where the player's save already exists fails
+-- with unique_violation (23505), before the upsert can turn into an update. The game today never inserts over a row
+-- (it reads that error as "another device saved first" and compares again), so only the old pages are refused. A
+-- player's first upload, and the first one of an Extreme save beside the main one, insert as before.
+--
+-- Run after 0039 (the realm column). Safe to run again. seed.sql inlines it (scripts/seed.ts).
+
+
+create or replace function saves_no_overwrite()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if exists (select 1 from saves s where s.user_id = new.user_id and s.realm = new.realm) then
+    raise exception 'save already exists for %', new.user_id using errcode = '23505';
+  end if;
+  return new;
+end
+$$;
+
+revoke all on function saves_no_overwrite() from public, anon, authenticated;
+
+drop trigger if exists saves_no_overwrite on saves;
+create trigger saves_no_overwrite before insert on saves for each row execute function saves_no_overwrite();
+
+
+-- ↓ supabase/migrations/0089_raids_done_mine.sql, inlined so this file stands alone.
+-- A player's progression raids won, read back from the server (2026-10-29).
+--
+-- raid_progress_done (0045) records each raid a player wins, keyed as the save keys it (`events.raidsDone`, area id and
+-- Pokédex number). No page can write over it, unlike the save: pages left open from a build before 2026-10-22 wrote
+-- saves back without every part their build never knew, `raidsDone` among them (0088 refuses those writes now), and
+-- the raids they had won opened again. The game reads this list at sign-in and adds back any raid its save lost
+-- (engine/progressRaid.ts keepRaidsDone); it only ever adds.
+--
+-- raid_progress_mine(p_realm): the caller's own raid keys in that realm, oldest first; none when signed out.
+--
+-- Run after 0045. Safe to run again. seed.sql inlines it (scripts/seed.ts).
+
+
+create or replace function raid_progress_mine(p_realm text default 'main')
+returns text[]
+language sql stable security definer set search_path = public as $$
+  select coalesce(array_agg(d.raid_key order by d.done_at, d.raid_key), '{}')
+  from raid_progress_done d
+  where d.user_id = auth.uid() and d.realm = p_realm
+$$;
+
+revoke all on function raid_progress_mine(text) from public, anon;
+grant execute on function raid_progress_mine(text) to authenticated;
+
+
+-- ↓ supabase/migrations/0090_versus_true_levels.sql, inlined so this file stands alone.
+-- Versus teams at their own levels (the user's rule, 2026-10-29), as raid teams are (0065): a Pokémon fights at Lv.50
+-- (its HP, the level shown), but its dice and rerolls stay those of its own level. The game caps it in the fight
+-- (`versusSeedLevels`, engine/versus.ts), so a registered team keeps each Pokémon's real level instead of
+-- `least(level, 50)`. Still built from the cloud save, never from what the page sends, and still Lv.50 or more only.
+-- The weekly league (0082) fights with these same teams. A team registered before keeps its Lv.50 until its owner saves
+-- it again (the Versus page offers to: SAVE comes back on while a Pokémon's level differs from the saved one). The bots'
+-- teams stay at Lv.50.
+--
+-- Run after 0039. Safe to run again. seed.sql inlines it (scripts/seed.ts).
+
+-- 0039's, the level no longer capped.
+create or replace function versus_set_team(ids text[], p_realm text default 'main')
+returns int
+language plpgsql security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+  save jsonb;
+  new_team jsonb;
+  new_ids jsonb := to_jsonb(versus_set_team.ids);
+  cur versus_teams%rowtype;
+  v int;
+begin
+  if me is null then raise exception 'versus_signed_out'; end if;
+  if versus_set_team.ids is null or coalesce(array_length(versus_set_team.ids, 1), 0) <> 3
+     or (select count(distinct x) from unnest(versus_set_team.ids) x) <> 3 then
+    raise exception 'versus_team_size';
+  end if;
+  select s.data into save from saves s where s.user_id = me and s.realm = p_realm;
+  if save is null then raise exception 'versus_no_save'; end if;
+
+  select jsonb_agg(jsonb_build_object(
+    'dex', (m ->> 'dex')::int,
+    'level', least(100, (m ->> 'level')::int),
+    'shiny', coalesce((m ->> 'shiny')::boolean, false)
+  ) order by t.ord)
+  into new_team
+  from unnest(versus_set_team.ids) with ordinality t(id, ord)
+  join (
+    select b from jsonb_array_elements(coalesce(save -> 'box', '[]')) b
+    union all
+    select b from jsonb_each(coalesce(save -> 'parked', '{}')) p(k, v), jsonb_array_elements(coalesce(p.v -> 'box', '[]')) b
+  ) boxes(m) on m ->> 'id' = t.id
+  where (m ->> 'level')::int >= 50 and m ->> 'revivesAt' is null;
+  if new_team is null or jsonb_array_length(new_team) <> 3 then raise exception 'versus_not_eligible'; end if;
+
+  select * into cur from versus_teams vt where vt.user_id = me and vt.realm = p_realm;
+  if not found then
+    insert into versus_teams (user_id, realm, version, team, ids) values (me, p_realm, 1, new_team, new_ids);
+    return 1;
+  end if;
+  if cur.team = new_team then
+    update versus_teams vt set ids = new_ids where vt.user_id = me and vt.realm = p_realm;
+    return cur.version;
+  end if;
+  update versus_teams vt
+     set team = new_team, ids = new_ids, version = cur.version + 1, updated_at = now()
+   where vt.user_id = me and vt.realm = p_realm
+  returning vt.version into v;
+  return v;
+end
+$$;
+
+revoke all on function versus_set_team(text[], text) from public;
+grant execute on function versus_set_team(text[], text) to authenticated;
+
+
 insert into type_chart (attacking, defending, multiplier) values
   ('bug', 'dark', 2),
   ('bug', 'fairy', 0.5),

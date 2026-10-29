@@ -62,9 +62,21 @@ describe('decideSync', () => {
     const played = { ...base, updatedAt: 5000, playedAt: 5000 }
     expect(decideSync(stale, played)).toBe('cloud')
     expect(decideSync(played, stale)).toBe('local')
-    // A save from before playedAt: its stamp stands in.
-    expect(decideSync(at(base, 6000), played)).toBe('local')
+    // Two saves from before playedAt: their stamps stand in.
+    expect(decideSync(at(base, 6000), at(base, 5000))).toBe('local')
+    expect(decideSync(at(base, 5000), at(base, 6000))).toBe('cloud')
     expect(sameSave(stale, played)).toBe(true)
+  })
+
+  it('never lets a copy an old page wrote (no playedAt) win a tie, however recent (2026-10-29)', () => {
+    // A page from before 2026-10-22, resumed days later, stamps the save now and drops every part it never knew.
+    const stripped: SaveData = { ...at(base, 9000), events: {} }
+    const played: SaveData = { ...base, updatedAt: 5000, playedAt: 5000, events: { raidsDone: ['a:150'] } }
+    expect(decideSync(stripped, played)).toBe('cloud')
+    expect(decideSync(played, stripped)).toBe('local')
+    // Progress still comes first: a copy that cleared more is kept, whoever wrote it.
+    const ahead: SaveData = { ...stripped, pokedex: [...base.pokedex, 16, 19, 25] }
+    expect(decideSync(ahead, played)).toBe('local')
   })
 
   it('…unless this device never saw a trade the cloud copy did: the Pokémon traded away would come back', () => {

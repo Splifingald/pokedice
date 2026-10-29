@@ -9,6 +9,12 @@ import { cx } from '@/theme/util'
 /** How long a one-button step stays before it presses itself (times the battle pace). */
 export const AUTO_STEP_MS = 1600
 
+/**
+ * On auto, how long a choice of who goes out against a trainer waits before it goes by itself (a trainer's card, the
+ * trainer's next Pokémon): time to tap another Pokémon, which then waits for the player's button. Never paced.
+ */
+export const PILOT_PICK_MS = 4000
+
 type Props = Omit<ComponentProps<typeof PixelButton>, 'onClick'> & {
   onClick: () => void
   /** Before it presses itself; the battle pace shortens it under auto-mode. */

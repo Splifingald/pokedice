@@ -1,6 +1,6 @@
 // Migration 0082 against a real Postgres (PGlite, in process): the weekly Versus league (docs/44). Offers, a match
 // recorded as a leave before it's fought and replaced by its checked result, bots seated and hidden as bots from all
-// but the admin, the global board (0088), the week's rewards as gift messages, and deleting your data. Supabase's own pieces (the auth schema,
+// but the admin, the global board (0091), the week's rewards as gift messages, and deleting your data. Supabase's own pieces (the auth schema,
 // the anon / authenticated roles) are stood in for at the top, as in friends-sql.test.ts.
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
@@ -132,13 +132,13 @@ beforeAll(async () => {
     '0064_battle_powers.sql',
     '0082_versus_league.sql',
     '0086_versus_league_admin_board.sql',
-    '0088_versus_league_global.sql',
+    '0091_versus_league_global.sql',
   ])
     await db.exec(sql(f))
   // Safe to run again.
   await db.exec(sql('0082_versus_league.sql'))
   await db.exec(sql('0086_versus_league_admin_board.sql'))
-  await db.exec(sql('0088_versus_league_global.sql'))
+  await db.exec(sql('0091_versus_league_global.sql'))
   await db.exec(
     `insert into auth.users (id) values ${Object.values(U)
       .map((u) => `('${u}')`)

@@ -2,7 +2,7 @@
 -- Players only: the bots that fill the groups are left out, and so are the players banned from the leaderboard (0011),
 -- but the caller's own row. It gives nothing at the week's end: the groups' rewards stay as they were (0082). Its own
 -- switch, game_config versusLeague.globalAccess (Off by default), read here as the league's own is, and only with the
--- league open. It only reads. Run after 0082; safe to run again.
+-- league open. It only reads. Run after 0090; safe to run again.
 
 -- On for everyone, or for the admin only, and the league open for the caller.
 create or replace function versus_league_global_open()

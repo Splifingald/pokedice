@@ -688,8 +688,11 @@ Players shouldn't have to make many requests:
 - **Explain, don't hide**: something that can't be used right now stays listed, greyed, with the reason in words
   ("Already full", "Fainted: needs a Revive", "Needs a Pokémon with 4+ dice", "6 badges"). Buttons you can't afford
   stay focusable (`aria-disabled`) and say what's missing ("need ₽14"); a tap explains in a toast.
-- **Reordering**: drag a card onto another to swap them (pointer events, 8 px before a press becomes a drag; a tap
-  still opens the card). Every drag has a button twin for keyboards and screen readers (Make lead).
+- **Reordering**: drag a card onto another to swap them (`useDragSwap`, `src/lib/useDragSwap.ts`: pointer events, 8 px
+  before a press becomes a drag; a tap still opens the card). Every drag has a button twin for keyboards and screen
+  readers: the Team's Make lead; a team picker's numbered slots (Versus, raids: `useSlotOrder`) swap by tapping one (it
+  turns gold, `aria-pressed`) then the other, a line under the hint saying both ways ("Drag a Pokémon onto another to
+  swap them, or tap one, then the other.").
 - **Shelves** (the Poké Mart, docs/43 §5.5): one `ItemTile` for every item the Mart shows: the shelf, the Bag, held gems,
   a Special Shop, the Explorakits, a small world's Mart, the Mega Gems, Coming later. Three to a row on phones
   (`TILE_GRID`), four from 768 px. **The price button is the purchase** (×1, one tap; short of ₽ it stays focusable,
@@ -718,8 +721,11 @@ puts the side nav and the tab bar away while it is mounted and keeps the top bar
 the height (`calc(100dvh - var(--top-bar))`). It must fit a 360×640 phone, top bar included, with nothing to scroll
 (`e2e/layout.spec.ts`). From 1024 px (the user's call, 2026-10-28) the middle column holds the stage, as wide as the
 window's height leaves room for the panel under it (`PC_PANEL`, 268 px: the line, the dice, the readout, the actions,
-the keys), and the panel framed under it, scrolling inside itself when a step holds more, its `BottomDock` pinned at its
-foot; at its sides, from the send-out to the catch, the Bag open (`BagColumn`) and the team on rows (`TeamColumn`),
+the keys), and the panel framed under it. **A fight's step never scrolls**: whatever it would scroll by (the line on two
+rows, a row of powers, the AUTO switch, the keys) is taken from the stage, up to `PC_PANEL_MAX` (440 px), and kept for
+the session so the stage doesn't change size from turn to turn (a player's feedback, 2026-10-29: the damage was hidden
+under REROLL and ATTACK). A result, the send-out and the catch scroll inside the panel instead, its `BottomDock` pinned
+at its foot; at its sides, from the send-out to the catch, the Bag open (`BagColumn`) and the team on rows (`TeamColumn`),
 each at most 340 px (docs/42 §3). The history is More details' button at the panel's foot.
 
 - **Stage** (`BattleStage`): 240×160 art pixels, scaled. The background is the area's picture (its middle 240 × 160,
