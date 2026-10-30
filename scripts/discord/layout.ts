@@ -271,7 +271,7 @@ export const LAYOUT: Layout = {
           name: '🎉-events',
           kind: 'announcement',
           aliases: ['live-events', 'event', 'evenements', 'evenement'],
-          topic: 'Live events, announced two hours before they start. Get Event Pings in Channels & Roles.',
+          topic: "Live events: the week's calendar every Monday, and a post as each one starts. Get Event Pings in Channels & Roles.",
         },
         {
           key: 'supportMe',
@@ -499,7 +499,7 @@ export const LAYOUT: Layout = {
             'dice, catch them all region after region, and take on the daily raid with your friends.\n\n' +
             `**[Play now: ${SITE.replace('https://', '')}](${SITE})**`,
           fields: [
-            { name: 'Start here', value: '{#rules} the rules\n{#announcements} news\n{#patchNotes} what each update changed\n{#dailyRaid} today\'s raid\n{#liveEvents} live events, two hours ahead\n{#supportMe} support the developer' },
+            { name: 'Start here', value: '{#rules} the rules\n{#announcements} news\n{#patchNotes} what each update changed\n{#dailyRaid} today\'s raid\n{#liveEvents} live events: the week\'s calendar, each start\n{#supportMe} support the developer' },
             { name: 'Talk', value: '{#general} chat\n{#help} questions\n{#strategy} teams and dice\n{#raidSquad} find raid partners\n{#showOff} your best catches\n{#offTopic} anything else' },
             { name: 'Feedback', value: '{#bugs} something broke\n{#ideas} ideas and votes' },
             {

@@ -2,9 +2,10 @@
 
 > **What this gives:** the server the game links to, rebuilt for a public player community. That means clear
 > channels, staff and ping roles, forums for help, bugs and ideas, safety settings and AutoMod, a "Channels & Roles"
-> question for pings and languages, and pinned welcome and rules posts. Four automatic posts come with it: **the daily
-> raid** at 00:00 UTC, **the patch notes** of each update once it is live, **each live event** two hours before it
-> starts, and **the week's Ko-fi update** every Saturday.
+> question for pings and languages, and pinned welcome and rules posts. Five automatic posts come with it: **the daily
+> raid** at 00:00 UTC, **the patch notes** of each update once it is live, **the week's live events calendar** every
+> Monday and **each live event** as it starts ([docs/50](50-DISCORD-LIVE-EVENTS.md)), and **the week's Ko-fi update**
+> every Saturday.
 >
 > **How:** the server is described in one file, `scripts/discord/layout.ts`. `pnpm discord` compares the live server
 > with that file and lists the differences without changing anything. `pnpm discord --apply` makes them. It adopts
@@ -134,8 +135,8 @@ private channel stays private, and the history stays. Delete the ones you don't 
 
 ## 7. GitHub: the automatic posts
 
-The four workflows (`.github/workflows/discord-raid.yml`, `discord-patch-notes.yml`, `discord-live.yml` and
-`discord-support.yml`) run from `main` only:
+The five workflows (`.github/workflows/discord-raid.yml`, `discord-patch-notes.yml`, `discord-live.yml`,
+`discord-live-week.yml` and `discord-support.yml`) run from `main` only:
 GitHub runs scheduled and push workflows from the default branch. They start working once this branch reaches `main`
 with version 2. GitHub → the repository → **Settings** → **Secrets and variables** → **Actions**:
 
@@ -256,15 +257,16 @@ GitHub → Actions → **Discord weekly Ko-fi update** → **Run workflow**.
 
 ## 12. Live events (`#🎉-events`)
 
-Two hours before each live event starts, `#🎉-events` gets a short post: its name, what it does with its numbers
-(×5 shiny in Kanto, +50% ₽, the shop's items…), when it starts and ends, the badges it needs and its banner. It pings
-Event Pings. Every hour at :07 a run takes the events whose "two hours before" falls in its hour and waits for that
-moment, so each event is posted once, on time. An event scheduled (and Published) less than two hours before its start
-isn't announced: post in `#📣-announcements` by hand. A moved or removed event isn't posted.
+Every Monday at about 07:23 UTC, `#🎉-events` gets **the week's calendar**: a chart of the week's days with a bar per
+event, each event in a line (what it does, when, in each reader's own time) and the next one after the week. A week
+without an event posts nothing. Then **each event gets its own post as it starts**, pinging Event Pings: everything it
+does (every shop item and price, every shiny area, the Underground's kits), when it ends, the badges it needs, how it
+comes back, what else is on, and its banner. [docs/50](50-DISCORD-LIVE-EVENTS.md) has the details and the setup.
 
 **Nothing is posted while live events are Off or On for admin** in Admin → Events.
 
-- Preview: `pnpm discord:live --dry --at 2026-12-24T18:07:00Z` (what the run of that hour would post).
+- Preview: `pnpm discord:live-week --dry` (this week's calendar) and `pnpm discord:live --dry --at 2026-12-24T18:07:00Z`
+  (what the run of that hour would post).
 - `pnpm discord --apply` makes `#🎉-events` (or adopts yours) and its webhook; add `DISCORD_EVENTS_WEBHOOK` and
   `DISCORD_EVENT_ROLE` to GitHub (step 7).
 

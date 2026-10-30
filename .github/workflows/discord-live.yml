@@ -1,6 +1,6 @@
-# Announces each live event in the Discord server's #events two hours before it starts (docs/23-DISCORD-SERVER.md §12).
-# Every hour at :07, the run takes the events whose "two hours before" falls in its hour and waits for that moment, so
-# it only stays up long (an hour at most) when an event is coming. Nothing is posted while Admin → Events has live
+# Posts each live event in the Discord server's #events as it starts (docs/50-DISCORD-LIVE-EVENTS.md). Every hour at
+# :07, the run takes the events that start in its hour and waits for each start, so it only stays up long (an hour at
+# most) when an event is coming. The week's calendar is discord-live-week.yml. Nothing is posted while Admin → Events has live
 # events Off or On for admin, nor before the DISCORD_EVENTS_WEBHOOK secret exists.
 name: Discord live events
 
@@ -37,7 +37,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Announce the live events starting in two hours
+      - name: Post the live events starting this hour
         run: pnpm discord:live $FORCE
         env:
           FORCE: ${{ inputs.force && '--force' || '' }}
