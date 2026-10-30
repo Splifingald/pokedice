@@ -8,7 +8,7 @@ import { blockers, contentPhase, fillMentions, matchChannels, matchRoles, planAl
 import { raidMessage } from '../scripts/discord/raid-post'
 import { DESCRIPTION_MAX, MESSAGE_MAX, noteMessages, parseNote, splitText } from '../scripts/discord/patch-notes'
 import { dueLiveEvents, liveBanner, liveMessage } from '../scripts/discord/live-event-post'
-import { gauge, money, supportMessage } from '../scripts/discord/support-post'
+import { coverage, gauge, money, supportMessage } from '../scripts/discord/support-post'
 import { newLiveEvent, raidOfDay, type LiveEvent } from '@/engine'
 import { data, makeData } from './fixtures'
 
@@ -337,6 +337,58 @@ describe('the weekly Ko-fi update', () => {
       ],
     })
     expect(msg.embeds[0]!.description).toContain('Also in USD: $5 this month, $5 for November.')
+  })
+
+  it("carries what goes past a month's goal into the next ones, never a shortfall", () => {
+    const income = new Map([
+      ['2026-09', 80],
+      ['2026-10', 10],
+      ['2026-11', 30],
+    ])
+    // September: 80 for 50, 30 over. October: 30 + 10 = 40, short: nothing carries. November: 30.
+    expect(coverage(50, income, '2026-09', '2026-11')).toEqual({ carried: 0, have: 30, ahead: 0, toward: 0 })
+    expect(coverage(50, income, '2026-09', '2026-10')).toEqual({ carried: 30, have: 40, ahead: 0, toward: 0 })
+    expect(coverage(50, new Map([['2026-10', 170]]), '2026-10', '2026-10')).toEqual({ carried: 0, have: 170, ahead: 2, toward: 20 })
+    // Across a year, and a start after now counts nothing from before.
+    expect(coverage(50, new Map([['2026-12', 120]]), '2026-12', '2027-01')).toEqual({ carried: 70, have: 70, ahead: 0, toward: 20 })
+    expect(coverage(50, new Map([['2026-10', 120]]), '2026-11', '2026-10')).toEqual({ carried: 0, have: 120, ahead: 1, toward: 20 })
+  })
+
+  it('shows the money raised before tracking, what carried over and the months covered ahead', () => {
+    const months = [
+      { month: '2026-09', currency: 'EUR', total: 60 },
+      { month: '2026-10', currency: 'EUR', total: 100 },
+      { month: '2026-10', currency: 'USD', total: 3 },
+    ]
+    const totals = [{ currency: 'EUR', this_month: 100, supporters: 2, next_month: 0 }]
+    // From September with 20 raised before: September 80 (30 over), October 30 + 100 = 130: 1 month and 30 ahead.
+    const text = supportMessage({ url, goal: 50, currency: 'EUR', now, totals, months, startMonth: '2026-09', raisedBefore: 20 })
+      .embeds[0]!.description!
+    expect(text).toContain('**October: €50 / €50** (100%) ✅')
+    expect(text).toContain('Carried over from September: €30.')
+    expect(text).toContain('**Covered ahead:** 1 month (through November), and €30 toward December.')
+    // No start month: from the first payment. Without a surplus, no line ahead.
+    const later = supportMessage({ url, goal: 200, currency: 'EUR', now, totals, months }).embeds[0]!.description!
+    expect(later).toContain('**October: €100 / €200** (50%)')
+    expect(later).not.toContain('Carried')
+    expect(later).not.toContain('Covered ahead')
+  })
+
+  it('names the year of a month ahead in another year, and counts what came before tracking in its first month', () => {
+    const text = supportMessage({
+      url,
+      goal: 50,
+      currency: 'EUR',
+      now,
+      totals: [],
+      months: [],
+      startMonth: '2026-10',
+      raisedBefore: 230,
+    }).embeds[0]!.description!
+    expect(text).toContain('**October: €50 / €50** (100%) ✅')
+    expect(text).toContain('**Covered ahead:** 3 months (through January 2027), and €30 toward February 2027.')
+    const partial = supportMessage({ url, goal: 50, currency: 'EUR', now, totals: [], months: [], startMonth: '2026-10', raisedBefore: 30 })
+    expect(partial.embeds[0]!.description).toContain('**October: €30 / €50** (60%)')
   })
 
   it('fills the gauge by tenths, a sliver once anything came in', () => {

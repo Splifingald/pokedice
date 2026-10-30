@@ -1,6 +1,6 @@
 // Ko-fi (docs/23 §11): migration 0071 against a real Postgres (PGlite, in process) — the PayPal link becomes the Ko-fi
-// one, the payments stay the webhook's, and kofi_totals counts the month and the memberships renewing — and the
-// webhook's parser. seed.sql carries the migration, inlined.
+// one, the payments stay the webhook's, and kofi_totals counts the month and the memberships renewing — then 0093's
+// month by month totals, and the webhook's parser. seed.sql carries both migrations, inlined.
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
@@ -11,6 +11,7 @@ import { parseKofi } from '../netlify/kofi/payment'
 const ROOT = path.join(__dirname, '..', 'supabase')
 const FILE = '0071_kofi.sql'
 const sql = readFileSync(path.join(ROOT, 'migrations', FILE), 'utf8')
+const MONTHS_SQL = readFileSync(path.join(ROOT, 'migrations', '0093_kofi_months.sql'), 'utf8')
 const ADMIN = '00000000-0000-4000-8000-000000000009'
 const ASH = '00000000-0000-4000-8000-000000000001'
 
@@ -100,6 +101,59 @@ describe('0071: Ko-fi', () => {
     expect(await as(ASH, 'select * from kofi_payments')).toEqual([])
     expect(await as(ADMIN, 'select transaction_id from kofi_payments')).toEqual([{ transaction_id: 'a' }])
     await expect(as(ADMIN, `insert into kofi_payments (transaction_id, kind, amount, currency, paid_at) values ('x', 'Donation', 1, 'EUR', now())`)).rejects.toThrow(/permission denied/)
+  })
+})
+
+describe('0093: Ko-fi month by month', () => {
+  let db: PGlite
+  const donation = async () =>
+    (await db.query<{ v: unknown }>(`select value v from game_config where key = 'donation'`)).rows[0]?.v
+  const months = async (now: string) =>
+    (await db.query<{ month: string; currency: string; total: string }>('select * from kofi_months($1)', [now])).rows.map(
+      (r) => ({ ...r, total: Number(r.total) }),
+    )
+
+  beforeAll(async () => {
+    db = new PGlite()
+    await db.exec(`
+      create role anon; create role authenticated;
+      create table game_config (key text primary key, value jsonb not null);
+      create function is_admin() returns boolean language sql stable as $$ select false $$;
+      insert into game_config (key, value) values
+        ('configVersion', '41'),
+        ('donation', '{"round": 1, "enabled": true, "kofiUrl": "https://ko-fi.com/gregoirefontaine", "monthlyGoal": 50}');
+    `)
+    await db.exec(sql)
+    await db.exec(MONTHS_SQL)
+  })
+
+  it('starts the goal in October 2026, keeping what the admin set when run again', async () => {
+    expect(await donation()).toMatchObject({ monthlyGoal: 50, startMonth: '2026-10', raisedBefore: 0 })
+    await db.exec(`update game_config set value = value || '{"startMonth": "2026-09", "raisedBefore": 30}' where key = 'donation'`)
+    await db.exec(MONTHS_SQL)
+    expect(await donation()).toMatchObject({ startMonth: '2026-09', raisedBefore: 30 })
+  })
+
+  it('totals each month (UTC) per currency, up to the moment asked, for anyone', async () => {
+    await db.exec(`
+      insert into kofi_payments (transaction_id, kind, amount, currency, paid_at) values
+        ('a', 'Donation', 5, 'EUR', '2026-09-30T23:30:00Z'),
+        ('b', 'Donation', 20, 'EUR', '2026-10-01T00:30:00Z'),
+        ('c', 'Donation', 2.5, 'EUR', '2026-10-15T10:00:00Z'),
+        ('d', 'Donation', 4, 'USD', '2026-10-16T10:00:00Z'),
+        ('e', 'Donation', 9, 'EUR', '2026-11-02T10:00:00Z');
+    `)
+    expect(await months('2026-10-31T12:00:00Z')).toEqual([
+      { month: '2026-09', currency: 'EUR', total: 5 },
+      { month: '2026-10', currency: 'EUR', total: 22.5 },
+      { month: '2026-10', currency: 'USD', total: 4 },
+    ])
+    await db.query('set role anon')
+    try {
+      expect((await db.query(`select * from kofi_months('2026-12-01')`)).rows).toHaveLength(4)
+    } finally {
+      await db.query('reset role')
+    }
   })
 })
 
