@@ -3,9 +3,11 @@
  * pnpm discord:support --dry    — print the message instead of posting it.
  * --force                       — post even while Support me is off in Admin → Config.
  *
- * GitHub Actions runs it every Monday morning (.github/workflows/discord-support.yml): the month's goal (Admin →
- * Config → Support me), what Ko-fi has brought this month, and what next month already holds from monthly members
- * (kofi_totals, migration 0071, fed by the Ko-fi webhook). Nothing is posted while Support me is off or has no link.
+ * GitHub Actions runs it every Saturday at noon UTC (.github/workflows/discord-support.yml): the month's goal (Admin →
+ * Config → Support me), what Ko-fi has brought this month, how many months ahead are covered (what goes past a month's
+ * goal covers the next ones, from the goal's start month: kofi_months, migration 0093), and what next month already
+ * holds from monthly members (kofi_totals, migration 0071, fed by the Ko-fi webhook). Nothing is posted while Support
+ * me is off or has no link.
  */
 import { donationEnabled, donationUrl } from '@/engine'
 import { postWebhook, type DEmbed } from './api'
@@ -21,12 +23,25 @@ export interface KofiTotals {
   next_month: number
 }
 
+/** A kofi_months row: what Ko-fi brought in one month (UTC, "2026-10"), in one currency. */
+export interface KofiMonth {
+  month: string
+  currency: string
+  total: number
+}
+
 export interface SupportMessageInput {
   url: string
   /** 0 = no target: the post says what came in, without a gauge. */
   goal: number
   currency: string
   totals: KofiTotals[]
+  /** Every month's total; without it, only this month's (from `totals`) counts. */
+  months?: KofiMonth[]
+  /** The first month the goal counts ("2026-10"); '' = the month of the first payment. */
+  startMonth?: string
+  /** Raised before Ko-fi's webhook was connected, counted in the start month. */
+  raisedBefore?: number
   now: number
   site?: string
 }
@@ -52,9 +67,33 @@ export function gauge(share: number): string {
   return '▰'.repeat(n) + '▱'.repeat(10 - n)
 }
 
-const monthName = (ms: number, offset = 0) => {
+const monthStart = (ms: number, offset = 0) => {
   const d = new Date(ms)
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + offset, 1)).toLocaleString('en', { month: 'long', timeZone: 'UTC' })
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + offset, 1))
+}
+const monthName = (ms: number, offset = 0) => monthStart(ms, offset).toLocaleString('en', { month: 'long', timeZone: 'UTC' })
+/** "January", or "January 2027" once it's another year than `ms`'s. */
+const monthLabel = (ms: number, offset: number) => {
+  const d = monthStart(ms, offset)
+  return d.getUTCFullYear() === new Date(ms).getUTCFullYear() ? monthName(ms, offset) : `${monthName(ms, offset)} ${d.getUTCFullYear()}`
+}
+/** "2026-10": the month holding `ms`, `offset` months later. */
+const monthKey = (ms: number, offset = 0) => monthStart(ms, offset).toISOString().slice(0, 7)
+const MONTH_KEY = /^\d{4}-(0[1-9]|1[0-2])$/
+
+/**
+ * The goal month by month, from `start` to `now` ("2026-10"), amounts in cents: what goes past a month's goal carries
+ * into the next one; a shortfall doesn't (a month gone by can't be paid for later). `ahead` whole months after this
+ * one are covered, and `toward` goes to the month after them.
+ */
+export function coverage(goal: number, income: ReadonlyMap<string, number>, start: string, now: string) {
+  let carried = 0
+  for (let m = start; m < now; m = monthKey(Date.parse(`${m}-01T00:00:00Z`), 1))
+    carried = Math.max(0, carried + (income.get(m) ?? 0) - goal)
+  const have = carried + (income.get(now) ?? 0)
+  const over = Math.max(0, have - goal)
+  const ahead = goal > 0 ? Math.floor(over / goal) : 0
+  return { carried, have, ahead, toward: over - ahead * goal }
 }
 
 /** The webhook message: this month against the goal, next month so far, and the Ko-fi link. */
@@ -68,8 +107,27 @@ export function supportMessage(input: SupportMessageInput) {
   const thisMonth = Number(main.this_month)
   const lines: string[] = []
   if (input.goal > 0) {
-    const share = thisMonth / input.goal
-    lines.push(`**${month}: ${money(thisMonth, cur)} / ${money(input.goal, cur)}** (${Math.round(share * 100)}%)`, gauge(share))
+    const cents = (amount: unknown) => Math.round(Number(amount) * 100) || 0
+    const now = monthKey(input.now)
+    const income = new Map<string, number>()
+    for (const m of input.months ?? [{ month: now, currency: cur, total: thisMonth }])
+      if (m.currency.toUpperCase() === cur) income.set(m.month, (income.get(m.month) ?? 0) + cents(m.total))
+    const first = [...income.keys()].sort()[0]
+    const start = MONTH_KEY.test(input.startMonth ?? '') ? input.startMonth! : first && first < now ? first : now
+    income.set(start, (income.get(start) ?? 0) + Math.max(0, cents(input.raisedBefore)))
+    const goal = cents(input.goal)
+    const c = coverage(goal, income, start, now)
+    const shown = Math.min(c.have, goal)
+    const share = shown / goal
+    lines.push(
+      `**${month}: ${money(shown / 100, cur)} / ${money(input.goal, cur)}** (${Math.round(share * 100)}%)${c.have >= goal ? ' ✅' : ''}`,
+      gauge(share),
+    )
+    if (c.carried > 0) lines.push(`Carried over from ${monthName(input.now, -1)}: ${money(c.carried / 100, cur)}.`)
+    const ahead: string[] = []
+    if (c.ahead > 0) ahead.push(`${c.ahead} month${c.ahead === 1 ? '' : 's'} (through ${monthLabel(input.now, c.ahead)})`)
+    if (c.toward > 0) ahead.push(`${money(c.toward / 100, cur)} toward ${monthLabel(input.now, c.ahead + 1)}`)
+    if (ahead.length) lines.push(`**Covered ahead:** ${ahead.join(', and ')}.`)
   } else lines.push(`**${month}: ${money(thisMonth, cur)}**`)
   if (main.supporters > 0) lines.push(`Thanks to ${main.supporters} supporter${main.supporters === 1 ? '' : 's'} this month 💖`)
   lines.push(`**${next}:** ${money(Number(main.next_month), cur)} already lined up from monthly members.`)
@@ -113,16 +171,25 @@ async function main() {
   if (!client) throw new Error('No VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY: the Ko-fi totals live in Supabase.')
   const { data: rows, error } = await client.rpc('kofi_totals')
   if (error) throw new Error(`kofi_totals: ${error.message} (has supabase/migrations/0071_kofi.sql been run?)`)
+  const months = await client.rpc('kofi_months')
+  if (months.error)
+    throw new Error(`kofi_months: ${months.error.message} (has supabase/migrations/0093_kofi_months.sql been run?)`)
   const cfg = data.config.donation
   const message = supportMessage({
     url,
     goal: Number(cfg.monthlyGoal) || 0,
     currency: cfg.currency || 'EUR',
     totals: (rows ?? []) as KofiTotals[],
+    months: ((months.data ?? []) as KofiMonth[]).map((m) => ({ ...m, total: Number(m.total) })),
+    startMonth: cfg.startMonth,
+    raisedBefore: Number(cfg.raisedBefore) || 0,
     now: Date.now(),
     site: env.POKEDICE_SITE?.trim() || SITE,
   })
-  console.log(`Goal ${cfg.monthlyGoal} ${cfg.currency}, from ${source}; totals: ${JSON.stringify(rows)}`)
+  console.log(
+    `Goal ${cfg.monthlyGoal} ${cfg.currency} from ${cfg.startMonth || 'the first payment'} (+${cfg.raisedBefore} before), ` +
+      `from ${source}; totals: ${JSON.stringify(rows)}; months: ${JSON.stringify(months.data)}`,
+  )
   if (dry) {
     console.log(JSON.stringify(message, null, 2))
     return

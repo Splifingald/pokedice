@@ -90,7 +90,7 @@ export const DEFAULT_CONFIG: GameConfig = {
     hatchMinLevel: 5,
   },
   // Off until the admin sets a Ko-fi link and switches it on.
-  donation: { enabled: false, kofiUrl: '', monthlyGoal: 0, currency: 'EUR', round: 0 },
+  donation: { enabled: false, kofiUrl: '', monthlyGoal: 0, currency: 'EUR', startMonth: '', raisedBefore: 0, round: 0 },
   // No Discord button until the admin sets the invite link.
   discordUrl: '',
   // Mega Evolution opens with Kalos (X and Y's mechanic) and then works in every region: a Lv.50 Pokémon of a species

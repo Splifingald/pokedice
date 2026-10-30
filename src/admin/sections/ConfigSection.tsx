@@ -209,7 +209,7 @@ function DonationBox() {
             onChange={(e) => set({ kofiUrl: e.target.value })}
           />
         </Field>
-        <Field label="Monthly goal" hint="The weekly #support-me post's target · 0 = none">
+        <Field label="Monthly goal" hint="The Saturday #support-me post's target · 0 = none">
           <NumInput min={0} value={cfg.monthlyGoal} onChange={(v) => set({ monthlyGoal: Math.max(0, v ?? 0) })} />
         </Field>
         <Field label="Currency" hint="Your Ko-fi page's, e.g. EUR">
@@ -219,6 +219,18 @@ function DonationBox() {
             value={cfg.currency}
             onChange={(e) => set({ currency: e.target.value.toUpperCase().replace(/[^A-Z]/g, '') })}
           />
+        </Field>
+        <Field label="Goal counts from" hint="What goes past a month's goal covers the next ones from here · empty = Ko-fi's first payment">
+          <input
+            className={inputCls}
+            type="month"
+            placeholder="2026-10"
+            value={cfg.startMonth}
+            onChange={(e) => set({ startMonth: e.target.value })}
+          />
+        </Field>
+        <Field label="Raised before tracking" hint="Ko-fi only reports payments made after its webhook was set up: add what came in before (counted in that first month)">
+          <NumInput min={0} value={cfg.raisedBefore} onChange={(v) => set({ raisedBefore: Math.max(0, v ?? 0) })} />
         </Field>
       </div>
       <label className="flex items-start gap-2 text-lg">

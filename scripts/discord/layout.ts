@@ -278,7 +278,7 @@ export const LAYOUT: Layout = {
           name: '💖-support-me',
           kind: 'text',
           aliases: ['soutien', 'soutenir', 'donations', 'donation', 'ko-fi', 'kofi'],
-          topic: "Pokédice is free forever. If you'd like to support the developer, Ko-fi's goal for the month is posted here every Monday.",
+          topic: "Pokédice is free forever. If you'd like to support the developer, Ko-fi's goal for the month is posted here every Saturday.",
         },
       ],
     },
