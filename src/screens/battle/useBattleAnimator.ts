@@ -344,11 +344,21 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       }
     case 'talent':
       return {
-        // Long enough to read the plaque; one that only says what works on its own reads its line too.
-        delay: e.entry ? 1300 : 1050,
+        // Long enough to read the plaque; one that only says what works on its own reads its line too. Mirror waits
+        // for its die to land.
+        delay: e.entry ? 1300 : e.dice ? 1500 : 1050,
         sound: 'talent',
         apply: (f) => ({
           ...f,
+          // Mirror: the roll stays, and only its lowest die is thrown again, landing on the highest's face.
+          ...(e.dice &&
+            e.index != null && {
+              tray: {
+                side: e.side,
+                dice: e.dice,
+                keys: e.dice.map((_, i) => (i === e.index ? `m${nextId()}-${i}` : (f.tray?.keys[i] ?? `k-${i}`))),
+              },
+            }),
           message: talentLogText(e.name ?? nameOf(e.uid), e, e.ally ? nameOf(e.ally) : undefined),
           talent: { id: nextId(), side: e.side, uid: e.uid, key: e.talent, name: e.name ?? nameOf(e.uid), ...(e.entry && { entry: true }) },
           ...(e.hpAfter != null && {

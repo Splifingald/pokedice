@@ -321,6 +321,9 @@ export type LogEntry =
       ally?: string
       name?: string
       hurt?: { side: Side; uid: string; amount: number; hpAfter: number }
+      /** Mirror's: the roll it turned (`index` the die that took the highest's face), for the tray to show it. */
+      dice?: RolledDie[]
+      index?: number
       /** Said as it first acts: a talent that works on its own (`ANNOUNCED_TALENTS`). */
       entry?: true
     }
@@ -1675,13 +1678,13 @@ function hitTalents(
 }
 
 /** Mirror (docs/51): the lowest die becomes a copy of the highest. Null when they already match. */
-function mirrorDice(dice: readonly RolledDie[], data: GameData): { dice: RolledDie[]; value: number } | null {
+function mirrorDice(dice: readonly RolledDie[], data: GameData): { dice: RolledDie[]; value: number; index: number } | null {
   if (dice.length < 2) return null
   const values = dice.map((d) => dieValue(d, data))
   const hi = values.indexOf(Math.max(...values))
   const lo = values.indexOf(Math.min(...values))
   if (values[hi] === values[lo]) return null
-  return { dice: dice.map((d, i) => (i === lo ? { ...dice[hi]! } : d)), value: values[hi]! }
+  return { dice: dice.map((d, i) => (i === lo ? { ...dice[hi]! } : d)), value: values[hi]!, index: lo }
 }
 
 /**
@@ -1780,7 +1783,7 @@ function resolveAttack(
   if (mirrored) {
     s.dice = mirrored.dice
     atk.talentSpent = [...(atk.talentSpent ?? []), 'mirror']
-    log.push({ kind: 'talent', side, uid: atk.uid, talent: 'mirror', amount: mirrored.value })
+    log.push({ kind: 'talent', side, uid: atk.uid, talent: 'mirror', amount: mirrored.value, dice: mirrored.dice, index: mirrored.index })
   }
   const dice = s.dice
 
