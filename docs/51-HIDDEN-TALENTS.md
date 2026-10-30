@@ -5,8 +5,8 @@ wild rarely carries it; catching one unlocks the talent for the whole family. Th
 (Rattata's line something common, Dragonite's something cool). The talents themselves were picked from a brainstorm
 (the artifact <https://claude.ai/artifact/BYkiNrNS95hvTPBvMiGaNk>).
 
-**Status: built** on `claude/pokemon-talent-system-h3n0tx`, behind its switch, **Off** (docs/15 §20). The migration is
-**0094**. Speed by level (docs/50) came with it.
+**Status: built** on `version/2_7`, behind its switch, **Off** (docs/15 §20). The migration is
+**0095**. Speed by level (docs/52) came with it.
 
 ## 1. Decisions
 
@@ -23,7 +23,7 @@ wild rarely carries it; catching one unlocks the talent for the whole family. Th
 | What the player sees | A family's talent is "???" until one carrying it is **met**; then its name, greyed until learnt. A wild one with its talent says so before the fight |
 | Pokémon owned before | **None** carries a talent: the switch starts everyone at zero |
 | Foes | **Use theirs**: wild ones at the odds, a gym leader's, an Elite Four's or a Champion's ace always, any other trainer Pokémon at the odds |
-| Versus and raids | **Apply**: the server's team snapshots carry the talent (0094). Raider acts only in raids, Power Spot and Friend Guard in double battles and raids |
+| Versus and raids | **Apply**: the server's team snapshots carry the talent (0095). Raider acts only in raids, Power Spot and Friend Guard in double battles and raids |
 | Trades | A traded Pokémon **keeps** its talent (and unlocks its family on arrival). A listing can ask for a species **with its hidden talent** |
 | Icon | A small **gem** (a lozenge): green for a common talent, blue for a rare one, gold for an ultra one, red for the unique one, grey for unknown; on the Box, the team, the plates and trades |
 | Small worlds, Extreme | **On** in both; Extreme mode keeps its own (its own save) |
@@ -88,7 +88,7 @@ The user's ask of 2026-10-30: a Rare Candy reskin (`public/items/talent-candy.pn
 a Pokémon's talent, given only while its talent isn't revealed yet. Used from a Pokémon's sheet (Use an item), it
 unlocks the family's talent in that region, as catching one that carries it would; a Pokémon that has it (or with
 the switch off) shows it greyed: "Its talent is already revealed". Effect kind `talent` (`applyFieldItem`,
-`talentCandyFits`). **Never in the Mart nor any loot**: the admin sells it in a Special Shop live event. Migration 0095
+`talentCandyFits`). **Never in the Mart nor any loot**: the admin sells it in a Special Shop live event. Migration 0096
 adds its row.
 
 ## 3. The rules (`src/engine`)
@@ -132,7 +132,7 @@ the catch's False Swipe line (and the balls' chances with it), the Day Care card
 Pickup's tag over its find. `/kitchen-sink/talent-lab` fights each one in the real battle screen (dev only; its fights
 are checked by `tests/talent-lab.test.ts`).
 
-## 4. The server (0094)
+## 4. The server (0095)
 
 - `game_config.hiddenTalents` (Off) and `talents_open()`.
 - `versus_set_team`, `raid_set_team`, `raid_progress_set_team`: the snapshot carries `talent` while the switch is open,
@@ -147,9 +147,9 @@ docs/15 §38. Admin → Config → Switches (the switch) and → Hidden talents 
 
 ## 6. Setting it up
 
-1. Run [`supabase/migrations/0093_speed_by_level.sql`](https://github.com/Splifingald/pokedice/blob/claude/pokemon-talent-system-h3n0tx/supabase/migrations/0093_speed_by_level.sql)
-   (Speed by level, docs/50),
-   [`supabase/migrations/0094_hidden_talents.sql`](https://github.com/Splifingald/pokedice/blob/claude/pokemon-talent-system-h3n0tx/supabase/migrations/0094_hidden_talents.sql)
-   and [`supabase/migrations/0095_talent_candy.sql`](https://github.com/Splifingald/pokedice/blob/claude/pokemon-talent-system-h3n0tx/supabase/migrations/0095_talent_candy.sql)
+1. Run [`supabase/migrations/0094_speed_by_level.sql`](https://github.com/Splifingald/pokedice/blob/version/2_7/supabase/migrations/0094_speed_by_level.sql)
+   (Speed by level, docs/52),
+   [`supabase/migrations/0095_hidden_talents.sql`](https://github.com/Splifingald/pokedice/blob/version/2_7/supabase/migrations/0095_hidden_talents.sql)
+   and [`supabase/migrations/0096_talent_candy.sql`](https://github.com/Splifingald/pokedice/blob/version/2_7/supabase/migrations/0096_talent_candy.sql)
    (the Talent Candy) in the Supabase SQL editor, in that order (`supabase/seed.sql` carries them, inlined).
 2. Admin → Config → Switches → Hidden talents: **On for admin** to try it, then **On for everyone**.

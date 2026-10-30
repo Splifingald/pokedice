@@ -59,7 +59,7 @@ describe('battle setup', () => {
     expect(tie.state.actor).toBe('player')
   })
 
-  it('Speed is the species\' base Speed stat plus the level (docs/50)', () => {
+  it('Speed is the species\' base Speed stat plus the level (docs/52)', () => {
     const vs = (level: number, cfg = data) =>
       createBattle(
         {

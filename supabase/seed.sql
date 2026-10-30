@@ -6660,8 +6660,35 @@ revoke all on function versus_set_team(text[], text) from public;
 grant execute on function versus_set_team(text[], text) to authenticated;
 
 
--- ↓ supabase/migrations/0093_speed_by_level.sql, inlined so this file stands alone.
--- Speed = the species' base Speed stat + level (docs/50-SPEED-BY-LEVEL.md).
+-- ↓ supabase/migrations/0093_kofi_months.sql, inlined so this file stands alone.
+-- The weekly Ko-fi post's months ahead (docs/23 §11): what goes past a month's goal covers the next months, so the post
+-- needs every month's total, not just this one's.
+--
+-- 1. game_config `donation`: the goal counts from October 2026 (when Ko-fi's webhook came), with nothing raised before
+--    it yet. An admin's own month or amount is left alone.
+-- 2. kofi_months: what Ko-fi brought each month (UTC), per currency. Totals only, like kofi_totals, so anyone may ask.
+-- Safe to run again.
+
+-- ---------------------------------------------------------------- 1. where the goal starts
+
+update game_config set value = '{"startMonth": "2026-10", "raisedBefore": 0}'::jsonb || value
+where key = 'donation' and jsonb_typeof(value) = 'object';
+
+-- ---------------------------------------------------------------- 2. the months
+
+create or replace function kofi_months(p_now timestamptz default now())
+returns table (month text, currency text, total numeric)
+language sql stable security definer set search_path = public as $$
+  select to_char(date_trunc('month', k.paid_at at time zone 'utc'), 'YYYY-MM'), k.currency, sum(k.amount)
+  from kofi_payments k
+  where k.paid_at <= p_now
+  group by 1, 2
+  order by 1, 2
+$$;
+grant execute on function kofi_months(timestamptz) to anon, authenticated;
+
+-- ↓ supabase/migrations/0094_speed_by_level.sql, inlined so this file stands alone.
+-- Speed = the species' base Speed stat + level (docs/52-SPEED-BY-LEVEL.md).
 -- 1. pokemon.speed holds the real base Speed stat (PokeAPI) instead of that stat ÷ 10; a form without a Speed of its
 --    own (Arceus's types, Silvally's memories) takes its species'. Battles add `speedPerLevel` × level.
 -- 2. game_config `speedPerLevel`: 1 (left alone when there).
@@ -6779,7 +6806,7 @@ where pokemon.dex = v.dex;
 insert into game_config (key, value) values ('speedPerLevel', '1'::jsonb) on conflict (key) do nothing;
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 
--- ↓ supabase/migrations/0094_hidden_talents.sql, inlined so this file stands alone.
+-- ↓ supabase/migrations/0095_hidden_talents.sql, inlined so this file stands alone.
 -- Hidden talents (docs/51-HIDDEN-TALENTS.md).
 -- 1. game_config `hiddenTalents`: the switch, Off, the odds (a wild Pokémon carries its talent 5 %, a locked family finds
 --    it on an evolution 30 %) and the admin's picks per family (none: the game's own). Left alone when there.
@@ -7109,7 +7136,7 @@ $$;
 
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 
--- ↓ supabase/migrations/0095_talent_candy.sql, inlined so this file stands alone.
+-- ↓ supabase/migrations/0096_talent_candy.sql, inlined so this file stands alone.
 -- The Talent Candy (docs/51): a Rare Candy reskin that reveals the hidden talent of a Pokémon whose family hasn't found
 -- it yet, for its whole family. Never in the Mart (`in_shop` false) nor in any loot table: the admin puts it in a
 -- Special Shop live event. As src/data/items.json has it (the test keeps the two the same). Left alone if there:

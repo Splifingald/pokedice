@@ -1,4 +1,4 @@
-// Migration 0094 against a real Postgres (PGlite, in process): hidden talents (docs/51). The switch's row, Off; the
+// Migration 0095 against a real Postgres (PGlite, in process): hidden talents (docs/51). The switch's row, Off; the
 // Versus team snapshot carries a Pokémon's talent while the switch is open, read from the cloud save; a trade listing
 // says whether its Pokémon carries it, may ask for a species "with its hidden talent" while the switch is open, and is
 // then only taken with such a Pokémon.
@@ -11,7 +11,7 @@ import itemsJson from '@/data/items.json'
 
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
-const FILE = '0094_hidden_talents.sql'
+const FILE = '0095_hidden_talents.sql'
 
 const AUTH = `create role anon; create role authenticated; create schema auth; create table auth.users (id uuid primary key);
   create function auth.uid() returns uuid language sql stable as $$
@@ -35,7 +35,7 @@ function save(box: Record<string, unknown>[]) {
   }
 }
 
-describe('0094: hidden talents', () => {
+describe('0095: hidden talents', () => {
   let db: PGlite
   const as = async <T>(user: string, q: string, params: unknown[] = []) => {
     await db.query(`select set_config('request.jwt.claim.sub', $1, false)`, [user])
@@ -151,9 +151,9 @@ describe('0094: hidden talents', () => {
     expect(taken.given.talent).toBe(true)
   })
 
-  it('0095 adds the Talent Candy as items.json has it, twice the same', async () => {
-    await db.exec(sql('0095_talent_candy.sql'))
-    await db.exec(sql('0095_talent_candy.sql'))
+  it('0096 adds the Talent Candy as items.json has it, twice the same', async () => {
+    await db.exec(sql('0096_talent_candy.sql'))
+    await db.exec(sql('0096_talent_candy.sql'))
     const [row] = (
       await db.query<Record<string, unknown>>(
         `select key, name, description, sprite_url, price, effect, in_shop, shop_badges from items where key = 'talent-candy'`,

@@ -16,7 +16,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   // Tuned with `pnpm balance` on the full Kanto content: ×1 HP keeps main-chain fights at ~3 turns with the v1.8 dice
   // schedule (×1.4 before it) while every hit stays exactly what the dice show; ×0.5 trainer gold paces the upgrades (v1.3).
   hpMultiplier: 1,
-  // Speed = base Speed stat + level (docs/50): each level is worth one point of Speed.
+  // Speed = base Speed stat + level (docs/52): each level is worth one point of Speed.
   speedPerLevel: 1,
   goldMultiplier: 0.5,
   gymGoldMultiplier: 2,
@@ -92,7 +92,7 @@ export const DEFAULT_CONFIG: GameConfig = {
     hatchMinLevel: 5,
   },
   // Off until the admin sets a Ko-fi link and switches it on.
-  donation: { enabled: false, kofiUrl: '', monthlyGoal: 0, currency: 'EUR', round: 0 },
+  donation: { enabled: false, kofiUrl: '', monthlyGoal: 0, currency: 'EUR', startMonth: '', raisedBefore: 0, round: 0 },
   // No Discord button until the admin sets the invite link.
   discordUrl: '',
   // Mega Evolution opens with Kalos (X and Y's mechanic) and then works in every region: a Lv.50 Pokémon of a species

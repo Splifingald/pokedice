@@ -635,6 +635,13 @@ export interface DonationConfig {
   monthlyGoal: number
   /** The Ko-fi page's currency (ISO code, e.g. EUR): the goal's, and the one the weekly post counts in. */
   currency: string
+  /**
+   * The first month the goal counts ("2026-10"): from there, what goes past a month's goal covers the next ones, and
+   * the weekly post says how many months ahead are covered. '' = the month of Ko-fi's first payment.
+   */
+  startMonth: string
+  /** Raised before Ko-fi's webhook was connected (Ko-fi only reports new payments), counted in `startMonth`. */
+  raisedBefore: number
   /** Bumped by the admin's reset: every player who has already seen the pop-up gets it once more. */
   round: number
 }
@@ -925,7 +932,7 @@ export interface GameConfig {
    */
   hpMultiplier: number
   /**
-   * Speed = the species' base Speed stat + this × level (docs/50): the weight of a level against the species' Speed.
+   * Speed = the species' base Speed stat + this × level (docs/52): the weight of a level against the species' Speed.
    * Migration 0093 inserts the same row.
    */
   speedPerLevel: number

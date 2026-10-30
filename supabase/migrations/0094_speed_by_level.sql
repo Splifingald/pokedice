@@ -1,4 +1,4 @@
--- Speed = the species' base Speed stat + level (docs/50-SPEED-BY-LEVEL.md).
+-- Speed = the species' base Speed stat + level (docs/52-SPEED-BY-LEVEL.md).
 -- 1. pokemon.speed holds the real base Speed stat (PokeAPI) instead of that stat ÷ 10; a form without a Speed of its
 --    own (Arceus's types, Silvally's memories) takes its species'. Battles add `speedPerLevel` × level.
 -- 2. game_config `speedPerLevel`: 1 (left alone when there).

@@ -54,7 +54,8 @@
     "discord:raid": "tsx scripts/discord/raid-post.ts",
     "discord:patch-notes": "tsx scripts/discord/patch-notes.ts",
     "discord:support": "tsx scripts/discord/support-post.ts",
-    "discord:live": "tsx scripts/discord/live-event-post.ts"
+    "discord:live": "tsx scripts/discord/live-event-post.ts",
+    "discord:live-week": "tsx scripts/discord/live-week-post.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",

@@ -211,6 +211,21 @@ test('PC: the stage on top, the Bag open at its left, the team at its right, the
   expect(m.scroll).toBeLessThanOrEqual(0)
 })
 
+test("PC: the send-out's lead is picked with a click in the team's column", async ({ page }) => {
+  // A player's feedback (2026-10-30): on a PC only 1–6 changed the lead, a click did nothing.
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await boot(page, threeTeam())
+  await page.goto('/home')
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+  const team = page.getByRole('region', { name: 'Switch Pokémon' })
+  await expect(team.getByRole('button', { pressed: true })).toContainText('Bulbasaur')
+  await team.getByRole('button', { name: /^Squirtle,/ }).click()
+  await expect(team.getByRole('button', { pressed: true })).toContainText('Squirtle')
+  await page.getByRole('button', { name: 'Send out Squirtle' }).click()
+  await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeEnabled({ timeout: 20_000 })
+  await expect(team.getByRole('button', { name: /^Squirtle, .*in battle$/ })).toBeVisible()
+})
+
 test("PC: an item's Pokémon and the switch are picked in the team's column", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await boot(page, threeTeam())

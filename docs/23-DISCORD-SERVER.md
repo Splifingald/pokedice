@@ -2,9 +2,10 @@
 
 > **What this gives:** the server the game links to, rebuilt for a public player community. That means clear
 > channels, staff and ping roles, forums for help, bugs and ideas, safety settings and AutoMod, a "Channels & Roles"
-> question for pings and languages, and pinned welcome and rules posts. Four automatic posts come with it: **the daily
-> raid** at 00:00 UTC, **the patch notes** of each update once it is live, **each live event** two hours before it
-> starts, and **the week's Ko-fi update** every Monday.
+> question for pings and languages, and pinned welcome and rules posts. Five automatic posts come with it: **the daily
+> raid** at 00:00 UTC, **the patch notes** of each update once it is live, **the week's live events calendar** every
+> Monday and **each live event** as it starts ([docs/50](50-DISCORD-LIVE-EVENTS.md)), and **the week's Ko-fi update**
+> every Saturday.
 >
 > **How:** the server is described in one file, `scripts/discord/layout.ts`. `pnpm discord` compares the live server
 > with that file and lists the differences without changing anything. `pnpm discord --apply` makes them. It adopts
@@ -134,8 +135,8 @@ private channel stays private, and the history stays. Delete the ones you don't 
 
 ## 7. GitHub: the automatic posts
 
-The four workflows (`.github/workflows/discord-raid.yml`, `discord-patch-notes.yml`, `discord-live.yml` and
-`discord-support.yml`) run from `main` only:
+The five workflows (`.github/workflows/discord-raid.yml`, `discord-patch-notes.yml`, `discord-live.yml`,
+`discord-live-week.yml` and `discord-support.yml`) run from `main` only:
 GitHub runs scheduled and push workflows from the default branch. They start working once this branch reaches `main`
 with version 2. GitHub → the repository → **Settings** → **Secrets and variables** → **Actions**:
 
@@ -210,11 +211,20 @@ What the setup matches and never touches:
 
 ## 11. The weekly Ko-fi update (`#💖-support-me`)
 
-Every Monday at about 07:43 UTC, `#💖-support-me` gets one short post: **the month's goal**, **what Ko-fi has brought
-this month** (with a gauge and the number of supporters), **what next month already holds** from monthly members, and
-the Ko-fi link. Next month counts each Ko-fi membership paid within the last 35 days, since it renews; Ko-fi doesn't
-say when one is cancelled, so a missed renewal drops out after 35 days. One-off donations count in the month they
-were made. Nothing is posted while Support me is off in Admin → Config.
+Every Saturday at noon UTC (GitHub can start it a few minutes late), `#💖-support-me` gets one short post: **the
+month's goal**, **what Ko-fi has brought this month** (with a gauge and the number of supporters), **how many months
+ahead are covered**, **what next month already holds** from monthly members, and the Ko-fi link. Nothing is posted
+while Support me is off in Admin → Config.
+
+- **Months ahead.** What goes past a month's goal covers the next months, counted from **Goal counts from** (Admin →
+  Config → Support me; October 2026 to start). €130 in October against €50: October ✅, November covered, €30 toward
+  December. The post says what carried over from last month. A month that falls short stays short: later money
+  covers the months to come, not the ones gone by.
+- **Before tracking.** Ko-fi only reports payments made after its webhook was set up (step 4 below), and a goal bar
+  you set by hand on Ko-fi isn't a payment. Put what came in before in **Raised before tracking**: it counts in the
+  first month.
+- **Next month** counts each Ko-fi membership paid within the last 35 days, since it renews; Ko-fi doesn't say when
+  one is cancelled, so a missed renewal drops out after 35 days. One-off donations count in the month they were made.
 
 The game's SUPPORT ME pop-up opens the same Ko-fi page (Admin → Config → Support me → **Ko-fi link**).
 
@@ -224,31 +234,39 @@ The game's SUPPORT ME pop-up opens the same Ko-fi page (Admin → Config → Sup
    [`supabase/migrations/0071_kofi.sql`](https://github.com/Splifingald/pokedice/blob/claude/modest-thompson-3x5pku/supabase/migrations/0071_kofi.sql)
    (`supabase/seed.sql` carries it too, inlined). It switches the game's link to Ko-fi, and adds the payments table
    and the totals the post reads.
+   Then run
+   [`supabase/migrations/0093_kofi_months.sql`](https://github.com/Splifingald/pokedice/blob/ccr-67727589-00ypqx/supabase/migrations/0093_kofi_months.sql)
+   (inlined in `supabase/seed.sql` too): each month's total, for the months ahead.
 2. **Admin → Config → Support me**: check the Ko-fi link, set the **Monthly goal** and the **Currency** of your Ko-fi
-   page (EUR by default). Save, then Publish.
+   page (EUR by default), **Goal counts from** (the first month) and **Raised before tracking** (what Ko-fi brought
+   before step 4). Save, then Publish.
 3. **Netlify** → Site configuration → Environment variables: add `KOFI_VERIFICATION_TOKEN` (Ko-fi → Settings → API →
-   *Verification Token*). `VITE_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are already there for the push sender
+   Advanced → *Verification Token*, pasted with no space around it). `VITE_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are already there for the push sender
    (docs/27); add them if not. Redeploy.
 4. **Ko-fi** → Settings → API → **Webhook URL**: `https://poke-dice.netlify.app/.netlify/functions/kofi-webhook`, then
-   **Send Single Donation Test**: Netlify → Logs → Functions → `kofi-webhook` should say `Donation 3 …`. Ko-fi's tests
-   use made-up ids, so delete the test row afterwards (Supabase → Table Editor → `kofi_payments`).
+   **Send Single Donation Test**: Netlify → Cloud compute → Functions → `kofi-webhook` (its log is real-time: keep it
+   open while you test) should say `Donation 3 …`; `refused: bad token` means step 3's token doesn't match. Ko-fi's
+   tests use made-up ids, so delete the test row afterwards (Supabase → Table Editor → `kofi_payments`).
 5. `pnpm discord --apply` makes `#💖-support-me` (or adopts yours) and its webhook; add `DISCORD_SUPPORT_WEBHOOK` to
-   GitHub (step 7).
+   GitHub (step 7). Without the bot: the channel's ⚙️ → Integrations → Webhooks → New Webhook → **Copy Webhook URL**
+   (name it `Pokédice`, the one the setup looks for).
 
-Payments made before step 4 aren't known: Ko-fi only sends new ones. Preview: `pnpm discord:support --dry`. Post now:
+Payments made before step 4 aren't known: Ko-fi only sends new ones (hence **Raised before tracking**). Preview:
+`pnpm discord:support --dry`. Post now:
 GitHub → Actions → **Discord weekly Ko-fi update** → **Run workflow**.
 
 ## 12. Live events (`#🎉-events`)
 
-Two hours before each live event starts, `#🎉-events` gets a short post: its name, what it does with its numbers
-(×5 shiny in Kanto, +50% ₽, the shop's items…), when it starts and ends, the badges it needs and its banner. It pings
-Event Pings. Every hour at :07 a run takes the events whose "two hours before" falls in its hour and waits for that
-moment, so each event is posted once, on time. An event scheduled (and Published) less than two hours before its start
-isn't announced: post in `#📣-announcements` by hand. A moved or removed event isn't posted.
+Every Monday at about 07:23 UTC, `#🎉-events` gets **the week's calendar**: a chart of the week's days with a bar per
+event, each event in a line (what it does, when, in each reader's own time) and the next one after the week. A week
+without an event posts nothing. Then **each event gets its own post as it starts**, pinging Event Pings: everything it
+does (every shop item and price, every shiny area, the Underground's kits), when it ends, the badges it needs, how it
+comes back, what else is on, and its banner. [docs/50](50-DISCORD-LIVE-EVENTS.md) has the details and the setup.
 
 **Nothing is posted while live events are Off or On for admin** in Admin → Events.
 
-- Preview: `pnpm discord:live --dry --at 2026-12-24T18:07:00Z` (what the run of that hour would post).
+- Preview: `pnpm discord:live-week --dry` (this week's calendar) and `pnpm discord:live --dry --at 2026-12-24T18:07:00Z`
+  (what the run of that hour would post).
 - `pnpm discord --apply` makes `#🎉-events` (or adopts yours) and its webhook; add `DISCORD_EVENTS_WEBHOOK` and
   `DISCORD_EVENT_ROLE` to GitHub (step 7).
 

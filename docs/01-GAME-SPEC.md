@@ -57,7 +57,7 @@ Title → a short intro → pick one of **Bulbasaur, Charmander, Squirtle at lev
 ### 2.1 Setup
 
 - Player team = up to **3 active Pokémon**. Before each fight the player picks which one to send.
-- **Speed** (the species' base Speed stat + its level, docs/50; base ÷ 10 from v1.7 until then) decides who acts first. Tie → player. With `noEscape` (the default, v1.7) there is no FLEE / AVOID before a fight and no RUN during one.
+- **Speed** (the species' base Speed stat + its level, docs/52; base ÷ 10 from v1.7 until then) decides who acts first. Tie → player. With `noEscape` (the default, v1.7) there is no FLEE / AVOID before a fight and no RUN during one.
 - Each Pokémon enters with a **reroll budget = its `rerolls` stat**, spent over the whole battle, not per turn.
 
 ### 2.2 A turn
@@ -222,7 +222,7 @@ Each Pokémon's set is a list of `{type, count}` where `type` may be `base` or a
 | Dex no., Name, Type 1, Type 2 | PokeAPI |
 | Base HP | real HP stat at **level 1** |
 | Max HP | real HP stat at **level 100** |
-| Speed | the real base Speed stat (Bulbasaur 45, Charmander 65, Squirtle 43); a battle adds `speedPerLevel` (1) × level (docs/50) |
+| Speed | the real base Speed stat (Bulbasaur 45, Charmander 65, Squirtle 43); a battle adds `speedPerLevel` (1) × level (docs/52) |
 | Sprite | `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/{dex}.png` |
 | Dice | generated, editable |
 | Rerolls | generated = dice count on arrival, +1 with every die gained later, editable |

@@ -9,7 +9,7 @@ export interface RaidFriend {
   name: string
   /** Their look: an id from src/lib/avatars, already checked. */
   avatar: string
-  /** `talent`: it carries its hidden talent (docs/51), as their snapshot says from 0094. */
+  /** `talent`: it carries its hidden talent (docs/51), as their snapshot says from 0095. */
   team: { dex: number; level: number; shiny: boolean; talent?: boolean }[]
   /** Times they've helped you catch a raid Pokémon. */
   helped: number

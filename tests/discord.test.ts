@@ -7,9 +7,10 @@ import { P } from '../scripts/discord/perms'
 import { blockers, contentPhase, fillMentions, matchChannels, matchRoles, planAll, rolesPhase, type Snapshot } from '../scripts/discord/plan'
 import { raidMessage } from '../scripts/discord/raid-post'
 import { DESCRIPTION_MAX, MESSAGE_MAX, noteMessages, parseNote, splitText } from '../scripts/discord/patch-notes'
-import { dueLiveEvents, liveBanner, liveMessage } from '../scripts/discord/live-event-post'
-import { gauge, money, supportMessage } from '../scripts/discord/support-post'
-import { newLiveEvent, raidOfDay, type LiveEvent } from '@/engine'
+import { dueLiveEvents, liveBanner, liveDetails, liveMessage, repeatLabel } from '../scripts/discord/live-event-post'
+import { nextAfterWeek, weekChart, weekMessage, weekOf, weekRuns, WEEK_MAX } from '../scripts/discord/live-week-post'
+import { coverage, gauge, money, supportMessage } from '../scripts/discord/support-post'
+import { liveById, newLiveEvent, raidOfDay, type LiveEvent } from '@/engine'
 import { data, makeData } from './fixtures'
 
 const UNKNOWN_BIT = 1n << 47n
@@ -249,13 +250,13 @@ describe('patch notes', () => {
 })
 
 describe('live events', () => {
-  const event = (patch: Partial<LiveEvent>): LiveEvent => ({ ...newLiveEvent('ev1', '2026-12-24T20:30:00Z', '2026-12-26T20:00:00Z'), ...patch })
+  const event = (patch: Partial<LiveEvent>): LiveEvent => ({ ...newLiveEvent('ev1', '2026-12-24T18:30:00Z', '2026-12-26T20:00:00Z'), ...patch })
   const withEvents = (...list: LiveEvent[]) => makeData({ liveEvents: { access: 'all', list } })
   const at = (iso: string) => Date.parse(iso)
 
-  it('is posted by the run whose hour holds "two hours before", once', () => {
+  it('is posted by the run whose hour holds its start, once', () => {
     const d = withEvents(event({}))
-    // 18:30 is two hours before: the 18:07 run owns it, late or not, and waits until then.
+    // 18:30: the 18:07 run owns it, waits until then; a few minutes late, it posts at once.
     expect(dueLiveEvents(d, at('2026-12-24T18:07:00Z')).map((x) => x.postAt)).toEqual([at('2026-12-24T18:30:00Z')])
     expect(dueLiveEvents(d, at('2026-12-24T18:50:00Z'))).toHaveLength(1)
     expect(dueLiveEvents(d, at('2026-12-24T17:07:00Z'))).toEqual([])
@@ -263,27 +264,28 @@ describe('live events', () => {
   })
 
   it('posts each run of a recurring event, by its own id', () => {
-    const d = withEvents(event({ repeat: { kind: 'weekly', weekday: 6, weeks: [], time: '20:30', hours: 4 } }))
-    // Saturday 26 December 2026, 20:30: the 18:07 run posts it at 18:30; a week later, the next one.
+    const d = withEvents(event({ repeat: { kind: 'weekly', weekday: 6, weeks: [], time: '18:30', hours: 4 } }))
+    // Saturday 26 December 2026, 18:30: the 18:07 run posts it; a week later, the next one.
     expect(dueLiveEvents(d, at('2026-12-26T18:07:00Z')).map((x) => [x.event.id, x.postAt])).toEqual([['ev1@2026-12-26', at('2026-12-26T18:30:00Z')]])
     expect(dueLiveEvents(d, at('2027-01-02T18:07:00Z')).map((x) => x.event.id)).toEqual(['ev1@2027-01-02'])
     expect(dueLiveEvents(d, at('2026-12-27T18:07:00Z'))).toEqual([])
   })
 
-  it('leaves out events already running or over', () => {
-    const d = withEvents(event({ start: '2026-12-24T20:00:00Z', end: '2026-12-24T20:00:00Z' }))
-    expect(dueLiveEvents(d, at('2026-12-24T18:07:00Z'))).toEqual([])
+  it('leaves out events already over', () => {
+    const d = withEvents(event({ start: '2026-12-24T18:10:00Z', end: '2026-12-24T18:20:00Z' }))
+    expect(dueLiveEvents(d, at('2026-12-24T18:07:00Z'))).toHaveLength(1)
+    expect(dueLiveEvents(d, at('2026-12-24T18:30:00Z'))).toEqual([])
   })
 
-  it('says what the event does in a short message, pinging the event role', () => {
+  it('says it is live, when it ends and what it does, pinging the event role', () => {
     const d = withEvents()
     const e = event({ type: 'cash', cash: { multiplier: 1.5 }, banner: 'village', title: { en: 'Christmas Cash' } })
     const msg = liveMessage(d, e, { roleId: '9' })
-    expect(msg.content).toBe(`<@&9> **Christmas Cash** starts <t:${at(e.start) / 1000}:R>!`)
+    expect(msg.content).toBe(`<@&9> 💰 **Christmas Cash** is live! Ends <t:${at(e.end) / 1000}:R>.`)
     expect(msg.allowed_mentions.roles).toEqual(['9'])
-    expect(msg.embeds[0]!.description).toContain('+50% on every ₽')
+    expect(msg.embeds[0]!.description).toContain('**+50%** on every ₽')
+    expect(msg.embeds[0]!.fields![0]!.value).toContain(`<t:${at(e.end) / 1000}:R>`)
     expect(msg.embeds[0]!.image!.url).toBe('https://poke-dice.netlify.app/area-art/village.png')
-    expect(msg.embeds[0]!.description!.length).toBeLessThan(300)
   })
 
   it("names a Shiny Parade's region, and the type when there's no title", () => {
@@ -291,14 +293,93 @@ describe('live events', () => {
     const region = d.regions[0]!
     const msg = liveMessage(d, event({ type: 'shiny', shiny: { multiplier: 5, scope: 'region', areaIds: [], regionId: region.id } }))
     expect(msg.embeds[0]!.title).toBe('Shiny Parade')
-    expect(msg.embeds[0]!.description).toContain(`5× more likely to be shiny, in ${region.name}`)
+    expect(msg.embeds[0]!.description).toContain(`**5×** more likely to be shiny, in ${region.name}`)
     expect(msg.allowed_mentions.roles).toEqual([])
+  })
+
+  it("lists a Special Shop's items with their price and limit, the first one's sprite beside", () => {
+    const d = withEvents()
+    const [a, b] = Object.values(d.items)
+    const e = event({ type: 'shop', shop: { items: [
+      { key: a!.key, price: 1_000_000, limit: 3, regions: 'all' },
+      { key: b!.key, price: 1_500_000, limit: null, regions: [d.regions[0]!.id] },
+    ] } })
+    const lines = liveDetails(d, e)
+    expect(lines[1]).toBe(`• **${a!.name}** ₽1,000,000 · 3 per trainer`)
+    expect(lines[2]).toBe(`• **${b!.name}** ₽1,500,000 · in ${d.regions[0]!.name}`)
+    expect(liveMessage(d, e).embeds[0]!.thumbnail?.url).toBeTruthy()
+  })
+
+  it('tells how a recurring run comes back, and what else is on with it', () => {
+    const rule = event({ repeat: { kind: 'weekly', weekday: 5, weeks: [1, 'last'], time: '18:00', hours: 6 } })
+    const other = { ...newLiveEvent('ev2', '2026-12-01T00:00:00Z', '2026-12-31T00:00:00Z'), type: 'cash' as const, title: { en: 'Big Cash' } }
+    const d = withEvents(rule, other)
+    const run = liveById(d, 'ev1@2027-01-01')
+    const fields = liveMessage(d, run!).embeds[0]!.fields!
+    expect(fields.find((f) => f.name === 'Comes back')!.value).toBe('the 1st and last Friday of each month')
+    expect(repeatLabel({ kind: 'yearly', month: 12, day: 24, time: '00:00', hours: 24 })).toBe('every year on 24 December')
+    expect(liveMessage(d, { ...run!, start: '2026-12-25T18:00:00Z' }).embeds[0]!.fields!.find((f) => f.name === 'Also on')!.value).toContain('Big Cash')
   })
 
   it('takes a banner as an area key, a path or a web address', () => {
     expect(liveBanner('')).toBeNull()
     expect(liveBanner('/events/x.png', 'https://s')).toBe('https://s/events/x.png')
     expect(liveBanner('https://cdn/x.png')).toBe('https://cdn/x.png')
+  })
+})
+
+describe('the weekly live events calendar', () => {
+  const at = (iso: string) => Date.parse(iso)
+  const ev = (id: string, start: string, end: string, patch: Partial<LiveEvent> = {}): LiveEvent => ({ ...newLiveEvent(id, start, end), ...patch })
+  const withEvents = (...list: LiveEvent[]) => makeData({ liveEvents: { access: 'all', list } })
+  // Monday 28 December 2026, 07:23 UTC.
+  const monday = at('2026-12-28T07:23:00Z')
+
+  it('runs Monday 00:00 to Monday 00:00 UTC, whatever the day', () => {
+    expect(weekOf(monday)).toEqual({ from: at('2026-12-28T00:00:00Z'), to: at('2027-01-04T00:00:00Z') })
+    expect(weekOf(at('2027-01-03T23:59:00Z')).from).toBe(at('2026-12-28T00:00:00Z'))
+  })
+
+  it("holds what's on in the week and not over yet, a weekly event's run included", () => {
+    const d = withEvents(
+      ev('over', '2026-12-28T00:00:00Z', '2026-12-28T06:00:00Z'),
+      ev('now', '2026-12-27T12:00:00Z', '2026-12-29T00:00:00Z'),
+      ev('fri', '2027-01-01T18:00:00Z', '2027-01-02T18:00:00Z'),
+      ev('later', '2027-01-10T18:00:00Z', '2027-01-11T18:00:00Z'),
+      ev('sat', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z', { repeat: { kind: 'weekly', weekday: 6, weeks: [], time: '10:00', hours: 4 } }),
+    )
+    expect(weekRuns(d, monday).map((e) => e.id)).toEqual(['now', 'fri', 'sat@2027-01-02'])
+    expect(nextAfterWeek(d, monday)?.id).toBe('sat@2027-01-09')
+  })
+
+  it('draws a bar on the days each event is on', () => {
+    const chart = weekChart([ev('a', '2026-12-29T18:00:00Z', '2026-12-31T02:00:00Z', { title: { en: '🎄 A very long Christmas title' } })], at('2026-12-28T00:00:00Z'))
+    const lines = chart.split('\n')
+    expect(lines[1]).toBe(`${' '.repeat(13)}M T W T F S S `)
+    expect(lines[2]).toBe('A very long… · ██████· · · ')
+    expect(lines.every((l) => l.length <= 27 || l.startsWith('```'))).toBe(true)
+  })
+
+  it('lists each event with its times in Discord timestamps, without pinging', () => {
+    const fri = ev('fri', '2027-01-01T18:00:00Z', '2027-01-02T18:00:00Z', { type: 'cash', cash: { multiplier: 2 }, minBadges: 8, banner: 'village' })
+    const msg = weekMessage(withEvents(fri), monday)!
+    const text = msg.embeds[0]!.description!
+    expect(msg.content).toBe('**1 live event this week!**')
+    expect(msg.allowed_mentions).toEqual({ parse: [] })
+    expect(msg.embeds[0]!.title).toBe('This week: 28 Dec – 3 Jan')
+    expect(text).toContain(`<t:${at(fri.start) / 1000}:f> → <t:${at(fri.end) / 1000}:f> · 🏅 8+ badges`)
+    expect(text).toContain('+100% on every ₽')
+    expect(msg.embeds[0]!.image!.url).toBe('https://poke-dice.netlify.app/area-art/village.png')
+  })
+
+  it('posts nothing on a week without an event, and keeps a full week under Discord\'s limit', () => {
+    expect(weekMessage(withEvents(), monday)).toBeNull()
+    const many = Array.from({ length: 20 }, (_, i) =>
+      ev(`e${i}`, `2026-12-${String(28 + (i % 4)).padStart(2, '0')}T10:00:00Z`, '2027-01-03T10:00:00Z', { type: 'shop' }),
+    )
+    const text = weekMessage(withEvents(...many), monday)!.embeds[0]!.description!
+    expect(text).toContain(`…and ${20 - WEEK_MAX} more in the game.`)
+    expect(text.length).toBeLessThan(4096)
   })
 })
 
@@ -337,6 +418,58 @@ describe('the weekly Ko-fi update', () => {
       ],
     })
     expect(msg.embeds[0]!.description).toContain('Also in USD: $5 this month, $5 for November.')
+  })
+
+  it("carries what goes past a month's goal into the next ones, never a shortfall", () => {
+    const income = new Map([
+      ['2026-09', 80],
+      ['2026-10', 10],
+      ['2026-11', 30],
+    ])
+    // September: 80 for 50, 30 over. October: 30 + 10 = 40, short: nothing carries. November: 30.
+    expect(coverage(50, income, '2026-09', '2026-11')).toEqual({ carried: 0, have: 30, ahead: 0, toward: 0 })
+    expect(coverage(50, income, '2026-09', '2026-10')).toEqual({ carried: 30, have: 40, ahead: 0, toward: 0 })
+    expect(coverage(50, new Map([['2026-10', 170]]), '2026-10', '2026-10')).toEqual({ carried: 0, have: 170, ahead: 2, toward: 20 })
+    // Across a year, and a start after now counts nothing from before.
+    expect(coverage(50, new Map([['2026-12', 120]]), '2026-12', '2027-01')).toEqual({ carried: 70, have: 70, ahead: 0, toward: 20 })
+    expect(coverage(50, new Map([['2026-10', 120]]), '2026-11', '2026-10')).toEqual({ carried: 0, have: 120, ahead: 1, toward: 20 })
+  })
+
+  it('shows the money raised before tracking, what carried over and the months covered ahead', () => {
+    const months = [
+      { month: '2026-09', currency: 'EUR', total: 60 },
+      { month: '2026-10', currency: 'EUR', total: 100 },
+      { month: '2026-10', currency: 'USD', total: 3 },
+    ]
+    const totals = [{ currency: 'EUR', this_month: 100, supporters: 2, next_month: 0 }]
+    // From September with 20 raised before: September 80 (30 over), October 30 + 100 = 130: 1 month and 30 ahead.
+    const text = supportMessage({ url, goal: 50, currency: 'EUR', now, totals, months, startMonth: '2026-09', raisedBefore: 20 })
+      .embeds[0]!.description!
+    expect(text).toContain('**October: €50 / €50** (100%) ✅')
+    expect(text).toContain('Carried over from September: €30.')
+    expect(text).toContain('**Covered ahead:** 1 month (through November), and €30 toward December.')
+    // No start month: from the first payment. Without a surplus, no line ahead.
+    const later = supportMessage({ url, goal: 200, currency: 'EUR', now, totals, months }).embeds[0]!.description!
+    expect(later).toContain('**October: €100 / €200** (50%)')
+    expect(later).not.toContain('Carried')
+    expect(later).not.toContain('Covered ahead')
+  })
+
+  it('names the year of a month ahead in another year, and counts what came before tracking in its first month', () => {
+    const text = supportMessage({
+      url,
+      goal: 50,
+      currency: 'EUR',
+      now,
+      totals: [],
+      months: [],
+      startMonth: '2026-10',
+      raisedBefore: 230,
+    }).embeds[0]!.description!
+    expect(text).toContain('**October: €50 / €50** (100%) ✅')
+    expect(text).toContain('**Covered ahead:** 3 months (through January 2027), and €30 toward February 2027.')
+    const partial = supportMessage({ url, goal: 50, currency: 'EUR', now, totals: [], months: [], startMonth: '2026-10', raisedBefore: 30 })
+    expect(partial.embeds[0]!.description).toContain('**October: €30 / €50** (60%)')
   })
 
   it('fills the gauge by tenths, a sliver once anything came in', () => {

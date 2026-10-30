@@ -27,7 +27,7 @@ export interface TradeListing {
   dex: number
   level: number
   shiny: boolean
-  /** It carries its hidden talent (docs/51); a database before 0094 doesn't say. */
+  /** It carries its hidden talent (docs/51); a database before 0095 doesn't say. */
   talent: boolean
   homeRegion: string
   want: TradeWant

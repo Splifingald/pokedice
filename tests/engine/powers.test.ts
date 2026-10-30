@@ -41,7 +41,7 @@ import { data as off, makeData } from '../fixtures'
 
 const D = DEFAULT_CONFIG
 /** Every power's newer rules switched on for everyone. */
-// Speed counts the species alone here (docs/50: `speedPerLevel` 0), so the player still opens against the Lv.100
+// Speed counts the species alone here (docs/52: `speedPerLevel` 0), so the player still opens against the Lv.100
 // Blissey these fights are set against.
 const on: GameData = makeData({
   speedPerLevel: 0,

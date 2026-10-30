@@ -61,7 +61,7 @@ const mons = (raw: unknown): VersusMon[] =>
         dex: Number(m?.dex) || 1,
         level: Number(m?.level) || 50,
         shiny: !!m?.shiny,
-        // Its hidden talent (docs/51): the server's snapshot carries it from 0094.
+        // Its hidden talent (docs/51): the server's snapshot carries it from 0095.
         ...(m?.talent === true && { talent: true }),
       }))
     : []

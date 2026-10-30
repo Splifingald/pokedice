@@ -20,7 +20,7 @@ import { parseSave } from '@/save/schema'
 import { makeData, newId } from '../fixtures'
 
 const on = (patch: Partial<DonationConfig> = {}): GameData =>
-  makeData({ donation: { enabled: true, kofiUrl: 'https://ko-fi.com/pokedice', monthlyGoal: 0, currency: 'EUR', round: 0, ...patch } })
+  makeData({ donation: { enabled: true, kofiUrl: 'https://ko-fi.com/pokedice', monthlyGoal: 0, currency: 'EUR', startMonth: '', raisedBefore: 0, round: 0, ...patch } })
 
 /** The first `n` badges of the live region, won. */
 function withBadges(save: SaveData, data: GameData, n: number): SaveData {

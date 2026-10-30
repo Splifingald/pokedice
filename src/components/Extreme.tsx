@@ -378,10 +378,12 @@ export function ExtremeTitleCard({ save }: { save: SaveData | null }) {
           </p>
         )}
         <div className="flex gap-2">
-          <PixelButton className="flex-1" onClick={() => (save ? setSwitching(true) : setRules('start'))}>
+          {/* `min-w-0`: a flex item is never narrower than its label, so "NOUVELLE PARTIE EXTRÊME" pushed INFO out of the
+              card; allowed to shrink, the label fits itself to what INFO leaves (PixelButton's fit). */}
+          <PixelButton className="min-w-0 flex-1" onClick={() => (save ? setSwitching(true) : setRules('start'))}>
             {t(save ? 'ui.extreme.card.play' : 'ui.extreme.card.new')}
           </PixelButton>
-          <PixelButton className="bg-sky" onClick={() => setRules('info')} aria-label={t('ui.extreme.infoLabel')}>
+          <PixelButton className="shrink-0 bg-sky" onClick={() => setRules('info')} aria-label={t('ui.extreme.infoLabel')}>
             {t('ui.events.info')}
           </PixelButton>
         </div>
