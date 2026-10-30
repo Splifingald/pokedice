@@ -205,3 +205,66 @@ test("Versus league: the week's groups, fetched when the admin asks", async ({ p
   await expect(box.getByText(/Last week, from Monday 2026-10-19 · rewards sent/)).toBeVisible()
   expect(asked).toEqual([false, true])
 })
+
+test("Versus league: this week's bot teams, seen and made from the admin's page", async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  let stored: { p_week: string; p_teams: { tier: number }[] } | null = null
+  // Before: the week takes last week's set. After the button: its own (0092 versus_league_bot_set).
+  const botSet = () =>
+    stored
+      ? {
+          week: '2026-10-26',
+          set: '2026-10-26',
+          madeAt: new Date().toISOString(),
+          tiers: [40, 40, 40, 80],
+          due: false,
+        }
+      : {
+          week: '2026-10-26',
+          set: '2026-10-19',
+          madeAt: '2026-10-19T00:13:00Z',
+          tiers: [40, 40, 40, 80],
+          due: true,
+        }
+  await admin(page, {
+    rpc: {
+      versus_league_bot_set: () => botSet(),
+      versus_league_put_bot_teams: (body: Record<string, unknown>) => {
+        stored = body as typeof stored
+        return stored!.p_teams.length
+      },
+    },
+  })
+  await page.goto('/admin/config?tab=versus')
+  const box = page.locator('section', {
+    has: page.getByRole('heading', { name: 'Versus league', exact: true }),
+  })
+  await expect(box).toBeVisible({ timeout: 30_000 })
+
+  await box.getByRole('button', { name: "This week's bot teams", exact: true }).click()
+  await expect(
+    box.getByText(
+      "This week's bot teams aren't made yet: its bots take the teams made for the week of 2026-10-19 (40 / 40 / 40 / 80 a tier). The hourly job makes them on the live site, or press Make.",
+    ),
+  ).toBeVisible()
+
+  await box.getByRole('button', { name: "Make this week's bot teams now" }).click()
+  await expect(
+    box.getByText(/^200 teams made for the week of 2026-10-26\. This week's own bot teams/),
+  ).toBeVisible({
+    timeout: 30_000,
+  })
+  expect(stored!.p_week).toBe('2026-10-26')
+  expect([0, 1, 2, 3].map((t) => stored!.p_teams.filter((x) => x.tier === t).length)).toEqual([
+    40, 40, 40, 80,
+  ])
+  await box.screenshot({ path: 'test-results/admin-versus-bot-teams.png' })
+
+  // Made already: pressed again, it says so and stores nothing.
+  stored = { ...stored!, p_teams: [] }
+  await box.getByRole('button', { name: "Make this week's bot teams now" }).click()
+  await expect(
+    box.getByText(/^Made already\. This week's own bot teams \(40 \/ 40 \/ 40 \/ 80 a tier\)/),
+  ).toBeVisible()
+})

@@ -1,12 +1,13 @@
 // Migration 0082 against a real Postgres (PGlite, in process): the weekly Versus league (docs/44). Offers, a match
 // recorded as a leave before it's fought and replaced by its checked result, bots seated and hidden as bots from all
-// but the admin, the global board (0091), the week's rewards as gift messages, and deleting your data. Supabase's own pieces (the auth schema,
+// but the admin, the global board (0091), the week's rewards as gift messages, deleting your data, and the bots' new
+// teams every week (0092). Supabase's own pieces (the auth schema,
 // the anon / authenticated roles) are stood in for at the top, as in friends-sql.test.ts.
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { trophyChange, VERSUS_LEAGUE_DEFAULTS, type LeagueOutcome } from '@/engine'
+import { trophyChange, VERSUS_LEAGUE_DEFAULTS, weekBotTeams, type LeagueOutcome } from '@/engine'
 import { botsSql, BEGIN, END } from '../scripts/versus-bots'
 import { data } from './fixtures'
 
@@ -35,6 +36,15 @@ async function as<T = Record<string, unknown>>(
   } finally {
     await db.query(`select set_config('request.jwt.claim.sub', '', false)`)
     await db.query(`select set_config('request.jwt.claim.email', '', false)`)
+  }
+}
+/** As the weekly job: signed in with the service role key. */
+async function asJob<T = Record<string, unknown>>(q: string, params: unknown[] = []): Promise<T[]> {
+  await db.query(`select set_config('request.jwt.claim.role', 'service_role', false)`)
+  try {
+    return (await db.query<T>(q, params)).rows
+  } finally {
+    await db.query(`select set_config('request.jwt.claim.role', '', false)`)
   }
 }
 async function fails(user: string | null, q: string, params: unknown[] = []): Promise<string> {
@@ -103,7 +113,8 @@ beforeAll(async () => {
     create function auth.uid() returns uuid language sql stable as $$
       select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     create function auth.jwt() returns jsonb language sql stable as $$
-      select jsonb_strip_nulls(jsonb_build_object('email', nullif(current_setting('request.jwt.claim.email', true), ''))) $$;
+      select jsonb_strip_nulls(jsonb_build_object('email', nullif(current_setting('request.jwt.claim.email', true), ''),
+        'role', nullif(current_setting('request.jwt.claim.role', true), ''))) $$;
     grant usage on schema auth to anon, authenticated;
   `)
   await db.exec(sql('0001_init.sql').replace('create extension if not exists pgcrypto;', ''))
@@ -133,12 +144,14 @@ beforeAll(async () => {
     '0082_versus_league.sql',
     '0086_versus_league_admin_board.sql',
     '0091_versus_league_global.sql',
+    '0092_versus_bot_weeks.sql',
   ])
     await db.exec(sql(f))
   // Safe to run again.
   await db.exec(sql('0082_versus_league.sql'))
   await db.exec(sql('0086_versus_league_admin_board.sql'))
   await db.exec(sql('0091_versus_league_global.sql'))
+  await db.exec(sql('0092_versus_bot_weeks.sql'))
   await db.exec(
     `insert into auth.users (id) values ${Object.values(U)
       .map((u) => `('${u}')`)
@@ -200,7 +213,7 @@ describe('the rules, as the engine has them', () => {
   })
 
   it('holds the bots scripts/versus-bots.ts writes', () => {
-    const file = sql('0082_versus_league.sql')
+    const file = sql('0092_versus_bot_weeks.sql')
     expect(file.slice(file.indexOf(BEGIN), file.indexOf(END) + END.length)).toBe(botsSql(data))
   })
 
@@ -542,5 +555,113 @@ describe('the league', () => {
     await as(U.ash, 'select delete_my_data()')
     for (const t of ['versus_league_members', 'versus_league_matches', 'versus_league_choices'])
       expect((await db.query(`select 1 from ${t} where user_id = $1`, [U.ash])).rows, t).toHaveLength(0)
+  })
+})
+
+describe('the bots’ teams, a new set every week (0092)', () => {
+  type BotSet = { week: string; set: string | null; tiers: number[]; due: boolean }
+  const botSet = async () => (await asJob<{ s: BotSet }>('select versus_league_bot_set() s'))[0]!.s
+  const put = (week: string, teams: unknown) =>
+    asJob<{ n: number }>('select versus_league_put_bot_teams($1::date, $2::jsonb) n', [
+      week,
+      JSON.stringify(teams),
+    ])
+  let week = ''
+  let teams: ReturnType<typeof weekBotTeams> = []
+
+  beforeAll(async () => {
+    week = (await db.query<{ w: string }>('select versus_league_week()::text w')).rows[0]!.w
+    teams = weekBotTeams(data, week)
+  })
+
+  it('are made by the job or the admin alone', async () => {
+    expect(await fails(U.misty, 'select versus_league_bot_set()')).toContain('not_admin')
+    expect(await fails(U.misty, `select versus_league_put_bot_teams($1::date, '[]')`, [week])).toContain(
+      'not_admin',
+    )
+    expect(await fails(null, 'select versus_league_bot_set()')).toContain('not_admin')
+    expect((await as<{ s: BotSet }>(U.admin, 'select versus_league_bot_set() s'))[0]!.s.week).toBe(week)
+  })
+
+  it('come from the built-in set (80 from 500 trophies) until the week has its own, needed while the league is on', async () => {
+    await access('all')
+    expect(await botSet()).toMatchObject({ week, set: null, tiers: [40, 40, 40, 80], due: true })
+    await access('off')
+    expect((await botSet()).due).toBe(false)
+    await access('all')
+  })
+
+  it('stores a week’s set once, whole and on a Monday', async () => {
+    expect(await fails(null, `select versus_league_put_bot_teams('2026-10-27', '[]')`)).toContain('not_admin')
+    const job = (q: string, params: unknown[]) =>
+      asJob(q, params).then(
+        () => 'no error',
+        (e: Error) => e.message,
+      )
+    const q = 'select versus_league_put_bot_teams($1::date, $2::jsonb)'
+    const day = new Date(Date.parse(week) + 86_400_000).toISOString().slice(0, 10)
+    expect(await job(q, [day, JSON.stringify(teams)])).toContain('bad_week')
+    expect(await job(q, [week, JSON.stringify(teams.filter((t) => t.tier < 3))])).toContain('bad_teams')
+    expect(await job(q, [week, JSON.stringify([{ ...teams[0], team: [] }, ...teams])])).toContain('bad_teams')
+    expect((await put(week, teams))[0]!.n).toBe(200)
+    // Made already: kept as it is, so the bots seated with it keep their teams.
+    expect((await put(week, teams.slice().reverse()))[0]!.n).toBe(0)
+    expect(await botSet()).toMatchObject({ week, set: week, tiers: [40, 40, 40, 80], due: false })
+  })
+
+  it('give the bots seated and offered from then on their teams', async () => {
+    const last = (await db.query<{ n: number }>('select max(id)::int n from versus_league_members')).rows[0]!
+      .n
+    const [seated] = await as<{ n: number }>(U.admin, `select versus_league_admin('seat_bots') n`)
+    expect(seated!.n).toBeGreaterThan(0)
+    const fresh = (
+      await db.query<{ week: string | null }>(
+        `select t.week::text week from versus_league_members m join versus_league_bot_teams t on t.id = m.bot_team
+         where m.id > $1`,
+        [last],
+      )
+    ).rows
+    expect(fresh.length).toBe(seated!.n)
+    expect(fresh.every((r) => r.week === week)).toBe(true)
+    // Far above everyone, Misty is offered bots made for 500 trophies and more: their teams are the week's.
+    await db.query(`delete from versus_league_members where user_id = $1`, [U.misty])
+    await db.query(
+      `insert into versus_league_members (week, group_id, user_id, trophies)
+       select week, group_id, $1, 5000 from versus_league_members where week = $2::date limit 1`,
+      [U.misty, week],
+    )
+    await db.query(`delete from versus_league_choices where user_id = $1`, [U.misty])
+    const offered = await as<{ team: unknown }>(U.misty, 'select * from versus_league_choices()')
+    const top = teams.filter((t) => t.tier === 3).map((t) => t.team)
+    expect(offered).toHaveLength(3)
+    for (const o of offered) expect(top).toContainEqual(o.team)
+  })
+
+  it('serve the next weeks until they have their own, and go a month on unless a bot was seated with them', async () => {
+    const plus = async (days: number) =>
+      (await db.query<{ d: string }>('select ($1::date + $2::int)::text d', [week, days])).rows[0]!.d
+    const setOf = async (w: string) =>
+      (await db.query<{ s: string | null }>('select versus_league_team_set($1::date)::text s', [w])).rows[0]!
+        .s
+    expect(await setOf(await plus(14))).toBe(week)
+    expect(await setOf(await plus(-7))).toBeNull()
+    const old = await plus(-35)
+    expect((await put(old, teams))[0]!.n).toBe(200)
+    await db.query(
+      `update versus_league_members set bot_team = (select min(id) from versus_league_bot_teams where week = $1::date)
+       where id = (select min(id) from versus_league_members where bot_id is not null)`,
+      [old],
+    )
+    expect((await put(await plus(7), teams))[0]!.n).toBe(200)
+    const left = (
+      await db.query<{ w: string; n: number }>(
+        `select week::text w, count(*)::int n from versus_league_bot_teams where week is not null group by week order by week`,
+      )
+    ).rows
+    expect(left).toEqual([
+      { w: old, n: 1 },
+      { w: week, n: 200 },
+      { w: await plus(7), n: 200 },
+    ])
   })
 })
