@@ -921,7 +921,7 @@ export interface GameConfig {
   hpMultiplier: number
   /**
    * Speed = the species' base Speed stat + this × level (docs/50): the weight of a level against the species' Speed.
-   * Migration 0092 inserts the same row.
+   * Migration 0093 inserts the same row.
    */
   speedPerLevel: number
   /** Global multiplier on trainer gold — the economy's pacing knob (Phase 10). */
@@ -1037,7 +1037,7 @@ export interface GameConfig {
   /**
    * Hidden talents (docs/51): the switch, the odds of a wild Pokémon carrying its talent and of a locked family finding
    * it on an evolution, and the admin's picks per family (by its lowest dex; the bundled ones otherwise). Migration
-   * 0093 inserts the same row.
+   * 0094 inserts the same row.
    */
   hiddenTalents: HiddenTalentsConfig
   /**

@@ -400,7 +400,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   // The League's heal between its battles (docs/42): off until the admin switches it on. Migration 0081 inserts the
   // same row.
   leagueHeal: { access: 'off' },
-  // Hidden talents (docs/51): off until the admin switches them on. Migration 0093 inserts the same row.
+  // Hidden talents (docs/51): off until the admin switches them on. Migration 0094 inserts the same row.
   hiddenTalents: { access: 'off', wildChance: 0.05, evolveChance: 0.3, families: {} },
   // The Unown Pokédex (docs/41): off until the admin switches it on; ₽1,000 for the 28th letter. Migration 0080 inserts
   // the same row.

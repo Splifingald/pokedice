@@ -45,7 +45,7 @@ create table pokemon (
   type2 text,
   base_hp int not null,             -- HP stat at level 1
   max_hp int not null,              -- HP stat at level 100
-  speed int not null,               -- the real base Speed stat (0092; ÷ 10 before it); battles add the level
+  speed int not null,               -- the real base Speed stat (0093; ÷ 10 before it); battles add the level
   sprite_url text not null,
   dice jsonb not null,              -- [{type:'fire',count:2},{type:'flying',count:1},{type:'normal',count:2}]
   rerolls int not null,

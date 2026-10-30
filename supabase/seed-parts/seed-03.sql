@@ -134,7 +134,7 @@ revoke all on function versus_set_team(text[], text) from public;
 grant execute on function versus_set_team(text[], text) to authenticated;
 
 
--- ↓ supabase/migrations/0092_speed_by_level.sql, inlined so this file stands alone.
+-- ↓ supabase/migrations/0093_speed_by_level.sql, inlined so this file stands alone.
 -- Speed = the species' base Speed stat + level (docs/50-SPEED-BY-LEVEL.md).
 -- 1. pokemon.speed holds the real base Speed stat (PokeAPI) instead of that stat ÷ 10; a form without a Speed of its
 --    own (Arceus's types, Silvally's memories) takes its species'. Battles add `speedPerLevel` × level.
@@ -253,7 +253,7 @@ where pokemon.dex = v.dex;
 insert into game_config (key, value) values ('speedPerLevel', '1'::jsonb) on conflict (key) do nothing;
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 
--- ↓ supabase/migrations/0093_hidden_talents.sql, inlined so this file stands alone.
+-- ↓ supabase/migrations/0094_hidden_talents.sql, inlined so this file stands alone.
 -- Hidden talents (docs/51-HIDDEN-TALENTS.md).
 -- 1. game_config `hiddenTalents`: the switch, Off, the odds (a wild Pokémon carries its talent 5 %, a locked family finds
 --    it on an evolution 30 %) and the admin's picks per family (none: the game's own). Left alone when there.

@@ -5,7 +5,7 @@ value is currently defined by dividing by 10 and rounding the real speed value o
 speed is = Real pokemon speed value + pokemon level now. This way an overlevelled pokemon will always go faster."
 
 **Status: built** on `claude/pokemon-talent-system-h3n0tx`. A balance change: **no switch and no rules pop-up** (the
-user's answer). The migration is **0092**.
+user's answer). The migration is **0093**.
 
 ## 1. Decisions
 
@@ -43,7 +43,7 @@ fall to about 1 in 100.
 
 ## 4. Setting it up
 
-1. Run [`supabase/migrations/0092_speed_by_level.sql`](https://github.com/Splifingald/pokedice/blob/claude/pokemon-talent-system-h3n0tx/supabase/migrations/0092_speed_by_level.sql)
+1. Run [`supabase/migrations/0093_speed_by_level.sql`](https://github.com/Splifingald/pokedice/blob/claude/pokemon-talent-system-h3n0tx/supabase/migrations/0093_speed_by_level.sql)
    in the Supabase SQL editor (`supabase/seed.sql` carries it too, inlined). It rewrites every Pokémon's `speed` with
    the real stat, adds `speedPerLevel` (1) and bumps `configVersion`. Until it runs, a game reading the database gets
    the old ÷ 10 values plus the level, so the level weighs far more than intended.

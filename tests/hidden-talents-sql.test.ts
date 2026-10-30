@@ -1,4 +1,4 @@
-// Migration 0093 against a real Postgres (PGlite, in process): hidden talents (docs/51). The switch's row, Off; the
+// Migration 0094 against a real Postgres (PGlite, in process): hidden talents (docs/51). The switch's row, Off; the
 // Versus team snapshot carries a Pokémon's talent while the switch is open, read from the cloud save; a trade listing
 // says whether its Pokémon carries it, may ask for a species "with its hidden talent" while the switch is open, and is
 // then only taken with such a Pokémon.
@@ -10,7 +10,7 @@ import { DEFAULT_CONFIG, encodeDexSet } from '@/engine'
 
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
-const FILE = '0093_hidden_talents.sql'
+const FILE = '0094_hidden_talents.sql'
 
 const AUTH = `create role anon; create role authenticated; create schema auth; create table auth.users (id uuid primary key);
   create function auth.uid() returns uuid language sql stable as $$
@@ -34,7 +34,7 @@ function save(box: Record<string, unknown>[]) {
   }
 }
 
-describe('0093: hidden talents', () => {
+describe('0094: hidden talents', () => {
   let db: PGlite
   const as = async <T>(user: string, q: string, params: unknown[] = []) => {
     await db.query(`select set_config('request.jwt.claim.sub', $1, false)`, [user])

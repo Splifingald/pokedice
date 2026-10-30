@@ -6,7 +6,7 @@ wild rarely carries it; catching one unlocks the talent for the whole family. Th
 (the artifact <https://claude.ai/artifact/BYkiNrNS95hvTPBvMiGaNk>).
 
 **Status: built** on `claude/pokemon-talent-system-h3n0tx`, behind its switch, **Off** (docs/15 §20). The migration is
-**0093**. Speed by level (docs/50) came with it.
+**0094**. Speed by level (docs/50) came with it.
 
 ## 1. Decisions
 
@@ -23,7 +23,7 @@ wild rarely carries it; catching one unlocks the talent for the whole family. Th
 | What the player sees | A family's talent is "???" until one carrying it is **met**; then its name, greyed until learnt. A wild one with its talent says so before the fight |
 | Pokémon owned before | **None** carries a talent: the switch starts everyone at zero |
 | Foes | **Use theirs**: wild ones at the odds, a gym leader's, an Elite Four's or a Champion's ace always, any other trainer Pokémon at the odds |
-| Versus and raids | **Apply**: the server's team snapshots carry the talent (0093). Duelist acts only in Versus, Raider only in raids |
+| Versus and raids | **Apply**: the server's team snapshots carry the talent (0094). Duelist acts only in Versus, Raider only in raids |
 | Trades | A traded Pokémon **keeps** its talent (and unlocks its family on arrival). A listing can ask for a species **with its hidden talent** |
 | Icon | A small **gem** (a lozenge): gold for a super talent, blue for a base one, grey for unknown; on the Box, the team, the plates and trades |
 | Small worlds, Extreme | **On** in both; Extreme mode keeps its own (its own save) |
@@ -71,7 +71,7 @@ Egg Rush was "Twin Eggs" (each Egg comes as two); the user chose "Eggs come fast
 - **Other arrivals**: `hatchEgg`, `addFossil`, `addRaidMon`, `applyGifts`, a world's mythical, the Rocket trade, the
   wheel's prize, a ghost caught (`TrickState.talent`).
 
-## 4. The server (0093)
+## 4. The server (0094)
 
 - `game_config.hiddenTalents` (Off) and `talents_open()`.
 - `versus_set_team`, `raid_set_team`, `raid_progress_set_team`: the snapshot carries `talent` while the switch is open,
@@ -86,8 +86,8 @@ docs/15 §38. Admin → Config → Switches (the switch) and → Hidden talents 
 
 ## 6. Setting it up
 
-1. Run [`supabase/migrations/0092_speed_by_level.sql`](https://github.com/Splifingald/pokedice/blob/claude/pokemon-talent-system-h3n0tx/supabase/migrations/0092_speed_by_level.sql)
+1. Run [`supabase/migrations/0093_speed_by_level.sql`](https://github.com/Splifingald/pokedice/blob/claude/pokemon-talent-system-h3n0tx/supabase/migrations/0093_speed_by_level.sql)
    (Speed by level, docs/50) and
-   [`supabase/migrations/0093_hidden_talents.sql`](https://github.com/Splifingald/pokedice/blob/claude/pokemon-talent-system-h3n0tx/supabase/migrations/0093_hidden_talents.sql)
+   [`supabase/migrations/0094_hidden_talents.sql`](https://github.com/Splifingald/pokedice/blob/claude/pokemon-talent-system-h3n0tx/supabase/migrations/0094_hidden_talents.sql)
    in the Supabase SQL editor, in that order (`supabase/seed.sql` carries both, inlined).
 2. Admin → Config → Switches → Hidden talents: **On for admin** to try it, then **On for everyone**.
