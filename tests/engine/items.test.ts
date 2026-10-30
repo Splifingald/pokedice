@@ -274,13 +274,14 @@ describe('catching', () => {
 })
 
 describe('items in battle', () => {
-  // A sturdy Snorlax against a faster Rattata: the enemy moves first, and the Snorlax survives it.
+  // A sturdy Snorlax (Speed 30 + 50) against a faster Rattata (72 + 10): the enemy moves first, and the Snorlax
+  // survives it.
   const battle = () =>
     createBattle(
       {
         kind: 'wild',
         team: [{ uid: 'a', dex: 143, level: 50, hp: 999 }, { uid: 'b', dex: 16, level: 5, hp: 1 }],
-        enemy: { dex: 19, level: 3 },
+        enemy: { dex: 19, level: 10 },
         playerLevels: uniformLevels(1),
         enemyLevels: uniformLevels(1),
       },

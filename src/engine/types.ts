@@ -917,6 +917,11 @@ export interface GameConfig {
    * exactly what the dice show.
    */
   hpMultiplier: number
+  /**
+   * Speed = the species' base Speed stat + this × level (docs/50): the weight of a level against the species' Speed.
+   * Migration 0092 inserts the same row.
+   */
+  speedPerLevel: number
   /** Global multiplier on trainer gold — the economy's pacing knob (Phase 10). */
   goldMultiplier: number
   /** Extra gold multiplier for gym leaders, the Elite Four and the Champion. */

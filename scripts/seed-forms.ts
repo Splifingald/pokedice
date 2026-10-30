@@ -161,7 +161,7 @@ function hpOf(base: Species, baseApi: ApiMon | undefined, api: ApiMon) {
 }
 function speedOf(base: Species, baseApi: ApiMon | undefined, api: ApiMon) {
   if (!baseApi || baseApi.stats.speed === api.stats.speed) return base.speed
-  return Math.floor(api.stats.speed! / 10)
+  return api.stats.speed!
 }
 
 async function main() {

@@ -99,6 +99,9 @@ test.describe('on a phone', () => {
     await expect(sheet.getByText('Speed', { exact: true })).toBeHidden()
     await sheet.locator('summary', { hasText: 'Stats' }).click()
     await expect(sheet.getByText('Speed', { exact: true })).toBeVisible()
+    // Speed is the species' base Speed plus the level (docs/50): Pikachu's 90 at Lv.21.
+    await expect(sheet.getByText('90 + Lv.21', { exact: true })).toBeVisible()
+    await expect(sheet.getByText('111', { exact: true })).toBeVisible()
     await expect(sheet.getByRole('button', { name: 'Use an item' })).toBeVisible()
     expect(await smallControls(page)).toEqual([])
     expect(await serious(page)).toEqual([])

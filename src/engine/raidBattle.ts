@@ -972,7 +972,7 @@ function unleash(s: RaidState, data: GameData, log: RaidLogEntry[]) {
   if (!fin) return
   if (fin.form && data.species[fin.form]) {
     const fromDex = s.boss.dex
-    wearForm(s.boss, data.species[fin.form]!)
+    wearForm(s.boss, data.species[fin.form]!, data)
     log.push({
       kind: 'form',
       side: 'enemy',

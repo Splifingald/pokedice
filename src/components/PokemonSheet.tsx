@@ -1,6 +1,7 @@
 import { useMemo, type ReactNode } from 'react'
 import {
   ARCEUS_DEX,
+  battleSpeed,
   choiceFormsOf,
   plateTypes,
   COPIES_FOE_DICE,
@@ -50,11 +51,13 @@ import { TypeBadge } from './TypeBadge'
 import { TypeMatchups } from './TypeMatchups'
 
 /** A stat as a big number over its name (Speed, Rerolls, Catch value); the hint is the tooltip. */
-function StatTile({ stat, value }: { stat: StatKind; value: ReactNode }) {
+/** `parts`: how the number is made, under it (Speed: "90 + Lv.30"). */
+function StatTile({ stat, value, parts }: { stat: StatKind; value: ReactNode; parts?: string }) {
   useT()
   return (
-    <div className="grid justify-items-center bg-paper px-1 pb-2 pt-1.5 shadow-ring-line" title={statHint(stat)}>
+    <div className="grid content-start justify-items-center bg-paper px-1 pb-2 pt-1.5 shadow-ring-line" title={statHint(stat)}>
       <b className="text-[26px] font-normal leading-none tabular-nums">{value}</b>
+      {parts && <small className="font-pixel-sm text-[15px] leading-none text-muted tabular-nums">{parts}</small>}
       <small className="font-pixel-sm text-[16px] text-muted">{statLabel(stat)}</small>
     </div>
   )
@@ -602,7 +605,16 @@ export function PokemonSheet({
           {t('ui.sheet.stats')}
         </summary>
         <div className="mt-1 grid grid-cols-3 gap-1.5">
-          <StatTile stat="speed" value={species.speed} />
+          {/* An owned Pokémon's Speed is its species' plus its level; the Pokédex shows the species' own. */}
+          {inst ? (
+            <StatTile
+              stat="speed"
+              value={battleSpeed(species, inst.level, data)}
+              parts={t('ui.stat.speed.parts', { base: species.speed, level: inst.level })}
+            />
+          ) : (
+            <StatTile stat="speed" value={species.speed} />
+          )}
           <StatTile stat="rerolls" value={stats.rerolls} />
           <StatTile stat="catch" value={species.catchValue} />
         </div>

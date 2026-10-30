@@ -59,6 +59,29 @@ describe('battle setup', () => {
     expect(tie.state.actor).toBe('player')
   })
 
+  it('Speed is the species\' base Speed stat plus the level (docs/50)', () => {
+    const vs = (level: number, cfg = data) =>
+      createBattle(
+        {
+          kind: 'wild',
+          team: [{ uid: 'a', dex: 7, level, hp: 999 }],
+          enemy: { dex: 19, level: 5 },
+          playerLevels: uniformLevels(1),
+          enemyLevels: uniformLevels(1),
+        },
+        cfg,
+      ).state
+    // Squirtle 43 + level against Rattata 72 + 5 = 77: Lv.33 is still slower, Lv.34 ties (yours), Lv.40 is faster.
+    expect(vs(33).actor).toBe('enemy')
+    expect(vs(34).actor).toBe('player')
+    expect(vs(40).player[0]!.speed).toBe(83)
+    expect(vs(40).enemy.speed).toBe(77)
+    // The weight of a level is the admin's: at 0, the species' own Speed alone decides.
+    const flat = { ...data, config: { ...data.config, speedPerLevel: 0 } }
+    expect(vs(90, flat).actor).toBe('enemy')
+    expect(makeBattler({ uid: 'm', dex: 150, level: 70, hp: 1 }, data).speed).toBe(130 + 70)
+  })
+
   it('skips a fainted lead and refuses a team with nobody able', () => {
     const s = createBattle(
       {

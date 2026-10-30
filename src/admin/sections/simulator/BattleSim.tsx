@@ -1,6 +1,6 @@
 // One matchup, N times, headlessly on the working copy. Both sides use the enemy reroll AI.
 import { useState } from 'react'
-import { createRng, effectiveStats, getSpecies, median, simulateBattle, turnsToKill, uniformLevels, type GameData, type SimResult } from '@/engine'
+import { battleSpeed, createRng, effectiveStats, getSpecies, median, simulateBattle, turnsToKill, uniformLevels, type GameData, type SimResult } from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
 import { Field, NumInput, PokemonPicker } from '../../widgets'
@@ -44,7 +44,7 @@ function SidePicker({ data, label, side, onChange }: { data: GameData; label: st
       </div>
       {stats && (
         <div className="text-base text-muted">
-          HP {stats.maxHp} · {stats.dice.length} dice · {stats.rerolls} rerolls · speed {sp?.speed}
+          HP {stats.maxHp} · {stats.dice.length} dice · {stats.rerolls} rerolls · speed {sp ? battleSpeed(sp, side.level, data) : '—'}
         </div>
       )}
     </div>

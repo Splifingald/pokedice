@@ -15,6 +15,14 @@ export function hpCurve(species: Species, level: number): number {
   return Math.round(species.baseHp + ((species.maxHp - species.baseHp) * (level - 1)) / 99)
 }
 
+/**
+ * Speed = the species' base Speed stat + `speedPerLevel` (1) × level (docs/50), so a Pokémon trained past its foe's
+ * level catches up with faster species. A tie still goes to the player (`startBattle`).
+ */
+export function battleSpeed(species: Species, level: number, data: GameData): number {
+  return species.speed + Math.round((data.config.speedPerLevel ?? 1) * level)
+}
+
 export interface EffectiveStats {
   dice: DieType[]
   rerolls: number

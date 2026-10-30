@@ -26,7 +26,7 @@ import { data, die, makeData } from '../fixtures'
 let n = 0
 const newId = () => `id-${++n}`
 
-/** Squirtle (Speed 4) and Bulbasaur (4) with Charmander (6) on the bench, against two Pidgey (5) or a trainer's team. */
+/** Squirtle (Speed 43 + 10) and Bulbasaur (45 + 10) with Charmander on the bench, against two Pidgey (56 + 5) or a trainer's team. */
 function start(foes = [{ dex: 16, level: 5 }, { dex: 16, level: 6 }], kind: 'wild' | 'trainer' = 'wild', d = data) {
   return createBattle(
     {
@@ -69,15 +69,15 @@ describe('double battle: the field (docs/33)', () => {
   })
 
   it('lets everyone act once a round, fastest first', () => {
-    // Charmander (6) and Squirtle (5) against two Pidgey (5): Charmander, then Squirtle (a tie goes to yours), then
-    // both Pidgey.
+    // Charmander (65 + 10) and Squirtle (43 + 18) against two Pidgey (56 + 5): Charmander, then Squirtle (a tie goes
+    // to yours), then both Pidgey.
     const r = rng()
     let s = createBattle(
       {
         kind: 'wild',
         team: [
           { uid: 'c', dex: 4, level: 10, hp: 999 },
-          { uid: 'a', dex: 7, level: 10, hp: 999 },
+          { uid: 'a', dex: 7, level: 18, hp: 999 },
         ],
         enemy: { dex: 16, level: 5 },
         double: { foes: [{ dex: 16, level: 5 }, { dex: 16, level: 5 }], leadUids: ['c', 'a'] },

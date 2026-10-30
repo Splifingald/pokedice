@@ -1047,6 +1047,7 @@ function GameSettings() {
   const data = useAdminData()
   const [encounterMode, setEncounterMode] = useConfigRow('encounterMode')
   const [hpMultiplier, setHpMultiplier] = useConfigRow('hpMultiplier')
+  const [speedPerLevel, setSpeedPerLevel] = useConfigRow('speedPerLevel')
   const [goldMultiplier, setGold] = useConfigRow('goldMultiplier')
   const [xpCurve, setXpCurve] = useConfigRow('xpCurve')
   const [share, setShare] = useConfigRow('xpShareMode')
@@ -1085,6 +1086,9 @@ function GameSettings() {
           </Field>
           <Field label="goldMultiplier" hint="× trainer gold — the economy knob">
             <NumInput step={0.1} value={goldMultiplier} onChange={(v) => setGold(v ?? 1)} />
+          </Field>
+          <Field label="speedPerLevel" hint="Speed = the species' base Speed stat + this × level: who acts first">
+            <NumInput step={0.5} value={speedPerLevel} min={0} onChange={(v) => setSpeedPerLevel(Math.max(0, v ?? 1))} />
           </Field>
         </div>
       </Box>

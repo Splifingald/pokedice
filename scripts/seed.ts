@@ -541,7 +541,7 @@ async function fetchSpecies(): Promise<Species[]> {
       type2,
       baseHp: hpAtLevel(hpStat, 1),
       maxHp: hpAtLevel(hpStat, 100),
-      speed: Math.floor(stat('speed') / 10), // game Speed = base Speed ÷ 10, rounded down
+      speed: stat('speed'), // the real base Speed stat; battles add the level (docs/50)
       spriteUrl: SPRITE(dex),
       dice: composeDice(diceCount, type1, type2),
       rerolls: diceCount,
@@ -922,6 +922,7 @@ export async function regionsPrelude(): Promise<string> {
       '0088_saves_no_overwrite.sql',
       '0089_raids_done_mine.sql',
       '0090_versus_true_levels.sql',
+      '0092_speed_by_level.sql',
     ].map(async (name) => {
       const sql = (await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')).replace(/^(begin|commit);\n/gm, '')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`

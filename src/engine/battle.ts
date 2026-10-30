@@ -6,7 +6,7 @@ import { attackMultiplier, attackType, computeDamage, type DamageResult, type Up
 import { rerollMasked, rollAll, type RolledDie } from './dice'
 import { reviveHp } from './economy'
 import { ARCEUS_DEX, choiceFormDie, choiceFormsOf, gmaxFormsOf, lowHpFormOf, megaDie, megaFormsOf, megaOptions, swapOneDie } from './forms'
-import { effectiveStats } from './progression'
+import { battleSpeed, effectiveStats } from './progression'
 import { potionHeal, shouldUsePotion } from './trainerItems'
 import { createRng, type Rng } from './rng'
 import {
@@ -94,6 +94,8 @@ export interface FormSnapshot {
   name: string
   types: PokeType[]
   dice: DieType[]
+  /** Absent in a battle saved before forms kept their own Speed. */
+  speed?: number
 }
 
 /** Species that fight with a copy of their opponent's dice (Ditto), rolled on their own and with their own upgrades. */
@@ -406,7 +408,7 @@ export function makeBattler(seed: BattlerSeed, data: GameData): Battler {
     types: stats.types,
     maxHp: stats.maxHp,
     hp: Math.max(0, Math.min(stats.maxHp, seed.hp)),
-    speed: species.speed,
+    speed: battleSpeed(species, seed.level, data),
     dice: stats.dice,
     rerolls: stats.rerolls,
     rerollsLeft: stats.rerolls,
@@ -485,20 +487,31 @@ export interface CreateBattleOptions {
   plates?: PokeType[]
 }
 
-/** Takes on a form's look and types (the dice are the caller's business). */
-export function wearForm(b: Battler, form: Species) {
+/**
+ * Takes on a form's look, types and Speed (the dice are the caller's business). The Speed counts from the next time
+ * the order is read: a single battle reads it once, as it opens; a double battle every round.
+ */
+export function wearForm(b: Battler, form: Species, data: GameData) {
   b.dex = form.dex
   b.name = b.nickname || form.name
   b.types = form.type2 ? [form.type1, form.type2] : [form.type1]
   b.spriteUrl = form.spriteUrl
+  b.speed = battleSpeed(form, b.level, data)
 }
 
-const snapshot = (b: Battler): FormSnapshot => ({ dex: b.dex, name: b.name, types: [...b.types], dice: [...b.dice] })
+const snapshot = (b: Battler): FormSnapshot => ({
+  dex: b.dex,
+  name: b.name,
+  types: [...b.types],
+  dice: [...b.dice],
+  speed: b.speed,
+})
 function restore(b: Battler, pre: FormSnapshot, data: GameData) {
   b.dex = pre.dex
   b.name = pre.name
   b.types = pre.types
   b.dice = pre.dice
+  if (pre.speed != null) b.speed = pre.speed
   b.spriteUrl = data.species[pre.dex]?.spriteUrl ?? b.spriteUrl
 }
 
@@ -530,7 +543,7 @@ function megaEvolve(s: BattleState, side: Side, b: Battler, mega: Species, data:
   if (!base) return
   const pre = snapshot(b)
   const die = megaDie(base, mega)
-  wearForm(b, mega)
+  wearForm(b, mega, data)
   b.mega = true
   b.powered = 'mega'
   if (s.megaTurns) b.megaTimer = { turns: Math.max(1, s.megaTurns), pre }
@@ -567,7 +580,7 @@ function gigantamax(s: BattleState, side: Side, b: Battler, form: Species, data:
   if (!base) return
   const pre = snapshot(b)
   const die = megaDie(base, form)
-  wearForm(b, form)
+  wearForm(b, form, data)
   const thrown = addDice(s, side, b, die, Math.max(1, s.gmaxBoost?.dice ?? 1), data, rng)
   b.gmax = { turns: Math.max(1, data.config.gigantamax.turns), pre }
   b.powered = 'gmax'
@@ -614,10 +627,10 @@ function tickGmax(s: BattleState, side: Side, data: GameData, log: LogEntry[]) {
 }
 
 /** A type picked from the menu (Arceus, Silvally, Ogerpon): its look, and every die — the hand too — takes the type. */
-function changeForm(s: BattleState, side: Side, b: Battler, form: Species, log: LogEntry[]) {
+function changeForm(s: BattleState, side: Side, b: Battler, form: Species, data: GameData, log: LogEntry[]) {
   const fromDex = b.dex
   const type = choiceFormDie(form)
-  wearForm(b, form)
+  wearForm(b, form, data)
   b.dice = b.dice.map(() => type)
   if (side === 'player') s.dice = s.dice.map((d) => ({ ...d, type }))
   log.push({ kind: 'form', side, uid: b.uid, fromDex, toDex: b.dex, reason: 'choice', dice: [...b.dice] })
@@ -666,7 +679,7 @@ export function raidFormShift(b: Battler, target: Battler, data: GameData): Extr
   if (!form) return null
   const fromDex = b.dex
   const type = choiceFormDie(form)
-  wearForm(b, form)
+  wearForm(b, form, data)
   b.dice = b.dice.map(() => type)
   return { kind: 'form', side: 'enemy', uid: b.uid, fromDex, toDex: b.dex, reason: 'choice', dice: [...b.dice] }
 }
@@ -693,7 +706,7 @@ function checkHpForms(s: BattleState, data: GameData, log: LogEntry[]) {
       const swap = form.form?.swapDie
       b.preForm = snapshot(b)
       const fromDex = b.dex
-      wearForm(b, form)
+      wearForm(b, form, data)
       if (swap) b.dice = swapOneDie(b.dice, swap.from, swap.to)
       log.push({ kind: 'form', side, uid: b.uid, fromDex, toDex: b.dex, reason: 'lowHp', dice: [...b.dice] })
     } else if (!low && b.preForm) {
@@ -715,7 +728,7 @@ export function unleashForm(b: Battler, data: GameData): Extract<LogEntry, { kin
   if (!form || b.dex === form.dex) return null
   const die = form.form?.swapDie?.to ?? form.type1
   const fromDex = b.dex
-  wearForm(b, form)
+  wearForm(b, form, data)
   // With the other typed dice, ahead of any base die.
   b.dice.splice(b.dice.filter((d) => d !== 'base').length, 0, die)
   return {
@@ -1706,7 +1719,7 @@ export function reduce(
       const a = activeBattler(s)
       const form = formChoices(s, data).find((f) => f.dex === e.toDex)
       if (!form) return NOOP(state)
-      changeForm(s, 'player', a, form, log)
+      changeForm(s, 'player', a, form, data, log)
       a.formChanges = (a.formChanges ?? 0) + 1
       break
     }
@@ -1788,7 +1801,7 @@ export function reduce(
       if (plan?.formChanges && (en.formChanges ?? 0) < data.config.formChangesPerBattle) {
         const form = foeTypeForm(s, en, target, data, rng)
         if (form) {
-          changeForm(s, 'enemy', en, form, log)
+          changeForm(s, 'enemy', en, form, data, log)
           en.formChanges = (en.formChanges ?? 0) + 1
         }
       }
