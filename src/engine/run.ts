@@ -28,7 +28,7 @@ import {
   nightmareWipe,
   nightmareWon,
 } from './nightmare'
-import { TALENT, talentOf, talentOnEvolve } from './talents'
+import { familyTalent, TALENT, talentCandyFits, talentOf, talentOnEvolve, unlockFamily } from './talents'
 import { areaOpenAt } from './worldList'
 import {
   averageLevel,
@@ -939,6 +939,12 @@ export function applyFieldItem(
     if (!next.pokedex.includes(toDex)) next = { ...next, pokedex: [...next.pokedex, toDex] }
     const events: ProgressEvent[] = [{ kind: 'evolve', uid: inst.id, fromDex: inst.dex, toDex, level: inst.level }]
     return { save: withEvolveTalents(next, data, events, 0, rng), events }
+  }
+  // The Talent Candy (docs/51): only on a Pokémon whose talent isn't revealed yet; its whole family carries it after.
+  if (item.effect.kind === 'talent') {
+    if (!talentCandyFits(save, data, inst)) return null
+    const next = unlockFamily(consumeItem(save, key)!, data, inst.dex)
+    return { save: next, events: [{ kind: 'talent', uid: inst.id, dex: inst.dex, talent: familyTalent(data, inst.dex), how: 'candy' }] }
   }
   if (item.effect.kind !== 'level' || inst.level >= data.config.maxLevel) return null
   let cur = inst

@@ -14,6 +14,8 @@ import {
 } from '@/components/Talent'
 import { PixelButton } from '@/components/PixelButton'
 import { Toggle } from '@/components/Toggle'
+import { ItemSprite } from '@/components/ItemSprite'
+import { useGame } from '@/store/game'
 import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { TALENT_KEYS, type TalentKey } from '@/engine'
@@ -29,6 +31,7 @@ function Frame({ name, children }: { name: string; children: ReactNode }) {
 
 export function TalentBits() {
   useT()
+  const data = useGame((s) => s.data)
   const [rules, setRules] = useState<'unlock' | 'info' | null>(null)
   const [withTalent, setWithTalent] = useState(true)
   const logs: { talent: TalentKey; amount?: number }[] = [
@@ -109,6 +112,13 @@ export function TalentBits() {
               </li>
             ))}
           </ul>
+        </Frame>
+        <Frame name="The Talent Candy: its picture, and its card when it reveals a talent">
+          <span className="flex items-center gap-2 bg-paper p-2 shadow-ring-line">
+            <ItemSprite item={data.items['talent-candy']} size={32} />
+            {data.items['talent-candy']?.name}
+          </span>
+          <TalentFoundCard uid="kit-f" dex={133} talent="eggRush" how="candy" />
         </Frame>
         <Frame name="Trades · asking for a species with its talent (on, off)">
           <Toggle

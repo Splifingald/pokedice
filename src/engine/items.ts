@@ -26,6 +26,7 @@ export function itemUses(item: ItemDef): ItemUse[] {
     case 'level':
     case 'stone':
     case 'link':
+    case 'talent':
       return ['field']
     case 'ball':
     case 'bait':

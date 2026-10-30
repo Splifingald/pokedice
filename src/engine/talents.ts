@@ -327,6 +327,13 @@ export function talentOnEvolve(
   return { save: next, found }
 }
 
+/** A Talent Candy (docs/51) would reveal this Pokémon's talent: the switch is on and its family hasn't found it here. */
+export const talentCandyFits = (
+  save: SaveData,
+  data: GameData,
+  inst: Pick<PokemonInstance, 'dex' | 'talent'>,
+): boolean => talentsOn(data) && !inst.talent && !familyUnlocked(save, data, inst.dex)
+
 /** + the catch die when this Pokémon made the K.O.: Gentle Touch (docs/51). */
 export const catchTalentBonus = (
   data: GameData,

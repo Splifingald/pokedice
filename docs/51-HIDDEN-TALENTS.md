@@ -49,6 +49,15 @@ wild rarely carries it; catching one unlocks the talent for the whole family. Th
 
 Egg Rush was "Twin Eggs" (each Egg comes as two); the user chose "Eggs come faster" instead, and the name followed.
 
+## 2b. The Talent Candy
+
+The user's ask of 2026-10-30: a Rare Candy reskin (`public/items/talent-candy.png`, the candy turned gold) that reveals
+a Pokémon's talent, given only while its talent isn't revealed yet. Used from a Pokémon's sheet (Use an item), it
+unlocks the family's talent in that region, as catching one that carries it would; a Pokémon that has it (or with
+the switch off) shows it greyed: "Its talent is already revealed". Effect kind `talent` (`applyFieldItem`,
+`talentCandyFits`). **Never in the Mart nor any loot**: the admin sells it in a Special Shop live event. Migration 0095
+adds its row.
+
 ## 3. The rules (`src/engine`)
 
 - **`talents.ts`**: the keys and numbers, the switch (`talentsOn`), families (`familyOf`, `familyMembers`,
@@ -87,7 +96,8 @@ docs/15 §38. Admin → Config → Switches (the switch) and → Hidden talents 
 ## 6. Setting it up
 
 1. Run [`supabase/migrations/0093_speed_by_level.sql`](https://github.com/Splifingald/pokedice/blob/claude/pokemon-talent-system-h3n0tx/supabase/migrations/0093_speed_by_level.sql)
-   (Speed by level, docs/50) and
+   (Speed by level, docs/50),
    [`supabase/migrations/0094_hidden_talents.sql`](https://github.com/Splifingald/pokedice/blob/claude/pokemon-talent-system-h3n0tx/supabase/migrations/0094_hidden_talents.sql)
-   in the Supabase SQL editor, in that order (`supabase/seed.sql` carries both, inlined).
+   and [`supabase/migrations/0095_talent_candy.sql`](https://github.com/Splifingald/pokedice/blob/claude/pokemon-talent-system-h3n0tx/supabase/migrations/0095_talent_candy.sql)
+   (the Talent Candy) in the Supabase SQL editor, in that order (`supabase/seed.sql` carries them, inlined).
 2. Admin → Config → Switches → Hidden talents: **On for admin** to try it, then **On for everyone**.

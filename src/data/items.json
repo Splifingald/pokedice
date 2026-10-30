@@ -966,6 +966,18 @@
   "shopBadges": 0
  },
  {
+  "key": "talent-candy",
+  "name": "Talent Candy",
+  "description": "Reveals a Pokémon's hidden talent, for its whole family. Use it from the Team screen.",
+  "spriteUrl": "/items/talent-candy.png",
+  "price": 1500,
+  "effect": {
+   "kind": "talent"
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
   "key": "bait",
   "name": "Bait",
   "description": "When a ball falls just short, throw it: its die (1, 1, 1, 2, 2 or 3) adds to the catch.",

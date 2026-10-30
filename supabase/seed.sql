@@ -7109,6 +7109,17 @@ $$;
 
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 
+-- ↓ supabase/migrations/0095_talent_candy.sql, inlined so this file stands alone.
+-- The Talent Candy (docs/51): a Rare Candy reskin that reveals the hidden talent of a Pokémon whose family hasn't found
+-- it yet, for its whole family. Never in the Mart (`in_shop` false) nor in any loot table: the admin puts it in a
+-- Special Shop live event. As src/data/items.json has it (the test keeps the two the same). Left alone if there:
+-- seed.sql writes it too. Safe to run again.
+insert into items (key, name, description, sprite_url, price, effect, in_shop, shop_badges) values
+  ('talent-candy', 'Talent Candy', 'Reveals a Pokémon''s hidden talent, for its whole family. Use it from the Team screen.',
+   '/items/talent-candy.png', 1500, '{"kind":"talent"}'::jsonb, false, 0)
+on conflict (key) do nothing;
+insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
+
 insert into type_chart (attacking, defending, multiplier) values
   ('bug', 'dark', 2),
   ('bug', 'fairy', 0.5),
@@ -17576,6 +17587,7 @@ insert into items (key, name, description, sprite_url, price, effect, in_shop, s
   ('galarica-cuff', 'Galarica Cuff', 'Makes certain Pokémon evolve: Galarian Slowpoke (Galarian Slowbro). Use it from the Team screen.', 'https://raw.githubusercontent.com/msikma/pokesprite/master/items/evo-item/galarica-cuff.png', 200, '{"kind":"stone"}'::jsonb, false, 0, null, 'galar', false),
   ('galarica-wreath', 'Galarica Wreath', 'Makes certain Pokémon evolve: Galarian Slowpoke (Galarian Slowking). Use it from the Team screen.', 'https://raw.githubusercontent.com/msikma/pokesprite/master/items/evo-item/galarica-wreath.png', 200, '{"kind":"stone"}'::jsonb, false, 0, null, 'galar', false),
   ('link-cable', 'Link Cable', 'Evolves a Pokémon that only evolves by trade, with no trade needed. Use it from the Team screen.', '/items/link-cable.png', 1000, '{"kind":"link"}'::jsonb, false, 0, null, null, false),
+  ('talent-candy', 'Talent Candy', 'Reveals a Pokémon''s hidden talent, for its whole family. Use it from the Team screen.', '/items/talent-candy.png', 1500, '{"kind":"talent"}'::jsonb, false, 0, null, null, false),
   ('bait', 'Bait', 'When a ball falls just short, throw it: its die (1, 1, 1, 2, 2 or 3) adds to the catch.', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/razz-berry.png', 150, '{"kind":"bait","faces":[1,1,1,2,2,3]}'::jsonb, true, 7, null, null, false),
   ('venusaurite', 'Venusaurite', 'Lets Venusaur Mega Evolve into Mega Venusaur in battle. Kept for good, never sold.', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/venusaurite.png', 1000, '{"kind":"megaGem","mega":10033}'::jsonb, false, 0, null, null, false),
   ('charizardite-x', 'Charizardite X', 'Lets Charizard Mega Evolve into Mega Charizard X in battle. Kept for good, never sold.', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/charizardite-x.png', 1000, '{"kind":"megaGem","mega":10034}'::jsonb, false, 0, null, null, false),

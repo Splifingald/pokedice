@@ -7,6 +7,7 @@ import path from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { DEFAULT_CONFIG, encodeDexSet } from '@/engine'
+import itemsJson from '@/data/items.json'
 
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
@@ -148,6 +149,27 @@ describe('0094: hidden talents', () => {
     )
     expect(taken.listed.talent).toBe(true)
     expect(taken.given.talent).toBe(true)
+  })
+
+  it('0095 adds the Talent Candy as items.json has it, twice the same', async () => {
+    await db.exec(sql('0095_talent_candy.sql'))
+    await db.exec(sql('0095_talent_candy.sql'))
+    const [row] = (
+      await db.query<Record<string, unknown>>(
+        `select key, name, description, sprite_url, price, effect, in_shop, shop_badges from items where key = 'talent-candy'`,
+      )
+    ).rows
+    const json = itemsJson.find((i) => i.key === 'talent-candy')!
+    expect(row).toEqual({
+      key: json.key,
+      name: json.name,
+      description: json.description,
+      sprite_url: json.spriteUrl,
+      price: json.price,
+      effect: json.effect,
+      in_shop: json.inShop,
+      shop_badges: json.shopBadges,
+    })
   })
 
   it('refuses to ask for a talent while the switch is off', async () => {

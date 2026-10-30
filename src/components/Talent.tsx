@@ -88,7 +88,7 @@ export function TalentFoundCard({
   uid: string
   dex: number
   talent: TalentKey
-  how: 'caught' | 'passed' | 'evolved'
+  how: 'caught' | 'passed' | 'evolved' | 'candy'
 }) {
   useT()
   const name = useMonName(uid, dex)

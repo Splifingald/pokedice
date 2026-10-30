@@ -113,9 +113,9 @@ export type ProgressEvent =
   | { kind: 'evolve'; uid: string; fromDex: number; toDex: number; level: number }
   /**
    * A family's hidden talent unlocked (docs/51) through this Pokémon: `caught` with it, `passed` from a weaker one caught
-   * and let go, `evolved` as it evolved.
+   * and let go, `evolved` as it evolved, `candy` given a Talent Candy.
    */
-  | { kind: 'talent'; uid: string; dex: number; talent: TalentKey; how: 'caught' | 'passed' | 'evolved' }
+  | { kind: 'talent'; uid: string; dex: number; talent: TalentKey; how: 'caught' | 'passed' | 'evolved' | 'candy' }
 
 /**
  * Which species may be evolved into, and — for a regional evolution — the region the player stands in (see

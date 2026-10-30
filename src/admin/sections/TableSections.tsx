@@ -224,6 +224,7 @@ const EFFECT_DEFAULTS: Record<ItemEffect['kind'], ItemEffect> = {
   level: { kind: 'level', amount: 1 },
   ball: { kind: 'ball', bonus: 1 },
   link: { kind: 'link' },
+  talent: { kind: 'talent' },
   bait: { kind: 'bait', faces: [1, 1, 1, 2, 2, 3] },
   megaGem: { kind: 'megaGem', mega: 10059 },
 }
@@ -268,7 +269,7 @@ function EffectEditor({ value, onDone }: { value: ItemEffect | undefined; onDone
         </div>
       ) : draft.kind === 'revive' ? (
         <NumInput value={draft.percent} min={1} max={100} onChange={(v) => setDraft({ kind: 'revive', percent: v ?? 50 })} />
-      ) : draft.kind === 'stone' || draft.kind === 'link' ? null : draft.kind === 'bait' ? (
+      ) : draft.kind === 'stone' || draft.kind === 'link' || draft.kind === 'talent' ? null : draft.kind === 'bait' ? (
         <div className="flex flex-wrap gap-1 text-base">
           {draft.faces.map((f, i) => (
             <NumInput

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   applyCatch,
+  applyFieldItem,
   applyVictory,
   catchTarget,
   computeDamage,
@@ -270,6 +271,29 @@ describe('in battle', () => {
         off,
       ).state.enemy.talent,
     ).toBeUndefined()
+  })
+})
+
+describe('the Talent Candy', () => {
+  it("reveals the talent of a Pokémon whose family hasn't found it, for the whole family, once", () => {
+    const save = {
+      ...saveWith([
+        { dex: 19, level: 10 },
+        { dex: 20, level: 30 },
+      ]),
+      inventory: { 'talent-candy': 2 },
+    }
+    const rat = save.box[0]!
+    const used = applyFieldItem(save, 'talent-candy', rat.id, on, createRng(1))!
+    expect(used.events).toContainEqual(
+      expect.objectContaining({ kind: 'talent', how: 'candy', talent: 'pickup' }),
+    )
+    expect(used.save.inventory['talent-candy']).toBe(1)
+    expect(used.save.box.every((p) => p.talent)).toBe(true)
+    // Already revealed: it can't be given, nothing is spent.
+    expect(applyFieldItem(used.save, 'talent-candy', rat.id, on, createRng(1))).toBeNull()
+    // Hidden talents off: no effect.
+    expect(applyFieldItem({ ...save }, 'talent-candy', rat.id, off, createRng(1))).toBeNull()
   })
 })
 

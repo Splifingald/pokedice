@@ -13,7 +13,7 @@ export type Cat = GroupId | 'all'
 export const GROUPS: { id: GroupId; chip: string; title: string; kinds: Kind[] }[] = [
   { id: 'ball', chip: 'ui.shop.catBalls', title: 'ui.shop.groupCatch', kinds: ['ball', 'bait'] },
   { id: 'heal', chip: 'ui.shop.groupHealing', title: 'ui.shop.groupHealing', kinds: ['heal', 'revive'] },
-  { id: 'battle', chip: 'ui.shop.groupBattle', title: 'ui.shop.groupBattle', kinds: ['rerolls', 'level'] },
+  { id: 'battle', chip: 'ui.shop.groupBattle', title: 'ui.shop.groupBattle', kinds: ['rerolls', 'level', 'talent'] },
   { id: 'cure', chip: 'ui.shop.groupCures', title: 'ui.shop.groupCures', kinds: ['cure'] },
   { id: 'stone', chip: 'ui.shop.groupEvolution', title: 'ui.shop.groupEvolution', kinds: ['stone', 'link'] },
   { id: 'fossil', chip: 'ui.shop.groupFossils', title: 'ui.shop.groupFossils', kinds: ['fossil'] },

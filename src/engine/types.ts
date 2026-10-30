@@ -574,6 +574,11 @@ export type ItemEffect =
   /** The Link Cable: evolves a Pokémon that only evolves by trade (`trade.evolveOnTrade`), from the Team screen. */
   | { kind: 'link' }
   /**
+   * The Talent Candy (docs/51): reveals the hidden talent of a Pokémon whose family hasn't found it here, from the Team
+   * screen; the whole family carries it from then on. Does nothing while hidden talents are off.
+   */
+  | { kind: 'talent' }
+  /**
    * The Bait: after a ball's throw falls short, its own die (these faces) is thrown and added to the total
    * (engine/catching). Never chosen from the bag: the catch offers it.
    */

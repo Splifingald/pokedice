@@ -28,6 +28,8 @@ export function effectText(item: ItemDef): string {
       return e.bonus >= 9 ? t('ui.effect.ballAlways') : t('ui.effect.ball', { bonus: e.bonus })
     case 'link':
       return t('ui.effect.link')
+    case 'talent':
+      return t('ui.effect.talent')
     case 'bait':
       return t('ui.effect.bait', { faces: joinList(e.faces.map(String)) })
     case 'megaGem':
