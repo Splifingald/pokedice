@@ -27,6 +27,7 @@ import {
 } from '@/engine'
 import { playCry } from '@/audio/cries'
 import { useBattleMusic } from '@/audio/useBattleMusic'
+import { TalentPlaque } from '@/components/Talent'
 import { HpBar } from '@/components/HpBar'
 import { PixelIcon } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
@@ -564,6 +565,18 @@ export function RaidView({ run }: { run: RaidRun }) {
             </motion.div>
           )}
         </AnimatePresence>
+        {/* A hidden talent at work (docs/51): its plaque, on its owner's side. */}
+        {fx.talent && (
+          <TalentPlaque
+            key={fx.talent.id}
+            talent={fx.talent.key}
+            name={fx.talent.name}
+            side={fx.talent.side}
+            entry={fx.talent.entry}
+            pace={pace}
+            still={quick}
+          />
+        )}
         {portal && <StageTear id={fx.barBreak?.id ?? null} />}
         {nightmare && <StageShadow id={fx.barBreak?.id ?? null} />}
         {fx.barBreak && !calm && <Shards key={fx.barBreak.id} color={cfg.barColors[(fx.broken - 1 + cfg.barColors.length) % cfg.barColors.length] ?? '#34c97a'} />}

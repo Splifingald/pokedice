@@ -61,7 +61,7 @@ import { leaveRebattle, startRebattle } from '@/store/rebattle'
 import { Medal, tierName } from '@/screens/events/RebattlePage'
 import { cx, shade, typeColor } from '@/theme/util'
 import { WorldMythicalCard } from '@/screens/events/world'
-import { TalentAfterWinCard, TalentFoundCard } from '@/components/Talent'
+import { TalentAfterWinCard, TalentFoundCard, talentName } from '@/components/Talent'
 
 /** How long NEXT fills before it goes by itself, with Auto on. */
 const ADVANCE_MS = 1800
@@ -506,6 +506,20 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           })
           return
         }
+        case 'talent_gold':
+          extras.push({
+            key: k,
+            sound: 'gold',
+            node: (
+              <TalentAfterWinCard
+                uid={e.uid}
+                dex={e.dex}
+                talent={e.talent}
+                line={(name) => t('ui.talent.goldCard', { name, talent: talentName(e.talent), n: e.amount })}
+              />
+            ),
+          })
+          return
         // Pickup's find (docs/51) is shown on its own step after the card (FindView), as any find.
         case 'pickup':
           return

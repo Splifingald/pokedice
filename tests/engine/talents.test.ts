@@ -591,3 +591,90 @@ describe('the full set (2026-10-30): real names, combos, statuses, guards', () =
     expect(makeBattler({ uid: 'x', dex: 19, level: 5, hp: 10, talent: 'imposter' }, on).copiesFoe).toBe(true)
   })
 })
+
+describe('what the player sees (docs/15 §38)', () => {
+  const battle = (talent: TalentKey, foeTalent?: TalentKey) => {
+    const s = createBattle(
+      {
+        kind: 'wild',
+        team: [{ uid: 'a', dex: 4, level: 50, hp: 9999, talent }],
+        enemy: { dex: 129, level: 80 },
+        playerLevels: L1,
+        enemyLevels: L1,
+      },
+      on,
+    )
+    if (foeTalent) s.state.enemy.talent = foeTalent
+    return s
+  }
+
+  it('a talent that works on its own is said once, as its Pokémon first acts', () => {
+    const { state, log } = battle('quick')
+    const said = (l: typeof log) => l.filter((e) => e.kind === 'talent' && e.talent === 'quick' && e.entry)
+    let all = [...log]
+    let s = state
+    for (let i = 0; i < 6 && s.phase !== 'won' && s.phase !== 'lost'; i++) {
+      const e =
+        s.phase === 'player_roll'
+          ? { t: 'ROLL' as const }
+          : s.phase === 'player_reroll'
+            ? { t: 'ATTACK' as const }
+            : { t: 'AI_TURN' as const }
+      const r = reduce(s, e, on, createRng(i + 1))
+      s = r.state
+      all = [...all, ...r.log]
+    }
+    expect(said(all)).toHaveLength(1)
+  })
+
+  it('a talent that changes the hit is said before it lands', () => {
+    const { state } = battle('opener')
+    const s = {
+      ...state,
+      phase: 'player_reroll' as const,
+      actor: 'player' as const,
+      dice: [die('fire', 6), die('fire', 6)],
+      selected: [false, false],
+    }
+    const { log } = reduce(s, { t: 'ATTACK' }, on, createRng(1))
+    const said = log.findIndex((e) => e.kind === 'talent' && e.talent === 'opener')
+    const hit = log.findIndex((e) => e.kind === 'damage')
+    expect(said).toBeGreaterThanOrEqual(0)
+    expect(said).toBeLessThan(hit)
+  })
+
+  it('Imposter is said as Ditto copies', () => {
+    const { log } = createBattle(
+      {
+        kind: 'wild',
+        team: [{ uid: 'a', dex: 132, level: 30, hp: 99, talent: 'imposter' }],
+        enemy: { dex: 6, level: 30 },
+        playerLevels: L1,
+        enemyLevels: L1,
+      },
+      on,
+    )
+    const said = log.findIndex((e) => e.kind === 'talent' && e.talent === 'imposter')
+    expect(said).toBeGreaterThanOrEqual(0)
+    expect(log[said + 1]?.kind).toBe('transform')
+  })
+
+  it('Pay Day and Amulet Coin say what they added, for the victory card', () => {
+    const area = on.areas.find((a) => a.trainerPool.length > 0)!
+    const save = saveWith([
+      { dex: 52, level: 40, talent: true },
+      { dex: 624, level: 30, talent: true },
+    ])
+    const won = applyVictory(
+      save,
+      { areaId: area.id, kind: 'trainer', enemyDex: 19, enemyLevel: 40, fighterUid: save.team[0]! },
+      on,
+      createRng(1),
+      0,
+      newId,
+    )
+    const gold = won.events.filter((e) => e.kind === 'talent_gold')
+    expect(gold.map((e) => e.kind === 'talent_gold' && e.talent)).toEqual(['payDay', 'amuletCoin'])
+    expect(gold.every((e) => e.kind === 'talent_gold' && e.amount > 0)).toBe(true)
+  })
+})

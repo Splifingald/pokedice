@@ -3,6 +3,7 @@
 // plays the catch timeline on the stage (BattleView); the die and the result show here as it lands. A throw that fell
 // short with a Bait in the bag asks first (docs/25): its die, its odds, Keep it / Throw the Bait. Capture Luck's second
 // chance ends on Throw again instead of Continue.
+import { TalentGem, talentName } from '@/components/Talent'
 import { AutoButton } from '@/components/AutoButton'
 import { BottomDock } from '@/components/BottomDock'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
@@ -97,11 +98,13 @@ export function CatchPanel({
     })),
   ]
   const chosen = options.find((o) => o.key === (picked !== undefined ? picked : ball)) ?? options[0]!
-  const pct = (bonus: number) => Math.round(catchChance(value, bonus) * 100)
+  // False Swipe (docs/51): + the catch die from the Pokémon that landed the K.O., in every ball's chance.
+  const swipe = c.bonus ?? 0
+  const pct = (bonus: number) => Math.round(catchChance(value, bonus + swipe) * 100)
   // A ball adds nothing once a weaker option (or no ball) is already certain.
-  const sure = catchChance(value, 0) >= 1
+  const sure = catchChance(value, swipe) >= 1
   const notNeeded = (o: (typeof options)[number]) =>
-    o.key != null && options.some((w) => w.bonus < o.bonus && catchChance(value, w.bonus) >= 1)
+    o.key != null && options.some((w) => w.bonus < o.bonus && catchChance(value, w.bonus + swipe) >= 1)
 
   // A throw that couldn't miss has no die and nothing to read once the ball has landed: on at once, no CONTINUE (the
   // user's call, 2026-10-26). A throw with a die keeps its CONTINUE, which loads and goes by itself.
@@ -193,6 +196,12 @@ export function CatchPanel({
   return (
     <>
       {/* Each ball says its own chance: no formula line, no tip (the rework). */}
+      {swipe > 0 && (
+        <p className="m-0 flex items-center justify-center gap-1.5 text-center font-pixel-sm text-[16px] leading-tight text-ink">
+          <TalentGem talent="falseSwipe" size={16} />
+          {t('ui.talent.catchBonus', { talent: talentName('falseSwipe'), n: swipe })}
+        </p>
+      )}
       {c.target.mode === 'replace' && (
         <p className="m-0 text-center font-pixel-sm text-[16px] leading-tight text-muted">
           {t('ui.catch.replaces', {

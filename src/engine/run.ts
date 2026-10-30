@@ -430,6 +430,8 @@ export type RunEvent =
   | { kind: 'unown_letter'; letter: string; isNew: boolean; found: number; total: number; reward?: number }
   /** Regenerator (docs/51): it healed after the battle it won. */
   | { kind: 'regenerator'; uid: string; amount: number }
+  /** Pay Day, Amulet Coin (docs/51): the ₽ it added to this K.O.'s (in the `gold` event's amount). */
+  | { kind: 'talent_gold'; uid: string; dex: number; talent: 'payDay' | 'amuletCoin'; amount: number }
   /**
    * Pickup (docs/51): it found something after the battle it won (`key` 'money' for ₽). Nothing is paid yet: the find
    * is shown on its own step (FindView) as the next card, and PICK IT UP takes it (`pickUpItem`).
@@ -542,7 +544,8 @@ export function applyVictory(
   if ((input.kind === 'trainer' || input.kind === 'gym') && input.prize !== 0) {
     // Pay Day and Amulet Coin (docs/51): more for this K.O.; a set prize stays as it is.
     const due =
-      input.prize ?? Math.round(trainerGoldFor(input.enemyLevel, area, progress.cleared, data, input.kind === 'gym') * goldTalents(save, data, fighters))
+      input.prize ??
+      goldTalents(trainerGoldFor(input.enemyLevel, area, progress.cleared, data, input.kind === 'gym'), save, data, fighters, events)
     const { amount, bonus } = earnedGold(due, live)
     next = { ...next, gold: next.gold + amount }
     events.push(bonus ? { kind: 'gold', amount, bonus } : { kind: 'gold', amount })
@@ -590,14 +593,33 @@ export function applyVictory(
   return { save: next, events }
 }
 
-/** × trainer ₽ for a K.O.: Pay Day on the Pokémon that made it, Amulet Coin anywhere on the team (docs/51). */
-function goldTalents(save: SaveData, data: GameData, fighters: string | readonly string[]): number {
-  const made = (typeof fighters === 'string' ? [fighters] : [...fighters]).some((uid) => {
-    const p = getInstance(save, uid)
-    return !!p && talentOf(data, p) === 'payDay'
-  })
-  const coin = teamOf(save).some((p) => talentOf(data, p) === 'amuletCoin')
-  return 1 + (made ? TALENT.payDay : 0) + (coin ? TALENT.amuletCoin : 0)
+/**
+ * Trainer ₽ for a K.O. with the talents on it (docs/51): Pay Day on the Pokémon that made it, Amulet Coin anywhere on
+ * the team; each says what it added (`talent_gold`), for the victory card.
+ */
+function goldTalents(
+  base: number,
+  save: SaveData,
+  data: GameData,
+  fighters: string | readonly string[],
+  events: RunEvent[],
+): number {
+  const made = (typeof fighters === 'string' ? [fighters] : [...fighters])
+    .map((uid) => getInstance(save, uid))
+    .find((p) => !!p && talentOf(data, p) === 'payDay')
+  const coin = teamOf(save).find((p) => talentOf(data, p) === 'amuletCoin')
+  let total = base
+  for (const [p, talent] of [
+    [made, 'payDay'],
+    [coin, 'amuletCoin'],
+  ] as const) {
+    if (!p) continue
+    const extra = Math.round(base * TALENT[talent])
+    if (extra <= 0) continue
+    total += extra
+    events.push({ kind: 'talent_gold', uid: p.id, dex: p.dex, talent, amount: extra })
+  }
+  return total
 }
 
 /**

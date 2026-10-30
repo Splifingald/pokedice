@@ -1913,6 +1913,20 @@ pop-up). The pieces are in `src/components/Talent.tsx`, every state on `/kitchen
   gold-pale card with the gem, the line and what it does (`TalentFoundCard`); Regenerator after a win is a sky card
   (`TalentAfterWinCard`). Pickup's find comes as the next screen, the usual item find (`FindView`, PICK IT UP) with a
   sky tag over it: "Found by Zigzagoon’s Pickup!" (`PickupTag`). Found evolving out of a fight (a stone, Rare Candy), a toast.
+- **In battle, the plaque** (`TalentPlaque`, as an ability's pop-up in the main games): every talent at work shows
+  its plaque on its owner's side (yours bottom left, the foe's top right): the gem, the Pokémon's name, the talent's
+  name. It slides in from the edge in three steps, holds about a second, and slides back (`off`: shown and gone, no
+  slide). At the same time its gem bursts over the Pokémon (`BattleStage`), a short glint plays (`sfx('talent')`), and
+  the message line says what it did. A talent that changes the hit (Technician, Opener, Guts, Skill Link, Triple and
+  Fours Pro, Power Spot; the target's Intimidate, Disguise, Friend Guard) is said **before** the hit lands. One that
+  works on its own (Extra and Double Reroll, Quick, Ultra Speed, Thick Hide, Reroller: `ANNOUNCED_TALENTS`) is said
+  once, as its Pokémon first acts, its text on the plaque. Imposter is said as Ditto copies. Raids show the same
+  plaque (`RaidView`).
+- **Out of battle**: Pay Day's and Amulet Coin's ₽ and Regenerator's heal are sky cards on the victory screen
+  (`TalentAfterWinCard`, the talent named over its line); False Swipe is a line over the catch's balls, every ball's
+  chance counting it; Daycare Darling and Flame Body are a line on their Day Care card (`TalentLine`).
+- Every talent at work in a real fight, for a look or a capture: `/kitchen-sink/talent-lab?talent=<key>` (dev only);
+  Pickup's find with `?find=pickup`.
 - **The battle log** says each talent at work in one line (`talentLogText`): Leftovers', Poison Heal's, Flame Heal's and Shell
   Bell's heal (with its green number), a damage talent's bonus, a partner's Power Spot (naming the partner), a hit
   softened (Intimidate, Disguise, a partner's Friend Guard), Rough Skin's hurt (the attacker's HP drops), Static's

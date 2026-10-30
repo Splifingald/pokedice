@@ -94,6 +94,8 @@ export interface Battler {
   talentSpent?: TalentKey[]
   /** A foe's Pressure (docs/51) already took its reroll. */
   pressured?: boolean
+  /** Its talent that works on its own (Quick, Extra Reroll…) was said as it first acted (docs/51). */
+  announced?: boolean
   /** Attacks it has made this battle (Opener counts the first). */
   attacks?: number
 }
@@ -319,6 +321,8 @@ export type LogEntry =
       ally?: string
       name?: string
       hurt?: { side: Side; uid: string; amount: number; hpAfter: number }
+      /** Said as it first acts: a talent that works on its own (`ANNOUNCED_TALENTS`). */
+      entry?: true
     }
   /** `double`: a double battle's opening, yours and the foes out (docs/33). */
   | { kind: 'start'; first: Side; double?: { own: string[]; foes: string[] } }
@@ -475,6 +479,8 @@ export function copyFoeDice(s: BattleState, log: LogEntry[]) {
     if (!b.copiesFoe || b.hp <= 0) continue
     const dice = [...(foe.copiesFoe ? (foe.ownDice ?? foe.dice) : foe.dice)]
     b.dice = dice
+    // Imposter (docs/51): Ditto's talent, said as it copies.
+    if (b.talent === 'imposter') log.push({ kind: 'talent', side, uid: b.uid, talent: 'imposter' })
     log.push({ kind: 'transform', side, uid: b.uid, fromUid: foe.uid, dice })
   }
 }
@@ -1055,6 +1061,7 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[], 
     s.itemUsedThisTurn = false
     const b = side === 'player' ? activeBattler(s) : s.enemy
     log.push({ kind: 'turn', side, turn: s.turn, uid: b.uid })
+    announce(b, side, log)
     pressure(b, side === 'player' ? s.enemy : activeBattler(s), side, log)
 
     const ticks = statusTicks(b, side, rules, log)
@@ -1253,6 +1260,7 @@ function copyDiceOf(b: Battler, side: Side, foe: Battler, log: LogEntry[]) {
   const dice = [...(foe.copiesFoe ? (foe.ownDice ?? foe.dice) : foe.dice)]
   if (dice.length === b.dice.length && dice.every((d, i) => d === b.dice[i])) return
   b.dice = dice
+  if (b.talent === 'imposter') log.push({ kind: 'talent', side, uid: b.uid, talent: 'imposter' })
   log.push({ kind: 'transform', side, uid: b.uid, fromUid: foe.uid, dice })
 }
 
@@ -1335,6 +1343,7 @@ function beginDoubleTurn(s: BattleState, data: GameData, log: LogEntry[], rng?: 
     s.itemUsedThisTurn = false
     const b = side === 'player' ? activeBattler(s) : s.enemy
     log.push({ kind: 'turn', side, turn: s.turn, uid: b.uid })
+    announce(b, side, log)
     pressure(b, side === 'player' ? s.enemy : activeBattler(s), side, log)
 
     const ticks = statusTicks(b, side, rules, log)
@@ -1593,6 +1602,25 @@ function statusTicks(b: Battler, side: Side, rules: GameData['config']['status']
   return ticks.length > 0
 }
 
+/**
+ * The talents that work on their own, with no moment of their own (docs/51): said once, as the Pokémon first acts, so
+ * the player sees them at work (the rerolls it has, its Speed, its HP, its rerolls that never repeat).
+ */
+export const ANNOUNCED_TALENTS: readonly TalentKey[] = [
+  'extraReroll',
+  'doubleReroll',
+  'quick',
+  'ultraSpeed',
+  'thickHide',
+  'reroller',
+]
+
+function announce(b: Battler, side: Side, log: LogEntry[]) {
+  if (b.announced || !b.talent || !ANNOUNCED_TALENTS.includes(b.talent) || b.hp <= 0) return
+  b.announced = true
+  log.push({ kind: 'talent', side, uid: b.uid, talent: b.talent, entry: true })
+}
+
 /** Pressure (docs/51): the first turn a Pokémon takes facing it, it loses a reroll (once a battle). */
 function pressure(b: Battler, foe: Battler, side: Side, log: LogEntry[]) {
   if (foe.talent !== 'pressure' || foe.hp <= 0 || b.hp <= 0 || b.pressured) return
@@ -1789,18 +1817,7 @@ function resolveAttack(
     def.hp = 1
     def.talentSpent = [...(def.talentSpent ?? []), 'sturdy']
   }
-  s.lastDamage = result
-  log.push({
-    kind: 'damage',
-    side,
-    target: other(side),
-    targetUid: def.uid,
-    amount: result.final,
-    hpAfter: def.hp,
-    dice,
-    result,
-    ...(z && { z: typeof z === 'string' ? { from: z } : {} }),
-  })
+  // The talents that changed the hit are said first, then it lands (an ability's pop-up, as in the main games).
   if (result.talent?.key) log.push({ kind: 'talent', side, uid: atk.uid, talent: result.talent.key })
   for (const g of result.talent?.guards ?? []) {
     // Disguise (docs/51): spent on the first hit it takes.
@@ -1824,6 +1841,18 @@ function resolveAttack(
       ally: atk.uid,
       ...(s.allyPowerSpot?.uid === result.talent.powerSpot && { name: s.allyPowerSpot.name }),
     })
+  s.lastDamage = result
+  log.push({
+    kind: 'damage',
+    side,
+    target: other(side),
+    targetUid: def.uid,
+    amount: result.final,
+    hpAfter: def.hp,
+    dice,
+    result,
+    ...(z && { z: typeof z === 'string' ? { from: z } : {} }),
+  })
   if (sturdy) log.push({ kind: 'talent', side: other(side), uid: def.uid, talent: 'sturdy' })
   if (result.final > 0) hitTalents(atk, def, side, result.final, data.config.status, log, rng ?? createRng(s.turn))
   const all = statusesFromRoll(dice, data, levels)

@@ -1,6 +1,7 @@
 // The battle, full screen: the 240×160 stage on top (BattleStage) and the panel under it — the message, the dice tray
 // and its readout, the actions, the Bag and the team. It drives the engine through the store and plays the engine's
 // log (useBattleAnimator); the UI never recomputes a rule.
+import { TalentPlaque } from '@/components/Talent'
 import { AutoButton, PILOT_PICK_MS } from '@/components/AutoButton'
 import { BottomDock } from '@/components/BottomDock'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -1178,6 +1179,18 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             </motion.div>
           )}
         </AnimatePresence>
+        {/* A hidden talent at work (docs/51): its plaque, on its owner's side. */}
+        {fx.talent && (
+          <TalentPlaque
+            key={fx.talent.id}
+            talent={fx.talent.key}
+            name={fx.talent.name}
+            side={fx.talent.side}
+            entry={fx.talent.entry}
+            pace={pace}
+            still={quick}
+          />
+        )}
       </BattleStage>
     </div>
   )

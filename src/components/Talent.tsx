@@ -2,6 +2,7 @@
 // rarity), the sheet's Talent section, and the rules pop-up (once, in the one-time pop-ups' queue; then a tap on
 // the sheet's talent box).
 // The engine decides who carries what (`engine/talents.ts`); these only show it.
+import { motion } from 'framer-motion'
 import { useState } from 'react'
 import {
   familyTalent,
@@ -73,10 +74,12 @@ export const talentText = (key: TalentKey): string => t(`ui.talent.text.${key}`,
 /** What the battle log says of a talent at work (`LogEntry` kind 'talent'). */
 export function talentLogText(
   name: string,
-  e: { talent: TalentKey; amount?: number; hurt?: { amount: number } },
+  e: { talent: TalentKey; amount?: number; hurt?: { amount: number }; entry?: boolean },
   ally?: string,
 ): string {
   const talent = talentName(e.talent)
+  // One that works on its own, said as it first acts.
+  if (e.entry) return t('ui.talent.log.entry', { name, talent })
   switch (e.talent) {
     case 'leftovers':
     case 'poisonHeal':
@@ -100,6 +103,8 @@ export function talentLogText(
       return t('ui.talent.log.guard', { name, talent })
     case 'friendGuard':
       return t('ui.talent.log.friendGuard', { name, ally: ally ?? '' })
+    case 'imposter':
+      return t('ui.talent.log.entry', { name, talent })
     case 'mirror':
       return t('ui.talent.log.mirror', { name, n: e.amount ?? 0 })
     case 'sturdy':
@@ -113,6 +118,69 @@ export function talentLogText(
     default:
       return t('ui.talent.log.boost', { name, talent })
   }
+}
+
+/**
+ * A hidden talent at work in battle (docs/51, docs/15 §38): its plaque, as an ability's pop-up in the main games. It
+ * slides in from its owner's edge (yours bottom left, the foe's top right) in three steps, holds while it reads, and
+ * slides back out; `still` (no animations), it shows and goes. One that works on its own (`entry`) says what it does.
+ */
+export function TalentPlaque({
+  talent,
+  name,
+  side,
+  entry,
+  pace = 1,
+  still,
+  rest,
+  className,
+}: {
+  talent: TalentKey
+  name: string
+  side: 'player' | 'enemy'
+  entry?: boolean
+  pace?: number
+  still?: boolean
+  /** Shown at rest, in place (the kitchen sink). */
+  rest?: boolean
+  className?: string
+}) {
+  const mine = side === 'player'
+  const off = mine ? '-110%' : '110%'
+  const hold = (entry ? 1.25 : 1) * pace
+  return (
+    <motion.div
+      role="status"
+      className={cx(
+        'pointer-events-none absolute z-30 flex max-w-[82%] items-center gap-2 bg-gold-pale py-1.5 pl-2 pr-3 text-ink shadow-ring',
+        mine ? 'bottom-[30%] left-0' : 'right-0 top-[20%] flex-row-reverse pl-3 pr-2 text-right',
+        className,
+      )}
+      initial={rest || still ? { opacity: 1 } : { x: off }}
+      animate={
+        rest
+          ? { opacity: 1 }
+          : still
+            ? { opacity: [1, 1, 0] }
+            : { x: [off, mine ? '-55%' : '55%', '0%', '0%', off] }
+      }
+      transition={{
+        duration: still ? hold : hold + 0.3,
+        times: still ? [0, 0.95, 1] : [0, 0.06, 0.12, 0.88, 1],
+        // Steps, never a glide: each keyframe held until the next (docs/15 §8).
+        ease: (p: number) => (p < 1 ? 0 : 1),
+      }}
+    >
+      <TalentGem talent={talent} size={28} className="shrink-0" />
+      <span className="grid min-w-0 gap-0.5">
+        <span className="truncate font-pixel-sm text-[16px] leading-none text-muted">{name}</span>
+        <span className="text-[24px] leading-none">{talentName(talent)}</span>
+        {entry && (
+          <span className="font-pixel-sm text-[16px] leading-tight text-muted">{talentText(talent)}</span>
+        )}
+      </span>
+    </motion.div>
+  )
 }
 
 /** A Pokémon of the save by id, its name as the player knows it (its nickname, else its species'). */
@@ -154,19 +222,44 @@ export function TalentAfterWinCard({
   uid,
   dex,
   line,
+  talent,
 }: {
   uid: string
   dex: number
   line: (name: string) => string
+  /** The talent that did it; its family's by default. */
+  talent?: TalentKey
 }) {
   useT()
   const data = useGame((s) => s.data)
   const name = useMonName(uid, dex)
+  const key = talent ?? familyTalent(data, dex)
   return (
     <div className="flex items-center gap-2 bg-sky p-2 text-left shadow-ring">
-      <TalentGem talent={familyTalent(data, dex)} size={20} />
-      <span className="text-lg leading-tight">{line(name)}</span>
+      <TalentGem talent={key} size={24} className="shrink-0" />
+      <span className="grid gap-0.5">
+        <span className="font-pixel-sm text-[16px] leading-none text-muted">{talentName(key)}</span>
+        <span className="text-lg leading-tight">{line(name)}</span>
+      </span>
     </div>
+  )
+}
+
+/** A talent at work where it lives (a Day Care resident's): its gem, its name and what it does, on one line. */
+export function TalentLine({ talent, className }: { talent: TalentKey; className?: string }) {
+  useT()
+  return (
+    <p
+      className={cx(
+        'm-0 flex items-start gap-1.5 font-pixel-sm text-[16px] leading-tight text-ink',
+        className,
+      )}
+    >
+      <TalentGem talent={talent} size={14} className="mt-0.5 shrink-0" />
+      <span>
+        <b className="font-normal">{talentName(talent)}</b> · {talentText(talent)}
+      </span>
+    </p>
   )
 }
 

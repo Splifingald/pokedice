@@ -10,6 +10,7 @@ import {
   type RolledDie,
   type Side,
   type StatusKind,
+  type TalentKey,
 } from '@/engine'
 import { t } from '@/i18n'
 import { chancePercent, comboName, typeName } from '@/lib/format'
@@ -55,6 +56,11 @@ export interface Fx {
   cry: { id: number; dex: number } | null
   /** Pokémon away after a Flying, Ground or Water Z-Move (docs/35): the stage doesn't draw them until they strike. */
   away?: Record<string, 'fly' | 'dig' | 'dive'>
+  /**
+   * A hidden talent at work (docs/51): its plaque slides in on its owner's side, its gem bursts on the Pokémon.
+   * `entry`: one that works on its own, said as it first acts (its text on the plaque).
+   */
+  talent?: { id: number; side: Side; uid: string; key: TalentKey; name: string; entry?: boolean } | null
 }
 
 /** What the battle stage plays for a log entry (src/fx timelines). */
@@ -159,6 +165,7 @@ function initFx(b: BattleSlice): Fx {
     chip: null,
     cry: null,
     away: {},
+    talent: null,
   }
 }
 
@@ -174,7 +181,7 @@ export function caughtUpFx(b: BattleSlice, ctx: AnimatorContext): Fx {
     const applied = step.apply(f)
     f = step.land ? step.land(applied, false) : applied
   }
-  return { ...f, cursor: b.log.length, pop: null, banner: null, shake: null, flash: null, status: null, fly: null, scene: null, cry: null }
+  return { ...f, cursor: b.log.length, pop: null, banner: null, shake: null, flash: null, status: null, fly: null, scene: null, cry: null, talent: null }
 }
 
 export interface Step {
@@ -337,10 +344,13 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       }
     case 'talent':
       return {
-        delay: 850,
+        // Long enough to read the plaque; one that only says what works on its own reads its line too.
+        delay: e.entry ? 1300 : 1050,
+        sound: 'talent',
         apply: (f) => ({
           ...f,
           message: talentLogText(e.name ?? nameOf(e.uid), e, e.ally ? nameOf(e.ally) : undefined),
+          talent: { id: nextId(), side: e.side, uid: e.uid, key: e.talent, name: e.name ?? nameOf(e.uid), ...(e.entry && { entry: true }) },
           ...(e.hpAfter != null && {
             hp: { ...f.hp, [e.uid]: e.hpAfter },
             pop: { id: nextId(), target: e.side, amount: e.amount ?? 0, tone: 'heal' as const },

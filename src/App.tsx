@@ -51,6 +51,7 @@ const FxLab = lazy(() => import('@/screens/FxLab').then((m) => ({ default: m.FxL
 const LeagueFightLab = lazy(() =>
   import('@/screens/kitchen/LeagueFightLab').then((m) => ({ default: m.LeagueFightLab })),
 )
+const TalentLab = lazy(() => import('@/screens/kitchen/TalentLab').then((m) => ({ default: m.TalentLab })))
 
 /**
  * The rework prototype (vite.proto.config.ts) runs inside an Artifact, whose address is not the game's: its pages live
@@ -99,6 +100,9 @@ export function App() {
             <Route element={<GameLayout />}>
               {import.meta.env.DEV && (
                 <Route path="/kitchen-sink/league-fight" element={<Lazy><LeagueFightLab /></Lazy>} />
+              )}
+              {import.meta.env.DEV && (
+                <Route path="/kitchen-sink/talent-lab" element={<Lazy><TalentLab /></Lazy>} />
               )}
               <Route path="/home" element={<HomeScreen />} />
               {/* Home replaced the Map as the landing screen: old links land there. */}

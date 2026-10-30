@@ -23,6 +23,7 @@ import {
   nextCheckAt,
   pairs,
   sharedGroups,
+  talentOf,
   type CareMember,
   type DayCareGuest,
   type DayCareResident,
@@ -30,6 +31,7 @@ import {
   type Hatch,
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
+import { TalentLine } from '@/components/Talent'
 import { AccountButton } from '@/components/AccountButton'
 import { DayCareRulesCard, DayCareRulesModal } from '@/components/FeatureRules'
 import { InfoButton } from '@/components/RulesModal'
@@ -114,6 +116,9 @@ function MineCard({ res, slot, now, onTake }: { res: DayCareResident; slot: numb
     : t('ui.dayCare.maxed', { level: lv(p.level) })
   const gained = p.level - res.inst.level
   const mates = matesOf(save, data, res.inst.id)
+  // Daycare Darling and Flame Body (docs/51) work here: said on its card.
+  const talent = talentOf(data, res.inst)
+  const here = talent === 'daycareDarling' || talent === 'flameBody' ? talent : null
   return (
     <SlotCard
       band={slotColor(slot)}
@@ -131,6 +136,7 @@ function MineCard({ res, slot, now, onTake }: { res: DayCareResident; slot: numb
       action={{ label: t('ui.dayCare.takeBack'), aria: t('ui.dayCare.takeBackName', { name }), onClick: onTake }}
     >
       <XpBar k={p.toNext ? p.xp / p.toNext : 1} line={line} />
+      {here && <TalentLine talent={here} />}
       {isDitto(data, res.inst.dex) ? (
         <MatesLine lead={t('ui.dayCare.allButLegends')} />
       ) : mates.length ? (

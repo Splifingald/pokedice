@@ -4,9 +4,10 @@
 import { AnimatePresence, motion, steps } from 'framer-motion'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { flushSync } from 'react-dom'
-import type { Battler, Side } from '@/engine'
+import { talentTier, type Battler, type Side } from '@/engine'
 import { AreaArt } from '@/components/AreaArt'
 import { PixelIcon, STATUS_ICON } from '@/components/icons'
+import { TIER_ICON } from '@/components/Talent'
 import { RaidStageArt, useStageDistortion } from '@/components/PortalFx'
 import { NightStageArt, useHaunt } from '@/components/NightmareFx'
 import { StageCanvas } from '@/components/StageCanvas'
@@ -362,6 +363,18 @@ function Mon({
         <button type="button" onClick={onTap} aria-label={tapLabel} className="absolute inset-0 z-[1]" />
       )}
       <AnimatePresence>
+        {/* A hidden talent at work (docs/51): its gem bursts on the Pokémon that carries it. */}
+        {fx.talent?.uid === b.uid && shown && !hidden && (
+          <motion.div
+            key={`gem${fx.talent.id}`}
+            className="pointer-events-none absolute inset-0 z-10 flex items-start justify-center"
+            initial={{ opacity: 0, y: 0, scale: 0.4 }}
+            animate={still ? { opacity: [1, 0] } : { opacity: [0, 1, 1, 0], y: [0, -10, -16, -22], scale: [0.4, 1.5, 1.2, 1] }}
+            transition={{ duration: (still ? 1 : 1.05) * pace, ease: (p: number) => (still ? (p < 1 ? 0 : 1) : p) }}
+          >
+            <PixelIcon name={TIER_ICON[talentTier(fx.talent.key)]} size={Math.max(14, Math.round(box.w * scale * 0.22))} />
+          </motion.div>
+        )}
         {fx.status?.target === side && front && !hidden && (
           <motion.div
             key={fx.status.id}

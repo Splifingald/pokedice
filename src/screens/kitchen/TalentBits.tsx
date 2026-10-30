@@ -1,13 +1,17 @@
 // Kitchen sink (dev only): hidden talents (docs/51) — the gem (common, rare, ultra, unique, unknown; each size), the
 // sheet's box (carried, known but not learnt, never met), the encounter's line (to learn, already learnt), the result
-// cards (caught, passed, found evolving; Regenerator, Pickup), the battle log's lines, the trade toggle, and the rules
-// (unlock, and again from a tap on the sheet's box).
+// cards (caught, passed, found evolving; Regenerator, Pay Day, Amulet Coin), Pickup's tag, the battle's plaque (yours,
+// a foe's, one said as it first acts), False Swipe's catch line, the Day Care's line, the battle log's lines, the trade
+// toggle, and the rules (unlock, and again from a tap on the sheet's box). Each talent at work in a real fight:
+// /kitchen-sink/talent-lab?talent=<key>.
 import { useState, type ReactNode } from 'react'
 import {
   TalentAfterWinCard,
   TalentBox,
   TalentFoundCard,
   TalentGem,
+  TalentLine,
+  TalentPlaque,
   TalentRulesModal,
   talentLogText,
   talentName,
@@ -35,7 +39,8 @@ export function TalentBits() {
   const data = useGame((s) => s.data)
   const [rules, setRules] = useState<'unlock' | 'info' | null>(null)
   const [withTalent, setWithTalent] = useState(true)
-  const logs: { talent: TalentKey; amount?: number; hurt?: { amount: number } }[] = [
+  const logs: { talent: TalentKey; amount?: number; hurt?: { amount: number }; entry?: boolean }[] = [
+    { talent: 'quick', entry: true },
     { talent: 'leftovers', amount: 7 },
     { talent: 'poisonHeal', amount: 9 },
     { talent: 'shellBell', amount: 4 },
@@ -115,6 +120,40 @@ export function TalentBits() {
           <TalentAfterWinCard uid="kit-d" dex={183} line={(name) => t('ui.talent.medic', { name, n: 12 })} />
           <span>
             <PickupTag uid="kit-e" dex={263} />
+          </span>
+        </Frame>
+        <Frame name="In battle · the plaque (yours bottom left, the foe's top right; one that works on its own says what it does)">
+          <div className="relative h-[190px] overflow-hidden bg-sky shadow-ring-line">
+            <TalentPlaque rest talent="opener" name="Charmeleon" side="player" />
+            <TalentPlaque rest talent="static" name="Raichu" side="enemy" />
+          </div>
+          <div className="relative h-[110px] overflow-hidden bg-sky shadow-ring-line">
+            <TalentPlaque rest entry talent="quick" name="Pidgeotto" side="player" className="!bottom-2" />
+          </div>
+          <div className="relative h-[90px] overflow-hidden bg-sky shadow-ring-line">
+            <TalentPlaque rest talent="imposter" name="Ditto" side="enemy" className="!top-2" />
+          </div>
+        </Frame>
+        <Frame name="After a win · Pay Day, Amulet Coin · at the catch, False Swipe · at the Day Care, Daycare Darling and Flame Body">
+          <TalentAfterWinCard
+            uid="kit-g"
+            dex={52}
+            talent="payDay"
+            line={(name) => t('ui.talent.goldCard', { name, talent: talentName('payDay'), n: 4 })}
+          />
+          <TalentAfterWinCard
+            uid="kit-h"
+            dex={624}
+            talent="amuletCoin"
+            line={(name) => t('ui.talent.goldCard', { name, talent: talentName('amuletCoin'), n: 10 })}
+          />
+          <p className="m-0 flex items-center justify-center gap-1.5 font-pixel-sm text-[16px] text-ink">
+            <TalentGem talent="falseSwipe" size={16} />
+            {t('ui.talent.catchBonus', { talent: talentName('falseSwipe'), n: 1 })}
+          </p>
+          <span className="grid gap-1 bg-paper p-2 shadow-ring-line">
+            <TalentLine talent="daycareDarling" />
+            <TalentLine talent="flameBody" />
           </span>
         </Frame>
         <Frame name="Battle log lines">

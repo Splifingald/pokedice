@@ -121,6 +121,17 @@ adds its row.
 - **Other arrivals**: `hatchEgg`, `addFossil`, `addRaidMon`, `applyGifts`, a world's mythical, the Rocket trade, the
   wheel's prize, a ghost caught (`TrickState.talent`).
 
+## 3b. How the player sees it (docs/15 §38)
+
+The user's ask of 2026-10-30: clear UX and an animation for each effect when it applies. In battle every talent at
+work shows its **plaque** on its owner's side (gem, Pokémon, talent; an ability's pop-up as in the main games), its gem
+bursts on the Pokémon and a glint plays; the line under the stage says what it did. The engine logs the talents that
+change a hit **before** the hit, and announces the ones that work on their own as their Pokémon first acts
+(`ANNOUNCED_TALENTS`). Out of battle: the victory screen's cards (Pay Day, Amulet Coin: `talent_gold`; Regenerator),
+the catch's False Swipe line (and the balls' chances with it), the Day Care card's line (Daycare Darling, Flame Body),
+Pickup's tag over its find. `/kitchen-sink/talent-lab` fights each one in the real battle screen (dev only; its fights
+are checked by `tests/talent-lab.test.ts`).
+
 ## 4. The server (0094)
 
 - `game_config.hiddenTalents` (Off) and `talents_open()`.

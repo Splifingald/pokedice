@@ -14,6 +14,7 @@ export type SfxName =
   | 'button'
   | 'error'
   | 'heal'
+  | 'talent'
 
 let enabled = false
 let ctx: AudioContext | null = null
@@ -135,6 +136,13 @@ const SOUNDS: Record<SfxName, () => void> = {
     play([
       { f: 196, t: 0, d: 0.1 },
       { f: 147, t: 0.11, d: 0.16 },
+    ]),
+  // A hidden talent at work (docs/51): a quick glint, up and back, under the hit's sounds.
+  talent: () =>
+    play([
+      { f: 1319, t: 0, d: 0.05, type: 'triangle', v: 0.6 },
+      { f: 1760, t: 0.05, d: 0.05, type: 'triangle', v: 0.6 },
+      { f: 2349, t: 0.1, d: 0.16, type: 'triangle', v: 0.5 },
     ]),
   heal: () =>
     play([
