@@ -1,5 +1,5 @@
-// Hidden talents (docs/51, docs/15 §38): the gem a Pokémon that carries its talent wears (gold for a super talent, blue
-// for a base one), the sheet's Talent section, and the rules pop-up (once, in the one-time pop-ups' queue; then a tap on
+// Hidden talents (docs/51, docs/15 §38): the gem a Pokémon that carries its talent wears (green, blue or gold by
+// rarity), the sheet's Talent section, and the rules pop-up (once, in the one-time pop-ups' queue; then a tap on
 // the sheet's talent box).
 // The engine decides who carries what (`engine/talents.ts`); these only show it.
 import { useState } from 'react'
@@ -138,8 +138,8 @@ export function TalentAfterWinCard({
 export const useTalentsOn = (): boolean => useGame((s) => talentsOn(s.data))
 
 /**
- * The gem: gold for a super talent, blue for a base one, grey for a talent not known yet. Its title names the talent
- * for screen readers and on hover.
+ * The gem: green, blue or gold for a common, rare or ultra talent, grey for a talent not known yet. Its title names
+ * the talent for screen readers and on hover.
  */
 export function TalentGem({
   talent,

@@ -1,4 +1,4 @@
-// Kitchen sink (dev only): hidden talents (docs/51) — the gem (a base talent, a super one, unknown; each size), the
+// Kitchen sink (dev only): hidden talents (docs/51) — the gem (common, rare, ultra, unknown; each size), the
 // sheet's box (carried, known but not learnt, never met), the encounter's line (to learn, already learnt), the result
 // cards (caught, passed, found evolving; Field Medic, Pickup), the battle log's lines, the trade toggle, and the rules
 // (unlock, and again from a tap on the sheet's box).
