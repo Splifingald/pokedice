@@ -1,6 +1,6 @@
 // Migration 0082 against a real Postgres (PGlite, in process): the weekly Versus league (docs/44). Offers, a match
 // recorded as a leave before it's fought and replaced by its checked result, bots seated and hidden as bots from all
-// but the admin, the week's rewards as gift messages, and deleting your data. Supabase's own pieces (the auth schema,
+// but the admin, the global board (0091), the week's rewards as gift messages, and deleting your data. Supabase's own pieces (the auth schema,
 // the anon / authenticated roles) are stood in for at the top, as in friends-sql.test.ts.
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
@@ -132,11 +132,13 @@ beforeAll(async () => {
     '0064_battle_powers.sql',
     '0082_versus_league.sql',
     '0086_versus_league_admin_board.sql',
+    '0091_versus_league_global.sql',
   ])
     await db.exec(sql(f))
   // Safe to run again.
   await db.exec(sql('0082_versus_league.sql'))
   await db.exec(sql('0086_versus_league_admin_board.sql'))
+  await db.exec(sql('0091_versus_league_global.sql'))
   await db.exec(
     `insert into auth.users (id) values ${Object.values(U)
       .map((u) => `('${u}')`)
@@ -399,6 +401,75 @@ describe('the league', () => {
     // Last week: its own groups (none were made here).
     const last = (await as<{ b: AdminBoard }>(U.admin, 'select versus_league_admin_board(true) b'))[0]!.b
     expect(last.groups).toEqual([])
+  })
+
+  it('ranks every player of every group on the global board: no bots, no banned players, its own switch', async () => {
+    const wk = (await db.query<{ w: string }>('select versus_league_week()::text w')).rows[0]!.w
+    await db.query(`select versus_league_join($1, $2::date)`, [U.misty, wk])
+    // Brock in a group of his own: the board crosses groups.
+    const [g] = (
+      await db.query<{ id: number }>(
+        `insert into versus_league_groups (week, n)
+         values ($1::date, (select max(n) + 1 from versus_league_groups where week = $1::date)) returning id`,
+        [wk],
+      )
+    ).rows
+    await db.query(`insert into versus_league_members (week, group_id, user_id) values ($1::date, $2, $3)`, [
+      wk,
+      g!.id,
+      U.brock,
+    ])
+    const set = (user: string, n: number) =>
+      db.query(`update versus_league_members set trophies = $2 where user_id = $1`, [user, n])
+    await set(U.ash, 150)
+    await set(U.misty, 150)
+    await set(U.brock, 40)
+    const league = (cfg: object) =>
+      db.query(
+        `insert into game_config (key, value) values ('versusLeague', $1) on conflict (key) do update set value = excluded.value`,
+        [JSON.stringify(cfg)],
+      )
+    type Global = { week: string; rows: { id: string; name: string; rank: number; isMe: boolean }[] }
+    const global = async (user: string | null) =>
+      (await as<{ r: Global }>(user, 'select versus_league_global() r'))[0]!.r
+
+    // Off until its own switch is on, and only with the league open.
+    expect(await fails(U.ash, 'select versus_league_global()')).toContain('versus_league_off')
+    await league({ access: 'all', globalAccess: 'admin' })
+    expect(await fails(U.ash, 'select versus_league_global()')).toContain('versus_league_off')
+    expect((await global(U.admin)).week).toBe(wk)
+    await league({ access: 'off', globalAccess: 'all' })
+    expect(await fails(U.ash, 'select versus_league_global()')).toContain('versus_league_off')
+    await league({ access: 'all', globalAccess: 'all' })
+
+    // The bots seated this week are left out; ties share a rank.
+    const bots = (
+      await db.query(`select 1 from versus_league_members where week = $1::date and bot_id is not null`, [wk])
+    ).rows
+    expect(bots.length).toBeGreaterThan(0)
+    const mine = await global(U.ash)
+    expect(mine.week).toBe(wk)
+    expect(mine.rows.map((r) => [r.name, r.rank, r.isMe])).toEqual([
+      ['ASH', 1, true],
+      ['MISTY', 1, false],
+      ['BROCK', 3, false],
+    ])
+    expect(mine.rows.every((r) => !('bot' in r))).toBe(true)
+    // Signed out, the same board, nobody's "you".
+    expect((await global(null)).rows.map((r) => [r.name, r.isMe])).toEqual([
+      ['ASH', false],
+      ['MISTY', false],
+      ['BROCK', false],
+    ])
+    // A player banned from the leaderboard is left out, but for themself.
+    await db.query(`insert into leaderboard_bans (user_id) values ($1)`, [U.brock])
+    expect((await global(U.ash)).rows.map((r) => r.name)).toEqual(['ASH', 'MISTY'])
+    expect((await global(U.brock)).rows.map((r) => r.name)).toEqual(['ASH', 'MISTY', 'BROCK'])
+
+    await db.query(`delete from leaderboard_bans where user_id = $1`, [U.brock])
+    await db.query(`delete from versus_league_members where user_id in ($1, $2)`, [U.misty, U.brock])
+    await db.query(`delete from versus_league_groups where id = $1`, [g!.id])
+    await access('all')
   })
 
   it('sends the week’s rewards as gift messages: ₽ a trophy, the rank’s Raid Balls and Rare Candies', async () => {

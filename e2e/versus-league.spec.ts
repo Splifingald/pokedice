@@ -76,6 +76,13 @@ const HOME = {
   rows: [row('Blue', 60, 1), row('Sam', 24, 2, true), row('Lina', 24, 2), row('Theo', 3, 4)],
 }
 
+/** The global board: every group's players this week (Kenta07 from another group), no bots. */
+const GLOBAL = {
+  week: HOME.week,
+  endsAt: HOME.endsAt,
+  rows: [row('Kenta07', 212, 1), row('Blue', 60, 2), row('Sam', 24, 3, true), row('Lina', 24, 3)],
+}
+
 /** Three Pokémon past Lv.50: what opens Versus. */
 function readySave() {
   const base = makeSave(4, { player: { name: 'Sam', character: 'red' } })
@@ -90,7 +97,7 @@ function readySave() {
   return { ...base, box: [...base.box, at('cz', 6, 72), at('vn', 3, 55), at('bl', 9, 60)] }
 }
 
-async function leagueOn(page: Page, save: object) {
+async function leagueOn(page: Page, save: object, league: object = {}) {
   await page.addInitScript(
     ([key, session, s, f, cfg]) => {
       localStorage.setItem(key!, session!)
@@ -103,7 +110,10 @@ async function leagueOn(page: Page, save: object) {
       JSON.stringify(fakeSession()),
       JSON.stringify(save),
       FAST,
-      JSON.stringify({ ...EVENTS_ON, versusLeague: { ...DEFAULT_CONFIG.versusLeague, access: 'all' } }),
+      JSON.stringify({
+        ...EVENTS_ON,
+        versusLeague: { ...DEFAULT_CONFIG.versusLeague, access: 'all', ...league },
+      }),
     ],
   )
 }
@@ -115,6 +125,7 @@ async function fakeLeague(page: Page) {
       versus_board: BOARD,
       versus_league_home: (b: Record<string, unknown>) =>
         b.p_last ? { ...HOME, joined: false, trophies: 0, rows: [] } : HOME,
+      versus_league_global: GLOBAL,
       versus_league_choices: CHOICES,
       versus_league_start: (b: Record<string, unknown>) => {
         sent.start!.push(b)
@@ -159,12 +170,38 @@ test('the league: trophies and the week, 3 opponents with theirs, the group rank
     .first()
     .click()
   await expect(side.getByText("You didn't play in the league last week.")).toBeVisible()
+  // The global board waits on its own switch (Off here).
+  await expect(side.getByRole('radio', { name: 'Global' })).toHaveCount(0)
 
   // A phone: the group is the third tab.
   await page.setViewportSize({ width: 390, height: 844 })
   await page.getByRole('tab', { name: 'Leaderboard' }).click()
   await expect(page.getByRole('tabpanel').getByText('Blue')).toBeVisible()
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/league-phone-board.png`, fullPage: true })
+})
+
+test('the global board, its switch on: every group’s players, for the glory (no rewards)', async ({
+  page,
+}) => {
+  await fakeLeague(page)
+  await leagueOn(page, { ...readySave(), versusLeagueRulesSeen: true }, { globalAccess: 'all' })
+  await page.goto('/versus')
+  const aside = page.getByRole('complementary')
+  // Not only your group any more: the panel is the Leaderboard.
+  await expect(aside.getByRole('heading', { name: 'Leaderboard' })).toBeVisible()
+  await aside.getByRole('radio', { name: 'Global' }).click()
+  await expect(aside.getByText('No rewards here: just the glory.', { exact: false })).toBeVisible()
+  const board = aside.getByRole('list', { name: 'Global' })
+  await expect(board.getByText('Kenta07')).toBeVisible()
+  await expect(board.getByLabel('212 trophies')).toBeVisible()
+  // Nothing to win: no Raid Balls or Rare Candies drawn.
+  await expect(board.getByLabel(/Wins \d+ Raid Ball/)).toHaveCount(0)
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/league-global-pc.png`, fullPage: true })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.getByRole('tab', { name: 'Leaderboard' }).click()
+  await page.getByRole('tabpanel').getByRole('radio', { name: 'Global' }).click()
+  await expect(page.getByRole('tabpanel').getByText('Kenta07')).toBeVisible()
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/league-global-phone.png`, fullPage: true })
 })
 
 test('a match: recorded as it starts, fought (here on AUTO, no Bag), its result sent and answered in trophies', async ({

@@ -11,6 +11,7 @@ import {
   startVersus,
   versusAutoMove,
   versusEdge,
+  versusGlobalOn,
   versusNextRound,
   versusPowersOf,
   versusRulesDue,
@@ -22,7 +23,7 @@ import {
   type LeagueOutcome,
   type VersusMatch,
 } from '@/engine'
-import { BoardRow } from '@/components/BoardRow'
+import { BoardGap, BoardRow } from '@/components/BoardRow'
 import { Chip } from '@/components/Chip'
 import { AccountButton } from '@/components/AccountButton'
 import { useVersusRules, VersusRulesModal } from '@/components/FeatureRules'
@@ -39,16 +40,19 @@ import { useT } from '@/i18n/react'
 import { avatarOf } from '@/lib/avatars'
 import { timeLeft } from '@/lib/format'
 import { useFriends } from '@/lib/friends'
+import { boardWindow } from '@/lib/leaderboard'
 import { offlineOr } from '@/lib/online'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { fetchVersusBoard, type VersusEntry } from '@/lib/versus'
 import {
   fetchLeagueChoices,
+  fetchLeagueGlobal,
   fetchLeagueHome,
   finishLeagueMatch,
   leagueErrorCode,
   startLeagueMatch,
   type LeagueChoice,
+  type LeagueGlobal,
   type LeagueHome,
   type LeagueMatchStart,
   type LeagueRow,
@@ -88,6 +92,7 @@ export function LeagueScreen() {
   const [rules, setRules] = useState(false)
   const rulesDue = versusRulesDue(save, data)
   const leagueRules = useVersusRules()
+  const globalOn = versusGlobalOn(data)
 
   const refresh = useCallback(() => {
     let live = true
@@ -247,7 +252,8 @@ export function LeagueScreen() {
                   className="m-0 flex items-center gap-2 text-[24px] font-normal leading-none"
                 >
                   <PixelIcon name="trophy" size={24} />
-                  {t('ui.league.group')}
+                  {/* The global board isn't your group: the panel takes the phone tab's name then. */}
+                  {t(globalOn ? 'ui.versus.tabBoard' : 'ui.league.group')}
                 </h2>
                 {status(home) ?? (h && <LeagueBoard home={h} />)}
               </section>
@@ -444,73 +450,114 @@ export function RewardMark({ rank }: { rank: number }) {
   )
 }
 
-/** Your group of 20, this week or last: rank, trainer, team, trophies, and what each place wins. */
-export function LeagueBoard({ home }: { home: LeagueHome }) {
+/**
+ * Your group of 20, this week or last: rank, trainer, team, trophies, and what each place wins. With its switch on, the
+ * global board beside them (docs/44 §8): every player of every group this week, bots left out, for the glory alone.
+ */
+/** Fetched the first time it's wanted (a board's tab opened), then kept. */
+function useLoadWhen<T>(wanted: boolean, fetch: () => Promise<T | null>): Load<T> {
   const { t } = useT()
-  const [week, setWeek] = useState<'this' | 'last'>('this')
-  const [last, setLast] = useState<Load<LeagueHome>>({ state: 'loading' })
+  const [load, setLoad] = useState<Load<T>>({ state: 'loading' })
   useEffect(() => {
-    if (week !== 'last' || last.state === 'ready') return
+    if (!wanted || load.state === 'ready') return
     let live = true
-    fetchLeagueHome(true)
-      .then((h) => live && setLast(h ? { state: 'ready', value: h } : { state: 'offline' }))
-      .catch((err) => live && setLast({ state: 'error', why: errorText(t, err) }))
+    fetch()
+      .then((v) => live && setLoad(v ? { state: 'ready', value: v } : { state: 'offline' }))
+      .catch((err) => live && setLoad({ state: 'error', why: errorText(t, err) }))
     return () => {
       live = false
     }
-  }, [week, last.state, t])
-  const shown = week === 'this' ? home : last.state === 'ready' ? last.value : null
+  }, [wanted, load.state, fetch, t])
+  return load
+}
+
+const fetchLastWeek = () => fetchLeagueHome(true)
+
+export function LeagueBoard({ home }: { home: LeagueHome }) {
+  const { t } = useT()
+  const global = useGame((s) => versusGlobalOn(s.data))
+  const [view, setView] = useState<'this' | 'last' | 'global'>('this')
+  // The switch turned off while its tab is open: back to this week.
+  const week = view === 'global' && !global ? 'this' : view
+  const last = useLoadWhen<LeagueHome>(week === 'last', fetchLastWeek)
+  const all = useLoadWhen<LeagueGlobal>(week === 'global', fetchLeagueGlobal)
+  const loaded = week === 'last' ? last : week === 'global' ? all : null
+  const rows = week === 'this' ? home.rows : loaded?.state === 'ready' ? loaded.value.rows : null
   return (
     <>
       <Seg
         label={t('ui.league.whichWeek')}
         value={week}
-        onChange={setWeek}
+        onChange={setView}
         options={[
           { id: 'this', label: t('ui.league.thisWeek') },
           { id: 'last', label: t('ui.league.lastWeek') },
+          ...(global ? [{ id: 'global' as const, label: t('ui.league.global') }] : []),
         ]}
       />
-      {week === 'last' && last.state === 'loading' && (
+      {week === 'global' && (
+        <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{t('ui.league.globalNote')}</p>
+      )}
+      {loaded?.state === 'loading' && (
         <p className="m-0 p-4 text-center text-[20px] text-muted">{t('ui.common.loading')}</p>
       )}
-      {week === 'last' && last.state === 'error' && (
-        <p className="m-0 p-4 text-center text-[20px] text-danger">{last.why}</p>
+      {loaded?.state === 'error' && (
+        <p className="m-0 p-4 text-center text-[20px] text-danger">{loaded.why}</p>
       )}
-      {shown && (
+      {rows && (
         <LeagueRows
-          rows={shown.rows}
-          empty={t(week === 'this' ? 'ui.league.boardEmpty' : 'ui.league.lastEmpty')}
+          rows={rows}
+          global={week === 'global'}
+          empty={t(
+            week === 'this'
+              ? 'ui.league.boardEmpty'
+              : week === 'last'
+                ? 'ui.league.lastEmpty'
+                : 'ui.league.globalEmpty',
+          )}
         />
       )}
     </>
   )
 }
 
-/** The ranked rows themselves (Home's kitchen shows them too). */
-export function LeagueRows({ rows, empty }: { rows: LeagueRow[]; empty: string }) {
+/**
+ * The ranked rows themselves (Home's kitchen shows them too). The global board wins nothing, so no rewards are drawn,
+ * and it can be long: its top 100, you with the trainers around you, and your friends (`boardWindow`).
+ */
+export function LeagueRows({ rows, empty, global }: { rows: LeagueRow[]; empty: string; global?: boolean }) {
   const { t } = useT()
   const friends = useFriends((s) => s.ids)
   if (!rows.length) return <p className="m-0 p-4 text-center text-[19px] text-muted">{empty}</p>
+  const items = global
+    ? boardWindow(rows.map((r) => ({ ...r, friendId: friends.has(r.id) ? r.id : null })))
+    : rows.map((row) => ({ row }))
   return (
-    <ol className="m-0 grid list-none gap-1.5 p-0" aria-label={t('ui.league.group')}>
-      {rows.map((r) => (
-        <BoardRow
-          key={r.id}
-          rank={r.rank}
-          look={avatarOf(r.avatar).src}
-          name={r.name}
-          rich={r.rich}
-          isMe={r.isMe}
-          isFriend={friends.has(r.id)}
-          tag={r.bot && <BotTag />}
-          team={r.team}
-          // Stacked always (the team under the name, even on PC); the trophies on the name's line, the rewards under them.
-          compact
-          value={<TrophyCount n={r.trophies} size={20} />}
-          aside={<RewardMark rank={r.rank} />}
-        />
-      ))}
+    <ol
+      className="m-0 grid list-none gap-1.5 p-0"
+      aria-label={t(global ? 'ui.league.global' : 'ui.league.group')}
+    >
+      {items.map((item, i) => {
+        if ('gap' in item) return <BoardGap key={`gap:${i}`} count={item.gap} />
+        const r = item.row
+        return (
+          <BoardRow
+            key={r.id}
+            rank={r.rank}
+            look={avatarOf(r.avatar).src}
+            name={r.name}
+            rich={r.rich}
+            isMe={r.isMe}
+            isFriend={friends.has(r.id)}
+            tag={r.bot && <BotTag />}
+            team={r.team}
+            // Stacked always (the team under the name, even on PC); the trophies on the name's line, the rewards under them.
+            compact
+            value={<TrophyCount n={r.trophies} size={20} />}
+            aside={global ? undefined : <RewardMark rank={r.rank} />}
+          />
+        )
+      })}
     </ol>
   )
 }

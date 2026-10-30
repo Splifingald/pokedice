@@ -1,7 +1,7 @@
 // The admin's view of the league's groups (0086 versus_league_admin_board, docs/44 §5): the server's rows read into
-// players and bots, and the week's totals the admin box shows.
+// players and bots, and the week's totals the admin box shows. And the players' global board (0091, docs/44 §8).
 import { describe, expect, it } from 'vitest'
-import { leagueAdminTotals, parseLeagueAdminBoard } from '@/lib/versusLeague'
+import { leagueAdminTotals, parseLeagueAdminBoard, parseLeagueGlobal } from '@/lib/versusLeague'
 
 const raw = {
   week: '2026-10-26',
@@ -102,5 +102,35 @@ describe('the admin board of the league', () => {
       groups: 0,
       members: 0,
     })
+  })
+})
+
+describe('the global board (0091)', () => {
+  it('reads every player of the week, ranked, with no bot mark', () => {
+    const g = parseLeagueGlobal({
+      week: '2026-10-26',
+      endsAt: '2026-11-02T00:00:00+00:00',
+      rows: [
+        {
+          id: 'a',
+          isMe: true,
+          name: 'ASH',
+          avatar: 'red',
+          team: [{ dex: 25 }],
+          trophies: 150,
+          rank: 1,
+          rich: false,
+        },
+        { id: 'b', isMe: false, name: '', avatar: null, team: null, trophies: 150, rank: 1, rich: true },
+      ],
+    })
+    expect(g.week).toBe('2026-10-26')
+    expect(g.endsAt).toBe(Date.parse('2026-11-02T00:00:00Z'))
+    expect(g.rows.map((r) => [r.name, r.rank, r.isMe, r.rich, r.bot])).toEqual([
+      ['ASH', 1, true, false, null],
+      ['Trainer', 1, false, true, null],
+    ])
+    expect(g.rows[0]!.team).toEqual([{ dex: 25, level: 50, shiny: false }])
+    expect(parseLeagueGlobal(null).rows).toEqual([])
   })
 })

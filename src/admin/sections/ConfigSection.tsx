@@ -1068,6 +1068,7 @@ function GameSettings() {
   const [showRound, setShowRound] = useConfigRow('showRoundGauge')
   const [showAhead, setShowAhead] = useConfigRow('showRoundPreview')
   const [shiny, setShiny] = useConfigRow('shinyChance')
+  const [fossilShiny, setFossilShiny] = useConfigRow('fossilShinyChance')
   const [cloudSync, setCloudSync] = useConfigRow('cloudSyncMinutes')
   const [maxFriends, setMaxFriends] = useConfigRow('maxFriends')
   const [fph, setFph] = useState(80)
@@ -1102,6 +1103,9 @@ function GameSettings() {
           </Field>
           <Field label="shinyChance" hint={`chance a wild Pokémon is shiny (only its sprites change) · 0.01 = 1 in 100${Number(shiny) > 0 ? ` · now 1 in ${Math.round(1 / Number(shiny))}` : ' · now off'}`}>
             <NumInput step={0.005} value={shiny} min={0} max={1} onChange={(v) => setShiny(Math.max(0, Math.min(1, v ?? 0)))} />
+          </Field>
+          <Field label="fossilShinyChance" hint={`chance a fossil revives shiny, wherever it was found · its own odds: the Shiny Charm and Shiny Parade don't change them · 0.1 = 1 in 10${Number(fossilShiny) > 0 ? ` · now 1 in ${Math.round(1 / Number(fossilShiny))}` : ' · now off'}`}>
+            <NumInput step={0.01} value={fossilShiny} min={0} max={1} onChange={(v) => setFossilShiny(Math.max(0, Math.min(1, v ?? 0)))} />
           </Field>
           <label className="flex items-center gap-2 text-lg" title="Players can't FLEE / AVOID an encounter or RUN from a battle (overrides skipPolicy)">
             <input type="checkbox" checked={!!noEscape} onChange={(e) => setNoEscape(e.target.checked)} /> noEscape
@@ -1306,6 +1310,7 @@ const FEATURES: Feature[] = [
   own('Double battles', 'doubleBattles', 'doubles'),
   own('Trades', 'trade', 'trades'),
   own('Versus league', 'versusLeague', 'versus', VERSUS_LEAGUE_DEFAULTS as unknown as Row),
+  field('Versus global board', 'versusLeague', 'globalAccess', 'versus'),
   own('Game Corner', 'slotMachine', 'gameCorner'),
   own('General upgrades', 'general', 'general'),
   field('Shiny Charm', 'general', 'charmAccess', 'general'),

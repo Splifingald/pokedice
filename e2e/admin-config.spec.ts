@@ -74,9 +74,10 @@ test('Config: the tabs, the switches in two columns, a name opens its numbers', 
     'page',
   )
 
-  // One row per feature (21 with Extreme Pokémon Centers): its name and its switch, nothing else; energy and the
+  // One row per feature (22 with the Versus global board): its name and its switch, nothing else; energy and the
   // retired switches are gone.
-  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(21)
+  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(22)
+  await expect(page.getByRole('radiogroup', { name: 'Versus global board: who has it' })).toBeVisible()
   for (const gone of [
     'Energy',
     'Dice throws',

@@ -652,6 +652,8 @@ export interface LeagueRewardBand {
 
 export interface VersusLeagueConfig {
   access: EventAccess
+  /** The global board's own switch (docs/44 §8): every player of the week, no rewards. Off when missing. */
+  globalAccess?: EventAccess
   /** Trophies for a win with 1, 2 or 3 Pokémon left; a loss costs what the opponent had left, the same way. */
   trophies: [number, number, number]
   /** Below this many trophies, a loss costs nothing. */
@@ -954,6 +956,8 @@ export interface GameConfig {
   showRoundPreview: boolean
   /** Chance (0–1) that a wild Pokémon is shiny: only its sprites change. */
   shinyChance: number
+  /** Chance (0–1) that a fossil revives shiny, wherever it was found: its own odds, never the Shiny Charm's. */
+  fossilShinyChance: number
   /** Signed-in players' save goes to the cloud at most this often (minutes) while they play; SYNC ONLINE does it now. */
   cloudSyncMinutes: number
   /** Friends each player can have (both sides of a friendship count it). The database reads the same key. */
