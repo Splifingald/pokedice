@@ -235,6 +235,9 @@ export function TeamColumn({
                 ? () => {
                     sfx('button')
                     if (aim) aim.onUse(b)
+                    // In a pick (the send-out's lead, a K.O.'s, a switch's) a click picks, as 1–6 do; GO! sends it
+                    // (a player's feedback, 2026-10-30: the send-out's lead couldn't be changed with the mouse).
+                    else if (pick) pick.onChange(b.uid)
                     else onPick(b)
                   }
                 : undefined
