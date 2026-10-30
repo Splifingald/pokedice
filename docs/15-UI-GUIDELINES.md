@@ -1897,8 +1897,9 @@ Where Unown live (Johto's Ruins of Alph), each one caught is one of 28 letters, 
 Each evolution family has one hidden talent (docs/51), behind its switch (§20, Off: no gem, no section, no line, no
 pop-up). The pieces are in `src/components/Talent.tsx`, every state on `/kitchen-sink` (`TalentBits`).
 
-- **The gem** (`TalentGem`, the `talentCommon` / `talentBase` / `talent` / `talentLocked` icons, 10 × 10 pixels): green
-  for a common talent, blue for a rare one, gold for an ultra one (`TIER_ICON`), grey for one not known yet. Its title names the talent ("Hidden talent: Pickup"). A
+- **The gem** (`TalentGem`, the `talentCommon` / `talentBase` / `talent` / `talentUnique` / `talentLocked` icons,
+  10 × 10 pixels): green for a common talent, blue for a rare one, gold for an ultra one, red for the unique one
+  (Ditto's Imposter; `TIER_ICON`), grey for one not known yet. Its title names the talent ("Hidden talent: Pickup"). A
   Pokémon that carries its talent wears it (`InstTalentGem`) after its name and shiny star wherever its card shows: the
   Box and team tiles (top left, under the star), the team cards (`MonCard`, `PokeCard`), the battle plates (yours and the
   foes', `Plates`, `DoublePlates`), a trade listing's Pokémon and a want "with its talent" (`DexTalentGem`).
@@ -1909,12 +1910,13 @@ pop-up). The pieces are in `src/components/Talent.tsx`, every state on `/kitchen
   talent: Pickup. Catch it to learn it!" while its family is locked, "This Dratini carries its hidden talent: Mirror."
   once learnt. Seeing it notes the talent as met.
 - **The result card**: a family's talent unlocked (caught with it, passed from a weaker one let go, found evolving) is a
-  gold-pale card with the gem, the line and what it does (`TalentFoundCard`); Field Medic after a win is a sky card
+  gold-pale card with the gem, the line and what it does (`TalentFoundCard`); Regenerator after a win is a sky card
   (`TalentAfterWinCard`). Pickup's find comes as the next screen, the usual item find (`FindView`, PICK IT UP) with a
   sky tag over it: "Found by Zigzagoon’s Pickup!" (`PickupTag`). Found evolving out of a fight (a stone, Rare Candy), a toast.
-- **The battle log** says each talent at work in one line (`talentLogText`): Leftovers' heal (with its green number),
-  a damage talent's bonus ("+3 damage"), a partner's Companion (naming the partner), Mirror's die, Sturdy, Natural
-  Cure, Thaw. A talent that changes numbers alone (Speed,
+- **The battle log** says each talent at work in one line (`talentLogText`): Leftovers', Poison Heal's, Flame Heal's and Shell
+  Bell's heal (with its green number), a damage talent's bonus, a partner's Power Spot (naming the partner), a hit
+  softened (Intimidate, Disguise, a partner's Friend Guard), Rough Skin's hurt (the attacker's HP drops), Static's
+  paralysis, Pressure's lost reroll, Shed Skin, Limber, Magic Guard, Mirror's die, Sturdy, Natural Cure, Magma Armor. A talent that changes numbers alone (Speed,
   rerolls, HP) says nothing.
 - **Trades**: asking for a species, a toggle "With its hidden talent" under the species (only while the switch is on).
 - Its rules: a `RulesModal` once, in the one-time pop-ups' queue after the battle powers' (`talentRulesSeen`); again

@@ -82,7 +82,7 @@ export interface CatchState {
   shiny?: boolean
   /** It carries its family's hidden talent (docs/51). */
   talent?: boolean
-  /** + the catch die: Gentle Touch on the Pokémon that made the K.O. (docs/51). */
+  /** + the catch die: False Swipe on the Pokémon that made the K.O. (docs/51). */
   bonus?: number
   kind: 'wild' | 'boss'
   target: CatchTarget

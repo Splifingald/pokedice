@@ -1,6 +1,6 @@
-// Kitchen sink (dev only): hidden talents (docs/51) — the gem (common, rare, ultra, unknown; each size), the
+// Kitchen sink (dev only): hidden talents (docs/51) — the gem (common, rare, ultra, unique, unknown; each size), the
 // sheet's box (carried, known but not learnt, never met), the encounter's line (to learn, already learnt), the result
-// cards (caught, passed, found evolving; Field Medic, Pickup), the battle log's lines, the trade toggle, and the rules
+// cards (caught, passed, found evolving; Regenerator, Pickup), the battle log's lines, the trade toggle, and the rules
 // (unlock, and again from a tap on the sheet's box).
 import { useState, type ReactNode } from 'react'
 import {
@@ -35,25 +35,37 @@ export function TalentBits() {
   const data = useGame((s) => s.data)
   const [rules, setRules] = useState<'unlock' | 'info' | null>(null)
   const [withTalent, setWithTalent] = useState(true)
-  const logs: { talent: TalentKey; amount?: number }[] = [
+  const logs: { talent: TalentKey; amount?: number; hurt?: { amount: number } }[] = [
     { talent: 'leftovers', amount: 7 },
-    { talent: 'opener', amount: 3 },
+    { talent: 'poisonHeal', amount: 9 },
+    { talent: 'shellBell', amount: 4 },
     { talent: 'mirror', amount: 6 },
     { talent: 'opener' },
-    { talent: 'companion' },
+    { talent: 'triplePro' },
+    { talent: 'powerSpot' },
     { talent: 'sturdy' },
     { talent: 'naturalCure' },
-    { talent: 'thaw' },
+    { talent: 'magmaArmor' },
+    { talent: 'static' },
+    { talent: 'roughSkin', hurt: { amount: 5 } },
+    { talent: 'pressure' },
+    { talent: 'shedSkin' },
+    { talent: 'limber' },
+    { talent: 'magicGuard' },
+    { talent: 'intimidate' },
+    { talent: 'disguise' },
+    { talent: 'friendGuard' },
   ]
   return (
     <div className="flex flex-col gap-4">
-      <Frame name="The gem · common · rare · ultra · unknown, at 10, 12, 16 and 24">
+      <Frame name="The gem · common · rare · ultra · unique · unknown, at 10, 12, 16 and 24">
         <div className="flex flex-wrap items-center gap-3 bg-paper p-2 shadow-ring-line">
           {[10, 12, 16, 24].map((size) => (
             <span key={size} className="flex items-center gap-1">
               <TalentGem talent="quick" size={size} />
               <TalentGem talent="pickup" size={size} />
               <TalentGem talent="mirror" size={size} />
+              <TalentGem talent="imposter" size={size} />
               <TalentGem talent="pickup" unknown size={size} />
             </span>
           ))}
@@ -99,7 +111,7 @@ export function TalentBits() {
           <TalentFoundCard uid="kit-b" dex={20} talent="pickup" how="passed" />
           <TalentFoundCard uid="kit-c" dex={148} talent="mirror" how="evolved" />
         </Frame>
-        <Frame name="After a win · Field Medic's card · Pickup's tag over the find (FindView)">
+        <Frame name="After a win · Regenerator's card · Pickup's tag over the find (FindView)">
           <TalentAfterWinCard uid="kit-d" dex={183} line={(name) => t('ui.talent.medic', { name, n: 12 })} />
           <span>
             <PickupTag uid="kit-e" dex={263} />
@@ -120,7 +132,7 @@ export function TalentBits() {
             <ItemSprite item={data.items['talent-candy']} size={32} />
             {data.items['talent-candy']?.name}
           </span>
-          <TalentFoundCard uid="kit-f" dex={133} talent="eggRush" how="candy" />
+          <TalentFoundCard uid="kit-f" dex={133} talent="flameBody" how="candy" />
         </Frame>
         <Frame name="Trades · asking for a species with its talent (on, off)">
           <Toggle

@@ -105,16 +105,22 @@ export function attackMultiplier(
  * leaves the attack as the dice made it.
  */
 export interface AttackMods {
-  /** The attacker's own talent when it acts on this hit (Opener, Finisher, Pair Pro, Mind's Eye, Raider). */
+  /** The attacker's own talent when it acts on this hit (Opener, Finisher, Technician, Guts, Mind's Eye, Raider…). */
   talent?: TalentKey
-  /** A partner's Companion boosting this hit: the partner's uid. */
-  companion?: string
-  /** × the hit when a Pair pays (Pair Pro). */
-  pairTimes?: number
+  /** A partner's Power Spot boosting this hit: the partner's uid. */
+  powerSpot?: string
+  /** × the hit when this combo pays (Technician: a Pair; Triple Pro, Fours Pro). */
+  comboTimes?: { key: ComboKey; times: number }
   /** An attack the foe is immune to hits × this instead (Mind's Eye). */
   immuneAs?: number
-  /** × the whole hit (Opener, Finisher, Raider, Companion): a share, never a flat amount. */
+  /** × the whole hit (Opener, Finisher, Guts, Raider, Power Spot): a share, never a flat amount. */
   times?: number
+  /** Upgrade levels its combo pays above its own (Skill Link), past the table's last level too. */
+  comboUp?: number
+  /** The target's side softening the hit (Intimidate, Disguise, a partner's Friend Guard): × the hit… */
+  guardTimes?: number
+  /** …and whose talents did it. */
+  guards?: { key: TalentKey; uid: string }[]
 }
 
 export interface DieBreakdown {
@@ -142,8 +148,17 @@ export interface DamageResult {
   flat?: { type: PokeType; amount: number } | null
   /** A Z-Move of a type with no effect of its own (docs/35): `final` is this % more than the dice made. */
   zPercent?: number
-  /** The hidden talents that changed this hit (docs/51): its own, a partner's Companion; and the damage they added. */
-  talent?: { key?: TalentKey; companion?: string; amount: number } | null
+  /**
+   * The hidden talents that changed this hit (docs/51): its own and a partner's Power Spot (`amount` the damage they
+   * added), the target's side that softened it (`guards`, `saved` the damage they took off).
+   */
+  talent?: {
+    key?: TalentKey
+    powerSpot?: string
+    amount: number
+    guards?: { key: TalentKey; uid: string }[]
+    saved?: number
+  } | null
 }
 
 /**
@@ -171,8 +186,8 @@ export function computeDamage(
     return { type: d.type, value, bonus, multiplier, damage: (value + bonus) * multiplier }
   })
   const values = perDie.map((p) => p.value)
-  const combo = selectCombo(detectCombos(values), levels.comboLevels, multiplier, data)
-  const times = (mods?.times ?? 1) * (combo?.key === 'pair' && mods?.pairTimes ? mods.pairTimes : 1)
+  const combo = selectCombo(detectCombos(values), levels.comboLevels, multiplier, data, mods?.comboUp ?? 0)
+  const times = (mods?.times ?? 1) * (combo && combo.key === mods?.comboTimes?.key ? mods.comboTimes.times : 1)
 
   // A portal run's boost is a flat bonus of its type, added to the dice and the combo and multiplied with them.
   const flat = typeFlatOf(levels, type)
@@ -181,8 +196,12 @@ export function computeDamage(
   const immune = perDie.length > 0 && multiplier === 0
   // The booster comes after the type's multiplier, and stays out of the effectiveness ("super effective" is the type's).
   const boost = typeBoostOf(levels, type)
-  const raw = typed * boost * times
+  const raw = typed * boost * times * (mods?.guardTimes ?? 1)
   const final = immune ? 0 : Math.max(1, Math.round(raw))
+  // The hit before the target's side softened it: what the attacker's talents made of it.
+  const up = immune ? 0 : Math.max(1, Math.round(typed * boost * times))
+  const boosted = !!plain && up !== plain.final && (!!mods?.talent || !!mods?.powerSpot)
+  const guarded = !!mods?.guards?.length && final < up
   return {
     perDie,
     combo,
@@ -195,11 +214,12 @@ export function computeDamage(
     ...(flat > 0 && type && { flat: { type, amount: flat } }),
     ...(plain &&
       mods &&
-      final !== plain.final && {
+      (boosted || guarded) && {
         talent: {
-          ...(mods.talent && { key: mods.talent }),
-          ...(mods.companion && { companion: mods.companion }),
-          amount: final - plain.final,
+          ...(boosted && mods.talent && { key: mods.talent }),
+          ...(boosted && mods.powerSpot && { powerSpot: mods.powerSpot }),
+          amount: boosted ? up - plain.final : 0,
+          ...(guarded && { guards: mods.guards, saved: up - final }),
         },
       }),
   }

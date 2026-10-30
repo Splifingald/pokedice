@@ -10,25 +10,41 @@ import { regionOf } from './regions'
 import { createRng, type Rng } from './rng'
 import type { GameData, PokemonInstance, RegionId, SaveData, Species } from './types'
 
-/** The three rarities (the user's call, 2026-10-30): weak families get a common talent, strong ones an ultra one. */
+/**
+ * The rarities (the user's calls, 2026-10-30): weak families get a common talent, strong ones an ultra one; a unique
+ * talent belongs to one family only (Ditto's Imposter). Names follow the main games' abilities and items wherever a
+ * talent does what one of them does, so players recognise them.
+ */
 export const COMMON_TALENTS = [
   'extraReroll',
-  'pairPro',
+  'technician',
   'quick',
   'thickHide',
-  'thaw',
+  'magmaArmor',
   'daycareDarling',
+  'static',
+  'shedSkin',
+  'limber',
+  'poisonHeal',
+  'flameHeal',
+  'roughSkin',
 ] as const
 export const RARE_TALENTS = [
   'opener',
   'finisher',
-  'fieldMedic',
+  'regenerator',
   'naturalCure',
-  'companion',
+  'powerSpot',
   'payDay',
   'pickup',
   'mindsEye',
-  'gentleTouch',
+  'falseSwipe',
+  'intimidate',
+  'guts',
+  'shellBell',
+  'friendGuard',
+  'disguise',
+  'triplePro',
 ] as const
 export const ULTRA_TALENTS = [
   'reroller',
@@ -38,21 +54,31 @@ export const ULTRA_TALENTS = [
   'sturdy',
   'leftovers',
   'raider',
-  'eggRush',
+  'flameBody',
   'amuletCoin',
+  'magicGuard',
+  'skillLink',
+  'pressure',
+  'foursPro',
 ] as const
-export const TALENT_KEYS = [...COMMON_TALENTS, ...RARE_TALENTS, ...ULTRA_TALENTS] as const
+export const UNIQUE_TALENTS = ['imposter'] as const
+export const TALENT_KEYS = [...COMMON_TALENTS, ...RARE_TALENTS, ...ULTRA_TALENTS, ...UNIQUE_TALENTS] as const
 export type TalentKey = (typeof TALENT_KEYS)[number]
-export type TalentTier = 'common' | 'rare' | 'ultra'
-export const TALENT_TIERS: readonly TalentTier[] = ['common', 'rare', 'ultra']
+export type TalentTier = 'common' | 'rare' | 'ultra' | 'unique'
+export const TALENT_TIERS: readonly TalentTier[] = ['common', 'rare', 'ultra', 'unique']
 
 export const talentTier = (key: TalentKey): TalentTier =>
-  (ULTRA_TALENTS as readonly string[]).includes(key)
-    ? 'ultra'
-    : (RARE_TALENTS as readonly string[]).includes(key)
-      ? 'rare'
-      : 'common'
+  (UNIQUE_TALENTS as readonly string[]).includes(key)
+    ? 'unique'
+    : (ULTRA_TALENTS as readonly string[]).includes(key)
+      ? 'ultra'
+      : (RARE_TALENTS as readonly string[]).includes(key)
+        ? 'rare'
+        : 'common'
 export const isTalentKey = (v: unknown): v is TalentKey => (TALENT_KEYS as readonly unknown[]).includes(v)
+
+/** Ditto: its family always carries its talent, Imposter, every Ditto owned before the switch included. */
+export const DITTO_DEX = 132
 
 /**
  * Each talent's numbers, in one place: the rules pop-up and the sheet read them for their text. Damage is always a
@@ -66,17 +92,21 @@ export const TALENT = {
   ultraSpeed: 0.2,
   /** × max HP. */
   thickHide: 0.1,
-  /** × the hit when a Pair pays. */
-  pairPro: 0.05,
+  /** × the hit when a Pair pays; Three of a Kind (Triple Pro); Four of a Kind (Fours Pro): it pays to reroll for it. */
+  technician: 0.05,
+  triplePro: 0.1,
+  foursPro: 0.25,
   /** × its first hit of a battle. */
   opener: 0.1,
   /** × its hit on a foe under `finisherBelow` of its max HP. */
   finisher: 0.1,
   finisherBelow: 0.33,
   /** × the hits of its partner on the field (a double battle) or of the other sides' Pokémon (a raid). */
-  companion: 0.1,
+  powerSpot: 0.1,
+  /** − the hits its partner takes (a double battle), or the other sides' Pokémon (a raid). */
+  friendGuard: 0.1,
   /** Share of max HP. */
-  fieldMedic: 0.1,
+  regenerator: 0.1,
   leftovers: 0.05,
   /** × an attack the foe is immune to, instead of 0. */
   mindsEye: 0.5,
@@ -90,9 +120,28 @@ export const TALENT = {
   /** × Day Care XP. */
   daycareDarling: 0.5,
   /** The Egg clock runs this many times as fast. */
-  eggRush: 2,
+  flameBody: 2,
   /** + the catch die. */
-  gentleTouch: 1,
+  falseSwipe: 1,
+  /** Chance to paralyse a foe that hits it. */
+  static: 0.1,
+  /** Chance, at the end of each of its turns, to shed its status. */
+  shedSkin: 0.3,
+  /** Share of the damage dealt that hurts the attacker back. */
+  roughSkin: 0.1,
+  /** − the hits it takes from each foe's first `intimidateHits` attacks of the battle. */
+  intimidate: 0.2,
+  intimidateHits: 2,
+  /** × its hits while it has a status. */
+  guts: 0.25,
+  /** Share of the damage it deals, healed. */
+  shellBell: 0.1,
+  /** − the first hit it takes in a battle. */
+  disguise: 0.4,
+  /** Upgrade levels its combos pay above their own (level 10 pays as 11). */
+  skillLink: 1,
+  /** Rerolls each foe that faces it loses. */
+  pressure: 1,
 } as const
 
 /** Rerolls a talent adds to every battle. */
@@ -172,9 +221,10 @@ export function isStarterFamily(data: GameData, dex: number): boolean {
   )
 }
 
-/** Legendaries and mythicals always carry their talent. */
+/** Legendaries and mythicals always carry their talent, and so does Ditto (Imposter, the user's call 2026-10-30). */
 // Read from the Egg groups as breeding.ts's isLegendary does (not imported: breeding needs this file).
-export const alwaysTalented = (data: GameData, dex: number): boolean => data.eggGroups[dex]?.l === 1
+export const alwaysTalented = (data: GameData, dex: number): boolean =>
+  data.eggGroups[dex]?.l === 1 || familyOf(data, dex) === DITTO_DEX
 
 /**
  * A Pokémon met now (wild, a ghost, an Egg, a gift…) carries its family's talent: a legendary always, a starter line
@@ -275,9 +325,14 @@ export function syncTalents(save: SaveData, data: GameData): SaveData {
     ...(save.dayCare?.residents ?? []).map((r) => [r.region, [r.inst]] as [RegionId, PokemonInstance[]]),
   ]
   let changed = false
+  // Ditto always carries Imposter: every Ditto unlocks it in its region, those owned before the switch included.
+  const always = talentsOn(data)
   for (const [region, mons] of groups)
     for (const p of mons)
-      if (p.talent && !setOf(region).has(familyOf(data, p.dex))) {
+      if (
+        (p.talent || (always && familyOf(data, p.dex) === DITTO_DEX)) &&
+        !setOf(region).has(familyOf(data, p.dex))
+      ) {
         setOf(region).add(familyOf(data, p.dex))
         changed = true
       }
@@ -346,11 +401,11 @@ export const talentCandyFits = (
   inst: Pick<PokemonInstance, 'dex' | 'talent'>,
 ): boolean => talentsOn(data) && !inst.talent && !familyUnlocked(save, data, inst.dex)
 
-/** + the catch die when this Pokémon made the K.O.: Gentle Touch (docs/51). */
+/** + the catch die when this Pokémon made the K.O.: False Swipe (docs/51). */
 export const catchTalentBonus = (
   data: GameData,
   inst: Pick<PokemonInstance, 'dex' | 'talent'> | undefined,
-): number => (inst && talentOf(data, inst) === 'gentleTouch' ? TALENT.gentleTouch : 0)
+): number => (inst && talentOf(data, inst) === 'falseSwipe' ? TALENT.falseSwipe : 0)
 
 // ---------------------------------------------------------------- the rules pop-up
 

@@ -68,11 +68,16 @@ export function comboDice(values: readonly number[], key: ComboKey): number[] {
   return need[key].sort((a, b) => a - b)
 }
 
-export function comboBonus(key: ComboKey, level: number, data: GameData): number {
+/** `up`: levels paid above the (clamped) level (Skill Link, docs/51), the table's last level included. */
+export function comboBonus(key: ComboKey, level: number, data: GameData, up = 0): number {
   const rows = data.comboUpgrades[key]
   if (!rows?.length) return 0
-  const lv = Math.min(rows.length, Math.max(1, Math.floor(level)))
-  return rows[lv - 1]?.bonus ?? 0
+  const lv = Math.min(rows.length, Math.max(1, Math.floor(level))) + up
+  if (lv <= rows.length) return rows[lv - 1]?.bonus ?? 0
+  // Past the last level (level 10 pays as 11): each level adds the table's last step again.
+  const last = rows[rows.length - 1]?.bonus ?? 0
+  const step = rows.length > 1 ? last - (rows[rows.length - 2]?.bonus ?? last) : 0
+  return last + step * (lv - rows.length)
 }
 
 export interface ComboResult {
@@ -91,10 +96,11 @@ export function selectCombo(
   levels: Partial<Record<ComboKey, number>>,
   multiplier: number,
   data: GameData,
+  up = 0,
 ): ComboResult | null {
   if (!found.length) return null
   const scored = found.map((key) => {
-    const bonus = comboBonus(key, levels[key] ?? 1, data)
+    const bonus = comboBonus(key, levels[key] ?? 1, data, up)
     return { key, bonus, multiplier, damage: bonus * multiplier }
   })
   if (data.config.comboPayoutMode === 'highestRank') {

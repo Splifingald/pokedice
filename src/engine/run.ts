@@ -428,8 +428,8 @@ export type RunEvent =
    * the prize when it was the last one.
    */
   | { kind: 'unown_letter'; letter: string; isNew: boolean; found: number; total: number; reward?: number }
-  /** Field Medic (docs/51): it healed after the battle it won. */
-  | { kind: 'field_medic'; uid: string; amount: number }
+  /** Regenerator (docs/51): it healed after the battle it won. */
+  | { kind: 'regenerator'; uid: string; amount: number }
   /**
    * Pickup (docs/51): it found something after the battle it won (`key` 'money' for ₽). Nothing is paid yet: the find
    * is shown on its own step (FindView) as the next card, and PICK IT UP takes it (`pickUpItem`).
@@ -581,7 +581,7 @@ export function applyVictory(
   // Secret areas whose conditions just came true (a catch, a level-up…)
   for (const id of unlockedHiddenAreas(next, data)) if (!hiddenBefore.has(id)) events.push({ kind: 'secret_unlocked', areaId: id })
 
-  // The fight is won: Field Medic and Pickup (docs/51).
+  // The fight is won: Regenerator and Pickup (docs/51).
   const over = input.last ?? (input.kind !== 'trainer' && input.kind !== 'gym')
   if (over) next = afterWinTalents(next, data, area, progressOf(next, area.id), rng, events)
 
@@ -601,7 +601,7 @@ function goldTalents(save: SaveData, data: GameData, fighters: string | readonly
 }
 
 /**
- * A fight won: each team member still standing with Field Medic heals a share of its max HP; each with Pickup may find
+ * A fight won: each team member still standing with Regenerator heals a share of its max HP; each with Pickup may find
  * something from the area's loot (its odds, never a once-only find, the deck untouched).
  */
 function afterWinTalents(save: SaveData, data: GameData, area: Area, progress: AreaProgress, rng: Rng, events: RunEvent[]): SaveData {
@@ -609,12 +609,12 @@ function afterWinTalents(save: SaveData, data: GameData, area: Area, progress: A
   for (const p of teamOf(save)) {
     if (p.currentHp <= 0) continue
     const talent = talentOf(data, p)
-    if (talent === 'fieldMedic') {
+    if (talent === 'regenerator') {
       const max = instanceMaxHp(p, data)
-      const amount = Math.min(max - p.currentHp, Math.max(1, Math.round(max * TALENT.fieldMedic)))
+      const amount = Math.min(max - p.currentHp, Math.max(1, Math.round(max * TALENT.regenerator)))
       if (amount > 0) {
         next = replaceInstance(next, { ...p, currentHp: p.currentHp + amount })
-        events.push({ kind: 'field_medic', uid: p.id, amount })
+        events.push({ kind: 'regenerator', uid: p.id, amount })
       }
     } else if (talent === 'pickup' && !events.some((e) => e.kind === 'pickup') && rng.next() < TALENT.pickup) {
       // One find a win, never a once-only one, the area's deck untouched.

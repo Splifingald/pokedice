@@ -345,6 +345,12 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
             hp: { ...f.hp, [e.uid]: e.hpAfter },
             pop: { id: nextId(), target: e.side, amount: e.amount ?? 0, tone: 'heal' as const },
           }),
+          // Rough Skin (docs/51): the attacker it hurt back.
+          ...(e.hurt && {
+            hp: { ...f.hp, [e.hurt.uid]: e.hurt.hpAfter },
+            pop: { id: nextId(), target: e.hurt.side, amount: e.hurt.amount, tone: 'normal' as const },
+            shake: { id: nextId(), power: 2 },
+          }),
         }),
       }
     case 'status_resisted':

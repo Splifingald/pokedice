@@ -497,7 +497,7 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
         case 'talent':
           extras.push({ key: k, sound: 'catch', node: <TalentFoundCard uid={e.uid} dex={e.dex} talent={e.talent} how={e.how} /> })
           return
-        case 'field_medic': {
+        case 'regenerator': {
           const dex = save?.box.find((p) => p.id === e.uid)?.dex ?? 0
           extras.push({
             key: k,

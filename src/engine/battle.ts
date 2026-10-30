@@ -90,8 +90,10 @@ export interface Battler {
   gmax?: { turns: number; pre: FormSnapshot }
   /** Its family's hidden talent (docs/51), yours or a foe's. */
   talent?: TalentKey
-  /** The once-a-battle talents it has spent (Sturdy, Mirror). */
+  /** The once-a-battle talents it has spent (Sturdy, Mirror, Disguise). */
   talentSpent?: TalentKey[]
+  /** A foe's Pressure (docs/51) already took its reroll. */
+  pressured?: boolean
   /** Attacks it has made this battle (Opener counts the first). */
   attacks?: number
 }
@@ -173,8 +175,10 @@ export interface BattleState {
    * end of battle and no statuses cleared: the raid decides what a K.O. means and who acts next.
    */
   single?: boolean
-  /** A raid side's step: another side's Pokémon in battle with Companion (docs/51) boosts this side's hits. */
-  allyCompanion?: { uid: string; name: string }
+  /** A raid side's step: another side's Pokémon in battle with Power Spot (docs/51) boosts this side's hits. */
+  allyPowerSpot?: { uid: string; name: string }
+  /** …and one with Friend Guard softens the raid Pokémon's hits on this side. */
+  allyFriendGuard?: { uid: string; name: string }
   /**
    * A double battle (docs/33): two of each side out at once. `activeIndex` and `enemy` are then the pair in front —
    * the Pokémon whose turn it is and the one it targets — so every rule written for one against one applies to them.
@@ -300,8 +304,22 @@ export type LogEntry =
    * A hidden talent at work (docs/51): `amount` is what it did (HP healed, damage added; the die copied for Mirror). A
    * talent that changes the numbers alone (Speed, rerolls) logs nothing.
    */
-  /** Companion's: `ally` the one it boosted; `name` its own when it isn't in this fight's teams (a raid's other side). */
-  | { kind: 'talent'; side: Side; uid: string; talent: TalentKey; amount?: number; hpAfter?: number; ally?: string; name?: string }
+  /**
+   * Power Spot's, Friend Guard's: `ally` the one it helped (Static's, Rough Skin's, Pressure's: the foe it hit); `name`
+   * its own when it isn't in this fight's teams (a raid's other side). `hurt`: the HP another Pokémon lost to it (Rough
+   * Skin).
+   */
+  | {
+      kind: 'talent'
+      side: Side
+      uid: string
+      talent: TalentKey
+      amount?: number
+      hpAfter?: number
+      ally?: string
+      name?: string
+      hurt?: { side: Side; uid: string; amount: number; hpAfter: number }
+    }
   /** `double`: a double battle's opening, yours and the foes out (docs/33). */
   | { kind: 'start'; first: Side; double?: { own: string[]; foes: string[] } }
   /** A double battle: the pair in front changed — the Pokémon whose turn it is, and the one it attacks. */
@@ -439,7 +457,8 @@ export function makeBattler(seed: BattlerSeed, data: GameData): Battler {
     ...(seed.item && { item: seed.item }),
     ...(seed.powered && { powered: seed.powered }),
     ...(talent && { talent }),
-    ...(COPIES_FOE_DICE.has(seed.dex) && { copiesFoe: true, ownDice: stats.dice }),
+    // Imposter (docs/51): Ditto's, always carried; any other family an admin gives it copies too.
+    ...((COPIES_FOE_DICE.has(seed.dex) || talent === 'imposter') && { copiesFoe: true, ownDice: stats.dice }),
   }
 }
 
@@ -1036,14 +1055,10 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[], 
     s.itemUsedThisTurn = false
     const b = side === 'player' ? activeBattler(s) : s.enemy
     log.push({ kind: 'turn', side, turn: s.turn, uid: b.uid })
+    pressure(b, side === 'player' ? s.enemy : activeBattler(s), side, log)
 
-    const { state, ticks } = tickDot(b.status, rules, b.maxHp)
-    b.status = state
-    for (const t of ticks) {
-      b.hp = Math.max(0, b.hp - t.amount)
-      log.push({ kind: 'status_tick', target: side, targetUid: b.uid, status: t.status, amount: t.amount, hpAfter: b.hp })
-    }
-    if (ticks.length) checkHpForms(s, data, log)
+    const ticks = statusTicks(b, side, rules, log)
+    if (ticks) checkHpForms(s, data, log)
     if (b.hp <= 0 && s.single) return endStep(s)
     if (b.hp <= 0) {
       // A K.O. here ends the turn.
@@ -1087,6 +1102,13 @@ function afterAction(s: BattleState, side: Side, data: GameData, log: LogEntry[]
     const amount = Math.min(actor.maxHp - actor.hp, Math.max(1, Math.round(actor.maxHp * TALENT.leftovers)))
     actor.hp += amount
     log.push({ kind: 'talent', side, uid: actor.uid, talent: 'leftovers', amount, hpAfter: actor.hp })
+  }
+  // Shed Skin (docs/51): a chance to shed its statuses at the end of its turn.
+  if (actor.talent === 'shedSkin' && actor.hp > 0 && hasAnyStatus(actor.status)) {
+    if ((rng ?? createRng(s.turn)).next() < TALENT.shedSkin) {
+      actor.status = emptyStatus()
+      log.push({ kind: 'talent', side, uid: actor.uid, talent: 'shedSkin' })
+    }
   }
   if (s.single) return endStep(s)
   if (s.double) {
@@ -1313,14 +1335,10 @@ function beginDoubleTurn(s: BattleState, data: GameData, log: LogEntry[], rng?: 
     s.itemUsedThisTurn = false
     const b = side === 'player' ? activeBattler(s) : s.enemy
     log.push({ kind: 'turn', side, turn: s.turn, uid: b.uid })
+    pressure(b, side === 'player' ? s.enemy : activeBattler(s), side, log)
 
-    const { state, ticks } = tickDot(b.status, rules, b.maxHp)
-    b.status = state
-    for (const t of ticks) {
-      b.hp = Math.max(0, b.hp - t.amount)
-      log.push({ kind: 'status_tick', target: side, targetUid: b.uid, status: t.status, amount: t.amount, hpAfter: b.hp })
-    }
-    if (ticks.length) checkHpForms(s, data, log)
+    const ticks = statusTicks(b, side, rules, log)
+    if (ticks) checkHpForms(s, data, log)
     if (b.hp <= 0) {
       // A K.O. here ends the turn.
       if (doubleKnockouts(s, log)) return
@@ -1506,6 +1524,7 @@ function applyZEffect(effect: ZEffect, atk: Battler, def: Battler, side: Side, d
   }
   if (def.hp <= 0) return
   const status: StatusKind = effect === 'freeze' ? 'frozen' : effect
+  if (shrugs(def, status)) return void log.push({ kind: 'talent', side: other(side), uid: def.uid, talent: 'limber' })
   // A Psychic Z-Move confuses as much as a full hand of Confuse faces.
   const level = effect === 'confuse' ? Math.max(1, data.config.status.confuse.maxFaces) : undefined
   const app = effect === 'burn' ? { status, stacks: cfg.burnStacks } : { status, level }
@@ -1525,6 +1544,8 @@ function confusedRecoil(atk: Battler, side: Side, data: GameData, log: LogEntry[
   const level = confusionLevel(atk.status)
   if (!level) return
   atk.status = { ...atk.status, confused: 0 }
+  // Magic Guard (docs/51): no status hurts it.
+  if (atk.talent === 'magicGuard') return void log.push({ kind: 'talent', side, uid: atk.uid, talent: 'magicGuard' })
   const amount = confusionRecoil(atk.maxHp, level, data)
   atk.hp = Math.max(0, atk.hp - amount)
   log.push({ kind: 'recoil', side, uid: atk.uid, amount, hpAfter: atk.hp })
@@ -1538,14 +1559,91 @@ function endAttack(s: BattleState, side: Side, data: GameData, log: LogEntry[], 
   afterAction(s, side, data, log, rng)
 }
 
-/** Thaw (docs/51): the turns a freeze holds it. */
-const TALENT_THAW_TURNS = 1
+/** Magma Armor (docs/51): the turns a freeze holds it. */
+const MAGMA_ARMOR_TURNS = 1
 
 /** Natural Cure (docs/51): its statuses clear as it leaves the field. */
 function naturalCure(b: Battler, side: Side, log: LogEntry[]) {
   if (b.talent !== 'naturalCure' || b.hp <= 0 || !hasAnyStatus(b.status)) return
   b.status = emptyStatus()
   log.push({ kind: 'talent', side, uid: b.uid, talent: 'naturalCure' })
+}
+
+/**
+ * The burn and poison at the start of a turn (they can K.O.): Poison Heal and Flame Heal turn theirs into a heal, Magic
+ * Guard takes none (docs/51). True when anything ticked.
+ */
+function statusTicks(b: Battler, side: Side, rules: GameData['config']['status'], log: LogEntry[]): boolean {
+  const { state, ticks } = tickDot(b.status, rules, b.maxHp)
+  b.status = state
+  for (const t of ticks) {
+    const heals = (t.status === 'poison' && b.talent === 'poisonHeal') || (t.status === 'burn' && b.talent === 'flameHeal')
+    if (heals) {
+      const amount = Math.min(b.maxHp - b.hp, t.amount)
+      if (amount <= 0) continue
+      b.hp += amount
+      log.push({ kind: 'talent', side, uid: b.uid, talent: b.talent!, amount, hpAfter: b.hp })
+    } else if (b.talent === 'magicGuard') {
+      log.push({ kind: 'talent', side, uid: b.uid, talent: 'magicGuard' })
+    } else {
+      b.hp = Math.max(0, b.hp - t.amount)
+      log.push({ kind: 'status_tick', target: side, targetUid: b.uid, status: t.status, amount: t.amount, hpAfter: b.hp })
+    }
+  }
+  return ticks.length > 0
+}
+
+/** Pressure (docs/51): the first turn a Pokémon takes facing it, it loses a reroll (once a battle). */
+function pressure(b: Battler, foe: Battler, side: Side, log: LogEntry[]) {
+  if (foe.talent !== 'pressure' || foe.hp <= 0 || b.hp <= 0 || b.pressured) return
+  b.pressured = true
+  b.rerollsLeft = Math.max(0, b.rerollsLeft - TALENT.pressure)
+  log.push({ kind: 'talent', side: other(side), uid: foe.uid, talent: 'pressure', ally: b.uid })
+}
+
+/** Limber (docs/51): no paralysis lands on it. */
+const shrugs = (b: Battler, status: StatusKind) => status === 'paralyze' && b.talent === 'limber'
+
+/**
+ * A hit that dealt `dealt` (docs/51): Shell Bell heals the attacker a share of it; the target's Rough Skin hurts the
+ * attacker back (not through Magic Guard); its Static may paralyse the attacker (not through Limber).
+ */
+function hitTalents(
+  atk: Battler,
+  def: Battler,
+  side: Side,
+  dealt: number,
+  rules: GameData['config']['status'],
+  log: LogEntry[],
+  rng: Rng,
+) {
+  const foe = other(side)
+  if (atk.talent === 'shellBell' && atk.hp > 0 && atk.hp < atk.maxHp) {
+    const amount = Math.min(atk.maxHp - atk.hp, Math.max(1, Math.round(dealt * TALENT.shellBell)))
+    atk.hp += amount
+    log.push({ kind: 'talent', side, uid: atk.uid, talent: 'shellBell', amount, hpAfter: atk.hp })
+  }
+  if (def.talent === 'roughSkin' && atk.hp > 0) {
+    if (atk.talent === 'magicGuard') log.push({ kind: 'talent', side, uid: atk.uid, talent: 'magicGuard' })
+    else {
+      const amount = Math.max(1, Math.round(dealt * TALENT.roughSkin))
+      atk.hp = Math.max(0, atk.hp - amount)
+      log.push({
+        kind: 'talent',
+        side: foe,
+        uid: def.uid,
+        talent: 'roughSkin',
+        ally: atk.uid,
+        hurt: { side, uid: atk.uid, amount, hpAfter: atk.hp },
+      })
+    }
+  }
+  if (def.talent === 'static' && atk.hp > 0 && atk.status.paralyze <= 0 && rng.next() < TALENT.static) {
+    if (shrugs(atk, 'paralyze')) return void log.push({ kind: 'talent', side, uid: atk.uid, talent: 'limber' })
+    log.push({ kind: 'talent', side: foe, uid: def.uid, talent: 'static', ally: atk.uid })
+    atk.status = applyStatuses(atk.status, [{ status: 'paralyze' }], rules)
+    log.push({ kind: 'status', target: side, targetUid: atk.uid, status: 'paralyze', turns: rules.paralyze.stunTurns })
+  }
 }
 
 /** Mirror (docs/51): the lowest die becomes a copy of the highest. Null when they already match. */
@@ -1559,39 +1657,78 @@ function mirrorDice(dice: readonly RolledDie[], data: GameData): { dice: RolledD
 }
 
 /**
- * What the attacker's hidden talent (docs/51) does to this attack: Pair Pro, Opener (its first attack), Finisher (a foe
- * under a third of its HP), Mind's Eye, Raider (a raid's fight); and a partner's Companion. Undefined when nothing.
+ * What the hidden talents (docs/51) do to this attack. The attacker's own: Technician (a Pair), Triple Pro and Fours
+ * Pro (Three and Four of a Kind), Opener (its first
+ * attack), Finisher (a foe under a third of its HP), Guts (it has a status), Mind's Eye, Raider (a raid's fight), Skill
+ * Link (its combo a level up). A partner's Power Spot. The target's: Intimidate (the attacker's first attacks),
+ * Disguise (the first hit it takes), a partner's Friend Guard. Undefined when nothing.
  */
 export function attackModsFor(s: BattleState, atk: Battler, def: Battler): AttackMods | undefined {
   const t = atk.talent
   const own: AttackMods | undefined =
-    t === 'pairPro'
-      ? { talent: t, pairTimes: 1 + TALENT.pairPro }
+    t === 'technician'
+      ? { talent: t, comboTimes: { key: 'pair', times: 1 + TALENT.technician } }
+      : t === 'triplePro'
+        ? { talent: t, comboTimes: { key: 'three_kind', times: 1 + TALENT.triplePro } }
+        : t === 'foursPro'
+          ? { talent: t, comboTimes: { key: 'four_kind', times: 1 + TALENT.foursPro } }
       : t === 'opener' && (atk.attacks ?? 0) === 0
         ? { talent: t, times: 1 + TALENT.opener }
         : t === 'finisher' && def.hp < def.maxHp * TALENT.finisherBelow
           ? { talent: t, times: 1 + TALENT.finisher }
-          : t === 'mindsEye'
-            ? { talent: t, immuneAs: TALENT.mindsEye }
-            : t === 'raider' && s.single
-              ? { talent: t, times: 1 + TALENT.raider }
-              : undefined
-  const partner = companionOf(s, atk)
-  if (!partner) return own
-  return { ...own, companion: partner, times: (own?.times ?? 1) * (1 + TALENT.companion) }
+          : t === 'guts' && hasAnyStatus(atk.status)
+            ? { talent: t, times: 1 + TALENT.guts }
+            : t === 'mindsEye'
+              ? { talent: t, immuneAs: TALENT.mindsEye }
+              : t === 'raider' && s.single
+                ? { talent: t, times: 1 + TALENT.raider }
+                : t === 'skillLink'
+                  ? { talent: t, comboUp: TALENT.skillLink }
+                  : undefined
+  let mods = own
+  const times = (m: AttackMods | undefined, x: number): AttackMods => ({ ...m, times: (m?.times ?? 1) * x })
+  const partner = powerSpotOf(s, atk)
+  if (partner) mods = { ...times(mods, 1 + TALENT.powerSpot), powerSpot: partner }
+  const guards: { key: TalentKey; uid: string }[] = []
+  let guardTimes = 1
+  if (def.talent === 'intimidate' && (atk.attacks ?? 0) < TALENT.intimidateHits) {
+    guardTimes *= 1 - TALENT.intimidate
+    guards.push({ key: 'intimidate', uid: def.uid })
+  }
+  if (def.talent === 'disguise' && !def.talentSpent?.includes('disguise')) {
+    guardTimes *= 1 - TALENT.disguise
+    guards.push({ key: 'disguise', uid: def.uid })
+  }
+  const guard = friendGuardOf(s, def)
+  if (guard) {
+    guardTimes *= 1 - TALENT.friendGuard
+    guards.push({ key: 'friendGuard', uid: guard })
+  }
+  return guards.length ? { ...mods, guardTimes, guards } : mods
 }
 
 /**
- * Companion (docs/51): the partner on the field that boosts this attacker. In a double battle, the other one of its
- * side still standing; in a raid, any other side's Pokémon in battle (`allyCompanion`, set by the raid for its sides'
+ * Power Spot (docs/51): the partner on the field that boosts this attacker. In a double battle, the other one of its
+ * side still standing; in a raid, any other side's Pokémon in battle (`allyPowerSpot`, set by the raid for its sides'
  * hits). A Pokémon never boosts itself.
  */
-function companionOf(s: BattleState, atk: Battler): string | undefined {
-  if (s.allyCompanion && s.player.some((p) => p.uid === atk.uid)) return s.allyCompanion.uid
+function powerSpotOf(s: BattleState, atk: Battler): string | undefined {
+  if (s.allyPowerSpot && s.player.some((p) => p.uid === atk.uid)) return s.allyPowerSpot.uid
+  return partnerWith(s, atk, 'powerSpot')
+}
+
+/** Friend Guard (docs/51): the partner that softens the hits this Pokémon takes, as Power Spot's twin. */
+function friendGuardOf(s: BattleState, def: Battler): string | undefined {
+  if (s.allyFriendGuard && s.player.some((p) => p.uid === def.uid)) return s.allyFriendGuard.uid
+  return partnerWith(s, def, 'friendGuard')
+}
+
+/** In a double battle, the other Pokémon on `b`'s side of the field, still standing, that carries `talent`. */
+function partnerWith(s: BattleState, b: Battler, talent: TalentKey): string | undefined {
   if (!s.double) return undefined
-  const mine = ownOnField(s).some((b) => b.uid === atk.uid)
+  const mine = ownOnField(s).some((x) => x.uid === b.uid)
   const field = mine ? ownOnField(s) : foesOnField(s)
-  return field.find((b) => b.uid !== atk.uid && b.hp > 0 && b.talent === 'companion')?.uid
+  return field.find((x) => x.uid !== b.uid && x.hp > 0 && x.talent === talent)?.uid
 }
 
 /**
@@ -1665,16 +1802,30 @@ function resolveAttack(
     ...(z && { z: typeof z === 'string' ? { from: z } : {} }),
   })
   if (result.talent?.key) log.push({ kind: 'talent', side, uid: atk.uid, talent: result.talent.key })
-  if (result.talent?.companion)
+  for (const g of result.talent?.guards ?? []) {
+    // Disguise (docs/51): spent on the first hit it takes.
+    if (g.key === 'disguise') def.talentSpent = [...(def.talentSpent ?? []), 'disguise']
+    log.push({
+      kind: 'talent',
+      side: other(side),
+      uid: g.uid,
+      talent: g.key,
+      amount: result.talent!.saved,
+      ...(g.uid !== def.uid && { ally: def.uid }),
+      ...(s.allyFriendGuard?.uid === g.uid && { name: s.allyFriendGuard.name }),
+    })
+  }
+  if (result.talent?.powerSpot)
     log.push({
       kind: 'talent',
       side,
-      uid: result.talent.companion,
-      talent: 'companion',
+      uid: result.talent.powerSpot,
+      talent: 'powerSpot',
       ally: atk.uid,
-      ...(s.allyCompanion?.uid === result.talent.companion && { name: s.allyCompanion.name }),
+      ...(s.allyPowerSpot?.uid === result.talent.powerSpot && { name: s.allyPowerSpot.name }),
     })
   if (sturdy) log.push({ kind: 'talent', side: other(side), uid: def.uid, talent: 'sturdy' })
+  if (result.final > 0) hitTalents(atk, def, side, result.final, data.config.status, log, rng ?? createRng(s.turn))
   const all = statusesFromRoll(dice, data, levels)
   // An attack with no effect inflicts nothing either; nor one a raid's shield or terrain stopped (docs/40).
   if (def.hp > 0 && !result.immune && !s.raidHit?.bounced && !s.raidHit?.noStatus) {
@@ -1683,6 +1834,10 @@ function resolveAttack(
     const apps: StatusApplication[] = []
     for (const a of all) {
       if (a.status === 'heal') continue
+      if (shrugs(def, a.status)) {
+        log.push({ kind: 'talent', side: other(side), uid: def.uid, talent: 'limber' })
+        continue
+      }
       const chance = a.chance ?? 1
       if (chance >= 1 || chanceRng.next() < chance) apps.push(a)
       else log.push({ kind: 'status_resisted', target: other(side), targetUid: def.uid, status: a.status, chance })
@@ -1691,10 +1846,10 @@ function resolveAttack(
     const longer = s.raidHit?.burnLonger ?? 0
     if (longer) for (const a of apps) if (a.status === 'burn' && a.turns != null) a.turns += longer
     def.status = applyStatuses(def.status, apps, data.config.status)
-    // Thaw (docs/51): a freeze holds it one turn only.
-    if (def.talent === 'thaw' && def.status.frozen > TALENT_THAW_TURNS && apps.some((a) => a.status === 'frozen')) {
-      def.status = { ...def.status, frozen: TALENT_THAW_TURNS }
-      log.push({ kind: 'talent', side: other(side), uid: def.uid, talent: 'thaw' })
+    // Magma Armor (docs/51): a freeze holds it one turn only.
+    if (def.talent === 'magmaArmor' && def.status.frozen > MAGMA_ARMOR_TURNS && apps.some((a) => a.status === 'frozen')) {
+      def.status = { ...def.status, frozen: MAGMA_ARMOR_TURNS }
+      log.push({ kind: 'talent', side: other(side), uid: def.uid, talent: 'magmaArmor' })
     }
     for (const a of apps)
       log.push({

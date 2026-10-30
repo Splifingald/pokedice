@@ -4,6 +4,8 @@ import {
   applyFieldItem,
   applyVictory,
   attackModsFor,
+  comboBonus,
+  emptyStatus,
   catchTarget,
   computeDamage,
   createBattle,
@@ -24,13 +26,15 @@ import {
   talentOf,
   talentOnEvolve,
   uniformLevels,
+  type Battler,
   type BattleState,
   type Encounter,
   type GameData,
   type HiddenTalentsConfig,
   type SaveData,
+  type TalentKey,
 } from '@/engine'
-import { data as off, die, makeData } from '../fixtures'
+import { data as off, die, makeData, sdie } from '../fixtures'
 
 const D: HiddenTalentsConfig = { access: 'all', wildChance: 0.05, evolveChance: 0.3, families: {} }
 const on = makeData({ hiddenTalents: D })
@@ -198,26 +202,28 @@ describe('in battle', () => {
       Math.round(plain.maxHp * 1.1),
     )
     // …and outside battle too, for a Pokémon of yours that carries it.
-    const inst = { dex: 98, level: 30, talent: true } // Krabby: Thick Hide
-    expect(instanceMaxHp(inst, on)).toBeGreaterThan(instanceMaxHp({ dex: 98, level: 30 }, on))
-    expect(instanceMaxHp(inst, off)).toBe(instanceMaxHp({ dex: 98, level: 30 }, off))
+    const inst = { dex: 27, level: 30, talent: true } // Sandshrew: Thick Hide
+    expect(instanceMaxHp(inst, on)).toBeGreaterThan(instanceMaxHp({ dex: 27, level: 30 }, on))
+    expect(instanceMaxHp(inst, off)).toBe(instanceMaxHp({ dex: 27, level: 30 }, off))
   })
 
-  it("Pair Pro, Opener, Finisher and Mind's Eye scale the hit, and say so", () => {
+  it("Technician, Opener, Finisher and Mind's Eye scale the hit, and say so", () => {
     const roll = [die('fire', 6), die('fire', 6), die('fire', 5)]
     const plain = computeDamage(roll, ['fire'], ['normal'], L1, on)
     const pair = computeDamage(roll, ['fire'], ['normal'], L1, on, undefined, {
-      talent: 'pairPro',
-      pairTimes: 1.05,
+      talent: 'technician',
+      comboTimes: { key: 'pair', times: 1.05 },
     })
     expect(plain.combo?.key).toBe('pair')
     expect(pair.final).toBe(Math.round(plain.final * 1.05))
-    expect(pair.talent).toEqual({ key: 'pairPro', amount: pair.final - plain.final })
+    expect(pair.talent).toEqual({ key: 'technician', amount: pair.final - plain.final })
     // No pair, no bonus.
     const odd = [die('fire', 6), die('fire', 5)]
     expect(
-      computeDamage(odd, ['fire'], ['normal'], L1, on, undefined, { talent: 'pairPro', pairTimes: 1.05 })
-        .final,
+      computeDamage(odd, ['fire'], ['normal'], L1, on, undefined, {
+        talent: 'technician',
+        comboTimes: { key: 'pair', times: 1.05 },
+      }).final,
     ).toBe(computeDamage(odd, ['fire'], ['normal'], L1, on).final)
     const ghost = computeDamage([die('normal', 4)], ['normal'], ['ghost'], L1, on)
     expect(ghost.final).toBe(0)
@@ -249,13 +255,13 @@ describe('in battle', () => {
     expect(attackModsFor(fin, fin.player[0]!, low)).toEqual({ talent: 'finisher', times: 1.1 })
   })
 
-  it('Companion: +10 % to the partner on the field in a double battle, and from another side in a raid', () => {
+  it('Power Spot: +10 % to the partner on the field in a double battle, and from another side in a raid', () => {
     const s = createBattle(
       {
         kind: 'wild',
         team: [
           { uid: 'a', dex: 25, level: 30, hp: 99 },
-          { uid: 'b', dex: 133, level: 30, hp: 99, talent: 'companion' },
+          { uid: 'b', dex: 133, level: 30, hp: 99, talent: 'powerSpot' },
         ],
         enemy: { dex: 19, level: 5 },
         double: {
@@ -272,7 +278,7 @@ describe('in battle', () => {
     ).state
     expect(s.double).toBeTruthy()
     const [pika, eevee] = s.player
-    expect(attackModsFor(s, pika!, s.enemy)).toEqual({ companion: 'b', times: 1.1 })
+    expect(attackModsFor(s, pika!, s.enemy)).toEqual({ powerSpot: 'b', times: 1.1 })
     // It never boosts itself, nor a partner once it is down.
     expect(attackModsFor(s, eevee!, s.enemy)).toBeUndefined()
     const down = { ...s, player: [pika!, { ...eevee!, hp: 0 }] }
@@ -280,8 +286,8 @@ describe('in battle', () => {
     // A single battle has no partner, but a raid's other side can be one.
     const one = fight({ dex: 25, level: 30 })
     expect(attackModsFor(one, one.player[0]!, one.enemy)).toBeUndefined()
-    const raid = { ...one, allyCompanion: { uid: 'x', name: 'Eevee' } }
-    expect(attackModsFor(raid, raid.player[0]!, raid.enemy)).toEqual({ companion: 'x', times: 1.1 })
+    const raid = { ...one, allyPowerSpot: { uid: 'x', name: 'Eevee' } }
+    expect(attackModsFor(raid, raid.player[0]!, raid.enemy)).toEqual({ powerSpot: 'x', times: 1.1 })
   })
 
   it('Sturdy leaves it at 1 HP once', () => {
@@ -353,7 +359,7 @@ describe('the Talent Candy', () => {
 })
 
 describe('out of battle', () => {
-  it("Pay Day and Amulet Coin add to a trainer's ₽; Field Medic heals after the win", () => {
+  it("Pay Day and Amulet Coin add to a trainer's ₽; Regenerator heals after the win", () => {
     const area = on.areas.find((a) => a.trainerPool.length > 0)!
     const plain = saveWith([{ dex: 52, level: 30 }], never)
     const meowth = saveWith([{ dex: 52, level: 30, talent: true }])
@@ -363,7 +369,7 @@ describe('out of battle', () => {
     expect(gold(meowth, on)).toBe(Math.round(gold(plain, never) * 1.1))
     const hurt = saveWith([{ dex: 114, level: 30, talent: true }])
     hurt.box[0]!.currentHp = 10
-    expect(talentOf(on, hurt.box[0]!)).toBe('fieldMedic')
+    expect(talentOf(on, hurt.box[0]!)).toBe('regenerator')
     const won = applyVictory(
       hurt,
       { ...input, kind: 'wild', fighterUid: hurt.team[0]! },
@@ -372,7 +378,7 @@ describe('out of battle', () => {
       0,
       newId,
     )
-    expect(won.events).toContainEqual(expect.objectContaining({ kind: 'field_medic' }))
+    expect(won.events).toContainEqual(expect.objectContaining({ kind: 'regenerator' }))
   })
 
   it('Pickup sometimes finds one of the area\u2019s items after a win, for the find screen to show', () => {
@@ -401,7 +407,187 @@ describe('out of battle', () => {
   it('Daycare Darling earns more Day Care XP', () => {
     const since = 0
     const now = 24 * 3_600_000
-    const inst = { id: 'x', dex: 10, level: 5, xp: 0, currentHp: 1, caughtAt: 0, talent: true }
+    const inst = { id: 'x', dex: 69, level: 5, xp: 0, currentHp: 1, caughtAt: 0, talent: true }
     expect(dayCareXp({ since, inst }, now, on)).toBe(Math.floor(dayCareXp({ since }, now, on) * 1.5))
+  })
+})
+
+describe('the full set (2026-10-30): real names, combos, statuses, guards', () => {
+  const duel = (mine: Partial<Battler> = {}, foe: Partial<Battler> = {}): BattleState => {
+    const s = createBattle(
+      {
+        kind: 'wild',
+        team: [{ uid: 'a', dex: 4, level: 50, hp: 9999 }],
+        enemy: { dex: 129, level: 80 },
+        playerLevels: L1,
+        enemyLevels: L1,
+      },
+      on,
+    ).state
+    return {
+      ...s,
+      player: [{ ...s.player[0]!, ...mine }],
+      enemy: { ...s.enemy, ...foe },
+      phase: 'player_reroll',
+      actor: 'player',
+      dice: [die('fire', 3), die('fire', 5)],
+      selected: [false, false],
+    }
+  }
+  const attack = (s: BattleState, seed = 1) => reduce(s, { t: 'ATTACK' }, on, createRng(seed))
+
+  it('Skill Link pays every combo a level up, past level 10 too', () => {
+    expect(comboBonus('pair', 10, on)).toBe(11)
+    expect(comboBonus('pair', 10, on, 1)).toBe(12)
+    expect(comboBonus('three_kind', 10, on, 1)).toBe(26)
+    expect(comboBonus('five_kind', 99, on, 1)).toBe(75)
+    expect(comboBonus('pair', 99, on)).toBe(11)
+    const roll = [die('fire', 6), die('fire', 6), die('fire', 2)]
+    const plain = computeDamage(roll, ['fire'], ['normal'], L1, on)
+    const linked = computeDamage(roll, ['fire'], ['normal'], L1, on, undefined, {
+      talent: 'skillLink',
+      comboUp: 1,
+    })
+    expect(linked.combo!.bonus).toBe(comboBonus('pair', 2, on))
+    expect(linked.final).toBeGreaterThan(plain.final)
+    expect(linked.talent?.key).toBe('skillLink')
+  })
+
+  it('Triple Pro and Fours Pro boost their own combo only', () => {
+    const three = [die('fire', 4), die('fire', 4), die('fire', 4)]
+    const plain = computeDamage(three, ['fire'], ['normal'], L1, on)
+    const pro = { talent: 'triplePro' as const, comboTimes: { key: 'three_kind' as const, times: 1.1 } }
+    expect(computeDamage(three, ['fire'], ['normal'], L1, on, undefined, pro).final).toBe(
+      Math.round(plain.final * 1.1),
+    )
+    const fours = { talent: 'foursPro' as const, comboTimes: { key: 'four_kind' as const, times: 1.25 } }
+    expect(computeDamage(three, ['fire'], ['normal'], L1, on, undefined, fours).final).toBe(plain.final)
+    const s = duel({ talent: 'foursPro' })
+    expect(attackModsFor(s, s.player[0]!, s.enemy)).toEqual({
+      talent: 'foursPro',
+      comboTimes: { key: 'four_kind', times: 1.25 },
+    })
+  })
+
+  it('Guts boosts while it has a status; Intimidate and Disguise soften the hits it takes', () => {
+    const s = duel({ talent: 'guts' })
+    expect(attackModsFor(s, s.player[0]!, s.enemy)).toBeUndefined()
+    const hurt = { ...s.player[0]!, status: { ...s.player[0]!.status, poison: { turns: 2 } } }
+    expect(attackModsFor(s, hurt, s.enemy)).toEqual({ talent: 'guts', times: 1.25 })
+
+    const scary = duel({}, { talent: 'intimidate' })
+    expect(attackModsFor(scary, scary.player[0]!, scary.enemy)).toMatchObject({ guardTimes: 0.8 })
+    expect(attackModsFor(scary, { ...scary.player[0]!, attacks: 2 }, scary.enemy)).toBeUndefined()
+
+    const mimic = duel({}, { talent: 'disguise' })
+    const first = attack(mimic)
+    expect(first.log).toContainEqual(expect.objectContaining({ kind: 'talent', talent: 'disguise' }))
+    expect(first.state.enemy.talentSpent).toContain('disguise')
+    expect(attackModsFor(first.state, first.state.player[0]!, first.state.enemy)).toBeUndefined()
+  })
+
+  it('Shell Bell heals from its hit; Rough Skin hurts the attacker back, unless Magic Guard', () => {
+    const bell = duel({ talent: 'shellBell', hp: 10 })
+    const healed = attack(bell)
+    expect(healed.log).toContainEqual(expect.objectContaining({ kind: 'talent', talent: 'shellBell' }))
+    expect(healed.state.player[0]!.hp).toBeGreaterThan(10)
+
+    const spiky = duel({}, { talent: 'roughSkin' })
+    const before = spiky.player[0]!.hp
+    const out = attack(spiky)
+    const entry = out.log.find((e) => e.kind === 'talent' && e.talent === 'roughSkin')
+    expect(entry).toMatchObject({ ally: 'a', hurt: { uid: 'a' } })
+    expect(out.state.player[0]!.hp).toBeLessThan(before)
+    const guarded = attack(duel({ talent: 'magicGuard' }, { talent: 'roughSkin' }))
+    expect(guarded.state.player[0]!.hp).toBe(before)
+  })
+
+  it('Static may paralyse the attacker, never one with Limber', () => {
+    const tries = Array.from({ length: 200 }, (_, i) => attack(duel({}, { talent: 'static' }), i))
+    const zapped = tries.filter((r) => r.state.player[0]!.status.paralyze > 0).length
+    expect(zapped).toBeGreaterThan(0)
+    expect(zapped).toBeLessThan(60)
+    const limber = Array.from({ length: 200 }, (_, i) =>
+      attack(duel({ talent: 'limber' }, { talent: 'static' }), i),
+    )
+    expect(limber.every((r) => r.state.player[0]!.status.paralyze === 0)).toBe(true)
+  })
+
+  it('Limber shrugs off a paralysing roll', () => {
+    const s = {
+      ...duel({}, { talent: 'limber' }),
+      dice: [sdie('electric', 'paralyze'), sdie('electric', 'paralyze')],
+    }
+    const out = attack(s)
+    expect(out.state.enemy.status.paralyze).toBe(0)
+    expect(out.log).toContainEqual(expect.objectContaining({ kind: 'talent', talent: 'limber' }))
+  })
+
+  it('Poison Heal turns poison into a heal; Magic Guard takes no status damage', () => {
+    const sick = (talent: TalentKey) =>
+      duel({}, { talent, hp: 50, status: { ...emptyStatus(), poison: { turns: 3 } } })
+    const healed = attack(sick('poisonHeal'))
+    expect(healed.state.enemy.hp).toBeGreaterThan(50 - 20)
+    expect(healed.log).toContainEqual(expect.objectContaining({ kind: 'talent', talent: 'poisonHeal' }))
+    expect(healed.log.some((e) => e.kind === 'status_tick')).toBe(false)
+    const guard = attack(sick('magicGuard'))
+    expect(guard.log).toContainEqual(expect.objectContaining({ kind: 'talent', talent: 'magicGuard' }))
+    expect(guard.log.some((e) => e.kind === 'status_tick')).toBe(false)
+  })
+
+  it('Pressure takes a reroll from a foe that faces it, once', () => {
+    const s = duel({ talent: 'pressure' })
+    const out = attack(s)
+    expect(out.state.enemy.rerollsLeft).toBe(s.enemy.rerollsLeft - 1)
+    expect(out.log).toContainEqual(
+      expect.objectContaining({ kind: 'talent', talent: 'pressure', ally: s.enemy.uid }),
+    )
+  })
+
+  it('Shed Skin sometimes sheds its status at the end of its turn', () => {
+    const sick = duel({ talent: 'shedSkin', status: { ...emptyStatus(), poison: { turns: 3 } } })
+    const shed = Array.from({ length: 100 }, (_, i) => attack(sick, i)).filter((r) =>
+      r.log.some((e) => e.kind === 'talent' && e.talent === 'shedSkin'),
+    ).length
+    expect(shed).toBeGreaterThan(10)
+    expect(shed).toBeLessThan(60)
+  })
+
+  it('Friend Guard softens the hits on its partner in a double battle', () => {
+    const s = createBattle(
+      {
+        kind: 'wild',
+        team: [
+          { uid: 'a', dex: 25, level: 30, hp: 99 },
+          { uid: 'b', dex: 35, level: 30, hp: 99, talent: 'friendGuard' },
+        ],
+        enemy: { dex: 19, level: 5 },
+        double: {
+          foes: [
+            { dex: 19, level: 5 },
+            { dex: 16, level: 5 },
+          ],
+          leadUids: ['a', 'b'],
+        },
+        playerLevels: L1,
+        enemyLevels: L1,
+      },
+      on,
+    ).state
+    const foe = s.double!.foes[0]!
+    expect(attackModsFor(s, foe, s.player[0]!)).toEqual({
+      guardTimes: 0.9,
+      guards: [{ key: 'friendGuard', uid: 'b' }],
+    })
+    expect(attackModsFor(s, foe, s.player[1]!)).toBeUndefined()
+  })
+
+  it('Ditto always carries Imposter, those owned before included; Imposter copies the foe', () => {
+    expect(familyTalent(on, 132)).toBe('imposter')
+    expect(rollTalent(never, 132, createRng(1))).toBe(true)
+    const owned = syncTalents(saveWith([{ dex: 132, level: 20 }]), on)
+    expect(owned.box[0]!.talent).toBe(true)
+    expect(syncTalents(saveWith([{ dex: 132, level: 20 }], off), off).box[0]!.talent).toBeUndefined()
+    expect(makeBattler({ uid: 'x', dex: 19, level: 5, hp: 10, talent: 'imposter' }, on).copiesFoe).toBe(true)
   })
 })

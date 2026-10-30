@@ -2,11 +2,12 @@
  * pnpm talents — writes src/data/talents.json: one hidden talent per evolution family (docs/51), keyed by the family's
  * lowest dex. The admin can pick another for any family (Config → Hidden talents); this is the starting assignment.
  *
- * Three rarities (the user's call, 2026-10-30), by the family's strength: its strongest plain member's base stat total
+ * Three rarities (the user's calls, 2026-10-30), by the family's strength: its strongest plain member's base stat total
  * (Megas and other forms left out). **Ultra**: a legendary or mythical, a starter line, a pseudo-legendary, an Ultra
  * Beast or Paradox Pokémon, or `ULTRA_AT`+; **rare**: `RARE_AT`+; **common**: the rest. Within its rarity, the family's
- * strongest member's first type picks from a short list (by the family's dex, so neighbours differ), and a few
- * well-known families get a talent picked by hand.
+ * strongest member's first type picks from a short list (by the family's dex, so neighbours differ): names that say a
+ * type go to it (Static to Electric, Poison Heal to Poison). Legendaries get Pressure or Fours Pro first. A few families
+ * get, by hand, the ability they have in the games; Ditto gets Imposter, its unique talent.
  */
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -28,90 +29,103 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 export const RARE_AT = 495
 export const ULTRA_AT = 540
 
-const LISTS: Record<TalentTier, Record<PokeType, TalentKey[]>> = {
+const LISTS: Record<'common' | 'rare' | 'ultra', Record<PokeType, TalentKey[]>> = {
   common: {
-    normal: ['extraReroll', 'daycareDarling', 'pairPro'],
-    fire: ['quick', 'extraReroll'],
-    water: ['thickHide', 'daycareDarling'],
-    grass: ['daycareDarling', 'thickHide'],
-    electric: ['quick', 'extraReroll'],
-    ice: ['thaw', 'thickHide'],
-    fighting: ['pairPro', 'thickHide'],
-    poison: ['pairPro', 'extraReroll'],
-    ground: ['thickHide', 'pairPro'],
+    normal: ['extraReroll', 'limber', 'daycareDarling', 'technician'],
+    fire: ['flameHeal', 'magmaArmor', 'quick'],
+    water: ['thickHide', 'daycareDarling', 'roughSkin'],
+    grass: ['daycareDarling', 'shedSkin', 'thickHide'],
+    electric: ['static', 'quick'],
+    ice: ['thickHide', 'extraReroll'],
+    fighting: ['limber', 'technician'],
+    poison: ['poisonHeal', 'shedSkin'],
+    ground: ['roughSkin', 'thickHide'],
     flying: ['quick', 'extraReroll'],
-    psychic: ['extraReroll', 'quick'],
-    bug: ['pairPro', 'daycareDarling'],
-    rock: ['thaw', 'thickHide'],
+    psychic: ['extraReroll', 'technician'],
+    bug: ['shedSkin', 'technician', 'daycareDarling'],
+    rock: ['magmaArmor', 'roughSkin'],
     ghost: ['extraReroll', 'quick'],
-    dragon: ['quick', 'thickHide'],
-    dark: ['pairPro', 'quick'],
-    steel: ['thaw', 'thickHide'],
+    dragon: ['roughSkin', 'shedSkin'],
+    dark: ['technician', 'quick'],
+    steel: ['thickHide', 'magmaArmor'],
     fairy: ['daycareDarling', 'extraReroll'],
   },
   rare: {
-    normal: ['pickup', 'payDay', 'gentleTouch', 'companion'],
-    fire: ['opener', 'finisher'],
-    water: ['naturalCure', 'fieldMedic'],
-    grass: ['fieldMedic', 'naturalCure'],
-    electric: ['opener', 'companion'],
-    ice: ['finisher', 'naturalCure'],
-    fighting: ['finisher', 'companion'],
+    normal: ['pickup', 'payDay', 'falseSwipe', 'triplePro', 'friendGuard'],
+    fire: ['opener', 'guts', 'triplePro'],
+    water: ['shellBell', 'naturalCure', 'regenerator'],
+    grass: ['regenerator', 'naturalCure'],
+    electric: ['opener', 'powerSpot'],
+    ice: ['finisher', 'triplePro'],
+    fighting: ['guts', 'finisher', 'intimidate'],
     poison: ['naturalCure', 'finisher'],
-    ground: ['companion', 'opener'],
-    flying: ['opener', 'companion'],
-    psychic: ['mindsEye', 'companion'],
-    bug: ['gentleTouch', 'pickup', 'companion'],
-    rock: ['companion', 'finisher'],
-    ghost: ['mindsEye', 'opener'],
-    dragon: ['opener', 'finisher'],
-    dark: ['payDay', 'pickup', 'finisher'],
-    steel: ['mindsEye', 'companion'],
-    fairy: ['gentleTouch', 'fieldMedic'],
+    ground: ['intimidate', 'powerSpot'],
+    flying: ['opener', 'intimidate'],
+    psychic: ['mindsEye', 'friendGuard'],
+    bug: ['falseSwipe', 'pickup', 'triplePro'],
+    rock: ['powerSpot', 'finisher'],
+    ghost: ['disguise', 'mindsEye'],
+    dragon: ['intimidate', 'opener'],
+    dark: ['payDay', 'intimidate', 'pickup'],
+    steel: ['mindsEye', 'powerSpot'],
+    fairy: ['friendGuard', 'falseSwipe'],
   },
   ultra: {
-    normal: ['doubleReroll', 'amuletCoin', 'eggRush'],
-    fire: ['raider', 'ultraSpeed'],
-    water: ['leftovers', 'eggRush', 'doubleReroll'],
-    grass: ['leftovers', 'eggRush'],
+    normal: ['skillLink', 'amuletCoin', 'doubleReroll'],
+    fire: ['flameBody', 'raider'],
+    water: ['leftovers', 'doubleReroll'],
+    grass: ['leftovers', 'skillLink'],
     electric: ['ultraSpeed', 'reroller'],
     ice: ['sturdy', 'mirror'],
-    fighting: ['raider', 'sturdy'],
-    poison: ['leftovers', 'reroller'],
+    fighting: ['raider', 'skillLink'],
+    poison: ['magicGuard', 'leftovers'],
     ground: ['sturdy', 'raider'],
     flying: ['ultraSpeed', 'raider'],
-    psychic: ['reroller', 'mirror'],
-    bug: ['reroller', 'ultraSpeed'],
+    psychic: ['magicGuard', 'reroller'],
+    bug: ['skillLink', 'ultraSpeed'],
     rock: ['sturdy', 'raider'],
-    ghost: ['mirror', 'reroller'],
+    ghost: ['mirror', 'magicGuard'],
     dragon: ['mirror', 'raider'],
     dark: ['amuletCoin', 'reroller'],
     steel: ['sturdy', 'reroller'],
-    fairy: ['eggRush', 'mirror'],
+    fairy: ['magicGuard', 'mirror'],
   },
 }
 
-/** Picked by hand, by the family's lowest dex: each fits its family's rarity but Meowth's (Pay Day is its move). */
+/** Legendaries and mythicals: Pressure (their signature ability in the games) and Fours Pro come first. */
+const LEGEND: TalentKey[] = ['pressure', 'foursPro']
+
+/**
+ * Picked by hand, by the family's lowest dex: mostly the ability the family has in the games (Pikachu's Static,
+ * Mimikyu's Disguise, Ditto's Imposter…), whatever its rarity.
+ */
 const BY_HAND: Record<number, TalentKey> = {
   1: 'leftovers', // Bulbasaur
   4: 'raider', // Charmander
   7: 'sturdy', // Squirtle
-  10: 'daycareDarling', // Caterpie
+  10: 'shedSkin', // Caterpie
   16: 'quick', // Pidgey
   19: 'extraReroll', // Rattata
-  25: 'opener', // Pikachu (Pichu, Raichu)
+  25: 'static', // Pikachu (Pichu, Raichu)
   52: 'payDay', // Meowth
-  63: 'mindsEye', // Abra
-  113: 'eggRush', // Chansey
+  58: 'intimidate', // Growlithe
+  63: 'magicGuard', // Abra
+  66: 'guts', // Machop
+  74: 'sturdy', // Geodude
+  79: 'regenerator', // Slowpoke
+  113: 'naturalCure', // Chansey
+  120: 'naturalCure', // Staryu
   129: 'doubleReroll', // Magikarp
-  132: 'daycareDarling', // Ditto
-  133: 'companion', // Eevee
+  132: 'imposter', // Ditto
+  133: 'powerSpot', // Eevee
   143: 'leftovers', // Snorlax (and Munchlax)
   147: 'mirror', // Dratini
-  150: 'reroller', // Mewtwo
+  150: 'pressure', // Mewtwo
   151: 'mirror', // Mew
   246: 'raider', // Larvitar
   263: 'pickup', // Zigzagoon
+  285: 'poisonHeal', // Shroomish
+  778: 'disguise', // Mimikyu
 }
 
 const bst = (s: Species) => Number(/BST (\d+)/.exec(s.notes ?? '')?.[1] ?? 0)
@@ -131,7 +145,7 @@ async function main() {
     const plain = members.filter((m) => !m.form)
     const strongest = [...(plain.length ? plain : members)].sort((a, b) => bst(b) - bst(a))[0]!
     const top = bst(strongest)
-    const tier: TalentTier =
+    const tier: Exclude<TalentTier, 'unique'> =
       members.some((m) => data.eggGroups[m.dex]?.l === 1 || strong.has(m.dex)) ||
       isStarterFamily(data, root) ||
       top >= ULTRA_AT
@@ -139,7 +153,11 @@ async function main() {
         : top >= RARE_AT
           ? 'rare'
           : 'common'
-    const list = LISTS[tier][strongest.type1]
+    const legend = members.some((m) => data.eggGroups[m.dex]?.l === 1)
+    // A legendary can't breed: Flame Body's Eggs would do nothing for it.
+    const list = legend
+      ? [...LEGEND, ...LISTS.ultra[strongest.type1].filter((k) => k !== 'flameBody')]
+      : LISTS[tier][strongest.type1]
     const talent = BY_HAND[root] ?? list[root % list.length]!
     families[String(root)] = talent
     tally[talent] = (tally[talent] ?? 0) + 1

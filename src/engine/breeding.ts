@@ -105,12 +105,12 @@ export function clockMs(data: GameData, clock: Clock): number {
 }
 
 /**
- * A clock's interval for this save: Egg Rush (docs/51) on one of your residents runs it `eggRush` times as fast. The
+ * A clock's interval for this save: Flame Body (docs/51) on one of your residents runs it `flameBody` times as fast. The
  * admin's summary (`eggsPerWeek`) reads `clockMs`, the plain one.
  */
 function stepMs(save: SaveData, data: GameData, clock: Clock): number {
-  const rush = dayCareOf(save).residents.some((r) => talentOf(data, r.inst) === 'eggRush')
-  return clockMs(data, clock) / (rush ? TALENT.eggRush : 1)
+  const rush = dayCareOf(save).residents.some((r) => talentOf(data, r.inst) === 'flameBody')
+  return clockMs(data, clock) / (rush ? TALENT.flameBody : 1)
 }
 
 const lastOf = (dc: DayCareState, clock: Clock) => dc[FIELD[clock]]

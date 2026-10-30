@@ -92,8 +92,8 @@ const DIG_PAL: Record<string, string> = {
 }
 
 export const ICONS = {
-  // Hidden talents (docs/51): a cut gem, green for a common talent, blue for a rare one, gold for an ultra one, grey while
-  // it’s unknown.
+  // Hidden talents (docs/51): a cut gem, green for a common talent, blue for a rare one, gold for an ultra one, red for the
+  // unique one (Ditto's), grey while it’s unknown.
   talent: [
     '....kk....',
     '...kwYk...',
@@ -128,6 +128,18 @@ export const ICONS = {
     '.kGGGdddk.',
     '..kGdddk..',
     '...kddk...',
+    '....kk....',
+  ],
+  talentUnique: [
+    '....kk....',
+    '...kwpk...',
+    '..kwprrk..',
+    '.kwprrrRk.',
+    'kprrrrRRRk',
+    'krrrrrRRRk',
+    '.krrrRRRk.',
+    '..krRRRk..',
+    '...kRRk...',
     '....kk....',
   ],
   talentLocked: [
@@ -603,6 +615,7 @@ const OWN_PALETTE: Partial<Record<IconName, Record<string, string>>> = {
   talent: NAV_PAL,
   talentBase: NAV_PAL,
   talentCommon: NAV_PAL,
+  talentUnique: NAV_PAL,
   talentLocked: NAV_PAL,
 }
 

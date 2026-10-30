@@ -24,8 +24,13 @@ import { useMyTurn, useOnScreen } from './popupTurn'
 import { RulesModal, type RuleRow } from './RulesModal'
 import { SheetSection } from './SheetSection'
 
-/** The gem of each rarity: green for common, blue for rare, gold for ultra. */
-export const TIER_ICON = { common: 'talentCommon', rare: 'talentBase', ultra: 'talent' } as const
+/** The gem of each rarity: green for common, blue for rare, gold for ultra, red for the unique one (Ditto's). */
+export const TIER_ICON = {
+  common: 'talentCommon',
+  rare: 'talentBase',
+  ultra: 'talent',
+  unique: 'talentUnique',
+} as const
 
 /** The numbers each talent's text says, from the engine's table. */
 const pct = (x: number) => Math.round(x * 100)
@@ -37,9 +42,11 @@ const NUMBERS: Partial<Record<TalentKey, Record<string, number | string>>> = {
   thickHide: { n: pct(TALENT.thickHide) },
   opener: { n: pct(TALENT.opener) },
   finisher: { n: pct(TALENT.finisher), below: pct(TALENT.finisherBelow) },
-  pairPro: { n: pct(TALENT.pairPro) },
-  companion: { n: pct(TALENT.companion) },
-  fieldMedic: { n: pct(TALENT.fieldMedic) },
+  technician: { n: pct(TALENT.technician) },
+  triplePro: { n: pct(TALENT.triplePro) },
+  foursPro: { n: pct(TALENT.foursPro) },
+  powerSpot: { n: pct(TALENT.powerSpot) },
+  regenerator: { n: pct(TALENT.regenerator) },
   leftovers: { n: pct(TALENT.leftovers) },
   mindsEye: { x: TALENT.mindsEye },
   raider: { n: pct(TALENT.raider) },
@@ -47,8 +54,17 @@ const NUMBERS: Partial<Record<TalentKey, Record<string, number | string>>> = {
   amuletCoin: { n: pct(TALENT.amuletCoin) },
   pickup: { n: pct(TALENT.pickup) },
   daycareDarling: { n: pct(TALENT.daycareDarling) },
-  eggRush: { n: TALENT.eggRush },
-  gentleTouch: { n: TALENT.gentleTouch },
+  flameBody: { n: TALENT.flameBody },
+  falseSwipe: { n: TALENT.falseSwipe },
+  static: { n: pct(TALENT.static) },
+  shedSkin: { n: pct(TALENT.shedSkin) },
+  roughSkin: { n: pct(TALENT.roughSkin) },
+  intimidate: { n: pct(TALENT.intimidate), k: TALENT.intimidateHits },
+  guts: { n: pct(TALENT.guts) },
+  shellBell: { n: pct(TALENT.shellBell) },
+  friendGuard: { n: pct(TALENT.friendGuard) },
+  disguise: { n: pct(TALENT.disguise) },
+  pressure: { n: TALENT.pressure },
 }
 
 export const talentName = (key: TalentKey): string => t(`ui.talent.name.${key}`)
@@ -57,23 +73,43 @@ export const talentText = (key: TalentKey): string => t(`ui.talent.text.${key}`,
 /** What the battle log says of a talent at work (`LogEntry` kind 'talent'). */
 export function talentLogText(
   name: string,
-  e: { talent: TalentKey; amount?: number },
+  e: { talent: TalentKey; amount?: number; hurt?: { amount: number } },
   ally?: string,
 ): string {
   const talent = talentName(e.talent)
   switch (e.talent) {
     case 'leftovers':
+    case 'poisonHeal':
+    case 'flameHeal':
+    case 'shellBell':
       return t('ui.talent.log.heal', { name, talent, n: e.amount ?? 0 })
+    case 'static':
+      return t('ui.talent.log.static', { name, ally: ally ?? '' })
+    case 'roughSkin':
+      return t('ui.talent.log.roughSkin', { name, ally: ally ?? '', n: e.hurt?.amount ?? 0 })
+    case 'pressure':
+      return t('ui.talent.log.pressure', { name, ally: ally ?? '' })
+    case 'shedSkin':
+      return t('ui.talent.log.shedSkin', { name })
+    case 'limber':
+      return t('ui.talent.log.limber', { name })
+    case 'magicGuard':
+      return t('ui.talent.log.magicGuard', { name })
+    case 'intimidate':
+    case 'disguise':
+      return t('ui.talent.log.guard', { name, talent })
+    case 'friendGuard':
+      return t('ui.talent.log.friendGuard', { name, ally: ally ?? '' })
     case 'mirror':
       return t('ui.talent.log.mirror', { name, n: e.amount ?? 0 })
     case 'sturdy':
       return t('ui.talent.log.sturdy', { name })
     case 'naturalCure':
       return t('ui.talent.log.cure', { name })
-    case 'thaw':
-      return t('ui.talent.log.thaw', { name })
-    case 'companion':
-      return t('ui.talent.log.companion', { name, ally: ally ?? '' })
+    case 'magmaArmor':
+      return t('ui.talent.log.magmaArmor', { name })
+    case 'powerSpot':
+      return t('ui.talent.log.powerSpot', { name, ally: ally ?? '' })
     default:
       return t('ui.talent.log.boost', { name, talent })
   }
@@ -113,7 +149,7 @@ export function TalentFoundCard({
   )
 }
 
-/** Field Medic and Pickup after a win (docs/51): what the talent did. */
+/** Regenerator and Pickup after a win (docs/51): what the talent did. */
 export function TalentAfterWinCard({
   uid,
   dex,
