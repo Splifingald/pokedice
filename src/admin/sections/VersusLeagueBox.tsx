@@ -1,14 +1,43 @@
 // Admin → Config: the weekly Versus league (docs/44). Its numbers (game_config `versusLeague`, which the server reads
-// too: migration 0082; its switch is on the Switches tab), and two buttons to try it without waiting: the hourly tick
-// now, bots seated now.
+// too: migration 0082; its switch is on the Switches tab), and buttons to try it without waiting: the hourly tick now,
+// bots seated now, and the week's bot teams (0092): which set they come from, and this week's made now, from here.
 import { useState } from 'react'
-import { VERSUS_LEAGUE_DEFAULTS, type VersusLeagueConfig } from '@/engine'
+import { VERSUS_LEAGUE_DEFAULTS, weekBotTeams, type VersusLeagueConfig } from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
-import { leagueAdmin, leagueErrorCode } from '@/lib/versusLeague'
+import {
+  fetchLeagueBotSet,
+  leagueAdmin,
+  leagueErrorCode,
+  putLeagueBotTeams,
+  type LeagueBotSet,
+} from '@/lib/versusLeague'
+import { useAdminData } from '../store'
 import { Box, Field, NumInput } from '../widgets'
 import { useConfigRow } from './ConfigSection'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+const when = (ms: number | null) =>
+  ms == null
+    ? '?'
+    : new Date(ms).toLocaleString(undefined, {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+
+/** "This week's own teams (40 / 40 / 40 / 80 a tier), made Mon 27 Oct, 00:13." and the like. */
+function botSetNote(s: LeagueBotSet): string {
+  const tiers = `${s.tiers.join(' / ')} a tier`
+  if (s.set === s.week) return `This week's own bot teams (${tiers}), made ${when(s.madeAt)}.`
+  const from = s.set ? `the teams made for the week of ${s.set} (${tiers})` : `the built-in teams (${tiers})`
+  const next = s.due
+    ? 'The hourly job makes them on the live site, or press Make.'
+    : 'Nothing is made while the league is Off.'
+  return `This week's bot teams aren't made yet: its bots take ${from}. ${next}`
+}
 
 export function VersusLeagueBox() {
   const [raw, setRaw] = useConfigRow('versusLeague')
@@ -17,13 +46,48 @@ export function VersusLeagueBox() {
   const set = (patch: Partial<VersusLeagueConfig>) => setRaw({ ...cfg, ...patch })
   const whole = (v: number | null, min = 0) => Math.max(min, Math.floor(v ?? 0))
   const [note, setNote] = useState<string | null>(null)
+  const data = useAdminData()
+  const refused = (err: unknown) =>
+    setNote(
+      leagueErrorCode(err) === 'versus_league_missing'
+        ? 'The database has no weekly bot teams yet: run supabase/migrations/0092_versus_bot_weeks.sql (after 0082).'
+        : `Refused: ${leagueErrorCode(err)} (${err instanceof Error ? err.message : String(err)})`,
+    )
   const run = async (action: 'tick' | 'seat_bots') => {
     setNote('…')
     try {
       const n = await leagueAdmin(action)
       setNote(action === 'seat_bots' ? `${n} bot(s) seated in this week's groups.` : 'Tick done.')
     } catch (err) {
-      setNote(`Refused: ${leagueErrorCode(err)} (${err instanceof Error ? err.message : String(err)})`)
+      refused(err)
+    }
+  }
+  const checkTeams = async () => {
+    setNote('…')
+    try {
+      setNote(botSetNote(await fetchLeagueBotSet()))
+    } catch (err) {
+      refused(err)
+    }
+  }
+  // Drawn here as the hourly job draws them (the same week, the same seeds), over the content as Admin has it.
+  const makeTeams = async () => {
+    if (!data) return
+    setNote('…')
+    try {
+      const before = await fetchLeagueBotSet()
+      if (before.set === before.week) {
+        setNote(`Made already. ${botSetNote(before)}`)
+        return
+      }
+      setNote('Drawing this week’s teams…')
+      // Lets the note show before the draw holds the page for a second or two.
+      await new Promise((r) => setTimeout(r, 30))
+      const n = await putLeagueBotTeams(before.week, weekBotTeams(data, before.week))
+      const after = await fetchLeagueBotSet()
+      setNote(n ? `${n} teams made for the week of ${after.week}. ${botSetNote(after)}` : botSetNote(after))
+    } catch (err) {
+      refused(err)
     }
   }
   const access = cfg.access
@@ -31,7 +95,7 @@ export function VersusLeagueBox() {
     <Box
       title="Versus league"
       icon="trophy"
-      hint="On: Versus becomes a weekly league (Monday to Sunday, UTC). Players fight their matches themselves (AUTO optional; no items), against one of 3 opponents near their trophies (players first, bots where nobody fits). A win gives trophies by the Pokémon left, a loss takes the opponent's, a leave the most; nothing is taken below the safe line. Groups of 20 fill as players come, spread over the week's groups; bots take empty places on the bot days and climb. At the end of the week each player gets ₽ for each trophy and the top 10 their Raid Balls and Rare Candies, as a gift message. Bots look like players to everyone but you. Off: Versus as before; the league's data stays."
+      hint="On: Versus becomes a weekly league (Monday to Sunday, UTC). Players fight their matches themselves (AUTO optional; no items), against one of 3 opponents near their trophies (players first, bots where nobody fits). A win gives trophies by the Pokémon left, a loss takes the opponent's, a leave the most; nothing is taken below the safe line. Groups of 20 fill as players come, spread over the week's groups; bots take empty places on the bot days and climb. At the end of the week each player gets ₽ for each trophy and the top 10 their Raid Balls and Rare Candies, as a gift message. Bots look like players to everyone but you, and get new teams every week (40 a tier, 80 in the last), made within the hour of Monday 00:00 UTC by a job on the live site. Off: Versus as before; the league's data stays."
     >
       {access !== 'off' && gifts?.access !== 'all' && (
         <p className="m-0 bg-gold-pale p-2 text-base leading-snug">
@@ -180,6 +244,12 @@ export function VersusLeagueBox() {
         </PixelButton>
         <PixelButton size="sm" onClick={() => void run('seat_bots')}>
           Seat bots now
+        </PixelButton>
+        <PixelButton size="sm" onClick={() => void checkTeams()}>
+          This week's bot teams
+        </PixelButton>
+        <PixelButton size="sm" disabled={!data} onClick={() => void makeTeams()}>
+          Make this week's bot teams now
         </PixelButton>
         {note && <span className="text-base text-muted">{note}</span>}
       </div>
