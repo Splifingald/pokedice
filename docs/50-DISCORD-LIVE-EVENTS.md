@@ -161,8 +161,8 @@ GitHub → the `pokedice` repository → **Settings** → **Secrets and variable
    | Name | Value | Where to find it |
    | --- | --- | --- |
    | `DISCORD_EVENT_ROLE` | the role id from step 3 (digits only) | leave it out if you skipped step 3 |
-   | `VITE_SUPABASE_URL` | `https://….supabase.co` | Supabase → **Project Settings** → **API** → Project URL (also in Netlify's environment variables and your `.env.local`) |
-   | `VITE_SUPABASE_ANON_KEY` | the long `eyJ…` key | the same page → the **anon** / **public** key. It's public (the site ships it), so a variable, not a secret |
+   | `VITE_SUPABASE_URL` | `https://lmauouvrczayxfxsrcqj.supabase.co` (the `pokedice` project) | Supabase → the project → **Project Settings** → **Data API** → *Project URL*. Also in Netlify → Site configuration → Environment variables |
+   | `VITE_SUPABASE_ANON_KEY` | the long key starting `eyJ…` | Supabase → **Project Settings** → **API Keys** → **Legacy API keys** tab → **anon** · *public* → Copy. Also in Netlify's environment variables. It's public (the site ships it), so a variable, not a secret. **Never** the `service_role` key |
 
    Type the names exactly, capitals included. The two Supabase values let the posts read the events you schedule in
    Admin; without them the posts read the game's bundled copy, which has none.
