@@ -24,19 +24,21 @@ import { useMyTurn, useOnScreen } from './popupTurn'
 import { RulesModal, type RuleRow } from './RulesModal'
 import { SheetSection } from './SheetSection'
 
+/** The gem of each rarity: green for common, blue for rare, gold for ultra. */
+export const TIER_ICON = { common: 'talentCommon', rare: 'talentBase', ultra: 'talent' } as const
+
 /** The numbers each talent's text says, from the engine's table. */
 const pct = (x: number) => Math.round(x * 100)
 const NUMBERS: Partial<Record<TalentKey, Record<string, number | string>>> = {
   extraReroll: { n: TALENT.extraReroll },
   doubleReroll: { n: TALENT.doubleReroll },
-  duelist: { n: TALENT.duelist },
   quick: { n: pct(TALENT.quick) },
   ultraSpeed: { n: pct(TALENT.ultraSpeed) },
   thickHide: { n: pct(TALENT.thickHide) },
-  opener: { n: TALENT.opener },
-  finisher: { n: TALENT.finisher, below: pct(TALENT.finisherBelow) },
-  pairPro: { n: TALENT.pairPro },
-  typeFocus: { n: TALENT.typeFocus },
+  opener: { n: pct(TALENT.opener) },
+  finisher: { n: pct(TALENT.finisher), below: pct(TALENT.finisherBelow) },
+  pairPro: { n: pct(TALENT.pairPro) },
+  companion: { n: pct(TALENT.companion) },
   fieldMedic: { n: pct(TALENT.fieldMedic) },
   leftovers: { n: pct(TALENT.leftovers) },
   mindsEye: { x: TALENT.mindsEye },
@@ -53,7 +55,11 @@ export const talentName = (key: TalentKey): string => t(`ui.talent.name.${key}`)
 export const talentText = (key: TalentKey): string => t(`ui.talent.text.${key}`, NUMBERS[key] ?? {})
 
 /** What the battle log says of a talent at work (`LogEntry` kind 'talent'). */
-export function talentLogText(name: string, e: { talent: TalentKey; amount?: number }): string {
+export function talentLogText(
+  name: string,
+  e: { talent: TalentKey; amount?: number },
+  ally?: string,
+): string {
   const talent = talentName(e.talent)
   switch (e.talent) {
     case 'leftovers':
@@ -66,8 +72,10 @@ export function talentLogText(name: string, e: { talent: TalentKey; amount?: num
       return t('ui.talent.log.cure', { name })
     case 'thaw':
       return t('ui.talent.log.thaw', { name })
+    case 'companion':
+      return t('ui.talent.log.companion', { name, ally: ally ?? '' })
     default:
-      return t('ui.talent.log.damage', { name, talent, n: e.amount ?? 0 })
+      return t('ui.talent.log.boost', { name, talent })
   }
 }
 
@@ -146,7 +154,7 @@ export function TalentGem({
 }) {
   useT()
   const name = unknown ? t('ui.talent.unknown') : t('ui.talent.carries', { talent: talentName(talent) })
-  const icon = unknown ? 'talentLocked' : talentTier(talent) === 'super' ? 'talent' : 'talentBase'
+  const icon = unknown ? 'talentLocked' : TIER_ICON[talentTier(talent)]
   return <PixelIcon name={icon} size={size} title={name} className={cx('shrink-0', className)} />
 }
 

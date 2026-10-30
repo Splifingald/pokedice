@@ -12,6 +12,7 @@ import {
 import { AutoButton } from '@/components/AutoButton'
 import { PixelIcon } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
+import { TalentGem } from '@/components/Talent'
 import { pictureOf } from '@/fx/areaArt'
 import { effectText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
@@ -125,11 +126,27 @@ export function FindView() {
       }
     >
       <div className="flex flex-col items-center gap-2 py-2 text-center" role="status">
+        {/* Pickup's find after a win (docs/51): who found it, with its talent's gem. */}
+        {enc.pickup && <PickupTag uid={enc.pickup.uid} dex={enc.pickup.dex} />}
         <RarityTag rarity={rarity} />
         <p className="m-0 text-[26px] leading-tight">{line}</p>
         {does && <p className="copy m-0 text-muted">{does}</p>}
       </div>
     </StagePanel>
+  )
+}
+
+/** "Found by Zigzagoon's Pickup!": over a find a Pokémon's Pickup talent made after a win (docs/51). */
+export function PickupTag({ uid, dex }: { uid: string; dex: number }) {
+  const { t } = useT()
+  const data = useGame((s) => s.data)
+  const nick = useGame((s) => s.save?.box.find((p) => p.id === uid)?.nickname)
+  const name = nick || data.species[dex]?.name || t('ui.common.pokemon')
+  return (
+    <span className="inline-flex items-center gap-1.5 bg-gold-pale px-2 pb-1 pt-0.5 text-[18px] leading-none shadow-ring-line">
+      <TalentGem talent="pickup" size={14} />
+      {t('ui.talent.pickupFind', { name })}
+    </span>
   )
 }
 

@@ -11,7 +11,7 @@ const ON = {
   hiddenTalents: { access: 'all', wildChance: 0.05, evolveChance: 0.3, families: {} },
 }
 
-/** Charmander leads Rattata (Pickup, unlocked in Kanto) and Pidgey (never met). */
+/** Charmander leads Rattata (Extra Reroll, unlocked in Kanto) and Pidgey (never met). */
 function talentSave(): SaveData {
   const base = makeSave(4)
   const rattata = { ...createInstance(19, 12, data, 'tal-rattata', Date.now()), talent: true }
@@ -49,17 +49,17 @@ test('switched on: the rules once, the gem on the Box and the card, the sheet na
   await expect(rules).toBeHidden()
 
   await page.goto('/team')
-  await expect(page.getByRole('img', { name: 'Hidden talent: Pickup' }).first()).toBeVisible()
+  await expect(page.getByRole('img', { name: 'Hidden talent: Extra Reroll' }).first()).toBeVisible()
   await page
     .getByRole('list', { name: 'Your team, in send-out order' })
     .getByRole('button', { name: /^Rattata/ })
     .click()
   const sheet = page.getByRole('dialog', { name: 'Rattata' })
   await expect(sheet.getByRole('heading', { name: 'Hidden talent' })).toBeVisible()
-  await expect(sheet.getByText('Pickup', { exact: true })).toBeVisible()
+  await expect(sheet.getByText('Extra Reroll', { exact: true })).toBeVisible()
   // A tap on the talent's box shows the rules again: no INFO button.
   await expect(sheet.getByRole('button', { name: /INFO/ })).toHaveCount(0)
-  await sheet.getByRole('button', { name: /Pickup/ }).click()
+  await sheet.getByRole('button', { name: /Extra Reroll/ }).click()
   await expect(page.getByRole('dialog', { name: 'Hidden talents' })).toBeVisible()
   await page
     .getByRole('dialog', { name: 'Hidden talents' })

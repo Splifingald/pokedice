@@ -626,7 +626,7 @@ function HiddenTalentsBox() {
                     <td className="py-1">
                       #{f.root} {f.names.join(' · ')}
                     </td>
-                    <td className="w-16 py-1 text-muted">{talentTier(talent) === 'super' ? 'super' : 'base'}</td>
+                    <td className="w-16 py-1 text-muted">{talentTier(talent)}</td>
                     <td className="w-48 py-1">
                       <select
                         className={inputCls}

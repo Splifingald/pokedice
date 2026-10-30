@@ -125,6 +125,8 @@ export interface RunState {
   catchPending?: string[]
   /** Dev tools: force the next encounter type. */
   forceNext: ForceKind | null
+  /** Pickup's find (docs/51): shown as a find of its own before the next card is dealt. */
+  pickup?: Extract<Encounter, { kind: 'item' }> | null
   /** An Elite Rebattle gauntlet is being fought: its region and tier (the fights run on its League area). */
   rebattle?: { regionId: string; tier: number } | null
   /** The Pokémon Center's healing has played: back from Home, the Center opens on the team, not on the jingle again. */

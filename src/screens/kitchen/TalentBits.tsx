@@ -16,6 +16,7 @@ import { PixelButton } from '@/components/PixelButton'
 import { Toggle } from '@/components/Toggle'
 import { ItemSprite } from '@/components/ItemSprite'
 import { useGame } from '@/store/game'
+import { PickupTag } from '@/screens/area/FindView'
 import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { TALENT_KEYS, type TalentKey } from '@/engine'
@@ -38,16 +39,19 @@ export function TalentBits() {
     { talent: 'leftovers', amount: 7 },
     { talent: 'opener', amount: 3 },
     { talent: 'mirror', amount: 6 },
+    { talent: 'opener' },
+    { talent: 'companion' },
     { talent: 'sturdy' },
     { talent: 'naturalCure' },
     { talent: 'thaw' },
   ]
   return (
     <div className="flex flex-col gap-4">
-      <Frame name="The gem · base · super · unknown, at 10, 12, 16 and 24">
+      <Frame name="The gem · common · rare · ultra · unknown, at 10, 12, 16 and 24">
         <div className="flex flex-wrap items-center gap-3 bg-paper p-2 shadow-ring-line">
           {[10, 12, 16, 24].map((size) => (
             <span key={size} className="flex items-center gap-1">
+              <TalentGem talent="quick" size={size} />
               <TalentGem talent="pickup" size={size} />
               <TalentGem talent="mirror" size={size} />
               <TalentGem talent="pickup" unknown size={size} />
@@ -95,20 +99,18 @@ export function TalentBits() {
           <TalentFoundCard uid="kit-b" dex={20} talent="pickup" how="passed" />
           <TalentFoundCard uid="kit-c" dex={148} talent="mirror" how="evolved" />
         </Frame>
-        <Frame name="After a win · Field Medic · Pickup">
+        <Frame name="After a win · Field Medic's card · Pickup's tag over the find (FindView)">
           <TalentAfterWinCard uid="kit-d" dex={183} line={(name) => t('ui.talent.medic', { name, n: 12 })} />
-          <TalentAfterWinCard
-            uid="kit-e"
-            dex={19}
-            line={(name) => t('ui.talent.pickup', { name, item: 'Potion' })}
-          />
+          <span>
+            <PickupTag uid="kit-e" dex={263} />
+          </span>
         </Frame>
         <Frame name="Battle log lines">
           <ul className="grid gap-1 bg-paper p-2 shadow-ring-line">
             {logs.map((l) => (
               <li key={l.talent} className="flex items-center gap-1.5">
                 <TalentGem talent={l.talent} />
-                {talentLogText('Snorlax', l)}
+                {talentLogText('Snorlax', l, 'Pikachu')}
               </li>
             ))}
           </ul>

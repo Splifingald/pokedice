@@ -173,6 +173,8 @@ export interface BattleState {
    * end of battle and no statuses cleared: the raid decides what a K.O. means and who acts next.
    */
   single?: boolean
+  /** A raid side's step: another side's Pokémon in battle with Companion (docs/51) boosts this side's hits. */
+  allyCompanion?: { uid: string; name: string }
   /**
    * A double battle (docs/33): two of each side out at once. `activeIndex` and `enemy` are then the pair in front —
    * the Pokémon whose turn it is and the one it targets — so every rule written for one against one applies to them.
@@ -298,7 +300,8 @@ export type LogEntry =
    * A hidden talent at work (docs/51): `amount` is what it did (HP healed, damage added; the die copied for Mirror). A
    * talent that changes the numbers alone (Speed, rerolls) logs nothing.
    */
-  | { kind: 'talent'; side: Side; uid: string; talent: TalentKey; amount?: number; hpAfter?: number }
+  /** Companion's: `ally` the one it boosted; `name` its own when it isn't in this fight's teams (a raid's other side). */
+  | { kind: 'talent'; side: Side; uid: string; talent: TalentKey; amount?: number; hpAfter?: number; ally?: string; name?: string }
   /** `double`: a double battle's opening, yours and the foes out (docs/33). */
   | { kind: 'start'; first: Side; double?: { own: string[]; foes: string[] } }
   /** A double battle: the pair in front changed — the Pokémon whose turn it is, and the one it attacks. */
@@ -1556,27 +1559,39 @@ function mirrorDice(dice: readonly RolledDie[], data: GameData): { dice: RolledD
 }
 
 /**
- * What the attacker's hidden talent (docs/51) does to this attack: Type Focus, Pair Pro, Opener (its first attack),
- * Finisher (a foe under a quarter of its HP), Mind's Eye, Raider (a raid's fight). Undefined when nothing.
+ * What the attacker's hidden talent (docs/51) does to this attack: Pair Pro, Opener (its first attack), Finisher (a foe
+ * under a third of its HP), Mind's Eye, Raider (a raid's fight); and a partner's Companion. Undefined when nothing.
  */
 export function attackModsFor(s: BattleState, atk: Battler, def: Battler): AttackMods | undefined {
   const t = atk.talent
-  switch (t) {
-    case 'typeFocus':
-      return atk.types[0] ? { talent: t, focus: { type: atk.types[0], amount: TALENT.typeFocus } } : undefined
-    case 'pairPro':
-      return { talent: t, pair: TALENT.pairPro }
-    case 'opener':
-      return (atk.attacks ?? 0) === 0 ? { talent: t, plus: TALENT.opener } : undefined
-    case 'finisher':
-      return def.hp < def.maxHp * TALENT.finisherBelow ? { talent: t, plus: TALENT.finisher } : undefined
-    case 'mindsEye':
-      return { talent: t, immuneAs: TALENT.mindsEye }
-    case 'raider':
-      return s.single ? { talent: t, times: 1 + TALENT.raider } : undefined
-    default:
-      return undefined
-  }
+  const own: AttackMods | undefined =
+    t === 'pairPro'
+      ? { talent: t, pairTimes: 1 + TALENT.pairPro }
+      : t === 'opener' && (atk.attacks ?? 0) === 0
+        ? { talent: t, times: 1 + TALENT.opener }
+        : t === 'finisher' && def.hp < def.maxHp * TALENT.finisherBelow
+          ? { talent: t, times: 1 + TALENT.finisher }
+          : t === 'mindsEye'
+            ? { talent: t, immuneAs: TALENT.mindsEye }
+            : t === 'raider' && s.single
+              ? { talent: t, times: 1 + TALENT.raider }
+              : undefined
+  const partner = companionOf(s, atk)
+  if (!partner) return own
+  return { ...own, companion: partner, times: (own?.times ?? 1) * (1 + TALENT.companion) }
+}
+
+/**
+ * Companion (docs/51): the partner on the field that boosts this attacker. In a double battle, the other one of its
+ * side still standing; in a raid, any other side's Pokémon in battle (`allyCompanion`, set by the raid for its sides'
+ * hits). A Pokémon never boosts itself.
+ */
+function companionOf(s: BattleState, atk: Battler): string | undefined {
+  if (s.allyCompanion && s.player.some((p) => p.uid === atk.uid)) return s.allyCompanion.uid
+  if (!s.double) return undefined
+  const mine = ownOnField(s).some((b) => b.uid === atk.uid)
+  const field = mine ? ownOnField(s) : foesOnField(s)
+  return field.find((b) => b.uid !== atk.uid && b.hp > 0 && b.talent === 'companion')?.uid
 }
 
 /**
@@ -1649,7 +1664,16 @@ function resolveAttack(
     result,
     ...(z && { z: typeof z === 'string' ? { from: z } : {} }),
   })
-  if (result.talent) log.push({ kind: 'talent', side, uid: atk.uid, talent: result.talent.key, amount: result.talent.amount })
+  if (result.talent?.key) log.push({ kind: 'talent', side, uid: atk.uid, talent: result.talent.key })
+  if (result.talent?.companion)
+    log.push({
+      kind: 'talent',
+      side,
+      uid: result.talent.companion,
+      talent: 'companion',
+      ally: atk.uid,
+      ...(s.allyCompanion?.uid === result.talent.companion && { name: s.allyCompanion.name }),
+    })
   if (sturdy) log.push({ kind: 'talent', side: other(side), uid: def.uid, talent: 'sturdy' })
   const all = statusesFromRoll(dice, data, levels)
   // An attack with no effect inflicts nothing either; nor one a raid's shield or terrain stopped (docs/40).

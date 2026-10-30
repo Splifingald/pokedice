@@ -506,16 +506,9 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           })
           return
         }
-        case 'pickup': {
-          const dex = save?.box.find((p) => p.id === e.uid)?.dex ?? 0
-          const what = e.key === 'money' ? money(e.qty) : `${data.items[e.key]?.name ?? e.key}${e.qty > 1 ? ` ×${e.qty}` : ''}`
-          extras.push({
-            key: k,
-            sound: 'gold',
-            node: <TalentAfterWinCard uid={e.uid} dex={dex} line={(name) => t('ui.talent.pickup', { name, item: what })} />,
-          })
+        // Pickup's find (docs/51) is shown on its own step after the card (FindView), as any find.
+        case 'pickup':
           return
-        }
         case 'rebattle_cleared':
           extras.push({
             key: k,

@@ -475,6 +475,11 @@ function advance(s: RaidState, data: GameData, rng: Rng, log: RaidLogEntry[]) {
 /** The duel for one action: the side's team (its active Pokémon out) against the raid Pokémon. */
 function duelOf(s: RaidState, sideIdx: number, hit?: RaidHit): BattleState {
   const side = s.sides[sideIdx]!
+  // Companion (docs/51): another side's Pokémon in battle that carries it boosts this side's hits.
+  const companion = s.sides
+    .filter((x, i) => i !== sideIdx && !x.out)
+    .map((x) => activeOf(x))
+    .find((b) => b && b.hp > 0 && b.talent === 'companion')
   return {
     kind: 'boss',
     phase: 'player_roll',
@@ -497,6 +502,7 @@ function duelOf(s: RaidState, sideIdx: number, hit?: RaidHit): BattleState {
     ...((side.kind !== 'me' || s.auto) && { auto: true }),
     single: true,
     ...(hit && { raidHit: hit }),
+    ...(companion && { allyCompanion: { uid: companion.uid, name: companion.name } }),
   }
 }
 

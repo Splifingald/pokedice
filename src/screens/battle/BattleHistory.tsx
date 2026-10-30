@@ -21,7 +21,7 @@ import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { chancePercent, comboName, typeName } from '@/lib/format'
 import { cx } from '@/theme/util'
-import { talentLogText } from '@/components/Talent'
+import { talentLogText, TIER_ICON } from '@/components/Talent'
 
 /**
  * How a hit adds up, in one line: ( dice + combo ) × the type multiplier = the damage dealt.
@@ -171,7 +171,7 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: r
         })
         return
       case 'talent':
-        rows.push({ key, ...who(e.uid), text: talentLogText(who(e.uid).name, e), icon: talentTier(e.talent) === 'super' ? 'talent' : 'talentBase' })
+        rows.push({ key, ...who(e.uid), text: talentLogText(e.name ?? who(e.uid).name, e, e.ally ? who(e.ally).name : undefined), icon: TIER_ICON[talentTier(e.talent)] })
         return
       case 'status_resisted':
         rows.push({

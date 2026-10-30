@@ -3,6 +3,7 @@ import {
   applyCatch,
   applyFieldItem,
   applyVictory,
+  attackModsFor,
   catchTarget,
   computeDamage,
   createBattle,
@@ -64,7 +65,7 @@ describe('families and their talents (docs/51)', () => {
   })
 
   it('gives Rattata something common and Dragonite something cool, the admin picking over both', () => {
-    expect(familyTalent(on, 20)).toBe('pickup')
+    expect(familyTalent(on, 20)).toBe('extraReroll')
     expect(familyTalent(on, 149)).toBe('mirror')
     const picked = makeData({ hiddenTalents: { ...D, families: { '19': 'sturdy' } } })
     expect(familyTalent(picked, 20)).toBe('sturdy')
@@ -123,7 +124,7 @@ describe('catching a talented one', () => {
     expect(res.save.box[0]!.talent).toBe(true)
     expect(familyUnlocked(res.save, on, 20)).toBe(true)
     expect(res.events).toContainEqual(
-      expect.objectContaining({ kind: 'talent', how: 'passed', talent: 'pickup' }),
+      expect.objectContaining({ kind: 'talent', how: 'passed', talent: 'extraReroll' }),
     )
   })
 
@@ -197,22 +198,27 @@ describe('in battle', () => {
       Math.round(plain.maxHp * 1.1),
     )
     // …and outside battle too, for a Pokémon of yours that carries it.
-    const inst = { dex: 74, level: 30, talent: true }
-    expect(instanceMaxHp(inst, on)).toBeGreaterThan(instanceMaxHp({ dex: 74, level: 30 }, on))
-    expect(instanceMaxHp(inst, off)).toBe(instanceMaxHp({ dex: 74, level: 30 }, off))
+    const inst = { dex: 98, level: 30, talent: true } // Krabby: Thick Hide
+    expect(instanceMaxHp(inst, on)).toBeGreaterThan(instanceMaxHp({ dex: 98, level: 30 }, on))
+    expect(instanceMaxHp(inst, off)).toBe(instanceMaxHp({ dex: 98, level: 30 }, off))
   })
 
-  it("Type Focus, Pair Pro, Opener and Mind's Eye change the hit, and say so", () => {
-    const roll = [die('fire', 3), die('fire', 3)]
+  it("Pair Pro, Opener, Finisher and Mind's Eye scale the hit, and say so", () => {
+    const roll = [die('fire', 6), die('fire', 6), die('fire', 5)]
     const plain = computeDamage(roll, ['fire'], ['normal'], L1, on)
-    const focus = computeDamage(roll, ['fire'], ['normal'], L1, on, undefined, {
-      talent: 'typeFocus',
-      focus: { type: 'fire', amount: 1 },
+    const pair = computeDamage(roll, ['fire'], ['normal'], L1, on, undefined, {
+      talent: 'pairPro',
+      pairTimes: 1.05,
     })
-    expect(focus.final).toBe(plain.final + 2)
-    expect(focus.talent).toEqual({ key: 'typeFocus', amount: 2 })
-    const pair = computeDamage(roll, ['fire'], ['normal'], L1, on, undefined, { talent: 'pairPro', pair: 2 })
-    expect(pair.final).toBe(plain.final + 2)
+    expect(plain.combo?.key).toBe('pair')
+    expect(pair.final).toBe(Math.round(plain.final * 1.05))
+    expect(pair.talent).toEqual({ key: 'pairPro', amount: pair.final - plain.final })
+    // No pair, no bonus.
+    const odd = [die('fire', 6), die('fire', 5)]
+    expect(
+      computeDamage(odd, ['fire'], ['normal'], L1, on, undefined, { talent: 'pairPro', pairTimes: 1.05 })
+        .final,
+    ).toBe(computeDamage(odd, ['fire'], ['normal'], L1, on).final)
     const ghost = computeDamage([die('normal', 4)], ['normal'], ['ghost'], L1, on)
     expect(ghost.final).toBe(0)
     const eye = computeDamage([die('normal', 4)], ['normal'], ['ghost'], L1, on, undefined, {
@@ -222,11 +228,60 @@ describe('in battle', () => {
     expect(eye.final).toBe(2)
     expect(eye.immune).toBe(false)
 
-    // Opener: only the first attack of the battle.
+    // Opener: +10 % on the first attack of the battle only.
     let s = fight({ dex: 4, level: 50, talent: 'opener' }, { dex: 129, level: 80 })
-    s = { ...s, phase: 'player_reroll', actor: 'player', dice: [die('fire', 3)], selected: [false] }
+    expect(attackModsFor(s, s.player[0]!, s.enemy)).toEqual({ talent: 'opener', times: 1.1 })
+    expect(attackModsFor(s, { ...s.player[0]!, attacks: 1 }, s.enemy)).toBeUndefined()
+    s = {
+      ...s,
+      phase: 'player_reroll',
+      actor: 'player',
+      dice: [die('fire', 6), die('fire', 6)],
+      selected: [false, false],
+    }
     const first = reduce(s, { t: 'ATTACK' }, on, createRng(1))
-    expect(first.log).toContainEqual(expect.objectContaining({ kind: 'talent', talent: 'opener', amount: 3 }))
+    expect(first.log).toContainEqual(expect.objectContaining({ kind: 'talent', talent: 'opener' }))
+
+    // Finisher: +10 % against a foe under a third of its HP.
+    const fin = fight({ dex: 4, level: 50, talent: 'finisher' }, { dex: 129, level: 80 })
+    expect(attackModsFor(fin, fin.player[0]!, fin.enemy)).toBeUndefined()
+    const low = { ...fin.enemy, hp: Math.floor(fin.enemy.maxHp * 0.3) }
+    expect(attackModsFor(fin, fin.player[0]!, low)).toEqual({ talent: 'finisher', times: 1.1 })
+  })
+
+  it('Companion: +10 % to the partner on the field in a double battle, and from another side in a raid', () => {
+    const s = createBattle(
+      {
+        kind: 'wild',
+        team: [
+          { uid: 'a', dex: 25, level: 30, hp: 99 },
+          { uid: 'b', dex: 133, level: 30, hp: 99, talent: 'companion' },
+        ],
+        enemy: { dex: 19, level: 5 },
+        double: {
+          foes: [
+            { dex: 19, level: 5 },
+            { dex: 16, level: 5 },
+          ],
+          leadUids: ['a', 'b'],
+        },
+        playerLevels: L1,
+        enemyLevels: L1,
+      },
+      on,
+    ).state
+    expect(s.double).toBeTruthy()
+    const [pika, eevee] = s.player
+    expect(attackModsFor(s, pika!, s.enemy)).toEqual({ companion: 'b', times: 1.1 })
+    // It never boosts itself, nor a partner once it is down.
+    expect(attackModsFor(s, eevee!, s.enemy)).toBeUndefined()
+    const down = { ...s, player: [pika!, { ...eevee!, hp: 0 }] }
+    expect(attackModsFor(down, pika!, s.enemy)).toBeUndefined()
+    // A single battle has no partner, but a raid's other side can be one.
+    const one = fight({ dex: 25, level: 30 })
+    expect(attackModsFor(one, one.player[0]!, one.enemy)).toBeUndefined()
+    const raid = { ...one, allyCompanion: { uid: 'x', name: 'Eevee' } }
+    expect(attackModsFor(raid, raid.player[0]!, raid.enemy)).toEqual({ companion: 'x', times: 1.1 })
   })
 
   it('Sturdy leaves it at 1 HP once', () => {
@@ -258,7 +313,7 @@ describe('in battle', () => {
       },
       on,
     ).state
-    expect(s.enemy.talent).toBe('pickup')
+    expect(s.enemy.talent).toBe('extraReroll')
     expect(
       createBattle(
         {
@@ -286,7 +341,7 @@ describe('the Talent Candy', () => {
     const rat = save.box[0]!
     const used = applyFieldItem(save, 'talent-candy', rat.id, on, createRng(1))!
     expect(used.events).toContainEqual(
-      expect.objectContaining({ kind: 'talent', how: 'candy', talent: 'pickup' }),
+      expect.objectContaining({ kind: 'talent', how: 'candy', talent: 'extraReroll' }),
     )
     expect(used.save.inventory['talent-candy']).toBe(1)
     expect(used.save.box.every((p) => p.talent)).toBe(true)
@@ -306,7 +361,7 @@ describe('out of battle', () => {
     const gold = (s: SaveData, d: GameData) =>
       applyVictory(s, { ...input, fighterUid: s.team[0]! }, d, createRng(1), 0, newId).save.gold - s.gold
     expect(gold(meowth, on)).toBe(Math.round(gold(plain, never) * 1.1))
-    const hurt = saveWith([{ dex: 183, level: 30, talent: true }])
+    const hurt = saveWith([{ dex: 114, level: 30, talent: true }])
     hurt.box[0]!.currentHp = 10
     expect(talentOf(on, hurt.box[0]!)).toBe('fieldMedic')
     const won = applyVictory(
@@ -318,6 +373,29 @@ describe('out of battle', () => {
       newId,
     )
     expect(won.events).toContainEqual(expect.objectContaining({ kind: 'field_medic' }))
+  })
+
+  it('Pickup sometimes finds one of the area\u2019s items after a win, for the find screen to show', () => {
+    const area = on.areas.find((a) => a.lootPool.some((e) => !e.unique && e.itemKey !== 'money'))!
+    const zig = saveWith([{ dex: 263, level: 30, talent: true }])
+    const input = {
+      areaId: area.id,
+      kind: 'wild' as const,
+      enemyDex: 19,
+      enemyLevel: 5,
+      fighterUid: zig.team[0]!,
+    }
+    const events = Array.from({ length: 200 }, (_, i) =>
+      applyVictory(zig, input, on, createRng(i), 0, newId).events.find((e) => e.kind === 'pickup'),
+    ).filter(Boolean)
+    expect(events.length).toBeGreaterThan(0)
+    expect(events.length).toBeLessThan(40)
+    const found = events[0]!
+    expect(found).toMatchObject({ kind: 'pickup', uid: zig.team[0], dex: 263 })
+    // Only an item the area can give, never a once-only find; nothing is added to the bag here.
+    expect(area.lootPool.some((e) => found.kind === 'pickup' && e.id === found.entryId && !e.unique)).toBe(
+      true,
+    )
   })
 
   it('Daycare Darling earns more Day Care XP', () => {

@@ -70,7 +70,8 @@ export type Encounter =
   /** `returning`: beaten before, fled the catch, back for another try. */
   | { kind: 'boss'; dex: number; level: number; returning?: boolean; shiny?: boolean; talent?: boolean }
   /** Something on the ground: `qty` of an item, or Pokédollars (itemKey 'money', qty = ₽). */
-  | { kind: 'item'; entryId: string; itemKey: string; qty: number }
+  /** `pickup`: found after a win by this Pokémon's Pickup talent (docs/51), not a card of the deck. */
+  | { kind: 'item'; entryId: string; itemKey: string; qty: number; pickup?: { uid: string; dex: number } }
   /** The Game Corner: play the slot machine as long as you like. */
   | { kind: 'casino' }
   /** Trick or Treat (docs/29): a ghost from the area's list, tempted with Treats and caught with a Trick Ball. */

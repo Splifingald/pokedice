@@ -469,6 +469,8 @@ export function rollNext() {
   settleRound()
   const { save, data, run } = useGame.getState()
   if (!save || !run.areaId) return
+  // Pickup's find after the last win (docs/51): shown first, as a find of its own, before any card is dealt.
+  if (run.pickup) return setRun({ phase: 'preview', encounter: run.pickup, pickup: null, firstInArea: false })
   // A won portal run or nightmare leaves only its raid: whatever asked (the map's CONTINUE HERE, a result card's
   // CONTINUE), no card is dealt there, or the next stop on its page would find CONTINUE shut (a player’s report, 2026-10-21).
   if (isAreaSealed(save, data, run.areaId)) return setRun({ phase: 'idle', encounter: null })
@@ -752,6 +754,13 @@ export function pickUpFind() {
     rollNext()
 }
 
+/** Pickup (docs/51): a find after the win waits for the next CONTINUE, which shows it on its own step (FindView). */
+function queuePickup(events: readonly RunEvent[]) {
+  const e = events.find((x) => x.kind === 'pickup')
+  if (e?.kind !== 'pickup') return
+  setRun({ pickup: { kind: 'item', entryId: e.entryId, itemKey: e.key, qty: e.qty, pickup: { uid: e.uid, dex: e.dex } } })
+}
+
 /** Every battle input goes through the engine reducer; rewards are settled the moment the battle ends. */
 export function dispatchBattle(e: BattleEvent) {
   const { battle, save, data } = useGame.getState()
@@ -836,6 +845,7 @@ function settleBattle(stalemate: boolean) {
     // last one, the player wakes up). The result card says so.
     const dream = inNightmare(res.save, data, run.areaId) ? winNightmareRound(res.save, data, run.areaId) : null
     commitSave(dream?.save ?? res.save)
+    queuePickup(res.events)
     const dreamEvents: RunEvent[] = dream
       ? [
           { kind: 'nightmare_round', round: dream.round, total: dream.total },
@@ -915,6 +925,8 @@ function settleDouble(save: SaveData, result: 'won' | 'lost' | 'fled' | 'ongoing
         gymTrainerId: gym ? enc.trainerId : undefined,
         gymComplete: gym && result === 'won' && i === kos.length - 1,
         prize: trainerPrize(enc, result === 'won' && i === kos.length - 1),
+        // The fight's last K.O.: the talents that act after a win act once (docs/51).
+        last: result === 'won' && i === kos.length - 1,
       },
       data,
       runRng,
@@ -945,6 +957,7 @@ function settleDouble(save: SaveData, result: 'won' | 'lost' | 'fled' | 'ongoing
     return
   }
   commitSave(next)
+  queuePickup(events)
   const cleared = settleRound(true)
   if (cleared) events = [...events, cleared]
   const catchKind = kind === 'wild' || kind === 'boss' ? kind : null

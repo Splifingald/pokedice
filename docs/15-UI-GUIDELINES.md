@@ -1897,22 +1897,24 @@ Where Unown live (Johto's Ruins of Alph), each one caught is one of 28 letters, 
 Each evolution family has one hidden talent (docs/51), behind its switch (§20, Off: no gem, no section, no line, no
 pop-up). The pieces are in `src/components/Talent.tsx`, every state on `/kitchen-sink` (`TalentBits`).
 
-- **The gem** (`TalentGem`, the `talent` / `talentBase` / `talentLocked` icons, 10 × 10 pixels): gold for a super
-  talent, blue for a base one, grey for one not known yet. Its title names the talent ("Hidden talent: Pickup"). A
+- **The gem** (`TalentGem`, the `talentCommon` / `talentBase` / `talent` / `talentLocked` icons, 10 × 10 pixels): green
+  for a common talent, blue for a rare one, gold for an ultra one (`TIER_ICON`), grey for one not known yet. Its title names the talent ("Hidden talent: Pickup"). A
   Pokémon that carries its talent wears it (`InstTalentGem`) after its name and shiny star wherever its card shows: the
   Box and team tiles (top left, under the star), the team cards (`MonCard`, `PokeCard`), the battle plates (yours and the
   foes', `Plates`, `DoublePlates`), a trade listing's Pokémon and a want "with its talent" (`DexTalentGem`).
 - **The sheet's section** (`TalentSection`, between the dice and the milestones): "Hidden talent" and its box
-  (`TalentBox`), which is the button to the rules (no INFO button: the user's call, 2026-10-30), in three states: carried (paper: the gem, the name, its tier, what it does), known but not learnt here
+  (`TalentBox`), which is the button to the rules (no INFO button: the user's call, 2026-10-30), in three states: carried (paper: the gem, the name, its rarity, what it does), known but not learnt here
   (well, dimmed, how to learn it), never met ("???" and how to find out).
 - **The encounter**: a talented wild Pokémon gets a gold-pale line under its catch value: "This Rattata has a hidden
   talent: Pickup. Catch it to learn it!" while its family is locked, "This Dratini carries its hidden talent: Mirror."
   once learnt. Seeing it notes the talent as met.
 - **The result card**: a family's talent unlocked (caught with it, passed from a weaker one let go, found evolving) is a
-  gold-pale card with the gem, the line and what it does (`TalentFoundCard`); Field Medic and Pickup after a win are a
-  sky card (`TalentAfterWinCard`). Found evolving out of a fight (a stone, Rare Candy), a toast.
+  gold-pale card with the gem, the line and what it does (`TalentFoundCard`); Field Medic after a win is a sky card
+  (`TalentAfterWinCard`). Pickup's find comes as the next screen, the usual item find (`FindView`, PICK IT UP) with a
+  sky tag over it: "Found by Zigzagoon’s Pickup!" (`PickupTag`). Found evolving out of a fight (a stone, Rare Candy), a toast.
 - **The battle log** says each talent at work in one line (`talentLogText`): Leftovers' heal (with its green number),
-  a damage talent's bonus, Mirror's die, Sturdy, Natural Cure, Thaw. A talent that changes numbers alone (Speed,
+  a damage talent's bonus ("+3 damage"), a partner's Companion (naming the partner), Mirror's die, Sturdy, Natural
+  Cure, Thaw. A talent that changes numbers alone (Speed,
   rerolls, HP) says nothing.
 - **Trades**: asking for a species, a toggle "With its hidden talent" under the species (only while the switch is on).
 - Its rules: a `RulesModal` once, in the one-time pop-ups' queue after the battle powers' (`talentRulesSeen`); again

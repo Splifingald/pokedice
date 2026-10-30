@@ -10,59 +10,71 @@ import { regionOf } from './regions'
 import { createRng, type Rng } from './rng'
 import type { GameData, PokemonInstance, RegionId, SaveData, Species } from './types'
 
-export const BASE_TALENTS = [
+/** The three rarities (the user's call, 2026-10-30): weak families get a common talent, strong ones an ultra one. */
+export const COMMON_TALENTS = [
   'extraReroll',
   'pairPro',
   'quick',
   'thickHide',
+  'thaw',
+  'daycareDarling',
+] as const
+export const RARE_TALENTS = [
   'opener',
   'finisher',
   'fieldMedic',
   'naturalCure',
-  'thaw',
-  'duelist',
+  'companion',
   'payDay',
   'pickup',
-  'daycareDarling',
+  'mindsEye',
+  'gentleTouch',
 ] as const
-export const SUPER_TALENTS = [
+export const ULTRA_TALENTS = [
   'reroller',
   'doubleReroll',
   'mirror',
-  'typeFocus',
   'ultraSpeed',
   'sturdy',
   'leftovers',
-  'mindsEye',
   'raider',
   'eggRush',
-  'gentleTouch',
   'amuletCoin',
 ] as const
-export const TALENT_KEYS = [...BASE_TALENTS, ...SUPER_TALENTS] as const
+export const TALENT_KEYS = [...COMMON_TALENTS, ...RARE_TALENTS, ...ULTRA_TALENTS] as const
 export type TalentKey = (typeof TALENT_KEYS)[number]
-export type TalentTier = 'base' | 'super'
+export type TalentTier = 'common' | 'rare' | 'ultra'
+export const TALENT_TIERS: readonly TalentTier[] = ['common', 'rare', 'ultra']
 
 export const talentTier = (key: TalentKey): TalentTier =>
-  (SUPER_TALENTS as readonly string[]).includes(key) ? 'super' : 'base'
+  (ULTRA_TALENTS as readonly string[]).includes(key)
+    ? 'ultra'
+    : (RARE_TALENTS as readonly string[]).includes(key)
+      ? 'rare'
+      : 'common'
 export const isTalentKey = (v: unknown): v is TalentKey => (TALENT_KEYS as readonly unknown[]).includes(v)
 
-/** Each talent's numbers, in one place: the rules pop-up and the sheet read them for their text. */
+/**
+ * Each talent's numbers, in one place: the rules pop-up and the sheet read them for their text. Damage is always a
+ * share of the hit, never a flat amount (the user's rule, 2026-10-30), so a talent scales with the Pokémon.
+ */
 export const TALENT = {
   extraReroll: 1,
   doubleReroll: 2,
-  duelist: 1,
   /** × Speed. */
   quick: 0.1,
   ultraSpeed: 0.2,
   /** × max HP. */
   thickHide: 0.1,
-  opener: 3,
-  finisher: 3,
-  /** Finisher's foe: under this share of its max HP. */
-  finisherBelow: 0.25,
-  pairPro: 2,
-  typeFocus: 1,
+  /** × the hit when a Pair pays. */
+  pairPro: 0.05,
+  /** × its first hit of a battle. */
+  opener: 0.1,
+  /** × its hit on a foe under `finisherBelow` of its max HP. */
+  finisher: 0.1,
+  finisherBelow: 0.33,
+  /** × the hits of its partner on the field (a double battle) or of the other sides' Pokémon (a raid). */
+  companion: 0.1,
   /** Share of max HP. */
   fieldMedic: 0.1,
   leftovers: 0.05,
@@ -83,7 +95,7 @@ export const TALENT = {
   gentleTouch: 1,
 } as const
 
-/** Rerolls a talent adds to every battle (Duelist's are Versus's: versus.ts adds them). */
+/** Rerolls a talent adds to every battle. */
 export const talentRerolls = (talent: TalentKey | null | undefined): number =>
   talent === 'extraReroll' ? TALENT.extraReroll : talent === 'doubleReroll' ? TALENT.doubleReroll : 0
 

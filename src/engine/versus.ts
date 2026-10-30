@@ -7,7 +7,7 @@ import { gemRulesOn, gmaxBoostOn, megaFormsOfGems, zMovesOn, type VersusPowers }
 import { regionOf, worldRegionOf } from './regions'
 import { autoEvents } from './sim'
 import { createRng } from './rng'
-import { carriedTalent, TALENT } from './talents'
+import { carriedTalent } from './talents'
 import { typeMultiplier } from './typechart'
 import { versusLeagueFor } from './versusLeague'
 import type { GameData, PokeType, PokemonInstance, PowerKind, RegionId, SaveData } from './types'
@@ -245,7 +245,7 @@ function openRound(m: Omit<VersusMatch, 'state'>, d: number, data: GameData): { 
   if (!team.some((p) => p.hp > 0)) return null
   const foe = m.defender[d]!
   const levels = uniformLevels(data.config.versusUpgradeLevel)
-  return withDuelists(createBattle(
+  return createBattle(
     {
       kind: 'trainer',
       team,
@@ -258,17 +258,7 @@ function openRound(m: Omit<VersusMatch, 'state'>, d: number, data: GameData): { 
       enemyPlan: defenderPlan(foe.dex, m.sides.defender, m.foeSpent, data),
     },
     data,
-  ))
-}
-
-/** Duelist (docs/51): its rerolls are Versus's alone, added to every battle of the match. */
-function withDuelists(opened: { state: BattleState; log: LogEntry[] }): { state: BattleState; log: LogEntry[] } {
-  for (const b of [...opened.state.player, opened.state.enemy])
-    if (b.talent === 'duelist') {
-      b.rerolls += TALENT.duelist
-      b.rerollsLeft += TALENT.duelist
-    }
-  return opened
+  )
 }
 
 /**

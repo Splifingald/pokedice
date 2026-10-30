@@ -430,8 +430,11 @@ export type RunEvent =
   | { kind: 'unown_letter'; letter: string; isNew: boolean; found: number; total: number; reward?: number }
   /** Field Medic (docs/51): it healed after the battle it won. */
   | { kind: 'field_medic'; uid: string; amount: number }
-  /** Pickup (docs/51): it found something after the battle it won (`key` 'money' for ₽). */
-  | { kind: 'pickup'; uid: string; key: string; qty: number }
+  /**
+   * Pickup (docs/51): it found something after the battle it won (`key` 'money' for ₽). Nothing is paid yet: the find
+   * is shown on its own step (FindView) as the next card, and PICK IT UP takes it (`pickUpItem`).
+   */
+  | { kind: 'pickup'; uid: string; dex: number; entryId: string; key: string; qty: number }
 
 export interface VictoryInput {
   areaId: string
@@ -613,15 +616,12 @@ function afterWinTalents(save: SaveData, data: GameData, area: Area, progress: A
         next = replaceInstance(next, { ...p, currentHp: p.currentHp + amount })
         events.push({ kind: 'field_medic', uid: p.id, amount })
       }
-    } else if (talent === 'pickup' && rng.next() < TALENT.pickup) {
+    } else if (talent === 'pickup' && !events.some((e) => e.kind === 'pickup') && rng.next() < TALENT.pickup) {
+      // One find a win, never a once-only one, the area's deck untouched.
       const entry = rng.weighted(lootPoolFor(area, progress, data).filter((e) => !e.unique), (e) => e.weight)
       if (!entry) continue
       const qty = Math.max(1, Math.min(entry.minQty, entry.maxQty))
-      next =
-        entry.itemKey === MONEY
-          ? { ...next, gold: next.gold + qty }
-          : { ...next, inventory: { ...next.inventory, [entry.itemKey]: (next.inventory[entry.itemKey] ?? 0) + qty } }
-      events.push({ kind: 'pickup', uid: p.id, key: entry.itemKey, qty })
+      events.push({ kind: 'pickup', uid: p.id, dex: p.dex, entryId: entry.id, key: entry.itemKey, qty })
     }
   }
   return next

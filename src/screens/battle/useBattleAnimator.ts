@@ -340,7 +340,7 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
         delay: 850,
         apply: (f) => ({
           ...f,
-          message: talentLogText(nameOf(e.uid), e),
+          message: talentLogText(e.name ?? nameOf(e.uid), e, e.ally ? nameOf(e.ally) : undefined),
           ...(e.hpAfter != null && {
             hp: { ...f.hp, [e.uid]: e.hpAfter },
             pop: { id: nextId(), target: e.side, amount: e.amount ?? 0, tone: 'heal' as const },

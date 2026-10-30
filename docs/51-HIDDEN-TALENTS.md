@@ -13,7 +13,7 @@ wild rarely carries it; catching one unlocks the talent for the whole family. Th
 | Question | Answer |
 |---|---|
 | Talents | **One per evolution family** (`familyOf`: every species joined to the lowest dex by an evolution or a form; a Mega, a Gigantamax and a regional form share their species'). The game's own pick is `src/data/talents.json` (`pnpm talents`); the admin can pick another for any family |
-| Tiers | **Super** for a family with a legendary or mythical, a starter line, a pseudo-legendary, an Ultra Beast or Paradox Pokémon, or a member with a base stat total of **500+**; **base** otherwise |
+| Rarities | Three (the user's call, 2026-10-30), by the family's strength (its strongest plain member's base stat total): **ultra** for a family with a legendary or mythical, a starter line, a pseudo-legendary, an Ultra Beast or Paradox Pokémon, or **540+**; **rare** for **495–539**; **common** below. Today: 222 common, 145 rare, 173 ultra of 540 families (`pnpm talents` prints it) |
 | Wild odds | **5 %** (admin): a wild Pokémon, a ghost (Trick or Treat), a boss, an Egg, a fossil, the Rocket trade, a wheel prize or a gift carries its family's talent |
 | Legendaries and mythicals | **Always** carry theirs (a raid's, a small world's mythical too) |
 | Starter lines | **Never** carry it (from any source), and **always** find it as one of them evolves |
@@ -23,29 +23,45 @@ wild rarely carries it; catching one unlocks the talent for the whole family. Th
 | What the player sees | A family's talent is "???" until one carrying it is **met**; then its name, greyed until learnt. A wild one with its talent says so before the fight |
 | Pokémon owned before | **None** carries a talent: the switch starts everyone at zero |
 | Foes | **Use theirs**: wild ones at the odds, a gym leader's, an Elite Four's or a Champion's ace always, any other trainer Pokémon at the odds |
-| Versus and raids | **Apply**: the server's team snapshots carry the talent (0094). Duelist acts only in Versus, Raider only in raids |
+| Versus and raids | **Apply**: the server's team snapshots carry the talent (0094). Raider acts only in raids, Companion in double battles and raids |
 | Trades | A traded Pokémon **keeps** its talent (and unlocks its family on arrival). A listing can ask for a species **with its hidden talent** |
-| Icon | A small **gem** (a lozenge): gold for a super talent, blue for a base one, grey for unknown; on the Box, the team, the plates and trades |
+| Icon | A small **gem** (a lozenge): green for a common talent, blue for a rare one, gold for an ultra one, grey for unknown; on the Box, the team, the plates and trades |
 | Small worlds, Extreme | **On** in both; Extreme mode keeps its own (its own save) |
 | Switch and rules | Off / On for admin / On for everyone; a rules pop-up once, then a tap on the Pokémon sheet's talent box (no INFO button: the user's call, 2026-10-30) |
 
 ## 2. The talents (`TALENT` in `src/engine/talents.ts` holds the numbers)
 
-| Base | What it does | Super | What it does |
-|---|---|---|---|
-| Extra Reroll | +1 reroll every battle | Reroller | a rerolled die never lands on the number it showed |
-| Pair Pro | a Pair pays +2 | Double Reroll | +2 rerolls every battle |
-| Quick | +10 % Speed | Mirror | once a battle, the lowest die turns into the highest (on its first attack) |
-| Thick Hide | +10 % max HP | Type Focus | each die of its first type +1 |
-| Opener | its first attack of a battle +3 | Ultra Speed | +20 % Speed |
-| Finisher | +3 against a foe under 25 % HP | Sturdy | once a battle, a K.O. hit leaves it at 1 HP |
-| Field Medic | heals 10 % after each battle won | Leftovers | heals 5 % at the end of each of its turns |
-| Natural Cure | its status clears as it leaves the field | Mind's Eye | immune foes take ×0.5 instead of 0 (no deadlock) |
-| Thaw | a freeze holds it 1 turn, not 2 | Raider | +5 % damage in raids |
-| Duelist | +1 reroll in Versus | Egg Rush | Day Care Eggs come twice as fast while it stays there |
-| Pay Day | +10 % ₽ for the trainer Pokémon it K.O.s | Gentle Touch | +1 on the catch die when it lands the K.O. |
-| Pickup | 5 % to find a loot item after a win | Amulet Coin | +25 % trainer ₽ while on the team |
-| Daycare Darling | +50 % Day Care XP | | |
+Every bonus to damage, Speed or HP is a percentage, never a flat number (the user's call, 2026-10-30), so it scales.
+
+| Rarity | Talent | What it does |
+|---|---|---|
+| Common | Extra Reroll | +1 reroll every battle |
+| | Pair Pro | +5 % damage when a Pair pays |
+| | Quick | +10 % Speed |
+| | Thick Hide | +10 % max HP |
+| | Thaw | a freeze holds it 1 turn, not 2 |
+| | Daycare Darling | +50 % Day Care XP |
+| Rare | Opener | +10 % damage on its first attack of a battle |
+| | Finisher | +10 % damage against a foe under 33 % HP |
+| | Field Medic | heals 10 % after each battle won |
+| | Natural Cure | its status clears as it leaves the field |
+| | Companion | +10 % damage to its partner on the field in a double battle, and to the other sides' Pokémon in a raid while it fights (it replaced Duelist) |
+| | Pay Day | +10 % ₽ for the trainer Pokémon it K.O.s |
+| | Pickup | 5 % to find an item from the area's loot after a win, shown on the find screen like any find (PICK IT UP) |
+| | Mind's Eye | immune foes take ×0.5 instead of 0 (no deadlock) |
+| | Gentle Touch | +1 on the catch die when it lands the K.O. |
+| Ultra | Reroller | a rerolled die never lands on the number it showed |
+| | Double Reroll | +2 rerolls every battle |
+| | Mirror | once a battle, the lowest die turns into the highest (on its first attack) |
+| | Ultra Speed | +20 % Speed |
+| | Sturdy | once a battle, a K.O. hit leaves it at 1 HP |
+| | Leftovers | heals 5 % at the end of each of its turns |
+| | Raider | +5 % damage in raids |
+| | Egg Rush | Day Care Eggs come twice as fast while it stays there |
+| | Amulet Coin | +25 % trainer ₽ while on the team |
+
+Type Focus and Duelist were dropped on 2026-10-30. A family an admin had set to one of them falls back to the game's
+pick.
 
 Egg Rush was "Twin Eggs" (each Egg comes as two); the user chose "Eggs come faster" instead, and the name followed.
 
@@ -72,11 +88,13 @@ adds its row.
 - **Evolving** (`run.ts` `withEvolveTalents`): battle XP, Rare Candy, a stone or the Link Cable, the level cap; a trade
   evolution draws from the arrival's id (`trade.ts`).
 - **Battles** (`battle.ts`): `BattlerSeed.talent` / `FoeSeed.talent`; `makeBattler` (rerolls, Speed via
-  `battleSpeed`, HP via `effectiveStats`), `attackModsFor` into `computeDamage` (Type Focus, Pair Pro, Opener,
-  Finisher, Mind's Eye, Raider: `DamageResult.talent`), Mirror, Sturdy, Thaw, Leftovers, Natural Cure, Reroller
+  `battleSpeed`, HP via `effectiveStats`), `attackModsFor` into `computeDamage` (Pair Pro, Opener, Finisher,
+  Mind's Eye, Raider, a partner's Companion: `DamageResult.talent`), Mirror, Sturdy, Thaw, Leftovers, Natural Cure, Reroller
   (`rerollMasked(…, fresh)`), a `talent` log entry for each.
 - **Out of battle**: `applyVictory` (Pay Day, Amulet Coin, Field Medic, Pickup: `field_medic` and `pickup` events),
-  `dayCareXp` (Daycare Darling), `breeding.ts` `stepMs` (Egg Rush), Versus (`withDuelists`), raids (`RaidMon.talent`).
+  `dayCareXp` (Daycare Darling), `breeding.ts` `stepMs` (Egg Rush), raids (`RaidMon.talent`; `allyCompanion` for Companion).
+- **Pickup's find** (`run.ts` `afterWinTalents`): a `pickup` event, nothing paid; the store queues it (`run.pickup`)
+  and the next roll shows it as an item find (`FindView`, tagged "Found by …"), picked up as any find.
 - **Other arrivals**: `hatchEgg`, `addFossil`, `addRaidMon`, `applyGifts`, a world's mythical, the Rocket trade, the
   wheel's prize, a ghost caught (`TrickState.talent`).
 

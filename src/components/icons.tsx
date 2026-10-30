@@ -117,6 +117,18 @@ export const ICONS = {
     '...kbbk...',
     '....kk....',
   ],
+  talentCommon: [
+    '....kk....',
+    '...kwLk...',
+    '..kwLGdk..',
+    '.kwLGGGdk.',
+    'kLGGGGdddk',
+    'kGGGGGdddk',
+    '.kGGGdddk.',
+    '..kGdddk..',
+    '...kddk...',
+    '....kk....',
+  ],
   talentLocked: [
     '....kk....',
     '...kwlk...',
@@ -589,6 +601,7 @@ const OWN_PALETTE: Partial<Record<IconName, Record<string, string>>> = {
   check: CHECK_PAL,
   talent: NAV_PAL,
   talentBase: NAV_PAL,
+  talentCommon: NAV_PAL,
   talentLocked: NAV_PAL,
 }
 

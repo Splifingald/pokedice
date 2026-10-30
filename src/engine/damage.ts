@@ -105,16 +105,15 @@ export function attackMultiplier(
  * leaves the attack as the dice made it.
  */
 export interface AttackMods {
-  talent: TalentKey
-  /** + on each die of this type (Type Focus), like an upgrade. */
-  focus?: { type: PokeType; amount: number }
-  /** + on the Pair's bonus when the Pair pays (Pair Pro). */
-  pair?: number
-  /** + damage on the hit, after its multiplier (Opener, Finisher). Nothing on an immune foe. */
-  plus?: number
+  /** The attacker's own talent when it acts on this hit (Opener, Finisher, Pair Pro, Mind's Eye, Raider). */
+  talent?: TalentKey
+  /** A partner's Companion boosting this hit: the partner's uid. */
+  companion?: string
+  /** × the hit when a Pair pays (Pair Pro). */
+  pairTimes?: number
   /** An attack the foe is immune to hits × this instead (Mind's Eye). */
   immuneAs?: number
-  /** × the whole hit (Raider). */
+  /** × the whole hit (Opener, Finisher, Raider, Companion): a share, never a flat amount. */
   times?: number
 }
 
@@ -143,8 +142,8 @@ export interface DamageResult {
   flat?: { type: PokeType; amount: number } | null
   /** A Z-Move of a type with no effect of its own (docs/35): `final` is this % more than the dice made. */
   zPercent?: number
-  /** The hidden talent that changed this hit (docs/51), and the damage it added. */
-  talent?: { key: TalentKey; amount: number } | null
+  /** The hidden talents that changed this hit (docs/51): its own, a partner's Companion; and the damage they added. */
+  talent?: { key?: TalentKey; companion?: string; amount: number } | null
 }
 
 /**
@@ -168,15 +167,12 @@ export function computeDamage(
   const multiplier = typeMult === 0 && mods?.immuneAs && dice.length ? mods.immuneAs : typeMult
   const perDie: DieBreakdown[] = dice.map((d) => {
     const value = dieValue(d, data)
-    const bonus = dieUpgradeBonus(d.type, levels, data) + (mods?.focus && d.type === mods.focus.type ? mods.focus.amount : 0)
+    const bonus = dieUpgradeBonus(d.type, levels, data)
     return { type: d.type, value, bonus, multiplier, damage: (value + bonus) * multiplier }
   })
   const values = perDie.map((p) => p.value)
-  const best = selectCombo(detectCombos(values), levels.comboLevels, multiplier, data)
-  const combo =
-    best?.key === 'pair' && mods?.pair
-      ? { ...best, bonus: best.bonus + mods.pair, damage: (best.bonus + mods.pair) * best.multiplier }
-      : best
+  const combo = selectCombo(detectCombos(values), levels.comboLevels, multiplier, data)
+  const times = (mods?.times ?? 1) * (combo?.key === 'pair' && mods?.pairTimes ? mods.pairTimes : 1)
 
   // A portal run's boost is a flat bonus of its type, added to the dice and the combo and multiplied with them.
   const flat = typeFlatOf(levels, type)
@@ -185,7 +181,7 @@ export function computeDamage(
   const immune = perDie.length > 0 && multiplier === 0
   // The booster comes after the type's multiplier, and stays out of the effectiveness ("super effective" is the type's).
   const boost = typeBoostOf(levels, type)
-  const raw = (typed * boost + (immune ? 0 : (mods?.plus ?? 0))) * (mods?.times ?? 1)
+  const raw = typed * boost * times
   const final = immune ? 0 : Math.max(1, Math.round(raw))
   return {
     perDie,
@@ -197,6 +193,14 @@ export function computeDamage(
     effectiveness: immune ? 0 : neutral > 0 ? typed / neutral : 1,
     ...(boost !== 1 && type && { boost: { type, multiplier: boost } }),
     ...(flat > 0 && type && { flat: { type, amount: flat } }),
-    ...(plain && mods && final !== plain.final && { talent: { key: mods.talent, amount: final - plain.final } }),
+    ...(plain &&
+      mods &&
+      final !== plain.final && {
+        talent: {
+          ...(mods.talent && { key: mods.talent }),
+          ...(mods.companion && { companion: mods.companion }),
+          amount: final - plain.final,
+        },
+      }),
   }
 }
