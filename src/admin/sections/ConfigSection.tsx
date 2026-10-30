@@ -31,6 +31,12 @@ import {
   INVITE_TIERS_MAX,
   inviteTiers,
   type InviteRewardsConfig,
+  type HiddenTalentsConfig,
+  familyOf,
+  familyTalent,
+  isTalentKey,
+  TALENT_KEYS,
+  talentTier,
 } from '@/engine'
 import { PixelIcon, type IconName } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
@@ -561,6 +567,89 @@ function TradesBox() {
             </PixelButton>
           </div>
         )}
+      </div>
+    </Box>
+  )
+}
+
+/**
+ * Hidden talents (docs/51): the odds, and each family's talent. A family is every species joined to its lowest dex by
+ * an evolution or a form; its talent is the game's own (src/data/talents.json, `pnpm talents`) unless picked here.
+ * The switch is on the Switches tab.
+ */
+function HiddenTalentsBox() {
+  const data = useAdminData()
+  const [raw, setRaw] = useConfigRow('hiddenTalents')
+  const cfg: HiddenTalentsConfig = { ...DEFAULT_CONFIG.hiddenTalents, ...(raw ?? {}) }
+  const set = (patch: Partial<HiddenTalentsConfig>) => setRaw({ ...cfg, ...patch })
+  const [q, setQ] = useState('')
+  const families = useMemo(() => {
+    if (!data) return []
+    const seen = new Map<number, string[]>()
+    for (const s of data.speciesList) {
+      if (s.form) continue
+      const root = familyOf(data, s.dex)
+      seen.set(root, [...(seen.get(root) ?? []), s.name])
+    }
+    return [...seen.entries()].map(([root, names]) => ({ root, names }))
+  }, [data])
+  const needle = q.trim().toLowerCase()
+  const shown = families.filter((f) => !needle || f.names.some((n) => n.toLowerCase().includes(needle)) || String(f.root) === needle)
+  const pct = (v: number) => Math.round(v * 1000) / 10
+  return (
+    <Box
+      title="Hidden talents"
+      icon="talent"
+      hint="One talent per evolution family. A wild Pokémon (a ghost, an Egg, a fossil, a gift…) carries its family's talent at the odds below; catching it unlocks the talent for every Pokémon of that family the player owns in that region. Legendaries and mythicals always carry theirs, starter lines never do and always find it as they evolve; any other family still locked may find it on each evolution. Gym leaders', the Elite Four's and Champions' aces always have theirs. Super talents (gold) go to strong families, base ones (blue) to the others."
+    >
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Wild odds (%)" hint="a Pokémon met carries its talent">
+          <NumInput min={0} max={100} step={0.5} value={pct(cfg.wildChance)} onChange={(v) => set({ wildChance: Math.max(0, Math.min(100, v ?? 0)) / 100 })} />
+        </Field>
+        <Field label="Evolution odds (%)" hint="a locked family finds it as one evolves">
+          <NumInput min={0} max={100} step={1} value={pct(cfg.evolveChance)} onChange={(v) => set({ evolveChance: Math.max(0, Math.min(100, v ?? 0)) / 100 })} />
+        </Field>
+      </div>
+      <input className={cx(inputCls, 'mt-3')} placeholder="Find a family (a name or the lowest dex)" value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="mt-2 max-h-[480px] overflow-y-auto">
+        <table className="w-full text-base">
+          <tbody>
+            {data &&
+              shown.slice(0, 200).map((f) => {
+                const own = cfg.families[String(f.root)]
+                const talent = familyTalent({ ...data, config: { ...data.config, hiddenTalents: cfg } }, f.root)
+                return (
+                  <tr key={f.root} className="border-b border-shadow">
+                    <td className="w-10 py-1">
+                      <SpriteImg dex={f.root} size={32} />
+                    </td>
+                    <td className="py-1">
+                      #{f.root} {f.names.join(' · ')}
+                    </td>
+                    <td className="w-16 py-1 text-muted">{talentTier(talent) === 'super' ? 'super' : 'base'}</td>
+                    <td className="w-48 py-1">
+                      <select
+                        className={inputCls}
+                        value={isTalentKey(own) ? own : ''}
+                        onChange={(e) => {
+                          const { [String(f.root)]: _old, ...rest } = cfg.families
+                          set({ families: e.target.value ? { ...rest, [String(f.root)]: e.target.value } : rest })
+                        }}
+                      >
+                        <option value="">{`game's: ${familyTalent({ ...data, config: { ...data.config, hiddenTalents: { ...cfg, families: {} } } }, f.root)}`}</option>
+                        {TALENT_KEYS.map((k) => (
+                          <option key={k} value={k}>
+                            {k} ({talentTier(k)})
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                  </tr>
+                )
+              })}
+          </tbody>
+        </table>
+        {shown.length > 200 && <p className="text-muted">{shown.length - 200} more: narrow the search.</p>}
       </div>
     </Box>
   )
@@ -1241,6 +1330,7 @@ const TABS = [
   { id: 'push', label: 'Push', icon: 'bell' },
   { id: 'gameCorner', label: 'Game Corner', icon: 'coin' },
   { id: 'unown', label: 'Unown Pokédex', icon: 'book' },
+  { id: 'talents', label: 'Hidden talents', icon: 'talent' },
   { id: 'support', label: 'Support & Discord', icon: 'heart' },
   { id: 'rows', label: 'All rows', icon: 'wrench' },
 ] as const satisfies readonly { id: string; label: string; icon: IconName }[]
@@ -1305,6 +1395,7 @@ const FEATURES: Feature[] = [
   bare('League heal', 'leagueHeal'),
   bare('Route 1 opening & tutorial', 'openingRounds'),
   own('Unown Pokédex', 'unownDex', 'unown'),
+  own('Hidden talents', 'hiddenTalents', 'talents'),
   own('Extreme mode', 'extreme', 'extreme'),
   own('Extreme Pokémon Centers', 'extremeCenters', 'extreme'),
   own('Double battles', 'doubleBattles', 'doubles'),
@@ -1453,6 +1544,7 @@ export function ConfigSection() {
       {tab === 'push' && <PushBox />}
       {tab === 'gameCorner' && <SlotMachineBox />}
       {tab === 'unown' && <UnownDexBox />}
+      {tab === 'talents' && <HiddenTalentsBox />}
       {tab === 'support' && (
         <div className="grid gap-4 xl:grid-cols-2">
           <DonationBox />

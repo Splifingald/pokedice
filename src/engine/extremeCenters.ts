@@ -3,6 +3,7 @@
 // drawn by weight as distinct kinds, among those that can do something now. Centers run out too: a completed area has
 // none, a secret area only its first, and a round lost to a K.O. starts over at a Center that only swaps. Every rule
 // and number is decided here; the screens only show them.
+import { rollTalent } from './talents'
 import { isLegendary } from './breeding'
 import { trainerGoldFor } from './economy'
 import { eventOpenTo } from './events'
@@ -358,7 +359,9 @@ export function pickCenterBoon(
       const dex = rng.pick(pool)
       const base = createInstance(dex, gave.level + c.rocket.levels, data, newId(), now)
       const shiny = shinyChance > 0 && rng.next() < shinyChance
-      const got: PokemonInstance = shiny ? { ...base, shiny } : base
+      // Its family's hidden talent, at the wild odds (docs/51).
+      const talent = rollTalent(data, dex, rng)
+      const got: PokemonInstance = { ...base, ...(shiny && { shiny }), ...(talent && { talent }) }
       // It takes the place of the one that went, in the team and its order.
       next = {
         ...next,

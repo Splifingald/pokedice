@@ -9,7 +9,8 @@ export interface RaidFriend {
   name: string
   /** Their look: an id from src/lib/avatars, already checked. */
   avatar: string
-  team: { dex: number; level: number; shiny: boolean }[]
+  /** `talent`: it carries its hidden talent (docs/51), as their snapshot says from 0093. */
+  team: { dex: number; level: number; shiny: boolean; talent?: boolean }[]
   /** Times they've helped you catch a raid Pokémon. */
   helped: number
   /** Their name shines gold ("I am just rich", docs/25). */
@@ -22,7 +23,7 @@ const parseFriend = (r: RawFriend): RaidFriend => ({
   userId: String(r.user_id),
   name: r.name || 'Trainer',
   avatar: avatarOf(r.avatar).id,
-  team: (r.team ?? []).map((m) => ({ dex: Number(m.dex), level: Number(m.level), shiny: !!m.shiny })),
+  team: (r.team ?? []).map((m) => ({ dex: Number(m.dex), level: Number(m.level), shiny: !!m.shiny, ...(m.talent === true && { talent: true }) })),
   helped: Number(r.helped) || 0,
   // A database before 0049 doesn't say: nobody's is.
   rich: r.rich === true,

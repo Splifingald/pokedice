@@ -2,6 +2,7 @@
 // the level cap and never evolve from it; friends' Pokémon visit; Eggs hatch on the spot into the first form of an
 // evolving line, favouring species the player doesn't have yet. The Egg-group checks that lay the Eggs are in
 // breeding.ts.
+import { rollTalent, TALENT, talentOf } from './talents'
 import { earnedGold, type LiveSet } from './liveEvents'
 import { createInstance, gainXp, instanceMaxHp, xpToNext } from './progression'
 import { inWorldRegion, regionCases, regionOf, regionOfSpecies, unlockedRegions, worldRegionOf } from './regions'
@@ -90,9 +91,11 @@ export const markDayCareVisited = (save: SaveData): SaveData =>
 const tickMs = (data: GameData) => Math.max(1, data.config.dayCare.tickMinutes) * MINUTE
 
 /** XP earned so far this stay: xpPerTick for each full tick since drop-off. Lv.100 is the only cap (residentNow). */
-export function dayCareXp(res: Pick<DayCareResident, 'since'>, now: number, data: GameData): number {
+export function dayCareXp(res: Pick<DayCareResident, 'since'> & { inst?: DayCareResident['inst'] }, now: number, data: GameData): number {
   const ticks = Math.floor(Math.max(0, now - res.since) / tickMs(data))
-  return ticks * Math.max(0, data.config.dayCare.xpPerTick)
+  // Daycare Darling (docs/51): more XP for every tick.
+  const darling = res.inst && talentOf(data, res.inst) === 'daycareDarling' ? 1 + TALENT.daycareDarling : 1
+  return Math.floor(ticks * Math.max(0, data.config.dayCare.xpPerTick) * darling)
 }
 
 /** The resident as it stands now: its Day Care XP applied as levels (never an evolution). */
@@ -419,6 +422,8 @@ export function hatchEgg(
   const shiny = rng.next() < Math.max(0, cfg.shinyChance)
   const inst = createInstance(pick.species.dex, hatchLevel(save, data), data, newId(), now)
   if (shiny) inst.shiny = true
+  // Its family's hidden talent, at the wild odds (docs/51).
+  if (rollTalent(data, inst.dex, rng)) inst.talent = true
   const isNew = !save.pokedex.includes(inst.dex)
   const copies = shiny ? [] : ownedPokemon(save).filter((p) => p.dex === inst.dex && !p.shiny)
   const kept = copies.every((p) => p.level < inst.level)
@@ -434,6 +439,12 @@ export function hatchEgg(
     dayCare: cleared,
   }
   const out = { inst, isNew, kept, shiny, gold, bonus, gift }
+  // Not kept, a hatchling with its talent still teaches it to the family (`syncTalents`): yours carries it.
+  if (!kept && inst.talent) {
+    const own = copies.sort((a, b) => b.level - a.level)[0]
+    const box = own ? base.box.map((p) => (p.id === own.id ? { ...p, talent: true } : p)) : base.box
+    return { ...out, save: { ...base, box }, joinedTeam: false }
+  }
   if (!kept) return { ...out, save: base, joinedTeam: false }
   const inTeam = replaced ? save.team.includes(replaced.id) : false
   const box = save.box.filter((p) => p.id !== replaced?.id)

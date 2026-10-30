@@ -58,6 +58,7 @@ import { pushToast, useGame } from '@/store/game'
 import { cancel, checkListings, loadBoard, playTrade, seeTradeRules, useTrades } from '@/store/trades'
 import { cx } from '@/theme/util'
 import { NameIn } from '@/components/TrainerName'
+import { InstTalentGem } from '@/components/Talent'
 
 type Tab = 'board' | 'mine'
 type Show = 'all' | 'friends' | 'new' | 'can'
@@ -390,6 +391,7 @@ function Mine({
     dex: o.mon.dex,
     level: o.mon.level,
     shiny: !!o.mon.shiny,
+    talent: !!o.mon.talent,
     homeRegion: o.region,
     want: o.want,
     visibility: o.visibility,
@@ -432,6 +434,7 @@ function Mine({
                   <b className="flex min-w-0 items-center gap-1 text-[19px] font-normal leading-none">
                     <span className="truncate">{called(o.mon)}</span>
                     {o.mon.shiny && <ShinyStar />}
+                    <InstTalentGem inst={o.mon} />
                     <LevelTag level={o.mon.level} />
                   </b>
                   <small className="font-pixel-sm text-[16px] leading-tight text-muted">

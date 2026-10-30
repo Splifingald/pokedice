@@ -68,6 +68,7 @@ import { SupportBits } from './kitchen/SupportBits'
 import { TrickBits } from './kitchen/TrickBits'
 import { UndergroundBits } from './kitchen/UndergroundBits'
 import { DayNightBits } from './kitchen/DayNightBits'
+import { TalentBits } from './kitchen/TalentBits'
 import { IdleBits } from './kitchen/IdleBits'
 import { ShinyDexBits } from './kitchen/ShinyDexBits'
 import { UnownDexBits } from './kitchen/UnownDexBits'
@@ -834,6 +835,9 @@ export function KitchenSink() {
       </Section>
       <Section title="Day and night (Johto): the top bar's chip by day and by night, the fights' indicator, the list tags (its half, the other half), rules">
         <DayNightBits />
+      </Section>
+      <Section title="Hidden talents: the gem (base, super, unknown), every talent, the sheet's box (carried, known, never met), the encounter's line, the result cards, the battle log, the trade toggle, rules (docs/51)">
+        <TalentBits />
       </Section>
       <Section title="Idle mode and the play styles: the style cards (each picked, none), a new game's question, the area's switch (AUTO-MODE, Idle mode; off, on, the tip), the autopilot's note, rules (docs/36)">
         <IdleBits />

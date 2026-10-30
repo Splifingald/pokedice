@@ -517,6 +517,8 @@ export interface TrainerMon {
   item?: string
   /** Shiny colours (cosmetic only), set per trainer in the admin. */
   shiny?: boolean
+  /** Dealt with its family's hidden talent for this fight (docs/51): never set in the data. */
+  talent?: boolean
 }
 
 export type TrainerRole = 'trainer' | 'leader' | 'elite' | 'champion'
@@ -1031,6 +1033,12 @@ export interface GameConfig {
    */
   leagueHeal: { access: EventAccess }
   /**
+   * Hidden talents (docs/51): the switch, the odds of a wild Pokémon carrying its talent and of a locked family finding
+   * it on an evolution, and the admin's picks per family (by its lowest dex; the bundled ones otherwise). Migration
+   * 0093 inserts the same row.
+   */
+  hiddenTalents: HiddenTalentsConfig
+  /**
    * The Unown Pokédex (docs/41): the 28 letters, once an area where Unown live is opened; `reward` ₽ for the last one.
    * Migration 0080 inserts the same row.
    */
@@ -1539,6 +1547,16 @@ export interface MegaConfig {
 
 // ---------------------------------------------------------------- save data (01-GAME-SPEC §9)
 
+export interface HiddenTalentsConfig {
+  access: EventAccess
+  /** A wild Pokémon (a ghost, an Egg, a gift…) carries its family's talent: 0–1. */
+  wildChance: number
+  /** A locked family finds its talent as one of its Pokémon evolves: 0–1. */
+  evolveChance: number
+  /** Family (its lowest dex) → talent key, over the bundled ones (src/data/talents.json). */
+  families: Record<string, string>
+}
+
 export interface PokemonInstance {
   id: string
   dex: number
@@ -1561,6 +1579,11 @@ export interface PokemonInstance {
   nickname?: string
   /** Unown only (docs/41): its letter, 'a'–'z', '!' or '?'. Absent = an A (`letterOf`). */
   letter?: string
+  /**
+   * It carries its family's hidden talent (docs/51): set when its family is unlocked in its region (`syncTalents`), or
+   * when it arrives with it (a trade, a gift). Never taken off. Absent = no talent.
+   */
+  talent?: boolean
 }
 
 export interface AreaProgress {
@@ -1698,6 +1721,15 @@ export interface SaveData {
    * in the Box). Filled whatever the switch says.
    */
   unownDex?: Partial<Record<RegionId, string[]>>
+  /**
+   * Hidden talents (docs/51): the families whose talent is unlocked, by region (each family by its lowest dex). Every
+   * Pokémon of an unlocked family carries the talent there.
+   */
+  talents?: Partial<Record<RegionId, number[]>>
+  /** The families whose talent has been met (a talented one seen, or unlocked): the sheet names it from then on. */
+  talentsMet?: number[]
+  /** The hidden talents' rules pop-up has been shown (once; INFO shows it again). */
+  talentRulesSeen?: boolean
   /** The regions whose Unown Pokédex prize was paid (once each). */
   unownDexPaid?: RegionId[]
   /** The Unown Pokédex's rules pop-up has been shown (once, when it opens; INFO shows it again). */
@@ -1814,7 +1846,8 @@ export interface GeneralSave {
 }
 
 /** What a listing asks for (docs/23 §1.1): one species, any the poster doesn't own, or anything. */
-export type TradeWant = { kind: 'species'; dex: number } | { kind: 'notOwned' } | { kind: 'any' }
+/** `talent`: that species, carrying its hidden talent (docs/51). */
+export type TradeWant = { kind: 'species'; dex: number; talent?: true } | { kind: 'notOwned' } | { kind: 'any' }
 
 export const TRADE_VISIBILITY = ['public', 'friends', 'private'] as const
 /** Who sees a listing: the trade board (every signed-in player), friends only, or only people with its link. */
@@ -2153,6 +2186,11 @@ export interface BundleRaw {
   regions?: Region[]
   /** Static canon, not content: src/config/bundle.ts adds it (src/data/egg-groups.json), the database never has it. */
   eggGroups?: Record<string, EggGroupEntry>
+  /**
+   * Each family's hidden talent, the game's own pick (docs/51: src/data/talents.json, `pnpm talents`), added like the
+   * Egg groups; the admin's picks (game_config `hiddenTalents.families`) go over it.
+   */
+  talentFamilies?: Record<string, string>
 }
 
 /**
@@ -2204,6 +2242,8 @@ export interface GameData {
   regions: Region[]
   /** Breeding data by dex (engine/daycare.ts): empty when a bundle came without it, and then nothing pairs. */
   eggGroups: Record<number, EggGroupEntry>
+  /** Family (its lowest dex) → its hidden talent, the game's own pick (docs/51). */
+  talentFamilies: Record<string, string>
   /** Who's playing, set by the store: the admin sees the events switched on for the admin only. Absent = a player. */
   /** Who's playing: the admin (signed in), and the Extreme save's race (docs/48: its online features off). */
   viewer?: { admin: boolean; race?: boolean }

@@ -27,6 +27,7 @@ import { PixelIcon } from '../icons'
 import type { RulesPicture } from '../RulesModal'
 import { MiniSprite } from '../SpriteImg'
 import { TrainerName } from '../TrainerName'
+import { DexTalentGem } from '../Talent'
 
 /** The rules pop-up's banner: trades happen at the Pokémon Center, as in the games' Cable Club. */
 export const TRADES_PICTURE: RulesPicture = { src: '/backgrounds/pokemon-center.png', focus: '50% 40%' }
@@ -81,6 +82,8 @@ export function WantTile({ want, big }: { want: TradeWant; big?: boolean }) {
     <span className={cx('flex min-w-0 items-center gap-1', big ? 'text-[20px]' : 'text-[16px]')}>
       <MiniSprite dex={want.dex} size={big ? 40 : 32} className={big ? '-my-1' : '-my-1.5'} />
       <b className="min-w-0 truncate font-normal leading-none">{words(want)}</b>
+      {/* "With its hidden talent" (docs/51). */}
+      {want.talent && <DexTalentGem dex={want.dex} />}
     </span>
   )
 }
@@ -268,6 +271,7 @@ export function ListingRow({
             <b className="flex min-w-0 items-center gap-1 text-[19px] font-normal leading-none">
               <span className="truncate">{name}</span>
               {l.shiny && <ShinyStar />}
+              {l.talent && <DexTalentGem dex={l.dex} />}
               {fresh && <NewTag className="shrink-0" />}
             </b>
             <small className="flex min-w-0 items-center gap-1 font-pixel-sm text-[16px] leading-tight text-muted">

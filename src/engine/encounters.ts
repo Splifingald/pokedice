@@ -7,8 +7,9 @@ import { drawLoot } from './items'
 import { openingCardAt, openingDeck, openingRound, openingRoundDue } from './opening'
 import { pityChance } from './pity'
 import { asSeenBy, gymsFor, type PlayerSide } from './rival'
-import type { Rng } from './rng'
+import { createRng, type Rng } from './rng'
 import { dealTrainerItems } from './trainerItems'
+import { foeTalentChance, rollTalent, talentsOn } from './talents'
 import { pickTrickGhost, trickDealable } from './trickOrTreat'
 import { isWorldMythical, worldOfArea } from './worldList'
 import type {
@@ -31,7 +32,8 @@ import type {
 
 export type Encounter =
   /** `partner`: a second wild Pokémon, for a double battle (docs/33). */
-  | { kind: 'wild'; dex: number; level: number; isNew: boolean; shiny?: boolean; partner?: WildPartner }
+  /** `talent`: it carries its family's hidden talent (docs/51). */
+  | { kind: 'wild'; dex: number; level: number; isNew: boolean; shiny?: boolean; talent?: boolean; partner?: WildPartner }
   /**
    * `double`: fought 2 v 2, two of the team out at once (docs/33). `prize`: a set opening's trainer (docs/46) pays these
    * ₽ for the win instead of the usual amount per K.O.
@@ -66,13 +68,13 @@ export type Encounter =
   /** `reason`: 'round' opens a new round; 'fainted' follows a K.O. in an easy area. */
   | { kind: 'center'; forced: boolean; reason?: 'fainted' | 'round' | 'wipe' }
   /** `returning`: beaten before, fled the catch, back for another try. */
-  | { kind: 'boss'; dex: number; level: number; returning?: boolean; shiny?: boolean }
+  | { kind: 'boss'; dex: number; level: number; returning?: boolean; shiny?: boolean; talent?: boolean }
   /** Something on the ground: `qty` of an item, or Pokédollars (itemKey 'money', qty = ₽). */
   | { kind: 'item'; entryId: string; itemKey: string; qty: number }
   /** The Game Corner: play the slot machine as long as you like. */
   | { kind: 'casino' }
   /** Trick or Treat (docs/29): a ghost from the area's list, tempted with Treats and caught with a Trick Ball. */
-  | { kind: 'trick'; dex: number; level: number; tier: TrickTier; isNew: boolean; shiny?: boolean }
+  | { kind: 'trick'; dex: number; level: number; tier: TrickTier; isNew: boolean; shiny?: boolean; talent?: boolean }
 
 /** A wild double battle's second Pokémon (docs/33). */
 export interface WildPartner {
@@ -80,6 +82,7 @@ export interface WildPartner {
   level: number
   isNew: boolean
   shiny?: boolean
+  talent?: boolean
 }
 
 export type ForceKind = EncounterKind | 'boss' | 'gym'
@@ -475,6 +478,39 @@ export function dueCenter(ctx: EncounterContext): 'round' | 'hurt' | 'fainted' |
  * A due gym battle or legendary is never dealt here: the player takes it on when ready (`challengeEncounter`).
  */
 export function nextEncounter(ctx: EncounterContext, rng: Rng): EncounterRoll {
+  const roll = dealEncounter(ctx, rng)
+  return { ...roll, encounter: dealTalents(roll.encounter, ctx.data, rng) }
+}
+
+/**
+ * Hidden talents (docs/51): who of this encounter carries its family's talent. A wild Pokémon, a ghost or a boss: a
+ * legendary always, a starter line never, any other at the wild odds. A trainer's: a gym leader's, an Elite Four's or a
+ * Champion's ace always, any other at the wild odds. Nothing is drawn while the switch is off.
+ */
+export function dealTalents(enc: Encounter, data: GameData, rng: Rng): Encounter {
+  if (!talentsOn(data)) return enc
+  switch (enc.kind) {
+    case 'wild':
+    case 'trick':
+    case 'boss':
+      return rollTalent(data, enc.dex, rng) ? { ...enc, talent: true } : enc
+    case 'trainer':
+    case 'gym': {
+      const levels = enc.team.map((m) => m.level)
+      const ace = enc.kind === 'gym' && enc.role !== 'trainer' ? levels.lastIndexOf(Math.max(...levels)) : -1
+      const has = (dex: number) => {
+        const chance = foeTalentChance(data, dex)
+        return chance >= 1 || rng.next() < chance
+      }
+      const team = enc.team.map((m, i) => (i === ace || has(m.dex) ? { ...m, talent: true } : m))
+      return { ...enc, team }
+    }
+    default:
+      return enc
+  }
+}
+
+function dealEncounter(ctx: EncounterContext, rng: Rng): EncounterRoll {
   const { data } = ctx
   const fixed = (encounter: Encounter): EncounterRoll => ({ encounter, deck: null, lootDeck: null })
   if (ctx.forceKind === 'item') {
@@ -511,12 +547,17 @@ export function challengeEncounter(
   shinyOdds?: number,
 ): Encounter | null {
   const gym = dueGym(area, progress, data, side)
-  if (gym) return gymEncounter(area, gym, data, side)
+  // Hidden talents (docs/51): without a draw to make, a gym's ace and a legendary boss still carry theirs.
+  const talents = (enc: Encounter) => dealTalents(enc, data, rng ?? NO_DRAW)
+  if (gym) return talents(gymEncounter(area, gym, data, side))
   const boss = dueBoss(area, progress, teamAvgLevel, data)
   return boss
-    ? { kind: 'boss', dex: boss.dex, level: boss.level, ...(legendShiny(boss, area, data, rng, shinyOdds) && { shiny: true }) }
+    ? talents({ kind: 'boss', dex: boss.dex, level: boss.level, ...(legendShiny(boss, area, data, rng, shinyOdds) && { shiny: true }) })
     : null
 }
+
+/** An rng that never lands a chance: only what is sure happens. */
+const NO_DRAW: Rng = { ...createRng(1), next: () => 1 }
 
 /** The next encounter alone, for callers that don't keep decks (each call deals from fresh ones). */
 export function rollEncounter(ctx: EncounterContext, rng: Rng): Encounter {

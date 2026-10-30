@@ -1085,7 +1085,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   rules pop-up (`RulesModal`, Later / Let's go!), taking its turn in the one-time pop-ups' queue, below; so do the
   rules shown at their own moment (the portal's and the nightmare's way in, Trick or Treat's first ghost, the gifts',
   the looks'). The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is the Pokémon sheet's Talent section, as it has no page), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **The one-time pop-ups take turns, in one queue** (`nextOneTimePopup`, src/engine/popups.ts; docs/38 U2a): one at a
   time, only between fights (`run.phase === 'idle'`, no battle, no full-screen moment, no gift being opened), never on
@@ -1094,7 +1094,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   the server's clock, what waits outside the save); `PopupQueue` (GameLayout) works it out once for the whole game, and
   each pop-up opens only on its own turn (`useMyTurn`). The order: the away reports (Extreme's, the General upgrades'),
   the offline report, the developer's answers, friends' raid gifts, a new region's offer, Extreme mode, an invite reward
-  ready, the portal run, day and night, the battle powers, a small world's opening, its finish and its goodbye, a live
+  ready, the portal run, day and night, the battle powers, hidden talents (§38), a small world's opening, its finish and its goodbye, a live
   event (but the Underground: `queuedLives`), a taken trade's scene (Home only), and push
 notifications' question last. A new pop-up gets a place in that list, not a list of its own. The rules that open at
   their own moment (the gifts' before the first gift, Trick or Treat's at the first ghost, the portal's and the
@@ -1891,3 +1891,29 @@ Where Unown live (Johto's Ruins of Alph), each one caught is one of 28 letters, 
 - Its rules: a `RulesCard` at the top of the Unown view until GOT IT (`unownDexSeen`, §20); INFO at the bottom of the
   Unown view. Opening the view no longer counts as reading them.
 
+
+## 38. Hidden talents
+
+Each evolution family has one hidden talent (docs/51), behind its switch (§20, Off: no gem, no section, no line, no
+pop-up). The pieces are in `src/components/Talent.tsx`, every state on `/kitchen-sink` (`TalentBits`).
+
+- **The gem** (`TalentGem`, the `talent` / `talentBase` / `talentLocked` icons, 10 × 10 pixels): gold for a super
+  talent, blue for a base one, grey for one not known yet. Its title names the talent ("Hidden talent: Pickup"). A
+  Pokémon that carries its talent wears it (`InstTalentGem`) after its name and shiny star wherever its card shows: the
+  Box and team tiles (top left, under the star), the team cards (`MonCard`, `PokeCard`), the battle plates (yours and the
+  foes', `Plates`, `DoublePlates`), a trade listing's Pokémon and a want "with its talent" (`DexTalentGem`).
+- **The sheet's section** (`TalentSection`, between the dice and the milestones): "Hidden talent" with INFO, and its box
+  (`TalentBox`) in three states: carried (paper: the gem, the name, its tier, what it does), known but not learnt here
+  (well, dimmed, how to learn it), never met ("???" and how to find out).
+- **The encounter**: a talented wild Pokémon gets a gold-pale line under its catch value: "This Rattata has a hidden
+  talent: Pickup. Catch it to learn it!" while its family is locked, "This Dratini carries its hidden talent: Mirror."
+  once learnt. Seeing it notes the talent as met.
+- **The result card**: a family's talent unlocked (caught with it, passed from a weaker one let go, found evolving) is a
+  gold-pale card with the gem, the line and what it does (`TalentFoundCard`); Field Medic and Pickup after a win are a
+  sky card (`TalentAfterWinCard`). Found evolving out of a fight (a stone, Rare Candy), a toast.
+- **The battle log** says each talent at work in one line (`talentLogText`): Leftovers' heal (with its green number),
+  a damage talent's bonus, Mirror's die, Sturdy, Natural Cure, Thaw. A talent that changes numbers alone (Speed,
+  rerolls, HP) says nothing.
+- **Trades**: asking for a species, a toggle "With its hidden talent" under the species (only while the switch is on).
+- Its rules: a `RulesModal` once, in the one-time pop-ups' queue after the battle powers' (`talentRulesSeen`); INFO on
+  the sheet's section.

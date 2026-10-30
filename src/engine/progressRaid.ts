@@ -144,7 +144,7 @@ export function progressRaidTeam(save: SaveData, data: GameData, raid: ProgressR
   const team = chosen.length ? chosen : [...box].sort((a, b) => b.level - a.level).slice(0, 3)
   return team
     .slice(0, 3)
-    .map((p) => ({ id: p.id, dex: p.dex, level: p.level, shiny: !!p.shiny }))
+    .map((p) => ({ id: p.id, dex: p.dex, level: p.level, shiny: !!p.shiny, ...(p.talent && { talent: true }) }))
 }
 
 /** Leaves a team on a progression raid: up to three ids from its region's Box. */

@@ -77,8 +77,8 @@ describe('damage formula', () => {
     const a = computeDamage(roll, low.types, ['normal'], L1, data)
     const b = computeDamage(roll, high.types, ['normal'], L1, data)
     expect(a).toEqual(b)
-    // The sixth is a dual-type Z-Move's picked type (docs/35), not a level.
-    expect(computeDamage.length).toBe(6)
+    // The sixth is a dual-type Z-Move's picked type (docs/35), the seventh a hidden talent's changes (docs/51): no level.
+    expect(computeDamage.length).toBe(7)
   })
 
   it('adds the die upgrade bonus per die before the multiplier', () => {

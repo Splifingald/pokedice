@@ -16,6 +16,7 @@ import { PixelIcon } from './icons'
 import { ItemSprite } from './ItemSprite'
 import { MiniSprite } from './SpriteImg'
 import { TypeBadge } from './TypeBadge'
+import { InstTalentGem } from './Talent'
 
 /** A fossil being revived: a timer gauge in place of HP, full when it wakes up. */
 export function RevivalBar({ inst, className }: { inst: PokemonInstance; className?: string }) {
@@ -192,6 +193,7 @@ export function MonCard({
             <span className="flex min-w-0 items-center gap-1">
               <span className="truncate text-xl leading-none">{inst.nickname || species.name}</span>
               {inst.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
+              <InstTalentGem inst={inst} />
             </span>
             <span className="flex flex-wrap items-center gap-1">
               <TypeBadge type={species.type1} size="sm" />

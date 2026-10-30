@@ -27,6 +27,8 @@ export interface TradeListing {
   dex: number
   level: number
   shiny: boolean
+  /** It carries its hidden talent (docs/51); a database before 0093 doesn't say. */
+  talent: boolean
   homeRegion: string
   want: TradeWant
   visibility: TradeVisibility
@@ -141,8 +143,9 @@ const time = (v: unknown): number => {
 const VIS: TradeVisibility[] = ['public', 'friends', 'private']
 
 export function parseWant(raw: unknown): TradeWant {
-  const w = (raw ?? {}) as { kind?: unknown; dex?: unknown }
-  if (w.kind === 'species' && num(w.dex) > 0) return { kind: 'species', dex: num(w.dex) }
+  const w = (raw ?? {}) as { kind?: unknown; dex?: unknown; talent?: unknown }
+  if (w.kind === 'species' && num(w.dex) > 0)
+    return { kind: 'species', dex: num(w.dex), ...(w.talent === true && { talent: true as const }) }
   if (w.kind === 'notOwned') return { kind: 'notOwned' }
   return { kind: 'any' }
 }
@@ -161,6 +164,8 @@ export function parseInstance(raw: unknown): PokemonInstance | null {
     caughtAt: num(m.caughtAt),
     ...(m.shiny === true && { shiny: true }),
     ...(nickname && { nickname }),
+    // A traded Pokémon keeps its hidden talent (docs/51).
+    ...(m.talent === true && { talent: true }),
   }
 }
 
@@ -183,6 +188,7 @@ export function parseListing(raw: unknown): TradeListing | null {
     dex: num(r.dex),
     level: Math.max(1, num(r.level, 1)),
     shiny: r.shiny === true,
+    talent: r.talent === true,
     homeRegion: typeof r.home_region === 'string' ? r.home_region : 'kanto',
     want: parseWant(r.want),
     visibility: VIS.includes(r.visibility as TradeVisibility) ? (r.visibility as TradeVisibility) : 'public',

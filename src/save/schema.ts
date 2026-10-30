@@ -40,6 +40,8 @@ const instanceSchema = z.object({
   nickname: z.unknown().transform(cleanNickname),
   // Unown's letter (docs/41): a bad one (an edited save) is dropped, the Unown reads as an A.
   letter: z.unknown().transform((v) => (isUnownLetter(v) ? v : undefined)),
+  // Its hidden talent (docs/51): anything but true is no talent.
+  talent: z.unknown().transform((v) => (v === true ? true : undefined)),
 })
 
 // Extreme mode's Centers (docs/47): the boons waiting for the pick.
@@ -400,6 +402,10 @@ export const saveSchema = z.object({
   unownDex: z.record(z.array(z.string().max(1)).max(UNOWN_LETTERS.length)).optional(),
   unownDexPaid: z.array(z.string().max(40)).max(40).optional(),
   unownDexSeen: z.boolean().optional(),
+  // Hidden talents (docs/51): the families unlocked by region, and those met.
+  talents: z.record(z.array(z.number().int().min(1)).max(3000)).optional(),
+  talentsMet: z.array(z.number().int().min(1)).max(3000).optional(),
+  talentRulesSeen: z.boolean().optional(),
   // The dice tutorial (docs/46 §5): an odd value starts it afresh, never fails the save.
   diceTutorial: z.enum(['started', 'done']).optional().catch(undefined),
   // The battle powers (docs/35): the Mega Gems held, bought ones included, which nothing else gives back. A power kind

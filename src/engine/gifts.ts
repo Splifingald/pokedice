@@ -1,6 +1,7 @@
 // Gifts with the developer's messages (docs/15 §23): items (a quantity each), Pokémon (a level each, shiny or not) and
 // Pokédollars, each sent to a region the admin picked or to the player's latest one. The server holds them on the message until the
 // player's game claims them (migration 0048); these functions decide where each one lands, and the screens only say it.
+import { rollTalentFor } from './talents'
 import { eventOpenTo } from './events'
 import { isExtreme } from './extreme'
 import { createInstance } from './progression'
@@ -140,6 +141,8 @@ export function placeGifts(
     if (!data.species[gift.dex]) continue
     const inst = createInstance(gift.dex, gift.level, data, newId(), now)
     if (gift.shiny) inst.shiny = true
+    // Its family's hidden talent, at the wild odds (docs/51); a legendary always.
+    if (rollTalentFor(data, inst.dex, inst.id)) inst.talent = true
     const dexBefore = region === regionOf(next) ? next.pokedex : (next.parked?.[region]?.pokedex ?? [])
     const teamBefore = region === regionOf(next) ? next.team.length : null
     const put = addToRegion(next, data, region, inst)

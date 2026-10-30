@@ -9,7 +9,7 @@ import { centersOn, healItemsOn, isExtreme, wipeHeals } from './extreme'
 import { boonCenters, pendingBoons } from './extremeCenters'
 import { addFossil, isReviving } from './fossils'
 import { LEGACY_GAUGE } from './legacyGauge'
-import { itemOnFor, MONEY, sellPrice, shopSells, usableIn } from './items'
+import { itemOnFor, lootPoolFor, MONEY, sellPrice, shopSells, usableIn } from './items'
 import { earnedGold, type LiveSet } from './liveEvents'
 import {
   canStartPortal,
@@ -28,6 +28,7 @@ import {
   nightmareWipe,
   nightmareWon,
 } from './nightmare'
+import { TALENT, talentOf, talentOnEvolve } from './talents'
 import { areaOpenAt } from './worldList'
 import {
   averageLevel,
@@ -427,6 +428,10 @@ export type RunEvent =
    * the prize when it was the last one.
    */
   | { kind: 'unown_letter'; letter: string; isNew: boolean; found: number; total: number; reward?: number }
+  /** Field Medic (docs/51): it healed after the battle it won. */
+  | { kind: 'field_medic'; uid: string; amount: number }
+  /** Pickup (docs/51): it found something after the battle it won (`key` 'money' for ₽). */
+  | { kind: 'pickup'; uid: string; key: string; qty: number }
 
 export interface VictoryInput {
   areaId: string
@@ -441,6 +446,8 @@ export interface VictoryInput {
   gymComplete?: boolean
   /** A set opening's trainer (docs/46): this K.O. pays these ₽ instead of its level's (`trainerPrize` says how many). */
   prize?: number
+  /** This K.O. ends the fight (a trainer's last Pokémon). Absent = it does, unless it's a trainer's or a gym's. */
+  last?: boolean
 }
 
 export interface VictoryResult {
@@ -465,6 +472,7 @@ export function awardBattleXp(
   events: RunEvent[],
 ): SaveData {
   let next: SaveData = { ...save, pokedex: [...save.pokedex] }
+  const from = events.length
   const xp = pokemonXp(enemyLevel, area, cleared, data)
   // Cross-generation evolutions wait for their generation; the gate is the same for every award in this battle.
   const allowDex = evolutionGate(save, data)
@@ -495,7 +503,14 @@ export function awardBattleXp(
       if (share > 0) award(uid, Math.max(1, Math.round(xp * share)), true)
     }
   }
-  return next
+  return withEvolveTalents(next, data, events, from, rng)
+}
+
+/** A locked family may find its hidden talent as one of its Pokémon evolves (docs/51): the events from `from` on. */
+function withEvolveTalents(save: SaveData, data: GameData, events: ProgressEvent[] | RunEvent[], from: number, rng: Rng): SaveData {
+  const found = talentOnEvolve(save, data, events.slice(from), rng)
+  for (const f of found.found) (events as ProgressEvent[]).push({ kind: 'talent', ...f, how: 'evolved' })
+  return found.save
 }
 
 /**
@@ -522,7 +537,9 @@ export function applyVictory(
   // Gold — trainers only (gym leaders, the Elite Four and the Champion pay extra; a set trainer its prize, with its
   // last K.O.), more under Cash Flow
   if ((input.kind === 'trainer' || input.kind === 'gym') && input.prize !== 0) {
-    const due = input.prize ?? trainerGoldFor(input.enemyLevel, area, progress.cleared, data, input.kind === 'gym')
+    // Pay Day and Amulet Coin (docs/51): more for this K.O.; a set prize stays as it is.
+    const due =
+      input.prize ?? Math.round(trainerGoldFor(input.enemyLevel, area, progress.cleared, data, input.kind === 'gym') * goldTalents(save, data, fighters))
     const { amount, bonus } = earnedGold(due, live)
     next = { ...next, gold: next.gold + amount }
     events.push(bonus ? { kind: 'gold', amount, bonus } : { kind: 'gold', amount })
@@ -561,9 +578,53 @@ export function applyVictory(
   // Secret areas whose conditions just came true (a catch, a level-up…)
   for (const id of unlockedHiddenAreas(next, data)) if (!hiddenBefore.has(id)) events.push({ kind: 'secret_unlocked', areaId: id })
 
+  // The fight is won: Field Medic and Pickup (docs/51).
+  const over = input.last ?? (input.kind !== 'trainer' && input.kind !== 'gym')
+  if (over) next = afterWinTalents(next, data, area, progressOf(next, area.id), rng, events)
+
   void now
   void newId
   return { save: next, events }
+}
+
+/** × trainer ₽ for a K.O.: Pay Day on the Pokémon that made it, Amulet Coin anywhere on the team (docs/51). */
+function goldTalents(save: SaveData, data: GameData, fighters: string | readonly string[]): number {
+  const made = (typeof fighters === 'string' ? [fighters] : [...fighters]).some((uid) => {
+    const p = getInstance(save, uid)
+    return !!p && talentOf(data, p) === 'payDay'
+  })
+  const coin = teamOf(save).some((p) => talentOf(data, p) === 'amuletCoin')
+  return 1 + (made ? TALENT.payDay : 0) + (coin ? TALENT.amuletCoin : 0)
+}
+
+/**
+ * A fight won: each team member still standing with Field Medic heals a share of its max HP; each with Pickup may find
+ * something from the area's loot (its odds, never a once-only find, the deck untouched).
+ */
+function afterWinTalents(save: SaveData, data: GameData, area: Area, progress: AreaProgress, rng: Rng, events: RunEvent[]): SaveData {
+  let next = save
+  for (const p of teamOf(save)) {
+    if (p.currentHp <= 0) continue
+    const talent = talentOf(data, p)
+    if (talent === 'fieldMedic') {
+      const max = instanceMaxHp(p, data)
+      const amount = Math.min(max - p.currentHp, Math.max(1, Math.round(max * TALENT.fieldMedic)))
+      if (amount > 0) {
+        next = replaceInstance(next, { ...p, currentHp: p.currentHp + amount })
+        events.push({ kind: 'field_medic', uid: p.id, amount })
+      }
+    } else if (talent === 'pickup' && rng.next() < TALENT.pickup) {
+      const entry = rng.weighted(lootPoolFor(area, progress, data).filter((e) => !e.unique), (e) => e.weight)
+      if (!entry) continue
+      const qty = Math.max(1, Math.min(entry.minQty, entry.maxQty))
+      next =
+        entry.itemKey === MONEY
+          ? { ...next, gold: next.gold + qty }
+          : { ...next, inventory: { ...next.inventory, [entry.itemKey]: (next.inventory[entry.itemKey] ?? 0) + qty } }
+      events.push({ kind: 'pickup', uid: p.id, key: entry.itemKey, qty })
+    }
+  }
+  return next
 }
 
 /**
@@ -876,7 +937,8 @@ export function applyFieldItem(
     const evolved = evolve(inst, toDex, data)
     let next = replaceInstance(consumeItem(save, key)!, evolved)
     if (!next.pokedex.includes(toDex)) next = { ...next, pokedex: [...next.pokedex, toDex] }
-    return { save: next, events: [{ kind: 'evolve', uid: inst.id, fromDex: inst.dex, toDex, level: inst.level }] }
+    const events: ProgressEvent[] = [{ kind: 'evolve', uid: inst.id, fromDex: inst.dex, toDex, level: inst.level }]
+    return { save: withEvolveTalents(next, data, events, 0, rng), events }
   }
   if (item.effect.kind !== 'level' || inst.level >= data.config.maxLevel) return null
   let cur = inst
@@ -888,7 +950,7 @@ export function applyFieldItem(
   }
   let next = replaceInstance(consumeItem(save, key)!, cur)
   for (const ev of events) if (ev.kind === 'evolve' && !next.pokedex.includes(ev.toDex)) next = { ...next, pokedex: [...next.pokedex, ev.toDex] }
-  return { save: next, events }
+  return { save: withEvolveTalents(next, data, events, 0, rng), events }
 }
 
 /**
@@ -909,7 +971,8 @@ export function applyLevelEvolution(
   const target = ready.length === 1 ? ready[0]! : rng.pick(preferUnowned(ready, save.pokedex))
   let next = replaceInstance(save, evolve(inst, target.toDex, data))
   if (!next.pokedex.includes(target.toDex)) next = { ...next, pokedex: [...next.pokedex, target.toDex] }
-  return { save: next, events: [{ kind: 'evolve', uid: inst.id, fromDex: inst.dex, toDex: target.toDex, level: inst.level }] }
+  const events: ProgressEvent[] = [{ kind: 'evolve', uid: inst.id, fromDex: inst.dex, toDex: target.toDex, level: inst.level }]
+  return { save: withEvolveTalents(next, data, events, 0, rng), events }
 }
 
 /** A small world has tracks of its own, bought with its own ₽ (docs/26: the user's call, 2026-10-13). */

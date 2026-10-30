@@ -4,6 +4,7 @@
 // time; Egg now buys the next check early. The hatching itself is `hatchEgg` in daycare.ts.
 import { dayCareOf, isDayCareOpen } from './daycare'
 import type { Rng } from './rng'
+import { TALENT, talentOf } from './talents'
 import type { DayCareGuest, DayCareResident, DayCareState, EggParent, GameData, SaveData } from './types'
 
 const HOUR = 3_600_000
@@ -103,6 +104,15 @@ export function clockMs(data: GameData, clock: Clock): number {
   return Math.max(0.01, clock === 'breed' ? cfg.breedHours : cfg.breedDittoHours) * HOUR
 }
 
+/**
+ * A clock's interval for this save: Egg Rush (docs/51) on one of your residents runs it `eggRush` times as fast. The
+ * admin's summary (`eggsPerWeek`) reads `clockMs`, the plain one.
+ */
+function stepMs(save: SaveData, data: GameData, clock: Clock): number {
+  const rush = dayCareOf(save).residents.some((r) => talentOf(data, r.inst) === 'eggRush')
+  return clockMs(data, clock) / (rush ? TALENT.eggRush : 1)
+}
+
 const lastOf = (dc: DayCareState, clock: Clock) => dc[FIELD[clock]]
 
 const onClock = (p: CarePair, clock: Clock) => p.slow === (clock === 'ditto')
@@ -139,14 +149,14 @@ export function syncEggClocks(save: SaveData, data: GameData, now: number): Save
 /** When a clock checks next; null while it has no pair (it isn't running). One with a pair that never ran starts now. */
 export function clockDueAt(save: SaveData, data: GameData, clock: Clock, now: number): number | null {
   if (!runningClocks(save, data).includes(clock)) return null
-  return (lastOf(dayCareOf(save), clock) ?? now) + clockMs(data, clock)
+  return (lastOf(dayCareOf(save), clock) ?? now) + stepMs(save, data, clock)
 }
 
 /** The clock the next Egg can come from: the sooner of those with pairs. Null with no pair: nothing is checked. */
 export function nextClock(save: SaveData, data: GameData, now: number): { clock: Clock; at: number } | null {
   return (
     runningClocks(save, data)
-      .map((clock) => ({ clock, at: (lastOf(dayCareOf(save), clock) ?? now) + clockMs(data, clock) }))
+      .map((clock) => ({ clock, at: (lastOf(dayCareOf(save), clock) ?? now) + stepMs(save, data, clock) }))
       .sort((x, y) => x.at - y.at)[0] ?? null
   )
 }
@@ -158,7 +168,7 @@ export const nextCheckAt = (save: SaveData, data: GameData, now: number) => next
 export function nextCheckProgress(save: SaveData, data: GameData, now: number): { at: number; done: number } | null {
   const next = nextClock(save, data, now)
   if (!next) return null
-  const step = clockMs(data, next.clock)
+  const step = stepMs(save, data, next.clock)
   return { at: next.at, done: Math.min(1, Math.max(0, (now - (next.at - step)) / step)) }
 }
 
@@ -183,7 +193,7 @@ export function processDayCare(save: SaveData, data: GameData, now: number, rng:
   // one that would have found the pair.
   const clocks = CLOCKS.flatMap((clock) => {
     const last = lastOf(dc, clock)
-    return last == null ? [] : [{ clock, last, step: clockMs(data, clock) }]
+    return last == null ? [] : [{ clock, last, step: stepMs(save, data, clock) }]
   }).sort((x, y) => x.last + x.step - (y.last + y.step))
   for (const { clock, last, step } of clocks) {
     const due = Math.floor((now - last) / step)

@@ -1,9 +1,9 @@
 import { HauntSprite } from '@/components/Nightmare'
 import { GlitchSprite } from '@/components/Portal'
 import { motion } from 'framer-motion'
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { catchTarget, catchValueOf, effectiveStats, getSpecies, isDoubleEncounter, MONEY, paidKey, rebattleProgress, rebattleTiers, teamOf, type Encounter, portalNoCatch, nightmareFoe } from '@/engine'
+import { catchTarget, catchValueOf, effectiveStats, getSpecies, isDoubleEncounter, MONEY, paidKey, rebattleProgress, rebattleTiers, teamOf, type Encounter, portalNoCatch, nightmareFoe, familyTalent, familyUnlocked, noteTalentMet, talentMet, talentsOn } from '@/engine'
 import { joinList } from '@/i18n'
 import { effectText } from '@/i18n/text'
 import { money } from '@/lib/format'
@@ -24,9 +24,10 @@ import { TypeBadge } from '@/components/TypeBadge'
 import { foeTypes } from '@/components/TypeMatchups'
 import { ShinyParadeChip } from '@/screens/events/live'
 import { TrickCard } from '@/components/TrickOrTreat'
-import { useGame } from '@/store/game'
+import { mutateSave, useGame } from '@/store/game'
 import { canSkipCurrent, declineChallenge, engage, skipEncounter } from '@/store/run'
 import { cx } from '@/theme/util'
+import { TalentGem, talentName } from '@/components/Talent'
 
 function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> }) {
   const { t } = useT()
@@ -100,6 +101,7 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
           <DiceSet dice={stats.dice} size={22} />
           <StatChip stat="rerolls" value={stats.rerolls} size={18} className="text-lg" />
         </div>
+        {enc.talent && <TalentNews dex={enc.dex} name={sp.name} catchable={!distorted && !dream} />}
         {distorted ? (
           <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted">
             <PixelIcon name="sparkle" size={14} />
@@ -111,7 +113,7 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
             {t('ui.nightmare.noCatch')}
           </p>
         ) : (
-          <CatchHint dex={enc.dex} level={enc.level} kind={boss ? 'boss' : 'wild'} shiny={enc.shiny} />
+          <CatchHint dex={enc.dex} level={enc.level} kind={boss ? 'boss' : 'wild'} shiny={enc.shiny} talent={enc.talent} />
         )}
       </div>
     </div>
@@ -119,12 +121,48 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
 }
 
 /** What a catch would mean here: its catch value, and whether it's new, an upgrade, or not catchable. */
-function CatchHint({ dex, level, kind, shiny }: { dex: number; level: number; kind: 'wild' | 'boss'; shiny?: boolean }) {
+/**
+ * A wild Pokémon carrying its hidden talent (docs/51): its name, and whether catching it teaches the family (still
+ * locked here) or it's one more that has it. Seeing it notes the talent as met: the sheets name it from now on.
+ */
+function TalentNews({ dex, name, catchable }: { dex: number; name: string; catchable: boolean }) {
+  const { t } = useT()
+  const data = useGame((s) => s.data)
+  const save = useGame((s) => s.save)
+  useEffect(() => {
+    if (talentsOn(data)) mutateSave((s) => (talentMet(s, data, dex) ? null : noteTalentMet(s, data, dex)))
+  }, [data, dex])
+  if (!talentsOn(data) || !save) return null
+  const talent = familyTalent(data, dex)
+  const learn = catchable && !familyUnlocked(save, data, dex)
+  return (
+    <p className="m-0 flex items-start gap-1.5 bg-gold-pale px-2 py-1 text-[17px] leading-tight shadow-ring-line">
+      <TalentGem talent={talent} size={16} className="mt-0.5" />
+      <span>
+        {t(learn ? 'ui.talent.preview.learn' : 'ui.talent.preview.has', { name, talent: talentName(talent) })}
+      </span>
+    </p>
+  )
+}
+
+function CatchHint({
+  dex,
+  level,
+  kind,
+  shiny,
+  talent,
+}: {
+  dex: number
+  level: number
+  kind: 'wild' | 'boss'
+  shiny?: boolean
+  talent?: boolean
+}) {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   if (!save) return null
-  const target = catchTarget(save, dex, level, kind, data, shiny)
+  const target = catchTarget(save, dex, level, kind, data, shiny, save.currentAreaId, !!talent)
   return (
     <div className="flex flex-wrap items-center gap-x-1 text-lg leading-tight">
       <StatChip stat="catch" value={catchValueOf(data, dex)} size={18} />

@@ -2,6 +2,9 @@
 import {
   autoLevel,
   autoOffersLead,
+  catchTalentBonus,
+  getInstance,
+  talentOf,
   noteBossCaught,
   arriveAtPortal,
   applyCatch,
@@ -617,6 +620,8 @@ function startBattle(
     hp: p.currentHp,
     shiny: p.shiny,
     nickname: p.nickname,
+    // Its hidden talent (docs/51), while the switch is on.
+    talent: talentOf(data, p),
     // A portal run's extra dice (docs/28), or an Extreme Pokébuff's die (docs/47).
     ...(portalDiceFor(save, data, run.areaId, p.id) ?? buffDiceFor(save, data, p.id, serverNow() ?? Date.now())),
   }))
@@ -706,12 +711,12 @@ export function engage(lead?: string | string[], staged?: boolean) {
       void beginTrick(enc)
       return
     case 'wild': {
-      const foe = { dex: enc.dex, level: enc.level, shiny: enc.shiny }
-      const partner = enc.partner && { dex: enc.partner.dex, level: enc.partner.level, shiny: enc.partner.shiny }
+      const foe = { dex: enc.dex, level: enc.level, shiny: enc.shiny, talent: enc.talent }
+      const partner = enc.partner && { dex: enc.partner.dex, level: enc.partner.level, shiny: enc.partner.shiny, talent: enc.partner.talent }
       return startBattle('wild', foe, leadUid, partner ? { foes: [foe, partner], leadUids } : undefined)
     }
     case 'boss':
-      return startBattle('boss', { dex: enc.dex, level: enc.level, shiny: enc.shiny }, leadUid)
+      return startBattle('boss', { dex: enc.dex, level: enc.level, shiny: enc.shiny, talent: enc.talent }, leadUid)
     case 'trainer':
     case 'gym': {
       const first = enc.team[0]
@@ -818,6 +823,8 @@ function settleBattle(stalemate: boolean) {
         gymTrainerId: gym ? enc.trainerId : undefined,
         gymComplete: gym && !!run.trainer && run.trainer.index + 1 >= enc.team.length,
         prize: trainerPrize(enc, enc?.kind !== 'trainer' || !run.trainer || run.trainer.index + 1 >= enc.team.length),
+        // A trainer's last Pokémon ends the fight (the talents that act after a win, docs/51).
+        ...((enc?.kind === 'trainer' || gym) && { last: !run.trainer || run.trainer.index + 1 >= enc.team.length }),
       },
       data,
       runRng,
@@ -844,12 +851,18 @@ function settleBattle(stalemate: boolean) {
     const foeDex = s.enemy.baseDex ?? s.enemy.dex
     // A portal run's wild Pokémon can't be caught (docs/28), nor the nightmare's (docs/30).
     const noCatch = portalNoCatch(save, data, run.areaId) || nightmareNoCatch(save, data, run.areaId)
-    const target = kind && !noCatch ? catchTarget(res.save, foeDex, s.enemy.level, kind, data, s.enemy.shiny) : null
+    const talent = !!s.enemy.talent
+    const target =
+      kind && !noCatch ? catchTarget(res.save, foeDex, s.enemy.level, kind, data, s.enemy.shiny, run.areaId, talent) : null
+    const bonus = catchTalentBonus(data, getInstance(res.save, out.fighterUid))
     setRun({
       phase: target ? 'catch' : 'victory',
       events,
       pendingCatchId: null,
-      catch: target && kind ? { dex: foeDex, level: s.enemy.level, shiny: s.enemy.shiny, kind, target, result: null } : null,
+      catch:
+        target && kind
+          ? { dex: foeDex, level: s.enemy.level, shiny: s.enemy.shiny, kind, target, result: null, ...(talent && { talent }), ...(bonus && { bonus }) }
+          : null,
       catchQueue: [],
       catchPending: [],
       trainer: run.trainer ? { ...run.trainer, gold: run.trainer.gold + gold } : null,
@@ -937,8 +950,11 @@ function settleDouble(save: SaveData, result: 'won' | 'lost' | 'fled' | 'ongoing
   const catchKind = kind === 'wild' || kind === 'boss' ? kind : null
   const catches: CatchState[] = catchKind
     ? kos.flatMap((ko) => {
-        const target = catchTarget(next, ko.dex, ko.level, catchKind, data, ko.shiny)
-        return target ? [{ uid: ko.uid, dex: ko.dex, level: ko.level, shiny: ko.shiny, kind: catchKind, target, result: null }] : []
+        const target = catchTarget(next, ko.dex, ko.level, catchKind, data, ko.shiny, run.areaId!, !!ko.talent)
+        const bonus = Math.max(0, ...ko.fighters.map((uid) => catchTalentBonus(data, getInstance(next, uid))))
+        return target
+          ? [{ uid: ko.uid, dex: ko.dex, level: ko.level, shiny: ko.shiny, kind: catchKind, target, result: null, ...(ko.talent && { talent: true }), ...(bonus && { bonus }) }]
+          : []
       })
     : []
   setRun({
@@ -963,7 +979,7 @@ export function throwBall(ballKey: string | null) {
   const ball = ballKey ? data.items[ballKey] : undefined
   if (ballKey && (!ball || !isBallFor(ball, false) || (save.inventory[ballKey] ?? 0) <= 0)) return
   const next = ballKey ? (consumeItem(save, ballKey) ?? save) : save
-  const roll = rollCatch(catchValueOf(data, c.dex), ballBonus(ball), runRng)
+  const roll = rollCatch(catchValueOf(data, c.dex), ballBonus(ball) + (c.bonus ?? 0), runRng)
   const bait = baitFor(roll, next, data)
   if (bait) {
     commitSave(next)
@@ -1008,7 +1024,7 @@ function settleThrow(save: SaveData, roll: CatchRoll, ballKey: string | null, ba
     } else {
       // An Unown's letter is drawn as it's caught (docs/41): one the page is missing.
       const letter = c.dex === UNOWN_DEX ? unownLetterFor(next, runRng) : undefined
-      const res = applyCatch(next, { dex: c.dex, level: c.level, shiny: c.shiny, letter }, c.target, data, Date.now(), newId)
+      const res = applyCatch(next, { dex: c.dex, level: c.level, shiny: c.shiny, letter, talent: c.talent }, c.target, data, Date.now(), newId)
       // A boss is noted as caught in its area: a small world's goes by that, not the Pokédex (docs/26 §2.5).
       next = c.kind === 'boss' && run.areaId ? noteBossCaught(res.save, run.areaId, c.dex) : res.save
       events = res.events
@@ -1057,7 +1073,7 @@ function afterCatch(events: RunEvent[], caughtId: string | null) {
   // copy taken as new would be let go at once (one copy per species), its "Add to team?" asking about nobody.
   const queue = (run.catchQueue ?? []).flatMap((c) => {
     if (!save) return [c]
-    const target = catchTarget(save, c.dex, c.level, c.kind, data, c.shiny)
+    const target = catchTarget(save, c.dex, c.level, c.kind, data, c.shiny, run.areaId ?? save.currentAreaId, !!c.talent)
     return target ? [{ ...c, target }] : []
   })
   const [next, ...rest] = queue

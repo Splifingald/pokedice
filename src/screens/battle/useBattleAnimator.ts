@@ -18,6 +18,7 @@ import { hasOwnCry, playCry } from '@/audio/cries'
 import { feelSound } from '@/audio/feel'
 import { sfx, type SfxName } from '@/audio/sfx'
 import type { BattleSlice } from '@/store/game'
+import { talentLogText } from '@/components/Talent'
 
 export interface Fx {
   cursor: number
@@ -332,6 +333,18 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           ...f,
           message: STATUS_TEXT[e.status](nameOf(e.targetUid), e.status === 'confuse' ? e.level : e.stacks),
           status: { id: nextId(), target: e.target, status: e.status },
+        }),
+      }
+    case 'talent':
+      return {
+        delay: 850,
+        apply: (f) => ({
+          ...f,
+          message: talentLogText(nameOf(e.uid), e),
+          ...(e.hpAfter != null && {
+            hp: { ...f.hp, [e.uid]: e.hpAfter },
+            pop: { id: nextId(), target: e.side, amount: e.amount ?? 0, tone: 'heal' as const },
+          }),
         }),
       }
     case 'status_resisted':

@@ -2,6 +2,7 @@
 // listings and decides who got there first; each player's game applies its own half of a trade, here. Everything a
 // trade decides — the level a Pokémon arrives at, where it lands, how it's kept, a trade evolution — is worked out by
 // these functions; the screens only show their results.
+import { familyUnlocked, idRng, talentOnEvolve } from './talents'
 import { isLegendary } from './breeding'
 import { everyRegionBox, type BoxedMon } from './daycare'
 import { eventOpenTo } from './events'
@@ -305,15 +306,15 @@ export function snapshotHas(snap: Pick<TradeSnapshot, 'has' | 'forms'>, dex: num
 }
 
 /**
- * Does this Pokémon answer the want? A species: that one, shiny or not. Any I don't own: one the poster doesn't have in
+ * Does this Pokémon answer the want? A species: that one, shiny or not (carrying its hidden talent when the want says). Any I don't own: one the poster doesn't have in
  * the Box it would land in, or a shiny when they have no shiny of it. Anything: anything.
  */
 export function wantMatches(
   want: TradeWant,
-  mon: { dex: number; shiny?: boolean },
+  mon: { dex: number; shiny?: boolean; talent?: boolean },
   poster: TradeSnapshot,
 ): boolean {
-  if (want.kind === 'species') return mon.dex === want.dex
+  if (want.kind === 'species') return mon.dex === want.dex && (!want.talent || !!mon.talent)
   if (want.kind === 'notOwned')
     return !snapshotHas(poster, mon.dex) || (!!mon.shiny && !poster.shiny.includes(mon.dex))
   return true
@@ -457,7 +458,12 @@ export function placeInBox(save: SaveData, data: GameData, region: RegionId, ins
     return { save: next, outcome: inst.shiny ? 'shiny' : 'new', instId: inst.id, region: here }
   }
   const weakest = [...plain].sort((a, c) => a.level - c.level)[0]!
-  if (weakest.level >= inst.level) return { save, outcome: 'merged', instId: null, region: here }
+  if (weakest.level >= inst.level) {
+    // Its hidden talent passes to yours (docs/51), and so to the family once the save settles (`syncTalents`).
+    if (!inst.talent || weakest.talent) return { save, outcome: 'merged', instId: null, region: here }
+    const passed = withBlock(save, here, (x) => ({ ...x, box: x.box.map((p) => (p.id === weakest.id ? { ...p, talent: true } : p)) }))
+    return { save: passed, outcome: 'merged', instId: null, region: here }
+  }
   // The one arriving is the one you now have: its nickname comes with it; without one, yours stays.
   const upgraded: PokemonInstance = {
     ...weakest,
@@ -465,6 +471,7 @@ export function placeInBox(save: SaveData, data: GameData, region: RegionId, ins
     xp: 0,
     caughtAt: inst.caughtAt,
     ...(inst.nickname && { nickname: inst.nickname }),
+    ...(inst.talent && { talent: true }),
   }
   upgraded.currentHp = instanceMaxHp(upgraded, data)
   const next = withBlock(save, here, (x) => ({
@@ -580,7 +587,7 @@ function landTraded(
 export function receiveTrade(
   save: SaveData,
   data: GameData,
-  mon: { dex: number; shiny?: boolean; nickname?: string },
+  mon: { dex: number; shiny?: boolean; nickname?: string; talent?: boolean },
   givenLevel: number,
   now: number,
   newId: () => string,
@@ -590,11 +597,18 @@ export function receiveTrade(
   const home = homeRegionOf(data, mon.dex) ?? regionOf(save)
   let inst = createInstance(mon.dex, arrival.level, data, newId(), now)
   if (mon.shiny) inst.shiny = true
+  // A traded Pokémon keeps its hidden talent (docs/51).
+  if (mon.talent === true) inst.talent = true
   const nickname = cleanNickname(mon.nickname)
   if (nickname) inst.nickname = nickname
   const to = tradeEvolutionOf(data, mon.dex)
   const evolvedTo = to != null && speciesAllowedIn(data, home)(to) ? to : null
   if (evolvedTo != null) inst = evolve(inst, evolvedTo, data)
+  // Evolving on the trade, a family still locked may find its hidden talent (docs/51): drawn from the arrival's id.
+  if (evolvedTo != null && !inst.talent && !familyUnlocked(save, data, evolvedTo, home)) {
+    const found = talentOnEvolve(save, data, [{ kind: 'evolve', uid: inst.id, toDex: evolvedTo }], idRng(inst.id), home)
+    if (found.found.length) inst.talent = true
+  }
   inst.currentHp = instanceMaxHp(inst, data)
   const landings = tradeLandings(save, data, inst.dex)
   const base = { dex: mon.dex, arrival, evolvedTo, landings, inst }
@@ -727,10 +741,10 @@ export function missesTrades(older: SaveData, current: SaveData): boolean {
   return (c.log ?? []).some((l) => !known.has(l.id))
 }
 
-/** What the Done list and the scene keep of a Pokémon beyond its species and level: shiny, and its nickname. */
-function extras(m: PokemonInstance): { shiny?: true; nickname?: string } {
+/** What the Done list and the scene keep of a Pokémon beyond its species and level: shiny, its nickname, its talent. */
+function extras(m: PokemonInstance): { shiny?: true; nickname?: string; talent?: true } {
   const nickname = cleanNickname(m.nickname)
-  return { ...(m.shiny && { shiny: true }), ...(nickname && { nickname }) }
+  return { ...(m.shiny && { shiny: true }), ...(nickname && { nickname }), ...(m.talent && { talent: true }) }
 }
 
 /** What the server says a taken trade was: the listed Pokémon, the one given for it, who took it. */

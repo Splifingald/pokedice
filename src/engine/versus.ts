@@ -7,6 +7,7 @@ import { gemRulesOn, gmaxBoostOn, megaFormsOfGems, zMovesOn, type VersusPowers }
 import { regionOf, worldRegionOf } from './regions'
 import { autoEvents } from './sim'
 import { createRng } from './rng'
+import { carriedTalent, TALENT } from './talents'
 import { typeMultiplier } from './typechart'
 import { versusLeagueFor } from './versusLeague'
 import type { GameData, PokeType, PokemonInstance, PowerKind, RegionId, SaveData } from './types'
@@ -25,6 +26,8 @@ export interface VersusMon {
   /** Its own level (50 or more; teams registered before migration 0090 say 50): the fight caps it (`versusSeedLevels`). */
   level: number
   shiny: boolean
+  /** It carries its family's hidden talent (docs/51); teams registered before have none. */
+  talent?: boolean
 }
 
 /** A Versus Pokémon in a battle: at Lv.50 at most (its HP, the level shown), with the dice and rerolls of its own level. */
@@ -128,8 +131,8 @@ export const versusRulesDue = (save: SaveData, data: GameData): boolean =>
     : !save.versusRulesSeen && versusUnlocked(save, data)
 
 /** The clone that fights for `p`: the same species, colours and level (the fight shows it at Lv.50 at most). */
-export function cloneForVersus(p: Pick<PokemonInstance, 'dex' | 'level' | 'shiny'>): VersusMon {
-  return { dex: p.dex, level: p.level, shiny: !!p.shiny }
+export function cloneForVersus(p: Pick<PokemonInstance, 'dex' | 'level' | 'shiny' | 'talent'>): VersusMon {
+  return { dex: p.dex, level: p.level, shiny: !!p.shiny, ...(p.talent && { talent: true }) }
 }
 
 /** One engine call of the fight, with what it produced: the replay feeds these back to the battle screen in order. */
@@ -235,18 +238,19 @@ function openRound(m: Omit<VersusMatch, 'state'>, d: number, data: GameData): { 
     // Full health for the first battle; afterwards, whatever the last one left.
     hp: m.hp[attackerUid(i)] ?? Number.MAX_SAFE_INTEGER,
     shiny: p.shiny,
+    talent: carriedTalent(data, p.dex, p.talent),
     ...(m.powered[attackerUid(i)] && { powered: m.powered[attackerUid(i)] }),
   }))
   // A mutual K.O. — the attacker's last Pokémon falling as it wins — leaves nobody to face the next one.
   if (!team.some((p) => p.hp > 0)) return null
   const foe = m.defender[d]!
   const levels = uniformLevels(data.config.versusUpgradeLevel)
-  return createBattle(
+  return withDuelists(createBattle(
     {
       kind: 'trainer',
       team,
       leadUid: m.lead,
-      enemy: { dex: foe.dex, ...versusSeedLevels(foe.level), shiny: foe.shiny },
+      enemy: { dex: foe.dex, ...versusSeedLevels(foe.level), shiny: foe.shiny, talent: foe.talent },
       playerLevels: levels,
       enemyLevels: levels,
       ...attackerPowers(m.sides.attacker, data),
@@ -254,7 +258,17 @@ function openRound(m: Omit<VersusMatch, 'state'>, d: number, data: GameData): { 
       enemyPlan: defenderPlan(foe.dex, m.sides.defender, m.foeSpent, data),
     },
     data,
-  )
+  ))
+}
+
+/** Duelist (docs/51): its rerolls are Versus's alone, added to every battle of the match. */
+function withDuelists(opened: { state: BattleState; log: LogEntry[] }): { state: BattleState; log: LogEntry[] } {
+  for (const b of [...opened.state.player, opened.state.enemy])
+    if (b.talent === 'duelist') {
+      b.rerolls += TALENT.duelist
+      b.rerollsLeft += TALENT.duelist
+    }
+  return opened
 }
 
 /**

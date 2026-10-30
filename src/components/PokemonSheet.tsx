@@ -2,6 +2,9 @@ import { useMemo, type ReactNode } from 'react'
 import {
   ARCEUS_DEX,
   battleSpeed,
+  talentOf,
+  TALENT,
+  type TalentKey,
   choiceFormsOf,
   plateTypes,
   COPIES_FOE_DICE,
@@ -49,8 +52,17 @@ import { MiniSprite, SpriteImg } from './SpriteImg'
 import { StatChip, statHint, statLabel, type StatKind } from './StatChip'
 import { TypeBadge } from './TypeBadge'
 import { TypeMatchups } from './TypeMatchups'
+import { TalentSection } from './Talent'
 
 /** A stat as a big number over its name (Speed, Rerolls, Catch value); the hint is the tooltip. */
+/** Speed's breakdown under its total: "90 + Lv.30", and Quick's or Ultra Speed's share when it carries one (docs/51). */
+function speedParts(base: number, level: number, talent: TalentKey | null): string {
+  const up = talent === 'quick' ? TALENT.quick : talent === 'ultraSpeed' ? TALENT.ultraSpeed : 0
+  return up
+    ? t('ui.stat.speed.partsTalent', { base, level, n: Math.round(up * 100) })
+    : t('ui.stat.speed.parts', { base, level })
+}
+
 /** `parts`: how the number is made, under it (Speed: "90 + Lv.30"). */
 function StatTile({ stat, value, parts }: { stat: StatKind; value: ReactNode; parts?: string }) {
   useT()
@@ -474,7 +486,8 @@ export function PokemonSheet({
   const species = getSpecies(data, dex)
   const level = inst?.level ?? 1
   const shiny = shinyAsked ?? inst?.shiny
-  const stats = effectiveStats(species, level, data)
+  // Its own hidden talent counts (docs/51: Thick Hide's HP).
+  const stats = effectiveStats(species, level, data, inst ? talentOf(data, inst) : null)
   const hints = useTypeHints()
   const types = species.type2 ? [species.type1, species.type2] : [species.type1]
   const lowHp = lowHpFormOf(data, species.dex)
@@ -583,6 +596,8 @@ export function PokemonSheet({
         </ul>
       </SheetSection>
 
+      <TalentSection dex={dex} inst={inst} />
+
       <MilestoneTrack species={species} level={inst ? inst.level : null} onOpenDex={onOpenDex} />
 
       {beforeMatchups}
@@ -609,8 +624,8 @@ export function PokemonSheet({
           {inst ? (
             <StatTile
               stat="speed"
-              value={battleSpeed(species, inst.level, data)}
-              parts={t('ui.stat.speed.parts', { base: species.speed, level: inst.level })}
+              value={battleSpeed(species, inst.level, data, talentOf(data, inst))}
+              parts={speedParts(species.speed, inst.level, talentOf(data, inst))}
             />
           ) : (
             <StatTile stat="speed" value={species.speed} />

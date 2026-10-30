@@ -1,4 +1,5 @@
 // Fossils: found in the field, they go straight to the Box as the Pokémon they hold and revive after a while.
+import { rollTalentFor } from './talents'
 import { createInstance, instanceMaxHp } from './progression'
 import type { GameData, ItemDef, PokemonInstance, SaveData } from './types'
 
@@ -9,7 +10,9 @@ export function addFossil(save: SaveData, item: ItemDef, data: GameData, now: nu
   if (item.effect.kind !== 'fossil' || !data.species[item.effect.dex]) return save
   const inst = createInstance(item.effect.dex, item.effect.level, data, id, now)
   const revivesAt = now + Math.max(0, item.effect.hours) * 3_600_000
-  return { ...save, box: [...save.box, { ...inst, revivesAt, fossil: item.key }] }
+  // Its family's hidden talent, at the wild odds (docs/51).
+  const talent = rollTalentFor(data, inst.dex, id)
+  return { ...save, box: [...save.box, { ...inst, revivesAt, fossil: item.key, ...(talent && { talent }) }] }
 }
 
 /** Fossils whose time has come are revived: full HP, into the Pokédex. `revived` lists them. */

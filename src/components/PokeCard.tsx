@@ -12,6 +12,7 @@ import { RevivalBar } from './MonCard'
 import { MiniSprite } from './SpriteImg'
 import { TypeBadge } from './TypeBadge'
 import { attackEdge } from './TypeMatchups'
+import { InstTalentGem } from './Talent'
 
 /**
  * A Pokémon as a card, three to a row: the one card for a team member everywhere (docs/43 §4: the Team screen, the
@@ -94,6 +95,7 @@ export function PokeCard({
         )}
         <span className="text-base leading-none">{t('ui.common.level.short', { n: inst.level })}</span>
         {inst.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
+        <InstTalentGem inst={inst} />
         {(edge !== 1 || badge || crown) && (
           <span className="ml-auto flex shrink-0 items-center gap-0.5">
             {edge !== 1 && (

@@ -6,6 +6,7 @@ import { itemOn } from './items'
 import { createInstance, instanceMaxHp } from './progression'
 import type { Rng } from './rng'
 import { getInstance, progressOf, unlockedHiddenAreas, type RunEvent } from './run'
+import { familyTalent, familyUnlocked, talentsOn, unlockFamily } from './talents'
 import type { GameData, ItemDef, PokemonInstance, SaveData } from './types'
 import {
   addUnownLetters,
@@ -21,7 +22,11 @@ import { worldOfArea } from './worldList'
 
 export const CATCH_DIE = 6
 
-export type CatchTarget = { mode: 'new' } | { mode: 'replace'; uid: string; level: number }
+/**
+ * `learn` (docs/51): a weaker copy carrying its family's hidden talent, still locked here. Caught, its talent passes to
+ * the family and the Pokémon is let go: `uid` is the copy the player keeps.
+ */
+export type CatchTarget = { mode: 'new' } | { mode: 'replace'; uid: string; level: number } | { mode: 'learn'; uid: string }
 
 /**
  * Can this K.O.'d Pokémon be caught? A species not in the Pokédex yet, or — wild ones only — a stronger copy of one you
@@ -41,6 +46,24 @@ export function catchTarget(
   data: GameData,
   shiny = false,
   areaId: string = save.currentAreaId,
+  /** It carries its family's hidden talent (docs/51). */
+  talent = false,
+): CatchTarget | null {
+  const target = ordinaryTarget(save, dex, level, kind, data, shiny, areaId)
+  if (target || !talent || !talentsOn(data) || familyUnlocked(save, data, dex)) return target
+  // A talent still locked here is worth a catch whatever its level: it passes to the family, the Pokémon is let go.
+  const own = save.box.filter((p) => p.dex === dex && !p.shiny).sort((a, b) => b.level - a.level)[0] ?? save.box.find((p) => p.dex === dex)
+  return own ? { mode: 'learn', uid: own.id } : null
+}
+
+function ordinaryTarget(
+  save: SaveData,
+  dex: number,
+  level: number,
+  kind: 'wild' | 'boss',
+  data: GameData,
+  shiny: boolean,
+  areaId: string,
 ): CatchTarget | null {
   if (!data.species[dex]) return null
   if (!save.pokedex.includes(dex)) return { mode: 'new' }
@@ -181,7 +204,7 @@ export interface CatchResult {
  */
 export function applyCatch(
   save: SaveData,
-  caught: { dex: number; level: number; shiny?: boolean; letter?: string },
+  caught: { dex: number; level: number; shiny?: boolean; letter?: string; talent?: boolean },
   target: CatchTarget,
   data: GameData,
   now: number,
@@ -194,6 +217,15 @@ export function applyCatch(
   let next: SaveData
   let caughtId: string
   let needsTeamChoice = false
+  const talent = !!caught.talent && talentsOn(data)
+  // A weaker copy caught for its talent (docs/51): the family learns it, the Pokémon is let go.
+  if (target.mode === 'learn') {
+    const kept = getInstance(save, target.uid)
+    if (!kept) return { save, events, caughtId: target.uid, needsTeamChoice: false }
+    const learnt = talent ? unlockFamily(save, data, caught.dex) : save
+    if (learnt !== save) events.push({ kind: 'talent', uid: kept.id, dex: kept.dex, talent: familyTalent(data, caught.dex), how: 'passed' })
+    return { save: learnt, events, caughtId: kept.id, needsTeamChoice: false }
+  }
   const old = target.mode === 'replace' ? getInstance(save, target.uid) : undefined
   const letter = caught.dex === UNOWN_DEX && isUnownLetter(caught.letter) ? caught.letter : null
   if (old) {
@@ -241,6 +273,11 @@ export function applyCatch(
         total: UNOWN_LETTERS.length,
         ...(prize.paid > 0 && { reward: prize.paid }),
       })
+  }
+  // Its hidden talent (docs/51): the whole family carries it from now on, here.
+  if (talent && !familyUnlocked(next, data, caught.dex)) {
+    next = unlockFamily(next, data, caught.dex)
+    events.push({ kind: 'talent', uid: caughtId, dex: caught.dex, talent: familyTalent(data, caught.dex), how: 'caught' })
   }
   // Secret areas whose Pokédex condition this catch just met.
   for (const id of unlockedHiddenAreas(next, data)) if (!hiddenBefore.has(id)) events.push({ kind: 'secret_unlocked', areaId: id })

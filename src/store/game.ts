@@ -23,6 +23,7 @@ import {
   settleLook,
   stampExtremeUnlock,
   noteShinyDex,
+  syncTalents,
   noteUnownDex,
   payUnownDex,
   syncPowers,
@@ -79,6 +80,10 @@ export interface CatchState {
   dex: number
   level: number
   shiny?: boolean
+  /** It carries its family's hidden talent (docs/51). */
+  talent?: boolean
+  /** + the catch die: Gentle Touch on the Pokémon that made the K.O. (docs/51). */
+  bonus?: number
   kind: 'wild' | 'boss'
   target: CatchTarget
   /** Capture Luck kept it after a miss and this is the second throw: it won't stay again (docs/25). */
@@ -260,7 +265,9 @@ function settle(save: SaveData, data: GameData) {
   // badges that open each power noted for Versus.
   const powers = syncPowers(settleLook(ko.save, progress, data), data)
   // The shiny Pokédex (docs/39): every shiny held is noted under its region, kept when it leaves.
-  const shinyDex = noteShinyDex(powers.save)
+  // Hidden talents (docs/51): a Pokémon that came with its talent unlocks its family; every one of an unlocked family
+  // carries it.
+  const shinyDex = noteShinyDex(syncTalents(powers.save, data))
   // The Unown Pokédex (docs/41): the letters held noted (a save from before it, a trade), and its prize once complete
   // (a page finished while the switch was off is paid the day it opens).
   const unown = payUnownDex(noteUnownDex(shinyDex), data)

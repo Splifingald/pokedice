@@ -28,6 +28,7 @@ import { useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { TeamCards } from './team/TeamCards'
+import { InstTalentGem } from '@/components/Talent'
 
 type Sort = Exclude<BoxSort, 'type'>
 const SORTS: readonly Sort[] = ['dex', 'level', 'newest']
@@ -193,7 +194,11 @@ export function TeamScreen() {
                     .join(', ')}
                   onClick={() => open(p)}
                   tags={
-                    p.shiny && <PixelIcon name="star" size={12} className="absolute left-[5px] top-[5px]" />
+                    <>
+                      {p.shiny && <PixelIcon name="star" size={12} className="absolute left-[5px] top-[5px]" />}
+                      {/* Its hidden talent (docs/51): under the star, or in its place. */}
+                      <InstTalentGem inst={p} className={cx('absolute left-[6px]', p.shiny ? 'top-[20px]' : 'top-[5px]')} />
+                    </>
                   }
                 />
               </li>
@@ -227,7 +232,11 @@ export function TeamScreen() {
                     .join(', ')}
                   onClick={() => setView({ kind: 'homer', id: p.id })}
                   tags={
-                    p.shiny && <PixelIcon name="star" size={12} className="absolute left-[5px] top-[5px]" />
+                    <>
+                      {p.shiny && <PixelIcon name="star" size={12} className="absolute left-[5px] top-[5px]" />}
+                      {/* Its hidden talent (docs/51): under the star, or in its place. */}
+                      <InstTalentGem inst={p} className={cx('absolute left-[6px]', p.shiny ? 'top-[20px]' : 'top-[5px]')} />
+                    </>
                   }
                 />
               </li>

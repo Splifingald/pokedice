@@ -18,6 +18,7 @@
     "haunted-hollow": "tsx scripts/content-haunted-hollow.ts",
     "seed-sql": "tsx scripts/write-seed-sql.ts",
     "seed-forms": "tsx scripts/seed-forms.ts",
+    "talents": "tsx scripts/hidden-talents.ts",
     "rebattle-teams": "tsx scripts/rebattle-teams.ts",
     "versus-bots": "tsx scripts/versus-bots.ts",
     "rebattle-sql": "tsx scripts/rebattle-sql.ts",

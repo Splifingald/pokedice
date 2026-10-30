@@ -28,6 +28,7 @@ import {
   raidNpcOffer,
   raidSeedLevels,
   raidTeam,
+  carriedTalent,
   raidTeamCap,
   randomSeed,
   regionOf,
@@ -232,7 +233,14 @@ function friendSide(f: RaidFriend, k: number, cap: number): RaidSideSeed {
     look: avatarOf(f.avatar).src,
     kind: 'friend',
     userId: f.userId,
-    team: f.team.slice(0, 3).map((m, i) => ({ uid: `s${k}-${i}`, dex: m.dex, ...raidSeedLevels(m.level, cap), hp: Number.MAX_SAFE_INTEGER, shiny: m.shiny })),
+    team: f.team.slice(0, 3).map((m, i) => ({
+      uid: `s${k}-${i}`,
+      dex: m.dex,
+      ...raidSeedLevels(m.level, cap),
+      hp: Number.MAX_SAFE_INTEGER,
+      shiny: m.shiny,
+      talent: carriedTalent(useGame.getState().data, m.dex, m.talent),
+    })),
   }
 }
 
@@ -262,6 +270,7 @@ function startFight(
       hp: Number.MAX_SAFE_INTEGER,
       shiny: m.shiny,
       nickname: m.nickname,
+      talent: carriedTalent(data, m.dex, m.talent),
     })),
   }
   const picked = friends.filter((f) => f.team.length > 0).slice(0, 2)

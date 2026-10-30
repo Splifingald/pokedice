@@ -9,6 +9,7 @@
 // XP; no upgrades (dice and combos follow each Pokémon's level, both sides); booster types (× damage, both sides, always
 // shown); its own Mart; a shiny mythical at the end. No event reaches inside, and the Day Care, Versus and the region
 // chain are the main game's.
+import { rollTalentFor } from './talents'
 import type { UpgradeLevels } from './damage'
 import { bossCaught, isRaidBoss } from './encounters'
 import { eventOpenTo } from './events'
@@ -543,6 +544,8 @@ export function catchWorldMythical(
   }
   const inst = createInstance(dex, caught.level, data, newId(), now)
   inst.shiny = true
+  // A mythical always carries its hidden talent (docs/51).
+  if (rollTalentFor(data, dex, inst.id)) inst.talent = true
   const home = mythicalHome(data, dex)
   const sent = home === world.regionId ? null : addToRegion(noted, data, home, inst)
   if (sent) return { save: sent.save, events: [{ kind: 'world_mythical', dex, level: caught.level, region: home, waiting: false }] }
@@ -573,6 +576,7 @@ export function releaseWorldPending(
     }
     const inst = createInstance(p.dex, p.level, data, newId(), now)
     if (p.shiny) inst.shiny = true
+    if (rollTalentFor(data, p.dex, inst.id)) inst.talent = true
     const res = addToRegion(next, data, home, inst)
     if (!res) {
       still.push(p)

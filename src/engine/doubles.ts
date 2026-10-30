@@ -1,5 +1,6 @@
 // Double battles (docs/33): when an encounter is fought two against two. The admin's switch and regions decide where,
 // the wild odds how often; duo trainers (the Twins, Tate & Liza…) always are. The battle itself is engine/battle.ts.
+import { rollTalent } from './talents'
 import { DEFAULT_CONFIG } from './defaults'
 import { rollWild, type Encounter, type EncounterContext } from './encounters'
 import { eventOpenTo } from './events'
@@ -40,7 +41,8 @@ export function asDouble(enc: Encounter, ctx: EncounterContext, save: SaveData, 
     // A roamer turning up instead is a legendary on its own: no pair this time.
     if (partner?.kind !== 'wild') return enc
     const { dex, level, isNew, shiny } = partner
-    return { ...enc, partner: { dex, level, isNew, ...(shiny && { shiny }) } }
+    const talent = rollTalent(data, dex, rng)
+    return { ...enc, partner: { dex, level, isNew, ...(shiny && { shiny }), ...(talent && { talent }) } }
   }
   if (enc.kind === 'trainer' || (enc.kind === 'gym' && !enc.rebattle)) {
     const t = data.trainers[enc.trainerId]

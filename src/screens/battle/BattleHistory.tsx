@@ -2,6 +2,7 @@
 // switches, items and heals. Only what the animation has already shown.
 import { useMemo, useState, type ReactNode } from 'react'
 import {
+  talentTier,
   type Battler,
   type DamageResult,
   type GameData,
@@ -20,6 +21,7 @@ import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { chancePercent, comboName, typeName } from '@/lib/format'
 import { cx } from '@/theme/util'
+import { talentLogText } from '@/components/Talent'
 
 /**
  * How a hit adds up, in one line: ( dice + combo ) × the type multiplier = the damage dealt.
@@ -167,6 +169,9 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: r
           icon: STATUS_ICON[e.status],
           amount: e.amount,
         })
+        return
+      case 'talent':
+        rows.push({ key, ...who(e.uid), text: talentLogText(who(e.uid).name, e), icon: talentTier(e.talent) === 'super' ? 'talent' : 'talentBase' })
         return
       case 'status_resisted':
         rows.push({

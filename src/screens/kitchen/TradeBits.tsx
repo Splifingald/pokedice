@@ -28,6 +28,7 @@ const listing = (over: Partial<TradeListing>): TradeListing => ({
   dex: 4,
   level: 12,
   shiny: false,
+  talent: false,
   homeRegion: 'kanto',
   want: { kind: 'species', dex: 16 },
   visibility: 'public',

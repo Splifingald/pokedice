@@ -40,9 +40,24 @@ export function rollAll(types: readonly DieType[], data: GameData, rng: Rng): Ro
   return types.map((t) => rollDie(t, data, rng))
 }
 
-/** Rethrow the dice whose mask entry is true; the others are kept. */
-export function rerollMasked(dice: readonly RolledDie[], mask: readonly boolean[], data: GameData, rng: Rng): RolledDie[] {
-  return dice.map((d, i) => (mask[i] ? rollDie(d.type, data, rng) : d))
+/**
+ * Rethrow the dice whose mask entry is true; the others are kept. `fresh` (the Reroller talent, docs/51): a rethrown die
+ * never lands on the number it showed, as long as its die has another.
+ */
+export function rerollMasked(
+  dice: readonly RolledDie[],
+  mask: readonly boolean[],
+  data: GameData,
+  rng: Rng,
+  fresh = false,
+): RolledDie[] {
+  return dice.map((d, i) => {
+    if (!mask[i]) return d
+    if (!fresh) return rollDie(d.type, data, rng)
+    const shown = dieValue(d, data)
+    const others = facesOf(d.type, data).flatMap((f, faceIndex) => (f.value !== shown ? [faceIndex] : []))
+    return others.length ? { type: d.type, faceIndex: rng.pick(others) } : rollDie(d.type, data, rng)
+  })
 }
 
 export function statusCounts(dice: readonly RolledDie[], data: GameData): Record<StatusKind, number> {

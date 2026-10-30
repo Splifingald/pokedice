@@ -57,10 +57,12 @@ export interface LeagueMatchStart {
 
 const mons = (raw: unknown): VersusMon[] =>
   Array.isArray(raw)
-    ? raw.map((m: { dex?: unknown; level?: unknown; shiny?: unknown }) => ({
+    ? raw.map((m: { dex?: unknown; level?: unknown; shiny?: unknown; talent?: unknown }) => ({
         dex: Number(m?.dex) || 1,
         level: Number(m?.level) || 50,
         shiny: !!m?.shiny,
+        // Its hidden talent (docs/51): the server's snapshot carries it from 0093.
+        ...(m?.talent === true && { talent: true }),
       }))
     : []
 

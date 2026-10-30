@@ -92,6 +92,43 @@ const DIG_PAL: Record<string, string> = {
 }
 
 export const ICONS = {
+  // Hidden talents (docs/51): a cut gem, gold for a super talent, blue for a base one, grey while it's unknown.
+  talent: [
+    '....kk....',
+    '...kwYk...',
+    '..kwYyyk..',
+    '.kwYyyyok.',
+    'kYyyyyyook',
+    'kyyyyyoook',
+    '.kyyyoook.',
+    '..kyoook..',
+    '...kook...',
+    '....kk....',
+  ],
+  talentBase: [
+    '....kk....',
+    '...kwck...',
+    '..kwccbk..',
+    '.kwccccbk.',
+    'kcccccbbbk',
+    'kcccccbbbk',
+    '.kcccbbbk.',
+    '..kcbbbk..',
+    '...kbbk...',
+    '....kk....',
+  ],
+  talentLocked: [
+    '....kk....',
+    '...kwlk...',
+    '..kwlllk..',
+    '.kwllllgk.',
+    'klllllgggk',
+    'klllllgggk',
+    '.klllgggk.',
+    '..klgggk..',
+    '...kggk...',
+    '....kk....',
+  ],
   gift: [
     '..kkk..kkk..',
     '.kyYykkyYyk.',
@@ -550,6 +587,9 @@ const OWN_PALETTE: Partial<Record<IconName, Record<string, string>>> = {
   daySun: NAV_PAL,
   nightMoon: NAV_PAL,
   check: CHECK_PAL,
+  talent: NAV_PAL,
+  talentBase: NAV_PAL,
+  talentLocked: NAV_PAL,
 }
 
 export function PixelIcon({

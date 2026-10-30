@@ -1,6 +1,7 @@
 // Out-of-battle save actions: shop, upgrades, bag items from the team screen, team changes (at a Center, at a portal's
 // way in).
 import {
+  type ProgressEvent,
   applyFieldItem,
   applyLevelEvolution,
   buyComboUpgrade,
@@ -99,6 +100,7 @@ export function applyBagItem(key: string, instId: string): { evolved: { uid: str
   const up = [...res.events].reverse().find((e) => e.kind === 'level_up')
   if (up && up.kind === 'level_up')
     pushToast(t('ui.toast.grewTo', { name: data.species[up.dex]?.name ?? '', level: up.level }), 'good')
+  toastTalents(res.events)
   return { evolved: evo && evo.kind === 'evolve' ? { uid: evo.uid, fromDex: evo.fromDex, toDex: evo.toDex } : null }
 }
 
@@ -110,7 +112,22 @@ export function evolveAtLevelCap(instId: string): { uid: string; fromDex: number
   const evo = res?.events.find((e) => e.kind === 'evolve')
   if (!res || !evo || evo.kind !== 'evolve') return null
   mutateSave(() => res.save)
+  toastTalents(res.events)
   return { uid: evo.uid, fromDex: evo.fromDex, toDex: evo.toDex }
+}
+
+/** A family's hidden talent found as one of its Pokémon evolved out of battle (docs/51): a toast says so. */
+function toastTalents(events: readonly { kind: string }[]) {
+  const data = useGame.getState().data
+  for (const e of events)
+    if (e.kind === 'talent') {
+      const f = e as Extract<ProgressEvent, { kind: 'talent' }>
+      pushToast(
+        t(`ui.talent.found.${f.how}`, { name: data.species[f.dex]?.name ?? '', talent: t(`ui.talent.name.${f.talent}`) }),
+        'good',
+        4500,
+      )
+    }
 }
 
 export function reorderTeam(ids: string[]) {

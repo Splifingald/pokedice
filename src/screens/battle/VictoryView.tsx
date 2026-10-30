@@ -61,6 +61,7 @@ import { leaveRebattle, startRebattle } from '@/store/rebattle'
 import { Medal, tierName } from '@/screens/events/RebattlePage'
 import { cx, shade, typeColor } from '@/theme/util'
 import { WorldMythicalCard } from '@/screens/events/world'
+import { TalentAfterWinCard, TalentFoundCard } from '@/components/Talent'
 
 /** How long NEXT fills before it goes by itself, with Auto on. */
 const ADVANCE_MS = 1800
@@ -492,6 +493,29 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
         case 'league_healed':
           extras.push({ key: k, sound: 'heal', node: <LeagueHealedCard /> })
           return
+        // Hidden talents (docs/51): a family's talent unlocked, and what one did after the win.
+        case 'talent':
+          extras.push({ key: k, sound: 'catch', node: <TalentFoundCard uid={e.uid} dex={e.dex} talent={e.talent} how={e.how} /> })
+          return
+        case 'field_medic': {
+          const dex = save?.box.find((p) => p.id === e.uid)?.dex ?? 0
+          extras.push({
+            key: k,
+            sound: 'heal',
+            node: <TalentAfterWinCard uid={e.uid} dex={dex} line={(name) => t('ui.talent.medic', { name, n: e.amount })} />,
+          })
+          return
+        }
+        case 'pickup': {
+          const dex = save?.box.find((p) => p.id === e.uid)?.dex ?? 0
+          const what = e.key === 'money' ? money(e.qty) : `${data.items[e.key]?.name ?? e.key}${e.qty > 1 ? ` ×${e.qty}` : ''}`
+          extras.push({
+            key: k,
+            sound: 'gold',
+            node: <TalentAfterWinCard uid={e.uid} dex={dex} line={(name) => t('ui.talent.pickup', { name, item: what })} />,
+          })
+          return
+        }
         case 'rebattle_cleared':
           extras.push({
             key: k,

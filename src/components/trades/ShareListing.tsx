@@ -16,6 +16,8 @@ export interface Shared {
   dex: number
   level: number
   shiny: boolean
+  /** It carries its hidden talent (docs/51). */
+  talent?: boolean
   want: TradeWant
   visibility: TradeVisibility
 }
