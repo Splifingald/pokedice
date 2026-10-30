@@ -956,6 +956,8 @@ export interface GameConfig {
   showRoundPreview: boolean
   /** Chance (0–1) that a wild Pokémon is shiny: only its sprites change. */
   shinyChance: number
+  /** Chance (0–1) that a fossil revives shiny, wherever it was found: its own odds, never the Shiny Charm's. */
+  fossilShinyChance: number
   /** Signed-in players' save goes to the cloud at most this often (minutes) while they play; SYNC ONLINE does it now. */
   cloudSyncMinutes: number
   /** Friends each player can have (both sides of a friendship count it). The database reads the same key. */
