@@ -1,5 +1,5 @@
 // Hidden talents (docs/51, docs/15 §38): with the switch on, the rules once (Later); a Pokémon carrying its family's
-// talent wears the gem on its Box tile and its card; its sheet's Talent section names it, INFO shows the rules again; a
+// talent wears the gem on its Box tile and its card; its sheet's Talent box names it, a tap on it shows the rules; a
 // Pokémon of a family never met says "???". Switched off, no gem, no section, no pop-up.
 import { expect, test, type Page } from '@playwright/test'
 import { createInstance, type SaveData } from '../src/engine'
@@ -57,7 +57,9 @@ test('switched on: the rules once, the gem on the Box and the card, the sheet na
   const sheet = page.getByRole('dialog', { name: 'Rattata' })
   await expect(sheet.getByRole('heading', { name: 'Hidden talent' })).toBeVisible()
   await expect(sheet.getByText('Pickup', { exact: true })).toBeVisible()
-  await sheet.getByRole('button', { name: /Hidden talents/ }).click()
+  // A tap on the talent's box shows the rules again: no INFO button.
+  await expect(sheet.getByRole('button', { name: /INFO/ })).toHaveCount(0)
+  await sheet.getByRole('button', { name: /Pickup/ }).click()
   await expect(page.getByRole('dialog', { name: 'Hidden talents' })).toBeVisible()
   await page
     .getByRole('dialog', { name: 'Hidden talents' })

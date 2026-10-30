@@ -1,7 +1,7 @@
 // Kitchen sink (dev only): hidden talents (docs/51) — the gem (a base talent, a super one, unknown; each size), the
 // sheet's box (carried, known but not learnt, never met), the encounter's line (to learn, already learnt), the result
 // cards (caught, passed, found evolving; Field Medic, Pickup), the battle log's lines, the trade toggle, and the rules
-// (unlock and INFO).
+// (unlock, and again from a tap on the sheet's box).
 import { useState, type ReactNode } from 'react'
 import {
   TalentAfterWinCard,
@@ -12,7 +12,6 @@ import {
   talentLogText,
   talentName,
 } from '@/components/Talent'
-import { InfoButton } from '@/components/RulesModal'
 import { PixelButton } from '@/components/PixelButton'
 import { Toggle } from '@/components/Toggle'
 import { t } from '@/i18n'
@@ -122,7 +121,9 @@ export function TalentBits() {
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <PixelButton onClick={() => setRules('unlock')}>Rules · unlock</PixelButton>
-        <InfoButton name={t('ui.talent.title')} onClick={() => setRules('info')} />
+        <span className="w-72">
+          <TalentBox talent="raider" has known onClick={() => setRules('info')} />
+        </span>
       </div>
       <TalentRulesModal
         open={rules != null}

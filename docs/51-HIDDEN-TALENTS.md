@@ -27,7 +27,7 @@ wild rarely carries it; catching one unlocks the talent for the whole family. Th
 | Trades | A traded Pokémon **keeps** its talent (and unlocks its family on arrival). A listing can ask for a species **with its hidden talent** |
 | Icon | A small **gem** (a lozenge): gold for a super talent, blue for a base one, grey for unknown; on the Box, the team, the plates and trades |
 | Small worlds, Extreme | **On** in both; Extreme mode keeps its own (its own save) |
-| Switch and rules | Off / On for admin / On for everyone; a rules pop-up once, INFO on the Pokémon sheet's Talent section |
+| Switch and rules | Off / On for admin / On for everyone; a rules pop-up once, then a tap on the Pokémon sheet's talent box (no INFO button: the user's call, 2026-10-30) |
 
 ## 2. The talents (`TALENT` in `src/engine/talents.ts` holds the numbers)
 

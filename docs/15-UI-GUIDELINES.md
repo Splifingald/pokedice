@@ -1085,7 +1085,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   rules pop-up (`RulesModal`, Later / Let's go!), taking its turn in the one-time pop-ups' queue, below; so do the
   rules shown at their own moment (the portal's and the nightmare's way in, Trick or Treat's first ghost, the gifts',
   the looks'). The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is the Pokémon sheet's Talent section, as it has no page), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is a tap on the Pokémon sheet's talent box, as it has no page), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **The one-time pop-ups take turns, in one queue** (`nextOneTimePopup`, src/engine/popups.ts; docs/38 U2a): one at a
   time, only between fights (`run.phase === 'idle'`, no battle, no full-screen moment, no gift being opened), never on
@@ -1902,8 +1902,8 @@ pop-up). The pieces are in `src/components/Talent.tsx`, every state on `/kitchen
   Pokémon that carries its talent wears it (`InstTalentGem`) after its name and shiny star wherever its card shows: the
   Box and team tiles (top left, under the star), the team cards (`MonCard`, `PokeCard`), the battle plates (yours and the
   foes', `Plates`, `DoublePlates`), a trade listing's Pokémon and a want "with its talent" (`DexTalentGem`).
-- **The sheet's section** (`TalentSection`, between the dice and the milestones): "Hidden talent" with INFO, and its box
-  (`TalentBox`) in three states: carried (paper: the gem, the name, its tier, what it does), known but not learnt here
+- **The sheet's section** (`TalentSection`, between the dice and the milestones): "Hidden talent" and its box
+  (`TalentBox`), which is the button to the rules (no INFO button: the user's call, 2026-10-30), in three states: carried (paper: the gem, the name, its tier, what it does), known but not learnt here
   (well, dimmed, how to learn it), never met ("???" and how to find out).
 - **The encounter**: a talented wild Pokémon gets a gold-pale line under its catch value: "This Rattata has a hidden
   talent: Pickup. Catch it to learn it!" while its family is locked, "This Dratini carries its hidden talent: Mirror."
@@ -1915,5 +1915,5 @@ pop-up). The pieces are in `src/components/Talent.tsx`, every state on `/kitchen
   a damage talent's bonus, Mirror's die, Sturdy, Natural Cure, Thaw. A talent that changes numbers alone (Speed,
   rerolls, HP) says nothing.
 - **Trades**: asking for a species, a toggle "With its hidden talent" under the species (only while the switch is on).
-- Its rules: a `RulesModal` once, in the one-time pop-ups' queue after the battle powers' (`talentRulesSeen`); INFO on
-  the sheet's section.
+- Its rules: a `RulesModal` once, in the one-time pop-ups' queue after the battle powers' (`talentRulesSeen`); again
+  from a tap on the sheet's talent box.

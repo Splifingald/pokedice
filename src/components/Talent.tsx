@@ -1,5 +1,6 @@
 // Hidden talents (docs/51, docs/15 §38): the gem a Pokémon that carries its talent wears (gold for a super talent, blue
-// for a base one), the sheet's Talent section, and the rules pop-up (once, in the one-time pop-ups' queue) and its INFO.
+// for a base one), the sheet's Talent section, and the rules pop-up (once, in the one-time pop-ups' queue; then a tap on
+// the sheet's talent box).
 // The engine decides who carries what (`engine/talents.ts`); these only show it.
 import { useState } from 'react'
 import {
@@ -20,7 +21,7 @@ import { mutateSave, useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { PixelIcon } from './icons'
 import { useMyTurn, useOnScreen } from './popupTurn'
-import { InfoButton, RulesModal, type RuleRow } from './RulesModal'
+import { RulesModal, type RuleRow } from './RulesModal'
 import { SheetSection } from './SheetSection'
 
 /** The numbers each talent's text says, from the engine's table. */
@@ -187,7 +188,7 @@ function TalentTitle({ talent, dim }: { talent: TalentKey; dim?: boolean }) {
 
 /**
  * The sheet's Talent section: what this Pokémon's family has. Carried: its name, tier and what it does. Known but not
- * learnt here: the same, dimmed, with how to learn it. Never met: "???" and how to find out. INFO shows the rules.
+ * learnt here: the same, dimmed, with how to learn it. Never met: "???" and how to find out. A tap shows the rules.
  */
 export function TalentSection({ dex, inst }: { dex: number; inst?: PokemonInstance }) {
   useT()
@@ -197,21 +198,45 @@ export function TalentSection({ dex, inst }: { dex: number; inst?: PokemonInstan
   if (!talentsOn(data)) return null
   const has = inst ? !!inst.talent : !!save && familyUnlocked(save, data, dex)
   return (
-    <SheetSection
-      title={t('ui.talent.section')}
-      extra={<InfoButton name={t('ui.talent.title')} onClick={() => setInfo(true)} />}
-    >
-      <TalentBox talent={familyTalent(data, dex)} has={has} known={has || talentMet(save, data, dex)} />
+    <SheetSection title={t('ui.talent.section')}>
+      {/* The box itself opens the rules (the user's call, 2026-10-30): no INFO button over it. */}
+      <TalentBox
+        talent={familyTalent(data, dex)}
+        has={has}
+        known={has || talentMet(save, data, dex)}
+        onClick={() => setInfo(true)}
+      />
       <TalentRulesModal open={info} onClose={() => setInfo(false)} />
     </SheetSection>
   )
 }
 
-/** The section's box, in its three states: carried, known but not learnt, never met. */
-export function TalentBox({ talent, has, known }: { talent: TalentKey; has: boolean; known: boolean }) {
+/**
+ * The section's box, in its three states: carried, known but not learnt, never met. With `onClick` the whole box is a
+ * button that opens the rules.
+ */
+export function TalentBox({
+  talent,
+  has,
+  known,
+  onClick,
+}: {
+  talent: TalentKey
+  has: boolean
+  known: boolean
+  onClick?: () => void
+}) {
   useT()
+  const Box = onClick ? 'button' : 'div'
   return (
-    <div className={cx('grid gap-1 px-3 py-2 shadow-ring-line', has ? 'bg-paper' : 'bg-well')}>
+    <Box
+      {...(onClick && { type: 'button' as const, onClick, 'aria-haspopup': 'dialog' as const })}
+      className={cx(
+        'grid w-full gap-1 px-3 py-2 text-left shadow-ring-line',
+        has ? 'bg-paper' : 'bg-well',
+        onClick && 'cursor-pointer hover:shadow-ring focus-visible:shadow-ring',
+      )}
+    >
       {known ? (
         <>
           <TalentTitle talent={talent} dim={!has} />
@@ -227,7 +252,7 @@ export function TalentBox({ talent, has, known }: { talent: TalentKey; has: bool
           <p className="copy text-muted">{t('ui.talent.unknownHint')}</p>
         </>
       )}
-    </div>
+    </Box>
   )
 }
 
@@ -251,7 +276,7 @@ export function useTalentRules(data: GameData): RuleRow[] {
   ]
 }
 
-/** The rules (docs/15 §20): once as they open (Later / Let's go!), then from the sheet's INFO (OK). */
+/** The rules (docs/15 §20): once as they open (Later / Let's go!), then from a tap on the sheet's talent box (OK). */
 export function TalentRulesModal({
   open,
   onClose,
