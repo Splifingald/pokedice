@@ -166,7 +166,7 @@ test('the rules under the cards fold one at a time', async ({ page }) => {
   await battles.click()
   await expect(battles).toHaveAttribute('aria-expanded', 'true')
   await expect(goal).toHaveAttribute('aria-expanded', 'false')
-  await expect(page.getByText('The faster Pokémon acts first.')).toBeVisible()
+  await expect(page.getByText(/^The faster Pokémon acts first: Speed is/)).toBeVisible()
   // Every detail, one tap further.
   await page.getByRole('button', { name: 'Every detail' }).click()
   await expect(page.getByText(/^Keyboard: 1–6 pick dice/)).toBeVisible()
