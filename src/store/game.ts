@@ -455,7 +455,13 @@ export function commitSave(next: SaveData | null, opts: { silent?: boolean; keep
   scheduleWrite(onDisk(stamped))
   if (!opts.silent) for (const fn of saveListeners) fn(stamped, prev)
   for (const p of settled?.revived ?? [])
-    pushToast(t('ui.toast.revivedFossil', { name: data.species[p.dex]?.name ?? `#${p.dex}` }), 'good', 4500)
+    pushToast(
+      t(p.shiny ? 'ui.toast.revivedFossilShiny' : 'ui.toast.revivedFossil', {
+        name: data.species[p.dex]?.name ?? `#${p.dex}`,
+      }),
+      'good',
+      4500,
+    )
   for (const g of settled?.gemsGiven ?? [])
     pushToast(t('ui.powers.gemGiven', { leader: g.leader, gem: g.gem.name }), 'good', 5000)
   for (const region of settled?.won ?? [])

@@ -300,6 +300,7 @@ Articuno, Zapdos, Moltres, Mewtwo and Mew are **not** in wild pools. Each is att
 
 - Helix Fossil and Dome Fossil are once-only finds in Mt. Moon, Old Amber in Silph Co. (`effect: {kind: 'fossil', dex, level: 20, hours: 24}`). They're never bought or sold, and wild Omanyte, Kabuto and Aerodactyl are gone (weight 0).
 - Found, the fossil goes straight to the Box as its Pokémon at Lv.20, reviving (`PokemonInstance.revivesAt`, `fossil`): a timer gauge replaces its HP; it can't join the team, go to the Day Care or take items, and isn't in the Pokédex or counted for duplicates yet. After 24 h (checked on load and every minute) it revives at full HP and joins the Pokédex.
+- **Shiny fossils** (2026-10-30): a fossil revives shiny at its own odds, `game_config.fossilShinyChance` (1 in 10 by default; Admin → Config → Encounters), wherever it was found: field finds, the Mart, the Underground. The Shiny Charm and a Shiny Parade never change them, and Extreme mode has none. The roll is seeded by the Pokémon's id (`fossilRevivesShiny`, `engine/fossils.ts`), so it is settled from the find and a reload can't roll it again; the revive toast says when it's shiny.
 
 ## 5. Economy & upgrades
 

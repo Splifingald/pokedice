@@ -2,7 +2,7 @@
 // opponents offered, starting a match (recorded as a leave before it's fought) and its result. The rows come from the
 // SQL functions of supabase/migrations/0082_versus_league.sql (the global board: 0091); the rules and the fight are the
 // engine's (engine/versusLeague).
-import type { VersusMon, VersusPowers } from '@/engine'
+import type { BotTeamRow, VersusMon, VersusPowers } from '@/engine'
 import { avatarOf } from './avatars'
 import { getSupabase } from './supabase'
 import { parsePowers } from './versus'
@@ -236,6 +236,45 @@ export async function leagueAdmin(action: 'tick' | 'seat_bots'): Promise<number>
   const { data, error } = await client.rpc('versus_league_admin', { p_action: action })
   if (error) throw error
   lastHome = null
+  return Number(data) || 0
+}
+
+/** Where a week's bot teams stand (0092 versus_league_bot_set, the admin's and the weekly job's). */
+export interface LeagueBotSet {
+  /** The week asked about, "2026-10-26". */
+  week: string
+  /** The week whose set its bots take teams from (this one, or the latest before it); null: the built-in set. */
+  set: string | null
+  madeAt: number | null
+  /** Teams in that set, a tier. */
+  tiers: number[]
+  /** The week still needs its own set, and the league isn't Off. */
+  due: boolean
+}
+
+/** This week's bot teams, as they stand. */
+export async function fetchLeagueBotSet(): Promise<LeagueBotSet> {
+  const client = await getSupabase()
+  if (!client) throw new Error('versus_signed_out')
+  const { data, error } = await client.rpc('versus_league_bot_set')
+  if (error) throw error
+  const r = (data ?? {}) as Record<string, unknown>
+  const madeAt = typeof r.madeAt === 'string' ? Date.parse(r.madeAt) : NaN
+  return {
+    week: String(r.week ?? ''),
+    set: typeof r.set === 'string' ? r.set : null,
+    madeAt: Number.isFinite(madeAt) ? madeAt : null,
+    tiers: Array.isArray(r.tiers) ? r.tiers.map((n) => Number(n) || 0) : [],
+    due: r.due === true,
+  }
+}
+
+/** Stores a week's set (engine weekBotTeams): how many teams were stored, 0 when the week had its set already. */
+export async function putLeagueBotTeams(week: string, teams: BotTeamRow[]): Promise<number> {
+  const client = await getSupabase()
+  if (!client) throw new Error('versus_signed_out')
+  const { data, error } = await client.rpc('versus_league_put_bot_teams', { p_week: week, p_teams: teams })
+  if (error) throw error
   return Number(data) || 0
 }
 

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   applyGifts,
+  BOT_TEAMS_PER_TIER,
+  botTeamSeed,
   botTierOf,
   buildBotTeam,
   createRng,
@@ -23,6 +25,7 @@ import {
   versusStep,
   VERSUS_LEAGUE_DEFAULTS as CFG,
   weekEndOf,
+  weekBotTeams,
   weekId,
   weekStartOf,
   winTooFast,
@@ -181,6 +184,22 @@ describe('the bots', () => {
 
   it('are the same for the same seed', () => {
     expect(buildBotTeam(data, 2, createRng(9))).toEqual(buildBotTeam(data, 2, createRng(9)))
+  })
+
+  it('come as a new set every week: 40 different teams a tier, 80 from 500 trophies, the same set for the same week', () => {
+    const week = weekBotTeams(data, '2026-10-26')
+    const key = (t: (typeof week)[number]) => `${t.tier}:${[...t.team.map((m) => m.dex)].sort().join(',')}`
+    expect(BOT_TEAMS_PER_TIER).toEqual([40, 40, 40, 80])
+    expect([0, 1, 2, 3].map((tier) => week.filter((t) => t.tier === tier).length)).toEqual([40, 40, 40, 80])
+    expect(new Set(week.map(key)).size).toBe(week.length)
+    expect(weekBotTeams(data, '2026-10-26')).toEqual(week)
+    const next = weekBotTeams(data, '2026-11-02')
+    // Below 500 trophies the teams are all new; the last tier's few species make many of its teams come back.
+    const below = next.filter((t) => t.tier < 3)
+    const shared = below.filter((t) => week.some((w) => key(w) === key(t))).length
+    expect(shared).toBeLessThan(below.length / 10)
+    expect(botTeamSeed('2026-10-26', 1)).not.toBe(botTeamSeed('2026-11-02', 1))
+    expect(botTeamSeed('2026-10-26', 1)).not.toBe(botTeamSeed('2026-10-26', 2))
   })
 })
 

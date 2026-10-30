@@ -40,6 +40,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   showRoundGauge: true,
   showRoundPreview: false,
   shinyChance: 0.01,
+  // A fossil revives shiny 1 in 10 (the user's call, 2026-10-30), whatever the Shiny Charm does to the wild odds.
+  fossilShinyChance: 0.1,
   cloudSyncMinutes: 15,
   maxFriends: 100,
   status: {

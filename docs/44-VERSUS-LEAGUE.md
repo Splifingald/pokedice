@@ -8,7 +8,8 @@ while it's Off, Versus is what it was (every team, the attack and defense boards
 
 **Status (2026-10-27): built** on `claude/quirky-maxwell-ilueyw` (from `version/2_4`), behind its switch, Off.
 Migration `0082_versus_league.sql`. The global board (§8, 2026-10-29): migration `0091_versus_league_global.sql`, its
-own switch, Off.
+own switch, Off. New bot teams every week (§9, 2026-10-30): migration `0092_versus_bot_weeks.sql` and the hourly
+Netlify job `netlify/functions/versus-bots.mts`.
 
 ## 1. Decisions (the user's answers)
 
@@ -26,6 +27,7 @@ own switch, Off.
 | Groups | **20 players**. The **number of groups** is set on the week's first match: last week's players × (last Sunday's daily players ÷ the Sunday before) ÷ 16. With no league last week, everyone with a Versus team ÷ 16. Each player's first match puts them in the **emptiest open group**, so early and late players mix. Friends get no priority. When every group is full, a new one opens |
 | Bots in groups | **Yes**: on **Wednesday, Thursday and Friday**, up to **5 bots a day** take the empty places of each group. They climb through the week toward a **believable place** among the group's players (a player's trophies, projected to Sunday, ×0.6 to ×1.25), arriving by Sunday 22:00. A bot can finish first |
 | Bots' strength | **Tiers by trophies**: 0–99 solid picks and no powers; 100–249 strong picks and one power; 250–499 better picks and two powers; 500+ the best (legendaries too) and all three. Good type coverage at every tier. The thresholds are in Admin |
+| Bots' teams | **A new set every week** (the user's ask, 2026-10-30): drawn on the week's own seeds, **40 different teams a tier and 80 from 500 trophies**. A bot keeps the team it was seated with all week (§9) |
 | Bots' disguise | **A player to everyone but the admin**: a name, a look, a team and trophies, and an id like a player's. The admin sees **BOT** |
 | Ties | **A shared rank**, and the same reward |
 | Rewards | **Gift messages** (Admin's gifts, docs/15 §23) after the week ends: **₽1 a trophy**, and for the top 10 of each group 1st **5 Raid Balls + 10 Rare Candies**, 2nd **2 + 5**, 3rd **1 + 3**, 4th–5th **3 Rare Candies**, 6th–10th **1 Rare Candy**. Everything goes to the region being played when the gift is opened |
@@ -51,6 +53,8 @@ own switch, Off.
   - The bots: `botTierOf`, `versusPower` (a species' strength at Lv.50), `teamCoverage` and `buildBotTeam` (three
     fully evolved Pokémon from the tier's share of the strength ranking, picked for the coverage they add, with the
     tier's powers and the Pokémon to use them).
+  - The week's set (§9): `BOT_TEAMS_PER_TIER` (40, 40, 40, 80), `botTeamSeed(week, n)` and `weekBotTeams(data, week)`
+    (each tier's teams all different).
 - **`items.ts`** `isBallFor(item, raid)`: the Raid Ball (`effect.raidOnly`) only in a raid's catch. The run's catches,
   Idle's own throws and the simulator never offer it.
 - **`gifts.ts`** `GIFT_CURRENT` (`'current'`): a gift that lands in the region being played when it's opened.
@@ -63,8 +67,9 @@ own switch, Off.
   - `versus_league_weeks`, `versus_league_groups`, `versus_league_members` (players and bots, trophies);
   - `versus_league_choices` (the 3 offers, as offered);
   - `versus_league_matches` (each match: the teams, the seed, the trophies before, the outcome, the moves);
-  - `versus_league_bots` (400 names and looks) and `versus_league_bot_teams` (40 teams a tier). Both are written by
-    **`pnpm versus-bots`** (`scripts/versus-bots.ts`, from `buildBotTeam`) between the file's GENERATED BOTS lines.
+  - `versus_league_bots` (400 names and looks) and `versus_league_bot_teams` (the teams: each week's set, and the
+    built-in set, §9). The names and the built-in set are written by **`pnpm versus-bots`** (`scripts/versus-bots.ts`,
+    from `buildBotTeam`) between the GENERATED BOTS lines, in 0092 now (0082's copy stays as it was).
 - **Functions**:
   - `versus_league_choices()`: the 3 offers, topped up.
   - `versus_league_start(slot)`: joins the week's league, records the match as a leave and returns the seed and the
@@ -122,6 +127,9 @@ Admin → Config → **Versus league**:
 - The numbers: trophies, safe line, group size, players a group, bots a day and the bot days, the opponents' range,
   the fastest win and seconds a move, the bot tiers, ₽ a trophy, the reward bands.
 - **Run the hourly tick now** and **Seat bots now**.
+- **This week's bot teams** (which set this week's bots take their teams from, when it was made, its teams a tier) and
+  **Make this week's bot teams now** (draws them in the admin's page as the hourly job would, and stores them if the
+  week has none yet), §9.
 - A warning while Gifts aren't on for everyone (the rewards wait on their messages until they are).
 - **The week's groups** (migration 0086, `versus_league_admin_board`, the admin's alone): nothing loads until
   **Fetch the groups** (or **Last week**) is pressed, then the league as it is at that moment:
@@ -158,12 +166,22 @@ The admin sees **BOT** on the bots, before their names, in the opponents and the
    (after 0090; safe to run again; `supabase/seed.sql` doesn't inline it), then Admin → Config → Switches → **Versus
    global board**: On for admin, look, then On for everyone.
 
-After a change to the species, their forms or the gems, run `pnpm versus-bots` and the migration again.
+7. For **new bot teams every week** (§9), run
+   <https://github.com/Splifingald/pokedice/blob/ccr-1be8c8e6-8dsxnn/supabase/migrations/0092_versus_bot_weeks.sql>
+   (after 0082, 0086 and 0091; safe to run again; `supabase/seed.sql` doesn't inline it). The hourly job needs
+   `VITE_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in Netlify's environment variables (there already for the push
+   sender, docs/27) and runs on the published site only: on a Deploy Preview, Admin → Config → Versus league → **Make
+   this week's bot teams now** does its work.
+
+After a change to the species, their forms or the gems, the next week's set has them already. To bring the built-in
+set along too, run `pnpm versus-bots` and then 0092 again (not 0082: its copies of `versus_league_offer` and
+`versus_league_seat_bots` would undo 0092's).
 
 ## 7. Tests
 
-- `tests/engine/versus-league.test.ts`: the trophies, the week, the ranks and rewards, the Raid Ball, the bots' teams,
-  and a match stepped through like the auto fight.
+- `tests/engine/versus-league.test.ts`: the trophies, the week, the ranks and rewards, the Raid Ball, the bots' teams
+  (and the week's set: 40 / 40 / 40 / 80, all different, the same for the same week, new the next), and a match
+  stepped through like the auto fight.
 - `tests/versus-league-sql.test.ts` (PGlite):
   - the defaults and the trophies match the engine's, and the bots block is what the script writes;
   - offers, a match recorded as a leave and then its result;
@@ -177,6 +195,10 @@ After a change to the species, their forms or the gems, run `pnpm versus-bots` a
     boards, a player's matches adding up;
   - the global board (0091): its own switch (and the league's), every group's players ranked together with ties
     shared, no bots, the banned left out but for themselves, readable signed out.
+  - the bots' weekly teams (0092): the job's and the admin's alone, the built-in set until the week has its own, a set
+    stored once (whole, on a Monday), the bots seated and offered taking their teams from it, the next weeks using it
+    until they have their own, old sets going but for the teams bots were seated with.
+- `tests/versus-bots-job.test.ts`: the hourly job only asks when the week has its set, else draws it and stores it.
 - `tests/versus-true-levels-sql.test.ts` (PGlite): 0090 keeps each Pokémon's own level, Lv.50 or more only.
 - `tests/engine/versus.test.ts`: a Versus Pokémon fights at Lv.50 with its own level's dice and rerolls, both sides.
 - `tests/versus-league-admin-board.test.ts`: the admin's groups read into players and bots, and the week's totals;
@@ -209,3 +231,30 @@ rewards, for the fame only."
 - **The server**: `versus_league_global()` (0091), readable signed out like `versus_league_home`: `{week, endsAt,
   rows}`, the rows as a group's (id, isMe, name, avatar, team, trophies, rank, rich) without `bot`.
 
+## 9. New bot teams every week (2026-10-30)
+
+The user's ask: "I want the seed to change every week and the bots to be automatically regenerated, and double the
+amount of bots above 500 trophies."
+
+- **A set a week**: every week's bots take their teams from a set of that week's own, drawn by the engine
+  (`weekBotTeams`) on seeds made from the week ("2026-10-26") and each team's number. The same week always gives the
+  same set, whoever makes it; the next week gives a new one.
+- **80 teams from 500 trophies** (the last tier, wherever Admin puts it), 40 in each other tier. The last tier draws
+  from some 30 species, so a set draws a team again when it holds those three already: its 80 teams are 80 different
+  ones. Below 500 trophies, a week's teams are all new; from 500, most come back from one week to the next, since that
+  tier has few teams to give (its share of the strength ranking is in `TIER_POOL`).
+- **Who makes it**: `netlify/functions/versus-bots.mts`, a Netlify scheduled function at :13 every hour. It asks the
+  database first (`versus_league_bot_set`: one request), and only when the week has no set yet and the league isn't
+  Off does it read the live content, draw the 200 teams (about 2 s) and store them (`versus_league_put_bot_teams`).
+  So a week has its set within the hour of Monday 00:00 UTC, and a missed run is made up an hour later. The admin's
+  **Make this week's bot teams now** does the same from the admin's page.
+- **Until then**: a week without its own set takes the latest one made before it (last week's), else the **built-in
+  set** (0082's 160 teams and 40 more for the last tier, written in 0092 by `pnpm versus-bots`). Nothing breaks while
+  the job isn't set up.
+- **A seated bot keeps its team**: a week's set is stored once and never replaced; sets over 4 weeks older than the one
+  stored go, but for the teams bots were seated with (their week's board still shows them).
+- **The database** (0092): `versus_league_bot_teams` gets `week` (null: the built-in set) and `made_at`;
+  `versus_league_team_set(week)` and `versus_league_bot_team(week, tier)` pick a team, and `versus_league_offer` and
+  `versus_league_seat_bots` use them (0082's otherwise). `versus_league_bot_set` and `versus_league_put_bot_teams` are
+  the job's (the service role) and the admin's alone.
+- No switch of its own: it changes where the league's bots get their teams, under the league's switch.

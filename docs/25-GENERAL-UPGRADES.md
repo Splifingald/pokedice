@@ -79,7 +79,7 @@ Five things, from one request:
 - The store hands the odds to the encounter rolls (`EncounterContext.shinyChance`, `challengeEncounter`'s last
   argument): every wild Pokémon (double battles' partner and the portal run's wild cards included), Trick or Treat's
   ghosts, and bosses that aren't shiny-locked. A Shiny Parade multiplies them on top. Legendaries stay shiny-locked.
-- Not: Day Care Eggs (`dayCare.shinyChance`, their own odds), raids (their shinies are the calendar's), small worlds
+- Not: Day Care Eggs (`dayCare.shinyChance`, their own odds), fossils (`fossilShinyChance`, theirs: docs/01 §4.6), raids (their shinies are the calendar's), small worlds
   (`inWorldRegion`: a world keeps game_config's odds, like every General upgrade).
 - **Its own switch**, `general.charmAccess` (Off by default), inside the tab's: the card, its rules and its effect
   need both on (`charmOn`). Off keeps the level bought. No server function decides a shiny, so there's nothing for
