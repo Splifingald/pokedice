@@ -379,6 +379,7 @@ export function liveProblems(list: readonly LiveEvent[], e: LiveEvent, data: Gam
 /** The live events' pictures (public/backgrounds): one per type, one per occasion. */
 export const LIVE_BANNERS = {
   shiny: '/backgrounds/live-shiny.png',
+  shop: '/backgrounds/live-shop.png',
   cash: '/backgrounds/live-cash.png',
   underground: '/backgrounds/live-underground.png',
   halloween: '/backgrounds/live-halloween.png',
@@ -399,12 +400,12 @@ const SEASONS: readonly { banner: keyof typeof LIVE_BANNERS; from: number; to: n
   { banner: 'summer', from: 601, to: 831 },
 ]
 
-/** A type's own picture, outside the occasions; a Special Shop has none yet, so it's a celebration. */
+/** A type's own picture, outside the occasions. */
 const TYPE_BANNER: Record<LiveType, keyof typeof LIVE_BANNERS> = {
   shiny: 'shiny',
   cash: 'cash',
   underground: 'underground',
-  shop: 'celebration',
+  shop: 'shop',
 }
 
 /**
