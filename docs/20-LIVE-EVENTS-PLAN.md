@@ -197,3 +197,26 @@ fourth)."*
    (`supabase/seed.sql` inlines it too, after 0071).
 2. Admin → Events → Live events → New live event → **When**, then Save & Publish.
 
+
+## 10. Live event pictures, picked by default (2026-10-31)
+
+The user's ask: banners made in Gemini (prompts: BASE + one scene, 16:9, the Johto Daybreak style block of
+`design/visual-lab/bgs.js`), shrunk like the others, and *"when I select a live event, it automatically picks the right
+banner by default"*, the type's own banners as defaults too.
+
+- **The pictures** (`public/backgrounds/live-*.png`, 400 × 223, true pixel art, listed under the admin's **Event
+  pictures**). Per type: Shiny Parade (sparkling lakeside meadow, aurora), Cash Flow (coin fountain, treasure on the
+  pier), Underground (lantern-lit mine, gems and cart); a Special Shop has none yet. Per occasion: Halloween, winter
+  (snowy town, tree, gifts), New Year, spring, summer, celebration. Each keeps its centre calm for the pop-up's big ×5
+  / +50 %, its motifs at a quarter and three quarters across.
+- **Made with** `pnpm unpixel <in> <out> --px <source width / 400> --width 400`: Gemini drew these on grids 240 to 480
+  art pixels wide, and `--width` alone pads or crops a grid to 400 rather than scaling it; `--px` reads the picture on
+  a 400-wide grid instead. JPGs are turned into PNGs first.
+- **The default** (`liveDefaultBanner`, engine): the occasion of the day halfway through the event wins (UTC: 15 Oct –
+  7 Nov Halloween, 1 – 25 Dec winter, 26 Dec – 10 Jan New Year, March – May spring, June – August summer), else the
+  type's own (a Special Shop: the celebration). A yearly event takes its date; a weekly one, back all year, its type's.
+  The Underground is always its cave, the place players dig in.
+- **Admin**: a new event starts with its default; while the picture is the default (or none), changing the dates, the
+  type or the repeat moves it to the new one; a picture picked by hand stays. An event saved with no picture gets its
+  default the next time it's edited. Players see nothing new to learn: no switch (it's the admin's picture picker,
+  behind Live events' own switch).
