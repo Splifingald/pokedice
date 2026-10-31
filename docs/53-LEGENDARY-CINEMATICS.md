@@ -99,7 +99,10 @@ Hoenn's:
   the ground, the land splitting over lava. **Rayquaza** (`rayquaza.ts`, 4.8): Sky Pillar above the clouds under the
   ozone band, a serpent weaving through the clouds, Dragon Ascent smashing a meteor.
 - **Jirachi** (`jirachi.ts`, boss): the Millennium Comet's wishes falling on a sleeping cocoon, a third eye opening.
-  **Deoxys** (`deoxys.ts`, boss): a meteor on Birth Island under the aurora, a DNA helix mutating into a glitching body.
+  **Deoxys** (`deoxys.ts`, boss, 4.35): deep space, the Moon close and the Earth a small blue marble; a violet crystal
+  with a green tail crosses the Moon and the camera chases it, the Earth swelling until it fills the screen. It burns
+  through the atmosphere as a fireball over the night side's city lights, through the clouds, and comes down on Birth
+  Island at night; the rock cracks, a DNA helix climbs out, mutates and wraps into a glitching body.
 
 Sinnoh's legends (raids):
 
