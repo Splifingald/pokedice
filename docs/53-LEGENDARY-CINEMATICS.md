@@ -231,7 +231,7 @@ calm OS removes the shakes and flashes, as everywhere. Sounds are synthesised (`
 ## 4. Setting it up
 
 1. Merge and deploy the client.
-2. Run [`supabase/migrations/0097_legend_cinema.sql`](https://github.com/Splifingald/pokedice/blob/claude/legendary-boss-intros-1sgk6u/supabase/migrations/0097_legend_cinema.sql)
+2. Run [`supabase/migrations/0098_legend_cinema.sql`](https://github.com/Splifingald/pokedice/blob/version/2_8/supabase/migrations/0098_legend_cinema.sql)
    in the SQL editor (safe to run again; `supabase/seed.sql` carries it inlined). The game works without it: a missing
    row reads as Off.
 3. Admin → Config → Switches → **Legendary intros**: On for admin to try it (Config → Legendary intros → Watch), then On

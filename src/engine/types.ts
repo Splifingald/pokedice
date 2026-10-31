@@ -1054,7 +1054,7 @@ export interface GameConfig {
   hiddenTalents: HiddenTalentsConfig
   /**
    * The legends' own cinematics (docs/53): a raid legend's entrance and a mythical boss's, each in its own place. Only
-   * how they look and sound, so no server function reads it. Migration 0097 inserts the same row.
+   * how they look and sound, so no server function reads it. Migration 0098 inserts the same row.
    */
   legendCinema: { access: EventAccess }
   /**
