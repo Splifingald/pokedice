@@ -23,6 +23,7 @@ export const PICTURE_GROUPS: readonly PictureGroup[] = [
     names: {
       '/backgrounds/fortune-wheel.png': 'Fortune Wheel — prize stall at dusk',
       '/backgrounds/live-shiny.png': 'Shiny Parade — sparkling lakeside meadow, aurora',
+      '/backgrounds/live-shop.png': 'Special Shop — awning, shelves of balls, potions, stones',
       '/backgrounds/live-cash.png': 'Cash Flow — coin fountain and treasure on the pier',
       '/backgrounds/live-underground.png': 'Underground — lantern-lit mine, gems and cart',
       '/backgrounds/live-halloween.png': 'Halloween — pumpkin patch under the moon',

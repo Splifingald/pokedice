@@ -497,8 +497,7 @@ describe('the default picture', () => {
     expect(liveDefaultBanner(once('2027-07-01T00:00:00Z', '2027-07-04T00:00:00Z'))).toBe(LIVE_BANNERS.summer)
     expect(liveDefaultBanner(once('2027-02-01T00:00:00Z', '2027-02-04T00:00:00Z'))).toBe(LIVE_BANNERS.shiny)
     expect(liveDefaultBanner(once('2027-02-01T00:00:00Z', '2027-02-04T00:00:00Z', 'cash'))).toBe(LIVE_BANNERS.cash)
-    // A Special Shop has no picture of its own yet.
-    expect(liveDefaultBanner(once('2027-02-01T00:00:00Z', '2027-02-04T00:00:00Z', 'shop'))).toBe(LIVE_BANNERS.celebration)
+    expect(liveDefaultBanner(once('2027-02-01T00:00:00Z', '2027-02-04T00:00:00Z', 'shop'))).toBe(LIVE_BANNERS.shop)
   })
 
   it("takes a yearly event's date, and gives a weekly one its type's", () => {
