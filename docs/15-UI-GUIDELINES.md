@@ -648,7 +648,7 @@ Players shouldn't have to make many requests:
 - **Home's cards are only for what is open** (docs/38 U3a): a secret area found and never played (one tap travels
   there), the Day Care, Versus, each open special event, a small world and a live event; each is a button that leads
   somewhere. Nothing locked gets a square: under them **one "Coming up" line** names the next thing to open and how
-  close the player is ("Coming up: Day Care · 7/20 caught", `ComingUpView`, from the engine's `comingUp`), in the order
+  close the player is ("Coming up: Day Care · 7/10 caught", `ComingUpView`, from the engine's `comingUp`), in the order
   things usually open: the Day Care, the special events (from the teaser's badge count, naming the area that opens the
   first), Versus, then the secret area closest to opening (the condition still to meet, the first left, as the areas
   list says). A goal is not a feature, so the next secret only shows once the features are open. No line once

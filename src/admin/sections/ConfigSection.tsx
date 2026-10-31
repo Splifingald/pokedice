@@ -718,6 +718,9 @@ function GeneralBox() {
         <Field label="Offline earnings count up to (hours)" hint="per absence, on the server's clock">
           <NumInput min={1} max={168} value={cfg.offlineMaxHours} onChange={(v) => set({ offlineMaxHours: Math.max(1, v ?? 24) })} />
         </Field>
+        <Field label="Offline earnings at level 0 (₽ / hour)" hint="before any level is bought; 0 = nothing">
+          <NumInput min={0} value={cfg.offlineBase} onChange={(v) => set({ offlineBase: Math.max(0, v ?? 0) })} />
+        </Field>
         <Field label="I am just rich (₽)" hint="one level: a golden name">
           <NumInput min={0} value={cfg.richCost} onChange={(v) => set({ richCost: Math.max(0, v ?? 0) })} />
         </Field>

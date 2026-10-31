@@ -1350,6 +1350,8 @@ export interface GeneralConfig {
   luck: { chance: number; cost: number }[]
   /** Offline earnings, one row per level: ₽ per hour spent out of the game, and its price. */
   offline: { perHour: number; cost: number }[]
+  /** Offline earnings before any level is bought (level 0), ₽ per hour. 0: none. */
+  offlineBase: number
   /** An absence earns for this many hours at most. */
   offlineMaxHours: number
   /** "I am just rich": its price. A golden name in every social feature, nothing else. */

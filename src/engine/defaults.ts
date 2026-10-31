@@ -78,7 +78,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   // One Day Care for every region (docs/15): two of yours, four friends' visitors, Lv.100 the only XP cap, an Egg-group
   // check every 12 h and Ditto's every 24 h, Egg now for ₽200, ₽10 when a hatchling isn't kept, shiny 1 in 100.
   dayCare: {
-    unlockPokedex: 20,
+    unlockPokedex: 10,
     slots: 2,
     friendSlots: 4,
     xpPerTick: 1,
@@ -466,6 +466,9 @@ export const DEFAULT_CONFIG: GameConfig = {
       { perHour: 18, cost: 1250 },
       { perHour: 20, cost: 1500 },
     ],
+    // Before any level is bought, so every player's first absence pays a little and the upgrade has something to grow
+    // from (₽24 a day at most, half of level 1).
+    offlineBase: 1,
     offlineMaxHours: 24,
     richCost: 99999,
     // The Shiny Charm (the user's numbers, 2026-10-18): from the base 1 in 1,000 to 1 in 333, ₽69,000 in all, a

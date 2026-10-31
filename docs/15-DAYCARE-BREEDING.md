@@ -17,7 +17,7 @@ commit message.
 | | Today (after the Daybreak port) | v2 |
 |---|---|---|
 | Where | One Day Care **per region**: `dayCare` lives in the region block and is parked with it (`liveBlock`/`withBlock` in `src/engine/regions.ts`) | **One Day Care for every region.** It doesn't reset when a region opens, and the same one shows in every region |
-| Opens | 20 species in the live region's Pokédex | 20 species caught, counted **across every region**; once open, open for good |
+| Opens | 20 species in the live region's Pokédex | 10 species caught (20 until 2026-10-31, migration 0102), counted **across every region**; once open, open for good |
 | Your Pokémon | 2 slots | 2 slots |
 | XP | +1 every 10 min, **200 XP cap per stay**, READY when full | +1 every 10 min, **no cap but Lv.100** |
 | Friends | — | **4 friend slots**: invite a Pokémon that is sitting in a friend's Day Care. It visits; nothing changes for the friend |
@@ -28,7 +28,7 @@ commit message.
 | Shiny | — | Day Care Eggs have their **own shiny odds**, 1 % by default |
 | Home widget | Residents with XP to the cap | Your two with XP to the next level; with an Egg waiting it turns **gold** with an Egg shaking, and a tap opens the Day Care **straight into the hatching** |
 
-Every number above (12 h, 24 h, ₽200, ₽10, 1 %, 20, 2, 4) is an admin setting.
+Every number above (12 h, 24 h, ₽200, ₽10, 1 %, 10, 2, 4) is an admin setting.
 
 **The mockup** is the Visual Lab's Home tab: https://claude.ai/artifact/EtDYmxgAmoFifQWSjtk3nD (source
 `design/visual-lab/` on `claude/modest-knuth-ph81n4`).
@@ -421,7 +421,7 @@ Match the lab, at 390 and at desktop width. Restyle the port's `DayCareScreen` a
 
 | State | Shows | Tap |
 |---|---|---|
-| Locked (under 20 caught, all regions) | the lock, "12/20 caught", a meter, "Opens for every region" | toast "The Day Care opens at 20 Pokémon caught, in every region" |
+| Locked (under 10 caught, all regions) | the lock, "6/10 caught", a meter, "Opens for every region" | toast "The Day Care opens at 10 Pokémon caught, in every region" |
 | Residents | each of your two: icon, name, Lv, an XP bar to the next level (or "Free slot · Leave a Pokémon"); then "+2 friends' Pokémon · Egg check in 7 h 14" | opens the Day Care page; the widget never acts on the Pokémon |
 | **Egg waiting** | the **gold** frame, an "EGG!" tag, the Egg **shaking** in place of the Pokémon, "An Egg is waiting!", "Tap to hatch it" | opens the Day Care page **and starts the hatching** about 450 ms later |
 
