@@ -87,15 +87,15 @@ export function PokeCard({
   )
   const facts = (
     <>
-      <div className="flex min-w-0 items-center gap-1">
+      {/* Tight on a phone's three to a row: the sprite's transparent edges and the gaps give the lead's crown its room. */}
+      <div className="flex min-w-0 items-center gap-0.5">
         {reviving ? (
           <ItemSprite item={fossil} size={28} className="shrink-0" />
         ) : (
-          <MiniSprite dex={inst.dex} size={32} className={cx('-my-1 -ml-1 shrink-0', fainted && 'grayscale')} />
+          <MiniSprite dex={inst.dex} size={32} className={cx('-my-1 -ml-1 -mr-0.5 shrink-0', fainted && 'grayscale')} />
         )}
         <span className="text-base leading-none">{t('ui.common.level.short', { n: inst.level })}</span>
         {inst.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
-        <InstTalentGem inst={inst} />
         {(edge !== 1 || badge || crown) && (
           <span className="ml-auto flex shrink-0 items-center gap-0.5">
             {edge !== 1 && (
@@ -114,6 +114,8 @@ export function PokeCard({
           must. */}
       <span className={cx('leading-none [overflow-wrap:anywhere]', nameWidth(name) > 9 ? 'text-base sm:text-lg' : 'text-lg')}>
         {name}
+        {/* The talent's gem (docs/51) after the name: in the top row it pushed the lead's crown off a narrow card. */}
+        <InstTalentGem inst={inst} size={10} className="ml-1 inline-block align-middle" />
       </span>
       {!brief && (
         <div className="flex flex-wrap items-center gap-1">

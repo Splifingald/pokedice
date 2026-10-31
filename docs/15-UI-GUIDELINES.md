@@ -1901,7 +1901,7 @@ pop-up). The pieces are in `src/components/Talent.tsx`, every state on `/kitchen
   10 × 10 pixels): green for a common talent, blue for a rare one, gold for an ultra one, red for the unique one
   (Ditto's Imposter; `TIER_ICON`), grey for one not known yet. Its title names the talent ("Hidden talent: Pickup"). A
   Pokémon that carries its talent wears it (`InstTalentGem`) after its name and shiny star wherever its card shows: the
-  Box and team tiles (top left, under the star), the team cards (`MonCard`, `PokeCard`), the battle plates (yours and the
+  Box and team tiles (top left, under the star), the team cards (`MonCard`; `PokeCard` after the name, so the lead's crown keeps its place), the battle plates (yours and the
   foes', `Plates`, `DoublePlates`), a trade listing's Pokémon and a want "with its talent" (`DexTalentGem`).
 - **The sheet's section** (`TalentSection`, between the dice and the milestones): "Hidden talent" and its box
   (`TalentBox`), which is the button to the rules (no INFO button: the user's call, 2026-10-30), in three states: carried (paper: the gem, the name, its rarity, what it does), known but not learnt here
