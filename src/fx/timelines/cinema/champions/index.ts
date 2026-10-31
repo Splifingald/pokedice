@@ -2,8 +2,13 @@
 // (the Elite Rebattle's tiers) shows the same person, so the same scene; a Kanto rival's version shows Red or Green
 // (engine/rival `asSeenBy`), and is Kanto's champion all the same.
 import type { ChampionCinema } from '../champion'
+import { geetaChampion } from './geeta'
+import { leonChampion } from './leon'
 
-export const CHAMPION_CINEMAS: Readonly<Record<string, ChampionCinema>> = {}
+export const CHAMPION_CINEMAS: Readonly<Record<string, ChampionCinema>> = {
+  leon: leonChampion,
+  geeta: geetaChampion,
+}
 
 /** The scene a trainer's picture calls for: `…/champion-lance.png` → lance, `blue-3.png` → blue, a rival's → blue. */
 export function championSceneId(spriteUrl: string | null | undefined): string | null {
