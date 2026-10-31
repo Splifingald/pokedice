@@ -919,6 +919,9 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   const over = !!versus && played && !!versus.end
   const result = !versus && ready && (run.phase === 'victory' || run.phase === 'wipe' || run.phase === 'stalemate')
+  // A real player's last Pokémon down (docs/53, the user's ask): their trainer steps back onto its spot for the result,
+  // the K.O.'d Pokémon's plate gone.
+  const trainerBack = result && run.phase === 'victory' && run.duel?.outcome === 'won' && !!trainerSprite
   useBattleMusic(!over && !(ready && !versus && ['victory', 'wipe', 'stalemate'].includes(run.phase)))
   // The player's own prompt, waiting on the dice (useBattleAnimator's 'turn' line).
   const prompting = !catching && !switching && !(forced && !auto) && fx.message === t('ui.log.whatWillDo', { name: active.name })
@@ -1105,7 +1108,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         art={art}
         ownShown={ownOut}
         foeShown={foeOut}
-        trainer={trainerIntro && isTrainerFight ? (trainerSprite ?? '') : null}
+        trainer={trainerIntro && isTrainerFight ? (trainerSprite ?? '') : trainerBack ? trainerSprite : null}
         overlay={legend ?? thrown}
         distorted={distorted}
         world={dream ? 'nightmare' : undefined}
@@ -1129,7 +1132,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             party={party}
           />
         )}
-        {!dbl && foeOut && !bossIntro && (
+        {!dbl && foeOut && !bossIntro && !trainerBack && (
           <FoePlate
             b={st.enemy}
             hp={fx.hp[st.enemy.uid] ?? st.enemy.hp}

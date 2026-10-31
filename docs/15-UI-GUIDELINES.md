@@ -1956,6 +1956,7 @@ docs/53. A card of the area's deck that brings a real player's team, behind its 
 - **The result**: a win's victory card ends with the real player's part (`DuelResult`: the tag, "You beat Misty's
   team!", "Your team is healed.", SEND FRIEND REQUEST); its NEXT doesn't count down. A loss is its own card, not a wipe:
   "Defeat", "Misty's team won", "No ₽ this time. Your team is healed and the round goes on.", the request, CONTINUE.
+  On a win, their trainer steps back onto the foe's spot on the stage (the K.O.'d Pokémon's plate gone).
   The result card scrolls the real player's part into full view as it shows, clear of its pinned buttons. SEND FRIEND
   REQUEST sends a letter: an envelope sealed with a heart pops out of the button, wobbles up and away and fades, hearts
   puffing behind it (`LetterFlight`, 0.9 s; none with animations off). After sending: a check and "Friend request sent

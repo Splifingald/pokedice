@@ -18,6 +18,7 @@ import {
   parseAreaFoe,
   placeVersusCards,
   progressOf,
+  runCampaignSync,
   teamAverageLevel,
   trainerGoldFor,
   withVersusCards,
@@ -245,5 +246,28 @@ describe('the server’s answer', () => {
     expect(f.comboLevels.pair).toBeGreaterThan(1)
     expect(parseAreaFoe(null, on)).toBeNull()
     expect(parseAreaFoe({ id: foe.id, team: [{ dex: 99999, level: 5 }] }, on)).toBeNull()
+  })
+})
+
+describe('the simulator (pnpm area-versus-balance)', () => {
+  it('deals and fights the card where an area has it, only with realPlayers set', () => {
+    const run = (realPlayers: { levelShift: number } | null) =>
+      runCampaignSync(on, {
+        encounters: 60,
+        seed: 3,
+        starterDex: 4,
+        spend: false,
+        multiExp: true,
+        areaId: ROUTE3.id,
+        team: [{ dex: 6, level: 30 }],
+        realPlayers,
+      }).areas.find((a) => a.areaId === ROUTE3.id)!
+    const without = run(null)
+    expect(without.versus.fights).toBe(0)
+    const met = run({ levelShift: 0 })
+    expect(met.versus.fights).toBeGreaterThan(0)
+    expect(met.versus.wins + met.versus.losses).toBe(met.versus.fights)
+    expect(met.versus.xp).toBeGreaterThan(0)
+    expect(met.xp).toBeGreaterThan(met.versus.xp)
   })
 })

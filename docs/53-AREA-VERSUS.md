@@ -94,6 +94,9 @@ the server answers nothing.
 - **The result**: the victory card's ₽, then "You beat Misty's team!", "Your team is healed." and SEND FRIEND REQUEST;
   a loss: "Misty's team won", "No ₽ this time. Your team is healed and the round goes on.", SEND FRIEND REQUEST and
   CONTINUE. After sending: "Request sent". Already friends: no button.
+- **Their trainer comes back** (the user's ask, 2026-10-31): once their last Pokémon is down, the result shows their
+  trainer stepping back onto its spot on the stage (the stage's `trainer`, as at a trainer's entrance), the K.O.'d
+  Pokémon's plate gone.
 - **The result scrolls to the request** (the user's ask, 2026-10-31): the real player's part of the result card
   (`DuelResult`, `follow`) brings itself into view as it shows, clear of the buttons pinned at the card's foot, so SEND
   FRIEND REQUEST is in full view without a scroll.
