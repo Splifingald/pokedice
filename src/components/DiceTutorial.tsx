@@ -236,12 +236,13 @@ export function GuideFrame({
   const mask = useId()
   const hole = box && padded(box)
   const lit = spots.map(padded)
-  // The zoom: the dim's cut-outs and rings shrink from the whole frame onto their targets. Taps only ever reach the
-  // target (the blockers use the hole itself).
+  // The zoom: the hole and its ring shrink from the whole frame onto what to tap. Taps only ever reach the target (the
+  // blockers use the hole itself).
   const zoom = useZoom(`${zoomKey}|${hole ? 1 : 0}`, !!hole && size.w > 0)
   const screen = { x: 0, y: 0, w: size.w, h: size.h }
   const zoomed = zoom < 1
-  const shown = (r: GuideBox | null) => r && (zoomed ? towards(screen, r, zoom) : r)
+  // Only what to tap zooms in (the user's call, 2026-10-31); what to look at is lit where it is from the start.
+  const cuts = [hole && (zoomed ? towards(screen, hole, zoom) : hole), ...lit]
   // The hand under its button pointing up, or above it pointing down when the button sits low on the screen.
   const handW = 16 * HAND_SCALE
   const handH = 17 * HAND_SCALE
@@ -275,9 +276,7 @@ export function GuideFrame({
         <defs>
           <mask id={mask}>
             <rect width="100%" height="100%" fill="white" />
-            {[hole, ...lit]
-              .map(shown)
-              .map((r, i) => r && <rect key={i} x={r.x} y={r.y} width={r.w} height={r.h} fill="black" />)}
+            {cuts.map((r, i) => r && <rect key={i} x={r.x} y={r.y} width={r.w} height={r.h} fill="black" />)}
           </mask>
         </defs>
         <rect width="100%" height="100%" className="fill-night/60" mask={`url(#${mask})`} />
@@ -291,19 +290,17 @@ export function GuideFrame({
         />
       ))}
       {/* The gold rings: the hole's is what to tap, a spot's what to look at. */}
-      {[hole, ...lit]
-        .map(shown)
-        .map(
-          (r, i) =>
-            r && (
-              <div
-                key={i}
-                aria-hidden
-                className="absolute shadow-[inset_0_0_0_3px_theme(colors.gold)]"
-                style={{ left: r.x, top: r.y, width: r.w, height: r.h }}
-              />
-            ),
-        )}
+      {cuts.map(
+        (r, i) =>
+          r && (
+            <div
+              key={i}
+              aria-hidden
+              className="absolute shadow-[inset_0_0_0_3px_theme(colors.gold)]"
+              style={{ left: r.x, top: r.y, width: r.w, height: r.h }}
+            />
+          ),
+      )}
       {hand && !zoomed && (
         <div className="absolute" style={{ left: hand.left, top: hand.top }}>
           <TutorialHand scale={HAND_SCALE} down={down} still={still} />

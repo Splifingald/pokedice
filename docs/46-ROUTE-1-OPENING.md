@@ -93,8 +93,8 @@ bundled tables). Right then, a **pointing hand** walks the player to it, step by
   other half of the screen. Every other tap goes nowhere; the button does its own job, which is what moves the step on.
   Keyboard: the button takes the focus. Calm devices get the hand still.
 - **The spotlight zooms in** (the user's request, 2026-10-31): each step's dim closes in from the whole screen onto
-  what to tap (and what to look at), in 6 steps over 420 ms (3 under Short animations), so the eye lands there; the
-  hand comes once it has closed in. Calm or animations off: at once. Taps only ever reach the target, zoom or not
+  what to tap, and only that (what to look at, like the lesson's dice and combo, is lit where it is from the start),
+  in 6 steps over 420 ms (3 under Short animations), so the eye lands there; the hand comes once it has closed in. Calm or animations off: at once. Taps only ever reach the target, zoom or not
   (`GuideFrame`'s `zoomKey`: a new step zooms again). The reroll lesson's steps zoom the same way.
 - **The step comes from the page** (`diceTutorialStep`): wherever the player is, the next tap is pointed at; a reload
   picks it up where it was. Should a step's button not be on screen (a page laid out otherwise), SHOW ME goes straight
