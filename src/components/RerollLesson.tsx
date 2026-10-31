@@ -66,9 +66,12 @@ export function ItemLessonGuide({ wide, onOk }: { wide: boolean; onOk: () => voi
   const { t } = useT()
   const { calm } = useMotion()
   const box = useTargetBox(wide ? '[data-guide="bag-column"]' : '[data-guide="bag"]', !wide)
+  // The column runs the screen's height: the hand points at its first item rather than past its foot.
+  const item = useTargetBox(wide ? '[data-guide="bag-column"] button' : null, false)
   return (
     <GuideFrame
       box={box}
+      handAt={wide ? item : null}
       bubble={
         <GuideBubble
           text={t('ui.tutorial.item.bag')}
