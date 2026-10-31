@@ -97,6 +97,7 @@ import {
   startPortalRun,
   applyNightmareStrike,
   asDouble,
+  fitWildPair,
   isDoubleEncounter,
   type FoeSeed,
   type DoubleKo,
@@ -697,8 +698,10 @@ export function engage(lead?: string | string[], staged?: boolean) {
   const leadUids = typeof lead === 'string' ? [lead] : (lead ?? [])
   const leadUid = leadUids[0]
   const { run, save, data } = useGame.getState()
-  const enc = run.encounter
-  if (!enc || !save) return
+  if (!run.encounter || !save) return
+  // A wild pair needs two able (docs/33): with one left since the card was drawn, the first comes alone.
+  const enc = fitWildPair(run.encounter, save)
+  if (enc !== run.encounter) setRun({ encounter: enc })
   if (!staged) commitEngage()
   switch (enc.kind) {
     case 'center':
