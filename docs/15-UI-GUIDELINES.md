@@ -429,7 +429,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 | The nightmare (§29): the intro, the waking | in full | in half the time |
 | Darkrai's strike after a round (§29, `nightmareStrikeTimeline`) | 2 s: the shadow rises, gathers, the beams | 1 s, straight to the beams |
 | Darkrai's raid entrance (§29, `nightRaidEntranceTimeline`) | in full | in full (an encounter) |
-| A legend's own cinematic (docs/53, `fx/timelines/cinema/`, the admin's switch): Mewtwo's lab, Articuno's ice cavern, Zapdos's power plant, Moltres's caldera (raids), Mew's forest (a boss fight) | in full | in full, fewer particles, no shake (an encounter) |
+| A legend's own cinematic (docs/53, `fx/timelines/cinema/`, the admin's switch): Kanto's and Johto's: Mewtwo's lab, the birds', Lugia's and Ho-Oh's places (raids); Mew's, the beasts' and Celebi's (boss fights, `cinema/boss.ts`) | in full | in full, fewer particles, no shake (an encounter) |
 
 `calm` (OS reduce motion, or animations off) also removes screen shakes and full-screen flashes; a hit keeps its two
 white sprite frames. Every timeline is on `/kitchen-sink/fx` (dev): replay, ¼ speed, one-frame steps, the end state,

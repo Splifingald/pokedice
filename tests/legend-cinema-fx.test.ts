@@ -54,9 +54,13 @@ describe('the raid intro’s words', () => {
   })
 })
 
-describe('the raid cinematics (Kanto first)', () => {
-  it('has Articuno, Zapdos, Moltres and Mewtwo', () => {
-    expect(Object.keys(RAID_CINEMAS).map(Number).sort()).toEqual([144, 145, 146, 150])
+describe('the raid cinematics', () => {
+  it('has Kanto’s birds and Mewtwo, then Lugia and Ho-Oh', () => {
+    expect(
+      Object.keys(RAID_CINEMAS)
+        .map(Number)
+        .sort((a, b) => a - b),
+    ).toEqual([144, 145, 146, 150, 249, 250])
   })
 
   for (const [dex, c] of Object.entries(RAID_CINEMAS))
@@ -79,31 +83,38 @@ describe('the raid cinematics (Kanto first)', () => {
     })
 })
 
-describe("Mew's boss entrance", () => {
-  const c = BOSS_CINEMAS[151]!
-  const tl = c.makeBattle({
-    own: '6b',
-    foe: '151f',
-    look: { aura: ['#ffffff', '#ffd0f0', '#e070d0', '#6a3aa0'], fx: 'psy', night: '#1a0a20' },
-    name: 'Mew',
-    level: 'Lv.65',
-    types: 'PSYCHIC',
+describe('the bosses’ cinematics', () => {
+  it('has Mew, then the legendary beasts and Celebi', () => {
+    expect(
+      Object.keys(BOSS_CINEMAS)
+        .map(Number)
+        .sort((a, b) => a - b),
+    ).toEqual([151, 243, 244, 245, 251])
   })
 
-  it('shows the foe, sends yours out and shows it, in that order, after the reveal and before it ends', () => {
-    const cues = tl.cues(undefined as never) as Cue<unknown>[]
-    const times = cues.map(([t]) => t)
-    expect([...times].sort((a, b) => a - b)).toEqual(times)
-    const order: [number, string][] = []
-    for (const [t, fire] of cues) {
-      const hud: Hud = {
-        beat: (b) => void order.push([t, b]),
-        show: (side, on) => void order.push([t, `show:${side}:${on}`]),
+  for (const [dex, c] of Object.entries(BOSS_CINEMAS))
+    it(`#${dex}: shows the foe, sends yours out and shows it, in that order, after the reveal and before it ends`, () => {
+      const tl = c.makeBattle({
+        own: '6b',
+        foe: `${dex}f`,
+        look: { aura: ['#ffffff', '#ffd0f0', '#e070d0', '#6a3aa0'], fx: 'psy', night: '#1a0a20' },
+        name: 'Boss',
+        level: 'Lv.65',
+        types: 'PSYCHIC',
+      })
+      const cues = tl.cues(undefined as never) as Cue<unknown>[]
+      const times = cues.map(([t]) => t)
+      expect([...times].sort((a, b) => a - b)).toEqual(times)
+      const order: [number, string][] = []
+      for (const [t, fire] of cues) {
+        const hud: Hud = {
+          beat: (b) => void order.push([t, b]),
+          show: (side, on) => void order.push([t, `show:${side}:${on}`]),
+        }
+        fire(hud, undefined)
       }
-      fire(hud, undefined)
-    }
-    expect(order.map(([, b]) => b)).toEqual(['show:foe:true', 'appeared', 'sendOut', 'show:own:true'])
-    expect(order[0]![0]).toBeGreaterThan(c.reveal)
-    expect(order[order.length - 1]![0]).toBeLessThan(tl.dur)
-  })
+      expect(order.map(([, b]) => b)).toEqual(['show:foe:true', 'appeared', 'sendOut', 'show:own:true'])
+      expect(order[0]![0]).toBeGreaterThan(c.reveal)
+      expect(order[order.length - 1]![0]).toBeLessThan(tl.dur)
+    })
 })

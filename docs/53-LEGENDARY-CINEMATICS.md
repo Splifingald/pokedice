@@ -4,7 +4,8 @@ The user's request, 2026-10-31: the legendary raid intros and the mythical boss 
 background and colours changed). Each legend now gets **its own entrance, in its own place, in the game's fantasy**: a
 short film on the pixel engine before the fight. A raid's no longer has the warning tapes. It can run a little longer
 than the shared one. **Kanto first** (Articuno, Zapdos, Moltres, Mewtwo, and Mew) so the user can judge the quality
-before the rest are made. **Status: Gen 1 built**, behind its switch, Off.
+before the rest are made, then Johto (the user, the same day: "start doing second generation"). **Status: Gen 1 and
+Gen 2 built**, behind its switch, Off.
 
 ## 1. Decisions
 
@@ -14,7 +15,7 @@ before the rest are made. **Status: Gen 1 built**, behind its switch, Off.
 | Warning tapes | **Gone from every legend's raid** while the switch is on (the red alarm, its beeps and both tapes), including the legends whose own cinematic isn't made yet. The daily non-legend raid keeps its alarm; Giratina's and Darkrai's raids keep their worlds' lines |
 | Length | The build-up is longer than the shared one (reveal at 4.3–5 s instead of 2.75 s); the raid intro's words follow the reveal at the same distances as before (`wordsAt`) |
 | Skip | As before: from the second time a raid legend is met |
-| Which first | Kanto: Articuno, Zapdos, Moltres, Mewtwo (raids) and Mew (a boss fight). The rest keep the shared entrance until theirs is made |
+| Which first | Kanto: Articuno, Zapdos, Moltres, Mewtwo (raids) and Mew (a boss fight); then Johto: Lugia and Ho-Oh (raids), Raikou, Entei and Suicune (roamers, met as boss fights) and Celebi (a boss fight). The rest keep the shared entrance until theirs is made |
 
 ## 2. The scenes
 
@@ -50,6 +51,33 @@ shards, a row wobble, rings, cues sorted by time). Times are seconds.
   name card comes (legend.ts's `banner`), the forest dissolves into the battle's own ground, and your Pokémon is sent
   out, with the same HUD cues as the shared entrance (`show foe`, `appeared`, `sendOut`, `show own`).
 
+Johto's:
+
+- **Lugia — the Whirl Islands** (`lugia.ts`, reveal 4.6). A storm at sea: swells, rain, black rocks, lightning far off.
+  The sea falls still, the rain stops in mid-air, the moon breaks through and lays a silver road on the water. A
+  whirlpool opens with light rising from the deep; the sea bursts upward in a tower of spray and Lugia rises out of it,
+  the water pouring off its wings.
+- **Ho-Oh — the Bell Tower at dawn** (`hooh.ts`, reveal 4.55). A violet sky, the tower's tiers black against it, a lamp
+  in each. Its bells ring three times (gold rings of sound); the sun comes up beside it, the sky warms, rays fan out and
+  a rainbow draws itself across the sky. Rainbow feathers fall; a golden shape crosses the sky, circles behind the
+  tower's top and swoops down before it, wings flaring in sacred fire. Rainbow rings on the reveal.
+- **Raikou — the storm** (`raikou.ts`, boss, reveal 3.95). A plain at night by the Burned Tower's ruin, rain. Lightning
+  strikes faster and faster, somewhere else each time; at each strike Raikou's outline crackles for an instant, a
+  streak along the ground to the next. The dark; sparks run over the ground to one spot; one great bolt, and it is there.
+- **Entei — the Burned Tower on fire** (`entei.ts`, boss, reveal 4.0). Charred posts and beams, the night through the
+  broken roof. Flames come up through the floor into a wall of fire; a burning beam crashes down; the fire whirls up
+  into the roof's light; on a high beam a shape in the flames roars, then leaps down in an arc of fire and lands in a
+  ring of flame.
+- **Suicune — the lake** (`suicune.ts`, boss, reveal 3.95). A murky lake under a full moon, mist on the water. The north
+  wind lights an aurora; Suicune runs across the water from the far shore, each footfall a ripple that turns the water
+  clear and blue; it bounds onto a rock, and the reveal purifies the whole lake.
+- **Celebi — Ilex Forest's shrine** (`celebi.ts`, boss, reveal 4.0). The shrine at night, a clock ticking. Time ripples
+  out of it in green rings and the forest turns with each one (spring, summer, autumn, winter, faster and faster) under
+  the hands of a great clock of light; the rings close into a portal and Celebi pops out, the forest back in spring.
+
+The bosses share their ending (`boss.ts`, `bossCinema`): the burst and rings in their colours, the name card, the scene
+dissolving into the battle's ground, the HUD's cues, the send-out. Mew's predates it and has its own copy.
+
 Motion levels (docs/15 §8): full; short (fewer particles, no shake); off (straight to the fight, every cue fired). A
 calm OS removes the shakes and flashes, as everywhere. Sounds are synthesised (`tone`, `hiss`, `fxSound`) on the cues.
 
@@ -75,9 +103,9 @@ calm OS removes the shakes and flashes, as everywhere. Sounds are synthesised (`
 
 `tests/legend-cinema-fx.test.ts`: the switch (Off, the admin alone, everyone); the raid intro's words at their old times
 without a cinematic and after each cinematic's reveal; every raid cinematic's cues in time order, its roar on its
-reveal, a longer build-up than the shared one; Mew's entrance shows the foe, sends yours out and shows it, in that
-order, after the reveal. `e2e/admin-config.spec.ts`: the Switches tab's 24 rows, Legendary intros among them.
+reveal, a longer build-up than the shared one; every boss's entrance shows the foe, sends yours out and shows it, in
+that order, after the reveal. `e2e/admin-config.spec.ts`: the Switches tab's 24 rows, Legendary intros among them.
 
 ## 6. Next
 
-Gen 2 (Raikou, Entei, Suicune, Lugia, Ho-Oh, Celebi), then the other regions, once Gen 1's are approved.
+Hoenn and the other regions, once Gen 1's and Gen 2's are approved.
