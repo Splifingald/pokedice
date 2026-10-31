@@ -1868,7 +1868,7 @@ function SendOutStep({
 }: {
   foe: number
   lead: string
-  /** A computer's fight: picked in the team's column at the side (SwitchStep's `chosen`). */
+  /** A computer's fight: the pick shared with the team's column at the side (SwitchStep's `chosen`). */
   chosen?: { value: string | null; onChange: (uid: string) => void }
 }) {
   const { t } = useT()
@@ -1904,13 +1904,11 @@ function SendOutStep({
   })
   return (
     <div className="flex flex-1 flex-col gap-3">
-      {/* In the middle of the room there is (a tall PC panel's too), GO! at the foot. */}
+      {/* In the middle of the room there is (a tall PC panel's too), GO! at the foot. A computer keeps the cards too
+          (the user's call, 2026-10-31: the one picked alone read as "only this one can go"); they and the team's
+          column share the pick. */}
       <div className="my-auto">
-        {chosen ? (
-          <PickedOne inst={save?.box.find((p) => p.id === picked)} />
-        ) : (
-          <LeadPicker value={picked} onChange={setPicked} foe={types} go fight />
-        )}
+        <LeadPicker value={picked} onChange={setPicked} foe={types} go fight />
       </div>
       <BottomDock>
       {auto && !touched && (

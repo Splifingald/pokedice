@@ -219,8 +219,18 @@ test("PC: the send-out's lead is picked with a click in the team's column", asyn
   await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
   const team = page.getByRole('region', { name: 'Switch Pokémon' })
   await expect(team.getByRole('button', { pressed: true })).toContainText('Bulbasaur')
+  // The panel keeps the three cards above GO! (the user's call, 2026-10-31), the pick shared with the column.
+  const card = (name: string) =>
+    page.getByRole('listitem').filter({ has: page.getByRole('button', { name: `${name} info` }) })
+  for (const name of ['Bulbasaur', 'Charmander', 'Squirtle']) await expect(card(name)).toBeVisible()
+  await expect(card('Bulbasaur').getByRole('button', { pressed: true })).toBeVisible()
+  await card('Charmander').getByRole('button', { pressed: false }).first().click()
+  await expect(team.getByRole('button', { pressed: true })).toContainText('Charmander')
   await team.getByRole('button', { name: /^Squirtle,/ }).click()
   await expect(team.getByRole('button', { pressed: true })).toContainText('Squirtle')
+  await expect(card('Squirtle').getByRole('button', { pressed: true })).toBeVisible()
+  const go = (await page.getByRole('button', { name: 'Send out Squirtle' }).boundingBox())!
+  expect((await card('Squirtle').boundingBox())!.y).toBeLessThan(go.y)
   await page.getByRole('button', { name: 'Send out Squirtle' }).click()
   await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeEnabled({ timeout: 20_000 })
   await expect(team.getByRole('button', { name: /^Squirtle, .*in battle$/ })).toBeVisible()
