@@ -92,6 +92,29 @@ Sinnoh's mythicals (and Victini):
   (`arceusRaidCinema`, reveal 5.1) the Hall of Origin building itself out of light, the 17 plates in a turning ring, the
   golden wheel drawn in the sky, Judgment streaking the plates into its hub.
 
+Kalos, and Alola's mythicals:
+
+- **Xerneas** (`xerneas.ts`, raid, reveal 4.8). A dead grey glade: a heartbeat in a great antlered tree, light climbing
+  its boughs, Geomancy's rainbow, a wave of life greening the world; the tree becomes a stag of light.
+- **Yveltal** (`yveltal.ts`, raid, reveal 4.75). A golden valley and a dark cocoon beating red: it drains the colour from
+  the world, splits open, Oblivion Wing turns the valley to stone, Yveltal the only colour left.
+- **Zygarde** (`zygarde.ts`, raid, reveal 4.8). Terminus Cave: cells blink on and march to the middle as the hexagonal
+  floor lights ring by ring, the Core rises, the cells build its form tile by tile.
+- **Diancie** (`diancie.ts`, boss). A diamond mine: pink crystals grow chiming from the walls, the dust is squeezed
+  white-hot into a faceted pink diamond that bursts into Diancie.
+- **Hoopa** (`hoopa.ts`, boss). Dahara City at dusk: golden rings pop open and things fall out, Hoopa Unbound's hand
+  waggles, everything is sucked back in.
+- **Volcanion** (`volcanion.ts`, boss). A volcanic valley: geysers of water then fire, the volcano erupts both, steam
+  whites out the valley, a steam blast clears it.
+- **Magearna** (`magearna.ts`, boss). A workshop shut for 500 years: gears wake, the clock moves, light runs into a red
+  glass heart that beats pink and rises.
+- **Marshadow** (`marshadow.ts`, boss). A shrine courtyard at night: a shadow snuffs the lanterns one by one, stands up
+  in ghost fire, Spectral Thief steals the last light.
+- **Zeraora** (`zeraora.ts`, boss). A city at night: a plasma streak zigzags over roofs bursting streetlights, the city
+  goes dark, Plasma Fists slam the road.
+- **Meltan** (`meltan.ts`, boss). A scrapyard: a crane magnet pulls up the scrap, Meltan swarm out, it all melts into a
+  white-hot hex nut that cools to gold.
+
 The bosses share their ending (`boss.ts`, `bossCinema`): the burst and rings in their colours, the name card, the scene
 dissolving into the battle's ground, the HUD's cues, the send-out. Mew's predates it and has its own copy.
 

@@ -60,7 +60,7 @@ describe('the raid cinematics', () => {
       Object.keys(RAID_CINEMAS)
         .map(Number)
         .sort((a, b) => a - b),
-    ).toEqual([130, 144, 145, 146, 150, 249, 250, 493])
+    ).toEqual([130, 144, 145, 146, 150, 249, 250, 493, 716, 717, 718])
   })
 
   for (const [dex, c] of Object.entries(RAID_CINEMAS))
@@ -89,7 +89,7 @@ describe('the bosses’ cinematics', () => {
       Object.keys(BOSS_CINEMAS)
         .map(Number)
         .sort((a, b) => a - b),
-    ).toEqual([151, 243, 244, 245, 251, 489, 490, 491, 492, 493, 494])
+    ).toEqual([151, 243, 244, 245, 251, 489, 490, 491, 492, 493, 494, 719, 720, 721, 801, 802, 807, 808])
   })
 
   for (const [dex, c] of Object.entries(BOSS_CINEMAS))

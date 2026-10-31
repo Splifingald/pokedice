@@ -20,6 +20,16 @@ import { manaphyCinema } from './manaphy'
 import { phioneCinema } from './phione'
 import { shayminCinema } from './shaymin'
 import { victiniCinema } from './victini'
+import { diancieCinema } from './diancie'
+import { hoopaCinema } from './hoopa'
+import { magearnaCinema } from './magearna'
+import { marshadowCinema } from './marshadow'
+import { meltanCinema } from './meltan'
+import { volcanionCinema } from './volcanion'
+import { xerneasCinema } from './xerneas'
+import { yveltalCinema } from './yveltal'
+import { zeraoraCinema } from './zeraora'
+import { zygardeCinema } from './zygarde'
 
 export { wordsAt } from './kit'
 export type { Cinema, CinemaParams } from './kit'
@@ -36,6 +46,9 @@ export const RAID_CINEMAS: Readonly<Record<number, Cinema>> = {
   250: hoohCinema,
   // Arceus's daily raid (its boss fight has its own, below).
   493: arceusRaidCinema,
+  716: xerneasCinema,
+  717: yveltalCinema,
+  718: zygardeCinema,
 }
 
 /** The bosses' cinematics, on the battle stage with the name card and the send-out: Mew first. */
@@ -51,4 +64,11 @@ export const BOSS_CINEMAS: Readonly<Record<number, BossCinema>> = {
   492: shayminCinema,
   493: arceusCinema,
   494: victiniCinema,
+  719: diancieCinema,
+  720: hoopaCinema,
+  721: volcanionCinema,
+  801: magearnaCinema,
+  802: marshadowCinema,
+  807: zeraoraCinema,
+  808: meltanCinema,
 }
