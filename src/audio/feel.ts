@@ -65,6 +65,11 @@ const FEEL_SOUNDS = {
     tone(82, 0.32, { type: 'square', vol: 0.07, slide: -30, at: 0.57 })
     tune([[392, 0.68, 0.07], [523, 0.75, 0.07], [659, 0.82, 0.07], [784, 0.89, 0.07], [988, 0.98, 0.26]], 'square', 0.05)
   },
+  /** A friend request sent after a real player's fight (docs/53): the letter's whoosh up, then two bright twinkles. */
+  'friend.send': () => {
+    tone(660, 0.2, { type: 'triangle', vol: 0.05, slide: 900 })
+    tune([[1319, 0.16, 0.06], [1760, 0.22, 0.12]], 'square', 0.035)
+  },
   /** A find lands on the stage (docs/43): a quick rising sparkle. */
   'find.item': () => tune([[988, 0, 0.05], [1319, 0.05, 0.05], [1760, 0.1, 0.12]], 'square', 0.04),
   /** It falls: a short rising whistle, then the thud of its landing (`die.landHeavy`'s weight, lighter). */

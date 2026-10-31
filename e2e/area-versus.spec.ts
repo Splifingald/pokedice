@@ -143,8 +143,12 @@ test('the card: its intro, the rules the first time, their team; FIGHT, won, ×1
   await expect(
     page.getByText('You beat Misty’s team!').or(page.getByText("You beat Misty's team!")),
   ).toBeVisible()
+  // The result scrolls itself to the request: in full view, nothing to scroll.
+  await expect(request).toBeInViewport({ ratio: 1 })
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/area-versus-won.png` })
   await request.click()
+  // The letter flies off the button.
+  await expect(page.getByTestId('letter-flight')).toBeAttached()
   await expect(page.getByText('Friend request sent to Misty.')).toBeVisible()
   expect(sent).toEqual([{ p_to: MISTY, p_area: ROUTE3.id }])
   expect(met).toEqual([{ p_foe: MISTY, p_area: ROUTE3.id, p_outcome: 'won' }])

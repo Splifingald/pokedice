@@ -81,6 +81,8 @@ the server answers nothing.
   short shake, one white flash, the seam lit gold, a boom); "REAL PLAYER BATTLE!" and their name wipe in; VS beats
   while it holds; then the bands split apart onto the card. 1.7 s in pixel steps, a rival's sting on its beats
   (`versus.intro`). A phone stacks the two (you above the seam, them below); a wide screen sets them side by side.
+  Beside each trainer, their team's menu icons pop in one after another once VS has landed (yours, then theirs; three
+  to a column), so both sides' Pokémon are seen at once (the user's ask, 2026-10-31).
   A tap ends it. In full under Short (an encounter's intro); calm: the still scene for 0.9 s, no shake or flash;
   animations off: none.
 - **The card** (`PlayerFoeCard`, the encounter's pop-up): REAL PLAYER over their look, their name (golden for the
@@ -92,6 +94,13 @@ the server answers nothing.
 - **The result**: the victory card's ₽, then "You beat Misty's team!", "Your team is healed." and SEND FRIEND REQUEST;
   a loss: "Misty's team won", "No ₽ this time. Your team is healed and the round goes on.", SEND FRIEND REQUEST and
   CONTINUE. After sending: "Request sent". Already friends: no button.
+- **The result scrolls to the request** (the user's ask, 2026-10-31): the real player's part of the result card
+  (`DuelResult`, `follow`) brings itself into view as it shows, clear of the buttons pinned at the card's foot, so SEND
+  FRIEND REQUEST is in full view without a scroll.
+- **The letter** (the user's ask, 2026-10-31: "an envelope with a heart, it comes from the button and flies away";
+  `LetterFlight`): SEND FRIEND REQUEST pops an envelope sealed with a heart out of the button; it wobbles up and away to
+  the right and fades as little hearts puff behind it (0.9 s, pixel steps, a soft chirp `friend.send`); none with
+  animations off.
 - **Friends page**: **Requests** at the top while there are some: their look, name, "Fought you in Route 4", ACCEPT /
   NO. A dot on the Friends row and the avatar, with the count.
 - **The round gauge**: a person on the card's segment, as a heart on a Center's.

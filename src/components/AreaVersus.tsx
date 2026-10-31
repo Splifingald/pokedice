@@ -10,6 +10,7 @@ import {
   familyTalent,
   foePrize,
   progressOf,
+  teamOf,
   type AreaFoe,
   type Encounter,
 } from '@/engine'
@@ -224,6 +225,35 @@ function Streaks({ toward }: { toward: 'left' | 'right' }) {
 }
 
 /**
+ * A side's team in the intro, beside its trainer (the user's ask, 2026-10-31): each Pokémon's menu icon on a plate, a
+ * star on a shiny, popping in one after another from `from` seconds. Three to a column: a team of six is two columns.
+ */
+function IntroTeam({
+  team,
+  icon,
+  from,
+}: {
+  team: readonly { dex: number; shiny?: boolean }[]
+  icon: number
+  from: number
+}) {
+  return (
+    <span className="grid shrink-0 grid-flow-col grid-rows-3 items-end gap-1">
+      {team.map((m, i) => (
+        <span
+          key={i}
+          className="rp-mon relative grid place-items-center bg-night/45 p-0.5 shadow-[inset_0_0_0_2px_rgba(255,255,255,0.35)]"
+          style={{ animationDelay: `${(from + i * 0.07).toFixed(2)}s` }}
+        >
+          <MiniSprite dex={m.dex} size={icon} />
+          {m.shiny && <PixelIcon name="star" size={12} className="absolute right-0.5 top-0.5" />}
+        </span>
+      ))}
+    </span>
+  )
+}
+
+/**
  * The card's intro (the user's asks, 2026-10-31: "a small animated intro that indicates it is a real player battle",
  * then "it should feel awesome and stay simple"): a rival's entrance over the whole screen. Your blue band slams in from
  * the left and their red one from the right, speed lines rushing; each trainer slides in as a black silhouette and
@@ -237,6 +267,10 @@ export function RealPlayerIntro({ foe, onDone }: { foe: AreaFoe; onDone: () => v
   const { level, calm } = useMotion()
   const desktop = useIsDesktop()
   const mine = useGame((s) => s.save?.player?.avatar ?? s.save?.player?.character ?? 'red')
+  // Your team as it goes in: the save, then its team (a selector must not build a new array on every call).
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  const myTeam = save ? teamOf(save).filter((p) => !!data.species[p.dex]) : []
   const [out, setOut] = useState(false)
   const done = useRef(onDone)
   done.current = onDone
@@ -256,6 +290,8 @@ export function RealPlayerIntro({ foe, onDone }: { foe: AreaFoe; onDone: () => v
   const vw = typeof window === 'undefined' ? 390 : window.innerWidth
   const vh = typeof window === 'undefined' ? 844 : window.innerHeight
   const size = Math.round(desktop ? Math.min(vh * 0.42, 320) : Math.min(vw * 0.5, vh * 0.26, 220))
+  // The team icons beside them (MiniSprite draws them at 1.5× this): three stand a little over half the trainer's height.
+  const icon = Math.round(size * (desktop ? 0.13 : 0.15))
   // The words' ink outline, pixel-hard on every side.
   const ink =
     '[text-shadow:3px_0_0_#24304f,-3px_0_0_#24304f,0_3px_0_#24304f,0_-3px_0_#24304f,3px_3px_0_#24304f,-3px_3px_0_#24304f,3px_-3px_0_#24304f,-3px_-3px_0_#24304f,6px_6px_0_rgba(0,0,0,0.35)]'
@@ -284,8 +320,11 @@ export function RealPlayerIntro({ foe, onDone }: { foe: AreaFoe; onDone: () => v
           <span className="absolute inset-0 bg-[repeating-linear-gradient(135deg,transparent_0_10px,rgba(0,0,0,0.08)_10px_20px)]" />
           <Streaks toward="right" />
           {/* A phone stacks them (you above the seam, them below it); a wide screen sets them side by side. */}
-          <span className="rp-me absolute bottom-[57%] left-[6%] md:bottom-[38%] md:left-[12%]">
+          {/* On a wide screen the seam rises to the right of your feet: your team stands level with your head. */}
+          <span className="rp-me absolute bottom-[57%] left-[4%] flex items-end gap-2 md:bottom-[38%] md:left-[10%] md:items-start">
             <TrainerSprite src={avatarOf(mine).src} size={size} />
+            {/* Your team, to the right of you: it pops in once VS has landed. */}
+            <IntroTeam team={myTeam} icon={icon} from={0.62} />
           </span>
         </span>
         {/* Theirs: the bottom band, from the right. */}
@@ -297,7 +336,9 @@ export function RealPlayerIntro({ foe, onDone }: { foe: AreaFoe; onDone: () => v
         >
           <span className="absolute inset-0 bg-[repeating-linear-gradient(135deg,transparent_0_10px,rgba(0,0,0,0.08)_10px_20px)]" />
           <Streaks toward="left" />
-          <span className="rp-foe absolute right-[6%] top-[57%] md:right-[12%] md:top-[40%]">
+          <span className="rp-foe absolute right-[4%] top-[57%] flex items-end gap-2 md:right-[10%] md:top-[40%]">
+            {/* Their team, to the left of them, a beat after yours. */}
+            <IntroTeam team={foe.team} icon={icon} from={0.7} />
             <TrainerSprite src={foe.sprite ?? avatarOf(foe.avatar).src} size={size} />
           </span>
           <span
@@ -432,6 +473,52 @@ export function PlayerFoeCard({
   )
 }
 
+/**
+ * SEND FRIEND REQUEST's letter (the user's ask, 2026-10-31: "an envelope with a heart, it comes from the button and
+ * flies away"): an envelope sealed with a heart pops out of the button's middle (`x`, `y`, the screen's), wobbles up
+ * and away to the right and fades, little hearts puffing behind it. 0.9 s in pixel steps, a soft chirp; the OS's
+ * reduced motion leaves it on its last frame (gone), animations off: none.
+ */
+export function LetterFlight({ x, y, onDone }: { x: number; y: number; onDone: () => void }) {
+  const { level } = useMotion()
+  const done = useRef(onDone)
+  done.current = onDone
+  useEffect(() => {
+    if (level === 'off') return done.current()
+    feelSound('friend.send')
+    const timer = setTimeout(() => done.current(), 1000)
+    return () => clearTimeout(timer)
+  }, [level])
+  if (level === 'off' || typeof document === 'undefined') return null
+  return createPortal(
+    <span
+      aria-hidden
+      data-testid="letter-flight"
+      className="pointer-events-none fixed z-[130]"
+      style={{ left: x, top: y }}
+    >
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="rp-puff absolute"
+          style={{ left: -26 + i * 18, top: -10, animationDelay: `${0.12 + i * 0.1}s` }}
+        >
+          <PixelIcon name="heart" size={16} />
+        </span>
+      ))}
+      <span className="rp-letter absolute -left-6 -top-6 block">
+        <span className="relative block">
+          <PixelIcon name="mail" size={48} />
+          <span className="absolute left-1/2 top-[58%] -translate-x-1/2 -translate-y-1/2">
+            <PixelIcon name="heart" size={18} />
+          </span>
+        </span>
+      </span>
+    </span>,
+    document.body,
+  )
+}
+
 /** SEND FRIEND REQUEST, and what became of it. Nothing for a friend already, or signed out (who would it be from?). */
 export function FriendRequestButton({ foe, signedInAs }: { foe: AreaFoe; signedInAs?: boolean }) {
   const { t } = useT()
@@ -439,6 +526,11 @@ export function FriendRequestButton({ foe, signedInAs }: { foe: AreaFoe; signedI
   const signedIn = useGame((s) => s.auth.status === 'signed_in') || !!signedInAs
   const sent = useAreaVersus((s) => s.sent[foe.id])
   const maxFriends = useGame((s) => s.data.config.maxFriends ?? 100)
+  // The letter in flight: it outlives the button (which gives way to "Request sent" at once).
+  const [flight, setFlight] = useState<{ x: number; y: number; n: number } | null>(null)
+  const letter = flight && (
+    <LetterFlight key={flight.n} x={flight.x} y={flight.y} onDone={() => setFlight(null)} />
+  )
   if (foe.friend)
     return (
       <p className="m-0 flex items-center gap-1.5 text-lg leading-tight">
@@ -465,17 +557,20 @@ export function FriendRequestButton({ foe, signedInAs }: { foe: AreaFoe; signedI
                 ? t('ui.friends.friendFull', { name: foe.name })
                 : t('ui.areaVersus.requestFailed')
     return (
-      <p className="m-0 flex items-center gap-1.5 text-lg leading-tight" role="status">
-        <PixelIcon
-          name={
-            sent === 'sent' || sent === 'pending' || sent === 'added' || sent === 'already'
-              ? 'check'
-              : 'warning'
-          }
-          size={18}
-        />
-        {line}
-      </p>
+      <>
+        <p className="m-0 flex items-center gap-1.5 text-lg leading-tight" role="status">
+          <PixelIcon
+            name={
+              sent === 'sent' || sent === 'pending' || sent === 'added' || sent === 'already'
+                ? 'check'
+                : 'warning'
+            }
+            size={18}
+          />
+          {line}
+        </p>
+        {letter}
+      </>
     )
   }
   return (
@@ -483,7 +578,11 @@ export function FriendRequestButton({ foe, signedInAs }: { foe: AreaFoe; signedI
       <PixelButton
         className="w-full"
         disabled={sent === 'sending'}
-        onClick={() => void sendFriendRequest(foe, areaId)}
+        onClick={(e) => {
+          const r = e.currentTarget.getBoundingClientRect()
+          setFlight({ x: r.left + r.width / 2, y: r.top + r.height / 2, n: Date.now() })
+          void sendFriendRequest(foe, areaId)
+        }}
       >
         <PixelIcon name="friends" size={20} />
         {t('ui.areaVersus.sendRequest')}
@@ -493,6 +592,7 @@ export function FriendRequestButton({ foe, signedInAs }: { foe: AreaFoe; signedI
           {t('ui.areaVersus.requestFailed')}
         </p>
       )}
+      {letter}
     </div>
   )
 }
@@ -502,14 +602,35 @@ export function DuelResult({
   outcome,
   foe,
   signedInAs,
+  follow,
 }: {
   outcome: 'won' | 'lost'
   foe: AreaFoe
   signedInAs?: boolean
+  /**
+   * Scroll it into view as it shows (the battle's result card, the user's ask: SEND FRIEND REQUEST clearly seen), clear
+   * of the buttons pinned at the card's foot.
+   */
+  follow?: boolean
 }) {
   const { t } = useT()
+  const { level, calm } = useMotion()
+  const box = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!follow) return
+    // A beat for the card's last pieces to settle, then the whole block in view.
+    const timer = setTimeout(
+      () =>
+        box.current?.scrollIntoView({
+          block: 'nearest',
+          behavior: level === 'off' || calm ? 'auto' : 'smooth',
+        }),
+      120,
+    )
+    return () => clearTimeout(timer)
+  }, [follow, level, calm])
   return (
-    <div className="flex flex-col gap-2 bg-paper p-2.5 shadow-ring">
+    <div ref={box} className="flex scroll-mb-[160px] flex-col gap-2 bg-paper p-2.5 shadow-ring">
       <div className="flex items-center gap-2.5">
         <TrainerLook src={foe.sprite ?? avatarOf(foe.avatar).src} w={44} h={48} />
         <div className="grid min-w-0 gap-1">

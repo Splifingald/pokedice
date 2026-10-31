@@ -1945,7 +1945,8 @@ docs/53. A card of the area's deck that brings a real player's team, behind its 
 - **The card** (`PlayerFoeCard`, in the encounter's pop-up titled "A real player!"): it opens on its **intro**
   (`RealPlayerIntro`, §8), over the whole screen: your blue band from the left and their red one from the right with
   speed lines, the trainers landing as silhouettes into colour, a big gold VS slamming onto the seam (shake, one white
-  flash, the seam lit), "REAL PLAYER BATTLE!" and their name wiping in, then the bands split apart onto the card;
+  flash, the seam lit), each side's team popping in as menu icons beside its trainer, "REAL PLAYER BATTLE!" and their
+  name wiping in, then the bands split apart onto the card;
   stacked on a phone, side by side on a wide screen; a tap ends it. Then: the **REAL PLAYER** tag (the friends' sky blue, a person: a word, never colour alone; Friend beside it for a
   friend), their look and name (golden when rich), "Played here 2 days ago", their team as chips (menu icon, name,
   level, the shiny star, the talent gem), the ₽ in a gold-pale box ("Win ₽26", "1.5× a trainer's ₽. Skip it and get
@@ -1955,8 +1956,10 @@ docs/53. A card of the area's deck that brings a real player's team, behind its 
 - **The result**: a win's victory card ends with the real player's part (`DuelResult`: the tag, "You beat Misty's
   team!", "Your team is healed.", SEND FRIEND REQUEST); its NEXT doesn't count down. A loss is its own card, not a wipe:
   "Defeat", "Misty's team won", "No ₽ this time. Your team is healed and the round goes on.", the request, CONTINUE.
-  After sending: a check and "Friend request sent to Misty." (or friends at once, already friends, a full list, or the
-  failure in red under the button). Signed out: a muted line asks to connect.
+  The result card scrolls the real player's part into full view as it shows, clear of its pinned buttons. SEND FRIEND
+  REQUEST sends a letter: an envelope sealed with a heart pops out of the button, wobbles up and away and fades, hearts
+  puffing behind it (`LetterFlight`, 0.9 s; none with animations off). After sending: a check and "Friend request sent
+  to Misty." (or friends at once, already friends, a full list, or the failure in red under the button). Signed out: a muted line asks to connect.
 - **The Friends page**: **Friend requests (n)** at the top while there are some: the look, the name, "Fought your team
   in Route 3", NO and a green ACCEPT (not red: one red action a screen, and there can be several rows). The Social
   tab's and the Friends tab's dots count them.

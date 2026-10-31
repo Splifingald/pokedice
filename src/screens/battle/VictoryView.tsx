@@ -1050,7 +1050,7 @@ export function VictoryView() {
       )}
       {allShown && run.duel && (
         <div className="mt-3">
-          <DuelResult outcome={run.duel.outcome} foe={run.duel.foe} />
+          <DuelResult outcome={run.duel.outcome} foe={run.duel.foe} follow />
         </div>
       )}
     </Overlay>
@@ -1209,7 +1209,7 @@ function DuelLostView({ foe }: { foe: AreaFoe }) {
       <h2 className="mb-3 text-center text-[32px] font-normal leading-none" aria-live="polite">
         {t('ui.areaVersus.lostTitle')}
       </h2>
-      <DuelResult outcome="lost" foe={foe} />
+      <DuelResult outcome="lost" foe={foe} follow />
     </Overlay>
   )
 }

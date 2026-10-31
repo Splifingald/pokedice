@@ -7,6 +7,7 @@ import {
   AreaVersusRulesModal,
   DuelResult,
   FriendRequests,
+  LetterFlight,
   PlayerFoeCard,
   RealPlayerIntro,
   RealPlayerTag,
@@ -67,6 +68,8 @@ export function AreaVersusBits() {
   const [replay, setReplay] = useState(0)
   // The intro playing (its run's number), or 0.
   const [playing, setPlaying] = useState(0)
+  // SEND FRIEND REQUEST's letter, flying from where it was asked.
+  const [letter, setLetter] = useState<{ x: number; y: number; n: number } | null>(null)
   useEffect(() => {
     if (replay) setPlaying(replay)
   }, [replay])
@@ -95,6 +98,19 @@ export function AreaVersusBits() {
           Play the intro
         </PixelButton>
         {playing > 0 && <RealPlayerIntro key={playing} foe={STRANGER} onDone={() => setPlaying(0)} />}
+      </Frame>
+      <Frame name="SEND FRIEND REQUEST's letter (an envelope with a heart flying away)">
+        <PixelButton
+          size="sm"
+          className="self-start"
+          onClick={(e) => {
+            const r = e.currentTarget.getBoundingClientRect()
+            setLetter({ x: r.left + r.width / 2, y: r.top + r.height / 2, n: Date.now() })
+          }}
+        >
+          Send the letter
+        </PixelButton>
+        {letter && <LetterFlight key={letter.n} x={letter.x} y={letter.y} onDone={() => setLetter(null)} />}
       </Frame>
       <Frame name="The tag">
         <RealPlayerTag className="self-start" />
