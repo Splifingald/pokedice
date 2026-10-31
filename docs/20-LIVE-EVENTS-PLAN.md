@@ -197,3 +197,23 @@ fourth)."*
    (`supabase/seed.sql` inlines it too, after 0071).
 2. Admin → Events → Live events → New live event → **When**, then Save & Publish.
 
+
+## 10. Occasion pictures, picked by default (2026-10-31)
+
+The user's ask: five occasion banners made in Gemini (prompts: BASE + one scene, 16:9, the Johto Daybreak style block of
+`design/visual-lab/bgs.js`), shrunk like the others, and *"when I select a live event, it automatically picks the right
+banner by default"*.
+
+- **The pictures** (`public/backgrounds/live-*.png`, 400 × 223, true pixel art, listed under the admin's **Event
+  pictures**): Halloween (pumpkin patch under the moon), New Year (fireworks over the harbour), Spring (cherry blossom,
+  red bridge), Summer (beach, umbrella, stall), Celebration (balloons, bunting, cake). Each keeps its centre calm for
+  the pop-up's big ×5 / +50 %, its motifs at a quarter and three quarters across.
+- **Made with** `pnpm unpixel <in> <out> --px <source width / 400> --width 400`: Gemini drew these on coarser grids
+  (240 to 480 art pixels wide), and `--width` alone pads or crops a grid to 400 rather than scaling it; `--px` reads the
+  picture on a 400-wide grid instead. JPGs are turned into PNGs first.
+- **The default** (`liveDefaultBanner`, engine): the occasion of the day halfway through the event, UTC: 15 Oct – 7 Nov
+  Halloween, 26 Dec – 10 Jan New Year, March – May spring, June – August summer, else a celebration. A yearly event
+  takes its date; a weekly one, back all year, a celebration; the Underground keeps its cave drawn in code (none).
+- **Admin**: a new event starts with its default; while the picture is the default (or none), changing the dates, the
+  type or the repeat moves it to the new one; a picture picked by hand stays. Players see nothing new to learn: no
+  switch (it's the admin's picture picker, behind Live events' own switch).

@@ -20,7 +20,14 @@ interface PictureGroup {
 export const PICTURE_GROUPS: readonly PictureGroup[] = [
   {
     label: 'Event pictures',
-    names: { '/backgrounds/fortune-wheel.png': 'Fortune Wheel — prize stall at dusk' },
+    names: {
+      '/backgrounds/fortune-wheel.png': 'Fortune Wheel — prize stall at dusk',
+      '/backgrounds/live-halloween.png': 'Halloween — pumpkin patch under the moon',
+      '/backgrounds/live-newyear.png': 'New Year — fireworks over the harbour',
+      '/backgrounds/live-spring.png': 'Spring — cherry blossom and red bridge',
+      '/backgrounds/live-summer.png': 'Summer — beach, umbrella and stall',
+      '/backgrounds/live-celebration.png': 'Celebration — balloons, bunting and cake',
+    },
   },
   {
     // Painted once, used by many areas.

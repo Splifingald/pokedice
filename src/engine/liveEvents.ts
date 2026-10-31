@@ -375,6 +375,42 @@ export function liveProblems(list: readonly LiveEvent[], e: LiveEvent, data: Gam
   return out
 }
 
+/** The occasion pictures (public/backgrounds), which an event gets by default from when it runs. */
+export const LIVE_BANNERS = {
+  halloween: '/backgrounds/live-halloween.png',
+  newyear: '/backgrounds/live-newyear.png',
+  spring: '/backgrounds/live-spring.png',
+  summer: '/backgrounds/live-summer.png',
+  celebration: '/backgrounds/live-celebration.png',
+} as const
+
+/** Each occasion's dates, as month * 100 + day (UTC), first match wins; the rest of the year is a celebration. */
+const SEASONS: readonly { banner: keyof typeof LIVE_BANNERS; from: number; to: number }[] = [
+  { banner: 'halloween', from: 1015, to: 1107 },
+  { banner: 'newyear', from: 1226, to: 1231 },
+  { banner: 'newyear', from: 101, to: 110 },
+  { banner: 'spring', from: 301, to: 531 },
+  { banner: 'summer', from: 601, to: 831 },
+]
+
+/**
+ * The picture an event gets until the admin picks one: the occasion of the day halfway through it (a one-off's dates,
+ * a yearly one's date). A weekly one comes back all year, so no season fits it: a celebration. The Underground keeps
+ * its cave, drawn in code ('').
+ */
+export function liveDefaultBanner(e: LiveEvent): string {
+  if (e.type === 'underground') return ''
+  const r = e.repeat
+  if (r?.kind === 'weekly') return LIVE_BANNERS.celebration
+  // A yearly one in a leap year, so its 29 February is a date.
+  const start = r?.kind === 'yearly' ? Date.UTC(2028, r.month - 1, r.day) + repeatTime(r.time) : Date.parse(e.start)
+  const length = r?.kind === 'yearly' ? runLength(r) : Date.parse(e.end) - start
+  if (!Number.isFinite(start)) return LIVE_BANNERS.celebration
+  const mid = new Date(start + (Number.isFinite(length) && length > 0 ? length / 2 : 0))
+  const md = (mid.getUTCMonth() + 1) * 100 + mid.getUTCDate()
+  return LIVE_BANNERS[SEASONS.find((s) => md >= s.from && md <= s.to)?.banner ?? 'celebration']
+}
+
 /** A new event's settings: every type's defaults, so switching type in the admin starts from sensible numbers. */
 export function newLiveEvent(id: string, start: string, end: string): LiveEvent {
   return {
