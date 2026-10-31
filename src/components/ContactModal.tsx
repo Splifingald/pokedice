@@ -36,7 +36,7 @@ const when = (iso: string) =>
 export function ReplyBox({ reply, at, fromDev }: { reply: string; at: string | null; fromDev?: boolean }) {
   const { t } = useT()
   const welcomeWords = useWelcomeWords()
-  // The weekly league's rewards (docs/44) and a welcome back (docs/56): the server sends their numbers, the game says
+  // The weekly league's rewards (docs/44) and a welcome back (docs/58): the server sends their numbers, the game says
   // them in the player's language.
   const league = leagueRewardNote(reply)
   const welcome = welcomeBackNote(reply)
@@ -61,7 +61,7 @@ export function ReplyBox({ reply, at, fromDev }: { reply: string; at: string | n
   )
 }
 
-/** A message's title; the weekly league's reward (docs/44) and a welcome back (docs/56) have their own, in the player's language. */
+/** A message's title; the weekly league's reward (docs/44) and a welcome back (docs/58) have their own, in the player's language. */
 export const messageTitle = (t: (k: string) => string, title: string) =>
   title === LEAGUE_REWARD_TITLE
     ? t('ui.league.reward.title')
@@ -139,7 +139,7 @@ function History({ onClose }: { onClose: () => void }) {
 /**
  * One message in My messages: its title and time, what the player wrote, the answer (or the developer's own words),
  * its gift — what it held once opened, else the wrapped gift with OPEN IT or why it waits — and, under a welcome back
- * (docs/56), INFO for its rules.
+ * (docs/58), INFO for its rules.
  */
 export function MessageItem({
   m,

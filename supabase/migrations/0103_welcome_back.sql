@@ -1,4 +1,4 @@
--- Welcome-back gifts (docs/56-WELCOME-BACK.md): a player who comes back after days away finds a message from the
+-- Welcome-back gifts (docs/58-WELCOME-BACK.md): a player who comes back after days away finds a message from the
 -- developer carrying a gift, bigger the longer they were gone — by default ₽300 and a few items after 3 days, more after
 -- 7, more again after 14 — at most once every 14 days. It is a developer's message with gifts like the admin's own
 -- (0048: the same pop-up, wrapped gift, opening and My messages), written here by the server.
@@ -14,7 +14,7 @@
 -- 4. welcome_back_claim(device id, local day): the game asks once a day. Days away = that day − the last day the
 --    server recorded the player playing before it (player_days, 0028: back the next day = 1), never the device's clock;
 --    the day is checked within a day of UTC, as player_ping's. A signed-in player's days are their account's and this
---    device's from before they signed in here (0100 moves those into the account at the sign-in's ping; read both, in
+--    device's from before they signed in here (0102 moves those into the account at the sign-in's ping; read both, in
 --    case this call comes first), and a guest's claim moves into their account the same way (the later one kept, its
 --    message with it), so a guest who signs in neither loses their history nor gets a second gift for the same return,
 --    on this device or another. Nothing for a player with no earlier day, while the cooldown runs, below the
@@ -24,7 +24,7 @@
 --    refused.
 -- 5. configVersion + 1, so players fetch the new content.
 --
--- Run after 0028, 0048 and 0082 (and 0100 where it ran; it isn't needed). Safe to run again. seed.sql doesn't inline it
+-- Run after 0028, 0048 and 0082 (and 0102 where it ran; it isn't needed). Safe to run again. seed.sql doesn't inline it
 -- (player_days isn't in its prelude).
 
 begin;
@@ -281,7 +281,7 @@ begin
   perform pg_advisory_xact_lock(hashtext('welcome_back:' || k)) from unnest(keys) k;
   cool := welcome_back_cooldown();
 
-  -- A guest who signed in here: their last welcome back becomes their account's (the later of the two kept), as 0100's
+  -- A guest who signed in here: their last welcome back becomes their account's (the later of the two kept), as 0102's
   -- analytics_merge_player folds their days into it, so another device of the account can't send a second gift for
   -- the same return; and its message follows the account to every device.
   if uid is not null then

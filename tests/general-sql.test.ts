@@ -233,7 +233,7 @@ describe('0049: the switches and the items', () => {
     )
     // The Shiny Charm came later (2026-10-18): its switch and levels come from the game's defaults under this row (the
     // server never reads them), so 0049's row is the defaults without them. Level 0's earnings (`offlineBase`) came
-    // with 0102, which adds them to the row.
+    // with 0104, which adds them to the row.
     const { charmAccess: _access, charm: _charm, offlineBase: _base, ...before } = DEFAULT_CONFIG.general
     expect(rows).toEqual([
       { key: 'general', value: before },

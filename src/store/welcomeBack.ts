@@ -1,5 +1,5 @@
-// Welcome-back gifts (docs/56), the game's side: once a day, whoever is playing tells the server the day it is where
-// they are, and the server decides (migration 0101, welcome_back_claim): days away on its own records of the days
+// Welcome-back gifts (docs/58), the game's side: once a day, whoever is playing tells the server the day it is where
+// they are, and the server decides (migration 0103, welcome_back_claim): days away on its own records of the days
 // played, the tier, the cooldown. A gift comes as a developer's message, so all that is left here is to load the
 // messages again when one was just written: the usual pop-up, wrapped gift and opening follow (ReplyPopup, Gifts).
 // Nothing at all without Supabase, or while the switch (or the gifts') is off for the player.

@@ -41,6 +41,7 @@ export function pageTitleKey(path: string): string | 'area' | null {
   if (first === 't') return 'ui.trades.title'
   if (first === 'admin') return 'ui.nav.admin'
   if (first === 'underground') return 'ui.live.underground.name'
+  if (first === 'calendar') return 'ui.live.calendar.name'
   if (first === 'raid') return 'ui.raid.progress.kicker'
   if (first === 'events' && second) return `ui.events.${second}.name`
   return null

@@ -35,7 +35,7 @@ function sender(m: FeedbackRow) {
   return `${name} · guest ${m.device_id.slice(0, 8)}`
 }
 
-/** The words as stored, or, for a welcome back the server wrote (docs/56), what they stand for. */
+/** The words as stored, or, for a welcome back the server wrote (docs/58), what they stand for. */
 function replyText(reply: string) {
   const note = welcomeBackNote(reply)
   return note

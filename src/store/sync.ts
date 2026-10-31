@@ -888,7 +888,7 @@ export function startBackgroundServices() {
   // A small world ends on the server's clock (docs/21): it closes, or sends the player out when switched off.
   startWorldClock()
   startAnalytics()
-  // Welcome-back gifts (docs/56): the server is asked once a day whether the player is back from days away.
+  // Welcome-back gifts (docs/58): the server is asked once a day whether the player is back from days away.
   startWelcomeBack()
   void initAuth()
   void checkContent()

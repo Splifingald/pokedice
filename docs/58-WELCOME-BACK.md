@@ -12,7 +12,7 @@ opens on screen.
 Behind its own admin switch (docs/15 §20), **Off by default**: while it's Off the server writes nothing and refuses to.
 
 **Status (2026-10-31): built** on `welcome-back-work` (from `version/2_8`), behind its switch, Off. Migration
-`0101_welcome_back.sql` (0100 is the analytics', 0102 the Day Care's and offline earnings').
+`0103_welcome_back.sql` (0102 is the analytics', 0104 the Day Care's and offline earnings').
 
 ## 1. Decisions
 
@@ -59,17 +59,17 @@ Behind its own admin switch (docs/15 §20), **Off by default**: while it's Off t
   device isn't asked again (`localStorage`); asking twice the same day gets **the same answer and no second message**
   (`fresh: false`). The answer only says whether a message was just written: the game then loads the messages again.
 - **Guests and accounts**: a guest is `'device:<id>'`, a signed-in player their account, the keys `player_days` uses.
-  A signed-in player's days are their account's **and this device's** (0100 moves a guest's days into their account at
+  A signed-in player's days are their account's **and this device's** (0102 moves a guest's days into their account at
   the sign-in's ping; reading both covers a claim that comes before it). Their messages are their account's (seen on
   every device), and a guest's are the device's — `my_feedback` still shows those to whoever signs in on it.
 - **Guest → sign-in**: the guest's last welcome back **moves into the account** the first time the account asks from
-  that device (the later of the two kept, as 0100 folds the guest's analytics in), and its message with it. So the same
+  that device (the later of the two kept, as 0102 folds the guest's analytics in), and its message with it. So the same
   return never earns a second gift, on that device or any other of the account's, and an unopened gift follows them.
 - **Two devices** of one account: one claim row (the account's), so the second device the same day gets the same
   answer; the days played on either end an absence (a phone played daily means no gift on the tablet). Two tabs at once
   take turns (an advisory lock per key).
 - **A shared device**: the device's guest days and last welcome back go to the first account that signs in there, as
-  the analytics' do since 0100.
+  the analytics' do since 0102.
 - **Delete my data** leaves the claims and the messages as they are (as it leaves the analytics): a fresh start
   within the cooldown doesn't get a second gift.
 
@@ -83,7 +83,7 @@ Behind its own admin switch (docs/15 §20), **Off by default**: while it's Off t
   through both.
 - `welcomeBackNote` / `welcomeBackReply`: the message's numbers, read and written.
 
-## 4. The database (`supabase/migrations/0101_welcome_back.sql`)
+## 4. The database (`supabase/migrations/0103_welcome_back.sql`)
 
 - game_config `welcomeBack` (`access`, `cooldownDays`, `tiers`), Off, inserted if missing; `welcome_back_cfg()`,
   `welcome_back_open()`, `welcome_back_cooldown()`, `welcome_back_tiers()` (cleaned with 0048's gifts check).
@@ -120,7 +120,7 @@ Behind its own admin switch (docs/15 §20), **Off by default**: while it's Off t
 ## 7. Setting it up
 
 1. Run the migration in Supabase's SQL editor:
-   <https://github.com/Splifingald/pokedice/blob/version/2_8/supabase/migrations/0101_welcome_back.sql>
+   <https://github.com/Splifingald/pokedice/blob/version/2_8/supabase/migrations/0103_welcome_back.sql>
    (after 0028, 0048 and 0082; safe to run again). `supabase/seed.sql` doesn't carry it.
 2. Admin › Messages: the **Gifts** switch must be on (it is, On for everyone, in production).
 3. Admin › Config › Switches › **Welcome back**: **On for admin** to try it (the admin's own return), then **On for
@@ -130,7 +130,7 @@ Behind its own admin switch (docs/15 §20), **Off by default**: while it's Off t
 
 - `tests/welcome-back.test.ts`: the defaults and their items, the tiers cleaned, the cooldown, days away across months,
   only the highest tier, a new player, a day after today, the same day, the cooldown, the switches, the note.
-- `tests/welcome-back-sql.test.ts` (PGlite, 0019/0025/0028/0048/0101): the row is the engine's defaults and the server
+- `tests/welcome-back-sql.test.ts` (PGlite, 0019/0025/0028/0048/0103): the row is the engine's defaults and the server
   reads the same tiers; Off refuses, On for admin only the admin, the gifts off refuse; the day and device checks;
   days away and the tiers (3 → 3, 9 → 7, 40 → 14); the message and its gifts, opened once; the same day; a day after;
   the cooldown and the admin's; a signed-in player on two devices; a guest who signs in (the claim and its message

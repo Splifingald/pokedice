@@ -33,7 +33,7 @@ export function PlayerMessages({
 }) {
   const data = useGame((s) => s.data)
   const target = playerTarget(player)
-  // A guest who signs in becomes one player with their account in Analytics (0100, docs/55), and the game still shows
+  // A guest who signs in becomes one player with their account in Analytics (0102, docs/57), and the game still shows
   // that device's guest messages once signed in (my_feedback), so the profile shows them too.
   const guestDevice = target.userId ? deviceId || null : null
   const [rows, setRows] = useState<FeedbackRow[] | null>(null)

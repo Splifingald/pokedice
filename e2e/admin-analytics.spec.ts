@@ -1,6 +1,6 @@
 // Admin → Analytics → Players per hour (the user's ask, 2026-10-11): the database is asked only when the button is
 // pressed, and the answer shows as one bar per hour of the last 24, with every hour in the table under it. Then
-// retention on day 1, 3, 7 and 30 from the page's one request, and churn by area on demand (docs/55).
+// retention on day 1, 3, 7 and 30 from the page's one request, and churn by area on demand (docs/57).
 import { expect, test, type Page } from '@playwright/test'
 import { fakeSession, gameData, makeSave, mockSupabase, STORAGE_KEY } from './helpers'
 

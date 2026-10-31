@@ -1,4 +1,4 @@
-// Migration 0102 against a real Postgres (PGlite, in process): the Day Care opens at 10 species, offline earnings pay
+// Migration 0104 against a real Postgres (PGlite, in process): the Day Care opens at 10 species, offline earnings pay
 // `offlineBase` at level 0 (added when missing, an admin's value kept), and the content version goes up. Not inlined in
 // seed.sql: the seed's game_config rows come from src/data/config.json (Day Care 10), and the client's defaults fill a
 // `general` row without `offlineBase`.
@@ -10,10 +10,10 @@ import { DEFAULT_CONFIG } from '@/engine'
 import bundled from '@/data/config.json'
 
 const ROOT = path.join(__dirname, '..', 'supabase')
-const FILE = '0102_day_care_10_offline_base.sql'
+const FILE = '0104_day_care_10_offline_base.sql'
 const sql = readFileSync(path.join(ROOT, 'migrations', FILE), 'utf8')
 
-describe('0102: the Day Care at 10, offline earnings at level 0', () => {
+describe('0104: the Day Care at 10, offline earnings at level 0', () => {
   let db: PGlite
   const value = async (key: string) =>
     (await db.query<{ v: Record<string, unknown> }>('select value v from game_config where key = $1', [key])).rows[0]

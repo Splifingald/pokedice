@@ -1,9 +1,9 @@
-// Welcome-back gifts (docs/56-WELCOME-BACK.md): a player who comes back after days away finds a message from the
+// Welcome-back gifts (docs/58-WELCOME-BACK.md): a player who comes back after days away finds a message from the
 // developer carrying a gift, bigger the longer they were gone (by default 3, 7 and 14 days), at most once every 14 days.
 // It is a developer's message like any other (docs/15 §23): the same pop-up, the same wrapped gift and opening, kept in
 // My messages, opened only in the main game outside a small world.
 //
-// The server decides (migration 0101, welcome_back_claim): days away are counted on the days it has recorded the
+// The server decides (migration 0103, welcome_back_claim): days away are counted on the days it has recorded the
 // player playing (the analytics' player_days, their own calendar days), never on the device's clock, and the message
 // is written there. These are the same rules in the game's terms: the admin's preview, the words of the message, and
 // the tests that hold the engine and the SQL together.
@@ -21,7 +21,7 @@ export const welcomeBackOn = (data: GameData): boolean => eventOpenTo(data.confi
 
 /**
  * A welcome back can be sent to this player: its switch and the gifts' are both on for them. The gift rides on a
- * message, and a message's gift is hidden while the gifts are off, so the server sends none then (0101).
+ * message, and a message's gift is hidden while the gifts are off, so the server sends none then (0103).
  */
 export const welcomeBackSends = (data: GameData): boolean => welcomeBackOn(data) && giftsOn(data)
 
@@ -95,7 +95,7 @@ export type WelcomeBackOutcome =
   | { kind: 'send'; days: number; tier: WelcomeBackTier }
 
 /**
- * The rule, as welcome_back_claim (0101) applies it: the same day's claim answers again; then the cooldown since the last
+ * The rule, as welcome_back_claim (0103) applies it: the same day's claim answers again; then the cooldown since the last
  * one; a day played after today (the device's clock or zone moved back) gives nothing; days away are today minus the
  * last day played before today; only the highest tier reached is given.
  */

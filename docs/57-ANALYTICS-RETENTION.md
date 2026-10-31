@@ -1,7 +1,7 @@
 # Analytics: retention on day 1, 3, 7 and 30, one player per guest who signs in, churn by area
 
 Admin → Analytics (`src/admin/sections/AnalyticsSection.tsx`) measured day-1 retention only, counted a guest who later
-signed in as two players, and couldn't say where players stop. Migration 0100 and the page fix the three. It is the
+signed in as two players, and couldn't say where players stop. Migration 0102 and the page fix the three. It is the
 admin's page only: nothing changes for players, so there is no switch and no rules card (docs/15 §20 is about what
 players can do). The game sends nothing new: the hourly call it already makes carries one more field.
 
@@ -64,10 +64,10 @@ before FETCH (`analytics_churn(p_days, p_since)`, admin-only).
 - **"The area they were in when they left"** is `players.last_area`: the area of the last hour they played. The daily
   ping's snapshot sets it, and the hourly `player_seen` now carries `p_area_id` (the save's `currentAreaId`, at the
   save change that sent it) — no new request. An Extreme save sends no area, as it sends no snapshot, so the main
-  save's area stays. Before 0100 only the snapshot existed: the migration copies its area, which is where a player
+  save's area stays. Before 0102 only the snapshot existed: the migration copies its area, which is where a player
   **started** their last day; it gets sharper as players come back.
 
-## 4. The database (`supabase/migrations/0100_analytics_retention.sql`)
+## 4. The database (`supabase/migrations/0102_analytics_retention.sql`)
 
 - `players.last_area text`, filled from each snapshot's `areaId`.
 - `analytics_merge_player(text, text) → boolean`: internal (revoked from `anon` and `authenticated`).
@@ -85,7 +85,7 @@ before FETCH (`analytics_churn(p_days, p_since)`, admin-only).
 
 1. Run the migration once in Supabase's SQL editor, **before** deploying the build (the new page calls
    `analytics_retention`; the old build keeps calling `analytics_d1` and `player_seen(text)`, both still there):
-   <https://github.com/Splifingald/pokedice/blob/version/2_8/supabase/migrations/0100_analytics_retention.sql>
+   <https://github.com/Splifingald/pokedice/blob/version/2_8/supabase/migrations/0102_analytics_retention.sql>
    (after 0028 and 0042). Safe to run again: a re-run merges only pairs made since. `supabase/seed.sql` doesn't inline
    it (analytics migrations never were).
 2. Deploy. Admin → Analytics shows the four rates at once; Churn by area on FETCH.
@@ -94,7 +94,7 @@ before FETCH (`analytics_churn(p_days, p_since)`, admin-only).
 
 - `tests/retention.test.ts`: day-N maths (pending until day N is over, the frame's bounds, each day's own column), and
   `churnByArea` (game order, unknown areas last, totals, bar scale).
-- `tests/analytics-retention-sql.test.ts`: migration 0100 on PGlite: `last_area` from the snapshot; the merge in
+- `tests/analytics-retention-sql.test.ts`: migration 0102 on PGlite: `last_area` from the snapshot; the merge in
   `player_ping` (days, hours, first day, the account's details kept and the guest's as fallback, nothing for a guest
   or a device with no guest row, not callable by players); the backfill (shared device to the earliest account, safe
   to re-run); `player_seen` with an area, without one, and its old one-argument call; `analytics_retention` against

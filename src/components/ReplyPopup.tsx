@@ -2,7 +2,7 @@
 // later), answers they haven't seen yet pop up, between fights, on their turn in the one-time pop-ups' queue
 // (engine/popups.ts: after Prof. Oak's tutorials). A message carrying a gift (docs/15 §23) shows it under the words, and
 // pops up until it's opened: closing the message opens it (the rules first, the first time). Closing marks the answers
-// seen; they stay in Contact the developer → My messages. A welcome back (docs/56) is such a message, written by the
+// seen; they stay in Contact the developer → My messages. A welcome back (docs/58) is such a message, written by the
 // server when a player returns after days away: it comes the same way.
 import { useEffect } from 'react'
 import { giftsWait, parseGifts, WELCOME_BACK_TITLE, type GiftsWait } from '@/engine'
@@ -92,7 +92,7 @@ export function ReplyPopup() {
 /**
  * The pop-up itself: the messages shown (answers, the developer's own, the league's week, a welcome back), each with its
  * wrapped gift, and one button — OPEN THE GIFT when `opens` of them open on closing, else OK. Alone, the league's week
- * (docs/44) and a welcome back (docs/56) have a title and words of their own.
+ * (docs/44) and a welcome back (docs/58) have a title and words of their own.
  */
 export function ReplyModal({
   open,

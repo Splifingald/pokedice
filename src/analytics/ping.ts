@@ -1,7 +1,7 @@
 // Analytics, all of it: one call per player per day (player_ping, migration 0028). That day counts for retention, and
 // the player's row in Admin → Analytics gets their name and a snapshot of their game. Each later hour they play in
 // costs one tiny call (player_seen, migration 0042) for the players-per-hour chart; it carries the area they're in, so
-// churn by area knows where they were in the last hour they played (0100). Nothing else is sent.
+// churn by area knows where they were in the last hour they played (0102). Nothing else is sent.
 // A day or hour already sent is remembered in localStorage, so reloads and new tabs cost nothing.
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase'
 import { deviceId } from '@/lib/device'

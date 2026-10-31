@@ -53,6 +53,7 @@ import { GiftEditor, giftName } from '../GiftEditor'
 import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
 import { AccessSwitch, Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 import { LegendIntrosBox } from './LegendIntrosBox'
+import { ChampionIntrosBox } from './ChampionIntrosBox'
 import { PushBox } from './PushBox'
 import { VersusLeagueBox } from './VersusLeagueBox'
 import { AreaVersusBox } from './AreaVersusBox'
@@ -935,8 +936,8 @@ function InviteRewardsBox() {
 }
 
 /**
- * Welcome-back gifts (docs/56): the cooldown and the tiers — each a number of days away and the gifts it gives (the
- * same editor as a message's gifts). The server reads the same row (0101): on a return it writes the player a message
+ * Welcome-back gifts (docs/58): the cooldown and the tiers — each a number of days away and the gifts it gives (the
+ * same editor as a message's gifts). The server reads the same row (0103): on a return it writes the player a message
  * from you with the highest tier's gifts, and only while the Gifts switch (Messages) is on for them too.
  */
 function WelcomeBackBox() {
@@ -1450,7 +1451,7 @@ const TABS = [
   { id: 'gameCorner', label: 'Game Corner', icon: 'coin' },
   { id: 'unown', label: 'Unown Pokédex', icon: 'book' },
   { id: 'talents', label: 'Hidden talents', icon: 'talent' },
-  { id: 'intros', label: 'Legendary intros', icon: 'sparkle' },
+  { id: 'intros', label: 'Intros', icon: 'sparkle' },
   { id: 'support', label: 'Support & Discord', icon: 'heart' },
   { id: 'rows', label: 'All rows', icon: 'wrench' },
 ] as const satisfies readonly { id: string; label: string; icon: IconName }[]
@@ -1514,6 +1515,7 @@ const FEATURES: Feature[] = [
   own('Trainer looks', 'looks'),
   bare('League heal', 'leagueHeal'),
   own('Legendary intros', 'legendCinema', 'intros'),
+  own('Champion intros', 'championCinema', 'intros'),
   bare('Route 1 opening & tutorial', 'openingRounds'),
   own('Unown Pokédex', 'unownDex', 'unown'),
   own('Hidden talents', 'hiddenTalents', 'talents'),
@@ -1671,6 +1673,7 @@ export function ConfigSection() {
       {tab === 'unown' && <UnownDexBox />}
       {tab === 'talents' && <HiddenTalentsBox />}
       {tab === 'intros' && <LegendIntrosBox />}
+      {tab === 'intros' && <ChampionIntrosBox />}
       {tab === 'support' && (
         <div className="grid gap-4 xl:grid-cols-2">
           <DonationBox />

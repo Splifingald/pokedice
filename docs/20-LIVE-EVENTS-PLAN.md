@@ -221,3 +221,11 @@ banner by default"*, the type's own banners as defaults too.
   type or the repeat moves it to the new one; a picture picked by hand stays. An event saved with no picture gets its
   default the next time it's edited. Players see nothing new to learn: no switch (it's the admin's picture picker,
   behind Live events' own switch).
+
+## 11. The gift calendar (2026-10-31)
+
+A fifth type, **Gift calendar** (docs/55): a door a day from its start, one reward each (an item, ₽ or a Pokémon, in a
+quantity), opened on its day or the next. It runs once, its end the day after its last door; it has its own switch
+(`giftCalendar.access`, Off) and its own page (`/calendar`), so like the Underground it takes no turn in the pop-ups'
+queue (`queuedLives`): Home's notice announces it and its page shows its rules. `liveTypeOn` keeps a calendar switched
+off out of `liveEventsAt`, the push schedule and the Discord posts. Never in an Extreme save.

@@ -10,7 +10,7 @@
  * Each start is posted on its own by live-event-post.ts. Nothing is posted while live events are Off or On for admin.
  * With DISCORD_FRENCH_WEBHOOK, the calendar goes to #🥖-français too, in French (french.ts).
  */
-import { liveEvents, liveRuns, liveState, type GameData, type LiveEvent } from '@/engine'
+import { liveEvents, liveRuns, liveState, liveTypeOn, type GameData, type LiveEvent } from '@/engine'
 import { postWebhook, type DEmbed } from './api'
 import { liveData } from './content'
 import { loadEnv } from './env'
@@ -37,6 +37,7 @@ export function weekOf(now: number): { from: number; to: number } {
 export function weekRuns(data: GameData, now: number): LiveEvent[] {
   const { from, to } = weekOf(now)
   return liveEvents(data)
+    .filter((e) => liveTypeOn(data, e))
     .flatMap((e) => liveRuns(e, from, to))
     .filter((e) => liveState(e, now) !== 'ended')
     .sort((a, b) => Date.parse(a.start) - Date.parse(b.start) || a.id.localeCompare(b.id))
@@ -47,6 +48,7 @@ export function nextAfterWeek(data: GameData, now: number): LiveEvent | null {
   const { to } = weekOf(now)
   return (
     liveEvents(data)
+      .filter((e) => liveTypeOn(data, e))
       .flatMap((e) => liveRuns(e, to, to + NEXT_WEEKS * 7 * DAY))
       .filter((e) => Date.parse(e.start) >= to)
       .sort((a, b) => Date.parse(a.start) - Date.parse(b.start))[0] ?? null

@@ -19,6 +19,7 @@ import {
   livePrice,
   liveRuns,
   liveStartsBetween,
+  liveTypeOn,
   liveState,
   ugCfg,
   type GameData,
@@ -42,6 +43,7 @@ export const TYPE_NAME: Record<LiveEvent['type'], string> = {
   shop: 'Special Shop',
   cash: 'Cash Flow',
   underground: 'The Underground',
+  calendar: 'Gift Calendar',
 }
 
 export const TYPE_EMOJI: Record<LiveEvent['type'], string> = {
@@ -49,6 +51,7 @@ export const TYPE_EMOJI: Record<LiveEvent['type'], string> = {
   shop: '🛒',
   cash: '💰',
   underground: '⛏️',
+  calendar: '🎁',
 }
 
 /** Each type's colour on Discord, so the channel reads at a glance. */
@@ -57,6 +60,7 @@ const TYPE_COLOR: Record<LiveEvent['type'], number> = {
   shop: COLORS.sky,
   cash: COLORS.green,
   underground: COLORS.ink,
+  calendar: COLORS.red,
 }
 
 /** A type's name in the post's language: the game's own French name in French. */
@@ -119,6 +123,8 @@ export function liveLine(data: GameData, e: LiveEvent, lang: PostLang = 'en'): s
   if (lang === 'fr') {
     if (e.type === 'cash') return `${cashBonus(e, lang)} sur chaque ₽ gagné.`
     if (e.type === 'underground') return 'Creuse les Souterrains pour des orbes, des fossiles et des plaques.'
+    if (e.type === 'calendar')
+      return `Un cadeau par jour pendant ${e.calendar.days.length} jours : ouvre la porte du jour !`
     if (e.type === 'shop') {
       const names = e.shop.items.map((r) => data.items[r.key]?.name).filter((n): n is string => !!n)
       return names.length
@@ -129,6 +135,7 @@ export function liveLine(data: GameData, e: LiveEvent, lang: PostLang = 'en'): s
   }
   if (e.type === 'cash') return `${cashBonus(e, lang)} on every ₽ you earn.`
   if (e.type === 'underground') return 'Dig for orbs, fossils and plates in the Underground.'
+  if (e.type === 'calendar') return `A gift a day for ${e.calendar.days.length} days: open today’s door!`
   if (e.type === 'shop') {
     const names = e.shop.items.map((r) => data.items[r.key]?.name).filter((n): n is string => !!n)
     return names.length
@@ -223,6 +230,11 @@ export function liveDetails(data: GameData, e: LiveEvent, lang: PostLang = 'en')
         : []),
     ]
   }
+  if (e.type === 'calendar')
+    return [
+      `🎁 A door opens every day for ${e.calendar.days.length} days, each with a gift: items, ₽ or Pokémon.`,
+      '📅 Missed a day? Its door still opens the next day, then it’s gone.',
+    ]
   const rows = e.shop.items.filter((r) => data.items[r.key])
   if (!rows.length) return ['🛒 Special prices in the shop.']
   const MAX = 12
@@ -260,6 +272,11 @@ function liveDetailsFr(data: GameData, e: LiveEvent): string[] {
         : []),
     ]
   }
+  if (e.type === 'calendar')
+    return [
+      `🎁 Une porte s’ouvre chaque jour pendant ${e.calendar.days.length} jours, chacune avec un cadeau : objets, ₽ ou Pokémon.`,
+      '📅 Un jour manqué ? Sa porte s’ouvre encore le lendemain, puis c’est fini.',
+    ]
   const rows = e.shop.items.filter((r) => data.items[r.key])
   if (!rows.length) return ['🛒 Prix spéciaux en boutique.']
   const MAX = 12
@@ -285,6 +302,7 @@ export function liveBanner(banner: string, site = SITE): string | null {
 /** The other events on at that moment: their bonuses add up with this one's. */
 export function liveAlongside(data: GameData, e: LiveEvent, at = Date.parse(e.start)): LiveEvent[] {
   return liveEvents(data)
+    .filter((x) => liveTypeOn(data, x))
     .flatMap((x) => liveRuns(x, at, at + 1))
     .filter((x) => x.id !== e.id)
 }

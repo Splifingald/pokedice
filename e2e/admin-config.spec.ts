@@ -74,13 +74,15 @@ test('Config: the tabs, the switches in two columns, a name opens its numbers', 
     'page',
   )
 
-  // One row per feature (26 with the Versus global board, the hidden talents, the legendary intros, real-player
-  // battles and welcome back): its name and its switch, nothing else; energy and the retired switches are gone.
-  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(26)
+  // One row per feature (27 with the Versus global board, the hidden talents, the legendary intros, real-player
+  // battles, the champion intros and welcome back): its name and its switch, nothing else; energy and the retired
+  // switches are gone.
+  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(27)
   await expect(page.getByRole('radiogroup', { name: 'Welcome back: who has it' })).toBeVisible()
   await expect(page.getByRole('radiogroup', { name: 'Hidden talents: who has it' })).toBeVisible()
   await expect(page.getByRole('radiogroup', { name: 'Legendary intros: who has it' })).toBeVisible()
   await expect(page.getByRole('radiogroup', { name: 'Real-player battles: who has it' })).toBeVisible()
+  await expect(page.getByRole('radiogroup', { name: 'Champion intros: who has it' })).toBeVisible()
   await expect(page.getByRole('radiogroup', { name: 'Versus global board: who has it' })).toBeVisible()
   for (const gone of [
     'Energy',
@@ -117,7 +119,7 @@ test('Config: the tabs, the switches in two columns, a name opens its numbers', 
   await page.screenshot({ path: 'test-results/admin-config-game.png', fullPage: true })
 })
 
-test('Welcome back (docs/56): its switch, then its tab with the cooldown and the tiers’ gifts', async ({ page }) => {
+test('Welcome back (docs/58): its switch, then its tab with the cooldown and the tiers’ gifts', async ({ page }) => {
   test.setTimeout(120_000)
   await page.setViewportSize({ width: 1440, height: 1000 })
   await admin(page)
@@ -183,6 +185,30 @@ const BOARD = {
     { n: 2, members: [member('MISTY', 24, 1, { matches: [4, 0, 0, 0] })] },
   ],
 }
+
+test('Intros: every champion listed, each one watched on a battle stage (docs/56)', async ({ page }) => {
+  test.setTimeout(120_000)
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(String(e)))
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await admin(page)
+  await page.goto('/admin/config?tab=intros')
+  await expect(page.getByRole('heading', { name: 'Champion intros' })).toBeVisible({ timeout: 30_000 })
+  // The champions' list (the legends' is above it): one row each.
+  const box = page.getByRole('list').filter({ has: page.getByText('Champion Blue', { exact: true }) })
+  await expect(box.getByRole('listitem')).toHaveCount(14)
+  for (const name of ['Champion Blue', 'Red', 'Champion Lance', 'Champion Cynthia', 'Champion Leon'])
+    await expect(box.getByText(name, { exact: true })).toBeVisible()
+  const red = box.getByRole('listitem').filter({ hasText: /^Red\s*Watch$/ })
+  await red.getByRole('button', { name: 'Watch' }).click()
+  const film = page.getByRole('dialog', { name: 'Red' })
+  await expect(film).toBeVisible()
+  await expect(film.locator('canvas')).toBeVisible()
+  await page.waitForTimeout(2500)
+  await film.click()
+  await expect(film).toHaveCount(0)
+  expect(errors).toEqual([])
+})
 
 test("Versus league: the week's groups, fetched when the admin asks", async ({ page }) => {
   test.setTimeout(120_000)

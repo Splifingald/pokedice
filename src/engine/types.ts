@@ -871,7 +871,7 @@ export interface EventsConfig {
 }
 
 /** Live events (docs/20): the kinds the admin can schedule. */
-export const LIVE_TYPES = ['shiny', 'shop', 'cash', 'underground'] as const
+export const LIVE_TYPES = ['shiny', 'shop', 'cash', 'underground', 'calendar'] as const
 export type LiveType = (typeof LIVE_TYPES)[number]
 
 /** One item of a Special Shop: its event price, how many each player may buy (null = no limit), where it's sold. */
@@ -882,6 +882,15 @@ export interface LiveShopItem {
   /** Sold while the player plays one of these regions; 'all' = everywhere. */
   regions: RegionId[] | 'all'
 }
+
+/**
+ * A gift calendar's day (docs/55): one reward, in a quantity. A Pokémon comes `qty` times, each a Pokémon of its own.
+ * It lands in the region being played when the player opens it (the gifts' rules, engine/gifts.ts).
+ */
+export type CalendarReward =
+  | { kind: 'item'; key: string; qty: number }
+  | { kind: 'gold'; amount: number }
+  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; qty: number }
 
 /** A week of the month a weekly live event runs in: the 1st to the 4th of that weekday, or the month's last. */
 export type LiveWeek = 1 | 2 | 3 | 4 | 'last'
@@ -927,6 +936,11 @@ export interface LiveEvent {
   shop: { items: LiveShopItem[] }
   /** Cash Flow: every ₽ earned × `multiplier` (1.5 = +50 %), selling excluded. */
   cash: { multiplier: number }
+  /**
+   * Gift calendar (docs/55): a door a day from `start`, one reward each (`days[0]` is day 1). Runs once: its `end` is
+   * the day after its last, the last day's catch-up.
+   */
+  calendar: { days: CalendarReward[] }
 }
 
 export interface GameConfig {
@@ -1044,7 +1058,7 @@ export interface GameConfig {
   general: GeneralConfig
   /** Friend invite rewards (docs/15 §25): their switch and the gauge's tiers. The server reads the same row. */
   inviteRewards: InviteRewardsConfig
-  /** Welcome-back gifts (docs/56): their switch, the cooldown and the tiers. The server reads the same row (0101). */
+  /** Welcome-back gifts (docs/58): their switch, the cooldown and the tiers. The server reads the same row (0103). */
   welcomeBack: WelcomeBackConfig
   /** Push notifications (docs/27): their switch, a game_config row of its own that seeding never writes. */
   push: PushConfig
@@ -1076,6 +1090,16 @@ export interface GameConfig {
    * how they look and sound, so no server function reads it. Migration 0098 inserts the same row.
    */
   legendCinema: { access: EventAccess }
+  /**
+   * The gift calendar (docs/55): live events of type `calendar` open only with this on. The doors opened are in each
+   * player's save, on the server's clock, so no server function reads it. Migration 0100 inserts the same row.
+   */
+  giftCalendar: { access: EventAccess }
+  /**
+   * The champions' own cinematics (docs/56): a League Champion's entrance in its own place before its fight. Only how
+   * it looks and sounds, so no server function reads it. Migration 0101 inserts the same row.
+   */
+  championCinema: { access: EventAccess }
   /**
    * The Unown Pokédex (docs/41): the 28 letters, once an area where Unown live is opened; `reward` ₽ for the last one.
    * Migration 0080 inserts the same row.
@@ -1308,8 +1332,8 @@ export interface InviteTier {
 }
 
 /**
- * Welcome-back gifts (docs/56): a player back after days away gets a developer's message carrying the gifts of the
- * highest tier their absence reached, at most once every `cooldownDays`. The server reads the same row (0101).
+ * Welcome-back gifts (docs/58): a player back after days away gets a developer's message carrying the gifts of the
+ * highest tier their absence reached, at most once every `cooldownDays`. The server reads the same row (0103).
  */
 export interface WelcomeBackConfig {
   /** The switch (docs/15 §20): off (no message is sent), on for the admin only, on for everyone. Off by default. */
@@ -2065,6 +2089,10 @@ export interface EventsSave {
   liveSeen?: string[]
   /** Special Shop purchases, per live event id then item key: what counts against each item's limit. */
   liveBought?: Record<string, Record<string, number>>
+  /** Gift calendars' doors opened (docs/55), per live event id: the days (1 = the first). A door opens once. */
+  calendarOpened?: Record<string, number[]>
+  /** The gift calendar's rules card was read (GOT IT): once, for every calendar; INFO shows them again. */
+  calendarRulesSeen?: boolean
   /** The small world this save holds (its block is the live region or a parked one), or the one that just closed. */
   world?: WorldSave
   /** Small worlds whose opening pop-up has been shown (ids). */

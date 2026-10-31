@@ -1,4 +1,4 @@
-// Kitchen sink: welcome-back gifts (docs/56) — a developer's message the server writes when a player comes back after
+// Kitchen sink: welcome-back gifts (docs/58) — a developer's message the server writes when a player comes back after
 // days away, so its states are the messages' own: the pop-up (alone, with the player's name and without, the gift
 // waiting in Extreme mode, beside another message from the developer), its words for each tier and a single day, My
 // messages' entry (to open, opening, opened, waiting) with its INFO, the rules, and the opening, the gifts' own.

@@ -1,4 +1,4 @@
-// Welcome-back gifts (docs/56): once a day the game asks the server whether the player is back from days away
+// Welcome-back gifts (docs/58): once a day the game asks the server whether the player is back from days away
 // (welcome_back_claim, with the player's own day and the device); the server decides and writes a message from the
 // developer with the tier's gifts, which then comes like any other: the pop-up (its own title and words, in the
 // player's language), the wrapped gift, the gifts' rules the first time, the opening, the save, My messages with INFO.

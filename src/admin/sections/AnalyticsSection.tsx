@@ -1,5 +1,5 @@
-// Admin → Analytics: retention on day 1, 3, 7 and 30 and the players, from the daily ping (migrations 0028, 0100),
-// players per hour (0042) and churn by area (0100), those two on demand. Admin-only via RLS. docs/55.
+// Admin → Analytics: retention on day 1, 3, 7 and 30 and the players, from the daily ping (migrations 0028, 0102),
+// players per hour (0042) and churn by area (0102), those two on demand. Admin-only via RLS. docs/57.
 import { PixelIcon } from '@/components/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
@@ -30,7 +30,7 @@ interface PlayerRow {
   first_day: string
   last_day: string
   days: number
-  /** The area of the last hour they played (0100). */
+  /** The area of the last hour they played (0102). */
   last_area: string | null
   /** From the latest daily snapshot, in the player's language: the fallback for an area the game data doesn't know. */
   area: string | null
@@ -326,7 +326,7 @@ export function AnalyticsSection() {
       {status === 'error' && (
         <div className="pixel-panel p-3 text-lg">
           <p className="text-danger">Could not load analytics: {error}</p>
-          <p>Has supabase/migrations/0100_analytics_retention.sql been run?</p>
+          <p>Has supabase/migrations/0102_analytics_retention.sql been run?</p>
         </div>
       )}
 

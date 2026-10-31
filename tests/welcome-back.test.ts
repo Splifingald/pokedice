@@ -1,4 +1,4 @@
-// Welcome-back gifts (docs/56): the engine's side of the rule the server applies (0101) — the tiers as the admin set
+// Welcome-back gifts (docs/58): the engine's side of the rule the server applies (0103) — the tiers as the admin set
 // them, cleaned; the cooldown; days away from the days played; only the highest tier; the edge cases (a new player, the
 // same day, the clock moved back); the switch with the gifts'; the message's numbers.
 import { describe, expect, it } from 'vitest'

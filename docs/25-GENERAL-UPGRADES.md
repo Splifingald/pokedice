@@ -10,7 +10,7 @@ Five things, from one request:
 | **Link Cable** (item) | Used on a Pokémon that only evolves by trade: it evolves, no trade needed. ₽1,000, **not in the Mart** by default. |
 | **Bait** (item) | When a ball's throw falls short, the catch asks whether to throw one: its own die (1, 1, 1, 2, 2, 3) adds to the total. ₽150, in every region's Mart from the **7th badge**. |
 | **Capture Luck** (General upgrade) | A wild Pokémon that broke free may stay for **one** more throw: 10 levels, 10 % to 100 %. Never a legendary, never a raid. |
-| **Offline earnings** (General upgrade) | ₽ for each hour the game is closed, up to 24 h an absence, on the server's clock: 10 levels, ₽2 to ₽20 an hour; level 0 pays ₽1 an hour (`offlineBase`, since 2026-10-31, migration 0102). |
+| **Offline earnings** (General upgrade) | ₽ for each hour the game is closed, up to 24 h an absence, on the server's clock: 10 levels, ₽2 to ₽20 an hour; level 0 pays ₽1 an hour (`offlineBase`, since 2026-10-31, migration 0104). |
 | **I am just rich** (General upgrade) | ₽99,999, one level, for fun: the trainer's name shines gold wherever other players see it. |
 | **Shiny Charm** (General upgrade, added 2026-10-18) | Better wild shiny odds: 10 levels, from the base 1 in 1,000 to 1 in 333. Its own switch. |
 
@@ -69,7 +69,7 @@ Five things, from one request:
   General upgrades open finds something waiting and the upgrade has a rate to grow from. 0 turns it off (no absence
   starts, as before). The Upgrades screen shows level 0's rate instead of "None"; the rules' range starts there.
   Admin → Config → General upgrades → *Offline earnings at level 0*. Setting it up: run
-  `supabase/migrations/0102_day_care_10_offline_base.sql` (adds `offlineBase: 1` when missing; it also opens the
+  `supabase/migrations/0104_day_care_10_offline_base.sql` (adds `offlineBase: 1` when missing; it also opens the
   Day Care at 10 species).
 
 ### 1.5 I am just rich

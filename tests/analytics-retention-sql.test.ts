@@ -1,4 +1,4 @@
-// Migration 0100 against a real Postgres (PGlite, in process): Admin → Analytics, sharper (docs/55). A guest who signs
+// Migration 0102 against a real Postgres (PGlite, in process): Admin → Analytics, sharper (docs/57). A guest who signs
 // in on the same device becomes one player with their account (player_ping's merge, and the one-time backfill for the
 // pairs already there); the hourly player_seen carries the area, its old one-argument call still works; retention on
 // day 1, 3, 7 and 30 and churn by area, both admin-only; analytics_d1 unchanged. Supabase's own pieces (the auth
@@ -10,7 +10,7 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
-const FILE = '0100_analytics_retention.sql'
+const FILE = '0102_analytics_retention.sql'
 
 const ADMIN = 'gregoire.ftn@gmail.com'
 const U = {
@@ -164,7 +164,7 @@ beforeEach(async () => {
 
 describe('players.last_area', () => {
   it("starts from the area of the latest snapshot, and a second run keeps what's newer", async () => {
-    // A player from before 0100: their area is only in their snapshot.
+    // A player from before 0102: their area is only in their snapshot.
     await db.exec(`insert into players (player, first_day, last_day, days, snapshot)
       values ('device:old', '2026-01-01', '2026-01-02', 2, '{"areaId": "route-1"}')`)
     await db.exec(sql(FILE))

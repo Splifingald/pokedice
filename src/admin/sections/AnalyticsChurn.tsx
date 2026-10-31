@@ -1,5 +1,5 @@
-// Admin → Analytics → Churn by area (docs/55): where the players who stopped playing were when they left, in game
-// order. The database is asked (analytics_churn, migration 0100) only when FETCH is pressed, never on its own.
+// Admin → Analytics → Churn by area (docs/57): where the players who stopped playing were when they left, in game
+// order. The database is asked (analytics_churn, migration 0102) only when FETCH is pressed, never on its own.
 import { useState } from 'react'
 import { churnByArea, type Churn, type ChurnRaw } from '@/analytics/churn'
 import { dayKey } from '@/analytics/retention'
@@ -147,7 +147,7 @@ export function ChurnByArea({ since, frame }: { since: Date | null; frame: strin
       )}
       {error && (
         <p className="text-lg text-danger-light">
-          Could not fetch: {error}. Has supabase/migrations/0100_analytics_retention.sql been run?
+          Could not fetch: {error}. Has supabase/migrations/0102_analytics_retention.sql been run?
         </p>
       )}
       {!churn && !error && (

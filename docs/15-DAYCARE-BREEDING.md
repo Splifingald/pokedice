@@ -17,7 +17,7 @@ commit message.
 | | Today (after the Daybreak port) | v2 |
 |---|---|---|
 | Where | One Day Care **per region**: `dayCare` lives in the region block and is parked with it (`liveBlock`/`withBlock` in `src/engine/regions.ts`) | **One Day Care for every region.** It doesn't reset when a region opens, and the same one shows in every region |
-| Opens | 20 species in the live region's Pokédex | 10 species caught (20 until 2026-10-31, migration 0102), counted **across every region**; once open, open for good |
+| Opens | 20 species in the live region's Pokédex | 10 species caught (20 until 2026-10-31, migration 0104), counted **across every region**; once open, open for good |
 | Your Pokémon | 2 slots | 2 slots |
 | XP | +1 every 10 min, **200 XP cap per stay**, READY when full | +1 every 10 min, **no cap but Lv.100** |
 | Friends | — | **4 friend slots**: invite a Pokémon that is sitting in a friend's Day Care. It visits; nothing changes for the friend |

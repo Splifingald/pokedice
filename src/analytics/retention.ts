@@ -1,7 +1,7 @@
 // Retention on day 1, 3, 7 and 30: of the players whose first day falls in the time frame, the share who played again
 // exactly N calendar days after it (the first day is day 0). A day is the player's own (the daily ping,
 // src/analytics/ping.ts, sends their local date); the database sums the players up per first day (analytics_retention,
-// migration 0100). A guest who signs in on the same device is one player there, with their guest days (docs/55).
+// migration 0102). A guest who signs in on the same device is one player there, with their guest days (docs/57).
 
 /** The days after the first that retention looks at, in the order analytics_retention returns them. */
 export const RETENTION_DAYS = [1, 3, 7, 30] as const

@@ -2,13 +2,16 @@
 // (game_config `liveEvents`). Several can run at once, each its own:
 //  - a Shiny Parade: wild Pokémon's shiny odds × n, in some areas, one region or everywhere;
 //  - a Special Shop: items at a special price, items the Mart never sells, some limited per player;
-//  - Cash Flow: every ₽ earned × n (selling excluded, so buying and selling back never pays).
+//  - Cash Flow: every ₽ earned × n (selling excluded, so buying and selling back never pays);
+//  - the Underground (docs/34) and the gift calendar (docs/55, engine/calendar.ts), each with a page and a switch of
+//    its own.
 // Two of a kind add up: two Cash Flows of +50 % pay +100 %, two Shiny Parades of ×5 make ×9 where both cover.
 // An event runs once (a start and an end) or comes back (§9): every year on a date, or on a weekday, every week or on
 // some weeks of the month. Each run of a recurring event is an event of its own for players (its own id, pop-up and
 // shop limits), built from the rule here; the admin's list holds only the rule.
 // Time is the server's (store/serverTime): it starts and ends at the same moment for everyone; while the time is
 // unknown, no event runs. A player sees it, and gets it, from the event's badge count on.
+import { calendarProblems } from './calendar'
 import { eventOpenTo } from './events'
 import { addFossil } from './fossils'
 import { sellPrice } from './items'
@@ -58,6 +61,9 @@ export function normaliseLiveEvent(raw: Partial<LiveEvent>): LiveEvent {
     shiny: { ...d.shiny, ...raw.shiny, areaIds: raw.shiny?.areaIds ?? [] },
     shop: { items: raw.shop?.items ?? [] },
     cash: { ...d.cash, ...raw.cash },
+    // A calendar runs once, between its start and the day after its last (engine/calendar.ts cleans each day).
+    ...(raw.type === 'calendar' && { repeat: null }),
+    calendar: { days: Array.isArray(raw.calendar?.days) ? raw.calendar.days : [] },
   } as LiveEvent
 }
 
@@ -154,6 +160,10 @@ export function liveState(e: Pick<LiveEvent, 'start' | 'end'> & Partial<LiveEven
   return now < s ? 'scheduled' : now < end ? 'live' : 'ended'
 }
 
+/** Its type is switched on: a gift calendar has a switch of its own beyond the live events' one (docs/55). */
+export const liveTypeOn = (data: GameData, e: Pick<LiveEvent, 'type'>): boolean =>
+  e.type !== 'calendar' || eventOpenTo(data.config.giftCalendar?.access, data)
+
 /**
  * The events (and recurring events' runs) running at that server time, the earliest started first; none while the
  * time is unknown or when they're switched off.
@@ -161,6 +171,7 @@ export function liveState(e: Pick<LiveEvent, 'start' | 'end'> & Partial<LiveEven
 export function liveEventsAt(data: GameData, now: number | null): LiveEvent[] {
   if (now == null || !eventOpenTo(data.config.liveEvents?.access, data)) return []
   return liveEvents(data)
+    .filter((e) => liveTypeOn(data, e))
     .flatMap((e) => liveRuns(e, now, now + 1))
     .sort((a, b) => at(a.start) - at(b.start) || a.id.localeCompare(b.id))
 }
@@ -171,6 +182,7 @@ export const liveEventAt = (data: GameData, now: number | null): LiveEvent | nul
 /** Runs starting between `from` and `to` (ms), the soonest first: what reminders announce. */
 export function liveStartsBetween(data: GameData, from: number, to: number): LiveEvent[] {
   return liveEvents(data)
+    .filter((e) => liveTypeOn(data, e))
     .flatMap((e) => liveRuns(e, from, to))
     .filter((e) => at(e.start) >= from && at(e.start) < to)
     .sort((a, b) => at(a.start) - at(b.start) || a.id.localeCompare(b.id))
@@ -186,7 +198,8 @@ export const badgesHeld = (save: SaveData, data: GameData): number => regionCase
 export function livesFor(save: SaveData, data: GameData, now: number | null): LiveEvent[] {
   if (inWorldRegion(save, data)) return []
   const badges = badgesHeld(save, data)
-  return liveEventsAt(data, now).filter((e) => badges >= e.minBadges)
+  // A gift calendar's doors are the main game's: an Extreme save has its own, and would open them twice.
+  return liveEventsAt(data, now).filter((e) => badges >= e.minBadges && !(e.type === 'calendar' && save.mode === 'extreme'))
 }
 
 /** The live events in effect: one, several (they add up), or none. */
@@ -373,6 +386,7 @@ export function liveProblems(list: readonly LiveEvent[], e: LiveEvent, data: Gam
     if (!e.shop.items.length) out.push('The shop has no item.')
     for (const r of e.shop.items) if (!data.items[r.key]) out.push(`Unknown item: ${r.key}.`)
   }
+  if (e.type === 'calendar') out.push(...calendarProblems(e, data))
   return out
 }
 
@@ -406,6 +420,8 @@ const TYPE_BANNER: Record<LiveType, keyof typeof LIVE_BANNERS> = {
   cash: 'cash',
   underground: 'underground',
   shop: 'shop',
+  // A calendar outside the occasions is a celebration (Advent's dates make it the winter picture).
+  calendar: 'celebration',
 }
 
 /**
@@ -441,5 +457,6 @@ export function newLiveEvent(id: string, start: string, end: string): LiveEvent 
     shiny: { multiplier: 5, scope: 'all', areaIds: [], regionId: null },
     shop: { items: [] },
     cash: { multiplier: 1.5 },
+    calendar: { days: [] },
   }
 }

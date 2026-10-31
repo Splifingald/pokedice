@@ -1,4 +1,4 @@
--- Admin → Analytics, sharper (docs/55): day-3, day-7 and day-30 retention next to day-1, a guest who signs in no longer
+-- Admin → Analytics, sharper (docs/57): day-3, day-7 and day-30 retention next to day-1, a guest who signs in no longer
 -- counted as a new player, and churn by area on demand.
 --
 -- 1. players.last_area: the area the player was in the last time the game reported, refreshed by the daily ping's

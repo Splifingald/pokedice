@@ -1,5 +1,5 @@
-// Churn by area (Admin → Analytics, docs/55): where the players who stopped playing were when they left. The database
-// counts them per area (analytics_churn, migration 0100); this puts the areas in game order with their English names.
+// Churn by area (Admin → Analytics, docs/57): where the players who stopped playing were when they left. The database
+// counts them per area (analytics_churn, migration 0102); this puts the areas in game order with their English names.
 // "Where they were" is the area of the last hour they played (player_seen carries it; the daily snapshot before it).
 import { regionOfArea } from '@/engine/regions'
 import type { GameData } from '@/engine/types'

@@ -1,4 +1,4 @@
-// Migration 0101 against a real Postgres (PGlite, in process): welcome-back gifts (docs/56). The switch (and the gifts'
+// Migration 0103 against a real Postgres (PGlite, in process): welcome-back gifts (docs/58). The switch (and the gifts'
 // switch) gate the claim; days away come from the days the server recorded (player_days), never the device; only the
 // highest tier is given, as a developer's message with gifts (0048's, opened through feedback_claim_gifts); the same
 // day answers the same and sends nothing more; the cooldown; a guest who signs in on the same device; a player can't
@@ -107,11 +107,11 @@ beforeAll(async () => {
     '0025_feedback_replies.sql',
     '0028_analytics_minimal.sql',
     '0048_message_gifts.sql',
-    '0101_welcome_back.sql',
+    '0103_welcome_back.sql',
   ])
     await db.exec(sql(f))
   // Safe to run again.
-  await db.exec(sql('0101_welcome_back.sql'))
+  await db.exec(sql('0103_welcome_back.sql'))
   await db.exec(
     `insert into auth.users (id) values ${Object.values(U)
       .map((u) => `('${u}')`)
@@ -328,7 +328,7 @@ describe('guests and accounts', () => {
     await played('device:dev-guest', -6, 0)
     const g = await claim(null, 'dev-guest')
     expect(g).toMatchObject({ days: 6, minDays: 3, fresh: true })
-    // Signed in now (a new account), same device, same day: 0100's ping moves the guest's days into the account.
+    // Signed in now (a new account), same device, same day: 0102's ping moves the guest's days into the account.
     await db.query(`update player_days set player = $1 where player = 'device:dev-guest'`, [U.brock])
     const s = await claim(U.brock, 'dev-guest')
     expect(s).toMatchObject({ messageId: g!.messageId, fresh: false })

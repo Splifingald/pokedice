@@ -1,4 +1,4 @@
-// Welcome-back gifts (docs/56): the words of the developer's message the server writes when a player comes back after
+// Welcome-back gifts (docs/58): the words of the developer's message the server writes when a player comes back after
 // days away — in the player's language, from the numbers the server put in it (engine/welcomeBack.ts) — and its rules,
 // read again from INFO under that message in My messages (docs/15 §20: the message's own line is the rule where it
 // happens). The pop-up, the wrapped gift and its opening are the developer's messages' own (ReplyPopup, Gifts).
