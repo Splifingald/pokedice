@@ -958,7 +958,8 @@ pieces.
 
 - **The avatar opens the trainer card** (the drawer, titled "Trainer card", docs/43 §5.9): the card is compact — the
   look (64 px), the name with a pencil (rename), a badge chip and the team's icons; Money, Pokédex, Best level, Areas,
-  Shinies and Versus fold behind "Stats ▾", open by themselves with More details. Menu rows are 48 px, titles only. The
+  Shinies and Versus fold behind "Stats ▾", open by themselves with More details. With the Versus league on, Versus is
+  **Versus best**: the most trophies ever held, as a `TrophyCount` in the card's font (docs/44 §10). Menu rows are 48 px, titles only. The
   foot is one row of three tiles (Discord, Support me, Contact). The main rows fit a 360×640 phone without scrolling.
 - **A friend's card** is drawn the same way, with their badges as the same one count across every region (no badge
   cases).

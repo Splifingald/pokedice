@@ -1849,6 +1849,7 @@ ui.card.badges,Badges,Badges,Medallas,Orden,Medaglie,Insígnias,Insígnias,バ�
 ui.card.shinies,Shinies,Chromatiques,Variocolor,Schillernde,Cromatici,Brilhantes,Brilhantes,色ちがい,이로치,异色
 ui.card.versus,Versus,Versus,Versus,Versus,Versus,Versus,Versus,対戦,대결,对战
 ui.card.versusRecord,{won} won · {held} held,{won} gagnés · {held} tenus,{won} ganados · {held} resistidos,{won} gewonnen · {held} gehalten,{won} vinti · {held} difesi,{won} ganhos · {held} defendidos,{won} ganhos · {held} defendidos,{won}勝・防衛{held},{won}승 · 방어 {held},{won}胜 · 守住{held}
+ui.card.versusBest,Versus best,Record Versus,Récord Versus,Versus-Rekord,Record Versus,Recorde Versus,Recorde Versus,対戦ベスト,대결 최고,对战最佳
 ui.card.locked,Locked,Verrouillé,Bloqueado,Gesperrt,Bloccato,Bloqueado,Bloqueado,まだ,잠김,未解锁
 ui.card.rename,Change your name,Changer ton nom,Cambiar tu nombre,Namen ändern,Cambia il tuo nome,Mudar o teu nome,Mudar seu nome,名前をかえる,이름 바꾸기,更改名字
 ui.card.done,Done,Terminé,Listo,Fertig,Fatto,Concluído,Pronto,おわる,완료,完成
