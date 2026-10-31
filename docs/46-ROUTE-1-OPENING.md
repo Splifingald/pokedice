@@ -145,3 +145,23 @@ A new player's **first fight** teaches the reroll and the combos, simply and fas
 - **The pieces**: `src/engine/lesson.ts`, `rerollLessonDue` in `src/engine/tutorial.ts`, `RerollLesson.tsx`;
   `GuideFrame` lights `spots` (seen, not tapped) and points its hand at `handAt` inside the hole. The tray, its dice,
   the readout, REROLL and ATTACK carry `data-guide`. On the kitchen sink, each step on a mock battle panel.
+
+## 7. The item tutorial
+
+The first time a new player's Pokémon in battle is **below half HP** while they hold a **potion that would waste at most
+5 HP** (a 20 HP Potion needs 15 missing; a Super Potion 45; a Hyper Potion 115), the hand points at the **Bag**: "You can
+use potions in battle to heal your Pokémon and still play your turn." (the user's request, 2026-10-31).
+
+- **It forces the Bag open, never the potion**: on a phone the Bag button is the one thing to tap, and opening it ends
+  the tutorial; the player may then use a potion or close the Bag and play on. On a computer the Bag is already open
+  (the column at the left): the spotlight is on it, and OK, or picking an item there, ends it. B on the keyboard opens
+  the Bag; no other key works meanwhile.
+- **When** (`itemLessonItem`): during the player's turn once the dice are down, the Bag usable, nothing else open, the
+  reroll lesson not under way, played by hand. Once (`save.itemLesson: 'done'`), for players who began with the
+  tutorials (the reroll lesson or the dice tutorial met), so a veteran never gets it. Not in Extreme mode with heal
+  items off.
+- **No switch of its own, no rules**: it rides the set opening's switch with the other new-player tutorials, and it is
+  the explanation.
+- **The pieces**: `itemLessonItem`, `ITEM_LESSON_WASTE` and `finishItemLesson` in `src/engine/tutorial.ts`,
+  `ItemLessonGuide` (`RerollLesson.tsx`); the Bag button carries `data-guide="bag"`, a computer's Bag column
+  `bag-column`. On the kitchen sink, a phone's and a computer's. e2e: `e2e/item-lesson.spec.ts`.

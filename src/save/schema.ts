@@ -410,6 +410,8 @@ export const saveSchema = z.object({
   diceTutorial: z.enum(['started', 'done']).optional().catch(undefined),
   // The reroll lesson (docs/46 §6): played once.
   rerollLesson: z.literal('done').optional().catch(undefined),
+  // The item tutorial (docs/46 §7): shown once.
+  itemLesson: z.literal('done').optional().catch(undefined),
   // The battle powers (docs/35): the Mega Gems held, bought ones included, which nothing else gives back. A power kind
   // this build doesn't know is dropped rather than failing the save, so an odd one never costs the gems.
   powers: z

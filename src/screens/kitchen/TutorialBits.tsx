@@ -148,6 +148,52 @@ function ZoomReplay({ text }: { text: string }) {
   )
 }
 
+/** The item tutorial (docs/46 §7) on a mock battle: a phone's Bag button, or a computer's open Bag column with OK. */
+function ItemLesson({ wide }: { wide?: boolean }) {
+  const { t } = useT()
+  const page = useRef<HTMLDivElement>(null)
+  const bag = useRef<HTMLDivElement>(null)
+  const [box, setBox] = useState<GuideBox | null>(null)
+  useEffect(() => setBox(within(page, bag)), [])
+  return (
+    <div
+      ref={page}
+      className={`relative flex h-[420px] ${wide ? 'w-[340px] flex-row gap-2 p-2' : 'w-[300px] flex-col'} overflow-hidden bg-parchment shadow-ring`}
+    >
+      {wide && (
+        <div ref={bag} className="flex w-[120px] flex-col gap-2 bg-paper p-2 shadow-card">
+          <span className="text-[18px]">{t('ui.battle.bag')}</span>
+          <span className="bg-panel p-1 text-[16px]">Potion ×2</span>
+        </div>
+      )}
+      <div className="flex-1 bg-sky/40" />
+      {!wide && (
+        <div className="flex items-center gap-2 bg-panel p-3">
+          <div
+            ref={bag}
+            className="inline-flex min-h-[48px] items-center bg-paper px-3 text-[18px] shadow-card"
+          >
+            {t('ui.battle.bag')}
+          </div>
+        </div>
+      )}
+      <GuideFrame
+        fixed={false}
+        box={box}
+        bubble={
+          <GuideBubble
+            text={t('ui.tutorial.item.bag')}
+            button={wide ? t('ui.common.ok') : undefined}
+            onButton={wide ? () => {} : undefined}
+          />
+        }
+        still
+        zoomKey="bag"
+      />
+    </div>
+  )
+}
+
 export function TutorialBits() {
   const { t } = useT()
   const noop = () => {}
@@ -198,6 +244,12 @@ export function TutorialBits() {
       </Frame>
       <Frame name="Reroll lesson · 3. the pair: its combo lit, ATTACK">
         <Lesson step="attack" />
+      </Frame>
+      <Frame name="Item tutorial · a phone: the Bag button">
+        <ItemLesson />
+      </Frame>
+      <Frame name="Item tutorial · a computer: the open Bag column, OK">
+        <ItemLesson wide />
       </Frame>
     </>
   )

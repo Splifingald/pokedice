@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import {
   activeBattler,
+  itemLessonItem,
   autoAvailable,
   autoLevel,
   autoOffersLead,
@@ -79,7 +80,8 @@ import { pushToast, setSettings, useGame, type BattleSlice, type CatchThrow } fr
 import { autoStepNow, useAutoLevel } from '@/store/autopilot'
 import { answerBait, dispatchBattle, canSkipCurrent, fleeAtSendOut, notYet, passCatch, retryCatch, sendOutLead, throwBall } from '@/store/run'
 import { LeadPicker } from '@/components/LeadPicker'
-import { RerollLessonGuide, type LessonStep } from '@/components/RerollLesson'
+import { ItemLessonGuide, RerollLessonGuide, type LessonStep } from '@/components/RerollLesson'
+import { finishItemLessonNow } from '@/store/actions'
 import { PokeCard } from '@/components/PokeCard'
 import { RunRoundGauge } from '@/screens/area/RoundGauge'
 import { speciesTypes } from '@/components/TypeMatchups'
@@ -565,6 +567,12 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   // 2026-10-27).
   const switchOpen = !auto && canAct && showSwitch
   const openSwitch = (uid?: string) => setSwitching(uid ?? switchTargets[0]?.uid ?? active.uid)
+  // The item tutorial on screen (set further down, once the dice are down): opening the Bag ends it.
+  const itemLessonRef = useRef(false)
+  const openBag = () => {
+    if (itemLessonRef.current) finishItemLessonNow()
+    setMenu('item')
+  }
   // The Bag's items, the ones that would do something right now first: the Sheet's list, and a computer's column.
   const bagList = [...ownedItems].sort(
     ([a], [b]) => Number(st.player.some((p) => itemHelps(b, p))) - Number(st.player.some((p) => itemHelps(a, p))),
@@ -580,6 +588,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   }))
   // A computer's Bag: an Ether goes to the one in battle; anything else waits for the team's column to say who.
   const pickItem = (k: string) => {
+    // An item picked while the item tutorial points at the Bag: it has done its job.
+    if (itemLessonRef.current) finishItemLessonNow()
     if (data.items[k]?.effect.kind === 'rerolls') {
       setAim(null)
       dispatch({ t: 'USE_ITEM', key: k, targetUid: activeBattler(st).uid })
@@ -605,8 +615,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   // Keyboard (docs/43 §5.3): 1–6 pick dice, R rerolls, Space (or Enter) throws or attacks, B opens the Bag, S the
   // switch, Esc goes back; on every other step Enter presses the step's one red button (GO!, CONTINUE, NEXT…).
-  const keyAct = useRef({ toggleDie, reroll, openSwitch })
-  keyAct.current = { toggleDie, reroll, openSwitch }
+  const keyAct = useRef({ toggleDie, reroll, openSwitch, openBag })
+  keyAct.current = { toggleDie, reroll, openSwitch, openBag }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null
@@ -623,6 +633,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       const onControl = !!el?.closest?.('button, a[href]')
       const key = e.key.toLowerCase()
       if ((canAct || stunned) && !switching) {
+        // The item tutorial: only B, the Bag.
+        if (itemLessonRef.current && key !== 'b') return
         // The reroll lesson: only its step's keys (the dice's numbers, then R, then Space or Enter to attack).
         const pick = /^[1-6]$/.test(e.key)
         if (lesson && !(lesson === 'attack' ? e.key === ' ' || e.key === 'Enter' : pick || (lesson === 'reroll' && key === 'r')))
@@ -636,7 +648,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         else if (key === 'b' && bagOpen) {
           // A computer's Bag is open at the side already: B goes to its first item.
           if (wide) bagBox.current?.querySelector<HTMLButtonElement>('button:not([disabled])')?.focus()
-          else setMenu('item')
+          else keyAct.current.openBag()
         }
         else if (key === 's' && switchOpen) keyAct.current.openSwitch()
         return
@@ -909,6 +921,20 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const lastReroll = rolling && active.rerollsLeft === 1
   // The reroll lesson's guide shows once the dice are down (and, after the reroll, once the pair's combo has counted).
   const lessonShown = !!lesson && settled && (lesson !== 'attack' || comboIn)
+  // The item tutorial (docs/46 §7): once the dice are down, the first time the Pokémon in battle is below half HP with
+  // a potion that fits (the engine says which), nothing else open.
+  const itemLesson =
+    !!save &&
+    !auto &&
+    !versus &&
+    !lesson &&
+    settled &&
+    bagOpen &&
+    !menu &&
+    !aim &&
+    !switching &&
+    !!itemLessonItem(save, data, active, !!st.noHealItems)
+  itemLessonRef.current = itemLesson
 
   const party = versus
     ? { count: versus.foeCount, index: versus.foeIndex }
@@ -1028,7 +1054,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         disabled={!bagOpen}
         title={st.itemUsedThisTurn ? t('ui.battle.oneItemPerTurn') : undefined}
         keys="B"
-        onClick={() => setMenu('item')}
+        onClick={openBag}
       />
     )
   )
@@ -1243,6 +1269,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   return (
     <BattleContexts pace={pace} motionCap={motionCap}>
+      {itemLesson && <ItemLessonGuide wide={!!sides} onOk={finishItemLessonNow} />}
       {lesson && (
         <RerollLessonGuide
           step={lesson}
@@ -1263,7 +1290,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         >
           <h1 className="sr-only">{heading}</h1>
           {wide && (
-            <div ref={bagBox} className="flex min-h-0 flex-col">
+            <div ref={bagBox} className="flex min-h-0 flex-col" data-guide="bag-column">
               {sides && !versus && (
                 <BagColumn
                   entries={bagEntries}

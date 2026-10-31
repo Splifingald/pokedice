@@ -55,3 +55,29 @@ export function RerollLessonGuide({
     />
   )
 }
+
+/**
+ * The item tutorial (docs/46 §7): the first time the Pokémon in battle is below half HP with a potion that fits, the
+ * hand points at the Bag ("You can use potions in battle…"). It only has the Bag opened, never an item used: on a phone
+ * its button (opening it ends the tutorial); on a computer, where the Bag is the open column at the side, the column,
+ * with OK (or an item picked) to end it.
+ */
+export function ItemLessonGuide({ wide, onOk }: { wide: boolean; onOk: () => void }) {
+  const { t } = useT()
+  const { calm } = useMotion()
+  const box = useTargetBox(wide ? '[data-guide="bag-column"]' : '[data-guide="bag"]', !wide)
+  return (
+    <GuideFrame
+      box={box}
+      bubble={
+        <GuideBubble
+          text={t('ui.tutorial.item.bag')}
+          button={wide ? t('ui.common.ok') : undefined}
+          onButton={wide ? onOk : undefined}
+        />
+      }
+      still={calm}
+      zoomKey="bag"
+    />
+  )
+}

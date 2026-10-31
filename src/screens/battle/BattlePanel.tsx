@@ -561,6 +561,8 @@ export function BagButton({
       disabled={disabled}
       title={title}
       aria-keyshortcuts={keys}
+      // What the item tutorial points at (docs/46 §7).
+      data-guide="bag"
       onClick={blip(onClick)}
       className="inline-flex min-h-[48px] items-center gap-1.5 bg-paper py-1 pl-2 pr-3 text-[18px] leading-none text-ink shadow-card disabled:opacity-50"
     >
