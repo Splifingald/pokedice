@@ -30,6 +30,12 @@ import { xerneasCinema } from './xerneas'
 import { yveltalCinema } from './yveltal'
 import { zeraoraCinema } from './zeraora'
 import { zygardeCinema } from './zygarde'
+import { azelfCinema, mespritCinema, uxieCinema } from './lakes'
+import { cresseliaCinema } from './cresselia'
+import { dialgaCinema, palkiaCinema } from './spearPillar'
+import { giratinaCinema } from './giratina'
+import { heatranCinema } from './heatran'
+import { regigigasCinema } from './regigigas'
 
 export { wordsAt } from './kit'
 export type { Cinema, CinemaParams } from './kit'
@@ -44,6 +50,15 @@ export const RAID_CINEMAS: Readonly<Record<number, Cinema>> = {
   150: mewtwoCinema,
   249: lugiaCinema,
   250: hoohCinema,
+  480: uxieCinema,
+  481: mespritCinema,
+  482: azelfCinema,
+  483: dialgaCinema,
+  484: palkiaCinema,
+  485: heatranCinema,
+  486: regigigasCinema,
+  487: giratinaCinema,
+  488: cresseliaCinema,
   // Arceus's daily raid (its boss fight has its own, below).
   493: arceusRaidCinema,
   716: xerneasCinema,

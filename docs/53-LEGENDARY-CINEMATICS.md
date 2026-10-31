@@ -75,6 +75,24 @@ Johto's:
   out of it in green rings and the forest turns with each one (spring, summer, autumn, winter, faster and faster) under
   the hands of a great clock of light; the rings close into a portal and Celebi pops out, the forest back in spring.
 
+Sinnoh's legends (raids):
+
+- **Uxie, Mesprit, Azelf** (`lakes.ts`): Lake Acuity's snowstorm, gold running through the ice's cracks like thoughts,
+  the world wiped to a blank page and redrawn (4.7); Lake Verity's mist turning pink with each heartbeat, Mesprit
+  glimpsed nearer each time, two ribbons whirling up (4.6); Lake Valor drained to cracked mud, the stones lifting, two
+  walls of water crashing together (4.8).
+- **Dialga, Palkia** (`spearPillar.ts`): time racing on Spear Pillar (stars wheeling, the sun crossing), a clock of light,
+  then time stopping frame by frame into grey and the reveal flooding colour back (4.9); space sagging into a pink well,
+  the world folding like a page and tearing over a nebula with Spacial Rend's slashes (4.8).
+- **Heatran** (`heatran.ts`, 4.75): Stark Mountain's magma chamber, it crawls upside down across the ceiling clang by
+  clang, drops in a crown of magma, Magma Storm.
+- **Regigigas** (`regigigas.ts`, 5.0): Snowpoint Temple, the three Regis' lights waking a frozen colossus that drags the
+  floor in tug by tug.
+- **Giratina** (`giratina.ts`, 4.8, its raid outside portal mode): Turnback Cave flipping upside down as the Distortion
+  World seeps in, Giratina rising from a pool of shadow.
+- **Cresselia** (`cresselia.ts`, 4.7): Fullmoon Island's moon waning to a crescent that leaves the sky and opens into
+  Cresselia.
+
 Sinnoh's mythicals (and Victini):
 
 - **Phione** (`phione.ts`, boss, reveal 3.85). A warm sea at sunset: floating lights drift into a slow whirl, rise in a
