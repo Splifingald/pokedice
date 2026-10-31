@@ -15,7 +15,8 @@ import {
   unownShowdownId,
   type ShowdownEntry,
 } from '@/lib/showdown'
-import { mirrorFiles } from '../scripts/sprites-mirror'
+import { existsSync } from 'node:fs'
+import { customFiles, mirrorFiles } from '../scripts/sprites-mirror'
 
 const entries = Object.values(showdown as unknown as Record<string, ShowdownEntry>)
 
@@ -52,5 +53,27 @@ describe('the sprite copy', () => {
     expect([...Object.values(ANI_DIRS), ...Object.values(GEN5_DIRS)].every((d) => d.startsWith('gen5'))).toBe(
       true,
     )
+  })
+
+  it('holds our own sprites, every view of each, read from disk rather than Showdown', () => {
+    const own = customFiles()
+    expect(own.map((f) => f.path)).toContain('sprites/gen5ani/pikachu-santa.gif')
+    const ids = new Set(
+      own.map((f) =>
+        f.path
+          .split('/')
+          .pop()!
+          .replace(/\.\w+$/, ''),
+      ),
+    )
+    for (const id of ids) {
+      // The game asks for all four views of a sprite: a missing one would cost a failed request.
+      for (const view of SHOWDOWN_VIEWS)
+        expect(paths.has(pathOf(showdownSpriteUrl(id, view, 'a'))), `${id} ${view}`).toBe(true)
+    }
+    for (const f of own) {
+      expect(paths.has(f.path), f.path).toBe(true)
+      expect(existsSync(f.cache), f.cache).toBe(true)
+    }
   })
 })
