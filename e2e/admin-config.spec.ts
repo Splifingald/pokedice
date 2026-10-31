@@ -74,11 +74,12 @@ test('Config: the tabs, the switches in two columns, a name opens its numbers', 
     'page',
   )
 
-  // One row per feature (24 with the Versus global board, the hidden talents and the legendary intros): its name and its
-  // switch, nothing else; energy and the retired switches are gone.
-  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(24)
+  // One row per feature (25 with the Versus global board, the hidden talents, the legendary and the champion intros):
+  // its name and its switch, nothing else; energy and the retired switches are gone.
+  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(25)
   await expect(page.getByRole('radiogroup', { name: 'Hidden talents: who has it' })).toBeVisible()
   await expect(page.getByRole('radiogroup', { name: 'Legendary intros: who has it' })).toBeVisible()
+  await expect(page.getByRole('radiogroup', { name: 'Champion intros: who has it' })).toBeVisible()
   await expect(page.getByRole('radiogroup', { name: 'Versus global board: who has it' })).toBeVisible()
   for (const gone of [
     'Energy',

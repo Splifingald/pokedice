@@ -47,6 +47,7 @@ import { GiftEditor, giftName } from '../GiftEditor'
 import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
 import { AccessSwitch, Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 import { LegendIntrosBox } from './LegendIntrosBox'
+import { ChampionIntrosBox } from './ChampionIntrosBox'
 import { PushBox } from './PushBox'
 import { VersusLeagueBox } from './VersusLeagueBox'
 import { VersusLeagueGroups } from './VersusLeagueGroups'
@@ -1348,7 +1349,7 @@ const TABS = [
   { id: 'gameCorner', label: 'Game Corner', icon: 'coin' },
   { id: 'unown', label: 'Unown Pokédex', icon: 'book' },
   { id: 'talents', label: 'Hidden talents', icon: 'talent' },
-  { id: 'intros', label: 'Legendary intros', icon: 'sparkle' },
+  { id: 'intros', label: 'Intros', icon: 'sparkle' },
   { id: 'support', label: 'Support & Discord', icon: 'heart' },
   { id: 'rows', label: 'All rows', icon: 'wrench' },
 ] as const satisfies readonly { id: string; label: string; icon: IconName }[]
@@ -1412,6 +1413,7 @@ const FEATURES: Feature[] = [
   own('Trainer looks', 'looks'),
   bare('League heal', 'leagueHeal'),
   own('Legendary intros', 'legendCinema', 'intros'),
+  own('Champion intros', 'championCinema', 'intros'),
   bare('Route 1 opening & tutorial', 'openingRounds'),
   own('Unown Pokédex', 'unownDex', 'unown'),
   own('Hidden talents', 'hiddenTalents', 'talents'),
@@ -1565,6 +1567,7 @@ export function ConfigSection() {
       {tab === 'unown' && <UnownDexBox />}
       {tab === 'talents' && <HiddenTalentsBox />}
       {tab === 'intros' && <LegendIntrosBox />}
+      {tab === 'intros' && <ChampionIntrosBox />}
       {tab === 'support' && (
         <div className="grid gap-4 xl:grid-cols-2">
           <DonationBox />
