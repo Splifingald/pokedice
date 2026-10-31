@@ -133,6 +133,21 @@ Kalos, and Alola's mythicals:
 - **Meltan** (`meltan.ts`, boss). A scrapyard: a crane magnet pulls up the scrap, Meltan swarm out, it all melts into a
   white-hot hex nut that cools to gold.
 
+Alola's legends (raids):
+
+- **The Tapus** (`tapu.ts`): each at its Ruins, the totems' eyes opening, a light becoming the guardian whose shell
+  claps shut, its terrain spreading over the plaza; then Koko dashing round as lightning until a giant bolt strikes
+  its shell (4.5), Lele's warping world and orbiting stones and butterfly wings (4.65), Bulu's desert turning to meadow
+  and its shell slamming down (4.55), Fini's water sphere bursting the mist (4.7).
+- **Cosmog** (`cosmog.ts`, 4.4): a nebula over the Altar spiralling down into one tiny cloud of stars that bounces and
+  pops. **Solgaleo** (`solgaleo.ts`, 4.6): the Sun Flute, sunrise over the clouds, Sunsteel Strike plunging onto the
+  altar. **Lunala** (`lunala.ts`, 4.75): an eclipse, the diamond ring, starry wings across the sky, the Moongeist
+  Beam. The Altar is shared (`altar.ts`), as are the group's helpers (`alolaKit.ts`).
+- **Necrozma** (`necrozma.ts`, 4.65): Ultra Megalopolis going dark as a black crystal eats its light, prisms splitting
+  rainbows, Photon Geyser.
+- **The Ultra Beasts** (`ultraBeast.ts`, 4.5, one for all eleven): an Alolan beach glitching, the sky shattering into an
+  Ultra Wormhole, the beast coming through with split cyan and magenta edges.
+
 The bosses share their ending (`boss.ts`, `bossCinema`): the burst and rings in their colours, the name card, the scene
 dissolving into the battle's ground, the HUD's cues, the send-out. Mew's predates it and has its own copy.
 
