@@ -279,8 +279,8 @@ Every update and every live event is posted again in French in `#🥖-français`
 
 - **Patch notes:** the note's French twin, `patch-notes/YYYY-MM-DD-short-name.fr.md`, written by hand beside the
   English one (same format). A push to `main` that adds it posts it once the site is live, like the English one. A note
-  without its twin posts in English only, and the run's log says so; `pnpm test` fails on a note from November 2026 on
-  without one.
+  without its twin posts in English only, and the run's log says so; `pnpm test` fails on a note from version 2.8 on
+  without one (2.7 and earlier stay English only).
 - **Live events:** each start, and the Monday calendar, in French: the game's own French names for the event types,
   items, areas and regions (from `src/i18n/strings.csv`), the admin's French title when it has one (else the English
   one). The words of the posts themselves are in `scripts/discord/live-event-post.ts` and `live-week-post.ts`.

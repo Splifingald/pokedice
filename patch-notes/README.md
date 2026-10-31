@@ -13,7 +13,7 @@ and its French twin to #🥖-français (`.github/workflows/discord-patch-notes.y
 - Write it for players: what they will notice, not how it was built. English (the server's main language).
 - **And in French:** every note has a twin, `YYYY-MM-DD-short-name.fr.md` (same name, `.fr` before `.md`, same
   format), written for French players ("tu", as the game speaks). The same run posts it to `#🥖-français`, without a
-  ping. `pnpm test` fails on a note from November 2026 on that has no twin.
+  ping. `pnpm test` fails on a note from version 2.8 on that has no twin.
 
 Long notes are fine: they're split across several embeds and, past Discord's 6 000 characters, several messages.
 

@@ -261,11 +261,13 @@ describe('patch notes', () => {
     expect(msg!.allowed_mentions.roles).toEqual([])
   })
 
-  // Every update goes to #français too (CLAUDE.md), from the first one after the French channel got its posts.
-  it('has a French version of every note since November 2026', () => {
+  // Every update goes to #français too (CLAUDE.md), from version 2.8 on: the notes before it stay English only.
+  const ENGLISH_ONLY = ['2.3', '2.4', '2.5', '2.6', '2.7'].map((v) => `version-${v.replace('.', '-')}.md`)
+  it('has a French version of every note from version 2.8 on', () => {
     const files = readdirSync('patch-notes')
     const missing = files
-      .filter((f) => /^\d{4}-\d{2}-\d{2}-.+\.md$/.test(f) && !f.endsWith('.fr.md') && f >= '2026-11-01')
+      .filter((f) => /^\d{4}-\d{2}-\d{2}-.+\.md$/.test(f) && !f.endsWith('.fr.md'))
+      .filter((f) => !ENGLISH_ONLY.some((old) => f.endsWith(`-${old}`)))
       .filter((f) => !files.includes(f.replace(/\.md$/, '.fr.md')))
     expect(missing).toEqual([])
   })
