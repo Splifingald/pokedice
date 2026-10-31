@@ -55,12 +55,12 @@ describe('the raid intro’s words', () => {
 })
 
 describe('the raid cinematics', () => {
-  it('has Kanto’s birds and Mewtwo, then Lugia and Ho-Oh', () => {
+  it('has Kanto’s birds and Mewtwo, then the red Gyarados, Lugia and Ho-Oh', () => {
     expect(
       Object.keys(RAID_CINEMAS)
         .map(Number)
         .sort((a, b) => a - b),
-    ).toEqual([144, 145, 146, 150, 249, 250])
+    ).toEqual([130, 144, 145, 146, 150, 249, 250])
   })
 
   for (const [dex, c] of Object.entries(RAID_CINEMAS))

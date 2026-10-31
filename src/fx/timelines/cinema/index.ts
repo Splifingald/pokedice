@@ -6,6 +6,7 @@ import { articunoCinema } from './articuno'
 import { moltresCinema } from './moltres'
 import { celebiCinema } from './celebi'
 import { enteiCinema } from './entei'
+import { gyaradosCinema } from './gyarados'
 import { hoohCinema } from './hooh'
 import { lugiaCinema } from './lugia'
 import { mewCinema } from './mew'
@@ -19,6 +20,8 @@ export type { Cinema, CinemaParams } from './kit'
 
 /** The raids' cinematics: Kanto's legends first (the user's call, 2026-10-31: the rest once these are approved). */
 export const RAID_CINEMAS: Readonly<Record<number, Cinema>> = {
+  // The red Gyarados of the Lake of Rage (the user's call: with the legends).
+  130: gyaradosCinema,
   144: articunoCinema,
   145: zapdosCinema,
   146: moltresCinema,
