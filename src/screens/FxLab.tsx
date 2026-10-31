@@ -23,6 +23,7 @@ import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { breachTimeline, closeTimeline, victoryTimeline, wildGlitchTimeline } from '@/fx/timelines/portal'
 import { legendRaidEntranceTimeline } from '@/fx/timelines/legendRaid'
 import { LEGEND_RAID_SCENES } from '@/fx/timelines/legendRaidScenes'
+import { BOSS_CINEMAS, RAID_CINEMAS } from '@/fx/timelines/cinema'
 import { raidEntranceTimeline } from '@/fx/timelines/portalRaid'
 import {
   nightmareIntroTimeline,
@@ -374,6 +375,32 @@ const PRESETS: Preset[] = [
       name: `Raid entrance: #${dex} (${scene.omen}, ${scene.weather})`,
       sprites: [[Number(dex), false]],
       make: (o) => legendRaidEntranceTimeline({ scene, mon: spriteKey(Number(dex), false), short: o.short }),
+    }),
+  ),
+  // The legends' own cinematics (docs/53): the raids' (their words are the raid intro's), the bosses' with their card.
+  ...Object.entries(RAID_CINEMAS).map(
+    ([dex, c]): Preset => ({
+      name: `Cinematic: #${dex}'s raid entrance`,
+      sprites: [[Number(dex), false], ...(c.sprites ?? []).map(([d, sh]): [number, boolean, boolean] => [d, false, sh])],
+      make: (o) => c.make({ mon: foe(Number(dex)), short: o.short }),
+    }),
+  ),
+  ...Object.entries(BOSS_CINEMAS).map(
+    ([dex, c]): Preset => ({
+      name: `Cinematic: #${dex}'s boss entrance`,
+      sprites: [
+        [6, true],
+        [Number(dex), false],
+      ],
+      make: () =>
+        c.makeBattle({
+          own: own(6),
+          foe: foe(Number(dex)),
+          look: legendLook(Number(dex), 'psychic'),
+          name: `#${dex}`,
+          level: 'LV65',
+          types: 'PSYCHIC',
+        }),
     }),
   ),
   // Darkrai's nightmare (docs/30): the intro, the strike after a round, the waking, the raid's entrance.

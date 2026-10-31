@@ -234,6 +234,13 @@ const dayCareSchema = z.object({
       at: z.number(),
       parents: z.tuple([eggParentSchema, eggParentSchema]).optional(),
       gift: z.literal(true).optional(),
+      hatchling: z
+        .object({
+          dex: z.number().int().min(1),
+          shiny: z.literal(true).optional(),
+          talent: z.literal(true).optional(),
+        })
+        .optional(),
     })
     .optional(),
 })

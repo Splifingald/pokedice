@@ -183,7 +183,7 @@ export interface DieUpgradeRow {
 /**
  * 'casino': the Game Corner — a slot machine the player can play as long as they like (Rocket Hideout). 'trick': Trick
  * or Treat (docs/29) — a ghost tempted with treats and caught with a Trick Ball, dealt only while its switch is on.
- * 'versus': a real player's team (docs/53), dealt only while its switch is on and the server has one for the area.
+ * 'versus': a real player's team (docs/54), dealt only while its switch is on and the server has one for the area.
  */
 export const ENCOUNTER_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus'] as const
 export type EncounterKind = (typeof ENCOUNTER_KINDS)[number]
@@ -291,7 +291,7 @@ export interface Area {
   roundsToClear: number | null
   minLevel: number
   maxLevel: number
-  /** Copies of each card in a deck; Trick or Treat's (docs/29) and a real player's (docs/53) are optional, as content
+  /** Copies of each card in a deck; Trick or Treat's (docs/29) and a real player's (docs/54) are optional, as content
    * from before them has none. */
   encounterWeights: Record<Exclude<EncounterKind, 'trick' | 'versus'>, number> & { trick?: number; versus?: number }
   backtrackMultiplier: number
@@ -666,7 +666,7 @@ export interface LeagueRewardBand {
   rareCandies: number
 }
 
-/** Real-player battles in areas (docs/53). */
+/** Real-player battles in areas (docs/54). */
 export interface AreaVersusConfig {
   access: EventAccess
   /** A real player's team pays this × a trainer's ₽ for each K.O. */
@@ -972,7 +972,7 @@ export interface GameConfig {
   versusUpgradeLevel: number
   /** The weekly Versus league (docs/44): its switch and numbers. Migration 0082 inserts the same row; the server reads it. */
   versusLeague?: Partial<VersusLeagueConfig>
-  /** Real-player battles in areas (docs/53): its switch and numbers. Migration 0098 inserts the same row. */
+  /** Real-player battles in areas (docs/54): its switch and numbers. Migration 0099 inserts the same row. */
   areaVersus?: Partial<AreaVersusConfig>
   /** Switching the active Pokémon on your own turn (costs the turn). Switching after a faint is always free. */
   allowVoluntarySwitch: boolean
@@ -1069,6 +1069,11 @@ export interface GameConfig {
    * 0094 inserts the same row.
    */
   hiddenTalents: HiddenTalentsConfig
+  /**
+   * The legends' own cinematics (docs/53): a raid legend's entrance and a mythical boss's, each in its own place. Only
+   * how they look and sound, so no server function reads it. Migration 0098 inserts the same row.
+   */
+  legendCinema: { access: EventAccess }
   /**
    * The Unown Pokédex (docs/41): the 28 letters, once an area where Unown live is opened; `reward` ₽ for the last one.
    * Migration 0080 inserts the same row.
@@ -1712,7 +1717,7 @@ export interface SaveData {
   versusRulesSeen?: boolean
   /** The weekly Versus league's rules card has been read (docs/44): its own flag, as players who had Versus see it too. */
   versusLeagueRulesSeen?: boolean
-  /** Real-player battles' rules pop-up (docs/53) has been shown: the first time a card is turned over. */
+  /** Real-player battles' rules pop-up (docs/54) has been shown: the first time a card is turned over. */
   areaVersusRulesSeen?: boolean
   /** The portal run's rules pop-up (docs/28) has been shown (once; INFO shows them again). */
   portalRulesSeen?: boolean
@@ -2181,6 +2186,13 @@ export interface EggParent {
   owner?: string
 }
 
+/** What an Egg holds once it has hatched, before it reaches a Box: its species, and the shiny and talent rolls. */
+export interface Hatchling {
+  dex: number
+  shiny?: true
+  talent?: true
+}
+
 export interface DayCareState {
   residents: DayCareResident[]
   /** Friends' Pokémon visiting, at most `friendSlots`, no empty entries (the UI draws the free slots). */
@@ -2193,8 +2205,11 @@ export interface DayCareState {
   breedAt?: number
   /** When the last Ditto check ran (ms). */
   dittoAt?: number
-  /** The Egg waiting to hatch: one at a time. `gift` is the free first one. */
-  egg?: { at: number; parents?: [EggParent, EggParent]; gift?: true }
+  /**
+   * The Egg waiting to hatch: one at a time. `gift` is the free first one. `hatchling` is what it holds, rolled the
+   * first time it hatches and kept until the player picks its Box, so closing the game mid-hatch rolls nothing again.
+   */
+  egg?: { at: number; parents?: [EggParent, EggParent]; gift?: true; hatchling?: Hatchling }
 }
 
 export type PlayerCharacter = 'red' | 'green'

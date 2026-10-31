@@ -47,6 +47,7 @@ import { DataTable } from '../DataTable'
 import { GiftEditor, giftName } from '../GiftEditor'
 import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
 import { AccessSwitch, Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
+import { LegendIntrosBox } from './LegendIntrosBox'
 import { PushBox } from './PushBox'
 import { VersusLeagueBox } from './VersusLeagueBox'
 import { AreaVersusBox } from './AreaVersusBox'
@@ -989,7 +990,7 @@ function DayCareBox() {
         {week('breed').toFixed(1)} Eggs a week (Ditto pairs: {week('ditto').toFixed(1)}).
       </p>
       <div className="grid gap-3 sm:grid-cols-4">
-        <Field label="Unowned weight" hint="× odds of a species not in the Pokédex (owned = 1)">
+        <Field label="Unowned weight" hint="× odds of a line, or a pool species, not in the Pokédex (owned = 1)">
           {num('unownedWeight', 0)}
         </Field>
         <Field label="Hatch: rank" hint="the n-th lowest level owned">
@@ -1000,7 +1001,9 @@ function DayCareBox() {
       </div>
       <div className="grid gap-2">
         <p className="text-base text-muted">
-          Eggs hatch into the first form of a line that evolves, starters excluded, and only from the region they are
+          An Egg hatches the first form of one parent’s line (Ditto passes none on), from the regions the player
+          has discovered, into the Box they pick. An Egg no parent passes a line on to (the free first one, Ditto
+          × Ditto) hatches the first form of a line that evolves, starters excluded, from the region it is
           hatched in:
         </p>
         {pools.map(({ region, pool }) => (
@@ -1350,6 +1353,7 @@ const TABS = [
   { id: 'gameCorner', label: 'Game Corner', icon: 'coin' },
   { id: 'unown', label: 'Unown Pokédex', icon: 'book' },
   { id: 'talents', label: 'Hidden talents', icon: 'talent' },
+  { id: 'intros', label: 'Legendary intros', icon: 'sparkle' },
   { id: 'support', label: 'Support & Discord', icon: 'heart' },
   { id: 'rows', label: 'All rows', icon: 'wrench' },
 ] as const satisfies readonly { id: string; label: string; icon: IconName }[]
@@ -1412,6 +1416,7 @@ const FEATURES: Feature[] = [
   own('Idle mode', 'idleMode'),
   own('Trainer looks', 'looks'),
   bare('League heal', 'leagueHeal'),
+  own('Legendary intros', 'legendCinema', 'intros'),
   bare('Route 1 opening & tutorial', 'openingRounds'),
   own('Unown Pokédex', 'unownDex', 'unown'),
   own('Hidden talents', 'hiddenTalents', 'talents'),
@@ -1566,6 +1571,7 @@ export function ConfigSection() {
       {tab === 'gameCorner' && <SlotMachineBox />}
       {tab === 'unown' && <UnownDexBox />}
       {tab === 'talents' && <HiddenTalentsBox />}
+      {tab === 'intros' && <LegendIntrosBox />}
       {tab === 'support' && (
         <div className="grid gap-4 xl:grid-cols-2">
           <DonationBox />

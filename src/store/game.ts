@@ -153,7 +153,7 @@ export interface RunState {
   /** The fight is on the screen, the player's side not out yet: one tap on a Pokémon sends it (the rework). */
   pickLead?: boolean
   /**
-   * A real player's fight just ended (docs/53): won (the victory card) or lost (the stalemate card, which a loss to
+   * A real player's fight just ended (docs/54): won (the victory card) or lost (the stalemate card, which a loss to
    * them is: no wipe). The result card's SEND FRIEND REQUEST is for `foe`.
    */
   duel?: { outcome: 'won' | 'lost'; foe: AreaFoe } | null

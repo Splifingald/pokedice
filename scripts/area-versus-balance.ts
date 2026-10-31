@@ -1,7 +1,7 @@
 /**
  * pnpm area-versus-balance [seeds=4] [encounters=900] [region…=every main region]
  *
- * Real-player battles (docs/53): what their card does to a run's XP and pace. For each region's first starter, over
+ * Real-player battles (docs/54): what their card does to a run's XP and pace. For each region's first starter, over
  * seeds 1..n, the headless campaign (src/engine/campaign.ts, the same as `pnpm balance`) runs without the card, then
  * with it, the real player's team modelled on a player whose newest area this is: the simulated player's own team and
  * upgrades at that moment, levels shifted −10 %, 0 and +10 % (a real player's team is their last one there, often a

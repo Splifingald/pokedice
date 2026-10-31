@@ -453,7 +453,7 @@ export interface VictoryInput {
   prize?: number
   /** This K.O. ends the fight (a trainer's last Pokémon). Absent = it does, unless it's a trainer's or a gym's. */
   last?: boolean
-  /** × this K.O.'s ₽, before the talents that add to it: a real player's team pays more (docs/53). */
+  /** × this K.O.'s ₽, before the talents that add to it: a real player's team pays more (docs/54). */
   goldMultiplier?: number
 }
 

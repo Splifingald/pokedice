@@ -114,7 +114,7 @@ function FriendsBody({ counter }: { counter?: string }) {
     void loadInviteStatus()
     void loadFriendRequests()
   }, [])
-  // Friend requests from players whose team you met (docs/53): at the top, while there are some.
+  // Friend requests from players whose team you met (docs/54): at the top, while there are some.
   const requests = useAreaVersus((s) => s.requests)
   // The rewards' rules sit at the top of this page, and nowhere else, while the gauge shows and until GOT IT (docs/43
   // §7: rules where they apply); INFO keeps them.

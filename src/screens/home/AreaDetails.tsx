@@ -315,7 +315,7 @@ export function DetailsBody({ area }: { area: Area }) {
   const kinds = (Object.entries(area.encounterWeights) as [EncounterKind, number][]).filter(
     // Trick or Treat only where it is dealt (its switch on, the area's ghosts listed: docs/29); the Game Corner only
     // while it's on.
-    // A real player (docs/53) only while a team waits for the area.
+    // A real player (docs/54) only while a team waits for the area.
     ([k, v]) =>
       v > 0 &&
       MIX[k] &&

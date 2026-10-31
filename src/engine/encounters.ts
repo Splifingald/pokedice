@@ -47,7 +47,7 @@ export type Encounter =
       team: TrainerMon[]
       double?: boolean
       prize?: number
-      /** A real player's team (docs/53): the fight is theirs, as it was, with its own rules (`isPlayerFoe`). */
+      /** A real player's team (docs/54): the fight is theirs, as it was, with its own rules (`isPlayerFoe`). */
       player?: AreaFoe
     }
   | {
@@ -126,13 +126,13 @@ export interface EncounterContext {
    */
   hour?: number | null
   /**
-   * Real-player battles (docs/53): the team the server has for this area, when the save meets them here
+   * Real-player battles (docs/54): the team the server has for this area, when the save meets them here
    * (`areaVersusHere`). Without one, no deck holds the card and a card already dealt is set aside.
    */
   versusFoe?: AreaFoe | null
 }
 
-/** A real player's team (docs/53), not a trainer of the content. */
+/** A real player's team (docs/54), not a trainer of the content. */
 export const isPlayerFoe = (enc: Encounter | null | undefined): enc is Extract<Encounter, { kind: 'trainer' }> & { player: AreaFoe } =>
   enc?.kind === 'trainer' && !!enc.player
 
@@ -401,7 +401,7 @@ export function deckCounts(
 
 /**
  * Cards in one freshly dealt encounter deck of the area (Trick or Treat counted only with the game data to say so; a
- * real player's card only with `foe`, a team waiting for the area: docs/53).
+ * real player's card only with `foe`, a team waiting for the area: docs/54).
  */
 export const deckSize = (area: Area, data?: GameData, foe = false) =>
   Object.values(deckCounts(area.encounterWeights, deckAbilities(area, data, foe))).reduce((a, b) => a + b, 0)
@@ -416,7 +416,7 @@ export function nextRoundSize(area: Area, progress: AreaProgress, data: GameData
   return (due == null ? null : openingRound(area, data, due))?.length ?? deckSize(area, data, foe)
 }
 
-/** `foe`: a real player's team waits for the area (docs/53); the caller has checked the save meets them here. */
+/** `foe`: a real player's team waits for the area (docs/54); the caller has checked the save meets them here. */
 export const deckAbilities = (area: Area, data?: GameData, foe = false) => ({
   wild: area.wildPool.length > 0,
   trainer: area.trainerPool.length > 0,
@@ -430,7 +430,7 @@ export const deckAbilities = (area: Area, data?: GameData, foe = false) => ({
  * A freshly shuffled deck for the area (plus any `extra` cards, e.g. a returning legendary). No two Centers are dealt
  * back to back, and with `noCenterFirst` (the round opens with a Center, or one was just met) the first card isn't
  * one — as long as the deck has enough other cards to keep them apart. With `foe` (a real player's team waits for the
- * area, docs/53), its cards go among the round's last ones. Cards are drawn from the end of the array.
+ * area, docs/54), its cards go among the round's last ones. Cards are drawn from the end of the array.
  */
 export function buildDeck(
   area: Area,
@@ -518,7 +518,7 @@ export function dealTalents(enc: Encounter, data: GameData, rng: Rng): Encounter
       return rollTalent(data, enc.dex, rng) ? { ...enc, talent: true } : enc
     case 'trainer':
     case 'gym': {
-      // A real player's team is as it was (docs/53): their talents came with it.
+      // A real player's team is as it was (docs/54): their talents came with it.
       if (enc.kind === 'trainer' && enc.player) return enc
       const levels = enc.team.map((m) => m.level)
       const ace = enc.kind === 'gym' && enc.role !== 'trainer' ? levels.lastIndexOf(Math.max(...levels)) : -1
@@ -613,7 +613,7 @@ const cardEncounter = (card: 'wild' | 'trainer' | 'center' | 'casino' | 'trick' 
             ? playerEncounter(ctx)
             : { kind: 'center', forced: false }
 
-/** A real player's card (docs/53): the team waiting for the area, else nothing (the card is set aside). */
+/** A real player's card (docs/54): the team waiting for the area, else nothing (the card is set aside). */
 const playerEncounter = (ctx: EncounterContext): Encounter | null => (ctx.versusFoe ? foeEncounter(ctx.versusFoe, ctx.data) : null)
 
 /** The extra card a fled legendary adds to every deck dealt until it's caught. */

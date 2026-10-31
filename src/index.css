@@ -248,7 +248,7 @@ canvas.pixelated,
   animation: loading-ball 1.2s steps(1, end) infinite;
 }
 
-/* A real player's card (docs/53): its intro, a rival's entrance in pixel steps (RealPlayerIntro). The bands slam in
+/* A real player's card (docs/54): its intro, a rival's entrance in pixel steps (RealPlayerIntro). The bands slam in
    (0–0.26 s), the trainers slide in as silhouettes and land in two white frames (0.22–0.5 s), VS slams onto the seam
    with the hit (0.57 s: shake, one white flash, the gold seam), the words wipe in (0.62–0.9 s), VS beats while it
    holds, and at 1.45 s the bands split apart onto the card. Reduced motion leaves each on its last frame: the still
@@ -452,7 +452,7 @@ canvas.pixelated,
 .rp-mon {
   animation: rp-mon 0.18s steps(3, end) both;
 }
-/* SEND FRIEND REQUEST's letter (LetterFlight, docs/53): it pops out of the button, wobbles up and away to the right
+/* SEND FRIEND REQUEST's letter (LetterFlight, docs/54): it pops out of the button, wobbles up and away to the right
    and fades; hearts puff up behind it. */
 @keyframes rp-letter {
   0% {

@@ -17,7 +17,7 @@ import {
   regionCaseOf,
   regionCases,
   regionOf,
-  regionSpecies,
+  regionsHolding,
 } from './regions'
 import {
   POWER_KINDS,
@@ -161,17 +161,6 @@ export function megaFormsFor(save: SaveData, data: GameData, dex: number, level:
 
 /** The gems a badge comes with (`gems.rewards`): won, never sold. */
 const rewardGems = (data: GameData) => new Set(data.config.megaEvolution.gems.rewards.map((r) => r.gem))
-
-/** The Pokémon each real region has to offer (regionSpecies), built once per GameData. */
-const speciesByRegion = new WeakMap<GameData, Map<RegionId, Set<number>>>()
-function regionsHolding(data: GameData, dex: number): RegionId[] {
-  let map = speciesByRegion.get(data)
-  if (!map) {
-    map = new Map(realRegions(data).map((r) => [r.id, regionSpecies(data, r.id)]))
-    speciesByRegion.set(data, map)
-  }
-  return [...map].filter(([, set]) => set.has(dex)).map(([id]) => id)
-}
 
 /**
  * The regions whose Mart sells a gem: every region where its Pokémon can be had, or one it evolves from (wild, a

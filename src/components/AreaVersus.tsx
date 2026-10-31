@@ -1,4 +1,4 @@
-// Real-player battles in areas (docs/53): the card that shows a real player's team before FIGHT or SKIP, its rules
+// Real-player battles in areas (docs/54): the card that shows a real player's team before FIGHT or SKIP, its rules
 // (once, the first time a card is turned over, and from INFO), the result card's friend request, the Friends page's
 // requests, and the service that keeps a team ready for the area being played.
 import { useEffect, useRef, useState } from 'react'
@@ -597,7 +597,7 @@ export function FriendRequestButton({ foe, signedInAs }: { foe: AreaFoe; signedI
   )
 }
 
-/** The result card's real-player part (docs/53): who won, the heal, the friend request. */
+/** The result card's real-player part (docs/54): who won, the heal, the friend request. */
 export function DuelResult({
   outcome,
   foe,

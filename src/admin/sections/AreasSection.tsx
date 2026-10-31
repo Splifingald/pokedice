@@ -168,7 +168,7 @@ function AreaEditor({ area }: { area: Row }) {
   const lootTotal = lootHere.reduce((sum, l) => sum + copiesOf(l), 0) || 1
   if (!data) return null
   // Trick or Treat (docs/29) is dealt where the area has a ghost list, and only while its switch is on for the player.
-  // A real player's card (docs/53) is counted as if a team waited: the game deals it only when one does.
+  // A real player's card (docs/54) is counted as if a team waited: the game deals it only when one does.
   const can = { wild: wildHere.length > 0, trainer: tHere.length > 0, item: lootHere.length > 0, trick: trickGhosts(data, id).length > 0, versus: true }
   const deck = deckCounts(weights, can)
   const deckTotal = KINDS.reduce((sum, k) => sum + deck[k], 0)

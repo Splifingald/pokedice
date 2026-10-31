@@ -9,6 +9,7 @@ import {
   LIVE_REPEAT_MAX_HOURS,
   LIVE_TYPES,
   enabledRegions,
+  liveDefaultBanner,
   liveNextRun,
   liveProblems,
   liveRuns,
@@ -129,7 +130,8 @@ export function LiveEventsSection() {
   const start = () => {
     // The next round hour, for three days (events may overlap now: no need to wait for the last one's end).
     const s = Math.ceil(now / HOUR) * HOUR
-    setDraft(newLiveEvent(newId(), new Date(s).toISOString(), new Date(s + 72 * HOUR).toISOString()))
+    const e = newLiveEvent(newId(), new Date(s).toISOString(), new Date(s + 72 * HOUR).toISOString())
+    setDraft({ ...e, banner: liveDefaultBanner(e) })
   }
   /** Ends it now, for everyone: a one-off event's end, or only the running run of a recurring one. */
   const endNow = (e: LiveEvent) => {
@@ -264,7 +266,13 @@ function LiveEditor({
   onApply: () => void
   onCancel: () => void
 }) {
-  const patch = (p: Partial<LiveEvent>) => set({ ...draft, ...p })
+  // The picture follows the dates and the type (liveDefaultBanner) until one is picked by hand, so changing the
+  // dates of an event left on its default moves it to the new occasion's.
+  const patch = (p: Partial<LiveEvent>) => {
+    const next = { ...draft, ...p }
+    const auto = !draft.banner || draft.banner === liveDefaultBanner(draft)
+    set(!('banner' in p) && auto ? { ...next, banner: liveDefaultBanner(next) } : next)
+  }
   const span = Date.parse(draft.end) - Date.parse(draft.start)
   const now = useNow(60_000)
   return (
@@ -294,7 +302,10 @@ function LiveEditor({
               ))}
             </select>
           </Field>
-          <Field label="Picture" hint="Home's square, the pop-up, the shop's section.">
+          <Field
+            label="Picture"
+            hint="Home's square, the pop-up, the shop's section. Until you pick one: the occasion of its dates (Halloween, winter, New Year, spring, summer), else its type's own; the Underground, always its cave."
+          >
             <PicturePicker value={draft.banner} placeholder="— pick one —" onChange={(banner) => patch({ banner })} />
           </Field>
           <Field label="Shown from (badges)" hint="Every region's counted.">

@@ -1,5 +1,5 @@
-// Real-player battles in areas (docs/53): a card of the area's deck that brings a real player's team, as it was when
-// that area was their newest one. The server keeps the teams and picks one (migration 0098); the engine decides where
+// Real-player battles in areas (docs/54): a card of the area's deck that brings a real player's team, as it was when
+// that area was their newest one. The server keeps the teams and picks one (migration 0099); the engine decides where
 // the card goes, what it pays, and turns the server's answer into a trainer's fight.
 import { trainerGoldFor } from './economy'
 import { maxComboLevel, maxDieLevel } from './economy'

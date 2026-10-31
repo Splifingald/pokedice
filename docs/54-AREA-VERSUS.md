@@ -1,4 +1,4 @@
-# 53 · Real-player battles in areas
+# 54 · Real-player battles in areas
 
 The user's ask, 2026-10-31: "Versus battles inside the areas. A new card in areas. It creates a versus-like battle
 against a real player who played in this area, only players who played in this area when it was their latest unlocked
@@ -9,8 +9,8 @@ to add the player as a friend."
 All of it sits behind its own admin switch (docs/15 §20), **Off by default**: while it's Off, no deck holds the card and
 the server answers nothing.
 
-**Status (2026-10-31): built** on `ccr-6bff124e-axbz00` (from `version/2_8`), behind its switch, Off. Migration
-`0098_area_versus.sql`.
+**Status (2026-10-31): built** on `ccr-6bff124e-axbz00`, merged into `version/2_8`, behind its switch, Off.
+Migration `0099_area_versus.sql` (0098 is the legendary cinematics', docs/53).
 
 ## 1. Decisions (the user's answers)
 
@@ -51,7 +51,7 @@ the server answers nothing.
 - `applyVictory`'s `goldMultiplier`: the ×1.5 on each K.O.'s ₽.
 - Talents aren't drawn for a real player's team (`dealTalents`): theirs are as they were.
 
-## 3. The database (`supabase/migrations/0098_area_versus.sql`)
+## 3. The database (`supabase/migrations/0099_area_versus.sql`)
 
 - **`game_config.areaVersus`** (the switch and the numbers) and `area_versus_open()`.
 - **`areas.encounter_weights.versus`**: 1 in the picked areas, 2 in the Victory Roads (an area that has one keeps it).
@@ -117,8 +117,8 @@ the server answers nothing.
 ## 6. Setting it up
 
 1. Run the migration in Supabase's SQL editor:
-   <https://github.com/Splifingald/pokedice/blob/ccr-6bff124e-axbz00/supabase/migrations/0098_area_versus.sql>
-   (after 0033, 0039 and 0040; safe to run again). It fills the pool from the saves of the last 14 days at once.
+   <https://github.com/Splifingald/pokedice/blob/version/2_8/supabase/migrations/0099_area_versus.sql>
+   (after 0033, 0039, 0040 and 0082; safe to run again). It fills the pool from the saves of the last 14 days at once.
    `supabase/seed.sql` doesn't inline it.
 2. Admin › Config › Switches › **Real-player battles**: **On for admin**, try it in an area after the first gym, then
    **On for everyone**.

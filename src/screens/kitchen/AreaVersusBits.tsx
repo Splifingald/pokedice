@@ -1,4 +1,4 @@
-// Kitchen sink (dev only): real-player battles in areas (docs/53) — the intro (replayed), the card (a stranger, a rich
+// Kitchen sink (dev only): real-player battles in areas (docs/54) — the intro (replayed), the card (a stranger, a rich
 // friend with a shiny and a talent, three Pokémon), the tag, the rules (the first time and INFO), the result's part (won
 // or lost; the request to send, sending, sent, failed, friends at once, already friends, signed out) and the Friends
 // page's requests (one, several).

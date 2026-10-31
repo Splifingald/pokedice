@@ -1,9 +1,9 @@
 /**
- * Real-player battles (docs/53): which areas deal the card, and how many a round. The user's rule (2026-10-31): the
+ * Real-player battles (docs/54): which areas deal the card, and how many a round. The user's rule (2026-10-31): the
  * areas after their region's first gym that have trainers and no gym leader of their own; two in each Victory Road.
  *
  *   tsx scripts/area-versus-cards.ts          writes `versus` into src/data/areas.json (an area that has one keeps it)
- *   tsx scripts/area-versus-cards.ts --sql    prints the same as an update for migration 0098 (between its GENERATED lines)
+ *   tsx scripts/area-versus-cards.ts --sql    prints the same as an update for migration 0099 (between its GENERATED lines)
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'

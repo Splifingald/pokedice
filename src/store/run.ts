@@ -285,7 +285,7 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
     shinyChance: wildShinyChance(save, data),
     // Day and night (docs/32): in Johto, only the hour's wild Pokémon come.
     hour: localHour(),
-    // Real-player battles (docs/53): the team the server has for this area, if the save meets them here.
+    // Real-player battles (docs/54): the team the server has for this area, if the save meets them here.
     versusFoe: areaVersusHere(save, area, data) ? areaFoeFor(area.id) : null,
   }
 }
@@ -531,7 +531,7 @@ export function rollNext() {
 const directFight = (enc: Encounter) =>
   (enc.kind === 'wild' || enc.kind === 'boss' || enc.kind === 'trainer' || enc.kind === 'gym') &&
   !isDoubleEncounter(enc) &&
-  // A real player's card shows their team first, FIGHT or SKIP (docs/53).
+  // A real player's card shows their team first, FIGHT or SKIP (docs/54).
   !isPlayerFoe(enc)
 function beginFight() {
   const { save, data, settings, run } = useGame.getState()
@@ -602,7 +602,7 @@ export function declineChallenge() {
 
 export function canSkipCurrent(): boolean {
   const { run, data } = useGame.getState()
-  // A real player's card is always the player's choice (docs/53): SKIP, and no ₽.
+  // A real player's card is always the player's choice (docs/54): SKIP, and no ₽.
   if (isPlayerFoe(run.encounter)) return true
   return !!run.encounter && !data.config.noEscape && canSkip(run.encounter, data.config.skipPolicy, run.skipsUsed)
 }
@@ -612,7 +612,7 @@ export function skipEncounter() {
   if (!canSkipCurrent()) return
   const { run } = useGame.getState()
   const enc = run.encounter
-  // SKIP a real player's team (docs/53): the card is used, no ₽, and the server hears of the meet (offered last next).
+  // SKIP a real player's team (docs/54): the card is used, no ₽, and the server hears of the meet (offered last next).
   if (isPlayerFoe(enc)) {
     if (run.areaId) noteMeet(enc.player, run.areaId, 'skipped')
     backToArea()
@@ -682,7 +682,7 @@ function startBattle(
         data,
         run.areaId,
       ),
-      // A real player's team fights with their own dice and combo upgrades (docs/53).
+      // A real player's team fights with their own dice and combo upgrades (docs/54).
       enemyLevels: withWorldBoost(isPlayerFoe(run.encounter) ? foeLevels(run.encounter.player) : uniformLevels(upgradeLevel), data, area),
       ...battlePowersFor(save, data),
       noHealItems: !healItemsOn(save, data),
@@ -748,7 +748,7 @@ export function engage(lead?: string | string[], staged?: boolean) {
     case 'gym': {
       const first = enc.team[0]
       if (!first) return
-      // A real player's fight (docs/53): the team is healed first, as at a Pokémon Center.
+      // A real player's fight (docs/54): the team is healed first, as at a Pokémon Center.
       if (isPlayerFoe(enc)) commitSave(centerHeal(useGame.getState().save!, data))
       // A double battle is the whole team at once (docs/33): no next Pokémon after it.
       if (isDoubleEncounter(enc) && enc.team.length > 1) {
@@ -861,7 +861,7 @@ function settleBattle(stalemate: boolean) {
         prize: trainerPrize(enc, enc?.kind !== 'trainer' || !run.trainer || run.trainer.index + 1 >= enc.team.length),
         // A trainer's last Pokémon ends the fight (the talents that act after a win, docs/51).
         ...((enc?.kind === 'trainer' || gym) && { last: !run.trainer || run.trainer.index + 1 >= enc.team.length }),
-        // A real player's team pays more for each K.O. (docs/53).
+        // A real player's team pays more for each K.O. (docs/54).
         ...(isPlayerFoe(enc) && { goldMultiplier: foeGoldMultiplier(data) }),
       },
       data,
@@ -883,7 +883,7 @@ function settleBattle(stalemate: boolean) {
       : []
     // The round's last card was this fight: count it now, so "AREA CLEARED" is part of the rewards.
     const cleared = trainerHasNext() ? null : settleRound(true)
-    // A real player's fight is over (docs/53): won once their last Pokémon falls (a mutual K.O. before it is a loss);
+    // A real player's fight is over (docs/54): won once their last Pokémon falls (a mutual K.O. before it is a loss);
     // the team is healed again, the server hears of the meet, and the result card says so.
     const duel = isPlayerFoe(enc) && !trainerHasNext() ? duelOver(enc.player, !!run.trainer && run.trainer.index + 1 >= enc.team.length) : null
     const events = [...(cleared ? [...res.events, cleared] : res.events), ...dreamEvents]
@@ -912,7 +912,7 @@ function settleBattle(stalemate: boolean) {
     })
     return
   }
-  // Lost to a real player's team, or neither side could win (docs/53): no wipe, the team healed, the round goes on.
+  // Lost to a real player's team, or neither side could win (docs/54): no wipe, the team healed, the round goes on.
   if (isPlayerFoe(run.encounter)) {
     commitSave(withHp)
     setRun({ phase: 'stalemate', trainer: null, events: [], duel: duelOver(run.encounter.player, false) })
@@ -1220,7 +1220,7 @@ export function forfeit() {
     return
   }
   if (run.phase !== 'victory' || !trainerHasNext()) return
-  // Giving up a real player's fight is a loss, not a wipe (docs/53).
+  // Giving up a real player's fight is a loss, not a wipe (docs/54).
   if (isPlayerFoe(run.encounter)) {
     setRun({ phase: 'stalemate', trainer: null, events: [], duel: duelOver(run.encounter.player, false) })
     return
@@ -1241,7 +1241,7 @@ export function afterWipe() {
 }
 
 /**
- * The end of a real player's fight (docs/53): the team is healed (it was before the fight too), the server hears of
+ * The end of a real player's fight (docs/54): the team is healed (it was before the fight too), the server hears of
  * the meet, and the area gets its next team. What the result card shows.
  */
 function duelOver(foe: AreaFoe, won: boolean | null): NonNullable<RunState['duel']> {

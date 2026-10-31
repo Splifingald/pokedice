@@ -24,7 +24,7 @@ commit message.
 | Eggs | Free once, then bought for ₽50 | **Bred.** Every 12 h each of your Pokémon checks everyone at the Day Care; a compatible pair leaves an Egg. **Ditto pairs with everyone but legendaries, on a slower check: every 24 h.** The 12 h start once a compatible pair is here, and start over when no pair is left. The free first Egg stays; the ₽50 Egg goes |
 | Egg now | — | **Skip the wait for ₽200:** the next check runs now, a pair leaves an Egg, and it hatches right away |
 | Compatibility | — | The **real Egg groups** (data from Pokémon Showdown) |
-| What hatches | Random, missing species ×4, from the region's pool | Unchanged: random, not the parents' species. **When it isn't kept** (you already own one at its level or higher), **the Day Care couple gives ₽10** |
+| What hatches | Random, missing species ×4, from the region's pool | **The parents' line** (since 2026-10-31, see Hatching): the first form of one parent's line, babies included, from the regions discovered; the player picks its Box when several regions' Pokédexes list it. **When it isn't kept** (you already own one at its level or higher there), **the Day Care couple gives ₽10** |
 | Shiny | — | Day Care Eggs have their **own shiny odds**, 1 % by default |
 | Home widget | Residents with XP to the cap | Your two with XP to the next level; with an Egg waiting it turns **gold** with an Egg shaking, and a tap opens the Day Care **straight into the hatching** |
 
@@ -252,8 +252,33 @@ for each running clock (Egg groups: breedHours, the plain pairs; Ditto: breedDit
 
 ### Hatching
 
-`hatchEgg(save, data, rng, now, newId)` keeps today's rules:
-- the species comes from `eggOdds` (the live region's pool, missing species × `unownedWeight`);
+**Since 2026-10-31 an Egg hatches its parents' line** (it used to be random from the live region's pool, D10). The
+rules, all in `src/engine/daycare.ts`:
+
+- **Which line.** Each parent offers its line (`eggLine`), Ditto none; two parents of one line count once
+  (`eggLines`). One is picked at random, a line whose hatchling is registered in none of the Pokédexes it could go to
+  weighing `unownedWeight` (×4), the others 1. A friend's visitor offers its line like yours.
+- **Which form.** The first form of the line, babies included (Raichu → Pichu, Charizard → Charmander, Tauros →
+  Tauros): starters and single-stage species hatch too. But never a species from a region the player hasn't
+  discovered (started, still on; small worlds don't count): the lowest form whose generation's region is discovered
+  **and** that a discovered region's Pokédex page lists (`regionSpecies`). So Raichu → Pikachu until Johto, then
+  Pichu; Snorlax → Snorlax until Sinnoh. A battle form breeds as its species; a regional form is a line of its own
+  (Alolan Vulpix, once Alola is discovered). A line with no such form passes nothing on (a friend's Sceptile before
+  Hoenn).
+- **Nidoran♀/♂, Volbeat/Illumise**: Pokédice has no genders, so an Egg of either line hatches either, 50/50.
+- **No line at all** (the free first Egg, Ditto × Ditto, Ditto with a line that can't pass on): the live region's
+  random pool as before (`eggOdds`).
+- **Which Box** (`hatchlingRegions`): every discovered region whose Pokédex page lists it (the live one alone if none
+  does). With one, it goes there; with several, the player picks after the reveal (the trades' "Where it goes" rows,
+  `LandingPick`, with the level it arrives at in each). The live region is picked first when it can take it.
+- **In that Box's terms:** the level is `hatchLevel` of that region's Pokémon, the keep rule compares that region's
+  plain copies, NEW is that region's Pokédex, and it joins the team only in the live region (or in the slot of the
+  copy it replaced). The ₽10 for one not kept goes to the live purse: the player is here.
+- **Rolled once.** `crackEgg` rolls the hatchling (species, shiny, talent) and keeps it on the Egg
+  (`egg.hatchling`) before the Box pick, so closing the game mid-pick rolls nothing again: the Egg waits and hatches
+  the same next time. `hatchChoices` gives the rows; `hatchEgg(…, region)` places it.
+
+`hatchEgg(save, data, rng, now, newId, live, region?)` keeps these:
 - the level comes from `hatchLevel`;
 - one copy per species is kept.
 
@@ -480,7 +505,9 @@ Laid out like Home, with no CONTINUE and no Areas button. The name shows **once*
   - a two-tone chime;
   - the line "A shiny Eevee hatched from the Egg!".
 - Skip, and Escape skips to the end.
-- The result card: NEW, ✦ SHINY, and where it went. When it isn't kept: "You already have a stronger Paras: the
+- The result card: NEW, ✦ SHINY, and where it went (a parked region's: "It went to your Johto Box."). With more than
+  one Box to choose from, the card first shows the Box pick (`HatchBoxPick`: the trades' note and rows, each region
+  with the level it would arrive at, NEW / STRONGER / "nothing gained") and SEND IT THERE. When it isn't kept: "You already have a stronger Paras: the
   Day Care couple will look after this one, and they give you ₽10 for your trouble." The money pill in the header
   bumps.
 
@@ -580,7 +607,7 @@ Each ends green: `pnpm lint`, `pnpm build`, `pnpm test`, `pnpm e2e`. Add a READM
 | D7 | Migration overflow | Keep the two that have stayed longest, send the rest home with their levels |
 | D8 | Unlock | 20 distinct species across every region's Pokédex |
 | D9 | Clocks | Two clocks (12 h Egg groups, 24 h Ditto), not one per pair |
-| D10 | The Egg's species | The live region's pool, as today, wherever the parents came from |
+| D10 | The Egg's species | ~~The live region's pool, as today, wherever the parents came from~~ Since 2026-10-31: the first form of one parent's line, from the regions discovered, into the Box the player picks (see Hatching). No admin switch: it replaced the old rule |
 | D11 | Egg now | ₽200, hatches at once, restarts the clock it skipped (it buys the check early, not an extra one) |
 | D12 | Legendaries | Never pair with anyone (follows from D2 and the Egg groups) |
 | D13 | A hatchling you don't keep | The Day Care couple gives ₽10 (`notKeptGold`, admin): whenever it isn't kept, at its level or under your copy's |

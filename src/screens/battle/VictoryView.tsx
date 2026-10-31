@@ -900,7 +900,7 @@ export function VictoryView() {
   // team's choice to be made), nor when the area was cleared (the way on is the next area), nor in a rebattle.
   // A new species, or a small world's mythical gone home (its finale): the card is looked at, so it waits for NEXT.
   const caughtNew = run.events.some((e) => (e.kind === 'caught' && e.isNew) || e.kind === 'world_mythical')
-  // A real player's fight over (docs/53): the card waits, its friend request is the player's to send.
+  // A real player's fight over (docs/54): the card waits, its friend request is the player's to send.
   const autoNext = !closes && !run.rebattle && !nextArea && !caughtNew && !run.duel
   // Only while auto-mode or Idle mode plays the area (the user's call, 2026-10-27: otherwise NEXT waits for a tap).
   const autoOn = useAutoLevel() !== 'off'
@@ -1182,7 +1182,7 @@ function AreaWipe() {
 }
 
 /**
- * Lost to a real player's team (docs/53): no wipe, the team healed, the round goes on. The defeat's jingle, who won,
+ * Lost to a real player's team (docs/54): no wipe, the team healed, the round goes on. The defeat's jingle, who won,
  * the friend request, and CONTINUE to the next encounter.
  */
 function DuelLostView({ foe }: { foe: AreaFoe }) {

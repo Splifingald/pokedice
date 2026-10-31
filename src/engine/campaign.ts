@@ -57,7 +57,7 @@ export interface CampaignOptions {
   /** Which region to run. Defaults to the first — a campaign is a run through one region, never across two. */
   regionId?: RegionId
   /**
-   * Real-player battles (docs/53), while their switch is on in `data`: the card is dealt where an area has it, always
+   * Real-player battles (docs/54), while their switch is on in `data`: the card is dealt where an area has it, always
    * with a team waiting, and fought (healed before and after, ×₽, a loss is no wipe). The team is modelled on a player
    * whose newest area this is: the simulated player's own team and upgrades at that moment, each level × (1 +
    * `levelShift`). Unset: no real player is ever met.
@@ -95,7 +95,7 @@ export interface AreaReport {
   clears: number
   /** XP earned here, every Pokémon's (Multi EXP's share included). */
   xp: number
-  /** Real-player battles here (docs/53): fought, won (their whole team down), lost, and their XP and ₽. */
+  /** Real-player battles here (docs/54): fought, won (their whole team down), lost, and their XP and ₽. */
   versus: { fights: number; wins: number; losses: number; xp: number; gold: number }
 }
 
@@ -305,7 +305,7 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
     gym?: { trainerId: string; last: boolean },
     /** A set opening's trainer (docs/46): this K.O.'s share of the prize. */
     prize?: number,
-    /** A real player's Pokémon (docs/53): their upgrades, their ₽ ×, and a loss that is no wipe. */
+    /** A real player's Pokémon (docs/54): their upgrades, their ₽ ×, and a loss that is no wipe. */
     real?: { levels: UpgradeLevels; goldMultiplier: number },
   ) => {
     const created = createBattle(
@@ -430,7 +430,7 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
       r.itemsFound++
     }
     else if (isPlayerFoe(enc)) {
-      // A real player's team (docs/53): healed before and after, their upgrades and ₽ ×, a loss that is no wipe.
+      // A real player's team (docs/54): healed before and after, their upgrades and ₽ ×, a loss that is no wipe.
       save = centerHeal(save, data)
       const real = { levels: foeLevels(enc.player), goldMultiplier: foeGoldMultiplier(data) }
       let won = true
@@ -485,7 +485,7 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
   }
 }
 
-/** The real player met in the simulation (docs/53): a player at this area as their newest, modelled on the simulated
+/** The real player met in the simulation (docs/54): a player at this area as their newest, modelled on the simulated
  * player's own team and upgrades at that moment, each level × (1 + `shift`). */
 function mirrorFoe(save: SaveData, shift: number): AreaFoe {
   return {

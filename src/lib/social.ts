@@ -21,7 +21,7 @@ export function useSocial() {
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const userId = useGame((s) => s.auth.userId)
-  // Friend requests to answer (docs/53) are new on the Friends page too.
+  // Friend requests to answer (docs/54) are new on the Friends page too.
   const requests = useAreaVersus((s) => s.requests.length)
   const newFriends = useFriends((s) => (s.userId && s.userId === userId ? s.unseen.length : 0)) + requests
   // Invite rewards ready to open (docs/15 §25) wait on the Friends page: its dot counts them too. The gauge is read

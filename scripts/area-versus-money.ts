@@ -1,7 +1,7 @@
 /**
  * pnpm area-versus-money [seeds=6] [encounters=900] [region…=every main region]
  *
- * Real-player battles (docs/53), the money side: their ₽ make the game easier too, through the upgrades they buy (the
+ * Real-player battles (docs/54), the money side: their ₽ make the game easier too, through the upgrades they buy (the
  * simulated player spends every ₽ on its team's dice and combos after each trainer). For each region's first starter,
  * over seeds 1..n, the headless campaign runs without the card; with it at ₽ ×1.5 (as built), ×1 (a trainer's) and
  * none (XP only); and at ×1.5 with every trainer's ₽ lowered 10 % and 20 % (game_config goldMultiplier: the real

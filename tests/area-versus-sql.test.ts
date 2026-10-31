@@ -1,4 +1,4 @@
-// Migration 0098 against a real Postgres (PGlite, in process): real-player battles in areas (docs/53). The writer keeps
+// Migration 0099 against a real Postgres (PGlite, in process): real-player battles in areas (docs/54). The writer keeps
 // a save's team for the area it stands in while that area is its newest one (main game only, the region being played,
 // an area dealing the card); the offer picks one, never yours, the least met first; meets open friend requests, which
 // are sent once, answered, crossed, expired and capped; the fill; deleting your data; the switch, checked everywhere.
@@ -194,13 +194,13 @@ beforeAll(async () => {
   await area(A.cave, 30, 'Cerulean Cave', deck)
   await area(A.johto, 40, 'Route 29', deck, 'johto')
   // The generated block only knows the real areas: these get their cards by hand, as Admin › Areas would.
-  await db.exec(sql('0098_area_versus.sql'))
+  await db.exec(sql('0099_area_versus.sql'))
   await db.query(
     `update areas set encounter_weights = encounter_weights || '{"versus": 1}' where id in ($1::uuid, $2::uuid, $3::uuid)`,
     [A.route3, A.cave, A.johto],
   )
   // Safe to run again: an area that has its number keeps it.
-  await db.exec(sql('0098_area_versus.sql'))
+  await db.exec(sql('0099_area_versus.sql'))
 })
 
 beforeEach(async () => {

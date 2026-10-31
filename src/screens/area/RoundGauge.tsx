@@ -41,7 +41,7 @@ const CARD_ICON: Record<DeckCard, IconName> = {
   legend: 'masterball',
 }
 /** What a met card was, for the gauge's tooltips. */
-// `ui.card.versus` is the trainer card's Versus line: a real player's card (docs/53) has its own words.
+// `ui.card.versus` is the trainer card's Versus line: a real player's card (docs/54) has its own words.
 const cardName = (card: DeckCard) => (card === 'versus' ? t('ui.areaVersus.card') : t(`ui.card.${card}`))
 
 /**
@@ -70,7 +70,7 @@ export function RoundGauge({
   const { t } = useT()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
-  // A real player's team waiting here (docs/53): the next round counts its card.
+  // A real player's team waiting here (docs/54): the next round counts its card.
   const foe = useAreaVersus((s) => !!s.foes[area.id]) && areaVersusHere(save, area, data)
   const cfg = data.config
   // A portal run (docs/28) counts the portals closed instead of a round's cards.
@@ -145,7 +145,7 @@ export function RoundGauge({
       ? ['center']
       : met
   const isCenter = (i: number) => order[i] === 'center'
-  // A real player's card (docs/53): a person on its segment, as a heart on a Center's, so the round's end is known.
+  // A real player's card (docs/54): a person on its segment, as a heart on a Center's, so the round's end is known.
   const isPlayer = (i: number) => order[i] === 'versus'
   // Where the player is (the user, 2026-10-27): the cards met fill in (green once the area is cleared, the free play's
   // rounds), the one being played is white on a fight's strip, the next one has a white edge on the page's gauge, and

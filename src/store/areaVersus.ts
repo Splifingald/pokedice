@@ -1,4 +1,4 @@
-// Real-player battles in areas (docs/53), the game's side: one real player's team kept ready for the area being
+// Real-player battles in areas (docs/54), the game's side: one real player's team kept ready for the area being
 // played (asked when the area opens, and again after each meet), the meets told to the server, and the friend
 // requests: sent from the result card, answered on the Friends page. No polling: the requests ride on friend_status's
 // moments (game load, back to the tab).
@@ -145,7 +145,7 @@ export async function loadFriendRequests(): Promise<void> {
   try {
     useAreaVersus.setState({ requests: parseRequests(await rpc('friend_requests')) })
   } catch (err) {
-    // A database without 0098: no requests.
+    // A database without 0099: no requests.
     console.warn('[area versus] requests not loaded:', err instanceof Error ? err.message : err)
   }
 }

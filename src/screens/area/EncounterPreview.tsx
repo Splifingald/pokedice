@@ -411,7 +411,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
               </div>
             </>
           )}
-          {/* A real player's team (docs/53): who, their team and what it pays, after its intro. */}
+          {/* A real player's team (docs/54): who, their team and what it pays, after its intro. */}
           {enc.kind === 'trainer' && (isPlayerFoe(enc) ? <PlayerFoeCard enc={enc} /> : <TrainerCard enc={enc} />)}
           {enc.kind === 'item' && <ItemCard enc={enc} />}
           {enc.kind === 'center' && <CenterCard enc={enc} />}

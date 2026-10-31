@@ -1,4 +1,4 @@
-// Real-player battles in areas (docs/53): the switch and where the card is dealt, the cards among the round's last
+// Real-player battles in areas (docs/54): the switch and where the card is dealt, the cards among the round's last
 // ones and only with a team waiting, the team turned into a trainer's fight (their upgrades, no talents drawn), the ×1.5
 // on each K.O.'s ₽, and the server's answer checked.
 import { describe, expect, it } from 'vitest'

@@ -1,4 +1,4 @@
--- Real-player battles in areas (docs/53): a card of the area's deck that brings a real player's team, as it was when
+-- Real-player battles in areas (docs/54): a card of the area's deck that brings a real player's team, as it was when
 -- that area was their newest one. Behind its own switch (docs/15 §20), Off.
 --
 -- 1. game_config `areaVersus` (the switch and the numbers) and area_versus_open(), the switch as the server reads it.
@@ -507,7 +507,7 @@ begin
     update versus_league_matches set foe_user = null where foe_user = me;
     delete from versus_league_members where user_id = me;
   end if;
-  -- Real-player battles (0098): your teams in areas and your meets, both ways.
+  -- Real-player battles (0099): your teams in areas and your meets, both ways.
   if p_realm is null or p_realm = 'main' then
     delete from area_versus_teams where user_id = me;
     delete from area_versus_meets where user_id = me or foe_id = me;

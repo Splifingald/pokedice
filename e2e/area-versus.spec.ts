@@ -1,4 +1,4 @@
-// Real-player battles in areas (docs/53), against a fake server: the card turned over at the round's end (its intro,
+// Real-player battles in areas (docs/54), against a fake server: the card turned over at the round's end (its intro,
 // its rules the first time, who, when, their team, the ₽), the fight won and the friend request sent; SKIP; a loss
 // that costs only the ₽; and the Friends page's requests answered.
 import { expect, test, type Page } from '@playwright/test'

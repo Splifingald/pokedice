@@ -1,5 +1,5 @@
-// Admin → Config: real-player battles in areas (docs/53). Its numbers (game_config `areaVersus`, which the server reads
-// too: migration 0098; its switch is on the Switches tab), and the fill: every save of the recent days through the
+// Admin → Config: real-player battles in areas (docs/54). Its numbers (game_config `areaVersus`, which the server reads
+// too: migration 0099; its switch is on the Switches tab), and the fill: every save of the recent days through the
 // writer, as the migration did once.
 import { useState } from 'react'
 import { AREA_VERSUS_DEFAULTS, type AreaVersusConfig } from '@/engine'
@@ -26,7 +26,7 @@ export function AreaVersusBox() {
       const e = err as { code?: string; message?: string }
       setNote(
         e.code === 'PGRST202' || e.code === '42883'
-          ? 'The database has no real-player battles yet: run supabase/migrations/0098_area_versus.sql.'
+          ? 'The database has no real-player battles yet: run supabase/migrations/0099_area_versus.sql.'
           : `Refused: ${e.message ?? String(err)}`,
       )
     }
