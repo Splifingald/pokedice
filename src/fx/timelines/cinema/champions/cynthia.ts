@@ -1,4 +1,4 @@
-// Cynthia's entrance (docs/54), on the battle stage: the Champion's hall of Sinnoh's League at night, dark marble and
+// Cynthia's entrance (docs/56), on the battle stage: the Champion's hall of Sinnoh's League at night, dark marble and
 // violet light, its stained-glass windows telling the region's myths. The camera tracks slowly along the colonnade to
 // the dais as her theme's piano begins: three low notes light the lake guardians' windows one by one, then a fast run
 // lights the gold ring inlaid in the floor round the dais, note by note, and the great rose window behind it glows, a

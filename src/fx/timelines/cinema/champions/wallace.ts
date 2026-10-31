@@ -1,4 +1,4 @@
-// Wallace's entrance (docs/54), on the battle stage: Sootopolis at dawn, inside its crater. White houses climb the
+// Wallace's entrance (docs/56), on the battle stage: Sootopolis at dawn, inside its crater. White houses climb the
 // terraced walls, the old Gym stands on its island, the lake lies still as a mirror under a pink and gold sky, and a
 // white marble stage stands out over the water. A single drop falls and rings the lake; then the show begins: jets of
 // water leap up one after another across the lake, each on a note, and dance. A long shape circles under the clear

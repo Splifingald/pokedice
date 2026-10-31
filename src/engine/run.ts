@@ -453,6 +453,8 @@ export interface VictoryInput {
   prize?: number
   /** This K.O. ends the fight (a trainer's last Pokémon). Absent = it does, unless it's a trainer's or a gym's. */
   last?: boolean
+  /** × this K.O.'s ₽, before the talents that add to it: a real player's team pays more (docs/54). */
+  goldMultiplier?: number
 }
 
 export interface VictoryResult {
@@ -545,7 +547,13 @@ export function applyVictory(
     // Pay Day and Amulet Coin (docs/51): more for this K.O.; a set prize stays as it is.
     const due =
       input.prize ??
-      goldTalents(trainerGoldFor(input.enemyLevel, area, progress.cleared, data, input.kind === 'gym'), save, data, fighters, events)
+      goldTalents(
+        Math.round(trainerGoldFor(input.enemyLevel, area, progress.cleared, data, input.kind === 'gym') * (input.goldMultiplier ?? 1)),
+        save,
+        data,
+        fighters,
+        events,
+      )
     const { amount, bonus } = earnedGold(due, live)
     next = { ...next, gold: next.gold + amount }
     events.push(bonus ? { kind: 'gold', amount, bonus } : { kind: 'gold', amount })

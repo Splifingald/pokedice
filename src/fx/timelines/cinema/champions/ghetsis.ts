@@ -1,4 +1,4 @@
-// Ghetsis's entrance (docs/54): the Unova League at night, a great pale moon over it, its hall lit warm at the end of
+// Ghetsis's entrance (docs/56): the Unova League at night, a great pale moon over it, its hall lit warm at the end of
 // the plaza, braziers burning. A rumble; cracks of green light race across the plaza and the ground gives: N's Castle
 // rises out of the earth round the League, tower after tower shedding rock and dust, its keep last and highest behind
 // the hall, swallowing it; the League's lights die and the braziers gutter out. The castle settles with a boom; Team

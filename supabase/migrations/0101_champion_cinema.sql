@@ -1,4 +1,4 @@
--- The champions' own cinematics (docs/54): Red on Mt. Silver's summit, Lance's dragons over the Indigo Plateau, Leon's
+-- The champions' own cinematics (docs/56): Red on Mt. Silver's summit, Lance's dragons over the Indigo Plateau, Leon's
 -- stadium… instead of the trainer stepping onto the field, before every League Champion's fight.
 -- 1. game_config `championCinema`: the switch, Off (left alone when there). It only changes how an entrance looks and
 --    sounds on the player's device (the engine has decided the fight first), so no server function acts for it and

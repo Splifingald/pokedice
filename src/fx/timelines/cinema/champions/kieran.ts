@@ -1,4 +1,4 @@
-// Kieran's entrance (docs/54), on the battle stage: Blueberry Academy's Terarium, under the sea. The camera sinks from
+// Kieran's entrance (docs/56), on the battle stage: Blueberry Academy's Terarium, under the sea. The camera sinks from
 // the bright surface, past the Academy's hull and the glass shaft running down from it, through light rays and a
 // shoal of fish, to the great dome on the sea floor glowing with its biomes and its painted sky. Then the dome's
 // lights die, band by band from the top, each with a clunk; the fish bolt; it goes black. Inside, in the dark, the

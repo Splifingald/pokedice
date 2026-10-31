@@ -1,4 +1,4 @@
-// Nemona's entrance (docs/54), on the battle stage: the Academy's grand stairs at golden hour. First from the foot:
+// Nemona's entrance (docs/56), on the battle stage: the Academy's grand stairs at golden hour. First from the foot:
 // Mesagoza's houses climbing both sides under strings of bunting, the stairs running up between them to the Academy,
 // and two figures at the bottom with their backs to us, Nemona and her Pawmot. The Academy's bell rings and they're
 // off: Pawmot a crackle of lightning up the right-hand side, lighting each lamp it passes, Nemona sprinting after it,

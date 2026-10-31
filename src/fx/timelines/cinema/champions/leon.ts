@@ -1,4 +1,4 @@
-// Leon's entrance (docs/54), on the battle stage: Wyndon Stadium on the night of the Champion Cup final. The camera
+// Leon's entrance (docs/56), on the battle stage: Wyndon Stadium on the night of the Champion Cup final. The camera
 // comes down out of the sky, searchlights sweeping it, into the bowl: a packed house in the dark, thousands of lights
 // twinkling in the stands, Wyndon's great wheel turning beyond the rim. The floodlights bang on bank by bank and the
 // LED ring runs gold. A rumble: behind the far stand a colossal shape rises, black, its outline burning, and the

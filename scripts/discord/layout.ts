@@ -539,6 +539,8 @@ export const LAYOUT: Layout = {
     { channel: 'patchNotes', name: 'Pokédice Patch Notes', env: 'DISCORD_PATCH_WEBHOOK' },
     { channel: 'liveEvents', name: 'Pokédice Events', env: 'DISCORD_EVENTS_WEBHOOK' },
     { channel: 'supportMe', name: 'Pokédice', env: 'DISCORD_SUPPORT_WEBHOOK' },
+    // Made by hand in #🥖-français (Server Settings → Integrations): the French patch notes and live events.
+    { channel: 'fr', name: 'French News', env: 'DISCORD_FRENCH_WEBHOOK' },
   ],
   roleEnv: { raidPings: 'DISCORD_RAID_ROLE', patchPings: 'DISCORD_PATCH_ROLE', eventPings: 'DISCORD_EVENT_ROLE' },
 }

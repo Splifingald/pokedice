@@ -1,4 +1,4 @@
-# 54 · The champions' cinematics
+# 56 · The champions' cinematics
 
 The user's request, 2026-10-31, after every legend got its own entrance (docs/53): "Create special intros for all
 League Champions too now". Each League Champion now gets **its own entrance, in its own place, in the game's
@@ -103,7 +103,7 @@ the whole stage (Lance's, Wallace's). Flashes no faster than 3 a second, none wi
 ## 4. Setting it up
 
 1. Merge and deploy the client.
-2. Run [`supabase/migrations/0099_champion_cinema.sql`](https://github.com/Splifingald/pokedice/blob/version/2_8/supabase/migrations/0099_champion_cinema.sql)
+2. Run [`supabase/migrations/0101_champion_cinema.sql`](https://github.com/Splifingald/pokedice/blob/version/2_8/supabase/migrations/0101_champion_cinema.sql)
    in the SQL editor (safe to run again; `supabase/seed.sql` carries it inlined). The game works without it: a missing
    row reads as Off.
 3. Admin → Config → Switches → **Champion intros**: On for admin to try it (Config → Intros → Watch, or a League), then

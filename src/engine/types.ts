@@ -183,8 +183,9 @@ export interface DieUpgradeRow {
 /**
  * 'casino': the Game Corner — a slot machine the player can play as long as they like (Rocket Hideout). 'trick': Trick
  * or Treat (docs/29) — a ghost tempted with treats and caught with a Trick Ball, dealt only while its switch is on.
+ * 'versus': a real player's team (docs/54), dealt only while its switch is on and the server has one for the area.
  */
-export const ENCOUNTER_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick'] as const
+export const ENCOUNTER_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus'] as const
 export type EncounterKind = (typeof ENCOUNTER_KINDS)[number]
 /** Cards in an area's encounter deck; 'legend' is a fled legendary coming back (one per deck until it's caught). */
 export type DeckCard = EncounterKind | 'legend'
@@ -290,8 +291,9 @@ export interface Area {
   roundsToClear: number | null
   minLevel: number
   maxLevel: number
-  /** Copies of each card in a deck; Trick or Treat's (docs/29) is optional, as content from before it has none. */
-  encounterWeights: Record<Exclude<EncounterKind, 'trick'>, number> & { trick?: number }
+  /** Copies of each card in a deck; Trick or Treat's (docs/29) and a real player's (docs/54) are optional, as content
+   * from before them has none. */
+  encounterWeights: Record<Exclude<EncounterKind, 'trick' | 'versus'>, number> & { trick?: number; versus?: number }
   backtrackMultiplier: number
   legendaryBoss: BossDef[] | null
   scalesToTeam: boolean
@@ -664,6 +666,19 @@ export interface LeagueRewardBand {
   rareCandies: number
 }
 
+/** Real-player battles in areas (docs/54). */
+export interface AreaVersusConfig {
+  access: EventAccess
+  /** A real player's team pays this × a trainer's ₽ for each K.O. */
+  prizeMultiplier: number
+  /** A team is met this many days after its owner last played there. */
+  recentDays: number
+  /** An unanswered friend request goes after this many days. */
+  requestDays: number
+  /** The cards go among the round's last this many. */
+  lastCards: number
+}
+
 export interface VersusLeagueConfig {
   access: EventAccess
   /** The global board's own switch (docs/44 §8): every player of the week, no rewards. Off when missing. */
@@ -856,7 +871,7 @@ export interface EventsConfig {
 }
 
 /** Live events (docs/20): the kinds the admin can schedule. */
-export const LIVE_TYPES = ['shiny', 'shop', 'cash', 'underground'] as const
+export const LIVE_TYPES = ['shiny', 'shop', 'cash', 'underground', 'calendar'] as const
 export type LiveType = (typeof LIVE_TYPES)[number]
 
 /** One item of a Special Shop: its event price, how many each player may buy (null = no limit), where it's sold. */
@@ -867,6 +882,15 @@ export interface LiveShopItem {
   /** Sold while the player plays one of these regions; 'all' = everywhere. */
   regions: RegionId[] | 'all'
 }
+
+/**
+ * A gift calendar's day (docs/55): one reward, in a quantity. A Pokémon comes `qty` times, each a Pokémon of its own.
+ * It lands in the region being played when the player opens it (the gifts' rules, engine/gifts.ts).
+ */
+export type CalendarReward =
+  | { kind: 'item'; key: string; qty: number }
+  | { kind: 'gold'; amount: number }
+  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; qty: number }
 
 /** A week of the month a weekly live event runs in: the 1st to the 4th of that weekday, or the month's last. */
 export type LiveWeek = 1 | 2 | 3 | 4 | 'last'
@@ -912,6 +936,11 @@ export interface LiveEvent {
   shop: { items: LiveShopItem[] }
   /** Cash Flow: every ₽ earned × `multiplier` (1.5 = +50 %), selling excluded. */
   cash: { multiplier: number }
+  /**
+   * Gift calendar (docs/55): a door a day from `start`, one reward each (`days[0]` is day 1). Runs once: its `end` is
+   * the day after its last, the last day's catch-up.
+   */
+  calendar: { days: CalendarReward[] }
 }
 
 export interface GameConfig {
@@ -957,6 +986,8 @@ export interface GameConfig {
   versusUpgradeLevel: number
   /** The weekly Versus league (docs/44): its switch and numbers. Migration 0082 inserts the same row; the server reads it. */
   versusLeague?: Partial<VersusLeagueConfig>
+  /** Real-player battles in areas (docs/54): its switch and numbers. Migration 0099 inserts the same row. */
+  areaVersus?: Partial<AreaVersusConfig>
   /** Switching the active Pokémon on your own turn (costs the turn). Switching after a faint is always free. */
   allowVoluntarySwitch: boolean
   /** Safety valve: two Pokémon immune to each other's every die would otherwise fight forever. Ends in a stalemate. */
@@ -1058,8 +1089,13 @@ export interface GameConfig {
    */
   legendCinema: { access: EventAccess }
   /**
-   * The champions' own cinematics (docs/54): a League Champion's entrance in its own place before its fight. Only how
-   * it looks and sounds, so no server function reads it. Migration 0099 inserts the same row.
+   * The gift calendar (docs/55): live events of type `calendar` open only with this on. The doors opened are in each
+   * player's save, on the server's clock, so no server function reads it. Migration 0100 inserts the same row.
+   */
+  giftCalendar: { access: EventAccess }
+  /**
+   * The champions' own cinematics (docs/56): a League Champion's entrance in its own place before its fight. Only how
+   * it looks and sounds, so no server function reads it. Migration 0101 inserts the same row.
    */
   championCinema: { access: EventAccess }
   /**
@@ -1705,6 +1741,8 @@ export interface SaveData {
   versusRulesSeen?: boolean
   /** The weekly Versus league's rules card has been read (docs/44): its own flag, as players who had Versus see it too. */
   versusLeagueRulesSeen?: boolean
+  /** Real-player battles' rules pop-up (docs/54) has been shown: the first time a card is turned over. */
+  areaVersusRulesSeen?: boolean
   /** The portal run's rules pop-up (docs/28) has been shown (once; INFO shows them again). */
   portalRulesSeen?: boolean
   /** The nightmare's rules pop-up (docs/30) has been shown (once; INFO shows them again). */
@@ -2028,6 +2066,10 @@ export interface EventsSave {
   liveSeen?: string[]
   /** Special Shop purchases, per live event id then item key: what counts against each item's limit. */
   liveBought?: Record<string, Record<string, number>>
+  /** Gift calendars' doors opened (docs/55), per live event id: the days (1 = the first). A door opens once. */
+  calendarOpened?: Record<string, number[]>
+  /** The gift calendar's rules card was read (GOT IT): once, for every calendar; INFO shows them again. */
+  calendarRulesSeen?: boolean
   /** The small world this save holds (its block is the live region or a parked one), or the one that just closed. */
   world?: WorldSave
   /** Small worlds whose opening pop-up has been shown (ids). */
@@ -2172,6 +2214,13 @@ export interface EggParent {
   owner?: string
 }
 
+/** What an Egg holds once it has hatched, before it reaches a Box: its species, and the shiny and talent rolls. */
+export interface Hatchling {
+  dex: number
+  shiny?: true
+  talent?: true
+}
+
 export interface DayCareState {
   residents: DayCareResident[]
   /** Friends' Pokémon visiting, at most `friendSlots`, no empty entries (the UI draws the free slots). */
@@ -2184,8 +2233,11 @@ export interface DayCareState {
   breedAt?: number
   /** When the last Ditto check ran (ms). */
   dittoAt?: number
-  /** The Egg waiting to hatch: one at a time. `gift` is the free first one. */
-  egg?: { at: number; parents?: [EggParent, EggParent]; gift?: true }
+  /**
+   * The Egg waiting to hatch: one at a time. `gift` is the free first one. `hatchling` is what it holds, rolled the
+   * first time it hatches and kept until the player picks its Box, so closing the game mid-hatch rolls nothing again.
+   */
+  egg?: { at: number; parents?: [EggParent, EggParent]; gift?: true; hatchling?: Hatchling }
 }
 
 export type PlayerCharacter = 'red' | 'green'

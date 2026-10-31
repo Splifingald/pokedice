@@ -13,6 +13,7 @@
 // (the Day Care, Versus, the special events, Trades, the General upgrades, the shiny and Unown Pokédexes, the invite
 // rewards, the raid overhaul, the Underground), whose rules are now a card at the top of that page (`RulesCard`).
 // Every "seen" flag stays where it was in the save.
+import { calendarRulesDue } from './calendar'
 import { dayCareTutorialDue, leaderboardTutorialDue } from './daycare'
 import { donationDue } from './donation'
 import { dayNightRulesDue } from './dayNight'
@@ -77,11 +78,12 @@ interface Entry {
 const under = (prefix: string) => (path: string) => path === prefix || path.startsWith(`${prefix}/`)
 
 /**
- * The live events whose pop-up still takes a turn in the queue: all but the Underground, whose rules are on its page
- * now (docs/43 §7) and whose opening is a notice on Home.
+ * The live events whose pop-up still takes a turn in the queue: all but those with a page of their own, the
+ * Underground and the gift calendar (docs/55), whose rules are on their page (docs/43 §7) and whose opening is a notice
+ * on Home.
  */
 export const queuedLives = (lives: LiveSet): LiveEvent[] =>
-  liveList(lives).filter((e) => e.type !== 'underground')
+  liveList(lives).filter((e) => e.type !== 'underground' && e.type !== 'calendar')
 
 /**
  * Every one-time pop-up, in the order they take the screen: what you came back to first, the messages, a new region,
@@ -184,7 +186,7 @@ export interface NoticeContext {
  * page's rules card is read: the feature's own "seen" flag), then what asks nothing of the player. The flags are the
  * pop-ups' own (`dayCare.visited`, `versusRulesSeen`, `events.seen`, `trades.rulesSeen`, `general.rulesSeen`,
  * `shinyDexSeen`, `unownDexSeen`, `invites.rulesSeen`, `events.raidRulesSeen`, `underground.rulesSeen`,
- * `leaderboardVisited`, `donationSeen`, the invite's per-region mark on the device).
+ * `events.calendarRulesSeen`, `leaderboardVisited`, `donationSeen`, the invite's per-region mark on the device).
  */
 const NOTICES = {
   /** The Day Care, at its catches (Prof. Oak's tutorial was its rules). → /daycare */
@@ -207,6 +209,8 @@ const NOTICES = {
   raidRules: (s: SaveData, d: GameData) => raidOverhaulRulesDue(s, d),
   /** The Underground, while its live event runs. → /underground */
   underground: (s: SaveData, d: GameData, c: NoticeContext) => ugRulesDue(s, d, c.now ?? null),
+  /** A gift calendar, while one runs, until its page's rules card is read (docs/55). → /calendar */
+  calendar: (s: SaveData, d: GameData, c: NoticeContext) => calendarRulesDue(s, d, c.now ?? null),
   /** Prof. Oak's leaderboard tip, from the first badge (after the Day Care's). → /leaderboard */
   leaderboard: (s: SaveData, d: GameData) => leaderboardTutorialDue(s, d),
   /** Prof. Oak's invite, at a region's 2nd badge (INVITE shares the link). */

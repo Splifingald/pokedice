@@ -29,6 +29,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   versusUpgradeLevel: 5,
   // The weekly Versus league (docs/44): off until the admin switches it on (the numbers: engine/versusLeague.ts).
   versusLeague: { access: 'off' },
+  // Real-player battles in areas (docs/54): off until the admin switches it on (the numbers: engine/areaVersus.ts).
+  areaVersus: { access: 'off' },
   allowVoluntarySwitch: true,
   maxBattleTurns: 150,
   multiExpShare: 0.3,
@@ -404,7 +406,9 @@ export const DEFAULT_CONFIG: GameConfig = {
   hiddenTalents: { access: 'off', wildChance: 0.05, evolveChance: 0.3, families: {} },
   // The legends' own cinematics (docs/53): off until the admin switches it on. Migration 0098 inserts the same row.
   legendCinema: { access: 'off' },
-  // The champions' own cinematics (docs/54): off until the admin switches it on. Migration 0099 inserts the same row.
+  // The gift calendar (docs/55): off until the admin switches it on. Migration 0100 inserts the same row.
+  giftCalendar: { access: 'off' },
+  // The champions' own cinematics (docs/56): off until the admin switches it on. Migration 0101 inserts the same row.
   championCinema: { access: 'off' },
   // The Unown Pokédex (docs/41): off until the admin switches it on; ₽1,000 for the 28th letter. Migration 0080 inserts
   // the same row.

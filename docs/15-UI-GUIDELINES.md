@@ -205,6 +205,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `LooksRow` / `LooksDot` / `LooksMenu` / `LooksSheet` / `LockedLook` / `OwnedLook` / `LooksRulesModal` | Trainer looks (§17, docs/31) | The row under the trainer card (with and without its red dot); the menu (a new game, some new looks, its list on the unlocked looks, an event's look won, every look unlocked); a locked look of each kind (a catch goal with its bar, an area with how far away, the League, the full Pokédex); an unlocked look with how it was won (from the start, a catch goal, an area, the League, an event); the rules (the first open, INFO) |
 | `DayNightButton` / `DayNightChip` / `BattleDayTime` / `DayNightTag` / `DayNightPill` / `DayNightRulesModal` | Day and night in Johto (§30, docs/32) | The top bar's chip by day and by night; the fights' indicator on a stage (day, night); a list's tag (its own half, greyed in the other); the Pokédex places' chip (day only, night only); the rules (the first time, INFO) |
 | `DoubleMons` (`BattleStage double`) / `DoublePlates` / `MiniPlate` / `TargetPicker` / `LeadPicker pair` | Double battles (§31) | The stage with four (the pair in front big on the usual spots, their partners smaller behind, each with a shadow; toggled, they change places), one K.O. on each side (greyed plates, 1 v 2); the name-less plates (icon, level, HP, statuses; the one in front ringed in gold; a fallen one greyed); the target picker (live, disabled); the lead picker sending two |
+| `CalendarDoorTile` / `CalendarGrid` / `CalendarRewardIcon` / `CalendarRulesModal` | The gift calendar (§40) | A door shut (a wrapped gift, its number), today's (gold, OPEN), yesterday's (LAST CHANCE), opened with each kind of gift, missed (hatched), busy; the grid on a calendar's 10th day; Home's card gold, later, done; the rules card and INFO; a door's opening |
 | `UgCave` / `CrackGauge` / `UgWall` / `PickaxeDie` / `PickaxeFaces` / `OrbArt` / `PlateArt` / `ThingIcon` / `HaulList` / `PlateGrid` / `OrbBagTable` / `UgRulesModal` / `UgTeamSeats` | The Underground (§32) | The cave (a square's size; big); the gauge fresh, under way, its last three shaking or calm, collapsed; the wall fresh, half dug with a strike flashing, cleared (glinting), collapsing; the die unrolled and rolled; the faces with the one that came up, and the next level's with its raised face; orbs of every colour and size, plates; the haul with every outcome; the plates none and some; the orb bag; the team seats solo, two, full; the rules (once, INFO) |
 | `TeamSwapActions` / `TeamSwapDock` / `SheetActionRow` | The Center's moves (`teamSwapsOpen`: inside a Pokémon Center, at a portal's way in before READY!) | `TeamSwapDock` is the Team sheet's footer where swaps are open: Make lead (red) beside Use an item, Send to the Box a small link; Add to team (red); a full team: "swap X in for:" and the members as one-tap buttons (mini, swap arrow, name); a fossil still reviving: a line saying so. `TeamSwapActions` (the body version) stays for the Center's own sheet. `SheetActionRow`: a quiet button and the main one sharing a `minmax(0,1fr)_minmax(0,1.4fr)` row |
 | `PlayStylePicker` / `PlayStylePanel` / `IdleRulesModal` / `AutoModeButton` / `AutopilotNote` | Idle mode and the play styles (§34, docs/36) | The two styles as a radio group of cards (an icon, the name, its line; the picked one on gold-pale with the gold ring and a check; none picked; arrow keys move the pick); Settings' panel with INFO; the rules (INFO only: they never pop up); the area's switch (AUTO-MODE or Idle mode, off and on, with Prof. Oak's tip); the line standing in for a card the autopilot takes (each style's); the catch panel with Idle's pick (`BattleBits`) |
@@ -285,7 +286,9 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   switch, the result), and **at its sides the room a wide screen has: the Bag open on the left, the team on rows on
   the right** (`BagColumn`, `TeamColumn`: what a phone keeps behind the Bag button and in the pips, with a bit more
   on each). The team's column is where a Pokémon is picked: the send-out's, a switch's and a K.O.'s pick (the panel
-  shows the one picked and GO!), and an item's "on whom" (tap the item, then the Pokémon). The columns stand from
+  shows the one picked and GO!), and an item's "on whom" (tap the item, then the Pokémon). **The send-out keeps its
+  cards above GO! there too** (the user's call, 2026-10-31: the one picked alone read as "only this one can go"): a
+  click on a card or a row picks, the two outlined together. The columns stand from
   the send-out to the catch; the result has the middle alone. A step taller than the panel (a result with a catch)
   scrolls inside it, its buttons pinned at its foot. The area's other steps (the page between encounters, a find,
   the Center) are the same middle column (`StagePanel`): a 3:2 scene as wide as the height leaves room for the panel
@@ -430,7 +433,8 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 | Darkrai's strike after a round (§29, `nightmareStrikeTimeline`) | 2 s: the shadow rises, gathers, the beams | 1 s, straight to the beams |
 | Darkrai's raid entrance (§29, `nightRaidEntranceTimeline`) | in full | in full (an encounter) |
 | A legend's own cinematic (docs/53, `fx/timelines/cinema/`, the admin's switch): Kanto's and Johto's: Mewtwo's lab, the birds', Lugia's and Ho-Oh's places (raids); Mew's, the beasts' and Celebi's (boss fights, `cinema/boss.ts`) | in full | in full, fewer particles, no shake (an encounter) |
-| A champion's own cinematic (docs/54, `cinema/champion.ts`, `cinema/champions/`, its own switch): Red on Mt. Silver, Leon's stadium… then the card and its lead thrown out | in full | in full, no shake (an encounter); off: the trainer steps onto the field as before |
+| A real player's card (§39, `RealPlayerIntro`), over the whole screen: the bands slamming in, the silhouettes landing in colour, VS's hit (shake, one flash, the gold seam), the words, the split | in full (1.7 s; a tap ends it) | in full (an encounter); calm: the still scene for 0.9 s, no shake or flash; off: none |
+| A champion's own cinematic (docs/56, `cinema/champion.ts`, `cinema/champions/`, its own switch): Red on Mt. Silver, Leon's stadium… then the card and its lead thrown out | in full | in full, no shake (an encounter); off: the trainer steps onto the field as before |
 
 `calm` (OS reduce motion, or animations off) also removes screen shakes and full-screen flashes; a hit keeps its two
 white sprite frames. Every timeline is on `/kitchen-sink/fx` (dev): replay, ¼ speed, one-frame steps, the end state,
@@ -1088,7 +1092,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   rules pop-up (`RulesModal`, Later / Let's go!), taking its turn in the one-time pop-ups' queue, below; so do the
   rules shown at their own moment (the portal's and the nightmare's way in, Trick or Treat's first ghost, the gifts',
   the looks'). The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is a tap on the Pokémon sheet's talent box, as it has no page), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is a tap on the Pokémon sheet's talent box, as it has no page), real-player battles (§39: its rules pop-up after the first card's intro, as Trick or Treat's at the first ghost; INFO on the card), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event), the gift calendar (§40: its page's rules card, once; INFO in its dock) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **The one-time pop-ups take turns, in one queue** (`nextOneTimePopup`, src/engine/popups.ts; docs/38 U2a): one at a
   time, only between fights (`run.phase === 'idle'`, no battle, no full-screen moment, no gift being opened), never on
@@ -1098,7 +1102,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   each pop-up opens only on its own turn (`useMyTurn`). The order: the away reports (Extreme's, the General upgrades'),
   the offline report, the developer's answers, friends' raid gifts, a new region's offer, Extreme mode, an invite reward
   ready, the portal run, day and night, the battle powers, hidden talents (§38), a small world's opening, its finish and its goodbye, a live
-  event (but the Underground: `queuedLives`), a taken trade's scene (Home only), and push
+  event (but the Underground and the gift calendar: `queuedLives`), a taken trade's scene (Home only), and push
 notifications' question last. A new pop-up gets a place in that list, not a list of its own. The rules that open at
   their own moment (the gifts' before the first gift, Trick or Treat's at the first ghost, the portal's and the
   nightmare's on their way in, the looks' at the first open, a world's finish or a live event asked for from Home) stay
@@ -1874,7 +1878,7 @@ For everyone (docs/40; its switch retired on 2026-10-28, §20): the engine decid
   distances from the reveal (`wordsAt`). With the switch on, **a legend's raid has no warning tapes and no alarm**, its
   own cinematic made or not; Giratina's and Darkrai's keep their worlds' lines, the daily non-legend raid its alarm.
   Every scene is ordered-dithered, its flashes no faster than 3 a second.
-- **A champion's own cinematic** (docs/54, the admin's switch): before a League Champion's fight, a short film in its
+- **A champion's own cinematic** (docs/56, the admin's switch): before a League Champion's fight, a short film in its
   place (Red on Mt. Silver's summit, Lance's dragons over the Indigo Plateau…) instead of the trainer stepping onto the
   field. The champion arrives where it then stands, facing the same way; its card is the legend's band with its name and
   a tray with a ball per Pokémon; then it steps aside and throws its lead out, and the send-out step follows as for any
@@ -1948,3 +1952,50 @@ pop-up). The pieces are in `src/components/Talent.tsx`, every state on `/kitchen
 - **Trades**: asking for a species, a toggle "With its hidden talent" under the species (only while the switch is on).
 - Its rules: a `RulesModal` once, in the one-time pop-ups' queue after the battle powers' (`talentRulesSeen`); again
   from a tap on the sheet's talent box.
+
+## 39. Real-player battles in areas
+
+docs/54. A card of the area's deck that brings a real player's team, behind its switch.
+
+- **The card** (`PlayerFoeCard`, in the encounter's pop-up titled "A real player!"): it opens on its **intro**
+  (`RealPlayerIntro`, §8), over the whole screen: your blue band from the left and their red one from the right with
+  speed lines, the trainers landing as silhouettes into colour, a big gold VS slamming onto the seam (shake, one white
+  flash, the seam lit), each side's team popping in as menu icons beside its trainer, "REAL PLAYER BATTLE!" and their
+  name wiping in, then the bands split apart onto the card;
+  stacked on a phone, side by side on a wide screen; a tap ends it. Then: the **REAL PLAYER** tag (the friends' sky blue, a person: a word, never colour alone; Friend beside it for a
+  friend), their look and name (golden when rich), "Played here 2 days ago", their team as chips (menu icon, name,
+  level, the shiny star, the talent gem), the ₽ in a gold-pale box ("Win ₽26", "1.5× a trainer's ₽. Skip it and get
+  none."), the heal line and INFO. Its buttons: **FIGHT** (red) and **SKIP · NO ₽**.
+- **The round gauge**: a person on the card's segment, as a heart on a Center's; the card is there only once a team
+  waits for the area. Home's area details count "Real players" in the mix then.
+- **The result**: a win's victory card ends with the real player's part (`DuelResult`: the tag, "You beat Misty's
+  team!", "Your team is healed.", SEND FRIEND REQUEST); its NEXT doesn't count down. A loss is its own card, not a wipe:
+  "Defeat", "Misty's team won", "No ₽ this time. Your team is healed and the round goes on.", the request, CONTINUE.
+  On a win, their trainer steps back onto the foe's spot on the stage (the K.O.'d Pokémon's plate gone).
+  The result card scrolls the real player's part into full view as it shows, clear of its pinned buttons. SEND FRIEND
+  REQUEST sends a letter: an envelope sealed with a heart pops out of the button, wobbles up and away and fades, hearts
+  puffing behind it (`LetterFlight`, 0.9 s; none with animations off). After sending: a check and "Friend request sent
+  to Misty." (or friends at once, already friends, a full list, or the failure in red under the button). Signed out: a muted line asks to connect.
+- **The Friends page**: **Friend requests (n)** at the top while there are some: the look, the name, "Fought your team
+  in Route 3", NO and a green ACCEPT (not red: one red action a screen, and there can be several rows). The Social
+  tab's and the Friends tab's dots count them.
+- Its rules: a `RulesModal` the first time a card is turned over, after its intro (`areaVersusRulesSeen`); again from
+  the card's INFO.
+
+## 40. The gift calendar
+
+A live event type (docs/55): a door a day, one reward each, opened on its day or the next. Its switch is its own
+(`giftCalendar.access`, §20); components in `src/components/Calendar.tsx`, all on `/kitchen-sink` (`CalendarBits`).
+
+- **Home**: the live card, **gold** while a door waits (one new thing to open), its line saying which ("Day 5's gift
+  is ready!", "Day 4: last chance!", "2 gifts to open!") or when the next opens; a tap opens `/calendar`. Its opening
+  is a Home notice, never a pop-up.
+- **The page**: the picture and plate, the rules card the first time, the doors (4 a row on a phone, 6 from 640 px),
+  "n of N opened · m missed", a gold line on what to do now; the dock's red OPEN DAY n (yesterday's first) or a
+  disabled "Next door in …", and INFO.
+- **A door** is a state in words and shape, never colour alone: shut (number on a tag, "opens in…" read out), today's
+  (gold, a wobbling gift, OPEN), yesterday's (a red ring and LAST CHANCE), opened (what it held and a check), missed
+  (hatched, faded, "Missed"). Only today's and yesterday's are buttons. A door to come never shows its reward.
+- **Art, not theme**: a shut door (navy, gold ribbon) and today's gold stay the same in Daybreak and Dusk
+  (`light-scope`). Motion in steps: the gift's wobble and today's passing light, still under calm.
+- **Opening** a door is the gifts' own opening (`GiftMoment`, §23), its first line "Day 5's gift!".

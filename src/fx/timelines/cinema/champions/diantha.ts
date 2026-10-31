@@ -1,4 +1,4 @@
-// Diantha's entrance (docs/54), on the battle stage: the premiere of her new film in Lumiose City. The camera starts
+// Diantha's entrance (docs/56), on the battle stage: the premiere of her new film in Lumiose City. The camera starts
 // up in the night sky on Prism Tower, its lights glittering gold all over it, and tilts down past the theatre's
 // copper dome and gilded statues to its great arched doorway at the top of a flight of steps, a red carpet running
 // down them between the velvet ropes and the press. The bulbs round the arch run on, the doors swing open on the

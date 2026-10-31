@@ -1,4 +1,4 @@
-// Lance's entrance (docs/54), on the battle stage: the Indigo Plateau at night, a dry storm rolling over the League.
+// Lance's entrance (docs/56), on the battle stage: the Indigo Plateau at night, a dry storm rolling over the League.
 // We look up at the storm first: the moon veiled, the clouds lit from inside, and in one flash a dragon's shadow in
 // them. A roar shakes the sky and the storm flickers again; the camera comes down onto the League's terrace as three
 // Dragonite burst out of the clouds in formation, vapour trailing from their wings. The wingmen peel away and the lead

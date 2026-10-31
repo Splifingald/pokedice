@@ -40,5 +40,6 @@ jobs:
         env:
           FORCE: ${{ inputs.force && '--force' || '' }}
           DISCORD_EVENTS_WEBHOOK: ${{ secrets.DISCORD_EVENTS_WEBHOOK }}
+          DISCORD_FRENCH_WEBHOOK: ${{ secrets.DISCORD_FRENCH_WEBHOOK }}
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}

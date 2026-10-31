@@ -1,4 +1,4 @@
-// Kukui's entrance (docs/54), on the battle stage: the Pokémon League on Mount Lanakila's summit at dusk. The camera
+// Kukui's entrance (docs/56), on the battle stage: the Pokémon League on Mount Lanakila's summit at dusk. The camera
 // rises out of a bank of cloud onto the summit: below it Alola, the ocean gold and rose with the sun just gone, the
 // islands dark on it and Wela Volcano's crater glowing; a full moon coming up behind a spire of rock; and the champion's
 // court, a square of stone with a Tapu totem at each corner. A figure stands on the spire against the moon. Lycanroc

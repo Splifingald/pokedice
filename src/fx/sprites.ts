@@ -167,7 +167,7 @@ export function loadSprite(dex: number, back: boolean, shiny = false): Promise<s
   return p
 }
 
-/** A picture's key on the canvas (a trainer's, for a champion's entrance: docs/54). */
+/** A picture's key on the canvas (a trainer's, for a champion's entrance: docs/56). */
 export const pictureKey = (url: string) => `pic|${url}`
 
 /**

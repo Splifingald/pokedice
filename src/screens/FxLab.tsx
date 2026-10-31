@@ -405,7 +405,7 @@ const PRESETS: Preset[] = [
         }),
     }),
   ),
-  // The champions' own cinematics (docs/54): each with its sample picture, team and card.
+  // The champions' own cinematics (docs/56): each with its sample picture, team and card.
   ...Object.values(CHAMPION_CINEMAS).map(
     (c): Preset => ({
       name: `Cinematic: ${c.sample.name}'s entrance`,

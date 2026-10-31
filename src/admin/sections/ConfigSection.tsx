@@ -4,6 +4,7 @@ import {
   DEFAULT_CONFIG,
   EVENT_ACCESS,
   VERSUS_LEAGUE_DEFAULTS,
+  AREA_VERSUS_DEFAULTS,
   eggSpecies,
   eggsPerWeek,
   centerBoonRules,
@@ -50,6 +51,7 @@ import { LegendIntrosBox } from './LegendIntrosBox'
 import { ChampionIntrosBox } from './ChampionIntrosBox'
 import { PushBox } from './PushBox'
 import { VersusLeagueBox } from './VersusLeagueBox'
+import { AreaVersusBox } from './AreaVersusBox'
 import { VersusLeagueGroups } from './VersusLeagueGroups'
 
 export function useConfigRow<K extends keyof GameConfig>(key: K): [GameConfig[K], (v: GameConfig[K]) => void] {
@@ -989,7 +991,7 @@ function DayCareBox() {
         {week('breed').toFixed(1)} Eggs a week (Ditto pairs: {week('ditto').toFixed(1)}).
       </p>
       <div className="grid gap-3 sm:grid-cols-4">
-        <Field label="Unowned weight" hint="× odds of a species not in the Pokédex (owned = 1)">
+        <Field label="Unowned weight" hint="× odds of a line, or a pool species, not in the Pokédex (owned = 1)">
           {num('unownedWeight', 0)}
         </Field>
         <Field label="Hatch: rank" hint="the n-th lowest level owned">
@@ -1000,7 +1002,9 @@ function DayCareBox() {
       </div>
       <div className="grid gap-2">
         <p className="text-base text-muted">
-          Eggs hatch into the first form of a line that evolves, starters excluded, and only from the region they are
+          An Egg hatches the first form of one parent’s line (Ditto passes none on), from the regions the player
+          has discovered, into the Box they pick. An Egg no parent passes a line on to (the free first one, Ditto
+          × Ditto) hatches the first form of a line that evolves, starters excluded, from the region it is
           hatched in:
         </p>
         {pools.map(({ region, pool }) => (
@@ -1342,6 +1346,7 @@ const TABS = [
   { id: 'doubles', label: 'Double battles', icon: 'vs' },
   { id: 'trades', label: 'Trades', icon: 'trade' },
   { id: 'versus', label: 'Versus league', icon: 'trophy' },
+  { id: 'areaVersus', label: 'Real-player battles', icon: 'user' },
   { id: 'general', label: 'General upgrades', icon: 'navUpgrades' },
   { id: 'powers', label: 'Battle powers', icon: 'up' },
   { id: 'invites', label: 'Invite rewards', icon: 'gift' },
@@ -1423,6 +1428,7 @@ const FEATURES: Feature[] = [
   own('Trades', 'trade', 'trades'),
   own('Versus league', 'versusLeague', 'versus', VERSUS_LEAGUE_DEFAULTS as unknown as Row),
   field('Versus global board', 'versusLeague', 'globalAccess', 'versus'),
+  own('Real-player battles', 'areaVersus', 'areaVersus', AREA_VERSUS_DEFAULTS as unknown as Row),
   own('Game Corner', 'slotMachine', 'gameCorner'),
   own('General upgrades', 'general', 'general'),
   field('Shiny Charm', 'general', 'charmAccess', 'general'),
@@ -1559,6 +1565,7 @@ export function ConfigSection() {
           <VersusLeagueGroups />
         </div>
       )}
+      {tab === 'areaVersus' && <AreaVersusBox />}
       {tab === 'general' && <GeneralBox />}
       {tab === 'powers' && <BattlePowersBox />}
       {tab === 'invites' && <InviteRewardsBox />}

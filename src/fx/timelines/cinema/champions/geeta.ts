@@ -1,4 +1,4 @@
-// Geeta's entrance (docs/54), on the battle stage: the Pokémon League's rooftop court above Mesagoza at sunset, a wind
+// Geeta's entrance (docs/56), on the battle stage: the Pokémon League's rooftop court above Mesagoza at sunset, a wind
 // off the plateau snapping the League's flags, the Academy on its hill and the Great Crater's rim far off, the sun
 // going down behind the court's far end and its gold laid down the polished floor. The camera drifts along the court
 // and Kingambit comes into the foreground, black against the sun, the edge of its blade catching it. A figure comes

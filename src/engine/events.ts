@@ -28,7 +28,7 @@ export const gameCornerOn = (data: GameData): boolean => eventOpenTo(data.config
 export const legendCinemaOn = (data: GameData): boolean => eventOpenTo(data.config.legendCinema?.access, data)
 
 /**
- * The champions' own cinematics (docs/54): Red on Mt. Silver's summit, Leon's stadium… instead of the trainer stepping
+ * The champions' own cinematics (docs/56): Red on Mt. Silver's summit, Leon's stadium… instead of the trainer stepping
  * onto the field. Purely visual: the fights are the same either way.
  */
 export const championCinemaOn = (data: GameData): boolean => eventOpenTo(data.config.championCinema?.access, data)

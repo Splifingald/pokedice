@@ -1,4 +1,4 @@
-// Steven's entrance (docs/54), on the battle stage: the deepest chamber of Meteor Falls at night, where he waits once
+// Steven's entrance (docs/56), on the battle stage: the deepest chamber of Meteor Falls at night, where he waits once
 // the League is won. The camera tilts down from a hole in the cavern's roof (stars, the moon, its light pouring in) past
 // a ceiling studded with glinting stones, to the chamber's floor, a waterfall spilling into a pool, a tunnel at the back.
 // Out of the dark, three heavy steel footfalls: Metagross, its eyes lighting red, each step sending a pulse through the

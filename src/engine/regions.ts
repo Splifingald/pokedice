@@ -190,6 +190,19 @@ export function regionSpecies(data: GameData, regionId: RegionId): Set<number> {
   return out
 }
 
+/** The Pokémon each real region has to offer (regionSpecies), built once per GameData. */
+const speciesByRegion = new WeakMap<GameData, Map<RegionId, Set<number>>>()
+
+/** The real regions whose Pokédex page lists a species (`regionSpecies`), in region order. */
+export function regionsHolding(data: GameData, dex: number): RegionId[] {
+  let map = speciesByRegion.get(data)
+  if (!map) {
+    map = new Map(realRegions(data).map((r) => [r.id, regionSpecies(data, r.id)]))
+    speciesByRegion.set(data, map)
+  }
+  return [...map].filter(([, set]) => set.has(dex)).map(([id]) => id)
+}
+
 /** Has this region's league been beaten? — its league area cleared. */
 export function leagueDone(save: SaveData, data: GameData, regionId = regionOf(save)): boolean {
   const region = getRegion(data, regionId)

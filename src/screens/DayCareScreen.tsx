@@ -29,6 +29,7 @@ import {
   type DayCareResident,
   type DepositError,
   type Hatch,
+  regionName,
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
 import { TalentLine } from '@/components/Talent'
@@ -56,7 +57,14 @@ import { isSupabaseConfigured } from '@/lib/supabase'
 import { money } from '@/lib/format'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { useMotion } from '@/lib/motion'
-import { hatchDayCareEgg, leaveAtDayCare, pickUpFromDayCare, rushDayCareEgg } from '@/store/actions'
+import {
+  hatchDayCareEgg,
+  hatchDayCareEggInto,
+  leaveAtDayCare,
+  pickUpFromDayCare,
+  rushDayCareEgg,
+  type HatchOffer,
+} from '@/store/actions'
 import { inviteFriendMon, parentName, sendGuestBack, syncFriendDayCares, tickDayCare } from '@/store/daycare'
 import { pushToast, useGame } from '@/store/game'
 import { cx } from '@/theme/util'
@@ -65,6 +73,7 @@ import {
   EmptySlot,
   GainTag,
   GuestTile,
+  HatchBoxPick,
   Heart,
   Mate,
   MatesLine,
@@ -549,21 +558,30 @@ function FriendSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
 
 /**
  * The hatching, full screen over the page: the timeline on the stage (src/fx/timelines/moments.ts) with Skip, then
- * what hatched (NEW, ✦ Shiny) and where it went, and Done. Escape skips to the end, then closes.
+ * what hatched (NEW, ✦ Shiny). With one Box to go to it is there already: where it went, and Done. With several, the
+ * Box pick (each region with the level it arrives at and what happens there) and SEND IT THERE, then where it went.
+ * Escape skips to the end, then closes: a hatchling not sent yet waits in its Egg, and hatches the same next time.
  */
-function HatchMoment({ hatch, onDone }: { hatch: Hatch; onDone: () => void }) {
+function HatchMoment({ offer, onDone }: { offer: HatchOffer; onDone: (placed: Hatch | null) => void }) {
   const { t } = useT()
   useHoldFullscreen()
   const data = useGame((s) => s.data)
   const stage = useRef<StageHandle>(null)
   const doneRef = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
+  const choices = 'choices' in offer ? offer.choices : null
+  const [placed, setPlaced] = useState<Hatch | null>('placed' in offer ? offer.placed : null)
+  // The live region first when it can take it: the Box the player is playing.
+  const [pick, setPick] = useState(() => (choices?.find((c) => c.live) ?? choices?.[0])?.region ?? null)
+  const hatch = placed ?? choices!.find((c) => c.region === pick) ?? choices![0]!
   const scene = useMemo(
     () => ({
       ready: loadSprite(hatch.inst.dex, false, hatch.inst.shiny),
       timeline: hatchTimeline({ baby: spriteKey(hatch.inst.dex, false, hatch.inst.shiny), shiny: hatch.shiny }),
     }),
-    [hatch],
+    // The same hatchling whatever the Box: the timeline never restarts on a pick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [hatch.inst.dex, hatch.shiny],
   )
   const sp = data.species[hatch.inst.dex]
   const name = sp?.name ?? t('ui.common.aPokemon')
@@ -574,14 +592,21 @@ function HatchMoment({ hatch, onDone }: { hatch: Hatch; onDone: () => void }) {
   }
   useEffect(() => {
     if (open) doneRef.current?.focus({ preventScroll: true })
-  }, [open])
+  }, [open, placed])
+  const send = () => {
+    if (!pick) return
+    const res = hatchDayCareEggInto(pick)
+    if (res) setPlaced(res)
+    else onDone(null)
+  }
+  const went = hatch.live
+    ? t(hatch.joinedTeam ? 'ui.dayCare.joinedTeam' : 'ui.dayCare.wentToBox')
+    : t('ui.dayCare.inRegionBox', { region: regionName(data, hatch.region) })
   const where = !hatch.kept
     ? hatch.gold > 0
       ? t('ui.dayCare.keptStrongerGold', { name, gold: money(hatch.gold) })
       : t('ui.dayCare.keptStronger', { name })
-    : `${hatch.replaced ? t('ui.dayCare.replacedYours', { level: hatch.replaced.level, name }) : ''}${t(
-        hatch.joinedTeam ? 'ui.dayCare.joinedTeam' : 'ui.dayCare.wentToBox',
-      )}`
+    : `${hatch.replaced ? t('ui.dayCare.replacedYours', { level: hatch.replaced.level, name }) : ''}${went}`
   const said = open
     ? t(hatch.shiny ? 'ui.dayCare.hatchedShiny' : 'ui.dayCare.hatched', { name })
     : t('ui.dayCare.eggMoving')
@@ -595,7 +620,7 @@ function HatchMoment({ hatch, onDone }: { hatch: Hatch; onDone: () => void }) {
       animate={{ opacity: 1 }}
       onKeyDown={(e) => {
         if (e.key !== 'Escape') return
-        if (open) onDone()
+        if (open) onDone(placed)
         else stage.current?.skip()
       }}
     >
@@ -631,10 +656,23 @@ function HatchMoment({ hatch, onDone }: { hatch: Hatch; onDone: () => void }) {
               {hatch.shiny && <Chip tone="gold">{t('ui.dayCare.shinyTag')}</Chip>}
               {hatch.isNew && <NewTag />}
             </p>
-            <p className="m-0 font-pixel-sm text-[16px] leading-tight text-muted">{where}</p>
-            <PixelButton ref={doneRef} onClick={onDone}>
-              {t('ui.dayCare.done')}
-            </PixelButton>
+            {placed || !choices ? (
+              <>
+                <p className="m-0 font-pixel-sm text-[16px] leading-tight text-muted">{where}</p>
+                <PixelButton ref={doneRef} onClick={() => onDone(placed)}>
+                  {t('ui.dayCare.done')}
+                </PixelButton>
+              </>
+            ) : (
+              <HatchBoxPick
+                name={name}
+                choices={choices}
+                value={pick}
+                onChange={setPick}
+                onSend={send}
+                sendRef={doneRef}
+              />
+            )}
           </div>
         )}
       </div>
@@ -668,7 +706,7 @@ function DayCareScreenMain() {
   const [leaving, setLeaving] = useState(false)
   const [inviting, setInviting] = useState(false)
   const [rules, setRules] = useState(false)
-  const [hatch, setHatch] = useState<Hatch | null>(null)
+  const [hatch, setHatch] = useState<HatchOffer | null>(null)
   const [hatchId, setHatchId] = useState(0)
   const open = !!save && isDayCareOpen(save, data)
   const { calm } = useMotion()
@@ -725,7 +763,7 @@ function DayCareScreenMain() {
   const cfg = data.config.dayCare
   const dc = dayCareOf(save)
 
-  const show = (res: Hatch | null) => {
+  const show = (res: HatchOffer | null) => {
     if (!res) return
     setHatch(res)
     setHatchId((n) => n + 1)
@@ -861,10 +899,10 @@ function DayCareScreenMain() {
       {hatch && (
         <HatchMoment
           key={hatchId}
-          hatch={hatch}
-          onDone={() => {
+          offer={hatch}
+          onDone={(placed) => {
             // The Day Care couple's ₽ came in while the top bar was hidden: its pill bumps when it's back.
-            if (hatch.gold > 0) bumpGold()
+            if (placed && placed.gold > 0) bumpGold()
             setHatch(null)
           }}
         />

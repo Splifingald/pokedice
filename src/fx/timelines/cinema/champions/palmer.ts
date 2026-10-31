@@ -1,4 +1,4 @@
-// Palmer's entrance (docs/54): the Battle Tower at the Fight Area, at dusk. The glass lift waits in the tower's lobby,
+// Palmer's entrance (docs/56): the Battle Tower at the Fight Area, at dusk. The glass lift waits in the tower's lobby,
 // the Tower Tycoon's figure inside it; a ding, and it rockets up the tower's face, the floors' windows smearing into
 // streaks, the harbour falling away, up through the clouds into the night, until the art-deco crown rises over a sea of
 // clouds and the lift brakes hard into the glass top floor: the crown is floodlit gold, the Tower's emblem blazes, two

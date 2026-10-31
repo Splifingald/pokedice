@@ -1,4 +1,4 @@
-// Red's entrance (docs/54), on the battle stage: Mt. Silver, the silent legend. A blizzard on the mountain at night:
+// Red's entrance (docs/56), on the battle stage: Mt. Silver, the silent legend. A blizzard on the mountain at night:
 // the camera climbs its snowfields and black rock ribs up into the storm wrapped round its summit, where something
 // yellow flickers. Into the white; and out on the summit, a lone figure at the cliff's edge with his back to us, the
 // snow tearing past him sideways. He doesn't move. On his shoulder a small shape with long ears: two red cheeks spark,

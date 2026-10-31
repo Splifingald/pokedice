@@ -1,4 +1,4 @@
-// A champion's own entrance on the battle stage (docs/54): the scene is each champion's (Red on Mt. Silver's summit,
+// A champion's own entrance on the battle stage (docs/56): the scene is each champion's (Red on Mt. Silver's summit,
 // Leon's stadium…); what follows its reveal is the same for all. The champion stands where its Pokémon will, outlined
 // in its colours; the letterbox and the card come, with its name, its title and a ball for each of its Pokémon; the
 // scene dissolves into the battle's own ground; then the champion steps aside and throws its lead out. The player's

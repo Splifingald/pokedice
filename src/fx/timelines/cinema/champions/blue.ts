@@ -1,4 +1,4 @@
-// Blue's entrance (docs/54), on the battle stage: the Indigo Plateau at sunset, and the rival who got there first.
+// Blue's entrance (docs/56), on the battle stage: the Indigo Plateau at sunset, and the rival who got there first.
 // The League stands on its mesa at the top of Victory Road's stairs, the peaks black against a red sky; Pidgeot crosses
 // the sun. The great doors bang open on a dark hall, and the camera goes in after them: down at the far end, against
 // a tall window full of sunset, a small figure stands with his back to us. Then the lamps snap on down the hall, pair

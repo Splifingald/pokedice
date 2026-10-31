@@ -1,4 +1,4 @@
-// The champions' own cinematics (docs/54): their switch (Off by default, the admin alone, everyone); every champion in
+// The champions' own cinematics (docs/56): their switch (Off by default, the admin alone, everyone); every champion in
 // the game's data, every version of it, finds its scene by its picture (a Kanto rival's Red or Green too); each scene
 // reveals its champion between 3.8 and 5 s and ends with its lead thrown out (the HUD's one cue), after the reveal.
 import { existsSync } from 'node:fs'

@@ -67,8 +67,10 @@ import { InviteBits } from './kitchen/InviteBits'
 import { SupportBits } from './kitchen/SupportBits'
 import { TrickBits } from './kitchen/TrickBits'
 import { UndergroundBits } from './kitchen/UndergroundBits'
+import { CalendarBits } from './kitchen/CalendarBits'
 import { DayNightBits } from './kitchen/DayNightBits'
 import { TalentBits } from './kitchen/TalentBits'
+import { AreaVersusBits } from './kitchen/AreaVersusBits'
 import { IdleBits } from './kitchen/IdleBits'
 import { ShinyDexBits } from './kitchen/ShinyDexBits'
 import { UnownDexBits } from './kitchen/UnownDexBits'
@@ -833,11 +835,17 @@ export function KitchenSink() {
       <Section title="The Underground: the cave, the crack gauge, a wall in each state (fresh, half dug with a strike flashing, cleared, collapsing), the pickaxe die and faces, orbs and plates, the haul, the plates and orb bag, the team seats, the rules">
         <UndergroundBits />
       </Section>
+      <Section title="The gift calendar: a door in every state (shut, today's, last chance, opened with each kind of gift, missed, busy), a calendar on its 10th day, Home's card (gold, later, done), the rules card and INFO, a door's opening (docs/55)">
+        <CalendarBits />
+      </Section>
       <Section title="Day and night (Johto): the top bar's chip by day and by night, the fights' indicator, the list tags (its half, the other half), rules">
         <DayNightBits />
       </Section>
       <Section title="Hidden talents: the gem (base, super, unknown), every talent, the sheet's box (carried, known, never met), the encounter's line, the result cards, the battle log, the trade toggle, rules (docs/51)">
         <TalentBits />
+      </Section>
+      <Section title="Real-player battles: the intro, the tag, the card (a stranger, a rich friend), the rules, the result's part (won, lost; each friend request state), the Friends page's requests (docs/54)">
+        <AreaVersusBits />
       </Section>
       <Section title="Idle mode and the play styles: the style cards (each picked, none), a new game's question, the area's switch (AUTO-MODE, Idle mode; off, on, the tip), the autopilot's note, rules (docs/36)">
         <IdleBits />

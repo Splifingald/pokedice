@@ -74,11 +74,12 @@ test('Config: the tabs, the switches in two columns, a name opens its numbers', 
     'page',
   )
 
-  // One row per feature (25 with the Versus global board, the hidden talents, the legendary and the champion intros):
-  // its name and its switch, nothing else; energy and the retired switches are gone.
-  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(25)
+  // One row per feature (26 with the Versus global board, the hidden talents, the legendary intros, real-player
+  // battles and the champion intros): its name and its switch, nothing else; energy and the retired switches are gone.
+  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(26)
   await expect(page.getByRole('radiogroup', { name: 'Hidden talents: who has it' })).toBeVisible()
   await expect(page.getByRole('radiogroup', { name: 'Legendary intros: who has it' })).toBeVisible()
+  await expect(page.getByRole('radiogroup', { name: 'Real-player battles: who has it' })).toBeVisible()
   await expect(page.getByRole('radiogroup', { name: 'Champion intros: who has it' })).toBeVisible()
   await expect(page.getByRole('radiogroup', { name: 'Versus global board: who has it' })).toBeVisible()
   for (const gone of [
@@ -164,7 +165,7 @@ const BOARD = {
   ],
 }
 
-test('Intros: every champion listed, each one watched on a battle stage (docs/54)', async ({ page }) => {
+test('Intros: every champion listed, each one watched on a battle stage (docs/56)', async ({ page }) => {
   test.setTimeout(120_000)
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(String(e)))

@@ -1,4 +1,4 @@
-// Admin → Config → Intros (docs/54): every champion's own cinematic, to watch here without reaching its League. Each
+// Admin → Config → Intros (docs/56): every champion's own cinematic, to watch here without reaching its League. Each
 // plays on a battle stage with its sample picture and team (Red with his Pikachu…), its card, and its lead thrown out.
 // The switch is on the Switches tab.
 import { useMemo, useState } from 'react'
