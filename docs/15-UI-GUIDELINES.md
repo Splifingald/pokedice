@@ -434,6 +434,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 | Darkrai's raid entrance (§29, `nightRaidEntranceTimeline`) | in full | in full (an encounter) |
 | A legend's own cinematic (docs/53, `fx/timelines/cinema/`, the admin's switch): Kanto's and Johto's: Mewtwo's lab, the birds', Lugia's and Ho-Oh's places (raids); Mew's, the beasts' and Celebi's (boss fights, `cinema/boss.ts`) | in full | in full, fewer particles, no shake (an encounter) |
 | A real player's card (§39, `RealPlayerIntro`), over the whole screen: the bands slamming in, the silhouettes landing in colour, VS's hit (shake, one flash, the gold seam), the words, the split | in full (1.7 s; a tap ends it) | in full (an encounter); calm: the still scene for 0.9 s, no shake or flash; off: none |
+| A champion's own cinematic (docs/56, `cinema/champion.ts`, `cinema/champions/`, its own switch): Red on Mt. Silver, Leon's stadium… then the card and its lead thrown out | in full | in full, no shake (an encounter); off: the trainer steps onto the field as before |
 
 `calm` (OS reduce motion, or animations off) also removes screen shakes and full-screen flashes; a hit keeps its two
 white sprite frames. Every timeline is on `/kitchen-sink/fx` (dev): replay, ¼ speed, one-frame steps, the end state,
@@ -1877,6 +1878,11 @@ For everyone (docs/40; its switch retired on 2026-10-28, §20): the engine decid
   distances from the reveal (`wordsAt`). With the switch on, **a legend's raid has no warning tapes and no alarm**, its
   own cinematic made or not; Giratina's and Darkrai's keep their worlds' lines, the daily non-legend raid its alarm.
   Every scene is ordered-dithered, its flashes no faster than 3 a second.
+- **A champion's own cinematic** (docs/56, the admin's switch): before a League Champion's fight, a short film in its
+  place (Red on Mt. Silver's summit, Lance's dragons over the Indigo Plateau…) instead of the trainer stepping onto the
+  field. The champion arrives where it then stands, facing the same way; its card is the legend's band with its name and
+  a tray with a ball per Pokémon; then it steps aside and throws its lead out, and the send-out step follows as for any
+  trainer. Every version of a champion (the Elite Rebattle's tiers) has the same scene, chosen by its picture.
 - **A Mega raid** is a progression raid with a MEGA RAID kicker; its lock says what opens it, its win shows the gem's
   sprite and name instead of the catch.
 

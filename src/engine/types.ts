@@ -1094,6 +1094,11 @@ export interface GameConfig {
    */
   giftCalendar: { access: EventAccess }
   /**
+   * The champions' own cinematics (docs/56): a League Champion's entrance in its own place before its fight. Only how
+   * it looks and sounds, so no server function reads it. Migration 0101 inserts the same row.
+   */
+  championCinema: { access: EventAccess }
+  /**
    * The Unown Pokédex (docs/41): the 28 letters, once an area where Unown live is opened; `reward` ₽ for the last one.
    * Migration 0080 inserts the same row.
    */

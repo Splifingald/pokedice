@@ -408,6 +408,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   legendCinema: { access: 'off' },
   // The gift calendar (docs/55): off until the admin switches it on. Migration 0100 inserts the same row.
   giftCalendar: { access: 'off' },
+  // The champions' own cinematics (docs/56): off until the admin switches it on. Migration 0101 inserts the same row.
+  championCinema: { access: 'off' },
   // The Unown Pokédex (docs/41): off until the admin switches it on; ₽1,000 for the 28th letter. Migration 0080 inserts
   // the same row.
   unownDex: { access: 'off', reward: 1000 },
