@@ -4,11 +4,12 @@
  * --at 2026-12-24T18:07:00Z       — run as if it were then (to check the schedule).
  * --force                         — post even while live events aren't switched on for everyone in Admin → Events.
  *
- * GitHub Actions runs it every hour at :07 (.github/workflows/discord-live.yml). Each run owns the hour from its
- * scheduled :07 to the next one, takes the events that start in it, waits for each start and posts it: what it does in
- * full (every shop item and price, every shiny area, the kits), when it ends, its banner (docs/50). A run GitHub starts
- * a few minutes late posts at once what already started in its hour, so each event is posted once. The week ahead is
- * live-week-post.ts. Nothing is posted while Admin → Events has live events Off or On for admin.
+ * Netlify posts each start by itself with liveMessage, within the minute (netlify/functions/discord-live.mts): GitHub
+ * ran an hourly schedule only about 5 times a day. This script prints a given hour's posts, or posts them by hand
+ * (.github/workflows/discord-live.yml, no schedule): a run owns the hour from its :07 to the next one, takes the events
+ * that start in it, waits for each start and posts it: what it does in full (every shop item and price, every shiny
+ * area, the kits), when it ends, its banner (docs/50). The week ahead is live-week-post.ts. Nothing is posted while
+ * Admin → Events has live events Off or On for admin.
  */
 import {
   freeKitRules,
@@ -32,7 +33,7 @@ import { COLORS, SITE } from './layout'
 /** How long before its start an event is posted: at the start itself (the Monday calendar gives the notice). */
 export const LIVE_LEAD_MS = 0
 const HOUR = 3600_000
-/** The minute past each hour the workflow is scheduled at (its cron). */
+/** The minute past each hour a run's hour starts at (the hourly schedule's, before Netlify posted the starts). */
 export const CRON_MINUTE = 7
 
 export const TYPE_NAME: Record<LiveEvent['type'], string> = {
