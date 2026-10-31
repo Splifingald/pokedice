@@ -65,6 +65,11 @@ export function AreaVersusBits() {
   const data = useGame((s) => s.data)
   const area = data.areas.find((a) => (a.encounterWeights.versus ?? 0) > 0)
   const [replay, setReplay] = useState(0)
+  // The intro playing (its run's number), or 0.
+  const [playing, setPlaying] = useState(0)
+  useEffect(() => {
+    if (replay) setPlaying(replay)
+  }, [replay])
   const [rules, setRules] = useState<'unlock' | 'info' | null>(null)
   // The result's states, each under its own foe: the store holds what became of a request.
   useEffect(() => {
@@ -85,13 +90,11 @@ export function AreaVersusBits() {
   const withId = (id: string) => ({ ...STRANGER, id })
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <Frame name="The intro (a tap ends it)">
-        <div className="relative h-[260px] w-full max-w-[420px] bg-panel shadow-ring">
-          <RealPlayerIntro key={replay} foe={STRANGER} onDone={() => {}} />
-        </div>
+      <Frame name="The intro, over the whole screen (a tap ends it)">
         <PixelButton size="sm" className="self-start" onClick={() => setReplay((n) => n + 1)}>
-          Replay the intro
+          Play the intro
         </PixelButton>
+        {playing > 0 && <RealPlayerIntro key={playing} foe={STRANGER} onDone={() => setPlaying(0)} />}
       </Frame>
       <Frame name="The tag">
         <RealPlayerTag className="self-start" />

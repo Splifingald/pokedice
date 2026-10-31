@@ -74,11 +74,15 @@ the server answers nothing.
 
 ## 4. What players see
 
-- **The intro** (the user's ask, 2026-10-31: "a small animated intro that indicates it is a real player battle";
-  `RealPlayerIntro`): over the card, your look on a blue band from the left, theirs on a red band from the right with
-  their name, the crossed swords popping in a gold frame, "REAL PLAYER BATTLE!" typed in, then the scene lifts away
-  (1.7 s, in pixel steps, a rival's sting `versus.intro`). A tap ends it. In full under Short (an encounter's intro),
-  a still scene for 0.9 s when calm, none with animations off.
+- **The intro** (the user's asks, 2026-10-31: "a small animated intro that indicates it is a real player battle",
+  then "it should feel awesome and stay simple"; `RealPlayerIntro`): a rival's entrance over the whole screen. Your blue
+  band slams in from the left and their red one from the right, speed lines rushing across; each trainer slides in as
+  a black silhouette and lands in a white frame into colour; a big VS slams onto the diagonal seam with the hit (a
+  short shake, one white flash, the seam lit gold, a boom); "REAL PLAYER BATTLE!" and their name wipe in; VS beats
+  while it holds; then the bands split apart onto the card. 1.7 s in pixel steps, a rival's sting on its beats
+  (`versus.intro`). A phone stacks the two (you above the seam, them below); a wide screen sets them side by side.
+  A tap ends it. In full under Short (an encounter's intro); calm: the still scene for 0.9 s, no shake or flash;
+  animations off: none.
 - **The card** (`PlayerFoeCard`, the encounter's pop-up): REAL PLAYER over their look, their name (golden for the
   rich), Friend, "Played here 2 days ago", their team (sprites, levels, shiny stars, talent gems), "Win ₽540 (×1.5 a
   trainer's)" and INFO. **FIGHT** (red) and **SKIP · no ₽**.

@@ -2,6 +2,7 @@
 // (once, the first time a card is turned over, and from INFO), the result card's friend request, the Friends page's
 // requests, and the service that keeps a team ready for the area being played.
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   areaVersusConfig,
   areaVersusHere,
@@ -191,17 +192,50 @@ export function FoeTeam({
   )
 }
 
-/** How long the intro holds before it lifts away, and its end (ms): the full scene, or a still one when calm. */
-const INTRO_MS = { full: [1500, 1700], calm: [900, 900] } as const
+/** When the bands split away, and when the intro is over (ms): the full scene, or a still one when calm. */
+const INTRO_MS = { full: [1450, 1700], calm: [900, 900] } as const
+
+/** Speed lines across a band: thin bars rushing by, each on its own row and beat (`rp-streak-*`, pixel steps). */
+const STREAKS = [
+  { top: 8, w: 34, delay: 0 },
+  { top: 19, w: 22, delay: 0.18 },
+  { top: 31, w: 40, delay: 0.09 },
+  { top: 44, w: 18, delay: 0.27 },
+  { top: 56, w: 30, delay: 0.05 },
+  { top: 69, w: 24, delay: 0.21 },
+  { top: 82, w: 36, delay: 0.13 },
+  { top: 93, w: 20, delay: 0.3 },
+]
+function Streaks({ toward }: { toward: 'left' | 'right' }) {
+  return (
+    <>
+      {STREAKS.map((r, i) => (
+        <span
+          key={i}
+          className={cx(
+            'absolute h-[4px] bg-white/25',
+            toward === 'left' ? 'rp-streak-left left-full' : 'rp-streak-right right-full',
+          )}
+          style={{ top: `${r.top}%`, width: `${r.w}%`, animationDelay: `${r.delay}s` }}
+        />
+      ))}
+    </>
+  )
+}
 
 /**
- * The card's intro (the user's ask, 2026-10-31): your band slides in from the left, theirs from the right, VS pops and
- * "REAL PLAYER BATTLE!" types in, then the scene lifts off the card. Played in full under Short (an encounter's
- * intro, docs/15 §8), held still when calm, skipped with animations off; a tap ends it.
+ * The card's intro (the user's asks, 2026-10-31: "a small animated intro that indicates it is a real player battle",
+ * then "it should feel awesome and stay simple"): a rival's entrance over the whole screen. Your blue band slams in from
+ * the left and their red one from the right, speed lines rushing; each trainer slides in as a black silhouette and
+ * lands in two white frames into colour; VS slams down on the seam (the hit: a short shake, one white flash, a boom),
+ * the gold seam lights, "REAL PLAYER BATTLE!" and their name wipe in; then the bands split apart onto the card. 1.7 s
+ * in pixel steps, a tap ends it. In full under Short (an encounter's intro, docs/15 §8); calm: the still scene, no
+ * shake or flash; animations off: none.
  */
 export function RealPlayerIntro({ foe, onDone }: { foe: AreaFoe; onDone: () => void }) {
   const { t } = useT()
   const { level, calm } = useMotion()
+  const desktop = useIsDesktop()
   const mine = useGame((s) => s.save?.player?.avatar ?? s.save?.player?.character ?? 'red')
   const [out, setOut] = useState(false)
   const done = useRef(onDone)
@@ -209,52 +243,111 @@ export function RealPlayerIntro({ foe, onDone }: { foe: AreaFoe; onDone: () => v
   useEffect(() => {
     if (level === 'off') return done.current()
     if (!calm) feelSound('versus.intro')
-    const [hold, end] = calm ? INTRO_MS.calm : INTRO_MS.full
-    const lift = setTimeout(() => setOut(true), hold)
+    const [split, end] = calm ? INTRO_MS.calm : INTRO_MS.full
+    const apart = setTimeout(() => setOut(true), split)
     const finish = setTimeout(() => done.current(), end)
     return () => {
-      clearTimeout(lift)
+      clearTimeout(apart)
       clearTimeout(finish)
     }
   }, [level, calm])
-  if (level === 'off') return null
-  return (
+  if (level === 'off' || typeof document === 'undefined') return null
+  // The trainers fill their band: a share of the screen's height on a wide one, of its width on a phone.
+  const vw = typeof window === 'undefined' ? 390 : window.innerWidth
+  const vh = typeof window === 'undefined' ? 844 : window.innerHeight
+  const size = Math.round(desktop ? Math.min(vh * 0.42, 320) : Math.min(vw * 0.5, vh * 0.26, 220))
+  // The words' ink outline, pixel-hard on every side.
+  const ink =
+    '[text-shadow:3px_0_0_#24304f,-3px_0_0_#24304f,0_3px_0_#24304f,0_-3px_0_#24304f,3px_3px_0_#24304f,-3px_3px_0_#24304f,3px_-3px_0_#24304f,-3px_-3px_0_#24304f,6px_6px_0_rgba(0,0,0,0.35)]'
+  return createPortal(
     <button
       type="button"
       data-testid="real-player-intro"
       onClick={() => done.current()}
       aria-label={t('ui.areaVersus.introSkip')}
-      className={cx('absolute inset-0 z-20 overflow-hidden bg-night', out && !calm && 'rp-out')}
+      className={cx(
+        'fixed inset-0 z-[110] block cursor-pointer overflow-hidden bg-night',
+        out && !calm && 'rp-fade',
+      )}
     >
       <span role="status" className="sr-only">
         {t('ui.areaVersus.intro', { name: foe.name })}
       </span>
-      <span
-        aria-hidden
-        className="rp-band-left absolute inset-x-0 top-0 flex h-[55%] items-end bg-[#5b8def] pl-3 [clip-path:polygon(0_0,100%_0,100%_62%,0_100%)]"
-      >
-        <TrainerSprite src={avatarOf(mine).src} size={84} />
-      </span>
-      <span
-        aria-hidden
-        className="rp-band-right absolute inset-x-0 bottom-0 flex h-[55%] items-end justify-end gap-2 bg-[#f2553f] pr-3 [clip-path:polygon(0_38%,100%_0,100%_100%,0_100%)]"
-      >
-        <span className="mb-2 max-w-[45%] truncate font-pixel-sm text-[18px] leading-none text-white [text-shadow:2px_2px_0_#1b1f3b]">
-          {foe.name}
+      <span aria-hidden className={cx('absolute inset-0', !calm && 'rp-shake')}>
+        {/* Yours: the top band, from the left. */}
+        <span
+          className={cx(
+            'absolute inset-0 overflow-hidden bg-[#3a6fd8] [clip-path:polygon(0_0,100%_0,100%_44%,0_56%)] md:[clip-path:polygon(0_0,100%_0,100%_38%,0_62%)]',
+            out && !calm ? 'rp-top-out' : 'rp-top',
+          )}
+        >
+          <span className="absolute inset-0 bg-[repeating-linear-gradient(135deg,transparent_0_10px,rgba(0,0,0,0.08)_10px_20px)]" />
+          <Streaks toward="right" />
+          {/* A phone stacks them (you above the seam, them below it); a wide screen sets them side by side. */}
+          <span className="rp-me absolute bottom-[57%] left-[6%] md:bottom-[38%] md:left-[12%]">
+            <TrainerSprite src={avatarOf(mine).src} size={size} />
+          </span>
         </span>
-        <TrainerSprite src={foe.sprite ?? avatarOf(foe.avatar).src} size={84} />
-      </span>
-      <span aria-hidden className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-        <span className="rp-pop flex items-center gap-1 bg-night px-2 py-1 shadow-[inset_0_0_0_3px_#ffbe2e]">
-          <PixelIcon name="vs" size={28} />
+        {/* Theirs: the bottom band, from the right. */}
+        <span
+          className={cx(
+            'absolute inset-0 overflow-hidden bg-[#e0483a] [clip-path:polygon(0_56%,100%_44%,100%_100%,0_100%)] md:[clip-path:polygon(0_62%,100%_38%,100%_100%,0_100%)]',
+            out && !calm ? 'rp-bottom-out' : 'rp-bottom',
+          )}
+        >
+          <span className="absolute inset-0 bg-[repeating-linear-gradient(135deg,transparent_0_10px,rgba(0,0,0,0.08)_10px_20px)]" />
+          <Streaks toward="left" />
+          <span className="rp-foe absolute right-[6%] top-[57%] md:right-[12%] md:top-[40%]">
+            <TrainerSprite src={foe.sprite ?? avatarOf(foe.avatar).src} size={size} />
+          </span>
+          <span
+            className={cx(
+              'rp-name absolute bottom-[7%] right-[6%] max-w-[80%] truncate text-right text-[34px] leading-none text-white md:right-[12%] md:text-[48px]',
+              ink,
+            )}
+          >
+            {foe.name}
+          </span>
         </span>
-      </span>
-      <span aria-hidden className="absolute inset-x-0 top-[calc(50%+26px)] flex justify-center">
-        <span className="rp-type whitespace-nowrap bg-night px-2 pb-0.5 text-[26px] leading-none tracking-[0.12em] text-gold [text-shadow:2px_2px_0_#000]">
-          {t('ui.areaVersus.introTitle')}
+        {/* The seam lights gold as VS lands. */}
+        <span
+          className={cx(
+            'absolute inset-0 bg-gold [clip-path:polygon(0_54.8%,100%_42.8%,100%_45.2%,0_57.2%)] md:[clip-path:polygon(0_60.6%,100%_36.6%,100%_39.4%,0_63.4%)]',
+            // Its animation holds it lit: the split takes the class away, or the seam would stay over the card.
+            out && !calm ? 'opacity-0' : calm ? '' : 'rp-seam',
+          )}
+        />
+        <span
+          className={cx(
+            'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2',
+            out && !calm && 'opacity-0',
+          )}
+        >
+          <span className="rp-vs block">
+            <span className={cx('rp-vs-beat block text-[96px] leading-none text-gold md:text-[150px]', ink)}>
+              VS
+            </span>
+          </span>
         </span>
+        <span
+          className={cx(
+            'rp-ribbon absolute inset-x-0 top-[9%] flex justify-center',
+            out && !calm && 'opacity-0',
+          )}
+        >
+          <span
+            className={cx(
+              'bg-night/85 px-4 py-1.5 text-[26px] leading-none tracking-[0.1em] text-gold md:text-[40px]',
+              ink,
+            )}
+          >
+            {t('ui.areaVersus.introTitle')}
+          </span>
+        </span>
+        {!calm && <span className="rp-flash absolute inset-0 bg-white opacity-0" />}
       </span>
-    </button>
+    </button>,
+    document.body,
   )
 }
 
@@ -297,7 +390,7 @@ export function PlayerFoeCard({
     setRules(null)
   }
   return (
-    <div className="relative flex min-h-[260px] flex-col gap-2.5">
+    <div className="flex flex-col gap-2.5">
       {intro && <RealPlayerIntro foe={foe} onDone={endIntro} />}
       <div className="flex items-center gap-3">
         <div className="-my-2 shrink-0 self-end">

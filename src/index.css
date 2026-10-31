@@ -248,10 +248,12 @@ canvas.pixelated,
   animation: loading-ball 1.2s steps(1, end) infinite;
 }
 
-/* A real player's card (docs/53): its intro, in pixel steps. Your band slides in from the left, theirs from the right,
-   the VS pops, the words type in, then the scene lifts away. Reduced motion leaves each on its last frame: the still
-   scene, held a moment, then gone. */
-@keyframes rp-band-left {
+/* A real player's card (docs/53): its intro, a rival's entrance in pixel steps (RealPlayerIntro). The bands slam in
+   (0–0.26 s), the trainers slide in as silhouettes and land in two white frames (0.22–0.5 s), VS slams onto the seam
+   with the hit (0.57 s: shake, one white flash, the gold seam), the words wipe in (0.62–0.9 s), VS beats while it
+   holds, and at 1.45 s the bands split apart onto the card. Reduced motion leaves each on its last frame: the still
+   scene (calm adds no shake, flash or split). */
+@keyframes rp-from-left {
   from {
     transform: translateX(-105%);
   }
@@ -259,7 +261,7 @@ canvas.pixelated,
     transform: translateX(0);
   }
 }
-@keyframes rp-band-right {
+@keyframes rp-from-right {
   from {
     transform: translateX(105%);
   }
@@ -267,18 +269,90 @@ canvas.pixelated,
     transform: translateX(0);
   }
 }
-@keyframes rp-pop {
-  0% {
-    transform: scale(0);
+@keyframes rp-to-left {
+  from {
+    transform: translateX(0);
   }
-  60% {
-    transform: scale(1.35);
+  to {
+    transform: translateX(-105%);
+  }
+}
+@keyframes rp-to-right {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(105%);
+  }
+}
+@keyframes rp-land {
+  0% {
+    filter: brightness(0);
+  }
+  34% {
+    filter: brightness(0) invert(1);
+  }
+  67%,
+  100% {
+    filter: none;
+  }
+}
+@keyframes rp-slam {
+  0% {
+    transform: scale(3.4);
+    opacity: 0;
+  }
+  1% {
+    opacity: 1;
   }
   100% {
     transform: scale(1);
+    opacity: 1;
   }
 }
-@keyframes rp-type {
+@keyframes rp-beat {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.08);
+  }
+}
+@keyframes rp-shake {
+  0% {
+    transform: translate(-6px, 4px);
+  }
+  25% {
+    transform: translate(6px, -4px);
+  }
+  50% {
+    transform: translate(-4px, -2px);
+  }
+  75% {
+    transform: translate(3px, 2px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+@keyframes rp-flash {
+  from {
+    opacity: 0.9;
+  }
+  to {
+    opacity: 0;
+  }
+}
+/* On from the hit and for good: a held value, as a one-step 0 → 1 can end on 0. */
+@keyframes rp-light {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes rp-wipe {
   from {
     clip-path: inset(0 100% 0 0);
   }
@@ -286,28 +360,82 @@ canvas.pixelated,
     clip-path: inset(0 0 0 0);
   }
 }
-@keyframes rp-out {
+@keyframes rp-streak-left {
   from {
-    transform: translateY(0);
+    transform: translateX(0);
   }
   to {
-    transform: translateY(-100%);
+    transform: translateX(-180vw);
   }
 }
-.rp-band-left {
-  animation: rp-band-left 0.3s steps(6, end) both;
+@keyframes rp-streak-right {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(180vw);
+  }
 }
-.rp-band-right {
-  animation: rp-band-right 0.3s steps(6, end) 0.1s both;
+@keyframes rp-fade {
+  from {
+    background-color: #24304f;
+  }
+  to {
+    background-color: transparent;
+  }
 }
-.rp-pop {
-  animation: rp-pop 0.24s steps(4, end) 0.42s both;
+.rp-top {
+  animation: rp-from-left 0.18s steps(4, end) both;
 }
-.rp-type {
-  animation: rp-type 0.42s steps(14, end) 0.5s both;
+.rp-bottom {
+  animation: rp-from-right 0.18s steps(4, end) 0.08s both;
 }
-.rp-out {
-  animation: rp-out 0.2s steps(4, end) both;
+.rp-top-out {
+  animation: rp-to-left 0.22s steps(5, end) both;
+}
+.rp-bottom-out {
+  animation: rp-to-right 0.22s steps(5, end) both;
+}
+.rp-me {
+  animation:
+    rp-from-left 0.16s steps(4, end) 0.22s both,
+    rp-land 0.1s steps(1, end) 0.38s both;
+}
+.rp-foe {
+  animation:
+    rp-from-right 0.16s steps(4, end) 0.3s both,
+    rp-land 0.1s steps(1, end) 0.46s both;
+}
+.rp-vs {
+  animation: rp-slam 0.15s steps(3, end) 0.42s both;
+}
+.rp-vs-beat {
+  animation: rp-beat 0.24s steps(2, end) 0.8s infinite alternate;
+}
+.rp-shake {
+  animation: rp-shake 0.14s steps(1, end) 0.57s;
+}
+.rp-flash {
+  animation: rp-flash 0.16s steps(2, end) 0.57s forwards;
+}
+.rp-seam {
+  opacity: 0;
+  animation: rp-light 0.06s 0.57s forwards;
+}
+.rp-ribbon {
+  animation: rp-wipe 0.28s steps(10, end) 0.62s both;
+}
+.rp-name {
+  animation: rp-from-right 0.15s steps(3, end) 0.72s both;
+}
+.rp-streak-left {
+  animation: rp-streak-left 0.5s steps(10, end) infinite;
+}
+.rp-streak-right {
+  animation: rp-streak-right 0.5s steps(10, end) infinite;
+}
+.rp-fade {
+  animation: rp-fade 0.25s steps(4, end) forwards;
 }
 
 /* Reduced motion: the OS setting or the in-game setting (html.reduce-motion) collapses everything. */

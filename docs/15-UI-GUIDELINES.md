@@ -429,7 +429,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 | The nightmare (§29): the intro, the waking | in full | in half the time |
 | Darkrai's strike after a round (§29, `nightmareStrikeTimeline`) | 2 s: the shadow rises, gathers, the beams | 1 s, straight to the beams |
 | Darkrai's raid entrance (§29, `nightRaidEntranceTimeline`) | in full | in full (an encounter) |
-| A real player's card (§39, `RealPlayerIntro`): the two bands, VS, the words, the lift | in full (1.7 s; a tap ends it) | in full (an encounter); calm: the still scene for 0.9 s; off: none |
+| A real player's card (§39, `RealPlayerIntro`), over the whole screen: the bands slamming in, the silhouettes landing in colour, VS's hit (shake, one flash, the gold seam), the words, the split | in full (1.7 s; a tap ends it) | in full (an encounter); calm: the still scene for 0.9 s, no shake or flash; off: none |
 
 `calm` (OS reduce motion, or animations off) also removes screen shakes and full-screen flashes; a hit keeps its two
 white sprite frames. Every timeline is on `/kitchen-sink/fx` (dev): replay, ¼ speed, one-frame steps, the end state,
@@ -1943,9 +1943,10 @@ pop-up). The pieces are in `src/components/Talent.tsx`, every state on `/kitchen
 docs/53. A card of the area's deck that brings a real player's team, behind its switch.
 
 - **The card** (`PlayerFoeCard`, in the encounter's pop-up titled "A real player!"): it opens on its **intro**
-  (`RealPlayerIntro`, §8): your look on a blue band from the left, theirs on a red band from the right with their name,
-  the crossed swords in a gold frame, "REAL PLAYER BATTLE!" typed in gold, then the scene lifts off the card; a tap ends
-  it. Then: the **REAL PLAYER** tag (the friends' sky blue, a person: a word, never colour alone; Friend beside it for a
+  (`RealPlayerIntro`, §8), over the whole screen: your blue band from the left and their red one from the right with
+  speed lines, the trainers landing as silhouettes into colour, a big gold VS slamming onto the seam (shake, one white
+  flash, the seam lit), "REAL PLAYER BATTLE!" and their name wiping in, then the bands split apart onto the card;
+  stacked on a phone, side by side on a wide screen; a tap ends it. Then: the **REAL PLAYER** tag (the friends' sky blue, a person: a word, never colour alone; Friend beside it for a
   friend), their look and name (golden when rich), "Played here 2 days ago", their team as chips (menu icon, name,
   level, the shiny star, the talent gem), the ₽ in a gold-pale box ("Win ₽26", "1.5× a trainer's ₽. Skip it and get
   none."), the heal line and INFO. Its buttons: **FIGHT** (red) and **SKIP · NO ₽**.
