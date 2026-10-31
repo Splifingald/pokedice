@@ -110,7 +110,10 @@ bundled tables). Right then, a **pointing hand** walks the player to it, step by
 
 A new player's **first fight** teaches the reroll and the combos, simply and fast (the user's request, 2026-10-31):
 
-1. The first throw is the player's own, attacked with as it falls.
+1. The **first throw is an average hit**: the plain throw (no combo, no status face) whose damage is nearest the dice's
+   mean, its dice close to each other (Charmander: 3 and 4, 7 damage), and always one that leaves Rattata standing yet
+   within the pair's reach (`lessonFirstRoll`, `lessonWindow`). A reroll of it stays in that window. No starter can
+   one-shot Rattata Lv.2 then (the user's call, 2026-10-31: only a Grass or Fire 6-6 could, 1 throw in 36).
 2. The **second throw is rigged to be bad**: the worst the starter's dice can do (the lowest sum with no combo and no
    status face, `lessonBadRoll`: Charmander's Fire and base dice show 2 and 1). The screen dims but for the dice, the
    hand points at the next one to pick: "Ouch, a bad roll! You can throw dice again: tap both dice to pick them."
@@ -119,16 +122,21 @@ A new player's **first fight** teaches the reroll and the combos, simply and fas
 4. The **reroll lands a pair of 4s** (`lessonPairRoll`; every starter's dice have a plain 4, else the highest number
    they all have). Once the combo has counted, the dice and the readout (its "Pair +2" chip) are lit and the hand points
    at **ATTACK**: "A pair! Two dice showing the same number make a combo: +2 damage. Bigger combos hit even harder. Now
-   ATTACK!" The hit (4 + 4 + 2 = 10) knocks out the opening's Rattata Lv.2 in all but the rarest fights.
+   ATTACK!" The hit (4 + 4 + 2 = 10) knocks out the opening's Rattata Lv.2, every time.
+5. **Rattata's throws are set** too (`LESSON_FOE`, the user's call, 2026-10-31): its first a 2, its second a 1 that it
+   rerolls into a 3. It is faster than the Kanto starters, so their fight always plays: Rattata 2, the average hit,
+   Rattata 1 → 3, the lesson; the starter ends it 5 HP down. A faster starter (Treecko, Froakie, Litten, Scorbunny,
+   Sobble) strikes first and meets only the 2.
 
 - **The engine rigs it** (`src/engine/lesson.ts`, `BattleState.lesson`): `createBattle`'s `rerollLesson` arms it; the
-  reducer counts the player's throws, makes the second one bad (with a reroll left and 2+ dice), lands the reroll's pair
-  and marks the lesson done with the ATTACK. The UI only points (`RerollLessonGuide`, on `GuideFrame`): it reads the
-  step from the battle state. Every tap but the step's own goes nowhere, keys too (the dice's numbers, R, Space).
+  reducer counts the player's throws (the first average, the second bad, with a reroll left and 2+ dice) and the foe's
+  (`foeThrows`), lands the reroll's pair and marks the lesson done with the ATTACK. The UI only points
+  (`RerollLessonGuide`, on `GuideFrame`): it reads the step from the battle state. Every tap but the step's own goes
+  nowhere, keys too (the dice's numbers, R, Space).
 - **When** (`rerollLessonDue`): fights on the set opening's area while its first round isn't won, played by hand (not on
   auto, not a double battle), the set opening switched on, until the lesson's ATTACK (`save.rerollLesson: 'done'`). A
-  fight that ends first (Rattata K.O. by the first throw: a pair of 6s) carries it to the next one's second throw. A
-  player already past the dice tutorial never gets it.
+  player who spent both rerolls on the first throw has no reroll for it: the second throw then falls as it may, and the
+  lesson waits for the next fight. A player already past the dice tutorial never gets it.
 - **No switch of its own, no rules**: like the dice tutorial, it is the set opening's, and it is the explanation.
 - **The pieces**: `src/engine/lesson.ts`, `rerollLessonDue` in `src/engine/tutorial.ts`, `RerollLesson.tsx`;
   `GuideFrame` lights `spots` (seen, not tapped) and points its hand at `handAt` inside the hole. The tray, its dice,

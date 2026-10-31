@@ -4,7 +4,18 @@ import { aiRerollMask } from './ai'
 import { getSpecies } from './data'
 import { attackMultiplier, attackType, computeDamage, type AttackMods, type DamageResult, type UpgradeLevels } from './damage'
 import { dieValue, rerollMasked, rollAll, type RolledDie } from './dice'
-import { LESSON_THROW, lessonBadRoll, lessonPairRoll, lessonPairValue, type RerollLesson } from './lesson'
+import {
+  LESSON_FOE,
+  LESSON_THROW,
+  lessonBadRoll,
+  lessonFirstRoll,
+  lessonFoeRoll,
+  lessonPairRoll,
+  lessonPairValue,
+  lessonWindow,
+  type LessonHit,
+  type RerollLesson,
+} from './lesson'
 import { reviveHp } from './economy'
 import { ARCEUS_DEX, choiceFormDie, choiceFormsOf, gmaxFormsOf, lowHpFormOf, megaDie, megaFormsOf, megaOptions, swapOneDie } from './forms'
 import { battleSpeed, effectiveStats } from './progression'
@@ -1915,6 +1926,12 @@ function resolveAttack(
 
 const NOOP = (state: BattleState) => ({ state, log: [] as LogEntry[] })
 
+/** A throw's damage to the foe in front, as `a`'s attack would deal it: what the reroll lesson weighs its throws by. */
+const lessonHit =
+  (s: BattleState, a: Battler, data: GameData): LessonHit =>
+  (dice) =>
+    computeDamage(dice, a.types, s.enemy.types, s.playerLevels, data, undefined, attackModsFor(s, a, s.enemy)).final
+
 export function reduce(
   state: BattleState,
   e: BattleEvent,
@@ -1932,10 +1949,18 @@ export function reduce(
       if (s.phase !== 'player_roll') return NOOP(state)
       const a = activeBattler(s)
       s.dice = rollAll(a.dice, data, rng)
-      // The reroll lesson's throw: the worst these dice can do, with a reroll left to mend it and a pair to land.
+      // The reroll lesson: the first throw an average hit that leaves the foe for the pair to finish; the second the
+      // worst these dice can do, with a reroll left to mend it and a pair to land.
       const lesson = s.lesson
-      if (lesson?.step === 'wait' && ++lesson.throws >= LESSON_THROW) {
-        if (a.rerollsLeft > 0 && s.dice.length >= 2 && lessonPairValue(a.dice, data) != null) {
+      if (lesson?.step === 'wait') {
+        lesson.throws += 1
+        if (lesson.throws === 1) s.dice = lessonFirstRoll(a.dice, data, lessonHit(s, a, data), s.enemy.hp) ?? s.dice
+        else if (
+          lesson.throws >= LESSON_THROW &&
+          a.rerollsLeft > 0 &&
+          s.dice.length >= 2 &&
+          lessonPairValue(a.dice, data) != null
+        ) {
           s.dice = lessonBadRoll(a.dice, data)
           lesson.step = 'reroll'
         }
@@ -1957,7 +1982,16 @@ export function reduce(
       const mask = [...s.selected]
       // The reroll lesson's reroll lands its pair; any other is thrown as usual.
       const rigged = s.lesson?.step === 'reroll' ? lessonPairRoll(s.dice, mask, data) : null
-      s.dice = rigged ?? rerollMasked(s.dice, mask, data, rng, a.talent === 'reroller')
+      let next = rigged ?? rerollMasked(s.dice, mask, data, rng, a.talent === 'reroller')
+      // A reroll of the lesson's first throw stays in its window: the foe left standing, for the pair to finish.
+      if (!rigged && s.lesson?.step === 'wait' && s.lesson.throws === 1) {
+        const hit = lessonHit(s, a, data)
+        const window = lessonWindow(a.dice, data, hit, s.enemy.hp)
+        const fits = (d: RolledDie[]) => !window || (hit(d) >= window.min && hit(d) <= window.max)
+        for (let i = 0; i < 50 && !fits(next); i++) next = rerollMasked(s.dice, mask, data, rng, a.talent === 'reroller')
+        if (!fits(next)) next = s.dice
+      }
+      s.dice = next
       if (s.lesson?.step === 'reroll') s.lesson.step = 'attack'
       a.rerollsLeft -= 1
       s.selected = s.dice.map(() => false)
@@ -2165,9 +2199,21 @@ export function reduce(
         en.item = null
         checkHpForms(s, data, log)
       }
-      s.dice = rollAll(en.dice, data, rng)
+      // The reroll lesson's fight: the foe's throws are set (LESSON_FOE), so the fight plays the same for everyone.
+      const lesson = s.lesson && s.lesson.step !== 'done' ? s.lesson : null
+      const foePlan = lesson ? LESSON_FOE[lesson.foeThrows ?? 0] : undefined
+      if (lesson) lesson.foeThrows = (lesson.foeThrows ?? 0) + 1
+      const setThrow = foePlan ? lessonFoeRoll(en.dice, foePlan.value, data) : null
+      s.dice = setThrow ?? rollAll(en.dice, data, rng)
       log.push({ kind: 'roll', side: 'enemy', dice: s.dice })
-      for (let guard = 0; guard < 20 && en.rerollsLeft > 0; guard++) {
+      const setReroll = setThrow && foePlan?.reroll != null ? lessonFoeRoll(en.dice, foePlan.reroll, data) : null
+      if (setReroll && en.rerollsLeft > 0) {
+        const mask = s.dice.map(() => true)
+        s.dice = setReroll
+        en.rerollsLeft -= 1
+        log.push({ kind: 'reroll', side: 'enemy', mask, dice: s.dice, rerollsLeft: en.rerollsLeft })
+      }
+      for (let guard = 0; guard < 20 && !setThrow && en.rerollsLeft > 0; guard++) {
         const mask = aiRerollMask({
           dice: s.dice,
           attackerTypes: en.types,

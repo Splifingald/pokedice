@@ -1,5 +1,5 @@
-// The reroll lesson (docs/46 §6): in a new player's first fight on Route 1, the second throw is the worst the dice can
-// do; the hand has them pick both dice and REROLL, the reroll lands a pair of 4s, its combo bonus is shown, and ATTACK
+// The reroll lesson (docs/46 §6): in a new player's first fight on Route 1, the first throw is an average hit that
+// leaves Rattata standing, the second the worst the dice can do; the hand has them pick both dice and REROLL, the reroll lands a pair of 4s, its combo bonus is shown, and ATTACK
 // ends it, once. Nothing but the step's own control can be pressed meanwhile.
 import { expect, test, type Page } from '@playwright/test'
 import { DEFAULT_CONFIG } from '../src/engine'
@@ -55,15 +55,8 @@ test('the second throw is bad, the hand mends it with a reroll of both dice, a p
   // The first throw is the player's own: no guide.
   await expect(bubble(page)).toHaveCount(0)
   await attack(page).click()
-  // The second throw comes after the foe's turn. Rattata Lv.2 rarely falls to the first hit (a pair of 6s): the lesson
-  // then waits for the next fight's second throw.
-  const won = page.getByRole('button', { name: 'CONTINUE', exact: true })
-  for (let i = 0; i < 3; i++) {
-    await expect(bubble(page).or(won).first()).toBeVisible({ timeout: 30_000 })
-    if (await bubble(page).isVisible()) break
-    await toFight(page)
-    await attack(page).click()
-  }
+  // The first hit leaves Rattata standing: the second throw comes after its turn.
+  await expect(bubble(page)).toBeVisible({ timeout: 30_000 })
 
   // 1. The bad throw: pick both dice. ATTACK can't be pressed.
   await expect(bubble(page)).toContainText('a bad roll')
@@ -85,6 +78,8 @@ test('the second throw is bad, the hand mends it with a reroll of both dice, a p
   await expect(page.getByText('Pair +2')).toBeVisible()
   await attack(page).click()
   await expect(bubble(page)).toHaveCount(0)
+  // The pair finishes Rattata: worn out, to be caught.
+  await expect(page.getByText('The wild Rattata is worn out!')).toBeVisible({ timeout: 15_000 })
 
   // Once: done in the save.
   const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}'))
