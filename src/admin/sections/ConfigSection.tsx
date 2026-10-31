@@ -46,6 +46,7 @@ import { DataTable } from '../DataTable'
 import { GiftEditor, giftName } from '../GiftEditor'
 import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
 import { AccessSwitch, Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
+import { LegendIntrosBox } from './LegendIntrosBox'
 import { PushBox } from './PushBox'
 import { VersusLeagueBox } from './VersusLeagueBox'
 import { VersusLeagueGroups } from './VersusLeagueGroups'
@@ -1347,6 +1348,7 @@ const TABS = [
   { id: 'gameCorner', label: 'Game Corner', icon: 'coin' },
   { id: 'unown', label: 'Unown Pokédex', icon: 'book' },
   { id: 'talents', label: 'Hidden talents', icon: 'talent' },
+  { id: 'intros', label: 'Legendary intros', icon: 'sparkle' },
   { id: 'support', label: 'Support & Discord', icon: 'heart' },
   { id: 'rows', label: 'All rows', icon: 'wrench' },
 ] as const satisfies readonly { id: string; label: string; icon: IconName }[]
@@ -1409,6 +1411,7 @@ const FEATURES: Feature[] = [
   own('Idle mode', 'idleMode'),
   own('Trainer looks', 'looks'),
   bare('League heal', 'leagueHeal'),
+  own('Legendary intros', 'legendCinema', 'intros'),
   bare('Route 1 opening & tutorial', 'openingRounds'),
   own('Unown Pokédex', 'unownDex', 'unown'),
   own('Hidden talents', 'hiddenTalents', 'talents'),
@@ -1561,6 +1564,7 @@ export function ConfigSection() {
       {tab === 'gameCorner' && <SlotMachineBox />}
       {tab === 'unown' && <UnownDexBox />}
       {tab === 'talents' && <HiddenTalentsBox />}
+      {tab === 'intros' && <LegendIntrosBox />}
       {tab === 'support' && (
         <div className="grid gap-4 xl:grid-cols-2">
           <DonationBox />
