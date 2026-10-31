@@ -248,6 +248,68 @@ canvas.pixelated,
   animation: loading-ball 1.2s steps(1, end) infinite;
 }
 
+/* A real player's card (docs/53): its intro, in pixel steps. Your band slides in from the left, theirs from the right,
+   the VS pops, the words type in, then the scene lifts away. Reduced motion leaves each on its last frame: the still
+   scene, held a moment, then gone. */
+@keyframes rp-band-left {
+  from {
+    transform: translateX(-105%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes rp-band-right {
+  from {
+    transform: translateX(105%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes rp-pop {
+  0% {
+    transform: scale(0);
+  }
+  60% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes rp-type {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes rp-out {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-100%);
+  }
+}
+.rp-band-left {
+  animation: rp-band-left 0.3s steps(6, end) both;
+}
+.rp-band-right {
+  animation: rp-band-right 0.3s steps(6, end) 0.1s both;
+}
+.rp-pop {
+  animation: rp-pop 0.24s steps(4, end) 0.42s both;
+}
+.rp-type {
+  animation: rp-type 0.42s steps(14, end) 0.5s both;
+}
+.rp-out {
+  animation: rp-out 0.2s steps(4, end) both;
+}
+
 /* Reduced motion: the OS setting or the in-game setting (html.reduce-motion) collapses everything. */
 @media (prefers-reduced-motion: reduce) {
   *,

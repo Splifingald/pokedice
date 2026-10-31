@@ -54,6 +54,12 @@ const FEEL_SOUNDS = {
     hiss(0.22, { freq: 900, vol: 0.06, slide: 1400 })
     tone(147, 0.12, { type: 'triangle', vol: 0.07, slide: 60, at: 0.04 })
   },
+  /** A real player's card (docs/53): the two bands rushing in, then a rival's sting. */
+  'versus.intro': () => {
+    hiss(0.18, { freq: 1200, vol: 0.05, slide: 1600 })
+    tune([[392, 0.2, 0.08], [523, 0.28, 0.08], [784, 0.36, 0.08], [740, 0.46, 0.22]], 'square', 0.05)
+    tone(98, 0.18, { type: 'triangle', vol: 0.07, at: 0.2 })
+  },
   /** A find lands on the stage (docs/43): a quick rising sparkle. */
   'find.item': () => tune([[988, 0, 0.05], [1319, 0.05, 0.05], [1760, 0.1, 0.12]], 'square', 0.04),
   /** It falls: a short rising whistle, then the thud of its landing (`die.landHeavy`'s weight, lighter). */

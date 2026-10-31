@@ -39,6 +39,8 @@ import { copyText, shareOrCopy } from '@/lib/share'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { inviteRulesDue } from '@/engine'
 import { pushToast, useGame } from '@/store/game'
+import { loadFriendRequests, useAreaVersus } from '@/store/areaVersus'
+import { FriendRequests } from '@/components/AreaVersus'
 import { openInviteRewards, seeInviteRules, useInviteRewards } from '@/store/invites'
 import { cx } from '@/theme/util'
 import { TrainerName } from '@/components/TrainerName'
@@ -110,7 +112,10 @@ function FriendsBody({ counter }: { counter?: string }) {
     // The list, then nobody is new any more (their NEW tags stay until the page closes).
     void loadFriendList(true).then(() => markFriendsSeen())
     void loadInviteStatus()
+    void loadFriendRequests()
   }, [])
+  // Friend requests from players whose team you met (docs/53): at the top, while there are some.
+  const requests = useAreaVersus((s) => s.requests)
   // The rewards' rules sit at the top of this page, and nowhere else, while the gauge shows and until GOT IT (docs/43
   // §7: rules where they apply); INFO keeps them.
   const inviteRules = useInviteRules()
@@ -146,6 +151,7 @@ function FriendsBody({ counter }: { counter?: string }) {
         <RulesCard title={t('ui.invite.infoName')} icon="gift" rules={inviteRules} onDone={seeInviteRules} />
       )}
       {gauge && <InviteRewardsCard gauge={gauge} busy={rewardsBusy} onOpen={() => void openInviteRewards()} />}
+      <FriendRequests requests={requests} />
 
       <section className="flex flex-col gap-1.5" aria-labelledby="friends-list-title">
         <h2 id="friends-list-title" className="m-0 flex items-baseline gap-2 text-[24px] font-normal leading-none">

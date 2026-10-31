@@ -167,11 +167,11 @@ const progressSchema = z.object({
   bossesDefeated: z.array(z.number().int()).default([]),
   bossesCaught: z.array(z.number().int()).optional(),
   gymsDefeated: z.array(z.string()).default([]),
-  deck: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'legend'])).optional(),
+  deck: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus', 'legend'])).optional(),
   lootDeck: z.array(z.string()).optional(),
   uniqueFound: z.array(z.string()).optional(),
   round: z.number().int().min(0).optional(),
-  drawn: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'legend'])).optional(),
+  drawn: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus', 'legend'])).optional(),
   lastCenter: z.boolean().optional(),
   // Route 1's set opening (docs/46): the deck in play is its round of this index. An odd value: a shuffled deck's cards.
   opening: z.number().int().min(0).optional().catch(undefined),
@@ -279,6 +279,7 @@ export const saveSchema = z.object({
   leaderboardVisited: z.boolean().optional(),
   versusRulesSeen: z.boolean().optional(),
   versusLeagueRulesSeen: z.boolean().optional(),
+  areaVersusRulesSeen: z.boolean().optional(),
   portalRulesSeen: z.boolean().optional(),
   nightmareRulesSeen: z.boolean().optional(),
   events: z

@@ -429,6 +429,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 | The nightmare (§29): the intro, the waking | in full | in half the time |
 | Darkrai's strike after a round (§29, `nightmareStrikeTimeline`) | 2 s: the shadow rises, gathers, the beams | 1 s, straight to the beams |
 | Darkrai's raid entrance (§29, `nightRaidEntranceTimeline`) | in full | in full (an encounter) |
+| A real player's card (§39, `RealPlayerIntro`): the two bands, VS, the words, the lift | in full (1.7 s; a tap ends it) | in full (an encounter); calm: the still scene for 0.9 s; off: none |
 
 `calm` (OS reduce motion, or animations off) also removes screen shakes and full-screen flashes; a hit keeps its two
 white sprite frames. Every timeline is on `/kitchen-sink/fx` (dev): replay, ¼ speed, one-frame steps, the end state,
@@ -1086,7 +1087,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   rules pop-up (`RulesModal`, Later / Let's go!), taking its turn in the one-time pop-ups' queue, below; so do the
   rules shown at their own moment (the portal's and the nightmare's way in, Trick or Treat's first ghost, the gifts',
   the looks'). The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is a tap on the Pokémon sheet's talent box, as it has no page), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is a tap on the Pokémon sheet's talent box, as it has no page), real-player battles (§39: its rules pop-up after the first card's intro, as Trick or Treat's at the first ghost; INFO on the card), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **The one-time pop-ups take turns, in one queue** (`nextOneTimePopup`, src/engine/popups.ts; docs/38 U2a): one at a
   time, only between fights (`run.phase === 'idle'`, no battle, no full-screen moment, no gift being opened), never on
@@ -1936,3 +1937,28 @@ pop-up). The pieces are in `src/components/Talent.tsx`, every state on `/kitchen
 - **Trades**: asking for a species, a toggle "With its hidden talent" under the species (only while the switch is on).
 - Its rules: a `RulesModal` once, in the one-time pop-ups' queue after the battle powers' (`talentRulesSeen`); again
   from a tap on the sheet's talent box.
+
+## 39. Real-player battles in areas
+
+docs/53. A card of the area's deck that brings a real player's team, behind its switch.
+
+- **The card** (`PlayerFoeCard`, in the encounter's pop-up titled "A real player!"): it opens on its **intro**
+  (`RealPlayerIntro`, §8): your look on a blue band from the left, theirs on a red band from the right with their name,
+  the crossed swords in a gold frame, "REAL PLAYER BATTLE!" typed in gold, then the scene lifts off the card; a tap ends
+  it. Then: the **REAL PLAYER** tag (the friends' sky blue, a person: a word, never colour alone; Friend beside it for a
+  friend), their look and name (golden when rich), "Played here 2 days ago", their team as chips (menu icon, name,
+  level, the shiny star, the talent gem), the ₽ in a gold-pale box ("Win ₽26", "1.5× a trainer's ₽. Skip it and get
+  none."), the heal line and INFO. Its buttons: **FIGHT** (red) and **SKIP · NO ₽**.
+- **The round gauge**: a person on the card's segment, as a heart on a Center's; the card is there only once a team
+  waits for the area. Home's area details count "Real players" in the mix then.
+- **The result**: a win's victory card ends with the real player's part (`DuelResult`: the tag, "You beat Misty's
+  team!", "Your team is healed.", SEND FRIEND REQUEST); its NEXT doesn't count down. A loss is its own card, not a wipe:
+  "Defeat", "Misty's team won", "No ₽ this time. Your team is healed and the round goes on.", the request, CONTINUE.
+  After sending: a check and "Friend request sent to Misty." (or friends at once, already friends, a full list, or the
+  failure in red under the button). Signed out: a muted line asks to connect.
+- **The Friends page**: **Friend requests (n)** at the top while there are some: the look, the name, "Fought your team
+  in Route 3", NO and a green ACCEPT (not red: one red action a screen, and there can be several rows). The Social
+  tab's and the Friends tab's dots count them.
+- Its rules: a `RulesModal` the first time a card is turned over, after its intro (`areaVersusRulesSeen`); again from
+  the card's INFO.
+

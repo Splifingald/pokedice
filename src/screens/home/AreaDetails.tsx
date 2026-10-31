@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  areaVersusHere,
   bossCaught,
   asSeenBy,
   dueBoss,
@@ -45,6 +46,7 @@ import { money } from '@/lib/format'
 import { useDetails } from '@/store/hooks'
 import { useAreaDayTime } from '@/store/dayTime'
 import { useGame } from '@/store/game'
+import { useAreaVersus } from '@/store/areaVersus'
 import { cx } from '@/theme/util'
 import { RoundGauge } from '../area/RoundGauge'
 import { levelText, useLevelSpan } from './AreaPlate'
@@ -60,6 +62,7 @@ const MIX: Record<EncounterKind, string> = {
   trainer: '#5b8def',
   casino: '#9b5de5',
   trick: '#ff8a3d',
+  versus: '#3d7bd9',
 }
 
 function Fact({
@@ -263,6 +266,7 @@ export function DetailsBody({ area }: { area: Area }) {
   const { t } = useT()
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
+  const foe = useAreaVersus((s) => s.foes[area.id])
   const details = useDetails()
   const [view, setView] = useState<SheetView | null>(null)
   const [itemKey, setItemKey] = useState<string | null>(null)
@@ -311,7 +315,13 @@ export function DetailsBody({ area }: { area: Area }) {
   const kinds = (Object.entries(area.encounterWeights) as [EncounterKind, number][]).filter(
     // Trick or Treat only where it is dealt (its switch on, the area's ghosts listed: docs/29); the Game Corner only
     // while it's on.
-    ([k, v]) => v > 0 && MIX[k] && (k !== 'trick' || trickDealable(data, area)) && (k !== 'casino' || gameCornerOn(data)),
+    // A real player (docs/53) only while a team waits for the area.
+    ([k, v]) =>
+      v > 0 &&
+      MIX[k] &&
+      (k !== 'trick' || trickDealable(data, area)) &&
+      (k !== 'casino' || gameCornerOn(data)) &&
+      (k !== 'versus' || (areaVersusHere(save, area, data) && !!foe)),
   )
   const sum = kinds.reduce((n, [, v]) => n + v, 0)
   const pct = kinds.map(([k, v]) => [k, Math.round((v / sum) * 100)] as const).sort((x, y) => y[1] - x[1])

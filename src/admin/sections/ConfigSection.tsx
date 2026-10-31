@@ -4,6 +4,7 @@ import {
   DEFAULT_CONFIG,
   EVENT_ACCESS,
   VERSUS_LEAGUE_DEFAULTS,
+  AREA_VERSUS_DEFAULTS,
   eggSpecies,
   eggsPerWeek,
   centerBoonRules,
@@ -48,6 +49,7 @@ import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
 import { AccessSwitch, Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 import { PushBox } from './PushBox'
 import { VersusLeagueBox } from './VersusLeagueBox'
+import { AreaVersusBox } from './AreaVersusBox'
 import { VersusLeagueGroups } from './VersusLeagueGroups'
 
 export function useConfigRow<K extends keyof GameConfig>(key: K): [GameConfig[K], (v: GameConfig[K]) => void] {
@@ -1340,6 +1342,7 @@ const TABS = [
   { id: 'doubles', label: 'Double battles', icon: 'vs' },
   { id: 'trades', label: 'Trades', icon: 'trade' },
   { id: 'versus', label: 'Versus league', icon: 'trophy' },
+  { id: 'areaVersus', label: 'Real-player battles', icon: 'user' },
   { id: 'general', label: 'General upgrades', icon: 'navUpgrades' },
   { id: 'powers', label: 'Battle powers', icon: 'up' },
   { id: 'invites', label: 'Invite rewards', icon: 'gift' },
@@ -1418,6 +1421,7 @@ const FEATURES: Feature[] = [
   own('Trades', 'trade', 'trades'),
   own('Versus league', 'versusLeague', 'versus', VERSUS_LEAGUE_DEFAULTS as unknown as Row),
   field('Versus global board', 'versusLeague', 'globalAccess', 'versus'),
+  own('Real-player battles', 'areaVersus', 'areaVersus', AREA_VERSUS_DEFAULTS as unknown as Row),
   own('Game Corner', 'slotMachine', 'gameCorner'),
   own('General upgrades', 'general', 'general'),
   field('Shiny Charm', 'general', 'charmAccess', 'general'),
@@ -1554,6 +1558,7 @@ export function ConfigSection() {
           <VersusLeagueGroups />
         </div>
       )}
+      {tab === 'areaVersus' && <AreaVersusBox />}
       {tab === 'general' && <GeneralBox />}
       {tab === 'powers' && <BattlePowersBox />}
       {tab === 'invites' && <InviteRewardsBox />}

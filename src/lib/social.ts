@@ -8,6 +8,7 @@ import {
   tradesToWatch,
 } from '@/engine'
 import { useFriends } from '@/lib/friends'
+import { useAreaVersus } from '@/store/areaVersus'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
 
@@ -20,7 +21,9 @@ export function useSocial() {
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const userId = useGame((s) => s.auth.userId)
-  const newFriends = useFriends((s) => (s.userId && s.userId === userId ? s.unseen.length : 0))
+  // Friend requests to answer (docs/53) are new on the Friends page too.
+  const requests = useAreaVersus((s) => s.requests.length)
+  const newFriends = useFriends((s) => (s.userId && s.userId === userId ? s.unseen.length : 0)) + requests
   // Invite rewards ready to open (docs/15 §25) wait on the Friends page: its dot counts them too. The gauge is read
   // here from the engine, not through InviteRewards' hook, so the shell doesn't pull the gifts' art into every page
   // (and into the unit tests' node, where it has no canvas).

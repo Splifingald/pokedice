@@ -29,6 +29,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   versusUpgradeLevel: 5,
   // The weekly Versus league (docs/44): off until the admin switches it on (the numbers: engine/versusLeague.ts).
   versusLeague: { access: 'off' },
+  // Real-player battles in areas (docs/53): off until the admin switches it on (the numbers: engine/areaVersus.ts).
+  areaVersus: { access: 'off' },
   allowVoluntarySwitch: true,
   maxBattleTurns: 150,
   multiExpShare: 0.3,

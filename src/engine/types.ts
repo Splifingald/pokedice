@@ -183,8 +183,9 @@ export interface DieUpgradeRow {
 /**
  * 'casino': the Game Corner — a slot machine the player can play as long as they like (Rocket Hideout). 'trick': Trick
  * or Treat (docs/29) — a ghost tempted with treats and caught with a Trick Ball, dealt only while its switch is on.
+ * 'versus': a real player's team (docs/53), dealt only while its switch is on and the server has one for the area.
  */
-export const ENCOUNTER_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick'] as const
+export const ENCOUNTER_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus'] as const
 export type EncounterKind = (typeof ENCOUNTER_KINDS)[number]
 /** Cards in an area's encounter deck; 'legend' is a fled legendary coming back (one per deck until it's caught). */
 export type DeckCard = EncounterKind | 'legend'
@@ -290,8 +291,9 @@ export interface Area {
   roundsToClear: number | null
   minLevel: number
   maxLevel: number
-  /** Copies of each card in a deck; Trick or Treat's (docs/29) is optional, as content from before it has none. */
-  encounterWeights: Record<Exclude<EncounterKind, 'trick'>, number> & { trick?: number }
+  /** Copies of each card in a deck; Trick or Treat's (docs/29) and a real player's (docs/53) are optional, as content
+   * from before them has none. */
+  encounterWeights: Record<Exclude<EncounterKind, 'trick' | 'versus'>, number> & { trick?: number; versus?: number }
   backtrackMultiplier: number
   legendaryBoss: BossDef[] | null
   scalesToTeam: boolean
@@ -664,6 +666,19 @@ export interface LeagueRewardBand {
   rareCandies: number
 }
 
+/** Real-player battles in areas (docs/53). */
+export interface AreaVersusConfig {
+  access: EventAccess
+  /** A real player's team pays this × a trainer's ₽ for each K.O. */
+  prizeMultiplier: number
+  /** A team is met this many days after its owner last played there. */
+  recentDays: number
+  /** An unanswered friend request goes after this many days. */
+  requestDays: number
+  /** The cards go among the round's last this many. */
+  lastCards: number
+}
+
 export interface VersusLeagueConfig {
   access: EventAccess
   /** The global board's own switch (docs/44 §8): every player of the week, no rewards. Off when missing. */
@@ -957,6 +972,8 @@ export interface GameConfig {
   versusUpgradeLevel: number
   /** The weekly Versus league (docs/44): its switch and numbers. Migration 0082 inserts the same row; the server reads it. */
   versusLeague?: Partial<VersusLeagueConfig>
+  /** Real-player battles in areas (docs/53): its switch and numbers. Migration 0098 inserts the same row. */
+  areaVersus?: Partial<AreaVersusConfig>
   /** Switching the active Pokémon on your own turn (costs the turn). Switching after a faint is always free. */
   allowVoluntarySwitch: boolean
   /** Safety valve: two Pokémon immune to each other's every die would otherwise fight forever. Ends in a stalemate. */
@@ -1695,6 +1712,8 @@ export interface SaveData {
   versusRulesSeen?: boolean
   /** The weekly Versus league's rules card has been read (docs/44): its own flag, as players who had Versus see it too. */
   versusLeagueRulesSeen?: boolean
+  /** Real-player battles' rules pop-up (docs/53) has been shown: the first time a card is turned over. */
+  areaVersusRulesSeen?: boolean
   /** The portal run's rules pop-up (docs/28) has been shown (once; INFO shows them again). */
   portalRulesSeen?: boolean
   /** The nightmare's rules pop-up (docs/30) has been shown (once; INFO shows them again). */

@@ -33,7 +33,7 @@ import { AreaBanner } from '@/components/AreaBanner'
 import { PortalModeBox } from './PortalModeBox'
 import { NightmareModeBox } from './NightmareModeBox'
 
-const KINDS: EncounterKind[] = ['wild', 'trainer', 'center', 'item', 'casino', 'trick']
+const KINDS: EncounterKind[] = ['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus']
 const CARD: Record<EncounterKind, { label: string; color: string }> = {
   wild: { label: 'Wild', color: '#34c97a' },
   trainer: { label: 'Trainer', color: '#f2553f' },
@@ -41,6 +41,7 @@ const CARD: Record<EncounterKind, { label: string; color: string }> = {
   item: { label: 'Item', color: '#ffbe2e' },
   casino: { label: 'Game Corner', color: '#6b3fa0' },
   trick: { label: 'Trick or Treat', color: '#ff8a2a' },
+  versus: { label: 'Real player', color: '#3d7bd9' },
 }
 
 /** A fresh condition of each kind, for the kind picker. */
@@ -167,7 +168,8 @@ function AreaEditor({ area }: { area: Row }) {
   const lootTotal = lootHere.reduce((sum, l) => sum + copiesOf(l), 0) || 1
   if (!data) return null
   // Trick or Treat (docs/29) is dealt where the area has a ghost list, and only while its switch is on for the player.
-  const can = { wild: wildHere.length > 0, trainer: tHere.length > 0, item: lootHere.length > 0, trick: trickGhosts(data, id).length > 0 }
+  // A real player's card (docs/53) is counted as if a team waited: the game deals it only when one does.
+  const can = { wild: wildHere.length > 0, trainer: tHere.length > 0, item: lootHere.length > 0, trick: trickGhosts(data, id).length > 0, versus: true }
   const deck = deckCounts(weights, can)
   const deckTotal = KINDS.reduce((sum, k) => sum + deck[k], 0)
   const missing: Partial<Record<EncounterKind, string>> = {
@@ -315,6 +317,11 @@ function AreaEditor({ area }: { area: Row }) {
                 {missing[k] && n(weights[k]) > 0 && <span className="text-sm leading-tight text-danger">not dealt: {missing[k]}</span>}
                 {k === 'trick' && !missing.trick && n(weights[k]) > 0 && (
                   <span className="text-sm leading-tight text-muted">only while its switch is on (Events → Trick or Treat)</span>
+                )}
+                {k === 'versus' && n(weights[k]) > 0 && (
+                  <span className="text-sm leading-tight text-muted">
+                    among the round's last cards, only while its switch is on (Config → Real-player battles) and a player's team waits
+                  </span>
                 )}
               </div>
             ))}
