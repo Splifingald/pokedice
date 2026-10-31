@@ -4,6 +4,7 @@ import { aiRerollMask } from './ai'
 import { getSpecies } from './data'
 import { attackMultiplier, attackType, computeDamage, type AttackMods, type DamageResult, type UpgradeLevels } from './damage'
 import { dieValue, rerollMasked, rollAll, type RolledDie } from './dice'
+import { LESSON_THROW, lessonBadRoll, lessonPairRoll, lessonPairValue, type RerollLesson } from './lesson'
 import { reviveHp } from './economy'
 import { ARCEUS_DEX, choiceFormDie, choiceFormsOf, gmaxFormsOf, lowHpFormOf, megaDie, megaFormsOf, megaOptions, swapOneDie } from './forms'
 import { battleSpeed, effectiveStats } from './progression'
@@ -188,6 +189,8 @@ export interface BattleState {
   double?: DoubleState
   /** A raid step's own rules on its hits (docs/40, engine/raidHit.ts), set by the raid; read back once the step is done. */
   raidHit?: RaidHit
+  /** A new player's first fight: the reroll lesson's rigged throws (docs/46 §6, engine/lesson.ts). */
+  lesson?: RerollLesson
 }
 
 /** A double battle's field (docs/33). */
@@ -536,6 +539,8 @@ export interface CreateBattleOptions {
   noHealItems?: boolean
   /** The types the player's Arceus may take: its plates (docs/34). Absent = any. Foes are never limited. */
   plates?: PokeType[]
+  /** The reroll lesson rigs this fight's second throw and its reroll (docs/46 §6; see `rerollLessonDue`). */
+  rerollLesson?: boolean
 }
 
 /**
@@ -962,6 +967,7 @@ export function createBattle(opts: CreateBattleOptions, data: GameData): { state
     lastDamage: null,
     itemUsedThisTurn: false,
     ...battlePowersOf(opts),
+    ...(opts.rerollLesson && { lesson: { step: 'wait', throws: 0 } }),
   }
   const log: LogEntry[] = [{ kind: 'start', first }]
   // A Giratina sent out below half HP is already in its Origin Forme.
@@ -1926,6 +1932,14 @@ export function reduce(
       if (s.phase !== 'player_roll') return NOOP(state)
       const a = activeBattler(s)
       s.dice = rollAll(a.dice, data, rng)
+      // The reroll lesson's throw: the worst these dice can do, with a reroll left to mend it and a pair to land.
+      const lesson = s.lesson
+      if (lesson?.step === 'wait' && ++lesson.throws >= LESSON_THROW) {
+        if (a.rerollsLeft > 0 && s.dice.length >= 2 && lessonPairValue(a.dice, data) != null) {
+          s.dice = lessonBadRoll(a.dice, data)
+          lesson.step = 'reroll'
+        }
+      }
       s.selected = s.dice.map(() => false)
       s.phase = 'player_reroll'
       log.push({ kind: 'roll', side: 'player', dice: s.dice })
@@ -1941,7 +1955,10 @@ export function reduce(
       if (s.phase !== 'player_reroll' || a.rerollsLeft <= 0 || !s.selected.some(Boolean)) return NOOP(state)
       // One press = one reroll spent, however many dice were selected.
       const mask = [...s.selected]
-      s.dice = rerollMasked(s.dice, mask, data, rng, a.talent === 'reroller')
+      // The reroll lesson's reroll lands its pair; any other is thrown as usual.
+      const rigged = s.lesson?.step === 'reroll' ? lessonPairRoll(s.dice, mask, data) : null
+      s.dice = rigged ?? rerollMasked(s.dice, mask, data, rng, a.talent === 'reroller')
+      if (s.lesson?.step === 'reroll') s.lesson.step = 'attack'
       a.rerollsLeft -= 1
       s.selected = s.dice.map(() => false)
       log.push({ kind: 'reroll', side: 'player', mask, dice: s.dice, rerollsLeft: a.rerollsLeft })
@@ -1949,6 +1966,8 @@ export function reduce(
     }
     case 'ATTACK': {
       if (s.phase !== 'player_reroll') return NOOP(state)
+      // The lesson's throw attacked with: it's over, mended or not.
+      if (s.lesson && (s.lesson.step === 'reroll' || s.lesson.step === 'attack')) s.lesson.step = 'done'
       resolveAttack(s, 'player', data, log, rng)
       break
     }

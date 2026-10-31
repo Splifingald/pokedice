@@ -79,6 +79,7 @@ import { pushToast, setSettings, useGame, type BattleSlice, type CatchThrow } fr
 import { autoStepNow, useAutoLevel } from '@/store/autopilot'
 import { answerBait, dispatchBattle, canSkipCurrent, fleeAtSendOut, notYet, passCatch, retryCatch, sendOutLead, throwBall } from '@/store/run'
 import { LeadPicker } from '@/components/LeadPicker'
+import { RerollLessonGuide, type LessonStep } from '@/components/RerollLesson'
 import { PokeCard } from '@/components/PokeCard'
 import { RunRoundGauge } from '@/screens/area/RoundGauge'
 import { speciesTypes } from '@/components/TypeMatchups'
@@ -454,6 +455,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   // One item per turn: before the roll, after it, or to cure a stun.
   const canItem = (canAct || stunned) && !st.itemUsedThisTurn
   const rolling = st.phase === 'player_reroll'
+  // The reroll lesson (docs/46 §6): the engine rigged this throw; a guide walks the player through mending it.
+  const lessonAt = !auto && canAct && rolling ? st.lesson?.step : undefined
+  const lesson: LessonStep | null =
+    lessonAt === 'attack' ? 'attack' : lessonAt === 'reroll' ? (st.selected.every(Boolean) ? 'reroll' : 'pick') : null
 
   const preview = useMemo<Preview | null>(() => {
     if (!rolling || !st.dice.length) return null
@@ -618,6 +623,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       const onControl = !!el?.closest?.('button, a[href]')
       const key = e.key.toLowerCase()
       if ((canAct || stunned) && !switching) {
+        // The reroll lesson: only its step's keys (the dice's numbers, then R, then Space or Enter to attack).
+        const pick = /^[1-6]$/.test(e.key)
+        if (lesson && !(lesson === 'attack' ? e.key === ' ' || e.key === 'Enter' : pick || (lesson === 'reroll' && key === 'r')))
+          return
         if (e.key === ' ' || e.key === 'Enter') {
           if (onControl) return
           e.preventDefault()
@@ -644,7 +653,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [canAct, stunned, auto, covered, menu, aim, switching, matchups, rolling, bagOpen, switchOpen, wide, st.phase, dispatch])
+  }, [canAct, stunned, auto, covered, menu, aim, switching, matchups, rolling, bagOpen, switchOpen, wide, st.phase, dispatch, lesson])
   // Mega Evolution (once per battle, Lv.50+, from Kalos on), Gigantamax and Arceus's types.
   const megaOpts = scripted ? [] : megaChoices(st, data)
   const gmaxOpts = scripted ? [] : gmaxChoices(st, data)
@@ -898,6 +907,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       : foeHand && { side: 'enemy' as const, dice: foeHand }
   const foeSize = Math.max(40, Math.round((dieSize * 0.75) / 2) * 2)
   const lastReroll = rolling && active.rerollsLeft === 1
+  // The reroll lesson's guide shows once the dice are down (and, after the reroll, once the pair's combo has counted).
+  const lessonShown = !!lesson && settled && (lesson !== 'attack' || comboIn)
 
   const party = versus
     ? { count: versus.foeCount, index: versus.foeIndex }
@@ -984,6 +995,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
           disabled={!canAct || active.rerollsLeft <= 0 || !st.selected.some(Boolean)}
           title={t('ui.battle.selectDice')}
           aria-keyshortcuts="R"
+          data-guide="reroll"
           onClick={reroll}
         >
           {lastReroll ? t('ui.battle.lastReroll') : t('ui.battle.reroll', { left: active.rerollsLeft })}
@@ -994,6 +1006,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
           className="whitespace-nowrap px-2"
           disabled={!canAct}
           aria-keyshortcuts="Space Enter"
+          data-guide="attack"
           onClick={() => dispatch({ t: 'ATTACK' })}
         >
           {t('ui.battle.attack')}
@@ -1230,6 +1243,14 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   return (
     <BattleContexts pace={pace} motionCap={motionCap}>
+      {lesson && (
+        <RerollLessonGuide
+          step={lesson}
+          show={lessonShown}
+          next={Math.max(0, st.selected.findIndex((x) => !x))}
+          bonus={shownR?.combo?.bonus ?? 0}
+        />
+      )}
       {/* The stage on top and the panel under it, on every screen (the user's call, 2026-10-28). A computer's middle
           column: the stage as wide as the height left allows (3:2), the panel framed under it, scrolling inside itself
           when it holds more (a long result); on its sides, from the send-out to the catch, the Bag open (left) and the
@@ -1349,6 +1370,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                 <div
                   className="flex min-h-[30px] flex-wrap items-center justify-center gap-x-2 gap-y-1"
                   aria-live="polite"
+                  data-guide="readout"
                 >
                   {fx.chip && (
                     <Chip key={fx.chip.id} tone="gold" className="text-[16px]">

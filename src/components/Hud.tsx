@@ -102,6 +102,8 @@ function NavEntry({ n, variant }: { n: NavItem; variant: 'side' | 'bottom' }) {
     'aria-label': dot ? `${label} · ${dot.label}` : label,
     onClick: (e: React.MouseEvent) => inFight && e.preventDefault(),
     title: lock ? t(lock === 'portal' ? 'ui.portal.locked' : 'ui.nav.finishFight') : undefined,
+    // What the dice tutorial points at (docs/46 §5): nav-home, nav-shop…
+    'data-guide': `nav-${n.to.slice(1)}`,
   }
   if (variant === 'side')
     return (

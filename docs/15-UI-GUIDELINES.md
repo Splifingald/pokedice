@@ -1116,7 +1116,8 @@ notifications' question last. A new pop-up gets a place in that list, not a list
 - **A set order** (Route 1's opening, docs/46): the switch, but no rules pop-up and no INFO: it only sets the order of
   cards the area already deals, so there is nothing new to learn or do. Its **dice tutorial** (docs/46 §5) rides the
   same switch and has no rules either: it is the explanation, a pointing hand over a dimmed screen (`GuideFrame`), one
-  step at a time, first in the one-time pop-ups' queue.
+  step at a time, first in the one-time pop-ups' queue. So does its **reroll lesson** (docs/46 §6), the same hand over
+  the first fight's dice, REROLL and ATTACK.
 - **A purely visual change** (as the dice throws, docs/37, and the game-feel pass, haptics and battle music, docs/38,
   were): the switch, but no rules pop-up and no INFO: it only changes how something already there looks, sounds or
   feels, so there is nothing to learn or do.

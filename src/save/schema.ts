@@ -408,6 +408,8 @@ export const saveSchema = z.object({
   talentRulesSeen: z.boolean().optional(),
   // The dice tutorial (docs/46 §5): an odd value starts it afresh, never fails the save.
   diceTutorial: z.enum(['started', 'done']).optional().catch(undefined),
+  // The reroll lesson (docs/46 §6): played once.
+  rerollLesson: z.literal('done').optional().catch(undefined),
   // The battle powers (docs/35): the Mega Gems held, bought ones included, which nothing else gives back. A power kind
   // this build doesn't know is dropped rather than failing the save, so an odd one never costs the gems.
   powers: z
