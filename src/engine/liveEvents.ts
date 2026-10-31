@@ -20,6 +20,7 @@ import type {
   LiveEvent,
   LiveRepeat,
   LiveShopItem,
+  LiveType,
   LiveWeek,
   SaveData,
   WheelReward,
@@ -375,40 +376,54 @@ export function liveProblems(list: readonly LiveEvent[], e: LiveEvent, data: Gam
   return out
 }
 
-/** The occasion pictures (public/backgrounds), which an event gets by default from when it runs. */
+/** The live events' pictures (public/backgrounds): one per type, one per occasion. */
 export const LIVE_BANNERS = {
+  shiny: '/backgrounds/live-shiny.png',
+  cash: '/backgrounds/live-cash.png',
+  underground: '/backgrounds/live-underground.png',
   halloween: '/backgrounds/live-halloween.png',
+  winter: '/backgrounds/live-winter.png',
   newyear: '/backgrounds/live-newyear.png',
   spring: '/backgrounds/live-spring.png',
   summer: '/backgrounds/live-summer.png',
   celebration: '/backgrounds/live-celebration.png',
 } as const
 
-/** Each occasion's dates, as month * 100 + day (UTC), first match wins; the rest of the year is a celebration. */
+/** Each occasion's dates, as month * 100 + day (UTC), first match wins. */
 const SEASONS: readonly { banner: keyof typeof LIVE_BANNERS; from: number; to: number }[] = [
   { banner: 'halloween', from: 1015, to: 1107 },
+  { banner: 'winter', from: 1201, to: 1225 },
   { banner: 'newyear', from: 1226, to: 1231 },
   { banner: 'newyear', from: 101, to: 110 },
   { banner: 'spring', from: 301, to: 531 },
   { banner: 'summer', from: 601, to: 831 },
 ]
 
+/** A type's own picture, outside the occasions; a Special Shop has none yet, so it's a celebration. */
+const TYPE_BANNER: Record<LiveType, keyof typeof LIVE_BANNERS> = {
+  shiny: 'shiny',
+  cash: 'cash',
+  underground: 'underground',
+  shop: 'celebration',
+}
+
 /**
- * The picture an event gets until the admin picks one: the occasion of the day halfway through it (a one-off's dates,
- * a yearly one's date). A weekly one comes back all year, so no season fits it: a celebration. The Underground keeps
- * its cave, drawn in code ('').
+ * The picture an event gets until the admin picks one (the user's rule, 2026-10-31): the occasion of the day halfway
+ * through it (a one-off's dates, a yearly one's date) wins, else its type's own. A weekly one comes back all year, so
+ * no occasion fits it: its type's. The Underground is always its cave, the place players dig in.
  */
 export function liveDefaultBanner(e: LiveEvent): string {
-  if (e.type === 'underground') return ''
+  const own = LIVE_BANNERS[TYPE_BANNER[e.type]]
   const r = e.repeat
-  if (r?.kind === 'weekly') return LIVE_BANNERS.celebration
+  if (e.type === 'underground' || r?.kind === 'weekly') return own
   // A yearly one in a leap year, so its 29 February is a date.
   const start = r?.kind === 'yearly' ? Date.UTC(2028, r.month - 1, r.day) + repeatTime(r.time) : Date.parse(e.start)
   const length = r?.kind === 'yearly' ? runLength(r) : Date.parse(e.end) - start
-  if (!Number.isFinite(start)) return LIVE_BANNERS.celebration
+  if (!Number.isFinite(start)) return own
   const mid = new Date(start + (Number.isFinite(length) && length > 0 ? length / 2 : 0))
   const md = (mid.getUTCMonth() + 1) * 100 + mid.getUTCDate()
-  return LIVE_BANNERS[SEASONS.find((s) => md >= s.from && md <= s.to)?.banner ?? 'celebration']
+  const occasion = SEASONS.find((s) => md >= s.from && md <= s.to)
+  return occasion ? LIVE_BANNERS[occasion.banner] : own
 }
 
 /** A new event's settings: every type's defaults, so switching type in the admin starts from sensible numbers. */

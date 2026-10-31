@@ -22,7 +22,11 @@ export const PICTURE_GROUPS: readonly PictureGroup[] = [
     label: 'Event pictures',
     names: {
       '/backgrounds/fortune-wheel.png': 'Fortune Wheel — prize stall at dusk',
+      '/backgrounds/live-shiny.png': 'Shiny Parade — sparkling lakeside meadow, aurora',
+      '/backgrounds/live-cash.png': 'Cash Flow — coin fountain and treasure on the pier',
+      '/backgrounds/live-underground.png': 'Underground — lantern-lit mine, gems and cart',
       '/backgrounds/live-halloween.png': 'Halloween — pumpkin patch under the moon',
+      '/backgrounds/live-winter.png': 'Winter — snowy town, decorated tree, gifts',
       '/backgrounds/live-newyear.png': 'New Year — fireworks over the harbour',
       '/backgrounds/live-spring.png': 'Spring — cherry blossom and red bridge',
       '/backgrounds/live-summer.png': 'Summer — beach, umbrella and stall',

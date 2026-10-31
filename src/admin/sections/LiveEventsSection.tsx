@@ -304,7 +304,7 @@ function LiveEditor({
           </Field>
           <Field
             label="Picture"
-            hint="Home's square, the pop-up, the shop's section. Follows the dates (Halloween, New Year, spring, summer, else a celebration) until you pick one."
+            hint="Home's square, the pop-up, the shop's section. Until you pick one: the occasion of its dates (Halloween, winter, New Year, spring, summer), else its type's own (a Special Shop: a celebration); the Underground, always its cave."
           >
             <PicturePicker value={draft.banner} placeholder="— pick one —" onChange={(banner) => patch({ banner })} />
           </Field>
