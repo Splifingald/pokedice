@@ -2,6 +2,7 @@
 // (every year on a date, every week on a weekday, some weeks of the month). A Shiny Parade boosts wild shiny odds where
 // it runs, a Special Shop sells items for a while (some never sold, some limited per player), Cash Flow multiplies
 // every ₽ earned but selling. A player sees and gets it from the event's badge count.
+import { existsSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   applyRebattleKO,
@@ -14,7 +15,9 @@ import {
   earnedGold,
   emptyProgress,
   leagueArea,
+  LIVE_BANNERS,
   liveCovers,
+  liveDefaultBanner,
   liveEventAt,
   liveById,
   liveEventsAt,
@@ -478,5 +481,47 @@ describe('several live events at once', () => {
     const s = markLiveSeen(fresh(), cashA)
     expect(livePopupNext(s, lives)?.id).toBe('p')
     expect(livePopupDue(markLiveSeen(s, parade), lives)).toBe(false)
+  })
+})
+
+describe('the default picture', () => {
+  const once = (start: string, end: string, type: LiveEvent['type'] = 'shiny') => ({ ...newLiveEvent('d', start, end), type })
+
+  it("is the occasion of the day halfway through a one-off event, else its type's own", () => {
+    expect(liveDefaultBanner(once('2026-10-29T18:00:00Z', '2026-11-01T18:00:00Z'))).toBe(LIVE_BANNERS.halloween)
+    // Starts before Halloween's window, but is mostly in it.
+    expect(liveDefaultBanner(once('2026-10-10T00:00:00Z', '2026-10-30T00:00:00Z', 'cash'))).toBe(LIVE_BANNERS.halloween)
+    expect(liveDefaultBanner(once('2026-12-10T00:00:00Z', '2026-12-13T00:00:00Z', 'shop'))).toBe(LIVE_BANNERS.winter)
+    expect(liveDefaultBanner(once('2026-12-30T00:00:00Z', '2027-01-03T00:00:00Z'))).toBe(LIVE_BANNERS.newyear)
+    expect(liveDefaultBanner(once('2027-04-10T00:00:00Z', '2027-04-13T00:00:00Z'))).toBe(LIVE_BANNERS.spring)
+    expect(liveDefaultBanner(once('2027-07-01T00:00:00Z', '2027-07-04T00:00:00Z'))).toBe(LIVE_BANNERS.summer)
+    expect(liveDefaultBanner(once('2027-02-01T00:00:00Z', '2027-02-04T00:00:00Z'))).toBe(LIVE_BANNERS.shiny)
+    expect(liveDefaultBanner(once('2027-02-01T00:00:00Z', '2027-02-04T00:00:00Z', 'cash'))).toBe(LIVE_BANNERS.cash)
+    // A Special Shop has no picture of its own yet.
+    expect(liveDefaultBanner(once('2027-02-01T00:00:00Z', '2027-02-04T00:00:00Z', 'shop'))).toBe(LIVE_BANNERS.celebration)
+  })
+
+  it("takes a yearly event's date, and gives a weekly one its type's", () => {
+    const base = once('2026-01-01T00:00:00Z', '2026-01-02T00:00:00Z')
+    expect(liveDefaultBanner({ ...base, repeat: { kind: 'yearly', month: 10, day: 31, time: '18:00', hours: 24 } })).toBe(
+      LIVE_BANNERS.halloween,
+    )
+    expect(liveDefaultBanner({ ...base, repeat: { kind: 'yearly', month: 2, day: 29, time: '00:00', hours: 24 } })).toBe(
+      LIVE_BANNERS.shiny,
+    )
+    expect(liveDefaultBanner({ ...base, repeat: { kind: 'weekly', weekday: 6, weeks: [], time: '20:00', hours: 6 } })).toBe(
+      LIVE_BANNERS.shiny,
+    )
+  })
+
+  it('keeps the Underground in its cave, and copes with unset dates', () => {
+    expect(liveDefaultBanner(once('2026-10-31T00:00:00Z', '2026-11-01T00:00:00Z', 'underground'))).toBe(
+      LIVE_BANNERS.underground,
+    )
+    expect(liveDefaultBanner(once('', '', 'cash'))).toBe(LIVE_BANNERS.cash)
+  })
+
+  it('has a file for every picture', () => {
+    for (const url of Object.values(LIVE_BANNERS)) expect(existsSync(`public${url}`), url).toBe(true)
   })
 })
