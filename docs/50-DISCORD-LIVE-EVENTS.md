@@ -102,8 +102,12 @@ Both read what players get: the live Supabase tables (with the public key), the 
 recurring event's runs are each an event of their own (`<id>@<date>`), as in the game. The numbers come from the
 engine (`livePrice`, `kitPrice`, `freeKitRules`, `liveRuns`…), so the posts never disagree with the game.
 
+**In French too:** with the `DISCORD_FRENCH_WEBHOOK` secret, both posts go to `#🥖-français` as well, in French and
+without a ping (`scripts/discord/french.ts` gives the game's French names; [docs/23 § 13](23-DISCORD-SERVER.md) has the
+setup).
+
 Tests: `tests/discord.test.ts` (the hour a start belongs to, recurring runs, the week's bounds, the chart, the
-message's limits).
+message's limits, the French posts).
 
 ## Setting it up
 

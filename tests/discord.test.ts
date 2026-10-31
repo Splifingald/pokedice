@@ -1,12 +1,14 @@
 // The Discord tools (docs/23): the server setup's plan, the daily raid post, the patch notes, the live events and the
 // weekly Ko-fi update.
+import { readdirSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import type { DChannel, DRole } from '../scripts/discord/api'
 import { LAYOUT } from '../scripts/discord/layout'
 import { P } from '../scripts/discord/perms'
 import { blockers, contentPhase, fillMentions, matchChannels, matchRoles, planAll, rolesPhase, type Snapshot } from '../scripts/discord/plan'
 import { raidMessage } from '../scripts/discord/raid-post'
-import { DESCRIPTION_MAX, MESSAGE_MAX, noteMessages, parseNote, splitText } from '../scripts/discord/patch-notes'
+import { DESCRIPTION_MAX, frenchTwin, MESSAGE_MAX, noteLang, noteMessages, parseNote, splitText } from '../scripts/discord/patch-notes'
+import { fr, frenchData } from '../scripts/discord/french'
 import { dueLiveEvents, liveBanner, liveDetails, liveMessage, repeatLabel } from '../scripts/discord/live-event-post'
 import { nextAfterWeek, weekChart, weekMessage, weekOf, weekRuns, WEEK_MAX } from '../scripts/discord/live-week-post'
 import { coverage, gauge, money, supportMessage } from '../scripts/discord/support-post'
@@ -247,6 +249,26 @@ describe('patch notes', () => {
     expect(msgs.slice(1).every((m) => !('content' in m))).toBe(true)
     expect(msgs.flatMap((m) => m.embeds).map((e) => e.description).join('\n\n')).toBe(body)
   })
+
+  it('posts a French twin in French, to #français, without the English ping', () => {
+    expect(noteLang('patch-notes/2026-11-02-v3.fr.md')).toBe('fr')
+    expect(noteLang('patch-notes/2026-11-02-v3.md')).toBe('en')
+    expect(frenchTwin('patch-notes/2026-11-02-v3.md')).toBe('patch-notes/2026-11-02-v3.fr.md')
+    const [msg] = noteMessages({ title: 'Version 3', body: 'Salut' }, { lang: 'fr' })
+    expect(msg!.content).toBe('Nouvelle mise à jour : **Version 3**')
+    expect(msg!.embeds[0]!.author!.name).toBe('Notes de mise à jour')
+    expect(msg!.embeds[0]!.footer!.text).toBe('Jouer : poke-dice.netlify.app')
+    expect(msg!.allowed_mentions.roles).toEqual([])
+  })
+
+  // Every update goes to #français too (CLAUDE.md), from the first one after the French channel got its posts.
+  it('has a French version of every note since November 2026', () => {
+    const files = readdirSync('patch-notes')
+    const missing = files
+      .filter((f) => /^\d{4}-\d{2}-\d{2}-.+\.md$/.test(f) && !f.endsWith('.fr.md') && f >= '2026-11-01')
+      .filter((f) => !files.includes(f.replace(/\.md$/, '.fr.md')))
+    expect(missing).toEqual([])
+  })
 })
 
 describe('live events', () => {
@@ -321,6 +343,26 @@ describe('live events', () => {
     expect(liveMessage(d, { ...run!, start: '2026-12-25T18:00:00Z' }).embeds[0]!.fields!.find((f) => f.name === 'Also on')!.value).toContain('Big Cash')
   })
 
+  it('says it all again in French, with the game\'s own French names', () => {
+    const d = withEvents()
+    const e = event({ type: 'cash', cash: { multiplier: 1.5 }, minBadges: 8, title: { en: 'Christmas Cash' } })
+    const msg = liveMessage(frenchData(d), e, { roleId: '9', lang: 'fr' })
+    expect(msg.content).toBe(`<@&9> 💰 **Christmas Cash** : c’est parti ! Fin <t:${at(e.end) / 1000}:R>.`)
+    expect(msg.embeds[0]!.author!.name).toBe(`💰 Événement · ${fr('ui.live.cash.name', '')}`)
+    expect(msg.embeds[0]!.description).toContain('**+50 %** sur chaque ₽')
+    expect(msg.embeds[0]!.fields!.map((f) => f.name)).toEqual(['Fin', 'Pour qui'])
+    // A French title wins; without any, the type's French name.
+    expect(liveMessage(d, { ...e, title: { en: 'Christmas Cash', fr: 'Noël en or' } }, { lang: 'fr' }).embeds[0]!.title).toBe('Noël en or')
+    expect(liveMessage(d, { ...e, title: {} }, { lang: 'fr' }).embeds[0]!.title).toBe(fr('ui.live.cash.name', ''))
+
+    const item = Object.values(d.items)[0]!
+    const shop = event({ type: 'shop', shop: { items: [{ key: item.key, price: 1_000_000, limit: 3, regions: 'all' }] } })
+    expect(liveDetails(frenchData(d), shop, 'fr')[1]).toBe(`• **${fr(`item.${item.key}`, item.name)}** ₽${(1_000_000).toLocaleString('fr')} · 3 par Dresseur`)
+    expect(repeatLabel({ kind: 'weekly', weekday: 5, weeks: [1, 'last'], time: '18:00', hours: 6 }, 'fr')).toBe('le 1er et le dernier vendredi de chaque mois')
+    expect(repeatLabel({ kind: 'weekly', weekday: 0, weeks: [], time: '18:00', hours: 6 }, 'fr')).toBe('chaque dimanche')
+    expect(repeatLabel({ kind: 'yearly', month: 12, day: 24, time: '00:00', hours: 24 }, 'fr')).toBe('chaque année le 24 décembre')
+  })
+
   it('takes a banner as an area key, a path or a web address', () => {
     expect(liveBanner('')).toBeNull()
     expect(liveBanner('/events/x.png', 'https://s')).toBe('https://s/events/x.png')
@@ -370,6 +412,16 @@ describe('the weekly live events calendar', () => {
     expect(text).toContain(`<t:${at(fri.start) / 1000}:f> → <t:${at(fri.end) / 1000}:f> · 🏅 8+ badges`)
     expect(text).toContain('+100% on every ₽')
     expect(msg.embeds[0]!.image!.url).toBe('https://poke-dice.netlify.app/area-art/village.png')
+  })
+
+  it('has a French calendar too', () => {
+    const fri = ev('fri', '2027-01-01T18:00:00Z', '2027-01-02T18:00:00Z', { type: 'cash', cash: { multiplier: 2 }, minBadges: 8 })
+    const msg = weekMessage(frenchData(withEvents(fri)), monday, { lang: 'fr' })!
+    expect(msg.content).toBe('**1 événement cette semaine !**')
+    expect(msg.embeds[0]!.title).toBe('Cette semaine : 28 déc. – 3 janv.')
+    expect(msg.embeds[0]!.description).toContain(`${' '.repeat(13)}L M M J V S D `)
+    expect(msg.embeds[0]!.description).toContain('+100 % sur chaque ₽')
+    expect(msg.embeds[0]!.description).toContain('🏅 8 badges ou plus')
   })
 
   it('posts nothing on a week without an event, and keeps a full week under Discord\'s limit', () => {
