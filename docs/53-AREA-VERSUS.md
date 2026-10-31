@@ -159,3 +159,29 @@ same, +10 %), everything measured up to the League. Every region together:
 - 6 seeds: a region's ±2 levels is noise (one gym wipe more or less). Runs that never reached the League (the
   simulated player falls to Kanto's Victory Road legendary hundreds of times, card or not) are left out.
 
+### The money side (2026-10-31)
+
+The user's question: "does it account for the additional money earned, which also makes the game easier? If the impact
+is too big we can decrease money earned in areas and trainers a bit." The simulated player spends every ₽ on its
+team's dice and combos after each trainer, so ₽ always counted; `pnpm area-versus-money 6 900` now shows it apart.
+Every region together, up to the League (real players at the player's level; wipes are medians):
+
+| Card | ₽ earned | ₽ per encounter | from real players | Upgrade levels bought | Lv at League | Wipes on the way | Wipes at the League | League cleared |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Off | 4,410 | 13.8 | — | 84.7 | 70.5 | 26.5 | 33.5 | 77 % |
+| On, ₽ ×1.5 (as built) | +16 % | +24 % | 21 % | +0.3 | +1.2 | 20 | 24 | 81 % |
+| On, ₽ ×1 (a trainer's) | +3 % | +11 % | 15 % | −0.1 | +1.1 | 20.5 | 25 | 81 % |
+| On, no ₽ (XP only) | −14 % | −7 % | — | −2.5 | +0.6 | 21 | 24 | 81 % |
+| On, ×1.5, all trainer ₽ −10 % | −1 % | +7 % | 22 % | −0.3 | +0.9 | 20.5 | 25 | 81 % |
+| On, ×1.5, all trainer ₽ −20 % | −10 % | −3 % | 21 % | −0.9 | +1.0 | 22 | 24 | 78 % |
+
+- Real players bring a fifth of the ₽ earned before the League (+16 % in all), but it buys almost nothing more: the
+  upgrades' prices climb steeply, so the team reaches the League with 0.3 upgrade levels more.
+- What eases the way (fewer wipes on the way and at the League, the League cleared a little more often) is the same with
+  no ₽ at all: it comes from the fights' XP and the heals, not from the money.
+- To keep the ₽ as they were: every trainer's ₽ −10 % (game_config `goldMultiplier` 0.5 → 0.45) cancels it (−1 %), or
+  the real players' ×1.5 at ×1 (+3 %). Neither changes the difficulty. The money finds on the ground are apart (the
+  loot tables), not in these numbers.
+- Unova's League is beyond the simulated player in most runs, card or not (its median of ~600 wipes there), and a few
+  Galar and Paldea runs never reach it: read those regions' League columns as noise.
+
