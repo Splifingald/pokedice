@@ -3,9 +3,17 @@
 // (engine/rival `asSeenBy`), and is Kanto's champion all the same.
 import type { ChampionCinema } from '../champion'
 import { geetaChampion } from './geeta'
+import { ghetsisChampion } from './ghetsis'
+import { lanceChampion } from './lance'
 import { leonChampion } from './leon'
+import { palmerChampion } from './palmer'
+import { wallaceChampion } from './wallace'
 
 export const CHAMPION_CINEMAS: Readonly<Record<string, ChampionCinema>> = {
+  lance: lanceChampion,
+  wallace: wallaceChampion,
+  palmer: palmerChampion,
+  ghetsis: ghetsisChampion,
   leon: leonChampion,
   geeta: geetaChampion,
 }

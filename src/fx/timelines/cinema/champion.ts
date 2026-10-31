@@ -24,6 +24,7 @@ import {
   H,
   quad,
   screenFlash,
+  screenShake,
   skippingNow as skippingSound,
   Stage,
   STEP,
@@ -70,6 +71,11 @@ export interface ChampionScene<X> {
   aura: readonly [string, string, string, string]
   /** Its flash on the reveal. */
   flash?: string
+  /**
+   * The wrapper shakes the whole stage by `st.screenShakes` (Stage's own, calm-OS aware); a scene that shakes its own
+   * layers with `screenShake` leaves it off.
+   */
+  shake?: boolean
   sample: ChampionSample
   /** Other Pokémon it shows whatever the champion's team (Red's Pikachu…): front sprites, loaded before it plays. */
   extras?: readonly number[]
@@ -165,6 +171,10 @@ export function championCinema<X>(spec: ChampionScene<X>): ChampionCinema {
         }
     },
     draw(g, s, t) {
+      const sh = spec.shake ? screenShake(t, s.screenShakes) : { x: 0, y: 0 }
+      if (sh.x || sh.y) rect(g, 0, 0, W, H, '#05040c')
+      g.save()
+      g.translate(sh.x, sh.y)
       g.drawImage(s.bg.cv, 0, 0)
       s.bg.dyn(g, t)
       const k = 1 - span(t, T.fade, T.out)
@@ -205,6 +215,7 @@ export function championCinema<X>(spec: ChampionScene<X>): ChampionCinema {
       }
       s.fx.draw(g)
       spec.front?.(g, s, t, k)
+      g.restore()
       if (within(t, R, R + 0.3)) screenFlash(g, spec.flash ?? '#ffffff', 0.75 * (1 - span(t, R, R + 0.3)))
       if (t < 0.5) wash(g, '#000000', 1 - span(t, 0, 0.5), 8)
       const bars = Math.round(
