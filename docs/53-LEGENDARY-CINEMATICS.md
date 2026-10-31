@@ -71,10 +71,13 @@ Johto's:
 - **Raikou — the storm** (`raikou.ts`, boss, reveal 3.95). A plain at night by the Burned Tower's ruin, rain. Lightning
   strikes faster and faster, somewhere else each time; at each strike Raikou's outline crackles for an instant, a
   streak along the ground to the next. The dark; sparks run over the ground to one spot; one great bolt, and it is there.
-- **Entei — the Burned Tower on fire** (`entei.ts`, boss, reveal 4.0). Charred posts and beams, the night through the
-  broken roof. Flames come up through the floor into a wall of fire; a burning beam crashes down; the fire whirls up
-  into the roof's light; on a high beam a shape in the flames roars, then leaps down in an arc of fire and lands in a
-  ring of flame.
+- **Entei — the Brass Tower burns** (`entei.ts`, boss, reveal 4.4). Ecruteak on a stormy night: the four-tiered Brass
+  Tower black and brass against the sky, the town's roofs in front, sleeping volcanoes on the skyline. Lightning strikes
+  the spire and the fire runs down it tier by tier; the upper tiers snap off and topple, and the tower sinks into a
+  plume of fire and ash. In the hush Ho-Oh crosses the sky and its rainbow light falls on the ashes; they crack and glow
+  gold, and Entei climbs out reborn and roars. The volcanoes erupt one after another, and a pillar of Sacred Fire roars
+  up round it and blows out into a ring of fire on the reveal. (Ho-Oh is drawn in code: the battle stage loads only the
+  foe's sprite.)
 - **Suicune — the lake** (`suicune.ts`, boss, reveal 3.95). A murky lake under a full moon, mist on the water. The north
   wind lights an aurora; Suicune runs across the water from the far shore, each footfall a ripple that turns the water
   clear and blue; it bounds onto a rock, and the reveal purifies the whole lake.
