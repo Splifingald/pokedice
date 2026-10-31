@@ -177,7 +177,7 @@ The admin sees **BOT** on the bots, before their names, in the opponents and the
    this week's bot teams now** does its work.
 
 8. For **the trainer card's Versus best** (§10), run
-   <https://github.com/Splifingald/pokedice/blob/ccr-fb9d3a3a-05h11u/supabase/migrations/0097_versus_best_trophies.sql>
+   <https://github.com/Splifingald/pokedice/blob/version/2_8/supabase/migrations/0097_versus_best_trophies.sql>
    (after 0082 and 0033; safe to run again; `supabase/seed.sql` doesn't inline it). Without it the card's line says
    "—" while the league is on.
 
