@@ -303,11 +303,32 @@ export const talentOf = (data: GameData, inst: Pick<PokemonInstance, 'dex' | 'ta
 export const carriedTalent = (data: GameData, dex: number, has: boolean | undefined): TalentKey | null =>
   has && talentsOn(data) ? familyTalent(data, dex) : null
 
+const evolvedForms = new WeakMap<GameData['species'], Set<number>>()
+
+/** A species another one evolves into (Ivysaur, Charizard), not a first stage nor a form. */
+function isEvolvedForm(data: GameData, dex: number): boolean {
+  let set = evolvedForms.get(data.species)
+  if (!set) {
+    set = new Set(Object.values(data.species).flatMap((s) => s.evolutions.map((e) => e.toDex)))
+    evolvedForms.set(data.species, set)
+  }
+  return set.has(dex)
+}
+
+/**
+ * A Pokémon that carries its talent however it came, those owned before the switch included (the user's calls,
+ * 2026-10-30 and 31): a legendary or mythical, Ditto, and a starter line's evolved member (it found its talent
+ * evolving, as starter lines always do, had the switch been on).
+ */
+const ownedCarries = (data: GameData, dex: number): boolean =>
+  alwaysTalented(data, dex) || (isStarterFamily(data, dex) && isEvolvedForm(data, dex))
+
 /**
  * Every Pokémon the save holds, each under its region: the live Box, the parked regions' Boxes and the Day Care's
  * residents. A Pokémon that came with its talent (a trade, a gift, a world's Pokémon gone home) unlocks its family in
- * its region; every Pokémon of an unlocked family carries it from then on, and never loses it. Called as every save
- * settles; the same save back when nothing changes.
+ * its region, and so does one that always carries it (`ownedCarries`: a legendary, Ditto, an evolved starter); every
+ * Pokémon of an unlocked family carries it from then on, and never loses it. Called as every save settles; the same
+ * save back when nothing changes.
  */
 export function syncTalents(save: SaveData, data: GameData): SaveData {
   const live = regionOf(save)
@@ -325,14 +346,10 @@ export function syncTalents(save: SaveData, data: GameData): SaveData {
     ...(save.dayCare?.residents ?? []).map((r) => [r.region, [r.inst]] as [RegionId, PokemonInstance[]]),
   ]
   let changed = false
-  // Ditto always carries Imposter: every Ditto unlocks it in its region, those owned before the switch included.
-  const always = talentsOn(data)
+  const on = talentsOn(data)
   for (const [region, mons] of groups)
     for (const p of mons)
-      if (
-        (p.talent || (always && familyOf(data, p.dex) === DITTO_DEX)) &&
-        !setOf(region).has(familyOf(data, p.dex))
-      ) {
+      if ((p.talent || (on && ownedCarries(data, p.dex))) && !setOf(region).has(familyOf(data, p.dex))) {
         setOf(region).add(familyOf(data, p.dex))
         changed = true
       }

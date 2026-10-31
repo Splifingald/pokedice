@@ -21,7 +21,7 @@ wild rarely carries it; catching one unlocks the talent for the whole family. Th
 | Unlock | **Per region, for the whole family**: catching one that carries it unlocks it for every Pokémon of that family the player owns there, and every one caught there later |
 | A weaker one | Can be caught **whatever its level** while the family is locked; it **merges**: the family learns the talent, the Pokémon is let go ("Its talent passes to your Rattata") |
 | What the player sees | A family's talent is "???" until one carrying it is **met**; then its name, greyed until learnt. A wild one with its talent says so before the fight |
-| Pokémon owned before | **None** carries a talent: the switch starts everyone at zero |
+| Pokémon owned before | Start at zero, **but** legendaries and mythicals, Ditto and a starter line's evolved members (Ivysaur, Charizard…) carry theirs, owned before or not (the user's call, 2026-10-31: they would have had it, a starter line finding its talent as it evolves). `ownedCarries`, as the save settles; their family unlocks with them |
 | Foes | **Use theirs**: wild ones at the odds, a gym leader's, an Elite Four's or a Champion's ace always, any other trainer Pokémon at the odds |
 | Versus and raids | **Apply**: the server's team snapshots carry the talent (0095). Raider acts only in raids, Power Spot and Friend Guard in double battles and raids |
 | Trades | A traded Pokémon **keeps** its talent (and unlocks its family on arrival). A listing can ask for a species **with its hidden talent** |

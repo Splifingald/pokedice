@@ -139,6 +139,23 @@ describe('catching a talented one', () => {
     expect(caught.events).toContainEqual(expect.objectContaining({ kind: 'talent', how: 'caught' }))
   })
 
+  it('owned before the switch: legendaries, mythicals and evolved starters carry theirs, the rest start at zero', () => {
+    const save = saveWith([
+      { dex: 6, level: 50 },
+      { dex: 150, level: 70 },
+      { dex: 151, level: 40 },
+      { dex: 1, level: 5 },
+      { dex: 20, level: 30 },
+    ])
+    const synced = syncTalents(save, on)
+    expect(synced.box.map((p) => !!p.talent)).toEqual([true, true, true, false, false])
+    // Charizard's family carries it: a Charmander caught later too, and the Kanto list says so.
+    expect(familyUnlocked(synced, on, 4)).toBe(true)
+    // Switched off, nothing changes.
+    const off = makeData({ hiddenTalents: { ...D, access: 'off' } })
+    expect(syncTalents(saveWith([{ dex: 6, level: 50 }], off), off).box[0]!.talent).toBeUndefined()
+  })
+
   it('a Pokémon that arrives with its talent (a trade) unlocks its family as the save settles', () => {
     const save = saveWith([
       { dex: 20, level: 30 },
