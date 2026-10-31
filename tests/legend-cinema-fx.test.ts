@@ -60,7 +60,9 @@ describe('the raid cinematics', () => {
       Object.keys(RAID_CINEMAS)
         .map(Number)
         .sort((a, b) => a - b),
-    ).toEqual([130, 144, 145, 146, 150, 249, 250, 480, 481, 482, 483, 484, 485, 486, 487, 488, 493, 716, 717, 718])
+    ).toEqual([
+      130, 144, 145, 146, 150, 249, 250, 480, 481, 482, 483, 484, 485, 486, 487, 488, 493, 716, 717, 718,
+    ])
   })
 
   for (const [dex, c] of Object.entries(RAID_CINEMAS))
