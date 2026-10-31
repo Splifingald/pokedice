@@ -152,6 +152,73 @@ test('the leave picker lists every region’s Box by level, and Compatible only 
   await expect(page.getByText(/Sentret is back!.*Johto Box/)).toBeVisible()
 })
 
+test('an Egg hatches its parents’ line, into the Box the player picks', async ({ page }) => {
+  const data = gameData()
+  const base = open()
+  const sentret = createInstance(161, 30, data, 'sentret', 0)
+  const johto = {
+    gold: 0,
+    pokedex: [161],
+    box: [sentret],
+    team: [sentret.id],
+    inventory: {},
+    comboLevels: base.comboLevels,
+    dieLevels: base.dieLevels,
+    currentAreaId: '',
+    areaProgress: {},
+  }
+  // Eevee and a Ditto left it: an Eevee, which both Kanto's and Johto's Pokédexes list.
+  const egg = { at: 0, parents: [{ dex: 133 }, { dex: 132 }] as [{ dex: number }, { dex: number }] }
+  await boot(page, { ...base, parked: { johto }, dayCare: { residents: [], guests: [], eggClaimed: true, visited: true, egg } })
+  await page.goto('/daycare')
+
+  await page.getByRole('button', { name: /hatch it/i }).last().click()
+  const moment = page.getByRole('dialog', { name: 'Egg hatching' })
+  await moment.getByRole('button', { name: 'SKIP ▸▸' }).click()
+  await expect(moment.getByText(/Eevee hatched from the Egg!/).first()).toBeVisible()
+  // The Box pick: Kanto (live) first and picked, Johto at its own level (25, its Box's 30 minus 5), NEW there.
+  const pick = moment.getByRole('radiogroup', { name: 'Where Eevee goes' })
+  await expect(pick.getByRole('radio')).toHaveCount(2)
+  await expect(pick.getByRole('radio', { name: /Kanto/ })).toHaveAttribute('aria-checked', 'true')
+  const toJohto = pick.getByRole('radio', { name: /Johto/ })
+  await expect(toJohto).toContainText('Lv.25')
+  await expect(toJohto).toContainText('NEW')
+  await toJohto.click()
+  await expect(moment.getByText('Lv.25').first()).toBeVisible()
+  await moment.getByRole('button', { name: /send it there/i }).click()
+  await expect(moment.getByText('It went to your Johto Box.')).toBeVisible()
+  await moment.getByRole('button', { name: 'Done' }).click()
+  await expect(moment).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /hatch it/i })).toHaveCount(0)
+})
+
+test('one Box only: Raichu’s Egg hatches a Pichu straight into Johto’s Box, with no pick', async ({ page }) => {
+  const data = gameData()
+  const base = open()
+  const sentret = createInstance(161, 30, data, 'sentret', 0)
+  const johto = {
+    gold: 0,
+    pokedex: [161],
+    box: [sentret],
+    team: [sentret.id],
+    inventory: {},
+    comboLevels: base.comboLevels,
+    dieLevels: base.dieLevels,
+    currentAreaId: '',
+    areaProgress: {},
+  }
+  const egg = { at: 0, parents: [{ dex: 26 }, { dex: 132 }] as [{ dex: number }, { dex: number }] }
+  await boot(page, { ...base, parked: { johto }, dayCare: { residents: [], guests: [], eggClaimed: true, visited: true, egg } })
+  await page.goto('/daycare')
+
+  await page.getByRole('button', { name: /hatch it/i }).last().click()
+  const moment = page.getByRole('dialog', { name: 'Egg hatching' })
+  await moment.getByRole('button', { name: 'SKIP ▸▸' }).click()
+  await expect(moment.getByText(/Pichu hatched from the Egg!/).first()).toBeVisible()
+  await expect(moment.getByRole('radiogroup')).toHaveCount(0)
+  await expect(moment.getByText('It went to your Johto Box.')).toBeVisible()
+})
+
 for (const theme of ['light', 'dark'] as const)
   test(`every text keeps its contrast (${theme}): short of ₽, then an Egg waiting`, async ({ page }) => {
     const data = gameData()

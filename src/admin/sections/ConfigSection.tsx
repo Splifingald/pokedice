@@ -988,7 +988,7 @@ function DayCareBox() {
         {week('breed').toFixed(1)} Eggs a week (Ditto pairs: {week('ditto').toFixed(1)}).
       </p>
       <div className="grid gap-3 sm:grid-cols-4">
-        <Field label="Unowned weight" hint="× odds of a species not in the Pokédex (owned = 1)">
+        <Field label="Unowned weight" hint="× odds of a line, or a pool species, not in the Pokédex (owned = 1)">
           {num('unownedWeight', 0)}
         </Field>
         <Field label="Hatch: rank" hint="the n-th lowest level owned">
@@ -999,7 +999,9 @@ function DayCareBox() {
       </div>
       <div className="grid gap-2">
         <p className="text-base text-muted">
-          Eggs hatch into the first form of a line that evolves, starters excluded, and only from the region they are
+          An Egg hatches the first form of one parent’s line (Ditto passes none on), from the regions the player
+          has discovered, into the Box they pick. An Egg no parent passes a line on to (the free first one, Ditto
+          × Ditto) hatches the first form of a line that evolves, starters excluded, from the region it is
           hatched in:
         </p>
         {pools.map(({ region, pool }) => (

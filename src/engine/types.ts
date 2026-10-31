@@ -2167,6 +2167,13 @@ export interface EggParent {
   owner?: string
 }
 
+/** What an Egg holds once it has hatched, before it reaches a Box: its species, and the shiny and talent rolls. */
+export interface Hatchling {
+  dex: number
+  shiny?: true
+  talent?: true
+}
+
 export interface DayCareState {
   residents: DayCareResident[]
   /** Friends' Pokémon visiting, at most `friendSlots`, no empty entries (the UI draws the free slots). */
@@ -2179,8 +2186,11 @@ export interface DayCareState {
   breedAt?: number
   /** When the last Ditto check ran (ms). */
   dittoAt?: number
-  /** The Egg waiting to hatch: one at a time. `gift` is the free first one. */
-  egg?: { at: number; parents?: [EggParent, EggParent]; gift?: true }
+  /**
+   * The Egg waiting to hatch: one at a time. `gift` is the free first one. `hatchling` is what it holds, rolled the
+   * first time it hatches and kept until the player picks its Box, so closing the game mid-hatch rolls nothing again.
+   */
+  egg?: { at: number; parents?: [EggParent, EggParent]; gift?: true; hatchling?: Hatchling }
 }
 
 export type PlayerCharacter = 'red' | 'green'
