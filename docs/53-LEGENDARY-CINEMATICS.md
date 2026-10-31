@@ -75,6 +75,23 @@ Johto's:
   out of it in green rings and the forest turns with each one (spring, summer, autumn, winter, faster and faster) under
   the hands of a great clock of light; the rings close into a portal and Celebi pops out, the forest back in spring.
 
+Sinnoh's mythicals (and Victini):
+
+- **Phione** (`phione.ts`, boss, reveal 3.85). A warm sea at sunset: floating lights drift into a slow whirl, rise in a
+  helix, gather into one star that drops into the water, and Phione bobs up.
+- **Manaphy** (`manaphy.ts`, boss, reveal 4.0). The Sea Temple Samiya wakes rune by rune; Heart Swap: a pink and a blue
+  heart wind round each other, fuse, beat twice and burst with Manaphy inside.
+- **Darkrai** (`darkrai.ts`, boss, reveal 4.15). Newmoon Island under a dead moon: the stars go out, the trees' shadows
+  creep, eyes open in the woods; Dark Void swallows everything, a cyan eye opens in the black, the dark shatters.
+- **Shaymin** (`shaymin.ts`, boss, reveal 3.9). The Flower Paradise under a sour haze: the light gathers into a great
+  Gracidea bud, the field blooms pink in a widening ring, Seed Flare bursts the flower open.
+- **Victini** (`victini.ts`, boss, reveal 3.85). Liberty Garden's lighthouse at night: its beam turns to fire, victory
+  fireworks, the lantern blows, two comets carve a giant blazing V where Victini springs up.
+- **Arceus** (`arceus.ts`): the boss fight (reveal 4.3) above Mt. Coronet's clouds, the Azure Flute's notes opening a
+  gate to the Hall of Origin, a stairway of light building itself, the plates falling like meteors; the daily raid
+  (`arceusRaidCinema`, reveal 5.1) the Hall of Origin building itself out of light, the 17 plates in a turning ring, the
+  golden wheel drawn in the sky, Judgment streaking the plates into its hub.
+
 The bosses share their ending (`boss.ts`, `bossCinema`): the burst and rings in their colours, the name card, the scene
 dissolving into the battle's ground, the HUD's cues, the send-out. Mew's predates it and has its own copy.
 

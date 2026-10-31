@@ -14,6 +14,12 @@ import { mewtwoCinema } from './mewtwo'
 import { raikouCinema } from './raikou'
 import { suicuneCinema } from './suicune'
 import { zapdosCinema } from './zapdos'
+import { arceusCinema, arceusRaidCinema } from './arceus'
+import { darkraiCinema } from './darkrai'
+import { manaphyCinema } from './manaphy'
+import { phioneCinema } from './phione'
+import { shayminCinema } from './shaymin'
+import { victiniCinema } from './victini'
 
 export { wordsAt } from './kit'
 export type { Cinema, CinemaParams } from './kit'
@@ -28,6 +34,8 @@ export const RAID_CINEMAS: Readonly<Record<number, Cinema>> = {
   150: mewtwoCinema,
   249: lugiaCinema,
   250: hoohCinema,
+  // Arceus's daily raid (its boss fight has its own, below).
+  493: arceusRaidCinema,
 }
 
 /** The bosses' cinematics, on the battle stage with the name card and the send-out: Mew first. */
@@ -37,4 +45,10 @@ export const BOSS_CINEMAS: Readonly<Record<number, BossCinema>> = {
   244: enteiCinema,
   245: suicuneCinema,
   251: celebiCinema,
+  489: phioneCinema,
+  490: manaphyCinema,
+  491: darkraiCinema,
+  492: shayminCinema,
+  493: arceusCinema,
+  494: victiniCinema,
 }

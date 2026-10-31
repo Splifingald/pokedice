@@ -55,12 +55,12 @@ describe('the raid intro’s words', () => {
 })
 
 describe('the raid cinematics', () => {
-  it('has Kanto’s birds and Mewtwo, then the red Gyarados, Lugia and Ho-Oh', () => {
+  it('has each finished legend’s raid', () => {
     expect(
       Object.keys(RAID_CINEMAS)
         .map(Number)
         .sort((a, b) => a - b),
-    ).toEqual([130, 144, 145, 146, 150, 249, 250])
+    ).toEqual([130, 144, 145, 146, 150, 249, 250, 493])
   })
 
   for (const [dex, c] of Object.entries(RAID_CINEMAS))
@@ -84,12 +84,12 @@ describe('the raid cinematics', () => {
 })
 
 describe('the bosses’ cinematics', () => {
-  it('has Mew, then the legendary beasts and Celebi', () => {
+  it('has each finished mythical’s and boss’s fight', () => {
     expect(
       Object.keys(BOSS_CINEMAS)
         .map(Number)
         .sort((a, b) => a - b),
-    ).toEqual([151, 243, 244, 245, 251])
+    ).toEqual([151, 243, 244, 245, 251, 489, 490, 491, 492, 493, 494])
   })
 
   for (const [dex, c] of Object.entries(BOSS_CINEMAS))
