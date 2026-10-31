@@ -77,12 +77,15 @@ save starts at ₽0, so it is exactly the price of the starter's type die at Lv.
 bundled tables). Right then, a **pointing hand** walks the player to it, step by step, **once** (the user's request,
 2026-10-28). It follows the set opening's switch: it is the opening's last step, not a feature of its own.
 
-1. **The money** in the top bar ("You won ₽10! Spend it to make Charmander stronger…"): it opens the Poké Mart, on a
-   phone and on PC alike, from any page.
-2. The Mart's **Upgrades** tab.
-3. Upgrades' **Dice Types** view.
-4. The starter's **type die**'s ₽10 button ("Charmander rolls Fire dice. Upgrade the Fire die for ₽10…").
-5. Bought: "Well done! Your Fire die is Lv.2 now…" and **BACK TO Route 1**, which ends it for good and returns to the area.
+1. **Home** ("You won ₽10! Spend it to make Charmander stronger. First, head Home."): the bottom bar's Home tab on a
+   phone, the side rail's on PC. Skipped when the player is on Home already.
+2. Home's **Shop** tab ("…Tap Shop: your Pokédollars are spent there."), the bottom bar's on a phone, the side rail's on
+   PC: the way to the Mart the player will use from then on, rather than the top bar's money (the user's call,
+   2026-10-31). With ₽10 to spend, the tab's dot opens the Mart on Upgrades already, and the next step is skipped.
+3. The Mart's **Upgrades** tab.
+4. Upgrades' **Dice Types** view.
+5. The starter's **type die**'s ₽10 button ("Charmander rolls Fire dice. Upgrade the Fire die for ₽10…").
+6. Bought: "Well done! Your Fire die is Lv.2 now…" and **BACK TO Route 1**, which ends it for good and returns to the area.
 
 - **Fully guided**: the screen dims but for the one button to tap (a gold ring around it), the hand points at it (from
   below, or from above when it sits low on the screen) and taps toward it, and Prof. Oak's bubble says why on the
@@ -98,4 +101,32 @@ bundled tables). Right then, a **pointing hand** walks the player to it, step by
 - **No rules card, no INFO**: it is the explanation (docs/15 §20).
 - **The pieces**: `src/engine/tutorial.ts` (the starter, its die and price, due, the step), `DiceTutorial`
   (`GuideFrame`, `GuideBubble`) and `TutorialHand` (the hand, drawn pixel by pixel), on the kitchen sink. Upgrades'
-  buy buttons carry `data-guide="buy-{kind}-{id}"`.
+  buy buttons carry `data-guide="buy-{kind}-{id}"`, the nav's tabs `data-guide="nav-home"`, `nav-shop`…
+
+## 6. The reroll lesson
+
+A new player's **first fight** teaches the reroll and the combos, simply and fast (the user's request, 2026-10-31):
+
+1. The first throw is the player's own, attacked with as it falls.
+2. The **second throw is rigged to be bad**: the worst the starter's dice can do (the lowest sum with no combo and no
+   status face, `lessonBadRoll`: Charmander's Fire and base dice show 2 and 1). The screen dims but for the dice, the
+   hand points at the next one to pick: "Ouch, a bad roll! You can throw dice again: tap both dice to pick them."
+3. Both picked, the hand moves to **REROLL** (the dice stay lit): "Now REROLL: the picked dice are thrown again. Each
+   battle gives only a few rerolls, so use them well!"
+4. The **reroll lands a pair of 4s** (`lessonPairRoll`; every starter's dice have a plain 4, else the highest number
+   they all have). Once the combo has counted, the dice and the readout (its "Pair +2" chip) are lit and the hand points
+   at **ATTACK**: "A pair! Two dice showing the same number make a combo: +2 damage. Bigger combos hit even harder. Now
+   ATTACK!" The hit (4 + 4 + 2 = 10) knocks out the opening's Rattata Lv.2 in all but the rarest fights.
+
+- **The engine rigs it** (`src/engine/lesson.ts`, `BattleState.lesson`): `createBattle`'s `rerollLesson` arms it; the
+  reducer counts the player's throws, makes the second one bad (with a reroll left and 2+ dice), lands the reroll's pair
+  and marks the lesson done with the ATTACK. The UI only points (`RerollLessonGuide`, on `GuideFrame`): it reads the
+  step from the battle state. Every tap but the step's own goes nowhere, keys too (the dice's numbers, R, Space).
+- **When** (`rerollLessonDue`): fights on the set opening's area while its first round isn't won, played by hand (not on
+  auto, not a double battle), the set opening switched on, until the lesson's ATTACK (`save.rerollLesson: 'done'`). A
+  fight that ends first (Rattata K.O. by the first throw: a pair of 6s) carries it to the next one's second throw. A
+  player already past the dice tutorial never gets it.
+- **No switch of its own, no rules**: like the dice tutorial, it is the set opening's, and it is the explanation.
+- **The pieces**: `src/engine/lesson.ts`, `rerollLessonDue` in `src/engine/tutorial.ts`, `RerollLesson.tsx`;
+  `GuideFrame` lights `spots` (seen, not tapped) and points its hand at `handAt` inside the hole. The tray, its dice,
+  the readout, REROLL and ATTACK carry `data-guide`. On the kitchen sink, each step on a mock battle panel.

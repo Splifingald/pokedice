@@ -81,9 +81,10 @@ describe('the dice tutorial (docs/46 §5)', () => {
     expect(startDiceTutorial(finishDiceTutorial(bought)).diceTutorial).toBe('done')
   })
 
-  it('reads its step from the page: to the Mart, Upgrades, Dice Types, the die', () => {
+  it('reads its step from the page: Home, its Mart tab, Upgrades, Dice Types, the die', () => {
     const save = winRoundOne(newSave(4, on, 0, newId), on)
-    expect(diceTutorialStep(save, on, at('/area'))).toBe('toMart')
+    expect(diceTutorialStep(save, on, at('/area'))).toBe('toHome')
+    expect(diceTutorialStep(save, on, at('/team'))).toBe('toHome')
     expect(diceTutorialStep(save, on, at('/home'))).toBe('toMart')
     expect(diceTutorialStep(save, on, at('/shop'))).toBe('toUpgrades')
     expect(diceTutorialStep(save, on, at('/shop', 'sell'))).toBe('toUpgrades')
