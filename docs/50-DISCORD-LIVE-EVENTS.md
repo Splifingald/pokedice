@@ -2,8 +2,8 @@
 
 > **What this gives:** `#🎉-events` on the Discord server follows the live events the admin schedules, by itself:
 > **a calendar of the week every Monday**, and **a post as each event starts**, with everything it does and its
-> banner. Built like the weekly Ko-fi update ([docs/23 §11](23-DISCORD-SERVER.md#11-the-weekly-ko-fi-update--support-me)):
-> a script, a GitHub workflow, the `#🎉-events` webhook. No database change, no new secret.
+> banner. A Netlify scheduled function sends both, every minute ([§3](#3-from-github-to-netlify-2026-10-31)), through
+> the `#🎉-events` webhook, and a small table (migration 0098) keeps each post to one.
 >
 > **Your part:** [Setting it up](#setting-it-up) at the end: about 15 minutes in a browser, from nothing.
 
@@ -86,29 +86,44 @@ is the old two hours.)
   switch, as the daily raid's and the Ko-fi update's are theirs; the game's own screens are unchanged.
 - An event moved or removed while the post waits for its start isn't posted. The post reads the live content again
   at the start, so it shows what players get.
-- An event added (and Published) after its start hour has begun isn't posted: post in `#📣-announcements` by hand.
+- An event added (and Published) more than two hours after its start isn't posted: post in `#📣-announcements` by
+  hand. Up to two hours late, it's posted within the minute.
 
 ## 2. How it's built
 
 | Piece | Does |
 | --- | --- |
-| `scripts/discord/live-week-post.ts` · `pnpm discord:live-week` | The Monday calendar: the week (Monday 00:00 to Monday 00:00 UTC), its runs not over yet, the chart, the list, "Next up". |
-| `.github/workflows/discord-live-week.yml` | Runs it every Monday at 07:23 UTC. **Run workflow** posts it by hand. |
-| `scripts/discord/live-event-post.ts` · `pnpm discord:live` | The start posts. Every hour at :07 it takes the events starting before the next :07, waits for each start, reads the content again and posts. A run GitHub starts late posts at once whatever already started in its hour. |
-| `.github/workflows/discord-live.yml` | Runs it every hour at :07 (unchanged). |
+| `netlify/functions/discord-live.mts` | Netlify runs it every minute, on the published site. Each minute it reads the admin's live events (one small read); when a start or the Monday calendar is due and not posted yet, it reads the content and posts. |
+| `netlify/discord/live.ts` | What is due: each run that started in the last two hours and isn't over, and the week's calendar on Mondays between 07:23 and 08:23 UTC. Takes each post's key in `discord_live_posts` before sending, and gives it back if Discord refuses, so the next minute tries again. |
+| `supabase/migrations/0098_discord_live_posts.sql` | The table of posts sent (`start:<run>:<start>`, `week:<Monday>`). The service role alone reads it. |
+| `scripts/discord/live-week-post.ts` · `pnpm discord:live-week` | The Monday calendar's message (`weekMessage`): the week (Monday 00:00 to Monday 00:00 UTC), its runs not over yet, the chart, the list, "Next up". |
+| `scripts/discord/live-event-post.ts` · `pnpm discord:live` | The start post's message (`liveMessage`). As a script, it prints (or posts by hand) the starts of a given hour. |
+| `.github/workflows/discord-live.yml`, `discord-live-week.yml` | No schedule any more: **Run workflow** prints the message in the run's log (untick **dry** to post it, only while the Netlify job is off). |
 | `scripts/discord/layout.ts` | `#🎉-events`' topic and the welcome post's line now say "the week's calendar, each start". |
 
 Both read what players get: the live Supabase tables (with the public key), the bundled copy when they can't. A
 recurring event's runs are each an event of their own (`<id>@<date>`), as in the game. The numbers come from the
 engine (`livePrice`, `kitPrice`, `freeKitRules`, `liveRuns`…), so the posts never disagree with the game.
 
-Tests: `tests/discord.test.ts` (the hour a start belongs to, recurring runs, the week's bounds, the chart, the
-message's limits).
+Tests: `tests/discord.test.ts` (recurring runs, the week's bounds, the chart, the message's limits) and
+`tests/discord-live-job.test.ts` (each start once and within the minute, late Publishes, the switch, a refused post
+tried again, the Monday calendar once).
+
+## 3. From GitHub to Netlify (2026-10-31)
+
+The posts first came from GitHub workflows scheduled every hour. GitHub ran that hourly schedule only about 5 times a
+day (38 runs in 8 days), so a start was posted only when a run happened to fall in its hour. Netlify's scheduled
+functions run on time (the push sender's every 5 minutes, the Versus bots' every hour), so the job moved there, every
+minute, with a table so overlapping runs never post twice. The GitHub workflows stay, without a schedule, to preview
+the messages.
 
 ## Setting it up
 
 This starts from nothing and takes about 15 minutes, all in a web browser: no bot, no command line. You need to be an
-admin of the Discord server and of the GitHub repository, and to reach the Supabase project and the game's Admin.
+admin of the Discord server and of the Netlify site, and to reach the Supabase project and the game's Admin.
+
+> **Set up before 2026-10-31?** The posts moved from GitHub to Netlify ([§3](#3-from-github-to-netlify-2026-10-31)):
+> do steps 4 and 5 only, with the webhook URL and role id the GitHub settings already hold.
 
 > **Already ran the full server setup** ([docs/23](23-DISCORD-SERVER.md), `pnpm discord --apply`)? Then
 > `#🎉-events`, its webhook and Event Pings exist: go to step 4 and copy the values from `.env.discord`.
@@ -127,11 +142,11 @@ Already have an events channel? Use it.
 1. The channel's ⚙️ (**Edit Channel**) → **Integrations** → **Webhooks** → **New Webhook**.
 2. Click the new webhook. Name it exactly **`Pokédice Events`**, so the full server setup reuses it if you ever run
    it. Check its channel is your events channel.
-3. **Copy Webhook URL** → **Save Changes**. Keep the URL for step 4.
+3. **Copy Webhook URL** → **Save Changes**. Keep the URL for step 5.
 
-> **The URL is a password:** anyone holding it can post in the channel. It goes in GitHub's secrets (step 4) and
-> nowhere else: not in the repository, not in a chat. If it leaks, delete the webhook, make a new one and update the
-> secret.
+> **The URL is a password:** anyone holding it can post in the channel. It goes in Netlify's environment variables (step 5) and
+> GitHub's secrets (step 6) and nowhere else: not in the repository, not in a chat. If it leaks, delete the webhook,
+> make a new one and update both.
 
 ### Step 3 — Discord: the ping role (optional)
 
@@ -146,9 +161,29 @@ nobody.
    ("Get pinged for…") with an answer *Live events* that gives `Event Pings`. Without Community, give the role by hand
    (Server Settings → **Members** → `+` next to a name).
 
-### Step 4 — GitHub: give the workflows the addresses
+### Step 4 — Supabase: the table of posts sent
 
-GitHub → the `pokedice` repository → **Settings** → **Secrets and variables** → **Actions**.
+Supabase → the `pokedice` project → **SQL Editor** → **New query** → paste
+[`supabase/migrations/0098_discord_live_posts.sql`](https://github.com/Splifingald/pokedice/blob/claude/tender-maxwell-vhhevv/supabase/migrations/0098_discord_live_posts.sql)
+→ **Run**. Safe to run again. (`supabase/seed.sql` doesn't carry it.)
+
+### Step 5 — Netlify: give the job the addresses
+
+Netlify → the `poke-dice` site → **Site configuration** → **Environment variables** → **Add a variable**, one at a
+time:
+
+| Key | Value |
+| --- | --- |
+| `DISCORD_EVENTS_WEBHOOK` | the webhook URL from step 2 (tick **Contains secret values**) |
+| `DISCORD_EVENT_ROLE` | the role id from step 3 (digits only); leave it out if you skipped step 3 |
+
+`VITE_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are there already, for the push sender. A new variable reaches the
+job at the next deploy: **Deploys** → **Trigger deploy** → **Deploy site** if nothing else is deploying.
+
+### Step 6 — GitHub: the same addresses, for the previews (optional)
+
+The GitHub workflows only print the messages now. To have them read your events, GitHub → the `pokedice` repository →
+**Settings** → **Secrets and variables** → **Actions**.
 
 1. **Secrets** tab → **New repository secret**:
 
@@ -164,10 +199,10 @@ GitHub → the `pokedice` repository → **Settings** → **Secrets and variable
    | `VITE_SUPABASE_URL` | `https://lmauouvrczayxfxsrcqj.supabase.co` (the `pokedice` project) | Supabase → the project → **Project Settings** → **Data API** → *Project URL*. Also in Netlify → Site configuration → Environment variables |
    | `VITE_SUPABASE_ANON_KEY` | the long key starting `eyJ…` | Supabase → **Project Settings** → **API Keys** → **Legacy API keys** tab → **anon** · *public* → Copy. Also in Netlify's environment variables. It's public (the site ships it), so a variable, not a secret. **Never** the `service_role` key |
 
-   Type the names exactly, capitals included. The two Supabase values let the posts read the events you schedule in
-   Admin; without them the posts read the game's bundled copy, which has none.
+   Type the names exactly, capitals included. The two Supabase values let the previews read the events you schedule
+   in Admin; without them they read the game's bundled copy, which has none.
 
-### Step 5 — the game: switch live events on
+### Step 7 — the game: switch live events on
 
 1. The game → **Admin** → **Events** → the **Live events** switch → **On for everyone**.
 2. The **Live events** tab: schedule an event (its kind, start, end, a banner, a title if you like) → save →
@@ -175,25 +210,24 @@ GitHub → the `pokedice` repository → **Settings** → **Secrets and variable
 
 While the switch is Off or On for admin, nothing is posted.
 
-### Step 6 — GitHub: merge to `main`
+### Step 8 — merge to `main`
 
-GitHub only runs scheduled workflows that are on the default branch (`main`). Once this branch is merged, everything
-runs by itself:
+Netlify runs scheduled functions on the published site only (not on Deploy Previews). Once this reaches `main` and the
+site is live, everything runs by itself:
 
-| When | Workflow (GitHub → **Actions**) | Posts |
-| --- | --- | --- |
-| Mondays, 07:23 UTC | **Discord weekly live events calendar** | the week's calendar (nothing on a week without an event) |
-| Every hour, at :07 | **Discord live events** | each event that starts in that hour, at its start |
+| When | Posts |
+| --- | --- |
+| Mondays, from 07:23 UTC | the week's calendar (nothing on a week without an event) |
+| Within the minute of each start | that event, with everything it does |
 
-### Step 7 — check it works
+### Step 9 — check it works
 
-1. GitHub → **Actions** → **Discord weekly live events calendar** → **Run workflow** → **Run workflow**. About a
-   minute later the calendar is in your channel, as long as an event is on this week. If live events are still On
-   for admin, tick **force**.
-2. Click the run to read its log: it says what it posted, or why it posted nothing (no event this week, the switch, a
-   missing secret).
-3. To see a start post: schedule a test event that starts within the next hour → **Publish**. The hourly run posts it
-   at its start. Delete the post and the event afterwards.
+1. Schedule a test event that starts in a few minutes → **Publish**. Within a minute of its start the post is in your
+   channel. Delete the post and the event afterwards.
+2. Netlify → **Logs** → **Functions** → `discord-live`: each post shows as `[discord-live] { posted: [...] }`; a
+   missing setting as `not configured: …`.
+3. To see the Monday calendar's message any day: GitHub → **Actions** → **Discord weekly live events calendar** →
+   **Run workflow** (keep **dry** ticked) → the run's log prints it.
 
 Done: every Monday the calendar, every start its own post.
 
@@ -217,11 +251,10 @@ run of that hour would post: use :07 of the hour your event starts in.
 
 | What you see | Why, and the fix |
 | --- | --- |
-| No Monday post | No event this week (the run's log says "No live event this week"), live events aren't **On for everyone**, or the secret is missing. GitHub → Actions → **Discord weekly live events calendar** → the run's log says which. |
-| The log says "using the bundled content" | `VITE_SUPABASE_URL` or `VITE_SUPABASE_ANON_KEY` is missing or misspelt (step 4), so the posts can't see your events. |
-| The log says `Discord POST … → 401` or `→ 404` | The webhook was deleted or its URL is wrong: make a new one (step 2) and update the secret. |
+| No Monday post | No event this week, live events aren't **On for everyone**, or a Netlify variable is missing (the function's log says `not configured: …`). |
+| The function's log says `discord_live_posts: …` | The migration of step 4 hasn't run. |
+| The log says `Discord POST … → 401` or `→ 404` | The webhook was deleted or its URL is wrong: make a new one (step 2) and update `DISCORD_EVENTS_WEBHOOK` in Netlify, then redeploy. |
 | The post shows `@Event Pings` but nobody is notified | Members don't have the role yet (step 3.3). If they do: Server Settings → Roles → Event Pings → **Allow anyone to @mention this role** on. |
-| No start post | Same checks in **Discord live events**. An event Published after its start hour began isn't posted. |
+| No start post | Same checks in the function's log. An event Published more than two hours after its start isn't posted. |
 | The wrong times | The times are each reader's own; the chart's days are UTC. An event at 23:00 UTC is on the next day in Asia. |
 | No picture | The event has no banner in Admin → Events, or its picture isn't on the live site yet. |
-| The workflows are disabled | GitHub pauses schedules after 60 days without a commit: Actions → the workflow → **Enable workflow**. |
