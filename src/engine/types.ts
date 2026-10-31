@@ -1044,6 +1044,8 @@ export interface GameConfig {
   general: GeneralConfig
   /** Friend invite rewards (docs/15 §25): their switch and the gauge's tiers. The server reads the same row. */
   inviteRewards: InviteRewardsConfig
+  /** Welcome-back gifts (docs/56): their switch, the cooldown and the tiers. The server reads the same row (0101). */
+  welcomeBack: WelcomeBackConfig
   /** Push notifications (docs/27): their switch, a game_config row of its own that seeding never writes. */
   push: PushConfig
   /** The areas' portal run (docs/28): its switch. The server reads the same row (0057). */
@@ -1302,6 +1304,25 @@ export interface InviteRewardsConfig {
 /** One stop on the invite gauge: this many invited players with their first badge, and what it gives. */
 export interface InviteTier {
   friends: number
+  gifts: Gift[]
+}
+
+/**
+ * Welcome-back gifts (docs/56): a player back after days away gets a developer's message carrying the gifts of the
+ * highest tier their absence reached, at most once every `cooldownDays`. The server reads the same row (0101).
+ */
+export interface WelcomeBackConfig {
+  /** The switch (docs/15 §20): off (no message is sent), on for the admin only, on for everyone. Off by default. */
+  access: EventAccess
+  /** At most one welcome-back gift every this many days (the player's own calendar days). */
+  cooldownDays: number
+  /** The tiers, fewest days first (engine/welcomeBack.ts cleans them): only the highest one reached is given. */
+  tiers: WelcomeBackTier[]
+}
+
+/** One welcome-back tier: away at least `minDays` days (back the next day = 1), and what it gives. */
+export interface WelcomeBackTier {
+  minDays: number
   gifts: Gift[]
 }
 
