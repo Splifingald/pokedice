@@ -203,10 +203,14 @@ Galar's and Hisui's legends (raids, sharing `gen8kit.ts`'s `raidCinema` wrapper)
   (4.4); the stones lifting into a chained energy dragon that dives into the floor (4.6).
 - **Glastrier, Spectrier, Calyrex** (`crowntundra.ts`): a charge raising ice lances (4.5); a ghost galloping across
   the moon (4.5); the harvest thawing the snow and a crown of light settling on the king (4.6).
-- **Enamorus** (`enamorus.ts`, 4.6): Hisui's spring, petals funnelling into a giant heart that beats three times.
-- **The Galarian birds** (`galarbirds.ts`, by their forms' dex): two eyes in a violet sky glaring the leaves to pieces
-  (4.6); a dust trail round the hill and a flying kick out of the sun (4.4); an eclipse with eyes and wings of black
-  fire closing like a cloak (4.6).
+- **Enamorus** (`enamorus.ts`, 4.6): Hisui's spring under Mt. Coronet, cherry trees at three depths (crooked dark
+  trunks, level boughs, blossom clouds) swaying from the foot up; petals funnelling into a giant heart that beats three
+  times.
+- **The Galarian birds** (`galarbirds.ts`, by their forms' dex), all three on the same Dyna Tree (one massive S-curved
+  trunk, buttress roots, gnarled boughs and a broad crown of shaded leaf clumps, red Dynamax glints in it), lit by each
+  scene's light: two eyes in a violet sky glaring the leaves to pieces, which swirl round the trunk (4.6); a dust trail
+  round the hill and a flying kick out of the sun (4.4); an eclipse with eyes, the tree withering clump by clump to bare
+  boughs, and wings of black fire closing like a cloak (4.6). Shaded mountain ranges and boulders behind and around.
 - **Zarude** (`zarude.ts`, boss): the jungle's eyes opening pair by pair, the troop swinging past, the leader dropping
   down.
 

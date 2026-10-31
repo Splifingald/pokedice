@@ -11,6 +11,7 @@
 // sweep down and close over everything, then open on the bird.
 import { fxSound, hiss, tone } from '@/audio/sfx'
 import {
+  bayer,
   bolt,
   canvas,
   ease,
@@ -19,9 +20,11 @@ import {
   glow,
   lerp,
   line,
+  mix,
   pattern,
   polyline,
   rect,
+  rgba,
   rng,
   span,
   wash,
@@ -32,124 +35,798 @@ import {
 import { drawSprite } from '../../sprites'
 import { quad } from '../../timeline'
 import { burstRing, dGradient, dissolve, drawShards, makeShard, stepShards, tri, type Shard } from './kit'
-import { peaks, raidCinema, speedLines, type Raid } from './gen8kit'
+import { noise, raidCinema, speedLines, type Raid } from './gen8kit'
+
+// --------------------------------------------------------------------------------------------------- the Dyna Tree
+
+/** A light on the tree: where it comes from, and the ramps (dark to light) it paints the leaves and the bark in. */
+interface Light {
+  /** Towards the light: x right, y down, z out of the screen. */
+  l: readonly [number, number, number]
+  leaf: readonly string[]
+  bark: readonly string[]
+  /** The edges facing the light, caught by it (through the gaps too). */
+  rim: string
+  /** A light that only reaches the crown (the eclipse's corona): no rim below its underside. */
+  high?: boolean
+}
 
 interface Pal {
   sky: string[]
-  peak: [string, string]
-  hill: string[]
+  /** Each range's rock in shade and lit, its snow in shade and lit: the far one, then the near one. */
+  far: readonly [string, string, string, string]
+  near: readonly [string, string, string, string]
+  /** Dark to light. */
+  hill: readonly [string, string, string, string]
+  /** The crest's lit grass. */
   grass: string
-  trunk: [string, string, string]
-  leaf: [string, string, string]
+  stone: readonly [string, string, string]
+  light: Light
 }
 
+// Night: starlight from the upper left, cold teal leaves, a lavender edge.
 const NIGHT: Pal = {
   sky: ['#04030e', '#0c0a26', '#1a1640', '#2a2458'],
-  peak: ['#24204a', '#7a78b0'],
-  hill: ['#1a3028', '#12241e', '#0a1612'],
-  grass: '#2a4a3a',
-  trunk: ['#1a1418', '#3a2c30', '#0a0608'],
-  leaf: ['#12302a', '#1e4a3a', '#3a7a5a'],
+  far: ['#121034', '#1a1844', '#2e2e66', '#424286'],
+  near: ['#1a183e', '#282654', '#504e88', '#8482c0'],
+  hill: ['#060e0d', '#0c1a17', '#132722', '#1c362e'],
+  grass: '#33604f',
+  stone: ['#0a0c14', '#1a1e2c', '#30364a'],
+  light: {
+    l: [-0.6, -0.7, 0.45],
+    leaf: ['#050a14', '#0a1620', '#10242c', '#183638', '#244c4a', '#3c6e66'],
+    bark: ['#06050a', '#0e0c16', '#181624', '#242236', '#38344c'],
+    rim: '#8a9ad8',
+  },
 }
+// A golden afternoon: the sun low on the right, warm greens, a gold edge.
 const AFTERNOON: Pal = {
   sky: ['#4a7ac8', '#7aa8e0', '#c8d8e8', '#ffe0a8', '#ffc078'],
-  peak: ['#8a90b0', '#f8f4f0'],
-  hill: ['#6aa040', '#4a8a30', '#3a7024'],
-  grass: '#8ac850',
-  trunk: ['#5a3a24', '#8a5a34', '#2a1a10'],
-  leaf: ['#2a6a2a', '#3a8a34', '#7ac04a'],
+  far: ['#98a2c6', '#b2bcda', '#d2daec', '#eef2fa'],
+  near: ['#727a9e', '#9096ba', '#d4d8ea', '#ffffff'],
+  hill: ['#2c561c', '#3c7024', '#538a2e', '#6ca63a'],
+  grass: '#a6d65c',
+  stone: ['#46463c', '#76766a', '#aeac96'],
+  light: {
+    l: [0.72, -0.55, 0.42],
+    leaf: ['#0d2614', '#163c1c', '#225622', '#337228', '#518e2e', '#86b23c'],
+    bark: ['#1a0e08', '#331e12', '#4e321c', '#6e4c2a', '#94703e'],
+    rim: '#f4e08a',
+  },
 }
+// Dusk: the sun just behind the crown, the tree dark against it, its every top edge burning orange.
 const DUSK: Pal = {
   sky: ['#2a0a24', '#5a1430', '#a02a30', '#e05a30', '#ff9a4a'],
-  peak: ['#3a1428', '#c88a8a'],
-  hill: ['#3a3020', '#2a2418', '#1a160e'],
-  grass: '#5a5a2a',
-  trunk: ['#2a1810', '#4a2c1a', '#140a06'],
-  leaf: ['#2a4a1a', '#3a6a24', '#6a9a3a'],
+  far: ['#3c1430', '#501c3a', '#783a52', '#9e5868'],
+  near: ['#2c1024', '#40182e', '#9a6470', '#e0a08e'],
+  hill: ['#120d09', '#1c160e', '#2a2214', '#3a301a'],
+  grass: '#c0703a',
+  stone: ['#120a08', '#281a14', '#463024'],
+  light: {
+    l: [0, -0.8, -0.45],
+    leaf: ['#0a0709', '#160f10', '#241a14', '#36281a', '#4c3a20'],
+    bark: ['#070405', '#140b0b', '#22140f', '#321e14'],
+    rim: '#ff8a3a',
+  },
+}
+// Under the eclipse: everything nearly black, edged in the corona's violet; the withered leaves brown and dry.
+const ECLIPSE: Light = {
+  l: [0, -0.8, -0.45],
+  high: true,
+  leaf: ['#040206', '#09050b', '#100912', '#180d1a', '#221224'],
+  bark: ['#030204', '#080409', '#0e0810', '#160c18'],
+  rim: '#c82a9a',
+}
+const WITHERED: Light = {
+  ...ECLIPSE,
+  leaf: ['#0a0406', '#1a0c0c', '#2c1610', '#422214', '#5a3218'],
+  rim: '#e05aa8',
+}
+
+/** A length of the tree's wood, tapering from w0 to w1 thick; `z` brings it forward (the roots over the trunk). */
+interface Limb {
+  x0: number
+  y0: number
+  x1: number
+  y1: number
+  w0: number
+  w1: number
+  z: number
+  /** The finest twigs, drawn only on a withering tree. */
+  fine: boolean
+}
+
+/** A clump of leaves: round lobes heaped on its centre (x, y, r, lift). A withering tree keeps the lowest `k` longest. */
+interface Clump {
+  x: number
+  y: number
+  r: number
+  back: boolean
+  k: number
+  lobes: (readonly [number, number, number, number])[]
+}
+
+/** The Dyna Tree's shape, the same at every hour: each bird's light paints it. */
+interface Dyna {
+  limbs: Limb[]
+  /** Top to bottom: the lower ones are nearer. */
+  clumps: Clump[]
+  top: number
+  ground: (x: number) => number
+  crown: [number, number]
+  cw: number
+  ch: number
+  tw: number
+  /** Where Dynamax light glints among its leaves. */
+  glints: [number, number][]
+  /** The box its leaves can fill. */
+  box: [number, number, number, number]
+  noise?: { leaf: Float32Array; fringe: Float32Array; hole?: Float32Array }
+  /** Its pixels before any light, by how far it has withered, and the pieces they are laid from. */
+  rasters: Map<string, Raster>
+  patches: Map<string, Patch>
+}
+
+interface Raster {
+  kind: Uint8Array
+  ord: Int16Array
+  base: Float32Array
+  nx: Float32Array
+  ny: Float32Array
+  nz: Float32Array
+  /** The box its pixels fill. */
+  box: [number, number, number, number]
+}
+
+/**
+ * The Dyna Tree laid out from the screen: a massive trunk in a slow S, buttress roots gripping the hill, five great
+ * boughs (the long low one to the left gives it its lean), and a broad crown of foliage masses with a saddle in the
+ * middle where the sky shows. Its own seed, so every bird finds the same tree.
+ */
+function dynaShape(s: Raid): Dyna {
+  const { w, h, cx } = s
+  const r = rng(1701)
+  const top = s.feet + 4
+  const ground = (x: number) => top + ((x - cx) / (w * 0.75)) ** 2 * h * 0.22
+  const ch = top * 0.29
+  const cy = Math.round(top * 0.4)
+  const cw = Math.min(w * 0.62, ch * 2.9)
+  const tw = Math.max(14, s.m * 0.15)
+  const fork = cy + ch * 0.85
+  const limbs: Limb[] = []
+  const wood = (
+    x0: number,
+    y0: number,
+    x1: number,
+    y1: number,
+    w0: number,
+    w1: number,
+    z = 0,
+    fine = false,
+  ) => limbs.push({ x0, y0, x1, y1, w0, w1, z, fine })
+  /** A bough through its joints, thinning as it goes, each joint knocked a little off true. */
+  const bough = (pts: [number, number][], w0: number, w1: number) => {
+    const at = pts.map(([x, y], i): [number, number] =>
+      i === 0 ? [x, y] : [x + r.range(-1, 1) * tw * 0.12, y + r.range(-1, 1) * tw * 0.12],
+    )
+    for (let i = 0; i < at.length - 1; i++) {
+      const [a, b] = [at[i]!, at[i + 1]!]
+      wood(a[0], a[1], b[0], b[1], lerp(w0, w1, i / (at.length - 1)), lerp(w0, w1, (i + 1) / (at.length - 1)))
+    }
+    return at
+  }
+  // The trunk: a slow S, pinched above its foot, swelling again where it forks.
+  const trunk: [number, number, number][] = [
+    [cx + tw * 0.05, top + 6, 1.0],
+    [cx - tw * 0.08, lerp(top, fork, 0.3), 0.9],
+    [cx - tw * 0.14, lerp(top, fork, 0.62), 0.84],
+    [cx - tw * 0.02, lerp(top, fork, 0.9), 0.95],
+    [cx + tw * 0.04, fork, 1.05],
+  ]
+  for (let i = 0; i < trunk.length - 1; i++) {
+    const [[x0, y0, w0], [x1, y1, w1]] = [trunk[i]!, trunk[i + 1]!]
+    wood(x0, y0, x1, y1, tw * w0, tw * w1)
+  }
+  // Buttress roots: fins off the trunk's foot, steep against it and flattening out down the hill, the side ones long,
+  // the near ones short; each stands in front of the trunk, so the crevice beside it falls in its shadow.
+  for (const [side, reach, up, wk, z] of [
+    [-1, 2.4, 0.44, 0.42, 1],
+    [1, 2.2, 0.4, 0.42, 1],
+    [-1, 1.3, 0.28, 0.36, 2],
+    [1, 1.4, 0.26, 0.34, 2],
+    [-1, 0.62, 0.18, 0.3, 3],
+    [1, 0.7, 0.16, 0.28, 3],
+  ] as const) {
+    const y0 = top - (top - fork) * up
+    let [px, py] = [cx + side * tw * 0.28, y0]
+    for (let k = 1; k <= 6; k++) {
+      const t = k / 6
+      const x = cx + side * tw * (0.28 + (reach - 0.28) * t ** 2.2)
+      const y = lerp(y0, ground(x) + 2, 1 - (1 - t) ** 1.7)
+      wood(px, py, x, y, tw * lerp(wk, 0.12, (k - 1) / 6), tw * lerp(wk, 0.12, t), z * tw * 0.1)
+      ;[px, py] = [x, y]
+    }
+  }
+  // The great boughs from the fork.
+  const f: [number, number] = [cx + tw * 0.04, fork]
+  const left = bough(
+    [f, [cx - cw * 0.3, cy + ch * 0.32], [cx - cw * 0.62, cy + ch * 0.24], [cx - cw * 0.93, cy + ch * 0.44]],
+    tw * 0.62,
+    tw * 0.14,
+  )
+  const up = bough(
+    [
+      [f[0], f[1] - tw * 0.3],
+      [cx - cw * 0.06, cy + ch * 0.05],
+      [cx + cw * 0.04, cy - ch * 0.3],
+    ],
+    tw * 0.55,
+    tw * 0.16,
+  )
+  const right = bough(
+    [f, [cx + cw * 0.28, cy + ch * 0.2], [cx + cw * 0.6, cy + ch * 0.04], [cx + cw * 0.9, cy + ch * 0.26]],
+    tw * 0.58,
+    tw * 0.13,
+  )
+  const ul = bough(
+    [left[1]!, [cx - cw * 0.4, cy - ch * 0.1], [cx - cw * 0.36, cy - ch * 0.62]],
+    tw * 0.4,
+    tw * 0.1,
+  )
+  const ur = bough(
+    [right[1]!, [cx + cw * 0.36, cy - ch * 0.16], [cx + cw * 0.42, cy - ch * 0.64]],
+    tw * 0.38,
+    tw * 0.1,
+  )
+  const bones = [left, up, right, ul, ur]
+  // The masses the leaves gather in: two domes with a saddle between them, the boughs' ends; the fork shows under them.
+  const masses: [number, number, number, number][] = [
+    [cx - cw * 0.38, cy - ch * 0.38, cw * 0.36, ch * 0.5],
+    [cx + cw * 0.4, cy - ch * 0.42, cw * 0.36, ch * 0.5],
+    [cx + cw * 0.02, cy - ch * 0.06, cw * 0.3, ch * 0.4],
+    [cx - cw * 0.66, cy + ch * 0.16, cw * 0.3, ch * 0.4],
+    [cx - cw * 0.92, cy + ch * 0.4, cw * 0.14, ch * 0.26],
+    [cx + cw * 0.66, cy + ch * 0.04, cw * 0.28, ch * 0.4],
+    [cx + cw * 0.9, cy + ch * 0.24, cw * 0.13, ch * 0.24],
+  ]
+  const R0 = Math.max(6, ch * 0.3)
+  const clumps: Clump[] = []
+  for (const [mx, my, rx, ry] of masses) {
+    const want = Math.max(2, Math.round((rx * ry * 2.6) / (R0 * R0)))
+    for (let tries = 0, n = 0; tries < want * 40 && n < want; tries++) {
+      const a = r() * Math.PI * 2
+      const d = Math.sqrt(r())
+      const x = mx + Math.cos(a) * rx * d * 0.8
+      const y = my + Math.sin(a) * ry * d * 0.75
+      const R = R0 * r.range(0.72, 1.08) * Math.min(1, 0.55 + rx / cw)
+      if (clumps.some((c) => Math.hypot(c.x - x, (c.y - y) * 1.2) < (c.r + R) * 0.55)) continue
+      // A big lobe in the middle, smaller ones round it, the lower ones tucked under: a cauliflower's head.
+      const lobes: [number, number, number, number][] = [[0, R * 0.12, R * 0.7, R * 0.25]]
+      const k = r.int(5, 7)
+      const a0 = r() * Math.PI
+      for (let j = 0; j < k; j++) {
+        const b = a0 + (j / k) * Math.PI * 2 + r.range(-0.3, 0.3)
+        const dd = R * r.range(0.38, 0.56)
+        lobes.push([
+          Math.cos(b) * dd,
+          Math.sin(b) * dd * (Math.sin(b) > 0 ? 0.45 : 0.85) - R * 0.04,
+          R * r.range(0.36, 0.5),
+          0,
+        ])
+      }
+      clumps.push({ x, y, r: R, back: r() < 0.38, k: r(), lobes })
+      n++
+    }
+  }
+  clumps.sort((a, b) => a.y - b.y)
+  // Twigs from the nearest bough out to every clump, and a spray of finer ones out from it, away from the crown's
+  // heart (only a withering tree shows those: on a living one they would poke through its leaves).
+  for (const c of clumps) {
+    let best: [number, number] = [c.x, c.y + c.r]
+    let bd = Infinity
+    for (const b of bones)
+      for (let i = 0; i < b.length - 1; i++) {
+        const [ax, ay] = b[i]!
+        const [bx, by] = b[i + 1]!
+        const q = Math.max(
+          0,
+          Math.min(
+            1,
+            ((c.x - ax) * (bx - ax) + (c.y - ay) * (by - ay)) / ((bx - ax) ** 2 + (by - ay) ** 2 || 1),
+          ),
+        )
+        const px = lerp(ax, bx, q)
+        const py = lerp(ay, by, q)
+        const d = Math.hypot(px - c.x, py - c.y)
+        if (d < bd) [bd, best] = [d, [px, py]]
+      }
+    wood(best[0], best[1], c.x, c.y, Math.max(1.4, tw * 0.13), 1.2, -1)
+    const out = Math.atan2(c.y - (cy + ch), c.x - cx)
+    for (const da of [-0.6, 0, 0.6]) {
+      const a = out + da + r.range(-0.2, 0.2)
+      const L1 = c.r * r.range(0.6, 0.95)
+      const [ex, ey] = [c.x + Math.cos(a) * L1, c.y + Math.sin(a) * L1]
+      wood(c.x, c.y, ex, ey, 1.3, 1, -1, true)
+      for (const db of [-0.5, 0.5]) {
+        const b = a + db + r.range(-0.15, 0.15)
+        wood(ex, ey, ex + Math.cos(b) * L1 * 0.5, ey + Math.sin(b) * L1 * 0.5, 1, 1, -1, true)
+      }
+    }
+  }
+  const front = clumps.filter((c) => !c.back)
+  const glints = Array.from({ length: 7 }, (): [number, number] => {
+    const c = front[r.int(0, front.length - 1)]!
+    return [Math.round(c.x + r.range(-0.4, 0.4) * c.r), Math.round(c.y + r.range(-0.1, 0.4) * c.r)]
+  })
+  const edge = (f: (c: Clump) => number, pick: (...v: number[]) => number) => pick(...clumps.map(f))
+  const box: Dyna['box'] = [
+    Math.max(0, Math.floor(edge((c) => c.x - c.r * 1.3, Math.min))),
+    Math.max(0, Math.floor(edge((c) => c.y - c.r * 1.3, Math.min))),
+    Math.min(w - 1, Math.ceil(edge((c) => c.x + c.r * 1.3, Math.max))),
+    Math.min(h - 1, Math.ceil(edge((c) => c.y + c.r * 1.3, Math.max))),
+  ]
+  return {
+    limbs,
+    clumps,
+    top,
+    ground,
+    crown: [cx, cy],
+    cw,
+    ch,
+    tw,
+    glints,
+    box,
+    rasters: new Map(),
+    patches: new Map(),
+  }
+}
+
+/** The fine noise a painting reads (the leaves' texture, their fringes, the holes in dead ones): the same in every
+ * light, so worked out once per tree, over the crown's box. */
+function noiseOf(D: Dyna, w: number, h: number, holes: boolean) {
+  const fill = (n: (x: number, y: number) => number, sc: number) => {
+    const into = new Float32Array(w * h)
+    const [x0, y0, x1, y1] = D.box
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) into[y * w + x] = n(x / sc, y / sc)
+    return into
+  }
+  const N = (D.noise ??= { leaf: fill(noise(91), 2.2), fringe: fill(noise(92), 1.7) })
+  // The holes only a withering tree needs.
+  if (holes) N.hole ??= fill(noise(94), 2.5)
+  return N
+}
+
+/** Pixels before any light: where each is, and its light as `base` plus its normal (weighted) dotted with the light. */
+interface Patch {
+  at: number[]
+  base: number[]
+  nx: number[]
+  ny: number[]
+  nz: number[]
+  /** In front of what (the wood only: its roots stand before the trunk). */
+  ord: number[]
+  /** How far out from its clump's middle (the leaves only: a withering tree's holes open wider there). */
+  d: number[]
+}
+const patch = (): Patch => ({ at: [], base: [], nx: [], ny: [], nz: [], ord: [], d: [] })
+
+/**
+ * One clump's leaves before any light, worked out once and laid down by every picture that keeps it: a dome of lobes,
+ * their rims made leafy by a fine noise, the crown's own dome over all of them (its lit side brighter, its underside in
+ * shade), a leaf texture.
+ */
+function clumpPatch(D: Dyna, ci: number, w: number, h: number): Patch {
+  const key = `c${ci}`
+  const had = D.patches.get(key)
+  if (had) return had
+  const c = D.clumps[ci]!
+  const N = noiseOf(D, w, h, false)
+  const [ccx, ccy] = D.crown
+  const P = patch()
+  const R = c.r * 1.3
+  for (let y = Math.max(0, Math.floor(c.y - R)); y <= Math.min(h - 1, c.y + R); y++)
+    for (let x = Math.max(0, Math.floor(c.x - R)); x <= Math.min(w - 1, c.x + R); x++) {
+      const px = x + 0.5 - c.x
+      const py = y + 0.5 - c.y
+      if (px * px + py * py > R * R) continue
+      const i = y * w + x
+      const f = 1 + (N.fringe[i]! - 0.5) * 0.5
+      let top = 0
+      let lx = 0
+      let ly = 0
+      for (const [ox, oy, lr, lift] of c.lobes) {
+        const dx = px - ox
+        const dy = py - oy
+        const rr = lr * f
+        const d2 = dx * dx + dy * dy
+        if (d2 >= rr * rr) continue
+        const ht = Math.sqrt(rr * rr - d2) + lift
+        if (ht > top) {
+          top = ht
+          lx = dx / rr
+          ly = dy / rr
+        }
+      }
+      if (top <= 0) continue
+      // The lobe's bump on the clump's dome: the normal both make.
+      let mx = lx * 0.55 + (px / c.r) * 0.6
+      let my = ly * 0.55 + (py / c.r) * 0.6
+      const m = Math.hypot(mx, my)
+      if (m > 0.98) {
+        mx *= 0.98 / m
+        my *= 0.98 / m
+      }
+      const kx = (x - ccx) / D.cw
+      const ky = (y - ccy) / D.ch
+      P.at.push(i)
+      P.base.push(0.44 - Math.max(0, ky) * 0.16 - (c.back ? 0.14 : 0) + (N.leaf[i]! - 0.5) * 0.36)
+      P.nx.push(mx * 0.36 + kx * 0.14)
+      P.ny.push(my * 0.36 + ky * 0.14)
+      P.nz.push(Math.sqrt(1 - mx * mx - my * my) * 0.36)
+      P.d.push(Math.hypot(px, py) / c.r)
+    }
+  D.patches.set(key, P)
+  return P
+}
+
+/**
+ * The tree's wood before any light, worked out once (with its finest twigs, or without): every limb round and
+ * furrowed with bark, sunk into the hill at its foot; where two meet the fatter one bulges in front, so they grow out
+ * of each other.
+ */
+function woodPatch(D: Dyna, w: number, h: number, fine: boolean): Patch {
+  const key = `w${fine}`
+  const had = D.patches.get(key)
+  if (had) return had
+  const zb = new Float32Array(w * h).fill(-Infinity)
+  const P = patch()
+  const slot = new Int32Array(w * h).fill(-1)
+  const barkN = noise(93)
+  const ground = Float32Array.from({ length: w }, (_, x) => D.ground(x + 0.5))
+  for (const b of D.limbs) {
+    if (b.fine && !fine) continue
+    const vx = b.x1 - b.x0
+    const vy = b.y1 - b.y0
+    const l2 = vx * vx + vy * vy || 1
+    const len = Math.sqrt(l2)
+    // Across the limb.
+    const ax = -vy / len
+    const ay = vx / len
+    const pad = Math.max(b.w0, b.w1) / 2 + 1
+    const [xa, xb] = [
+      Math.max(0, Math.floor(Math.min(b.x0, b.x1) - pad)),
+      Math.min(w - 1, Math.max(b.x0, b.x1) + pad),
+    ]
+    const [ya, yb] = [
+      Math.max(0, Math.floor(Math.min(b.y0, b.y1) - pad)),
+      Math.min(h - 1, Math.max(b.y0, b.y1) + pad),
+    ]
+    for (let y = ya; y <= yb; y++)
+      for (let x = xa; x <= xb; x++) {
+        const qx = x + 0.5 - b.x0
+        const qy = y + 0.5 - b.y0
+        const t = Math.max(0, Math.min(1, (qx * vx + qy * vy) / l2))
+        const dx = qx - t * vx
+        const dy = qy - t * vy
+        const rr = Math.max(0.62, b.w0 + (b.w1 - b.w0) * t) / 2
+        const d2 = dx * dx + dy * dy
+        if (d2 > rr * rr || y + 0.5 > ground[x]! + 1) continue
+        const i = y * w + x
+        const ht = Math.sqrt(rr * rr - d2) + b.z
+        if (ht <= zb[i]!) continue
+        zb[i] = ht
+        const u = (dx * ax + dy * ay) / rr
+        // Bark: ridges running along the wood, deep furrows between them (along it in screen space, so the furrows
+        // run on unbroken from one length of a limb to the next).
+        const ridge = barkN(u * rr * 0.55, ((x * vx + y * vy) / len) * 0.07)
+        let k = slot[i]!
+        if (k < 0) {
+          k = slot[i] = P.at.length
+          P.at.push(i)
+        }
+        P.base[k] = 0.42 + (ridge < 0.3 ? -0.3 : ridge > 0.66 ? 0.1 : 0)
+        P.nx[k] = u * ax * 0.42
+        P.ny[k] = u * ay * 0.42
+        P.nz[k] = Math.sqrt(Math.max(0, 1 - u * u)) * 0.42
+        P.ord[k] = b.z > 0 ? 600 : 500
+      }
+  }
+  D.patches.set(key, P)
+  return P
+}
+
+/**
+ * The tree's pixels before any light, as one picture: the leaves behind the boughs, the wood, then the leaves in front
+ * of it, each lower clump nearer. `keep` thins it to its last clumps (a withering tree, which shows its finest twigs),
+ * `holes` tatters what is left.
+ */
+function rasterOf(D: Dyna, w: number, h: number, keep: number, holes: number): Raster {
+  const key = `${keep}|${holes}`
+  const had = D.rasters.get(key)
+  if (had) return had
+  const n = w * h
+  const R: Raster = {
+    kind: new Uint8Array(n),
+    ord: new Int16Array(n),
+    base: new Float32Array(n),
+    nx: new Float32Array(n),
+    ny: new Float32Array(n),
+    nz: new Float32Array(n),
+    box: [w, h, -1, -1],
+  }
+  // A withering tree's leaves tattered, the holes opening wider towards each clump's edge.
+  const hole = holes > 0 ? noiseOf(D, w, h, true).hole! : null
+  const lay = (P: Patch, kind: number, ord: number) => {
+    for (let k = 0; k < P.at.length; k++) {
+      const i = P.at[k]!
+      if (hole && kind === 2 && hole[i]! < holes * (0.3 + 0.7 * P.d[k]!)) continue
+      R.kind[i] = kind
+      R.ord[i] = kind === 1 ? P.ord[k]! : ord
+      R.base[i] = P.base[k]!
+      R.nx[i] = P.nx[k]!
+      R.ny[i] = P.ny[k]!
+      R.nz[i] = P.nz[k]!
+      const [x, y] = [i % w, Math.floor(i / w)]
+      if (x < R.box[0]) R.box[0] = x
+      if (y < R.box[1]) R.box[1] = y
+      if (x > R.box[2]) R.box[2] = x
+      if (y > R.box[3]) R.box[3] = y
+    }
+  }
+  const kept = D.clumps.map((c, i) => [c, i] as const).filter(([c]) => c.k < keep)
+  kept.filter(([c]) => c.back).forEach(([, ci], o) => lay(clumpPatch(D, ci, w, h), 2, o))
+  lay(woodPatch(D, w, h, keep < 1), 1, 500)
+  kept.filter(([c]) => !c.back).forEach(([, ci], o) => lay(clumpPatch(D, ci, w, h), 2, 1000 + o))
+  D.rasters.set(key, R)
+  return R
+}
+
+/**
+ * The Dyna Tree in one light: each pixel's light quantised into its ramp through the ordered dither, darkened by
+ * whatever stands nearer the light (a clump in front, a bough, the leaves over the wood), a dark edge on the shadow
+ * side and the light's own edge on the other.
+ */
+function paintDyna(s: Raid, D: Dyna, L: Light, o: { keep?: number; holes?: number } = {}): Canvas {
+  const { w, h } = s
+  const { kind, ord, base, nx, ny, nz, box } = rasterOf(D, w, h, o.keep ?? 1, o.holes ?? 0)
+  const cv = canvas(w, h)
+  const [x0, y0, x1, y1] = box
+  if (x1 < x0) return cv
+  const ll = Math.hypot(L.l[0], L.l[1], L.l[2])
+  const [lx, ly, lz] = [L.l[0] / ll, L.l[1] / ll, L.l[2] / ll]
+  const [bark, leaf, rim] = [L.bark.map(rgba), L.leaf.map(rgba), rgba(L.rim)]
+  const rimTo = L.high ? D.crown[1] + D.ch : h
+  // Across the screen towards the light, and a pixel's step that way.
+  const sl = Math.hypot(lx, ly) || 1
+  const [sx, sy] = [lx / sl, ly / sl]
+  const ox = Math.abs(sx) > 0.3 ? Math.sign(sx) : 0
+  const oy = Math.abs(sy) > 0.3 ? Math.sign(sy) : 0
+  const at = (x: number, y: number) => (x < 0 || y < 0 || x >= w || y >= h ? -1 : y * w + x)
+  const empty = (x: number, y: number) => {
+    const j = at(x, y)
+    return j >= 0 && !kind[j]
+  }
+  const img = cv.g.createImageData(x1 - x0 + 1, y1 - y0 + 1)
+  const px = img.data
+  for (let y = y0; y <= y1; y++)
+    for (let x = x0; x <= x1; x++) {
+      const i = y * w + x
+      const k = kind[i]!
+      if (!k) continue
+      const ramp = k === 1 ? bark : leaf
+      let c: readonly number[]
+      const litEdge = (ox !== 0 && empty(x + ox, y)) || (oy !== 0 && empty(x, y + oy))
+      const darkEdge =
+        (ox !== 0 && empty(x - ox, y)) || (oy !== 0 && empty(x, y - oy)) || (k === 2 && empty(x, y + 1))
+      // The light's edge only on what is thick enough to catch it (not on a twig).
+      if (litEdge && !darkEdge && !empty(x - ox * 2, y - oy * 2) && y < rimTo) c = rim
+      else if (darkEdge && !litEdge) c = ramp[0]!
+      else {
+        let v = base[i]! + nx[i]! * lx + ny[i]! * ly + nz[i]! * lz
+        // Cast shadows: a clump or a bough nearer the light darkens what lies just behind it.
+        for (let d = 1; d <= 3; d++) {
+          const j = at(Math.round(x + sx * d * 1.4), Math.round(y + sy * d * 1.4))
+          if (j >= 0 && kind[j] && ord[j]! > ord[i]!) {
+            v -= 0.2
+            break
+          }
+        }
+        // The wood under the leaves is in their shade.
+        if (k === 1)
+          for (let d = 2; d <= 8; d++) {
+            const j = at(Math.round(x + sx * d), Math.round(y + sy * d))
+            if (j >= 0 && kind[j] === 2) {
+              v -= 0.22
+              break
+            }
+          }
+        const tt = Math.floor(v * ramp.length + (bayer(x, y) - 0.5) * 0.9)
+        c = ramp[Math.max(0, Math.min(ramp.length - 1, tt))]!
+      }
+      const p = ((y - y0) * (x1 - x0 + 1) + (x - x0)) * 4
+      px[p] = c[0]!
+      px[p + 1] = c[1]!
+      px[p + 2] = c[2]!
+      px[p + 3] = 255
+    }
+  cv.g.putImageData(img, x0, y0)
+  return cv
+}
+
+/** The tree in a light, with the hill's grass growing up over its roots. */
+function dynaTree(s: Raid, D: Dyna, P: Pal, L: Light, o?: { keep?: number; holes?: number }): Canvas {
+  const cv = paintDyna(s, D, L, o)
+  const g = cv.g
+  const span0 = D.tw * 2.2
+  for (let x = Math.round(s.cx - span0); x < s.cx + span0; x++) {
+    const y = Math.round(D.ground(x + 0.5))
+    const k = (x * 7 + 3) % 5
+    rect(g, x, y - (k < 2 ? 2 : 1), 1, k < 2 ? 3 : 2, k === 0 ? P.grass : P.hill[k % 2 ? 2 : 3])
+  }
+  return cv
 }
 
 interface Hill {
   sky: Canvas
   tree: Canvas
-  /** The canopy alone again, withered (Moltres's). */
-  dead?: Canvas
   top: number
   /** The canopy's middle. */
   crown: [number, number]
+  glints: [number, number][]
+  D: Dyna
 }
 
-/** The hill and the great tree on it, in a palette: the sky and hill in one picture, the tree in another. */
-function dynaHill(s: Raid, r: Rng, P: Pal, withered = false): Hill {
+/** Dyna Tree Hill in a palette: the sky, the two ranges and the hill in one picture, the tree in another. */
+function dynaHill(s: Raid, r: Rng, P: Pal): Hill {
   const { w, h, cx } = s
-  const top = s.feet + 4
+  const D = dynaShape(s)
+  const top = D.top
   const sky = canvas(w, h)
   const g = sky.g
-  // The sky down to the hill, the peaks standing just behind it.
   g.drawImage(dGradient(w, h, P.sky), 0, 0)
-  peaks(g, w, top + 8, Math.max(24, h * 0.13), r, P.peak[0], P.peak[1])
-  // The hill: a broad dome under the tree, grass tufts on it.
-  for (let x = 0; x < w; x++) {
-    const d = (x - cx) / (w * 0.75)
-    const y = Math.round(top + d * d * h * 0.22)
-    rect(g, x, y, 1, h - y, P.hill[0]!)
-    rect(g, x, y, 1, 1, P.grass)
-    if (x % 3 === 0) rect(g, x, y - 1 - (x % 2), 1, 2, P.grass)
+  // The far range pale and high, the near one lower and sharper.
+  const lx = P.light.l[0]
+  range(g, w, top + 2, Math.max(30, h * 0.17), r, P.far, lx)
+  range(g, w, top + 8, Math.max(22, h * 0.12), r, P.near, lx)
+  // The hill: lit on the light's side and along its crest, darker down its flanks, in the tree's shade under the crown.
+  const grain = noise(95)
+  const shx = cx - lx * D.cw * 0.3
+  const srx = D.cw * 0.9
+  const sry = Math.max(6, (h - top) * 0.13)
+  const gys = Float32Array.from({ length: w }, (_, x) => D.ground(x + 0.5))
+  g.drawImage(
+    paletted(w, h, [...P.hill, P.grass], (x, y) => {
+      const gy = gys[x]!
+      if (y + 0.5 < gy) return -1
+      if (y + 0.5 < gy + 1.2) return 4
+      const e = ((x - shx) / srx) ** 2 + ((y - top - 2) / sry) ** 2
+      const v =
+        0.85 -
+        ((y - gy) / (h - top)) * 1.3 +
+        ((x - cx) / w) * lx * 0.5 +
+        (grain(x / 7, y / 3) - 0.5) * 0.35 -
+        (e < 1 ? 0.5 * (1 - e) : 0)
+      return Math.max(0, Math.min(3, Math.floor(v * 4 + (bayer(x, y) - 0.5) * 0.9)))
+    }),
+    0,
+    0,
+  )
+  // Grass along the crest against the sky; tufts down the hill, bigger nearer; a few stones.
+  for (let x = 0; x < w; x += 2) {
+    const y = Math.round(D.ground(x + 0.5))
+    if ((x * 5) % 7 < 3) rect(g, x, y - 2, 1, 2, P.grass)
+    else rect(g, x, y - 1, 1, 1, P.grass)
   }
-  for (let y = top + 6; y < h; y += 5)
-    for (let x = (y * 7) % 11; x < w; x += 11) {
-      const d = (x - cx) / (w * 0.75)
-      if (y > top + d * d * h * 0.22 + 3) rect(g, x, y, 3, 1, P.hill[1]!)
-    }
-  // Grass tufts and stones down the hill, bigger nearer.
-  for (let i = 0; i < Math.round(w / 6); i++) {
+  for (let i = 0; i < Math.round((w * (h - top)) / 70); i++) {
     const x = r.range(0, w)
-    const d = (x - cx) / (w * 0.75)
-    const y0 = top + d * d * h * 0.22
-    const y = r.range(y0 + 6, h)
+    const y = r.range(D.ground(x) + 4, h)
+    const k = 1 + ((y - top) / (h - top)) * 1.6
+    const lit = (x - cx) * lx > 0 && y < top + (h - top) * 0.5
+    for (const b of [-1, 0, 1]) line(g, x, y, x + b * k, y - (b ? 1.5 : 2.5) * k, lit ? P.hill[3] : P.hill[2])
+  }
+  for (let i = 0; i < 4; i++) {
+    const x = Math.round(r.range(w * 0.05, w * 0.95))
+    const y = Math.round(r.range(D.ground(x) + (h - top) * 0.25, h - 4))
     const k = 1 + ((y - top) / (h - top)) * 2
-    if (r() < 0.15) {
-      ellipse(g, x, y, Math.round(3 * k), Math.round(1.5 * k), P.hill[2]!)
-      ellipse(g, x - 1, y - 1, Math.round(2 * k), Math.max(1, Math.round(k)), P.hill[1]!)
-    } else for (let b = -1; b <= 1; b++) line(g, x, y, x + b * k, y - 2 * k, P.grass)
+    const rx = Math.round(3.5 * k)
+    const ry = Math.round(2.4 * k)
+    ellipse(g, x + 1, y + 1, rx + 1, Math.max(1, Math.round(k * 0.8)), P.hill[0])
+    // A boulder: round on top, flat where it sits, lit on the light's side.
+    for (let dy = -ry; dy <= 0; dy++)
+      for (let dx = -rx; dx <= rx; dx++) {
+        if ((dx / rx) ** 2 + (dy / ry) ** 2 > 1) continue
+        const v = (dx * Math.sign(lx || -1) * 0.6 - dy * 0.8) / ry + (bayer(x + dx, y + dy) - 0.5) * 0.6
+        rect(g, x + dx, y + dy, 1, 1, v > 0.7 ? P.stone[2] : v > 0 ? P.stone[1] : P.stone[0])
+      }
   }
-  // The tree: a thick trunk flaring into roots, three boughs, a wide canopy of clumps.
-  const tree = canvas(w, h)
-  // A withering tree keeps its trunk solid in the background; only its canopy thins.
-  const t = withered ? g : tree.g
-  const tw = Math.round(Math.max(10, s.m * 0.1))
-  const crown: [number, number] = [cx, Math.round(h * 0.26)]
-  const cw = Math.min(w * 0.48, 120)
-  const ch = Math.min(h * 0.16, 56)
-  rect(t, cx - tw / 2, crown[1], tw, top - crown[1], P.trunk[0])
-  rect(t, cx - tw / 2, crown[1], 2, top - crown[1], P.trunk[1])
-  rect(t, cx + tw / 2 - 1, crown[1], 1, top - crown[1], P.trunk[2])
-  for (let y = crown[1] + 10; y < top - 4; y += 7)
-    rect(t, cx - tw / 2 + 3 + ((y * 5) % (tw - 5)), y, 1, 4, P.trunk[2])
-  for (const side of [-1, 1]) {
-    tri(t, cx + side * tw * 0.4, top - tw, cx + side * tw * 1.6, top + 2, cx, top + 2, P.trunk[0])
-    line(t, cx + side * 2, crown[1] + ch * 0.5, cx + side * cw * 0.6, crown[1] + ch * 0.1, P.trunk[0], 3)
-  }
-  const leaf = withered ? (['#3a2a20', '#5a4030', '#7a6048'] as const) : P.leaf
-  const canopy = (cg: G, pal: readonly string[], rr: Rng) => {
-    for (let i = 0; i < 34; i++) {
-      const a = rr() * Math.PI * 2
-      const d = Math.sqrt(rr())
-      const x = cx + Math.cos(a) * cw * d
-      const y = crown[1] + Math.sin(a) * ch * d * 0.8
-      const cr = rr.range(9, 15) * Math.min(1.4, s.m / 160)
-      ellipse(cg, x, y + 2, cr, cr * 0.7, pal[0]!)
-      ellipse(cg, x - 1, y, cr - 1, cr * 0.62, pal[1]!)
-      ellipse(cg, x - 3, y - 3, cr * 0.5, cr * 0.32, pal[2]!)
+  return { sky, tree: dynaTree(s, D, P, P.light), top, crown: D.crown, glints: D.glints, D }
+}
+
+/** `shade` for a picture in a few colours: `fn` gives each pixel's index in `pal` (−1 for none), no colour parsed per
+ * pixel. */
+function paletted(
+  w: number,
+  h: number,
+  pal: readonly string[],
+  fn: (x: number, y: number) => number,
+): Canvas {
+  const cv = canvas(w, h)
+  const img = cv.g.createImageData(cv.width, cv.height)
+  const d = img.data
+  const cs = pal.map(rgba)
+  for (let y = 0, p = 0; y < cv.height; y++)
+    for (let x = 0; x < cv.width; x++, p += 4) {
+      const k = fn(x, y)
+      if (k < 0) continue
+      const c = cs[k]!
+      d[p] = c[0]
+      d[p + 1] = c[1]
+      d[p + 2] = c[2]
+      d[p + 3] = c[3]
     }
-  }
-  canopy(t, leaf, rng(1700))
-  let dead: Canvas | undefined
-  if (withered) {
-    // Its healthy canopy, drawn over the dead one and dissolved away as it withers.
-    dead = canvas(w, h)
-    canopy(dead.g, P.leaf, rng(1700))
-  }
-  return { sky, tree, dead, top, crown }
+  cv.g.putImageData(img, 0, 0)
+  return cv
+}
+
+/**
+ * A mountain range along `base`, drawn once: jagged ridgelines, each peak's face towards the light lit and the other
+ * in shade (with no side light, the faces towards the middle), gullies down the rock, snow off the summits in a ragged
+ * line. `c`: rock in shade and lit, snow in shade and lit.
+ */
+function range(g: G, w: number, base: number, ht: number, r: Rng, c: readonly string[], lx: number) {
+  const pk: [number, number, number][] = []
+  for (let x = -ht * 0.6; x < w + ht; x += ht * r.range(0.6, 1.1))
+    pk.push([x, ht * r.range(0.5, 1), r.range(0.8, 1.4)])
+  const jag = noise(r.int(1, 999))
+  const bh = Math.ceil(ht) + 2
+  // Each column's tallest peak, which of its faces this is, its ridge and its snow line.
+  const cols = Array.from({ length: w }, (_, x) => {
+    let [best, face, ph] = [-Infinity, 0, 0]
+    for (const [px, hh, sl] of pk) {
+      const v = hh - Math.abs(x + 0.5 - px) * sl
+      if (v > best) [best, face, ph] = [v, Math.sign(x + 0.5 - px), hh]
+    }
+    const lit = lx !== 0 ? face * lx > 0 : face * (w / 2 - x) > 0
+    return [
+      best + (jag(x / 2.5, 0) - 0.5) * 3,
+      face,
+      lit ? 1 : 0,
+      ph * (0.6 + (jag(x / 2, 3) - 0.5) * 0.3),
+    ] as const
+  })
+  g.drawImage(
+    paletted(w, bh, c, (x, y) => {
+      const [ridge, face, lit, snow] = cols[x]!
+      const up = bh - y
+      if (up > ridge) return -1
+      const shine = lit && jag((x + up * face * 0.9) / 2.2, 7 + up / 5) >= 0.28 ? 1 : 0
+      return (up > snow ? 2 : 0) + shine
+    }),
+    0,
+    Math.round(base - bh),
+  )
+}
+
+/** Lets go of what painting the tree took (it would otherwise stay with the scene for its whole run). */
+function settle<T extends { D: Dyna }>(H: T): T {
+  H.D.rasters.clear()
+  H.D.patches.clear()
+  H.D.noise = undefined
+  return H
+}
+
+/** The Dynamax light glinting in the Dyna Tree's leaves, each glint on its own beat; `k` 0 puts them out. */
+function glints(g: G, H: Hill, t: number, k: number, c: readonly [string, string] = ['#ff4a7a', '#ffb0c8']) {
+  if (k <= 0) return
+  H.glints.forEach(([x, y], i) => {
+    const on = Math.sin(((t * 0.8 + i * 0.37) % 1) * Math.PI) * k
+    if (on < 0.35) return
+    if (on > 0.75) {
+      rect(g, x - 1, y, 3, 1, c[0])
+      rect(g, x, y - 1, 1, 3, c[0])
+      rect(g, x, y, 1, 1, '#ffffff')
+    } else rect(g, x, y, 1, 1, c[1])
+  })
 }
 
 // ----------------------------------------------------------------------------------------------- Articuno (Galar)
@@ -187,19 +864,25 @@ function lattice(w: number, h: number, cell: number): Canvas {
   return cv
 }
 
-/** Leaf i: falling under the canopy, held where it was, then turning round the tree. */
-function leafAt(s: Raid & AX, i: number, t: number): [number, number] {
+/** Leaf i: falling under the canopy, held where it was, then turning round the tree; and how near (−1 behind it). */
+function leafAt(s: Raid & AX, i: number, t: number): [number, number, number] {
   const [x0, y0, v] = s.leaves[i]!
   const fall = (tt: number) => y0 + ((tt * v) % (s.top - y0))
-  if (t < T_HOLD) return [x0 + Math.sin(t * 2 + i) * 4, fall(t)]
+  if (t < T_HOLD) return [x0 + Math.sin(t * 2 + i) * 4, fall(t), 1]
   // Slowing to a stop, then held.
-  const held = fall(T_HOLD) + v * 0.25 * ease.outC(span(t, T_HOLD, T_HOLD + 0.5))
-  const turn = ease.inQ(span(t, T_LATTICE + 0.3, T_GLARE)) * 1.6
-  const dx = x0 - s.crown[0]
-  const dy = held - s.crown[1]
+  const hx = x0 + Math.sin(T_HOLD * 2 + i) * 4
+  const hy = fall(T_HOLD) + v * 0.25 * ease.outC(span(t, T_HOLD, T_HOLD + 0.5))
+  // Then swung round the trunk as on a turntable seen from a little above, each at its own radius, rising as it goes.
+  // Every other one starts on the ring's far side, so the ring is full all round once it turns.
+  const turn = ease.inQ(span(t, T_LATTICE + 0.3, T_GLARE)) * 2.6
+  const dx = hx - s.crown[0]
+  const R = Math.max(Math.abs(dx) + 4, s.D.cw * 0.45)
+  const a0 = i % 2 ? Math.PI - Math.asin(dx / R) : Math.asin(dx / R)
+  const a = a0 + turn
   return [
-    s.crown[0] + dx * Math.cos(turn) - dy * Math.sin(turn) * 0.5,
-    s.crown[1] + dy * Math.cos(turn) + dx * Math.sin(turn) * 0.4,
+    s.crown[0] + Math.sin(a) * R,
+    hy + (Math.cos(a) - Math.cos(a0)) * R * 0.2 - turn * 4,
+    lerp(1, Math.cos(a), Math.min(1, turn * 2)),
   ]
 }
 
@@ -222,18 +905,20 @@ export const articunoGalarCinema = raidCinema<AX>({
     const H = dynaHill(s, r, NIGHT)
     for (let i = 0; i < 40; i++)
       rect(H.sky.g, r.range(0, s.w), r.range(0, s.h * 0.4), 1, 1, r() < 0.3 ? '#ffffff' : '#8a88c8')
+    // Falling from under the crown, never out of the empty sky past its ends.
+    const reach = Math.min(s.w * 0.44, H.D.cw * 0.85)
     const leaves: [number, number, number][] = Array.from({ length: Math.round(28 * s.many) + 6 }, () => [
-      r.range(s.w * 0.08, s.w * 0.92),
-      r.range(H.crown[1], H.crown[1] + s.h * 0.1),
+      r.range(s.cx - reach, s.cx + reach),
+      r.range(H.crown[1], H.crown[1] + H.D.ch * 0.55),
       r.range(14, 30),
     ])
-    return {
+    return settle({
       ...H,
       lattice: lattice(s.w, s.h, Math.max(16, Math.round(s.m * 0.12))),
       leaves,
       shards: [],
       eyes: [Math.round(Math.max(20, s.m * 0.17)), Math.round(s.h * 0.15)],
-    }
+    })
   },
   step(s, t, dt) {
     const r = s.r
@@ -286,17 +971,23 @@ export const articunoGalarCinema = raidCinema<AX>({
       }
     }
     g.drawImage(s.tree, 0, 0)
+    glints(g, s, t, 1 - span(t, T_EYES, T_GLARE) * 0.6)
     // The cold: everything gone violet under the gaze.
     const cold = span(t, T_EYES, T_GLARE) * (1 - span(t, A_REVEAL, A_REVEAL + 0.6) * 0.6)
     if (cold > 0) wash(g, '#3a1a6a', 0.4 * cold, 8)
     // The leaves: falling, held, turning; outlined in violet once the lattice holds them.
     if (t < T_GLARE)
       for (let i = 0; i < s.leaves.length; i++) {
-        const [x, y] = leafAt(s, i, t)
+        const [x, y, near] = leafAt(s, i, t)
         // Held: a violet light round it, its colour gone cold.
         const held = span(t, T_LATTICE, T_LATTICE + 0.4)
+        const c = held > 0.5 ? ['#e8c8ff', '#b07ae0', '#6a3aa0'] : ['#8ab8a0', '#3a6656', '#163032']
+        // Swung round behind the tree: smaller and dim.
+        if (near < -0.2) {
+          rect(g, x - 1, y, 2, 1, c[2]!)
+          continue
+        }
         if (held > 0) g.drawImage(glow(5, PSY[2], 1.2, 0.8 * held), Math.round(x) - 5, Math.round(y) - 5)
-        const c = held > 0.5 ? ['#e8c8ff', '#b07ae0', '#6a3aa0'] : ['#7ac08a', '#3a8a5a', '#1e5a3a']
         rect(g, x - 2, y, 4, 2, c[1]!)
         rect(g, x - 1, y - 1, 2, 1, c[0]!)
         rect(g, x, y + 2, 2, 1, c[2]!)
@@ -425,12 +1116,12 @@ export const zapdosGalarCinema = raidCinema<ZX>({
         3,
       )
     })
-    return {
+    return settle({
       ...H,
       shards: [],
       cracks,
       sun: [Math.round(s.cx + s.w * 0.16), Math.round(Math.max(s.h * 0.12, s.sz.h * 0.7))],
-    }
+    })
   },
   step(s, t, dt) {
     const r = s.r
@@ -518,6 +1209,7 @@ export const zapdosGalarCinema = raidCinema<ZX>({
       if (d < 0) runner(g, s, t, x, y, d)
     }
     g.drawImage(s.tree, 0, 0)
+    glints(g, s, t, 0.8)
     // The kick's cracks, splitting out across the hill.
     const cq = span(t, T_KICK, T_KICK + 0.2)
     if (cq > 0)
@@ -672,7 +1364,20 @@ const T_WINGS = 2.95
 const T_CLOSE = 3.6
 const T_OPEN = 4.2
 
-type MX = Hill & { sun: [number, number]; sr: number }
+type MX = Hill & {
+  sun: [number, number]
+  sr: number
+  /** The tree under the eclipse, whole; then withered, from most of its leaves down to its last few. */
+  dim: Canvas
+  dead: Canvas[]
+}
+
+/** The hill's grass at the tree's roots, darkened as the eclipse darkens the hill. */
+const UNDER: Pal = {
+  ...DUSK,
+  grass: mix(DUSK.grass, '#14041a', 0.55),
+  hill: DUSK.hill.map((c) => mix(c, '#14041a', 0.55)) as unknown as Pal['hill'],
+}
 
 export const moltresGalarCinema = raidCinema<MX>({
   id: 'cinema-moltres-galar',
@@ -688,8 +1393,14 @@ export const moltresGalarCinema = raidCinema<MX>({
     [M_REVEAL, 0.5, 3],
   ],
   setup(s) {
-    const H = dynaHill(s, s.r, DUSK, true)
-    return { ...H, sun: [s.cx, Math.round(s.h * 0.15)], sr: Math.round(Math.max(18, s.m * 0.14)) }
+    const H = dynaHill(s, s.r, DUSK)
+    return settle({
+      ...H,
+      dim: dynaTree(s, H.D, UNDER, ECLIPSE),
+      dead: [0.75, 0.5, 0.3, 0.12].map((keep) => dynaTree(s, H.D, UNDER, WITHERED, { keep, holes: 0.3 })),
+      sun: [s.cx, Math.round(s.h * 0.15)],
+      sr: Math.round(Math.max(18, s.m * 0.14)),
+    })
   },
   step(s, t) {
     const r = s.r
@@ -729,12 +1440,20 @@ export const moltresGalarCinema = raidCinema<MX>({
     const dark = span(t, T_ECLIPSE, T_ECLIPSE + 0.8)
     if (dark > 0) wash(g, '#14041a', 0.55 * dark, 8)
     drawEclipse(g, s, t)
-    // The tree: whole, then withering, its living canopy dissolving off the dead one and the dead one thinning as its
-    // leaves fall, the eclipse showing through the bare boughs.
+    // The tree: lit by the dusk, gone dark under the eclipse, then withering, its dead leaves dropping off the boughs
+    // clump by clump till the black sun shows through them. Every picture holds the boughs and each holds less than
+    // the one over it, so only the topmost whole one and those over it need drawing.
     const wither = span(t, T_WITHER, T_WITHER + 0.8)
-    const bare = span(t, T_WITHER + 0.5, T_CREEP + 0.8)
-    dissolve(g, s.tree, 1 - bare * 0.6)
-    if (wither < 1 && s.dead) dissolve(g, s.dead, 1 - wither)
+    const bare = span(t, T_WITHER + 0.5, T_CREEP + 0.8) * (s.dead.length - 1)
+    const stack: [Canvas, number][] = [
+      ...s.dead.map((c, i): [Canvas, number] => [c, 1 - span(bare, i, i + 1)]).reverse(),
+      [s.dim, 1 - wither],
+      [s.tree, 1 - dark],
+    ]
+    let from = 0
+    for (let i = 0; i < stack.length; i++) if (stack[i]![1] >= 1) from = i
+    for (const [c, k] of stack.slice(from)) dissolve(g, c, k)
+    glints(g, s, t, 1 - wither)
     drawWings(g, s, t)
     drawCreep(g, s, t)
   },
