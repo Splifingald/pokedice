@@ -20,6 +20,7 @@ import { dayNightRulesDue } from './dayNight'
 import { eventUnlockDue } from './events'
 import { extremeRulesDue, isExtreme } from './extreme'
 import { generalRulesDue } from './general'
+import { friendshipRulesDue, friendshipWaits } from './friendship'
 import { inviteRulesDue } from './invites'
 import { liveList, livePopupDue, livesFor, type LiveSet } from './liveEvents'
 import { powerRulesDue } from './powers'
@@ -185,7 +186,7 @@ export interface NoticeContext {
  * Home's notices (docs/43 §7), in the order Home shows them: each feature with a page of its own as it opens (until its
  * page's rules card is read: the feature's own "seen" flag), then what asks nothing of the player. The flags are the
  * pop-ups' own (`dayCare.visited`, `versusRulesSeen`, `events.seen`, `trades.rulesSeen`, `general.rulesSeen`,
- * `shinyDexSeen`, `unownDexSeen`, `invites.rulesSeen`, `events.raidRulesSeen`, `underground.rulesSeen`,
+ * `shinyDexSeen`, `unownDexSeen`, `invites.rulesSeen`, `friendship.rulesSeen`, `events.raidRulesSeen`, `underground.rulesSeen`,
  * `events.calendarRulesSeen`, `leaderboardVisited`, `donationSeen`, the invite's per-region mark on the device).
  */
 const NOTICES = {
@@ -205,6 +206,9 @@ const NOTICES = {
   unownDex: (s: SaveData, d: GameData) => unownDexRulesDue(s, d),
   /** The invite rewards. → /friends */
   invites: (s: SaveData, d: GameData) => inviteRulesDue(s, d),
+  /** Friendship streaks and the Friend Market (docs/57), for an account in the main game. → /friends */
+  friendship: (s: SaveData, d: GameData, c: NoticeContext) =>
+    !!c.signedIn && friendshipRulesDue(s, d) && !friendshipWaits(s, d),
   /** The raid overhaul's rules (docs/40), once a raid is open with it on. → /events/raid */
   raidRules: (s: SaveData, d: GameData) => raidOverhaulRulesDue(s, d),
   /** The Underground, while its live event runs. → /underground */

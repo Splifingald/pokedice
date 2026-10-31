@@ -38,6 +38,10 @@ import {
   isTalentKey,
   TALENT_KEYS,
   talentTier,
+  marketShiny,
+  marketWeek,
+  normaliseMarketItem,
+  type FriendshipConfig,
 } from '@/engine'
 import { PixelIcon, type IconName } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
@@ -698,6 +702,104 @@ function UnownDexBox() {
 }
 
 /**
+ * Friendship streaks and the Friend Market (docs/57): what each tier of a streak pays a day, the day's cap, the
+ * market's weekly shelf and the shiny of the week. The server prices and pays from this same row (friendship_cfg()).
+ */
+function FriendshipBox() {
+  const data = useAdminData()
+  const [raw, setRaw] = useConfigRow('friendship')
+  const cfg: FriendshipConfig = { ...DEFAULT_CONFIG.friendship, ...(raw ?? {}) }
+  const set = (patch: Partial<FriendshipConfig>) => setRaw({ ...cfg, ...patch })
+  const n = (v: number | null | undefined, lo: number, hi: number, d: number) => Math.max(lo, Math.min(hi, Math.round(v ?? d)))
+  const week = marketWeek(new Date().toISOString().slice(0, 10))
+  const shinyNow = data ? marketShiny(week, { ...data, config: { ...data.config, friendship: cfg } }) : null
+  return (
+    <Box
+      title="Friendship & Friend Market"
+      icon="heart"
+      hint="Two friends who raid beside each other's team, trade together or make an Egg with the other's Pokémon keep a streak going (once per UTC day). Each new streak day pays both of them Festival Coins by its tier, up to the daily cap across every friend. A missed day starts the streak again. The coins buy from the Friend Market, whose limits and shiny reset every Monday 00:00 UTC."
+    >
+      <div className="grid gap-3">
+        <div className="grid gap-3 sm:grid-cols-5">
+          {cfg.tiers.map((tier, i) => (
+            <Field key={i} label={`Tier ${i + 1}: from day`} hint={`pays ${tier.coins} a day`}>
+              <div className="flex gap-1.5">
+                <NumInput
+                  className="w-16"
+                  min={1}
+                  value={tier.from}
+                  onChange={(v) => set({ tiers: cfg.tiers.map((x, j) => (j === i ? { ...x, from: n(v, 1, 9999, 1) } : x)) })}
+                />
+                <NumInput
+                  className="w-16"
+                  min={0}
+                  max={99}
+                  value={tier.coins}
+                  onChange={(v) => set({ tiers: cfg.tiers.map((x, j) => (j === i ? { ...x, coins: n(v, 0, 99, 0) } : x)) })}
+                />
+              </div>
+            </Field>
+          ))}
+        </div>
+        <Field label="Daily cap" hint="coins a player can earn a UTC day, every friend together">
+          <NumInput className="w-24" min={0} value={cfg.dailyCap} onChange={(v) => set({ dailyCap: n(v, 0, 9999, 50) })} />
+        </Field>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {cfg.market.map((m, i) => (
+            <Field key={m.key} label={data?.items[m.key]?.name ?? m.key} hint="price · weekly limit">
+              <div className="flex gap-1.5">
+                <NumInput
+                  className="w-20"
+                  min={1}
+                  value={m.price}
+                  onChange={(v) => set({ market: cfg.market.map((x, j) => (j === i ? normaliseMarketItem({ ...x, price: v ?? 1 }) : x)) })}
+                />
+                <NumInput
+                  className="w-16"
+                  min={1}
+                  max={99}
+                  value={m.limit}
+                  onChange={(v) => set({ market: cfg.market.map((x, j) => (j === i ? normaliseMarketItem({ ...x, limit: v ?? 1 }) : x)) })}
+                />
+              </div>
+            </Field>
+          ))}
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Field label="Shiny of the week: price">
+            <NumInput className="w-24" min={1} value={cfg.shiny.price} onChange={(v) => set({ shiny: { ...cfg.shiny, price: n(v, 1, 99999, 150) } })} />
+          </Field>
+          <Field label="Shiny of the week: level">
+            <NumInput className="w-20" min={1} max={100} value={cfg.shiny.level} onChange={(v) => set({ shiny: { ...cfg.shiny, level: n(v, 1, 100, 15) } })} />
+          </Field>
+          <Field
+            label="Shiny pool (Pokédex numbers, one a week in this order)"
+            hint={`this week: ${shinyNow ? `#${shinyNow} ${data?.species[shinyNow]?.name ?? ''}` : 'none'}`}
+          >
+            <input
+              aria-label="Shiny pool"
+              className={cx(inputCls, 'w-full')}
+              defaultValue={cfg.shiny.pool.join(', ')}
+              onBlur={(e) =>
+                set({
+                  shiny: {
+                    ...cfg.shiny,
+                    pool: e.target.value
+                      .split(/[^0-9]+/)
+                      .map(Number)
+                      .filter((d) => Number.isInteger(d) && d > 0 && (!data || data.species[d])),
+                  },
+                })
+              }
+            />
+          </Field>
+        </div>
+      </div>
+    </Box>
+  )
+}
+
+/**
  * The General upgrades (docs/25): the levels' numbers. Their switches (the tab, the Shiny Charm, and the Link Cable and
  * Bait that came with them) are on the Switches tab; the server reads the General one too, for the golden names.
  */
@@ -1350,6 +1452,7 @@ const TABS = [
   { id: 'general', label: 'General upgrades', icon: 'navUpgrades' },
   { id: 'powers', label: 'Battle powers', icon: 'up' },
   { id: 'invites', label: 'Invite rewards', icon: 'gift' },
+  { id: 'friendship', label: 'Friendship', icon: 'heart' },
   { id: 'push', label: 'Push', icon: 'bell' },
   { id: 'gameCorner', label: 'Game Corner', icon: 'coin' },
   { id: 'unown', label: 'Unown Pokédex', icon: 'book' },
@@ -1438,6 +1541,7 @@ const FEATURES: Feature[] = [
   inPart('Gigantamax', 'gigantamax', 'boost', 'powers'),
   own('Z-Moves', 'zMove', 'powers'),
   own('Friend invite rewards', 'inviteRewards', 'invites'),
+  own('Friendship & Friend Market', 'friendship', 'friendship'),
   own('Push notifications', 'push', 'push'),
 ]
 
@@ -1569,6 +1673,7 @@ export function ConfigSection() {
       {tab === 'general' && <GeneralBox />}
       {tab === 'powers' && <BattlePowersBox />}
       {tab === 'invites' && <InviteRewardsBox />}
+      {tab === 'friendship' && <FriendshipBox />}
       {tab === 'push' && <PushBox />}
       {tab === 'gameCorner' && <SlotMachineBox />}
       {tab === 'unown' && <UnownDexBox />}

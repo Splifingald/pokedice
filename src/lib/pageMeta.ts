@@ -29,6 +29,7 @@ export function pageTitleKey(path: string): string | 'area' | null {
     '/pokedex': 'ui.dex.title',
     '/leaderboard': 'ui.nav.leaderboard',
     '/friends': 'ui.friends.title',
+    '/market': 'ui.market.title',
     '/versus': 'ui.versus.title',
     '/trades': 'ui.trades.title',
     '/settings': 'ui.settings.title',

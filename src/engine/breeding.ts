@@ -3,6 +3,7 @@
 // group, every `breedDittoHours` for pairs with a Ditto. A clock only runs while it has a pair. One Egg waits at a
 // time; Egg now buys the next check early. The hatching itself is `hatchEgg` in daycare.ts.
 import { dayCareOf, isDayCareOpen } from './daycare'
+import { friendshipOn, queueEggReport } from './friendship'
 import type { Rng } from './rng'
 import { TALENT, talentOf } from './talents'
 import type { DayCareGuest, DayCareResident, DayCareState, EggParent, GameData, SaveData } from './types'
@@ -92,7 +93,8 @@ export function matesOf(save: SaveData, data: GameData, key: string): CareMember
   return ps.flatMap((p) => (p.a.key === key ? [p.b] : p.b.key === key ? [p.a] : []))
 }
 
-const parentOf = (m: CareMember): EggParent => (m.guest ? { dex: m.dex, owner: m.guest.ownerName } : { dex: m.dex })
+const parentOf = (m: CareMember): EggParent =>
+  m.guest ? { dex: m.dex, owner: m.guest.ownerName, ownerId: m.guest.owner } : { dex: m.dex }
 
 export type Clock = 'breed' | 'ditto'
 const CLOCKS: readonly Clock[] = ['breed', 'ditto']
@@ -208,7 +210,17 @@ export function processDayCare(save: SaveData, data: GameData, now: number, rng:
     changed = true
   }
   if (!changed) return { save }
-  return laid ? { save: { ...save, dayCare: dc }, laid: true } : { save: { ...save, dayCare: dc } }
+  return laid
+    ? { save: reportEggFriends({ ...save, dayCare: dc }, data, dc.egg?.parents), laid: true }
+    : { save: { ...save, dayCare: dc } }
+}
+
+/** An Egg made with a friend's Pokémon keeps the friendship streak going (docs/57): the server is told later. */
+function reportEggFriends(save: SaveData, data: GameData, parents: readonly EggParent[] | undefined): SaveData {
+  if (!friendshipOn(data)) return save
+  let out = save
+  for (const p of parents ?? []) if (p.ownerId) out = queueEggReport(out, p.ownerId)
+  return out
 }
 
 export type RushRefusal = 'egg' | 'pair' | 'gold'
@@ -234,12 +246,13 @@ export function rushEgg(
   // There is a pair, so a clock runs.
   const { clock } = nextClock(save, data, now)!
   const p = rng.pick(ps.filter((x) => onClock(x, clock)))
+  const parents: [EggParent, EggParent] = [parentOf(p.a), parentOf(p.b)]
   return {
-    save: {
-      ...save,
-      gold: save.gold - price,
-      dayCare: { ...dc, [FIELD[clock]]: now, egg: { at: now, parents: [parentOf(p.a), parentOf(p.b)] } },
-    },
+    save: reportEggFriends(
+      { ...save, gold: save.gold - price, dayCare: { ...dc, [FIELD[clock]]: now, egg: { at: now, parents } } },
+      data,
+      parents,
+    ),
   }
 }
 

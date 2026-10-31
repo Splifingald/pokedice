@@ -25,7 +25,7 @@ interface GiftsState {
   rulesFor: number[] | null
 }
 
-export type GiftSource = 'message' | 'invite' | 'calendar'
+export type GiftSource = 'message' | 'invite' | 'calendar' | 'market'
 
 export const useGiftMoment = create<GiftsState>(() => ({ opening: null, source: 'message', busy: false, rulesFor: null }))
 

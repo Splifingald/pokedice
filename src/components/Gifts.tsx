@@ -345,7 +345,9 @@ export function GiftMoment({
           ? t('ui.gift.wobble')
           : source === 'calendar'
             ? t('ui.cal.arrive', { n: day ?? 1 })
-            : t(source === 'invite' ? 'ui.invite.arrive' : 'ui.gift.arrive')
+            : source === 'market'
+              ? t('ui.market.arrive')
+              : t(source === 'invite' ? 'ui.invite.arrive' : 'ui.gift.arrive')
   return createPortal(
     <motion.div
       role="dialog"
@@ -353,7 +355,9 @@ export function GiftMoment({
       aria-label={
         source === 'calendar'
           ? t('ui.cal.arrive', { n: day ?? 1 })
-          : t(source === 'invite' ? 'ui.invite.momentTitle' : 'ui.gift.title')
+          : source === 'market'
+            ? t('ui.market.arrive')
+            : t(source === 'invite' ? 'ui.invite.momentTitle' : 'ui.gift.title')
       }
       className="fixed inset-0 z-[100] overflow-y-auto bg-paper"
       initial={{ opacity: 0 }}

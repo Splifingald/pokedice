@@ -225,7 +225,7 @@ export function background(W: number, H: number): Background {
 }
 
 // ------------------------------------------------------------------ Poké Balls
-export type BallKind = 'poke' | 'great' | 'ultra' | 'master' | 'trick' | 'raid'
+export type BallKind = 'poke' | 'great' | 'ultra' | 'master' | 'trick' | 'raid' | 'friend'
 export const BALLS: Record<BallKind, { top: readonly string[]; mark?: readonly string[] }> = {
   poke: { top: ['#ff8a78', '#ec3b33', '#a8231f'] },
   great: { top: ['#7fb3ff', '#3474e0', '#1f4aa0'], mark: ['#ff6b5e', '#d8312a'] },
@@ -235,6 +235,8 @@ export const BALLS: Record<BallKind, { top: readonly string[]; mark?: readonly s
   trick: { top: ['#a15fda', '#8e40d2', '#6726a0'] },
   // The Raid Ball (docs/44): drawn from its picture once loaded (loadRaidBall); these stand in until then.
   raid: { top: ['#ff7a9e', '#e8336b', '#8c1238'], mark: ['#fff6c2', '#ffd23f'] },
+  // The Friend Ball (docs/57): the games' green top with its red band.
+  friend: { top: ['#8fdc6a', '#4aa93a', '#2a6e24'], mark: ['#ff8a5c', '#e2452a'] },
 }
 
 /** Trick or Treat's ball picture (30 × 30, the ball in its middle 18 × 18): the file its buttons show. */
@@ -368,7 +370,9 @@ export const ballOfItem = (key: string | null | undefined): BallKind =>
         ? 'master'
         : key === 'raid-ball'
           ? 'raid'
-          : 'poke'
+          : key === 'friend-ball'
+            ? 'friend'
+            : 'poke'
 const BOTTOM = ['#ffffff', '#e9e9f2', '#b9b9cc']
 const OUT = '#1b1626'
 

@@ -138,6 +138,19 @@
   "shopBadges": 4
  },
  {
+  "key": "friend-ball",
+  "name": "Friend Ball",
+  "description": "A ball from the Friend Market: adds 3 to the catch die, as an Ultra Ball does.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/friend-ball.png",
+  "price": 100,
+  "effect": {
+   "kind": "ball",
+   "bonus": 3
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
   "key": "master-ball",
   "name": "Master Ball",
   "description": "The best ball there is. It never misses.",

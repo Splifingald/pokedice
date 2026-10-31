@@ -17,7 +17,7 @@ const VIEWS: { id: SocialView; to: string; label: string; icon: IconName }[] = [
 ]
 
 /** The routes the Social tab lights up for. */
-export const SOCIAL_PATHS = ['/social', ...VIEWS.map((v) => v.to)]
+export const SOCIAL_PATHS = ['/social', '/market', ...VIEWS.map((v) => v.to)]
 
 /**
  * The Social tab's views (docs/43 §3, §5.8): the leaderboard, Versus, Friends and Trades, one place for the other

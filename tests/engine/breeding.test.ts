@@ -185,7 +185,7 @@ describe('The checks', () => {
     const both = run(at([133, 135], [132], { breedAt: T0, dittoAt: T0 - cfg.breedDittoHours * HOUR + 1 }), T0).save
     const when = run(both, T0 + 1)
     expect(when.laid).toBe(true)
-    expect(egg(when.save)?.parents?.[1]).toEqual({ dex: 132, owner: 'Lea' })
+    expect(egg(when.save)?.parents?.[1]).toEqual({ dex: 132, owner: 'Lea', ownerId: 'lea' })
     expect(dayCareOf(when.save)).toMatchObject({ breedAt: T0, dittoAt: T0 + 1 })
   })
 
@@ -207,7 +207,7 @@ describe('The checks', () => {
 
   it('a visitor pair names its owner, for "Ditto (Noor)"', () => {
     const s = run(at([143], [133, 132]), T0).save
-    expect(egg(run(s, T0 + cfg.breedDittoHours * HOUR).save)?.parents).toEqual([{ dex: 143 }, { dex: 132, owner: 'Noor' }])
+    expect(egg(run(s, T0 + cfg.breedDittoHours * HOUR).save)?.parents).toEqual([{ dex: 143 }, { dex: 132, owner: 'Noor', ownerId: 'noor' }])
   })
 
   it('nothing runs while the Day Care is shut', () => {
@@ -256,7 +256,7 @@ describe('Egg now', () => {
     expect(dc.dittoAt).toBe(T0 + HOUR)
     expect(dc.breedAt).toBe(T0)
     expect(dc.egg?.at).toBe(T0 + HOUR)
-    expect(dc.egg?.parents?.[1]).toEqual({ dex: 132, owner: 'Lea' })
+    expect(dc.egg?.parents?.[1]).toEqual({ dex: 132, owner: 'Lea', ownerId: 'lea' })
 
     const plain = rushEgg(at([133, 135], [], { breedAt: T0, dittoAt: T0 }), data, T0 + HOUR, rng())
     if (!('save' in plain)) throw new Error(plain.refused)

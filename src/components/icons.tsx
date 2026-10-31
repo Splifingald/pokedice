@@ -55,6 +55,15 @@ const GIFT_PAL: Record<string, string> = {
   o: '#e08e00',
 }
 
+/** The Festival Coin: rose, its rim deeper, a white heart (the same in both themes, its outline the edge). */
+const FCOIN_PAL: Record<string, string> = {
+  k: '#24304f',
+  w: '#ffffff',
+  l: '#ffc2d6',
+  p: '#ff6f9c',
+  P: '#c93d6c',
+}
+
 /** The battle Bag: a red flap with a gold buckle over a tan backpack, its front pocket and brown straps. */
 const BAG_PAL: Record<string, string> = {
   k: '#24304f',
@@ -167,6 +176,20 @@ export const ICONS = {
     '.krrryyrrrk.',
     '.kRRRyoRRRk.',
     '.kkkkkkkkkk.',
+  ],
+  /** A Festival Coin (docs/57): the Friend Market's currency, a rose coin with a white heart. */
+  fcoin: [
+    '...kkkkkk...',
+    '.kkllllllkk.',
+    '.klppppppPk.',
+    'klpwwppwwpPk',
+    'klwwwwwwwwPk',
+    'kpwwwwwwwwPk',
+    'kppwwwwwwpPk',
+    'kpppwwwwpPPk',
+    '.kpppwwpPPk.',
+    '.kkPPPPPPkk.',
+    '...kkkkkk...',
   ],
   burn: ['....k...', '...kok..', '..koYok.', '.kooYyok', '.koyYyok', '.kooyyok', '..koook.', '...kkk..'],
   frozen: ['...kk...', '..kCck..', '.kCccck.', 'kCcCccck', 'kcccCcck', '.kcccck.', '..kcck..', '...kk...'],
@@ -604,6 +627,7 @@ const OWN_PALETTE: Partial<Record<IconName, Record<string, string>>> = {
   navFriends: NAV_PAL,
   trade: TRADE_PAL,
   gift: GIFT_PAL,
+  fcoin: FCOIN_PAL,
   bag: BAG_PAL,
   pumpkin: PUMPKIN_PAL,
   pickaxe: DIG_PAL,

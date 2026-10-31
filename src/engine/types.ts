@@ -1099,6 +1099,12 @@ export interface GameConfig {
    */
   championCinema: { access: EventAccess }
   /**
+   * Friendship streaks and the Friend Market (docs/57): the switch, what a streak's day pays by tier, the day's cap
+   * across every friend, and the weekly market (items with a price and a weekly limit, and the shiny of the week drawn
+   * from a pool). The server prices and pays from the same row (migration 0102, friendship_cfg()).
+   */
+  friendship: FriendshipConfig
+  /**
    * The Unown Pokédex (docs/41): the 28 letters, once an area where Unown live is opened; `reward` ₽ for the last one.
    * Migration 0080 inserts the same row.
    */
@@ -1804,6 +1810,8 @@ export interface SaveData {
   gifts?: GiftsSave
   /** Friend invite rewards (docs/15 §25): the tiers opened, and the rules seen. Absent = none yet. */
   invites?: InvitesSave
+  /** Friendship streaks and the Friend Market (docs/57): the rules read, purchases put away. Absent = none yet. */
+  friendship?: FriendshipSave
   /** The General upgrades (docs/25), for every region of this save. Absent = none bought. */
   general?: GeneralSave
   /** Trick or Treat (docs/29): its rules seen. Absent = never met. */
@@ -2207,11 +2215,44 @@ export interface DayCareGuest {
   addedAt: number
 }
 
+/** One step of the friendship streak (docs/57): from its first day on, each new day of the streak pays `coins`. */
+export interface FriendshipTier {
+  from: number
+  coins: number
+}
+
+/** A Friend Market item: its price in Festival Coins and how many a player can buy a week. */
+export interface FriendMarketItem {
+  key: string
+  price: number
+  limit: number
+}
+
+export interface FriendshipConfig {
+  access: EventAccess
+  tiers: FriendshipTier[]
+  dailyCap: number
+  market: FriendMarketItem[]
+  /** The shiny of the week: its price, its level and the pool it turns through, a species a week. */
+  shiny: { price: number; level: number; pool: number[] }
+}
+
+/** Friendship in a save (docs/57): the rules read, purchases put away, Eggs to tell the server about. */
+export interface FriendshipSave {
+  rulesSeen?: boolean
+  /** The last market purchases put in the save (their ids): one handed back twice is applied once. */
+  applied?: string[]
+  /** Friends (user ids) whose Pokémon helped make an Egg, not told to the server yet. */
+  eggs?: string[]
+}
+
 /** One parent of an Egg, for "Eevee and Ditto (Noor) left it": the species, and whose it is when it's a visitor. */
 export interface EggParent {
   dex: number
   /** The friend's name, for a guest. */
   owner?: string
+  /** The friend's user id, for a guest: the Egg keeps the friendship streak going (docs/57). */
+  ownerId?: string
 }
 
 /** What an Egg holds once it has hatched, before it reaches a Box: its species, and the shiny and talent rolls. */
