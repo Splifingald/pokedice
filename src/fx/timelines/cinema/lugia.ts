@@ -30,6 +30,16 @@ const T_BURST = 3.75
 const REVEAL = 4.6
 const DUR = REVEAL + AFTER_REVEAL
 
+/** The smaller whirlpools: where (across, how far out on the sea) and when each opens. */
+const POOLS: readonly (readonly [number, number, number])[] = [
+  [0.2, 0.3, 1.85],
+  [0.8, 0.22, 2.0],
+  [0.34, 0.68, 2.12],
+  [0.7, 0.58, 2.24],
+  [0.1, 0.82, 2.36],
+  [0.9, 0.86, 2.46],
+]
+
 const AURA = ['#ffffff', '#e0ecff', '#8ab0e0', '#2a4a78'] as const
 
 type S = {
@@ -259,6 +269,51 @@ export const lugiaCinema: Cinema = {
               )
           }
         }
+        // Smaller whirlpools first (the user's review), opening one by one across the calm sea, then drawn in and
+        // swallowed by the great one before it bursts.
+        for (const [fx, fd, at] of POOLS) {
+          const grow = ease.outC(span(t, at, at + 0.5))
+          if (grow <= 0) continue
+          const merge = ease.inQ(span(t, T_WHIRL + 0.3, T_BURST - 0.15))
+          if (merge >= 1) continue
+          const px0 = w * fx
+          const py0 = sea + 4 + (h - sea - 8) * fd
+          const px = lerp(px0, cx, merge)
+          const py = lerp(py0, sea + 10, merge)
+          const pr = Math.round((10 + fd * 30) * (Math.min(w, h) / 160) * grow * (1 - merge * 0.8))
+          if (pr < 2) continue
+          ellipse(
+            g,
+            Math.round(px),
+            Math.round(py),
+            Math.round(pr * 0.5),
+            Math.max(1, Math.round(pr * 0.1)),
+            '#040c1a',
+          )
+          ellipse(
+            g,
+            Math.round(px),
+            Math.round(py),
+            Math.round(pr * 0.25),
+            Math.max(1, Math.round(pr * 0.05)),
+            '#02060e',
+          )
+          for (let k = 0; k < 4; k++) {
+            const rr = Math.round(pr * (1 - k * 0.2))
+            const a0 = t * (5 + k * 2) + fx * 10 + k
+            if (rr > 1)
+              ellipseLine(
+                g,
+                Math.round(px),
+                Math.round(py),
+                rr,
+                Math.max(1, Math.round(rr * 0.18)),
+                k % 2 ? '#c8e0ff' : '#5a7aa8',
+                a0,
+                a0 + Math.PI * 1.2,
+              )
+          }
+        }
         s.rain.draw(g)
         // The calm is a held breath: everything a little darker until it bursts.
         if (t > T_CALM && t < T_BURST) wash(g, '#02040a', 0.25 * span(t, T_CALM, T_CALM + 0.5), 8)
@@ -312,6 +367,10 @@ export const lugiaCinema: Cinema = {
           [T_CALM, quiet(() => tone(659, 1.4, { type: 'sine', vol: 0.025 }))],
           [T_MOON, quiet(() => tone(988, 1.2, { type: 'sine', vol: 0.02 }))],
           [T_WHIRL, quiet(() => hiss(1.2, { freq: 300, slide: 900, vol: 0.07 }))],
+          ...POOLS.map(
+            ([, , at], i) =>
+              [at, quiet(() => hiss(0.5, { freq: 260 + i * 40, slide: 500, vol: 0.035 }))] as const,
+          ),
           [3.15, quiet(() => fxSound('legend.heart'))],
           [3.45, quiet(() => fxSound('legend.heart'))],
           [T_BURST, quiet(() => (fxSound('water.jet'), hiss(1, { freq: 250, type: 'lowpass', vol: 0.14 })))],

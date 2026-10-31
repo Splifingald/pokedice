@@ -55,13 +55,19 @@ shards, a row wobble, rings, cues sorted by time). Times are seconds.
 Johto's:
 
 - **Lugia — the Whirl Islands** (`lugia.ts`, reveal 4.6). A storm at sea: swells, rain, black rocks, lightning far off.
-  The sea falls still, the rain stops in mid-air, the moon breaks through and lays a silver road on the water. A
-  whirlpool opens with light rising from the deep; the sea bursts upward in a tower of spray and Lugia rises out of it,
-  the water pouring off its wings.
+  The sea falls still, the rain stops in mid-air, the moon breaks through and lays a silver road on the water. Small
+  whirlpools open here and there, then drift together into one great whirlpool with light rising from the deep; the sea
+  bursts upward in a tower of spray and Lugia rises out of it, the water pouring off its wings.
 - **Ho-Oh — the Bell Tower at dawn** (`hooh.ts`, reveal 4.55). A violet sky, the tower's tiers black against it, a lamp
   in each. Its bells ring three times (gold rings of sound); the sun comes up beside it, the sky warms, rays fan out and
-  a rainbow draws itself across the sky. Rainbow feathers fall; a golden shape crosses the sky, circles behind the
-  tower's top and swoops down before it, wings flaring in sacred fire. Rainbow rings on the reveal.
+  a faint, thin rainbow draws itself across the sky, fading once Ho-Oh is there. Golden feathers fall; a golden shape
+  crosses the sky, circles behind the tower's top and swoops down before it, wings flaring in sacred fire. Gold rings
+  on the reveal.
+- **Red Gyarados — the Lake of Rage** (`gyarados.ts`, reveal 4.5). A clear afternoon, a blue lake under green hills,
+  Magikarp leaping (the real sprites, small far off and bigger near), a radio mast on the far shore. The mast's signal
+  pulses out in red rings and the Magikarp go wild; a shiny one leaps higher than the rest with a sparkle, stops in the
+  air, flickers between its outline and Gyarados's as an evolution does, and crashes in. The sky breaks into a storm,
+  the lake erupts, the red Gyarados rises, and the lake turns red from where it rose, in perspective.
 - **Raikou — the storm** (`raikou.ts`, boss, reveal 3.95). A plain at night by the Burned Tower's ruin, rain. Lightning
   strikes faster and faster, somewhere else each time; at each strike Raikou's outline crackles for an instant, a
   streak along the ground to the next. The dark; sparks run over the ground to one spot; one great bolt, and it is there.
@@ -203,8 +209,9 @@ Paldea's (raids sharing `gen9kit.ts`'s `raidScene` wrapper), and Pecharunt:
 - **The Treasures of Ruin** (`ruin.ts`, 4.6): a sealed shrine, its stakes pulled one by one, the chains snapping; then
   Wo-Chien's tablets and a wave of rot, Chien-Pao's sword and one slash, Ting-Lu's vessel rising from a quake, Chi-Yu's
   beads drawing a ring of fire.
-- **Koraidon** (`koraidon.ts`, 4.5): Area Zero's past, an enormous ancient sun, a leap across it and a Collision Course
-  comet. **Miraidon** (`miraidon.ts`, 4.4): Area Zero's future, a neon grid and an Electro Drift circle.
+- **Koraidon** (`koraidon.ts`, 4.5): Area Zero's past, an enormous ancient sun; a small shape climbs onto the crater's
+  far spire and roars, leaps across the sun's face, ignites into a Collision Course comet and craters the red earth,
+  then stands where it struck, the sun behind it. **Miraidon** (`miraidon.ts`, 4.4): Area Zero's future, a neon grid and an Electro Drift circle.
 - **The Paradox Pokémon** (`paradox.ts`, 4.5, two scenes): a tear like burning paper onto the far past for the ancient
   ones (1009, 1020, 1021); a time machine printing the Pokémon line by line for the future ones (1010, 1022, 1023).
 - **The Loyal Three** (`loyal.ts`, 4.5): Kitakami's plaza, toxic chains coiling up a statue; Okidogi bursting it and
@@ -222,7 +229,9 @@ calm OS removes the shakes and flashes, as everywhere. Sounds are synthesised (`
 ## 3. Where it plugs in
 
 - `RaidView` picks the legend's cinematic (`RAID_CINEMAS`, by the Mega raid's base) when `legendCinemaOn`; `RaidIntro`
-  plays it as its scene, with no tapes or alarm (`legend.quiet`), its words at `wordsAt(cinema.reveal)`.
+  plays it as its scene, with no tapes or alarm (`legend.quiet`), its words at `wordsAt(cinema.reveal)`. A cinematic
+  that shows other Pokémon lists them (`Cinema.sprites`, e.g. Gyarados's Magikarp and its shiny one) and `RaidIntro`
+  loads them with the legend's sprite before it plays.
 - `BattleView`'s boss intro plays `BOSS_CINEMAS[dex].makeBattle` instead of `legendTimeline` when the switch is on.
 - **Admin → Config → Legendary intros**: every cinematic with a **Watch** button (a raid's plays the real raid intro
   with sample sides; a boss's plays on a battle stage), and a Shiny tick. The switch is on the Switches tab.

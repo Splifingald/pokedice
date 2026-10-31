@@ -1,9 +1,9 @@
-// The red Gyarados's raid entrance (docs/53): the Lake of Rage at dusk. Magikarp leaping in a calm lake under a red
-// sky, hills all round, a radio mast on the far shore. The mast's lamp starts blinking and its signal pulses out over
-// the water in red rings: the Magikarp go wild, leaping everywhere. One leaps higher than the rest and stops in the air,
-// glowing white; it swells and flickers between its shape and a serpent's, as an evolution does, then crashes into the
-// lake as one. The sky breaks into a storm; a red glow circles under the water; the lake erupts and the red Gyarados
-// rises out of it, enraged. The reveal; it towers over the lake in the storm.
+// The red Gyarados's raid entrance (docs/53): the Lake of Rage on a clear afternoon. Magikarp leaping in a calm blue
+// lake, hills all round, a radio mast on the far shore. The mast's lamp starts blinking and its signal pulses out over
+// the water in red rings: the Magikarp go wild, leaping everywhere. A shiny one, gold among the red, leaps higher than
+// the rest and stops in the air, glowing white; it swells and flickers between its shape and a serpent's, as an
+// evolution does, then crashes into the lake as one. The sky breaks into a storm; a red glow circles under the water;
+// the lake erupts, the red Gyarados rises out of it, and the lake turns red from where it rose (the user's review).
 import { fxSound, hiss, tone } from '@/audio/sfx'
 import {
   bolt,
@@ -11,7 +11,6 @@ import {
   ease,
   ellipse,
   glow,
-  icon,
   lerp,
   Particles,
   polyline,
@@ -22,7 +21,7 @@ import {
   type Canvas,
   type G,
 } from '../../pixel'
-import { drawSprite, spriteSize } from '../../sprites'
+import { drawSprite, spriteKey, spriteSize } from '../../sprites'
 import { screenFlash, screenShake, skippingNow, within, type Cue, type Timeline } from '../../timeline'
 import { drawRays } from '../legend'
 import { AFTER_REVEAL, burstRing, dGradient, dissolve, inOrder, type Cinema, type CinemaParams } from './kit'
@@ -36,24 +35,15 @@ const REVEAL = 4.5
 const DUR = REVEAL + AFTER_REVEAL
 
 const AURA = ['#ffffff', '#ffb0a0', '#e0403a', '#6a0a0a'] as const
-/** A Magikarp, ten pixels long, facing left. */
-const KARP = [
-  '...yy.....',
-  '..rrrr..y.',
-  '.rwkrrryyy',
-  'rrrrrrrryy',
-  '.rwwwrry.y',
-  '..yrrry...',
-  '...y......',
-]
-const KARP_PAL = { r: '#e0503a', w: '#fff0e0', k: '#1a1010', y: '#ffd23a' }
-const flipped = KARP.map((row) => [...row].reverse().join(''))
+/** The Magikarp it shows: the school, and the shiny one that evolves (the user's review: their real sprites). */
+const KARP = spriteKey(129, false)
+const SHINY_KARP = spriteKey(129, false, true)
 
 type S = {
   r: ReturnType<typeof rng>
   fx: Particles
   rain: Particles
-  dusk: Canvas
+  day: Canvas
   storm: Canvas
   hills: Canvas
   rays: Canvas
@@ -63,6 +53,10 @@ type S = {
 }
 
 export const gyaradosCinema: Cinema = {
+  sprites: [
+    [129, false],
+    [129, true],
+  ],
   reveal: REVEAL,
   dur: DUR,
   make(p: CinemaParams): Timeline<S> {
@@ -76,8 +70,9 @@ export const gyaradosCinema: Cinema = {
     const apex = { x: cx, y: Math.round(h * 0.3) }
     const many = p.short ? 0.4 : 1
     const quiet = (f: () => void) => () => void (!skippingNow() && f())
-    const karp = (g: G, x: number, y: number, left: boolean, k = 1) =>
-      g.drawImage(icon(left ? KARP : flipped, KARP_PAL, k), Math.round(x - 5 * k), Math.round(y - 4 * k))
+    // A Magikarp at its distance's size; its sprite faces left, flipped to leap right.
+    const karp = (g: G, x: number, y: number, left: boolean, k = 0.4, key = KARP) =>
+      drawSprite(g, key, Math.round(x), Math.round(y), { sx: k, sy: k, flip: !left })
     return {
       id: 'cinema-gyarados',
       dur: DUR,
@@ -85,8 +80,8 @@ export const gyaradosCinema: Cinema = {
         const r = rng(130)
         const hills = canvas(w, h)
         for (const [k, c] of [
-          [0, '#2a0e12'],
-          [1, '#1a080c'],
+          [0, '#4a7a5a'],
+          [1, '#2e5a3e'],
         ] as const)
           for (let x = 0; x < w; x++) {
             const y = Math.round(
@@ -125,7 +120,7 @@ export const gyaradosCinema: Cinema = {
           r,
           fx: new Particles(),
           rain: new Particles(),
-          dusk: dGradient(w, lake, ['#2a0a24', '#6a1a34', '#c0402a', '#f08a3a']),
+          day: dGradient(w, lake, ['#2a5aa8', '#4a82c8', '#8ab8e8', '#cfe4f6']),
           storm: dGradient(w, lake, ['#0a0408', '#200810', '#3a0c14', '#5a1418']),
           hills,
           rays: canvas(w, h),
@@ -160,6 +155,22 @@ export const gyaradosCinema: Cinema = {
                 trail: 0.03,
                 colors: ['#8a4a5a', '#c8a0a8'],
               })
+        // The shiny one's sparkle as it leaps out of the school.
+        if (within(t, T_LEAP, T_LEAP + dt))
+          for (let i = 0; i < 16; i++) {
+            const a = (i / 16) * Math.PI * 2
+            s.fx.add({
+              x: apex.x,
+              y: lake - 6,
+              vx: Math.cos(a) * 50,
+              vy: Math.sin(a) * 30 - 30,
+              drag: 3,
+              life: 0.7,
+              size: 2,
+              shape: 'star',
+              colors: ['#ffffff', '#fff3a0', '#ffd23a'],
+            })
+          }
         // A splash where each Magikarp lands.
         for (const k of s.karps)
           if (within(t, k.t0 + k.dur, k.t0 + k.dur + dt))
@@ -227,13 +238,13 @@ export const gyaradosCinema: Cinema = {
         g.fillRect(0, 0, w, h)
         g.save()
         g.translate(sh.x, sh.y)
-        // Dusk, then the storm.
-        g.drawImage(s.dusk, 0, 0)
+        // A clear afternoon, then the storm.
+        g.drawImage(s.day, 0, 0)
         dissolve(g, s.storm, span(t, T_CRASH - 0.2, T_CRASH + 0.5))
         if (t < T_CRASH) {
           const sunR = Math.round(Math.min(w, h) * 0.08)
-          ellipse(g, Math.round(w * 0.3), lake - Math.round(h * 0.1), sunR, sunR, '#ffd08a')
-          ellipse(g, Math.round(w * 0.3), lake - Math.round(h * 0.1), sunR - 2, sunR - 2, '#fff0c8')
+          ellipse(g, Math.round(w * 0.24), Math.round(lake * 0.28), sunR, sunR, '#fff6d8')
+          ellipse(g, Math.round(w * 0.24), Math.round(lake * 0.28), sunR - 2, sunR - 2, '#ffffff')
         }
         for (const [i, at] of [3.3, 3.95, 5.6, 6.8].entries())
           if (within(t, at, at + 0.12)) polyline(g, s.bolts[i % 3]!, '#fff0f0', 2)
@@ -252,31 +263,45 @@ export const gyaradosCinema: Cinema = {
               2,
               '#ff4a4a',
             )
-        // The lake: calm, then rough; its red reflection of the sky; a red glow under the water before it rises.
+        // The lake: calm and blue, rough under the storm, then red, spreading out from where it rises.
         const rough = span(t, T_CRASH - 0.1, T_CRASH + 0.6)
-        for (let y = lake; y < h; y++)
-          rect(
-            g,
-            0,
-            y,
-            w,
-            1,
-            y % 3 ? (t < T_CRASH ? '#3a1220' : '#1a0810') : t < T_CRASH ? '#6a2030' : '#2a0c14',
-          )
+        const red = ease.outC(span(t, T_RISE - 0.1, REVEAL + 0.6))
+        const calm = t < T_CRASH
+        // The red: an ellipse in perspective round the point it rises from, widening until it fills the lake.
+        const ey = lake + (h - lake) * 0.2
+        const rx = red * w * 1.6
+        const ry = red * (h - lake) * 1.6
+        const redHalf = (y: number) => (ry > 0 ? rx * Math.sqrt(Math.max(0, 1 - ((y - ey) / ry) ** 2)) : 0)
+        for (let y = lake; y < h; y++) {
+          const d = (y - lake) / (h - lake)
+          const band = y % 3 === 0
+          rect(g, 0, y, w, 1, band ? (calm ? '#3a7ab8' : '#1c3a60') : calm ? '#2a5a98' : '#122848')
+          // The red front, an ellipse in perspective round its rising point.
+          const R = redHalf(y)
+          if (R > 0) rect(g, cx - R, y, R * 2, 1, band ? '#a02a2a' : '#6a1420')
+          if (R > 2 && d > 0) {
+            // Its edge, a lit rim.
+            rect(g, cx - R, y, 1, 1, '#e05a4a')
+            rect(g, cx + R - 1, y, 1, 1, '#e05a4a')
+          }
+        }
         for (let row = 0; row < 12; row++) {
           const y = lake + 2 + Math.round((row / 12) ** 1.4 * (h - lake - 2))
           const len = 4 + row
-          for (let x = (row * 13 + Math.round(t * (6 + rough * 40))) % (len * 3); x < w; x += len * 3)
+          const R = redHalf(y)
+          for (let x = (row * 13 + Math.round(t * (6 + rough * 40))) % (len * 3); x < w; x += len * 3) {
+            const inRed = Math.abs(x + len / 2 - cx) < R
             rect(
               g,
               x,
               y + Math.round(Math.sin(x / 8 + t * 5 + row) * rough * 3),
               len,
               1,
-              t < T_CRASH ? '#c0503a' : '#5a2030',
+              inRed ? '#e05a4a' : calm ? '#9ac8f0' : '#3a5a88',
             )
+          }
         }
-        rect(g, 0, lake, w, 1, t < T_CRASH ? '#f08a3a' : '#6a2030')
+        rect(g, 0, lake, w, 1, red > 0.9 ? '#e05a4a' : calm ? '#e0f0ff' : '#4a6a98')
         if (t > T_CRASH + 0.2 && t < T_RISE + 0.3) {
           const a = (t - T_CRASH) * 4
           const gx = cx + Math.cos(a) * w * 0.25
@@ -292,7 +317,7 @@ export const gyaradosCinema: Cinema = {
             k.x + (k.left ? -1 : 1) * q * 10,
             k.y - Math.sin(q * Math.PI) * k.h,
             k.left,
-            k.y > lake + (h - lake) * 0.3 ? 2 : 1,
+            k.y > lake + (h - lake) * 0.3 ? 0.5 : 0.32,
           )
         }
         if (t > T_LEAP && t < T_CRASH + 0.05) drawEvolution(g, p.mon, t, apex, lake, karp, sz)
@@ -364,20 +389,21 @@ export const gyaradosCinema: Cinema = {
   },
 }
 
-/** The one that leaps: up to the top of its leap, stopped there, glowing white, swelling, flickering between a Magikarp
- * and the serpent, then falling into the lake as the serpent. */
+/** The shiny one that leaps: gold, up to the top of its leap, stopped there, glowing white, swelling, flickering
+ * between a Magikarp and the serpent, then falling into the lake as the serpent. */
 function drawEvolution(
   g: G,
   mon: string,
   t: number,
   apex: { x: number; y: number },
   lake: number,
-  karp: (g: G, x: number, y: number, left: boolean, k?: number) => void,
+  karp: (g: G, x: number, y: number, left: boolean, k?: number, key?: string) => void,
   sz: { w: number; h: number },
 ) {
+  const ks = spriteSize(SHINY_KARP)
   if (t < T_EVOLVE) {
     const q = ease.outQ(span(t, T_LEAP, T_EVOLVE))
-    karp(g, apex.x, lerp(lake, apex.y, q), true, 2)
+    karp(g, apex.x, lerp(lake, apex.y + ks.h * 0.4, q), true, 0.8, SHINY_KARP)
     return
   }
   const gr = Math.round(10 + 22 * span(t, T_EVOLVE, T_EVOLVE + 0.6))
@@ -389,11 +415,7 @@ function drawEvolution(
     if (serpent)
       drawSprite(g, mon, apex.x, Math.round(apex.y + sz.h / 2), { sil: '#ffffff', sx: 0.8, sy: 0.8 })
     else
-      g.drawImage(
-        icon(KARP, { r: '#ffffff', w: '#ffffff', k: '#ffffff', y: '#ffffff' }, 3),
-        apex.x - 15,
-        apex.y - 12,
-      )
+      drawSprite(g, SHINY_KARP, apex.x, Math.round(apex.y + ks.h * 0.4), { sil: '#ffffff', sx: 0.8, sy: 0.8 })
     return
   }
   // Falling into the lake, a white serpent.

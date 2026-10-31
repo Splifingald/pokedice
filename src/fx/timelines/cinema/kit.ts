@@ -31,6 +31,8 @@ export interface Cinema {
   reveal: number
   dur: number
   make(p: CinemaParams): Timeline<unknown>
+  /** Other Pokémon it shows (front sprites: dex, shiny), loaded with the legend's before it plays. */
+  sprites?: readonly (readonly [number, boolean])[]
 }
 
 /** After the reveal: the name (+0.5), the bars (+0.85), the trainers (+1.8), GO (+2.75), the fight (+3.4). */

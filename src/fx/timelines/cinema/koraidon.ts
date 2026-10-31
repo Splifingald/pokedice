@@ -1,10 +1,11 @@
 // Koraidon's raid entrance (docs/53): Area Zero in the far past. The Great Crater at dawn, its walls black against an
 // amber sky, a jungle of tree ferns and rock spires, a pool in the red earth. An enormous ancient sun rises behind
 // the crater's rim and swells, the light turning harsh (its Orichalcum Pulse): heat shimmer, embers. Footfalls shake
-// the ground, the pool rippling with each; winged reptiles take flight. A shape crests the tallest spire and roars,
-// then leaps, black across the face of the sun, and from the top of its arc comes down in a Collision Course, a comet
-// of red fire: the impact craters the ground, rocks and dust flying. The dust parts: it stands in its crater, the sun
-// blazing behind it.
+// the ground, the pool rippling with each; winged reptiles take flight. A shape climbs onto the tallest spire, small
+// on the crater's far side, and roars, then leaps: over the top of its arc and down, black across the face of the sun,
+// where it hangs a moment and bursts into a Collision Course, a comet of red fire coming on at the camera, straight
+// into the red earth before it: the impact craters the ground, rocks and dust flying. The dust parts: it stands in its
+// crater, just where the comet struck, the sun blazing behind it.
 import { fxSound, hiss, tone } from '@/audio/sfx'
 import {
   canvas,
@@ -23,7 +24,7 @@ import {
   type G,
 } from '../../pixel'
 import { drawSprite } from '../../sprites'
-import { quad, screenFlash } from '../../timeline'
+import { screenFlash } from '../../timeline'
 import { drawRays } from '../legend'
 import { raidScene, ridge, type Ctx } from './gen9kit'
 import { dGradient, dissolve, drawShards, makeShard, pulse, stepShards, wobble, type Shard } from './kit'
@@ -37,6 +38,10 @@ const T_LEAP = 2.95
 const T_DIVE = 3.5
 const T_IMPACT = 3.9
 const REVEAL = 4.5
+/** Its size on the far spire: it grows as its arc brings it across the crater, nearer the camera. */
+const FAR = 0.45
+/** How far along its arc it bursts into flame: falling across the sun's face. */
+const IGNITE = 0.7
 
 const AURA = ['#ffffff', '#ffd0a0', '#e0402a', '#5a0a10'] as const
 const FIRE = ['#ffffff', '#fff3a0', '#ffbe2e', '#ff6a1e', '#c8281a', '#5a0a10'] as const
@@ -59,8 +64,13 @@ const makeDust = () =>
 function layout(c: Ctx) {
   const horizon = Math.round(c.h * 0.5)
   const R = Math.round(Math.min(c.m * 0.36, c.h * 0.3))
-  const crag = { x: Math.round(c.w - Math.max(18, c.w * 0.16)), top: Math.round(c.h * 0.3) }
-  return { horizon, R, crag, ground: Math.round(c.feet + 4) }
+  // The spire far enough in for all of it to stand on its top, on screen.
+  const crag = {
+    x: Math.round(c.w - Math.max(18, c.w * 0.16, (c.sz.w * FAR) / 2 + 3)),
+    top: Math.round(c.h * 0.3),
+  }
+  // The red earth reaches back past its feet, the jungle beyond: it lands and stands on the ground, its crater in it.
+  return { horizon, R, crag, ground: Math.round(c.feet - Math.max(12, c.h * 0.06)) }
 }
 
 /** The crater, its jungle and its earth, drawn once: far walls, spires, tree ferns, the pool. */
@@ -73,17 +83,18 @@ function landscape(c: Ctx): Canvas {
   ridge(g, w, L.horizon + 4, c.h * 0.07, '#3a1418', 11, h, 0.5)
   ridge(g, w, L.horizon + 14, c.h * 0.05, '#2a0c12', 12, h, 0.35)
   // Rock spires, the tallest the one it will crest: tapering, lit on the sun's side.
-  const spire = (x: number, top: number, base: number, wd: number, lit: number) => {
+  // `flat` broadens the top into a ledge (the one it stands on).
+  const spire = (x: number, top: number, base: number, wd: number, lit: number, flat = 0) => {
     for (let y = top; y < base; y++) {
       const k = (y - top) / (base - top)
-      const hw = Math.round(wd * (0.35 + 0.65 * k) + Math.sin(y / 3) * 0.6)
+      const hw = Math.round(wd * (0.35 + 0.65 * k) + flat * (1 - k) + Math.sin(y / 3) * 0.6)
       rect(g, x - hw, y, hw * 2, 1, '#1e0a0c')
       rect(g, x - hw * lit, y, 1, 1, '#7a3018')
       if (y % 7 === 0) rect(g, x - hw + 1, y, hw * 2 - 2, 1, '#14060a')
     }
-    rect(g, x - Math.round(wd * 0.4), top - 1, Math.round(wd * 0.8), 2, '#7a3018')
+    rect(g, x - Math.round(wd * 0.4 + flat), top - 1, Math.round(wd * 0.8 + flat * 2), 2, '#7a3018')
   }
-  spire(L.crag.x, L.crag.top, L.ground + 6, Math.max(9, Math.round(c.w * 0.05)), -1)
+  spire(L.crag.x, L.crag.top, L.ground + 6, Math.max(9, Math.round(c.w * 0.05)), -1, 3)
   spire(Math.round(c.w * 0.1), Math.round(c.h * 0.4), L.ground + 6, 6, 1)
   if (c.w > 200) {
     spire(Math.round(c.w * 0.3), Math.round(c.h * 0.44), L.ground, 5, 1)
@@ -171,24 +182,24 @@ function drawBird(g: G, x: number, y: number, ph: number) {
   line(g, x + 2, y, x + 7, y + (up ? -3 : 2), '#14060a')
 }
 
-/** Where it is in its leap and its dive: the spire's top, over the sun, down into the crater. */
+/**
+ * Where its feet are from the leap to the impact: one arc from the spire's top to the spot it will stand on, up off
+ * the summit, over and down across the sun's face, where it slows to hang a moment as it ignites, then the comet the
+ * rest of the way. All of it leftward, the way it faces, so the comet that lands is the shape that stands up.
+ */
 function flight(c: Ctx, t: number) {
   const L = layout(c)
+  const k = span(t, T_LEAP, T_DIVE)
+  const q = span(t, T_DIVE, T_IMPACT)
+  const u = t < T_DIVE ? IGNITE * (0.8 * ease.outQ(k) + 0.2 * k) : lerp(IGNITE, 1, q * (0.2 + 0.8 * q))
+  const hop = Math.round(c.h * 0.1)
+  const x = lerp(L.crag.x, c.cx, u)
+  const y = L.crag.top + (c.feet - L.crag.top) * u * u - hop * 4 * u * (1 - u)
+  const s = lerp(FAR, 1, u * u * u)
+  // How squarely its body is on the sun's face: the rays flare then.
   const sun = { x: c.cx, y: L.horizon - Math.round(L.R * 0.55) }
-  // Above the sun's face, but on the screen.
-  const apex = { x: Math.round(c.w * 0.24), y: Math.max(sun.y - L.R - 4, Math.round(c.sz.h * 0.62) + 6) }
-  if (t < T_DIVE) {
-    // Through the middle of the sun's face, slowest there: the moment it is a black shape on the light.
-    const u = span(t, T_LEAP, T_DIVE)
-    const q = u + (0.55 / (Math.PI * 2)) * Math.sin(u * Math.PI * 2)
-    const s = lerp(0.62, 0.72, Math.sin(q * Math.PI))
-    const mid = { x: sun.x, y: sun.y + Math.round((c.sz.h * 0.72) / 2) }
-    const ctl = { x: 2 * mid.x - (L.crag.x + apex.x) / 2, y: 2 * mid.y - (L.crag.top + apex.y) / 2 }
-    const b = quad({ x: L.crag.x, y: L.crag.top }, ctl, apex, q)
-    return { x: b.x, y: b.y, s, flip: false, over: 1 - Math.abs(q - 0.5) * 2 }
-  }
-  const q = ease.inQ(span(t, T_DIVE, T_IMPACT))
-  return { x: lerp(apex.x, c.cx, q), y: lerp(apex.y, c.feet, q), s: lerp(0.62, 1, q), flip: true, over: 0 }
+  const over = Math.max(0, 1 - Math.hypot(x - sun.x, y - (c.sz.h * s) / 2 - sun.y) / L.R)
+  return { x, y, s, over }
 }
 
 export const koraidonCinema = raidScene<X>({
@@ -197,7 +208,7 @@ export const koraidonCinema = raidScene<X>({
   seed: 1007,
   aura: AURA,
   flash: '#fff0d0',
-  feet: 0.62,
+  feet: 0.65,
   rays: '#ffbe2e',
   setup(c, r) {
     const L = layout(c)
@@ -219,7 +230,7 @@ export const koraidonCinema = raidScene<X>({
   step(c, s, t, dt) {
     const r = s.r
     const L = layout(c)
-    stepShards(s.rocks, dt, { floor: L.ground + 10 })
+    stepShards(s.rocks, dt, { floor: c.feet + 12 })
     for (const d of s.dust) {
       d.age += dt
       d.x += d.vx * dt
@@ -267,12 +278,16 @@ export const koraidonCinema = raidScene<X>({
     // The fire it trails as it comes down.
     if (t > T_DIVE && t < T_IMPACT) {
       const f = flight(c, t)
-      for (let i = 0; i < 4; i++)
+      // Streaming back along its path.
+      const b = flight(c, t - 0.03)
+      const len = Math.hypot(f.x - b.x, f.y - b.y) || 1
+      for (let i = 0; i < 4; i++) {
+        const v = r.range(50, 100)
         s.fx.add({
           x: f.x + r.range(-6, 6) * f.s,
           y: f.y - c.sz.h * f.s * 0.5 + r.range(-8, 8) * f.s,
-          vx: -r.range(30, 70),
-          vy: -r.range(40, 90),
+          vx: ((b.x - f.x) / len) * v + r.range(-20, 20),
+          vy: ((b.y - f.y) / len) * v + r.range(-20, 20),
           drag: 3,
           life: r.range(0.3, 0.6),
           size: 3,
@@ -280,6 +295,7 @@ export const koraidonCinema = raidScene<X>({
           shape: 'sq',
           colors: [...FIRE],
         })
+      }
     }
     // The impact: rocks, a ring of dust, sparks.
     if (t >= T_IMPACT && t - dt < T_IMPACT) {
@@ -339,7 +355,7 @@ export const koraidonCinema = raidScene<X>({
     const sy = Math.round(lerp(L.horizon + R * 0.9, L.horizon - R * 0.55, rise))
     const hot = span(t, 1.4, 2.8)
     // The rays flare as it crosses the sun's face.
-    const cross = t > T_LEAP && t < T_DIVE ? flight(c, t).over : 0
+    const cross = t > T_LEAP && t < T_IMPACT ? flight(c, t).over : 0
     // Until the reveal: then its own rays take over (one pass of them a frame is enough).
     if (t > 1.6 && t < REVEAL) {
       drawRays(s.rays, { x: sx, y: sy }, t * 0.4, '#ffd06a', (0.35 + 0.4 * cross) * hot)
@@ -392,17 +408,23 @@ export const koraidonCinema = raidScene<X>({
   },
   before(g, c, _s, t) {
     const L = layout(c)
-    // On top of the spire, a shape against the sun; then leaping, black across its face.
+    // On top of the far spire, a shape against the sky, climbing up from behind its summit (none of it below the top);
+    // then leaping, black across the sun's face.
     if (t >= T_CREST && t < T_LEAP) {
       const up = ease.outBack(span(t, T_CREST, T_CREST + 0.3))
       const roar = within(t, T_ROAR, T_ROAR + 0.3)
-      drawSprite(g, c.mon, L.crag.x, L.crag.top + Math.round((1 - up) * 14), {
-        sx: 0.62,
-        sy: 0.62,
+      g.save()
+      g.beginPath()
+      g.rect(0, 0, c.w, L.crag.top)
+      g.clip()
+      drawSprite(g, c.mon, L.crag.x, L.crag.top + Math.round((1 - up) * c.sz.h * FAR), {
+        sx: FAR,
+        sy: FAR,
         sil: '#14040a',
         outline: roar && Math.floor(t * 20) % 2 ? '#ffe08a' : '#c8401e',
         dx: roar ? Math.round(Math.sin(t * 90)) : 0,
       })
+      g.restore()
     }
     if (t >= T_LEAP && t < T_IMPACT) {
       const f = flight(c, t)
@@ -416,12 +438,7 @@ export const koraidonCinema = raidScene<X>({
         const trail = ['#ffbe2e', '#ff6a1e', '#c8281a', '#7a1410'] as const
         for (let i = trail.length; i >= 1; i--) {
           const b = flight(c, Math.max(T_DIVE, t - i * 0.035))
-          drawSprite(g, c.mon, Math.round(b.x), Math.round(b.y), {
-            sx: b.s,
-            sy: b.s,
-            flip: true,
-            sil: trail[i - 1]!,
-          })
+          drawSprite(g, c.mon, Math.round(b.x), Math.round(b.y), { sx: b.s, sy: b.s, sil: trail[i - 1]! })
         }
         const ax = c.cx - f.x
         const ay = c.feet - f.y
@@ -436,12 +453,11 @@ export const koraidonCinema = raidScene<X>({
       drawSprite(g, c.mon, Math.round(f.x), Math.round(f.y), {
         sx: f.s,
         sy: f.s,
-        flip: f.flip,
         sil: diving ? '#5a0a10' : '#14040a',
         outline: diving ? (Math.floor(t * 20) % 2 ? '#ffffff' : '#ffbe2e') : '#ffbe4a',
       })
     }
-    // In the dust after the impact: its shape, its outline glowing, rising from a crouch.
+    // In the dust after the impact: its shape where the comet struck, its outline glowing, rising from a crouch.
     if (t >= T_IMPACT) {
       const up = ease.outQ(span(t, T_IMPACT, T_IMPACT + 0.35))
       drawSprite(g, c.mon, c.cx, c.feet, {
@@ -453,6 +469,7 @@ export const koraidonCinema = raidScene<X>({
     }
   },
   front(g, c, s, t) {
+    const L = layout(c)
     drawShards(g, s.rocks, '#14040a')
     // The dust wall: puffs lit on top by the sun, thinning out before the reveal.
     for (const d of s.dust) {
@@ -470,7 +487,9 @@ export const koraidonCinema = raidScene<X>({
       const q = span(t, T_IMPACT + d, T_IMPACT + d + 0.6)
       if (q > 0 && q < 1) {
         const rx = Math.round(lerp(8, c.w * 0.75, ease.outC(q)))
-        ellipseLine(g, c.cx, c.feet + 2, rx, Math.max(2, Math.round(rx * 0.16)), d ? '#ff6a1e' : '#fff3a0')
+        // Flattening as they spread, to keep to the earth (not over the jungle beyond it).
+        const ry = Math.max(2, Math.min(Math.round(rx * 0.16), c.feet + 2 - L.ground))
+        ellipseLine(g, c.cx, c.feet + 2, rx, ry, d ? '#ff6a1e' : '#fff3a0')
       }
     }
     g.drawImage(s.fern, 0, 0)

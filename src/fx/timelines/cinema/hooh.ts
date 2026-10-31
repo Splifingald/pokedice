@@ -1,8 +1,8 @@
 // Ho-Oh's raid entrance (docs/53): the Bell Tower before dawn. A still violet sky, the last stars, the tower's tiers
 // black against it, a lamp in each. Its bells ring, three times, gold rings of sound going out; the sun rises behind
-// the tower and the sky warms; its rays fan out and a rainbow draws itself across the sky. Rainbow feathers drift down;
-// a golden shape crosses the sun, circles the tower's top in a trail of colours and swoops down before it, its wings
-// flaring in sacred fire. The reveal's rainbow rings; it hovers before the tower, the sun up behind it.
+// the tower and the sky warms; its rays fan out and a faint rainbow draws itself across the sky. Golden feathers drift
+// down; a golden shape crosses the sun, circles the tower's top in a trail of sparks and swoops down before it, its
+// wings flaring in sacred fire. The reveal's gold rings; it hovers before the tower, the sun up behind it.
 import { fxSound, hiss, tone } from '@/audio/sfx'
 import {
   canvas,
@@ -43,6 +43,8 @@ const DUR = REVEAL + AFTER_REVEAL
 
 const AURA = ['#ffffff', '#fff3a0', '#ff8a1e', '#a83a10'] as const
 const BOW = ['#e0403a', '#ff8a1e', '#ffd23a', '#7ac74c', '#3a9af0', '#8a5ad0'] as const
+// Ho-Oh's own colours (gold, flame, its green tail tips): the rainbow stays in the sky, the rest is sacred fire.
+const GOLD = ['#fff3a0', '#ffd23a', '#ff8a1e', '#e0403a', '#7ac74c'] as const
 
 type S = {
   r: ReturnType<typeof rng>
@@ -149,7 +151,7 @@ export const hoohCinema: Cinema = {
         const r = s.r
         s.fx.update(dt)
         s.feathers.update(dt)
-        if (t > T_BOW && r() < 0.18 * many)
+        if (t > T_BOW && r() < 0.1 * many)
           s.feathers.add({
             x: r.range(0, w),
             y: -4,
@@ -159,7 +161,7 @@ export const hoohCinema: Cinema = {
             size: 2,
             shape: 'leaf',
             spin: r.range(-2, 2),
-            ...((c) => ({ colors: [c], light: '#ffffff', dark: c }))(BOW[Math.floor(r() * BOW.length)]!),
+            ...((c) => ({ colors: [c], light: '#fff6c8', dark: c }))(GOLD[Math.floor(r() * GOLD.length)]!),
           })
         // The trail of colours behind it as it flies.
         if (t > T_FLY && t < REVEAL) {
@@ -172,7 +174,7 @@ export const hoohCinema: Cinema = {
               life: 0.8,
               size: r.int(1, 2),
               shape: 'star',
-              colors: [BOW[Math.floor(r() * 6)]!, '#ffffff'],
+              colors: [GOLD[Math.floor(r() * 3)]!, '#ffffff'],
             })
         }
         // Sacred fire on its wings.
@@ -202,7 +204,7 @@ export const hoohCinema: Cinema = {
               life: r.range(0.5, 1),
               size: r.int(1, 2),
               shape: 'star',
-              colors: [BOW[k % 6]!, '#ffffff'],
+              colors: [GOLD[k % 4]!, '#ffffff'],
             })
           }
       },
@@ -230,16 +232,18 @@ export const hoohCinema: Cinema = {
           drawRays(s.rays, { x: sx, y: sy }, t * 0.5, '#ffe08a', k)
           g.drawImage(s.rays, 0, 0)
         }
-        // The rainbow drawing itself across the sky, left to right.
-        const bq = span(t, T_BOW, T_BOW + 0.9)
+        // The rainbow drawing itself across the sky, left to right: thin and see-through, a hint behind the sun's
+        // rays, fading once Ho-Oh is there so it doesn't fight it.
+        const bq = span(t, T_BOW, T_BOW + 1.2)
+        const fade = 1 - span(t, REVEAL, REVEAL + 1.2) * 0.6
         if (bq > 0) {
           const RX = Math.round(w * 0.62)
           const RY = Math.round(ground * 0.62)
-          BOW.forEach((c, i) => {
-            const end = Math.PI + Math.PI * bq
-            ellipseLine(g, cx, ground, RX - i * 2, RY - i * 2, c, Math.PI, end)
-            ellipseLine(g, cx, ground, RX - i * 2 - 1, RY - i * 2 - 1, c, Math.PI, end)
-          })
+          const end = Math.PI + Math.PI * ease.ioS(bq)
+          g.save()
+          g.globalAlpha = (Math.round(0.45 * fade * 8) / 8) * Math.min(1, bq * 3)
+          BOW.forEach((c, i) => ellipseLine(g, cx, ground, RX - i, RY - i, c, Math.PI, end))
+          g.restore()
         }
         // Behind the tower when it circles behind it.
         const at = t > T_FLY && t < REVEAL ? fly(t) : null
@@ -259,12 +263,12 @@ export const hoohCinema: Cinema = {
             outline: Math.floor(t * 8) % 2 ? AURA[1] : AURA[2],
           })
         }
-        BOW.forEach((c, i) =>
+        ;['#fff6c8', '#ffd23a', '#ff8a1e'].forEach((c, i) =>
           burstRing(
             g,
             cx,
             feet - 30,
-            span(t, REVEAL + i * 0.05, REVEAL + i * 0.05 + 0.6),
+            span(t, REVEAL + i * 0.08, REVEAL + i * 0.08 + 0.6),
             Math.max(w, h) * 0.75,
             2,
             c,

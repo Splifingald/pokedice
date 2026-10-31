@@ -381,7 +381,7 @@ const PRESETS: Preset[] = [
   ...Object.entries(RAID_CINEMAS).map(
     ([dex, c]): Preset => ({
       name: `Cinematic: #${dex}'s raid entrance`,
-      sprites: [[Number(dex), false]],
+      sprites: [[Number(dex), false], ...(c.sprites ?? []).map(([d, sh]): [number, boolean, boolean] => [d, false, sh])],
       make: (o) => c.make({ mon: foe(Number(dex)), short: o.short }),
     }),
   ),

@@ -84,7 +84,10 @@ export function RaidIntro({
     () =>
       dw
         ? {
-            ready: loadSprite(boss.dex, false, boss.shiny),
+            ready: Promise.all([
+              loadSprite(boss.dex, false, boss.shiny),
+              ...(legend?.cinema?.sprites ?? []).map(([d, s]) => loadSprite(d, false, s)),
+            ]),
             timeline: legend?.cinema
               ? legend.cinema.make({ w: size.w, h: size.h, mon: spriteKey(boss.dex, false, boss.shiny), short: level === 'short' })
               : legend?.scene
