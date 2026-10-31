@@ -89,6 +89,36 @@ test('Live events: once, every year or every week on some weeks of the month; ov
   await expect(page.getByText(/^Unsaved: game_config/)).toBeVisible()
 })
 
+test('A gift calendar: its switch, the days, each day’s gift, the Advent proposal; it runs once', async ({
+  page,
+}) => {
+  test.setTimeout(120_000)
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await admin(page)
+  await page.goto('/admin/events?tab=live')
+  await expect(page.getByRole('button', { name: 'New live event' })).toBeVisible({ timeout: 30_000 })
+  await page.getByRole('button', { name: 'New live event' }).click()
+  await page.getByLabel(/^Type/).selectOption({ label: 'Gift calendar' })
+  // Once only: no repeat; its end follows its start and days.
+  await expect(page.getByLabel(/^When/)).toHaveCount(0)
+  await expect(page.getByText('Day 1 opens (UTC)')).toBeVisible()
+  const access = page.getByRole('radiogroup', { name: 'Gift calendars: who sees them' })
+  await expect(access.getByRole('radio', { name: 'Off' })).toHaveAttribute('aria-checked', 'true')
+  await access.getByRole('radio', { name: 'On for admin' }).click()
+  await page.getByLabel(/^Days/).fill('2')
+  await expect(page.getByRole('combobox', { name: /^Day \d: kind of gift$/ })).toHaveCount(2)
+  await page.getByRole('combobox', { name: 'Day 2: kind of gift' }).selectOption({ label: 'Pokémon' })
+  page.once('dialog', (d) => void d.accept())
+  await page.getByRole('button', { name: 'Fill with the Advent proposal (24 days)' }).click()
+  await expect(page.getByRole('combobox', { name: /^Day \d+: kind of gift$/ })).toHaveCount(24)
+  if (process.env.SHOT_DIR)
+    await page.screenshot({ path: `${process.env.SHOT_DIR}/admin-cal.png`, fullPage: true })
+  await expect(page.getByRole('alert')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Add to the list' }).click()
+  await expect(page.getByText(/Gift calendar · a gift a day for 24 days/)).toBeVisible()
+  await expect(page.getByText(/^Unsaved: game_config/)).toBeVisible()
+})
+
 test('Trick or Treat: its switch, the tiers’ exact rates, an area’s ghosts prefilled from its wild pool', async ({ page }) => {
   test.setTimeout(120_000)
   await page.setViewportSize({ width: 1440, height: 1000 })

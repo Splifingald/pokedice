@@ -333,6 +333,8 @@ export const saveSchema = z.object({
       raidIntrosSeen: z.array(z.number().int()).max(200).optional(),
       liveSeen: z.array(z.string().max(80)).max(50).optional(),
       liveBought: z.record(z.record(z.number().int().min(0))).optional(),
+      calendarOpened: z.record(z.array(z.number().int().min(1).max(31)).max(31)).optional(),
+      calendarRulesSeen: z.boolean().optional(),
       // Small worlds (docs/21): the one held, the pop-ups shown, the mythicals waiting for their home region.
       world: z
         .object({

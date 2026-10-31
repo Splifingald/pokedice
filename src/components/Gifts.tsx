@@ -20,7 +20,7 @@ import { giftTimeline, type GiftContent } from '@/fx/timelines/gift'
 import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
 import { useHoldFullscreen } from '@/lib/fullscreen'
-import { closeGiftMoment, giftRulesGo, giftRulesLater, useGiftMoment } from '@/store/gifts'
+import { closeGiftMoment, giftRulesGo, giftRulesLater, useGiftMoment, type GiftSource } from '@/store/gifts'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { Chip, NewTag } from './Chip'
@@ -303,11 +303,17 @@ export function GiftMoment({
   landed,
   onDone,
   source = 'message',
+  day,
 }: {
   landed: GiftLanded[]
   onDone: () => void
-  /** The developer's gift (a message), or invite rewards (docs/15 §25): only the first line and the title differ. */
-  source?: 'message' | 'invite'
+  /**
+   * The developer's gift (a message), invite rewards (docs/15 §25) or a gift calendar's door (docs/55): only the first
+   * line and the title differ.
+   */
+  source?: GiftSource
+  /** A calendar door's day ("Day 5's gift!"). */
+  day?: number
 }) {
   const { t } = useT()
   useHoldFullscreen()
@@ -337,12 +343,18 @@ export function GiftMoment({
         ? t('ui.gift.untie')
         : beat === 'wobble'
           ? t('ui.gift.wobble')
-          : t(source === 'invite' ? 'ui.invite.arrive' : 'ui.gift.arrive')
+          : source === 'calendar'
+            ? t('ui.cal.arrive', { n: day ?? 1 })
+            : t(source === 'invite' ? 'ui.invite.arrive' : 'ui.gift.arrive')
   return createPortal(
     <motion.div
       role="dialog"
       aria-modal="true"
-      aria-label={t(source === 'invite' ? 'ui.invite.momentTitle' : 'ui.gift.title')}
+      aria-label={
+        source === 'calendar'
+          ? t('ui.cal.arrive', { n: day ?? 1 })
+          : t(source === 'invite' ? 'ui.invite.momentTitle' : 'ui.gift.title')
+      }
       className="fixed inset-0 z-[100] overflow-y-auto bg-paper"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -393,6 +405,7 @@ export function GiftMoment({
 export function GiftService() {
   const opening = useGiftMoment((s) => s.opening)
   const source = useGiftMoment((s) => s.source)
+  const day = useGiftMoment((s) => s.day)
   const rulesFor = useGiftMoment((s) => s.rulesFor)
   const live = useGame((s) => (s.save ? regionOf(s.save) : null))
   const done = () => {
@@ -403,7 +416,7 @@ export function GiftService() {
   return (
     <>
       <GiftRulesModal open={!!rulesFor} onClose={giftRulesLater} onGo={giftRulesGo} />
-      {opening && <GiftMoment landed={opening} onDone={done} source={source} />}
+      {opening && <GiftMoment landed={opening} onDone={done} source={source} day={day} />}
     </>
   )
 }

@@ -108,6 +108,8 @@ export function featureTarget(
       return { name: t('ui.events.raid.name'), icon: 'star', to: '/events/raid' }
     case 'underground':
       return { name: t('ui.live.underground.name'), icon: 'pickaxe', to: '/underground' }
+    case 'calendar':
+      return { name: t('ui.live.calendar.name'), icon: 'calendar', to: '/calendar' }
     default:
       return null
   }

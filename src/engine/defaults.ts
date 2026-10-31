@@ -406,6 +406,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   hiddenTalents: { access: 'off', wildChance: 0.05, evolveChance: 0.3, families: {} },
   // The legends' own cinematics (docs/53): off until the admin switches it on. Migration 0098 inserts the same row.
   legendCinema: { access: 'off' },
+  // The gift calendar (docs/55): off until the admin switches it on. Migration 0100 inserts the same row.
+  giftCalendar: { access: 'off' },
   // The Unown Pokédex (docs/41): off until the admin switches it on; ₽1,000 for the 28th letter. Migration 0080 inserts
   // the same row.
   unownDex: { access: 'off', reward: 1000 },
