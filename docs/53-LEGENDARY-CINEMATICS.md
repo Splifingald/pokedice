@@ -5,7 +5,8 @@ background and colours changed). Each legend now gets **its own entrance, in its
 short film on the pixel engine before the fight. A raid's no longer has the warning tapes. It can run a little longer
 than the shared one. **Kanto first** (Articuno, Zapdos, Moltres, Mewtwo, and Mew) so the user can judge the quality
 before the rest are made, then Johto (the user, the same day: "start doing second generation"). **Status: Gen 1 and
-Gen 2 built**, behind its switch, Off.
+Gen 2 built**, behind its switch, Off. Then every other generation (the user: "all generations' legendaries and
+mythicals + red Gyarados", 2026-10-31): **every legendary and mythical with a raid or a boss fight now has its own**.
 
 ## 1. Decisions
 
@@ -75,6 +76,22 @@ Johto's:
   out of it in green rings and the forest turns with each one (spring, summer, autumn, winter, faster and faster) under
   the hands of a great clock of light; the rings close into a portal and Celebi pops out, the forest back in spring.
 
+Hoenn's:
+
+- **The Regis** (`regis.ts`, 4.7): a sealed chamber, a torch finding a Braille tablet that really spells its words and
+  lights cell by cell, the light running through the wall's joints, its seven dots lighting in its own pattern; then
+  Regirock built from flying boulders, Regice inside a hexagonal ice column over a giant frost snowflake, Registeel
+  ringing like a bell three times.
+- **Latias, Latios** (`eon.ts`): Southern Island at sunset, a V of foam with nothing at its head (the invisibility
+  shimmer), across the sun, down through pink mist (4.6); at night, a sonic boom, across the moon, a shooting star
+  skimming at you between walls of spray (4.5).
+- **Kyogre** (`kyogre.ts`, 4.8): the α rising from the abyss with each heartbeat, up through the surface into a storm,
+  the sea climbing into a wall. **Groudon** (`groudon.ts`, 4.75): a drought sun boiling the land dry, an Ω burnt into
+  the ground, the land splitting over lava. **Rayquaza** (`rayquaza.ts`, 4.8): Sky Pillar above the clouds under the
+  ozone band, a serpent weaving through the clouds, Dragon Ascent smashing a meteor.
+- **Jirachi** (`jirachi.ts`, boss): the Millennium Comet's wishes falling on a sleeping cocoon, a third eye opening.
+  **Deoxys** (`deoxys.ts`, boss): a meteor on Birth Island under the aurora, a DNA helix mutating into a glitching body.
+
 Sinnoh's legends (raids):
 
 - **Uxie, Mesprit, Azelf** (`lakes.ts`): Lake Acuity's snowstorm, gold running through the ice's cracks like thoughts,
@@ -109,6 +126,19 @@ Sinnoh's mythicals (and Victini):
   gate to the Hall of Origin, a stairway of light building itself, the plates falling like meteors; the daily raid
   (`arceusRaidCinema`, reveal 5.1) the Hall of Origin building itself out of light, the 17 plates in a turning ring, the
   golden wheel drawn in the sky, Judgment streaking the plates into its hub.
+
+Unova's:
+
+- **The Swords of Justice** (`swords.ts`): Cobalion's blade of light cutting the picture in two in Mistralton Cave
+  (4.6); Terrakion slicing a boulder on Victory Road and charging through (4.7); Virizion's six cuts halving the leaves
+  held in mid-air in Pinwheel Forest (4.5).
+- **The Forces of Nature** (`forces.ts`): Tornadus's tornado over the fields (4.6); Thundurus's thunderhead racing in
+  and a cage of bolts (4.5); Landorus's golden cloud turning the burnt fields to wheat (4.7).
+- **Reshiram, Zekrom** (`dragonspiral.ts`): Dragonspiral Tower, a white turbine burning the night away into a dome of
+  flame (4.7); a generator, black lightning and a plasma sphere in a rainless storm (4.6).
+- **Kyurem** (`kyurem.ts`, 4.8): Giant Chasm draining of colour, a void with two yellow eyes, an ice wing that shatters.
+- **Keldeo, Meloetta, Genesect** (bosses): a sword of water cutting a lake at sunrise; a song written on a staff in a
+  theatre, the Aria then the Pirouette; Team Plasma's lab loading four drives and firing Techno Blast at your Pokémon.
 
 Kalos, and Alola's mythicals:
 
@@ -168,6 +198,21 @@ Galar's and Hisui's legends (raids, sharing `gen8kit.ts`'s `raidCinema` wrapper)
 - **Zarude** (`zarude.ts`, boss): the jungle's eyes opening pair by pair, the troop swinging past, the leader dropping
   down.
 
+Paldea's (raids sharing `gen9kit.ts`'s `raidScene` wrapper), and Pecharunt:
+
+- **The Treasures of Ruin** (`ruin.ts`, 4.6): a sealed shrine, its stakes pulled one by one, the chains snapping; then
+  Wo-Chien's tablets and a wave of rot, Chien-Pao's sword and one slash, Ting-Lu's vessel rising from a quake, Chi-Yu's
+  beads drawing a ring of fire.
+- **Koraidon** (`koraidon.ts`, 4.5): Area Zero's past, an enormous ancient sun, a leap across it and a Collision Course
+  comet. **Miraidon** (`miraidon.ts`, 4.4): Area Zero's future, a neon grid and an Electro Drift circle.
+- **The Paradox Pokémon** (`paradox.ts`, 4.5, two scenes): a tear like burning paper onto the far past for the ancient
+  ones (1009, 1020, 1021); a time machine printing the Pokémon line by line for the future ones (1010, 1022, 1023).
+- **The Loyal Three** (`loyal.ts`, 4.5): Kitakami's plaza, toxic chains coiling up a statue; Okidogi bursting it and
+  slamming the plaza, Munkidori's eyes and hypnotic spiral, Fezandipiti's fan of feathers.
+- **Ogerpon** (`ogerpon.ts`, 4.5): the Festival of Masks, the lanterns blown out, the four masks lit one per drumbeat.
+- **Terapagos** (`terapagos.ts`, 4.5): crystals waking in Tera colours, a honeycomb shell bursting in a Tera Starstorm.
+- **Pecharunt** (`pecharunt.ts`, boss): a peach bouncing down a Kitakami road into chains that coil round a mochi stand.
+
 The bosses share their ending (`boss.ts`, `bossCinema`): the burst and rings in their colours, the name card, the scene
 dissolving into the battle's ground, the HUD's cues, the send-out. Mew's predates it and has its own copy.
 
@@ -201,4 +246,4 @@ that order, after the reveal. `e2e/admin-config.spec.ts`: the Switches tab's 24 
 
 ## 6. Next
 
-Hoenn and the other regions, once Gen 1's and Gen 2's are approved.
+The user's verdicts on the review page (one film per cinematic, a note each), then the switch On for everyone.

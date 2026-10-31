@@ -50,6 +50,28 @@ import { calyrexCinema, glastrierCinema, spectrierCinema } from './crowntundra'
 import { enamorusCinema } from './enamorus'
 import { articunoGalarCinema, moltresGalarCinema, zapdosGalarCinema } from './galarbirds'
 import { zarudeCinema } from './zarude'
+import { regiceCinema, regirockCinema, registeelCinema } from './regis'
+import { latiasCinema, latiosCinema } from './eon'
+import { kyogreCinema } from './kyogre'
+import { groudonCinema } from './groudon'
+import { rayquazaCinema } from './rayquaza'
+import { jirachiCinema } from './jirachi'
+import { deoxysCinema } from './deoxys'
+import { chienpaoCinema, chiyuCinema, tingluCinema, wochienCinema } from './ruin'
+import { koraidonCinema } from './koraidon'
+import { miraidonCinema } from './miraidon'
+import { fezandipitiCinema, munkidoriCinema, okidogiCinema } from './loyal'
+import { ogerponCinema } from './ogerpon'
+import { terapagosCinema } from './terapagos'
+import { ancientParadoxCinema, futureParadoxCinema } from './paradox'
+import { pecharuntCinema } from './pecharunt'
+import { cobalionCinema, terrakionCinema, virizionCinema } from './swords'
+import { landorusCinema, thundurusCinema, tornadusCinema } from './forces'
+import { reshiramCinema, zekromCinema } from './dragonspiral'
+import { kyuremCinema } from './kyurem'
+import { keldeoCinema } from './keldeo'
+import { meloettaCinema } from './meloetta'
+import { genesectCinema } from './genesect'
 
 export { wordsAt } from './kit'
 export type { Cinema, CinemaParams } from './kit'
@@ -64,6 +86,14 @@ export const RAID_CINEMAS: Readonly<Record<number, Cinema>> = {
   150: mewtwoCinema,
   249: lugiaCinema,
   250: hoohCinema,
+  377: regirockCinema,
+  378: regiceCinema,
+  379: registeelCinema,
+  380: latiasCinema,
+  381: latiosCinema,
+  382: kyogreCinema,
+  383: groudonCinema,
+  384: rayquazaCinema,
   480: uxieCinema,
   481: mespritCinema,
   482: azelfCinema,
@@ -75,6 +105,15 @@ export const RAID_CINEMAS: Readonly<Record<number, Cinema>> = {
   488: cresseliaCinema,
   // Arceus's daily raid (its boss fight has its own, below).
   493: arceusRaidCinema,
+  638: cobalionCinema,
+  639: terrakionCinema,
+  640: virizionCinema,
+  641: tornadusCinema,
+  642: thundurusCinema,
+  643: reshiramCinema,
+  644: zekromCinema,
+  645: landorusCinema,
+  646: kyuremCinema,
   716: xerneasCinema,
   717: yveltalCinema,
   718: zygardeCinema,
@@ -96,6 +135,20 @@ export const RAID_CINEMAS: Readonly<Record<number, Cinema>> = {
   897: spectrierCinema,
   898: calyrexCinema,
   905: enamorusCinema,
+  1001: wochienCinema,
+  1002: chienpaoCinema,
+  1003: tingluCinema,
+  1004: chiyuCinema,
+  1007: koraidonCinema,
+  1008: miraidonCinema,
+  1014: okidogiCinema,
+  1015: munkidoriCinema,
+  1016: fezandipitiCinema,
+  1017: ogerponCinema,
+  1024: terapagosCinema,
+  // The Paradox Pokémon share a rift: into the past, or into the future (the user's call, as the Ultra Beasts).
+  ...Object.fromEntries([1009, 1020, 1021].map((d) => [d, ancientParadoxCinema])),
+  ...Object.fromEntries([1010, 1022, 1023].map((d) => [d, futureParadoxCinema])),
   // The Galarian birds, by their forms' dex (as legendRaidScenes.ts keys them).
   10169: articunoGalarCinema,
   10170: zapdosGalarCinema,
@@ -113,12 +166,17 @@ export const BOSS_CINEMAS: Readonly<Record<number, BossCinema>> = {
   244: enteiCinema,
   245: suicuneCinema,
   251: celebiCinema,
+  385: jirachiCinema,
+  386: deoxysCinema,
   489: phioneCinema,
   490: manaphyCinema,
   491: darkraiCinema,
   492: shayminCinema,
   493: arceusCinema,
   494: victiniCinema,
+  647: keldeoCinema,
+  648: meloettaCinema,
+  649: genesectCinema,
   719: diancieCinema,
   720: hoopaCinema,
   721: volcanionCinema,
@@ -127,4 +185,5 @@ export const BOSS_CINEMAS: Readonly<Record<number, BossCinema>> = {
   807: zeraoraCinema,
   808: meltanCinema,
   893: zarudeCinema,
+  1025: pecharuntCinema,
 }
