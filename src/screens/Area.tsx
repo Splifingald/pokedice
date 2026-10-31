@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import {
   autoAvailable,
+  fitWildPair,
   nightmareModeOf,
   pilotShowsCard,
   portalModeOf,
@@ -139,7 +140,8 @@ export function AreaScreen() {
       {finding && <FindView />}
       {/* Under the autopilot, the cards it leaves on the table (Trick or Treat, a trainer's: pilotShowsCard) still open. */}
       {run.phase === 'preview' && run.encounter && !finding && !(pilot && !pilotShowsCard(run.encounter.kind)) && (
-        <EncounterPreview enc={run.encounter} />
+        // A wild pair shown as it will be fought: alone if the team lost its second able one since (docs/33).
+        <EncounterPreview enc={fitWildPair(run.encounter, save)} />
       )}
       {run.phase === 'center' && !pilot && <CenterView />}
       {run.phase === 'casino' && !pilot && <CasinoView />}
