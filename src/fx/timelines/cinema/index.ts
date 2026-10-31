@@ -36,6 +36,12 @@ import { dialgaCinema, palkiaCinema } from './spearPillar'
 import { giratinaCinema } from './giratina'
 import { heatranCinema } from './heatran'
 import { regigigasCinema } from './regigigas'
+import { cosmogCinema } from './cosmog'
+import { lunalaCinema } from './lunala'
+import { necrozmaCinema } from './necrozma'
+import { solgaleoCinema } from './solgaleo'
+import { tapuBuluCinema, tapuFiniCinema, tapuKokoCinema, tapuLeleCinema } from './tapu'
+import { ultraBeastCinema } from './ultraBeast'
 
 export { wordsAt } from './kit'
 export type { Cinema, CinemaParams } from './kit'
@@ -64,6 +70,18 @@ export const RAID_CINEMAS: Readonly<Record<number, Cinema>> = {
   716: xerneasCinema,
   717: yveltalCinema,
   718: zygardeCinema,
+  785: tapuKokoCinema,
+  786: tapuLeleCinema,
+  787: tapuBuluCinema,
+  788: tapuFiniCinema,
+  789: cosmogCinema,
+  791: solgaleoCinema,
+  792: lunalaCinema,
+  800: necrozmaCinema,
+  // The Ultra Beasts share one Ultra Wormhole (the user's call: not legendaries, one opening for all).
+  ...Object.fromEntries(
+    [793, 794, 795, 796, 797, 798, 799, 803, 804, 805, 806].map((d) => [d, ultraBeastCinema]),
+  ),
 }
 
 /** The bosses' cinematics, on the battle stage with the name card and the send-out: Mew first. */
