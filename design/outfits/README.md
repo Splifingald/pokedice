@@ -8,7 +8,7 @@ game reads from the copy.
 
 | Id | Drawn on | Files |
 |---|---|---|
-| `pikachu-santa` | `pikachu-original` (Original Cap), its cap swapped for a Santa hat | `sprites-custom/sprites/gen5ani{,-back}{,-shiny}/pikachu-santa.gif` |
+| `pikachu-santa` | `pikachu-original` (Original Cap), its cap swapped for a Santa hat drawn after Pokémon GO's holiday Pikachu: the cap's size, a low crown, the tip flopping down Pikachu's right side to a pom-pom by the cheek | `sprites-custom/sprites/gen5ani{,-back}{,-shiny}/pikachu-santa.gif` |
 
 ## How a hat is drawn
 
@@ -19,10 +19,12 @@ pixel, the letters are the palette in `hat.py`):
   follows it through every frame (the head only bobs: 0 to 4 pixels down);
 - it takes the cap off, and puts the hat where the cap is in that frame. The red part goes behind Pikachu, so an ear
   that comes up stays in front of it, as it did over the cap; the fur band goes in front;
-- the canvas grows where the hat goes past it (5 pixels on top for Santa);
+- the canvas grows where the hat goes past it (Santa: a pixel on top, and room for the hanging tip, 3 pixels to the
+  left in front, 6 to the right behind);
 - the frame timing is the source's, to the millisecond.
 
-The hat has to cover the whole cap: the sprite has no head drawn under it.
+The hat has to cover the whole cap: the sprite has no head drawn under it. That sets its size: a taller hat looked too
+big, and a smaller one needs the top of the head drawn back where the cap was, which looked too small on the head.
 
 ## Remaking Santa Pikachu
 
