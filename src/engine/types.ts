@@ -1053,6 +1053,11 @@ export interface GameConfig {
    */
   hiddenTalents: HiddenTalentsConfig
   /**
+   * The legends' own cinematics (docs/53): a raid legend's entrance and a mythical boss's, each in its own place. Only
+   * how they look and sound, so no server function reads it. Migration 0098 inserts the same row.
+   */
+  legendCinema: { access: EventAccess }
+  /**
    * The Unown Pokédex (docs/41): the 28 letters, once an area where Unown live is opened; `reward` ₽ for the last one.
    * Migration 0080 inserts the same row.
    */

@@ -9,7 +9,8 @@ while it's Off, Versus is what it was (every team, the attack and defense boards
 **Status (2026-10-27): built** on `claude/quirky-maxwell-ilueyw` (from `version/2_4`), behind its switch, Off.
 Migration `0082_versus_league.sql`. The global board (§8, 2026-10-29): migration `0091_versus_league_global.sql`, its
 own switch, Off. New bot teams every week (§9, 2026-10-30): migration `0092_versus_bot_weeks.sql` and the hourly
-Netlify job `netlify/functions/versus-bots.mts`.
+Netlify job `netlify/functions/versus-bots.mts`. The trainer card's best (§10, 2026-10-31): migration
+`0097_versus_best_trophies.sql`.
 
 ## 1. Decisions (the user's answers)
 
@@ -112,6 +113,8 @@ Netlify job `netlify/functions/versus-bots.mts`.
   - The result card: VICTORY! / DEFEAT, the trophies won or lost (+6 🏆), "You have 46 trophies." (or "Below 100
     trophies, a loss costs you nothing."); if the result couldn't be sent, it says the match counts as left.
 - **Home's Versus card** shows your trophies and your rank in place of the wins.
+- **The trainer card** (Stats) says **Versus best**: the most trophies you ever held, any week (§10). A friend's card
+  says theirs.
 - **Monday**: the week's gift message, opened like every gift. Its pop-up is the league's own, not the developer's:
   "Your Versus league week", "Your place in your group and your rewards…", then the message signed **Versus league**
   ("You finished #2 of 20 in your group with 152 trophies. Here are your rewards.") and OPEN THE GIFT.
@@ -173,6 +176,11 @@ The admin sees **BOT** on the bots, before their names, in the opponents and the
    sender, docs/27) and runs on the published site only: on a Deploy Preview, Admin → Config → Versus league → **Make
    this week's bot teams now** does its work.
 
+8. For **the trainer card's Versus best** (§10), run
+   <https://github.com/Splifingald/pokedice/blob/version/2_8/supabase/migrations/0097_versus_best_trophies.sql>
+   (after 0082 and 0033; safe to run again; `supabase/seed.sql` doesn't inline it). Without it the card's line says
+   "—" while the league is on.
+
 After a change to the species, their forms or the gems, the next week's set has them already. To bring the built-in
 set along too, run `pnpm versus-bots` and then 0092 again (not 0082: its copies of `versus_league_offer` and
 `versus_league_seat_bots` would undo 0092's).
@@ -198,6 +206,10 @@ set along too, run `pnpm versus-bots` and then 0092 again (not 0082: its copies 
   - the bots' weekly teams (0092): the job's and the admin's alone, the built-in set until the week has its own, a set
     stored once (whole, on a Monday), the bots seated and offered taking their teams from it, the next weeks using it
     until they have their own, old sets going but for the teams bots were seated with.
+- `tests/versus-best-sql.test.ts` (PGlite): 0097's high mark, from the matches for the weeks before it ran, then kept
+  by its trigger (a win raises it, a loss leaves it); `versus_league_best` the best of every week, 0 for a player who
+  never fought, a friend's and nobody else's, nothing while the league is closed.
+- `e2e/versus-league.spec.ts` and `e2e/friends.spec.ts`: the trainer card's Versus best, yours and a friend's, at 360 px.
 - `tests/versus-bots-job.test.ts`: the hourly job only asks when the week has its set, else draws it and stores it.
 - `tests/versus-true-levels-sql.test.ts` (PGlite): 0090 keeps each Pokémon's own level, Lv.50 or more only.
 - `tests/engine/versus.test.ts`: a Versus Pokémon fights at Lv.50 with its own level's dice and rerolls, both sides.
@@ -258,3 +270,24 @@ amount of bots above 500 trophies."
   `versus_league_seat_bots` use them (0082's otherwise). `versus_league_bot_set` and `versus_league_put_bot_teams` are
   the job's (the service role) and the admin's alone.
 - No switch of its own: it changes where the league's bots get their teams, under the league's switch.
+
+## 10. Versus best on the trainer card (2026-10-31)
+
+The user's ask: "Change the player card stats to show best ever score in versus (trophies)." The card's Versus line
+said the old board's wins ("0 won · 3 held"), which the league no longer counts.
+
+- **What it says**: with the league on, the line is **Versus best** (beside Best level, the same way) and the most
+  trophies you ever held, in any week, this one included: the number and the league's trophy (`TrophyCount`, in the
+  card's own font: `inherit`), "152 trophies" to a screen reader. It's the high mark, not a week's final total, so it
+  never goes down: a week where you reached 150 and finished on 120 counts 150. "—" until the server answers.
+- **A friend's card** says theirs the same way (a friend who never had a Versus team: "—").
+- **Without the league** (its switch Off for you, or Extreme, which keeps Versus as it was) the line is Versus and the
+  old board's wins and holds, as before. Versus not open yet: Locked.
+- **The database** (`0097_versus_best_trophies.sql`):
+  - `versus_league_members.best`, a week's high mark, raised by a trigger whenever the trophies go past it, whatever
+    moved them (a match's start and its result, the bots' climb). None of 0082's functions is written again.
+  - The weeks fought before it ran get theirs from their matches: the trophies before each one, and after each one
+    finished.
+  - `versus_league_best(p_user)`: the caller's best across every week (0 if they never fought), or a friend's; null
+    signed out, for someone who isn't a friend, or while the league is closed to the caller.
+- No switch of its own: it's how the card reads the league, under the league's switch (as §9).

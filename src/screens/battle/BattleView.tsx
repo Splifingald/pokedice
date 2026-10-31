@@ -42,6 +42,7 @@ import {
   type Side,
   inPortalRun,
   inNightmare,
+  legendCinemaOn,
 } from '@/engine'
 import { playCry } from '@/audio/cries'
 import { feelSound } from '@/audio/feel'
@@ -64,6 +65,7 @@ import { ballOfItem } from '@/fx/scenes'
 import { loadSprite, spriteKey } from '@/fx/sprites'
 import { catchTimeline } from '@/fx/timelines/catch'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
+import { BOSS_CINEMAS } from '@/fx/timelines/cinema'
 import { useT } from '@/i18n/react'
 import { effectText, zMoveText } from '@/i18n/text'
 import { trainerTitle, typeName } from '@/lib/format'
@@ -811,15 +813,18 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     if (!bossIntro) return null
     const foe = st.enemy
     const lead = activeBattler(st)
+    const params = {
+      own: spriteKey(lead.dex, true, lead.shiny),
+      foe: spriteKey(foe.dex, false, foe.shiny),
+      look: legendLook(foe.baseDex ?? foe.dex, foe.types[0] ?? 'normal'),
+      name: foe.name,
+      level: t('ui.common.level.short', { n: foe.level }),
+      types: foe.types.map((ty) => typeName(ty)).join(' / '),
+    }
+    // A mythical's own entrance (docs/53: Mew in its forest) when the cinematics are on and it has one.
+    const cinema = legendCinemaOn(data) ? BOSS_CINEMAS[foe.baseDex ?? foe.dex] : undefined
     return {
-      timeline: legendTimeline({
-        own: spriteKey(lead.dex, true, lead.shiny),
-        foe: spriteKey(foe.dex, false, foe.shiny),
-        look: legendLook(foe.baseDex ?? foe.dex, foe.types[0] ?? 'normal'),
-        name: foe.name,
-        level: t('ui.common.level.short', { n: foe.level }),
-        types: foe.types.map((ty) => typeName(ty)).join(' / '),
-      }),
+      timeline: cinema ? cinema.makeBattle(params) : legendTimeline(params),
       ready: Promise.all([loadSprite(lead.dex, true, lead.shiny), loadSprite(foe.dex, false, foe.shiny)]),
       label: t('ui.battle.aWild', { name: foe.name }),
       hud: {

@@ -429,6 +429,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 | The nightmare (§29): the intro, the waking | in full | in half the time |
 | Darkrai's strike after a round (§29, `nightmareStrikeTimeline`) | 2 s: the shadow rises, gathers, the beams | 1 s, straight to the beams |
 | Darkrai's raid entrance (§29, `nightRaidEntranceTimeline`) | in full | in full (an encounter) |
+| A legend's own cinematic (docs/53, `fx/timelines/cinema/`, the admin's switch): Kanto's and Johto's: Mewtwo's lab, the birds', Lugia's and Ho-Oh's places (raids); Mew's, the beasts' and Celebi's (boss fights, `cinema/boss.ts`) | in full | in full, fewer particles, no shake (an encounter) |
 
 `calm` (OS reduce motion, or animations off) also removes screen shakes and full-screen flashes; a hit keeps its two
 white sprite frames. Every timeline is on `/kitchen-sink/fx` (dev): replay, ¼ speed, one-frame steps, the end state,
@@ -958,7 +959,8 @@ pieces.
 
 - **The avatar opens the trainer card** (the drawer, titled "Trainer card", docs/43 §5.9): the card is compact — the
   look (64 px), the name with a pencil (rename), a badge chip and the team's icons; Money, Pokédex, Best level, Areas,
-  Shinies and Versus fold behind "Stats ▾", open by themselves with More details. Menu rows are 48 px, titles only. The
+  Shinies and Versus fold behind "Stats ▾", open by themselves with More details. With the Versus league on, Versus is
+  **Versus best**: the most trophies ever held, as a `TrophyCount` in the card's font (docs/44 §10). Menu rows are 48 px, titles only. The
   foot is one row of three tiles (Discord, Support me, Contact). The main rows fit a 360×640 phone without scrolling.
 - **A friend's card** is drawn the same way, with their badges as the same one count across every region (no badge
   cases).
@@ -1866,6 +1868,11 @@ For everyone (docs/40; its switch retired on 2026-10-28, §20): the engine decid
 - **A legend's entrance** is the pixel engine's, like Giratina's (§27) and Darkrai's (§29), under the raid intro's
   usual words: its place in dithered steps, never a gradient; its aura's four colours for the outline, the rays and the
   rings. Pairs and trios share a place in their own colours. Skip shows from the second time; motion levels as §8.
+- **A legend's own cinematic** (docs/53, the admin's switch): a short film in its own place (Mewtwo's lab, Mew's
+  forest…) instead of the shared entrance, its build-up longer (reveal at 4.3–5 s); the raid intro's words keep their
+  distances from the reveal (`wordsAt`). With the switch on, **a legend's raid has no warning tapes and no alarm**, its
+  own cinematic made or not; Giratina's and Darkrai's keep their worlds' lines, the daily non-legend raid its alarm.
+  Every scene is ordered-dithered, its flashes no faster than 3 a second.
 - **A Mega raid** is a progression raid with a MEGA RAID kicker; its lock says what opens it, its win shows the gem's
   sprite and name instead of the catch.
 
