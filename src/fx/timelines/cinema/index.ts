@@ -42,6 +42,14 @@ import { necrozmaCinema } from './necrozma'
 import { solgaleoCinema } from './solgaleo'
 import { tapuBuluCinema, tapuFiniCinema, tapuKokoCinema, tapuLeleCinema } from './tapu'
 import { ultraBeastCinema } from './ultraBeast'
+import { zacianCinema, zamazentaCinema } from './heroes'
+import { eternatusCinema } from './eternatus'
+import { kubfuCinema } from './kubfu'
+import { regidragoCinema, regielekiCinema } from './splitruins'
+import { calyrexCinema, glastrierCinema, spectrierCinema } from './crowntundra'
+import { enamorusCinema } from './enamorus'
+import { articunoGalarCinema, moltresGalarCinema, zapdosGalarCinema } from './galarbirds'
+import { zarudeCinema } from './zarude'
 
 export { wordsAt } from './kit'
 export type { Cinema, CinemaParams } from './kit'
@@ -78,6 +86,20 @@ export const RAID_CINEMAS: Readonly<Record<number, Cinema>> = {
   791: solgaleoCinema,
   792: lunalaCinema,
   800: necrozmaCinema,
+  888: zacianCinema,
+  889: zamazentaCinema,
+  890: eternatusCinema,
+  891: kubfuCinema,
+  894: regielekiCinema,
+  895: regidragoCinema,
+  896: glastrierCinema,
+  897: spectrierCinema,
+  898: calyrexCinema,
+  905: enamorusCinema,
+  // The Galarian birds, by their forms' dex (as legendRaidScenes.ts keys them).
+  10169: articunoGalarCinema,
+  10170: zapdosGalarCinema,
+  10171: moltresGalarCinema,
   // The Ultra Beasts share one Ultra Wormhole (the user's call: not legendaries, one opening for all).
   ...Object.fromEntries(
     [793, 794, 795, 796, 797, 798, 799, 803, 804, 805, 806].map((d) => [d, ultraBeastCinema]),
@@ -104,4 +126,5 @@ export const BOSS_CINEMAS: Readonly<Record<number, BossCinema>> = {
   802: marshadowCinema,
   807: zeraoraCinema,
   808: meltanCinema,
+  893: zarudeCinema,
 }

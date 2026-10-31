@@ -148,6 +148,26 @@ Alola's legends (raids):
 - **The Ultra Beasts** (`ultraBeast.ts`, 4.5, one for all eleven): an Alolan beach glitching, the sky shattering into an
   Ultra Wormhole, the beast coming through with split cyan and magenta edges.
 
+Galar's and Hisui's legends (raids, sharing `gen8kit.ts`'s `raidCinema` wrapper), and Zarude:
+
+- **Zacian, Zamazenta** (`heroes.ts`, 4.6): the Slumbering Weald's fog and a howl; the Rusted Sword shedding its rust
+  and one slash cutting the screen and the fog; the Rusted Shield ringing three times and opening into a dome of
+  hexagons that holds the fog back until it bursts.
+- **Eternatus** (`eternatus.ts`, 4.8): Hammerlocke at night under the Darkest Day, six Dynamax pillars bending their
+  light into a crimson core that fires a beam, Eternatus uncoiling down it.
+- **Kubfu** (`kubfu.ts`, 4.4): the Master Dojo at dawn, a shadow striking posts faster and faster, one punch breaking a
+  stack of tiles and a falling leaf in two.
+- **Regieleki, Regidrago** (`splitruins.ts`): the Split-Decision Ruins, a ball of lightning tearing round the hall
+  (4.4); the stones lifting into a chained energy dragon that dives into the floor (4.6).
+- **Glastrier, Spectrier, Calyrex** (`crowntundra.ts`): a charge raising ice lances (4.5); a ghost galloping across
+  the moon (4.5); the harvest thawing the snow and a crown of light settling on the king (4.6).
+- **Enamorus** (`enamorus.ts`, 4.6): Hisui's spring, petals funnelling into a giant heart that beats three times.
+- **The Galarian birds** (`galarbirds.ts`, by their forms' dex): two eyes in a violet sky glaring the leaves to pieces
+  (4.6); a dust trail round the hill and a flying kick out of the sun (4.4); an eclipse with eyes and wings of black
+  fire closing like a cloak (4.6).
+- **Zarude** (`zarude.ts`, boss): the jungle's eyes opening pair by pair, the troop swinging past, the leader dropping
+  down.
+
 The bosses share their ending (`boss.ts`, `bossCinema`): the burst and rings in their colours, the name card, the scene
 dissolving into the battle's ground, the HUD's cues, the send-out. Mew's predates it and has its own copy.
 
