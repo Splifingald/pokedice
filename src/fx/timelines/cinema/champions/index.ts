@@ -2,16 +2,20 @@
 // (the Elite Rebattle's tiers) shows the same person, so the same scene; a Kanto rival's version shows Red or Green
 // (engine/rival `asSeenBy`), and is Kanto's champion all the same.
 import type { ChampionCinema } from '../champion'
+import { cynthiaChampion } from './cynthia'
 import { geetaChampion } from './geeta'
 import { ghetsisChampion } from './ghetsis'
 import { lanceChampion } from './lance'
 import { leonChampion } from './leon'
 import { palmerChampion } from './palmer'
+import { stevenChampion } from './steven'
 import { wallaceChampion } from './wallace'
 
 export const CHAMPION_CINEMAS: Readonly<Record<string, ChampionCinema>> = {
   lance: lanceChampion,
   wallace: wallaceChampion,
+  steven: stevenChampion,
+  cynthia: cynthiaChampion,
   palmer: palmerChampion,
   ghetsis: ghetsisChampion,
   leon: leonChampion,
