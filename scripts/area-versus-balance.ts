@@ -39,16 +39,19 @@ interface Tally {
   cardEncounters: number
 }
 
-/** What a run did before reaching the League (its whole run when it never got there). */
+/**
+ * What a run did before reaching the League. A run that never got there is counted apart and left out of every average:
+ * the simulated player never trains, and takes a due legendary at once, so a run can fall to the same one hundreds of
+ * times (Kanto's Victory Road) whatever the card does.
+ */
 function upToLeague(res: CampaignResult, leagueId: string, cardAreas: Set<string>, t: Tally) {
   t.runs++
   const at = res.timeline.findIndex((p) => p.areaId === leagueId)
   const league = res.areas.find((r) => r.areaId === leagueId)
-  if (at >= 0 && league) {
-    t.reached++
-    t.encounters += at
-    t.level += league.levelIn
-  }
+  if (at < 0 || !league) return
+  t.reached++
+  t.encounters += at
+  t.level += league.levelIn
   for (const r of res.areas) {
     if (r.areaId === leagueId) break
     t.xp += r.xp
@@ -121,17 +124,20 @@ for (const regionId of regionIds) {
     for (const k of Object.keys(t) as (keyof Tally)[]) all[k] += t[k]
     totals.set(mode.label, all)
     const per = (n: number) => n / Math.max(1, t.reached)
+    // The baseline's averages over its own runs that reached the League.
+    const b = base
+    const perB = (n: number) => n / Math.max(1, b?.reached ?? 1)
     const xpPerCardEncounter = t.cardXp / Math.max(1, t.cardEncounters)
     const row = [
       region.name,
       mode.label,
-      `${per(t.encounters).toFixed(0)}${base ? ` (${delta(per(t.encounters), per(base.encounters))})` : ''}`,
-      `${per(t.level).toFixed(1)}${base ? ` (${per(t.level) - per(base.level) >= 0 ? '+' : ''}${(per(t.level) - per(base.level)).toFixed(1)})` : ''}`,
-      `${Math.round(per(t.xp))}${base ? ` (${delta(per(t.xp), per(base.xp))})` : ''}`,
+      `${per(t.encounters).toFixed(0)}${b ? ` (${delta(per(t.encounters), perB(b.encounters))})` : ''}`,
+      `${per(t.level).toFixed(1)}${b ? ` (${per(t.level) - perB(b.level) >= 0 ? '+' : ''}${(per(t.level) - perB(b.level)).toFixed(1)})` : ''}`,
+      `${Math.round(per(t.xp))}${b ? ` (${delta(per(t.xp), perB(b.xp))})` : ''}`,
       pct(t.versusXp, t.xp),
-      t.fights ? `${(t.fights / seeds).toFixed(1)} (${pct(t.wins, t.fights)})` : '—',
+      t.fights ? `${(t.fights / Math.max(1, t.reached)).toFixed(1)} (${pct(t.wins, t.fights)})` : '—',
       `${xpPerCardEncounter.toFixed(1)}${base ? ` (${delta(xpPerCardEncounter, base.cardXp / Math.max(1, base.cardEncounters))})` : ''}`,
-      `${Math.round(per(t.gold))}${base ? ` (${delta(per(t.gold), per(base.gold))})` : ''}`,
+      `${Math.round(per(t.gold))}${b ? ` (${delta(per(t.gold), perB(b.gold))})` : ''}`,
     ]
     console.log(`| ${row.join(' | ')} |`)
     if (t.reached < t.runs)
