@@ -1,18 +1,31 @@
 /**
- * pnpm discord:patch-notes patch-notes/2026-10-20-version-2.md       — post these notes to #patch-notes.
+ * pnpm discord:patch-notes patch-notes/2026-10-20-version-2.md       — post these notes to #patch-notes; a French one
+ *                                                                      (…-version-2.fr.md) to #🥖-français.
  * --dry                                                              — print the messages instead.
  * --wait-deploy <commit>                                             — first wait (15 min at most) until the live site
  *                                                                      serves that commit, so the post never runs ahead
  *                                                                      of the update.
  *
  * GitHub Actions runs it for every note a push to main adds (.github/workflows/discord-patch-notes.yml). How to write a
- * note: patch-notes/README.md.
+ * note, and its French twin: patch-notes/README.md.
  */
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { postWebhook, type DEmbed } from './api'
+import { existsSync } from 'node:fs'
 import { loadEnv, ROOT } from './env'
+import type { PostLang } from './french'
 import { COLORS, SITE } from './layout'
+
+/** `…-version-2.fr.md` is the French twin of `…-version-2.md`: it goes to #🥖-français. */
+export const noteLang = (file: string): PostLang => (file.endsWith('.fr.md') ? 'fr' : 'en')
+export const frenchTwin = (file: string): string => file.replace(/\.md$/, '.fr.md')
+
+/** The post's own words, per language. */
+const NOTE_WORDS = {
+  en: { author: 'Patch notes', update: 'New update:', play: 'Play:' },
+  fr: { author: 'Notes de mise à jour', update: 'Nouvelle mise à jour :', play: 'Jouer :' },
+} satisfies Record<PostLang, unknown>
 
 /** Discord's limits: an embed's description, and every embed of one message together. */
 export const DESCRIPTION_MAX = 4096
@@ -77,17 +90,21 @@ export function splitText(text: string, max = DESCRIPTION_MAX - 96): string[] {
 const embedSize = (e: DEmbed) => (e.title?.length ?? 0) + (e.description?.length ?? 0) + (e.footer?.text.length ?? 0) + (e.author?.name.length ?? 0)
 
 /** The note as webhook messages: one embed per piece, as many to a message as Discord allows. */
-export function noteMessages(note: PatchNote, opts: { roleId?: string; site?: string; now?: Date } = {}) {
+export function noteMessages(
+  note: PatchNote,
+  opts: { roleId?: string; site?: string; now?: Date; lang?: PostLang } = {},
+) {
   const site = opts.site ?? SITE
+  const w = NOTE_WORDS[opts.lang ?? 'en']
   const pieces = splitText(note.body || '…')
   const embeds: DEmbed[] = pieces.map((description, i) => ({
-    ...(i === 0 ? { author: { name: 'Patch notes' }, title: note.title, url: site } : {}),
+    ...(i === 0 ? { author: { name: w.author }, title: note.title, url: site } : {}),
     description,
     color: COLORS.green,
   }))
   const last = embeds[embeds.length - 1]!
   if (note.image) last.image = { url: note.image }
-  last.footer = { text: `Play: ${site.replace('https://', '')}` }
+  last.footer = { text: `${w.play} ${site.replace('https://', '')}` }
   last.timestamp = (opts.now ?? new Date()).toISOString()
 
   const messages: { embeds: DEmbed[] }[] = []
@@ -99,7 +116,7 @@ export function noteMessages(note: PatchNote, opts: { roleId?: string; site?: st
   return messages.map((m, i) => ({
     username: 'Pokédice',
     avatar_url: `${site}/characters/prof-oak.png`,
-    ...(i === 0 ? { content: `${opts.roleId ? `<@&${opts.roleId}> ` : ''}New update: **${note.title}**` } : {}),
+    ...(i === 0 ? { content: `${opts.roleId ? `<@&${opts.roleId}> ` : ''}${w.update} **${note.title}**` } : {}),
     embeds: m.embeds,
     allowed_mentions: { parse: [], roles: opts.roleId ? [opts.roleId] : [] },
   }))
@@ -136,24 +153,42 @@ async function main() {
   }
   const env = await loadEnv()
   const site = env.POKEDICE_SITE?.trim() || SITE
-  const webhook = env.DISCORD_PATCH_WEBHOOK?.trim()
-  if (!dry && !webhook) {
-    console.log('No DISCORD_PATCH_WEBHOOK: nothing posted. `pnpm discord --apply` writes it to .env.discord (docs/23).')
+  const webhooks: Record<PostLang, string | undefined> = {
+    en: env.DISCORD_PATCH_WEBHOOK?.trim() || undefined,
+    fr: env.DISCORD_FRENCH_WEBHOOK?.trim() || undefined,
+  }
+  const envName: Record<PostLang, string> = { en: 'DISCORD_PATCH_WEBHOOK', fr: 'DISCORD_FRENCH_WEBHOOK' }
+  if (!dry && !files.some((f) => webhooks[noteLang(f)])) {
+    console.log(
+      `No ${[...new Set(files.map((f) => envName[noteLang(f)]))].join(' nor ')}: nothing posted. \`pnpm discord --apply\` writes them to .env.discord (docs/23).`,
+    )
     return
   }
+  // Every update is posted in French too (CLAUDE.md): say so loudly when a note comes without its twin.
+  for (const f of files)
+    if (noteLang(f) === 'en' && !existsSync(path.resolve(ROOT, frenchTwin(f))))
+      console.log(`! ${f} has no French version (${frenchTwin(f)}): nothing goes to #français for it.`)
   if (wait && !dry) {
     console.log(`Waiting for ${site} to serve ${wait.slice(0, 7)}…`)
     if (!(await waitForDeploy(site, wait))) console.log('! Not live after 15 minutes (a later push may have replaced it): posting anyway.')
   }
   for (const file of files) {
+    const lang = noteLang(file)
     const note = parseNote(await readFile(path.resolve(ROOT, file), 'utf8'), file, site)
-    const messages = noteMessages(note, { roleId: env.DISCORD_PATCH_ROLE?.trim() || undefined, site })
-    console.log(`${file}: "${note.title}", ${messages.length} message(s).`)
+    // No ping in French: the Patch Notes Pings role is the English channel's.
+    const roleId = lang === 'en' ? env.DISCORD_PATCH_ROLE?.trim() || undefined : undefined
+    const messages = noteMessages(note, { roleId, site, lang })
+    console.log(`${file}: "${note.title}", ${messages.length} message(s)${lang === 'fr' ? ', in #français' : ''}.`)
     if (dry) {
       console.log(JSON.stringify(messages, null, 2))
       continue
     }
-    for (const m of messages) await postWebhook(webhook!, m)
+    const webhook = webhooks[lang]
+    if (!webhook) {
+      console.log(`  No ${envName[lang]}: not posted.`)
+      continue
+    }
+    for (const m of messages) await postWebhook(webhook, m)
     console.log('✓ Posted.')
   }
 }
