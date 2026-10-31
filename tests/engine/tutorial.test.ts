@@ -99,4 +99,12 @@ describe('the dice tutorial (docs/46 §5)', () => {
     expect(nextOneTimePopup(save, on, { ...ctx, calm: false })).toBeNull()
     expect(nextOneTimePopup(finishDiceTutorial(save), on, ctx)).toBe('away')
   })
+
+  it("may start over the round's Pokémon Center right after Joey, and nothing else may", () => {
+    const save = winRoundOne(newSave(4, on, 0, newId), on)
+    const ctx = { calm: false, atCenter: true, path: '/area', signedIn: false, now: null, awayReport: true }
+    expect(nextOneTimePopup(save, on, ctx)).toBe('diceTutorial')
+    expect(nextOneTimePopup(finishDiceTutorial(save), on, ctx)).toBeNull()
+    expect(nextOneTimePopup(save, on, { ...ctx, atCenter: false })).toBeNull()
+  })
 })

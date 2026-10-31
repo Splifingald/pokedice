@@ -27,8 +27,9 @@ type PointStep = Exclude<DiceTutorialStep, 'back'>
 
 /** Each step's button on screen (the first one showing). */
 const TARGETS: Record<PointStep, (type: string) => string> = {
-  // Home, then its Mart tab: the bottom bar's on a phone, the side rail's on PC (the first one showing).
-  toHome: () => '[data-guide="nav-home"]',
+  // Home, then its Mart tab: the bottom bar's on a phone, the side rail's on PC. Right after Joey, the round's Pokémon
+  // Center is on screen: its own HOME first (the nav is shut there).
+  toHome: () => '[data-guide="center-home"], [data-guide="nav-home"]',
   toMart: () => '[data-guide="nav-shop"]',
   toUpgrades: () => '#mart-upgrades',
   toDice: () => '#up-dice',
@@ -64,7 +65,8 @@ export const boxOf = (el: Element): GuideBox | null => {
 
 /**
  * The step's button on screen, followed as the page scrolls or lays out again; null while it isn't there. On arrival
- * it's scrolled into view and takes the focus, so a keyboard's Enter presses it.
+ * it's scrolled into view and takes the focus, so a keyboard's Enter presses it. A list of selectors is tried in its
+ * order: the first that shows one wins.
  */
 export function useTargetBox(selector: string | null, focus = true): GuideBox | null {
   const [box, setBox] = useState<GuideBox | null>(null)
@@ -74,7 +76,11 @@ export function useTargetBox(selector: string | null, focus = true): GuideBox | 
     let raf = 0
     let found: Element | null = null
     const tick = () => {
-      const el = [...document.querySelectorAll(selector)].find((e) => boxOf(e)) ?? null
+      const el =
+        selector
+          .split(',')
+          .map((one) => [...document.querySelectorAll(one)].find((e) => boxOf(e)))
+          .find(Boolean) ?? null
       if (el && el !== found) {
         found = el
         el.scrollIntoView({ block: 'center', inline: 'nearest' })

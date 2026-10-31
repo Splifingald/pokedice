@@ -77,8 +77,9 @@ save starts at ₽0, so it is exactly the price of the starter's type die at Lv.
 bundled tables). Right then, a **pointing hand** walks the player to it, step by step, **once** (the user's request,
 2026-10-28). It follows the set opening's switch: it is the opening's last step, not a feature of its own.
 
-1. **Home** ("You won ₽10! Spend it to make Charmander stronger. First, head Home."): the bottom bar's Home tab on a
-   phone, the side rail's on PC. Skipped when the player is on Home already.
+1. **Home** ("You won ₽10! Spend it to make Charmander stronger. First, head Home."): right after Joey, the round's
+   Pokémon Center is on screen, so its own HOME button (the nav is shut there); elsewhere the bottom bar's Home tab on
+   a phone, the side rail's on PC. Skipped when the player is on Home already.
 2. Home's **Shop** tab ("…Tap Shop: your Pokédollars are spent there."), the bottom bar's on a phone, the side rail's on
    PC: the way to the Mart the player will use from then on, rather than the top bar's money (the user's call,
    2026-10-31). With ₽10 to spend, the tab's dot opens the Mart on Upgrades already, and the next step is skipped.
@@ -95,8 +96,10 @@ bundled tables). Right then, a **pointing hand** walks the player to it, step by
   picks it up where it was. Should a step's button not be on screen (a page laid out otherwise), SHOW ME goes straight
   to where it lives.
 - **When**: between fights, as the one-time pop-ups' first (`popups.ts`): it keeps the turn on every page it walks
-  through, so nothing comes between its steps. Due once the opening's first round is won while the die is Lv.1 and the
-  purse holds its price (`diceTutorialDue`); once shown (`save.diceTutorial: 'started'`) it comes back until BACK TO
+  through, so nothing comes between its steps. Joey's win leads straight into the next round's Pokémon Center, which
+  isn't "between fights" for the other pop-ups: the tutorial alone may start there, once the heal has played (about
+  3 s, `PopupContext.atCenter`), so a new player meets it before their next fight. Due once the opening's first round
+  is won while the die is Lv.1 and the purse holds its price (`diceTutorialDue`); once shown (`save.diceTutorial: 'started'`) it comes back until BACK TO
   (`'done'`), the die bought or not. A player who upgraded the die on their own never sees it.
 - **No rules card, no INFO**: it is the explanation (docs/15 §20).
 - **The pieces**: `src/engine/tutorial.ts` (the starter, its die and price, due, the step), `DiceTutorial`
