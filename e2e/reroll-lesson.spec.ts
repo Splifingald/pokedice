@@ -34,7 +34,10 @@ async function toFight(page: Page) {
       .isVisible()
       .catch(() => false)) && (await attack(page).isEnabled())
   for (let i = 0; i < 150 && !(await ready()); i++) {
-    for (const name of ['FIGHT', 'CONTINUE', 'GO!', 'NEXT']) {
+    // Switched off, the deck is shuffled: a find or a Center may come first.
+    const healing = page.getByRole('dialog', { name: 'Healing…' })
+    if (await healing.isVisible().catch(() => false)) await healing.getByRole('button', { name: 'SKIP ▸▸' }).click()
+    for (const name of ['FIGHT', 'EXPLORE', 'ENTER', 'PICK IT UP', 'CONTINUE', 'GO!', 'NEXT']) {
       const b = page.getByRole('button', { name, exact: true }).first()
       if ((await b.isVisible().catch(() => false)) && (await b.isEnabled().catch(() => false))) {
         await b.click()

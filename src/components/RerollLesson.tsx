@@ -51,6 +51,7 @@ export function RerollLessonGuide({
       spots={spots}
       bubble={<GuideBubble text={t(`ui.tutorial.reroll.${step}`, { bonus })} />}
       still={calm}
+      zoomKey={step}
     />
   )
 }

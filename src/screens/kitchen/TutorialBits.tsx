@@ -24,7 +24,7 @@ function Frame({ name, children }: { name: string; children: ReactNode }) {
 const VARS = { gold: 10, mon: 'Charmander', type: 'Fire', area: 'Route 1' }
 
 /** A phone-sized mock page with one button at `at` (from the top, in %), framed as the tutorial frames it. */
-function Step({ at, text }: { at: number; text: string }) {
+function Step({ at, text, zoomKey }: { at: number; text: string; zoomKey?: string }) {
   const page = useRef<HTMLDivElement>(null)
   const button = useRef<HTMLButtonElement>(null)
   const [box, setBox] = useState<GuideBox | null>(null)
@@ -48,7 +48,7 @@ function Step({ at, text }: { at: number; text: string }) {
       >
         ₽10 Upgrade
       </button>
-      <GuideFrame fixed={false} box={box} bubble={<GuideBubble text={text} />} still />
+      <GuideFrame fixed={false} box={box} bubble={<GuideBubble text={text} />} still zoomKey={zoomKey} />
     </div>
   )
 }
@@ -135,6 +135,19 @@ function Lesson({ step }: { step: LessonStep }) {
   )
 }
 
+/** The spotlight's zoom in, again at each REPLAY (calm or animations off: at once). */
+function ZoomReplay({ text }: { text: string }) {
+  const [n, setN] = useState(0)
+  return (
+    <div className="flex flex-col items-start gap-2">
+      <PixelButton size="sm" onClick={() => setN((v) => v + 1)}>
+        REPLAY
+      </PixelButton>
+      <Step at={45} text={text} zoomKey={String(n)} />
+    </div>
+  )
+}
+
 export function TutorialBits() {
   const { t } = useT()
   const noop = () => {}
@@ -173,6 +186,9 @@ export function TutorialBits() {
       </Frame>
       <Frame name="GuideFrame · the button low: the hand above it, the bubble on top">
         <Step at={78} text={t('ui.tutorial.dice.toUpgrades', VARS)} />
+      </Frame>
+      <Frame name="GuideFrame · the zoom in: each step's spotlight closes in on its target in steps, then the hand">
+        <ZoomReplay text={t('ui.tutorial.dice.toMart', VARS)} />
       </Frame>
       <Frame name="Reroll lesson · 1. the bad throw: the tray to tap, the hand on the next die">
         <Lesson step="pick" />

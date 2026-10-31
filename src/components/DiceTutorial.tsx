@@ -149,6 +149,43 @@ export function GuideBubble({
   )
 }
 
+/** The spotlight's zoom in (docs/15 §8: pixel motion steps): its steps and each step's time, by motion level. */
+const ZOOM_STEPS = { full: 6, short: 3 } as const
+const ZOOM_STEP_MS = 70
+
+/** `from` moved `p` (0–1) of the way to `to`. */
+const towards = (from: GuideBox, to: GuideBox, p: number): GuideBox => ({
+  x: from.x + (to.x - from.x) * p,
+  y: from.y + (to.y - from.y) * p,
+  w: from.w + (to.w - from.w) * p,
+  h: from.h + (to.h - from.h) * p,
+})
+
+/**
+ * The zoom's progress (0–1, in steps) for the step `key`: it plays again whenever the key changes. None (1 at once)
+ * when the screen is calm or animations are off.
+ */
+function useZoom(key: string, active: boolean): number {
+  const { level, calm } = useMotion()
+  const steps = calm || level === 'off' ? 0 : ZOOM_STEPS[level]
+  const [step, setStep] = useState(0)
+  useEffect(() => {
+    if (!active || !steps) return
+    setStep(0)
+    let n = 0
+    const id = window.setInterval(() => {
+      n += 1
+      setStep(n)
+      if (n >= steps) window.clearInterval(id)
+    }, ZOOM_STEP_MS)
+    return () => window.clearInterval(id)
+  }, [key, active, steps])
+  if (!active || !steps) return 1
+  // Eased out: big strides first, then it settles on the target.
+  const p = Math.min(1, step / steps)
+  return 1 - (1 - p) ** 2
+}
+
 /** A box with room around it: a hole in the dimmed screen. */
 const padded = (b: GuideBox): GuideBox => ({ x: b.x - PAD, y: b.y - PAD, w: b.w + 2 * PAD, h: b.h + 2 * PAD })
 
@@ -164,6 +201,7 @@ export function GuideFrame({
   bubbleAt,
   still,
   fixed = true,
+  zoomKey = '',
 }: {
   box: GuideBox | null
   /** Lit too, to be looked at, not tapped (the reroll lesson's combo): out of the dim, ringed, but taps go nowhere. */
@@ -178,6 +216,11 @@ export function GuideFrame({
   bubbleAt?: 'top' | 'middle' | 'bottom'
   still?: boolean
   fixed?: boolean
+  /**
+   * The step: each new one zooms its spotlight in from the whole screen onto what to tap (and what to look at), so the
+   * eye goes there; the hand and the bubble come once it has closed in.
+   */
+  zoomKey?: string
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ w: 0, h: 0 })
@@ -193,6 +236,12 @@ export function GuideFrame({
   const mask = useId()
   const hole = box && padded(box)
   const lit = spots.map(padded)
+  // The zoom: the dim's cut-outs and rings shrink from the whole frame onto their targets. Taps only ever reach the
+  // target (the blockers use the hole itself).
+  const zoom = useZoom(`${zoomKey}|${hole ? 1 : 0}`, !!hole && size.w > 0)
+  const screen = { x: 0, y: 0, w: size.w, h: size.h }
+  const zoomed = zoom < 1
+  const shown = (r: GuideBox | null) => r && (zoomed ? towards(screen, r, zoom) : r)
   // The hand under its button pointing up, or above it pointing down when the button sits low on the screen.
   const handW = 16 * HAND_SCALE
   const handH = 17 * HAND_SCALE
@@ -226,9 +275,9 @@ export function GuideFrame({
         <defs>
           <mask id={mask}>
             <rect width="100%" height="100%" fill="white" />
-            {[hole, ...lit].map(
-              (r, i) => r && <rect key={i} x={r.x} y={r.y} width={r.w} height={r.h} fill="black" />,
-            )}
+            {[hole, ...lit]
+              .map(shown)
+              .map((r, i) => r && <rect key={i} x={r.x} y={r.y} width={r.w} height={r.h} fill="black" />)}
           </mask>
         </defs>
         <rect width="100%" height="100%" className="fill-night/60" mask={`url(#${mask})`} />
@@ -242,18 +291,20 @@ export function GuideFrame({
         />
       ))}
       {/* The gold rings: the hole's is what to tap, a spot's what to look at. */}
-      {[hole, ...lit].map(
-        (r, i) =>
-          r && (
-            <div
-              key={i}
-              aria-hidden
-              className="absolute shadow-[inset_0_0_0_3px_theme(colors.gold)]"
-              style={{ left: r.x, top: r.y, width: r.w, height: r.h }}
-            />
-          ),
-      )}
-      {hand && (
+      {[hole, ...lit]
+        .map(shown)
+        .map(
+          (r, i) =>
+            r && (
+              <div
+                key={i}
+                aria-hidden
+                className="absolute shadow-[inset_0_0_0_3px_theme(colors.gold)]"
+                style={{ left: r.x, top: r.y, width: r.w, height: r.h }}
+              />
+            ),
+        )}
+      {hand && !zoomed && (
         <div className="absolute" style={{ left: hand.left, top: hand.top }}>
           <TutorialHand scale={HAND_SCALE} down={down} still={still} />
         </div>
@@ -332,6 +383,12 @@ export function DiceTutorial() {
       />
     )
   return (
-    <GuideFrame box={box} bubble={bubble} bubbleAt={step === 'back' ? 'middle' : undefined} still={calm} />
+    <GuideFrame
+      box={box}
+      bubble={bubble}
+      bubbleAt={step === 'back' ? 'middle' : undefined}
+      still={calm}
+      zoomKey={step}
+    />
   )
 }
