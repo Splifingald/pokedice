@@ -134,3 +134,28 @@ the server answers nothing.
   requests.
 - The kitchen sink's **Real-player battles** section: the card (a stranger, a friend, a guest), the results, the
   requests.
+
+## 8. Balance: what the card does to XP (2026-10-31)
+
+The user's ask: "run simulations to tell me how much this affects the game balancing in terms of experience".
+`pnpm area-versus-balance 6 900`: each region's first starter, 6 seeds, the headless campaign (`pnpm balance`'s) without
+the card and with it, the real player's team modelled on the simulated player's own at that moment (levels −10 %, the
+same, +10 %), everything measured up to the League. Every region together:
+
+| Card | Encounters to League | Lv at League | XP before League | from real players | Real fights won | XP / encounter in card areas |
+|---|---:|---:|---:|---:|---:|---:|
+| Off | 320 | 70.5 | 15,983 | — | — | 52.7 |
+| On, −10 % | 296 (−7 %) | 71.9 (+1.4) | 16,573 (+4 %) | 13 % | 99 % | 66.4 (+26 %) |
+| On, same level | 301 (−6 %) | 71.7 (+1.2) | 16,693 (+4 %) | 14 % | 97 % | 67.0 (+27 %) |
+| On, +10 % | 296 (−8 %) | 69.7 (−0.8) | 15,405 (−4 %) | 8 % | 15 % | 58.4 (+11 %) |
+
+- Where the card is dealt, a round gives about a quarter more XP (their Pokémon stand at the player's level, above the
+  area's trainers and wild ones); a stronger team still gives some (the K.O.s made before losing count).
+- Over a whole region it is small: +4 % XP and about one level at the League. The simulated player plays each area
+  only until it clears, and a stronger team wipes less at the gyms, so it reaches the League in 6–8 % fewer encounters
+  and meets fewer wild Pokémon and trainers on the way. A player who stays to grind gets the quarter more per round.
+- Galar and Paldea feel it least (5 and 2 real fights before the League: few areas deal the card there).
+- At the same level the player wins almost every fight (97 %): their whole team faces one Pokémon at a time.
+- 6 seeds: a region's ±2 levels is noise (one gym wipe more or less). Runs that never reached the League (the
+  simulated player falls to Kanto's Victory Road legendary hundreds of times, card or not) are left out.
+
