@@ -106,6 +106,8 @@ export interface TimelinePoint {
   level: number
   gold: number
   dex: number
+  /** Every combo and die track's level added up: what the ₽ has bought so far. */
+  upgrades: number
 }
 
 export interface CampaignResult {
@@ -462,7 +464,9 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
     }
     const level = round1(teamAverageLevel(save))
     r.levelOut = level
-    timeline.push({ i, areaId: area.id, level, gold: save.gold, dex: new Set(save.pokedex).size })
+    const upgrades =
+      Object.values(save.comboLevels).reduce((n, l) => n + l, 0) + Object.values(save.dieLevels).reduce((n, l) => n + l, 0)
+    timeline.push({ i, areaId: area.id, level, gold: save.gold, dex: new Set(save.pokedex).size, upgrades })
     if ((i + 1) % 5 === 0 || i + 1 === total) yield (i + 1) / total
   }
 
