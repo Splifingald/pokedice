@@ -285,7 +285,9 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   switch, the result), and **at its sides the room a wide screen has: the Bag open on the left, the team on rows on
   the right** (`BagColumn`, `TeamColumn`: what a phone keeps behind the Bag button and in the pips, with a bit more
   on each). The team's column is where a Pokémon is picked: the send-out's, a switch's and a K.O.'s pick (the panel
-  shows the one picked and GO!), and an item's "on whom" (tap the item, then the Pokémon). The columns stand from
+  shows the one picked and GO!), and an item's "on whom" (tap the item, then the Pokémon). **The send-out keeps its
+  cards above GO! there too** (the user's call, 2026-10-31: the one picked alone read as "only this one can go"): a
+  click on a card or a row picks, the two outlined together. The columns stand from
   the send-out to the catch; the result has the middle alone. A step taller than the panel (a result with a catch)
   scrolls inside it, its buttons pinned at its foot. The area's other steps (the page between encounters, a find,
   the Center) are the same middle column (`StagePanel`): a 3:2 scene as wide as the height leaves room for the panel
