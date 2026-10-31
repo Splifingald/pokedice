@@ -78,21 +78,22 @@ events"*, and *"propose a calendar for 1st of December to 24th"* (§5).
 
 ## 5. The Advent proposal (1 – 24 December)
 
-Winter Pokémon, two stones that evolve two of them, Rare Candies, two Master Balls and ₽11,000 over the month, a shiny
-Delibird on the 24th. ₽ in this game is small (a trainer pays half the levels it fielded; an Ultra Ball costs ₽100), so
-₽1,000–5,000 is a real gift. The admin's button fills exactly this (`ADVENT_PROPOSAL`).
+Toned down after the first draft (₽11,000, two Master Balls, 18 Rare Candies, Frigibax, Lapras and a shiny Delibird:
+"way too generous", the user, 2026-10-31). ₽ in this game is small: a trainer pays half the levels it fielded, a whole
+region about ₽6,000, an Ultra Ball costs ₽100. So: small things a day, ₽1,000 over the month, one Rare Candy, one Ice
+Stone, winter Pokémon at Lv.5, a Delibird on the 24th. The admin's button fills exactly this (`ADVENT_PROPOSAL`).
 
 | Day | Gift | Day | Gift |
 |---|---|---|---|
-| 1 | ₽1,000 | 13 | Master Ball ×1 |
-| 2 | Ultra Ball ×10 | 14 | Spheal Lv.18 |
-| 3 | Swinub Lv.10 | 15 | ₽3,000 |
-| 4 | Rare Candy ×3 | 16 | Snover Lv.20 |
-| 5 | Ice Stone ×1 (for day 12) | 17 | Max Ether ×5 |
-| 6 | Snorunt Lv.12 | 18 | Dawn Stone ×1 (Snorunt → Froslass) |
-| 7 | Max Revive ×3 | 19 | Frigibax Lv.20 |
-| 8 | ₽2,000 | 20 | Rare Candy ×10 |
-| 9 | Cubchoo Lv.15 | 21 | Lapras Lv.25 |
-| 10 | Rare Candy ×5 | 22 | ₽5,000 |
-| 11 | Hyper Potion ×10 | 23 | Master Ball ×1 |
-| 12 | Eevee Lv.15 (+ day 5's Ice Stone = Glaceon) | 24 | ✦ Shiny Delibird Lv.30 |
+| 1 | Poké Ball ×5 | 13 | Great Ball ×5 |
+| 2 | ₽100 | 14 | Rare Candy ×1 |
+| 3 | Potion ×5 | 15 | ₽250 |
+| 4 | Swinub Lv.5 | 16 | Cubchoo Lv.5 |
+| 5 | Great Ball ×3 | 17 | Hyper Potion ×2 |
+| 6 | ₽150 | 18 | Ultra Ball ×2 |
+| 7 | Super Potion ×3 | 19 | Snover Lv.5 |
+| 8 | Snorunt Lv.5 | 20 | ₽300 |
+| 9 | Ice Heal ×3 | 21 | Revive ×2 |
+| 10 | ₽200 | 22 | Ice Stone ×1 |
+| 11 | Ether ×2 | 23 | Eevee Lv.5 (+ the Ice Stone = Glaceon) |
+| 12 | Spheal Lv.5 | 24 | Delibird Lv.10 |
