@@ -192,6 +192,43 @@ export const DEFAULT_CONFIG: GameConfig = {
       { friends: 4, gifts: [{ kind: 'item', key: 'master-ball', qty: 1, region: 'latest' }] },
     ],
   },
+  // Welcome-back gifts (docs/56): off until the admin switches them on. Migration 0101 inserts the same row (and its
+  // SQL test keeps the two the same). Only the highest tier reached is given, at most once every 14 days.
+  welcomeBack: {
+    access: 'off',
+    cooldownDays: 14,
+    tiers: [
+      {
+        minDays: 3,
+        gifts: [
+          { kind: 'gold', amount: 300, region: 'latest' },
+          { kind: 'item', key: 'great-ball', qty: 5, region: 'latest' },
+          { kind: 'item', key: 'super-potion', qty: 3, region: 'latest' },
+          { kind: 'item', key: 'rare-candy', qty: 1, region: 'latest' },
+        ],
+      },
+      {
+        minDays: 7,
+        gifts: [
+          { kind: 'gold', amount: 1000, region: 'latest' },
+          { kind: 'item', key: 'ultra-ball', qty: 5, region: 'latest' },
+          { kind: 'item', key: 'hyper-potion', qty: 3, region: 'latest' },
+          { kind: 'item', key: 'revive', qty: 2, region: 'latest' },
+          { kind: 'item', key: 'rare-candy', qty: 2, region: 'latest' },
+        ],
+      },
+      {
+        minDays: 14,
+        gifts: [
+          { kind: 'gold', amount: 2500, region: 'latest' },
+          { kind: 'item', key: 'ultra-ball', qty: 10, region: 'latest' },
+          { kind: 'item', key: 'max-revive', qty: 3, region: 'latest' },
+          { kind: 'item', key: 'max-ether', qty: 2, region: 'latest' },
+          { kind: 'item', key: 'rare-candy', qty: 5, region: 'latest' },
+        ],
+      },
+    ],
+  },
   extreme: {
     access: 'off',
     // The speedrun (docs/48): Kanto's League opens it, and each region's League its run.
