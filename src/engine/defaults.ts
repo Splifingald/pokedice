@@ -596,6 +596,32 @@ export const DEFAULT_CONFIG: GameConfig = {
     },
     areas: {},
   },
+  // The Gift card (docs/61 §4.0, the user's design of 2026-11-01): off until the admin switches it on. A tap breaks the
+  // gift 20 / 40 / 60 / 80 % of the time from levels 1 to 4, level 5 the top; owning a Delibird takes 20 off each and
+  // adds level 6. Always tapping reaches level 5 3.8 % of the time (19.2 % with a Delibird, and level 6 3.8 %), so the
+  // rewards climb steeply: two of the area's balls, then better ones or Super Potions, Hyper Potions or ₽ (the area's
+  // level × 15), a Revive or an evolution item its Mart sells, 3 Rare Candies (the user's call), and on top 3 Rare
+  // Candies and a Revive. Evergreen Hill's Delibird bursts out of its present on the 5th tap (docs/61 §4.2).
+  giftCard: {
+    access: 'off',
+    breakChances: [20, 40, 60, 80],
+    helper: { dex: 225, safer: 20, extraLevels: 1 },
+    rewards: [
+      [[{ kind: 'ball', qty: 2 }]],
+      [[{ kind: 'betterBall', qty: 3 }], [{ kind: 'item', key: 'super-potion', qty: 2 }]],
+      [[{ kind: 'item', key: 'hyper-potion', qty: 2 }], [{ kind: 'money', qty: 15 }]],
+      [[{ kind: 'item', key: 'revive', qty: 1 }], [{ kind: 'evolution', qty: 1 }]],
+      [[{ kind: 'item', key: 'rare-candy', qty: 3 }]],
+      [
+        [
+          { kind: 'item', key: 'rare-candy', qty: 3 },
+          { kind: 'item', key: 'revive', qty: 1 },
+        ],
+      ],
+    ],
+    balls: ['poke-ball', 'great-ball', 'ultra-ball'],
+    bossTaps: 5,
+  },
   // The Underground (docs/34): off until the admin switches it on. Shapes follow Platinum's treasures, whose large
   // sphere is half again the small one: small orb 1×1, medium 2×2, large 3×3, a plate 3×2, a fossil 2×2. A 6×6 wall of 1–3 layers (30 / 40 / 30 %) hides 2–4
   // things and takes 15 strikes. Free kits: 3 a day, one every 8 h, at most 3 waiting. The pickaxe's 8 levels each

@@ -170,11 +170,11 @@ const progressSchema = z.object({
   bossesDefeated: z.array(z.number().int()).default([]),
   bossesCaught: z.array(z.number().int()).optional(),
   gymsDefeated: z.array(z.string()).default([]),
-  deck: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus', 'legend'])).optional(),
+  deck: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus', 'gift', 'legend'])).optional(),
   lootDeck: z.array(z.string()).optional(),
   uniqueFound: z.array(z.string()).optional(),
   round: z.number().int().min(0).optional(),
-  drawn: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus', 'legend'])).optional(),
+  drawn: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus', 'gift', 'legend'])).optional(),
   lastCenter: z.boolean().optional(),
   // Route 1's set opening (docs/46): the deck in play is its round of this index. An odd value: a shuffled deck's cards.
   opening: z.number().int().min(0).optional().catch(undefined),
@@ -526,6 +526,8 @@ export const saveSchema = z.object({
     .optional(),
   // Trick or Treat (docs/29): its rules pop-up seen.
   trickOrTreat: z.object({ rulesSeen: z.boolean().optional() }).optional(),
+  // The Gift card (docs/61 §4.0): its rules pop-up seen.
+  giftCard: z.object({ rulesSeen: z.boolean().optional() }).optional(),
   // The Underground (docs/34): the running event's block, and the plates kept for good.
   underground: undergroundSchema.optional(),
   plates: z.array(typeEnum).max(18).optional(),

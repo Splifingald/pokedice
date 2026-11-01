@@ -43,14 +43,14 @@ describe('deckCounts', () => {
   const both = { wild: true, trainer: true }
 
   it('an encounter weight is the number of copies of that card in the deck', () => {
-    expect(deckCounts({ wild: 7, trainer: 2, center: 1 }, both)).toEqual({ wild: 7, trainer: 2, center: 1, item: 0, casino: 0, trick: 0, versus: 0 })
-    expect(deckCounts({ wild: 5, trainer: 3, center: 1, item: 1 }, { ...both, item: true })).toEqual({ wild: 5, trainer: 3, center: 1, item: 1, casino: 0, trick: 0, versus: 0 })
-    expect(deckCounts({ wild: 2.6, trainer: 0, center: 1 }, both)).toEqual({ wild: 3, trainer: 0, center: 1, item: 0, casino: 0, trick: 0, versus: 0 })
+    expect(deckCounts({ wild: 7, trainer: 2, center: 1 }, both)).toEqual({ wild: 7, trainer: 2, center: 1, item: 0, casino: 0, trick: 0, versus: 0, gift: 0 })
+    expect(deckCounts({ wild: 5, trainer: 3, center: 1, item: 1 }, { ...both, item: true })).toEqual({ wild: 5, trainer: 3, center: 1, item: 1, casino: 0, trick: 0, versus: 0, gift: 0 })
+    expect(deckCounts({ wild: 2.6, trainer: 0, center: 1 }, both)).toEqual({ wild: 3, trainer: 0, center: 1, item: 0, casino: 0, trick: 0, versus: 0, gift: 0 })
   })
 
   it('gives no cards to kinds the area cannot produce, and a lone Center to an empty deck', () => {
-    expect(deckCounts({ wild: 6, trainer: 3, center: 1 }, { wild: true, trainer: false })).toEqual({ wild: 6, trainer: 0, center: 1, item: 0, casino: 0, trick: 0, versus: 0 })
-    expect(deckCounts({ wild: 0, trainer: 0, center: 0 }, both)).toEqual({ wild: 0, trainer: 0, center: 1, item: 0, casino: 0, trick: 0, versus: 0 })
+    expect(deckCounts({ wild: 6, trainer: 3, center: 1 }, { wild: true, trainer: false })).toEqual({ wild: 6, trainer: 0, center: 1, item: 0, casino: 0, trick: 0, versus: 0, gift: 0 })
+    expect(deckCounts({ wild: 0, trainer: 0, center: 0 }, both)).toEqual({ wild: 0, trainer: 0, center: 1, item: 0, casino: 0, trick: 0, versus: 0, gift: 0 })
     expect(deckCounts({ wild: 8, center: 1, item: 1 }, both).item).toBe(0) // no loot table → no item cards
   })
 
