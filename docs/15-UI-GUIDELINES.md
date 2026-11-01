@@ -2133,8 +2133,12 @@ every state on `/kitchen-sink` (`TracksBits`); the engine (`engine/tracks.ts`, `
 the bushes, points the prints and decides every outcome with its own rng. **Every scene is pixel art on the FX engine**
 (`src/fx/timelines/tracks.ts`, `cinema/stantler.ts`; on `/kitchen-sink/fx`), and the bushes too (`bushSprite`,
 `openBushSprite`, drawn into small canvases). Its palette (`TS`): the winter night's blues, the moon's creams, the
-snow's whites and blue shades, the bushes' pine greens, Stantler's gold. Its scenes follow §8 (short: half the time;
-off: their end at once).
+snow's whites and blue shades, the bushes' pine greens, Stantler's gold. Its scenes share one glade painted in layers,
+as the legends' cinematics are (`buildGlade`: the sky and its twinkling stars, the moon with its halo and ring of ice,
+snowy peaks, the forest along the horizon in mist, a snowfield in perspective with its drifts, the moon's path, glints
+and the pines' blue moon-shadows, snow-laden pines and bushes at every depth, a snowbank in front), each depth drifting
+at its own pace as the camera moves, snow falling at three depths; a silhouette is solid, rimmed with moonlight on the
+moon's side (`drawPose`). Its scenes follow §8 (short: half the time; off: their end at once).
 
 - **The switch and the rules** follow §20: `tracks` (Admin → Areas → Special mode: Tracks in the Snow), Off by default;
   the server answers it (`tracks_open()`, 0122) before a signed-in player begins. Off, the glade is a plain secret
@@ -2145,8 +2149,10 @@ off: their end at once).
   the pixel engine as its banner: `GladeScene`).
 - **The way in** (`TracksEntry`): the nightmare's, piece for piece. CONTINUE on Home says ENTER THE GLADE ("3 rounds of
   hide and seek"; after a wipe "Round 2/3: find Stantler"); the intro plays at once, full screen (`TracksIntro`: the
-  moon rises behind the bushes, snow drifting, a reindeer's silhouette edged with moonlight leaps across it into the
-  bushes on the right, which shake and throw up snow; the line in a night-blue card with the moon's cream above and
+  camera comes down from the stars and the moon to the glade, snow falling; a reindeer's solid silhouette trots out
+  from behind a pine, crouches and leaps in a high arc across the moon, dropping into the bushes on the right, which
+  throw up a cloud of snow and shake; the card (a night-blue band with snow along its top and icicles under it, the
+  title wiped in beside a small moon once the band has settled); the line in a night-blue card with the moon's cream above and
   ice below from its landing; held at its end, "Tap to continue ▼" with the focus; no SKIP). Arriving heals as a
   Center does. The tap raises its pop-up at the bottom ("Into the glade": the rules, TEAM with "Healed as at a Pokémon
   Center…", NOT NOW, BEGIN THE SEARCH in red). Back from TEAM the pop-up is up again at once (`run.tracksPopup`).
@@ -2168,14 +2174,20 @@ off: their end at once).
   off) before what it held comes: a fight on the battle screen, the find's step, the cabin as a Pokémon Center.
 - **The snow falling** (`tracksSnowfallTimeline` over the grid, transparent elsewhere): after the last tap, flakes
   thicken into a flurry and a dithered white veil covers the glade (the bush just opened still shown under it until
-  then), then thins out over the fresh glade. Coming back from a fight on the last tap, it falls once as the page opens.
+  then), then thins out over the fresh glade (a flurry at three depths, the wind swinging it, gusts streaking across;
+  the veil in stepped alpha, never a dither over the bushes). Coming back from a fight on the last tap, it falls once as the page opens.
 - **Stantler's fights**: rounds 1 and 2's is a plain wild fight (catchable); the result card adds "Round 1/3 cleared:
   Stantler found!" on a night card with hoofprints. Round 3's is the area's boss: **its own entrance on the battle
-  stage** (`stantlerCinema`, as docs/53's bosses, whatever the legends' cinematics switch): the glade under the moon,
-  the bush shaking, antlers rising out of it, the reindeer's silhouette rearing up before the moon, its coat flashing
-  gold three times, a stamp throwing the snow off the bushes, the reveal, the name card.
-- **The outro** (`TracksOutroView`): full screen, the shiny Stantler standing in the glade, the bushes' last rustle,
-  fresh snow covering a trail of prints, the card; then "The glade is quiet again", "Fresh snow covers the prints.
+  stage** (`stantlerCinema`, as docs/53's bosses, whatever the legends' cinematics switch): the layered glade drifting into
+  place, the bush before the moon shaking twice (snow puffing off it), antlers rising out of it, a solid silhouette
+  rimmed with moonlight; it rises and the bush parts, it crouches and rears up (leaning back on its hind feet), its rim
+  flashing gold three times with sparkles off its antlers; it stamps down (snow bursting along the ground and off the
+  bushes, the stage shaking, none when calm), the moonlight gathers into it, the reveal, shiny sparkles, the name
+  card.
+- **The outro** (`TracksOutroView`): full screen, out of the white the shiny Stantler stands in the moonlit glade, its
+  breath steaming, its trail of hoofprints coming up the snow to it; the near bushes' last rustle; fresh snow falls
+  thicker and fills the prints one after another, the far ones first; a calm moment, it bows its head and its coat
+  sparkles; the card; then "The glade is quiet again", "Fresh snow covers the prints.
   Shiny Stantler is yours." and the green BACK TO THE WORLD. Then the glade is closed (Home: "Stantler was caught: the
   glade is closed", CONTINUE shut).
 - **A wipe** keeps the wipe card (§14), its line: back at the glade's edge, the team healed, XP, ₽, items and the

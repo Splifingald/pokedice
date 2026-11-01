@@ -36,7 +36,12 @@ import {
 import { nightRaidEntranceTimeline } from '@/fx/timelines/nightmareRaid'
 import { raceIntroTimeline, raceWinTimeline } from '@/fx/timelines/timeRace'
 import { bonfireTimeline, whiteoutIntroTimeline, whiteoutOutroTimeline } from '@/fx/timelines/whiteout'
-import { tracksIntroTimeline, tracksOutroTimeline, tracksSnowfallTimeline } from '@/fx/timelines/tracks'
+import {
+  gladeGridBackdrop,
+  tracksIntroTimeline,
+  tracksOutroTimeline,
+  tracksSnowfallTimeline,
+} from '@/fx/timelines/tracks'
 import { stantlerCinema } from '@/fx/timelines/cinema/stantler'
 import { artUrl } from '@/fx/areaArt'
 import { evolveTimeline, hatchTimeline } from '@/fx/timelines/moments'
@@ -606,7 +611,15 @@ const PRESETS: Preset[] = [
   {
     name: 'Tracks in the Snow: the snow falling over the glade (an overlay)',
     sprites: [],
-    make: (o) => tracksSnowfallTimeline({ short: o.short }),
+    // Over a stand-in of the glade's grid (the page's bushes), so the overlay shows as it does there.
+    make: (o) => {
+      const tl = tracksSnowfallTimeline({ short: o.short })
+      const draw: typeof tl.draw = (g, s, t) => {
+        g.drawImage(gladeGridBackdrop(W, H), 0, 0)
+        tl.draw(g, s, t)
+      }
+      return { ...tl, draw }
+    },
   },
   {
     name: "Tracks in the Snow: the shiny Stantler's entrance (it rears up under the moon)",
