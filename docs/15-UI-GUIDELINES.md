@@ -2097,17 +2097,26 @@ state on `/kitchen-sink` (`GiftCardBits`), every take on `/kitchen-sink/fx`.
     name and count (`RewardList`; ₽ as coins), the round gauge and **CONTINUE** (back on the trail). An area with no wild
     Pokémon left would break into nothing: a short card says so (`GiftEmpty`).
 - **Motion** (§8), on the battle's stage with the game's pixel FX, never CSS tweens; one canvas, every take holding its
-  last frame (`hold`). **It lands**: it drops in, a squash and a puff of snow. **It holds** (`grow`): a crouch, two
-  wobbles, two white silhouette frames, then it swells to the next size in three pixel steps (a little over, then
-  back), a gold ring and twinkles, a soft warm flash unless calm; the gauge and the message change on the `grown` beat.
-  **It breaks**: it strains, shaking harder each beat, rips appear in its paper (paper bits fly at each), four white
-  frames of hit-stop, then it bursts in paper scraps, ribbon and a dithered puff, a flash and a shake, and the wild
-  Pokémon pops out with two white frames as it lands (`broke`, then `out`: its cry). **Delibird's** is the same,
-  longer and bigger, silver and gold with confetti, and a shiny's two rings of stars. **OPEN**: the bow springs loose,
-  light leaks under the lid, the lid flies off in a burst of light and confetti, and each thing rises out (an item's
-  picture, ₽ as coins) with a burst of stars (`opened`). The buttons wait while a take plays. `short`: no wobbles, a
-  short strain. `off`: the stage jumps to the end, every cue fired, every message kept. `calm`: no breathing, no flash,
-  no shake.
+  last frame (`hold`), drawn to read on any area's picture (snow as night): the present is a box seen from a little
+  above (a lit top face in perspective, the lid's band, the body's front in dithered light from the top left, a ribbon
+  with its light and shadow edges, a bow of two loops, a knot and two tails), outlined in ink with a dithered contact
+  shadow; every squash, stretch and growth is drawn at its own size in whole pixels, never a scaled picture. At rest it
+  breathes (a pixel of squash) and a shine sweeps across it now and then (a boss's more often, with glints on its
+  corners and a warm pool of light on the snow). **It lands**: it drops in stretched, squashes, rebounds, snow puffs
+  either side. **It holds** (`grow`): a crouch, two wobbles (it leans row by row), a deeper crouch, it springs up, two
+  white frames growing (half way, then past the new size), then it settles on the new size in steps, a gold ring,
+  twinkles, a shine, a soft warm flash unless calm; the gauge and the message change on the `grown` beat. **It
+  breaks**: it strains, bulging wide then tall and shaking harder each beat, three rips (shreds fly at each, light leaks
+  through), a 4-frame hit-stop on its fullest bulge with beams through the tears, then a starburst, a flash and a shake:
+  paper shreds that turn over, flutter down, lie on the snow and fade out through the dither, curling ribbons that
+  shorten away, the bow tossed aside onto the snow, a puff; the wild Pokémon leaps out on an arc and lands with a
+  squash and two white frames (ink-edged), snow puffing (`broke`, then `out`: its cry). **Delibird's** is the same,
+  longer and bigger, silver and gold with confetti, and a shiny's two rings of stars. **OPEN**: it shivers, the bow
+  springs off and lands beside it, the lid jumps on the light pushing under it, then pops off, turns over and lands on
+  the other side; light pours up out of the open box, confetti and ribbons fly, and each thing rises out of it (an
+  item's picture, ₽ as coins) with a burst of stars (`opened`). The buttons wait while a take plays. `short`: no
+  wobbles, a short strain. `off`: the stage jumps to the end, every cue fired, every message kept. `calm`: no
+  breathing, no shine, no flash or starburst, no shake.
 - **Sound** (§9): `present.land`, `present.wobble`, `present.grow` (a chime, a step higher per level),
   `present.strain`, `present.rip`, `present.break` (Delibird's `present.burst`), `present.untie`, `present.open` and
   `present.item` on the takes' cues, and the Pokémon's cry as it comes out.
