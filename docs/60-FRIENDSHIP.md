@@ -78,8 +78,9 @@ player, as for any gift.
 ## 2. What players see
 
 - **No Home notice, no pop-up** (the user's call, 2026-11-01: "players should see the feature when they get to the
-  friends menu"): it appears on the Friends page, its rules card at the top the first time.
-- **The Friends page**: the rules card at the top the first time (GOT IT, `friendship.rulesSeen`); then the
+  friends menu"): it appears on the Friends page; its rules wait behind the page's INFO (no card on top: the user's
+  call, 2026-11-01; the market's page still has its rules card the first time).
+- **The Friends page**: the
   **Friendship card** (rose, under the invite rewards): the Heart Scales, today's gauge ("Earned today 9/50"), "1 of 3 streaks
   kept today", the **streaks to keep today** (the longest first, at most three, each with what today would pay: "+7
   today"), the one-line how-to, **FRIEND MARKET** and INFO.

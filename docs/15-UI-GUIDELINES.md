@@ -630,7 +630,8 @@ Players shouldn't have to make many requests:
 - **Notices** (`NoticeCard`, `homeNotices`): what never needs a pop-up over Home is a card in the page, one at a time: a
   feature with a page opening ("Versus is open!", SEE VERSUS; ✕ hides it for the visit, the page's `RulesCard` ends
   it), Prof. Oak's leaderboard tip, Support me, a region on offer once its pop-up was seen. **His invite is the
-  friends list's**, at the top of Friends until ✕ or a share (the user's call, 2026-10-27: not on Home). Never red. **A
+  friends list's**, a line of the Friends page's INFO (the user's call, 2026-10-27: not on Home; 2026-11-01: no note on
+  top of Friends). Never red. **A
   region on offer** is its own picture as the card, "{region} is available", and two buttons: NOT NOW (put away on this
   device for good; the Regions view keeps it) and GO (gold: the professor's lab for that region).
 - **After an encounter the player stays in the area** (a trainer, a wild Pokémon, a find, the Center, the Game
@@ -1395,11 +1396,9 @@ tiers, places the gauge and puts the gifts away (as `engine/gifts.ts` does a mes
   Misty gets a reward for inviting you!" Adding by friend ID counts nobody.
 - **The switch and the rules** follow §20: Off, no gauge, pop-up or dot, and no invite is counted (what was counted
   and opened stays); On for admin, only the admin sees the gauge and opens rewards, and the players they invite count.
-  The rules pop-up (`InviteRulesModal`, friends, a badge and the gift drawn in code as its banner; the tiers listed
-  from the config, "1 → Rare Candy · 2 → ₽1,000 …") opens once, and only on the Friends page: the first time a
-  signed-in player in the main game opens it with the gauge there (OK; marked seen as it opens). It is not in the
-  one-time pop-ups' queue and never opens over another page (the user's call, 2026-10-25). INFO sits at the bottom of
-  the Friends page.
+  The rules (the tiers listed from the config, "1 → Rare Candy · 2 → ₽1,000 …") never open by themselves: they are a
+  part of the Friends page's INFO, at its foot (the user's call, 2026-11-01), and reaching the page marks them seen.
+  They are not in the one-time pop-ups' queue and never open over another page (the user's call, 2026-10-25).
 - **The gauge**: the tiers evenly spaced (the fill moves evenly between two of them, `inviteFill`), each tile right
   over the end of its stretch of track, the number of friends under it. Gold only for a tier ready to open; a check
   for one opened (it stays opened even if the count drops). The track is a `meter` ("3 of 4 friends with their first
@@ -2052,6 +2051,10 @@ docs/60. Its switch is `friendship.access` (§20); the server keeps the streaks,
 - **A streak is never colour alone**: kept today, rose with the check; waiting (one interaction today keeps it), gold
   with a red "!"; its state is the badge's accessible name ("Friendship streak: 12 days, keep it today!"). A lost
   streak shows nothing on the row; the friend's card says "Start one with …".
+- **The Friends page opens on what's there, with no notes on top** (the user's call, 2026-11-01): Prof. Oak's invite,
+  the invite rewards' rules and friendship's rules all wait behind the one INFO at the page's foot (`FriendsInfoModal`:
+  the invite line, then a part per feature on for the player, OK). Reaching the page marks the invite rules seen (Home's
+  notice that sends there ends).
 - **The Friendship card** sits on the Friends page under the invite rewards: the coins, today's gauge (a `meter`), the
   streaks to keep today (the longest first, at most three, with what today would pay), one line on what counts, and
   FRIEND MARKET (navy: the page's red stays SHARE INVITE LINK) beside a small INFO.

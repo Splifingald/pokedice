@@ -175,7 +175,7 @@ async function seriousAxe(page: Page) {
     .map((v) => `${v.id}: ${v.nodes[0]?.target.join(' ')}`)
 }
 
-test('the Friends page: the Friendship card, the streaks on the rows, the rules once, a friend’s streak', async ({
+test('the Friends page: the Friendship card, the streaks on the rows, the rules behind INFO, a friend’s streak', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 })
@@ -183,11 +183,6 @@ test('the Friends page: the Friendship card, the streaks on the rows, the rules 
   await boot(page, save)
   await page.goto('/friends')
 
-  const rules = page.getByRole('region', { name: 'How Friendship works' })
-  await expect(rules).toContainText('Play together, once a day')
-  await expect(rules).toContainText(
-    'Days 1–3: +3 · Days 4–7: +4 · Days 8–14: +5 · Days 15–30: +6 · Day 31+: +7',
-  )
   const card = page.getByTestId('friendship-card')
   await expect(card).toBeVisible()
   await expect(card.getByRole('img', { name: '186 Heart Scales' })).toBeVisible()
@@ -208,9 +203,14 @@ test('the Friends page: the Friendship card, the streaks on the rows, the rules 
   expect(await seriousAxe(page)).toEqual([])
   await shot(page, '1-friends-page-phone')
 
-  await rules.getByRole('button', { name: 'GOT IT' }).click()
+  // No rules on the page (the user's call, 2026-11-01): they wait behind the INFO at its foot.
+  await expect(page.getByRole('region', { name: 'How Friendship works' })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Info: how the Friends page works' }).click()
+  const rules = page.getByRole('dialog', { name: 'Friends' })
+  await expect(rules.getByRole('region', { name: 'Friendship' })).toContainText('Play together, once a day')
+  await expect(rules).toContainText('Days 1–3: +3 · Days 4–7: +4 · Days 8–14: +5 · Days 15–30: +6 · Day 31+: +7')
+  await rules.getByRole('button', { name: 'OK', exact: true }).click()
   await expect(rules).toHaveCount(0)
-  await expect.poll(async () => (await stored(page)).friendship?.rulesSeen).toBe(true)
 
   // A friend's card: their streak, its tier, what keeps it.
   await page.getByRole('button', { name: /^Misty,/ }).click()
