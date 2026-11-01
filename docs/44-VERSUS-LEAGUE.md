@@ -223,7 +223,8 @@ rewards, for the fame only."
   line over its rows says "Every player of every group, this week. No rewards here: just the glory."
 - **Where**: a third option, **Global**, beside This week and Last week (`LeagueBoard`), on PC's side panel (headed
   "Leaderboard" then, not "Your group") and phones' Leaderboard tab. Fetched the first time it's opened. Long, it shows
-  its top 100, you with the 10 either side and your friends (`boardWindow`), as the leaderboard does.
+  its top 100, you and your friends with their real places, no one else (the user's ask of 2026-11-01: `boardWindow`
+  with nobody around you, where the leaderboard keeps 10 either side); a gap row says how many are left out between.
 - **Its switch**: Admin → Config → Switches → **Versus global board** (`versusLeague.globalAccess`), Off by default, and
   only with the league on (`versusGlobalOn`). The server checks both (`versus_league_global_open`).
 - **Its rules**: the line over its rows (a rule explained where it happens, docs/15 §20): no pop-up, and the league's
