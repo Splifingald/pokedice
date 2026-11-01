@@ -254,3 +254,45 @@ test('the send-out step: the foe out, the first picked, whole names at 360 px, a
   await expect(page.getByRole('button', { name: /^Send out/ })).toHaveCount(0)
   await expect(page.getByText(/Go, Charmander!/)).toBeVisible({ timeout: 20_000 })
 })
+
+test('another Pokémon picked at the send-out step: the same fight, its way in not played again', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 640 })
+  const base = makeSave(1)
+  const lead = base.box[0]!
+  const mon = { ...lead, id: 'e2e-charmander', dex: 4 }
+  const box = [...base.box, mon].map((p) => ({ ...p, currentHp: instanceMaxHp(p, gameData()) }))
+  await boot(
+    page,
+    {
+      ...base,
+      box,
+      team: [...base.team, mon.id],
+      areaProgress: { ...base.areaProgress, [base.currentAreaId]: { ...emptyProgress(), deck: ['wild'] } },
+    },
+    MOTION_ON,
+  )
+  await page.goto('/home')
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+  // The way in plays once, as the fight opens, then goes.
+  const swipe = page.getByTestId('encounter-swipe')
+  await expect(swipe).toHaveCount(1)
+  await expect(swipe).toHaveCount(0)
+  await page
+    .getByRole('main')
+    .getByRole('button', { pressed: false })
+    .filter({ hasText: 'Charmander' })
+    .click()
+  // GO! stages the fight again with Charmander in front: no second swipe over the stage, even a brief one.
+  await page.evaluate(() => {
+    const w = window as unknown as { swiped?: boolean }
+    new MutationObserver(() => {
+      if (document.querySelector('[data-testid="encounter-swipe"]')) w.swiped = true
+    }).observe(document.body, { childList: true, subtree: true })
+  })
+  await page.getByRole('button', { name: 'Send out Charmander' }).click()
+  await expect(page.getByRole('button', { name: /^Send out/ })).toHaveCount(0)
+  await expect(page.getByText(/Go, Charmander!/)).toBeVisible({ timeout: 20_000 })
+  expect(await page.evaluate(() => (window as unknown as { swiped?: boolean }).swiped ?? false)).toBe(false)
+})
