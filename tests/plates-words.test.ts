@@ -1,4 +1,4 @@
-// The Stairway of Plates' words (docs/61 §4.5): every type has a Plate's name in the ten languages (the games' names,
+// The Stairway of Plates' words (docs/64 §4.5): every type has a Plate's name in the ten languages (the games' names,
 // Normal the Legend Plate), and a portal line takes the Stairway's own wording where it has one, the portal run's
 // where it reads the same.
 import { describe, expect, it } from 'vitest'

@@ -82,7 +82,7 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
           </span>
         </div>
         <RoundGauge area={area} progress={progress} />
-        {/* The race of time and space (docs/61 §4.4): its clock, big, under the gauge while a try runs. */}
+        {/* The race of time and space (docs/64 §4.4): its clock, big, under the gauge while a try runs. */}
         <TimeRaceClockHere areaId={area.id} className="self-center" />
         {/* A cleared area can play itself (with Idle, any area): switched here, between its encounters, without a
             trip Home. */}
@@ -119,7 +119,7 @@ export function AreaScreen() {
   if (battle) return <BattleView key={battle.id} battle={battle} />
   // Trick or Treat takes the whole screen as a battle does (docs/15 §28).
   if (run.phase === 'trick' && run.trick && run.areaId) return <TrickView key={run.trick.id} />
-  // So does the Gift card, and a boss's present (docs/61 §4.0, §4.2; docs/15 §45).
+  // So does the Gift card, and a boss's present (docs/64 §4.0, §4.2; docs/15 §45).
   if (run.phase === 'gift' && run.gift && run.areaId) return <GiftView key={run.gift.id} />
   // An Elite Rebattle run ends on its own page.
   if (!area || !run.areaId || (run.phase === 'idle' && run.rebattle))
@@ -134,13 +134,13 @@ export function AreaScreen() {
   // The nightmare's area (docs/30): its way in, its intro, Darkrai's strike after a round, the waking.
   const nm = run.rebattle ? null : nightmareModeOf(area, data)
   const dream = !!nm && run.phase === 'idle' && nightmareStepDue(area, { save, data }, run)
-  // The race of time and space's area (docs/61 §4.4): its way in, a fork's gates, the win.
+  // The race of time and space's area (docs/64 §4.4): its way in, a fork's gates, the win.
   const race = run.rebattle ? null : timeRaceModeOf(area, data)
   const raced = !!race && run.phase === 'idle' && timeRaceStepDue(area, { save, data })
-  // The whiteout's area (docs/61 §4.3): its way in, its intro, the bonfire after a wave, the end.
+  // The whiteout's area (docs/64 §4.3): its way in, its intro, the bonfire after a wave, the end.
   const wo = run.rebattle ? null : whiteoutModeOf(area, data)
   const white = !!wo && run.phase === 'idle' && whiteoutStepDue(area, { save, data })
-  // Tracks in the Snow's glade (docs/61 §4.1): its way in, the glade between bushes (a bush just opened included, before
+  // Tracks in the Snow's glade (docs/64 §4.1): its way in, the glade between bushes (a bush just opened included, before
   // what it held comes), its outro.
   const trk = run.rebattle ? null : tracksModeOf(area, data)
   const glade = !!trk && tracksStepDue(area, { save, data }, run)

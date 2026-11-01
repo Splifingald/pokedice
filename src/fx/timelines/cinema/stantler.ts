@@ -1,4 +1,4 @@
-// The shiny Stantler's entrance (docs/61 §4.1, as docs/53's bosses), on the battle stage: Moonlit Glade at night, the
+// The shiny Stantler's entrance (docs/64 §4.1, as docs/53's bosses), on the battle stage: Moonlit Glade at night, the
 // tracks' own glade in its layers (the moon and its halo, the snowy peaks, the forest, the snowfield in perspective,
 // snow-laden pines and bushes), drifting into place as it opens, snow falling. The bush before the moon shakes twice,
 // snow puffing off it; antlers rise out of it, a solid silhouette rimmed with moonlight; the whole reindeer rises and

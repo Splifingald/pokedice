@@ -205,7 +205,7 @@ export function PortalBreach({
   const scene = useMemo(
     () => ({
       ready: picture ? loadItemSprite(picture) : Promise.resolve(),
-      // The Stairway of Plates: the area rising into light, the stairway behind it (docs/61 §4.5).
+      // The Stairway of Plates: the area rising into light, the stairway behind it (docs/64 §4.5).
       timeline: (skin === 'plates' ? stairwayTimeline : breachTimeline)({
         ...size,
         title: t('ui.portal.title'),
@@ -762,7 +762,7 @@ export function PortalVictoryView({
   const scene = useMemo(
     () => ({
       ready: loadSprite(dex, false, true),
-      // The Stairway of Plates: shiny Arceus coming down the stairs, then the Judgment (docs/61 §4.5).
+      // The Stairway of Plates: shiny Arceus coming down the stairs, then the Judgment (docs/64 §4.5).
       timeline: (skin === 'plates' ? descentTimeline : victoryTimeline)({
         ...size,
         mon: spriteKey(dex, false, true),

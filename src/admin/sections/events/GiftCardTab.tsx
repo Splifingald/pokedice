@@ -1,4 +1,4 @@
-// Admin → Events → Gift card (docs/61 §4.0): the switch (Off / On for admin / On for everyone, docs/15 §20), each
+// Admin → Events → Gift card (docs/64 §4.0): the switch (Off / On for admin / On for everyone, docs/15 §20), each
 // level's break chance with the odds of reaching each level by always tapping (with and without Delibird), Delibird's
 // help, each level's reward options, the balls from worst to best and the taps a boss's present takes. One game_config
 // row, `giftCard`, saved with the rest of the config (Publish); the server reads its switch. An area's number of cards

@@ -1,4 +1,4 @@
-// The race of time and space (docs/61 §4.4, docs/15 §48): its way in (the intro: a clock face and a rift of space over
+// The race of time and space (docs/64 §4.4, docs/15 §48): its way in (the intro: a clock face and a rift of space over
 // Spear Pillar, "Tap to continue ▼", then its pop-up: the short rules, TEAM, NOT NOW / READY!), the big countdown, the
 // gauge of fights with each fork's type, a fork's two gates (their type colours and finds), its rules from INFO, and the
 // win (the legend's roar, time and space settling). The scenes are the pixel engine's (src/fx/timelines/timeRace.ts).

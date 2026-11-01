@@ -1,4 +1,4 @@
-// The Stairway of Plates (docs/61 §4.5): Distortion World's portal run dressed for Arceus, in a small world served as
+// The Stairway of Plates (docs/64 §4.5): Distortion World's portal run dressed for Arceus, in a small world served as
 // content (as e2e/portal.spec.ts does, whose rules it shares). The way in in its own words (CLIMB THE STAIRWAY, the
 // stairway's pop-up), its Pokémon in light that can't be caught, an altar's blessings confirmed, the landings' gauge,
 // the victory (shiny Arceus down the stairs); its own rules pop-up for a Distortion World veteran; and its raid: the
@@ -105,7 +105,7 @@ function bundle(): BundleRaw {
       ...b.config,
       configVersion: VERSION,
       smallWorlds: { access: 'all', list: [WORLD] },
-      // The Stairway answers to its own switch (docs/61 §4.5), Distortion World's left Off to prove it.
+      // The Stairway answers to its own switch (docs/64 §4.5), Distortion World's left Off to prove it.
       platesRun: { access: 'all' },
       portalRun: { access: 'off' },
       events: { ...DEFAULT_CONFIG.events, raid: { ...DEFAULT_CONFIG.events.raid, access: 'all' } },

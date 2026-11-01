@@ -317,7 +317,7 @@ export const AREA_ART: Readonly<Record<string, string>> = {
   '11a60b7e-5463-5955-8c58-14be0ad97b89': 'deepcave', // 14 Cavern (Haunted Hollow)
   '2361c7fc-b267-5637-a81d-c622b95003b9': 'a127', // 15 Newmoon Island (Haunted Hollow)
   'cfff57e0-5175-545c-9e68-a2e2e64d7d45': 'a123', // 16 Distortion World (Haunted Hollow)
-  // Snowglobe Valley, the winter small world (docs/61): existing pictures only.
+  // Snowglobe Valley, the winter small world (docs/64): existing pictures only.
   '0c5da7f8-c0d1-5e2b-bcfe-b23bef7e7eed': 'snow', // 1 Snowy Trail (Snowglobe Valley)
   '86027687-5c39-5902-a7fa-9da648a00cbc': 'forest', // 2 Pinewood Forest (Snowglobe Valley)
   '571fc205-b861-59f3-862c-a1ea8fd135fa': 'lake', // 3 Frozen Pond (Snowglobe Valley)

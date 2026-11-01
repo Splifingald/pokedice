@@ -1,4 +1,4 @@
-// The Gift card (docs/61 §4.0) on the server: migration 0121 against a real Postgres (PGlite, in process). It writes the
+// The Gift card (docs/64 §4.0) on the server: migration 0123 against a real Postgres (PGlite, in process). It writes the
 // config row (Off, the game's own numbers), keeps an admin's row when run again, and gift_card_open() reads the switch
 // for the caller as trick_or_treat_open() does: off, on for the admin only (their JWT), on for everyone. seed.sql
 // carries it too.
@@ -10,7 +10,7 @@ import { DEFAULT_CONFIG, type GiftCardConfig } from '@/engine'
 
 const ROOT = path.join(__dirname, '..', 'supabase')
 const sql = (file: string) => readFileSync(path.join(ROOT, 'migrations', file), 'utf8')
-const FILE = '0121_gift_card.sql'
+const FILE = '0123_gift_card.sql'
 const ADMIN_EMAIL = 'gregoire.ftn@gmail.com'
 let db: PGlite
 
@@ -32,7 +32,7 @@ beforeAll(async () => {
   await db.exec(sql(FILE))
 }, 60_000)
 
-describe('0121: the Gift card', () => {
+describe('0123: the Gift card', () => {
   it('writes the config row, Off, with the game’s own numbers', async () => {
     const row = (await cfg('giftCard')) as GiftCardConfig
     expect(row).toEqual(JSON.parse(JSON.stringify(DEFAULT_CONFIG.giftCard)))

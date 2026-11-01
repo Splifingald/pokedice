@@ -332,7 +332,7 @@ const FX_SOUNDS = {
   'gift.item': (n = 0) => tone(784 * Math.pow(2, (n % 6) / 6), 0.14, { type: 'square', vol: 0.035, slide: 400 }),
   'gift.shiny': () => tone(2637, 0.2, { type: 'triangle', vol: 0.04 }),
   'gift.fanfare': (n = 0) => tone(GIFT_FANFARE[n]!, n === 3 ? 0.5 : 0.12, { type: 'square', vol: 0.045 }),
-  // The Gift card (docs/61 §4.0): a present lands, wobbles, grows a step higher each level (a rising chime, the
+  // The Gift card (docs/64 §4.0): a present lands, wobbles, grows a step higher each level (a rising chime, the
   // level's note), strains, rips and bursts (a crunch and a puff), or opens (the gifts' own untie and pop, then a
   // chime per thing). Delibird's present (§4.2) bursts with a bigger bang.
   'present.land': () => hiss(0.08, { freq: 500, vol: 0.06 }),
@@ -507,7 +507,7 @@ const FX_SOUNDS = {
     tone(784, 0.18, { type: 'triangle', vol: 0.04, at: 0.16 })
     tone(1047, 0.45, { type: 'triangle', vol: 0.045, at: 0.32 })
   },
-  // The race of time and space (docs/61 §4.4): the clock's tick (a dry click, higher in its last 30 s), the rift
+  // The race of time and space (docs/64 §4.4): the clock's tick (a dry click, higher in its last 30 s), the rift
   // tearing space open (a rising hiss over a wobbling hum), a gate taken (two quick notes up), a time shard (a bright
   // glassy chime climbing) and time and space settling at the win (a low bell under a chord).
   'race.tick': (n = 0) => tone(n ? 1760 : 1320, 0.03, { type: 'square', vol: n ? 0.035 : 0.025 }),
@@ -531,7 +531,7 @@ const FX_SOUNDS = {
     tone(659, 0.9, { type: 'triangle', vol: 0.03, at: 0.2 })
     tone(784, 1.0, { type: 'triangle', vol: 0.03, at: 0.3 })
   },
-  // Crown Shrine's whiteout (docs/61 §4.3): the blizzard rolling in (a long wind rising), the eyes glowing in the
+  // Crown Shrine's whiteout (docs/64 §4.3): the blizzard rolling in (a long wind rising), the eyes glowing in the
   // crown tree, a bonfire catching (a crackle and a warm low note), the tree shaking its snow off, the blizzard
   // lifting (the wind falling away into a bright major chord).
   'whiteout.wind': () => {
@@ -558,7 +558,7 @@ const FX_SOUNDS = {
     tone(659, 0.3, { type: 'triangle', vol: 0.035, at: 0.72 })
     tone(784, 0.7, { type: 'triangle', vol: 0.04, at: 0.84 })
   },
-  // Tracks in the Snow (docs/61 §4.1): the winter wind (a soft high hiss swelling), a leap (a quick rising whistle), a
+  // Tracks in the Snow (docs/64 §4.1): the winter wind (a soft high hiss swelling), a leap (a quick rising whistle), a
   // bush rustling (two short bursts of noise, as branches), the snow falling (a long hush), Stantler found (a bright
   // two-note bell, a sleigh's) and Stantler bolting (hooves: three quick low taps).
   'tracks.wind': () => {

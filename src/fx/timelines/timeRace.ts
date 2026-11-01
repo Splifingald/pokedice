@@ -1,4 +1,4 @@
-// The race of time and space (docs/61 §4.4, docs/15 §48) on the pixel engine. It stands in the very place of Dialga's
+// The race of time and space (docs/64 §4.4, docs/15 §48) on the pixel engine. It stands in the very place of Dialga's
 // and Palkia's raid cinematics (cinema/spearPillar.ts, whose ruins it reuses): Spear Pillar's worn tiles in perspective,
 // the round dais, broken columns near and far, the sea of clouds under a night sky that is time's blue on one side and
 // space's violet on the other. Over the ruins hang a clock face of light (rings, sixty ticks, gears turning behind) and
@@ -601,7 +601,7 @@ interface IntroState {
 }
 
 /**
- * The way in (docs/61 §4.4): the area gives way to Spear Pillar's night; the clock of light draws itself, its hands
+ * The way in (docs/64 §4.4): the area gives way to Spear Pillar's night; the clock of light draws itself, its hands
  * whip backwards (a smear of light behind them), slow and stop; space strains across from it, cracks, and tears open
  * with a flash and a shockwave; then it holds its end (the clock ticking, the rift drinking in motes) until the player
  * taps. 3.8 s (short: half).
@@ -768,7 +768,7 @@ interface WinState {
 }
 
 /**
- * The last fight won in time (docs/61 §4.4): the clock and the rift over the ruins; dark pulses; the legend rising out
+ * The last fight won in time (docs/64 §4.4): the clock and the rift over the ruins; dark pulses; the legend rising out
  * of the dais in silhouette, rim-lit in its colour, a shaft of light under it; light gathering; the reveal (a flash gone
  * in a quarter second, rings, rays, its roar and a quake) and the shiny sparkle. Then the other half settles and its own
  * last: Dialga's hands sweep round to twelve and stop with a chime (the rift sealed before), or Palkia's rift seals to a

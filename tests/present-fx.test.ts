@@ -1,4 +1,4 @@
-// The Gift card's present (docs/61 §4.0, §4.2; docs/15 §45): every take holds its last frame, says its beats in order
+// The Gift card's present (docs/64 §4.0, §4.2; docs/15 §45): every take holds its last frame, says its beats in order
 // (`grown`; `broke` then `out`; `opened` after the last thing has risen), and short takes are shorter.
 import { describe, expect, it, vi } from 'vitest'
 

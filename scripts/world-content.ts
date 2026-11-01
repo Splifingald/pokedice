@@ -1,7 +1,7 @@
 /**
  * What every small world's content script shares (docs/21): its areas written as short specs, turned into the game's
  * rows, and the same content as a migration. Haunted Hollow (scripts/content-haunted-hollow.ts, docs/26) and Snowglobe
- * Valley (scripts/content-snowglobe-valley.ts, docs/61) are built with it, so both worlds' rows have one shape.
+ * Valley (scripts/content-snowglobe-valley.ts, docs/64) are built with it, so both worlds' rows have one shape.
  */
 import type {
   Area,

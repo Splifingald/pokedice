@@ -1,4 +1,4 @@
-// The race of time and space (docs/61 §4.4, the user's design of 2026-11-01): Spear Pillar's mode. A time trial: from
+// The race of time and space (docs/64 §4.4, the user's design of 2026-11-01): Spear Pillar's mode. A time trial: from
 // READY! the clock runs on the server's time, kept in the save, so closing the app or reloading never stops it. Every
 // few fights a fork offers two gates, each a type (the next foes are of it, drawn from the area's wild pool) and each
 // holding a find: an item, or a time shard that puts time back on the clock. The last fork's gate decides the raid:

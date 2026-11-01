@@ -136,7 +136,7 @@ export function PortalArt({
   const hold = still ?? level === 'off'
   const ref = useRef<HTMLCanvasElement>(null)
   const art = Math.max(16, Math.round(size / 2))
-  // The Stairway of Plates' altar in place of the portal (docs/61 §4.5).
+  // The Stairway of Plates' altar in place of the portal (docs/64 §4.5).
   const loop = skin === 'plates' ? altarLoop : portalLoop
   useLoop(ref, () => loop(art, art, { scene: false, still: hold }), hold, [art, skin])
   return (
@@ -164,7 +164,7 @@ export function PortalScene({ className, still }: { className?: string; still?: 
   const size = useBoxSize(box)
   const w = size ? Math.max(16, Math.ceil(size.w / 2)) : 0
   const h = size ? Math.max(16, Math.ceil(size.h / 2)) : 0
-  // The Stairway of Plates: its sky, the stairway and an altar (docs/61 §4.5).
+  // The Stairway of Plates: its sky, the stairway and an altar (docs/64 §4.5).
   const loop = skin === 'plates' ? altarLoop : portalLoop
   useLoop(ref, () => (w && h ? loop(w, h, { still: hold }) : null), hold, [w, h, skin])
   return (
@@ -238,7 +238,7 @@ function useDistortion({
   active: boolean
   /** distortionLevel's: off is still (the rim alone), short has no tear. */
   level: MotionLevel
-  /** The Stairway of Plates' Pokémon wear light instead (gold and white, never torn: docs/61 §4.5). */
+  /** The Stairway of Plates' Pokémon wear light instead (gold and white, never torn: docs/64 §4.5). */
   look?: PortalSkin
 }) {
   const ax = at?.x ?? 0
@@ -554,7 +554,7 @@ function drawTear(g: G, w: number, h: number, n: number, f: number, short: boole
 const GLEAM_CLASSES = { full: 'ui-gleam', short: 'ui-gleam-short' }
 
 /**
- * One frame (f of 4) of a gleam across the screen (the Stairway of Plates' screen effect, docs/61 §4.5): a slanted band
+ * One frame (f of 4) of a gleam across the screen (the Stairway of Plates' screen effect, docs/64 §4.5): a slanted band
  * of light sweeping across, dithered white and pale gold with a gold edge, a few sparkles. `short`: a thin band.
  */
 function drawGleam(g: G, w: number, h: number, n: number, f: number, short: boolean) {

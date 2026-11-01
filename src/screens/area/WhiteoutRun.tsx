@@ -1,4 +1,4 @@
-// The whiteout on the game's screens (docs/61 §4.3, docs/15 §47): the guard that keeps the run in Crown Shrine while it
+// The whiteout on the game's screens (docs/64 §4.3, docs/15 §47): the guard that keeps the run in Crown Shrine while it
 // holds the player, its INFO, and the area's own steps (the way in: the intro full screen, then its pop-up; the bonfire
 // after each wave; the end). The engine (engine/whiteout.ts) decides everything; these only show it.
 import { useEffect, useState } from 'react'

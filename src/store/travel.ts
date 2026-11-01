@@ -7,7 +7,7 @@ import { closeVictoryLeftOpen, enterArea } from '@/store/run'
 /** Go to an area (from the Areas sheet, its details, a widget). False when it can't be entered right now. */
 export function travelTo(area: Area): boolean {
   const { run, save, data } = useGame.getState()
-  // Darkrai's nightmare (docs/30), or the whiteout (docs/61 §4.3), holds the player in its area until it ends: travel
+  // Darkrai's nightmare (docs/30), or the whiteout (docs/64 §4.3), holds the player in its area until it ends: travel
   // is the one thing it shuts.
   const held = heldIn(save, data)
   if (held && held.area.id !== area.id) {

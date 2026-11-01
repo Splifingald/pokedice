@@ -143,7 +143,7 @@ function BossCard({ b, data, onChange, onRemove }: { b: BossDef; data: GameData;
         </label>
         <label
           className="flex flex-wrap items-center gap-2 text-lg"
-          title="Out of a present (docs/61 §4.2, Evergreen Hill's Delibird): its challenge opens on a present that only grows and bursts on its last tap, then the fight. Only while the Gift card is on."
+          title="Out of a present (docs/64 §4.2, Evergreen Hill's Delibird): its challenge opens on a present that only grows and bursts on its last tap, then the fight. Only while the Gift card is on."
         >
           <input
             type="checkbox"
@@ -189,7 +189,7 @@ function AreaEditor({ area }: { area: Row }) {
   if (!data) return null
   // Trick or Treat (docs/29) is dealt where the area has a ghost list, and only while its switch is on for the player.
   // A real player's card (docs/54) is counted as if a team waited: the game deals it only when one does.
-  // The Gift card (docs/61 §4.0) is counted as if switched on: its copies replace the item cards then.
+  // The Gift card (docs/64 §4.0) is counted as if switched on: its copies replace the item cards then.
   const can = {
     wild: wildHere.length > 0,
     trainer: tHere.length > 0,
@@ -328,11 +328,11 @@ function AreaEditor({ area }: { area: Row }) {
             <PortalModeBox area={area} />
             {/* The nightmare (docs/30): one special mode per area, so ticking one replaces the other. */}
             <NightmareModeBox area={area} />
-            {/* The race of time and space (docs/61 §4.4): the same, one mode per area. */}
+            {/* The race of time and space (docs/64 §4.4): the same, one mode per area. */}
             <TimeRaceModeBox area={area} />
-            {/* The whiteout (docs/61 §4.3), Crown Shrine's: one special mode per area, as the others. */}
+            {/* The whiteout (docs/64 §4.3), Crown Shrine's: one special mode per area, as the others. */}
             <WhiteoutModeBox area={area} />
-            {/* Tracks in the Snow (docs/61 §4.1): the same, one special mode per area. */}
+            {/* Tracks in the Snow (docs/64 §4.1): the same, one special mode per area. */}
             <TracksModeBox area={area} />
           </>
         )}

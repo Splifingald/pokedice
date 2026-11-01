@@ -1,4 +1,4 @@
-// Crown Shrine's whiteout (docs/61 §4.3, docs/15 §47): its way in (the blizzard rolling in over the area, eyes in the
+// Crown Shrine's whiteout (docs/64 §4.3, docs/15 §47): its way in (the blizzard rolling in over the area, eyes in the
 // crown tree, "Tap to continue ▼", then the pop-up with its short rules, TEAM, NOT NOW and BRAVE THE BLIZZARD), its
 // rules (INFO), the gauge of waves, the bonfire between waves (the cozy moment: the fire catching, the team round it,
 // its heal, TEAM for team changes and items, MOVE ON), the blizzard's chip and its snow over the fights, and the end

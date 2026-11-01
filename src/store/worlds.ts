@@ -85,7 +85,7 @@ export function leaveSmallWorld(): boolean {
     pushToast(t('ui.region.finishFight'), 'bad')
     return false
   }
-  // Darkrai's nightmare (docs/30) or the whiteout (docs/61 §4.3) holds the player in its area, so in the world too.
+  // Darkrai's nightmare (docs/30) or the whiteout (docs/64 §4.3) holds the player in its area, so in the world too.
   const held = heldIn(save, data)
   if (held) {
     pushToast(t(`ui.${held.by}.locked`, { area: held.area.name }), 'info')

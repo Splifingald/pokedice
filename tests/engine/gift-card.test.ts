@@ -1,4 +1,4 @@
-// The Gift card (docs/61 §4.0): its odds by level, Delibird's help, the levels' rewards as they land in an area (its
+// The Gift card (docs/64 §4.0): its odds by level, Delibird's help, the levels' rewards as they land in an area (its
 // balls, ₽ by its level, its Mart's evolution items), a broken gift's wild Pokémon, the card in the deck in place of the
 // item card (only while switched on), and a boss's present (Evergreen Hill's Delibird, §4.2).
 import { describe, expect, it } from 'vitest'

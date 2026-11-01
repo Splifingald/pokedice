@@ -1,4 +1,4 @@
-// The Gift card (docs/61 §4.0, §4.2; docs/15 §45), on Route 1 served as content with a Gift card in its deck (as
+// The Gift card (docs/64 §4.0, §4.2; docs/15 §45), on Route 1 served as content with a Gift card in its deck (as
 // e2e/portal.spec.ts serves its world): a present on top of the deck, the rules once, the screen laid out as the battle
 // (full screen: the stage with the present and its plate, the message, the level gauge, OPEN with what it gives,
 // MAKE IT BIGGER with the next tap's break chance); taps that hold up to the top, then OPEN (the reward in the bag, the

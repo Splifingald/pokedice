@@ -1,5 +1,5 @@
 // Admin → Areas: an area's special mode (docs/28). The portal run: Distortion World's, and the Hall of Origin's dressed
-// as the Stairway of Plates (docs/61 §4.5). Their two switches (the game_config rows `portalRun` and `platesRun`, which
+// as the Stairway of Plates (docs/64 §4.5). Their two switches (the game_config rows `portalRun` and `platesRun`, which
 // the server reads too: a run dressed as the Stairway answers to its own), its look, every number of the area's run
 // and its raid's, the raid Pokémon's type on each bar among them.
 import type { Row } from '@/config/mapping'
@@ -96,7 +96,7 @@ export function PortalModeBox({ area }: { area: Row }) {
     <Box
       title="Special mode: portal run"
       icon="star"
-      hint="Distortion World's mode (docs/28), also the Hall of Origin's Stairway of Plates (docs/61 §4.5): no rounds and no Pokémon Center; the team is healed going in and can't leave until it wins or is K.O. An endless deck of wild Pokémon (never caught) and finds, each cycle ending on a distortion that offers boons; the last one wins for good and opens the area's raid at the numbers below. A wipe keeps XP, ₽ and items but closes the portals back to 0."
+      hint="Distortion World's mode (docs/28), also the Hall of Origin's Stairway of Plates (docs/64 §4.5): no rounds and no Pokémon Center; the team is healed going in and can't leave until it wins or is K.O. An endless deck of wild Pokémon (never caught) and finds, each cycle ending on a distortion that offers boons; the last one wins for good and opens the area's raid at the numbers below. A wipe keeps XP, ₽ and items but closes the portals back to 0."
     >
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-lg">Distortion World runs (every area)</span>
@@ -140,7 +140,7 @@ export function PortalModeBox({ area }: { area: Row }) {
         <>
           <Field
             label="Its look"
-            hint="The same rules and numbers either way; only the words and the effects change (docs/61 §4.5)."
+            hint="The same rules and numbers either way; only the words and the effects change (docs/64 §4.5)."
           >
             <select
               className={inputCls}

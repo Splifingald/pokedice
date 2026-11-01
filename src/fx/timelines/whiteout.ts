@@ -1,4 +1,4 @@
-// Crown Shrine's whiteout (docs/61 §4.3, docs/15 §47) on the pixel engine, built like the legends' cinematics: a
+// Crown Shrine's whiteout (docs/64 §4.3, docs/15 §47) on the pixel engine, built like the legends' cinematics: a
 // shrine in layers (a storm sky, two ranges of mountains, a forest ridge, a snowfield in perspective, stone steps and
 // lanterns climbing to the crown tree, rocks), each layer drifting at its own pace (parallax). The crown tree is a huge
 // old fir: six snow-laden tiers, a sacred rope round its trunk, a gold crown on its top; the eyes in it are

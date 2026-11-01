@@ -1,4 +1,4 @@
-// Crown Shrine's whiteout (docs/61 §4.3) in a small world served as content (as e2e/nightmare.spec.ts does): ENTER THE
+// Crown Shrine's whiteout (docs/64 §4.3) in a small world served as content (as e2e/nightmare.spec.ts does): ENTER THE
 // BLIZZARD plays the intro at once, held at its end until a tap, then its pop-up with the short rules (arriving heals;
 // TEAM and back; BRAVE THE BLIZZARD starts it); its foes come in their waves, can't be caught, and fight in the blizzard
 // (its chip, the bag shut with its line); Home's Areas button is locked while the Mart stays open; a bonfire after each

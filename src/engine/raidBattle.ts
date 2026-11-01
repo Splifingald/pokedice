@@ -92,7 +92,7 @@ export interface RaidState {
   /** The raid overhaul's own rules for this raid and where they stand (docs/40); absent when it's off. */
   special?: RaidSpecialState
   /**
-   * The type it takes as each bar starts (the Hall of Origin's Arceus changing its Plate, docs/61 §4.5: its area's mode
+   * The type it takes as each bar starts (the Hall of Origin's Arceus changing its Plate, docs/64 §4.5: its area's mode
    * says which), by bar; absent for every other raid.
    */
   plates?: PokeType[]
@@ -981,7 +981,7 @@ function breakBar(s: RaidState, overflow: number, sideIdx: number, log: RaidLogE
   if (s.bars - s.broken === 1) unleash(s, data, log)
 }
 
-/** The bar starting now takes its Plate, when the raid has them (docs/61 §4.5): its type form, every die that type. */
+/** The bar starting now takes its Plate, when the raid has them (docs/64 §4.5): its type form, every die that type. */
 function takePlate(s: RaidState, data: GameData, log: RaidLogEntry[]) {
   const type = s.plates?.[s.broken]
   if (!type) return

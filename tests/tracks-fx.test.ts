@@ -1,4 +1,4 @@
-// Tracks in the Snow's effects (docs/61 §4.1, docs/15 §46): the way in holds its end and says its line as the reindeer
+// Tracks in the Snow's effects (docs/64 §4.1, docs/15 §46): the way in holds its end and says its line as the reindeer
 // lands in the bushes, before its card; the snowfall covers the glade at a known time (the fresh glade swaps in then),
 // in half the time when short; the outro's card comes last; and the shiny Stantler's entrance is a boss's (its reveal
 // before its card and the send-out).

@@ -70,7 +70,7 @@ export function BagColumn({
   /** The item waiting for its Pokémon. */
   aim: string | null
   onPick: (key: string) => void
-  /** Why the bag stays shut in this fight (the whiteout, docs/61 §4.3), said over its greyed items. */
+  /** Why the bag stays shut in this fight (the whiteout, docs/64 §4.3), said over its greyed items. */
   shut?: string | null
   className?: string
 }) {

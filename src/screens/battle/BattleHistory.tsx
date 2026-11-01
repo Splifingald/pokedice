@@ -172,7 +172,7 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: r
         })
         return
       case 'weather':
-        // The whiteout's blizzard (docs/61 §4.3).
+        // The whiteout's blizzard (docs/64 §4.3).
         rows.push({
           key,
           ...who(e.targetUid),

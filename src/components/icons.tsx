@@ -397,7 +397,7 @@ export const ICONS = {
   // Extreme mode (docs/22): its emblem, and a Pokémon resting after a K.O.
   skull: ['..kkkkkk..', '.kwwwwwwk.', 'kwwwwwwwwk', 'kwkkwwkkwk', 'kwkkwwkkwk', 'kwwwkkwwwk', '.kwwwwwwk.', '..kwwwwk..', '..kwkkwk..', '...kkkk...'],
   moon: ['..kkkk..', '.kyykk..', 'kyyk....', 'kyk.....', 'kyk.....', 'kyyk....', '.kyykk..', '..kkkk..'],
-  // The race of time and space (docs/61 §4.4): a clock face, its ring gold, its hands at ten past twelve.
+  // The race of time and space (docs/64 §4.4): a clock face, its ring gold, its hands at ten past twelve.
   clock: [
     '...kkkkkk...',
     '..kyyyyyyk..',

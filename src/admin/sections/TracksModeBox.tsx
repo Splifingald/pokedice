@@ -1,5 +1,5 @@
-// Admin → Areas: an area's Tracks in the Snow (docs/61 §4.1), Moonlit Glade's mode. Its switch (the game_config row
-// `tracks`, which the server reads too: tracks_open, 0122) and every number of the area's hide and seek: each round's
+// Admin → Areas: an area's Tracks in the Snow (docs/64 §4.1), Moonlit Glade's mode. Its switch (the game_config row
+// `tracks`, which the server reads too: tracks_open, 0124) and every number of the area's hide and seek: each round's
 // glade (bushes a side, taps before the snow, what the bushes hold, Stantler kept away from the first bush's
 // neighbours) and where the hoofprints show.
 import type { Row } from '@/config/mapping'
@@ -32,7 +32,7 @@ export function TracksModeBox({ area }: { area: Row }) {
     <Box
       title="Special mode: Tracks in the Snow"
       icon="sparkle"
-      hint="Moonlit Glade's mode (docs/61 §4.1): hide and seek with Stantler, round after round. Each round is a glade of snowy bushes; the first opened is never Stantler's (it's hidden only then), and with 'Not next to the first' not one of its 8 neighbours either. A bush holds a wild Pokémon of the area's pool, a find of its loot, a warm cabin (a Pokémon Center's heal) or nothing, and shows hoofprints pointing at Stantler. Out of taps, the snow falls: a fresh glade. Rounds before the last end on a wild Stantler (the boss's species), the last on the area's boss. Cleared rounds are kept through a wipe."
+      hint="Moonlit Glade's mode (docs/64 §4.1): hide and seek with Stantler, round after round. Each round is a glade of snowy bushes; the first opened is never Stantler's (it's hidden only then), and with 'Not next to the first' not one of its 8 neighbours either. A bush holds a wild Pokémon of the area's pool, a find of its loot, a warm cabin (a Pokémon Center's heal) or nothing, and shows hoofprints pointing at Stantler. Out of taps, the snow falls: a fresh glade. Rounds before the last end on a wild Stantler (the boss's species), the last on the area's boss. Cleared rounds are kept through a wipe."
     >
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-lg">Tracks in the Snow (every area)</span>

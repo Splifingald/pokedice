@@ -1,7 +1,7 @@
-// Tracks in the Snow (docs/61 §4.1): migration 0122 against a real Postgres (PGlite, in process). The switch goes in
+// Tracks in the Snow (docs/64 §4.1): migration 0124 against a real Postgres (PGlite, in process). The switch goes in
 // Off and the content version goes up; tracks_open() reads it for the caller (everyone, the admin only, an odd value
-// off); run again, an admin's switch is kept. Moonlit Glade's mode comes with 0120's content, and seed.sql carries
-// 0122, inlined.
+// off); run again, an admin's switch is kept. Moonlit Glade's mode comes with 0122's content, and seed.sql carries
+// 0124, inlined.
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
@@ -11,10 +11,10 @@ import { snowglobe } from '../scripts/content-snowglobe-valley'
 
 const ROOT = path.join(__dirname, '..', 'supabase')
 const sql = (file: string) => readFileSync(path.join(ROOT, 'migrations', file), 'utf8')
-const FILE = '0122_tracks_in_the_snow.sql'
+const FILE = '0124_tracks_in_the_snow.sql'
 const ADMIN_EMAIL = 'gregoire.ftn@gmail.com'
 
-describe('0122: Tracks in the Snow', () => {
+describe('0124: Tracks in the Snow', () => {
   let db: PGlite
   const value = async (key: string) =>
     (await db.query<{ v: unknown }>('select value v from game_config where key = $1', [key])).rows[0]?.v
@@ -79,10 +79,10 @@ describe('0122: Tracks in the Snow', () => {
     expect(await value('configVersion')).toBe(before + 1)
   })
 
-  it('Moonlit Glade carries its mode in 0120’s content', () => {
+  it('Moonlit Glade carries its mode in 0122’s content', () => {
     const glade = snowglobe().areas.find((a) => a.name === 'Moonlit Glade')!
     expect(glade.mode).toEqual(DEFAULT_TRACKS)
-    const row = sql('0120_snowglobe_valley.sql')
+    const row = sql('0122_snowglobe_valley.sql')
       .split('\n')
       .find((l) => l.includes(`'${glade.id}'`) && l.includes("'Moonlit Glade'"))!
     expect(row).toContain(`'${JSON.stringify(DEFAULT_TRACKS)}'::jsonb`)

@@ -96,7 +96,7 @@ describe('the bosses’ cinematics', () => {
         .map(Number)
         .sort((a, b) => a - b),
     ).toEqual([
-      // 460: Crown Shrine's shiny Abomasnow, out of its crown tree (the whiteout, docs/61 §4.3).
+      // 460: Crown Shrine's shiny Abomasnow, out of its crown tree (the whiteout, docs/64 §4.3).
       151, 243, 244, 245, 251, 385, 386, 460, 489, 490, 491, 492, 493, 494, 647, 648, 649, 719, 720, 721, 801,
       802, 807, 808, 893, 1025,
     ])

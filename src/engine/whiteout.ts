@@ -1,4 +1,4 @@
-// The whiteout (docs/61 §4.3, the user's design of 2026-11-01): Crown Shrine's mode, weather survival. The blizzard
+// The whiteout (docs/64 §4.3, the user's design of 2026-11-01): Crown Shrine's mode, weather survival. The blizzard
 // wears down every Pokémon that isn't an Ice type, both sides, each round of every fight here (whiteoutMode.ts, the
 // raids' rule). Waves of fixed foes come one after the other, wild Pokémon that can't be caught; after each wave a
 // bonfire heals the team a share of its max HP, and only there can the team change and the bag be used (the bag stays

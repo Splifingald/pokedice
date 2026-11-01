@@ -1,7 +1,7 @@
--- The race of time and space (docs/61 §4.4): Spear Pillar's time trial in Snowglobe Valley. Run after 0060 (it
--- extends 0060's raid_progress_special_locked) and after 0120 when Snowglobe Valley is on the database; safe to run
+-- The race of time and space (docs/64 §4.4): Spear Pillar's time trial in Snowglobe Valley. Run after 0060 (it
+-- extends 0060's raid_progress_special_locked) and after 0122 when Snowglobe Valley is on the database; safe to run
 -- again. It patches only what this feature changes, over the admin's later edits:
---  1. Spear Pillar gets its race (when it has no mode yet: 0120 writes it too; without Snowglobe Valley, nothing).
+--  1. Spear Pillar gets its race (when it has no mode yet: 0122 writes it too; without Snowglobe Valley, nothing).
 --  2. game_config `timeRace`: the switch, Off (left alone when there).
 --  3. The server's checks: a race area's raids take teams and close (raid_progress_set_team, raid_progress_close,
 --     through raid_progress_special_locked) only once the player's cloud save says the race was won at that raid's

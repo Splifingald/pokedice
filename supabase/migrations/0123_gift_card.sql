@@ -1,6 +1,6 @@
--- The Gift card (docs/61 §4.0): in place of an area's item card while its switch is on, a present to open or make
+-- The Gift card (docs/64 §4.0): in place of an area's item card while its switch is on, a present to open or make
 -- bigger, a broken one a wild Pokémon of the area; Evergreen Hill's Delibird comes out of a present of its own (§4.2).
--- The cards themselves are content (an area's `encounter_weights.gift`, Snowglobe Valley's from 0120); this adds:
+-- The cards themselves are content (an area's `encounter_weights.gift`, Snowglobe Valley's from 0122); this adds:
 -- 1. game_config `giftCard`: its switch, Off, and its numbers (left alone when there: an admin's own are kept).
 -- 2. gift_card_open(): the switch as the server reads it for the caller (docs/15 §20), as trick_or_treat_open() does.
 --    The game asks it before a present appears; while it says no the card is spent and nothing comes out.

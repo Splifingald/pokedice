@@ -187,6 +187,6 @@ export const BOSS_CINEMAS: Readonly<Record<number, BossCinema>> = {
   808: meltanCinema,
   893: zarudeCinema,
   1025: pecharuntCinema,
-  // Crown Shrine's shiny Abomasnow (docs/61 §4.3): the whiteout plays it whatever the cinematics' switch says.
+  // Crown Shrine's shiny Abomasnow (docs/64 §4.3): the whiteout plays it whatever the cinematics' switch says.
   460: abomasnowCinema,
 }

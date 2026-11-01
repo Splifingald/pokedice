@@ -1,4 +1,4 @@
-// Tracks in the Snow (docs/61 §4.1, Moonlit Glade): the first bush opened is never Stantler's (every first bush, many
+// Tracks in the Snow (docs/64 §4.1, Moonlit Glade): the first bush opened is never Stantler's (every first bush, many
 // seeds), on the 4 × 4 not one of its 8 neighbours either; each glade holds what the user's design says; the prints
 // point at Stantler; out of taps the snow falls (a fresh glade, Stantler hidden again); rounds 1 and 2 end on a wild
 // Stantler, round 3 on the shiny boss (a missed throw: it bolts, a fresh glade), caught it closes the glade for good;

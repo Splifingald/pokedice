@@ -1,4 +1,4 @@
-// Kitchen sink (dev only): the Gift card (docs/61 §4.0, §4.2; docs/15 §45) — the present at every level in both looks,
+// Kitchen sink (dev only): the Gift card (docs/64 §4.0, §4.2; docs/15 §45) — the present at every level in both looks,
 // the level gauge, the reward lines, the plate and Delibird's chip, the screen in every state (it lands, a grow
 // playing, with Delibird, at the top, a break playing and what came out, opening, opened), Delibird's present (idle,
 // growing, bursting, shiny Delibird out), the result cards, the preview card and the rules (unlock and INFO). The

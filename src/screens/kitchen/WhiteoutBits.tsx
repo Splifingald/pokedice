@@ -1,4 +1,4 @@
-// Kitchen sink: Crown Shrine's whiteout (docs/61 §4.3, docs/15 §47) in every state — the shrine on the pixel engine
+// Kitchen sink: Crown Shrine's whiteout (docs/64 §4.3, docs/15 §47) in every state — the shrine on the pixel engine
 // (moving and still), the gauge of waves (fresh, mid-wave, every wave cleared, the boss next), the blizzard's chip and
 // its snow over a fight's stage, the way in (the intro full screen, held at its end with "Tap to continue ▼", then its
 // pop-up over that end; the pop-up at once, back from TEAM; the pop-up on its own), the rules pop-up (INFO), the bonfire

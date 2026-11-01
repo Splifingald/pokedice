@@ -1,4 +1,4 @@
-// The whiteout's settings (docs/61 §4.3), on their own as nightmareMode.ts is for the nightmare: an area's `mode` as the
+// The whiteout's settings (docs/64 §4.3), on their own as nightmareMode.ts is for the nightmare: an area's `mode` as the
 // admin set it, cleaned and filled from the defaults, the switch that turns it on, and the blizzard's wear, which is
 // the raids' weather rule (engine/raidSpecials.ts) called as it is, so the general weather system (docs/62) can take
 // its place later without the whiteout changing.
@@ -7,7 +7,7 @@ import { WEATHER_CHIP, WEATHER_SPARES } from './raidSpecials'
 import type { Area, GameData, PokeType, WhiteoutFoe, WhiteoutMode } from './types'
 
 /**
- * Crown Shrine's whiteout (the user's design of 2026-11-01, docs/61 §4.3): three waves of fixed foes, one Ice type in
+ * Crown Shrine's whiteout (the user's design of 2026-11-01, docs/64 §4.3): three waves of fixed foes, one Ice type in
  * each and no Ghost type anywhere (a team of Normal types could never get past one), every level below Abomasnow's
  * Lv.50; the last wave holds a foe strong against each of the world's starter lines. A bonfire after every wave heals
  * 40 %. The weather is the raids' Snow.

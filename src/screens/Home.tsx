@@ -111,7 +111,7 @@ function HomeView({ area }: { area: Area }) {
   }
   const openSheet = (view: AreasView) => setSheet({ view, key: Date.now() })
   const wide = useMediaQuery('(min-width: 1024px)')
-  // Darkrai's nightmare (docs/30) or the whiteout (docs/61 §4.3) holds the player in its area: the banner is shut, and
+  // Darkrai's nightmare (docs/30) or the whiteout (docs/64 §4.3) holds the player in its area: the banner is shut, and
   // says why. (The area and the kind apart: a selector hands back stable values.)
   const heldArea = useGame((s) => heldIn(s.save, s.data)?.area ?? null)
   const heldBy = useGame((s) => heldIn(s.save, s.data)?.by ?? null)

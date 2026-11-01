@@ -1,5 +1,5 @@
-// Tracks in the Snow's server check (docs/61 §4.1, docs/15 §20): the glade's way in opens only while the switch is on
-// for the player, and for a signed-in player the server confirms it (tracks_open(), migration 0122) before BEGIN, so
+// Tracks in the Snow's server check (docs/64 §4.1, docs/15 §20): the glade's way in opens only while the switch is on
+// for the player, and for a signed-in player the server confirms it (tracks_open(), migration 0124) before BEGIN, so
 // an old build or a hand-made save can't search the glade while it's off. A guest's switch can only be "On for
 // everyone" (eventOpenTo), which the content already says. The answer is kept a few minutes, as Trick or Treat's.
 import { tracksRunsOn } from '@/engine'

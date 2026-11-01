@@ -5,7 +5,7 @@
 // the team's changes at the way in, a portal closing, the run's bonuses (none, some), a distorted sprite at each motion
 // level, the UI's glitch on a few pieces, the screen's distortion, and the victory. Every scene is also on
 // /kitchen-sink/fx, frame by frame. With `skin="plates"`, the same states dressed as the Hall of Origin's Stairway of
-// Plates (docs/61 §4.5): the stairway and its altars, a landing's gauge, the way in, an altar's blessings (a Plate
+// Plates (docs/64 §4.5): the stairway and its altars, a landing's gauge, the way in, an altar's blessings (a Plate
 // among them), an altar lit, the wild Pokémon in light, the screen's gleam, and shiny Arceus coming down.
 import { useMemo, useRef, useState } from 'react'
 import {

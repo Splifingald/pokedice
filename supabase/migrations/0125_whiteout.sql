@@ -1,6 +1,6 @@
--- Crown Shrine's whiteout (docs/61 §4.3): weather survival in Snowglobe Valley's third secret area, three waves of
--- fixed foes in the blizzard, a bonfire after each, then shiny Abomasnow. Run after 0120; safe to run again.
---  1. Crown Shrine gets its whiteout when it has no mode yet (0120 writes it too, when generated with it; an admin's
+-- Crown Shrine's whiteout (docs/64 §4.3): weather survival in Snowglobe Valley's third secret area, three waves of
+-- fixed foes in the blizzard, a bonfire after each, then shiny Abomasnow. Run after 0122; safe to run again.
+--  1. Crown Shrine gets its whiteout when it has no mode yet (0122 writes it too, when generated with it; an admin's
 --     own mode stays). A no-op where Snowglobe Valley isn't loaded.
 --  2. game_config `whiteout`: the switch, Off (left alone when there).
 --  3. whiteout_open(): the switch as the server reads it, as nightmare_open() (0060) does. The run itself lives in the

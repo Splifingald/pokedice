@@ -1,4 +1,4 @@
-// The Gift card (docs/61 §4.0, the user's design of 2026-11-01): a card in an area's deck, in place of its item cards
+// The Gift card (docs/64 §4.0, the user's design of 2026-11-01): a card in an area's deck, in place of its item cards
 // while the switch is on. A present appears at level 1; OPEN gives that level's reward, MAKE IT BIGGER grows it a level,
 // but each tap may break it: a broken gift is a wild Pokémon of the area, fought and caught as any. Owning the helper
 // (Delibird) makes every tap safer and adds a level on top. A boss marked `present` (Evergreen Hill's Delibird, §4.2)

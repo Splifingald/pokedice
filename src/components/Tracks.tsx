@@ -1,4 +1,4 @@
-// Tracks in the Snow (docs/61 §4.1, docs/15 §46): Moonlit Glade's hide and seek on the game's screens. Its way in (the
+// Tracks in the Snow (docs/64 §4.1, docs/15 §46): Moonlit Glade's hide and seek on the game's screens. Its way in (the
 // moon rising, a reindeer leaping into the bushes, "Tap to continue ▼", then the pop-up with its short rules), the
 // gauge of rounds, the glade itself (a grid of snowy bushes that fits a 360 px phone at 4 × 4: what each opened bush
 // held and its hoofprints, the taps left, the snow falling over it) and the outro (the bushes settle, fresh snow).

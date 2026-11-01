@@ -78,9 +78,9 @@ export function GameLayout() {
         <PortalGuard />
         {/* The nightmare holding the player (docs/30): the run kept in its area (no screen effect). */}
         <NightmareGuard />
-        {/* The race of time and space (docs/61 §4.4): a try kept in its area, ended by its clock wherever it is. */}
+        {/* The race of time and space (docs/64 §4.4): a try kept in its area, ended by its clock wherever it is. */}
         <TimeRaceGuard />
-        {/* The whiteout holding the player (docs/61 §4.3): the run kept in Crown Shrine. */}
+        {/* The whiteout holding the player (docs/64 §4.3): the run kept in Crown Shrine. */}
         <WhiteoutGuard />
       </div>
     </PopupQueue>

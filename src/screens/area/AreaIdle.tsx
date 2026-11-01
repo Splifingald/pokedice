@@ -33,7 +33,7 @@ export function AreaIdle({ area, scene = false }: { area: Area; scene?: boolean 
   // Inside a portal run (docs/28) there is no way Home: CONTINUE alone.
   const locked = useGame((s) => !!portalLock(s.save, s.data))
   const data = useGame((s) => s.data)
-  // The nightmare (docs/30) and the whiteout (docs/61 §4.3) shut travel only: HOME stays, the reason is said over the bar.
+  // The nightmare (docs/30) and the whiteout (docs/64 §4.3) shut travel only: HOME stays, the reason is said over the bar.
   const held = useGame((s) => heldIn(s.save, s.data)?.area ?? null)
   const heldBy = useGame((s) => heldIn(s.save, s.data)?.by ?? 'nightmare')
   const autoHere = useGame((s) => !!s.save && autoAvailable(s.save, s.data, s.settings, area.id))

@@ -2061,7 +2061,7 @@ docs/60. Its switch is `friendship.access` (§20); the server keeps the streaks,
 
 ## 45. The Gift card
 
-An encounter card (docs/61 §4.0), in place of an area's item card while its switch is on: a present appears at level 1;
+An encounter card (docs/64 §4.0), in place of an area's item card while its switch is on: a present appears at level 1;
 **OPEN** gives that level's reward, **MAKE IT BIGGER** grows it a level but may break it, and a broken gift is a wild
 Pokémon of the area. Evergreen Hill's Delibird comes out of a present of its own (§4.2). The engine
 (`engine/giftCard.ts`) decides every number and outcome; the pieces are in `src/components/GiftCard.tsx`, the screen in
@@ -2069,7 +2069,7 @@ Pokémon of the area. Evergreen Hill's Delibird comes out of a present of its ow
 state on `/kitchen-sink` (`GiftCardBits`), every take on `/kitchen-sink/fx`.
 
 - **The switch and the rules** follow §20: `giftCard.access`, Off by default and read by the server too
-  (`gift_card_open()`, migration 0121). Off, the item card is dealt as before (no gift tile on the round gauge, no
+  (`gift_card_open()`, migration 0123). Off, the item card is dealt as before (no gift tile on the round gauge, no
   "Gifts" in the area's round mix) and a gift left in a deck is set aside. The rules pop-up opens over the screen the
   first time a present appears (Later / Let's go! both carry on), INFO sits at the foot of the panel; four rows with the
   config's numbers: OPEN, MAKE IT BIGGER (the break chances in order and the top level), a broken gift, and the
@@ -2127,7 +2127,7 @@ state on `/kitchen-sink` (`GiftCardBits`), every take on `/kitchen-sink/fx`.
 
 ## 46. Tracks in the Snow (Moonlit Glade)
 
-docs/61 §4.1: an area's special mode (`Area.mode`, kind `tracks`), hide and seek with Stantler in three rounds, built
+docs/64 §4.1: an area's special mode (`Area.mode`, kind `tracks`), hide and seek with Stantler in three rounds, built
 as the nightmare's parallel (§29). Its pieces are in `src/components/Tracks.tsx` and `src/screens/area/TracksRun.tsx`,
 every state on `/kitchen-sink` (`TracksBits`); the engine (`engine/tracks.ts`, `tracksMode.ts`) hides Stantler, fills
 the bushes, points the prints and decides every outcome with its own rng. **Every scene is pixel art on the FX engine**
@@ -2141,7 +2141,7 @@ at its own pace as the camera moves, snow falling at three depths; a silhouette 
 moon's side (`drawPose`). Its scenes follow §8 (short: half the time; off: their end at once).
 
 - **The switch and the rules** follow §20: `tracks` (Admin → Areas → Special mode: Tracks in the Snow), Off by default;
-  the server answers it (`tracks_open()`, 0122) before a signed-in player begins. Off, the glade is a plain secret
+  the server answers it (`tracks_open()`, 0124) before a signed-in player begins. Off, the glade is a plain secret
   area. **Its rules are short**, as the nightmare's: four one-line `RuleList` rows from the area's numbers ("3 rounds:
   find Stantler, the shiny one last", "Every bush you open shows hoofprints pointing at it" (or "Empty bushes…"), "5
   taps (7 in the last glade) before the snow falls and it moves", "Bushes hide wild Pokémon, finds and warm cabins"),
@@ -2195,7 +2195,7 @@ moon's side (`drawPose`). Its scenes follow §8 (short: half the time; off: thei
 
 ## 47. Whiteout (Crown Shrine)
 
-An area's special mode (docs/61 §4.3), Snowglobe Valley's third secret area: weather survival. Waves of fixed foes in
+An area's special mode (docs/64 §4.3), Snowglobe Valley's third secret area: weather survival. Waves of fixed foes in
 a blizzard, a bonfire after each, then shiny Abomasnow. Built as the nightmare's parallel (§29); the pieces are in
 `src/components/Whiteout.tsx` and `src/screens/area/WhiteoutRun.tsx`, every state on `/kitchen-sink` (`WhiteoutBits`);
 the engine (`engine/whiteout.ts`, `whiteoutMode.ts`) decides every foe, number and outcome, the blizzard's wear in the
@@ -2212,7 +2212,7 @@ day light of the same shrine for the end. **Its lasting effects follow §8**
 (`useWhiteoutLevel`: a calm OS or motion off stills them; short halves the snow).
 
 - **The switch and the rules** follow §20: `whiteout` (Admin → Areas → Special mode: whiteout), Off by default; the
-  server has its check (`whiteout_open()`, 0123). Off: the area plays as a plain secret area (its deck, then its boss).
+  server has its check (`whiteout_open()`, 0125). Off: the area plays as a plain secret area (its deck, then its boss).
   **Its rules are short**, six one-line `RuleList` rows from the area's numbers: "3 waves of foes that can't be
   caught", "The blizzard takes 4% HP each round from all but Ice types, foes too", "A bonfire after each wave: +40% HP,
   team changes and items", "No bag in battle", "Then Abomasnow: catch it to end the blizzard", "No travel until it ends
@@ -2285,7 +2285,7 @@ day light of the same shrine for the end. **Its lasting effects follow §8**
 
 ## 48. The Race of Time and Space (Spear Pillar)
 
-An area's special mode (docs/61-SNOWGLOBE-VALLEY.md §4.4), Snowglobe Valley's S4: a time trial whose last gate picks the
+An area's special mode (docs/64-SNOWGLOBE-VALLEY.md §4.4), Snowglobe Valley's S4: a time trial whose last gate picks the
 raid (Water: shiny Palkia, Steel: shiny Dialga). Built as the portal run's and the nightmare's parallel (§27, §29); the
 pieces are in `src/components/TimeRace.tsx` and `src/screens/area/TimeRaceRun.tsx`, every state on `/kitchen-sink`
 (`TimeRaceBits`); the engine (`engine/timeRace.ts`, `timeRaceMode.ts`) decides every gate, foe, find, second and outcome.
@@ -2360,10 +2360,10 @@ one still frame with motion off.
 
 ## 49. The Stairway of Plates (Hall of Origin)
 
-docs/61 §4.5: the Hall of Origin's portal run, **§27's run with its rules, numbers, flows and buttons unchanged, dressed
+docs/64 §4.5: the Hall of Origin's portal run, **§27's run with its rules, numbers, flows and buttons unchanged, dressed
 for Arceus** in light instead of distortion, **on a switch of its own** (`platesRun`, §20; the user's call of
 2026-11-01): a portal area in this look answers to it, every other to §27's `portalRun`, so either opens without the
-other (`portalSwitchOf`, `src/engine/portalMode.ts`; the server's 0125). The area's mode says so (`skin: 'plates'`,
+other (`portalSwitchOf`, `src/engine/portalMode.ts`; the server's 0127). The area's mode says so (`skin: 'plates'`,
 Admin → Areas → Special mode → Its look); absent, Distortion World's look, as it always was. The pieces are §27's: they
 read the look from `PortalSkinProvider` (`src/components/portalSkin.ts`), so every state is on `/kitchen-sink`
 (`PortalBits skin="plates"`, its own section) and every scene on `/kitchen-sink/fx` ("Stairway of Plates: …", "A raid's

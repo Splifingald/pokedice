@@ -20,7 +20,7 @@ const size = (id: string) => {
 
 describe('area pictures (public/area-art)', () => {
   it('gives every area a picture, and names no area the game lacks', () => {
-    // A small world's areas come from the admin's bundle, not src/data (Haunted Hollow: docs/26; Snowglobe Valley: docs/61).
+    // A small world's areas come from the admin's bundle, not src/data (Haunted Hollow: docs/26; Snowglobe Valley: docs/64).
     const ids = new Set([
       ...(areas as { id: string }[]).map((a) => a.id),
       ...haunted().areas.map((a) => a.id),

@@ -753,7 +753,7 @@ export function WorldStrip() {
   const now = useServerNow(1000)
   const back = useBackName()
   const { t } = useT()
-  // The nightmare (docs/30) or the whiteout (docs/61 §4.3) holding the player: the way back is shut, and says why.
+  // The nightmare (docs/30) or the whiteout (docs/64 §4.3) holding the player: the way back is shut, and says why.
   const held = useGame((s) => heldIn(s.save, s.data)?.area ?? null)
   const heldBy = useGame((s) => heldIn(s.save, s.data)?.by ?? 'nightmare')
   if (!inside) return null

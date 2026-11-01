@@ -1,5 +1,5 @@
--- Tracks in the Snow (docs/61 §4.1): Moonlit Glade's hide and seek, an area special mode (`areas.mode`, kind
--- 'tracks', written on the area by 0120's content). Run after 0120; safe to run again.
+-- Tracks in the Snow (docs/64 §4.1): Moonlit Glade's hide and seek, an area special mode (`areas.mode`, kind
+-- 'tracks', written on the area by 0122's content). Run after 0122; safe to run again.
 -- 1. game_config `tracks`: the switch, Off (left alone when there).
 -- 2. tracks_open(): the switch as the server reads it for the caller, as portal_run_open() (0057) and nightmare_open()
 --    (0060) read theirs: on for everyone, or for the admin only. The game asks it before a signed-in player enters the

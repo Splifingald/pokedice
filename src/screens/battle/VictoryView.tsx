@@ -579,7 +579,7 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           })
           return
         case 'time_race_fight':
-          // A fight of the race of time and space won in time (docs/61 §4.4): the next comes, or a fork, or the win.
+          // A fight of the race of time and space won in time (docs/64 §4.4): the next comes, or a fork, or the win.
           extras.push({
             key: k,
             node: (
@@ -595,7 +595,7 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           })
           return
         case 'whiteout_wave':
-          // A wave of the whiteout cleared (docs/61 §4.3): a bonfire comes next.
+          // A wave of the whiteout cleared (docs/64 §4.3): a bonfire comes next.
           extras.push({
             key: k,
             node: (
@@ -609,7 +609,7 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           })
           return
         case 'tracks_round':
-          // A round of Tracks in the Snow cleared (docs/61 §4.1): Stantler found and down; the next glade waits.
+          // A round of Tracks in the Snow cleared (docs/64 §4.1): Stantler found and down; the next glade waits.
           extras.push({
             key: k,
             node: (
@@ -927,7 +927,7 @@ export function VictoryView() {
     return () => clearTimeout(timer)
   }, [closes, allShown, then, picking, lead])
 
-  // Inside a portal run (docs/28) there is no way Home: CONTINUE alone. Nor in a try of the race (docs/61 §4.4).
+  // Inside a portal run (docs/28) there is no way Home: CONTINUE alone. Nor in a try of the race (docs/64 §4.4).
   const locked = useGame((s) => !!portalLock(s.save, s.data) || !!timeRaceLock(s.save, s.data))
 
   // After a fight: NEXT waits for the player, unless Auto is on (Settings, or AUTO beside NEXT): then it fills and goes.
@@ -1199,12 +1199,12 @@ function AreaWipe() {
   const portalLost = useGame((s) => s.run.portalLost)
   // A wipe that woke the player from the nightmare (docs/30): its rounds start again from the first.
   const nightmareLost = useGame((s) => s.run.nightmareLost)
-  // A try of the race of time and space ended (docs/61 §4.4): the clock or a full K.O., back to the start.
+  // A try of the race of time and space ended (docs/64 §4.4): the clock or a full K.O., back to the start.
   const raceLost = useGame((s) => s.run.raceLost)
   const timeUp = raceLost?.reason === 'time'
-  // A wipe in the whiteout (docs/61 §4.3): back to wave 1.
+  // A wipe in the whiteout (docs/64 §4.3): back to wave 1.
   const whiteoutLost = useGame((s) => s.run.whiteoutLost)
-  // A wipe in Tracks in the Snow's glade (docs/61 §4.1): back at its edge, its cleared rounds kept.
+  // A wipe in Tracks in the Snow's glade (docs/64 §4.1): back at its edge, its cleared rounds kept.
   const tracksWiped = useGame((s) => !!s.run.tracksWiped)
   return (
     <Overlay

@@ -337,9 +337,9 @@ export function latestOpenArea(save: SaveData, data: GameData, now?: number | nu
 export function isAreaClosed(save: SaveData, areaId: string, data: GameData): boolean {
   const area = data.areas.find((a) => a.id === areaId)
   if (!area) return false
-  // Crown Shrine once its whiteout is won (docs/61 §4.3): its boss caught, the shrine closes for good.
+  // Crown Shrine once its whiteout is won (docs/64 §4.3): its boss caught, the shrine closes for good.
   if (whiteoutWon(save, data, areaId)) return true
-  // Tracks in the Snow (docs/61 §4.1): the shiny Stantler caught and its outro played, the glade closes for good.
+  // Tracks in the Snow (docs/64 §4.1): the shiny Stantler caught and its outro played, the glade closes for good.
   if (tracksWon(save, data, areaId) && tracksStateOf(save, areaId).wonSeen) return true
   const c = deckCounts(area.encounterWeights, deckAbilities(area))
   if (c.wild + c.trainer + c.casino > 0) return false
@@ -355,8 +355,8 @@ export function isAreaClosed(save: SaveData, areaId: string, data: GameData): bo
 
 /**
  * The area deals no more cards: its portal run (docs/28) or its nightmare (docs/30) is won, so it is only its raid,
- * then sealed; or its race of time and space (docs/61 §4.4) is won with no replay open now, so it is only its raids; or
- * its Tracks in the Snow (docs/61 §4.1), the shiny Stantler caught, closing once its outro has played.
+ * then sealed; or its race of time and space (docs/64 §4.4) is won with no replay open now, so it is only its raids; or
+ * its Tracks in the Snow (docs/64 §4.1), the shiny Stantler caught, closing once its outro has played.
  * Unlike a closed area it can still be entered (its raid is reached from it; the glade's outro plays there).
  */
 export const isAreaSealed = (save: SaveData, data: GameData, areaId: string): boolean =>
@@ -452,11 +452,11 @@ export type RunEvent =
   | { kind: 'nightmare_round'; round: number; total: number }
   /** The item a nightmare round left in the bag (docs/30), once for good. */
   | { kind: 'nightmare_gift'; key: string; qty: number }
-  /** A fight of the race of time and space won in time (docs/61 §4.4): `fight` of `total`. */
+  /** A fight of the race of time and space won in time (docs/64 §4.4): `fight` of `total`. */
   | { kind: 'time_race_fight'; fight: number; total: number }
-  /** A wave of the whiteout cleared (docs/61 §4.3): `wave` of `waves`; a bonfire comes next. */
+  /** A wave of the whiteout cleared (docs/64 §4.3): `wave` of `waves`; a bonfire comes next. */
   | { kind: 'whiteout_wave'; wave: number; waves: number }
-  /** A round of Tracks in the Snow cleared (docs/61 §4.1): Stantler found and K.O., `round` of `total` now cleared. */
+  /** A round of Tracks in the Snow cleared (docs/64 §4.1): Stantler found and K.O., `round` of `total` now cleared. */
   | { kind: 'tracks_round'; round: number; total: number }
   /**
    * An Unown caught with the Unown Pokédex open (docs/41): its letter, new to the page or not, the page's count, and
@@ -788,11 +788,11 @@ export function applyWipe(save: SaveData, areaId: string, data: GameData): SaveD
   if (inPortalRun(save, data, areaId)) return portalWipe(save, data, areaId)
   // So does the nightmare (docs/30): the player wakes up, the rounds back to 0.
   if (inNightmare(save, data, areaId)) return nightmareWipe(save, data, areaId)
-  // And the race of time and space (docs/61 §4.4): back to the start, healed, the legends won kept.
+  // And the race of time and space (docs/64 §4.4): back to the start, healed, the legends won kept.
   if (inTimeRace(save, data, areaId)) return timeRaceWipe(save, data, areaId)
-  // And the whiteout (docs/61 §4.3): back to wave 1, healed.
+  // And the whiteout (docs/64 §4.3): back to wave 1, healed.
   if (inWhiteout(save, data, areaId)) return whiteoutWipe(save, data, areaId)
-  // Tracks in the Snow (docs/61 §4.1): back at the glade's edge, healed, its cleared rounds kept.
+  // Tracks in the Snow (docs/64 §4.1): back at the glade's edge, healed, its cleared rounds kept.
   if (inTracks(save, data, areaId)) return tracksWipe(save, data, areaId)
   const p = progressOf(save, areaId)
   const healed = new Set(wipeHeals(save, data) ? save.team : [])
@@ -858,7 +858,7 @@ export function arriveAtNightmare(save: SaveData, data: GameData, areaId: string
 }
 
 /**
- * Arriving at the race's way in (docs/61 §4.4, before READY!) heals as a Pokémon Center does, as the portal's way in
+ * Arriving at the race's way in (docs/64 §4.4, before READY!) heals as a Pokémon Center does, as the portal's way in
  * does. The same save when there is nothing to heal, or outside a way in.
  */
 export function arriveAtTimeRace(save: SaveData, data: GameData, areaId: string): SaveData {
@@ -867,7 +867,7 @@ export function arriveAtTimeRace(save: SaveData, data: GameData, areaId: string)
 }
 
 /**
- * Arriving at Tracks in the Snow's way in (docs/61 §4.1, before BEGIN) heals as a Pokémon Center does, as the
+ * Arriving at Tracks in the Snow's way in (docs/64 §4.1, before BEGIN) heals as a Pokémon Center does, as the
  * nightmare's way in does. The same save when there is nothing to heal, or outside a way in.
  */
 export function arriveAtTracks(save: SaveData, data: GameData, areaId: string): SaveData {
@@ -876,7 +876,7 @@ export function arriveAtTracks(save: SaveData, data: GameData, areaId: string): 
 }
 
 /**
- * Arriving at the whiteout's way in (docs/61 §4.3, before BEGIN) heals as a Pokémon Center does, as the nightmare's way
+ * Arriving at the whiteout's way in (docs/64 §4.3, before BEGIN) heals as a Pokémon Center does, as the nightmare's way
  * in does. The same save when there is nothing to heal, or outside a way in.
  */
 export function arriveAtWhiteout(save: SaveData, data: GameData, areaId: string): SaveData {
@@ -885,7 +885,7 @@ export function arriveAtWhiteout(save: SaveData, data: GameData, areaId: string)
 }
 
 /**
- * The race won, HEAL & START RAID (docs/61 §4.4, as the portal run's victory): the team and the Box healed as a Pokémon
+ * The race won, HEAL & START RAID (docs/64 §4.4, as the portal run's victory): the team and the Box healed as a Pokémon
  * Center would, the win's moment marked seen. The same save when no win is waiting here.
  */
 export function timeRaceVictoryToRaid(save: SaveData, data: GameData, areaId: string): SaveData {
@@ -927,8 +927,8 @@ export function teamSwapsOpen(save: SaveData, data: GameData, at: SwapPlace): bo
   // An Extreme boon Center (docs/47): the team changes once its boon is picked, so the boons fit the team they met.
   if (at.phase === 'center') return !(at.areaId && pendingBoons(save, at.areaId))
   // The nightmare's way in too (docs/30), before it begins: there is no Center inside it either. And the whiteout's
-  // (docs/61 §4.3): its way in, and its bonfires, the only places the team changes once it has begun. And the race's
-  // way in (docs/61 §4.4), before READY!.
+  // (docs/64 §4.3): its way in, and its bonfires, the only places the team changes once it has begun. And the race's
+  // way in (docs/64 §4.4), before READY!.
   return (
     at.phase === 'idle' &&
     !!at.areaId &&
@@ -938,7 +938,7 @@ export function teamSwapsOpen(save: SaveData, data: GameData, at: SwapPlace): bo
       canStartTimeRace(save, data, at.areaId) ||
       canStartWhiteout(save, data, at.areaId) ||
       atBonfire(save, data, at.areaId) ||
-      // Tracks in the Snow's way in too (docs/61 §4.1).
+      // Tracks in the Snow's way in too (docs/64 §4.1).
       canStartTracks(save, data, at.areaId))
   )
 }
@@ -1038,7 +1038,7 @@ export function applyFieldItem(
   const item = data.items[key]
   const inst = getInstance(save, instId)
   if (!item || !inst || isReviving(inst) || !usableIn(item, 'field') || (save.inventory[key] ?? 0) <= 0) return null
-  // In the whiteout (docs/61 §4.3) the bag opens only at a bonfire.
+  // In the whiteout (docs/64 §4.3) the bag opens only at a bonfire.
   if (whiteoutBagShut(save, data)) return null
   if (item.effect.kind === 'heal' || item.effect.kind === 'revive') {
     if (!healItemsOn(save, data)) return null

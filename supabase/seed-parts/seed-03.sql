@@ -722,10 +722,10 @@ revoke all on function trade_picks(jsonb, uuid[], int, text) from public, anon;
 grant execute on function trade_picks(jsonb, uuid[], int, text) to authenticated;
 
 
--- ↓ supabase/migrations/0121_gift_card.sql, inlined so this file stands alone.
--- The Gift card (docs/61 §4.0): in place of an area's item card while its switch is on, a present to open or make
+-- ↓ supabase/migrations/0123_gift_card.sql, inlined so this file stands alone.
+-- The Gift card (docs/64 §4.0): in place of an area's item card while its switch is on, a present to open or make
 -- bigger, a broken one a wild Pokémon of the area; Evergreen Hill's Delibird comes out of a present of its own (§4.2).
--- The cards themselves are content (an area's `encounter_weights.gift`, Snowglobe Valley's from 0120); this adds:
+-- The cards themselves are content (an area's `encounter_weights.gift`, Snowglobe Valley's from 0122); this adds:
 -- 1. game_config `giftCard`: its switch, Off, and its numbers (left alone when there: an admin's own are kept).
 -- 2. gift_card_open(): the switch as the server reads it for the caller (docs/15 §20), as trick_or_treat_open() does.
 --    The game asks it before a present appears; while it says no the card is spent and nothing comes out.
@@ -743,8 +743,8 @@ revoke all on function gift_card_open() from public;
 grant execute on function gift_card_open() to anon, authenticated;
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 
--- ↓ supabase/migrations/0125_plates_run.sql, inlined so this file stands alone.
--- The Stairway of Plates' own switch (docs/61 §4.5, the user's call of 2026-11-01): the Hall of Origin's portal run
+-- ↓ supabase/migrations/0127_plates_run.sql, inlined so this file stands alone.
+-- The Stairway of Plates' own switch (docs/64 §4.5, the user's call of 2026-11-01): the Hall of Origin's portal run
 -- (an area whose mode says `"skin": "plates"`) opens apart from Distortion World's. Run after 0057; safe to run again.
 -- It patches only what this feature changes, over the admin's later edits:
 --  1. game_config `platesRun`: the switch, Off (left alone when there).
@@ -781,11 +781,11 @@ revoke all on function raid_progress_portal(text) from public, anon, authenticat
 
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 
--- ↓ supabase/migrations/0124_time_race.sql, inlined so this file stands alone.
--- The race of time and space (docs/61 §4.4): Spear Pillar's time trial in Snowglobe Valley. Run after 0060 (it
--- extends 0060's raid_progress_special_locked) and after 0120 when Snowglobe Valley is on the database; safe to run
+-- ↓ supabase/migrations/0126_time_race.sql, inlined so this file stands alone.
+-- The race of time and space (docs/64 §4.4): Spear Pillar's time trial in Snowglobe Valley. Run after 0060 (it
+-- extends 0060's raid_progress_special_locked) and after 0122 when Snowglobe Valley is on the database; safe to run
 -- again. It patches only what this feature changes, over the admin's later edits:
---  1. Spear Pillar gets its race (when it has no mode yet: 0120 writes it too; without Snowglobe Valley, nothing).
+--  1. Spear Pillar gets its race (when it has no mode yet: 0122 writes it too; without Snowglobe Valley, nothing).
 --  2. game_config `timeRace`: the switch, Off (left alone when there).
 --  3. The server's checks: a race area's raids take teams and close (raid_progress_set_team, raid_progress_close,
 --     through raid_progress_special_locked) only once the player's cloud save says the race was won at that raid's
@@ -852,10 +852,10 @@ revoke all on function raid_progress_special_locked(text, text) from public, ano
 
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 
--- ↓ supabase/migrations/0123_whiteout.sql, inlined so this file stands alone.
--- Crown Shrine's whiteout (docs/61 §4.3): weather survival in Snowglobe Valley's third secret area, three waves of
--- fixed foes in the blizzard, a bonfire after each, then shiny Abomasnow. Run after 0120; safe to run again.
---  1. Crown Shrine gets its whiteout when it has no mode yet (0120 writes it too, when generated with it; an admin's
+-- ↓ supabase/migrations/0125_whiteout.sql, inlined so this file stands alone.
+-- Crown Shrine's whiteout (docs/64 §4.3): weather survival in Snowglobe Valley's third secret area, three waves of
+-- fixed foes in the blizzard, a bonfire after each, then shiny Abomasnow. Run after 0122; safe to run again.
+--  1. Crown Shrine gets its whiteout when it has no mode yet (0122 writes it too, when generated with it; an admin's
 --     own mode stays). A no-op where Snowglobe Valley isn't loaded.
 --  2. game_config `whiteout`: the switch, Off (left alone when there).
 --  3. whiteout_open(): the switch as the server reads it, as nightmare_open() (0060) does. The run itself lives in the
@@ -882,9 +882,9 @@ revoke all on function whiteout_open() from public, anon, authenticated;
 
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 
--- ↓ supabase/migrations/0122_tracks_in_the_snow.sql, inlined so this file stands alone.
--- Tracks in the Snow (docs/61 §4.1): Moonlit Glade's hide and seek, an area special mode (`areas.mode`, kind
--- 'tracks', written on the area by 0120's content). Run after 0120; safe to run again.
+-- ↓ supabase/migrations/0124_tracks_in_the_snow.sql, inlined so this file stands alone.
+-- Tracks in the Snow (docs/64 §4.1): Moonlit Glade's hide and seek, an area special mode (`areas.mode`, kind
+-- 'tracks', written on the area by 0122's content). Run after 0122; safe to run again.
 -- 1. game_config `tracks`: the switch, Off (left alone when there).
 -- 2. tracks_open(): the switch as the server reads it for the caller, as portal_run_open() (0057) and nightmare_open()
 --    (0060) read theirs: on for everyone, or for the admin only. The game asks it before a signed-in player enters the

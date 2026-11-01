@@ -1,4 +1,4 @@
-// Spear Pillar's race of time and space (docs/61 §4.4): the clock on the server's time from READY!, kept in the save
+// Spear Pillar's race of time and space (docs/64 §4.4): the clock on the server's time from READY!, kept in the save
 // (it runs on through a reload); a fork every 3 fights, its two gates each a type (the foes drawn from the area's pool by
 // that type) and a find (an item or a time shard of 0:30); the last gate picks the raid (Water: Palkia, Steel: Dialga);
 // out of time or a wipe sends the player back to the start, healed, XP and items kept; the one replay once that legend is

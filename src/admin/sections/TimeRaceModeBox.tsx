@@ -1,4 +1,4 @@
-// Admin → Areas: an area's race of time and space (docs/61 §4.4), Spear Pillar's mode. Its switch (the game_config row
+// Admin → Areas: an area's race of time and space (docs/64 §4.4), Spear Pillar's mode. Its switch (the game_config row
 // `timeRace`, which the server reads too) and every number of the area's race: the forks, the last gate's legends, the
 // clock, the gates' finds, the speed inside, the replay and the raids after it.
 import type { Row } from '@/config/mapping'
@@ -115,7 +115,7 @@ export function TimeRaceModeBox({ area }: { area: Row }) {
     <Box
       title="Special mode: race of time and space"
       icon="clock"
-      hint="Spear Pillar's mode (docs/61 §4.4): a time trial. From READY! the clock runs on the server's time, kept in the save. A fork every few fights offers two gates, each a type (the next foes are of it, drawn from this area's wild pool) and a find (an item, or a time shard that adds time). The last fork's gates are the two legends': the one taken opens that legend's raid when the last fight is won in time. Out of time or a full K.O.: back to the start, healed, XP and items kept. No Center, no catch, no auto-battle, one battle speed for everyone inside. Once that legend is caught, one replay with its own forks opens the other."
+      hint="Spear Pillar's mode (docs/64 §4.4): a time trial. From READY! the clock runs on the server's time, kept in the save. A fork every few fights offers two gates, each a type (the next foes are of it, drawn from this area's wild pool) and a find (an item, or a time shard that adds time). The last fork's gates are the two legends': the one taken opens that legend's raid when the last fight is won in time. Out of time or a full K.O.: back to the start, healed, XP and items kept. No Center, no catch, no auto-battle, one battle speed for everyone inside. Once that legend is caught, one replay with its own forks opens the other."
     >
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-lg">Races (every area)</span>

@@ -40,7 +40,7 @@ export {
 } from './portalMode'
 
 /**
- * The run's rules pop-up has been seen for this look: each skin has its own flag (docs/61 §4.5), so a player who read
+ * The run's rules pop-up has been seen for this look: each skin has its own flag (docs/64 §4.5), so a player who read
  * Distortion World's rules last Halloween still gets the Stairway of Plates' once.
  */
 export const portalRulesSeen = (save: SaveData, skin: PortalSkin): boolean =>

@@ -116,7 +116,7 @@ export function burstFrame(b: Burst, short = false): BurstFrame {
 }
 
 /**
- * The Stairway of Plates' wild Pokémon (docs/61 §4.5) wear light, not distortion: the same rhythm, never torn; a gold
+ * The Stairway of Plates' wild Pokémon (docs/64 §4.5) wear light, not distortion: the same rhythm, never torn; a gold
  * and white gleam a pixel off each side, brightening on two frames.
  */
 const LIGHT = { gold: '#e3a92f', pale: '#ffe9a3', white: '#ffffff' } as const

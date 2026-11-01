@@ -1,4 +1,4 @@
-// Snowglobe Valley's content (docs/61 §3): the user's brief of 2026-11-01 holds in the data itself.
+// Snowglobe Valley's content (docs/64 §3): the user's brief of 2026-11-01 holds in the data itself.
 import { describe, expect, it } from 'vitest'
 import {
   areaOpenAt,
@@ -98,7 +98,7 @@ describe('Snowglobe Valley', () => {
         expect(onRoad.has(w.dex), `${name}: ${data.species[w.dex]!.name}`).toBe(true)
   })
 
-  it('makes the Hall of Origin Distortion World’s portal run, dressed as the Stairway of Plates (docs/61 §4.5)', () => {
+  it('makes the Hall of Origin Distortion World’s portal run, dressed as the Stairway of Plates (docs/64 §4.5)', () => {
     const hall = h.areas.find((a) => a.name === 'Hall of Origin')!
     const mode = normalisePortal(hall.mode)!
     // The run's rules and numbers are Distortion World's; only its look and its raid are its own.
@@ -262,7 +262,7 @@ describe('Snowglobe Valley', () => {
     expect(AREAS).toHaveLength(16)
   })
 
-  it('turns each main area’s item card into a Gift card while its switch is on, and Evergreen Hill into three (docs/61 §4.0, §4.2)', () => {
+  it('turns each main area’s item card into a Gift card while its switch is on, and Evergreen Hill into three (docs/64 §4.0, §4.2)', () => {
     const on = { ...data, config: { ...data.config, giftCard: { ...data.config.giftCard, access: 'all' as const } } }
     const dealt = (d: GameData, name: string) => {
       const a = d.areas.find((x) => x.id === areaId(name))!
@@ -287,7 +287,7 @@ describe('Snowglobe Valley', () => {
     const secrets = h.areas.filter((a) => a.hidden)
     expect(secrets.map((a) => [a.name, a.unlockConditions, a.legendaryBoss])).toEqual([
       ['Moonlit Glade', [{ kind: 'pokedex', count: 20 }], [{ dex: 234, level: 30, shiny: true }]],
-      // Delibird comes out of a present while the Gift card is on (docs/61 §4.2).
+      // Delibird comes out of a present while the Gift card is on (docs/64 §4.2).
       ['Evergreen Hill', [], [{ dex: 225, level: 40, shiny: true, present: true }]],
       ['Crown Shrine', [{ kind: 'pokedex', count: 50 }], [{ dex: 460, level: 50, shiny: true }]],
       [
@@ -306,7 +306,7 @@ describe('Snowglobe Valley', () => {
     ])
   })
 
-  it('plays Moonlit Glade as Tracks in the Snow (docs/61 §4.1) while its switch is on; each secret has its own mode', () => {
+  it('plays Moonlit Glade as Tracks in the Snow (docs/64 §4.1) while its switch is on; each secret has its own mode', () => {
     const secrets = h.areas.filter((a) => a.hidden)
     // Evergreen Hill's gameplay is its gift cards and Delibird's present (§4.2), not a mode.
     expect(secrets.map((a) => [a.name, a.mode?.kind ?? null])).toEqual([

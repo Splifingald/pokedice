@@ -1,5 +1,5 @@
 /**
- * Snowglobe Valley (docs/61): the winter small world, as content, built like Haunted Hollow (docs/26) with
+ * Snowglobe Valley (docs/64): the winter small world, as content, built like Haunted Hollow (docs/26) with
  * scripts/world-content.ts. `snowglobe()` builds its region, areas, trainers and the world's settings;
  * `pnpm snowglobe-valley <in-bundle.json> <out-bundle.json>` adds them to an admin export for `pnpm import-bundle`, and
  * `pnpm snowglobe-valley --sql <out.sql>` writes the same as a migration. Ids are stable (`stableUuid`), so a re-run
@@ -8,11 +8,11 @@
  * The user's brief (2026-11-01): Ice instead of Ghost; Sat 19 Dec 2026 → Sun 3 Jan 2027; Alolan Sandshrew, Alolan
  * Vulpix and a third Ice starter; about 125 Pokémon; Ice ×1.2; XP ×1.5; ten areas, the Frost League, five secret areas
  * (shiny Stantler; shiny Delibird from 24 Dec; shiny Abomasnow at 50 caught; shiny Dialga or Palkia after the league,
- * from 25 Dec; shiny Arceus at 90 caught, from 1 Jan). Each secret area gets a gameplay of its own (docs/61 §4): until
+ * from 25 Dec; shiny Arceus at 90 caught, from 1 Jan). Each secret area gets a gameplay of its own (docs/64 §4): until
  * those are built they play as plain secret areas, which is how this content runs today. Moonlit Glade's (Tracks in
  * the Snow, §4.1) is built: its area carries the mode, which plays only while its switch is on.
  *
- * Its own rules (docs/61 §3): every area holds an Ice type; every item evolution uses an item its Mart sells; no
+ * Its own rules (docs/64 §3): every area holds an Ice type; every item evolution uses an item its Mart sells; no
  * legendary or mythical but the prizes, no fossil, no starter of another region; a level-evolving species is wild only
  * below its evolution level, its evolution only above it.
  */
@@ -28,7 +28,7 @@ import { balls, buildAreas, worldSql, type AreaSpec, type WorldContent } from '.
 import { DEFAULT_TIME_RACE } from '../src/engine/timeRaceMode'
 
 /**
- * The Hall of Origin's mode (docs/61 §4.5, the user's review: "keep it like the Giratina event"): Distortion World's
+ * The Hall of Origin's mode (docs/64 §4.5, the user's review: "keep it like the Giratina event"): Distortion World's
  * portal run with its numbers, dressed as the Stairway of Plates, and its raid: shiny Arceus Lv.90, foes' dice 10,
  * 4 HP bars, teams up to Lv.90, its Plate changing on each bar (Normal → Ice → Steel → Dragon).
  */
@@ -55,7 +55,7 @@ export const STARTERS = [179, 506, 731]
 
 /**
  * The world's areas, in order: its chain, its league, then its secret areas. Each main area's item card becomes a Gift
- * card while the Gift card's switch is on (docs/61 §4.0): its `gift: 1`, which takes the item card's place then.
+ * card while the Gift card's switch is on (docs/64 §4.0): its `gift: 1`, which takes the item card's place then.
  */
 export const AREAS: AreaSpec[] = [
   {
@@ -289,7 +289,7 @@ export const AREAS: AreaSpec[] = [
     max: 26,
     rounds: 1,
     deck: { wild: 5, trainer: 3, gift: 1 },
-    // 2, not 3: Steel and Steel/Fairy wall an Ice team (the campaign simulator's wipes, docs/61 §5).
+    // 2, not 3: Steel and Steel/Fairy wall an Ice team (the campaign simulator's wipes, docs/64 §5).
     upgrade: 2,
     wild: [
       [599, 20, 20, 23],
@@ -480,7 +480,7 @@ export const AREAS: AreaSpec[] = [
     max: 44,
     rounds: 1,
     deck: { wild: 4, trainer: 4, gift: 1 },
-    // 4, not 5: the Fire area is the Ice team's hardest on purpose, not a wall (docs/61 §5).
+    // 4, not 5: the Fire area is the Ice team's hardest on purpose, not a wall (docs/64 §5).
     upgrade: 4,
     wild: [
       [323, 15, 37, 41],
@@ -621,7 +621,7 @@ export const AREAS: AreaSpec[] = [
     min: 48,
     max: 56,
     rounds: 1,
-    // 4 wild · 4 trainers at upgrade 4 (was 3 · 5 at 5): ten wipes a run there before (docs/61 §5).
+    // 4 wild · 4 trainers at upgrade 4 (was 3 · 5 at 5): ten wipes a run there before (docs/64 §5).
     deck: { wild: 4, trainer: 4, gift: 1 },
     upgrade: 4,
     wild: [
@@ -772,7 +772,7 @@ export const AREAS: AreaSpec[] = [
       },
     ],
   },
-  // The secret areas (docs/61 §4): each will play its own way; until then, a short deck, its boss or raid at the end.
+  // The secret areas (docs/64 §4): each will play its own way; until then, a short deck, its boss or raid at the end.
   {
     key: 'moonlit-glade',
     name: 'Moonlit Glade',
@@ -786,7 +786,7 @@ export const AREAS: AreaSpec[] = [
     hidden: true,
     unlock: [{ kind: 'pokedex', count: 20 }],
     boss: [{ dex: 234, level: 30, shiny: true }],
-    // Tracks in the Snow (docs/61 §4.1): hide and seek in three rounds, behind its switch (Off: a plain secret area).
+    // Tracks in the Snow (docs/64 §4.1): hide and seek in three rounds, behind its switch (Off: a plain secret area).
     mode: DEFAULT_TRACKS,
     wild: [
       [234, 15, 24, 28],
@@ -822,7 +822,7 @@ export const AREAS: AreaSpec[] = [
     min: 34,
     max: 40,
     rounds: 1,
-    // Christmas Eve on the hill (docs/61 §4.2): three Gift cards, which take the item card's place while the Gift card is
+    // Christmas Eve on the hill (docs/64 §4.2): three Gift cards, which take the item card's place while the Gift card is
     // on; then Delibird bursts out of a present of its own. Off, a plain secret area: its item card, its boss as usual.
     deck: { wild: 2, trainer: 2, gift: 3 },
     upgrade: 5,
@@ -877,7 +877,7 @@ export const AREAS: AreaSpec[] = [
     hidden: true,
     unlock: [{ kind: 'pokedex', count: 50 }],
     boss: [{ dex: 460, level: 50, shiny: true }],
-    // Whiteout (docs/61 §4.3): three waves of fixed foes in the blizzard, a bonfire after each, then Abomasnow. With
+    // Whiteout (docs/64 §4.3): three waves of fixed foes in the blizzard, a bonfire after each, then Abomasnow. With
     // its switch Off the area plays as the plain secret area below (its short deck, then its boss).
     mode: DEFAULT_WHITEOUT,
     wild: [
@@ -917,17 +917,17 @@ export const AREAS: AreaSpec[] = [
     deck: { wild: 3, trainer: 1 },
     upgrade: 7,
     hidden: true,
-    // After the Frost League, from Christmas Day (the world's `opens`). Its time race (docs/61 §4.4) decides which of
+    // After the Frost League, from Christmas Day (the world's `opens`). Its time race (docs/64 §4.4) decides which of
     // the two raids opens: Water → Palkia, Steel → Dialga; the replay opens the other.
     unlock: [{ kind: 'cleared', areaId: id('area', 'frost-league') }],
     boss: [
       { dex: 483, level: 70, shiny: true, raid: true },
       { dex: 484, level: 70, shiny: true, raid: true },
     ],
-    // The race of time and space (docs/61 §4.4): its own switch (`timeRace`, Off by default); off, the area plays as a
+    // The race of time and space (docs/64 §4.4): its own switch (`timeRace`, Off by default); off, the area plays as a
     // plain secret area (its short deck, then its raids).
     mode: DEFAULT_TIME_RACE,
-    // The race's forks draw by type from this pool (docs/61 §4.4), all met elsewhere: Fire or Grass, Dark or Psychic,
+    // The race's forks draw by type from this pool (docs/64 §4.4), all met elsewhere: Fire or Grass, Dark or Psychic,
     // Dragon or Ice, Electric or Ground, then Water (Palkia) or Steel (Dialga); the replay's other types (Normal or
     // Fairy, Rock or Flying, Bug or Dragon, Ice or Dark, then the other gate) come last.
     wild: [
@@ -1003,7 +1003,7 @@ export const AREAS: AreaSpec[] = [
     hidden: true,
     // 90 of the world's Pokémon, from New Year's Day (the world's `opens`).
     unlock: [{ kind: 'pokedex', count: 90 }],
-    // Lv.90 (the user's review); its portal run (docs/61 §4.5) holds the raid's own numbers.
+    // Lv.90 (the user's review); its portal run (docs/64 §4.5) holds the raid's own numbers.
     boss: [{ dex: 493, level: 90, shiny: true, raid: true }],
     mode: HALL_OF_ORIGIN_RUN,
     // Only Pokémon met elsewhere too: everything must be catchable before it opens.
@@ -1169,7 +1169,7 @@ export function snowglobeSql(): string {
   return worldSql(
     snowglobe(),
     [
-      '-- Snowglobe Valley (docs/61), the winter small world. Generated by `pnpm snowglobe-valley --sql`: do not edit by',
+      '-- Snowglobe Valley (docs/64), the winter small world. Generated by `pnpm snowglobe-valley --sql`: do not edit by',
       '-- hand. Its region, areas, pools and trainers, and the world in game_config `smallWorlds` (the switch is left as',
       '-- it is). Safe to run again.',
     ],

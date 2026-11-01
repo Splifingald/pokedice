@@ -1,4 +1,4 @@
-// Tracks in the Snow (docs/61 §4.1) in a small world served as content (as e2e/nightmare.spec.ts does): ENTER THE
+// Tracks in the Snow (docs/64 §4.1) in a small world served as content (as e2e/nightmare.spec.ts does): ENTER THE
 // GLADE plays the intro at once, held for a tap, then its pop-up with the short rules (NOT NOW goes Home; BEGIN THE
 // SEARCH starts round 1); the first bush is never Stantler's and shows its hoofprints; out of taps the snow falls (a
 // fresh glade); a wild Stantler found in round 1 clears it (the result card); round 3's shiny Stantler, caught with the

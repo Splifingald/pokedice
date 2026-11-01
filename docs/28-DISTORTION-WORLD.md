@@ -10,7 +10,7 @@ on the pixel engine (`src/fx/timelines/portal.ts`, `src/fx/glitch.ts`, hosted by
 `src/admin/sections/PortalModeBox.tsx`; migration `supabase/migrations/0057_hh_distortion_world.sql` (written by
 `scripts/patch-hh-distortion.ts`). Rules for the screens: docs/15 §27.
 
-Since 2026-11-01 the run can wear another look, the Hall of Origin's **Stairway of Plates** (docs/61 §4.5, docs/15 §49):
+Since 2026-11-01 the run can wear another look, the Hall of Origin's **Stairway of Plates** (docs/64 §4.5, docs/15 §49):
 `skin: 'plates'` on the mode, with the same rules and numbers; absent, this one. Its raid can also set the raid
 Pokémon's type bar by bar (`raid.barTypes`: Arceus's Plates).
 
@@ -20,7 +20,7 @@ Pokémon's type bar by bar (`raid.barTypes`: Arceus's Plates).
 |---|---|
 | Distortion World opens | **100 Pokémon in the world's Pokédex** (was 119: all but Giratina). |
 | Where its rules live | **On the area** (`Area.mode`, the `areas.mode` jsonb column): a per-area special mode, every number the admin's (Admin → Areas → Special mode). Only Distortion World has one. |
-| Switch | **Off / On for admin / On for everyone**, Off by default (`game_config.portalRun`, docs/15 §20). The server reads it too. **Off: the area plays as before** (rounds, Centers, its raid once cleared), and a run in a save is kept. A portal area dressed as the Stairway of Plates (docs/61 §4.5) answers to its own switch, `platesRun`, instead (`portalSwitchOf`; the server's 0125). |
+| Switch | **Off / On for admin / On for everyone**, Off by default (`game_config.portalRun`, docs/15 §20). The server reads it too. **Off: the area plays as before** (rounds, Centers, its raid once cleared), and a run in a save is kept. A portal area dressed as the Stairway of Plates (docs/64 §4.5) answers to its own switch, `platesRun`, instead (`portalSwitchOf`; the server's 0127). |
 | The way in | Opening the area (Home's CONTINUE there: **ENTER THE DISTORTION**) plays the breach: a big distortion and "Giratina is breaking into this world, you have to close the distortion portals from the inside!" It **holds its end** (the open portal turning) and **waits for a tap** ("Tap to continue ▼"; no SKIP, it plays out); then the pop-up **rises over that end**: the rules and "Are you sure you want to enter? You cannot leave the area unless all your party is K.O." — **TEAM** / **NOT NOW** (back Home) / **READY!** (the user, 2026-10-15). |
 | Arriving | **Like a Pokémon Center** (the user, 2026-10-15): arriving at the way in **heals the team and the Box** (the Center's heal and its rules: `arriveAtPortal`), and **until READY! the team can change** in the Team screen as at a Center (`teamSwapsOpen`); TEAM goes there, BACK TO THE DISTORTION (or Home's CONTINUE) comes back to the pop-up at once. The menus are open until READY!. |
 | Inside | The team is **fully healed on entry** (READY! heals it again, harmlessly). **No Pokémon Center at all**, so **no team changes** once READY! is pressed. **No way out**: the menus, the top bar, Home and every other page send back to the area, and a reload comes back into the run (its state is in the save). The screen wears a **recurring distortion** (motion levels below). |

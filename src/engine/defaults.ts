@@ -430,17 +430,17 @@ export const DEFAULT_CONFIG: GameConfig = {
   push: { access: 'off', raidHour: 9, quietHours: [22, 8] },
   // The areas' portal run (docs/28): off until the admin switches it on. Migration 0057 inserts the same row.
   portalRun: { access: 'off' },
-  // The Stairway of Plates (docs/61 §4.5): its own switch, off until the admin switches it on. Migration 0125 inserts
+  // The Stairway of Plates (docs/64 §4.5): its own switch, off until the admin switches it on. Migration 0127 inserts
   // the same row.
   platesRun: { access: 'off' },
   // The areas' nightmare (docs/30): off until the admin switches it on. Migration 0060 inserts the same row.
   nightmare: { access: 'off' },
-  // The areas' race of time and space (docs/61 §4.4): off until the admin switches it on. Migration 0124 inserts the
+  // The areas' race of time and space (docs/64 §4.4): off until the admin switches it on. Migration 0126 inserts the
   // same row.
   timeRace: { access: 'off' },
-  // Crown Shrine's whiteout (docs/61 §4.3): off until the admin switches it on. Migration 0123 inserts the same row.
+  // Crown Shrine's whiteout (docs/64 §4.3): off until the admin switches it on. Migration 0125 inserts the same row.
   whiteout: { access: 'off' },
-  // Tracks in the Snow (docs/61 §4.1): off until the admin switches it on. Migration 0122 inserts the same row.
+  // Tracks in the Snow (docs/64 §4.1): off until the admin switches it on. Migration 0124 inserts the same row.
   tracks: { access: 'off' },
   // Trainer looks (docs/31): off until the admin switches them on; the old free list stays meanwhile.
   looks: { access: 'off' },
@@ -606,12 +606,12 @@ export const DEFAULT_CONFIG: GameConfig = {
     },
     areas: {},
   },
-  // The Gift card (docs/61 §4.0, the user's design of 2026-11-01): off until the admin switches it on. A tap breaks the
+  // The Gift card (docs/64 §4.0, the user's design of 2026-11-01): off until the admin switches it on. A tap breaks the
   // gift 20 / 40 / 60 / 80 % of the time from levels 1 to 4, level 5 the top; owning a Delibird takes 20 off each and
   // adds level 6. Always tapping reaches level 5 3.8 % of the time (19.2 % with a Delibird, and level 6 3.8 %), so the
   // rewards climb steeply: two of the area's balls, then better ones or Super Potions, Hyper Potions or ₽ (the area's
   // level × 15), a Revive or an evolution item its Mart sells, 3 Rare Candies (the user's call), and on top 3 Rare
-  // Candies and a Revive. Evergreen Hill's Delibird bursts out of its present on the 5th tap (docs/61 §4.2).
+  // Candies and a Revive. Evergreen Hill's Delibird bursts out of its present on the 5th tap (docs/64 §4.2).
   giftCard: {
     access: 'off',
     breakChances: [20, 40, 60, 80],

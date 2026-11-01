@@ -6,10 +6,10 @@ https://claude.ai/artifact/KCHnkbKDiL5VKTrcJz8JcN.
 
 Branch `claude/eloquent-galileo-b5uahz` (from `version/2_9`), a PR into `version/2_9`.
 
-**Status:** the content is built (§2–§3, migration 0120, not to run before the user's review). Built, each behind its
-own switch (Off): the Gift card and Evergreen Hill's present (§4.0, §4.2, migration 0121), Moonlit Glade's Tracks in
-the Snow (§4.1, migration 0122), Crown Shrine's whiteout (§4.3, migration 0123), Spear Pillar's race of time and space
-(§4.4, migration 0124) and the Hall of Origin's Stairway of Plates (§4.5, no migration of its own). The user's reviews
+**Status:** the content is built (§2–§3, migration 0122, not to run before the user's review). Built, each behind its
+own switch (Off): the Gift card and Evergreen Hill's present (§4.0, §4.2, migration 0123), Moonlit Glade's Tracks in
+the Snow (§4.1, migration 0124), Crown Shrine's whiteout (§4.3, migration 0125), Spear Pillar's race of time and space
+(§4.4, migration 0126) and the Hall of Origin's Stairway of Plates (§4.5, no migration of its own). The user's reviews
 (2026-11-01, notes left on the artifact's feedback boxes) are folded in (§6). Until each gameplay is switched on, its
 area plays as a plain secret area (a short deck, then its boss or raid).
 
@@ -173,9 +173,9 @@ either way.
   languages. Every state on `/kitchen-sink` (`GiftCardBits`), every take on `/kitchen-sink/fx`.
 - **Admin**: Events → Gift card (`src/admin/sections/events/GiftCardTab.tsx`; `GIFT_SCHEMA` in `src/admin/schemas.ts`),
   Areas → Encounter deck's Gift card and a boss's "Out of a present", Dev tools' forced next card.
-- **Server**: migration **0121** (`supabase/migrations/0121_gift_card.sql`): the `giftCard` row (Off) and
+- **Server**: migration **0123** (`supabase/migrations/0123_gift_card.sql`): the `giftCard` row (Off) and
   `gift_card_open()`, inlined in `supabase/seed.sql`.
-- **Content**: `scripts/content-snowglobe-valley.ts` gives the ten main areas `gift: 1` (0120 regenerated).
+- **Content**: `scripts/content-snowglobe-valley.ts` gives the ten main areas `gift: 1` (0122 regenerated).
 - **Tests**: `tests/engine/gift-card.test.ts` (odds, a Monte Carlo of the engine's taps, Delibird, levels, rewards, a
   broken gift's wild Pokémon, the card only while on, a boss's present, the rules), `tests/gift-card-sql.test.ts`
   (PGlite: the row, the server's switch, a second run, seed.sql), `tests/content/snowglobe-valley.test.ts` (the decks
@@ -225,7 +225,7 @@ Files: engine `src/engine/tracks.ts`, `src/engine/tracksMode.ts` (hooks in `run.
 `src/store/tracks.ts` (the server's check); UI `src/components/Tracks.tsx`, `src/screens/area/TracksRun.tsx`,
 `src/styles/tracks.css` (docs/15 §46); scenes `src/fx/timelines/tracks.ts`, `src/fx/timelines/cinema/stantler.ts`,
 sounds `tracks.*` in `src/audio/sfx.ts`; admin `src/admin/sections/TracksModeBox.tsx`; kitchen sink
-`src/screens/kitchen/TracksBits.tsx`; migration `supabase/migrations/0122_tracks_in_the_snow.sql`. Tests
+`src/screens/kitchen/TracksBits.tsx`; migration `supabase/migrations/0124_tracks_in_the_snow.sql`. Tests
 `tests/engine/tracks-in-the-snow.test.ts`, `tests/tracks-in-the-snow-sql.test.ts`, `e2e/tracks-in-the-snow.spec.ts`.
 
 ### 4.2 Evergreen Hill: Christmas Eve on the hill — built
@@ -257,8 +257,8 @@ comes as it always did. The present plays again on each new challenge (after a w
 `src/screens/area/WhiteoutRun.tsx`, its scenes on the pixel engine `src/fx/timelines/whiteout.ts` and Abomasnow's
 entrance `src/fx/timelines/cinema/abomasnow.ts`, its sounds (`whiteout.*` in `src/audio/sfx.ts`); admin
 `src/admin/sections/WhiteoutModeBox.tsx` (Admin → Areas → Special mode: whiteout); migration
-`supabase/migrations/0123_whiteout.sql` (inlined in `supabase/seed.sql`); the mode on Crown Shrine in
-`scripts/content-snowglobe-valley.ts` (so 0120 writes it). Tests `tests/engine/whiteout.test.ts`,
+`supabase/migrations/0125_whiteout.sql` (inlined in `supabase/seed.sql`); the mode on Crown Shrine in
+`scripts/content-snowglobe-valley.ts` (so 0122 writes it). Tests `tests/engine/whiteout.test.ts`,
 `tests/whiteout-fx.test.ts`, `tests/whiteout-sql.test.ts`, `e2e/whiteout.spec.ts`. Its screens: docs/15 §47.
 
 - The weather is **docs/62's Snow** (the raids' rule): every Pokémon that isn't Ice type loses **4% of its max HP each
@@ -328,7 +328,7 @@ and space). The screens' rules: docs/15 §48.
   `RoundGauge.tsx`, `BattleView.tsx` (one speed, the clock in its corner), `VictoryView.tsx`, `ContinueBar.tsx`,
   `AreaDetails.tsx`, `Team.tsx`, `ProgressRaidScreen.tsx`; kitchen sink `TimeRaceBits`, FX lab presets. Admin:
   `src/admin/sections/TimeRaceModeBox.tsx`. Strings `ui.timeRace.*` in the ten languages.
-- Server: migration `supabase/migrations/0124_time_race.sql` (the switch's row, Off; `time_race_open()`;
+- Server: migration `supabase/migrations/0126_time_race.sql` (the switch's row, Off; `time_race_open()`;
   `raid_progress_time_race`, `raid_progress_time_race_won` and 0060's `raid_progress_special_locked` extended: a race
   area's raid takes teams and closes only once the cloud save's `timeRace.won` holds its legend, while the switch is on
   for the caller; Spear Pillar's mode where it has none). `supabase/seed.sql` carries it (inlined in its schema part; its
@@ -361,7 +361,7 @@ and space). The screens' rules: docs/15 §48.
   `markPortalRulesSeen`), so a Distortion World veteran still sees it once.
 - **Content**: `HALL_OF_ORIGIN_RUN` in `scripts/content-snowglobe-valley.ts` (Distortion World's numbers, `skin:
   'plates'`, raid Lv.90 · dice 10 · 4 bars · teams up to Lv.90 · Normal, Ice, Steel, Dragon), on the Hall of Origin;
-  migration 0120 regenerated (it writes each area's `mode`).
+  migration 0122 regenerated (it writes each area's `mode`).
 - **Screens**: `src/components/portalSkin.ts` (the look's context, `skinKey`, the prize, `plateKey`),
   `src/components/Portal.tsx` and `PortalFx.tsx` (every piece reads the look), `src/fx/timelines/plates.ts` (the way in,
   the altar, an altar lit, the victory, the raid's Plate), `src/fx/glitch.ts` (the light on its Pokémon),
@@ -377,16 +377,16 @@ and space). The screens' rules: docs/15 §48.
   is the Stairway answers to `platesRun`, every other portal area to `portalRun`: one engine helper decides
   (`portalSwitchOf(mode)`, read by `portalRunsOn` and `portalModeOf` in `src/engine/portalMode.ts`, which every screen
   and rule goes through). Off, the Hall plays as a plain secret area (its deck, then its raid).
-- **Server**: migration **0125** (`supabase/migrations/0125_plates_run.sql`): the `platesRun` row, Off (an admin's own
+- **Server**: migration **0127** (`supabase/migrations/0127_plates_run.sql`): the `platesRun` row, Off (an admin's own
   kept), `plates_run_open()`, and 0057's `raid_progress_portal` redefined to pick the switch by the area's look, so
   every raid check that asks it (`raid_progress_special_locked`, the team writers) follows: the Hall's raid is locked
   until its climb is won while `platesRun` is on for the caller, whatever `portalRun` says. The teams are capped at Lv.90
   in the fight by the game (no team is capped on the server since 0065), and the raid's level, dice and bars are the
-  game's, as for Giratina. The look and the bars' types live in the same `areas.mode` jsonb, written by 0120.
+  game's, as for Giratina. The look and the bars' types live in the same `areas.mode` jsonb, written by 0122.
 - **Tests**: `tests/engine/stairway-of-plates.test.ts` (each run on its own switch, the skin leaves Distortion World's
   mode as it was, the Hall's run is Distortion World's, the raid at Lv.90 / 90 / 4 bars, the Plates bar by bar, its rules flag),
   `tests/plates-words.test.ts` (the Plates' names, the look's words, their placeholders),
-  `tests/content/snowglobe-valley.test.ts` (the Hall's mode), `tests/plates-run-sql.test.ts` (0125: the row, each raid
+  `tests/content/snowglobe-valley.test.ts` (the Hall's mode), `tests/plates-run-sql.test.ts` (0127: the row, each raid
   on its own switch); `e2e/stairway.spec.ts` (with `portalRun` Off) (the way in, a blessing, the
   gauge, the victory, the rules for a veteran, the raid's first Plate).
 
@@ -399,48 +399,48 @@ stairway of light, then the Judgment (Hall of Origin). Once its boss is caught a
 
 ## 5. Setting it up (after the review)
 
-The Stairway of Plates (§4.5): 0120 carries the Hall of Origin's mode (its look, its numbers and its raid's Plates);
-its switch comes with 0125 (step 7).
+The Stairway of Plates (§4.5): 0122 carries the Hall of Origin's mode (its look, its numbers and its raid's Plates);
+its switch comes with 0127 (step 7).
 
 1. Run in the Supabase SQL editor
-   [`supabase/migrations/0120_snowglobe_valley.sql`](https://github.com/Splifingald/pokedice/blob/claude/eloquent-galileo-b5uahz/supabase/migrations/0120_snowglobe_valley.sql)
+   [`supabase/migrations/0122_snowglobe_valley.sql`](https://github.com/Splifingald/pokedice/blob/claude/eloquent-galileo-b5uahz/supabase/migrations/0122_snowglobe_valley.sql)
    (generated by `pnpm snowglobe-valley --sql`; safe to run again). It writes the region, areas, pools and trainers,
    adds the world to `smallWorlds` (the switch and the other worlds kept) and bumps `configVersion`.
    `supabase/seed.sql` does not carry it (content migrations aren't inlined there, as Haunted Hollow's).
 2. Or, over an admin export: `pnpm snowglobe-valley <in.json> <out.json>`, then `pnpm import-bundle`.
 3. **The Gift card** (§4.0, §4.2): run
-   [`supabase/migrations/0121_gift_card.sql`](https://github.com/Splifingald/pokedice/blob/claude/eloquent-galileo-b5uahz/supabase/migrations/0121_gift_card.sql)
-   in the Supabase SQL editor (after 0120: the decks' `gift` copies and Delibird's `present` are in 0120's content). It
+   [`supabase/migrations/0123_gift_card.sql`](https://github.com/Splifingald/pokedice/blob/claude/eloquent-galileo-b5uahz/supabase/migrations/0123_gift_card.sql)
+   in the Supabase SQL editor (after 0122: the decks' `gift` copies and Delibird's `present` are in 0122's content). It
    adds the `giftCard` row (Off, an admin's own row kept), `gift_card_open()` (the switch as the server reads it) and
    bumps `configVersion`. Safe to run again. `supabase/seed.sql` carries it too (inlined). Then Admin → Events → Gift
    card: **On for admin** to try it, then **On for everyone**.
-4. **Tracks in the Snow** (§4.1): run in the Supabase SQL editor, after 0120,
-   [`supabase/migrations/0122_tracks_in_the_snow.sql`](https://github.com/Splifingald/pokedice/blob/claude/eloquent-galileo-b5uahz/supabase/migrations/0122_tracks_in_the_snow.sql)
+4. **Tracks in the Snow** (§4.1): run in the Supabase SQL editor, after 0122,
+   [`supabase/migrations/0124_tracks_in_the_snow.sql`](https://github.com/Splifingald/pokedice/blob/claude/eloquent-galileo-b5uahz/supabase/migrations/0124_tracks_in_the_snow.sql)
    (its switch `tracks`, Off, and `tracks_open()`; safe to run again). `supabase/seed.sql` carries it too (inlined).
-   Moonlit Glade's mode itself comes with 0120. Then Admin → Areas → Moonlit Glade → Special mode: Tracks in the Snow:
+   Moonlit Glade's mode itself comes with 0122. Then Admin → Areas → Moonlit Glade → Special mode: Tracks in the Snow:
    the switch **On for admin** to try it, **On for everyone** to open it. Publish.
 5. **Crown Shrine's whiteout** (§4.3): deploy the client (the switch is Off: nothing changes for anyone), then run
-   [`supabase/migrations/0123_whiteout.sql`](https://github.com/Splifingald/pokedice/blob/claude/eloquent-galileo-b5uahz/supabase/migrations/0123_whiteout.sql)
-   (after 0120; safe to run again). It gives Crown Shrine its whiteout when it has no mode yet, adds the switch
+   [`supabase/migrations/0125_whiteout.sql`](https://github.com/Splifingald/pokedice/blob/claude/eloquent-galileo-b5uahz/supabase/migrations/0125_whiteout.sql)
+   (after 0122; safe to run again). It gives Crown Shrine its whiteout when it has no mode yet, adds the switch
    `game_config.whiteout` Off, creates `whiteout_open()` and bumps `configVersion`. `supabase/seed.sql` carries it too
    (inlined in its schema part). Then Admin → Areas → Crown Shrine → **Special mode: whiteout**: check the waves, the
    weather and the bonfires' heal; the switch **On for admin** to try it, **On for everyone** to open it. Publish.
 6. **The race of time and space** (§4.4), once the client is deployed: run in the Supabase SQL editor
-   [`supabase/migrations/0124_time_race.sql`](https://github.com/Splifingald/pokedice/blob/claude/eloquent-galileo-b5uahz/supabase/migrations/0124_time_race.sql)
-   (after 0060 and 0120; safe to run again): the switch `timeRace` (Off), Spear Pillar's race where it has no mode yet,
+   [`supabase/migrations/0126_time_race.sql`](https://github.com/Splifingald/pokedice/blob/claude/eloquent-galileo-b5uahz/supabase/migrations/0126_time_race.sql)
+   (after 0060 and 0122; safe to run again): the switch `timeRace` (Off), Spear Pillar's race where it has no mode yet,
    and the server's checks on Dialga's and Palkia's raids. `supabase/seed.sql` carries it too (inlined). Then Admin →
    Areas → Spear Pillar → Special mode: race of time and space: check the numbers, the switch **On for admin** to try
    it, **On for everyone** to open it. Publish.
 7. **The Stairway of Plates' own switch** (§4.5), once the client is deployed: run in the Supabase SQL editor
-   [`supabase/migrations/0125_plates_run.sql`](https://github.com/Splifingald/pokedice/blob/claude/eloquent-galileo-b5uahz/supabase/migrations/0125_plates_run.sql)
+   [`supabase/migrations/0127_plates_run.sql`](https://github.com/Splifingald/pokedice/blob/claude/eloquent-galileo-b5uahz/supabase/migrations/0127_plates_run.sql)
    (after 0057; safe to run again): the switch `platesRun` (Off, an admin's own kept), `plates_run_open()`, and the raid
    checks reading it for the Hall of Origin (Distortion World's keep `portalRun`); it bumps `configVersion`.
    `supabase/seed.sql` carries it too (inlined). Then Admin → Areas → Hall of Origin → Special mode: portal run: check
    its look and numbers, then the **Stairway of Plates** switch **On for admin** to try it, **On for everyone** to open
    it (Distortion World's switch is left as it is). Publish.
 
-Later changes, once 0120 has run on live, come as patches of their own (as Haunted Hollow's 0055 onwards), never by
-regenerating 0120.
+Later changes, once 0122 has run on live, come as patches of their own (as Haunted Hollow's 0055 onwards), never by
+regenerating 0122.
 
 ## 6. The first review (2026-11-01)
 

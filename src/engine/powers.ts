@@ -327,7 +327,7 @@ export function enemyPlanFor(
   const plan: EnemyPlan = {}
   if (choiceFormsOf(data, foe.dex).length) plan.formChanges = true
   const cfg = data.config
-  // A trainer holding the ace's own Mega Gem in its items (Snowglobe Valley's Champion and his Abomasite, docs/61):
+  // A trainer holding the ace's own Mega Gem in its items (Snowglobe Valley's Champion and his Abomasite, docs/64):
   // the ace Mega Evolves whatever the region, the player's unlocks or a small world. The gem is the content's choice.
   const held = trainer?.ace ? megaFormsOfGems(data, trainer.items ?? []) : []
   const gemMega = megaFormsOf(data, foe.dex).find((f) => held.includes(f.dex))

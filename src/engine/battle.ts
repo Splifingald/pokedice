@@ -146,10 +146,10 @@ export interface BattleState {
   canRun: boolean
   /** Extreme mode with the admin's items switch off: no Potion or Revive works. */
   noHealItems?: boolean
-  /** The bag stays shut: no item at all (the whiteout's fights, docs/61 §4.3). */
+  /** The bag stays shut: no item at all (the whiteout's fights, docs/64 §4.3). */
   noBag?: boolean
   /**
-   * The weather of this fight (the whiteout's blizzard, docs/61 §4.3): at the end of each round every Pokémon out that
+   * The weather of this fight (the whiteout's blizzard, docs/64 §4.3): at the end of each round every Pokémon out that
    * isn't of a spared type loses a share of its max HP, both sides (the raids' rule, engine/whiteoutMode.ts).
    */
   weather?: 'snow' | 'sand'
@@ -389,7 +389,7 @@ export type LogEntry =
   /** A Freeze or a Paralysis that missed its chance. */
   | { kind: 'status_resisted'; target: Side; targetUid: string; status: StatusKind; chance: number }
   | { kind: 'status_tick'; target: Side; targetUid: string; status: 'burn' | 'poison'; amount: number; hpAfter: number }
-  /** The weather wore a Pokémon down at the end of a round (the whiteout's blizzard, docs/61 §4.3). */
+  /** The weather wore a Pokémon down at the end of a round (the whiteout's blizzard, docs/64 §4.3). */
   | { kind: 'weather'; weather: 'snow' | 'sand'; target: Side; targetUid: string; amount: number; hpAfter: number }
   /** `pending`: the player may still cure it before the turn is lost. */
   | { kind: 'stunned'; side: Side; uid: string; status: 'frozen' | 'paralyze'; pending?: boolean }
@@ -418,7 +418,7 @@ export type LogEntry =
    * A Pokémon changed form: `mega` (Mega Evolution, Primal Reversion, Ultra Burst — `die` is the die it gained),
    * `gmax` (Gigantamax; `revert` when it shrinks back), `lowHp` (Giratina's Origin Forme…, `revert` when it goes back
    * above half HP), `unleash` (that form on a raid Pokémon's last bar, for good; `die` is the die it gained)
-   * or `choice` (an Arceus, Silvally or Ogerpon type), or `plate` (a raid's Arceus taking its bar's Plate, docs/61 §4.5).
+   * or `choice` (an Arceus, Silvally or Ogerpon type), or `plate` (a raid's Arceus taking its bar's Plate, docs/64 §4.5).
    */
   | {
       kind: 'form'
@@ -565,7 +565,7 @@ export interface CreateBattleOptions {
   auto?: boolean
   /** No Potion or Revive works (Extreme mode, items switched off). */
   noHealItems?: boolean
-  /** No item at all: the bag stays shut (the whiteout, docs/61 §4.3). */
+  /** No item at all: the bag stays shut (the whiteout, docs/64 §4.3). */
   noBag?: boolean
   /** The weather of this fight, both sides worn down each round (the whiteout's blizzard). Absent = none. */
   weather?: 'snow' | 'sand' | null
@@ -773,7 +773,7 @@ export function raidFormShift(b: Battler, target: Battler, data: GameData): Extr
 }
 
 /**
- * A raid Pokémon takes a set type (the Hall of Origin's Arceus, its Plate on each bar: docs/61 §4.5): its type form of
+ * A raid Pokémon takes a set type (the Hall of Origin's Arceus, its Plate on each bar: docs/64 §4.5): its type form of
  * that type (its own species for the type it was sent out as), every die taking it. Null when it already has that type,
  * or has no such form (the bar's type is then simply skipped).
  */
@@ -2105,7 +2105,7 @@ export function reduce(
     case 'USE_ITEM': {
       // One item per turn — before the roll, after it, or while stunned. It doesn't end the turn.
       const phaseOk = s.phase === 'player_roll' || s.phase === 'player_reroll' || s.phase === 'player_stunned'
-      // The whiteout's fights (docs/61 §4.3): the bag stays shut, whatever is in it.
+      // The whiteout's fights (docs/64 §4.3): the bag stays shut, whatever is in it.
       if (!phaseOk || s.itemUsedThisTurn || s.noBag) return NOOP(state)
       const item = data.items[e.key]
       const target = s.player.find((b) => b.uid === (e.targetUid ?? activeBattler(s).uid))

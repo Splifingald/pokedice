@@ -87,7 +87,7 @@ export function RoundGauge({
   const portal = portalModeOf(area, data)
   if (portal)
     return (
-      // The Stairway of Plates counts its landings climbed (docs/61 §4.5).
+      // The Stairway of Plates counts its landings climbed (docs/64 §4.5).
       <PortalSkinProvider value={portalSkin(portal)}>
         <DistortionGauge closed={progress.portal?.closed ?? 0} total={portal.portals} className={className} />
       </PortalSkinProvider>
@@ -102,7 +102,7 @@ export function RoundGauge({
         className={className}
       />
     )
-  // The race of time and space (docs/61 §4.4) counts its fights, each fork's stretch in its gate's type.
+  // The race of time and space (docs/64 §4.4) counts its fights, each fork's stretch in its gate's type.
   const race = timeRaceModeOf(area, data)
   if (race && save) {
     const r = progress.timeRace
@@ -116,7 +116,7 @@ export function RoundGauge({
       />
     )
   }
-  // The whiteout (docs/61 §4.3) counts its waves, a pip a foe, then the crown for its boss.
+  // The whiteout (docs/64 §4.3) counts its waves, a pip a foe, then the crown for its boss.
   const white = whiteoutModeOf(area, data)
   if (white)
     return (
@@ -128,7 +128,7 @@ export function RoundGauge({
         className={className}
       />
     )
-  // Tracks in the Snow (docs/61 §4.1) counts its rounds cleared.
+  // Tracks in the Snow (docs/64 §4.1) counts its rounds cleared.
   const glade = tracksModeOf(area, data)
   if (glade)
     return <TracksGauge round={progress.tracks?.round ?? 0} total={glade.rounds.length} className={className} />

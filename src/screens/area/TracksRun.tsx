@@ -1,4 +1,4 @@
-// Tracks in the Snow on the area's page (docs/61 §4.1, docs/15 §46): its INFO, and the area's own steps: the way in
+// Tracks in the Snow on the area's page (docs/64 §4.1, docs/15 §46): its INFO, and the area's own steps: the way in
 // (the intro full screen, then its pop-up), the glade between bushes (and the bush just opened, before what it held
 // comes), and the outro once the shiny Stantler is caught. The engine (engine/tracks.ts) decides every bush, print and
 // outcome; these only show it and pass the taps on.

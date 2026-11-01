@@ -1,4 +1,4 @@
-// Tracks in the Snow (docs/61 §4.1, docs/15 §46) on the pixel engine, built as the legends' cinematics are: a winter
+// Tracks in the Snow (docs/64 §4.1, docs/15 §46) on the pixel engine, built as the legends' cinematics are: a winter
 // night in Moonlit Glade, painted in layers that drift apart as the camera moves (the sky and its stars, the moon and
 // its halo, far snowy peaks, the hills and their forest, a snowfield in perspective with its drifts, the pines' blue
 // moon-shadows and the moon's path, snow-laden pines and bushes at every depth, a snowbank in front), snow falling at

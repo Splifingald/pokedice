@@ -1,4 +1,4 @@
-// Snowglobe Valley's migration against a real Postgres (PGlite, in process): 0120 lands the content (docs/61) as its
+// Snowglobe Valley's migration against a real Postgres (PGlite, in process): 0122 lands the content (docs/64) as its
 // script builds it, the world joins `smallWorlds` beside Haunted Hollow with the admin's switch kept, and running it
 // again changes nothing but the content version.
 import { readFileSync } from 'node:fs'
@@ -10,7 +10,7 @@ import { REGION_ID, WORLD_ID, snowglobe, snowglobeSql } from '../scripts/content
 
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
-const FILE = '0120_snowglobe_valley.sql'
+const FILE = '0122_snowglobe_valley.sql'
 const h = snowglobe()
 let db: PGlite
 
@@ -36,7 +36,7 @@ const count = async (q: string) => Number((await db.query<{ n: number }>(q)).row
 const cfg = async (key: string) =>
   (await db.query<{ v: unknown }>(`select value v from game_config where key = $1`, [key])).rows[0]!.v
 
-describe('0120: Snowglobe Valley', () => {
+describe('0122: Snowglobe Valley', () => {
   it('is what the content script writes today', () => {
     expect(sql(FILE)).toBe(snowglobeSql())
   })

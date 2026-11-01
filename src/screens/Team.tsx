@@ -54,7 +54,7 @@ export function TeamScreen() {
   // Pokémon's sheet then has the Center's moves at its foot.
   const swaps = useGame((s) => !!s.save && teamSwapsOpen(s.save, s.data, s.run))
   const atPortal = useGame((s) => swaps && s.run.phase === 'idle')
-  // The Stairway of Plates' way in says it in its own words (docs/61 §4.5).
+  // The Stairway of Plates' way in says it in its own words (docs/64 §4.5).
   const skin = useRunSkin()
   // …or the nightmare's way in (docs/30): its own words.
   const atNightmare = useGame(
@@ -65,7 +65,7 @@ export function TeamScreen() {
         s.data,
       ),
   )
-  // …or the race of time and space's (docs/61 §4.4).
+  // …or the race of time and space's (docs/64 §4.4).
   const atRace = useGame(
     (s) =>
       atPortal &&
@@ -74,7 +74,7 @@ export function TeamScreen() {
         s.data,
       ),
   )
-  // …or the whiteout's (docs/61 §4.3): its way in, or a bonfire between its waves (the bag open there too).
+  // …or the whiteout's (docs/64 §4.3): its way in, or a bonfire between its waves (the bag open there too).
   const atWhiteout = useGame(
     (s) =>
       atPortal &&
@@ -83,7 +83,7 @@ export function TeamScreen() {
         s.data,
       ),
   )
-  // …or Tracks in the Snow's (docs/61 §4.1).
+  // …or Tracks in the Snow's (docs/64 §4.1).
   const atGlade = useGame(
     (s) => atPortal && !!tracksModeOf(s.data.areas.find((a) => a.id === s.run.areaId), s.data),
   )

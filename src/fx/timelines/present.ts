@@ -1,4 +1,4 @@
-// The Gift card's present (docs/61 §4.0, §4.2) on the battle's stage, drawn with the game's pixel FX: no background of
+// The Gift card's present (docs/64 §4.0, §4.2) on the battle's stage, drawn with the game's pixel FX: no background of
 // its own (the area's picture shows through the canvas, as Trick or Treat's), the present standing at the stage's
 // centre. Every take holds its last frame (`hold`), the present breathing (a pixel of squash) unless `still`, so one
 // canvas always shows it.
@@ -117,7 +117,7 @@ const PAL: Record<PresentLook, Look> = {
     shine: ['#ffffff', '#ffc9d0'],
     scraps: ['#d92b44', '#f45a6c', '#a01d3c', GOLD, '#d92b44'],
   },
-  // Delibird's present (docs/61 §4.2): silver paper and a gold bow, a shine sweeping across it more often.
+  // Delibird's present (docs/64 §4.2): silver paper and a gold bow, a shine sweeping across it more often.
   silver: {
     top: ['#ffffff', '#eef3fa', '#cdd7e5', '#a6b2c6'],
     front: ['#e3eaf4', '#bcc8d9', '#8794ad', '#56627e'],

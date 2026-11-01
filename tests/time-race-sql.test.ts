@@ -1,5 +1,5 @@
-// The race of time and space (docs/61 §4.4) on the server: migration 0124 against a real Postgres (PGlite, in process),
-// over Snowglobe Valley's 0120 and the raids' own migrations. Spear Pillar gets its race only where it has none (an
+// The race of time and space (docs/64 §4.4) on the server: migration 0126 against a real Postgres (PGlite, in process),
+// over Snowglobe Valley's 0122 and the raids' own migrations. Spear Pillar gets its race only where it has none (an
 // admin's own stays), the switch lands Off, and twice changes nothing but the content version. Then the raid's checks:
 // switched off, Dialga's and Palkia's raids are as before; on, each stays shut (teams, close) until the cloud save says
 // the race was won at that legend's gate, the world played or parked; the nightmare's and the portal run's checks stay.
@@ -13,7 +13,7 @@ import { REGION_ID, snowglobe } from '../scripts/content-snowglobe-valley'
 
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
-const FILE = '0124_time_race.sql'
+const FILE = '0126_time_race.sql'
 const SP = snowglobe().areas.find((a) => a.name === 'Spear Pillar')!
 
 const AUTH = `create role anon; create role authenticated; create schema auth; create table auth.users (id uuid primary key);
@@ -30,7 +30,7 @@ async function speciesInto(db: PGlite) {
   )
 }
 
-/** A fresh database with the raids' migrations, the special areas' checks (0057, 0060) and Snowglobe Valley (0120). */
+/** A fresh database with the raids' migrations, the special areas' checks (0057, 0060) and Snowglobe Valley (0122). */
 async function database(): Promise<PGlite> {
   const db = new PGlite()
   await db.exec(AUTH)
@@ -58,8 +58,8 @@ async function database(): Promise<PGlite> {
   await db.exec(sql('0046_progress_raids_worlds.sql'))
   await db.exec(sql('0057_hh_distortion_world.sql'))
   await db.exec(sql('0060_hh_nightmare.sql'))
-  // 0120 as live will have it before the race is generated into it: Spear Pillar with no mode yet.
-  await db.exec(sql('0120_snowglobe_valley.sql'))
+  // 0122 as live will have it before the race is generated into it: Spear Pillar with no mode yet.
+  await db.exec(sql('0122_snowglobe_valley.sql'))
   await db.query('update areas set mode = null where id = $1', [SP.id])
   return db
 }
@@ -67,7 +67,7 @@ async function database(): Promise<PGlite> {
 const cfg = async (db: PGlite, key: string) =>
   (await db.query<{ v: unknown }>(`select value v from game_config where key = $1`, [key])).rows[0]?.v
 
-describe('0124: the race on Spear Pillar and its switch', () => {
+describe('0126: the race on Spear Pillar and its switch', () => {
   let db: PGlite
   const mode = async () =>
     (await db.query<{ m: unknown }>('select mode m from areas where id = $1', [SP.id])).rows[0]!.m
@@ -99,7 +99,7 @@ describe('0124: the race on Spear Pillar and its switch', () => {
   })
 })
 
-describe('0124: the raids’ checks', () => {
+describe('0126: the raids’ checks', () => {
   let db: PGlite
   const ME = '00000000-0000-4000-8000-0000000000bb'
   const DIALGA = `${SP.id}:483`

@@ -66,7 +66,7 @@ export function raidRules(data: GameData, dex: number, kind: RaidKindOf = 'daily
   }
   // A portal area's raid (docs/28: Distortion World's Giratina) has its own numbers, set on the area.
   // So has a nightmare area's (docs/30: Newmoon Island's Darkrai).
-  // And a race area's two (docs/61 §4.4: Spear Pillar's Dialga and Palkia).
+  // And a race area's two (docs/64 §4.4: Spear Pillar's Dialga and Palkia).
   const portal = kind === 'progress' ? specialRaidRules(data, areaId) : null
   if (portal)
     return { bars: portal.bars, barHp: Math.max(0.1, pick('barHp') ?? 1), level: portal.level, upgradeLevel: portal.upgradeLevel }

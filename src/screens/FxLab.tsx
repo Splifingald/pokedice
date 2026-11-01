@@ -103,11 +103,11 @@ const STONE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/
 const CANDY = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/rare-candy.png'
 /** Distortion World's picture (Haunted Hollow), cracked open by the breach. */
 const RIFT = artUrl('a123')
-/** The Hall of Origin's picture (Snowglobe Valley, docs/61). */
+/** The Hall of Origin's picture (Snowglobe Valley, docs/64). */
 const HALL = artUrl('a130')
 // Newmoon Island's picture (docs/30): what the nightmare's intro sinks into the night.
 const NEWMOON = artUrl('a127')
-// Spear Pillar's picture (docs/61 §4.4): what the race's intro darkens into its night.
+// Spear Pillar's picture (docs/64 §4.4): what the race's intro darkens into its night.
 const PILLAR = artUrl('lair-summit')
 
 const attack = (
@@ -338,7 +338,7 @@ const PRESETS: Preset[] = [
         ground: 126,
       }),
   },
-  // The Gift card (docs/61 §4.0, §4.2): the present at the stage's centre, no background of its own (the area's picture
+  // The Gift card (docs/64 §4.0, §4.2): the present at the stage's centre, no background of its own (the area's picture
   // shows through in the game).
   {
     name: 'Gift card: the present lands (level 1)',
@@ -421,7 +421,7 @@ const PRESETS: Preset[] = [
     sprites: [[487, false, true]],
     make: (o) => raidEntranceTimeline({ mon: spriteKey(487, false, true), short: o.short }),
   },
-  // The Stairway of Plates (docs/61 §4.5): the same run in light, in the Hall of Origin.
+  // The Stairway of Plates (docs/64 §4.5): the same run in light, in the Hall of Origin.
   {
     name: 'Stairway of Plates: the way in (drawn field)',
     sprites: [],
@@ -544,7 +544,7 @@ const PRESETS: Preset[] = [
     sprites: [[491, false, true]],
     make: (o) => nightRaidEntranceTimeline({ mon: spriteKey(491, false, true), short: o.short }),
   },
-  // The race of time and space (docs/61 §4.4): the intro (clock and rift), the wins (Dialga's, Palkia's).
+  // The race of time and space (docs/64 §4.4): the intro (clock and rift), the wins (Dialga's, Palkia's).
   {
     name: 'Race of time and space: the intro (drawn pillars)',
     sprites: [],
@@ -568,7 +568,7 @@ const PRESETS: Preset[] = [
     make: (o) =>
       raceWinTimeline({ mon: spriteKey(484, false, true), side: 'space', name: 'Palkia', subs: ['SHINY', 'Lv.70'], short: o.short }),
   },
-  // Crown Shrine's whiteout (docs/61 §4.3): the way in, the bonfire between waves, the end. (Abomasnow's entrance is
+  // Crown Shrine's whiteout (docs/64 §4.3): the way in, the bonfire between waves, the end. (Abomasnow's entrance is
   // with the bosses' cinematics.)
   {
     name: 'Whiteout: the way in (the blizzard rolls in, eyes in the crown tree)',
@@ -601,7 +601,7 @@ const PRESETS: Preset[] = [
     sprites: [[460, false, true]],
     make: (o) => whiteoutOutroTimeline({ title: 'The blizzard lifts', mon: spriteKey(460, false, true), short: o.short }),
   },
-  // Tracks in the Snow (docs/61 §4.1): the way in, the snow falling over the glade, the shiny Stantler's entrance, the
+  // Tracks in the Snow (docs/64 §4.1): the way in, the snow falling over the glade, the shiny Stantler's entrance, the
   // outro.
   {
     name: 'Tracks in the Snow: the way in (a reindeer leaps across the moon)',
@@ -816,7 +816,7 @@ const PRESETS: Preset[] = [
       }),
   },
   {
-    // The Hall of Origin's raid (docs/61 §4.5): a bar breaks, Arceus takes the next one's Plate (20005: its Ice form).
+    // The Hall of Origin's raid (docs/64 §4.5): a bar breaks, Arceus takes the next one's Plate (20005: its Ice form).
     name: "A raid's bar: Arceus takes the Icicle Plate",
     sprites: [
       [150, true],

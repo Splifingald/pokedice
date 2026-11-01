@@ -61,7 +61,7 @@ export interface AutoRun {
 }
 
 /**
- * A portal run's, the nightmare's, Tracks in the Snow's, the whiteout's or the race's area (docs/28, docs/30, docs/61
+ * A portal run's, the nightmare's, Tracks in the Snow's, the whiteout's or the race's area (docs/28, docs/30, docs/64
  * §4.1, §4.3, §4.4): their own steps, so never the autopilot's.
  */
 const specialArea = (area: Area | undefined, data: GameData): boolean =>
@@ -86,7 +86,7 @@ export function autoAvailable(
   // Extreme mode's boon Centers (docs/47): every Center is a choice, so nothing plays itself there (the user's call,
   // 2026-10-28: no idle mode in Extreme).
   if (boonCenters(save, data)) return false
-  // The race of time and space (docs/61 §4.4): auto-battle is off there, whatever the switch (the user's call,
+  // The race of time and space (docs/64 §4.4): auto-battle is off there, whatever the switch (the user's call,
   // 2026-11-01), so the clock means the same for everyone.
   if (timeRaceModeOf(data.areas.find((a) => a.id === areaId), data)) return false
   const cleared = progressOf(save, areaId).cleared

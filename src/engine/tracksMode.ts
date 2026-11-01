@@ -1,10 +1,10 @@
-// Tracks in the Snow's settings (docs/61 §4.1), on their own as nightmareMode.ts and portalMode.ts are: an area's
+// Tracks in the Snow's settings (docs/64 §4.1), on their own as nightmareMode.ts and portalMode.ts are: an area's
 // `mode` as the admin set it, cleaned and filled from the defaults, and the switch that turns it on.
 import { eventOpenTo } from './events'
 import type { Area, GameData, TracksMode, TracksRound } from './types'
 
 /**
- * Moonlit Glade's hide and seek (the user's design, docs/61 §4.1): two rounds on a 3 × 3 glade (3 wild Pokémon, a
+ * Moonlit Glade's hide and seek (the user's design, docs/64 §4.1): two rounds on a 3 × 3 glade (3 wild Pokémon, a
  * find, a cabin, 3 empty bushes, 5 taps a snowfall), then the shiny Stantler's on a 4 × 4 (5 wild, 2 finds, a cabin,
  * 7 empty, 7 taps), where it never hides next to the first bush opened. Prints on every bush opened.
  */

@@ -1,4 +1,4 @@
-// Tracks in the Snow (docs/61 §4.1, the user's design): Moonlit Glade's mode, hide and seek with Stantler. Each round
+// Tracks in the Snow (docs/64 §4.1, the user's design): Moonlit Glade's mode, hide and seek with Stantler. Each round
 // is a glade of snowy bushes; the player opens them one by one. A bush holds a wild Pokémon (a fight, catchable), a
 // find, a warm cabin (a Pokémon Center's heal) or nothing, and once opened shows hoofprints pointing at Stantler. The
 // first bush opened is never Stantler's: it is hidden only then, away from it (on the 4 × 4 not next to it either).

@@ -1,5 +1,5 @@
-// Crown Shrine's whiteout (docs/61 §4.3): migration 0123 against a real Postgres (PGlite, in process). Over Snowglobe
-// Valley as an older 0120 (no mode) left it, Crown Shrine gets its whiteout, the switch goes in Off and the content
+// Crown Shrine's whiteout (docs/64 §4.3): migration 0125 against a real Postgres (PGlite, in process). Over Snowglobe
+// Valley as an older 0122 (no mode) left it, Crown Shrine gets its whiteout, the switch goes in Off and the content
 // version goes up; run again, nothing changes but the version, an admin's own mode and switch stay. whiteout_open()
 // reads the switch as nightmare_open() does. seed.sql carries the same file, inlined.
 import { readFileSync } from 'node:fs'
@@ -12,10 +12,10 @@ import { snowglobe } from '../scripts/content-snowglobe-valley'
 
 const ROOT = path.join(__dirname, '..', 'supabase')
 const sql = (file: string) => readFileSync(path.join(ROOT, 'migrations', file), 'utf8')
-const FILE = '0123_whiteout.sql'
+const FILE = '0125_whiteout.sql'
 const CS = snowglobe().areas.find((a) => a.name === 'Crown Shrine')!
 
-describe('0123: the whiteout', () => {
+describe('0125: the whiteout', () => {
   let db: PGlite
   const value = async (key: string) =>
     (await db.query<{ v: unknown }>('select value v from game_config where key = $1', [key])).rows[0]?.v
@@ -44,8 +44,8 @@ describe('0123: the whiteout', () => {
         dexes.map((d) => `(${d}, 'p${d}', 'ice', 10, 100, 5, '', '[]', 1, 3, '[]', '[]')`).join(', '),
     )
     await db.exec(`insert into game_config (key, value) values ('configVersion', '122')`)
-    await db.exec(sql('0120_snowglobe_valley.sql'))
-    // As an 0120 generated before Crown Shrine had its mode.
+    await db.exec(sql('0122_snowglobe_valley.sql'))
+    // As an 0122 generated before Crown Shrine had its mode.
     await db.query('update areas set mode = null where id = $1', [CS.id])
     await db.exec(sql(FILE))
   }, 60_000)

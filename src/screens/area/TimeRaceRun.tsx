@@ -1,4 +1,4 @@
-// The race of time and space on the game's screens (docs/61 §4.4, docs/15 §48): the guard that keeps a try in its area
+// The race of time and space on the game's screens (docs/64 §4.4, docs/15 §48): the guard that keeps a try in its area
 // (every page sends back to it, a reload picks it up there) and ends it when the clock reaches 0:00 wherever the player
 // is; the clock; its INFO; and the area's own steps (the way in: the intro full screen, then its pop-up; a fork's gates;
 // the win). The engine (engine/timeRace.ts) decides everything; these only show it.

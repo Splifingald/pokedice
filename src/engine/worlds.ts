@@ -250,7 +250,7 @@ export function worldCompletion(save: SaveData, data: GameData, world: SmallWorl
   const areas = data.areas.filter((a) => (a.regionId ?? KANTO) === world.regionId)
   const done = areas.filter((a) => {
     const p = progress[a.id]
-    // The race's area (docs/61 §4.4) once one of its legends is won; Crown Shrine's whiteout won (docs/61 §4.3): its
+    // The race's area (docs/64 §4.4) once one of its legends is won; Crown Shrine's whiteout won (docs/64 §4.3): its
     // boss caught, the shrine closed for good; Moonlit Glade's Stantler caught (§4.1).
     return !!(
       p?.cleared ||

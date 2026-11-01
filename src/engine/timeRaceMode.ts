@@ -1,11 +1,11 @@
-// The race of time and space's settings (docs/61 §4.4), on their own so the raid's numbers can read them without the
+// The race of time and space's settings (docs/64 §4.4), on their own so the raid's numbers can read them without the
 // race's rules, as portalMode.ts does for the portal run: an area's `mode` as the admin set it, cleaned and filled from
 // the defaults, and the switch that turns it on.
 import { eventOpenTo } from './events'
 import { POKE_TYPES, type Area, type GameData, type PokeType, type TimeRaceMode } from './types'
 
 /**
- * Spear Pillar's race (the user's design of 2026-11-01, docs/61 §4.4): 15 fights in 12:00, a fork every 3 fights (Fire
+ * Spear Pillar's race (the user's design of 2026-11-01, docs/64 §4.4): 15 fights in 12:00, a fork every 3 fights (Fire
  * or Grass, Dark or Psychic, Dragon or Ice, Electric or Ground, then Water for Palkia or Steel for Dialga), a time shard
  * of 0:30 or an item behind each gate; the replay's other types at +4 levels on 10:00; the raids at Lv.70, dice 8, three
  * bars, teams up to Lv.70.

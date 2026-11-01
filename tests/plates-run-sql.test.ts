@@ -1,5 +1,5 @@
-// The Stairway of Plates' own switch (docs/61 §4.5) on the server: migration 0125 against a real Postgres (PGlite, in
-// process), over the portal run's 0057, the raids' own migrations and Snowglobe Valley's 0120. The switch lands Off
+// The Stairway of Plates' own switch (docs/64 §4.5) on the server: migration 0127 against a real Postgres (PGlite, in
+// process), over the portal run's 0057, the raids' own migrations and Snowglobe Valley's 0122. The switch lands Off
 // (an admin's own stays) and twice changes nothing but the content version. Then the raids' checks: the Hall of
 // Origin's raid (a 'plates' portal area) answers to `platesRun` alone, and a portal area in Distortion World's look to
 // `portalRun` alone, so either opens without the other.
@@ -13,7 +13,7 @@ import { REGION_ID, snowglobe } from '../scripts/content-snowglobe-valley'
 
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
-const FILE = '0125_plates_run.sql'
+const FILE = '0127_plates_run.sql'
 const HO = snowglobe().areas.find((a) => a.name === 'Hall of Origin')!
 // Spear Pillar stands in for a portal area in Distortion World's look (no skin), in the same world.
 const SP = snowglobe().areas.find((a) => a.name === 'Spear Pillar')!
@@ -32,7 +32,7 @@ async function speciesInto(db: PGlite) {
   )
 }
 
-/** A fresh database with the raids' migrations, the special areas' checks (0057, 0060) and Snowglobe Valley (0120). */
+/** A fresh database with the raids' migrations, the special areas' checks (0057, 0060) and Snowglobe Valley (0122). */
 async function database(): Promise<PGlite> {
   const db = new PGlite()
   await db.exec(AUTH)
@@ -60,7 +60,7 @@ async function database(): Promise<PGlite> {
   await db.exec(sql('0046_progress_raids_worlds.sql'))
   await db.exec(sql('0057_hh_distortion_world.sql'))
   await db.exec(sql('0060_hh_nightmare.sql'))
-  await db.exec(sql('0120_snowglobe_valley.sql'))
+  await db.exec(sql('0122_snowglobe_valley.sql'))
   await db.query('update areas set mode = $2 where id = $1', [SP.id, JSON.stringify(DEFAULT_PORTAL_RUN)])
   return db
 }
@@ -68,7 +68,7 @@ async function database(): Promise<PGlite> {
 const cfg = async (db: PGlite, key: string) =>
   (await db.query<{ v: unknown }>(`select value v from game_config where key = $1`, [key])).rows[0]?.v
 
-describe('0125: the Stairway of Plates’ switch', () => {
+describe('0127: the Stairway of Plates’ switch', () => {
   let db: PGlite
 
   beforeAll(async () => {
@@ -98,7 +98,7 @@ describe('0125: the Stairway of Plates’ switch', () => {
   })
 })
 
-describe('0125: each portal raid on its own switch', () => {
+describe('0127: each portal raid on its own switch', () => {
   let db: PGlite
   const ME = '00000000-0000-4000-8000-0000000000cc'
   const ARCEUS = `${HO.id}:493`

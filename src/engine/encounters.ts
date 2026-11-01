@@ -80,7 +80,7 @@ export type Encounter =
   | { kind: 'casino' }
   /** Trick or Treat (docs/29): a ghost from the area's list, tempted with Treats and caught with a Trick Ball. */
   | { kind: 'trick'; dex: number; level: number; tier: TrickTier; isNew: boolean; shiny?: boolean; talent?: boolean }
-  /** The Gift card (docs/61 §4.0): a present to open or make bigger; what it holds is drawn when it appears. */
+  /** The Gift card (docs/64 §4.0): a present to open or make bigger; what it holds is drawn when it appears. */
   | { kind: 'gift' }
 
 /** A wild double battle's second Pokémon (docs/33). */
@@ -360,7 +360,7 @@ export function rollTrick(ctx: EncounterContext, rng: Rng): Encounter | null {
 }
 
 /**
- * A Gift card (docs/61 §4.0): the present itself (its rewards are drawn as it appears, engine/giftCard.ts). Null while
+ * A Gift card (docs/64 §4.0): the present itself (its rewards are drawn as it appears, engine/giftCard.ts). Null while
  * the switch is off for the player or the area can't deal it: the card is then discarded like any card the area can't
  * produce.
  */
@@ -368,7 +368,7 @@ export const rollGift = (ctx: EncounterContext): Encounter | null =>
   giftDealable(ctx.data, ctx.area) ? { kind: 'gift' } : null
 
 /**
- * What comes out of a broken gift (docs/61 §4.0): a wild Pokémon of the area's own pool, as a wild card would bring it
+ * What comes out of a broken gift (docs/64 §4.0): a wild Pokémon of the area's own pool, as a wild card would bring it
  * (its level, the shiny odds, a hidden talent), never a roaming legendary. Null when the area has none.
  */
 export function rollGiftWild(ctx: EncounterContext, rng: Rng): Encounter | null {
@@ -404,7 +404,7 @@ export type DeckCounts = Record<(typeof DECK_KINDS)[number], number>
  * Cards of each kind in one encounter deck. An area's encounter weight *is* its number of copies (v1.6): wild 8,
  * Center 1, item 1 → a 10-card deck. Kinds the area can't produce (no wild pool / no trainers / no loot / the Game Corner
  * or Trick or Treat switched off, or no ghosts; the Gift card switched off) get none; an area with nothing at all gets a
- * single Center. Gift cards, when dealt, take the item cards' place (docs/61 §4.0: "the item card becomes a Gift").
+ * single Center. Gift cards, when dealt, take the item cards' place (docs/64 §4.0: "the item card becomes a Gift").
  */
 export function deckCounts(
   weights: Partial<Record<EncounterKind, number>>,
@@ -763,7 +763,7 @@ function drawFromDeck(ctx: EncounterContext, rng: Rng): EncounterRoll {
 function rollWeighted(ctx: EncounterContext, rng: Rng): EncounterRoll {
   const w = ctx.area.encounterWeights
   const can = deckAbilities(ctx.area, ctx.data)
-  // Gift cards take the item cards' place while they're dealt (docs/61 §4.0).
+  // Gift cards take the item cards' place while they're dealt (docs/64 §4.0).
   const gifts = can.gift ? (w.gift ?? 0) : 0
   const kinds: { kind: 'wild' | 'trainer' | 'center' | 'item' | 'casino' | 'trick' | 'gift'; weight: number }[] = [
     { kind: 'wild', weight: can.wild ? w.wild : 0 },

@@ -1,4 +1,4 @@
-// Kitchen sink: the race of time and space (docs/61 §4.4, docs/15 §48) in every state — Spear Pillar's clock and rift on
+// Kitchen sink: the race of time and space (docs/64 §4.4, docs/15 §48) in every state — Spear Pillar's clock and rift on
 // the pixel engine (moving and still), the countdown (plenty of time, under a minute, the last 30 seconds, out), the
 // gauge of fights (fresh, under way across forks, all won), a fork (the first, the last with its legends, the replay's
 // gate alone, a shard and an item behind the gates), the way in (the intro full screen, held at its end with "Tap to

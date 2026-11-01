@@ -66,7 +66,7 @@ export function ItemPanel({ inst, onUsed }: { inst: PokemonInstance; onUsed?: ()
   const whyNot = (key: string): string | null => {
     const fx = data.items[key]?.effect
     if (inst.revivesAt != null) return t('ui.sheet.itemReviving')
-    // The whiteout (docs/61 §4.3): the bag opens only at a bonfire.
+    // The whiteout (docs/64 §4.3): the bag opens only at a bonfire.
     if (save && whiteoutBagShut(save, data)) return t('ui.whiteout.noBag')
     if ((fx?.kind === 'heal' || fx?.kind === 'revive') && save && !healItemsOn(save, data)) return t('ui.extreme.noItems')
     if (fx?.kind === 'stone' || fx?.kind === 'link') {

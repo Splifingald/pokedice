@@ -1,4 +1,4 @@
-// Abomasnow's entrance (docs/61 §4.3, docs/53's boss cinematics), on the battle stage after the whiteout's last bonfire:
+// Abomasnow's entrance (docs/64 §4.3, docs/53's boss cinematics), on the battle stage after the whiteout's last bonfire:
 // Crown Shrine in the blizzard (the shrine of whiteout.ts, its crown tree standing where the foe will be). Two red eyes
 // open in the tree. The ground rumbles once, twice, the tree shudders and the first snow slides off its top; then it
 // shakes hard, each tier whipping after the one above, and its snow avalanches off in clumps and powder. The tree

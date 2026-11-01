@@ -181,7 +181,7 @@ describe('a full-screen scene’s stage', () => {
   })
 })
 
-describe('the Stairway of Plates in light (docs/61 §4.5, docs/15 §49)', () => {
+describe('the Stairway of Plates in light (docs/64 §4.5, docs/15 §49)', () => {
   it('its scenes keep the portal run’s timings and motion levels, so the screens swap one for the other', async () => {
     const { altarLitTimeline, descentTimeline, plateTimeline, stairwayTimeline, PLATE_CONTACT } =
       await import('@/fx/timelines/plates')

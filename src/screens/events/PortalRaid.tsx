@@ -15,7 +15,7 @@ import { cx } from '@/theme/util'
 
 /**
  * The raid's area is in portal mode in Distortion World's look (its Giratina): its page, pop-ups and fight are themed.
- * The Stairway of Plates' Arceus (docs/61 §4.5) is a raid of the usual look: its Plates are its show.
+ * The Stairway of Plates' Arceus (docs/64 §4.5) is a raid of the usual look: its Plates are its show.
  */
 export function usePortalRaid(areaId: string | null | undefined): boolean {
   return useGame((s) => {

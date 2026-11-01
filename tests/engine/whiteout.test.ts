@@ -1,4 +1,4 @@
-// Crown Shrine's whiteout (docs/61 §4.3): the blizzard (the raids' Snow: 4 % of max HP a round from every Pokémon that
+// Crown Shrine's whiteout (docs/64 §4.3): the blizzard (the raids' Snow: 4 % of max HP a round from every Pokémon that
 // isn't Ice type, both sides), the three waves of fixed foes in their order (wild, not catchable), the bonfire after
 // each (40 % back, the only place the team changes and the bag opens), no bag in battle, the boss after the last
 // bonfire, a wipe back to wave 1 (XP, ₽ and items kept), the travel lock, the shrine closing once the boss is caught,

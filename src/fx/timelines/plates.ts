@@ -1,4 +1,4 @@
-// The Stairway of Plates (docs/61 §4.5, docs/15 §49): the Hall of Origin's portal run, Distortion World's scenes
+// The Stairway of Plates (docs/64 §4.5, docs/15 §49): the Hall of Origin's portal run, Distortion World's scenes
 // (portal.ts) redrawn in light instead of distortion. The Hall: an amber sky paling to white over a sea of cloud, a
 // monumental stairway rising away up the screen in true perspective (lit step edges, a runner of light up its middle,
 // balustrades and columns receding with it, a beacon on each landing's columns once its altar is lit), Arceus's golden
@@ -1839,7 +1839,7 @@ const BITS: Partial<Record<DieType, ParticleShape>> = {
 }
 
 /**
- * A raid's Arceus taking its bar's Plate (docs/61 §4.5), its own short effect: the stage dims a little and a glint
+ * A raid's Arceus taking its bar's Plate (docs/64 §4.5), its own short effect: the stage dims a little and a glint
  * shows high above it; the Plate (a tablet of the new type's colour, a dark rim, a white glint) falls out of the sky
  * turning, trailing its light, and strikes it: a hit-stop, a white frame in which the form changes cleanly, a
  * shockwave of that colour round it and over the ground, a ring of the type's own bits; then the new form in an aura

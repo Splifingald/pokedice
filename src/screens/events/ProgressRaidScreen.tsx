@@ -70,7 +70,7 @@ export function ProgressRaidScreen() {
 export function progressRaidLook(data: GameData, raid: ProgressRaid, caught: boolean) {
   const area = data.areas.find((a) => a.id === raid.areaId)
   // A portal area's raid (docs/28) opens with its run won, not its rounds; Distortion World's wears its look, the
-  // Stairway of Plates' (docs/61 §4.5) the usual one, its lock in its own words.
+  // Stairway of Plates' (docs/64 §4.5) the usual one, its lock in its own words.
   const pm = portalModeOf(area, data)
   const portal = !!pm && portalSkin(pm) === 'distortion'
   const plates = !!pm && !portal
@@ -130,7 +130,7 @@ export function ProgressRaidPanel({ raidKey, title }: { raidKey: string; title?:
   const megaLock = raid.mega && state === 'locked' ? megaRaidLock(save, data, raid) : null
   const gemName = raid.mega ? (data.items[raid.mega.gem]?.name ?? raid.mega.gem) : ''
   const area = data.areas.find((a) => a.id === raid.areaId)!
-  // A race area's raid (docs/61 §4.4): opened by the race won at its legend's gate.
+  // A race area's raid (docs/64 §4.4): opened by the race won at its legend's gate.
   const raceGate = timeRaceModeOf(area, data)?.legends.find((l) => l.dex === raid.dex)?.type ?? null
   const region = getRegion(data, raid.region)?.name ?? raid.region
   const name = data.species[raid.dex]?.name ?? ''

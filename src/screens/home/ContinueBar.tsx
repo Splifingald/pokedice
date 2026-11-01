@@ -77,19 +77,19 @@ export function useContinue(area: Area) {
   // it is only its raid, then sealed.
   const mode = portalModeOf(area, data)
   const portal = mode ? portalStateOf(save, area.id) : null
-  // Its lines in its look's words (the Stairway of Plates: docs/61 §4.5).
+  // Its lines in its look's words (the Stairway of Plates: docs/64 §4.5).
   const pk = (key: string) => skinKey(portalSkin(mode), key)
   // A nightmare area (docs/30): the same way: before it, CONTINUE goes to its way in; once over, only its raid.
   const dreamMode = nightmareModeOf(area, data)
   const dream = dreamMode ? nightmareStateOf(save, area.id) : null
-  // The race of time and space's area (docs/61 §4.4): before a try, CONTINUE goes to its way in (the replay's too, once
+  // The race of time and space's area (docs/64 §4.4): before a try, CONTINUE goes to its way in (the replay's too, once
   // the first legend is caught); in one, back to it; won, only its raids.
   const raceMode = timeRaceModeOf(area, data)
   const race = raceMode ? timeRaceStateOf(save, area.id) : null
-  // The whiteout's area (docs/61 §4.3): before it, CONTINUE goes to its way in; its boss is its own last step.
+  // The whiteout's area (docs/64 §4.3): before it, CONTINUE goes to its way in; its boss is its own last step.
   const whiteMode = whiteoutModeOf(area, data)
   const white = whiteMode ? whiteoutStateOf(save, area.id) : null
-  // Tracks in the Snow's glade (docs/61 §4.1): before it, CONTINUE goes to its way in; under way, to the glade; once its
+  // Tracks in the Snow's glade (docs/64 §4.1): before it, CONTINUE goes to its way in; under way, to the glade; once its
   // shiny Stantler is caught, the glade is closed. Its boss is found in a bush, never challenged.
   const gladeMode = tracksModeOf(area, data)
   const glade = gladeMode ? tracksStateOf(save, area.id) : null
@@ -115,7 +115,7 @@ export function useContinue(area: Area) {
   const enterGlade = !!gladeMode && !glade?.active && !glade?.won && !busy
   const searching = !!glade?.active && !busy
   const enter = enterPortal || enterDream || enterRace || enterWhite || enterGlade
-  // Darkrai's strike waits on the area's page after a round (docs/30); so does a bonfire after a wave (docs/61).
+  // Darkrai's strike waits on the area's page after a round (docs/30); so does a bonfire after a wave (docs/64).
   const struck =
     (!!dream?.active && (!!dream.strike || (run.areaId === area.id && !!run.nightmareStruck))) ||
     (!!white?.active && !!white.bonfire)
@@ -490,7 +490,7 @@ export function AreaButton({
 export function PlayDock({ area, onAreas }: { area: Area; onAreas?: () => void }) {
   const { t } = useT()
   const { label, sub, go, explore, off, gym, boss, raid, resting, latest, goTo, keepExploring } = useContinue(area)
-  // Darkrai's nightmare (docs/30) or the whiteout (docs/61 §4.3) holds the player in its area: the area button is
+  // Darkrai's nightmare (docs/30) or the whiteout (docs/64 §4.3) holds the player in its area: the area button is
   // shut, and says why.
   const held = useGame((s) => heldIn(s.save, s.data)?.area ?? null)
   const heldBy = useGame((s) => heldIn(s.save, s.data)?.by ?? 'nightmare')

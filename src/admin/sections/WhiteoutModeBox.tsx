@@ -1,5 +1,5 @@
-// Admin → Areas: an area's whiteout (docs/61 §4.3), Crown Shrine's mode. Its switch (the game_config row `whiteout`,
-// which the server reads too: whiteout_open, 0123) and every number of the area's whiteout: its waves of foes in
+// Admin → Areas: an area's whiteout (docs/64 §4.3), Crown Shrine's mode. Its switch (the game_config row `whiteout`,
+// which the server reads too: whiteout_open, 0125) and every number of the area's whiteout: its waves of foes in
 // order, the weather of its fights, the bonfires' heal. Its boss is the area's own (Legendary boss, above).
 import type { Row } from '@/config/mapping'
 import {
@@ -28,7 +28,7 @@ export function WhiteoutModeBox({ area }: { area: Row }) {
     <Box
       title="Special mode: whiteout"
       icon="frozen"
-      hint="Crown Shrine's mode (docs/61 §4.3): weather survival. Its waves of foes are fought one after the other, in this order (wild Pokémon that can't be caught), every fight in the weather below (both sides lose a share of their max HP each round, its spared types excepted: the raids' rule). After each wave a bonfire heals the team, and it is the only place the team can change and items be used; the bag stays shut in battle. After the last bonfire, the area's boss. Caught, the area closes for good; a wipe sends the player back to wave 1. Until it ends the player can't travel to another area (the Mart, the menus and Home stay open). Off: the area plays as a plain secret area."
+      hint="Crown Shrine's mode (docs/64 §4.3): weather survival. Its waves of foes are fought one after the other, in this order (wild Pokémon that can't be caught), every fight in the weather below (both sides lose a share of their max HP each round, its spared types excepted: the raids' rule). After each wave a bonfire heals the team, and it is the only place the team can change and items be used; the bag stays shut in battle. After the last bonfire, the area's boss. Caught, the area closes for good; a wipe sends the player back to wave 1. Until it ends the player can't travel to another area (the Mart, the menus and Home stay open). Off: the area plays as a plain secret area."
     >
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-lg">Whiteouts (every area)</span>

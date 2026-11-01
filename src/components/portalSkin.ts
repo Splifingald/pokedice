@@ -1,4 +1,4 @@
-// A portal run's look on the page (docs/28; the Stairway of Plates, docs/61 §4.5 and docs/15 §49): Distortion World's
+// A portal run's look on the page (docs/28; the Stairway of Plates, docs/64 §4.5 and docs/15 §49): Distortion World's
 // portals by default, or the Hall of Origin's stairway of light. The rules are the same; the run's pieces read the look
 // from here to pick their words (`ui.plates.*` over `ui.portal.*`) and their scenes. Nothing here decides a rule.
 import { createContext, useContext } from 'react'

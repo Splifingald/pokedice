@@ -80,7 +80,7 @@ export type RunPhase =
   | 'stalemate'
 
 /**
- * A Gift card under way (docs/61 §4.0), or a boss's present (§4.2): the present, the last tap for the screen to play,
+ * A Gift card under way (docs/64 §4.0), or a boss's present (§4.2): the present, the last tap for the screen to play,
  * what OPEN gave, and what came out of it when it broke or burst (the fight that follows).
  */
 export interface GiftRun {
@@ -181,38 +181,38 @@ export interface RunState {
   /** Darkrai's strike has landed and its moment is still on the area's page (until CONTINUE: the next round). */
   nightmareStruck?: boolean
   /**
-   * The race's way in has shown its pop-up (docs/61 §4.4): back from the Team screen, it shows again at once over the
+   * The race's way in has shown its pop-up (docs/64 §4.4): back from the Team screen, it shows again at once over the
    * intro's end, with no intro and no tap to wait for (as the Distortion World's portalPopup).
    */
   racePopup?: boolean
   /**
-   * A try of the race just ended (docs/61 §4.4): the clock reached 0:00 or the team was K.O., with the fights it had won
+   * A try of the race just ended (docs/64 §4.4): the clock reached 0:00 or the team was K.O., with the fights it had won
    * (the wipe card says so).
    */
   raceLost?: { reason: 'time' | 'wipe'; fights: number; total: number } | null
-  /** A wipe just ended a whiteout try (docs/61 §4.3): the waves it had cleared, lost now (the wipe card says so). */
+  /** A wipe just ended a whiteout try (docs/64 §4.3): the waves it had cleared, lost now (the wipe card says so). */
   whiteoutLost?: number | null
   /**
    * The whiteout's way in has shown its pop-up: back from the Team screen, it shows again at once over the intro's
    * end, with no intro and no tap to wait for (as the nightmare's nightmarePopup).
    */
   whiteoutPopup?: boolean
-  /** A wipe just sent the player back to the glade's edge (docs/61 §4.1): the wipe card says its cleared rounds stay. */
+  /** A wipe just sent the player back to the glade's edge (docs/64 §4.1): the wipe card says its cleared rounds stay. */
   tracksWiped?: boolean
   /**
-   * Tracks in the Snow's way in has shown its pop-up (docs/61 §4.1): back from the Team screen, it shows again at once
+   * Tracks in the Snow's way in has shown its pop-up (docs/64 §4.1): back from the Team screen, it shows again at once
    * over the intro's end (as the nightmare's nightmarePopup).
    */
   tracksPopup?: boolean
   /**
-   * The bush just opened in the glade (docs/61 §4.1), for its moment on the glade (it parts, shows what it held and its
+   * The bush just opened in the glade (docs/64 §4.1), for its moment on the glade (it parts, shows what it held and its
    * prints; the snow falls after the last tap). With an encounter, the glade shows it first: `meetBush` then brings
    * the fight, the find or the cabin. `id` tells one opening from the next.
    */
   tracksBush?: { id: number; index: number; bush: TracksBush; print: TracksPrint | null; snowfall: boolean } | null
   /** Trick or Treat under way (docs/29). */
   trick?: TrickRun | null
-  /** A Gift card or a boss's present under way (docs/61 §4.0, §4.2). */
+  /** A Gift card or a boss's present under way (docs/64 §4.0, §4.2). */
   gift?: GiftRun | null
   /** The fight is on the screen, the player's side not out yet: one tap on a Pokémon sends it (the rework). */
   pickLead?: boolean

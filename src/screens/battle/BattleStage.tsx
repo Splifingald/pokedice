@@ -649,7 +649,7 @@ export function BattleStage({
   aimLabel?: (b: Battler) => string
   /** The foe is one of a portal run's wild Pokémon (docs/28): it wears the distortion shader. */
   distorted?: boolean
-  /** With `distorted`: the Stairway of Plates' look, light instead of distortion (docs/61 §4.5). */
+  /** With `distorted`: the Stairway of Plates' look, light instead of distortion (docs/64 §4.5). */
   lit?: boolean
   /** The foe is one of the nightmare's (docs/30): a dark shadow haunts it (a rim on its sprite, smoke behind it). */
   haunted?: boolean

@@ -402,7 +402,7 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
         }),
       }
     case 'weather':
-      // The whiteout's blizzard at the end of a round (docs/61 §4.3): its line, the HP down, the number.
+      // The whiteout's blizzard at the end of a round (docs/64 §4.3): its line, the HP down, the number.
       return {
         delay: 850,
         sound: 'hit',
@@ -553,7 +553,7 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       const unleash = e.reason === 'unleash'
       const cryDex = unleash || (e.reason === 'mega' && !e.revert && hasOwnCry(e.toDex)) ? e.toDex : null
       const cry = (f: Fx) => (cryDex ? { id: nextId(), dex: cryDex } : f.cry)
-      // A raid's Arceus taking its bar's Plate (docs/61 §4.5): its own short scene and word.
+      // A raid's Arceus taking its bar's Plate (docs/64 §4.5): its own short scene and word.
       const plate = e.reason === 'plate'
       // The raid's word over the stage, like BREAK!.
       const banner = (f: Fx) =>

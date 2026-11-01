@@ -186,7 +186,7 @@ function AreaTitle() {
   const data = useGame((s) => s.data)
   if (!inArea || !area || !save) return <span className="flex-1" />
   const progress = progressOf(save, area.id)
-  // Tracks in the Snow's glade (docs/61 §4.1) counts its own rounds, not its deck's.
+  // Tracks in the Snow's glade (docs/64 §4.1) counts its own rounds, not its deck's.
   const glade = tracksModeOf(area, data)
   const need = glade ? glade.rounds.length : area.roundsToClear || 0
   const doneRounds = glade ? (progress.tracks?.round ?? 0) : (progress.roundsDone ?? 0)

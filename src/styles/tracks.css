@@ -1,4 +1,4 @@
-/* Tracks in the Snow (docs/61 §4.1, docs/15 §46): Moonlit Glade's bushes. Each bush is a button on a tile of moonlit
+/* Tracks in the Snow (docs/64 §4.1, docs/15 §46): Moonlit Glade's bushes. Each bush is a button on a tile of moonlit
    snow (the glade's ground, the same in both themes: it is a night scene), its frame the game's 2 px edge. A closed
    bush lifts a pixel on hover and focus; an opened one sinks into the trampled snow. The bush just opened rustles in
    four stepped frames (never a smooth tween, docs/15 §8); reduced motion collapses it (index.css). */

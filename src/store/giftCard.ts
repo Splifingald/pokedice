@@ -1,5 +1,5 @@
-// The Gift card's server check (docs/61 §4.0, docs/15 §20): the game deals the card only while the switch is on for the
-// player, and for a signed-in player the server confirms it (gift_card_open(), migration 0121) before a present
+// The Gift card's server check (docs/64 §4.0, docs/15 §20): the game deals the card only while the switch is on for the
+// player, and for a signed-in player the server confirms it (gift_card_open(), migration 0123) before a present
 // appears, so an old build or a hand-made save can't open one while it's off. A guest's switch can only be "On for
 // everyone" (eventOpenTo), which the content already says. The answer is kept for a few minutes: one call per session
 // in practice, not one per card. As Trick or Treat's (store/trick.ts).

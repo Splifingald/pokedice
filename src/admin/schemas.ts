@@ -76,13 +76,13 @@ export const TRICK_SCHEMA = z
   })
   .refine((c) => c.treatMax >= c.treatMin, { message: 'Treat max below min', path: ['treatMax'] })
 
-/** One part of a Gift card's reward (docs/61 §4.0): an item names its key. */
+/** One part of a Gift card's reward (docs/64 §4.0): an item names its key. */
 const giftPart = z
   .object({ kind: z.enum(GIFT_REWARD_KINDS), key: z.string().optional(), qty: int(1, 999) })
   .refine((p) => p.kind !== 'item' || !!p.key, { message: 'an item needs its key', path: ['key'] })
 
 /**
- * game_config `giftCard` (docs/61 §4.0): the switch, each level's break chance (whole %), Delibird's help, each level's
+ * game_config `giftCard` (docs/64 §4.0): the switch, each level's break chance (whole %), Delibird's help, each level's
  * reward options (at least one part each), the balls from worst to best, the taps a boss's present takes.
  */
 export const GIFT_SCHEMA = z.object({
@@ -202,7 +202,7 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
       casino: z.number().min(0).optional(),
       // Trick or Treat (docs/29): its copies, dealt only while its switch is on and the area has ghosts.
       trick: z.number().min(0).optional(),
-      // The Gift card (docs/61 §4.0): its copies, in place of the item cards while its switch is on.
+      // The Gift card (docs/64 §4.0): its copies, in place of the item cards while its switch is on.
       gift: z.number().min(0).optional(),
     }),
     backtrack_multiplier: z.number().min(0).max(1),
@@ -216,7 +216,7 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
           battleBackground: background.nullable().optional(),
           shiny: z.boolean().optional(),
           raid: z.boolean().optional(),
-          // Out of a present while the Gift card is on (docs/61 §4.2).
+          // Out of a present while the Gift card is on (docs/64 §4.2).
           present: z.boolean().optional(),
         }),
       )
@@ -273,7 +273,7 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
           gifts: z.array(z.object({ round: int(1, 20), key: z.string().min(1), qty: int(1, 99) })),
           raid: z.object({ level: int(1, 100), upgradeLevel: int(1, 10), bars: int(1, 10), teamCap: int(1, 100) }),
         }),
-        // Spear Pillar's race of time and space (docs/61 §4.4): its forks, legends, clock, finds, speed, replay and raids.
+        // Spear Pillar's race of time and space (docs/64 §4.4): its forks, legends, clock, finds, speed, replay and raids.
         z.object({
           kind: z.literal('timeRace'),
           forks: z.array(z.tuple([z.string(), z.string()])).min(1).max(10),
@@ -290,7 +290,7 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
           }),
           raid: z.object({ level: int(1, 100), upgradeLevel: int(1, 10), bars: int(1, 10), teamCap: int(1, 100) }),
         }),
-        // Crown Shrine's whiteout (docs/61 §4.3): its waves of foes in order, the weather, the bonfires' heal.
+        // Crown Shrine's whiteout (docs/64 §4.3): its waves of foes in order, the weather, the bonfires' heal.
         z.object({
           kind: z.literal('whiteout'),
           waves: z
@@ -300,7 +300,7 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
           weather: z.enum(['snow', 'sand']).nullable(),
           bonfirePercent: z.number().min(0).max(100),
         }),
-        // Moonlit Glade's Tracks in the Snow (docs/61 §4.1): its rounds' glades, taps and bushes, and where prints show.
+        // Moonlit Glade's Tracks in the Snow (docs/64 §4.1): its rounds' glades, taps and bushes, and where prints show.
         z.object({
           kind: z.literal('tracks'),
           rounds: z

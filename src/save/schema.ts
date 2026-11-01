@@ -194,7 +194,7 @@ const whiteoutSchema = z.object({
   wonSeen: z.boolean().optional(),
   tries: z.number().int().min(0).optional(),
 })
-// Tracks in the Snow (docs/61 §4.1): its rounds cleared and the glade being searched.
+// Tracks in the Snow (docs/64 §4.1): its rounds cleared and the glade being searched.
 const tracksBush = z.enum(['stantler', 'wild', 'find', 'cabin', 'empty'])
 const tracksSchema = z.object({
   active: z.boolean(),
@@ -237,11 +237,11 @@ const progressSchema = z.object({
   portal: portalSchema.optional().catch(undefined),
   // The nightmare (docs/30): the same, an odd value drops it, never the save.
   nightmare: nightmareSchema.optional().catch(undefined),
-  // The race of time and space (docs/61 §4.4): the same, an odd value drops it, never the save.
+  // The race of time and space (docs/64 §4.4): the same, an odd value drops it, never the save.
   timeRace: timeRaceSchema.optional().catch(undefined),
-  // The whiteout (docs/61 §4.3): the same.
+  // The whiteout (docs/64 §4.3): the same.
   whiteout: whiteoutSchema.optional().catch(undefined),
-  // Tracks in the Snow (docs/61 §4.1): the same, an odd value drops it, never the save.
+  // Tracks in the Snow (docs/64 §4.1): the same, an odd value drops it, never the save.
   tracks: tracksSchema.optional().catch(undefined),
   // Extreme mode's Centers (docs/47): a secret area's first one met, and a round to start over at a Center.
   centerMet: z.boolean().optional(),
@@ -590,7 +590,7 @@ export const saveSchema = z.object({
     .optional(),
   // Trick or Treat (docs/29): its rules pop-up seen.
   trickOrTreat: z.object({ rulesSeen: z.boolean().optional() }).optional(),
-  // The Gift card (docs/61 §4.0): its rules pop-up seen.
+  // The Gift card (docs/64 §4.0): its rules pop-up seen.
   giftCard: z.object({ rulesSeen: z.boolean().optional() }).optional(),
   // The Underground (docs/34): the running event's block, and the plates kept for good.
   underground: undergroundSchema.optional(),

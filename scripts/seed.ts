@@ -872,9 +872,9 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  * row, Off, Youngster Joey and Oddish on Route 1, which the upserts below then write again), then 0084, 0085 and
  * 0087 (their headers say what), then 0088 (an old page's plain upsert refused over an existing save) and 0089 (a
  * player's raids won, read back), then 0090 (Versus teams at their own levels: 0039's team writer redefined), and the
- * later ones listed below (0108: the trade board's picks, after the trades' own; 0122: Tracks in the Snow's switch
- * and tracks_open; 0124: the race of time and space's switch and its raids' checks, after 0060's, its Spear Pillar patch
- * a no-op here, the bundle has no Snowglobe Valley; 0125: the Stairway of Plates' own switch, after 0057's
+ * later ones listed below (0108: the trade board's picks, after the trades' own; 0124: Tracks in the Snow's switch
+ * and tracks_open; 0126: the race of time and space's switch and its raids' checks, after 0060's, its Spear Pillar patch
+ * a no-op here, the bundle has no Snowglobe Valley; 0127: the Stairway of Plates' own switch, after 0057's
  * raid_progress_portal, which it redefines). Folded into
  * seed.sql
  * so there is
@@ -935,11 +935,11 @@ export async function regionsPrelude(): Promise<string> {
       '0101_champion_cinema.sql',
       '0105_outfits.sql',
       '0108_trade_picks.sql',
-      '0121_gift_card.sql',
-      '0125_plates_run.sql',
-      '0124_time_race.sql',
-      '0123_whiteout.sql',
-      '0122_tracks_in_the_snow.sql',
+      '0123_gift_card.sql',
+      '0127_plates_run.sql',
+      '0126_time_race.sql',
+      '0125_whiteout.sql',
+      '0124_tracks_in_the_snow.sql',
     ].map(async (name) => {
       const sql = (await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')).replace(/^(begin|commit);\n/gm, '')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`

@@ -299,15 +299,15 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const dbl = st.double
   // A portal run's wild Pokémon wear the distortion (docs/28).
   const distorted = !versus && st.kind === 'wild' && !!save && inPortalRun(save, data, run.areaId)
-  // The Stairway of Plates' wild Pokémon wear light instead (docs/61 §4.5).
+  // The Stairway of Plates' wild Pokémon wear light instead (docs/64 §4.5).
   const lit =
     distorted && portalSkin(portalModeOf(data.areas.find((a) => a.id === run.areaId), data)) === 'plates'
   // The nightmare's rounds (docs/30) are fought under its full moon, a dark shadow haunting the foe.
   const dream = !versus && st.kind === 'wild' && !!save && inNightmare(save, data, run.areaId)
-  // The whiteout's fights (docs/61 §4.3): the engine's blizzard (its chip, snow over the stage) and the bag shut.
+  // The whiteout's fights (docs/64 §4.3): the engine's blizzard (its chip, snow over the stage) and the bag shut.
   const storm = !versus && !!st.weather
   const bagShut = !versus && !!st.noBag
-  // Tracks in the Snow's last round (docs/61 §4.1): the shiny Stantler found in its bush, its own entrance.
+  // Tracks in the Snow's last round (docs/64 §4.1): the shiny Stantler found in its bush, its own entrance.
   const gladeBoss = !versus && st.kind === 'boss' && !!save && tracksFound(save, data, run.areaId)
   const stageBox = useRef<HTMLDivElement>(null)
   const panel = useRef<HTMLDivElement>(null)
@@ -344,7 +344,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const live = versus?.live
   const scripted = !!versus && !live
   const auto = live ? live.auto : !!versus || autoAt !== 'off'
-  // The race of time and space (docs/61 §4.4): one speed for everyone inside it, whatever the setting (the engine's:
+  // The race of time and space (docs/64 §4.4): one speed for everyone inside it, whatever the setting (the engine's:
   // short animations at its quick pace), so its clock means the same for all. Auto-battle is off there.
   const raceSpeed = !versus && save ? timeRaceBattleSpeed(save, data, run.areaId) : null
   // Auto-mode plays the whole fight faster: animations, dice and timers.
@@ -874,8 +874,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       types: foe.types.map((ty) => typeName(ty)).join(' / '),
     }
     // A mythical's own entrance (docs/53: Mew in its forest) when the cinematics are on and it has one.
-    // The whiteout's boss (docs/61 §4.3): the crown tree shaking out Abomasnow, its own way in whatever that switch says.
-    // The glade's shiny Stantler rears up under the moon (docs/61 §4.1), with the feature's own switch.
+    // The whiteout's boss (docs/64 §4.3): the crown tree shaking out Abomasnow, its own way in whatever that switch says.
+    // The glade's shiny Stantler rears up under the moon (docs/64 §4.1), with the feature's own switch.
     const cinema =
       save && inWhiteout(save, data, run.areaId)
         ? abomasnowCinema
@@ -1129,7 +1129,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     ownedItems.length > 0 &&
     !auto && (
       <BagButton
-        // The whiteout's bag stays shut, but its button still answers: why (docs/61 §4.3).
+        // The whiteout's bag stays shut, but its button still answers: why (docs/64 §4.3).
         disabled={!bagOpen && !bagShut}
         title={bagShut ? t('ui.whiteout.noBag') : st.itemUsedThisTurn ? t('ui.battle.oneItemPerTurn') : undefined}
         keys="B"
@@ -1244,7 +1244,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         label={heading}
       >
         {dayTime && <BattleDayTime time={dayTime} />}
-        {/* The race's clock runs on in its fights (docs/61 §4.4), in the stage's top right corner. */}
+        {/* The race's clock runs on in its fights (docs/64 §4.4), in the stage's top right corner. */}
         {raceSpeed && <TimeRaceClockHere areaId={run.areaId} size="small" className="absolute right-2 top-5 z-20" />}
         {/* The blizzard (docs/15 §47): its snow over the stage, under the plates, and its chip by the strip. */}
         {storm && <SnowOverStage className="z-[5]" />}
@@ -2130,5 +2130,5 @@ function SendOutStep({
   )
 }
 
-/** The whiteout's bag stays shut (docs/61 §4.3): the Bag button and B say why. */
+/** The whiteout's bag stays shut (docs/64 §4.3): the Bag button and B say why. */
 const shutBag = () => pushToast(say('ui.whiteout.noBag'), 'info')

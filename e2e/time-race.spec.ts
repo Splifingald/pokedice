@@ -1,4 +1,4 @@
-// The race of time and space (docs/61 §4.4) in a small world served as content (as e2e/nightmare.spec.ts does): ENTER
+// The race of time and space (docs/64 §4.4) in a small world served as content (as e2e/nightmare.spec.ts does): ENTER
 // THE RACE plays the intro at once, held for a tap, then its pop-up (arriving heals; NOT NOW goes Home; READY! starts
 // the clock on the server's time); a fork's two gates in their types, the foes of the gate taken, never caught, the clock
 // on screen and in the fight; no way out but the area while it runs; the last gate decides the raid (Water: Palkia) and

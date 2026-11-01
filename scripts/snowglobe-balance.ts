@@ -2,7 +2,7 @@
  * pnpm snowglobe-balance [encounters=400] [seeds=3]
  * Snowglobe Valley's chain on the headless campaign (src/engine/campaign.ts, as Haunted Hollow was checked: docs/26
  * §2.4): each starter over seeds 1..n, the world's XP ×1.5, Ice ×1.2 and its own upgrade tracks. One row per area: the
- * team's level arriving, fights, wipes, and how many runs cleared it, so the curve can be read at a glance (docs/61 §5).
+ * team's level arriving, fights, wipes, and how many runs cleared it, so the curve can be read at a glance (docs/64 §5).
  */
 import { BUNDLE } from '../src/config/bundle'
 import { compileGameData, mergeAreaReports, runCampaignSync, type AreaReport } from '../src/engine'

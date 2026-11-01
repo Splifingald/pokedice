@@ -42,14 +42,14 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
   const area = useGame((s) => s.data.areas.find((a) => a.id === s.run.areaId))
   // A portal run's wild Pokémon (docs/28): distorted, and never caught.
   const distorted = useGame((s) => !boss && !!s.save && portalNoCatch(s.save, s.data, s.run.areaId))
-  // The Stairway of Plates' Pokémon wear light instead, and say so in its words (docs/61 §4.5).
+  // The Stairway of Plates' Pokémon wear light instead, and say so in its words (docs/64 §4.5).
   const skin = skinOfArea(area, data)
   // The nightmare's foe (docs/30): its round, and never caught either.
   // (Its store values picked one by one: a selector must not build a new object on every call.)
   const save = useGame((s) => s.save)
   const runArea = useGame((s) => s.run.areaId)
   const dream = !boss && save && runArea ? nightmareFoe(save, data, runArea) : null
-  // The whiteout's wave foe (docs/61 §4.3): its wave and place, lost in the blizzard, never caught.
+  // The whiteout's wave foe (docs/64 §4.3): its wave and place, lost in the blizzard, never caught.
   const storm = !boss && !dream && save && runArea ? whiteoutFoe(save, data, runArea) : null
   return (
     <div className="flex items-center gap-3 sm:gap-4">
@@ -438,7 +438,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
           {enc.kind === 'center' && <CenterCard enc={enc} />}
           {enc.kind === 'casino' && <CasinoCard />}
           {enc.kind === 'trick' && <TrickCard dex={enc.dex} level={enc.level} tier={enc.tier} isNew={enc.isNew} shiny={enc.shiny} />}
-          {/* The Gift card (docs/61 §4.0): only while the server says yes, the present itself comes at once. */}
+          {/* The Gift card (docs/64 §4.0): only while the server says yes, the present itself comes at once. */}
           {enc.kind === 'gift' && <GiftCardPreview />}
 
           {/* A team of one has no one to pick: no "Send out" at all (LeadPicker draws nothing either). */}

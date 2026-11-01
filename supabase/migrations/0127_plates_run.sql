@@ -1,4 +1,4 @@
--- The Stairway of Plates' own switch (docs/61 §4.5, the user's call of 2026-11-01): the Hall of Origin's portal run
+-- The Stairway of Plates' own switch (docs/64 §4.5, the user's call of 2026-11-01): the Hall of Origin's portal run
 -- (an area whose mode says `"skin": "plates"`) opens apart from Distortion World's. Run after 0057; safe to run again.
 -- It patches only what this feature changes, over the admin's later edits:
 --  1. game_config `platesRun`: the switch, Off (left alone when there).

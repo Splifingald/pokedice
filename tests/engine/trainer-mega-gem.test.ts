@@ -1,4 +1,4 @@
-// A trainer holding its ace's Mega Gem (docs/61, the user's review of 2026-11-01): Snowglobe Valley's Champion
+// A trainer holding its ace's Mega Gem (docs/64, the user's review of 2026-11-01): Snowglobe Valley's Champion
 // Nicholas Mega Evolves his Abomasnow inside the small world, where trainers' Megas are otherwise off.
 import { describe, expect, it } from 'vitest'
 import { compileGameData, enemyPlanFor, newSave } from '@/engine'

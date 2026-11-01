@@ -1,4 +1,4 @@
-// The Stairway of Plates (docs/61 §4.5): the Hall of Origin's portal run, Distortion World's rules and numbers dressed
+// The Stairway of Plates (docs/64 §4.5): the Hall of Origin's portal run, Distortion World's rules and numbers dressed
 // for Arceus. The skin leaves Haunted Hollow's run as it was; the run plays the same; each look has its own rules
 // pop-up; the raid is shiny Arceus at Lv.90, foes' dice 10, 4 HP bars, teams up to Lv.90, its Plate changing on each
 // bar (Normal → Ice → Steel → Dragon), announced as a form change of its own.

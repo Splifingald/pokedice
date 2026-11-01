@@ -248,7 +248,7 @@ export function enterArea(areaId: string): boolean {
   const { save, data } = useGame.getState()
   if (!save || !isAreaUnlocked(save, areaId, data) || isAreaClosed(save, areaId, data)) return false
   // Inside a portal run (docs/28) there is no other area to go to, nor in the nightmare (docs/30), nor in the race of
-  // time and space (docs/61 §4.4) or the whiteout (§4.3).
+  // time and space (docs/64 §4.4) or the whiteout (§4.3).
   const locked = portalLock(save, data) ?? nightmareLock(save, data) ?? timeRaceLock(save, data) ?? whiteoutLock(save, data)
   if (locked && locked.id !== areaId) return false
   // A small world's area may also wait for its date (docs/21), on the server's clock.
@@ -318,7 +318,7 @@ function settleRound(quiet = false): Extract<RunEvent, { kind: 'area_cleared' }>
 function backToArea() {
   setRun({ phase: 'idle', encounter: null, duel: null })
   settleRound()
-  // Tracks in the Snow (docs/61 §4.1): back on the glade with Stantler found but not taken, it bolts to another bush.
+  // Tracks in the Snow (docs/64 §4.1): back on the glade with Stantler found but not taken, it bolts to another bush.
   boltIfFound()
   // In a portal run, a distortion next is turned over at once: its boons, with no stop on the area's page first (the
   // user, 2026-10-15).
@@ -426,7 +426,7 @@ export function pickDistortionOffer(index: number) {
   pushToast(t(closedToastKey(data, run.areaId), { n }), 'good')
 }
 
-/** A portal closed, or an altar lit (the Stairway of Plates, docs/61 §4.5). */
+/** A portal closed, or an altar lit (the Stairway of Plates, docs/64 §4.5). */
 const closedToastKey = (data: GameData, areaId: string) =>
   portalSkin(portalModeOf(data.areas.find((a) => a.id === areaId), data)) === 'plates'
     ? 'ui.plates.closedToast'
@@ -550,12 +550,12 @@ export function healAndStartNightmareRaid(): ProgressRaid | null {
 }
 
 /**
- * The race's clock (docs/61 §4.4): the server's time; until it has been read once (the page offline from the start), the
+ * The race's clock (docs/64 §4.4): the server's time; until it has been read once (the page offline from the start), the
  * device's, so a try is never stuck. READY! itself waits for the server's (beginTimeRace).
  */
 const raceNow = () => serverNow() ?? Date.now()
 
-/** A full K.O. in a try (docs/61 §4.4): what the wipe card says it lost. */
+/** A full K.O. in a try (docs/64 §4.4): what the wipe card says it lost. */
 function raceLostOf(save: SaveData, areaId: string): { reason: 'wipe'; fights: number; total: number } {
   const { data } = useGame.getState()
   return {
@@ -573,7 +573,7 @@ function raceLostCard(areaId: string, reason: 'time' | 'wipe', fights: number, t
 }
 
 /**
- * The race's next step (docs/61 §4.4): past the clock, back to the start (its card says so); a fork due opens and its
+ * The race's next step (docs/64 §4.4): past the clock, back to the start (its card says so); a fork due opens and its
  * gates wait on the area's page; otherwise the next foe of the gate's type, straight into the fight (a time trial: no
  * preview card to stop on). A team with nobody standing goes back to the start too.
  */
@@ -603,7 +603,7 @@ function rollTimeRace(save: SaveData, areaId: string) {
 }
 
 /**
- * READY! on the race's way in (docs/61 §4.4): into a try, the team healed, the clock started on the server's time, the
+ * READY! on the race's way in (docs/64 §4.4): into a try, the team healed, the clock started on the server's time, the
  * first fork next. False when it can't start here, or while the server's time is still unknown (a toast says so).
  */
 export function beginTimeRace(areaId: string): boolean {
@@ -624,7 +624,7 @@ export function beginTimeRace(areaId: string): boolean {
 }
 
 /**
- * The whiteout's next foe (docs/61 §4.3): the wave's foe, or the boss after the last bonfire, its preview first. Nothing
+ * The whiteout's next foe (docs/64 §4.3): the wave's foe, or the boss after the last bonfire, its preview first. Nothing
  * while a bonfire is lit (the area shows it); a team with nobody standing is the wipe (back to wave 1).
  */
 function rollWhiteout(save: SaveData, areaId: string) {
@@ -642,7 +642,7 @@ function rollWhiteout(save: SaveData, areaId: string) {
 }
 
 /**
- * BEGIN on the whiteout's way in (docs/61 §4.3): into the blizzard, wave 1's first foe next (its intro has played
+ * BEGIN on the whiteout's way in (docs/64 §4.3): into the blizzard, wave 1's first foe next (its intro has played
  * already, as the nightmare's). False when it can't begin here.
  */
 export function beginWhiteout(areaId: string): boolean {
@@ -680,7 +680,7 @@ export function markTimeRacePopup() {
   if (!useGame.getState().run.racePopup) setRun({ racePopup: true })
 }
 
-/** Through a gate (docs/61 §4.4): its find is taken (a shard's time, an item), and its first foe comes at once. */
+/** Through a gate (docs/64 §4.4): its find is taken (a shard's time, an item), and its first foe comes at once. */
 export function pickRaceGate(index: number) {
   const { save, data, run } = useGame.getState()
   if (!save || !run.areaId) return
@@ -746,7 +746,7 @@ export function arriveAtWhiteoutWayIn(areaId: string) {
   if (next !== save) commitSave(next)
 }
 
-// ---------------------------------------------------------------- Tracks in the Snow (docs/61 §4.1)
+// ---------------------------------------------------------------- Tracks in the Snow (docs/64 §4.1)
 
 let bushSeq = 0
 
@@ -773,7 +773,7 @@ function rollTracks(save: SaveData, areaId: string) {
 }
 
 /**
- * BEGIN on the way in's pop-up (docs/61 §4.1): into the glade, the team healed, the round the player had reached, a
+ * BEGIN on the way in's pop-up (docs/64 §4.1): into the glade, the team healed, the round the player had reached, a
  * fresh glade. The server says yes first for a signed-in player (tracks_open). False when it can't begin here.
  */
 export async function beginTracks(areaId: string): Promise<boolean> {
@@ -896,7 +896,7 @@ export function rollNext() {
   if (inNightmare(save, data, run.areaId)) return rollNightmare(save, run.areaId)
   if (inTimeRace(save, data, run.areaId)) return rollTimeRace(save, run.areaId)
   if (inWhiteout(save, data, run.areaId)) return rollWhiteout(save, run.areaId)
-  // Tracks in the Snow (docs/61 §4.1): the glade deals nothing; its bushes are opened on its page (tapBush).
+  // Tracks in the Snow (docs/64 §4.1): the glade deals nothing; its bushes are opened on its page (tapBush).
   if (tracksModeOf(data.areas.find((a) => a.id === run.areaId), data)) return rollTracks(save, run.areaId)
   if (inPortalRun(save, data, run.areaId)) return rollPortal(save, run.areaId)
   // A Center's boons still waiting (a reload, HOME before the pick: docs/47): back in that Center. Boons drawn in
@@ -996,7 +996,7 @@ export function challenge() {
     isAreaSealed(save, data, run.areaId)
   )
     return
-  // Nor has Tracks in the Snow (docs/61 §4.1): its Stantler is found in a bush, its boss in the last glade.
+  // Nor has Tracks in the Snow (docs/64 §4.1): its Stantler is found in a bush, its boss in the last glade.
   if (tracksModeOf(data.areas.find((a) => a.id === run.areaId), data)) return
   const area = data.areas.find((a) => a.id === run.areaId)
   const found = area
@@ -1010,7 +1010,7 @@ export function challenge() {
         wildShinyChance(save, data),
       )
     : null
-  // A boss that comes out of a present (docs/61 §4.2: Evergreen Hill's Delibird), while the Gift card is on: its
+  // A boss that comes out of a present (docs/64 §4.2: Evergreen Hill's Delibird), while the Gift card is on: its
   // present first, the fight once it bursts. A returning one (it fled the catch) is a plain card of the deck.
   const def = found?.kind === 'boss' ? area?.legendaryBoss?.find((b) => b.dex === found.dex) : null
   if (found?.kind === 'boss' && bossInPresent(data, def)) return void beginBossPresent(found)
@@ -1118,7 +1118,7 @@ function startBattle(
       enemyLevels: withWorldBoost(isPlayerFoe(run.encounter) ? foeLevels(run.encounter.player) : uniformLevels(upgradeLevel), data, area),
       ...battlePowersFor(save, data),
       noHealItems: !healItemsOn(save, data),
-      // The whiteout (docs/61 §4.3): the blizzard on both sides, and the bag shut.
+      // The whiteout (docs/64 §4.3): the blizzard on both sides, and the bag shut.
       weather: whiteoutWeather(save, data, run.areaId),
       noBag: inWhiteout(save, data, run.areaId),
       // Arceus takes only the types of its plates while the Underground is on (docs/34).
@@ -1315,16 +1315,16 @@ function settleBattle(stalemate: boolean) {
     // A round of the nightmare won (docs/30): it counts, its gift goes into the bag, Darkrai's strike is due (or, the
     // last one, the player wakes up). The result card says so.
     const dream = inNightmare(res.save, data, run.areaId) ? winNightmareRound(res.save, data, run.areaId) : null
-    // A fight of the race of time and space (docs/61 §4.4): it counts if won in time, the last one opens its legend's
+    // A fight of the race of time and space (docs/64 §4.4): it counts if won in time, the last one opens its legend's
     // raid; past the clock it counts for nothing and the try ends (the wipe card says so, the XP kept).
     const raced = inTimeRace(res.save, data, run.areaId) ? winTimeRaceFight(res.save, data, run.areaId, raceNow()) : null
     if (raced?.outOfTime) {
       commitSave(raced.save)
       return raceLostCard(run.areaId, 'time', raced.fights, raced.total)
     }
-    // A wave foe of the whiteout (docs/61 §4.3): the next one is due, or its wave is cleared and a bonfire is lit.
+    // A wave foe of the whiteout (docs/64 §4.3): the next one is due, or its wave is cleared and a bonfire is lit.
     const white = s.kind === 'wild' && !dream && !raced ? winWhiteoutFoe(res.save, data, run.areaId) : null
-    // Tracks in the Snow (docs/61 §4.1): the Stantler found is down. Before the last round, the round is cleared (the
+    // Tracks in the Snow (docs/64 §4.1): the Stantler found is down. Before the last round, the round is cleared (the
     // result card says so); in the last, its catch decides.
     const glade = tracksFound(res.save, data, run.areaId) ? tracksQuarryDown(res.save, data, run.areaId) : null
     commitSave(raced?.save ?? dream?.save ?? white?.save ?? glade?.save ?? res.save)
@@ -1355,7 +1355,7 @@ function settleBattle(stalemate: boolean) {
     const noCatch =
       portalNoCatch(save, data, run.areaId) ||
       nightmareNoCatch(save, data, run.areaId) ||
-      // Nor the race's (docs/61 §4.4), nor the whiteout's (§4.3): all are met elsewhere.
+      // Nor the race's (docs/64 §4.4), nor the whiteout's (§4.3): all are met elsewhere.
       timeRaceNoCatch(save, data, run.areaId) ||
       whiteoutNoCatch(save, data, run.areaId)
     const talent = !!s.enemy.talent
@@ -1563,7 +1563,7 @@ function settleThrow(save: SaveData, roll: CatchRoll, ballKey: string | null, ba
       const res = applyCatch(next, { dex: c.dex, level: c.level, shiny: c.shiny, letter, talent }, c.target, data, Date.now(), newId)
       // A boss is noted as caught in its area: a small world's goes by that, not the Pokédex (docs/26 §2.5).
       next = c.kind === 'boss' && run.areaId ? noteBossCaught(res.save, run.areaId, c.dex) : res.save
-      // Tracks in the Snow (docs/61 §4.1): the shiny Stantler caught, the glade is won (its outro next).
+      // Tracks in the Snow (docs/64 §4.1): the shiny Stantler caught, the glade is won (its outro next).
       if (c.kind === 'boss' && run.areaId && tracksFound(next, data, run.areaId)) next = tracksCaught(next, data, run.areaId)
       events = res.events
       if (res.needsTeamChoice) pendingCatchId = res.caughtId
@@ -1604,7 +1604,7 @@ export function passCatch() {
 
 /** Out of this throw: the next one queued (after a wild pair), else the rewards screen with every "Add to team?". */
 function afterCatch(events: RunEvent[], caughtId: string | null) {
-  // The whiteout's boss (docs/61 §4.3): caught, the blizzard lifts for good; got away, back to wave 1.
+  // The whiteout's boss (docs/64 §4.3): caught, the blizzard lifts for good; got away, back to wave 1.
   const before = useGame.getState()
   const c = before.run.catch
   if (c?.kind === 'boss' && before.save && before.run.areaId && inWhiteout(before.save, before.data, before.run.areaId)) {
@@ -1693,12 +1693,12 @@ export function continueExploring() {
   // The nightmare (docs/30): the waking shows first, or Darkrai's strike after a round; the area's page plays them.
   const dream = save && run.areaId ? nightmareStateOf(save, run.areaId) : null
   if (dream && ((dream.won && !dream.wonSeen) || (dream.active && dream.strike))) return
-  // The race (docs/61 §4.4): its win shows first, on the area's page.
+  // The race (docs/64 §4.4): its win shows first, on the area's page.
   if (save && run.areaId && timeRaceVictoryDue(save, useGame.getState().data, run.areaId)) return
-  // The whiteout (docs/61 §4.3): its outro first, or the bonfire after a wave; the area's page plays them.
+  // The whiteout (docs/64 §4.3): its outro first, or the bonfire after a wave; the area's page plays them.
   const white = save && run.areaId ? whiteoutStateOf(save, run.areaId) : null
   if (white && ((white.won && !white.wonSeen) || (white.active && white.bonfire))) return
-  // Tracks in the Snow (docs/61 §4.1): its outro shows first, on the area's page.
+  // Tracks in the Snow (docs/64 §4.1): its outro shows first, on the area's page.
   if (save && run.areaId && tracksOutroDue(save, useGame.getState().data, run.areaId)) return
   challenge()
   if (useGame.getState().run.phase === 'idle') rollNext()
@@ -1890,7 +1890,7 @@ export function leaveTrick() {
   backToArea()
 }
 
-// ---------------------------------------------------------------- the Gift card (docs/61 §4.0, §4.2)
+// ---------------------------------------------------------------- the Gift card (docs/64 §4.0, §4.2)
 
 /** A present waiting on the server's answer: a second tap doesn't ask twice. */
 let giftAsking = false

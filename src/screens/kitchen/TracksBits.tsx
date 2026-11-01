@@ -1,4 +1,4 @@
-// Kitchen sink: Tracks in the Snow (docs/61 §4.1, docs/15 §46) in every state — the glade on the pixel engine (moving
+// Kitchen sink: Tracks in the Snow (docs/64 §4.1, docs/15 §46) in every state — the glade on the pixel engine (moving
 // and still), the gauge of rounds (fresh, under way, won), the bushes (closed, open with each content, the prints in
 // all 8 directions), the glade's panel on a 3 × 3 (fresh, searched, a bush just opened rustling, the snow falling,
 // Stantler bolted, out of taps) and on a 4 × 4 at a phone's 360 px, a playable glade, the way in (the intro held for

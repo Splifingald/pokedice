@@ -31,7 +31,7 @@ export function useDetails(): boolean {
 
 /**
  * Why the menus are shut right now: a fight under way, a portal run (docs/28: no way out of the area until it's won
- * or the party is K.O.) or a try of the race of time and space (docs/61 §4.4: the same, or the clock). Null when
+ * or the party is K.O.) or a try of the race of time and space (docs/64 §4.4: the same, or the clock). Null when
  * they're open.
  */
 export function useNavLock(): 'fight' | 'portal' | 'race' | null {
@@ -48,7 +48,7 @@ export function useNavLock(): 'fight' | 'portal' | 'race' | null {
 export function useLockReason(): string | null {
   const { t } = useT()
   const lock = useNavLock()
-  // The Stairway of Plates says it in its own words (docs/61 §4.5).
+  // The Stairway of Plates says it in its own words (docs/64 §4.5).
   const plates = useGame(
     (s) => !!s.save && portalSkin(portalModeOf(portalLock(s.save, s.data), s.data)) === 'plates',
   )

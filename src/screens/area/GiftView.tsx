@@ -1,4 +1,4 @@
-// The Gift card (docs/61 §4.0, §4.2), laid out as the battle is (docs/15 §14, §45): full screen, the battle's stage on
+// The Gift card (docs/64 §4.0, §4.2), laid out as the battle is (docs/15 §14, §45): full screen, the battle's stage on
 // top (the area's picture, the present at its centre, its plate), then the panel: the message box, the level gauge,
 // OPEN (with what it gives now) and MAKE IT BIGGER (red, with the next tap's break chance); INFO at the foot. A boss's
 // present (Evergreen Hill's Delibird) offers MAKE IT BIGGER alone, no odds, no INFO. The store asks the engine for each

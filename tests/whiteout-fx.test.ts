@@ -1,4 +1,4 @@
-// Crown Shrine's whiteout's effects (docs/61 §4.3, docs/15 §47): the way in holds its end and says its line once the
+// Crown Shrine's whiteout's effects (docs/64 §4.3, docs/15 §47): the way in holds its end and says its line once the
 // eyes glow, before its name card; the bonfire catches before it heals (the screen has the engine give the heal on that
 // cue), quicker when short; the team sits round the fire, those on its left turned to face it; the end's card comes
 // after the boss shows; Abomasnow's entrance is a boss cinematic like the others.

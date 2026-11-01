@@ -41,7 +41,7 @@ const obj = (v: unknown): Record<string, unknown> =>
   v && typeof v === 'object' ? (v as Record<string, unknown>) : {}
 
 /**
- * The Hall of Origin's raid (docs/61 §4.5, the user's call): Arceus's Plate on each of its four bars, Normal → Ice →
+ * The Hall of Origin's raid (docs/64 §4.5, the user's call): Arceus's Plate on each of its four bars, Normal → Ice →
  * Steel → Dragon. What the admin's "Plates" button fills in.
  */
 export const PLATE_BARS: readonly PokeType[] = ['normal', 'ice', 'steel', 'dragon']
@@ -103,7 +103,7 @@ export function normalisePortal(raw: unknown): PortalRunMode | null {
 /**
  * The switch a portal run answers to (the user's call of 2026-11-01): the Stairway of Plates has its own (`platesRun`),
  * so Arceus's climb and Distortion World open apart; every other portal run, Distortion World's (`portalRun`).
- * The server picks the same way (0125, raid_progress_portal).
+ * The server picks the same way (0127, raid_progress_portal).
  */
 export const portalSwitchOf = (
   mode: Pick<PortalRunMode, 'skin'> | null | undefined,

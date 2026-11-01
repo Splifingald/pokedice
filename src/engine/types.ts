@@ -184,7 +184,7 @@ export interface DieUpgradeRow {
  * 'casino': the Game Corner — a slot machine the player can play as long as they like (Rocket Hideout). 'trick': Trick
  * or Treat (docs/29) — a ghost tempted with treats and caught with a Trick Ball, dealt only while its switch is on.
  * 'versus': a real player's team (docs/54), dealt only while its switch is on and the server has one for the area.
- * 'gift': the Gift card (docs/61 §4.0) — a present to open or make bigger, dealt only while its switch is on, in place
+ * 'gift': the Gift card (docs/64 §4.0) — a present to open or make bigger, dealt only while its switch is on, in place
  * of the area's item cards.
  */
 export const ENCOUNTER_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus', 'gift'] as const
@@ -269,7 +269,7 @@ export interface BossDef {
    */
   raid?: boolean
   /**
-   * It comes out of a present (the Gift card's, docs/61 §4.2: Evergreen Hill's Delibird): its challenge opens on a
+   * It comes out of a present (the Gift card's, docs/64 §4.2: Evergreen Hill's Delibird): its challenge opens on a
    * present that only grows and bursts on the last tap, then the fight. Only while the Gift card is on; a plain boss
    * otherwise.
    */
@@ -300,7 +300,7 @@ export interface Area {
   minLevel: number
   maxLevel: number
   /**
-   * Copies of each card in a deck; Trick or Treat's (docs/29), a real player's (docs/54) and the Gift card's (docs/61
+   * Copies of each card in a deck; Trick or Treat's (docs/29), a real player's (docs/54) and the Gift card's (docs/64
    * §4.0) are optional, as content from before them has none. While the Gift card is on, its copies replace the item
    * cards: an area with `gift` deals no item card then.
    */
@@ -330,19 +330,19 @@ export interface Area {
   lootPool: LootEntry[]
   /**
    * How the area plays instead of rounds: Distortion World's portal run (docs/28), Newmoon Island's nightmare
-   * (docs/30), Moonlit Glade's Tracks in the Snow (docs/61 §4.1), Crown Shrine's whiteout (§4.3), Spear Pillar's race
+   * (docs/30), Moonlit Glade's Tracks in the Snow (docs/64 §4.1), Crown Shrine's whiteout (§4.3), Spear Pillar's race
    * of time and space (§4.4). Absent or null = a plain area.
    */
   mode?: AreaMode | null
 }
 
 /**
- * An area's special mode: the portal run (docs/28), the nightmare (docs/30), Tracks in the Snow (docs/61 §4.1), the
+ * An area's special mode: the portal run (docs/28), the nightmare (docs/30), Tracks in the Snow (docs/64 §4.1), the
  * whiteout (§4.3) or the time race (§4.4).
  */
 export type AreaMode = PortalRunMode | NightmareMode | TracksMode | TimeRaceMode | WhiteoutMode
 
-/** One of the race's two gates at a fork leading to a legend (docs/61 §4.4): its type, and whose raid it opens. */
+/** One of the race's two gates at a fork leading to a legend (docs/64 §4.4): its type, and whose raid it opens. */
 export interface TimeRaceLegend {
   type: PokeType
   /** The legend's dex: one of the area's raid bosses (`legendaryBoss`). */
@@ -350,7 +350,7 @@ export interface TimeRaceLegend {
 }
 
 /**
- * The race of time and space (docs/61 §4.4, Spear Pillar): a time trial. From READY! the clock runs on the server's
+ * The race of time and space (docs/64 §4.4, Spear Pillar): a time trial. From READY! the clock runs on the server's
  * time: `perFork` fights after each fork, each fork two gates of a type (the next foes of that type, drawn from the
  * area's wild pool); the forks are `forks` then the last one, whose gates are the `legends`' types: the gate taken there
  * opens that legend's raid when the last fight is won within `seconds`. Each gate holds a find: an item, or a time shard
@@ -414,14 +414,14 @@ export interface TimeRaceState {
   tries?: number
 }
 
-/** One of the whiteout's foes (docs/61 §4.3): a wild Pokémon at a set level, met in its wave's order. */
+/** One of the whiteout's foes (docs/64 §4.3): a wild Pokémon at a set level, met in its wave's order. */
 export interface WhiteoutFoe {
   dex: number
   level: number
 }
 
 /**
- * The whiteout (docs/61 §4.3, Crown Shrine): weather survival. Its `waves` of fixed foes are fought one after the other,
+ * The whiteout (docs/64 §4.3, Crown Shrine): weather survival. Its `waves` of fixed foes are fought one after the other,
  * as wild Pokémon that can't be caught, in the blizzard: every Pokémon that isn't of the weather's spared types loses
  * the weather's share of its max HP each round, both sides (the raids' rule, engine/raidSpecials.ts). After every wave
  * a bonfire heals the team `bonfirePercent` % of each one's max HP, and it is the only place the team can change and
@@ -459,7 +459,7 @@ export interface WhiteoutState {
   tries?: number
 }
 
-/** One round of Tracks in the Snow (docs/61 §4.1): its glade of snowy bushes and what they hold. */
+/** One round of Tracks in the Snow (docs/64 §4.1): its glade of snowy bushes and what they hold. */
 export interface TracksRound {
   /** Bushes on a side: a size × size glade. */
   size: number
@@ -474,7 +474,7 @@ export interface TracksRound {
 }
 
 /**
- * Tracks in the Snow (docs/61 §4.1, Moonlit Glade): hide and seek with Stantler, round after round. Each round is a
+ * Tracks in the Snow (docs/64 §4.1, Moonlit Glade): hide and seek with Stantler, round after round. Each round is a
  * glade of snowy bushes; the first opened is never Stantler's (it is hidden only then, away from it). Every bush opened
  * shows hoofprints pointing at it (or only the empty ones, `emptyPrintsOnly`). Each round but the last ends on a wild
  * Stantler (the boss's species, catchable); the last on the area's boss (the shiny Stantler). Every number is the
@@ -576,7 +576,7 @@ export interface NightmareState {
  * raid at `raid`'s numbers. Every number is the admin's (Admin → Areas).
  */
 /**
- * How a portal run is dressed (docs/28, docs/61 §4.5): Distortion World's portals (the default), or the Hall of
+ * How a portal run is dressed (docs/28, docs/64 §4.5): Distortion World's portals (the default), or the Hall of
  * Origin's stairway of light, its landings ended by altars and its damage boons named after Arceus's Plates. The
  * rules and numbers are the same either way: only the words and the effects change.
  */
@@ -1279,21 +1279,21 @@ export interface GameConfig {
   push: PushConfig
   /** The areas' portal run (docs/28): its switch. The server reads the same row (0057). */
   portalRun: { access: EventAccess }
-  /** The Hall of Origin's Stairway of Plates (docs/61 §4.5): a portal run with its own switch. The server reads it (0125). */
+  /** The Hall of Origin's Stairway of Plates (docs/64 §4.5): a portal run with its own switch. The server reads it (0127). */
   platesRun: { access: EventAccess }
   /** The areas' nightmare (docs/30): its switch. The server reads the same row (0060). */
   nightmare: { access: EventAccess }
-  /** The areas' race of time and space (docs/61 §4.4): its switch. The server reads the same row (0124). */
+  /** The areas' race of time and space (docs/64 §4.4): its switch. The server reads the same row (0126). */
   timeRace: { access: EventAccess }
-  /** The areas' whiteout (docs/61 §4.3, Crown Shrine): its switch. Migration 0123 inserts the same row. */
+  /** The areas' whiteout (docs/64 §4.3, Crown Shrine): its switch. Migration 0125 inserts the same row. */
   whiteout: { access: EventAccess }
-  /** Tracks in the Snow (docs/61 §4.1): its switch. The server reads the same row (0122, tracks_open). */
+  /** Tracks in the Snow (docs/64 §4.1): its switch. The server reads the same row (0124, tracks_open). */
   tracks: { access: EventAccess }
   /** Trainer looks (docs/31): unlockable looks in place of the free list. Off by default. */
   looks: { access: EventAccess }
   /** Trick or Treat (docs/29): its switch, numbers and each area's ghosts. The server reads the switch too. */
   trickOrTreat: TrickOrTreatConfig
-  /** The Gift card (docs/61 §4.0): its switch and numbers. The server reads the switch too (0121). */
+  /** The Gift card (docs/64 §4.0): its switch and numbers. The server reads the switch too (0123). */
   giftCard: GiftCardConfig
   /** Day and night in Johto (docs/32): its switch. Migration 0061 inserts the same row. */
   dayNight: { access: EventAccess }
@@ -1539,7 +1539,7 @@ export interface TrickSave {
 }
 
 /**
- * What a Gift card's level gives (docs/61 §4.0), one part of a reward: the area's own ball (the best its finds hold)
+ * What a Gift card's level gives (docs/64 §4.0), one part of a reward: the area's own ball (the best its finds hold)
  * or the one above it, an item, Pokédollars (`qty` × the area's level) or an evolution item its Mart sells.
  */
 export const GIFT_REWARD_KINDS = ['ball', 'betterBall', 'item', 'money', 'evolution'] as const
@@ -1553,7 +1553,7 @@ export interface GiftRewardPart {
 }
 
 /**
- * The Gift card (docs/61 §4.0): a present to OPEN for its level's reward or MAKE BIGGER, each tap able to break it, a
+ * The Gift card (docs/64 §4.0): a present to OPEN for its level's reward or MAKE BIGGER, each tap able to break it, a
  * broken one a wild Pokémon of the area. Owning the helper (Delibird) makes every tap safer and adds a level.
  */
 export interface GiftCardConfig {
@@ -1574,7 +1574,7 @@ export interface GiftCardConfig {
   bossTaps: number
 }
 
-/** The Gift card in a save (docs/61 §4.0): its rules pop-up shown. */
+/** The Gift card in a save (docs/64 §4.0): its rules pop-up shown. */
 export interface GiftCardSave {
   rulesSeen?: boolean
 }
@@ -1993,11 +1993,11 @@ export interface AreaProgress {
   portal?: PortalState
   /** The nightmare here (docs/30): its round, Darkrai's strike due, the gifts given, whether it's over. */
   nightmare?: NightmareState
-  /** The race of time and space here (docs/61 §4.4): its clock, its gates, the legends it opened. */
+  /** The race of time and space here (docs/64 §4.4): its clock, its gates, the legends it opened. */
   timeRace?: TimeRaceState
-  /** The whiteout here (docs/61 §4.3): its wave, a bonfire, the boss next, whether it's over. */
+  /** The whiteout here (docs/64 §4.3): its wave, a bonfire, the boss next, whether it's over. */
   whiteout?: WhiteoutState
-  /** Tracks in the Snow here (docs/61 §4.1): the rounds cleared, the glade being searched, whether it's over. */
+  /** Tracks in the Snow here (docs/64 §4.1): the rounds cleared, the glade being searched, whether it's over. */
   tracks?: TracksState
   /** Extreme mode (docs/47): a Pokémon Center has been met here (a secret area has only its first). */
   centerMet?: boolean
@@ -2062,13 +2062,13 @@ export interface SaveData {
   areaVersusRulesSeen?: boolean
   /** The portal run's rules pop-up (docs/28) has been shown (once; INFO shows them again). */
   portalRulesSeen?: boolean
-  /** The same for a portal run dressed as the Stairway of Plates (docs/61 §4.5): its own, as its words are its own. */
+  /** The same for a portal run dressed as the Stairway of Plates (docs/64 §4.5): its own, as its words are its own. */
   platesRulesSeen?: boolean
   /** The nightmare's rules pop-up (docs/30) has been shown (once; INFO shows them again). */
   nightmareRulesSeen?: boolean
-  /** The whiteout's rules pop-up (docs/61 §4.3) has been shown (once; INFO shows them again). */
+  /** The whiteout's rules pop-up (docs/64 §4.3) has been shown (once; INFO shows them again). */
   whiteoutRulesSeen?: boolean
-  /** Tracks in the Snow's rules (docs/61 §4.1) have been read on its way in (they show there every time). */
+  /** Tracks in the Snow's rules (docs/64 §4.1) have been read on its way in (they show there every time). */
   tracksRulesSeen?: boolean
   /** The region being played. Absent on saves from before the second region = 'kanto'. */
   region?: RegionId
@@ -2139,7 +2139,7 @@ export interface SaveData {
   general?: GeneralSave
   /** Trick or Treat (docs/29): its rules seen. Absent = never met. */
   trickOrTreat?: TrickSave
-  /** The Gift card (docs/61 §4.0): its rules seen. Absent = never met. */
+  /** The Gift card (docs/64 §4.0): its rules seen. Absent = never met. */
   giftCard?: GiftCardSave
   /** The Underground (docs/34): the running event's kits, pickaxe, orbs and wall. Gone when the event ends. */
   underground?: UndergroundSave
