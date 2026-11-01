@@ -430,6 +430,9 @@ export const DEFAULT_CONFIG: GameConfig = {
   push: { access: 'off', raidHour: 9, quietHours: [22, 8] },
   // The areas' portal run (docs/28): off until the admin switches it on. Migration 0057 inserts the same row.
   portalRun: { access: 'off' },
+  // The Stairway of Plates (docs/61 §4.5): its own switch, off until the admin switches it on. Migration 0125 inserts
+  // the same row.
+  platesRun: { access: 'off' },
   // The areas' nightmare (docs/30): off until the admin switches it on. Migration 0060 inserts the same row.
   nightmare: { access: 'off' },
   // The areas' race of time and space (docs/61 §4.4): off until the admin switches it on. Migration 0124 inserts the

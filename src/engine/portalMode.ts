@@ -100,16 +100,26 @@ export function normalisePortal(raw: unknown): PortalRunMode | null {
   }
 }
 
-/** The portal run is switched on for whoever is playing (Off by default; docs/15 §20). */
-export const portalRunsOn = (data: GameData): boolean => eventOpenTo(data.config.portalRun?.access, data)
+/**
+ * The switch a portal run answers to (the user's call of 2026-11-01): the Stairway of Plates has its own (`platesRun`),
+ * so Arceus's climb and Distortion World open apart; every other portal run, Distortion World's (`portalRun`).
+ * The server picks the same way (0125, raid_progress_portal).
+ */
+export const portalSwitchOf = (
+  mode: Pick<PortalRunMode, 'skin'> | null | undefined,
+): 'portalRun' | 'platesRun' => (portalSkin(mode) === 'plates' ? 'platesRun' : 'portalRun')
 
-/** The area's portal run, when it has one and the switch is on for the player; null otherwise (it plays as before). */
+/** That portal run is switched on for whoever is playing (each switch Off by default; docs/15 §20). */
+export const portalRunsOn = (data: GameData, mode?: Pick<PortalRunMode, 'skin'> | null): boolean =>
+  eventOpenTo(data.config[portalSwitchOf(mode)]?.access, data)
+
+/** The area's portal run, when it has one and its switch is on for the player; null otherwise (it plays as before). */
 export function portalModeOf(
   area: Pick<Area, 'mode'> | undefined | null,
   data: GameData,
 ): PortalRunMode | null {
-  if (!area?.mode || !portalRunsOn(data)) return null
-  return normalisePortal(area.mode)
+  const mode = area?.mode ? normalisePortal(area.mode) : null
+  return mode && portalRunsOn(data, mode) ? mode : null
 }
 
 /**

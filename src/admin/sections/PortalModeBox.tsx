@@ -1,6 +1,7 @@
 // Admin → Areas: an area's special mode (docs/28). The portal run: Distortion World's, and the Hall of Origin's dressed
-// as the Stairway of Plates (docs/61 §4.5). Its switch (the game_config row `portalRun`, which the server reads too),
-// its look, every number of the area's run and its raid's, the raid Pokémon's type on each bar among them.
+// as the Stairway of Plates (docs/61 §4.5). Their two switches (the game_config rows `portalRun` and `platesRun`, which
+// the server reads too: a run dressed as the Stairway answers to its own), its look, every number of the area's run
+// and its raid's, the raid Pokémon's type on each bar among them.
 import type { Row } from '@/config/mapping'
 import {
   DEFAULT_PORTAL_RUN,
@@ -75,7 +76,9 @@ function BarTypes({
 export function PortalModeBox({ area }: { area: Row }) {
   const data = useAdminData()
   const [sw, setSw] = useConfigRow('portalRun')
+  const [platesSw, setPlatesSw] = useConfigRow('platesRun')
   const access = sw?.access ?? 'off'
+  const platesAccess = platesSw?.access ?? 'off'
   const mode = normalisePortal(area.mode)
   const set = (next: PortalRunMode | null) => updateRow('areas', rowKey('areas', area), { mode: next })
   const patch = (p: Partial<PortalRunMode>) => mode && set({ ...mode, ...p })
@@ -96,18 +99,33 @@ export function PortalModeBox({ area }: { area: Row }) {
       hint="Distortion World's mode (docs/28), also the Hall of Origin's Stairway of Plates (docs/61 §4.5): no rounds and no Pokémon Center; the team is healed going in and can't leave until it wins or is K.O. An endless deck of wild Pokémon (never caught) and finds, each cycle ending on a distortion that offers boons; the last one wins for good and opens the area's raid at the numbers below. A wipe keeps XP, ₽ and items but closes the portals back to 0."
     >
       <div className="flex flex-wrap items-center gap-3">
-        <span className="text-lg">Portal runs (every area)</span>
+        <span className="text-lg">Distortion World runs (every area)</span>
         <AccessSwitch
           value={access}
           onChange={(a) => setSw({ access: a })}
-          label="Portal runs: who plays them"
+          label="Distortion World runs: who plays them"
         />
         <span className="text-base text-muted">
           {access === 'all'
-            ? 'Every player: portal areas play their run; their raid opens once it is won.'
+            ? 'Every player: portal areas in the Distortion World look play their run; their raid opens once it is won.'
             : access === 'admin'
-              ? 'Only you (signed in) play the runs; other players see the areas as before.'
-              : 'Off: portal areas play as before (rounds, Centers, their raid once cleared). Runs in saves are kept.'}
+              ? 'Only you (signed in) play them; other players see the areas as before.'
+              : 'Off: those areas play as before (rounds, Centers, their raid once cleared). Runs in saves are kept.'}
+        </span>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Stairway of Plates (every area)</span>
+        <AccessSwitch
+          value={platesAccess}
+          onChange={(a) => setPlatesSw({ access: a })}
+          label="Stairway of Plates: who climbs it"
+        />
+        <span className="text-base text-muted">
+          {platesAccess === 'all'
+            ? 'Every player: portal areas in the Stairway of Plates look play their climb; their raid opens once it is won.'
+            : platesAccess === 'admin'
+              ? 'Only you (signed in) climb it; other players see the areas as before.'
+              : 'Off: those areas play as before (rounds, Centers, their raid once cleared). Climbs in saves are kept.'}
         </span>
       </div>
       <label className="flex items-center gap-2 text-lg">

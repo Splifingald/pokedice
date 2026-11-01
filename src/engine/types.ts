@@ -1279,6 +1279,8 @@ export interface GameConfig {
   push: PushConfig
   /** The areas' portal run (docs/28): its switch. The server reads the same row (0057). */
   portalRun: { access: EventAccess }
+  /** The Hall of Origin's Stairway of Plates (docs/61 §4.5): a portal run with its own switch. The server reads it (0125). */
+  platesRun: { access: EventAccess }
   /** The areas' nightmare (docs/30): its switch. The server reads the same row (0060). */
   nightmare: { access: EventAccess }
   /** The areas' race of time and space (docs/61 §4.4): its switch. The server reads the same row (0124). */

@@ -35,6 +35,7 @@ export {
   portalModeOf,
   portalRaidRules,
   portalRunsOn,
+  portalSwitchOf,
   portalSkin,
 } from './portalMode'
 
