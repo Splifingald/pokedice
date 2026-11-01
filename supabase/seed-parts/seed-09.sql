@@ -2,29 +2,6 @@
 -- Run the parts in order (1 first: it carries the schema changes). Together they are supabase/seed.sql.
 begin;
 insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time_of_day) values
-  ('1ebb6a86-2d8d-5f60-9761-8e96f6bdba93', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 371, 10, 60, 76, null),
-  ('266a7d91-f0cf-5f06-80ee-f199494ede5a', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 399, 10, 60, 76, null),
-  ('aa9fad0b-74f8-5a1d-91f1-edbdbb0b9a3d', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 406, 10, 60, 76, null),
-  ('d7dca950-1008-577a-88dd-3434b6c18b39', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 412, 10, 60, 76, null),
-  ('4847d793-5903-5f78-9e1b-6ae0b86d9895', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 415, 10, 60, 76, null),
-  ('77629945-cf63-50c8-b4bc-e66c49bd988d', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 417, 10, 60, 76, null),
-  ('d9887bfd-1014-52fc-b381-3a978cbcc537', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 419, 10, 60, 76, null),
-  ('cea190be-e3ec-53ba-917d-25d4eaeff62b', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 425, 10, 60, 76, null),
-  ('6a9dad45-7753-5cd2-8f69-8c6f4a5bc5ea', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 433, 10, 60, 76, null),
-  ('19450c29-4c67-577b-ba3c-209ee4bac75b', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 434, 10, 60, 76, null),
-  ('e8989584-55c0-59d8-9485-b7337d14c6de', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 439, 10, 60, 76, null),
-  ('a8a11e7b-cb7e-5ba6-a031-87aa59f6d4e8', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 441, 10, 60, 76, null),
-  ('2e157fd2-864f-59b5-aa1e-7ef77af35cd4', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 443, 3, 60, 76, null),
-  ('0c43382b-2c8d-5359-94ed-994427318f61', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 447, 3, 60, 76, null),
-  ('163207d6-a614-5274-8a3d-58a77631da5f', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 449, 10, 60, 76, null),
-  ('e6c53b89-1650-54b2-93d7-bbda090e8456', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 451, 10, 60, 76, null),
-  ('658382d0-f2d6-5b3c-bef3-67801e15a9f4', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 452, 10, 60, 76, null),
-  ('17e69cc6-1b88-5737-990d-b56fce69f4a1', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 453, 10, 60, 76, null),
-  ('4eea158d-ee9c-5354-b9a5-bb5154e9077e', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 455, 10, 60, 76, null),
-  ('6a707633-829f-5b61-9bdb-4e53daf750de', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 459, 10, 60, 76, null),
-  ('ecd4aceb-aa8f-58ca-9ac9-747eeb18e9d1', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 460, 10, 60, 76, null),
-  ('31c8cd8a-2fce-5fcf-b371-4306365182e1', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 505, 10, 60, 76, null),
-  ('362fa4da-eb59-58d6-9b78-eed76ac6e770', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 510, 10, 60, 76, null),
   ('ec0ac13a-6a4b-548e-9138-bb2e0159b6d6', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 511, 10, 60, 76, null),
   ('7d47cc7b-c61d-52e5-9150-bfacc1621046', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 513, 10, 60, 76, null),
   ('79d1a6f7-c56a-521f-b015-4e5f8f27afdf', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 515, 10, 60, 76, null),
@@ -251,10 +228,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time
   ('af052dad-0d10-5075-8e7e-9c7b043fbb27', 'f4f5da0f-eca7-5aa5-a902-aa3f27d8910a', 278, 18, 40, 46, null),
   ('0ebca767-57d6-5562-869a-3a34870e585a', 'f4f5da0f-eca7-5aa5-a902-aa3f27d8910a', 72, 16, 40, 46, null),
   ('bcdf980b-2210-5a7a-9550-ee85422c1808', 'f4f5da0f-eca7-5aa5-a902-aa3f27d8910a', 337, 14, 41, 47, null),
-  ('b22e6062-6f07-5772-8de0-7da6b6928389', 'f4f5da0f-eca7-5aa5-a902-aa3f27d8910a', 338, 14, 41, 47, null)
-on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level, time_of_day = excluded.time_of_day;
-
-insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time_of_day) values
+  ('b22e6062-6f07-5772-8de0-7da6b6928389', 'f4f5da0f-eca7-5aa5-a902-aa3f27d8910a', 338, 14, 41, 47, null),
   ('fd3f1c9c-a423-5095-97a9-5a889c570a78', 'f4f5da0f-eca7-5aa5-a902-aa3f27d8910a', 307, 14, 41, 47, null),
   ('9e2f5a12-8377-51be-b173-4f9dfad31d01', 'f4f5da0f-eca7-5aa5-a902-aa3f27d8910a', 280, 12, 40, 46, null),
   ('3675e082-b500-517d-8715-a256df7d18d8', 'f4f5da0f-eca7-5aa5-a902-aa3f27d8910a', 343, 12, 40, 46, null),
@@ -277,7 +251,10 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time
   ('789e8d71-0662-5f67-bc1e-73e654649a97', '707bb825-6657-5025-b3b2-422458b071d9', 321, 8, 46, 51, null),
   ('de5d2710-3c0f-55e7-84dd-7ad17a735510', '707bb825-6657-5025-b3b2-422458b071d9', 366, 12, 43, 49, null),
   ('aa25dd1d-dc61-541d-9460-bc87e6a388d0', '707bb825-6657-5025-b3b2-422458b071d9', 369, 10, 44, 50, null),
-  ('0b921441-cf48-5303-a654-47ad3b09d53b', '707bb825-6657-5025-b3b2-422458b071d9', 370, 12, 42, 48, null),
+  ('0b921441-cf48-5303-a654-47ad3b09d53b', '707bb825-6657-5025-b3b2-422458b071d9', 370, 12, 42, 48, null)
+on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level, time_of_day = excluded.time_of_day;
+
+insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time_of_day) values
   ('57a595af-2063-5ef3-abb3-4d4642e893ef', '707bb825-6657-5025-b3b2-422458b071d9', 278, 12, 42, 48, null),
   ('a3d24cef-8d91-506d-8bd1-7eafdea9271f', '707bb825-6657-5025-b3b2-422458b071d9', 116, 12, 42, 48, null),
   ('5854c57e-38b4-5ea8-b492-10530d82f324', '9c6c6d9c-030c-55ba-9294-e9125e8ef539', 626, 12, 42, 48, null),
@@ -504,10 +481,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time
   ('f79c2277-fe0b-51f1-8ef3-16937e4be091', '8e822a9a-e17c-56d4-9413-f55f279f136b', 366, 12, 45, 51, null),
   ('06ec1cdc-3a1a-5035-bb12-92d91e641a9e', '8e822a9a-e17c-56d4-9413-f55f279f136b', 370, 12, 44, 50, null),
   ('de6fb9bc-83e9-5be8-95fc-4e9f199ae457', '8e822a9a-e17c-56d4-9413-f55f279f136b', 116, 12, 44, 50, null),
-  ('6972ef8e-09e0-53c4-ba9c-420cb5b58a91', '8e822a9a-e17c-56d4-9413-f55f279f136b', 349, 6, 45, 51, null)
-on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level, time_of_day = excluded.time_of_day;
-
-insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time_of_day) values
+  ('6972ef8e-09e0-53c4-ba9c-420cb5b58a91', '8e822a9a-e17c-56d4-9413-f55f279f136b', 349, 6, 45, 51, null),
   ('b6bd39cf-ad69-5b60-a82e-7a92466af536', 'c3397515-cd10-59d4-b70a-949ef766c59d', 42, 14, 46, 52, null),
   ('8d7c58e9-bb4e-5083-ba2d-b4662b9873fd', 'c3397515-cd10-59d4-b70a-949ef766c59d', 75, 12, 46, 52, null),
   ('f92a5ce8-4ddc-5d5c-b5ed-d92bcdec1c07', 'c3397515-cd10-59d4-b70a-949ef766c59d', 305, 12, 46, 52, null),
@@ -530,7 +504,10 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time
   ('a94b9dfc-d620-5710-806b-c295b80bd9d5', '463df9e2-3191-591e-889c-f3a8c82e6c0a', 308, 12, 46, 54, null),
   ('33ab2ae4-1b94-5d8b-bc85-8bb2f5341dde', '463df9e2-3191-591e-889c-f3a8c82e6c0a', 444, 12, 46, 54, null),
   ('332c8da9-71c8-59bb-abd4-659651fc836d', '463df9e2-3191-591e-889c-f3a8c82e6c0a', 452, 12, 46, 54, null),
-  ('5a95e4ad-a5f9-5cf3-a37b-3383f52a5afd', '463df9e2-3191-591e-889c-f3a8c82e6c0a', 332, 10, 45, 53, null),
+  ('5a95e4ad-a5f9-5cf3-a37b-3383f52a5afd', '463df9e2-3191-591e-889c-f3a8c82e6c0a', 332, 10, 45, 53, null)
+on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level, time_of_day = excluded.time_of_day;
+
+insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time_of_day) values
   ('476e98c5-082d-5f3b-8730-0643d1a82985', '463df9e2-3191-591e-889c-f3a8c82e6c0a', 297, 10, 46, 54, null),
   ('a54eabbb-8551-5b23-a2ef-0d2c776ebb30', '463df9e2-3191-591e-889c-f3a8c82e6c0a', 232, 10, 45, 53, null),
   ('f4fe6ba7-fad5-5ad1-80fa-ba977abdd781', 'bb60e243-3c86-5c3a-ad23-572ba44840f8', 569, 14, 40, 45, null),
@@ -757,10 +734,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time
   ('b7f87ec6-a1b4-52c9-9a3d-ab77cbd57595', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 331, 10, 60, 75, null),
   ('68cab01c-12ce-5060-99d9-c3c671c7cac9', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 332, 10, 60, 75, null),
   ('b981f6d0-dafa-502e-af15-754b6347bf58', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 333, 10, 60, 75, null),
-  ('363bacf4-0b7a-5066-8ae1-50269f7c009c', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 334, 10, 60, 75, null)
-on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level, time_of_day = excluded.time_of_day;
-
-insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time_of_day) values
+  ('363bacf4-0b7a-5066-8ae1-50269f7c009c', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 334, 10, 60, 75, null),
   ('a06aace2-3cbe-58b6-b9cf-943563f7c3a8', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 335, 10, 60, 75, null),
   ('de304ca0-869e-5ccb-8bf9-3bdd451f23ee', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 336, 10, 60, 75, null),
   ('4f9e68eb-674b-5223-80d0-f4255bccba36', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 337, 10, 60, 75, null),
@@ -783,7 +757,10 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time
   ('6f095531-8fe7-53ee-8a20-cf590bdec331', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 358, 10, 60, 75, null),
   ('23e2bc67-386d-5858-95c0-0b6f7a3f0457', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 359, 10, 60, 75, null),
   ('77e8631d-df83-5894-9dd7-644fdf37454e', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 360, 10, 60, 75, null),
-  ('f33e6b82-60c9-5fef-b8ff-a8327bea44c5', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 361, 10, 60, 75, null),
+  ('f33e6b82-60c9-5fef-b8ff-a8327bea44c5', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 361, 10, 60, 75, null)
+on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level, time_of_day = excluded.time_of_day;
+
+insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time_of_day) values
   ('776052dd-c52d-574c-8f6a-e59fee9da060', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 362, 10, 60, 75, null),
   ('a04cf11d-1a8a-5bf9-bbe9-692d47691a72', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 363, 10, 60, 75, null),
   ('0c9f6437-5aa7-5a00-87c1-78ee540b8a19', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 364, 10, 60, 75, null),
@@ -1010,10 +987,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time
   ('7e54825e-9626-56a2-b6c9-945ea5250cad', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 438, 10, 60, 76, null),
   ('31b28a8e-ab90-5046-aa47-f160c7ae8fda', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 439, 10, 60, 76, null),
   ('b449e5e8-9f48-5319-8611-a8cc9d1fd1fe', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 440, 10, 60, 76, null),
-  ('25af23bc-a035-5a06-9ce3-5f6450d7862b', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 444, 3, 60, 76, null)
-on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level, time_of_day = excluded.time_of_day;
-
-insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time_of_day) values
+  ('25af23bc-a035-5a06-9ce3-5f6450d7862b', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 444, 3, 60, 76, null),
   ('46ef6378-1cb1-5fef-92a1-cfdaa1fd6e74', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 446, 3, 60, 76, null),
   ('6aa63202-ba44-5a60-a888-61dee0960f4a', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 448, 3, 60, 76, null),
   ('69bbaf9c-5d17-5a95-b107-a2e89bda4c4b', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 456, 10, 60, 76, null),
@@ -1036,7 +1010,10 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time
   ('3a12032b-0a37-5cd0-8e6b-59db03c6959c', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 572, 10, 60, 76, null),
   ('1f87da88-525b-5577-9c59-c8eb7e897d0b', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 583, 10, 60, 76, null),
   ('dc1905d8-06fa-508f-8e34-cae82b8ff380', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 584, 10, 60, 76, null),
-  ('3862ed89-94c9-5b9a-8f0c-73d5252c4a69', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 594, 10, 60, 76, null),
+  ('3862ed89-94c9-5b9a-8f0c-73d5252c4a69', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 594, 10, 60, 76, null)
+on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level, time_of_day = excluded.time_of_day;
+
+insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time_of_day) values
   ('92a12458-6acf-52c6-a936-f9f2085f0329', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 604, 10, 60, 76, null),
   ('3e7b342d-2e03-5a84-801f-1aec4efcbc30', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 605, 10, 60, 76, null),
   ('14b8289d-38ff-5772-93ed-2e581ef996e5', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 607, 10, 60, 76, null),
@@ -1263,10 +1240,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time
   ('e46ef054-fef0-5977-b439-22b4f1d8e1b8', '1a1d8cd3-309b-5135-a5bf-cce7726d9285', 833, 6, 13, 15, null),
   ('6445fbad-dae0-56e0-849d-d9771515807f', '1a1d8cd3-309b-5135-a5bf-cce7726d9285', 595, 4, 13, 15, null),
   ('585f303c-1c45-5748-a90e-c197c2b55ec9', '1a1d8cd3-309b-5135-a5bf-cce7726d9285', 742, 4, 13, 15, null),
-  ('65ffe688-8e4b-55b0-a9f0-e99471b207e8', '1a1d8cd3-309b-5135-a5bf-cce7726d9285', 406, 4, 13, 15, null)
-on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level, time_of_day = excluded.time_of_day;
-
-insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time_of_day) values
+  ('65ffe688-8e4b-55b0-a9f0-e99471b207e8', '1a1d8cd3-309b-5135-a5bf-cce7726d9285', 406, 4, 13, 15, null),
   ('3e2400d6-8db4-5eb6-90e8-a7aaaf48fb46', '1a1d8cd3-309b-5135-a5bf-cce7726d9285', 25, 2, 14, 16, null),
   ('a8f1460e-7757-54de-8688-917ce0f6d4c2', '1a1d8cd3-309b-5135-a5bf-cce7726d9285', 133, 2, 14, 16, null),
   ('a260758f-4f4a-5e1e-978f-70b73a8a0f52', '1a1d8cd3-309b-5135-a5bf-cce7726d9285', 10161, 12, 13, 16, null),
@@ -1289,7 +1263,10 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time
   ('dedced00-f048-5c14-ae95-609bc55c861b', '902e5ba8-0792-587d-ace6-eef95a49b627', 422, 8, 20, 24, null),
   ('69795f65-f8e3-56f9-864f-afc42ef8a359', '902e5ba8-0792-587d-ace6-eef95a49b627', 767, 8, 20, 24, null),
   ('3f5a6f97-5727-5ea2-97d1-f8556351b99e', '902e5ba8-0792-587d-ace6-eef95a49b627', 341, 6, 20, 24, null),
-  ('f7200a91-fb43-5bfe-b15c-b5ce852712b8', '902e5ba8-0792-587d-ace6-eef95a49b627', 714, 6, 20, 24, null),
+  ('f7200a91-fb43-5bfe-b15c-b5ce852712b8', '902e5ba8-0792-587d-ace6-eef95a49b627', 714, 6, 20, 24, null)
+on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level, time_of_day = excluded.time_of_day;
+
+insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time_of_day) values
   ('6ee72446-09c0-56fe-88eb-787c4115fede', '902e5ba8-0792-587d-ace6-eef95a49b627', 688, 6, 20, 24, null),
   ('312c70fa-966f-52b0-8382-bba36d70abb3', '902e5ba8-0792-587d-ace6-eef95a49b627', 559, 6, 20, 24, null),
   ('0a1a3812-63ec-599f-99ae-33058466a343', '902e5ba8-0792-587d-ace6-eef95a49b627', 453, 6, 20, 24, null),
@@ -1516,10 +1493,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time
   ('8a1ae839-b9bc-5528-8b41-ae225355db79', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 127, 3, 50, 70, null),
   ('339f87cc-5a16-5690-b51f-c7c2bc7ab76c', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 128, 3, 50, 70, null),
   ('bac501e5-7166-5af7-bf1f-9ba60b712a1a', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 129, 10, 50, 70, null),
-  ('b0558fb1-257b-584a-b65d-3a47afda5e1b', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 130, 10, 50, 70, null)
-on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level, time_of_day = excluded.time_of_day;
-
-insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time_of_day) values
+  ('b0558fb1-257b-584a-b65d-3a47afda5e1b', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 130, 10, 50, 70, null),
   ('c82a1cf8-6054-5537-ac57-ade798e95f8c', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 131, 3, 50, 70, null),
   ('c460641e-8234-5a23-aa38-5d2547aa01cf', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 132, 3, 50, 70, null),
   ('90c95fa4-c3f5-5757-9d26-482d1ce61d8f', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 133, 3, 50, 70, null),
@@ -1542,7 +1516,10 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time
   ('48e6f0d9-8dd5-507d-8bd8-5bd4fd03eee7', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 79, 10, 50, 70, null),
   ('83a6b86a-f77c-5a06-aaba-a0941b6cb02b', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 80, 10, 50, 70, null),
   ('b4ea9440-ee3e-5ce0-90ab-4e89c7211995', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 81, 10, 50, 70, null),
-  ('f6e65094-8f8f-581e-9e63-7431c042f216', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 82, 10, 50, 70, null),
+  ('f6e65094-8f8f-581e-9e63-7431c042f216', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 82, 10, 50, 70, null)
+on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level, time_of_day = excluded.time_of_day;
+
+insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time_of_day) values
   ('f0b7ffb6-9450-593d-a791-dbe190537122', '3585c2a5-43bc-50c9-9818-e148404cabf8', 16, 50, 2, 5, null),
   ('506f1166-489e-50f6-9203-e56826c4aab2', '3585c2a5-43bc-50c9-9818-e148404cabf8', 19, 50, 2, 4, null),
   ('bc17445e-5dec-5c85-8ec0-ae46500c579f', '3585c2a5-43bc-50c9-9818-e148404cabf8', 43, 3, 3, 5, null),
@@ -1769,6 +1746,29 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time
   ('33087447-6180-55de-8677-e84f89df33fb', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 869, 10, 60, 76, null),
   ('1ad26a40-f873-50a2-975d-487a29a30af2', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 870, 10, 60, 76, null),
   ('02ba22c1-e1e9-51f3-95b9-afa497fb12b1', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 871, 10, 60, 76, null),
-  ('ede8856d-cc04-577f-8724-952071a0c307', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 872, 10, 60, 76, null)
+  ('ede8856d-cc04-577f-8724-952071a0c307', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 872, 10, 60, 76, null),
+  ('6aa3f32e-6b85-5dd5-881f-c85fa5ae803c', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 873, 10, 60, 76, null),
+  ('1268409e-004b-5c45-9405-33c344d2e77b', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 874, 10, 60, 76, null),
+  ('0e92c2e7-9222-5e7a-9dcb-94790081d36b', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 875, 10, 60, 76, null),
+  ('95af6bcb-9449-5f6b-92cc-0edfca61c8c5', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 876, 10, 60, 76, null),
+  ('899617b7-336b-548b-9864-2aa0576e1e67', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 877, 10, 60, 76, null),
+  ('176cc26c-d373-560f-9600-d35219c7c91e', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 878, 10, 60, 76, null),
+  ('a336d32b-46c1-5b78-9f5e-a32c51ddd1b6', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 879, 10, 60, 76, null),
+  ('f9d37707-b072-50b1-8eb5-b0a2de482dbf', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 884, 10, 60, 76, null),
+  ('db649c8d-904c-56fb-adc8-790bb46246ff', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 885, 10, 60, 76, null),
+  ('8adb9b34-046f-56b8-aa67-72186155b411', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 886, 10, 60, 76, null),
+  ('64fef1d1-317b-5e64-94d6-76feae6a612f', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 887, 10, 60, 76, null),
+  ('eaee17ae-222e-59f6-acc8-bb9eff78ad50', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 899, 10, 60, 76, null),
+  ('8283c01c-93cb-5292-82ef-2c21b9609571', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 900, 10, 60, 76, null),
+  ('adb37265-d3f3-5cfe-8517-a5ef93651f7e', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 901, 10, 60, 76, null),
+  ('08c08928-8090-527f-bdfd-bea0f87a063e', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 902, 10, 60, 76, null),
+  ('8c4de5e8-7cda-5923-a487-87e7b6b483bf', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 903, 10, 60, 76, null),
+  ('e1311701-ee9a-5cdf-b610-78903d56a07e', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 904, 10, 60, 76, null),
+  ('f97cb3ce-6690-57e9-b5b2-dbb0d8e359f6', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 10161, 10, 60, 76, null),
+  ('b98f22f3-b67a-5266-89ba-be9e4f2c36b3', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 10162, 10, 60, 76, null),
+  ('555372b4-f4a2-589e-85d0-4f00fedaaf63', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 10166, 10, 60, 76, null),
+  ('af13858d-b763-5a23-8910-6f986059a18e', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 10168, 10, 60, 76, null),
+  ('928ca269-4c60-57f7-a117-1997d065cefd', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 10173, 10, 60, 76, null),
+  ('033299b6-912a-53da-ba68-dba042e0a0af', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 10174, 10, 60, 76, null)
 on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level, time_of_day = excluded.time_of_day;
 commit;

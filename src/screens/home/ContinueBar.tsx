@@ -19,6 +19,8 @@ import {
   portalStateOf,
   progressOf,
   raidRules,
+  safariRoundDue,
+  safariRoundPrice,
   teamAverageLevel,
   type Area,
 } from '@/engine'
@@ -76,6 +78,9 @@ export function useContinue(area: Area) {
   const raidName = raid ? (data.species[raid.dex]?.name ?? '') : ''
   const need = area.roundsToClear || null
   const done = progress.roundsDone ?? 0
+  // A Safari (docs/61 §4): the next round's price, or its free round, under CONTINUE.
+  const safariDue = !busy && safariRoundDue(data, area, progress)
+  const safariPrice = safariDue ? safariRoundPrice(data, area, progress) : 0
   // Extreme mode (docs/22): nobody can fight and no Center will come — the team rests.
   // With its boon Centers (docs/47), a K.O. here sends the Center that swaps instead.
   const resting = !busy && !hasAbleTeam(save) && !centersOn(save, data) && !wipeCenterDue(save, area.id, data)
@@ -119,6 +124,10 @@ export function useContinue(area: Area) {
           ? t('ui.raid.progress.continueSub', { level: raidRules(data, raid.dex, 'progress', raid.areaId).level })
         : closed
           ? t('ui.home.closed')
+          : safariDue
+            ? safariPrice > 0
+              ? t('ui.safari.price', { price: safariPrice })
+              : t('ui.safari.freeRound')
           : progress.cleared
             ? t('ui.home.freePlay')
             : need != null

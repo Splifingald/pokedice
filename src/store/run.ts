@@ -139,6 +139,12 @@ import {
   rerollLessonDue,
   disguisesOn,
   isDisguisedFind,
+  lureCfg,
+  safariDealable,
+  safariOn,
+  safariRoundDue,
+  safariRoundPrice,
+  startSafariRound,
 } from '@/engine'
 import { activeSlot } from '@/save/storage'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type CatchState, type RunState } from './game'
@@ -510,7 +516,20 @@ export function rollNext() {
     pushToast(t('ui.extreme.restingToast'), 'bad')
     return
   }
-  const forceKind = noneAble && !wipeCenter ? 'center' : run.forceNext
+  // A Safari (docs/61 §4): nobody fights there, so a team unable to fight still plays it; a new round is paid first.
+  const safari = data.areas.find((a) => a.id === run.areaId)
+  const forceKind = noneAble && !wipeCenter && !(safari && safariDealable(data, safari)) ? 'center' : run.forceNext
+  if (safari && safariRoundDue(data, safari, progressOf(save, safari.id))) {
+    const price = safariRoundPrice(data, safari, progressOf(save, safari.id))
+    const paid = startSafariRound(save, data, safari)
+    if (!paid) {
+      setRun({ phase: 'idle', encounter: null })
+      pushToast(t('ui.safari.tooPoor', { price }), 'bad')
+      return
+    }
+    commitSave(paid)
+    if (price > 0) pushToast(t('ui.safari.paid', { price }), 'info')
+  }
   const ctx = encounterContext(useGame.getState().save!, run.areaId, forceKind)
   if (!ctx) return
   const area = ctx.area
@@ -755,6 +774,9 @@ export function engage(lead?: string | string[], staged?: boolean) {
       return
     case 'trick':
       void beginTrick(enc)
+      return
+    case 'safari':
+      void beginSafari(enc)
       return
     case 'wild': {
       const foe = { dex: enc.dex, level: enc.level, shiny: enc.shiny, talent: enc.talent }
@@ -1376,12 +1398,29 @@ async function beginTrick(enc: Extract<NonNullable<RunState['encounter']>, { kin
   setRun({ phase: 'trick', trick: { id: ++trickSeq, state: startTrick(enc, trickCfg(useGame.getState().data), runRng), last: null, caught: null } })
 }
 
-/** One step of Trick or Treat, decided by the engine; a catch goes into the save at once. */
+/**
+ * A Safari encounter (docs/61 §4) once the server agrees (a signed-in player: side_quest_open): Trick or Treat's screen
+ * with the Safari's look and numbers. Switched off meanwhile, the card is spent and the player is back in the area.
+ */
+async function beginSafari(enc: Extract<NonNullable<RunState['encounter']>, { kind: 'safari' }>) {
+  const ok = await sideQuestAllowed('safari', safariOn(useGame.getState().data))
+  const run = useGame.getState().run
+  if (run.phase !== 'preview' || run.encounter !== enc) return
+  if (!ok) {
+    pushToast(t('ui.safari.closed'), 'bad')
+    backToArea()
+    return
+  }
+  const cfg = lureCfg(useGame.getState().data, 'safari')
+  setRun({ phase: 'trick', trick: { id: ++trickSeq, state: startTrick(enc, cfg, runRng, 'safari'), last: null, caught: null } })
+}
+
+/** One step of Trick or Treat (or the Safari), decided by the engine; a catch goes into the save at once. */
 function trickStep(step: (cfg: ReturnType<typeof trickCfg>) => TrickStep | null): TrickStep | null {
   const { run, save, data } = useGame.getState()
   const tr = run.trick
   if (run.phase !== 'trick' || !tr || tr.state.end || !save) return null
-  const res = step(trickCfg(data))
+  const res = step(lureCfg(data, tr.state.theme))
   if (!res) return null
   let caught = tr.caught
   if (res.caught) {

@@ -185,6 +185,8 @@ const progressSchema = z.object({
   // Extreme mode's Centers (docs/47): a secret area's first one met, and a round to start over at a Center.
   centerMet: z.boolean().optional(),
   wiped: z.boolean().optional(),
+  // A Safari (docs/61 §4): rounds begun there (the free ones included). An odd value counts as none.
+  safariRounds: z.number().int().min(0).optional().catch(undefined),
 })
 
 /** One parked region's block: the same fields the live region keeps at the top level of the save. */
@@ -519,6 +521,8 @@ export const saveSchema = z.object({
     .optional(),
   // Trick or Treat (docs/29): its rules pop-up seen.
   trickOrTreat: z.object({ rulesSeen: z.boolean().optional() }).optional(),
+  // The Safari (docs/61 §4): its rules pop-up shown.
+  safari: z.object({ rulesSeen: z.boolean().optional() }).optional().catch(undefined),
   // The Underground (docs/34): the running event's block, and the plates kept for good.
   underground: undergroundSchema.optional(),
   plates: z.array(typeEnum).max(18).optional(),

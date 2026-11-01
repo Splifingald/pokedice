@@ -1639,6 +1639,7 @@ const FEATURES: Feature[] = [
   bare('Route 1 opening & tutorial', 'openingRounds'),
   // The side quests (docs/61).
   bare('Pokémon posing as items', 'disguises'),
+  own('Safari Zones', 'safari'),
   own('Unown Pokédex', 'unownDex', 'unown'),
   own('Hidden talents', 'hiddenTalents', 'talents'),
   bare('Outfits', 'outfits'),

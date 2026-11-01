@@ -1,4 +1,5 @@
 import { areaVersusConfig, foeEncounter, placeVersusCards, type AreaFoe } from './areaVersus'
+import { safariDealable, safariTier } from './safari'
 import { isLegendary } from './breeding'
 import { areaDayTime, wildPoolAt } from './dayNight'
 import { shuffle } from './deal'
@@ -91,6 +92,8 @@ export type Encounter =
   | { kind: 'casino' }
   /** Trick or Treat (docs/29): a ghost from the area's list, tempted with Treats and caught with a Trick Ball. */
   | { kind: 'trick'; dex: number; level: number; tier: TrickTier; isNew: boolean; shiny?: boolean; talent?: boolean }
+  /** A Safari's wild card (docs/61 §4): Trick or Treat's gauge, with Bait and Safari Balls; nobody battles. */
+  | { kind: 'safari'; dex: number; level: number; tier: TrickTier; isNew: boolean; shiny?: boolean; talent?: boolean }
 
 /** A wild double battle's second Pokémon (docs/33). */
 export interface WildPartner {
@@ -372,6 +375,19 @@ export function rollTrick(ctx: EncounterContext, rng: Rng): Encounter | null {
   return { kind: 'trick', dex: ghost.dex, level, tier: ghost.tier, isNew: !ctx.pokedex.includes(ghost.dex), ...(shiny && { shiny }) }
 }
 
+/**
+ * A Safari's wild card (docs/61 §4): a Pokémon from the area's wild pool by its odds (the new-Pokémon pity and the time
+ * of day as for a wild card; never a roamer), its tier from the Safari's list or its catch value, the wild shiny odds.
+ */
+export function rollSafari(ctx: EncounterContext, rng: Rng): Encounter | null {
+  const entry = rng.weighted(wildOdds(ctx), (o) => o.weight)?.entry
+  if (!entry) return null
+  const level = enemyLevel(rng.int(entry.minLevel, Math.max(entry.minLevel, entry.maxLevel)), ctx, rng)
+  const shiny = !shinyLocked(ctx.data, entry.dex) && rollShiny(ctx.data, rng, ctx.shinyBoost, ctx.shinyChance)
+  const tier = safariTier(ctx.data, ctx.area.id, entry.dex)
+  return { kind: 'safari', dex: entry.dex, level, tier, isNew: !ctx.pokedex.includes(entry.dex), ...(shiny && { shiny }) }
+}
+
 export function rollTrainer(ctx: EncounterContext, rng: Rng): Encounter | null {
   const entry = rng.weighted(ctx.area.trainerPool, (t) => (ctx.data.trainers[t.trainerId] ? t.weight : 0))
   const trainer = entry && ctx.data.trainers[entry.trainerId]
@@ -516,7 +532,8 @@ export function dueCenter(ctx: EncounterContext): 'round' | 'hurt' | 'fainted' |
  * A due gym battle or legendary is never dealt here: the player takes it on when ready (`challengeEncounter`).
  */
 export function nextEncounter(ctx: EncounterContext, rng: Rng): EncounterRoll {
-  const roll = dealEncounter(ctx, rng)
+  // A Safari (docs/61 §4) deals no Pokémon Center while it's played: nothing there hurts.
+  const roll = dealEncounter(safariDealable(ctx.data, ctx.area) ? { ...ctx, noCenters: true } : ctx, rng)
   return { ...roll, encounter: dealTalents(roll.encounter, ctx.data, rng) }
 }
 
@@ -530,6 +547,7 @@ export function dealTalents(enc: Encounter, data: GameData, rng: Rng): Encounter
   switch (enc.kind) {
     case 'wild':
     case 'trick':
+    case 'safari':
     case 'boss':
       return rollTalent(data, enc.dex, rng) ? { ...enc, talent: true } : enc
     case 'trainer':
@@ -629,7 +647,9 @@ function returningLegend(ctx: EncounterContext, rng: Rng): Encounter | null {
 
 const cardEncounter = (card: 'wild' | 'trainer' | 'center' | 'casino' | 'trick' | 'versus', ctx: EncounterContext, rng: Rng): Encounter | null =>
   card === 'wild'
-    ? rollWild(ctx, rng)
+    ? safariDealable(ctx.data, ctx.area)
+      ? rollSafari(ctx, rng)
+      : rollWild(ctx, rng)
     : card === 'trainer'
       ? rollTrainer(ctx, rng)
       : card === 'casino'

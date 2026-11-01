@@ -67,10 +67,25 @@ export const TRICK_SCHEMA = z
   })
   .refine((c) => c.treatMax >= c.treatMin, { message: 'Treat max below min', path: ['treatMax'] })
 
-/** Problems with a game_config value that has a schema of its own (Trick or Treat's), as readable lines. */
+/** game_config `safari` (docs/61 §4): Trick or Treat's numbers, each Safari's tier overrides, a round's price. */
+export const SAFARI_SCHEMA = z
+  .object({
+    access: z.enum(EVENT_ACCESS),
+    treatMin: int(1, 100),
+    treatMax: int(1, 100),
+    failPush: int(1, 100),
+    tiers: z.object(Object.fromEntries(TRICK_TIERS.map((k) => [k, trickTier])) as Record<(typeof TRICK_TIERS)[number], typeof trickTier>),
+    areas: z.record(z.array(z.object({ dex: int(1, 99999), tier: z.enum(TRICK_TIERS) }))),
+    freeRounds: int(0, 100),
+    roundPrice: int(0, 1_000_000),
+  })
+  .refine((c) => c.treatMax >= c.treatMin, { message: 'Bait max below min', path: ['treatMax'] })
+
+/** Problems with a game_config value that has a schema of its own (Trick or Treat's, the Safari's), as readable lines. */
 export function configProblems(key: string, value: unknown): string[] {
-  if (key !== 'trickOrTreat') return []
-  const res = TRICK_SCHEMA.safeParse(value)
+  const schema = key === 'trickOrTreat' ? TRICK_SCHEMA : key === 'safari' ? SAFARI_SCHEMA : null
+  if (!schema) return []
+  const res = schema.safeParse(value)
   return res.success ? [] : res.error.issues.map((i) => `${i.path.join('.') || 'value'}: ${i.message}`)
 }
 
@@ -243,6 +258,8 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
           gifts: z.array(z.object({ round: int(1, 20), key: z.string().min(1), qty: int(1, 99) })),
           raid: z.object({ level: int(1, 100), upgradeLevel: int(1, 10), bars: int(1, 10), teamCap: int(1, 100) }),
         }),
+        // A Safari (docs/61 §4): its wild cards are Safari encounters while the Safari's switch is on.
+        z.object({ kind: z.literal('safari') }),
       ])
       .nullable()
       .optional(),

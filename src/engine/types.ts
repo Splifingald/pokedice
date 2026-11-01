@@ -341,7 +341,15 @@ export interface Area {
 }
 
 /** An area's special mode: the portal run (docs/28) or the nightmare (docs/30). */
-export type AreaMode = PortalRunMode | NightmareMode
+export type AreaMode = PortalRunMode | NightmareMode | SafariMode
+
+/**
+ * A Safari (docs/61 §4): a secret area of its own where nobody battles. Its wild cards are Safari encounters, Trick or
+ * Treat's gauge with Bait and Safari Balls, while the Safari's switch is on; off, they're fought as wild Pokémon.
+ */
+export interface SafariMode {
+  kind: 'safari'
+}
 
 /** One of the nightmare's foes, met in its order (docs/30): a wild Pokémon at a set level. */
 export interface NightmareFoe {
@@ -1102,6 +1110,8 @@ export interface GameConfig {
   trickOrTreat: TrickOrTreatConfig
   /** Pokémon posing as items (docs/61 §3): its switch. The server reads the same row (0110: side_quest_open). */
   disguises: { access: EventAccess }
+  /** The Safari (docs/61 §4): its switch, its gauge's numbers, tiers and a round's price. The server reads the switch. */
+  safari: SafariConfig
   /** Day and night in Johto (docs/32): its switch. Migration 0061 inserts the same row. */
   dayNight: { access: EventAccess }
   /** Idle mode and the play styles (docs/36): its switch. Migration 0068 inserts the same row. */
@@ -1339,6 +1349,21 @@ export interface TrickOrTreatConfig {
   /** Each area's ghosts, by area id. An area without a list deals no Trick or Treat card. */
   areas: Record<string, TrickGhost[]>
 }
+
+/**
+ * The Safari (docs/61 §4): Trick or Treat's numbers (Bait is its Treat, the Safari Ball its Trick Ball) with their own
+ * values, each Safari area's tier overrides (`areas`: a Pokémon not listed takes its tier from its catch value), and the
+ * price of a round: the first rounds in each Safari area free, the next ones paid in the region's ₽.
+ */
+export interface SafariConfig extends TrickOrTreatConfig {
+  /** Rounds free in each Safari area, per save. */
+  freeRounds: number
+  /** ₽ for each round after them. */
+  roundPrice: number
+}
+
+/** Trick or Treat's look: the haunted one (docs/29) or the Safari's (docs/61 §4). */
+export type LureTheme = 'trick' | 'safari'
 
 /** Trick or Treat in a save (docs/29): its rules pop-up shown. */
 export interface TrickSave {
@@ -1722,6 +1747,8 @@ export interface PokemonInstance {
 export interface AreaProgress {
   /** Rounds completed here (a round counts once its last card is dealt with; a wipe loses the round in progress). */
   roundsDone: number
+  /** A Safari (docs/61 §4): rounds begun here, the free ones included; a round is paid for as it's dealt. */
+  safariRounds?: number
   /** The current round has already been counted (its deck ran out): don't count it twice. */
   roundCounted?: boolean
   /** Exploration XP from before rounds replaced the gauge: converted to `roundsDone` on load, then dropped. */
@@ -1889,6 +1916,8 @@ export interface SaveData {
   general?: GeneralSave
   /** Trick or Treat (docs/29): its rules seen. Absent = never met. */
   trickOrTreat?: TrickSave
+  /** The Safari (docs/61 §4): its rules pop-up shown. */
+  safari?: TrickSave
   /** The Underground (docs/34): the running event's kits, pickaxe, orbs and wall. Gone when the event ends. */
   underground?: UndergroundSave
   /** Arceus's plates found in the Underground, by type: kept for good. Each lets the player's Arceus take its type. */

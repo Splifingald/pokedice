@@ -355,6 +355,7 @@ const TITLES: Record<Encounter['kind'], string> = {
   center: 'ui.enc.titleCenter',
   casino: 'ui.enc.titleCasino',
   trick: 'ui.enc.titleTrick',
+  safari: 'ui.enc.titleSafari',
 }
 
 /** The encounter, in a pop-up (a bottom sheet on phones): the opponent, who to send out, FIGHT or FLEE (AVOID a trainer). */
@@ -371,7 +372,8 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
   const roadblock = enc.kind === 'boss' ? roadblockOf(runArea, enc.dex) : null
   const titleId = useId()
   const skippable = canSkipCurrent()
-  const fight = enc.kind !== 'center' && enc.kind !== 'item' && enc.kind !== 'casino' && enc.kind !== 'trick'
+  const fight =
+    enc.kind !== 'center' && enc.kind !== 'item' && enc.kind !== 'casino' && enc.kind !== 'trick' && enc.kind !== 'safari'
   const dark = enc.kind === 'boss' || enc.kind === 'gym'
   // A card whose one way on is its button (the Game Corner, Trick or Treat with no skipping it): it loads and presses
   // itself (the user's rule: no step that is only a button). A fight, or a card with a second choice, waits.
@@ -434,6 +436,9 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
           {enc.kind === 'center' && <CenterCard enc={enc} />}
           {enc.kind === 'casino' && <CasinoCard />}
           {enc.kind === 'trick' && <TrickCard dex={enc.dex} level={enc.level} tier={enc.tier} isNew={enc.isNew} shiny={enc.shiny} />}
+          {enc.kind === 'safari' && (
+            <TrickCard theme="safari" dex={enc.dex} level={enc.level} tier={enc.tier} isNew={enc.isNew} shiny={enc.shiny} />
+          )}
 
           {/* A team of one has no one to pick: no "Send out" at all (LeadPicker draws nothing either). */}
           {fight && save && teamOf(save).length > 1 && (
@@ -470,6 +475,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
           >
             {fight && <PixelIcon name="sword" size={22} />}
             {enc.kind === 'trick' && <PixelIcon name="pumpkin" size={22} />}
+            {enc.kind === 'safari' && <PixelIcon name="ball" size={22} />}
             {t(
               enc.kind === 'center' || enc.kind === 'casino'
                 ? 'ui.enc.enter'
@@ -477,7 +483,9 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
                   ? 'ui.enc.pickUp'
                   : enc.kind === 'trick'
                     ? 'ui.trick.start'
-                    : 'ui.enc.fight',
+                    : enc.kind === 'safari'
+                      ? 'ui.safari.start'
+                      : 'ui.enc.fight',
             )}
           </Primary>
           {skippable && (

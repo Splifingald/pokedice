@@ -8,12 +8,21 @@ import {
   conditionStatus,
   dueBoss,
   emptyProgress,
+  feedTreat,
   isAreaUnlocked,
+  isSafariArea,
+  lureCfg,
   lootPoolFor,
   newSave,
   nextEncounter,
   pokedexEverywhere,
   roadblockOf,
+  safariRoundPrice,
+  safariTier,
+  startSafariRound,
+  startTrick,
+  tierFromCatchValue,
+  trickBestPlay,
   type SaveData,
 } from '@/engine'
 import { BUNDLE } from '@/config/bundle'
@@ -150,5 +159,94 @@ describe('Pokémon posing as items (docs/61 §3)', () => {
     expect(lootPoolFor(plant, emptyProgress(), off).some((l) => l.disguise)).toBe(false)
     expect(lootPoolFor(plant, emptyProgress(), withSwitch('all')).some((l) => l.disguise)).toBe(true)
     for (let seed = 1; seed < 20; seed++) expect(find(off, plant, seed).encounter.kind).toBe('item')
+  })
+})
+
+describe('Safari Zones (docs/61 §4)', () => {
+  const withSafari = (access: 'off' | 'all') => ({ ...data, config: { ...data.config, safari: { ...data.config.safari, access } } })
+  const on = withSafari('all')
+  const kanto = data.areas.find((a) => a.name === 'Safari Zone' && (a.regionId ?? 'kanto') === 'kanto')!
+  const ctx = (d: typeof data, area = kanto, deck: ('wild' | 'item' | 'center')[] = ['wild']) => ({
+    area,
+    progress: { ...emptyProgress(), deck },
+    data: d,
+    teamAvgLevel: 30,
+    teamHurt: true,
+    isFirstInArea: true,
+    pokedex: [] as number[],
+  })
+
+  it('is a secret area of its own in every region that has one, Kanto split from Fuchsia City', () => {
+    const safaris = data.areas.filter((a) => isSafariArea(a))
+    expect(safaris.map((a) => `${a.regionId}:${a.name}`).sort()).toEqual([
+      'hoenn:Safari Zone',
+      'kalos:The Friend Safari',
+      'kanto:Safari Zone',
+      'sinnoh:The Great Marsh',
+    ])
+    for (const a of safaris) {
+      expect(a.hidden, a.name).toBe(true)
+      expect(a.roundsToClear, a.name).toBeNull()
+      expect(a.encounterWeights.center, a.name).toBe(0)
+      expect(a.encounterWeights.trainer, a.name).toBe(0)
+      expect(a.gyms, a.name).toEqual([])
+      expect(a.unlockConditions?.[0]?.kind, a.name).toBe('area')
+    }
+    const fuchsia = data.areas.find((a) => a.id === '2238f26a-2629-5f28-af07-e74cb41d5f7a')!
+    expect(fuchsia.name).toBe('Fuchsia City')
+    expect(fuchsia.hidden).toBe(false)
+    expect(fuchsia.wildPool).toEqual([])
+    expect(fuchsia.gyms).toHaveLength(1)
+    expect(fuchsia.encounterWeights.trainer).toBeGreaterThan(0)
+  })
+
+  it('deals Safari encounters from its wild cards while on, wild fights while off', () => {
+    for (let seed = 1; seed < 15; seed++) {
+      const enc = nextEncounter(ctx(on, kanto, ['wild']), createRng(seed)).encounter
+      expect(enc.kind).toBe('safari')
+      if (enc.kind !== 'safari') continue
+      expect(kanto.wildPool.some((w) => w.dex === enc.dex)).toBe(true)
+      expect(enc.tier).toBe(safariTier(on, kanto.id, enc.dex))
+      expect(nextEncounter(ctx(withSafari('off'), kanto, ['wild']), createRng(seed)).encounter.kind).not.toBe('safari')
+    }
+  })
+
+  it('deals no Pokémon Center while on, even for a hurt team entering', () => {
+    // A new round (no deck) would open with a Center anywhere else.
+    const roll = nextEncounter({ ...ctx(on), progress: emptyProgress() }, createRng(4))
+    expect(roll.encounter.kind).not.toBe('center')
+  })
+
+  it('takes a tier from its catch value unless the admin set one', () => {
+    expect(tierFromCatchValue(2)).toBe('common')
+    expect(tierFromCatchValue(5)).toBe('rare')
+    expect(tierFromCatchValue(6)).toBe('veryRare')
+    expect(safariTier(on, kanto.id, 113)).toBe('veryRare') // Chansey
+    expect(safariTier(on, kanto.id, 128)).toBe('rare') // Tauros
+    const set = { ...on, config: { ...on.config, safari: { ...on.config.safari, areas: { [kanto.id]: [{ dex: 113, tier: 'common' as const }] } } } }
+    expect(safariTier(set, kanto.id, 113)).toBe('common')
+  })
+
+  it('charges a round as it is dealt: the first free, then ₽100', () => {
+    let s: SaveData = { ...fresh(), gold: 150 }
+    expect(safariRoundPrice(on, kanto, emptyProgress())).toBe(0)
+    s = startSafariRound(s, on, kanto)!
+    expect(s.gold).toBe(150)
+    expect(s.areaProgress[kanto.id]!.safariRounds).toBe(1)
+    expect(safariRoundPrice(on, kanto, s.areaProgress[kanto.id]!)).toBe(100)
+    // Mid-round: nothing to pay.
+    expect(safariRoundPrice(on, kanto, { ...s.areaProgress[kanto.id]!, deck: ['wild'] })).toBe(0)
+    s = startSafariRound(s, on, kanto)!
+    expect(s.gold).toBe(50)
+    expect(startSafariRound(s, on, kanto)).toBeNull()
+    // Switched off: no price, nothing counted.
+    expect(safariRoundPrice(withSafari('off'), kanto, s.areaProgress[kanto.id]!)).toBe(0)
+  })
+
+  it('plays Trick or Treat’s gauge with its own numbers and look', () => {
+    const st = startTrick({ dex: 113, level: 25, tier: 'veryRare' }, lureCfg(on, 'safari'), createRng(2), 'safari')
+    expect(st.theme).toBe('safari')
+    expect(feedTreat(st, lureCfg(on, 'safari'), createRng(3))?.state.theme).toBe('safari')
+    expect(trickBestPlay(lureCfg(on, 'safari'), 'common').best).toBeGreaterThan(0.6)
   })
 })

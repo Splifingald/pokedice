@@ -14,20 +14,23 @@ import {
 import {
   TRICK_GAUGE_MAX,
   failPush,
+  lureCfg,
+  safariCfg,
   treatRange,
   trickBand,
-  trickCfg,
   trickChance,
   trickZoneAt,
+  type LureTheme,
   type TrickBand,
   type TrickTier,
 } from '@/engine'
 import { artPlacement, artUrl, battleWindow, pictureOf } from '@/fx/areaArt'
 import { softEllipse, canvas } from '@/fx/pixel'
-import { setArtUnderStage, TRICK_BALL_URL } from '@/fx/scenes'
+import { SAFARI_BAIT_URL, SAFARI_BALL_URL, setArtUnderStage, TRICK_BALL_URL } from '@/fx/scenes'
 import { placeSprite, spriteError, stageSprite } from '@/fx/sprites'
 import { H, W, type Hud, type Timeline } from '@/fx/timeline'
 import { TREAT_URL } from '@/fx/timelines/trick'
+import { hasKey } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useShowdownDown, watchShowdown } from '@/lib/showdownReach'
 import { useGame } from '@/store/game'
@@ -41,6 +44,27 @@ import { StageCanvas } from './StageCanvas'
 
 export const TREAT_SRC = TREAT_URL
 export const TRICK_BALL_SRC = TRICK_BALL_URL
+
+/**
+ * A line in a theme's words (docs/61 §4): the Safari's own `ui.safari.*` where it has one (Bait, the Safari Ball, a
+ * Pokémon that runs off), else Trick or Treat's `ui.trick.*` (the gauge, the tiers, the catch's placement).
+ */
+export const lureKey = (theme: LureTheme | undefined, key: string): string =>
+  theme === 'safari' && hasKey(`ui.safari.${key}`) ? `ui.safari.${key}` : `ui.trick.${key}`
+
+/** A theme's two pictures: the Treat and the Trick Ball, or the Safari's Bait and Safari Ball. */
+export const lureSrc = (theme: LureTheme | undefined, kind: 'treat' | 'ball'): string =>
+  theme === 'safari'
+    ? kind === 'treat'
+      ? SAFARI_BAIT_URL
+      : SAFARI_BALL_URL
+    : kind === 'treat'
+      ? TREAT_SRC
+      : TRICK_BALL_SRC
+
+/** The stage's sky where the area has no picture: the night for the ghosts, a day's green for the Safari. */
+const stageSky = (theme?: LureTheme) =>
+  theme === 'safari' ? 'linear-gradient(#bfe6ff, #d8f0c0 70%, #a6d47e)' : 'linear-gradient(#1c1236, #3b2560 70%, #2a1a44)'
 
 /** Where the ghost floats on the 240 × 160 stage (its feet: centred, a little low so a tall ghost clears the plate). */
 export const TRICK_AT = { x: W / 2, y: 108 }
@@ -75,15 +99,17 @@ export function TrickSprite({
   size = 30,
   className,
   style,
+  theme,
 }: {
   kind: 'treat' | 'ball'
   size?: number
   className?: string
   style?: CSSProperties
+  theme?: LureTheme
 }) {
   return (
     <img
-      src={kind === 'treat' ? TREAT_SRC : TRICK_BALL_SRC}
+      src={lureSrc(theme, kind)}
       alt=""
       aria-hidden
       draggable={false}
@@ -164,7 +190,9 @@ export function TrickGauge({
   numbers = true,
   instant,
   className,
+  theme,
 }: {
+  theme?: LureTheme
   band: TrickBand
   value: number
   /** What the last Treat or miss added: shown beside the value, popping in each time `key` changes. */
@@ -212,8 +240,8 @@ export function TrickGauge({
         <div className="flex min-h-[38px] items-center justify-between gap-2">
           {lead ?? (
             <span className="flex min-w-0 items-center gap-1.5 font-pixel-sm text-[16px] leading-none text-muted">
-              <PixelIcon name="pumpkin" size={16} />
-              <span className="truncate">{t('ui.trick.gauge')}</span>
+              <PixelIcon name={theme === 'safari' ? 'ball' : 'pumpkin'} size={16} />
+              <span className="truncate">{t(lureKey(theme, 'gauge'))}</span>
             </span>
           )}
           <span className="flex shrink-0 items-center gap-1.5">
@@ -237,11 +265,11 @@ export function TrickGauge({
           aria-valuemin={0}
           aria-valuemax={TRICK_GAUGE_MAX}
           aria-valuenow={v}
-          aria-label={t('ui.trick.gauge')}
+          aria-label={t(lureKey(theme, 'gauge'))}
           aria-valuetext={t('ui.trick.gaugeValue', {
             value: v,
             zone: here
-              ? t('ui.trick.zoneCatch', { target: targetLabel(here.zone.need) })
+              ? t(lureKey(theme, 'zoneCatch'), { target: targetLabel(here.zone.need) })
               : t('ui.trick.zoneFlee'),
           })}
           className="pixel-corners relative h-7 overflow-hidden bg-night shadow-ring"
@@ -366,7 +394,9 @@ export function TrickStage({
   still,
   label,
   children,
+  theme,
 }: {
+  theme?: LureTheme
   areaId: string | null
   dex: number
   shiny?: boolean
@@ -406,7 +436,7 @@ export function TrickStage({
     <div
       ref={box}
       className="relative isolate z-0 aspect-[3/2] w-full select-none overflow-hidden"
-      style={{ background: 'linear-gradient(#1c1236, #3b2560 70%, #2a1a44)' }}
+      style={{ background: stageSky(theme) }}
     >
       {/* The scene is one picture for screen readers; the plate on top is read on its own. */}
       <div role="img" aria-label={label} className="absolute inset-0" />
@@ -414,7 +444,7 @@ export function TrickStage({
       {ghost && <Shadow />}
       {scale > 0 && ghost && (
         <div
-          className={cx('absolute', !still && 'tt-float')}
+          className={cx('absolute', !still && theme !== 'safari' && 'tt-float')}
           style={{
             left: at.left * scale,
             top: at.top * scale,
@@ -436,6 +466,7 @@ export function TrickStage({
       {scale > 0 && !overlay && rest === 'caught' && (
         <TrickSprite
           kind="ball"
+          theme={theme}
           size={Math.round(30 * scale)}
           className="absolute"
           style={{
@@ -468,7 +499,9 @@ export function TrickCard({
   tier,
   isNew,
   shiny,
+  theme,
 }: {
+  theme?: LureTheme
   dex: number
   level: number
   tier: TrickTier
@@ -481,7 +514,7 @@ export function TrickCard({
   const name = sp?.name ?? `#${dex}`
   return (
     <div className="flex items-center gap-3 sm:gap-4">
-      <span className="shrink-0 shadow-ring" style={{ background: 'linear-gradient(#1c1236, #3b2560)' }}>
+      <span className="shrink-0 shadow-ring" style={{ background: stageSky(theme) }}>
         <SpriteImg dex={dex} size={104} shiny={shiny} />
       </span>
       <div className="flex min-w-0 flex-col gap-1">
@@ -500,11 +533,11 @@ export function TrickCard({
           )}
         </div>
         <span className="text-2xl leading-none">{t('ui.common.level.short', { n: level })}</span>
-        <p className="copy m-0 text-[17px] text-muted">{t('ui.trick.intro', { name })}</p>
+        <p className="copy m-0 text-[17px] text-muted">{t(lureKey(theme, 'intro'), { name })}</p>
         <div className="flex items-center gap-2 text-lg leading-tight">
-          <TrickSprite kind="treat" size={30} />
-          <TrickSprite kind="ball" size={30} />
-          <span className="text-muted">{t('ui.trick.free')}</span>
+          <TrickSprite kind="treat" size={30} theme={theme} />
+          <TrickSprite kind="ball" size={30} theme={theme} />
+          <span className="text-muted">{t(lureKey(theme, 'free'))}</span>
         </div>
       </div>
     </div>
@@ -529,48 +562,54 @@ export function TierChip({ tier }: { tier: TrickTier }) {
 }
 
 /** Its rules, with the config's numbers: Treats, Trick Balls, a miss, the flee zone. */
-export function useTrickRules(): RuleRow[] {
+export function useTrickRules(theme?: LureTheme): RuleRow[] {
   const { t } = useT()
-  const cfg = trickCfg(useGame((s) => s.data))
+  const data = useGame((s) => s.data)
+  const cfg = lureCfg(data, theme)
   const { min, max } = treatRange(cfg)
   const zones = trickBand(cfg, 'common').zones
   const best = zones[zones.length - 1]!
-  return [
+  const k = (key: string) => lureKey(theme, key)
+  const rows: RuleRow[] = [
     {
-      icon: <TrickSprite kind="treat" size={30} />,
-      title: t('ui.trick.rules.treat.title'),
-      text: t('ui.trick.rules.treat.text', { min, max }),
+      icon: <TrickSprite kind="treat" size={30} theme={theme} />,
+      title: t(k('rules.treat.title')),
+      text: t(k('rules.treat.text'), { min, max }),
     },
     {
-      icon: <TrickSprite kind="ball" size={30} />,
-      title: t('ui.trick.rules.ball.title'),
-      text: t('ui.trick.rules.ball.text', {
+      icon: <TrickSprite kind="ball" size={30} theme={theme} />,
+      title: t(k('rules.ball.title')),
+      text: t(k('rules.ball.text'), {
         target: targetLabel(best.need),
         pct: Math.round(trickChance(best.need) * 100),
       }),
     },
     {
       icon: 'dice',
-      title: t('ui.trick.rules.miss.title'),
-      text: t('ui.trick.rules.miss.text', { push: failPush(cfg) }),
+      title: t(k('rules.miss.title')),
+      text: t(k('rules.miss.text'), { push: failPush(cfg) }),
     },
-    { icon: 'ghost', title: t('ui.trick.rules.flee.title'), text: t('ui.trick.rules.flee.text') },
+    { icon: theme === 'safari' ? 'run' : 'ghost', title: t(k('rules.flee.title')), text: t(k('rules.flee.text')) },
   ]
+  // The Safari's ticket (docs/61 §4): its first round free, then its price.
+  if (theme === 'safari')
+    rows.push({ icon: 'coin', title: t('ui.safari.rules.round.title'), text: t('ui.safari.rules.round.text', { price: safariCfg(data).roundPrice }) })
+  return rows
 }
 
-/** The rules pop-up's banner: the haunted picture, a Treat and a Trick Ball on it. */
-function TrickBanner() {
+/** The rules pop-up's banner: the haunted picture, a Treat and a Trick Ball on it (the Safari: a meadow, its two). */
+function TrickBanner({ theme }: { theme?: LureTheme }) {
   return (
     <>
       <img
-        src={artUrl('haunted')}
+        src={artUrl(theme === 'safari' ? 'meadow' : 'haunted')}
         alt=""
         className="pixelated absolute inset-0 h-full w-full object-cover"
         style={{ objectPosition: '50% 60%' }}
       />
       <span className="absolute bottom-2 right-3 flex items-end gap-2" aria-hidden>
-        <TrickSprite kind="treat" size={48} />
-        <TrickSprite kind="ball" size={48} />
+        <TrickSprite kind="treat" size={48} theme={theme} />
+        <TrickSprite kind="ball" size={48} theme={theme} />
       </span>
     </>
   )
@@ -581,20 +620,22 @@ export function TrickRulesModal({
   open,
   onClose,
   onGo,
+  theme,
 }: {
   open: boolean
   onClose: () => void
   onGo?: () => void
+  theme?: LureTheme
 }) {
   const { t } = useT()
-  const rules = useTrickRules()
+  const rules = useTrickRules(theme)
   return (
     <RulesModal
       open={open}
       onClose={onClose}
-      title={t('ui.trick.title')}
-      picture={<TrickBanner />}
-      icon="pumpkin"
+      title={t(lureKey(theme, 'title'))}
+      picture={<TrickBanner theme={theme} />}
+      icon={theme === 'safari' ? 'ball' : 'pumpkin'}
       rules={rules}
       onGo={onGo}
     />

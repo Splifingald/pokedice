@@ -227,7 +227,8 @@ export function chooseIdleBall(
 export const autoOffersLead = (kind: string | null | undefined): boolean => kind === 'trainer' || kind === 'gym'
 
 /** The cards the autopilot leaves on the table: Trick or Treat (the player plays it), and a trainer's (`autoOffersLead`). */
-export const pilotShowsCard = (kind: string | null | undefined): boolean => kind === 'trick' || autoOffersLead(kind)
+export const pilotShowsCard = (kind: string | null | undefined): boolean =>
+  kind === 'trick' || kind === 'safari' || autoOffersLead(kind)
 
 /** What the run stands at, as the screens see it. */
 export interface AutoView {

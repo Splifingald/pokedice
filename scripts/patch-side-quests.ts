@@ -107,12 +107,105 @@ export function withDisguises(b: SideQuestBundle): void {
   }
 }
 
+// ---------------------------------------------------------------- 4. The Safaris (docs/61 §4, migration 0111)
+
+/** Kanto's "Safari Zone" held Fuchsia's Gym too: it keeps its id, progress and Koga as Fuchsia City (trainers only). */
+export const FUCHSIA_CITY = '2238f26a-2629-5f28-af07-e74cb41d5f7a'
+/** Kanto's Safari Zone, split off: a secret area of its own (`stableUuid('area:kanto-safari-zone')`). */
+export const KANTO_SAFARI = '38fc3c59-6f8d-5aa8-a299-a5bb949254b2'
+export const HOENN_SAFARI = 'd5fe2203-9a4f-5874-99c6-005b01b42ece'
+export const GREAT_MARSH = '132bb05f-9768-59fb-89de-b25ecb1acc45'
+export const FRIEND_SAFARI = 'cb642e3e-986b-5430-b507-7baf6cc0567b'
+const FORTREE = 'e34791dd-2b08-51ef-9c9f-be18cea0524b'
+const PASTORIA = '67b3b539-dd5b-5c9a-96d4-60e4d8b8d188'
+const KILOUDE = 'a3a909e6-bd11-52cd-8d21-bc6a6aa8992d'
+
+/** The new Safari's finds: Balls and pocket money for its rounds (nothing heals: nothing hurts there). */
+export const KANTO_SAFARI_LOOT = [
+  { id: 'dcc370fd-62b2-53f9-aa28-49aa3134c009', itemKey: 'poke-ball', weight: 4, unique: false, minQty: 2, maxQty: 3 },
+  { id: 'cb20f0b9-da4b-594a-a678-450d03ed770b', itemKey: 'great-ball', weight: 3, unique: false, minQty: 1, maxQty: 2 },
+  { id: 'c11f996f-f818-5b78-a861-35f6faab7693', itemKey: 'ultra-ball', weight: 1, unique: false, minQty: 1, maxQty: 1 },
+  { id: '73301700-6705-5c69-a182-7aa6e9a72dc1', itemKey: 'money', weight: 3, unique: false, minQty: 100, maxQty: 300 },
+]
+
+const SAFARI_MODE = { kind: 'safari' } as const
+
+/**
+ * A Safari as a secret mini game: no rounds to clear, no Center, trainer or real player's card in its deck (docs/54's
+ * `versus`), its own mode. The same again changes nothing.
+ */
+function asSafari(area: Area, unlock: UnlockCondition[] | null): void {
+  area.hidden = true
+  if (unlock) area.unlockConditions = unlock
+  area.roundsToClear = null
+  const versus = 'versus' in area.encounterWeights ? { versus: 0 } : {}
+  area.encounterWeights = { ...area.encounterWeights, center: 0, trainer: 0, ...versus }
+  area.mode = SAFARI_MODE
+}
+
+/** Trainers of a Safari go to the town beside it (the Great Marsh's Rangers to Pastoria, the Friend Safari's to Kiloude). */
+function moveTrainers(b: SideQuestBundle, from: string, to: string): void {
+  const src = b.areas.find((a) => a.id === from)
+  const dst = b.areas.find((a) => a.id === to)
+  if (!src || !dst || !src.trainerPool.length) return
+  // In front: the double battles' pairs (scripts/patch-double-battles.ts) are added at the end of a pool.
+  dst.trainerPool = [...src.trainerPool.filter((e) => !dst.trainerPool.some((x) => x.id === e.id)), ...dst.trainerPool]
+  src.trainerPool = []
+}
+
+export function withSafaris(b: SideQuestBundle): void {
+  const fuchsia = b.areas.find((a) => a.id === FUCHSIA_CITY)
+  if (fuchsia && fuchsia.name === 'Safari Zone' && !b.areas.some((a) => a.id === KANTO_SAFARI)) {
+    const order = Math.max(...b.areas.map((a) => a.orderIndex)) + 1
+    b.areas.push({
+      ...fuchsia,
+      id: KANTO_SAFARI,
+      orderIndex: order,
+      name: 'Safari Zone',
+      hidden: true,
+      unlockConditions: [{ kind: 'area', areaId: FUCHSIA_CITY }],
+      roundsToClear: null,
+      encounterWeights: { wild: 6, item: 2, center: 0, trainer: 0, casino: 0 },
+      legendaryBoss: null,
+      gyms: [],
+      wildPool: fuchsia.wildPool,
+      trainerPool: [],
+      lootPool: KANTO_SAFARI_LOOT.map((l) => ({ ...l })),
+      battleBackground: 'grass',
+      mode: SAFARI_MODE,
+    })
+    Object.assign(fuchsia, {
+      name: 'Fuchsia City',
+      wildPool: [],
+      encounterWeights: { wild: 0, item: 2, center: 1, trainer: 5, casino: 0 },
+      roundsToClear: 1,
+      minLevel: 30,
+      maxLevel: 34,
+      battleBackground: 'default',
+    })
+  }
+  const hoenn = b.areas.find((a) => a.id === HOENN_SAFARI)
+  const plain = (a: Area | undefined): a is Area => !!a && (!a.mode || a.mode.kind === 'safari')
+  if (plain(hoenn)) asSafari(hoenn, [{ kind: 'area', areaId: FORTREE }])
+  const marsh = b.areas.find((a) => a.id === GREAT_MARSH)
+  if (plain(marsh)) {
+    moveTrainers(b, GREAT_MARSH, PASTORIA)
+    asSafari(marsh, [{ kind: 'area', areaId: PASTORIA }])
+  }
+  const friend = b.areas.find((a) => a.id === FRIEND_SAFARI)
+  if (plain(friend)) {
+    moveTrainers(b, FRIEND_SAFARI, KILOUDE)
+    asSafari(friend, null)
+  }
+}
+
 // ---------------------------------------------------------------- the whole patch
 
 export function patchSideQuests(b: SideQuestBundle): void {
   withRegis(b)
   withRoadblocks(b)
   withDisguises(b)
+  withSafaris(b)
 }
 
 /** The data files are written as the seed writes them: one space of indent and a final newline. */

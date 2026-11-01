@@ -302,7 +302,7 @@ export const DEFAULT_CONFIG: GameConfig = {
     raid: {
       access: 'off',
       priority: 3,
-      // The Safari Zone, Kanto.
+      // Fuchsia City, Kanto (the area that held the Safari Zone until docs/61 split it off: the same id, the same point).
       unlockAreaId: '2238f26a-2629-5f28-af07-e74cb41d5f7a',
       banner: 'lair-shrine',
       rules: ['raid.daily', 'raid.sides', 'raid.bars', 'raid.catch'],
@@ -559,6 +559,48 @@ export const DEFAULT_CONFIG: GameConfig = {
   // winning: at the first idea's +10 they caught 98 % of common ghosts, and the Treats were never worth giving.
   // Pokémon posing as items (docs/61 §3): a find that springs out as Voltorb. Off until the admin opens it.
   disguises: { access: 'off' },
+  // The Safari (docs/61 §4): Trick or Treat's gauge with Bait and Safari Balls, its numbers starting from Trick's (the
+  // same measured best play: about 7 common Pokémon in 10, 4 rare ones in 7, a very rare one in 3). The first round in
+  // each Safari area is free, then ₽100 a round (the user's call, 2026-11-01). `areas`: each Safari's tier overrides;
+  // a Pokémon not listed takes its tier from its catch value.
+  safari: {
+    access: 'off',
+    freeRounds: 1,
+    roundPrice: 100,
+    treatMin: 10,
+    treatMax: 30,
+    failPush: 35,
+    tiers: {
+      common: {
+        weight: 6,
+        flee: 90,
+        sections: [
+          { from: 0, need: 6 },
+          { from: 40, need: 5 },
+          { from: 75, need: 4 },
+          { from: 80, need: 3 },
+        ],
+      },
+      rare: {
+        weight: 3,
+        flee: 85,
+        sections: [
+          { from: 0, need: 6 },
+          { from: 40, need: 5 },
+          { from: 75, need: 4 },
+        ],
+      },
+      veryRare: {
+        weight: 1,
+        flee: 65,
+        sections: [
+          { from: 0, need: 6 },
+          { from: 45, need: 5 },
+        ],
+      },
+    },
+    areas: {},
+  },
   trickOrTreat: {
     access: 'off',
     treatMin: 10,

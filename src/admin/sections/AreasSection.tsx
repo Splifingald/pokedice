@@ -312,6 +312,17 @@ function AreaEditor({ area }: { area: Row }) {
             <label className="flex items-center gap-2 text-lg" title="A Center comes next whenever a team member is K.O.">
               <input type="checkbox" checked={!!area.easy_mode} onChange={(e) => patch({ easy_mode: e.target.checked })} /> Easy (Center after a K.O.)
             </label>
+            {/* A Safari (docs/61 §4): its wild cards are Safari encounters (Admin → Events → Safari). */}
+            {(!area.mode || (area.mode as { kind?: string }).kind === 'safari') && (
+              <label className="flex items-center gap-2 text-lg" title="A Safari (docs/61 §4): its wild cards are Safari encounters while the Safari is switched on; no Center or trainer is dealt there">
+                <input
+                  type="checkbox"
+                  checked={(area.mode as { kind?: string } | null)?.kind === 'safari'}
+                  onChange={(e) => patch({ mode: e.target.checked ? { kind: 'safari' } : null })}
+                />{' '}
+                Safari
+              </label>
+            )}
             <label className="flex items-center gap-2 text-lg" title="Hidden areas sit outside the linear chain and open when their conditions hold">
               <input
                 type="checkbox"
@@ -355,7 +366,9 @@ function AreaEditor({ area }: { area: Row }) {
         </Box>
 
         {/* A special mode (docs/28): shown on an area that has one, or a small world's secret area that could. */}
-        {(!!area.mode || (!!area.hidden && isWorldRegion(data, s(area.region_id)))) && (
+        {/* A Safari's mode (docs/61 §4) has nothing to set here: its numbers are Events → Safari's. */}
+        {((!!area.mode && (area.mode as { kind?: string }).kind !== 'safari') ||
+          (!!area.hidden && isWorldRegion(data, s(area.region_id)))) && (
           <>
             <PortalModeBox area={area} />
             {/* The nightmare (docs/30): one special mode per area, so ticking one replaces the other. */}
