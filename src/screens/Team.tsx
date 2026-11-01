@@ -20,6 +20,7 @@ import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { BoxFilter, sortBox, type BoxSort } from '@/components/BoxSort'
 import { PixelIcon } from '@/components/icons'
+import { EggSprite } from '@/components/EggSprite'
 import { ItemSprite } from '@/components/ItemSprite'
 import { MonTile, TILE_GRID } from '@/components/MonTile'
 import { PageHead } from '@/components/PageHead'
@@ -117,7 +118,8 @@ export function TeamScreen() {
   const [q, setQ] = useState('')
   if (!save) return null
   const team = teamOf(save)
-  const name = (p: PokemonInstance) => monName(p, data)
+  // A gift Egg (docs/61 §5.3) keeps what's inside to itself.
+  const name = (p: PokemonInstance) => (p.egg ? t('ui.mon.egg') : monName(p, data))
   const speciesName = (p: PokemonInstance) => data.species[p.dex]?.name ?? t('ui.common.unknown')
   const typesOf = (p: PokemonInstance) => {
     const s = data.species[p.dex]
@@ -235,13 +237,13 @@ export function TeamScreen() {
                   level={reviving ? undefined : level}
                   sub={reviving ? until : undefined}
                   selected={current === p.id}
-                  icon={reviving ? <ItemSprite item={fossil} size={40} /> : undefined}
+                  icon={reviving ? p.egg ? <EggSprite size={34} /> : <ItemSprite item={fossil} size={40} /> : undefined}
                   label={[
                     name(p),
                     p.nickname ? speciesName(p) : null,
                     p.shiny ? t('ui.mon.shiny') : null,
                     outfitOf(data, p) ? outfitName(p.outfit!) : null,
-                    reviving ? t('ui.mon.revivesIn', { time: until }) : level,
+                    reviving ? t(p.egg ? 'ui.mon.hatchesIn' : 'ui.mon.revivesIn', { time: until }) : level,
                   ]
                     .filter(Boolean)
                     .join(', ')}

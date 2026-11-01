@@ -18,6 +18,8 @@ const PACE: Record<RunPhase, number> = {
   catch: 1000,
   trick: 1000,
   present: 1000,
+  // A gift (docs/61 §5.3): long enough to see who gives what.
+  gift: 2200,
 }
 
 /** A find's step (FindView): long enough to see it land; its PICK IT UP, loading under the autopilot, goes first. */

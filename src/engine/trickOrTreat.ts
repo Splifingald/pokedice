@@ -11,6 +11,7 @@ import type { Rng } from './rng'
 import type { RunEvent } from './run'
 import {
   TRICK_TIERS,
+  type LureTheme,
   type Area,
   type GameData,
   type SaveData,
@@ -158,6 +159,8 @@ export interface TrickState {
   dex: number
   level: number
   tier: TrickTier
+  /** The Safari's look and numbers (docs/61 §4); absent = Trick or Treat's. */
+  theme?: LureTheme
   shiny?: boolean
   /** It carries its family's hidden talent (docs/51). */
   talent?: boolean
@@ -191,11 +194,13 @@ export function startTrick(
   },
   cfg?: TrickOrTreatConfig,
   rng?: Rng,
+  theme?: LureTheme,
 ): TrickState {
   return {
     dex: enc.dex,
     level: enc.level,
     tier: enc.tier,
+    ...(theme === 'safari' && { theme }),
     ...(enc.shiny && { shiny: true }),
     ...(enc.talent && { talent: true }),
     // Somewhere in the first section, at random (the user's call, 2026-10-15): each ghost starts a little different.

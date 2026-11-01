@@ -50,6 +50,7 @@ import {
   tracksFound,
   legendCinemaOn,
   championCinemaOn,
+  roadblockOf,
 } from '@/engine'
 import { playCry } from '@/audio/cries'
 import { feelSound } from '@/audio/feel'
@@ -67,6 +68,7 @@ import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { TypeMatchups } from '@/components/TypeMatchups'
 import { BattleDayTime } from '@/components/DayNight'
+import { BattleWeather, WeatherLayer } from '@/components/Weather'
 import { pictureOf, versusPicture } from '@/fx/areaArt'
 import { ballOfItem } from '@/fx/scenes'
 import { loadPicture, loadSprite, pictureKey, spriteKey } from '@/fx/sprites'
@@ -75,7 +77,6 @@ import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { BOSS_CINEMAS } from '@/fx/timelines/cinema'
 import { abomasnowCinema } from '@/fx/timelines/cinema/abomasnow'
 import { stantlerCinema } from '@/fx/timelines/cinema/stantler'
-import { BlizzardChip, SnowOverStage } from '@/components/Whiteout'
 import { t as say } from '@/i18n'
 import { championCinemaFor } from '@/fx/timelines/cinema/champions'
 import { useT } from '@/i18n/react'
@@ -305,7 +306,6 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   // The nightmare's rounds (docs/30) are fought under its full moon, a dark shadow haunting the foe.
   const dream = !versus && st.kind === 'wild' && !!save && inNightmare(save, data, run.areaId)
   // The whiteout's fights (docs/64 §4.3): the engine's blizzard (its chip, snow over the stage) and the bag shut.
-  const storm = !versus && !!st.weather
   const bagShut = !versus && !!st.noBag
   // Tracks in the Snow's last round (docs/64 §4.1): the shiny Stantler found in its bush, its own entrance.
   const gladeBoss = !versus && st.kind === 'boss' && !!save && tracksFound(save, data, run.areaId)
@@ -401,13 +401,34 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     (st.kind === 'wild' || st.kind === 'boss') &&
     !!save &&
     !!catchTarget(save, b.baseDex ?? b.dex, b.level, st.kind, data, b.shiny)
-  const catchable = dbl ? (uid: string) => dbl.foes.some((f) => f.uid === uid && canCatch(f)) : canCatch(st.enemy)
+  // A region flavour's fight (docs/62): a horde's one throw, a Totem's and a Titan's none.
+  const flavour =
+    enc?.kind === 'wild' && enc.horde?.length ? 'horde' : enc?.kind === 'gym' && enc.trial ? 'trial' : enc?.kind === 'boss' && enc.titan ? 'titan' : null
+  const hordeCatch = (uid: string) => {
+    // The shiny one waits worn out at once; else only the last one, as the fight is won.
+    const f = dbl?.foes.find((x) => x.uid === uid)
+    if (!f || !canCatch(f)) return false
+    if (dbl!.foes.some((x) => x.shiny)) return f.shiny && dbl!.foes.find((x) => x.shiny) === f
+    return st.phase === 'won' && dbl!.kos[dbl!.kos.length - 1]?.uid === uid
+  }
+  const catchable =
+    flavour === 'titan'
+      ? false
+      : flavour === 'horde'
+        ? hordeCatch
+        : dbl
+          ? (uid: string) => dbl.foes.some((f) => f.uid === uid && canCatch(f))
+          : canCatch(st.enemy)
   const { fx, ready, sceneContact, sceneDone } = useBattleAnimator(
     battle,
     quick,
     {
       kind: st.kind,
       trainerName,
+      // A roadblock boss (docs/61 §2) is spoken of as the wild Pokémon it is, not a legendary.
+      roadblock: st.kind === 'boss' && !!roadblockOf(data.areas.find((a) => a.id === run.areaId), st.enemy.baseDex ?? st.enemy.dex),
+      rival: enc?.kind === 'trainer' && !!enc.moment,
+      flavour,
       catchable,
       itemName: (k) => data.items[k]?.name ?? k,
       speciesName: (dex) => data.species[dex]?.name ?? `#${dex}`,
@@ -461,8 +482,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const foeBack = dbl ? (foeRow.find((b) => b.uid !== foeFront.uid && waiting(b)) ?? null) : null
   // Cries: the foe's as it comes out, yours as each of yours does (after the foe's when both come out at once), a
   // Mega's once it stands there.
+  // Another lead picked at the send-out step: the foe out already has cried (a trainer's next one still does).
+  const [criedFoe] = useState(() => (swapped ? st.enemy.uid : null))
   useEffect(() => {
-    if (!foeOut) return
+    if (!foeOut || st.enemy.uid === criedFoe) return
     playCry(st.enemy.dex)
     // A pair: the second one's cry after the first's.
     const partner = dbl?.foes[1]
@@ -1017,7 +1040,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       ? dbl
         ? { count: dbl.foes.length, index: dbl.foes.filter((f) => fx.fainted[f.uid]).length }
         : { count: enc.team.length, index: run.trainer.index }
-      : null
+      : // A horde's five and a Titan's two phases (docs/62) count down the same way.
+        (flavour === 'horde' || flavour === 'titan') && dbl
+        ? { count: dbl.foes.length, index: dbl.foes.filter((f) => fx.fainted[f.uid] || fx.wornOut[f.uid]).length }
+        : null
 
   const pairNames = (row: readonly Battler[]) => row.map((b) => b.name).join(' & ')
   const heading = dbl
@@ -1214,8 +1240,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       style={{ '--strip': !versus && !run.rebattle ? '14px' : '0px' } as CSSProperties}
     >
       {!versus && !run.rebattle && <RunRoundGauge strip className="absolute inset-x-0 top-0 z-30" />}
-      {/* Each new fight opens on its own beat (docs/42). */}
-      {!versus && <EncounterSwipe />}
+      {/* Each new fight opens on its own beat (docs/42); another lead picked is the same fight, already open. */}
+      {!versus && !swapped && <EncounterSwipe />}
       <BattleStage
         own={active}
         foe={foeFront}
@@ -1228,6 +1254,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         art={art}
         ownShown={ownOut}
         foeShown={foeOut}
+        foeSettled={swapped}
         trainer={
           trainerIntro && isTrainerFight && !champIntro ? (trainerSprite ?? '') : trainerBack ? trainerSprite : null
         }
@@ -1246,13 +1273,9 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         {dayTime && <BattleDayTime time={dayTime} />}
         {/* The race's clock runs on in its fights (docs/64 §4.4), in the stage's top right corner. */}
         {raceSpeed && <TimeRaceClockHere areaId={run.areaId} size="small" className="absolute right-2 top-5 z-20" />}
-        {/* The blizzard (docs/15 §47): its snow over the stage, under the plates, and its chip by the strip. */}
-        {storm && <SnowOverStage className="z-[5]" />}
-        {storm && (
-          <span className="absolute right-1 z-20 leading-[0]" style={{ top: 'calc(var(--strip, 0px) + 4px)' }}>
-            <BlizzardChip />
-          </span>
-        )}
+        {/* The weather (docs/62 §2): falling over the stage, and its chip. */}
+        {st.weather && <WeatherLayer weather={st.weather} />}
+        {st.weather && <BattleWeather weather={st.weather} />}
         {dbl && foeOut && ownOut && !catching && (
           <DoublePlates
             foes={foeRow}

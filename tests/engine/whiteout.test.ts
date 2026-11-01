@@ -203,10 +203,10 @@ describe('the blizzard: the raids’ Snow, both sides, Ice spared', () => {
     return { s, log }
   }
 
-  it('falls at the end of every round on both Pokémon out, with its line; an Ice type takes nothing', () => {
+  it('is the shared weather (docs/62 §2): it wears each Pokémon down at its turn, both sides; an Ice type takes nothing', () => {
     // Ampharos (Electric) against Glalie (Ice): only Ampharos is worn down.
     const { log } = play([[181, 30]], [362, 30], 'snow')
-    const wear = log.filter((e): e is Extract<LogEntry, { kind: 'weather' }> => e.kind === 'weather')
+    const wear = log.filter((e): e is Extract<LogEntry, { kind: 'weather_tick' }> => e.kind === 'weather_tick')
     expect(wear.length).toBeGreaterThan(0)
     expect(wear.every((e) => e.target === 'player' && e.weather === 'snow')).toBe(true)
     // Ampharos and Stoutland (Normal) against Bronzong (Steel / Psychic): both sides every round.
@@ -218,21 +218,17 @@ describe('the blizzard: the raids’ Snow, both sides, Ice spared', () => {
       [437, 30],
       'snow',
     )
-    const w2 = both.log.filter((e): e is Extract<LogEntry, { kind: 'weather' }> => e.kind === 'weather')
+    const w2 = both.log.filter((e): e is Extract<LogEntry, { kind: 'weather_tick' }> => e.kind === 'weather_tick')
     expect(w2.some((e) => e.target === 'player')).toBe(true)
     expect(w2.some((e) => e.target === 'enemy')).toBe(true)
     const foeMax = both.s.enemy.maxHp
     for (const e of w2.filter((x) => x.target === 'enemy'))
       expect(e.amount).toBe(Math.min(Math.max(1, Math.round(foeMax * 0.04)), e.amount + e.hpAfter))
-    // Once a round: two turns between each fall.
-    const turnsBefore = (i: number) =>
-      both.log.slice(0, both.log.indexOf(w2[i]!)).filter((e) => e.kind === 'turn').length
-    expect(turnsBefore(0) % 2).toBe(0)
   })
 
   it('never falls without weather', () => {
     const { log } = play([[181, 30]], [437, 30], null)
-    expect(log.some((e) => e.kind === 'weather')).toBe(false)
+    expect(log.some((e) => e.kind === 'weather_tick')).toBe(false)
   })
 
   it('ends a fight neither side could win: the blizzard K.O.s the foe', () => {
@@ -244,7 +240,7 @@ describe('the blizzard: the raids’ Snow, both sides, Ice spared', () => {
     const { s, log } = play([[508, 50]], [200, 50, 20], 'snow')
     expect(s.phase).toBe('won')
     expect(log.every((e) => e.kind !== 'damage' || e.amount === 0)).toBe(true)
-    expect(log.filter((e) => e.kind === 'weather' && e.target === 'enemy').length).toBeGreaterThan(1)
+    expect(log.filter((e) => e.kind === 'weather_tick' && e.target === 'enemy').length).toBeGreaterThan(1)
   })
 })
 

@@ -36,6 +36,7 @@ import { AccessSwitch, Box, Field, NumInput, PicturePicker, inputCls } from '../
 import { useConfigRow } from './ConfigSection'
 import { RaidsTab } from './events/RaidsTab'
 import { SmallWorldsTab } from './events/SmallWorldsTab'
+import { SafariTab } from './events/SafariTab'
 import { TrickOrTreatTab } from './events/TrickOrTreatTab'
 import { GiftCardTab } from './events/GiftCardTab'
 import { LiveEventsSection } from './LiveEventsSection'
@@ -449,6 +450,7 @@ const TABS = [
   { id: 'worlds', label: 'Small worlds', icon: 'map' },
   { id: 'trick', label: 'Trick or Treat', icon: 'pumpkin' },
   { id: 'gift', label: 'Gift card', icon: 'gift' },
+  { id: 'safari', label: 'Safari', icon: 'ball' },
 ] as const satisfies readonly { id: string; label: string; icon: IconName }[]
 type TabId = (typeof TABS)[number]['id']
 const ACCESS_SHORT: Record<EventAccess, string> = { off: 'Off', admin: 'Admin', all: 'On' }
@@ -463,6 +465,7 @@ export function EventsSection() {
   const [worlds] = useConfigRow('smallWorlds')
   const [trick] = useConfigRow('trickOrTreat')
   const [gift] = useConfigRow('giftCard')
+  const [safari] = useConfigRow('safari')
   const [params, setParams] = useSearchParams()
   const tab: TabId = TABS.some((t) => t.id === params.get('tab')) ? (params.get('tab') as TabId) : 'general'
   const access = (id: TabId): EventAccess | null =>
@@ -480,7 +483,9 @@ export function EventsSection() {
                 ? (trick?.access ?? 'off')
                 : id === 'gift'
                   ? (gift?.access ?? 'off')
-                  : null
+                  : id === 'safari'
+                    ? (safari?.access ?? 'off')
+                    : null
   return (
     <div className="flex flex-col gap-4">
       <nav aria-label="Events" className="flex flex-wrap gap-1.5">
@@ -530,6 +535,7 @@ export function EventsSection() {
       {tab === 'worlds' && <SmallWorldsTab />}
       {tab === 'trick' && <TrickOrTreatTab />}
       {tab === 'gift' && <GiftCardTab />}
+      {tab === 'safari' && <SafariTab />}
     </div>
   )
 }

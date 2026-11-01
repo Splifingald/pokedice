@@ -9,7 +9,7 @@
  * without knowing regions exist; switching region is a swap of those fields, and nothing else changes.
  */
 import { linearAreas } from './data'
-import { gameCornerOn } from './events'
+import { eventOpenTo, gameCornerOn } from './events'
 import { evolutionsIn } from './forms'
 import { isReviving } from './fossils'
 import type { BadgeInfo } from './run'
@@ -78,6 +78,17 @@ export function enabledRegions(data: GameData): Region[] {
 export function unlockedRegions(save: SaveData, data: GameData): Region[] {
   const started = new Set<RegionId>([regionOf(save), ...Object.keys(save.parked ?? {})])
   return enabledRegions(data).filter((r) => started.has(r.id))
+}
+
+/**
+ * Every species caught, in every region's Pokédex: the live one and the parked ones. A small world's catches don't
+ * count (they go home on their own, docs/26), as the Day Care's count leaves them out too.
+ */
+export function pokedexEverywhere(save: SaveData): Set<number> {
+  const world = worldRegionOf(save)
+  const all = new Set(regionOf(save) === world ? [] : save.pokedex)
+  for (const [id, block] of Object.entries(save.parked ?? {})) if (id !== world) for (const dex of block?.pokedex ?? []) all.add(dex)
+  return all
 }
 
 /**
@@ -173,6 +184,13 @@ export function regionSpecies(data: GameData, regionId: RegionId): Set<number> {
     for (const j of data.config.events.wheel.jackpot ?? []) if (j.reward.kind === 'pokemon' && data.species[j.reward.dex]) out.add(j.reward.dex)
   // The roamers belong to their region without sitting in any one area (see engine/encounters.ts).
   for (const dex of data.config.roamers?.regionId === regionId ? (data.config.roamers?.dex ?? []) : []) out.add(dex)
+  // The gift Pokémon of its areas, while gifts are on (docs/61 §5.3): Platinum's Togepi, Eevee and Porygon in Sinnoh.
+  if (eventOpenTo(data.config.giftMoments?.access, data)) {
+    const here = new Set(data.areas.filter((a) => regionOfArea(a) === regionId).map((a) => a.id))
+    for (const g of data.config.giftMoments?.gifts ?? [])
+      if (here.has(g.areaId))
+        for (const dex of [...g.dex, ...Object.values(g.byStarter ?? {})]) if (data.species[dex]) out.add(dex)
+  }
   // So do the raid pool's mythicals: met in Raid Battles once their lair, an area of the region, is cleared.
   for (const p of data.config.events.raid.pool) {
     const lair = data.areas.find((a) => a.id === p.areaId)

@@ -21,6 +21,8 @@ import {
   unownDexOpen,
   unownDexPaid,
   unownReward,
+  titansBeaten,
+  titansOn,
   wildPoolAt,
   type UnownLetter,
 } from '@/engine'
@@ -29,6 +31,7 @@ import { useT } from '@/i18n/react'
 import { DexCompleteCard, DexGauge, DexGridList, DexTile } from '@/components/DexGrid'
 import { DexSheet } from '@/components/DexEntry'
 import { PageHead } from '@/components/PageHead'
+import { PixelIcon } from '@/components/icons'
 import { InfoButton } from '@/components/RulesModal'
 import { SearchField } from '@/components/Segmented'
 import { RulesCard } from '@/components/RulesCard'
@@ -147,6 +150,7 @@ export function PokedexScreen() {
   const regionName = getRegion(data, region)?.name ?? ''
   const unown = dexView === 'unown'
   const shiny = dexView === 'shiny'
+  const titans = !shiny && !unown && titansOn(data) ? titansBeaten(save, data, region) : null
   // Known by name: caught at all. Owned: on this page (caught, or owned shiny on the shiny page).
   const caught = new Set(save.pokedex)
   const owned = shiny ? new Set(shinyDexOf(save)) : caught
@@ -342,6 +346,13 @@ export function PokedexScreen() {
         </div>
         {views.length > 0 && <DexViewSwitch value={dexView} onChange={setDexView} views={views} />}
         {under && <p className="font-pixel-sm text-[18px] leading-tight text-muted">{under}</p>}
+        {/* Paldea's Titans (docs/62 §7): how many are beaten, while their switch is on. */}
+        {titans && titans.total > 0 && (
+          <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[18px] leading-tight text-muted" data-titans-beaten>
+            <PixelIcon name="crown" size={16} />
+            {t('ui.titan.beaten', { n: titans.beaten, total: titans.total })}
+          </p>
+        )}
       </div>
       {shiny && !shinySeen && (
         <RulesCard

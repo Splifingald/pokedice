@@ -92,8 +92,11 @@ export interface SpeciesForm {
   /**
    * Battle forms only — when the engine switches to it. `lowHp`: below half HP, swapping one `swapDie.from` die for a
    * `swapDie.to` one (Giratina). `choice`: picked from a menu, every die turning into the form's type (Arceus).
+   * `weather`: as a fight under one of `weather` starts, its dice of the species' type turning into the form's
+   * (Castform, docs/62 §3).
    */
-  trigger?: 'lowHp' | 'choice' | null
+  trigger?: 'lowHp' | 'choice' | 'weather' | null
+  weather?: Weather[] | null
   swapDie?: { from: DieType; to: DieType } | null
   /** A `mega` row that is a Primal Reversion or an Ultra Burst: the same rules, its own name in the game. */
   mechanic?: 'primal' | 'ultra' | null
@@ -243,15 +246,35 @@ export interface LootEntry {
   /** Quantity found (for money: the ₽ amount), drawn between these. */
   minQty: number
   maxQty: number
+  /**
+   * A Pokémon posing as this item (docs/61 §3): Voltorb in a Poké Ball. Dealt and shown as the find, it springs out as
+   * a wild Pokémon when picked up, at a level between these. Only while its switch is on.
+   */
+  disguise?: LootDisguise | null
+}
+
+export interface LootDisguise {
+  dex: number
+  minLevel: number
+  maxLevel: number
 }
 
 /** Battle scenes (public/battle/*.png). */
 export const BATTLE_BACKGROUNDS = ['grass', 'sea', 'water', 'rock', 'default'] as const
 export type BattleBackground = (typeof BATTLE_BACKGROUNDS)[number]
 
+/**
+ * A roadblock boss (docs/61 §2): a Pokémon across the road, not a legendary. Its kind picks its words: Snorlax asleep,
+ * Sudowoodo the "tree", Kecleon unseen.
+ */
+export const ROADBLOCK_KINDS = ['sleeping', 'tree', 'invisible'] as const
+export type RoadblockKind = (typeof ROADBLOCK_KINDS)[number]
+
 export interface BossDef {
   dex: number
   level: number
+  /** A Pokémon blocking the road rather than a legendary (docs/61 §2): the same rules, its own words. */
+  roadblock?: RoadblockKind | null
   /** Victory Road style: the boss triggers when the team's average level reaches this, instead of once every round is done. */
   teamAvgThreshold?: number
   /** Upgrade level this legendary fights at; unset = the area's. */
@@ -274,6 +297,19 @@ export interface BossDef {
    * otherwise.
    */
   present?: boolean
+  /**
+   * A Titan (docs/62 §7): fought in two phases, the second bigger and stronger after a Herba Mystica, never caught.
+   * Only while the Titans' switch is on for the player; otherwise the area has no boss.
+   */
+  titan?: TitanDef | null
+}
+
+/** A Titan's own (docs/62 §7); its numbers are the Titans' config. */
+export interface TitanDef {
+  /** The species fought instead by a player in Green's look (Violet's side): Iron Treads for Great Tusk. */
+  versionDex?: number | null
+  /** A second Titan fought beside it in the first phase (Tatsugiri with Dondozo), which jumps in for the second. */
+  partner?: { dex: number; level: number } | null
 }
 
 /** Levels relative to the team average, both ends included: { min: -15, max: -10 } = 15 to 10 levels below. */
@@ -337,10 +373,10 @@ export interface Area {
 }
 
 /**
- * An area's special mode: the portal run (docs/28), the nightmare (docs/30), Tracks in the Snow (docs/64 §4.1), the
- * whiteout (§4.3) or the time race (§4.4).
+ * An area's special mode: the portal run (docs/28), the nightmare (docs/30), the Safari (docs/61 §4), Tracks in the Snow
+ * (docs/64 §4.1), the whiteout (§4.3) or the time race (§4.4).
  */
-export type AreaMode = PortalRunMode | NightmareMode | TracksMode | TimeRaceMode | WhiteoutMode
+export type AreaMode = PortalRunMode | NightmareMode | SafariMode | TracksMode | TimeRaceMode | WhiteoutMode
 
 /** One of the race's two gates at a fork leading to a legend (docs/64 §4.4): its type, and whose raid it opens. */
 export interface TimeRaceLegend {
@@ -520,6 +556,14 @@ export interface TracksState {
   tries?: number
 }
 
+/**
+ * A Safari (docs/61 §4): a secret area of its own where nobody battles. Its wild cards are Safari encounters, Trick or
+ * Treat's gauge with Bait and Safari Balls, while the Safari's switch is on; off, they're fought as wild Pokémon.
+ */
+export interface SafariMode {
+  kind: 'safari'
+}
+
 /** One of the nightmare's foes, met in its order (docs/30): a wild Pokémon at a set level. */
 export interface NightmareFoe {
   dex: number
@@ -650,6 +694,11 @@ export type UnlockCondition =
   | { kind: 'area'; areaId: string }
   /** Another area is cleared — e.g. a small world's league beaten, every main area done (docs/26 §2.5). */
   | { kind: 'cleared'; areaId: string }
+  /**
+   * Every species listed is caught, in any region's Pokédex (docs/61 §1): Snowpoint Temple waits for the three Regis,
+   * caught in Hoenn. Caught rather than owned, so trading one away doesn't shut the area again.
+   */
+  | { kind: 'caught'; dex: number[] }
 
 /**
  * The roaming legendaries. They have no area of their own: once every Pokémon in `requires` has been **caught**, each
@@ -1295,6 +1344,24 @@ export interface GameConfig {
   trickOrTreat: TrickOrTreatConfig
   /** The Gift card (docs/64 §4.0): its switch and numbers. The server reads the switch too (0123). */
   giftCard: GiftCardConfig
+  /** Pokémon posing as items (docs/61 §3): its switch. The server reads the same row (0111: side_quest_open). */
+  disguises: { access: EventAccess }
+  /** The Safari (docs/61 §4): its switch, its gauge's numbers, tiers and a round's price. The server reads the switch. */
+  safari: SafariConfig
+  /** Rivals' set meetings (docs/61 §5.2): the switch (the server reads it) and the meetings, the game's own. */
+  rivals: RivalsConfig
+  /** Gift Pokémon (docs/61 §5.3): the switch (the server reads it), an Egg's hours and the gifts, the game's own. */
+  giftMoments: GiftMomentsConfig
+  /** Hoenn's fixed weather (docs/62 §3): the switch (the server reads it) and each area's. */
+  hoennWeather: WeatherConfig
+  /** Galar's weather of the day (docs/62 §4): the switch (the server reads it), each area's odds and the pool shift. */
+  galarWeather: WeatherConfig
+  /** Kalos hordes (docs/62 §5). */
+  hordes: HordesConfig
+  /** Alola's island trials (docs/62 §6): the Totems instead of the captains' battles. */
+  trials: TrialsConfig
+  /** Paldea's Titans (docs/62 §7). */
+  titans: TitansConfig
   /** Day and night in Johto (docs/32): its switch. Migration 0061 inserts the same row. */
   dayNight: { access: EventAccess }
   /** Idle mode and the play styles (docs/36): its switch. Migration 0068 inserts the same row. */
@@ -1533,6 +1600,169 @@ export interface TrickOrTreatConfig {
   areas: Record<string, TrickGhost[]>
 }
 
+/**
+ * The Safari (docs/61 §4): Trick or Treat's numbers (Bait is its Treat, the Safari Ball its Trick Ball) with their own
+ * values, each Safari area's tier overrides (`areas`: a Pokémon not listed takes its tier from its catch value), and the
+ * price of a round: the first rounds in each Safari area free, the next ones paid in the region's ₽.
+ */
+export interface SafariConfig extends TrickOrTreatConfig {
+  /** Rounds free in each Safari area, per save. */
+  freeRounds: number
+  /** ₽ for each round after them. */
+  roundPrice: number
+}
+
+/**
+ * A set moment's place (docs/61 §5): an area, the round it comes in (the rounds done there: 0 = the first) and how many
+ * cards of that round are turned over before it. It comes on top of the deck and uses no card.
+ */
+export interface MomentPoint {
+  areaId: string
+  round: number
+  after: number
+}
+
+/**
+ * A rival's meeting (docs/61 §5.2): one trainer per version, the player's starter picking it (`Trainer.rivalOf`), or one
+ * for everyone. Met once per save, only while the area isn't cleared.
+ */
+export interface RivalMeeting extends MomentPoint {
+  id: string
+  trainers: string[]
+}
+
+/**
+ * A gift Pokémon (docs/61 §5.3): the giver (a trainer's name, translated as one; its picture), what's given, and how.
+ * `dex`: one Pokémon, or several to pick one from; `byStarter`: the one for the player's starter instead (the Unova
+ * monkey); `egg`: an Egg hatching after `eggHours`, the Odd Egg (`dex` several) one of them at random; `price`: ₽ to pay
+ * (the Magikarp salesman). `level`: absent = the area's lowest. Met once per save, a cleared area's on the next visit.
+ */
+export interface GiftMoment extends MomentPoint {
+  id: string
+  giver: string
+  sprite: string
+  dex: number[]
+  byStarter?: Record<string, number>
+  level?: number
+  egg?: boolean
+  /** An Egg's own shiny odds (the Odd Egg's); absent = the wild odds. */
+  shinyChance?: number
+  price?: number
+}
+
+export interface RivalsConfig {
+  access: EventAccess
+  meetings: RivalMeeting[]
+}
+
+export interface GiftMomentsConfig {
+  access: EventAccess
+  /** Hours a gift Egg takes to hatch (the user's call, 2026-11-01: 6). */
+  eggHours: number
+  gifts: GiftMoment[]
+}
+
+/** The region flavours' weather (docs/62 §2): what it does is the raids' own rules. */
+export const WEATHER_KINDS = ['clear', 'overcast', 'rain', 'thunderstorm', 'sun', 'sand', 'snow', 'fog', 'ash'] as const
+export type Weather = (typeof WEATHER_KINDS)[number]
+
+/** An area's weather (docs/62 §3–4): one that never changes, two taking turns a round each, or the odds of the day's. */
+export interface AreaWeather {
+  fixed?: Weather | null
+  alternate?: Weather[] | null
+  /** Weights of each weather of the day (UTC), the same for everyone. */
+  daily?: Partial<Record<Weather, number>> | null
+}
+
+/** Hoenn's or Galar's weather (docs/62): the switch (the server reads it) and each area's weather, by area id. */
+export interface WeatherConfig {
+  access: EventAccess
+  areas: Record<string, AreaWeather>
+  /** Galar: × the weight of the wild Pokémon of the day's weather's types (no species added or taken away). */
+  poolTimes?: number
+}
+
+/** Kalos hordes (docs/62 §5): the switch (the server reads it) and the numbers. */
+export interface HordesConfig {
+  access: EventAccess
+  /** % of the wild cards that come as a horde. */
+  chance: number
+  /** Hordes at most per visit to an area (the round's cards). */
+  perArea: number
+  /** How many come. */
+  size: number
+  /** Levels below the one rolled (never under Lv 2). */
+  levelDrop: number
+  /** % of hordes with one of another species. */
+  mixedChance: number
+  /** Pool entries up to this weight (the rarest) never make a horde. */
+  minWeight: number
+  regions: RegionId[]
+}
+
+/** An island trial (docs/62 §6): the Totem fought instead of a captain's battle, or a trial of its own. */
+export interface TrialDef {
+  id: string
+  /** The Z-Crystal it gives: Z-Moves of this type (docs/62 §6). */
+  crystal?: PokeType | null
+  areaId: string
+  /** The gym battle this trial replaces: a captain's, or (`own`) a row there only for the trial. */
+  trainerId: string
+  /** The gym exists only as this trial (Vast Poni Canyon's): with the switch off, the area doesn't have it. */
+  own?: boolean
+  /** Who greets the player ('Ilima', 'Hapu'). */
+  captain: string
+  /** The place said in the greeting ('the Verdant Cavern'). */
+  place: string
+  totem: number
+  level: number
+  /** The allies it calls, in turn. */
+  allies: number[]
+  allyLevel: number
+}
+
+export interface TrialsConfig {
+  access: EventAccess
+  /** × the Totem's max HP. */
+  hpTimes: number
+  /** Extra dice of its type: its aura. */
+  extraDice: number
+  /** Allies it calls in a fight, at most. */
+  calls: number
+  trials: TrialDef[]
+  /** The other battles that give a Z-Crystal (the kahunas', Mina's), by trainer id. */
+  crystals?: Record<string, PokeType>
+}
+
+/** The Titans (docs/62 §7): the switch (the server reads it), the second phase's numbers and the reward. */
+export interface TitansConfig {
+  access: EventAccess
+  hpTimes: number
+  extraDice: number
+  /** Dondozo with Tatsugiri in its mouth (Commander): its own numbers. */
+  commanderHpTimes: number
+  commanderExtraDice: number
+  gold: number
+  items: { key: string; qty: number }[]
+}
+
+/** The region flavours, each with its switch and its rules (docs/62). */
+export const FLAVOUR_KEYS = ['hoennWeather', 'galarWeather', 'hordes', 'trials', 'titans'] as const
+export type FlavourKey = (typeof FLAVOUR_KEYS)[number]
+
+export interface FlavoursSave {
+  /** The flavours whose rules have been shown once. */
+  seen?: FlavourKey[]
+}
+
+/** The set moments a save has met (docs/61 §5): each one's id, once. */
+export interface MomentsSave {
+  done: string[]
+}
+
+/** Trick or Treat's look: the haunted one (docs/29) or the Safari's (docs/61 §4). */
+export type LureTheme = 'trick' | 'safari'
+
 /** Trick or Treat in a save (docs/29): its rules pop-up shown. */
 export interface TrickSave {
   rulesSeen?: boolean
@@ -1647,13 +1877,19 @@ export type GiftRegion = string
 
 /**
  * One gift on a message, as the admin set it (Admin → Messages, or a player's profile): an item and how many, a
- * Pokémon at a level, shiny or not, or Pokédollars. Each goes to its region's Bag, Box or ₽.
+ * Pokémon at a level, shiny or not, Pokédollars, or Heart Scales. Each goes to its region's Bag, Box or ₽, the Heart
+ * Scales to the player's wallet.
  */
 export type Gift =
   | { kind: 'item'; key: string; qty: number; region: GiftRegion }
   /** `outfit` (docs/59): the Pokémon comes dressed up (a key of `OUTFITS` its species wears). */
   | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; outfit?: string; region: GiftRegion }
   | { kind: 'gold'; amount: number; region: GiftRegion }
+  /**
+   * Heart Scales (docs/60), a message's only: the server adds them to the player's wallet as it hands the gifts over
+   * (migration 0121), so a message carrying them goes to an account. `region` is kept for the shape, never read.
+   */
+  | { kind: 'heartScales'; amount: number; region: GiftRegion }
 
 /** The gifts a save has opened (docs/15 §23). */
 export interface GiftsSave {
@@ -1937,6 +2173,9 @@ export interface PokemonInstance {
   revivesAt?: number
   /** The fossil item it came from (for its picture while it revives). */
   fossil?: string
+  /** A gift Egg (docs/61 §5.3) waiting to hatch at `revivesAt`, in the Box as a fossil waits; `hatchShiny` when it hatches. */
+  egg?: boolean
+  hatchShiny?: boolean
   /** Extreme mode: when it was K.O. (ms, server time). It rests until `koHours` later. Absent = not on the clock. */
   koAt?: number
   /** Extreme mode's Pokébuff (docs/47): one more die of this type in its battles until `until` (ms, real time). */
@@ -1960,6 +2199,8 @@ export interface PokemonInstance {
 export interface AreaProgress {
   /** Rounds completed here (a round counts once its last card is dealt with; a wipe loses the round in progress). */
   roundsDone: number
+  /** A Safari (docs/61 §4): rounds begun here, the free ones included; a round is paid for as it's dealt. */
+  safariRounds?: number
   /** The current round has already been counted (its deck ran out): don't count it twice. */
   roundCounted?: boolean
   /** Exploration XP from before rounds replaced the gauge: converted to `roundsDone` on load, then dropped. */
@@ -2003,6 +2244,8 @@ export interface AreaProgress {
   centerMet?: boolean
   /** Extreme mode (docs/47): the team was K.O. here; the round starts over at a Center that only swaps. */
   wiped?: boolean
+  /** Kalos hordes met this round (docs/62 §5): the round and how many. */
+  hordes?: { round: number; n: number }
 }
 
 export interface SaveData {
@@ -2113,7 +2356,7 @@ export interface SaveData {
   talents?: Partial<Record<RegionId, number[]>>
   /** The families whose talent has been met (a talented one seen, or unlocked): the sheet names it from then on. */
   talentsMet?: number[]
-  /** The hidden talents' rules pop-up has been shown (once; INFO shows it again). */
+  /** Retired: the hidden talents' rules pop-up was shown (it no longer opens by itself, 2026-11-01). Old saves keep it. */
   talentRulesSeen?: boolean
   /** Outfits (docs/59): their rules pop-up seen, once for good. */
   outfitRulesSeen?: boolean
@@ -2141,6 +2384,12 @@ export interface SaveData {
   trickOrTreat?: TrickSave
   /** The Gift card (docs/64 §4.0): its rules seen. Absent = never met. */
   giftCard?: GiftCardSave
+  /** The Safari (docs/61 §4): its rules pop-up shown. */
+  safari?: TrickSave
+  /** The set moments met: rivals' meetings and gifts (docs/61 §5). */
+  moments?: MomentsSave
+  /** The region flavours (docs/62): the rules seen of each. */
+  flavours?: FlavoursSave
   /** The Underground (docs/34): the running event's kits, pickaxe, orbs and wall. Gone when the event ends. */
   underground?: UndergroundSave
   /** Arceus's plates found in the Underground, by type: kept for good. Each lets the player's Arceus take its type. */

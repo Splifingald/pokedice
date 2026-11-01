@@ -19,7 +19,9 @@ export const AREA_ART: Readonly<Record<string, string>> = {
   '1e08b1b8-cda6-5046-a40f-5041361f6736': 'haunted', // 12 Pokémon Tower (Kanto)
   'ff3f0086-1b99-559e-a646-e88006eec749': 'flowers', // 13 Routes 12–15 (Kanto)
   'e7d8c094-5b1f-51d5-b205-3951e8be98ab': 'evening', // 14 Cycling Road (Kanto)
-  '2238f26a-2629-5f28-af07-e74cb41d5f7a': 'marsh', // 15 Safari Zone (Kanto)
+  // docs/61 §4: the area that held both is Fuchsia City now (Koga's town); its Safari Zone is a secret area of its own.
+  '2238f26a-2629-5f28-af07-e74cb41d5f7a': 'village', // 15 Fuchsia City (Kanto)
+  '38fc3c59-6f8d-5aa8-a299-a5bb949254b2': 'marsh', // 958 Safari Zone (Kanto)
   '0451cbfb-2955-5b42-a816-3e6affb72c35': 'modern', // 16 Silph Co. (Kanto)
   '6be7fc24-0db6-59e6-b9f0-81cbefc90ab4': 'sea', // 17 Sea Routes 19 & 20 (Kanto)
   '51bb91b2-9c10-508c-bd4d-0f9e39e3f30d': 'icecave', // 18 Seafoam Islands (Kanto)

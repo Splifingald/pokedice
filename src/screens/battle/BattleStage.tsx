@@ -119,6 +119,9 @@ export function StageBackground({ art, zones = true }: { art: AreaPicture | null
   )
 }
 
+/** How much bigger a Totem and a Titan's second phase stand (docs/62 §6–7). */
+const AURA_SIZE: Record<NonNullable<Battler['aura']>, number> = { totem: 1.3, titan: 1.55 }
+
 /** Five key frames round the orbit; star `i` starts a third of a turn after the one before. */
 const ORBIT = [0, 1, 2, 3, 4]
 const angle = (j: number, i: number) => ((j / 4) * 2 + (i * 2) / 3) * Math.PI
@@ -199,6 +202,7 @@ function Mon({
   place,
   front = true,
   live,
+  settled = false,
 }: {
   b: Battler
   side: Side
@@ -217,6 +221,8 @@ function Mon({
   hostClass?: string
   /** Out on the field (the foe has slid in, yours has popped out of its ball). */
   shown: boolean
+  /** Out already before this stage drew (the same fight with another lead): no entrance again. */
+  settled?: boolean
   fainted: boolean
   /** A timeline is drawing it on the canvas right now. */
   hidden: boolean
@@ -230,6 +236,9 @@ function Mon({
   const { level } = useMotion()
   const still = level === 'off'
   const back = side === 'player'
+  // Only the sprite it first drew is out already: a form change later still comes in as its own.
+  const [settledKey] = useState(() => (settled ? `${b.uid}:${b.dex}` : null))
+  const entered = settledKey === `${b.uid}:${b.dex}`
   // Showdown failing or stalling brings the local sprite, placed as it stands (src/lib/showdownReach.ts).
   const down = useShowdownDown()
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -269,13 +278,15 @@ function Mon({
   return (
     <div
       ref={host}
-      className={cx('absolute', host && hostClass)}
+      className={cx('absolute', host && hostClass, b.aura && `foe-aura-${b.aura}`)}
       style={{
         left: box.left * scale,
         top: box.top * scale,
         width: box.w * scale,
         height: box.h * scale,
         opacity: hidden ? 0 : 1,
+        // A Totem or a Titan (docs/62) stands bigger than its kind, its feet where they were.
+        ...(b.aura && { transform: `scale(${AURA_SIZE[b.aura]})`, transformOrigin: '50% 90%' }),
         ...(place && {
           zIndex: place.z,
           transition: still ? undefined : `left ${0.3 * pace}s, top ${0.3 * pace}s, width ${0.3 * pace}s, height ${0.3 * pace}s`,
@@ -286,7 +297,7 @@ function Mon({
         key={`${b.uid}:${b.dex}`}
         className="absolute inset-0"
         style={{ transformOrigin: '50% 90%' }}
-        initial={still ? false : back ? { opacity: 0, scale: 0 } : { opacity: 0, x: 60 * scale }}
+        initial={still || entered ? false : back ? { opacity: 0, scale: 0 } : { opacity: 0, x: 60 * scale }}
         animate={
           fainted
             ? // Down through its platform in four steps, its bottom cut away as it goes (the games' fall, docs/38).
@@ -618,6 +629,7 @@ export function BattleStage({
   art,
   ownShown,
   foeShown,
+  foeSettled = false,
   trainer,
   overlay,
   worn,
@@ -666,6 +678,11 @@ export function BattleStage({
   art?: AreaPicture | null
   ownShown: boolean
   foeShown: boolean
+  /**
+   * The foe was out before this stage drew: the same fight again with another lead picked at the send-out step. It
+   * stands there as it was (no slide-in, no shiny sparkle a second time).
+   */
+  foeSettled?: boolean
   /** A trainer stepping onto the field before their Pokémon (sprite URL), or null. */
   trainer: string | null
   /** A full-stage timeline that takes over from the sprites (a legendary's entrance, the catch). */
@@ -718,7 +735,7 @@ export function BattleStage({
   const foeOut = !!fx.fainted[foe.uid] || !!fx.wornOut[foe.uid]
   // A shiny comes out in a sparkle (docs/38 F10b): the hatching's rings of stars as it lands, once per Pokémon.
   const [sparkle, setSparkle] = useState<Sparkle | null>(null)
-  const sparkled = useRef(new Set<string>())
+  const sparkled = useRef(new Set<string>(foeSettled ? [foe.uid] : []))
   useEffect(() => {
     if (!foe.shiny || !foeShown || foeOut || scale === 0 || sparkled.current.has(foe.uid)) return
     sparkled.current.add(foe.uid)
@@ -839,6 +856,7 @@ export function BattleStage({
               side="enemy"
               scale={scale}
               shown={foeShown}
+              settled={foeSettled}
               fainted={(!!fx.fainted[foe.uid] || !!fx.wornOut[foe.uid]) && !worn}
               hidden={(playing && !liveOn) || !!fx.away?.[foe.uid]}
               live={liveOn ? liveSprites : undefined}

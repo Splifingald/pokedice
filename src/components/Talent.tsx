@@ -7,7 +7,6 @@ import { useState } from 'react'
 import {
   familyTalent,
   familyUnlocked,
-  markTalentRulesSeen,
   TALENT,
   talentMet,
   talentTier,
@@ -18,10 +17,9 @@ import {
 } from '@/engine'
 import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
-import { mutateSave, useGame } from '@/store/game'
+import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { PixelIcon } from './icons'
-import { useMyTurn, useOnScreen } from './popupTurn'
 import { RulesModal, type RuleRow } from './RulesModal'
 import { SheetSection } from './SheetSection'
 
@@ -413,16 +411,8 @@ export function useTalentRules(data: GameData): RuleRow[] {
   ]
 }
 
-/** The rules (docs/15 §20): once as they open (Later / Let's go!), then from a tap on the sheet's talent box (OK). */
-export function TalentRulesModal({
-  open,
-  onClose,
-  onGo,
-}: {
-  open: boolean
-  onClose: () => void
-  onGo?: () => void
-}) {
+/** The rules (docs/15 §20), from a tap on the sheet's talent box (OK): they never open by themselves (2026-11-01). */
+export function TalentRulesModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   useT()
   const data = useGame((s) => s.data)
   const rules = useTalentRules(data)
@@ -434,7 +424,6 @@ export function TalentRulesModal({
       picture={<TalentBanner />}
       icon="talent"
       rules={rules}
-      onGo={onGo}
     />
   )
 }
@@ -448,16 +437,4 @@ function TalentBanner() {
       <PixelIcon name="talentLocked" size={44} />
     </div>
   )
-}
-
-const seen = () => mutateSave((s) => (s.talentRulesSeen ? null : markTalentRulesSeen(s)))
-
-/**
- * Once, between fights, as the switch opens them to the player. It takes its turn in the one-time pop-ups' queue
- * (engine/popups.ts), after the battle powers'. Let's go! has nowhere to lead: talents are on every Pokémon.
- */
-export function TalentRulesPopup() {
-  const open = useMyTurn('talents')
-  useOnScreen('talents', open)
-  return <TalentRulesModal open={open} onClose={seen} onGo={seen} />
 }

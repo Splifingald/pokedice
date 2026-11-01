@@ -271,7 +271,8 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   No toast. Under the autopilot it shows too, its PICK IT UP loading.
 - **A fight's result card follows itself and moves on** (2026-10-26): each piece (XP, a level-up, the Pokédex entry…)
   scrolls into view as it comes, clear of the buttons at the foot; once all is shown, NEXT waits for the tap (its gauge
-  fills and goes only while auto-mode or Idle mode plays the area, the user's call of 2026-10-27), BACK still in reach. It waits instead when a new species was caught or a small world's mythical won (its card is looked at, and a full team's
+  fills and goes only while auto-mode or Idle mode plays the area, the user's call of 2026-10-27), BACK still in reach.
+  The fight that cleared the area has HOME in BACK's place, beside the next area's button (2026-11-01). It waits instead when a new species was caught or a small world's mythical won (its card is looked at, and a full team's
   replace choice, scrolled to, is made), when the area was cleared (the way on is the next area), and in a rebattle.
   No AUTO switch on the card nor in Settings: AUTO-MODE is the fights' own.
 - **A region begun opens on its first area**, its first encounter under way (`exploreFirstArea`): a new game's partner
@@ -629,7 +630,8 @@ Players shouldn't have to make many requests:
 - **Notices** (`NoticeCard`, `homeNotices`): what never needs a pop-up over Home is a card in the page, one at a time: a
   feature with a page opening ("Versus is open!", SEE VERSUS; ✕ hides it for the visit, the page's `RulesCard` ends
   it), Prof. Oak's leaderboard tip, Support me, a region on offer once its pop-up was seen. **His invite is the
-  friends list's**, at the top of Friends until ✕ or a share (the user's call, 2026-10-27: not on Home). Never red. **A
+  friends list's**, a line of the Friends page's INFO (the user's call, 2026-10-27: not on Home; 2026-11-01: no note on
+  top of Friends). Never red. **A
   region on offer** is its own picture as the card, "{region} is available", and two buttons: NOT NOW (put away on this
   device for good; the Regions view keeps it) and GO (gold: the professor's lab for that region).
 - **After an encounter the player stays in the area** (a trainer, a wild Pokémon, a find, the Center, the Game
@@ -1325,12 +1327,18 @@ pieces are in `src/components/Gifts.tsx`, every state on `/kitchen-sink` (`GiftB
   into a copy), at its level within the game's cap and full HP, and into the team when that region is the one being
   played and the team has room. A region the player hasn't started yet sends it to their latest one, and the result
   says so.
+- **Heart Scales** (docs/60, the Friend Market's coins; migration 0121): a message to a signed-in player can also give
+  1–9,999 of them. They live on the server, so the server puts them in the player's wallet as the game claims the
+  message's gifts, once, in the same step that marks them opened (not counted toward the streaks' daily cap). A guest
+  has no wallet: the server refuses Heart Scales on a message to a device, and the editor shuts its row there. They
+  show among what arrived ("Added to your Heart Scales") only while Friendship is on for the player; the Friends page
+  and the market show the new count at once. Invite rewards, welcome-back gifts and calendars don't offer them.
 - **The opening** (`GiftMoment`, `giftTimeline` in `src/fx/timelines/gift.ts`): full screen, held with
   `useHoldFullscreen` so pop-ups wait. The wrapped box falls onto a warm stage and lands with a squash, wobbles three
   times, each bigger (the anticipation), the bow springs loose, the box crouches and holds four frames, and the lid
   flies off in a burst of light and confetti; then what was inside rises out one by one — items as their pictures, the
   Pokémon as their sprites, a shiny with its two rings of stars — in an arc over the box (six at most; past that the
-  last says "+n"; Pokédollars rise as a stack of coins drawn in code), and a short fanfare. The lines (beats `wobble`, `untie`, `opened`) are in the message box below,
+  last says "+n"; Pokédollars rise as a stack of coins drawn in code, Heart Scales as their icon), and a short fanfare. The lines (beats `wobble`, `untie`, `opened`) are in the message box below,
   in a polite live region. SKIP and Esc jump to what arrived (`GiftResult`: each thing's picture, name, ×quantity or
   level or ₽, ✦ Shiny, NEW, and where it went: "In your Johto Bag", "Added to your Pokédollars", "Joined your team"),
   then DONE. Motion off jumps there
@@ -1346,7 +1354,8 @@ pieces are in `src/components/Gifts.tsx`, every state on `/kitchen-sink` (`GiftB
   opened yet. The trainer menu's **Inbox** row opens it on its own, with the same count (§17).
 - **In the admin**, the same gift editor in both places (`GiftEditor`): an item and a quantity, a Pokémon, its level
   and Shiny, or an amount of ₽, each with its region (their latest, or one by name; on a profile, the regions they haven't started say
-  where it would go). A message's card says whether its gifts were opened, and when; an opened gift can't be changed.
+  where it would go); and, on a message, Heart Scales (to an account only, and only while Friendship is on: the row says
+  why it's shut, and warns while it's on for the admin alone). A message's card says whether its gifts were opened, and when; an opened gift can't be changed.
 
 ## 24. The General upgrades and golden names
 
@@ -1387,11 +1396,9 @@ tiers, places the gauge and puts the gifts away (as `engine/gifts.ts` does a mes
   Misty gets a reward for inviting you!" Adding by friend ID counts nobody.
 - **The switch and the rules** follow §20: Off, no gauge, pop-up or dot, and no invite is counted (what was counted
   and opened stays); On for admin, only the admin sees the gauge and opens rewards, and the players they invite count.
-  The rules pop-up (`InviteRulesModal`, friends, a badge and the gift drawn in code as its banner; the tiers listed
-  from the config, "1 → Rare Candy · 2 → ₽1,000 …") opens once, and only on the Friends page: the first time a
-  signed-in player in the main game opens it with the gauge there (OK; marked seen as it opens). It is not in the
-  one-time pop-ups' queue and never opens over another page (the user's call, 2026-10-25). INFO sits at the bottom of
-  the Friends page.
+  The rules (the tiers listed from the config, "1 → Rare Candy · 2 → ₽1,000 …") never open by themselves: they are a
+  part of the Friends page's INFO, at its foot (the user's call, 2026-11-01), and reaching the page marks them seen.
+  They are not in the one-time pop-ups' queue and never open over another page (the user's call, 2026-10-25).
 - **The gauge**: the tiers evenly spaced (the fill moves evenly between two of them, `inviteFill`), each tile right
   over the end of its stretch of track, the number of friends under it. Gold only for a tier ready to open; a check
   for one opened (it stays opened even if the count drops). The track is a `meter` ("3 of 4 friends with their first
@@ -1969,8 +1976,8 @@ pop-up). The pieces are in `src/components/Talent.tsx`, every state on `/kitchen
   paralysis, Pressure's lost reroll, Shed Skin, Limber, Magic Guard, Mirror's die, Sturdy, Natural Cure, Magma Armor. A talent that changes numbers alone (Speed,
   rerolls, HP) says nothing.
 - **Trades**: asking for a species, a toggle "With its hidden talent" under the species (only while the switch is on).
-- Its rules: a `RulesModal` once, in the one-time pop-ups' queue after the battle powers' (`talentRulesSeen`); again
-  from a tap on the sheet's talent box.
+- Its rules: a `RulesModal` from a tap on the sheet's talent box, never a pop-up of its own (the user's call,
+  2026-11-01: no rules pop-up nor INFO button for talents).
 
 ## 39. Real-player battles in areas
 
@@ -2045,6 +2052,10 @@ docs/60. Its switch is `friendship.access` (§20); the server keeps the streaks,
 - **A streak is never colour alone**: kept today, rose with the check; waiting (one interaction today keeps it), gold
   with a red "!"; its state is the badge's accessible name ("Friendship streak: 12 days, keep it today!"). A lost
   streak shows nothing on the row; the friend's card says "Start one with …".
+- **The Friends page opens on what's there, with no notes on top** (the user's call, 2026-11-01): Prof. Oak's invite,
+  the invite rewards' rules and friendship's rules all wait behind the one INFO at the page's foot (`FriendsInfoModal`:
+  the invite line, then a part per feature on for the player, OK). Reaching the page marks the invite rules seen (Home's
+  notice that sends there ends).
 - **The Friendship card** sits on the Friends page under the invite rewards: the coins, today's gauge (a `meter`), the
   streaks to keep today (the longest first, at most three, with what today would pay), one line on what counts, and
   FRIEND MARKET (navy: the page's red stays SHARE INVITE LINK) beside a small INFO.
@@ -2058,6 +2069,66 @@ docs/60. Its switch is `friendship.access` (§20); the server keeps the streaks,
 - **The Friend Ball** (docs/60 §1b): its description ends with the boost now ("current: ×2", `useItemDescription`
   fills it wherever an item's description shows). On the catch panel its button wears a gold corner tag (the unknown
   talent's gem and ×n) while the boost can still find this Pokémon's talent, and it is never "not needed" then.
+
+## 43. The side quests: roadblocks, disguises, Safaris, rivals and gifts
+
+docs/61. Their switches are `disguises`, `safari`, `rivals` and `giftMoments` (§20; one server check,
+`side_quest_open`); the roadblocks and Snowpoint Temple's Regis are content. Every state is on `/kitchen-sink`
+(`SideQuestBits`); `e2e/side-quests.spec.ts` plays each one in the game and keeps its picture in `docs/61-side-quests/`.
+
+- **A roadblock is never called legendary**: its card's tag is IN THE WAY and its line its own ("A sleeping Pokémon
+  blocks the way!"); the area, Home, the Pokédex and the result say "In the way" / a plain VICTORY / "The wild …".
+  Everything else is a boss's (the challenge, the intro, the throw).
+- **A disguise is a find until it's picked up**: the find's screen shows the item it poses as (no rarity tag of its own:
+  the plainest find's), PICK IT UP; then the ball wobbles and bursts in a white flash and the Pokémon stands there with
+  its line in red ("It wasn't an item at all: it's Voltorb!") and FIGHT. No FLEE: the line under it says why. Calm
+  motion: the Pokémon is simply there.
+- **The Safari is Trick or Treat's screen in daylight**: the same gauge, buttons and result card (§28), its words and
+  pictures its own (Bait, the Safari Ball, a Pokémon that runs off the stage instead of fading into wisps; the flee
+  zone's running icon), the stage's sky a day's when the area has no picture. A round's price is said under CONTINUE
+  ("₽100 a round", "Free round") and a paid round is a toast; short of ₽ the toast says the price.
+- **A gift is a step on the stage of its own** (as a find is, §15): the giver walks in from the left, what they give
+  beside them (a Poké Ball, or the Day Care's Egg), their line in the dialogue box; a choice is cards to tap (sprite,
+  name, types; the picked one ringed in gold); TAKE IT (AutoButton when there's nothing to choose), BUY and NO THANKS for
+  a price. Taken: the ball springs open as a disguise does, or the Egg slides to the middle and wobbles; the panel says
+  what and where. A gift Egg in the Box and on cards is the Egg, "Egg" and HATCHING with its countdown: what's inside
+  stays hidden until it hatches (a toast then).
+- **A rival needs no card**: the fight opens on the battle screen as every trainer's does, the rival's line its first
+  message.
+
+## 44. The region flavours: weather, hordes, island trials, Titans
+
+docs/62. Their switches are `hoennWeather`, `galarWeather`, `hordes`, `trials` and `titans` (§20; the same server check
+as §43, `side_quest_open`). Every state is on `/kitchen-sink` (`FlavourBits`); `e2e/region-flavours.spec.ts` plays each
+one in the game and keeps its picture in `docs/62-region-flavours/`.
+
+- **The weather is a chip, never a hidden number**: its icon on a tile by the area's name in the top bar (a tap is its
+  rules, the INFO), its small twin at the stage's top right (Johto's sun or moon has that corner; no region has both),
+  and its fall over the stage (rain streaks, flakes, blowing sand, ash; the sun's glare, fog's band, a dimming under
+  clouds): `components/Weather.tsx`. Its × in the damage recap is its own factor (`WeatherBoostChip`: the weather's icon
+  and ×1.25), after the type's, as a small world's booster is (§21). A sandstorm's or snow's wear is a line and a −N pop,
+  as a burn's is. At Motion level 0 nothing falls: a still frame stays, and the chip says the rest.
+- **The rules come once per region** (Hoenn's, Galar's), between fights, in the one-time pop-ups' queue (`weather`,
+  after `dayNight`), Later / Let's go!. They say what the weather does, never which area has which (the user's call,
+  2026-11-01: each area's chip says it); Galar's add that it changes every day, and its top-bar line says the day's
+  weather and when it changes ("Today: Rain · changes in 5 h").
+- **Castform shows the weather's form** as the fight starts (the Sunny, Rainy or Snowy Form's sprite), said as a type
+  change ("Castform became Water type!"), one line per Castform out.
+- **A horde, a trial and a Titan each have a card of their own** (`screens/area/FlavourCards.tsx`), with INFO top right
+  and the rules opening by themselves the first time the card shows (Later / Let's go!). A horde: HORDE over the five of
+  them (a shiny one starred), its two lines, then the one in front as any wild card; in the fight, five pips under the
+  foes' plates count down. A trial: ISLAND TRIAL, the captain walking in with their line in the dialogue box, the Totem
+  on a night tile with its aura, its numbers and the Z-Crystal, its allies as a trainer's team is shown. A Titan:
+  TITAN, its line, the Titan (and Tatsugiri) on a night tile with its aura, its two phases, what it leaves, "beaten, not
+  caught".
+- **A Totem and a Titan's second phase stand bigger**, their feet where they were (×1.3, ×1.55), with a warm glow that
+  pulses slowly (still for reduced motion): `foe-aura-totem`, `foe-aura-titan` (`styles/flavours.css`). Its calls and its
+  return are messages of their own ("Gumshoos called for help! Yungoos appeared!", "Klawf ate a Herba Mystica… It's
+  back, and huge!"); a trial's allies flee when the Totem falls.
+- **A Titan alone is one on one**: its card asks for one Pokémon, not two; Dondozo with Tatsugiri asks for two.
+- **A trial says its Z-Crystal** under the Totem (its type's badge and "Its Z-Crystal: Fire-type Z-Moves"), and the
+  result card says it was won ("You got the Fire Z-Crystal!"). With Z-Crystals, the Z-MOVE button only shows for a
+  Pokémon of a type whose crystal is held; the Z-Moves' rules open with "One Z-Crystal per type".
 
 ## 45. The Gift card
 
@@ -2234,11 +2305,8 @@ day light of the same shrine for the end. **Its lasting effects follow §8**
   the boss (gold edge when it's next), "1/3"; an image with "Waves cleared: 1/3".
 - **The foes**: the preview says "Wave 2/3 · 1/3" over the name and "Lost in the blizzard: it can't be caught." in
   place of the catch hint (no NEW / caught tag), on a storm-blue frame. **Every fight here is in the blizzard** (the
-  boss's too): `SnowOverStage` drives flakes and a few streaks over the stage (over the picture, under the plates, no
-  taps), and the **blizzard's chip** (`BlizzardChip`, a snowflake and "Blizzard" in a storm-blue tag with a snow rim)
-  sits at the stage's top right under the round's strip; its title and label say the rule. The wear is a line of the
-  log ("Ampharos is buffeted by the blizzard! −6") with the HP bar and its number, at the end of each round, both sides
-  (an Ice type takes nothing), and a history row ("was buffeted by the blizzard").
+  boss's too): it is docs/62's Snow (§44), so the weather's own fall over the stage, its chip and its log lines and
+  history rows show it, at each Pokémon's turn, both sides (an Ice type takes nothing).
 - **No bag in battle**: the engine refuses every item (`noBag`). On a phone the Bag button stays enabled and a tap (or
   B) toasts "It's too dangerous to open the bag here, items might fly away"; on a computer the Bag column keeps its
   items greyed with that line over them in a well with a lock (a `note`). Between fights the Pokémon sheet's items say

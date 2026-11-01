@@ -5,12 +5,14 @@
 // short fanfare. It plays in full
 // whatever the motion setting short; only "off" skips it. Words are the host's: the beats say when.
 import { fxSound } from '@/audio/sfx'
+import { HEART_SCALE_PAL, ICONS } from '@/components/icons'
 import {
   cached,
   canvas,
   ease,
   ellipse,
   glow,
+  icon,
   Particles,
   rect,
   ring,
@@ -29,8 +31,8 @@ import { momentBg } from './moments'
 export interface GiftContent {
   /** What to draw: a Pokémon's front sprite key (`spriteKey`) or an item's (`item|<url>`). Not loaded: a sparkle. */
   key: string
-  /** `gold`: Pokédollars, drawn here as coins (no sprite to load). */
-  kind: 'mon' | 'item' | 'gold'
+  /** `gold`: Pokédollars, drawn here as coins; `scales`: Heart Scales, their icon (no sprite to load either). */
+  kind: 'mon' | 'item' | 'gold' | 'scales'
   shiny?: boolean
 }
 
@@ -407,7 +409,12 @@ export function giftTimeline(p: GiftParams): Timeline<GiftState> {
           const c = p.contents[i]!
           // Items and coins stay on whole pixels: twice their size alone, as they are among others.
           const k = c.kind === 'mon' ? pl.k : pl.k >= 0.9 ? 2 : 1
-          if (c.kind === 'gold') {
+          if (c.kind === 'scales') {
+            const scale = icon(ICONS.heartScale, HEART_SCALE_PAL)
+            const w = scale.width * k
+            const h = scale.height * k
+            g.drawImage(scale, Math.round(x - w / 2), y + bob - h, w, h)
+          } else if (c.kind === 'gold') {
             const coins = coinsArt()
             const w = coins.width * k
             const h = coins.height * k

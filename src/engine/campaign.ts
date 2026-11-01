@@ -66,7 +66,7 @@ export interface CampaignOptions {
 }
 
 export type EncounterTally = Record<
-  'wild' | 'trainer' | 'center' | 'item' | 'casino' | 'trick' | 'gift' | 'gym' | 'boss',
+  'wild' | 'trainer' | 'center' | 'item' | 'casino' | 'trick' | 'safari' | 'gift' | 'gym' | 'boss',
   number
 >
 
@@ -261,7 +261,7 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
         name: area.name,
         visits: 1,
         encounters: 0,
-        kinds: { wild: 0, trainer: 0, center: 0, item: 0, casino: 0, trick: 0, gift: 0, gym: 0, boss: 0 },
+        kinds: { wild: 0, trainer: 0, center: 0, item: 0, casino: 0, trick: 0, safari: 0, gift: 0, gym: 0, boss: 0 },
         fights: 0,
         wins: 0,
         wipes: 0,
@@ -426,8 +426,8 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
       save = centerHeal(save, data)
       stalled = false
     }
-    else if (enc.kind === 'casino' || enc.kind === 'trick' || enc.kind === 'gift') {
-      // The simulated player walks past the Game Corner, Trick or Treat and the Gift card.
+    else if (enc.kind === 'casino' || enc.kind === 'trick' || enc.kind === 'safari' || enc.kind === 'gift') {
+      // The simulated player walks past the Game Corner, Trick or Treat, the Safari and the Gift card.
     } else if (enc.kind === 'item') {
       save = pickUpItem(save, area.id, enc, data, 0, newId)
       r.itemsFound++

@@ -2,7 +2,7 @@
 // and waiting, the tiers' ladder at each tier, today's gauge (empty, midway, capped), the Friendship card (loading,
 // failed, no streak, streaks waiting), a friend's streak (none, waiting, kept, at the top, after a lost one), the
 // market's shiny of the week (to buy, too poor, sold out), its items (to buy, short, sold out), its plate, the rules
-// card and INFO, and a purchase's opening.
+// card and INFO, a purchase's opening, and the Friends page's INFO (all on; Prof. Oak's invite alone).
 import { useState, type ReactNode } from 'react'
 import { DEFAULT_CONFIG, marketRows, type FriendStreak, type GiftLanded } from '@/engine'
 import {
@@ -18,6 +18,7 @@ import {
   StreakLadder,
   useFriendshipRules,
 } from '@/components/friends/Friendship'
+import { FriendsInfoModal } from '@/components/friends/FriendsInfo'
 import { GiftMoment } from '@/components/Gifts'
 import { ItemSprite } from '@/components/ItemSprite'
 import { FriendBallTag } from '@/screens/battle/CatchPanel'
@@ -69,6 +70,7 @@ export function FriendshipBits() {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const [info, setInfo] = useState(false)
+  const [pageInfo, setPageInfo] = useState<'all' | 'oak' | null>(null)
   const [moment, setMoment] = useState(false)
   const [rulesSeen, setRulesSeen] = useState(false)
   const rules = useFriendshipRules()
@@ -274,8 +276,22 @@ export function FriendshipBits() {
             </PixelButton>
           </div>
         </Frame>
+        <Frame name="The Friends page's INFO">
+          <div className="grid gap-2">
+            <InfoButton name={t('ui.friends.infoName')} onClick={() => setPageInfo('all')} />
+            <PixelButton size="sm" onClick={() => setPageInfo('oak')}>
+              Invites and friendship off
+            </PixelButton>
+          </div>
+        </Frame>
       </div>
       <FriendshipRulesModal open={info} onClose={() => setInfo(false)} />
+      <FriendsInfoModal
+        open={pageInfo != null}
+        onClose={() => setPageInfo(null)}
+        invites={pageInfo === 'all'}
+        friendship={pageInfo === 'all'}
+      />
       {moment && <GiftMoment landed={landed} source="market" onDone={() => setMoment(false)} />}
     </div>
   )

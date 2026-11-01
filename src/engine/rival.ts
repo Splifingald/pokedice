@@ -1,5 +1,6 @@
 // The rival: the character the player didn't pick. An area can list one version of a trainer per starter
 // (Trainer.rivalOf); a player only ever meets the version for their own starter, under the rival's name and sprite.
+import { trialOnlyGym, trialsOn } from './trials'
 import type { Area, GameData, SaveData, Trainer } from './types'
 
 export type Character = 'red' | 'green'
@@ -23,15 +24,33 @@ export const rivalCharacter = (side?: PlayerSide | null): Character => (side?.ch
  * dropped (no match — an unusual starter — keeps the first version).
  */
 export function gymsFor(area: Area, data: GameData, side?: PlayerSide | null): string[] {
-  const rivals = area.gyms.filter((id) => data.trainers[id]?.rivalOf != null)
-  if (!rivals.length) return area.gyms
+  // A gym row there only as an island trial (docs/62 §6) is left out while the trials are off.
+  const gyms = trialsOn(data) ? area.gyms : area.gyms.filter((id) => !trialOnlyGym(data, id))
+  const rivals = gyms.filter((id) => data.trainers[id]?.rivalOf != null)
+  if (!rivals.length) return gyms
   const mine = rivals.find((id) => data.trainers[id]!.rivalOf === side?.starterDex) ?? rivals[0]
-  return area.gyms.filter((id) => !rivals.includes(id) || id === mine)
+  return gyms.filter((id) => !rivals.includes(id) || id === mine)
 }
 
-/** A rival version shows the rival's name and sprite ("Champion Blue" → "Champion Green"); other trainers are as is. */
+/**
+ * Hoenn's rival is the other character (docs/61 §5.2): May for a player in Red's look, Brendan for one in Green's.
+ * Keyed by the trainer's name as the content has it.
+ */
+const SWAPS: Record<string, { name: string; spriteUrl: string }> = {
+  May: { name: 'Brendan', spriteUrl: '/trainers/classes/hoenn/brendan.png' },
+}
+
+/** Kanto's rival, whose name is the other character's: "Champion Rival", "Rival Blue". */
+const KANTO_RIVAL = /(^|\s)(Rival|Blue)$/
+
+/**
+ * A rival version shows the rival's name and sprite ("Champion Blue" → "Champion Green"; May → Brendan for a player in
+ * Green's look); other trainers, and the other regions' rivals, are as they are.
+ */
 export function asSeenBy(t: Trainer, side?: PlayerSide | null): Trainer {
-  if (t.rivalOf == null) return t
+  const swap = SWAPS[t.name]
+  if (swap) return side?.character === 'green' ? { ...t, ...swap } : t
+  if (t.rivalOf == null || !KANTO_RIVAL.test(t.name)) return t
   const rival = rivalCharacter(side)
   const name = rival === 'red' ? 'Red' : 'Green'
   const title = t.name.split(' ').slice(0, -1).join(' ')

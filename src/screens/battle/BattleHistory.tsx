@@ -17,6 +17,7 @@ import { MiniSprite } from '@/components/SpriteImg'
 import type { BattleSlice } from '@/store/game'
 import { useGame } from '@/store/game'
 import { BoosterChip } from '@/screens/events/world'
+import { WeatherBoostChip } from '@/components/Weather'
 import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { chancePercent, comboName, typeName } from '@/lib/format'
@@ -72,6 +73,13 @@ export function DamageRecap({ result, dice, className }: { result: DamageResult;
           <>
             <span aria-hidden>×</span>
             <BoosterChip type={result.boost.type} n={result.boost.multiplier} />
+          </>
+        )}
+        {/* The weather's (docs/62 §2): its own factor too. */}
+        {result.weather && (
+          <>
+            <span aria-hidden>×</span>
+            <WeatherBoostChip kind={result.weather.kind} n={result.weather.multiplier} />
           </>
         )}
         <span aria-hidden>=</span>
@@ -162,6 +170,29 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: r
           icon: STATUS_ICON[e.status],
         })
         return
+      case 'weather_tick':
+        rows.push({
+          key,
+          ...who(e.targetUid),
+          text: t(`ui.raid.x.tick.${e.weather === 'snow' ? 'snow' : 'sand'}`, { name: who(e.targetUid).name }),
+          icon: e.weather === 'snow' ? 'weatherSnow' : 'weatherSand',
+          amount: e.amount,
+        })
+        return
+      case 'sos':
+        rows.push({ key, ...who(e.uid), text: t('ui.log.sos', { name: who(e.from).name, ally: who(e.uid).name }), icon: 'warning' })
+        return
+      case 'titan_rise':
+        rows.push({
+          key,
+          ...who(e.uid),
+          text: t(e.commander ? 'ui.log.titanCommander' : 'ui.log.titanRise', { name: who(e.uid).name }),
+          icon: 'crown',
+        })
+        return
+      case 'foe_fled':
+        rows.push({ key, ...who(e.uid), text: t('ui.log.allyFled', { name: who(e.uid).name }), icon: 'run' })
+        return
       case 'status_tick':
         rows.push({
           key,
@@ -171,16 +202,7 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: r
           amount: e.amount,
         })
         return
-      case 'weather':
-        // The whiteout's blizzard (docs/64 §4.3).
-        rows.push({
-          key,
-          ...who(e.targetUid),
-          text: e.weather === 'snow' ? t('ui.whiteout.hist') : t('ui.raid.x.weather.sand.name'),
-          icon: STATUS_ICON.frozen,
-          amount: e.amount,
-        })
-        return
+
       case 'talent':
         rows.push({ key, ...who(e.uid), text: talentLogText(e.name ?? who(e.uid).name, e, e.ally ? who(e.ally).name : undefined), icon: TIER_ICON[talentTier(e.talent)] })
         return

@@ -105,14 +105,10 @@ test('the Friends page: the gauge on top, a reward opened like a gift, then INFO
   const cardTop = (await card.boundingBox())!.y
   const idTop = (await page.getByTestId('friend-code').boundingBox())!.y
   expect(cardTop).toBeLessThan(idTop)
-  // The first time on the page, the rules sit at its top (docs/43 §7: where they apply), not in a pop-up; GOT IT puts
-  // them away for good.
-  const first = page.getByRole('region', { name: 'How invite rewards works' })
-  await expect(first).toContainText('Invite new players')
+  // No rules on the page, nor a pop-up (the user's call, 2026-11-01): they wait behind INFO, and the visit is enough
+  // for Home's notice.
+  await expect(page.getByRole('region', { name: 'How invite rewards works' })).toHaveCount(0)
   await expect(page.getByRole('dialog')).toHaveCount(0)
-  expect((await first.boundingBox())!.y).toBeLessThan(cardTop)
-  await first.getByRole('button', { name: 'GOT IT' }).click()
-  await expect(first).toHaveCount(0)
   await expect.poll(async () => (await stored(page)).invites?.rulesSeen).toBe(true)
 
   await card.getByRole('button', { name: 'Open it' }).click()
@@ -134,11 +130,11 @@ test('the Friends page: the gauge on top, a reward opened like a gift, then INFO
   await expect(card).toContainText('1 more friend for Master Ball')
   await expect(card.getByRole('button', { name: 'Open it' })).toHaveCount(0)
 
-  await page.getByRole('button', { name: 'Info: how invite rewards works' }).click()
-  const rules = page.getByRole('dialog', { name: 'Invite rewards' })
+  await page.getByRole('button', { name: 'Info: how the Friends page works' }).click()
+  const rules = page.getByRole('dialog', { name: 'Friends' }).getByRole('region', { name: 'Invite rewards' })
   await expect(rules).toContainText('Invite new players')
   await expect(rules).toContainText('1 → Rare Candy · 2 → ₽1,000 · 3 → Ditto Lv.10 ✦ Shiny · 4 → Master Ball')
-  await rules.getByRole('button', { name: 'OK' }).click()
+  await page.getByRole('dialog', { name: 'Friends' }).getByRole('button', { name: 'OK', exact: true }).click()
 })
 
 test('between fights: never the rules (the Friends page has them), the reward’s pop-up, opened from Home', async ({
@@ -183,18 +179,22 @@ test('Later keeps the reward on the Friends page, with the Social tab’s dot', 
   await expect(page.getByRole('region', { name: /^Invite rewards/ }).getByRole('button', { name: 'Open it' })).toBeVisible()
 })
 
-test('Prof. Oak’s invite is a note on the friends list, with the gauge; not on Home', async ({ page }) => {
-  // Prof. Oak asks to invite a friend in a note at the top of Friends (the user's call, 2026-10-27), not a pop-up.
+test('Prof. Oak’s invite waits behind the Friends page’s INFO; not on Home', async ({ page }) => {
+  // No note on top of Friends any more (the user's call, 2026-11-01): the invite is a line of the page's INFO, the
+  // gauge on its own card.
   const save = { ...withBadges(makeSave(4), 2), invites: { done: [], rulesSeen: true } }
   await boot(page, save, { invite_status: { count: 0, pending: 1, claimed: [], latest: null } })
   await page.goto('/home')
   await expect(page.getByRole('region', { name: 'Invite a friend' })).toHaveCount(0)
   await page.goto('/friends')
-  const oak = page.getByRole('region', { name: 'Invite a friend' })
-  await expect(oak).toBeVisible()
+  await expect(page.getByTestId('friend-code')).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Invite a friend' })).toHaveCount(0)
   await expect(page.getByRole('dialog')).toHaveCount(0)
-  await expect(oak.getByTestId('invite-gauge')).toBeVisible()
-  await expect(oak).toContainText('1 more friend for Rare Candy')
+  await expect(page.getByRole('region', { name: /^Invite rewards/ })).toContainText('1 more friend for Rare Candy')
+  await page.getByRole('button', { name: 'Info: how the Friends page works' }).click()
+  await expect(page.getByRole('dialog', { name: 'Friends' })).toContainText(
+    'You like the game? Invite a friend to play with you!',
+  )
 })
 
 test('an invite link counts for its owner: the new friend hears the first badge matters', async ({
@@ -226,7 +226,8 @@ test('switched off: no gauge, no pop-up, nothing asked', async ({ page }) => {
   await page.goto('/friends')
   await expect(page.getByTestId('friend-code')).toBeVisible()
   await expect(page.getByRole('region', { name: /^Invite rewards/ })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Info: how invite rewards works' })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Info: how the Friends page works' }).click()
+  await expect(page.getByRole('dialog', { name: 'Friends' }).getByRole('region', { name: 'Invite rewards' })).toHaveCount(0)
   expect(calls.filter((c) => c.includes('invite_'))).toEqual([])
 })
 

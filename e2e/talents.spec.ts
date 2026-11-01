@@ -1,4 +1,4 @@
-// Hidden talents (docs/51, docs/15 §38): with the switch on, the rules once (Later); a Pokémon carrying its family's
+// Hidden talents (docs/51, docs/15 §38): with the switch on, no rules pop-up; a Pokémon carrying its family's
 // talent wears the gem on its Box tile and its card; its sheet's Talent box names it, a tap on it shows the rules; a
 // Pokémon of a family never met says "???". Switched off, no gem, no section, no pop-up.
 import { expect, test, type Page } from '@playwright/test'
@@ -39,14 +39,11 @@ async function boot(page: Page, devConfig: object) {
 
 test.use({ viewport: { width: 390, height: 844 } })
 
-test('switched on: the rules once, the gem on the Box and the card, the sheet names it', async ({ page }) => {
+test('switched on: no rules pop-up, the gem on the Box and the card, the sheet names it', async ({ page }) => {
   await boot(page, ON)
   await page.goto('/home')
-  const rules = page.getByRole('dialog', { name: 'Hidden talents' })
-  await expect(rules).toBeVisible()
-  await expect(rules.getByText('One talent per family')).toBeVisible()
-  await rules.getByRole('button', { name: 'Later' }).click()
-  await expect(rules).toBeHidden()
+  await expect(page.getByRole('button', { name: 'CONTINUE', exact: true })).toBeVisible()
+  await expect(page.getByRole('dialog', { name: 'Hidden talents' })).toHaveCount(0)
 
   await page.goto('/team')
   await expect(page.getByRole('img', { name: 'Hidden talent: Extra Reroll' }).first()).toBeVisible()
@@ -61,22 +58,16 @@ test('switched on: the rules once, the gem on the Box and the card, the sheet na
   await expect(sheet.getByRole('button', { name: /INFO/ })).toHaveCount(0)
   await sheet.getByRole('button', { name: /Extra Reroll/ }).click()
   await expect(page.getByRole('dialog', { name: 'Hidden talents' })).toBeVisible()
+  await expect(page.getByRole('dialog', { name: 'Hidden talents' }).getByText('One talent per family')).toBeVisible()
   await page
     .getByRole('dialog', { name: 'Hidden talents' })
     .getByRole('button', { name: 'OK', exact: true })
     .click()
-
-  // The rules came once: back Home, no pop-up.
-  await page.goto('/home')
   await expect(page.getByRole('dialog', { name: 'Hidden talents' })).toBeHidden()
 })
 
 test('a family never met: "???" on the sheet', async ({ page }) => {
   await boot(page, ON)
-  await page.addInitScript(() => {
-    const s = JSON.parse(localStorage.getItem('pokedice.save')!)
-    localStorage.setItem('pokedice.save', JSON.stringify({ ...s, talentRulesSeen: true }))
-  })
   await page.goto('/team')
   await page
     .getByRole('list', { name: 'Your team, in send-out order' })

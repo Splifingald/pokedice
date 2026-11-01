@@ -8,8 +8,10 @@ import {
   EVENT_ACCESS,
   GIFT_REWARD_KINDS,
   POKE_TYPES,
+  ROADBLOCK_KINDS,
   STATUS_KINDS,
   TRICK_TIERS,
+  WEATHER_KINDS,
 } from '@/engine/types'
 
 const pokeType = z.enum(POKE_TYPES)
@@ -96,9 +98,24 @@ export const GIFT_SCHEMA = z.object({
   bossTaps: int(1, 10),
 })
 
-/** Problems with a game_config value that has a schema of its own (Trick or Treat's, the Gift card's), as lines. */
+/** game_config `safari` (docs/61 §4): Trick or Treat's numbers, each Safari's tier overrides, a round's price. */
+export const SAFARI_SCHEMA = z
+  .object({
+    access: z.enum(EVENT_ACCESS),
+    treatMin: int(1, 100),
+    treatMax: int(1, 100),
+    failPush: int(1, 100),
+    tiers: z.object(Object.fromEntries(TRICK_TIERS.map((k) => [k, trickTier])) as Record<(typeof TRICK_TIERS)[number], typeof trickTier>),
+    areas: z.record(z.array(z.object({ dex: int(1, 99999), tier: z.enum(TRICK_TIERS) }))),
+    freeRounds: int(0, 100),
+    roundPrice: int(0, 1_000_000),
+  })
+  .refine((c) => c.treatMax >= c.treatMin, { message: 'Bait max below min', path: ['treatMax'] })
+
+/** Problems with a game_config value that has a schema of its own (Trick or Treat's, the Gift card's, the Safari's). */
 export function configProblems(key: string, value: unknown): string[] {
-  const schema = key === 'trickOrTreat' ? TRICK_SCHEMA : key === 'giftCard' ? GIFT_SCHEMA : null
+  const schema =
+    key === 'trickOrTreat' ? TRICK_SCHEMA : key === 'giftCard' ? GIFT_SCHEMA : key === 'safari' ? SAFARI_SCHEMA : null
   if (!schema) return []
   const res = schema.safeParse(value)
   return res.success ? [] : res.error.issues.map((i) => `${i.path.join('.') || 'value'}: ${i.message}`)
@@ -163,7 +180,9 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
           of: int(1),
           kind: z.enum(['regional', 'mega', 'gmax', 'battle']),
           region: z.string().nullable().optional(),
-          trigger: z.enum(['lowHp', 'choice']).nullable().optional(),
+          trigger: z.enum(['lowHp', 'choice', 'weather']).nullable().optional(),
+          // Castform's forms (docs/62 §3): the weathers that bring each.
+          weather: z.array(z.enum(WEATHER_KINDS)).nullable().optional(),
           swapDie: z.object({ from: dieType, to: dieType }).nullable().optional(),
           mechanic: z.enum(['primal', 'ultra']).nullable().optional(),
         })
@@ -215,9 +234,19 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
           upgradeLevel: int(1, 10).nullable().optional(),
           battleBackground: background.nullable().optional(),
           shiny: z.boolean().optional(),
+          // A roadblock (docs/61 §2): a Pokémon across the road, its own words instead of a legendary's.
+          roadblock: z.enum(ROADBLOCK_KINDS).nullable().optional(),
           raid: z.boolean().optional(),
           // Out of a present while the Gift card is on (docs/64 §4.2).
           present: z.boolean().optional(),
+          // A Titan (docs/62 §7): two phases, never caught; its version's species and its partner.
+          titan: z
+            .object({
+              versionDex: int(1).nullable().optional(),
+              partner: z.object({ dex: int(1), level: int(1, 100) }).nullable().optional(),
+            })
+            .nullable()
+            .optional(),
         }),
       )
       .nullable(),
@@ -242,6 +271,8 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
           z.object({ kind: z.literal('area'), areaId: uuid }),
           // "Another area is cleared": a small world's league beaten (docs/26 §2.5).
           z.object({ kind: z.literal('cleared'), areaId: uuid }),
+          // "These species caught", any region's Pokédex: Snowpoint Temple's three Regis (docs/61 §1).
+          z.object({ kind: z.literal('caught'), dex: z.array(int(1, 99999)).min(1).max(12) }),
         ]),
       )
       .nullable(),
@@ -322,6 +353,8 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
             .max(9),
           emptyPrintsOnly: z.boolean(),
         }),
+        // A Safari (docs/61 §4): its wild cards are Safari encounters while the Safari's switch is on.
+        z.object({ kind: z.literal('safari') }),
       ])
       .nullable()
       .optional(),
@@ -371,6 +404,12 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
       unique_find: z.boolean(),
       min_qty: int(1),
       max_qty: int(1),
+      // A Pokémon posing as the find (docs/61 §3). Optional so a database before migration 0111 still loads.
+      disguise: z
+        .object({ dex: int(1, 99999), minLevel: int(1, 100), maxLevel: int(1, 100) })
+        .refine((d) => d.maxLevel >= d.minLevel, { message: 'max below min', path: ['maxLevel'] })
+        .nullable()
+        .optional(),
     })
     .refine((r) => r.max_qty >= r.min_qty, { message: 'max below min', path: ['max_qty'] }),
   combo_upgrades: z.object({ combo_key: z.enum(COMBO_KEYS), level: int(1, 10), bonus: int(0), cost: int(0) }),

@@ -399,7 +399,7 @@ export function DetailsBody({ area }: { area: Area }) {
                 key={b.dex}
                 gold
                 icon={<MiniSprite dex={b.dex} size={40} silhouette={!caught && !beaten} />}
-                small={t('ui.map.legendary')}
+                small={t(b.roadblock ? 'ui.map.roadblock' : 'ui.map.legendary')}
                 title={`${caught || beaten ? (data.species[b.dex]?.name ?? '???') : t('ui.common.unknown')} · ${t('ui.common.level.short', { n: b.level })}`}
                 note={when}
                 tag={

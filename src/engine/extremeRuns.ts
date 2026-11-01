@@ -124,7 +124,7 @@ export function runsWon(before: SaveData, after: SaveData): RegionId[] {
 
 /**
  * The game as an Extreme page plays it (docs/48, a pure race): the special events (the wheel, the raids, the
- * rebattle), the live events, Trick or Treat, the Gift card and the General upgrades are off, whatever their switches say, and no Pokémon is ever
+ * rebattle), the live events, Trick or Treat, the Gift card, the General upgrades and the region flavours (docs/62) are off, whatever their switches say, and no Pokémon is ever
  * shiny (the user, 2026-10-29: "absolutely no shiny Pokémon anywhere"): the wild odds are 0, and the trainers' and
  * bosses' set shinies are plain. (Gifts and invite rewards never open in Extreme: they wait for the main game and say
  * so.) Applied to the whole page's game data while the Extreme save is played; the same data when it is already.
@@ -146,6 +146,12 @@ export function raceData(data: GameData): GameData {
       liveEvents: off(data.config.liveEvents),
       trickOrTreat: off(data.config.trickOrTreat),
       giftCard: off(data.config.giftCard),
+      // The region flavours (docs/62): none in a race, the Titans' bosses included.
+      hoennWeather: off(data.config.hoennWeather),
+      galarWeather: off(data.config.galarWeather),
+      hordes: off(data.config.hordes),
+      trials: off(data.config.trials),
+      titans: off(data.config.titans),
       general: { ...data.config.general, access: 'off', charmAccess: 'off' },
       shinyChance: 0,
     },

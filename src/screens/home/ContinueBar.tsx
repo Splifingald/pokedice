@@ -26,6 +26,8 @@ import {
   tracksQuarryDex,
   tracksModeOf,
   tracksStateOf,
+  safariRoundDue,
+  safariRoundPrice,
   teamAverageLevel,
   canStartTimeRace,
   timeRaceModeOf,
@@ -102,6 +104,9 @@ export function useContinue(area: Area) {
   const raidName = raid ? (data.species[raid.dex]?.name ?? '') : ''
   const need = area.roundsToClear || null
   const done = progress.roundsDone ?? 0
+  // A Safari (docs/61 §4): the next round's price, or its free round, under CONTINUE.
+  const safariDue = !busy && safariRoundDue(data, area, progress)
+  const safariPrice = safariDue ? safariRoundPrice(data, area, progress) : 0
   // Extreme mode (docs/22): nobody can fight and no Center will come — the team rests.
   // With its boon Centers (docs/47), a K.O. here sends the Center that swaps instead.
   const resting = !busy && !hasAbleTeam(save) && !centersOn(save, data) && !wipeCenterDue(save, area.id, data)
@@ -181,11 +186,15 @@ export function useContinue(area: Area) {
       : gym
       ? t('ui.home.gymReady', { name: trainerTitle(gym) })
       : boss
-        ? t('ui.home.legendReady')
+        ? t(boss.roadblock ? 'ui.home.roadblockReady' : 'ui.home.legendReady')
         : raid
           ? t('ui.raid.progress.continueSub', { level: raidRules(data, raid.dex, 'progress', raid.areaId).level })
         : closed
           ? t('ui.home.closed')
+          : safariDue
+            ? safariPrice > 0
+              ? t('ui.safari.price', { price: safariPrice })
+              : t('ui.safari.freeRound')
           : progress.cleared
             ? t('ui.home.freePlay')
             : need != null
@@ -199,7 +208,8 @@ export function useContinue(area: Area) {
     const leader = dueGym(to, p, data, side)
     const rounds = to.roundsToClear || null
     if (leader) return t('ui.home.gymReady', { name: trainerTitle(leader) })
-    if (dueBoss(to, p, teamAverageLevel(save), data)) return t('ui.home.legendReady')
+    const waiting = dueBoss(to, p, teamAverageLevel(save), data)
+    if (waiting) return t(waiting.roadblock ? 'ui.home.roadblockReady' : 'ui.home.legendReady')
     return rounds != null
       ? t('ui.home.roundOf', { n: Math.min((p.roundsDone ?? 0) + 1, rounds), total: rounds })
       : t('ui.home.secretArea')
@@ -220,8 +230,13 @@ export function useContinue(area: Area) {
     }
     if (gym || boss) {
       ensureRun(area)
-      challenge()
-      if (useGame.getState().run.phase !== 'idle') navigate('/area')
+      // A trial's or a Titan's server answer may be on its way (docs/62): the area opens once it's there.
+      const opened = () => {
+        if (useGame.getState().run.phase !== 'idle') navigate('/area')
+      }
+      const asked = challenge()
+      if (asked) void asked.then(opened)
+      else opened()
       return
     }
     explore()

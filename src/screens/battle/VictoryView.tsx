@@ -3,6 +3,7 @@ import { BottomDock } from '@/components/BottomDock'
 import { AutoButton, PILOT_PICK_MS } from '@/components/AutoButton'
 import { AnimatePresence, motion } from 'framer-motion'
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   getInstance,
   isUnownLetter,
@@ -19,6 +20,7 @@ import {
   type DieType,
   type Milestone,
   type RunEvent,
+  roadblockOf,
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
 import { feelSound, type FeelSound } from '@/audio/feel'
@@ -39,8 +41,9 @@ import { DuelResult } from '@/components/AreaVersus'
 import { UnownLetterCard } from '@/components/UnownDex'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { ItemSprite } from '@/components/ItemSprite'
+import { TypeBadge } from '@/components/TypeBadge'
 import { dexNo, milestoneText, money, typeName } from '@/lib/format'
-import { t } from '@/i18n'
+import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useMotion } from '@/lib/motion'
 import { usePace } from '@/lib/pace'
@@ -639,6 +642,38 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           })
           return
         }
+        case 'z_crystal': {
+          // A Z-Crystal won (docs/62 §6): Z-Moves of its type.
+          extras.push({
+            key: k,
+            sound: 'gold',
+            node: (
+              <div className="flex items-center justify-center gap-2 bg-gold-pale p-2 text-center shadow-ring" data-z-crystal={e.type}>
+                <TypeBadge type={e.type} size="sm" />
+                <span className="text-xl leading-tight">{t('ui.zCrystal.got', { type: typeName(e.type) })}</span>
+              </div>
+            ),
+          })
+          return
+        }
+        case 'titan_reward': {
+          // A Titan beaten (docs/62 §7): what it left, a Herba Mystica's worth.
+          const what = e.items.map((i) => `${data.items[i.key]?.name ?? i.key}${i.qty > 1 ? ` ×${i.qty}` : ''}`)
+          const first = e.items[0] ? data.items[e.items[0].key] : undefined
+          extras.push({
+            key: k,
+            sound: 'gold',
+            node: (
+              <div className="flex items-center justify-center gap-2 bg-gold-pale p-2 text-center shadow-ring" data-titan-reward>
+                {first && <ItemSprite item={first} size={32} />}
+                <span className="text-xl leading-tight">
+                  {t('ui.titan.left', { name: data.species[e.dex]?.name ?? '', items: joinList(what) })}
+                </span>
+              </div>
+            ),
+          })
+          return
+        }
       }
     })
     return { mons: [...byUid.values()].filter((m) => m.dex), extras, evolutions }
@@ -850,6 +885,7 @@ const AUTO_CARD_MS = 1600
  */
 export function VictoryView() {
   const { t } = useT()
+  const navigate = useNavigate()
   const run = useGame((s) => s.run)
   const battle = useGame((s) => s.battle)
   const data = useGame((s) => s.data)
@@ -1002,13 +1038,26 @@ export function VictoryView() {
     <RebattleNext go={go} />
   ) : (
     <div className="flex flex-col gap-2">
-      {/* BACK: the area's page between encounters (its HOME, the team); NEXT: the next encounter. */}
+      {/* BACK: the area's page between encounters (its HOME, the team); NEXT: the next encounter. The area cleared, BACK
+          would land on a page with nothing left to do: HOME beside the next area instead (the user's call, 2026-11-01). */}
       <div className={locked ? 'grid' : 'grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-2.5'}>
-        {!locked && (
-          <PixelButton size="lg" className="whitespace-nowrap px-2" onClick={go(() => continueAfterVictory())}>
-            ◂ {t('ui.common.back')}
-          </PixelButton>
-        )}
+        {!locked &&
+          (nextArea ? (
+            <PixelButton
+              size="lg"
+              className="whitespace-nowrap px-2"
+              onClick={go(() => {
+                continueAfterVictory()
+                navigate('/home')
+              })}
+            >
+              {t('ui.nav.home')}
+            </PixelButton>
+          ) : (
+            <PixelButton size="lg" className="whitespace-nowrap px-2" onClick={go(() => continueAfterVictory())}>
+              ◂ {t('ui.common.back')}
+            </PixelButton>
+          ))}
         <PixelButton
           variant="primary"
           size="lg"
@@ -1030,7 +1079,10 @@ export function VictoryView() {
     </div>
   )
 
-  const title = t(battle?.state.kind === 'boss' ? 'ui.victory.legendaryVictory' : 'ui.victory.victory')
+  // A roadblock boss (docs/61 §2) is a plain victory: it isn't a legendary.
+  const bossFoe = battle?.state.kind === 'boss' ? battle.state.enemy : null
+  const roadblock = !!bossFoe && !!roadblockOf(data.areas.find((a) => a.id === run.areaId), bossFoe.baseDex ?? bossFoe.dex)
+  const title = t(battle?.state.kind === 'boss' && !roadblock ? 'ui.victory.legendaryVictory' : 'ui.victory.victory')
   return (
     <Overlay footer={footer} label={title}>
       {/* The battle's live region says the fight is won (the line under the stage gives way to the card). */}

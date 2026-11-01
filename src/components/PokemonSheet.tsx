@@ -1,3 +1,4 @@
+import { EggSprite } from './EggSprite'
 import { useMemo, type ReactNode } from 'react'
 import {
   ARCEUS_DEX,
@@ -510,7 +511,8 @@ export function PokemonSheet({
       {hero && (
       <div className="flex items-center gap-3">
         <div className="grid h-[112px] w-[120px] shrink-0 place-items-center bg-sky shadow-ring">
-          <SpriteImg dex={dex} size={96} shiny={shiny} outfit={outfit} />
+          {/* A gift Egg (docs/61 §5.3) keeps what's inside to itself. */}
+          {inst?.egg ? <EggSprite size={72} /> : <SpriteImg dex={dex} size={96} shiny={shiny} outfit={outfit} />}
         </div>
         <div className="grid min-w-0 flex-1 gap-2">
           <div className="flex flex-wrap items-center gap-1">

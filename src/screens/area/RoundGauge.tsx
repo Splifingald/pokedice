@@ -305,7 +305,7 @@ export function RoundGauge({
             <PixelIcon
               name="masterball"
               size={18}
-              title={t('ui.area.legendaryNamed', { name: finale ?? '' })}
+              title={t(boss.roadblock ? 'ui.area.roadblockNamed' : 'ui.area.legendaryNamed', { name: finale ?? '' })}
             />
           ) : null}
         </span>
