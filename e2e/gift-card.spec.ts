@@ -286,6 +286,8 @@ test('a 360 × 640 phone: the stage, the gauge and both buttons fit, nothing scr
 })
 
 test('the kitchen sink shows every piece, with no error', async ({ page }) => {
+  // The kitchen sink is the heaviest page: a cold dev server on a busy machine takes minutes to serve it.
+  test.setTimeout(300_000)
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
   await mockSupabase(page)
@@ -297,7 +299,7 @@ test('the kitchen sink shows every piece, with no error', async ({ page }) => {
     [JSON.stringify(save0), FAST],
   )
   await page.goto('/kitchen-sink')
-  await expect(page.getByText(/^The Gift card \(docs\/61/)).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByText(/^The Gift card \(docs\/61/)).toBeVisible({ timeout: 180_000 })
   for (const state of [
     'It lands (level 1)',
     'With a Delibird: level 1 is safe, a level 6',
