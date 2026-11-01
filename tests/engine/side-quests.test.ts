@@ -2,20 +2,32 @@
 // Safari areas and the set moments.
 import { describe, expect, it } from 'vitest'
 import {
+  asSeenBy,
   canSkip,
   compileGameData,
   createRng,
   conditionStatus,
+  dealtAsMeeting,
+  declineGift,
   dueBoss,
+  dueGift,
+  dueRival,
   emptyProgress,
   feedTreat,
+  giftChoices,
   isAreaUnlocked,
   isSafariArea,
   lureCfg,
+  markMomentDone,
   lootPoolFor,
   newSave,
   nextEncounter,
   pokedexEverywhere,
+  receiveGift,
+  regionSpecies,
+  reviveFossils,
+  rivalEncounter,
+  rivalFor,
   roadblockOf,
   safariRoundPrice,
   safariTier,
@@ -248,5 +260,141 @@ describe('Safari Zones (docs/61 §4)', () => {
     expect(st.theme).toBe('safari')
     expect(feedTreat(st, lureCfg(on, 'safari'), createRng(3))?.state.theme).toBe('safari')
     expect(trickBestPlay(lureCfg(on, 'safari'), 'common').best).toBeGreaterThan(0.6)
+  })
+})
+
+describe('Set moments: rivals and gifts (docs/61 §5)', () => {
+  const on = {
+    ...data,
+    config: {
+      ...data.config,
+      rivals: { ...data.config.rivals, access: 'all' as const },
+      giftMoments: { ...data.config.giftMoments, access: 'all' as const },
+    },
+  }
+  const area = (name: string, region: string) => data.areas.find((a) => a.name === name && (a.regionId ?? 'kanto') === region)!
+  const cerulean = area('Route 4 & Nugget Bridge', 'kanto')
+  const progress = (drawn: number, extra: Partial<ReturnType<typeof emptyProgress>> = {}) => ({
+    ...emptyProgress(),
+    drawn: Array.from({ length: drawn }, () => 'wild' as const),
+    ...extra,
+  })
+
+  it('meets a rival at its point, once, never in a cleared area nor while off', () => {
+    const s = fresh()
+    expect(dueRival(s, cerulean, progress(1), on)).toBeNull()
+    const m = dueRival(s, cerulean, progress(2), on)
+    expect(m?.id).toBe('rival-kanto-cerulean')
+    expect(dueRival(s, cerulean, progress(2), data)).toBeNull()
+    expect(dueRival(s, cerulean, progress(2, { cleared: true }), on)).toBeNull()
+    expect(dueRival(markMomentDone(s, m!.id), cerulean, progress(2), on)).toBeNull()
+  })
+
+  it('brings the version for the player’s starter: Blue picks the one strong against yours', () => {
+    const m = dueRival(fresh(), cerulean, progress(2), on)!
+    // A Bulbasaur player meets Charmander's line, a Charmander player Squirtle's, a Squirtle player Bulbasaur's.
+    expect(rivalFor(m, on, { starterDex: 1, character: 'red' })!.team.at(-1)!.dex).toBe(5)
+    expect(rivalFor(m, on, { starterDex: 4, character: 'red' })!.team.at(-1)!.dex).toBe(8)
+    expect(rivalFor(m, on, { starterDex: 7, character: 'red' })!.team.at(-1)!.dex).toBe(2)
+    const enc = rivalEncounter(m, on, { starterDex: 1, character: 'red' })
+    expect(enc).toMatchObject({ kind: 'trainer', moment: m.id })
+  })
+
+  it('shows Hoenn’s rival as May, or Brendan for a player in Green’s look', () => {
+    const t = on.trainers[on.config.rivals.meetings.find((x) => x.id === 'rival-hoenn-route-103')!.trainers[0]!]!
+    expect(asSeenBy(t, { starterDex: 252, character: 'red' }).name).toBe('May')
+    expect(asSeenBy(t, { starterDex: 252, character: 'green' }).name).toBe('Brendan')
+    // Silver stays Silver (only Kanto's rival takes the other character's name).
+    const silver = on.trainers[on.config.rivals.meetings.find((x) => x.id === 'rival-johto-azalea')!.trainers[0]!]!
+    expect(asSeenBy(silver, { starterDex: 152, character: 'green' }).name).toBe('Silver')
+  })
+
+  it('keeps a rival out of the trainer pools while rivals are on', () => {
+    const tower = area('Pokémon Tower', 'kanto')
+    const blue = tower.trainerPool.find((e) => on.trainers[e.trainerId]?.name === 'Rival Blue')!
+    expect(dealtAsMeeting(on, blue.trainerId)).toBe(true)
+    expect(dealtAsMeeting(data, blue.trainerId)).toBe(false)
+  })
+
+  it('gives a Pokémon as a catch here would join, once', () => {
+    const celadon = area('Routes 7 & 8', 'kanto')
+    const g = on.config.giftMoments.gifts.find((x) => x.id === 'gift-eevee-celadon')!
+    const s = fresh()
+    expect(dueGift(s, celadon, progress(2), on)).toBeNull()
+    expect(dueGift(s, celadon, progress(3), on)?.id).toBe(g.id)
+    const r = receiveGift(s, on, g, celadon, 133, 0, id, createRng(1))!
+    expect(r.placed).toBe('team')
+    expect(r.save.pokedex).toContain(133)
+    expect(r.save.box.find((p) => p.dex === 133)!.level).toBe(celadon.minLevel)
+    expect(dueGift(r.save, celadon, progress(5), on)).toBeNull()
+  })
+
+  it('still gives a gift in an area already cleared', () => {
+    const celadon = area('Routes 7 & 8', 'kanto')
+    expect(dueGift(fresh(), celadon, progress(0, { cleared: true, roundsDone: 9 }), on)?.id).toBe('gift-eevee-celadon')
+  })
+
+  it('lets the player pick one, and only one of its choices', () => {
+    const silph = area('Silph Co.', 'kanto')
+    const g = on.config.giftMoments.gifts.find((x) => x.id === 'gift-hitmon')!
+    expect(giftChoices(g, fresh())).toEqual([106, 107])
+    expect(receiveGift(fresh(), on, g, silph, 1, 0, id, createRng(1))).toBeNull()
+    expect(receiveGift(fresh(), on, g, silph, 107, 0, id, createRng(1))!.dex).toBe(107)
+  })
+
+  it('gives the Unova monkey for the player’s starter', () => {
+    const g = on.config.giftMoments.gifts.find((x) => x.id === 'gift-monkey')!
+    expect(giftChoices(g, { ...fresh(), pokedex: [495] })).toEqual([515])
+    expect(giftChoices(g, { ...fresh(), pokedex: [498] })).toEqual([511])
+    expect(giftChoices(g, { ...fresh(), pokedex: [501] })).toEqual([513])
+  })
+
+  it('sells the Magikarp for its price, or not at all', () => {
+    const moon = area('Mt. Moon', 'kanto')
+    const g = on.config.giftMoments.gifts.find((x) => x.id === 'gift-magikarp')!
+    expect(receiveGift({ ...fresh(), gold: 499 }, on, g, moon, 129, 0, id, createRng(1))).toBeNull()
+    const r = receiveGift({ ...fresh(), gold: 600 }, on, g, moon, 129, 0, id, createRng(1))!
+    expect(r.save.gold).toBe(100)
+    expect(declineGift(fresh(), g).moments?.done).toContain(g.id)
+  })
+
+  it('hands an Egg over to the Box, hatching after 6 hours with the shiny it was given', () => {
+    const day = area('Route 34 & the Day Care', 'johto')
+    const g = on.config.giftMoments.gifts.find((x) => x.id === 'gift-odd-egg')!
+    const r = receiveGift(fresh(), on, g, day, 0, 1000, id, createRng(3))!
+    expect(r.placed).toBe('egg')
+    const egg = r.save.box.find((p) => p.egg)!
+    expect([172, 173, 174, 236, 238, 239, 240]).toContain(egg.dex)
+    expect(egg.revivesAt).toBe(1000 + 6 * 3_600_000)
+    expect(r.save.pokedex).not.toContain(egg.dex)
+    const early = reviveFossils(r.save, on, 1000 + 5 * 3_600_000)
+    expect(early.revived).toHaveLength(0)
+    const hatched = reviveFossils(r.save, on, 1000 + 6 * 3_600_000)
+    expect(hatched.revived[0]).toMatchObject({ dex: egg.dex, egg: true })
+    const out = hatched.save.box.find((p) => p.id === egg.id)!
+    expect(out.egg).toBeUndefined()
+    expect(out.revivesAt).toBeUndefined()
+    expect(!!out.shiny).toBe(!!egg.hatchShiny)
+    expect(hatched.save.pokedex).toContain(egg.dex)
+  })
+
+  it('counts a region’s gifts in its Pokédex while gifts are on: Platinum’s Togepi, Eevee and Porygon in Sinnoh', () => {
+    for (const dex of [175, 133, 137]) {
+      expect(regionSpecies(on, 'sinnoh').has(dex), String(dex)).toBe(true)
+    }
+    expect(regionSpecies(data, 'sinnoh').has(175)).toBe(false)
+    // Sycamore's Kanto starters: the two not picked are in the Friend Safari.
+    for (const dex of [1, 4, 7]) expect(regionSpecies(data, 'kalos').has(dex), String(dex)).toBe(true)
+  })
+
+  it('places every meeting and gift in an area of the game, its trainers there', () => {
+    for (const m of on.config.rivals.meetings) {
+      expect(on.areas.some((a) => a.id === m.areaId), m.id).toBe(true)
+      for (const t of m.trainers) expect(on.trainers[t], `${m.id} ${t}`).toBeTruthy()
+    }
+    for (const g of on.config.giftMoments.gifts) {
+      expect(on.areas.some((a) => a.id === g.areaId), g.id).toBe(true)
+      for (const d of g.dex) expect(on.species[d], `${g.id} #${d}`).toBeTruthy()
+    }
   })
 })

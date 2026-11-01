@@ -1,5 +1,6 @@
 import { areaVersusConfig, foeEncounter, placeVersusCards, type AreaFoe } from './areaVersus'
 import { safariDealable, safariTier } from './safari'
+import { dealtAsMeeting } from './moments'
 import { isLegendary } from './breeding'
 import { areaDayTime, wildPoolAt } from './dayNight'
 import { shuffle } from './deal'
@@ -62,6 +63,8 @@ export type Encounter =
       prize?: number
       /** A real player's team (docs/54): the fight is theirs, as it was, with its own rules (`isPlayerFoe`). */
       player?: AreaFoe
+      /** A rival's set meeting (docs/61 §5.2): met once it's won. */
+      moment?: string
     }
   | {
       kind: 'gym'
@@ -389,7 +392,10 @@ export function rollSafari(ctx: EncounterContext, rng: Rng): Encounter | null {
 }
 
 export function rollTrainer(ctx: EncounterContext, rng: Rng): Encounter | null {
-  const entry = rng.weighted(ctx.area.trainerPool, (t) => (ctx.data.trainers[t.trainerId] ? t.weight : 0))
+  // A rival is met at a set point while rivals are on (docs/61 §5.2), never as a pool's card.
+  const entry = rng.weighted(ctx.area.trainerPool, (t) =>
+    ctx.data.trainers[t.trainerId] && !dealtAsMeeting(ctx.data, t.trainerId) ? t.weight : 0,
+  )
   const trainer = entry && ctx.data.trainers[entry.trainerId]
   if (!trainer || !trainer.team.length) return null
   return {

@@ -1640,6 +1640,8 @@ const FEATURES: Feature[] = [
   // The side quests (docs/61).
   bare('Pokémon posing as items', 'disguises'),
   own('Safari Zones', 'safari'),
+  bare('Rivals on the road', 'rivals'),
+  bare('Gift Pokémon', 'giftMoments'),
   own('Unown Pokédex', 'unownDex', 'unown'),
   own('Hidden talents', 'hiddenTalents', 'talents'),
   bare('Outfits', 'outfits'),

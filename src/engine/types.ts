@@ -1112,6 +1112,10 @@ export interface GameConfig {
   disguises: { access: EventAccess }
   /** The Safari (docs/61 §4): its switch, its gauge's numbers, tiers and a round's price. The server reads the switch. */
   safari: SafariConfig
+  /** Rivals' set meetings (docs/61 §5.2): the switch (the server reads it) and the meetings, the game's own. */
+  rivals: RivalsConfig
+  /** Gift Pokémon (docs/61 §5.3): the switch (the server reads it), an Egg's hours and the gifts, the game's own. */
+  giftMoments: GiftMomentsConfig
   /** Day and night in Johto (docs/32): its switch. Migration 0061 inserts the same row. */
   dayNight: { access: EventAccess }
   /** Idle mode and the play styles (docs/36): its switch. Migration 0068 inserts the same row. */
@@ -1360,6 +1364,61 @@ export interface SafariConfig extends TrickOrTreatConfig {
   freeRounds: number
   /** ₽ for each round after them. */
   roundPrice: number
+}
+
+/**
+ * A set moment's place (docs/61 §5): an area, the round it comes in (the rounds done there: 0 = the first) and how many
+ * cards of that round are turned over before it. It comes on top of the deck and uses no card.
+ */
+export interface MomentPoint {
+  areaId: string
+  round: number
+  after: number
+}
+
+/**
+ * A rival's meeting (docs/61 §5.2): one trainer per version, the player's starter picking it (`Trainer.rivalOf`), or one
+ * for everyone. Met once per save, only while the area isn't cleared.
+ */
+export interface RivalMeeting extends MomentPoint {
+  id: string
+  trainers: string[]
+}
+
+/**
+ * A gift Pokémon (docs/61 §5.3): the giver (a trainer's name, translated as one; its picture), what's given, and how.
+ * `dex`: one Pokémon, or several to pick one from; `byStarter`: the one for the player's starter instead (the Unova
+ * monkey); `egg`: an Egg hatching after `eggHours`, the Odd Egg (`dex` several) one of them at random; `price`: ₽ to pay
+ * (the Magikarp salesman). `level`: absent = the area's lowest. Met once per save, a cleared area's on the next visit.
+ */
+export interface GiftMoment extends MomentPoint {
+  id: string
+  giver: string
+  sprite: string
+  dex: number[]
+  byStarter?: Record<string, number>
+  level?: number
+  egg?: boolean
+  /** An Egg's own shiny odds (the Odd Egg's); absent = the wild odds. */
+  shinyChance?: number
+  price?: number
+}
+
+export interface RivalsConfig {
+  access: EventAccess
+  meetings: RivalMeeting[]
+}
+
+export interface GiftMomentsConfig {
+  access: EventAccess
+  /** Hours a gift Egg takes to hatch (the user's call, 2026-11-01: 6). */
+  eggHours: number
+  gifts: GiftMoment[]
+}
+
+/** The set moments a save has met (docs/61 §5): each one's id, once. */
+export interface MomentsSave {
+  done: string[]
 }
 
 /** Trick or Treat's look: the haunted one (docs/29) or the Safari's (docs/61 §4). */
@@ -1724,6 +1783,9 @@ export interface PokemonInstance {
   revivesAt?: number
   /** The fossil item it came from (for its picture while it revives). */
   fossil?: string
+  /** A gift Egg (docs/61 §5.3) waiting to hatch at `revivesAt`, in the Box as a fossil waits; `hatchShiny` when it hatches. */
+  egg?: boolean
+  hatchShiny?: boolean
   /** Extreme mode: when it was K.O. (ms, server time). It rests until `koHours` later. Absent = not on the clock. */
   koAt?: number
   /** Extreme mode's Pokébuff (docs/47): one more die of this type in its battles until `until` (ms, real time). */
@@ -1918,6 +1980,8 @@ export interface SaveData {
   trickOrTreat?: TrickSave
   /** The Safari (docs/61 §4): its rules pop-up shown. */
   safari?: TrickSave
+  /** The set moments met: rivals' meetings and gifts (docs/61 §5). */
+  moments?: MomentsSave
   /** The Underground (docs/34): the running event's kits, pickaxe, orbs and wall. Gone when the event ends. */
   underground?: UndergroundSave
   /** Arceus's plates found in the Underground, by type: kept for good. Each lets the player's Arceus take its type. */

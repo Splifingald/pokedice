@@ -116,6 +116,8 @@ export interface AnimatorContext {
   trainerName: string | null
   /** The boss is a roadblock (docs/61 §2): said as a wild Pokémon, not a legendary. */
   roadblock?: boolean
+  /** A rival's set meeting (docs/61 §5.2): the fight opens with their line. */
+  rival?: boolean
   /**
    * The foe goes to the catch throw once it's K.O.'d (wild or legendary, and a catch on offer). A double battle asks per
    * foe: a wild pair's first K.O. waits, worn out on its spot, for the other's (docs/33).
@@ -234,7 +236,11 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           ? t('ui.log.startWild', { foe: st.enemy.name, lead })
           : ctx.kind === 'boss'
             ? t(ctx.roadblock ? 'ui.log.startWild' : 'ui.log.startBoss', { foe: st.enemy.name, lead })
-            : t('ui.log.startTrainer', { trainer: ctx.trainerName ?? t('ui.log.theTrainer'), foe: st.enemy.name, lead })
+            : t(ctx.rival ? 'ui.log.startRival' : 'ui.log.startTrainer', {
+                trainer: ctx.trainerName ?? t('ui.log.theTrainer'),
+                foe: st.enemy.name,
+                lead,
+              })
       return { delay: 1100, apply: (f) => ({ ...f, message: text }) }
     }
     case 'turn':

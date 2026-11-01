@@ -175,7 +175,8 @@ describe('areas & trainers', () => {
         else if (entry) expect(entry.weight, a.name).toBe(TUNED_STARTERS[`${a.id}/${s}`] ?? 1)
       }
     }
-    for (const t of allTrainers) for (const m of t.team) expect(STARTERS).not.toContain(m.dex)
+    // A rival's versions carry the starter strong against yours, as in the games (docs/61 §5.2).
+    for (const t of allTrainers.filter((x) => x.rivalOf == null)) for (const m of t.team) expect(STARTERS).not.toContain(m.dex)
     // The Game Corner jackpot prize (Porygon) counts too.
     const catchable = new Set([...allAreas.flatMap((a) => a.wildPool.map((w) => w.dex)), ...LEGENDARIES, (BUNDLE.config.slotMachine as { prizeDex: number }).prizeDex])
     expect(catchable.size).toBe(151)
@@ -301,8 +302,9 @@ describe('Kanto structure', () => {
 
   it('gives every trainer a sprite cut from the trainer sheet', () => {
     for (const t of trainers as Trainer[]) {
-      // Rival versions show as the character the player didn't pick.
-      expect(t.spriteUrl, t.name).toMatch(t.rivalOf != null ? /^\/characters\/(red|green)\.png$/ : /^\/trainers\/classes\//)
+      // Rival versions show as the character the player didn't pick (Kanto's champion), or the rival's own class
+      // picture (Blue, Silver, May, Barry: docs/61 §5.2).
+      expect(t.spriteUrl, t.name).toMatch(t.rivalOf != null ? /^\/(characters\/(red|green)|trainers\/classes\/.+)\.png$/ : /^\/trainers\/classes\//)
       expect(existsSync(path.join('public', t.spriteUrl!)), t.spriteUrl!).toBe(true)
     }
   })

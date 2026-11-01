@@ -31,6 +31,9 @@ const instanceSchema = z.object({
   shiny: z.boolean().optional(),
   revivesAt: z.number().optional(),
   fossil: z.string().optional(),
+  // A gift Egg waiting to hatch (docs/61 §5.3), and the shiny it hatches with.
+  egg: z.boolean().optional(),
+  hatchShiny: z.boolean().optional(),
   koAt: z.number().optional(),
   // Extreme mode's Pokébuff (docs/47): an odd one (an edited save) is dropped, never the Pokémon.
   buff: z
@@ -523,6 +526,8 @@ export const saveSchema = z.object({
   trickOrTreat: z.object({ rulesSeen: z.boolean().optional() }).optional(),
   // The Safari (docs/61 §4): its rules pop-up shown.
   safari: z.object({ rulesSeen: z.boolean().optional() }).optional().catch(undefined),
+  // The set moments met (docs/61 §5): rivals' meetings and gifts, by id. An odd value drops the list, never the save.
+  moments: z.object({ done: z.array(z.string()) }).optional().catch(undefined),
   // The Underground (docs/34): the running event's block, and the plates kept for good.
   underground: undergroundSchema.optional(),
   plates: z.array(typeEnum).max(18).optional(),

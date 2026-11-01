@@ -233,7 +233,17 @@ export const pilotShowsCard = (kind: string | null | undefined): boolean =>
 /** What the run stands at, as the screens see it. */
 export interface AutoView {
   phase:
-    'idle' | 'preview' | 'battle' | 'catch' | 'victory' | 'center' | 'casino' | 'trick' | 'wipe' | 'stalemate'
+    | 'idle'
+    | 'preview'
+    | 'battle'
+    | 'catch'
+    | 'victory'
+    | 'center'
+    | 'casino'
+    | 'trick'
+    | 'gift'
+    | 'wipe'
+    | 'stalemate'
   areaId: string
   /** The kind of card on the table (the preview). */
   encounter?: string | null
@@ -302,6 +312,8 @@ export function autopilotStep(
     case 'victory':
       // Idle changes no team: "Add to team?" is answered as CONTINUE answers it, to the Box.
       return v.pendingCatch && style !== 'idle' ? { do: 'wait', why: 'player' } : { do: 'close' }
+    // A gift (docs/61 §5.3): a free one taken (its first choice), a paid one turned down.
+    case 'gift':
     case 'center':
     case 'casino':
     case 'stalemate':

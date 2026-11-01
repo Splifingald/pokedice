@@ -38,3 +38,18 @@ export async function sideQuestAllowed(key: SideQuestKey, on: boolean): Promise<
     return false
   }
 }
+
+/**
+ * The server's answer already known, for a step that can't wait for it (a rival's or a gift's moment, dealt as the
+ * next card is): a guest's is the switch itself; a signed-in player's the answer kept, else false while it's asked now
+ * (the next card knows).
+ */
+export function sideQuestKnown(key: SideQuestKey, on: boolean): boolean {
+  if (!on) return false
+  const { auth } = useGame.getState()
+  if (auth.status !== 'signed_in') return true
+  const hit = cache.get(key)
+  if (hit && hit.user === (auth.email ?? null) && Date.now() - hit.at < KEEP_MS) return hit.ok
+  void sideQuestAllowed(key, on)
+  return false
+}

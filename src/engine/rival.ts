@@ -29,9 +29,25 @@ export function gymsFor(area: Area, data: GameData, side?: PlayerSide | null): s
   return area.gyms.filter((id) => !rivals.includes(id) || id === mine)
 }
 
-/** A rival version shows the rival's name and sprite ("Champion Blue" → "Champion Green"); other trainers are as is. */
+/**
+ * Hoenn's rival is the other character (docs/61 §5.2): May for a player in Red's look, Brendan for one in Green's.
+ * Keyed by the trainer's name as the content has it.
+ */
+const SWAPS: Record<string, { name: string; spriteUrl: string }> = {
+  May: { name: 'Brendan', spriteUrl: '/trainers/classes/hoenn/brendan.png' },
+}
+
+/** Kanto's rival, whose name is the other character's: "Champion Rival", "Rival Blue". */
+const KANTO_RIVAL = /(^|\s)(Rival|Blue)$/
+
+/**
+ * A rival version shows the rival's name and sprite ("Champion Blue" → "Champion Green"; May → Brendan for a player in
+ * Green's look); other trainers, and the other regions' rivals, are as they are.
+ */
 export function asSeenBy(t: Trainer, side?: PlayerSide | null): Trainer {
-  if (t.rivalOf == null) return t
+  const swap = SWAPS[t.name]
+  if (swap) return side?.character === 'green' ? { ...t, ...swap } : t
+  if (t.rivalOf == null || !KANTO_RIVAL.test(t.name)) return t
   const rival = rivalCharacter(side)
   const name = rival === 'red' ? 'Red' : 'Green'
   const title = t.name.split(' ').slice(0, -1).join(' ')

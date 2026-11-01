@@ -12,13 +12,16 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { Area, BossDef, UnlockCondition } from '../src/engine/types'
+import type { Area, BossDef, GiftMoment, RivalMeeting, Species, Trainer, UnlockCondition } from '../src/engine/types'
+import { stableUuid } from './seed'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const DATA = path.join(ROOT, 'src', 'data')
 
 export interface SideQuestBundle {
   areas: Area[]
+  trainers?: Trainer[]
+  pokemon?: Species[]
 }
 
 // ---------------------------------------------------------------- 1. Regigigas (docs/61 §1, migration 0108)
@@ -199,6 +202,286 @@ export function withSafaris(b: SideQuestBundle): void {
   }
 }
 
+// ---------------------------------------------------------------- 5. Set moments: rivals and gifts (docs/61 §5, migration 0112)
+
+/** A place, by region and the area's name (resolved to its id when the content is written). */
+type Place = [region: string, area: string]
+
+/** Kanto's rival picks the starter strong against yours; so do Silver, May (or Brendan) and Barry. */
+const RIVAL_STARTER: Record<string, Record<number, number>> = {
+  kanto: { 1: 4, 4: 7, 7: 1 },
+  johto: { 152: 155, 155: 158, 158: 152 },
+  hoenn: { 252: 255, 255: 258, 258: 252 },
+  sinnoh: { 387: 390, 390: 393, 393: 387 },
+}
+
+/** A new rival meeting: per player starter (`rivalOf`), its team; `S` in a team is the rival's starter at that level. */
+interface NewRival {
+  key: string
+  place: Place
+  round: number
+  after: number
+  name: string
+  sprite: string
+  /** [dex or 'S', level]; per rival starter when `by` is set (partners differ by the rival's starter). */
+  team: [number | 'S', number][]
+  by?: Record<number, [number | 'S', number][]>
+  /** One version for everyone (Wally). */
+  single?: boolean
+}
+
+const BLUE = '/trainers/classes/blue-1.png'
+const SILVER = '/trainers/classes/johto/silver.png'
+const MAY = '/trainers/classes/hoenn/may.png'
+const WALLY = '/trainers/classes/hoenn/wally.png'
+const BARRY = '/trainers/classes/sinnoh/barry.png'
+
+/**
+ * The rivals' new meetings, from the originals (the top three at each meeting, at the area's level; docs/61 §5.2):
+ * Blue's (Red and Blue), Silver's (Gold and Silver), May's (Emerald; Brendan for a player in Green's look), Wally's and
+ * Barry's first. Blue's partners follow his starter as in the games: Exeggcute and Gyarados with Charmander, Growlithe and
+ * Exeggcute with Squirtle, Gyarados and Growlithe with Bulbasaur; May's: Lotad with Torchic, Shroomish with Mudkip, Numel
+ * with Treecko.
+ */
+export const NEW_RIVALS: NewRival[] = [
+  { key: 'kanto-22', place: ['kanto', 'Routes 22 & 2'], round: 0, after: 3, name: 'Rival Blue', sprite: BLUE, team: [[16, 6], ['S', 7]] },
+  { key: 'kanto-cerulean', place: ['kanto', 'Route 4 & Nugget Bridge'], round: 0, after: 2, name: 'Rival Blue', sprite: BLUE, team: [[17, 18], [63, 16], ['S', 19]] },
+  { key: 'kanto-ss-anne', place: ['kanto', 'Routes 5 & 6'], round: 0, after: 2, name: 'Rival Blue', sprite: BLUE, team: [[17, 21], [64, 20], ['S', 23]] },
+  { key: 'kanto-route-22-again', place: ['kanto', 'Route 21'], round: 0, after: 2, name: 'Rival Blue', sprite: BLUE, team: [[18, 44], [65, 45], ['S', 47]] },
+  { key: 'johto-cherrygrove', place: ['johto', 'Routes 30 & 31'], round: 0, after: 3, name: 'Silver', sprite: SILVER, team: [['S', 6]] },
+  { key: 'johto-azalea', place: ['johto', 'Azalea Town'], round: 0, after: 2, name: 'Silver', sprite: SILVER, team: [[92, 14], [41, 15], ['S', 17]] },
+  { key: 'johto-burned-tower', place: ['johto', 'Ecruteak City & the Burned Tower'], round: 0, after: 2, name: 'Silver', sprite: SILVER, team: [[93, 27], [81, 26], ['S', 29]] },
+  { key: 'johto-radio-tower', place: ['johto', 'Mahogany Town & the Team Rocket HQ'], round: 0, after: 2, name: 'Silver', sprite: SILVER, team: [[215, 40], [42, 40], ['S', 42]] },
+  { key: 'johto-victory-road', place: ['johto', 'Victory Road'], round: 0, after: 2, name: 'Silver', sprite: SILVER, team: [[82, 48], [42, 48], ['S', 50]] },
+  { key: 'hoenn-route-103', place: ['hoenn', 'Routes 102 & 103'], round: 0, after: 3, name: 'May', sprite: MAY, team: [['S', 6]] },
+  {
+    key: 'hoenn-rustboro',
+    place: ['hoenn', 'Rustboro City'],
+    round: 0,
+    after: 2,
+    name: 'May',
+    sprite: MAY,
+    team: [],
+    by: { 255: [[278, 13], [270, 13], ['S', 15]], 258: [[278, 13], [285, 13], ['S', 15]], 252: [[278, 13], [322, 13], ['S', 15]] },
+  },
+  {
+    key: 'hoenn-route-110',
+    place: ['hoenn', 'Slateport City & Route 110'],
+    round: 0,
+    after: 2,
+    name: 'May',
+    sprite: MAY,
+    team: [],
+    by: { 255: [[278, 21], [271, 21], ['S', 23]], 258: [[278, 21], [285, 21], ['S', 23]], 252: [[278, 21], [322, 21], ['S', 23]] },
+  },
+  {
+    key: 'hoenn-route-119',
+    place: ['hoenn', 'Routes 118 & 119'],
+    round: 0,
+    after: 2,
+    name: 'May',
+    sprite: MAY,
+    team: [],
+    by: { 255: [[279, 36], [272, 36], ['S', 38]], 258: [[279, 36], [286, 36], ['S', 38]], 252: [[279, 36], [323, 36], ['S', 38]] },
+  },
+  {
+    key: 'hoenn-lilycove',
+    place: ['hoenn', 'Lilycove City, Route 124 & Shoal Cave'],
+    round: 0,
+    after: 2,
+    name: 'May',
+    sprite: MAY,
+    team: [],
+    by: { 255: [[279, 45], [272, 45], ['S', 47]], 258: [[279, 45], [286, 45], ['S', 47]], 252: [[279, 45], [323, 45], ['S', 47]] },
+  },
+  { key: 'hoenn-wally-mauville', place: ['hoenn', 'Mauville City'], round: 0, after: 2, name: 'Wally', sprite: WALLY, team: [[281, 25]], single: true },
+  { key: 'hoenn-wally-victory-road', place: ['hoenn', 'Victory Road'], round: 0, after: 2, name: 'Wally', sprite: WALLY, team: [[334, 53], [315, 53], [282, 55]], single: true },
+  { key: 'sinnoh-route-201', place: ['sinnoh', 'Route 201 & Lake Verity'], round: 0, after: 2, name: 'Barry', sprite: BARRY, team: [['S', 5]] },
+]
+
+/**
+ * Kanto's two meetings with Blue already in the game (Pokémon Tower, Silph Co.): the rows there are one version each
+ * (Squirtle's at the Tower, Charmander's at Silph Co.); the other two versions join them.
+ */
+export const BLUE_VERSIONS: { id: string; place: Place; rivalOf: number; others: Record<number, [number, number][]> }[] = [
+  {
+    id: '8ac18ebf-ef70-5887-9076-1714e5870d7b',
+    place: ['kanto', 'Pokémon Tower'],
+    rivalOf: 4,
+    others: { 1: [[5, 25], [17, 25], [102, 23]], 7: [[2, 25], [17, 25], [130, 23]] },
+  },
+  {
+    id: '82eb7a7a-2fa5-5a69-9e84-a56fb850da5d',
+    place: ['kanto', 'Silph Co.'],
+    rivalOf: 1,
+    others: { 4: [[9, 40], [58, 38], [18, 37]], 7: [[3, 40], [130, 38], [18, 37]] },
+  },
+]
+
+/** The rivals already in a region's trainer pools (a random card today): each becomes a meeting where it is. */
+export const POOL_RIVALS: Record<string, string[]> = {
+  sinnoh: ['Barry'],
+  unova: ['Cheren', 'Bianca'],
+  kalos: ['Shauna', 'Tierno', 'Trevor'],
+  alola: ['Hau', 'Gladion'],
+  galar: ['Hop', 'Bede', 'Marnie'],
+  paldea: ['Nemona'],
+}
+
+/** A gift (docs/61 §5.3), by place; the content writes its area's id. */
+interface GiftPlan extends Omit<GiftMoment, 'areaId'> {
+  place: Place
+}
+
+const G = (p: string) => `/trainers/classes/${p}.png`
+/** The Odd Egg's babies (Crystal): Pichu, Cleffa, Igglybuff, Tyrogue, Smoochum, Elekid, Magby. */
+const ODD_EGG = [172, 173, 174, 236, 238, 239, 240]
+
+export const GIFTS: GiftPlan[] = [
+  { id: 'gift-magikarp', place: ['kanto', 'Mt. Moon'], round: 0, after: 1, giver: 'Gentleman', sprite: G('gentleman'), dex: [129], level: 5, price: 500 },
+  { id: 'gift-eevee-celadon', place: ['kanto', 'Routes 7 & 8'], round: 0, after: 3, giver: 'Lady', sprite: G('lady'), dex: [133] },
+  { id: 'gift-hitmon', place: ['kanto', 'Silph Co.'], round: 0, after: 1, giver: 'Black Belt', sprite: G('karateka'), dex: [106, 107] },
+  { id: 'gift-lapras-silph', place: ['kanto', 'Silph Co.'], round: 0, after: 4, giver: 'Scientist', sprite: G('scientist'), dex: [131] },
+  { id: 'gift-togepi-egg', place: ['johto', 'Violet City & Sprout Tower'], round: 0, after: 2, giver: 'Scientist', sprite: G('johto/scientist'), dex: [175], egg: true },
+  { id: 'gift-eevee-bill', place: ['johto', 'Goldenrod City'], round: 0, after: 2, giver: 'Bill', sprite: G('super-nerd'), dex: [133] },
+  { id: 'gift-odd-egg', place: ['johto', 'Route 34 & the Day Care'], round: 0, after: 2, giver: 'Gentleman', sprite: G('johto/gentleman'), dex: ODD_EGG, egg: true, shinyChance: 0.14 },
+  { id: 'gift-shuckle', place: ['johto', 'Cianwood City'], round: 0, after: 2, giver: 'Pokémaniac Kirk', sprite: G('pokemaniac'), dex: [213] },
+  { id: 'gift-dratini', place: ['johto', "Blackthorn City & the Dragon's Den"], round: 0, after: 2, giver: 'Sage', sprite: G('johto/sage'), dex: [147] },
+  { id: 'gift-wynaut-egg', place: ['hoenn', 'Lavaridge Town'], round: 0, after: 2, giver: 'Lady', sprite: G('hoenn/lady'), dex: [360], egg: true },
+  { id: 'gift-castform', place: ['hoenn', 'Routes 118 & 119'], round: 0, after: 4, giver: 'Scientist', sprite: G('scientist'), dex: [351] },
+  { id: 'gift-beldum', place: ['hoenn', 'Mossdeep City & the Space Center'], round: 0, after: 2, giver: 'Steven', sprite: G('hoenn/steven'), dex: [374] },
+  { id: 'gift-togepi-egg-sinnoh', place: ['sinnoh', 'Eterna City & the Galactic Building'], round: 0, after: 2, giver: 'Champion Cynthia', sprite: G('sinnoh/champion-cynthia'), dex: [175], egg: true },
+  { id: 'gift-happiny-egg', place: ['sinnoh', 'Hearthome City'], round: 0, after: 1, giver: 'Hiker', sprite: G('sinnoh/hiker'), dex: [440], egg: true },
+  { id: 'gift-eevee-bebe', place: ['sinnoh', 'Hearthome City'], round: 0, after: 4, giver: 'Lady', sprite: G('sinnoh/lady'), dex: [133] },
+  { id: 'gift-porygon', place: ['sinnoh', 'Veilstone City & the Galactic HQ'], round: 0, after: 2, giver: 'Scientist', sprite: G('sinnoh/scientist'), dex: [137] },
+  { id: 'gift-riolu-egg', place: ['sinnoh', 'Canalave City & Iron Island'], round: 0, after: 2, giver: 'Riley', sprite: G('sinnoh/riley'), dex: [447], egg: true },
+  {
+    id: 'gift-monkey',
+    place: ['unova', 'Striaton City & the Dreamyard'],
+    round: 0,
+    after: 2,
+    giver: 'Lady',
+    sprite: G('unova/lady'),
+    dex: [511, 513, 515],
+    // Black and White: the monkey that beats the Striaton leader your starter faces.
+    byStarter: { 495: 515, 498: 511, 501: 513 },
+  },
+  { id: 'gift-kanto-starter', place: ['kalos', 'Routes 4 & 22 and Lumiose City South'], round: 0, after: 2, giver: 'Professor Sycamore', sprite: G('kalos/sycamore'), dex: [1, 4, 7] },
+  { id: 'gift-lucario', place: ['kalos', 'Route 11, Reflection Cave & Shalour City'], round: 0, after: 2, giver: 'Korrina', sprite: G('kalos/korrina'), dex: [448] },
+  { id: 'gift-lapras-kalos', place: ['kalos', 'Route 12, Azure Bay & Coumarine City'], round: 0, after: 2, giver: 'Fisherman', sprite: G('kalos/fisherman'), dex: [131] },
+  { id: 'gift-eevee-egg', place: ['alola', 'Heahea City & Routes 4–6'], round: 0, after: 2, giver: 'Pokémon Breeder', sprite: G('alola/breeder-f'), dex: [133], egg: true },
+  { id: 'gift-type-null', place: ['alola', 'Aether Paradise'], round: 0, after: 2, giver: 'Gladion', sprite: G('alola/gladion'), dex: [772] },
+  { id: 'gift-toxel-egg', place: ['galar', 'Route 5 & Hulbury'], round: 0, after: 2, giver: 'Pokémon Breeder', sprite: G('galar/breeder-f'), dex: [848], egg: true },
+]
+
+/** Kalos's page can be filled though Sycamore's gift is one of three: the Kanto starters, rare in the Friend Safari. */
+export const FRIEND_SAFARI_STARTERS = [1, 4, 7].map((dex) => ({ id: stableUuid(`wild:friend-safari:${dex}`), dex }))
+
+const areaOf = (b: SideQuestBundle, [region, name]: Place): Area => {
+  const a = b.areas.find((x) => (x.regionId ?? 'kanto') === region && x.name === name)
+  if (!a) throw new Error(`No area ${region}: ${name}`)
+  return a
+}
+
+/** A species at a level, evolved as far as its level evolutions go by then (a rival's starter). */
+function evolvedAt(b: SideQuestBundle, dex: number, level: number): number {
+  let d = dex
+  for (let i = 0; i < 3; i++) {
+    const next = b.pokemon?.find((p) => p.dex === d)?.evolutions?.find((e) => e.level != null && e.level <= level)
+    if (!next) break
+    d = next.toDex
+  }
+  return d
+}
+
+/** Each new rival's trainer rows: one per player starter, or one for everyone. Ids are stable. */
+export function rivalTrainers(b: SideQuestBundle): { meeting: string; place: Place; round: number; after: number; trainers: Trainer[] }[] {
+  return NEW_RIVALS.map((r) => {
+    const region = r.place[0]
+    const versions = r.single ? [null] : Object.keys(RIVAL_STARTER[region] ?? {}).map(Number)
+    const trainers = versions.map((player) => {
+      const rivalStarter = player == null ? null : RIVAL_STARTER[region]![player]!
+      const team = (rivalStarter != null && r.by ? r.by[rivalStarter] : r.team) ?? r.team
+      return {
+        id: stableUuid(`rival:${r.key}:${player ?? 'all'}`),
+        name: r.name,
+        spriteUrl: r.sprite,
+        team: team.map(([d, level]) => ({ dex: d === 'S' ? evolvedAt(b, rivalStarter!, level) : d, level })),
+        role: 'trainer' as const,
+        badge: null,
+        upgradeLevel: null,
+        battleBackground: null,
+        ...(player != null && { rivalOf: player }),
+      } as Trainer
+    })
+    return { meeting: `rival-${r.key}`, place: r.place, round: r.round, after: r.after, trainers }
+  })
+}
+
+/** Blue's other versions at the Tower and Silph Co. */
+export function blueVersions(b: SideQuestBundle): { place: Place; base: Trainer; trainers: Trainer[] }[] {
+  return BLUE_VERSIONS.flatMap((v) => {
+    const area = areaOf(b, v.place)
+    const base = (b.trainers ?? []).find(
+      (t) => t.name === 'Rival Blue' && area.trainerPool.some((e) => e.trainerId === t.id),
+    )
+    if (!base) return []
+    const others = Object.entries(v.others).map(([player, team]) => ({
+      ...base,
+      id: stableUuid(`rival:blue:${area.id}:${player}`),
+      team: team.map(([dex, level]) => ({ dex, level })),
+      rivalOf: Number(player),
+    }))
+    return [{ place: v.place, base: { ...base, rivalOf: v.rivalOf }, trainers: others }]
+  })
+}
+
+/** The meetings and gifts as the game's own content (src/engine/momentsContent.ts), every area by its id. */
+export function momentsContent(b: SideQuestBundle): { meetings: RivalMeeting[]; gifts: GiftMoment[] } {
+  const meetings: RivalMeeting[] = []
+  for (const r of rivalTrainers(b)) {
+    const area = areaOf(b, r.place)
+    meetings.push({ id: r.meeting, areaId: area.id, round: r.round, after: r.after, trainers: r.trainers.map((t) => t.id) })
+  }
+  for (const v of blueVersions(b)) {
+    const area = areaOf(b, v.place)
+    meetings.push({ id: `rival-blue-${area.id.slice(0, 8)}`, areaId: area.id, round: 0, after: 2, trainers: [v.base.id, ...v.trainers.map((t) => t.id)] })
+  }
+  // The rivals already in the pools: a meeting where each one is, the second of an area a little later.
+  for (const [region, names] of Object.entries(POOL_RIVALS)) {
+    for (const area of b.areas.filter((a) => (a.regionId ?? 'kanto') === region && !a.hidden).sort((x, y) => x.orderIndex - y.orderIndex)) {
+      let after = 2
+      for (const e of area.trainerPool) {
+        const t = (b.trainers ?? []).find((x) => x.id === e.trainerId)
+        if (!t || !names.includes(t.name)) continue
+        meetings.push({ id: `rival-${t.id.slice(0, 8)}`, areaId: area.id, round: 0, after, trainers: [t.id] })
+        after += 2
+      }
+    }
+  }
+  const gifts = GIFTS.map(({ place, ...g }) => ({ ...g, areaId: areaOf(b, place).id }))
+  return { meetings, gifts }
+}
+
+export function withMoments(b: SideQuestBundle): void {
+  if (!b.trainers || !b.pokemon) return
+  const have = new Set(b.trainers.map((t) => t.id))
+  // New rows go first: the double battles' pairs (scripts/patch-double-battles.ts) are added at the end of the list.
+  const added: Trainer[] = []
+  for (const r of rivalTrainers(b)) for (const t of r.trainers) if (!have.has(t.id)) added.push(t)
+  for (const v of blueVersions(b)) {
+    const base = b.trainers.find((t) => t.id === v.base.id)
+    if (base && base.rivalOf == null) base.rivalOf = v.base.rivalOf
+    for (const t of v.trainers) if (!have.has(t.id)) added.push(t)
+  }
+  b.trainers.unshift(...added)
+  const friend = b.areas.find((a) => a.id === FRIEND_SAFARI)
+  if (friend)
+    for (const s of FRIEND_SAFARI_STARTERS)
+      if (!friend.wildPool.some((w) => w.dex === s.dex))
+        friend.wildPool.push({ id: s.id, dex: s.dex, weight: 3, minLevel: friend.minLevel, maxLevel: friend.maxLevel })
+}
+
 // ---------------------------------------------------------------- the whole patch
 
 export function patchSideQuests(b: SideQuestBundle): void {
@@ -206,6 +489,7 @@ export function patchSideQuests(b: SideQuestBundle): void {
   withRoadblocks(b)
   withDisguises(b)
   withSafaris(b)
+  withMoments(b)
 }
 
 /** The data files are written as the seed writes them: one space of indent and a final newline. */
@@ -217,9 +501,33 @@ async function main() {
     console.log('Usage: tsx scripts/patch-side-quests.ts --data')
     process.exit(1)
   }
-  const b: SideQuestBundle = { areas: await read<Area[]>('areas.json') }
+  const b: SideQuestBundle = {
+    areas: await read<Area[]>('areas.json'),
+    trainers: await read<Trainer[]>('trainers.json'),
+    pokemon: await read<Species[]>('pokemon.json'),
+  }
   patchSideQuests(b)
   await write('areas.json', b.areas)
+  await write('trainers.json', b.trainers)
+  // The meetings and gifts are the game's own (docs/61 §5): written as code, the database holding only their switches.
+  const { meetings, gifts } = momentsContent(b)
+  const prettier = await import('prettier')
+  const file = path.join(ROOT, 'src', 'engine', 'momentsContent.ts')
+  const options = { ...(await prettier.resolveConfig(file)), filepath: file }
+  await writeFile(
+    file,
+    await prettier.format(
+      `// Generated by \`tsx scripts/patch-side-quests.ts --data\` (docs/61 §5): the rivals' meetings and the gifts, the game's
+// own content. The database holds only their switches. Do not edit by hand: edit the script and run it again.
+import type { GiftMoment, RivalMeeting } from './types'
+
+export const RIVAL_MEETINGS: RivalMeeting[] = ${JSON.stringify(meetings, null, 2)}
+
+export const GIFT_MOMENTS: GiftMoment[] = ${JSON.stringify(gifts, null, 2)}
+`,
+      options,
+    ),
+  )
   console.log('✓ src/data patched with the side quests (docs/61)')
 }
 

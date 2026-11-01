@@ -1,3 +1,4 @@
+import { GIFT_MOMENTS, RIVAL_MEETINGS } from './momentsContent'
 import type { GameConfig } from './types'
 
 /** Starting values for every game_config key. Anything missing from the DB/bundle falls back to these. */
@@ -559,6 +560,10 @@ export const DEFAULT_CONFIG: GameConfig = {
   // winning: at the first idea's +10 they caught 98 % of common ghosts, and the Treats were never worth giving.
   // Pokémon posing as items (docs/61 §3): a find that springs out as Voltorb. Off until the admin opens it.
   disguises: { access: 'off' },
+  // Set moments (docs/61 §5): the rivals' meetings and the gifts are the game's own (momentsContent.ts, written by
+  // scripts/patch-side-quests.ts); the database holds their switches, Off. A gift Egg hatches in 6 hours.
+  rivals: { access: 'off', meetings: RIVAL_MEETINGS },
+  giftMoments: { access: 'off', eggHours: 6, gifts: GIFT_MOMENTS },
   // The Safari (docs/61 §4): Trick or Treat's gauge with Bait and Safari Balls, its numbers starting from Trick's (the
   // same measured best play: about 7 common Pokémon in 10, 4 rare ones in 7, a very rare one in 3). The first round in
   // each Safari area is free, then ₽100 a round (the user's call, 2026-11-01). `areas`: each Safari's tier overrides;

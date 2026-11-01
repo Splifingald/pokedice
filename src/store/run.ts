@@ -139,6 +139,17 @@ import {
   rerollLessonDue,
   disguisesOn,
   isDisguisedFind,
+  declineGift,
+  dueGift,
+  dueRival,
+  giftChoices,
+  giftMomentsOn,
+  giftRng,
+  markMomentDone,
+  receiveGift,
+  rivalEncounter,
+  rivalsOn,
+  isExtreme,
   lureCfg,
   safariDealable,
   safariOn,
@@ -155,7 +166,7 @@ import { currentLive } from './live'
 import { useRebattleMedal } from './rebattle'
 import { serverNow } from './serverTime'
 import { trickAllowed } from './trick'
-import { sideQuestAllowed } from './sideQuests'
+import { sideQuestAllowed, sideQuestKnown } from './sideQuests'
 import { t } from '@/i18n'
 
 // An encounter picked up from the last visit (store/resume.ts) rolls on from where both streams stood, so a reload
@@ -510,6 +521,8 @@ export function rollNext() {
   // Nobody able to fight (e.g. after a stalemate) → the Center is the only sensible next stop. Extreme mode has none:
   // the team rests (Home and the area say until when); with its boon Centers, a K.O. here sends the one that swaps.
   const noneAble = !hasAbleTeam(save)
+  // A set moment due here (docs/61 §5) comes on top of the deck, using no card: a gift, then a rival (one able to fight).
+  if (dealMoment(save, run.areaId, noneAble)) return
   const wipeCenter = wipeCenterDue(save, run.areaId, data)
   if (noneAble && !centersOn(save, data) && !wipeCenter) {
     setRun({ phase: 'idle', encounter: null })
@@ -916,7 +929,10 @@ function settleBattle(stalemate: boolean) {
     // A round of the nightmare won (docs/30): it counts, its gift goes into the bag, Darkrai's strike is due (or, the
     // last one, the player wakes up). The result card says so.
     const dream = inNightmare(res.save, data, run.areaId) ? winNightmareRound(res.save, data, run.areaId) : null
-    commitSave(dream?.save ?? res.save)
+    // A rival's set meeting (docs/61 §5.2) is met once its last Pokémon falls.
+    const meeting = enc?.kind === 'trainer' && enc.moment && !trainerHasNext() ? enc.moment : null
+    const won = dream?.save ?? res.save
+    commitSave(meeting ? markMomentDone(won, meeting) : won)
     queuePickup(res.events)
     const dreamEvents: RunEvent[] = dream
       ? [
@@ -1347,6 +1363,80 @@ export function spinSlotMachine(): SpinResult | null {
 
 export function leaveCasino() {
   backToArea()
+}
+
+// ---------------------------------------------------------------- set moments: rivals and gifts (docs/61 §5)
+
+/**
+ * The gift or the rival meeting due in this area, dealt now (true) instead of a card: a gift opens its screen (phase
+ * 'gift'); a rival's fight starts as a trainer's does. Only once the server's answer is known (sideQuestKnown): asked
+ * the first time, the moment comes with the next card.
+ */
+function dealMoment(save: SaveData, areaId: string, noneAble: boolean): boolean {
+  const { data } = useGame.getState()
+  const area = data.areas.find((a) => a.id === areaId)
+  if (!area || isExtreme(save)) return false
+  const progress = progressOf(save, area.id)
+  const gift = dueGift(save, area, progress, data)
+  if (gift && sideQuestKnown('giftMoments', giftMomentsOn(data))) {
+    setRun({ phase: 'gift', encounter: null, gift: { id: gift.id, received: null }, firstInArea: false })
+    return true
+  }
+  const meeting = noneAble ? null : dueRival(save, area, progress, data)
+  if (!meeting || !sideQuestKnown('rivals', rivalsOn(data))) return false
+  const encounter = rivalEncounter(meeting, data, playerSideOf(save))
+  if (!encounter) return false
+  setRun({ phase: 'preview', encounter, firstInArea: false, sprung: false })
+  beginFight()
+  return true
+}
+
+/** The gift on screen (phase 'gift'), its area, and the save; null when there's none. */
+function currentGift() {
+  const { run, save, data } = useGame.getState()
+  const g = run.gift ? data.config.giftMoments?.gifts.find((x) => x.id === run.gift!.id) : undefined
+  const area = g ? data.areas.find((a) => a.id === g.areaId) : undefined
+  return run.phase === 'gift' && g && area && save ? { g, area, save, data } : null
+}
+
+/** TAKE IT (a gift's choice, `pick`): the engine places it; the screen shows what came of it. False when ₽ are short. */
+export function takeGift(pick: number): boolean {
+  const cur = currentGift()
+  if (!cur || useGame.getState().run.gift?.received) return false
+  const res = receiveGift(cur.save, cur.data, cur.g, cur.area, pick, Date.now(), newId, giftRng(cur.save, cur.g))
+  if (!res) {
+    pushToast(t('ui.gift.tooPoor', { price: cur.g.price ?? 0 }), 'bad')
+    return false
+  }
+  commitSave(res.save)
+  const { save: _s, ...received } = res
+  setRun({ gift: { id: cur.g.id, received } })
+  return true
+}
+
+/** NO THANKS (a paid gift turned down): met, nothing taken, on with the trail. */
+export function declineGiftHere() {
+  const cur = currentGift()
+  if (!cur) return
+  commitSave(declineGift(cur.save, cur.g))
+  finishGift()
+}
+
+/** CONTINUE after a gift: on with the trail. */
+export function finishGift() {
+  setRun({ phase: 'idle', gift: null })
+  rollNext()
+}
+
+/** Auto-mode and Idle (docs/36): a free gift taken (its first choice), a paid one turned down; then on. */
+export function autoGift() {
+  const cur = currentGift()
+  if (!cur) return
+  const run = useGame.getState().run
+  if (run.gift?.received) return finishGift()
+  if ((cur.g.price ?? 0) > 0) return declineGiftHere()
+  const pick = giftChoices(cur.g, cur.save)[0]
+  if (pick != null) takeGift(pick)
 }
 
 // ---------------------------------------------------------------- Pokémon posing as items (docs/61 §3)

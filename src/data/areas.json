@@ -23685,6 +23685,27 @@
     "weight": 10,
     "minLevel": 60,
     "maxLevel": 76
+   },
+   {
+    "id": "494d86ab-6221-5002-8c18-2c5fb23fa97c",
+    "dex": 1,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "500fe10a-8d09-5dc9-a554-cef31bc92f48",
+    "dex": 4,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "5db429ce-36e1-537e-816a-ab5f4de2e2b0",
+    "dex": 7,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
    }
   ],
   "trainerPool": [],

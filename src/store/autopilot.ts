@@ -23,6 +23,7 @@ import {
   enterArea,
   finishCenter,
   leaveCasino,
+  autoGift,
 } from './run'
 import { serverNow } from './serverTime'
 
@@ -98,6 +99,7 @@ export function runAutoStep(step: AutopilotStep) {
         finishCenter()
         pushToast(t('ui.idle.healed'), 'good')
       } else if (run.phase === 'casino') leaveCasino()
+      else if (run.phase === 'gift') autoGift()
       else if (run.phase === 'stalemate') afterStalemate()
       return
     case 'travel': {

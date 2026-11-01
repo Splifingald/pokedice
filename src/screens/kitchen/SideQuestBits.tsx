@@ -8,6 +8,8 @@ import { loadItemSprite, loadSprite, spriteKey } from '@/fx/sprites'
 import { catchTimeline } from '@/fx/timelines/catch'
 import { treatTimeline } from '@/fx/timelines/trick'
 import { TrickRecapBody, TrickScreen, type TrickScreenProps } from '@/screens/area/TrickView'
+import { GiftStage, giftLine } from '@/screens/area/GiftView'
+import { useGame } from '@/store/game'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
 import { useT } from '@/i18n/react'
@@ -133,6 +135,49 @@ function SafariBits() {
   )
 }
 
+/** The gifts (docs/61 §5.3): the giver walking in with a ball or an Egg, its line, then the Pokémon out, or the Egg. */
+function GiftBits() {
+  const { t } = useT()
+  const gifts = useGame((s) => s.data.config.giftMoments?.gifts ?? [])
+  const [replay, setReplay] = useState(0)
+  const pick = (id: string) => gifts.find((g) => g.id === id)
+  const shown = [
+    { id: 'gift-eevee-celadon', name: 'Eevee', received: null },
+    { id: 'gift-hitmon', name: 'Hitmonlee', received: null },
+    { id: 'gift-magikarp', name: 'Magikarp', received: null },
+    { id: 'gift-odd-egg', name: 'Pichu', received: null },
+    { id: 'gift-eevee-celadon', name: 'Eevee', received: { dex: 133, shiny: false, placed: 'team' as const, isNew: true } },
+    { id: 'gift-odd-egg', name: 'Pichu', received: { dex: 172, shiny: false, placed: 'egg' as const, isNew: true } },
+  ]
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="grid gap-3 md:grid-cols-2">
+        {shown.map((x, i) => {
+          const g = pick(x.id)
+          if (!g) return null
+          return (
+            <div key={`${x.id}-${i}-${replay}`} className="grid gap-1">
+              <span className="font-pixel-sm text-[16px] text-muted">
+                {x.received ? (x.received.placed === 'egg' ? t('ui.gift.receivedEgg') : t('ui.gift.received', { name: x.name })) : x.id}
+              </span>
+              <GiftStage areaId={g.areaId} g={g} received={x.received} dex={x.received?.dex ?? g.dex[0]!} />
+              {!x.received && (
+                <p className="pixel-dialogue m-0 px-3 py-1.5 text-[18px] leading-[1.15]">{giftLine(t, g, g.giver, x.name)}</p>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      <PixelButton size="sm" className="self-start" onClick={() => setReplay((n) => n + 1)}>
+        Play the gifts again
+      </PixelButton>
+      <p className="pixel-dialogue m-0 max-w-xl px-3 py-1.5 text-[18px] leading-[1.15]">
+        {t('ui.log.startRival', { trainer: 'Silver', foe: 'Quilava', lead: 'Totodile' })}
+      </p>
+    </div>
+  )
+}
+
 export function SideQuestBits() {
   const { t } = useT()
   const [replay, setReplay] = useState(0)
@@ -166,6 +211,7 @@ export function SideQuestBits() {
         Play them again
       </PixelButton>
       <SafariBits />
+      <GiftBits />
     </div>
   )
 }

@@ -26,6 +26,7 @@ import { AreaIdle } from './area/AreaIdle'
 import { CenterView } from './area/CenterView'
 import { EncounterPreview } from './area/EncounterPreview'
 import { FindView } from './area/FindView'
+import { GiftView } from './area/GiftView'
 import { RoundGauge } from './area/RoundGauge'
 import { AreaDetails } from './home/AreaDetails'
 import { RebattleHeader } from './events/RebattlePage'
@@ -137,9 +138,12 @@ export function AreaScreen() {
       ) : (
         !(run.phase === 'center' && !pilot) &&
         !sceneIdle &&
-        !finding && <AreaHeader area={area} progress={progress} teamAvg={teamAverageLevel(save)} />
+        !finding &&
+        run.phase !== 'gift' && <AreaHeader area={area} progress={progress} teamAvg={teamAverageLevel(save)} />
       )}
       {finding && <FindView />}
+      {/* A gift (docs/61 §5.3): a step on the stage of its own, as a find is, with or without the autopilot. */}
+      {run.phase === 'gift' && <GiftView />}
       {/* Under the autopilot, the cards it leaves on the table (Trick or Treat, a trainer's: pilotShowsCard) still open. */}
       {run.phase === 'preview' && run.encounter && !finding && !(pilot && !pilotShowsCard(run.encounter.kind)) && (
         // A wild pair shown as it will be fought: alone if the team lost its second able one since (docs/33).
