@@ -38,6 +38,7 @@ const CARD_ICON: Record<DeckCard, IconName> = {
   casino: 'coin',
   trick: 'pumpkin',
   versus: 'user',
+  gift: 'gift',
   legend: 'masterball',
 }
 /** What a met card was, for the gauge's tooltips. */

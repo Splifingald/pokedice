@@ -42,7 +42,9 @@ describe('0121: the Gift card', () => {
 
   it('the server reads the switch for the caller: off, on for the admin only, on for everyone', async () => {
     const set = (access: string) =>
-      db.exec(`update game_config set value = jsonb_set(value, '{access}', '"${access}"') where key = 'giftCard'`)
+      db.exec(
+        `update game_config set value = jsonb_set(value, '{access}', '"${access}"') where key = 'giftCard'`,
+      )
     expect(await open()).toBe(false)
     await set('admin')
     expect(await open()).toBe(false)

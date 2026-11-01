@@ -332,6 +332,37 @@ const FX_SOUNDS = {
   'gift.item': (n = 0) => tone(784 * Math.pow(2, (n % 6) / 6), 0.14, { type: 'square', vol: 0.035, slide: 400 }),
   'gift.shiny': () => tone(2637, 0.2, { type: 'triangle', vol: 0.04 }),
   'gift.fanfare': (n = 0) => tone(GIFT_FANFARE[n]!, n === 3 ? 0.5 : 0.12, { type: 'square', vol: 0.045 }),
+  // The Gift card (docs/61 §4.0): a present lands, wobbles, grows a step higher each level (a rising chime, the
+  // level's note), strains, rips and bursts (a crunch and a puff), or opens (the gifts' own untie and pop, then a
+  // chime per thing). Delibird's present (§4.2) bursts with a bigger bang.
+  'present.land': () => hiss(0.08, { freq: 500, vol: 0.06 }),
+  'present.wobble': () => hiss(0.04, { vol: 0.045, freq: 760 }),
+  'present.grow': (n = 1) => {
+    const f = 523 * Math.pow(2, (Math.min(6, n) - 1) / 6)
+    tone(f, 0.08, { type: 'square', vol: 0.035 })
+    tone(f * 1.5, 0.08, { type: 'square', vol: 0.03, at: 0.07 })
+    tone(f * 2, 0.16, { type: 'triangle', vol: 0.04, at: 0.14 })
+  },
+  'present.strain': () => tone(196, 0.35, { type: 'sawtooth', vol: 0.03, slide: 90 }),
+  'present.rip': () => hiss(0.1, { vol: 0.08, freq: 3600, slide: -1800 }),
+  'present.break': () => {
+    hiss(0.4, { vol: 0.1, freq: 1400, slide: -1000 })
+    tone(330, 0.3, { type: 'square', vol: 0.04, slide: -200 })
+  },
+  'present.burst': () => {
+    hiss(0.6, { vol: 0.11, freq: 2400, slide: -1600 })
+    tone(1047, 0.5, { type: 'square', vol: 0.04, slide: 500 })
+    tone(1568, 0.4, { type: 'triangle', vol: 0.04, at: 0.12 })
+  },
+  'present.untie': () => {
+    tone(660, 0.12, { type: 'square', vol: 0.03, slide: 500 })
+    hiss(0.12, { freq: 2600, vol: 0.04 })
+  },
+  'present.open': () => {
+    hiss(0.3, { vol: 0.08, freq: 2800 })
+    tone(1319, 0.3, { type: 'square', vol: 0.035, slide: 300 })
+  },
+  'present.item': (n = 0) => tone(784 * Math.pow(2, (n % 6) / 6), 0.14, { type: 'square', vol: 0.035, slide: 400 }),
   // A trade (docs/23): drawn into the ball, up the link, the other ball down it, open, and a short jingle.
   'trade.recall': () => tone(880, 0.25, { type: 'triangle', vol: 0.04, slide: -500 }),
   'trade.shut': () => hiss(0.06, { freq: 900, vol: 0.06 }),

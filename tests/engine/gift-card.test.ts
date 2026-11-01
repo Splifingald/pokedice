@@ -149,7 +149,8 @@ describe('Delibird', () => {
 
 describe('the rewards', () => {
   const sg = compileGameData(withSnowglobe(BUNDLE))
-  const sgArea = (name: string) => sg.areas.find((a) => a.id === snowglobe().areas.find((x) => x.name === name)!.id)!
+  const sgArea = (name: string) =>
+    sg.areas.find((a) => a.id === snowglobe().areas.find((x) => x.name === name)!.id)!
   const trail = sgArea('Snowy Trail')
   const pond = sgArea('Frozen Pond')
 
@@ -184,7 +185,9 @@ describe('the rewards', () => {
     expect([...seen.get(3)!].sort()).toEqual([`${15 * level} money`, '2 hyper-potion'].sort())
     const four = [...seen.get(4)!]
     expect(four).toContain('1 revive')
-    expect(four.filter((x) => x !== '1 revive').every((x) => giftEvolutionItems(trail, sg).includes(x.slice(2)))).toBe(true)
+    expect(
+      four.filter((x) => x !== '1 revive').every((x) => giftEvolutionItems(trail, sg).includes(x.slice(2))),
+    ).toBe(true)
     expect([...seen.get(5)!]).toEqual(['3 rare-candy'])
     expect([...seen.get(6)!]).toEqual(['3 rare-candy + 1 revive'])
   })
@@ -193,7 +196,14 @@ describe('the rewards', () => {
     const save = newSave(1, sg, 0, () => 'starter')
     const s: GiftState = {
       ...gift(3),
-      rewards: [[], [], [{ key: 'money', qty: 105 }, { key: 'hyper-potion', qty: 2 }]],
+      rewards: [
+        [],
+        [],
+        [
+          { key: 'money', qty: 105 },
+          { key: 'hyper-potion', qty: 2 },
+        ],
+      ],
     }
     expect(giftRewardAt(s)).toEqual(s.rewards[2])
     const opened = openGift(s)!
@@ -239,7 +249,9 @@ describe('the card in the deck', () => {
 
   it('switched on, its card is a present; switched off, the item card as before and a gift left in a deck is discarded', () => {
     const on = world('all')
-    expect(nextEncounter(ctx(on.data, on.area, ['wild', 'gift']), createRng(2)).encounter).toEqual({ kind: 'gift' })
+    expect(nextEncounter(ctx(on.data, on.area, ['wild', 'gift']), createRng(2)).encounter).toEqual({
+      kind: 'gift',
+    })
     const off = world('off')
     const roll = nextEncounter(ctx(off.data, off.area, ['wild', 'gift']), createRng(3))
     expect(roll.encounter.kind).toBe('wild')

@@ -24,6 +24,7 @@ import { TypeBadge } from '@/components/TypeBadge'
 import { foeTypes } from '@/components/TypeMatchups'
 import { ShinyParadeChip } from '@/screens/events/live'
 import { TrickCard } from '@/components/TrickOrTreat'
+import { GiftCardPreview } from '@/components/GiftCard'
 import { mutateSave, useGame } from '@/store/game'
 import { canSkipCurrent, declineChallenge, engage, skipEncounter } from '@/store/run'
 import { cx } from '@/theme/util'
@@ -351,6 +352,7 @@ const TITLES: Record<Encounter['kind'], string> = {
   center: 'ui.enc.titleCenter',
   casino: 'ui.enc.titleCasino',
   trick: 'ui.enc.titleTrick',
+  gift: 'ui.enc.titleGift',
 }
 
 /** The encounter, in a pop-up (a bottom sheet on phones): the opponent, who to send out, FIGHT or FLEE (AVOID a trainer). */
@@ -364,7 +366,8 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
   const save = useGame((s) => s.save)
   const titleId = useId()
   const skippable = canSkipCurrent()
-  const fight = enc.kind !== 'center' && enc.kind !== 'item' && enc.kind !== 'casino' && enc.kind !== 'trick'
+  const fight =
+    enc.kind !== 'center' && enc.kind !== 'item' && enc.kind !== 'casino' && enc.kind !== 'trick' && enc.kind !== 'gift'
   const dark = enc.kind === 'boss' || enc.kind === 'gym'
   // A card whose one way on is its button (the Game Corner, Trick or Treat with no skipping it): it loads and presses
   // itself (the user's rule: no step that is only a button). A fight, or a card with a second choice, waits.
@@ -417,6 +420,8 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
           {enc.kind === 'center' && <CenterCard enc={enc} />}
           {enc.kind === 'casino' && <CasinoCard />}
           {enc.kind === 'trick' && <TrickCard dex={enc.dex} level={enc.level} tier={enc.tier} isNew={enc.isNew} shiny={enc.shiny} />}
+          {/* The Gift card (docs/61 §4.0): only while the server says yes, the present itself comes at once. */}
+          {enc.kind === 'gift' && <GiftCardPreview />}
 
           {/* A team of one has no one to pick: no "Send out" at all (LeadPicker draws nothing either). */}
           {fight && save && teamOf(save).length > 1 && (
@@ -453,6 +458,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
           >
             {fight && <PixelIcon name="sword" size={22} />}
             {enc.kind === 'trick' && <PixelIcon name="pumpkin" size={22} />}
+            {enc.kind === 'gift' && <PixelIcon name="gift" size={22} />}
             {t(
               enc.kind === 'center' || enc.kind === 'casino'
                 ? 'ui.enc.enter'
@@ -460,7 +466,9 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
                   ? 'ui.enc.pickUp'
                   : enc.kind === 'trick'
                     ? 'ui.trick.start'
-                    : 'ui.enc.fight',
+                    : enc.kind === 'gift'
+                      ? 'ui.giftCard.start'
+                      : 'ui.enc.fight',
             )}
           </Primary>
           {skippable && (

@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import { autoStepNow, runAutoStep, useAutoLevel } from '@/store/autopilot'
 import { useGame, type RunPhase } from '@/store/game'
 
-/** How long each moment stays on screen before the next step (ms). A fight, a catch and Trick or Treat are re-checked. */
+/** How long each moment stays on screen before the next step (ms). A fight, a catch, Trick or Treat and a gift are
+ * re-checked. */
 const PACE: Record<RunPhase, number> = {
   idle: 900,
   preview: 250,
@@ -16,6 +17,7 @@ const PACE: Record<RunPhase, number> = {
   battle: 1000,
   catch: 1000,
   trick: 1000,
+  gift: 1000,
 }
 
 /** A find's step (FindView): long enough to see it land; its PICK IT UP, loading under the autopilot, goes first. */

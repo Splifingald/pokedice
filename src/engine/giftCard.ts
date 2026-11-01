@@ -97,7 +97,8 @@ export interface GiftItem {
   qty: number
 }
 
-const isKind = (k: unknown): k is GiftRewardPart['kind'] => (GIFT_REWARD_KINDS as readonly unknown[]).includes(k)
+const isKind = (k: unknown): k is GiftRewardPart['kind'] =>
+  (GIFT_REWARD_KINDS as readonly unknown[]).includes(k)
 
 /** The area's level for its ₽: the top of its range. */
 export const giftAreaLevel = (area: Pick<Area, 'maxLevel'>): number => Math.max(1, Math.round(area.maxLevel))
@@ -106,7 +107,10 @@ export const giftAreaLevel = (area: Pick<Area, 'maxLevel'>): number => Math.max(
  * The area's balls: the best of the admin's list that its finds hold (a Poké Ball when they hold none), and the next
  * one up (the same at the top of the list).
  */
-export function giftBalls(area: Pick<Area, 'lootPool'>, data: Pick<GameData, 'items' | 'config'>): { ball: string; better: string } {
+export function giftBalls(
+  area: Pick<Area, 'lootPool'>,
+  data: Pick<GameData, 'items' | 'config'>,
+): { ball: string; better: string } {
   const list = (giftCfg(data).balls ?? []).filter((k) => !!data.items[k])
   if (!list.length) return { ball: 'poke-ball', better: 'poke-ball' }
   const found = new Set(area.lootPool.filter((e) => e.weight > 0).map((e) => e.itemKey))
@@ -159,7 +163,8 @@ export function giftPart(
 
 /** A level's reward options (a level past the admin's list takes its last). */
 const levelOptions = (cfg: GiftCardConfig, level: number): GiftRewardPart[][] => {
-  const list = Array.isArray(cfg.rewards) && cfg.rewards.length ? cfg.rewards : DEFAULT_CONFIG.giftCard.rewards
+  const list =
+    Array.isArray(cfg.rewards) && cfg.rewards.length ? cfg.rewards : DEFAULT_CONFIG.giftCard.rewards
   return (list[Math.min(level, list.length) - 1] ?? []).filter((o) => Array.isArray(o) && o.length > 0)
 }
 
@@ -216,7 +221,10 @@ export const giftBossTaps = (cfg: GiftCardConfig): number =>
   clamp(cfg.bossTaps, 1, 10, DEFAULT_CONFIG.giftCard.bossTaps)
 
 /** A boss's present: it grows on each tap and bursts on the last one; nothing to open. */
-export function startBossPresent(cfg: GiftCardConfig, boss: { dex: number; level: number; shiny?: boolean }): GiftState {
+export function startBossPresent(
+  cfg: GiftCardConfig,
+  boss: { dex: number; level: number; shiny?: boolean },
+): GiftState {
   return {
     level: 1,
     top: giftBossTaps(cfg),
@@ -279,7 +287,8 @@ export function growGift(state: GiftState, cfg: GiftCardConfig, rng: Rng): GiftS
 }
 
 /** What OPEN gives at the gift's level now. */
-export const giftRewardAt = (state: GiftState, level = state.level): GiftItem[] => state.rewards[level - 1] ?? []
+export const giftRewardAt = (state: GiftState, level = state.level): GiftItem[] =>
+  state.rewards[level - 1] ?? []
 
 /** OPEN: the gift is opened at its level (a boss's present can't be). Null once it's over. */
 export function openGift(state: GiftState): GiftState | null {
@@ -299,14 +308,16 @@ export function applyGiftOpen(
   if (state.end !== 'opened') return { save, items: [] }
   const items = giftRewardAt(state)
   let next = save
-  for (const it of items) next = pickUpItem(next, areaId, { entryId: 'gift', itemKey: it.key, qty: it.qty }, data, now, newId, live)
+  for (const it of items)
+    next = pickUpItem(next, areaId, { entryId: 'gift', itemKey: it.key, qty: it.qty }, data, now, newId, live)
   return { save: next, items }
 }
 
 // ---------------------------------------------------------------- its rules pop-up
 
 /** Its rules pop-up is due: switched on for the player and not seen yet (the first gift shows it). */
-export const giftCardRulesDue = (save: SaveData, data: GameData): boolean => giftOn(data) && !save.giftCard?.rulesSeen
+export const giftCardRulesDue = (save: SaveData, data: GameData): boolean =>
+  giftOn(data) && !save.giftCard?.rulesSeen
 
 export function markGiftCardRulesSeen(save: SaveData): SaveData {
   return { ...save, giftCard: { ...save.giftCard, rulesSeen: true } }
