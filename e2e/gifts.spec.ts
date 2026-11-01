@@ -245,7 +245,7 @@ test('admin → Messages: an answer carries a gift, and says when it was opened'
 
 test('admin → Analytics → a player: write to them first, with a Pokémon', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 1000 })
-  await mockSupabase(page, { rpc: { analytics_d1: {} } })
+  await mockSupabase(page, { rpc: { analytics_retention: {} } })
   await giftsOn(page)
   const today = new Date().toISOString().slice(0, 10)
   await page.route(`${SUPABASE}/rest/v1/players**`, (route) =>

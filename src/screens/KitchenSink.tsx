@@ -64,6 +64,7 @@ import { NightmareBits } from './kitchen/NightmareBits'
 import { NightmareRaidBits } from './kitchen/NightmareRaidBits'
 import { GiftBits } from './kitchen/GiftBits'
 import { InviteBits } from './kitchen/InviteBits'
+import { WelcomeBackBits } from './kitchen/WelcomeBackBits'
 import { SupportBits } from './kitchen/SupportBits'
 import { TrickBits } from './kitchen/TrickBits'
 import { UndergroundBits } from './kitchen/UndergroundBits'
@@ -731,6 +732,10 @@ export function KitchenSink() {
 
       <Section title="Invite rewards: the gauge in every state, the Friends page’s card, Prof. Oak’s invite, ready, rules, the opening">
         <InviteBits />
+      </Section>
+
+      <Section title="Welcome back: the developer's message on a return (the pop-up, its words per tier, My messages in every state, INFO, the rules, the opening)">
+        <WelcomeBackBits />
       </Section>
 
       <Section title="Support me: the developer's asks (Discord, invite, Ko-fi), with and without a Discord link">

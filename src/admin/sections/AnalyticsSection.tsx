@@ -1,24 +1,38 @@
-// Admin → Analytics: day-1 retention and the players, from the daily ping (migration 0028), and players per hour
-// (0042, on demand). Admin-only via RLS.
+// Admin → Analytics: retention on day 1, 3, 7 and 30 and the players, from the daily ping (migrations 0028, 0102),
+// players per hour (0042) and churn by area (0102), those two on demand. Admin-only via RLS. docs/57.
 import { PixelIcon } from '@/components/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { dayKey, dayOneRetention, type D1Cohorts, type Retention } from '@/analytics/retention'
+import {
+  dayKey,
+  RETENTION_DAYS,
+  retentionByDay,
+  type Cohorts,
+  type Retention,
+  type RetentionDay,
+} from '@/analytics/retention'
 import { PixelButton } from '@/components/PixelButton'
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase'
+import { useGame } from '@/store/game'
+import { PALETTE } from '@/theme/colors'
 import { cx } from '@/theme/util'
 import { inputCls } from '../widgets'
+import { ChurnByArea } from './AnalyticsChurn'
 import { HourlyPlayers } from './AnalyticsHourly'
 import { errorText, PlayerPanel } from './AnalyticsPlayer'
 
 interface PlayerRow {
   player: string
   user_id: string | null
+  /** The latest device the player played on. */
+  device_id: string | null
   name: string | null
   email: string | null
   first_day: string
   last_day: string
   days: number
-  /** From the latest daily snapshot. */
+  /** The area of the last hour they played (0102). */
+  last_area: string | null
+  /** From the latest daily snapshot, in the player's language: the fallback for an area the game data doesn't know. */
   area: string | null
   badges: number | null
   team: { dex: number; level: number }[] | null
@@ -43,10 +57,10 @@ async function client() {
   return c
 }
 
-async function fetchCohorts(): Promise<D1Cohorts> {
-  const { data, error } = await (await client()).rpc('analytics_d1')
+async function fetchCohorts(): Promise<Cohorts> {
+  const { data, error } = await (await client()).rpc('analytics_retention')
   if (error) throw error
-  return (data ?? {}) as D1Cohorts
+  return (data ?? {}) as Cohorts
 }
 
 /** Players seen on or after `since` (null = all), most recent first, a page of 1000 at a time. */
@@ -58,7 +72,7 @@ async function fetchPlayers(since: Date | null, max = 10_000): Promise<PlayerRow
     let q = c
       .from('players')
       .select(
-        'player,user_id,name,email,first_day,last_day,days,area:snapshot->>area,badges:snapshot->badges,team:snapshot->team',
+        'player,user_id,device_id,name,email,first_day,last_day,days,last_area,area:snapshot->>area,badges:snapshot->badges,team:snapshot->team',
       )
       .order('last_day', { ascending: false })
       .order('player')
@@ -71,51 +85,86 @@ async function fetchPlayers(since: Date | null, max = 10_000): Promise<PlayerRow
   return out
 }
 
-const rateColor = (pct: number | null) =>
-  pct == null ? '#b6c3d9' : pct >= 40 ? '#34c97a' : pct >= 20 ? '#ffbe2e' : '#f2553f'
+/**
+ * Green from the first number, amber from the second, red under it: rough free-to-play benchmarks, lower the later
+ * the day, so a fair day-30 rate doesn't read as an alarm next to day 1's.
+ */
+const RATE_BANDS: Record<RetentionDay, readonly [number, number]> = {
+  1: [40, 20],
+  3: [25, 12],
+  7: [15, 8],
+  30: [8, 4],
+}
 
-function RetentionHero({ r }: { r: Retention | null }) {
+const rateColor = (day: RetentionDay, pct: number | null) =>
+  pct == null
+    ? PALETTE.shadow
+    : pct >= RATE_BANDS[day][0]
+      ? PALETTE.hpGreen
+      : pct >= RATE_BANDS[day][1]
+        ? PALETTE.gold
+        : PALETTE.accent
+
+const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString()} ${n === 1 ? one : many}`
+
+function RetentionTile({ day, r }: { day: RetentionDay; r: Retention | null }) {
   const pct = r?.rate == null ? null : Math.round(r.rate * 100)
-  const color = rateColor(pct)
+  const color = rateColor(day, pct)
   return (
-    <section
-      className="pixel-panel-dark flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-6"
-      aria-label="Retention"
+    <div
+      className="flex min-w-0 flex-col gap-2 border-2 border-white/30 p-3"
+      role="group"
+      aria-label={`Day ${day}`}
     >
-      <div className="flex shrink-0 flex-col">
-        <span className="text-xl uppercase tracking-wider text-gold">Day-1 retention</span>
-        <span className="text-7xl leading-none sm:text-8xl" style={{ color }}>
-          {r == null ? '…' : pct == null ? '–' : `${pct}%`}
-        </span>
+      <span className="text-xl uppercase tracking-wider text-gold">Day {day}</span>
+      <span className="text-6xl leading-none" style={{ color }}>
+        {r == null ? '…' : pct == null ? '–' : `${pct}%`}
+      </span>
+      {r && (
+        <>
+          <div
+            className="h-4 w-full border-2 border-white/60 bg-night"
+            role="img"
+            aria-label={`${r.returned} of ${r.cohort} players came back on day ${day}`}
+          >
+            <div className="h-full" style={{ width: `${pct ?? 0}%`, background: color }} />
+          </div>
+          <p className="text-xl leading-tight">
+            {r.cohort ? (
+              <>
+                <b className="text-gold">{r.returned.toLocaleString()}</b> of{' '}
+                <b className="text-gold">{r.cohort.toLocaleString()}</b> came back
+              </>
+            ) : (
+              'Nobody to measure yet'
+            )}
+          </p>
+          <p className="text-base leading-tight opacity-80">
+            {r.pending
+              ? `Pending: ${plural(r.pending, 'player')} from ${plural(r.pendingCohorts, 'first day')}`
+              : 'Nothing pending'}
+          </p>
+        </>
+      )}
+    </div>
+  )
+}
+
+function RetentionHero({ byDay }: { byDay: Record<RetentionDay, Retention> | null }) {
+  return (
+    <section className="pixel-panel-dark flex flex-col gap-3 p-4" aria-label="Retention">
+      <span className="text-xl uppercase tracking-wider text-gold">Retention</span>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {RETENTION_DAYS.map((d) => (
+          <RetentionTile key={d} day={d} r={byDay?.[d] ?? null} />
+        ))}
       </div>
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
-        {r && (
-          <>
-            <div
-              className="h-6 w-full border-2 border-panel bg-ink"
-              role="img"
-              aria-label={`${r.returned} of ${r.cohort} players came back`}
-            >
-              <div className="h-full" style={{ width: `${pct ?? 0}%`, background: color }} />
-            </div>
-            <p className="text-2xl leading-tight">
-              {r.cohort ? (
-                <>
-                  <b className="text-gold">{r.returned}</b> of <b className="text-gold">{r.cohort}</b> new
-                  players came back the next day
-                </>
-              ) : (
-                'No new players to measure yet in this time frame'
-              )}
-            </p>
-          </>
-        )}
-        <p className="text-base leading-snug opacity-80">
-          New players whose first day falls in this time frame who played again the next calendar day
-          (theirs). A player counts on each day they open the game with a save.
-          {r && r.pending > 0 && ` Not counted yet: ${r.pending} whose next day isn't over.`}
-        </p>
-      </div>
+      <p className="text-base leading-snug opacity-80">
+        Of the new players whose first day falls in this time frame, the share who played again exactly 1, 3,
+        7 or 30 calendar days later (their own days; the first day is day 0). A player counts on each day they
+        open the game with a save; a guest who signs in on the same device counts as one player from their
+        first day as a guest. Pending: first days whose day N isn&apos;t over yet, left out until it is.
+      </p>
     </section>
   )
 }
@@ -171,7 +220,7 @@ const dayLabel = (day: string) =>
 
 export function AnalyticsSection() {
   const [frame, setFrame] = useState<FrameId>('30d')
-  const [cohorts, setCohorts] = useState<D1Cohorts | null>(null)
+  const [cohorts, setCohorts] = useState<Cohorts | null>(null)
   const [rows, setRows] = useState<PlayerRow[]>([])
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
@@ -180,6 +229,8 @@ export function AnalyticsSection() {
   const [shown, setShown] = useState(200)
   const sort = useSort<PlayerSort>('last', -1, ['name'])
 
+  const frameDef = FRAMES.find((f) => f.id === frame)!
+  const frameLabel = frameDef.days == null ? 'all time' : `the last ${frameDef.label}`
   const from = useMemo(() => {
     const days = FRAMES.find((f) => f.id === frame)!.days
     return days == null ? null : startOfDay(days - 1)
@@ -204,13 +255,17 @@ export function AnalyticsSection() {
   }, [load])
   useEffect(() => setShown(200), [frame, search])
 
-  const retention = useMemo(() => (cohorts ? dayOneRetention(cohorts, from, null) : null), [cohorts, from])
+  const retention = useMemo(() => (cohorts ? retentionByDay(cohorts, from, null) : null), [cohorts, from])
+  const rawData = useGame((s) => s.rawData)
+  const areaNames = useMemo(() => new Map(rawData.areas.map((a) => [a.id, a.name])), [rawData])
 
   const players = useMemo(() => {
     const q = search.trim().toLowerCase()
     const list = rows
       .map((r) => ({
         ...r,
+        // In English from the game data when it knows the area, else the snapshot's own name.
+        area: (r.last_area && areaNames.get(r.last_area)) || r.area,
         guest: !r.user_id,
         label: r.name || r.email?.split('@')[0] || `Guest ${r.player.slice(-4)}`,
         topLevel: Math.max(0, ...(r.team ?? []).map((m) => Number(m.level) || 0)),
@@ -228,7 +283,7 @@ export function AnalyticsSection() {
               ? p.badgeCount
               : p[sort.key]
     return list.sort((a, b) => (val(a) < val(b) ? -1 : val(a) > val(b) ? 1 : 0) * sort.dir)
-  }, [rows, search, sort.key, sort.dir])
+  }, [rows, search, sort.key, sort.dir, areaNames])
 
   if (!isSupabaseConfigured)
     return <p className="text-xl">Analytics needs Supabase — this admin is running offline.</p>
@@ -262,18 +317,27 @@ export function AnalyticsSection() {
         </PixelButton>
       </div>
 
-      <RetentionHero r={status === 'loading' ? null : retention} />
+      <RetentionHero byDay={status === 'loading' ? null : retention} />
 
       <HourlyPlayers />
+
+      <ChurnByArea since={from} frame={frameLabel} />
 
       {status === 'error' && (
         <div className="pixel-panel p-3 text-lg">
           <p className="text-danger">Could not load analytics: {error}</p>
-          <p>Has supabase/migrations/0028_analytics_minimal.sql been run?</p>
+          <p>Has supabase/migrations/0102_analytics_retention.sql been run?</p>
         </div>
       )}
 
-      {selected && <PlayerPanel key={selected.player} player={selected.player} name={selected.label} />}
+      {selected && (
+        <PlayerPanel
+          key={selected.player}
+          player={selected.player}
+          name={selected.label}
+          deviceId={selected.device_id}
+        />
+      )}
 
       <section className="pixel-panel overflow-hidden p-0" aria-label="Players">
         <h3 className="flex flex-wrap items-center gap-3 border-b-[3px] border-edge px-3 py-1 text-2xl">

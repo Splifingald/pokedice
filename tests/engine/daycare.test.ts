@@ -83,14 +83,15 @@ describe('Day Care', () => {
     expect(isDayCareOpen({ ...s, pokedex: Array.from({ length: cfg.unlockPokedex }, (_, i) => i + 1) }, data)).toBe(true)
   })
 
-  it('counts distinct species across every region: 12 in Kanto and 8 others in Johto open it', () => {
+  it('counts distinct species across every region: 6 in Kanto and 4 others in Johto open it', () => {
+    expect(cfg.unlockPokedex).toBe(10)
     const s = newSave(4, data, 0, newId)
-    const kanto = { ...s, pokedex: Array.from({ length: 12 }, (_, i) => i + 1) }
+    const kanto = { ...s, pokedex: Array.from({ length: 6 }, (_, i) => i + 1) }
     const both = startRegion(kanto, johto, newRegionBlock(johto, 152, data, 0, newId, createInstance))
     const at = (pokedex: number[]) => ({ ...both, pokedex })
-    // 7 new ones and one Kanto species again: 19 distinct, still shut.
-    expect(isDayCareOpen(at([152, 153, 154, 155, 156, 157, 158, 1]), data)).toBe(false)
-    expect(isDayCareOpen(at([152, 153, 154, 155, 156, 157, 158, 159]), data)).toBe(true)
+    // 3 new ones and one Kanto species again: 9 distinct, still shut.
+    expect(isDayCareOpen(at([152, 153, 154, 1]), data)).toBe(false)
+    expect(isDayCareOpen(at([152, 153, 154, 155]), data)).toBe(true)
   })
 
   it('sends the player there once when it opens: due until the first visit, never for saves that used it', () => {

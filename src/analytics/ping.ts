@@ -1,6 +1,7 @@
-// Analytics, all of it: one call per player per day (player_ping, migration 0028). That day counts for day-1
-// retention, and the player's row in Admin → Analytics gets their name and a snapshot of their game. Each later hour
-// they play in costs one tiny call (player_seen, migration 0042) for the players-per-hour chart. Nothing else is sent.
+// Analytics, all of it: one call per player per day (player_ping, migration 0028). That day counts for retention, and
+// the player's row in Admin → Analytics gets their name and a snapshot of their game. Each later hour they play in
+// costs one tiny call (player_seen, migration 0042) for the players-per-hour chart; it carries the area they're in, so
+// churn by area knows where they were in the last hour they played (0102). Nothing else is sent.
 // A day or hour already sent is remembered in localStorage, so reloads and new tabs cost nothing.
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase'
 import { deviceId } from '@/lib/device'
@@ -60,8 +61,8 @@ export async function pingNow(now = new Date()) {
   try {
     const client = await getSupabase()
     if (!client) return
-    // An Extreme save (docs/22) counts the day played, but leaves the admin's picture of the player — their name and
-    // snapshot — to the main save.
+    // An Extreme save (docs/22) counts the day played, but leaves the admin's picture of the player — their name,
+    // snapshot and area — to the main save.
     const extreme = save.mode === 'extreme'
     const { error } = dayDue
       ? await client.rpc('player_ping', {
@@ -70,7 +71,10 @@ export async function pingNow(now = new Date()) {
           p_name: extreme ? null : save.player?.name?.trim() || null,
           p_snapshot: extreme ? null : snapshotOf(save, data),
         })
-      : await client.rpc('player_seen', { p_device_id: deviceId() })
+      : await client.rpc('player_seen', {
+          p_device_id: deviceId(),
+          p_area_id: extreme ? null : save.currentAreaId,
+        })
     if (error) throw error
     lastTry = 0
     if (dayDue) markSent(SENT_KEY, player, day)

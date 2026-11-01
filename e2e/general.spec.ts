@@ -71,6 +71,8 @@ test('the rules where they apply: a card on the General view until GOT IT, Captu
   await expect(card).toBeVisible()
   await expect(card).toContainText('Capture Luck')
   await expect(card).toContainText('I am just rich')
+  // Level 0 earns a little offline too (`offlineBase`, ₽1 an hour): the range starts there.
+  await expect(card).toContainText('₽1–₽20 an hour')
   // Opening the view doesn't count as reading them: only GOT IT does.
   expect((await stored(page)).general?.rulesSeen).toBeFalsy()
   await card.getByRole('button', { name: 'GOT IT' }).click()
@@ -79,6 +81,7 @@ test('the rules where they apply: a card on the General view until GOT IT, Captu
 
   const luck = page.getByRole('listitem').filter({ hasText: 'Capture Luck' })
   await expect(luck).toContainText('None')
+  await expect(page.getByRole('listitem').filter({ hasText: 'Offline earnings' })).toContainText('₽1/h')
   await luck.getByRole('button', { name: /₽1,000/ }).click()
   await expect(luck).toContainText('Lv.1')
   await expect(luck).toContainText('10% chance')
