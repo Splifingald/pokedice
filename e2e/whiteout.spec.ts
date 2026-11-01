@@ -277,7 +277,7 @@ test('ENTER plays the intro then its pop-up; the waves in the blizzard with the 
     .first()
     .click()
   await clickAny(page, ['FIGHT'])
-  await expect(page.locator('[data-blizzard-chip]')).toBeVisible()
+  await expect(page.locator('[data-battle-weather="snow"]')).toBeVisible()
   // On a computer the Bag is a column at the side: its items greyed, and why over them.
   const shut = 'It’s too dangerous to open the bag here, items might fly away'
   await expect(page.getByRole('note').filter({ hasText: shut })).toBeVisible()
@@ -364,7 +364,7 @@ test('switched off, the shrine plays as a plain secret area', async ({ page }) =
     .click()
   await expect(page).toHaveURL(/\/area$/)
   await expect(page.getByRole('dialog', { name: 'Whiteout' })).toHaveCount(0)
-  await expect(page.locator('[data-blizzard-chip]')).toHaveCount(0)
+  await expect(page.locator('[data-battle-weather="snow"]')).toHaveCount(0)
   expect(whiteOf(await stored(page))).toBeUndefined()
 })
 
@@ -391,7 +391,7 @@ test('a 360×640 phone: the bonfire fits, its way on in reach; the Bag button sa
   // On a phone the Bag is a button: in the blizzard it stays shut and says why.
   await on.click()
   await clickAny(page, ['FIGHT'])
-  await expect(page.locator('[data-blizzard-chip]')).toBeVisible()
+  await expect(page.locator('[data-battle-weather="snow"]')).toBeVisible()
   const bag = page.getByRole('button', { name: 'Bag' }).first()
   await expect(bag).toBeEnabled()
   await bag.click()

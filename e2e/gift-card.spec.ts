@@ -299,7 +299,7 @@ test('the kitchen sink shows every piece, with no error', async ({ page }) => {
     [JSON.stringify(save0), FAST],
   )
   await page.goto('/kitchen-sink')
-  await expect(page.getByText(/^The Gift card \(docs\/61/)).toBeVisible({ timeout: 180_000 })
+  await expect(page.getByText(/^The Gift card \(docs\/64/)).toBeVisible({ timeout: 180_000 })
   for (const state of [
     'It lands (level 1)',
     'With a Delibird: level 1 is safe, a level 6',
