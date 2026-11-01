@@ -285,7 +285,7 @@ export function tracksIntroTimeline(p: TracksIntroParams): Timeline<IntroState> 
       s.snow.draw(g)
       if (t < 0.4) wash(g, '#000000', 1 - span(t, 0, 0.4), 8)
       bars(g, w, h, Math.round(Math.min(16, h * 0.08) * ease.outC(span(t, T_CARD - 0.15, T_CARD + 0.1))))
-      if (t >= T_CARD) gladeCard(g, w, Math.round(hv * 0.1), span(t, T_CARD, T_CARD + 0.3), p.title)
+      if (t >= T_CARD) gladeCard(g, w, Math.round(hv * 0.52), span(t, T_CARD, T_CARD + 0.3), p.title)
     },
     cues: () => [
       [0.02, () => quiet('tracks.wind')],
@@ -404,7 +404,7 @@ export function tracksOutroTimeline(p: OutroParams): Timeline<OutroState> {
       s.snow.draw(g)
       if (t < 0.3) wash(g, '#ffffff', 1 - span(t, 0, 0.3), 8)
       bars(g, w, h, Math.round(Math.min(16, h * 0.08) * ease.outC(span(t, T_CARD - 0.15, T_CARD + 0.1))))
-      if (t >= T_CARD) gladeCard(g, w, Math.round(hv * 0.1), span(t, T_CARD, T_CARD + 0.3), p.title)
+      if (t >= T_CARD) gladeCard(g, w, hv - 34, span(t, T_CARD, T_CARD + 0.3), p.title)
     },
     cues: () => [
       [T_SETTLE, () => quiet('tracks.rustle')],

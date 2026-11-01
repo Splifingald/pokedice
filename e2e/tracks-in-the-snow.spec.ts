@@ -195,14 +195,14 @@ async function clickAny(page: Page, names: (string | RegExp)[]): Promise<boolean
 }
 
 /** Plays on (fights, throws with the best ball there is, results) until `until` shows. */
-async function playUntil(page: Page, until: ReturnType<Page['getByRole']>, ms = 60_000) {
+async function playUntil(page: Page, until: ReturnType<Page['getByRole']>, ms = 60_000, hold: string[] = []) {
   for (const end = Date.now() + ms; Date.now() < end && !(await until.isVisible().catch(() => false));) {
     const ball = page.getByRole('button', { name: /^(Master Ball|Poké Ball).*Throw it$/ }).first()
     if (await ball.isVisible().catch(() => false)) {
       await ball.click().catch(() => {})
       continue
     }
-    await clickAny(page, [
+    const names: (string | RegExp)[] = [
       'FIGHT',
       'SKIP ▸▸',
       /^Send out /,
@@ -213,7 +213,12 @@ async function playUntil(page: Page, until: ReturnType<Page['getByRole']>, ms = 
       'ROLL TO CATCH',
       'CONTINUE',
       'Next ▸',
-    ])
+    ]
+    // `hold`: the buttons left alone (the result card's Next while its lines come in one by one).
+    await clickAny(
+      page,
+      names.filter((n) => typeof n !== 'string' || !hold.includes(n)),
+    )
     await page.waitForTimeout(120)
   }
   await expect(until).toBeVisible()
@@ -315,17 +320,11 @@ test('round 1: Stantler found, a wild one; its K.O. clears the round (the result
     .first()
     .click({ timeout: 15_000 })
   await expect(page.getByRole('heading', { name: 'Round 1/3' })).toBeVisible()
-  // The result card says the round is cleared: watched from the start, as the loop below moves on at once.
-  await page.evaluate((line) => {
-    const w = window as unknown as { __roundCard?: boolean }
-    new MutationObserver(() => {
-      if (document.body.textContent?.includes(line)) w.__roundCard = true
-    }).observe(document.body, { childList: true, subtree: true, characterData: true })
-  }, 'Round 1/3 cleared: Stantler found!')
   await bush(page, 2).click()
+  // The result card says the round is cleared (its lines come one by one: Next waits for it).
+  await playUntil(page, page.getByText('Round 1/3 cleared: Stantler found!'), 60_000, ['Next ▸'])
   // On: round 2's glade, its gauge one round on.
   await playUntil(page, page.getByRole('heading', { name: 'Round 2/3' }))
-  expect(await page.evaluate(() => (window as unknown as { __roundCard?: boolean }).__roundCard)).toBe(true)
   await expect
     .poll(async () => tracksOf(await stored(page)))
     .toMatchObject({ active: true, round: 1, field: { taps: 5, bushes: null, opened: [] } })

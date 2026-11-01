@@ -50,7 +50,18 @@ const PAL: Record<string, string> = {
 }
 
 /** A pixel picture from rows of palette letters ('.' clear), as PixelIcon draws its own. */
-function PixelMap({ rows, size, className }: { rows: readonly string[]; size: number; className?: string }) {
+function PixelMap({
+  rows,
+  size,
+  className,
+  color,
+}: {
+  rows: readonly string[]
+  size: number
+  className?: string
+  /** Every pixel in this one colour (a light print on the night's blue). */
+  color?: string
+}) {
   const w = rows[0]!.length
   const h = rows.length
   return (
@@ -64,7 +75,9 @@ function PixelMap({ rows, size, className }: { rows: readonly string[]; size: nu
     >
       {rows.flatMap((row, y) =>
         [...row].map((ch, x) =>
-          ch === '.' ? null : <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={PAL[ch]} />,
+          ch === '.' ? null : (
+            <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={color ?? PAL[ch]} />
+          ),
         ),
       )}
     </svg>
@@ -118,14 +131,28 @@ export function Hoofprints({
       data-print={dir}
       aria-hidden
     >
-      <PixelMap rows={HOOF} size={size} />
+      <PixelMap rows={HOOF} size={size} color="#e8f0ff" />
     </span>
   )
 }
 
-export const HoofIcon = ({ size = 24 }: { size?: number }) => <PixelMap rows={HOOF} size={size} />
+export const HoofIcon = ({ size = 24, color }: { size?: number; color?: string }) => (
+  <PixelMap rows={HOOF} size={size} color={color} />
+)
 export const CabinIcon = ({ size = 24 }: { size?: number }) => <PixelMap rows={CABIN} size={size} />
 export const SnowflakeIcon = ({ size = 20 }: { size?: number }) => <PixelMap rows={SNOWFLAKE} size={size} />
+
+/** A snowflake on a chip of the night's blue: it reads on a light panel and a dark one alike. */
+export function SnowChip({ size = 14, spent = false }: { size?: number; spent?: boolean }) {
+  return (
+    <span
+      className={cx('grid place-items-center bg-[#14224a] shadow-[0_0_0_1px_#050a1a]', spent && 'opacity-30')}
+      style={{ width: size + 6, height: size + 6, borderRadius: 2 }}
+    >
+      <SnowflakeIcon size={size} />
+    </span>
+  )
+}
 
 /** A bush drawn by the pixel engine (closed and snowy, or searched), `px` CSS pixels per art pixel. */
 export function BushArt({
@@ -184,7 +211,7 @@ export function TracksGauge({
       role="img"
       aria-label={t('ui.tracks.gauge', { done, total })}
     >
-      <SnowflakeIcon size={16} />
+      <SnowChip size={12} />
       <ol className="flex min-w-0 flex-1 gap-[2px]" aria-hidden>
         {Array.from({ length: total }, (_, i) => (
           <li
@@ -195,7 +222,11 @@ export function TracksGauge({
             )}
             style={{ borderRadius: 2 }}
           >
-            {i < done ? <HoofIcon size={12} /> : i === total - 1 ? <SnowflakeIcon size={10} /> : null}
+            {i < done ? (
+              <HoofIcon size={12} color="#c8f4ff" />
+            ) : i === total - 1 ? (
+              <SnowflakeIcon size={10} />
+            ) : null}
           </li>
         ))}
       </ol>
@@ -229,7 +260,7 @@ export function useTracksRules(mode: TracksMode, name: string): RuleRow[] {
       text: '',
     },
     {
-      icon: <SnowflakeIcon size={24} />,
+      icon: <SnowChip size={20} />,
       title: same
         ? t('ui.tracks.rule.taps', { n: first.taps })
         : t('ui.tracks.rule.tapsLast', { n: first.taps, last: last.taps }),
@@ -555,7 +586,7 @@ export function TracksGlade({
   )
   const dirName = (d: TracksPrint) => t(`ui.tracks.dir.${d}`)
   return (
-    <div className="relative">
+    <div className="relative mx-auto w-full max-w-[440px]">
       <div
         ref={grid}
         role="group"
@@ -671,9 +702,7 @@ export function TracksPanel({
           data-taps={taps}
         >
           {Array.from({ length: maxTaps }, (_, i) => (
-            <span key={i} className={cx(i >= taps && 'opacity-30')}>
-              <SnowflakeIcon size={14} />
-            </span>
+            <SnowChip key={i} size={12} spent={i >= taps} />
           ))}
         </span>
       </div>
