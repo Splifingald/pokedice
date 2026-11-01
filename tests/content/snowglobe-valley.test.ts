@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 import {
   areaOpenAt,
   compileGameData,
+  deckAbilities,
+  deckCounts,
   evolutionsIn,
   isTradeEvolution,
   isLegendary,
@@ -208,6 +210,7 @@ describe('Snowglobe Valley', () => {
       const total = w.wild + w.trainer + w.item + w.center + (w.casino ?? 0) + (w.trick ?? 0)
       if (a.name === 'Frost League') {
         expect(total).toBe(0)
+        expect(w.gift ?? 0).toBe(0)
         expect(a.gyms).toHaveLength(5)
         continue
       }
@@ -217,11 +220,33 @@ describe('Snowglobe Valley', () => {
     expect(AREAS).toHaveLength(16)
   })
 
+  it('turns each main area’s item card into a Gift card while its switch is on, and Evergreen Hill into three (docs/61 §4.0, §4.2)', () => {
+    const on = { ...data, config: { ...data.config, giftCard: { ...data.config.giftCard, access: 'all' as const } } }
+    const dealt = (d: GameData, name: string) => {
+      const a = d.areas.find((x) => x.id === areaId(name))!
+      return deckCounts(a.encounterWeights, deckAbilities(a, d))
+    }
+    for (const a of h.areas.filter((x) => !x.hidden && x.name !== 'Frost League')) {
+      expect([a.name, a.encounterWeights.gift]).toEqual([a.name, 1])
+      // Off (the default): the item card, as before; on: a Gift in its place, the deck still 10 cards.
+      expect(dealt(data, a.name)).toMatchObject({ item: 1, gift: 0 })
+      expect(dealt(on, a.name)).toMatchObject({ item: 0, gift: 1 })
+      expect(Object.values(dealt(on, a.name)).reduce((x, y) => x + y, 0)).toBe(10)
+    }
+    // Evergreen Hill: 2 wild, 2 trainers, a Center and 3 Gift cards, no item card; off, a plain secret area's 6 cards.
+    expect(dealt(on, 'Evergreen Hill')).toMatchObject({ wild: 2, trainer: 2, center: 1, item: 0, gift: 3 })
+    expect(dealt(data, 'Evergreen Hill')).toMatchObject({ wild: 2, trainer: 2, center: 1, item: 1, gift: 0 })
+    // The other secret areas deal no gift.
+    for (const name of ['Moonlit Glade', 'Crown Shrine', 'Spear Pillar', 'Hall of Origin'])
+      expect(dealt(on, name).gift).toBe(0)
+  })
+
   it('opens its secret areas as the user set: 20 caught, Christmas Eve, 50 caught, the League then Christmas, 90 caught then New Year', () => {
     const secrets = h.areas.filter((a) => a.hidden)
     expect(secrets.map((a) => [a.name, a.unlockConditions, a.legendaryBoss])).toEqual([
       ['Moonlit Glade', [{ kind: 'pokedex', count: 20 }], [{ dex: 234, level: 30, shiny: true }]],
-      ['Evergreen Hill', [], [{ dex: 225, level: 40, shiny: true }]],
+      // Delibird comes out of a present while the Gift card is on (docs/61 §4.2).
+      ['Evergreen Hill', [], [{ dex: 225, level: 40, shiny: true, present: true }]],
       ['Crown Shrine', [{ kind: 'pokedex', count: 50 }], [{ dex: 460, level: 50, shiny: true }]],
       [
         'Spear Pillar',

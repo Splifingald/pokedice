@@ -37,7 +37,10 @@ const id = (...parts: (string | number)[]) => stableUuid(['snowglobe-valley', ..
  */
 export const STARTERS = [179, 506, 731]
 
-/** The world's areas, in order: its chain, its league, then its secret areas. */
+/**
+ * The world's areas, in order: its chain, its league, then its secret areas. Each main area's item card becomes a Gift
+ * card while the Gift card's switch is on (docs/61 §4.0): its `gift: 1`, which takes the item card's place then.
+ */
 export const AREAS: AreaSpec[] = [
   {
     key: 'snowy-trail',
@@ -47,7 +50,7 @@ export const AREAS: AreaSpec[] = [
     min: 3,
     max: 7,
     rounds: 1,
-    deck: { wild: 7, trainer: 1 },
+    deck: { wild: 7, trainer: 1, gift: 1 },
     upgrade: 1,
     wild: [
       [161, 30, 3, 5],
@@ -87,7 +90,7 @@ export const AREAS: AreaSpec[] = [
     min: 7,
     max: 12,
     rounds: 1,
-    deck: { wild: 6, trainer: 2 },
+    deck: { wild: 6, trainer: 2, gift: 1 },
     upgrade: 1,
     wild: [
       [204, 25, 6, 9],
@@ -149,7 +152,7 @@ export const AREAS: AreaSpec[] = [
     min: 11,
     max: 16,
     rounds: 1,
-    deck: { wild: 6, trainer: 2 },
+    deck: { wild: 6, trainer: 2, gift: 1 },
     upgrade: 2,
     wild: [
       [194, 20, 11, 14],
@@ -203,7 +206,7 @@ export const AREAS: AreaSpec[] = [
     min: 15,
     max: 21,
     rounds: 1,
-    deck: { wild: 5, trainer: 3 },
+    deck: { wild: 5, trainer: 3, gift: 1 },
     upgrade: 2,
     wild: [
       [433, 15, 15, 18],
@@ -269,7 +272,7 @@ export const AREAS: AreaSpec[] = [
     min: 20,
     max: 26,
     rounds: 1,
-    deck: { wild: 5, trainer: 3 },
+    deck: { wild: 5, trainer: 3, gift: 1 },
     // 2, not 3: Steel and Steel/Fairy wall an Ice team (the campaign simulator's wipes, docs/61 §5).
     upgrade: 2,
     wild: [
@@ -327,7 +330,7 @@ export const AREAS: AreaSpec[] = [
     min: 25,
     max: 32,
     rounds: 1,
-    deck: { wild: 5, trainer: 3 },
+    deck: { wild: 5, trainer: 3, gift: 1 },
     upgrade: 3,
     wild: [
       [42, 15, 25, 29],
@@ -391,7 +394,7 @@ export const AREAS: AreaSpec[] = [
     min: 31,
     max: 38,
     rounds: 1,
-    deck: { wild: 4, trainer: 4 },
+    deck: { wild: 4, trainer: 4, gift: 1 },
     upgrade: 4,
     wild: [
       [171, 20, 31, 34],
@@ -460,7 +463,7 @@ export const AREAS: AreaSpec[] = [
     min: 37,
     max: 44,
     rounds: 1,
-    deck: { wild: 4, trainer: 4 },
+    deck: { wild: 4, trainer: 4, gift: 1 },
     // 4, not 5: the Fire area is the Ice team's hardest on purpose, not a wall (docs/61 §5).
     upgrade: 4,
     wild: [
@@ -530,7 +533,7 @@ export const AREAS: AreaSpec[] = [
     min: 42,
     max: 50,
     rounds: 1,
-    deck: { wild: 4, trainer: 4 },
+    deck: { wild: 4, trainer: 4, gift: 1 },
     upgrade: 4,
     wild: [
       [359, 15, 42, 46],
@@ -603,7 +606,7 @@ export const AREAS: AreaSpec[] = [
     max: 56,
     rounds: 1,
     // 4 wild · 4 trainers at upgrade 4 (was 3 · 5 at 5): ten wipes a run there before (docs/61 §5).
-    deck: { wild: 4, trainer: 4 },
+    deck: { wild: 4, trainer: 4, gift: 1 },
     upgrade: 4,
     wild: [
       [461, 10, 48, 52],
@@ -801,12 +804,14 @@ export const AREAS: AreaSpec[] = [
     min: 34,
     max: 40,
     rounds: 1,
-    deck: { wild: 2, trainer: 2 },
+    // Christmas Eve on the hill (docs/61 §4.2): three Gift cards, which take the item card's place while the Gift card is
+    // on; then Delibird bursts out of a present of its own. Off, a plain secret area: its item card, its boss as usual.
+    deck: { wild: 2, trainer: 2, gift: 3 },
     upgrade: 5,
     hidden: true,
     // No count to reach: it opens on Christmas Eve (the world's `opens`), for everyone who has started the world.
     unlock: [],
-    boss: [{ dex: 225, level: 40, shiny: true }],
+    boss: [{ dex: 225, level: 40, shiny: true, present: true }],
     wild: [
       [225, 15, 34, 38],
       [764, 10, 35, 38],

@@ -33,7 +33,7 @@ import { AreaBanner } from '@/components/AreaBanner'
 import { PortalModeBox } from './PortalModeBox'
 import { NightmareModeBox } from './NightmareModeBox'
 
-const KINDS: EncounterKind[] = ['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus']
+const KINDS: EncounterKind[] = ['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus', 'gift']
 const CARD: Record<EncounterKind, { label: string; color: string }> = {
   wild: { label: 'Wild', color: '#34c97a' },
   trainer: { label: 'Trainer', color: '#f2553f' },
@@ -42,6 +42,7 @@ const CARD: Record<EncounterKind, { label: string; color: string }> = {
   casino: { label: 'Game Corner', color: '#6b3fa0' },
   trick: { label: 'Trick or Treat', color: '#ff8a2a' },
   versus: { label: 'Real player', color: '#3d7bd9' },
+  gift: { label: 'Gift card', color: '#e2364a' },
 }
 
 /** A fresh condition of each kind, for the kind picker. */
@@ -137,6 +138,22 @@ function BossCard({ b, data, onChange, onRemove }: { b: BossDef; data: GameData;
           Raid
           <span className="text-sm text-muted">opens when the area is completed; Lv. and bars from Events → Raids</span>
         </label>
+        <label
+          className="flex flex-wrap items-center gap-2 text-lg"
+          title="Out of a present (docs/61 §4.2, Evergreen Hill's Delibird): its challenge opens on a present that only grows and bursts on its last tap, then the fight. Only while the Gift card is on."
+        >
+          <input
+            type="checkbox"
+            checked={!!b.present}
+            onChange={(e) => {
+              if (e.target.checked) return onChange({ ...b, present: true })
+              const { present: _drop, ...rest } = b
+              onChange(rest)
+            }}
+          />
+          Out of a present
+          <span className="text-sm text-muted">while the Gift card is on (Events → Gift card)</span>
+        </label>
       </div>
       <PixelButton size="sm" variant="danger" onClick={onRemove}>
         Remove
@@ -169,7 +186,15 @@ function AreaEditor({ area }: { area: Row }) {
   if (!data) return null
   // Trick or Treat (docs/29) is dealt where the area has a ghost list, and only while its switch is on for the player.
   // A real player's card (docs/54) is counted as if a team waited: the game deals it only when one does.
-  const can = { wild: wildHere.length > 0, trainer: tHere.length > 0, item: lootHere.length > 0, trick: trickGhosts(data, id).length > 0, versus: true }
+  // The Gift card (docs/61 §4.0) is counted as if switched on: its copies replace the item cards then.
+  const can = {
+    wild: wildHere.length > 0,
+    trainer: tHere.length > 0,
+    item: lootHere.length > 0,
+    trick: trickGhosts(data, id).length > 0,
+    versus: true,
+    gift: wildHere.length > 0,
+  }
   const deck = deckCounts(weights, can)
   const deckTotal = KINDS.reduce((sum, k) => sum + deck[k], 0)
   const missing: Partial<Record<EncounterKind, string>> = {
@@ -177,6 +202,7 @@ function AreaEditor({ area }: { area: Row }) {
     trainer: can.trainer ? undefined : 'the trainer pool is empty',
     item: can.item ? undefined : 'there is no loot',
     trick: can.trick ? undefined : 'no ghost list (Events → Trick or Treat)',
+    gift: can.gift ? undefined : 'the wild pool is empty (a broken gift is a wild Pokémon)',
   }
   const setBosses = (next: BossDef[]) => patch({ legendary_boss: next.length ? next : null })
   const lootLabel = (k: string) => (k === 'money' ? '₽ Pokédollars' : (data.items[k]?.name ?? `${k} (unknown item)`))
@@ -317,6 +343,11 @@ function AreaEditor({ area }: { area: Row }) {
                 {missing[k] && n(weights[k]) > 0 && <span className="text-sm leading-tight text-danger">not dealt: {missing[k]}</span>}
                 {k === 'trick' && !missing.trick && n(weights[k]) > 0 && (
                   <span className="text-sm leading-tight text-muted">only while its switch is on (Events → Trick or Treat)</span>
+                )}
+                {k === 'gift' && !missing.gift && n(weights[k]) > 0 && (
+                  <span className="text-sm leading-tight text-muted">
+                    in place of the item cards, only while its switch is on (Events → Gift card)
+                  </span>
                 )}
                 {k === 'versus' && n(weights[k]) > 0 && (
                   <span className="text-sm leading-tight text-muted">

@@ -1,7 +1,16 @@
 // Zod row schemas for every config table (snake_case, as stored). Errors are shown in the cell; saving is blocked.
 import { z } from 'zod'
 import type { Row, TableName } from '@/config/mapping'
-import { BATTLE_BACKGROUNDS, COMBO_KEYS, DAY_TIMES, EVENT_ACCESS, POKE_TYPES, STATUS_KINDS, TRICK_TIERS } from '@/engine/types'
+import {
+  BATTLE_BACKGROUNDS,
+  COMBO_KEYS,
+  DAY_TIMES,
+  EVENT_ACCESS,
+  GIFT_REWARD_KINDS,
+  POKE_TYPES,
+  STATUS_KINDS,
+  TRICK_TIERS,
+} from '@/engine/types'
 
 const pokeType = z.enum(POKE_TYPES)
 const background = z.enum(BATTLE_BACKGROUNDS)
@@ -67,10 +76,31 @@ export const TRICK_SCHEMA = z
   })
   .refine((c) => c.treatMax >= c.treatMin, { message: 'Treat max below min', path: ['treatMax'] })
 
-/** Problems with a game_config value that has a schema of its own (Trick or Treat's), as readable lines. */
+/** One part of a Gift card's reward (docs/61 §4.0): an item names its key. */
+const giftPart = z
+  .object({ kind: z.enum(GIFT_REWARD_KINDS), key: z.string().optional(), qty: int(1, 999) })
+  .refine((p) => p.kind !== 'item' || !!p.key, { message: 'an item needs its key', path: ['key'] })
+
+/**
+ * game_config `giftCard` (docs/61 §4.0): the switch, each level's break chance (whole %), Delibird's help, each level's
+ * reward options (at least one part each), the balls from worst to best, the taps a boss's present takes.
+ */
+export const GIFT_SCHEMA = z.object({
+  access: z.enum(EVENT_ACCESS),
+  breakChances: z.array(int(0, 100)).min(1, 'at least one level that can grow').max(8, 'eight at most'),
+  helper: z.object({ dex: int(0, 99999), safer: int(0, 100), extraLevels: int(0, 5) }),
+  rewards: z
+    .array(z.array(z.array(giftPart).min(1, 'an option gives something')).min(1, 'a level needs an option'))
+    .min(1, 'at least level 1'),
+  balls: z.array(z.string().min(1)).min(1, 'at least one ball'),
+  bossTaps: int(1, 10),
+})
+
+/** Problems with a game_config value that has a schema of its own (Trick or Treat's, the Gift card's), as lines. */
 export function configProblems(key: string, value: unknown): string[] {
-  if (key !== 'trickOrTreat') return []
-  const res = TRICK_SCHEMA.safeParse(value)
+  const schema = key === 'trickOrTreat' ? TRICK_SCHEMA : key === 'giftCard' ? GIFT_SCHEMA : null
+  if (!schema) return []
+  const res = schema.safeParse(value)
   return res.success ? [] : res.error.issues.map((i) => `${i.path.join('.') || 'value'}: ${i.message}`)
 }
 
@@ -172,6 +202,8 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
       casino: z.number().min(0).optional(),
       // Trick or Treat (docs/29): its copies, dealt only while its switch is on and the area has ghosts.
       trick: z.number().min(0).optional(),
+      // The Gift card (docs/61 §4.0): its copies, in place of the item cards while its switch is on.
+      gift: z.number().min(0).optional(),
     }),
     backtrack_multiplier: z.number().min(0).max(1),
     legendary_boss: z
@@ -184,6 +216,8 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
           battleBackground: background.nullable().optional(),
           shiny: z.boolean().optional(),
           raid: z.boolean().optional(),
+          // Out of a present while the Gift card is on (docs/61 §4.2).
+          present: z.boolean().optional(),
         }),
       )
       .nullable(),

@@ -11,6 +11,7 @@ import { asSeenBy, gymsFor, type PlayerSide } from './rival'
 import { createRng, type Rng } from './rng'
 import { dealTrainerItems } from './trainerItems'
 import { foeTalentChance, rollTalent, talentsOn } from './talents'
+import { giftDealable } from './giftCard'
 import { pickTrickGhost, trickDealable } from './trickOrTreat'
 import { isWorldMythical, worldOfArea } from './worldList'
 import type {
@@ -79,6 +80,8 @@ export type Encounter =
   | { kind: 'casino' }
   /** Trick or Treat (docs/29): a ghost from the area's list, tempted with Treats and caught with a Trick Ball. */
   | { kind: 'trick'; dex: number; level: number; tier: TrickTier; isNew: boolean; shiny?: boolean; talent?: boolean }
+  /** The Gift card (docs/61 §4.0): a present to open or make bigger; what it holds is drawn when it appears. */
+  | { kind: 'gift' }
 
 /** A wild double battle's second Pokémon (docs/33). */
 export interface WildPartner {
@@ -356,6 +359,27 @@ export function rollTrick(ctx: EncounterContext, rng: Rng): Encounter | null {
   return { kind: 'trick', dex: ghost.dex, level, tier: ghost.tier, isNew: !ctx.pokedex.includes(ghost.dex), ...(shiny && { shiny }) }
 }
 
+/**
+ * A Gift card (docs/61 §4.0): the present itself (its rewards are drawn as it appears, engine/giftCard.ts). Null while
+ * the switch is off for the player or the area can't deal it: the card is then discarded like any card the area can't
+ * produce.
+ */
+export const rollGift = (ctx: EncounterContext): Encounter | null =>
+  giftDealable(ctx.data, ctx.area) ? { kind: 'gift' } : null
+
+/**
+ * What comes out of a broken gift (docs/61 §4.0): a wild Pokémon of the area's own pool, as a wild card would bring it
+ * (its level, the shiny odds, a hidden talent), never a roaming legendary. Null when the area has none.
+ */
+export function rollGiftWild(ctx: EncounterContext, rng: Rng): Encounter | null {
+  const entry = rng.weighted(wildOdds(ctx), (o) => o.weight)?.entry
+  if (!entry) return null
+  const level = enemyLevel(rng.int(entry.minLevel, Math.max(entry.minLevel, entry.maxLevel)), ctx, rng)
+  const shiny = !shinyLocked(ctx.data, entry.dex) && rollShiny(ctx.data, rng, ctx.shinyBoost, ctx.shinyChance)
+  const enc: Encounter = { kind: 'wild', dex: entry.dex, level, isNew: !ctx.pokedex.includes(entry.dex), ...(shiny && { shiny }) }
+  return dealTalents(enc, ctx.data, rng)
+}
+
 export function rollTrainer(ctx: EncounterContext, rng: Rng): Encounter | null {
   const entry = rng.weighted(ctx.area.trainerPool, (t) => (ctx.data.trainers[t.trainerId] ? t.weight : 0))
   const trainer = entry && ctx.data.trainers[entry.trainerId]
@@ -373,30 +397,36 @@ export function rollTrainer(ctx: EncounterContext, rng: Rng): Encounter | null {
   }
 }
 
-const DECK_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus'] as const
+const DECK_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus', 'gift'] as const
 export type DeckCounts = Record<(typeof DECK_KINDS)[number], number>
 
 /**
  * Cards of each kind in one encounter deck. An area's encounter weight *is* its number of copies (v1.6): wild 8,
  * Center 1, item 1 → a 10-card deck. Kinds the area can't produce (no wild pool / no trainers / no loot / the Game Corner
- * or Trick or Treat switched off, or no ghosts) get none; an area with nothing at all gets a single Center.
+ * or Trick or Treat switched off, or no ghosts; the Gift card switched off) get none; an area with nothing at all gets a
+ * single Center. Gift cards, when dealt, take the item cards' place (docs/61 §4.0: "the item card becomes a Gift").
  */
 export function deckCounts(
   weights: Partial<Record<EncounterKind, number>>,
-  can: { wild: boolean; trainer: boolean; item?: boolean; casino?: boolean; trick?: boolean; versus?: boolean },
+  can: { wild: boolean; trainer: boolean; item?: boolean; casino?: boolean; trick?: boolean; versus?: boolean; gift?: boolean },
 ): DeckCounts {
+  const count = (k: (typeof DECK_KINDS)[number]) => Math.max(0, Math.round(Number(weights[k]) || 0))
+  const gifts = can.gift ? count('gift') : 0
   const copies = (k: (typeof DECK_KINDS)[number]) =>
     (k === 'wild' && !can.wild) ||
     (k === 'trainer' && !can.trainer) ||
-    (k === 'item' && !can.item) ||
+    (k === 'item' && (!can.item || gifts > 0)) ||
     (k === 'casino' && !can.casino) ||
     (k === 'trick' && !can.trick) ||
-    (k === 'versus' && !can.versus)
+    (k === 'versus' && !can.versus) ||
+    (k === 'gift' && !gifts)
       ? 0
-      : Math.max(0, Math.round(Number(weights[k]) || 0))
+      : count(k)
   const c = Object.fromEntries(DECK_KINDS.map((k) => [k, copies(k)])) as DeckCounts
   // A real player's card alone is no deck: it only comes on top of the area's own cards.
-  return DECK_KINDS.some((k) => k !== 'versus' && c[k] > 0) ? c : { wild: 0, trainer: 0, center: 1, item: 0, casino: 0, trick: 0, versus: 0 }
+  return DECK_KINDS.some((k) => k !== 'versus' && c[k] > 0)
+    ? c
+    : { wild: 0, trainer: 0, center: 1, item: 0, casino: 0, trick: 0, versus: 0, gift: 0 }
 }
 
 /**
@@ -424,6 +454,7 @@ export const deckAbilities = (area: Area, data?: GameData, foe = false) => ({
   casino: !!data && gameCornerOn(data),
   trick: !!data && trickDealable(data, area),
   versus: foe,
+  gift: !!data && giftDealable(data, area),
 })
 
 /**
@@ -600,7 +631,11 @@ function returningLegend(ctx: EncounterContext, rng: Rng): Encounter | null {
   return b ? { kind: 'boss', dex: b.dex, level: b.level, returning: true, ...(legendShiny(b, ctx.area, ctx.data, rng, ctx.shinyChance) && { shiny: true }) } : null
 }
 
-const cardEncounter = (card: 'wild' | 'trainer' | 'center' | 'casino' | 'trick' | 'versus', ctx: EncounterContext, rng: Rng): Encounter | null =>
+const cardEncounter = (
+  card: 'wild' | 'trainer' | 'center' | 'casino' | 'trick' | 'versus' | 'gift',
+  ctx: EncounterContext,
+  rng: Rng,
+): Encounter | null =>
   card === 'wild'
     ? rollWild(ctx, rng)
     : card === 'trainer'
@@ -611,7 +646,9 @@ const cardEncounter = (card: 'wild' | 'trainer' | 'center' | 'casino' | 'trick' 
           ? rollTrick(ctx, rng)
           : card === 'versus'
             ? playerEncounter(ctx)
-            : { kind: 'center', forced: false }
+            : card === 'gift'
+              ? rollGift(ctx)
+              : { kind: 'center', forced: false }
 
 /** A real player's card (docs/54): the team waiting for the area, else nothing (the card is set aside). */
 const playerEncounter = (ctx: EncounterContext): Encounter | null => (ctx.versusFoe ? foeEncounter(ctx.versusFoe, ctx.data) : null)
@@ -726,13 +763,16 @@ function drawFromDeck(ctx: EncounterContext, rng: Rng): EncounterRoll {
 function rollWeighted(ctx: EncounterContext, rng: Rng): EncounterRoll {
   const w = ctx.area.encounterWeights
   const can = deckAbilities(ctx.area, ctx.data)
-  const kinds: { kind: 'wild' | 'trainer' | 'center' | 'item' | 'casino' | 'trick'; weight: number }[] = [
+  // Gift cards take the item cards' place while they're dealt (docs/61 §4.0).
+  const gifts = can.gift ? (w.gift ?? 0) : 0
+  const kinds: { kind: 'wild' | 'trainer' | 'center' | 'item' | 'casino' | 'trick' | 'gift'; weight: number }[] = [
     { kind: 'wild', weight: can.wild ? w.wild : 0 },
     { kind: 'trainer', weight: can.trainer ? w.trainer : 0 },
     { kind: 'center', weight: ctx.noCenters ? 0 : w.center },
-    { kind: 'item', weight: can.item ? (w.item ?? 0) : 0 },
+    { kind: 'item', weight: can.item && !(gifts > 0) ? (w.item ?? 0) : 0 },
     { kind: 'casino', weight: can.casino ? (w.casino ?? 0) : 0 },
     { kind: 'trick', weight: can.trick ? (w.trick ?? 0) : 0 },
+    { kind: 'gift', weight: gifts },
   ]
   for (let attempt = 0; attempt < 10; attempt++) {
     const pick = rng.weighted(kinds, (k) => k.weight)?.kind ?? 'wild'
@@ -765,6 +805,8 @@ function forcedEncounter(ctx: EncounterContext, kind: ForceKind, rng: Rng): Enco
       return { kind: 'casino' }
     case 'trick':
       return rollTrick(ctx, rng)
+    case 'gift':
+      return rollGift(ctx)
     case 'versus':
       return playerEncounter(ctx)
     case 'boss': {

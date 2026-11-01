@@ -131,6 +131,16 @@ import {
   throwTrickBall as throwTrickBallIn,
   trickCfg,
   type TrickStep,
+  applyGiftOpen,
+  bossInPresent,
+  giftCfg,
+  growGift,
+  openGift,
+  rollGiftWild,
+  startBossPresent,
+  startGift,
+  type GiftItem,
+  type GiftStep,
   type ProgressRaid,
   friendBallTalent,
   isTalentBall,
@@ -147,6 +157,7 @@ import { currentLive } from './live'
 import { useRebattleMedal } from './rebattle'
 import { serverNow } from './serverTime'
 import { trickAllowed } from './trick'
+import { giftAllowed } from './giftCard'
 import { t } from '@/i18n'
 
 // An encounter picked up from the last visit (store/resume.ts) rolls on from where both streams stood, so a reload
@@ -156,6 +167,7 @@ let runRng = createRng(resumed?.run ?? randomSeed())
 let battleRng = createRng(resumed?.battle ?? randomSeed())
 let battleSeq = useGame.getState().battle?.id ?? 0
 let trickSeq = useGame.getState().run.trick?.id ?? 0
+let giftSeq = useGame.getState().run.gift?.id ?? 0
 trackRngs(() => ({ run: runRng.getState(), battle: battleRng.getState() }))
 
 export const newId = (): string =>
@@ -525,6 +537,8 @@ export function rollNext() {
   // A find is a step of its own (FindView: the item on the stage, PICK IT UP loading and pressing itself), not a toast
   // the trail runs past (the user's call, 2026-10-28): it waits in 'preview' for pickUpFind.
   else if (encounter.kind === 'item') return
+  // A Gift card is a step of its own too (GiftView): the present comes out at once, nothing to pick before it.
+  else if (encounter.kind === 'gift') engage()
   else if (directFight(encounter)) beginFight()
 }
 
@@ -592,6 +606,10 @@ export function challenge() {
         wildShinyChance(save, data),
       )
     : null
+  // A boss that comes out of a present (docs/61 §4.2: Evergreen Hill's Delibird), while the Gift card is on: its
+  // present first, the fight once it bursts. A returning one (it fled the catch) is a plain card of the deck.
+  const def = found?.kind === 'boss' ? area?.legendaryBoss?.find((b) => b.dex === found.dex) : null
+  if (found?.kind === 'boss' && bossInPresent(data, def)) return void beginBossPresent(found)
   // Tate & Liza fight 2 v 2 where double battles are on (docs/33).
   const ctx = found && run.areaId ? encounterContext(save, run.areaId, null) : null
   const encounter = found && ctx ? asDouble(found, ctx, save, runRng) : found
@@ -748,6 +766,9 @@ export function engage(lead?: string | string[], staged?: boolean) {
       return
     case 'trick':
       void beginTrick(enc)
+      return
+    case 'gift':
+      void beginGift(enc)
       return
     case 'wild': {
       const foe = { dex: enc.dex, level: enc.level, shiny: enc.shiny, talent: enc.talent }
@@ -1387,6 +1408,109 @@ export function leaveTrick() {
   const tr = useGame.getState().run.trick
   if (tr && !tr.state.end) return
   setRun({ trick: null })
+  backToArea()
+}
+
+// ---------------------------------------------------------------- the Gift card (docs/61 §4.0, §4.2)
+
+/** A present waiting on the server's answer: a second tap doesn't ask twice. */
+let giftAsking = false
+
+/**
+ * The present appears once the server agrees (a signed-in player: gift_card_open), its rewards drawn. Switched off
+ * meanwhile, the card is spent and the player is back on the trail. Either way the card was used when it was turned
+ * over.
+ */
+async function beginGift(enc: Extract<NonNullable<RunState['encounter']>, { kind: 'gift' }>) {
+  if (giftAsking) return
+  giftAsking = true
+  const ok = await giftAllowed().finally(() => (giftAsking = false))
+  const { run, save, data } = useGame.getState()
+  if (run.phase !== 'preview' || run.encounter !== enc || !save) return
+  const area = data.areas.find((a) => a.id === run.areaId)
+  if (!ok || !area) {
+    pushToast(t('ui.giftCard.closed'), 'bad')
+    backToArea()
+    return
+  }
+  setRun({
+    phase: 'gift',
+    gift: { id: ++giftSeq, state: startGift(save, area, data, runRng), last: null, got: null, out: null },
+  })
+}
+
+/**
+ * CHALLENGE on a boss that comes out of a present: the present at once (the page follows the phase), then the server's
+ * word; said no (or not reachable), the plain fight instead, the boss as it always came. The present changes only how
+ * the boss comes out, so nothing waits on the answer.
+ */
+async function beginBossPresent(enc: Extract<Encounter, { kind: 'boss' }>) {
+  const { data } = useGame.getState()
+  const id = ++giftSeq
+  setRun({
+    phase: 'gift',
+    encounter: enc,
+    firstInArea: false,
+    skipsUsed: 0,
+    gift: { id, state: startBossPresent(giftCfg(data), enc), last: null, got: null, out: enc },
+  })
+  if (await giftAllowed()) return
+  const { run } = useGame.getState()
+  if (run.phase !== 'gift' || run.gift?.id !== id) return
+  setRun({ phase: 'preview', encounter: enc, gift: null })
+  beginFight()
+}
+
+/**
+ * MAKE IT BIGGER: the engine grows the present a level, or breaks it (a wild Pokémon of the area comes out, drawn now
+ * so the screen can show it), or bursts a boss's on its last tap. Null when nothing happened.
+ */
+export function growPresent(): GiftStep | null {
+  const { run, save, data } = useGame.getState()
+  const g = run.gift
+  if (run.phase !== 'gift' || !g || g.state.end || !save || !run.areaId) return null
+  const step = growGift(g.state, giftCfg(data), runRng)
+  if (!step) return null
+  let out = g.out
+  if (step.broke) {
+    const ctx = encounterContext(save, run.areaId, null)
+    out = ctx ? rollGiftWild(ctx, runRng) : null
+  }
+  setRun({ gift: { ...g, state: step.state, last: step, out } })
+  return step
+}
+
+/** OPEN: the level's reward goes into the bag at once; the result card says what it was. */
+export function openPresent(): GiftItem[] | null {
+  const { run, save, data } = useGame.getState()
+  const g = run.gift
+  if (run.phase !== 'gift' || !g || !save || !run.areaId) return null
+  const opened = openGift(g.state)
+  if (!opened) return null
+  const res = applyGiftOpen(save, data, run.areaId, opened, Date.now(), newId, currentLive())
+  commitSave(res.save)
+  setRun({ gift: { ...g, state: opened, last: null, got: res.items } })
+  return res.items
+}
+
+/**
+ * The present broke (or burst) and what came out has had its moment: the fight, as a wild Pokémon's (or the boss's)
+ * always is, caught as any. Nothing came out (an area with no wild Pokémon left): back on the trail.
+ */
+export function fightFromPresent() {
+  const { run } = useGame.getState()
+  const g = run.gift
+  if (run.phase !== 'gift' || !g || (g.state.end !== 'broken' && g.state.end !== 'burst')) return
+  if (!g.out) return leavePresent()
+  setRun({ phase: 'preview', encounter: g.out, gift: null, firstInArea: false, skipsUsed: 0 })
+  beginFight()
+}
+
+/** Opened (or nothing came out): back on the trail (the round may be complete). */
+export function leavePresent() {
+  const g = useGame.getState().run.gift
+  if (g && !g.state.end) return
+  setRun({ gift: null })
   backToArea()
 }
 

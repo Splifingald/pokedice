@@ -184,8 +184,10 @@ export interface DieUpgradeRow {
  * 'casino': the Game Corner — a slot machine the player can play as long as they like (Rocket Hideout). 'trick': Trick
  * or Treat (docs/29) — a ghost tempted with treats and caught with a Trick Ball, dealt only while its switch is on.
  * 'versus': a real player's team (docs/54), dealt only while its switch is on and the server has one for the area.
+ * 'gift': the Gift card (docs/61 §4.0) — a present to open or make bigger, dealt only while its switch is on, in place
+ * of the area's item cards.
  */
-export const ENCOUNTER_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus'] as const
+export const ENCOUNTER_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus', 'gift'] as const
 export type EncounterKind = (typeof ENCOUNTER_KINDS)[number]
 /** Cards in an area's encounter deck; 'legend' is a fled legendary coming back (one per deck until it's caught). */
 export type DeckCard = EncounterKind | 'legend'
@@ -266,6 +268,12 @@ export interface BossDef {
    * caught nowhere else here. Only while Raid Battles are switched on for the player; otherwise a boss as before.
    */
   raid?: boolean
+  /**
+   * It comes out of a present (the Gift card's, docs/61 §4.2: Evergreen Hill's Delibird): its challenge opens on a
+   * present that only grows and bursts on the last tap, then the fight. Only while the Gift card is on; a plain boss
+   * otherwise.
+   */
+  present?: boolean
 }
 
 /** Levels relative to the team average, both ends included: { min: -15, max: -10 } = 15 to 10 levels below. */
@@ -291,9 +299,16 @@ export interface Area {
   roundsToClear: number | null
   minLevel: number
   maxLevel: number
-  /** Copies of each card in a deck; Trick or Treat's (docs/29) and a real player's (docs/54) are optional, as content
-   * from before them has none. */
-  encounterWeights: Record<Exclude<EncounterKind, 'trick' | 'versus'>, number> & { trick?: number; versus?: number }
+  /**
+   * Copies of each card in a deck; Trick or Treat's (docs/29), a real player's (docs/54) and the Gift card's (docs/61
+   * §4.0) are optional, as content from before them has none. While the Gift card is on, its copies replace the item
+   * cards: an area with `gift` deals no item card then.
+   */
+  encounterWeights: Record<Exclude<EncounterKind, 'trick' | 'versus' | 'gift'>, number> & {
+    trick?: number
+    versus?: number
+    gift?: number
+  }
   backtrackMultiplier: number
   legendaryBoss: BossDef[] | null
   scalesToTeam: boolean
@@ -1075,6 +1090,8 @@ export interface GameConfig {
   looks: { access: EventAccess }
   /** Trick or Treat (docs/29): its switch, numbers and each area's ghosts. The server reads the switch too. */
   trickOrTreat: TrickOrTreatConfig
+  /** The Gift card (docs/61 §4.0): its switch and numbers. The server reads the switch too (0121). */
+  giftCard: GiftCardConfig
   /** Day and night in Johto (docs/32): its switch. Migration 0061 inserts the same row. */
   dayNight: { access: EventAccess }
   /** Idle mode and the play styles (docs/36): its switch. Migration 0068 inserts the same row. */
@@ -1315,6 +1332,47 @@ export interface TrickOrTreatConfig {
 
 /** Trick or Treat in a save (docs/29): its rules pop-up shown. */
 export interface TrickSave {
+  rulesSeen?: boolean
+}
+
+/**
+ * What a Gift card's level gives (docs/61 §4.0), one part of a reward: the area's own ball (the best its finds hold)
+ * or the one above it, an item, Pokédollars (`qty` × the area's level) or an evolution item its Mart sells.
+ */
+export const GIFT_REWARD_KINDS = ['ball', 'betterBall', 'item', 'money', 'evolution'] as const
+export type GiftRewardKind = (typeof GIFT_REWARD_KINDS)[number]
+
+export interface GiftRewardPart {
+  kind: GiftRewardKind
+  /** The item, for `item`. */
+  key?: string
+  qty: number
+}
+
+/**
+ * The Gift card (docs/61 §4.0): a present to OPEN for its level's reward or MAKE BIGGER, each tap able to break it, a
+ * broken one a wild Pokémon of the area. Owning the helper (Delibird) makes every tap safer and adds a level.
+ */
+export interface GiftCardConfig {
+  /** The switch (docs/15 §20): off (the item card as before), on for the admin only, on for everyone. Off by default. */
+  access: EventAccess
+  /**
+   * The % a MAKE IT BIGGER tap breaks the gift, by the level it is at (first = level 1). The level after the last is the
+   * top: it can't grow.
+   */
+  breakChances: number[]
+  /** Owning this Pokémon (team or Box): every tap `safer` % less likely to break, `extraLevels` more on top. */
+  helper: { dex: number; safer: number; extraLevels: number }
+  /** Each level's reward (first = level 1): its options, one drawn as the gift appears; a level past the list takes the last. */
+  rewards: GiftRewardPart[][][]
+  /** Poké Balls from worst to best: an area's ball is the best of these in its finds, its better ball the next one. */
+  balls: string[]
+  /** A boss that comes out of a present (`BossDef.present`): the taps until it bursts. */
+  bossTaps: number
+}
+
+/** The Gift card in a save (docs/61 §4.0): its rules pop-up shown. */
+export interface GiftCardSave {
   rulesSeen?: boolean
 }
 
@@ -1866,6 +1924,8 @@ export interface SaveData {
   general?: GeneralSave
   /** Trick or Treat (docs/29): its rules seen. Absent = never met. */
   trickOrTreat?: TrickSave
+  /** The Gift card (docs/61 §4.0): its rules seen. Absent = never met. */
+  giftCard?: GiftCardSave
   /** The Underground (docs/34): the running event's kits, pickaxe, orbs and wall. Gone when the event ends. */
   underground?: UndergroundSave
   /** Arceus's plates found in the Underground, by type: kept for good. Each lets the player's Arceus take its type. */

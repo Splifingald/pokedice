@@ -45,6 +45,9 @@ import {
   type TrickPlaced,
   type TrickState,
   type TrickStep,
+  type GiftItem,
+  type GiftState,
+  type GiftStep,
 } from '@/engine'
 import { activeSlot, DEFAULT_SETTINGS, readSave, readSettings, scheduleWrite, writeSettings, type Settings } from '@/save/storage'
 import { trustedNow } from './clock'
@@ -61,7 +64,34 @@ export interface Toast {
   tone: ToastTone
 }
 
-export type RunPhase = 'idle' | 'preview' | 'battle' | 'catch' | 'victory' | 'center' | 'casino' | 'trick' | 'wipe' | 'stalemate'
+export type RunPhase =
+  | 'idle'
+  | 'preview'
+  | 'battle'
+  | 'catch'
+  | 'victory'
+  | 'center'
+  | 'casino'
+  | 'trick'
+  | 'gift'
+  | 'wipe'
+  | 'stalemate'
+
+/**
+ * A Gift card under way (docs/61 §4.0), or a boss's present (§4.2): the present, the last tap for the screen to play,
+ * what OPEN gave, and what came out of it when it broke or burst (the fight that follows).
+ */
+export interface GiftRun {
+  /** One per present: the screen starts afresh for each. */
+  id: number
+  state: GiftState
+  /** The last MAKE IT BIGGER, for the screen to play (null before the first, and once opened). */
+  last: GiftStep | null
+  /** Opened: what went into the bag (the save has it already). */
+  got: GiftItem[] | null
+  /** Broken or burst: the wild Pokémon or the boss that came out, fought once its moment has played. */
+  out: Encounter | null
+}
 
 /** Trick or Treat under way (docs/29): the ghost and its gauge, the last Treat or Trick Ball to play, and the catch. */
 export interface TrickRun {
@@ -150,6 +180,8 @@ export interface RunState {
   nightmareStruck?: boolean
   /** Trick or Treat under way (docs/29). */
   trick?: TrickRun | null
+  /** A Gift card or a boss's present under way (docs/61 §4.0, §4.2). */
+  gift?: GiftRun | null
   /** The fight is on the screen, the player's side not out yet: one tap on a Pokémon sends it (the rework). */
   pickLead?: boolean
   /**

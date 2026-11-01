@@ -67,6 +67,7 @@ import { InviteBits } from './kitchen/InviteBits'
 import { WelcomeBackBits } from './kitchen/WelcomeBackBits'
 import { SupportBits } from './kitchen/SupportBits'
 import { TrickBits } from './kitchen/TrickBits'
+import { GiftCardBits } from './kitchen/GiftCardBits'
 import { UndergroundBits } from './kitchen/UndergroundBits'
 import { FriendshipBits } from './kitchen/FriendshipBits'
 import { CalendarBits } from './kitchen/CalendarBits'
@@ -838,6 +839,9 @@ export function KitchenSink() {
       </Section>
       <Section title="Trick or Treat: the gauge of each tier, the screen in each state (idle, after a Treat, a Treat and a throw playing, a miss, caught, fled), the recaps, the pieces, preview cards, rules">
         <TrickBits />
+      </Section>
+      <Section title="The Gift card (docs/61 §4.0, §4.2): the present at every level in both looks, the level gauge, rewards, the plate and Delibird's chip, the screen in each state (lands, grows, with Delibird, at the top, breaks, broken, opening, opened), Delibird's present (idle, growing, bursting, shiny Delibird out), the result cards, the preview card, rules">
+        <GiftCardBits />
       </Section>
       <Section title="The Underground: the cave, the crack gauge, a wall in each state (fresh, half dug with a strike flashing, cleared, collapsing), the pickaxe die and faces, orbs and plates, the haul, the plates and orb bag, the team seats, the rules">
         <UndergroundBits />

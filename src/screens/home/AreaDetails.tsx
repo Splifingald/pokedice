@@ -18,6 +18,7 @@ import {
   raidRules,
   teamAverageLevel,
   trickDealable,
+  giftDealable,
   gameCornerOn,
   uniqueFindChances,
   type Area,
@@ -63,6 +64,7 @@ const MIX: Record<EncounterKind, string> = {
   casino: '#9b5de5',
   trick: '#ff8a3d',
   versus: '#3d7bd9',
+  gift: '#e2364a',
 }
 
 function Fact({
@@ -315,11 +317,14 @@ export function DetailsBody({ area }: { area: Area }) {
   const kinds = (Object.entries(area.encounterWeights) as [EncounterKind, number][]).filter(
     // Trick or Treat only where it is dealt (its switch on, the area's ghosts listed: docs/29); the Game Corner only
     // while it's on.
-    // A real player (docs/54) only while a team waits for the area.
+    // A real player (docs/54) only while a team waits for the area. The Gift card (docs/61 §4.0) only while it's on,
+    // and then in place of the item card.
     ([k, v]) =>
       v > 0 &&
       MIX[k] &&
       (k !== 'trick' || trickDealable(data, area)) &&
+      (k !== 'gift' || giftDealable(data, area)) &&
+      (k !== 'item' || !giftDealable(data, area)) &&
       (k !== 'casino' || gameCornerOn(data)) &&
       (k !== 'versus' || (areaVersusHere(save, area, data) && !!foe)),
   )
