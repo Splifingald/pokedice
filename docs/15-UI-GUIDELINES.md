@@ -2252,7 +2252,11 @@ raid (Water: shiny Palkia, Steel: shiny Dialga). Built as the portal run's and t
 pieces are in `src/components/TimeRace.tsx` and `src/screens/area/TimeRaceRun.tsx`, every state on `/kitchen-sink`
 (`TimeRaceBits`); the engine (`engine/timeRace.ts`, `timeRaceMode.ts`) decides every gate, foe, find, second and outcome.
 **Every scene is pixel art on the game's FX engine** (`src/fx/timelines/timeRace.ts`, on `/kitchen-sink/fx`: the intro
-over the drawn pillars and over Spear Pillar's picture, Dialga's and Palkia's wins). Its palette (`TR`): Spear Pillar's
+over the drawn ruins and over Spear Pillar's picture, Dialga's and Palkia's wins). **It stands in the very place of
+Dialga's and Palkia's raid cinematics** (`cinema/spearPillar.ts`, whose ruins it reuses: the worn tiles in perspective,
+the round dais, broken columns near and far, the sea of clouds), under a night sky that is time's blue on the left and
+space's violet on the right; the clock is the raid's clock of light (rims, sixty ticks, gears behind, the ruins seen
+through it), the rift a ragged tear (pearl lips, the void's stars streaming into it). Its palette (`TR`): Spear Pillar's
 indigo night (`#05061a` to `#6a62b8`), the stone's greys, **time's steel blue and gold** (`#4a6bd8`, `#a8c8ff`,
 `#ffd65a`: Dialga, the clock) and **space's pearl pinks** (`#e88ac0`, `#ffd0ea`: Palkia, the rift). Its scenes follow §8
 as every timeline does (short: half the time; calm: no quake, no flash; off: the end at once); the loop (`RaceScene`) is
@@ -2267,9 +2271,11 @@ one still frame with motion off.
   time, as the nightmare's, and from INFO at the bottom of the area's page (`TimeRaceRulesModal`, the scene as its banner).
 - **The way in** (`TimeRaceEntry`): the Distortion World's, piece for piece. CONTINUE on Home says ENTER THE RACE ("15
   fights in 12:00"; the replay: "The replay: 15 fights in 10:00"); the area plays **the intro at once** (`TimeRaceIntro`,
-  `raceIntroTimeline`, 3.4 s, full screen: the area darkens into the night over the pillars, a clock face fades in and
-  its hands race backwards, the rift of space tears open across from it with a flash and a quake; the line in a night card
-  from then; held at its end, the clock ticking and the rift shimmering, "Tap to continue ▼" with the focus; no SKIP).
+  `raceIntroTimeline`, 3.8 s, full screen: the area darkens and dissolves into the night over the ruins; the clock of
+  light draws itself round, its hands tick forward once then whip backwards (a dithered smear of light behind them, a
+  click each quarter turn), slowing to a stop; across from it space strains (a pinprick, pink crackles), a seam runs out
+  from it and tears open with a flash, a quake and a shockwave (a bright ring, a dark one behind it, sparks flung out),
+  the void's stars streaming into it, motes sucked in; the line in a night card from then; held at its end, the clock ticking and the rift shimmering, "Tap to continue ▼" with the focus; no SKIP).
   Arriving heals as a Center does. The tap raises its pop-up over that end ("Into the race", or "The race again" for the
   replay): the rules, "Healed as at a Pokémon Center" with TEAM (the team can change until READY!, `teamSwapsOpen`; back
   from the Team screen the pop-up is up again at once: `run.racePopup`), NOT NOW and READY!. READY! waits for the server's
@@ -2300,10 +2306,15 @@ one still frame with motion off.
 - **Out of time or a wipe** keeps the wipe card (§14): "Out of time!" as its title when the clock ran out, its line the
   fights won and lost ("The clock ran out after 11 of 15 fights: back to the start of the race. XP, ₽ and items are kept,
   and your team is healed."); a wipe's says the party was K.O. The next way in plays the intro again.
-- **The win** (`TimeRaceVictoryView`, `raceWinTimeline`, 5 s): full screen; dark pulses, the legend's silhouette rising
-  between the clock and the rift in its colour, the reveal (a flash, rings, its roar and its cry, a quake) and the shiny
-  gleam, then **time and space settle**: the hands turn to twelve and stop, the rift seals to a line (`race.settle`); the
-  name card (SHINY, its raid level); "Time and space settle", "Shiny Palkia is now available in raids.", the time it was
+- **The win** (`TimeRaceVictoryView`, `raceWinTimeline`, 6.4 s): full screen; dark pulses (the clock and the rift
+  flaring), the legend rising out of the dais in silhouette, ink rim-lit in its colour (its top edges and left lit, the
+  dais's light on its lower part), its glow behind; light gathers into it; the reveal (a white flash gone in a quarter
+  second, three rings, rays that fade within a second, its roar and its cry, a quake) and the shiny sparkle (four stars
+  popping round it, the gleam, the chime), then **time and space settle**, the other legend's half first and its own
+  last: the hands sweep round to twelve and stop with a recoil and a chime (rings, gold for Dialga), the clock breaking
+  up into motes; the rift is pulled shut to a line (trembling for Palkia), shrinks to a point and closes with a glint
+  (`race.settle` on its own legend's); the name card (SHINY, its raid level), a plate fully on screen (on a short stage
+  the legend stands lower and the card is only as wide as its words, on the left, so its head stays clear); "Time and space settle", "Shiny Palkia is now available in raids.", the time it was
   won with in gold; HEAL & START RAID (red, the focus) over the green BACK TO THE WORLD; no skip.
 - **The raids**: each of the area's two opens on its own legend's win; before, its page is locked ("Win the race of
   Spear Pillar to open this raid", "Take the Water gate at the last fork and finish in time to face Palkia here."). Their
