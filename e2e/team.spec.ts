@@ -177,6 +177,8 @@ test.describe('on a PC', () => {
   test('at a Pokémon Center the full team’s swap is one tap on who leaves', async ({ page }) => {
     await boot(page)
     await page.goto('/team')
+    // window.__pd comes with store/run's own import, after the first paint (src/main.tsx): wait for it.
+    await page.waitForFunction(() => '__pd' in window)
     await page.evaluate(() => {
       const pd = (window as unknown as { __pd: { useGame: { setState: (f: (s: { run: object }) => object) => void } } })
         .__pd
