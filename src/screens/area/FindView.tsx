@@ -356,12 +356,23 @@ export function FoundThing({ enc, isMoney, rarity }: { enc: Find; isMoney: boole
  * A Pokémon posing as a find springs out (docs/61 §3): the ball on the ground wobbles, the third wobble bursts it in a
  * white flash, and the Pokémon stands where it lay, with a hop. No motion, or a calm screen: the Pokémon is simply there.
  */
-export function SprungThing({ itemKey, dex, shiny }: { itemKey: string; dex: number; shiny?: boolean }) {
+export function SprungThing({
+  itemKey,
+  dex,
+  shiny,
+  size: own,
+}: {
+  itemKey: string
+  dex: number
+  shiny?: boolean
+  /** Its size to the stage's (a gift's, sized to the stage); unset = the find's screen's. */
+  size?: number
+}) {
   const data = useGame((s) => s.data)
   const { level, calm } = useMotion()
   const wide = useMediaQuery('(min-width: 1024px)')
   const still = level === 'off' || calm
-  const size = wide ? 136 : 80
+  const size = own ?? (wide ? 136 : 80)
   const item = data.items[itemKey]
   // The wobbles and the burst take this long; the Pokémon is out from there.
   const burst = level === 'short' ? 0.45 : 0.8

@@ -4,7 +4,7 @@
 // the ball springs open in the middle of the stage and the Pokémon stands there (an Egg is handed over and wobbles), and
 // the panel says where it went. The engine decides everything (engine/moments.ts); this only shows it.
 import { motion } from 'framer-motion'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { giftChoices, type GameData, type GiftMoment } from '@/engine'
 import { AutoButton } from '@/components/AutoButton'
 import { EggSprite } from '@/components/EggSprite'
@@ -59,28 +59,47 @@ export function GiftStage({
   const ball = useGame((s) => s.data.items['poke-ball'])
   const { level, calm } = useMotion()
   const still = level === 'off' || calm
+  // Everyone on it is sized to the stage (the user, 2026-11-01: the giver, the ball and the Pokémon read too small on a
+  // wide one): the giver about half its height, what they hold a ninth of its width, the Pokémon a third.
+  const box = useRef<HTMLDivElement>(null)
+  const [w, setW] = useState(360)
+  useEffect(() => {
+    const el = box.current
+    if (!el) return
+    setW(el.clientWidth || 360)
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => setW(el.clientWidth || 360))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  const giver = Math.round(w * 0.44)
+  const held = Math.round(w * 0.11)
   return (
-    <div className="relative isolate aspect-[3/2] w-full select-none overflow-hidden shadow-ledge">
+    <div ref={box} className="relative isolate aspect-[3/2] w-full select-none overflow-hidden shadow-ledge" data-gift-stage>
       <StageBackground art={art} zones={false} />
       <RunRoundGauge strip className="absolute inset-x-0 top-0 z-30" />
       <motion.div
-        className="absolute bottom-[10%] left-[6%] z-10 w-[34%]"
+        className="absolute bottom-[6%] left-[4%] z-10"
+        style={{ width: giver, height: giver }}
         initial={still ? false : { x: '-120%' }}
         animate={{ x: '0%' }}
         transition={{ duration: still ? 0 : 0.55, ease: 'easeOut' }}
       >
-        <TrainerSprite src={g.sprite} size={160} className="h-auto w-full" />
+        <TrainerSprite src={g.sprite} size={giver} />
         {!received && (
           <motion.span
-            className="absolute -right-[18%] top-[48%] block w-[34%]"
+            className="absolute top-[46%] block"
+            style={{ right: -held * 0.9 }}
             animate={still ? undefined : { y: ['0%', '-8%', '0%'] }}
             transition={{ duration: 1.2, repeat: Infinity }}
           >
-            {g.egg ? <EggSprite size={44} /> : <ItemSprite item={ball} size={40} />}
+            {g.egg ? <EggSprite size={Math.round(held * 1.1)} /> : <ItemSprite item={ball} size={held} />}
           </motion.span>
         )}
       </motion.div>
-      {received && received.placed !== 'egg' && <SprungThing itemKey="poke-ball" dex={dex} shiny={received.shiny} />}
+      {received && received.placed !== 'egg' && (
+        <SprungThing itemKey="poke-ball" dex={dex} shiny={received.shiny} size={Math.round(w * 0.22)} />
+      )}
       {received?.placed === 'egg' && (
         <motion.div
           className="absolute left-1/2 top-[72%] z-20 -translate-x-1/2 -translate-y-full"
@@ -88,7 +107,7 @@ export function GiftStage({
           animate={still ? { opacity: 1 } : { x: '-50%', y: '-100%', rotate: [0, -8, 8, 0], opacity: 1 }}
           transition={{ duration: still ? 0 : 0.8 }}
         >
-          <EggSprite size={72} shake={!still} />
+          <EggSprite size={Math.round(w * 0.16)} shake={!still} />
         </motion.div>
       )}
     </div>
@@ -108,7 +127,7 @@ function Choice({ dex, data, picked, onPick }: { dex: number; data: GameData; pi
         picked && 'outline outline-[3px] outline-offset-2 outline-gold',
       )}
     >
-      <SpriteImg dex={dex} size={72} />
+      <SpriteImg dex={dex} size={88} />
       <span className="truncate text-xl leading-none">{sp?.name ?? `#${dex}`}</span>
       <span className="flex gap-1">
         {sp && <TypeBadge type={sp.type1} size="sm" />}
