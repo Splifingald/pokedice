@@ -37,7 +37,7 @@ import { t as tr } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { useMotion } from '@/lib/motion'
-import { mutateSave, useGame, type GiftRun } from '@/store/game'
+import { mutateSave, useGame, type PresentRun } from '@/store/game'
 import { fightFromPresent, growPresent, leavePresent, openPresent } from '@/store/run'
 import { Overlay } from '@/screens/battle/VictoryView'
 import { cx } from '@/theme/util'
@@ -94,7 +94,7 @@ export interface GiftScreenProps {
   children?: ReactNode
 }
 
-/** The screen itself, from what GiftView (or the kitchen sink) gives it. */
+/** The screen itself, from what PresentView (or the kitchen sink) gives it. */
 export function GiftScreen(p: GiftScreenProps) {
   const { t } = useT()
   const text = useRewardText()
@@ -272,12 +272,12 @@ export function giftMessage(st: GiftState, name: string | null, rewardText: stri
     : tr('ui.giftCard.grew', { level: st.level })
 }
 
-export function GiftView() {
+export function PresentView() {
   useHoldFullscreen()
   const run = useGame((s) => s.run)
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
-  const g = run.gift as GiftRun
+  const g = run.present as PresentRun
   const { level: motion, calm } = useMotion()
   const short = motion === 'short'
   const st = g.state
@@ -327,7 +327,7 @@ export function GiftView() {
     const step = growPresent()
     if (!step) return
     setBusy(true)
-    const after = useGame.getState().run.gift
+    const after = useGame.getState().run.present
     const done = () => {
       if (!alive.current) return
       setBusy(false)

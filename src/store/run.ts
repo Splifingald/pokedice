@@ -215,7 +215,7 @@ let runRng = createRng(resumed?.run ?? randomSeed())
 let battleRng = createRng(resumed?.battle ?? randomSeed())
 let battleSeq = useGame.getState().battle?.id ?? 0
 let trickSeq = useGame.getState().run.trick?.id ?? 0
-let giftSeq = useGame.getState().run.gift?.id ?? 0
+let giftSeq = useGame.getState().run.present?.id ?? 0
 trackRngs(() => ({ run: runRng.getState(), battle: battleRng.getState() }))
 
 export const newId = (): string =>
@@ -933,7 +933,7 @@ export function rollNext() {
   // A find is a step of its own (FindView: the item on the stage, PICK IT UP loading and pressing itself), not a toast
   // the trail runs past (the user's call, 2026-10-28): it waits in 'preview' for pickUpFind.
   else if (encounter.kind === 'item') return
-  // A Gift card is a step of its own too (GiftView): the present comes out at once, nothing to pick before it.
+  // A Gift card is a step of its own too (PresentView): the present comes out at once, nothing to pick before it.
   else if (encounter.kind === 'gift') engage()
   else if (directFight(encounter)) beginFight()
 }
@@ -1913,8 +1913,8 @@ async function beginGift(enc: Extract<NonNullable<RunState['encounter']>, { kind
     return
   }
   setRun({
-    phase: 'gift',
-    gift: { id: ++giftSeq, state: startGift(save, area, data, runRng), last: null, got: null, out: null },
+    phase: 'present',
+    present: { id: ++giftSeq, state: startGift(save, area, data, runRng), last: null, got: null, out: null },
   })
 }
 
@@ -1927,16 +1927,16 @@ async function beginBossPresent(enc: Extract<Encounter, { kind: 'boss' }>) {
   const { data } = useGame.getState()
   const id = ++giftSeq
   setRun({
-    phase: 'gift',
+    phase: 'present',
     encounter: enc,
     firstInArea: false,
     skipsUsed: 0,
-    gift: { id, state: startBossPresent(giftCfg(data), enc), last: null, got: null, out: enc },
+    present: { id, state: startBossPresent(giftCfg(data), enc), last: null, got: null, out: enc },
   })
   if (await giftAllowed()) return
   const { run } = useGame.getState()
-  if (run.phase !== 'gift' || run.gift?.id !== id) return
-  setRun({ phase: 'preview', encounter: enc, gift: null })
+  if (run.phase !== 'present' || run.present?.id !== id) return
+  setRun({ phase: 'preview', encounter: enc, present: null })
   beginFight()
 }
 
@@ -1946,8 +1946,8 @@ async function beginBossPresent(enc: Extract<Encounter, { kind: 'boss' }>) {
  */
 export function growPresent(): GiftStep | null {
   const { run, save, data } = useGame.getState()
-  const g = run.gift
-  if (run.phase !== 'gift' || !g || g.state.end || !save || !run.areaId) return null
+  const g = run.present
+  if (run.phase !== 'present' || !g || g.state.end || !save || !run.areaId) return null
   const step = growGift(g.state, giftCfg(data), runRng)
   if (!step) return null
   let out = g.out
@@ -1955,20 +1955,20 @@ export function growPresent(): GiftStep | null {
     const ctx = encounterContext(save, run.areaId, null)
     out = ctx ? rollGiftWild(ctx, runRng) : null
   }
-  setRun({ gift: { ...g, state: step.state, last: step, out } })
+  setRun({ present: { ...g, state: step.state, last: step, out } })
   return step
 }
 
 /** OPEN: the level's reward goes into the bag at once; the result card says what it was. */
 export function openPresent(): GiftItem[] | null {
   const { run, save, data } = useGame.getState()
-  const g = run.gift
-  if (run.phase !== 'gift' || !g || !save || !run.areaId) return null
+  const g = run.present
+  if (run.phase !== 'present' || !g || !save || !run.areaId) return null
   const opened = openGift(g.state)
   if (!opened) return null
   const res = applyGiftOpen(save, data, run.areaId, opened, Date.now(), newId, currentLive())
   commitSave(res.save)
-  setRun({ gift: { ...g, state: opened, last: null, got: res.items } })
+  setRun({ present: { ...g, state: opened, last: null, got: res.items } })
   return res.items
 }
 
@@ -1978,18 +1978,18 @@ export function openPresent(): GiftItem[] | null {
  */
 export function fightFromPresent() {
   const { run } = useGame.getState()
-  const g = run.gift
-  if (run.phase !== 'gift' || !g || (g.state.end !== 'broken' && g.state.end !== 'burst')) return
+  const g = run.present
+  if (run.phase !== 'present' || !g || (g.state.end !== 'broken' && g.state.end !== 'burst')) return
   if (!g.out) return leavePresent()
-  setRun({ phase: 'preview', encounter: g.out, gift: null, firstInArea: false, skipsUsed: 0 })
+  setRun({ phase: 'preview', encounter: g.out, present: null, firstInArea: false, skipsUsed: 0 })
   beginFight()
 }
 
 /** Opened (or nothing came out): back on the trail (the round may be complete). */
 export function leavePresent() {
-  const g = useGame.getState().run.gift
+  const g = useGame.getState().run.present
   if (g && !g.state.end) return
-  setRun({ gift: null })
+  setRun({ present: null })
   backToArea()
 }
 

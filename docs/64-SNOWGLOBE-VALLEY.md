@@ -161,11 +161,11 @@ either way.
   a roaming legendary), the `gift` deck card in place of the item cards, the random mode's weights. Types and defaults:
   `GiftCardConfig`, `GiftRewardPart`, `GiftCardSave`, `ENCOUNTER_KINDS` + `gift`, `encounterWeights.gift`,
   `BossDef.present`, `DEFAULT_CONFIG.giftCard`. Extreme's race turns it off; the campaign simulator walks past it.
-- **Store** (`src/store/run.ts`): the phase `gift`, `run.gift` (`GiftRun`: the present, the last tap, what OPEN gave,
+- **Store** (`src/store/run.ts`): the phase `present`, `run.present` (`PresentRun`: the present, the last tap, what OPEN gave,
   what came out); `growPresent`, `openPresent`, `fightFromPresent`, `leavePresent`; a gift card goes straight to its
   screen, a broken one into the wild battle, a resumed reload comes back to it (`store/resume.ts`).
   `src/store/giftCard.ts`: the server's check, as Trick or Treat's.
-- **Screens**: `src/screens/area/GiftView.tsx` (laid out as the battle, `GiftScreen`, `GiftRecap`), the pieces in
+- **Screens**: `src/screens/area/PresentView.tsx` (laid out as the battle, `GiftScreen`, `GiftRecap`), the pieces in
   `src/components/GiftCard.tsx` (the stage, plate, level gauge, reward lines, Delibird's chip, preview card, rules),
   the round gauge's gift tile and the area's round mix (only while dealt), the encounter preview while the server is
   asked. Animations `src/fx/timelines/present.ts` (it lands, grows, breaks or bursts, opens); sounds `present.*` in
@@ -245,7 +245,7 @@ be inside?"); each MAKE IT BIGGER grows it a level, the 5th tap (`giftCard.bossT
 bursts in silver and gold, shiny Delibird pops out with its cry, then **FIGHT!** is the area's `legendaryBoss` fight as
 usual (Lv.40, caught as any boss). A returning Delibird (it fled the catch) is a plain card of the deck. Off, the boss
 comes as it always did. The present plays again on each new challenge (after a wipe). Files: as §4.0's
-(`src/fx/timelines/present.ts`'s `burst`, `GiftView`'s boss state, `challenge()` and `beginBossPresent` in
+(`src/fx/timelines/present.ts`'s `burst`, `PresentView`'s boss state, `challenge()` and `beginBossPresent` in
 `src/store/run.ts`), and `tests/content/snowglobe-valley.test.ts` checks the deck and the boss.
 
 ### 4.3 Crown Shrine: Whiteout (weather survival)

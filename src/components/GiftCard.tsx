@@ -1,6 +1,6 @@
 // The Gift card's pieces (docs/64 §4.0, §4.2; docs/15 §45): the present on the battle's stage (the area's picture, the
 // present's timelines over it), its plate, the level gauge, a reward's line, the preview card and the rules. They only
-// draw what the engine decided (engine/giftCard.ts); the area screen (GiftView) plays the steps. Every state is on
+// draw what the engine decided (engine/giftCard.ts); the area screen (PresentView) plays the steps. Every state is on
 // /kitchen-sink (GiftCardBits).
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
 import { MONEY, giftBreakChance, giftCfg, giftHelper, giftTop, type GiftItem } from '@/engine'

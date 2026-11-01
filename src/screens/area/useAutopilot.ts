@@ -17,7 +17,7 @@ const PACE: Record<RunPhase, number> = {
   battle: 1000,
   catch: 1000,
   trick: 1000,
-  gift: 1000,
+  present: 1000,
 }
 
 /** A find's step (FindView): long enough to see it land; its PICK IT UP, loading under the autopilot, goes first. */

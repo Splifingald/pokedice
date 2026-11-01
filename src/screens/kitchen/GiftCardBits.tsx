@@ -27,7 +27,7 @@ import {
   GiftScreen,
   presentContents,
   type GiftScreenProps,
-} from '@/screens/area/GiftView'
+} from '@/screens/area/PresentView'
 
 const noop = () => {}
 const SNORUNT = 361

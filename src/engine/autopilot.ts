@@ -260,7 +260,7 @@ export interface AutoView {
     | 'center'
     | 'casino'
     | 'trick'
-    | 'gift'
+    | 'present'
     | 'wipe'
     | 'stalemate'
   areaId: string
@@ -324,7 +324,7 @@ export function autopilotStep(
     case 'catch':
       return style === 'idle' && v.catch ? idleCatchStep(save, data, v.catch) : { do: 'wait', why: 'player' }
     case 'trick':
-    case 'gift':
+    case 'present':
       return { do: 'wait', why: 'player' }
     case 'preview':
       // Trick or Treat is a catch of its own: the player plays it. A trainer's card is the page's (pilotShowsCard).

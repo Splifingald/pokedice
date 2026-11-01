@@ -75,7 +75,7 @@ export type RunPhase =
   | 'center'
   | 'casino'
   | 'trick'
-  | 'gift'
+  | 'present'
   | 'wipe'
   | 'stalemate'
 
@@ -83,7 +83,7 @@ export type RunPhase =
  * A Gift card under way (docs/64 §4.0), or a boss's present (§4.2): the present, the last tap for the screen to play,
  * what OPEN gave, and what came out of it when it broke or burst (the fight that follows).
  */
-export interface GiftRun {
+export interface PresentRun {
   /** One per present: the screen starts afresh for each. */
   id: number
   state: GiftState
@@ -213,7 +213,7 @@ export interface RunState {
   /** Trick or Treat under way (docs/29). */
   trick?: TrickRun | null
   /** A Gift card or a boss's present under way (docs/64 §4.0, §4.2). */
-  gift?: GiftRun | null
+  present?: PresentRun | null
   /** The fight is on the screen, the player's side not out yet: one tap on a Pokémon sends it (the rework). */
   pickLead?: boolean
   /**

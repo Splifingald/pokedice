@@ -24,7 +24,7 @@ import { useGame } from '@/store/game'
 import { BattleView } from './battle/BattleView'
 import { CasinoView } from './area/CasinoView'
 import { TrickView } from './area/TrickView'
-import { GiftView } from './area/GiftView'
+import { PresentView } from './area/PresentView'
 import { AreaIdle } from './area/AreaIdle'
 import { CenterView } from './area/CenterView'
 import { EncounterPreview } from './area/EncounterPreview'
@@ -120,7 +120,7 @@ export function AreaScreen() {
   // Trick or Treat takes the whole screen as a battle does (docs/15 §28).
   if (run.phase === 'trick' && run.trick && run.areaId) return <TrickView key={run.trick.id} />
   // So does the Gift card, and a boss's present (docs/64 §4.0, §4.2; docs/15 §45).
-  if (run.phase === 'gift' && run.gift && run.areaId) return <GiftView key={run.gift.id} />
+  if (run.phase === 'present' && run.present && run.areaId) return <PresentView key={run.present.id} />
   // An Elite Rebattle run ends on its own page.
   if (!area || !run.areaId || (run.phase === 'idle' && run.rebattle))
     return <Navigate to={run.rebattle ? '/events/rebattle' : '/home'} replace />

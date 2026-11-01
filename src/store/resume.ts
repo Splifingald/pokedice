@@ -56,7 +56,7 @@ const PHASES: readonly RunPhase[] = [
   'center',
   'casino',
   'trick',
-  'gift',
+  'present',
   'wipe',
   'stalemate',
 ]
@@ -85,7 +85,7 @@ export function restoreSnapshot(
   if (run.phase === 'preview' && !isObj(run.encounter)) return null
   if (run.phase === 'catch' && !isObj(run.catch)) return null
   if (run.phase === 'trick' && !isObj(run.trick)) return null
-  if (run.phase === 'gift' && !isObj(run.gift)) return null
+  if (run.phase === 'present' && !isObj(run.present)) return null
   const battle = snap.battle ? battleOf(snap.battle, save, data) : null
   if (snap.battle && !battle) return null
   if (FIGHT.includes(run.phase) && !battle) return null

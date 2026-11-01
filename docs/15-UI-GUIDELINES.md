@@ -2065,7 +2065,7 @@ An encounter card (docs/64 §4.0), in place of an area's item card while its swi
 **OPEN** gives that level's reward, **MAKE IT BIGGER** grows it a level but may break it, and a broken gift is a wild
 Pokémon of the area. Evergreen Hill's Delibird comes out of a present of its own (§4.2). The engine
 (`engine/giftCard.ts`) decides every number and outcome; the pieces are in `src/components/GiftCard.tsx`, the screen in
-`src/screens/area/GiftView.tsx` (`GiftScreen`, `GiftRecap`), the animations in `src/fx/timelines/present.ts`; every
+`src/screens/area/PresentView.tsx` (`GiftScreen`, `GiftRecap`), the animations in `src/fx/timelines/present.ts`; every
 state on `/kitchen-sink` (`GiftCardBits`), every take on `/kitchen-sink/fx`.
 
 - **The switch and the rules** follow §20: `giftCard.access`, Off by default and read by the server too
