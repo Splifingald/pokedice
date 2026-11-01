@@ -178,6 +178,7 @@ const timeRaceSchema = z.object({
   gates: z.array(raceGateSchema).max(4).nullable().optional(),
   met: z.array(z.number().int()).max(99).optional(),
   shards: z.number().int().min(0).optional(),
+  left: z.number().min(0).optional(),
   won: z.array(z.number().int()).max(9).optional(),
   wonSeen: z.boolean().optional(),
   tries: z.number().int().min(0).optional(),

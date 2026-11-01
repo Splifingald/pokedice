@@ -239,6 +239,23 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
           gifts: z.array(z.object({ round: int(1, 20), key: z.string().min(1), qty: int(1, 99) })),
           raid: z.object({ level: int(1, 100), upgradeLevel: int(1, 10), bars: int(1, 10), teamCap: int(1, 100) }),
         }),
+        // Spear Pillar's race of time and space (docs/61 §4.4): its forks, legends, clock, finds, speed, replay and raids.
+        z.object({
+          kind: z.literal('timeRace'),
+          forks: z.array(z.tuple([z.string(), z.string()])).min(1).max(10),
+          legends: z.array(z.object({ type: z.string(), dex: int(1, 99999) })).length(2),
+          perFork: int(1, 10),
+          seconds: int(30, 7200),
+          shard: z.object({ chance: z.number().min(0).max(100), seconds: int(0, 600) }),
+          items: z.array(z.object({ key: z.string().min(1), qty: int(1, 99), weight: z.number().min(0) })),
+          speed: z.number().min(1).max(3),
+          replay: z.object({
+            forks: z.array(z.tuple([z.string(), z.string()])).min(1).max(10),
+            levelBonus: int(0, 40),
+            seconds: int(30, 7200),
+          }),
+          raid: z.object({ level: int(1, 100), upgradeLevel: int(1, 10), bars: int(1, 10), teamCap: int(1, 100) }),
+        }),
       ])
       .nullable()
       .optional(),

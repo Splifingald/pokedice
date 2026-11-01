@@ -10,6 +10,7 @@ import {
   progressOf,
   scaledLevelSpan,
   teamAverageLevel,
+  timeRaceModeOf,
   type Area,
   type AreaProgress,
 } from '@/engine'
@@ -32,6 +33,7 @@ import { AreaStrip } from '@/components/AreaStrip'
 import { WipeView } from './battle/VictoryView'
 import { PortalBonuses, PortalInfo, PortalStep } from './area/PortalRun'
 import { NightmareInfo, NightmareStep, nightmareStepDue } from './area/NightmareRun'
+import { TimeRaceClockHere, TimeRaceInfo, TimeRaceStep, timeRaceStepDue } from './area/TimeRaceRun'
 import { AutopilotNote } from './area/AutopilotNote'
 import { useAutopilot } from './area/useAutopilot'
 
@@ -75,6 +77,8 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
           </span>
         </div>
         <RoundGauge area={area} progress={progress} />
+        {/* The race of time and space (docs/61 §4.4): its clock, big, under the gauge while a try runs. */}
+        <TimeRaceClockHere areaId={area.id} className="self-center" />
         {/* A cleared area can play itself (with Idle, any area): switched here, between its encounters, without a
             trip Home. */}
         {autoHere && (
@@ -123,8 +127,11 @@ export function AreaScreen() {
   // The nightmare's area (docs/30): its way in, its intro, Darkrai's strike after a round, the waking.
   const nm = run.rebattle ? null : nightmareModeOf(area, data)
   const dream = !!nm && run.phase === 'idle' && nightmareStepDue(area, { save, data }, run)
+  // The race of time and space's area (docs/61 §4.4): its way in, a fork's gates, the win.
+  const race = run.rebattle ? null : timeRaceModeOf(area, data)
+  const raced = !!race && run.phase === 'idle' && timeRaceStepDue(area, { save, data })
   // The plain page between encounters (docs/42): the area's scene with the team, as on Home, in the banner's place.
-  const sceneIdle = run.phase === 'idle' && !own && !dream && !mode && !nm && !run.rebattle
+  const sceneIdle = run.phase === 'idle' && !own && !dream && !raced && !mode && !nm && !race && !run.rebattle
   // A find is a step on the stage of its own (FindView), with or without the autopilot: no banner, no card.
   const finding = run.phase === 'preview' && run.encounter?.kind === 'item'
   return (
@@ -153,7 +160,8 @@ export function AreaScreen() {
       {run.phase === 'wipe' && <WipeView />}
       {run.phase === 'idle' && own && step}
       {dream && <NightmareStep area={area} />}
-      {run.phase === 'idle' && !own && !dream && (
+      {raced && <TimeRaceStep area={area} />}
+      {run.phase === 'idle' && !own && !dream && !raced && (
         <>
           {mode && <PortalBonuses area={area} />}
           <AreaIdle area={area} scene={sceneIdle} />
@@ -161,6 +169,7 @@ export function AreaScreen() {
       )}
       {mode && run.phase === 'idle' && <PortalInfo mode={mode} />}
       {nm && run.phase === 'idle' && <NightmareInfo mode={nm} />}
+      {race && run.phase === 'idle' && <TimeRaceInfo area={area} mode={race} />}
     </div>
   )
 }

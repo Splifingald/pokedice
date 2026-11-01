@@ -385,6 +385,8 @@ export interface TimeRaceState {
   met?: number[]
   /** Time shards picked up this try. */
   shards?: number
+  /** What was left on the clock when the last try was won (ms), for the win's line. */
+  left?: number
   /** The legends (dex) whose raid a won try opened, in order: the first race's, then the replay's. */
   won?: number[]
   /** The last win's moment has played. */

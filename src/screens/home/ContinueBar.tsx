@@ -20,6 +20,10 @@ import {
   progressOf,
   raidRules,
   teamAverageLevel,
+  canStartTimeRace,
+  timeRaceModeOf,
+  timeRacePlan,
+  timeRaceStateOf,
   type Area,
 } from '@/engine'
 import { useT } from '@/i18n/react'
@@ -68,8 +72,12 @@ export function useContinue(area: Area) {
   // A nightmare area (docs/30): the same way: before it, CONTINUE goes to its way in; once over, only its raid.
   const dreamMode = nightmareModeOf(area, data)
   const dream = dreamMode ? nightmareStateOf(save, area.id) : null
-  const gym = mode || dreamMode ? null : dueGym(area, progress, data, side)
-  const boss = gym || mode || dreamMode ? null : dueBoss(area, progress, teamAverageLevel(save), data)
+  // The race of time and space's area (docs/61 §4.4): before a try, CONTINUE goes to its way in (the replay's too, once
+  // the first legend is caught); in one, back to it; won, only its raids.
+  const raceMode = timeRaceModeOf(area, data)
+  const race = raceMode ? timeRaceStateOf(save, area.id) : null
+  const gym = mode || dreamMode || raceMode ? null : dueGym(area, progress, data, side)
+  const boss = gym || mode || dreamMode || raceMode ? null : dueBoss(area, progress, teamAverageLevel(save), data)
   const closed = isAreaClosed(save, area.id, data) || isAreaSealed(save, data, area.id)
   const busy = (run.areaId === area.id && run.phase !== 'idle') || battle
   const raid = gym || boss || busy ? null : openRaidIn(save, data, area)
@@ -83,11 +91,18 @@ export function useContinue(area: Area) {
 
   const enterPortal = !!mode && !portal?.active && !portal?.won && !busy
   const enterDream = !!dreamMode && !dream?.active && !dream?.won && !busy
-  const enter = enterPortal || enterDream
+  const enterRace = !!raceMode && canStartTimeRace(save, data, area.id) && !busy
+  const racePlan = raceMode ? timeRacePlan(save, raceMode, area.id) : null
+  const enter = enterPortal || enterDream || enterRace
   // Darkrai's strike waits on the area's page after a round (docs/30).
   const struck = !!dream?.active && (!!dream.strike || (run.areaId === area.id && !!run.nightmareStruck))
   const sub = busy
     ? t('ui.home.backToEncounter')
+    : enterRace
+      ? t(racePlan!.replay ? 'ui.timeRace.enterReplaySub' : 'ui.timeRace.enterSub', {
+          n: racePlan!.total,
+          time: `${Math.floor(racePlan!.seconds / 60)}:${String(racePlan!.seconds % 60).padStart(2, '0')}`,
+        })
     : enterDream
       ? t('ui.nightmare.enterSub', { n: dreamMode!.foes.length })
       : enter
@@ -98,6 +113,12 @@ export function useContinue(area: Area) {
         ? t('ui.nightmare.sealed')
       : dream?.active
         ? t('ui.nightmare.continueSub', { n: Math.min(dream.round + 1, dreamMode!.foes.length), total: dreamMode!.foes.length })
+      : raid && race?.won?.length
+        ? t('ui.raid.progress.continueSub', { level: raidRules(data, raid.dex, 'progress', raid.areaId).level })
+      : race?.won?.length && !race.active
+        ? t('ui.timeRace.sealed')
+      : race?.active
+        ? t('ui.timeRace.continueSub', { n: Math.min(race.fights + 1, racePlan!.total), total: racePlan!.total })
       : raid && portal?.won
         ? t('ui.raid.progress.continueSub', { level: raidRules(data, raid.dex, 'progress', raid.areaId).level })
       : portal?.won
@@ -147,7 +168,7 @@ export function useContinue(area: Area) {
     // Shut (sealed, resting): CONTINUE is greyed out, and the map's CONTINUE HERE says why instead.
     if (off) return pushToast(sub, 'info')
     if (raid) return navigate(progressRaidPath(raid))
-    if (enter || (portal?.active && portal.offers?.length) || struck) {
+    if (enter || (portal?.active && portal.offers?.length) || struck || race?.active) {
       ensureRun(area)
       return navigate('/area')
     }
@@ -176,6 +197,7 @@ export function useContinue(area: Area) {
     !struck &&
     !portal?.active &&
     !dream?.active &&
+    !race?.active &&
     !closed &&
     progress.cleared
   // GO TO's two lines: the area, and what waits for the player there (the gym, the legend, the round).
@@ -184,7 +206,9 @@ export function useContinue(area: Area) {
       ? { area: latest, label: t('ui.victory.goToArea', { name: latest.name }), sub: waitsIn(latest) }
       : null
   const keepExploring = !!(gym || boss || raid) && !closed && !busy && !resting
-  const label = enterDream
+  const label = enterRace
+    ? t('ui.timeRace.enter')
+    : enterDream
     ? t('ui.nightmare.enter')
     : enter
     ? t('ui.portal.enter')

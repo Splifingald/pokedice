@@ -80,7 +80,8 @@ const kept = (r: TimeRaceState): Partial<TimeRaceState> => ({
 // ------------------------------------------------------------------ the legends and the replay
 
 /** The legends whose raid the race opened here, in order (the first race's, then the replay's). */
-export const timeRaceWonDexes = (save: SaveData, areaId: string): number[] => timeRaceStateOf(save, areaId).won ?? []
+export const timeRaceWonDexes = (save: SaveData, areaId: string): number[] =>
+  timeRaceStateOf(save, areaId).won ?? []
 
 /** The race opened this legend's raid here (its raid can be fought: progressRaidState). */
 export const timeRaceOpened = (save: SaveData, areaId: string, dex: number): boolean =>
@@ -213,7 +214,12 @@ export const timeRaceOutOfTime = (save: SaveData, data: GameData, areaId: string
 
 /** Back to the start: the try ends, the team healed; XP, ₽ and items stay; the legends won stay won. */
 function backToStart(save: SaveData, data: GameData, areaId: string): SaveData {
-  return withRace(healTeam(save, data), areaId, { ...kept(timeRaceStateOf(save, areaId)), active: false, fights: 0, path: [] })
+  return withRace(healTeam(save, data), areaId, {
+    ...kept(timeRaceStateOf(save, areaId)),
+    active: false,
+    fights: 0,
+    path: [],
+  })
 }
 
 /**
@@ -368,10 +374,22 @@ export function winTimeRaceFight(
   const r = timeRaceStateOf(save, areaId)
   const plan = timeRacePlan(save, mode, areaId)
   if (timeRaceOutOfTime(save, data, areaId, now))
-    return { save: backToStart(save, data, areaId), fights: r.fights, total: plan.total, legend: null, outOfTime: true }
+    return {
+      save: backToStart(save, data, areaId),
+      fights: r.fights,
+      total: plan.total,
+      legend: null,
+      outOfTime: true,
+    }
   const fights = r.fights + 1
   if (fights < plan.total)
-    return { save: withRace(save, areaId, { ...r, fights }), fights, total: plan.total, legend: null, outOfTime: false }
+    return {
+      save: withRace(save, areaId, { ...r, fights }),
+      fights,
+      total: plan.total,
+      legend: null,
+      outOfTime: false,
+    }
   const last = r.path[r.path.length - 1]
   const legend = mode.legends.find((l) => l.type === last)?.dex ?? null
   const won = legend != null && !r.won?.includes(legend) ? [...(r.won ?? []), legend] : (r.won ?? [])
@@ -384,8 +402,8 @@ export function winTimeRaceFight(
     ...(r.tries != null && { tries: r.tries }),
     ...(r.shards != null && { shards: r.shards }),
     ...(r.startedAt != null && { startedAt: r.startedAt }),
-    // The moment it was won, for the win's line (how much time was left).
-    deadline: r.deadline,
+    // What was left on the clock, for the win's line.
+    left: Math.max(0, (r.deadline ?? now) - now),
   })
   return { save: done, fights, total: plan.total, legend, outOfTime: false }
 }
@@ -398,7 +416,9 @@ export const timeRaceLastWon = (save: SaveData, areaId: string): number | null =
 
 /** The last win's moment is due here. */
 export const timeRaceVictoryDue = (save: SaveData, data: GameData, areaId: string): boolean =>
-  !!modeAt(data, areaId) && timeRaceLastWon(save, areaId) != null && timeRaceStateOf(save, areaId).wonSeen === false
+  !!modeAt(data, areaId) &&
+  timeRaceLastWon(save, areaId) != null &&
+  timeRaceStateOf(save, areaId).wonSeen === false
 
 /** The win's moment has played. */
 export function markTimeRaceWonSeen(save: SaveData, areaId: string): SaveData {

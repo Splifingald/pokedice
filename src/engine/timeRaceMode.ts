@@ -56,13 +56,17 @@ const num = (v: unknown, fallback: number, min: number, max: number): number => 
 const int = (v: unknown, fallback: number, min: number, max: number) => Math.round(num(v, fallback, min, max))
 const obj = (v: unknown): Record<string, unknown> =>
   v && typeof v === 'object' ? (v as Record<string, unknown>) : {}
-const isType = (v: unknown): v is PokeType => typeof v === 'string' && (POKE_TYPES as readonly string[]).includes(v)
+const isType = (v: unknown): v is PokeType =>
+  typeof v === 'string' && (POKE_TYPES as readonly string[]).includes(v)
 
 /** A list of forks: two distinct types each, 10 at most; anything odd dropped (the default when none is left). */
 function forksOf(raw: unknown, fallback: [PokeType, PokeType][]): [PokeType, PokeType][] {
   if (!Array.isArray(raw)) return fallback
   const out = raw
-    .filter((f): f is unknown[] => Array.isArray(f) && f.length === 2 && isType(f[0]) && isType(f[1]) && f[0] !== f[1])
+    .filter(
+      (f): f is unknown[] =>
+        Array.isArray(f) && f.length === 2 && isType(f[0]) && isType(f[1]) && f[0] !== f[1],
+    )
     .slice(0, 10)
     .map((f) => [f[0], f[1]] as [PokeType, PokeType])
   return out.length ? out : fallback
@@ -97,7 +101,10 @@ export function normaliseTimeRace(raw: unknown): TimeRaceMode | null {
     legends: twoLegends ? legends : d.legends,
     perFork: int(r.perFork, d.perFork, 1, 10),
     seconds: int(r.seconds, d.seconds, 30, 7200),
-    shard: { chance: num(shard.chance, d.shard.chance, 0, 100), seconds: int(shard.seconds, d.shard.seconds, 0, 600) },
+    shard: {
+      chance: num(shard.chance, d.shard.chance, 0, 100),
+      seconds: int(shard.seconds, d.shard.seconds, 0, 600),
+    },
     items,
     speed: num(r.speed, d.speed, 1, 3),
     replay: {
@@ -118,7 +125,10 @@ export function normaliseTimeRace(raw: unknown): TimeRaceMode | null {
 export const timeRaceRunsOn = (data: GameData): boolean => eventOpenTo(data.config.timeRace?.access, data)
 
 /** The area's race, when it has one and the switch is on for the player; null otherwise (it plays as before). */
-export function timeRaceModeOf(area: Pick<Area, 'mode'> | undefined | null, data: GameData): TimeRaceMode | null {
+export function timeRaceModeOf(
+  area: Pick<Area, 'mode'> | undefined | null,
+  data: GameData,
+): TimeRaceMode | null {
   if (!area?.mode || !timeRaceRunsOn(data)) return null
   return normaliseTimeRace(area.mode)
 }

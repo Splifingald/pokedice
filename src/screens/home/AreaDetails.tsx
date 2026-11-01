@@ -15,6 +15,7 @@ import {
   progressRaidState,
   portalModeOf,
   nightmareModeOf,
+  timeRaceModeOf,
   raidRules,
   teamAverageLevel,
   trickDealable,
@@ -124,7 +125,9 @@ function RaidFact({ area, boss }: { area: Area; boss: BossDef }) {
             ? 'ui.portal.factLocked'
             : nightmareModeOf(area, data)
               ? 'ui.nightmare.factLocked'
-              : 'ui.raid.progress.factLocked'
+              : timeRaceModeOf(area, data)
+                ? 'ui.timeRace.factLocked'
+                : 'ui.raid.progress.factLocked'
           : state === 'done'
             ? 'ui.raid.progress.factDone'
             : 'ui.raid.progress.factOpen',

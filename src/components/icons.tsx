@@ -397,6 +397,21 @@ export const ICONS = {
   // Extreme mode (docs/22): its emblem, and a Pokémon resting after a K.O.
   skull: ['..kkkkkk..', '.kwwwwwwk.', 'kwwwwwwwwk', 'kwkkwwkkwk', 'kwkkwwkkwk', 'kwwwkkwwwk', '.kwwwwwwk.', '..kwwwwk..', '..kwkkwk..', '...kkkk...'],
   moon: ['..kkkk..', '.kyykk..', 'kyyk....', 'kyk.....', 'kyk.....', 'kyyk....', '.kyykk..', '..kkkk..'],
+  // The race of time and space (docs/61 §4.4): a clock face, its ring gold, its hands at ten past twelve.
+  clock: [
+    '...kkkkkk...',
+    '..kyyyyyyk..',
+    '.kywwkwwwyk.',
+    'kywwwkwwwwyk',
+    'kywwwkwwwwyk',
+    'kywwwkkkkwyk',
+    'kywwwwwwwwyk',
+    'kywwwwwwwwyk',
+    '.kywwwwwwyk.',
+    '..kyyyyyyk..',
+    '...kkkkkk...',
+    '............',
+  ],
   // The raids' calendar: two rings, a red header, a grid of days.
   calendar: [
     '..k.....k..',

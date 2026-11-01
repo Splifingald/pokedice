@@ -476,6 +476,30 @@ const FX_SOUNDS = {
     tone(784, 0.18, { type: 'triangle', vol: 0.04, at: 0.16 })
     tone(1047, 0.45, { type: 'triangle', vol: 0.045, at: 0.32 })
   },
+  // The race of time and space (docs/61 §4.4): the clock's tick (a dry click, higher in its last 30 s), the rift
+  // tearing space open (a rising hiss over a wobbling hum), a gate taken (two quick notes up), a time shard (a bright
+  // glassy chime climbing) and time and space settling at the win (a low bell under a chord).
+  'race.tick': (n = 0) => tone(n ? 1760 : 1320, 0.03, { type: 'square', vol: n ? 0.035 : 0.025 }),
+  'race.rift': () => {
+    hiss(1.1, { freq: 500, slide: 2600, vol: 0.06 })
+    tone(150, 1.0, { type: 'triangle', vol: 0.04, slide: 60 })
+    tone(156, 1.0, { type: 'sine', vol: 0.03, slide: 50 })
+  },
+  'race.gate': () => {
+    tone(659, 0.07, { type: 'square', vol: 0.04 })
+    tone(988, 0.12, { type: 'square', vol: 0.04, at: 0.07 })
+  },
+  'race.shard': () => {
+    tone(1568, 0.08, { type: 'triangle', vol: 0.045 })
+    tone(2093, 0.08, { type: 'triangle', vol: 0.045, at: 0.07 })
+    tone(2637, 0.22, { type: 'triangle', vol: 0.04, at: 0.14 })
+  },
+  'race.settle': () => {
+    tone(131, 1.2, { type: 'triangle', vol: 0.06 })
+    tone(523, 0.9, { type: 'triangle', vol: 0.035, at: 0.1 })
+    tone(659, 0.9, { type: 'triangle', vol: 0.03, at: 0.2 })
+    tone(784, 1.0, { type: 'triangle', vol: 0.03, at: 0.3 })
+  },
   // The Underground (docs/34): a pickaxe's clink on rock (lower and heavier the bigger the roll), the wall rumbling
   // down, and a little chime when something is dug out whole.
   'ug.strike': (n = 1) => {

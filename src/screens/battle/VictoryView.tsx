@@ -8,6 +8,7 @@ import {
   isUnownLetter,
   latestOpenArea,
   portalLock,
+  timeRaceLock,
   instanceStats,
   progressOf,
   rebattleEncounter,
@@ -575,6 +576,22 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
             ),
           })
           return
+        case 'time_race_fight':
+          // A fight of the race of time and space won in time (docs/61 §4.4): the next comes, or a fork, or the win.
+          extras.push({
+            key: k,
+            node: (
+              <div className="light-scope flex items-center justify-center gap-2 bg-[#0b0f2e] p-2 text-center text-white shadow-[inset_0_3px_0_#a8c8ff,0_0_0_2px_#24304f]">
+                <PixelIcon name="clock" size={22} />
+                <span className="text-xl leading-tight">
+                  {e.fight >= e.total
+                    ? t('ui.timeRace.lastFightWon')
+                    : t('ui.timeRace.fightWon', { n: e.fight, total: e.total })}
+                </span>
+              </div>
+            ),
+          })
+          return
         case 'nightmare_gift': {
           // The item a round left in the bag (docs/30), once for good.
           const item = data.items[e.key]
@@ -880,8 +897,8 @@ export function VictoryView() {
     return () => clearTimeout(timer)
   }, [closes, allShown, then, picking, lead])
 
-  // Inside a portal run (docs/28) there is no way Home: CONTINUE alone.
-  const locked = useGame((s) => !!portalLock(s.save, s.data))
+  // Inside a portal run (docs/28) there is no way Home: CONTINUE alone. Nor in a try of the race (docs/61 §4.4).
+  const locked = useGame((s) => !!portalLock(s.save, s.data) || !!timeRaceLock(s.save, s.data))
 
   // After a fight: NEXT waits for the player, unless Auto is on (Settings, or AUTO beside NEXT): then it fills and goes.
   const sendNext = go(() => continueAfterVictory(lead ?? stillIn ?? defaultLead()))
@@ -1152,6 +1169,9 @@ function AreaWipe() {
   const portalLost = useGame((s) => s.run.portalLost)
   // A wipe that woke the player from the nightmare (docs/30): its rounds start again from the first.
   const nightmareLost = useGame((s) => s.run.nightmareLost)
+  // A try of the race of time and space ended (docs/61 §4.4): the clock or a full K.O., back to the start.
+  const raceLost = useGame((s) => s.run.raceLost)
+  const timeUp = raceLost?.reason === 'time'
   return (
     <Overlay
       label={t('ui.wipe.title')}
@@ -1161,11 +1181,18 @@ function AreaWipe() {
         </AutoButton>
       }
     >
-      <h2 className="mb-2 text-center text-[32px] font-normal leading-none" aria-live="polite">{t('ui.wipe.title')}</h2>
+      <h2 className="mb-2 text-center text-[32px] font-normal leading-none" aria-live="polite">
+        {timeUp ? t('ui.timeRace.timeUpTitle') : t('ui.wipe.title')}
+      </h2>
       {/* The rework: what a wipe costs is said only where it differs from the usual (a portal, the nightmare, Extreme). */}
-      <p className="copy mb-3 text-lg" hidden={portalLost == null && nightmareLost == null && !!save && wipeHeals(save, data)}>
+      <p
+        className="copy mb-3 text-lg"
+        hidden={portalLost == null && nightmareLost == null && !raceLost && !!save && wipeHeals(save, data)}
+      >
         {/* Extreme mode heals nobody after a lost round: the fainted ones rest (docs/22). */}
-        {portalLost != null
+        {raceLost
+          ? t(timeUp ? 'ui.timeRace.timeUpBody' : 'ui.timeRace.wipeBody', { n: raceLost.fights, total: raceLost.total })
+          : portalLost != null
           ? t('ui.portal.wipeBody', { n: portalLost })
           : nightmareLost != null
           ? t('ui.nightmare.wipeBody', { n: nightmareLost })

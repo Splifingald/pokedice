@@ -58,7 +58,10 @@ const SP = h.areas.find((a) => a.name === 'Spear Pillar')!
 const NOW = Date.parse('2026-12-26T12:00:00.000Z')
 const world = { ...h.world, minBadges: 0, previewHours: 48 }
 const dataWith = (access: 'off' | 'all') =>
-  makeDataWith({ areas: h.areas, regions: [h.region] }, { smallWorlds: { access: 'all', list: [world] }, timeRace: { access } })
+  makeDataWith(
+    { areas: h.areas, regions: [h.region] },
+    { smallWorlds: { access: 'all', list: [world] }, timeRace: { access } },
+  )
 const data = dataWith('all')
 const off = dataWith('off')
 const PALKIA = 484
@@ -72,13 +75,23 @@ function atPillar(d: GameData = data): SaveData {
     const p = createInstance(dex, 65, d, newId(), NOW)
     return { ...p, currentHp: Math.floor(instanceMaxHp(p, d) / 2) }
   })
-  return { ...s, box: team, team: team.map((p) => p.id), currentAreaId: SP.id, gold: 500, inventory: { potion: 2 } }
+  return {
+    ...s,
+    box: team,
+    team: team.map((p) => p.id),
+    currentAreaId: SP.id,
+    gold: 500,
+    inventory: { potion: 2 },
+  }
 }
 const started = (d: GameData = data, at = NOW) => startTimeRace(atPillar(d), d, SP.id, at)!
 const race = (s: SaveData) => timeRaceStateOf(s, SP.id)
 const withRace = (s: SaveData, patch: Partial<TimeRaceState>): SaveData => ({
   ...s,
-  areaProgress: { ...s.areaProgress, [SP.id]: { ...emptyProgress(), ...s.areaProgress[SP.id], timeRace: { ...race(s), ...patch } } },
+  areaProgress: {
+    ...s.areaProgress,
+    [SP.id]: { ...emptyProgress(), ...s.areaProgress[SP.id], timeRace: { ...race(s), ...patch } },
+  },
 })
 const typesOf = (dex: number) => [data.species[dex]!.type1, data.species[dex]!.type2].filter(Boolean)
 
@@ -122,7 +135,16 @@ describe('the area and its switch', () => {
       perFork: 3,
       seconds: 720,
       shard: { seconds: 30 },
-      replay: { forks: [['normal', 'fairy'], ['rock', 'flying'], ['bug', 'dragon'], ['ice', 'dark']], levelBonus: 4, seconds: 600 },
+      replay: {
+        forks: [
+          ['normal', 'fairy'],
+          ['rock', 'flying'],
+          ['bug', 'dragon'],
+          ['ice', 'dark'],
+        ],
+        levelBonus: 4,
+        seconds: 600,
+      },
       raid: { level: 70, upgradeLevel: 8, bars: 3, teamCap: 70 },
     })
     expect(timeRacePlanAt(atPillar(), data, SP.id)).toMatchObject({ replay: false, total: 15, seconds: 720 })
@@ -132,7 +154,11 @@ describe('the area and its switch', () => {
   it('cleans what the admin left: odd numbers fall back, odd forks dropped, the legends always two', () => {
     const r = normaliseTimeRace({
       kind: 'timeRace',
-      forks: [['fire', 'fire'], ['water', 'nope'], ['rock', 'bug']],
+      forks: [
+        ['fire', 'fire'],
+        ['water', 'nope'],
+        ['rock', 'bug'],
+      ],
       legends: [{ type: 'water', dex: 484 }],
       perFork: 0,
       seconds: 'x',
@@ -155,7 +181,10 @@ describe('the area and its switch', () => {
     // Its raids as before: open once the area is cleared.
     const raid = progressRaidOf(off, progressRaidKey(SP.id, DIALGA))!
     expect(progressRaidState(s, off, raid)).toBe('locked')
-    const cleared = { ...s, areaProgress: { ...s.areaProgress, [SP.id]: { ...emptyProgress(), cleared: true } } }
+    const cleared = {
+      ...s,
+      areaProgress: { ...s.areaProgress, [SP.id]: { ...emptyProgress(), cleared: true } },
+    }
     expect(progressRaidState(cleared, off, raid)).toBe('open')
   })
 
@@ -173,7 +202,14 @@ describe('the way in and the clock', () => {
     expect(arrived.box.every((p) => p.currentHp === instanceMaxHp(p, data))).toBe(true)
     expect(teamSwapsOpen(s, data, { phase: 'idle', areaId: SP.id })).toBe(true)
     const r = started()
-    expect(race(r)).toMatchObject({ active: true, fights: 0, path: [], startedAt: NOW, deadline: NOW + 12 * MIN, tries: 1 })
+    expect(race(r)).toMatchObject({
+      active: true,
+      fights: 0,
+      path: [],
+      startedAt: NOW,
+      deadline: NOW + 12 * MIN,
+      tries: 1,
+    })
     expect(r.box.every((p) => p.currentHp === instanceMaxHp(p, data))).toBe(true)
     expect(timeRaceLock(r, data)?.id).toBe(SP.id)
     expect(timeRaceNoCatch(r, data, SP.id)).toBe(true)
@@ -238,7 +274,12 @@ describe('the forks', () => {
       ],
     })
     const a = pickTimeRaceGate(shard, data, SP.id, 0)!.save
-    expect(race(a)).toMatchObject({ path: ['fire'], deadline: NOW + 12 * MIN + 30_000, shards: 1, gates: null })
+    expect(race(a)).toMatchObject({
+      path: ['fire'],
+      deadline: NOW + 12 * MIN + 30_000,
+      shards: 1,
+      gates: null,
+    })
     const b = pickTimeRaceGate(shard, data, SP.id, 1)!.save
     expect(race(b).deadline).toBe(NOW + 12 * MIN)
     expect(b.inventory.revive).toBe(1)
@@ -252,7 +293,8 @@ describe('the forks', () => {
       const g = race(openTimeRaceFork(started(), data, SP.id, rng)!).gates!
       for (const x of g) {
         if (x.find?.kind === 'shard') shards++
-        else expect(DEFAULT_TIME_RACE.items.map((it) => it.key)).toContain(x.find?.kind === 'item' && x.find.key)
+        else
+          expect(DEFAULT_TIME_RACE.items.map((it) => it.key)).toContain(x.find?.kind === 'item' && x.find.key)
       }
     }
     expect(shards / 800).toBeGreaterThan(0.28)
@@ -278,7 +320,9 @@ describe('how it ends', () => {
       expect(timeRaceVictoryDue(end.save, data, SP.id)).toBe(true)
       const raid = progressRaidOf(data, progressRaidKey(SP.id, dex))!
       expect(progressRaidState(end.save, data, raid)).toBe('open')
-      expect(progressRaidState(end.save, data, progressRaidOf(data, progressRaidKey(SP.id, other))!)).toBe('locked')
+      expect(progressRaidState(end.save, data, progressRaidOf(data, progressRaidKey(SP.id, other))!)).toBe(
+        'locked',
+      )
       expect(openRaidIn(end.save, data, SP)?.dex).toBe(dex)
       expect(raidRules(data, dex, 'progress', SP.id)).toMatchObject({ level: 70, upgradeLevel: 8, bars: 3 })
       expect(raidTeamCap(data, dex, 'progress', SP.id)).toBe(70)
@@ -332,7 +376,12 @@ describe('the replay', () => {
     const s = palkiaCaught()
     expect(isAreaSealed(s, data, SP.id)).toBe(false)
     expect(canStartTimeRace(s, data, SP.id)).toBe(true)
-    expect(timeRacePlanAt(s, data, SP.id)).toMatchObject({ replay: true, seconds: 600, levelBonus: 4, total: 15 })
+    expect(timeRacePlanAt(s, data, SP.id)).toMatchObject({
+      replay: true,
+      seconds: 600,
+      levelBonus: 4,
+      total: 15,
+    })
     let r = startTimeRace(s, data, SP.id, NOW + 60 * MIN)!
     expect(race(r).deadline).toBe(NOW + 70 * MIN)
     const types: PokeType[] = []
@@ -371,7 +420,10 @@ describe('inside the race', () => {
     const r = started()
     expect(timeRaceBattleSpeed(r, data, SP.id)).toEqual({ motion: 'short', pace: 1 / 1.5 })
     expect(timeRaceBattleSpeed(atPillar(), data, SP.id)).toBeNull()
-    const cleared = { ...r, areaProgress: { ...r.areaProgress, [SP.id]: { ...r.areaProgress[SP.id]!, cleared: true } } }
+    const cleared = {
+      ...r,
+      areaProgress: { ...r.areaProgress, [SP.id]: { ...r.areaProgress[SP.id]!, cleared: true } },
+    }
     for (const playStyle of ['explored', 'idle'] as const) {
       const s = { autoMode: true, playStyle }
       expect(autoAvailable(cleared, data, s, SP.id)).toBe(false)

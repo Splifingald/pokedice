@@ -432,6 +432,8 @@ export type RunEvent =
   | { kind: 'nightmare_round'; round: number; total: number }
   /** The item a nightmare round left in the bag (docs/30), once for good. */
   | { kind: 'nightmare_gift'; key: string; qty: number }
+  /** A fight of the race of time and space won in time (docs/61 §4.4): `fight` of `total`. */
+  | { kind: 'time_race_fight'; fight: number; total: number }
   /**
    * An Unown caught with the Unown Pokédex open (docs/41): its letter, new to the page or not, the page's count, and
    * the prize when it was the last one.
