@@ -493,7 +493,8 @@ function DoubleBattlesBox() {
 }
 
 /**
- * Trades (docs/23): the numbers, the trade evolutions (a pair taken off evolves by level again)
+ * Trades (docs/23): the numbers (the board's picks among them, §2.1), the trade evolutions (a pair taken off evolves by
+ * level again)
  * and the species that can never be traded (the Ultra Beasts; legendaries and mythicals always are out).
  */
 function TradesBox() {
@@ -504,7 +505,18 @@ function TradesBox() {
   const [from, setFrom] = useState<number | null>(null)
   const [to, setTo] = useState<number | null>(null)
   const [out, setOut] = useState<number | null>(null)
-  const num = (k: 'maxListings' | 'listingDays' | 'tradesPerDay' | 'levelCap' | 'minBadges', min = 0, max?: number) => (
+  const num = (
+    k:
+      | 'maxListings'
+      | 'listingDays'
+      | 'tradesPerDay'
+      | 'levelCap'
+      | 'minBadges'
+      | 'boardPicks'
+      | 'boardRerolls',
+    min = 0,
+    max?: number,
+  ) => (
     <NumInput min={min} max={max} value={cfg[k]} onChange={(v) => set({ [k]: Math.max(min, Math.min(max ?? Infinity, v ?? min)) })} />
   )
   const name = (dex: number) => data?.species[dex]?.name ?? `#${dex}`
@@ -519,6 +531,10 @@ function TradesBox() {
         <Field label="Trades taken a day" hint="per player, UTC days">{num('tradesPerDay', 1, 100)}</Field>
         <Field label="Level cap" hint="traded Pokémon arrive at most at">{num('levelCap', 1, 100)}</Field>
         <Field label="Badges needed" hint="every region's counted">{num('minBadges', 0, 100)}</Field>
+        <Field label="Board picks" hint="listings picked for a player; a search shows all">
+          {num('boardPicks', 1, 20)}
+        </Field>
+        <Field label="New picks a day" hint="per player, UTC days">{num('boardRerolls', 0, 20)}</Field>
       </div>
       <div className="grid gap-2">
         <span className="text-lg">Evolve when traded (never by level)</span>
