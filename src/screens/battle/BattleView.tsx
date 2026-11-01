@@ -45,6 +45,7 @@ import {
   inNightmare,
   legendCinemaOn,
   championCinemaOn,
+  roadblockOf,
 } from '@/engine'
 import { playCry } from '@/audio/cries'
 import { feelSound } from '@/audio/feel'
@@ -387,6 +388,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     {
       kind: st.kind,
       trainerName,
+      // A roadblock boss (docs/61 §2) is spoken of as the wild Pokémon it is, not a legendary.
+      roadblock: st.kind === 'boss' && !!roadblockOf(data.areas.find((a) => a.id === run.areaId), st.enemy.baseDex ?? st.enemy.dex),
       catchable,
       itemName: (k) => data.items[k]?.name ?? k,
       speciesName: (dex) => data.species[dex]?.name ?? `#${dex}`,

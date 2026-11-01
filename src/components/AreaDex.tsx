@@ -12,7 +12,7 @@ import { SpriteImg } from './SpriteImg'
 
 export interface AreaMon {
   dex: number
-  kind: 'wild' | 'legendary' | 'fossil'
+  kind: 'wild' | 'legendary' | 'roadblock' | 'fossil'
   /**
    * Share of the wild pool (or, for a fossil, of the loot table); 0 for a legendary. Where the area keeps the time
    * (docs/32), the share when it's met: now, or in its own half.
@@ -32,7 +32,7 @@ export function areaPokemon(area: Area, data: GameData, now: DayTime | null = nu
   const out: AreaMon[] = [...wild]
     .sort((a, b) => a - b)
     .map((dex) => ({ dex, kind: 'wild', share: wildShare(data, area, dex, now), time: speciesTime(data, area, dex) }))
-  for (const b of area.legendaryBoss ?? []) out.push({ dex: b.dex, kind: 'legendary', share: 0 })
+  for (const b of area.legendaryBoss ?? []) out.push({ dex: b.dex, kind: b.roadblock ? 'roadblock' : 'legendary', share: 0 })
   const lootTotal = area.lootPool.reduce((sum, e) => sum + Math.max(0, e.weight), 0)
   for (const e of area.lootPool) {
     const effect = data.items[e.itemKey]?.effect
@@ -93,12 +93,14 @@ export function AreaDex({ areaId, onOpenDex }: { areaId: string; onOpenDex: (dex
                   <span
                     className={cx(
                       'inline-flex items-center gap-1 text-sm leading-none',
-                      m.kind === 'legendary' ? 'text-danger' : 'text-muted',
+                      m.kind === 'legendary' || m.kind === 'roadblock' ? 'text-danger' : 'text-muted',
                     )}
                   >
                     {m.time && <DayNightTag time={m.time} now={now} size={12} />}
                     {m.kind === 'legendary'
                       ? t('ui.areaDex.legendary')
+                      : m.kind === 'roadblock'
+                        ? t('ui.areaDex.roadblock')
                       : m.kind === 'fossil'
                         ? t('ui.areaDex.fossil')
                         : rarity(m.share)}

@@ -18,6 +18,7 @@ import {
   type DieType,
   type Milestone,
   type RunEvent,
+  roadblockOf,
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
 import { feelSound, type FeelSound } from '@/audio/feel'
@@ -983,7 +984,10 @@ export function VictoryView() {
     </div>
   )
 
-  const title = t(battle?.state.kind === 'boss' ? 'ui.victory.legendaryVictory' : 'ui.victory.victory')
+  // A roadblock boss (docs/61 §2) is a plain victory: it isn't a legendary.
+  const bossFoe = battle?.state.kind === 'boss' ? battle.state.enemy : null
+  const roadblock = !!bossFoe && !!roadblockOf(data.areas.find((a) => a.id === run.areaId), bossFoe.baseDex ?? bossFoe.dex)
+  const title = t(battle?.state.kind === 'boss' && !roadblock ? 'ui.victory.legendaryVictory' : 'ui.victory.victory')
   return (
     <Overlay footer={footer} label={title}>
       {/* The battle's live region says the fight is won (the line under the stage gives way to the card). */}

@@ -557,6 +557,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   // about 3 in 5 and a very rare one about 1 in 3, and no fixed recipe (Trick Balls only, one or two Treats first,
   // Treats up to the best section) comes within 4 points. A miss pushing the gauge by 35 is what keeps Balls only from
   // winning: at the first idea's +10 they caught 98 % of common ghosts, and the Treats were never worth giving.
+  // Pokémon posing as items (docs/61 §3): a find that springs out as Voltorb. Off until the admin opens it.
+  disguises: { access: 'off' },
   trickOrTreat: {
     access: 'off',
     treatMin: 10,

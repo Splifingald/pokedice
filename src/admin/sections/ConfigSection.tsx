@@ -1637,6 +1637,8 @@ const FEATURES: Feature[] = [
   own('Legendary intros', 'legendCinema', 'intros'),
   own('Champion intros', 'championCinema', 'intros'),
   bare('Route 1 opening & tutorial', 'openingRounds'),
+  // The side quests (docs/61).
+  bare('Pokémon posing as items', 'disguises'),
   own('Unown Pokédex', 'unownDex', 'unown'),
   own('Hidden talents', 'hiddenTalents', 'talents'),
   bare('Outfits', 'outfits'),

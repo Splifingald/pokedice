@@ -241,15 +241,35 @@ export interface LootEntry {
   /** Quantity found (for money: the ₽ amount), drawn between these. */
   minQty: number
   maxQty: number
+  /**
+   * A Pokémon posing as this item (docs/61 §3): Voltorb in a Poké Ball. Dealt and shown as the find, it springs out as
+   * a wild Pokémon when picked up, at a level between these. Only while its switch is on.
+   */
+  disguise?: LootDisguise | null
+}
+
+export interface LootDisguise {
+  dex: number
+  minLevel: number
+  maxLevel: number
 }
 
 /** Battle scenes (public/battle/*.png). */
 export const BATTLE_BACKGROUNDS = ['grass', 'sea', 'water', 'rock', 'default'] as const
 export type BattleBackground = (typeof BATTLE_BACKGROUNDS)[number]
 
+/**
+ * A roadblock boss (docs/61 §2): a Pokémon across the road, not a legendary. Its kind picks its words: Snorlax asleep,
+ * Sudowoodo the "tree", Kecleon unseen.
+ */
+export const ROADBLOCK_KINDS = ['sleeping', 'tree', 'invisible'] as const
+export type RoadblockKind = (typeof ROADBLOCK_KINDS)[number]
+
 export interface BossDef {
   dex: number
   level: number
+  /** A Pokémon blocking the road rather than a legendary (docs/61 §2): the same rules, its own words. */
+  roadblock?: RoadblockKind | null
   /** Victory Road style: the boss triggers when the team's average level reaches this, instead of once every round is done. */
   teamAvgThreshold?: number
   /** Upgrade level this legendary fights at; unset = the area's. */
@@ -440,6 +460,11 @@ export type UnlockCondition =
   | { kind: 'area'; areaId: string }
   /** Another area is cleared — e.g. a small world's league beaten, every main area done (docs/26 §2.5). */
   | { kind: 'cleared'; areaId: string }
+  /**
+   * Every species listed is caught, in any region's Pokédex (docs/61 §1): Snowpoint Temple waits for the three Regis,
+   * caught in Hoenn. Caught rather than owned, so trading one away doesn't shut the area again.
+   */
+  | { kind: 'caught'; dex: number[] }
 
 /**
  * The roaming legendaries. They have no area of their own: once every Pokémon in `requires` has been **caught**, each
@@ -1075,6 +1100,8 @@ export interface GameConfig {
   looks: { access: EventAccess }
   /** Trick or Treat (docs/29): its switch, numbers and each area's ghosts. The server reads the switch too. */
   trickOrTreat: TrickOrTreatConfig
+  /** Pokémon posing as items (docs/61 §3): its switch. The server reads the same row (0110: side_quest_open). */
+  disguises: { access: EventAccess }
   /** Day and night in Johto (docs/32): its switch. Migration 0061 inserts the same row. */
   dayNight: { access: EventAccess }
   /** Idle mode and the play styles (docs/36): its switch. Migration 0068 inserts the same row. */

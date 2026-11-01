@@ -3,7 +3,7 @@ import { GlitchSprite } from '@/components/Portal'
 import { motion } from 'framer-motion'
 import { useEffect, useId, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { catchTarget, catchValueOf, effectiveStats, getSpecies, isDoubleEncounter, isPlayerFoe, MONEY, paidKey, rebattleProgress, rebattleTiers, teamOf, type Encounter, portalNoCatch, nightmareFoe, familyTalent, familyUnlocked, noteTalentMet, talentMet, talentsOn } from '@/engine'
+import { catchTarget, catchValueOf, roadblockOf, effectiveStats, getSpecies, isDoubleEncounter, isPlayerFoe, MONEY, paidKey, rebattleProgress, rebattleTiers, teamOf, type Encounter, portalNoCatch, nightmareFoe, familyTalent, familyUnlocked, noteTalentMet, talentMet, talentsOn } from '@/engine'
 import { joinList } from '@/i18n'
 import { effectText } from '@/i18n/text'
 import { money } from '@/lib/format'
@@ -68,7 +68,11 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
         )}
       </motion.div>
       <div className="flex min-w-0 flex-col gap-1">
-        {boss && <div className="text-lg leading-none tracking-[0.35em] text-gold">{t('ui.enc.legendaryTag')}</div>}
+        {boss && (
+          <div className="text-lg leading-none tracking-[0.35em] text-gold">
+            {t(roadblockOf(area, enc.dex) ? 'ui.enc.roadblockTag' : 'ui.enc.legendaryTag')}
+          </div>
+        )}
         {dream && (
           <div className="text-lg leading-none tracking-[0.2em] text-muted">
             {t('ui.nightmare.roundTag', { n: dream.round, total: dream.total })}
@@ -362,6 +366,9 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
   const double = isDoubleEncounter(enc)
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
+  // A roadblock boss (docs/61 §2) is a Pokémon across the road, not a legendary: its own words.
+  const runArea = useGame((s) => s.data.areas.find((a) => a.id === s.run.areaId))
+  const roadblock = enc.kind === 'boss' ? roadblockOf(runArea, enc.dex) : null
   const titleId = useId()
   const skippable = canSkipCurrent()
   const fight = enc.kind !== 'center' && enc.kind !== 'item' && enc.kind !== 'casino' && enc.kind !== 'trick'
@@ -393,7 +400,15 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
       >
         {/* Gym and legendary cards carry their own banner, so their title is for screen readers only. */}
         <h2 id={titleId} className={dark ? 'sr-only' : 'border-b-[3px] border-edge px-3 py-2 text-center text-2xl leading-tight sm:text-3xl'}>
-          {t(enc.kind === 'wild' && enc.partner ? 'ui.enc.titleWildPair' : isPlayerFoe(enc) ? 'ui.areaVersus.title' : TITLES[enc.kind])}
+          {t(
+            enc.kind === 'wild' && enc.partner
+              ? 'ui.enc.titleWildPair'
+              : isPlayerFoe(enc)
+                ? 'ui.areaVersus.title'
+                : roadblock
+                  ? 'ui.enc.titleRoadblock'
+                  : TITLES[enc.kind],
+          )}
         </h2>
         <div className="pixel-scroll flex flex-col gap-3 overflow-y-auto p-3 sm:p-4">
           {enc.kind === 'gym' && <GymCard enc={enc} />}
@@ -404,7 +419,9 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
               <div className="text-center text-2xl leading-tight text-gold">
                 {enc.returning
                   ? t('ui.enc.legendaryBack', { name: data.species[enc.dex]?.name ?? t('ui.enc.theLegendary') })
-                  : t('ui.enc.legendaryBlocks')}
+                  : roadblock
+                    ? t(`ui.enc.roadblock.${roadblock}`)
+                    : t('ui.enc.legendaryBlocks')}
               </div>
               <div className="bg-panel p-3 text-ink">
                 <WildCard enc={enc} />

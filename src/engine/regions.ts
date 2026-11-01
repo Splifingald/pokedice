@@ -81,6 +81,17 @@ export function unlockedRegions(save: SaveData, data: GameData): Region[] {
 }
 
 /**
+ * Every species caught, in every region's Pokédex: the live one and the parked ones. A small world's catches don't
+ * count (they go home on their own, docs/26), as the Day Care's count leaves them out too.
+ */
+export function pokedexEverywhere(save: SaveData): Set<number> {
+  const world = worldRegionOf(save)
+  const all = new Set(regionOf(save) === world ? [] : save.pokedex)
+  for (const [id, block] of Object.entries(save.parked ?? {})) if (id !== world) for (const dex of block?.pokedex ?? []) all.add(dex)
+  return all
+}
+
+/**
  * The region a species *belongs* to — the region whose `dexRange` covers its number. Unlike `regionSpecies`, which
  * asks where you can catch something, this asks which generation it is from, and that is what decides whether a
  * Pokémon exists for you yet.

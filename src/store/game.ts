@@ -150,6 +150,8 @@ export interface RunState {
   nightmareStruck?: boolean
   /** Trick or Treat under way (docs/29). */
   trick?: TrickRun | null
+  /** A Pokémon posing as a find has sprung out (docs/61 §3): the find's screen shows it, FIGHT to go. */
+  sprung?: boolean
   /** The fight is on the screen, the player's side not out yet: one tap on a Pokémon sends it (the rework). */
   pickLead?: boolean
   /**

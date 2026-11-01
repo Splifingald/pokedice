@@ -114,7 +114,7 @@ export function useContinue(area: Area) {
       : gym
       ? t('ui.home.gymReady', { name: trainerTitle(gym) })
       : boss
-        ? t('ui.home.legendReady')
+        ? t(boss.roadblock ? 'ui.home.roadblockReady' : 'ui.home.legendReady')
         : raid
           ? t('ui.raid.progress.continueSub', { level: raidRules(data, raid.dex, 'progress', raid.areaId).level })
         : closed
@@ -132,7 +132,8 @@ export function useContinue(area: Area) {
     const leader = dueGym(to, p, data, side)
     const rounds = to.roundsToClear || null
     if (leader) return t('ui.home.gymReady', { name: trainerTitle(leader) })
-    if (dueBoss(to, p, teamAverageLevel(save), data)) return t('ui.home.legendReady')
+    const waiting = dueBoss(to, p, teamAverageLevel(save), data)
+    if (waiting) return t(waiting.roadblock ? 'ui.home.roadblockReady' : 'ui.home.legendReady')
     return rounds != null
       ? t('ui.home.roundOf', { n: Math.min((p.roundsDone ?? 0) + 1, rounds), total: rounds })
       : t('ui.home.secretArea')

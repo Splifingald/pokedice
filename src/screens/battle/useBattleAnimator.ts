@@ -114,6 +114,8 @@ export function finalBlow() {
 export interface AnimatorContext {
   kind: BattleState['kind']
   trainerName: string | null
+  /** The boss is a roadblock (docs/61 §2): said as a wild Pokémon, not a legendary. */
+  roadblock?: boolean
   /**
    * The foe goes to the catch throw once it's K.O.'d (wild or legendary, and a catch on offer). A double battle asks per
    * foe: a wild pair's first K.O. waits, worn out on its spot, for the other's (docs/33).
@@ -231,7 +233,7 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
         ctx.kind === 'wild'
           ? t('ui.log.startWild', { foe: st.enemy.name, lead })
           : ctx.kind === 'boss'
-            ? t('ui.log.startBoss', { foe: st.enemy.name, lead })
+            ? t(ctx.roadblock ? 'ui.log.startWild' : 'ui.log.startBoss', { foe: st.enemy.name, lead })
             : t('ui.log.startTrainer', { trainer: ctx.trainerName ?? t('ui.log.theTrainer'), foe: st.enemy.name, lead })
       return { delay: 1100, apply: (f) => ({ ...f, message: text }) }
     }
@@ -424,7 +426,7 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           apply: (f) => ({
             ...f,
             message: t('ui.catch.wornOut', {
-              who: t(ctx.kind === 'boss' ? 'ui.catch.theLegendary' : 'ui.catch.theWild'),
+              who: t(ctx.kind === 'boss' && !ctx.roadblock ? 'ui.catch.theLegendary' : 'ui.catch.theWild'),
               name: nameOf(e.uid),
             }),
             wornOut: { ...f.wornOut, [e.uid]: true },

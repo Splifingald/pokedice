@@ -1748,7 +1748,13 @@
    "trainer": 3
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
+  "legendaryBoss": [
+   {
+    "dex": 352,
+    "level": 30,
+    "roadblock": "invisible"
+   }
+  ],
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 6,
@@ -1765,13 +1771,6 @@
     "weight": 14,
     "minLevel": 31,
     "maxLevel": 37
-   },
-   {
-    "id": "16bc8568-d41e-598b-ab97-2cfbe327aee3",
-    "dex": 352,
-    "weight": 12,
-    "minLevel": 32,
-    "maxLevel": 38
    },
    {
     "id": "b5267f4e-1e1a-5788-99b8-0890180cc8fa",
@@ -2469,6 +2468,19 @@
     "unique": true,
     "minQty": 1,
     "maxQty": 1
+   },
+   {
+    "id": "56f72fe5-e1dd-59ac-9181-e25d3eb33fa7",
+    "itemKey": "poke-ball",
+    "weight": 30,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 101,
+     "minLevel": 36,
+     "maxLevel": 45
+    }
    }
   ]
  },
@@ -3131,6 +3143,14 @@
    {
     "kind": "maxLevel",
     "level": 65
+   },
+   {
+    "kind": "caught",
+    "dex": [
+     377,
+     378,
+     379
+    ]
    }
   ],
   "gyms": [],
@@ -3822,6 +3842,32 @@
     "unique": false,
     "minQty": 1,
     "maxQty": 1
+   },
+   {
+    "id": "ac4762ac-52d0-5cb5-a237-1fffa7e1e1d3",
+    "itemKey": "poke-ball",
+    "weight": 2,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 100,
+     "minLevel": 25,
+     "maxLevel": 32
+    }
+   },
+   {
+    "id": "271d2ecb-a1ec-54b6-9e66-dc1a6c118dac",
+    "itemKey": "poke-ball",
+    "weight": 2,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 101,
+     "minLevel": 33,
+     "maxLevel": 36
+    }
    }
   ]
  },
@@ -5610,6 +5656,19 @@
     "unique": true,
     "minQty": 1,
     "maxQty": 1
+   },
+   {
+    "id": "cc331cf8-fc26-5b16-958a-f123495650de",
+    "itemKey": "poke-ball",
+    "weight": 32,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 100,
+     "minLevel": 18,
+     "maxLevel": 24
+    }
    }
   ]
  },
@@ -5884,7 +5943,13 @@
    "versus": 1
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
+  "legendaryBoss": [
+   {
+    "dex": 143,
+    "level": 30,
+    "roadblock": "sleeping"
+   }
+  ],
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 5,
@@ -5927,13 +5992,6 @@
     "weight": 5,
     "minLevel": 20,
     "maxLevel": 25
-   },
-   {
-    "id": "dd2a6cbd-52c7-50b4-80b6-093cbefb3740",
-    "dex": 143,
-    "weight": 2,
-    "minLevel": 30,
-    "maxLevel": 30
    },
    {
     "id": "d4b33063-e7c7-5a10-8be2-9cd7d8d5e6c6",
@@ -7800,7 +7858,13 @@
    "versus": 1
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
+  "legendaryBoss": [
+   {
+    "dex": 143,
+    "level": 15,
+    "roadblock": "sleeping"
+   }
+  ],
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 2,
@@ -7878,13 +7942,6 @@
     "weight": 6,
     "minLevel": 12,
     "maxLevel": 15
-   },
-   {
-    "id": "fe966699-73e0-51c4-84d2-b1e00a73a3f4",
-    "dex": 143,
-    "weight": 2,
-    "minLevel": 15,
-    "maxLevel": 17
    }
   ],
   "trainerPool": [
@@ -10034,6 +10091,19 @@
     "unique": false,
     "minQty": 50,
     "maxQty": 100
+   },
+   {
+    "id": "8d04b152-b23b-5c37-b009-de0bf1055105",
+    "itemKey": "poke-ball",
+    "weight": 32,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 100,
+     "minLevel": 27,
+     "maxLevel": 29
+    }
    }
   ]
  },
@@ -16262,7 +16332,13 @@
    "versus": 1
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
+  "legendaryBoss": [
+   {
+    "dex": 185,
+    "level": 20,
+    "roadblock": "tree"
+   }
+  ],
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 4,
@@ -16351,13 +16427,6 @@
     "minLevel": 17,
     "maxLevel": 24,
     "time": "day"
-   },
-   {
-    "id": "29d3e958-1b64-5c9c-8fd4-ac8c7e2d390d",
-    "dex": 185,
-    "weight": 3,
-    "minLevel": 20,
-    "maxLevel": 24
    },
    {
     "id": "e0d4735f-b286-5784-9f2c-1893639c1231",
@@ -21691,6 +21760,32 @@
     "unique": true,
     "minQty": 1,
     "maxQty": 1
+   },
+   {
+    "id": "3278e5ac-76c1-5399-8619-397dc62edcd0",
+    "itemKey": "poke-ball",
+    "weight": 16,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 100,
+     "minLevel": 33,
+     "maxLevel": 39
+    }
+   },
+   {
+    "id": "30953001-6060-5359-a922-36c7ea4c0a66",
+    "itemKey": "poke-ball",
+    "weight": 16,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 101,
+     "minLevel": 35,
+     "maxLevel": 41
+    }
    }
   ]
  },
@@ -38231,6 +38326,19 @@
     "unique": false,
     "minQty": 50,
     "maxQty": 100
+   },
+   {
+    "id": "35c80365-6e31-5113-a33a-d0cb4e0e6bfa",
+    "itemKey": "poke-ball",
+    "weight": 32,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 590,
+     "minLevel": 26,
+     "maxLevel": 31
+    }
    }
   ]
  },
@@ -58071,6 +58179,19 @@
     "unique": false,
     "minQty": 100,
     "maxQty": 200
+   },
+   {
+    "id": "2f62d186-c3bd-5d48-8749-8d09c4238542",
+    "itemKey": "poke-ball",
+    "weight": 32,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 590,
+     "minLevel": 30,
+     "maxLevel": 35
+    }
    }
   ]
  },
@@ -58619,6 +58740,19 @@
     "unique": false,
     "minQty": 100,
     "maxQty": 200
+   },
+   {
+    "id": "ef9fdc57-ba18-5810-8b43-98d62ff05ed9",
+    "itemKey": "poke-ball",
+    "weight": 32,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 591,
+     "minLevel": 35,
+     "maxLevel": 40
+    }
    }
   ]
  },
@@ -59046,6 +59180,19 @@
     "unique": false,
     "minQty": 200,
     "maxQty": 400
+   },
+   {
+    "id": "ff71b70c-4aaf-55d6-b6e1-f9f6ed2ff284",
+    "itemKey": "poke-ball",
+    "weight": 29,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 591,
+     "minLevel": 60,
+     "maxLevel": 68
+    }
    }
   ]
  },

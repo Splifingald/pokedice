@@ -137,6 +137,8 @@ import {
   outfitOf,
   finishRerollLesson,
   rerollLessonDue,
+  disguisesOn,
+  isDisguisedFind,
 } from '@/engine'
 import { activeSlot } from '@/save/storage'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type CatchState, type RunState } from './game'
@@ -147,6 +149,7 @@ import { currentLive } from './live'
 import { useRebattleMedal } from './rebattle'
 import { serverNow } from './serverTime'
 import { trickAllowed } from './trick'
+import { sideQuestAllowed } from './sideQuests'
 import { t } from '@/i18n'
 
 // An encounter picked up from the last visit (store/resume.ts) rolls on from where both streams stood, so a reload
@@ -519,12 +522,18 @@ export function rollNext() {
   const before = useGame.getState().save!
   const recorded = recordDraws(before, area.id, roll)
   if (recorded !== before) commitSave(recorded)
-  setRun({ phase: 'preview', encounter, firstInArea: false, forceNext: forceKind === run.forceNext ? null : run.forceNext })
+  setRun({
+    phase: 'preview',
+    encounter,
+    firstInArea: false,
+    forceNext: forceKind === run.forceNext ? null : run.forceNext,
+    sprung: false,
+  })
   // A Pokémon Center is never a choice (no skipping it, nothing to pick): straight in, no preview card.
   if (encounter.kind === 'center') engage()
   // A find is a step of its own (FindView: the item on the stage, PICK IT UP loading and pressing itself), not a toast
   // the trail runs past (the user's call, 2026-10-28): it waits in 'preview' for pickUpFind.
-  else if (encounter.kind === 'item') return
+  else if (encounter.kind === 'item' || isDisguisedFind(encounter)) return
   else if (directFight(encounter)) beginFight()
 }
 
@@ -1316,6 +1325,37 @@ export function spinSlotMachine(): SpinResult | null {
 
 export function leaveCasino() {
   backToArea()
+}
+
+// ---------------------------------------------------------------- Pokémon posing as items (docs/61 §3)
+
+/**
+ * PICK IT UP on a find that is a Pokémon in disguise: once the server agrees (a signed-in player: side_quest_open), it
+ * springs out (`run.sprung`: the find's screen shows it and FIGHT). Switched off meanwhile, the card is spent and the
+ * player is back on the trail, as with Trick or Treat. True when it sprang out.
+ */
+export async function revealDisguise(): Promise<boolean> {
+  const { run, data } = useGame.getState()
+  const enc = run.encounter
+  if (run.phase !== 'preview' || !isDisguisedFind(enc) || run.sprung) return false
+  const ok = await sideQuestAllowed('disguises', disguisesOn(data))
+  const now = useGame.getState().run
+  if (now.phase !== 'preview' || now.encounter !== enc) return false
+  if (!ok) {
+    pushToast(t('ui.disguise.closed'), 'bad')
+    backToArea()
+    return false
+  }
+  setRun({ sprung: true })
+  return true
+}
+
+/** FIGHT once it has sprung out: the wild battle begins on the battle screen, as any wild one's does. */
+export function fightSprung() {
+  const { run } = useGame.getState()
+  if (run.phase !== 'preview' || !isDisguisedFind(run.encounter) || !run.sprung) return
+  setRun({ sprung: false })
+  beginFight()
 }
 
 // ---------------------------------------------------------------- Trick or Treat (docs/29)

@@ -297,7 +297,7 @@ export function autopilotStep(
       return { do: 'wait', why: 'player' }
     case 'preview':
       // Trick or Treat is a catch of its own: the player plays it. A trainer's card is the page's (pilotShowsCard).
-      return pilotShowsCard(v.encounter) ? { do: 'wait', why: 'player' } : { do: 'engage' }
+      return pilotShowsCard(v.encounter) || v.encounter === 'disguise' ? { do: 'wait', why: 'player' } : { do: 'engage' }
     case 'victory':
       // Idle changes no team: "Add to team?" is answered as CONTINUE answers it, to the Box.
       return v.pendingCatch && style !== 'idle' ? { do: 'wait', why: 'player' } : { do: 'close' }

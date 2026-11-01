@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom'
 import {
   autoAvailable,
   fitWildPair,
+  isDisguisedFind,
   nightmareModeOf,
   pilotShowsCard,
   portalModeOf,
@@ -126,7 +127,8 @@ export function AreaScreen() {
   // The plain page between encounters (docs/42): the area's scene with the team, as on Home, in the banner's place.
   const sceneIdle = run.phase === 'idle' && !own && !dream && !mode && !nm && !run.rebattle
   // A find is a step on the stage of its own (FindView), with or without the autopilot: no banner, no card.
-  const finding = run.phase === 'preview' && run.encounter?.kind === 'item'
+  // A Pokémon posing as a find (docs/61 §3) is a find on that screen until it springs out and the fight starts.
+  const finding = run.phase === 'preview' && (run.encounter?.kind === 'item' || isDisguisedFind(run.encounter))
   return (
     <div className="flex flex-col gap-4">
       {/* The Center is laid out as a battle (the rework): its own gauge at the top, no area banner. */}

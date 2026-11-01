@@ -1,7 +1,7 @@
 // Zod row schemas for every config table (snake_case, as stored). Errors are shown in the cell; saving is blocked.
 import { z } from 'zod'
 import type { Row, TableName } from '@/config/mapping'
-import { BATTLE_BACKGROUNDS, COMBO_KEYS, DAY_TIMES, EVENT_ACCESS, POKE_TYPES, STATUS_KINDS, TRICK_TIERS } from '@/engine/types'
+import { BATTLE_BACKGROUNDS, COMBO_KEYS, DAY_TIMES, EVENT_ACCESS, POKE_TYPES, ROADBLOCK_KINDS, STATUS_KINDS, TRICK_TIERS } from '@/engine/types'
 
 const pokeType = z.enum(POKE_TYPES)
 const background = z.enum(BATTLE_BACKGROUNDS)
@@ -183,6 +183,8 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
           upgradeLevel: int(1, 10).nullable().optional(),
           battleBackground: background.nullable().optional(),
           shiny: z.boolean().optional(),
+          // A roadblock (docs/61 §2): a Pokémon across the road, its own words instead of a legendary's.
+          roadblock: z.enum(ROADBLOCK_KINDS).nullable().optional(),
           raid: z.boolean().optional(),
         }),
       )
@@ -208,6 +210,8 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
           z.object({ kind: z.literal('area'), areaId: uuid }),
           // "Another area is cleared": a small world's league beaten (docs/26 §2.5).
           z.object({ kind: z.literal('cleared'), areaId: uuid }),
+          // "These species caught", any region's Pokédex: Snowpoint Temple's three Regis (docs/61 §1).
+          z.object({ kind: z.literal('caught'), dex: z.array(int(1, 99999)).min(1).max(12) }),
         ]),
       )
       .nullable(),
@@ -288,6 +292,12 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
       unique_find: z.boolean(),
       min_qty: int(1),
       max_qty: int(1),
+      // A Pokémon posing as the find (docs/61 §3). Optional so a database before migration 0110 still loads.
+      disguise: z
+        .object({ dex: int(1, 99999), minLevel: int(1, 100), maxLevel: int(1, 100) })
+        .refine((d) => d.maxLevel >= d.minLevel, { message: 'max below min', path: ['maxLevel'] })
+        .nullable()
+        .optional(),
     })
     .refine((r) => r.max_qty >= r.min_qty, { message: 'max below min', path: ['max_qty'] }),
   combo_upgrades: z.object({ combo_key: z.enum(COMBO_KEYS), level: int(1, 10), bonus: int(0), cost: int(0) }),

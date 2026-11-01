@@ -9,6 +9,7 @@ alter table items add column if not exists region text;
 alter table items add column if not exists once_only boolean not null default false;
 alter table pokemon add column if not exists form jsonb;
 alter table area_wild_pool add column if not exists time_of_day text;
+alter table area_loot_pool add column if not exists disguise jsonb;
 -- ↓ supabase/migrations/0016_regions.sql, inlined so this file stands alone.
 -- Regions: Kanto, Johto, Hoenn. A region is a self-contained run — its own chain of areas, its own starters, its own
 -- Pokédex page and its own leaderboard — and the player keeps only their character when they move on.

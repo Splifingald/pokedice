@@ -1,6 +1,6 @@
 // Pure state transitions on the save: new game, rewards, catches, wipes, center, team, shop, upgrades.
 import { getSpecies, linearAreas } from './data'
-import { KANTO, evolutionGate, inWorldRegion, regionOf, regionOfArea } from './regions'
+import { KANTO, evolutionGate, inWorldRegion, pokedexEverywhere, regionOf, regionOfArea } from './regions'
 import { asSeenBy, gymsFor, playerSideOf } from './rival'
 import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount, multiExpShareFor } from './economy'
 import { bossCaught, deckAbilities, deckCounts, dueGym, fightBosses, roundsComplete } from './encounters'
@@ -277,6 +277,13 @@ export function conditionStatus(cond: UnlockCondition, save: SaveData, data: Gam
     const current = new Set(save.pokedex).size
     return { cond, current, target: cond.count, met: current >= cond.count, label: `Catch ${cond.count} Pokémon` }
   }
+  if (cond.kind === 'caught') {
+    const dex = [...new Set(cond.dex)]
+    const caught = pokedexEverywhere(save)
+    const current = dex.filter((d) => caught.has(d)).length
+    const names = dex.map((d) => data.species[d]?.name ?? `#${d}`).join(', ')
+    return { cond, current, target: dex.length, met: current >= dex.length, label: `Catch ${names}` }
+  }
   const current = maxOwnedLevel(save)
   return { cond, current, target: cond.level, met: current >= cond.level, label: `Raise a Pokémon to Lv.${cond.level}` }
 }
@@ -288,7 +295,12 @@ export function conditionStatus(cond: UnlockCondition, save: SaveData, data: Gam
 export function isAreaUnlocked(save: SaveData, areaId: string, data: GameData, depth = 0): boolean {
   const area = data.areas.find((a) => a.id === areaId)
   if (!area) return false
-  if (area.hidden) return (area.unlockConditions ?? []).every((c) => conditionStatus(c, save, data, depth).met)
+  if (area.hidden)
+    return (area.unlockConditions ?? []).every(
+      // A species condition added after a player had already been in (Snowpoint Temple's Regis, docs/61 §1) doesn't
+      // shut them out: the area stays open to anyone it has progress for.
+      (c) => (c.kind === 'caught' && !!save.areaProgress[area.id]) || conditionStatus(c, save, data, depth).met,
+    )
   // A region is a run of its own: an area opens behind the one before it *in its own region*, never across a border.
   const chain = linearAreas(data, regionOfArea(area))
   const idx = chain.findIndex((a) => a.id === areaId)
@@ -648,7 +660,7 @@ function afterWinTalents(save: SaveData, data: GameData, area: Area, progress: A
       }
     } else if (talent === 'pickup' && !events.some((e) => e.kind === 'pickup') && rng.next() < TALENT.pickup) {
       // One find a win, never a once-only one, the area's deck untouched.
-      const entry = rng.weighted(lootPoolFor(area, progress, data).filter((e) => !e.unique), (e) => e.weight)
+      const entry = rng.weighted(lootPoolFor(area, progress, data).filter((e) => !e.unique && !e.disguise), (e) => e.weight)
       if (!entry) continue
       const qty = Math.max(1, Math.min(entry.minQty, entry.maxQty))
       events.push({ kind: 'pickup', uid: p.id, dex: p.dex, entryId: entry.id, key: entry.itemKey, qty })

@@ -18,6 +18,8 @@ import type {
   AreaProgress,
   BattleBackground,
   BossDef,
+  LootDisguise,
+  RoadblockKind,
   DeckCard,
   EncounterKind,
   GameData,
@@ -34,7 +36,17 @@ import type {
 export type Encounter =
   /** `partner`: a second wild Pokémon, for a double battle (docs/33). */
   /** `talent`: it carries its family's hidden talent (docs/51). */
-  | { kind: 'wild'; dex: number; level: number; isNew: boolean; shiny?: boolean; talent?: boolean; partner?: WildPartner }
+  /** `disguisedAs`: it posed as this item until picked up (docs/61 §3): never fled from, never one of a pair. */
+  | {
+      kind: 'wild'
+      dex: number
+      level: number
+      isNew: boolean
+      shiny?: boolean
+      talent?: boolean
+      partner?: WildPartner
+      disguisedAs?: string
+    }
   /**
    * `double`: fought 2 v 2, two of the team out at once (docs/33). `prize`: a set opening's trainer (docs/46) pays these
    * ₽ for the win instead of the usual amount per K.O.
@@ -180,6 +192,10 @@ export const progressRaidsOn = (data: GameData): boolean => eventOn(data, 'raid'
 export const isRaidBoss = (data: GameData, b: BossDef): boolean => !!b.raid && progressRaidsOn(data)
 
 /** The bosses an area fights as bosses (its raids left out). */
+/** The roadblock this area's boss is (docs/61 §2), or null for a legendary (or no boss of that species there). */
+export const roadblockOf = (area: Area | null | undefined, dex: number): RoadblockKind | null =>
+  area?.legendaryBoss?.find((b) => b.dex === dex)?.roadblock ?? null
+
 export const fightBosses = (area: Area, data: GameData): BossDef[] => (area.legendaryBoss ?? []).filter((b) => !isRaidBoss(data, b))
 
 /** An area's progression raids, in order. */
@@ -590,9 +606,20 @@ export function rollEncounter(ctx: EncounterContext, rng: Rng): Encounter {
 
 function findItem(ctx: EncounterContext, rng: Rng): { encounter: Encounter; lootDeck: string[] } | null {
   const loot = drawLoot(ctx.area, ctx.progress, ctx.data, rng)
-  return loot
-    ? { encounter: { kind: 'item', entryId: loot.entry.id, itemKey: loot.entry.itemKey, qty: loot.qty }, lootDeck: loot.lootDeck }
-    : null
+  if (!loot) return null
+  const disguise = loot.entry.disguise
+  if (disguise) return { encounter: disguisedWild(disguise, loot.entry.itemKey, ctx, rng), lootDeck: loot.lootDeck }
+  return { encounter: { kind: 'item', entryId: loot.entry.id, itemKey: loot.entry.itemKey, qty: loot.qty }, lootDeck: loot.lootDeck }
+}
+
+/**
+ * The Pokémon a disguised find is (docs/61 §3): a wild one at a level of its row (around the team where the area
+ * scales), with the wild shiny odds; it keeps the item it posed as, for the find to look like it until picked up.
+ */
+function disguisedWild(d: LootDisguise, itemKey: string, ctx: EncounterContext, rng: Rng): Encounter {
+  const level = enemyLevel(rng.int(d.minLevel, Math.max(d.minLevel, d.maxLevel)), ctx, rng)
+  const shiny = !shinyLocked(ctx.data, d.dex) && rollShiny(ctx.data, rng, ctx.shinyBoost, ctx.shinyChance)
+  return { kind: 'wild', dex: d.dex, level, isNew: !ctx.pokedex.includes(d.dex), disguisedAs: itemKey, ...(shiny && { shiny }) }
 }
 
 function returningLegend(ctx: EncounterContext, rng: Rng): Encounter | null {
@@ -778,6 +805,8 @@ function forcedEncounter(ctx: EncounterContext, kind: ForceKind, rng: Rng): Enco
 
 export function canSkip(enc: Encounter, policy: SkipPolicy, skipsThisEncounter: number): boolean {
   if (enc.kind !== 'wild' && enc.kind !== 'trainer') return false
+  // A Pokémon that posed as a find was picked up: there's no leaving it (docs/61 §3).
+  if (enc.kind === 'wild' && enc.disguisedAs) return false
   if (policy === 'none') return false
   if (policy === 'once') return skipsThisEncounter < 1
   return true

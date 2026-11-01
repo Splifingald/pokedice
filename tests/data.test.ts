@@ -161,7 +161,8 @@ describe('areas & trainers', () => {
     const evolved = new Set([809])
     for (const l of ALL_LEGENDARIES) expect(bosses.has(l) || roamers.has(l) || evolved.has(l), `#${l}`).toBe(true)
     for (const m of mythicals) expect(bosses.has(m) || evolved.has(m), `#${m} is its lair's boss`).toBe(true)
-    for (const b of bossList) expect(!!b.raid, `#${b.dex}`).toBe(!mythicals.has(b.dex))
+    // A roadblock (docs/61 §2: Snorlax across the road) is a boss fight in its area, never a raid.
+    for (const b of bossList) expect(!!b.raid, `#${b.dex}`).toBe(!b.roadblock && !mythicals.has(b.dex))
   })
 
   it('keeps the starters rare in the wild (weight 3 in the catch-all, 1 elsewhere), never in trainer teams', () => {
