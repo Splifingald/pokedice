@@ -180,6 +180,9 @@ export const DEFAULT_CONFIG: GameConfig = {
       [710, 711],
     ],
     exclude: [793, 794, 795, 796, 797, 798, 799, 803, 804, 805, 806],
+    // The board shows 5 listings picked for the player (docs/23 §2.1), and NEW PICKS twice a UTC day.
+    boardPicks: 5,
+    boardRerolls: 2,
   },
   // Gifts with the developer's messages (docs/15 §23): off until the admin switches them on.
   gifts: { access: 'off' },
