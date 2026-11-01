@@ -16,6 +16,8 @@ import {
   worldProblems,
   DEFAULT_PORTAL_RUN,
   normalisePortal,
+  DEFAULT_TRACKS,
+  tracksModeOf,
   type GameData,
 } from '@/engine'
 import { BUNDLE } from '@/config/bundle'
@@ -303,5 +305,20 @@ describe('Snowglobe Valley', () => {
         [{ dex: 493, level: 90, shiny: true, raid: true }],
       ],
     ])
+  })
+
+  it('plays Moonlit Glade as Tracks in the Snow (docs/61 §4.1) while its switch is on; each secret has its own mode', () => {
+    const secrets = h.areas.filter((a) => a.hidden)
+    // Evergreen Hill's gameplay is its gift cards and Delibird's present (§4.2), not a mode.
+    expect(secrets.map((a) => [a.name, a.mode?.kind ?? null])).toEqual([
+      ['Moonlit Glade', 'tracks'],
+      ['Evergreen Hill', null],
+      ['Crown Shrine', 'whiteout'],
+      ['Spear Pillar', 'timeRace'],
+      ['Hall of Origin', 'portal'],
+    ])
+    expect(secrets[0]!.mode).toEqual(DEFAULT_TRACKS)
+    // The switch ships Off: the glade is a plain secret area until the admin turns it on.
+    expect(tracksModeOf(secrets[0], data)).toBeNull()
   })
 })

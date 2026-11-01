@@ -14,6 +14,7 @@ import { portalModeOf } from './portalMode'
 import { portalLock } from './portal'
 import { timeRaceModeOf } from './timeRaceMode'
 import { timeRaceLock } from './timeRace'
+import { tracksModeOf } from './tracksMode'
 import { regionOfArea } from './regions'
 import { hasAbleTeam, isAreaClosed, isAreaUnlocked, progressOf } from './run'
 import {
@@ -60,13 +61,14 @@ export interface AutoRun {
 }
 
 /**
- * A portal run's, the nightmare's, the race's or the whiteout's area (docs/28, docs/30, docs/61 §4.3, §4.4): their own
- * steps, so never the autopilot's.
+ * A portal run's, the nightmare's, Tracks in the Snow's, the whiteout's or the race's area (docs/28, docs/30, docs/61
+ * §4.1, §4.3, §4.4): their own steps, so never the autopilot's.
  */
 const specialArea = (area: Area | undefined, data: GameData): boolean =>
   !!area &&
   (!!portalModeOf(area, data) ||
     !!nightmareModeOf(area, data) ||
+    !!tracksModeOf(area, data) ||
     !!timeRaceModeOf(area, data) ||
     !!whiteoutModeOf(area, data))
 

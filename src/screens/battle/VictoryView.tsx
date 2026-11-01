@@ -27,6 +27,7 @@ import { EvolutionQueue, type EvolutionShow } from '@/components/Evolution'
 import { useCountUp } from '@/components/GoldPill'
 import { Chip, NewTag } from '@/components/Chip'
 import { PixelIcon } from '@/components/icons'
+import { HoofIcon, STANTLER } from '@/components/Tracks'
 import { LeadPicker, defaultLead } from '@/components/LeadPicker'
 import { ForfeitButton } from '@/components/ForfeitButton'
 import { speciesTypes } from '@/components/TypeMatchups'
@@ -602,6 +603,20 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
                 <PixelIcon name="burn" size={22} />
                 <span className="text-xl leading-tight">
                   {t('ui.whiteout.waveWon', { n: e.wave, total: e.waves })}
+                </span>
+              </div>
+            ),
+          })
+          return
+        case 'tracks_round':
+          // A round of Tracks in the Snow cleared (docs/61 §4.1): Stantler found and down; the next glade waits.
+          extras.push({
+            key: k,
+            node: (
+              <div className="light-scope flex items-center justify-center gap-2 bg-[#0b1530] p-2 text-center text-[#f4f8ff] shadow-[inset_0_3px_0_#f3efd6,0_0_0_2px_#24304f]">
+                <HoofIcon size={22} />
+                <span className="text-xl leading-tight">
+                  {t('ui.tracks.roundWon', { n: e.round, total: e.total, name: data.species[STANTLER]?.name ?? '' })}
                 </span>
               </div>
             ),
@@ -1189,6 +1204,8 @@ function AreaWipe() {
   const timeUp = raceLost?.reason === 'time'
   // A wipe in the whiteout (docs/61 §4.3): back to wave 1.
   const whiteoutLost = useGame((s) => s.run.whiteoutLost)
+  // A wipe in Tracks in the Snow's glade (docs/61 §4.1): back at its edge, its cleared rounds kept.
+  const tracksWiped = useGame((s) => !!s.run.tracksWiped)
   return (
     <Overlay
       label={t('ui.wipe.title')}
@@ -1205,7 +1222,13 @@ function AreaWipe() {
       <p
         className="copy mb-3 text-lg"
         hidden={
-          portalLost == null && nightmareLost == null && whiteoutLost == null && !raceLost && !!save && wipeHeals(save, data)
+          portalLost == null &&
+          nightmareLost == null &&
+          whiteoutLost == null &&
+          !raceLost &&
+          !tracksWiped &&
+          !!save &&
+          wipeHeals(save, data)
         }
       >
         {/* Extreme mode heals nobody after a lost round: the fainted ones rest (docs/22). */}
@@ -1217,6 +1240,8 @@ function AreaWipe() {
           ? t('ui.nightmare.wipeBody', { n: nightmareLost })
           : whiteoutLost != null
           ? t('ui.whiteout.wipeBody', { n: whiteoutLost })
+          : tracksWiped
+          ? t('ui.tracks.wipeBody')
           : save && !wipeHeals(save, data)
           ? t('ui.wipe.bodyExtreme', {
               area: area?.name ?? '',

@@ -1096,7 +1096,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   rules pop-up (`RulesModal`, Later / Let's go!), taking its turn in the one-time pop-ups' queue, below; so do the
   rules shown at their own moment (the portal's and the nightmare's way in, Trick or Treat's first ghost, the Gift
   card's first present (§45), the gifts', the looks'). The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is a tap on the Pokémon sheet's talent box, as it has no page), real-player battles (§39: its rules pop-up after the first card's intro, as Trick or Treat's at the first ghost; INFO on the card), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event), the gift calendar (§40: its page's rules card, once; INFO in its dock), outfits (§41, docs/59: no page, so its rules pop-up once the first Pokémon in an outfit arrives; its INFO is a tap on the outfit's chip on the Pokémon sheet), friendship (§42: its rules card on the Friends page or the market, whichever opens first, once; INFO on its card and at the market's foot; **no Home notice**, the user's call of 2026-11-01: players meet it on the Friends page), welcome-back gifts (§23, docs/58: **no rules and no INFO**, the user's explicit exception of 2026-11-01: a developer's message that says only how long the player was away) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is a tap on the Pokémon sheet's talent box, as it has no page), real-player battles (§39: its rules pop-up after the first card's intro, as Trick or Treat's at the first ghost; INFO on the card), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), Tracks in the Snow (§46: the same, as the nightmare's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event), the gift calendar (§40: its page's rules card, once; INFO in its dock), outfits (§41, docs/59: no page, so its rules pop-up once the first Pokémon in an outfit arrives; its INFO is a tap on the outfit's chip on the Pokémon sheet), friendship (§42: its rules card on the Friends page or the market, whichever opens first, once; INFO on its card and at the market's foot; **no Home notice**, the user's call of 2026-11-01: players meet it on the Friends page), welcome-back gifts (§23, docs/58: **no rules and no INFO**, the user's explicit exception of 2026-11-01: a developer's message that says only how long the player was away) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **The one-time pop-ups take turns, in one queue** (`nextOneTimePopup`, src/engine/popups.ts; docs/38 U2a): one at a
   time, only between fights (`run.phase === 'idle'`, no battle, no full-screen moment, no gift being opened), never on
@@ -2114,6 +2114,62 @@ state on `/kitchen-sink` (`GiftCardBits`), every take on `/kitchen-sink/fx`.
   level by always tapping with and without the helper, the helper and its bonus, each level's reward options, the
   balls from worst to best, a boss's taps). Areas → Encounter deck has the Gift card's copies ("in place of the item
   cards, only while its switch is on"), and a boss's "Out of a present" box.
+
+## 46. Tracks in the Snow (Moonlit Glade)
+
+docs/61 §4.1: an area's special mode (`Area.mode`, kind `tracks`), hide and seek with Stantler in three rounds, built
+as the nightmare's parallel (§29). Its pieces are in `src/components/Tracks.tsx` and `src/screens/area/TracksRun.tsx`,
+every state on `/kitchen-sink` (`TracksBits`); the engine (`engine/tracks.ts`, `tracksMode.ts`) hides Stantler, fills
+the bushes, points the prints and decides every outcome with its own rng. **Every scene is pixel art on the FX engine**
+(`src/fx/timelines/tracks.ts`, `cinema/stantler.ts`; on `/kitchen-sink/fx`), and the bushes too (`bushSprite`,
+`openBushSprite`, drawn into small canvases). Its palette (`TS`): the winter night's blues, the moon's creams, the
+snow's whites and blue shades, the bushes' pine greens, Stantler's gold. Its scenes follow §8 (short: half the time;
+off: their end at once).
+
+- **The switch and the rules** follow §20: `tracks` (Admin → Areas → Special mode: Tracks in the Snow), Off by default;
+  the server answers it (`tracks_open()`, 0122) before a signed-in player begins. Off, the glade is a plain secret
+  area. **Its rules are short**, as the nightmare's: four one-line `RuleList` rows from the area's numbers ("3 rounds:
+  find Stantler, the shiny one last", "Every bush you open shows hoofprints pointing at it" (or "Empty bushes…"), "5
+  taps (7 in the last glade) before the snow falls and it moves", "Bushes hide wild Pokémon, finds and warm cabins"),
+  on the way in's pop-up every time and from INFO at the bottom of the area's page (`TracksRulesModal`, the glade on
+  the pixel engine as its banner: `GladeScene`).
+- **The way in** (`TracksEntry`): the nightmare's, piece for piece. CONTINUE on Home says ENTER THE GLADE ("3 rounds of
+  hide and seek"; after a wipe "Round 2/3: find Stantler"); the intro plays at once, full screen (`TracksIntro`: the
+  moon rises behind the bushes, snow drifting, a reindeer's silhouette edged with moonlight leaps across it into the
+  bushes on the right, which shake and throw up snow; the line in a night-blue card with the moon's cream above and
+  ice below from its landing; held at its end, "Tap to continue ▼" with the focus; no SKIP). Arriving heals as a
+  Center does. The tap raises its pop-up at the bottom ("Into the glade": the rules, TEAM with "Healed as at a Pokémon
+  Center…", NOT NOW, BEGIN THE SEARCH in red). Back from TEAM the pop-up is up again at once (`run.tracksPopup`).
+- **The gauge** (`TracksGauge`): in the round gauge's place, a tile per round, hoofprints on the cleared ones, the gold
+  edge on the one under way, a snowflake on the last; "1/3"; an image with "Rounds cleared: 1/3". The top bar's
+  "n/3" counts the glade's rounds too.
+- **The glade** (`TracksPanel` + `TracksGlade`): the area's page between bushes. "Round 2/3", the taps left as
+  snowflakes (spent ones faded; an image "Taps before the snow: 4"), the last round's line ("The shiny Stantler hides
+  here", a sparkle), the grid, and one line under it (`aria-live`): "Tap a bush to search it.", what the bush just
+  held, "Snow falls: …", "Stantler bolted to another bush!". **The grid is square**, `size` columns of equal width,
+  6 px gaps: each bush is a button on a tile of moonlit snow (the same in both themes: it's a night scene) with the
+  game's 2 px edge, **44 px at least**; a 4 × 4 fits a 360 px phone (about 78 px a bush). A closed bush lifts 2 px on
+  hover and focus (a gold focus ring); an opened one is parted (`openBushSprite`), disabled, sinks into the trampled
+  snow and shows what it held (a ball: a wild Pokémon; a sparkle: a find; the cabin; Stantler's own sprite, shiny in
+  the last round; nothing) and, in its top right corner, **the hoofprints** (two prints a stride apart, rotated to one
+  of 8 directions). Every bush's name says its row, column, what it held and where the prints point ("Snowy bush, row
+  2, column 2, Nothing, Hoofprints point up and right"): **direction is never the picture alone**. The bush just opened
+  rustles (four stepped frames, `.ts-rustle`; none when calm or off) and its moment holds 0.7 s (0.35 s short, none
+  off) before what it held comes: a fight on the battle screen, the find's step, the cabin as a Pokémon Center.
+- **The snow falling** (`tracksSnowfallTimeline` over the grid, transparent elsewhere): after the last tap, flakes
+  thicken into a flurry and a dithered white veil covers the glade (the bush just opened still shown under it until
+  then), then thins out over the fresh glade. Coming back from a fight on the last tap, it falls once as the page opens.
+- **Stantler's fights**: rounds 1 and 2's is a plain wild fight (catchable); the result card adds "Round 1/3 cleared:
+  Stantler found!" on a night card with hoofprints. Round 3's is the area's boss: **its own entrance on the battle
+  stage** (`stantlerCinema`, as docs/53's bosses, whatever the legends' cinematics switch): the glade under the moon,
+  the bush shaking, antlers rising out of it, the reindeer's silhouette rearing up before the moon, its coat flashing
+  gold three times, a stamp throwing the snow off the bushes, the reveal, the name card.
+- **The outro** (`TracksOutroView`): full screen, the shiny Stantler standing in the glade, the bushes' last rustle,
+  fresh snow covering a trail of prints, the card; then "The glade is quiet again", "Fresh snow covers the prints.
+  Shiny Stantler is yours." and the green BACK TO THE WORLD. Then the glade is closed (Home: "Stantler was caught: the
+  glade is closed", CONTINUE shut).
+- **A wipe** keeps the wipe card (§14), its line: back at the glade's edge, the team healed, XP, ₽, items and the
+  cleared rounds kept.
 
 ## 47. Whiteout (Crown Shrine)
 

@@ -437,6 +437,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   timeRace: { access: 'off' },
   // Crown Shrine's whiteout (docs/61 §4.3): off until the admin switches it on. Migration 0123 inserts the same row.
   whiteout: { access: 'off' },
+  // Tracks in the Snow (docs/61 §4.1): off until the admin switches it on. Migration 0122 inserts the same row.
+  tracks: { access: 'off' },
   // Trainer looks (docs/31): off until the admin switches them on; the old free list stays meanwhile.
   looks: { access: 'off' },
   // Day and night in Johto (docs/32): off until the admin switches it on. Migration 0061 inserts the same row.

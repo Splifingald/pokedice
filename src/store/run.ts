@@ -180,6 +180,20 @@ import {
   outfitOf,
   finishRerollLesson,
   rerollLessonDue,
+  arriveAtTracks,
+  canStartTracks,
+  inTracks,
+  markTracksWonSeen,
+  openBush,
+  startTracks,
+  tracksBolt,
+  tracksCaught,
+  tracksEncounter,
+  tracksField,
+  tracksFound,
+  tracksModeOf,
+  tracksOutroDue,
+  tracksQuarryDown,
 } from '@/engine'
 import { activeSlot } from '@/save/storage'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type CatchState, type RunState } from './game'
@@ -191,6 +205,7 @@ import { useRebattleMedal } from './rebattle'
 import { serverNow } from './serverTime'
 import { trickAllowed } from './trick'
 import { giftAllowed } from './giftCard'
+import { tracksAllowed } from './tracks'
 import { t } from '@/i18n'
 
 // An encounter picked up from the last visit (store/resume.ts) rolls on from where both streams stood, so a reload
@@ -303,6 +318,8 @@ function settleRound(quiet = false): Extract<RunEvent, { kind: 'area_cleared' }>
 function backToArea() {
   setRun({ phase: 'idle', encounter: null, duel: null })
   settleRound()
+  // Tracks in the Snow (docs/61 §4.1): back on the glade with Stantler found but not taken, it bolts to another bush.
+  boltIfFound()
   // In a portal run, a distortion next is turned over at once: its boons, with no stop on the area's page first (the
   // user, 2026-10-15).
   const { save, data, run } = useGame.getState()
@@ -729,6 +746,64 @@ export function arriveAtWhiteoutWayIn(areaId: string) {
   if (next !== save) commitSave(next)
 }
 
+// ---------------------------------------------------------------- Tracks in the Snow (docs/61 §4.1)
+
+let bushSeq = 0
+
+/** Stantler found but not taken (fled, a missed throw, a draw): it bolts, a fresh glade of the same round. */
+function boltIfFound() {
+  const { save, data, run } = useGame.getState()
+  if (!save || !run.areaId || !tracksFound(save, data, run.areaId)) return
+  commitSave(tracksBolt(save, data, run.areaId))
+}
+
+/**
+ * Between bushes the glade waits on the area's page: nothing is dealt. A Stantler left behind bolts; a team with
+ * nobody standing is back at the glade's edge (the wipe).
+ */
+function rollTracks(save: SaveData, areaId: string) {
+  const { data } = useGame.getState()
+  if (inTracks(save, data, areaId) && !hasAbleTeam(save)) {
+    commitSave(applyWipe(save, areaId, data))
+    setRun({ phase: 'wipe', trainer: null, events: [], tracksWiped: true, tracksBush: null })
+    return
+  }
+  boltIfFound()
+  setRun({ phase: 'idle', encounter: null })
+}
+
+/**
+ * BEGIN on the way in's pop-up (docs/61 §4.1): into the glade, the team healed, the round the player had reached, a
+ * fresh glade. The server says yes first for a signed-in player (tracks_open). False when it can't begin here.
+ */
+export async function beginTracks(areaId: string): Promise<boolean> {
+  const { save, data, run } = useGame.getState()
+  if (!save || run.phase !== 'idle' || !canStartTracks(save, data, areaId)) return false
+  if (!(await tracksAllowed())) {
+    pushToast(t('ui.tracks.closed'), 'bad')
+    return false
+  }
+  if (useGame.getState().run.areaId !== areaId && !enterArea(areaId)) return false
+  const started = startTracks(useGame.getState().save!, data, areaId)
+  if (!started) return false
+  commitSave(started)
+  setRun({ tracksWiped: false, tracksBush: null })
+  return true
+}
+
+/** The way in's pop-up is up: back from the Team screen, it shows again at once. */
+export function markTracksPopup() {
+  if (!useGame.getState().run.tracksPopup) setRun({ tracksPopup: true })
+}
+
+/** The way in shows: the team and the Box are healed as at a Pokémon Center (the engine's). */
+export function arriveAtTracksWayIn(areaId: string) {
+  const { save, data } = useGame.getState()
+  if (!save) return
+  const next = arriveAtTracks(save, data, areaId)
+  if (next !== save) commitSave(next)
+}
+
 /**
  * The bonfire warms the team (its scene has lit): the engine gives each one its share, once. Who got what, or null
  * when it was given already (a reload, a second call).
@@ -762,6 +837,52 @@ export function finishWhiteoutVictory() {
   useGame.setState((s) => ({ run: { ...initialRun(), forceNext: s.run.forceNext }, battle: null }))
 }
 
+/**
+ * A bush tapped: the engine opens it (Stantler hidden first on a glade's first bush, the snow after the last tap) and
+ * says what it brings. The glade shows the bush's moment; an encounter waits in 'preview' until `meetBush`. Null when
+ * it can't be opened.
+ */
+export function tapBush(index: number): NonNullable<RunState['tracksBush']> | null {
+  const { save, data, run } = useGame.getState()
+  if (!save || !run.areaId || run.phase !== 'idle' || !inTracks(save, data, run.areaId)) return null
+  const at = tracksField(save, data, run.areaId)
+  const res = openBush(save, data, run.areaId, index, runRng)
+  if (!res || !at) return null
+  const reveal = { id: ++bushSeq, index, bush: res.bush, print: res.print, snowfall: res.snowfall }
+  const ctx = encounterContext(res.save, run.areaId, null)
+  const met = ctx ? tracksEncounter(ctx, res.bush, at.last, runRng) : null
+  if (!met) {
+    commitSave(res.save)
+    setRun({ tracksBush: reveal })
+    return reveal
+  }
+  commitSave(recordDraws(res.save, run.areaId, { encounter: met.encounter, deck: null, lootDeck: met.lootDeck }))
+  setRun({ phase: 'preview', encounter: met.encounter, firstInArea: false, tracksBush: reveal })
+  return reveal
+}
+
+/**
+ * The bush's moment is over: what it held comes, as a card dealt does (a fight on the battle screen, the find's
+ * step, the cabin's heal). An empty bush's moment just closes.
+ */
+export function meetBush() {
+  const { run } = useGame.getState()
+  if (!run.tracksBush) return
+  setRun({ tracksBush: null })
+  const enc = run.encounter
+  if (run.phase !== 'preview' || !enc) return
+  if (enc.kind === 'center') engage()
+  else if (enc.kind !== 'item' && directFight(enc)) beginFight()
+}
+
+/** The outro is over: the glade is closed for good, back to the world's Home. */
+export function finishTracksOutro() {
+  const { save, run } = useGame.getState()
+  const areaId = run.areaId ?? save?.currentAreaId
+  if (save && areaId) commitSave(markTracksWonSeen(save, areaId))
+  useGame.setState((s) => ({ run: { ...initialRun(), forceNext: s.run.forceNext }, battle: null }))
+}
+
 /** Roll the next encounter and show its preview card. */
 export function rollNext() {
   settleRound()
@@ -775,6 +896,8 @@ export function rollNext() {
   if (inNightmare(save, data, run.areaId)) return rollNightmare(save, run.areaId)
   if (inTimeRace(save, data, run.areaId)) return rollTimeRace(save, run.areaId)
   if (inWhiteout(save, data, run.areaId)) return rollWhiteout(save, run.areaId)
+  // Tracks in the Snow (docs/61 §4.1): the glade deals nothing; its bushes are opened on its page (tapBush).
+  if (tracksModeOf(data.areas.find((a) => a.id === run.areaId), data)) return rollTracks(save, run.areaId)
   if (inPortalRun(save, data, run.areaId)) return rollPortal(save, run.areaId)
   // A Center's boons still waiting (a reload, HOME before the pick: docs/47): back in that Center. Boons drawn in
   // another area go: the player walked out without picking.
@@ -873,6 +996,8 @@ export function challenge() {
     isAreaSealed(save, data, run.areaId)
   )
     return
+  // Nor has Tracks in the Snow (docs/61 §4.1): its Stantler is found in a bush, its boss in the last glade.
+  if (tracksModeOf(data.areas.find((a) => a.id === run.areaId), data)) return
   const area = data.areas.find((a) => a.id === run.areaId)
   const found = area
     ? challengeEncounter(
@@ -1199,7 +1324,10 @@ function settleBattle(stalemate: boolean) {
     }
     // A wave foe of the whiteout (docs/61 §4.3): the next one is due, or its wave is cleared and a bonfire is lit.
     const white = s.kind === 'wild' && !dream && !raced ? winWhiteoutFoe(res.save, data, run.areaId) : null
-    commitSave(raced?.save ?? dream?.save ?? white?.save ?? res.save)
+    // Tracks in the Snow (docs/61 §4.1): the Stantler found is down. Before the last round, the round is cleared (the
+    // result card says so); in the last, its catch decides.
+    const glade = tracksFound(res.save, data, run.areaId) ? tracksQuarryDown(res.save, data, run.areaId) : null
+    commitSave(raced?.save ?? dream?.save ?? white?.save ?? glade?.save ?? res.save)
     queuePickup(res.events)
     const dreamEvents: RunEvent[] = dream
       ? [
@@ -1216,7 +1344,9 @@ function settleBattle(stalemate: boolean) {
     // A real player's fight is over (docs/54): won once their last Pokémon falls (a mutual K.O. before it is a loss);
     // the team is healed again, the server hears of the meet, and the result card says so.
     const duel = isPlayerFoe(enc) && !trainerHasNext() ? duelOver(enc.player, !!run.trainer && run.trainer.index + 1 >= enc.team.length) : null
-    const events = [...(cleared ? [...res.events, cleared] : res.events), ...dreamEvents]
+    const gladeEvents: RunEvent[] =
+      glade && !glade.last ? [{ kind: 'tracks_round', round: glade.round, total: glade.total }] : []
+    const events = [...(cleared ? [...res.events, cleared] : res.events), ...dreamEvents, ...gladeEvents]
     const gold = res.events.reduce((g, e) => (e.kind === 'gold' ? g + e.amount : g), 0)
     // A wild or legendary K.O. that can be caught goes to the catch throw first; the rewards screen follows it.
     const kind = s.kind === 'wild' || s.kind === 'boss' ? s.kind : null
@@ -1261,6 +1391,7 @@ function settleBattle(stalemate: boolean) {
     const dream = inNightmare(withHp, data, run.areaId) ? nightmareStateOf(withHp, run.areaId).round : null
     const race = inTimeRace(withHp, data, run.areaId) ? raceLostOf(withHp, run.areaId) : null
     const white = inWhiteout(withHp, data, run.areaId) ? whiteoutStateOf(withHp, run.areaId).wave : null
+    const glade = inTracks(withHp, data, run.areaId)
     commitSave(applyWipe(withHp, run.areaId, data))
     setRun({
       phase: 'wipe',
@@ -1270,6 +1401,7 @@ function settleBattle(stalemate: boolean) {
       nightmareLost: dream,
       raceLost: race,
       whiteoutLost: white,
+      tracksWiped: glade,
     })
     return
   }
@@ -1431,6 +1563,8 @@ function settleThrow(save: SaveData, roll: CatchRoll, ballKey: string | null, ba
       const res = applyCatch(next, { dex: c.dex, level: c.level, shiny: c.shiny, letter, talent }, c.target, data, Date.now(), newId)
       // A boss is noted as caught in its area: a small world's goes by that, not the Pokédex (docs/26 §2.5).
       next = c.kind === 'boss' && run.areaId ? noteBossCaught(res.save, run.areaId, c.dex) : res.save
+      // Tracks in the Snow (docs/61 §4.1): the shiny Stantler caught, the glade is won (its outro next).
+      if (c.kind === 'boss' && run.areaId && tracksFound(next, data, run.areaId)) next = tracksCaught(next, data, run.areaId)
       events = res.events
       if (res.needsTeamChoice) pendingCatchId = res.caughtId
     }
@@ -1561,6 +1695,8 @@ export function continueExploring() {
   // The whiteout (docs/61 §4.3): its outro first, or the bonfire after a wave; the area's page plays them.
   const white = save && run.areaId ? whiteoutStateOf(save, run.areaId) : null
   if (white && ((white.won && !white.wonSeen) || (white.active && white.bonfire))) return
+  // Tracks in the Snow (docs/61 §4.1): its outro shows first, on the area's page.
+  if (save && run.areaId && tracksOutroDue(save, useGame.getState().data, run.areaId)) return
   challenge()
   if (useGame.getState().run.phase === 'idle') rollNext()
 }
@@ -1596,6 +1732,7 @@ export function forfeit() {
   const dream = inNightmare(save, data, run.areaId) ? nightmareStateOf(save, run.areaId).round : null
   const race = inTimeRace(save, data, run.areaId) ? raceLostOf(save, run.areaId) : null
   const white = inWhiteout(save, data, run.areaId) ? whiteoutStateOf(save, run.areaId).wave : null
+  const glade = inTracks(save, data, run.areaId)
   commitSave(run.rebattle ? applyRebattleLoss(save, data, run.rebattle.regionId) : applyWipe(save, run.areaId, data))
   setRun({
     phase: 'wipe',
@@ -1605,6 +1742,7 @@ export function forfeit() {
     nightmareLost: dream,
     raceLost: race,
     whiteoutLost: white,
+    tracksWiped: glade,
   })
 }
 

@@ -9,6 +9,7 @@ import { nightmareModeOf } from './nightmareMode'
 import { whiteoutModeOf } from './whiteoutMode'
 import { portalModeOf } from './portalMode'
 import { timeRaceModeOf } from './timeRaceMode'
+import { tracksModeOf } from './tracksMode'
 import { shuffle } from './deal'
 import { talentsOn } from './talents'
 import { worldOfArea } from './worldList'
@@ -61,7 +62,8 @@ export const versusWeight = (area: Area): number =>
 
 /**
  * This save meets real players in this area: the switch is on, the main game (never Extreme mode), and the area deals
- * the card — a main region's area or its secret one, not a small world's, a portal run's or the nightmare's.
+ * the card — a main region's area or its secret one, not a small world's, a portal run's, the nightmare's or Tracks
+ * in the Snow's.
  */
 export function areaVersusHere(
   save: SaveData | null | undefined,
@@ -74,7 +76,8 @@ export function areaVersusHere(
     portalModeOf(area, data) ||
     nightmareModeOf(area, data) ||
     timeRaceModeOf(area, data) ||
-    whiteoutModeOf(area, data)
+    whiteoutModeOf(area, data) ||
+    tracksModeOf(area, data)
   )
     return false
   return versusWeight(area) > 0

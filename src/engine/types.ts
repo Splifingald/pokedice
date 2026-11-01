@@ -330,17 +330,17 @@ export interface Area {
   lootPool: LootEntry[]
   /**
    * How the area plays instead of rounds: Distortion World's portal run (docs/28), Newmoon Island's nightmare
-   * (docs/30), Crown Shrine's whiteout (docs/61 §4.3), Spear Pillar's race of time and space (docs/61 §4.4). Absent or
-   * null = a plain area.
+   * (docs/30), Moonlit Glade's Tracks in the Snow (docs/61 §4.1), Crown Shrine's whiteout (§4.3), Spear Pillar's race
+   * of time and space (§4.4). Absent or null = a plain area.
    */
   mode?: AreaMode | null
 }
 
 /**
- * An area's special mode: the portal run (docs/28), the nightmare (docs/30), the whiteout (docs/61 §4.3) or the time
- * race (§4.4).
+ * An area's special mode: the portal run (docs/28), the nightmare (docs/30), Tracks in the Snow (docs/61 §4.1), the
+ * whiteout (§4.3) or the time race (§4.4).
  */
-export type AreaMode = PortalRunMode | NightmareMode | TimeRaceMode | WhiteoutMode
+export type AreaMode = PortalRunMode | NightmareMode | TracksMode | TimeRaceMode | WhiteoutMode
 
 /** One of the race's two gates at a fork leading to a legend (docs/61 §4.4): its type, and whose raid it opens. */
 export interface TimeRaceLegend {
@@ -456,6 +456,67 @@ export interface WhiteoutState {
   /** The outro has played. */
   wonSeen?: boolean
   /** Tries started here (a wipe ends one). */
+  tries?: number
+}
+
+/** One round of Tracks in the Snow (docs/61 §4.1): its glade of snowy bushes and what they hold. */
+export interface TracksRound {
+  /** Bushes on a side: a size × size glade. */
+  size: number
+  /** Bushes the player may open before the snow falls (a fresh glade, Stantler moved). */
+  taps: number
+  /** Bushes holding a wild Pokémon of the area's pool, a find of its loot, a warm cabin (a Pokémon Center's heal). */
+  wild: number
+  finds: number
+  cabins: number
+  /** Stantler never hides in one of the 8 bushes around the first one opened either (the 4 × 4: a little hunting). */
+  apart: boolean
+}
+
+/**
+ * Tracks in the Snow (docs/61 §4.1, Moonlit Glade): hide and seek with Stantler, round after round. Each round is a
+ * glade of snowy bushes; the first opened is never Stantler's (it is hidden only then, away from it). Every bush opened
+ * shows hoofprints pointing at it (or only the empty ones, `emptyPrintsOnly`). Each round but the last ends on a wild
+ * Stantler (the boss's species, catchable); the last on the area's boss (the shiny Stantler). Every number is the
+ * admin's.
+ */
+export interface TracksMode {
+  kind: 'tracks'
+  rounds: TracksRound[]
+  emptyPrintsOnly: boolean
+}
+
+/** What a bush of the glade holds. */
+export type TracksBush = 'stantler' | 'wild' | 'find' | 'cabin' | 'empty'
+
+/** The glade being searched (one snowfall's): it lives in the save, so a reload can't reshuffle it. */
+export interface TracksField {
+  /** Bushes left to open before the snow falls. */
+  taps: number
+  /** What each bush holds, row by row; null until the first is opened (Stantler is hidden then, away from it). */
+  bushes: TracksBush[] | null
+  /** The bushes opened, in order. */
+  opened: number[]
+  /** Stantler was found: its fight (and its catch) decide; back on the glade without it, it has bolted. */
+  found?: boolean
+  /** Fresh snow fell on this glade (the last one ran out of taps): said on the glade until a bush is opened. */
+  snowed?: boolean
+  /** Stantler bolted to another bush (it fled, or the throw missed): said on the glade until a bush is opened. */
+  bolted?: boolean
+}
+
+/** Where Tracks in the Snow stands, in its area's progress (so it's saved and parked with the region). */
+export interface TracksState {
+  /** In the glade: begun, not over. A trip Home keeps it (and its field). */
+  active: boolean
+  /** Rounds cleared, kept through a wipe and a trip Home: the next is `rounds[round]`. */
+  round: number
+  field?: TracksField | null
+  /** The shiny Stantler caught: the glade closes for good. */
+  won?: boolean
+  /** The outro has played. */
+  wonSeen?: boolean
+  /** Times the glade was entered (BEGIN). */
   tries?: number
 }
 
@@ -1224,6 +1285,8 @@ export interface GameConfig {
   timeRace: { access: EventAccess }
   /** The areas' whiteout (docs/61 §4.3, Crown Shrine): its switch. Migration 0123 inserts the same row. */
   whiteout: { access: EventAccess }
+  /** Tracks in the Snow (docs/61 §4.1): its switch. The server reads the same row (0122, tracks_open). */
+  tracks: { access: EventAccess }
   /** Trainer looks (docs/31): unlockable looks in place of the free list. Off by default. */
   looks: { access: EventAccess }
   /** Trick or Treat (docs/29): its switch, numbers and each area's ghosts. The server reads the switch too. */
@@ -1932,6 +1995,8 @@ export interface AreaProgress {
   timeRace?: TimeRaceState
   /** The whiteout here (docs/61 §4.3): its wave, a bonfire, the boss next, whether it's over. */
   whiteout?: WhiteoutState
+  /** Tracks in the Snow here (docs/61 §4.1): the rounds cleared, the glade being searched, whether it's over. */
+  tracks?: TracksState
   /** Extreme mode (docs/47): a Pokémon Center has been met here (a secret area has only its first). */
   centerMet?: boolean
   /** Extreme mode (docs/47): the team was K.O. here; the round starts over at a Center that only swaps. */
@@ -2001,6 +2066,8 @@ export interface SaveData {
   nightmareRulesSeen?: boolean
   /** The whiteout's rules pop-up (docs/61 §4.3) has been shown (once; INFO shows them again). */
   whiteoutRulesSeen?: boolean
+  /** Tracks in the Snow's rules (docs/61 §4.1) have been read on its way in (they show there every time). */
+  tracksRulesSeen?: boolean
   /** The region being played. Absent on saves from before the second region = 'kanto'. */
   region?: RegionId
   /** The regions not being played, each holding everything that region owns. */

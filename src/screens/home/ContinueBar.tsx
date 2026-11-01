@@ -22,6 +22,10 @@ import {
   portalStateOf,
   progressOf,
   raidRules,
+  tracksField,
+  tracksQuarryDex,
+  tracksModeOf,
+  tracksStateOf,
   teamAverageLevel,
   canStartTimeRace,
   timeRaceModeOf,
@@ -85,9 +89,13 @@ export function useContinue(area: Area) {
   // The whiteout's area (docs/61 §4.3): before it, CONTINUE goes to its way in; its boss is its own last step.
   const whiteMode = whiteoutModeOf(area, data)
   const white = whiteMode ? whiteoutStateOf(save, area.id) : null
-  const gym = mode || dreamMode || raceMode || whiteMode ? null : dueGym(area, progress, data, side)
-  const boss =
-    gym || mode || dreamMode || raceMode || whiteMode ? null : dueBoss(area, progress, teamAverageLevel(save), data)
+  // Tracks in the Snow's glade (docs/61 §4.1): before it, CONTINUE goes to its way in; under way, to the glade; once its
+  // shiny Stantler is caught, the glade is closed. Its boss is found in a bush, never challenged.
+  const gladeMode = tracksModeOf(area, data)
+  const glade = gladeMode ? tracksStateOf(save, area.id) : null
+  const special = mode || dreamMode || raceMode || whiteMode || gladeMode
+  const gym = special ? null : dueGym(area, progress, data, side)
+  const boss = gym || special ? null : dueBoss(area, progress, teamAverageLevel(save), data)
   const closed = isAreaClosed(save, area.id, data) || isAreaSealed(save, data, area.id)
   const busy = (run.areaId === area.id && run.phase !== 'idle') || battle
   const raid = gym || boss || busy ? null : openRaidIn(save, data, area)
@@ -104,11 +112,14 @@ export function useContinue(area: Area) {
   const enterRace = !!raceMode && canStartTimeRace(save, data, area.id) && !busy
   const racePlan = raceMode ? timeRacePlan(save, raceMode, area.id) : null
   const enterWhite = !!whiteMode && !white?.active && !white?.won && !busy
-  const enter = enterPortal || enterDream || enterRace || enterWhite
+  const enterGlade = !!gladeMode && !glade?.active && !glade?.won && !busy
+  const searching = !!glade?.active && !busy
+  const enter = enterPortal || enterDream || enterRace || enterWhite || enterGlade
   // Darkrai's strike waits on the area's page after a round (docs/30); so does a bonfire after a wave (docs/61).
   const struck =
     (!!dream?.active && (!!dream.strike || (run.areaId === area.id && !!run.nightmareStruck))) ||
     (!!white?.active && !!white.bonfire)
+  const stantler = gladeMode ? (data.species[tracksQuarryDex(area) ?? 0]?.name ?? '') : ''
   const sub = busy
     ? t('ui.home.backToEncounter')
     : enterRace
@@ -126,6 +137,18 @@ export function useContinue(area: Area) {
         : white.boss
           ? t('ui.whiteout.bossSub')
           : t('ui.whiteout.continueSub', { n: Math.min(white.wave + 1, whiteMode!.waves.length), total: whiteMode!.waves.length })
+    : enterGlade
+      ? glade?.round
+        ? t('ui.tracks.continueSub', { n: glade.round + 1, total: gladeMode!.rounds.length, name: stantler })
+        : t('ui.tracks.enterSub', { n: gladeMode!.rounds.length })
+      : searching
+        ? t('ui.tracks.continueSub', {
+            n: (tracksField(save, data, area.id)?.index ?? 0) + 1,
+            total: gladeMode!.rounds.length,
+            name: stantler,
+          })
+      : glade?.won
+        ? t('ui.tracks.sealed', { name: stantler })
     : enterDream
       ? t('ui.nightmare.enterSub', { n: dreamMode!.foes.length })
       : enter
@@ -191,7 +214,7 @@ export function useContinue(area: Area) {
     // Shut (sealed, resting): CONTINUE is greyed out, and the map's CONTINUE HERE says why instead.
     if (off) return pushToast(sub, 'info')
     if (raid) return navigate(progressRaidPath(raid))
-    if (enter || (portal?.active && portal.offers?.length) || struck || race?.active) {
+    if (enter || (portal?.active && portal.offers?.length) || struck || race?.active || searching) {
       ensureRun(area)
       return navigate('/area')
     }
@@ -222,6 +245,7 @@ export function useContinue(area: Area) {
     !dream?.active &&
     !race?.active &&
     !white?.active &&
+    !glade?.active &&
     !closed &&
     progress.cleared
   // GO TO's two lines: the area, and what waits for the player there (the gym, the legend, the round).
@@ -234,6 +258,8 @@ export function useContinue(area: Area) {
     ? t('ui.timeRace.enter')
     : enterWhite
     ? t('ui.whiteout.enter')
+    : enterGlade
+    ? t('ui.tracks.enter')
     : enterDream
     ? t('ui.nightmare.enter')
     : enter

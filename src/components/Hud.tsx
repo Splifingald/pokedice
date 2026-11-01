@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useT } from '@/i18n/react'
 import { getLang } from '@/i18n'
-import { progressOf, undergroundLive } from '@/engine'
+import { progressOf, tracksModeOf, undergroundLive } from '@/engine'
 import { useDexNew } from '@/lib/dexSeen'
 import { affordableUpgrades } from '@/lib/upgrades'
 import { pushToast, useGame } from '@/store/game'
@@ -183,11 +183,15 @@ function AreaTitle() {
   // The save itself, not progressOf's result: that is a fresh object for an area not played yet, and a selector
   // returning a new object every time re-renders forever (React #185).
   const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
   if (!inArea || !area || !save) return <span className="flex-1" />
   const progress = progressOf(save, area.id)
-  const need = area.roundsToClear || 0
-  const done = progress.cleared || (need > 0 && (progress.roundsDone ?? 0) >= need)
-  const round = Math.min((progress.roundsDone ?? 0) + 1, need)
+  // Tracks in the Snow's glade (docs/61 §4.1) counts its own rounds, not its deck's.
+  const glade = tracksModeOf(area, data)
+  const need = glade ? glade.rounds.length : area.roundsToClear || 0
+  const doneRounds = glade ? (progress.tracks?.round ?? 0) : (progress.roundsDone ?? 0)
+  const done = glade ? !!progress.tracks?.won : progress.cleared || (need > 0 && doneRounds >= need)
+  const round = Math.min(doneRounds + 1, need)
   return (
     <p className="m-0 flex min-w-0 flex-1 items-center gap-2 leading-none" data-area-title>
       <span className="min-w-0 truncate text-[20px]">{area.name}</span>

@@ -34,6 +34,7 @@ import { PortalModeBox } from './PortalModeBox'
 import { NightmareModeBox } from './NightmareModeBox'
 import { TimeRaceModeBox } from './TimeRaceModeBox'
 import { WhiteoutModeBox } from './WhiteoutModeBox'
+import { TracksModeBox } from './TracksModeBox'
 
 const KINDS: EncounterKind[] = ['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus', 'gift']
 const CARD: Record<EncounterKind, { label: string; color: string }> = {
@@ -331,6 +332,8 @@ function AreaEditor({ area }: { area: Row }) {
             <TimeRaceModeBox area={area} />
             {/* The whiteout (docs/61 §4.3), Crown Shrine's: one special mode per area, as the others. */}
             <WhiteoutModeBox area={area} />
+            {/* Tracks in the Snow (docs/61 §4.1): the same, one special mode per area. */}
+            <TracksModeBox area={area} />
           </>
         )}
 

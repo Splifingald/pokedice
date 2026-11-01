@@ -36,6 +36,8 @@ import {
 import { nightRaidEntranceTimeline } from '@/fx/timelines/nightmareRaid'
 import { raceIntroTimeline, raceWinTimeline } from '@/fx/timelines/timeRace'
 import { bonfireTimeline, whiteoutIntroTimeline, whiteoutOutroTimeline } from '@/fx/timelines/whiteout'
+import { tracksIntroTimeline, tracksOutroTimeline, tracksSnowfallTimeline } from '@/fx/timelines/tracks'
+import { stantlerCinema } from '@/fx/timelines/cinema/stantler'
 import { artUrl } from '@/fx/areaArt'
 import { evolveTimeline, hatchTimeline } from '@/fx/timelines/moments'
 import { tradeTimeline } from '@/fx/timelines/trade'
@@ -593,6 +595,39 @@ const PRESETS: Preset[] = [
     name: 'Whiteout: the end (the blizzard lifts, shiny Abomasnow in the sun)',
     sprites: [[460, false, true]],
     make: (o) => whiteoutOutroTimeline({ title: 'The blizzard lifts', mon: spriteKey(460, false, true), short: o.short }),
+  },
+  // Tracks in the Snow (docs/61 §4.1): the way in, the snow falling over the glade, the shiny Stantler's entrance, the
+  // outro.
+  {
+    name: 'Tracks in the Snow: the way in (a reindeer leaps across the moon)',
+    sprites: [[234, false]],
+    make: (o) => tracksIntroTimeline({ title: 'Tracks in the Snow', mon: spriteKey(234, false), short: o.short }),
+  },
+  {
+    name: 'Tracks in the Snow: the snow falling over the glade (an overlay)',
+    sprites: [],
+    make: (o) => tracksSnowfallTimeline({ short: o.short }),
+  },
+  {
+    name: "Tracks in the Snow: the shiny Stantler's entrance (it rears up under the moon)",
+    sprites: [
+      [6, true],
+      [234, false, true],
+    ],
+    make: () =>
+      stantlerCinema.makeBattle({
+        own: own(6),
+        foe: spriteKey(234, false, true),
+        look: legendLook(234, 'normal'),
+        name: 'Stantler',
+        level: 'LV30',
+        types: 'NORMAL',
+      }),
+  },
+  {
+    name: 'Tracks in the Snow: the outro (fresh snow over the prints)',
+    sprites: [[234, false, true]],
+    make: (o) => tracksOutroTimeline({ mon: spriteKey(234, false, true), title: 'Stantler', short: o.short }),
   },
   {
     name: 'Evolution (Charmeleon)',

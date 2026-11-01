@@ -9,6 +9,7 @@ import {
   playerSideOf,
   nightmareModeOf,
   whiteoutModeOf,
+  tracksModeOf,
   nextRoundSize,
   opensWithoutCenter,
   portalModeOf,
@@ -36,6 +37,7 @@ import { PortalSkinProvider } from '@/components/portalSkin'
 import { NightmareGauge } from '@/components/Nightmare'
 import { RaceGauge } from '@/components/TimeRace'
 import { WhiteoutGauge } from '@/components/Whiteout'
+import { TracksGauge } from '@/components/Tracks'
 
 const CARD_ICON: Record<DeckCard, IconName> = {
   wild: 'ball',
@@ -126,6 +128,10 @@ export function RoundGauge({
         className={className}
       />
     )
+  // Tracks in the Snow (docs/61 §4.1) counts its rounds cleared.
+  const glade = tracksModeOf(area, data)
+  if (glade)
+    return <TracksGauge round={progress.tracks?.round ?? 0} total={glade.rounds.length} className={className} />
   if (!cfg.showRoundGauge || cfg.encounterMode !== 'deck') return null
   const remaining = progress.deck?.length ?? 0
   const met = progress.drawn ?? []

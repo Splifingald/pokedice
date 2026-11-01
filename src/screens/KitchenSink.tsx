@@ -64,6 +64,7 @@ import { NightmareBits } from './kitchen/NightmareBits'
 import { NightmareRaidBits } from './kitchen/NightmareRaidBits'
 import { TimeRaceBits } from './kitchen/TimeRaceBits'
 import { WhiteoutBits } from './kitchen/WhiteoutBits'
+import { TracksBits } from './kitchen/TracksBits'
 import { GiftBits } from './kitchen/GiftBits'
 import { InviteBits } from './kitchen/InviteBits'
 import { WelcomeBackBits } from './kitchen/WelcomeBackBits'
@@ -847,6 +848,9 @@ export function KitchenSink() {
       </Section>
       <Section title="Whiteout (Crown Shrine): the shrine, the gauge of waves, the blizzard's chip and snow over a fight, the way in (intro, then its pop-up), rules, the bonfire (catching, warmed, the last, one Pokémon, six), the wave's card, the shut bag, the locked Areas button, the end">
         <WhiteoutBits />
+      </Section>
+      <Section title="Tracks in the Snow (Moonlit Glade): the glade, gauge, bushes and prints, the glade's panel (fresh, searched, a bush rustling, the snow falling, bolted, found), the 4 × 4 at 360 px, a playable glade, way in, rules, result card, wipe line, outro">
+        <TracksBits />
       </Section>
       <Section title="Trick or Treat: the gauge of each tier, the screen in each state (idle, after a Treat, a Treat and a throw playing, a miss, caught, fled), the recaps, the pieces, preview cards, rules">
         <TrickBits />

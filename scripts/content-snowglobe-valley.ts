@@ -9,7 +9,8 @@
  * Vulpix and a third Ice starter; about 125 Pokémon; Ice ×1.2; XP ×1.5; ten areas, the Frost League, five secret areas
  * (shiny Stantler; shiny Delibird from 24 Dec; shiny Abomasnow at 50 caught; shiny Dialga or Palkia after the league,
  * from 25 Dec; shiny Arceus at 90 caught, from 1 Jan). Each secret area gets a gameplay of its own (docs/61 §4): until
- * those are built they play as plain secret areas, which is how this content runs today.
+ * those are built they play as plain secret areas, which is how this content runs today. Moonlit Glade's (Tracks in
+ * the Snow, §4.1) is built: its area carries the mode, which plays only while its switch is on.
  *
  * Its own rules (docs/61 §3): every area holds an Ice type; every item evolution uses an item its Mart sells; no
  * legendary or mythical but the prizes, no fossil, no starter of another region; a level-evolving species is wild only
@@ -19,6 +20,7 @@ import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { DEFAULT_PORTAL_RUN, PLATE_BARS } from '../src/engine/portalMode'
+import { DEFAULT_TRACKS } from '../src/engine/tracksMode'
 import type { BundleRaw, PortalRunMode, Region, SmallWorld } from '../src/engine/types'
 import { DEFAULT_WHITEOUT } from '../src/engine/whiteoutMode'
 import { stableUuid } from './seed'
@@ -784,6 +786,8 @@ export const AREAS: AreaSpec[] = [
     hidden: true,
     unlock: [{ kind: 'pokedex', count: 20 }],
     boss: [{ dex: 234, level: 30, shiny: true }],
+    // Tracks in the Snow (docs/61 §4.1): hide and seek in three rounds, behind its switch (Off: a plain secret area).
+    mode: DEFAULT_TRACKS,
     wild: [
       [234, 15, 24, 28],
       [164, 20, 25, 29],

@@ -259,7 +259,8 @@ export function progressTotals(s: SaveData) {
   const world = open && {
     id: open.id,
     cleared: Object.values(open.block.areaProgress).filter(
-      (p) => p.cleared || p.portal?.won || p.nightmare?.won || !!p.timeRace?.won?.length || p.whiteout?.won,
+      (p) =>
+        p.cleared || p.portal?.won || p.nightmare?.won || !!p.timeRace?.won?.length || p.whiteout?.won || p.tracks?.won,
     ).length,
     gyms: Object.values(open.block.areaProgress).reduce((n, p) => n + (p.gymsDefeated?.length ?? 0), 0),
     species: new Set(open.block.pokedex).size,

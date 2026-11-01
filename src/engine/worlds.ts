@@ -238,7 +238,8 @@ export interface WorldCompletion {
 
 /**
  * The world's areas (secret ones included) and Pokédex, for the save holding it. An area is done once cleared, or once
- * its special run is won (the portal run's and the nightmare's areas are only their raid afterwards, never "cleared").
+ * its special run is won (the portal run's and the nightmare's areas are only their raid afterwards, never "cleared";
+ * Tracks in the Snow's glade closes once its shiny Stantler is caught).
  */
 export function worldCompletion(save: SaveData, data: GameData, world: SmallWorld): WorldCompletion {
   const live = regionOf(save) === world.regionId
@@ -250,8 +251,15 @@ export function worldCompletion(save: SaveData, data: GameData, world: SmallWorl
   const done = areas.filter((a) => {
     const p = progress[a.id]
     // The race's area (docs/61 §4.4) once one of its legends is won; Crown Shrine's whiteout won (docs/61 §4.3): its
-    // boss caught, the shrine closed for good.
-    return !!(p?.cleared || p?.portal?.won || p?.nightmare?.won || p?.timeRace?.won?.length || p?.whiteout?.won)
+    // boss caught, the shrine closed for good; Moonlit Glade's Stantler caught (§4.1).
+    return !!(
+      p?.cleared ||
+      p?.portal?.won ||
+      p?.nightmare?.won ||
+      p?.timeRace?.won?.length ||
+      p?.whiteout?.won ||
+      p?.tracks?.won
+    )
   }).length
   const species = [...regionSpecies(data, world.regionId)].filter((d) => !!data.species[d])
   const dex = species.filter((d) => caught.has(d)).length

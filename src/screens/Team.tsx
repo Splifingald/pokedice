@@ -7,6 +7,7 @@ import {
   timeRaceModeOf,
   whiteoutModeOf,
   atBonfire,
+  tracksModeOf,
   monName,
   POKE_TYPES,
   regionOf,
@@ -82,23 +83,31 @@ export function TeamScreen() {
         s.data,
       ),
   )
+  // …or Tracks in the Snow's (docs/61 §4.1).
+  const atGlade = useGame(
+    (s) => atPortal && !!tracksModeOf(s.data.areas.find((a) => a.id === s.run.areaId), s.data),
+  )
   const atCamp = useGame((s) => atWhiteout && !!s.save && atBonfire(s.save, s.data, s.run.areaId))
   const hint = atCamp
     ? 'ui.whiteout.teamHintBonfire'
     : atNightmare || atWhiteout
       ? 'ui.nightmare.teamHint'
-      : atRace
-        ? 'ui.timeRace.teamHint'
-        : skinKey(skin, 'ui.portal.teamHint')
+      : atGlade
+        ? 'ui.tracks.teamHint'
+        : atRace
+          ? 'ui.timeRace.teamHint'
+          : skinKey(skin, 'ui.portal.teamHint')
   const back = atCamp
     ? 'ui.whiteout.backToBonfire'
     : atWhiteout
       ? 'ui.whiteout.backToWayIn'
       : atNightmare
         ? 'ui.nightmare.backToWayIn'
-        : atRace
-          ? 'ui.timeRace.backToWayIn'
-          : skinKey(skin, 'ui.portal.backToPortal')
+        : atGlade
+          ? 'ui.tracks.backToWayIn'
+          : atRace
+            ? 'ui.timeRace.backToWayIn'
+            : skinKey(skin, 'ui.portal.backToPortal')
   const navigate = useNavigate()
   const now = useNow(30_000)
   const wide = useMediaQuery('(min-width: 1024px)')

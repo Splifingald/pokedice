@@ -47,6 +47,7 @@ import {
   inNightmare,
   timeRaceBattleSpeed,
   inWhiteout,
+  tracksFound,
   legendCinemaOn,
   championCinemaOn,
 } from '@/engine'
@@ -73,6 +74,7 @@ import { catchTimeline } from '@/fx/timelines/catch'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { BOSS_CINEMAS } from '@/fx/timelines/cinema'
 import { abomasnowCinema } from '@/fx/timelines/cinema/abomasnow'
+import { stantlerCinema } from '@/fx/timelines/cinema/stantler'
 import { BlizzardChip, SnowOverStage } from '@/components/Whiteout'
 import { t as say } from '@/i18n'
 import { championCinemaFor } from '@/fx/timelines/cinema/champions'
@@ -305,6 +307,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   // The whiteout's fights (docs/61 §4.3): the engine's blizzard (its chip, snow over the stage) and the bag shut.
   const storm = !versus && !!st.weather
   const bagShut = !versus && !!st.noBag
+  // Tracks in the Snow's last round (docs/61 §4.1): the shiny Stantler found in its bush, its own entrance.
+  const gladeBoss = !versus && st.kind === 'boss' && !!save && tracksFound(save, data, run.areaId)
   const stageBox = useRef<HTMLDivElement>(null)
   const panel = useRef<HTMLDivElement>(null)
   const [menu, setMenu] = useState<null | 'item' | 'history' | 'mega' | 'form' | 'z'>(null)
@@ -871,12 +875,15 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     }
     // A mythical's own entrance (docs/53: Mew in its forest) when the cinematics are on and it has one.
     // The whiteout's boss (docs/61 §4.3): the crown tree shaking out Abomasnow, its own way in whatever that switch says.
+    // The glade's shiny Stantler rears up under the moon (docs/61 §4.1), with the feature's own switch.
     const cinema =
       save && inWhiteout(save, data, run.areaId)
         ? abomasnowCinema
-        : legendCinemaOn(data)
-          ? BOSS_CINEMAS[foe.baseDex ?? foe.dex]
-          : undefined
+        : gladeBoss
+          ? stantlerCinema
+          : legendCinemaOn(data)
+            ? BOSS_CINEMAS[foe.baseDex ?? foe.dex]
+            : undefined
     return {
       timeline: cinema ? cinema.makeBattle(params) : legendTimeline(params),
       ready: Promise.all([loadSprite(lead.dex, true, lead.shiny, lead.outfit), loadSprite(foe.dex, false, foe.shiny, foe.outfit)]),
