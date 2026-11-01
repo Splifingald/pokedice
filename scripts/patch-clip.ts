@@ -107,8 +107,30 @@ interface Segment {
 
 const visible = (l: Locator) => l.isVisible().catch(() => false)
 
-/** The FX lab's stage (dev only, /kitchen-sink/fx) filling the frame at ×5, playing one timeline from its start. */
-function fxLab(name: string, preset: string, seconds: number): Segment {
+// Runs in the page: the area picture `id` under the stage, as a battle there has it (BattleStage: the stage's own
+// background cleared, the picture's battle window behind it), through the dev server's own modules.
+const ART_UNDER = (id: string) => `(async () => {
+  const scenes = await import('/src/fx/scenes.ts')
+  const art = await import('/src/fx/areaArt.ts')
+  const map = await import('/src/fx/areaArtMap.ts')
+  scenes.setArtUnderStage(true)
+  const place = art.artPlacement(art.battleWindow(map.ART_GEOMETRY[${JSON.stringify(id)}]))
+  const box = document.createElement('div')
+  box.style.cssText = 'position:fixed;inset:0;overflow:hidden;z-index:2147483646;background:#000'
+  const img = document.createElement('img')
+  img.src = art.artUrl(${JSON.stringify(id)})
+  img.style.cssText = 'position:absolute;max-width:none;image-rendering:pixelated'
+  Object.assign(img.style, place)
+  box.appendChild(img)
+  document.body.appendChild(box)
+  await img.decode()
+})()`
+
+/**
+ * The FX lab's stage (dev only, /kitchen-sink/fx) filling the frame at ×6, playing one timeline from its start; with
+ * `art`, that area picture under it, as in the game (the champions' intros dissolve into it).
+ */
+function fxLab(name: string, preset: string, seconds: number, art?: string): Segment {
   return {
     name,
     dpr: 1,
@@ -132,6 +154,7 @@ function fxLab(name: string, preset: string, seconds: number): Segment {
             height: 100vh !important; z-index: 2147483647 !important; }`,
         }),
       )
+      if (art) await pumped(page.evaluate(ART_UNDER(art)))
       // Its sprites and pictures in, before the replay.
       await pumped(page.waitForLoadState('networkidle'))
       await until(async () => false, 1500)
@@ -369,7 +392,8 @@ const friendship: Segment = {
 }
 
 const SEGMENTS: Segment[] = [
-  fxLab('blue', "Cinematic: Champion Blue's entrance", 8),
+  // Fought at the Indigo Plateau: the Elite Four's picture (the user's pick, 2026-11-01).
+  fxLab('blue', "Cinematic: Champion Blue's entrance", 8, 'league'),
   realPlayer,
   friendship,
   fxLab('lugia', "Cinematic: #249's raid entrance", 8),
@@ -450,12 +474,11 @@ async function record(url: string, seg: Segment, fps: number, dir: string) {
       await frame(false)
     }
   }
+  // A click straight on the element: the mouse's coordinates don't survive --force-device-scale-factor.
   const press = async (target: Locator) => {
-    const box = await pumped(target.boundingBox())
-    if (!box) throw new Error(`[${seg.name}] nothing to press`)
-    await pumped(page.mouse.click(box.x + box.width / 2, box.y + box.height / 2))
-    // No pointer resting on what was pressed: its hover look isn't part of the shot.
-    await pumped(page.mouse.move(2, Math.round(H / seg.dpr) - 2))
+    const hit = await pumped(target.evaluate((el: HTMLElement) => (el.click(), true)))
+    if (!hit) throw new Error(`[${seg.name}] nothing to press`)
+    console.log(`[${seg.name}] pressed ${target}`)
   }
   const rig: Rig = { page, pumped, frame, until, press }
 
