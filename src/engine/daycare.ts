@@ -1,18 +1,29 @@
 // The Pokémon Day Care, one for every region (docs/15): your Pokémon gain XP in real time (no battles) all the way to
-// the level cap and never evolve from it; friends' Pokémon visit; Eggs hatch on the spot into the first form of an
-// evolving line, favouring species the player doesn't have yet. The Egg-group checks that lay the Eggs are in
-// breeding.ts.
+// the level cap and never evolve from it; friends' Pokémon visit; an Egg hatches into the first form of one of its
+// parents' lines, favouring species the player doesn't have yet, in the Box of a region the player picks. The
+// Egg-group checks that lay the Eggs are in breeding.ts.
 import { rollTalent, TALENT, talentOf } from './talents'
 import { earnedGold, type LiveSet } from './liveEvents'
 import { createInstance, gainXp, instanceMaxHp, xpToNext } from './progression'
-import { inWorldRegion, regionCases, regionOf, regionOfSpecies, unlockedRegions, worldRegionOf } from './regions'
+import { isDitto } from './breeding'
+import {
+  inWorldRegion,
+  isWorldRegion,
+  regionCases,
+  regionOf,
+  regionOfSpecies,
+  regionsHolding,
+  unlockedRegions,
+  worldRegionOf,
+} from './regions'
 import { createRng, type Rng } from './rng'
-import { badgeCase, ownedPokemon } from './run'
+import { badgeCase } from './run'
 import type {
   DayCareGuest,
   DayCareResident,
   DayCareState,
   GameData,
+  Hatchling,
   PokemonInstance,
   RegionId,
   SaveData,
@@ -346,9 +357,10 @@ export function refreshGuests(
 
 /**
  * First forms of evolving lines (nothing evolves into them), starters excluded — and, with a region, only that
- * region's own generation.
+ * region's own generation. This is the pool of an Egg no parent can pass a line on to (`rollHatchling`): the free first
+ * Egg, a Ditto with a Ditto, a Ditto with a visitor from a region not discovered yet.
  *
- * An Egg is a region's Egg: hatching a Chikorita in Kanto would put a #152 in a Pokédex that ends at #151, and
+ * Such an Egg is a region's Egg: hatching a Chikorita in Kanto would put a #152 in a Pokédex that ends at #151, and
  * hatching a Pidgey in Johto would hand out a region the player has already finished. So the pool is cut to the
  * species whose dex number belongs to the region (see `regionOfSpecies`), never a previous or a later one. A region
  * with no first forms of its own (nothing in the table yet) falls back to the whole pool, so Eggs never dry up.
@@ -363,8 +375,8 @@ export function eggSpecies(data: GameData, regionId?: RegionId | null): Species[
 }
 
 /**
- * Each hatchable species with its weight: missing from the Pokédex → unownedWeight, else 1. The live region's pool,
- * wherever the parents came from.
+ * The random pool's species with their weights: missing from the Pokédex → unownedWeight, else 1. The live region's
+ * pool, for an Egg no parent passes a line on to.
  */
 export function eggOdds(save: SaveData, data: GameData): { species: Species; weight: number }[] {
   const dex = new Set(save.pokedex)
@@ -372,10 +384,140 @@ export function eggOdds(save: SaveData, data: GameData): { species: Species; wei
   return eggSpecies(data, regionOf(save)).map((species) => ({ species, weight: dex.has(species.dex) ? 1 : unowned }))
 }
 
-/** The hatchling's level: the hatchRank-th lowest level owned (or the highest, with fewer Pokémon), minus hatchOffset. */
-export function hatchLevel(save: SaveData, data: GameData): number {
+/** The regions discovered: started (live or parked) and still on, small worlds left out (they have no Box to fill). */
+const discoveredRegions = (save: SaveData, data: GameData): Set<RegionId> =>
+  new Set(
+    unlockedRegions(save, data)
+      .filter((r) => !isWorldRegion(data, r.id) && worldRegionOf(save) !== r.id)
+      .map((r) => r.id),
+  )
+
+/** The discovered regions whose Pokédex page lists a species (`regionSpecies`), in region order: where it can go. */
+export function hatchRegions(save: SaveData, data: GameData, dex: number): RegionId[] {
+  const open = discoveredRegions(save, data)
+  return regionsHolding(data, dex).filter((r) => open.has(r))
+}
+
+/** A hatchling's Boxes to choose from: `hatchRegions`, or the live one for a species no discovered Pokédex lists. */
+export function hatchlingRegions(save: SaveData, data: GameData, dex: number): RegionId[] {
+  const regions = hatchRegions(save, data, dex)
+  return regions.length ? regions : [regionOf(save)]
+}
+
+/**
+ * The player may hatch it: its generation's region is discovered (no Pichu before Johto), and a discovered region's
+ * Pokédex lists it, so it has a Box to go to.
+ */
+function hatchable(save: SaveData, data: GameData, dex: number): boolean {
+  const from = regionOfSpecies(data, dex)
+  if (from && !discoveredRegions(save, data).has(from)) return false
+  return hatchRegions(save, data, dex).length > 0
+}
+
+const prevoIndex = new WeakMap<GameData, Map<number, number>>()
+
+/** The species this one evolves from, or null for a line's first form. In the data no species has two. */
+function prevoOf(data: GameData, dex: number): number | null {
+  let index = prevoIndex.get(data)
+  if (!index) {
+    index = new Map()
+    for (const s of data.speciesList) {
+      for (const e of s.evolutions) if (!index.has(e.toDex)) index.set(e.toDex, s.dex)
+    }
+    prevoIndex.set(data, index)
+  }
+  return index.get(dex) ?? null
+}
+
+/** A battle or cosmetic form breeds as its species; a regional form is a line of its own (Alolan Vulpix). */
+function breedingDex(data: GameData, dex: number): number {
+  const form = data.species[dex]?.form
+  return form && form.kind !== 'regional' ? form.of : dex
+}
+
+/**
+ * What a parent passes on: the first form of its line, babies included (Pikachu → Pichu, Charizard → Charmander, Tauros
+ * → Tauros), or the lowest form the player may hatch (`hatchable`): before Johto is discovered, Pikachu → Pikachu. Null
+ * when no form of its line can hatch (a friend's Treecko before Hoenn).
+ */
+export function eggLine(save: SaveData, data: GameData, parentDex: number): number | null {
+  const line = [breedingDex(data, parentDex)]
+  for (let d = prevoOf(data, line[0]!); d != null && !line.includes(d); d = prevoOf(data, d)) line.unshift(d)
+  return line.find((d) => hatchable(save, data, d)) ?? null
+}
+
+/** Registered in this region's Pokédex: the live one at the top level, a parked one in `save.parked`. */
+const registeredIn = (save: SaveData, region: RegionId, dex: number): boolean =>
+  (region === regionOf(save) ? save.pokedex : (save.parked?.[region]?.pokedex ?? [])).includes(dex)
+
+/**
+ * The lines an Egg's parents pass on, each with its weight: one registered in none of the Pokédexes it could go to →
+ * unownedWeight, else 1. Ditto passes nothing on; two parents of one line count once. Empty when neither can (the gift
+ * Egg has no parents): that Egg hatches from the random pool.
+ */
+export function eggLines(save: SaveData, data: GameData): { dex: number; weight: number }[] {
+  const parents = dayCareOf(save).egg?.parents ?? []
+  const unowned = Math.max(0, data.config.dayCare.unownedWeight)
+  const out: { dex: number; weight: number }[] = []
+  for (const p of parents) {
+    if (isDitto(data, p.dex)) continue
+    const dex = eggLine(save, data, p.dex)
+    if (dex == null || out.some((l) => l.dex === dex)) continue
+    const missing = hatchRegions(save, data, dex).every((r) => !registeredIn(save, r, dex))
+    out.push({ dex, weight: missing ? unowned : 1 })
+  }
+  return out
+}
+
+/** Species the games split in two by gender: Pokédice has none, so an Egg of either line hatches either, 50/50. */
+const TWINS: Record<number, number> = { 29: 32, 32: 29, 313: 314, 314: 313 }
+
+/**
+ * What the Egg holds: one of the parents' lines (`eggLines`), or the live region's random pool when neither passes one
+ * on; then the Day Care's shiny odds and the family's hidden talent at the wild odds (docs/51). Null without an Egg.
+ */
+export function rollHatchling(save: SaveData, data: GameData, rng: Rng): Hatchling | null {
+  if (!dayCareOf(save).egg) return null
+  const lines = eggLines(save, data)
+  let dex = lines.length
+    ? rng.weighted(lines, (l) => l.weight)?.dex
+    : rng.weighted(eggOdds(save, data), (o) => o.weight)?.species.dex
+  if (dex == null) return null
+  const twin = TWINS[dex]
+  if (lines.length && twin != null && hatchable(save, data, twin) && rng.next() < 0.5) dex = twin
+  const shiny = rng.next() < Math.max(0, data.config.dayCare.shinyChance)
+  const talent = rollTalent(data, dex, rng)
+  return { dex, ...(shiny && { shiny: true as const }), ...(talent && { talent: true as const }) }
+}
+
+/**
+ * The Egg cracks: what it holds is rolled once and kept on it, so the player can see it before choosing its Box, and
+ * closing the game then rolls nothing again. The same save when it already has. Null without an Egg, or in a small
+ * world (its Egg waits outside).
+ */
+export function crackEgg(save: SaveData, data: GameData, rng: Rng): SaveData | null {
+  const dc = dayCareOf(save)
+  if (!dc.egg || inWorldRegion(save, data)) return null
+  if (dc.egg.hatchling) return save
+  const hatchling = rollHatchling(save, data, rng)
+  return hatchling ? { ...save, dayCare: { ...dc, egg: { ...dc.egg, hatchling } } } : null
+}
+
+/** A region's Box (the live one at the top level, a parked one in `save.parked`) and its residents at the Day Care. */
+function ownedIn(save: SaveData, region: RegionId): PokemonInstance[] {
+  const here = regionOf(save)
+  const box = region === here ? save.box : (save.parked?.[region]?.box ?? [])
+  const residents = dayCareOf(save).residents.filter((r) => (r.region ?? here) === region).map((r) => r.inst)
+  return [...box, ...residents]
+}
+
+/**
+ * The hatchling's level: the hatchRank-th lowest level owned in the region it goes to (or the highest, with fewer
+ * Pokémon), minus hatchOffset.
+ */
+export function hatchLevel(save: SaveData, data: GameData, region: RegionId = regionOf(save)): number {
   const cfg = data.config.dayCare
-  const levels = ownedPokemon(save)
+  const levels = ownedIn(save, region)
     .map((p) => p.level)
     .sort((a, b) => a - b)
   const ref = levels[Math.min(Math.max(1, cfg.hatchRank), levels.length) - 1] ?? cfg.hatchMinLevel
@@ -385,11 +527,14 @@ export function hatchLevel(save: SaveData, data: GameData): number {
 export interface Hatch {
   save: SaveData
   inst: PokemonInstance
+  /** Missing from that region's Pokédex. */
   isNew: boolean
-  /** False when you already own a plain copy at a level at least as high: the hatchling isn't kept. */
+  /** False when that region already holds a plain copy at a level at least as high: the hatchling isn't kept. */
   kept: boolean
   /** The weaker copy the hatchling replaced (it takes its team slot). */
   replaced?: PokemonInstance
+  /** Not kept: the level of the strongest plain copy there, the one that holds it back. */
+  strongest?: number
   joinedTeam: boolean
   shiny: boolean
   /** ₽ from the Day Care couple: `notKeptGold` when it isn't kept, else 0; and Cash Flow's part of it. */
@@ -397,13 +542,22 @@ export interface Hatch {
   bonus: number
   /** It was the free first Egg. */
   gift: boolean
+  /** The region whose Box it went to. */
+  region: RegionId
+  /** That region is the live one (otherwise it waits in a parked Box: "in your Johto Box"). */
+  live: boolean
+  /** Every Box it could have gone to (`hatchlingRegions`): more than one, and the player picks. */
+  regions: RegionId[]
 }
 
 /**
- * Hatch the Egg waiting (null when none waits). Only one plain copy of a species is kept: a hatchling stronger than
- * every plain copy you own replaces the weakest one, otherwise the Day Care couple keeps it and gives `notKeptGold`.
+ * Hatch the Egg waiting into `region`'s Box (null when no Egg waits, or that Box can't take it). Without a region: the
+ * live one when it can take it, else the first that can. The Egg cracks first if it hasn't (`crackEgg`).
+ *
+ * Only one plain copy of a species is kept per region: a hatchling stronger than every plain copy there replaces the
+ * weakest one, otherwise the Day Care couple keeps it and gives `notKeptGold` (to the live purse: the player is here).
  * A shiny is a Pokémon of its own (the catching rule): it never replaces a copy, nothing holds it back, so it is
- * always kept.
+ * always kept. It joins the team only in the live region, unless it takes the slot of the copy it replaced.
  */
 export function hatchEgg(
   save: SaveData,
@@ -412,55 +566,88 @@ export function hatchEgg(
   now: number,
   newId: () => string,
   live: LiveSet = null,
+  region?: RegionId,
 ): Hatch | null {
-  const dc = dayCareOf(save)
-  // A hatchling joins the region being played: never a small world's (its Egg waits outside).
-  if (!dc.egg || inWorldRegion(save, data)) return null
+  const cracked = crackEgg(save, data, rng)
+  if (!cracked) return null
+  const dc = dayCareOf(cracked)
+  const egg = dc.egg!
+  const h = egg.hatchling!
+  const here = regionOf(cracked)
+  const regions = hatchlingRegions(cracked, data, h.dex)
+  const to = region ?? (regions.includes(here) ? here : regions[0]!)
+  const isLive = to === here
+  const block = isLive ? cracked : cracked.parked?.[to]
+  if (!regions.includes(to) || !block) return null
   const cfg = data.config.dayCare
-  const pick = rng.weighted(eggOdds(save, data), (o) => o.weight)
-  if (!pick) return null
-  const shiny = rng.next() < Math.max(0, cfg.shinyChance)
-  const inst = createInstance(pick.species.dex, hatchLevel(save, data), data, newId(), now)
-  if (shiny) inst.shiny = true
-  // Its family's hidden talent, at the wild odds (docs/51).
-  if (rollTalent(data, inst.dex, rng)) inst.talent = true
-  const isNew = !save.pokedex.includes(inst.dex)
-  const copies = shiny ? [] : ownedPokemon(save).filter((p) => p.dex === inst.dex && !p.shiny)
+  const inst = createInstance(h.dex, hatchLevel(cracked, data, to), data, newId(), now)
+  if (h.shiny) inst.shiny = true
+  if (h.talent) inst.talent = true
+  const shiny = !!h.shiny
+  const isNew = !block.pokedex.includes(inst.dex)
+  // A shiny or an outfit copy (docs/59) is its own Pokémon: a hatchling never replaces it.
+  const copies = shiny ? [] : ownedIn(cracked, to).filter((p) => p.dex === inst.dex && !p.shiny && !p.outfit)
   const kept = copies.every((p) => p.level < inst.level)
-  const replaced = kept ? copies.sort((a, b) => a.level - b.level)[0] : undefined
+  const replaced = kept ? [...copies].sort((a, b) => a.level - b.level)[0] : undefined
   const { amount: gold, bonus } = earnedGold(kept ? 0 : cfg.notKeptGold, live)
-  const gift = !!dc.egg.gift
+  const gift = !!egg.gift
   const { egg: _hatched, ...rest } = dc
   const cleared: DayCareState = { ...rest, eggClaimed: dc.eggClaimed || gift }
-  const base: SaveData = {
-    ...save,
-    gold: save.gold + gold,
-    pokedex: isNew ? [...save.pokedex, inst.dex] : save.pokedex,
-    dayCare: cleared,
-  }
-  const out = { inst, isNew, kept, shiny, gold, bonus, gift }
-  // Not kept, a hatchling with its talent still teaches it to the family (`syncTalents`): yours carries it.
+  const pokedex = isNew ? [...block.pokedex, inst.dex] : block.pokedex
+  let box = block.box
+  let team = block.team
+  let dayCare = cleared
+  let joinedTeam = false
   if (!kept && inst.talent) {
-    const own = copies.sort((a, b) => b.level - a.level)[0]
-    const box = own ? base.box.map((p) => (p.id === own.id ? { ...p, talent: true } : p)) : base.box
-    return { ...out, save: { ...base, box }, joinedTeam: false }
+    // Not kept, a hatchling with its talent still teaches it to the family (`syncTalents`): yours carries it.
+    const own = [...copies].sort((a, b) => b.level - a.level)[0]
+    if (own) box = box.map((p) => (p.id === own.id ? { ...p, talent: true } : p))
   }
-  if (!kept) return { ...out, save: base, joinedTeam: false }
-  const inTeam = replaced ? save.team.includes(replaced.id) : false
-  const box = save.box.filter((p) => p.id !== replaced?.id)
-  const team = inTeam
-    ? save.team.map((id) => (id === replaced!.id ? inst.id : id))
-    : save.team.filter((id) => id !== replaced?.id)
-  const joinedTeam = inTeam || team.length < data.config.maxTeamSize
+  if (kept) {
+    const inTeam = replaced ? team.includes(replaced.id) : false
+    const without = team.filter((id) => id !== replaced?.id)
+    joinedTeam = inTeam || (isLive && without.length < data.config.maxTeamSize)
+    team = inTeam
+      ? team.map((id) => (id === replaced!.id ? inst.id : id))
+      : joinedTeam
+        ? [...without, inst.id]
+        : without
+    box = [...box.filter((p) => p.id !== replaced?.id), inst]
+    dayCare = { ...cleared, residents: cleared.residents.filter((r) => r.inst.id !== replaced?.id) }
+  }
+  const paid: SaveData = { ...cracked, gold: cracked.gold + gold, dayCare }
+  const next: SaveData = isLive
+    ? { ...paid, box, team, pokedex }
+    : { ...paid, parked: { ...paid.parked, [to]: { ...block, box, team, pokedex } } }
+  const strongest = kept ? undefined : Math.max(...copies.map((p) => p.level))
   return {
-    ...out,
-    save: {
-      ...base,
-      box: [...box, inst],
-      team: joinedTeam && !inTeam ? [...team, inst.id] : team,
-      dayCare: { ...cleared, residents: cleared.residents.filter((r) => r.inst.id !== replaced?.id) },
-    },
+    save: next,
+    inst,
+    isNew,
+    kept,
     replaced,
+    strongest,
     joinedTeam,
+    shiny,
+    gold,
+    bonus,
+    gift,
+    region: to,
+    live: isLive,
+    regions,
   }
+}
+
+/**
+ * The cracked Egg's hatchling as it would arrive in each Box it can go to (level, kept or not, NEW, the copy it would
+ * replace): the rows the player picks from. Empty until the Egg has cracked.
+ */
+export function hatchChoices(save: SaveData, data: GameData, now: number, live: LiveSet = null): Hatch[] {
+  const h = dayCareOf(save).egg?.hatchling
+  if (!h) return []
+  // Cracked, so nothing is rolled: the rng and the id are never what the player keeps.
+  const rng = createRng(0)
+  return hatchlingRegions(save, data, h.dex).flatMap(
+    (r) => hatchEgg(save, data, rng, now, () => 'hatchling', live, r) ?? [],
+  )
 }

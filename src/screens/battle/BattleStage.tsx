@@ -232,7 +232,7 @@ function Mon({
   // Showdown failing or stalling brings the local sprite, placed as it stands (src/lib/showdownReach.ts).
   const down = useShowdownDown()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const s = useMemo(() => stageSprite(b.dex, back, b.shiny), [b.dex, back, b.shiny, down])
+  const s = useMemo(() => stageSprite(b.dex, back, b.shiny, b.outfit), [b.dex, back, b.shiny, b.outfit, down])
   const at = place ?? (back ? LAYOUT.own : LAYOUT.foe)
   const raw = placeSprite(s, at.x, at.y)
   // Scaled about its feet, so it stands on the same spot.
@@ -240,7 +240,7 @@ function Mon({
   const box = { left: at.x + (raw.left - at.x) * k, top: at.y + (raw.top - at.y) * k, w: raw.w * k, h: raw.h * k }
   const flash = useFlash(fx.flash?.target === side && front ? fx.flash.id : null, still)
   const liveBox = useRef<HTMLSpanElement>(null)
-  const liveKey = spriteKey(b.dex, back, b.shiny)
+  const liveKey = spriteKey(b.dex, back, b.shiny, b.outfit)
   useLayoutEffect(() => {
     const el = liveBox.current
     if (!live || !el) return
@@ -504,7 +504,7 @@ function DoubleMons({
   )
 }
 
-const key = (b: Battler, back: boolean, dex = b.dex) => spriteKey(dex, back, b.shiny)
+const key = (b: Battler, back: boolean, dex = b.dex) => spriteKey(dex, back, b.shiny, b.outfit)
 
 const asShown = (b: Battler, fx: Fx): Battler => {
   const dex = fx.dex[b.uid]
@@ -522,8 +522,8 @@ function useSceneTimeline(scene: Scene | null, own: Battler, foe: Battler, short
     const mine = scene.side === 'player'
     const changing = mine ? own : foe
     const sprites: Promise<string>[] = [
-      loadSprite(own.dex, true, own.shiny),
-      loadSprite(foe.dex, false, foe.shiny),
+      loadSprite(own.dex, true, own.shiny, own.outfit),
+      loadSprite(foe.dex, false, foe.shiny, foe.outfit),
     ]
     let timeline: Timeline<unknown>
     if (scene.kind === 'attack') {
@@ -562,7 +562,7 @@ function useSceneTimeline(scene: Scene | null, own: Battler, foe: Battler, short
     } else {
       const from = scene.fromDex ?? changing.dex
       const to = scene.toDex ?? changing.dex
-      sprites.push(loadSprite(from, mine, changing.shiny), loadSprite(to, mine, changing.shiny))
+      sprites.push(loadSprite(from, mine, changing.shiny, changing.outfit), loadSprite(to, mine, changing.shiny, changing.outfit))
       const p = {
         // The side that doesn't change keeps its sprite; the changing side's comes from the scene.
         own: key(own, true, mine ? from : own.dex),
@@ -762,9 +762,9 @@ export function BattleStage({
 
   // Keep both Pokémon ready on the canvas: a move can start any moment.
   useEffect(() => {
-    void loadSprite(own.dex, true, own.shiny)
-    void loadSprite(foe.dex, false, foe.shiny)
-  }, [own.dex, own.shiny, foe.dex, foe.shiny])
+    void loadSprite(own.dex, true, own.shiny, own.outfit)
+    void loadSprite(foe.dex, false, foe.shiny, foe.outfit)
+  }, [own.dex, own.shiny, own.outfit, foe.dex, foe.shiny, foe.outfit])
 
   useEffect(() => {
     const el = box.current

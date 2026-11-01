@@ -1,10 +1,13 @@
 // The Day Care page's pieces (docs/15, the Visual Lab's daycare.js), drawn from props so /kitchen-sink can show each
-// state: the hearts, a slot's card, a friend's tile, an empty slot, the Egg card and the Egg-now bar.
-import type { ReactNode } from 'react'
+// state: the hearts, a slot's card, a friend's tile, an empty slot, the Egg card, the Egg-now bar and a hatchling's Box
+// pick.
+import type { ReactNode, Ref } from 'react'
+import type { Hatch, RegionId } from '@/engine'
 import { Chip } from '@/components/Chip'
 import { EggSprite } from '@/components/EggSprite'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
+import { LandingPick } from '@/components/trades/TradeBits'
 import { MiniSprite, showdownView, SpriteImg } from '@/components/SpriteImg'
 import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
@@ -75,8 +78,8 @@ const TILE = { h: 60, artH: 48, artW: 60 }
  * The SpriteImg box that shows a Pokémon's art at ×1.17 on the tile, or smaller when that wouldn't fit (Lugia, Onix).
  * SpriteImg draws Showdown's art at `size / max(96, canvas)` per pixel, so the box follows from the scale wanted.
  */
-function tileSpriteSize(dex: number, shiny?: boolean): number {
-  const view = showdownView(dex, false, !!shiny)
+function tileSpriteSize(dex: number, shiny?: boolean, outfit?: string | null): number {
+  const view = showdownView(dex, false, !!shiny, outfit)
   if (!view) return TILE.h + 8
   const [x0, y0, x1, y1] = artBox(view.box)
   const w = x1 - x0 + 1
@@ -96,6 +99,7 @@ export function SlotCard({
   tag,
   dex,
   shiny,
+  outfit,
   name,
   level,
   children,
@@ -106,6 +110,8 @@ export function SlotCard({
   tag?: ReactNode
   dex: number
   shiny?: boolean
+  /** Its outfit (docs/59), as `outfitOf` gave it. */
+  outfit?: string | null
   name: string
   level: string
   children?: ReactNode
@@ -120,7 +126,7 @@ export function SlotCard({
         <span className="relative block h-[60px] w-[60px] shrink-0 overflow-hidden bg-sky shadow-[inset_0_-5px_0_rgb(var(--c-sky-line))]">
           {/* Centred on the tile above its lip, whatever the box's size (a grid would start an oversized box at the top). */}
           <span className="absolute left-1/2 top-[calc(50%-2px)] -translate-x-1/2 -translate-y-1/2">
-            <SpriteImg dex={dex} size={tileSpriteSize(dex, shiny)} shiny={shiny} />
+            <SpriteImg dex={dex} size={tileSpriteSize(dex, shiny, outfit)} shiny={shiny} outfit={outfit} />
           </span>
         </span>
         <span className="grid min-w-0 flex-1 gap-1">
@@ -378,3 +384,66 @@ export function RushBarView({
 
 /** The green tag on your card: levels gained here, or New. */
 export const GainTag = ({ children }: { children: ReactNode }) => <Chip tone="done">{children}</Chip>
+
+/** What the Box pick reads of a hatchling's arrival in one Box (a `Hatch`, or a made-up one on /kitchen-sink). */
+export type HatchRow = Pick<Hatch, 'region' | 'shiny' | 'kept' | 'isNew' | 'strongest'> & {
+  inst: { level: number }
+  replaced?: { level: number }
+}
+
+/** A hatchling's arrival in one Box, as the Box pick's row says it (`LandingPick`, shared with trades). */
+const hatchLanding = (h: HatchRow) => ({
+  region: h.region,
+  outcome: h.shiny
+    ? ('shiny' as const)
+    : !h.kept
+      ? ('merged' as const)
+      : h.replaced
+        ? ('replaced' as const)
+        : ('new' as const),
+  isNew: h.isNew,
+  mine: h.replaced?.level ?? h.strongest ?? null,
+  // Never `locked`: a hatchling arrives at that Box's own level.
+  best: h.inst.level,
+  level: h.inst.level,
+})
+
+/**
+ * The Box pick of a hatchling more than one discovered region's Pokédex lists (docs/15): the note, a row per region
+ * (the level it arrives at there, and what happens: it joins, NEW, STRONGER, nothing gained) and SEND IT THERE.
+ */
+export function HatchBoxPick({
+  name,
+  choices,
+  value,
+  onChange,
+  onSend,
+  sendRef,
+}: {
+  name: string
+  choices: HatchRow[]
+  value: RegionId | null
+  onChange: (region: RegionId) => void
+  onSend: () => void
+  sendRef?: Ref<HTMLButtonElement>
+}) {
+  const { t } = useT()
+  const level = choices.find((c) => c.region === value)?.inst.level ?? choices[0]?.inst.level ?? 1
+  return (
+    <>
+      <p className="m-0 font-pixel-sm text-[16px] leading-tight text-muted">
+        {t('ui.trades.land.note', { name })}
+      </p>
+      <LandingPick
+        name={name}
+        level={level}
+        options={choices.map(hatchLanding)}
+        value={value}
+        onChange={onChange}
+      />
+      <PixelButton ref={sendRef} variant="primary" className="w-full" disabled={!value} onClick={onSend}>
+        {t('ui.trades.land.send')}
+      </PixelButton>
+    </>
+  )
+}

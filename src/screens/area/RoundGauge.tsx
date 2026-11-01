@@ -1,5 +1,6 @@
 import {
   asSeenBy,
+  areaVersusHere,
   centersOn,
   roundCenterHere,
   deckSize,
@@ -24,6 +25,7 @@ import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useMotion } from '@/lib/motion'
 import { useGame } from '@/store/game'
+import { useAreaVersus } from '@/store/areaVersus'
 import { cx } from '@/theme/util'
 import { DistortionGauge } from '@/components/Portal'
 import { NightmareGauge } from '@/components/Nightmare'
@@ -35,10 +37,12 @@ const CARD_ICON: Record<DeckCard, IconName> = {
   item: 'box',
   casino: 'coin',
   trick: 'pumpkin',
+  versus: 'user',
   legend: 'masterball',
 }
 /** What a met card was, for the gauge's tooltips. */
-const cardName = (card: DeckCard) => t(`ui.card.${card}`)
+// `ui.card.versus` is the trainer card's Versus line: a real player's card (docs/54) has its own words.
+const cardName = (card: DeckCard) => (card === 'versus' ? t('ui.areaVersus.card') : t(`ui.card.${card}`))
 
 /**
  * The round gauge, under the area name (no label): one tile per card of the current round's deck · n/total.
@@ -66,6 +70,8 @@ export function RoundGauge({
   const { t } = useT()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
+  // A real player's team waiting here (docs/54): the next round counts its card.
+  const foe = useAreaVersus((s) => !!s.foes[area.id]) && areaVersusHere(save, area, data)
   const cfg = data.config
   // A portal run (docs/28) counts the portals closed instead of a round's cards.
   const portal = portalModeOf(area, data)
@@ -101,10 +107,10 @@ export function RoundGauge({
   const total = inRound
     ? progress.drawn
       ? met.length + remaining
-      : Math.max(deckSize(area, data), remaining)
+      : Math.max(deckSize(area, data, foe), remaining)
     : justDone
       ? met.length
-      : nextRoundSize(area, progress, data) + (opening ? 1 : 0)
+      : nextRoundSize(area, progress, data, foe) + (opening ? 1 : 0)
   const metCount = inRound ? total - remaining : justDone ? total : 0
   // Which round this is, of how many; every round done fills the gauge in green.
   const need = area.roundsToClear || 1
@@ -139,6 +145,8 @@ export function RoundGauge({
       ? ['center']
       : met
   const isCenter = (i: number) => order[i] === 'center'
+  // A real player's card (docs/54): a person on its segment, as a heart on a Center's, so the round's end is known.
+  const isPlayer = (i: number) => order[i] === 'versus'
   // Where the player is (the user, 2026-10-27): the cards met fill in (green once the area is cleared, the free play's
   // rounds), the one being played is white on a fight's strip, the next one has a white edge on the page's gauge, and
   // the rest stay grey.
@@ -159,6 +167,7 @@ export function RoundGauge({
               )}
             >
               {isCenter(i) && <PixelIcon name="heart" size={12} />}
+              {isPlayer(i) && <PixelIcon name="user" size={12} />}
               {i === metCount - 1 && <FreshPip areaId={area.id} met={metCount} />}
             </li>
           ))}
@@ -180,6 +189,7 @@ export function RoundGauge({
               )}
             >
               {isCenter(i) && <PixelIcon name="heart" size={12} />}
+              {isPlayer(i) && <PixelIcon name="user" size={12} />}
             </li>
           ))}
         </ol>
@@ -206,6 +216,7 @@ export function RoundGauge({
             )}
           >
             {isCenter(i) && <PixelIcon name="heart" size={12} />}
+            {isPlayer(i) && <PixelIcon name="user" size={12} />}
           </li>
         ))}
       </ol>

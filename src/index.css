@@ -8,6 +8,7 @@
 @import './styles/nightmare.css';
 @import './styles/trick.css';
 @import './styles/underground.css';
+@import './styles/calendar.css';
 
 /* Jersey 25: Daybreak's face for titles, names, buttons and most text. */
 @font-face {
@@ -246,6 +247,255 @@ canvas.pixelated,
 .loading-ball {
   transform-origin: 50% 100%;
   animation: loading-ball 1.2s steps(1, end) infinite;
+}
+
+/* A real player's card (docs/54): its intro, a rival's entrance in pixel steps (RealPlayerIntro). The bands slam in
+   (0–0.26 s), the trainers slide in as silhouettes and land in two white frames (0.22–0.5 s), VS slams onto the seam
+   with the hit (0.57 s: shake, one white flash, the gold seam), the words wipe in (0.62–0.9 s), VS beats while it
+   holds, and at 1.45 s the bands split apart onto the card. Reduced motion leaves each on its last frame: the still
+   scene (calm adds no shake, flash or split). */
+@keyframes rp-from-left {
+  from {
+    transform: translateX(-105%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes rp-from-right {
+  from {
+    transform: translateX(105%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes rp-to-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-105%);
+  }
+}
+@keyframes rp-to-right {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(105%);
+  }
+}
+@keyframes rp-land {
+  0% {
+    filter: brightness(0);
+  }
+  34% {
+    filter: brightness(0) invert(1);
+  }
+  67%,
+  100% {
+    filter: none;
+  }
+}
+@keyframes rp-slam {
+  0% {
+    transform: scale(3.4);
+    opacity: 0;
+  }
+  1% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes rp-beat {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.08);
+  }
+}
+@keyframes rp-shake {
+  0% {
+    transform: translate(-6px, 4px);
+  }
+  25% {
+    transform: translate(6px, -4px);
+  }
+  50% {
+    transform: translate(-4px, -2px);
+  }
+  75% {
+    transform: translate(3px, 2px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+@keyframes rp-flash {
+  from {
+    opacity: 0.9;
+  }
+  to {
+    opacity: 0;
+  }
+}
+/* On from the hit and for good: a held value, as a one-step 0 → 1 can end on 0. */
+@keyframes rp-light {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes rp-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes rp-streak-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-180vw);
+  }
+}
+@keyframes rp-streak-right {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(180vw);
+  }
+}
+@keyframes rp-fade {
+  from {
+    background-color: #24304f;
+  }
+  to {
+    background-color: transparent;
+  }
+}
+.rp-top {
+  animation: rp-from-left 0.18s steps(4, end) both;
+}
+.rp-bottom {
+  animation: rp-from-right 0.18s steps(4, end) 0.08s both;
+}
+.rp-top-out {
+  animation: rp-to-left 0.22s steps(5, end) both;
+}
+.rp-bottom-out {
+  animation: rp-to-right 0.22s steps(5, end) both;
+}
+.rp-me {
+  animation:
+    rp-from-left 0.16s steps(4, end) 0.22s both,
+    rp-land 0.1s steps(1, end) 0.38s both;
+}
+.rp-foe {
+  animation:
+    rp-from-right 0.16s steps(4, end) 0.3s both,
+    rp-land 0.1s steps(1, end) 0.46s both;
+}
+.rp-vs {
+  animation: rp-slam 0.15s steps(3, end) 0.42s both;
+}
+.rp-vs-beat {
+  animation: rp-beat 0.24s steps(2, end) 0.8s infinite alternate;
+}
+.rp-shake {
+  animation: rp-shake 0.14s steps(1, end) 0.57s;
+}
+.rp-flash {
+  animation: rp-flash 0.16s steps(2, end) 0.57s forwards;
+}
+.rp-seam {
+  opacity: 0;
+  animation: rp-light 0.06s 0.57s forwards;
+}
+.rp-ribbon {
+  animation: rp-wipe 0.28s steps(10, end) 0.62s both;
+}
+.rp-name {
+  animation: rp-from-right 0.15s steps(3, end) 0.72s both;
+}
+.rp-streak-left {
+  animation: rp-streak-left 0.5s steps(10, end) infinite;
+}
+.rp-streak-right {
+  animation: rp-streak-right 0.5s steps(10, end) infinite;
+}
+.rp-fade {
+  animation: rp-fade 0.25s steps(4, end) forwards;
+}
+/* Each side's team beside its trainer: an icon pops in (its delay set one by one), after VS has landed. */
+@keyframes rp-mon {
+  0% {
+    transform: scale(0);
+  }
+  60% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.rp-mon {
+  animation: rp-mon 0.18s steps(3, end) both;
+}
+/* SEND FRIEND REQUEST's letter (LetterFlight, docs/54): it pops out of the button, wobbles up and away to the right
+   and fades; hearts puff up behind it. */
+@keyframes rp-letter {
+  0% {
+    transform: translate(0, 0) scale(0);
+    opacity: 1;
+  }
+  14% {
+    transform: translate(0, -14px) scale(1.3);
+  }
+  24% {
+    transform: translate(0, -20px) scale(1);
+  }
+  45% {
+    transform: translate(40px, -90px) rotate(10deg) scale(1);
+  }
+  65% {
+    transform: translate(90px, -170px) rotate(-8deg) scale(0.9);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(170px, -320px) rotate(6deg) scale(0.6);
+    opacity: 0;
+  }
+}
+.rp-letter {
+  animation: rp-letter 0.9s steps(18, end) both;
+}
+@keyframes rp-puff {
+  0% {
+    transform: translateY(0) scale(0);
+    opacity: 1;
+  }
+  30% {
+    transform: translateY(-10px) scale(1);
+  }
+  100% {
+    transform: translateY(-56px) scale(0.6);
+    opacity: 0;
+  }
+}
+.rp-puff {
+  animation: rp-puff 0.6s steps(10, end) both;
 }
 
 /* Reduced motion: the OS setting or the in-game setting (html.reduce-motion) collapses everything. */

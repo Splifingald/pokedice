@@ -146,6 +146,7 @@ with version 2. GitHub → the repository → **Settings** → **Secrets and var
 | Secret | `DISCORD_PATCH_WEBHOOK` | from `.env.discord` |
 | Secret | `DISCORD_EVENTS_WEBHOOK` | from `.env.discord` |
 | Secret | `DISCORD_SUPPORT_WEBHOOK` | from `.env.discord` |
+| Secret | `DISCORD_FRENCH_WEBHOOK` | the **French News** webhook of `#🥖-français` (section 13) |
 | Variable | `DISCORD_RAID_ROLE` | from `.env.discord` (leave it out and the post pings nobody) |
 | Variable | `DISCORD_PATCH_ROLE` | from `.env.discord` |
 | Variable | `DISCORD_EVENT_ROLE` | from `.env.discord` (the live events ping Event Pings) |
@@ -191,6 +192,7 @@ Pings.
 
 - Preview: `pnpm discord:patch-notes patch-notes/2026-10-20-version-2.md --dry`.
 - Post again: GitHub → Actions → **Discord patch notes** → **Run workflow** → the file's path.
+- **Every note has a French twin**, `…-short-name.fr.md`, posted to `#🥖-français` by the same run (section 13).
 
 ## 10. Changing the server later
 
@@ -270,6 +272,38 @@ comes back, what else is on, and its banner. [docs/50](50-DISCORD-LIVE-EVENTS.md
 - `pnpm discord --apply` makes `#🎉-events` (or adopts yours) and its webhook; add `DISCORD_EVENTS_WEBHOOK` and
   `DISCORD_EVENT_ROLE` to GitHub (step 7).
 
+## 13. In French (`#🥖-français`)
+
+Every update and every live event is posted again in French in `#🥖-français`, through its **French News** webhook
+(`DISCORD_FRENCH_WEBHOOK`), by the same runs as the English posts:
+
+- **Patch notes:** the note's French twin, `patch-notes/YYYY-MM-DD-short-name.fr.md`, written by hand beside the
+  English one (same format). A push to `main` that adds it posts it once the site is live, like the English one. A note
+  without its twin posts in English only, and the run's log says so; `pnpm test` fails on a note from version 2.8 on
+  without one (2.7 and earlier stay English only).
+- **Live events:** each start, and the Monday calendar, in French: the game's own French names for the event types,
+  items, areas and regions (from `src/i18n/strings.csv`), the admin's French title when it has one (else the English
+  one). The words of the posts themselves are in `scripts/discord/live-event-post.ts` and `live-week-post.ts`.
+- **No ping in French:** the ping roles are the English channels'. The daily raid and the Ko-fi update stay English
+  only.
+
+### Setting it up
+
+1. The channel and its webhook exist already (made by hand: Server Settings → Integrations → Webhooks → **French
+   News**, posting in `#🥖-français`). **Copy Webhook URL** there.
+2. GitHub → the repository → **Settings** → **Secrets and variables** → **Actions** → **Secrets** → **New repository
+   secret**: name `DISCORD_FRENCH_WEBHOOK`, value the URL. Or `gh secret set DISCORD_FRENCH_WEBHOOK` and paste it.
+3. Netlify → the `poke-dice` site → **Site configuration** → **Environment variables** → **Add a variable**: key
+   `DISCORD_FRENCH_WEBHOOK`, the same URL (tick **Contains secret values**). The live events' posts come from Netlify
+   since 2026-10-31 ([docs/50 § 3](50-DISCORD-LIVE-EVENTS.md)); GitHub's secret is the patch notes'. It reaches the job
+   at the next deploy.
+4. Nothing else: the next patch note, live event and Monday calendar post in French too once this is on `main`.
+   `pnpm discord --apply` adopts the webhook by its name and writes its URL to `.env.discord`, for the `--dry`-less
+   commands run by hand.
+
+Previews: `pnpm discord:patch-notes patch-notes/<file>.fr.md --dry`; `pnpm discord:live --dry` and
+`pnpm discord:live-week --dry` print the French post after the English one.
+
 ---
 
 ## Troubleshooting
@@ -287,4 +321,5 @@ comes back, what else is on, and its banner. [docs/50](50-DISCORD-LIVE-EVENTS.md
 | The Channels & Roles step fails (`50035`) | Discord's onboarding rules changed or a channel isn't visible to everyone. Everything else is done; set the questions by hand in Server Settings → Onboarding. |
 | No raid post at midnight | Raids aren't **On for everyone** in Admin → Events, the secret is missing, or the branch isn't on `main` yet. GitHub → Actions → **Discord daily raid** → the run's log says which. |
 | The raid workflow is disabled | GitHub pauses schedules after 60 days without a commit. Actions → **Discord daily raid** → **Enable workflow**. |
+| No French post | A patch note: the `DISCORD_FRENCH_WEBHOOK` GitHub secret is missing (the run's log says so), or the note has no `.fr.md` twin. A live event: `DISCORD_FRENCH_WEBHOOK` is missing from Netlify's environment variables. |
 | The patch note came before the update | Netlify took more than 15 minutes, or a later push replaced that build. The post goes out anyway. |

@@ -29,6 +29,7 @@ export function pageTitleKey(path: string): string | 'area' | null {
     '/pokedex': 'ui.dex.title',
     '/leaderboard': 'ui.nav.leaderboard',
     '/friends': 'ui.friends.title',
+    '/market': 'ui.market.title',
     '/versus': 'ui.versus.title',
     '/trades': 'ui.trades.title',
     '/settings': 'ui.settings.title',
@@ -41,6 +42,7 @@ export function pageTitleKey(path: string): string | 'area' | null {
   if (first === 't') return 'ui.trades.title'
   if (first === 'admin') return 'ui.nav.admin'
   if (first === 'underground') return 'ui.live.underground.name'
+  if (first === 'calendar') return 'ui.live.calendar.name'
   if (first === 'raid') return 'ui.raid.progress.kicker'
   if (first === 'events' && second) return `ui.events.${second}.name`
   return null

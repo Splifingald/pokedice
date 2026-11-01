@@ -1,16 +1,17 @@
-# Posts the week's live events calendar to the Discord server's #events every Monday (docs/50-DISCORD-LIVE-EVENTS.md):
-# a chart of the week's days with a bar per event, each event in a line, and the next one after the week. A week
-# without an event posts nothing, and nothing is posted while Admin → Events has live events Off or On for admin, nor
-# before the DISCORD_EVENTS_WEBHOOK secret exists. Each start gets its own post (discord-live.yml).
+# Prints, or posts by hand, the week's live events calendar for the Discord server's #events
+# (docs/50-DISCORD-LIVE-EVENTS.md): a chart of the week's days with a bar per event, each event in a line, and the next
+# one after the week. Netlify posts it by itself on Mondays from 07:23 UTC (netlify/functions/discord-live.mts), so this
+# has no schedule and Run workflow only prints it unless "dry" is unticked. Nothing is posted while Admin → Events has
+# live events Off or On for admin.
 name: Discord weekly live events calendar
 
 on:
-  schedule:
-    # Mondays 07:23 UTC (08:23 in Paris in winter): off the top of the hour, GitHub's busiest minute, and before
-    # discord-live.yml's :07 run of 08:07.
-    - cron: '23 7 * * 1'
   workflow_dispatch:
     inputs:
+      dry:
+        description: Only print the calendar in the run's log (Netlify posts it on Mondays by itself)
+        type: boolean
+        default: true
       force:
         description: Post even while live events aren't on for everyone
         type: boolean
@@ -36,9 +37,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Post the week's calendar
-        run: pnpm discord:live-week $FORCE
+        run: pnpm discord:live-week $FORCE $DRY
         env:
           FORCE: ${{ inputs.force && '--force' || '' }}
+          DRY: ${{ inputs.dry && '--dry' || '' }}
           DISCORD_EVENTS_WEBHOOK: ${{ secrets.DISCORD_EVENTS_WEBHOOK }}
+          DISCORD_FRENCH_WEBHOOK: ${{ secrets.DISCORD_FRENCH_WEBHOOK }}
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}

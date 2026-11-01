@@ -26,6 +26,8 @@
   previews only for PRs into `main` or a branch-deploy branch (Project configuration › Build & deploy › Branches and
   deploy contexts): a new version branch goes in that list first.
 - **Patch note with every change bound for `main`** (a push the user asks for, or a PR into `main`): write
-  `patch-notes/YYYY-MM-DD-short-name.md` (format: `patch-notes/README.md`), show it to the user with
-  `pnpm discord:patch-notes <file> --dry`, and add it only once they approve it. Adding it to `main` posts it to Discord
-  as soon as the site is live, so leave out what players can't see yet (a feature still Off or On for admin).
+  `patch-notes/YYYY-MM-DD-short-name.md` and its French twin `…-short-name.fr.md`, both short (format:
+  `patch-notes/README.md`; the French one goes to #🥖-français), show both to the user with
+  `pnpm discord:patch-notes <file> <file.fr> --dry`, and add them only once they approve them. Adding it to `main`
+  posts it to Discord as soon as the site is live, so leave out what players can't see yet (a feature still Off or
+  On for admin), unless the user switches it on later that day: then the note says it comes during the day.

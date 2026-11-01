@@ -55,6 +55,17 @@ const GIFT_PAL: Record<string, string> = {
   o: '#e08e00',
 }
 
+/** The Heart Scale: the item sprite's own pearly colours, its outline the edge's navy. */
+const HEART_SCALE_PAL: Record<string, string> = {
+  k: '#24304f',
+  a: '#ceceef',
+  b: '#efefef',
+  c: '#ceefef',
+  d: '#7b7b9c',
+  e: '#efcece',
+  f: '#c5e6c5',
+}
+
 /** The battle Bag: a red flap with a gold buckle over a tan backpack, its front pocket and brown straps. */
 const BAG_PAL: Record<string, string> = {
   k: '#24304f',
@@ -167,6 +178,24 @@ export const ICONS = {
     '.krrryyrrrk.',
     '.kRRRyoRRRk.',
     '.kkkkkkkkkk.',
+  ],
+  /** A Heart Scale (docs/60): the Friend Market's currency, the games' own item sprite (Gen IV, 18 × 15). */
+  heartScale: [
+    '....kkkk..........',
+    '...kaaaak.........',
+    '..kabbbbbk........',
+    '..kaccccbk........',
+    '.dacccccckkkkk....',
+    '.kaeeeeecccebakk..',
+    '.kabbbbeecccebaak.',
+    'dabfffbbeeccebaabk',
+    'dafffffbeeccebaabk',
+    'kaccccfbeeccebaabk',
+    'kcbcccfbeeccebafbk',
+    'kcbbccfbeecebabbk.',
+    'kcbbccbeecebbbkk..',
+    'kcbbbbbbbbbkkk....',
+    'kkkkkkkkkkk.......',
   ],
   burn: ['....k...', '...kok..', '..koYok.', '.kooYyok', '.koyYyok', '.kooyyok', '..koook.', '...kkk..'],
   frozen: ['...kk...', '..kCck..', '.kCccck.', 'kCcCccck', 'kcccCcck', '.kcccck.', '..kcck..', '...kk...'],
@@ -481,6 +510,17 @@ export const ICONS = {
     '................',
   ],
   // Trick or Treat (docs/29): its card (a jack-o'-lantern), and the flee zone's ghost.
+  // An outfit (docs/59): Santa's hat, its tip and pom-pom hanging left, as Santa Pikachu wears it.
+  santaHat: [
+    '....kkkk...',
+    '..kkrrrRk..',
+    '.krrrrrrRk.',
+    'kwkrrrrrrRk',
+    'kwkrrrrrrRk',
+    '.kkwwwwwwwk',
+    '..kwwwwwwwk',
+    '...kkkkkkk.',
+  ],
   pumpkin: [
     '....kkk....',
     '....kgk....',
@@ -604,8 +644,10 @@ const OWN_PALETTE: Partial<Record<IconName, Record<string, string>>> = {
   navFriends: NAV_PAL,
   trade: TRADE_PAL,
   gift: GIFT_PAL,
+  heartScale: HEART_SCALE_PAL,
   bag: BAG_PAL,
   pumpkin: PUMPKIN_PAL,
+  santaHat: GIFT_PAL,
   pickaxe: DIG_PAL,
   pickaxeSm: DIG_PAL,
   kit: DIG_PAL,

@@ -4,15 +4,18 @@
  * --at 2026-12-21T07:23:00Z       — run as if it were then (to check another week).
  * --force                         — post even while live events aren't switched on for everyone in Admin → Events.
  *
- * GitHub Actions runs it every Monday morning (.github/workflows/discord-live-week.yml). The week is Monday 00:00 to
+ * Netlify posts it every Monday morning with weekMessage (netlify/functions/discord-live.mts); this script prints it, or
+ * posts it by hand (.github/workflows/discord-live-week.yml, no schedule). The week is Monday 00:00 to
  * Sunday 24:00 UTC: a calendar of its days with a bar per event, then each event in a line (what it does, when, in
  * every reader's own time zone), and the first one after the week (docs/50). A week without an event posts nothing.
  * Each start is posted on its own by live-event-post.ts. Nothing is posted while live events are Off or On for admin.
+ * With DISCORD_FRENCH_WEBHOOK, the calendar goes to #🥖-français too, in French (french.ts).
  */
-import { liveEvents, liveRuns, liveState, type GameData, type LiveEvent } from '@/engine'
+import { liveEvents, liveRuns, liveState, liveTypeOn, type GameData, type LiveEvent } from '@/engine'
 import { postWebhook, type DEmbed } from './api'
 import { liveData } from './content'
 import { loadEnv } from './env'
+import { frenchData, type PostLang } from './french'
 import { COLORS, SITE } from './layout'
 import { liveBanner, liveLine, liveName, repeatLabel, TYPE_EMOJI } from './live-event-post'
 
@@ -35,6 +38,7 @@ export function weekOf(now: number): { from: number; to: number } {
 export function weekRuns(data: GameData, now: number): LiveEvent[] {
   const { from, to } = weekOf(now)
   return liveEvents(data)
+    .filter((e) => liveTypeOn(data, e))
     .flatMap((e) => liveRuns(e, from, to))
     .filter((e) => liveState(e, now) !== 'ended')
     .sort((a, b) => Date.parse(a.start) - Date.parse(b.start) || a.id.localeCompare(b.id))
@@ -45,6 +49,7 @@ export function nextAfterWeek(data: GameData, now: number): LiveEvent | null {
   const { to } = weekOf(now)
   return (
     liveEvents(data)
+      .filter((e) => liveTypeOn(data, e))
       .flatMap((e) => liveRuns(e, to, to + NEXT_WEEKS * 7 * DAY))
       .filter((e) => Date.parse(e.start) >= to)
       .sort((a, b) => Date.parse(a.start) - Date.parse(b.start))[0] ?? null
@@ -65,78 +70,112 @@ const fit = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` 
  *   ` M T W T F S S`
  *   `Shiny Parade ██████· · · · `
  */
-export function weekChart(runs: LiveEvent[], from: number): string {
-  const head = `${' '.repeat(NAME_WIDTH + 1)}M T W T F S S `
+export function weekChart(runs: LiveEvent[], from: number, lang: PostLang = 'en'): string {
+  const head = `${' '.repeat(NAME_WIDTH + 1)}${lang === 'fr' ? 'L M M J V S D ' : 'M T W T F S S '}`
   const rows = runs.slice(0, WEEK_MAX).map((e) => {
     const s = Date.parse(e.start)
     const end = Date.parse(e.end)
     const days = Array.from({ length: 7 }, (_, i) =>
       s < from + (i + 1) * DAY && end > from + i * DAY ? '██' : '· ',
     ).join('')
-    return `${fit(plain(liveName(e)) || e.type, NAME_WIDTH)} ${days}`
+    return `${fit(plain(liveName(e, lang)) || e.type, NAME_WIDTH)} ${days}`
   })
   return ['```', head, ...rows, '```'].join('\n')
 }
 
-const DATE = (ms: number) =>
-  new Date(ms).toLocaleString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })
+const DATE = (ms: number, lang: PostLang = 'en') =>
+  new Date(ms).toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-GB', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  })
+
+/** The calendar's words, per language. */
+const WEEK_WORDS = {
+  en: {
+    onNow: (end: number) => `🟢 **On now**, ends <t:${end}:R>`,
+    badges: (n: number) => `🏅 ${n}+ badge${n === 1 ? '' : 's'}`,
+    more: (n: number) => `…and ${n} more in the game.`,
+    next: 'Next up:',
+    playNow: 'Play now',
+    author: '🗓️ Live events calendar',
+    title: (from: string, to: string) => `This week: ${from} – ${to}`,
+    footer:
+      'Times are in your own time zone; the calendar’s days are UTC. Each event gets its own post when it starts.',
+    content: (n: number) => `**${n} live event${n === 1 ? '' : 's'} this week!**`,
+    username: 'Pokédice Events',
+  },
+  fr: {
+    onNow: (end: number) => `🟢 **En cours**, fin <t:${end}:R>`,
+    badges: (n: number) => `🏅 ${n} badge${n === 1 ? '' : 's'} ou plus`,
+    more: (n: number) => `…et ${n} autres dans le jeu.`,
+    next: 'Ensuite :',
+    playNow: 'Jouer',
+    author: '🗓️ Calendrier des événements',
+    title: (from: string, to: string) => `Cette semaine : ${from} – ${to}`,
+    footer:
+      'Les heures sont dans ton fuseau horaire ; les jours du calendrier sont en UTC. Chaque événement a son propre message quand il commence.',
+    content: (n: number) => `**${n} événement${n === 1 ? '' : 's'} cette semaine !**`,
+    username: 'Pokédice Événements',
+  },
+} satisfies Record<PostLang, unknown>
 
 /** One event of the list: its name and what it does, then when (each reader's own time), how it comes back, who. */
-export function weekLine(data: GameData, e: LiveEvent, now: number): string {
+export function weekLine(data: GameData, e: LiveEvent, now: number, lang: PostLang = 'en'): string {
+  const w = WEEK_WORDS[lang]
   const start = Math.round(Date.parse(e.start) / 1000)
   const end = Math.round(Date.parse(e.end) / 1000)
   const rule = e.ruleId ? liveEvents(data).find((x) => x.id === e.ruleId) : null
-  const when =
-    liveState(e, now) === 'live' ? `🟢 **On now**, ends <t:${end}:R>` : `<t:${start}:f> → <t:${end}:f>`
+  const when = liveState(e, now) === 'live' ? w.onNow(end) : `<t:${start}:f> → <t:${end}:f>`
   const extra = [
-    rule?.repeat ? `🔁 ${repeatLabel(rule.repeat)}` : '',
-    e.minBadges > 0 ? `🏅 ${e.minBadges}+ badge${e.minBadges === 1 ? '' : 's'}` : '',
+    rule?.repeat ? `🔁 ${repeatLabel(rule.repeat, lang)}` : '',
+    e.minBadges > 0 ? w.badges(e.minBadges) : '',
   ].filter(Boolean)
   return [
-    `${TYPE_EMOJI[e.type]} **${liveName(e)}**: ${liveLine(data, e)}`,
+    `${TYPE_EMOJI[e.type]} **${liveName(e, lang)}**${lang === 'fr' ? ' :' : ':'} ${liveLine(data, e, lang)}`,
     [when, ...extra].join(' · '),
   ].join('\n')
 }
 
 /** The webhook message for the week, or null when no event is on this week. */
-export function weekMessage(data: GameData, now: number, opts: { site?: string } = {}) {
+export function weekMessage(data: GameData, now: number, opts: { site?: string; lang?: PostLang } = {}) {
   const site = opts.site ?? SITE
+  const lang = opts.lang ?? 'en'
+  const w = WEEK_WORDS[lang]
   const { from, to } = weekOf(now)
   const runs = weekRuns(data, now)
   if (!runs.length) return null
   const next = nextAfterWeek(data, now)
   const more = runs.length - WEEK_MAX
   const description = [
-    weekChart(runs, from),
+    weekChart(runs, from, lang),
     runs
       .slice(0, WEEK_MAX)
-      .map((e) => weekLine(data, e, now))
+      .map((e) => weekLine(data, e, now, lang))
       .join('\n\n'),
-    more > 0 ? `…and ${more} more in the game.` : '',
+    more > 0 ? w.more(more) : '',
     next
-      ? `**Next up:** ${TYPE_EMOJI[next.type]} ${liveName(next)}, <t:${Math.round(Date.parse(next.start) / 1000)}:R>`
+      ? `**${w.next}** ${TYPE_EMOJI[next.type]} ${liveName(next, lang)}, <t:${Math.round(Date.parse(next.start) / 1000)}:R>`
       : '',
-    `**[Play now](${site})**`,
+    `**[${w.playNow}](${site})**`,
   ]
     .filter(Boolean)
     .join('\n\n')
   // The first event's picture, or the next one's that has a picture.
   const banner = runs.map((e) => liveBanner(e.banner, site)).find(Boolean)
   const embed: DEmbed = {
-    author: { name: '🗓️ Live events calendar' },
-    title: `This week: ${DATE(from)} – ${DATE(to - DAY)}`,
+    author: { name: w.author },
+    title: w.title(DATE(from, lang), DATE(to - DAY, lang)),
     url: site,
     description,
     color: COLORS.sky,
     ...(banner ? { image: { url: banner } } : {}),
-    footer: {
-      text: 'Times are in your own time zone; the calendar’s days are UTC. Each event gets its own post when it starts.',
-    },
+    footer: { text: w.footer },
   }
   return {
-    username: 'Pokédice Events',
+    username: w.username,
     avatar_url: `${site}/characters/prof-oak.png`,
-    content: `**${runs.length} live event${runs.length === 1 ? '' : 's'} this week!**`,
+    content: w.content(runs.length),
     embeds: [embed],
     allowed_mentions: { parse: [] },
   }
@@ -166,19 +205,25 @@ async function main() {
     )
     return
   }
+  const french = weekMessage(frenchData(data), now, { site, lang: 'fr' })!
   if (dry) {
     console.log(JSON.stringify(message, null, 2))
+    console.log(JSON.stringify(french, null, 2))
     return
   }
   const webhook = env.DISCORD_EVENTS_WEBHOOK?.trim()
-  if (!webhook) {
+  const frenchWebhook = env.DISCORD_FRENCH_WEBHOOK?.trim()
+  if (webhook) {
+    await postWebhook(webhook, message)
+    console.log('✓ Posted.')
+  } else
     console.log(
-      'No DISCORD_EVENTS_WEBHOOK: nothing posted. `pnpm discord --apply` writes it to .env.discord (docs/23).',
+      'No DISCORD_EVENTS_WEBHOOK: nothing posted in #events. `pnpm discord --apply` writes it to .env.discord (docs/23).',
     )
-    return
-  }
-  await postWebhook(webhook, message)
-  console.log('✓ Posted.')
+  if (frenchWebhook) {
+    await postWebhook(frenchWebhook, french)
+    console.log('✓ Posted in French.')
+  } else console.log('No DISCORD_FRENCH_WEBHOOK: no French post in #français.')
 }
 
 // Run as a script, not when a test imports weekMessage.

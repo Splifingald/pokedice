@@ -3,6 +3,7 @@
 // SHARE INVITE LINK, the page's one red action, pinned at the foot on a phone. PC: the list on the left, the friend
 // picked docked beside it (the first one at first), so cards are read side by side with the list.
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { AccountButton } from '@/components/AccountButton'
 import { NewTag } from '@/components/Chip'
 import { AddFriendForm, useAddText } from '@/components/friends/AddFriendModal'
@@ -37,12 +38,17 @@ import {
 } from '@/lib/friends'
 import { copyText, shareOrCopy } from '@/lib/share'
 import { isSupabaseConfigured } from '@/lib/supabase'
+import { friendshipRulesDue, friendshipWaits, streakState, utcDay, type FriendStreak } from '@/engine'
 import { inviteRulesDue } from '@/engine'
 import { pushToast, useGame } from '@/store/game'
+import { loadFriendRequests, useAreaVersus } from '@/store/areaVersus'
+import { FriendRequests } from '@/components/AreaVersus'
 import { openInviteRewards, seeInviteRules, useInviteRewards } from '@/store/invites'
 import { cx } from '@/theme/util'
 import { TrainerName } from '@/components/TrainerName'
 import { ShareNotice, useShareSeen } from '@/components/ShareTutorial'
+import { FriendshipCard, FriendshipRulesModal, StreakBadge, useFriendshipRules } from '@/components/friends/Friendship'
+import { loadFriendship, seeFriendshipRules, useFriendship } from '@/store/friendship'
 
 /** Off the boards after 72 hours without playing: shown, but quieter. */
 const AWAY_MS = 72 * 3_600_000
@@ -110,10 +116,19 @@ function FriendsBody({ counter }: { counter?: string }) {
     // The list, then nobody is new any more (their NEW tags stay until the page closes).
     void loadFriendList(true).then(() => markFriendsSeen())
     void loadInviteStatus()
+    void loadFriendRequests()
+    void loadFriendship(true)
   }, [])
+  // Friend requests from players whose team you met (docs/54): at the top, while there are some.
+  const requests = useAreaVersus((s) => s.requests)
   // The rewards' rules sit at the top of this page, and nowhere else, while the gauge shows and until GOT IT (docs/43
   // §7: rules where they apply); INFO keeps them.
   const inviteRules = useInviteRules()
+  // Friendship streaks (docs/60): their card under the invite rewards, the rules on top the first time.
+  const navigate = useNavigate()
+  const fship = useFriendshipView()
+  const fshipRules = useFriendshipRules()
+  const [fshipInfo, setFshipInfo] = useState(false)
 
   const share = () => {
     if (!code) return
@@ -146,6 +161,22 @@ function FriendsBody({ counter }: { counter?: string }) {
         <RulesCard title={t('ui.invite.infoName')} icon="gift" rules={inviteRules} onDone={seeInviteRules} />
       )}
       {gauge && <InviteRewardsCard gauge={gauge} busy={rewardsBusy} onOpen={() => void openInviteRewards()} />}
+      <FriendRequests requests={requests} />
+      {fship.on && fship.rulesDue && (
+        <RulesCard title={t('ui.fship.title')} icon="heart" rules={fshipRules} onDone={seeFriendshipRules} />
+      )}
+      {fship.on && (
+        <FriendshipCard
+          balance={fship.status?.balance ?? 0}
+          earned={fship.status?.earned ?? 0}
+          streaks={fship.status?.streaks ?? []}
+          friends={list ?? []}
+          today={fship.today}
+          state={fship.status ? 'ready' : fship.state === 'error' ? 'error' : 'loading'}
+          onMarket={() => navigate('/market')}
+          onInfo={() => setFshipInfo(true)}
+        />
+      )}
 
       <section className="flex flex-col gap-1.5" aria-labelledby="friends-list-title">
         <h2 id="friends-list-title" className="m-0 flex items-baseline gap-2 text-[24px] font-normal leading-none">
@@ -169,6 +200,8 @@ function FriendsBody({ counter }: { counter?: string }) {
               <FriendListRow
                 key={f.userId}
                 friend={f}
+                streak={fship.on ? fship.status?.streaks.find((x) => x.friend === f.userId) : undefined}
+                today={fship.today}
                 picked={wide && shown?.userId === f.userId}
                 onOpen={() => setOpen(f)}
               />
@@ -239,6 +272,7 @@ function FriendsBody({ counter }: { counter?: string }) {
       {!wide && <SocialDock>{shareButton}</SocialDock>}
 
       <InviteRulesModal open={rules} onClose={() => setRules(false)} />
+      <FriendshipRulesModal open={fshipInfo} onClose={() => setFshipInfo(false)} />
       <Modal open={resetting} onClose={() => setResetting(false)} title={t('ui.friends.resetTitle')}>
         <p className="copy mb-4 text-lg">{t('ui.friends.resetBody')}</p>
         <div className="flex justify-end gap-2">
@@ -253,7 +287,19 @@ function FriendsBody({ counter }: { counter?: string }) {
 }
 
 /** One friend: their look, name (NEW while new), team, and where they are. The whole row opens their card. */
-function FriendListRow({ friend: f, onOpen, picked }: { friend: FriendRow; onOpen: () => void; picked?: boolean }) {
+function FriendListRow({
+  friend: f,
+  onOpen,
+  picked,
+  streak,
+  today,
+}: {
+  friend: FriendRow
+  onOpen: () => void
+  picked?: boolean
+  streak?: FriendStreak
+  today: string
+}) {
   const { t } = useT()
   const line = useFriendLine()
   const now = Date.now()
@@ -291,6 +337,7 @@ function FriendListRow({ friend: f, onOpen, picked }: { friend: FriendRow; onOpe
           )}
           <small className={cx('truncate font-pixel-sm text-[16px] leading-tight', away ? 'text-ink' : 'text-muted')}>{summary}</small>
         </span>
+        {streak && <StreakBadge streak={streak.streak} state={streakState(streak, today)} />}
         {elsewhere ? (
           <PixelIcon name="skull" size={14} className="shrink-0 opacity-60" />
         ) : (
@@ -299,4 +346,14 @@ function FriendListRow({ friend: f, onOpen, picked }: { friend: FriendRow; onOpe
       </button>
     </li>
   )
+}
+
+/** Friendship (docs/60) as the page needs it: on for this player in the main game, the status, the server's day. */
+export function useFriendshipView() {
+  // Not in Extreme mode (a race of its own); inside a small world the card shows, and the market says it waits.
+  const on = useGame((s) => !!s.save && [null, 'world'].includes(friendshipWaits(s.save, s.data)))
+  const rulesDue = useGame((s) => !!s.save && friendshipRulesDue(s.save, s.data))
+  const status = useFriendship((s) => s.status)
+  const state = useFriendship((s) => s.state)
+  return { on, rulesDue, status, state, today: status?.day || utcDay(Date.now()) }
 }

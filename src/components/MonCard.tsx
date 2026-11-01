@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { instanceStats, xpToNext, type PokemonInstance } from '@/engine'
+import { instanceStats, xpToNext, type PokemonInstance, outfitOf } from '@/engine'
 import { feelSound } from '@/audio/feel'
 import { useT } from '@/i18n/react'
 import { countdown } from '@/lib/format'
@@ -17,6 +17,7 @@ import { ItemSprite } from './ItemSprite'
 import { MiniSprite } from './SpriteImg'
 import { TypeBadge } from './TypeBadge'
 import { InstTalentGem } from './Talent'
+import { outfitName } from './Outfit'
 
 /** A fossil being revived: a timer gauge in place of HP, full when it wakes up. */
 export function RevivalBar({ inst, className }: { inst: PokemonInstance; className?: string }) {
@@ -193,6 +194,10 @@ export function MonCard({
             <span className="flex min-w-0 items-center gap-1">
               <span className="truncate text-xl leading-none">{inst.nickname || species.name}</span>
               {inst.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
+              {/* Its outfit (docs/59): the menu icon is the plain one, so its hat beside the name says it. */}
+              {outfitOf(data, inst) && (
+                <PixelIcon name="santaHat" size={14} title={outfitName(inst.outfit!)} className="shrink-0" />
+              )}
               <InstTalentGem inst={inst} />
             </span>
             <span className="flex flex-wrap items-center gap-1">

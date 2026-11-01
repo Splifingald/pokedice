@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
-import { instanceMaxHp, instanceStats, xpToNext, type PokemonInstance, type PokeType } from '@/engine'
+import { instanceMaxHp, instanceStats, xpToNext, type PokemonInstance, type PokeType, outfitOf } from '@/engine'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { useDetails, useTypeHints } from '@/store/hooks'
@@ -13,6 +13,7 @@ import { MiniSprite } from './SpriteImg'
 import { TypeBadge } from './TypeBadge'
 import { attackEdge } from './TypeMatchups'
 import { InstTalentGem } from './Talent'
+import { outfitName } from './Outfit'
 
 /**
  * A Pokémon as a card, three to a row: the one card for a team member everywhere (docs/43 §4: the Team screen, the
@@ -96,6 +97,10 @@ export function PokeCard({
         )}
         <span className="text-base leading-none">{t('ui.common.level.short', { n: inst.level })}</span>
         {inst.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
+        {/* Its outfit (docs/59): the menu icon is the plain one, so its hat beside the name says it. */}
+        {outfitOf(data, inst) && (
+          <PixelIcon name="santaHat" size={14} title={outfitName(inst.outfit!)} className="shrink-0" />
+        )}
         {(edge !== 1 || badge || crown) && (
           <span className="ml-auto flex shrink-0 items-center gap-0.5">
             {edge !== 1 && (

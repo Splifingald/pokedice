@@ -12,13 +12,20 @@ import { pushSaveNow, syncSettled } from './sync'
 interface GiftsState {
   /** The opening on screen: everything that arrived, in order; null when none plays. */
   opening: GiftLanded[] | null
-  /** Whose gift it is: the developer's (a message), or invite rewards (docs/15 §25), which reuse the same opening. */
-  source: 'message' | 'invite'
+  /**
+   * Whose gift it is: the developer's (a message), or invite rewards (docs/15 §25) and a gift calendar's door
+   * (docs/55), which reuse the same opening.
+   */
+  source: GiftSource
+  /** A calendar's door: its day, for the opening's first line. */
+  day?: number
   /** Asking the server: the button waits. */
   busy: boolean
   /** The first gift's rules are showing (docs/15 §20): these messages' gifts open on Let's go!. */
   rulesFor: number[] | null
 }
+
+export type GiftSource = 'message' | 'invite' | 'calendar' | 'market'
 
 export const useGiftMoment = create<GiftsState>(() => ({ opening: null, source: 'message', busy: false, rulesFor: null }))
 

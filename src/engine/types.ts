@@ -183,8 +183,9 @@ export interface DieUpgradeRow {
 /**
  * 'casino': the Game Corner — a slot machine the player can play as long as they like (Rocket Hideout). 'trick': Trick
  * or Treat (docs/29) — a ghost tempted with treats and caught with a Trick Ball, dealt only while its switch is on.
+ * 'versus': a real player's team (docs/54), dealt only while its switch is on and the server has one for the area.
  */
-export const ENCOUNTER_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick'] as const
+export const ENCOUNTER_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus'] as const
 export type EncounterKind = (typeof ENCOUNTER_KINDS)[number]
 /** Cards in an area's encounter deck; 'legend' is a fled legendary coming back (one per deck until it's caught). */
 export type DeckCard = EncounterKind | 'legend'
@@ -290,8 +291,9 @@ export interface Area {
   roundsToClear: number | null
   minLevel: number
   maxLevel: number
-  /** Copies of each card in a deck; Trick or Treat's (docs/29) is optional, as content from before it has none. */
-  encounterWeights: Record<Exclude<EncounterKind, 'trick'>, number> & { trick?: number }
+  /** Copies of each card in a deck; Trick or Treat's (docs/29) and a real player's (docs/54) are optional, as content
+   * from before them has none. */
+  encounterWeights: Record<Exclude<EncounterKind, 'trick' | 'versus'>, number> & { trick?: number; versus?: number }
   backtrackMultiplier: number
   legendaryBoss: BossDef[] | null
   scalesToTeam: boolean
@@ -570,7 +572,11 @@ export type ItemEffect =
   /** Rare Candy: levels, from the Team screen. */
   | { kind: 'level'; amount: number }
   /** Poké Balls: added to the catch die. `raidOnly`: thrown in raids alone (the Raid Ball, docs/44). */
-  | { kind: 'ball'; bonus: number; raidOnly?: boolean }
+  /**
+   * `talentBoost` (the Friend Ball, docs/60): a catch with it has more chances to find the Pokémon's hidden talent, by
+   * the player's best friendship streak (`friendBallBoost`).
+   */
+  | { kind: 'ball'; bonus: number; raidOnly?: boolean; talentBoost?: boolean }
   /** The Link Cable: evolves a Pokémon that only evolves by trade (`trade.evolveOnTrade`), from the Team screen. */
   | { kind: 'link' }
   /**
@@ -662,6 +668,19 @@ export interface LeagueRewardBand {
   upTo: number
   raidBalls: number
   rareCandies: number
+}
+
+/** Real-player battles in areas (docs/54). */
+export interface AreaVersusConfig {
+  access: EventAccess
+  /** A real player's team pays this × a trainer's ₽ for each K.O. */
+  prizeMultiplier: number
+  /** A team is met this many days after its owner last played there. */
+  recentDays: number
+  /** An unanswered friend request goes after this many days. */
+  requestDays: number
+  /** The cards go among the round's last this many. */
+  lastCards: number
 }
 
 export interface VersusLeagueConfig {
@@ -856,7 +875,7 @@ export interface EventsConfig {
 }
 
 /** Live events (docs/20): the kinds the admin can schedule. */
-export const LIVE_TYPES = ['shiny', 'shop', 'cash', 'underground'] as const
+export const LIVE_TYPES = ['shiny', 'shop', 'cash', 'underground', 'calendar'] as const
 export type LiveType = (typeof LIVE_TYPES)[number]
 
 /** One item of a Special Shop: its event price, how many each player may buy (null = no limit), where it's sold. */
@@ -867,6 +886,16 @@ export interface LiveShopItem {
   /** Sold while the player plays one of these regions; 'all' = everywhere. */
   regions: RegionId[] | 'all'
 }
+
+/**
+ * A gift calendar's day (docs/55): one reward, in a quantity. A Pokémon comes `qty` times, each a Pokémon of its own.
+ * It lands in the region being played when the player opens it (the gifts' rules, engine/gifts.ts).
+ */
+export type CalendarReward =
+  | { kind: 'item'; key: string; qty: number }
+  | { kind: 'gold'; amount: number }
+  /** `outfit` (docs/59): the Pokémon comes dressed up (a key of `OUTFITS` its species wears). */
+  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; outfit?: string; qty: number }
 
 /** A week of the month a weekly live event runs in: the 1st to the 4th of that weekday, or the month's last. */
 export type LiveWeek = 1 | 2 | 3 | 4 | 'last'
@@ -912,6 +941,11 @@ export interface LiveEvent {
   shop: { items: LiveShopItem[] }
   /** Cash Flow: every ₽ earned × `multiplier` (1.5 = +50 %), selling excluded. */
   cash: { multiplier: number }
+  /**
+   * Gift calendar (docs/55): a door a day from `start`, one reward each (`days[0]` is day 1). Runs once: its `end` is
+   * the day after its last, the last day's catch-up.
+   */
+  calendar: { days: CalendarReward[] }
 }
 
 export interface GameConfig {
@@ -957,6 +991,8 @@ export interface GameConfig {
   versusUpgradeLevel: number
   /** The weekly Versus league (docs/44): its switch and numbers. Migration 0082 inserts the same row; the server reads it. */
   versusLeague?: Partial<VersusLeagueConfig>
+  /** Real-player battles in areas (docs/54): its switch and numbers. Migration 0099 inserts the same row. */
+  areaVersus?: Partial<AreaVersusConfig>
   /** Switching the active Pokémon on your own turn (costs the turn). Switching after a faint is always free. */
   allowVoluntarySwitch: boolean
   /** Safety valve: two Pokémon immune to each other's every die would otherwise fight forever. Ends in a stalemate. */
@@ -1027,6 +1063,8 @@ export interface GameConfig {
   general: GeneralConfig
   /** Friend invite rewards (docs/15 §25): their switch and the gauge's tiers. The server reads the same row. */
   inviteRewards: InviteRewardsConfig
+  /** Welcome-back gifts (docs/58): their switch, the cooldown and the tiers. The server reads the same row (0103). */
+  welcomeBack: WelcomeBackConfig
   /** Push notifications (docs/27): their switch, a game_config row of its own that seeding never writes. */
   push: PushConfig
   /** The areas' portal run (docs/28): its switch. The server reads the same row (0057). */
@@ -1052,6 +1090,33 @@ export interface GameConfig {
    * 0094 inserts the same row.
    */
   hiddenTalents: HiddenTalentsConfig
+  /**
+   * The legends' own cinematics (docs/53): a raid legend's entrance and a mythical boss's, each in its own place. Only
+   * how they look and sound, so no server function reads it. Migration 0098 inserts the same row.
+   */
+  legendCinema: { access: EventAccess }
+  /**
+   * The gift calendar (docs/55): live events of type `calendar` open only with this on. The doors opened are in each
+   * player's save, on the server's clock, so no server function reads it. Migration 0100 inserts the same row.
+   */
+  giftCalendar: { access: EventAccess }
+  /**
+   * The champions' own cinematics (docs/56): a League Champion's entrance in its own place before its fight. Only how
+   * it looks and sounds, so no server function reads it. Migration 0101 inserts the same row.
+   */
+  championCinema: { access: EventAccess }
+  /**
+   * Friendship streaks and the Friend Market (docs/60): the switch, what a streak's day pays by tier, the day's cap
+   * across every friend, and the weekly market (items with a price and a weekly limit, and the shiny of the week drawn
+   * from a pool). The server prices and pays from the same row (migration 0107, friendship_cfg()).
+   */
+  friendship: FriendshipConfig
+  /**
+   * Outfits (docs/59): Pokémon dressed up (Santa Pikachu), given as gifts. Off, an outfit Pokémon looks plain (it keeps
+   * its tag). Only looks and evolution in the player's own save, so no server function reads it. Migration 0105 inserts
+   * the same row.
+   */
+  outfits: { access: EventAccess }
   /**
    * The Unown Pokédex (docs/41): the 28 letters, once an area where Unown live is opened; `reward` ₽ for the last one.
    * Migration 0080 inserts the same row.
@@ -1283,6 +1348,25 @@ export interface InviteTier {
   gifts: Gift[]
 }
 
+/**
+ * Welcome-back gifts (docs/58): a player back after days away gets a developer's message carrying the gifts of the
+ * highest tier their absence reached, at most once every `cooldownDays`. The server reads the same row (0103).
+ */
+export interface WelcomeBackConfig {
+  /** The switch (docs/15 §20): off (no message is sent), on for the admin only, on for everyone. Off by default. */
+  access: EventAccess
+  /** At most one welcome-back gift every this many days (the player's own calendar days). */
+  cooldownDays: number
+  /** The tiers, fewest days first (engine/welcomeBack.ts cleans them): only the highest one reached is given. */
+  tiers: WelcomeBackTier[]
+}
+
+/** One welcome-back tier: away at least `minDays` days (back the next day = 1), and what it gives. */
+export interface WelcomeBackTier {
+  minDays: number
+  gifts: Gift[]
+}
+
 /** The invite rewards a save has opened (docs/15 §25). */
 export interface InvitesSave {
   /** Tiers (by their number of friends) whose gifts are in this save already: a tier is put in once. */
@@ -1306,7 +1390,8 @@ export type GiftRegion = string
  */
 export type Gift =
   | { kind: 'item'; key: string; qty: number; region: GiftRegion }
-  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; region: GiftRegion }
+  /** `outfit` (docs/59): the Pokémon comes dressed up (a key of `OUTFITS` its species wears). */
+  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; outfit?: string; region: GiftRegion }
   | { kind: 'gold'; amount: number; region: GiftRegion }
 
 /** The gifts a save has opened (docs/15 §23). */
@@ -1328,6 +1413,8 @@ export interface GeneralConfig {
   luck: { chance: number; cost: number }[]
   /** Offline earnings, one row per level: ₽ per hour spent out of the game, and its price. */
   offline: { perHour: number; cost: number }[]
+  /** Offline earnings before any level is bought (level 0), ₽ per hour. 0: none. */
+  offlineBase: number
   /** An absence earns for this many hours at most. */
   offlineMaxHours: number
   /** "I am just rich": its price. A golden name in every social feature, nothing else. */
@@ -1594,6 +1681,11 @@ export interface PokemonInstance {
   /** Unown only (docs/41): its letter, 'a'–'z', '!' or '?'. Absent = an A (`letterOf`). */
   letter?: string
   /**
+   * Its outfit (docs/59), a key of `OUTFITS` (src/engine/outfits.ts): 'santa'. Only its look: it evolves only into a
+   * species that wears the same outfit, an Egg it leaves hatches plain, and it goes with it in a trade. Absent = none.
+   */
+  outfit?: string
+  /**
    * It carries its family's hidden talent (docs/51): set when its family is unlocked in its region (`syncTalents`), or
    * when it arrives with it (a trade, a gift). Never taken off. Absent = no talent.
    */
@@ -1695,6 +1787,8 @@ export interface SaveData {
   versusRulesSeen?: boolean
   /** The weekly Versus league's rules card has been read (docs/44): its own flag, as players who had Versus see it too. */
   versusLeagueRulesSeen?: boolean
+  /** Real-player battles' rules pop-up (docs/54) has been shown: the first time a card is turned over. */
+  areaVersusRulesSeen?: boolean
   /** The portal run's rules pop-up (docs/28) has been shown (once; INFO shows them again). */
   portalRulesSeen?: boolean
   /** The nightmare's rules pop-up (docs/30) has been shown (once; INFO shows them again). */
@@ -1744,18 +1838,26 @@ export interface SaveData {
   talentsMet?: number[]
   /** The hidden talents' rules pop-up has been shown (once; INFO shows it again). */
   talentRulesSeen?: boolean
+  /** Outfits (docs/59): their rules pop-up seen, once for good. */
+  outfitRulesSeen?: boolean
   /** The regions whose Unown Pokédex prize was paid (once each). */
   unownDexPaid?: RegionId[]
   /** The Unown Pokédex's rules pop-up has been shown (once, when it opens; INFO shows it again). */
   unownDexSeen?: boolean
   /** The dice tutorial after Route 1's first round (docs/46 §5): shown and not finished, or finished for good. */
   diceTutorial?: 'started' | 'done'
+  /** The reroll lesson in a new player's first fight (docs/46 §6) has played. */
+  rerollLesson?: 'done'
+  /** The item tutorial (docs/46 §7) has shown: the Bag pointed at once, in a fight below half HP. */
+  itemLesson?: 'done'
   /** Trades (docs/23): listed Pokémon, the trades already applied, the last ones done. Absent = never traded. */
   trades?: TradesSave
   /** Gifts from the developer (docs/15 §23): the ones opened, and the rules seen. Absent = none yet. */
   gifts?: GiftsSave
   /** Friend invite rewards (docs/15 §25): the tiers opened, and the rules seen. Absent = none yet. */
   invites?: InvitesSave
+  /** Friendship streaks and the Friend Market (docs/60): the rules read, purchases put away. Absent = none yet. */
+  friendship?: FriendshipSave
   /** The General upgrades (docs/25), for every region of this save. Absent = none bought. */
   general?: GeneralSave
   /** Trick or Treat (docs/29): its rules seen. Absent = never met. */
@@ -2018,6 +2120,10 @@ export interface EventsSave {
   liveSeen?: string[]
   /** Special Shop purchases, per live event id then item key: what counts against each item's limit. */
   liveBought?: Record<string, Record<string, number>>
+  /** Gift calendars' doors opened (docs/55), per live event id: the days (1 = the first). A door opens once. */
+  calendarOpened?: Record<string, number[]>
+  /** The gift calendar's rules card was read (GOT IT): once, for every calendar; INFO shows them again. */
+  calendarRulesSeen?: boolean
   /** The small world this save holds (its block is the live region or a parked one), or the one that just closed. */
   world?: WorldSave
   /** Small worlds whose opening pop-up has been shown (ids). */
@@ -2071,6 +2177,8 @@ export interface WorldHomer {
   from?: RegionId
   /** The trainer it came from in a trade (docs/23 §1.4), when it arrived above the region's best level. */
   tradedBy?: string
+  /** Bought at the Friend Market (docs/60): it waits in its species' region until one there reaches its level. */
+  market?: true
 }
 
 /** A shiny mythical won in a small world, waiting for its home region to be started. */
@@ -2155,11 +2263,56 @@ export interface DayCareGuest {
   addedAt: number
 }
 
+/** One step of the friendship streak (docs/60): from its first day on, each new day of the streak pays `coins`. */
+export interface FriendshipTier {
+  from: number
+  coins: number
+}
+
+/** A Friend Market item: its price in Heart Scales and how many a player can buy a week. */
+export interface FriendMarketItem {
+  key: string
+  price: number
+  limit: number
+}
+
+export interface FriendshipConfig {
+  access: EventAccess
+  tiers: FriendshipTier[]
+  dailyCap: number
+  market: FriendMarketItem[]
+  /** The shiny of the week: its price, its level and the pool it turns through, a species a week. */
+  shiny: { price: number; level: number; pool: number[] }
+  /**
+   * The Friend Ball's hidden-talent boost by the player's best live streak, one per tier (the first also below it):
+   * ×1, ×2, ×3, ×4, ×5. Read by the game only (the catch is the game's).
+   */
+  ballBoost: number[]
+}
+
+/** Friendship in a save (docs/60): the rules read, purchases put away, Eggs to tell the server about. */
+export interface FriendshipSave {
+  rulesSeen?: boolean
+  /** The last market purchases put in the save (their ids): one handed back twice is applied once. */
+  applied?: string[]
+  /** Friends (user ids) whose Pokémon helped make an Egg, not told to the server yet. */
+  eggs?: string[]
+}
+
 /** One parent of an Egg, for "Eevee and Ditto (Noor) left it": the species, and whose it is when it's a visitor. */
 export interface EggParent {
   dex: number
   /** The friend's name, for a guest. */
   owner?: string
+  /** The friend's user id, for a guest: the Egg keeps the friendship streak going (docs/60). */
+  ownerId?: string
+}
+
+/** What an Egg holds once it has hatched, before it reaches a Box: its species, and the shiny and talent rolls. */
+export interface Hatchling {
+  dex: number
+  shiny?: true
+  talent?: true
 }
 
 export interface DayCareState {
@@ -2174,8 +2327,11 @@ export interface DayCareState {
   breedAt?: number
   /** When the last Ditto check ran (ms). */
   dittoAt?: number
-  /** The Egg waiting to hatch: one at a time. `gift` is the free first one. */
-  egg?: { at: number; parents?: [EggParent, EggParent]; gift?: true }
+  /**
+   * The Egg waiting to hatch: one at a time. `gift` is the free first one. `hatchling` is what it holds, rolled the
+   * first time it hatches and kept until the player picks its Box, so closing the game mid-hatch rolls nothing again.
+   */
+  egg?: { at: number; parents?: [EggParent, EggParent]; gift?: true; hatchling?: Hatchling }
 }
 
 export type PlayerCharacter = 'red' | 'green'

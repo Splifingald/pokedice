@@ -453,6 +453,8 @@ export interface VictoryInput {
   prize?: number
   /** This K.O. ends the fight (a trainer's last Pokémon). Absent = it does, unless it's a trainer's or a gym's. */
   last?: boolean
+  /** × this K.O.'s ₽, before the talents that add to it: a real player's team pays more (docs/54). */
+  goldMultiplier?: number
 }
 
 export interface VictoryResult {
@@ -545,7 +547,13 @@ export function applyVictory(
     // Pay Day and Amulet Coin (docs/51): more for this K.O.; a set prize stays as it is.
     const due =
       input.prize ??
-      goldTalents(trainerGoldFor(input.enemyLevel, area, progress.cleared, data, input.kind === 'gym'), save, data, fighters, events)
+      goldTalents(
+        Math.round(trainerGoldFor(input.enemyLevel, area, progress.cleared, data, input.kind === 'gym') * (input.goldMultiplier ?? 1)),
+        save,
+        data,
+        fighters,
+        events,
+      )
     const { amount, bonus } = earnedGold(due, live)
     next = { ...next, gold: next.gold + amount }
     events.push(bonus ? { kind: 'gold', amount, bonus } : { kind: 'gold', amount })
@@ -1055,11 +1063,14 @@ export function releaseDuplicates(save: SaveData): { save: SaveData; released: P
   const best = new Map<number, PokemonInstance>()
   // Team members first, so a Box copy has to beat them outright to stay.
   for (const p of [...teamOf(save), ...save.box.filter((p) => !inTeam.has(p.id))]) {
-    if (p.shiny || isReviving(p)) continue
+    // A shiny or an outfit (docs/59) is a Pokémon of its own: never a plain copy to let go.
+    if (p.shiny || p.outfit || isReviving(p)) continue
     const cur = best.get(p.dex)
     if (!cur || stronger(p, cur)) best.set(p.dex, p)
   }
-  const released = save.box.filter((p) => !p.shiny && !isReviving(p) && !inTeam.has(p.id) && best.get(p.dex) !== p)
+  const released = save.box.filter(
+    (p) => !p.shiny && !p.outfit && !isReviving(p) && !inTeam.has(p.id) && best.get(p.dex) !== p,
+  )
   if (!released.length) return { save, released }
   const gone = new Set(released.map((p) => p.id))
   return { save: { ...save, box: save.box.filter((p) => !gone.has(p.id)) }, released }

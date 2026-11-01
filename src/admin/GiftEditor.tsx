@@ -21,10 +21,12 @@ import {
   type GiftRegion,
   type ItemDef,
   type SaveData,
+  hasOutfit
 } from '@/engine'
 import { cx } from '@/theme/util'
 import { useConfigRow } from './sections/ConfigSection'
 import { AccessSwitch, inputCls, NumInput, PokemonPicker } from './widgets'
+import { OutfitSelect } from './OutfitSelect'
 
 export const regionLabel = (data: GameData, r: GiftRegion) =>
   r === GIFT_LATEST
@@ -176,6 +178,7 @@ export function GiftEditor({
   const [dex, setDex] = useState<number | null>(null)
   const [level, setLevel] = useState(5)
   const [shiny, setShiny] = useState(false)
+  const [outfit, setOutfit] = useState<string | undefined>()
   const [monRegion, setMonRegion] = useState<GiftRegion>(GIFT_LATEST)
   const [gold, setGold] = useState(1000)
   const [goldRegion, setGoldRegion] = useState<GiftRegion>(GIFT_LATEST)
@@ -266,6 +269,7 @@ export function GiftEditor({
           <input type="checkbox" checked={shiny} onChange={(e) => setShiny(e.target.checked)} />
           Shiny
         </label>
+        {dex != null && <OutfitSelect dex={dex} value={outfit} onChange={setOutfit} />}
         <label className="flex w-56 flex-col text-base">
           To the Box of
           <RegionSelect data={data} value={monRegion} onChange={setMonRegion} save={save} />
@@ -277,7 +281,15 @@ export function GiftEditor({
             dex &&
             onChange([
               ...gifts,
-              { kind: 'pokemon', dex, level, ...(shiny && { shiny: true }), region: monRegion },
+              {
+                kind: 'pokemon',
+                dex,
+                level,
+                ...(shiny && { shiny: true }),
+                // Only one the species wears (docs/59): a Pokémon picked after the outfit drops it.
+                ...(outfit && hasOutfit(outfit, dex) && { outfit }),
+                region: monRegion,
+              },
             ])
           }
         >

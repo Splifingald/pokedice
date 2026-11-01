@@ -2,8 +2,8 @@
 // adding by friend ID, invite links signed in and out, friends on the leaderboard, and the CONNECT chooser.
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import { badgeCase, type SaveData } from '../src/engine'
-import { FAST, fakeSession, gameData, LEADERBOARD, makeSave, mockSupabase, STORAGE_KEY, SUPABASE, withBadge, type SupabaseMock } from './helpers'
+import { badgeCase, DEFAULT_CONFIG, type SaveData } from '../src/engine'
+import { EVENTS_ON, FAST, fakeSession, gameData, LEADERBOARD, makeSave, mockSupabase, STORAGE_KEY, SUPABASE, withBadge, type SupabaseMock } from './helpers'
 
 const data = gameData()
 const MISTY = '22222222-0000-4000-8000-000000000002'
@@ -156,6 +156,33 @@ test('a phone: the list first, SHARE INVITE LINK pinned at the foot, a friend in
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await page.getByRole('button', { name: /^Misty,/ }).click()
   await expect(page.getByRole('dialog', { name: 'Misty' })).toBeVisible()
+})
+
+test("a friend's card with the Versus league on: the most trophies they ever held (phone)", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 640 })
+  const save = makeSave(4)
+  const asked: Record<string, unknown>[] = []
+  await boot(page, save, {
+    mock: friendsMock(save, {
+      friend_status: [{ ids: [MISTY, BROCK], unseen: [] }],
+      versus_league_best: (b: Record<string, unknown>) => (asked.push(b), 152),
+    }),
+  })
+  await page.addInitScript(
+    (cfg) => localStorage.setItem('pokedice.devConfig', cfg),
+    JSON.stringify({ ...EVENTS_ON, versusLeague: { ...DEFAULT_CONFIG.versusLeague, access: 'all' } }),
+  )
+  await page.goto('/friends')
+  await page.getByRole('button', { name: /^Misty,/ }).click()
+  const card = page.getByRole('dialog', { name: 'Misty' })
+  await expect(card.getByRole('term').filter({ hasText: 'Versus best' })).toBeVisible()
+  const line = card.getByRole('definition').filter({ has: page.getByLabel('152 trophies') })
+  await expect(line).toBeVisible()
+  // Whole on a 360 px phone, beside the look.
+  expect(await line.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+  await expect(card).not.toContainText('3 won · 2 held')
+  expect(asked).toContainEqual({ p_user: MISTY })
+  if (process.env.E2E_SHOTS) await card.screenshot({ path: `${process.env.E2E_SHOTS}/friend-versus-best.png` })
 })
 
 test('an invite link, signed in: friends at once', async ({ page }) => {

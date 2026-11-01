@@ -6,6 +6,9 @@ import { type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { create } from 'zustand'
 import {
+  calendarDoors,
+  calendarNextAt,
+  calendarReady,
   cashMultiplier,
   kitsHeld,
   liveCovers,
@@ -18,6 +21,7 @@ import {
   type Area,
   type GameData,
   type LiveEvent,
+  type SaveData,
 } from '@/engine'
 import { getLang, joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
@@ -60,6 +64,7 @@ const areaNames = (data: GameData, ids: string[]) => ids.map((id) => data.areas.
 /** What it does, in a line: "×5 shiny in Kanto", "3 items, for a while", "+50% on every ₽". */
 export function liveSub(e: LiveEvent, data: GameData): string {
   if (e.type === 'underground') return t('ui.live.underground.sub')
+  if (e.type === 'calendar') return t('ui.live.calendar.sub', { n: e.calendar.days.length })
   if (e.type === 'cash') return t('ui.live.cash.sub', { pct: pct(e.cash.multiplier) })
   if (e.type === 'shop') {
     const n = e.shop.items.length
@@ -70,6 +75,19 @@ export function liveSub(e: LiveEvent, data: GameData): string {
   if (s.scope === 'region') return t('ui.live.shiny.subIn', { n: s.multiplier, place: regionName(data, s.regionId) })
   const names = areaNames(data, s.areaIds)
   return t('ui.live.shiny.subIn', { n: s.multiplier, place: names.length > 1 ? `${names[0]} +${names.length - 1}` : (names[0] ?? '') })
+}
+
+/**
+ * A gift calendar's line on Home, for this player: the door to open now ("Day 5's gift is ready!", "Day 4: last
+ * chance!", "2 gifts to open!"), else when the next opens, else that every door is done.
+ */
+export function calendarSub(save: SaveData, e: LiveEvent, now: number): string {
+  const ready = calendarReady(save, e, now)
+  if (ready.length > 1) return t('ui.cal.twoReady', { n: ready.length })
+  if (ready[0]) return t(ready[0].state === 'late' ? 'ui.cal.lateNow' : 'ui.cal.readyNow', { n: ready[0].day })
+  const next = calendarNextAt(e, now)
+  if (next != null) return t('ui.cal.nextIn', { time: liveTime(next - now) })
+  return t(calendarDoors(save, e, now).some((d) => d.state === 'missed') ? 'ui.cal.noMore' : 'ui.cal.allDone')
 }
 
 /** The date it ends, in the player's language and time: "Sat 12 Oct, 20:00". */
@@ -97,6 +115,13 @@ export function LiveTag({ e, className }: { e: LiveEvent; className?: string }) 
       <Chip tone="dark" className={cx('tracking-[0.04em]', className)}>
         <PixelIcon name="pickaxeSm" size={11} />
         {t('ui.ug.tag')}
+      </Chip>
+    )
+  if (e.type === 'calendar')
+    return (
+      <Chip tone="gold" className={cx('tracking-[0.04em]', className)}>
+        <PixelIcon name="gift" size={12} />
+        {t('ui.live.calendar.tag')}
       </Chip>
     )
   return (
@@ -141,6 +166,17 @@ export function LivePicture({ e, className, children }: { e: LiveEvent; classNam
 /** What floats over the picture: sparkles, falling coins, the shop's first items. */
 export function LiveFx({ e, data, big }: { e: LiveEvent; data: GameData; big?: boolean }) {
   if (e.type === 'underground') return null
+  // A gift calendar: three wrapped gifts bobbing (what's inside is each door's surprise).
+  if (e.type === 'calendar')
+    return (
+      <span className={cx('lv-fx lv-shelf', big && 'big')} aria-hidden>
+        {[0, 1, 2].map((i) => (
+          <i key={i} style={{ ['--i' as string]: i }}>
+            <PixelIcon name="gift" size={big ? 48 : 26} />
+          </i>
+        ))}
+      </span>
+    )
   if (e.type === 'shiny')
     return (
       <span className={cx('lv-fx lv-spk', big && 'big')} aria-hidden>
@@ -176,6 +212,19 @@ export function LiveFx({ e, data, big }: { e: LiveEvent; data: GameData; big?: b
 const usePopupAsked = create<{ asked: string | null }>(() => ({ asked: null }))
 export const openLivePopup = (id: string) => usePopupAsked.setState({ asked: id })
 
+/** A gift calendar's page, for that calendar (two could run at once). */
+export const calendarPath = (e: LiveEvent) => `/calendar?id=${encodeURIComponent(e.id)}`
+
+/** A live card's label key: what a tap opens (the shop, the Underground, the calendar, else its pop-up). */
+export const liveLabel = (e: LiveEvent): string =>
+  e.type === 'shop'
+    ? 'ui.live.labelShop'
+    : e.type === 'underground'
+      ? 'ui.live.labelUnderground'
+      : e.type === 'calendar'
+        ? 'ui.live.labelCalendar'
+        : 'ui.live.label'
+
 /** Home's squares: one per live event running for this player, the earliest started first. */
 export function LiveSquares() {
   const { lives, now } = useLive(1000)
@@ -202,21 +251,27 @@ export function LiveSquare({ live, now }: { live: LiveEvent; now: number }) {
   const name = liveName(live)
   const shop = live.type === 'shop'
   const dig = live.type === 'underground'
+  const cal = live.type === 'calendar'
   // The Underground's square says what the player holds: kits, and when the next free one comes.
   const kits = dig && ug?.eventId === live.id ? kitsHeld(ug) : null
+  const save = useGame((s) => s.save)
   const sub =
-    kits == null
-      ? liveSub(live, data)
-      : ug!.freeAt != null
-        ? t('ui.live.underground.kitsNext', { n: kits, time: countdown(Math.max(0, ug!.freeAt - now)) })
-        : t('ui.live.underground.kits', { n: kits })
+    cal && save
+      ? calendarSub(save, live, now)
+      : kits == null
+        ? liveSub(live, data)
+        : ug!.freeAt != null
+          ? t('ui.live.underground.kitsNext', { n: kits, time: countdown(Math.max(0, ug!.freeAt - now)) })
+          : t('ui.live.underground.kits', { n: kits })
   const time = t('ui.live.endsIn', { time: liveTime(left.ms) })
   const hot = left.ms < 3 * HOUR
   return (
     <button
       type="button"
-      onClick={() => (shop ? navigate('/shop') : dig ? navigate('/underground') : openLivePopup(live.id))}
-      aria-label={t(shop ? 'ui.live.labelShop' : dig ? 'ui.live.labelUnderground' : 'ui.live.label', { name, sub, time })}
+      onClick={() =>
+        shop ? navigate('/shop') : dig ? navigate('/underground') : cal ? navigate(calendarPath(live)) : openLivePopup(live.id)
+      }
+      aria-label={t(liveLabel(live), { name, sub, time })}
       data-testid="live-square"
       className="pixel-panel lv-square relative isolate flex min-w-0 flex-col gap-[5px] overflow-hidden px-2.5 pb-2.5 pt-2 text-left"
     >

@@ -14,13 +14,14 @@ import {
   type Gift,
   type GiftLanded,
   type GiftsWait,
+  outfitOf,
 } from '@/engine'
 import { loadItemSprite, loadSprite, spriteKey } from '@/fx/sprites'
 import { giftTimeline, type GiftContent } from '@/fx/timelines/gift'
 import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
 import { useHoldFullscreen } from '@/lib/fullscreen'
-import { closeGiftMoment, giftRulesGo, giftRulesLater, useGiftMoment } from '@/store/gifts'
+import { closeGiftMoment, giftRulesGo, giftRulesLater, useGiftMoment, type GiftSource } from '@/store/gifts'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { Chip, NewTag } from './Chip'
@@ -29,6 +30,7 @@ import { PixelIcon } from './icons'
 import { ItemSprite } from './ItemSprite'
 import { PixelButton } from './PixelButton'
 import { RulesModal, type RuleRow } from './RulesModal'
+import { outfitName } from './Outfit'
 import { MiniSprite } from './SpriteImg'
 import { StageCanvas, type StageHandle } from './StageCanvas'
 
@@ -96,6 +98,12 @@ export function GiftIcon({ g, size = 32 }: { g: Gift; size?: number }) {
     <span className="grid shrink-0 place-items-center" style={{ width: size, height: size }} aria-hidden>
       <PixelIcon name="coin" size={Math.round(size * 0.7)} />
     </span>
+  ) : outfitOf(data, g) ? (
+    // In an outfit (docs/59): the menu icon is the plain one, so its hat sits in the corner, as on the team's tiles.
+    <span className="relative -my-1 inline-block shrink-0">
+      <MiniSprite dex={g.dex} size={size} />
+      <PixelIcon name="santaHat" size={Math.max(10, Math.round(size * 0.4))} className="absolute -right-1 -top-0.5" />
+    </span>
   ) : (
     <MiniSprite dex={g.dex} size={size} className="-my-1" />
   )
@@ -114,6 +122,8 @@ export function useGiftText() {
             data.species[g.dex]?.name ?? t('ui.common.aPokemon'),
             t('ui.common.level.short', { n: g.level }),
             ...(g.shiny ? [t('ui.dayCare.shinyTag')] : []),
+            // Its outfit (docs/59), while outfits are on: off, the gift brings the plain Pokémon.
+            ...(outfitOf(data, g) ? [outfitName(g.outfit!)] : []),
           ].join(' ')
 }
 
@@ -138,6 +148,7 @@ function GiftName({ g }: { g: Gift }) {
             : t('ui.common.level.short', { n: g.level })}
       </span>
       {g.kind === 'pokemon' && g.shiny && <Chip tone="gold">{t('ui.dayCare.shinyTag')}</Chip>}
+      {g.kind === 'pokemon' && outfitOf(data, g) && <Chip tone="red">{outfitName(g.outfit!)}</Chip>}
     </>
   )
 }
@@ -181,8 +192,10 @@ function useWhere() {
           ? many
             ? t('ui.gift.inMoneyOf', { region })
             : t('ui.gift.inMoney')
-          : l.joinedTeam
-            ? t('ui.gift.joinedTeam')
+          : l.locked
+            ? t('ui.trades.result.locked', { region, level: t('ui.common.level.short', { n: l.gift.level }) })
+            : l.joinedTeam
+              ? t('ui.gift.joinedTeam')
             : many
               ? t('ui.gift.inBoxOf', { region })
               : t('ui.gift.inBox')
@@ -284,8 +297,9 @@ function contentsOf(
   const loads: Promise<unknown>[] = []
   const contents = landed.map((l): GiftContent => {
     if (l.gift.kind === 'pokemon') {
-      loads.push(loadSprite(l.gift.dex, false, !!l.gift.shiny))
-      return { kind: 'mon', key: spriteKey(l.gift.dex, false, !!l.gift.shiny), shiny: !!l.gift.shiny }
+      const outfit = outfitOf(data, l.gift)
+      loads.push(loadSprite(l.gift.dex, false, !!l.gift.shiny, outfit))
+      return { kind: 'mon', key: spriteKey(l.gift.dex, false, !!l.gift.shiny, outfit), shiny: !!l.gift.shiny }
     }
     if (l.gift.kind === 'gold') return { kind: 'gold', key: 'gold' }
     const url = data.items[l.gift.key]?.spriteUrl
@@ -303,11 +317,17 @@ export function GiftMoment({
   landed,
   onDone,
   source = 'message',
+  day,
 }: {
   landed: GiftLanded[]
   onDone: () => void
-  /** The developer's gift (a message), or invite rewards (docs/15 §25): only the first line and the title differ. */
-  source?: 'message' | 'invite'
+  /**
+   * The developer's gift (a message), invite rewards (docs/15 §25) or a gift calendar's door (docs/55): only the first
+   * line and the title differ.
+   */
+  source?: GiftSource
+  /** A calendar door's day ("Day 5's gift!"). */
+  day?: number
 }) {
   const { t } = useT()
   useHoldFullscreen()
@@ -337,12 +357,22 @@ export function GiftMoment({
         ? t('ui.gift.untie')
         : beat === 'wobble'
           ? t('ui.gift.wobble')
-          : t(source === 'invite' ? 'ui.invite.arrive' : 'ui.gift.arrive')
+          : source === 'calendar'
+            ? t('ui.cal.arrive', { n: day ?? 1 })
+            : source === 'market'
+              ? t('ui.market.arrive')
+              : t(source === 'invite' ? 'ui.invite.arrive' : 'ui.gift.arrive')
   return createPortal(
     <motion.div
       role="dialog"
       aria-modal="true"
-      aria-label={t(source === 'invite' ? 'ui.invite.momentTitle' : 'ui.gift.title')}
+      aria-label={
+        source === 'calendar'
+          ? t('ui.cal.arrive', { n: day ?? 1 })
+          : source === 'market'
+            ? t('ui.market.arrive')
+            : t(source === 'invite' ? 'ui.invite.momentTitle' : 'ui.gift.title')
+      }
       className="fixed inset-0 z-[100] overflow-y-auto bg-paper"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -393,6 +423,7 @@ export function GiftMoment({
 export function GiftService() {
   const opening = useGiftMoment((s) => s.opening)
   const source = useGiftMoment((s) => s.source)
+  const day = useGiftMoment((s) => s.day)
   const rulesFor = useGiftMoment((s) => s.rulesFor)
   const live = useGame((s) => (s.save ? regionOf(s.save) : null))
   const done = () => {
@@ -403,7 +434,7 @@ export function GiftService() {
   return (
     <>
       <GiftRulesModal open={!!rulesFor} onClose={giftRulesLater} onGo={giftRulesGo} />
-      {opening && <GiftMoment landed={opening} onDone={done} source={source} />}
+      {opening && <GiftMoment landed={opening} onDone={done} source={source} day={day} />}
     </>
   )
 }

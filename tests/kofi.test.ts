@@ -95,7 +95,8 @@ describe('0071: Ko-fi', () => {
   })
 
   it('lets anyone read the totals, only the admin the payments', async () => {
-    await pay('a', 5, '2026-10-02T10:00:00Z')
+    // Paid now: kofi_totals() reads the current month, so a fixed date stops counting once its month is over.
+    await pay('a', 5, new Date().toISOString())
     expect(await as(null, 'select count(*)::int n from kofi_totals()')).toEqual([{ n: 1 }])
     await expect(as(null, 'select * from kofi_payments')).rejects.toThrow(/permission denied/)
     expect(await as(ASH, 'select * from kofi_payments')).toEqual([])

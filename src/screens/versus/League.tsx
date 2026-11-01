@@ -36,6 +36,7 @@ import { InfoButton } from '@/components/RulesModal'
 import { Seg } from '@/components/Segmented'
 import { SocialColumns, SocialDock } from '@/components/SocialTabs'
 import { TrainerSprite } from '@/components/TrainerArt'
+import { TrophyCount } from '@/components/TrophyCount'
 import { useT } from '@/i18n/react'
 import { avatarOf } from '@/lib/avatars'
 import { timeLeft } from '@/lib/format'
@@ -396,21 +397,6 @@ export function EdgeMark({ edge, total }: { edge: number; total: number }) {
   )
 }
 
-/** A trophy count with its icon (the words for screen readers). */
-export function TrophyCount({ n, size = 16 }: { n: number; size?: number }) {
-  const { t } = useT()
-  return (
-    <span
-      className="inline-flex items-center gap-1 font-pixel-sm leading-none tabular-nums"
-      style={{ fontSize: size + 4 }}
-      aria-label={t('ui.league.trophiesLabel', { n })}
-    >
-      {n}
-      <PixelIcon name="trophy" size={size} />
-    </span>
-  )
-}
-
 /** The admin's mark on a bot (nobody else is told). */
 export function BotTag() {
   return (
@@ -523,14 +509,17 @@ export function LeagueBoard({ home }: { home: LeagueHome }) {
 
 /**
  * The ranked rows themselves (Home's kitchen shows them too). The global board wins nothing, so no rewards are drawn,
- * and it can be long: its top 100, you with the trainers around you, and your friends (`boardWindow`).
+ * and it can be long: its top 100, you and your friends with their places, no one else (`boardWindow`, none around you).
  */
 export function LeagueRows({ rows, empty, global }: { rows: LeagueRow[]; empty: string; global?: boolean }) {
   const { t } = useT()
   const friends = useFriends((s) => s.ids)
   if (!rows.length) return <p className="m-0 p-4 text-center text-[19px] text-muted">{empty}</p>
   const items = global
-    ? boardWindow(rows.map((r) => ({ ...r, friendId: friends.has(r.id) ? r.id : null })))
+    ? boardWindow(
+        rows.map((r) => ({ ...r, friendId: friends.has(r.id) ? r.id : null })),
+        0,
+      )
     : rows.map((row) => ({ row }))
   return (
     <ol

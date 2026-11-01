@@ -138,6 +138,20 @@
   "shopBadges": 4
  },
  {
+  "key": "friend-ball",
+  "name": "Friend Ball",
+  "description": "More chances to discover hidden talents on catch depending on your best streak, current: ×{x}.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/friend-ball.png",
+  "price": 100,
+  "effect": {
+   "kind": "ball",
+   "bonus": 3,
+   "talentBoost": true
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
   "key": "master-ball",
   "name": "Master Ball",
   "description": "The best ball there is. It never misses.",

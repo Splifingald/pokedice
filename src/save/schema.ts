@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { cleanNickname } from '@/engine/nickname'
 import { isUnownLetter, UNOWN_LETTERS } from '@/engine/unownDex'
+import { OUTFITS } from '@/engine/outfits'
 import {
   COMBO_KEYS,
   EVENT_IDS,
@@ -42,6 +43,8 @@ const instanceSchema = z.object({
   letter: z.unknown().transform((v) => (isUnownLetter(v) ? v : undefined)),
   // Its hidden talent (docs/51): anything but true is no talent.
   talent: z.unknown().transform((v) => (v === true ? true : undefined)),
+  // Its outfit (docs/59): one this build doesn't know (an edited save, a newer build's) is dropped, never the Pokémon.
+  outfit: z.unknown().transform((v) => (typeof v === 'string' && Object.hasOwn(OUTFITS, v) ? v : undefined)),
 })
 
 // Extreme mode's Centers (docs/47): the boons waiting for the pick.
@@ -167,11 +170,11 @@ const progressSchema = z.object({
   bossesDefeated: z.array(z.number().int()).default([]),
   bossesCaught: z.array(z.number().int()).optional(),
   gymsDefeated: z.array(z.string()).default([]),
-  deck: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'legend'])).optional(),
+  deck: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus', 'legend'])).optional(),
   lootDeck: z.array(z.string()).optional(),
   uniqueFound: z.array(z.string()).optional(),
   round: z.number().int().min(0).optional(),
-  drawn: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'legend'])).optional(),
+  drawn: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus', 'legend'])).optional(),
   lastCenter: z.boolean().optional(),
   // Route 1's set opening (docs/46): the deck in play is its round of this index. An odd value: a shuffled deck's cards.
   opening: z.number().int().min(0).optional().catch(undefined),
@@ -206,7 +209,11 @@ const levelRecord = <K extends string>(keys: readonly K[]) =>
     .record(z.number().int().min(1).max(10))
     .transform((r) => Object.fromEntries(keys.map((k) => [k, r[k] ?? 1])) as Record<K, number>)
 
-const eggParentSchema = z.object({ dex: z.number().int().min(1), owner: z.string().max(40).optional() })
+const eggParentSchema = z.object({
+  dex: z.number().int().min(1),
+  owner: z.string().max(40).optional(),
+  ownerId: z.string().max(64).optional(),
+})
 
 const dayCareSchema = z.object({
   // `region` is absent on saves from before the one Day Care: parseSave tags them.
@@ -234,6 +241,13 @@ const dayCareSchema = z.object({
       at: z.number(),
       parents: z.tuple([eggParentSchema, eggParentSchema]).optional(),
       gift: z.literal(true).optional(),
+      hatchling: z
+        .object({
+          dex: z.number().int().min(1),
+          shiny: z.literal(true).optional(),
+          talent: z.literal(true).optional(),
+        })
+        .optional(),
     })
     .optional(),
 })
@@ -279,6 +293,7 @@ export const saveSchema = z.object({
   leaderboardVisited: z.boolean().optional(),
   versusRulesSeen: z.boolean().optional(),
   versusLeagueRulesSeen: z.boolean().optional(),
+  areaVersusRulesSeen: z.boolean().optional(),
   portalRulesSeen: z.boolean().optional(),
   nightmareRulesSeen: z.boolean().optional(),
   events: z
@@ -325,6 +340,8 @@ export const saveSchema = z.object({
       raidIntrosSeen: z.array(z.number().int()).max(200).optional(),
       liveSeen: z.array(z.string().max(80)).max(50).optional(),
       liveBought: z.record(z.record(z.number().int().min(0))).optional(),
+      calendarOpened: z.record(z.array(z.number().int().min(1).max(31)).max(31)).optional(),
+      calendarRulesSeen: z.boolean().optional(),
       // Small worlds (docs/21): the one held, the pop-ups shown, the mythicals waiting for their home region.
       world: z
         .object({
@@ -357,6 +374,7 @@ export const saveSchema = z.object({
             worldId: z.string().max(80).optional(),
             from: z.string().min(1).max(80).optional(),
             tradedBy: z.string().max(40).optional(),
+            market: z.literal(true).optional(),
           }),
         )
         .max(2000)
@@ -406,8 +424,14 @@ export const saveSchema = z.object({
   talents: z.record(z.array(z.number().int().min(1)).max(3000)).optional(),
   talentsMet: z.array(z.number().int().min(1)).max(3000).optional(),
   talentRulesSeen: z.boolean().optional(),
+  // Outfits (docs/59): their rules pop-up seen.
+  outfitRulesSeen: z.boolean().optional(),
   // The dice tutorial (docs/46 §5): an odd value starts it afresh, never fails the save.
   diceTutorial: z.enum(['started', 'done']).optional().catch(undefined),
+  // The reroll lesson (docs/46 §6): played once.
+  rerollLesson: z.literal('done').optional().catch(undefined),
+  // The item tutorial (docs/46 §7): shown once.
+  itemLesson: z.literal('done').optional().catch(undefined),
   // The battle powers (docs/35): the Mega Gems held, bought ones included, which nothing else gives back. A power kind
   // this build doesn't know is dropped rather than failing the save, so an odd one never costs the gems.
   powers: z
@@ -483,6 +507,14 @@ export const saveSchema = z.object({
     .object({
       done: z.array(z.number().int()).max(200).default([]),
       rulesSeen: z.boolean().optional(),
+    })
+    .optional(),
+  // Friendship (docs/60): the rules read, market purchases put away (ids), Eggs to tell the server about.
+  friendship: z
+    .object({
+      rulesSeen: z.boolean().optional(),
+      applied: z.array(z.string().max(64)).max(100).optional(),
+      eggs: z.array(z.string().max(64)).max(20).optional(),
     })
     .optional(),
   // Trick or Treat (docs/29): its rules pop-up seen.

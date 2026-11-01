@@ -5,6 +5,11 @@
 [build.environment]
   NODE_VERSION = "22"
 
+# The #events job's French posts name the items, areas and regions the way the game does, from the strings sheet it
+# reads at run time (scripts/discord/french.ts): the bundle carries it.
+[functions."discord-live"]
+  included_files = ["src/i18n/strings.csv"]
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

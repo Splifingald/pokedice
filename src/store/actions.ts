@@ -14,6 +14,7 @@ import {
   markShinyDexSeen as markShinyDexSeenIn,
   markUnownDexSeen as markUnownDexSeenIn,
   startDiceTutorial,
+  finishItemLesson,
   finishDiceTutorial,
   sellItem,
   createRng,
@@ -26,6 +27,8 @@ import {
   dayCareOf,
   depositError,
   depositPokemon,
+  crackEgg,
+  hatchChoices,
   hatchEgg,
   markDayCareVisited,
   markDonationSeen,
@@ -39,7 +42,10 @@ import {
   type Pickup,
   type PokeType,
   type PowerKind,
+  type RegionId,
+  type Rng,
   type RushRefusal,
+  type SaveData,
   versusLeagueOn,
 } from '@/engine'
 import { tickDayCare } from './daycare'
@@ -232,6 +238,11 @@ export function startDiceTutorialNow(): void {
   mutateSave((s) => (s.diceTutorial ? null : startDiceTutorial(s)))
 }
 
+/** The item tutorial has shown (docs/46 §7): never again. */
+export function finishItemLessonNow(): void {
+  mutateSave((s) => (s.itemLesson ? null : finishItemLesson(s)))
+}
+
 /** BACK TO the area: the dice tutorial is done, for good. */
 export function finishDiceTutorialNow(): void {
   mutateSave((s) => (s.diceTutorial === 'done' ? null : finishDiceTutorial(s)))
@@ -261,33 +272,64 @@ export function pickUpFromDayCare(uid: string): Pickup | null {
   return res
 }
 
-/** The Egg waiting hatches (the gift, or one a pair left). Null when none waits. */
-export function hatchDayCareEgg(): Hatch | null {
-  const { save, data } = useGame.getState()
-  const res = save ? hatchEgg(save, data, createRng(randomSeed()), Date.now(), newId, currentLive()) : null
+/**
+ * What a hatching Egg offers: `placed` when it had one Box to go to (it is there already), else `choices`, one per Box
+ * it can go to, as it would arrive there (the player picks with `hatchDayCareEggInto`).
+ */
+export type HatchOffer = { placed: Hatch } | { choices: Hatch[] }
+
+/**
+ * The Egg cracks and what it holds is kept on it (so a reload rolls nothing again); with one Box to go to it hatches
+ * there at once, with several the screen asks which. Null when none waits.
+ */
+function offerHatch(save: SaveData, rng: Rng): HatchOffer | null {
+  const { data } = useGame.getState()
+  const cracked = crackEgg(save, data, rng)
+  if (!cracked) return null
+  const choices = hatchChoices(cracked, data, Date.now(), currentLive())
+  if (choices.length > 1) {
+    mutateSave(() => cracked)
+    return { choices }
+  }
+  return hatchInto(cracked, choices[0]?.region)
+}
+
+function hatchInto(save: SaveData, region?: RegionId): { placed: Hatch } | null {
+  const { data } = useGame.getState()
+  const res = hatchEgg(save, data, createRng(randomSeed()), Date.now(), newId, currentLive(), region)
   if (!res) return null
   mutateSave(() => res.save)
   // The clocks kept running while it waited: a check that came due meanwhile can leave the next one now.
   tickDayCare()
-  return res
+  return { placed: res }
+}
+
+/** The Egg waiting hatches (the gift, or one a pair left). Null when none waits. */
+export function hatchDayCareEgg(): HatchOffer | null {
+  const { save } = useGame.getState()
+  return save ? offerHatch(save, createRng(randomSeed())) : null
+}
+
+/** The player picked the hatchling's Box (one of its `choices`). Null when none waits or it can't go there. */
+export function hatchDayCareEggInto(region: RegionId): Hatch | null {
+  const { save } = useGame.getState()
+  return (save && hatchInto(save, region)?.placed) ?? null
 }
 
 /**
  * Egg now: the checks that are due run first (one may leave an Egg on its own, and then there is nothing to buy),
  * then the next check runs early for `rushPrice` and its Egg hatches at once: one commit, one moment.
  */
-export function rushDayCareEgg(): { hatch: Hatch } | { refused: RushRefusal } {
+export function rushDayCareEgg(): { hatch: HatchOffer } | { refused: RushRefusal } {
   tickDayCare()
   const { save, data } = useGame.getState()
   if (!save) return { refused: 'pair' }
-  const now = Date.now()
   const rng = createRng(randomSeed())
-  const rushed = rushEgg(save, data, now, rng)
+  const rushed = rushEgg(save, data, Date.now(), rng)
   if ('refused' in rushed) return rushed
-  const hatch = hatchEgg(rushed.save, data, rng, now, newId, currentLive())
-  if (!hatch) return { refused: 'pair' }
-  mutateSave(() => hatch.save)
-  return { hatch }
+  // Paid with the Egg it bought: the hatching commits both, or the Box pick does, with the Egg cracked meanwhile.
+  const hatch = offerHatch(rushed.save, rng)
+  return hatch ? { hatch } : { refused: 'pair' }
 }
 
 /** The residents the Day Care sent home when it had too many: read once, for the toast. */

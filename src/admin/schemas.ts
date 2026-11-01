@@ -29,7 +29,7 @@ const itemEffect = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('level'), amount: int(1, 10) }),
   z.object({ kind: z.literal('stone') }),
   z.object({ kind: z.literal('fossil'), dex: int(1, 1025), level: int(1, 100), hours: z.number().min(0) }),
-  z.object({ kind: z.literal('ball'), bonus: int(0, 12) }),
+  z.object({ kind: z.literal('ball'), bonus: int(0, 12), raidOnly: z.boolean().optional(), talentBoost: z.boolean().optional() }),
   z.object({ kind: z.literal('link') }),
   z.object({ kind: z.literal('talent') }),
   z.object({ kind: z.literal('bait'), faces: z.array(int(0, 12)).length(6, 'exactly 6 faces') }),

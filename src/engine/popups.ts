@@ -13,6 +13,7 @@
 // (the Day Care, Versus, the special events, Trades, the General upgrades, the shiny and Unown Pokédexes, the invite
 // rewards, the raid overhaul, the Underground), whose rules are now a card at the top of that page (`RulesCard`).
 // Every "seen" flag stays where it was in the save.
+import { calendarRulesDue } from './calendar'
 import { dayCareTutorialDue, leaderboardTutorialDue } from './daycare'
 import { donationDue } from './donation'
 import { dayNightRulesDue } from './dayNight'
@@ -26,6 +27,7 @@ import { raidOverhaulRulesDue } from './progressRaid'
 import { inWorldRegion, regionOfferDue } from './regions'
 import { badgeCase, portalRulesDue } from './run'
 import { shinyDexRulesDue } from './shinyDex'
+import { outfitRulesDue } from './outfits'
 import { talentRulesDue } from './talents'
 import { tradeRulesDue, tradesToWatch } from './trade'
 import { diceTutorialDue } from './tutorial'
@@ -42,6 +44,11 @@ export const SHARE_PROMPT_BADGES = 2
 export interface PopupContext {
   /** Between fights: no encounter under way (`run.phase === 'idle'`), no battle, no full-screen moment on screen. */
   calm: boolean
+  /**
+   * A Pokémon Center between fights, its heal played: not calm (an encounter is under way), but the dice tutorial may
+   * start there, its HOME the way to the Mart. Right after Joey the round's Center comes at once (docs/46 §5).
+   */
+  atCenter?: boolean
   /** The page open (its path): a pop-up never opens over the page it leads to. */
   path: string
   /** Signed in to the online service: Trades and the invite rewards are only there for an account. */
@@ -77,11 +84,12 @@ interface Entry {
 const under = (prefix: string) => (path: string) => path === prefix || path.startsWith(`${prefix}/`)
 
 /**
- * The live events whose pop-up still takes a turn in the queue: all but the Underground, whose rules are on its page
- * now (docs/43 §7) and whose opening is a notice on Home.
+ * The live events whose pop-up still takes a turn in the queue: all but those with a page of their own, the
+ * Underground and the gift calendar (docs/55), whose rules are on their page (docs/43 §7) and whose opening is a notice
+ * on Home.
  */
 export const queuedLives = (lives: LiveSet): LiveEvent[] =>
-  liveList(lives).filter((e) => e.type !== 'underground')
+  liveList(lives).filter((e) => e.type !== 'underground' && e.type !== 'calendar')
 
 /**
  * Every one-time pop-up, in the order they take the screen: what you came back to first, the messages, a new region,
@@ -111,6 +119,8 @@ const QUEUE = {
   powers: { due: (s, d) => !!powerRulesDue(s, d) },
   /** Hidden talents (docs/51), as the switch opens them. */
   talents: { due: (s, d) => talentRulesDue(s, d) },
+  /** Outfits (docs/59), as the first Pokémon in one arrives. */
+  outfits: { due: (s, d) => outfitRulesDue(s, d) },
   /** A small world has opened (the player outside it). */
   world: {
     due: (s, d, c) => !inWorld(s, d) && worldPopupDue(s, worldFor(s, d, c.now)),
@@ -167,7 +177,8 @@ export function nextOneTimePopup(
   data: GameData,
   ctx: PopupContext,
 ): OneTimePopup | null {
-  if (!save || !ctx.calm) return null
+  if (!save) return null
+  if (!ctx.calm) return ctx.atCenter && ready('diceTutorial', save, data, ctx) ? 'diceTutorial' : null
   if (ctx.showing && ready(ctx.showing, save, data, ctx)) return ctx.showing
   return ONE_TIME_POPUPS.find((id) => ready(id, save, data, ctx)) ?? null
 }
@@ -184,7 +195,7 @@ export interface NoticeContext {
  * page's rules card is read: the feature's own "seen" flag), then what asks nothing of the player. The flags are the
  * pop-ups' own (`dayCare.visited`, `versusRulesSeen`, `events.seen`, `trades.rulesSeen`, `general.rulesSeen`,
  * `shinyDexSeen`, `unownDexSeen`, `invites.rulesSeen`, `events.raidRulesSeen`, `underground.rulesSeen`,
- * `leaderboardVisited`, `donationSeen`, the invite's per-region mark on the device).
+ * `events.calendarRulesSeen`, `leaderboardVisited`, `donationSeen`, the invite's per-region mark on the device).
  */
 const NOTICES = {
   /** The Day Care, at its catches (Prof. Oak's tutorial was its rules). → /daycare */
@@ -207,6 +218,8 @@ const NOTICES = {
   raidRules: (s: SaveData, d: GameData) => raidOverhaulRulesDue(s, d),
   /** The Underground, while its live event runs. → /underground */
   underground: (s: SaveData, d: GameData, c: NoticeContext) => ugRulesDue(s, d, c.now ?? null),
+  /** A gift calendar, while one runs, until its page's rules card is read (docs/55). → /calendar */
+  calendar: (s: SaveData, d: GameData, c: NoticeContext) => calendarRulesDue(s, d, c.now ?? null),
   /** Prof. Oak's leaderboard tip, from the first badge (after the Day Care's). → /leaderboard */
   leaderboard: (s: SaveData, d: GameData) => leaderboardTutorialDue(s, d),
   /** Prof. Oak's invite, at a region's 2nd badge (INVITE shares the link). */

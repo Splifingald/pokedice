@@ -52,7 +52,9 @@ export function catchTarget(
   const target = ordinaryTarget(save, dex, level, kind, data, shiny, areaId)
   if (target || !talent || !talentsOn(data) || familyUnlocked(save, data, dex)) return target
   // A talent still locked here is worth a catch whatever its level: it passes to the family, the Pokémon is let go.
-  const own = save.box.filter((p) => p.dex === dex && !p.shiny).sort((a, b) => b.level - a.level)[0] ?? save.box.find((p) => p.dex === dex)
+  const own =
+    save.box.filter((p) => p.dex === dex && !p.shiny && !p.outfit).sort((a, b) => b.level - a.level)[0] ??
+    save.box.find((p) => p.dex === dex)
   return own ? { mode: 'learn', uid: own.id } : null
 }
 
@@ -72,7 +74,8 @@ function ordinaryTarget(
   if (kind !== 'wild') return null
   // A shiny never overwrites a copy you own, whatever its level: it always joins as its own Pokémon.
   if (shiny) return { mode: 'new' }
-  const plain = save.box.filter((p) => p.dex === dex && !p.shiny)
+  // A shiny or an outfit copy (docs/59) is its own Pokémon: a wild catch never overwrites it.
+  const plain = save.box.filter((p) => p.dex === dex && !p.shiny && !p.outfit)
   // Only shiny copies (or none here at all): the plain one is a Pokémon you don't have, so it joins as its own.
   if (!plain.length) return { mode: 'new' }
   const weakest = plain.sort((a, b) => a.level - b.level)[0]!

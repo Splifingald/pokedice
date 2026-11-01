@@ -621,6 +621,44 @@ insert into items (key, name, description, sprite_url, price, effect, in_shop, s
 on conflict (key) do nothing;
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 
+-- ↓ supabase/migrations/0098_legend_cinema.sql, inlined so this file stands alone.
+-- The legends' own cinematics (docs/53): Mewtwo's lab, Articuno's ice cavern, Zapdos's power plant, Moltres's
+-- volcano, Mew's forest… instead of the shared entrance, and no warning tapes on a legend's raid.
+-- 1. game_config `legendCinema`: the switch, Off (left alone when there). It only changes how an entrance looks and
+--    sounds on the player's device (the engine has decided the fight first), so no server function acts for it and
+--    none reads it.
+-- 2. configVersion + 1, so players fetch the new content. Safe to run again.
+insert into game_config (key, value) values ('legendCinema', '{"access": "off"}'::jsonb) on conflict (key) do nothing;
+insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
+
+-- ↓ supabase/migrations/0100_gift_calendar.sql, inlined so this file stands alone.
+-- The gift calendar (docs/55): a live event of type `calendar`, a door a day with one reward each (an item, Pokédollars
+-- or a Pokémon, in a quantity), opened on its day or the next.
+-- 1. game_config `giftCalendar`: its switch, Off (left alone when there). The calendar itself is a live event in the
+--    `liveEvents` row the admin already writes. The doors a player opened are in their own save, on the server's clock
+--    (event_time), like the Special Shop's limits, so no server function acts for it and none reads it.
+-- 2. configVersion + 1, so players fetch the new content. Safe to run again.
+insert into game_config (key, value) values ('giftCalendar', '{"access": "off"}'::jsonb) on conflict (key) do nothing;
+insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
+
+-- ↓ supabase/migrations/0101_champion_cinema.sql, inlined so this file stands alone.
+-- The champions' own cinematics (docs/56): Red on Mt. Silver's summit, Lance's dragons over the Indigo Plateau, Leon's
+-- stadium… instead of the trainer stepping onto the field, before every League Champion's fight.
+-- 1. game_config `championCinema`: the switch, Off (left alone when there). It only changes how an entrance looks and
+--    sounds on the player's device (the engine has decided the fight first), so no server function acts for it and
+--    none reads it.
+-- 2. configVersion + 1, so players fetch the new content. Safe to run again.
+insert into game_config (key, value) values ('championCinema', '{"access": "off"}'::jsonb) on conflict (key) do nothing;
+insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
+
+-- ↓ supabase/migrations/0105_outfits.sql, inlined so this file stands alone.
+-- Outfits (docs/59): Pokémon dressed up, Santa Pikachu first, given as the gift calendar's or the developer's gifts.
+-- 1. game_config `outfits`: the switch, Off (left alone when there). An outfit only changes how a Pokémon looks and
+--    which species it may evolve into, in the player's own save, so no server function acts for it and none reads it.
+-- 2. configVersion + 1, so players fetch the new content. Safe to run again.
+insert into game_config (key, value) values ('outfits', '{"access": "off"}'::jsonb) on conflict (key) do nothing;
+insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
+
 insert into type_chart (attacking, defending, multiplier) values
   ('bug', 'dark', 2),
   ('bug', 'fairy', 0.5),

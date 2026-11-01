@@ -2,6 +2,7 @@
 // your turns, the catch. A raid isn't saved mid-fight: leaving or reloading is a free retry, the try already counted.
 // The same fight runs the day's raid and a progression raid (docs/24): the team, the friends' teams, the numbers and
 // where a catch goes are the raid's own.
+import { raidWithFriends } from './friendship'
 import { create } from 'zustand'
 import {
   applyMegaRaidWin,
@@ -366,6 +367,12 @@ export function raidFightOver() {
   // A Mega raid (docs/40): won, its gem or orb is the player's, and nothing is caught.
   const { save, data } = useGame.getState()
   const mega = run.source.kind === 'progress' ? progressRaidOf(data, run.source.key) : null
+  // Fought beside friends' teams, won or lost: their friendship streaks go on (docs/60).
+  if (run.state.phase === 'won' || run.state.phase === 'lost')
+    void raidWithFriends(
+      run.friends.map((f) => f.userId),
+      run.source.kind === 'progress' ? run.source.key : null,
+    )
   if (run.state.phase === 'won' && save && mega?.mega) {
     commitSave(applyMegaRaidWin(save, mega))
     void closeOnServer(run.source, run.friends.map((f) => f.userId))

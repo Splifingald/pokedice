@@ -14,6 +14,7 @@ import {
   confusionLevel,
   confusionRecoil,
   hasStatus,
+  legendCinemaOn,
   MEGA_RAIDS,
   progressRaidOf,
   raidSpecialFor,
@@ -81,6 +82,7 @@ import { BattleStage, type StageOverlay } from '../battle/BattleStage'
 import { CatchPanel, catchMessage } from '../battle/CatchPanel'
 import { RaidIntro } from './RaidIntro'
 import { LEGEND_RAID_SCENES } from '@/fx/timelines/legendRaidScenes'
+import { RAID_CINEMAS } from '@/fx/timelines/cinema'
 import { RaidNpcPicker } from './RaidNpcPicker'
 import { battlerOf, sideOfUid, useRaidAnimator, type RaidFx } from './raidAnimator'
 import { TrainerName } from '@/components/TrainerName'
@@ -362,12 +364,18 @@ export function RaidView({ run }: { run: RaidRun }) {
   const nightmare = useNightmareRaid(run.raid.areaId) && !portal
   // A legendary's own entrance (docs/40): with the overhaul on, its place and omen (a Mega raid's base's place). Skip
   // shows from the second time the player meets it.
+  // With the legends' cinematics on (docs/53): its own when it has one (Mewtwo's lab…), and no warning tapes.
   const legend = useMemo(() => {
     if (portal || nightmare) return undefined
     const kind = run.source.kind === 'progress' ? 'progress' : 'daily'
     if (!raidSpecialFor(data, run.raid.dex, kind, run.raid.areaId)) return undefined
-    const scene = LEGEND_RAID_SCENES[MEGA_RAIDS[run.raid.dex]?.base ?? run.raid.dex]
-    return scene ? { scene, skippable: !!save?.events?.raidIntrosSeen?.includes(run.raid.dex) } : undefined
+    const base = MEGA_RAIDS[run.raid.dex]?.base ?? run.raid.dex
+    const scene = LEGEND_RAID_SCENES[base]
+    const quiet = legendCinemaOn(data)
+    const cinema = quiet ? RAID_CINEMAS[base] : undefined
+    return scene || cinema
+      ? { scene, cinema, quiet, skippable: !!save?.events?.raidIntrosSeen?.includes(run.raid.dex) }
+      : undefined
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [run.id])
 

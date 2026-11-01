@@ -6,6 +6,7 @@ import {
   EmptySlot,
   GainTag,
   GuestTile,
+  HatchBoxPick,
   Heart,
   Mate,
   MatesLine,
@@ -14,6 +15,7 @@ import {
   SLOT_COLORS,
   SlotCard,
   XpBar,
+  type HatchRow,
 } from '@/screens/daycare/parts'
 
 const noop = () => undefined
@@ -26,6 +28,21 @@ const yours = (slot: number) => (
   </>
 )
 const guest = (name: string) => <span>{name}’s</span>
+
+const row = (region: string, level: number, more: Partial<HatchRow> = {}): HatchRow => ({
+  region,
+  inst: { level },
+  shiny: false,
+  kept: true,
+  isNew: false,
+  ...more,
+})
+/** A Pichu that three regions' Pokédexes list: it joins one (NEW), beats yours in another, is held back in the third. */
+const PICHU = [
+  row('johto', 18, { isNew: true }),
+  row('hoenn', 27, { replaced: { level: 12 } }),
+  row('alola', 41, { kept: false, strongest: 45 }),
+]
 
 export function DayCareBits() {
   return (
@@ -120,6 +137,25 @@ export function DayCareBits() {
         <RushBarView wait={null} pairs={0} price={200} short={0} onRush={noop} onShort={noop} />
         <EggCardView from="Eevee and Ditto (Noor) left it." onHatch={noop} />
         <EggCardView from="A gift for your first visit." onHatch={noop} />
+      </div>
+
+      {/* The hatchling's Box pick: one picked (the live region), none picked (SEND disabled), and a shiny's. */}
+      <div className="grid max-w-md gap-4">
+        <div className="grid gap-2">
+          <HatchBoxPick name="Pichu" choices={PICHU} value="johto" onChange={noop} onSend={noop} />
+        </div>
+        <div className="grid gap-2">
+          <HatchBoxPick name="Pichu" choices={PICHU} value={null} onChange={noop} onSend={noop} />
+        </div>
+        <div className="grid gap-2">
+          <HatchBoxPick
+            name="Eevee"
+            choices={[row('kanto', 22, { shiny: true }), row('johto', 30, { shiny: true, isNew: true })]}
+            value="johto"
+            onChange={noop}
+            onSend={noop}
+          />
+        </div>
       </div>
     </div>
   )
