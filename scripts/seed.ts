@@ -874,7 +874,8 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  * player's raids won, read back), then 0090 (Versus teams at their own levels: 0039's team writer redefined), and the
  * later ones listed below (0108: the trade board's picks, after the trades' own; 0122: Tracks in the Snow's switch
  * and tracks_open; 0124: the race of time and space's switch and its raids' checks, after 0060's, its Spear Pillar patch
- * a no-op here, the bundle has no Snowglobe Valley). Folded into
+ * a no-op here, the bundle has no Snowglobe Valley; 0125: the Stairway of Plates' own switch, after 0057's
+ * raid_progress_portal, which it redefines). Folded into
  * seed.sql
  * so there is
  * one file to run rather than several in a particular order. The
@@ -935,6 +936,7 @@ export async function regionsPrelude(): Promise<string> {
       '0105_outfits.sql',
       '0108_trade_picks.sql',
       '0121_gift_card.sql',
+      '0125_plates_run.sql',
       '0124_time_race.sql',
       '0123_whiteout.sql',
       '0122_tracks_in_the_snow.sql',

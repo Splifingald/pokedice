@@ -24,6 +24,7 @@ import {
   portalRulesDue,
   portalRulesSeen,
   portalSkin,
+  portalSwitchOf,
   portalStateOf,
   progressRaidKey,
   progressRaidOf,
@@ -32,6 +33,7 @@ import {
   raidTeamCap,
   startPortalRun,
   type Area,
+  type EventAccess,
   type GameData,
   type PokeType,
   type RaidLogEntry,
@@ -47,10 +49,14 @@ const HALL = sg.areas.find((a) => a.name === 'Hall of Origin')!
 const DW = haunted().areas.find((a) => a.name === 'Distortion World')!
 const NOW = Date.parse('2027-01-02T12:00:00.000Z')
 const world = { ...sg.world, minBadges: 0, previewHours: 48 }
-const dataWith = (areas: Area[] = sg.areas) =>
+const dataWith = (areas: Area[] = sg.areas, sw: { portalRun?: EventAccess; platesRun?: EventAccess } = {}) =>
   makeDataWith(
     { areas, regions: [sg.region] },
-    { smallWorlds: { access: 'all', list: [world] }, portalRun: { access: 'all' } },
+    {
+      smallWorlds: { access: 'all', list: [world] },
+      portalRun: { access: sw.portalRun ?? 'off' },
+      platesRun: { access: sw.platesRun ?? 'all' },
+    },
   )
 const data = dataWith()
 
@@ -63,6 +69,43 @@ function atHall(d: GameData = data): SaveData {
   })
   return { ...s, box: team, team: team.map((p) => p.id), currentAreaId: HALL.id }
 }
+
+describe('its own switch (the user’s call of 2026-11-01)', () => {
+  // Distortion World's mode moved onto a Snowglobe Valley area, so both runs sit in the same data.
+  const both = (sw: { portalRun?: EventAccess; platesRun?: EventAccess }) => {
+    const d = dataWith(sg.areas, sw)
+    const dw = { ...HALL, mode: DEFAULT_PORTAL_RUN }
+    return { hall: portalModeOf(HALL, d), dw: portalModeOf(dw, d) }
+  }
+
+  it('the Stairway answers to `platesRun`, every other portal run to `portalRun`', () => {
+    expect(portalSwitchOf(normalisePortal(HALL.mode))).toBe('platesRun')
+    expect(portalSwitchOf(normalisePortal(DW.mode))).toBe('portalRun')
+    expect(portalSwitchOf(null)).toBe('portalRun')
+  })
+
+  it('`portalRun` on and `platesRun` off: Distortion World plays its run, the Hall plays as before', () => {
+    const { hall, dw } = both({ portalRun: 'all', platesRun: 'off' })
+    expect(hall).toBeNull()
+    expect(dw).toEqual(DEFAULT_PORTAL_RUN)
+  })
+
+  it('`platesRun` on and `portalRun` off: the Hall climbs its Stairway, Distortion World plays as before', () => {
+    const { hall, dw } = both({ portalRun: 'off', platesRun: 'all' })
+    expect(hall?.skin).toBe('plates')
+    expect(dw).toBeNull()
+  })
+
+  it('both off: neither; the Hall’s raid has no portal rules then', () => {
+    const { hall, dw } = both({ portalRun: 'off', platesRun: 'off' })
+    expect(hall).toBeNull()
+    expect(dw).toBeNull()
+  })
+
+  it('ships Off', () => {
+    expect(makeDataWith({}).config.platesRun).toEqual({ access: 'off' })
+  })
+})
 
 describe('the skin', () => {
   it('leaves Distortion World’s mode exactly as it was: no skin written, its own look', () => {

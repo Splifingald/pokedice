@@ -20,7 +20,7 @@ Pokémon's type bar by bar (`raid.barTypes`: Arceus's Plates).
 |---|---|
 | Distortion World opens | **100 Pokémon in the world's Pokédex** (was 119: all but Giratina). |
 | Where its rules live | **On the area** (`Area.mode`, the `areas.mode` jsonb column): a per-area special mode, every number the admin's (Admin → Areas → Special mode). Only Distortion World has one. |
-| Switch | **Off / On for admin / On for everyone**, Off by default (`game_config.portalRun`, docs/15 §20). The server reads it too. **Off: the area plays as before** (rounds, Centers, its raid once cleared), and a run in a save is kept. |
+| Switch | **Off / On for admin / On for everyone**, Off by default (`game_config.portalRun`, docs/15 §20). The server reads it too. **Off: the area plays as before** (rounds, Centers, its raid once cleared), and a run in a save is kept. A portal area dressed as the Stairway of Plates (docs/61 §4.5) answers to its own switch, `platesRun`, instead (`portalSwitchOf`; the server's 0125). |
 | The way in | Opening the area (Home's CONTINUE there: **ENTER THE DISTORTION**) plays the breach: a big distortion and "Giratina is breaking into this world, you have to close the distortion portals from the inside!" It **holds its end** (the open portal turning) and **waits for a tap** ("Tap to continue ▼"; no SKIP, it plays out); then the pop-up **rises over that end**: the rules and "Are you sure you want to enter? You cannot leave the area unless all your party is K.O." — **TEAM** / **NOT NOW** (back Home) / **READY!** (the user, 2026-10-15). |
 | Arriving | **Like a Pokémon Center** (the user, 2026-10-15): arriving at the way in **heals the team and the Box** (the Center's heal and its rules: `arriveAtPortal`), and **until READY! the team can change** in the Team screen as at a Center (`teamSwapsOpen`); TEAM goes there, BACK TO THE DISTORTION (or Home's CONTINUE) comes back to the pop-up at once. The menus are open until READY!. |
 | Inside | The team is **fully healed on entry** (READY! heals it again, harmlessly). **No Pokémon Center at all**, so **no team changes** once READY! is pressed. **No way out**: the menus, the top bar, Home and every other page send back to the area, and a reload comes back into the run (its state is in the save). The screen wears a **recurring distortion** (motion levels below). |
@@ -39,7 +39,7 @@ Pokémon's type bar by bar (`raid.barTypes`: Arceus's Plates).
 ## 2. Engine (pure)
 
 - `portalMode.ts`: `DEFAULT_PORTAL_RUN` (the numbers above), `normalisePortal` (the admin's value cleaned, defaults
-  for anything odd), `portalRunsOn` (the switch), `portalModeOf(area)`, `portalRaidRules`.
+  for anything odd), `portalRunsOn` (the switch: `portalSwitchOf` picks `portalRun` or the Stairway's `platesRun` by the look), `portalModeOf(area)`, `portalRaidRules`.
 - `portal.ts`: the run's state is in the area's progress (`AreaProgress.portal`: `active`, `closed`, `deck`, `offers`,
   `boosts`, `dice`, `won`, `wonSeen`, `tries`), so it's saved and parked with the world.
   - `startPortalRun` (heals the team, deals the first cycle), `portalCycle` (the distortion at index 0: drawn last),

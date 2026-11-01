@@ -105,7 +105,9 @@ function bundle(): BundleRaw {
       ...b.config,
       configVersion: VERSION,
       smallWorlds: { access: 'all', list: [WORLD] },
-      portalRun: { access: 'all' },
+      // The Stairway answers to its own switch (docs/61 §4.5), Distortion World's left Off to prove it.
+      platesRun: { access: 'all' },
+      portalRun: { access: 'off' },
       events: { ...DEFAULT_CONFIG.events, raid: { ...DEFAULT_CONFIG.events.raid, access: 'all' } },
     },
   }
