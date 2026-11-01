@@ -74,10 +74,12 @@ test('Config: the tabs, the switches in two columns, a name opens its numbers', 
     'page',
   )
 
-  // One row per feature (29 with the Versus global board, the hidden talents, the legendary intros, real-player
-  // battles, the champion intros, welcome back, the outfits and friendship): its name and its switch, nothing else;
-  // energy and the retired switches are gone.
-  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(29)
+  // One row per feature (38 with the Versus global board, the hidden talents, the legendary intros, real-player
+  // battles, the champion intros, welcome back, the outfits, friendship, 2.9's four side quests and five region
+  // flavours): its name and its switch, nothing else; energy and the retired switches are gone.
+  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(38)
+  for (const name of ['Safari Zones', 'Rivals on the road', "Hoenn's weather", 'Paldea Titans'])
+    await expect(page.getByRole('radiogroup', { name: `${name}: who has it` })).toBeVisible()
   await expect(page.getByRole('radiogroup', { name: 'Outfits: who has it' })).toBeVisible()
   await expect(page.getByRole('radiogroup', { name: 'Welcome back: who has it' })).toBeVisible()
   await expect(page.getByRole('radiogroup', { name: 'Friendship & Friend Market: who has it' })).toBeVisible()
