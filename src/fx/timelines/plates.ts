@@ -79,7 +79,7 @@ const PLATE_COLORS = POKE_TYPES.filter((t) => t !== 'normal').map((t) => typeCol
 
 /** Where the wheel at the top of the stairway stands on a stage of w × h, and how big it is. */
 export const wheelSpot = (w: number, h: number) => ({
-  c: { x: Math.round(w / 2), y: Math.round(h * 0.2) },
+  c: { x: Math.round(w / 2), y: Math.round(h * 0.24) },
   R: Math.max(8, Math.round(Math.min(w, h * 1.2) * 0.13)),
 })
 
@@ -126,7 +126,7 @@ export interface Stairway {
 /** The stairway of a stage of w × h (its words kept clear at the bottom: `hv` the visible height). */
 export const stairwayOf = (w: number, hv: number, landings = 10): Stairway => ({
   base: hv + 2,
-  top: Math.round(hv * 0.27),
+  top: Math.round(hv * 0.3),
   wide: Math.round(w * 0.36),
   narrow: Math.max(4, Math.round(w * 0.05)),
   landings,

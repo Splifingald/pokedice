@@ -180,3 +180,41 @@ describe('a full-screen scene’s stage', () => {
     expect(fullStage(2560, 1440)).toEqual({ w: 640, h: 360, inset: 0 })
   })
 })
+
+describe('the Stairway of Plates in light (docs/61 §4.5, docs/15 §49)', () => {
+  it('its scenes keep the portal run’s timings and motion levels, so the screens swap one for the other', async () => {
+    const { altarLitTimeline, descentTimeline, plateTimeline, stairwayTimeline, PLATE_CONTACT } =
+      await import('@/fx/timelines/plates')
+    const { breachTimeline, closeTimeline, victoryTimeline } = await import('@/fx/timelines/portal')
+    for (const short of [false, true]) {
+      const way = stairwayTimeline({ title: 'Stairway of Plates', short })
+      expect(way.hold).toBe(true)
+      expect(way.dur).toBe(breachTimeline({ title: '', short }).dur)
+      expect(altarLitTimeline({ short }).dur).toBe(closeTimeline({ short }).dur)
+      expect(descentTimeline({ mon: 'm', name: 'Arceus', short }).dur).toBe(
+        victoryTimeline({ mon: 'm', name: 'Giratina', short }).dur,
+      )
+    }
+    // The raid's Plate: the screen's words land when it touches Arceus, short or not.
+    const at = (short: boolean) =>
+      plateTimeline({ own: 'a', foe: 'b', side: 'foe', from: 'b', to: 'c', die: 'ice', short })
+        .cues({} as never)
+        .map(([t]) => t)
+    expect(at(false)).toContain(PLATE_CONTACT)
+    expect(at(true)).toContain(0.25)
+  })
+
+  it('its Pokémon wear light: never torn, gold and white copies, brighter on two frames; short, one copy', async () => {
+    const { lightBurstFrame, lightRestCss, LIGHT_TINT } = await import('@/fx/glitch')
+    const frames = [0.1, 0.3, 0.6, 0.9].map((p) => lightBurstFrame({ n: 3, p }))
+    for (const f of frames) expect(f.bands).toEqual([])
+    expect(frames.map((f) => f.tint)).toEqual([true, false, true, false])
+    expect(lightBurstFrame({ n: 3, p: 0.1 }, true)).toMatchObject({
+      bands: [],
+      tint: false,
+      ghosts: [[1, '#ffe9a3', 0.5]],
+    })
+    expect(burstCss(frames[0]!, 2, null, LIGHT_TINT)).toContain('brightness')
+    expect(lightRestCss(2)).not.toContain('hue-rotate')
+  })
+})

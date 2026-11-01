@@ -10,6 +10,10 @@ on the pixel engine (`src/fx/timelines/portal.ts`, `src/fx/glitch.ts`, hosted by
 `src/admin/sections/PortalModeBox.tsx`; migration `supabase/migrations/0057_hh_distortion_world.sql` (written by
 `scripts/patch-hh-distortion.ts`). Rules for the screens: docs/15 §27.
 
+Since 2026-11-01 the run can wear another look, the Hall of Origin's **Stairway of Plates** (docs/61 §4.5, docs/15 §49):
+`skin: 'plates'` on the mode, with the same rules and numbers; absent, this one. Its raid can also set the raid
+Pokémon's type bar by bar (`raid.barTypes`: Arceus's Plates).
+
 ## 1. Decisions
 
 | Question | Answer |
