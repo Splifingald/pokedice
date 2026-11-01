@@ -2,6 +2,7 @@
 -- Run the parts in order (1 first: it carries the schema changes). Together they are supabase/seed.sql.
 begin;
 insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, battle_background, rival_of, items, duo) values
+  ('0cc41a79-3741-55bb-9f30-613958d7a34b', 'Backpacker Blossom', '/trainers/classes/unova/backpacker-f.png', '[{"dex":613,"level":36},{"dex":528,"level":37}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('f860b7cb-0b5e-5201-b8be-72ddafc42889', 'Fisherman Eustace', '/trainers/classes/unova/fisherman.png', '[{"dex":536,"level":37},{"dex":618,"level":37}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('a9baac53-8fda-5d06-82aa-ac5086a5f610', 'Parasol Lady Tyra', '/trainers/classes/unova/parasol-lady.png', '[{"dex":586,"level":38},{"dex":581,"level":38}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('4dc0142b-95b0-570b-9b27-4a97c2765f7c', 'Team Plasma Grunt', '/trainers/classes/unova/plasma-grunt-m.png', '[{"dex":510,"level":38},{"dex":591,"level":38}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
@@ -250,11 +251,11 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('2d862857-b247-5fef-abc2-92e45643ccaf', 'Young Couple Zane & Jen', '/trainers/classes/kalos/young-couple.png', '[{"dex":241,"level":28},{"dex":128,"level":28}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, true),
   ('6b3cfae2-6706-55e1-b475-b3aa955b3e82', 'Young Couple Owen & Ola', '/trainers/classes/kalos/young-couple.png', '[{"dex":195,"level":49},{"dex":705,"level":49}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, true),
   ('a884ca34-1e91-5a8a-ae40-e413a5fb1725', 'Twins Kai & Lani', '/trainers/classes/kalos/twins.png', '[{"dex":731,"level":15},{"dex":761,"level":15}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, true),
-  ('b031043f-3161-5e5d-936b-ddbc13f31a5b', 'Young Couple Noa & Mele', '/trainers/classes/kalos/young-couple.png', '[{"dex":120,"level":25},{"dex":456,"level":25}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, true),
-  ('7cb37504-4a8e-5d15-8d0b-cea367cd5939', 'Twins Ana & Ula', '/trainers/classes/kalos/twins.png', '[{"dex":10101,"level":32},{"dex":10103,"level":32}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, true)
+  ('b031043f-3161-5e5d-936b-ddbc13f31a5b', 'Young Couple Noa & Mele', '/trainers/classes/kalos/young-couple.png', '[{"dex":120,"level":25},{"dex":456,"level":25}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, true)
 on conflict (id) do update set name = excluded.name, sprite_url = excluded.sprite_url, team = excluded.team, role = excluded.role, badge = excluded.badge, upgrade_level = excluded.upgrade_level, battle_background = excluded.battle_background, rival_of = excluded.rival_of, items = excluded.items, duo = excluded.duo;
 
 insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, battle_background, rival_of, items, duo) values
+  ('7cb37504-4a8e-5d15-8d0b-cea367cd5939', 'Twins Ana & Ula', '/trainers/classes/kalos/twins.png', '[{"dex":10101,"level":32},{"dex":10103,"level":32}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, true),
   ('d73fe745-3d19-5f49-a73d-800e6d507677', 'Twins Ella & Effie', '/trainers/classes/kalos/twins.png', '[{"dex":835,"level":17},{"dex":831,"level":17}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, true),
   ('5fd01ade-3d73-586e-acd2-2b283363db1f', 'Young Couple Rory & Tess', '/trainers/classes/kalos/young-couple.png', '[{"dex":857,"level":36},{"dex":860,"level":36}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, true),
   ('3a59c183-f154-54c7-ba05-053510c5a21a', 'Twins Bree & Bea', '/trainers/classes/kalos/twins.png', '[{"dex":872,"level":42},{"dex":361,"level":42}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, true),

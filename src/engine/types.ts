@@ -286,6 +286,19 @@ export interface BossDef {
    * caught nowhere else here. Only while Raid Battles are switched on for the player; otherwise a boss as before.
    */
   raid?: boolean
+  /**
+   * A Titan (docs/62 §7): fought in two phases, the second bigger and stronger after a Herba Mystica, never caught.
+   * Only while the Titans' switch is on for the player; otherwise the area has no boss.
+   */
+  titan?: TitanDef | null
+}
+
+/** A Titan's own (docs/62 §7); its numbers are the Titans' config. */
+export interface TitanDef {
+  /** The species fought instead by a player in Green's look (Violet's side): Iron Treads for Great Tusk. */
+  versionDex?: number | null
+  /** A second Titan fought beside it in the first phase (Tatsugiri with Dondozo), which jumps in for the second. */
+  partner?: { dex: number; level: number } | null
 }
 
 /** Levels relative to the team average, both ends included: { min: -15, max: -10 } = 15 to 10 levels below. */
@@ -1116,6 +1129,16 @@ export interface GameConfig {
   rivals: RivalsConfig
   /** Gift Pokémon (docs/61 §5.3): the switch (the server reads it), an Egg's hours and the gifts, the game's own. */
   giftMoments: GiftMomentsConfig
+  /** Hoenn's fixed weather (docs/62 §3): the switch (the server reads it) and each area's. */
+  hoennWeather: WeatherConfig
+  /** Galar's weather of the day (docs/62 §4): the switch (the server reads it), each area's odds and the pool shift. */
+  galarWeather: WeatherConfig
+  /** Kalos hordes (docs/62 §5). */
+  hordes: HordesConfig
+  /** Alola's island trials (docs/62 §6): the Totems instead of the captains' battles. */
+  trials: TrialsConfig
+  /** Paldea's Titans (docs/62 §7). */
+  titans: TitansConfig
   /** Day and night in Johto (docs/32): its switch. Migration 0061 inserts the same row. */
   dayNight: { access: EventAccess }
   /** Idle mode and the play styles (docs/36): its switch. Migration 0068 inserts the same row. */
@@ -1414,6 +1437,95 @@ export interface GiftMomentsConfig {
   /** Hours a gift Egg takes to hatch (the user's call, 2026-11-01: 6). */
   eggHours: number
   gifts: GiftMoment[]
+}
+
+/** The region flavours' weather (docs/62 §2): what it does is the raids' own rules. */
+export const WEATHER_KINDS = ['clear', 'overcast', 'rain', 'thunderstorm', 'sun', 'sand', 'snow', 'fog', 'ash'] as const
+export type Weather = (typeof WEATHER_KINDS)[number]
+
+/** An area's weather (docs/62 §3–4): one that never changes, two taking turns a round each, or the odds of the day's. */
+export interface AreaWeather {
+  fixed?: Weather | null
+  alternate?: Weather[] | null
+  /** Weights of each weather of the day (UTC), the same for everyone. */
+  daily?: Partial<Record<Weather, number>> | null
+}
+
+/** Hoenn's or Galar's weather (docs/62): the switch (the server reads it) and each area's weather, by area id. */
+export interface WeatherConfig {
+  access: EventAccess
+  areas: Record<string, AreaWeather>
+  /** Galar: × the weight of the wild Pokémon of the day's weather's types (no species added or taken away). */
+  poolTimes?: number
+}
+
+/** Kalos hordes (docs/62 §5): the switch (the server reads it) and the numbers. */
+export interface HordesConfig {
+  access: EventAccess
+  /** % of the wild cards that come as a horde. */
+  chance: number
+  /** Hordes at most per visit to an area (the round's cards). */
+  perArea: number
+  /** How many come. */
+  size: number
+  /** Levels below the one rolled (never under Lv 2). */
+  levelDrop: number
+  /** % of hordes with one of another species. */
+  mixedChance: number
+  /** Pool entries up to this weight (the rarest) never make a horde. */
+  minWeight: number
+  regions: RegionId[]
+}
+
+/** An island trial (docs/62 §6): the Totem fought instead of a captain's battle, or a trial of its own. */
+export interface TrialDef {
+  id: string
+  areaId: string
+  /** The gym battle this trial replaces: a captain's, or (`own`) a row there only for the trial. */
+  trainerId: string
+  /** The gym exists only as this trial (Vast Poni Canyon's): with the switch off, the area doesn't have it. */
+  own?: boolean
+  /** Who greets the player ('Ilima', 'Hapu'). */
+  captain: string
+  /** The place said in the greeting ('the Verdant Cavern'). */
+  place: string
+  totem: number
+  level: number
+  /** The allies it calls, in turn. */
+  allies: number[]
+  allyLevel: number
+}
+
+export interface TrialsConfig {
+  access: EventAccess
+  /** × the Totem's max HP. */
+  hpTimes: number
+  /** Extra dice of its type: its aura. */
+  extraDice: number
+  /** Allies it calls in a fight, at most. */
+  calls: number
+  trials: TrialDef[]
+}
+
+/** The Titans (docs/62 §7): the switch (the server reads it), the second phase's numbers and the reward. */
+export interface TitansConfig {
+  access: EventAccess
+  hpTimes: number
+  extraDice: number
+  /** Dondozo with Tatsugiri in its mouth (Commander): its own numbers. */
+  commanderHpTimes: number
+  commanderExtraDice: number
+  gold: number
+  items: { key: string; qty: number }[]
+}
+
+/** The region flavours, each with its switch and its rules (docs/62). */
+export const FLAVOUR_KEYS = ['hoennWeather', 'galarWeather', 'hordes', 'trials', 'titans'] as const
+export type FlavourKey = (typeof FLAVOUR_KEYS)[number]
+
+export interface FlavoursSave {
+  /** The flavours whose rules have been shown once. */
+  seen?: FlavourKey[]
 }
 
 /** The set moments a save has met (docs/61 §5): each one's id, once. */
@@ -1852,6 +1964,8 @@ export interface AreaProgress {
   centerMet?: boolean
   /** Extreme mode (docs/47): the team was K.O. here; the round starts over at a Center that only swaps. */
   wiped?: boolean
+  /** Kalos hordes met this round (docs/62 §5): the round and how many. */
+  hordes?: { round: number; n: number }
 }
 
 export interface SaveData {
@@ -1986,6 +2100,8 @@ export interface SaveData {
   safari?: TrickSave
   /** The set moments met: rivals' meetings and gifts (docs/61 §5). */
   moments?: MomentsSave
+  /** The region flavours (docs/62): the rules seen of each. */
+  flavours?: FlavoursSave
   /** The Underground (docs/34): the running event's kits, pickaxe, orbs and wall. Gone when the event ends. */
   underground?: UndergroundSave
   /** Arceus's plates found in the Underground, by type: kept for good. Each lets the player's Arceus take its type. */

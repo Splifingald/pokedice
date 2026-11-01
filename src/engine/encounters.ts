@@ -15,6 +15,9 @@ import { dealTrainerItems } from './trainerItems'
 import { foeTalentChance, rollTalent, talentsOn } from './talents'
 import { pickTrickGhost, trickDealable } from './trickOrTreat'
 import { isWorldMythical, worldOfArea } from './worldList'
+import { weatherPoolTimes } from './weather'
+import { titansOn } from './titans'
+import { trialOf, trialTeam } from './trials'
 import type {
   Area,
   AreaProgress,
@@ -23,6 +26,7 @@ import type {
   LootDisguise,
   RoadblockKind,
   DeckCard,
+  SaveData,
   EncounterKind,
   GameData,
   LevelOffsetRange,
@@ -32,6 +36,7 @@ import type {
   TrainerMon,
   TrainerRole,
   TrickTier,
+  Weather,
   WildPoolEntry,
 } from './types'
 
@@ -48,6 +53,8 @@ export type Encounter =
       talent?: boolean
       partner?: WildPartner
       disguisedAs?: string
+      /** A Kalos horde (docs/62 §5): the others, fought two at a time with this one. */
+      horde?: WildPartner[]
     }
   /**
    * `double`: fought 2 v 2, two of the team out at once (docs/33). `prize`: a set opening's trainer (docs/46) pays these
@@ -83,11 +90,14 @@ export type Encounter =
       rebattle?: { regionId: string; tier: number }
       /** Fought 2 v 2 (Tate & Liza, docs/33). */
       double?: boolean
+      /** An island trial (docs/62 §6): its Totem and allies are `team`, the captain greets. */
+      trial?: string
     }
   /** `reason`: 'round' opens a new round; 'fainted' follows a K.O. in an easy area. */
   | { kind: 'center'; forced: boolean; reason?: 'fainted' | 'round' | 'wipe' }
   /** `returning`: beaten before, fled the catch, back for another try. */
-  | { kind: 'boss'; dex: number; level: number; returning?: boolean; shiny?: boolean; talent?: boolean }
+  /** `titan`: a Titan (docs/62 §7), fought in two phases and never caught. */
+  | { kind: 'boss'; dex: number; level: number; returning?: boolean; shiny?: boolean; talent?: boolean; titan?: boolean }
   /** Something on the ground: `qty` of an item, or Pokédollars (itemKey 'money', qty = ₽). */
   /** `pickup`: found after a win by this Pokémon's Pickup talent (docs/51), not a card of the deck. */
   | { kind: 'item'; entryId: string; itemKey: string; qty: number; pickup?: { uid: string; dex: number } }
@@ -148,6 +158,8 @@ export interface EncounterContext {
    * (`areaVersusHere`). Without one, no deck holds the card and a card already dealt is set aside.
    */
   versusFoe?: AreaFoe | null
+  /** The area's weather now (docs/62 §2): in Galar, the day's brings its types out more. */
+  weather?: Weather | null
 }
 
 /** A real player's team (docs/54), not a trainer of the content. */
@@ -169,18 +181,21 @@ export function dueGym(area: Area, progress: AreaProgress, data: GameData, side?
   return null
 }
 
-function gymEncounter(area: Area, t: Trainer, data: GameData, side?: PlayerSide | null): Encounter {
+function gymEncounter(area: Area, t: Trainer, data: GameData, side?: PlayerSide | null, save?: SaveData | null): Encounter {
   const gyms = gymsFor(area, data, side)
+  // An island trial (docs/62 §6): the Totem and its allies instead of the captain's team.
+  const trial = trialOf(data, t.id, save)
   return {
     kind: 'gym',
     trainerId: t.id,
     name: t.name,
     spriteUrl: t.spriteUrl,
-    team: dealTrainerItems(t.team, t.items, data),
+    team: trial ? trialTeam(trial, data) : dealTrainerItems(t.team, t.items, data),
     role: t.role,
     badge: t.badge,
     index: gyms.indexOf(t.id) + 1,
     total: gyms.length,
+    ...(trial && { trial: trial.id }),
   }
 }
 
@@ -202,7 +217,9 @@ export const isRaidBoss = (data: GameData, b: BossDef): boolean => !!b.raid && p
 export const roadblockOf = (area: Area | null | undefined, dex: number): RoadblockKind | null =>
   area?.legendaryBoss?.find((b) => b.dex === dex)?.roadblock ?? null
 
-export const fightBosses = (area: Area, data: GameData): BossDef[] => (area.legendaryBoss ?? []).filter((b) => !isRaidBoss(data, b))
+export const fightBosses = (area: Area, data: GameData): BossDef[] =>
+  // A Titan (docs/62 §7) is a boss only while its switch is on.
+  (area.legendaryBoss ?? []).filter((b) => !isRaidBoss(data, b) && (!b.titan || titansOn(data)))
 
 /** An area's progression raids, in order. */
 export const raidBosses = (area: Area, data: GameData): BossDef[] => (area.legendaryBoss ?? []).filter((b) => isRaidBoss(data, b))
@@ -224,7 +241,7 @@ export function dueBoss(area: Area, progress: AreaProgress, teamAvgLevel: number
  * One roll of the wild shiny odds — the player's (the Shiny Charm, `odds`) or game_config's `shinyChance` — × a Shiny
  * Parade's boost for wild Pokémon.
  */
-const rollShiny = (data: GameData, rng: Rng, boost = 1, odds?: number): boolean => {
+export const rollShiny = (data: GameData, rng: Rng, boost = 1, odds?: number): boolean => {
   const chance = Math.min(1, (odds ?? data.config.shinyChance ?? 0) * Math.max(1, boost))
   return chance > 0 && rng.next() < chance
 }
@@ -251,7 +268,12 @@ const legendShiny = (b: BossDef, area: Area, data: GameData, rng?: Rng, odds?: n
  * a kind and the Pokédex says it.
  */
 export const bossCaught = (area: Area, progress: AreaProgress, pokedex: readonly number[], dex: number, data: GameData): boolean =>
-  worldOfArea(data, area) ? !!progress.bossesCaught?.includes(dex) : pokedex.includes(dex)
+  // A Titan (docs/62 §7) is beaten, never caught: done once beaten.
+  area.legendaryBoss?.some((b) => b.dex === dex && b.titan)
+    ? progress.bossesDefeated.includes(dex)
+    : worldOfArea(data, area)
+      ? !!progress.bossesCaught?.includes(dex)
+      : pokedex.includes(dex)
 
 /**
  * A legendary beaten earlier that fled the catch. It keeps coming back — one card per encounter deck — until caught. A
@@ -333,15 +355,16 @@ export function rollRoamer(ctx: EncounterContext, rng: Rng): Encounter | null {
  * themselves. While it's ×1, or every one is caught (or none is), the pool's own weights.
  */
 export function wildOdds(
-  ctx: Pick<EncounterContext, 'area' | 'progress' | 'data' | 'pokedex' | 'hour'>,
+  ctx: Pick<EncounterContext, 'area' | 'progress' | 'data' | 'pokedex' | 'hour' | 'weather'>,
 ): { entry: WildPoolEntry; weight: number; isNew: boolean }[] {
   const caught = new Set(ctx.pokedex)
   const pool = wildPoolAt(ctx.area, areaDayTime(ctx.data, ctx.area, ctx.hour))
-  const odds = pool.map((entry) => ({
-    entry,
-    weight: ctx.data.species[entry.dex] ? Math.max(0, entry.weight) : 0,
-    isNew: !caught.has(entry.dex),
-  }))
+  const odds = pool.map((entry) => {
+    const sp = ctx.data.species[entry.dex]
+    // Galar's weather of the day (docs/62 §4): its types come out more; no species is added or taken away.
+    const times = sp ? weatherPoolTimes(ctx.area, ctx.data, ctx.weather, sp.type2 ? [sp.type1, sp.type2] : [sp.type1]) : 1
+    return { entry, weight: sp ? Math.max(0, entry.weight) * times : 0, isNew: !caught.has(entry.dex) }
+  })
   const total = odds.reduce((sum, o) => sum + o.weight, 0)
   const fresh = odds.reduce((sum, o) => sum + (o.isNew ? o.weight : 0), 0)
   if (!(fresh > 0 && fresh < total)) return odds
@@ -609,12 +632,15 @@ export function challengeEncounter(
   side?: PlayerSide | null,
   rng?: Rng,
   shinyOdds?: number,
+  save?: SaveData | null,
 ): Encounter | null {
   const gym = dueGym(area, progress, data, side)
   // Hidden talents (docs/51): without a draw to make, a gym's ace and a legendary boss still carry theirs.
   const talents = (enc: Encounter) => dealTalents(enc, data, rng ?? NO_DRAW)
-  if (gym) return talents(gymEncounter(area, gym, data, side))
+  if (gym) return talents(gymEncounter(area, gym, data, side, save))
   const boss = dueBoss(area, progress, teamAvgLevel, data)
+  // A Titan (docs/62 §7) is never shiny: it is fought, not caught.
+  if (boss?.titan) return { kind: 'boss', dex: boss.dex, level: boss.level, titan: true }
   return boss
     ? talents({ kind: 'boss', dex: boss.dex, level: boss.level, ...(legendShiny(boss, area, data, rng, shinyOdds) && { shiny: true }) })
     : null
@@ -822,6 +848,7 @@ function forcedEncounter(ctx: EncounterContext, kind: ForceKind, rng: Rng): Enco
       return playerEncounter(ctx)
     case 'boss': {
       const b = fightBosses(ctx.area, ctx.data).find((x) => !ctx.progress.bossesDefeated.includes(x.dex))
+      if (b?.titan) return { kind: 'boss', dex: b.dex, level: b.level, titan: true }
       return b ? { kind: 'boss', dex: b.dex, level: b.level, ...(legendShiny(b, ctx.area, ctx.data, rng, ctx.shinyChance) && { shiny: true }) } : returningLegend(ctx, rng)
     }
     default:

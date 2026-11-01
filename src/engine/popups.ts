@@ -19,6 +19,7 @@ import { donationDue } from './donation'
 import { dayNightRulesDue } from './dayNight'
 import { eventUnlockDue } from './events'
 import { extremeRulesDue, isExtreme } from './extreme'
+import { weatherRulesDue } from './flavours'
 import { generalRulesDue } from './general'
 import { inviteRulesDue } from './invites'
 import { liveList, livePopupDue, livesFor, type LiveSet } from './liveEvents'
@@ -115,6 +116,8 @@ const QUEUE = {
   inviteReward: { due: (_s, _d, c) => !!c.inviteReward, away: under('/friends') },
   portal: { due: (s, d) => !!portalRulesDue(s, d), away: (p) => p === '/area' },
   dayNight: { due: (s, d) => dayNightRulesDue(s, d) },
+  /** The weather (docs/62 §2): the first time in an area with weather, Hoenn's and Galar's each. */
+  weather: { due: (s, d, c) => weatherRulesDue(s, d, c.now ?? Date.now()) },
   /** Mega Evolution, Gigantamax and Z-Moves, each once its badge is won. */
   powers: { due: (s, d) => !!powerRulesDue(s, d) },
   /** Hidden talents (docs/51), as the switch opens them. */

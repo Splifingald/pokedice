@@ -63,6 +63,7 @@ import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { TypeMatchups } from '@/components/TypeMatchups'
 import { BattleDayTime } from '@/components/DayNight'
+import { BattleWeather, WeatherLayer } from '@/components/Weather'
 import { pictureOf, versusPicture } from '@/fx/areaArt'
 import { ballOfItem } from '@/fx/scenes'
 import { loadPicture, loadSprite, pictureKey, spriteKey } from '@/fx/sprites'
@@ -381,7 +382,24 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     (st.kind === 'wild' || st.kind === 'boss') &&
     !!save &&
     !!catchTarget(save, b.baseDex ?? b.dex, b.level, st.kind, data, b.shiny)
-  const catchable = dbl ? (uid: string) => dbl.foes.some((f) => f.uid === uid && canCatch(f)) : canCatch(st.enemy)
+  // A region flavour's fight (docs/62): a horde's one throw, a Totem's and a Titan's none.
+  const flavour =
+    enc?.kind === 'wild' && enc.horde?.length ? 'horde' : enc?.kind === 'gym' && enc.trial ? 'trial' : enc?.kind === 'boss' && enc.titan ? 'titan' : null
+  const hordeCatch = (uid: string) => {
+    // The shiny one waits worn out at once; else only the last one, as the fight is won.
+    const f = dbl?.foes.find((x) => x.uid === uid)
+    if (!f || !canCatch(f)) return false
+    if (dbl!.foes.some((x) => x.shiny)) return f.shiny && dbl!.foes.find((x) => x.shiny) === f
+    return st.phase === 'won' && dbl!.kos[dbl!.kos.length - 1]?.uid === uid
+  }
+  const catchable =
+    flavour === 'titan'
+      ? false
+      : flavour === 'horde'
+        ? hordeCatch
+        : dbl
+          ? (uid: string) => dbl.foes.some((f) => f.uid === uid && canCatch(f))
+          : canCatch(st.enemy)
   const { fx, ready, sceneContact, sceneDone } = useBattleAnimator(
     battle,
     quick,
@@ -391,6 +409,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       // A roadblock boss (docs/61 §2) is spoken of as the wild Pokémon it is, not a legendary.
       roadblock: st.kind === 'boss' && !!roadblockOf(data.areas.find((a) => a.id === run.areaId), st.enemy.baseDex ?? st.enemy.dex),
       rival: enc?.kind === 'trainer' && !!enc.moment,
+      flavour,
       catchable,
       itemName: (k) => data.items[k]?.name ?? k,
       speciesName: (dex) => data.species[dex]?.name ?? `#${dex}`,
@@ -990,7 +1009,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       ? dbl
         ? { count: dbl.foes.length, index: dbl.foes.filter((f) => fx.fainted[f.uid]).length }
         : { count: enc.team.length, index: run.trainer.index }
-      : null
+      : // A horde's five and a Titan's two phases (docs/62) count down the same way.
+        (flavour === 'horde' || flavour === 'titan') && dbl
+        ? { count: dbl.foes.length, index: dbl.foes.filter((f) => fx.fainted[f.uid] || fx.wornOut[f.uid]).length }
+        : null
 
   const pairNames = (row: readonly Battler[]) => row.map((b) => b.name).join(' & ')
   const heading = dbl
@@ -1215,6 +1237,9 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         label={heading}
       >
         {dayTime && <BattleDayTime time={dayTime} />}
+        {/* The weather (docs/62 §2): falling over the stage, and its chip. */}
+        {st.weather && <WeatherLayer weather={st.weather} />}
+        {st.weather && <BattleWeather weather={st.weather} />}
         {dbl && foeOut && ownOut && !catching && (
           <DoublePlates
             foes={foeRow}

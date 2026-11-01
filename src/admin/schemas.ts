@@ -201,6 +201,14 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
           // A roadblock (docs/61 §2): a Pokémon across the road, its own words instead of a legendary's.
           roadblock: z.enum(ROADBLOCK_KINDS).nullable().optional(),
           raid: z.boolean().optional(),
+          // A Titan (docs/62 §7): two phases, never caught; its version's species and its partner.
+          titan: z
+            .object({
+              versionDex: int(1).nullable().optional(),
+              partner: z.object({ dex: int(1), level: int(1, 100) }).nullable().optional(),
+            })
+            .nullable()
+            .optional(),
         }),
       )
       .nullable(),

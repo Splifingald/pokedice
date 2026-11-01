@@ -39,7 +39,7 @@ import { UnownLetterCard } from '@/components/UnownDex'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { ItemSprite } from '@/components/ItemSprite'
 import { dexNo, milestoneText, money, typeName } from '@/lib/format'
-import { t } from '@/i18n'
+import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useMotion } from '@/lib/motion'
 import { usePace } from '@/lib/pace'
@@ -587,6 +587,24 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
                 {item && <ItemSprite item={item} size={32} />}
                 <span className="text-xl leading-tight">
                   {t('ui.nightmare.gotGift', { item: `${item?.name ?? e.key}${e.qty > 1 ? ` ×${e.qty}` : ''}` })}
+                </span>
+              </div>
+            ),
+          })
+          return
+        }
+        case 'titan_reward': {
+          // A Titan beaten (docs/62 §7): what it left, a Herba Mystica's worth.
+          const what = e.items.map((i) => `${data.items[i.key]?.name ?? i.key}${i.qty > 1 ? ` ×${i.qty}` : ''}`)
+          const first = e.items[0] ? data.items[e.items[0].key] : undefined
+          extras.push({
+            key: k,
+            sound: 'gold',
+            node: (
+              <div className="flex items-center justify-center gap-2 bg-gold-pale p-2 text-center shadow-ring" data-titan-reward>
+                {first && <ItemSprite item={first} size={32} />}
+                <span className="text-xl leading-tight">
+                  {t('ui.titan.left', { name: data.species[e.dex]?.name ?? '', items: joinList(what) })}
                 </span>
               </div>
             ),

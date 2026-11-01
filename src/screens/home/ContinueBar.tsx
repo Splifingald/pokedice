@@ -163,8 +163,13 @@ export function useContinue(area: Area) {
     }
     if (gym || boss) {
       ensureRun(area)
-      challenge()
-      if (useGame.getState().run.phase !== 'idle') navigate('/area')
+      // A trial's or a Titan's server answer may be on its way (docs/62): the area opens once it's there.
+      const opened = () => {
+        if (useGame.getState().run.phase !== 'idle') navigate('/area')
+      }
+      const asked = challenge()
+      if (asked) void asked.then(opened)
+      else opened()
       return
     }
     explore()

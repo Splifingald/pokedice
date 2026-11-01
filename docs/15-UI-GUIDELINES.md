@@ -2083,3 +2083,31 @@ docs/61. Their switches are `disguises`, `safari`, `rivals` and `giftMoments` (�
   stays hidden until it hatches (a toast then).
 - **A rival needs no card**: the fight opens on the battle screen as every trainer's does, the rival's line its first
   message.
+
+## 44. The region flavours: weather, hordes, island trials, Titans
+
+docs/62. Their switches are `hoennWeather`, `galarWeather`, `hordes`, `trials` and `titans` (§20; the same server check
+as §43, `side_quest_open`). Every state is on `/kitchen-sink` (`FlavourBits`); `e2e/region-flavours.spec.ts` plays each
+one in the game and keeps its picture in `docs/62-region-flavours/`.
+
+- **The weather is a chip, never a hidden number**: its icon on a tile by the area's name in the top bar (a tap is its
+  rules, the INFO), its small twin at the stage's top right (Johto's sun or moon has that corner; no region has both),
+  and its fall over the stage (rain streaks, flakes, blowing sand, ash; the sun's glare, fog's band, a dimming under
+  clouds): `components/Weather.tsx`. Its × in the damage recap is its own factor (`WeatherBoostChip`: the weather's icon
+  and ×1.25), after the type's, as a small world's booster is (§21). A sandstorm's or snow's wear is a line and a −N pop,
+  as a burn's is. At Motion level 0 nothing falls: a still frame stays, and the chip says the rest.
+- **The rules come once per region** (Hoenn's, Galar's), between fights, in the one-time pop-ups' queue (`weather`,
+  after `dayNight`), Later / Let's go!; Galar's top-bar line says the day's weather and when it changes ("Today:
+  Rain · changes in 5 h").
+- **A horde, a trial and a Titan each have a card of their own** (`screens/area/FlavourCards.tsx`), with INFO top right
+  and the rules opening by themselves the first time the card shows (Later / Let's go!). A horde: HORDE over the five of
+  them (a shiny one starred), its two lines, then the one in front as any wild card; in the fight, five pips under the
+  foes' plates count down. A trial: ISLAND TRIAL, the captain walking in with their line in the dialogue box, the Totem
+  on a night tile with its aura, its numbers and the Z-Crystal, its allies as a trainer's team is shown. A Titan:
+  TITAN, its line, the Titan (and Tatsugiri) on a night tile with its aura, its two phases, what it leaves, "beaten, not
+  caught".
+- **A Totem and a Titan's second phase stand bigger**, their feet where they were (×1.3, ×1.55), with a warm glow that
+  pulses slowly (still for reduced motion): `foe-aura-totem`, `foe-aura-titan` (`styles/flavours.css`). Its calls and its
+  return are messages of their own ("Gumshoos called for help! Yungoos appeared!", "Klawf ate a Herba Mystica… It's
+  back, and huge!"); a trial's allies flee when the Totem falls.
+- **A Titan alone is one on one**: its card asks for one Pokémon, not two; Dondozo with Tatsugiri asks for two.

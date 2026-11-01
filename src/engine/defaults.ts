@@ -1,3 +1,4 @@
+import { GALAR_WEATHER, HOENN_WEATHER, TRIALS } from './flavoursContent'
 import { GIFT_MOMENTS, RIVAL_MEETINGS } from './momentsContent'
 import type { GameConfig } from './types'
 
@@ -567,6 +568,24 @@ export const DEFAULT_CONFIG: GameConfig = {
   // scripts/patch-side-quests.ts); the database holds their switches, Off. A gift Egg hatches in 6 hours.
   rivals: { access: 'off', meetings: RIVAL_MEETINGS },
   giftMoments: { access: 'off', eggHours: 6, gifts: GIFT_MOMENTS },
+  // The region flavours (docs/62), each Off: the weather's areas and the trials are the game's own (flavoursContent.ts).
+  // Galar's weather doubles the weight of its types' wild Pokémon. A horde is 4 % of Kalos's wild cards, once a visit at
+  // most: five of a species 3 levels down, one in ten mixed. A Totem has ×2 HP, a die more and calls two allies; a
+  // Titan's second phase ×2 HP and a die more (Dondozo with Tatsugiri: ×2 and two dice), and it leaves ₽1,000 and 3 Rare
+  // Candies.
+  hoennWeather: { access: 'off', areas: HOENN_WEATHER },
+  galarWeather: { access: 'off', areas: GALAR_WEATHER, poolTimes: 2 },
+  hordes: { access: 'off', chance: 4, perArea: 1, size: 5, levelDrop: 3, mixedChance: 10, minWeight: 2, regions: ['kalos'] },
+  trials: { access: 'off', hpTimes: 2, extraDice: 1, calls: 2, trials: TRIALS },
+  titans: {
+    access: 'off',
+    hpTimes: 2,
+    extraDice: 1,
+    commanderHpTimes: 2,
+    commanderExtraDice: 2,
+    gold: 1000,
+    items: [{ key: 'rare-candy', qty: 3 }],
+  },
   // The Safari (docs/61 §4): Trick or Treat's gauge with Bait and Safari Balls, its numbers starting from Trick's (the
   // same measured best play: about 7 common Pokémon in 10, 4 rare ones in 7, a very rare one in 3). The first round in
   // each Safari area is free, then ₽100 a round (the user's call, 2026-11-01). `areas`: each Safari's tier overrides;

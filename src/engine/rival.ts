@@ -1,5 +1,6 @@
 // The rival: the character the player didn't pick. An area can list one version of a trainer per starter
 // (Trainer.rivalOf); a player only ever meets the version for their own starter, under the rival's name and sprite.
+import { trialOnlyGym, trialsOn } from './trials'
 import type { Area, GameData, SaveData, Trainer } from './types'
 
 export type Character = 'red' | 'green'
@@ -23,10 +24,12 @@ export const rivalCharacter = (side?: PlayerSide | null): Character => (side?.ch
  * dropped (no match — an unusual starter — keeps the first version).
  */
 export function gymsFor(area: Area, data: GameData, side?: PlayerSide | null): string[] {
-  const rivals = area.gyms.filter((id) => data.trainers[id]?.rivalOf != null)
-  if (!rivals.length) return area.gyms
+  // A gym row there only as an island trial (docs/62 §6) is left out while the trials are off.
+  const gyms = trialsOn(data) ? area.gyms : area.gyms.filter((id) => !trialOnlyGym(data, id))
+  const rivals = gyms.filter((id) => data.trainers[id]?.rivalOf != null)
+  if (!rivals.length) return gyms
   const mine = rivals.find((id) => data.trainers[id]!.rivalOf === side?.starterDex) ?? rivals[0]
-  return area.gyms.filter((id) => !rivals.includes(id) || id === mine)
+  return gyms.filter((id) => !rivals.includes(id) || id === mine)
 }
 
 /**

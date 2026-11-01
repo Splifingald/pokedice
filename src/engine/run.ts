@@ -449,6 +449,8 @@ export type RunEvent =
    * is shown on its own step (FindView) as the next card, and PICK IT UP takes it (`pickUpItem`).
    */
   | { kind: 'pickup'; uid: string; dex: number; entryId: string; key: string; qty: number }
+  /** A Titan beaten (docs/62 §7): what it left, its ₽ in the `gold` events' total. */
+  | { kind: 'titan_reward'; dex: number; gold: number; items: { key: string; qty: number }[] }
 
 export interface VictoryInput {
   areaId: string

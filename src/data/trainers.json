@@ -1,5 +1,20 @@
 [
  {
+  "id": "7278511c-319e-5fc1-a053-0be766cb70fd",
+  "name": "Totem Kommo-o",
+  "spriteUrl": "/trainers/classes/alola/hapu.png",
+  "team": [
+   {
+    "dex": 784,
+    "level": 45
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
   "id": "bb51d07e-b961-557b-935c-11d660bc5a26",
   "name": "Rival Blue",
   "spriteUrl": "/trainers/classes/blue-1.png",

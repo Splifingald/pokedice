@@ -29,6 +29,7 @@ import { canSkipCurrent, declineChallenge, engage, skipEncounter } from '@/store
 import { cx } from '@/theme/util'
 import { TalentGem, talentName } from '@/components/Talent'
 import { PlayerFoeCard } from '@/components/AreaVersus'
+import { HordeBanner, TitanCard, TrialCard } from './FlavourCards'
 
 function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> }) {
   const { t } = useT()
@@ -364,11 +365,14 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
   const [lead, setLead] = useState<string | null>(null)
   // A double battle sends two out (docs/33).
   const [leads, setLeads] = useState<string[]>([])
-  const double = isDoubleEncounter(enc)
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
   // A roadblock boss (docs/61 §2) is a Pokémon across the road, not a legendary: its own words.
   const runArea = useGame((s) => s.data.areas.find((a) => a.id === s.run.areaId))
+  // A Titan alone is one on one (docs/62 §7): one to send out; Dondozo with Tatsugiri asks for two.
+  const lonelyTitan =
+    enc.kind === 'boss' && !!enc.titan && !runArea?.legendaryBoss?.find((b) => b.dex === enc.dex && b.titan)?.titan?.partner
+  const double = isDoubleEncounter(enc) && !lonelyTitan
   const roadblock = enc.kind === 'boss' ? roadblockOf(runArea, enc.dex) : null
   const titleId = useId()
   const skippable = canSkipCurrent()
@@ -403,7 +407,9 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
         {/* Gym and legendary cards carry their own banner, so their title is for screen readers only. */}
         <h2 id={titleId} className={dark ? 'sr-only' : 'border-b-[3px] border-edge px-3 py-2 text-center text-2xl leading-tight sm:text-3xl'}>
           {t(
-            enc.kind === 'wild' && enc.partner
+            enc.kind === 'wild' && enc.horde?.length
+              ? 'ui.horde.title'
+              : enc.kind === 'wild' && enc.partner
               ? 'ui.enc.titleWildPair'
               : isPlayerFoe(enc)
                 ? 'ui.areaVersus.title'
@@ -413,10 +419,13 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
           )}
         </h2>
         <div className="pixel-scroll flex flex-col gap-3 overflow-y-auto p-3 sm:p-4">
-          {enc.kind === 'gym' && <GymCard enc={enc} />}
+          {enc.kind === 'gym' && (enc.trial ? <TrialCard enc={enc} /> : <GymCard enc={enc} />)}
+          {/* A Kalos horde (docs/62 §5): its banner, then the one in front. */}
+          {enc.kind === 'wild' && enc.horde?.length && <HordeBanner enc={enc} />}
           {enc.kind === 'wild' && <WildCard enc={enc} />}
           {enc.kind === 'wild' && enc.partner && <WildCard enc={{ kind: 'wild', ...enc.partner }} />}
-          {enc.kind === 'boss' && (
+          {enc.kind === 'boss' && enc.titan && <TitanCard enc={enc} />}
+          {enc.kind === 'boss' && !enc.titan && (
             <>
               <div className="text-center text-2xl leading-tight text-gold">
                 {enc.returning

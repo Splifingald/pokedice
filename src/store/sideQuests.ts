@@ -6,7 +6,17 @@
 import { getSupabase } from '@/lib/supabase'
 import { useGame } from './game'
 
-export type SideQuestKey = 'disguises' | 'safari' | 'rivals' | 'giftMoments'
+export type SideQuestKey =
+  | 'disguises'
+  | 'safari'
+  | 'rivals'
+  | 'giftMoments'
+  // The region flavours (docs/62, migrations 0114–0117).
+  | 'hoennWeather'
+  | 'galarWeather'
+  | 'hordes'
+  | 'trials'
+  | 'titans'
 
 const KEEP_MS = 5 * 60 * 1000
 const cache = new Map<SideQuestKey, { ok: boolean; at: number; user: string | null }>()
@@ -37,6 +47,15 @@ export async function sideQuestAllowed(key: SideQuestKey, on: boolean): Promise<
   } catch {
     return false
   }
+}
+
+/** The answer as known now without asking: the switch itself for a guest, the kept answer, or null (not asked yet). */
+export function sideQuestCached(key: SideQuestKey, on: boolean): boolean | null {
+  if (!on) return false
+  const { auth } = useGame.getState()
+  if (auth.status !== 'signed_in') return true
+  const hit = cache.get(key)
+  return hit && hit.user === (auth.email ?? null) && Date.now() - hit.at < KEEP_MS ? hit.ok : null
 }
 
 /**

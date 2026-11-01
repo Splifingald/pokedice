@@ -12,6 +12,7 @@ import { PlayerMenu } from './PlayerMenu'
 import { cx } from '@/theme/util'
 import { useCountUp, useGoldBump } from './GoldPill'
 import { DayNightButton } from './DayNight'
+import { WeatherButton } from './Weather'
 import { PixelIcon, type IconName } from './icons'
 import { CashChip } from '@/screens/events/live'
 import { useSocial } from '@/lib/social'
@@ -203,6 +204,8 @@ function AreaTitle() {
           <span className="sr-only">{t('ui.home.roundOf', { n: round, total: need })}</span>
         </span>
       ) : null}
+      {/* The weather (docs/62 §2): its chip, a tap for the rules. */}
+      <WeatherButton areaId={area.id} />
     </p>
   )
 }

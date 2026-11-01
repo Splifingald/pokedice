@@ -106,6 +106,15 @@ import {
   fitWildPair,
   isDoubleEncounter,
   type FoeSeed,
+  type CreateBattleOptions,
+  asHorde,
+  hordesOn,
+  hordeThrowAt,
+  noteHorde,
+  titanFight,
+  titanReward,
+  trialById,
+  trialFoes,
   type DoubleKo,
   arriveAtNightmare,
   inNightmare,
@@ -166,7 +175,8 @@ import { currentLive } from './live'
 import { useRebattleMedal } from './rebattle'
 import { serverNow } from './serverTime'
 import { trickAllowed } from './trick'
-import { sideQuestAllowed, sideQuestKnown } from './sideQuests'
+import { sideQuestAllowed, sideQuestCached, sideQuestKnown } from './sideQuests'
+import { weatherHere } from './flavours'
 import { t } from '@/i18n'
 
 // An encounter picked up from the last visit (store/resume.ts) rolls on from where both streams stood, so a reload
@@ -313,6 +323,8 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
     hour: localHour(),
     // Real-player battles (docs/54): the team the server has for this area, if the save meets them here.
     versusFoe: areaVersusHere(save, area, data) ? areaFoeFor(area.id) : null,
+    // The weather (docs/62 §4): Galar's of the day brings its types out more.
+    weather: weatherHere(save, data, area),
   }
 }
 
@@ -547,13 +559,17 @@ export function rollNext() {
   if (!ctx) return
   const area = ctx.area
   const roll = nextEncounter(ctx, runRng)
+  // A Kalos horde (docs/62 §5), once the server allows it: rolled before a pair, which it is a double of its own.
+  const dealt = hordesOn(ctx.data) && sideQuestKnown('hordes', true) ? asHorde(roll.encounter, ctx, save, runRng) : roll.encounter
   // A wild pair or a duo trainer is fought 2 v 2 (docs/33): decided now, so the preview says so.
-  const encounter = asDouble(roll.encounter, ctx, save, runRng)
+  const encounter = asDouble(dealt, ctx, save, runRng)
   // The decks live in the save, so reloading the page can't reshuffle them.
   // Always recorded: besides the decks, the area notes whether this was a Center (never two in a row).
   const before = useGame.getState().save!
   const recorded = recordDraws(before, area.id, roll)
-  if (recorded !== before) commitSave(recorded)
+  // …and a horde met this round counts towards its limit.
+  const noted = encounter.kind === 'wild' && encounter.horde ? noteHorde(recorded, area.id) : recorded
+  if (noted !== before) commitSave(noted)
   setRun({
     phase: 'preview',
     encounter,
@@ -614,7 +630,7 @@ export function notYet() {
 }
 
 /** CHALLENGE: bring on the gym battle (or legendary) waiting at the full gauge — only when the player chooses to. */
-export function challenge() {
+export function challenge(): void | Promise<void> {
   const { save, data, run } = useGame.getState()
   if (!save || !run.areaId || run.phase !== 'idle') return
   // A portal run has no challenge: its cards come one after the other (docs/28); nor has the nightmare (docs/30), nor
@@ -631,13 +647,30 @@ export function challenge() {
         playerSideOf(save),
         runRng,
         wildShinyChance(save, data),
+        save,
       )
     : null
   // Tate & Liza fight 2 v 2 where double battles are on (docs/33).
   const ctx = found && run.areaId ? encounterContext(save, run.areaId, null) : null
   const encounter = found && ctx ? asDouble(found, ctx, save, runRng) : found
-  if (encounter) setRun({ phase: 'preview', encounter, firstInArea: false, skipsUsed: 0 })
-  if (encounter && directFight(encounter)) beginFight()
+  // An island trial or a Titan (docs/62): only once the server allows it. A trial it doesn't is the captain's battle,
+  // a Titan it doesn't waits. Known already (a guest's, an answer kept), it's settled now; else once the server answers.
+  const key = encounter?.kind === 'gym' && encounter.trial ? 'trials' : encounter?.kind === 'boss' && encounter.titan ? 'titans' : null
+  const present = (ok: boolean) => {
+    // The run may have moved on while the server answered.
+    if (useGame.getState().run.phase !== 'idle') return
+    let shown = encounter
+    if (!ok && shown?.kind === 'gym') {
+      const t = data.trainers[shown.trainerId]
+      const { trial: _trial, ...plain } = shown
+      shown = t ? { ...plain, team: t.team } : null
+    } else if (!ok) shown = null
+    if (shown) setRun({ phase: 'preview', encounter: shown, firstInArea: false, skipsUsed: 0 })
+    if (shown && directFight(shown)) beginFight()
+  }
+  const known = key ? sideQuestCached(key, true) : true
+  if (known != null) return present(known)
+  return sideQuestAllowed(key!, true).then(present)
 }
 
 /** NOT YET: back out of a challenge you picked. Nothing is used up; the gauge stays full. */
@@ -673,13 +706,12 @@ export function skipEncounter() {
   pushToast(t(trainer ? 'ui.toast.slippedPast' : 'ui.toast.gotAway'))
 }
 
-/** `double`: a double battle's foes, all of them (two out at once), and the two leads picked (docs/33). */
-function startBattle(
-  kind: BattleKind,
-  enemy: FoeSeed,
-  leadUid?: string,
-  double?: { foes: FoeSeed[]; leadUids: string[] },
-) {
+/**
+ * `double`: a double battle's foes, all of them (two out at once), and the two leads picked (docs/33); an island
+ * trial's leader and its calls, a Titan's one-on-one field (docs/62).
+ */
+type StartDouble = NonNullable<CreateBattleOptions['double']> & { leadUids: string[] }
+function startBattle(kind: BattleKind, enemy: FoeSeed, leadUid?: string, double?: StartDouble) {
   const { save, data, run } = useGame.getState()
   if (!save) return
   const area = data.areas.find((a) => a.id === run.areaId)
@@ -739,10 +771,12 @@ function startBattle(
       plates: plateTypes(save, data),
       enemyPlan: enemyPlanFor(save, data, enemy, trainer),
       auto,
+      // The area's weather (docs/62 §2), on both sides alike.
+      weather: weatherHere(save, data, area),
       // A new player's first fight teaches the reroll and the combo (docs/46 §6): played by hand, one foe.
       rerollLesson: !auto && !double && rerollLessonDue(save, data, run.areaId),
       ...(double && {
-        double: { foes: double.foes, leadUids: double.leadUids, plans: double.foes.map((f, i) => enemyPlanFor(save, data, f, trainerAt(i))) },
+        double: { ...double, plans: double.foes.map((f, i) => enemyPlanFor(save, data, f, trainerAt(i))) },
       }),
     },
     data,
@@ -793,17 +827,36 @@ export function engage(lead?: string | string[], staged?: boolean) {
       return
     case 'wild': {
       const foe = { dex: enc.dex, level: enc.level, shiny: enc.shiny, talent: enc.talent }
+      // A Kalos horde (docs/62 §5): all of it, two out at a time.
+      if (enc.horde?.length) {
+        const foes = [foe, ...enc.horde.map((h) => ({ dex: h.dex, level: h.level, shiny: h.shiny, talent: h.talent }))]
+        return startBattle('wild', foe, leadUid, { foes, leadUids })
+      }
       const partner = enc.partner && { dex: enc.partner.dex, level: enc.partner.level, shiny: enc.partner.shiny, talent: enc.partner.talent }
       return startBattle('wild', foe, leadUid, partner ? { foes: [foe, partner], leadUids } : undefined)
     }
-    case 'boss':
+    case 'boss': {
+      // A Titan (docs/62 §7): its two phases in one fight.
+      const def = enc.titan ? data.areas.find((a) => a.id === run.areaId)?.legendaryBoss?.find((b) => b.dex === enc.dex && b.titan) : null
+      if (def) {
+        const f = titanFight(def, data, playerSideOf(save))
+        return startBattle('boss', f.foes[0]!, leadUid, { foes: f.foes, leadUids, foeField: f.foeField, ownField: f.ownField })
+      }
       return startBattle('boss', { dex: enc.dex, level: enc.level, shiny: enc.shiny, talent: enc.talent }, leadUid)
+    }
     case 'trainer':
     case 'gym': {
       const first = enc.team[0]
       if (!first) return
       // A real player's fight (docs/54): the team is healed first, as at a Pokémon Center.
       if (isPlayerFoe(enc)) commitSave(centerHeal(useGame.getState().save!, data))
+      // An island trial (docs/62 §6): the Totem with its aura, calling its allies; won when it falls.
+      const trial = enc.kind === 'gym' ? trialById(data, enc.trial) : null
+      if (trial) {
+        const foes = trialFoes(trial, data, enc.team)
+        setRun({ trainer: { index: enc.team.length - 1, gold: 0 } })
+        return startBattle('trainer', foes[0]!, leadUid, { foes, leadUids, leader: 0, calls: true })
+      }
       // A double battle is the whole team at once (docs/33): no next Pokémon after it.
       if (isDoubleEncounter(enc) && enc.team.length > 1) {
         setRun({ trainer: { index: enc.team.length - 1, gold: 0 } })
@@ -1007,6 +1060,8 @@ function settleDouble(save: SaveData, result: 'won' | 'lost' | 'fled' | 'ongoing
   const enc = run.encounter
   const gym = enc?.kind === 'gym'
   const kind = battle.state.kind
+  // A Titan (docs/62 §7): each phase is the boss it stands for (Iron Treads is Great Tusk's), and never caught.
+  const titan = enc?.kind === 'boss' && enc.titan ? enc.dex : null
   let next = save
   let events: RunEvent[] = []
   let gold = 0
@@ -1016,7 +1071,7 @@ function settleDouble(save: SaveData, result: 'won' | 'lost' | 'fled' | 'ongoing
       {
         areaId: run.areaId!,
         kind: gym ? 'gym' : kind,
-        enemyDex: ko.dex,
+        enemyDex: titan ?? ko.dex,
         enemyLevel: ko.level,
         fighterUid: ko.fighters[0] ?? '',
         fighterUids: ko.fighters,
@@ -1054,13 +1109,23 @@ function settleDouble(save: SaveData, result: 'won' | 'lost' | 'fled' | 'ongoing
     rollNext()
     return
   }
+  // A Titan beaten leaves its ₽ and items (docs/62 §7).
+  if (titan != null) {
+    const r = titanReward(next, data)
+    next = r.save
+    gold += r.gold
+    events = [...events, ...(r.gold > 0 ? [{ kind: 'gold' as const, amount: r.gold }] : []), { kind: 'titan_reward', dex: titan, gold: r.gold, items: r.items }]
+  }
   commitSave(next)
   queuePickup(events)
   const cleared = settleRound(true)
   if (cleared) events = [...events, cleared]
-  const catchKind = kind === 'wild' || kind === 'boss' ? kind : null
+  const catchKind = (kind === 'wild' || kind === 'boss') && titan == null ? kind : null
+  // A horde's one throw (docs/62 §5): at its shiny one, else the last one K.O.'d.
+  const horde = enc?.kind === 'wild' && !!enc.horde?.length
+  const thrownAt = horde ? hordeThrowAt(kos) : null
   const catches: CatchState[] = catchKind
-    ? kos.flatMap((ko) => {
+    ? (thrownAt ? [thrownAt] : kos).flatMap((ko) => {
         const target = catchTarget(next, ko.dex, ko.level, catchKind, data, ko.shiny, run.areaId!, !!ko.talent)
         const bonus = Math.max(0, ...ko.fighters.map((uid) => catchTalentBonus(data, getInstance(next, uid))))
         return target
@@ -1257,8 +1322,13 @@ export function continueExploring() {
   // The nightmare (docs/30): the waking shows first, or Darkrai's strike after a round; the area's page plays them.
   const dream = save && run.areaId ? nightmareStateOf(save, run.areaId) : null
   if (dream && ((dream.won && !dream.wonSeen) || (dream.active && dream.strike))) return
-  challenge()
-  if (useGame.getState().run.phase === 'idle') rollNext()
+  // A trial's or a Titan's server answer may be on its way (docs/62): the next card waits for it.
+  const next = () => {
+    if (useGame.getState().run.phase === 'idle') rollNext()
+  }
+  const asked = challenge()
+  if (asked) void asked.then(next)
+  else next()
 }
 
 /** "Add to team?" — swap the new catch in for `replaceId`, or send it to the Box (null). */

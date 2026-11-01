@@ -1,4 +1,4 @@
-# 62 — Region flavours: weather, hordes, island trials, Titans (plan, for validation)
+# 62 — Region flavours: weather, hordes, island trials, Titans
 
 Five features, each giving one region something of its own, as asked on 2026-11-01:
 
@@ -10,8 +10,8 @@ Five features, each giving one region something of its own, as asked on 2026-11-
 | Galar | **Weather** | The Wild Area's weather changes every day (the same for everyone), and changes the battles and which Pokémon come out. |
 | Paldea | **Titans** | Five areas get a Titan as their boss: it fights, runs off, eats a Herba Mystica and comes back as a giant. |
 
-Nothing here is built yet. Each **decision** has a default (in bold). Anything left unanswered when the work starts is
-built with its default.
+**Built on 2026-11-01** (§10), every decision at its default: no answer came before the work started. Where the build
+differs from the plan below, §10 says so.
 
 ## 1. Rules all five follow
 
@@ -30,9 +30,11 @@ built with its default.
   the nightmare, a Safari) or a raid. A raid keeps its own weather (docs/40).
 - **Text** goes only in `strings.csv`, in all ten languages. **Admin**: each one has its section, and its per-area
   data sits on the area in AreasSection. **Kitchen sink**: every new piece in every state.
-- **Data** comes from one script, `scripts/patch-region-flavours.ts`, the way `patch-side-quests.ts` works (`--data`
-  patches the bundle). The new migrations come after 0113: 0114 weather, 0115 hordes, 0116 trials, 0117 Titans.
-  `supabase/seed.sql` carries them, and the PGlite test runs each of them twice.
+- **Data**: each area's weather and the trials are the game's own content (`src/engine/flavoursContent.ts`, deep-merged
+  under their config rows, as the rivals' meetings are); the Titans' bosses and Totem Kommo-o's gym row come from
+  `scripts/patch-region-flavours.ts` (it writes the bundle, safe to run again). The new migrations come after 0113: 0114
+  weather, 0115 hordes, 0116 trials, 0117 Titans. `supabase/seed.sql` carries the data, and the PGlite test runs each of
+  them twice.
 - **Branch**: `ccr-f432a8de-hqqe99`, so PR #42 into `version/2_9` (a new PR into `version/2_9` if #42 has been
   merged by then). Screenshots go in `docs/62-region-flavours/`, taken by an e2e spec, as for docs/61.
 
@@ -84,8 +86,8 @@ weather means the same thing everywhere in the game:
   or Mt. Chimney under harsh sun (neither area is fixed in the games).
 - **Decision (H2): Castform.** The bundle has no Castform forms (10013–10015), so Castform stays in its normal form.
   **Default: left as is.** Adding the three forms and their sprites is possible as a follow-up.
-- **Admin**: a Weather field on each area (none / one weather / sun-and-rain alternating), sent by migration 0114 as an
-  `areas.weather` jsonb column (null = none).
+- **Admin**: the areas' weather is the `hoennWeather` row's `areas` (Admin → Config → All rows), by area id: `fixed`,
+  or `alternate` (two that take turns a round each). Without it, the game's own (the table above).
 
 ## 4. Galar: the weather of the day
 
@@ -106,8 +108,8 @@ weather means the same thing everywhere in the game:
   at sea and in Spikemuth).
 - **Decision (G2): which day.** **UTC midnight**, like the daily raids. Another option is the player's local
   midnight, but then two friends could see different weather at the same moment.
-- **Admin**: each area's table of odds in AreasSection, plus a "pin today's weather" override for testing and events.
-  The table goes in the same `areas.weather` column (`{ daily: { rain: 15, … } }`).
+- **Admin**: each area's odds are the `galarWeather` row's `areas` (`{ "<area id>": { "daily": { "rain": 15, … } } }`, or
+  `fixed` to pin a weather for an event); Admin → Config → Region flavours sets the pool's ×.
 
 ## 5. Kalos: hordes
 
@@ -146,9 +148,8 @@ kahunas' grand trials stay trainer battles, as in the games.
 | Routes 15 & 16 and the Thrifty Megamart | Acerola | Mimikyu Lv 33 | Haunter |
 | Exeggutor Island & Vast Poni Canyon | — (the canyon's trial) | Kommo-o Lv 45 | Hakamo-o |
 
-- **The Totem** is bigger (×1.4 sprite), wears an aura, has **HP ×2**, and rolls its dice **2 upgrade levels** above
-  the area's (all three are admin-editable per trial). That uses the doubles foe's `hp` and `diceLevel` the engine
-  already has, with no new stat system.
+- **The Totem** is bigger (×1.3 sprite), wears an aura, has **HP ×2** and **one more die of its type** (both
+  admin-editable). The die is seen on its dice, where upgrade levels would only be a hidden number.
 - **SOS calls.** The Totem calls its **first ally on the first turn**, and another each time an ally falls, **two
   allies at most** (admin: `calls`). The allies fight in the second spot: the doubles engine's "one alone fights both"
   if only one of yours can fight, two against two otherwise.
@@ -164,8 +165,9 @@ kahunas' grand trials stay trainer battles, as in the games.
   longer.
 - **Rebattles** (the gyms' rebattle) become a trial again at the rebattle level. **Extreme mode** keeps the captains
   as trainer battles.
-- **Data**: a `trial` field on the captain's trainer row (`{ totem, level, allies, hpTimes, diceUp, calls, line }`),
-  through migration 0116. Kommo-o's trial is a new trainer-like row in Vast Poni Canyon's gyms, ahead of Hapu.
+- **Data**: the trials are the `trials` row's (`trials: [{ id, areaId, trainerId, captain, place, totem, level, allies,
+  allyLevel }]`, the game's own when the row has none); Kommo-o's is a gym row of its own (migration 0116), ahead of
+  Hapu, left out of the area's gyms while the switch is off.
 
 ## 7. Paldea: the Titans
 
@@ -181,12 +183,11 @@ rules, docs/61 §2's roadblocks being the newest of them):
 | Casseroya Lake | False Dragon Titan: Dondozo 56 & Tatsugiri 57 | 56–57 |
 
 - **Two phases, one fight.** Phase 1 is the Titan at its level. When it falls, it flees, eats a **Herba Mystica**
-  and comes straight back for phase 2: **HP ×2**, **+2 upgrade levels**, a ×1.6 sprite and a gold TITAN plate. Your
+  and comes straight back for phase 2: **HP ×2**, **one more die of its type**, a ×1.55 sprite and its aura. Your
   team keeps its HP between the phases, the way a trainer's next Pokémon comes into a fallen one's spot. Both phases
   are two entries of one foe team, so the engine needs no new kind of battle.
 - **Dondozo & Tatsugiri**: phase 1 is a double battle against the two of them (or one at a time if only one of yours
-  can fight). In phase 2, Tatsugiri jumps into Dondozo's mouth (Commander): Dondozo alone, **HP ×2, +3 upgrade
-  levels**.
+  can fight). In phase 2, Tatsugiri jumps into Dondozo's mouth (Commander): Dondozo alone, **HP ×2, two more dice**.
 - **The Quaking Earth Titan** is Great Tusk or Iron Treads, by the save's side, as the rivals' versions are chosen
   (Great Tusk without a side). At Lv 33 it's two levels above the area, not the games' Lv 45, which docs/11 already
   ruled a wall for a Lv 24–31 area.
@@ -199,9 +200,9 @@ rules, docs/61 §2's roadblocks being the newest of them):
   as the games' Path of Legends is: a card offered once the rounds are done.
 - **Decision (P2): a breather between the phases?** **No**: the fight carries on. An option is 25% HP back for your
   team.
-- **Data**: `BossDef.titan` (`{ hpTimes, diceUp, size, phase2Dex?, commander? }`) on each of these areas'
-  `legendaryBoss`, through migration 0117. The data test's "every boss is a raid" rule gets the same exemption roadblocks
-  have.
+- **Data**: `BossDef.titan` (`{ versionDex?, partner? }`) on each of these areas' `legendaryBoss`, through migration
+  0117; the numbers (×HP, dice, ₽, items) are the `titans` row's. The data test's "every boss is a raid" rule gets the
+  same exemption roadblocks have.
 
 ## 8. Order of work and checks
 
@@ -234,3 +235,65 @@ rules, docs/61 §2's roadblocks being the newest of them):
 | P1 | The Titan blocks the area | Yes, like every area boss |
 | P2 | A breather between phases | No |
 | — | Extreme mode | None of the five |
+
+## 10. What was built
+
+All five, each **Off** until switched on (Admin → Config → Switches; the numbers on Admin → Config → Region flavours).
+
+| Part | Engine | On screen | Content |
+| --- | --- | --- | --- |
+| Weather | `weather.ts` (`weatherAt`, the day's `dailyWeather`, `weatherPoolTimes`); `damage.ts`'s weather factor; `battle.ts`'s wear at a Pokémon's turn (`weather_tick`) | `components/Weather.tsx`: the top bar's chip, the stage's chip and fall, the recap's factor, the rules pop-up (queue `weather`) | `flavoursContent.ts`: `HOENN_WEATHER`, `GALAR_WEATHER` |
+| Hordes | `hordes.ts` (`asHorde`, one a round, `hordeThrowAt`); dealt in `rollNext` before a pair | `FlavourCards.tsx` `HordeBanner`; the five pips in the fight | the `hordes` row's numbers |
+| Trials | `trials.ts` (`trialOf`, `trialFoes`); `battle.ts`'s leader (its K.O. ends the fight, `foe_fled`) and calls (`sos`) | `TrialCard`; the Totem's aura on the stage | `TRIALS`; Totem Kommo-o's gym row |
+| Titans | `titans.ts` (`titanFight`, `titanReward`, `titansBeaten`); `battle.ts`'s phases (`titan_rise`) and one-on-one field | `TitanCard`; the aura; the result's `titan_reward`; Paldea's Pokédex line | five bosses (`BossDef.titan`) |
+
+What differs from the plan:
+
+- **A die, not upgrade levels**: a Totem's aura and a Titan's second phase add dice of their type (one; Dondozo's
+  Commander two), with ×2 HP. A die is seen on the dice; upgrade levels would have been a number nobody sees.
+- **No `areas.weather` column**: the weather of each area is content in its config row, like the rivals' meetings,
+  and Admin edits it there (All rows); 0114 adds only the switches.
+- **The Titans are off in Extreme mode too**: Extreme's race data switches all five flavours off (`raceData`).
+- **Titan's server check**: a trial or a Titan the server doesn't allow (an out-of-date page) is the captain's battle,
+  or no challenge yet.
+- The Sootopolis weather turns with the area's rounds done (sun on even, rain on odd).
+
+### Pictures
+
+Taken by `e2e/region-flavours.spec.ts` in the game, with the switches on:
+
+| | |
+| --- | --- |
+| ![](62-region-flavours/1-weather-rules-hoenn.png) Hoenn's weather: its rules, once | ![](62-region-flavours/1-weather-rain-battle.png) Rain on Routes 118 & 119: the chip by the area's name and on the stage, the rain falling |
+| ![](62-region-flavours/1-weather-sandstorm.png) The Route 111 desert's sandstorm wears Treecko down (−3) | ![](62-region-flavours/2-weather-rules-galar.png) Galar's weather: its rules |
+| ![](62-region-flavours/2-weather-galar-battle.png) A rainy day in the Rolling Fields | ![](62-region-flavours/3-horde-rules.png) Hordes: the rules, the first time |
+| ![](62-region-flavours/3-horde-preview.png) A horde's card | ![](62-region-flavours/3-horde-battle.png) Two at a time, five pips |
+| ![](62-region-flavours/4-trial-rules.png) Island trials: the rules | ![](62-region-flavours/4-trial-card.png) Ilima's trial: Totem Gumshoos and its allies |
+| ![](62-region-flavours/4-trial-battle.png) Gumshoos calls for help | ![](62-region-flavours/5-titan-rules.png) The Titans: the rules |
+| ![](62-region-flavours/5-titan-card.png) Klawf's card | ![](62-region-flavours/5-titan-battle.png) Klawf, the Stony Cliff Titan |
+| ![](62-region-flavours/0-kitchen-sink.png) The kitchen sink: every state | |
+
+### Tests
+
+- `tests/engine/region-flavours.test.ts`: the weather (fixed, turns, the day's, the pool's ×, the damage factor, the
+  wear, Extreme), hordes (dealt, never off/alone/elsewhere/past the limit, the throw), trials (on/off/Extreme, the
+  challenge, Kommo-o's gym, the Totem's HP, die, calls and end), Titans (the boss only while on, beaten not caught, the
+  two phases, Commander, Iron Treads, the reward).
+- `tests/region-flavours-sql.test.ts`: 0114–0117 on PGlite, twice.
+- `e2e/region-flavours.spec.ts`: each part in the game, and its pictures.
+
+## 11. Setting it up
+
+1. Run the four migrations in order (after 0113), in the Supabase SQL editor:
+   - [0114_weather.sql](https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0114_weather.sql)
+     — the two weather switches, and `side_quest_open` knowing the five keys.
+   - [0115_hordes.sql](https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0115_hordes.sql)
+     — the hordes' switch.
+   - [0116_trials.sql](https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0116_trials.sql)
+     — the trials' switch, Totem Kommo-o's row and Vast Poni Canyon's gyms.
+   - [0117_titans.sql](https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0117_titans.sql)
+     — the Titans' switch and the five bosses.
+
+   `supabase/seed.sql` carries the data part (Kommo-o, the gyms, the Titans' bosses) for a fresh database.
+2. Admin → Config → Switches: each of the five, Off / On for admin / On for everyone. Admin → Config → Region flavours
+   for the numbers.

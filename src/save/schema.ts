@@ -5,6 +5,7 @@ import { OUTFITS } from '@/engine/outfits'
 import {
   COMBO_KEYS,
   EVENT_IDS,
+  FLAVOUR_KEYS,
   PLAY_STYLES,
   POKE_TYPES,
   POWER_KINDS,
@@ -190,6 +191,8 @@ const progressSchema = z.object({
   wiped: z.boolean().optional(),
   // A Safari (docs/61 §4): rounds begun there (the free ones included). An odd value counts as none.
   safariRounds: z.number().int().min(0).optional().catch(undefined),
+  // Kalos hordes met this round (docs/62 §5).
+  hordes: z.object({ round: z.number().int().min(0), n: z.number().int().min(0) }).optional().catch(undefined),
 })
 
 /** One parked region's block: the same fields the live region keeps at the top level of the save. */
@@ -535,6 +538,8 @@ export const saveSchema = z.object({
   safari: z.object({ rulesSeen: z.boolean().optional() }).optional().catch(undefined),
   // The set moments met (docs/61 §5): rivals' meetings and gifts, by id. An odd value drops the list, never the save.
   moments: z.object({ done: z.array(z.string()) }).optional().catch(undefined),
+  // The region flavours (docs/62): whose rules have been shown. An odd value drops the list, never the save.
+  flavours: z.object({ seen: z.array(z.enum(FLAVOUR_KEYS)).optional() }).optional().catch(undefined),
   // The Underground (docs/34): the running event's block, and the plates kept for good.
   underground: undergroundSchema.optional(),
   plates: z.array(typeEnum).max(18).optional(),

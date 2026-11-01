@@ -36,7 +36,8 @@ import {
   type StatusApplication,
   type StatusState,
 } from './status'
-import type { CurableStatus, DieType, GameData, PokeType, PowerKind, RaidTypeScale, Species, StatusKind } from './types'
+import type { CurableStatus, DieType, GameData, PokeType, PowerKind, RaidTypeScale, Species, StatusKind, Weather } from './types'
+import { weatherTypeBoost, weatherWear } from './weather'
 
 export type Side = 'player' | 'enemy'
 export type BattleKind = 'wild' | 'trainer' | 'boss'
@@ -112,7 +113,12 @@ export interface Battler {
   announced?: boolean
   /** Attacks it has made this battle (Opener counts the first). */
   attacks?: number
+  /** A Totem's or a Titan's look (docs/62): bigger, with its aura. */
+  aura?: FoeAura
 }
+
+/** A foe bigger than its kind (docs/62): an island trial's Totem, or a Titan's second phase. */
+export type FoeAura = 'totem' | 'titan'
 
 export interface FormSnapshot {
   dex: number
@@ -204,6 +210,8 @@ export interface BattleState {
   raidHit?: RaidHit
   /** A new player's first fight: the reroll lesson's rigged throws (docs/46 §6, engine/lesson.ts). */
   lesson?: RerollLesson
+  /** The weather the fight is under (docs/62 §2): its × is on both sides' levels; a sandstorm or snow wears. */
+  weather?: Weather
 }
 
 /** A double battle's field (docs/33). */
@@ -214,6 +222,14 @@ export interface DoubleState {
   foeSlots: number[]
   /** Indexes into `player` of yours out on the field (one or two), left to right. */
   ownSlots: number[]
+  /** Yours out at once at most (a Titan's phases are one on one); absent = two. */
+  ownMax?: number
+  /** Index into `foes` of the one whose K.O. ends the fight (an island trial's Totem): the others flee. */
+  leader?: number
+  /** The foes after the first two are allies the leader calls (an island trial's SOS). */
+  calls?: boolean
+  /** Each foe's phase (a Titan's): one of a later phase comes out only once every earlier one is down. */
+  phases?: number[]
   /** Index into `foes` of `enemy`: the foe in front. */
   foeIndex: number
   /** Still to act this round, fastest first (uids). Newcomers wait for the next round. */
@@ -350,6 +366,14 @@ export type LogEntry =
   | { kind: 'focus'; own: string; foe: string; aim?: true }
   /** A double battle: the trainer's next Pokémon takes the place of one K.O.'d. */
   | { kind: 'foe_out'; uid: string }
+  /** The weather wears a Pokémon down at its turn (docs/62 §2): a sandstorm or snow. */
+  | { kind: 'weather_tick'; target: Side; targetUid: string; weather: Weather; amount: number; hpAfter: number }
+  /** An island trial's Totem calls an ally (docs/62 §6), the one coming out next. */
+  | { kind: 'sos'; from: string; uid: string }
+  /** A Titan's second phase is coming (docs/62 §7): it ate a Herba Mystica; `commander`: Tatsugiri jumped in. */
+  | { kind: 'titan_rise'; uid: string; commander?: boolean }
+  /** The leader fell: the foes still out flee (an island trial's allies). */
+  | { kind: 'foe_fled'; uid: string }
   | { kind: 'turn'; side: Side; turn: number; uid: string }
   | { kind: 'roll'; side: Side; dice: RolledDie[] }
   | { kind: 'reroll'; side: Side; mask: boolean[]; dice: RolledDie[]; rerollsLeft: number }
@@ -510,6 +534,13 @@ export function copyFoeDice(s: BattleState, log: LogEntry[]) {
 export interface FoeSeed {
   dex: number
   level: number
+  /** × its max HP (a Totem's, a Titan's second phase: docs/62). */
+  hpTimes?: number
+  /** Dice it gets on top of its own: its aura. */
+  extraDice?: DieType[]
+  aura?: FoeAura
+  /** A Titan's phase (docs/62 §7): see `DoubleState.phases`. */
+  phase?: number
   /** Dealt with its family's hidden talent (docs/51). */
   talent?: boolean
   /** As a `BattlerSeed`'s: a Versus defender fights (and shows) at Lv.50 with the dice of its own level. */
@@ -528,7 +559,19 @@ export interface CreateBattleOptions {
    * A double battle (docs/33): every foe, two out at once (`enemy` is ignored), and yours led by `leadUids`. With
    * `plans` each foe's Mega / Gigantamax / type change, in the same order.
    */
-  double?: { foes: FoeSeed[]; leadUids?: string[]; plans?: (EnemyPlan | null)[] }
+  double?: {
+    foes: FoeSeed[]
+    leadUids?: string[]
+    plans?: (EnemyPlan | null)[]
+    /** The foe whose K.O. ends the fight (an island trial's Totem), the others its called allies (docs/62 §6). */
+    leader?: number
+    calls?: boolean
+    /** Foes out at once and yours at most (one each for a Titan, docs/62 §7); absent = two. */
+    foeField?: number
+    ownField?: number
+  }
+  /** The area's weather (docs/62 §2), both sides alike; absent = none. */
+  weather?: Weather | null
   playerLevels: UpgradeLevels
   enemyLevels: UpgradeLevels
   /** The player has unlocked Mega Evolution (see `megaUnlocked`). */
@@ -942,25 +985,43 @@ function battlePowersOf(opts: CreateBattleOptions): Partial<BattleState> {
   }
 }
 
+/** A foe as it fights: its talent carried, and a Totem's or a Titan's HP, aura dice and look (docs/62). */
+function foeBattler(f: FoeSeed, uid: string, data: GameData): Battler {
+  const b = makeBattler(
+    {
+      uid,
+      dex: f.dex,
+      level: f.level,
+      diceLevel: f.diceLevel,
+      hp: f.hp ?? Infinity,
+      shiny: f.shiny,
+      item: f.item,
+      talent: carriedTalent(data, f.dex, f.talent),
+      ...(f.extraDice?.length && { extraDice: f.extraDice }),
+    },
+    data,
+  )
+  if (f.hpTimes && f.hpTimes > 0 && f.hpTimes !== 1) {
+    b.maxHp = Math.max(1, Math.round(b.maxHp * f.hpTimes))
+    b.hp = Math.min(b.maxHp, f.hp ?? b.maxHp)
+  }
+  if (f.aura) b.aura = f.aura
+  return b
+}
+
+/** Both sides' levels under the weather (docs/62 §2): its × on attacks of its types, for each alike. */
+function withWeather(levels: UpgradeLevels, w: Weather | null | undefined): UpgradeLevels {
+  const boost = weatherTypeBoost(w)
+  return w && Object.keys(boost).length ? { ...levels, weather: { kind: w, boost } } : levels
+}
+
 export function createBattle(opts: CreateBattleOptions, data: GameData): { state: BattleState; log: LogEntry[] } {
   if (opts.double && opts.double.foes.length > 1) return createDouble(opts, opts.double, data)
   const player = opts.team.map((t) => makeBattler(t, data))
   let activeIndex = player.findIndex((b) => b.uid === opts.leadUid && b.hp > 0)
   if (activeIndex < 0) activeIndex = player.findIndex((b) => b.hp > 0)
   if (activeIndex < 0) throw new Error('No able Pokémon to send out')
-  const enemy = makeBattler(
-    {
-      uid: 'enemy',
-      dex: opts.enemy.dex,
-      level: opts.enemy.level,
-      diceLevel: opts.enemy.diceLevel,
-      hp: opts.enemy.hp ?? Infinity,
-      shiny: opts.enemy.shiny,
-      item: opts.enemy.item,
-      talent: carriedTalent(data, opts.enemy.dex, opts.enemy.talent),
-    },
-    data,
-  )
+  const enemy = foeBattler(opts.enemy, 'enemy', data)
   const lead = player[activeIndex]!
   const first: Side = lead.speed >= enemy.speed ? 'player' : 'enemy' // tie → player
   const state: BattleState = {
@@ -974,8 +1035,9 @@ export function createBattle(opts: CreateBattleOptions, data: GameData): { state
     enemy,
     dice: [],
     selected: [],
-    playerLevels: opts.playerLevels,
-    enemyLevels: opts.enemyLevels,
+    playerLevels: withWeather(opts.playerLevels, opts.weather),
+    enemyLevels: withWeather(opts.enemyLevels, opts.weather),
+    ...(opts.weather && { weather: opts.weather }),
     participants: [lead.uid],
     canRun: opts.kind === 'wild' && !data.config.noEscape,
     ...(opts.noHealItems && { noHealItems: true }),
@@ -1090,7 +1152,8 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[], 
     pressure(b, side === 'player' ? s.enemy : activeBattler(s), side, log)
 
     const ticks = statusTicks(b, side, rules, log)
-    if (ticks) checkHpForms(s, data, log)
+    const worn = weatherTick(s, b, side, log)
+    if (ticks || worn) checkHpForms(s, data, log)
     if (b.hp <= 0 && s.single) return endStep(s)
     if (b.hp <= 0) {
       // A K.O. here ends the turn.
@@ -1174,28 +1237,21 @@ function createDouble(
   data: GameData,
 ): { state: BattleState; log: LogEntry[] } {
   const player = opts.team.map((t) => makeBattler(t, data))
+  // A Titan's phases are one on one (docs/62 §7): one of yours out at a time.
+  const ownMax = Math.max(1, Math.min(2, double.ownField ?? 2))
   // The leads picked, then whoever is able, two at most; one alone fights both (docs/33).
   const ownSlots: number[] = []
   for (const uid of [...(double.leadUids ?? []), ...(opts.leadUid ? [opts.leadUid] : []), ...player.map((b) => b.uid)]) {
     const i = player.findIndex((b) => b.uid === uid && b.hp > 0)
-    if (i >= 0 && !ownSlots.includes(i) && ownSlots.length < 2) ownSlots.push(i)
+    if (i >= 0 && !ownSlots.includes(i) && ownSlots.length < ownMax) ownSlots.push(i)
   }
   if (!ownSlots.length) throw new Error('No able Pokémon to send out')
-  const foes = double.foes.map((f, i) => {
-    return makeBattler(
-      {
-        uid: foeUid(i),
-        dex: f.dex,
-        level: f.level,
-        diceLevel: f.diceLevel,
-        hp: f.hp ?? Infinity,
-        shiny: f.shiny,
-        item: f.item,
-        talent: carriedTalent(data, f.dex, f.talent),
-      },
-      data,
-    )
-  })
+  const foes = double.foes.map((f, i) => foeBattler(f, foeUid(i), data))
+  // A Titan's phases (docs/62 §7): those of the first phase come out; a later one waits for them all to fall.
+  const phases = double.foes.map((f) => f.phase ?? 1)
+  const phased = phases.some((p) => p !== phases[0])
+  const foeMax = Math.max(1, Math.min(2, double.foeField ?? 2))
+  const foeSlots = foes.map((_, i) => i).filter((i) => phases[i] === Math.min(...phases)).slice(0, foeMax)
   const plans: Record<string, EnemyPlan> = {}
   double.plans?.forEach((p, i) => {
     // An auto battle keeps a foe's powers whose newer rules are on (docs/35), as one on one does.
@@ -1220,8 +1276,9 @@ function createDouble(
     enemy: foes[0]!,
     dice: [],
     selected: [],
-    playerLevels: opts.playerLevels,
-    enemyLevels: opts.enemyLevels,
+    playerLevels: withWeather(opts.playerLevels, opts.weather),
+    enemyLevels: withWeather(opts.enemyLevels, opts.weather),
+    ...(opts.weather && { weather: opts.weather }),
     participants: ownSlots.map((i) => player[i]!.uid),
     canRun: opts.kind === 'wild' && !data.config.noEscape,
     ...(opts.noHealItems && { noHealItems: true }),
@@ -1232,8 +1289,12 @@ function createDouble(
       : { ...(opts.megaAllowed && { megaAllowed: true }), ...(opts.gmaxAllowed && { gmaxAllowed: true }) }),
     double: {
       foes,
-      foeSlots: foes.length > 1 ? [0, 1] : [0],
+      foeSlots,
       ownSlots,
+      ...(ownMax < 2 && { ownMax }),
+      ...(double.leader != null && foes[double.leader] && { leader: double.leader }),
+      ...(double.calls && { calls: true }),
+      ...(phased && { phases }),
       foeIndex: 0,
       queue: [],
       round: 0,
@@ -1247,6 +1308,10 @@ function createDouble(
   const log: LogEntry[] = [
     { kind: 'start', first, double: { own: ownOnField(state).map((b) => b.uid), foes: foesOnField(state).map((b) => b.uid) } },
   ]
+  // An island trial (docs/62 §6): the Totem calls its first ally as the fight opens.
+  const lead = state.double!.leader
+  if (state.double!.calls && lead != null)
+    for (const i of foeSlots) if (i !== lead) log.push({ kind: 'sos', from: foes[lead]!.uid, uid: foes[i]!.uid })
   checkHpForms(state, data, log)
   // Every Ditto out copies the Pokémon facing it.
   for (const [side, row, facing] of [
@@ -1372,7 +1437,8 @@ function beginDoubleTurn(s: BattleState, data: GameData, log: LogEntry[], rng?: 
     pressure(b, side === 'player' ? s.enemy : activeBattler(s), side, log)
 
     const ticks = statusTicks(b, side, rules, log)
-    if (ticks) checkHpForms(s, data, log)
+    const worn = weatherTick(s, b, side, log)
+    if (ticks || worn) checkHpForms(s, data, log)
     if (b.hp <= 0) {
       // A K.O. here ends the turn.
       if (doubleKnockouts(s, log)) return
@@ -1411,20 +1477,37 @@ function beginDoubleTurn(s: BattleState, data: GameData, log: LogEntry[], rng?: 
 function doubleKnockouts(s: BattleState, log: LogEntry[]): boolean {
   const d = s.double!
   const fighters = d.ownSlots.map((i) => s.player[i]!.uid)
+  const phaseOf = (k: number) => d.phases?.[k] ?? 1
+  let leaderDown = false
   for (const [at, i] of [...d.foeSlots].entries()) {
     const f = d.foes[i]!
     if (f.hp > 0) continue
     log.push({ kind: 'faint', side: 'enemy', uid: f.uid, dex: f.dex })
     d.kos.push({ uid: f.uid, dex: f.baseDex ?? f.dex, level: f.level, shiny: f.shiny, fighters, ...(f.talent && { talent: true }) })
     const slot = d.foeSlots.indexOf(i)
-    // A foe never out yet (alive and off the field) takes its place, in the same spot.
-    const reserve = d.foes.findIndex((x, k) => x.hp > 0 && !d.foeSlots.includes(k))
+    if (d.leader === i) leaderDown = true
+    // A foe never out yet (alive and off the field) takes its place, in the same spot: of a later phase (a Titan's
+    // second) only once every foe of the earlier one is down; an island trial's allies only while the Totem stands.
+    const lowest = Math.min(...d.foes.map((x, k) => (x.hp > 0 ? phaseOf(k) : Infinity)))
+    const reserve =
+      leaderDown || (d.leader != null && d.foes[d.leader]!.hp <= 0)
+        ? -1
+        : d.foes.findIndex((x, k) => x.hp > 0 && !d.foeSlots.includes(k) && phaseOf(k) <= lowest)
     if (reserve >= 0) {
       d.foeSlots[slot] = reserve
+      if (phaseOf(reserve) > phaseOf(i))
+        log.push({ kind: 'titan_rise', uid: d.foes[reserve]!.uid, ...(d.phases!.filter((p) => p === phaseOf(i)).length > 1 && { commander: true }) })
+      else if (d.calls && d.leader != null) log.push({ kind: 'sos', from: d.foes[d.leader]!.uid, uid: d.foes[reserve]!.uid })
       log.push({ kind: 'foe_out', uid: d.foes[reserve]!.uid })
       const facing = ownOnField(s).filter((b) => b.hp > 0)
       if (facing.length) copyDiceOf(d.foes[reserve]!, 'enemy', facing[Math.min(at, facing.length - 1)]!, log)
     } else d.foeSlots.splice(slot, 1)
+  }
+  // The Totem down (docs/62 §6): the trial is won, and its allies still out flee.
+  if (leaderDown || (d.leader != null && d.foes[d.leader]!.hp <= 0)) {
+    for (const k of d.foeSlots) if (d.foes[k]!.hp > 0) log.push({ kind: 'foe_fled', uid: d.foes[k]!.uid })
+    finish(s, 'won', log)
+    return true
   }
   if (!d.foes.some((f) => f.hp > 0)) {
     finish(s, 'won', log)
@@ -1445,7 +1528,7 @@ function doubleKnockouts(s: BattleState, log: LogEntry[]): boolean {
   }
   if (fallen) {
     const bench = s.player.filter((b, k) => b.hp > 0 && !d.ownSlots.includes(k)).length
-    d.toReplace = Math.min(fallen, bench, 2 - d.ownSlots.length)
+    d.toReplace = Math.min(fallen, bench, (d.ownMax ?? 2) - d.ownSlots.length)
     if (d.toReplace > 0) {
       s.phase = 'player_switch'
       s.dice = []
@@ -1485,7 +1568,7 @@ function doubleSwitch(s: BattleState, uid: string, data: GameData, log: LogEntry
   if ((s.phase !== 'player_roll' && s.phase !== 'player_reroll') || !data.config.allowVoluntarySwitch) return false
   const outgoing = activeBattler(s)
   naturalCure(outgoing, 'player', log)
-  if (d.ownSlots.length >= 2) {
+  if (d.ownSlots.length >= (d.ownMax ?? 2)) {
     // A Gigantamax Pokémon shrinks back when it leaves the field.
     if (outgoing.gmax) endGmax('player', outgoing, data, log)
     d.ownSlots[d.ownSlots.indexOf(s.activeIndex)] = idx
@@ -1591,6 +1674,23 @@ function endAttack(s: BattleState, side: Side, data: GameData, log: LogEntry[], 
   s.dice = []
   s.selected = []
   afterAction(s, side, data, log, rng)
+}
+
+/**
+ * A sandstorm's or snow's wear at the start of a Pokémon's turn (docs/62 §2): 4 % of its max HP unless its type is
+ * spared (it can K.O.); Magic Guard takes none. True when it wore.
+ */
+function weatherTick(s: BattleState, b: Battler, side: Side, log: LogEntry[]): boolean {
+  if (!s.weather || s.single || b.hp <= 0) return false
+  const amount = Math.min(b.hp, weatherWear(s.weather, b.types, b.maxHp))
+  if (amount <= 0) return false
+  if (b.talent === 'magicGuard') {
+    log.push({ kind: 'talent', side, uid: b.uid, talent: 'magicGuard' })
+    return false
+  }
+  b.hp -= amount
+  log.push({ kind: 'weather_tick', target: side, targetUid: b.uid, weather: s.weather, amount, hpAfter: b.hp })
+  return true
 }
 
 /** Magma Armor (docs/51): the turns a freeze holds it. */
@@ -2047,7 +2147,7 @@ export function reduce(
         // A double battle with a spot empty (yours fought on alone): it stands back up there, and acts from next round.
         const d = s.double
         const at = s.player.indexOf(target)
-        if (d && d.ownSlots.length < 2 && !d.ownSlots.includes(at)) {
+        if (d && d.ownSlots.length < (d.ownMax ?? 2) && !d.ownSlots.includes(at)) {
           d.ownSlots.push(at)
           if (!s.participants.includes(target.uid)) s.participants.push(target.uid)
         }

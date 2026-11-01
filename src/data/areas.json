@@ -34286,6 +34286,7 @@
   "hidden": false,
   "unlockConditions": null,
   "gyms": [
+   "7278511c-319e-5fc1-a053-0be766cb70fd",
    "c6106307-fd9e-50e1-aa2c-8edd1069cb8f"
   ],
   "wildPool": [
@@ -51041,7 +51042,13 @@
    "trainer": 2
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
+  "legendaryBoss": [
+   {
+    "dex": 950,
+    "level": 16,
+    "titan": {}
+   }
+  ],
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 1,
@@ -51441,7 +51448,13 @@
    "trainer": 2
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
+  "legendaryBoss": [
+   {
+    "dex": 962,
+    "level": 20,
+    "titan": {}
+   }
+  ],
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 3,
@@ -51846,7 +51859,13 @@
    "trainer": 2
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
+  "legendaryBoss": [
+   {
+    "dex": 968,
+    "level": 29,
+    "titan": {}
+   }
+  ],
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 4,
@@ -52078,7 +52097,15 @@
    "trainer": 2
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
+  "legendaryBoss": [
+   {
+    "dex": 984,
+    "level": 33,
+    "titan": {
+     "versionDex": 990
+    }
+   }
+  ],
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 4,
@@ -53842,7 +53869,18 @@
    "versus": 1
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
+  "legendaryBoss": [
+   {
+    "dex": 977,
+    "level": 56,
+    "titan": {
+     "partner": {
+      "dex": 978,
+      "level": 57
+     }
+    }
+   }
+  ],
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,

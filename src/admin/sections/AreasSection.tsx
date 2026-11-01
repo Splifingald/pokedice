@@ -168,6 +168,55 @@ function BossCard({ b, data, onChange, onRemove }: { b: BossDef; data: GameData;
             <option value="invisible">something invisible (Kecleon)</option>
           </select>
         </label>
+        <label
+          className="flex flex-wrap items-center gap-2 text-lg"
+          title="A Titan (docs/62 §7): fought in two phases, never caught, only while the Titans' switch is on (off: no boss here)"
+        >
+          <input
+            type="checkbox"
+            checked={!!b.titan}
+            onChange={(e) => {
+              if (e.target.checked) return onChange({ ...b, titan: {} })
+              const { titan: _drop, ...rest } = b
+              onChange(rest)
+            }}
+          />
+          Titan
+          {b.titan && (
+            <>
+              <span className="text-sm text-muted">Violet's species</span>
+              <NumInput
+                className="w-24"
+                nullable
+                value={b.titan.versionDex ?? null}
+                min={1}
+                onChange={(v) => onChange({ ...b, titan: { ...b.titan, versionDex: v } })}
+              />
+              <span className="text-sm text-muted">partner #</span>
+              <NumInput
+                className="w-24"
+                nullable
+                value={b.titan.partner?.dex ?? null}
+                min={1}
+                onChange={(v) =>
+                  onChange({ ...b, titan: { ...b.titan, partner: v ? { dex: v, level: b.titan?.partner?.level ?? b.level } : null } })
+                }
+              />
+              {b.titan.partner && (
+                <>
+                  <span className="text-sm text-muted">Lv</span>
+                  <NumInput
+                    className="w-20"
+                    value={b.titan.partner.level}
+                    min={1}
+                    max={100}
+                    onChange={(v) => onChange({ ...b, titan: { ...b.titan, partner: { dex: b.titan!.partner!.dex, level: v ?? b.level } } })}
+                  />
+                </>
+              )}
+            </>
+          )}
+        </label>
         <label className="flex flex-wrap items-center gap-2 text-lg" title="Shiny colours (cosmetic only) — the Red Gyarados kind of legendary">
           <input
             type="checkbox"

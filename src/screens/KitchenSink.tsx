@@ -68,6 +68,7 @@ import { WelcomeBackBits } from './kitchen/WelcomeBackBits'
 import { SupportBits } from './kitchen/SupportBits'
 import { TrickBits } from './kitchen/TrickBits'
 import { SideQuestBits } from './kitchen/SideQuestBits'
+import { FlavourBits } from './kitchen/FlavourBits'
 import { UndergroundBits } from './kitchen/UndergroundBits'
 import { FriendshipBits } from './kitchen/FriendshipBits'
 import { CalendarBits } from './kitchen/CalendarBits'
@@ -839,6 +840,9 @@ export function KitchenSink() {
       </Section>
       <Section title="The side quests (docs/61): a roadblock's words, a Pokémon posing as a find (before and as it springs out), the Safari, rivals and gifts">
         <SideQuestBits />
+      </Section>
+      <Section title="The region flavours (docs/62): the weather (its chips, its recap factor, its fall on a stage), a horde, an island trial, the Titans, the auras, the fights' lines, the rules">
+        <FlavourBits />
       </Section>
       <Section title="Trick or Treat: the gauge of each tier, the screen in each state (idle, after a Treat, a Treat and a throw playing, a miss, caught, fled), the recaps, the pieces, preview cards, rules">
         <TrickBits />

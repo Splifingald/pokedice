@@ -2,6 +2,7 @@
 -- Run the parts in order (1 first: it carries the schema changes). Together they are supabase/seed.sql.
 begin;
 insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, battle_background, rival_of, items, duo) values
+  ('fa111b8c-9102-5f48-8742-e33fdf2a4535', 'Youngster Eddie', '/trainers/classes/youngster.png', '[{"dex":23,"level":21}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('341ab477-ce85-5923-93d1-984955f5419c', 'Engineer Bernie', '/trainers/classes/engineer.png', '[{"dex":81,"level":18},{"dex":81,"level":18},{"dex":82,"level":18}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('eabab5d4-0870-576e-a0d8-777fdd15fdef', 'Youngster Dave', '/trainers/classes/youngster.png', '[{"dex":32,"level":18},{"dex":33,"level":18}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('1e56740b-9148-5eab-b70c-9fbee6647b09', 'Team Skull Grunt', '/trainers/classes/alola/skull-grunt-m.png', '[{"dex":568,"level":27},{"dex":757,"level":27}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
@@ -250,11 +251,11 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('1280cf8b-50ed-5b4a-b618-2f2e90dd176c', 'Model Eliza', '/trainers/classes/galar/model.png', '[{"dex":873,"level":58},{"dex":866,"level":58}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('44ce7777-4cf5-5901-813f-6a2c3b6cc674', 'Marnie', '/trainers/classes/galar/marnie.png', '[{"dex":454,"level":57},{"dex":860,"level":58},{"dex":861,"level":59}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb, false),
   ('d441cafb-3f08-5574-ab4e-5bb865205339', 'Nessa', '/trainers/classes/galar/nessa.png', '[{"dex":768,"level":59},{"dex":847,"level":60},{"dex":834,"level":61}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb, false),
-  ('034cdfb7-6dd9-5804-8fca-8951ee6682dd', 'Bea', '/trainers/classes/galar/bea.png', '[{"dex":853,"level":60},{"dex":865,"level":60},{"dex":870,"level":61}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb, false),
-  ('6887f24f-ca71-5e77-abb9-a8be436c7a42', 'Raihan', '/trainers/classes/galar/raihan.png', '[{"dex":330,"level":61},{"dex":844,"level":61},{"dex":884,"level":62}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb, false)
+  ('034cdfb7-6dd9-5804-8fca-8951ee6682dd', 'Bea', '/trainers/classes/galar/bea.png', '[{"dex":853,"level":60},{"dex":865,"level":60},{"dex":870,"level":61}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb, false)
 on conflict (id) do update set name = excluded.name, sprite_url = excluded.sprite_url, team = excluded.team, role = excluded.role, badge = excluded.badge, upgrade_level = excluded.upgrade_level, battle_background = excluded.battle_background, rival_of = excluded.rival_of, items = excluded.items, duo = excluded.duo;
 
 insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, battle_background, rival_of, items, duo) values
+  ('6887f24f-ca71-5e77-abb9-a8be436c7a42', 'Raihan', '/trainers/classes/galar/raihan.png', '[{"dex":330,"level":61},{"dex":844,"level":61},{"dex":884,"level":62}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb, false),
   ('2f444eb0-d61d-5437-b740-7604da4ad736', 'Beauty Anya', '/trainers/classes/beauty.png', '[{"dex":118,"level":30},{"dex":119,"level":30}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('17d36b24-b850-5b11-87b2-984bb62387c9', 'Beauty Alice', '/trainers/classes/beauty.png', '[{"dex":60,"level":28},{"dex":118,"level":28},{"dex":119,"level":28}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('bcb10076-61de-59b3-973e-c475c0a0beaf', 'Swimmer Barry', '/trainers/classes/swimmer-m.png', '[{"dex":90,"level":31},{"dex":91,"level":31}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
@@ -503,11 +504,11 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('aeaaa522-0b8e-5e1e-9aad-8cc1222352e1', 'Ace Trainer Vance', '/trainers/classes/johto/schoolboy.png', '[{"dex":248,"level":56},{"dex":212,"level":56}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('189dc071-f025-5c31-8bf1-bc29b87a8d25', 'Ace Trainer Quinn', '/trainers/classes/johto/schoolboy.png', '[{"dex":213,"level":55},{"dex":219,"level":57},{"dex":95,"level":57}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('e1da0aec-aef4-5c60-b2f4-c4dfc6d866c2', 'Ace Trainer Mira', '/trainers/classes/johto/schoolgirl.png', '[{"dex":238,"level":63},{"dex":215,"level":63},{"dex":124,"level":64}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
-  ('6f60f985-a49a-52d8-b82c-5bada07f08e1', 'Ace Trainer Vance', '/trainers/classes/johto/schoolboy.png', '[{"dex":148,"level":69},{"dex":230,"level":70},{"dex":147,"level":69}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
-  ('ba248c8f-ec99-5035-b9f2-83bbfec638af', 'Red', '/trainers/classes/johto/red.png', '[{"dex":25,"level":68},{"dex":3,"level":66},{"dex":6,"level":66}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb, false)
+  ('6f60f985-a49a-52d8-b82c-5bada07f08e1', 'Ace Trainer Vance', '/trainers/classes/johto/schoolboy.png', '[{"dex":148,"level":69},{"dex":230,"level":70},{"dex":147,"level":69}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false)
 on conflict (id) do update set name = excluded.name, sprite_url = excluded.sprite_url, team = excluded.team, role = excluded.role, badge = excluded.badge, upgrade_level = excluded.upgrade_level, battle_background = excluded.battle_background, rival_of = excluded.rival_of, items = excluded.items, duo = excluded.duo;
 
 insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, battle_background, rival_of, items, duo) values
+  ('ba248c8f-ec99-5035-b9f2-83bbfec638af', 'Red', '/trainers/classes/johto/red.png', '[{"dex":25,"level":68},{"dex":3,"level":66},{"dex":6,"level":66}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb, false),
   ('894a9912-d956-572c-abc0-bd33fc7288f6', 'Youngster Calvin', '/trainers/classes/hoenn/youngster.png', '[{"dex":263,"level":6},{"dex":261,"level":6}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('e55747c0-0e0c-53de-846a-de8441bb6652', 'Lass Haley', '/trainers/classes/hoenn/lass.png', '[{"dex":270,"level":7},{"dex":265,"level":7}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('ec7d3253-fe83-5410-a696-80ce8dfc7a8b', 'Bug Catcher Rick', '/trainers/classes/hoenn/bug-catcher.png', '[{"dex":266,"level":8},{"dex":268,"level":8}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
@@ -756,7 +757,6 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('1bef9136-d825-5bb3-835f-b2c8695b728f', 'Nurse Dixie', '/trainers/classes/unova/nurse.png', '[{"dex":531,"level":35},{"dex":546,"level":35}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('364efc2f-54f2-590e-8f62-ee329527cc8f', 'Lady Sarah', '/trainers/classes/unova/lady.png', '[{"dex":607,"level":34},{"dex":578,"level":35}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
   ('c9f701c8-cb75-57c9-81d8-1a245f3a3f8f', 'Worker Dick', '/trainers/classes/unova/worker.png', '[{"dex":533,"level":36},{"dex":525,"level":36}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
-  ('1ba833cd-9b58-5607-9a6b-7ae91308c010', 'Hiker Grant', '/trainers/classes/unova/hiker.png', '[{"dex":525,"level":36},{"dex":529,"level":37}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false),
-  ('0cc41a79-3741-55bb-9f30-613958d7a34b', 'Backpacker Blossom', '/trainers/classes/unova/backpacker-f.png', '[{"dex":613,"level":36},{"dex":528,"level":37}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false)
+  ('1ba833cd-9b58-5607-9a6b-7ae91308c010', 'Hiker Grant', '/trainers/classes/unova/hiker.png', '[{"dex":525,"level":36},{"dex":529,"level":37}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb, false)
 on conflict (id) do update set name = excluded.name, sprite_url = excluded.sprite_url, team = excluded.team, role = excluded.role, badge = excluded.badge, upgrade_level = excluded.upgrade_level, battle_background = excluded.battle_background, rival_of = excluded.rival_of, items = excluded.items, duo = excluded.duo;
 commit;
