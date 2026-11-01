@@ -33,6 +33,7 @@ import { AreaBanner } from '@/components/AreaBanner'
 import { PortalModeBox } from './PortalModeBox'
 import { NightmareModeBox } from './NightmareModeBox'
 import { TimeRaceModeBox } from './TimeRaceModeBox'
+import { WhiteoutModeBox } from './WhiteoutModeBox'
 
 const KINDS: EncounterKind[] = ['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus', 'gift']
 const CARD: Record<EncounterKind, { label: string; color: string }> = {
@@ -328,6 +329,8 @@ function AreaEditor({ area }: { area: Row }) {
             <NightmareModeBox area={area} />
             {/* The race of time and space (docs/61 §4.4): the same, one mode per area. */}
             <TimeRaceModeBox area={area} />
+            {/* The whiteout (docs/61 §4.3), Crown Shrine's: one special mode per area, as the others. */}
+            <WhiteoutModeBox area={area} />
           </>
         )}
 

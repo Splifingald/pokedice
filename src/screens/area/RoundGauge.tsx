@@ -8,6 +8,7 @@ import {
   gymsFor,
   playerSideOf,
   nightmareModeOf,
+  whiteoutModeOf,
   nextRoundSize,
   opensWithoutCenter,
   portalModeOf,
@@ -34,6 +35,7 @@ import { DistortionGauge } from '@/components/Portal'
 import { PortalSkinProvider } from '@/components/portalSkin'
 import { NightmareGauge } from '@/components/Nightmare'
 import { RaceGauge } from '@/components/TimeRace'
+import { WhiteoutGauge } from '@/components/Whiteout'
 
 const CARD_ICON: Record<DeckCard, IconName> = {
   wild: 'ball',
@@ -112,6 +114,18 @@ export function RoundGauge({
       />
     )
   }
+  // The whiteout (docs/61 §4.3) counts its waves, a pip a foe, then the crown for its boss.
+  const white = whiteoutModeOf(area, data)
+  if (white)
+    return (
+      <WhiteoutGauge
+        sizes={white.waves.map((w) => w.length)}
+        wave={progress.whiteout?.wave ?? 0}
+        foe={progress.whiteout?.foe ?? 0}
+        boss={!!progress.whiteout?.boss}
+        className={className}
+      />
+    )
   if (!cfg.showRoundGauge || cfg.encounterMode !== 'deck') return null
   const remaining = progress.deck?.length ?? 0
   const met = progress.drawn ?? []

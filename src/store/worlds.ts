@@ -14,7 +14,7 @@ import {
   markWorldBye,
   markWorldFinishSeen,
   markWorldSeen,
-  nightmareLock,
+  heldIn,
   payWheelPrize,
   regionOf,
   worldById,
@@ -85,10 +85,10 @@ export function leaveSmallWorld(): boolean {
     pushToast(t('ui.region.finishFight'), 'bad')
     return false
   }
-  // Darkrai's nightmare (docs/30) holds the player in its area, so in the world too, until they wake up.
-  const held = nightmareLock(save, data)
+  // Darkrai's nightmare (docs/30) or the whiteout (docs/61 §4.3) holds the player in its area, so in the world too.
+  const held = heldIn(save, data)
   if (held) {
-    pushToast(t('ui.nightmare.locked', { area: held.name }), 'info')
+    pushToast(t(`ui.${held.by}.locked`, { area: held.area.name }), 'info')
     return false
   }
   const next = leaveWorld(save, data)
@@ -112,9 +112,9 @@ export function finishSmallWorld(): boolean {
     pushToast(t('ui.region.finishFight'), 'bad')
     return false
   }
-  const held = nightmareLock(save, data)
+  const held = heldIn(save, data)
   if (held) {
-    pushToast(t('ui.nightmare.locked', { area: held.name }), 'info')
+    pushToast(t(`ui.${held.by}.locked`, { area: held.area.name }), 'info')
     return false
   }
   const next = finishWorld(save, data, serverNow())

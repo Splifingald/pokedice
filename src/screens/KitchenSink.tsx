@@ -63,6 +63,7 @@ import { PortalRaidBits } from './kitchen/PortalRaidBits'
 import { NightmareBits } from './kitchen/NightmareBits'
 import { NightmareRaidBits } from './kitchen/NightmareRaidBits'
 import { TimeRaceBits } from './kitchen/TimeRaceBits'
+import { WhiteoutBits } from './kitchen/WhiteoutBits'
 import { GiftBits } from './kitchen/GiftBits'
 import { InviteBits } from './kitchen/InviteBits'
 import { WelcomeBackBits } from './kitchen/WelcomeBackBits'
@@ -843,6 +844,9 @@ export function KitchenSink() {
       </Section>
       <Section title="The race of time and space (Spear Pillar): the clock and rift, the countdown, the gauge, a fork's gates (first, last, the replay's alone), the way in (intro, then its pop-up; the replay's), rules, result and lost-try cards, the wins (Dialga, Palkia)">
         <TimeRaceBits />
+      </Section>
+      <Section title="Whiteout (Crown Shrine): the shrine, the gauge of waves, the blizzard's chip and snow over a fight, the way in (intro, then its pop-up), rules, the bonfire (catching, warmed, the last, one Pokémon, six), the wave's card, the shut bag, the locked Areas button, the end">
+        <WhiteoutBits />
       </Section>
       <Section title="Trick or Treat: the gauge of each tier, the screen in each state (idle, after a Treat, a Treat and a throw playing, a miss, caught, fled), the recaps, the pieces, preview cards, rules">
         <TrickBits />

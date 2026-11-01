@@ -10,9 +10,11 @@ import {
   isAreaClosed,
   isAreaSealed,
   latestOpenArea,
-  nightmareLock,
+  heldIn,
   nightmareModeOf,
   nightmareStateOf,
+  whiteoutModeOf,
+  whiteoutStateOf,
   openRaidIn,
   playerSideOf,
   portalModeOf,
@@ -80,8 +82,12 @@ export function useContinue(area: Area) {
   // the first legend is caught); in one, back to it; won, only its raids.
   const raceMode = timeRaceModeOf(area, data)
   const race = raceMode ? timeRaceStateOf(save, area.id) : null
-  const gym = mode || dreamMode || raceMode ? null : dueGym(area, progress, data, side)
-  const boss = gym || mode || dreamMode || raceMode ? null : dueBoss(area, progress, teamAverageLevel(save), data)
+  // The whiteout's area (docs/61 §4.3): before it, CONTINUE goes to its way in; its boss is its own last step.
+  const whiteMode = whiteoutModeOf(area, data)
+  const white = whiteMode ? whiteoutStateOf(save, area.id) : null
+  const gym = mode || dreamMode || raceMode || whiteMode ? null : dueGym(area, progress, data, side)
+  const boss =
+    gym || mode || dreamMode || raceMode || whiteMode ? null : dueBoss(area, progress, teamAverageLevel(save), data)
   const closed = isAreaClosed(save, area.id, data) || isAreaSealed(save, data, area.id)
   const busy = (run.areaId === area.id && run.phase !== 'idle') || battle
   const raid = gym || boss || busy ? null : openRaidIn(save, data, area)
@@ -97,9 +103,12 @@ export function useContinue(area: Area) {
   const enterDream = !!dreamMode && !dream?.active && !dream?.won && !busy
   const enterRace = !!raceMode && canStartTimeRace(save, data, area.id) && !busy
   const racePlan = raceMode ? timeRacePlan(save, raceMode, area.id) : null
-  const enter = enterPortal || enterDream || enterRace
-  // Darkrai's strike waits on the area's page after a round (docs/30).
-  const struck = !!dream?.active && (!!dream.strike || (run.areaId === area.id && !!run.nightmareStruck))
+  const enterWhite = !!whiteMode && !white?.active && !white?.won && !busy
+  const enter = enterPortal || enterDream || enterRace || enterWhite
+  // Darkrai's strike waits on the area's page after a round (docs/30); so does a bonfire after a wave (docs/61).
+  const struck =
+    (!!dream?.active && (!!dream.strike || (run.areaId === area.id && !!run.nightmareStruck))) ||
+    (!!white?.active && !!white.bonfire)
   const sub = busy
     ? t('ui.home.backToEncounter')
     : enterRace
@@ -107,6 +116,16 @@ export function useContinue(area: Area) {
           n: racePlan!.total,
           time: `${Math.floor(racePlan!.seconds / 60)}:${String(racePlan!.seconds % 60).padStart(2, '0')}`,
         })
+    : enterWhite
+      ? t('ui.whiteout.enterSub', { n: whiteMode!.waves.length })
+    : white?.won
+      ? t('ui.whiteout.sealed')
+    : white?.active
+      ? white.bonfire
+        ? t('ui.whiteout.bonfireSub')
+        : white.boss
+          ? t('ui.whiteout.bossSub')
+          : t('ui.whiteout.continueSub', { n: Math.min(white.wave + 1, whiteMode!.waves.length), total: whiteMode!.waves.length })
     : enterDream
       ? t('ui.nightmare.enterSub', { n: dreamMode!.foes.length })
       : enter
@@ -202,6 +221,7 @@ export function useContinue(area: Area) {
     !portal?.active &&
     !dream?.active &&
     !race?.active &&
+    !white?.active &&
     !closed &&
     progress.cleared
   // GO TO's two lines: the area, and what waits for the player there (the gym, the legend, the round).
@@ -212,6 +232,8 @@ export function useContinue(area: Area) {
   const keepExploring = !!(gym || boss || raid) && !closed && !busy && !resting
   const label = enterRace
     ? t('ui.timeRace.enter')
+    : enterWhite
+    ? t('ui.whiteout.enter')
     : enterDream
     ? t('ui.nightmare.enter')
     : enter
@@ -368,6 +390,7 @@ export function AreaButton({
 }) {
   const { t } = useT()
   const save = useGame((s) => s.save)!
+  const heldBy = useGame((s) => heldIn(s.save, s.data)?.by ?? 'nightmare')
   // The round's own steps when the encounters are dealt from a deck (the area's gauge), its rounds as pips otherwise.
   const steps = useGame((s) => s.data.config.showRoundGauge && s.data.config.encounterMode === 'deck')
   const p = progressOf(save, area.id)
@@ -393,7 +416,7 @@ export function AreaButton({
       aria-disabled={heldWhy ? true : undefined}
       aria-label={
         heldWhy
-          ? `${area.name} · ${t('ui.nightmare.areasLocked')}`
+          ? `${area.name} · ${t(`ui.${heldBy}.areasLocked`)}`
           : [t('ui.home.areaButton', { area: area.name, levels, rounds }), news].filter(Boolean).join('. ') + parade
       }
       data-area-button
@@ -441,9 +464,11 @@ export function AreaButton({
 export function PlayDock({ area, onAreas }: { area: Area; onAreas?: () => void }) {
   const { t } = useT()
   const { label, sub, go, explore, off, gym, boss, raid, resting, latest, goTo, keepExploring } = useContinue(area)
-  // Darkrai's nightmare holds the player in its area (docs/30): the area button is shut, and says why.
-  const held = useGame((s) => nightmareLock(s.save, s.data))
-  const heldWhy = held ? t('ui.nightmare.locked', { area: held.name }) : null
+  // Darkrai's nightmare (docs/30) or the whiteout (docs/61 §4.3) holds the player in its area: the area button is
+  // shut, and says why.
+  const held = useGame((s) => heldIn(s.save, s.data)?.area ?? null)
+  const heldBy = useGame((s) => heldIn(s.save, s.data)?.by ?? 'nightmare')
+  const heldWhy = held ? t(`ui.${heldBy}.locked`, { area: held.name }) : null
   const ahead = heldWhy ? null : goTo
   const green = latest && !heldWhy && !ahead ? latest : null
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { autoAvailable, nightmareLock, portalLock, teamOf, type Area } from '@/engine'
+import { autoAvailable, heldIn, portalLock, teamOf, type Area } from '@/engine'
 import { useT } from '@/i18n/react'
 import { AutoModeToggle } from '@/components/AutoModeToggle'
 import { RestingPanel } from '@/components/Extreme'
@@ -33,8 +33,9 @@ export function AreaIdle({ area, scene = false }: { area: Area; scene?: boolean 
   // Inside a portal run (docs/28) there is no way Home: CONTINUE alone.
   const locked = useGame((s) => !!portalLock(s.save, s.data))
   const data = useGame((s) => s.data)
-  // The nightmare (docs/30) shuts travel only: HOME stays, the reason is said over the bar.
-  const held = useGame((s) => nightmareLock(s.save, s.data))
+  // The nightmare (docs/30) and the whiteout (docs/61 §4.3) shut travel only: HOME stays, the reason is said over the bar.
+  const held = useGame((s) => heldIn(s.save, s.data)?.area ?? null)
+  const heldBy = useGame((s) => heldIn(s.save, s.data)?.by ?? 'nightmare')
   const autoHere = useGame((s) => !!s.save && autoAvailable(s.save, s.data, s.settings, area.id))
   if (!save) return null
 
@@ -49,7 +50,7 @@ export function AreaIdle({ area, scene = false }: { area: Area; scene?: boolean 
       )}
       {held && (
         <p className="m-0 text-center font-pixel-sm text-[16px] leading-tight text-ink">
-          {t('ui.nightmare.locked', { area: held.name })}
+          {t(`ui.${heldBy}.locked`, { area: held.name })}
         </p>
       )}
       <div className={locked ? 'grid' : 'grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5'}>

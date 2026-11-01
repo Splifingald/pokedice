@@ -72,6 +72,7 @@ import { kyuremCinema } from './kyurem'
 import { keldeoCinema } from './keldeo'
 import { meloettaCinema } from './meloetta'
 import { genesectCinema } from './genesect'
+import { abomasnowCinema } from './abomasnow'
 
 export { wordsAt } from './kit'
 export type { Cinema, CinemaParams } from './kit'
@@ -186,4 +187,6 @@ export const BOSS_CINEMAS: Readonly<Record<number, BossCinema>> = {
   808: meltanCinema,
   893: zarudeCinema,
   1025: pecharuntCinema,
+  // Crown Shrine's shiny Abomasnow (docs/61 §4.3): the whiteout plays it whatever the cinematics' switch says.
+  460: abomasnowCinema,
 }

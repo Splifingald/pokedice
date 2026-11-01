@@ -46,6 +46,7 @@ import {
   portalSkin,
   inNightmare,
   timeRaceBattleSpeed,
+  inWhiteout,
   legendCinemaOn,
   championCinemaOn,
 } from '@/engine'
@@ -71,6 +72,9 @@ import { loadPicture, loadSprite, pictureKey, spriteKey } from '@/fx/sprites'
 import { catchTimeline } from '@/fx/timelines/catch'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { BOSS_CINEMAS } from '@/fx/timelines/cinema'
+import { abomasnowCinema } from '@/fx/timelines/cinema/abomasnow'
+import { BlizzardChip, SnowOverStage } from '@/components/Whiteout'
+import { t as say } from '@/i18n'
 import { championCinemaFor } from '@/fx/timelines/cinema/champions'
 import { useT } from '@/i18n/react'
 import { effectText, zMoveText } from '@/i18n/text'
@@ -298,6 +302,9 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     distorted && portalSkin(portalModeOf(data.areas.find((a) => a.id === run.areaId), data)) === 'plates'
   // The nightmare's rounds (docs/30) are fought under its full moon, a dark shadow haunting the foe.
   const dream = !versus && st.kind === 'wild' && !!save && inNightmare(save, data, run.areaId)
+  // The whiteout's fights (docs/61 §4.3): the engine's blizzard (its chip, snow over the stage) and the bag shut.
+  const storm = !versus && !!st.weather
+  const bagShut = !versus && !!st.noBag
   const stageBox = useRef<HTMLDivElement>(null)
   const panel = useRef<HTMLDivElement>(null)
   const [menu, setMenu] = useState<null | 'item' | 'history' | 'mega' | 'form' | 'z'>(null)
@@ -581,7 +588,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const usefulItems = ownedItems.filter(([k]) => st.player.some((p) => itemHelps(k, p)))
   const showSwitch = data.config.allowVoluntarySwitch
   // What the B and S keys (and the pips) can open right now: the same rules as their buttons.
-  const bagOpen = !versus && !auto && canItem && usefulItems.length > 0
+  const bagOpen = !versus && !auto && canItem && usefulItems.length > 0 && !bagShut
   // With nobody to send in, the team's pips still open the step: its BACK and its flag, the fight's way out (the user,
   // 2026-10-27).
   const switchOpen = !auto && canAct && showSwitch
@@ -664,6 +671,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
           dispatch(stunned ? { t: 'PASS' } : st.phase === 'player_roll' ? { t: 'ROLL' } : { t: 'ATTACK' })
         } else if (key === 'r' && rolling) keyAct.current.reroll()
         else if (/^[1-6]$/.test(e.key) && rolling) keyAct.current.toggleDie(Number(e.key) - 1)
+        else if (key === 'b' && bagShut) shutBag()
         else if (key === 'b' && bagOpen) {
           // A computer's Bag is open at the side already: B goes to its first item.
           if (wide) bagBox.current?.querySelector<HTMLButtonElement>('button:not([disabled])')?.focus()
@@ -684,7 +692,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [canAct, stunned, auto, covered, menu, aim, switching, matchups, rolling, bagOpen, switchOpen, wide, st.phase, dispatch, lesson])
+  }, [canAct, stunned, auto, covered, menu, aim, switching, matchups, rolling, bagOpen, bagShut, switchOpen, wide, st.phase, dispatch, lesson])
   // Mega Evolution (once per battle, Lv.50+, from Kalos on), Gigantamax and Arceus's types.
   const megaOpts = scripted ? [] : megaChoices(st, data)
   const gmaxOpts = scripted ? [] : gmaxChoices(st, data)
@@ -862,7 +870,13 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       types: foe.types.map((ty) => typeName(ty)).join(' / '),
     }
     // A mythical's own entrance (docs/53: Mew in its forest) when the cinematics are on and it has one.
-    const cinema = legendCinemaOn(data) ? BOSS_CINEMAS[foe.baseDex ?? foe.dex] : undefined
+    // The whiteout's boss (docs/61 §4.3): the crown tree shaking out Abomasnow, its own way in whatever that switch says.
+    const cinema =
+      save && inWhiteout(save, data, run.areaId)
+        ? abomasnowCinema
+        : legendCinemaOn(data)
+          ? BOSS_CINEMAS[foe.baseDex ?? foe.dex]
+          : undefined
     return {
       timeline: cinema ? cinema.makeBattle(params) : legendTimeline(params),
       ready: Promise.all([loadSprite(lead.dex, true, lead.shiny, lead.outfit), loadSprite(foe.dex, false, foe.shiny, foe.outfit)]),
@@ -1108,10 +1122,11 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     ownedItems.length > 0 &&
     !auto && (
       <BagButton
-        disabled={!bagOpen}
-        title={st.itemUsedThisTurn ? t('ui.battle.oneItemPerTurn') : undefined}
+        // The whiteout's bag stays shut, but its button still answers: why (docs/61 §4.3).
+        disabled={!bagOpen && !bagShut}
+        title={bagShut ? t('ui.whiteout.noBag') : st.itemUsedThisTurn ? t('ui.battle.oneItemPerTurn') : undefined}
         keys="B"
-        onClick={openBag}
+        onClick={bagShut ? shutBag : openBag}
       />
     )
   )
@@ -1224,6 +1239,13 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         {dayTime && <BattleDayTime time={dayTime} />}
         {/* The race's clock runs on in its fights (docs/61 §4.4), in the stage's top right corner. */}
         {raceSpeed && <TimeRaceClockHere areaId={run.areaId} size="small" className="absolute right-2 top-5 z-20" />}
+        {/* The blizzard (docs/15 §47): its snow over the stage, under the plates, and its chip by the strip. */}
+        {storm && <SnowOverStage className="z-[5]" />}
+        {storm && (
+          <span className="absolute right-1 z-20 leading-[0]" style={{ top: 'calc(var(--strip, 0px) + 4px)' }}>
+            <BlizzardChip />
+          </span>
+        )}
         {dbl && foeOut && ownOut && !catching && (
           <DoublePlates
             foes={foeRow}
@@ -1357,6 +1379,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                 <BagColumn
                   entries={bagEntries}
                   open={bagOpen && !teamPick}
+                  shut={bagShut ? t('ui.whiteout.noBag') : null}
                   used={!!st.itemUsedThisTurn}
                   aim={aim}
                   onPick={pickItem}
@@ -2099,3 +2122,6 @@ function SendOutStep({
     </div>
   )
 }
+
+/** The whiteout's bag stays shut (docs/61 §4.3): the Bag button and B say why. */
+const shutBag = () => pushToast(say('ui.whiteout.noBag'), 'info')

@@ -136,6 +136,20 @@ import {
   timeRaceVictoryDue,
   timeRaceVictoryToRaid,
   winTimeRaceFight,
+  arriveAtWhiteout,
+  inWhiteout,
+  leaveBonfire,
+  markWhiteoutWonSeen,
+  startWhiteout,
+  warmAtBonfire,
+  whiteoutBossGotAway,
+  whiteoutEncounter,
+  whiteoutLock,
+  whiteoutNoCatch,
+  whiteoutStateOf,
+  whiteoutWeather,
+  winWhiteout,
+  winWhiteoutFoe,
   type BattleEvent,
   type BattleKind,
   type ForceKind,
@@ -219,8 +233,8 @@ export function enterArea(areaId: string): boolean {
   const { save, data } = useGame.getState()
   if (!save || !isAreaUnlocked(save, areaId, data) || isAreaClosed(save, areaId, data)) return false
   // Inside a portal run (docs/28) there is no other area to go to, nor in the nightmare (docs/30), nor in the race of
-  // time and space (docs/61 §4.4).
-  const locked = portalLock(save, data) ?? nightmareLock(save, data) ?? timeRaceLock(save, data)
+  // time and space (docs/61 §4.4) or the whiteout (§4.3).
+  const locked = portalLock(save, data) ?? nightmareLock(save, data) ?? timeRaceLock(save, data) ?? whiteoutLock(save, data)
   if (locked && locked.id !== areaId) return false
   // A small world's area may also wait for its date (docs/21), on the server's clock.
   if (!areaOpenAt(data, areaId, serverNow())) return false
@@ -593,6 +607,40 @@ export function beginTimeRace(areaId: string): boolean {
 }
 
 /**
+ * The whiteout's next foe (docs/61 §4.3): the wave's foe, or the boss after the last bonfire, its preview first. Nothing
+ * while a bonfire is lit (the area shows it); a team with nobody standing is the wipe (back to wave 1).
+ */
+function rollWhiteout(save: SaveData, areaId: string) {
+  const { data } = useGame.getState()
+  if (whiteoutStateOf(save, areaId).bonfire) return setRun({ phase: 'idle', encounter: null })
+  if (!hasAbleTeam(save)) {
+    const lost = whiteoutStateOf(save, areaId).wave
+    commitSave(applyWipe(save, areaId, data))
+    setRun({ phase: 'wipe', trainer: null, events: [], whiteoutLost: lost })
+    return
+  }
+  const encounter = whiteoutEncounter(save, data, areaId)
+  if (!encounter) return setRun({ phase: 'idle', encounter: null })
+  setRun({ phase: 'preview', encounter, firstInArea: false })
+}
+
+/**
+ * BEGIN on the whiteout's way in (docs/61 §4.3): into the blizzard, wave 1's first foe next (its intro has played
+ * already, as the nightmare's). False when it can't begin here.
+ */
+export function beginWhiteout(areaId: string): boolean {
+  const { save, data, run } = useGame.getState()
+  if (!save || run.phase !== 'idle') return false
+  if (run.areaId !== areaId && !enterArea(areaId)) return false
+  const started = startWhiteout(useGame.getState().save!, data, areaId)
+  if (!started) return false
+  commitSave(started)
+  setRun({ whiteoutLost: null })
+  rollNext()
+  return true
+}
+
+/**
  * A fork due but not dealt yet (the page opened between a fight and its fork, a reload): it is dealt now. Nothing
  * when it isn't due any more by the time this runs (the clock ran out meanwhile, a fight began).
  */
@@ -668,6 +716,52 @@ export function healAndStartTimeRaceRaid(): ProgressRaid | null {
   return openRaidIn(next, data, area)
 }
 
+/** The whiteout's way-in pop-up is up: back from the Team screen, it shows again at once. */
+export function markWhiteoutPopup() {
+  if (!useGame.getState().run.whiteoutPopup) setRun({ whiteoutPopup: true })
+}
+
+/** The whiteout's way in shows: the team and the Box are healed as at a Pokémon Center (the engine's). */
+export function arriveAtWhiteoutWayIn(areaId: string) {
+  const { save, data } = useGame.getState()
+  if (!save) return
+  const next = arriveAtWhiteout(save, data, areaId)
+  if (next !== save) commitSave(next)
+}
+
+/**
+ * The bonfire warms the team (its scene has lit): the engine gives each one its share, once. Who got what, or null
+ * when it was given already (a reload, a second call).
+ */
+export function warmBonfire(): { uid: string; from: number; to: number }[] | null {
+  const { save, data, run } = useGame.getState()
+  const areaId = run.areaId ?? save?.currentAreaId
+  if (!save || !areaId) return null
+  const res = warmAtBonfire(save, data, areaId)
+  if (!res) return null
+  commitSave(res.save)
+  return res.heals
+}
+
+/** MOVE ON from a bonfire: the next wave's first foe, or the boss after the last one. */
+export function moveOnFromBonfire() {
+  const { save, data, run } = useGame.getState()
+  const areaId = run.areaId ?? save?.currentAreaId
+  if (!save || !areaId || run.phase !== 'idle') return
+  const next = leaveBonfire(save, data, areaId)
+  if (!next) return
+  commitSave(next)
+  rollNext()
+}
+
+/** The outro is over: back to the world's Home, where the shrine is closed now. */
+export function finishWhiteoutVictory() {
+  const { save, run } = useGame.getState()
+  const areaId = run.areaId ?? save?.currentAreaId
+  if (save && areaId) commitSave(markWhiteoutWonSeen(save, areaId))
+  useGame.setState((s) => ({ run: { ...initialRun(), forceNext: s.run.forceNext }, battle: null }))
+}
+
 /** Roll the next encounter and show its preview card. */
 export function rollNext() {
   settleRound()
@@ -680,6 +774,7 @@ export function rollNext() {
   if (isAreaSealed(save, data, run.areaId)) return setRun({ phase: 'idle', encounter: null })
   if (inNightmare(save, data, run.areaId)) return rollNightmare(save, run.areaId)
   if (inTimeRace(save, data, run.areaId)) return rollTimeRace(save, run.areaId)
+  if (inWhiteout(save, data, run.areaId)) return rollWhiteout(save, run.areaId)
   if (inPortalRun(save, data, run.areaId)) return rollPortal(save, run.areaId)
   // A Center's boons still waiting (a reload, HOME before the pick: docs/47): back in that Center. Boons drawn in
   // another area go: the player walked out without picking.
@@ -774,6 +869,7 @@ export function challenge() {
     inPortalRun(save, data, run.areaId) ||
     inNightmare(save, data, run.areaId) ||
     inTimeRace(save, data, run.areaId) ||
+    inWhiteout(save, data, run.areaId) ||
     isAreaSealed(save, data, run.areaId)
   )
     return
@@ -897,6 +993,9 @@ function startBattle(
       enemyLevels: withWorldBoost(isPlayerFoe(run.encounter) ? foeLevels(run.encounter.player) : uniformLevels(upgradeLevel), data, area),
       ...battlePowersFor(save, data),
       noHealItems: !healItemsOn(save, data),
+      // The whiteout (docs/61 §4.3): the blizzard on both sides, and the bag shut.
+      weather: whiteoutWeather(save, data, run.areaId),
+      noBag: inWhiteout(save, data, run.areaId),
       // Arceus takes only the types of its plates while the Underground is on (docs/34).
       plates: plateTypes(save, data),
       enemyPlan: enemyPlanFor(save, data, enemy, trainer),
@@ -1098,7 +1197,9 @@ function settleBattle(stalemate: boolean) {
       commitSave(raced.save)
       return raceLostCard(run.areaId, 'time', raced.fights, raced.total)
     }
-    commitSave(raced?.save ?? dream?.save ?? res.save)
+    // A wave foe of the whiteout (docs/61 §4.3): the next one is due, or its wave is cleared and a bonfire is lit.
+    const white = s.kind === 'wild' && !dream && !raced ? winWhiteoutFoe(res.save, data, run.areaId) : null
+    commitSave(raced?.save ?? dream?.save ?? white?.save ?? res.save)
     queuePickup(res.events)
     const dreamEvents: RunEvent[] = dream
       ? [
@@ -1107,6 +1208,8 @@ function settleBattle(stalemate: boolean) {
         ]
       : raced
         ? [{ kind: 'time_race_fight', fight: raced.fights, total: raced.total }]
+      : white?.cleared
+        ? [{ kind: 'whiteout_wave', wave: white.wave, waves: white.waves }]
         : []
     // The round's last card was this fight: count it now, so "AREA CLEARED" is part of the rewards.
     const cleared = trainerHasNext() ? null : settleRound(true)
@@ -1122,11 +1225,15 @@ function settleBattle(stalemate: boolean) {
     const noCatch =
       portalNoCatch(save, data, run.areaId) ||
       nightmareNoCatch(save, data, run.areaId) ||
-      // Nor the race's (docs/61 §4.4): all are met elsewhere.
-      timeRaceNoCatch(save, data, run.areaId)
+      // Nor the race's (docs/61 §4.4), nor the whiteout's (§4.3): all are met elsewhere.
+      timeRaceNoCatch(save, data, run.areaId) ||
+      whiteoutNoCatch(save, data, run.areaId)
     const talent = !!s.enemy.talent
     const target =
       kind && !noCatch ? catchTarget(res.save, foeDex, s.enemy.level, kind, data, s.enemy.shiny, run.areaId, talent) : null
+    // The whiteout's boss beaten with nothing to throw at (it can't be caught again): the blizzard ends here.
+    if (kind === 'boss' && !target && inWhiteout(res.save, data, run.areaId))
+      commitSave(winWhiteout(useGame.getState().save!, data, run.areaId))
     const bonus = catchTalentBonus(data, getInstance(res.save, out.fighterUid))
     setRun({
       phase: target ? 'catch' : 'victory',
@@ -1153,8 +1260,17 @@ function settleBattle(stalemate: boolean) {
     const lost = inPortalRun(withHp, data, run.areaId) ? portalStateOf(withHp, run.areaId).closed : null
     const dream = inNightmare(withHp, data, run.areaId) ? nightmareStateOf(withHp, run.areaId).round : null
     const race = inTimeRace(withHp, data, run.areaId) ? raceLostOf(withHp, run.areaId) : null
+    const white = inWhiteout(withHp, data, run.areaId) ? whiteoutStateOf(withHp, run.areaId).wave : null
     commitSave(applyWipe(withHp, run.areaId, data))
-    setRun({ phase: 'wipe', trainer: null, events: [], portalLost: lost, nightmareLost: dream, raceLost: race })
+    setRun({
+      phase: 'wipe',
+      trainer: null,
+      events: [],
+      portalLost: lost,
+      nightmareLost: dream,
+      raceLost: race,
+      whiteoutLost: white,
+    })
     return
   }
   // fled / stalemate: damage is kept, no rewards
@@ -1354,6 +1470,15 @@ export function passCatch() {
 
 /** Out of this throw: the next one queued (after a wild pair), else the rewards screen with every "Add to team?". */
 function afterCatch(events: RunEvent[], caughtId: string | null) {
+  // The whiteout's boss (docs/61 §4.3): caught, the blizzard lifts for good; got away, back to the last bonfire.
+  const before = useGame.getState()
+  const c = before.run.catch
+  if (c?.kind === 'boss' && before.save && before.run.areaId && inWhiteout(before.save, before.data, before.run.areaId))
+    commitSave(
+      c.result?.caught
+        ? winWhiteout(before.save, before.data, before.run.areaId)
+        : whiteoutBossGotAway(before.save, before.data, before.run.areaId),
+    )
   const { run, save, data } = useGame.getState()
   const pending = [...(run.catchPending ?? []), ...(caughtId ? [caughtId] : [])]
   // The next throw's target as the save stands now, not as it stood before the first: a pair of one species, the first
@@ -1413,7 +1538,8 @@ export function continueAfterVictory(leadUid?: string) {
 export function closeVictoryLeftOpen(): boolean {
   const { save, data, run } = useGame.getState()
   if (run.phase !== 'victory' || run.rebattle || trainerHasNext()) return false
-  if (save && (portalLock(save, data) ?? nightmareLock(save, data) ?? timeRaceLock(save, data))) return false
+  if (save && (portalLock(save, data) ?? nightmareLock(save, data) ?? timeRaceLock(save, data) ?? whiteoutLock(save, data)))
+    return false
   while (useGame.getState().run.pendingCatchId) resolveCatch(null)
   continueAfterVictory()
   return useGame.getState().run.phase === 'idle'
@@ -1432,6 +1558,9 @@ export function continueExploring() {
   if (dream && ((dream.won && !dream.wonSeen) || (dream.active && dream.strike))) return
   // The race (docs/61 §4.4): its win shows first, on the area's page.
   if (save && run.areaId && timeRaceVictoryDue(save, useGame.getState().data, run.areaId)) return
+  // The whiteout (docs/61 §4.3): its outro first, or the bonfire after a wave; the area's page plays them.
+  const white = save && run.areaId ? whiteoutStateOf(save, run.areaId) : null
+  if (white && ((white.won && !white.wonSeen) || (white.active && white.bonfire))) return
   challenge()
   if (useGame.getState().run.phase === 'idle') rollNext()
 }
@@ -1466,8 +1595,17 @@ export function forfeit() {
   const lost = inPortalRun(save, data, run.areaId) ? portalStateOf(save, run.areaId).closed : null
   const dream = inNightmare(save, data, run.areaId) ? nightmareStateOf(save, run.areaId).round : null
   const race = inTimeRace(save, data, run.areaId) ? raceLostOf(save, run.areaId) : null
+  const white = inWhiteout(save, data, run.areaId) ? whiteoutStateOf(save, run.areaId).wave : null
   commitSave(run.rebattle ? applyRebattleLoss(save, data, run.rebattle.regionId) : applyWipe(save, run.areaId, data))
-  setRun({ phase: 'wipe', trainer: null, events: [], portalLost: lost, nightmareLost: dream, raceLost: race })
+  setRun({
+    phase: 'wipe',
+    trainer: null,
+    events: [],
+    portalLost: lost,
+    nightmareLost: dream,
+    raceLost: race,
+    whiteoutLost: white,
+  })
 }
 
 /** After a full K.O. the run is over: Home (where CONTINUE starts the area afresh), or the rebattle page. */

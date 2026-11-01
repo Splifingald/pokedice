@@ -6,6 +6,7 @@ import { maxComboLevel, maxDieLevel } from './economy'
 import { isExtreme } from './extreme'
 import { eventOpenTo } from './events'
 import { nightmareModeOf } from './nightmareMode'
+import { whiteoutModeOf } from './whiteoutMode'
 import { portalModeOf } from './portalMode'
 import { timeRaceModeOf } from './timeRaceMode'
 import { shuffle } from './deal'
@@ -68,7 +69,13 @@ export function areaVersusHere(
   data: GameData,
 ): boolean {
   if (!save || !area || !areaVersusOn(data) || isExtreme(save)) return false
-  if (worldOfArea(data, area) || portalModeOf(area, data) || nightmareModeOf(area, data) || timeRaceModeOf(area, data))
+  if (
+    worldOfArea(data, area) ||
+    portalModeOf(area, data) ||
+    nightmareModeOf(area, data) ||
+    timeRaceModeOf(area, data) ||
+    whiteoutModeOf(area, data)
+  )
     return false
   return versusWeight(area) > 0
 }

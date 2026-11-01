@@ -4,6 +4,7 @@ import {
   autoAvailable,
   fitWildPair,
   nightmareModeOf,
+  whiteoutModeOf,
   pilotShowsCard,
   portalModeOf,
   portalStateOf,
@@ -35,6 +36,7 @@ import { WipeView } from './battle/VictoryView'
 import { PortalBonuses, PortalInfo, PortalStep } from './area/PortalRun'
 import { NightmareInfo, NightmareStep, nightmareStepDue } from './area/NightmareRun'
 import { TimeRaceClockHere, TimeRaceInfo, TimeRaceStep, timeRaceStepDue } from './area/TimeRaceRun'
+import { WhiteoutInfo, WhiteoutStep, whiteoutStepDue } from './area/WhiteoutRun'
 import { AutopilotNote } from './area/AutopilotNote'
 import { useAutopilot } from './area/useAutopilot'
 
@@ -133,8 +135,12 @@ export function AreaScreen() {
   // The race of time and space's area (docs/61 §4.4): its way in, a fork's gates, the win.
   const race = run.rebattle ? null : timeRaceModeOf(area, data)
   const raced = !!race && run.phase === 'idle' && timeRaceStepDue(area, { save, data })
+  // The whiteout's area (docs/61 §4.3): its way in, its intro, the bonfire after a wave, the end.
+  const wo = run.rebattle ? null : whiteoutModeOf(area, data)
+  const white = !!wo && run.phase === 'idle' && whiteoutStepDue(area, { save, data })
   // The plain page between encounters (docs/42): the area's scene with the team, as on Home, in the banner's place.
-  const sceneIdle = run.phase === 'idle' && !own && !dream && !raced && !mode && !nm && !race && !run.rebattle
+  const sceneIdle =
+    run.phase === 'idle' && !own && !dream && !raced && !white && !mode && !nm && !race && !wo && !run.rebattle
   // A find is a step on the stage of its own (FindView), with or without the autopilot: no banner, no card.
   const finding = run.phase === 'preview' && run.encounter?.kind === 'item'
   return (
@@ -164,7 +170,8 @@ export function AreaScreen() {
       {run.phase === 'idle' && own && step}
       {dream && <NightmareStep area={area} />}
       {raced && <TimeRaceStep area={area} />}
-      {run.phase === 'idle' && !own && !dream && !raced && (
+      {white && <WhiteoutStep area={area} />}
+      {run.phase === 'idle' && !own && !dream && !raced && !white && (
         <>
           {mode && <PortalBonuses area={area} />}
           <AreaIdle area={area} scene={sceneIdle} />
@@ -173,6 +180,7 @@ export function AreaScreen() {
       {mode && run.phase === 'idle' && <PortalInfo mode={mode} area={area} />}
       {nm && run.phase === 'idle' && <NightmareInfo mode={nm} />}
       {race && run.phase === 'idle' && <TimeRaceInfo area={area} mode={race} />}
+      {wo && run.phase === 'idle' && <WhiteoutInfo area={area} mode={wo} />}
     </div>
   )
 }

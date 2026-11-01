@@ -7,10 +7,11 @@ https://claude.ai/artifact/KCHnkbKDiL5VKTrcJz8JcN.
 Branch `claude/eloquent-galileo-b5uahz` (from `version/2_9`), a PR into `version/2_9`.
 
 **Status:** the content is built (§2–§3, migration 0120, not to run before the user's review). Built, each behind its
-own switch (Off): the Gift card and Evergreen Hill's present (§4.0, §4.2, migration 0121), Spear Pillar's race of time
-and space (§4.4, migration 0124). The user's reviews (2026-11-01, notes left on the artifact's feedback boxes) are
-folded in (§6). Until each gameplay is switched on, its area plays as a plain secret area (a short deck, then its boss
-or raid).
+own switch (Off): the Gift card and Evergreen Hill's present (§4.0, §4.2, migration 0121), Crown Shrine's whiteout
+(§4.3, migration 0123), Spear Pillar's race of time and space (§4.4, migration 0124) and the Hall of Origin's Stairway
+of Plates (§4.5, no migration of its own). The user's reviews (2026-11-01, notes left on the artifact's feedback boxes)
+are folded in (§6). Until each gameplay is switched on, its area plays as a plain secret area (a short deck, then its
+boss or raid).
 
 ## 1. The brief, and the calls made on it
 
@@ -217,9 +218,25 @@ comes as it always did. The present plays again on each new challenge (after a w
 
 ### 4.3 Crown Shrine: Whiteout (weather survival)
 
+**Built** (its switch `whiteout`, Off). Engine `src/engine/whiteout.ts` and `whiteoutMode.ts` (the area's settings,
+`DEFAULT_WHITEOUT`, the blizzard's wear), the wear in the battle engine (`src/engine/battle.ts`: `weather`, `noBag`, the
+`weather` log entry), its hooks in `src/engine/run.ts` (`teamSwapsOpen`, `applyWipe`, `isAreaClosed` / `isAreaSealed`,
+`applyFieldItem`, `arriveAtWhiteout`), the run in `src/store/run.ts`; UI `src/components/Whiteout.tsx` and
+`src/screens/area/WhiteoutRun.tsx`, its scenes on the pixel engine `src/fx/timelines/whiteout.ts` and Abomasnow's
+entrance `src/fx/timelines/cinema/abomasnow.ts`, its sounds (`whiteout.*` in `src/audio/sfx.ts`); admin
+`src/admin/sections/WhiteoutModeBox.tsx` (Admin → Areas → Special mode: whiteout); migration
+`supabase/migrations/0123_whiteout.sql` (inlined in `supabase/seed.sql`); the mode on Crown Shrine in
+`scripts/content-snowglobe-valley.ts` (so 0120 writes it). Tests `tests/engine/whiteout.test.ts`,
+`tests/whiteout-fx.test.ts`, `tests/whiteout-sql.test.ts`, `e2e/whiteout.spec.ts`. Its screens: docs/15 §47.
+
 - The weather is **docs/62's Snow** (the raids' rule): every Pokémon that isn't Ice type loses **4% of its max HP each
   round**, both sides, with its chip, its snowfall and its log line. (Weather is otherwise off in small worlds; this
-  area's mode turns it on.)
+  area's mode turns it on.) *Built on the raids' rule as it stands* (`WEATHER_CHIP` and `WEATHER_SPARES` in
+  `src/engine/raidSpecials.ts`, called through `blizzardWear` in `whiteoutMode.ts`): when docs/62's general weather
+  system lands, `blizzardWear` is the one place to point at it. The admin picks the weather (snow, a sandstorm or
+  none); the share is the rule's, not a number of the area's.
+- A round is two turns: the wear falls once both sides have had theirs, on both Pokémon out (yours first), and can
+  K.O. either; a fight neither side could otherwise win ends that way rather than as a stalemate.
 - **Waves of 2, 3 and 4 foes**, various types, one Ice type in each; the last holds an Ice type and one foe strong
   against each starter line: Glalie · Bronzong (Lv.47); Beartic · Sawsbuck · Absol (48–49); Walrein · Crabominable
   (vs Stoutland) · Lanturn (vs Toucannon) · Ursaluna (vs Ampharos) (49–50), below Abomasnow's Lv.50 (the user's call,
@@ -229,6 +246,17 @@ comes as it always did. The present plays again on each new challenge (after a w
   the bag here, items might fly away."
 - Abomasnow's intro (the crown tree shakes, it steps out), then the boss, Lv.50, in the blizzard. A wipe: back to wave
   1, healed, XP and items kept.
+- As built (the user's design, 2026-11-01): wave 1 Glalie 47, Bronzong 47 · wave 2 Beartic 48, Sawsbuck 48, Absol 49 ·
+  wave 3 Walrein 49, Crabominable 49, Lanturn 50, Ursaluna 50 (wild, not catchable, always in that order; the admin's).
+  The way in heals as a Center does and opens with the intro (the blizzard rolls in, eyes glow in the crown tree), then
+  a pop-up with six short rules, TEAM until it begins, NOT NOW and BRAVE THE BLIZZARD. A bonfire after every wave
+  heals **40 % of max HP to every team member still standing** (a K.O. one stays K.O.: the bag is open there, a
+  Revive brings it back; my call, the design said "heals the team 40%"); the heal is given once, a reload doesn't give
+  it twice. In battle the bag stays shut (the engine refuses items), between fights too but at a bonfire. No travel
+  while it's under way (the nightmare's lock: the Mart and menus stay open). The boss caught: the outro, and the shrine
+  closes for good (`isAreaClosed`, whatever the switch says later). **The boss beaten but not caught** (a throw that
+  fails, or none): back at the last bonfire, already warm, then the boss again (the design didn't say; this keeps the
+  team and bag reachable before the retry). Switch Off: the plain secret area (its 6-card deck, then its boss).
 
 ### 4.4 Spear Pillar: the Race of Time and Space (time trial with forks)
 
@@ -345,19 +373,24 @@ with Distortion World's run). Publish.
    adds the world to `smallWorlds` (the switch and the other worlds kept) and bumps `configVersion`.
    `supabase/seed.sql` does not carry it (content migrations aren't inlined there, as Haunted Hollow's).
 2. Or, over an admin export: `pnpm snowglobe-valley <in.json> <out.json>`, then `pnpm import-bundle`.
-3. The race of time and space (§4.4), once the client is deployed: run in the Supabase SQL editor
-   [`supabase/migrations/0124_time_race.sql`](https://github.com/Splifingald/pokedice/blob/claude/eloquent-galileo-b5uahz/supabase/migrations/0124_time_race.sql)
-   (after 0060 and 0120; safe to run again): the switch `timeRace` (Off), Spear Pillar's race where it has no mode yet,
-   and the server's checks on Dialga's and Palkia's raids. `supabase/seed.sql` carries it too (inlined). Then Admin →
-   Areas → Spear Pillar → Special mode: race of time and space: check the numbers, the switch **On for admin** to try
-   it, **On for everyone** to open it. Publish.
-
 3. **The Gift card** (§4.0, §4.2): run
    [`supabase/migrations/0121_gift_card.sql`](https://github.com/Splifingald/pokedice/blob/claude/eloquent-galileo-b5uahz/supabase/migrations/0121_gift_card.sql)
    in the Supabase SQL editor (after 0120: the decks' `gift` copies and Delibird's `present` are in 0120's content). It
    adds the `giftCard` row (Off, an admin's own row kept), `gift_card_open()` (the switch as the server reads it) and
    bumps `configVersion`. Safe to run again. `supabase/seed.sql` carries it too (inlined). Then Admin → Events → Gift
    card: **On for admin** to try it, then **On for everyone**.
+4. **Crown Shrine's whiteout** (§4.3): deploy the client (the switch is Off: nothing changes for anyone), then run
+   [`supabase/migrations/0123_whiteout.sql`](https://github.com/Splifingald/pokedice/blob/claude/eloquent-galileo-b5uahz/supabase/migrations/0123_whiteout.sql)
+   (after 0120; safe to run again). It gives Crown Shrine its whiteout when it has no mode yet, adds the switch
+   `game_config.whiteout` Off, creates `whiteout_open()` and bumps `configVersion`. `supabase/seed.sql` carries it too
+   (inlined in its schema part). Then Admin → Areas → Crown Shrine → **Special mode: whiteout**: check the waves, the
+   weather and the bonfires' heal; the switch **On for admin** to try it, **On for everyone** to open it. Publish.
+5. **The race of time and space** (§4.4), once the client is deployed: run in the Supabase SQL editor
+   [`supabase/migrations/0124_time_race.sql`](https://github.com/Splifingald/pokedice/blob/claude/eloquent-galileo-b5uahz/supabase/migrations/0124_time_race.sql)
+   (after 0060 and 0120; safe to run again): the switch `timeRace` (Off), Spear Pillar's race where it has no mode yet,
+   and the server's checks on Dialga's and Palkia's raids. `supabase/seed.sql` carries it too (inlined). Then Admin →
+   Areas → Spear Pillar → Special mode: race of time and space: check the numbers, the switch **On for admin** to try
+   it, **On for everyone** to open it. Publish.
 
 Later changes, once 0120 has run on live, come as patches of their own (as Haunted Hollow's 0055 onwards), never by
 regenerating 0120.

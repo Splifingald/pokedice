@@ -2,6 +2,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   areaOpenAt,
+  DEFAULT_WHITEOUT,
+  normaliseWhiteout,
   compileGameData,
   deckAbilities,
   deckCounts,
@@ -150,6 +152,22 @@ describe('Snowglobe Valley', () => {
     const top = Math.max(...champ.team.map((m) => m.level))
     expect(champ.team.at(-1)).toEqual({ dex: 460, level: top })
     expect(champ.team.filter((m) => m.level === top)).toHaveLength(1)
+  })
+
+  it('makes Crown Shrine a whiteout: three waves below Abomasnow’s level, an Ice type in each, no Ghost to get past', () => {
+    const shrine = h.areas.find((a) => a.name === 'Crown Shrine')!
+    const mode = normaliseWhiteout(shrine.mode)!
+    expect(shrine.mode).toEqual(DEFAULT_WHITEOUT)
+    expect(mode.waves.map((w) => w.length)).toEqual([2, 3, 4])
+    const boss = shrine.legendaryBoss![0]!
+    expect(boss).toEqual({ dex: 460, level: 50, shiny: true })
+    for (const w of mode.waves) {
+      expect(w.some((f) => typesOf(f.dex).includes('ice'))).toBe(true)
+      for (const f of w) {
+        expect(typesOf(f.dex), data.species[f.dex]!.name).not.toContain('ghost')
+        expect(f.level).toBeLessThanOrEqual(boss.level)
+      }
+    }
   })
 
   it('runs Sat 19 Dec 2026 → Sun 3 Jan 2027, exactly 15 days', () => {

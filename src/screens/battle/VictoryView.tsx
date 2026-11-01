@@ -593,6 +593,20 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
             ),
           })
           return
+        case 'whiteout_wave':
+          // A wave of the whiteout cleared (docs/61 §4.3): a bonfire comes next.
+          extras.push({
+            key: k,
+            node: (
+              <div className="light-scope flex items-center justify-center gap-2 bg-[#16264a] p-2 text-center text-[#eef6ff] shadow-[inset_0_3px_0_#e6f1fa,0_0_0_2px_#060b18]">
+                <PixelIcon name="burn" size={22} />
+                <span className="text-xl leading-tight">
+                  {t('ui.whiteout.waveWon', { n: e.wave, total: e.waves })}
+                </span>
+              </div>
+            ),
+          })
+          return
         case 'nightmare_gift': {
           // The item a round left in the bag (docs/30), once for good.
           const item = data.items[e.key]
@@ -1173,6 +1187,8 @@ function AreaWipe() {
   // A try of the race of time and space ended (docs/61 §4.4): the clock or a full K.O., back to the start.
   const raceLost = useGame((s) => s.run.raceLost)
   const timeUp = raceLost?.reason === 'time'
+  // A wipe in the whiteout (docs/61 §4.3): back to wave 1.
+  const whiteoutLost = useGame((s) => s.run.whiteoutLost)
   return (
     <Overlay
       label={t('ui.wipe.title')}
@@ -1188,7 +1204,9 @@ function AreaWipe() {
       {/* The rework: what a wipe costs is said only where it differs from the usual (a portal, the nightmare, Extreme). */}
       <p
         className="copy mb-3 text-lg"
-        hidden={portalLost == null && nightmareLost == null && !raceLost && !!save && wipeHeals(save, data)}
+        hidden={
+          portalLost == null && nightmareLost == null && whiteoutLost == null && !raceLost && !!save && wipeHeals(save, data)
+        }
       >
         {/* Extreme mode heals nobody after a lost round: the fainted ones rest (docs/22). */}
         {raceLost
@@ -1197,6 +1215,8 @@ function AreaWipe() {
           ? t(skinKey(skinOfArea(area, data), 'ui.portal.wipeBody'), { n: portalLost })
           : nightmareLost != null
           ? t('ui.nightmare.wipeBody', { n: nightmareLost })
+          : whiteoutLost != null
+          ? t('ui.whiteout.wipeBody', { n: whiteoutLost })
           : save && !wipeHeals(save, data)
           ? t('ui.wipe.bodyExtreme', {
               area: area?.name ?? '',

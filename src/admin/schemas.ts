@@ -290,6 +290,16 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
           }),
           raid: z.object({ level: int(1, 100), upgradeLevel: int(1, 10), bars: int(1, 10), teamCap: int(1, 100) }),
         }),
+        // Crown Shrine's whiteout (docs/61 §4.3): its waves of foes in order, the weather, the bonfires' heal.
+        z.object({
+          kind: z.literal('whiteout'),
+          waves: z
+            .array(z.array(z.object({ dex: int(1, 99999), level: int(1, 100) })).min(1, 'a wave needs a foe').max(8))
+            .min(1, 'at least one wave')
+            .max(10),
+          weather: z.enum(['snow', 'sand']).nullable(),
+          bonfirePercent: z.number().min(0).max(100),
+        }),
       ])
       .nullable()
       .optional(),

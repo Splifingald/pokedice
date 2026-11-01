@@ -531,6 +531,33 @@ const FX_SOUNDS = {
     tone(659, 0.9, { type: 'triangle', vol: 0.03, at: 0.2 })
     tone(784, 1.0, { type: 'triangle', vol: 0.03, at: 0.3 })
   },
+  // Crown Shrine's whiteout (docs/61 §4.3): the blizzard rolling in (a long wind rising), the eyes glowing in the
+  // crown tree, a bonfire catching (a crackle and a warm low note), the tree shaking its snow off, the blizzard
+  // lifting (the wind falling away into a bright major chord).
+  'whiteout.wind': () => {
+    hiss(2.2, { freq: 500, slide: 900, q: 1.4, vol: 0.06 })
+    hiss(2.0, { freq: 1400, slide: -600, q: 2, vol: 0.03, at: 0.3 })
+  },
+  'whiteout.eyes': () => {
+    tone(1568, 0.12, { type: 'square', vol: 0.025 })
+    tone(1568, 0.12, { type: 'square', vol: 0.025, at: 0.16 })
+    tone(98, 0.6, { type: 'sawtooth', vol: 0.04, at: 0.1 })
+  },
+  'whiteout.fire': () => {
+    for (let i = 0; i < 6; i++) hiss(0.04, { freq: 2600 - i * 180, vol: 0.05, at: i * 0.07 + (i % 2) * 0.02 })
+    tone(196, 0.9, { type: 'triangle', vol: 0.035, at: 0.1 })
+    tone(294, 0.7, { type: 'triangle', vol: 0.025, at: 0.3 })
+  },
+  'whiteout.shake': () => {
+    hiss(0.9, { freq: 320, type: 'lowpass', vol: 0.1 })
+    tone(60, 0.6, { type: 'sawtooth', vol: 0.05, slide: -20 })
+  },
+  'whiteout.lift': () => {
+    hiss(1.4, { freq: 900, slide: -700, vol: 0.05 })
+    tone(523, 0.3, { type: 'triangle', vol: 0.035, at: 0.6 })
+    tone(659, 0.3, { type: 'triangle', vol: 0.035, at: 0.72 })
+    tone(784, 0.7, { type: 'triangle', vol: 0.04, at: 0.84 })
+  },
   // The Underground (docs/34): a pickaxe's clink on rock (lower and heavier the bigger the roll), the wall rumbling
   // down, and a little chime when something is dug out whole.
   'ug.strike': (n = 1) => {

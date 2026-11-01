@@ -19,7 +19,7 @@ import { HomeNotices } from './home/Notices'
 import { H as SCENE_H, W as SCENE_W } from './home/scene'
 import { SceneStage } from './home/SceneStage'
 import { pictureOf } from '@/fx/areaArt'
-import { nightmareLock } from '@/engine'
+import { heldIn } from '@/engine'
 import { travelTo } from '@/store/travel'
 import { Widgets } from './home/Widgets'
 import { useInWorld, WorldStrip, WorldWaiting } from '@/screens/events/world'
@@ -111,9 +111,11 @@ function HomeView({ area }: { area: Area }) {
   }
   const openSheet = (view: AreasView) => setSheet({ view, key: Date.now() })
   const wide = useMediaQuery('(min-width: 1024px)')
-  // Darkrai's nightmare holds the player in its area (docs/30): the banner is shut, and says why.
-  const held = useGame((s) => nightmareLock(s.save, s.data))
-  const heldWhy = held ? t('ui.nightmare.locked', { area: held.name }) : null
+  // Darkrai's nightmare (docs/30) or the whiteout (docs/61 §4.3) holds the player in its area: the banner is shut, and
+  // says why. (The area and the kind apart: a selector hands back stable values.)
+  const heldArea = useGame((s) => heldIn(s.save, s.data)?.area ?? null)
+  const heldBy = useGame((s) => heldIn(s.save, s.data)?.by ?? null)
+  const heldWhy = heldArea && heldBy ? t(`ui.${heldBy}.locked`, { area: heldArea.name }) : null
   // What the phone's shorter scene keeps: a window of SCENE_SHOWN of its height, centred on where the team walks.
   const walk = pictureOf(area.id)?.walk
   const walkMid = walk ? (walk[1] + walk[3]) / 2 / SCENE_H : 0.62

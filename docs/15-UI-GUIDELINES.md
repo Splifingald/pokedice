@@ -2115,6 +2115,79 @@ state on `/kitchen-sink` (`GiftCardBits`), every take on `/kitchen-sink/fx`.
   balls from worst to best, a boss's taps). Areas → Encounter deck has the Gift card's copies ("in place of the item
   cards, only while its switch is on"), and a boss's "Out of a present" box.
 
+## 47. Whiteout (Crown Shrine)
+
+An area's special mode (docs/61 §4.3), Snowglobe Valley's third secret area: weather survival. Waves of fixed foes in
+a blizzard, a bonfire after each, then shiny Abomasnow. Built as the nightmare's parallel (§29); the pieces are in
+`src/components/Whiteout.tsx` and `src/screens/area/WhiteoutRun.tsx`, every state on `/kitchen-sink` (`WhiteoutBits`);
+the engine (`engine/whiteout.ts`, `whiteoutMode.ts`) decides every foe, number and outcome, the blizzard's wear in the
+battle engine itself (`BattleState.weather`, the raids' rule). **Every effect is pixel art on the game's FX engine**
+(`src/fx/timelines/whiteout.ts`, `cinema/abomasnow.ts`; on `/kitchen-sink/fx`). Its palette (`WO`): the storm's
+near-black blues to slate, the snow's whites and frost, the crown tree's pine greens with a gold crown, the fire's ramp
+(cream, yellow, orange, red, ember) and the morning's blues and sun gold at the end. **Its lasting effects follow §8**
+(`useWhiteoutLevel`: a calm OS or motion off stills them; short halves the snow).
+
+- **The switch and the rules** follow §20: `whiteout` (Admin → Areas → Special mode: whiteout), Off by default; the
+  server has its check (`whiteout_open()`, 0123). Off: the area plays as a plain secret area (its deck, then its boss).
+  **Its rules are short**, six one-line `RuleList` rows from the area's numbers: "3 waves of foes that can't be
+  caught", "The blizzard takes 4% HP each round from all but Ice types, foes too", "A bonfire after each wave: +40% HP,
+  team changes and items", "No bag in battle", "Then Abomasnow: catch it to end the blizzard", "No travel until it ends
+  (the shop stays open)". On the way in's pop-up every time, and from INFO at the foot of the area's page
+  (`WhiteoutRulesModal`, the shrine in its storm as the banner, `ShrineScene`).
+- **The way in** (`WhiteoutEntry`): the nightmare's, piece for piece. CONTINUE on Home says ENTER THE BLIZZARD ("3
+  waves, no travel until it ends"); it plays **the intro at once** (`WhiteoutIntro`, full screen: the blizzard rolls in
+  over the area's picture as a white wall with a dithered front until all is white, then the shrine shows in the storm
+  and two red eyes blink open in the crown tree; the line in a storm-blue card with a snow rim and a gold edge; held at
+  its end, "Tap to continue ▼" with the focus; no SKIP; motion off, its end at once). Arriving heals as a Center does.
+  The tap raises its pop-up at the bottom (`WhiteoutEntryDialog`, "Into the blizzard"): the rules, "Healed as at a
+  Pokémon Center" with TEAM (the team can change until it begins; back from the Team screen the pop-up is up again at
+  once: `run.whiteoutPopup`), NOT NOW and BRAVE THE BLIZZARD (red). After a wipe the next way in plays it again.
+- **The gauge** (`WhiteoutGauge`): the round gauge's place, a tile per wave with a pip per foe (snow-white once
+  beaten), the wave under way with the gold edge, a flame between waves (lit once its bonfire is behind), the crown for
+  the boss (gold edge when it's next), "1/3"; an image with "Waves cleared: 1/3".
+- **The foes**: the preview says "Wave 2/3 · 1/3" over the name and "Lost in the blizzard: it can't be caught." in
+  place of the catch hint (no NEW / caught tag), on a storm-blue frame. **Every fight here is in the blizzard** (the
+  boss's too): `SnowOverStage` drives flakes and a few streaks over the stage (over the picture, under the plates, no
+  taps), and the **blizzard's chip** (`BlizzardChip`, a snowflake and "Blizzard" in a storm-blue tag with a snow rim)
+  sits at the stage's top right under the round's strip; its title and label say the rule. The wear is a line of the
+  log ("Ampharos is buffeted by the blizzard! −6") with the HP bar and its number, at the end of each round, both sides
+  (an Ice type takes nothing), and a history row ("was buffeted by the blizzard").
+- **No bag in battle**: the engine refuses every item (`noBag`). On a phone the Bag button stays enabled and a tap (or
+  B) toasts "It's too dangerous to open the bag here, items might fly away"; on a computer the Bag column keeps its
+  items greyed with that line over them in a well with a lock (a `note`). Between fights the Pokémon sheet's items say
+  it too; **at a bonfire the bag opens**.
+- **The result card** after a wave's last foe adds "Wave 1/3 cleared: a bonfire ahead" on a storm-blue card with a
+  flame.
+- **The bonfire** (`BonfireView`, the cozy moment): on the area's page, a 2:1 scene (`bonfireTimeline`): the dark, far
+  pines, snow falling softly; a spark on the logs, then the fire catching and growing (tongues of flame through the
+  fire's ramp, swaying, a lick now and then; its glow dithered over the snow; embers rising); the team sitting round it
+  in an arc, their front sprites (those on its left turned to face it), cold blue until it catches, then lit warm. When
+  it has caught (`hud.heal`) the engine gives the heal and the team's cards under it fill; the line says "Its warmth
+  gave every Pokémon still standing 40% of its max HP back." (a K.O. one stays K.O.: a Revive from the bag, there).
+  Its title is "Bonfire 1/3", the last "The last bonfire". A well with a flame says the team can change and items be
+  used here, with TEAM (the Team screen: "At the bonfire: swap Pokémon with your Box and use items before you move on."
+  and BACK TO THE BONFIRE). The way on (red, enabled once lit): "On to wave 2", or "Face the crown tree" at the last. It
+  stays until then (a reload or a trip Home shows it again, warmed: no second heal). Motion off or short: it has caught
+  at once.
+- **Abomasnow's entrance** (`abomasnowCinema`, a boss cinematic, docs/53): the shrine in the blizzard, the crown tree
+  where the foe will stand; its eyes open, it shakes harder and harder and the snow pours off its tiers in clumps; then
+  Abomasnow steps out from behind it as a white-rimmed silhouette into its place, and the reveal (the name card, the
+  send-out). Played by the whiteout whatever the cinematics' switch says; listed with the bosses' (FX lab, Admin →
+  Legend intros).
+- **The end** (`WhiteoutVictoryView`): full screen; the wind falls, the snow thins and stops, the morning dithers in
+  over the storm, long gold rays break over the shrine, the snow on the tree glints; shiny Abomasnow by its tree, a
+  sparkle and its cry; the card. Then "The blizzard lifts" in gold on the storm card, "Shiny Abomasnow is yours.
+  Sunlight falls on Crown Shrine, closed for good.", and the green BACK TO THE WORLD (the focus). No skip. The shrine
+  is closed from then on (`isAreaClosed`): Home's CONTINUE for it is shut and says why.
+- **If the boss gets away** (its throw failed, or none was thrown): back at the last bonfire, already warm (team and
+  bag open, no second heal), and "Face the crown tree" again.
+- **The lock**: as the nightmare's (§29), only travel shuts, with its own words ("The blizzard holds you at Crown Shrine:
+  no travel until it ends. The Mart stays open.", "Areas: locked during the blizzard"): Home's Areas button, the green
+  GO TO, the world strip's way back. The Mart, the Team, the bag (at a bonfire) and the menus stay open. No screen
+  effect outside its fights.
+- **A wipe** keeps the wipe card (§14), its line: the blizzard swallowed the team, the waves cleared are lost, back to
+  wave 1, XP, ₽ and items kept, the team healed; the lock lifts.
+
 ## 48. The Race of Time and Space (Spear Pillar)
 
 An area's special mode (docs/61-SNOWGLOBE-VALLEY.md §4.4), Snowglobe Valley's S4: a time trial whose last gate picks the

@@ -188,6 +188,13 @@ export interface RunState {
    * (the wipe card says so).
    */
   raceLost?: { reason: 'time' | 'wipe'; fights: number; total: number } | null
+  /** A wipe just ended a whiteout try (docs/61 §4.3): the waves it had cleared, lost now (the wipe card says so). */
+  whiteoutLost?: number | null
+  /**
+   * The whiteout's way in has shown its pop-up: back from the Team screen, it shows again at once over the intro's
+   * end, with no intro and no tap to wait for (as the nightmare's nightmarePopup).
+   */
+  whiteoutPopup?: boolean
   /** Trick or Treat under way (docs/29). */
   trick?: TrickRun | null
   /** A Gift card or a boss's present under way (docs/61 §4.0, §4.2). */

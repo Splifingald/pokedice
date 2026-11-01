@@ -171,6 +171,16 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: r
           amount: e.amount,
         })
         return
+      case 'weather':
+        // The whiteout's blizzard (docs/61 §4.3).
+        rows.push({
+          key,
+          ...who(e.targetUid),
+          text: e.weather === 'snow' ? t('ui.whiteout.hist') : t('ui.raid.x.weather.sand.name'),
+          icon: STATUS_ICON.frozen,
+          amount: e.amount,
+        })
+        return
       case 'talent':
         rows.push({ key, ...who(e.uid), text: talentLogText(e.name ?? who(e.uid).name, e, e.ally ? who(e.ally).name : undefined), icon: TIER_ICON[talentTier(e.talent)] })
         return
