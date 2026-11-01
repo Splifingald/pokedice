@@ -1171,6 +1171,12 @@ decides every level, landing Box and outcome, and the screens only say them.
   Johto first, no trades left today, you have no Haunter…), the row greyed, and the time left at its far end (so the
   trainer's name keeps its room on a phone). Friends' rows are sky blue with
   the FRIEND tag, yours gold with YOURS, sorted last. A guest's rows have no line.
+- **The board's picks** (docs/23 §2.1): without a search the Board shows 5 listings picked for the player (only ones
+  they can take: a Pokémon they don't have first, then a hidden talent their family lacks), under "Picked for you" and
+  its one-line why, then **NEW PICKS** (`NewPicksButton`: a white button with the dice icon and "2/2 today"; greyed
+  with "That's every listing you can take right now" under it when nothing else can be shown; "New picks tomorrow"
+  once the day's are used). Typing a search swaps the picks for every listing that matches, with the sort beside the
+  field and the chips under it; clearing it brings the picks back.
 - **Who can see it** (`VisChip`): Public blue, Friends green, Private (link) navy. **Time left** (`TimeLeft`): "2d 4h"
   and a thin bar of the listing's life, red in its last 6 hours.
 - **The listing's sheet** (`ListingSheet`): the sprite large, types, whose, its chips and level, a box with what they
