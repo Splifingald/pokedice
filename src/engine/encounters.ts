@@ -1,3 +1,4 @@
+import { areaVersusConfig, foeEncounter, placeVersusCards, type AreaFoe } from './areaVersus'
 import { isLegendary } from './breeding'
 import { areaDayTime, wildPoolAt } from './dayNight'
 import { shuffle } from './deal'
@@ -46,6 +47,8 @@ export type Encounter =
       team: TrainerMon[]
       double?: boolean
       prize?: number
+      /** A real player's team (docs/54): the fight is theirs, as it was, with its own rules (`isPlayerFoe`). */
+      player?: AreaFoe
     }
   | {
       kind: 'gym'
@@ -122,7 +125,16 @@ export interface EncounterContext {
    * Unset = every one, as where time isn't kept.
    */
   hour?: number | null
+  /**
+   * Real-player battles (docs/54): the team the server has for this area, when the save meets them here
+   * (`areaVersusHere`). Without one, no deck holds the card and a card already dealt is set aside.
+   */
+  versusFoe?: AreaFoe | null
 }
+
+/** A real player's team (docs/54), not a trainer of the content. */
+export const isPlayerFoe = (enc: Encounter | null | undefined): enc is Extract<Encounter, { kind: 'trainer' }> & { player: AreaFoe } =>
+  enc?.kind === 'trainer' && !!enc.player
 
 /** Every round the area asks for is done: its gym / legendary waits, and the area can clear. */
 export const roundsComplete = (area: Area, progress: AreaProgress) =>
@@ -361,7 +373,7 @@ export function rollTrainer(ctx: EncounterContext, rng: Rng): Encounter | null {
   }
 }
 
-const DECK_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick'] as const
+const DECK_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus'] as const
 export type DeckCounts = Record<(typeof DECK_KINDS)[number], number>
 
 /**
@@ -371,57 +383,66 @@ export type DeckCounts = Record<(typeof DECK_KINDS)[number], number>
  */
 export function deckCounts(
   weights: Partial<Record<EncounterKind, number>>,
-  can: { wild: boolean; trainer: boolean; item?: boolean; casino?: boolean; trick?: boolean },
+  can: { wild: boolean; trainer: boolean; item?: boolean; casino?: boolean; trick?: boolean; versus?: boolean },
 ): DeckCounts {
   const copies = (k: (typeof DECK_KINDS)[number]) =>
     (k === 'wild' && !can.wild) ||
     (k === 'trainer' && !can.trainer) ||
     (k === 'item' && !can.item) ||
     (k === 'casino' && !can.casino) ||
-    (k === 'trick' && !can.trick)
+    (k === 'trick' && !can.trick) ||
+    (k === 'versus' && !can.versus)
       ? 0
       : Math.max(0, Math.round(Number(weights[k]) || 0))
   const c = Object.fromEntries(DECK_KINDS.map((k) => [k, copies(k)])) as DeckCounts
-  return DECK_KINDS.some((k) => c[k] > 0) ? c : { wild: 0, trainer: 0, center: 1, item: 0, casino: 0, trick: 0 }
+  // A real player's card alone is no deck: it only comes on top of the area's own cards.
+  return DECK_KINDS.some((k) => k !== 'versus' && c[k] > 0) ? c : { wild: 0, trainer: 0, center: 1, item: 0, casino: 0, trick: 0, versus: 0 }
 }
 
-/** Cards in one freshly dealt encounter deck of the area (Trick or Treat counted only with the game data to say so). */
-export const deckSize = (area: Area, data?: GameData) =>
-  Object.values(deckCounts(area.encounterWeights, deckAbilities(area, data))).reduce((a, b) => a + b, 0)
+/**
+ * Cards in one freshly dealt encounter deck of the area (Trick or Treat counted only with the game data to say so; a
+ * real player's card only with `foe`, a team waiting for the area: docs/54).
+ */
+export const deckSize = (area: Area, data?: GameData, foe = false) =>
+  Object.values(deckCounts(area.encounterWeights, deckAbilities(area, data, foe))).reduce((a, b) => a + b, 0)
 
 /** The next round dealt here is the set opening's first (docs/42): no Pokémon Center opens it. */
 export const opensWithoutCenter = (area: Area, progress: AreaProgress, data: GameData): boolean =>
   openingRoundDue(area, progress, data) === 0
 
 /** Cards in the next round dealt here: the set opening's round when one is due (docs/46), else a fresh deck's. */
-export function nextRoundSize(area: Area, progress: AreaProgress, data: GameData): number {
+export function nextRoundSize(area: Area, progress: AreaProgress, data: GameData, foe = false): number {
   const due = openingRoundDue(area, progress, data)
-  return (due == null ? null : openingRound(area, data, due))?.length ?? deckSize(area, data)
+  return (due == null ? null : openingRound(area, data, due))?.length ?? deckSize(area, data, foe)
 }
 
-export const deckAbilities = (area: Area, data?: GameData) => ({
+/** `foe`: a real player's team waits for the area (docs/54); the caller has checked the save meets them here. */
+export const deckAbilities = (area: Area, data?: GameData, foe = false) => ({
   wild: area.wildPool.length > 0,
   trainer: area.trainerPool.length > 0,
   item: area.lootPool.length > 0,
   casino: !!data && gameCornerOn(data),
   trick: !!data && trickDealable(data, area),
+  versus: foe,
 })
 
 /**
  * A freshly shuffled deck for the area (plus any `extra` cards, e.g. a returning legendary). No two Centers are dealt
  * back to back, and with `noCenterFirst` (the round opens with a Center, or one was just met) the first card isn't
- * one — as long as the deck has enough other cards to keep them apart. Cards are drawn from the end of the array.
+ * one — as long as the deck has enough other cards to keep them apart. With `foe` (a real player's team waits for the
+ * area, docs/54), its cards go among the round's last ones. Cards are drawn from the end of the array.
  */
 export function buildDeck(
   area: Area,
   data: GameData,
   rng: Rng,
   extra: readonly DeckCard[] = [],
-  opts: { noCenterFirst?: boolean; noCenters?: boolean } = {},
+  opts: { noCenterFirst?: boolean; noCenters?: boolean; foe?: boolean } = {},
 ): DeckCard[] {
-  const counts = deckCounts(area.encounterWeights, deckAbilities(area, data))
+  const counts = deckCounts(area.encounterWeights, deckAbilities(area, data, !!opts.foe))
   const c = opts.noCenters ? { ...counts, center: 0 } : counts
-  const others = shuffle([...DECK_KINDS.filter((k) => k !== 'center').flatMap((k) => Array.from({ length: c[k] }, (): DeckCard => k)), ...extra], rng)
+  const shuffled = DECK_KINDS.filter((k) => k !== 'center' && k !== 'versus')
+  const others = shuffle([...shuffled.flatMap((k) => Array.from({ length: c[k] }, (): DeckCard => k)), ...extra], rng)
   // Centers go into distinct gaps between the other cards (gap i = just before the i-th card drawn).
   const gaps = shuffle(Array.from({ length: others.length + 1 }, (_, i) => i).filter((i) => !opts.noCenterFirst || i > 0 || others.length === 0), rng)
   const perGap = new Map<number, number>()
@@ -434,7 +455,7 @@ export function buildDeck(
     for (let k = 0; k < (perGap.get(i) ?? 0); k++) order.push('center')
     if (i < others.length) order.push(others[i]!)
   }
-  return order.reverse()
+  return placeVersusCards(order, c.versus, areaVersusConfig(data).lastCards, rng).reverse()
 }
 
 export interface EncounterRoll {
@@ -497,6 +518,8 @@ export function dealTalents(enc: Encounter, data: GameData, rng: Rng): Encounter
       return rollTalent(data, enc.dex, rng) ? { ...enc, talent: true } : enc
     case 'trainer':
     case 'gym': {
+      // A real player's team is as it was (docs/54): their talents came with it.
+      if (enc.kind === 'trainer' && enc.player) return enc
       const levels = enc.team.map((m) => m.level)
       const ace = enc.kind === 'gym' && enc.role !== 'trainer' ? levels.lastIndexOf(Math.max(...levels)) : -1
       const has = (dex: number) => {
@@ -577,7 +600,7 @@ function returningLegend(ctx: EncounterContext, rng: Rng): Encounter | null {
   return b ? { kind: 'boss', dex: b.dex, level: b.level, returning: true, ...(legendShiny(b, ctx.area, ctx.data, rng, ctx.shinyChance) && { shiny: true }) } : null
 }
 
-const cardEncounter = (card: 'wild' | 'trainer' | 'center' | 'casino' | 'trick', ctx: EncounterContext, rng: Rng): Encounter | null =>
+const cardEncounter = (card: 'wild' | 'trainer' | 'center' | 'casino' | 'trick' | 'versus', ctx: EncounterContext, rng: Rng): Encounter | null =>
   card === 'wild'
     ? rollWild(ctx, rng)
     : card === 'trainer'
@@ -586,7 +609,12 @@ const cardEncounter = (card: 'wild' | 'trainer' | 'center' | 'casino' | 'trick',
         ? { kind: 'casino' }
         : card === 'trick'
           ? rollTrick(ctx, rng)
-          : { kind: 'center', forced: false }
+          : card === 'versus'
+            ? playerEncounter(ctx)
+            : { kind: 'center', forced: false }
+
+/** A real player's card (docs/54): the team waiting for the area, else nothing (the card is set aside). */
+const playerEncounter = (ctx: EncounterContext): Encounter | null => (ctx.versusFoe ? foeEncounter(ctx.versusFoe, ctx.data) : null)
 
 /** The extra card a fled legendary adds to every deck dealt until it's caught. */
 const legendCards = (ctx: EncounterContext): DeckCard[] => (fledLegendary(ctx.area, ctx.progress, ctx.pokedex, ctx.data) ? ['legend'] : [])
@@ -596,7 +624,7 @@ function dealRound(ctx: EncounterContext, rng: Rng, noCenterFirst: boolean): { d
   const opening = openingRoundDue(ctx.area, ctx.progress, ctx.data)
   const round = opening == null ? null : openingRound(ctx.area, ctx.data, opening)
   if (round) return { deck: openingDeck(round, ctx.noCenters), opening }
-  const deck = buildDeck(ctx.area, ctx.data, rng, legendCards(ctx), { noCenterFirst, noCenters: ctx.noCenters })
+  const deck = buildDeck(ctx.area, ctx.data, rng, legendCards(ctx), { noCenterFirst, noCenters: ctx.noCenters, foe: !!ctx.versusFoe })
   return { deck, opening: null }
 }
 
@@ -647,7 +675,7 @@ function drawFromDeck(ctx: EncounterContext, rng: Rng): EncounterRoll {
   let drawn: DeckCard[] = []
   const roll = (r: Omit<EncounterRoll, 'opening'>): EncounterRoll => (r.newRound ? { ...r, opening } : r)
   // A card the area can no longer produce (content edited since the deal, a legendary caught) is discarded.
-  const tries = 2 * (deck.length + deckSize(ctx.area, ctx.data) + 1)
+  const tries = 2 * (deck.length + deckSize(ctx.area, ctx.data, !!ctx.versusFoe) + 1)
   for (let i = 0; i < tries; i++) {
     if (!deck.length) {
       deck = deal()
@@ -737,6 +765,8 @@ function forcedEncounter(ctx: EncounterContext, kind: ForceKind, rng: Rng): Enco
       return { kind: 'casino' }
     case 'trick':
       return rollTrick(ctx, rng)
+    case 'versus':
+      return playerEncounter(ctx)
     case 'boss': {
       const b = fightBosses(ctx.area, ctx.data).find((x) => !ctx.progress.bossesDefeated.includes(x.dex))
       return b ? { kind: 'boss', dex: b.dex, level: b.level, ...(legendShiny(b, ctx.area, ctx.data, rng, ctx.shinyChance) && { shiny: true }) } : returningLegend(ctx, rng)

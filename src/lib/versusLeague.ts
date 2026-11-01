@@ -182,6 +182,22 @@ export async function fetchLeagueGlobal(): Promise<LeagueGlobal | null> {
   return parseLeagueGlobal(data)
 }
 
+/** The server's answer to versus_league_best: a count of trophies, or null (closed, not a friend, or nothing sent). */
+export const parseLeagueBest = (raw: unknown): number | null =>
+  raw == null || !Number.isFinite(Number(raw)) ? null : Math.max(0, Math.round(Number(raw)))
+
+/**
+ * The most trophies ever held in the league, in any week (migration 0097): yours, or a friend's (`userId`). Null when
+ * the cloud isn't configured on this site, or the server won't say (the league closed to you, not a friend).
+ */
+export async function fetchLeagueBest(userId?: string): Promise<number | null> {
+  const client = await getSupabase()
+  if (!client) return null
+  const { data, error } = await client.rpc('versus_league_best', userId ? { p_user: userId } : {})
+  if (error) throw error
+  return parseLeagueBest(data)
+}
+
 /** This week's league, fetched at most once every `maxAgeMs` (the Versus screen always fetches it fresh). */
 export async function leagueHomeCached(maxAgeMs = 10 * 60_000): Promise<LeagueHome | null> {
   if (lastHome && Date.now() - lastHome.at < maxAgeMs) return lastHome.home

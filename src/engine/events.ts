@@ -21,6 +21,18 @@ export const eventOpenTo = (access: EventAccess | undefined, data: GameData): bo
 /** The Game Corner's slot machine (its cards in area decks): off since 2026-10-25, the wheel gives Porygon instead. */
 export const gameCornerOn = (data: GameData): boolean => eventOpenTo(data.config.slotMachine?.access, data)
 
+/**
+ * The legends' own cinematics (docs/53): Mewtwo's lab, Articuno's ice cavern… instead of the shared entrance, and no
+ * warning tapes on a legend's raid. Purely visual: the fights are the same either way.
+ */
+export const legendCinemaOn = (data: GameData): boolean => eventOpenTo(data.config.legendCinema?.access, data)
+
+/**
+ * The champions' own cinematics (docs/56): Red on Mt. Silver's summit, Leon's stadium… instead of the trainer stepping
+ * onto the field. Purely visual: the fights are the same either way.
+ */
+export const championCinemaOn = (data: GameData): boolean => eventOpenTo(data.config.championCinema?.access, data)
+
 /** This event is switched on for whoever is playing. */
 export const eventOn = (data: GameData, id: EventId): boolean => eventOpenTo(eventDef(data, id)?.access, data)
 

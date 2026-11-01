@@ -1,5 +1,10 @@
 // Run flow: map → area → encounter preview → battle → rewards → next. Thin glue over the pure engine.
 import {
+  areaVersusHere,
+  foeGoldMultiplier,
+  foeLevels,
+  isPlayerFoe,
+  type AreaFoe,
   autoLevel,
   autoOffersLead,
   catchTalentBonus,
@@ -97,6 +102,7 @@ import {
   startPortalRun,
   applyNightmareStrike,
   asDouble,
+  fitWildPair,
   isDoubleEncounter,
   type FoeSeed,
   type DoubleKo,
@@ -128,6 +134,7 @@ import {
 } from '@/engine'
 import { activeSlot } from '@/save/storage'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type CatchState, type RunState } from './game'
+import { areaFoeFor, noteMeet } from './areaVersus'
 import { localHour } from './dayTime'
 import { resumedRngs, trackRngs } from './resume'
 import { currentLive } from './live'
@@ -242,7 +249,7 @@ function settleRound(quiet = false): Extract<RunEvent, { kind: 'area_cleared' }>
 
 /** Back to the area screen after an encounter: the round may be complete. */
 function backToArea() {
-  setRun({ phase: 'idle', encounter: null })
+  setRun({ phase: 'idle', encounter: null, duel: null })
   settleRound()
   // In a portal run, a distortion next is turned over at once: its boons, with no stop on the area's page first (the
   // user, 2026-10-15).
@@ -278,6 +285,8 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
     shinyChance: wildShinyChance(save, data),
     // Day and night (docs/32): in Johto, only the hour's wild Pokémon come.
     hour: localHour(),
+    // Real-player battles (docs/54): the team the server has for this area, if the save meets them here.
+    versusFoe: areaVersusHere(save, area, data) ? areaFoeFor(area.id) : null,
   }
 }
 
@@ -520,7 +529,10 @@ export function rollNext() {
  * double battle keeps its preview (two to pick).
  */
 const directFight = (enc: Encounter) =>
-  (enc.kind === 'wild' || enc.kind === 'boss' || enc.kind === 'trainer' || enc.kind === 'gym') && !isDoubleEncounter(enc)
+  (enc.kind === 'wild' || enc.kind === 'boss' || enc.kind === 'trainer' || enc.kind === 'gym') &&
+  !isDoubleEncounter(enc) &&
+  // A real player's card shows their team first, FIGHT or SKIP (docs/54).
+  !isPlayerFoe(enc)
 function beginFight() {
   const { save, data, settings, run } = useGame.getState()
   if (!save) return
@@ -590,6 +602,8 @@ export function declineChallenge() {
 
 export function canSkipCurrent(): boolean {
   const { run, data } = useGame.getState()
+  // A real player's card is always the player's choice (docs/54): SKIP, and no ₽.
+  if (isPlayerFoe(run.encounter)) return true
   return !!run.encounter && !data.config.noEscape && canSkip(run.encounter, data.config.skipPolicy, run.skipsUsed)
 }
 
@@ -597,6 +611,14 @@ export function canSkipCurrent(): boolean {
 export function skipEncounter() {
   if (!canSkipCurrent()) return
   const { run } = useGame.getState()
+  const enc = run.encounter
+  // SKIP a real player's team (docs/54): the card is used, no ₽, and the server hears of the meet (offered last next).
+  if (isPlayerFoe(enc)) {
+    if (run.areaId) noteMeet(enc.player, run.areaId, 'skipped')
+    backToArea()
+    pushToast(t('ui.areaVersus.skippedToast', { name: enc.player.name }))
+    return
+  }
   const trainer = run.encounter?.kind === 'trainer'
   // skipsUsed survives until a fight is engaged, so skipPolicy 'once' still allows one skip in a row.
   setRun({ skipsUsed: run.skipsUsed + 1 })
@@ -660,7 +682,8 @@ function startBattle(
         data,
         run.areaId,
       ),
-      enemyLevels: withWorldBoost(uniformLevels(upgradeLevel), data, area),
+      // A real player's team fights with their own dice and combo upgrades (docs/54).
+      enemyLevels: withWorldBoost(isPlayerFoe(run.encounter) ? foeLevels(run.encounter.player) : uniformLevels(upgradeLevel), data, area),
       ...battlePowersFor(save, data),
       noHealItems: !healItemsOn(save, data),
       // Arceus takes only the types of its plates while the Underground is on (docs/34).
@@ -697,8 +720,10 @@ export function engage(lead?: string | string[], staged?: boolean) {
   const leadUids = typeof lead === 'string' ? [lead] : (lead ?? [])
   const leadUid = leadUids[0]
   const { run, save, data } = useGame.getState()
-  const enc = run.encounter
-  if (!enc || !save) return
+  if (!run.encounter || !save) return
+  // A wild pair needs two able (docs/33): with one left since the card was drawn, the first comes alone.
+  const enc = fitWildPair(run.encounter, save)
+  if (enc !== run.encounter) setRun({ encounter: enc })
   if (!staged) commitEngage()
   switch (enc.kind) {
     case 'center':
@@ -723,6 +748,8 @@ export function engage(lead?: string | string[], staged?: boolean) {
     case 'gym': {
       const first = enc.team[0]
       if (!first) return
+      // A real player's fight (docs/54): the team is healed first, as at a Pokémon Center.
+      if (isPlayerFoe(enc)) commitSave(centerHeal(useGame.getState().save!, data))
       // A double battle is the whole team at once (docs/33): no next Pokémon after it.
       if (isDoubleEncounter(enc) && enc.team.length > 1) {
         setRun({ trainer: { index: enc.team.length - 1, gold: 0 } })
@@ -834,6 +861,8 @@ function settleBattle(stalemate: boolean) {
         prize: trainerPrize(enc, enc?.kind !== 'trainer' || !run.trainer || run.trainer.index + 1 >= enc.team.length),
         // A trainer's last Pokémon ends the fight (the talents that act after a win, docs/51).
         ...((enc?.kind === 'trainer' || gym) && { last: !run.trainer || run.trainer.index + 1 >= enc.team.length }),
+        // A real player's team pays more for each K.O. (docs/54).
+        ...(isPlayerFoe(enc) && { goldMultiplier: foeGoldMultiplier(data) }),
       },
       data,
       runRng,
@@ -854,6 +883,9 @@ function settleBattle(stalemate: boolean) {
       : []
     // The round's last card was this fight: count it now, so "AREA CLEARED" is part of the rewards.
     const cleared = trainerHasNext() ? null : settleRound(true)
+    // A real player's fight is over (docs/54): won once their last Pokémon falls (a mutual K.O. before it is a loss);
+    // the team is healed again, the server hears of the meet, and the result card says so.
+    const duel = isPlayerFoe(enc) && !trainerHasNext() ? duelOver(enc.player, !!run.trainer && run.trainer.index + 1 >= enc.team.length) : null
     const events = [...(cleared ? [...res.events, cleared] : res.events), ...dreamEvents]
     const gold = res.events.reduce((g, e) => (e.kind === 'gold' ? g + e.amount : g), 0)
     // A wild or legendary K.O. that can be caught goes to the catch throw first; the rewards screen follows it.
@@ -876,7 +908,14 @@ function settleBattle(stalemate: boolean) {
       catchQueue: [],
       catchPending: [],
       trainer: run.trainer ? { ...run.trainer, gold: run.trainer.gold + gold } : null,
+      duel,
     })
+    return
+  }
+  // Lost to a real player's team, or neither side could win (docs/54): no wipe, the team healed, the round goes on.
+  if (isPlayerFoe(run.encounter)) {
+    commitSave(withHp)
+    setRun({ phase: 'stalemate', trainer: null, events: [], duel: duelOver(run.encounter.player, false) })
     return
   }
   if (out.result === 'lost') {
@@ -1181,6 +1220,11 @@ export function forfeit() {
     return
   }
   if (run.phase !== 'victory' || !trainerHasNext()) return
+  // Giving up a real player's fight is a loss, not a wipe (docs/54).
+  if (isPlayerFoe(run.encounter)) {
+    setRun({ phase: 'stalemate', trainer: null, events: [], duel: duelOver(run.encounter.player, false) })
+    return
+  }
   const lost = inPortalRun(save, data, run.areaId) ? portalStateOf(save, run.areaId).closed : null
   const dream = inNightmare(save, data, run.areaId) ? nightmareStateOf(save, run.areaId).round : null
   commitSave(run.rebattle ? applyRebattleLoss(save, data, run.rebattle.regionId) : applyWipe(save, run.areaId, data))
@@ -1194,6 +1238,18 @@ export function afterWipe() {
       ? { battle: null, run: { ...initialRun(), rebattle: s.run.rebattle } }
       : { battle: null, run: { ...initialRun(), forceNext: s.run.forceNext } },
   )
+}
+
+/**
+ * The end of a real player's fight (docs/54): the team is healed (it was before the fight too), the server hears of
+ * the meet, and the area gets its next team. What the result card shows.
+ */
+function duelOver(foe: AreaFoe, won: boolean | null): NonNullable<RunState['duel']> {
+  const { save, data, run } = useGame.getState()
+  if (save) commitSave(centerHeal(save, data))
+  const outcome = won ? 'won' : 'lost'
+  if (run.areaId) noteMeet(foe, run.areaId, outcome)
+  return { outcome, foe }
 }
 
 export function afterStalemate() {

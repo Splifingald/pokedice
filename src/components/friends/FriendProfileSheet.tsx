@@ -1,7 +1,8 @@
 // A friend's trainer card (docs/16): drawn with the same pieces as your own — the blue card, their badges counted
 // across every region — from their player card, as of their last cloud push. Friends only; REMOVE FRIEND ends it for both.
-import { useEffect, useState } from 'react'
-import { linearAreas, regionCaseOf, regionSpecies } from '@/engine'
+// Versus says the most trophies they ever held while the weekly league is on (docs/44 §10), as your own card does.
+import { useEffect, useState, type ReactNode } from 'react'
+import { linearAreas, regionCaseOf, regionSpecies, versusLeagueFor } from '@/engine'
 import { getLang } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { agoText } from '@/lib/ago'
@@ -12,8 +13,9 @@ import { TeamIcons } from '../BoardRow'
 import { Modal } from '../Modal'
 import { PixelButton } from '../PixelButton'
 import { Sheet } from '../Sheet'
-import { CardFrame, CardTeam, Stat } from '../TrainerCard'
+import { CardFrame, CardTeam, Stat, useLeagueBest } from '../TrainerCard'
 import { TrainerLook } from '../TrainerLook'
+import { TrophyCount } from '../TrophyCount'
 import { TheirTrades } from '../trades/TheirTrades'
 import { useAddText } from './AddFriendModal'
 import { TrainerName } from '../TrainerName'
@@ -35,6 +37,9 @@ export function FriendProfileSheet({
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
+  // The league is the main game's (Extreme keeps Versus as it was), so the realm being played decides, as for your card.
+  const league = useGame((s) => !!s.save && versusLeagueFor(s.save, s.data))
+  const best = useLeagueBest(!!userId && league, userId ?? undefined)
   const errorText = useAddText()
   const [load, setLoad] = useState<Load>({ state: 'loading' })
   const [confirm, setConfirm] = useState(false)
@@ -65,6 +70,16 @@ export function FriendProfileSheet({
     (n, r) => n + (regionCaseOf(data, r.region, r.badges, r.endgame)?.earned ?? 0),
     0,
   )
+  // With the league on, their high mark; a 0 from a friend who never had a Versus team reads as nothing to show.
+  let versusValue: ReactNode = '—'
+  if (league) {
+    if (best != null && (best > 0 || profile?.versus)) versusValue = <TrophyCount n={best} size={13} inherit />
+  } else if (profile?.versus) {
+    versusValue = t('ui.card.versusRecord', {
+      won: profile.versus.attackWins,
+      held: profile.versus.defenseWins,
+    })
+  }
 
   const remove = async () => {
     if (!userId || busy) return
@@ -135,14 +150,7 @@ export function FriendProfileSheet({
                       )}
                       <Stat label={t('ui.card.badges')} value={String(badges)} />
                       {here && <Stat label={t('ui.card.shinies')} value={String(here.shinies)} />}
-                      <Stat
-                        label={t('ui.card.versus')}
-                        value={
-                          profile.versus
-                            ? t('ui.card.versusRecord', { won: profile.versus.attackWins, held: profile.versus.defenseWins })
-                            : '—'
-                        }
-                      />
+                      <Stat label={t(league ? 'ui.card.versusBest' : 'ui.card.versus')} value={versusValue} />
                     </dl>
                   )}
                 </div>

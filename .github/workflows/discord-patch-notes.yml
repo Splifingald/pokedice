@@ -1,5 +1,6 @@
-# Posts each patch note a push to main adds (patch-notes/*.md) to the Discord server's #patch-notes, once the live site
-# serves that push (docs/23-DISCORD-SERVER.md). Run it by hand to post a note again.
+# Posts each patch note a push to main adds (patch-notes/*.md) to the Discord server's #patch-notes, and its French twin
+# (*.fr.md) to #🥖-français, once the live site serves that push (docs/23-DISCORD-SERVER.md). Run it by hand to post a
+# note again.
 name: Discord patch notes
 
 on:
@@ -9,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       files:
-        description: Notes to post, separated by spaces (patch-notes/2026-10-20-version-2.md)
+        description: Notes to post, separated by spaces (patch-notes/2026-10-20-version-2.md patch-notes/2026-10-20-version-2.fr.md)
         required: true
 
 concurrency: discord-patch-notes
@@ -55,4 +56,5 @@ jobs:
           NOTES: ${{ steps.notes.outputs.files }}
           WAIT: ${{ github.event_name == 'push' && format('--wait-deploy {0}', github.sha) || '' }}
           DISCORD_PATCH_WEBHOOK: ${{ secrets.DISCORD_PATCH_WEBHOOK }}
+          DISCORD_FRENCH_WEBHOOK: ${{ secrets.DISCORD_FRENCH_WEBHOOK }}
           DISCORD_PATCH_ROLE: ${{ vars.DISCORD_PATCH_ROLE }}

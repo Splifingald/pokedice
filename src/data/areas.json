@@ -2165,7 +2165,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -2321,7 +2322,8 @@
    "wild": 2,
    "casino": 0,
    "center": 1,
-   "trainer": 3
+   "trainer": 3,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -2484,7 +2486,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 2
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -3241,7 +3244,8 @@
    "wild": 2,
    "casino": 0,
    "center": 1,
-   "trainer": 3
+   "trainer": 3,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -4785,7 +4789,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -5875,7 +5880,8 @@
    "item": 1,
    "wild": 3,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -6940,7 +6946,8 @@
    "item": 1,
    "wild": 3,
    "center": 0,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 2
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": [
@@ -7240,7 +7247,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -7410,7 +7418,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -7604,7 +7613,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -7786,7 +7796,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -8003,7 +8014,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -8667,7 +8679,8 @@
    "item": 1,
    "wild": 3,
    "center": 1,
-   "trainer": 3
+   "trainer": 3,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -8921,7 +8934,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -9840,7 +9854,8 @@
    "wild": 2,
    "casino": 0,
    "center": 1,
-   "trainer": 3
+   "trainer": 3,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -10447,7 +10462,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -10674,7 +10690,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -11428,7 +11445,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -11617,7 +11635,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -12337,7 +12356,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -12555,7 +12575,8 @@
    "wild": 2,
    "casino": 0,
    "center": 1,
-   "trainer": 3
+   "trainer": 3,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -12962,7 +12983,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -13406,7 +13428,8 @@
    "wild": 2,
    "casino": 0,
    "center": 1,
-   "trainer": 3
+   "trainer": 3,
+   "versus": 2
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -13602,7 +13625,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -14552,7 +14576,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -14758,7 +14783,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -14952,7 +14978,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": [
@@ -15171,7 +15198,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -15518,7 +15546,8 @@
    "wild": 3,
    "casino": 0,
    "center": 0,
-   "trainer": 1
+   "trainer": 1,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -15711,7 +15740,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -16228,7 +16258,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -16473,7 +16504,8 @@
    "wild": 3,
    "casino": 0,
    "center": 0,
-   "trainer": 1
+   "trainer": 1,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -16927,7 +16959,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -17338,7 +17371,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -17735,7 +17769,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -18054,7 +18089,8 @@
    "item": 1,
    "wild": 3,
    "center": 0,
-   "trainer": 1
+   "trainer": 1,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -18284,7 +18320,8 @@
    "item": 1,
    "wild": 3,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -18716,7 +18753,8 @@
    "wild": 0,
    "casino": 1,
    "center": 1,
-   "trainer": 5
+   "trainer": 5,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -20648,7 +20686,8 @@
    "item": 1,
    "wild": 3,
    "center": 0,
-   "trainer": 1
+   "trainer": 1,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -21044,7 +21083,8 @@
    "item": 1,
    "wild": 2,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -21264,7 +21304,8 @@
    "item": 1,
    "wild": 3,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -22022,7 +22063,8 @@
    "wild": 6,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -24557,7 +24599,8 @@
    "item": 1,
    "wild": 3,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -25052,7 +25095,8 @@
    "item": 1,
    "wild": 3,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -25570,7 +25614,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -25752,7 +25797,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -27110,7 +27156,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -27273,7 +27320,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 2
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -27641,7 +27689,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -27825,7 +27874,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -28188,7 +28238,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -29235,7 +29286,8 @@
    "wild": 2,
    "casino": 0,
    "center": 1,
-   "trainer": 3
+   "trainer": 3,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -29429,7 +29481,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -29590,7 +29643,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -29933,7 +29987,8 @@
    "wild": 2,
    "casino": 0,
    "center": 1,
-   "trainer": 3
+   "trainer": 3,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -30142,7 +30197,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -30348,7 +30404,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -30541,7 +30598,8 @@
    "wild": 2,
    "casino": 0,
    "center": 1,
-   "trainer": 3
+   "trainer": 3,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -30738,7 +30796,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -31150,7 +31209,8 @@
    "wild": 2,
    "casino": 0,
    "center": 1,
-   "trainer": 3
+   "trainer": 3,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -31530,7 +31590,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -31929,7 +31990,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 2
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -32248,7 +32310,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 2
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -32590,7 +32653,8 @@
    "wild": 2,
    "casino": 2,
    "center": 1,
-   "trainer": 3
+   "trainer": 3,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -33016,7 +33080,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -33228,7 +33293,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -34458,7 +34524,8 @@
    "wild": 2,
    "casino": 0,
    "center": 1,
-   "trainer": 3
+   "trainer": 3,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -36427,7 +36494,8 @@
    "wild": 2,
    "casino": 0,
    "center": 1,
-   "trainer": 3
+   "trainer": 3,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -36967,7 +37035,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -37535,7 +37604,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -38446,7 +38516,8 @@
    "wild": 6,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -40466,7 +40537,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": [
@@ -43710,7 +43782,8 @@
    "wild": 2,
    "casino": 0,
    "center": 1,
-   "trainer": 3
+   "trainer": 3,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -43934,7 +44007,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -44606,7 +44680,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -45491,7 +45566,8 @@
    "wild": 2,
    "casino": 0,
    "center": 1,
-   "trainer": 3
+   "trainer": 3,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -45867,7 +45943,8 @@
    "item": 1,
    "wild": 6,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": [
@@ -47246,7 +47323,8 @@
    "wild": 2,
    "casino": 0,
    "center": 1,
-   "trainer": 3
+   "trainer": 3,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -47454,7 +47532,8 @@
    "wild": 2,
    "casino": 0,
    "center": 1,
-   "trainer": 3
+   "trainer": 3,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -47624,7 +47703,8 @@
    "wild": 6,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -49271,7 +49351,8 @@
    "wild": 2,
    "casino": 0,
    "center": 1,
-   "trainer": 3
+   "trainer": 3,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -53772,7 +53853,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -54427,7 +54509,8 @@
    "wild": 2,
    "casino": 0,
    "center": 1,
-   "trainer": 3
+   "trainer": 3,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -54794,7 +54877,8 @@
    "wild": 6,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -57630,7 +57714,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -58003,7 +58088,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -58174,7 +58260,8 @@
    "wild": 3,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -59533,7 +59620,8 @@
    "wild": 6,
    "casino": 0,
    "center": 1,
-   "trainer": 2
+   "trainer": 2,
+   "versus": 1
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
