@@ -113,7 +113,8 @@ test('dark: the Pokémon sheet and the Pokédex entry keep their contrast', asyn
 // Every component in every state: whatever reads at daybreak reads at dusk too. A few states are dim on
 // purpose in both themes (a fainted card), so the dusk list is held to the daybreak one, not to nothing.
 test('dark /kitchen-sink: no text reads worse at dusk than at daybreak', async ({ browser }) => {
-  test.setTimeout(240_000)
+  // Two full axe passes over the whole kitchen sink: about 4.3 minutes since 2.9's pieces joined it.
+  test.setTimeout(480_000)
   const failing = async (theme: 'light' | 'dark') => {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
     const page = await context.newPage()
