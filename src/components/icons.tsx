@@ -56,7 +56,7 @@ const GIFT_PAL: Record<string, string> = {
 }
 
 /** The Heart Scale: the item sprite's own pearly colours, its outline the edge's navy. */
-const HEART_SCALE_PAL: Record<string, string> = {
+export const HEART_SCALE_PAL: Record<string, string> = {
   k: '#24304f',
   a: '#ceceef',
   b: '#efefef',

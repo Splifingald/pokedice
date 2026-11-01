@@ -52,6 +52,29 @@ questions, take decisions."*
 - **Where**: the catches in an area (wild and bosses). A raid's catch rolls its talent its own way and isn't boosted.
 - **Admin**: Config → Friendship, *Friend Ball ×* per tier (`friendship.ballBoost`, 1–20).
 
+## 1c. Heart Scales as a message gift
+
+The user's ask (2026-11-01): *"Make sure the heart scale item is an item I can give players through messages and
+gifts."* Heart Scales aren't a Bag item: they live in the server's wallet (`friendship_wallets`), so a message gift
+of them is paid by the server.
+
+- **Where**: Admin → Messages (an answer) and a player's profile → Messages (a message the admin starts): the gift
+  editor's **Heart Scales** row, 1–9,999 a gift (`{ kind: 'heartScales', amount, region: 'latest' }`).
+- **Paid**: by `feedback_claim_gifts` (migration **0108**), the moment the player's game opens the message's gifts,
+  in the same statement that marks them opened, so never twice. Only the balance moves: not today's earnings (the
+  daily cap stays the streaks') nor the total earned.
+- **To an account only**: a guest has no wallet, so the server refuses Heart Scales on a message to a device
+  (`feedback_scales_need_account`) and the editor's row is shut there.
+- **Friendship off**: the editor's row is shut while Friendship is Off; On for admin, it says players won't see them
+  yet. A player for whom Friendship is off doesn't see them in the opening (they wait in the wallet).
+- **Not offered** for invite rewards, welcome-back gifts or calendars: those gifts are put in the save by the game,
+  and nothing there pays a wallet.
+
+**Setting it up**: run in Supabase → SQL Editor, after 0107:
+https://github.com/Splifingald/pokedice/blob/claude/practical-euler-vx5wdk/supabase/migrations/0108_heart_scale_gifts.sql
+It isn't inlined in `supabase/seed.sql` (safe to run again). The Gifts switch (Admin → Messages) must be on for the
+player, as for any gift.
+
 ## 2. What players see
 
 - **No Home notice, no pop-up** (the user's call, 2026-11-01: "players should see the feature when they get to the
@@ -97,7 +120,8 @@ questions, take decisions."*
   the daily cap, each item's price and weekly limit, the shiny's price, level and pool (with this week's pick).
 - **Strings**: `ui.fship.*`, `ui.market.*`, `ui.rules.fship.*`, `item.friend-ball`, ten languages.
 - **Tests**: `tests/friendship-sql.test.ts` (the migration in PGlite), `tests/engine/friendship.test.ts`,
-  `e2e/friendship.spec.ts`.
+  `e2e/friendship.spec.ts`; Heart Scales as a message gift (§1c): `tests/heart-scale-gifts-sql.test.ts`,
+  `tests/engine/gifts.test.ts`.
 
 ## 4. Setting it up
 
@@ -108,6 +132,9 @@ questions, take decisions."*
 3. Admin → Config → Switches → **Friendship & Friend Market**: *On for admin*, Save & Publish, and try it signed in as
    admin with a friend's account (a trade between the two, a raid with their team, an Egg with their Pokémon); then *On
    for everyone*.
+4. Heart Scales as a message gift (§1c): run, after 0107,
+   https://github.com/Splifingald/pokedice/blob/claude/practical-euler-vx5wdk/supabase/migrations/0108_heart_scale_gifts.sql
+   (not inlined in `supabase/seed.sql`; safe to run again).
 
 ## 5. Balance
 

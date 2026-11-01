@@ -1,6 +1,6 @@
 // Admin: the gifts a message carries (docs/15 §23), in Messages (an answer) and on a player's profile (a message you
 // start). Items with a quantity, Pokémon with a level and shininess, Pokédollars; each to a region, or to the player's
-// latest one.
+// latest one. A message to an account can carry Heart Scales too (docs/60), straight to the player's wallet.
 // The same editor in both places, and the same line to read them back.
 import { useState } from 'react'
 import { PixelIcon } from '@/components/icons'
@@ -14,6 +14,7 @@ import {
   GIFT_LATEST,
   GIFT_MAX,
   GIFT_QTY_MAX,
+  GIFT_SCALES_MAX,
   giftLanding,
   realRegions,
   type GameData,
@@ -35,19 +36,23 @@ export const regionLabel = (data: GameData, r: GiftRegion) =>
       ? 'the region they play when they open it'
       : (data.regions.find((x) => x.id === r)?.name ?? r)
 
-/** "Rare Candy ×5" / "Pikachu Lv.20 ✦ shiny" / "₽5,000". */
+/** "Rare Candy ×5" / "Pikachu Lv.20 ✦ shiny" / "₽5,000" / "20 Heart Scales". */
 export const giftName = (data: GameData, g: Gift) =>
   g.kind === 'item'
     ? `${data.items[g.key]?.name ?? g.key} ×${g.qty}`
     : g.kind === 'gold'
       ? `₽${g.amount.toLocaleString()}`
-      : `${data.species[g.dex]?.name ?? `#${g.dex}`} Lv.${g.level}${g.shiny ? ' ✦ shiny' : ''}`
+      : g.kind === 'heartScales'
+        ? `${g.amount.toLocaleString()} Heart Scales`
+        : `${data.species[g.dex]?.name ?? `#${g.dex}`} Lv.${g.level}${g.shiny ? ' ✦ shiny' : ''}`
 
 function GiftIcon({ data, g }: { data: GameData; g: Gift }) {
   return g.kind === 'item' ? (
     <ItemSprite item={data.items[g.key]} size={28} />
   ) : g.kind === 'gold' ? (
     <PixelIcon name="coin" size={24} className="mx-0.5" />
+  ) : g.kind === 'heartScales' ? (
+    <PixelIcon name="heartScale" size={24} className="mx-0.5" />
   ) : (
     <SpriteImg dex={g.dex} size={32} shiny={g.shiny} />
   )
@@ -71,13 +76,13 @@ export function GiftList({
   return (
     <ul className="m-0 flex list-none flex-col gap-1 p-0">
       {gifts.map((g, i) => {
-        const lands = save ? giftLanding(save, data, g.region) : null
+        const lands = save && g.kind !== 'heartScales' ? giftLanding(save, data, g.region) : null
         return (
           <li key={i} className="flex min-h-[36px] items-center gap-2 bg-paper px-2 py-0.5 shadow-ring-line">
             <GiftIcon data={data} g={g} />
             <span className="min-w-0 flex-1 truncate text-lg">{giftName(data, g)}</span>
             <span className="text-base text-muted">
-              → {regionLabel(data, g.region)}
+              → {g.kind === 'heartScales' ? 'their Heart Scales (every region)' : regionLabel(data, g.region)}
               {lands && (g.region === GIFT_LATEST || lands !== g.region) && (
                 <>
                   {' '}
@@ -160,6 +165,7 @@ export function GiftEditor({
   save,
   hint = 'the player opens them when they close the message',
   messages = true,
+  scales,
 }: {
   data: GameData
   gifts: Gift[]
@@ -170,6 +176,11 @@ export function GiftEditor({
   hint?: string
   /** A message's gifts, under the Gifts switch (its warning shows here). Invite rewards have a switch of their own. */
   messages?: boolean
+  /**
+   * Heart Scales can be added (a message: the claim pays them into the wallet, 0108): `account` for a signed-in
+   * player, `guest` for a device (no wallet: the row says why it's shut). Unset: not offered (rewards, calendars).
+   */
+  scales?: 'account' | 'guest'
 }) {
   const items = Object.values(data.items).sort((a, b) => a.name.localeCompare(b.name))
   const [item, setItem] = useState<ItemDef | null>(data.items['rare-candy'] ?? items[0] ?? null)
@@ -182,6 +193,9 @@ export function GiftEditor({
   const [monRegion, setMonRegion] = useState<GiftRegion>(GIFT_LATEST)
   const [gold, setGold] = useState(1000)
   const [goldRegion, setGoldRegion] = useState<GiftRegion>(GIFT_LATEST)
+  const [scaleQty, setScaleQty] = useState(20)
+  // Friendship's switch as it stands (docs/60): off, players have no Friend Market to spend them in.
+  const fship = useConfigRow('friendship')[0]?.access ?? 'off'
   const full = gifts.length >= GIFT_MAX
   // The switch as it stands in the admin, saved or not.
   const access = useConfigRow('gifts')[0]?.access ?? 'off'
@@ -318,6 +332,39 @@ export function GiftEditor({
           Add ₽
         </PixelButton>
       </div>
+      {scales && (
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="flex w-40 flex-col text-base">
+            <span className="flex items-center gap-1">
+              <PixelIcon name="heartScale" size={18} /> Heart Scales
+            </span>
+            <NumInput
+              value={scaleQty}
+              min={1}
+              max={GIFT_SCALES_MAX}
+              onChange={(v) => setScaleQty(clamp(v ?? 1, 1, GIFT_SCALES_MAX))}
+            />
+          </label>
+          <span className="flex min-h-[34px] flex-1 items-center text-base text-muted">
+            {scales === 'guest'
+              ? 'A guest has no Heart Scale wallet: only a signed-in player can get them.'
+              : fship === 'off'
+                ? 'Friendship is off (Config → Switches): switch it on to send Heart Scales.'
+                : fship === 'admin'
+                  ? "To the player's wallet. Friendship is on for you only: players won't see them until it's on."
+                  : "Straight to the player's wallet, for the Friend Market (every region)."}
+          </span>
+          <PixelButton
+            size="sm"
+            disabled={full || scales === 'guest' || fship === 'off'}
+            onClick={() =>
+              onChange([...gifts, { kind: 'heartScales', amount: scaleQty, region: GIFT_LATEST }])
+            }
+          >
+            Add Heart Scales
+          </PixelButton>
+        </div>
+      )}
       {full && <p className="text-base text-muted">{GIFT_MAX} gifts at most on one message.</p>}
     </div>
   )

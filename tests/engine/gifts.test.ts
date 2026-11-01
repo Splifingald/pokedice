@@ -92,6 +92,17 @@ describe('reading the server’s gifts', () => {
     expect(parseGifts(null)).toEqual([])
     expect(parseGifts({ kind: 'item' })).toEqual([])
   })
+
+  it('reads Heart Scales from 1 to 9,999', () => {
+    expect(
+      parseGifts([
+        { kind: 'heartScales', amount: 20, region: 'latest' },
+        { kind: 'heartScales', amount: 0, region: 'latest' },
+        { kind: 'heartScales', amount: 10_000, region: 'latest' },
+        { kind: 'heartScales', amount: 20 },
+      ]),
+    ).toEqual([{ kind: 'heartScales', amount: 20, region: 'latest' }])
+  })
 })
 
 describe('where a gift lands', () => {
@@ -211,6 +222,31 @@ describe('opening a message’s gifts', () => {
     expect(giftsOf(first.save).done).toEqual([13])
     const parsed = parseSave(JSON.parse(JSON.stringify(first.save)))
     expect(parsed.ok && parsed.save.gifts).toEqual({ done: [13] })
+  })
+})
+
+describe('Heart Scales on a message (docs/60)', () => {
+  const scales = (amount: number): Gift => ({ kind: 'heartScales', amount, region: GIFT_LATEST })
+  const fship = makeData({
+    gifts: { access: 'all' },
+    friendship: { ...DEFAULT_CONFIG.friendship, access: 'all' },
+  })
+
+  it('show among what arrived, in their place, and leave the save as it was (the server paid them)', () => {
+    const s = kanto()
+    const res = applyGifts(s, fship, 20, [candy(1), scales(25)], NOW, newId)!
+    expect(res.landed.map((l) => [l.gift.kind, !!l.scales])).toEqual([
+      ['item', false],
+      ['heartScales', true],
+    ])
+    expect(res.save.gold).toBe(s.gold)
+    expect(giftsOf(res.save).done).toEqual([20])
+  })
+
+  it('stay hidden while Friendship is off for the player', () => {
+    const res = applyGifts(kanto(), data, 21, [scales(25)], NOW, newId)!
+    expect(res.landed).toEqual([])
+    expect(giftsOf(res.save).done).toEqual([21])
   })
 })
 

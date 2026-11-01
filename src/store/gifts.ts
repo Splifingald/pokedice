@@ -59,6 +59,10 @@ export async function openGifts(ids: number[]): Promise<void> {
       useGiftMoment.setState({ opening: landed, source: 'message' })
       void pushSaveNow().catch(() => {})
     }
+    // Heart Scales went to the wallet on the server: the Friends page and the market show the new count. Imported
+    // late, as the friendship store imports this one.
+    if (landed.some((l) => l.scales))
+      void import('./friendship').then((m) => m.loadFriendship(true)).catch(() => {})
   } catch (err) {
     console.warn('[gifts] not opened:', err instanceof Error ? err.message : err)
     useInbox.getState().putOff(ids)

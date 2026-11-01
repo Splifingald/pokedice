@@ -1386,13 +1386,19 @@ export type GiftRegion = string
 
 /**
  * One gift on a message, as the admin set it (Admin → Messages, or a player's profile): an item and how many, a
- * Pokémon at a level, shiny or not, or Pokédollars. Each goes to its region's Bag, Box or ₽.
+ * Pokémon at a level, shiny or not, Pokédollars, or Heart Scales. Each goes to its region's Bag, Box or ₽, the Heart
+ * Scales to the player's wallet.
  */
 export type Gift =
   | { kind: 'item'; key: string; qty: number; region: GiftRegion }
   /** `outfit` (docs/59): the Pokémon comes dressed up (a key of `OUTFITS` its species wears). */
   | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; outfit?: string; region: GiftRegion }
   | { kind: 'gold'; amount: number; region: GiftRegion }
+  /**
+   * Heart Scales (docs/60), a message's only: the server adds them to the player's wallet as it hands the gifts over
+   * (migration 0108), so a message carrying them goes to an account. `region` is kept for the shape, never read.
+   */
+  | { kind: 'heartScales'; amount: number; region: GiftRegion }
 
 /** The gifts a save has opened (docs/15 §23). */
 export interface GiftsSave {
