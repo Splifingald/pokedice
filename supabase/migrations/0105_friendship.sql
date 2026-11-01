@@ -1,4 +1,4 @@
--- Friendship streaks and the Friend Market (docs/57). Two friends who interact on a UTC day keep a streak going: a
+-- Friendship streaks and the Friend Market (docs/59). Two friends who interact on a UTC day keep a streak going: a
 -- raid fought beside the other's team (either way round), a trade between them, or an Egg the Day Care made with the
 -- other's Pokémon. Each new day of a streak pays both of them Festival Coins, more the longer it runs (3 a day on days
 -- 1–3, 4 on 4–7, 5 on 8–14, 6 on 15–30, 7 from day 31), at most 50 a player a UTC day across every friend. A day with
@@ -22,7 +22,7 @@
 -- 5. Removing a friend ends your streak; Delete my data (the main save) takes the wallet and the purchases.
 -- 6. The Friend Ball (an Ultra Ball for now: its own effect comes later) in items, as src/data/items.json has it.
 --
--- Run after 0101; safe to run again.
+-- Run after 0104; safe to run again.
 begin;
 
 -- ---------------------------------------------------------------- 1. the switch and the numbers

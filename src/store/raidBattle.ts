@@ -367,7 +367,7 @@ export function raidFightOver() {
   // A Mega raid (docs/40): won, its gem or orb is the player's, and nothing is caught.
   const { save, data } = useGame.getState()
   const mega = run.source.kind === 'progress' ? progressRaidOf(data, run.source.key) : null
-  // Fought beside friends' teams, won or lost: their friendship streaks go on (docs/57).
+  // Fought beside friends' teams, won or lost: their friendship streaks go on (docs/59).
   if (run.state.phase === 'won' || run.state.phase === 'lost')
     void raidWithFriends(
       run.friends.map((f) => f.userId),

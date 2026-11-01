@@ -651,7 +651,7 @@ Players shouldn't have to make many requests:
 - **Home's cards are only for what is open** (docs/38 U3a): a secret area found and never played (one tap travels
   there), the Day Care, Versus, each open special event, a small world and a live event; each is a button that leads
   somewhere. Nothing locked gets a square: under them **one "Coming up" line** names the next thing to open and how
-  close the player is ("Coming up: Day Care · 7/20 caught", `ComingUpView`, from the engine's `comingUp`), in the order
+  close the player is ("Coming up: Day Care · 7/10 caught", `ComingUpView`, from the engine's `comingUp`), in the order
   things usually open: the Day Care, the special events (from the teaser's badge count, naming the area that opens the
   first), Versus, then the secret area closest to opening (the condition still to meet, the first left, as the areas
   list says). A goal is not a feature, so the next secret only shows once the features are open. No line once
@@ -1093,7 +1093,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   rules pop-up (`RulesModal`, Later / Let's go!), taking its turn in the one-time pop-ups' queue, below; so do the
   rules shown at their own moment (the portal's and the nightmare's way in, Trick or Treat's first ghost, the gifts',
   the looks'). The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is a tap on the Pokémon sheet's talent box, as it has no page), real-player battles (§39: its rules pop-up after the first card's intro, as Trick or Treat's at the first ghost; INFO on the card), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event), the gift calendar (§40: its page's rules card, once; INFO in its dock), friendship (§41: its rules card on the Friends page or the market, whichever opens first, once; INFO on its card and at the market's foot) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is a tap on the Pokémon sheet's talent box, as it has no page), real-player battles (§39: its rules pop-up after the first card's intro, as Trick or Treat's at the first ghost; INFO on the card), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event), the gift calendar (§40: its page's rules card, once; INFO in its dock), friendship (§41: its rules card on the Friends page or the market, whichever opens first, once; INFO on its card and at the market's foot), welcome-back gifts (§23, docs/58: a developer's message, so no pop-up of its own; its rule is a line in the message itself, its INFO under that message in My messages) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **The one-time pop-ups take turns, in one queue** (`nextOneTimePopup`, src/engine/popups.ts; docs/38 U2a): one at a
   time, only between fights (`run.phase === 'idle'`, no battle, no full-screen moment, no gift being opened), never on
@@ -1324,6 +1324,12 @@ pieces are in `src/components/Gifts.tsx`, every state on `/kitchen-sink` (`GiftB
   level or ₽, ✦ Shiny, NEW, and where it went: "In your Johto Bag", "Added to your Pokédollars", "Joined your team"),
   then DONE. Motion off jumps there
   at once.
+- **Welcome back** (docs/58, its own switch): a player back after days away (3, 7, 14 by default, on the server's
+  record of the days played) gets such a message, written by the server, with the highest tier's gifts, at most once
+  every 14 days. Its words are the game's, in the player's language, from the numbers the server puts in `reply`
+  (`@welcome_back:…`, as the league's reward); alone, the pop-up is "Welcome back, {name}!". Its rule is a line in the
+  message; under it in My messages, "Welcome-back gifts" and a compact INFO open its rules (`WelcomeBackRulesModal`).
+  Sent only while the gifts are on for the player too.
 - **My messages** keeps every message with its answer, the developer's own messages, and their gifts: opened ("Opened
   — it held:" and what), or the wrapped gift with OPEN IT (gold), or why it waits. The tab's count adds the gifts not
   opened yet. The trainer menu's **Inbox** row opens it on its own, with the same count (§17).
@@ -2003,7 +2009,7 @@ A live event type (docs/55): a door a day, one reward each, opened on its day or
 
 ## 41. Friendship streaks and the Friend Market
 
-docs/57. Its switch is `friendship.access` (§20); the server keeps the streaks, pays the coins and sells. Components in
+docs/59. Its switch is `friendship.access` (§20); the server keeps the streaks, pays the coins and sells. Components in
 `src/components/friends/Friendship.tsx`, all on `/kitchen-sink` (`FriendshipBits`).
 
 - **Its colour is rose** (`rose`, and the coin's `#ff6f9c`): the Friendship card is framed like the friend ID's box but

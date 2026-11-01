@@ -1,4 +1,4 @@
-// Friendship streaks and the Friend Market (docs/57; docs/15 §41). The pieces: the Festival Coins plate, a friend's
+// Friendship streaks and the Friend Market (docs/59; docs/15 §41). The pieces: the Festival Coins plate, a friend's
 // streak badge (on their row), the streak's tiers, the Friends page's Friendship card, the streak on a friend's card,
 // the market's shelf (the shiny of the week and the items) and the rules. They only show what the engine and the
 // server decided; every state is on /kitchen-sink (FriendshipBits).

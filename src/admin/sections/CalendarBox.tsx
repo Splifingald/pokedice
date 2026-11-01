@@ -22,35 +22,35 @@ import { useConfigRow } from './ConfigSection'
 const DAY = 24 * 3_600_000
 
 /**
- * Advent, 1 to 24 December (the user's ask, 2026-10-31): winter Pokémon, the stones that evolve two of them (Day 5's
- * Ice Stone for Day 12's Eevee, Glaceon; Day 18's Dawn Stone for Day 6's Snorunt, Froslass), Rare Candies, two Master
- * Balls and ₽11,000 over the month, and a shiny Delibird on the 24th.
+ * Advent, 1 to 24 December (the user's ask, 2026-10-31; toned down the same day, "way too generous"): small things a
+ * day, as a trainer's ₽ goes (a whole region pays about ₽6,000). Balls, potions and heals, ₽1,000 over the month, one
+ * Rare Candy, one Ice Stone (for Day 23's Eevee, Glaceon), winter Pokémon at Lv.5, and a Delibird on the 24th.
  */
 export const ADVENT_PROPOSAL: CalendarReward[] = [
-  { kind: 'gold', amount: 1000 },
-  { kind: 'item', key: 'ultra-ball', qty: 10 },
-  { kind: 'pokemon', dex: 220, level: 10, qty: 1 },
-  { kind: 'item', key: 'rare-candy', qty: 3 },
+  { kind: 'item', key: 'poke-ball', qty: 5 },
+  { kind: 'gold', amount: 100 },
+  { kind: 'item', key: 'potion', qty: 5 },
+  { kind: 'pokemon', dex: 220, level: 5, qty: 1 },
+  { kind: 'item', key: 'great-ball', qty: 3 },
+  { kind: 'gold', amount: 150 },
+  { kind: 'item', key: 'super-potion', qty: 3 },
+  { kind: 'pokemon', dex: 361, level: 5, qty: 1 },
+  { kind: 'item', key: 'ice-heal', qty: 3 },
+  { kind: 'gold', amount: 200 },
+  { kind: 'item', key: 'ether', qty: 2 },
+  { kind: 'pokemon', dex: 363, level: 5, qty: 1 },
+  { kind: 'item', key: 'great-ball', qty: 5 },
+  { kind: 'item', key: 'rare-candy', qty: 1 },
+  { kind: 'gold', amount: 250 },
+  { kind: 'pokemon', dex: 613, level: 5, qty: 1 },
+  { kind: 'item', key: 'hyper-potion', qty: 2 },
+  { kind: 'item', key: 'ultra-ball', qty: 2 },
+  { kind: 'pokemon', dex: 459, level: 5, qty: 1 },
+  { kind: 'gold', amount: 300 },
+  { kind: 'item', key: 'revive', qty: 2 },
   { kind: 'item', key: 'ice-stone', qty: 1 },
-  { kind: 'pokemon', dex: 361, level: 12, qty: 1 },
-  { kind: 'item', key: 'max-revive', qty: 3 },
-  { kind: 'gold', amount: 2000 },
-  { kind: 'pokemon', dex: 613, level: 15, qty: 1 },
-  { kind: 'item', key: 'rare-candy', qty: 5 },
-  { kind: 'item', key: 'hyper-potion', qty: 10 },
-  { kind: 'pokemon', dex: 133, level: 15, qty: 1 },
-  { kind: 'item', key: 'master-ball', qty: 1 },
-  { kind: 'pokemon', dex: 363, level: 18, qty: 1 },
-  { kind: 'gold', amount: 3000 },
-  { kind: 'pokemon', dex: 459, level: 20, qty: 1 },
-  { kind: 'item', key: 'max-ether', qty: 5 },
-  { kind: 'item', key: 'dawn-stone', qty: 1 },
-  { kind: 'pokemon', dex: 996, level: 20, qty: 1 },
-  { kind: 'item', key: 'rare-candy', qty: 10 },
-  { kind: 'pokemon', dex: 131, level: 25, qty: 1 },
-  { kind: 'gold', amount: 5000 },
-  { kind: 'item', key: 'master-ball', qty: 1 },
-  { kind: 'pokemon', dex: 225, level: 30, shiny: true, qty: 1 },
+  { kind: 'pokemon', dex: 133, level: 5, qty: 1 },
+  { kind: 'pokemon', dex: 225, level: 10, qty: 1 },
 ]
 
 /** The gift calendar's switch, over the live events' own: Off, no calendar shows, whatever the list says. */

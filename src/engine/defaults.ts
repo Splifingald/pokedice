@@ -78,7 +78,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   // One Day Care for every region (docs/15): two of yours, four friends' visitors, Lv.100 the only XP cap, an Egg-group
   // check every 12 h and Ditto's every 24 h, Egg now for ₽200, ₽10 when a hatchling isn't kept, shiny 1 in 100.
   dayCare: {
-    unlockPokedex: 20,
+    unlockPokedex: 10,
     slots: 2,
     friendSlots: 4,
     xpPerTick: 1,
@@ -190,6 +190,43 @@ export const DEFAULT_CONFIG: GameConfig = {
       { friends: 2, gifts: [{ kind: 'gold', amount: 1000, region: 'latest' }] },
       { friends: 3, gifts: [{ kind: 'pokemon', dex: 132, level: 10, shiny: true, region: 'latest' }] },
       { friends: 4, gifts: [{ kind: 'item', key: 'master-ball', qty: 1, region: 'latest' }] },
+    ],
+  },
+  // Welcome-back gifts (docs/58): off until the admin switches them on. Migration 0103 inserts the same row (and its
+  // SQL test keeps the two the same). Only the highest tier reached is given, at most once every 14 days.
+  welcomeBack: {
+    access: 'off',
+    cooldownDays: 14,
+    tiers: [
+      {
+        minDays: 3,
+        gifts: [
+          { kind: 'gold', amount: 300, region: 'latest' },
+          { kind: 'item', key: 'great-ball', qty: 5, region: 'latest' },
+          { kind: 'item', key: 'super-potion', qty: 3, region: 'latest' },
+          { kind: 'item', key: 'rare-candy', qty: 1, region: 'latest' },
+        ],
+      },
+      {
+        minDays: 7,
+        gifts: [
+          { kind: 'gold', amount: 1000, region: 'latest' },
+          { kind: 'item', key: 'ultra-ball', qty: 5, region: 'latest' },
+          { kind: 'item', key: 'hyper-potion', qty: 3, region: 'latest' },
+          { kind: 'item', key: 'revive', qty: 2, region: 'latest' },
+          { kind: 'item', key: 'rare-candy', qty: 2, region: 'latest' },
+        ],
+      },
+      {
+        minDays: 14,
+        gifts: [
+          { kind: 'gold', amount: 2500, region: 'latest' },
+          { kind: 'item', key: 'ultra-ball', qty: 10, region: 'latest' },
+          { kind: 'item', key: 'max-revive', qty: 3, region: 'latest' },
+          { kind: 'item', key: 'max-ether', qty: 2, region: 'latest' },
+          { kind: 'item', key: 'rare-candy', qty: 5, region: 'latest' },
+        ],
+      },
     ],
   },
   extreme: {
@@ -410,9 +447,9 @@ export const DEFAULT_CONFIG: GameConfig = {
   giftCalendar: { access: 'off' },
   // The champions' own cinematics (docs/56): off until the admin switches it on. Migration 0101 inserts the same row.
   championCinema: { access: 'off' },
-  // Friendship streaks and the Friend Market (docs/57): off until the admin switches it on. 3 to 7 Festival Coins a
+  // Friendship streaks and the Friend Market (docs/59): off until the admin switches it on. 3 to 7 Festival Coins a
   // streak day by tier, 50 a day at most; the market's weekly shelf and the shiny of the week turning through Pokémon
-  // that grow with friendship. Migration 0102 holds the same numbers (friendship_defaults()).
+  // that grow with friendship. Migration 0105 holds the same numbers (friendship_defaults()).
   friendship: {
     access: 'off',
     tiers: [
@@ -490,6 +527,9 @@ export const DEFAULT_CONFIG: GameConfig = {
       { perHour: 18, cost: 1250 },
       { perHour: 20, cost: 1500 },
     ],
+    // Before any level is bought, so every player's first absence pays a little and the upgrade has something to grow
+    // from (₽24 a day at most, half of level 1).
+    offlineBase: 1,
     offlineMaxHours: 24,
     richCost: 99999,
     // The Shiny Charm (the user's numbers, 2026-10-18): from the base 1 in 1,000 to 1 in 333, ₽69,000 in all, a

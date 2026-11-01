@@ -40,7 +40,7 @@ export function FriendProfileSheet({
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
-  // Your friendship streak with them (docs/57), while it's on for you in the main game.
+  // Your friendship streak with them (docs/59), while it's on for you in the main game.
   const fship = useFriendship((s) => s.status)
   const fshipOn = useGame((s) => !!s.save && [null, 'world'].includes(friendshipWaits(s.save, s.data))) && !!fship
   // The league is the main game's (Extreme keeps Versus as it was), so the realm being played decides, as for your card.

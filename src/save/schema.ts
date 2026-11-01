@@ -499,7 +499,7 @@ export const saveSchema = z.object({
       rulesSeen: z.boolean().optional(),
     })
     .optional(),
-  // Friendship (docs/57): the rules read, market purchases put away (ids), Eggs to tell the server about.
+  // Friendship (docs/59): the rules read, market purchases put away (ids), Eggs to tell the server about.
   friendship: z
     .object({
       rulesSeen: z.boolean().optional(),

@@ -1058,6 +1058,8 @@ export interface GameConfig {
   general: GeneralConfig
   /** Friend invite rewards (docs/15 §25): their switch and the gauge's tiers. The server reads the same row. */
   inviteRewards: InviteRewardsConfig
+  /** Welcome-back gifts (docs/58): their switch, the cooldown and the tiers. The server reads the same row (0103). */
+  welcomeBack: WelcomeBackConfig
   /** Push notifications (docs/27): their switch, a game_config row of its own that seeding never writes. */
   push: PushConfig
   /** The areas' portal run (docs/28): its switch. The server reads the same row (0057). */
@@ -1099,9 +1101,9 @@ export interface GameConfig {
    */
   championCinema: { access: EventAccess }
   /**
-   * Friendship streaks and the Friend Market (docs/57): the switch, what a streak's day pays by tier, the day's cap
+   * Friendship streaks and the Friend Market (docs/59): the switch, what a streak's day pays by tier, the day's cap
    * across every friend, and the weekly market (items with a price and a weekly limit, and the shiny of the week drawn
-   * from a pool). The server prices and pays from the same row (migration 0102, friendship_cfg()).
+   * from a pool). The server prices and pays from the same row (migration 0105, friendship_cfg()).
    */
   friendship: FriendshipConfig
   /**
@@ -1335,6 +1337,25 @@ export interface InviteTier {
   gifts: Gift[]
 }
 
+/**
+ * Welcome-back gifts (docs/58): a player back after days away gets a developer's message carrying the gifts of the
+ * highest tier their absence reached, at most once every `cooldownDays`. The server reads the same row (0103).
+ */
+export interface WelcomeBackConfig {
+  /** The switch (docs/15 §20): off (no message is sent), on for the admin only, on for everyone. Off by default. */
+  access: EventAccess
+  /** At most one welcome-back gift every this many days (the player's own calendar days). */
+  cooldownDays: number
+  /** The tiers, fewest days first (engine/welcomeBack.ts cleans them): only the highest one reached is given. */
+  tiers: WelcomeBackTier[]
+}
+
+/** One welcome-back tier: away at least `minDays` days (back the next day = 1), and what it gives. */
+export interface WelcomeBackTier {
+  minDays: number
+  gifts: Gift[]
+}
+
 /** The invite rewards a save has opened (docs/15 §25). */
 export interface InvitesSave {
   /** Tiers (by their number of friends) whose gifts are in this save already: a tier is put in once. */
@@ -1380,6 +1401,8 @@ export interface GeneralConfig {
   luck: { chance: number; cost: number }[]
   /** Offline earnings, one row per level: ₽ per hour spent out of the game, and its price. */
   offline: { perHour: number; cost: number }[]
+  /** Offline earnings before any level is bought (level 0), ₽ per hour. 0: none. */
+  offlineBase: number
   /** An absence earns for this many hours at most. */
   offlineMaxHours: number
   /** "I am just rich": its price. A golden name in every social feature, nothing else. */
@@ -1810,7 +1833,7 @@ export interface SaveData {
   gifts?: GiftsSave
   /** Friend invite rewards (docs/15 §25): the tiers opened, and the rules seen. Absent = none yet. */
   invites?: InvitesSave
-  /** Friendship streaks and the Friend Market (docs/57): the rules read, purchases put away. Absent = none yet. */
+  /** Friendship streaks and the Friend Market (docs/59): the rules read, purchases put away. Absent = none yet. */
   friendship?: FriendshipSave
   /** The General upgrades (docs/25), for every region of this save. Absent = none bought. */
   general?: GeneralSave
@@ -2215,7 +2238,7 @@ export interface DayCareGuest {
   addedAt: number
 }
 
-/** One step of the friendship streak (docs/57): from its first day on, each new day of the streak pays `coins`. */
+/** One step of the friendship streak (docs/59): from its first day on, each new day of the streak pays `coins`. */
 export interface FriendshipTier {
   from: number
   coins: number
@@ -2237,7 +2260,7 @@ export interface FriendshipConfig {
   shiny: { price: number; level: number; pool: number[] }
 }
 
-/** Friendship in a save (docs/57): the rules read, purchases put away, Eggs to tell the server about. */
+/** Friendship in a save (docs/59): the rules read, purchases put away, Eggs to tell the server about. */
 export interface FriendshipSave {
   rulesSeen?: boolean
   /** The last market purchases put in the save (their ids): one handed back twice is applied once. */
@@ -2251,7 +2274,7 @@ export interface EggParent {
   dex: number
   /** The friend's name, for a guest. */
   owner?: string
-  /** The friend's user id, for a guest: the Egg keeps the friendship streak going (docs/57). */
+  /** The friend's user id, for a guest: the Egg keeps the friendship streak going (docs/59). */
   ownerId?: string
 }
 

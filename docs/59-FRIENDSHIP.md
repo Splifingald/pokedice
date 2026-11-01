@@ -9,7 +9,7 @@ contains Rare Candies, Talent Candies, one rotating shiny Pokémon that fits the
 Ball") that is like an Ultra Ball with an effect we will define later. Build the feature as you see fit, don't ask
 questions, take decisions."*
 
-**Status: built** on `version/2_8`, behind its switch, **Off** (docs/15 §20). The migration is **0102**.
+**Status: built** on `version/2_8`, behind its switch, **Off** (docs/15 §20). The migration is **0105**.
 
 ## 1. Decisions
 
@@ -57,7 +57,7 @@ questions, take decisions."*
 
 ## 3. Code
 
-- **Migration** `supabase/migrations/0102_friendship.sql`: `friendship_cfg()` / `friendship_open()`, the tables
+- **Migration** `supabase/migrations/0105_friendship.sql`: `friendship_cfg()` / `friendship_open()`, the tables
   (`friendship_streaks`, `friendship_wallets`, `friendship_log`, `friend_market_buys`), `friendship_touch()` (the one
   place a streak moves and both are paid, `friendship_pay()` within the cap), the trade trigger, `friendship_raid()`,
   `friendship_egg()`, `friendship_status()`, `friend_market_buy()`, `friend_market_applied()`, the clean-up triggers,
@@ -84,7 +84,7 @@ questions, take decisions."*
 ## 4. Setting it up
 
 1. Run in Supabase → SQL Editor (the switch's row, Off, the tables and functions, the Friend Ball):
-   https://github.com/Splifingald/pokedice/blob/ccr-18cceff8-0y80b6/supabase/migrations/0102_friendship.sql
+   https://github.com/Splifingald/pokedice/blob/ccr-18cceff8-0y80b6/supabase/migrations/0105_friendship.sql
    It isn't inlined in `supabase/seed.sql`: run the file itself (it's safe to run again).
 2. Admin → Config → **Friendship**: check the numbers (the defaults are the ones above).
 3. Admin → Config → Switches → **Friendship & Friend Market**: *On for admin*, Save & Publish, and try it signed in as

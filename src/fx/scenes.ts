@@ -235,7 +235,7 @@ export const BALLS: Record<BallKind, { top: readonly string[]; mark?: readonly s
   trick: { top: ['#a15fda', '#8e40d2', '#6726a0'] },
   // The Raid Ball (docs/44): drawn from its picture once loaded (loadRaidBall); these stand in until then.
   raid: { top: ['#ff7a9e', '#e8336b', '#8c1238'], mark: ['#fff6c2', '#ffd23f'] },
-  // The Friend Ball (docs/57): the games' green top with its red band.
+  // The Friend Ball (docs/59): the games' green top with its red band.
   friend: { top: ['#8fdc6a', '#4aa93a', '#2a6e24'], mark: ['#ff8a5c', '#e2452a'] },
 }
 

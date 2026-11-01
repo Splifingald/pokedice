@@ -54,7 +54,7 @@ export function FriendsService() {
     if (isSupabaseConfigured && status === 'signed_in' && invitesOn) void loadInviteStatus()
   }, [status, userId, invitesOn])
 
-  // Friendship streaks (docs/57): the status once signed in and the switch on; an Egg made with a friend's Pokémon is
+  // Friendship streaks (docs/59): the status once signed in and the switch on; an Egg made with a friend's Pokémon is
   // told as soon as it's laid.
   const friendshipOpen = useGame((s) => friendshipOn(s.data))
   const eggsToTell = useGame((s) => (s.save ? (friendshipOf(s.save).eggs?.length ?? 0) : 0))

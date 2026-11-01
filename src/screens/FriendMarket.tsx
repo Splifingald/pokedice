@@ -1,4 +1,4 @@
-// The Friend Market (docs/57; docs/15 §41), reached from the Friends page's Friendship card: Festival Coins earned by
+// The Friend Market (docs/59; docs/15 §41), reached from the Friends page's Friendship card: Festival Coins earned by
 // friendship streaks buy the week's shelf — the shiny of the week, then Friend Balls, Rare Candies and Talent Candies,
 // each with its weekly limit. The rules the first time (a card at the top), INFO at the foot. The server prices,
 // limits and pays; a purchase opens like a gift (GiftMoment) into the region being played.

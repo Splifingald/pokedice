@@ -1,4 +1,4 @@
-// Migration 0102 against a real Postgres (PGlite, in process): friendship streaks and the Friend Market (docs/57). A
+// Migration 0105 against a real Postgres (PGlite, in process): friendship streaks and the Friend Market (docs/59). A
 // trade, a raid beside a friend's team and an Egg with a friend's Pokémon each move the pair's streak once a UTC day and
 // pay both by its tier, within the day's cap; a missed day starts it again; strangers never count; the switch gates
 // everything; the market prices, limits and hands back purchases until they're applied; removing a friend ends the
@@ -12,7 +12,7 @@ import itemsJson from '@/data/items.json'
 
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
-const FILE = '0102_friendship.sql'
+const FILE = '0105_friendship.sql'
 
 const U = {
   ash: '00000000-0000-4000-8000-000000000001',
@@ -129,7 +129,7 @@ afterAll(async () => {
   await db?.close()
 })
 
-describe('0102: friendship', () => {
+describe('0105: friendship', () => {
   it('keeps the game’s defaults, off', async () => {
     const [row] = (await db.query<{ v: unknown }>(`select friendship_cfg() v`)).rows
     expect(row!.v).toEqual(DEFAULT_CONFIG.friendship)

@@ -177,7 +177,7 @@ export const ICONS = {
     '.kRRRyoRRRk.',
     '.kkkkkkkkkk.',
   ],
-  /** A Festival Coin (docs/57): the Friend Market's currency, a rose coin with a white heart. */
+  /** A Festival Coin (docs/59): the Friend Market's currency, a rose coin with a white heart. */
   fcoin: [
     '...kkkkkk...',
     '.kkllllllkk.',

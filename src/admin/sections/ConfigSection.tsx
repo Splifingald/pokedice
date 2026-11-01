@@ -32,6 +32,11 @@ import {
   INVITE_TIERS_MAX,
   inviteTiers,
   type InviteRewardsConfig,
+  type WelcomeBackConfig,
+  WELCOME_BACK_DAYS_MAX,
+  WELCOME_BACK_TIERS_MAX,
+  welcomeBackCooldown,
+  welcomeBackTiers,
   type HiddenTalentsConfig,
   familyOf,
   familyTalent,
@@ -702,7 +707,7 @@ function UnownDexBox() {
 }
 
 /**
- * Friendship streaks and the Friend Market (docs/57): what each tier of a streak pays a day, the day's cap, the
+ * Friendship streaks and the Friend Market (docs/59): what each tier of a streak pays a day, the day's cap, the
  * market's weekly shelf and the shiny of the week. The server prices and pays from this same row (friendship_cfg()).
  */
 function FriendshipBox() {
@@ -820,6 +825,9 @@ function GeneralBox() {
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Offline earnings count up to (hours)" hint="per absence, on the server's clock">
           <NumInput min={1} max={168} value={cfg.offlineMaxHours} onChange={(v) => set({ offlineMaxHours: Math.max(1, v ?? 24) })} />
+        </Field>
+        <Field label="Offline earnings at level 0 (₽ / hour)" hint="before any level is bought; 0 = nothing">
+          <NumInput min={0} value={cfg.offlineBase} onChange={(v) => set({ offlineBase: Math.max(0, v ?? 0) })} />
         </Field>
         <Field label="I am just rich (₽)" hint="one level: a golden name">
           <NumInput min={0} value={cfg.richCost} onChange={(v) => set({ richCost: Math.max(0, v ?? 0) })} />
@@ -1023,6 +1031,94 @@ function InviteRewardsBox() {
           {seen.length
             ? seen.map((t) => `${t.friends} → ${t.gifts.map((g) => giftName(data, g)).join(' + ')}`).join(' · ')
             : 'no tier yet (no gauge).'}
+        </p>
+      )}
+    </Box>
+  )
+}
+
+/**
+ * Welcome-back gifts (docs/58): the cooldown and the tiers — each a number of days away and the gifts it gives (the
+ * same editor as a message's gifts). The server reads the same row (0103): on a return it writes the player a message
+ * from you with the highest tier's gifts, and only while the Gifts switch (Messages) is on for them too.
+ */
+function WelcomeBackBox() {
+  const data = useAdminData()
+  const [raw, setRaw] = useConfigRow('welcomeBack')
+  const cfg: WelcomeBackConfig = { ...DEFAULT_CONFIG.welcomeBack, ...(raw ?? {}) }
+  const set = (patch: Partial<WelcomeBackConfig>) => setRaw({ ...cfg, ...patch })
+  const tiers = Array.isArray(cfg.tiers) ? cfg.tiers : []
+  const setTier = (i: number, patch: Partial<WelcomeBackConfig['tiers'][number]>) =>
+    set({ tiers: tiers.map((t, j) => (j === i ? { ...t, ...patch } : t)) })
+  // What the server will read: in order, each number of days once, only tiers whose every gift is readable.
+  const seen = welcomeBackTiers(cfg)
+  const nextDays = Math.min(WELCOME_BACK_DAYS_MAX, Math.max(0, ...tiers.map((t) => Number(t.minDays) || 0)) + 7)
+  const clampDays = (v: number | null) => Math.max(1, Math.min(WELCOME_BACK_DAYS_MAX, Math.round(v ?? 1)))
+  return (
+    <Box
+      title="Welcome back" icon="gift"
+      hint="A player back after days away (the days the server saw them play: back the next day = 1) finds a message from you with the gifts of the highest tier reached, opened like any message's gifts, at most once per cooldown. Never for a new player. The server checks the switch, and needs the Gifts switch (Messages) on for the player too."
+    >
+      <Field
+        label="Cooldown (days)"
+        hint={`at most one welcome-back gift per player every this many days (1–${WELCOME_BACK_DAYS_MAX})`}
+      >
+        <NumInput
+          className="w-24"
+          value={cfg.cooldownDays}
+          min={1}
+          max={WELCOME_BACK_DAYS_MAX}
+          onChange={(v) => set({ cooldownDays: clampDays(v) })}
+        />
+      </Field>
+      <ol className="m-0 flex list-none flex-col gap-2 p-0">
+        {tiers.map((t, i) => (
+          <li key={i} className="flex flex-col gap-2 border-2 border-shadow p-2">
+            <div className="flex flex-wrap items-end gap-3">
+              <Field label="Days away, at least" hint={`1–${WELCOME_BACK_DAYS_MAX}`}>
+                <NumInput
+                  className="w-24"
+                  value={t.minDays}
+                  min={1}
+                  max={WELCOME_BACK_DAYS_MAX}
+                  onChange={(v) => setTier(i, { minDays: clampDays(v) })}
+                />
+              </Field>
+              <PixelButton size="sm" variant="ghost" onClick={() => set({ tiers: tiers.filter((_, j) => j !== i) })}>
+                Remove tier
+              </PixelButton>
+            </div>
+            {data && (
+              <GiftEditor
+                data={data}
+                gifts={t.gifts ?? []}
+                onChange={(gifts) => setTier(i, { gifts })}
+                hint="in your message when they come back"
+              />
+            )}
+          </li>
+        ))}
+      </ol>
+      <div className="flex flex-wrap items-center gap-3">
+        <PixelButton
+          size="sm"
+          disabled={tiers.length >= WELCOME_BACK_TIERS_MAX}
+          onClick={() => set({ tiers: [...tiers, { minDays: nextDays, gifts: [] }] })}
+        >
+          Add a tier
+        </PixelButton>
+        <span className="text-base text-muted">
+          {WELCOME_BACK_TIERS_MAX} tiers at most. Only the highest tier reached is given. A tier without a gift, or a
+          number of days already used, is left out.
+        </span>
+      </div>
+      {data && (
+        <p className="text-lg">
+          Players get:{' '}
+          {seen.length
+            ? seen.map((t) => `${t.minDays}+ days → ${t.gifts.map((g) => giftName(data, g)).join(' + ')}`).join(' · ')
+            : 'nothing (no tier).'}{' '}
+          · one every {welcomeBackCooldown(cfg)} days at most.
         </p>
       )}
     </Box>
@@ -1453,6 +1549,7 @@ const TABS = [
   { id: 'powers', label: 'Battle powers', icon: 'up' },
   { id: 'invites', label: 'Invite rewards', icon: 'gift' },
   { id: 'friendship', label: 'Friendship', icon: 'heart' },
+  { id: 'welcomeBack', label: 'Welcome back', icon: 'gift' },
   { id: 'push', label: 'Push', icon: 'bell' },
   { id: 'gameCorner', label: 'Game Corner', icon: 'coin' },
   { id: 'unown', label: 'Unown Pokédex', icon: 'book' },
@@ -1542,6 +1639,7 @@ const FEATURES: Feature[] = [
   own('Z-Moves', 'zMove', 'powers'),
   own('Friend invite rewards', 'inviteRewards', 'invites'),
   own('Friendship & Friend Market', 'friendship', 'friendship'),
+  own('Welcome back', 'welcomeBack', 'welcomeBack'),
   own('Push notifications', 'push', 'push'),
 ]
 
@@ -1674,6 +1772,7 @@ export function ConfigSection() {
       {tab === 'powers' && <BattlePowersBox />}
       {tab === 'invites' && <InviteRewardsBox />}
       {tab === 'friendship' && <FriendshipBox />}
+      {tab === 'welcomeBack' && <WelcomeBackBox />}
       {tab === 'push' && <PushBox />}
       {tab === 'gameCorner' && <SlotMachineBox />}
       {tab === 'unown' && <UnownDexBox />}

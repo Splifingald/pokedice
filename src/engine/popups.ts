@@ -206,7 +206,7 @@ const NOTICES = {
   unownDex: (s: SaveData, d: GameData) => unownDexRulesDue(s, d),
   /** The invite rewards. → /friends */
   invites: (s: SaveData, d: GameData) => inviteRulesDue(s, d),
-  /** Friendship streaks and the Friend Market (docs/57), for an account in the main game. → /friends */
+  /** Friendship streaks and the Friend Market (docs/59), for an account in the main game. → /friends */
   friendship: (s: SaveData, d: GameData, c: NoticeContext) =>
     !!c.signedIn && friendshipRulesDue(s, d) && !friendshipWaits(s, d),
   /** The raid overhaul's rules (docs/40), once a raid is open with it on. → /events/raid */

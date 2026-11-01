@@ -5,7 +5,7 @@
 import { PixelIcon } from '@/components/icons'
 import { useCallback, useEffect, useState } from 'react'
 import { PixelButton } from '@/components/PixelButton'
-import type { Gift, SaveData } from '@/engine'
+import { welcomeBackNote, type Gift, type SaveData } from '@/engine'
 import { FEEDBACK_MESSAGE_MAX, type FeedbackRow } from '@/lib/feedback'
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase'
 import { pushToast, useGame } from '@/store/game'
@@ -33,6 +33,14 @@ function sender(m: FeedbackRow) {
   if (m.email) return `${name} · ${m.email}`
   if (m.from_admin && m.user_id) return `${name} · signed-in player`
   return `${name} · guest ${m.device_id.slice(0, 8)}`
+}
+
+/** The words as stored, or, for a welcome back the server wrote (docs/58), what they stand for. */
+function replyText(reply: string) {
+  const note = welcomeBackNote(reply)
+  return note
+    ? `Welcome back (sent by the game): away ${note.days} days, the ${note.minDays}-day tier. The player reads it in their language.`
+    : reply
 }
 
 const sameGifts = (a: Gift[] | null | undefined, b: Gift[]) => JSON.stringify(a ?? []) === JSON.stringify(b)
@@ -155,7 +163,7 @@ export function MessageCard({
               {m.reply_seen ? ' · seen' : ' · not seen yet'}
             </span>
           </p>
-          <p className="copy mt-1 whitespace-pre-wrap break-words text-lg leading-snug">{m.reply}</p>
+          <p className="copy mt-1 whitespace-pre-wrap break-words text-lg leading-snug">{replyText(m.reply)}</p>
         </div>
       )}
       {draft === null && <GiftsLine m={m} />}

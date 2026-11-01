@@ -64,6 +64,7 @@ import { NightmareBits } from './kitchen/NightmareBits'
 import { NightmareRaidBits } from './kitchen/NightmareRaidBits'
 import { GiftBits } from './kitchen/GiftBits'
 import { InviteBits } from './kitchen/InviteBits'
+import { WelcomeBackBits } from './kitchen/WelcomeBackBits'
 import { SupportBits } from './kitchen/SupportBits'
 import { TrickBits } from './kitchen/TrickBits'
 import { UndergroundBits } from './kitchen/UndergroundBits'
@@ -734,6 +735,10 @@ export function KitchenSink() {
         <InviteBits />
       </Section>
 
+      <Section title="Welcome back: the developer's message on a return (the pop-up, its words per tier, My messages in every state, INFO, the rules, the opening)">
+        <WelcomeBackBits />
+      </Section>
+
       <Section title="Support me: the developer's asks (Discord, invite, Ko-fi), with and without a Discord link">
         <SupportBits />
       </Section>
@@ -839,7 +844,7 @@ export function KitchenSink() {
       <Section title="The gift calendar: a door in every state (shut, today's, last chance, opened with each kind of gift, missed, busy), a calendar on its 10th day, Home's card (gold, later, done), the rules card and INFO, a door's opening (docs/55)">
         <CalendarBits />
       </Section>
-      <Section title="Friendship streaks and the Friend Market: coins, a streak badge (kept, waiting), the tiers' ladder, today's gauge, the Friendship card (streaks waiting, none, loading, failed), a friend's streak (waiting, kept, top, lost, none), the shiny of the week (to buy, too poor, sold out), the items, the rules card and INFO, a purchase's opening (docs/57)">
+      <Section title="Friendship streaks and the Friend Market: coins, a streak badge (kept, waiting), the tiers' ladder, today's gauge, the Friendship card (streaks waiting, none, loading, failed), a friend's streak (waiting, kept, top, lost, none), the shiny of the week (to buy, too poor, sold out), the items, the rules card and INFO, a purchase's opening (docs/59)">
         <FriendshipBits />
       </Section>
       <Section title="Day and night (Johto): the top bar's chip by day and by night, the fights' indicator, the list tags (its half, the other half), rules">
