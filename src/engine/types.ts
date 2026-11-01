@@ -966,6 +966,11 @@ export interface VersusLeagueConfig {
   secondsPerMove: number
   /** The trophies from which a bot's team gets stronger: a tier each (the last brings all three powers). */
   botTiers: number[]
+  /**
+   * Where seated bots' trophies are headed by Sunday night: [lowest, highest], most of them near the bottom. Fixed, so
+   * every group gets bots as strong as every other's, whatever its players do (the user's rule, 2026-11-01).
+   */
+  botTargets: [number, number]
   /** ₽ for each trophy at the end of the week. */
   goldPerTrophy: number
   rewards: LeagueRewardBand[]

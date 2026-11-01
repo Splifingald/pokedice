@@ -3,6 +3,7 @@ import {
   applyGifts,
   BOT_TEAMS_PER_TIER,
   botTeamSeed,
+  botTargetOf,
   botTierOf,
   buildBotTeam,
   createRng,
@@ -154,6 +155,12 @@ describe('the bots', () => {
     expect([0, 99, 100, 249, 250, 499, 500, 9999].map((t) => botTierOf(t, CFG))).toEqual([
       0, 0, 1, 1, 2, 2, 3, 3,
     ])
+  })
+
+  it("head for trophies from Admin's range alone, most of them low", () => {
+    expect([0, 0.5, 0.999, 1].map((r) => botTargetOf(r, CFG))).toEqual([20, 78, 250, 250])
+    expect(botTargetOf(0.5, { ...CFG, botTargets: [300, 100] })).toBe(150)
+    expect(botTargetOf(-1, { ...CFG, botTargets: [-50, 100] })).toBe(0)
   })
 
   it('field three different Pokémon at Lv.50, with as many powers as their tier', () => {
