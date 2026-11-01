@@ -16,6 +16,8 @@
     "seed": "tsx scripts/seed.ts",
     "seed-regions": "tsx scripts/seed-regions.ts",
     "haunted-hollow": "tsx scripts/content-haunted-hollow.ts",
+    "snowglobe-valley": "tsx scripts/content-snowglobe-valley.ts",
+    "snowglobe-balance": "tsx scripts/snowglobe-balance.ts",
     "seed-sql": "tsx scripts/write-seed-sql.ts",
     "seed-forms": "tsx scripts/seed-forms.ts",
     "talents": "tsx scripts/hidden-talents.ts",

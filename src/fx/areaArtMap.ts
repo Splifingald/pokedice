@@ -317,6 +317,23 @@ export const AREA_ART: Readonly<Record<string, string>> = {
   '11a60b7e-5463-5955-8c58-14be0ad97b89': 'deepcave', // 14 Cavern (Haunted Hollow)
   '2361c7fc-b267-5637-a81d-c622b95003b9': 'a127', // 15 Newmoon Island (Haunted Hollow)
   'cfff57e0-5175-545c-9e68-a2e2e64d7d45': 'a123', // 16 Distortion World (Haunted Hollow)
+  // Snowglobe Valley, the winter small world (docs/61): existing pictures only.
+  '0c5da7f8-c0d1-5e2b-bcfe-b23bef7e7eed': 'snow', // 1 Snowy Trail (Snowglobe Valley)
+  '86027687-5c39-5902-a7fa-9da648a00cbc': 'forest', // 2 Pinewood Forest (Snowglobe Valley)
+  '571fc205-b861-59f3-862c-a1ea8fd135fa': 'lake', // 3 Frozen Pond (Snowglobe Valley)
+  '24714d59-a220-5b61-bfcc-ec569104657d': 'snowtown', // 4 Holly Village (Snowglobe Valley)
+  'e8a95d77-f972-5fb7-a784-33373bac3d37': 'a761', // 5 Toy Workshop (Snowglobe Valley)
+  'e5561682-98aa-5c19-b8a4-32acdc30c64e': 'icecave', // 6 Icicle Cave (Snowglobe Valley)
+  '93acfeb0-0e5b-592c-a50b-8c817cd51c71': 'harbour', // 7 Frostbite Harbour (Snowglobe Valley)
+  'd7c050e7-dd23-5e09-8385-2cce834e515d': 'volcano', // 8 Ember Springs (Snowglobe Valley)
+  '82c065db-ab84-5f2e-ae22-0c0d01362006': 'mountain', // 9 Blizzard Pass (Snowglobe Valley)
+  '8e6d4d5b-bf5c-537b-85ac-cb13eccda2bc': 'a54', // 10 Aurora Summit (Snowglobe Valley)
+  'e116c980-4cbc-5b72-bf2e-e07d1853c123': 'league', // 11 Frost League (Snowglobe Valley)
+  'b1f65375-1a86-5211-ab2f-48d83db2b40f': 'a126', // 12 Moonlit Glade (Snowglobe Valley)
+  'da1bc5c9-2661-54cb-9896-6979901a096d': 'a858', // 13 Evergreen Hill (Snowglobe Valley)
+  'd22c8323-edb5-5a4a-8004-a49d833ee24e': 'a855', // 14 Crown Shrine (Snowglobe Valley)
+  '4ec17080-5cb8-59c6-b862-45b620296d5d': 'lair-summit', // 15 Spear Pillar (Snowglobe Valley)
+  'fc6e19d5-9dd7-5ee1-a6ee-8f645d1de9ed': 'a130', // 16 Hall of Origin (Snowglobe Valley)
 }
 
 /**

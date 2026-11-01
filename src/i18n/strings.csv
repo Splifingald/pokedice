@@ -721,6 +721,22 @@ area.cemetery,Cemetery,Cimetière,Cementerio,Friedhof,Cimitero,Cemitério,Cemit�
 area.haunted-house,Haunted House,Maison Hantée,Casa Encantada,Spukhaus,Casa Infestata,Casa Assombrada,Casa Assombrada,おばけやしき,유령의 집,鬼屋
 area.cavern,Cavern,Caverne,Caverna,Kaverne,Caverna,Caverna,Caverna,どうくつ,동굴,洞窟
 area.distortion-world,Distortion World,Monde Distorsion,Mundo Distorsión,Zerrwelt,Mondo Distorto,Mundo Distorção,Mundo Distorção,やぶれたせかい,깨어진 세계,毁坏的世界
+area.snowy-trail,Snowy Trail,Sentier Enneigé,Sendero Nevado,Schneepfad,Sentiero Innevato,Trilha Nevada,Trilha Nevada,ゆきのこみち,눈 덮인 오솔길,雪之小径
+area.pinewood-forest,Pinewood Forest,Forêt des Pins,Bosque de Pinos,Kiefernwald,Bosco dei Pini,Floresta dos Pinheiros,Floresta dos Pinheiros,まつのもり,소나무 숲,松树林
+area.frozen-pond,Frozen Pond,Étang Gelé,Estanque Helado,Gefrorener Teich,Stagno Ghiacciato,Lagoa Gelada,Lagoa Congelada,こおったいけ,얼어붙은 연못,冰封池塘
+area.holly-village,Holly Village,Village du Houx,Pueblo Acebo,Stechpalmendorf,Villaggio Agrifoglio,Aldeia do Azevinho,Vila do Azevinho,ヒイラギむら,호랑가시 마을,冬青村
+area.toy-workshop,Toy Workshop,Atelier des Jouets,Taller de Juguetes,Spielzeugwerkstatt,Laboratorio dei Giocattoli,Oficina de Brinquedos,Oficina de Brinquedos,おもちゃこうぼう,장난감 공방,玩具工坊
+area.icicle-cave,Icicle Cave,Grotte des Stalactites,Cueva Carámbano,Eiszapfenhöhle,Grotta dei Ghiaccioli,Caverna dos Pingentes,Caverna dos Pingentes,つららのどうくつ,고드름 동굴,冰柱洞窟
+area.frostbite-harbour,Frostbite Harbour,Port Givré,Puerto Escarcha,Frosthafen,Porto Gelido,Porto Gélido,Porto Gélido,しもやけみなと,동상 항구,霜冻港
+area.ember-springs,Ember Springs,Sources des Braises,Termas Brasa,Glutquellen,Terme delle Braci,Fontes das Brasas,Fontes das Brasas,おきびのいでゆ,잉걸불 온천,余烬温泉
+area.blizzard-pass,Blizzard Pass,Col du Blizzard,Paso Ventisca,Blizzardpass,Passo della Tormenta,Passo da Nevasca,Passo da Nevasca,ふぶきのとうげ,눈보라 고개,暴风雪山口
+area.aurora-summit,Aurora Summit,Sommet de l'Aurore,Cumbre Aurora,Polarlichtgipfel,Vetta dell'Aurora,Cume da Aurora,Cume da Aurora,オーロラのいただき,오로라 정상,极光之巅
+area.frost-league,Frost League,Ligue du Givre,Liga Escarcha,Frost-Liga,Lega del Gelo,Liga do Gelo,Liga do Gelo,フロストリーグ,프로스트 리그,冰霜联盟
+area.moonlit-glade,Moonlit Glade,Clairière de Lune,Claro Lunar,Mondlichtung,Radura della Luna,Clareira do Luar,Clareira do Luar,つきあかりのもり,달빛 숲속 빈터,月光林地
+area.evergreen-hill,Evergreen Hill,Colline du Sapin,Colina del Abeto,Tannenhügel,Collina dell'Abete,Colina do Pinheiro,Colina do Pinheiro,もみのきのおか,전나무 언덕,常青山丘
+area.crown-shrine,Crown Shrine,Sanctuaire Couronne,Santuario Corona,Kronenschrein,Santuario Corona,Santuário da Coroa,Santuário da Coroa,かんむりのやしろ,왕관 신사,王冠神社
+area.spear-pillar,Spear Pillar,Colonnes Lances,Columnas Lanza,Speersäule,Vetta Lancia,Pilar da Lança,Pilar da Lança,やりのはしら,창기둥,枪之柱
+area.hall-of-origin,Hall of Origin,Salle Originelle,Sala Origen,Ursprungshalle,Sala dell'Origine,Salão da Origem,Salão da Origem,はじまりのま,시작의 방,起始之间
 area.the-seabreak-path,The Seabreak Path,Le Passage Marin,La Vía Costera,Der Buhnenpfad,Il Sentiero Frangiflutti,O Caminho do Quebra-Mar,O Caminho do Quebra-Mar,うみのとおりみち,바다의 길,海之通道
 area.flower-paradise,Flower Paradise,Paradis Fleuri,Paraíso Floral,Blumenparadies,Paradiso Fiorito,Paraíso das Flores,Paraíso das Flores,はなのらくえん,꽃의 낙원,花之乐园
 area.the-hall-of-origin,The Hall of Origin,La Salle Originelle,La Sala del Origen,Die Halle des Beginns,La Sala d'Origine,O Salão da Origem,O Salão da Origem,はじまりのま,시작의 방,起始之间
@@ -3588,6 +3604,7 @@ area.the-area-zero-underdepths,The Area Zero Underdepths,Les Profondeurs de la Z
 area.kitakami-hall,Kitakami Hall,Septemplion,Kitakami Hall,Das Kitakami-Kulturzentrum,Kitakami Hall,Kitakami Hall,Kitakami Hall,キタカミの公民館,Kitakami Hall,Kitakami Hall
 region.paldea,Paldea,Paldea,Paldea,Paldea,Paldea,Paldea,Paldea,パルデア,팔데아,帕底亚
 region.world-haunted-hollow,Haunted Hollow,Vallon Hanté,Hondonada Encantada,Spukmulde,Valle Infestata,Vale Assombrado,Vale Assombrado,おばけの谷,유령의 골짜기,幽灵谷
+region.world-snowglobe-valley,Snowglobe Valley,Vallée Boule-de-Neige,Valle Bola de Nieve,Schneekugeltal,Valle Palla di Neve,Vale Globo de Neve,Vale Globo de Neve,スノードームの谷,스노우볼 골짜기,雪景球山谷
 badge.electric-badge,Electric Badge,Badge Électrik,Medalla Eléctrica,Elektro-Orden,Medaglia Elettro,Insígnia Elétrica,Insígnia Elétrica,でんきバッジ,전기배지,电徽章
 badge.normal-badge,Normal Badge,Badge Normal,Medalla Normal,Normal-Orden,Medaglia Normale,Insígnia Normal,Insígnia Normal,ノーマルバッジ,노말배지,一般徽章
 badge.ghost-badge,Ghost Badge,Badge Spectre,Medalla Fantasma,Geist-Orden,Medaglia Spettro,Insígnia Fantasma,Insígnia Fantasma,ゴーストバッジ,고스트배지,幽灵徽章
