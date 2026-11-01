@@ -66,7 +66,11 @@ export default async function handler(): Promise<Response> {
       post: async (message) => {
         await postWebhook(webhook!, message)
       },
-      postFrench: frenchWebhook ? (message) => postWebhook(frenchWebhook, message) : undefined,
+      postFrench: frenchWebhook
+        ? async (message) => {
+            await postWebhook(frenchWebhook, message)
+          }
+        : undefined,
       roleId: env.DISCORD_EVENT_ROLE?.trim() || undefined,
       site: env.POKEDICE_SITE?.trim() || undefined,
     },
