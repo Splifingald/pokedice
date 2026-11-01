@@ -357,11 +357,11 @@ Where it differs from the plan:
 
 1. Run the five migrations in the Supabase SQL editor, in order (each safe to run again; `supabase/seed.sql` carries
    their content, its schema part the `disguise` column):
-   - https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0109_regigigas_regis.sql
-   - https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0110_roadblocks.sql
-   - https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0111_disguises.sql
-   - https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0112_safaris.sql
-   - https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0113_set_moments.sql
+   - https://github.com/Splifingald/pokedice/blob/version/2_9/supabase/migrations/0109_regigigas_regis.sql
+   - https://github.com/Splifingald/pokedice/blob/version/2_9/supabase/migrations/0110_roadblocks.sql
+   - https://github.com/Splifingald/pokedice/blob/version/2_9/supabase/migrations/0111_disguises.sql
+   - https://github.com/Splifingald/pokedice/blob/version/2_9/supabase/migrations/0112_safaris.sql
+   - https://github.com/Splifingald/pokedice/blob/version/2_9/supabase/migrations/0113_set_moments.sql
 2. Parts 1, 2 and 4's split are content: they apply as soon as 0109, 0110 and 0112 are run (Snowpoint Temple's Regis,
    the roadblocks, Fuchsia City and the four Safaris off the main road).
 3. Admin → Config: **Pokémon posing as items**, **Safari Zones**, **Rivals on the road**, **Gift Pokémon**: On for admin

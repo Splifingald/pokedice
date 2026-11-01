@@ -119,7 +119,7 @@ export const TRIALS: TrialDef[] = [
     id: 'trial-vast-poni-canyon',
     crystal: 'dragon',
     areaId: 'e7ae24d0-80a4-51d7-a9cb-c0df82d25286',
-    // A gym row of its own, before Hapu's grand trial; she shows the way (migration 0116).
+    // A gym row of its own, before Hapu's grand trial; she shows the way (migration 0117).
     trainerId: '7278511c-319e-5fc1-a053-0be766cb70fd',
     own: true,
     captain: 'Hapu',

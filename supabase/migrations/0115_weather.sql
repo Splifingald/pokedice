@@ -4,7 +4,7 @@
 --    Area's, the Isle of Armor's and the Crown Tundra's weather of the day, Circhester's snow). Each area's weather is
 --    the game's own content (src/engine/flavoursContent.ts); a row's `areas` overrides it.
 -- 2. side_quest_open(key) also knows the five region flavours: hoennWeather, galarWeather, hordes, trials, titans
---    (0115–0117 add the other three rows; a key with no row yet is off).
+--    (0116–0118 add the other three rows; a key with no row yet is off).
 -- 3. configVersion + 1. Safe to run again.
 begin;
 insert into game_config (key, value) values ('hoennWeather', '{"access":"off"}'::jsonb) on conflict (key) do nothing;

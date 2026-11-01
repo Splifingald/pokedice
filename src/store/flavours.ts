@@ -1,5 +1,5 @@
 // The region flavours in the game (docs/62): what the engine says about the place the player is in, once the server
-// has confirmed the feature's switch (side_quest_open, migration 0114). A guest's switch can only be "On for everyone".
+// has confirmed the feature's switch (side_quest_open, migration 0115). A guest's switch can only be "On for everyone".
 import { progressOf, weatherAt, weatherConfigOf, type Area, type GameData, type SaveData, type Weather } from '@/engine'
 import { useGame } from './game'
 import { useNow } from './hooks'

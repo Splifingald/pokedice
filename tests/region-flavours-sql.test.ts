@@ -1,4 +1,4 @@
-// The region flavours' migrations (docs/62), 0114 to 0119, against a real Postgres (PGlite, in process), over the areas
+// The region flavours' migrations (docs/62), 0115 to 0120, against a real Postgres (PGlite, in process), over the areas
 // they touch as they were before them: the five Titans' areas with no boss, Vast Poni Canyon's gyms without Totem
 // Kommo-o, no Castform form, the six areas of the type trials without them. Each migration does what the bundle has; run again, nothing moves but the content version.
 import { readFileSync } from 'node:fs'
@@ -10,7 +10,7 @@ import { TRIALS, type Area, type Trainer } from '@/engine'
 
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
-const FILES = ['0114_weather.sql', '0115_hordes.sql', '0116_trials.sql', '0117_titans.sql', '0118_castform_forms.sql', '0119_type_trials.sql']
+const FILES = ['0115_weather.sql', '0116_hordes.sql', '0117_trials.sql', '0118_titans.sql', '0119_castform_forms.sql', '0120_type_trials.sql']
 
 const AUTH = `create role anon; create role authenticated; create schema auth; create table auth.users (id uuid primary key);
   create function auth.uid() returns uuid language sql stable as $$
@@ -25,7 +25,7 @@ const TITAN_AREAS = areas.filter((a) => a.legendaryBoss?.some((b) => b.titan))
 const CANYON = 'e7ae24d0-80a4-51d7-a9cb-c0df82d25286'
 const KOMMO_O = '7278511c-319e-5fc1-a053-0be766cb70fd'
 const HAPU = 'c6106307-fd9e-50e1-aa2c-8edd1069cb8f'
-/** The six trials of their own for the types Alola's don't give (0119): their areas and their Totems' gym rows. */
+/** The six trials of their own for the types Alola's don't give (0120): their areas and their Totems' gym rows. */
 const TYPE_TRIALS = TRIALS.filter((t) => t.own && t.trainerId !== KOMMO_O)
 
 const q = (v: unknown) =>
@@ -62,7 +62,7 @@ async function setUp(db: PGlite) {
 
 const one = async <T,>(db: PGlite, text: string, params: unknown[] = []) => (await db.query<T>(text, params)).rows[0]
 
-describe('the region flavours’ migrations (0114–0119)', () => {
+describe('the region flavours’ migrations (0115–0120)', () => {
   let db: PGlite
   beforeAll(async () => {
     db = new PGlite()
@@ -70,7 +70,7 @@ describe('the region flavours’ migrations (0114–0119)', () => {
     for (const f of FILES) await db.exec(sql(f))
   }, 60_000)
 
-  it('0114: the weather’s switches Off, and the server’s check knows the five flavours', async () => {
+  it('0115: the weather’s switches Off, and the server’s check knows the five flavours', async () => {
     for (const key of ['hoennWeather', 'galarWeather', 'hordes', 'trials', 'titans']) {
       expect((await one<{ v: { access: string } }>(db, 'select value v from game_config where key = $1', [key]))!.v).toEqual({ access: 'off' })
       expect((await one<{ v: boolean }>(db, 'select side_quest_open($1) v', [key]))!.v).toBe(false)
@@ -81,21 +81,21 @@ describe('the region flavours’ migrations (0114–0119)', () => {
     expect((await one<{ v: boolean }>(db, "select side_quest_open('configVersion') v"))!.v).toBe(false)
   })
 
-  it('0116: Totem Kommo-o, a gym of Vast Poni Canyon before Hapu, as the bundle has it', async () => {
+  it('0117: Totem Kommo-o, a gym of Vast Poni Canyon before Hapu, as the bundle has it', async () => {
     const t = await one<{ name: string; team: unknown }>(db, 'select name, team from trainers where id = $1', [KOMMO_O])
     expect(t).toEqual({ name: 'Totem Kommo-o', team: [{ dex: 784, level: 45 }] })
     const a = await one<{ g: string[] }>(db, 'select gyms g from areas where id = $1', [CANYON])
     expect(a!.g).toEqual(byId(CANYON).gyms)
   })
 
-  it('0117: each Titan its area’s boss, as the bundle has it', async () => {
+  it('0118: each Titan its area’s boss, as the bundle has it', async () => {
     for (const area of TITAN_AREAS) {
       const r = await one<{ b: unknown }>(db, 'select legendary_boss b from areas where id = $1', [area.id])
       expect(r!.b, area.name).toEqual(area.legendaryBoss)
     }
   })
 
-  it('0118: Castform’s three weather forms, as the bundle has them', async () => {
+  it('0119: Castform’s three weather forms, as the bundle has them', async () => {
     const species = BUNDLE.pokemon as { dex: number; type1: string; form?: unknown }[]
     for (const dex of [10013, 10014, 10015]) {
       const r = await one<{ type1: string; form: unknown }>(db, 'select type1, form from pokemon where dex = $1', [dex])
@@ -104,7 +104,7 @@ describe('the region flavours’ migrations (0114–0119)', () => {
     }
   })
 
-  it('0119: the six type trials’ Totems, each the gym of its area, as the bundle has them', async () => {
+  it('0120: the six type trials’ Totems, each the gym of its area, as the bundle has them', async () => {
     expect(TYPE_TRIALS).toHaveLength(6)
     for (const tr of TYPE_TRIALS) {
       const t = await one<{ name: string; team: unknown }>(db, 'select name, team from trainers where id = $1', [tr.trainerId])

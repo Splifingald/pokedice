@@ -32,9 +32,9 @@ differs from the plan below, §10 says so.
   data sits on the area in AreasSection. **Kitchen sink**: every new piece in every state.
 - **Data**: each area's weather and the trials are the game's own content (`src/engine/flavoursContent.ts`, deep-merged
   under their config rows, as the rivals' meetings are); the Titans' bosses and Totem Kommo-o's gym row come from
-  `scripts/patch-region-flavours.ts` (it writes the bundle, safe to run again). The new migrations come after 0113: 0114
-  weather, 0115 hordes, 0116 trials, 0117 Titans. `supabase/seed.sql` carries the data, and the PGlite test runs each of
-  them twice.
+  `scripts/patch-region-flavours.ts` (it writes the bundle, safe to run again). The new migrations come after 2.9's
+  0114 (anti-cheat): 0115 weather, 0116 hordes, 0117 trials, 0118 Titans, then 0119 Castform's forms and 0120 the type
+  trials. `supabase/seed.sql` carries the data, and the PGlite test runs each of them twice.
 - **Branch**: `ccr-f432a8de-hqqe99`, so PR #42 into `version/2_9` (a new PR into `version/2_9` if #42 has been
   merged by then). Screenshots go in `docs/62-region-flavours/`, taken by an e2e spec, as for docs/61.
 
@@ -87,7 +87,7 @@ weather means the same thing everywhere in the game:
 - **Castform** (decision H2, the user's call of 2026-11-01: include its forms): as a fight under harsh sun, rain (or a
   thunderstorm) or snow starts, each Castform on either side takes its Sunny (Fire), Rainy (Water) or Snowy (Ice)
   Form, its Normal dice turning into the form's type (`weatherFormOf`, the `form` log's `weather` reason: "Castform
-  became Water type!"). A Castform caught in one is Castform. The forms are battle rows 10013–10015 (migration 0118),
+  became Water type!"). A Castform caught in one is Castform. The forms are battle rows 10013–10015 (migration 0119),
   written by `scripts/castform-forms.ts` with their names and offline sprites; Showdown's come from
   `pnpm showdown-sprites pokemon icons cries --only 10013,10014,10015`.
 - **Admin**: the areas' weather is the `hoennWeather` row's `areas` (Admin → Config → All rows), by area id: `fixed`,
@@ -135,7 +135,7 @@ weather means the same thing everywhere in the game:
   and the idle mode fights it as it would a wild pair.
 - **On screen.** A HORDE banner on the encounter preview showing the five silhouettes, then the pips on the battle
   stage. The rules pop up the first time, and INFO sits on the banner.
-- **Data**: no per-area data (any Kalos wild pool works); migration 0115 adds the `hordes` config row.
+- **Data**: no per-area data (any Kalos wild pool works); migration 0116 adds the `hordes` config row.
 
 ## 6. Alola: island trials instead of the captains' battles
 
@@ -188,7 +188,7 @@ battle with her, Fairy. **Eighteen battles, one Z-Crystal per type** (the user's
   as trainer battles.
 - **Data**: the trials are the `trials` row's (`trials: [{ id, areaId, trainerId, captain, place, totem, level, allies,
   allyLevel, crystal }]`, the game's own when the row has none; `crystals` for the grand trials'); Kommo-o's is a gym
-  row of its own (migration 0116), ahead of Hapu, and the six type trials' too (0119), each its area's only gym: all
+  row of its own (migration 0117), ahead of Hapu, and the six type trials' too (0120), each its area's only gym: all
   left out of the areas' gyms while the switch is off.
 
 ## 7. Paldea: the Titans
@@ -223,19 +223,19 @@ rules, docs/61 §2's roadblocks being the newest of them):
 - **Decision (P2): a breather between the phases?** **No**: the fight carries on. An option is 25% HP back for your
   team.
 - **Data**: `BossDef.titan` (`{ versionDex?, partner? }`) on each of these areas' `legendaryBoss`, through migration
-  0117; the numbers (×HP, dice, ₽, items) are the `titans` row's. The data test's "every boss is a raid" rule gets the
+  0118; the numbers (×HP, dice, ₽, items) are the `titans` row's. The data test's "every boss is a raid" rule gets the
   same exemption roadblocks have.
 
 ## 8. Order of work and checks
 
 1. The weather engine and its tests. Then Hoenn's fixed weather, then Galar's daily weather and pool shift. That's
-   migration 0114, the chips, the particles, the recap line and the rules.
-2. Hordes: the engine, the doubles hook-up, the banner and pips, the single throw, migration 0115.
-3. Trials: the Totem, the calls, the card with the captain walking in, migration 0116.
-4. Titans: the two phases, Commander, the reward, migration 0117.
+   migration 0115, the chips, the particles, the recap line and the rules.
+2. Hordes: the engine, the doubles hook-up, the banner and pips, the single throw, migration 0116.
+3. Trials: the Totem, the calls, the card with the captain walking in, migration 0117.
+4. Titans: the two phases, Commander, the reward, migration 0118.
 5. Admin, kitchen sink, strings in ten languages (`pnpm i18n:fonts`), docs/15 rules, this doc's "What was built"
    and "Setting it up" (each migration's link on the branch).
-6. `pnpm lint && pnpm build && pnpm test`, the PGlite test for 0114–0117, and a new `e2e/region-flavours.spec.ts`:
+6. `pnpm lint && pnpm build && pnpm test`, the PGlite test for 0115–0118, and a new `e2e/region-flavours.spec.ts`:
    rain at Route 119 with its recap line, the sandstorm's wear, Galar's day weather, a Kalos horde and its pips, the
    Verdant Cavern trial and its call, Klawf's two phases. Each one leaves a picture in `docs/62-region-flavours/`.
    Then the e2e specs the change touches (encounters, doubles, area loop).
@@ -274,7 +274,7 @@ What differs from the plan:
 - **A die, not upgrade levels**: a Totem's aura and a Titan's second phase add dice of their type (one; Dondozo's
   Commander two), with ×2 HP. A die is seen on the dice; upgrade levels would have been a number nobody sees.
 - **No `areas.weather` column**: the weather of each area is content in its config row, like the rivals' meetings,
-  and Admin edits it there (All rows); 0114 adds only the switches.
+  and Admin edits it there (All rows); 0115 adds only the switches.
 - **The Titans are off in Extreme mode too**: Extreme's race data switches all five flavours off (`raceData`).
 - **Titan's server check**: a trial or a Titan the server doesn't allow (an out-of-date page) is the captain's battle,
   or no challenge yet.
@@ -304,23 +304,23 @@ Taken by `e2e/region-flavours.spec.ts` in the game, with the switches on:
   wear, Extreme), hordes (dealt, never off/alone/elsewhere/past the limit, the throw), trials (on/off/Extreme, the
   challenge, Kommo-o's gym, the Totem's HP, die, calls and end), Titans (the boss only while on, beaten not caught, the
   two phases, Commander, Iron Treads, the reward).
-- `tests/region-flavours-sql.test.ts`: 0114–0117 on PGlite, twice.
+- `tests/region-flavours-sql.test.ts`: 0115–0118 on PGlite, twice.
 - `e2e/region-flavours.spec.ts`: each part in the game, and its pictures.
 
 ## 11. Setting it up
 
-1. Run the four migrations in order (after 0113), in the Supabase SQL editor:
-   - [0114_weather.sql](https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0114_weather.sql)
+1. Run the six migrations in order (after 2.9's `0114_anti_cheat.sql`), in the Supabase SQL editor:
+   - [0115_weather.sql](https://github.com/Splifingald/pokedice/blob/version/2_9/supabase/migrations/0115_weather.sql)
      — the two weather switches, and `side_quest_open` knowing the five keys.
-   - [0115_hordes.sql](https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0115_hordes.sql)
+   - [0116_hordes.sql](https://github.com/Splifingald/pokedice/blob/version/2_9/supabase/migrations/0116_hordes.sql)
      — the hordes' switch.
-   - [0116_trials.sql](https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0116_trials.sql)
+   - [0117_trials.sql](https://github.com/Splifingald/pokedice/blob/version/2_9/supabase/migrations/0117_trials.sql)
      — the trials' switch, Totem Kommo-o's row and Vast Poni Canyon's gyms.
-   - [0117_titans.sql](https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0117_titans.sql)
+   - [0118_titans.sql](https://github.com/Splifingald/pokedice/blob/version/2_9/supabase/migrations/0118_titans.sql)
      — the Titans' switch and the five bosses.
-   - [0118_castform_forms.sql](https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0118_castform_forms.sql)
+   - [0119_castform_forms.sql](https://github.com/Splifingald/pokedice/blob/version/2_9/supabase/migrations/0119_castform_forms.sql)
      — Castform's Sunny, Rainy and Snowy Forms.
-   - [0119_type_trials.sql](https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0119_type_trials.sql)
+   - [0120_type_trials.sql](https://github.com/Splifingald/pokedice/blob/version/2_9/supabase/migrations/0120_type_trials.sql)
      — the six type trials' Totems (Flying, Poison, Bug, Steel, Psychic, Ice) and their areas' gyms.
 
    `supabase/seed.sql` carries the data part (the trials' Totems, the gyms, the Titans' bosses, Castform's forms) for a

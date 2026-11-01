@@ -2,7 +2,7 @@
  * pnpm tsx scripts/patch-region-flavours.ts — the region flavours' data (docs/62), written into the bundle (src/data)
  * and safe to run again: Paldea's five Titans as their areas' bosses (§7), and Vast Poni Canyon's Totem Kommo-o, a gym
  * row there only for its island trial, before Hapu (§6). The weather's areas and the trials themselves are the game's
- * own content (src/engine/flavoursContent.ts); migrations 0116 and 0117 carry the same rows to the database.
+ * own content (src/engine/flavoursContent.ts); migrations 0117 and 0118 carry the same rows to the database.
  */
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -43,7 +43,7 @@ export const HAPU = 'c6106307-fd9e-50e1-aa2c-8edd1069cb8f'
 
 /**
  * One trial per type (docs/62 §6, the user's call): the six Totems for the types Alola's trials don't give (Flying,
- * Poison, Bug, Steel, Psychic, Ice), each a gym row of its own, the only gym of its area. Migration 0119.
+ * Poison, Bug, Steel, Psychic, Ice), each a gym row of its own, the only gym of its area. Migration 0120.
  */
 export const TYPE_TRIALS: { areaId: string; trainer: Trainer }[] = [
   {

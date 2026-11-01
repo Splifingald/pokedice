@@ -11,7 +11,7 @@ export type SideQuestKey =
   | 'safari'
   | 'rivals'
   | 'giftMoments'
-  // The region flavours (docs/62, migrations 0114–0117).
+  // The region flavours (docs/62, migrations 0115–0118).
   | 'hoennWeather'
   | 'galarWeather'
   | 'hordes'
