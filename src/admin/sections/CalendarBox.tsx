@@ -15,16 +15,19 @@ import {
   type GameData,
   type ItemDef,
   type LiveEvent,
+  hasOutfit,
 } from '@/engine'
 import { AccessSwitch, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 import { useConfigRow } from './ConfigSection'
+import { OutfitSelect } from '../OutfitSelect'
 
 const DAY = 24 * 3_600_000
 
 /**
  * Advent, 1 to 24 December (the user's ask, 2026-10-31; toned down the same day, "way too generous"): small things a
  * day, as a trainer's ₽ goes (a whole region pays about ₽6,000). Balls, potions and heals, ₽1,000 over the month, one
- * Rare Candy, one Ice Stone (for Day 23's Eevee, Glaceon), winter Pokémon at Lv.5, and a Delibird on the 24th.
+ * Rare Candy, one Ice Stone (for Day 23's Eevee, Glaceon), winter Pokémon at Lv.5, and Santa Pikachu on the 24th (in
+ * its hat while the outfits' switch is on, docs/59; a plain Pikachu while it's off).
  */
 export const ADVENT_PROPOSAL: CalendarReward[] = [
   { kind: 'item', key: 'poke-ball', qty: 5 },
@@ -50,7 +53,7 @@ export const ADVENT_PROPOSAL: CalendarReward[] = [
   { kind: 'item', key: 'revive', qty: 2 },
   { kind: 'item', key: 'ice-stone', qty: 1 },
   { kind: 'pokemon', dex: 133, level: 5, qty: 1 },
-  { kind: 'pokemon', dex: 225, level: 10, qty: 1 },
+  { kind: 'pokemon', dex: 25, level: 10, outfit: 'santa', qty: 1 },
 ]
 
 /** The gift calendar's switch, over the live events' own: Off, no calendar shows, whatever the list says. */
@@ -174,7 +177,15 @@ function DayRow({
           <div className="flex flex-wrap items-end gap-2">
             <label className="flex min-w-[200px] flex-1 flex-col text-base">
               Pokémon
-              <PokemonPicker data={data} value={r.dex} onChange={(dex) => set({ ...r, dex })} />
+              <PokemonPicker
+                data={data}
+                value={r.dex}
+                // An outfit stays only on a species that wears it (docs/59).
+                onChange={(dex) => {
+                  const { outfit, ...rest } = r
+                  set({ ...rest, dex, ...(outfit && hasOutfit(outfit, dex) && { outfit }) })
+                }}
+              />
             </label>
             <label className="flex w-20 flex-col text-base">
               Level
@@ -193,6 +204,14 @@ function DayRow({
               />
               Shiny
             </label>
+            <OutfitSelect
+              dex={r.dex}
+              value={r.outfit}
+              onChange={(outfit) => {
+                const { outfit: _old, ...rest } = r
+                set({ ...rest, ...(outfit && { outfit }) })
+              }}
+            />
             <label className="flex w-20 flex-col text-base">
               How many
               <NumInput

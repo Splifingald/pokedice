@@ -205,7 +205,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `LooksRow` / `LooksDot` / `LooksMenu` / `LooksSheet` / `LockedLook` / `OwnedLook` / `LooksRulesModal` | Trainer looks (§17, docs/31) | The row under the trainer card (with and without its red dot); the menu (a new game, some new looks, its list on the unlocked looks, an event's look won, every look unlocked); a locked look of each kind (a catch goal with its bar, an area with how far away, the League, the full Pokédex); an unlocked look with how it was won (from the start, a catch goal, an area, the League, an event); the rules (the first open, INFO) |
 | `DayNightButton` / `DayNightChip` / `BattleDayTime` / `DayNightTag` / `DayNightPill` / `DayNightRulesModal` | Day and night in Johto (§30, docs/32) | The top bar's chip by day and by night; the fights' indicator on a stage (day, night); a list's tag (its own half, greyed in the other); the Pokédex places' chip (day only, night only); the rules (the first time, INFO) |
 | `DoubleMons` (`BattleStage double`) / `DoublePlates` / `MiniPlate` / `TargetPicker` / `LeadPicker pair` | Double battles (§31) | The stage with four (the pair in front big on the usual spots, their partners smaller behind, each with a shadow; toggled, they change places), one K.O. on each side (greyed plates, 1 v 2); the name-less plates (icon, level, HP, statuses; the one in front ringed in gold; a fallen one greyed); the target picker (live, disabled); the lead picker sending two |
-| `CoinPlate` / `FriendBallTag` / `StreakBadge` / `StreakLadder` / `CapGauge` / `FriendshipCard` / `FriendStreakBlock` / `MarketShinyCard` / `MarketItemCard` / `MarketHead` / `FriendshipRulesModal` | Friendship streaks and the Friend Market (§41) | Heart Scales (sm, md, lg); the Friend Ball's catch tag (×2, ×5); a streak kept (rose, check) and waiting (gold, "!"), none when lost; the ladder at each tier; today's gauge empty, midway, capped; the card with streaks waiting, none, loading, failed; a friend's streak waiting, kept, at the top, lost, none; the shiny of the week to buy, too dear, sold out; an item to buy, short, sold out; the rules card and INFO; a purchase's opening |
+| `CoinPlate` / `FriendBallTag` / `StreakBadge` / `StreakLadder` / `CapGauge` / `FriendshipCard` / `FriendStreakBlock` / `MarketShinyCard` / `MarketItemCard` / `MarketHead` / `FriendshipRulesModal` | Friendship streaks and the Friend Market (§42) | Heart Scales (sm, md, lg); the Friend Ball's catch tag (×2, ×5); a streak kept (rose, check) and waiting (gold, "!"), none when lost; the ladder at each tier; today's gauge empty, midway, capped; the card with streaks waiting, none, loading, failed; a friend's streak waiting, kept, at the top, lost, none; the shiny of the week to buy, too dear, sold out; an item to buy, short, sold out; the rules card and INFO; a purchase's opening |
 | `CalendarDoorTile` / `CalendarGrid` / `CalendarRewardIcon` / `CalendarRulesModal` | The gift calendar (§40) | A door shut (a wrapped gift, its number), today's (gold, OPEN), yesterday's (LAST CHANCE), opened with each kind of gift, missed (hatched), busy; the grid on a calendar's 10th day; Home's card gold, later, done; the rules card and INFO; a door's opening |
 | `UgCave` / `CrackGauge` / `UgWall` / `PickaxeDie` / `PickaxeFaces` / `OrbArt` / `PlateArt` / `ThingIcon` / `HaulList` / `PlateGrid` / `OrbBagTable` / `UgRulesModal` / `UgTeamSeats` | The Underground (§32) | The cave (a square's size; big); the gauge fresh, under way, its last three shaking or calm, collapsed; the wall fresh, half dug with a strike flashing, cleared (glinting), collapsing; the die unrolled and rolled; the faces with the one that came up, and the next level's with its raised face; orbs of every colour and size, plates; the haul with every outcome; the plates none and some; the orb bag; the team seats solo, two, full; the rules (once, INFO) |
 | `TeamSwapActions` / `TeamSwapDock` / `SheetActionRow` | The Center's moves (`teamSwapsOpen`: inside a Pokémon Center, at a portal's way in before READY!) | `TeamSwapDock` is the Team sheet's footer where swaps are open: Make lead (red) beside Use an item, Send to the Box a small link; Add to team (red); a full team: "swap X in for:" and the members as one-tap buttons (mini, swap arrow, name); a fossil still reviving: a line saying so. `TeamSwapActions` (the body version) stays for the Center's own sheet. `SheetActionRow`: a quiet button and the main one sharing a `minmax(0,1fr)_minmax(0,1.4fr)` row |
@@ -923,7 +923,7 @@ pieces.
   board): it always shows its real top 100, every friend wherever they are, and you with the 10 trainers ahead of you
   and the 10 behind, all with their real ranks ("You're #N of M" counts the whole board). Each run of rows left out is
   one `BoardGap` between dashed rules, "37 trainers not shown", the last one too. FRIENDS shows only your friends and
-  you, as before, with no gaps.
+  you, as before, with no gaps. The Versus league's Global board keeps nobody around you (`boardWindow(rows, 0)`).
 - **Versus locked**: what opens it, a meter n/3, and the three Pokémon closest to Lv.50 with how many levels to go
   (`versusClosest`). Unlocked: tabs Opponents (with the count still to beat) / My team / Leaderboard; Opponents has
   your team strip with Change, a search by trainer *or* Pokémon and To beat / Beaten / All chips with counts. My team
@@ -954,8 +954,9 @@ pieces.
   - **Global** (docs/44 §8, its own switch): a third option in that `Seg`, every group's players this week (no bots),
     ranked by trophies. It wins nothing, so no `RewardMark`; a muted line over the rows says so ("No rewards here: just
     the glory."), and that line is its rules (a rule explained where it happens, §20: no pop-up, the league's INFO
-    stays the league's). Long, it is windowed as the leaderboard is (`boardWindow`: its top 100, you with the 10 either
-    side, your friends; `BoardGap` between). With it on, PC's board panel is headed "Leaderboard", not "Your group".
+    stays the league's). Long, it shows its top 100, you and your friends with their real ranks, no one else
+    (`boardWindow` with nobody around you; `BoardGap` between). With it on, PC's board panel is headed "Leaderboard",
+    not "Your group".
   - The admin alone sees `BotTag` (BOT) on a bot, before its name.
   - The fight is the battle screen with `versus.live`: the player's own controls and powers, AUTO-MODE as the panel's
     switch, never the Bag. Its result card (`LeagueResultCard`) shows the trophies won or lost, green or red, beside
@@ -1093,7 +1094,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   rules pop-up (`RulesModal`, Later / Let's go!), taking its turn in the one-time pop-ups' queue, below; so do the
   rules shown at their own moment (the portal's and the nightmare's way in, Trick or Treat's first ghost, the gifts',
   the looks'). The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is a tap on the Pokémon sheet's talent box, as it has no page), real-player battles (§39: its rules pop-up after the first card's intro, as Trick or Treat's at the first ghost; INFO on the card), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event), the gift calendar (§40: its page's rules card, once; INFO in its dock), friendship (§41: its rules card on the Friends page or the market, whichever opens first, once; INFO on its card and at the market's foot; **no Home notice**, the user's call of 2026-11-01: players meet it on the Friends page), welcome-back gifts (§23, docs/58: a developer's message, so no pop-up of its own; its rule is a line in the message itself, its INFO under that message in My messages) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is a tap on the Pokémon sheet's talent box, as it has no page), real-player battles (§39: its rules pop-up after the first card's intro, as Trick or Treat's at the first ghost; INFO on the card), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event), the gift calendar (§40: its page's rules card, once; INFO in its dock), outfits (§41, docs/59: no page, so its rules pop-up once the first Pokémon in an outfit arrives; its INFO is a tap on the outfit's chip on the Pokémon sheet), friendship (§42: its rules card on the Friends page or the market, whichever opens first, once; INFO on its card and at the market's foot; **no Home notice**, the user's call of 2026-11-01: players meet it on the Friends page), welcome-back gifts (§23, docs/58: **no rules and no INFO**, the user's explicit exception of 2026-11-01: a developer's message that says only how long the player was away) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **The one-time pop-ups take turns, in one queue** (`nextOneTimePopup`, src/engine/popups.ts; docs/38 U2a): one at a
   time, only between fights (`run.phase === 'idle'`, no battle, no full-screen moment, no gift being opened), never on
@@ -1102,7 +1103,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   the server's clock, what waits outside the save); `PopupQueue` (GameLayout) works it out once for the whole game, and
   each pop-up opens only on its own turn (`useMyTurn`). The order: the away reports (Extreme's, the General upgrades'),
   the offline report, the developer's answers, friends' raid gifts, a new region's offer, Extreme mode, an invite reward
-  ready, the portal run, day and night, the battle powers, hidden talents (§38), a small world's opening, its finish and its goodbye, a live
+  ready, the portal run, day and night, the battle powers, hidden talents (§38), outfits (§41), a small world's opening, its finish and its goodbye, a live
   event (but the Underground and the gift calendar: `queuedLives`), a taken trade's scene (Home only), and push
 notifications' question last. A new pop-up gets a place in that list, not a list of its own. The rules that open at
   their own moment (the gifts' before the first gift, Trick or Treat's at the first ghost, the portal's and the
@@ -1120,7 +1121,9 @@ notifications' question last. A new pop-up gets a place in that list, not a list
 - **A set order** (Route 1's opening, docs/46): the switch, but no rules pop-up and no INFO: it only sets the order of
   cards the area already deals, so there is nothing new to learn or do. Its **dice tutorial** (docs/46 §5) rides the
   same switch and has no rules either: it is the explanation, a pointing hand over a dimmed screen (`GuideFrame`), one
-  step at a time, first in the one-time pop-ups' queue.
+  step at a time, first in the one-time pop-ups' queue. Each step's spotlight zooms in from the whole screen onto what
+  to tap (only that) in pixel steps (§8), then the hand comes. So does its **reroll lesson** (docs/46 §6), the same hand over
+  the first fight's dice, REROLL and ATTACK.
 - **A purely visual change** (as the dice throws, docs/37, and the game-feel pass, haptics and battle music, docs/38,
   were): the switch, but no rules pop-up and no INFO: it only changes how something already there looks, sounds or
   feels, so there is nothing to learn or do.
@@ -1327,8 +1330,8 @@ pieces are in `src/components/Gifts.tsx`, every state on `/kitchen-sink` (`GiftB
 - **Welcome back** (docs/58, its own switch): a player back after days away (3, 7, 14 by default, on the server's
   record of the days played) gets such a message, written by the server, with the highest tier's gifts, at most once
   every 14 days. Its words are the game's, in the player's language, from the numbers the server puts in `reply`
-  (`@welcome_back:…`, as the league's reward); alone, the pop-up is "Welcome back, {name}!". Its rule is a line in the
-  message; under it in My messages, "Welcome-back gifts" and a compact INFO open its rules (`WelcomeBackRulesModal`).
+  (`@welcome_back:…`, as the league's reward); alone, the pop-up is "Welcome back, {name}!". The message says only how
+  long they were away: **no rules and no INFO** (the user's explicit exception to §20, 2026-11-01).
   Sent only while the gifts are on for the player too.
 - **My messages** keeps every message with its answer, the developer's own messages, and their gifts: opened ("Opened
   — it held:" and what), or the wrapped gift with OPEN IT (gold), or why it waits. The tab's count adds the gifts not
@@ -2007,9 +2010,24 @@ A live event type (docs/55): a door a day, one reward each, opened on its day or
   (`light-scope`). Motion in steps: the gift's wobble and today's passing light, still under calm.
 - **Opening** a door is the gifts' own opening (`GiftMoment`, §23), its first line "Day 5's gift!".
 
-## 41. Friendship streaks and the Friend Market
+## 41. Outfits
 
-docs/59. Its switch is `friendship.access` (§20); the server keeps the streaks, pays the coins and sells. Components in
+A Pokémon dressed up (docs/59), Santa Pikachu first: a tag on the Pokémon, only its look. Its switch is
+`outfits.access` (§20); components in `src/components/Outfit.tsx`, all on `/kitchen-sink` (`OutfitBits`).
+
+- **The chip**: red (`Chip tone="red"`), the outfit's name ("Santa hat"), beside the shiny chip on the Pokémon sheet.
+  It's a button: a tap opens the rules (the feature's INFO, as the talent box is hidden talents').
+- **The hat marker** (`santaHat`, a pixel icon in the gift palette): the menu icons have no outfits, so a tile (the
+  team, the Box) and a gift's icon carry the hat in the top-right corner, opposite the shiny star and the talent gem;
+  the outfit's name is in the tile's label for screen readers.
+- **The sprite** goes wherever the instance is drawn big (the sheet, battle, Home's scene, the Day Care, a gift's
+  opening): `outfitOf(data, inst)` into `SpriteImg`/`stageSprite`/`loadSprite`'s `outfit`. Without our sprite copy
+  (docs/45) it is the plain sprite: never a request to Showdown for a file it doesn't have.
+- **Rules**: three rows (look, evolution, its own Pokémon), the banner Santa Pikachu on the night ground.
+
+## 42. Friendship streaks and the Friend Market
+
+docs/60. Its switch is `friendship.access` (§20); the server keeps the streaks, pays the coins and sells. Components in
 `src/components/friends/Friendship.tsx`, all on `/kitchen-sink` (`FriendshipBits`).
 
 - **Its colour is rose** (`rose`, and the coin's `#ff6f9c`): the Friendship card is framed like the friend ID's box but
@@ -2028,6 +2046,6 @@ docs/59. Its switch is `friendship.access` (§20); the server keeps the streaks,
 - **Numbers are the server's and the engine's**: the tiers, the cap, prices, limits and the shiny of the week come from
   the config (`friendship_cfg()` on the server, `marketRows` / `streakTier` in the engine); the screens never compute a
   price or a pay.
-- **The Friend Ball** (docs/59 §1b): its description ends with the boost now ("current: ×2", `useItemDescription`
+- **The Friend Ball** (docs/60 §1b): its description ends with the boost now ("current: ×2", `useItemDescription`
   fills it wherever an item's description shows). On the catch panel its button wears a gold corner tag (the unknown
   talent's gem and ×n) while the boost can still find this Pokémon's talent, and it is never "not needed" then.

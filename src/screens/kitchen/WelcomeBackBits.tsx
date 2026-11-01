@@ -1,7 +1,8 @@
 // Kitchen sink: welcome-back gifts (docs/58) — a developer's message the server writes when a player comes back after
 // days away, so its states are the messages' own: the pop-up (alone, with the player's name and without, the gift
 // waiting in Extreme mode, beside another message from the developer), its words for each tier and a single day, My
-// messages' entry (to open, opening, opened, waiting) with its INFO, the rules, and the opening, the gifts' own.
+// messages' entry (to open, opening, opened, waiting), and the opening, the gifts' own. No rules and no INFO: the
+// user's call (2026-11-01).
 import { useState } from 'react'
 import {
   DEFAULT_CONFIG,
@@ -15,7 +16,6 @@ import { MessageItem, ReplyBox } from '@/components/ContactModal'
 import { GiftMoment } from '@/components/Gifts'
 import { PixelButton } from '@/components/PixelButton'
 import { ReplyModal } from '@/components/ReplyPopup'
-import { WelcomeBackInfo, WelcomeBackRulesModal } from '@/components/WelcomeBack'
 import type { MyMessage } from '@/lib/feedback'
 
 const TIERS = DEFAULT_CONFIG.welcomeBack.tiers
@@ -62,7 +62,7 @@ const DEV: MyMessage = {
 
 const SEVEN_LANDED: GiftLanded[] = TIERS[1]!.gifts.map((gift) => ({ gift, region: 'kanto', moved: false }))
 
-type Open = null | 'alone' | 'extreme' | 'mixed' | 'rules' | 'moment'
+type Open = null | 'alone' | 'extreme' | 'mixed' | 'moment'
 
 export function WelcomeBackBits() {
   const [open, setOpen] = useState<Open>(null)
@@ -92,9 +92,6 @@ export function WelcomeBackBits() {
         <PixelButton size="sm" onClick={() => setOpen('moment')}>
           Open: the 7-day gift
         </PixelButton>
-        <PixelButton size="sm" onClick={() => setOpen('rules')}>
-          The rules (INFO)
-        </PixelButton>
       </div>
       <p className={label}>
         The words, in the player’s language: 3+ days · 7+ · 14+ · one day (the admin’s 1-day tier)
@@ -113,12 +110,9 @@ export function WelcomeBackBits() {
         <MessageItem m={FOURTEEN} wait="extreme" onOpen={() => {}} />
         <MessageItem m={THREE} wait="world" onOpen={() => {}} />
       </ul>
-      <p className={label}>INFO on its own</p>
-      <WelcomeBackInfo className="justify-self-end" />
       {open === 'alone' && pop([SEVEN], null)}
       {open === 'extreme' && pop([FOURTEEN], 'extreme')}
       {open === 'mixed' && pop([SEVEN, DEV], null)}
-      <WelcomeBackRulesModal open={open === 'rules'} onClose={close} />
       {open === 'moment' && <GiftMoment landed={SEVEN_LANDED} onDone={close} />}
     </div>
   )

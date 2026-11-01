@@ -11,6 +11,7 @@ import { isReviving } from './fossils'
 import { regionBestLevel, worldHomers } from './homecoming'
 import { badgesHeld } from './liveEvents'
 import { cleanNickname } from './nickname'
+import { cleanOutfit, outfitAllowsEvolution } from './outfits'
 import { createInstance, evolve, instanceMaxHp, isTradeEvolution, tradeEvolutionOf } from './progression'
 import {
   getRegion,
@@ -447,8 +448,9 @@ export function placeInBox(save: SaveData, data: GameData, region: RegionId, ins
   const here = landing(save, data, region)
   const b = here === regionOf(save) ? save : save.parked![here]!
   const withDex = (dex: readonly number[], d: number) => (dex.includes(d) ? [...dex] : [...dex, d])
-  const plain = b.box.filter((p) => p.dex === inst.dex && !p.shiny && !isReviving(p))
-  if (inst.shiny || !plain.length) {
+  // A shiny or an outfit (docs/59) is a Pokémon of its own, on either side.
+  const plain = b.box.filter((p) => p.dex === inst.dex && !p.shiny && !p.outfit && !isReviving(p))
+  if (inst.shiny || inst.outfit || !plain.length) {
     const join = b.team.length < data.config.maxTeamSize
     const next = withBlock(save, here, (x) => ({
       box: [...x.box, inst],
@@ -541,7 +543,7 @@ export function tradeLandings(save: SaveData, data: GameData, dex: number): Regi
 /** The level of your weakest plain copy of a species in a region's Box, or null when you have none. */
 function mineIn(save: SaveData, region: RegionId, dex: number): number | null {
   const block = region === regionOf(save) ? save : save.parked?.[region]
-  const plain = (block?.box ?? []).filter((p) => p.dex === dex && !p.shiny && !isReviving(p))
+  const plain = (block?.box ?? []).filter((p) => p.dex === dex && !p.shiny && !p.outfit && !isReviving(p))
   return plain.length ? Math.min(...plain.map((p) => p.level)) : null
 }
 
@@ -587,7 +589,7 @@ function landTraded(
 export function receiveTrade(
   save: SaveData,
   data: GameData,
-  mon: { dex: number; shiny?: boolean; nickname?: string; talent?: boolean },
+  mon: { dex: number; shiny?: boolean; nickname?: string; talent?: boolean; outfit?: string },
   givenLevel: number,
   now: number,
   newId: () => string,
@@ -601,8 +603,11 @@ export function receiveTrade(
   if (mon.talent === true) inst.talent = true
   const nickname = cleanNickname(mon.nickname)
   if (nickname) inst.nickname = nickname
+  // Its outfit goes with it (docs/59), and holds back a trade evolution that doesn't wear it.
+  const outfit = cleanOutfit(mon.outfit, mon.dex)
+  if (outfit) inst.outfit = outfit
   const to = tradeEvolutionOf(data, mon.dex)
-  const evolvedTo = to != null && speciesAllowedIn(data, home)(to) ? to : null
+  const evolvedTo = to != null && speciesAllowedIn(data, home)(to) && outfitAllowsEvolution(inst, to) ? to : null
   if (evolvedTo != null) inst = evolve(inst, evolvedTo, data)
   // Evolving on the trade, a family still locked may find its hidden talent (docs/51): drawn from the arrival's id.
   if (evolvedTo != null && !inst.talent && !familyUnlocked(save, data, evolvedTo, home)) {

@@ -215,7 +215,7 @@ export function processDayCare(save: SaveData, data: GameData, now: number, rng:
     : { save: { ...save, dayCare: dc } }
 }
 
-/** An Egg made with a friend's Pokémon keeps the friendship streak going (docs/59): the server is told later. */
+/** An Egg made with a friend's Pokémon keeps the friendship streak going (docs/60): the server is told later. */
 function reportEggFriends(save: SaveData, data: GameData, parents: readonly EggParent[] | undefined): SaveData {
   if (!friendshipOn(data)) return save
   let out = save

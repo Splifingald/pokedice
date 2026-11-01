@@ -293,7 +293,11 @@ Every update and every live event is posted again in French in `#🥖-français`
    News**, posting in `#🥖-français`). **Copy Webhook URL** there.
 2. GitHub → the repository → **Settings** → **Secrets and variables** → **Actions** → **Secrets** → **New repository
    secret**: name `DISCORD_FRENCH_WEBHOOK`, value the URL. Or `gh secret set DISCORD_FRENCH_WEBHOOK` and paste it.
-3. Nothing else: the next patch note, live event and Monday calendar post in French too once this is on `main`.
+3. Netlify → the `poke-dice` site → **Site configuration** → **Environment variables** → **Add a variable**: key
+   `DISCORD_FRENCH_WEBHOOK`, the same URL (tick **Contains secret values**). The live events' posts come from Netlify
+   since 2026-10-31 ([docs/50 § 3](50-DISCORD-LIVE-EVENTS.md)); GitHub's secret is the patch notes'. It reaches the job
+   at the next deploy.
+4. Nothing else: the next patch note, live event and Monday calendar post in French too once this is on `main`.
    `pnpm discord --apply` adopts the webhook by its name and writes its URL to `.env.discord`, for the `--dry`-less
    commands run by hand.
 
@@ -317,5 +321,5 @@ Previews: `pnpm discord:patch-notes patch-notes/<file>.fr.md --dry`; `pnpm disco
 | The Channels & Roles step fails (`50035`) | Discord's onboarding rules changed or a channel isn't visible to everyone. Everything else is done; set the questions by hand in Server Settings → Onboarding. |
 | No raid post at midnight | Raids aren't **On for everyone** in Admin → Events, the secret is missing, or the branch isn't on `main` yet. GitHub → Actions → **Discord daily raid** → the run's log says which. |
 | The raid workflow is disabled | GitHub pauses schedules after 60 days without a commit. Actions → **Discord daily raid** → **Enable workflow**. |
-| No French post | The `DISCORD_FRENCH_WEBHOOK` secret is missing (the run's log says so), or the note has no `.fr.md` twin. |
+| No French post | A patch note: the `DISCORD_FRENCH_WEBHOOK` GitHub secret is missing (the run's log says so), or the note has no `.fr.md` twin. A live event: `DISCORD_FRENCH_WEBHOOK` is missing from Netlify's environment variables. |
 | The patch note came before the update | Netlify took more than 15 minutes, or a later push replaced that build. The post goes out anyway. |

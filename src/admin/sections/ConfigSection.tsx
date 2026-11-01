@@ -707,7 +707,7 @@ function UnownDexBox() {
 }
 
 /**
- * Friendship streaks and the Friend Market (docs/59): what each tier of a streak pays a day, the day's cap, the
+ * Friendship streaks and the Friend Market (docs/60): what each tier of a streak pays a day, the day's cap, the
  * market's weekly shelf and the shiny of the week. The server prices and pays from this same row (friendship_cfg()).
  */
 function FriendshipBox() {
@@ -1639,6 +1639,7 @@ const FEATURES: Feature[] = [
   bare('Route 1 opening & tutorial', 'openingRounds'),
   own('Unown Pokédex', 'unownDex', 'unown'),
   own('Hidden talents', 'hiddenTalents', 'talents'),
+  bare('Outfits', 'outfits'),
   own('Extreme mode', 'extreme', 'extreme'),
   own('Extreme Pokémon Centers', 'extremeCenters', 'extreme'),
   own('Double battles', 'doubleBattles', 'doubles'),

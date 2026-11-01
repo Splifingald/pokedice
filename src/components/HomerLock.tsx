@@ -28,7 +28,7 @@ export function HomerLockView({
   from?: string | null
   /** The trainer it came from in a trade, for one that arrived above the region's best (docs/23 §1.4). */
   tradedBy?: string | null
-  /** Bought at the Friend Market (docs/59). */
+  /** Bought at the Friend Market (docs/60). */
   market?: boolean
 }) {
   const { t } = useT()

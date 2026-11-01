@@ -12,6 +12,7 @@ import {
 import itemSheet from '@/assets/item-icons.png'
 import itemAtlas from '@/data/item-atlas.json'
 import { artBox } from '@/lib/showdown'
+import { outfitSprite } from '@/lib/outfitSprites'
 import { isShowdownUrl, PATIENCE_MS, showdownMissed } from '@/lib/showdownReach'
 import type { SyntheticEvent } from 'react'
 import { cached, canvas, clamp, type Canvas, type G } from './pixel'
@@ -35,9 +36,9 @@ export interface StageSprite {
 }
 
 /** A Pokémon's sprite for a stage: the front (a foe, Home) or the back (yours in battle). */
-export function stageSprite(dex: number, back: boolean, shiny: boolean): StageSprite {
+export function stageSprite(dex: number, back: boolean, shiny: boolean, outfit?: string | null): StageSprite {
   const local = spriteUrlFor(dex, back ? 'back' : 'front', shiny)
-  const sd = showdownView(dex, back, shiny)
+  const sd = showdownView(dex, back, shiny, outfit)
   if (sd) {
     const [x0, y0, x1, y1] = artBox(sd.box)
     const artW = x1 - x0 + 1
@@ -104,9 +105,9 @@ export function placeSprite(s: StageSprite, x: number, y: number) {
 const frames = new Map<string, Canvas>()
 const loading = new Map<string, Promise<string>>()
 
-/** A sprite's key on the canvas: species, view and shininess. */
-export const spriteKey = (dex: number, back: boolean, shiny = false) =>
-  `${dex}${back ? 'b' : 'f'}${shiny ? 's' : ''}`
+/** A sprite's key on the canvas: species, view, shininess and outfit (docs/59), the one it can show. */
+export const spriteKey = (dex: number, back: boolean, shiny = false, outfit?: string | null) =>
+  `${dex}${back ? 'b' : 'f'}${shiny ? 's' : ''}${outfitSprite(outfit, dex) ? `-${outfit}` : ''}`
 
 function crop(img: HTMLImageElement, s: StageSprite, fromFallback: boolean): Canvas {
   // The fallback is the local 64px sprite, whose box is in its own metrics: use its whole image, scaled.
@@ -125,12 +126,12 @@ function crop(img: HTMLImageElement, s: StageSprite, fromFallback: boolean): Can
 }
 
 /** Load one view of a Pokémon for the canvas; resolves to its key (also when it fails: it then draws nothing). */
-export function loadSprite(dex: number, back: boolean, shiny = false): Promise<string> {
-  const key = spriteKey(dex, back, shiny)
+export function loadSprite(dex: number, back: boolean, shiny = false, outfit?: string | null): Promise<string> {
+  const key = spriteKey(dex, back, shiny, outfit)
   if (frames.has(key)) return Promise.resolve(key)
   let p = loading.get(key)
   if (p) return p
-  const s = stageSprite(dex, back, shiny)
+  const s = stageSprite(dex, back, shiny, outfit)
   p = new Promise<string>((res) => {
     const img = new Image()
     let fallback = false

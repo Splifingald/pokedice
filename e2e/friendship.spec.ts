@@ -1,4 +1,4 @@
-// Friendship streaks and the Friend Market (docs/59), against the mocked Supabase: the Friends page's Friendship card
+// Friendship streaks and the Friend Market (docs/60), against the mocked Supabase: the Friends page's Friendship card
 // (coins, today's gauge, the streaks to keep today), the badges on the friends' rows, the rules card once, a friend's
 // streak on their card, the market (the shiny of the week, the items, limits and coins, a purchase opened like a gift
 // into the save and marked applied), a purchase a closed tab left behind put away once, and the switch off.
@@ -253,7 +253,7 @@ test('the Friend Market: the shiny of the week, the shelf, a purchase opened lik
   const shiny = page.getByTestId('market-shiny')
   await expect(shiny).toContainText(data.species[SHINY]!.name)
   await expect(shiny).toContainText('Lv.15')
-  // It goes to its own region, and waits there locked while nothing there is at its level (docs/59).
+  // It goes to its own region, and waits there locked while nothing there is at its level (docs/60).
   // A starter at Lv.5 is the save's best: the shiny (Lv.15) waits there, locked.
   await expect(shiny).toContainText(/goes to \w+/)
   await expect(shiny).toContainText('It waits there, locked, until one of yours in')

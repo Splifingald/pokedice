@@ -31,6 +31,7 @@ import { OfflineReportModal } from './GeneralRules'
 import { GiftService } from './Gifts'
 import { POPUP_GAP_MS, PopupTurnContext, usePopupOnScreen } from './popupTurn'
 import { PowersUnlockPopup } from './PowersRules'
+import { OutfitRulesPopup } from './Outfit'
 import { TalentRulesPopup } from './Talent'
 import { PushService } from './PushService'
 import { RaidGiftPopup } from './RaidGiftPopup'
@@ -52,6 +53,9 @@ const FOLLOWS_AT_ONCE = new Set<OneTimePopup>([
   'push',
 ])
 
+/** How long a Center's heal plays before the dice tutorial may start over it. */
+const CENTER_HEAL_MS = 3200
+
 /** Works out whose turn it is, once, and hands it down to every pop-up (the pages' too: the region offer, push). */
 export function PopupQueue({ children }: { children: ReactNode }) {
   const path = useLocation().pathname
@@ -69,12 +73,22 @@ export function PopupQueue({ children }: { children: ReactNode }) {
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const idle = useGame((s) => s.run.phase === 'idle' && !s.battle)
+  // A Pokémon Center, once its heal has had time to play (about 2.7 s): the dice tutorial may start there.
+  const center = useGame((s) => s.run.phase === 'center' && !s.battle)
+  const [healed, setHealed] = useState(false)
+  useEffect(() => {
+    setHealed(false)
+    if (!center) return
+    const timer = setTimeout(() => setHealed(true), CENTER_HEAL_MS)
+    return () => clearTimeout(timer)
+  }, [center])
   const signedIn = useGame((s) => s.auth.status === 'signed_in')
   // Worked out again only when one of these changes, not on every change to the store (a toast, a fight's turn).
   const due = useMemo(
     () =>
       nextOneTimePopup(save, data, {
         calm: idle && !full && !gifts,
+        atCenter: center && healed && !full && !gifts,
         path,
         signedIn,
         online: isSupabaseConfigured,
@@ -91,6 +105,8 @@ export function PopupQueue({ children }: { children: ReactNode }) {
       save,
       data,
       idle,
+      center,
+      healed,
       full,
       gifts,
       path,
@@ -141,6 +157,7 @@ export function OneTimePopups() {
       <DayNightRulesPopup />
       <PowersUnlockPopup />
       <TalentRulesPopup />
+      <OutfitRulesPopup />
       <WorldPopup />
       <WorldPick />
       <WorldFinishPopup />

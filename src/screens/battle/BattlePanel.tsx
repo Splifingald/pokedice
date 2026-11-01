@@ -206,6 +206,8 @@ export function DiceTray({
       ref={box}
       role="group"
       aria-label={foe ? t('ui.battle.foeDice', { name: foeName }) : t('ui.battle.yourDice')}
+      // What the reroll lesson points at (docs/46 §6): your tray and each of its dice.
+      data-guide={foe ? undefined : 'dice-tray'}
       className="relative flex min-h-[64px] flex-wrap items-end justify-center gap-2"
     >
       {children ??
@@ -215,7 +217,7 @@ export function DiceTray({
               const pop = !foe ? score?.pops.find((p) => p.die === i) : undefined
               return (
                 // Keyed by its throw: a die thrown in ahead of it (a Mega's) moves it along without a fresh tumble.
-                <span key={key ?? i} className="relative inline-flex">
+                <span key={key ?? i} className="relative inline-flex" data-guide={foe ? undefined : `die-${i}`}>
                   <Die
                     type={d.type}
                     face={faceOf(d, data)}
@@ -559,6 +561,8 @@ export function BagButton({
       disabled={disabled}
       title={title}
       aria-keyshortcuts={keys}
+      // What the item tutorial points at (docs/46 §7).
+      data-guide="bag"
       onClick={blip(onClick)}
       className="inline-flex min-h-[48px] items-center gap-1.5 bg-paper py-1 pl-2 pr-3 text-[18px] leading-none text-ink shadow-card disabled:opacity-50"
     >

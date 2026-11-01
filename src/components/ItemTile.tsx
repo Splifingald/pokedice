@@ -233,7 +233,7 @@ export function ItemDetail({
   actions: ReactNode
   onClose: () => void
 }) {
-  // The Friend Ball's line says its boost today (docs/59).
+  // The Friend Ball's line says its boost today (docs/60).
   const said = useItemDescription(description)
   const { t } = useT()
   const docked = useContext(SheetDock)

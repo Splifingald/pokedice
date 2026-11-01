@@ -6,7 +6,7 @@
  * `pnpm sprites-mirror` (about 6,000 files, 250 MB; downloads land in scripts/.cache/showdown, shared with
  * `pnpm showdown-sprites`, so a re-run only fetches what is new). `--dry` only counts them.
  */
-import { existsSync } from 'node:fs'
+import { existsSync, readdirSync } from 'node:fs'
 import { copyFile, mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -25,6 +25,11 @@ import {
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const CACHE = path.join(ROOT, 'scripts', '.cache', 'showdown')
 export const OUT = path.join(ROOT, 'sprites-mirror')
+/**
+ * Our own sprites, drawn for the game (an outfit Showdown doesn't have: Santa Pikachu), at the paths Showdown would
+ * use, so the game asks the copy for them like any other. Showdown has none of them: they exist only in the copy.
+ */
+export const CUSTOM = path.join(ROOT, 'sprites-custom')
 /** Downloads at a time: quick, and gentle on Showdown. */
 const PARALLEL = 6
 
@@ -50,7 +55,20 @@ export function mirrorFiles(): MirrorFile[] {
   }
   for (const l of UNOWN_LETTERS)
     add(`sprites/gen5ani/${unownShowdownId(l)}.gif`, `gen5ani/${unownShowdownId(l)}.gif`)
+  for (const f of customFiles()) files.set(f.path, f)
   return [...files.values()]
+}
+
+/** Every file under sprites-custom/, at its own path: already on disk, so nothing is fetched for it. */
+export function customFiles(dir = CUSTOM): MirrorFile[] {
+  if (!existsSync(dir)) return []
+  return readdirSync(dir, { recursive: true, withFileTypes: true })
+    .filter((e) => e.isFile() && !e.name.startsWith('.'))
+    .map((e) => {
+      const cache = path.join(e.parentPath, e.name)
+      return { path: path.relative(dir, cache).split(path.sep).join('/'), cache }
+    })
+    .sort((a, b) => a.path.localeCompare(b.path))
 }
 
 /** The copy's own rules (Cloudflare Pages `_headers`): a month in the browser's cache, readable from any page. */
@@ -63,7 +81,8 @@ const INDEX = `<!doctype html>
 <meta charset="utf-8">
 <title>Pokédice sprites</title>
 <p>A copy of the Pokémon Showdown sprites and cries used by Pokédice, a personal, non-commercial fan game.
-Pokémon © Nintendo / Creatures / GAME FREAK. Sprites from Pokémon Showdown and the Smogon Sprite Project.</p>
+Pokémon © Nintendo / Creatures / GAME FREAK. Sprites from Pokémon Showdown and the Smogon Sprite Project; the
+outfits Showdown doesn't have (Santa Pikachu) are Pokédice's own edits of them.</p>
 `
 
 async function fetchCached(url: string, file: string): Promise<void> {
@@ -82,7 +101,10 @@ async function fetchCached(url: string, file: string): Promise<void> {
   }
 }
 
-/** Fill `out` with `files` (from the cache, fetching what it lacks from Showdown), plus `_headers` and a front page. */
+/**
+ * Fill `out` with `files` (from the cache, fetching what it lacks from Showdown; our own sprites are already on disk),
+ * plus `_headers` and a front page.
+ */
 export async function buildMirror(files: MirrorFile[], out = OUT) {
   await rm(out, { recursive: true, force: true })
   let next = 0
@@ -104,7 +126,10 @@ export async function buildMirror(files: MirrorFile[], out = OUT) {
 async function main() {
   const files = mirrorFiles()
   const sprites = files.filter((f) => f.path.startsWith('sprites/')).length
-  console.log(`${files.length} files: ${sprites} sprites, ${files.length - sprites} cries`)
+  const custom = customFiles().length
+  console.log(
+    `${files.length} files: ${sprites} sprites (${custom} of them our own), ${files.length - sprites} cries`,
+  )
   if (process.argv.includes('--dry')) return
   await buildMirror(files)
   console.log(

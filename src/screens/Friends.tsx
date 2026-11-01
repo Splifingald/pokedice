@@ -124,7 +124,7 @@ function FriendsBody({ counter }: { counter?: string }) {
   // The rewards' rules sit at the top of this page, and nowhere else, while the gauge shows and until GOT IT (docs/43
   // §7: rules where they apply); INFO keeps them.
   const inviteRules = useInviteRules()
-  // Friendship streaks (docs/59): their card under the invite rewards, the rules on top the first time.
+  // Friendship streaks (docs/60): their card under the invite rewards, the rules on top the first time.
   const navigate = useNavigate()
   const fship = useFriendshipView()
   const fshipRules = useFriendshipRules()
@@ -348,7 +348,7 @@ function FriendListRow({
   )
 }
 
-/** Friendship (docs/59) as the page needs it: on for this player in the main game, the status, the server's day. */
+/** Friendship (docs/60) as the page needs it: on for this player in the main game, the status, the server's day. */
 export function useFriendshipView() {
   // Not in Extreme mode (a race of its own); inside a small world the card shows, and the market says it waits.
   const on = useGame((s) => !!s.save && [null, 'world'].includes(friendshipWaits(s.save, s.data)))

@@ -1,7 +1,8 @@
 // Welcome-back gifts (docs/58): once a day the game asks the server whether the player is back from days away
 // (welcome_back_claim, with the player's own day and the device); the server decides and writes a message from the
 // developer with the tier's gifts, which then comes like any other: the pop-up (its own title and words, in the
-// player's language), the wrapped gift, the gifts' rules the first time, the opening, the save, My messages with INFO.
+// player's language), the wrapped gift, the gifts' rules the first time, the opening, the save, My messages. No rule
+// line and no INFO of its own (the user's call, 2026-11-01).
 // Nothing is asked while the switch, or the gifts', is off; a reload the same day asks nothing more.
 import { expect, test, type Page } from '@playwright/test'
 import { DEFAULT_CONFIG } from '../src/engine'
@@ -109,11 +110,8 @@ test('back after 9 days: the developer’s message with the 7-day gift, opened i
   await expect(
     popup.getByText(/You were away for 9 days, so here's a gift to get you going again!/),
   ).toBeVisible()
-  await expect(
-    popup.getByText(
-      /Come back after 3 days or more away and a gift waits for you.*At most one every 14 days\./,
-    ),
-  ).toBeVisible()
+  // The message says only how long they were away: its rules are INFO's, in My messages (the user's call, 2026-11-01).
+  await expect(popup.getByText(/Come back after|At most one every/)).toHaveCount(0)
   await expect(popup.getByText('A gift is attached!')).toBeVisible()
   await expect(popup.getByText(/5 things inside · Close the message to open it\./)).toBeVisible()
   await page.screenshot({ path: 'test-results/welcome-back-popup.png' })
@@ -146,7 +144,7 @@ test('back after 9 days: the developer’s message with the 7-day gift, opened i
   expect(stored.gold).toBe(SAVE.gold + 1000)
   expect(stored.gifts).toEqual({ done: [31], rulesSeen: true })
 
-  // My messages keeps it, opened, with its INFO.
+  // My messages keeps it, opened, with no INFO of its own (the gifts' INFO at the bottom of the list is theirs).
   await page.getByRole('button', { name: 'Your trainer menu' }).click()
   await page.getByRole('button', { name: 'Contact the developer' }).click()
   const form = page.getByRole('dialog', { name: 'Contact the developer' })
@@ -155,14 +153,8 @@ test('back after 9 days: the developer’s message with the 7-day gift, opened i
   await expect(form.getByText('Opened — it held:')).toBeVisible()
   await page.waitForTimeout(400)
   await page.screenshot({ path: 'test-results/welcome-back-inbox.png' })
-  await form.getByRole('button', { name: 'Info: how a welcome-back gift works' }).click()
-  const rules = page.getByRole('dialog', { name: 'Welcome-back gifts' })
-  await expect(rules.getByText('Away 3 days or more')).toBeVisible()
-  await expect(rules.getByText('3 days → ₽300 +3 · 7 days → ₽1,000 +4 · 14 days → ₽2,500 +4')).toBeVisible()
-  await expect(rules.getByText('One every 14 days at most')).toBeVisible()
-  await page.waitForTimeout(400)
-  await page.screenshot({ path: 'test-results/welcome-back-rules.png' })
-  await rules.getByRole('button', { name: 'OK' }).click()
+  await expect(form.getByRole('button', { name: /welcome-back/i })).toHaveCount(0)
+  await expect(form.getByText('Welcome-back gifts')).toHaveCount(0)
 
   // A reload the same day asks nothing more, and nothing pops up again.
   await page.reload()

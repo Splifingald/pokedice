@@ -1,15 +1,17 @@
-# Posts each live event in the Discord server's #events as it starts (docs/50-DISCORD-LIVE-EVENTS.md). Every hour at
-# :07, the run takes the events that start in its hour and waits for each start, so it only stays up long (an hour at
-# most) when an event is coming. The week's calendar is discord-live-week.yml. Nothing is posted while Admin → Events has live
-# events Off or On for admin, nor before the DISCORD_EVENTS_WEBHOOK secret exists.
+# Prints, or posts by hand, the live events starting this hour in the Discord server's #events
+# (docs/50-DISCORD-LIVE-EVENTS.md). The posts go out by themselves from Netlify now (netlify/functions/discord-live.mts,
+# every minute): GitHub ran this hourly schedule only about 5 times a day and missed starts. So it has no schedule, and
+# Run workflow only prints the message unless "dry" is unticked; a post sent from here isn't known to the Netlify job,
+# so untick it only while that job is off. Nothing is posted while Admin → Events has live events Off or On for admin.
 name: Discord live events
 
 on:
-  schedule:
-    # Keep the minute equal to CRON_MINUTE in scripts/discord/live-event-post.ts.
-    - cron: '7 * * * *'
   workflow_dispatch:
     inputs:
+      dry:
+        description: Only print the message in the run's log (Netlify posts the starts by itself)
+        type: boolean
+        default: true
       force:
         description: Post even while live events aren't on for everyone
         type: boolean
@@ -38,9 +40,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Post the live events starting this hour
-        run: pnpm discord:live $FORCE
+        run: pnpm discord:live $FORCE $DRY
         env:
           FORCE: ${{ inputs.force && '--force' || '' }}
+          DRY: ${{ inputs.dry && '--dry' || '' }}
           DISCORD_EVENTS_WEBHOOK: ${{ secrets.DISCORD_EVENTS_WEBHOOK }}
           DISCORD_FRENCH_WEBHOOK: ${{ secrets.DISCORD_FRENCH_WEBHOOK }}
           DISCORD_EVENT_ROLE: ${{ vars.DISCORD_EVENT_ROLE }}

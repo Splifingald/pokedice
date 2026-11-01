@@ -30,6 +30,7 @@ import {
   type Milestone,
   type PokemonInstance,
   type Species,
+  outfitOf,
 } from '@/engine'
 import { typeName } from '@/lib/format'
 import { t } from '@/i18n'
@@ -52,6 +53,7 @@ import { MiniSprite, SpriteImg } from './SpriteImg'
 import { StatChip, statHint, statLabel, type StatKind } from './StatChip'
 import { TypeBadge } from './TypeBadge'
 import { TypeMatchups } from './TypeMatchups'
+import { OutfitChip } from './Outfit'
 import { TalentSection } from './Talent'
 
 /** A stat as a big number over its name (Speed, Rerolls, Catch value); the hint is the tooltip. */
@@ -486,6 +488,8 @@ export function PokemonSheet({
   const species = getSpecies(data, dex)
   const level = inst?.level ?? 1
   const shiny = shinyAsked ?? inst?.shiny
+  // Its outfit (docs/59), while the switch is on: the sprite and a chip naming it.
+  const outfit = inst && inst.dex === dex ? outfitOf(data, inst) : null
   // Its own hidden talent counts (docs/51: Thick Hide's HP).
   const stats = effectiveStats(species, level, data, inst ? talentOf(data, inst) : null)
   const hints = useTypeHints()
@@ -506,7 +510,7 @@ export function PokemonSheet({
       {hero && (
       <div className="flex items-center gap-3">
         <div className="grid h-[112px] w-[120px] shrink-0 place-items-center bg-sky shadow-ring">
-          <SpriteImg dex={dex} size={96} shiny={shiny} />
+          <SpriteImg dex={dex} size={96} shiny={shiny} outfit={outfit} />
         </div>
         <div className="grid min-w-0 flex-1 gap-2">
           <div className="flex flex-wrap items-center gap-1">
@@ -518,6 +522,7 @@ export function PokemonSheet({
                 <PixelIcon name="star" size={12} /> {t('ui.mon.shinyTag')}
               </Chip>
             )}
+            {outfit && <OutfitChip outfit={outfit} />}
             {inst?.revivesAt == null && <CryButton dex={dex} name={species.name} className="ml-auto" />}
           </div>
           {inst?.revivesAt != null ? (

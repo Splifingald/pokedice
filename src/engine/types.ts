@@ -573,7 +573,7 @@ export type ItemEffect =
   | { kind: 'level'; amount: number }
   /** Poké Balls: added to the catch die. `raidOnly`: thrown in raids alone (the Raid Ball, docs/44). */
   /**
-   * `talentBoost` (the Friend Ball, docs/59): a catch with it has more chances to find the Pokémon's hidden talent, by
+   * `talentBoost` (the Friend Ball, docs/60): a catch with it has more chances to find the Pokémon's hidden talent, by
    * the player's best friendship streak (`friendBallBoost`).
    */
   | { kind: 'ball'; bonus: number; raidOnly?: boolean; talentBoost?: boolean }
@@ -894,7 +894,8 @@ export interface LiveShopItem {
 export type CalendarReward =
   | { kind: 'item'; key: string; qty: number }
   | { kind: 'gold'; amount: number }
-  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; qty: number }
+  /** `outfit` (docs/59): the Pokémon comes dressed up (a key of `OUTFITS` its species wears). */
+  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; outfit?: string; qty: number }
 
 /** A week of the month a weekly live event runs in: the 1st to the 4th of that weekday, or the month's last. */
 export type LiveWeek = 1 | 2 | 3 | 4 | 'last'
@@ -1105,11 +1106,17 @@ export interface GameConfig {
    */
   championCinema: { access: EventAccess }
   /**
-   * Friendship streaks and the Friend Market (docs/59): the switch, what a streak's day pays by tier, the day's cap
+   * Friendship streaks and the Friend Market (docs/60): the switch, what a streak's day pays by tier, the day's cap
    * across every friend, and the weekly market (items with a price and a weekly limit, and the shiny of the week drawn
-   * from a pool). The server prices and pays from the same row (migration 0105, friendship_cfg()).
+   * from a pool). The server prices and pays from the same row (migration 0107, friendship_cfg()).
    */
   friendship: FriendshipConfig
+  /**
+   * Outfits (docs/59): Pokémon dressed up (Santa Pikachu), given as gifts. Off, an outfit Pokémon looks plain (it keeps
+   * its tag). Only looks and evolution in the player's own save, so no server function reads it. Migration 0105 inserts
+   * the same row.
+   */
+  outfits: { access: EventAccess }
   /**
    * The Unown Pokédex (docs/41): the 28 letters, once an area where Unown live is opened; `reward` ₽ for the last one.
    * Migration 0080 inserts the same row.
@@ -1383,7 +1390,8 @@ export type GiftRegion = string
  */
 export type Gift =
   | { kind: 'item'; key: string; qty: number; region: GiftRegion }
-  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; region: GiftRegion }
+  /** `outfit` (docs/59): the Pokémon comes dressed up (a key of `OUTFITS` its species wears). */
+  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; outfit?: string; region: GiftRegion }
   | { kind: 'gold'; amount: number; region: GiftRegion }
 
 /** The gifts a save has opened (docs/15 §23). */
@@ -1673,6 +1681,11 @@ export interface PokemonInstance {
   /** Unown only (docs/41): its letter, 'a'–'z', '!' or '?'. Absent = an A (`letterOf`). */
   letter?: string
   /**
+   * Its outfit (docs/59), a key of `OUTFITS` (src/engine/outfits.ts): 'santa'. Only its look: it evolves only into a
+   * species that wears the same outfit, an Egg it leaves hatches plain, and it goes with it in a trade. Absent = none.
+   */
+  outfit?: string
+  /**
    * It carries its family's hidden talent (docs/51): set when its family is unlocked in its region (`syncTalents`), or
    * when it arrives with it (a trade, a gift). Never taken off. Absent = no talent.
    */
@@ -1825,19 +1838,25 @@ export interface SaveData {
   talentsMet?: number[]
   /** The hidden talents' rules pop-up has been shown (once; INFO shows it again). */
   talentRulesSeen?: boolean
+  /** Outfits (docs/59): their rules pop-up seen, once for good. */
+  outfitRulesSeen?: boolean
   /** The regions whose Unown Pokédex prize was paid (once each). */
   unownDexPaid?: RegionId[]
   /** The Unown Pokédex's rules pop-up has been shown (once, when it opens; INFO shows it again). */
   unownDexSeen?: boolean
   /** The dice tutorial after Route 1's first round (docs/46 §5): shown and not finished, or finished for good. */
   diceTutorial?: 'started' | 'done'
+  /** The reroll lesson in a new player's first fight (docs/46 §6) has played. */
+  rerollLesson?: 'done'
+  /** The item tutorial (docs/46 §7) has shown: the Bag pointed at once, in a fight below half HP. */
+  itemLesson?: 'done'
   /** Trades (docs/23): listed Pokémon, the trades already applied, the last ones done. Absent = never traded. */
   trades?: TradesSave
   /** Gifts from the developer (docs/15 §23): the ones opened, and the rules seen. Absent = none yet. */
   gifts?: GiftsSave
   /** Friend invite rewards (docs/15 §25): the tiers opened, and the rules seen. Absent = none yet. */
   invites?: InvitesSave
-  /** Friendship streaks and the Friend Market (docs/59): the rules read, purchases put away. Absent = none yet. */
+  /** Friendship streaks and the Friend Market (docs/60): the rules read, purchases put away. Absent = none yet. */
   friendship?: FriendshipSave
   /** The General upgrades (docs/25), for every region of this save. Absent = none bought. */
   general?: GeneralSave
@@ -2158,7 +2177,7 @@ export interface WorldHomer {
   from?: RegionId
   /** The trainer it came from in a trade (docs/23 §1.4), when it arrived above the region's best level. */
   tradedBy?: string
-  /** Bought at the Friend Market (docs/59): it waits in its species' region until one there reaches its level. */
+  /** Bought at the Friend Market (docs/60): it waits in its species' region until one there reaches its level. */
   market?: true
 }
 
@@ -2244,7 +2263,7 @@ export interface DayCareGuest {
   addedAt: number
 }
 
-/** One step of the friendship streak (docs/59): from its first day on, each new day of the streak pays `coins`. */
+/** One step of the friendship streak (docs/60): from its first day on, each new day of the streak pays `coins`. */
 export interface FriendshipTier {
   from: number
   coins: number
@@ -2271,7 +2290,7 @@ export interface FriendshipConfig {
   ballBoost: number[]
 }
 
-/** Friendship in a save (docs/59): the rules read, purchases put away, Eggs to tell the server about. */
+/** Friendship in a save (docs/60): the rules read, purchases put away, Eggs to tell the server about. */
 export interface FriendshipSave {
   rulesSeen?: boolean
   /** The last market purchases put in the save (their ids): one handed back twice is applied once. */
@@ -2285,7 +2304,7 @@ export interface EggParent {
   dex: number
   /** The friend's name, for a guest. */
   owner?: string
-  /** The friend's user id, for a guest: the Egg keeps the friendship streak going (docs/59). */
+  /** The friend's user id, for a guest: the Egg keeps the friendship streak going (docs/60). */
   ownerId?: string
 }
 

@@ -1,4 +1,4 @@
-// Friendship streaks and the Friend Market (docs/59): the tiers and what a streak day pays (as the server's
+// Friendship streaks and the Friend Market (docs/60): the tiers and what a streak day pays (as the server's
 // friendship_coins_for), where a streak stands on a day, the market's week, its shiny of the week (as the server's
 // friendship_shiny), its shelf and limits, purchases put in the save once, the rules, an Egg with a friend's Pokémon
 // queued for the server, and the Home notice.

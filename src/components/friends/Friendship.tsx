@@ -1,4 +1,4 @@
-// Friendship streaks and the Friend Market (docs/59; docs/15 §41). The pieces: the Heart Scales plate, a friend's
+// Friendship streaks and the Friend Market (docs/60; docs/15 §42). The pieces: the Heart Scales plate, a friend's
 // streak badge (on their row), the streak's tiers, the Friends page's Friendship card, the streak on a friend's card,
 // the market's shelf (the shiny of the week and the items) and the rules. They only show what the engine and the
 // server decided; every state is on /kitchen-sink (FriendshipBits).
@@ -475,7 +475,7 @@ export function MarketShinyCard({
 }) {
   const { t } = useT()
   const species = useGame((s) => (row.dex ? s.data.species[row.dex] : undefined))
-  // Where it goes (docs/59): its species' region, locked there until one of yours reaches its level.
+  // Where it goes (docs/60): its species' region, locked there until one of yours reaches its level.
   const homeRegion = useGame((s) =>
     s.save && row.dex ? marketShinyHome(s.save, s.data, row.dex, row.level ?? 15).region : null,
   )

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
-import { instanceMaxHp, monName, type Area, type PokemonInstance } from '@/engine'
+import { instanceMaxHp, monName, outfitOf, type Area, type PokemonInstance } from '@/engine'
 import { playCry } from '@/audio/cries'
 import { useT } from '@/i18n/react'
 import { HpBar } from '@/components/HpBar'
@@ -79,7 +79,7 @@ export function SceneStage({
         inst,
         name: monName(inst, data),
         maxHp: instanceMaxHp(inst, data),
-        sprite: stageSprite(inst.dex, false, !!inst.shiny),
+        sprite: stageSprite(inst.dex, false, !!inst.shiny, outfitOf(data, inst)),
       })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [team, data, down],
@@ -88,7 +88,7 @@ export function SceneStage({
   const teamKey = team
     .map(
       (p) =>
-        `${p.id}:${p.dex}:${p.shiny ? 1 : 0}:${p.currentHp > 0 && p.currentHp / instanceMaxHp(p, data) >= 0.5 ? 1 : 0}`,
+        `${p.id}:${p.dex}:${p.shiny ? 1 : 0}:${p.outfit ?? ''}:${p.currentHp > 0 && p.currentHp / instanceMaxHp(p, data) >= 0.5 ? 1 : 0}`,
     )
     .join('|')
   const herd = useMemo(() => {

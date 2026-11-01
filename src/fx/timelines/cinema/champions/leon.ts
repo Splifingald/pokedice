@@ -1,13 +1,15 @@
 // Leon's entrance (docs/56), on the battle stage: Wyndon Stadium on the night of the Champion Cup final. The camera
 // comes down out of the sky, searchlights sweeping it, into the bowl: a packed house in the dark, thousands of lights
 // twinkling in the stands, Wyndon's great wheel turning beyond the rim. The floodlights bang on bank by bank and the
-// LED ring runs gold. A rumble: behind the far stand a colossal shape rises, black, its outline burning, and the
-// camera tilts up and up with it: Gigantamax Charizard, towering over the stadium. Its fire catches, it roars, and the
-// heat rolls over the bowl and sets the roof's edge alight. Back down to the pitch as it leans in over the rim to
-// watch, and the showman's entrance: a hatch opens in the grass, a column of light and smoke, pyro jets firing in
-// pairs, and Leon rises out of the floor on the lift; the whole stadium answers with his pose, arms up in a wave from
-// stand to stand, stamping in time, and the reveal fires the confetti cannons. No Dynamax red (the Galar legends have
-// it): the show is the stadium's, and Charizard's fire.
+// LED ring runs gold. A rumble: the Power Spot at the pitch's far end lights up, red-gold energy pours up out of it,
+// and a shape of that light grows in it, bigger and bigger, the camera tilting up and up with it: Gigantamax
+// Charizard, towering inside the bowl over the far end, in front of the stands, lit by the floodlights. Its fire
+// catches, its wings of flame flare, it roars, and the light of it washes over the crowd while the grass at its feet
+// catches. Back down to the pitch, the giant standing over the far end, and the showman's entrance in front of it: a
+// hatch opens in the grass, a column of light and smoke, pyro jets firing in pairs, and Leon rises out of the floor on
+// the lift; the whole stadium answers with his pose, arms up in a wave from stand to stand, stamping in time, and the
+// reveal fires the confetti cannons. No Dynamax-red sky (the Galar legends have it): the show is the stadium's, and
+// Charizard's fire.
 import { fxSound, hiss, tone } from '@/audio/sfx'
 import {
   bayer,
@@ -44,15 +46,19 @@ const T_TILT1 = 1.1
 /** The floodlight banks banging on, one after another. */
 const T_BANKS = [1.2, 1.36, 1.52, 1.68] as const
 const T_RUMBLE = 1.82
-/** Gigantamax Charizard rising behind the far stand, the camera tilting up with it; its fire catching; its roar. */
-const T_RISE = 1.9
-const T_TALL = 2.6
-const UP = 105
-const T_LOOK0 = 1.95
+/**
+ * Gigantamax Charizard: the Power Spot lighting on the pitch, the energy pouring up and the giant growing in it, the
+ * camera tilting up with it; its fire catching; its roar.
+ */
+const T_SPOT = 1.86
+const T_RISE = 1.98
+const T_TALL = 2.55
+const UP = 72
+const T_LOOK0 = 2.0
 const T_LOOK1 = 2.55
-const T_IGNITE = 2.38
+const T_IGNITE = 2.45
 const T_ROAR = 2.75
-/** Back down to the pitch, as it leans in over the rim to watch. */
+/** Back down to the pitch, the giant standing over the far end. */
 const T_DOWN0 = 3.05
 const T_DOWN1 = 3.5
 /** The lift: the hatch opens, the pyro fires in pairs, Leon rises. */
@@ -78,10 +84,11 @@ const WALL1 = 85
 const MID = 118
 /** How much sky the scene keeps above the stadium (px): enough for the camera's tilts. */
 const SKY = 180
-/** Where the giant stands behind the far stand (its middle), how tall it stands, where it leans in to. */
-const GIANT_X = 90
-const TALL_TOP = -100
-const LEAN_TOP = 3
+/** Where the giant grows: the Power Spot on the grass at the pitch's far end, left of the lift (its middle, its feet). */
+const GIANT_X = 76
+const GIANT_FEET = 91
+/** Dynamax energy, in Charizard's fire: red going to gold. */
+const ENERGY = ['#fff0b0', '#ffbe2e', '#ff7a32', '#e0401e', '#a8201a'] as const
 
 const FIRE = ['#fff6c8', '#ffe08a', '#ffbe2e', '#ff8a1e', '#e0501e', '#a8281a', '#5a120c'] as const
 const CONFETTI = ['#ffd23a', '#ffffff', '#c8283a', '#3a6ad8', '#ffbe2e', '#e0e0f0'] as const
@@ -182,7 +189,10 @@ type X = {
   fans: Fan[]
   /** The Gigantamax's sprite: its own form when it has loaded, else the champion's ace. */
   giant: string
+  /** The stand in the fire's colour: laid over it, stepped, when the giant's roar lights the crowd. */
+  standLit: Canvas
   fire: Particles
+  energy: Particles
   fog: Particles
   sparks: Particles
 }
@@ -327,7 +337,7 @@ export const leonChampion = championCinema<X>({
   setup(st, r, p) {
     const sc = stand()
     const fans = crowd(sc.g, r)
-    st.screenShakes.push([T_RUMBLE, 0.7, 1], [T_TALL - 0.1, 0.3, 1], [T_ROAR, 0.55, 3], [T_HATCH, 0.25, 1])
+    st.screenShakes.push([T_RUMBLE, 0.7, 1], [T_TALL - 0.05, 0.3, 2], [T_ROAR, 0.55, 3], [T_HATCH, 0.25, 1])
     const gmax = spriteKey(10196, false)
     const zard = spriteKey(6, false)
     return {
@@ -340,7 +350,9 @@ export const leonChampion = championCinema<X>({
       fogBuf: canvas(W, H),
       fans,
       giant: spriteFrame(gmax) ? gmax : spriteFrame(zard) ? zard : p.ace,
+      standLit: tinted(sc, '#ff8a3a'),
       fire: new Particles(),
+      energy: new Particles(),
       fog: new Particles(),
       sparks: new Particles(),
     }
@@ -348,10 +360,23 @@ export const leonChampion = championCinema<X>({
   step(s, t, dt) {
     const r = s.r
     const F = s.L.foe
-    for (const p of [s.fire, s.fog, s.sparks]) p.update(dt)
+    for (const p of [s.fire, s.energy, s.fog, s.sparks]) p.update(dt)
     const gz = giantAt(s, t)
-    // Its fire, behind it, so it shows round its shape: licking its outline as it rises, roaring up once it catches.
-    if (gz) {
+    // The Power Spot's energy: red-gold motes streaming up out of the grass, thickest as the giant grows in it.
+    if (t > T_SPOT && t < T_ROAR + 0.3)
+      for (let i = 0; i < (t < T_TALL ? 4 : 1); i++)
+        s.energy.add({
+          x: GIANT_X + r.range(-34, 34),
+          y: GIANT_FEET + r.range(-2, 3),
+          vx: r.range(-6, 6),
+          vy: -r.range(80, 200),
+          life: r.range(0.4, 0.8),
+          size: r.int(1, 2),
+          shape: r() < 0.3 ? 'plus' : 'sq',
+          colors: [...ENERGY],
+        })
+    // Its fire, behind it, so it shows round its shape: licking its outline as it grows, roaring up once it catches.
+    if (gz && t > T_TALL - 0.15) {
       const blaze = t > T_IGNITE && t < T_ROAR + 0.7
       const n = t < T_IGNITE ? (r() < 0.5 ? 1 : 0) : blaze ? 5 : 2
       for (let i = 0; i < n; i++)
@@ -367,6 +392,25 @@ export const leonChampion = championCinema<X>({
           colors: [...FIRE],
         })
     }
+    // Its wings of flame flaring as it roars: fans of fire thrown up and out from its shoulders.
+    if (within(t, T_ROAR - 0.05, T_ROAR + 0.25) && gz)
+      for (const sd of [-1, 1])
+        for (let i = 0; i < 3; i++) {
+          const a = -Math.PI / 2 + sd * r.range(0.3, 1.2)
+          const v = r.range(90, 170)
+          s.fire.add({
+            x: gz.x + sd * gz.w * 0.22,
+            y: gz.top + gz.h * 0.32,
+            vx: Math.cos(a) * v,
+            vy: Math.sin(a) * v,
+            drag: 1.5,
+            life: r.range(0.5, 0.8),
+            size: r.int(4, 7),
+            size1: 0,
+            shape: 'sq',
+            colors: [...FIRE],
+          })
+        }
     // The roar's blast of heat: fire thrown out of its head over the stadium.
     if (within(t, T_ROAR, T_ROAR + dt) && gz) {
       const hd = headAt(gz)
@@ -466,14 +510,13 @@ export const leonChampion = championCinema<X>({
     b.setTransform(1, 0, 0, 1, 0, cam)
     b.drawImage(s.sky, 0, -SKY)
     wheel(b, 22, 18, 20, t, banks > 0)
-    // Its fire lights the sky behind the stadium.
+    // Its fire lights the sky over the stadium.
     const heat = q8(0.45 * span(t, T_RISE, T_IGNITE) + 0.55 * roar)
     if (heat > 0) {
-      b.drawImage(glow(100, '#2e1022', 1.1, heat), GIANT_X - 100, RIM - 110)
-      b.drawImage(glow(70, '#5a2018', 1.3, heat), GIANT_X - 70, RIM - 60)
+      b.drawImage(glow(100, '#2e1022', 1.1, heat), GIANT_X - 100, GIANT_FEET - 190)
+      b.drawImage(glow(70, '#5a2018', 1.3, heat), GIANT_X - 70, GIANT_FEET - 150)
     }
     LIGHTS.forEach(([x], i) => beam(b, x, RIM - 2, lightAngle(i, t), 240, t > T_ROAR ? 0.5 : 1))
-    drawGiant(b, s, t)
     b.drawImage(s.stand, 0, 0)
     b.drawImage(s.pitch, 0, 0)
     // The stadium in the dark until the floodlights bang on, a step at a time; one dip as the ground shakes.
@@ -481,11 +524,20 @@ export const leonChampion = championCinema<X>({
     b.setTransform(1, 0, 0, 1, 0, 0)
     wash(b, '#04030c', 0.62 - 0.155 * banks + (stutter ? 0.3 : 0), 8)
     b.setTransform(1, 0, 0, 1, 0, cam)
+    // The roar's light over the crowd: the stand washed in its fire, a step at a time, settling to a glow.
+    const lit = span(t, T_ROAR, T_ROAR + 0.08) * (1 - 0.65 * span(t, T_ROAR + 0.3, T_ROAR + 1.3))
+    if (lit > 0) {
+      b.globalAlpha = Math.round(lit * 0.45 * 8) / 8
+      b.drawImage(s.standLit, 0, 0)
+      b.globalAlpha = 1
+    }
     drawCrowd(b, s, t)
     drawBoards(b, t, banks)
     drawBanks(b, t, stutter)
-    // The roof's edge alight near it.
-    if (roar > 0) drawRimFire(b, t)
+    // The giant on the pitch's far end, in front of the stands, behind the lift.
+    drawSpot(b, s, t)
+    drawGiant(b, s, t)
+    if (roar > 0) drawFootFire(b, t)
     drawLift(b, s, t)
     s.sparks.draw(b)
     b.setTransform(1, 0, 0, 1, 0, 0)
@@ -576,16 +628,16 @@ export const leonChampion = championCinema<X>({
   ],
 })
 
-/** The giant's box at t (2× its sprite, world rows): rising behind the stand, standing tall, leaning in over it. */
+/** The giant's box at t (world rows): growing on the Power Spot to twice its sprite, its feet planted on the grass. */
 function giantAt(s: X, t: number) {
   if (t < T_RISE) return null
   const sz = spriteSize(s.giant)
-  const w = sz.w * 2
-  const h = sz.h * 2
-  const lean = ease.ioS(span(t, T_DOWN0, T_DOWN1 + 0.1))
-  const rise = ease.outQ(span(t, T_RISE, T_TALL))
-  const top = Math.round(lerp(lerp(RIM + 8, TALL_TOP, rise), LEAN_TOP, lean) + Math.sin(t * 3) * rise)
-  return { x: GIANT_X + Math.round(10 * lean), top, w, h, feet: top + h }
+  // Small in the light at first, swelling, then slowing into its full height; a heave of breath as it roars.
+  const grow = ease.ioS(span(t, T_RISE, T_TALL))
+  const sc = lerp(0.45, 2, grow) * (1 + 0.03 * pulse(t, T_ROAR, T_ROAR + 0.5))
+  const w = Math.round(sz.w * sc)
+  const h = Math.round(sz.h * sc)
+  return { x: GIANT_X, top: GIANT_FEET - h, w, h, feet: GIANT_FEET, sc }
 }
 
 /** Where its head is (its sprite looks left, its head high on that side): the roar comes from there. */
@@ -594,37 +646,80 @@ const headAt = (gz: { x: number; top: number; w: number; h: number }) => ({
   y: gz.top + Math.round(gz.h * 0.14),
 })
 
-/** Gigantamax Charizard behind the stand: a black shape, its outline burning; then its fire catches and lights it. */
+/** The Power Spot on the grass: a ring lighting up, red-gold energy pouring up out of it, then a glow under the giant. */
+function drawSpot(g: G, s: X, t: number) {
+  const on = span(t, T_SPOT, T_SPOT + 0.15)
+  if (on <= 0) return
+  const y = GIANT_FEET
+  const pour = span(t, T_RISE - 0.05, T_RISE + 0.1) * (1 - span(t, T_TALL - 0.1, T_IGNITE + 0.1))
+  const flare = 1 - span(t, T_SPOT, T_SPOT + 0.4)
+  // Its glow on the grass, its rings, brighter while the energy pours.
+  const rx = Math.round(lerp(10, 36, ease.outBack(on, 1.4)))
+  ellipse(g, GIANT_X, y, rx + 4, 5, pattern(g, '#a8201a', 6 + 6 * pour))
+  ellipse(g, GIANT_X, y, rx, 4, pattern(g, '#ff7a32', 4 + 8 * Math.max(pour, flare)))
+  ellipseLine(g, GIANT_X, y, rx, 4, '#ffbe2e')
+  ellipseLine(g, GIANT_X, y, Math.round(rx * 0.6), 2, pour > 0 || flare > 0.5 ? '#fff0b0' : '#ff7a32')
+  // The energy pouring up: a column of red going gold in its core, its dither thinning up the sky.
+  if (pour > 0) {
+    const top = Math.round(lerp(y, y - 260, ease.outQ(span(t, T_RISE - 0.05, T_RISE + 0.2))))
+    for (let yy = top; yy < y; yy++) {
+      const u = (y - yy) / (y - top)
+      const hw = rx * (0.7 + 0.3 * u) + Math.sin(yy * 0.4 + t * 30) * 1.5
+      rect(g, GIANT_X - hw, yy, hw * 2 + 1, 1, pattern(g, '#e0401e', pour * (12 - 8 * u)))
+      rect(g, GIANT_X - hw * 0.45, yy, hw * 0.9 + 1, 1, pattern(g, '#ffbe2e', pour * (14 - 10 * u)))
+      rect(g, GIANT_X - 2, yy, 5, 1, pattern(g, '#fff0b0', pour * (16 - 8 * u)))
+    }
+  }
+  s.energy.draw(g)
+}
+
+/** Gigantamax Charizard: a shape of red-gold light growing in the energy; then its fire catches and it stands there. */
 function drawGiant(g: G, s: X, t: number) {
   const gz = giantAt(s, t)
   if (!gz) return
+  // Its shadow on the grass, its fire behind it.
+  ellipse(g, gz.x, gz.feet + 1, Math.round(gz.w * 0.36), 3, pattern(g, '#0a1a0e', 10))
   s.fire.draw(g)
   const lit = span(t, T_IGNITE, T_IGNITE + 0.22)
-  const breath = 1 + 0.03 * pulse(t, T_ROAR, T_ROAR + 0.5)
-  const sx = 2 * breath
-  // A shadow, its shape just made out against the glow behind it.
-  if (lit < 1)
-    drawSprite(g, s.giant, gz.x, gz.feet, {
-      sx,
-      sy: sx,
-      tint: { color: '#120608', a: 0.82 },
-      outline: Math.floor(t * 12) % 3 ? '#ff8a1e' : '#ffbe2e',
-    })
-  if (lit > 0) {
-    const z = s.zard.g
+  const o = { sx: gz.sc, sy: gz.sc }
+  const z = s.zard.g
+  const m = g.getTransform()
+  // Drawn on its own canvas under the same camera, then laid on the scene.
+  const begin = () => {
     z.setTransform(1, 0, 0, 1, 0, 0)
     z.clearRect(0, 0, W, H)
-    z.setTransform(g.getTransform())
+    z.setTransform(m)
+  }
+  const lay = (k: number) => {
+    z.setTransform(1, 0, 0, 1, 0, 0)
+    g.setTransform(1, 0, 0, 1, 0, 0)
+    dissolve(g, s.zard, k)
+    g.setTransform(m)
+  }
+  if (lit < 1) {
+    // Made of the energy: its shape glowing red-gold, its markings showing through, its edge white-hot, bands of
+    // light running up through it as it grows.
+    begin()
     drawSprite(z, s.giant, gz.x, gz.feet, {
-      sx,
-      sy: sx,
+      ...o,
+      tint: { color: '#ff6a2a', a: 0.62 },
+      outline: Math.floor(t * 20) % 2 ? '#fff0b0' : '#ffffff',
+    })
+    z.globalCompositeOperation = 'source-atop'
+    const run = Math.floor(t * 80)
+    for (let y = gz.top - 2; y <= gz.feet; y++)
+      if ((y + run) % 7 === 0) rect(z, gz.x - gz.w / 2 - 3, y, gz.w + 6, 1, '#ffe08a')
+    z.globalCompositeOperation = 'source-over'
+    lay(1)
+  }
+  if (lit > 0) {
+    // Lit by the floodlights and its own fire, its outline burning.
+    begin()
+    drawSprite(z, s.giant, gz.x, gz.feet, {
+      ...o,
       outline: t < T_ROAR + 0.3 ? (Math.floor(t * 20) % 2 ? '#ffffff' : '#ffe08a') : '#ff8a1e',
     })
-    z.setTransform(1, 0, 0, 1, 0, 0)
-    const m = g.getTransform()
-    g.setTransform(1, 0, 0, 1, 0, 0)
-    dissolve(g, s.zard, lit)
-    g.setTransform(m)
+    lay(lit)
   }
   // The roar: rings of heat from its head.
   const hd = headAt(gz)
@@ -633,17 +728,27 @@ function drawGiant(g: G, s: X, t: number) {
   )
 }
 
-/** The roof's edge caught by its heat: fire along it either side of the giant, flaring as it roars, then burning low. */
-function drawRimFire(g: G, t: number) {
+/** The grass at its feet catching as it roars: fire running out either side of it, then burning low (never to the lift). */
+function drawFootFire(g: G, t: number) {
   const run = ease.outQ(span(t, T_ROAR, T_ROAR + 0.4))
-  const die = 1 - 0.6 * span(t, T_ROAR + 0.4, T_ROAR + 1.2)
-  const reach = run * 80
-  for (let x = Math.max(0, GIANT_X - 90); x < Math.min(W, GIANT_X + 90); x++) {
+  const die = 1 - 0.65 * span(t, T_ROAR + 0.4, T_ROAR + 1.4)
+  const reach = run * 62
+  for (let x = Math.max(0, GIANT_X - 64); x < GIANT_X + 64; x++) {
     const d = Math.abs(x - GIANT_X)
     if (d > reach) continue
-    const h = Math.round(die * (1 - d / 95) * (2 + 8 * flick(x, t)))
-    if (h > 0) tongue(g, x, bend(x, RIM) - 1, h)
+    const h = Math.round(die * (1 - d / 70) * (3 + 9 * flick(x, t)))
+    if (h > 0) tongue(g, x, GIANT_FEET + 1 + (x % 3 === 0 ? 1 : 0), h)
   }
+}
+
+/** A canvas's shape filled with one colour (the stand, lit by the fire). */
+function tinted(src: Canvas, color: string): Canvas {
+  const c = canvas(src.width, src.height)
+  c.g.drawImage(src, 0, 0)
+  c.g.globalCompositeOperation = 'source-in'
+  c.g.fillStyle = color
+  c.g.fillRect(0, 0, c.width, c.height)
+  return c
 }
 
 /** The floodlight banks under the roof's edge: dark, then on with a bang each, glaring. */
@@ -693,8 +798,9 @@ function drawCrowd(g: G, s: X, t: number) {
     if (tw < (dark ? 0.2 : 0.7)) continue
     rect(g, x, y - 1, 1, 1, tw > 0.93 ? '#ffffff' : fan.light > 0.5 ? '#fff6c8' : '#a8d8ff')
   }
-  // Camera flashes popping round the stands.
-  for (let i = 0; i < (dark ? 8 : 5); i++) {
+  // Camera flashes popping round the stands: a storm of them as the giant roars.
+  const burst = within(t, T_ROAR, T_ROAR + 0.6)
+  for (let i = 0; i < (dark ? 8 : burst ? 14 : 5); i++) {
     const n = Math.floor(t * 9) * 8 + i
     if (hash(n * 3.3) < 0.45) continue
     const fan = s.fans[Math.floor(hash(n * 7.7) * s.fans.length)]!

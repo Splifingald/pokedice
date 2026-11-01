@@ -1,4 +1,4 @@
--- Friendship streaks and the Friend Market (docs/59). Two friends who interact on a UTC day keep a streak going: a
+-- Friendship streaks and the Friend Market (docs/60). Two friends who interact on a UTC day keep a streak going: a
 -- raid fought beside the other's team (either way round), a trade between them, or an Egg the Day Care made with the
 -- other's Pokémon. Each new day of a streak pays both of them Heart Scales, more the longer it runs (3 a day on days
 -- 1–3, 4 on 4–7, 5 on 8–14, 6 on 15–30, 7 from day 31), at most 50 a player a UTC day across every friend. A day with
@@ -23,7 +23,7 @@
 -- 6. The Friend Ball in items, as src/data/items.json has it: +3 on the catch die as an Ultra Ball, and more chances
 --    of the hidden talent on its catch by the player's best streak (the game's: engine/friendship.ts friendBallTalent).
 --
--- Run after 0104; safe to run again.
+-- Run after 0106; safe to run again.
 begin;
 
 -- ---------------------------------------------------------------- 1. the switch and the numbers

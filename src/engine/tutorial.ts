@@ -3,11 +3,12 @@
 // once: the money in the top bar (the Mart), its Upgrades, the Dice view, the die, then back to the area. It follows the
 // set opening's switch: it is that opening's last step.
 import { nextDieCost } from './economy'
+import { usableIn } from './items'
 import { openingOn } from './opening'
 import { progressOf } from './run'
 import type { GameData, PokeType, SaveData } from './types'
 
-export type DiceTutorialStep = 'toMart' | 'toUpgrades' | 'toDice' | 'buy' | 'back'
+export type DiceTutorialStep = 'toHome' | 'toMart' | 'toUpgrades' | 'toDice' | 'buy' | 'back'
 
 /** The starter: the Pokémon held longest (as `starterFainted` reads it). */
 const starterOf = (save: SaveData) =>
@@ -62,12 +63,14 @@ export interface TutorialPlace {
 
 /**
  * The step for the page the player is on: the die bought → back to the area; else on the Mart's Upgrades, Dice view →
- * buy it; Upgrades → open Dice; the Mart → open Upgrades; anywhere else → to the Mart.
+ * buy it; Upgrades → open Dice; the Mart → open Upgrades; Home → its Mart tab; anywhere else → Home first (the Mart is
+ * reached as it always will be, from Home's tab, not the top bar's money: the user's call, 2026-10-31).
  */
 export function diceTutorialStep(save: SaveData, data: GameData, at: TutorialPlace): DiceTutorialStep {
   const target = diceTutorialTarget(save, data)
   if (!target || (save.dieLevels[target.type] ?? 1) > 1) return 'back'
-  if (at.path !== '/shop') return 'toMart'
+  if (at.path === '/home') return 'toMart'
+  if (at.path !== '/shop') return 'toHome'
   if (at.martTab !== 'upgrades') return 'toUpgrades'
   return at.upTab === 'dice' ? 'buy' : 'toDice'
 }
@@ -79,3 +82,60 @@ export const startDiceTutorial = (save: SaveData): SaveData =>
 /** BACK TO the area: done, for good. */
 export const finishDiceTutorial = (save: SaveData): SaveData =>
   save.diceTutorial === 'done' ? save : { ...save, diceTutorial: 'done' }
+
+/**
+ * The reroll lesson (docs/46 §6) rigs this fight: a new player's first fights on the set opening's area, its first round
+ * not won yet, until the lesson has played once (its ATTACK pressed). A player past the dice tutorial never gets it.
+ * Follows the set opening's switch, as the dice tutorial does.
+ */
+export function rerollLessonDue(save: SaveData, data: GameData, areaId: string | null | undefined): boolean {
+  const area = data.config.openingRounds?.areaId
+  return (
+    !save.rerollLesson &&
+    !save.diceTutorial &&
+    openingOn(data) &&
+    !!areaId &&
+    areaId === area &&
+    (progressOf(save, area).roundsDone ?? 0) === 0
+  )
+}
+
+/** The lesson has played: never again. */
+export const finishRerollLesson = (save: SaveData): SaveData =>
+  save.rerollLesson ? save : { ...save, rerollLesson: 'done' }
+
+/** The item tutorial's most HP a potion may waste (a 20 HP Potion needs 15 missing: the user's rule, 2026-10-31). */
+export const ITEM_LESSON_WASTE = 5
+
+/**
+ * The item tutorial (docs/46 §7): the heal item it points the player to, the first time their Pokémon in battle is below
+ * half HP while they hold one that would waste at most `ITEM_LESSON_WASTE` HP; null otherwise. The smallest that
+ * fits. For players who began with the tutorials (the reroll lesson or the dice tutorial met), while the set opening
+ * is on, until it has shown once.
+ */
+export function itemLessonItem(
+  save: SaveData,
+  data: GameData,
+  mon: { hp: number; maxHp: number },
+  noHealItems = false,
+): string | null {
+  if (save.itemLesson || noHealItems || !openingOn(data)) return null
+  if (!save.rerollLesson && !save.diceTutorial) return null
+  if (mon.hp <= 0 || mon.hp * 2 >= mon.maxHp) return null
+  const missing = mon.maxHp - mon.hp
+  const fits = Object.entries(save.inventory)
+    .filter(([, n]) => n > 0)
+    .flatMap(([key]) => {
+      const item = data.items[key]
+      const fx = item?.effect
+      return item && fx?.kind === 'heal' && usableIn(item, 'battle') && missing >= fx.amount - ITEM_LESSON_WASTE
+        ? [{ key, amount: fx.amount }]
+        : []
+    })
+    .sort((a, b) => a.amount - b.amount)
+  return fits[0]?.key ?? null
+}
+
+/** The item tutorial has shown (the Bag opened, or on a computer its column seen): never again. */
+export const finishItemLesson = (save: SaveData): SaveData =>
+  save.itemLesson ? save : { ...save, itemLesson: 'done' }

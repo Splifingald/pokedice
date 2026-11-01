@@ -30,6 +30,7 @@ import {
   type DepositError,
   type Hatch,
   regionName,
+  outfitOf,
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
 import { TalentLine } from '@/components/Talent'
@@ -140,6 +141,7 @@ function MineCard({ res, slot, now, onTake }: { res: DayCareResident; slot: numb
       tag={<GainTag>{gained > 0 ? t('ui.dayCare.gainedLv', { n: gained }) : t('ui.dayCare.newHere')}</GainTag>}
       dex={res.inst.dex}
       shiny={res.inst.shiny}
+      outfit={outfitOf(data, res.inst)}
       name={name}
       level={lv(p.level)}
       action={{ label: t('ui.dayCare.takeBack'), aria: t('ui.dayCare.takeBackName', { name }), onClick: onTake }}
@@ -751,6 +753,7 @@ function DayCareScreenMain() {
       key: m.key,
       dex: m.dex,
       shiny: m.resident?.inst.shiny ?? m.guest?.shiny,
+      outfit: m.resident ? outfitOf(data, m.resident.inst) : null,
       name: data.species[m.dex]?.name ?? '',
       // Pairs seek each other out: yours with everyone, a visitor with yours.
       likes: all

@@ -1,12 +1,12 @@
 // Red's entrance (docs/56), on the battle stage: Mt. Silver, the silent legend. A blizzard on the mountain at night:
 // the camera climbs its snowfields and black rock ribs up into the storm wrapped round its summit, where something
 // yellow flickers. Into the white; and out on the summit, a lone figure at the cliff's edge with his back to us, the
-// snow tearing past him sideways. He doesn't move. On his shoulder a small shape with long ears: two red cheeks spark,
-// once, again, crackling. Then Pikachu's Thunder goes up into the storm, a column of lightning from his shoulder to the
-// sky, and the storm is blown open from the inside: the clouds torn back in a ring, the snow flung away, and behind
-// it all the dawn over a sea of clouds, far peaks standing out of it. Silence; the snow left in the air glitters as it
-// settles. He turns round, slowly. Three dots over his head, one at a time — that's all he says. The sun clears the
-// clouds right behind him: the reveal.
+// snow tearing past him sideways, and Pikachu on the snow beside him, both black against the storm. He doesn't move.
+// Pikachu's cheeks spark, once, again, crackling; then its Thunder goes up into the storm, a column of lightning from
+// its head to the sky, and the storm is blown open from the inside: the clouds torn back in a ring, the snow flung
+// away, and behind it all the dawn over a sea of clouds, far peaks standing out of it. Silence; the snow left in the
+// air glitters as it settles. He turns round, slowly, and the light comes onto them both. Three dots over his head, one
+// at a time — that's all he says. The sun clears the clouds right behind him: the reveal.
 import { fxSound, hiss, tone } from '@/audio/sfx'
 import {
   bayer,
@@ -26,7 +26,7 @@ import {
   type Canvas,
   type G,
 } from '../../../pixel'
-import { drawSprite, spriteSize } from '../../../sprites'
+import { drawSprite, spriteKey, spriteSize } from '../../../sprites'
 import { H, screenFlash, screenShake, W, within } from '../../../timeline'
 import { championCinema, type ChampionState } from '../champion'
 import { dGradient, dissolve, tri } from '../kit'
@@ -428,103 +428,60 @@ function summit(dawn: boolean, fx: number, fy: number): Canvas {
   return cv
 }
 
+const PIKA = spriteKey(25, false)
+
 /**
- * Pikachu, small, sitting on his shoulder: from behind (ears, round back, its stripes, the zigzag tail up) or from
- * the front (eyes, nose, red cheeks). `dark` 1 draws it black against the storm, cheeks still glowing.
+ * Where Pikachu stands: at its own size on the snow at the cliff's edge, a little in front of him and to his left;
+ * and where its cheeks and the top of its head are (fractions of its front sprite, measured on it).
  */
-const PIKA_BACK = [
-  'K.............K',
-  'KK...........KK',
-  '.YY.........YY.',
-  '.YY.........YY.',
-  '..YY.......YY..',
-  '..YY.......YY..',
-  '...YY.....YY...',
-  '....YYYYYYY....',
-  '...YYYYYYYYY...',
-  '..YYYYYYYYYYY..',
-  '.RYYYYYYYYYYYR.',
-  '..yYYYYYYYYYy..',
-  '...yYYYYYYYy...',
-  '...yBBBBBBBy...',
-  '...yYYYYYYYy...',
-  '...yBBBBBBBy...',
-  '....yyyyyyy....',
-]
-const PIKA_FRONT = [
-  'K.............K',
-  'KK...........KK',
-  '.YY.........YY.',
-  '.YY.........YY.',
-  '..YY.......YY..',
-  '..YY.......YY..',
-  '...YY.....YY...',
-  '....YYYYYYY....',
-  '...YYYYYYYYY...',
-  '..YYEWYYYEWYY..',
-  '..YYEEYYYEEYY..',
-  '.RRYYYYKYYYYRR.',
-  '.rRYYYYYYYYYRr.',
-  '..yYYYYYYYYYy..',
-  '...yYYYYYYYy...',
-  '...YY.yyy.YY...',
-  '...yy.....yy...',
-]
-/** The tail, a zigzag of lightning standing up beside it (drawn mirrored on the other side from the front). */
-const TAIL = ['.....YYY', '....YYY.', '...YYY..', '..YYYYYY', '.....YY.', '....YY..', '...YY...', '..BB....']
-const PIKA_PAL: Record<string, string> = {
-  K: '#202028',
-  Y: '#f8d838',
-  y: '#c89a20',
-  B: '#8a5a20',
-  R: '#e83a28',
-  r: '#a82418',
-  E: '#181820',
-  W: '#ffffff',
+function pikaAt(fx: number, fy: number) {
+  const sz = spriteSize(PIKA)
+  const x = fx - 40
+  const y = fy + 8
+  const left = x - sz.w / 2
+  const top = y - sz.h
+  return {
+    x,
+    y,
+    cheeks: [
+      [Math.round(left + sz.w * 0.15), Math.round(top + sz.h * 0.42)],
+      [Math.round(left + sz.w * 0.43), Math.round(top + sz.h * 0.42)],
+    ] as const,
+    head: { x: Math.round(left + sz.w * 0.3), y: Math.round(top + sz.h * 0.12) },
+  }
 }
 
-function pika(g: G, x: number, y: number, front: boolean, dark: boolean, cheeks: number, rim: boolean) {
-  const map = front ? PIKA_FRONT : PIKA_BACK
-  const w = map[0]!.length
-  const h = map.length
-  const x0 = x - (w >> 1)
-  const y0 = y - h
-  // The tail first: standing up behind its back on the right from behind, peeking out on the left from the front.
-  const tw = TAIL[0]!.length
-  const tx = front ? x0 - 3 : x0 + w - 5
-  const ty = y0 + h - TAIL.length - 3
-  for (let j = 0; j < TAIL.length; j++)
-    for (let i = 0; i < tw; i++) {
-      const c = TAIL[j]![front ? tw - 1 - i : i]!
-      if (c === '.') continue
-      rect(g, tx + i, ty + j, 1, 1, dark ? SIL : PIKA_PAL[c]!)
-    }
-  for (let j = 0; j < h; j++)
-    for (let i = 0; i < w; i++) {
-      const c = map[j]![i]!
-      if (c === '.') continue
-      const cheek = c === 'R' || c === 'r'
-      const col = cheek && cheeks > 0 ? (cheeks > 0.6 ? '#ffe070' : '#ff5a38') : dark ? SIL : PIKA_PAL[c]!
-      rect(g, x0 + i, y0 + j, 1, 1, col)
-    }
-  // The dawn round its edge, from behind.
-  if (rim)
-    for (let j = 0; j < h; j++) {
-      const row = map[j]!
-      const a = row.search(/[^.]/)
-      const b = row.length - 1 - [...row].reverse().join('').search(/[^.]/)
-      if (a >= 0) {
-        rect(g, x0 + a - 1, y0 + j, 1, 1, RIM)
-        rect(g, x0 + b + 1, y0 + j, 1, 1, RIM)
-      }
-    }
+/**
+ * Pikachu on the snow: black against the storm, its cheeks glowing when they spark, an edge of yellow while it charges;
+ * rimmed by the dawn once the storm is gone; lit by the sunrise as he turns round. Its shadow on the snow under it.
+ */
+function drawPika(g: G, tmp: Canvas, x: number, y: number, t: number, flash = 0) {
+  const clear = t > T_HOLE + 0.15
+  ellipse(g, x - 3, y, 14, 2, clear ? '#2a3664' : '#6e788e')
+  const charge = within(t, T_CHARGE, T_THUNDER + 0.3)
+  const outline = charge ? (Math.floor(t * 30) % 2 ? '#fff070' : '#ffb020') : clear ? RIM : undefined
+  // How lit it is: none in the storm or against the dawn, all of it once he has turned round with it.
+  // A quick change, as his own does: at the middle of his turn, over a few frames.
+  const lit = span(t, T_TURN + TURN_DUR * 0.5, T_TURN + TURN_DUR * 0.5 + 0.12)
+  if (lit > 0) drawSprite(g, PIKA, x, y, { outline, flash })
+  if (lit < 1) {
+    // The silhouette, dissolving away as the light comes on it.
+    const b = tmp.g
+    b.clearRect(0, 0, tmp.width, tmp.height)
+    const ox = tmp.width >> 1
+    const oy = tmp.height - 4
+    drawSprite(b, PIKA, ox, oy, { sil: SIL, outline })
+    dissolve(g, tmp, 1 - lit, x - ox, y - oy)
+  }
 }
 
 type X = {
   buf: Canvas
   hole: Canvas
-  /** Pikachu alone, to fade it out with the scene after the reveal. */
+  /** Pikachu alone: to dissolve its silhouette away, and to fade it out with the scene after the reveal. */
   pk: Canvas
+  /** Pikachu's own canvas for its silhouette while it is being lit. */
+  pkSil: Canvas
   mount: Canvas
   far: Canvas
   stormSky: Canvas
@@ -542,18 +499,6 @@ type X = {
   puffs: [number, number][]
 }
 
-/** Where Pikachu sits on his shoulder: his left, which is on our left while his back is turned. */
-function shoulder(s: ChampionState<X>, t: number) {
-  const tz = spriteSize(s.p.trainer)
-  const q = ease.ioS(span(t, T_TURN, T_TURN + TURN_DUR))
-  const cs = Math.cos(q * Math.PI)
-  return {
-    x: s.L.foe.x + Math.round(-tz.w * 0.34 * cs),
-    y: s.L.foe.y + 2 - Math.round(tz.h * 0.6),
-    front: cs < 0,
-  }
-}
-
 export const redChampion = championCinema<X>({
   id: 'red',
   reveal: REVEAL,
@@ -567,9 +512,10 @@ export const redChampion = championCinema<X>({
     const F0 = st.L.foe
     const sky = canvas(W, H)
     sky.g.drawImage(dGradient(W, H, ['#1e2436', '#2c3448', '#3c465c', '#4e586e']), 0, 0)
-    // The Thunder: a few shapes of the bolt to flicker between, from his shoulder up out of the frame, and forks.
-    const bx = F0.x - 9
-    const by = F0.y - 50
+    // The Thunder: a few shapes of the bolt to flicker between, from Pikachu's head up out of the frame, and forks.
+    const pa = pikaAt(F0.x, F0.y)
+    const bx = pa.head.x
+    const by = pa.head.y
     const bolts = Array.from({ length: 4 }, () => bolt(r, bx, by, bx + r.range(-14, 14), -12, 0.28, 5))
     const forks = Array.from({ length: 6 }, (_, i) => {
       const from = bolts[i % 4]![r.int(8, 20)]!
@@ -578,7 +524,8 @@ export const redChampion = championCinema<X>({
     return {
       buf: canvas(W, H),
       hole: canvas(W, H),
-      pk: canvas(32, 32),
+      pk: canvas(80, 64),
+      pkSil: canvas(80, 64),
       mount: mountain(),
       far: farRanges(),
       stormSky: sky,
@@ -622,9 +569,10 @@ export const redChampion = championCinema<X>({
     // The Thunder flings the storm's snow out from him, every flake at once.
     const F0 = s.L.foe
     if (within(t, T_THUNDER, T_THUNDER + dt)) {
+      const hd = pikaAt(F0.x, F0.y).head
       for (const p of s.snow.list) {
-        const dx = p.x - F0.x
-        const dy = p.y - (F0.y - 50)
+        const dx = p.x - hd.x
+        const dy = p.y - hd.y
         const d = Math.hypot(dx, dy) || 1
         p.vx = (dx / d) * r.range(420, 640)
         p.vy = (dy / d) * r.range(320, 520)
@@ -633,8 +581,8 @@ export const redChampion = championCinema<X>({
       for (let i = 0; i < 40; i++) {
         const a = r() * Math.PI * 2
         s.fx.add({
-          x: F0.x - 9,
-          y: F0.y - 52,
+          x: hd.x,
+          y: hd.y,
           vx: Math.cos(a) * r.range(80, 220),
           vy: Math.sin(a) * r.range(80, 220),
           drag: 2,
@@ -658,13 +606,14 @@ export const redChampion = championCinema<X>({
         colors: ['#ffffff', '#ffe0c8', '#c8b0d8', '#8a7aa8'],
       })
     // Pikachu's sparks: a few off its cheeks when they flare; a spray while it charges.
-    const sp = shoulder(s, t)
+    const ck = pikaAt(F0.x, F0.y).cheeks
     const charging = t > T_CHARGE && t < T_THUNDER
     if (within(t, T_SPARK, T_SPARK + dt) || within(t, T_SPARK2, T_SPARK2 + dt) || (charging && r() < 0.6))
-      for (let i = 0; i < (charging ? 2 : 8); i++)
+      for (let i = 0; i < (charging ? 2 : 8); i++) {
+        const [cx, cy] = ck[i % 2]!
         s.fx.add({
-          x: sp.x + (r() < 0.5 ? -6 : 6),
-          y: sp.y - 5,
+          x: cx,
+          y: cy,
           vx: r.range(-60, 60),
           vy: r.range(-70, 30),
           ay: 120,
@@ -673,6 +622,7 @@ export const redChampion = championCinema<X>({
           shape: 'px',
           colors: ['#ffffff', '#fff070', '#ffb020'],
         })
+      }
   },
   back(g, s, t, k) {
     if (k <= 0) return
@@ -700,23 +650,11 @@ export const redChampion = championCinema<X>({
       sil: backTurned ? SIL : undefined,
       outline: clear ? RIM : undefined,
     })
-    // Pikachu on his shoulder: dark in the storm, its cheeks the only colour; lit once it clears.
-    const sp = shoulder(s, t)
-    // Lit by its own sparks when they flare, and all through the charge.
-    const self =
-      Math.abs(t - T_SPARK - 0.05) < 0.07 ||
-      Math.abs(t - T_SPARK2 - 0.05) < 0.09 ||
-      within(t, T_CHARGE, T_THUNDER + 0.3)
-    pika(
-      g,
-      sp.x + sh.x,
-      sp.y + sh.y,
-      sp.front,
-      !self && (!clear || !sp.front),
-      cheekAt(t),
-      clear && !sp.front,
-    )
-    sparks(g, s, t, sp.x + sh.x, sp.y + sh.y)
+    // Pikachu on the snow beside him, a little in front: dark in the storm, its cheeks the only colour.
+    const pa = pikaAt(F0.x, F0.y)
+    drawPika(g, s.pkSil, pa.x + sh.x, pa.y + sh.y, t)
+    cheeks(g, t, pa.cheeks, sh.x, sh.y)
+    sparks(g, t, pa.cheeks, pa.y, sh.x, sh.y)
     // His three dots, one at a time: all he has to say.
     const tz = spriteSize(s.p.trainer)
     T_DOTS.forEach((at, i) => {
@@ -734,14 +672,17 @@ export const redChampion = championCinema<X>({
       s.snow.draw(g)
       s.glitter.draw(g)
     }
-    // After the reveal Pikachu stays on his shoulder, part of the scene, until that fades into the fight's ground.
+    // After the reveal Pikachu stays beside him, part of the scene, until that fades into the fight's ground (the
+    // Pikachu he then throws out isn't there twice).
     if (t >= REVEAL && k > 0) {
-      const sp = shoulder(s, t)
+      const pa = pikaAt(s.L.foe.x, s.L.foe.y)
       const pc = s.pk.g
-      pc.clearRect(0, 0, 32, 32)
-      pika(pc, 16, 26, true, false, cheekAt(t), false)
+      pc.clearRect(0, 0, s.pk.width, s.pk.height)
+      const ox = s.pk.width >> 1
+      const oy = s.pk.height - 4
+      drawPika(pc, s.pkSil, ox, oy, t, 1 - span(t, REVEAL + 0.05, REVEAL + 0.4))
       const sh = screenShake(t, s.screenShakes)
-      dissolve(g, s.pk, k, sp.x - 16 + sh.x, sp.y - 26 + sh.y)
+      dissolve(g, s.pk, k, pa.x - ox + sh.x, pa.y - oy + sh.y)
     }
     // The Thunder: a column of lightning from Pikachu up out of the sky, flickering between its shapes.
     if (within(t, T_THUNDER - 0.04, T_THUNDER + 0.36)) {
@@ -833,8 +774,28 @@ function cheekAt(t: number) {
   return Math.max(base * (Math.floor(t * 12) % 3 ? 1 : 0.5), flare(T_SPARK), flare(T_SPARK2))
 }
 
-/** Little arcs crackling off Pikachu's cheeks: a few pixels of zigzag, new every few frames; longer while it charges. */
-function sparks(g: G, s: ChampionState<X>, t: number, x: number, y: number) {
+/** Its cheeks glowing on the silhouette: red when they spark, gold while it charges. */
+function cheeks(g: G, t: number, at: readonly (readonly [number, number])[], dx: number, dy: number) {
+  const h = cheekAt(t)
+  if (h <= 0 || t > T_TURN + TURN_DUR * 0.5) return
+  for (const [x, y] of at) {
+    rect(g, x - 1 + dx, y - 1 + dy, 3, 2, h > 0.6 ? '#ffe070' : '#ff5a38')
+    if (h > 0.6) rect(g, x + dx, y - 1 + dy, 1, 1, '#ffffff')
+  }
+}
+
+/**
+ * Little arcs crackling off its cheeks: a few pixels of zigzag, new every few frames, longer while it charges; then
+ * arcs from it to the snow round its feet.
+ */
+function sparks(
+  g: G,
+  t: number,
+  at: readonly (readonly [number, number])[],
+  feet: number,
+  dx: number,
+  dy: number,
+) {
   if (t < T_SPARK || t > T_THUNDER + 0.05) return
   const f = Math.floor(t * 20)
   const charging = t > T_CHARGE
@@ -845,18 +806,19 @@ function sparks(g: G, s: ChampionState<X>, t: number, x: number, y: number) {
   const n = charging ? 4 : 2
   for (let i = 0; i < n; i++) {
     const sd = i % 2 ? 1 : -1
-    const x0 = x + sd * 6
-    const y0 = y - 5
-    const len = charging ? r.range(8, 22) : r.range(4, 9)
-    const a = (sd > 0 ? 0 : Math.PI) + r.range(-1, 1)
+    const [cx, cy] = at[i % 2]!
+    const x0 = cx + dx
+    const y0 = cy + dy
+    const len = charging ? r.range(8, 20) : r.range(4, 8)
+    const a = (sd > 0 ? -0.3 : Math.PI + 0.3) + r.range(-0.9, 0.9)
     const pts = bolt(r, x0, y0, x0 + Math.cos(a) * len, y0 + Math.sin(a) * len, 0.5, 2)
     polyline(g, pts, '#fff070')
     if (charging) polyline(g, pts.slice(0, 3), '#ffffff')
   }
-  // While it charges, an arc to the snow at his feet now and then.
+  // While it charges, an arc down to the snow by its feet now and then.
   if (charging && f % 3 === 0) {
-    const fy = s.L.foe.y + 2
-    const pts = bolt(r, x, y - 2, x + r.range(-30, 30), fy, 0.4, 3)
+    const [cx, cy] = at[r() < 0.5 ? 0 : 1]!
+    const pts = bolt(r, cx + dx, cy + dy, cx + dx + r.range(-34, 26), feet + dy + r.range(0, 4), 0.4, 3)
     polyline(g, pts, '#ffd030')
     polyline(g, pts, '#ffffff')
   }
@@ -919,13 +881,14 @@ function summitShot(b: G, s: ChampionState<X>, t: number) {
     // The Thunder lights the storm from inside: its clouds paling round the bolt.
     const lt = 1 - span(t, T_THUNDER, T_THUNDER + 0.3)
     if (within(t, T_THUNDER, T_THUNDER + 0.3)) {
-      ellipseC(h, F0.x - 9, 10, 120 * lt + 30, 70 * lt + 20, '#8a8ca8')
-      ellipseC(h, F0.x - 9, 0, 70 * lt + 16, 44 * lt + 10, '#c8c4cc')
+      const hx = pikaAt(F0.x, F0.y).head.x
+      ellipseC(h, hx, 10, 120 * lt + 30, 70 * lt + 20, '#8a8ca8')
+      ellipseC(h, hx, 0, 70 * lt + 16, 44 * lt + 10, '#c8c4cc')
     }
     // The hole: torn open from the top of the bolt outwards, its edge a scallop of cloud lit by the dawn.
     const R = 290 * ease.outC(span(t, T_HOLE, T_HOLE + 0.6))
     if (R > 0) {
-      const cx = F0.x - 9
+      const cx = pikaAt(F0.x, F0.y).head.x
       const cy = -24
       const puffs = (grow: number, c: string) => {
         ellipseC(h, cx, cy, R * 1.1 + grow, R * 0.82 + grow, c)

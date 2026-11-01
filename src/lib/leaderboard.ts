@@ -259,13 +259,18 @@ export type BoardItem<T> = { row: T } | { gap: number }
  * What a board shows of a long ranking (the user's ask of 2026-10-18): its real top 100, every friend wherever they
  * are, and you with the 10 trainers ahead of you and the 10 behind. Ranks are the whole board's, given before this;
  * each run of rows left out becomes one gap saying how many, the last one included so the board doesn't look ended.
+ * `around` narrows the trainers kept either side of you: Versus's global board keeps none (the user's ask of
+ * 2026-11-01: its top 100, you and your friends, no more).
  */
-export function boardWindow<T extends { isMe: boolean; friendId: string | null }>(rows: T[]): BoardItem<T>[] {
+export function boardWindow<T extends { isMe: boolean; friendId: string | null }>(
+  rows: T[],
+  around = BOARD_AROUND,
+): BoardItem<T>[] {
   const me = rows.findIndex((r) => r.isMe)
   const items: BoardItem<T>[] = []
   let hidden = 0
   rows.forEach((row, i) => {
-    const near = me >= 0 && Math.abs(i - me) <= BOARD_AROUND
+    const near = me >= 0 && Math.abs(i - me) <= around
     if (i >= BOARD_TOP && !near && !row.isMe && !row.friendId) {
       hidden++
       return

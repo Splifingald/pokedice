@@ -1,7 +1,7 @@
-// Friendship streaks and the Friend Market (docs/59). Two friends who interact on a UTC day (a raid beside the other's
+// Friendship streaks and the Friend Market (docs/60). Two friends who interact on a UTC day (a raid beside the other's
 // team, a trade between them, an Egg made with the other's Pokémon) keep a streak going; each new day of it pays both
 // Heart Scales by the streak's tier, at most the day's cap across every friend. The coins buy from a weekly market.
-// The server keeps the streaks, the wallet and the purchases (migration 0105); these functions read the admin's
+// The server keeps the streaks, the wallet and the purchases (migration 0107); these functions read the admin's
 // numbers, name the tiers, lay out the market and put what was bought in the save. The screens only say it.
 import { eventOpenTo } from './events'
 import { daysBetween } from './eventTime'

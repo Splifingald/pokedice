@@ -1063,11 +1063,14 @@ export function releaseDuplicates(save: SaveData): { save: SaveData; released: P
   const best = new Map<number, PokemonInstance>()
   // Team members first, so a Box copy has to beat them outright to stay.
   for (const p of [...teamOf(save), ...save.box.filter((p) => !inTeam.has(p.id))]) {
-    if (p.shiny || isReviving(p)) continue
+    // A shiny or an outfit (docs/59) is a Pokémon of its own: never a plain copy to let go.
+    if (p.shiny || p.outfit || isReviving(p)) continue
     const cur = best.get(p.dex)
     if (!cur || stronger(p, cur)) best.set(p.dex, p)
   }
-  const released = save.box.filter((p) => !p.shiny && !isReviving(p) && !inTeam.has(p.id) && best.get(p.dex) !== p)
+  const released = save.box.filter(
+    (p) => !p.shiny && !p.outfit && !isReviving(p) && !inTeam.has(p.id) && best.get(p.dex) !== p,
+  )
   if (!released.length) return { save, released }
   const gone = new Set(released.map((p) => p.id))
   return { save: { ...save, box: save.box.filter((p) => !gone.has(p.id)) }, released }

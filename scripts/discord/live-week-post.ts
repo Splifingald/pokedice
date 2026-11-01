@@ -4,7 +4,8 @@
  * --at 2026-12-21T07:23:00Z       — run as if it were then (to check another week).
  * --force                         — post even while live events aren't switched on for everyone in Admin → Events.
  *
- * GitHub Actions runs it every Monday morning (.github/workflows/discord-live-week.yml). The week is Monday 00:00 to
+ * Netlify posts it every Monday morning with weekMessage (netlify/functions/discord-live.mts); this script prints it, or
+ * posts it by hand (.github/workflows/discord-live-week.yml, no schedule). The week is Monday 00:00 to
  * Sunday 24:00 UTC: a calendar of its days with a bar per event, then each event in a line (what it does, when, in
  * every reader's own time zone), and the first one after the week (docs/50). A week without an event posts nothing.
  * Each start is posted on its own by live-event-post.ts. Nothing is posted while live events are Off or On for admin.

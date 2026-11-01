@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { cleanNickname } from '@/engine/nickname'
 import { isUnownLetter, UNOWN_LETTERS } from '@/engine/unownDex'
+import { OUTFITS } from '@/engine/outfits'
 import {
   COMBO_KEYS,
   EVENT_IDS,
@@ -42,6 +43,8 @@ const instanceSchema = z.object({
   letter: z.unknown().transform((v) => (isUnownLetter(v) ? v : undefined)),
   // Its hidden talent (docs/51): anything but true is no talent.
   talent: z.unknown().transform((v) => (v === true ? true : undefined)),
+  // Its outfit (docs/59): one this build doesn't know (an edited save, a newer build's) is dropped, never the Pokémon.
+  outfit: z.unknown().transform((v) => (typeof v === 'string' && Object.hasOwn(OUTFITS, v) ? v : undefined)),
 })
 
 // Extreme mode's Centers (docs/47): the boons waiting for the pick.
@@ -421,8 +424,14 @@ export const saveSchema = z.object({
   talents: z.record(z.array(z.number().int().min(1)).max(3000)).optional(),
   talentsMet: z.array(z.number().int().min(1)).max(3000).optional(),
   talentRulesSeen: z.boolean().optional(),
+  // Outfits (docs/59): their rules pop-up seen.
+  outfitRulesSeen: z.boolean().optional(),
   // The dice tutorial (docs/46 §5): an odd value starts it afresh, never fails the save.
   diceTutorial: z.enum(['started', 'done']).optional().catch(undefined),
+  // The reroll lesson (docs/46 §6): played once.
+  rerollLesson: z.literal('done').optional().catch(undefined),
+  // The item tutorial (docs/46 §7): shown once.
+  itemLesson: z.literal('done').optional().catch(undefined),
   // The battle powers (docs/35): the Mega Gems held, bought ones included, which nothing else gives back. A power kind
   // this build doesn't know is dropped rather than failing the save, so an odd one never costs the gems.
   powers: z
@@ -500,7 +509,7 @@ export const saveSchema = z.object({
       rulesSeen: z.boolean().optional(),
     })
     .optional(),
-  // Friendship (docs/59): the rules read, market purchases put away (ids), Eggs to tell the server about.
+  // Friendship (docs/60): the rules read, market purchases put away (ids), Eggs to tell the server about.
   friendship: z
     .object({
       rulesSeen: z.boolean().optional(),

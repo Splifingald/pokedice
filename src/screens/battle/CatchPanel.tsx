@@ -114,7 +114,7 @@ export function CatchPanel({
   const pct = (bonus: number) => Math.round(catchChance(value, bonus + swipe) * 100)
   // A ball adds nothing once a weaker option (or no ball) is already certain.
   const sure = catchChance(value, swipe) >= 1
-  // The Friend Ball (docs/59): its hidden-talent boost, while it can still find this one's talent.
+  // The Friend Ball (docs/60): its hidden-talent boost, while it can still find this one's talent.
   const boost = useFriendBallBoost()
   const talentUp = (o: (typeof options)[number]) =>
     o.key != null && isTalentBall(data.items[o.key]) && friendBallHelps(data, c.dex, !!c.talent, boost)
@@ -289,7 +289,7 @@ function Plain({ children }: { children?: ReactNode }) {
 }
 
 /**
- * The Friend Ball's corner tag on its throw button (docs/59): the unknown talent's gem and the boost, while it can
+ * The Friend Ball's corner tag on its throw button (docs/60): the unknown talent's gem and the boost, while it can
  * still find this Pokémon's hidden talent. The button's name says it in words.
  */
 export function FriendBallTag({ boost, className }: { boost: number; className?: string }) {

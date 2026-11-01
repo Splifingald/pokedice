@@ -1,4 +1,4 @@
-// Friendship streaks and the Friend Market on the server (docs/59, migration 0105): the status, a purchase, purchases
+// Friendship streaks and the Friend Market on the server (docs/60, migration 0107): the status, a purchase, purchases
 // put away, and the two interactions only the game sees (a raid beside friends' teams, an Egg with a friend's Pokémon).
 // Trades count on the server by themselves.
 import type { FriendStreak, FriendshipKind, MarketBuy } from '@/engine'

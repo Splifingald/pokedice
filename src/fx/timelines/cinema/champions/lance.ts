@@ -1,11 +1,12 @@
 // Lance's entrance (docs/56), on the battle stage: the Indigo Plateau at night, a dry storm rolling over the League.
 // We look up at the storm first: the moon veiled, the clouds lit from inside, and in one flash a dragon's shadow in
-// them. A roar shakes the sky and the storm flickers again; the camera comes down onto the League's terrace as three
-// Dragonite burst out of the clouds in formation, vapour trailing from their wings. The wingmen peel away and the lead
-// dives straight at you until it fills the screen and roars past overhead; in its wake a man drops out of the sky,
-// his cape streaming above him like a pair of wings. He lands on the dais in a crouch that cracks the stone and flares
-// every brazier, the cape whipping down round him. Dragonite wheels back over the League's roof, gathers Hyper Beam
-// and fires it into the sky: the beam blows the clouds open and its light falls on the Dragon Master.
+// them. A roar shakes the sky and the storm flickers again; the camera comes down onto the League's terrace as
+// Dragonite tears out of the clouds, black against the lightning, and sweeps round the Plateau in a wide hook, vapour
+// trailing from its wingtips. It turns and dives straight at you until it fills the screen and roars past overhead; in
+// its wake a man drops out of the sky, his cape streaming above him like a pair of wings. He lands on the dais in a
+// crouch that cracks the stone and flares every brazier, the cape whipping down round him. Dragonite wheels back over
+// the League's roof, gathers Hyper Beam and fires it into the sky: the beam blows the clouds open and its light falls
+// on the Dragon Master.
 import { fxSound, hiss, tone } from '@/audio/sfx'
 import {
   bayer,
@@ -49,7 +50,9 @@ const T_ROAR = 0.95
 const T_TILT0 = 1.0
 const T_TILT1 = 1.95
 const T_EMERGE = 1.15
-const T_SPLIT = 1.85
+/** Out of the storm and past the League; then, unseen, it climbs back into the cloud and comes about. */
+const T_BY = T_EMERGE + 0.6
+const T_TURN = 1.82
 const T_DIVE = 2.0
 const T_PASS = 2.64
 const T_DROP = 2.66
@@ -59,8 +62,10 @@ const T_HOVER = 3.68
 const T_CHARGE = 3.7
 const T_BEAM = 4.2
 
-/** Where the shadow shows in the storm, and the formation bursts out of it (with the camera down). */
+/** Where the shadow shows in the storm, and Dragonite bursts out of it (with the camera down). */
 const SHADOW = { x: 166, y: -24 }
+/** Where it comes about in the cloud before its dive, a shape in the lightning (with the camera down). */
+const TURN = { x: 118, y: 8 }
 /** The terrace's far edge (the balustrade's foot) and where the League stands on it. */
 const HZ = 88
 /** Where Dragonite hovers to fire, over the League's roof: its feet, its size. */
@@ -103,8 +108,8 @@ function flick(x: number, t: number) {
 
 /** How the braziers burn: steady, flaring at the landing, higher with the beam. */
 const fireAt = (t: number) => 1 + 1.4 * pulse(t, T_LAND, T_LAND + 0.5) + 0.35 * span(t, T_BEAM, REVEAL)
-/** Which way the wind bends the flames (px at their tips). */
-const leanAt = (t: number) => 2 * Math.sin(t * 3)
+/** Which way the wind bends the flames (px at their tips): Dragonite's wake flattens them as it sweeps past. */
+const leanAt = (t: number) => 2 * Math.sin(t * 3) - 9 * pulse(t, T_EMERGE + 0.25, T_BY + 0.2)
 
 /** A brazier's flames over a bowl w wide at (cx, y): white-gold at the root, red at the tips, bent by the wind. */
 function flames(g: G, cx: number, y: number, w: number, h: number, t: number, lean: number) {
@@ -413,35 +418,45 @@ const bowlTop = (h: number) => h + 7
 
 type Fly = { x: number; y: number; k: number }
 
-/** Where each of the three Dragonite is (centre, scale): bursting from the clouds, the wingmen peeling off, the dive. */
-function flier(t: number, i: number): Fly | null {
-  if (t < T_EMERGE) return null
-  const u = span(t, T_EMERGE, i ? T_SPLIT : T_DIVE)
-  const e = ease.inQ(u)
-  let x = lerp(SHADOW.x, 126, e)
-  let y = lerp(SHADOW.y, 40, e)
-  let k = lerp(0.08, 0.46, e)
-  if (i) {
-    const side = i === 1 ? -1 : 1
-    const v = span(t, T_SPLIT, T_SPLIT + 0.5)
-    if (v >= 1) return null
-    x += side * (lerp(13, 50, e) + 190 * ease.inQ(v))
-    y -= lerp(3, 12, e) + 60 * ease.inQ(v)
-    k *= 0.9 * (1 + 1.4 * v)
-  } else if (t >= T_DIVE) {
+/**
+ * Its fly-past, in the frame as the camera comes down: out of the storm's belly, a swoop down past the League's tower
+ * close enough to shake the Plateau, and away out to the left under the moon.
+ */
+const BY = [
+  [166, 23],
+  [160, 100],
+  [64, 126],
+  [-64, 84],
+] as const
+
+/**
+ * Where Dragonite is (its centre, its size): bursting out of the storm and sweeping past the League; gone, climbing
+ * back into the cloud; then out of it again and straight at the camera.
+ */
+function flier(t: number): Fly | null {
+  if (t < T_EMERGE || (t >= T_BY && t < T_DIVE)) return null
+  let x: number
+  let y: number
+  let k: number
+  if (t < T_BY) {
+    const u = span(t, T_EMERGE, T_BY)
+    const [a, b, c, d] = BY
+    const v = 1 - u
+    x = v * v * v * a[0] + 3 * v * v * u * b[0] + 3 * v * u * u * c[0] + u * u * u * d[0]
+    y = v * v * v * a[1] + 3 * v * v * u * b[1] + 3 * v * u * u * c[1] + u * u * u * d[1]
+    k = 0.3 + 0.5 * ease.outQ(Math.min(1, u * 1.6))
+  } else {
     // Straight at the camera, growing until it fills the screen; then it roars on past overhead.
     const q = span(t, T_DIVE, T_PASS)
-    const c = ease.inC(q)
-    k = lerp(0.46, 3.7, c)
-    x = lerp(126, 170, ease.outQ(q))
-    y = lerp(40, 4, ease.inQ(q))
+    k = lerp(0.5, 3.7, ease.inC(q))
+    x = lerp(TURN.x, 168, ease.outQ(q))
+    y = lerp(TURN.y, 36, ease.outQ(Math.min(1, q * 1.4))) - 30 * ease.inQ(q)
     const p = span(t, T_PASS, T_PASS + 0.16)
     if (p >= 1) return null
     y -= 320 * ease.inQ(p)
   }
-  // A wingbeat's bob, and the camera still coming down the sky.
-  y += Math.sin(t * 15 + i * 2) * 3 * k + shiftOf(t, SHIFT.cloud)
-  return { x, y, k }
+  // A wingbeat's bob.
+  return { x, y: y + Math.sin(t * 15) * 3 * k, k }
 }
 
 /** Dragonite coming back over the League's roof to hover there and fire: from the top left, into its hover. */
@@ -534,9 +549,11 @@ function lightning(t: number) {
     // The roar's echo: the storm lit again round the shape, the shape gone.
     f(T_ROAR + 0.12, T_ROAR + 0.17, 0.5),
     f(T_ROAR + 0.24, T_ROAR + 0.27, 0.3),
-    // Once more behind the formation as it comes out, black against the light.
-    f(T_EMERGE + 0.2, T_EMERGE + 0.26, 0.7),
-    f(T_EMERGE + 0.32, T_EMERGE + 0.35, 0.4),
+    // Behind Dragonite as it bursts out, black against the light.
+    f(T_EMERGE - 0.02, T_EMERGE + 0.05, 0.75),
+    // As it comes about in the cloud: its shape again, smaller, nearer the middle.
+    f(T_TURN, T_TURN + 0.06, 0.85),
+    f(T_TURN + 0.11, T_TURN + 0.15, 0.55),
   )
 }
 
@@ -578,6 +595,7 @@ export const lanceChampion = championCinema<X>({
     st.screenShakes.push(
       [T_SHADOW, 0.25, 1],
       [T_ROAR, 0.7, 2],
+      [T_EMERGE + 0.32, 0.35, 1],
       [T_PASS - 0.1, 0.4, 2],
       [T_LAND, 0.5, 4],
       [T_BEAM, 0.6, 2],
@@ -633,7 +651,7 @@ export const lanceChampion = championCinema<X>({
           shape: 'px',
           colors: ['#fff6c8', '#ffbe2e', '#ff8a1e', '#a8281a'],
         })
-    // The formation tearing out of the clouds: vapour flung out in streaks.
+    // Dragonite tearing out of the clouds: vapour flung out in streaks.
     if (within(t, T_EMERGE, T_EMERGE + dt * 1.5))
       for (let i = 0; i < 22; i++) {
         const a = r() * Math.PI * 2
@@ -651,6 +669,21 @@ export const lanceChampion = championCinema<X>({
           colors: ['#c8ccf0', '#7a80b8', '#50548a'],
         })
       }
+    // Its fly-past: the air torn along behind it.
+    const by = flier(t)
+    if (by && t < T_BY && t > T_EMERGE + 0.15 && r() < 0.8)
+      s.fx.add({
+        // In its wake, not across it.
+        x: by.x + r.range(26, 60) * by.k,
+        y: by.y + r.range(-34, 34) * by.k,
+        vx: -r.range(280, 420),
+        vy: r.range(-40, 10),
+        life: 0.25,
+        size: 1,
+        shape: 'streak',
+        trail: 0.04,
+        colors: ['#c8ccff', '#8088c8', '#50548a'],
+      })
     // The dive: the air rushing past, streaks flying out from the middle of the screen.
     if (t > T_DIVE + 0.2 && t < T_PASS + 0.1)
       for (let i = 0; i < 3; i++) {
@@ -780,17 +813,17 @@ export const lanceChampion = championCinema<X>({
     cb.drawImage(s.clouds, 0, 0)
     // Lightning inside the bank, lighting it from within round the strike; the big one shows the shadow in it.
     if (flash > 0) {
-      const lead = flier(t, 0)
       const at =
         t < T_SHADOW
-          ? { x: 92, y: -34 }
+          ? { x: 92, y: -34, r: 56, sh: 0 }
           : t < T_ROAR
-            ? SHADOW
-            : t < T_EMERGE || !lead
-              ? { x: 120, y: -10 }
-              : { x: lead.x - 10, y: lead.y - shiftOf(t, SHIFT.cloud) - 6 }
-      const big = t >= T_SHADOW && t < T_ROAR
-      lightUp(s, s.lit, at.x - cx, at.y + CT, big ? 84 : 60, flash, big)
+            ? { ...SHADOW, r: 84, sh: 1.5 }
+            : t < T_EMERGE - 0.05
+              ? { x: 120, y: -10, r: 56, sh: 0 }
+              : t < T_TURN - 0.05
+                ? { ...SHADOW, r: 60, sh: 0 }
+                : { ...TURN, r: 60, sh: 0.6 }
+      lightUp(s, s.lit, at.x - cx, at.y + CT, at.r, flash, at.sh)
     }
     // Hyper Beam lights the storm's belly gold and blows it open over Dragonite's head.
     const d = hoverAt(t)
@@ -798,7 +831,7 @@ export const lanceChampion = championCinema<X>({
     const m = d && mouth(d)
     // Its light spreading along the storm's belly from where it strikes.
     const spread = 48 + 8 * Math.round(12 * ease.outC(span(t, T_BEAM, T_BEAM + 0.6)))
-    if (m && beam > 0) lightUp(s, s.fireLit, m.x - cx, -cy, spread, beam, false)
+    if (m && beam > 0) lightUp(s, s.fireLit, m.x - cx, -cy, spread, beam)
     const hole = m ? 56 * ease.outC(span(t, T_BEAM, T_BEAM + 0.5)) : 0
     if (m && hole > 1) {
       cb.globalCompositeOperation = 'destination-out'
@@ -813,15 +846,12 @@ export const lanceChampion = championCinema<X>({
       polyline(b, pts, '#8a8ae0', 3)
       polyline(b, pts, '#ffffff', 1)
     }
-    // The three Dragonite, vapour streaming off their wingtips; later the wingmen wheeling high over the Plateau.
-    for (let i = 2; i >= 0; i--) {
-      if (!i && t > T_DIVE + 0.25) continue
-      drawFlier(b, t, i)
-    }
-    for (let i = 1; i <= 2; i++) drawFlier(b, t, i, wheel(t, i))
     b.drawImage(s.range, 0, shiftOf(t, SHIFT.range))
     const pl = shiftOf(t, SHIFT.plateau)
     b.drawImage(s.plateau, 0, pl)
+    // Dragonite out of the storm and round the Plateau, vapour streaming off its wingtips (in front of all of it once
+    // near: its dive is drawn over the champion).
+    if (t <= T_DIVE + 0.25) drawFlier(b, t)
     // The braziers' light on the terrace, and the beam's over everything once it fires.
     const heat = fireAt(t)
     for (const [bx, by] of BRAZIERS) {
@@ -902,7 +932,7 @@ export const lanceChampion = championCinema<X>({
   },
   front(g, _s, t) {
     // The lead Dragonite's dive at the camera, so near it fills the screen.
-    if (t > T_DIVE + 0.25 && t < T_PASS + 0.2) drawFlier(g, t, 0)
+    if (t > T_DIVE + 0.25 && t < T_PASS + 0.2) drawFlier(g, t)
     if (within(t, T_SHADOW, T_SHADOW + 0.07)) screenFlash(g, '#c8ccff', 0.2)
     if (within(t, T_LAND, T_LAND + 0.07)) screenFlash(g, '#ffe8c0', 0.25)
     if (within(t, T_BEAM, T_BEAM + 0.08)) screenFlash(g, '#fff0b0', 0.3)
@@ -918,9 +948,16 @@ export const lanceChampion = championCinema<X>({
     [T_FLICK + 0.15, () => tone(62, 0.6, { type: 'sine', vol: 0.06, slide: -20 })],
     [T_SHADOW, () => (fxSound('thunder.strike'), hiss(0.6, { freq: 200, type: 'lowpass', vol: 0.08 }))],
     [T_ROAR, () => (fxSound('legend.roar'), tone(73, 0.8, { type: 'sawtooth', vol: 0.04, slide: -25 }))],
-    ...[0, 0.12, 0.24].map(
-      (d) => [T_EMERGE + d, () => hiss(0.25, { freq: 900, slide: 600, vol: 0.04 })] as const,
-    ),
+    // It tears out of the cloud and roars past the League; its cry as it comes about in the storm.
+    [T_EMERGE, () => hiss(0.3, { freq: 900, slide: 900, vol: 0.05 })],
+    [
+      T_EMERGE + 0.22,
+      () => (
+        hiss(0.55, { freq: 2600, slide: -2200, vol: 0.09 }),
+        tone(240, 0.5, { type: 'sawtooth', vol: 0.035, slide: -140 })
+      ),
+    ],
+    [T_TURN, () => tone(330, 0.45, { type: 'sawtooth', vol: 0.04, slide: -160 })],
     [T_DIVE + 0.1, () => hiss(0.6, { freq: 400, slide: 2600, vol: 0.06 })],
     [
       T_PASS - 0.05,
@@ -959,9 +996,9 @@ const beamAt = (t: number) =>
 
 /**
  * Part of the storm lit up: `src` (the same bank, lit) over the clouds through a dithered disc round (x, y) on the
- * cloud canvas, its strength k. With `shadow`, the dragon's shape dark inside the light.
+ * cloud canvas, its strength k. With `shadow` (its size), the dragon's shape dark inside the light.
  */
-function lightUp(s: S, src: Canvas, x: number, y: number, r: number, k: number, shadow: boolean) {
+function lightUp(s: S, src: Canvas, x: number, y: number, r: number, k: number, shadow = 0) {
   const l = s.litBuf.g
   const x0 = Math.round(x - r)
   const y0 = Math.round(y - r)
@@ -971,11 +1008,11 @@ function lightUp(s: S, src: Canvas, x: number, y: number, r: number, k: number, 
   if (shadow) {
     l.globalCompositeOperation = 'source-atop'
     const z = spriteSize(DRAGONITE)
-    drawSprite(l, DRAGONITE, Math.round(x), Math.round(y + z.h * 0.75), {
+    drawSprite(l, DRAGONITE, Math.round(x), Math.round(y + (z.h * shadow) / 2), {
       ...ON_CANVAS,
       sil: '#121236',
-      sx: 1.5,
-      sy: 1.5,
+      sx: shadow,
+      sy: shadow,
     })
   }
   l.globalCompositeOperation = 'destination-in'
@@ -993,28 +1030,29 @@ const lightMask = (r: number, k: number) =>
     }),
   )
 
-/** The wingmen back from their break, wheeling high over the Plateau while Lance lands and Dragonite fires. */
-function wheel(t: number, i: number): Fly | null {
-  if (t < T_SWOOP + 0.1 || t > REVEAL + 1.5) return null
-  const a = (t - T_SWOOP) * 1.4 + i * Math.PI + 0.6
-  return { x: 156 + Math.cos(a) * 92, y: 30 + Math.sin(a) * 9, k: 0.17 + 0.04 * Math.sin(a) }
-}
-
-/** One of the formation: rimmed in moonlight, vapour trailing off its wingtips; near, its own colours in the dark. */
-function drawFlier(g: G, t: number, i: number, at?: Fly | null) {
-  const pos = (tt: number) => (at === undefined ? flier(tt, i) : wheel(tt, i))
-  const f = at === undefined ? flier(t, i) : at
+/** Dragonite in flight: rimmed in moonlight, vapour trailing off its wingtips; near, its own colours in the dark. */
+function drawFlier(g: G, t: number) {
+  const f = flier(t)
   if (!f) return
   const z = spriteSize(DRAGONITE)
-  // The trails: where its wingtips were a moment ago, thinning out behind it.
-  const trail = ['#c8ccf0', '#8a90c8', '#5a5e98', '#3a3c70']
+  // The trails: where its wingtips were a moment ago, a vapour thinning out behind it.
+  const trail = ['#c8ccf0', '#9aa0d8', '#6a70a8']
+  const N = 14
   for (const side of [-1, 1]) {
     let prev: [number, number] | null = null
-    for (let j = 0; j < 9; j++) {
-      const p = pos(t - j * 0.03)
+    for (let j = 0; j < N; j++) {
+      const p = flier(t - j * 0.03)
       if (!p) break
-      const pt: [number, number] = [p.x + side * z.w * p.k * 0.42, p.y - z.h * p.k * 0.1]
-      if (prev) line(g, prev[0], prev[1], pt[0], pt[1], trail[Math.min(3, j >> 1)]!)
+      const pt: [number, number] = [p.x + side * z.w * p.k * 0.4, p.y - z.h * p.k * 0.12]
+      if (prev) {
+        const n = Math.max(1, Math.ceil(Math.hypot(pt[0] - prev[0], pt[1] - prev[1])))
+        for (let i = 0; i < n; i++) {
+          const x = Math.round(lerp(prev[0], pt[0], i / n))
+          const y = Math.round(lerp(prev[1], pt[1], i / n))
+          if ((1 - (j + i / n) / N) * 1.1 > bayer(x, y))
+            rect(g, x, y, 1, 1, trail[Math.min(2, (j * 3) / N) | 0]!)
+        }
+      }
       prev = pt
     }
   }
@@ -1022,7 +1060,7 @@ function drawFlier(g: G, t: number, i: number, at?: Fly | null) {
   drawSprite(g, DRAGONITE, Math.round(f.x), Math.round(f.y + (z.h * f.k) / 2), {
     ...ON_CANVAS,
     sx: f.k,
-    sy: f.k * (1 + 0.04 * Math.sin(t * 15 + i * 2)),
+    sy: f.k * (1 + 0.04 * Math.sin(t * 15)),
     sil: far ? '#0a0816' : undefined,
     tint: far ? null : { color: '#0a0818', a: f.k > 1.4 ? 0.5 : 0.625 },
     outline: f.k > 0.14 && f.k < 1.4 ? MOON_RIM : undefined,

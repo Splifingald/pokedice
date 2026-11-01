@@ -1,4 +1,4 @@
-// Friendship streaks and the Friend Market (docs/59): the status from the server (on game load, on the Friends and
+// Friendship streaks and the Friend Market (docs/60): the status from the server (on game load, on the Friends and
 // market pages, and on return to the tab, at most once a minute), a purchase put in the save with the gifts' own
 // opening, purchases a closed tab left unapplied, and the interactions only the game sees told to the server.
 import { create } from 'zustand'
@@ -184,7 +184,7 @@ export async function raidWithFriends(ids: string[], key: string | null): Promis
 
 export const seeFriendshipRules = () => mutateSave(markFriendshipRulesSeen)
 
-/** The Friend Ball's boost now (docs/59), from the last status: ×1 without one. */
+/** The Friend Ball's boost now (docs/60), from the last status: ×1 without one. */
 export function friendBallBoostNow(): number {
   const status = useFriendship.getState().status
   return friendBallBoost(

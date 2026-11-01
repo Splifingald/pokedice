@@ -72,6 +72,7 @@ import { FriendshipBits } from './kitchen/FriendshipBits'
 import { CalendarBits } from './kitchen/CalendarBits'
 import { DayNightBits } from './kitchen/DayNightBits'
 import { TalentBits } from './kitchen/TalentBits'
+import { OutfitBits } from './kitchen/OutfitBits'
 import { AreaVersusBits } from './kitchen/AreaVersusBits'
 import { IdleBits } from './kitchen/IdleBits'
 import { ShinyDexBits } from './kitchen/ShinyDexBits'
@@ -844,7 +845,7 @@ export function KitchenSink() {
       <Section title="The gift calendar: a door in every state (shut, today's, last chance, opened with each kind of gift, missed, busy), a calendar on its 10th day, Home's card (gold, later, done), the rules card and INFO, a door's opening (docs/55)">
         <CalendarBits />
       </Section>
-      <Section title="Friendship streaks and the Friend Market: coins, a streak badge (kept, waiting), the tiers' ladder, today's gauge, the Friend Ball's catch tag, the Friendship card (streaks waiting, none, loading, failed), a friend's streak (waiting, kept, top, lost, none), the shiny of the week (to buy, too poor, sold out), the items, the rules card and INFO, a purchase's opening (docs/59)">
+      <Section title="Friendship streaks and the Friend Market: coins, a streak badge (kept, waiting), the tiers' ladder, today's gauge, the Friend Ball's catch tag, the Friendship card (streaks waiting, none, loading, failed), a friend's streak (waiting, kept, top, lost, none), the shiny of the week (to buy, too poor, sold out), the items, the rules card and INFO, a purchase's opening (docs/60)">
         <FriendshipBits />
       </Section>
       <Section title="Day and night (Johto): the top bar's chip by day and by night, the fights' indicator, the list tags (its half, the other half), rules">
@@ -852,6 +853,9 @@ export function KitchenSink() {
       </Section>
       <Section title="Hidden talents: the gem (base, super, unknown), every talent, the sheet's box (carried, known, never met), the encounter's line, the result cards, the battle log, the trade toggle, rules (docs/51)">
         <TalentBits />
+      </Section>
+      <Section title="Outfits: the sheet's chip (a tap: the rules), the hat on a tile or a gift (each size), Santa Pikachu in each view (and Raichu, which has no outfit), the rules pop-up (docs/59)">
+        <OutfitBits />
       </Section>
       <Section title="Real-player battles: the intro, the tag, the card (a stranger, a rich friend), the rules, the result's part (won, lost; each friend request state), the Friends page's requests (docs/54)">
         <AreaVersusBits />

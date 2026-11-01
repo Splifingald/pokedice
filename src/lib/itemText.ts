@@ -1,4 +1,4 @@
-// An item's description as the player reads it now. The Friend Ball's (docs/59) says the boost it gives today:
+// An item's description as the player reads it now. The Friend Ball's (docs/60) says the boost it gives today:
 // "…current: ×{x}", filled from the player's best friendship streak (the engine's friendBallBoost).
 import { bestLiveStreak, friendBallBoost, utcDay } from '@/engine'
 import { useFriendship } from '@/store/friendship'

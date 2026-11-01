@@ -17,6 +17,8 @@ export interface YardMember {
   key: string
   dex: number
   shiny?: boolean
+  /** Its outfit (docs/59), as `outfitOf` gave it. */
+  outfit?: string | null
   name: string
   likes: string[]
 }
@@ -49,11 +51,11 @@ export function YardStage({
   const front = useRef<HTMLCanvasElement>(null)
   const imgs = useRef<(HTMLImageElement | null)[]>([])
 
-  const key = members.map((m) => `${m.key}:${m.dex}:${m.shiny ? 1 : 0}:${m.likes.join(',')}`).join('|')
+  const key = members.map((m) => `${m.key}:${m.dex}:${m.shiny ? 1 : 0}:${m.outfit ?? ''}:${m.likes.join(',')}`).join('|')
   // Showdown failing or stalling brings the local sprites (src/lib/showdownReach.ts).
   const down = useShowdownDown()
   const sprites = useMemo(
-    () => members.map((m) => stageSprite(m.dex, false, !!m.shiny)),
+    () => members.map((m) => stageSprite(m.dex, false, !!m.shiny, m.outfit)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [key, down],
   )

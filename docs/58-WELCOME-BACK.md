@@ -28,7 +28,7 @@ Behind its own admin switch (docs/15 §20), **Off by default**: while it's Off t
 | Never | For a **brand-new player** (no earlier day); with **no Supabase** (nothing is asked); while the switch is Off, or On for admin and it isn't the admin |
 | Small worlds, Extreme | The message comes; **its gift waits** for the main game outside a small world, as every message's gift does (`giftsWait`). The Extreme save never opens one |
 | How it arrives | **A developer's message with the tier's gifts** (the user's call), written by the server on the return. Its words are the game's, in the player's language (below) |
-| Rules and INFO (§20) | It has no page: **its rule is in the message itself** (a line under "You were away for 9 days…": from how many days, bigger the longer, how often), and **INFO under that message in My messages** shows its rules (the tiers and what they hold, the cooldown, the main game). The gifts' own rules pop-up still opens before a player's very first gift |
+| Rules and INFO (§20) | **None: no rules and no INFO** (the user's explicit exception, 2026-11-01: "No need for an info pop up at all for this feature"). The message says only "You were away for 9 days, so here's a gift to get you going again!"; a rule line under it and an INFO under the message in My messages were removed the same day. The gifts' own rules pop-up still opens before a player's very first gift, as for any gift |
 | Needs the gifts | The gift rides on a message, whose gift is hidden while the **Gifts** switch (Admin › Messages) is off. So the server sends a welcome back only while **both** switches are on for the player |
 
 ### What changed from the first brief, and why
@@ -103,11 +103,9 @@ Behind its own admin switch (docs/15 §20), **Off by default**: while it's Off t
 
 - The developer's messages' pop-up, on its turn: **"Welcome back, Sam!"**, "A gift for coming back. You'll find it again
   under Contact the developer → My messages.", the message ("You were away for 9 days, so here's a gift to get you going
-  again!" and its rule line), the wrapped gift ("5 things inside"), **OPEN THE GIFT**. Beside another message from the
+  again!", nothing more), the wrapped gift ("5 things inside"), **OPEN THE GIFT**. Beside another message from the
   developer, the pop-up is theirs ("A message from the developer!") with each message's title.
-- My messages: "Welcome back!", the same words, the gift (opened: what it held), and under it **Welcome-back gifts ·
-  INFO**: the rules (Away 3 days or more · Bigger the longer you were away: "3 days → ₽300 +3 · 7 days → ₽1,000 +4 ·
-  14 days → ₽2,500 +4" · One every 14 days at most · In your main game).
+- My messages: "Welcome back!", the same words, the gift (opened: what it held). No INFO of its own.
 - Every state is on `/kitchen-sink` (`WelcomeBackBits`).
 
 ## 6. The admin
@@ -137,5 +135,6 @@ Behind its own admin switch (docs/15 §20), **Off by default**: while it's Off t
   follow the account, no second gift elsewhere); a guest's history for the account; a player's forged message stripped
   (as the API's own roles) while the claim's goes in; the claims unreadable; the engine and the SQL agreeing on 14 cases.
 - `e2e/welcome-back.spec.ts`: back after 9 days (the ask with the local day, the pop-up and its words, the gifts' rules,
-  the opening, the save, My messages and INFO, a reload asking nothing more); nothing asked with either switch off.
-- `e2e/admin-config.spec.ts`: 26 switches, the Welcome back tab.
+  the opening, the save, My messages with no INFO of its own, a reload asking nothing more); nothing asked with either
+  switch off.
+- `e2e/admin-config.spec.ts`: 27 switches, the Welcome back tab.

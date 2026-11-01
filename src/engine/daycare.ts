@@ -585,7 +585,8 @@ export function hatchEgg(
   if (h.talent) inst.talent = true
   const shiny = !!h.shiny
   const isNew = !block.pokedex.includes(inst.dex)
-  const copies = shiny ? [] : ownedIn(cracked, to).filter((p) => p.dex === inst.dex && !p.shiny)
+  // A shiny or an outfit copy (docs/59) is its own Pokémon: a hatchling never replaces it.
+  const copies = shiny ? [] : ownedIn(cracked, to).filter((p) => p.dex === inst.dex && !p.shiny && !p.outfit)
   const kept = copies.every((p) => p.level < inst.level)
   const replaced = kept ? [...copies].sort((a, b) => a.level - b.level)[0] : undefined
   const { amount: gold, bonus } = earnedGold(kept ? 0 : cfg.notKeptGold, live)

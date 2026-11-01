@@ -1,4 +1,4 @@
-// Kitchen sink (dev only): friendship streaks and the Friend Market (docs/59) — the coins plate, a streak badge kept
+// Kitchen sink (dev only): friendship streaks and the Friend Market (docs/60) — the coins plate, a streak badge kept
 // and waiting, the tiers' ladder at each tier, today's gauge (empty, midway, capped), the Friendship card (loading,
 // failed, no streak, streaks waiting), a friend's streak (none, waiting, kept, at the top, after a lost one), the
 // market's shiny of the week (to buy, too poor, sold out), its items (to buy, short, sold out), its plate, the rules

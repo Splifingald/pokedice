@@ -15,15 +15,31 @@ export type PostLang = 'en' | 'fr'
 let frTable: Record<string, string> | null = null
 export function frenchTable(): Record<string, string> {
   if (frTable) return frTable
-  const rows = parseCsv(readFileSync(path.join(ROOT, 'src/i18n/strings.csv'), 'utf8'))
-  const col = (rows[0] ?? []).map((h) => h.trim()).indexOf('fr')
   frTable = {}
+  const sheet = readSheet()
+  if (!sheet) return frTable
+  const rows = parseCsv(sheet)
+  const col = (rows[0] ?? []).map((h) => h.trim()).indexOf('fr')
   for (const row of rows.slice(1)) {
     const key = (row[0] ?? '').trim()
     const value = row[col]
     if (key && !key.startsWith('#') && value) frTable[key] = value
   }
   return frTable
+}
+
+/** The sheet from the repository, or from beside the Netlify #events job (netlify.toml's included_files keeps its path
+ * under the function's working directory). Missing, the French posts still go out, with the English names. */
+function readSheet(): string | null {
+  for (const root of [ROOT, process.cwd()]) {
+    try {
+      return readFileSync(path.join(root, 'src/i18n/strings.csv'), 'utf8')
+    } catch {
+      // Not there: the next place.
+    }
+  }
+  console.warn('[french] src/i18n/strings.csv not found: the French posts use the English names')
+  return null
 }
 
 /** The sheet's French for a key, else the English it falls back to (as the game does). */

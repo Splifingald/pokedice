@@ -14,6 +14,7 @@ import {
   type Gift,
   type GiftLanded,
   type GiftsWait,
+  outfitOf,
 } from '@/engine'
 import { loadItemSprite, loadSprite, spriteKey } from '@/fx/sprites'
 import { giftTimeline, type GiftContent } from '@/fx/timelines/gift'
@@ -29,6 +30,7 @@ import { PixelIcon } from './icons'
 import { ItemSprite } from './ItemSprite'
 import { PixelButton } from './PixelButton'
 import { RulesModal, type RuleRow } from './RulesModal'
+import { outfitName } from './Outfit'
 import { MiniSprite } from './SpriteImg'
 import { StageCanvas, type StageHandle } from './StageCanvas'
 
@@ -96,6 +98,12 @@ export function GiftIcon({ g, size = 32 }: { g: Gift; size?: number }) {
     <span className="grid shrink-0 place-items-center" style={{ width: size, height: size }} aria-hidden>
       <PixelIcon name="coin" size={Math.round(size * 0.7)} />
     </span>
+  ) : outfitOf(data, g) ? (
+    // In an outfit (docs/59): the menu icon is the plain one, so its hat sits in the corner, as on the team's tiles.
+    <span className="relative -my-1 inline-block shrink-0">
+      <MiniSprite dex={g.dex} size={size} />
+      <PixelIcon name="santaHat" size={Math.max(10, Math.round(size * 0.4))} className="absolute -right-1 -top-0.5" />
+    </span>
   ) : (
     <MiniSprite dex={g.dex} size={size} className="-my-1" />
   )
@@ -114,6 +122,8 @@ export function useGiftText() {
             data.species[g.dex]?.name ?? t('ui.common.aPokemon'),
             t('ui.common.level.short', { n: g.level }),
             ...(g.shiny ? [t('ui.dayCare.shinyTag')] : []),
+            // Its outfit (docs/59), while outfits are on: off, the gift brings the plain Pokémon.
+            ...(outfitOf(data, g) ? [outfitName(g.outfit!)] : []),
           ].join(' ')
 }
 
@@ -138,6 +148,7 @@ function GiftName({ g }: { g: Gift }) {
             : t('ui.common.level.short', { n: g.level })}
       </span>
       {g.kind === 'pokemon' && g.shiny && <Chip tone="gold">{t('ui.dayCare.shinyTag')}</Chip>}
+      {g.kind === 'pokemon' && outfitOf(data, g) && <Chip tone="red">{outfitName(g.outfit!)}</Chip>}
     </>
   )
 }
@@ -286,8 +297,9 @@ function contentsOf(
   const loads: Promise<unknown>[] = []
   const contents = landed.map((l): GiftContent => {
     if (l.gift.kind === 'pokemon') {
-      loads.push(loadSprite(l.gift.dex, false, !!l.gift.shiny))
-      return { kind: 'mon', key: spriteKey(l.gift.dex, false, !!l.gift.shiny), shiny: !!l.gift.shiny }
+      const outfit = outfitOf(data, l.gift)
+      loads.push(loadSprite(l.gift.dex, false, !!l.gift.shiny, outfit))
+      return { kind: 'mon', key: spriteKey(l.gift.dex, false, !!l.gift.shiny, outfit), shiny: !!l.gift.shiny }
     }
     if (l.gift.kind === 'gold') return { kind: 'gold', key: 'gold' }
     const url = data.items[l.gift.key]?.spriteUrl

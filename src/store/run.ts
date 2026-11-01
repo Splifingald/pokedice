@@ -134,6 +134,9 @@ import {
   type ProgressRaid,
   friendBallTalent,
   isTalentBall,
+  outfitOf,
+  finishRerollLesson,
+  rerollLessonDue,
 } from '@/engine'
 import { activeSlot } from '@/save/storage'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type CatchState, type RunState } from './game'
@@ -646,6 +649,8 @@ function startBattle(
     level: p.level,
     hp: p.currentHp,
     shiny: p.shiny,
+    // Its outfit (docs/59), while the switch is on.
+    outfit: outfitOf(data, p),
     nickname: p.nickname,
     // Its hidden talent (docs/51), while the switch is on.
     talent: talentOf(data, p),
@@ -693,6 +698,8 @@ function startBattle(
       plates: plateTypes(save, data),
       enemyPlan: enemyPlanFor(save, data, enemy, trainer),
       auto,
+      // A new player's first fight teaches the reroll and the combo (docs/46 §6): played by hand, one foe.
+      rerollLesson: !auto && !double && rerollLessonDue(save, data, run.areaId),
       ...(double && {
         double: { foes: double.foes, leadUids: double.leadUids, plans: double.foes.map((f, i) => enemyPlanFor(save, data, f, trainerAt(i))) },
       }),
@@ -800,6 +807,8 @@ export function dispatchBattle(e: BattleEvent) {
   if (r.state === battle.state) return
   if (e.t === 'USE_ITEM' && r.log.some((l) => l.kind === 'item')) mutateSave((s) => consumeItem(s, e.key))
   useGame.setState({ battle: { ...battle, state: r.state, log: [...battle.log, ...r.log] } })
+  // The reroll lesson's ATTACK: it has played, for good (a fight that ends before it carries it to the next one).
+  if (r.state.lesson?.step === 'done' && battle.state.lesson?.step !== 'done') mutateSave(finishRerollLesson)
   const phase = r.state.phase
   if (phase === 'won' || phase === 'lost' || phase === 'fled') settleBattle(r.log.some((l) => l.kind === 'end' && l.reason === 'stalemate'))
 }

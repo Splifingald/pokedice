@@ -135,6 +135,8 @@ export function CenterView() {
       <PixelButton
         size="lg"
         className="whitespace-nowrap px-2"
+        // The dice tutorial's way Home right after Joey (docs/46 §5).
+        data-guide="center-home"
         onClick={() => {
           finishCenter()
           navigate('/home')

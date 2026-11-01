@@ -509,14 +509,17 @@ export function LeagueBoard({ home }: { home: LeagueHome }) {
 
 /**
  * The ranked rows themselves (Home's kitchen shows them too). The global board wins nothing, so no rewards are drawn,
- * and it can be long: its top 100, you with the trainers around you, and your friends (`boardWindow`).
+ * and it can be long: its top 100, you and your friends with their places, no one else (`boardWindow`, none around you).
  */
 export function LeagueRows({ rows, empty, global }: { rows: LeagueRow[]; empty: string; global?: boolean }) {
   const { t } = useT()
   const friends = useFriends((s) => s.ids)
   if (!rows.length) return <p className="m-0 p-4 text-center text-[19px] text-muted">{empty}</p>
   const items = global
-    ? boardWindow(rows.map((r) => ({ ...r, friendId: friends.has(r.id) ? r.id : null })))
+    ? boardWindow(
+        rows.map((r) => ({ ...r, friendId: friends.has(r.id) ? r.id : null })),
+        0,
+      )
     : rows.map((row) => ({ row }))
   return (
     <ol
