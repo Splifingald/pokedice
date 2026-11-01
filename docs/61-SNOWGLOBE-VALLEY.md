@@ -6,8 +6,9 @@ https://claude.ai/artifact/KCHnkbKDiL5VKTrcJz8JcN.
 
 Branch `claude/eloquent-galileo-b5uahz` (from `version/2_9`), a PR into `version/2_9`.
 
-**Status:** the content is built (§2–§3, migration 0120, not to run before the user's review). The Gift card and the
-five secret-area gameplays (§4) are designed; the user's first review (2026-11-01, notes left on the artifact's
+**Status:** the content is built (§2–§3, migration 0120, not to run before the user's review). **Moonlit Glade's
+Tracks in the Snow (§4.1) is built**, behind its switch, Off (migration 0122). The Gift card and the other secret-area
+gameplays (§4) are designed; the user's first review (2026-11-01, notes left on the artifact's
 feedback boxes) is folded in (§6), the Hall of Origin not yet reviewed. Until each is built and switched on, its area
 plays as a plain secret area (a short deck, then its boss or raid), which is how the content plays today.
 
@@ -149,6 +150,38 @@ secret area. Every number below is the admin's.
 - The artifact's prototype plays all three rounds, with the taps (both sizes) and the prints (every bush, or only the
   empty ones) to tune.
 
+**Built** (branch `claude/eloquent-galileo-b5uahz`), behind its switch `tracks`, **Off**. The rules as above, every
+number the admin's (Admin → Areas → Moonlit Glade → **Special mode: Tracks in the Snow**: each round's bushes a side,
+taps a snowfall, wild / finds / cabins, "not next to the first", and "hoofprints on empty bushes only"). How it plays:
+
+- **The way in** as the nightmare's (docs/30 §1): Home's CONTINUE says **ENTER THE GLADE**; the intro (the moon rises,
+  a reindeer's silhouette leaps across it into the bushes, "Tap to continue ▼"), then the pop-up with four short rules,
+  TEAM (healed as at a Center, the team can change), NOT NOW and **BEGIN THE SEARCH** (the server asked first for a
+  signed-in player: `tracks_open()`). No travel lock: a trip Home keeps the glade as it was.
+- **The bushes**: Stantler is hidden on the glade's first tap, anywhere but that bush (and on the 4 × 4 not one of its 8
+  neighbours; on a glade too small for that, anywhere but the first). Then the wild Pokémon, finds and cabins are
+  shuffled over the other bushes, the first one included. **The prints** point by row and column: straight when
+  Stantler shares the bush's row or column, else the diagonal of its quarter, so they never send the player past it. A
+  wild bush is a fight of the area's pool (never Stantler's species: Stantler is only ever the one found), a find its
+  loot, a cabin a Pokémon Center's heal.
+- **Stantler found**: rounds 1 and 2, a plain wild Stantler at its pool levels (24–28), never shiny; its K.O. clears the
+  round (the result card says so), caught or not. Round 3, the area's boss (shiny Stantler Lv.30) with **its own
+  entrance** on the battle stage (it rears up under the moon, its coat flashing gold). Fled, a draw, a missed throw: it
+  **bolts** (a fresh glade of the same round). Caught: the outro (the bushes settle, fresh snow covers the prints), the
+  glade **sealed** (`isAreaSealed`), then **closed for good** once the outro has played (`isAreaClosed`).
+- **A wipe**: back at the glade's edge (its way in), the team healed, XP, ₽, items and the cleared rounds kept; the
+  glade being searched is gone, a fresh one next time.
+- Off: the area plays as a plain secret area (its short deck, then its boss), as before. A glade in a save is kept.
+
+Files: engine `src/engine/tracks.ts`, `src/engine/tracksMode.ts` (hooks in `run.ts`: `isAreaSealed`, `isAreaClosed`,
+`applyWipe`, `arriveAtTracks`, `teamSwapsOpen`, the `tracks_round` event); store `src/store/run.ts` (`beginTracks`,
+`tapBush`, `meetBush`, `finishTracksOutro`; the found Stantler's K.O. and catch in `settleBattle` / `settleThrow`),
+`src/store/tracks.ts` (the server's check); UI `src/components/Tracks.tsx`, `src/screens/area/TracksRun.tsx`,
+`src/styles/tracks.css` (docs/15 §46); scenes `src/fx/timelines/tracks.ts`, `src/fx/timelines/cinema/stantler.ts`,
+sounds `tracks.*` in `src/audio/sfx.ts`; admin `src/admin/sections/TracksModeBox.tsx`; kitchen sink
+`src/screens/kitchen/TracksBits.tsx`; migration `supabase/migrations/0122_tracks_in_the_snow.sql`. Tests
+`tests/engine/tracks-in-the-snow.test.ts`, `tests/tracks-in-the-snow-sql.test.ts`, `e2e/tracks-in-the-snow.spec.ts`.
+
 ### 4.2 Evergreen Hill: Christmas Eve on the hill
 
 - (The Lost Presents were dropped by the review.) A simple deck: 2 wild, 2 trainers, a Pokémon Center and **3 Gift
@@ -210,6 +243,11 @@ stairway of light, then the Judgment (Hall of Origin). Once its boss is caught a
    adds the world to `smallWorlds` (the switch and the other worlds kept) and bumps `configVersion`.
    `supabase/seed.sql` does not carry it (content migrations aren't inlined there, as Haunted Hollow's).
 2. Or, over an admin export: `pnpm snowglobe-valley <in.json> <out.json>`, then `pnpm import-bundle`.
+3. **Tracks in the Snow** (§4.1): run in the Supabase SQL editor, after 0120,
+   [`supabase/migrations/0122_tracks_in_the_snow.sql`](https://github.com/Splifingald/pokedice/blob/claude/eloquent-galileo-b5uahz/supabase/migrations/0122_tracks_in_the_snow.sql)
+   (its switch `tracks`, Off, and `tracks_open()`; safe to run again). `supabase/seed.sql` carries it too (inlined).
+   Moonlit Glade's mode itself comes with 0120. Then Admin → Areas → Moonlit Glade → Special mode: Tracks in the Snow:
+   the switch **On for admin** to try it, **On for everyone** to open it. Publish.
 
 Later changes, once 0120 has run on live, come as patches of their own (as Haunted Hollow's 0055 onwards), never by
 regenerating 0120.
