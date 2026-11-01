@@ -274,7 +274,7 @@ function startFight(
       talent: carriedTalent(data, m.dex, m.talent),
     })),
   }
-  // A friend's Pokémon the game doesn't know (a forged save) is left out rather than failing the whole fight (docs/61).
+  // A friend's Pokémon the game doesn't know (a forged save) is left out rather than failing the whole fight (docs/63).
   const picked = friends
     .map((f) => ({ ...f, team: f.team.filter((m) => data.species[m.dex]) }))
     .filter((f) => f.team.length > 0)

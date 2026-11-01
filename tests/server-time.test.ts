@@ -36,7 +36,7 @@ describe('reading the server’s time', () => {
     expect(trustedNow()).not.toBeNull()
   })
 
-  it('reads the steady clock, so moving the device’s clock after a reading changes nothing (docs/61)', async () => {
+  it('reads the steady clock, so moving the device’s clock after a reading changes nothing (docs/63)', async () => {
     net.wait = 0
     net.server = T0
     await syncServerTime()

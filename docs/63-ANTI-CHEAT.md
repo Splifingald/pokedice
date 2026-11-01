@@ -55,11 +55,11 @@ an old page's rollback (docs/49).
 
 ## 4. Setting it up
 
-1. Run in the Supabase SQL editor, after 0107 (safe to run again):
-   [`supabase/migrations/0108_anti_cheat.sql`](https://github.com/Splifingald/pokedice/blob/ccr-47b7b5da-qaz2eu/supabase/migrations/0108_anti_cheat.sql)
+1. Run in the Supabase SQL editor, after 0108 (safe to run again):
+   [`supabase/migrations/0114_anti_cheat.sql`](https://github.com/Splifingald/pokedice/blob/ccr-47b7b5da-qaz2eu/supabase/migrations/0114_anti_cheat.sql)
 2. `supabase/seed.sql` doesn't carry it: it needs the optional features' tables (trades, raids, push, the League, area
    versus), which seed.sql leaves out.
 3. It changes one admin setting: the League's `minWinSeconds` goes from 5 to 30 where it was lower.
 
-Tests: `tests/anti-cheat-sql.test.ts` (0108 on PGlite, over every migration before it), `tests/server-time.test.ts`,
+Tests: `tests/anti-cheat-sql.test.ts` (0114 on PGlite, over every migration before it), `tests/server-time.test.ts`,
 `e2e/admin-analytics.spec.ts` (the suspicious list).

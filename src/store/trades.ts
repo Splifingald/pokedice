@@ -168,7 +168,7 @@ export async function checkTrades(force = false, now = Date.now(), every = CHECK
     next = reconcileListings(next, st.data, open, new Set(rows.map((r) => r.id)))
     for (const r of rows) {
       // One trade the game can't apply (a species it doesn't know: a forged save on the other side) stays unapplied on
-      // its own; it must never hold back every other trade, as one shared try did (docs/61).
+      // its own; it must never hold back every other trade, as one shared try did (docs/63).
       try {
         if (r.role === 'owner' && r.status === 'taken' && r.takerMon) {
           const res = applyTaken(

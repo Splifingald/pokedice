@@ -266,7 +266,7 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   Setup in [docs/17](docs/17-DISCORD-SIGN-IN.md) and `/setup` step 7; no environment variable.
 - **Anti-cheat** — an edited save stays in its own game: the server checks everything that reaches other players
   (trades, boards, Versus, raids, area versus), a ban reaches all of it, and Admin → Analytics → Suspicious saves lists
-  the saves that look edited. See [docs/61](docs/61-ANTI-CHEAT.md); needs `supabase/migrations/0108_anti_cheat.sql`,
-  after 0107.
+  the saves that look edited. See [docs/63](docs/63-ANTI-CHEAT.md); needs `supabase/migrations/0114_anti_cheat.sql`,
+  after 0108.
 - `allowVoluntarySwitch`, `enemyUpgradeLevel`, `goldMultiplier`, `forcedCenterWhenHurt` and `scaleLevelSpread` are
   `game_config` keys (the spec was silent on these).

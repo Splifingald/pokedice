@@ -1,5 +1,5 @@
-// Migration 0108 against a real Postgres (PGlite, in process), on every migration before it as the live database has
-// them: what an edited save can no longer do to other players (docs/61). Unknown species don't trade, a Pokémon given
+// Migration 0114 against a real Postgres (PGlite, in process), on every migration before it as the live database has
+// them: what an edited save can no longer do to other players (docs/63). Unknown species don't trade, a Pokémon given
 // in a trade never trades again from its old trainer, cards and teams hold only what the game has, the Extreme clock is
 // the server's, a raid needs a fight, one League match at a time, a ban reaches everything shared, and the admin's
 // suspicious list finds an edited save. Supabase's own pieces (auth, the roles) are stood in for at the top.
@@ -10,8 +10,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
-const FILE = '0108_anti_cheat.sql'
-// Run on the live database in another order (or needing Supabase's realtime): left out here, as 0108 reads none of them.
+const FILE = '0114_anti_cheat.sql'
+// Run on the live database in another order (or needing Supabase's realtime): left out here, as 0114 reads none of them.
 const SKIP = new Set([
   '0022_player_avatar.sql',
   '0023_leaderboard_inactive.sql',
@@ -115,7 +115,7 @@ beforeAll(async () => {
   // Supabase grants every new function to anon and authenticated directly; PGlite only to public.
   await db.exec(`grant execute on function versus_league_close_week(date), versus_league_seat_bots(date),
     versus_league_join(uuid, date), player_powers(uuid, text) to anon, authenticated`)
-  // Players' rows written before 0108, which it must take back.
+  // Players' rows written before 0114, which it must take back.
   await db.exec(
     `insert into auth.users (id) values ${Object.values(U)
       .map((u) => `('${u}')`)
@@ -149,7 +149,7 @@ afterAll(async () => {
   await db?.close()
 })
 
-describe('0108: internal functions', () => {
+describe('0114: internal functions', () => {
   it('takes the League’s internal functions back from players', async () => {
     for (const fn of [
       'versus_league_close_week(date)',
@@ -173,7 +173,7 @@ describe('0108: internal functions', () => {
   })
 })
 
-describe('0108: names', () => {
+describe('0114: names', () => {
   it('drops invisible characters and stacked accents, keeps real names', async () => {
     const clean = async (s: string) => (await one<{ n: string }>(`select name_clean($1) n`, [s])).n
     expect(await clean('Ash')).toBe('Ash')
@@ -188,7 +188,7 @@ describe('0108: names', () => {
   })
 })
 
-describe('0108: trades', () => {
+describe('0114: trades', () => {
   beforeAll(async () => {
     await putSave(U.ash, save({ name: 'ASH', box: [mon('a0', 1, 30), mon('a1', 4, 12), mon('a2', 7, 5)] }))
     await putSave(
@@ -256,7 +256,7 @@ describe('0108: trades', () => {
   })
 })
 
-describe('0108: boards', () => {
+describe('0114: boards', () => {
   it('a card holds only what the game has, on the server’s clock', async () => {
     await putSave(
       U.gary,
@@ -301,7 +301,7 @@ describe('0108: boards', () => {
   })
 })
 
-describe('0108: Extreme speedrun', () => {
+describe('0114: Extreme speedrun', () => {
   const run = (o: object) =>
     save({ name: 'ERIKA', box: [mon('e0', 1, 5)], extra: { extreme: { runs: { kanto: o } } } })
   const best = async () =>
@@ -341,7 +341,7 @@ describe('0108: Extreme speedrun', () => {
   })
 })
 
-describe('0108: raids', () => {
+describe('0114: raids', () => {
   beforeAll(async () => {
     await putSave(U.brock, save({ name: 'BROCK', box: [mon('b0', 25, 30), mon('b1', 8, 20)] }))
   })
@@ -381,7 +381,7 @@ describe('0108: raids', () => {
   })
 })
 
-describe('0108: teams others meet', () => {
+describe('0114: teams others meet', () => {
   it('refuses a Versus or raid team with a battle form or a species the game doesn’t have', async () => {
     await putSave(
       U.misty,
@@ -440,7 +440,7 @@ describe('0108: teams others meet', () => {
   })
 })
 
-describe('0108: the Versus League', () => {
+describe('0114: the Versus League', () => {
   beforeAll(async () => {
     await db.query(
       `update game_config set value = value || '{"access": "all"}'::jsonb where key = 'versusLeague'`,
@@ -498,7 +498,7 @@ describe('0108: the Versus League', () => {
   })
 })
 
-describe('0108: a ban reaches everything shared', () => {
+describe('0114: a ban reaches everything shared', () => {
   it('took the teams of a player banned before, and takes them at the ban', async () => {
     await db.query(`insert into leaderboard_bans (user_id) values ($1) on conflict do nothing`, [U.cheat])
     const t = await one<{ n: number }>(`select count(*)::int n from versus_teams where user_id = $1`, [
@@ -514,7 +514,7 @@ describe('0108: a ban reaches everything shared', () => {
   })
 })
 
-describe('0108: push and guests', () => {
+describe('0114: push and guests', () => {
   it('takes only the browsers’ push services as endpoints', async () => {
     const add = (endpoint: string) =>
       db.query(
@@ -564,7 +564,7 @@ describe('0108: push and guests', () => {
   })
 })
 
-describe('0108: the admin’s suspicious list', () => {
+describe('0114: the admin’s suspicious list', () => {
   it('is the admin’s only', async () => {
     expect(await fails(U.ash, `select admin_suspicious()`)).toContain('admin only')
   })

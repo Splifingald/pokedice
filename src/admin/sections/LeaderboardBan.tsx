@@ -1,6 +1,6 @@
 // Admin → Analytics → player → Leaderboard: ban a signed-in player from everything other players see, or lift the ban.
 // Their game and cloud save are untouched. `leaderboard()` leaves them out (table leaderboard_bans, migration 0011), and
-// since 0108 (docs/61) their Versus, raid and area versus teams go, their open listings are cancelled, their League
+// since 0114 (docs/63) their Versus, raid and area versus teams go, their open listings are cancelled, their League
 // trophies this week go to 0, and none of these take them back until the ban is lifted.
 import { useEffect, useState } from 'react'
 import { PixelButton } from '@/components/PixelButton'

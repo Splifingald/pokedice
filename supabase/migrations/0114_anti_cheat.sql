@@ -1,4 +1,4 @@
--- Anti-cheat (docs/61-ANTI-CHEAT.md). A player's save is their own JSON, so the server can't stop them editing their
+-- Anti-cheat (docs/63-ANTI-CHEAT.md). A player's save is their own JSON, so the server can't stop them editing their
 -- own game. What it can stop is an edited save reaching other players (trades, boards, Versus, raids, area versus)
 -- and a claim nobody could have earned. Nothing here changes what an honest player sees or does. The limits are set
 -- from the live data of 2026-11-01, well above what any honest player reached.
@@ -38,8 +38,8 @@
 --     in the analytics (the record is 361).
 -- 13. admin_suspicious(): the admin's list of saves that look edited, on demand (Admin → Analytics → Suspicious).
 --
--- Run after 0107. Safe to run again. Not in seed.sql: it needs the optional features' tables (0044, 0045, 0053, 0082,
--- 0099), which seed.sql leaves out.
+-- Run after 0108 (2.9's trade picks; 0109–0113 touch nothing here). Safe to run again. Not in seed.sql: it needs the
+-- optional features' tables (0044, 0045, 0053, 0082, 0099), which seed.sql leaves out.
 begin;
 
 -- ---------------------------------------------------------------- 1. internal League functions

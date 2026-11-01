@@ -1,5 +1,5 @@
-// Admin → Analytics → Suspicious saves (docs/61): every cloud save with something no honest game has reached, and why.
-// The database reads every save for it (about a second), so it is asked (admin_suspicious, migration 0108) only when
+// Admin → Analytics → Suspicious saves (docs/63): every cloud save with something no honest game has reached, and why.
+// The database reads every save for it (about a second), so it is asked (admin_suspicious, migration 0114) only when
 // FETCH is pressed. A row opens the player's panel, where the ban is.
 import { useState } from 'react'
 import { PixelButton } from '@/components/PixelButton'
@@ -92,7 +92,7 @@ export function SuspiciousSaves({ onPick }: { onPick: (player: string, name: str
       </div>
       {error && (
         <p className="text-lg text-danger-light">
-          Could not fetch: {error}. Has supabase/migrations/0108_anti_cheat.sql been run?
+          Could not fetch: {error}. Has supabase/migrations/0114_anti_cheat.sql been run?
         </p>
       )}
       {rows && !shown.length && <p className="text-lg opacity-80">Nothing suspicious.</p>}

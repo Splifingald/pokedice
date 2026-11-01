@@ -47,7 +47,7 @@ export default async function handler(): Promise<Response> {
       return (data ?? []) as DueRow[]
     },
     // A push service that never answers must not hold up the run (Netlify stops it after about 30 s, and every notice it
-    // claimed would be lost): 5 s each at most (docs/61).
+    // claimed would be lost): 5 s each at most (docs/63).
     push: (sub, body) =>
       webpush.sendNotification(sub, body, { TTL: TTL_SECONDS, urgency: 'normal', timeout: PUSH_TIMEOUT_MS }),
     report: async (ok, gone) => {

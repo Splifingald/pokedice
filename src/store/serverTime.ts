@@ -70,7 +70,7 @@ export async function syncServerTime(): Promise<void> {
 
 /**
  * The real time now, or null while unknown: the last reading carried on the page's steady clock (trustedNow), so moving
- * the device's clock between two readings changes nothing (docs/61). The offset stands in only where no reading set the
+ * the device's clock between two readings changes nothing (docs/63). The offset stands in only where no reading set the
  * anchor (tests that set it by hand).
  */
 export function serverNow(): number | null {
