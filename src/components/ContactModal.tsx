@@ -24,7 +24,7 @@ import { GiftOpened, GiftPresent, GiftRulesModal } from './Gifts'
 import { Sheet } from './Sheet'
 import { PixelButton } from './PixelButton'
 import { InfoButton } from './RulesModal'
-import { useWelcomeWords, WelcomeBackInfo } from './WelcomeBack'
+import { useWelcomeWords } from './WelcomeBack'
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString(getLang(), { dateStyle: 'medium', timeStyle: 'short' })
@@ -172,8 +172,6 @@ export function MessageItem({
         ) : (
           <GiftPresent count={gifts.length} wait={wait} busy={busy} onOpen={onOpen} />
         ))}
-      {/* A welcome back's rules, read again here (docs/15 §20): it has no page of its own. */}
-      {m.from_admin && welcomeBackNote(m.reply) && <WelcomeBackInfo className="mt-1 self-end" />}
     </li>
   )
 }
