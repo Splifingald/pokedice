@@ -1108,7 +1108,7 @@ export interface GameConfig {
   looks: { access: EventAccess }
   /** Trick or Treat (docs/29): its switch, numbers and each area's ghosts. The server reads the switch too. */
   trickOrTreat: TrickOrTreatConfig
-  /** Pokémon posing as items (docs/61 §3): its switch. The server reads the same row (0110: side_quest_open). */
+  /** Pokémon posing as items (docs/61 §3): its switch. The server reads the same row (0111: side_quest_open). */
   disguises: { access: EventAccess }
   /** The Safari (docs/61 §4): its switch, its gauge's numbers, tiers and a round's price. The server reads the switch. */
   safari: SafariConfig

@@ -969,7 +969,7 @@ export function buildSql(b: {
     'alter table pokemon add column if not exists form jsonb;',
     // Day and night (0061, docs/32): a wild Pokémon met only by day or only by night.
     'alter table area_wild_pool add column if not exists time_of_day text;',
-    // Pokémon posing as items (docs/61 §3, migration 0110).
+    // Pokémon posing as items (docs/61 §3, migration 0111).
     'alter table area_loot_pool add column if not exists disguise jsonb;',
     prelude,
     upsert(

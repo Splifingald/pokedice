@@ -319,11 +319,11 @@ points (§5.2).
 
 | Part | Engine | Screens | Switch | Migration |
 |---|---|---|---|---|
-| 1. Regigigas | `UnlockCondition` `caught` (`conditionStatus`, `pokedexEverywhere`), an area already entered stays open (`isAreaUnlocked`) | the lock's words everywhere a condition shows | none (content) | 0108 |
-| 2. Roadblocks | `BossDef.roadblock`, `roadblockOf` | the boss card's IN THE WAY and line, the area and Home's lines, the Pokédex, a plain victory and catch | none (content) | 0109 |
-| 3. Disguises | `LootEntry.disguise`, `engine/disguises.ts`; a find drawn as a wild encounter with `disguisedAs` | FindView: the ball, then it springs out (`SprungThing`), FIGHT | `disguises` | 0110 (+ `side_quest_open`) |
-| 4. Safaris | `engine/safari.ts`; Trick or Treat's engine with a theme (`TrickState.theme`, `lureCfg`); the `safari` encounter | Trick or Treat's screen in the Safari's look and words; the round's price under CONTINUE | `safari` | 0111 |
-| 5. Rivals and gifts | `engine/moments.ts`, the content in `engine/momentsContent.ts` (written by `scripts/patch-side-quests.ts`) | the rival's line as the fight opens; GiftView; Eggs in the Box (HATCHING) | `rivals`, `giftMoments` | 0112 |
+| 1. Regigigas | `UnlockCondition` `caught` (`conditionStatus`, `pokedexEverywhere`), an area already entered stays open (`isAreaUnlocked`) | the lock's words everywhere a condition shows | none (content) | 0109 |
+| 2. Roadblocks | `BossDef.roadblock`, `roadblockOf` | the boss card's IN THE WAY and line, the area and Home's lines, the Pokédex, a plain victory and catch | none (content) | 0110 |
+| 3. Disguises | `LootEntry.disguise`, `engine/disguises.ts`; a find drawn as a wild encounter with `disguisedAs` | FindView: the ball, then it springs out (`SprungThing`), FIGHT | `disguises` | 0111 (+ `side_quest_open`) |
+| 4. Safaris | `engine/safari.ts`; Trick or Treat's engine with a theme (`TrickState.theme`, `lureCfg`); the `safari` encounter | Trick or Treat's screen in the Safari's look and words; the round's price under CONTINUE | `safari` | 0112 |
+| 5. Rivals and gifts | `engine/moments.ts`, the content in `engine/momentsContent.ts` (written by `scripts/patch-side-quests.ts`) | the rival's line as the fight opens; GiftView; Eggs in the Box (HATCHING) | `rivals`, `giftMoments` | 0113 |
 
 Where it differs from the plan:
 
@@ -332,7 +332,7 @@ Where it differs from the plan:
   numbers, each Safari's tiers); an area's Safari toggle and a loot row's disguise are in Areas; a Snowpoint-style
   condition is a new kind in the unlock conditions. The meetings and gifts are code (as Route 1's opening is), the
   database holding only their switches and an Egg's hours.
-- **The server's check** is one function for the four switches, `side_quest_open(key)` (0110). A rival's or a gift's
+- **The server's check** is one function for the four switches, `side_quest_open(key)` (0111). A rival's or a gift's
   moment, dealt as the next card is, waits for the answer to be known (`sideQuestKnown`): the first time, it comes with
   the next card.
 - **Rival trainers**: 51 new rows (Blue ×4 meetings, Silver ×5, May ×5, Barry ×1, three versions each; Wally ×2) and
@@ -357,12 +357,12 @@ Where it differs from the plan:
 
 1. Run the five migrations in the Supabase SQL editor, in order (each safe to run again; `supabase/seed.sql` carries
    their content, its schema part the `disguise` column):
-   - https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0108_regigigas_regis.sql
-   - https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0109_roadblocks.sql
-   - https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0110_disguises.sql
-   - https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0111_safaris.sql
-   - https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0112_set_moments.sql
-2. Parts 1, 2 and 4's split are content: they apply as soon as 0108, 0109 and 0111 are run (Snowpoint Temple's Regis,
+   - https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0109_regigigas_regis.sql
+   - https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0110_roadblocks.sql
+   - https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0111_disguises.sql
+   - https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0112_safaris.sql
+   - https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0113_set_moments.sql
+2. Parts 1, 2 and 4's split are content: they apply as soon as 0109, 0110 and 0112 are run (Snowpoint Temple's Regis,
    the roadblocks, Fuchsia City and the four Safaris off the main road).
 3. Admin → Config: **Pokémon posing as items**, **Safari Zones**, **Rivals on the road**, **Gift Pokémon**: On for admin
    to try them, then On for everyone. Events → Safari has its numbers.

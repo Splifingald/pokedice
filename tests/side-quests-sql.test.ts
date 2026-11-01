@@ -1,4 +1,4 @@
-// The side quests' migrations (docs/61), 0108 to 0112, against a real Postgres (PGlite, in process), over the areas
+// The side quests' migrations (docs/61), 0109 to 0113, against a real Postgres (PGlite, in process), over the areas
 // they touch as they were live before them: Snowpoint Temple's conditions, the roadblocks' areas and their wild rows, the
 // disguises' areas, the four Safaris (Kanto's still holding Fuchsia's Gym) and the towns their trainers move to, Blue's
 // two rows. Each migration does what the bundle has; run again, nothing moves but the content version.
@@ -11,7 +11,7 @@ import type { Area, Trainer } from '@/engine'
 
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
-const FILES = ['0108_regigigas_regis.sql', '0109_roadblocks.sql', '0110_disguises.sql', '0111_safaris.sql', '0112_set_moments.sql']
+const FILES = ['0109_regigigas_regis.sql', '0110_roadblocks.sql', '0111_disguises.sql', '0112_safaris.sql', '0113_set_moments.sql']
 
 const AUTH = `create role anon; create role authenticated; create schema auth; create table auth.users (id uuid primary key);
   create function auth.uid() returns uuid language sql stable as $$
@@ -66,7 +66,7 @@ async function schema(db: PGlite) {
     insert into game_config (key, value) values ('configVersion', '200');`)
 }
 
-/** The content as it was before 0108: undone from the bundle by hand, area by area. */
+/** The content as it was before 0109: undone from the bundle by hand, area by area. */
 async function before(db: PGlite) {
   const kantoSafari = byId(KANTO_SAFARI)
   const dexes = new Set<number>()
@@ -144,7 +144,7 @@ async function before(db: PGlite) {
 const one = async <T,>(db: PGlite, text: string, params: unknown[] = []) => (await db.query<T>(text, params)).rows[0]
 const all = async <T,>(db: PGlite, text: string, params: unknown[] = []) => (await db.query<T>(text, params)).rows
 
-describe('the side quests’ migrations (0108–0112)', () => {
+describe('the side quests’ migrations (0109–0113)', () => {
   let db: PGlite
   beforeAll(async () => {
     db = new PGlite()
@@ -153,12 +153,12 @@ describe('the side quests’ migrations (0108–0112)', () => {
     for (const f of FILES) await db.exec(sql(f))
   }, 60_000)
 
-  it('0108: Snowpoint Temple waits for the three Regis', async () => {
+  it('0109: Snowpoint Temple waits for the three Regis', async () => {
     const r = await one<{ u: unknown[] }>(db, 'select unlock_conditions u from areas where id = $1', [TEMPLE])
     expect(r!.u).toContainEqual({ kind: 'caught', dex: [377, 378, 379] })
   })
 
-  it('0109: each roadblock is its area’s boss and out of its wild pool', async () => {
+  it('0110: each roadblock is its area’s boss and out of its wild pool', async () => {
     for (const [id, dex] of ROADS) {
       const a = await one<{ b: { dex: number; roadblock: string }[] }>(db, 'select legendary_boss b from areas where id = $1', [id])
       expect(a!.b.some((b) => b.dex === dex && !!b.roadblock), id).toBe(true)
@@ -167,7 +167,7 @@ describe('the side quests’ migrations (0108–0112)', () => {
     }
   })
 
-  it('0110: the disguises and the server’s switch for the side quests', async () => {
+  it('0111: the disguises and the server’s switch for the side quests', async () => {
     const n = await one<{ n: number }>(db, 'select count(*)::int n from area_loot_pool where disguise is not null')
     expect(n!.n).toBe(areas.flatMap((a) => a.lootPool.filter((l) => l.disguise)).length)
     expect((await one<{ v: boolean }>(db, "select side_quest_open('disguises') v"))!.v).toBe(false)
@@ -177,7 +177,7 @@ describe('the side quests’ migrations (0108–0112)', () => {
     await db.exec(`update game_config set value = '{"access":"off"}' where key = 'disguises'`)
   })
 
-  it('0111: Kanto’s area is Fuchsia City, its Safari a secret area of its own; the others secret too', async () => {
+  it('0112: Kanto’s area is Fuchsia City, its Safari a secret area of its own; the others secret too', async () => {
     const f = await one<{ name: string; w: Record<string, number>; r: number }>(db, 'select name, encounter_weights w, rounds_to_clear r from areas where id = $1', [FUCHSIA])
     expect(f).toMatchObject({ name: 'Fuchsia City', r: 1 })
     expect(f!.w.trainer).toBe(5)
@@ -195,7 +195,7 @@ describe('the side quests’ migrations (0108–0112)', () => {
     expect((await one<{ v: { roundPrice: number } }>(db, "select value v from game_config where key = 'safari'"))!.v.roundPrice).toBe(100)
   })
 
-  it('0112: the rivals’ trainers, Blue’s versions, the Kanto starters in the Friend Safari, the switches Off', async () => {
+  it('0113: the rivals’ trainers, Blue’s versions, the Kanto starters in the Friend Safari, the switches Off', async () => {
     const n = await one<{ n: number }>(db, "select count(*)::int n from trainers where name in ('Silver', 'May', 'Wally') or (name = 'Rival Blue' and id <> all($1::uuid[]))", [BLUE])
     expect(n!.n).toBeGreaterThanOrEqual(15 + 15 + 2 + 16)
     expect((await one<{ r: number }>(db, 'select rival_of r from trainers where id = $1', [BLUE[0]]))!.r).toBe(4)

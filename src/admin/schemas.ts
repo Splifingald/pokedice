@@ -309,7 +309,7 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
       unique_find: z.boolean(),
       min_qty: int(1),
       max_qty: int(1),
-      // A Pokémon posing as the find (docs/61 §3). Optional so a database before migration 0110 still loads.
+      // A Pokémon posing as the find (docs/61 §3). Optional so a database before migration 0111 still loads.
       disguise: z
         .object({ dex: int(1, 99999), minLevel: int(1, 100), maxLevel: int(1, 100) })
         .refine((d) => d.maxLevel >= d.minLevel, { message: 'max below min', path: ['maxLevel'] })

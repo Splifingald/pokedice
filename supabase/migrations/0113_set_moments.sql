@@ -80,6 +80,6 @@ on conflict (id) do nothing;
 insert into game_config (key, value) values ('rivals', '{"access":"off"}'::jsonb) on conflict (key) do nothing;
 insert into game_config (key, value) values ('giftMoments', '{"access":"off","eggHours":6}'::jsonb) on conflict (key) do nothing;
 
--- The two switches join the side quests' server check (0110): the same function, the same four keys.
+-- The two switches join the side quests' server check (0111): the same function, the same four keys.
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 commit;

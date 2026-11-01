@@ -1,5 +1,5 @@
 // The side quests' server check (docs/61, docs/15 §20): the game only deals a feature while its switch is on for the
-// player, and for a signed-in player the server confirms it (side_quest_open(key), migration 0110) at the moment it
+// player, and for a signed-in player the server confirms it (side_quest_open(key), migration 0111) at the moment it
 // matters (a disguise springing out, a Safari round, a rival's or a gift's moment), so an old build or a hand-made save
 // can't use a feature that's off. A guest's switch can only be "On for everyone", which the content already says. The
 // answer is kept for a few minutes per feature: one call per session in practice.

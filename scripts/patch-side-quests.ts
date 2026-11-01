@@ -4,7 +4,7 @@
  *
  * This file is the single source of that content for the bundle. `tsx scripts/patch-side-quests.ts --data` patches
  * src/data in place (then `pnpm seed-sql` writes supabase/seed.sql from it); the live database gets the same rows from
- * the migrations 0108 to 0112, which hold the same values. Safe to run again: every step looks before it writes.
+ * the migrations 0109 to 0113, which hold the same values. Safe to run again: every step looks before it writes.
  *
  * `pnpm seed-regions` rebuilds a region's content from its script and would undo what lands in that region; run this
  * with `--data` again after it.
@@ -24,7 +24,7 @@ export interface SideQuestBundle {
   pokemon?: Species[]
 }
 
-// ---------------------------------------------------------------- 1. Regigigas (docs/61 §1, migration 0108)
+// ---------------------------------------------------------------- 1. Regigigas (docs/61 §1, migration 0109)
 
 export const SNOWPOINT_TEMPLE = '10a7f721-2f52-58c4-bba1-728e2f88d763'
 export const REGIS: UnlockCondition = { kind: 'caught', dex: [377, 378, 379] }
@@ -36,7 +36,7 @@ export function withRegis(b: SideQuestBundle): void {
   if (!conds.some((c) => c.kind === 'caught')) temple.unlockConditions = [...conds, REGIS]
 }
 
-// ---------------------------------------------------------------- 2. Roadblocks (docs/61 §2, migration 0109)
+// ---------------------------------------------------------------- 2. Roadblocks (docs/61 §2, migration 0110)
 
 /** The Pokémon across a road, as its area's boss; it leaves that area's wild pool (the boss replaces it). */
 export const ROADBLOCKS: { areaId: string; area: string; boss: BossDef }[] = [
@@ -65,7 +65,7 @@ export function withRoadblocks(b: SideQuestBundle): void {
   }
 }
 
-// ---------------------------------------------------------------- 3. Pokémon posing as items (docs/61 §3, migration 0110)
+// ---------------------------------------------------------------- 3. Pokémon posing as items (docs/61 §3, migration 0111)
 
 /**
  * A loot row that looks like a Poké Ball and springs out as the Pokémon: the levels of that Pokémon in the area's wild
@@ -110,7 +110,7 @@ export function withDisguises(b: SideQuestBundle): void {
   }
 }
 
-// ---------------------------------------------------------------- 4. The Safaris (docs/61 §4, migration 0111)
+// ---------------------------------------------------------------- 4. The Safaris (docs/61 §4, migration 0112)
 
 /** Kanto's "Safari Zone" held Fuchsia's Gym too: it keeps its id, progress and Koga as Fuchsia City (trainers only). */
 export const FUCHSIA_CITY = '2238f26a-2629-5f28-af07-e74cb41d5f7a'
@@ -202,7 +202,7 @@ export function withSafaris(b: SideQuestBundle): void {
   }
 }
 
-// ---------------------------------------------------------------- 5. Set moments: rivals and gifts (docs/61 §5, migration 0112)
+// ---------------------------------------------------------------- 5. Set moments: rivals and gifts (docs/61 §5, migration 0113)
 
 /** A place, by region and the area's name (resolved to its id when the content is written). */
 type Place = [region: string, area: string]
