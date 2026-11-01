@@ -36,7 +36,7 @@ import {
 } from '@/fx/timelines/portal'
 import { raidBattleStage, raidCardStage } from '@/fx/timelines/portalRaid'
 import { altarLitTimeline, altarLoop, PL } from '@/fx/timelines/plates'
-import type { PortalSkin } from '@/engine'
+import type { PokeType, PortalSkin } from '@/engine'
 import { usePortalSkin } from './portalSkin'
 import { createPortal } from 'react-dom'
 import { useMotion, type MotionLevel } from '@/lib/motion'
@@ -801,12 +801,15 @@ export function StageTear({ id }: { id: number | null }) {
 
 // ------------------------------------------------------------------ a portal closing
 
-const closers = new Set<() => void>()
+const closers = new Set<(plate: PokeType | null) => void>()
 
-/** A boon was picked: the portal closes over the page (PortalCloseFx), or its sound alone where none is shown. */
-export function playPortalClose() {
+/**
+ * A boon was picked: the portal closes over the page (PortalCloseFx), or its sound alone where none is shown. `plate`:
+ * a type boon's type, the Plate the Stairway of Plates' altar takes (none: Arceus's own gold).
+ */
+export function playPortalClose(plate: PokeType | null = null) {
   if (!closers.size) fxSound('portal.close')
-  closers.forEach((f) => f())
+  closers.forEach((f) => f(plate))
 }
 
 /**
@@ -818,8 +821,10 @@ export function PortalCloseFx() {
   const skin = usePortalSkin()
   const [n, setN] = useState(0)
   const [on, setOn] = useState(false)
+  const plate = useRef<PokeType | null>(null)
   useEffect(() => {
-    const f = () => {
+    const f = (p: PokeType | null) => {
+      plate.current = p
       setN((x) => x + 1)
       setOn(true)
     }
@@ -831,7 +836,9 @@ export function PortalCloseFx() {
     () =>
       n
         ? // The Stairway of Plates lights an altar where Distortion World closes a portal.
-          (skin === 'plates' ? altarLitTimeline : closeTimeline)({ clear: true, short: level === 'short' })
+          skin === 'plates'
+          ? altarLitTimeline({ clear: true, short: level === 'short', plate: plate.current })
+          : closeTimeline({ clear: true, short: level === 'short' })
         : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [n],

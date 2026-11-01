@@ -182,7 +182,9 @@ function PortalStepIn({ area, mode }: { area: Area; mode: PortalRunMode }) {
           index={p.closed + 1}
           total={mode.portals}
           onPick={(i) => {
-            playPortalClose()
+            const o = p.offers![i]
+            // A type boon is a Plate: the altar takes that one.
+            playPortalClose(o?.kind === 'boost' ? o.type : null)
             pickDistortionOffer(i)
           }}
         />
