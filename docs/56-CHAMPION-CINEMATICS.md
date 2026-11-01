@@ -23,19 +23,20 @@ Each is a timeline in `src/fx/timelines/cinema/champions/` on the 240×160 battl
 
 Kanto and Johto:
 
-- **Blue — the Indigo Plateau** (`blue.ts`, reveal 4.55, extras Pidgeot). The League at sunset above Victory Road;
-  the great doors bang open and the camera rushes into the dark hall, where he stands with his back to us against a
-  sunset window. The lamps snap on pair by pair, quicker and quicker, down the red carpet; Pidgeot swoops in and beats a
-  gust down the hall twice; he spins round on his heel, pointing, and two spotlights snap onto him. Kanto's rival
-  rematches play it with Red's or Green's picture.
-- **Red — Mt. Silver's summit** (`red.ts`, 4.7, Pikachu drawn in the scene). A night blizzard; the camera climbs to the
-  storm wrapped round the summit, a yellow flicker in it; a lone figure at the cliff's edge, back to us, Pikachu's
-  cheeks sparking on his shoulder. Pikachu's Thunder tears the storm open in a ring on dawn over a sea of clouds; in the
-  silence he slowly turns, three dots appear over his head one by one (shapes, no text), the sun comes up behind him.
+- **Blue — the Indigo Plateau** (`blue.ts`, reveal 4.32, no Pokémon of its own: the user's review). The League at
+  sunset above Victory Road; the great doors bang open and the camera rushes into the dark hall, where he stands with his
+  back to us against a sunset window. The lamps snap on pair by pair, quicker and quicker, down the red carpet; the
+  League's emblem lights ring by ring from his feet and rings of light run out across the floor; he spins round on his
+  heel, pointing, and two spotlights snap onto him. Kanto's rival rematches play it with Red's or Green's picture.
+- **Red — Mt. Silver's summit** (`red.ts`, 4.7, Pikachu's own sprite). A night blizzard; the camera climbs to the
+  storm wrapped round the summit, a yellow flicker in it; a lone figure at the cliff's edge, back to us, Pikachu on the
+  snow beside him, its cheeks sparking. Pikachu's Thunder tears the storm open in a ring on dawn over a sea of clouds;
+  they are lit together as he slowly turns, three dots appear over his head one by one (shapes, no text), the sun comes
+  up behind him.
 - **Lance — the Indigo Plateau in a storm** (`lance.ts`, 4.6, Dragonite). Lightning shows a giant Dragonite shadow in
-  the clouds; three Dragonite burst out in formation, the lead dives over the camera and Lance drops from it, his cape
-  spread like crimson wings, and lands in a crouch that cracks the dais; Dragonite's Hyper Beam blows a hole in the
-  storm and its light reaches him.
+  the clouds; one Dragonite bursts out and sweeps past the League's tower, comes back round in the storm and dives at
+  the camera; Lance drops from it, his cape spread like crimson wings, and lands in a crouch that cracks the dais;
+  Dragonite's Hyper Beam blows a hole in the storm and its light reaches him.
 
 Hoenn:
 
@@ -73,8 +74,9 @@ Kalos, Alola, Galar and Paldea:
   wrestling ring; he moonsaults across the moon and lands with a quake, his Z-Ring flares, rings of Z-Power climb round
   him, Lycanroc's Stormshards burst up and shatter.
 - **Leon — Wyndon Stadium** (`leon.ts`, 4.8, Gigantamax Charizard). Champion Cup night: the floodlights bang on bank
-  by bank; a Gigantamax Charizard rises behind the stand and roars the roof alight; a hatch opens in the pitch and he
-  rises on a lift through pyro jets; the whole crowd strikes his pose; confetti cannons.
+  by bank; a Power Spot lights at the far end of the pitch and Gigantamax Charizard grows out of its column of energy,
+  inside the stadium, towering over the stands, and roars its wings of fire alight; a hatch opens in the pitch and Leon
+  rises on a lift in front of it through pyro jets; the whole crowd strikes his pose; confetti cannons.
 - **Geeta — the League's rooftop court** (`geeta.ts`, 4.75, Glimmora and Kingambit). Sunset above Mesagoza, flags
   snapping; Kingambit black against the sun; she walks out of the glare down the court, the wind drops dead, she lifts
   the Tera Orb and a Tera crystal grows and bursts, Glimmora terastallized under its jewel.
@@ -118,4 +120,6 @@ picture exists, its cues are in time order, and its one HUD cue (the lead out) c
 
 ## 6. Next
 
-The user's verdicts on the review page (one film per champion, a note each), then the switch On for everyone.
+The review page's first round (2026-11-01): ten approved; Blue's Pokémon removed, Red's Pikachu drawn from its own
+sprite beside him, Lance's three Dragonite made one, Leon's Charizard brought inside the stadium. Then the switch On for
+everyone.

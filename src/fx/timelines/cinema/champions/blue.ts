@@ -1,12 +1,11 @@
 // Blue's entrance (docs/56), on the battle stage: the Indigo Plateau at sunset, and the rival who got there first.
-// The League stands on its mesa at the top of Victory Road's stairs, the peaks black against a red sky; Pidgeot crosses
-// the sun. The great doors bang open on a dark hall, and the camera goes in after them: down at the far end, against
-// a tall window full of sunset, a small figure stands with his back to us. Then the lamps snap on down the hall, pair
-// after pair, quicker and quicker, as if the place were showing him off: pillars, blue banners, the red carpet running
-// to him, his long shadow lying on it. The camera rushes down the carpet, pillars whipping past, and pulls up short
-// behind him. Pidgeot drops out of the sky past the window and hovers at his shoulder, beating its wings once, twice: a
-// gust down the hall, feathers and dust. Then he spins round on his heel, pointing, a glint of a smile: the reveal,
-// two spotlights snapping onto him and the League's emblem lighting under his feet.
+// The League stands on its mesa at the top of Victory Road's stairs, the peaks black against a red sky. The great
+// doors bang open on a dark hall, and the camera goes in after them: down at the far end, against a tall window full
+// of sunset, a small figure stands with his back to us. Then the lamps snap on down the hall, pair after pair, quicker
+// and quicker, as if the place were showing him off: pillars, blue banners, the red carpet running to him, his long
+// shadow lying on it. The camera rushes down the carpet, pillars whipping past, and pulls up short behind him; the
+// League's emblem in the floor round his feet lights up, ring after ring running out from him. Then he spins round on
+// his heel, pointing, a glint of a smile: the reveal, two spotlights snapping onto him.
 // Rival rematches show Red's or Green's picture here: nothing in the scene depends on whose picture it is.
 import { hiss, tone } from '@/audio/sfx'
 import {
@@ -25,14 +24,13 @@ import {
   type Canvas,
   type G,
 } from '../../../pixel'
-import { drawSprite, spriteKey, spriteSize } from '../../../sprites'
+import { drawSprite, spriteSize } from '../../../sprites'
 import { H, screenShake, W, within } from '../../../timeline'
-import { championCinema, type ChampionState } from '../champion'
-import { burstRing, dGradient, dissolve, pulse } from '../kit'
+import { championCinema } from '../champion'
+import { dGradient, dissolve } from '../kit'
 
-const REVEAL = 4.55
-/** Outside: Pidgeot over the sun; the doors; the camera rushing through them; inside. */
-const T_BIRD = 0.1
+const REVEAL = 4.32
+/** Outside: the doors; the camera rushing through them; inside. */
 const T_DOORS = 0.74
 const T_RUSH = 0.86
 const T_IN = 1.24
@@ -40,18 +38,14 @@ const T_IN = 1.24
 const LAMPS_T = [1.4, 1.6, 1.77, 1.9, 2.01, 2.1, 2.18] as const
 /** Down the carpet. */
 const T_DOLLY = 2.26
-const T_ARRIVE = 3.4
-/** Pidgeot: down out of the sky behind him, then its two wingbeats. */
-const T_SWOOP = 3.02
-const T_HOVER = 3.38
-const T_GUST = 3.48
-const T_GUST2 = 3.72
+const T_ARRIVE = 3.46
+/** The emblem round his feet lighting up as the camera brakes: its rings running out from him one after another. */
+const T_RIPPLE = 3.36
+const RIPPLE_DUR = 0.42
 /** He spins round (one and a half turns), then the glint. */
-const T_SPIN = 3.96
+const T_SPIN = 3.74
 const SPIN_DUR = 0.36
-const T_GLINT = 4.33
-
-const PIDGEOT = spriteKey(18, false)
+const T_GLINT = 4.1
 
 // ---------------------------------------------------------------- the hall, in world units (1 unit = 1 px at F)
 /** Focal length: a thing F away is drawn at its own size. The eye's height over the floor. */
@@ -339,8 +333,7 @@ function drawHall(g: G, x: Scene, t: number, c: Cam) {
     const bz = (((z - 150) % 150) + 150) % 150
     if (bz > 112 || bz < 38) {
       const u = ((bz + 38) % 150) / 76
-      const gust = x.gustK(t) * Math.sin(u * 7 + t * 30) * 6
-      const tail = 54 + 14 * Math.abs(u - 0.5) * 2 + gust
+      const tail = 54 + 14 * Math.abs(u - 0.5) * 2
       const bt = Math.round(hz - (186 - EYE) * s)
       const bb = Math.round(hz - (tail - EYE) * s)
       lit(g, px, px + 1, bt, bb - bt, BANNER, k)
@@ -452,30 +445,57 @@ function windowFrame(g: G, c: Cam, sb: number) {
   rect(g, c.vx - (WW + 6) * sb, yb, (WW + 6) * 2 * sb, Math.max(1, Math.round(5 * sb)), '#3a2a2e')
 }
 
-/** The emblem round his feet: a gold ring with the ball's band across it, lit by the lamps, blazing at the reveal. */
+/**
+ * The emblem round his feet: a gold ring with the ball's band across it, dim under the lamps. As the camera brakes it
+ * lights up from his feet outwards, its own rings in turn and then rings of light running out over the floor; it
+ * blazes at the reveal.
+ */
 function emblem(g: G, c: Cam, t: number) {
   const d = Z_CH - c.z
   if (d < 10) return
   const s = F / d
-  const k = Math.max(
-    0.55 * lampLight(Z_CH, t),
-    span(t, REVEAL, REVEAL + 0.1) * (1 - 0.4 * span(t, REVEAL + 0.5, REVEAL + 1.2)),
-  )
+  const dim = 0.55 * lampLight(Z_CH, t)
+  const blaze = span(t, REVEAL, REVEAL + 0.1) * (1 - 0.4 * span(t, REVEAL + 0.5, REVEAL + 1.2))
+  // Each part lights when the ripple reaches it: the inner ring, the band, the outer rings.
+  const on = (i: number) =>
+    Math.max(dim, 0.85 * span(t, T_RIPPLE + i * 0.08, T_RIPPLE + i * 0.08 + 0.1), blaze)
   const cx = Math.round(c.vx)
   const cy = Math.round(c.hz + EYE * s)
-  for (const [R, off] of [
-    [52, 0],
-    [49, 1],
-    [16, 0],
+  const ry = (R: number) => Math.max(1, Math.round((R * EYE * F) / (d * d)))
+  for (const [R, off, i] of [
+    [52, 0, 2],
+    [49, 1, 2],
+    [16, 0, 0],
   ] as const) {
     const rx = Math.round(R * s)
-    const ry = Math.max(1, Math.round((R * EYE * F) / (d * d)))
-    if (rx < 2) continue
-    ellipseLine(g, cx, cy, rx, ry, tone8(GOLD, k, off))
+    if (rx >= 2) ellipseLine(g, cx, cy, rx, ry(R), tone8(GOLD, on(i), off))
   }
   const rx = Math.round(49 * s)
-  rect(g, cx - rx, cy, rx - Math.round(16 * s), 1, tone8(GOLD, k, 1))
-  rect(g, cx + Math.round(16 * s), cy, rx - Math.round(16 * s), 1, tone8(GOLD, k, 1))
+  rect(g, cx - rx, cy, rx - Math.round(16 * s), 1, tone8(GOLD, on(1), 1))
+  rect(g, cx + Math.round(16 * s), cy, rx - Math.round(16 * s), 1, tone8(GOLD, on(1), 1))
+  // Rings of light running out across the floor from it, white-hot, cooling to gold as they spread: each point put
+  // on the floor in perspective, so the far side flattens and stops at the back wall, the near side swells at us.
+  for (let i = 0; i < 3; i++) {
+    const q = span(t, T_RIPPLE + 0.1 + i * 0.1, T_RIPPLE + 0.1 + i * 0.1 + RIPPLE_DUR)
+    if (q <= 0 || q >= 1) continue
+    const R = lerp(20, 150, ease.outC(q))
+    const col = q < 0.3 ? '#fffbe0' : q < 0.65 ? GOLD[4] : GOLD[3]
+    let prev: [number, number] | null = null
+    for (let j = 0; j <= 96; j++) {
+      const a = (j / 96) * Math.PI * 2
+      const z = Z_CH + Math.sin(a) * R - c.z
+      if (z < 12 || z > Z_BACK - 2 - c.z) {
+        prev = null
+        continue
+      }
+      const pt: [number, number] = [c.vx + (Math.cos(a) * R * F) / z, c.hz + (EYE * F) / z]
+      if (prev) {
+        line(g, prev[0], prev[1], pt[0], pt[1], col)
+        if (q < 0.5) line(g, prev[0], prev[1] + 1, pt[0], pt[1] + 1, col)
+      }
+      prev = pt
+    }
+  }
 }
 
 // ---------------------------------------------------------------- outside: the League on its mesa
@@ -746,29 +766,6 @@ function leaves(g: G, z: number, open: number) {
   }
 }
 
-/** Pidgeot far off, a little bird of shadow against the sunset: wings up, level, down; its plume streaming back. */
-function bird(g: G, x: number, y: number, t: number) {
-  const c = '#24101e'
-  const f = Math.floor(t * 14) % 4
-  ellipse(g, x, y, 4, 1, c)
-  rect(g, x + 4, y - 2, 3, 2, c)
-  rect(g, x + 7, y - 1, 1, 1, c)
-  line(g, x + 4, y - 2, x + 1, y - 5, '#c83a2a')
-  line(g, x + 3, y - 2, x, y - 4, '#f0b030')
-  line(g, x - 4, y, x - 8, y - 1, c)
-  line(g, x - 4, y, x - 8, y + 1, c)
-  if (f === 0) {
-    line(g, x, y - 1, x - 4, y - 7, c)
-    line(g, x + 1, y - 1, x - 1, y - 8, c)
-  } else if (f === 2) {
-    line(g, x, y + 1, x - 3, y + 6, c)
-    line(g, x + 1, y + 1, x, y + 6, c)
-  } else {
-    line(g, x - 1, y, x - 6, y - 2, c)
-    line(g, x + 1, y, x - 2, y - 3, c)
-  }
-}
-
 type X = {
   buf: Canvas
   ext: Canvas
@@ -780,30 +777,8 @@ type X = {
   /** The near boulders' tops by screen column (H: none there), and the cracks down their faces. */
   rocks: number[]
   crackAt: number[]
-  gustK: (t: number) => number
 }
 type Scene = X
-
-/**
- * Pidgeot: down out of the sky past the window and round to hover at his left shoulder, a little behind him, wings
- * beating; off up into the rafters after the reveal.
- */
-function pidgeotAt(t: number, fx: number, fy: number) {
-  const q = span(t, T_SWOOP, T_HOVER)
-  const e = ease.outC(q)
-  const away = ease.inQ(span(t, REVEAL + 0.3, REVEAL + 1.1))
-  // A curve: in from the top right, sweeping low across the window, then up into its place.
-  const x = lerp(fx + 110, fx - 56, e) - 70 * away
-  const y = lerp(-46, fy - 24, e) + 22 * Math.sin(Math.PI * e) + Math.sin(t * 9) * 1.5 - 130 * away
-  // A wingbeat: the wings thrown up (a stretch), then driven down (a squash) — two big ones for the gust.
-  const beat = (t0: number) => {
-    const u = span(t, t0 - 0.12, t0 + 0.14)
-    return u > 0 && u < 1 ? Math.sin(Math.PI * 2 * u) : 0
-  }
-  const big = beat(T_GUST) + beat(T_GUST2)
-  const flap = Math.sin(t * 15) * 0.05 + big * 0.14
-  return { x, y, sy: 1 + flap, sx: 1 - flap * 0.4 + Math.abs(big) * 0.08 }
-}
 
 export const blueChampion = championCinema<X>({
   id: 'blue',
@@ -812,10 +787,9 @@ export const blueChampion = championCinema<X>({
   aura: ['#ffffff', '#9ad0ff', '#3a6ae0', '#1a2a6a'],
   flash: '#e8f2ff',
   sample: { trainer: '/trainers/classes/blue-3.png', name: 'Champion Blue', lead: 6, ace: 18, team: 3 },
-  extras: [18],
   setup(st) {
     const r = rng(1803)
-    st.screenShakes.push([T_DOORS, 0.4, 2], [T_GUST, 0.4, 2], [T_GUST2, 0.35, 2], [REVEAL, 0.35, 2])
+    st.screenShakes.push([T_DOORS, 0.4, 2], [T_ARRIVE - 0.06, 0.25, 1], [REVEAL, 0.35, 2])
     const rid = ridge(r, WW * 2 + 1, 26, 0.6)
     const jag = Array.from({ length: 200 }, (_, i) =>
       Math.round(Math.sin(i * 0.9) * 2 + Math.sin(i * 0.31) * 4 + r.range(-1, 1)),
@@ -852,8 +826,6 @@ export const blueChampion = championCinema<X>({
       sunset: sunsetBack(),
       ridge: rid,
       jag,
-      gustK: (t: number) =>
-        Math.max(pulse(t, T_GUST - 0.05, T_GUST + 0.5), 0.8 * pulse(t, T_GUST2 - 0.05, T_GUST2 + 0.45)),
     }
   },
   step(s, t, dt) {
@@ -878,57 +850,6 @@ export const blueChampion = championCinema<X>({
           light: '#e8c8a8',
         })
     }
-    // The gust: wind lines blasting off its wings, down the hall at us and the challenger; feathers; floor dust.
-    const gk = s.gustK(t)
-    const p = pidgeotAt(t, F0.x, F0.y)
-    if (gk > 0.2 && r() < gk * 0.9)
-      for (let i = 0; i < 2; i++) {
-        // Off its leading edge and wingtips, never across its body.
-        const a = Math.PI * r.range(0.82, 1.12)
-        const v = r.range(260, 420)
-        s.fx.add({
-          x: p.x - r.range(30, 40),
-          y: p.y - r.range(6, 64),
-          vx: Math.cos(a) * v,
-          vy: Math.sin(a) * v * 0.7 + 60,
-          life: r.range(0.3, 0.5),
-          size: 1,
-          shape: 'streak',
-          trail: 0.06,
-          colors: ['#ffffff', '#c8d4f0', '#6a78a0'],
-        })
-      }
-    if (within(t, T_GUST, T_GUST + dt) || within(t, T_GUST2, T_GUST2 + dt))
-      for (let i = 0; i < 12; i++) {
-        s.fx.add({
-          x: p.x + r.range(-22, 22),
-          y: p.y - r.range(10, 44),
-          vx: -r.range(40, 170),
-          vy: r.range(-30, 60),
-          ay: 50,
-          drag: 0.9,
-          life: r.range(1, 1.5),
-          size: 2,
-          shape: 'leaf',
-          spin: r.range(-8, 8),
-          colors: ['#b8844a'],
-          light: '#f0dcb0',
-          dark: '#6a4428',
-        })
-      }
-    if (gk > 0.3 && r() < gk * 1.5)
-      s.fx.add({
-        x: F0.x + r.range(-90, 30),
-        y: F0.y + r.range(0, 30),
-        vx: -r.range(120, 220),
-        vy: r.range(5, 30),
-        drag: 1.2,
-        life: r.range(0.4, 0.7),
-        size: 1,
-        shape: 'streak',
-        trail: 0.03,
-        colors: ['#8a84a8', '#4a4868'],
-      })
     // The spin throws off a ring of air; the glint.
     if (within(t, T_SPIN + SPIN_DUR * 0.85, T_SPIN + SPIN_DUR * 0.85 + dt)) {
       const tz = spriteSize(s.p.trainer)
@@ -977,16 +898,12 @@ export const blueChampion = championCinema<X>({
         flip: true,
       })
     }
-    drawPidgeot(b, s, t)
     if (t > REVEAL) spotlights(b, F0.x, F0.y, t)
     if (t < T_IN) {
       const e = s.ext.g
       const z = zoomAt(t)
       e.clearRect(0, 0, W, H)
       e.drawImage(s.sunset, 0, 0)
-      const u = span(t, T_BIRD, T_BIRD + 0.95)
-      if (u > 0 && u < 1)
-        bird(e, Math.round(lerp(-12, 252, u)), Math.round(lerp(30, 76, u) - Math.sin(u * Math.PI) * 8), t)
       facade(e, s, t, z)
       boulders(e, s, z)
       // The leaves, in the opening (in the hall's own space: they swing in over its floor).
@@ -1037,23 +954,8 @@ export const blueChampion = championCinema<X>({
       if (n >= 3) rect(g, gx - 1, gy - 1, 3, 3, '#ffffff')
     }
   },
-  front(g, s, t) {
-    // The gust's rings of air, off its wings.
-    const F0 = s.L.foe
-    const p = pidgeotAt(t, F0.x, F0.y)
-    burstRing(g, p.x, p.y - 30, span(t, T_GUST, T_GUST + 0.4), 90, 2, '#c8d4f0')
-    burstRing(g, p.x, p.y - 30, span(t, T_GUST2, T_GUST2 + 0.4), 110, 2, '#ffffff')
-  },
   sounds: [
     [0.05, () => hiss(1.2, { freq: 380, type: 'lowpass', vol: 0.04 })],
-    // Pidgeot's cry over the plateau.
-    [
-      0.32,
-      () => (
-        tone(1500, 0.22, { type: 'triangle', vol: 0.03, slide: -500 }),
-        tone(1900, 0.18, { type: 'triangle', vol: 0.02, slide: -700, at: 0.12 })
-      ),
-    ],
     // The doors: a boom, wood on stone.
     [
       T_DOORS,
@@ -1077,27 +979,11 @@ export const blueChampion = championCinema<X>({
     ),
     [T_DOLLY, () => hiss(1.1, { freq: 300, slide: 2200, vol: 0.06 })],
     [T_DOLLY + 0.5, () => tone(196, 0.6, { type: 'sawtooth', vol: 0.02, slide: 196 })],
-    [
-      T_SWOOP,
-      () => (
-        tone(1700, 0.25, { type: 'triangle', vol: 0.035, slide: -800 }),
-        hiss(0.35, { freq: 1200, slide: -800, vol: 0.05 })
-      ),
-    ],
-    [
-      T_GUST,
-      () => (
-        hiss(0.45, { freq: 420, type: 'lowpass', vol: 0.14 }),
-        tone(70, 0.25, { type: 'sine', vol: 0.1 })
-      ),
-    ],
-    [
-      T_GUST2,
-      () => (
-        hiss(0.5, { freq: 380, type: 'lowpass', vol: 0.16 }),
-        tone(62, 0.3, { type: 'sine', vol: 0.12 })
-      ),
-    ],
+    // The emblem lighting up under him, ring after ring: a climbing chime.
+    ...[523, 659, 784, 1047].map(
+      (f, i) => [T_RIPPLE + i * 0.09, () => tone(f, 0.22, { type: 'triangle', vol: 0.028 })] as const,
+    ),
+    [T_RIPPLE, () => hiss(0.4, { freq: 1800, slide: 1600, vol: 0.03 })],
     [T_SPIN, () => hiss(0.3, { freq: 2400, slide: -1800, vol: 0.06 })],
     [
       T_GLINT,
@@ -1116,19 +1002,6 @@ export const blueChampion = championCinema<X>({
     ],
   ],
 })
-
-/** Pidgeot at his shoulder, lit by the lamps and rimmed by the sunset; a white flash as the spotlights hit it. */
-function drawPidgeot(g: G, s: ChampionState<X>, t: number) {
-  if (t < T_SWOOP || t > REVEAL + 1.2) return
-  const F0 = s.L.foe
-  const p = pidgeotAt(t, F0.x, F0.y)
-  drawSprite(g, PIDGEOT, Math.round(p.x), Math.round(p.y), {
-    sx: p.sx,
-    sy: p.sy,
-    outline: t < REVEAL ? '#ff9a5a' : undefined,
-    flash: t >= REVEAL ? 1 - span(t, REVEAL, REVEAL + 0.25) : 0,
-  })
-}
 
 /**
  * The reveal's spotlights: two beams from high on either side, crossing on him, and their pool at his feet. A flat
