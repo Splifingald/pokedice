@@ -400,6 +400,21 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           pop: { id: nextId(), target: e.target, amount: e.amount, tone: 'normal' },
         }),
       }
+    case 'weather':
+      // The whiteout's blizzard at the end of a round (docs/61 §4.3): its line, the HP down, the number.
+      return {
+        delay: 850,
+        sound: 'hit',
+        apply: (f) => ({
+          ...f,
+          message:
+            e.weather === 'snow'
+              ? t('ui.whiteout.log', { name: nameOf(e.targetUid), amount: e.amount })
+              : t('ui.raid.x.tick.sand', { name: nameOf(e.targetUid) }),
+          hp: { ...f.hp, [e.targetUid]: e.hpAfter },
+          pop: { id: nextId(), target: e.target, amount: e.amount, tone: 'normal' },
+        }),
+      }
     case 'stunned':
       return {
         delay: 1000,

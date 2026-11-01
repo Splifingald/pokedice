@@ -8,6 +8,7 @@ import {
   gymsFor,
   playerSideOf,
   nightmareModeOf,
+  whiteoutModeOf,
   nextRoundSize,
   opensWithoutCenter,
   portalModeOf,
@@ -29,6 +30,7 @@ import { useAreaVersus } from '@/store/areaVersus'
 import { cx } from '@/theme/util'
 import { DistortionGauge } from '@/components/Portal'
 import { NightmareGauge } from '@/components/Nightmare'
+import { WhiteoutGauge } from '@/components/Whiteout'
 
 const CARD_ICON: Record<DeckCard, IconName> = {
   wild: 'ball',
@@ -86,6 +88,18 @@ export function RoundGauge({
       <NightmareGauge
         round={progress.nightmare?.round ?? 0}
         total={dream.foes.length}
+        className={className}
+      />
+    )
+  // The whiteout (docs/61 §4.3) counts its waves, a pip a foe, then the crown for its boss.
+  const white = whiteoutModeOf(area, data)
+  if (white)
+    return (
+      <WhiteoutGauge
+        sizes={white.waves.map((w) => w.length)}
+        wave={progress.whiteout?.wave ?? 0}
+        foe={progress.whiteout?.foe ?? 0}
+        boss={!!progress.whiteout?.boss}
         className={className}
       />
     )

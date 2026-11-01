@@ -4,6 +4,7 @@ import {
   autoAvailable,
   fitWildPair,
   nightmareModeOf,
+  whiteoutModeOf,
   pilotShowsCard,
   portalModeOf,
   portalStateOf,
@@ -32,6 +33,7 @@ import { AreaStrip } from '@/components/AreaStrip'
 import { WipeView } from './battle/VictoryView'
 import { PortalBonuses, PortalInfo, PortalStep } from './area/PortalRun'
 import { NightmareInfo, NightmareStep, nightmareStepDue } from './area/NightmareRun'
+import { WhiteoutInfo, WhiteoutStep, whiteoutStepDue } from './area/WhiteoutRun'
 import { AutopilotNote } from './area/AutopilotNote'
 import { useAutopilot } from './area/useAutopilot'
 
@@ -123,8 +125,11 @@ export function AreaScreen() {
   // The nightmare's area (docs/30): its way in, its intro, Darkrai's strike after a round, the waking.
   const nm = run.rebattle ? null : nightmareModeOf(area, data)
   const dream = !!nm && run.phase === 'idle' && nightmareStepDue(area, { save, data }, run)
+  // The whiteout's area (docs/61 §4.3): its way in, its intro, the bonfire after a wave, the end.
+  const wo = run.rebattle ? null : whiteoutModeOf(area, data)
+  const white = !!wo && run.phase === 'idle' && whiteoutStepDue(area, { save, data })
   // The plain page between encounters (docs/42): the area's scene with the team, as on Home, in the banner's place.
-  const sceneIdle = run.phase === 'idle' && !own && !dream && !mode && !nm && !run.rebattle
+  const sceneIdle = run.phase === 'idle' && !own && !dream && !white && !mode && !nm && !wo && !run.rebattle
   // A find is a step on the stage of its own (FindView), with or without the autopilot: no banner, no card.
   const finding = run.phase === 'preview' && run.encounter?.kind === 'item'
   return (
@@ -153,7 +158,8 @@ export function AreaScreen() {
       {run.phase === 'wipe' && <WipeView />}
       {run.phase === 'idle' && own && step}
       {dream && <NightmareStep area={area} />}
-      {run.phase === 'idle' && !own && !dream && (
+      {white && <WhiteoutStep area={area} />}
+      {run.phase === 'idle' && !own && !dream && !white && (
         <>
           {mode && <PortalBonuses area={area} />}
           <AreaIdle area={area} scene={sceneIdle} />
@@ -161,6 +167,7 @@ export function AreaScreen() {
       )}
       {mode && run.phase === 'idle' && <PortalInfo mode={mode} />}
       {nm && run.phase === 'idle' && <NightmareInfo mode={nm} />}
+      {wo && run.phase === 'idle' && <WhiteoutInfo area={area} mode={wo} />}
     </div>
   )
 }

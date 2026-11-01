@@ -3,7 +3,7 @@ import { GlitchSprite } from '@/components/Portal'
 import { motion } from 'framer-motion'
 import { useEffect, useId, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { catchTarget, catchValueOf, effectiveStats, getSpecies, isDoubleEncounter, isPlayerFoe, MONEY, paidKey, rebattleProgress, rebattleTiers, teamOf, type Encounter, portalNoCatch, nightmareFoe, familyTalent, familyUnlocked, noteTalentMet, talentMet, talentsOn } from '@/engine'
+import { catchTarget, catchValueOf, effectiveStats, getSpecies, isDoubleEncounter, isPlayerFoe, MONEY, paidKey, rebattleProgress, rebattleTiers, teamOf, type Encounter, portalNoCatch, nightmareFoe, whiteoutFoe, familyTalent, familyUnlocked, noteTalentMet, talentMet, talentsOn } from '@/engine'
 import { joinList } from '@/i18n'
 import { effectText } from '@/i18n/text'
 import { money } from '@/lib/format'
@@ -45,6 +45,8 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
   const save = useGame((s) => s.save)
   const runArea = useGame((s) => s.run.areaId)
   const dream = !boss && save && runArea ? nightmareFoe(save, data, runArea) : null
+  // The whiteout's wave foe (docs/61 §4.3): its wave and place, lost in the blizzard, never caught.
+  const storm = !boss && !dream && save && runArea ? whiteoutFoe(save, data, runArea) : null
   return (
     <div className="flex items-center gap-3 sm:gap-4">
       <motion.div
@@ -56,7 +58,9 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
             ? 'bg-night shadow-[inset_0_0_0_3px_#ffbe2e]'
             : dream
               ? 'light-scope bg-[#080b1f] shadow-[inset_0_0_0_3px_#5a3aa8]'
-              : 'bg-paper shadow-ring',
+              : storm
+                ? 'light-scope bg-[#16264a] shadow-[inset_0_0_0_3px_#a6c2db]'
+                : 'bg-paper shadow-ring',
         )}
       >
         {distorted ? (
@@ -74,6 +78,11 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
             {t('ui.nightmare.roundTag', { n: dream.round, total: dream.total })}
           </div>
         )}
+        {storm && (
+          <div className="text-lg leading-none tracking-[0.2em] text-muted">
+            {t('ui.whiteout.waveTag', { n: storm.wave, total: storm.waves, i: storm.index, size: storm.size })}
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="text-[30px] leading-none">{sp.name}</span>
           {enc.shiny && (
@@ -85,6 +94,7 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
           {enc.kind === 'wild' &&
             !distorted &&
             !dream &&
+            !storm &&
             (enc.isNew ? (
               <span className="bg-gold px-1.5 text-lg leading-tight text-ink shadow-ring">{t('ui.enc.new')}</span>
             ) : (
@@ -102,7 +112,7 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
           <DiceSet dice={stats.dice} size={22} />
           <StatChip stat="rerolls" value={stats.rerolls} size={18} className="text-lg" />
         </div>
-        {enc.talent && <TalentNews dex={enc.dex} name={sp.name} catchable={!distorted && !dream} />}
+        {enc.talent && <TalentNews dex={enc.dex} name={sp.name} catchable={!distorted && !dream && !storm} />}
         {distorted ? (
           <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted">
             <PixelIcon name="sparkle" size={14} />
@@ -112,6 +122,11 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
           <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted">
             <PixelIcon name="moon" size={14} />
             {t('ui.nightmare.noCatch')}
+          </p>
+        ) : storm ? (
+          <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted">
+            <PixelIcon name="frozen" size={14} />
+            {t('ui.whiteout.noCatch')}
           </p>
         ) : (
           <CatchHint dex={enc.dex} level={enc.level} kind={boss ? 'boss' : 'wild'} shiny={enc.shiny} talent={enc.talent} />

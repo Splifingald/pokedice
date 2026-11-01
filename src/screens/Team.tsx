@@ -4,6 +4,8 @@ import {
   homersIn,
   teamSwapsOpen,
   nightmareModeOf,
+  whiteoutModeOf,
+  atBonfire,
   monName,
   POKE_TYPES,
   regionOf,
@@ -58,6 +60,28 @@ export function TeamScreen() {
         s.data,
       ),
   )
+  // …or the whiteout's (docs/61 §4.3): its way in, or a bonfire between its waves (the bag open there too).
+  const atWhiteout = useGame(
+    (s) =>
+      atPortal &&
+      !!whiteoutModeOf(
+        s.data.areas.find((a) => a.id === s.run.areaId),
+        s.data,
+      ),
+  )
+  const atCamp = useGame((s) => atWhiteout && !!s.save && atBonfire(s.save, s.data, s.run.areaId))
+  const hint = atCamp
+    ? 'ui.whiteout.teamHintBonfire'
+    : atNightmare || atWhiteout
+      ? 'ui.nightmare.teamHint'
+      : 'ui.portal.teamHint'
+  const back = atCamp
+    ? 'ui.whiteout.backToBonfire'
+    : atWhiteout
+      ? 'ui.whiteout.backToWayIn'
+      : atNightmare
+        ? 'ui.nightmare.backToWayIn'
+        : 'ui.portal.backToPortal'
   const navigate = useNavigate()
   const now = useNow(30_000)
   const wide = useMediaQuery('(min-width: 1024px)')
@@ -116,10 +140,10 @@ export function TeamScreen() {
         <div className="pixel-dialogue flex flex-col gap-2.5 px-3 py-2.5 sm:flex-row sm:items-center">
           <p className="m-0 flex flex-1 items-center gap-3 text-[20px] leading-[1.15]">
             <PixelIcon name="heart" size={24} className="shrink-0" />
-            <span>{t(atNightmare ? 'ui.nightmare.teamHint' : 'ui.portal.teamHint')}</span>
+            <span>{t(hint)}</span>
           </p>
           <PixelButton variant="primary" className="shrink-0" onClick={() => navigate('/area')}>
-            {t(atNightmare ? 'ui.nightmare.backToWayIn' : 'ui.portal.backToPortal')}
+            {t(back)}
           </PixelButton>
         </div>
       )}

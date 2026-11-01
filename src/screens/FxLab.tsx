@@ -33,6 +33,7 @@ import {
   nightmareWakeTimeline,
 } from '@/fx/timelines/nightmare'
 import { nightRaidEntranceTimeline } from '@/fx/timelines/nightmareRaid'
+import { bonfireTimeline, whiteoutIntroTimeline, whiteoutOutroTimeline } from '@/fx/timelines/whiteout'
 import { artUrl } from '@/fx/areaArt'
 import { evolveTimeline, hatchTimeline } from '@/fx/timelines/moments'
 import { tradeTimeline } from '@/fx/timelines/trade'
@@ -465,6 +466,39 @@ const PRESETS: Preset[] = [
     name: "Nightmare: Darkrai's raid entrance (out of the smoke, before the moon)",
     sprites: [[491, false, true]],
     make: (o) => nightRaidEntranceTimeline({ mon: spriteKey(491, false, true), short: o.short }),
+  },
+  // Crown Shrine's whiteout (docs/61 §4.3): the way in, the bonfire between waves, the end. (Abomasnow's entrance is
+  // with the bosses' cinematics.)
+  {
+    name: 'Whiteout: the way in (the blizzard rolls in, eyes in the crown tree)',
+    sprites: [],
+    make: (o) => whiteoutIntroTimeline({ title: 'Whiteout', short: o.short }),
+  },
+  {
+    name: 'Whiteout: the bonfire (three round the fire)',
+    sprites: [
+      [181, false],
+      [508, false],
+      [733, false],
+    ],
+    make: (o) =>
+      bonfireTimeline({ team: [181, 508, 733].map((d) => spriteKey(d, false)), w: 240, h: 160, short: o.short }),
+  },
+  {
+    name: 'Whiteout: the bonfire (six round the fire)',
+    sprites: [181, 508, 733, 460, 362, 614].map((d): [number, boolean] => [d, false]),
+    make: (o) =>
+      bonfireTimeline({
+        team: [181, 508, 733, 460, 362, 614].map((d) => spriteKey(d, false)),
+        w: 240,
+        h: 160,
+        short: o.short,
+      }),
+  },
+  {
+    name: 'Whiteout: the end (the blizzard lifts, shiny Abomasnow in the sun)',
+    sprites: [[460, false, true]],
+    make: (o) => whiteoutOutroTimeline({ title: 'The blizzard lifts', mon: spriteKey(460, false, true), short: o.short }),
   },
   {
     name: 'Evolution (Charmeleon)',

@@ -32,6 +32,7 @@ import { BackgroundPicker, Box, Field, NumInput, PokemonPicker, Stepper, TextInp
 import { AreaBanner } from '@/components/AreaBanner'
 import { PortalModeBox } from './PortalModeBox'
 import { NightmareModeBox } from './NightmareModeBox'
+import { WhiteoutModeBox } from './WhiteoutModeBox'
 
 const KINDS: EncounterKind[] = ['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus']
 const CARD: Record<EncounterKind, { label: string; color: string }> = {
@@ -299,6 +300,8 @@ function AreaEditor({ area }: { area: Row }) {
             <PortalModeBox area={area} />
             {/* The nightmare (docs/30): one special mode per area, so ticking one replaces the other. */}
             <NightmareModeBox area={area} />
+            {/* The whiteout (docs/61 §4.3), Crown Shrine's: one special mode per area, as the others. */}
+            <WhiteoutModeBox area={area} />
           </>
         )}
 
