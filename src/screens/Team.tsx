@@ -31,6 +31,7 @@ import { cx } from '@/theme/util'
 import { TeamCards } from './team/TeamCards'
 import { InstTalentGem } from '@/components/Talent'
 import { outfitName } from '@/components/Outfit'
+import { skinKey, useRunSkin } from '@/components/portalSkin'
 
 type Sort = Exclude<BoxSort, 'type'>
 const SORTS: readonly Sort[] = ['dex', 'level', 'newest']
@@ -49,6 +50,8 @@ export function TeamScreen() {
   // Pokémon's sheet then has the Center's moves at its foot.
   const swaps = useGame((s) => !!s.save && teamSwapsOpen(s.save, s.data, s.run))
   const atPortal = useGame((s) => swaps && s.run.phase === 'idle')
+  // The Stairway of Plates' way in says it in its own words (docs/61 §4.5).
+  const skin = useRunSkin()
   // …or the nightmare's way in (docs/30): its own words.
   const atNightmare = useGame(
     (s) =>
@@ -116,10 +119,10 @@ export function TeamScreen() {
         <div className="pixel-dialogue flex flex-col gap-2.5 px-3 py-2.5 sm:flex-row sm:items-center">
           <p className="m-0 flex flex-1 items-center gap-3 text-[20px] leading-[1.15]">
             <PixelIcon name="heart" size={24} className="shrink-0" />
-            <span>{t(atNightmare ? 'ui.nightmare.teamHint' : 'ui.portal.teamHint')}</span>
+            <span>{t(atNightmare ? 'ui.nightmare.teamHint' : skinKey(skin, 'ui.portal.teamHint'))}</span>
           </p>
           <PixelButton variant="primary" className="shrink-0" onClick={() => navigate('/area')}>
-            {t(atNightmare ? 'ui.nightmare.backToWayIn' : 'ui.portal.backToPortal')}
+            {t(atNightmare ? 'ui.nightmare.backToWayIn' : skinKey(skin, 'ui.portal.backToPortal'))}
           </PixelButton>
         </div>
       )}

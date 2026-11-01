@@ -6,6 +6,7 @@ import { AutoModeToggle } from '@/components/AutoModeToggle'
 import { RestingPanel } from '@/components/Extreme'
 import { PixelIcon } from '@/components/icons'
 import { PokeCard } from '@/components/PokeCard'
+import { skinKey, skinOfArea } from '@/components/portalSkin'
 import { PixelButton } from '@/components/PixelButton'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { useContinue } from '@/screens/home/ContinueBar'
@@ -31,6 +32,7 @@ export function AreaIdle({ area, scene = false }: { area: Area; scene?: boolean 
   const { label, sub, go, explore, off, gym, boss, raid, closed, resting } = useContinue(area)
   // Inside a portal run (docs/28) there is no way Home: CONTINUE alone.
   const locked = useGame((s) => !!portalLock(s.save, s.data))
+  const data = useGame((s) => s.data)
   // The nightmare (docs/30) shuts travel only: HOME stays, the reason is said over the bar.
   const held = useGame((s) => nightmareLock(s.save, s.data))
   const autoHere = useGame((s) => !!s.save && autoAvailable(s.save, s.data, s.settings, area.id))
@@ -42,7 +44,7 @@ export function AreaIdle({ area, scene = false }: { area: Area; scene?: boolean 
       {off && <p className="m-0 text-center font-pixel-sm text-[16px] leading-tight text-ink">{sub}</p>}
       {locked && (
         <p className="m-0 text-center font-pixel-sm text-[16px] leading-tight text-ink">
-          {t('ui.portal.locked')}
+          {t(skinKey(skinOfArea(area, data), 'ui.portal.locked'))}
         </p>
       )}
       {held && (

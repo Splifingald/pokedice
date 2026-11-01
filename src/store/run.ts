@@ -48,6 +48,7 @@ import {
   challengeEncounter,
   finishRound,
   type Encounter,
+  type GameData,
   type EncounterContext,
   playerSideOf,
   consumeItem,
@@ -98,6 +99,8 @@ import {
   portalLevels,
   portalLock,
   portalNoCatch,
+  portalModeOf,
+  portalSkin,
   portalNextCard,
   portalStateOf,
   startPortalRun,
@@ -313,7 +316,8 @@ function rollPortal(save: SaveData, areaId: string) {
   if (drawn.card === 'distortion') {
     const opened = openDistortion(drawn.save, data, areaId, runRng)
     if (opened) commitSave(opened.save)
-    if (opened?.closedAtOnce) pushToast(t('ui.portal.closedToast', { n: portalStateOf(opened.save, areaId).closed }), 'good')
+    if (opened?.closedAtOnce)
+      pushToast(t(closedToastKey(data, areaId), { n: portalStateOf(opened.save, areaId).closed }), 'good')
     setRun({ phase: 'idle', encounter: null, firstInArea: false })
     return
   }
@@ -359,8 +363,14 @@ export function pickDistortionOffer(index: number) {
   commitSave(res.save)
   const n = portalStateOf(res.save, run.areaId).closed
   if (res.itemKey) pushToast(t('ui.portal.gotItem', { item: data.items[res.itemKey]?.name ?? res.itemKey }), 'good')
-  pushToast(t('ui.portal.closedToast', { n }), 'good')
+  pushToast(t(closedToastKey(data, run.areaId), { n }), 'good')
 }
+
+/** A portal closed, or an altar lit (the Stairway of Plates, docs/61 §4.5). */
+const closedToastKey = (data: GameData, areaId: string) =>
+  portalSkin(portalModeOf(data.areas.find((a) => a.id === areaId), data)) === 'plates'
+    ? 'ui.plates.closedToast'
+    : 'ui.portal.closedToast'
 
 /** The victory's moment is over: back to the world's Home, where the area is its raid now. */
 export function finishPortalVictory() {

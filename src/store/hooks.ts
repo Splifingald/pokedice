@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { badgesHeld, portalLock } from '@/engine'
+import { badgesHeld, portalLock, portalModeOf, portalSkin } from '@/engine'
 import { useT } from '@/i18n/react'
 import { isAdminEmail } from '@/lib/supabase'
 import { typeHintsOn } from '@/save/storage'
@@ -46,7 +46,13 @@ export function useNavLock(): 'fight' | 'portal' | null {
 export function useLockReason(): string | null {
   const { t } = useT()
   const lock = useNavLock()
-  return lock ? t(lock === 'portal' ? 'ui.portal.locked' : 'ui.nav.finishFight') : null
+  // The Stairway of Plates says it in its own words (docs/61 §4.5).
+  const plates = useGame(
+    (s) => !!s.save && portalSkin(portalModeOf(portalLock(s.save, s.data), s.data)) === 'plates',
+  )
+  return lock
+    ? t(lock === 'portal' ? (plates ? 'ui.plates.locked' : 'ui.portal.locked') : 'ui.nav.finishFight')
+    : null
 }
 
 /** The clock, refreshed every `ms`. */

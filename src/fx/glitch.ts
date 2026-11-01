@@ -115,6 +115,31 @@ export function burstFrame(b: Burst, short = false): BurstFrame {
   return { f, ghosts: GHOSTS[f]!, bands, tint: f % 2 === 0 }
 }
 
+/**
+ * The Stairway of Plates' wild Pokémon (docs/61 §4.5) wear light, not distortion: the same rhythm, never torn; a gold
+ * and white gleam a pixel off each side, brightening on two frames.
+ */
+const LIGHT = { gold: '#e3a92f', pale: '#ffe9a3', white: '#ffffff' } as const
+const LIGHT_GHOSTS: readonly (readonly Ghost[])[] = [
+  [[1, LIGHT.pale, 0.6]],
+  [
+    [2, LIGHT.white, 0.55],
+    [-2, LIGHT.gold, 0.5],
+  ],
+  [[-1, LIGHT.white, 0.5]],
+  [[1, LIGHT.gold, 0.4]],
+]
+
+/** A burst's frame in light: its gleaming copies only (no tear); `tint` brightens it on the even frames. */
+export function lightBurstFrame(b: Burst, short = false): BurstFrame {
+  const f = Math.min(3, Math.floor(b.p * 4))
+  if (short) return { f, ghosts: [[1, LIGHT.pale, 0.5]], bands: [], tint: false }
+  return { f, ghosts: LIGHT_GHOSTS[f]!, bands: [], tint: f % 2 === 0 }
+}
+
+/** What a light burst's tint does to the sprite (Distortion World's is a violet hue shift). */
+export const LIGHT_TINT = 'brightness(1.25) saturate(0.9)'
+
 /** A colour with its alpha, for a CSS filter. */
 const rgba = (hex: string, a: number) =>
   `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(' ')} / ${a})`
@@ -124,11 +149,16 @@ const rgba = (hex: string, a: number) =>
  * place it shows right now, and moves with it. `px`: CSS pixels per art pixel; `tear`: the url() of the SVG filter that
  * shifts the bands (tearPrimitives), or null.
  */
-export function burstCss(frame: BurstFrame, px: number, tear: string | null): string {
+export function burstCss(
+  frame: BurstFrame,
+  px: number,
+  tear: string | null,
+  tint = 'hue-rotate(-25deg) saturate(1.2)',
+): string {
   return [
     tear,
     ...frame.ghosts.map(([dx, col, a]) => `drop-shadow(${dx * px}px 0 0 ${rgba(col, a)})`),
-    frame.tint ? 'hue-rotate(-25deg) saturate(1.2)' : null,
+    frame.tint ? tint : null,
   ]
     .filter(Boolean)
     .join(' ')
@@ -137,6 +167,10 @@ export function burstCss(frame: BurstFrame, px: number, tear: string | null): st
 /** Between bursts: the sprite's own shape a pixel each side, violet and teal, faint; it is a filter on the sprite. */
 export const restCss = (px: number) =>
   `drop-shadow(${px}px 0 0 ${rgba(DW.violet, 0.35)}) drop-shadow(${-px}px 0 0 ${rgba(DW.teal, 0.3)})`
+
+/** Between bursts in light: a faint gold and white rim of its shape. */
+export const lightRestCss = (px: number) =>
+  `drop-shadow(${px}px 0 0 ${rgba(LIGHT.gold, 0.4)}) drop-shadow(${-px}px 0 0 ${rgba(LIGHT.white, 0.45)})`
 
 /**
  * The SVG filter primitives that tear a sprite `w`×`h` CSS pixels (`px` per art pixel): a flat map, a flood per band
@@ -220,8 +254,8 @@ export function drawAura(g: G, key: string, x: number, y: number) {
   g.globalAlpha = 1
 }
 
-/** A mote of the void rising off a distorted Pokémon (w: its width; feet at x, y). */
-export function emitMote(P: Particles, r: Rng, x: number, y: number, w: number) {
+/** A mote of the void rising off a distorted Pokémon (w: its width; feet at x, y); `light`: a mote of light instead. */
+export function emitMote(P: Particles, r: Rng, x: number, y: number, w: number, light = false) {
   P.add({
     x: x + r.range(-w / 2, w / 2),
     y: y - r.range(0, 8),
@@ -230,6 +264,6 @@ export function emitMote(P: Particles, r: Rng, x: number, y: number, w: number) 
     life: r.range(0.6, 1.1),
     size: r() < 0.85 ? 1 : 2,
     shape: 'sq',
-    colors: [DW.violet, DW.mid, DW.dark],
+    colors: light ? [LIGHT.white, LIGHT.pale, LIGHT.gold] : [DW.violet, DW.mid, DW.dark],
   })
 }

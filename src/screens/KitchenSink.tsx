@@ -827,6 +827,9 @@ export function KitchenSink() {
       <Section title="Portal run (Distortion World): the portal, gauge, breach and its pop-up, rules, boons, bonuses, shader, screen distortion, victory">
         <PortalBits />
       </Section>
+      <Section title="The Stairway of Plates (Hall of Origin): the altar, landings' gauge, the way in and its pop-up, rules, an altar's blessings (a Plate), bonuses, light on its Pokémon, the screen's gleam, an altar lit, shiny Arceus coming down">
+        <PortalBits skin="plates" />
+      </Section>
       <Section title="Giratina's area raid (Distortion World): the themed raid page, its pop-up, the raid's stage and a bar's tear">
         <PortalRaidBits />
       </Section>

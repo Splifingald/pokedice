@@ -1,7 +1,14 @@
 // The portal run's settings (docs/28), on their own so the raid's numbers can read them without the run's rules: an
 // area's `mode` as the admin set it, cleaned and filled from the defaults, and the switch that turns it on.
 import { eventOpenTo } from './events'
-import { POKE_TYPES, type Area, type GameData, type PokeType, type PortalRunMode, type PortalSkin } from './types'
+import {
+  POKE_TYPES,
+  type Area,
+  type GameData,
+  type PokeType,
+  type PortalRunMode,
+  type PortalSkin,
+} from './types'
 
 /** Distortion World's numbers (the user's spec of 2026-10-15): what a new portal area starts with. */
 export const DEFAULT_PORTAL_RUN: PortalRunMode = {
@@ -39,7 +46,8 @@ const obj = (v: unknown): Record<string, unknown> =>
  */
 export const PLATE_BARS: readonly PokeType[] = ['normal', 'ice', 'steel', 'dragon']
 
-const isType = (v: unknown): v is PokeType => typeof v === 'string' && (POKE_TYPES as readonly string[]).includes(v)
+const isType = (v: unknown): v is PokeType =>
+  typeof v === 'string' && (POKE_TYPES as readonly string[]).includes(v)
 
 /** A portal run's look: Distortion World's unless it says the Stairway of Plates. */
 export const portalSkin = (mode: Pick<PortalRunMode, 'skin'> | null | undefined): PortalSkin =>

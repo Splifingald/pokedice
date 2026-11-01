@@ -334,6 +334,27 @@ export function fillTri(g: G, p: readonly (readonly [number, number])[], c: stri
  * The name card, legend.ts's: a slanted band sweeping in (the void's purples, Giratina's red and gold rims), the title
  * at 2× when it fits (else 1×), a glint across it, small lines on the right.
  */
+/** A name card's colours (the Stairway of Plates draws it in light: plates.ts). */
+export interface CardColors {
+  band: readonly [string, string]
+  rim: string
+  top: string
+  text: string
+  shadow: string
+  glint: string
+  sub: string
+}
+
+const DW_CARD: CardColors = {
+  band: [DW.dark, DW.deep],
+  rim: DW.gold,
+  top: DW.red,
+  text: '#ffffff',
+  shadow: DW.night,
+  glint: DW.paleGold,
+  sub: DW.gold,
+}
+
 export function nameCard(
   g: G,
   w: number,
@@ -342,6 +363,7 @@ export function nameCard(
   title: string,
   subs: readonly string[],
   glint: number,
+  cc: CardColors = DW_CARD,
 ) {
   const subW = Math.max(0, ...subs.map((s) => labelWidth(g, s)))
   const s = labelWidth(g, title, 2) + 40 + subW <= w ? 2 : 1
@@ -351,12 +373,12 @@ export function nameCard(
   for (let y = 0; y < h; y++) {
     const slant = Math.round((h - y) * 0.6)
     const col =
-      y === 0 || y === h - 1 ? DW.gold : y < 3 ? DW.red : bayer(y, y * 3) < y / h ? DW.dark : DW.deep
+      y === 0 || y === h - 1 ? cc.rim : y < 3 ? cc.top : bayer(y, y * 3) < y / h ? cc.band[0] : cc.band[1]
     rect(g, x + slant - 10, y0 + y, w + 20, 1, col)
   }
   const tx = x + 14
   const ty = y0 + (s === 2 ? 8 : 8)
-  const nameW = label(g, title, tx, ty, '#ffffff', DW.night, s)
+  const nameW = label(g, title, tx, ty, cc.text, cc.shadow, s)
   if (glint > 0 && glint < 1) {
     g.save()
     g.beginPath()
@@ -366,12 +388,12 @@ export function nameCard(
     g.lineTo(gx - 2, ty + 16)
     g.lineTo(gx - 8, ty + 16)
     g.clip()
-    label(g, title, tx, ty, DW.paleGold, null, s)
+    label(g, title, tx, ty, cc.glint, null, s)
     g.restore()
   }
   if (showSubs)
     subs.slice(0, s === 2 ? 2 : 1).forEach((sub, i) => {
-      label(g, sub, x + w - 12 - labelWidth(g, sub), y0 + 7 + i * 10, i ? '#ffffff' : DW.gold, DW.night)
+      label(g, sub, x + w - 12 - labelWidth(g, sub), y0 + 7 + i * 10, i ? cc.text : cc.sub, cc.shadow)
     })
 }
 
@@ -402,7 +424,7 @@ function bars(g: G, w: number, h: number, n: number) {
 }
 
 /** The seal: a gold ring with eight marks turning round it in steps, fading out through the dither. */
-function seal(g: G, c: Point, R: number, t: number, q: number) {
+export function seal(g: G, c: Point, R: number, t: number, q: number) {
   if (q <= 0 || q >= 1) return
   const k = 1 - span(q, 0.55, 1)
   const r0 = Math.round(R * (0.35 + 0.75 * ease.outBack(span(q, 0, 0.4), 1.6)))

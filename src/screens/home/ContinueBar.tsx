@@ -16,6 +16,7 @@ import {
   openRaidIn,
   playerSideOf,
   portalModeOf,
+  portalSkin,
   portalStateOf,
   progressOf,
   raidRules,
@@ -27,6 +28,7 @@ import { NewTag } from '@/components/Chip'
 import { RestingPanel } from '@/components/Extreme'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
+import { skinKey } from '@/components/portalSkin'
 import { countdown, trainerTitle } from '@/lib/format'
 import { pushToast, useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
@@ -65,6 +67,8 @@ export function useContinue(area: Area) {
   // it is only its raid, then sealed.
   const mode = portalModeOf(area, data)
   const portal = mode ? portalStateOf(save, area.id) : null
+  // Its lines in its look's words (the Stairway of Plates: docs/61 §4.5).
+  const pk = (key: string) => skinKey(portalSkin(mode), key)
   // A nightmare area (docs/30): the same way: before it, CONTINUE goes to its way in; once over, only its raid.
   const dreamMode = nightmareModeOf(area, data)
   const dream = dreamMode ? nightmareStateOf(save, area.id) : null
@@ -91,7 +95,7 @@ export function useContinue(area: Area) {
     : enterDream
       ? t('ui.nightmare.enterSub', { n: dreamMode!.foes.length })
       : enter
-      ? t('ui.portal.enterSub', { n: mode!.portals })
+      ? t(pk('ui.portal.enterSub'), { n: mode!.portals })
       : raid && dream?.won
         ? t('ui.raid.progress.continueSub', { level: raidRules(data, raid.dex, 'progress', raid.areaId).level })
       : dream?.won
@@ -101,9 +105,9 @@ export function useContinue(area: Area) {
       : raid && portal?.won
         ? t('ui.raid.progress.continueSub', { level: raidRules(data, raid.dex, 'progress', raid.areaId).level })
       : portal?.won
-        ? t('ui.portal.sealed')
+        ? t(pk('ui.portal.sealed'))
       : portal?.active
-        ? t('ui.portal.continueSub', { n: portal.closed, total: mode!.portals })
+        ? t(pk('ui.portal.continueSub'), { n: portal.closed, total: mode!.portals })
     : resting
       ? back
         ? t('ui.extreme.card.resting', {
@@ -187,7 +191,7 @@ export function useContinue(area: Area) {
   const label = enterDream
     ? t('ui.nightmare.enter')
     : enter
-    ? t('ui.portal.enter')
+    ? t(pk('ui.portal.enter'))
     : gym
     ? t('ui.area.challenge', { name: gym.name.toUpperCase() })
     : boss

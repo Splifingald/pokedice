@@ -12,12 +12,13 @@ import {
   type PokemonInstance,
   type PokeType,
   type PortalRunMode,
+  type PortalSkin,
 } from '@/engine'
 import { playCry } from '@/audio/cries'
 import { loadItemSprite, loadSprite, spriteKey } from '@/fx/sprites'
 import { breachTimeline, distortionLevel, victoryTimeline } from '@/fx/timelines/portal'
+import { descentTimeline, stairwayTimeline } from '@/fx/timelines/plates'
 import { joinList } from '@/i18n'
-import { useT } from '@/i18n/react'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { typeName } from '@/lib/format'
 import { useMotion } from '@/lib/motion'
@@ -29,6 +30,7 @@ import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
 import { RuleList, RulesModal, type RuleRow } from './RulesModal'
 import { PortalArt, PortalScene, useFullStage } from './PortalFx'
+import { plateKey, PRIZE, skinKey, usePortalT } from './portalSkin'
 import { MiniSprite } from './SpriteImg'
 import { StageCanvas, type StageHandle } from './StageCanvas'
 import { TypeBadge } from './TypeBadge'
@@ -74,7 +76,7 @@ export function DistortionGauge({
   total: number
   className?: string
 }) {
-  const { t } = useT()
+  const { t, skin } = usePortalT()
   const done = Math.min(closed, total)
   return (
     <div
@@ -90,7 +92,7 @@ export function DistortionGauge({
             className={cx(
               'flex h-6 min-w-0 flex-1 items-center justify-center border-2',
               i < done
-                ? 'light-scope border-edge bg-[#b9a2e8]'
+                ? cx('light-scope border-edge', skin === 'plates' ? 'bg-[#ffe9a3]' : 'bg-[#b9a2e8]')
                 : i === done
                   ? 'border-gold bg-line'
                   : 'border-edge bg-line',
@@ -110,10 +112,10 @@ export function DistortionGauge({
 
 // ------------------------------------------------------------------ its rules
 
-/** The run's rules, from the area's numbers. */
-export function usePortalRules(mode: PortalRunMode, data: GameData): RuleRow[] {
-  const { t } = useT()
-  const name = data.species[GIRATINA]?.name ?? 'Giratina'
+/** The run's rules, from the area's numbers; `prize` the Pokémon at the end of it (the look's by default). */
+export function usePortalRules(mode: PortalRunMode, data: GameData, prize?: number): RuleRow[] {
+  const { t, skin } = usePortalT()
+  const name = data.species[prize ?? PRIZE[skin]]?.name ?? ''
   return [
     {
       icon: 'sparkle',
@@ -137,15 +139,17 @@ export function PortalRulesModal({
   onGo,
   mode,
   data,
+  prize,
 }: {
   open: boolean
   onClose: () => void
   onGo?: () => void
   mode: PortalRunMode
   data: GameData
+  prize?: number
 }) {
-  const { t } = useT()
-  const rules = usePortalRules(mode, data)
+  const { t } = usePortalT()
+  const rules = usePortalRules(mode, data, prize)
   return (
     <RulesModal
       open={open}
@@ -164,6 +168,12 @@ export function PortalRulesModal({
 /** The line under a full-screen scene: a card in the name card's colours (the void, Giratina's red and gold rims). */
 const LINE_CARD =
   'm-0 max-w-md bg-[#12051f] px-4 py-3 text-center leading-tight text-[#f4ecff] shadow-[inset_0_3px_0_#e8384a,inset_0_-3px_0_#ffc94a,0_0_0_3px_#07020d]'
+/** The Stairway of Plates' line card: cream, dark-gold ink, gold and white rims (the light name card's colours). */
+const LINE_CARD_LIGHT =
+  'm-0 max-w-md bg-[#fff6dc] px-4 py-3 text-center leading-tight text-[#4a3410] shadow-[inset_0_3px_0_#e3a92f,inset_0_-3px_0_#ffffff,0_0_0_3px_#8a6420]'
+const lineCard = (skin: PortalSkin) => (skin === 'plates' ? LINE_CARD_LIGHT : LINE_CARD)
+/** The page under a full-screen scene: the void, or the white-gold sky. */
+const sceneBg = (skin: PortalSkin) => (skin === 'plates' ? 'bg-[#fff6dc]' : 'bg-[#07020d]')
 
 /**
  * The breach, full screen (breachTimeline): the area cracks and falls in pixel shards into a tear of the Distortion
@@ -184,7 +194,7 @@ export function PortalBreach({
   instant?: boolean
   under?: boolean
 }) {
-  const { t } = useT()
+  const { t, skin } = usePortalT()
   const { level } = useMotion()
   const size = useFullStage(200)
   const stage = useRef<StageHandle>(null)
@@ -195,7 +205,8 @@ export function PortalBreach({
   const scene = useMemo(
     () => ({
       ready: picture ? loadItemSprite(picture) : Promise.resolve(),
-      timeline: breachTimeline({
+      // The Stairway of Plates: the area rising into light, the stairway behind it (docs/61 §4.5).
+      timeline: (skin === 'plates' ? stairwayTimeline : breachTimeline)({
         ...size,
         title: t('ui.portal.title'),
         picture: picture ? `item|${picture}` : null,
@@ -213,7 +224,8 @@ export function PortalBreach({
   return (
     <div
       className={cx(
-        'portal-breach fixed inset-0 overflow-hidden bg-[#07020d]',
+        'portal-breach fixed inset-0 overflow-hidden',
+        sceneBg(skin),
         // Under the pop-up (Modal's z-90), still over the page.
         under ? 'z-[89]' : 'z-[95]',
       )}
@@ -235,7 +247,7 @@ export function PortalBreach({
         className="absolute inset-0 h-full w-full"
       />
       <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-3 p-4 pb-6">
-        <p className={cx(LINE_CARD, 'text-[24px]', !line && 'invisible')} aria-live="polite">
+        <p className={cx(lineCard(skin), 'text-[24px]', !line && 'invisible')} aria-live="polite">
           {t('ui.portal.breach')}
         </p>
         {!under && end && (
@@ -246,10 +258,14 @@ export function PortalBreach({
               e.stopPropagation()
               onContinue()
             }}
-            className="flex min-h-[44px] items-center gap-2 px-3 font-pixel-sm text-[20px] uppercase tracking-[0.04em] text-[#f4ecff] outline-offset-4"
+            className={cx(
+              'flex min-h-[44px] items-center gap-2 px-3 font-pixel-sm text-[20px] uppercase tracking-[0.04em] outline-offset-4',
+              // On the white-gold sky the prompt sits on a cream chip in dark-gold ink, for contrast.
+              skin === 'plates' ? 'bg-[#fff6dc] text-[#4a3410] shadow-[0_0_0_2px_#8a6420]' : 'text-[#f4ecff]',
+            )}
           >
             {t('ui.portal.tapContinue')}
-            <span aria-hidden className="blink text-[#ffc94a]">
+            <span aria-hidden className={cx('blink', skin === 'plates' ? 'text-[#8a6420]' : 'text-[#ffc94a]')}>
               ▼
             </span>
           </button>
@@ -272,6 +288,7 @@ export function PortalEntryDialog({
   onNotNow,
   onTeam,
   banner = true,
+  prize,
 }: {
   open: boolean
   mode: PortalRunMode
@@ -281,9 +298,10 @@ export function PortalEntryDialog({
   /** To the Team screen, and back here after. */
   onTeam?: () => void
   banner?: boolean
+  prize?: number
 }) {
-  const { t } = useT()
-  const rules = usePortalRules(mode, data)
+  const { t, skin } = usePortalT()
+  const rules = usePortalRules(mode, data, prize)
   return (
     <Modal
       open={open}
@@ -296,7 +314,7 @@ export function PortalEntryDialog({
     >
       <div className={cx('flex flex-col gap-3', !banner && 'min-h-0 flex-1')}>
         {banner && (
-          <div className="relative -mx-4 h-[150px] overflow-hidden bg-[#07020d]" aria-hidden>
+          <div className={cx('relative -mx-4 h-[150px] overflow-hidden', sceneBg(skin))} aria-hidden>
             <PortalScene />
           </div>
         )}
@@ -343,6 +361,7 @@ export function PortalEntry({
   onReady,
   onNotNow,
   onTeam,
+  prize,
 }: {
   mode: PortalRunMode
   data: GameData
@@ -352,6 +371,7 @@ export function PortalEntry({
   onReady: () => void
   onNotNow: () => void
   onTeam?: () => void
+  prize?: number
 }) {
   const [open, setOpen] = useState(popup)
   const show = useCallback(() => {
@@ -369,6 +389,7 @@ export function PortalEntry({
         onReady={onReady}
         onNotNow={onNotNow}
         onTeam={onTeam}
+        prize={prize}
       />
     </>
   )
@@ -446,8 +467,11 @@ export function describeOffer(
   data: GameData,
   team: readonly PokemonInstance[],
   diceOf: (inst: PokemonInstance) => number,
-  t: (key: string, vars?: Record<string, string | number>) => string,
+  tr: (key: string, vars?: Record<string, string | number>) => string,
+  skin: PortalSkin = 'distortion',
 ): OfferView {
+  // In the look's words: the Stairway of Plates names its damage boon after a Plate (the Flame Plate: Fire +10).
+  const t = (key: string, vars?: Record<string, string | number>) => tr(skinKey(skin, key), vars)
   const who = (uid: string) => team.find((p) => p.id === uid)
   switch (offer.kind) {
     case 'heal':
@@ -472,8 +496,16 @@ export function describeOffer(
       return {
         offer,
         icon: <TypeBadge type={offer.type} />,
-        title: t('ui.portal.offer.boost.title', { type: typeName(offer.type), n: offer.amount }),
-        text: t('ui.portal.offer.boost.text', { type: typeName(offer.type), n: offer.amount }),
+        title: t('ui.portal.offer.boost.title', {
+          type: typeName(offer.type),
+          n: offer.amount,
+          plate: tr(plateKey(offer.type)),
+        }),
+        text: t('ui.portal.offer.boost.text', {
+          type: typeName(offer.type),
+          n: offer.amount,
+          plate: tr(plateKey(offer.type)),
+        }),
       }
     case 'die': {
       const p = who(offer.uid)
@@ -535,7 +567,7 @@ export function BoonConfirm({
   onBack: () => void
   onConfirm: () => void
 }) {
-  const { t } = useT()
+  const { t } = usePortalT()
   const ok = useRef<HTMLButtonElement>(null)
   // The last boon stays while the pop-up closes.
   const last = useRef(view)
@@ -589,12 +621,15 @@ export function DistortionChoiceView({
   total: number
   onPick: (i: number) => void
 }) {
-  const { t } = useT()
+  const { t, skin } = usePortalT()
   const [asked, setAsked] = useState<number | null>(null)
   return (
-    <section className="pixel-panel portal-panel flex flex-col gap-3 p-3" aria-labelledby="portal-choice">
+    <section
+      className={cx('pixel-panel flex flex-col gap-3 p-3', skin === 'plates' ? 'plates-panel' : 'portal-panel')}
+      aria-labelledby="portal-choice"
+    >
       <div className="flex items-center gap-3">
-        <div className="shrink-0 bg-[#07020d] p-1 shadow-ring">
+        <div className={cx('shrink-0 p-1 shadow-ring', sceneBg(skin))}>
           <PortalArt size={72} />
         </div>
         <div className="grid min-w-0 gap-1">
@@ -646,11 +681,14 @@ export function RunBonuses({
   boosts: Partial<Record<PokeType, number>>
   dice: { name: string; dex: number; types: PokeType[] }[]
 }) {
-  const { t } = useT()
+  const { t, skin } = usePortalT()
   const list = Object.entries(boosts).filter(([, n]) => (n ?? 0) > 0) as [PokeType, number][]
   const none = !list.length && !dice.some((d) => d.types.length)
   return (
-    <section className="pixel-panel portal-panel flex flex-col gap-2 p-3" aria-labelledby="portal-bonuses">
+    <section
+      className={cx('pixel-panel flex flex-col gap-2 p-3', skin === 'plates' ? 'plates-panel' : 'portal-panel')}
+      aria-labelledby="portal-bonuses"
+    >
       <h2 id="portal-bonuses" className="m-0 text-[22px] font-normal leading-none">
         {t('ui.portal.bonuses')}
       </h2>
@@ -661,7 +699,9 @@ export function RunBonuses({
           {list.map(([type, n]) => (
             <li key={type} className="inline-flex items-center gap-1.5 bg-paper px-2 py-1 shadow-ring-line">
               <TypeBadge type={type} size="sm" />
-              <span className="font-pixel-sm text-[16px]">{t('ui.portal.boostChip', { n })}</span>
+              <span className="font-pixel-sm text-[16px]">
+                {t('ui.portal.boostChip', { n, plate: t(plateKey(type)) })}
+              </span>
             </li>
           ))}
           {dice
@@ -699,15 +739,21 @@ export function PortalVictoryView({
   level: lv,
   onDone,
   onRaid,
+  dex = GIRATINA,
+  portals = 10,
 }: {
   name: string
+  /** Who comes out: shiny Giratina, or shiny Arceus down the stairway. */
+  dex?: number
+  /** How many there were (the Stairway of Plates' title counts its altars). */
+  portals?: number
   level?: number
   /** BACK TO THE WORLD: Home. */
   onDone: () => void
   /** HEAL & START RAID: healed as at a Center, then the raid's page (the user, 2026-10-15). */
   onRaid?: () => void
 }) {
-  const { t } = useT()
+  const { t, skin } = usePortalT()
   const { level } = useMotion()
   const size = useFullStage(300)
   const stage = useRef<StageHandle>(null)
@@ -715,10 +761,11 @@ export function PortalVictoryView({
   useHoldFullscreen()
   const scene = useMemo(
     () => ({
-      ready: loadSprite(GIRATINA, false, true),
-      timeline: victoryTimeline({
+      ready: loadSprite(dex, false, true),
+      // The Stairway of Plates: shiny Arceus coming down the stairs, then the Judgment (docs/61 §4.5).
+      timeline: (skin === 'plates' ? descentTimeline : victoryTimeline)({
         ...size,
-        mon: spriteKey(GIRATINA, false, true),
+        mon: spriteKey(dex, false, true),
         name,
         subs: [t('ui.mon.shinyTag'), ...(lv ? [t('ui.common.level.short', { n: lv })] : [])],
         short: level === 'short',
@@ -730,7 +777,7 @@ export function PortalVictoryView({
   )
   return (
     <div
-      className="portal-breach fixed inset-0 z-[95] overflow-hidden bg-[#07020d]"
+      className={cx('portal-breach fixed inset-0 z-[95] overflow-hidden', sceneBg(skin))}
       role="dialog"
       aria-modal="true"
       aria-labelledby="portal-won"
@@ -742,7 +789,7 @@ export function PortalVictoryView({
         size={{ w: size.w, h: size.h }}
         hud={{
           beat: (b) => {
-            if (b === 'roar') playCry(GIRATINA)
+            if (b === 'roar') playCry(dex)
             if (b === 'card') setCard(true)
           },
         }}
@@ -755,9 +802,15 @@ export function PortalVictoryView({
           !card && 'invisible',
         )}
       >
-        <div className={cx(LINE_CARD, 'grid gap-2')}>
-          <h2 id="portal-won" className="light-scope m-0 text-[30px] font-normal leading-none text-gold-light">
-            {t('ui.portal.victoryTitle')}
+        <div className={cx(lineCard(skin), 'grid gap-2')}>
+          <h2
+            id="portal-won"
+            className={cx(
+              'light-scope m-0 text-[30px] font-normal leading-none',
+              skin === 'plates' ? 'text-[#8a6420]' : 'text-gold-light',
+            )}
+          >
+            {t('ui.portal.victoryTitle', { n: portals })}
           </h2>
           <p className="m-0 text-[20px] leading-tight" aria-live="polite">
             {t('ui.portal.victoryBody', { name })}

@@ -21,6 +21,7 @@ import { gmaxEndTimeline, gmaxFor, megaFor, unleashTimeline } from '@/fx/timelin
 import { zAwayTimeline, zMoveTimeline, zStrikeTimeline } from '@/fx/timelines/zmove'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { breachTimeline, closeTimeline, victoryTimeline, wildGlitchTimeline } from '@/fx/timelines/portal'
+import { altarLitTimeline, descentTimeline, plateTimeline, stairwayTimeline } from '@/fx/timelines/plates'
 import { legendRaidEntranceTimeline } from '@/fx/timelines/legendRaid'
 import { LEGEND_RAID_SCENES } from '@/fx/timelines/legendRaidScenes'
 import { BOSS_CINEMAS, RAID_CINEMAS } from '@/fx/timelines/cinema'
@@ -92,6 +93,8 @@ const STONE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/
 const CANDY = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/rare-candy.png'
 /** Distortion World's picture (Haunted Hollow), cracked open by the breach. */
 const RIFT = artUrl('a123')
+/** The Hall of Origin's picture (Snowglobe Valley, docs/61). */
+const HALL = artUrl('a130')
 // Newmoon Island's picture (docs/30): what the nightmare's intro sinks into the night.
 const NEWMOON = artUrl('a127')
 
@@ -371,6 +374,34 @@ const PRESETS: Preset[] = [
     sprites: [[487, false, true]],
     make: (o) => raidEntranceTimeline({ mon: spriteKey(487, false, true), short: o.short }),
   },
+  // The Stairway of Plates (docs/61 §4.5): the same run in light, in the Hall of Origin.
+  {
+    name: 'Stairway of Plates: the way in (drawn field)',
+    sprites: [],
+    make: (o) => stairwayTimeline({ title: 'Stairway of Plates', short: o.short }),
+  },
+  {
+    name: "Stairway of Plates: the way in (the Hall of Origin's picture)",
+    sprites: [],
+    item: HALL,
+    make: (o) => stairwayTimeline({ title: 'Stairway of Plates', picture: `item|${HALL}`, short: o.short }),
+  },
+  {
+    name: 'Stairway of Plates: an altar lit (a blessing picked)',
+    sprites: [],
+    make: (o) => altarLitTimeline({ short: o.short }),
+  },
+  {
+    name: 'Stairway of Plates: the victory (shiny Arceus down the stairs, the Judgment)',
+    sprites: [[493, false, true]],
+    make: (o) =>
+      descentTimeline({
+        mon: spriteKey(493, false, true),
+        name: 'Arceus',
+        subs: ['SHINY', 'Lv.90'],
+        short: o.short,
+      }),
+  },
   // The raid overhaul's legendary entrances (docs/40): one per scene, the raid intro's words being the page's.
   ...Object.entries(LEGEND_RAID_SCENES).map(
     ([dex, scene]): Preset => ({
@@ -636,6 +667,25 @@ const PRESETS: Preset[] = [
         from: spriteKey(487, false, true),
         to: spriteKey(10007, false, true),
         die: 'dragon',
+        short: o.short,
+      }),
+  },
+  {
+    // The Hall of Origin's raid (docs/61 §4.5): a bar breaks, Arceus takes the next one's Plate (20005: its Ice form).
+    name: "A raid's bar: Arceus takes the Icicle Plate",
+    sprites: [
+      [150, true],
+      [493, false, true],
+      [20005, false, true],
+    ],
+    make: (o) =>
+      plateTimeline({
+        own: own(150),
+        foe: spriteKey(493, false, true),
+        side: 'foe',
+        from: spriteKey(493, false, true),
+        to: spriteKey(20005, false, true),
+        die: 'ice',
         short: o.short,
       }),
   },

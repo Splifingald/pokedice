@@ -100,7 +100,13 @@ describe('Snowglobe Valley', () => {
     const { raid: _dwRaid, ...dwRules } = DEFAULT_PORTAL_RUN
     expect(rules).toEqual(dwRules)
     expect(skin).toBe('plates')
-    expect(raid).toEqual({ level: 90, upgradeLevel: 10, bars: 4, teamCap: 90, barTypes: ['normal', 'ice', 'steel', 'dragon'] })
+    expect(raid).toEqual({
+      level: 90,
+      upgradeLevel: 10,
+      bars: 4,
+      teamCap: 90,
+      barTypes: ['normal', 'ice', 'steel', 'dragon'],
+    })
     // The only area of the world with a mode, and it reaches the migration (worldSql writes modes).
     expect(h.areas.filter((a) => a.mode).map((a) => a.name)).toEqual(['Hall of Origin'])
     expect(snowglobeSql()).toContain('"skin":"plates"')

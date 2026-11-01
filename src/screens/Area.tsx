@@ -159,7 +159,7 @@ export function AreaScreen() {
           <AreaIdle area={area} scene={sceneIdle} />
         </>
       )}
-      {mode && run.phase === 'idle' && <PortalInfo mode={mode} />}
+      {mode && run.phase === 'idle' && <PortalInfo mode={mode} area={area} />}
       {nm && run.phase === 'idle' && <NightmareInfo mode={nm} />}
     </div>
   )

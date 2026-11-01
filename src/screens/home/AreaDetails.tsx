@@ -30,6 +30,7 @@ import {
 } from '@/engine'
 import { useT } from '@/i18n/react'
 import { BadgeIcon } from '@/components/BadgeIcon'
+import { skinKey, skinOfArea } from '@/components/portalSkin'
 import { Chip } from '@/components/Chip'
 import { DayNightTag } from '@/components/DayNight'
 import { rarity } from '@/components/DexEntry'
@@ -121,7 +122,7 @@ function RaidFact({ area, boss }: { area: Area; boss: BossDef }) {
       note={t(
         state === 'locked'
           ? portalModeOf(area, data)
-            ? 'ui.portal.factLocked'
+            ? skinKey(skinOfArea(area, data), 'ui.portal.factLocked')
             : nightmareModeOf(area, data)
               ? 'ui.nightmare.factLocked'
               : 'ui.raid.progress.factLocked'

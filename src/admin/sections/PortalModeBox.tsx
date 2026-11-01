@@ -1,11 +1,76 @@
-// Admin → Areas: an area's special mode (docs/28). Only the portal run exists: Distortion World's. Its switch (the
-// game_config row `portalRun`, which the server reads too) and every number of the area's run.
+// Admin → Areas: an area's special mode (docs/28). The portal run: Distortion World's, and the Hall of Origin's dressed
+// as the Stairway of Plates (docs/61 §4.5). Its switch (the game_config row `portalRun`, which the server reads too),
+// its look, every number of the area's run and its raid's, the raid Pokémon's type on each bar among them.
 import type { Row } from '@/config/mapping'
-import { DEFAULT_PORTAL_RUN, normalisePortal, type PortalRunMode } from '@/engine'
+import {
+  DEFAULT_PORTAL_RUN,
+  normalisePortal,
+  PLATE_BARS,
+  POKE_TYPES,
+  portalSkin,
+  type PokeType,
+  type PortalRunMode,
+  type PortalSkin,
+} from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
 import { updateRow, rowKey, useAdminData } from '../store'
 import { AccessSwitch, Box, Field, NumInput, inputCls } from '../widgets'
 import { useConfigRow } from './ConfigSection'
+
+/**
+ * The raid Pokémon's type as each bar starts (Arceus changing its Plate: Normal → Ice → Steel → Dragon in the Hall of
+ * Origin). Bar by bar; "—" ends the list there (it keeps its type from then on). Only a Pokémon with type forms
+ * (Arceus) changes; any other ignores it.
+ */
+function BarTypes({
+  mode,
+  onChange,
+}: {
+  mode: PortalRunMode
+  onChange: (barTypes: PokeType[] | undefined) => void
+}) {
+  const list = mode.raid.barTypes ?? []
+  const set = (next: PokeType[]) => onChange(next.length ? next : undefined)
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="text-lg">
+        Raid Pokémon’s type on each bar{' '}
+        <span className="text-base text-muted">
+          (its type form, announced as it takes the bar’s Plate; Arceus only)
+        </span>
+      </span>
+      <div className="flex flex-wrap items-end gap-2">
+        {Array.from({ length: mode.raid.bars }, (_, i) => (
+          <Field key={i} label={`Bar ${i + 1}`}>
+            <select
+              className={inputCls}
+              aria-label={`Raid bar ${i + 1}: its type`}
+              value={list[i] ?? ''}
+              disabled={i > list.length}
+              onChange={(e) => {
+                const v = e.target.value as PokeType | ''
+                set(v ? [...list.slice(0, i), v, ...list.slice(i + 1)] : list.slice(0, i))
+              }}
+            >
+              <option value="">— (keeps its type)</option>
+              {POKE_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </Field>
+        ))}
+        <PixelButton size="sm" onClick={() => set([...PLATE_BARS])}>
+          The Hall of Origin’s Plates
+        </PixelButton>
+        <PixelButton size="sm" variant="danger" onClick={() => set([])}>
+          None
+        </PixelButton>
+      </div>
+    </div>
+  )
+}
 
 export function PortalModeBox({ area }: { area: Row }) {
   const data = useAdminData()
@@ -28,7 +93,7 @@ export function PortalModeBox({ area }: { area: Row }) {
     <Box
       title="Special mode: portal run"
       icon="star"
-      hint="Distortion World's mode (docs/28): no rounds and no Pokémon Center; the team is healed going in and can't leave until it wins or is K.O. An endless deck of wild Pokémon (never caught) and finds, each cycle ending on a distortion that offers boons; the last one wins for good and opens the area's raid at the numbers below. A wipe keeps XP, ₽ and items but closes the portals back to 0."
+      hint="Distortion World's mode (docs/28), also the Hall of Origin's Stairway of Plates (docs/61 §4.5): no rounds and no Pokémon Center; the team is healed going in and can't leave until it wins or is K.O. An endless deck of wild Pokémon (never caught) and finds, each cycle ending on a distortion that offers boons; the last one wins for good and opens the area's raid at the numbers below. A wipe keeps XP, ₽ and items but closes the portals back to 0."
     >
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-lg">Portal runs (every area)</span>
@@ -55,6 +120,24 @@ export function PortalModeBox({ area }: { area: Row }) {
       </label>
       {mode && (
         <>
+          <Field
+            label="Its look"
+            hint="The same rules and numbers either way; only the words and the effects change (docs/61 §4.5)."
+          >
+            <select
+              className={inputCls}
+              value={portalSkin(mode)}
+              onChange={(e) => {
+                const skin = e.target.value as PortalSkin
+                // Distortion World's look is the default: no `skin` written for it, so its mode reads as before.
+                const { skin: _old, ...rest } = mode
+                set(skin === 'plates' ? { ...rest, skin } : rest)
+              }}
+            >
+              <option value="distortion">Distortion World: portals, distortions, Giratina</option>
+              <option value="plates">Stairway of Plates: landings, altars, Plates, Arceus</option>
+            </select>
+          </Field>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {num('Portals to close', mode.portals, (v) => patch({ portals: v }), {
               min: 1,
@@ -239,6 +322,7 @@ export function PortalModeBox({ area }: { area: Row }) {
               { min: 1, max: 100, hint: 'teams from the world’s Box' },
             )}
           </div>
+          <BarTypes mode={mode} onChange={(barTypes) => patch({ raid: { ...mode.raid, barTypes } })} />
         </>
       )}
     </Box>

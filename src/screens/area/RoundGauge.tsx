@@ -11,6 +11,7 @@ import {
   nextRoundSize,
   opensWithoutCenter,
   portalModeOf,
+  portalSkin,
   progressOf,
   type Area,
   type AreaProgress,
@@ -28,6 +29,7 @@ import { useGame } from '@/store/game'
 import { useAreaVersus } from '@/store/areaVersus'
 import { cx } from '@/theme/util'
 import { DistortionGauge } from '@/components/Portal'
+import { PortalSkinProvider } from '@/components/portalSkin'
 import { NightmareGauge } from '@/components/Nightmare'
 
 const CARD_ICON: Record<DeckCard, IconName> = {
@@ -77,7 +79,10 @@ export function RoundGauge({
   const portal = portalModeOf(area, data)
   if (portal)
     return (
-      <DistortionGauge closed={progress.portal?.closed ?? 0} total={portal.portals} className={className} />
+      // The Stairway of Plates counts its landings climbed (docs/61 §4.5).
+      <PortalSkinProvider value={portalSkin(portal)}>
+        <DistortionGauge closed={progress.portal?.closed ?? 0} total={portal.portals} className={className} />
+      </PortalSkinProvider>
     )
   // The nightmare (docs/30) counts its rounds won.
   const dream = nightmareModeOf(area, data)
