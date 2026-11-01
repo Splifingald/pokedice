@@ -12,6 +12,7 @@ import {
   type ShowdownBox,
   type ShowdownEntry,
 } from '@/lib/showdown'
+import { outfitSprite } from '@/lib/outfitSprites'
 import {
   isShowdownUrl,
   showdownDown,
@@ -47,14 +48,16 @@ export const SHOWDOWN = showdownSprites as unknown as Record<string, ShowdownEnt
 
 /**
  * The Showdown sprite of one view, when Showdown has one and is answering (src/lib/showdownReach.ts): its URL and box.
- * Shiny boxes fall back to the plain ones.
+ * Shiny boxes fall back to the plain ones. `outfit` (docs/59): the species in that outfit when it has it drawn and the
+ * game can load it (`outfitSprite`), else the plain species.
  */
 export function showdownView(
   dex: number,
   back: boolean,
   shiny: boolean,
+  outfit?: string | null,
 ): { url: string; box: ShowdownBox } | null {
-  const e = SHOWDOWN[dex]
+  const e = outfitSprite(outfit, dex) ?? SHOWDOWN[dex]
   if (!e || showdownDown()) return null
   const v = (back ? 1 : 0) + (shiny ? 2 : 0)
   const kind = e.v[v]
@@ -131,11 +134,14 @@ export function SpriteImg({
   flip = false,
   back = false,
   shiny = false,
+  outfit,
   className,
   alt,
   fit = true,
 }: {
   dex: number
+  /** Its outfit (docs/59), from `outfitOf`: the outfit's sprite when the game can show it, the plain one otherwise. */
+  outfit?: string | null
   size?: number
   silhouette?: boolean
   flip?: boolean
@@ -150,7 +156,7 @@ export function SpriteImg({
   const species = useGame((s) => s.data.species[dex])
   // Showdown failing or stalling (here or anywhere) brings the local sprite at once.
   useShowdownDown()
-  const sd = showdownView(dex, back, shiny)
+  const sd = showdownView(dex, back, shiny, outfit)
   const local = spriteUrlFor(dex, back ? 'back' : 'front', shiny)
   // A species added in admin without a local sprite falls back to its own sprite_url.
   const own = species?.spriteUrl && species.spriteUrl !== spriteUrlFor(dex) ? species.spriteUrl : null

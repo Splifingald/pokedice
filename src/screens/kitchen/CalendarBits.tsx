@@ -38,6 +38,8 @@ const REWARDS: CalendarReward[] = [
   { kind: 'pokemon', dex: 220, level: 10, qty: 2 },
   { kind: 'item', key: 'ice-stone', qty: 1 },
   { kind: 'pokemon', dex: 25, level: 20, shiny: true, qty: 1 },
+  // In an outfit (docs/59): its name and hat show while Outfits are on (Admin → Config), the plain one otherwise.
+  { kind: 'pokemon', dex: 25, level: 10, outfit: 'santa', qty: 1 },
 ]
 const DAYS = Array.from({ length: 24 }, (_, i) => REWARDS[i % REWARDS.length]!)
 

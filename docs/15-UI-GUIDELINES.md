@@ -1093,7 +1093,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   rules pop-up (`RulesModal`, Later / Let's go!), taking its turn in the one-time pop-ups' queue, below; so do the
   rules shown at their own moment (the portal's and the nightmare's way in, Trick or Treat's first ghost, the gifts',
   the looks'). The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is a tap on the Pokémon sheet's talent box, as it has no page), real-player battles (§39: its rules pop-up after the first card's intro, as Trick or Treat's at the first ghost; INFO on the card), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event), the gift calendar (§40: its page's rules card, once; INFO in its dock), welcome-back gifts (§23, docs/58: **no rules and no INFO**, the user's explicit exception of 2026-11-01: a developer's message that says only how long the player was away) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is a tap on the Pokémon sheet's talent box, as it has no page), real-player battles (§39: its rules pop-up after the first card's intro, as Trick or Treat's at the first ghost; INFO on the card), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event), the gift calendar (§40: its page's rules card, once; INFO in its dock), outfits (§41, docs/59: no page, so its rules pop-up once the first Pokémon in an outfit arrives; its INFO is a tap on the outfit's chip on the Pokémon sheet), welcome-back gifts (§23, docs/58: **no rules and no INFO**, the user's explicit exception of 2026-11-01: a developer's message that says only how long the player was away) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **The one-time pop-ups take turns, in one queue** (`nextOneTimePopup`, src/engine/popups.ts; docs/38 U2a): one at a
   time, only between fights (`run.phase === 'idle'`, no battle, no full-screen moment, no gift being opened), never on
@@ -1102,7 +1102,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   the server's clock, what waits outside the save); `PopupQueue` (GameLayout) works it out once for the whole game, and
   each pop-up opens only on its own turn (`useMyTurn`). The order: the away reports (Extreme's, the General upgrades'),
   the offline report, the developer's answers, friends' raid gifts, a new region's offer, Extreme mode, an invite reward
-  ready, the portal run, day and night, the battle powers, hidden talents (§38), a small world's opening, its finish and its goodbye, a live
+  ready, the portal run, day and night, the battle powers, hidden talents (§38), outfits (§41), a small world's opening, its finish and its goodbye, a live
   event (but the Underground and the gift calendar: `queuedLives`), a taken trade's scene (Home only), and push
 notifications' question last. A new pop-up gets a place in that list, not a list of its own. The rules that open at
   their own moment (the gifts' before the first gift, Trick or Treat's at the first ghost, the portal's and the
@@ -2006,3 +2006,18 @@ A live event type (docs/55): a door a day, one reward each, opened on its day or
 - **Art, not theme**: a shut door (navy, gold ribbon) and today's gold stay the same in Daybreak and Dusk
   (`light-scope`). Motion in steps: the gift's wobble and today's passing light, still under calm.
 - **Opening** a door is the gifts' own opening (`GiftMoment`, §23), its first line "Day 5's gift!".
+
+## 41. Outfits
+
+A Pokémon dressed up (docs/59), Santa Pikachu first: a tag on the Pokémon, only its look. Its switch is
+`outfits.access` (§20); components in `src/components/Outfit.tsx`, all on `/kitchen-sink` (`OutfitBits`).
+
+- **The chip**: red (`Chip tone="red"`), the outfit's name ("Santa hat"), beside the shiny chip on the Pokémon sheet.
+  It's a button: a tap opens the rules (the feature's INFO, as the talent box is hidden talents').
+- **The hat marker** (`santaHat`, a pixel icon in the gift palette): the menu icons have no outfits, so a tile (the
+  team, the Box) and a gift's icon carry the hat in the top-right corner, opposite the shiny star and the talent gem;
+  the outfit's name is in the tile's label for screen readers.
+- **The sprite** goes wherever the instance is drawn big (the sheet, battle, Home's scene, the Day Care, a gift's
+  opening): `outfitOf(data, inst)` into `SpriteImg`/`stageSprite`/`loadSprite`'s `outfit`. Without our sprite copy
+  (docs/45) it is the plain sprite: never a request to Showdown for a file it doesn't have.
+- **Rules**: three rows (look, evolution, its own Pokémon), the banner Santa Pikachu on the night ground.

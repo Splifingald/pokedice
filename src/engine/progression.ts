@@ -2,6 +2,7 @@ import { getSpecies } from './data'
 import { expandDice } from './dice'
 import { evolutionsIn } from './forms'
 import type { Rng } from './rng'
+import { outfitAllowsEvolution } from './outfits'
 import { TALENT, talentOf, type TalentKey } from './talents'
 import type { DieType, Evolution, GameConfig, GameData, Milestone, PokeType, PokemonInstance, Species } from './types'
 
@@ -134,7 +135,11 @@ export function stoneEvolution(
   allowDex?: EvolutionGateLike,
 ): number | null {
   const e = evolutionsIn(data.species[inst.dex]?.evolutions ?? [], allowDex?.region).find(
-    (x) => x.item === itemKey && data.species[x.toDex] && (allowDex?.(x.toDex) ?? true),
+    (x) =>
+      x.item === itemKey &&
+      data.species[x.toDex] &&
+      (allowDex?.(x.toDex) ?? true) &&
+      outfitAllowsEvolution(inst, x.toDex),
   )
   return e ? e.toDex : null
 }
@@ -180,9 +185,13 @@ export function tradeEvolutionOf(data: GameData, dex: number): number | null {
  * The Link Cable (docs/25): the trade evolution this Pokémon would have in a trade, without one — gated like
  * `stoneEvolution` on the region being played. Null when it has none.
  */
-export function linkEvolution(inst: Pick<PokemonInstance, 'dex'>, data: GameData, allowDex?: EvolutionGateLike): number | null {
+export function linkEvolution(
+  inst: Pick<PokemonInstance, 'dex' | 'outfit'>,
+  data: GameData,
+  allowDex?: EvolutionGateLike,
+): number | null {
   const to = tradeEvolutionOf(data, inst.dex)
-  return to != null && (allowDex?.(to) ?? true) ? to : null
+  return to != null && (allowDex?.(to) ?? true) && outfitAllowsEvolution(inst, to) ? to : null
 }
 
 /**
@@ -196,7 +205,9 @@ export function levelEvolutions(inst: PokemonInstance, data: GameData, allowDex?
       e.level <= inst.level &&
       data.species[e.toDex] &&
       (allowDex?.(e.toDex) ?? true) &&
-      !isTradeEvolution(data, inst.dex, e.toDex),
+      !isTradeEvolution(data, inst.dex, e.toDex) &&
+      // An outfit (docs/59) evolves only into a species wearing it too.
+      outfitAllowsEvolution(inst, e.toDex),
   )
 }
 

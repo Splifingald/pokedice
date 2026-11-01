@@ -70,6 +70,10 @@ the sprites come from there, and nothing from `pokemonshowdown.com`.
 ## Afterwards
 
 - **New species or forms** (after `pnpm showdown-sprites`): run step 3, then the `deploy` line of step 4.
+- **Our own sprites** (outfits Showdown doesn't have, such as Santa Pikachu: `design/outfits/README.md`) live in
+  `sprites-custom/`, at the paths Showdown would use. Step 3 copies them in as they are, with nothing to download.
+  After adding or changing one, run step 3, then the `deploy` line of step 4. Only the copy has them, not Showdown,
+  so the game can show them only once `VITE_SPRITES_HOST` points at the copy.
 - **If the copy fails** for a player: after 4 s the game shows its older built-in sprites, exactly as it does when
   Showdown fails (`src/lib/showdownReach.ts`). It doesn't fall back to Showdown.
 - **To go back to Showdown:** delete `VITE_SPRITES_HOST` in Netlify and deploy again.
@@ -77,5 +81,5 @@ the sprites come from there, and nothing from `pokemonshowdown.com`.
   players do, so there is nothing to show players first.
 
 How it works: `SPRITES_HOST` in `src/lib/showdown.ts` swaps `https://play.pokemonshowdown.com` for the copy in every
-sprite and cry address; `scripts/sprites-mirror.ts` lists exactly those files (`tests/sprites-mirror.test.ts` checks
-none is missing).
+sprite and cry address; `scripts/sprites-mirror.ts` lists exactly those files, plus everything in `sprites-custom/`
+(`tests/sprites-mirror.test.ts` checks none is missing, and that each of our own sprites has all four views).

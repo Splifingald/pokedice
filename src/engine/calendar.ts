@@ -7,6 +7,7 @@
 import { eventOpenTo } from './events'
 import { GIFT_CURRENT, GIFT_GOLD_MAX, GIFT_QTY_MAX, placeGifts, type GiftLanded } from './gifts'
 import { livesFor } from './liveEvents'
+import { cleanOutfit } from './outfits'
 import type { CalendarReward, GameData, Gift, LiveEvent, SaveData } from './types'
 
 const DAY = 24 * 3_600_000
@@ -54,7 +55,14 @@ export function normaliseCalendarReward(raw: unknown): CalendarReward | null {
       level <= 100 &&
       qty >= 1 &&
       qty <= CALENDAR_MON_MAX
-      ? { kind: 'pokemon', dex, level, ...(o.shiny === true && { shiny: true }), qty }
+      ? {
+          kind: 'pokemon',
+          dex,
+          level,
+          ...(o.shiny === true && { shiny: true }),
+          ...(cleanOutfit(o.outfit, dex) && { outfit: o.outfit as string }),
+          qty,
+        }
       : null
   }
   return null
@@ -139,6 +147,7 @@ export function calendarGifts(r: CalendarReward): Gift[] {
     dex: r.dex,
     level: r.level,
     ...(r.shiny && { shiny: true }),
+    ...(r.outfit && { outfit: r.outfit }),
     region: GIFT_CURRENT,
   }
   return Array.from({ length: r.qty }, () => mon)

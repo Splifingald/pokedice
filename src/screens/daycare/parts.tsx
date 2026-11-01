@@ -78,8 +78,8 @@ const TILE = { h: 60, artH: 48, artW: 60 }
  * The SpriteImg box that shows a Pokémon's art at ×1.17 on the tile, or smaller when that wouldn't fit (Lugia, Onix).
  * SpriteImg draws Showdown's art at `size / max(96, canvas)` per pixel, so the box follows from the scale wanted.
  */
-function tileSpriteSize(dex: number, shiny?: boolean): number {
-  const view = showdownView(dex, false, !!shiny)
+function tileSpriteSize(dex: number, shiny?: boolean, outfit?: string | null): number {
+  const view = showdownView(dex, false, !!shiny, outfit)
   if (!view) return TILE.h + 8
   const [x0, y0, x1, y1] = artBox(view.box)
   const w = x1 - x0 + 1
@@ -99,6 +99,7 @@ export function SlotCard({
   tag,
   dex,
   shiny,
+  outfit,
   name,
   level,
   children,
@@ -109,6 +110,8 @@ export function SlotCard({
   tag?: ReactNode
   dex: number
   shiny?: boolean
+  /** Its outfit (docs/59), as `outfitOf` gave it. */
+  outfit?: string | null
   name: string
   level: string
   children?: ReactNode
@@ -123,7 +126,7 @@ export function SlotCard({
         <span className="relative block h-[60px] w-[60px] shrink-0 overflow-hidden bg-sky shadow-[inset_0_-5px_0_rgb(var(--c-sky-line))]">
           {/* Centred on the tile above its lip, whatever the box's size (a grid would start an oversized box at the top). */}
           <span className="absolute left-1/2 top-[calc(50%-2px)] -translate-x-1/2 -translate-y-1/2">
-            <SpriteImg dex={dex} size={tileSpriteSize(dex, shiny)} shiny={shiny} />
+            <SpriteImg dex={dex} size={tileSpriteSize(dex, shiny, outfit)} shiny={shiny} outfit={outfit} />
           </span>
         </span>
         <span className="grid min-w-0 flex-1 gap-1">
