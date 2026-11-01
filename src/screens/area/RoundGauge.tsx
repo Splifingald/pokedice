@@ -8,6 +8,7 @@ import {
   gymsFor,
   playerSideOf,
   nightmareModeOf,
+  tracksModeOf,
   nextRoundSize,
   opensWithoutCenter,
   portalModeOf,
@@ -29,6 +30,7 @@ import { useAreaVersus } from '@/store/areaVersus'
 import { cx } from '@/theme/util'
 import { DistortionGauge } from '@/components/Portal'
 import { NightmareGauge } from '@/components/Nightmare'
+import { TracksGauge } from '@/components/Tracks'
 
 const CARD_ICON: Record<DeckCard, IconName> = {
   wild: 'ball',
@@ -89,6 +91,10 @@ export function RoundGauge({
         className={className}
       />
     )
+  // Tracks in the Snow (docs/61 §4.1) counts its rounds cleared.
+  const glade = tracksModeOf(area, data)
+  if (glade)
+    return <TracksGauge round={progress.tracks?.round ?? 0} total={glade.rounds.length} className={className} />
   if (!cfg.showRoundGauge || cfg.encounterMode !== 'deck') return null
   const remaining = progress.deck?.length ?? 0
   const met = progress.drawn ?? []

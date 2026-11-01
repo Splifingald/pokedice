@@ -32,6 +32,7 @@ import { BackgroundPicker, Box, Field, NumInput, PokemonPicker, Stepper, TextInp
 import { AreaBanner } from '@/components/AreaBanner'
 import { PortalModeBox } from './PortalModeBox'
 import { NightmareModeBox } from './NightmareModeBox'
+import { TracksModeBox } from './TracksModeBox'
 
 const KINDS: EncounterKind[] = ['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus']
 const CARD: Record<EncounterKind, { label: string; color: string }> = {
@@ -299,6 +300,8 @@ function AreaEditor({ area }: { area: Row }) {
             <PortalModeBox area={area} />
             {/* The nightmare (docs/30): one special mode per area, so ticking one replaces the other. */}
             <NightmareModeBox area={area} />
+            {/* Tracks in the Snow (docs/61 §4.1): the same, one special mode per area. */}
+            <TracksModeBox area={area} />
           </>
         )}
 

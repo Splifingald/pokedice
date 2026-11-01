@@ -4,6 +4,7 @@ import {
   homersIn,
   teamSwapsOpen,
   nightmareModeOf,
+  tracksModeOf,
   monName,
   POKE_TYPES,
   regionOf,
@@ -57,6 +58,10 @@ export function TeamScreen() {
         s.data.areas.find((a) => a.id === s.run.areaId),
         s.data,
       ),
+  )
+  // …or Tracks in the Snow's (docs/61 §4.1).
+  const atGlade = useGame(
+    (s) => atPortal && !!tracksModeOf(s.data.areas.find((a) => a.id === s.run.areaId), s.data),
   )
   const navigate = useNavigate()
   const now = useNow(30_000)
@@ -116,10 +121,12 @@ export function TeamScreen() {
         <div className="pixel-dialogue flex flex-col gap-2.5 px-3 py-2.5 sm:flex-row sm:items-center">
           <p className="m-0 flex flex-1 items-center gap-3 text-[20px] leading-[1.15]">
             <PixelIcon name="heart" size={24} className="shrink-0" />
-            <span>{t(atNightmare ? 'ui.nightmare.teamHint' : 'ui.portal.teamHint')}</span>
+            <span>
+              {t(atNightmare ? 'ui.nightmare.teamHint' : atGlade ? 'ui.tracks.teamHint' : 'ui.portal.teamHint')}
+            </span>
           </p>
           <PixelButton variant="primary" className="shrink-0" onClick={() => navigate('/area')}>
-            {t(atNightmare ? 'ui.nightmare.backToWayIn' : 'ui.portal.backToPortal')}
+            {t(atNightmare ? 'ui.nightmare.backToWayIn' : atGlade ? 'ui.tracks.backToWayIn' : 'ui.portal.backToPortal')}
           </PixelButton>
         </div>
       )}

@@ -19,6 +19,10 @@ import {
   portalStateOf,
   progressOf,
   raidRules,
+  tracksField,
+  tracksQuarryDex,
+  tracksModeOf,
+  tracksStateOf,
   teamAverageLevel,
   type Area,
 } from '@/engine'
@@ -68,8 +72,12 @@ export function useContinue(area: Area) {
   // A nightmare area (docs/30): the same way: before it, CONTINUE goes to its way in; once over, only its raid.
   const dreamMode = nightmareModeOf(area, data)
   const dream = dreamMode ? nightmareStateOf(save, area.id) : null
-  const gym = mode || dreamMode ? null : dueGym(area, progress, data, side)
-  const boss = gym || mode || dreamMode ? null : dueBoss(area, progress, teamAverageLevel(save), data)
+  // Tracks in the Snow's glade (docs/61 §4.1): before it, CONTINUE goes to its way in; under way, to the glade; once its
+  // shiny Stantler is caught, the glade is closed. Its boss is found in a bush, never challenged.
+  const gladeMode = tracksModeOf(area, data)
+  const glade = gladeMode ? tracksStateOf(save, area.id) : null
+  const gym = mode || dreamMode || gladeMode ? null : dueGym(area, progress, data, side)
+  const boss = gym || mode || dreamMode || gladeMode ? null : dueBoss(area, progress, teamAverageLevel(save), data)
   const closed = isAreaClosed(save, area.id, data) || isAreaSealed(save, data, area.id)
   const busy = (run.areaId === area.id && run.phase !== 'idle') || battle
   const raid = gym || boss || busy ? null : openRaidIn(save, data, area)
@@ -83,11 +91,26 @@ export function useContinue(area: Area) {
 
   const enterPortal = !!mode && !portal?.active && !portal?.won && !busy
   const enterDream = !!dreamMode && !dream?.active && !dream?.won && !busy
-  const enter = enterPortal || enterDream
+  const enterGlade = !!gladeMode && !glade?.active && !glade?.won && !busy
+  const searching = !!glade?.active && !busy
+  const enter = enterPortal || enterDream || enterGlade
   // Darkrai's strike waits on the area's page after a round (docs/30).
   const struck = !!dream?.active && (!!dream.strike || (run.areaId === area.id && !!run.nightmareStruck))
+  const stantler = gladeMode ? (data.species[tracksQuarryDex(area) ?? 0]?.name ?? '') : ''
   const sub = busy
     ? t('ui.home.backToEncounter')
+    : enterGlade
+      ? glade?.round
+        ? t('ui.tracks.continueSub', { n: glade.round + 1, total: gladeMode!.rounds.length, name: stantler })
+        : t('ui.tracks.enterSub', { n: gladeMode!.rounds.length })
+      : searching
+        ? t('ui.tracks.continueSub', {
+            n: (tracksField(save, data, area.id)?.index ?? 0) + 1,
+            total: gladeMode!.rounds.length,
+            name: stantler,
+          })
+      : glade?.won
+        ? t('ui.tracks.sealed', { name: stantler })
     : enterDream
       ? t('ui.nightmare.enterSub', { n: dreamMode!.foes.length })
       : enter
@@ -147,7 +170,7 @@ export function useContinue(area: Area) {
     // Shut (sealed, resting): CONTINUE is greyed out, and the map's CONTINUE HERE says why instead.
     if (off) return pushToast(sub, 'info')
     if (raid) return navigate(progressRaidPath(raid))
-    if (enter || (portal?.active && portal.offers?.length) || struck) {
+    if (enter || (portal?.active && portal.offers?.length) || struck || searching) {
       ensureRun(area)
       return navigate('/area')
     }
@@ -176,6 +199,7 @@ export function useContinue(area: Area) {
     !struck &&
     !portal?.active &&
     !dream?.active &&
+    !glade?.active &&
     !closed &&
     progress.cleared
   // GO TO's two lines: the area, and what waits for the player there (the gym, the legend, the round).
@@ -184,7 +208,9 @@ export function useContinue(area: Area) {
       ? { area: latest, label: t('ui.victory.goToArea', { name: latest.name }), sub: waitsIn(latest) }
       : null
   const keepExploring = !!(gym || boss || raid) && !closed && !busy && !resting
-  const label = enterDream
+  const label = enterGlade
+    ? t('ui.tracks.enter')
+    : enterDream
     ? t('ui.nightmare.enter')
     : enter
     ? t('ui.portal.enter')

@@ -68,7 +68,14 @@ function atGlade(d: GameData = data): SaveData {
     const p = createInstance(dex, 30, d, newId(), NOW)
     return { ...p, currentHp: Math.floor(instanceMaxHp(p, d) / 2) }
   })
-  return { ...s, box: team, team: team.map((p) => p.id), currentAreaId: GLADE.id, gold: 300, inventory: { potion: 2 } }
+  return {
+    ...s,
+    box: team,
+    team: team.map((p) => p.id),
+    currentAreaId: GLADE.id,
+    gold: 300,
+    inventory: { potion: 2 },
+  }
 }
 const withTracks = (s: SaveData, tracks: TracksState): SaveData => ({
   ...s,
@@ -151,14 +158,37 @@ describe('Tracks in the Snow: its rules', () => {
   it('fills each glade as designed: 3 wild, 1 find, 1 cabin, 3 empty on a 3 × 3; 5, 2, 1, 7 on the 4 × 4', () => {
     const [small, , big] = DEFAULT_TRACKS.rounds
     const a = hideStantler(small!, 4, createRng(3))
-    expect([a.length, count(a, 'stantler'), count(a, 'wild'), count(a, 'find'), count(a, 'cabin'), count(a, 'empty')]).toEqual([9, 1, 3, 1, 1, 3])
+    expect([
+      a.length,
+      count(a, 'stantler'),
+      count(a, 'wild'),
+      count(a, 'find'),
+      count(a, 'cabin'),
+      count(a, 'empty'),
+    ]).toEqual([9, 1, 3, 1, 1, 3])
     const b = hideStantler(big!, 0, createRng(3))
-    expect([b.length, count(b, 'stantler'), count(b, 'wild'), count(b, 'find'), count(b, 'cabin'), count(b, 'empty')]).toEqual([16, 1, 5, 2, 1, 7])
+    expect([
+      b.length,
+      count(b, 'stantler'),
+      count(b, 'wild'),
+      count(b, 'find'),
+      count(b, 'cabin'),
+      count(b, 'empty'),
+    ]).toEqual([16, 1, 5, 2, 1, 7])
   })
 
   it('points the prints at Stantler in 8 directions, by row and column', () => {
     // A 3 × 3, Stantler in the middle: every bush around points at it.
-    expect([0, 1, 2, 3, 5, 6, 7, 8].map((i) => tracksPrintDirection(i, 4, 3))).toEqual(['se', 's', 'sw', 'e', 'w', 'ne', 'n', 'nw'])
+    expect([0, 1, 2, 3, 5, 6, 7, 8].map((i) => tracksPrintDirection(i, 4, 3))).toEqual([
+      'se',
+      's',
+      'sw',
+      'e',
+      'w',
+      'ne',
+      'n',
+      'nw',
+    ])
     // Off the diagonal, the quarter's diagonal: never past it.
     expect(tracksPrintDirection(0, 6, 4)).toBe('se')
     expect(tracksPrintDirection(15, 3, 4)).toBe('n')
@@ -173,7 +203,12 @@ describe('Tracks in the Snow: the search', () => {
     expect(healed.box.every((p) => p.currentHp === instanceMaxHp(p, data))).toBe(true)
     expect(teamSwapsOpen(s, data, { phase: 'idle', areaId: GLADE.id })).toBe(true)
     const b = startTracks(s, data, GLADE.id)!
-    expect(tracksStateOf(b, GLADE.id)).toEqual({ active: true, round: 0, field: { taps: 5, bushes: null, opened: [] }, tries: 1 })
+    expect(tracksStateOf(b, GLADE.id)).toEqual({
+      active: true,
+      round: 0,
+      field: { taps: 5, bushes: null, opened: [] },
+      tries: 1,
+    })
     expect(inTracks(b, data, GLADE.id)).toBe(true)
     expect(teamSwapsOpen(b, data, { phase: 'idle', areaId: GLADE.id })).toBe(false)
     expect(startTracks(b, data, GLADE.id)).toBeNull()
@@ -240,7 +275,10 @@ describe('Tracks in the Snow: the search', () => {
     const find = tracksEncounter(ctxOf(s), 'find', false, rng)!
     expect(find.encounter.kind).toBe('item')
     expect(find.lootDeck).not.toBeNull()
-    expect(tracksEncounter(ctxOf(s), 'cabin', false, rng)!.encounter).toEqual({ kind: 'center', forced: true })
+    expect(tracksEncounter(ctxOf(s), 'cabin', false, rng)!.encounter).toEqual({
+      kind: 'center',
+      forced: true,
+    })
     expect(tracksEncounter(ctxOf(s), 'empty', false, rng)).toBeNull()
   })
 
@@ -260,11 +298,19 @@ describe('Tracks in the Snow: the search', () => {
     }
     const down = tracksQuarryDown(s, data, GLADE.id)!
     expect(down).toMatchObject({ round: 1, total: 3, last: false })
-    expect(tracksStateOf(down.save, GLADE.id)).toMatchObject({ active: true, round: 1, field: { taps: 5, bushes: null, opened: [] } })
+    expect(tracksStateOf(down.save, GLADE.id)).toMatchObject({
+      active: true,
+      round: 1,
+      field: { taps: 5, bushes: null, opened: [] },
+    })
     // Round 2 is a 3 × 3 too; its Stantler clears it, and round 3's glade is the 4 × 4.
     const two = tracksQuarryDown(findStantler(down.save, 2), data, GLADE.id)!
     expect(two).toMatchObject({ round: 2, last: false })
-    expect(tracksField(two.save, data, GLADE.id)).toMatchObject({ spec: { size: 4, taps: 7 }, index: 2, last: true })
+    expect(tracksField(two.save, data, GLADE.id)).toMatchObject({
+      spec: { size: 4, taps: 7 },
+      index: 2,
+      last: true,
+    })
   })
 
   it('round 3: the shiny Stantler is the boss, Lv.30; a missed throw sends it to another bush, a fresh 4 × 4', () => {
@@ -293,7 +339,13 @@ describe('Tracks in the Snow: the search', () => {
   it('caught, the outro is due and the glade closes for good once it has played', () => {
     const s = tracksQuarryDown(findStantler(begun(2), 5), data, GLADE.id)!.save
     const won = tracksCaught(s, data, GLADE.id)
-    expect(tracksStateOf(won, GLADE.id)).toEqual({ active: false, round: 3, won: true, wonSeen: false, tries: 1 })
+    expect(tracksStateOf(won, GLADE.id)).toEqual({
+      active: false,
+      round: 3,
+      won: true,
+      wonSeen: false,
+      tries: 1,
+    })
     expect(tracksWon(won, data, GLADE.id)).toBe(true)
     expect(tracksOutroDue(won, data, GLADE.id)).toBe(true)
     expect(isAreaSealed(won, data, GLADE.id)).toBe(true)
@@ -315,7 +367,12 @@ describe('Tracks in the Snow: the search', () => {
     expect(w.gold).toBe(ko.gold)
     // The next way in starts at round 2, on a fresh glade.
     const again = startTracks(w, data, GLADE.id)!
-    expect(tracksStateOf(again, GLADE.id)).toMatchObject({ active: true, round: 1, field: { bushes: null }, tries: 2 })
+    expect(tracksStateOf(again, GLADE.id)).toMatchObject({
+      active: true,
+      round: 1,
+      field: { bushes: null },
+      tries: 2,
+    })
   })
 })
 

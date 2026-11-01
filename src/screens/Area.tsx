@@ -8,6 +8,7 @@ import {
   portalModeOf,
   portalStateOf,
   progressOf,
+  tracksModeOf,
   scaledLevelSpan,
   teamAverageLevel,
   type Area,
@@ -32,6 +33,7 @@ import { AreaStrip } from '@/components/AreaStrip'
 import { WipeView } from './battle/VictoryView'
 import { PortalBonuses, PortalInfo, PortalStep } from './area/PortalRun'
 import { NightmareInfo, NightmareStep, nightmareStepDue } from './area/NightmareRun'
+import { TracksInfo, TracksStep, tracksStepDue } from './area/TracksRun'
 import { AutopilotNote } from './area/AutopilotNote'
 import { useAutopilot } from './area/useAutopilot'
 
@@ -123,10 +125,14 @@ export function AreaScreen() {
   // The nightmare's area (docs/30): its way in, its intro, Darkrai's strike after a round, the waking.
   const nm = run.rebattle ? null : nightmareModeOf(area, data)
   const dream = !!nm && run.phase === 'idle' && nightmareStepDue(area, { save, data }, run)
+  // Tracks in the Snow's glade (docs/61 §4.1): its way in, the glade between bushes (a bush just opened included, before
+  // what it held comes), its outro.
+  const trk = run.rebattle ? null : tracksModeOf(area, data)
+  const glade = !!trk && tracksStepDue(area, { save, data }, run)
   // The plain page between encounters (docs/42): the area's scene with the team, as on Home, in the banner's place.
-  const sceneIdle = run.phase === 'idle' && !own && !dream && !mode && !nm && !run.rebattle
+  const sceneIdle = run.phase === 'idle' && !own && !dream && !glade && !mode && !nm && !trk && !run.rebattle
   // A find is a step on the stage of its own (FindView), with or without the autopilot: no banner, no card.
-  const finding = run.phase === 'preview' && run.encounter?.kind === 'item'
+  const finding = run.phase === 'preview' && run.encounter?.kind === 'item' && !glade
   return (
     <div className="flex flex-col gap-4">
       {/* The Center is laid out as a battle (the rework): its own gauge at the top, no area banner. */}
@@ -139,7 +145,7 @@ export function AreaScreen() {
       )}
       {finding && <FindView />}
       {/* Under the autopilot, the cards it leaves on the table (Trick or Treat, a trainer's: pilotShowsCard) still open. */}
-      {run.phase === 'preview' && run.encounter && !finding && !(pilot && !pilotShowsCard(run.encounter.kind)) && (
+      {run.phase === 'preview' && run.encounter && !finding && !glade && !(pilot && !pilotShowsCard(run.encounter.kind)) && (
         // A wild pair shown as it will be fought: alone if the team lost its second able one since (docs/33).
         <EncounterPreview enc={fitWildPair(run.encounter, save)} />
       )}
@@ -153,7 +159,8 @@ export function AreaScreen() {
       {run.phase === 'wipe' && <WipeView />}
       {run.phase === 'idle' && own && step}
       {dream && <NightmareStep area={area} />}
-      {run.phase === 'idle' && !own && !dream && (
+      {glade && <TracksStep area={area} />}
+      {run.phase === 'idle' && !own && !dream && !glade && (
         <>
           {mode && <PortalBonuses area={area} />}
           <AreaIdle area={area} scene={sceneIdle} />
@@ -161,6 +168,7 @@ export function AreaScreen() {
       )}
       {mode && run.phase === 'idle' && <PortalInfo mode={mode} />}
       {nm && run.phase === 'idle' && <NightmareInfo mode={nm} />}
+      {trk && run.phase === 'idle' && <TracksInfo mode={trk} />}
     </div>
   )
 }

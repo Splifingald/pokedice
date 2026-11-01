@@ -56,7 +56,10 @@ export const tracksStateOf = (save: SaveData, areaId: string): TracksState =>
   save.areaProgress[areaId]?.tracks ?? EMPTY
 
 function withTracks(save: SaveData, areaId: string, tracks: TracksState): SaveData {
-  return { ...save, areaProgress: { ...save.areaProgress, [areaId]: { ...progressAt(save, areaId), tracks } } }
+  return {
+    ...save,
+    areaProgress: { ...save.areaProgress, [areaId]: { ...progressAt(save, areaId), tracks } },
+  }
 }
 
 const teamIds = (save: SaveData) => new Set(save.team)
@@ -70,13 +73,20 @@ function healTeam(save: SaveData, data: GameData): SaveData {
 }
 
 /** The round under way (`index`, 0-based) and its glade; the last round's once every round is cleared. */
-export function tracksRoundOf(mode: TracksMode, round: number): { index: number; spec: TracksRound; last: boolean } {
+export function tracksRoundOf(
+  mode: TracksMode,
+  round: number,
+): { index: number; spec: TracksRound; last: boolean } {
   const index = Math.max(0, Math.min(round, mode.rounds.length - 1))
   return { index, spec: mode.rounds[index]!, last: index === mode.rounds.length - 1 }
 }
 
 /** A glade before its first bush is opened: nothing hidden yet, every tap left. */
-export const freshTracksField = (spec: TracksRound): TracksField => ({ taps: spec.taps, bushes: null, opened: [] })
+export const freshTracksField = (spec: TracksRound): TracksField => ({
+  taps: spec.taps,
+  bushes: null,
+  opened: [],
+})
 
 /**
  * Who hides in the glade: the area's boss (the shiny Stantler), whose species the rounds before the last end on too.
@@ -85,7 +95,8 @@ export const freshTracksField = (spec: TracksRound): TracksField => ({ taps: spe
 export const tracksBoss = (area: Area): BossDef | null => area.legendaryBoss?.[0] ?? null
 
 /** The species hiding in the glade's bushes. */
-export const tracksQuarryDex = (area: Area): number | null => tracksBoss(area)?.dex ?? area.wildPool[0]?.dex ?? null
+export const tracksQuarryDex = (area: Area): number | null =>
+  tracksBoss(area)?.dex ?? area.wildPool[0]?.dex ?? null
 
 // ------------------------------------------------------------------ the glade's geometry
 
@@ -160,7 +171,12 @@ export function hideStantler(spec: TracksRound, first: number, rng: Rng): Tracks
  * The prints an opened bush shows, pointing at Stantler: none on Stantler's own, none on a bush that held something
  * when the admin keeps them for empty bushes only, none before Stantler is hidden.
  */
-export function tracksPrintAt(mode: TracksMode, field: TracksField, size: number, index: number): TracksPrint | null {
+export function tracksPrintAt(
+  mode: TracksMode,
+  field: TracksField,
+  size: number,
+  index: number,
+): TracksPrint | null {
   const bushes = field.bushes
   if (!bushes || !field.opened.includes(index)) return null
   const at = bushes.indexOf('stantler')
@@ -198,7 +214,13 @@ export function tracksField(
   const s = tracksStateOf(save, areaId)
   if (!mode || !s.active) return null
   const r = tracksRoundOf(mode, s.round)
-  return { field: s.field ?? freshTracksField(r.spec), spec: r.spec, index: r.index, total: mode.rounds.length, last: r.last }
+  return {
+    field: s.field ?? freshTracksField(r.spec),
+    spec: r.spec,
+    index: r.index,
+    total: mode.rounds.length,
+    last: r.last,
+  }
 }
 
 /** Stantler was found and its fight (or catch) is under way. */
@@ -239,20 +261,33 @@ export interface BushOpened {
  * bush). Stantler's: found (its fight next). Otherwise, the last tap brings the snow: a fresh glade. Null when it
  * can't be opened (not in the glade, Stantler already found, a bush opened already or not there).
  */
-export function openBush(save: SaveData, data: GameData, areaId: string, index: number, rng: Rng): BushOpened | null {
+export function openBush(
+  save: SaveData,
+  data: GameData,
+  areaId: string,
+  index: number,
+  rng: Rng,
+): BushOpened | null {
   const mode = modeAt(data, areaId)
   const at = tracksField(save, data, areaId)
   if (!mode || !at) return null
   const { field, spec } = at
   const n = spec.size * spec.size
-  if (field.found || !Number.isInteger(index) || index < 0 || index >= n || field.opened.includes(index)) return null
+  if (field.found || !Number.isInteger(index) || index < 0 || index >= n || field.opened.includes(index))
+    return null
   const bushes = field.bushes ?? hideStantler(spec, index, rng)
   const opened: TracksField = { taps: Math.max(0, field.taps - 1), bushes, opened: [...field.opened, index] }
   const bush = bushes[index]!
   const print = tracksPrintAt(mode, opened, spec.size, index)
   const s = tracksStateOf(save, areaId)
   if (bush === 'stantler')
-    return { save: withTracks(save, areaId, { ...s, field: { ...opened, found: true } }), index, bush, print, snowfall: false }
+    return {
+      save: withTracks(save, areaId, { ...s, field: { ...opened, found: true } }),
+      index,
+      bush,
+      print,
+      snowfall: false,
+    }
   const snowfall = opened.taps <= 0
   const next: TracksField = snowfall ? { ...freshTracksField(spec), snowed: true } : opened
   return { save: withTracks(save, areaId, { ...s, field: next }), index, bush, print, snowfall }
@@ -284,7 +319,10 @@ export function tracksEncounter(
   }
   if (bush === 'wild') {
     const others = area.wildPool.filter((w) => w.dex !== quarry)
-    const wild = rollWild({ ...ctx, area: { ...area, wildPool: others.length ? others : area.wildPool } }, rng)
+    const wild = rollWild(
+      { ...ctx, area: { ...area, wildPool: others.length ? others : area.wildPool } },
+      rng,
+    )
     return wild ? { encounter: wild, lootDeck: null } : null
   }
   if (bush !== 'stantler' || quarry == null || !ctx.data.species[quarry]) return null
@@ -358,7 +396,10 @@ export function tracksBolt(save: SaveData, data: GameData, areaId: string): Save
   const mode = modeAt(data, areaId)
   const s = tracksStateOf(save, areaId)
   if (!mode || !s.active || !s.field?.found) return save
-  return withTracks(save, areaId, { ...s, field: { ...freshTracksField(tracksRoundOf(mode, s.round).spec), bolted: true } })
+  return withTracks(save, areaId, {
+    ...s,
+    field: { ...freshTracksField(tracksRoundOf(mode, s.round).spec), bolted: true },
+  })
 }
 
 /** The outro has played: the glade is closed (`isAreaClosed`). */

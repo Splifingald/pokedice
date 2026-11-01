@@ -476,6 +476,26 @@ const FX_SOUNDS = {
     tone(784, 0.18, { type: 'triangle', vol: 0.04, at: 0.16 })
     tone(1047, 0.45, { type: 'triangle', vol: 0.045, at: 0.32 })
   },
+  // Tracks in the Snow (docs/61 §4.1): the winter wind (a soft high hiss swelling), a leap (a quick rising whistle), a
+  // bush rustling (two short bursts of noise, as branches), the snow falling (a long hush), Stantler found (a bright
+  // two-note bell, a sleigh's) and Stantler bolting (hooves: three quick low taps).
+  'tracks.wind': () => {
+    hiss(1.6, { freq: 2400, type: 'highpass', vol: 0.025 })
+    hiss(1.2, { freq: 700, slide: 300, vol: 0.02, at: 0.5 })
+  },
+  'tracks.leap': () => tone(440, 0.3, { type: 'triangle', vol: 0.035, slide: 520 }),
+  'tracks.rustle': () => {
+    hiss(0.12, { freq: 3200, vol: 0.06 })
+    hiss(0.14, { freq: 2600, vol: 0.05, at: 0.13 })
+  },
+  'tracks.snow': () => hiss(1.4, { freq: 5200, type: 'highpass', vol: 0.03 }),
+  'tracks.found': () => {
+    tone(1319, 0.12, { type: 'triangle', vol: 0.04 })
+    tone(1760, 0.3, { type: 'triangle', vol: 0.04, at: 0.1 })
+  },
+  'tracks.bolt': () => {
+    for (const at of [0, 0.08, 0.16]) tone(140, 0.05, { type: 'square', vol: 0.04, at, slide: -40 })
+  },
   // The Underground (docs/34): a pickaxe's clink on rock (lower and heavier the bigger the roll), the wall rumbling
   // down, and a little chime when something is dug out whole.
   'ug.strike': (n = 1) => {

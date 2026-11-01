@@ -26,6 +26,7 @@ import { EvolutionQueue, type EvolutionShow } from '@/components/Evolution'
 import { useCountUp } from '@/components/GoldPill'
 import { Chip, NewTag } from '@/components/Chip'
 import { PixelIcon } from '@/components/icons'
+import { HoofIcon, STANTLER } from '@/components/Tracks'
 import { LeadPicker, defaultLead } from '@/components/LeadPicker'
 import { ForfeitButton } from '@/components/ForfeitButton'
 import { speciesTypes } from '@/components/TypeMatchups'
@@ -570,6 +571,20 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
                   {e.round >= e.total
                     ? t('ui.nightmare.lastRoundWon')
                     : t('ui.nightmare.roundWon', { n: e.round, total: e.total })}
+                </span>
+              </div>
+            ),
+          })
+          return
+        case 'tracks_round':
+          // A round of Tracks in the Snow cleared (docs/61 §4.1): Stantler found and down; the next glade waits.
+          extras.push({
+            key: k,
+            node: (
+              <div className="light-scope flex items-center justify-center gap-2 bg-[#0b1530] p-2 text-center text-[#f4f8ff] shadow-[inset_0_3px_0_#f3efd6,0_0_0_2px_#24304f]">
+                <HoofIcon size={22} />
+                <span className="text-xl leading-tight">
+                  {t('ui.tracks.roundWon', { n: e.round, total: e.total, name: data.species[STANTLER]?.name ?? '' })}
                 </span>
               </div>
             ),
@@ -1152,6 +1167,8 @@ function AreaWipe() {
   const portalLost = useGame((s) => s.run.portalLost)
   // A wipe that woke the player from the nightmare (docs/30): its rounds start again from the first.
   const nightmareLost = useGame((s) => s.run.nightmareLost)
+  // A wipe in Tracks in the Snow's glade (docs/61 §4.1): back at its edge, its cleared rounds kept.
+  const tracksWiped = useGame((s) => !!s.run.tracksWiped)
   return (
     <Overlay
       label={t('ui.wipe.title')}
@@ -1163,12 +1180,17 @@ function AreaWipe() {
     >
       <h2 className="mb-2 text-center text-[32px] font-normal leading-none" aria-live="polite">{t('ui.wipe.title')}</h2>
       {/* The rework: what a wipe costs is said only where it differs from the usual (a portal, the nightmare, Extreme). */}
-      <p className="copy mb-3 text-lg" hidden={portalLost == null && nightmareLost == null && !!save && wipeHeals(save, data)}>
+      <p
+        className="copy mb-3 text-lg"
+        hidden={portalLost == null && nightmareLost == null && !tracksWiped && !!save && wipeHeals(save, data)}
+      >
         {/* Extreme mode heals nobody after a lost round: the fainted ones rest (docs/22). */}
         {portalLost != null
           ? t('ui.portal.wipeBody', { n: portalLost })
           : nightmareLost != null
           ? t('ui.nightmare.wipeBody', { n: nightmareLost })
+          : tracksWiped
+          ? t('ui.tracks.wipeBody')
           : save && !wipeHeals(save, data)
           ? t('ui.wipe.bodyExtreme', {
               area: area?.name ?? '',

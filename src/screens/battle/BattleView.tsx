@@ -43,6 +43,7 @@ import {
   type Side,
   inPortalRun,
   inNightmare,
+  tracksFound,
   legendCinemaOn,
   championCinemaOn,
 } from '@/engine'
@@ -68,6 +69,7 @@ import { loadPicture, loadSprite, pictureKey, spriteKey } from '@/fx/sprites'
 import { catchTimeline } from '@/fx/timelines/catch'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { BOSS_CINEMAS } from '@/fx/timelines/cinema'
+import { stantlerCinema } from '@/fx/timelines/cinema/stantler'
 import { championCinemaFor } from '@/fx/timelines/cinema/champions'
 import { useT } from '@/i18n/react'
 import { effectText, zMoveText } from '@/i18n/text'
@@ -291,6 +293,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const distorted = !versus && st.kind === 'wild' && !!save && inPortalRun(save, data, run.areaId)
   // The nightmare's rounds (docs/30) are fought under its full moon, a dark shadow haunting the foe.
   const dream = !versus && st.kind === 'wild' && !!save && inNightmare(save, data, run.areaId)
+  // Tracks in the Snow's last round (docs/61 §4.1): the shiny Stantler found in its bush, its own entrance.
+  const gladeBoss = !versus && st.kind === 'boss' && !!save && tracksFound(save, data, run.areaId)
   const stageBox = useRef<HTMLDivElement>(null)
   const panel = useRef<HTMLDivElement>(null)
   const [menu, setMenu] = useState<null | 'item' | 'history' | 'mega' | 'form' | 'z'>(null)
@@ -852,7 +856,12 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       types: foe.types.map((ty) => typeName(ty)).join(' / '),
     }
     // A mythical's own entrance (docs/53: Mew in its forest) when the cinematics are on and it has one.
-    const cinema = legendCinemaOn(data) ? BOSS_CINEMAS[foe.baseDex ?? foe.dex] : undefined
+    // The glade's shiny Stantler rears up under the moon (docs/61 §4.1), with the feature's own switch.
+    const cinema = gladeBoss
+      ? stantlerCinema
+      : legendCinemaOn(data)
+        ? BOSS_CINEMAS[foe.baseDex ?? foe.dex]
+        : undefined
     return {
       timeline: cinema ? cinema.makeBattle(params) : legendTimeline(params),
       ready: Promise.all([loadSprite(lead.dex, true, lead.shiny, lead.outfit), loadSprite(foe.dex, false, foe.shiny, foe.outfit)]),

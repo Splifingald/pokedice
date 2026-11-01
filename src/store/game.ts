@@ -45,6 +45,8 @@ import {
   type TrickPlaced,
   type TrickState,
   type TrickStep,
+  type TracksBush,
+  type TracksPrint,
 } from '@/engine'
 import { activeSlot, DEFAULT_SETTINGS, readSave, readSettings, scheduleWrite, writeSettings, type Settings } from '@/save/storage'
 import { trustedNow } from './clock'
@@ -148,6 +150,19 @@ export interface RunState {
   nightmarePopup?: boolean
   /** Darkrai's strike has landed and its moment is still on the area's page (until CONTINUE: the next round). */
   nightmareStruck?: boolean
+  /** A wipe just sent the player back to the glade's edge (docs/61 §4.1): the wipe card says its cleared rounds stay. */
+  tracksWiped?: boolean
+  /**
+   * Tracks in the Snow's way in has shown its pop-up (docs/61 §4.1): back from the Team screen, it shows again at once
+   * over the intro's end (as the nightmare's nightmarePopup).
+   */
+  tracksPopup?: boolean
+  /**
+   * The bush just opened in the glade (docs/61 §4.1), for its moment on the glade (it parts, shows what it held and its
+   * prints; the snow falls after the last tap). With an encounter, the glade shows it first: `meetBush` then brings
+   * the fight, the find or the cabin. `id` tells one opening from the next.
+   */
+  tracksBush?: { id: number; index: number; bush: TracksBush; print: TracksPrint | null; snowfall: boolean } | null
   /** Trick or Treat under way (docs/29). */
   trick?: TrickRun | null
   /** The fight is on the screen, the player's side not out yet: one tap on a Pokémon sends it (the rework). */
