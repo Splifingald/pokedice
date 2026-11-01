@@ -463,8 +463,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const foeBack = dbl ? (foeRow.find((b) => b.uid !== foeFront.uid && waiting(b)) ?? null) : null
   // Cries: the foe's as it comes out, yours as each of yours does (after the foe's when both come out at once), a
   // Mega's once it stands there.
+  // Another lead picked at the send-out step: the foe out already has cried (a trainer's next one still does).
+  const [criedFoe] = useState(() => (swapped ? st.enemy.uid : null))
   useEffect(() => {
-    if (!foeOut) return
+    if (!foeOut || st.enemy.uid === criedFoe) return
     playCry(st.enemy.dex)
     // A pair: the second one's cry after the first's.
     const partner = dbl?.foes[1]
@@ -1208,8 +1210,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       style={{ '--strip': !versus && !run.rebattle ? '14px' : '0px' } as CSSProperties}
     >
       {!versus && !run.rebattle && <RunRoundGauge strip className="absolute inset-x-0 top-0 z-30" />}
-      {/* Each new fight opens on its own beat (docs/42). */}
-      {!versus && <EncounterSwipe />}
+      {/* Each new fight opens on its own beat (docs/42); another lead picked is the same fight, already open. */}
+      {!versus && !swapped && <EncounterSwipe />}
       <BattleStage
         own={active}
         foe={foeFront}
@@ -1222,6 +1224,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         art={art}
         ownShown={ownOut}
         foeShown={foeOut}
+        foeSettled={swapped}
         trainer={
           trainerIntro && isTrainerFight && !champIntro ? (trainerSprite ?? '') : trainerBack ? trainerSprite : null
         }

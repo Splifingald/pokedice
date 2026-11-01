@@ -28,7 +28,11 @@ export function EncounterSwipe() {
   }, [])
   if (!on) return null
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 z-40 flex flex-col overflow-hidden">
+    <div
+      aria-hidden
+      data-testid="encounter-swipe"
+      className="pointer-events-none absolute inset-0 z-40 flex flex-col overflow-hidden"
+    >
       {Array.from({ length: BARS }, (_, i) => (
         <motion.div
           key={i}
