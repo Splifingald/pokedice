@@ -215,16 +215,19 @@ export function WeatherLayer({ weather }: { weather: Weather | null }) {
   )
 }
 
-/** The rules: what the weather is, rain and sun, sandstorm and snow, then the region's own. */
+/**
+ * The rules: what the weather is, rain and sun, sandstorm and snow; Galar's also that it changes every day. Hoenn's
+ * areas aren't listed (the user's call, 2026-11-01): each one's chip says its weather.
+ */
 export function useWeatherRules(region: RegionId): RuleRow[] {
   const { t } = useT()
   return [
     { icon: 'weatherRain', title: t('ui.weather.rules.what.title'), text: t('ui.weather.rules.what.text') },
     { icon: 'daySun', title: t('ui.weather.rules.boost.title'), text: t('ui.weather.rules.boost.text') },
     { icon: 'weatherSand', title: t('ui.weather.rules.wear.title'), text: t('ui.weather.rules.wear.text') },
-    region === 'galar'
-      ? { icon: 'calendar', title: t('ui.weather.rules.galar.title'), text: t('ui.weather.rules.galar.text') }
-      : { icon: 'map', title: t('ui.weather.rules.hoenn.title'), text: t('ui.weather.rules.hoenn.text') },
+    ...(region === 'galar'
+      ? [{ icon: 'calendar' as const, title: t('ui.weather.rules.galar.title'), text: t('ui.weather.rules.galar.text') }]
+      : []),
   ]
 }
 

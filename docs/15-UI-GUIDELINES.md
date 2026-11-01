@@ -2097,8 +2097,9 @@ one in the game and keeps its picture in `docs/62-region-flavours/`.
   and ×1.25), after the type's, as a small world's booster is (§21). A sandstorm's or snow's wear is a line and a −N pop,
   as a burn's is. At Motion level 0 nothing falls: a still frame stays, and the chip says the rest.
 - **The rules come once per region** (Hoenn's, Galar's), between fights, in the one-time pop-ups' queue (`weather`,
-  after `dayNight`), Later / Let's go!; Galar's top-bar line says the day's weather and when it changes ("Today:
-  Rain · changes in 5 h").
+  after `dayNight`), Later / Let's go!. They say what the weather does, never which area has which (the user's call,
+  2026-11-01: each area's chip says it); Galar's add that it changes every day, and its top-bar line says the day's
+  weather and when it changes ("Today: Rain · changes in 5 h").
 - **A horde, a trial and a Titan each have a card of their own** (`screens/area/FlavourCards.tsx`), with INFO top right
   and the rules opening by themselves the first time the card shows (Later / Let's go!). A horde: HORDE over the five of
   them (a shiny one starred), its two lines, then the one in front as any wild card; in the fight, five pips under the
