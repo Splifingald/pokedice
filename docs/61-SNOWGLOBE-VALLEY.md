@@ -8,8 +8,9 @@ Branch `claude/eloquent-galileo-b5uahz` (from `version/2_9`), a PR into `version
 
 **Status:** the content is built (§2–§3, migration 0120, not to run before the user's review). The Gift card and the
 five secret-area gameplays (§4) are designed; the user's first review (2026-11-01, notes left on the artifact's
-feedback boxes) is folded in (§6), the Hall of Origin not yet reviewed. Until each is built and switched on, its area
-plays as a plain secret area (a short deck, then its boss or raid), which is how the content plays today.
+feedback boxes) is folded in (§6), the Hall of Origin not yet reviewed. Spear Pillar's race of time and space is
+built (§4.4, its switch Off). Until each is built and switched on, its area plays as a plain secret area (a short
+deck, then its boss or raid), which is how the content plays today.
 
 ## 1. The brief, and the calls made on it
 
@@ -186,6 +187,43 @@ secret area. Every number below is the admin's.
 - **One replay** once that legend is caught, with **other types**: Normal or Fairy · Rock or Flying · Bug or Dragon ·
   Ice or Dark, then only the other gate. Foes +4 levels, **10:00**. The pool holds both runs' types.
 
+**Built** (2026-11-01, Off by default: its switch `timeRace`, Admin → Areas → Spear Pillar → Special mode: race of time
+and space). The screens' rules: docs/15 §48.
+
+- Engine: `src/engine/timeRaceMode.ts` (`DEFAULT_TIME_RACE`, every number above, `normaliseTimeRace`, `timeRaceRunsOn`,
+  `timeRaceModeOf`, `timeRaceRaidRules`) and `src/engine/timeRace.ts`. The state is in the area's progress
+  (`AreaProgress.timeRace`: `active`, `startedAt` and `deadline` on the server's time, `fights`, `path`, `gates`, `met`,
+  `shards`, `won` (the legends opened, in order), `wonSeen`, `left`, `tries`), so the clock lives in the save and runs on
+  with the app closed: `startTimeRace` (READY!: healed, the clock from now), `timeRacePlan` (the first race, or the replay:
+  its forks, the other legend's gate alone at the end, +4 levels, 10:00), `openTimeRaceFork` / `pickTimeRaceGate` (a
+  shard moves the deadline, an item goes into the bag), `timeRaceEncounter` (the gate's type from the pool, no species
+  twice in a stretch while the pool allows), `winTimeRaceFight` (in time it counts; the last opens the last gate's legend;
+  past the clock it counts for nothing), `timeRaceTimeUp` and `timeRaceWipe` (back to the start, healed, XP and items
+  kept), `timeRaceLock`, `timeRaceNoCatch`, `timeRaceSealed` (only its raids, until the legend won is caught: then the
+  replay), `timeRaceBattleSpeed` (short motion at 1 / 1.5 the pace, inside a try only). `run.ts`: `isAreaSealed`,
+  `applyWipe`, `arriveAtTimeRace`, `teamSwapsOpen`, `timeRaceVictoryToRaid`, the `time_race_fight` run event. The raids:
+  `progressRaidState` opens each of the area's two raids on its own legend's win (never on the rounds); `raidRules` and
+  `raidTeamCap` read the mode's raid numbers (Lv.70, dice 8, 3 bars, teams up to Lv.70); `autoAvailable` is off in the
+  area; the autopilot, area Versus and double battles stay out of it.
+- Store and screens: `src/store/run.ts` (`beginTimeRace`, `pickRaceGate`, `timeRaceExpired`, `openDueTimeRaceFork`,
+  `finishTimeRaceVictory`, `healAndStartTimeRaceRaid`, the fight's win and loss), `src/screens/area/TimeRaceRun.tsx` (the
+  guard: every page sends back to the area while a try runs, the clock ends it at 0:00 there), `src/components/TimeRace.tsx`,
+  `src/fx/timelines/timeRace.ts`, the sounds `race.*` in `src/audio/sfx.ts`, a `clock` icon; in `Area.tsx`,
+  `RoundGauge.tsx`, `BattleView.tsx` (one speed, the clock in its corner), `VictoryView.tsx`, `ContinueBar.tsx`,
+  `AreaDetails.tsx`, `Team.tsx`, `ProgressRaidScreen.tsx`; kitchen sink `TimeRaceBits`, FX lab presets. Admin:
+  `src/admin/sections/TimeRaceModeBox.tsx`. Strings `ui.timeRace.*` in the ten languages.
+- Server: migration `supabase/migrations/0124_time_race.sql` (the switch's row, Off; `time_race_open()`;
+  `raid_progress_time_race`, `raid_progress_time_race_won` and 0060's `raid_progress_special_locked` extended: a race
+  area's raid takes teams and closes only once the cloud save's `timeRace.won` holds its legend, while the switch is on
+  for the caller; Spear Pillar's mode where it has none). `supabase/seed.sql` carries it (inlined in its schema part; its
+  Spear Pillar patch is a no-op there).
+- Tests: `tests/engine/time-race.test.ts`, `tests/time-race-sql.test.ts`, `e2e/time-race.spec.ts`.
+- Calls made in building it: a gate's find shows on the gate before the pick (the choice is the type and the find);
+  the gates' items are Hyper Potion ×2, Revive, Max Revive (40/35/10), a shard 35 % of the time; fleeing a fight
+  (where the game allows it) brings another foe of the same type and costs the time; READY! needs the server's time (the
+  device's clock stands in only for a step taken before it was ever read on the page); the admins' No animations
+  stays off for them.
+
 ### 4.5 Hall of Origin: the Stairway of Plates (Giratina's run, kept)
 
 - The user's review: **keep it like the Giratina event.** Distortion World's portal run as it is (docs/28: the way in,
@@ -210,6 +248,12 @@ stairway of light, then the Judgment (Hall of Origin). Once its boss is caught a
    adds the world to `smallWorlds` (the switch and the other worlds kept) and bumps `configVersion`.
    `supabase/seed.sql` does not carry it (content migrations aren't inlined there, as Haunted Hollow's).
 2. Or, over an admin export: `pnpm snowglobe-valley <in.json> <out.json>`, then `pnpm import-bundle`.
+3. The race of time and space (§4.4), once the client is deployed: run in the Supabase SQL editor
+   [`supabase/migrations/0124_time_race.sql`](https://github.com/Splifingald/pokedice/blob/claude/eloquent-galileo-b5uahz/supabase/migrations/0124_time_race.sql)
+   (after 0060 and 0120; safe to run again): the switch `timeRace` (Off), Spear Pillar's race where it has no mode yet,
+   and the server's checks on Dialga's and Palkia's raids. `supabase/seed.sql` carries it too (inlined). Then Admin →
+   Areas → Spear Pillar → Special mode: race of time and space: check the numbers, the switch **On for admin** to try
+   it, **On for everyone** to open it. Publish.
 
 Later changes, once 0120 has run on live, come as patches of their own (as Haunted Hollow's 0055 onwards), never by
 regenerating 0120.
