@@ -406,7 +406,7 @@ export type LogEntry =
    * A Pokémon changed form: `mega` (Mega Evolution, Primal Reversion, Ultra Burst — `die` is the die it gained),
    * `gmax` (Gigantamax; `revert` when it shrinks back), `lowHp` (Giratina's Origin Forme…, `revert` when it goes back
    * above half HP), `unleash` (that form on a raid Pokémon's last bar, for good; `die` is the die it gained)
-   * or `choice` (an Arceus, Silvally or Ogerpon type).
+   * or `choice` (an Arceus, Silvally or Ogerpon type), or `plate` (a raid's Arceus taking its bar's Plate, docs/61 §4.5).
    */
   | {
       kind: 'form'
@@ -414,7 +414,7 @@ export type LogEntry =
       uid: string
       fromDex: number
       toDex: number
-      reason: 'mega' | 'gmax' | 'lowHp' | 'unleash' | 'choice'
+      reason: 'mega' | 'gmax' | 'lowHp' | 'unleash' | 'choice' | 'plate'
       dice: DieType[]
       die?: DieType
       revert?: boolean
@@ -754,6 +754,24 @@ export function raidFormShift(b: Battler, target: Battler, data: GameData): Extr
   wearForm(b, form, data)
   b.dice = b.dice.map(() => type)
   return { kind: 'form', side: 'enemy', uid: b.uid, fromDex, toDex: b.dex, reason: 'choice', dice: [...b.dice] }
+}
+
+/**
+ * A raid Pokémon takes a set type (the Hall of Origin's Arceus, its Plate on each bar: docs/61 §4.5): its type form of
+ * that type (its own species for the type it was sent out as), every die taking it. Null when it already has that type,
+ * or has no such form (the bar's type is then simply skipped).
+ */
+export function raidPlate(b: Battler, type: PokeType, data: GameData): Extract<LogEntry, { kind: 'form' }> | null {
+  const base = b.baseDex ?? b.dex
+  const own = data.species[base]
+  const forms = choiceFormsOf(data, base)
+  if (!own || !forms.length) return null
+  const form = own.type1 === type && !own.type2 ? own : forms.find((f) => choiceFormDie(f) === type)
+  if (!form || form.dex === b.dex) return null
+  const fromDex = b.dex
+  wearForm(b, form, data)
+  b.dice = b.dice.map(() => type)
+  return { kind: 'form', side: 'enemy', uid: b.uid, fromDex, toDex: b.dex, reason: 'plate', dice: [...b.dice] }
 }
 
 /** Auto-mode's pick for the Pokémon in battle: a type form best against the foe, at random among equals. */

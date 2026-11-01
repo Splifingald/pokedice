@@ -295,6 +295,7 @@ export const saveSchema = z.object({
   versusLeagueRulesSeen: z.boolean().optional(),
   areaVersusRulesSeen: z.boolean().optional(),
   portalRulesSeen: z.boolean().optional(),
+  platesRulesSeen: z.boolean().optional(),
   nightmareRulesSeen: z.boolean().optional(),
   events: z
     .object({

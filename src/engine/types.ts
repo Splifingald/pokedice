@@ -378,8 +378,17 @@ export interface NightmareState {
  * distortion offers `offers` boons of distinct kinds drawn by weight; the last one wins the run and opens the area's
  * raid at `raid`'s numbers. Every number is the admin's (Admin → Areas).
  */
+/**
+ * How a portal run is dressed (docs/28, docs/61 §4.5): Distortion World's portals (the default), or the Hall of
+ * Origin's stairway of light, its landings ended by altars and its damage boons named after Arceus's Plates. The
+ * rules and numbers are the same either way: only the words and the effects change.
+ */
+export type PortalSkin = 'distortion' | 'plates'
+
 export interface PortalRunMode {
   kind: 'portal'
+  /** Its look (absent: Distortion World's). */
+  skin?: PortalSkin
   portals: number
   wild: number
   items: number
@@ -394,8 +403,12 @@ export interface PortalRunMode {
   die: { weight: number; maxDice: number }
   /** A rare item into the bag, drawn from `items` by weight. */
   item: { weight: number; items: { key: string; weight: number }[] }
-  /** The area's raid once the run is won: its level, the foe's dice level, its HP bars and the teams' level cap. */
-  raid: { level: number; upgradeLevel: number; bars: number; teamCap: number }
+  /**
+   * The area's raid once the run is won: its level, the foe's dice level, its HP bars and the teams' level cap.
+   * `barTypes`: the type the raid Pokémon takes at the start of each bar (the Hall of Origin's Arceus changing its Plate:
+   * Normal → Ice → Steel → Dragon), through its type forms; absent or short, it keeps the type it has.
+   */
+  raid: { level: number; upgradeLevel: number; bars: number; teamCap: number; barTypes?: PokeType[] }
 }
 
 /** One boon a distortion offers (docs/28), as drawn: who and what it names is fixed when it's offered. */
@@ -1795,6 +1808,8 @@ export interface SaveData {
   areaVersusRulesSeen?: boolean
   /** The portal run's rules pop-up (docs/28) has been shown (once; INFO shows them again). */
   portalRulesSeen?: boolean
+  /** The same for a portal run dressed as the Stairway of Plates (docs/61 §4.5): its own, as its words are its own. */
+  platesRulesSeen?: boolean
   /** The nightmare's rules pop-up (docs/30) has been shown (once; INFO shows them again). */
   nightmareRulesSeen?: boolean
   /** The region being played. Absent on saves from before the second region = 'kanto'. */
