@@ -15,12 +15,13 @@ right Pokémon first.
 | Topic | Decision |
 |---|---|
 | Rivals | Set meetings in **every region**, the rival's team per starter where the original had one. Rivals met today at random in trainer pools leave the pools while the switch is on. |
-| Gifts | Gift Pokémon and Eggs from **every generation**, each with a short intro: the giver comes in and hands it over, animated. A pick-one choice only where the Pokémon not taken is still met in the region. |
+| Gifts | Gift Pokémon and Eggs from **every generation**, each with a short intro: the giver comes in and hands it over, animated. A pick-one choice only where the Pokémon not taken is still met in the region. **Gifts of species a region doesn't have are added too** (Platinum's Togepi, Eevee and Porygon; Kalos's Kanto starter): that region's Pokédex grows. |
+| Gift Eggs | Go to the Box and **hatch after 6 hours** (admin), at the Day Care's hatch level. |
 | NPC trades | **No.** |
 | Key items | **No** (no Silph Scope, Poké Flute, Squirtbottle or Devon Scope). |
 | Pokémon posing as items | Item cards that turn into **Voltorb or Electrode**, and Gen 5's **Foongus and Amoonguss**. **No Gimmighoul.** |
 | Roadblocks | A set **Snorlax** across Kanto's road as a boss (no Poké Flute); **Sudowoodo**, **Kecleon** and Kalos's Snorlax the same way. |
-| Safari | The **Trick or Treat system** (docs/29): Bait and Safari Balls, no battle, in **every region that has a Safari**. As in the games it is **not a blocker**: a **secret area of its own**, a mini game, that opens when its route or city is reached; an area merged with another road is **split**. No XP there unless the campaign simulator says the main road got too hard. Tiers by catch value. |
+| Safari | The **Trick or Treat system** (docs/29): Bait and Safari Balls, no battle, in **every region that has a Safari**. As in the games it is **not a blocker**: a **secret area of its own**, a mini game, that opens when its route or city is reached; an area merged with another road is **split** (Kanto's Fuchsia City keeps the Gym's trainers only). No XP there unless the campaign simulator says the main road got too hard. Tiers by catch value. **Paid per round: the first round free, then ₽100** (admin). |
 | Regigigas | Snowpoint Temple needs **Regirock, Regice and Registeel caught** (any region's Pokédex). A player who has already been in keeps it open. |
 | Not doing | Outbreaks, weekday Pokémon, tides, honey trees, Feebas's spot, rematches, Poké Radar, the other legendary quests, new Poké Balls, Pokérus, the lottery, the Trick House, quizzes, contests, the Battle Frontier's rules, weather, takeovers, partners, the Bug-Catching Contest, gauntlets. |
 
@@ -148,6 +149,12 @@ Safari Zone**: the old area's 23 wild Pokémon, a loot table of its own (new, so
   copy; a shiny is its own Pokémon), as Trick's.
 - **No XP and no ₽** (only item finds' ₽). It never clears (a secret area: `roundsToClear` null); rounds count for its
   gauge and the pity.
+- **Paid per round** (the user's call, 2026-11-01): a player's **first round in each Safari area is free**, and every
+  round after costs **₽100**, the region's ₽ (`game_config.safari.freeRounds` 1, `roundPrice` 100, both admin). It is
+  paid when the round's deck is dealt, before its first card: the area screen's button reads "EXPLORE · ₽100", and
+  without ₽100 it waits, saying so. A paid round is the player's until its last card, even if they leave and come back
+  (the deck is kept, as every area's is). The round gauge and the Map show the price. Read as "the first round free per
+  area and per save"; a free round a day would be the same two numbers with a daily reset.
 - **Switch**: Off / On for admin / On for everyone (`game_config.safari.access`), checked by the server (`safari_open()`,
   as `trick_or_treat_open()`). Off: the Safari areas are still secret areas off the main road, and their cards are
   fought as wild Pokémon, as today, so no species is locked behind the switch.
@@ -169,7 +176,8 @@ Safari Zone**: the old area's 23 wild Pokémon, a loot table of its own (new, so
 - Engine: `engine/trickOrTreat.ts` becomes one engine with two themes (`trick`, `safari`): the gauge, the steps and the
   best play once, each theme's config apart; Trick's behaviour and tests stay as they are. A `safari` card in
   `ENCOUNTER_KINDS`; an area with `mode: { kind: 'safari' }` deals its wild cards as Safari encounters while the switch
-  is on, and no Centers.
+  is on, and no Centers. The round's price (`safariRoundPrice`: free rounds left, else the price) and its payment when
+  the deck is dealt (`AreaProgress.safariPaid`, the rounds paid for).
 - Content (one migration): Kanto's area split, the three others made secret (unlock, `roundsToClear`, Centers, mode),
   the trainers moved; area names in the ten languages; the new area's banner (`fx/areaArtMap.ts`). `supabase/seed.sql`
   carries it.
@@ -177,7 +185,8 @@ Safari Zone**: the old area's 23 wild Pokémon, a loot table of its own (new, so
   the item atlas as the Trick Ball was), its preview card and the round gauge's icon; every state on `/kitchen-sink`.
 - Admin: Events → Safari (Trick's tab, themed); Areas → the mode.
 - Tests: the split's old save, the main road's unlocks, the deal (no Centers, no trainers), Off fights them, the tiers,
-  the best-play targets, the simulator.
+  the best-play targets, the simulator, the price (the free round, then ₽100, a paid round never paid twice, not enough
+  ₽).
 
 ## 5. Set moments: rivals and gifts
 
@@ -228,8 +237,15 @@ they're built: about 45 meetings, up to three versions each, written by a script
 - **The one choice**, Hitmonlee or Hitmonchan: two Poké Balls with their sprites, types and dice; the other stays wild
   at Victory Road and in Cerulean Cave. The fossils stay finds (Mt. Moon's both, the desert's both): the one not taken
   can't be met anywhere else.
-- Every gift species is **already met in its region**, so no regional Pokédex changes and nothing becomes missable; its
-  rare wild spots stay. Shiny at the wild odds; the Odd Egg at its own (admin, about 1 in 7 as in Crystal).
+- **A region's Pokédex counts its gifts** while Gift Pokémon is on (`regionSpecies`, as it counts the Game Corner's
+  prize while that is on), with what they evolve into there. Most gift species are already met in their region, so
+  their rare wild spots stay and nothing becomes missable. Some are new to their region (the user's call, 2026-11-01):
+  Sinnoh's page gains Togepi, Eevee and Porygon and their Sinnoh evolutions (Togekiss, Leafeon, Glaceon, Porygon-Z…),
+  Kalos's gains the Kanto starters. Lucario is on Kalos's page already, through the Friend Safari's Riolu.
+- **Sycamore's Kanto starter** is a choice of three; so that Kalos's page can still be filled, the two not taken are
+  rare wild Pokémon in the Friend Safari (weight 3, as the Kalos starters are there).
+- **Eggs hatch after 6 hours** (`giftMoments.eggHours`, admin).
+- Shiny at the wild odds; the Odd Egg at its own (admin, about 1 in 7 as in Crystal).
 
 | Region | Area | Gift | Giver |
 |---|---|---|---|
@@ -244,16 +260,19 @@ they're built: about 45 meetings, up to three versions each, written by a script
 | Hoenn | Lavaridge Town | Wynaut Egg | an old lady |
 | Hoenn | Routes 118 & 119 | Castform | the Weather Institute |
 | Hoenn | Mossdeep City & the Space Center | Beldum | Steven (his letter) |
-| Sinnoh | Hearthome City | Happiny Egg | a Hiker |
+| Sinnoh | Eterna City & the Galactic Building | Togepi Egg (new to Sinnoh) | Cynthia |
+| Sinnoh | Hearthome City | Happiny Egg · Eevee (new to Sinnoh) | a Hiker · Bebe |
+| Sinnoh | Veilstone City & the Galactic HQ | Porygon (new to Sinnoh) | a scientist in its Pokémon Center |
 | Sinnoh | Canalave City & Iron Island | Riolu Egg | Riley |
 | Unova | Striaton City & the Dreamyard | the monkey for the starter: Snivy → Panpour, Tepig → Pansage, Oshawott → Pansear | the Dreamyard |
+| Kalos | Routes 4 & 22 and Lumiose City South | Bulbasaur, Charmander or Squirtle (new to Kalos, a choice) | Prof. Sycamore |
+| Kalos | Route 11, Reflection Cave & Shalour City | Lucario | Korrina |
 | Kalos | Route 12, Azure Bay & Coumarine City | Lapras | a man on Route 12 |
 | Alola | Heahea City & Routes 4–6 | Eevee Egg | Paniola Ranch's nursery |
 | Alola | Aether Paradise | Type: Null | Gladion |
 | Galar | Route 5 & Hulbury | Toxel Egg | the Route 5 nursery |
 
-Left out (§8): Platinum's Togepi Egg, Eevee and Porygon (not met in Sinnoh), Kalos's Kanto starter and Korrina's Lucario
-(not met in Kalos); Paldea has no gift to borrow.
+Paldea has no gift to borrow.
 
 ## 6. Switches and rules
 
@@ -282,10 +301,12 @@ Each part: `pnpm lint && pnpm build && pnpm test` green, the e2e specs it touche
 request into the version branch and its Netlify preview; the migrations' links in the reply and in the part's
 "Setting it up".
 
-## 8. Open questions
+## 8. Answered (2026-11-01)
 
-1. **Safari entry**: free, or a price per visit like the games' ₽500? Default: free.
-2. **Fuchsia City's deck**: trainers only, like Silph Co.? Default: yes.
-3. **Gifts of species a region doesn't have** (Platinum's Togepi, Eevee and Porygon in Sinnoh; Kalos's Kanto starter
-   and Lucario): leave them out, or add them (the region's Pokédex grows)? Default: leave them out.
-4. **A gift Egg's hatch**: after a few hours (admin), at the Day Care's hatch level? Default: yes, 6 hours.
+1. **Safari entry**: paid per round, the first round free, then ₽100 (§4.2).
+2. **Fuchsia City's deck**: trainers only, like Silph Co. (§4.1).
+3. **Gifts of species a region doesn't have**: added; the region's Pokédex grows (§5.3).
+4. **A gift Egg's hatch**: after 6 hours, at the Day Care's hatch level (§5.3).
+
+Still to settle in the content pass, with tables for validation: the rivals' teams and Kalos's and Paldea's meeting
+points (§5.2).
