@@ -1446,6 +1446,10 @@ export interface TradeConfig {
   evolveOnTrade: [number, number][]
   /** Never tradable, on top of legendaries and mythicals (the Ultra Beasts by default). */
   exclude: number[]
+  /** Listings the board picks for a player (docs/23 §2.1); a search still shows every match. */
+  boardPicks: number
+  /** NEW PICKS a player can ask for per UTC day: the board shows others. */
+  boardRerolls: number
 }
 
 /** One booster of a small world: every hit of this type, both sides', × `multiplier`. */
@@ -2023,6 +2027,14 @@ export interface TradeLanding {
   dex: number
 }
 
+/** The board's picks today (docs/23 §2.1): NEW PICKS used, and the listings shown before them, least recently first. */
+export interface TradePicks {
+  /** The UTC day (days since 1970) these count for: a new day starts afresh. */
+  day: number
+  rerolls: number
+  skip: string[]
+}
+
 export interface TradesSave {
   out: TradeOut[]
   /** Trade ids already applied to this save (the last 50): a trade is applied exactly once. */
@@ -2035,6 +2047,8 @@ export interface TradesSave {
   landing?: TradeLanding[]
   /** The rules pop-up has been shown (once; INFO shows it again). */
   rulesSeen?: boolean
+  /** The board's NEW PICKS today. */
+  picks?: TradePicks
 }
 
 export type SaveMode = 'main' | 'extreme'

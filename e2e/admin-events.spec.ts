@@ -89,6 +89,43 @@ test('Live events: once, every year or every week on some weeks of the month; ov
   await expect(page.getByText(/^Unsaved: game_config/)).toBeVisible()
 })
 
+test('Live events: a month calendar, a bar per run; a bar edits its event, a day starts a new one', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await admin(page)
+  await page.goto('/admin/events?tab=live')
+  await expect(page.getByRole('button', { name: 'New live event' })).toBeVisible({ timeout: 30_000 })
+  // A Cash Flow every Saturday: a bar each week it comes back.
+  await page.getByRole('button', { name: 'New live event' }).click()
+  await page.getByLabel(/^Type/).selectOption({ label: 'Cash Flow' })
+  await page.getByLabel(/^When/).selectOption('weekly')
+  await page.getByLabel(/^Weekday/).selectOption({ label: 'Saturday' })
+  await page.getByRole('button', { name: 'Add to the list' }).click()
+  await page.getByRole('tab', { name: 'Calendar' }).click()
+  await expect(page).toHaveURL(/tab=live&view=calendar/)
+  const bars = page.getByRole('gridcell', { name: /^Cash Flow \(Cash Flow\), .*Every Saturday.*\. Edit$/ })
+  expect(await bars.count()).toBeGreaterThanOrEqual(4)
+  if (process.env.SHOT_DIR) await page.screenshot({ path: `${process.env.SHOT_DIR}/admin-live-calendar.png`, fullPage: true })
+  // A bar opens its event; while a draft is open, the calendar waits.
+  await bars.last().click()
+  await expect(page.getByRole('heading', { name: 'Edit · Cash Flow' })).toBeVisible()
+  await expect(bars.first()).toBeDisabled()
+  await page.getByRole('button', { name: 'Cancel' }).click()
+  // Next month's 15th: a new event that day, 18:00 UTC; the view stays on a reload.
+  await page.getByRole('button', { name: 'Next month' }).click()
+  const next = new Date()
+  next.setUTCDate(1)
+  next.setUTCMonth(next.getUTCMonth() + 1)
+  const ym = next.toISOString().slice(0, 7)
+  const label = new Date(`${ym}-15T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+  // On its number: a bar may cover the rest of the day.
+  await page.getByRole('gridcell', { name: `${label}: new live event that day` }).click({ position: { x: 12, y: 8 } })
+  await expect(page.getByRole('heading', { name: /^New · / })).toBeVisible()
+  await expect(page.getByLabel(/^Starts \(UTC\)/)).toHaveValue(`${ym}-15T18:00`)
+  await page.reload()
+  await expect(page.getByRole('tab', { name: 'Calendar' })).toHaveAttribute('aria-selected', 'true', { timeout: 30_000 })
+})
+
 test('A gift calendar: its switch, the days, each day’s gift, the Advent proposal; it runs once', async ({
   page,
 }) => {

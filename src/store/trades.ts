@@ -14,7 +14,10 @@ import {
   listOut,
   markTradeRulesSeen,
   markTradesSeen,
+  picksAsk,
+  picksToday,
   reconcileListings,
+  rerollPicks,
   tradeSnapshot,
   tradesOf,
   tradesOn,
@@ -30,6 +33,7 @@ import {
   cancelListing,
   fetchBoard,
   fetchMine,
+  fetchPicks,
   markApplied,
   postListing,
   takeListing,
@@ -60,6 +64,12 @@ interface TradesState {
   boardKey: string
   boardAt: number
   boardState: 'idle' | 'loading' | 'ready' | 'error'
+  /** The board's candidates for this player (docs/23 §2.1): the page shows the picks among them. */
+  picks: TradeListing[] | null
+  /** The listings passed over today, as the candidates were asked for them. */
+  picksKey: string
+  picksAt: number
+  picksState: 'idle' | 'loading' | 'ready' | 'error'
   /** Listings that ended without a trade, back in the Box: a toast each (their dex). */
   returned: number[]
   /** Trades you took that a check applied (a tab closed mid-trade): a toast each. */
@@ -74,6 +84,10 @@ const EMPTY: TradesState = {
   boardKey: '',
   boardAt: 0,
   boardState: 'idle',
+  picks: null,
+  picksKey: '',
+  picksAt: 0,
+  picksState: 'idle',
   returned: [],
   settled: [],
   scene: null,
@@ -256,10 +270,48 @@ export async function loadBoard(q: BoardQuery = {}, force = false, now = Date.no
   }
 }
 
+/**
+ * The board's candidates (docs/23 §2.1), for what the save owns now and the listings it passed over today: from the
+ * cache when read under a minute ago for the same ones, unless `force`.
+ */
+export async function loadPicks(force = false, now = Date.now()): Promise<void> {
+  signedInUser()
+  const { save, data } = useGame.getState()
+  if (!save) return
+  const skip = picksToday(save, now).skip
+  const key = JSON.stringify(skip)
+  const st = useTrades.getState()
+  if (!force && st.picksKey === key && st.picksState === 'ready' && now - st.picksAt < BOARD_EVERY_MS) return
+  useTrades.setState({ picksKey: key, picksState: st.picks ? 'ready' : 'loading', picksAt: now })
+  try {
+    const picks = await fetchPicks(picksAsk(save, data), skip)
+    if (useTrades.getState().picksKey !== key) return
+    useTrades.setState({ picks, picksState: 'ready' })
+  } catch (err) {
+    console.warn('[trades] picks not loaded:', err instanceof Error ? err.message : err)
+    useTrades.setState({ picksState: 'error' })
+  }
+}
+
+/**
+ * NEW PICKS: the listings shown go to the back of the line until tomorrow and one of the day's is used, then the
+ * candidates are asked for again (offline, the ones at hand are ranked again). False when none is left.
+ */
+export async function newPicks(shown: string[], now = Date.now()): Promise<boolean> {
+  const { save, data } = useGame.getState()
+  const next = save && rerollPicks(save, data, shown, now)
+  if (!next) return false
+  commitSave(next)
+  await loadPicks(true, now)
+  return true
+}
+
 const forgetBoard = (id?: string) =>
   useTrades.setState((s) => ({
     boardAt: 0,
+    picksAt: 0,
     board: id ? (s.board?.filter((l) => l.id !== id) ?? null) : s.board,
+    picks: id ? (s.picks?.filter((l) => l.id !== id) ?? null) : s.picks,
   }))
 
 /** Your save must be in the cloud first: the server reads the Pokémon from there, never from what the page sends. */
