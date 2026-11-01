@@ -24,15 +24,15 @@ area plays as a plain secret area (a short deck, then its boss or raid).
 | About 10 areas + the Frost League | **10 areas + the Frost League** (four Elite Four and Champion Nicholas, no badges) |
 | 5 secret areas | Moonlit Glade, Evergreen Hill, Crown Shrine, Spear Pillar, Hall of Origin (§2.3) |
 | Shiny Stantler, the first secret boss | Moonlit Glade, **20 caught** (Haunted Hollow's first secret's count; the brief named none) |
-| Shiny Delibird from 24 Dec | Evergreen Hill, no count, opens **24 Dec 00:00 Paris** (the world's `opens`) |
+| Shiny Delibird from 24 Dec | Evergreen Hill, no count, opens **24 Dec 12:00 UTC** (the world's `opens`) |
 | Shiny Abomasnow at 50 caught | Crown Shrine, **50 caught** |
-| Shiny Dialga or Palkia, the player's choice, after the league and from 25 Dec | Spear Pillar, **Frost League cleared** + **25 Dec 00:00 Paris**; the race's last gate picks (§4.4) |
-| Shiny Arceus at 90 caught, from 1 Jan | Hall of Origin, **90 caught** + **1 Jan 00:00 Paris** |
+| Shiny Dialga or Palkia, the player's choice, after the league and from 25 Dec | Spear Pillar, **Frost League cleared** + **25 Dec 12:00 UTC**; the race's last gate picks (§4.4) |
+| Shiny Arceus at 90 caught, from 1 Jan | Hall of Origin, **90 caught** + **1 Jan 12:00 UTC** |
 | Each area its own gameplay | Read as **each secret area** (§4); the review asks whether the main areas get one too |
 
 The date gates use the small worlds' per-area opening dates (`SmallWorld.opens`, docs/21): no new unlock condition. A
-secret area opens when its conditions hold **and** its date has come, on the server's clock; Home says "Opens Wed 24 Dec,
-00:00" in the player's own time until then.
+secret area opens when its conditions hold **and** its date has come, on the server's clock; Home says "Opens Thu 24 Dec,
+13:00" (in Paris) in the player's own time until then.
 
 ## 2. The content
 
@@ -76,10 +76,10 @@ The script holds every pool and trainer; the artifact shows them with their spri
 | | Area | Picture | Lv. | Opens | Prize |
 |---|---|---|---|---|---|
 | S1 | Moonlit Glade | a126 | 24–30 | 20 caught | shiny Stantler Lv.30 (boss) |
-| S2 | Evergreen Hill | a858 | 34–40 | 24 Dec 00:00 Paris | shiny Delibird Lv.40 (boss) |
+| S2 | Evergreen Hill | a858 | 34–40 | 24 Dec 12:00 UTC | shiny Delibird Lv.40 (boss) |
 | S3 | Crown Shrine | a855 | 48–55 | 50 caught | shiny Abomasnow Lv.50 (boss) |
-| S4 | Spear Pillar | lair-summit | 56–64 | Frost League cleared, 25 Dec 00:00 Paris | shiny Dialga and shiny Palkia Lv.70 (raids) |
-| S5 | Hall of Origin | a130 | 52–70 | 90 caught, 1 Jan 00:00 Paris | shiny Arceus Lv.90 (raid) |
+| S4 | Spear Pillar | lair-summit | 56–64 | Frost League cleared, 25 Dec 12:00 UTC | shiny Dialga and shiny Palkia Lv.70 (raids) |
+| S5 | Hall of Origin | a130 | 52–70 | 90 caught, 1 Jan 12:00 UTC | shiny Arceus Lv.90 (raid) |
 
 Spear Pillar's pool holds the race's types by fork (§4.4), all met elsewhere. The Hall of Origin's pool too.
 
@@ -135,8 +135,8 @@ secret area. Every number below is the admin's.
   Box) lowers each by 20% (level 1 is safe) and adds a **level 6**.
 - **A broken gift is a wild encounter** of the area's pool, fought and caught as usual.
 - Rewards (balanced; scaled to the area): 1. **2 of the area's balls** (the best ball its loot pool holds, a Poké Ball
-  when none) · 2. **3 of the ball above it** or **2 Super Potions** · 3. **2 Hyper Potions** or **₽ (the area's top
-  level × 15)** · 4. **a Revive** or **an evolution item the world's Mart sells** · 5. **3 Rare Candies** (the user's
+  when none) · 2. **3 of the ball above it** or **2 Super Potions** · 3. **2 Hyper Potions** or **₽ (the area's lowest
+  level × 15**, the user's call) · 4. **a Revive** or **an evolution item the world's Mart sells** · 5. **3 Rare Candies** (the user's
   call, up from the proposed 2) · 6. **3 Rare Candies and a Revive**. Where a level has two, one is drawn as the gift
   appears and the player sees it before choosing (OPEN shows what it gives now, a line shows the next level's). A
   player who always taps reaches level 5 3.8% of the time (19.2% with a Delibird), level 6 3.8%. Every number is the
@@ -287,8 +287,7 @@ entrance `src/fx/timelines/cinema/abomasnow.ts`, its sounds (`whiteout.*` in `sr
   it twice. In battle the bag stays shut (the engine refuses items), between fights too but at a bonfire. No travel
   while it's under way (the nightmare's lock: the Mart and menus stay open). The boss caught: the outro, and the shrine
   closes for good (`isAreaClosed`, whatever the switch says later). **The boss beaten but not caught** (a throw that
-  fails, or none): back at the last bonfire, already warm, then the boss again (the design didn't say; this keeps the
-  team and bag reachable before the retry). Switch Off: the plain secret area (its 6-card deck, then its boss).
+  fails, or none): back to wave 1, as a wipe (the user's call), the team healed and the way in's intro again. Switch Off: the plain secret area (its 6-card deck, then its boss).
 
 ### 4.4 Spear Pillar: the Race of Time and Space (time trial with forks)
 

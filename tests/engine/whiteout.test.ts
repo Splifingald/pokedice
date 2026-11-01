@@ -36,6 +36,7 @@ import {
   WEATHER_CHIP,
   whiteoutBagShut,
   whiteoutBossGotAway,
+  whiteoutWipe,
   whiteoutEncounter,
   whiteoutFoe,
   whiteoutFoeCount,
@@ -431,13 +432,12 @@ describe('the boss and the end', () => {
     expect(isAreaClosed(seen, CS.id, off)).toBe(true)
   })
 
-  it('got away: back at the last bonfire (no second heal), then the boss again', () => {
-    const away = whiteoutBossGotAway(toBoss(), data, CS.id)
-    expect(whiteoutStateOf(away, CS.id)).toMatchObject({ active: true, bonfire: true, warmed: true })
-    expect(warmAtBonfire(away, data, CS.id)).toBeNull()
-    expect(teamSwapsOpen(away, data, { phase: 'idle', areaId: CS.id })).toBe(true)
-    const again = leaveBonfire(away, data, CS.id)!
-    expect(whiteoutNext(again, data, CS.id)).toBe('boss')
+  it('got away: back to wave 1 as a wipe, healed, the lock lifted', () => {
+    const boss = toBoss()
+    const away = whiteoutBossGotAway(boss, data, CS.id)
+    expect(whiteoutStateOf(away, CS.id)).toEqual(whiteoutStateOf(whiteoutWipe(boss, data, CS.id), CS.id))
+    expect(whiteoutStateOf(away, CS.id)).toMatchObject({ active: false, wave: 0, foe: 0 })
+    expect(canStartWhiteout(away, data, CS.id)).toBe(true)
   })
 
   it('a wipe: back to wave 1, healed, the lock lifted; XP, ₽ and items kept; no limit on tries', () => {

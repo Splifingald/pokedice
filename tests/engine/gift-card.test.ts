@@ -169,7 +169,7 @@ describe('the rewards', () => {
   })
 
   it('draws one option per level: balls, then better balls or Super Potions, … 3 Rare Candies, then a Revive too', () => {
-    const level = trail.maxLevel
+    const level = trail.minLevel
     const seen = new Map<number, Set<string>>()
     for (let seed = 1; seed < 200; seed++) {
       const r = drawGiftRewards(CFG, 6, trail, sg, createRng(seed))

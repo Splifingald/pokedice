@@ -189,13 +189,12 @@ describe('Snowglobe Valley', () => {
       expect(areaOpenAt(data, areaId(name), before(iso)), name).toBe(false)
       expect(areaOpenAt(data, areaId(name), Date.parse(iso)), name).toBe(true)
     }
-    // Midnight in Paris: the dates the French community expects.
-    expect(new Date(DATES.christmasEve).toLocaleString('en-GB', { timeZone: 'Europe/Paris' })).toBe(
-      '24/12/2026, 00:00:00',
-    )
-    expect(new Date(DATES.newYear).toLocaleString('en-GB', { timeZone: 'Europe/Paris' })).toBe(
-      '01/01/2027, 00:00:00',
-    )
+    // At the world's own hour, 12:00 UTC, on their day (the user's call).
+    expect([DATES.christmasEve, DATES.christmas, DATES.newYear]).toEqual([
+      '2026-12-24T12:00:00.000Z',
+      '2026-12-25T12:00:00.000Z',
+      '2027-01-01T12:00:00.000Z',
+    ])
   })
 
   it('has 125 Pokémon to catch, all but its legendary prizes catchable before Spear Pillar and the Hall of Origin open', () => {

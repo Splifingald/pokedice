@@ -100,8 +100,8 @@ export interface GiftItem {
 const isKind = (k: unknown): k is GiftRewardPart['kind'] =>
   (GIFT_REWARD_KINDS as readonly unknown[]).includes(k)
 
-/** The area's level for its ₽: the top of its range. */
-export const giftAreaLevel = (area: Pick<Area, 'maxLevel'>): number => Math.max(1, Math.round(area.maxLevel))
+/** The area's level for its ₽: the bottom of its range (the user's call). */
+export const giftAreaLevel = (area: Pick<Area, 'minLevel'>): number => Math.max(1, Math.round(area.minLevel))
 
 /**
  * The area's balls: the best of the admin's list that its finds hold (a Poké Ball when they hold none), and the next
@@ -138,7 +138,7 @@ export function giftEvolutionItems(area: Pick<Area, 'regionId'>, data: GameData)
 /** One part of a reward as it lands in this area: what it is and how many. Null for an item the game doesn't have. */
 export function giftPart(
   part: GiftRewardPart,
-  area: Pick<Area, 'lootPool' | 'maxLevel' | 'regionId'>,
+  area: Pick<Area, 'lootPool' | 'minLevel' | 'regionId'>,
   data: GameData,
   rng: Rng,
 ): GiftItem | null {
@@ -172,7 +172,7 @@ const levelOptions = (cfg: GiftCardConfig, level: number): GiftRewardPart[][] =>
 export function drawGiftRewards(
   cfg: GiftCardConfig,
   top: number,
-  area: Pick<Area, 'lootPool' | 'maxLevel' | 'regionId'>,
+  area: Pick<Area, 'lootPool' | 'minLevel' | 'regionId'>,
   data: GameData,
   rng: Rng,
 ): GiftItem[][] {
@@ -206,7 +206,7 @@ export interface GiftState {
 /** A Gift card's present, at level 1, its rewards drawn. */
 export function startGift(
   save: Pick<SaveData, 'box'>,
-  area: Pick<Area, 'lootPool' | 'maxLevel' | 'regionId'>,
+  area: Pick<Area, 'lootPool' | 'minLevel' | 'regionId'>,
   data: GameData,
   rng: Rng,
 ): GiftState {

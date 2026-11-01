@@ -1068,15 +1068,15 @@ export const TITLE: SmallWorld['title'] = {
 }
 
 /**
- * Paris midnight, as the dates players expect (the French community's): 00:00 CET is 23:00 UTC the day before. The
- * world itself opens and closes at 12:00 UTC like Haunted Hollow, which makes it exactly 15 days.
+ * The world opens and closes at 12:00 UTC like Haunted Hollow, which makes it exactly 15 days; its dated bosses open at
+ * the same hour on their day (the user's call: Delibird on 24 Dec, Dialga and Palkia on 25 Dec, Arceus on 1 Jan).
  */
 export const DATES = {
   start: '2026-12-19T12:00:00.000Z',
   end: '2027-01-03T12:00:00.000Z',
-  christmasEve: '2026-12-23T23:00:00.000Z',
-  christmas: '2026-12-24T23:00:00.000Z',
-  newYear: '2026-12-31T23:00:00.000Z',
+  christmasEve: '2026-12-24T12:00:00.000Z',
+  christmas: '2026-12-25T12:00:00.000Z',
+  newYear: '2027-01-01T12:00:00.000Z',
 }
 
 const SHOP: SmallWorld['shop'] = [

@@ -2235,8 +2235,8 @@ near-black blues to slate, the snow's whites and frost, the crown tree's pine gr
   sparkle and its cry; the card. Then "The blizzard lifts" in gold on the storm card, "Shiny Abomasnow is yours.
   Sunlight falls on Crown Shrine, closed for good.", and the green BACK TO THE WORLD (the focus). No skip. The shrine
   is closed from then on (`isAreaClosed`): Home's CONTINUE for it is shut and says why.
-- **If the boss gets away** (its throw failed, or none was thrown): back at the last bonfire, already warm (team and
-  bag open, no second heal), and "Face the crown tree" again.
+- **If the boss gets away** (its throw failed, or none was thrown): back to wave 1 as after a wipe (the user's call),
+  the team healed; a toast says so ("Abomasnow vanished into the blizzard: back to wave 1.") and the way in plays again.
 - **The lock**: as the nightmare's (§29), only travel shuts, with its own words ("The blizzard holds you at Crown Shrine:
   no travel until it ends. The Mart stays open.", "Areas: locked during the blizzard"): Home's Areas button, the green
   GO TO, the world strip's way back. The Mart, the Team, the bag (at a bonfire) and the menus stay open. No screen

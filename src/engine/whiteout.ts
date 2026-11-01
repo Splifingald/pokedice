@@ -326,14 +326,12 @@ export function winWhiteout(save: SaveData, data: GameData, areaId: string): Sav
 }
 
 /**
- * The boss beaten but not caught (it broke free, or no ball was thrown): back at the last bonfire, its heal already
- * given, the team and the bag open again; MOVE ON brings the boss back.
+ * The boss beaten but not caught (it broke free, or no ball was thrown): back to wave 1, as a wipe (the user's call):
+ * the team healed, the lock lifted, the way in next.
  */
 export function whiteoutBossGotAway(save: SaveData, data: GameData, areaId: string): SaveData {
-  const w = whiteoutStateOf(save, areaId)
-  if (!inWhiteout(save, data, areaId) || !w.boss) return save
-  const { boss: _b, ...rest } = w
-  return withWhiteout(save, areaId, { ...rest, bonfire: true, warmed: true })
+  if (!inWhiteout(save, data, areaId) || !whiteoutStateOf(save, areaId).boss) return save
+  return whiteoutWipe(save, data, areaId)
 }
 
 /** The outro has played. */

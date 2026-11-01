@@ -1604,15 +1604,18 @@ export function passCatch() {
 
 /** Out of this throw: the next one queued (after a wild pair), else the rewards screen with every "Add to team?". */
 function afterCatch(events: RunEvent[], caughtId: string | null) {
-  // The whiteout's boss (docs/61 §4.3): caught, the blizzard lifts for good; got away, back to the last bonfire.
+  // The whiteout's boss (docs/61 §4.3): caught, the blizzard lifts for good; got away, back to wave 1.
   const before = useGame.getState()
   const c = before.run.catch
-  if (c?.kind === 'boss' && before.save && before.run.areaId && inWhiteout(before.save, before.data, before.run.areaId))
+  if (c?.kind === 'boss' && before.save && before.run.areaId && inWhiteout(before.save, before.data, before.run.areaId)) {
     commitSave(
       c.result?.caught
         ? winWhiteout(before.save, before.data, before.run.areaId)
         : whiteoutBossGotAway(before.save, before.data, before.run.areaId),
     )
+    if (!c.result?.caught)
+      pushToast(t('ui.whiteout.bossAway', { name: before.data.species[c.dex]?.name ?? '' }), 'bad')
+  }
   const { run, save, data } = useGame.getState()
   const pending = [...(run.catchPending ?? []), ...(caughtId ? [caughtId] : [])]
   // The next throw's target as the save stands now, not as it stood before the first: a pair of one species, the first
