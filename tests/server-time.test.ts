@@ -31,8 +31,17 @@ describe('reading the server’s time', () => {
     net.server = T0 + 100
     await syncServerTime()
     expect(useServerTime.getState().offset).toBe(0)
-    expect(serverNow()).toBe(T0 + 200)
+    // The page's steady clock (not faked here) barely moved during the reading: the server's reading carried on it.
+    expect(Math.abs(serverNow()! - (T0 + 100))).toBeLessThan(50)
     expect(trustedNow()).not.toBeNull()
+  })
+
+  it('reads the steady clock, so moving the device’s clock after a reading changes nothing (docs/61)', async () => {
+    net.wait = 0
+    net.server = T0
+    await syncServerTime()
+    vi.setSystemTime(Date.now() + 7 * DAY)
+    expect(Math.abs(serverNow()! - T0)).toBeLessThan(50)
   })
 
   it('drops a reading whose round trip outlasted the limit, and keeps the last one', async () => {

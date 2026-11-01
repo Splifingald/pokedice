@@ -274,7 +274,11 @@ function startFight(
       talent: carriedTalent(data, m.dex, m.talent),
     })),
   }
-  const picked = friends.filter((f) => f.team.length > 0).slice(0, 2)
+  // A friend's Pokémon the game doesn't know (a forged save) is left out rather than failing the whole fight (docs/61).
+  const picked = friends
+    .map((f) => ({ ...f, team: f.team.filter((m) => data.species[m.dex]) }))
+    .filter((f) => f.team.length > 0)
+    .slice(0, 2)
   const chosen = npcs.slice(0, 2 - picked.length).map((o, i) => npcSideSeed(o, picked.length + i + 1, cap, t('ui.raid.npcName', { n: picked.length + i + 1 })))
   const sides = [me, ...picked.map((f, i) => friendSide(f, i + 1, cap)), ...chosen, ...npcSides(2 - picked.length - chosen.length, source, cap)]
   const { state, log } = createRaid(
@@ -293,7 +297,7 @@ function startFight(
 }
 
 /**
- * Starts today's raid with the friends and the NPC trainers picked. The try counts now. Signed in, your own raid team
+ * Starts today's raid with the friends and the NPC trainers picked. The try counts once it has started. Signed in, your own raid team
  * is registered for your friends on the way.
  */
 export function startRaid(npcs: RaidNpcOption[] = [], friends: RaidFriend[] = groupOf('daily', useRaidGroup.getState())): boolean {
@@ -303,8 +307,9 @@ export function startRaid(npcs: RaidNpcOption[] = [], friends: RaidFriend[] = gr
   if (!save || !raid || inWorldRegion(save, data)) return false
   const team = raidTeam(save, data)
   if (!team.length) return false
-  mutateSave((s) => countRaidTry(s, raid.day))
   startFight({ kind: 'daily' }, raid, team, friends, npcs, raidTeamCap(data, raid.dex, 'daily'))
+  // Counted once the fight is under way: a fight that fails to start costs no try.
+  mutateSave((s) => countRaidTry(s, raid.day))
   void syncRaidTeam()
   return true
 }

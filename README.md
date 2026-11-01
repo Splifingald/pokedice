@@ -264,5 +264,9 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   and Settings → Connected accounts links both to one account. CONNECT offers the choice only once Discord is switched
   on in Supabase (the game reads Auth's public settings, kept a day); until then it goes straight to Google as before.
   Setup in [docs/17](docs/17-DISCORD-SIGN-IN.md) and `/setup` step 7; no environment variable.
+- **Anti-cheat** — an edited save stays in its own game: the server checks everything that reaches other players
+  (trades, boards, Versus, raids, area versus), a ban reaches all of it, and Admin → Analytics → Suspicious saves lists
+  the saves that look edited. See [docs/61](docs/61-ANTI-CHEAT.md); needs `supabase/migrations/0108_anti_cheat.sql`,
+  after 0107.
 - `allowVoluntarySwitch`, `enemyUpgradeLevel`, `goldMultiplier`, `forcedCenterWhenHurt` and `scaleLevelSpread` are
   `game_config` keys (the spec was silent on these).
