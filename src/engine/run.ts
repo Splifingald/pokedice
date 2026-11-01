@@ -28,6 +28,14 @@ import {
   nightmareWipe,
   nightmareWon,
 } from './nightmare'
+import {
+  canStartTimeRace,
+  inTimeRace,
+  markTimeRaceWonSeen,
+  timeRaceSealed,
+  timeRaceStateOf,
+  timeRaceWipe,
+} from './timeRace'
 import { familyTalent, TALENT, talentCandyFits, talentOf, talentOnEvolve, unlockFamily } from './talents'
 import { areaOpenAt } from './worldList'
 import {
@@ -332,10 +340,11 @@ export function isAreaClosed(save: SaveData, areaId: string, data: GameData): bo
 
 /**
  * The area deals no more cards: its portal run (docs/28) or its nightmare (docs/30) is won, so it is only its raid,
- * then sealed. Unlike a closed area it can still be entered (its raid is reached from it).
+ * then sealed; or its race of time and space (docs/61 §4.4) is won with no replay open now, so it is only its raids.
+ * Unlike a closed area it can still be entered (its raid is reached from it).
  */
 export const isAreaSealed = (save: SaveData, data: GameData, areaId: string): boolean =>
-  portalWon(save, data, areaId) || nightmareWon(save, data, areaId)
+  portalWon(save, data, areaId) || nightmareWon(save, data, areaId) || timeRaceSealed(save, data, areaId)
 
 /** A boss of this area was caught here: noted in its progress (what a small world's bosses go by, docs/26 §2.5). */
 export function noteBossCaught(save: SaveData, areaId: string, dex: number): SaveData {
@@ -423,6 +432,8 @@ export type RunEvent =
   | { kind: 'nightmare_round'; round: number; total: number }
   /** The item a nightmare round left in the bag (docs/30), once for good. */
   | { kind: 'nightmare_gift'; key: string; qty: number }
+  /** A fight of the race of time and space won in time (docs/61 §4.4): `fight` of `total`. */
+  | { kind: 'time_race_fight'; fight: number; total: number }
   /**
    * An Unown caught with the Unown Pokédex open (docs/41): its letter, new to the page or not, the page's count, and
    * the prize when it was the last one.
@@ -753,6 +764,8 @@ export function applyWipe(save: SaveData, areaId: string, data: GameData): SaveD
   if (inPortalRun(save, data, areaId)) return portalWipe(save, data, areaId)
   // So does the nightmare (docs/30): the player wakes up, the rounds back to 0.
   if (inNightmare(save, data, areaId)) return nightmareWipe(save, data, areaId)
+  // And the race of time and space (docs/61 §4.4): back to the start, healed, the legends won kept.
+  if (inTimeRace(save, data, areaId)) return timeRaceWipe(save, data, areaId)
   const p = progressOf(save, areaId)
   const healed = new Set(wipeHeals(save, data) ? save.team : [])
   // Extreme mode's boon Centers (docs/47): the round starts over at a Center that only swaps.
@@ -817,6 +830,24 @@ export function arriveAtNightmare(save: SaveData, data: GameData, areaId: string
 }
 
 /**
+ * Arriving at the race's way in (docs/61 §4.4, before READY!) heals as a Pokémon Center does, as the portal's way in
+ * does. The same save when there is nothing to heal, or outside a way in.
+ */
+export function arriveAtTimeRace(save: SaveData, data: GameData, areaId: string): SaveData {
+  if (!canStartTimeRace(save, data, areaId)) return save
+  return healedOrSame(save, data)
+}
+
+/**
+ * The race won, HEAL & START RAID (docs/61 §4.4, as the portal run's victory): the team and the Box healed as a Pokémon
+ * Center would, the win's moment marked seen. The same save when no win is waiting here.
+ */
+export function timeRaceVictoryToRaid(save: SaveData, data: GameData, areaId: string): SaveData {
+  if (!timeRaceStateOf(save, areaId).won?.length) return save
+  return markTimeRaceWonSeen(centerHeal(save, data), areaId)
+}
+
+/**
  * Waking up from the nightmare, HEAL & START RAID (docs/30, as the portal run's victory): the team and the Box healed as
  * a Pokémon Center would, the waking marked seen. The same save when no waking is waiting here.
  */
@@ -854,7 +885,10 @@ export function teamSwapsOpen(save: SaveData, data: GameData, at: SwapPlace): bo
     at.phase === 'idle' &&
     !!at.areaId &&
     save.currentAreaId === at.areaId &&
-    (canStartPortal(save, data, at.areaId) || canStartNightmare(save, data, at.areaId))
+    (canStartPortal(save, data, at.areaId) ||
+      canStartNightmare(save, data, at.areaId) ||
+      // The race's way in too (docs/61 §4.4), before READY!.
+      canStartTimeRace(save, data, at.areaId))
   )
 }
 

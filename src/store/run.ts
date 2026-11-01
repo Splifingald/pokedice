@@ -117,6 +117,22 @@ import {
   nightmareVictoryToRaid,
   startNightmare,
   winNightmareRound,
+  arriveAtTimeRace,
+  inTimeRace,
+  markTimeRaceWonSeen,
+  openTimeRaceFork,
+  pickTimeRaceGate,
+  startTimeRace,
+  timeRaceEncounter,
+  timeRaceForkDue,
+  timeRaceLock,
+  timeRaceNoCatch,
+  timeRacePlanAt,
+  timeRaceStateOf,
+  timeRaceTimeUp,
+  timeRaceVictoryDue,
+  timeRaceVictoryToRaid,
+  winTimeRaceFight,
   type BattleEvent,
   type BattleKind,
   type ForceKind,
@@ -199,8 +215,9 @@ export function deleteSave() {
 export function enterArea(areaId: string): boolean {
   const { save, data } = useGame.getState()
   if (!save || !isAreaUnlocked(save, areaId, data) || isAreaClosed(save, areaId, data)) return false
-  // Inside a portal run (docs/28) there is no other area to go to, nor in the nightmare (docs/30).
-  const locked = portalLock(save, data) ?? nightmareLock(save, data)
+  // Inside a portal run (docs/28) there is no other area to go to, nor in the nightmare (docs/30), nor in the race of
+  // time and space (docs/61 §4.4).
+  const locked = portalLock(save, data) ?? nightmareLock(save, data) ?? timeRaceLock(save, data)
   if (locked && locked.id !== areaId) return false
   // A small world's area may also wait for its date (docs/21), on the server's clock.
   if (!areaOpenAt(data, areaId, serverNow())) return false
@@ -491,6 +508,156 @@ export function healAndStartNightmareRaid(): ProgressRaid | null {
   return openRaidIn(next, data, area)
 }
 
+/**
+ * The race's clock (docs/61 §4.4): the server's time; until it has been read once (the page offline from the start), the
+ * device's, so a try is never stuck. READY! itself waits for the server's (beginTimeRace).
+ */
+const raceNow = () => serverNow() ?? Date.now()
+
+/** A full K.O. in a try (docs/61 §4.4): what the wipe card says it lost. */
+function raceLostOf(save: SaveData, areaId: string): { reason: 'wipe'; fights: number; total: number } {
+  const { data } = useGame.getState()
+  return {
+    reason: 'wipe',
+    fights: timeRaceStateOf(save, areaId).fights,
+    total: timeRacePlanAt(save, data, areaId)?.total ?? 0,
+  }
+}
+
+/** A try of the race ended without a win: the wipe card says why (the clock, or a full K.O.) and what it had won. */
+function raceLostCard(areaId: string, reason: 'time' | 'wipe', fights: number, total: number) {
+  useGame.setState({ battle: null })
+  // In its area, whatever the run held (the clock may run out before the page has entered it, on a reload).
+  setRun({ areaId, phase: 'wipe', encounter: null, trainer: null, events: [], raceLost: { reason, fights, total } })
+}
+
+/**
+ * The race's next step (docs/61 §4.4): past the clock, back to the start (its card says so); a fork due opens and its
+ * gates wait on the area's page; otherwise the next foe of the gate's type, straight into the fight (a time trial: no
+ * preview card to stop on). A team with nobody standing goes back to the start too.
+ */
+function rollTimeRace(save: SaveData, areaId: string) {
+  const { data } = useGame.getState()
+  const up = timeRaceTimeUp(save, data, areaId, raceNow())
+  if (up) {
+    commitSave(up.save)
+    return raceLostCard(areaId, 'time', up.fights, up.total)
+  }
+  if (timeRaceStateOf(save, areaId).gates?.length) return setRun({ phase: 'idle', encounter: null })
+  if (!hasAbleTeam(save)) {
+    const lost = raceLostOf(save, areaId)
+    commitSave(applyWipe(save, areaId, data))
+    return raceLostCard(areaId, 'wipe', lost.fights, lost.total)
+  }
+  if (timeRaceForkDue(save, data, areaId)) {
+    const opened = openTimeRaceFork(save, data, areaId, runRng)
+    if (opened) commitSave(opened)
+    return setRun({ phase: 'idle', encounter: null, firstInArea: false })
+  }
+  const res = timeRaceEncounter(save, data, areaId, runRng)
+  if (!res) return setRun({ phase: 'idle', encounter: null })
+  commitSave(res.save)
+  setRun({ phase: 'preview', encounter: res.encounter, firstInArea: false })
+  beginFight()
+}
+
+/**
+ * READY! on the race's way in (docs/61 §4.4): into a try, the team healed, the clock started on the server's time, the
+ * first fork next. False when it can't start here, or while the server's time is still unknown (a toast says so).
+ */
+export function beginTimeRace(areaId: string): boolean {
+  const { save, data, run } = useGame.getState()
+  if (!save || run.phase !== 'idle') return false
+  const now = serverNow()
+  if (now == null) {
+    pushToast(t('ui.common.offline'), 'bad')
+    return false
+  }
+  if (run.areaId !== areaId && !enterArea(areaId)) return false
+  const started = startTimeRace(useGame.getState().save!, data, areaId, now)
+  if (!started) return false
+  commitSave(started)
+  setRun({ raceLost: null })
+  rollNext()
+  return true
+}
+
+/**
+ * A fork due but not dealt yet (the page opened between a fight and its fork, a reload): it is dealt now. Nothing
+ * when it isn't due any more by the time this runs (the clock ran out meanwhile, a fight began).
+ */
+export function openDueTimeRaceFork() {
+  const { save, data, run } = useGame.getState()
+  if (!save || !run.areaId || run.phase !== 'idle' || !timeRaceForkDue(save, data, run.areaId)) return
+  rollTimeRace(save, run.areaId)
+}
+
+/** The way in shows: the team and the Box are healed as at a Pokémon Center (the engine's). */
+export function arriveAtTimeRaceWayIn(areaId: string) {
+  const { save, data } = useGame.getState()
+  if (!save) return
+  const next = arriveAtTimeRace(save, data, areaId)
+  if (next !== save) commitSave(next)
+}
+
+/** The way in's pop-up is up: back from the Team screen, it shows again at once. */
+export function markTimeRacePopup() {
+  if (!useGame.getState().run.racePopup) setRun({ racePopup: true })
+}
+
+/** Through a gate (docs/61 §4.4): its find is taken (a shard's time, an item), and its first foe comes at once. */
+export function pickRaceGate(index: number) {
+  const { save, data, run } = useGame.getState()
+  if (!save || !run.areaId) return
+  const res = pickTimeRaceGate(save, data, run.areaId, index)
+  if (!res) return
+  commitSave(res.save)
+  const find = res.gate.find
+  if (find?.kind === 'shard') pushToast(t('ui.timeRace.shardToast', { s: find.seconds }), 'good')
+  else if (find?.kind === 'item')
+    pushToast(t('ui.timeRace.itemToast', { item: data.items[find.key]?.name ?? find.key, n: find.qty }), 'good')
+  rollNext()
+}
+
+/**
+ * The clock reached 0:00 while the player was on the area's page or in a fight (the screen's timer asks): back to the
+ * start, its card says so. False while there is time left.
+ */
+export function timeRaceExpired(): boolean {
+  const { save, data, run } = useGame.getState()
+  const areaId = run.areaId ?? save?.currentAreaId
+  if (!save || !areaId) return false
+  const up = timeRaceTimeUp(save, data, areaId, raceNow())
+  if (!up) return false
+  commitSave(up.save)
+  raceLostCard(areaId, 'time', up.fights, up.total)
+  return true
+}
+
+/** The win's moment is over: back to the world's Home, where the area is its raid now. */
+export function finishTimeRaceVictory() {
+  const { save, run } = useGame.getState()
+  const areaId = run.areaId ?? save?.currentAreaId
+  if (save && areaId) commitSave(markTimeRaceWonSeen(save, areaId))
+  useGame.setState((s) => ({ run: { ...initialRun(), forceNext: s.run.forceNext }, battle: null }))
+}
+
+/**
+ * HEAL & START RAID on the race's win (as the portal run's victory): the team and the Box healed as at a Pokémon Center,
+ * the moment seen (the engine's timeRaceVictoryToRaid), and the raid the race just opened, its page next. Null when there
+ * is none (the screen goes Home then).
+ */
+export function healAndStartTimeRaceRaid(): ProgressRaid | null {
+  const { save, data, run } = useGame.getState()
+  const areaId = run.areaId ?? save?.currentAreaId
+  const area = data.areas.find((a) => a.id === areaId)
+  if (!save || !area) return null
+  const next = timeRaceVictoryToRaid(save, data, area.id)
+  if (next !== save) commitSave(next)
+  useGame.setState((s) => ({ run: { ...initialRun(), forceNext: s.run.forceNext }, battle: null }))
+  return openRaidIn(next, data, area)
+}
+
 /** Roll the next encounter and show its preview card. */
 export function rollNext() {
   settleRound()
@@ -502,6 +669,7 @@ export function rollNext() {
   // CONTINUE), no card is dealt there, or the next stop on its page would find CONTINUE shut (a player’s report, 2026-10-21).
   if (isAreaSealed(save, data, run.areaId)) return setRun({ phase: 'idle', encounter: null })
   if (inNightmare(save, data, run.areaId)) return rollNightmare(save, run.areaId)
+  if (inTimeRace(save, data, run.areaId)) return rollTimeRace(save, run.areaId)
   if (inPortalRun(save, data, run.areaId)) return rollPortal(save, run.areaId)
   // A Center's boons still waiting (a reload, HOME before the pick: docs/47): back in that Center. Boons drawn in
   // another area go: the player walked out without picking.
@@ -592,7 +760,12 @@ export function challenge() {
   if (!save || !run.areaId || run.phase !== 'idle') return
   // A portal run has no challenge: its cards come one after the other (docs/28); nor has the nightmare (docs/30), nor
   // either once won.
-  if (inPortalRun(save, data, run.areaId) || inNightmare(save, data, run.areaId) || isAreaSealed(save, data, run.areaId))
+  if (
+    inPortalRun(save, data, run.areaId) ||
+    inNightmare(save, data, run.areaId) ||
+    inTimeRace(save, data, run.areaId) ||
+    isAreaSealed(save, data, run.areaId)
+  )
     return
   const area = data.areas.find((a) => a.id === run.areaId)
   const found = area
@@ -908,14 +1081,23 @@ function settleBattle(stalemate: boolean) {
     // A round of the nightmare won (docs/30): it counts, its gift goes into the bag, Darkrai's strike is due (or, the
     // last one, the player wakes up). The result card says so.
     const dream = inNightmare(res.save, data, run.areaId) ? winNightmareRound(res.save, data, run.areaId) : null
-    commitSave(dream?.save ?? res.save)
+    // A fight of the race of time and space (docs/61 §4.4): it counts if won in time, the last one opens its legend's
+    // raid; past the clock it counts for nothing and the try ends (the wipe card says so, the XP kept).
+    const raced = inTimeRace(res.save, data, run.areaId) ? winTimeRaceFight(res.save, data, run.areaId, raceNow()) : null
+    if (raced?.outOfTime) {
+      commitSave(raced.save)
+      return raceLostCard(run.areaId, 'time', raced.fights, raced.total)
+    }
+    commitSave(raced?.save ?? dream?.save ?? res.save)
     queuePickup(res.events)
     const dreamEvents: RunEvent[] = dream
       ? [
           { kind: 'nightmare_round', round: dream.round, total: dream.total },
           ...(dream.gift ? [{ kind: 'nightmare_gift' as const, ...dream.gift }] : []),
         ]
-      : []
+      : raced
+        ? [{ kind: 'time_race_fight', fight: raced.fights, total: raced.total }]
+        : []
     // The round's last card was this fight: count it now, so "AREA CLEARED" is part of the rewards.
     const cleared = trainerHasNext() ? null : settleRound(true)
     // A real player's fight is over (docs/54): won once their last Pokémon falls (a mutual K.O. before it is a loss);
@@ -927,7 +1109,11 @@ function settleBattle(stalemate: boolean) {
     const kind = s.kind === 'wild' || s.kind === 'boss' ? s.kind : null
     const foeDex = s.enemy.baseDex ?? s.enemy.dex
     // A portal run's wild Pokémon can't be caught (docs/28), nor the nightmare's (docs/30).
-    const noCatch = portalNoCatch(save, data, run.areaId) || nightmareNoCatch(save, data, run.areaId)
+    const noCatch =
+      portalNoCatch(save, data, run.areaId) ||
+      nightmareNoCatch(save, data, run.areaId) ||
+      // Nor the race's (docs/61 §4.4): all are met elsewhere.
+      timeRaceNoCatch(save, data, run.areaId)
     const talent = !!s.enemy.talent
     const target =
       kind && !noCatch ? catchTarget(res.save, foeDex, s.enemy.level, kind, data, s.enemy.shiny, run.areaId, talent) : null
@@ -956,8 +1142,9 @@ function settleBattle(stalemate: boolean) {
   if (out.result === 'lost') {
     const lost = inPortalRun(withHp, data, run.areaId) ? portalStateOf(withHp, run.areaId).closed : null
     const dream = inNightmare(withHp, data, run.areaId) ? nightmareStateOf(withHp, run.areaId).round : null
+    const race = inTimeRace(withHp, data, run.areaId) ? raceLostOf(withHp, run.areaId) : null
     commitSave(applyWipe(withHp, run.areaId, data))
-    setRun({ phase: 'wipe', trainer: null, events: [], portalLost: lost, nightmareLost: dream })
+    setRun({ phase: 'wipe', trainer: null, events: [], portalLost: lost, nightmareLost: dream, raceLost: race })
     return
   }
   // fled / stalemate: damage is kept, no rewards
@@ -1216,7 +1403,7 @@ export function continueAfterVictory(leadUid?: string) {
 export function closeVictoryLeftOpen(): boolean {
   const { save, data, run } = useGame.getState()
   if (run.phase !== 'victory' || run.rebattle || trainerHasNext()) return false
-  if (save && (portalLock(save, data) ?? nightmareLock(save, data))) return false
+  if (save && (portalLock(save, data) ?? nightmareLock(save, data) ?? timeRaceLock(save, data))) return false
   while (useGame.getState().run.pendingCatchId) resolveCatch(null)
   continueAfterVictory()
   return useGame.getState().run.phase === 'idle'
@@ -1233,6 +1420,8 @@ export function continueExploring() {
   // The nightmare (docs/30): the waking shows first, or Darkrai's strike after a round; the area's page plays them.
   const dream = save && run.areaId ? nightmareStateOf(save, run.areaId) : null
   if (dream && ((dream.won && !dream.wonSeen) || (dream.active && dream.strike))) return
+  // The race (docs/61 §4.4): its win shows first, on the area's page.
+  if (save && run.areaId && timeRaceVictoryDue(save, useGame.getState().data, run.areaId)) return
   challenge()
   if (useGame.getState().run.phase === 'idle') rollNext()
 }
@@ -1266,8 +1455,9 @@ export function forfeit() {
   }
   const lost = inPortalRun(save, data, run.areaId) ? portalStateOf(save, run.areaId).closed : null
   const dream = inNightmare(save, data, run.areaId) ? nightmareStateOf(save, run.areaId).round : null
+  const race = inTimeRace(save, data, run.areaId) ? raceLostOf(save, run.areaId) : null
   commitSave(run.rebattle ? applyRebattleLoss(save, data, run.rebattle.regionId) : applyWipe(save, run.areaId, data))
-  setRun({ phase: 'wipe', trainer: null, events: [], portalLost: lost, nightmareLost: dream })
+  setRun({ phase: 'wipe', trainer: null, events: [], portalLost: lost, nightmareLost: dream, raceLost: race })
 }
 
 /** After a full K.O. the run is over: Home (where CONTINUE starts the area afresh), or the rebattle page. */

@@ -2114,3 +2114,67 @@ state on `/kitchen-sink` (`GiftCardBits`), every take on `/kitchen-sink/fx`.
   level by always tapping with and without the helper, the helper and its bonus, each level's reward options, the
   balls from worst to best, a boss's taps). Areas → Encounter deck has the Gift card's copies ("in place of the item
   cards, only while its switch is on"), and a boss's "Out of a present" box.
+
+## 48. The Race of Time and Space (Spear Pillar)
+
+An area's special mode (docs/61-SNOWGLOBE-VALLEY.md §4.4), Snowglobe Valley's S4: a time trial whose last gate picks the
+raid (Water: shiny Palkia, Steel: shiny Dialga). Built as the portal run's and the nightmare's parallel (§27, §29); the
+pieces are in `src/components/TimeRace.tsx` and `src/screens/area/TimeRaceRun.tsx`, every state on `/kitchen-sink`
+(`TimeRaceBits`); the engine (`engine/timeRace.ts`, `timeRaceMode.ts`) decides every gate, foe, find, second and outcome.
+**Every scene is pixel art on the game's FX engine** (`src/fx/timelines/timeRace.ts`, on `/kitchen-sink/fx`: the intro
+over the drawn pillars and over Spear Pillar's picture, Dialga's and Palkia's wins). Its palette (`TR`): Spear Pillar's
+indigo night (`#05061a` to `#6a62b8`), the stone's greys, **time's steel blue and gold** (`#4a6bd8`, `#a8c8ff`,
+`#ffd65a`: Dialga, the clock) and **space's pearl pinks** (`#e88ac0`, `#ffd0ea`: Palkia, the rift). Its scenes follow §8
+as every timeline does (short: half the time; calm: no quake, no flash; off: the end at once); the loop (`RaceScene`) is
+one still frame with motion off.
+
+- **The switch and the rules** follow §20: `timeRace` (Admin → Areas → Special mode: race of time and space), Off by
+  default and checked by the server for the area's two raids; Off, the area plays as a plain secret area (its short deck,
+  then its raids). Its rules are four short `RuleList` rows from the try's plan and the area's numbers: "15 fights in
+  12:00" (the replay's line under it: "foes 4 levels higher"), "A fork every 3 fights: pick a type" (behind each gate an
+  item or a time shard), "The last gate: Water for Palkia, Steel for Dialga" (the replay names its one gate), "No Center,
+  no catch, no auto: one speed for all" (out of time or K.O.: back to the start). They are on the way in's pop-up every
+  time, as the nightmare's, and from INFO at the bottom of the area's page (`TimeRaceRulesModal`, the scene as its banner).
+- **The way in** (`TimeRaceEntry`): the Distortion World's, piece for piece. CONTINUE on Home says ENTER THE RACE ("15
+  fights in 12:00"; the replay: "The replay: 15 fights in 10:00"); the area plays **the intro at once** (`TimeRaceIntro`,
+  `raceIntroTimeline`, 3.4 s, full screen: the area darkens into the night over the pillars, a clock face fades in and
+  its hands race backwards, the rift of space tears open across from it with a flash and a quake; the line in a night card
+  from then; held at its end, the clock ticking and the rift shimmering, "Tap to continue ▼" with the focus; no SKIP).
+  Arriving heals as a Center does. The tap raises its pop-up over that end ("Into the race", or "The race again" for the
+  replay): the rules, "Healed as at a Pokémon Center" with TEAM (the team can change until READY!, `teamSwapsOpen`; back
+  from the Team screen the pop-up is up again at once: `run.racePopup`), NOT NOW and READY!. READY! waits for the server's
+  time (a toast says the player is offline until it is read).
+- **The clock** (`RaceClock`): big pixel digits on a night plate with the clock icon, under the gauge on the area's page,
+  small in a fight's top right corner (`TimeRaceClockHere`). Time's light blue; **gold under a minute; red and blinking in
+  its last 30 seconds**, with a "!" so it is never colour alone (still when calm). A `timer` whose name says the time
+  ("Time left: 7:32"); it doesn't announce every second. The last 10 seconds tick (`race.tick`). It reads the server's
+  time only (nothing until it is read). At 0:00 the try ends wherever the player is on the area's page, in a fight too.
+- **The gauge** (`RaceGauge`): the round gauge's place, a tile per fight grouped by fork, each group in its gate's type
+  colour once taken (faint ahead, filled once won), the next with the gold edge, "4/15"; an image named "Race fights won:
+  4/15".
+- **A fork** (`ForkView`): on the area's page, a panel "Fork 2/5: pick a gate" ("The last fork: pick your legend"; "The
+  last gate" when the replay's is alone), one line on what it means, then **the gates side by side** (one alone, full
+  width): each an archway in its type's colour (`typeColor`) with its `TypeBadge`, what lies behind it (the item's sprite,
+  or a time shard: a small hourglass of light) and its words on the type's badge colours, and on the last fork the
+  legend's raid in gold ("Opens Palkia's raid"). Each gate is one button of at least 44 px, its name all of it ("Water
+  gate: Revive · Opens Palkia's raid"); the first holds the focus. Taking it: `race.gate`, or `race.shard` and a toast
+  "+30 s on the clock"; an item's toast says it went into the bag; its first foe comes at once.
+- **The fights**: straight in, no preview card (a time trial). **One speed for everyone** (the user's call): every fight
+  plays at the short motion level and the race's pace (the auto battle's quick 1.5×, the admin's number) whatever the
+  player's Animations setting, and **auto-battle is off** (its switch isn't offered); the admins' own No animations stays
+  off for them. The foes can't be caught (no throw). The result card adds "Race fight 4/15 won in time" on a night card
+  with the clock (the last: "The last fight is won in time!"). Won after 0:00, a fight counts for nothing.
+- **The lock**: while a try runs, as the portal run's: every page sends back to the area (a reload too), the menus are
+  shut and say why ("You can't leave the race until you finish, run out of time or your party is K.O."), the result card
+  has no HOME.
+- **Out of time or a wipe** keeps the wipe card (§14): "Out of time!" as its title when the clock ran out, its line the
+  fights won and lost ("The clock ran out after 11 of 15 fights: back to the start of the race. XP, ₽ and items are kept,
+  and your team is healed."); a wipe's says the party was K.O. The next way in plays the intro again.
+- **The win** (`TimeRaceVictoryView`, `raceWinTimeline`, 5 s): full screen; dark pulses, the legend's silhouette rising
+  between the clock and the rift in its colour, the reveal (a flash, rings, its roar and its cry, a quake) and the shiny
+  gleam, then **time and space settle**: the hands turn to twelve and stop, the rift seals to a line (`race.settle`); the
+  name card (SHINY, its raid level); "Time and space settle", "Shiny Palkia is now available in raids.", the time it was
+  won with in gold; HEAL & START RAID (red, the focus) over the green BACK TO THE WORLD; no skip.
+- **The raids**: each of the area's two opens on its own legend's win; before, its page is locked ("Win the race of
+  Spear Pillar to open this raid", "Take the Water gate at the last fork and finish in time to face Palkia here."). Their
+  look is the plain raid's (no themed page yet).

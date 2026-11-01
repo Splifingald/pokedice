@@ -15,6 +15,7 @@ import {
   progressRaidState,
   portalModeOf,
   nightmareModeOf,
+  timeRaceModeOf,
   progressRaidTeam,
   raidTeamCap,
   type GameData,
@@ -25,6 +26,7 @@ import {
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { useT } from '@/i18n/react'
+import { typeName } from '@/lib/format'
 import { avatarOf, playerAvatarId } from '@/lib/avatars'
 import { pushToast, useGame } from '@/store/game'
 import { useDetails } from '@/store/hooks'
@@ -124,6 +126,8 @@ export function ProgressRaidPanel({ raidKey, title }: { raidKey: string; title?:
   const megaLock = raid.mega && state === 'locked' ? megaRaidLock(save, data, raid) : null
   const gemName = raid.mega ? (data.items[raid.mega.gem]?.name ?? raid.mega.gem) : ''
   const area = data.areas.find((a) => a.id === raid.areaId)!
+  // A race area's raid (docs/61 §4.4): opened by the race won at its legend's gate.
+  const raceGate = timeRaceModeOf(area, data)?.legends.find((l) => l.dex === raid.dex)?.type ?? null
   const region = getRegion(data, raid.region)?.name ?? raid.region
   const name = data.species[raid.dex]?.name ?? ''
   const need = emptySlots(friends)
@@ -169,7 +173,9 @@ export function ProgressRaidPanel({ raidKey, title }: { raidKey: string; title?:
                     ? 'ui.portal.raidLockTitle'
                     : nightmare
                       ? 'ui.nightmare.raidLockTitle'
-                      : 'ui.raid.progress.lockTitle',
+                      : raceGate
+                        ? 'ui.timeRace.raidLockTitle'
+                        : 'ui.raid.progress.lockTitle',
                 { area: area.name, name: data.species[raid.mega?.base ?? 0]?.name ?? '' },
               )}
             </b>
@@ -181,8 +187,10 @@ export function ProgressRaidPanel({ raidKey, title }: { raidKey: string; title?:
                     ? 'ui.portal.raidLockText'
                     : nightmare
                       ? 'ui.nightmare.raidLockText'
-                      : 'ui.raid.progress.lockText',
-                { name, gem: gemName },
+                      : raceGate
+                        ? 'ui.timeRace.raidLockText'
+                        : 'ui.raid.progress.lockText',
+                { name, gem: gemName, type: raceGate ? typeName(raceGate) : '' },
               )}
             </small>
           </span>

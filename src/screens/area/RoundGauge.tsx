@@ -12,6 +12,8 @@ import {
   opensWithoutCenter,
   portalModeOf,
   progressOf,
+  timeRaceModeOf,
+  timeRacePlan,
   type Area,
   type AreaProgress,
   type DeckCard,
@@ -29,6 +31,7 @@ import { useAreaVersus } from '@/store/areaVersus'
 import { cx } from '@/theme/util'
 import { DistortionGauge } from '@/components/Portal'
 import { NightmareGauge } from '@/components/Nightmare'
+import { RaceGauge } from '@/components/TimeRace'
 
 const CARD_ICON: Record<DeckCard, IconName> = {
   wild: 'ball',
@@ -90,6 +93,20 @@ export function RoundGauge({
         className={className}
       />
     )
+  // The race of time and space (docs/61 §4.4) counts its fights, each fork's stretch in its gate's type.
+  const race = timeRaceModeOf(area, data)
+  if (race && save) {
+    const r = progress.timeRace
+    return (
+      <RaceGauge
+        fights={r?.active ? r.fights : 0}
+        total={timeRacePlan(save, race, area.id).total}
+        perFork={race.perFork}
+        path={r?.active ? r.path : []}
+        className={className}
+      />
+    )
+  }
   if (!cfg.showRoundGauge || cfg.encounterMode !== 'deck') return null
   const remaining = progress.deck?.length ?? 0
   const met = progress.drawn ?? []

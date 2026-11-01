@@ -178,6 +178,16 @@ export interface RunState {
   nightmarePopup?: boolean
   /** Darkrai's strike has landed and its moment is still on the area's page (until CONTINUE: the next round). */
   nightmareStruck?: boolean
+  /**
+   * The race's way in has shown its pop-up (docs/61 §4.4): back from the Team screen, it shows again at once over the
+   * intro's end, with no intro and no tap to wait for (as the Distortion World's portalPopup).
+   */
+  racePopup?: boolean
+  /**
+   * A try of the race just ended (docs/61 §4.4): the clock reached 0:00 or the team was K.O., with the fights it had won
+   * (the wipe card says so).
+   */
+  raceLost?: { reason: 'time' | 'wipe'; fights: number; total: number } | null
   /** Trick or Treat under way (docs/29). */
   trick?: TrickRun | null
   /** A Gift card or a boss's present under way (docs/61 §4.0, §4.2). */

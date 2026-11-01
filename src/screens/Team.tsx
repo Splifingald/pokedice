@@ -4,6 +4,7 @@ import {
   homersIn,
   teamSwapsOpen,
   nightmareModeOf,
+  timeRaceModeOf,
   monName,
   POKE_TYPES,
   regionOf,
@@ -54,6 +55,15 @@ export function TeamScreen() {
     (s) =>
       atPortal &&
       !!nightmareModeOf(
+        s.data.areas.find((a) => a.id === s.run.areaId),
+        s.data,
+      ),
+  )
+  // …or the race of time and space's (docs/61 §4.4).
+  const atRace = useGame(
+    (s) =>
+      atPortal &&
+      !!timeRaceModeOf(
         s.data.areas.find((a) => a.id === s.run.areaId),
         s.data,
       ),
@@ -116,10 +126,12 @@ export function TeamScreen() {
         <div className="pixel-dialogue flex flex-col gap-2.5 px-3 py-2.5 sm:flex-row sm:items-center">
           <p className="m-0 flex flex-1 items-center gap-3 text-[20px] leading-[1.15]">
             <PixelIcon name="heart" size={24} className="shrink-0" />
-            <span>{t(atNightmare ? 'ui.nightmare.teamHint' : 'ui.portal.teamHint')}</span>
+            <span>
+              {t(atNightmare ? 'ui.nightmare.teamHint' : atRace ? 'ui.timeRace.teamHint' : 'ui.portal.teamHint')}
+            </span>
           </p>
           <PixelButton variant="primary" className="shrink-0" onClick={() => navigate('/area')}>
-            {t(atNightmare ? 'ui.nightmare.backToWayIn' : 'ui.portal.backToPortal')}
+            {t(atNightmare ? 'ui.nightmare.backToWayIn' : atRace ? 'ui.timeRace.backToWayIn' : 'ui.portal.backToPortal')}
           </PixelButton>
         </div>
       )}

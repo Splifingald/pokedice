@@ -43,6 +43,7 @@ import {
   type Side,
   inPortalRun,
   inNightmare,
+  timeRaceBattleSpeed,
   legendCinemaOn,
   championCinemaOn,
 } from '@/engine'
@@ -76,6 +77,7 @@ import { useHoldFullscreen } from '@/lib/fullscreen'
 import { haptic } from '@/lib/haptics'
 import { capMotion, MotionCap, useMotion, type MotionLevel } from '@/lib/motion'
 import { AUTO_PACE, PaceContext, usePace, VERSUS_PACE } from '@/lib/pace'
+import { TimeRaceClockHere } from '@/screens/area/TimeRaceRun'
 import { useDialogOpen } from '@/lib/useDialog'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { pushToast, setSettings, useGame, type BattleSlice, type CatchThrow } from '@/store/game'
@@ -326,10 +328,13 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const live = versus?.live
   const scripted = !!versus && !live
   const auto = live ? live.auto : !!versus || autoAt !== 'off'
+  // The race of time and space (docs/61 §4.4): one speed for everyone inside it, whatever the setting (the engine's:
+  // short animations at its quick pace), so its clock means the same for all. Auto-battle is off there.
+  const raceSpeed = !versus && save ? timeRaceBattleSpeed(save, data, run.areaId) : null
   // Auto-mode plays the whole fight faster: animations, dice and timers.
-  const pace = scripted ? VERSUS_PACE : auto ? AUTO_PACE : 1
+  const pace = scripted ? VERSUS_PACE : raceSpeed ? raceSpeed.pace : auto ? AUTO_PACE : 1
   // A fight that plays itself is watched, not played: short animations unless the player turned them off altogether.
-  const motionCap: MotionLevel | null = auto ? 'short' : null
+  const motionCap: MotionLevel | null = raceSpeed ? raceSpeed.motion : auto ? 'short' : null
   const level = capMotion(chosenLevel, motionCap)
   // Nothing to wait for: animations off.
   const quick = level === 'off'
@@ -1211,6 +1216,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         label={heading}
       >
         {dayTime && <BattleDayTime time={dayTime} />}
+        {/* The race's clock runs on in its fights (docs/61 §4.4), in the stage's top right corner. */}
+        {raceSpeed && <TimeRaceClockHere areaId={run.areaId} size="small" className="absolute right-2 top-5 z-20" />}
         {dbl && foeOut && ownOut && !catching && (
           <DoublePlates
             foes={foeRow}

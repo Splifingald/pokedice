@@ -33,6 +33,7 @@ import {
   nightmareWakeTimeline,
 } from '@/fx/timelines/nightmare'
 import { nightRaidEntranceTimeline } from '@/fx/timelines/nightmareRaid'
+import { raceIntroTimeline, raceWinTimeline } from '@/fx/timelines/timeRace'
 import { artUrl } from '@/fx/areaArt'
 import { evolveTimeline, hatchTimeline } from '@/fx/timelines/moments'
 import { tradeTimeline } from '@/fx/timelines/trade'
@@ -95,6 +96,8 @@ const CANDY = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/
 const RIFT = artUrl('a123')
 // Newmoon Island's picture (docs/30): what the nightmare's intro sinks into the night.
 const NEWMOON = artUrl('a127')
+// Spear Pillar's picture (docs/61 §4.4): what the race's intro darkens into its night.
+const PILLAR = artUrl('lair-summit')
 
 const attack = (
   name: string,
@@ -501,6 +504,30 @@ const PRESETS: Preset[] = [
     name: "Nightmare: Darkrai's raid entrance (out of the smoke, before the moon)",
     sprites: [[491, false, true]],
     make: (o) => nightRaidEntranceTimeline({ mon: spriteKey(491, false, true), short: o.short }),
+  },
+  // The race of time and space (docs/61 §4.4): the intro (clock and rift), the wins (Dialga's, Palkia's).
+  {
+    name: 'Race of time and space: the intro (drawn pillars)',
+    sprites: [],
+    make: (o) => raceIntroTimeline({ short: o.short }),
+  },
+  {
+    name: "Race of time and space: the intro (Spear Pillar's picture)",
+    sprites: [],
+    item: PILLAR,
+    make: (o) => raceIntroTimeline({ picture: `item|${PILLAR}`, short: o.short }),
+  },
+  {
+    name: 'Race of time and space: the win (shiny Dialga, time settles)',
+    sprites: [[483, false, true]],
+    make: (o) =>
+      raceWinTimeline({ mon: spriteKey(483, false, true), side: 'time', name: 'Dialga', subs: ['SHINY', 'Lv.70'], short: o.short }),
+  },
+  {
+    name: 'Race of time and space: the win (shiny Palkia, space settles)',
+    sprites: [[484, false, true]],
+    make: (o) =>
+      raceWinTimeline({ mon: spriteKey(484, false, true), side: 'space', name: 'Palkia', subs: ['SHINY', 'Lv.70'], short: o.short }),
   },
   {
     name: 'Evolution (Charmeleon)',

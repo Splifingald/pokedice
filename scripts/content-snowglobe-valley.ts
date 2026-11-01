@@ -21,6 +21,7 @@ import { fileURLToPath } from 'node:url'
 import type { BundleRaw, Region, SmallWorld } from '../src/engine/types'
 import { stableUuid } from './seed'
 import { balls, buildAreas, worldSql, type AreaSpec, type WorldContent } from './world-content'
+import { DEFAULT_TIME_RACE } from '../src/engine/timeRaceMode'
 
 export const REGION_ID = 'world-snowglobe-valley'
 export const WORLD_ID = 'snowglobe-valley-2026'
@@ -903,6 +904,9 @@ export const AREAS: AreaSpec[] = [
       { dex: 483, level: 70, shiny: true, raid: true },
       { dex: 484, level: 70, shiny: true, raid: true },
     ],
+    // The race of time and space (docs/61 §4.4): its own switch (`timeRace`, Off by default); off, the area plays as a
+    // plain secret area (its short deck, then its raids).
+    mode: DEFAULT_TIME_RACE,
     // The race's forks draw by type from this pool (docs/61 §4.4), all met elsewhere: Fire or Grass, Dark or Psychic,
     // Dragon or Ice, Electric or Ground, then Water (Palkia) or Steel (Dialga); the replay's other types (Normal or
     // Fairy, Rock or Flying, Bug or Dragon, Ice or Dark, then the other gate) come last.
