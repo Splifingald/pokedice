@@ -118,6 +118,9 @@ export function StageBackground({ art, zones = true }: { art: AreaPicture | null
   )
 }
 
+/** How much bigger a Totem and a Titan's second phase stand (docs/62 §6–7). */
+const AURA_SIZE: Record<NonNullable<Battler['aura']>, number> = { totem: 1.3, titan: 1.55 }
+
 /** Five key frames round the orbit; star `i` starts a third of a turn after the one before. */
 const ORBIT = [0, 1, 2, 3, 4]
 const angle = (j: number, i: number) => ((j / 4) * 2 + (i * 2) / 3) * Math.PI
@@ -268,13 +271,15 @@ function Mon({
   return (
     <div
       ref={host}
-      className={cx('absolute', host && hostClass)}
+      className={cx('absolute', host && hostClass, b.aura && `foe-aura-${b.aura}`)}
       style={{
         left: box.left * scale,
         top: box.top * scale,
         width: box.w * scale,
         height: box.h * scale,
         opacity: hidden ? 0 : 1,
+        // A Totem or a Titan (docs/62) stands bigger than its kind, its feet where they were.
+        ...(b.aura && { transform: `scale(${AURA_SIZE[b.aura]})`, transformOrigin: '50% 90%' }),
         ...(place && {
           zIndex: place.z,
           transition: still ? undefined : `left ${0.3 * pace}s, top ${0.3 * pace}s, width ${0.3 * pace}s, height ${0.3 * pace}s`,

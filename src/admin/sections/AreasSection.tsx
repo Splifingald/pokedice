@@ -11,6 +11,8 @@ import {
   trainerSpecialty,
   type BattleBackground,
   type BossDef,
+  type LootDisguise,
+  type RoadblockKind,
   type DeckCounts,
   type EncounterKind,
   type GameData,
@@ -48,6 +50,7 @@ const CARD: Record<EncounterKind, { label: string; color: string }> = {
 function newCondition(kind: string, areas: Row[], self: string): UnlockCondition {
   if (kind === 'pokedex') return { kind: 'pokedex', count: 50 }
   if (kind === 'area' || kind === 'cleared') return { kind, areaId: s(areas.find((a) => s(a.id) !== self)?.id) }
+  if (kind === 'caught') return { kind: 'caught', dex: [1] }
   return { kind: 'maxLevel', level: 50 }
 }
 
@@ -69,6 +72,43 @@ function DeckPreview({ deck }: { deck: DeckCounts }) {
         )),
       )}
     </div>
+  )
+}
+
+/** A loot row's disguise (docs/61 §3), read from the row as the database holds it. */
+const asDisguise = (v: unknown): LootDisguise | null =>
+  v && typeof v === 'object' && typeof (v as LootDisguise).dex === 'number' ? (v as LootDisguise) : null
+
+function DisguiseLabel({ value, data }: { value: unknown; data: GameData }) {
+  const d = asDisguise(value)
+  if (!d) return <span className="text-muted">— a plain find</span>
+  return (
+    <span className="flex items-center gap-1">
+      <SpriteImg dex={d.dex} size={28} /> {data.species[d.dex]?.name ?? `#${d.dex}`} · Lv.{d.minLevel}–{d.maxLevel}
+    </span>
+  )
+}
+
+/** A Pokémon posing as the find (Voltorb in a Poké Ball): picked up, it's a wild fight. Empty = a plain find. */
+function DisguiseEditor({ value, data, onChange }: { value: unknown; data: GameData; onChange: (v: LootDisguise | null) => void }) {
+  const d = asDisguise(value)
+  if (!d)
+    return (
+      <PixelButton size="sm" onClick={() => onChange({ dex: 100, minLevel: 20, maxLevel: 25 })}>
+        + a Pokémon posing as it
+      </PixelButton>
+    )
+  return (
+    <span className="flex flex-wrap items-center gap-1">
+      <PokemonPicker data={data} value={d.dex} onChange={(dex) => onChange({ ...d, dex })} />
+      Lv.
+      <NumInput className="w-16" value={d.minLevel} min={1} max={100} onChange={(v) => onChange({ ...d, minLevel: v ?? 1 })} />
+      –
+      <NumInput className="w-16" value={d.maxLevel} min={1} max={100} onChange={(v) => onChange({ ...d, maxLevel: v ?? 1 })} />
+      <PixelButton size="sm" variant="danger" onClick={() => onChange(null)} aria-label="A plain find">
+        ✕
+      </PixelButton>
+    </span>
   )
 }
 
@@ -106,6 +146,76 @@ function BossCard({ b, data, onChange, onRemove }: { b: BossDef; data: GameData;
         <label className="flex flex-wrap items-center gap-2 text-lg">
           Battle scene
           <BackgroundPicker value={b.battleBackground} emptyLabel="the area's" onChange={(v) => onChange({ ...b, battleBackground: v })} />
+        </label>
+        <label
+          className="flex flex-wrap items-center gap-2 text-lg"
+          title="A Pokémon blocking the road rather than a legendary (docs/61 §2): the same rules, its own words in the game"
+        >
+          Roadblock
+          <select
+            className={cx(inputCls, 'w-auto')}
+            value={b.roadblock ?? ''}
+            onChange={(e) => {
+              const v = e.target.value as RoadblockKind | ''
+              if (v) return onChange({ ...b, roadblock: v })
+              const { roadblock: _drop, ...rest } = b
+              onChange(rest)
+            }}
+          >
+            <option value="">no: a legendary</option>
+            <option value="sleeping">asleep across the road (Snorlax)</option>
+            <option value="tree">a strange tree (Sudowoodo)</option>
+            <option value="invisible">something invisible (Kecleon)</option>
+          </select>
+        </label>
+        <label
+          className="flex flex-wrap items-center gap-2 text-lg"
+          title="A Titan (docs/62 §7): fought in two phases, never caught, only while the Titans' switch is on (off: no boss here)"
+        >
+          <input
+            type="checkbox"
+            checked={!!b.titan}
+            onChange={(e) => {
+              if (e.target.checked) return onChange({ ...b, titan: {} })
+              const { titan: _drop, ...rest } = b
+              onChange(rest)
+            }}
+          />
+          Titan
+          {b.titan && (
+            <>
+              <span className="text-sm text-muted">Violet's species</span>
+              <NumInput
+                className="w-24"
+                nullable
+                value={b.titan.versionDex ?? null}
+                min={1}
+                onChange={(v) => onChange({ ...b, titan: { ...b.titan, versionDex: v } })}
+              />
+              <span className="text-sm text-muted">partner #</span>
+              <NumInput
+                className="w-24"
+                nullable
+                value={b.titan.partner?.dex ?? null}
+                min={1}
+                onChange={(v) =>
+                  onChange({ ...b, titan: { ...b.titan, partner: v ? { dex: v, level: b.titan?.partner?.level ?? b.level } : null } })
+                }
+              />
+              {b.titan.partner && (
+                <>
+                  <span className="text-sm text-muted">Lv</span>
+                  <NumInput
+                    className="w-20"
+                    value={b.titan.partner.level}
+                    min={1}
+                    max={100}
+                    onChange={(v) => onChange({ ...b, titan: { ...b.titan, partner: { dex: b.titan!.partner!.dex, level: v ?? b.level } } })}
+                  />
+                </>
+              )}
+            </>
+          )}
         </label>
         <label className="flex flex-wrap items-center gap-2 text-lg" title="Shiny colours (cosmetic only) — the Red Gyarados kind of legendary">
           <input
@@ -251,6 +361,17 @@ function AreaEditor({ area }: { area: Row }) {
             <label className="flex items-center gap-2 text-lg" title="A Center comes next whenever a team member is K.O.">
               <input type="checkbox" checked={!!area.easy_mode} onChange={(e) => patch({ easy_mode: e.target.checked })} /> Easy (Center after a K.O.)
             </label>
+            {/* A Safari (docs/61 §4): its wild cards are Safari encounters (Admin → Events → Safari). */}
+            {(!area.mode || (area.mode as { kind?: string }).kind === 'safari') && (
+              <label className="flex items-center gap-2 text-lg" title="A Safari (docs/61 §4): its wild cards are Safari encounters while the Safari is switched on; no Center or trainer is dealt there">
+                <input
+                  type="checkbox"
+                  checked={(area.mode as { kind?: string } | null)?.kind === 'safari'}
+                  onChange={(e) => patch({ mode: e.target.checked ? { kind: 'safari' } : null })}
+                />{' '}
+                Safari
+              </label>
+            )}
             <label className="flex items-center gap-2 text-lg" title="Hidden areas sit outside the linear chain and open when their conditions hold">
               <input
                 type="checkbox"
@@ -294,7 +415,9 @@ function AreaEditor({ area }: { area: Row }) {
         </Box>
 
         {/* A special mode (docs/28): shown on an area that has one, or a small world's secret area that could. */}
-        {(!!area.mode || (!!area.hidden && isWorldRegion(data, s(area.region_id)))) && (
+        {/* A Safari's mode (docs/61 §4) has nothing to set here: its numbers are Events → Safari's. */}
+        {((!!area.mode && (area.mode as { kind?: string }).kind !== 'safari') ||
+          (!!area.hidden && isWorldRegion(data, s(area.region_id)))) && (
           <>
             <PortalModeBox area={area} />
             {/* The nightmare (docs/30): one special mode per area, so ticking one replaces the other. */}
@@ -447,8 +570,27 @@ function AreaEditor({ area }: { area: Row }) {
                 <option value="maxLevel">Highest Pokémon level ≥</option>
                 <option value="area">Area reached</option>
                 <option value="cleared">Area cleared</option>
+                <option value="caught">Species caught (any region)</option>
               </select>
-              {c.kind === 'area' || c.kind === 'cleared' ? (
+              {c.kind === 'caught' ? (
+                <span className="flex flex-wrap items-center gap-2">
+                  {c.dex.map((d, j) => (
+                    <span key={j} className="flex items-center gap-1">
+                      <PokemonPicker data={data} value={d} onChange={(dex) => setAt({ kind: 'caught', dex: c.dex.map((x, k) => (k === j ? dex : x)) })} />
+                      {c.dex.length > 1 && (
+                        <PixelButton size="sm" variant="danger" onClick={() => setAt({ kind: 'caught', dex: c.dex.filter((_, k) => k !== j) })} aria-label="Remove species">
+                          ✕
+                        </PixelButton>
+                      )}
+                    </span>
+                  ))}
+                  {c.dex.length < 12 && (
+                    <PixelButton size="sm" onClick={() => setAt({ kind: 'caught', dex: [...c.dex, 1] })}>
+                      + species
+                    </PixelButton>
+                  )}
+                </span>
+              ) : c.kind === 'area' || c.kind === 'cleared' ? (
                 <select className={cx(inputCls, 'w-auto')} value={c.areaId} onChange={(e) => setAt({ kind: c.kind, areaId: e.target.value })} aria-label="Area">
                   {[...allAreas]
                     .filter((a) => s(a.id) !== id)
@@ -462,7 +604,7 @@ function AreaEditor({ area }: { area: Row }) {
               ) : (
                 <NumInput
                   className="w-24"
-                  value={c.kind === 'pokedex' ? c.count : c.level}
+                  value={c.kind === 'pokedex' ? c.count : c.kind === 'maxLevel' ? c.level : 0}
                   onChange={(v) => setAt(c.kind === 'pokedex' ? { kind: 'pokedex', count: v ?? 1 } : { kind: 'maxLevel', level: v ?? 1 })}
                 />
               )}
@@ -581,6 +723,13 @@ function AreaEditor({ area }: { area: Row }) {
             { key: 'min_qty', label: 'Min qty', kind: 'number', width: 80 },
             { key: 'max_qty', label: 'Max qty', kind: 'number', width: 80 },
             { key: 'unique_find', label: 'Once only', kind: 'bool' },
+            {
+              key: 'disguise',
+              label: 'Poses as (docs/61)',
+              width: 300,
+              render: (r) => <DisguiseLabel value={r.disguise} data={data} />,
+              editor: (v, set) => <DisguiseEditor value={v} data={data} onChange={set} />,
+            },
             { key: 'chance', label: 'Per find', readOnly: true, render: perFind },
           ]}
         />

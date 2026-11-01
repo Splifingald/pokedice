@@ -1,4 +1,4 @@
-// Migration 0108 against a real Postgres (PGlite, in process): Heart Scales as a message gift (docs/15 §23, docs/60).
+// Migration 0121 against a real Postgres (PGlite, in process): Heart Scales as a message gift (docs/15 §23, docs/60).
 // Only a message to an account can carry them; opening the message pays them into that player's wallet, once, without
 // touching the streaks' daily count; a malformed amount is refused. Supabase's own pieces (auth, the roles) are stood
 // in for at the top, as in gifts-sql.test.ts.
@@ -9,7 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
-const FILE = '0108_heart_scale_gifts.sql'
+const FILE = '0121_heart_scale_gifts.sql'
 
 const ADMIN = 'gregoire.ftn@gmail.com'
 const U = {

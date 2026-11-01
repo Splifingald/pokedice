@@ -18,6 +18,7 @@ import {
   type DieType,
   type Milestone,
   type RunEvent,
+  roadblockOf,
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
 import { feelSound, type FeelSound } from '@/audio/feel'
@@ -37,8 +38,9 @@ import { DuelResult } from '@/components/AreaVersus'
 import { UnownLetterCard } from '@/components/UnownDex'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { ItemSprite } from '@/components/ItemSprite'
+import { TypeBadge } from '@/components/TypeBadge'
 import { dexNo, milestoneText, money, typeName } from '@/lib/format'
-import { t } from '@/i18n'
+import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useMotion } from '@/lib/motion'
 import { usePace } from '@/lib/pace'
@@ -592,6 +594,38 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           })
           return
         }
+        case 'z_crystal': {
+          // A Z-Crystal won (docs/62 §6): Z-Moves of its type.
+          extras.push({
+            key: k,
+            sound: 'gold',
+            node: (
+              <div className="flex items-center justify-center gap-2 bg-gold-pale p-2 text-center shadow-ring" data-z-crystal={e.type}>
+                <TypeBadge type={e.type} size="sm" />
+                <span className="text-xl leading-tight">{t('ui.zCrystal.got', { type: typeName(e.type) })}</span>
+              </div>
+            ),
+          })
+          return
+        }
+        case 'titan_reward': {
+          // A Titan beaten (docs/62 §7): what it left, a Herba Mystica's worth.
+          const what = e.items.map((i) => `${data.items[i.key]?.name ?? i.key}${i.qty > 1 ? ` ×${i.qty}` : ''}`)
+          const first = e.items[0] ? data.items[e.items[0].key] : undefined
+          extras.push({
+            key: k,
+            sound: 'gold',
+            node: (
+              <div className="flex items-center justify-center gap-2 bg-gold-pale p-2 text-center shadow-ring" data-titan-reward>
+                {first && <ItemSprite item={first} size={32} />}
+                <span className="text-xl leading-tight">
+                  {t('ui.titan.left', { name: data.species[e.dex]?.name ?? '', items: joinList(what) })}
+                </span>
+              </div>
+            ),
+          })
+          return
+        }
       }
     })
     return { mons: [...byUid.values()].filter((m) => m.dex), extras, evolutions }
@@ -983,7 +1017,10 @@ export function VictoryView() {
     </div>
   )
 
-  const title = t(battle?.state.kind === 'boss' ? 'ui.victory.legendaryVictory' : 'ui.victory.victory')
+  // A roadblock boss (docs/61 §2) is a plain victory: it isn't a legendary.
+  const bossFoe = battle?.state.kind === 'boss' ? battle.state.enemy : null
+  const roadblock = !!bossFoe && !!roadblockOf(data.areas.find((a) => a.id === run.areaId), bossFoe.baseDex ?? bossFoe.dex)
+  const title = t(battle?.state.kind === 'boss' && !roadblock ? 'ui.victory.legendaryVictory' : 'ui.victory.victory')
   return (
     <Overlay footer={footer} label={title}>
       {/* The battle's live region says the fight is won (the line under the stage gives way to the card). */}

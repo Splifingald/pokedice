@@ -23,6 +23,7 @@ import { WorldPick } from '@/screens/events/worldPick'
 import { PortalUnlockPopup } from '@/screens/area/PortalRun'
 import { DayCareNotice } from './DayCareTutorial'
 import { DayNightRulesPopup } from './DayNight'
+import { WeatherRulesPopup } from './Weather'
 import { AwayReportModal, ExtremeUnlockPopup } from './Extreme'
 import { FriendsService } from './friends/FriendsService'
 import { AreaVersusService } from './AreaVersus'
@@ -155,6 +156,7 @@ export function OneTimePopups() {
       <InviteRewardPopup />
       <PortalUnlockPopup />
       <DayNightRulesPopup />
+      <WeatherRulesPopup />
       <PowersUnlockPopup />
       <TalentRulesPopup />
       <OutfitRulesPopup />

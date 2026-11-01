@@ -188,7 +188,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `PixelIcon` | Every icon | Pixel maps drawn as SVG rects: the Pokémon ones hand-drawn in `icons.tsx` (balls, Pokédex, badges, status symbols, the battle Bag's backpack), the generic UI ones (coin, heart, shop, trophy, settings…) from the "1-bit Pixel Icons" pack, recoloured into `packIcons.ts` by `scripts/import-icons.ts` (11–16 px squares; the tab bar's on 16×16). Draw them at 12 px or more. One shared palette (`ICON_PALETTE`); a map may have its own (`OWN_PALETTE`) |
 | `TrainerName` / `NameIn` | Another trainer's name anywhere social (§24) | Plain; golden (`rich`: the `rich` token, a sparkle that twinkles, a stepped glint, still under reduced motion). Inline, so `truncate` around it still ends in "…". `NameIn` puts it in a translated sentence ("Misty's"), only the name golden |
 | `RulesModal` / `InfoButton` | A feature's rules: once when it unlocks, then from the blue INFO button at the bottom of its page | The special events' pop-up: its picture as a banner (`RulesBanner`), or a banner drawn in code (the gifts'), a NOW OPEN tag on the unlock, 2–4 `RuleList` rows (an icon, a short title, a line with the config's numbers, optionally a small button under it); Later and Let's go! on the unlock, OK from INFO. The Day Care and Versus use it (`FeatureRules.tsx`); the events have their own copies (`EventUnlockPopup`, `EventInfo`), with the same words. INFO is a quiet 48 px button on the sky tint with a blue "i" mark (`.ev-info`), never a competing block; `compact` when it shares a dock row. `RulesCard`: the rules at the top of a feature's page the first time (§20) |
-| `ContinueButton` / `StayHere` / `ComingUpView` / `LeaderboardTipModal` | Home (§12, docs/38 §6) | The big button: CONTINUE (the play arrow), a challenge waiting (the sword), greyed out (a tap says why), GO TO {area} behind in the region (the map) with Stay here, a 44 px link, under it; the "Coming up" line for the Day Care, the special events, Versus and a secret area (a level, the Pokédex); Prof. Oak's leaderboard tip with Later (✕ and Later end it for good) and SEE THE LEADERBOARD (`HomeBits`) |
+| `ContinueButton` / `MapButton` / `StayHere` / `ComingUpView` / `LeaderboardTipModal` | Home (§12, docs/38 §6) | The big button: CONTINUE (the play arrow), a challenge waiting (the sword), greyed out (a tap says why), GO TO {area} behind in the region (the map) with Stay here, a 44 px link, under it; the green map square left of CONTINUE (plain; shut by the nightmare); the "Coming up" line for the Day Care, the special events, Versus and a secret area (a level, the Pokédex); Prof. Oak's leaderboard tip with Later (✕ and Later end it for good) and SEE THE LEADERBOARD (`HomeBits`) |
 | `RotateCover` / `RotateView` | A phone held sideways (§6) | Over everything, not dismissable: the pixel phone tipping upright in steps (upright and still under reduced motion), the title and a line |
 | `ToastStack` / `ToastCard` | A short word on what just happened, or why something didn't (§7) | On `<body>`, beside the dialogs: under the top bar on phones, at the bottom on desktop; four at most. Info (panel) and good (green): a tap closes them, they go after 4 s or 1.2 s + 70 ms a character, waiting while touched, hovered or focused. Error (red): a ✕ (44 px), stays until closed |
 | `DiceLogo` | The title with the game feel on (docs/38 §9) | The word POKÉDICE as eight pixel-art dice on a canvas (`role="img"`, named Pokédice, inside the `<h1>`): thrown in and landing crooked on their letters (full), dropped in (short), two-step drops (calm), at rest (off); two rows under 768 px, one from 768; the white flash, the gold rings, the tagline; a tap throws it again. Off: the wordmark and its five dice |
@@ -614,13 +614,15 @@ Players shouldn't have to make many requests:
   Events (the region's **legendary raids open now first**, as cards of their own, then a small world, the live events
   and the rest), Secret areas and Features as Home's one card (`HomeCard`: the picture as a strip on the left, the name,
   one status line, a thin gauge where time or progress runs; gold for one new thing), then the "Coming up" line. The
-  **PLAY dock** is CONTINUE (and Stay here, Keep exploring, a green GO TO when they apply). Phones: pinned over the tab
+  **PLAY dock** is CONTINUE (and Stay here, Keep exploring, a green GO TO when they apply), with **a green map square
+  on its left** (`MapButton`, 76 px, as tall as CONTINUE: the map and AREAS; the user's call, 2026-11-01) opening the
+  same Areas sheet as the banner, in the thumb's reach; shut by the nightmare with its reason. Phones: pinned over the tab
   bar, the page scrolling behind it; 768–1023 px: sticky at the column's foot; from 1024 px: the scene as tall as the
   window on the left (`SceneStage fill`, a box at most 1.15× as tall as wide, kept on where the team walks: `focus`) with **the dock under it, pinned with it,
   always in sight** (the user's call, 2026-10-27; the scene gives it its room), and on the right (clamp(380px, 34%,
   520px)) the area's Pokémon (`HereCard`), the notice and the sections. The encounter itself plays on
   `/area`, and Home stays lit in the menus while it does.
-- **The Areas sheet** opens from the area's banner on the area's details (tabs Details · All areas · Regions); a row opens
+- **The Areas sheet** opens from the area's banner (or the dock's map square) on the area's details (tabs Details · All areas · Regions); a row opens
   its details in the same sheet. From 1024 px it is one wide sheet: the list or the regions on the left, the picked
   area's details on the right, their CONTINUE HERE / TRAVEL HERE navy so the lead GO stays the one red. Area rows have
   Home's card shape: strip, name, one status line (levels · caught · to catch, or why it's locked), GO at the right.
@@ -1171,6 +1173,12 @@ decides every level, landing Box and outcome, and the screens only say them.
   Johto first, no trades left today, you have no Haunter…), the row greyed, and the time left at its far end (so the
   trainer's name keeps its room on a phone). Friends' rows are sky blue with
   the FRIEND tag, yours gold with YOURS, sorted last. A guest's rows have no line.
+- **The board's picks** (docs/23 §2.1): without a search the Board shows 5 listings picked for the player (only ones
+  they can take: a Pokémon they don't have first, then a hidden talent their family lacks), under "Picked for you" and
+  its one-line why, then **NEW PICKS** (`NewPicksButton`: a white button with the dice icon and "2/2 today"; greyed
+  with "That's every listing you can take right now" under it when nothing else can be shown; "New picks tomorrow"
+  once the day's are used). Typing a search swaps the picks for every listing that matches, with the sort beside the
+  field and the chips under it; clearing it brings the picks back.
 - **Who can see it** (`VisChip`): Public blue, Friends green, Private (link) navy. **Time left** (`TimeLeft`): "2d 4h"
   and a thin bar of the listing's life, red in its last 6 hours.
 - **The listing's sheet** (`ListingSheet`): the sprite large, types, whose, its chips and level, a box with what they
@@ -1317,7 +1325,7 @@ pieces are in `src/components/Gifts.tsx`, every state on `/kitchen-sink` (`GiftB
   into a copy), at its level within the game's cap and full HP, and into the team when that region is the one being
   played and the team has room. A region the player hasn't started yet sends it to their latest one, and the result
   says so.
-- **Heart Scales** (docs/60, the Friend Market's coins; migration 0108): a message to a signed-in player can also give
+- **Heart Scales** (docs/60, the Friend Market's coins; migration 0121): a message to a signed-in player can also give
   1–9,999 of them. They live on the server, so the server puts them in the player's wallet as the game claims the
   message's gifts, once, in the same step that marks them opened (not counted toward the streaks' daily cap). A guest
   has no wallet: the server refuses Heart Scales on a message to a device, and the editor shuts its row there. They
@@ -2056,3 +2064,63 @@ docs/60. Its switch is `friendship.access` (§20); the server keeps the streaks,
 - **The Friend Ball** (docs/60 §1b): its description ends with the boost now ("current: ×2", `useItemDescription`
   fills it wherever an item's description shows). On the catch panel its button wears a gold corner tag (the unknown
   talent's gem and ×n) while the boost can still find this Pokémon's talent, and it is never "not needed" then.
+
+## 43. The side quests: roadblocks, disguises, Safaris, rivals and gifts
+
+docs/61. Their switches are `disguises`, `safari`, `rivals` and `giftMoments` (§20; one server check,
+`side_quest_open`); the roadblocks and Snowpoint Temple's Regis are content. Every state is on `/kitchen-sink`
+(`SideQuestBits`); `e2e/side-quests.spec.ts` plays each one in the game and keeps its picture in `docs/61-side-quests/`.
+
+- **A roadblock is never called legendary**: its card's tag is IN THE WAY and its line its own ("A sleeping Pokémon
+  blocks the way!"); the area, Home, the Pokédex and the result say "In the way" / a plain VICTORY / "The wild …".
+  Everything else is a boss's (the challenge, the intro, the throw).
+- **A disguise is a find until it's picked up**: the find's screen shows the item it poses as (no rarity tag of its own:
+  the plainest find's), PICK IT UP; then the ball wobbles and bursts in a white flash and the Pokémon stands there with
+  its line in red ("It wasn't an item at all: it's Voltorb!") and FIGHT. No FLEE: the line under it says why. Calm
+  motion: the Pokémon is simply there.
+- **The Safari is Trick or Treat's screen in daylight**: the same gauge, buttons and result card (§28), its words and
+  pictures its own (Bait, the Safari Ball, a Pokémon that runs off the stage instead of fading into wisps; the flee
+  zone's running icon), the stage's sky a day's when the area has no picture. A round's price is said under CONTINUE
+  ("₽100 a round", "Free round") and a paid round is a toast; short of ₽ the toast says the price.
+- **A gift is a step on the stage of its own** (as a find is, §15): the giver walks in from the left, what they give
+  beside them (a Poké Ball, or the Day Care's Egg), their line in the dialogue box; a choice is cards to tap (sprite,
+  name, types; the picked one ringed in gold); TAKE IT (AutoButton when there's nothing to choose), BUY and NO THANKS for
+  a price. Taken: the ball springs open as a disguise does, or the Egg slides to the middle and wobbles; the panel says
+  what and where. A gift Egg in the Box and on cards is the Egg, "Egg" and HATCHING with its countdown: what's inside
+  stays hidden until it hatches (a toast then).
+- **A rival needs no card**: the fight opens on the battle screen as every trainer's does, the rival's line its first
+  message.
+
+## 44. The region flavours: weather, hordes, island trials, Titans
+
+docs/62. Their switches are `hoennWeather`, `galarWeather`, `hordes`, `trials` and `titans` (§20; the same server check
+as §43, `side_quest_open`). Every state is on `/kitchen-sink` (`FlavourBits`); `e2e/region-flavours.spec.ts` plays each
+one in the game and keeps its picture in `docs/62-region-flavours/`.
+
+- **The weather is a chip, never a hidden number**: its icon on a tile by the area's name in the top bar (a tap is its
+  rules, the INFO), its small twin at the stage's top right (Johto's sun or moon has that corner; no region has both),
+  and its fall over the stage (rain streaks, flakes, blowing sand, ash; the sun's glare, fog's band, a dimming under
+  clouds): `components/Weather.tsx`. Its × in the damage recap is its own factor (`WeatherBoostChip`: the weather's icon
+  and ×1.25), after the type's, as a small world's booster is (§21). A sandstorm's or snow's wear is a line and a −N pop,
+  as a burn's is. At Motion level 0 nothing falls: a still frame stays, and the chip says the rest.
+- **The rules come once per region** (Hoenn's, Galar's), between fights, in the one-time pop-ups' queue (`weather`,
+  after `dayNight`), Later / Let's go!. They say what the weather does, never which area has which (the user's call,
+  2026-11-01: each area's chip says it); Galar's add that it changes every day, and its top-bar line says the day's
+  weather and when it changes ("Today: Rain · changes in 5 h").
+- **Castform shows the weather's form** as the fight starts (the Sunny, Rainy or Snowy Form's sprite), said as a type
+  change ("Castform became Water type!"), one line per Castform out.
+- **A horde, a trial and a Titan each have a card of their own** (`screens/area/FlavourCards.tsx`), with INFO top right
+  and the rules opening by themselves the first time the card shows (Later / Let's go!). A horde: HORDE over the five of
+  them (a shiny one starred), its two lines, then the one in front as any wild card; in the fight, five pips under the
+  foes' plates count down. A trial: ISLAND TRIAL, the captain walking in with their line in the dialogue box, the Totem
+  on a night tile with its aura, its numbers and the Z-Crystal, its allies as a trainer's team is shown. A Titan:
+  TITAN, its line, the Titan (and Tatsugiri) on a night tile with its aura, its two phases, what it leaves, "beaten, not
+  caught".
+- **A Totem and a Titan's second phase stand bigger**, their feet where they were (×1.3, ×1.55), with a warm glow that
+  pulses slowly (still for reduced motion): `foe-aura-totem`, `foe-aura-titan` (`styles/flavours.css`). Its calls and its
+  return are messages of their own ("Gumshoos called for help! Yungoos appeared!", "Klawf ate a Herba Mystica… It's
+  back, and huge!"); a trial's allies flee when the Totem falls.
+- **A Titan alone is one on one**: its card asks for one Pokémon, not two; Dondozo with Tatsugiri asks for two.
+- **A trial says its Z-Crystal** under the Totem (its type's badge and "Its Z-Crystal: Fire-type Z-Moves"), and the
+  result card says it was won ("You got the Fire Z-Crystal!"). With Z-Crystals, the Z-MOVE button only shows for a
+  Pokémon of a type whose crystal is held; the Z-Moves' rules open with "One Z-Crystal per type".

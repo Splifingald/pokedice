@@ -1,3 +1,5 @@
+import { GALAR_WEATHER, HOENN_WEATHER, KAHUNA_CRYSTALS, TRIALS } from './flavoursContent'
+import { GIFT_MOMENTS, RIVAL_MEETINGS } from './momentsContent'
 import type { GameConfig } from './types'
 
 /** Starting values for every game_config key. Anything missing from the DB/bundle falls back to these. */
@@ -179,6 +181,9 @@ export const DEFAULT_CONFIG: GameConfig = {
       [710, 711],
     ],
     exclude: [793, 794, 795, 796, 797, 798, 799, 803, 804, 805, 806],
+    // The board shows 5 listings picked for the player (docs/23 §2.1), and NEW PICKS twice a UTC day.
+    boardPicks: 5,
+    boardRerolls: 2,
   },
   // Gifts with the developer's messages (docs/15 §23): off until the admin switches them on.
   gifts: { access: 'off' },
@@ -302,7 +307,7 @@ export const DEFAULT_CONFIG: GameConfig = {
     raid: {
       access: 'off',
       priority: 3,
-      // The Safari Zone, Kanto.
+      // Fuchsia City, Kanto (the area that held the Safari Zone until docs/61 split it off: the same id, the same point).
       unlockAreaId: '2238f26a-2629-5f28-af07-e74cb41d5f7a',
       banner: 'lair-shrine',
       rules: ['raid.daily', 'raid.sides', 'raid.bars', 'raid.catch'],
@@ -557,6 +562,72 @@ export const DEFAULT_CONFIG: GameConfig = {
   // about 3 in 5 and a very rare one about 1 in 3, and no fixed recipe (Trick Balls only, one or two Treats first,
   // Treats up to the best section) comes within 4 points. A miss pushing the gauge by 35 is what keeps Balls only from
   // winning: at the first idea's +10 they caught 98 % of common ghosts, and the Treats were never worth giving.
+  // Pokémon posing as items (docs/61 §3): a find that springs out as Voltorb. Off until the admin opens it.
+  disguises: { access: 'off' },
+  // Set moments (docs/61 §5): the rivals' meetings and the gifts are the game's own (momentsContent.ts, written by
+  // scripts/patch-side-quests.ts); the database holds their switches, Off. A gift Egg hatches in 6 hours.
+  rivals: { access: 'off', meetings: RIVAL_MEETINGS },
+  giftMoments: { access: 'off', eggHours: 6, gifts: GIFT_MOMENTS },
+  // The region flavours (docs/62), each Off: the weather's areas and the trials are the game's own (flavoursContent.ts).
+  // Galar's weather doubles the weight of its types' wild Pokémon. A horde is 4 % of Kalos's wild cards, once a visit at
+  // most: five of a species 3 levels down, one in ten mixed. A Totem has ×2 HP, a die more and calls two allies; a
+  // Titan's second phase ×2 HP and a die more (Dondozo with Tatsugiri: ×2 and two dice), and it leaves ₽1,000 and 3 Rare
+  // Candies.
+  hoennWeather: { access: 'off', areas: HOENN_WEATHER },
+  galarWeather: { access: 'off', areas: GALAR_WEATHER, poolTimes: 2 },
+  hordes: { access: 'off', chance: 4, perArea: 1, size: 5, levelDrop: 3, mixedChance: 10, minWeight: 2, regions: ['kalos'] },
+  trials: { access: 'off', hpTimes: 2, extraDice: 1, calls: 2, trials: TRIALS, crystals: KAHUNA_CRYSTALS },
+  titans: {
+    access: 'off',
+    hpTimes: 2,
+    extraDice: 1,
+    commanderHpTimes: 2,
+    commanderExtraDice: 2,
+    gold: 1000,
+    items: [{ key: 'rare-candy', qty: 3 }],
+  },
+  // The Safari (docs/61 §4): Trick or Treat's gauge with Bait and Safari Balls, its numbers starting from Trick's (the
+  // same measured best play: about 7 common Pokémon in 10, 4 rare ones in 7, a very rare one in 3). The first round in
+  // each Safari area is free, then ₽100 a round (the user's call, 2026-11-01). `areas`: each Safari's tier overrides;
+  // a Pokémon not listed takes its tier from its catch value.
+  safari: {
+    access: 'off',
+    freeRounds: 1,
+    roundPrice: 100,
+    treatMin: 10,
+    treatMax: 30,
+    failPush: 35,
+    tiers: {
+      common: {
+        weight: 6,
+        flee: 90,
+        sections: [
+          { from: 0, need: 6 },
+          { from: 40, need: 5 },
+          { from: 75, need: 4 },
+          { from: 80, need: 3 },
+        ],
+      },
+      rare: {
+        weight: 3,
+        flee: 85,
+        sections: [
+          { from: 0, need: 6 },
+          { from: 40, need: 5 },
+          { from: 75, need: 4 },
+        ],
+      },
+      veryRare: {
+        weight: 1,
+        flee: 65,
+        sections: [
+          { from: 0, need: 6 },
+          { from: 45, need: 5 },
+        ],
+      },
+    },
+    areas: {},
+  },
   trickOrTreat: {
     access: 'off',
     treatMin: 10,

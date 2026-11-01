@@ -227,12 +227,23 @@ export function chooseIdleBall(
 export const autoOffersLead = (kind: string | null | undefined): boolean => kind === 'trainer' || kind === 'gym'
 
 /** The cards the autopilot leaves on the table: Trick or Treat (the player plays it), and a trainer's (`autoOffersLead`). */
-export const pilotShowsCard = (kind: string | null | undefined): boolean => kind === 'trick' || autoOffersLead(kind)
+export const pilotShowsCard = (kind: string | null | undefined): boolean =>
+  kind === 'trick' || kind === 'safari' || autoOffersLead(kind)
 
 /** What the run stands at, as the screens see it. */
 export interface AutoView {
   phase:
-    'idle' | 'preview' | 'battle' | 'catch' | 'victory' | 'center' | 'casino' | 'trick' | 'wipe' | 'stalemate'
+    | 'idle'
+    | 'preview'
+    | 'battle'
+    | 'catch'
+    | 'victory'
+    | 'center'
+    | 'casino'
+    | 'trick'
+    | 'gift'
+    | 'wipe'
+    | 'stalemate'
   areaId: string
   /** The kind of card on the table (the preview). */
   encounter?: string | null
@@ -297,10 +308,12 @@ export function autopilotStep(
       return { do: 'wait', why: 'player' }
     case 'preview':
       // Trick or Treat is a catch of its own: the player plays it. A trainer's card is the page's (pilotShowsCard).
-      return pilotShowsCard(v.encounter) ? { do: 'wait', why: 'player' } : { do: 'engage' }
+      return pilotShowsCard(v.encounter) || v.encounter === 'disguise' ? { do: 'wait', why: 'player' } : { do: 'engage' }
     case 'victory':
       // Idle changes no team: "Add to team?" is answered as CONTINUE answers it, to the Box.
       return v.pendingCatch && style !== 'idle' ? { do: 'wait', why: 'player' } : { do: 'close' }
+    // A gift (docs/61 §5.3): a free one taken (its first choice), a paid one turned down.
+    case 'gift':
     case 'center':
     case 'casino':
     case 'stalemate':

@@ -23,6 +23,7 @@ import {
   enterArea,
   finishCenter,
   leaveCasino,
+  autoGift,
 } from './run'
 import { serverNow } from './serverTime'
 
@@ -42,7 +43,8 @@ export function autoStepNow(held = false): AutopilotStep | null {
     {
       phase: run.phase,
       areaId: run.areaId,
-      encounter: run.encounter?.kind ?? null,
+      // A Pokémon posing as a find (docs/61 §3) is played by the find's own screen, its buttons pressing themselves.
+      encounter: run.encounter?.kind === 'wild' && run.encounter.disguisedAs ? 'disguise' : (run.encounter?.kind ?? null),
       pendingCatch: !!run.pendingCatchId,
       held,
       catch: run.catch
@@ -97,6 +99,7 @@ export function runAutoStep(step: AutopilotStep) {
         finishCenter()
         pushToast(t('ui.idle.healed'), 'good')
       } else if (run.phase === 'casino') leaveCasino()
+      else if (run.phase === 'gift') autoGift()
       else if (run.phase === 'stalemate') afterStalemate()
       return
     case 'travel': {

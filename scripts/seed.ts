@@ -871,7 +871,8 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  * switch's row, Off), then 0083 (Route 1's set opening, docs/46: its switch's
  * row, Off, Youngster Joey and Oddish on Route 1, which the upserts below then write again), then 0084, 0085 and
  * 0087 (their headers say what), then 0088 (an old page's plain upsert refused over an existing save) and 0089 (a
- * player's raids won, read back), then 0090 (Versus teams at their own levels: 0039's team writer redefined). Folded into
+ * player's raids won, read back), then 0090 (Versus teams at their own levels: 0039's team writer redefined), and the
+ * later ones listed below (0108: the trade board's picks, after the trades' own). Folded into
  * seed.sql
  * so there is
  * one file to run rather than several in a particular order. The
@@ -930,6 +931,7 @@ export async function regionsPrelude(): Promise<string> {
       '0100_gift_calendar.sql',
       '0101_champion_cinema.sql',
       '0105_outfits.sql',
+      '0108_trade_picks.sql',
     ].map(async (name) => {
       const sql = (await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')).replace(/^(begin|commit);\n/gm, '')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`
@@ -967,6 +969,8 @@ export function buildSql(b: {
     'alter table pokemon add column if not exists form jsonb;',
     // Day and night (0061, docs/32): a wild Pokémon met only by day or only by night.
     'alter table area_wild_pool add column if not exists time_of_day text;',
+    // Pokémon posing as items (docs/61 §3, migration 0111).
+    'alter table area_loot_pool add column if not exists disguise jsonb;',
     prelude,
     upsert(
       'type_chart',
@@ -1090,8 +1094,10 @@ export function buildSql(b: {
     ),
     upsert(
       'area_loot_pool',
-      ['id', 'area_id', 'item_key', 'weight', 'unique_find', 'min_qty', 'max_qty'],
-      b.areas.flatMap((a) => a.lootPool.map((l) => [l.id, a.id, l.itemKey, l.weight, l.unique, l.minQty, l.maxQty])),
+      ['id', 'area_id', 'item_key', 'weight', 'unique_find', 'min_qty', 'max_qty', 'disguise'],
+      b.areas.flatMap((a) =>
+        a.lootPool.map((l) => [l.id, a.id, l.itemKey, l.weight, l.unique, l.minQty, l.maxQty, l.disguise ?? null]),
+      ),
       ['id'],
     ),
     upsert(

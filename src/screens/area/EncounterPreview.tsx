@@ -3,7 +3,7 @@ import { GlitchSprite } from '@/components/Portal'
 import { motion } from 'framer-motion'
 import { useEffect, useId, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { catchTarget, catchValueOf, effectiveStats, getSpecies, isDoubleEncounter, isPlayerFoe, MONEY, paidKey, rebattleProgress, rebattleTiers, teamOf, type Encounter, portalNoCatch, nightmareFoe, familyTalent, familyUnlocked, noteTalentMet, talentMet, talentsOn } from '@/engine'
+import { catchTarget, catchValueOf, roadblockOf, effectiveStats, getSpecies, isDoubleEncounter, isPlayerFoe, MONEY, paidKey, rebattleProgress, rebattleTiers, teamOf, type Encounter, portalNoCatch, nightmareFoe, familyTalent, familyUnlocked, noteTalentMet, talentMet, talentsOn } from '@/engine'
 import { joinList } from '@/i18n'
 import { effectText } from '@/i18n/text'
 import { money } from '@/lib/format'
@@ -29,6 +29,7 @@ import { canSkipCurrent, declineChallenge, engage, skipEncounter } from '@/store
 import { cx } from '@/theme/util'
 import { TalentGem, talentName } from '@/components/Talent'
 import { PlayerFoeCard } from '@/components/AreaVersus'
+import { HordeBanner, TitanCard, TrialCard } from './FlavourCards'
 
 function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> }) {
   const { t } = useT()
@@ -68,7 +69,11 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
         )}
       </motion.div>
       <div className="flex min-w-0 flex-col gap-1">
-        {boss && <div className="text-lg leading-none tracking-[0.35em] text-gold">{t('ui.enc.legendaryTag')}</div>}
+        {boss && (
+          <div className="text-lg leading-none tracking-[0.35em] text-gold">
+            {t(roadblockOf(area, enc.dex) ? 'ui.enc.roadblockTag' : 'ui.enc.legendaryTag')}
+          </div>
+        )}
         {dream && (
           <div className="text-lg leading-none tracking-[0.2em] text-muted">
             {t('ui.nightmare.roundTag', { n: dream.round, total: dream.total })}
@@ -351,6 +356,7 @@ const TITLES: Record<Encounter['kind'], string> = {
   center: 'ui.enc.titleCenter',
   casino: 'ui.enc.titleCasino',
   trick: 'ui.enc.titleTrick',
+  safari: 'ui.enc.titleSafari',
 }
 
 /** The encounter, in a pop-up (a bottom sheet on phones): the opponent, who to send out, FIGHT or FLEE (AVOID a trainer). */
@@ -359,12 +365,19 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
   const [lead, setLead] = useState<string | null>(null)
   // A double battle sends two out (docs/33).
   const [leads, setLeads] = useState<string[]>([])
-  const double = isDoubleEncounter(enc)
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
+  // A roadblock boss (docs/61 §2) is a Pokémon across the road, not a legendary: its own words.
+  const runArea = useGame((s) => s.data.areas.find((a) => a.id === s.run.areaId))
+  // A Titan alone is one on one (docs/62 §7): one to send out; Dondozo with Tatsugiri asks for two.
+  const lonelyTitan =
+    enc.kind === 'boss' && !!enc.titan && !runArea?.legendaryBoss?.find((b) => b.dex === enc.dex && b.titan)?.titan?.partner
+  const double = isDoubleEncounter(enc) && !lonelyTitan
+  const roadblock = enc.kind === 'boss' ? roadblockOf(runArea, enc.dex) : null
   const titleId = useId()
   const skippable = canSkipCurrent()
-  const fight = enc.kind !== 'center' && enc.kind !== 'item' && enc.kind !== 'casino' && enc.kind !== 'trick'
+  const fight =
+    enc.kind !== 'center' && enc.kind !== 'item' && enc.kind !== 'casino' && enc.kind !== 'trick' && enc.kind !== 'safari'
   const dark = enc.kind === 'boss' || enc.kind === 'gym'
   // A card whose one way on is its button (the Game Corner, Trick or Treat with no skipping it): it loads and presses
   // itself (the user's rule: no step that is only a button). A fight, or a card with a second choice, waits.
@@ -393,18 +406,33 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
       >
         {/* Gym and legendary cards carry their own banner, so their title is for screen readers only. */}
         <h2 id={titleId} className={dark ? 'sr-only' : 'border-b-[3px] border-edge px-3 py-2 text-center text-2xl leading-tight sm:text-3xl'}>
-          {t(enc.kind === 'wild' && enc.partner ? 'ui.enc.titleWildPair' : isPlayerFoe(enc) ? 'ui.areaVersus.title' : TITLES[enc.kind])}
+          {t(
+            enc.kind === 'wild' && enc.horde?.length
+              ? 'ui.horde.title'
+              : enc.kind === 'wild' && enc.partner
+              ? 'ui.enc.titleWildPair'
+              : isPlayerFoe(enc)
+                ? 'ui.areaVersus.title'
+                : roadblock
+                  ? 'ui.enc.titleRoadblock'
+                  : TITLES[enc.kind],
+          )}
         </h2>
         <div className="pixel-scroll flex flex-col gap-3 overflow-y-auto p-3 sm:p-4">
-          {enc.kind === 'gym' && <GymCard enc={enc} />}
+          {enc.kind === 'gym' && (enc.trial ? <TrialCard enc={enc} /> : <GymCard enc={enc} />)}
+          {/* A Kalos horde (docs/62 §5): its banner, then the one in front. */}
+          {enc.kind === 'wild' && enc.horde?.length && <HordeBanner enc={enc} />}
           {enc.kind === 'wild' && <WildCard enc={enc} />}
           {enc.kind === 'wild' && enc.partner && <WildCard enc={{ kind: 'wild', ...enc.partner }} />}
-          {enc.kind === 'boss' && (
+          {enc.kind === 'boss' && enc.titan && <TitanCard enc={enc} />}
+          {enc.kind === 'boss' && !enc.titan && (
             <>
               <div className="text-center text-2xl leading-tight text-gold">
                 {enc.returning
                   ? t('ui.enc.legendaryBack', { name: data.species[enc.dex]?.name ?? t('ui.enc.theLegendary') })
-                  : t('ui.enc.legendaryBlocks')}
+                  : roadblock
+                    ? t(`ui.enc.roadblock.${roadblock}`)
+                    : t('ui.enc.legendaryBlocks')}
               </div>
               <div className="bg-panel p-3 text-ink">
                 <WildCard enc={enc} />
@@ -417,6 +445,9 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
           {enc.kind === 'center' && <CenterCard enc={enc} />}
           {enc.kind === 'casino' && <CasinoCard />}
           {enc.kind === 'trick' && <TrickCard dex={enc.dex} level={enc.level} tier={enc.tier} isNew={enc.isNew} shiny={enc.shiny} />}
+          {enc.kind === 'safari' && (
+            <TrickCard theme="safari" dex={enc.dex} level={enc.level} tier={enc.tier} isNew={enc.isNew} shiny={enc.shiny} />
+          )}
 
           {/* A team of one has no one to pick: no "Send out" at all (LeadPicker draws nothing either). */}
           {fight && save && teamOf(save).length > 1 && (
@@ -453,6 +484,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
           >
             {fight && <PixelIcon name="sword" size={22} />}
             {enc.kind === 'trick' && <PixelIcon name="pumpkin" size={22} />}
+            {enc.kind === 'safari' && <PixelIcon name="ball" size={22} />}
             {t(
               enc.kind === 'center' || enc.kind === 'casino'
                 ? 'ui.enc.enter'
@@ -460,7 +492,9 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
                   ? 'ui.enc.pickUp'
                   : enc.kind === 'trick'
                     ? 'ui.trick.start'
-                    : 'ui.enc.fight',
+                    : enc.kind === 'safari'
+                      ? 'ui.safari.start'
+                      : 'ui.enc.fight',
             )}
           </Primary>
           {skippable && (

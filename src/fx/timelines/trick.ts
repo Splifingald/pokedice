@@ -127,6 +127,46 @@ export interface TreatParams extends Fighters {
   /** Too many Treats: it flees once it has eaten. */
   fled: boolean
   short?: boolean
+  /** What is tossed, as `loadItemSprite` keys it: the Treat by default, the Safari's Bait (docs/61 §4). */
+  treatKey?: string
+  /** A wild Pokémon, not a ghost (the Safari): fleeing, it runs off the stage instead of fading into wisps. */
+  runs?: boolean
+}
+
+/** How far a running Pokémon has gone (art pixels, to the right), in whole steps, with a hop every few frames. */
+const runAway = (t: number, t0: number, short: boolean): { dx: number; dy: number } => {
+  const q = span(t, t0 + (short ? 0 : SHIVER), t0 + (short ? 0.35 : FLEE_DUR - 0.1))
+  const dx = Math.round((ease.inQ(q) * W * 0.75) / 4) * 4
+  const dy = q > 0 && q < 1 ? -(Math.floor(t * 12) % 2) * 3 : 0
+  return { dx, dy }
+}
+
+/** The dust it kicks up as it runs. Call from the timeline's `step`, from `t0` on. */
+function runStep(s: Stage, t: number, t0: number, short: boolean) {
+  const { dx } = runAway(t, t0, short)
+  if (dx <= 0 || Math.floor(t * 60) % 3) return
+  const r = s.r
+  s.fx.add({
+    x: s.L.foe.x + dx - s.fs.w * 0.3,
+    y: s.L.foe.y - 1,
+    vx: -r.range(10, 30),
+    vy: -r.range(4, 14),
+    drag: 2,
+    life: 0.4,
+    size: r.int(1, 2),
+    size1: 3,
+    shape: 'smoke',
+    colors: ['#f2e6c8', '#d8c49a', '#b39b6e'],
+    density: 0.7,
+  })
+}
+
+/** A wild Pokémon running off (the Safari's flee): a shiver, then away to the right in hops. */
+function drawRun(g: G, s: Stage, t: number, t0: number, short: boolean) {
+  const shiver = !short && t < t0 + SHIVER ? (Math.floor(t * 30) % 2 ? 1 : -1) : 0
+  const { dx, dy } = runAway(t, t0, short)
+  if (dx > W) return
+  drawSprite(g, s.foe, s.L.foe.x + dx + shiver, s.L.foe.y + dy, {})
 }
 
 type S = Stage & { MP: Point; start: Point; ctrl: Point }
@@ -248,7 +288,7 @@ export function treatTimeline(p: TreatParams): Timeline<S> {
             size: r.int(1, 2),
             colors: GOLD,
           })
-      if (p.fled) fleeStep(s, t, T_FLEE, short)
+      if (p.fled) (p.runs ? runStep : fleeStep)(s, t, T_FLEE, short)
     },
     draw(g, s, t) {
       s.begin(g, t)
@@ -269,10 +309,11 @@ export function treatTimeline(p: TreatParams): Timeline<S> {
         const f = Math.floor((t - T_LAND) * 60)
         const warm = !short && f >= 0 && (f < 2 || (f >= 4 && f < 6))
         s.drawTarget(g, t, warm ? { ...look, tint: { color: '#ffe066', a: 0.85 } } : look)
-      } else drawFlee(g, s, t, T_FLEE, short)
+      } else if (p.runs) drawRun(g, s, t, T_FLEE, short)
+      else drawFlee(g, s, t, T_FLEE, short)
       // The Treat in the air, a quarter turn at a time (pixel-exact), a short white trail behind it.
       const tp = treatPos(s, t)
-      const art = spriteFrame(TREAT_KEY)
+      const art = spriteFrame(p.treatKey ?? TREAT_KEY)
       if (tp) {
         for (const lag of [0.05, 0.025]) {
           const q = treatPos(s, t - lag)
@@ -294,7 +335,8 @@ export function treatTimeline(p: TreatParams): Timeline<S> {
       }
       s.fx.draw(g)
       s.end(g)
-      if (p.fled) fleeDim(g, t, T_FLEE)
+      // A ghost vanishes into the night; a wild Pokémon just runs off, the day stays bright.
+      if (p.fled && !p.runs) fleeDim(g, t, T_FLEE)
       // A soft warm flash as the gauge fills (none when calm).
       if (!short && within(t, T_FILL, T_FILL + 2 * STEP)) screenFlash(g, '#ffe066', 0.25)
     },
@@ -305,7 +347,10 @@ export function treatTimeline(p: TreatParams): Timeline<S> {
         [T_FILL, (hud) => (fxSound('trick.fill'), hud.beat?.('fill'))],
       ]
       if (p.fled)
-        c.push([T_FLEE, (hud) => (fxSound('trick.flee'), hud.beat?.('fled'), hud.show?.('foe', false))])
+        c.push([
+          T_FLEE,
+          (hud) => (fxSound(p.runs ? 'catch.break' : 'trick.flee'), hud.beat?.('fled'), hud.show?.('foe', false)),
+        ])
       return c.sort((a, b) => a[0] - b[0])
     },
   }

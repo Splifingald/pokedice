@@ -15,17 +15,25 @@ const rows = bundleToRows(bundle) as unknown as Record<string, unknown[]>
 
 const day = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10)
 
-async function admin(page: Page) {
+/** The admin, signed in, on the game's own content; `config` sets some of its game_config rows. */
+async function admin(page: Page, config: Record<string, unknown> = {}) {
+  const tables: Record<string, unknown[]> = {
+    ...rows,
+    game_config: [
+      ...(rows.game_config as { key: string; value: unknown }[]).filter((r) => !(r.key in config)),
+      ...Object.entries(config).map(([key, value]) => ({ key, value })),
+    ],
+  }
   await mockSupabase(page)
   // The admin's tables: the game's own content, page by page.
   await page.route(`${SUPABASE}/rest/v1/**`, async (route) => {
     const req = route.request()
     const url = new URL(req.url())
     const table = url.pathname.split('/').pop()!
-    if (req.method() !== 'GET' || !(table in rows)) return route.fallback()
+    if (req.method() !== 'GET' || !(table in tables)) return route.fallback()
     const offset = Number(url.searchParams.get('offset') ?? 0)
     const limit = Number(url.searchParams.get('limit') ?? 1000)
-    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(rows[table]!.slice(offset, offset + limit)) })
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(tables[table]!.slice(offset, offset + limit)) })
   })
   await page.addInitScript(
     ([key, session, save]) => {
@@ -87,6 +95,72 @@ test('Live events: once, every year or every week on some weeks of the month; ov
   await expect(page.getByRole('cell', { name: 'Once', exact: true })).toBeVisible()
   await expect(page.getByRole('cell', { name: /^Every year on 31 October/ })).toBeVisible()
   await expect(page.getByText(/^Unsaved: game_config/)).toBeVisible()
+})
+
+test('Live events: a month calendar, a bar per run; a bar edits its event, a day starts a new one', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await admin(page)
+  await page.goto('/admin/events?tab=live')
+  await expect(page.getByRole('button', { name: 'New live event' })).toBeVisible({ timeout: 30_000 })
+  // A Cash Flow every Saturday: a bar each week it comes back.
+  await page.getByRole('button', { name: 'New live event' }).click()
+  await page.getByLabel(/^Type/).selectOption({ label: 'Cash Flow' })
+  await page.getByLabel(/^When/).selectOption('weekly')
+  await page.getByLabel(/^Weekday/).selectOption({ label: 'Saturday' })
+  await page.getByRole('button', { name: 'Add to the list' }).click()
+  await page.getByRole('tab', { name: 'Calendar' }).click()
+  await expect(page).toHaveURL(/tab=live&view=calendar/)
+  const bars = page.getByRole('gridcell', { name: /^Cash Flow \(Cash Flow\), .*Every Saturday.*\. Edit$/ })
+  expect(await bars.count()).toBeGreaterThanOrEqual(4)
+  if (process.env.SHOT_DIR) await page.screenshot({ path: `${process.env.SHOT_DIR}/admin-live-calendar.png`, fullPage: true })
+  // A bar opens its event; while a draft is open, the calendar waits.
+  await bars.last().click()
+  await expect(page.getByRole('heading', { name: 'Edit · Cash Flow' })).toBeVisible()
+  await expect(bars.first()).toBeDisabled()
+  await page.getByRole('button', { name: 'Cancel' }).click()
+  // Next month's 15th: a new event that day, 18:00 UTC; the view stays on a reload.
+  await page.getByRole('button', { name: 'Next month' }).click()
+  const next = new Date()
+  next.setUTCDate(1)
+  next.setUTCMonth(next.getUTCMonth() + 1)
+  const ym = next.toISOString().slice(0, 7)
+  const label = new Date(`${ym}-15T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+  // On its number: a bar may cover the rest of the day.
+  await page.getByRole('gridcell', { name: `${label}: new live event that day` }).click({ position: { x: 12, y: 8 } })
+  await expect(page.getByRole('heading', { name: /^New · / })).toBeVisible()
+  await expect(page.getByLabel(/^Starts \(UTC\)/)).toHaveValue(`${ym}-15T18:00`)
+  await page.reload()
+  await expect(page.getByRole('tab', { name: 'Calendar' })).toHaveAttribute('aria-selected', 'true', { timeout: 30_000 })
+})
+
+test('Live events calendar: small worlds among the bars, a world opens in its tab; daily raids with their Pokémon', async ({
+  page,
+}) => {
+  test.setTimeout(120_000)
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  const at = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 13) + ':00:00.000Z'
+  await admin(page, {
+    smallWorlds: { access: 'off', list: [{ id: 'w-test', regionId: 'kanto', start: at(-1), end: at(5), title: { en: 'Mew Island' } }] },
+  })
+  await page.goto('/admin/events?tab=live&view=calendar')
+  const world = page.getByRole('gridcell', { name: /^Mew Island \(Small world\), .*, live, its switch is off\. Edit$/ })
+  await expect(world.first()).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByText(/^Switched off, so not for players until you switch them on: live events, small worlds/)).toBeVisible()
+  // Daily raids: each day's Pokémon in its square, kept in the address.
+  await page.getByRole('checkbox', { name: 'Daily raids' }).check()
+  await expect(page).toHaveURL(/raids=1/)
+  await expect(page.getByRole('gridcell', { name: new RegExp(`^${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}, raid: `) })).toBeVisible()
+  expect(await page.getByRole('gridcell', { name: /, raid: / }).count()).toBeGreaterThanOrEqual(28)
+  // The Pokémon's own picture, loaded.
+  const sprite = page.getByRole('grid').locator('img').first()
+  await expect.poll(() => sprite.evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0)).toBe(true)
+  if (process.env.SHOT_DIR) await page.screenshot({ path: `${process.env.SHOT_DIR}/admin-live-calendar-worlds.png`, fullPage: true })
+  // A world's bar opens it in the Small worlds tab.
+  await world.first().click()
+  await expect(page).toHaveURL(/tab=worlds/)
+  await expect(page.getByRole('heading', { name: 'Edit · Mew Island' })).toBeVisible()
+  await expect(page).not.toHaveURL(/edit=/)
 })
 
 test('A gift calendar: its switch, the days, each day’s gift, the Advent proposal; it runs once', async ({

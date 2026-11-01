@@ -177,7 +177,7 @@ export function GiftEditor({
   /** A message's gifts, under the Gifts switch (its warning shows here). Invite rewards have a switch of their own. */
   messages?: boolean
   /**
-   * Heart Scales can be added (a message: the claim pays them into the wallet, 0108): `account` for a signed-in
+   * Heart Scales can be added (a message: the claim pays them into the wallet, 0121): `account` for a signed-in
    * player, `guest` for a device (no wallet: the row says why it's shut). Unset: not offered (rewards, calendars).
    */
   scales?: 'account' | 'guest'

@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom'
 import {
   autoAvailable,
   fitWildPair,
+  isDisguisedFind,
   nightmareModeOf,
   pilotShowsCard,
   portalModeOf,
@@ -25,6 +26,7 @@ import { AreaIdle } from './area/AreaIdle'
 import { CenterView } from './area/CenterView'
 import { EncounterPreview } from './area/EncounterPreview'
 import { FindView } from './area/FindView'
+import { GiftView } from './area/GiftView'
 import { RoundGauge } from './area/RoundGauge'
 import { AreaDetails } from './home/AreaDetails'
 import { RebattleHeader } from './events/RebattlePage'
@@ -126,7 +128,8 @@ export function AreaScreen() {
   // The plain page between encounters (docs/42): the area's scene with the team, as on Home, in the banner's place.
   const sceneIdle = run.phase === 'idle' && !own && !dream && !mode && !nm && !run.rebattle
   // A find is a step on the stage of its own (FindView), with or without the autopilot: no banner, no card.
-  const finding = run.phase === 'preview' && run.encounter?.kind === 'item'
+  // A Pokémon posing as a find (docs/61 §3) is a find on that screen until it springs out and the fight starts.
+  const finding = run.phase === 'preview' && (run.encounter?.kind === 'item' || isDisguisedFind(run.encounter))
   return (
     <div className="flex flex-col gap-4">
       {/* The Center is laid out as a battle (the rework): its own gauge at the top, no area banner. */}
@@ -135,9 +138,12 @@ export function AreaScreen() {
       ) : (
         !(run.phase === 'center' && !pilot) &&
         !sceneIdle &&
-        !finding && <AreaHeader area={area} progress={progress} teamAvg={teamAverageLevel(save)} />
+        !finding &&
+        run.phase !== 'gift' && <AreaHeader area={area} progress={progress} teamAvg={teamAverageLevel(save)} />
       )}
       {finding && <FindView />}
+      {/* A gift (docs/61 §5.3): a step on the stage of its own, as a find is, with or without the autopilot. */}
+      {run.phase === 'gift' && <GiftView />}
       {/* Under the autopilot, the cards it leaves on the table (Trick or Treat, a trainer's: pilotShowsCard) still open. */}
       {run.phase === 'preview' && run.encounter && !finding && !(pilot && !pilotShowsCard(run.encounter.kind)) && (
         // A wild pair shown as it will be fought: alone if the team lost its second able one since (docs/33).

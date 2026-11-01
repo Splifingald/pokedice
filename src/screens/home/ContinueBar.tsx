@@ -19,6 +19,8 @@ import {
   portalStateOf,
   progressOf,
   raidRules,
+  safariRoundDue,
+  safariRoundPrice,
   teamAverageLevel,
   type Area,
 } from '@/engine'
@@ -76,6 +78,9 @@ export function useContinue(area: Area) {
   const raidName = raid ? (data.species[raid.dex]?.name ?? '') : ''
   const need = area.roundsToClear || null
   const done = progress.roundsDone ?? 0
+  // A Safari (docs/61 §4): the next round's price, or its free round, under CONTINUE.
+  const safariDue = !busy && safariRoundDue(data, area, progress)
+  const safariPrice = safariDue ? safariRoundPrice(data, area, progress) : 0
   // Extreme mode (docs/22): nobody can fight and no Center will come — the team rests.
   // With its boon Centers (docs/47), a K.O. here sends the Center that swaps instead.
   const resting = !busy && !hasAbleTeam(save) && !centersOn(save, data) && !wipeCenterDue(save, area.id, data)
@@ -114,11 +119,15 @@ export function useContinue(area: Area) {
       : gym
       ? t('ui.home.gymReady', { name: trainerTitle(gym) })
       : boss
-        ? t('ui.home.legendReady')
+        ? t(boss.roadblock ? 'ui.home.roadblockReady' : 'ui.home.legendReady')
         : raid
           ? t('ui.raid.progress.continueSub', { level: raidRules(data, raid.dex, 'progress', raid.areaId).level })
         : closed
           ? t('ui.home.closed')
+          : safariDue
+            ? safariPrice > 0
+              ? t('ui.safari.price', { price: safariPrice })
+              : t('ui.safari.freeRound')
           : progress.cleared
             ? t('ui.home.freePlay')
             : need != null
@@ -132,7 +141,8 @@ export function useContinue(area: Area) {
     const leader = dueGym(to, p, data, side)
     const rounds = to.roundsToClear || null
     if (leader) return t('ui.home.gymReady', { name: trainerTitle(leader) })
-    if (dueBoss(to, p, teamAverageLevel(save), data)) return t('ui.home.legendReady')
+    const waiting = dueBoss(to, p, teamAverageLevel(save), data)
+    if (waiting) return t(waiting.roadblock ? 'ui.home.roadblockReady' : 'ui.home.legendReady')
     return rounds != null
       ? t('ui.home.roundOf', { n: Math.min((p.roundsDone ?? 0) + 1, rounds), total: rounds })
       : t('ui.home.secretArea')
@@ -153,8 +163,13 @@ export function useContinue(area: Area) {
     }
     if (gym || boss) {
       ensureRun(area)
-      challenge()
-      if (useGame.getState().run.phase !== 'idle') navigate('/area')
+      // A trial's or a Titan's server answer may be on its way (docs/62): the area opens once it's there.
+      const opened = () => {
+        if (useGame.getState().run.phase !== 'idle') navigate('/area')
+      }
+      const asked = challenge()
+      if (asked) void asked.then(opened)
+      else opened()
       return
     }
     explore()
@@ -258,6 +273,32 @@ export function ContinueButton({
             {sub}
           </span>
         </span>
+      </span>
+    </PixelButton>
+  )
+}
+
+/**
+ * The green map square left of the big action (the user's call, 2026-11-01): the Areas sheet in the thumb's reach, the
+ * same one the area button on the scene opens. Shut by Darkrai's nightmare: a tap says why.
+ */
+export function MapButton({ heldWhy, onOpen }: { heldWhy: string | null; onOpen: () => void }) {
+  const { t } = useT()
+  return (
+    <PixelButton
+      variant={heldWhy ? 'secondary' : 'success'}
+      size="xl"
+      // As tall as CONTINUE (xl, 72px), narrow: the label under the icon.
+      className={cx('h-full w-[76px] shrink-0 !px-1 !py-1.5', heldWhy && 'hatched')}
+      shut={heldWhy}
+      onClick={onOpen}
+      aria-label={t('ui.home.areas')}
+      aria-haspopup={heldWhy ? undefined : 'dialog'}
+      data-map-button
+    >
+      <span className="flex flex-col items-center gap-1">
+        <PixelIcon name={heldWhy ? 'lock' : 'map'} size={28} />
+        <span className="font-pixel-sm text-[16px] leading-none tracking-[0.04em]">{t('ui.home.areas')}</span>
       </span>
     </PixelButton>
   )
@@ -380,10 +421,11 @@ export function AreaButton({
  * Home's PLAY dock (docs/43 §5.2): the area button, then the one big action (useContinue). Behind in the region's main
  * chain with nothing waiting here, the big action is GO TO the furthest open area, with "Stay here" (the free play)
  * under it; otherwise CONTINUE, with the green GO TO and "keep exploring" (when a gym or a legendary waits) under it in
- * one row. Phones pin it over the tab bar; on PC it heads the column beside the scene. (Auto-mode is switched in the
- * area itself, on the encounter screens.)
+ * one row. The green map square (`MapButton`, the Areas sheet) stands left of the big action. Phones pin it over the
+ * tab bar; on PC it heads the column beside the scene. (Auto-mode is switched in the area itself, on the encounter
+ * screens.)
  */
-export function PlayDock({ area }: { area: Area }) {
+export function PlayDock({ area, onAreas }: { area: Area; onAreas?: () => void }) {
   const { t } = useT()
   const { label, sub, go, explore, off, gym, boss, raid, resting, latest, goTo, keepExploring } = useContinue(area)
   // Darkrai's nightmare holds the player in its area (docs/30): the area button is shut, and says why.
@@ -404,11 +446,23 @@ export function PlayDock({ area }: { area: Area }) {
         </p>
       )}
       {resting && <RestingPanel />}
-      {ahead ? (
-        <ContinueButton label={ahead.label} sub={ahead.sub} icon="map" onClick={() => travelTo(ahead.area)} />
-      ) : (
-        <ContinueButton label={label} sub={sub} icon={gym || boss || raid ? 'sword' : 'play'} off={off} onClick={go} />
-      )}
+      {/* The green map square beside the big action opens the Areas sheet, as the area button on the scene does. */}
+      <div className="flex items-stretch gap-2">
+        {onAreas && <MapButton heldWhy={heldWhy} onOpen={onAreas} />}
+        <div className="min-w-0 flex-1">
+          {ahead ? (
+            <ContinueButton label={ahead.label} sub={ahead.sub} icon="map" onClick={() => travelTo(ahead.area)} />
+          ) : (
+            <ContinueButton
+              label={label}
+              sub={sub}
+              icon={gym || boss || raid ? 'sword' : 'play'}
+              off={off}
+              onClick={go}
+            />
+          )}
+        </div>
+      </div>
       {/* The free play stays a tap away under GO TO. */}
       {ahead && <StayHere sub={sub} onClick={go} />}
       {(green || keepExploring) && (

@@ -61,7 +61,30 @@ export interface Toast {
   tone: ToastTone
 }
 
-export type RunPhase = 'idle' | 'preview' | 'battle' | 'catch' | 'victory' | 'center' | 'casino' | 'trick' | 'wipe' | 'stalemate'
+export type RunPhase =
+  | 'idle'
+  | 'preview'
+  | 'battle'
+  | 'catch'
+  | 'victory'
+  | 'center'
+  | 'casino'
+  | 'trick'
+  | 'gift'
+  | 'wipe'
+  | 'stalemate'
+
+/** A gift being given (docs/61 §5.3): which one, and once taken what came of it (the screen's result). */
+export interface GiftRun {
+  id: string
+  received: {
+    dex: number
+    shiny: boolean
+    placed: 'team' | 'box' | 'replaced' | 'merged' | 'egg'
+    isNew: boolean
+    replacedLevel?: number
+  } | null
+}
 
 /** Trick or Treat under way (docs/29): the ghost and its gauge, the last Treat or Trick Ball to play, and the catch. */
 export interface TrickRun {
@@ -150,6 +173,10 @@ export interface RunState {
   nightmareStruck?: boolean
   /** Trick or Treat under way (docs/29). */
   trick?: TrickRun | null
+  /** A Pokémon posing as a find has sprung out (docs/61 §3): the find's screen shows it, FIGHT to go. */
+  sprung?: boolean
+  /** A gift being given (docs/61 §5.3), phase 'gift'. */
+  gift?: GiftRun | null
   /** The fight is on the screen, the player's side not out yet: one tap on a Pokémon sends it (the rework). */
   pickLead?: boolean
   /**
@@ -464,7 +491,7 @@ export function commitSave(next: SaveData | null, opts: { silent?: boolean; keep
   if (!opts.silent) for (const fn of saveListeners) fn(stamped, prev)
   for (const p of settled?.revived ?? [])
     pushToast(
-      t(p.shiny ? 'ui.toast.revivedFossilShiny' : 'ui.toast.revivedFossil', {
+      t(p.egg ? (p.shiny ? 'ui.toast.hatchedGiftShiny' : 'ui.toast.hatchedGift') : p.shiny ? 'ui.toast.revivedFossilShiny' : 'ui.toast.revivedFossil', {
         name: data.species[p.dex]?.name ?? `#${p.dex}`,
       }),
       'good',

@@ -82,6 +82,7 @@ describe('the one-time pop-ups queue', () => {
       'inviteReward',
       'portal',
       'dayNight',
+      'weather',
       'powers',
       'talents',
       'outfits',

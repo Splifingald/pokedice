@@ -1,6 +1,6 @@
 // Gifts with the developer's messages (docs/15 §23): items (a quantity each), Pokémon (a level each, shiny or not),
 // Pokédollars and Heart Scales (docs/60), each sent to a region the admin picked or to the player's latest one (Heart
-// Scales go to the player's wallet on the server, migration 0108). The server holds them on the message until the
+// Scales go to the player's wallet on the server, migration 0121). The server holds them on the message until the
 // player's game claims them (migration 0048); these functions decide where each one lands, and the screens only say it.
 import { cleanOutfit, hasOutfit, outfitsOn } from './outfits'
 import { rollTalentFor } from './talents'
@@ -19,7 +19,7 @@ export const GIFT_CURRENT: GiftRegion = 'current'
 export const GIFT_MAX = 20
 export const GIFT_QTY_MAX = 999
 export const GIFT_GOLD_MAX = 999_999
-/** Heart Scales on one gift (0108 checks the same): a few weeks of the Friend Market's shelf. */
+/** Heart Scales on one gift (0121 checks the same): a few weeks of the Friend Market's shelf. */
 export const GIFT_SCALES_MAX = 9_999
 /** Messages remembered as opened in the save. */
 const DONE_KEPT = 100
@@ -116,7 +116,7 @@ export interface GiftLanded {
   isNew?: boolean
   /** A Pokémon that joined the team of the region being played (there was room). */
   joinedTeam?: boolean
-  /** Heart Scales: the server put them in the wallet (0108); nothing went into the save. */
+  /** Heart Scales: the server put them in the wallet (0121); nothing went into the save. */
   scales?: boolean
   /**
    * A Friend Market Pokémon (docs/60) waiting in its species' region, locked until one of the player's Pokémon there

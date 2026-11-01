@@ -60,7 +60,7 @@ of them is paid by the server.
 
 - **Where**: Admin → Messages (an answer) and a player's profile → Messages (a message the admin starts): the gift
   editor's **Heart Scales** row, 1–9,999 a gift (`{ kind: 'heartScales', amount, region: 'latest' }`).
-- **Paid**: by `feedback_claim_gifts` (migration **0108**), the moment the player's game opens the message's gifts,
+- **Paid**: by `feedback_claim_gifts` (migration **0121**), the moment the player's game opens the message's gifts,
   in the same statement that marks them opened, so never twice. Only the balance moves: not today's earnings (the
   daily cap stays the streaks') nor the total earned.
 - **To an account only**: a guest has no wallet, so the server refuses Heart Scales on a message to a device
@@ -71,7 +71,7 @@ of them is paid by the server.
   and nothing there pays a wallet.
 
 **Setting it up**: run in Supabase → SQL Editor, after 0107:
-https://github.com/Splifingald/pokedice/blob/claude/practical-euler-vx5wdk/supabase/migrations/0108_heart_scale_gifts.sql
+https://github.com/Splifingald/pokedice/blob/claude/practical-euler-vx5wdk/supabase/migrations/0121_heart_scale_gifts.sql
 It isn't inlined in `supabase/seed.sql` (safe to run again). The Gifts switch (Admin → Messages) must be on for the
 player, as for any gift.
 
@@ -133,7 +133,7 @@ player, as for any gift.
    admin with a friend's account (a trade between the two, a raid with their team, an Egg with their Pokémon); then *On
    for everyone*.
 4. Heart Scales as a message gift (§1c): run, after 0107,
-   https://github.com/Splifingald/pokedice/blob/claude/practical-euler-vx5wdk/supabase/migrations/0108_heart_scale_gifts.sql
+   https://github.com/Splifingald/pokedice/blob/claude/practical-euler-vx5wdk/supabase/migrations/0121_heart_scale_gifts.sql
    (not inlined in `supabase/seed.sql`; safe to run again).
 
 ## 5. Balance

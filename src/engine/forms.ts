@@ -6,7 +6,7 @@
  * a Pokémon like any other: it is caught, levels, evolves and has its Pokédex entry. **Mega** and **battle** forms are
  * looks a Pokémon takes in a fight and loses when it ends: nothing about them is ever saved.
  */
-import type { DieType, Evolution, GameData, PokeType, RegionId, Species } from './types'
+import type { DieType, Evolution, GameData, PokeType, RegionId, Species, Weather } from './types'
 
 /** A form that only exists inside a battle (a Mega Evolution, a Gigantamax, Giratina's Origin Forme, Arceus's types). */
 export const isBattleForm = (s: Species | null | undefined): boolean =>
@@ -47,6 +47,12 @@ export const gmaxFormsOf = (data: GameData, dex: number): Species[] => formsOf(d
 /** Giratina's Origin Forme, Darmanitan's Zen Mode…: the form a Pokémon takes below half HP. */
 export const lowHpFormOf = (data: GameData, dex: number): Species | undefined =>
   formsOf(data, dex).find((s) => s.form!.kind === 'battle' && s.form!.trigger === 'lowHp')
+
+/** The form a weather brings (Castform's Sunny, Rainy or Snowy Form, docs/62 §3), or undefined. */
+export const weatherFormOf = (data: GameData, dex: number, weather: Weather | null | undefined): Species | undefined =>
+  weather
+    ? formsOf(data, dex).find((s) => s.form!.kind === 'battle' && s.form!.trigger === 'weather' && !!s.form!.weather?.includes(weather))
+    : undefined
 
 /** Arceus's dex: its types need their plates once the Underground is on (docs/34). */
 export const ARCEUS_DEX = 493
