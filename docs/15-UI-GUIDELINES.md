@@ -1325,12 +1325,18 @@ pieces are in `src/components/Gifts.tsx`, every state on `/kitchen-sink` (`GiftB
   into a copy), at its level within the game's cap and full HP, and into the team when that region is the one being
   played and the team has room. A region the player hasn't started yet sends it to their latest one, and the result
   says so.
+- **Heart Scales** (docs/60, the Friend Market's coins; migration 0121): a message to a signed-in player can also give
+  1–9,999 of them. They live on the server, so the server puts them in the player's wallet as the game claims the
+  message's gifts, once, in the same step that marks them opened (not counted toward the streaks' daily cap). A guest
+  has no wallet: the server refuses Heart Scales on a message to a device, and the editor shuts its row there. They
+  show among what arrived ("Added to your Heart Scales") only while Friendship is on for the player; the Friends page
+  and the market show the new count at once. Invite rewards, welcome-back gifts and calendars don't offer them.
 - **The opening** (`GiftMoment`, `giftTimeline` in `src/fx/timelines/gift.ts`): full screen, held with
   `useHoldFullscreen` so pop-ups wait. The wrapped box falls onto a warm stage and lands with a squash, wobbles three
   times, each bigger (the anticipation), the bow springs loose, the box crouches and holds four frames, and the lid
   flies off in a burst of light and confetti; then what was inside rises out one by one — items as their pictures, the
   Pokémon as their sprites, a shiny with its two rings of stars — in an arc over the box (six at most; past that the
-  last says "+n"; Pokédollars rise as a stack of coins drawn in code), and a short fanfare. The lines (beats `wobble`, `untie`, `opened`) are in the message box below,
+  last says "+n"; Pokédollars rise as a stack of coins drawn in code, Heart Scales as their icon), and a short fanfare. The lines (beats `wobble`, `untie`, `opened`) are in the message box below,
   in a polite live region. SKIP and Esc jump to what arrived (`GiftResult`: each thing's picture, name, ×quantity or
   level or ₽, ✦ Shiny, NEW, and where it went: "In your Johto Bag", "Added to your Pokédollars", "Joined your team"),
   then DONE. Motion off jumps there
@@ -1346,7 +1352,8 @@ pieces are in `src/components/Gifts.tsx`, every state on `/kitchen-sink` (`GiftB
   opened yet. The trainer menu's **Inbox** row opens it on its own, with the same count (§17).
 - **In the admin**, the same gift editor in both places (`GiftEditor`): an item and a quantity, a Pokémon, its level
   and Shiny, or an amount of ₽, each with its region (their latest, or one by name; on a profile, the regions they haven't started say
-  where it would go). A message's card says whether its gifts were opened, and when; an opened gift can't be changed.
+  where it would go); and, on a message, Heart Scales (to an account only, and only while Friendship is on: the row says
+  why it's shut, and warns while it's on for the admin alone). A message's card says whether its gifts were opened, and when; an opened gift can't be changed.
 
 ## 24. The General upgrades and golden names
 

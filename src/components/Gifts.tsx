@@ -89,14 +89,14 @@ export function GiftPresent({
   )
 }
 
-/** One gift's picture: the item's, the coin for Pokédollars, or the Pokémon's menu icon. */
+/** One gift's picture: the item's, the coin for Pokédollars, the Heart Scale, or the Pokémon's menu icon. */
 export function GiftIcon({ g, size = 32 }: { g: Gift; size?: number }) {
   const data = useGame((s) => s.data)
   return g.kind === 'item' ? (
     <ItemSprite item={data.items[g.key]} size={size} />
-  ) : g.kind === 'gold' ? (
+  ) : g.kind === 'gold' || g.kind === 'heartScales' ? (
     <span className="grid shrink-0 place-items-center" style={{ width: size, height: size }} aria-hidden>
-      <PixelIcon name="coin" size={Math.round(size * 0.7)} />
+      <PixelIcon name={g.kind === 'gold' ? 'coin' : 'heartScale'} size={Math.round(size * 0.7)} />
     </span>
   ) : outfitOf(data, g) ? (
     // In an outfit (docs/59): the menu icon is the plain one, so its hat sits in the corner, as on the team's tiles.
@@ -109,7 +109,7 @@ export function GiftIcon({ g, size = 32 }: { g: Gift; size?: number }) {
   )
 }
 
-/** A gift in words, for a line or a screen reader: "Rare Candy ×5", "₽1,000", "Ditto Lv.10 ✦ Shiny". */
+/** A gift in words, for a line or a screen reader: "Rare Candy ×5", "₽1,000", "20 Heart Scales", "Ditto Lv.10". */
 export function useGiftText() {
   const { t } = useT()
   const data = useGame((s) => s.data)
@@ -118,16 +118,18 @@ export function useGiftText() {
       ? `${data.items[g.key]?.name ?? g.key} ${t('ui.gift.qty', { n: g.qty })}`
       : g.kind === 'gold'
         ? money(g.amount)
-        : [
-            data.species[g.dex]?.name ?? t('ui.common.aPokemon'),
-            t('ui.common.level.short', { n: g.level }),
-            ...(g.shiny ? [t('ui.dayCare.shinyTag')] : []),
-            // Its outfit (docs/59), while outfits are on: off, the gift brings the plain Pokémon.
-            ...(outfitOf(data, g) ? [outfitName(g.outfit!)] : []),
-          ].join(' ')
+        : g.kind === 'heartScales'
+          ? t('ui.fship.coinsLabel', { n: g.amount })
+          : [
+              data.species[g.dex]?.name ?? t('ui.common.aPokemon'),
+              t('ui.common.level.short', { n: g.level }),
+              ...(g.shiny ? [t('ui.dayCare.shinyTag')] : []),
+              // Its outfit (docs/59), while outfits are on: off, the gift brings the plain Pokémon.
+              ...(outfitOf(data, g) ? [outfitName(g.outfit!)] : []),
+            ].join(' ')
 }
 
-/** "Rare Candy" and "×5", "Pokédollars" and "₽5,000", or "Pikachu" and "Lv.20", with its ✦ Shiny. */
+/** "Rare Candy" and "×5", "Pokédollars" and "₽5,000", "Heart Scales" and "×20", or "Pikachu" and "Lv.20" (✦ Shiny). */
 function GiftName({ g }: { g: Gift }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
@@ -136,7 +138,9 @@ function GiftName({ g }: { g: Gift }) {
       ? (data.items[g.key]?.name ?? g.key)
       : g.kind === 'gold'
         ? t('ui.home.pokedollars')
-        : (data.species[g.dex]?.name ?? t('ui.common.aPokemon'))
+        : g.kind === 'heartScales'
+          ? t('ui.gift.heartScales')
+          : (data.species[g.dex]?.name ?? t('ui.common.aPokemon'))
   return (
     <>
       <b className="font-normal">{name}</b>
@@ -145,7 +149,9 @@ function GiftName({ g }: { g: Gift }) {
           ? t('ui.gift.qty', { n: g.qty })
           : g.kind === 'gold'
             ? money(g.amount)
-            : t('ui.common.level.short', { n: g.level })}
+            : g.kind === 'heartScales'
+              ? t('ui.gift.qty', { n: g.amount })
+              : t('ui.common.level.short', { n: g.level })}
       </span>
       {g.kind === 'pokemon' && g.shiny && <Chip tone="gold">{t('ui.dayCare.shinyTag')}</Chip>}
       {g.kind === 'pokemon' && outfitOf(data, g) && <Chip tone="red">{outfitName(g.outfit!)}</Chip>}
@@ -176,12 +182,16 @@ export function GiftOpened({ gifts }: { gifts: unknown }) {
   )
 }
 
-/** Where each one went, in words: the Bag, the ₽ or the Box (with its region once there are several), or the team. */
+/**
+ * Where each one went, in words: the Bag, the ₽ or the Box (with its region once there are several), the team, or the
+ * Heart Scales (one wallet for every region).
+ */
 function useWhere() {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const many = useGame((s) => !!s.save && unlockedRegions(s.save, s.data).length > 1)
   return (l: GiftLanded) => {
+    if (l.gift.kind === 'heartScales') return t('ui.gift.inScales')
     const region = regionName(data, l.region)
     const where =
       l.gift.kind === 'item'
@@ -289,7 +299,7 @@ export function GiftRulesModal({
   )
 }
 
-/** What the stage draws for each gift: the Pokémon's front sprite (its shiny one), the item's picture, coins. */
+/** What the stage draws for each gift: the Pokémon's front sprite (its shiny one), the item's picture, coins, scales. */
 function contentsOf(
   landed: GiftLanded[],
   data: GameData,
@@ -302,6 +312,7 @@ function contentsOf(
       return { kind: 'mon', key: spriteKey(l.gift.dex, false, !!l.gift.shiny, outfit), shiny: !!l.gift.shiny }
     }
     if (l.gift.kind === 'gold') return { kind: 'gold', key: 'gold' }
+    if (l.gift.kind === 'heartScales') return { kind: 'scales', key: 'scales' }
     const url = data.items[l.gift.key]?.spriteUrl
     if (url) loads.push(loadItemSprite(url))
     return { kind: 'item', key: `item|${url ?? ''}` }
