@@ -148,6 +148,13 @@ export interface RunState {
   nightmarePopup?: boolean
   /** Darkrai's strike has landed and its moment is still on the area's page (until CONTINUE: the next round). */
   nightmareStruck?: boolean
+  /** A wipe just ended a whiteout try (docs/61 §4.3): the waves it had cleared, lost now (the wipe card says so). */
+  whiteoutLost?: number | null
+  /**
+   * The whiteout's way in has shown its pop-up: back from the Team screen, it shows again at once over the intro's
+   * end, with no intro and no tap to wait for (as the nightmare's nightmarePopup).
+   */
+  whiteoutPopup?: boolean
   /** Trick or Treat under way (docs/29). */
   trick?: TrickRun | null
   /** The fight is on the screen, the player's side not out yet: one tap on a Pokémon sends it (the rework). */

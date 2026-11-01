@@ -14,7 +14,7 @@ import {
   hasWorldMythical,
   heldWorld,
   inWorld,
-  nightmareLock,
+  heldIn,
   isAreaClosed,
   isAreaUnlocked,
   mythicalHome,
@@ -753,7 +753,9 @@ export function WorldStrip() {
   const now = useServerNow(1000)
   const back = useBackName()
   const { t } = useT()
-  const held = useGame((s) => nightmareLock(s.save, s.data))
+  // The nightmare (docs/30) or the whiteout (docs/61 §4.3) holding the player: the way back is shut, and says why.
+  const held = useGame((s) => heldIn(s.save, s.data)?.area ?? null)
+  const heldBy = useGame((s) => heldIn(s.save, s.data)?.by ?? 'nightmare')
   if (!inside) return null
   return (
     <WorldStripView
@@ -761,7 +763,7 @@ export function WorldStrip() {
       now={now}
       back={back}
       onBack={() => leaveSmallWorld()}
-      locked={held ? t('ui.nightmare.locked', { area: held.name }) : null}
+      locked={held ? t(`ui.${heldBy}.locked`, { area: held.name }) : null}
     />
   )
 }

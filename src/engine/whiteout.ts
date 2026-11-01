@@ -9,6 +9,7 @@
 // the admin's (`whiteout`).
 import type { Encounter } from './encounters'
 import { fightBosses } from './encounters'
+import { nightmareLock } from './nightmare'
 import { instanceMaxHp } from './progression'
 import type {
   Area,
@@ -97,6 +98,20 @@ export function whiteoutLock(save: SaveData | null, data: GameData): Area | null
   if (!save) return null
   const area = areaOf(data, save.currentAreaId)
   return area && inWhiteout(save, data, area.id) ? area : null
+}
+
+/**
+ * What holds the player in their area, travel shut but the Mart, the menus and Home open: Darkrai's nightmare
+ * (docs/30) or the whiteout. Null when they are free to go. `by` names it, for the screens' words.
+ */
+export function heldIn(
+  save: SaveData | null,
+  data: GameData,
+): { area: Area; by: 'nightmare' | 'whiteout' } | null {
+  const dream = nightmareLock(save, data)
+  if (dream) return { area: dream, by: 'nightmare' }
+  const white = whiteoutLock(save, data)
+  return white ? { area: white, by: 'whiteout' } : null
 }
 
 /**
