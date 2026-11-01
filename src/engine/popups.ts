@@ -29,7 +29,6 @@ import { inWorldRegion, regionOfferDue } from './regions'
 import { badgeCase, portalRulesDue } from './run'
 import { shinyDexRulesDue } from './shinyDex'
 import { outfitRulesDue } from './outfits'
-import { talentRulesDue } from './talents'
 import { tradeRulesDue, tradesToWatch } from './trade'
 import { diceTutorialDue } from './tutorial'
 import { ugRulesDue } from './underground'
@@ -120,8 +119,6 @@ const QUEUE = {
   weather: { due: (s, d, c) => weatherRulesDue(s, d, c.now ?? Date.now()) },
   /** Mega Evolution, Gigantamax and Z-Moves, each once its badge is won. */
   powers: { due: (s, d) => !!powerRulesDue(s, d) },
-  /** Hidden talents (docs/51), as the switch opens them. */
-  talents: { due: (s, d) => talentRulesDue(s, d) },
   /** Outfits (docs/59), as the first Pokémon in one arrives. */
   outfits: { due: (s, d) => outfitRulesDue(s, d) },
   /** A small world has opened (the player outside it). */

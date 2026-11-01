@@ -271,7 +271,8 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   No toast. Under the autopilot it shows too, its PICK IT UP loading.
 - **A fight's result card follows itself and moves on** (2026-10-26): each piece (XP, a level-up, the Pokédex entry…)
   scrolls into view as it comes, clear of the buttons at the foot; once all is shown, NEXT waits for the tap (its gauge
-  fills and goes only while auto-mode or Idle mode plays the area, the user's call of 2026-10-27), BACK still in reach. It waits instead when a new species was caught or a small world's mythical won (its card is looked at, and a full team's
+  fills and goes only while auto-mode or Idle mode plays the area, the user's call of 2026-10-27), BACK still in reach.
+  The fight that cleared the area has HOME in BACK's place, beside the next area's button (2026-11-01). It waits instead when a new species was caught or a small world's mythical won (its card is looked at, and a full team's
   replace choice, scrolled to, is made), when the area was cleared (the way on is the next area), and in a rebattle.
   No AUTO switch on the card nor in Settings: AUTO-MODE is the fights' own.
 - **A region begun opens on its first area**, its first encounter under way (`exploreFirstArea`): a new game's partner
@@ -1975,8 +1976,8 @@ pop-up). The pieces are in `src/components/Talent.tsx`, every state on `/kitchen
   paralysis, Pressure's lost reroll, Shed Skin, Limber, Magic Guard, Mirror's die, Sturdy, Natural Cure, Magma Armor. A talent that changes numbers alone (Speed,
   rerolls, HP) says nothing.
 - **Trades**: asking for a species, a toggle "With its hidden talent" under the species (only while the switch is on).
-- Its rules: a `RulesModal` once, in the one-time pop-ups' queue after the battle powers' (`talentRulesSeen`); again
-  from a tap on the sheet's talent box.
+- Its rules: a `RulesModal` from a tap on the sheet's talent box, never a pop-up of its own (the user's call,
+  2026-11-01: no rules pop-up nor INFO button for talents).
 
 ## 39. Real-player battles in areas
 

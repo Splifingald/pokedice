@@ -2083,7 +2083,7 @@ export interface SaveData {
   talents?: Partial<Record<RegionId, number[]>>
   /** The families whose talent has been met (a talented one seen, or unlocked): the sheet names it from then on. */
   talentsMet?: number[]
-  /** The hidden talents' rules pop-up has been shown (once; INFO shows it again). */
+  /** Retired: the hidden talents' rules pop-up was shown (it no longer opens by itself, 2026-11-01). Old saves keep it. */
   talentRulesSeen?: boolean
   /** Outfits (docs/59): their rules pop-up seen, once for good. */
   outfitRulesSeen?: boolean

@@ -3,6 +3,7 @@ import { BottomDock } from '@/components/BottomDock'
 import { AutoButton, PILOT_PICK_MS } from '@/components/AutoButton'
 import { AnimatePresence, motion } from 'framer-motion'
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   getInstance,
   isUnownLetter,
@@ -837,6 +838,7 @@ const AUTO_CARD_MS = 1600
  */
 export function VictoryView() {
   const { t } = useT()
+  const navigate = useNavigate()
   const run = useGame((s) => s.run)
   const battle = useGame((s) => s.battle)
   const data = useGame((s) => s.data)
@@ -989,13 +991,26 @@ export function VictoryView() {
     <RebattleNext go={go} />
   ) : (
     <div className="flex flex-col gap-2">
-      {/* BACK: the area's page between encounters (its HOME, the team); NEXT: the next encounter. */}
+      {/* BACK: the area's page between encounters (its HOME, the team); NEXT: the next encounter. The area cleared, BACK
+          would land on a page with nothing left to do: HOME beside the next area instead (the user's call, 2026-11-01). */}
       <div className={locked ? 'grid' : 'grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-2.5'}>
-        {!locked && (
-          <PixelButton size="lg" className="whitespace-nowrap px-2" onClick={go(() => continueAfterVictory())}>
-            ◂ {t('ui.common.back')}
-          </PixelButton>
-        )}
+        {!locked &&
+          (nextArea ? (
+            <PixelButton
+              size="lg"
+              className="whitespace-nowrap px-2"
+              onClick={go(() => {
+                continueAfterVictory()
+                navigate('/home')
+              })}
+            >
+              {t('ui.nav.home')}
+            </PixelButton>
+          ) : (
+            <PixelButton size="lg" className="whitespace-nowrap px-2" onClick={go(() => continueAfterVictory())}>
+              ◂ {t('ui.common.back')}
+            </PixelButton>
+          ))}
         <PixelButton
           variant="primary"
           size="lg"

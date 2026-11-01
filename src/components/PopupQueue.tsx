@@ -33,7 +33,6 @@ import { GiftService } from './Gifts'
 import { POPUP_GAP_MS, PopupTurnContext, usePopupOnScreen } from './popupTurn'
 import { PowersUnlockPopup } from './PowersRules'
 import { OutfitRulesPopup } from './Outfit'
-import { TalentRulesPopup } from './Talent'
 import { PushService } from './PushService'
 import { RaidGiftPopup } from './RaidGiftPopup'
 import { ReplyPopup, useRepliesWaiting } from './ReplyPopup'
@@ -158,7 +157,6 @@ export function OneTimePopups() {
       <DayNightRulesPopup />
       <WeatherRulesPopup />
       <PowersUnlockPopup />
-      <TalentRulesPopup />
       <OutfitRulesPopup />
       <WorldPopup />
       <WorldPick />
