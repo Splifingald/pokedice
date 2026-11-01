@@ -150,12 +150,16 @@ const q = (v: string) => `'${v.replace(/'/g, "''")}'`
  * pools (rows the script no longer has are deleted), the world added to `smallWorlds` (its switch and other worlds
  * kept), and `configVersion` + 1 so players fetch the new content. Safe to run again. `header` opens the file.
  */
-export function worldSql(h: WorldContent, header: string[]): string {
+export function worldSql(h: WorldContent, header: string[], opts: { modes?: boolean } = {}): string {
+  // With `modes`, each area's special mode (`areas.mode`, docs/28) is written too: Haunted Hollow's came as patches
+  // after its content ran (0057, 0060), so its own migration stays without it.
+  const modeCol = opts.modes ? ['mode'] : []
   const areaIds = h.areas.map((a) => q(a.id)).join(', ')
   const keep = (ids: string[]) => (ids.length ? ids.map(q).join(', ') : "''")
   return [
     ...header,
     'begin;',
+    ...(opts.modes ? ['alter table areas add column if not exists mode jsonb;'] : []),
     upsert(
       'regions',
       [
@@ -234,6 +238,7 @@ export function worldSql(h: WorldContent, header: string[]): string {
         'hidden',
         'unlock_conditions',
         'gyms',
+        ...modeCol,
       ],
       h.areas.map((a) => [
         a.id,
@@ -255,6 +260,7 @@ export function worldSql(h: WorldContent, header: string[]): string {
         a.hidden,
         a.unlockConditions,
         a.gyms,
+        ...(opts.modes ? [a.mode ?? null] : []),
       ]),
       ['id'],
     ),
