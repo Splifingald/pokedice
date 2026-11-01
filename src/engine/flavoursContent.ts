@@ -1,7 +1,7 @@
 // The region flavours' content (docs/62): Hoenn's and Galar's areas with weather, and Alola's island trials. The
 // game's own, like the rivals' meetings (docs/61): the database holds the switches, and an admin's row can override
 // any of it (game_config is deep-merged over these).
-import type { AreaWeather, TrialDef } from './types'
+import type { AreaWeather, PokeType, TrialDef } from './types'
 
 /** Hoenn's fixed weather (docs/62 §3), by area id. */
 export const HOENN_WEATHER: Record<string, AreaWeather> = {
@@ -39,11 +39,13 @@ export const GALAR_WEATHER: Record<string, AreaWeather> = {
 
 /**
  * Alola's island trials (docs/62 §6): each captain's Totem, at its captain's ace's level, and the allies it calls; Vast
- * Poni Canyon's Kommo-o is a trial of its own, before Hapu's grand trial. Mina's stays a battle, as in the games.
+ * Poni Canyon's Kommo-o is a trial of its own, before Hapu's grand trial. Mina's stays a battle, as in the games. Each
+ * gives its type's Z-Crystal (`crystal`), as the kahunas' grand trials do (`KAHUNA_CRYSTALS`): eighteen, one per type.
  */
 export const TRIALS: TrialDef[] = [
   {
     id: 'trial-verdant-cavern',
+    crystal: 'normal',
     areaId: 'd7bfc7c0-ab59-5608-88c7-5d395cdbe217',
     trainerId: '4f91ae65-c2ed-5625-8493-cc888560e844',
     captain: 'Ilima',
@@ -55,6 +57,7 @@ export const TRIALS: TrialDef[] = [
   },
   {
     id: 'trial-brooklet-hill',
+    crystal: 'water',
     areaId: 'ab9ebe55-a162-52ce-b648-cc84608f7f77',
     trainerId: '2d323fd2-b283-56cf-99fb-d525a90ba2ec',
     captain: 'Lana',
@@ -66,6 +69,7 @@ export const TRIALS: TrialDef[] = [
   },
   {
     id: 'trial-wela-volcano',
+    crystal: 'fire',
     areaId: '38846271-6caa-52ab-b474-600c585b98f2',
     trainerId: 'd8a8325d-a9dd-5865-b389-ded18cb9dcb9',
     captain: 'Kiawe',
@@ -77,6 +81,7 @@ export const TRIALS: TrialDef[] = [
   },
   {
     id: 'trial-lush-jungle',
+    crystal: 'grass',
     areaId: '5e9ea6d6-2b62-56a5-a737-d841a48684f6',
     trainerId: '4d870364-1d61-5516-a2f7-717f067720bf',
     captain: 'Mallow',
@@ -88,6 +93,7 @@ export const TRIALS: TrialDef[] = [
   },
   {
     id: 'trial-hokulani',
+    crystal: 'electric',
     areaId: '5fb9f3eb-bdbe-5c45-8345-3f4a20d75f1d',
     trainerId: '018f1a21-bb29-56a5-a929-6228bbad679b',
     captain: 'Sophocles',
@@ -99,6 +105,7 @@ export const TRIALS: TrialDef[] = [
   },
   {
     id: 'trial-thrifty-megamart',
+    crystal: 'ghost',
     areaId: '8b0339d9-7358-5cff-a342-49b1ae6dda36',
     trainerId: '1a82b30c-6585-5df3-bbd7-4aea039a82f4',
     captain: 'Acerola',
@@ -110,6 +117,7 @@ export const TRIALS: TrialDef[] = [
   },
   {
     id: 'trial-vast-poni-canyon',
+    crystal: 'dragon',
     areaId: 'e7ae24d0-80a4-51d7-a9cb-c0df82d25286',
     // A gym row of its own, before Hapu's grand trial; she shows the way (migration 0116).
     trainerId: '7278511c-319e-5fc1-a053-0be766cb70fd',
@@ -121,4 +129,95 @@ export const TRIALS: TrialDef[] = [
     allies: [783, 783],
     allyLevel: 43,
   },
+  // One trial per type (the user's call, 2026-11-01): the six types Alola's trials and grand trials don't give, each a
+  // Totem of its area's in a gym row there only for it, greeted by someone of that type.
+  {
+    id: 'trial-heahea',
+    crystal: 'flying',
+    areaId: '87cba513-0bc5-55df-a781-9de73048528c',
+    trainerId: '8cebb4a0-7553-5d00-904d-0461d1389075',
+    own: true,
+    captain: 'Kahili',
+    place: 'the Heahea skies',
+    totem: 733,
+    level: 18,
+    allies: [732, 732],
+    allyLevel: 16,
+  },
+  {
+    id: 'trial-hano-beach',
+    crystal: 'poison',
+    areaId: '0e1ccc24-1c60-56e1-9f03-4b3deda34951',
+    trainerId: '23c7789e-eb83-55e8-96bb-9bb2097fe93d',
+    own: true,
+    captain: 'Plumeria',
+    place: 'Hano Beach',
+    totem: 748,
+    level: 27,
+    allies: [747, 747],
+    allyLevel: 25,
+  },
+  {
+    id: 'trial-malie-garden',
+    crystal: 'bug',
+    areaId: '7d3ee2f7-3442-5738-b2c6-d3037e514fec',
+    trainerId: '65e861d9-c327-56f8-aa34-bd8710000c3a',
+    own: true,
+    captain: 'Guzma',
+    place: 'Malie Garden',
+    totem: 752,
+    level: 28,
+    allies: [284, 284],
+    allyLevel: 26,
+  },
+  {
+    id: 'trial-blush-mountain',
+    crystal: 'steel',
+    areaId: 'd6ba26d1-3dd2-51fc-b559-74c01d2ddba2',
+    trainerId: '9f29379a-7508-5443-8710-c533da46baa5',
+    own: true,
+    captain: 'Molayne',
+    place: 'Blush Mountain',
+    totem: 777,
+    level: 31,
+    allies: [702, 702],
+    allyLevel: 29,
+  },
+  {
+    id: 'trial-haina-desert',
+    crystal: 'psychic',
+    areaId: '3463beea-946a-5c99-89d1-19dc707896e8',
+    trainerId: 'ce72ec00-480b-588e-9ffb-178257855a46',
+    own: true,
+    captain: 'Faba',
+    place: 'the Haina Desert',
+    totem: 779,
+    level: 33,
+    allies: [343, 343],
+    allyLevel: 31,
+  },
+  {
+    id: 'trial-mount-lanakila',
+    crystal: 'ice',
+    areaId: 'db4e5701-dfdf-54dd-bfee-002c1fdcc391',
+    trainerId: 'a8411dd0-0c2b-5f0f-ac1a-0556001dc88d',
+    own: true,
+    captain: 'Lillie',
+    place: 'Mount Lanakila',
+    totem: 10104,
+    level: 52,
+    allies: [10103, 10103],
+    allyLevel: 50,
+  },
 ]
+
+/** The kahunas' grand trials and Mina's trial, battles of their own (docs/62 §6): the Z-Crystal each gives, by trainer id. */
+export const KAHUNA_CRYSTALS: Record<string, PokeType> = {
+  // Hala, Olivia, Nanu, Hapu.
+  '6f841802-a4ca-5e58-bc31-2c5037791a07': 'fighting',
+  '8ccda063-9222-5190-a949-145815db7a6f': 'rock',
+  '4f0e8ccf-2756-5de1-a7c0-7412cb29daf5': 'dark',
+  'c6106307-fd9e-50e1-aa2c-8edd1069cb8f': 'ground',
+  // Mina's trial stays a battle with her (as in the games): the Fairium Z.
+  'd88dbaef-893e-522d-b404-bb5c106568cd': 'fairy',
+}

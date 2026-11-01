@@ -1,4 +1,4 @@
-import { GALAR_WEATHER, HOENN_WEATHER, TRIALS } from './flavoursContent'
+import { GALAR_WEATHER, HOENN_WEATHER, KAHUNA_CRYSTALS, TRIALS } from './flavoursContent'
 import { GIFT_MOMENTS, RIVAL_MEETINGS } from './momentsContent'
 import type { GameConfig } from './types'
 
@@ -576,7 +576,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   hoennWeather: { access: 'off', areas: HOENN_WEATHER },
   galarWeather: { access: 'off', areas: GALAR_WEATHER, poolTimes: 2 },
   hordes: { access: 'off', chance: 4, perArea: 1, size: 5, levelDrop: 3, mixedChance: 10, minWeight: 2, regions: ['kalos'] },
-  trials: { access: 'off', hpTimes: 2, extraDice: 1, calls: 2, trials: TRIALS },
+  trials: { access: 'off', hpTimes: 2, extraDice: 1, calls: 2, trials: TRIALS, crystals: KAHUNA_CRYSTALS },
   titans: {
     access: 'off',
     hpTimes: 2,

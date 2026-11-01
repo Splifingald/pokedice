@@ -38,6 +38,7 @@ import { DuelResult } from '@/components/AreaVersus'
 import { UnownLetterCard } from '@/components/UnownDex'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { ItemSprite } from '@/components/ItemSprite'
+import { TypeBadge } from '@/components/TypeBadge'
 import { dexNo, milestoneText, money, typeName } from '@/lib/format'
 import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
@@ -588,6 +589,20 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
                 <span className="text-xl leading-tight">
                   {t('ui.nightmare.gotGift', { item: `${item?.name ?? e.key}${e.qty > 1 ? ` ×${e.qty}` : ''}` })}
                 </span>
+              </div>
+            ),
+          })
+          return
+        }
+        case 'z_crystal': {
+          // A Z-Crystal won (docs/62 §6): Z-Moves of its type.
+          extras.push({
+            key: k,
+            sound: 'gold',
+            node: (
+              <div className="flex items-center justify-center gap-2 bg-gold-pale p-2 text-center shadow-ring" data-z-crystal={e.type}>
+                <TypeBadge type={e.type} size="sm" />
+                <span className="text-xl leading-tight">{t('ui.zCrystal.got', { type: typeName(e.type) })}</span>
               </div>
             ),
           })

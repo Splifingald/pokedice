@@ -142,15 +142,32 @@ weather means the same thing everywhere in the game:
 The seven captains stop being trainer battles. Each one's trial is a fight against its **Totem Pokémon**, and the four
 kahunas' grand trials stay trainer battles, as in the games.
 
-| Area | Captain | Totem | Its allies |
-| --- | --- | --- | --- |
-| Route 2 & the Verdant Cavern | Ilima | Gumshoos Lv 12 | Yungoos |
-| Brooklet Hill | Lana | Wishiwashi (School Form) Lv 20 | Alomomola |
-| Routes 7 & 8 and Wela Volcano Park | Kiawe | Salazzle Lv 22 | Salandit |
-| Lush Jungle | Mallow | Lurantis Lv 24 | Fomantis |
-| Route 10 & Mount Hokulani | Sophocles | Vikavolt Lv 29 | Charjabug |
-| Routes 15 & 16 and the Thrifty Megamart | Acerola | Mimikyu Lv 33 | Haunter |
-| Exeggutor Island & Vast Poni Canyon | — (the canyon's trial) | Kommo-o Lv 45 | Hakamo-o |
+| Area | Captain | Totem | Its allies | Z-Crystal |
+| --- | --- | --- | --- | --- |
+| Route 2 & the Verdant Cavern | Ilima | Gumshoos Lv 12 | Yungoos | Normal |
+| Heahea City & Routes 4–6 | Kahili | Toucannon Lv 18 | Trumbeak | Flying |
+| Brooklet Hill | Lana | Wishiwashi (School Form) Lv 20 | Alomomola | Water |
+| Routes 7 & 8 and Wela Volcano Park | Kiawe | Salazzle Lv 22 | Salandit | Fire |
+| Lush Jungle | Mallow | Lurantis Lv 24 | Fomantis | Grass |
+| Hano Beach & Aether Paradise | Plumeria | Toxapex Lv 27 | Mareanie | Poison |
+| Malie City & Malie Garden | Guzma | Araquanid Lv 28 | Masquerain | Bug |
+| Route 10 & Mount Hokulani | Sophocles | Vikavolt Lv 29 | Charjabug | Electric |
+| Routes 11 & 12 and Blush Mountain | Molayne | Togedemaru Lv 31 | Dedenne | Steel |
+| Routes 13 & 14, Haina Desert & Tapu Village | Faba | Bruxish Lv 33 | Baltoy | Psychic |
+| Routes 15 & 16 and the Thrifty Megamart | Acerola | Mimikyu Lv 33 | Haunter | Ghost |
+| Exeggutor Island & Vast Poni Canyon | Hapu (the canyon's trial) | Kommo-o Lv 45 | Hakamo-o | Dragon |
+| Mount Lanakila | Lillie | Ninetales (Alolan) Lv 52 | Vulpix (Alolan) | Ice |
+
+The grand trials stay battles and give theirs: Hala Fighting, Olivia Rock, Nanu Dark, Hapu Ground; Mina's trial, a
+battle with her, Fairy. **Eighteen battles, one Z-Crystal per type** (the user's call of 2026-11-01).
+
+- **Z-Crystals.** With the trials on, a crystal unlocks the Z-Moves of its type, as in Sun & Moon: Z-Moves open with
+  the first crystal (Ilima's), and a Pokémon can use one only in a type whose crystal is held (a two-type Pokémon with
+  one of its two takes that one; a Steel-type shakes off a stun only with the Steelium Z). Elsewhere, with that
+  region's League, as before. With the trials off, Z-Moves open with Lana's badge for every type (docs/35).
+  `trials.ts`: `crystalOf`, `zCrystalsOf`; the battle's `zTypes`. The trial's card and the result say the crystal
+  ("You got the Fire Z-Crystal!"); the Z-Moves' rules say one per type.
+- **Totems use no Z-Move** (the user's call): the kahunas' and the League's aces still do.
 
 - **The Totem** is bigger (×1.3 sprite), wears an aura, has **HP ×2** and **one more die of its type** (both
   admin-editable). The die is seen on its dice, where upgrade levels would only be a hidden number.
@@ -170,8 +187,9 @@ kahunas' grand trials stay trainer battles, as in the games.
 - **Rebattles** (the gyms' rebattle) become a trial again at the rebattle level. **Extreme mode** keeps the captains
   as trainer battles.
 - **Data**: the trials are the `trials` row's (`trials: [{ id, areaId, trainerId, captain, place, totem, level, allies,
-  allyLevel }]`, the game's own when the row has none); Kommo-o's is a gym row of its own (migration 0116), ahead of
-  Hapu, left out of the area's gyms while the switch is off.
+  allyLevel, crystal }]`, the game's own when the row has none; `crystals` for the grand trials'); Kommo-o's is a gym
+  row of its own (migration 0116), ahead of Hapu, and the six type trials' too (0119), each its area's only gym: all
+  left out of the areas' gyms while the switch is off.
 
 ## 7. Paldea: the Titans
 
@@ -302,8 +320,10 @@ Taken by `e2e/region-flavours.spec.ts` in the game, with the switches on:
      — the Titans' switch and the five bosses.
    - [0118_castform_forms.sql](https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0118_castform_forms.sql)
      — Castform's Sunny, Rainy and Snowy Forms.
+   - [0119_type_trials.sql](https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0119_type_trials.sql)
+     — the six type trials' Totems (Flying, Poison, Bug, Steel, Psychic, Ice) and their areas' gyms.
 
-   `supabase/seed.sql` carries the data part (Kommo-o, the gyms, the Titans' bosses, Castform's forms) for a fresh
-   database.
+   `supabase/seed.sql` carries the data part (the trials' Totems, the gyms, the Titans' bosses, Castform's forms) for a
+   fresh database.
 2. Admin → Config → Switches: each of the five, Off / On for admin / On for everyone. Admin → Config → Region flavours
    for the numbers.

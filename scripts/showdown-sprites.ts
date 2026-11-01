@@ -19,6 +19,7 @@
  * - `cries`: which of Showdown's cries (`audio/cries/<id>.mp3`) exist, checked with a HEAD request each. The game
  *   plays them from Showdown's CDN, nothing is copied. A form without a cry of its own gets its base species' as `c`
  *   in src/data/showdown-sprites.json, so the game never asks for a cry that isn't there.
+ * - `pack`: the trainers step's sheets alone, from the files already in public/ (nothing downloaded).
  * - `trainers`: downloads Showdown's 80×80 trainer sprite for every Kanto–Unova class and character (TRAINERS below;
  *   Kalos onward came from Showdown already, see region-trainers.ts) over the files in public/, then packs every
  *   sprite the game refers to into one sheet per region (src/assets/trainers/<region>.png) and writes their cells to
@@ -921,11 +922,12 @@ const fileFor = (region: keyof typeof TRAINERS, name: string) =>
       ? path.join(PUBLIC, 'trainers/classes', `${name}.png`)
       : path.join(PUBLIC, 'trainers/classes', region, `${name}.png`)
 
-async function buildTrainers() {
+async function buildTrainers(download = true) {
   const jobs = Object.entries(TRAINERS).flatMap(([region, table]) =>
     Object.entries(table).map(([name, id]) => ({ file: fileFor(region as keyof typeof TRAINERS, name), id })),
   )
-  await pool(jobs, 16, async ({ file, id }) => {
+  // `pack`: the sheets from the files already in public/, nothing downloaded (a sprite newly named by a trainer).
+  await pool(download ? jobs : [], 16, async ({ file, id }) => {
     const buf = await mustFetch(
       `${SHOWDOWN_SPRITES}/trainers/${id}.png`,
       path.join(CACHE, 'trainers', `${id}.png`),
@@ -935,7 +937,7 @@ async function buildTrainers() {
       throw new Error(`${id}: ${img.width}×${img.height}`)
     await writeFile(file, PNG.sync.write(img, { colorType: 6 }))
   })
-  console.log(`Trainers: ${jobs.length} sprites from Showdown written over public/`)
+  if (download) console.log(`Trainers: ${jobs.length} sprites from Showdown written over public/`)
 
   // Every sprite the game names: trainers, social looks, the two characters and Professor Oak.
   const urls = new Set<string>(['/characters/red.png', '/characters/green.png', '/characters/prof-oak.png'])
@@ -993,20 +995,20 @@ async function main() {
   const args = at >= 0 ? argv.filter((_, i) => i !== at && i !== at + 1) : argv
   const steps = args.length ? args : ['pokemon', 'icons', 'cries', 'trainers']
   for (const s of steps)
-    if (!['pokemon', 'icons', 'cries', 'trainers'].includes(s)) throw new Error(`Unknown step: ${s}`)
+    if (!['pokemon', 'icons', 'cries', 'trainers', 'pack'].includes(s)) throw new Error(`Unknown step: ${s}`)
   const entries: Record<string, ShowdownEntry> = existsSync(SPRITES_JSON)
     ? JSON.parse(await readFile(SPRITES_JSON, 'utf8'))
     : {}
   if (steps.includes('pokemon')) await buildPokemon(entries, only)
   if (steps.includes('icons')) await buildIcons(entries, only)
   if (steps.includes('cries')) await buildCries(entries, only)
-  if (steps.some((s) => s !== 'trainers')) {
+  if (steps.some((s) => s !== 'trainers' && s !== 'pack')) {
     const sorted = Object.fromEntries(Object.entries(entries).sort(([a], [b]) => Number(a) - Number(b)))
     await writeFile(SPRITES_JSON, `${JSON.stringify(sorted)}\n`)
   }
   if (steps.includes('trainers')) {
     await buildTrainers()
-  }
+  } else if (steps.includes('pack')) await buildTrainers(false)
 }
 
 main().catch((err) => {

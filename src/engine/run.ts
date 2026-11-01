@@ -1,4 +1,5 @@
 // Pure state transitions on the save: new game, rewards, catches, wipes, center, team, shop, upgrades.
+import { crystalOf, zCrystalsOn } from './trials'
 import { getSpecies, linearAreas } from './data'
 import { KANTO, evolutionGate, inWorldRegion, pokedexEverywhere, regionOf, regionOfArea } from './regions'
 import { asSeenBy, gymsFor, playerSideOf } from './rival'
@@ -449,6 +450,8 @@ export type RunEvent =
    * is shown on its own step (FindView) as the next card, and PICK IT UP takes it (`pickUpItem`).
    */
   | { kind: 'pickup'; uid: string; dex: number; entryId: string; key: string; qty: number }
+  /** A Z-Crystal won (docs/62 §6): Z-Moves of its type. */
+  | { kind: 'z_crystal'; type: PokeType }
   /** A Titan beaten (docs/62 §7): what it left, its ₽ in the `gold` events' total. */
   | { kind: 'titan_reward'; dex: number; gold: number; items: { key: string; qty: number }[] }
 
@@ -586,9 +589,12 @@ export function applyVictory(
   if (input.kind === 'gym' && input.gymComplete && input.gymTrainerId) {
     const raw = data.trainers[input.gymTrainerId]
     const t = raw && asSeenBy(raw, playerSideOf(save))
-    if (!progress.gymsDefeated.includes(input.gymTrainerId))
-      progress = { ...progress, gymsDefeated: [...progress.gymsDefeated, input.gymTrainerId] }
+    const first = !progress.gymsDefeated.includes(input.gymTrainerId)
+    if (first) progress = { ...progress, gymsDefeated: [...progress.gymsDefeated, input.gymTrainerId] }
     if (t) events.push({ kind: 'gym_defeated', trainerId: t.id, name: t.name, badge: t.badge, role: t.role })
+    // Its Z-Crystal, the first time (docs/62 §6).
+    const crystal = first && zCrystalsOn(data) ? crystalOf(data, input.gymTrainerId) : null
+    if (crystal) events.push({ kind: 'z_crystal', type: crystal })
   }
 
   const cleared = clearIfDone(area, progress, save, data)

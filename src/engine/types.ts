@@ -1483,6 +1483,8 @@ export interface HordesConfig {
 /** An island trial (docs/62 §6): the Totem fought instead of a captain's battle, or a trial of its own. */
 export interface TrialDef {
   id: string
+  /** The Z-Crystal it gives: Z-Moves of this type (docs/62 §6). */
+  crystal?: PokeType | null
   areaId: string
   /** The gym battle this trial replaces: a captain's, or (`own`) a row there only for the trial. */
   trainerId: string
@@ -1508,6 +1510,8 @@ export interface TrialsConfig {
   /** Allies it calls in a fight, at most. */
   calls: number
   trials: TrialDef[]
+  /** The other battles that give a Z-Crystal (the kahunas', Mina's), by trainer id. */
+  crystals?: Record<string, PokeType>
 }
 
 /** The Titans (docs/62 §7): the switch (the server reads it), the second phase's numbers and the reward. */

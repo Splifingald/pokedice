@@ -5,7 +5,8 @@
 import type { FoeSeed } from './battle'
 import { eventOpenTo } from './events'
 import { isExtreme } from './extreme'
-import type { DieType, GameData, SaveData, TrainerMon, TrialDef } from './types'
+import { regionOf } from './regions'
+import { POKE_TYPES, type AreaProgress, type DieType, type GameData, type PokeType, type SaveData, type TrainerMon, type TrialDef } from './types'
 
 /** Island trials are switched on for whoever is playing. */
 export const trialsOn = (data: GameData): boolean => eventOpenTo(data.config.trials?.access, data)
@@ -50,4 +51,32 @@ export function trialFoes(def: TrialDef, data: GameData, team: readonly TrainerM
         }
       : { dex: m.dex, level: m.level, ...(m.talent && { talent: true }) },
   )
+}
+
+/**
+ * Z-Crystals (docs/62 §6, the user's call of 2026-11-01): with the island trials on, each trial and grand trial gives
+ * its type's crystal, eighteen in all, and a Z-Move is only for a Pokémon of a type whose crystal is held; Z-Moves open
+ * with the first one. With the trials off, Z-Moves open with Lana's badge, for every type (docs/35).
+ */
+export const zCrystalsOn = (data: GameData): boolean => trialsOn(data)
+
+/** The Z-Crystal this battle gives once won, or null. */
+export function crystalOf(data: GameData, trainerId: string): PokeType | null {
+  const cfg = data.config.trials
+  return cfg?.trials?.find((t) => t.trainerId === trainerId)?.crystal ?? cfg?.crystals?.[trainerId] ?? null
+}
+
+/** Alola's progress, played now or parked. */
+const alolaProgress = (save: SaveData): Record<string, AreaProgress> =>
+  regionOf(save) === 'alola' ? save.areaProgress : (save.parked?.alola?.areaProgress ?? {})
+
+/** The Z-Crystals this save holds, in type order: those of the Alola battles won that give one. */
+export function zCrystalsOf(save: SaveData, data: GameData): PokeType[] {
+  const held = new Set<PokeType>()
+  for (const p of Object.values(alolaProgress(save)))
+    for (const id of p?.gymsDefeated ?? []) {
+      const c = crystalOf(data, id)
+      if (c) held.add(c)
+    }
+  return POKE_TYPES.filter((t) => held.has(t))
 }

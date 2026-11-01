@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { flavourSeen, getSpecies, markFlavourSeen, trialById, type BossDef, type Encounter, type FlavourKey } from '@/engine'
 import { joinList } from '@/i18n'
 import { useT } from '@/i18n/react'
-import { money } from '@/lib/format'
+import { money, typeName } from '@/lib/format'
 import { useIsDesktop } from '@/lib/useMediaQuery'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { PixelIcon, type IconName } from '@/components/icons'
@@ -14,6 +14,7 @@ import { PixelButton } from '@/components/PixelButton'
 import { RulesModal, type RuleRow } from '@/components/RulesModal'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { TrainerSprite } from '@/components/TrainerArt'
+import { TypeBadge } from '@/components/TypeBadge'
 import { mutateSave, useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 
@@ -30,6 +31,7 @@ const RULE_KEYS: Record<CardFlavour, [IconName, string][]> = {
     ['sparkle', 'ui.trial.rules.what'],
     ['up', 'ui.trial.rules.aura'],
     ['badge', 'ui.trial.rules.win'],
+    ['sword', 'ui.trial.rules.crystal'],
   ],
   titans: [
     ['crown', 'ui.titan.rules.what'],
@@ -183,6 +185,13 @@ export function TrialCard({ enc, auto }: { enc: Extract<Encounter, { kind: 'gym'
           {enc.badge && (
             <span className="flex items-center gap-2 text-lg">
               <BadgeIcon badge={enc.badge} earned size={20} /> {t('ui.enc.winBadge', { badge: enc.badge })}
+            </span>
+          )}
+          {/* Its Z-Crystal (docs/62 §6): Z-Moves of its type. */}
+          {def.crystal && (
+            <span className="flex items-center gap-2 font-pixel-sm text-[16px] leading-tight" data-crystal={def.crystal}>
+              <TypeBadge type={def.crystal} size="sm" />
+              {t('ui.trial.crystal', { type: typeName(def.crystal) })}
             </span>
           )}
         </div>

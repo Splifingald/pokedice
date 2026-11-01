@@ -197,12 +197,28 @@ test('Alola: the Verdant Cavern’s trial, Totem Gumshoos calling its ally', asy
   await shot(page, '4-trial-rules')
   await page.getByRole('dialog', { name: 'Island trials' }).getByRole('button', { name: /Let's go/i }).click()
   await expect(page.locator('[data-trial="trial-verdant-cavern"]')).toBeVisible()
+  // Its Z-Crystal: Normal-type Z-Moves.
+  await expect(page.locator('[data-crystal="normal"]')).toBeVisible()
   await page.waitForTimeout(800)
   await shot(page, '4-trial-card')
   await page.getByRole('button', { name: /FIGHT/ }).click()
   await expect(page.getByText(/called for help/).first()).toBeVisible({ timeout: 20_000 })
   await page.waitForTimeout(600)
   await shot(page, '4-trial-battle')
+})
+
+test('Alola: one trial per type, Plumeria’s at Hano Beach and its Poisonium Z', async ({ page }) => {
+  const hano = data.areas.find((a) => a.name === 'Hano Beach & Aether Paradise')!
+  const save = standingIn('alola', 'Hano Beach & Aether Paradise', { roundsDone: hano.roundsToClear ?? 1, drawn: ['center'] }, {
+    flavours: { seen: ['trials'] },
+  })
+  await boot(page, save)
+  await page.goto('/home')
+  await page.getByRole('button', { name: /CHALLENGE TOTEM TOXAPEX/ }).first().click()
+  await expect(page.locator('[data-trial="trial-hano-beach"]')).toBeVisible({ timeout: 20_000 })
+  await expect(page.locator('[data-crystal="poison"]')).toBeVisible()
+  await page.waitForTimeout(800)
+  await shot(page, '4-trial-poison-card')
 })
 
 test('Paldea: Klawf, the Stony Cliff Titan', async ({ page }) => {

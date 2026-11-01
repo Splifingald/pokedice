@@ -181,6 +181,8 @@ export interface BattleState {
   ownLimits?: boolean
   /** The player may use a Z-Move in this fight (docs/35). Absent = no. */
   zAllowed?: boolean
+  /** …of these types only: the Z-Crystals held (docs/62 §6). Absent = any. */
+  zTypes?: PokeType[]
   /**
    * An auto battle: under the older rules no Mega Evolution or Gigantamax on either side; type changers on both pick
    * their type themselves. Under the newer ones (docs/35) the player's side uses its powers by itself.
@@ -580,6 +582,8 @@ export interface CreateBattleOptions {
   gmaxAllowed?: boolean
   /** The player has unlocked Z-Moves (see `zUnlocked`). */
   zAllowed?: boolean
+  /** The Z-Crystals held (docs/62 §6): a Z-Move only for a Pokémon of one of these types. Absent = any type. */
+  zTypes?: PokeType[]
   /** The newer rules (docs/35, see `battlePowersFor`): the gems' Mega forms and a Mega's turns… */
   megaForms?: number[]
   megaTurns?: number
@@ -897,10 +901,16 @@ export function gmaxChoices(s: BattleState, data: GameData): Species[] {
  * The Pokémon in battle could attack with a Z-Move now: after the roll, once per battle, not already powered — or,
  * a Steel-type, while frozen or paralyzed (its Z-Move shakes the stun off).
  */
+/** The types this Pokémon's Z-Move may take: its own, those whose Z-Crystal is held (docs/62 §6). */
+export const zTypesOf = (s: BattleState, b: Battler): PokeType[] => (s.zTypes ? b.types.filter((t) => s.zTypes!.includes(t)) : b.types)
+
 export function canZMove(s: BattleState, data: GameData): boolean {
   if (!s.zAllowed || powerSpent(s, 'z', data)) return false
   const a = activeBattler(s)
-  const when = s.phase === 'player_reroll' || (s.phase === 'player_stunned' && a.types.includes('steel'))
+  // With Z-Crystals, only for a Pokémon of a type whose crystal is held.
+  const allowed = zTypesOf(s, a)
+  if (!allowed.length) return false
+  const when = s.phase === 'player_reroll' || (s.phase === 'player_stunned' && allowed.includes('steel'))
   return when && canPower(a)
 }
 
@@ -911,7 +921,7 @@ export function canZMove(s: BattleState, data: GameData): boolean {
  */
 export function zTypeChoices(s: BattleState, data: GameData): PokeType[] {
   if (!canZMove(s, data) || s.phase !== 'player_reroll') return []
-  const types = activeBattler(s).types
+  const types = zTypesOf(s, activeBattler(s))
   return types.length > 1 ? [...types] : []
 }
 
@@ -974,6 +984,7 @@ function battlePowersOf(opts: CreateBattleOptions): Partial<BattleState> {
     ...(mega && { megaAllowed: true }),
     ...(gmax && { gmaxAllowed: true }),
     ...(opts.zAllowed && { zAllowed: true }),
+    ...(opts.zAllowed && opts.zTypes && { zTypes: [...opts.zTypes] }),
     ...(opts.megaForms && { megaForms: [...opts.megaForms] }),
     ...(opts.megaTurns && { megaTurns: opts.megaTurns }),
     ...(opts.gmaxBoost && { gmaxBoost: { ...opts.gmaxBoost } }),
@@ -2138,8 +2149,10 @@ export function reduce(
       if (!canZMove(s, data)) return NOOP(state)
       if (e.type && !zTypeChoices(s, data).includes(e.type)) return NOOP(state)
       const a = activeBattler(s)
+      // A two-type Pokémon with one of its crystals: its Z-Move takes that type (docs/62 §6).
+      const only = s.zTypes && a.types.length > 1 ? zTypesOf(s, a) : []
       // Stunned, it is a Steel-type's own Z-Move that shakes the stun off, whatever its other type.
-      const type = s.phase === 'player_stunned' ? 'steel' : e.type
+      const type = s.phase === 'player_stunned' ? 'steel' : (e.type ?? (only.length === 1 ? only[0] : undefined))
       // A Steel-type frozen or paralyzed: its Z-Move shakes off the stun and every status, then it throws and strikes.
       if (s.phase === 'player_stunned') {
         a.status = emptyStatus()

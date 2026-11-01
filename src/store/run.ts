@@ -776,7 +776,11 @@ function startBattle(kind: BattleKind, enemy: FoeSeed, leadUid?: string, double?
       // A new player's first fight teaches the reroll and the combo (docs/46 §6): played by hand, one foe.
       rerollLesson: !auto && !double && rerollLessonDue(save, data, run.areaId),
       ...(double && {
-        double: { ...double, plans: double.foes.map((f, i) => enemyPlanFor(save, data, f, trainerAt(i))) },
+        // A Totem uses no Z-Move nor any power (docs/62 §6, the user's call): its aura is its own.
+        double: {
+          ...double,
+          plans: double.foes.map((f, i) => (double.leader != null ? null : enemyPlanFor(save, data, f, trainerAt(i)))),
+        },
       }),
     },
     data,

@@ -1,16 +1,16 @@
-// The region flavours' migrations (docs/62), 0114 to 0118, against a real Postgres (PGlite, in process), over the areas
+// The region flavours' migrations (docs/62), 0114 to 0119, against a real Postgres (PGlite, in process), over the areas
 // they touch as they were before them: the five Titans' areas with no boss, Vast Poni Canyon's gyms without Totem
-// Kommo-o, no Castform form. Each migration does what the bundle has; run again, nothing moves but the content version.
+// Kommo-o, no Castform form, the six areas of the type trials without them. Each migration does what the bundle has; run again, nothing moves but the content version.
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { BUNDLE } from '@/config/bundle'
-import type { Area, Trainer } from '@/engine'
+import { TRIALS, type Area, type Trainer } from '@/engine'
 
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
-const FILES = ['0114_weather.sql', '0115_hordes.sql', '0116_trials.sql', '0117_titans.sql', '0118_castform_forms.sql']
+const FILES = ['0114_weather.sql', '0115_hordes.sql', '0116_trials.sql', '0117_titans.sql', '0118_castform_forms.sql', '0119_type_trials.sql']
 
 const AUTH = `create role anon; create role authenticated; create schema auth; create table auth.users (id uuid primary key);
   create function auth.uid() returns uuid language sql stable as $$
@@ -25,6 +25,8 @@ const TITAN_AREAS = areas.filter((a) => a.legendaryBoss?.some((b) => b.titan))
 const CANYON = 'e7ae24d0-80a4-51d7-a9cb-c0df82d25286'
 const KOMMO_O = '7278511c-319e-5fc1-a053-0be766cb70fd'
 const HAPU = 'c6106307-fd9e-50e1-aa2c-8edd1069cb8f'
+/** The six trials of their own for the types Alola's don't give (0119): their areas and their Totems' gym rows. */
+const TYPE_TRIALS = TRIALS.filter((t) => t.own && t.trainerId !== KOMMO_O)
 
 const q = (v: unknown) =>
   v == null
@@ -46,9 +48,9 @@ async function setUp(db: PGlite) {
     alter table pokemon add column if not exists form jsonb;
     insert into game_config (key, value) values ('configVersion', '300');`)
   // As they were before: no Titan, no Kommo-o.
-  const rows = [...TITAN_AREAS, byId(CANYON)].map((a) => {
+  const rows = [...TITAN_AREAS, byId(CANYON), ...TYPE_TRIALS.map((t) => byId(t.areaId))].map((a) => {
     const bosses = (a.legendaryBoss ?? []).filter((b) => !b.titan)
-    const gyms = a.gyms.filter((g) => g !== KOMMO_O)
+    const gyms = a.gyms.filter((g) => g !== KOMMO_O && !TYPE_TRIALS.some((t) => t.trainerId === g))
     return `(${q(a.id)}, ${a.orderIndex}, ${q(a.regionId)}, ${q(a.name)}, ${a.minLevel}, ${a.maxLevel}, ${q(a.encounterWeights)}, ${a.backtrackMultiplier}, ${q(bosses.length ? bosses : null)}, ${q(gyms)})`
   })
   await db.exec(
@@ -60,7 +62,7 @@ async function setUp(db: PGlite) {
 
 const one = async <T,>(db: PGlite, text: string, params: unknown[] = []) => (await db.query<T>(text, params)).rows[0]
 
-describe('the region flavours’ migrations (0114–0118)', () => {
+describe('the region flavours’ migrations (0114–0119)', () => {
   let db: PGlite
   beforeAll(async () => {
     db = new PGlite()
@@ -99,6 +101,17 @@ describe('the region flavours’ migrations (0114–0118)', () => {
       const r = await one<{ type1: string; form: unknown }>(db, 'select type1, form from pokemon where dex = $1', [dex])
       const own = species.find((p) => p.dex === dex)!
       expect(r, String(dex)).toEqual({ type1: own.type1, form: own.form })
+    }
+  })
+
+  it('0119: the six type trials’ Totems, each the gym of its area, as the bundle has them', async () => {
+    expect(TYPE_TRIALS).toHaveLength(6)
+    for (const tr of TYPE_TRIALS) {
+      const t = await one<{ name: string; team: unknown }>(db, 'select name, team from trainers where id = $1', [tr.trainerId])
+      const own = trainers.find((x) => x.id === tr.trainerId)!
+      expect(t, own.name).toEqual({ name: own.name, team: own.team })
+      const a = await one<{ g: string[] }>(db, 'select gyms g from areas where id = $1', [tr.areaId])
+      expect(a!.g, own.name).toEqual(byId(tr.areaId).gyms)
     }
   })
 

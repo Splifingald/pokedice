@@ -15,6 +15,96 @@
   "battleBackground": "default"
  },
  {
+  "id": "8cebb4a0-7553-5d00-904d-0461d1389075",
+  "name": "Totem Toucannon",
+  "spriteUrl": "/trainers/classes/alola/elite-kahili.png",
+  "team": [
+   {
+    "dex": 733,
+    "level": 18
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "23c7789e-eb83-55e8-96bb-9bb2097fe93d",
+  "name": "Totem Toxapex",
+  "spriteUrl": "/trainers/classes/alola/plumeria.png",
+  "team": [
+   {
+    "dex": 748,
+    "level": 27
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "65e861d9-c327-56f8-aa34-bd8710000c3a",
+  "name": "Totem Araquanid",
+  "spriteUrl": "/trainers/classes/alola/guzma.png",
+  "team": [
+   {
+    "dex": 752,
+    "level": 28
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "9f29379a-7508-5443-8710-c533da46baa5",
+  "name": "Totem Togedemaru",
+  "spriteUrl": "/trainers/classes/alola/elite-molayne.png",
+  "team": [
+   {
+    "dex": 777,
+    "level": 31
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "ce72ec00-480b-588e-9ffb-178257855a46",
+  "name": "Totem Bruxish",
+  "spriteUrl": "/trainers/classes/alola/faba.png",
+  "team": [
+   {
+    "dex": 779,
+    "level": 33
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "a8411dd0-0c2b-5f0f-ac1a-0556001dc88d",
+  "name": "Totem Ninetales",
+  "spriteUrl": "/trainers/classes/alola/lillie.png",
+  "team": [
+   {
+    "dex": 10104,
+    "level": 52
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
   "id": "bb51d07e-b961-557b-935c-11d660bc5a26",
   "name": "Rival Blue",
   "spriteUrl": "/trainers/classes/blue-1.png",

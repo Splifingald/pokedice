@@ -28224,7 +28224,9 @@
   "battleBackground": "grass",
   "hidden": false,
   "unlockConditions": null,
-  "gyms": [],
+  "gyms": [
+   "8cebb4a0-7553-5d00-904d-0461d1389075"
+  ],
   "wildPool": [
    {
     "id": "71e9ff96-3617-5a9d-bcb8-76c517bd8628",
@@ -29272,7 +29274,9 @@
   "battleBackground": "sea",
   "hidden": false,
   "unlockConditions": null,
-  "gyms": [],
+  "gyms": [
+   "23c7789e-eb83-55e8-96bb-9bb2097fe93d"
+  ],
   "wildPool": [
    {
     "id": "65049284-b757-5d69-bd17-63e970fff086",
@@ -32636,7 +32640,9 @@
   "battleBackground": "default",
   "hidden": false,
   "unlockConditions": null,
-  "gyms": [],
+  "gyms": [
+   "65e861d9-c327-56f8-aa34-bd8710000c3a"
+  ],
   "wildPool": [
    {
     "id": "da05e9f0-83e3-5fc5-8cff-b34e537094db",
@@ -33063,7 +33069,9 @@
   "battleBackground": "rock",
   "hidden": false,
   "unlockConditions": null,
-  "gyms": [],
+  "gyms": [
+   "9f29379a-7508-5443-8710-c533da46baa5"
+  ],
   "wildPool": [
    {
     "id": "64da1426-441f-54aa-8332-bb5f66a13677",
@@ -33276,7 +33284,9 @@
   "battleBackground": "rock",
   "hidden": false,
   "unlockConditions": null,
-  "gyms": [],
+  "gyms": [
+   "ce72ec00-480b-588e-9ffb-178257855a46"
+  ],
   "wildPool": [
    {
     "id": "4880af9b-5941-5be4-934b-9ae1568a0da1",
@@ -34508,7 +34518,9 @@
   "battleBackground": "rock",
   "hidden": false,
   "unlockConditions": null,
-  "gyms": [],
+  "gyms": [
+   "a8411dd0-0c2b-5f0f-ac1a-0556001dc88d"
+  ],
   "wildPool": [
    {
     "id": "4bab38e2-91db-520f-b4cc-d45b7bee9a6a",

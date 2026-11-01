@@ -3,6 +3,14 @@ import { describe, expect, it } from 'vitest'
 import {
   asHorde,
   bossCaught,
+  canZMove,
+  crystalOf,
+  POKE_TYPES,
+  zCrystalsOf,
+  zCrystalsOn,
+  zTypeChoices,
+  type PokeType,
+  type RegionSave,
   challengeEncounter,
   computeDamage,
   createBattle,
@@ -368,5 +376,70 @@ describe('Castform’s Forecast (docs/62 §3)', () => {
     const foe = start('rain', { dex: 351, level: 20 }).state.enemy
     expect(foe.dex).toBe(10014)
     expect(foe.baseDex).toBe(351)
+  })
+})
+
+describe('Z-Crystals: one trial per type (docs/62 §6)', () => {
+  const alola = live.areas.filter((a) => a.regionId === 'alola')
+  /** Every crystal's battle, by type. */
+  const sources = () => {
+    const out = new Map<string, string>()
+    for (const a of alola) for (const id of a.gyms) {
+      const c = crystalOf(live, id)
+      if (c) out.set(c, id)
+    }
+    return out
+  }
+
+  it('eighteen battles give eighteen crystals, one per type', () => {
+    const by = sources()
+    expect([...by.keys()].sort()).toEqual([...POKE_TYPES].sort())
+  })
+
+  it('a save holds the crystals of the battles it has won in Alola; Z-Moves open with the first', () => {
+    const s = save()
+    const ilima = '4f91ae65-c2ed-5625-8493-cc888560e844'
+    const lana = '2d323fd2-b283-56cf-99fb-d525a90ba2ec'
+    const route2 = area('Route 2 & the Verdant Cavern').id
+    const brooklet = area('Brooklet Hill').id
+    const won = (ids: [string, string][]): SaveData => ({
+      ...s,
+      areaProgress: Object.fromEntries(ids.map(([a, id]) => [a, { ...emptyProgress(), gymsDefeated: [id] }])),
+    })
+    // Not in Alola: parked there.
+    const parked = (x: SaveData): SaveData => ({ ...x, parked: { alola: { ...(x as unknown as RegionSave), areaProgress: x.areaProgress } } })
+    expect(zCrystalsOf(parked(won([])), live)).toEqual([])
+    expect(zCrystalsOf(parked(won([[route2, ilima]])), live)).toEqual(['normal'])
+    expect(zCrystalsOf(parked(won([[route2, ilima], [brooklet, lana]])), live)).toEqual(['normal', 'water'])
+    // With the trials off, none: Z-Moves follow Lana's badge, every type.
+    expect(zCrystalsOn(data)).toBe(false)
+  })
+
+  it('a Z-Move only for a Pokémon of a type whose crystal is held; a two-type one takes that type', () => {
+    const fight = (zTypes: PokeType[] | undefined, dex: number) => {
+      const { state } = createBattle(
+        {
+          kind: 'wild',
+          team: [{ uid: 'a', dex, level: 30, hp: 999 }],
+          enemy: { dex: 19, level: 3 },
+          playerLevels: uniformLevels(1),
+          enemyLevels: uniformLevels(1),
+          zAllowed: true,
+          ...(zTypes && { zTypes }),
+        },
+        live,
+      )
+      return { ...state, phase: 'player_reroll' as const, actor: 'player' as const, dice: [die('base', 3)], selected: [false] }
+    }
+    // Squirtle (Water): with the Normalium Z only, no Z-Move; with the Waterium Z, one.
+    expect(canZMove(fight(['normal'], 7), live)).toBe(false)
+    expect(canZMove(fight(['water'], 7), live)).toBe(true)
+    expect(canZMove(fight(undefined, 7), live)).toBe(true)
+    // Bulbasaur (Grass/Poison) with the Poisonium Z alone: no choice, its Z-Move is Poison.
+    const s = fight(['poison'], 1)
+    expect(zTypeChoices(s, live)).toEqual([])
+    const out = reduce(s, { t: 'ZMOVE' }, live, createRng(3))
+    const z = out.log.find((e) => e.kind === 'zmove')
+    expect(z && z.kind === 'zmove' && z.type).toBe('poison')
   })
 })

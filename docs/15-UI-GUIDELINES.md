@@ -2114,3 +2114,6 @@ one in the game and keeps its picture in `docs/62-region-flavours/`.
   return are messages of their own ("Gumshoos called for help! Yungoos appeared!", "Klawf ate a Herba Mystica… It's
   back, and huge!"); a trial's allies flee when the Totem falls.
 - **A Titan alone is one on one**: its card asks for one Pokémon, not two; Dondozo with Tatsugiri asks for two.
+- **A trial says its Z-Crystal** under the Totem (its type's badge and "Its Z-Crystal: Fire-type Z-Moves"), and the
+  result card says it was won ("You got the Fire Z-Crystal!"). With Z-Crystals, the Z-MOVE button only shows for a
+  Pokémon of a type whose crystal is held; the Z-Moves' rules open with "One Z-Crystal per type".
