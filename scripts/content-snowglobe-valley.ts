@@ -748,7 +748,8 @@ export const AREAS: AreaSpec[] = [
           [461, 59],
           [460, 60],
         ],
-        items: ['hyper-potion'],
+        // His Abomasnow Mega Evolves with its gem (the user's review: enemyPlanFor reads a gem among a trainer's items).
+        items: ['hyper-potion', 'abomasite'],
       },
     ],
   },

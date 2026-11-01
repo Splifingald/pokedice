@@ -671,6 +671,8 @@ function startBattle(
             regionId: area ? regionOfArea(area) : regionOf(save),
             role: enc.kind === 'gym' ? enc.role : (data.trainers[enc.trainerId]?.role ?? 'trainer'),
             ace: index === levels.lastIndexOf(Math.max(...levels)),
+            // A gem among its items makes its ace Mega Evolve (enemyPlanFor).
+            items: data.trainers[enc.trainerId]?.items ?? null,
           }
         })()
       : null

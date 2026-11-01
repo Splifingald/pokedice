@@ -322,11 +322,19 @@ export function enemyPlanFor(
   save: SaveData,
   data: GameData,
   foe: { dex: number; level: number },
-  trainer: { regionId: RegionId; role: TrainerRole; ace: boolean } | null,
+  trainer: { regionId: RegionId; role: TrainerRole; ace: boolean; items?: readonly string[] | null } | null,
 ): EnemyPlan | null {
   const plan: EnemyPlan = {}
   if (choiceFormsOf(data, foe.dex).length) plan.formChanges = true
   const cfg = data.config
+  // A trainer holding the ace's own Mega Gem in its items (Snowglobe Valley's Champion and his Abomasite, docs/61):
+  // the ace Mega Evolves whatever the region, the player's unlocks or a small world. The gem is the content's choice.
+  const held = trainer?.ace ? megaFormsOfGems(data, trainer.items ?? []) : []
+  const gemMega = megaFormsOf(data, foe.dex).find((f) => held.includes(f.dex))
+  if (gemMega) {
+    plan.mega = gemMega.dex
+    return plan
+  }
   if (trainer?.ace && cfg.megaEvolution.trainerRoles.includes(trainer.role)) {
     const gmax = gmaxFormsOf(data, foe.dex)[0]
     const mega = megaOptions(data, foe.dex, foe.level)[0]

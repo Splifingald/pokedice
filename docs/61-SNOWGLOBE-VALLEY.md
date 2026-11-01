@@ -65,7 +65,7 @@ shares with Haunted Hollow (its output unchanged, byte for byte). Names in the t
 | 8 | Ember Springs | volcano | 37–44 | 4 · 4 | 4 | Sealeo (bathing) | Peat Block |
 | 9 | Blizzard Pass | mountain | 42–50 | 4 · 4 | 4 | Glalie, Beartic, Vanillish, Crabominable, Mamoswine, Froslass | — |
 | 10 | Aurora Summit | a54 | 48–56 | 4 · 4 | 4 | Weavile, Walrein, Avalugg, Frosmoth, Jynx, Vanilluxe, Alolan Sandslash and Ninetales (rare) | — |
-| 11 | Frost League | league | 52–60 | five fights | 7 | Elite Four Fjord (Water), Gunnar (Steel), Drasna (Dragon), Holly (Ice: Walrein, Glalie, Alolan Ninetales; no Ghost), Champion Nicholas (his ace Abomasnow, Lv.60) | — |
+| 11 | Frost League | league | 52–60 | five fights | 7 | Elite Four Fjord (Water), Gunnar (Steel), Drasna (Dragon), Holly (Ice: Walrein, Glalie, Alolan Ninetales; no Ghost), Champion Nicholas (his ace Abomasnow, Lv.60, Mega Evolves with the Abomasite he holds) | — |
 
 The script holds every pool and trainer; the artifact shows them with their sprites.
 
@@ -222,7 +222,7 @@ The user's notes, left in the artifact's feedback boxes, each answered there:
 |---|---|
 | Starters too different, Spheal most | Rowlet, Popplio, Mareep: plain three-stage lines, evolving at about the same levels, none strong against Ice (a test); replaced by the third review |
 | Ember Springs: no Houndoom line | Gone from the world (a test); Magcargo and Absol take its places |
-| Frost League: the Champion's Abomasnow with a Mega Gem | Abomasnow is his ace (last, Lv.60); the gem needs engine work (trainer megas are off in worlds): on the build list |
+| Frost League: the Champion's Abomasnow with a Mega Gem | Abomasnow is his ace (last, Lv.60) and he holds an Abomasite: a gem among a trainer's items makes its ace Mega Evolve whatever the region or a small world (`enemyPlanFor`, `tests/engine/trainer-mega-gem.test.ts`). Built |
 | A special card in every normal area | The Gift card (§4.0) |
 | Moonlit Glade: a prototype; a boss intro; its Pokémon elsewhere | A playable prototype on the artifact; the intro; Stantler, Buneary, Lycanroc on the road |
 | Evergreen Hill: not the Lost Presents | Three Gift cards and Delibird's bursting present (§4.2); Delibird and Comfey on the road |
