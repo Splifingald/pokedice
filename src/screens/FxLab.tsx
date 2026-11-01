@@ -37,6 +37,7 @@ import { artUrl } from '@/fx/areaArt'
 import { evolveTimeline, hatchTimeline } from '@/fx/timelines/moments'
 import { tradeTimeline } from '@/fx/timelines/trade'
 import { giftTimeline } from '@/fx/timelines/gift'
+import { presentTimeline } from '@/fx/timelines/present'
 import { labColors, starterTimeline } from '@/fx/timelines/starter'
 
 interface Preset {
@@ -322,6 +323,41 @@ const PRESETS: Preset[] = [
         at: { x: 120, y: 108 },
         ground: 126,
       }),
+  },
+  // The Gift card (docs/61 §4.0, §4.2): the present at the stage's centre, no background of its own (the area's picture
+  // shows through in the game).
+  {
+    name: 'Gift card: the present lands (level 1)',
+    sprites: [],
+    make: (o) => presentTimeline({ mode: 'appear', level: 1, short: o.short }),
+  },
+  {
+    name: 'Gift card: MAKE IT BIGGER, it holds (3 → 4)',
+    sprites: [],
+    make: (o) => presentTimeline({ mode: 'grow', level: 3, to: 4, short: o.short }),
+  },
+  {
+    name: 'Gift card: it breaks, a wild Snorunt jumps out',
+    sprites: [[361, false]],
+    make: (o) => presentTimeline({ mode: 'break', level: 4, mon: foe(361), short: o.short }),
+  },
+  {
+    name: 'Gift card: OPEN (level 5, three Rare Candies)',
+    sprites: [],
+    item: CANDY,
+    make: (o) =>
+      presentTimeline({ mode: 'open', level: 5, contents: [{ kind: 'item', key: `item|${CANDY}` }], short: o.short }),
+  },
+  {
+    name: "Delibird's present grows (silver, 4 → 5)",
+    sprites: [],
+    make: (o) => presentTimeline({ mode: 'grow', level: 4, to: 5, look: 'silver', short: o.short }),
+  },
+  {
+    name: "Delibird's present bursts: shiny Delibird",
+    sprites: [[225, false, true]],
+    make: (o) =>
+      presentTimeline({ mode: 'burst', level: 5, look: 'silver', mon: spriteKey(225, false, true), shiny: true, short: o.short }),
   },
   ...ATTACKS.map(([name, atk, def, type, status]) => attack(name, atk, def, type, status)),
   legend(150, 'Mewtwo', 'psychic'),

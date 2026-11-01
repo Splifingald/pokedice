@@ -95,9 +95,9 @@ const CONFETTI = ['#e2364a', '#ffbe2e', '#5b8def', '#34c97a', '#ff6f9c', '#fffff
 /** The present's size at a level: a body and a lid a little wider, both growing in whole pixels. */
 export function presentSize(level: number): { bw: number; bh: number; lw: number; lh: number; bow: number } {
   const l = Math.max(1, Math.min(7, Math.round(level)))
-  const bw = 20 + 6 * (l - 1)
-  const bh = 14 + 4 * (l - 1)
-  return { bw, bh, lw: bw + 4, lh: 5 + (l >> 1), bow: 5 + l }
+  const bw = 26 + 8 * (l - 1)
+  const bh = 18 + 5 * (l - 1)
+  return { bw, bh, lw: bw + 4, lh: 6 + (l >> 1), bow: 6 + l }
 }
 
 /** The whole present at a level (body, lid, ribbon, bow), `tears` rips in its paper (0–3): drawn once per look. */
@@ -473,7 +473,8 @@ export function presentTimeline(p: PresentParams): Timeline<PresentState> {
           sx = 1 + 0.12 * q
           sy = 1 - 0.14 * q
         }
-        if (boss) drawGlow(g, level, t)
+        // A boss's glow lights up once it has landed.
+        if (boss && fall >= 1) drawGlow(g, level, t)
         drawShadow(g, level, fall)
         drawPresent(g, look, level, { sx, sy, dy: drop + (t >= dur ? rest : 0) })
         s.fx.draw(g)

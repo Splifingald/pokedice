@@ -1094,8 +1094,8 @@ Two rules for every feature that adds something players can do (an event, a mode
   is announced on Home as a notice card with a button to its page, never a modal over Home. A feature **with no page**
   of its own (day and night, the battle powers, a small world's opening, Extreme mode, the push question) keeps its
   rules pop-up (`RulesModal`, Later / Let's go!), taking its turn in the one-time pop-ups' queue, below; so do the
-  rules shown at their own moment (the portal's and the nightmare's way in, Trick or Treat's first ghost, the gifts',
-  the looks'). The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
+  rules shown at their own moment (the portal's and the nightmare's way in, Trick or Treat's first ghost, the Gift
+  card's first present (§45), the gifts', the looks'). The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
   the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is a tap on the Pokémon sheet's talent box, as it has no page), real-player battles (§39: its rules pop-up after the first card's intro, as Trick or Treat's at the first ghost; INFO on the card), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event), the gift calendar (§40: its page's rules card, once; INFO in its dock), outfits (§41, docs/59: no page, so its rules pop-up once the first Pokémon in an outfit arrives; its INFO is a tap on the outfit's chip on the Pokémon sheet), friendship (§42: its rules card on the Friends page or the market, whichever opens first, once; INFO on its card and at the market's foot; **no Home notice**, the user's call of 2026-11-01: players meet it on the Friends page), welcome-back gifts (§23, docs/58: **no rules and no INFO**, the user's explicit exception of 2026-11-01: a developer's message that says only how long the player was away) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **The one-time pop-ups take turns, in one queue** (`nextOneTimePopup`, src/engine/popups.ts; docs/38 U2a): one at a
@@ -2057,3 +2057,60 @@ docs/60. Its switch is `friendship.access` (§20); the server keeps the streaks,
 - **The Friend Ball** (docs/60 §1b): its description ends with the boost now ("current: ×2", `useItemDescription`
   fills it wherever an item's description shows). On the catch panel its button wears a gold corner tag (the unknown
   talent's gem and ×n) while the boost can still find this Pokémon's talent, and it is never "not needed" then.
+
+## 45. The Gift card
+
+An encounter card (docs/61 §4.0), in place of an area's item card while its switch is on: a present appears at level 1;
+**OPEN** gives that level's reward, **MAKE IT BIGGER** grows it a level but may break it, and a broken gift is a wild
+Pokémon of the area. Evergreen Hill's Delibird comes out of a present of its own (§4.2). The engine
+(`engine/giftCard.ts`) decides every number and outcome; the pieces are in `src/components/GiftCard.tsx`, the screen in
+`src/screens/area/GiftView.tsx` (`GiftScreen`, `GiftRecap`), the animations in `src/fx/timelines/present.ts`; every
+state on `/kitchen-sink` (`GiftCardBits`), every take on `/kitchen-sink/fx`.
+
+- **The switch and the rules** follow §20: `giftCard.access`, Off by default and read by the server too
+  (`gift_card_open()`, migration 0121). Off, the item card is dealt as before (no gift tile on the round gauge, no
+  "Gifts" in the area's round mix) and a gift left in a deck is set aside. The rules pop-up opens over the screen the
+  first time a present appears (Later / Let's go! both carry on), INFO sits at the foot of the panel; four rows with the
+  config's numbers: OPEN, MAKE IT BIGGER (the break chances in order and the top level), a broken gift, and the
+  helper (Delibird's sprite, "every tap 20% safer, and level 6 on top"). A boss's present has neither: it is a moment,
+  not a choice.
+- **The card** has no preview of its own: the present comes out at once (no step that is only a button), a gift tile
+  on the round gauge. While the server is asked, the preview card shows a present and LET'S SEE!, which presses itself.
+- **The screen is the battle's** (§14), as Trick or Treat's (§28): full screen (`useHoldFullscreen`), the battle's
+  column, the stage on top (the area's picture as the battle cuts it, a winter night where there's none), and it fits a
+  360×640 phone with nothing to scroll (`e2e/gift-card.spec.ts`).
+  - **The stage**: the present at its centre, drawn in pixels at each level's own size (a body and a lid that grow by
+    whole pixels, its bow too), breathing a pixel at rest; the plate top left as a foe's (`GiftPlate`: the gift icon,
+    "Gift", "Lv.3/5", and "Delibird helps" with its sprite when the player owns one). A boss's present is silver with a
+    gold bow, glowing in dithered steps, sparkling now and then; its plate says "Shining present", "Lv.3" (no top).
+  - **The panel**, top to bottom: the message box (`pixel-dialogue`, a polite live region); the level row ("Lv.3/5" and
+    `GiftGauge`, a step per level, each a little taller, numbered, the reached ones gold, the current one ringed; a
+    meter for screen readers); "Next, Lv.4:" and its reward (`RewardLine`, each thing's picture and "Revive ×1"); then
+    **OPEN** (white) beside **MAKE IT BIGGER** (red, the one main action) in the battle's `1fr / 1.4fr` grid. Under OPEN
+    what it gives now; under MAKE IT BIGGER the next tap's break chance from the engine, in red with a skull ("40% to
+    break"), green "Safe: it can't break" at 0 %, and at the top the button is disabled and says "As big as it gets!".
+    Each button's accessible name carries its line ("OPEN: Poké Ball ×2"). A boss's present has only MAKE IT BIGGER,
+    full width, "What could be inside?" under it (the players don't know it will burst). Broken or burst, the two give
+    way to one red **FIGHT!**, into the battle with what came out (as a wild card's or the boss's own).
+  - **The result card** (opened) rises over the panel as a battle's (`Overlay`): "Gift opened!", each thing big with its
+    name and count (`RewardList`; ₽ as coins), the round gauge and **CONTINUE** (back on the trail). An area with no wild
+    Pokémon left would break into nothing: a short card says so (`GiftEmpty`).
+- **Motion** (§8), on the battle's stage with the game's pixel FX, never CSS tweens; one canvas, every take holding its
+  last frame (`hold`). **It lands**: it drops in, a squash and a puff of snow. **It holds** (`grow`): a crouch, two
+  wobbles, two white silhouette frames, then it swells to the next size in three pixel steps (a little over, then
+  back), a gold ring and twinkles, a soft warm flash unless calm; the gauge and the message change on the `grown` beat.
+  **It breaks**: it strains, shaking harder each beat, rips appear in its paper (paper bits fly at each), four white
+  frames of hit-stop, then it bursts in paper scraps, ribbon and a dithered puff, a flash and a shake, and the wild
+  Pokémon pops out with two white frames as it lands (`broke`, then `out`: its cry). **Delibird's** is the same,
+  longer and bigger, silver and gold with confetti, and a shiny's two rings of stars. **OPEN**: the bow springs loose,
+  light leaks under the lid, the lid flies off in a burst of light and confetti, and each thing rises out (an item's
+  picture, ₽ as coins) with a burst of stars (`opened`). The buttons wait while a take plays. `short`: no wobbles, a
+  short strain. `off`: the stage jumps to the end, every cue fired, every message kept. `calm`: no breathing, no flash,
+  no shake.
+- **Sound** (§9): `present.land`, `present.wobble`, `present.grow` (a chime, a step higher per level),
+  `present.strain`, `present.rip`, `present.break` (Delibird's `present.burst`), `present.untie`, `present.open` and
+  `present.item` on the takes' cues, and the Pokémon's cry as it comes out.
+- **Admin**: Events → Gift card (`GiftCardTab`: the switch, each level's break chance with the odds of reaching each
+  level by always tapping with and without the helper, the helper and its bonus, each level's reward options, the
+  balls from worst to best, a boss's taps). Areas → Encounter deck has the Gift card's copies ("in place of the item
+  cards, only while its switch is on"), and a boss's "Out of a present" box.

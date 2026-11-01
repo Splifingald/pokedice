@@ -6,8 +6,8 @@ https://claude.ai/artifact/KCHnkbKDiL5VKTrcJz8JcN.
 
 Branch `claude/eloquent-galileo-b5uahz` (from `version/2_9`), a PR into `version/2_9`.
 
-**Status:** the content is built (§2–§3, migration 0120, not to run before the user's review). The Gift card and the
-five secret-area gameplays (§4) are designed; the user's first review (2026-11-01, notes left on the artifact's
+**Status:** the content is built (§2–§3, migration 0120, not to run before the user's review). The Gift card and
+Evergreen Hill's gameplay are built (§4.0, §4.2, migration 0121, Off); the other secret-area gameplays (§4) are designed; the user's first review (2026-11-01, notes left on the artifact's
 feedback boxes) is folded in (§6), the Hall of Origin not yet reviewed. Until each is built and switched on, its area
 plays as a plain secret area (a short deck, then its boss or raid), which is how the content plays today.
 
@@ -123,16 +123,61 @@ step, its admin box, **its own Off / On for admin / On for everyone switch, Off 
 its `RulesCard` and INFO (docs/15 §20), kitchen-sink states, tests and an e2e spec. Off: the area plays as a plain
 secret area. Every number below is the admin's.
 
-### 4.0 The Gift card (every main area; the user's design)
+### 4.0 The Gift card (every main area; the user's design) — built
+
+**Built** (2026-11-01, Trick or Treat's architecture, docs/29). It ships **Off** (Admin → Events → Gift card); docs/15
+§45 is its UI.
 
 - In the ten main areas **the item card becomes a Gift**. Open it for its level's reward, or tap it to make it bigger:
   the next tap breaks it at **20 / 40 / 60 / 80%** from levels 1–4; level 5 is the top. **Owning a Delibird** (team or
   Box) lowers each by 20% (level 1 is safe) and adds a **level 6**.
 - **A broken gift is a wild encounter** of the area's pool, fought and caught as usual.
-- Rewards (proposed, scaled to the area: its own balls, ₽ by its level): 1. 2 balls · 2. 3 better balls or 2 Super
-  Potions · 3. 2 Hyper Potions or ₽ · 4. a Revive or an evolution item · 5. 2 Rare Candies · 6. 3 Rare Candies and a
-  Revive. A player who always taps reaches level 5 3.8% of the time (19.2% with a Delibird), level 6 3.8%.
-- Its own switch (Off / On for admin / On for everyone), Off by default; Off, the item card stays.
+- Rewards (balanced; scaled to the area): 1. **2 of the area's balls** (the best ball its loot pool holds, a Poké Ball
+  when none) · 2. **3 of the ball above it** or **2 Super Potions** · 3. **2 Hyper Potions** or **₽ (the area's top
+  level × 15)** · 4. **a Revive** or **an evolution item the world's Mart sells** · 5. **3 Rare Candies** (the user's
+  call, up from the proposed 2) · 6. **3 Rare Candies and a Revive**. Where a level has two, one is drawn as the gift
+  appears and the player sees it before choosing (OPEN shows what it gives now, a line shows the next level's). A
+  player who always taps reaches level 5 3.8% of the time (19.2% with a Delibird), level 6 3.8%. Every number is the
+  admin's.
+- Its own switch (Off / On for admin / On for everyone), Off by default and checked by the server; Off, the item card
+  stays.
+
+**How a deck says it deals gifts**, for any area: its encounter weight **`gift`** (Admin → Areas → Encounter deck:
+Gift card). While the switch is on for the player and the area has wild Pokémon, its `gift` copies are dealt **in place
+of its item cards** (`deckCounts`: item 0); off, the item cards as before, and a gift left in a deck dealt while on is
+set aside like any card the area can't produce. Each main area of this world has `gift: 1`, so its deck stays 10 cards
+either way.
+
+**What was built** (files):
+
+- **Engine** `src/engine/giftCard.ts`: the switch (`giftOn`, `giftDealable`), the odds (`giftBreakChance`, `giftTop`,
+  `giftReachOdds`), Delibird (`hasGiftHelper`: dex 225 in the save's team or Box), the rewards as they land in the area
+  (`giftBalls`, `giftEvolutionItems`, `giftPart`, `drawGiftRewards`), one gift (`startGift`, `growGift`, `openGift`,
+  `applyGiftOpen`, which puts the reward in the bag as a find would), a boss's present (`startBossPresent`,
+  `bossInPresent`), the rules (`giftCardRulesDue`). `src/engine/encounters.ts`: the encounter `{ kind: 'gift' }`,
+  `rollGift`, `rollGiftWild` (a broken gift's wild Pokémon: the area's own pool, its levels, shiny odds and talents, never
+  a roaming legendary), the `gift` deck card in place of the item cards, the random mode's weights. Types and defaults:
+  `GiftCardConfig`, `GiftRewardPart`, `GiftCardSave`, `ENCOUNTER_KINDS` + `gift`, `encounterWeights.gift`,
+  `BossDef.present`, `DEFAULT_CONFIG.giftCard`. Extreme's race turns it off; the campaign simulator walks past it.
+- **Store** (`src/store/run.ts`): the phase `gift`, `run.gift` (`GiftRun`: the present, the last tap, what OPEN gave,
+  what came out); `growPresent`, `openPresent`, `fightFromPresent`, `leavePresent`; a gift card goes straight to its
+  screen, a broken one into the wild battle, a resumed reload comes back to it (`store/resume.ts`).
+  `src/store/giftCard.ts`: the server's check, as Trick or Treat's.
+- **Screens**: `src/screens/area/GiftView.tsx` (laid out as the battle, `GiftScreen`, `GiftRecap`), the pieces in
+  `src/components/GiftCard.tsx` (the stage, plate, level gauge, reward lines, Delibird's chip, preview card, rules),
+  the round gauge's gift tile and the area's round mix (only while dealt), the encounter preview while the server is
+  asked. Animations `src/fx/timelines/present.ts` (it lands, grows, breaks or bursts, opens); sounds `present.*` in
+  `src/audio/sfx.ts`; strings `ui.giftCard.*`, `ui.card.gift`, `ui.home.kind.gift`, `ui.enc.titleGift` in the ten
+  languages. Every state on `/kitchen-sink` (`GiftCardBits`), every take on `/kitchen-sink/fx`.
+- **Admin**: Events → Gift card (`src/admin/sections/events/GiftCardTab.tsx`; `GIFT_SCHEMA` in `src/admin/schemas.ts`),
+  Areas → Encounter deck's Gift card and a boss's "Out of a present", Dev tools' forced next card.
+- **Server**: migration **0121** (`supabase/migrations/0121_gift_card.sql`): the `giftCard` row (Off) and
+  `gift_card_open()`, inlined in `supabase/seed.sql`.
+- **Content**: `scripts/content-snowglobe-valley.ts` gives the ten main areas `gift: 1` (0120 regenerated).
+- **Tests**: `tests/engine/gift-card.test.ts` (odds, a Monte Carlo of the engine's taps, Delibird, levels, rewards, a
+  broken gift's wild Pokémon, the card only while on, a boss's present, the rules), `tests/gift-card-sql.test.ts`
+  (PGlite: the row, the server's switch, a second run, seed.sql), `tests/content/snowglobe-valley.test.ts` (the decks
+  on and off), `e2e/gift-card.spec.ts`.
 
 ### 4.1 Moonlit Glade: Tracks in the Snow (hide and seek, three rounds)
 
@@ -149,13 +194,25 @@ secret area. Every number below is the admin's.
 - The artifact's prototype plays all three rounds, with the taps (both sizes) and the prints (every bush, or only the
   empty ones) to tune.
 
-### 4.2 Evergreen Hill: Christmas Eve on the hill
+### 4.2 Evergreen Hill: Christmas Eve on the hill — built
 
 - (The Lost Presents were dropped by the review.) A simple deck: 2 wild, 2 trainers, a Pokémon Center and **3 Gift
-  cards** (§4.0, Delibird's help included).
+  cards** (§4.0, Delibird's help included), no item card: its content says `{ wild: 2, trainer: 2, gift: 3 }` (and the
+  item card and Center every deck gets), so while the Gift card is on its gifts take the item card's place (8 cards),
+  and off it plays as a plain secret area (6 cards, its item card).
 - **Delibird's intro** reuses the Gift: after the deck, a different present (silver paper, gold bow, glowing); only
   MAKE IT BIGGER is offered; it grows, shakes and bursts on the last tap: shiny Delibird, Lv.40. Players don't know it
   will break.
+
+**Built** (2026-11-01) on the Gift card's own switch: the boss is marked **`present: true`** (`BossDef.present`, Admin →
+Areas → the boss's "Out of a present"; usable by any area's boss). Its challenge (FACE IT, where the boss normally
+comes) opens the present screen (`startBossPresent`: a silver present at level 1, no OPEN, no odds, no INFO, "What could
+be inside?"); each MAKE IT BIGGER grows it a level, the 5th tap (`giftCard.bossTaps`) bursts it: it strains, rips and
+bursts in silver and gold, shiny Delibird pops out with its cry, then **FIGHT!** is the area's `legendaryBoss` fight as
+usual (Lv.40, caught as any boss). A returning Delibird (it fled the catch) is a plain card of the deck. Off, the boss
+comes as it always did. The present plays again on each new challenge (after a wipe). Files: as §4.0's
+(`src/fx/timelines/present.ts`'s `burst`, `GiftView`'s boss state, `challenge()` and `beginBossPresent` in
+`src/store/run.ts`), and `tests/content/snowglobe-valley.test.ts` checks the deck and the boss.
 
 ### 4.3 Crown Shrine: Whiteout (weather survival)
 
@@ -210,6 +267,13 @@ stairway of light, then the Judgment (Hall of Origin). Once its boss is caught a
    adds the world to `smallWorlds` (the switch and the other worlds kept) and bumps `configVersion`.
    `supabase/seed.sql` does not carry it (content migrations aren't inlined there, as Haunted Hollow's).
 2. Or, over an admin export: `pnpm snowglobe-valley <in.json> <out.json>`, then `pnpm import-bundle`.
+
+3. **The Gift card** (§4.0, §4.2): run
+   [`supabase/migrations/0121_gift_card.sql`](https://github.com/Splifingald/pokedice/blob/claude/eloquent-galileo-b5uahz/supabase/migrations/0121_gift_card.sql)
+   in the Supabase SQL editor (after 0120: the decks' `gift` copies and Delibird's `present` are in 0120's content). It
+   adds the `giftCard` row (Off, an admin's own row kept), `gift_card_open()` (the switch as the server reads it) and
+   bumps `configVersion`. Safe to run again. `supabase/seed.sql` carries it too (inlined). Then Admin → Events → Gift
+   card: **On for admin** to try it, then **On for everyone**.
 
 Later changes, once 0120 has run on live, come as patches of their own (as Haunted Hollow's 0055 onwards), never by
 regenerating 0120.

@@ -1438,26 +1438,25 @@ async function beginGift(enc: Extract<NonNullable<RunState['encounter']>, { kind
 }
 
 /**
- * CHALLENGE on a boss that comes out of a present: the present once the server agrees, else the plain fight (the boss
- * as it always came). Nothing is spent until the fight starts.
+ * CHALLENGE on a boss that comes out of a present: the present at once (the page follows the phase), then the server's
+ * word; said no (or not reachable), the plain fight instead, the boss as it always came. The present changes only how
+ * the boss comes out, so nothing waits on the answer.
  */
 async function beginBossPresent(enc: Extract<Encounter, { kind: 'boss' }>) {
-  if (giftAsking) return
-  giftAsking = true
-  const ok = await giftAllowed().finally(() => (giftAsking = false))
-  const { run, data } = useGame.getState()
-  if (run.phase !== 'idle') return
-  if (!ok) {
-    setRun({ phase: 'preview', encounter: enc, firstInArea: false, skipsUsed: 0 })
-    return beginFight()
-  }
+  const { data } = useGame.getState()
+  const id = ++giftSeq
   setRun({
     phase: 'gift',
     encounter: enc,
     firstInArea: false,
     skipsUsed: 0,
-    gift: { id: ++giftSeq, state: startBossPresent(giftCfg(data), enc), last: null, got: null, out: enc },
+    gift: { id, state: startBossPresent(giftCfg(data), enc), last: null, got: null, out: enc },
   })
+  if (await giftAllowed()) return
+  const { run } = useGame.getState()
+  if (run.phase !== 'gift' || run.gift?.id !== id) return
+  setRun({ phase: 'preview', encounter: enc, gift: null })
+  beginFight()
 }
 
 /**

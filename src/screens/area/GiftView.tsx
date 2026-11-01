@@ -180,11 +180,9 @@ export function GiftScreen(p: GiftScreenProps) {
                   className="w-full whitespace-nowrap px-2"
                   disabled={off || atTop}
                   onClick={p.onGrow}
-                  aria-label={
-                    atTop
-                      ? t('ui.giftCard.topNote')
-                      : `${t('ui.giftCard.bigger')}: ${t('ui.giftCard.breakOdds', { pct: p.chance ?? 0 })}`
-                  }
+                  aria-label={`${t('ui.giftCard.bigger')}: ${
+                    atTop ? t('ui.giftCard.topNote') : t('ui.giftCard.breakOdds', { pct: p.chance ?? 0 })
+                  }`}
                 >
                   {t('ui.giftCard.bigger')}
                 </PixelButton>
@@ -460,7 +458,7 @@ export const giftChanceFor = (data: GameData, st: Pick<GiftState, 'helper'>, lev
   giftBreakChance(giftCfg(data), level, st.helper)
 
 /** A broken gift with nothing in it (an area with no wild Pokémon): a short card, back on the trail. */
-function GiftEmpty({ onContinue }: { onContinue: () => void }) {
+export function GiftEmpty({ onContinue }: { onContinue: () => void }) {
   const { t } = useT()
   return (
     <Overlay
