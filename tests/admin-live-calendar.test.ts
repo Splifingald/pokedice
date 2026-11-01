@@ -1,16 +1,17 @@
 // Admin → Live events → Calendar: each run as a bar over the UTC days it's on, Monday first, overlapping ones in lanes,
-// a recurring event's every time it comes back.
+// a recurring event's every time it comes back, small worlds among them.
 import { describe, expect, it } from 'vitest'
-import { monthWeeks, shiftMonth } from '@/admin/liveCalendar'
-import { newLiveEvent, type LiveEvent } from '@/engine'
+import { monthWeeks, shiftMonth, type CalBar } from '@/admin/liveCalendar'
+import { newLiveEvent, newSmallWorld, type LiveEvent, type SmallWorld } from '@/engine'
 
 const ev = (id: string, start: string, end: string, p: Partial<LiveEvent> = {}): LiveEvent => ({
   ...newLiveEvent(id, start, end),
   ...p,
 })
-const barsOf = (month: string, list: LiveEvent[]) =>
-  monthWeeks(month, list).flatMap((w) =>
-    w.bars.map((b) => ({ week: w.days[0], id: b.run.id, rule: b.rule.id, col: b.col, span: b.span, lane: b.lane, s: b.startsHere, e: b.endsHere })),
+const ruleOf = (b: CalBar) => (b.entry.kind === 'live' ? b.entry.rule.id : `world:${b.entry.world.id}`)
+const barsOf = (month: string, list: LiveEvent[], worlds: SmallWorld[] = []) =>
+  monthWeeks(month, list, worlds).flatMap((w) =>
+    w.bars.map((b) => ({ week: w.days[0], id: b.id, rule: ruleOf(b), col: b.col, span: b.span, lane: b.lane, s: b.startsHere, e: b.endsHere })),
   )
 
 describe('live events calendar', () => {
@@ -38,7 +39,7 @@ describe('live events calendar', () => {
     const short = ev('short', '2026-11-16T12:00:00.000Z', '2026-11-17T12:00:00.000Z')
     const later = ev('later', '2026-11-19T00:00:00.000Z', '2026-11-20T00:00:00.000Z')
     const week = monthWeeks('2026-11', [short, later, long]).find((w) => w.days[0] === '2026-11-16')!
-    expect(week.bars.map((b) => [b.run.id, b.lane])).toEqual([
+    expect(week.bars.map((b) => [b.id, b.lane])).toEqual([
       ['long', 0],
       ['short', 1],
       ['later', 1],
@@ -53,6 +54,17 @@ describe('live events calendar', () => {
       { week: '2026-11-02', id: 'sat@2026-11-07', rule: 'sat', col: 5, span: 2, lane: 0, s: true, e: true },
       { week: '2026-11-16', id: 'sat@2026-11-21', rule: 'sat', col: 5, span: 2, lane: 0, s: true, e: true },
       { week: '2026-11-30', id: 'sat@2026-12-05', rule: 'sat', col: 5, span: 2, lane: 0, s: true, e: true },
+    ])
+  })
+
+  it('lays a small world out with the live events, sharing their lanes', () => {
+    const world = newSmallWorld('w', 'w-region', '2026-11-04T12:00:00.000Z', '2026-11-14T12:00:00.000Z')
+    const cash = ev('cash', '2026-11-05T00:00:00.000Z', '2026-11-06T00:00:00.000Z')
+    const over = newSmallWorld('old', 'w-region', '2026-09-01T00:00:00.000Z', '2026-09-10T00:00:00.000Z')
+    expect(barsOf('2026-11', [cash], [world, over])).toEqual([
+      { week: '2026-11-02', id: 'w', rule: 'world:w', col: 2, span: 5, lane: 0, s: true, e: false },
+      { week: '2026-11-02', id: 'cash', rule: 'cash', col: 3, span: 1, lane: 1, s: true, e: true },
+      { week: '2026-11-09', id: 'w', rule: 'world:w', col: 0, span: 6, lane: 0, s: false, e: true },
     ])
   })
 

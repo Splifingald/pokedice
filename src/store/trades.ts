@@ -167,32 +167,38 @@ export async function checkTrades(force = false, now = Date.now(), every = CHECK
       }))
     next = reconcileListings(next, st.data, open, new Set(rows.map((r) => r.id)))
     for (const r of rows) {
-      if (r.role === 'owner' && r.status === 'taken' && r.takerMon) {
-        const res = applyTaken(
-          next,
-          st.data,
-          { id: r.id, listed: r.mon, given: r.takerMon, with: r.with, withRich: r.withRich },
-          now,
-          newId,
-        )
-        next = res.save
-        ids.push(r.id)
-      } else if (r.role === 'owner' && ENDED.has(r.status)) {
-        const res = applyEnded(next, st.data, r.id)
-        next = res.save
-        ids.push(r.id)
-        if (!res.already && res.back) returned.push(r.mon.dex)
-      } else if (r.role === 'taker' && r.takerMon) {
-        const res = applyTake(
-          next,
-          st.data,
-          { id: r.id, listed: r.mon, given: r.takerMon, with: r.with, withRich: r.withRich },
-          now,
-          newId,
-        )
-        next = res.save
-        ids.push(r.id)
-        if (!res.already) settled.push(r.id)
+      // One trade the game can't apply (a species it doesn't know: a forged save on the other side) stays unapplied on
+      // its own; it must never hold back every other trade, as one shared try did (docs/63).
+      try {
+        if (r.role === 'owner' && r.status === 'taken' && r.takerMon) {
+          const res = applyTaken(
+            next,
+            st.data,
+            { id: r.id, listed: r.mon, given: r.takerMon, with: r.with, withRich: r.withRich },
+            now,
+            newId,
+          )
+          next = res.save
+          ids.push(r.id)
+        } else if (r.role === 'owner' && ENDED.has(r.status)) {
+          const res = applyEnded(next, st.data, r.id)
+          next = res.save
+          ids.push(r.id)
+          if (!res.already && res.back) returned.push(r.mon.dex)
+        } else if (r.role === 'taker' && r.takerMon) {
+          const res = applyTake(
+            next,
+            st.data,
+            { id: r.id, listed: r.mon, given: r.takerMon, with: r.with, withRich: r.withRich },
+            now,
+            newId,
+          )
+          next = res.save
+          ids.push(r.id)
+          if (!res.already) settled.push(r.id)
+        }
+      } catch (err) {
+        console.warn('[trades] skipped', r.id, err instanceof Error ? err.message : err)
       }
     }
     // Trades settled by the server, not played here: a copy that misses one loses the sync anyway (missesTrades).

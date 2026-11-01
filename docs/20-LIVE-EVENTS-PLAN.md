@@ -246,6 +246,16 @@ The user's ask: *"Create a live event calendar view in admin mode."*
   new event there** (18:00 UTC, or the next round hour if that's past; three days, as New live event). While a draft is
   open the calendar waits, as the list's Edit does. It shows the working copy: an applied change shows before Save &
   Publish.
+- **Small worlds too** (the user's ask, same day: *"include small worlds inside the calendar"*): each world (docs/21)
+  is a bar among the live events' runs, sharing their lanes, in the worlds' purple, hatched while the small worlds'
+  switch is off. Its bar opens it in the Small worlds tab's editor (`?tab=worlds&edit=<id>`: the tab opens that world,
+  then drops `edit` from the address).
+- **Daily raids** (*"an option to show daily raids too (with pokemon image)"*): a checkbox over the calendar
+  (`&raids=1` in the address) puts each day's raid Pokémon in its square, its sprite (shiny when it is), from the raid
+  calendar as it stands (the plan and the days set by hand, `raidOfDay`); its name in the day's label.
+- One line under the month names what's switched off among the live events, the small worlds and (when shown) the
+  raids.
 - No switch and no rules: it's the admin's own view of the live events; players see nothing new.
-- Tests: `tests/admin-live-calendar.test.ts` (weeks, a run cut at a week, midnight ends, lanes, recurring runs),
-  `e2e/admin-events.spec.ts` (the view in the address, a bar per Saturday, a bar edits, a day starts a new event).
+- Tests: `tests/admin-live-calendar.test.ts` (weeks, a run cut at a week, midnight ends, lanes, recurring runs, a world
+  among them), `e2e/admin-events.spec.ts` (the view in the address, a bar per Saturday, a bar edits, a day starts a new
+  event; a world's bar, hatched, opening it in its tab; Daily raids with their pictures loaded).

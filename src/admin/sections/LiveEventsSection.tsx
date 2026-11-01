@@ -19,6 +19,8 @@ import {
   liveState,
   newLiveEvent,
   normaliseLiveEvent,
+  normaliseWorld,
+  raidOfDay,
   resizeCalendar,
   sellPrice,
   type GameData,
@@ -27,6 +29,8 @@ import {
   type LiveShopItem,
   type LiveType,
   type LiveWeek,
+  type RaidDay,
+  type SmallWorld,
   type RegionId,
 } from '@/engine'
 import { LANGS } from '@/i18n/langs'
@@ -36,7 +40,8 @@ import { useNow } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { PixelButton } from '@/components/PixelButton'
 import { Seg } from '@/components/Segmented'
-import { monthWeeks, shiftMonth } from '../liveCalendar'
+import { SpriteImg } from '@/components/SpriteImg'
+import { calEntries, monthWeeks, shiftMonth } from '../liveCalendar'
 import { useAdminData } from '../store'
 import { AccessSwitch, Box, Field, NumInput, PicturePicker, inputCls } from '../widgets'
 import { useConfigRow } from './ConfigSection'
@@ -131,6 +136,8 @@ const sortKey = (e: LiveEvent, now: number) => Date.parse(shownRun(e, now)?.star
 export function LiveEventsSection() {
   const data = useAdminData()
   const [raw, setRaw] = useConfigRow('liveEvents')
+  const [worldsRaw] = useConfigRow('smallWorlds')
+  const worlds = useMemo(() => (worldsRaw?.list ?? []).map((w) => normaliseWorld(w)), [worldsRaw])
   const list = useMemo(() => (raw?.list ?? []).map((e) => normaliseLiveEvent(e)), [raw])
   const now = useNow(30_000)
   const [draft, setDraft] = useState<LiveEvent | null>(null)
@@ -147,16 +154,17 @@ export function LiveEventsSection() {
   // List or calendar, in the address beside the tab (?tab=live&view=calendar), so a reload stays on it.
   const [params, setParams] = useSearchParams()
   const view: LiveView = params.get('view') === 'calendar' ? 'calendar' : 'list'
-  const setView = (v: LiveView) =>
+  const setParam = (key: string, value: string | null) =>
     setParams(
       (p) => {
         const next = new URLSearchParams(p)
-        if (v === 'calendar') next.set('view', v)
-        else next.delete('view')
+        if (value) next.set(key, value)
+        else next.delete(key)
         return next
       },
       { replace: true },
     )
+  const setView = (v: LiveView) => setParam('view', v === 'calendar' ? v : null)
   // An event opened from the calendar's foot or the list's end: its editor brought into view.
   const editorRef = useRef<HTMLDivElement>(null)
   const draftId = draft?.id
@@ -218,15 +226,21 @@ export function LiveEventsSection() {
           <div role="tabpanel" aria-labelledby="live-view-calendar">
             <LiveCalendar
               list={list}
+              worlds={worlds}
               data={data}
               now={now}
               access={access}
+              worldsAccess={worldsRaw?.access ?? 'off'}
+              raids={params.get('raids') === '1'}
+              onRaids={(on) => setParam('raids', on ? '1' : null)}
               editingId={draft?.id ?? null}
               busy={!!draft}
               onEdit={(id) => {
                 const e = list.find((x) => x.id === id)
                 if (e) setDraft(e)
               }}
+              // A world is edited in its own tab, opened on it (SmallWorldsTab reads ?edit=).
+              onEditWorld={(id) => setParams({ tab: 'worlds', edit: id }, { replace: true })}
               onNew={start}
             />
           </div>
@@ -331,42 +345,62 @@ const TYPE_BAR: Record<LiveType, string> = {
   calendar: 'bg-[#c8372a] text-white',
 }
 const CAL_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-// A gift calendar whose own switch is off runs for nobody: its bar is hatched.
+// A gift calendar or small world whose switch is off runs for nobody: its bar is hatched.
 const HATCH = 'repeating-linear-gradient(135deg, rgba(255,255,255,.35) 0 4px, transparent 4px 8px)'
 const longDay = (d: string) =>
   new Date(`${d}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
 
+/** A small world's bar: the worlds' own purple (their default theme). */
+const WORLD_BAR = 'bg-[#5b3a9e] text-white'
+const worldTitle = (w: SmallWorld, data: GameData | null) =>
+  w.title.en?.trim() || data?.regions.find((r) => r.id === w.regionId)?.name || 'Small world'
+
 /**
- * The live events month by month (UTC days, Monday first): every run as a bar over the days it's on, a recurring
- * event's each time it comes back, overlapping ones in lanes. A bar opens its event in the editor; a free day from
- * today on starts a new event that day. It shows the working copy, so an applied change shows before Save & Publish.
+ * The live events and small worlds month by month (UTC days, Monday first): every run as a bar over the days it's on,
+ * a recurring event's each time it comes back, overlapping ones in lanes; with Daily raids, each day's raid Pokémon in
+ * its square. A bar opens its event (or world) in its editor; a day from today on starts a new event that day. It
+ * shows the working copy, so an applied change shows before Save & Publish.
  */
 function LiveCalendar({
   list,
+  worlds,
   data,
   now,
   access,
+  worldsAccess,
+  raids,
+  onRaids,
   editingId,
   busy,
   onEdit,
+  onEditWorld,
   onNew,
 }: {
   list: readonly LiveEvent[]
+  worlds: readonly SmallWorld[]
   data: GameData | null
   now: number
   access: string
+  worldsAccess: string
+  raids: boolean
+  onRaids: (on: boolean) => void
   editingId: string | null
   busy: boolean
   onEdit: (id: string) => void
+  onEditWorld: (id: string) => void
   onNew: (day: number) => void
 }) {
   const today = new Date(now).toISOString().slice(0, 10)
   const [month, setMonth] = useState(() => today.slice(0, 7))
-  const weeks = useMemo(() => monthWeeks(month, list), [month, list])
+  const weeks = useMemo(() => monthWeeks(month, list, worlds), [month, list, worlds])
   const first = Date.parse(`${month}-01T00:00:00Z`)
-  const runs = list.flatMap((e) => liveRuns(e, first, Date.parse(`${shiftMonth(month, 1)}-01T00:00:00Z`))).length
+  const runs = calEntries(list, worlds, first, Date.parse(`${shiftMonth(month, 1)}-01T00:00:00Z`)).length
   const label = new Date(first).toLocaleString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' })
   const calendarOff = (data?.config.giftCalendar?.access ?? 'off') === 'off'
+  const raidsOff = (data?.config.events?.raid?.access ?? 'off') === 'off'
+  // The day's raid, from the raid calendar (plan and days set by hand), when they're shown.
+  const raidOf = (d: string) => (raids && data ? raidOfDay(data, d) : null)
+  const raidName = (r: RaidDay) => `${r.shiny ? 'shiny ' : ''}${data?.species[r.dex]?.name ?? `#${r.dex}`}`
   return (
     <div className="flex min-w-0 flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
@@ -383,21 +417,32 @@ function LiveCalendar({
           Today
         </PixelButton>
         <span className="text-base text-muted">
-          {runs ? `${runs} run${runs === 1 ? '' : 's'} this month` : 'Nothing this month'} · times in UTC
+          {runs ? `${runs} on this month` : 'Nothing this month'} · times in UTC
         </span>
+        <label className="flex min-h-[34px] items-center gap-2 text-lg">
+          <input type="checkbox" checked={raids} onChange={(e) => onRaids(e.target.checked)} />
+          Daily raids
+        </label>
         <span className="ml-auto flex flex-wrap gap-1">
           {LIVE_TYPES.map((t) => (
             <span key={t} className={cx('px-1.5 py-0.5 text-sm leading-none', TYPE_BAR[t])}>
               {TYPE_NAME[t]}
             </span>
           ))}
+          <span className={cx('px-1.5 py-0.5 text-sm leading-none', WORLD_BAR)}>Small world</span>
         </span>
       </div>
-      {access === 'off' && (
-        <p className="text-base text-muted">Live events are switched off: none of these runs for players until you switch them on.</p>
+      {(access === 'off' || worldsAccess === 'off' || (raids && raidsOff)) && (
+        <p className="text-base text-muted">
+          Switched off, so not for players until you switch them on:{' '}
+          {[access === 'off' && 'live events', worldsAccess === 'off' && 'small worlds (hatched)', raids && raidsOff && 'raids']
+            .filter(Boolean)
+            .join(', ')}
+          .
+        </p>
       )}
       <div className="overflow-x-auto">
-        <div className="flex min-w-[720px] flex-col gap-px bg-line p-px" role="grid" aria-label={`Live events, ${label}`}>
+        <div className="flex min-w-[720px] flex-col gap-px bg-line p-px" role="grid" aria-label={`Live events and small worlds, ${label}`}>
           <div className="grid grid-cols-7 gap-px" role="row">
             {CAL_DAYS.map((d) => (
               <span key={d} role="columnheader" className="bg-panel text-center text-base text-muted">
@@ -410,10 +455,11 @@ function LiveCalendar({
               key={w.days[0]}
               role="row"
               className="grid grid-cols-7 gap-x-px"
-              style={{ gridTemplateRows: `24px repeat(${Math.max(2, w.lanes)}, 26px) 6px` }}
+              style={{ gridTemplateRows: `${raids ? 38 : 24}px repeat(${Math.max(2, w.lanes)}, 26px) 6px` }}
             >
               {w.days.map((d, i) => {
                 const past = d < today
+                const raid = raidOf(d)
                 return (
                   <button
                     key={d}
@@ -421,11 +467,11 @@ function LiveCalendar({
                     role="gridcell"
                     disabled={busy || past}
                     onClick={() => onNew(Date.parse(`${d}T00:00:00Z`))}
-                    aria-label={`${longDay(d)}${past ? '' : ': new live event that day'}`}
+                    aria-label={`${longDay(d)}${raid ? `, raid: ${raidName(raid)}` : ''}${past ? '' : ': new live event that day'}`}
                     title={past || busy ? undefined : 'New live event that day (18:00 UTC)'}
                     style={{ gridColumn: i + 1, gridRow: '1 / -1', ...(d === today && { boxShadow: 'inset 0 0 0 3px #f2553f' }) }}
                     className={cx(
-                      'flex items-start bg-panel px-1 pt-0.5 text-left disabled:cursor-default',
+                      'flex items-start justify-between bg-panel px-1 pt-0.5 text-left disabled:cursor-default',
                       !past && !busy && 'hover:bg-gold-pale',
                       d.slice(0, 7) !== month && 'bg-shadow',
                     )}
@@ -434,21 +480,30 @@ function LiveCalendar({
                       {Number(d.slice(8))}
                       {d.slice(8) === '01' && ` ${new Date(`${d}T12:00:00Z`).toLocaleString('en-GB', { month: 'short', timeZone: 'UTC' })}`}
                     </span>
+                    {raid && (
+                      <span className={cx('-mt-0.5', past && 'opacity-50')} title={`Raid: ${raidName(raid)}`}>
+                        <SpriteImg dex={raid.dex} shiny={raid.shiny} size={34} alt="" />
+                      </span>
+                    )}
                   </button>
                 )
               })}
               {w.bars.map((b) => {
-                const st = liveState(b.run, now)
-                const off = b.run.type === 'calendar' && calendarOff
-                const name = titleOf(b.rule)
-                const what = `${name} (${TYPE_NAME[b.run.type]}), ${utc(b.run.start)} to ${utc(b.run.end)} UTC, ${st}${b.rule.repeat ? `, ${repeatText(b.rule.repeat)}` : ''}${off ? ', its switch is off' : ''}`
+                const e = b.entry
+                const st = liveState(b, now)
+                const off = e.kind === 'world' ? worldsAccess === 'off' : e.run.type === 'calendar' && calendarOff
+                const name = e.kind === 'world' ? worldTitle(e.world, data) : titleOf(e.rule)
+                const kind = e.kind === 'world' ? 'Small world' : TYPE_NAME[e.run.type]
+                const repeat = e.kind === 'live' && e.rule.repeat ? `, ${repeatText(e.rule.repeat)}` : ''
+                const what = `${name} (${kind}), ${utc(b.start)} to ${utc(b.end)} UTC, ${st}${repeat}${off ? ', its switch is off' : ''}`
+                const editing = editingId === (e.kind === 'world' ? e.world.id : e.rule.id)
                 return (
                   <button
-                    key={b.run.id}
+                    key={b.id}
                     type="button"
                     role="gridcell"
                     disabled={busy}
-                    onClick={() => onEdit(b.rule.id)}
+                    onClick={() => (e.kind === 'world' ? onEditWorld(e.world.id) : onEdit(e.rule.id))}
                     aria-label={`${what}. Edit`}
                     title={what}
                     style={{
@@ -458,15 +513,15 @@ function LiveCalendar({
                     }}
                     className={cx(
                       'relative z-[1] flex min-w-0 items-center gap-1 overflow-hidden whitespace-nowrap px-1 text-left text-base leading-none disabled:cursor-default',
-                      TYPE_BAR[b.run.type],
+                      e.kind === 'world' ? WORLD_BAR : TYPE_BAR[e.run.type],
                       b.startsHere ? 'ml-1' : 'pl-0.5',
                       b.endsHere && 'mr-1',
                       st === 'ended' && 'opacity-50',
-                      editingId === b.rule.id && 'outline outline-2 -outline-offset-2 outline-ink',
+                      editing && 'outline outline-2 -outline-offset-2 outline-ink',
                     )}
                   >
                     {!b.startsHere && <span aria-hidden>‹</span>}
-                    {b.startsHere && <span className="font-mono text-sm">{utc(b.run.start).slice(11)}</span>}
+                    {b.startsHere && <span className="font-mono text-sm">{utc(b.start).slice(11)}</span>}
                     {st === 'live' && <span className="bg-ink px-1 text-xs text-panel">LIVE</span>}
                     <span className="min-w-0 truncate">{name}</span>
                     {!b.endsHere && (
@@ -482,8 +537,9 @@ function LiveCalendar({
         </div>
       </div>
       <p className="text-base text-muted">
-        A bar opens its event in the editor (a recurring one's rule: every run shows it); a day from today on starts a new
-        event there. Faded: over. Hatched: a gift calendar whose own switch is off.
+        A bar opens its event in the editor (a recurring one's rule: every run shows it), a small world's in the Small
+        worlds tab; a day from today on starts a new live event there. Faded: over. Hatched: its switch is off (a gift
+        calendar's own, or the small worlds').
       </p>
     </div>
   )

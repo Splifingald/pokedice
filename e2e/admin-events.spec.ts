@@ -15,17 +15,25 @@ const rows = bundleToRows(bundle) as unknown as Record<string, unknown[]>
 
 const day = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10)
 
-async function admin(page: Page) {
+/** The admin, signed in, on the game's own content; `config` sets some of its game_config rows. */
+async function admin(page: Page, config: Record<string, unknown> = {}) {
+  const tables: Record<string, unknown[]> = {
+    ...rows,
+    game_config: [
+      ...(rows.game_config as { key: string; value: unknown }[]).filter((r) => !(r.key in config)),
+      ...Object.entries(config).map(([key, value]) => ({ key, value })),
+    ],
+  }
   await mockSupabase(page)
   // The admin's tables: the game's own content, page by page.
   await page.route(`${SUPABASE}/rest/v1/**`, async (route) => {
     const req = route.request()
     const url = new URL(req.url())
     const table = url.pathname.split('/').pop()!
-    if (req.method() !== 'GET' || !(table in rows)) return route.fallback()
+    if (req.method() !== 'GET' || !(table in tables)) return route.fallback()
     const offset = Number(url.searchParams.get('offset') ?? 0)
     const limit = Number(url.searchParams.get('limit') ?? 1000)
-    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(rows[table]!.slice(offset, offset + limit)) })
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(tables[table]!.slice(offset, offset + limit)) })
   })
   await page.addInitScript(
     ([key, session, save]) => {
@@ -124,6 +132,35 @@ test('Live events: a month calendar, a bar per run; a bar edits its event, a day
   await expect(page.getByLabel(/^Starts \(UTC\)/)).toHaveValue(`${ym}-15T18:00`)
   await page.reload()
   await expect(page.getByRole('tab', { name: 'Calendar' })).toHaveAttribute('aria-selected', 'true', { timeout: 30_000 })
+})
+
+test('Live events calendar: small worlds among the bars, a world opens in its tab; daily raids with their Pokémon', async ({
+  page,
+}) => {
+  test.setTimeout(120_000)
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  const at = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 13) + ':00:00.000Z'
+  await admin(page, {
+    smallWorlds: { access: 'off', list: [{ id: 'w-test', regionId: 'kanto', start: at(-1), end: at(5), title: { en: 'Mew Island' } }] },
+  })
+  await page.goto('/admin/events?tab=live&view=calendar')
+  const world = page.getByRole('gridcell', { name: /^Mew Island \(Small world\), .*, live, its switch is off\. Edit$/ })
+  await expect(world.first()).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByText(/^Switched off, so not for players until you switch them on: live events, small worlds/)).toBeVisible()
+  // Daily raids: each day's Pokémon in its square, kept in the address.
+  await page.getByRole('checkbox', { name: 'Daily raids' }).check()
+  await expect(page).toHaveURL(/raids=1/)
+  await expect(page.getByRole('gridcell', { name: new RegExp(`^${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}, raid: `) })).toBeVisible()
+  expect(await page.getByRole('gridcell', { name: /, raid: / }).count()).toBeGreaterThanOrEqual(28)
+  // The Pokémon's own picture, loaded.
+  const sprite = page.getByRole('grid').locator('img').first()
+  await expect.poll(() => sprite.evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0)).toBe(true)
+  if (process.env.SHOT_DIR) await page.screenshot({ path: `${process.env.SHOT_DIR}/admin-live-calendar-worlds.png`, fullPage: true })
+  // A world's bar opens it in the Small worlds tab.
+  await world.first().click()
+  await expect(page).toHaveURL(/tab=worlds/)
+  await expect(page.getByRole('heading', { name: 'Edit · Mew Island' })).toBeVisible()
+  await expect(page).not.toHaveURL(/edit=/)
 })
 
 test('A gift calendar: its switch, the days, each day’s gift, the Advent proposal; it runs once', async ({

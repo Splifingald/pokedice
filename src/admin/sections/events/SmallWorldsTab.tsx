@@ -3,8 +3,8 @@
 // goes into the list only when nothing is wrong with it. Its region and its areas are rows of their own: this tab makes
 // the region, adds or copies areas into it and sets their opening dates; the areas' pools, trainers and pictures are
 // edited in Areas (and Trainers), like any region's.
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   POKE_TYPES,
   PREVIEW_HOURS,
@@ -142,6 +142,22 @@ export function SmallWorldsTab() {
   const list = useMemo(() => (raw?.list ?? []).map((w) => normaliseWorld(w)), [raw])
   const now = useNow(30_000)
   const [draft, setDraft] = useState<SmallWorld | null>(null)
+  // Opened on a world from the live events' calendar (?tab=worlds&edit=<id>): its editor, once the list has it.
+  const [params, setParams] = useSearchParams()
+  const editId = params.get('edit')
+  useEffect(() => {
+    const w = editId ? list.find((x) => x.id === editId) : null
+    if (!w) return
+    setDraft(w)
+    setParams(
+      (p) => {
+        const next = new URLSearchParams(p)
+        next.delete('edit')
+        return next
+      },
+      { replace: true },
+    )
+  }, [editId, list, setParams])
   const access = raw?.access ?? 'off'
   const previewAccess = raw?.previewAccess ?? 'off'
   const finishAccess = raw?.finishAccess ?? 'off'
