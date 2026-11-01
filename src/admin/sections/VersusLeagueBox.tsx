@@ -200,6 +200,25 @@ export function VersusLeagueBox() {
           </Field>
         ))}
       </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {(['lowest', 'highest'] as const).map((end, i) => (
+          <Field
+            key={end}
+            label={`Bots' trophies by Sunday, ${end}`}
+            hint="the same in every group, whatever its players do; most bots near the lowest"
+          >
+            <NumInput
+              min={0}
+              value={cfg.botTargets[i]}
+              onChange={(v) => {
+                const next: [number, number] = [...cfg.botTargets]
+                next[i] = whole(v)
+                set({ botTargets: next })
+              }}
+            />
+          </Field>
+        ))}
+      </div>
       <Field label="Rewards" hint="each band: the places up to this rank (after the band before)">
         <table className="text-base">
           <thead>

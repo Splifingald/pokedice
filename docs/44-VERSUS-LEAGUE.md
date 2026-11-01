@@ -10,7 +10,8 @@ while it's Off, Versus is what it was (every team, the attack and defense boards
 Migration `0082_versus_league.sql`. The global board (§8, 2026-10-29): migration `0091_versus_league_global.sql`, its
 own switch, Off. New bot teams every week (§9, 2026-10-30): migration `0092_versus_bot_weeks.sql` and the hourly
 Netlify job `netlify/functions/versus-bots.mts`. The trainer card's best (§10, 2026-10-31): migration
-`0097_versus_best_trophies.sql`.
+`0097_versus_best_trophies.sql`. Bots the same in every group (§11, 2026-11-01): migration
+`0128_versus_bot_targets.sql`.
 
 ## 1. Decisions (the user's answers)
 
@@ -26,7 +27,7 @@ Netlify job `netlify/functions/versus-bots.mts`. The trainer card's best (§10, 
 | Match limit | **None** |
 | Opponents | **3 choices**, their **teams and trophies** shown. **Fixed until one is fought**. From **any player** with a Versus team whose trophies this week are within **±15 %** of yours (**±30** at least). Bots fill the slots nobody fits |
 | Groups | **20 players**. The **number of groups** is set on the week's first match: last week's players × (last Sunday's daily players ÷ the Sunday before) ÷ 16. With no league last week, everyone with a Versus team ÷ 16. Each player's first match puts them in the **emptiest open group**, so early and late players mix. Friends get no priority. When every group is full, a new one opens |
-| Bots in groups | **Yes**: on **Wednesday, Thursday and Friday**, up to **5 bots a day** take the empty places of each group. They climb through the week toward a **believable place** among the group's players (a player's trophies, projected to Sunday, ×0.6 to ×1.25), arriving by Sunday 22:00. A bot can finish first |
+| Bots in groups | **Yes**: on **Wednesday, Thursday and Friday**, up to **5 bots a day** take the empty places of each group. They climb through the week toward **a place of their own, the same in every group** (§11, the user's rule, 2026-11-01): **20 to 250 trophies** by Sunday 22:00, most near the bottom, whatever the group's players do. A bot can finish first |
 | Bots' strength | **Tiers by trophies**: 0–99 solid picks and no powers; 100–249 strong picks and one power; 250–499 better picks and two powers; 500+ the best (legendaries too) and all three. Good type coverage at every tier. The thresholds are in Admin |
 | Bots' teams | **A new set every week** (the user's ask, 2026-10-30): drawn on the week's own seeds, **40 different teams a tier and 80 from 500 trophies**. A bot keeps the team it was seated with all week (§9) |
 | Bots' disguise | **A player to everyone but the admin**: a name, a look, a team and trophies, and an id like a player's. The admin sees **BOT** |
@@ -51,7 +52,7 @@ Netlify job `netlify/functions/versus-bots.mts`. The trainer card's best (§10, 
   - The rules: `trophyChange` and `winTrophies`, `opponentRange`, `winTooFast`.
   - The week: `weekStartOf`, `weekEndOf`, `weekId`, `leagueGroupCount`.
   - The ranking and rewards: `rankLeague` (tied players share a rank), `leagueReward`, `leagueGifts`.
-  - The bots: `botTierOf`, `versusPower` (a species' strength at Lv.50), `teamCoverage` and `buildBotTeam` (three
+  - The bots: `botTierOf`, `botTargetOf` (where a seated bot's trophies are headed, §11), `versusPower` (a species' strength at Lv.50), `teamCoverage` and `buildBotTeam` (three
     fully evolved Pokémon from the tier's share of the strength ranking, picked for the coverage they add, with the
     tier's powers and the Pokémon to use them).
   - The week's set (§9): `BOT_TEAMS_PER_TIER` (40, 40, 40, 80), `botTeamSeed(week, n)` and `weekBotTeams(data, week)`
@@ -128,7 +129,7 @@ Admin → Config → **Versus league**:
 
 - The switch.
 - The numbers: trophies, safe line, group size, players a group, bots a day and the bot days, the opponents' range,
-  the fastest win and seconds a move, the bot tiers, ₽ a trophy, the reward bands.
+  the fastest win and seconds a move, the bot tiers, the bots' trophies by Sunday (lowest and highest, §11), ₽ a trophy, the reward bands.
 - **Run the hourly tick now** and **Seat bots now**.
 - **This week's bot teams** (which set this week's bots take their teams from, when it was made, its teams a tier) and
   **Make this week's bot teams now** (draws them in the admin's page as the hourly job would, and stores them if the
@@ -181,9 +182,15 @@ The admin sees **BOT** on the bots, before their names, in the opponents and the
    (after 0082 and 0033; safe to run again; `supabase/seed.sql` doesn't inline it). Without it the card's line says
    "—" while the league is on.
 
+9. For **bots the same in every group** (§11), run
+   <https://github.com/Splifingald/pokedice/blob/ccr-7db9d89a-y7lc5s/supabase/migrations/0128_versus_bot_targets.sql>
+   (after 0082 and 0092; safe to run again; `supabase/seed.sql` doesn't inline it). Bots already seated keep where
+   they were headed; the ones seated from then on follow the new rule.
+
 After a change to the species, their forms or the gems, the next week's set has them already. To bring the built-in
-set along too, run `pnpm versus-bots` and then 0092 again (not 0082: its copies of `versus_league_offer` and
-`versus_league_seat_bots` would undo 0092's).
+set along too, run `pnpm versus-bots` and then 0092 again, then 0128 again (not 0082: its copies of
+`versus_league_offer` and `versus_league_seat_bots` would undo 0092's; and 0092's `versus_league_seat_bots` undoes
+0128's).
 
 ## 7. Tests
 
@@ -292,3 +299,25 @@ said the old board's wins ("0 won · 3 held"), which the league no longer counts
   - `versus_league_best(p_user)`: the caller's best across every week (0 if they never fought), or a friend's; null
     signed out, for someone who isn't a friend, or while the league is closed to the caller.
 - No switch of its own: it's how the card reads the league, under the league's switch (as §9).
+
+## 11. Bots the same in every group (2026-11-01)
+
+The user's rule: "Bots in versus battles shouldn't adapt to the group difficulty, they should be consistent no matter
+what the real players do."
+
+- **Before**: a bot seated on a bot day headed for a random player of its group, their trophies projected to Sunday,
+  ×0.6 to ×1.25. A group with one player far ahead filled with bots far ahead too, with stronger teams (the tier follows
+  the trophies): in the first week, one player's 1,518 sent their group's bots up to 1,209, while most bots elsewhere
+  ended under 80.
+- **Now**: where a bot's trophies are headed by Sunday 22:00 looks at nothing but Admin's **bots' trophies by Sunday**,
+  lowest and highest (**20 and 250** by default): `botTargetOf(roll)` = lowest + (highest − lowest) × roll², so most
+  bots sit low and few high, as players do (half of them under 78). Each day's bots of a group spread over the whole
+  range (the i-th of k rolls within the i-th k-th), so no group gets all strong or all weak ones by luck. Their team's
+  tier follows that target as before (with the defaults: tier 0 under 100, tier 1 from 100, tier 2 at 250).
+- **Unchanged**: the bots offered as **opponents** still come at your own trophies (±15 %, ±30 at least) with a team of
+  your tier: that is matchmaking for you, not your group.
+- **Server**: migration `0128_versus_bot_targets.sql` adds `botTargets` to `versus_league_cfg()`, the same sum as
+  `versus_league_bot_target(roll, cfg)` and a `versus_league_seat_bots` using it. Bots already seated keep their target.
+- **Tests**: `tests/engine/versus-league.test.ts` (the sum, the ends either way round, never below 0);
+  `tests/versus-league-sql.test.ts` (the server's sum the engine's, and a group's bots spread over the range while its
+  player sits at 1,500 trophies).
