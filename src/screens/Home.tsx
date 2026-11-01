@@ -118,7 +118,7 @@ function HomeView({ area }: { area: Area }) {
   const walk = pictureOf(area.id)?.walk
   const walkMid = walk ? (walk[1] + walk[3]) / 2 / SCENE_H : 0.62
   const cropTop = Math.min(1 - SCENE_SHOWN, Math.max(0, walkMid - SCENE_SHOWN / 2))
-  const dock = <PlayDock area={area} />
+  const dock = <PlayDock area={area} onAreas={() => openSheet('details')} />
   const [dockRef, dockH] = useHeight<HTMLDivElement>()
   // PC: CONTINUE under the scene, in the pinned column, always in sight (the user's call, 2026-10-27); the scene gives it
   // its room in the window's height.
