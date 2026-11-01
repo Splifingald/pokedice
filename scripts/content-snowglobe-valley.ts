@@ -18,10 +18,22 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { BundleRaw, Region, SmallWorld } from '../src/engine/types'
+import { DEFAULT_PORTAL_RUN, PLATE_BARS } from '../src/engine/portalMode'
+import type { BundleRaw, PortalRunMode, Region, SmallWorld } from '../src/engine/types'
 import { stableUuid } from './seed'
 import { balls, buildAreas, worldSql, type AreaSpec, type WorldContent } from './world-content'
 import { DEFAULT_TIME_RACE } from '../src/engine/timeRaceMode'
+
+/**
+ * The Hall of Origin's mode (docs/61 §4.5, the user's review: "keep it like the Giratina event"): Distortion World's
+ * portal run with its numbers, dressed as the Stairway of Plates, and its raid: shiny Arceus Lv.90, foes' dice 10,
+ * 4 HP bars, teams up to Lv.90, its Plate changing on each bar (Normal → Ice → Steel → Dragon).
+ */
+export const HALL_OF_ORIGIN_RUN: PortalRunMode = {
+  ...DEFAULT_PORTAL_RUN,
+  skin: 'plates',
+  raid: { level: 90, upgradeLevel: 10, bars: 4, teamCap: 90, barTypes: [...PLATE_BARS] },
+}
 
 export const REGION_ID = 'world-snowglobe-valley'
 export const WORLD_ID = 'snowglobe-valley-2026'
@@ -983,8 +995,9 @@ export const AREAS: AreaSpec[] = [
     hidden: true,
     // 90 of the world's Pokémon, from New Year's Day (the world's `opens`).
     unlock: [{ kind: 'pokedex', count: 90 }],
-    // Lv.90 (the user's review); its portal run (docs/61 §4.5) will hold the raid's own numbers.
+    // Lv.90 (the user's review); its portal run (docs/61 §4.5) holds the raid's own numbers.
     boss: [{ dex: 493, level: 90, shiny: true, raid: true }],
+    mode: HALL_OF_ORIGIN_RUN,
     // Only Pokémon met elsewhere too: everything must be catchable before it opens.
     wild: [
       [461, 15, 60, 64],

@@ -1,7 +1,14 @@
 // The portal run's settings (docs/28), on their own so the raid's numbers can read them without the run's rules: an
 // area's `mode` as the admin set it, cleaned and filled from the defaults, and the switch that turns it on.
 import { eventOpenTo } from './events'
-import type { Area, GameData, PortalRunMode } from './types'
+import {
+  POKE_TYPES,
+  type Area,
+  type GameData,
+  type PokeType,
+  type PortalRunMode,
+  type PortalSkin,
+} from './types'
 
 /** Distortion World's numbers (the user's spec of 2026-10-15): what a new portal area starts with. */
 export const DEFAULT_PORTAL_RUN: PortalRunMode = {
@@ -33,6 +40,19 @@ const int = (v: unknown, fallback: number, min: number, max: number) => Math.rou
 const obj = (v: unknown): Record<string, unknown> =>
   v && typeof v === 'object' ? (v as Record<string, unknown>) : {}
 
+/**
+ * The Hall of Origin's raid (docs/61 §4.5, the user's call): Arceus's Plate on each of its four bars, Normal → Ice →
+ * Steel → Dragon. What the admin's "Plates" button fills in.
+ */
+export const PLATE_BARS: readonly PokeType[] = ['normal', 'ice', 'steel', 'dragon']
+
+const isType = (v: unknown): v is PokeType =>
+  typeof v === 'string' && (POKE_TYPES as readonly string[]).includes(v)
+
+/** A portal run's look: Distortion World's unless it says the Stairway of Plates. */
+export const portalSkin = (mode: Pick<PortalRunMode, 'skin'> | null | undefined): PortalSkin =>
+  mode?.skin === 'plates' ? 'plates' : 'distortion'
+
 /** A portal mode as the admin left it (a missing or odd number falls back to the default); null when it isn't one. */
 export function normalisePortal(raw: unknown): PortalRunMode | null {
   const r = obj(raw)
@@ -49,8 +69,12 @@ export function normalisePortal(raw: unknown): PortalRunMode | null {
         .filter((x) => typeof x.key === 'string' && x.key)
         .map((x) => ({ key: String(x.key), weight: num(x.weight, 0, 0, 1e6) }))
     : d.item.items
+  // Only the types the game knows, up to one per bar the admin may set.
+  const barTypes = Array.isArray(raid.barTypes) ? raid.barTypes.filter(isType).slice(0, 10) : []
   return {
     kind: 'portal',
+    // Written only when it isn't the default, so Distortion World's mode reads exactly as it always has.
+    ...(r.skin === 'plates' && { skin: 'plates' as const }),
     portals: int(r.portals, d.portals, 1, 99),
     wild: int(r.wild, d.wild, 0, 30),
     items: int(r.items, d.items, 0, 30),
@@ -71,6 +95,7 @@ export function normalisePortal(raw: unknown): PortalRunMode | null {
       upgradeLevel: int(raid.upgradeLevel, d.raid.upgradeLevel, 1, 10),
       bars: int(raid.bars, d.raid.bars, 1, 10),
       teamCap: int(raid.teamCap, d.raid.teamCap, 1, 100),
+      ...(barTypes.length > 0 && { barTypes }),
     },
   }
 }
@@ -87,7 +112,10 @@ export function portalModeOf(
   return normalisePortal(area.mode)
 }
 
-/** The raid's numbers of a portal area (Lv.100, dice level 10, 4 bars, teams up to Lv.100); null elsewhere. */
+/**
+ * The raid's numbers of a portal area (Lv.100, dice level 10, 4 bars, teams up to Lv.100; the Hall of Origin's Lv.90
+ * with its Plate on each bar); null elsewhere.
+ */
 export function portalRaidRules(data: GameData, areaId: string | undefined): PortalRunMode['raid'] | null {
   const area = areaId ? data.areas.find((a) => a.id === areaId) : undefined
   return portalModeOf(area, data)?.raid ?? null

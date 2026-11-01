@@ -23,6 +23,7 @@ import type {
   PokeType,
   PortalCard,
   PortalRunMode,
+  PortalSkin,
   PortalState,
   SaveData,
 } from './types'
@@ -30,10 +31,25 @@ import type {
 export {
   DEFAULT_PORTAL_RUN,
   normalisePortal,
+  PLATE_BARS,
   portalModeOf,
   portalRaidRules,
   portalRunsOn,
+  portalSkin,
 } from './portalMode'
+
+/**
+ * The run's rules pop-up has been seen for this look: each skin has its own flag (docs/61 §4.5), so a player who read
+ * Distortion World's rules last Halloween still gets the Stairway of Plates' once.
+ */
+export const portalRulesSeen = (save: SaveData, skin: PortalSkin): boolean =>
+  !!(skin === 'plates' ? save.platesRulesSeen : save.portalRulesSeen)
+
+/** The rules pop-up of this look has been shown (the same save when it already was). */
+export function markPortalRulesSeen(save: SaveData, skin: PortalSkin): SaveData {
+  if (portalRulesSeen(save, skin)) return save
+  return skin === 'plates' ? { ...save, platesRulesSeen: true } : { ...save, portalRulesSeen: true }
+}
 
 const EMPTY: PortalState = { active: false, closed: 0, deck: [] }
 

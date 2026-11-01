@@ -14,6 +14,7 @@ import {
   megaRaidLock,
   progressRaidState,
   portalModeOf,
+  portalSkin,
   nightmareModeOf,
   timeRaceModeOf,
   progressRaidTeam,
@@ -68,10 +69,13 @@ export function ProgressRaidScreen() {
 /** What a progression raid looks like: its world (portal, nightmare) and the card's data. */
 export function progressRaidLook(data: GameData, raid: ProgressRaid, caught: boolean) {
   const area = data.areas.find((a) => a.id === raid.areaId)
-  // A portal area's raid (docs/28) opens with its run won, not its rounds.
-  const portal = !!portalModeOf(area, data)
+  // A portal area's raid (docs/28) opens with its run won, not its rounds; Distortion World's wears its look, the
+  // Stairway of Plates' (docs/61 §4.5) the usual one, its lock in its own words.
+  const pm = portalModeOf(area, data)
+  const portal = !!pm && portalSkin(pm) === 'distortion'
+  const plates = !!pm && !portal
   // So does a nightmare area's (docs/30), once the player wakes up; it wears the moonlit night (docs/15 §29).
-  const nightmare = !portal && !!nightmareModeOf(area, data)
+  const nightmare = !pm && !!nightmareModeOf(area, data)
   const card: TodayRaid = {
     day: '',
     dex: raid.dex,
@@ -80,7 +84,7 @@ export function progressRaidLook(data: GameData, raid: ProgressRaid, caught: boo
     caught,
     tries: 0,
   }
-  return { portal, nightmare, card, scope: portal ? 'dw-scope' : nightmare ? 'nm-scope' : undefined }
+  return { portal, plates, nightmare, card, scope: portal ? 'dw-scope' : nightmare ? 'nm-scope' : undefined }
 }
 
 /** A progression raid's card on its area, in its world. */
@@ -121,7 +125,7 @@ export function ProgressRaidPanel({ raidKey, title }: { raidKey: string; title?:
   const friends = groupOf(raidKey, useRaidGroup())
   const [offer, setOffer] = useState<RaidNpcOption[] | null>(null)
   const state = progressRaidState(save, data, raid)
-  const { portal, nightmare } = progressRaidLook(data, raid, state === 'done')
+  const { portal, plates, nightmare } = progressRaidLook(data, raid, state === 'done')
   // A Mega raid (docs/40): locked until its raid Pokémon is caught, then until Mega Evolution is earned in Kalos.
   const megaLock = raid.mega && state === 'locked' ? megaRaidLock(save, data, raid) : null
   const gemName = raid.mega ? (data.items[raid.mega.gem]?.name ?? raid.mega.gem) : ''
@@ -171,7 +175,9 @@ export function ProgressRaidPanel({ raidKey, title }: { raidKey: string; title?:
                   ? `ui.raid.mega.lock.${megaLock}.title`
                   : portal
                     ? 'ui.portal.raidLockTitle'
-                    : nightmare
+                    : plates
+                      ? 'ui.plates.raidLockTitle'
+                      : nightmare
                       ? 'ui.nightmare.raidLockTitle'
                       : raceGate
                         ? 'ui.timeRace.raidLockTitle'
@@ -185,7 +191,9 @@ export function ProgressRaidPanel({ raidKey, title }: { raidKey: string; title?:
                   ? `ui.raid.mega.lock.${megaLock}.text`
                   : portal
                     ? 'ui.portal.raidLockText'
-                    : nightmare
+                    : plates
+                      ? 'ui.plates.raidLockText'
+                      : nightmare
                       ? 'ui.nightmare.raidLockText'
                       : raceGate
                         ? 'ui.timeRace.raidLockText'

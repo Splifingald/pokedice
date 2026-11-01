@@ -2178,3 +2178,63 @@ one still frame with motion off.
 - **The raids**: each of the area's two opens on its own legend's win; before, its page is locked ("Win the race of
   Spear Pillar to open this raid", "Take the Water gate at the last fork and finish in time to face Palkia here."). Their
   look is the plain raid's (no themed page yet).
+
+## 49. The Stairway of Plates (Hall of Origin)
+
+docs/61 §4.5: the Hall of Origin's portal run, **§27's run with its rules, numbers, flows, buttons and switch
+(`portalRun`) unchanged, dressed for Arceus** in light instead of distortion. The area's mode says so (`skin: 'plates'`,
+Admin → Areas → Special mode → Its look); absent, Distortion World's look, as it always was. The pieces are §27's: they
+read the look from `PortalSkinProvider` (`src/components/portalSkin.ts`), so every state is on `/kitchen-sink`
+(`PortalBits skin="plates"`, its own section) and every scene on `/kitchen-sink/fx` ("Stairway of Plates: …", "A raid's
+bar: Arceus takes the Icicle Plate").
+
+- **Its words** are their own (`ui.plates.*`, all ten languages) wherever a line names portals or distortions, the
+  portal run's (`ui.portal.*`) where they read the same (Ready!, Not now, Team, Confirm, Tap to continue): `skinKey`
+  picks. A portal is a **landing** (the gauge, "Landings climbed: 3/10"), a distortion an **altar** ("Altar 4/10", "Pick
+  one blessing to light this altar"), a boon a **blessing** ("Take this blessing?"), the run a **climb** ("This climb's
+  bonuses"); CONTINUE says CLIMB THE STAIRWAY ("Climb 10 landings in a row"); the lock "You can't leave the stairway
+  until you reach the top or your party is K.O."; its Pokémon "Of the Hall of Origin: it can't be caught here."; the
+  victory "All 10 altars are lit!" and "Shiny Arceus came down the stairway of light: it is now available in raids."
+- **The type boon is a Plate**: its title the games' Plate of that type with the bonus ("Flame Plate: Fire +10",
+  `plateKey`: `plate.<type>`, Normal the Legend Plate of Legends: Arceus, `ui.plates.legend`), its line "Arceus's Flame
+  Plate: +10 damage on every Fire attack, for this climb.", the run's bonuses "Flame Plate: +20 damage". Its icon stays
+  the type's badge.
+- **Its palette** (`PL` in `src/fx/timelines/plates.ts`): a white-gold sky (`#fffdf6` to `#f6cf7e`), pale stone
+  (`#f6ecd2`, `#dcc595`, risers `#caa968`), Arceus's gold (`#e3a92f`, `#ffc94a`, `#ffe9a3`), an ink of dark gold for
+  edges and words on cream (`#4a3410`, `#8a6420`), and the seventeen Plates' colours (the types' own) round its wheel.
+  Its panels have the gold along their top (`.plates-panel`), its line cards are cream with dark-gold ink (contrast on
+  the light sky), the tap prompt a cream chip.
+- **Its scenes** (the same timings, cues' places and motion levels as §27's, so the screens swap one for the other):
+  - **The way in** (`stairwayTimeline`, 3.9 s, holds its end): the area's picture (the Hall's `a130`) brightens in two
+    white pulses, a point of gold light opens at the top, rays of light race out over the area, the area comes apart in
+    pieces that rise and whiten into light, and behind them the white-gold sky and **a stairway of light** (pale steps in
+    perspective, gold rails with a glint running up, an altar on each landing) rising to **Arceus's wheel** (a white
+    heart through pale to gold, rays turning, a dashed gold rim, four gold spikes turning, the Plates' gems turning the
+    other way); a flash, rings, the name card in gold with white rims. Then it holds (the wheel turning, light rising)
+    for the tap, its pop-up over it.
+  - **The altar** (`altarLoop`, `drawAltar`: the wheel on a two-tier pedestal) where the portal turned: the rules'
+    banner, the pop-up on its own, by an altar's blessings (`PortalArt`).
+  - **An altar lit** (`altarLitTimeline`, 1.6 s, `short` 0.9 s): the wheel swells, light of every Plate's colour is drawn
+    into it, it turns faster and shrinks to a point, a white flash, the gold seal ring.
+  - **Its wild Pokémon wear light, never torn** (`lightBurstFrame`, `lightRestCss`; `GlitchSprite look="plates"`,
+    `BattleStage lit`): a faint gold and white rim of its own shape, motes of light rising; every 5 s a gleam of 0.35 s,
+    white and gold copies a pixel or two off, brighter on two frames. `short`: one pale copy; off: the rim alone.
+  - **The screen's gleam** (`DistortionFx` in that look): every 6–10 s a slanted band of light sweeps across in four
+    frames (white and pale gold, gold edges, a few sparkles), the page warmed to gold for three of them (a soft-light
+    layer, `.plates-fx-tint`); the UI's pieces catch the light now and then (`.ui-gleam`: a white-gold rim a pixel off,
+    a little brighter; never torn). `short`: a thin band, no warming, `.ui-gleam-short`; off: nothing.
+  - **The victory** (`descentTimeline`, 6.2 s, `short` 3.1 s): the stairway glowing whole, the wheel at its top throbbing
+    in two white pulses, gold rays; **shiny Arceus's silhouette appears in the wheel and comes down the stairs, growing**,
+    in a flickering white-and-gold outline, a gleam; the reveal at their foot (a flash, rings, the roar and its cry, a
+    quake); **the Judgment**: seventeen beams of the Plates' colours falling round it; the shiny sparkle; the name card.
+    Then §27's words and buttons.
+- **Its raid** wears the usual raid look (no violet night, no distortion: §27's raid theme is Distortion World's only;
+  the lock in its words, "Light every altar of … to open this raid"). Its show is **Arceus's Plate on each bar**: as a bar
+  starts with a type of the area's list (Normal → Ice → Steel → Dragon), the stage's `plate` scene (`plateTimeline`,
+  1.85 s: a Plate of the new type's colour, gold-rimmed, falls out of the sky turning and touches Arceus; a flash of that
+  colour, rings in it and gold, the new form, motes rising; `short`: a flash and the new sprite), and at the touch (its
+  `contact` cue) the line "Arceus takes the Icicle Plate! It is now Ice type!" and the gold NEW PLATE! banner; the
+  battle's history says "took the Icicle Plate · now Ice type". Its first bar's Plate is said as the fight starts unless
+  it is already that type (Normal).
+- **Its rules pop-up** is its own (`platesRulesSeen`): a player who read Distortion World's still gets the stairway's
+  once.

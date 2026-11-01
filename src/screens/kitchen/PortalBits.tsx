@@ -4,9 +4,17 @@
 // fewer can help), their icons (an extra die, a rare item turning through its items, still), a boon's confirm pop-up,
 // the team's changes at the way in, a portal closing, the run's bonuses (none, some), a distorted sprite at each motion
 // level, the UI's glitch on a few pieces, the screen's distortion, and the victory. Every scene is also on
-// /kitchen-sink/fx, frame by frame.
+// /kitchen-sink/fx, frame by frame. With `skin="plates"`, the same states dressed as the Hall of Origin's Stairway of
+// Plates (docs/61 §4.5): the stairway and its altars, a landing's gauge, the way in, an altar's blessings (a Plate
+// among them), an altar lit, the wild Pokémon in light, the screen's gleam, and shiny Arceus coming down.
 import { useMemo, useRef, useState } from 'react'
-import { createInstance, DEFAULT_PORTAL_RUN, type DistortionOffer } from '@/engine'
+import {
+  createInstance,
+  DEFAULT_PORTAL_RUN,
+  PLATE_BARS,
+  type DistortionOffer,
+  type PortalSkin,
+} from '@/engine'
 import {
   BoonConfirm,
   describeOffer,
@@ -29,16 +37,34 @@ import {
   useUiGlitch,
 } from '@/components/Portal'
 import { InfoButton } from '@/components/RulesModal'
+import { PortalSkinProvider, PRIZE, skinKey } from '@/components/portalSkin'
 import { PixelButton } from '@/components/PixelButton'
 import { TeamSwapActions } from '@/components/TeamSwapActions'
 import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 
-export function PortalBits() {
+/** The Hall of Origin's run (scripts/content-snowglobe-valley.ts's numbers): Distortion World's, in light. */
+const PLATES_RUN = {
+  ...DEFAULT_PORTAL_RUN,
+  skin: 'plates' as const,
+  raid: { level: 90, upgradeLevel: 10, bars: 4, teamCap: 90, barTypes: [...PLATE_BARS] },
+}
+
+export function PortalBits({ skin = 'distortion' }: { skin?: PortalSkin }) {
+  return (
+    <PortalSkinProvider value={skin}>
+      <Bits skin={skin} />
+    </PortalSkinProvider>
+  )
+}
+
+function Bits({ skin }: { skin: PortalSkin }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
-  const mode = DEFAULT_PORTAL_RUN
+  const plates = skin === 'plates'
+  const mode = plates ? PLATES_RUN : DEFAULT_PORTAL_RUN
+  const prize = PRIZE[skin]
   const [open, setOpen] = useState<
     null | 'breach' | 'held' | 'entry' | 'rules' | 'info' | 'won' | 'fx' | 'confirm'
   >(null)
@@ -48,20 +74,21 @@ export function PortalBits() {
   useUiGlitch({ enabled: glitch, root: demo, selector: '[data-glitch]', every: [0.8, 1.6] })
   const team = useMemo(
     () =>
-      [94, 477, 609].map((dex, i) => ({
-        ...createInstance(dex, 68, data, `sink-portal-${i}`, 0),
+      (plates ? [143, 461, 998] : [94, 477, 609]).map((dex, i) => ({
+        ...createInstance(dex, 68, data, `sink-portal-${skin}-${i}`, 0),
         currentHp: i === 1 ? 0 : 40,
       })),
-    [data],
+    [data, plates, skin],
   )
   const all: DistortionOffer[] = [
     { kind: 'heal', percent: 30 },
     { kind: 'revive', uid: team[1]!.id },
-    { kind: 'boost', type: 'ghost', amount: 10 },
-    { kind: 'die', uid: team[0]!.id, type: 'poison' },
+    // The Stairway of Plates names it after a Plate: the Flame Plate, Fire +10.
+    { kind: 'boost', type: plates ? 'fire' : 'ghost', amount: 10 },
+    { kind: 'die', uid: team[0]!.id, type: plates ? 'normal' : 'poison' },
     { kind: 'item' },
   ]
-  const views = all.map((o) => describeOffer(o, mode, data, team, () => 5, t))
+  const views = all.map((o) => describeOffer(o, mode, data, team, () => 5, t, skin))
   const rare = mode.item.items.flatMap((i) => (data.items[i.key] ? [data.items[i.key]!] : []))
   const save = useGame((s) => s.save)
   const lead = save?.box.find((p) => p.id === save.team[0])
@@ -100,15 +127,21 @@ export function PortalBits() {
           UI glitch demo {glitch ? 'off' : 'on'}
         </PixelButton>
       </div>
-      <div className="flex flex-wrap items-end gap-4 bg-[#07020d] p-3">
+      <div
+        className={
+          plates
+            ? 'flex flex-wrap items-end gap-4 bg-[#fff6dc] p-3'
+            : 'flex flex-wrap items-end gap-4 bg-[#07020d] p-3'
+        }
+      >
         <PortalArt size={160} />
         <PortalArt size={96} still />
       </div>
       {/* A wild Pokémon's distortion at each motion level: full, short, off (still), as on the preview's card. */}
       <div className="flex flex-wrap items-end gap-4">
-        <GlitchSprite dex={94} size={144} level="full" className="bg-paper shadow-ring" />
-        <GlitchSprite dex={609} size={144} level="short" className="bg-paper shadow-ring" />
-        <GlitchSprite dex={477} size={144} level="off" className="bg-paper shadow-ring" />
+        <GlitchSprite dex={team[0]!.dex} size={144} level="full" className="bg-paper shadow-ring" />
+        <GlitchSprite dex={team[2]!.dex} size={144} level="short" className="bg-paper shadow-ring" />
+        <GlitchSprite dex={team[1]!.dex} size={144} level="off" className="bg-paper shadow-ring" />
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="relative h-[150px] overflow-hidden">
@@ -152,15 +185,22 @@ export function PortalBits() {
       <div className="grid max-w-xl gap-2">
         <RunBonuses boosts={{}} dice={[]} />
         <RunBonuses
-          boosts={{ ghost: 20, fire: 10 }}
-          dice={[
-            { name: 'Gengar', dex: 94, types: ['poison', 'ghost'] },
-            { name: 'Chandelure', dex: 609, types: ['fire'] },
-          ]}
+          boosts={plates ? { fire: 20, ice: 10 } : { ghost: 20, fire: 10 }}
+          dice={
+            plates
+              ? [
+                  { name: 'Snorlax', dex: 143, types: ['normal', 'normal'] },
+                  { name: 'Weavile', dex: 461, types: ['ice'] },
+                ]
+              : [
+                  { name: 'Gengar', dex: 94, types: ['poison', 'ghost'] },
+                  { name: 'Chandelure', dex: 609, types: ['fire'] },
+                ]
+          }
         />
       </div>
       <div className="max-w-xs">
-        <InfoButton name={t('ui.portal.title')} onClick={() => setOpen('info')} />
+        <InfoButton name={t(skinKey(skin, 'ui.portal.title'))} onClick={() => setOpen('info')} />
       </div>
       {/* The team's changes at the way in (and at a Center), for the save's lead and one from its Box: here, outside
           both, the buttons show but change nothing (teamSwapsOpen). */}
@@ -178,7 +218,7 @@ export function PortalBits() {
         <PortalEntry
           mode={mode}
           data={data}
-          picture={artUrl('a123')}
+          picture={artUrl(plates ? 'a130' : 'a123')}
           popup={open === 'held'}
           onReady={close}
           onNotNow={close}
@@ -205,7 +245,9 @@ export function PortalBits() {
       <PortalRulesModal open={open === 'info'} onClose={close} mode={mode} data={data} />
       {open === 'won' && (
         <PortalVictoryView
-          name={data.species[487]?.name ?? 'Giratina'}
+          name={data.species[prize]?.name ?? ''}
+          dex={prize}
+          portals={mode.portals}
           level={mode.raid.level}
           onDone={close}
           onRaid={close}

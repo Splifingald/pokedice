@@ -26,6 +26,7 @@ import {
 import { H, quicken, W, type Hud, type Timeline } from '@/fx/timeline'
 import { attackTimeline } from '@/fx/timelines/attacks'
 import { gmaxEndTimeline, gmaxFor, megaFor, unleashTimeline } from '@/fx/timelines/forms'
+import { plateTimeline } from '@/fx/timelines/plates'
 import { shinyTimeline } from '@/fx/timelines/shiny'
 import { zAwayTimeline, zMoveTimeline, zStrikeTimeline } from '@/fx/timelines/zmove'
 import { usePace } from '@/lib/pace'
@@ -581,7 +582,9 @@ function useSceneTimeline(scene: Scene | null, own: Battler, foe: Battler, short
             ? gmaxFor(p)
             : scene.kind === 'unleash'
               ? unleashTimeline(p)
-              : gmaxEndTimeline(p)
+              : scene.kind === 'plate'
+                ? plateTimeline(p)
+                : gmaxEndTimeline(p)
     }
     if (scene.speed && scene.speed !== 1) timeline = quicken(timeline, scene.speed)
     return { timeline, ready: Promise.all(sprites) }
@@ -625,6 +628,7 @@ export function BattleStage({
   label,
   children,
   distorted,
+  lit,
   haunted,
   world,
   ownBack,
@@ -645,6 +649,8 @@ export function BattleStage({
   aimLabel?: (b: Battler) => string
   /** The foe is one of a portal run's wild Pokémon (docs/28): it wears the distortion shader. */
   distorted?: boolean
+  /** With `distorted`: the Stairway of Plates' look, light instead of distortion (docs/61 §4.5). */
+  lit?: boolean
   /** The foe is one of the nightmare's (docs/30): a dark shadow haunts it (a rim on its sprite, smoke behind it). */
   haunted?: boolean
   /**
@@ -729,6 +735,7 @@ export function BattleStage({
     LAYOUT.foe,
     scale,
     !!distorted && scale > 0 && foeShown && !foeOut && !playing && !worn,
+    lit ? 'plates' : 'distortion',
   )
   // The nightmare's foe (docs/30): its shadow behind it, its rim on its own sprite.
   const haunt = useHaunt({

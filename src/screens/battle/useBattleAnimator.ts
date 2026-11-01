@@ -20,6 +20,7 @@ import { feelSound } from '@/audio/feel'
 import { sfx, type SfxName } from '@/audio/sfx'
 import type { BattleSlice } from '@/store/game'
 import { talentLogText } from '@/components/Talent'
+import { plateKey, plateType } from '@/components/portalSkin'
 
 export interface Fx {
   cursor: number
@@ -68,7 +69,7 @@ export interface Scene {
   id: number
   /** The log entry it belongs to. */
   cursor: number
-  kind: 'attack' | 'mega' | 'gmax' | 'gmaxEnd' | 'unleash' | 'zmove' | 'zstrike' | 'zaway'
+  kind: 'attack' | 'mega' | 'gmax' | 'gmaxEnd' | 'unleash' | 'plate' | 'zmove' | 'zstrike' | 'zaway'
   /** A Z-Move's going away, or the strike's coming back (docs/35). */
   how?: 'fly' | 'dig' | 'dive'
   /** Who acts: the attacker, or the Pokémon whose form changes. */
@@ -509,7 +510,13 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
                     form: t(`ui.raid.form.${e.toDex}`),
                     type: typeName(e.die ?? 'normal'),
                   })
-                : t('ui.log.typeChange', { name: nameOf(e.uid), type: typeName(e.dice[0] ?? 'normal') })
+                : e.reason === 'plate'
+                  ? t('ui.raid.log.plate', {
+                      name: nameOf(e.uid),
+                      plate: t(plateKey(plateType(e.dice))),
+                      type: typeName(plateType(e.dice)),
+                    })
+                  : t('ui.log.typeChange', { name: nameOf(e.uid), type: typeName(e.dice[0] ?? 'normal') })
       // Your Pokémon's new die, said under the dice until its next roll.
       const gained =
         e.side === 'player' && !e.revert && e.die && (e.reason === 'mega' || e.reason === 'gmax')
@@ -531,9 +538,15 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       const unleash = e.reason === 'unleash'
       const cryDex = unleash || (e.reason === 'mega' && !e.revert && hasOwnCry(e.toDex)) ? e.toDex : null
       const cry = (f: Fx) => (cryDex ? { id: nextId(), dex: cryDex } : f.cry)
+      // A raid's Arceus taking its bar's Plate (docs/61 §4.5): its own short scene and word.
+      const plate = e.reason === 'plate'
       // The raid's word over the stage, like BREAK!.
       const banner = (f: Fx) =>
-        unleash ? { id: nextId(), text: t('ui.raid.unleash'), tone: 'super' as const } : f.banner
+        unleash
+          ? { id: nextId(), text: t('ui.raid.unleash'), tone: 'super' as const }
+          : plate
+            ? { id: nextId(), text: t('ui.raid.plateBanner'), tone: 'super' as const }
+            : f.banner
       // A timed Mega changing back (the gem rules) has no scene of its own: the flash, like a form going back.
       const scene: Step['scene'] =
         e.reason === 'mega' && e.revert
@@ -544,7 +557,9 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
             ? { kind: e.revert ? 'gmaxEnd' : 'gmax', side: e.side, fromDex: e.fromDex, toDex: e.toDex }
             : unleash
               ? { kind: 'unleash', side: e.side, fromDex: e.fromDex, toDex: e.toDex, type: e.die }
-              : undefined
+              : plate
+                ? { kind: 'plate', side: e.side, fromDex: e.fromDex, toDex: e.toDex, type: plateType(e.dice) }
+                : undefined
       const formed = (f: Fx) => ({ ...f.dex, [e.uid]: e.toDex })
       // Dice gained mid-turn land in your hand: only they tumble, the others keep their keys (and stay still).
       const hand = e.hand

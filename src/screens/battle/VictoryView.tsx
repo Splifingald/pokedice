@@ -65,6 +65,7 @@ import { Medal, tierName } from '@/screens/events/RebattlePage'
 import { cx, shade, typeColor } from '@/theme/util'
 import { WorldMythicalCard } from '@/screens/events/world'
 import { TalentAfterWinCard, TalentFoundCard, talentName } from '@/components/Talent'
+import { skinKey, skinOfArea } from '@/components/portalSkin'
 
 /** How long NEXT fills before it goes by itself, with Auto on. */
 const ADVANCE_MS = 1800
@@ -1193,7 +1194,7 @@ function AreaWipe() {
         {raceLost
           ? t(timeUp ? 'ui.timeRace.timeUpBody' : 'ui.timeRace.wipeBody', { n: raceLost.fights, total: raceLost.total })
           : portalLost != null
-          ? t('ui.portal.wipeBody', { n: portalLost })
+          ? t(skinKey(skinOfArea(area, data), 'ui.portal.wipeBody'), { n: portalLost })
           : nightmareLost != null
           ? t('ui.nightmare.wipeBody', { n: nightmareLost })
           : save && !wipeHeals(save, data)

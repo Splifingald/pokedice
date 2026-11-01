@@ -42,6 +42,8 @@ import {
   teamOf,
   type Side,
   inPortalRun,
+  portalModeOf,
+  portalSkin,
   inNightmare,
   timeRaceBattleSpeed,
   legendCinemaOn,
@@ -291,6 +293,9 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const dbl = st.double
   // A portal run's wild Pokémon wear the distortion (docs/28).
   const distorted = !versus && st.kind === 'wild' && !!save && inPortalRun(save, data, run.areaId)
+  // The Stairway of Plates' wild Pokémon wear light instead (docs/61 §4.5).
+  const lit =
+    distorted && portalSkin(portalModeOf(data.areas.find((a) => a.id === run.areaId), data)) === 'plates'
   // The nightmare's rounds (docs/30) are fought under its full moon, a dark shadow haunting the foe.
   const dream = !versus && st.kind === 'wild' && !!save && inNightmare(save, data, run.areaId)
   const stageBox = useRef<HTMLDivElement>(null)
@@ -1206,6 +1211,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         }
         overlay={legend ?? championIntro ?? thrown}
         distorted={distorted}
+        lit={lit}
         world={dream ? 'nightmare' : undefined}
         haunted={dream}
         worn={(catching || !!fx.wornOut[foeFront.uid]) && !thrown}

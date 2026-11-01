@@ -15,6 +15,9 @@ import {
   emitMote,
   GLITCH_DUR,
   GLITCH_PERIOD,
+  LIGHT_TINT,
+  lightBurstFrame,
+  lightRestCss,
   restCss,
   seeded,
   tearPrimitives,
@@ -32,6 +35,9 @@ import {
   type PortalLoop,
 } from '@/fx/timelines/portal'
 import { raidBattleStage, raidCardStage } from '@/fx/timelines/portalRaid'
+import { altarLitTimeline, altarLoop, PL } from '@/fx/timelines/plates'
+import type { PortalSkin } from '@/engine'
+import { usePortalSkin } from './portalSkin'
 import { createPortal } from 'react-dom'
 import { useMotion, type MotionLevel } from '@/lib/motion'
 import { cx } from '@/theme/util'
@@ -126,10 +132,13 @@ export function PortalArt({
   className?: string
 }) {
   const level = useDistortionLevel()
+  const skin = usePortalSkin()
   const hold = still ?? level === 'off'
   const ref = useRef<HTMLCanvasElement>(null)
   const art = Math.max(16, Math.round(size / 2))
-  useLoop(ref, () => portalLoop(art, art, { scene: false, still: hold }), hold, [art])
+  // The Stairway of Plates' altar in place of the portal (docs/61 §4.5).
+  const loop = skin === 'plates' ? altarLoop : portalLoop
+  useLoop(ref, () => loop(art, art, { scene: false, still: hold }), hold, [art, skin])
   return (
     <canvas
       ref={ref}
@@ -148,15 +157,22 @@ export function PortalArt({
  */
 export function PortalScene({ className, still }: { className?: string; still?: boolean }) {
   const level = useDistortionLevel()
+  const skin = usePortalSkin()
   const hold = still ?? level === 'off'
   const box = useRef<HTMLDivElement>(null)
   const ref = useRef<HTMLCanvasElement>(null)
   const size = useBoxSize(box)
   const w = size ? Math.max(16, Math.ceil(size.w / 2)) : 0
   const h = size ? Math.max(16, Math.ceil(size.h / 2)) : 0
-  useLoop(ref, () => (w && h ? portalLoop(w, h, { still: hold }) : null), hold, [w, h])
+  // The Stairway of Plates: its sky, the stairway and an altar (docs/61 §4.5).
+  const loop = skin === 'plates' ? altarLoop : portalLoop
+  useLoop(ref, () => (w && h ? loop(w, h, { still: hold }) : null), hold, [w, h, skin])
   return (
-    <div ref={box} aria-hidden className={cx('absolute inset-0 overflow-hidden bg-[#07020d]', className)}>
+    <div
+      ref={box}
+      aria-hidden
+      className={cx('absolute inset-0 overflow-hidden', skin === 'plates' ? 'bg-[#fff6dc]' : 'bg-[#07020d]', className)}
+    >
       {w > 0 && (
         <canvas
           ref={ref}
@@ -212,6 +228,7 @@ function useDistortion({
   px,
   active,
   level,
+  look = 'distortion',
 }: {
   over: RefObject<HTMLCanvasElement | null>
   host: RefObject<HTMLElement | null>
@@ -221,6 +238,8 @@ function useDistortion({
   active: boolean
   /** distortionLevel's: off is still (the rim alone), short has no tear. */
   level: MotionLevel
+  /** The Stairway of Plates' Pokémon wear light instead (gold and white, never torn: docs/61 §4.5). */
+  look?: PortalSkin
 }) {
   const ax = at?.x ?? 0
   const ay = at?.y ?? 0
@@ -243,7 +262,8 @@ function useDistortion({
       clear()
     }
     if (!active) return reset()
-    el.style.setProperty('--glitch-rest', restCss(px))
+    const light = look === 'plates'
+    el.style.setProperty('--glitch-rest', light ? lightRestCss(px) : restCss(px))
     if (still) return reset
     // Its canvas frame tells the motes how wide it is.
     void loadSprite(...parseKey(sprite))
@@ -273,14 +293,14 @@ function useDistortion({
       last = now
       motes.update(dt)
       const fw = spriteFrame(sprite)?.width ?? 0
-      if (fw && r() < dt * 4) emitMote(motes, r, ax, ay, fw)
+      if (fw && r() < dt * 4) emitMote(motes, r, ax, ay, fw, light)
       // Ambient: about 20 frames a second is plenty, a burst's frames step every ~0.09 s anyway.
       if (now - shown >= 0.045) {
         shown = now
         clear()
         motes.draw(o)
         const b = burstAt(t, GLITCH_PERIOD, GLITCH_DUR, 7)
-        const f = b ? burstFrame(b, short) : null
+        const f = b ? (light ? lightBurstFrame(b, short) : burstFrame(b, short)) : null
         const tag = b && f ? `${b.n}:${f.f}` : ''
         if (tag !== drawn) {
           drawn = tag
@@ -288,7 +308,7 @@ function useDistortion({
           if (f && img) {
             const tear = f.bands.length > 0
             if (tear) filter.innerHTML = tearPrimitives(f.bands, img.offsetWidth, img.offsetHeight, px)
-            setGlitch(burstCss(f, px, tear ? `url(#${id})` : null))
+            setGlitch(burstCss(f, px, tear ? `url(#${id})` : null, light ? LIGHT_TINT : undefined))
           } else setGlitch(null)
         }
       }
@@ -301,7 +321,7 @@ function useDistortion({
       reset()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sprite, ax, ay, px, active, level])
+  }, [sprite, ax, ay, px, active, level, look])
 }
 
 /**
@@ -315,10 +335,11 @@ export function useStageDistortion(
   at: { x: number; y: number },
   scale: number,
   active: boolean,
+  look: PortalSkin = 'distortion',
 ) {
   const level = useDistortionLevel()
   const over = useRef<HTMLCanvasElement>(null)
-  useDistortion({ over, host, sprite, at, px: scale, active, level })
+  useDistortion({ over, host, sprite, at, px: scale, active, level, look })
   return { over }
 }
 
@@ -331,15 +352,19 @@ export function GlitchSprite({
   size,
   shiny = false,
   level: forced,
+  look,
   className,
 }: {
   dex: number
   size: number
   shiny?: boolean
   level?: MotionLevel
+  /** Its look; else the portal run's being shown (the Stairway of Plates: light). */
+  look?: PortalSkin
   className?: string
 }) {
   const shown = useDistortionLevel()
+  const skin = usePortalSkin()
   const level = forced ?? shown
   const host = useRef<HTMLDivElement>(null)
   const over = useRef<HTMLCanvasElement>(null)
@@ -364,6 +389,7 @@ export function GlitchSprite({
     px: per,
     active: true,
     level,
+    look: look ?? skin,
   })
   return (
     <div
@@ -524,6 +550,34 @@ function drawTear(g: G, w: number, h: number, n: number, f: number, short: boole
   }
 }
 
+/** The UI's gleam in the Stairway of Plates (portal.css): a brief white-gold shine, no tear. */
+const GLEAM_CLASSES = { full: 'ui-gleam', short: 'ui-gleam-short' }
+
+/**
+ * One frame (f of 4) of a gleam across the screen (the Stairway of Plates' screen effect, docs/61 §4.5): a slanted band
+ * of light sweeping across, dithered white and pale gold with a gold edge, a few sparkles. `short`: a thin band.
+ */
+function drawGleam(g: G, w: number, h: number, n: number, f: number, short: boolean) {
+  const r = seeded(n * 11 + 5)
+  const bw = short ? 3 : r.int(6, 12)
+  // Its slant and where it is: from left to right over the four frames.
+  const x0 = Math.round(-h * 0.4 + ((w + h * 0.4) * (f + 0.5)) / 4)
+  for (let y = 0; y < h; y++) {
+    const x = x0 + Math.round(y * 0.4)
+    for (let k = 0; k < bw; k++) {
+      if ((x + k + y) % 2 && k > 0 && k < bw - 1) continue
+      rect(g, x + k, y, 1, 1, k === 0 || k === bw - 1 ? PL.gold : k % 3 ? PL.white : PL.pale)
+    }
+  }
+  if (short) return
+  for (let k = 0; k < r.int(3, 6); k++) {
+    const sx = x0 + r.int(-10, bw + 10) + Math.round(r.int(0, h) * 0.4)
+    const sy = r.int(0, h)
+    rect(g, sx - 1, sy, 3, 1, PL.white)
+    rect(g, sx, sy - 1, 1, 3, PL.white)
+  }
+}
+
 /**
  * The screen's recurring distortion while a run is under way (over the page, under the pop-ups, catching no tap): every
  * 6–10 s (`short`: 12–18 s) a tear of half a second, four frames of scanlines and displaced blocks, the page's colours
@@ -533,11 +587,14 @@ function drawTear(g: G, w: number, h: number, n: number, f: number, short: boole
  */
 export function DistortionFx() {
   const level = useDistortionLevel()
+  const skin = usePortalSkin()
+  const light = skin === 'plates'
   const moving = level !== 'off'
   const short = level === 'short'
   const ref = useRef<HTMLCanvasElement>(null)
   const tint = useRef<HTMLDivElement>(null)
-  useUiGlitch({ enabled: moving, short })
+  // The Stairway of Plates: a gleam of light passing over a piece of the page instead of a glitch.
+  useUiGlitch({ enabled: moving, short, ...(light && { classes: GLEAM_CLASSES }) })
   useEffect(() => {
     const cv = ref.current
     const g = cv?.getContext('2d')
@@ -575,7 +632,8 @@ export function DistortionFx() {
         }
         const f = Math.floor(p * 4)
         still()
-        drawTear(g, w, h, n, f, short)
+        if (light) drawGleam(g, w, h, n, f, short)
+        else drawTear(g, w, h, n, f, short)
         setTint(!short && f < 3)
         raf = requestAnimationFrame(frame)
       }
@@ -591,11 +649,11 @@ export function DistortionFx() {
       cancelAnimationFrame(raf)
       setTint(false)
     }
-  }, [moving, short])
+  }, [moving, short, light])
   return (
     <>
       {/* Its own fixed layer, not inside the canvas's: a blend only reaches the page from the page's stacking level. */}
-      <div ref={tint} aria-hidden className="portal-fx-tint" style={{ opacity: 0 }} />
+      <div ref={tint} aria-hidden className={light ? 'plates-fx-tint' : 'portal-fx-tint'} style={{ opacity: 0 }} />
       <div aria-hidden className="portal-fx">
         <PortalFilters />
         <canvas
@@ -757,6 +815,7 @@ export function playPortalClose() {
  */
 export function PortalCloseFx() {
   const { level } = useMotion()
+  const skin = usePortalSkin()
   const [n, setN] = useState(0)
   const [on, setOn] = useState(false)
   useEffect(() => {
@@ -769,7 +828,11 @@ export function PortalCloseFx() {
   }, [])
   // A new scene per pick; the level is read when it starts.
   const timeline = useMemo<Timeline<unknown> | null>(
-    () => (n ? closeTimeline({ clear: true, short: level === 'short' }) : null),
+    () =>
+      n
+        ? // The Stairway of Plates lights an altar where Distortion World closes a portal.
+          (skin === 'plates' ? altarLitTimeline : closeTimeline)({ clear: true, short: level === 'short' })
+        : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [n],
   )

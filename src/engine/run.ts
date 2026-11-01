@@ -16,6 +16,8 @@ import {
   inPortalRun,
   markPortalWonSeen,
   portalModeOf,
+  portalRulesSeen,
+  portalSkin,
   portalStateOf,
   portalWipe,
   portalWon,
@@ -1112,16 +1114,17 @@ export function releaseDuplicates(save: SaveData): { save: SaveData; released: P
 
 /**
  * The portal run's rules pop-up is due (docs/28, docs/15 §20): the first area of the region being played with a portal
- * run switched on, open and not won yet, while the player hasn't seen the rules. Null otherwise.
+ * run switched on, open and not won yet, while the player hasn't seen the rules of its look. Null otherwise.
  */
 export function portalRulesDue(save: SaveData, data: GameData): Area | null {
-  if (save.portalRulesSeen) return null
   const region = regionOf(save)
   return (
     data.areas.find(
       (a) =>
         regionOfArea(a) === region &&
         !!portalModeOf(a, data) &&
+        // Each look its own flag: the Stairway of Plates' rules are new to a Distortion World veteran.
+        !portalRulesSeen(save, portalSkin(portalModeOf(a, data))) &&
         !portalStateOf(save, a.id).won &&
         isAreaUnlocked(save, a.id, data),
     ) ?? null

@@ -12,6 +12,8 @@ import {
   smallWorlds,
   worldPrizes,
   worldProblems,
+  DEFAULT_PORTAL_RUN,
+  normalisePortal,
   type GameData,
 } from '@/engine'
 import { BUNDLE } from '@/config/bundle'
@@ -22,6 +24,7 @@ import {
   STARTERS,
   WORLD_ID,
   snowglobe,
+  snowglobeSql,
   withSnowglobe,
 } from '../../scripts/content-snowglobe-valley'
 
@@ -89,6 +92,26 @@ describe('Snowglobe Valley', () => {
     for (const name of ['Moonlit Glade', 'Evergreen Hill', 'Crown Shrine'])
       for (const w of h.areas.find((a) => a.name === name)!.wildPool)
         expect(onRoad.has(w.dex), `${name}: ${data.species[w.dex]!.name}`).toBe(true)
+  })
+
+  it('makes the Hall of Origin Distortion World’s portal run, dressed as the Stairway of Plates (docs/61 §4.5)', () => {
+    const hall = h.areas.find((a) => a.name === 'Hall of Origin')!
+    const mode = normalisePortal(hall.mode)!
+    // The run's rules and numbers are Distortion World's; only its look and its raid are its own.
+    const { skin, raid, ...rules } = mode
+    const { raid: _dwRaid, ...dwRules } = DEFAULT_PORTAL_RUN
+    expect(rules).toEqual(dwRules)
+    expect(skin).toBe('plates')
+    expect(raid).toEqual({
+      level: 90,
+      upgradeLevel: 10,
+      bars: 4,
+      teamCap: 90,
+      barTypes: ['normal', 'ice', 'steel', 'dragon'],
+    })
+    // The world's only portal run, and its mode reaches the migration (worldSql writes modes).
+    expect(h.areas.filter((a) => a.mode?.kind === 'portal').map((a) => a.name)).toEqual(['Hall of Origin'])
+    expect(snowglobeSql()).toContain('"skin":"plates"')
   })
 
   it('puts every type among the Hall of Origin’s Pokémon (the user’s review)', () => {

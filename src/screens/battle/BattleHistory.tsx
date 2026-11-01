@@ -22,6 +22,7 @@ import { useT } from '@/i18n/react'
 import { chancePercent, comboName, typeName } from '@/lib/format'
 import { cx } from '@/theme/util'
 import { talentLogText, TIER_ICON } from '@/components/Talent'
+import { plateKey, plateType } from '@/components/portalSkin'
 
 /**
  * How a hit adds up, in one line: ( dice + combo ) × the type multiplier = the damage dealt.
@@ -262,7 +263,12 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: r
                         form: t(`ui.raid.form.${e.toDex}`),
                         type: typeName(e.die ?? 'normal'),
                       })
-                    : t('ui.hist.typeChange', { type: typeName(e.dice[0] ?? 'normal') }),
+                    : e.reason === 'plate'
+                      ? t('ui.hist.plate', {
+                          plate: t(plateKey(plateType(e.dice))),
+                          type: typeName(plateType(e.dice)),
+                        })
+                      : t('ui.hist.typeChange', { type: typeName(e.dice[0] ?? 'normal') }),
           icon: 'up',
         })
         return

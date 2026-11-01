@@ -1,5 +1,6 @@
 import { HauntSprite } from '@/components/Nightmare'
 import { GlitchSprite } from '@/components/Portal'
+import { skinKey, skinOfArea } from '@/components/portalSkin'
 import { motion } from 'framer-motion'
 import { useEffect, useId, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -41,6 +42,8 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
   const area = useGame((s) => s.data.areas.find((a) => a.id === s.run.areaId))
   // A portal run's wild Pokémon (docs/28): distorted, and never caught.
   const distorted = useGame((s) => !boss && !!s.save && portalNoCatch(s.save, s.data, s.run.areaId))
+  // The Stairway of Plates' Pokémon wear light instead, and say so in its words (docs/61 §4.5).
+  const skin = skinOfArea(area, data)
   // The nightmare's foe (docs/30): its round, and never caught either.
   // (Its store values picked one by one: a selector must not build a new object on every call.)
   const save = useGame((s) => s.save)
@@ -61,7 +64,7 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
         )}
       >
         {distorted ? (
-          <GlitchSprite dex={enc.dex} size={desktop ? 144 : 104} shiny={enc.shiny} />
+          <GlitchSprite dex={enc.dex} size={desktop ? 144 : 104} shiny={enc.shiny} look={skin} />
         ) : dream ? (
           <HauntSprite dex={enc.dex} size={desktop ? 144 : 104} shiny={enc.shiny} />
         ) : (
@@ -107,7 +110,7 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
         {distorted ? (
           <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted">
             <PixelIcon name="sparkle" size={14} />
-            {t('ui.portal.noCatch')}
+            {t(skinKey(skin, 'ui.portal.noCatch'))}
           </p>
         ) : dream ? (
           <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted">

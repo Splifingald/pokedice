@@ -290,6 +290,41 @@ and space). The screens' rules: docs/15 §48.
 - The 10th altar: shiny Arceus. The raid: **Lv.90**, foes' dice 10, 4 HP bars, teams up to Lv.90, its Plate changing on
   each bar: Normal → Ice → Steel → Dragon (agreed).
 
+**Built** (2026-11-01): the portal run as it is, with a look on its mode. Its screens: docs/15 §49.
+
+- **Engine**: `PortalRunMode.skin` (`'distortion' | 'plates'`; absent: Distortion World's, so Haunted Hollow's mode reads
+  exactly as before) and `raid.barTypes` (the raid Pokémon's type as each bar starts) in `src/engine/types.ts`, cleaned
+  by `normalisePortal` (`src/engine/portalMode.ts`: `portalSkin`, `PLATE_BARS`). The run's rules don't read the look.
+  The raid: `createRaid` takes the area's `barTypes` (a progression raid of a portal area only), `takePlate` puts on the
+  bar's type form at the start and after each broken bar (`raidPlate` in `battle.ts`: Arceus's form of that type, every
+  die that type; nothing when it has that type already or has no type forms), logged as a `form` with
+  `reason: 'plate'`. Its rules pop-up has its own flag (`platesRulesSeen`, `portalRulesSeen(save, skin)`,
+  `markPortalRulesSeen`), so a Distortion World veteran still sees it once.
+- **Content**: `HALL_OF_ORIGIN_RUN` in `scripts/content-snowglobe-valley.ts` (Distortion World's numbers, `skin:
+  'plates'`, raid Lv.90 · dice 10 · 4 bars · teams up to Lv.90 · Normal, Ice, Steel, Dragon), on the Hall of Origin;
+  migration 0120 regenerated (it writes each area's `mode`).
+- **Screens**: `src/components/portalSkin.ts` (the look's context, `skinKey`, the prize, `plateKey`),
+  `src/components/Portal.tsx` and `PortalFx.tsx` (every piece reads the look), `src/fx/timelines/plates.ts` (the way in,
+  the altar, an altar lit, the victory, the raid's Plate), `src/fx/glitch.ts` (the light on its Pokémon),
+  `src/styles/portal.css` (`.plates-panel`, `.plates-fx-tint`, `.ui-gleam`), the run's screens (`PortalRun.tsx`, the
+  gauge, Home's CONTINUE, the area's details, the Team screen's way back, the preview, the wipe card, the toasts, the
+  menus' lock), the raid's (the plain look for the Hall's raid, its lock; the `plate` scene, line, banner and history
+  row). Words: `ui.plates.*`, `ui.raid.log.plate`, `ui.raid.plateBanner`, `ui.hist.plate`, ten languages.
+- **Admin**: Areas → Special mode: portal run → **Its look** (Distortion World / Stairway of Plates) and the raid's type
+  on each bar ("The Hall of Origin's Plates" fills Normal, Ice, Steel, Dragon).
+- **Server**: nothing changes, **no migration 0125**. 0057's checks key off the area's mode, not its look: the raid is
+  locked until the run is won (`raid_progress_special_locked`, 0060's, which reads any portal mode); the teams are capped
+  at Lv.90 in the fight by the game (no team is capped on the server since 0065), and the raid's level, dice and bars
+  are the game's, as for Giratina. The look and the bars' types live in the same
+  `areas.mode` jsonb, written by 0120.
+- **Switch**: the portal run's (`portalRun`, Off / On for admin / On for everyone, shared with Distortion World as the
+  same feature); Off, the Hall plays as a plain secret area (its deck, then its raid).
+- **Tests**: `tests/engine/stairway-of-plates.test.ts` (the skin leaves Distortion World's mode as it was, the Hall's run
+  is Distortion World's, the raid at Lv.90 / 90 / 4 bars, the Plates bar by bar, its rules flag),
+  `tests/plates-words.test.ts` (the Plates' names, the look's words, their placeholders),
+  `tests/content/snowglobe-valley.test.ts` (the Hall's mode); `e2e/stairway.spec.ts` (the way in, a blessing, the
+  gauge, the victory, the rules for a veteran, the raid's first Plate).
+
 ### 4.6 Intros and outros, and closing
 
 Every secret area has an intro and an outro on the pixel FX engine (as docs/53's legends): the moon and a leaping
@@ -298,6 +333,11 @@ blizzard rolling in, then lifting (Crown Shrine); a clock face and a rift, then 
 stairway of light, then the Judgment (Hall of Origin). Once its boss is caught a secret area closes for good.
 
 ## 5. Setting it up (after the review)
+
+The Stairway of Plates (§4.5) needs no SQL of its own: 0120 carries the Hall of Origin's mode (its look, its numbers and
+its raid's Plates). Once 0120 has run: Admin → Areas → Hall of Origin → Special mode: portal run, check its look and
+numbers, then the portal runs' switch **On for admin** to try it, **On for everyone** to open it (the switch is shared
+with Distortion World's run). Publish.
 
 1. Run in the Supabase SQL editor
    [`supabase/migrations/0120_snowglobe_valley.sql`](https://github.com/Splifingald/pokedice/blob/claude/eloquent-galileo-b5uahz/supabase/migrations/0120_snowglobe_valley.sql)

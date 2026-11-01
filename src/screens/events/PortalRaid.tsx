@@ -2,7 +2,7 @@
 // raid whose area is in portal mode. Its page and pop-ups wear the violet night (`.dw-scope`), the portal turning as
 // their banner, Giratina distorted on its card; the effects themselves are PortalFx's. Nothing here decides a rule.
 import { useEffect, useState, type ReactNode } from 'react'
-import { catchValueOf, portalModeOf, type RaidRules, type TodayRaid } from '@/engine'
+import { catchValueOf, portalModeOf, portalSkin, type RaidRules, type TodayRaid } from '@/engine'
 import { GlitchSprite, PortalScene, RaidStageArt } from '@/components/Portal'
 import { PixelIcon } from '@/components/icons'
 import { SpriteImg } from '@/components/SpriteImg'
@@ -13,15 +13,18 @@ import { distortionLevel } from '@/fx/timelines/portal'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 
-/** The raid's area is in portal mode (Distortion World's Giratina): its page, pop-ups and fight are themed. */
+/**
+ * The raid's area is in portal mode in Distortion World's look (its Giratina): its page, pop-ups and fight are themed.
+ * The Stairway of Plates' Arceus (docs/61 §4.5) is a raid of the usual look: its Plates are its show.
+ */
 export function usePortalRaid(areaId: string | null | undefined): boolean {
-  return useGame(
-    (s) =>
-      !!portalModeOf(
-        s.data.areas.find((a) => a.id === areaId),
-        s.data,
-      ),
-  )
+  return useGame((s) => {
+    const mode = portalModeOf(
+      s.data.areas.find((a) => a.id === areaId),
+      s.data,
+    )
+    return !!mode && portalSkin(mode) === 'distortion'
+  })
 }
 
 /**
