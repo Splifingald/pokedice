@@ -3,7 +3,7 @@ import { GlitchSprite } from '@/components/Portal'
 import { motion } from 'framer-motion'
 import { useEffect, useId, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { catchTarget, catchValueOf, effectiveStats, getSpecies, isDoubleEncounter, MONEY, paidKey, rebattleProgress, rebattleTiers, teamOf, type Encounter, portalNoCatch, nightmareFoe, familyTalent, familyUnlocked, noteTalentMet, talentMet, talentsOn } from '@/engine'
+import { catchTarget, catchValueOf, effectiveStats, getSpecies, isDoubleEncounter, isPlayerFoe, MONEY, paidKey, rebattleProgress, rebattleTiers, teamOf, type Encounter, portalNoCatch, nightmareFoe, familyTalent, familyUnlocked, noteTalentMet, talentMet, talentsOn } from '@/engine'
 import { joinList } from '@/i18n'
 import { effectText } from '@/i18n/text'
 import { money } from '@/lib/format'
@@ -28,6 +28,7 @@ import { mutateSave, useGame } from '@/store/game'
 import { canSkipCurrent, declineChallenge, engage, skipEncounter } from '@/store/run'
 import { cx } from '@/theme/util'
 import { TalentGem, talentName } from '@/components/Talent'
+import { PlayerFoeCard } from '@/components/AreaVersus'
 
 function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> }) {
   const { t } = useT()
@@ -392,7 +393,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
       >
         {/* Gym and legendary cards carry their own banner, so their title is for screen readers only. */}
         <h2 id={titleId} className={dark ? 'sr-only' : 'border-b-[3px] border-edge px-3 py-2 text-center text-2xl leading-tight sm:text-3xl'}>
-          {t(enc.kind === 'wild' && enc.partner ? 'ui.enc.titleWildPair' : TITLES[enc.kind])}
+          {t(enc.kind === 'wild' && enc.partner ? 'ui.enc.titleWildPair' : isPlayerFoe(enc) ? 'ui.areaVersus.title' : TITLES[enc.kind])}
         </h2>
         <div className="pixel-scroll flex flex-col gap-3 overflow-y-auto p-3 sm:p-4">
           {enc.kind === 'gym' && <GymCard enc={enc} />}
@@ -410,7 +411,8 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
               </div>
             </>
           )}
-          {enc.kind === 'trainer' && <TrainerCard enc={enc} />}
+          {/* A real player's team (docs/54): who, their team and what it pays, after its intro. */}
+          {enc.kind === 'trainer' && (isPlayerFoe(enc) ? <PlayerFoeCard enc={enc} /> : <TrainerCard enc={enc} />)}
           {enc.kind === 'item' && <ItemCard enc={enc} />}
           {enc.kind === 'center' && <CenterCard enc={enc} />}
           {enc.kind === 'casino' && <CasinoCard />}
@@ -464,8 +466,8 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
           {skippable && (
             <PixelButton size="lg" className="flex-1" onClick={skipEncounter}>
               {fight && <PixelIcon name="run" size={20} />}
-              {t(enc.kind === 'trainer' ? 'ui.enc.avoid' : fight ? 'ui.enc.flee' : 'ui.enc.skip')}
-              {data.config.skipPolicy === 'once' && <span className="text-base"> (1)</span>}
+              {t(isPlayerFoe(enc) ? 'ui.areaVersus.skip' : enc.kind === 'trainer' ? 'ui.enc.avoid' : fight ? 'ui.enc.flee' : 'ui.enc.skip')}
+              {data.config.skipPolicy === 'once' && !isPlayerFoe(enc) && <span className="text-base"> (1)</span>}
             </PixelButton>
           )}
           {/* A challenge the player picked (gym, or a legendary due once every round is done) can wait. */}

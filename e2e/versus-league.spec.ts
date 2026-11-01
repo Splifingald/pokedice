@@ -119,7 +119,7 @@ async function leagueOn(page: Page, save: object, league: object = {}) {
 }
 
 async function fakeLeague(page: Page) {
-  const sent: Record<string, Record<string, unknown>[]> = { start: [], finish: [] }
+  const sent: Record<string, Record<string, unknown>[]> = { start: [], finish: [], best: [] }
   await mockSupabase(page, {
     rpc: {
       versus_board: BOARD,
@@ -135,6 +135,11 @@ async function fakeLeague(page: Page) {
       versus_league_finish: (b: Record<string, unknown>) => {
         sent.finish!.push(b)
         return b.p_outcome === 'won' ? [{ delta: 10, trophies: 34 }] : [{ delta: 0, trophies: 24 }]
+      },
+      // The most trophies ever held, in any week (migration 0097).
+      versus_league_best: (b: Record<string, unknown>) => {
+        sent.best!.push(b)
+        return 152
       },
     },
   })
@@ -278,6 +283,29 @@ test('a match by hand: after a K.O. with two left, the two come up as cards and 
   await expect(next).toHaveCount(0)
   // Blastoise is out, and the fight goes on.
   await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeVisible({ timeout: 30_000 })
+})
+
+test("the trainer card's Versus line: the most trophies ever held, not the old board's wins (phone)", async ({
+  page,
+}) => {
+  const sent = await fakeLeague(page)
+  await leagueOn(page, { ...readySave(), versusLeagueRulesSeen: true })
+  await page.setViewportSize({ width: 360, height: 640 })
+  await page.goto('/home')
+  await page.getByRole('button', { name: 'Your trainer menu' }).click()
+  const card = page.getByRole('dialog', { name: 'Trainer card' })
+  await card.getByRole('button', { name: 'Stats', exact: true }).click()
+  const stats = card.locator('#card-stats')
+  await expect(stats.getByRole('term').filter({ hasText: 'Versus best' })).toBeVisible()
+  const line = stats.getByRole('definition').filter({ has: page.getByLabel('152 trophies') })
+  await expect(line).toBeVisible()
+  await expect(stats).not.toContainText(' won · ')
+  // Whole on a 360 px phone, not cut short.
+  expect(await line.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+  // Your own: no friend asked about (dev's StrictMode may ask twice).
+  expect(sent.best!.length).toBeGreaterThan(0)
+  expect(sent.best!.every((b) => !('p_user' in b))).toBe(true)
+  if (SHOTS) await card.screenshot({ path: `${SHOTS}/card-versus-best.png` })
 })
 
 test("Monday: the week's rewards pop up as the league's, in its own words, and open as a gift", async ({

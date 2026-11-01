@@ -37,7 +37,7 @@
   }
  },
  "dayCare": {
-  "unlockPokedex": 20,
+  "unlockPokedex": 10,
   "slots": 2,
   "friendSlots": 4,
   "xpPerTick": 1,

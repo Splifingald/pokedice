@@ -8,7 +8,7 @@ import { StageCanvas, type StageHandle } from '@/components/StageCanvas'
 import { Toggle } from '@/components/Toggle'
 import type { DieType, PokeType, StatusKind } from '@/engine/types'
 import { hitPower, type HitPower } from '@/engine/hitPower'
-import { loadItemSprite, loadSprite, spriteKey } from '@/fx/sprites'
+import { loadItemSprite, loadPicture, loadSprite, spriteKey } from '@/fx/sprites'
 import { H, Stage, W, type Hud, type Timeline } from '@/fx/timeline'
 import { attackTimeline } from '@/fx/timelines/attacks'
 import { shinyTimeline } from '@/fx/timelines/shiny'
@@ -23,6 +23,9 @@ import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { breachTimeline, closeTimeline, victoryTimeline, wildGlitchTimeline } from '@/fx/timelines/portal'
 import { legendRaidEntranceTimeline } from '@/fx/timelines/legendRaid'
 import { LEGEND_RAID_SCENES } from '@/fx/timelines/legendRaidScenes'
+import { BOSS_CINEMAS, RAID_CINEMAS } from '@/fx/timelines/cinema'
+import { CHAMPION_CINEMAS } from '@/fx/timelines/cinema/champions'
+import { sampleParams } from '@/fx/timelines/cinema/champion'
 import { raidEntranceTimeline } from '@/fx/timelines/portalRaid'
 import {
   nightmareIntroTimeline,
@@ -374,6 +377,41 @@ const PRESETS: Preset[] = [
       name: `Raid entrance: #${dex} (${scene.omen}, ${scene.weather})`,
       sprites: [[Number(dex), false]],
       make: (o) => legendRaidEntranceTimeline({ scene, mon: spriteKey(Number(dex), false), short: o.short }),
+    }),
+  ),
+  // The legends' own cinematics (docs/53): the raids' (their words are the raid intro's), the bosses' with their card.
+  ...Object.entries(RAID_CINEMAS).map(
+    ([dex, c]): Preset => ({
+      name: `Cinematic: #${dex}'s raid entrance`,
+      sprites: [[Number(dex), false], ...(c.sprites ?? []).map(([d, sh]): [number, boolean, boolean] => [d, false, sh])],
+      make: (o) => c.make({ mon: foe(Number(dex)), short: o.short }),
+    }),
+  ),
+  ...Object.entries(BOSS_CINEMAS).map(
+    ([dex, c]): Preset => ({
+      name: `Cinematic: #${dex}'s boss entrance`,
+      sprites: [
+        [6, true],
+        [Number(dex), false],
+      ],
+      make: () =>
+        c.makeBattle({
+          own: own(6),
+          foe: foe(Number(dex)),
+          look: legendLook(Number(dex), 'psychic'),
+          name: `#${dex}`,
+          level: 'LV65',
+          types: 'PSYCHIC',
+        }),
+    }),
+  ),
+  // The champions' own cinematics (docs/56): each with its sample picture, team and card.
+  ...Object.values(CHAMPION_CINEMAS).map(
+    (c): Preset => ({
+      name: `Cinematic: ${c.sample.name}'s entrance`,
+      sprites: [[6, true], ...[c.sample.lead, c.sample.ace, ...c.extras].map((d): [number, boolean] => [d, false])],
+      load: () => loadPicture(c.sample.trainer),
+      make: () => c.makeBattle(sampleParams(c.sample)),
     }),
   ),
   // Darkrai's nightmare (docs/30): the intro, the strike after a round, the waking, the raid's entrance.

@@ -23,13 +23,19 @@ export function PlayerMessages({
   player,
   name,
   save,
+  deviceId,
 }: {
   player: string
   name: string
   save?: SaveData | null
+  /** A signed-in player's latest device: its guest messages show too (below). */
+  deviceId?: string | null
 }) {
   const data = useGame((s) => s.data)
   const target = playerTarget(player)
+  // A guest who signs in becomes one player with their account in Analytics (0102, docs/57), and the game still shows
+  // that device's guest messages once signed in (my_feedback), so the profile shows them too.
+  const guestDevice = target.userId ? deviceId || null : null
   const [rows, setRows] = useState<FeedbackRow[] | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [title, setTitle] = useState('')
@@ -46,14 +52,18 @@ export function PlayerMessages({
         .order('created_at', { ascending: false })
         .limit(100)
       const { data: got, error } = await (target.userId
-        ? q.eq('user_id', target.userId)
+        ? guestDevice
+          ? q.or(
+              `user_id.eq.${target.userId},and(user_id.is.null,device_id.eq."${guestDevice.replace(/["\\]/g, '\\$&')}")`,
+            )
+          : q.eq('user_id', target.userId)
         : q.is('user_id', null).eq('device_id', target.deviceId))
       if (error) throw error
       setRows((got ?? []) as FeedbackRow[])
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
     }
-  }, [target.userId, target.deviceId])
+  }, [target.userId, target.deviceId, guestDevice])
 
   useEffect(() => {
     if (isSupabaseConfigured) void load()
@@ -103,6 +113,8 @@ export function PlayerMessages({
           ? `${name} gets it on their account, the next time they open the game (or come back to it).`
           : `${name} plays as a guest: they get it on the device they last played on.`}{' '}
         Gifts open when they close the message.
+        {guestDevice &&
+          " Below: their account's messages, and their device's from when they played there as a guest."}
       </p>
       <label className="flex flex-col gap-1 text-base">
         Title

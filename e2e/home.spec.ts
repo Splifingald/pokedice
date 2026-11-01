@@ -299,10 +299,10 @@ test("Home's cards are only for what's open; the line under them names what open
   await expect(page.getByText('Special events')).toHaveCount(0)
   expect(await seriousAxe(page)).toEqual([])
 
-  // Twenty species caught (the Day Care's rules already read): its card, and the line moves on.
+  // Ten species caught (the Day Care's rules already read): its card, and the line moves on.
   // A context of its own: the first page's save stays in its own storage.
   const later = await (await browser.newContext()).newPage()
-  const caught = Array.from({ length: 20 }, (_, i) => i + 1)
+  const caught = Array.from({ length: 10 }, (_, i) => i + 1)
   const dayCare = { residents: [], guests: [], eggClaimed: false, visited: true }
   await boot(later, makeSave(4, { pokedex: caught, dayCare }))
   await later.goto('/home')
