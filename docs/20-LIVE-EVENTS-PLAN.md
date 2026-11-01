@@ -229,3 +229,23 @@ quantity), opened on its day or the next. It runs once, its end the day after it
 (`giftCalendar.access`, Off) and its own page (`/calendar`), so like the Underground it takes no turn in the pop-ups'
 queue (`queuedLives`): Home's notice announces it and its page shows its rules. `liveTypeOn` keeps a calendar switched
 off out of `liveEventsAt`, the push schedule and the Discord posts. Never in an Extreme save.
+
+## 12. The calendar view (2026-11-01)
+
+The user's ask: *"Create a live event calendar view in admin mode."*
+
+- **Admin → Events → Live events**: **List | Calendar** beside New live event (`Seg`, in the address as
+  `?tab=live&view=calendar`, so a reload stays on it). The list is as before.
+- **The calendar**: a month (UTC days, Monday first, as the raid calendar), ‹ › and Today, the month's run count and a
+  legend of the five types' colours. Every run is a bar over the days it's on: a recurring event's each time it comes
+  back (the engine's `liveRuns`, so it shows exactly what players get), a run crossing a week carried on with ‹ ›, its
+  start time (UTC) on its first day, LIVE on the one running, faded once over, hatched for a gift calendar whose own
+  switch is off; overlapping runs take lanes, the longer on top (`src/admin/liveCalendar.ts`, `monthWeeks`). A line
+  says when Live events are switched off altogether.
+- **A bar opens its event in the editor** (a recurring one's rule), brought into view; **a day from today on starts a
+  new event there** (18:00 UTC, or the next round hour if that's past; three days, as New live event). While a draft is
+  open the calendar waits, as the list's Edit does. It shows the working copy: an applied change shows before Save &
+  Publish.
+- No switch and no rules: it's the admin's own view of the live events; players see nothing new.
+- Tests: `tests/admin-live-calendar.test.ts` (weeks, a run cut at a week, midnight ends, lanes, recurring runs),
+  `e2e/admin-events.spec.ts` (the view in the address, a bar per Saturday, a bar edits, a day starts a new event).
