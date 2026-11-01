@@ -10,6 +10,7 @@ import { nightmareModeOf } from './nightmareMode'
 import { nightmareLock } from './nightmare'
 import { portalModeOf } from './portalMode'
 import { portalLock } from './portal'
+import { tracksModeOf } from './tracksMode'
 import { regionOfArea } from './regions'
 import { hasAbleTeam, isAreaClosed, isAreaUnlocked, progressOf } from './run'
 import {
@@ -55,9 +56,12 @@ export interface AutoRun {
   rebattle?: unknown
 }
 
-/** A portal run's or the nightmare's area (docs/28, docs/30): their own steps, so never the autopilot's. */
+/**
+ * A portal run's, the nightmare's or Tracks in the Snow's area (docs/28, docs/30, docs/61 §4.1): their own steps, so
+ * never the autopilot's.
+ */
 const specialArea = (area: Area | undefined, data: GameData): boolean =>
-  !!area && (!!portalModeOf(area, data) || !!nightmareModeOf(area, data))
+  !!area && (!!portalModeOf(area, data) || !!nightmareModeOf(area, data) || !!tracksModeOf(area, data))
 
 /**
  * Where the auto switch is offered (the area's header, a battle's extras). Off: cleared areas, as auto-mode always was.

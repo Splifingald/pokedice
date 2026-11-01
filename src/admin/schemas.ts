@@ -239,6 +239,28 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
           gifts: z.array(z.object({ round: int(1, 20), key: z.string().min(1), qty: int(1, 99) })),
           raid: z.object({ level: int(1, 100), upgradeLevel: int(1, 10), bars: int(1, 10), teamCap: int(1, 100) }),
         }),
+        // Moonlit Glade's Tracks in the Snow (docs/61 §4.1): its rounds' glades, taps and bushes, and where prints show.
+        z.object({
+          kind: z.literal('tracks'),
+          rounds: z
+            .array(
+              z
+                .object({
+                  size: int(2, 6),
+                  taps: int(1, 36),
+                  wild: int(0, 35),
+                  finds: int(0, 35),
+                  cabins: int(0, 35),
+                  apart: z.boolean(),
+                })
+                .refine((r) => r.wild + r.finds + r.cabins <= r.size * r.size - 1, {
+                  message: 'more contents than bushes (one is Stantler’s)',
+                }),
+            )
+            .min(1, 'at least one round')
+            .max(9),
+          emptyPrintsOnly: z.boolean(),
+        }),
       ])
       .nullable()
       .optional(),

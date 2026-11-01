@@ -28,6 +28,7 @@ import {
   nightmareWipe,
   nightmareWon,
 } from './nightmare'
+import { canStartTracks, inTracks, tracksStateOf, tracksWipe, tracksWon } from './tracks'
 import { familyTalent, TALENT, talentCandyFits, talentOf, talentOnEvolve, unlockFamily } from './talents'
 import { areaOpenAt } from './worldList'
 import {
@@ -318,6 +319,8 @@ export function latestOpenArea(save: SaveData, data: GameData, now?: number | nu
 export function isAreaClosed(save: SaveData, areaId: string, data: GameData): boolean {
   const area = data.areas.find((a) => a.id === areaId)
   if (!area) return false
+  // Tracks in the Snow (docs/61 §4.1): the shiny Stantler caught and its outro played, the glade closes for good.
+  if (tracksWon(save, data, areaId) && tracksStateOf(save, areaId).wonSeen) return true
   const c = deckCounts(area.encounterWeights, deckAbilities(area))
   if (c.wild + c.trainer + c.casino > 0) return false
   const bosses = fightBosses(area, data)
@@ -332,10 +335,11 @@ export function isAreaClosed(save: SaveData, areaId: string, data: GameData): bo
 
 /**
  * The area deals no more cards: its portal run (docs/28) or its nightmare (docs/30) is won, so it is only its raid,
- * then sealed. Unlike a closed area it can still be entered (its raid is reached from it).
+ * then sealed; or its Tracks in the Snow (docs/61 §4.1), the shiny Stantler caught, closing once its outro has played.
+ * Unlike a closed area it can still be entered (its raid is reached from it; the glade's outro plays there).
  */
 export const isAreaSealed = (save: SaveData, data: GameData, areaId: string): boolean =>
-  portalWon(save, data, areaId) || nightmareWon(save, data, areaId)
+  portalWon(save, data, areaId) || nightmareWon(save, data, areaId) || tracksWon(save, data, areaId)
 
 /** A boss of this area was caught here: noted in its progress (what a small world's bosses go by, docs/26 §2.5). */
 export function noteBossCaught(save: SaveData, areaId: string, dex: number): SaveData {
@@ -423,6 +427,8 @@ export type RunEvent =
   | { kind: 'nightmare_round'; round: number; total: number }
   /** The item a nightmare round left in the bag (docs/30), once for good. */
   | { kind: 'nightmare_gift'; key: string; qty: number }
+  /** A round of Tracks in the Snow cleared (docs/61 §4.1): Stantler found and K.O., `round` of `total` now cleared. */
+  | { kind: 'tracks_round'; round: number; total: number }
   /**
    * An Unown caught with the Unown Pokédex open (docs/41): its letter, new to the page or not, the page's count, and
    * the prize when it was the last one.
@@ -753,6 +759,8 @@ export function applyWipe(save: SaveData, areaId: string, data: GameData): SaveD
   if (inPortalRun(save, data, areaId)) return portalWipe(save, data, areaId)
   // So does the nightmare (docs/30): the player wakes up, the rounds back to 0.
   if (inNightmare(save, data, areaId)) return nightmareWipe(save, data, areaId)
+  // Tracks in the Snow (docs/61 §4.1): back at the glade's edge, healed, its cleared rounds kept.
+  if (inTracks(save, data, areaId)) return tracksWipe(save, data, areaId)
   const p = progressOf(save, areaId)
   const healed = new Set(wipeHeals(save, data) ? save.team : [])
   // Extreme mode's boon Centers (docs/47): the round starts over at a Center that only swaps.
@@ -817,6 +825,15 @@ export function arriveAtNightmare(save: SaveData, data: GameData, areaId: string
 }
 
 /**
+ * Arriving at Tracks in the Snow's way in (docs/61 §4.1, before BEGIN) heals as a Pokémon Center does, as the
+ * nightmare's way in does. The same save when there is nothing to heal, or outside a way in.
+ */
+export function arriveAtTracks(save: SaveData, data: GameData, areaId: string): SaveData {
+  if (!canStartTracks(save, data, areaId)) return save
+  return healedOrSame(save, data)
+}
+
+/**
  * Waking up from the nightmare, HEAL & START RAID (docs/30, as the portal run's victory): the team and the Box healed as
  * a Pokémon Center would, the waking marked seen. The same save when no waking is waiting here.
  */
@@ -854,7 +871,10 @@ export function teamSwapsOpen(save: SaveData, data: GameData, at: SwapPlace): bo
     at.phase === 'idle' &&
     !!at.areaId &&
     save.currentAreaId === at.areaId &&
-    (canStartPortal(save, data, at.areaId) || canStartNightmare(save, data, at.areaId))
+    (canStartPortal(save, data, at.areaId) ||
+      canStartNightmare(save, data, at.areaId) ||
+      // Tracks in the Snow's way in too (docs/61 §4.1).
+      canStartTracks(save, data, at.areaId))
   )
 }
 
