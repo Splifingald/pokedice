@@ -28,8 +28,12 @@ const ORDER0 = 9200
 
 const id = (...parts: (string | number)[]) => stableUuid(['snowglobe-valley', ...parts].join(':'))
 
-/** The three partners (the user's picks: Alolan Sandshrew and Alolan Vulpix; Spheal the third). */
-export const STARTERS = [10101, 10103, 363]
+/**
+ * The three partners (the user's review of 2026-11-01): fan favourites with a plain three-stage line evolving at about
+ * the same levels, none strong against Ice: Rowlet (the snowy owl, 17/34), Popplio (the sea lion, 17/34), Mareep (the
+ * woolly sheep, 15/30). Alolan Sandshrew and Vulpix, the first picks, stay in the wild.
+ */
+export const STARTERS = [722, 728, 179]
 
 /** The world's areas, in order: its chain, its league, then its secret areas. */
 export const AREAS: AreaSpec[] = [
@@ -83,50 +87,52 @@ export const AREAS: AreaSpec[] = [
     deck: { wild: 6, trainer: 2 },
     upgrade: 1,
     wild: [
-      [204, 25, 7, 10],
-      [216, 20, 7, 10],
-      [585, 20, 8, 11],
-      [821, 20, 7, 10],
-      [661, 15, 7, 10],
-      [459, 12, 8, 11],
-      [41, 12, 7, 10],
-      [179, 12, 8, 11],
-      [827, 12, 7, 10],
-      [397, 5, 10, 12],
-      [613, 6, 9, 12],
-      [10103, 4, 8, 10],
+      [204, 25, 6, 9],
+      [216, 20, 6, 9],
+      [585, 20, 7, 10],
+      [821, 20, 6, 9],
+      [661, 15, 6, 9],
+      [459, 6, 7, 9],
+      [41, 12, 6, 9],
+      [179, 12, 7, 10],
+      [827, 12, 6, 9],
+      [397, 5, 9, 11],
+      [613, 4, 8, 10],
+      [10103, 8, 7, 9],
+      [234, 8, 7, 9],
+      [722, 4, 7, 9],
     ],
     trainers: [
       {
         name: 'Bug Catcher Moss',
         sprite: 'bug-catcher',
         team: [
-          [204, 10],
-          [872, 10],
+          [204, 9],
+          [872, 9],
         ],
       },
       {
         name: 'Ranger Fir',
         sprite: 'sinnoh/ranger-m',
         team: [
-          [585, 11],
-          [216, 10],
+          [585, 10],
+          [216, 9],
         ],
       },
       {
         name: 'Bird Keeper Robin',
         sprite: 'bird-keeper',
         team: [
-          [661, 10],
-          [821, 10],
+          [661, 9],
+          [821, 9],
         ],
       },
       {
         name: 'Picnicker Ivy',
         sprite: 'picnicker',
         team: [
-          [459, 11],
-          [613, 10],
+          [459, 10],
+          [613, 9],
         ],
       },
     ],
@@ -147,11 +153,11 @@ export const AREAS: AreaSpec[] = [
       [129, 20, 11, 14],
       [86, 20, 11, 14],
       [90, 15, 12, 15],
-      [339, 15, 11, 14],
       [361, 15, 12, 15],
       [363, 10, 12, 15],
       [170, 8, 12, 15],
       [349, 4, 14, 16],
+      [728, 4, 12, 15],
       [195, 4, 14, 16],
     ],
     trainers: [
@@ -160,7 +166,7 @@ export const AREAS: AreaSpec[] = [
         sprite: 'fisherman',
         team: [
           [129, 13],
-          [339, 14],
+          [349, 14],
         ],
       },
       {
@@ -205,7 +211,9 @@ export const AREAS: AreaSpec[] = [
       [582, 20, 16, 19],
       [333, 15, 16, 19],
       [322, 12, 15, 18],
-      [228, 10, 16, 19],
+      [427, 10, 15, 18],
+      [764, 8, 16, 19],
+      [225, 4, 18, 21],
       [446, 5, 17, 20],
       [181, 3, 19, 21],
     ],
@@ -326,7 +334,7 @@ export const AREAS: AreaSpec[] = [
       [615, 10, 27, 31],
       [220, 15, 25, 28],
       [361, 8, 27, 31],
-      [10101, 5, 26, 29],
+      [10101, 8, 26, 29],
       // Very rare, as Dreepy in Haunted Hollow's Cavern: Arctibax at 35, Baxcalibur at 54.
       [996, 1, 25, 28],
     ],
@@ -385,7 +393,6 @@ export const AREAS: AreaSpec[] = [
     upgrade: 4,
     wild: [
       [171, 20, 31, 34],
-      [320, 15, 31, 34],
       [739, 15, 32, 35],
       [974, 15, 32, 35],
       [875, 10, 33, 36],
@@ -399,7 +406,7 @@ export const AREAS: AreaSpec[] = [
         sprite: 'sailor',
         team: [
           [739, 35],
-          [320, 35],
+          [171, 35],
         ],
       },
       {
@@ -456,7 +463,6 @@ export const AREAS: AreaSpec[] = [
     upgrade: 4,
     wild: [
       [323, 15, 37, 41],
-      [229, 15, 37, 41],
       [218, 15, 37, 37],
       [324, 15, 38, 41],
       [663, 15, 38, 41],
@@ -477,7 +483,7 @@ export const AREAS: AreaSpec[] = [
         name: 'Firebreather Ember',
         sprite: 'johto/firebreather',
         team: [
-          [229, 41],
+          [219, 41],
           [324, 41],
         ],
       },
@@ -502,7 +508,7 @@ export const AREAS: AreaSpec[] = [
         sprite: 'sinnoh/ace-trainer-m',
         team: [
           [663, 42],
-          [229, 42],
+          [219, 42],
           [323, 41],
         ],
       },
@@ -532,6 +538,7 @@ export const AREAS: AreaSpec[] = [
       [823, 10, 44, 47],
       [583, 15, 42, 46],
       [740, 10, 43, 47],
+      [745, 6, 44, 48],
       [473, 4, 47, 50],
       [478, 4, 47, 50],
     ],
@@ -734,9 +741,9 @@ export const AREAS: AreaSpec[] = [
         sprite: 'kalos/wulfric',
         role: 'champion',
         team: [
-          [473, 60],
+          [473, 59],
           [461, 59],
-          [460, 59],
+          [460, 60],
         ],
         items: ['hyper-potion'],
       },
@@ -888,14 +895,15 @@ export const AREAS: AreaSpec[] = [
       { dex: 484, level: 70, shiny: true, raid: true },
     ],
     // The race's forks draw by type from this pool (docs/61 §4.4), all met elsewhere: Fire or Grass, Dark or Psychic,
-    // Dragon or Ice, Electric or Ground, then Water (Palkia) or Steel (Dialga).
+    // Dragon or Ice, Electric or Ground, then Water (Palkia) or Steel (Dialga); the replay's other types (Normal or
+    // Fairy, Rock or Flying, Bug or Dragon, Ice or Dark, then the other gate) come last.
     wild: [
       [663, 10, 56, 60],
       [323, 10, 56, 60],
       [219, 10, 56, 60],
       [460, 10, 56, 60],
       [586, 10, 56, 60],
-      [229, 10, 56, 60],
+      [359, 10, 56, 60],
       [461, 10, 56, 60],
       [828, 10, 56, 60],
       [124, 10, 56, 60],
@@ -910,17 +918,27 @@ export const AREAS: AreaSpec[] = [
       [181, 10, 56, 60],
       [473, 10, 56, 60],
       [195, 10, 56, 60],
-      [340, 10, 56, 60],
+      [901, 10, 56, 60],
       [131, 10, 56, 60],
       [130, 10, 56, 60],
       [91, 10, 56, 60],
       [350, 10, 56, 60],
-      [321, 10, 56, 60],
       [437, 10, 56, 60],
       [601, 10, 56, 60],
       [227, 10, 56, 60],
       [823, 10, 56, 60],
       [10102, 10, 56, 60],
+      [143, 10, 56, 60],
+      [832, 10, 56, 60],
+      [428, 10, 56, 60],
+      [869, 10, 56, 60],
+      [959, 10, 56, 60],
+      [185, 10, 56, 60],
+      [745, 10, 56, 60],
+      [398, 10, 56, 60],
+      [169, 10, 56, 60],
+      [873, 10, 56, 60],
+      [205, 10, 56, 60],
     ],
     trainers: [
       {

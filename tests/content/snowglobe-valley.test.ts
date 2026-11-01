@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   areaOpenAt,
   compileGameData,
+  evolutionsIn,
   isLegendary,
   regionSpecies,
   smallWorlds,
@@ -37,18 +38,64 @@ const areaId = (name: string) => h.areas.find((a) => a.name === name)!.id
 const PRIZES = [234, 225, 460, 483, 484, 493]
 
 describe('Snowglobe Valley', () => {
-  it('is a sound world for the admin, Ice ×1.2 and XP ×1.5, with the three Ice starters', () => {
+  it('is a sound world for the admin, Ice ×1.2 and XP ×1.5', () => {
     const list = smallWorlds(data)
     const w = list.find((x) => x.id === WORLD_ID)!
     expect(worldProblems(list, w, data)).toEqual([])
     expect(w.boosters).toEqual([{ type: 'ice', multiplier: 1.2 }])
     expect(w.xpMultiplier).toBe(1.5)
     expect(w.starters).toEqual(STARTERS)
-    for (const d of STARTERS) expect(typesOf(d), data.species[d]!.name).toContain('ice')
-    expect(STARTERS.slice(0, 2).map((d) => data.species[d]!.name)).toEqual([
-      'Alolan Sandshrew',
-      'Alolan Vulpix',
-    ])
+  })
+
+  it('offers three starters with a plain three-stage line, evolving at about the same levels, none strong against Ice', () => {
+    // The user's review (2026-11-01): Rowlet, Popplio and Mareep, fan favourites.
+    expect(STARTERS.map((d) => data.species[d]!.name)).toEqual(['Rowlet', 'Popplio', 'Mareep'])
+    const ICE_BEATERS = ['fire', 'fighting', 'rock', 'steel']
+    // Only the evolutions this world allows (Hisuian Decidueye, Grass/Fighting, happens in Galar alone).
+    const evos = (dex: number) => evolutionsIn(data.species[dex]!.evolutions ?? [], REGION_ID)
+    const levels = STARTERS.map((d) => {
+      const line = [d]
+      for (let e = evos(d); e.length; e = evos(line.at(-1)!)) {
+        expect(e, data.species[line.at(-1)!]!.name).toHaveLength(1)
+        line.push(e[0]!.toDex)
+      }
+      expect(line, data.species[d]!.name).toHaveLength(3)
+      for (const x of line)
+        expect(
+          typesOf(x).filter((t) => ICE_BEATERS.includes(t!)),
+          data.species[x]!.name,
+        ).toEqual([])
+      return line.slice(0, 2).map((x) => evos(x)[0]!.level!)
+    })
+    for (const i of [0, 1]) {
+      const at = levels.map((l) => l[i]!)
+      expect(Math.max(...at) - Math.min(...at), `stage ${i + 2}`).toBeLessThanOrEqual(4)
+    }
+  })
+
+  it('lets every Pokémon of Moonlit Glade, Evergreen Hill and Crown Shrine be found on the road too', () => {
+    // Their bosses close them once caught (the user's review), so nothing may be met only there.
+    const road = compileGameData({
+      ...withSnowglobe(BUNDLE),
+      areas: withSnowglobe(BUNDLE).areas.filter((a) => !(a.regionId === REGION_ID && a.hidden)),
+    })
+    const onRoad = regionSpecies(road, REGION_ID)
+    for (const name of ['Moonlit Glade', 'Evergreen Hill', 'Crown Shrine'])
+      for (const w of h.areas.find((a) => a.name === name)!.wildPool)
+        expect(onRoad.has(w.dex), `${name}: ${data.species[w.dex]!.name}`).toBe(true)
+  })
+
+  it('has no Houndour line (the user: it led Haunted Hollow’s picks)', () => {
+    expect([228, 229].filter((d) => regionSpecies(data, REGION_ID).has(d))).toEqual([])
+  })
+
+  it('makes Abomasnow the Champion’s ace: his last and strongest', () => {
+    const league = h.areas.find((a) => a.name === 'Frost League')!
+    const champ = data.trainers[league.gyms.at(-1)!]!
+    expect(champ.role).toBe('champion')
+    const top = Math.max(...champ.team.map((m) => m.level))
+    expect(champ.team.at(-1)).toEqual({ dex: 460, level: top })
+    expect(champ.team.filter((m) => m.level === top)).toHaveLength(1)
   })
 
   it('runs Sat 19 Dec 2026 → Sun 3 Jan 2027, exactly 15 days', () => {
