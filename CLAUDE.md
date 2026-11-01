@@ -29,5 +29,5 @@
   `patch-notes/YYYY-MM-DD-short-name.md` and its French twin `…-short-name.fr.md`, both short (format:
   `patch-notes/README.md`; the French one goes to #🥖-français), show both to the user with
   `pnpm discord:patch-notes <file> <file.fr> --dry`, and add them only once they approve them. Adding it to `main`
-  posts it to Discord as soon as the site is live, so leave out what players can't see yet (a feature still Off or On for admin), unless
-  the user switches it on later that day: then the note says it comes during the day.
+  posts it to Discord as soon as the site is live, so leave out what players can't see yet (a feature still Off or
+  On for admin), unless the user switches it on later that day: then the note says it comes during the day.
