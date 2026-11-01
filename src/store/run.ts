@@ -513,9 +513,10 @@ function raceLostOf(save: SaveData, areaId: string): { reason: 'wipe'; fights: n
 }
 
 /** A try of the race ended without a win: the wipe card says why (the clock, or a full K.O.) and what it had won. */
-function raceLostCard(reason: 'time' | 'wipe', fights: number, total: number) {
+function raceLostCard(areaId: string, reason: 'time' | 'wipe', fights: number, total: number) {
   useGame.setState({ battle: null })
-  setRun({ phase: 'wipe', trainer: null, events: [], raceLost: { reason, fights, total } })
+  // In its area, whatever the run held (the clock may run out before the page has entered it, on a reload).
+  setRun({ areaId, phase: 'wipe', encounter: null, trainer: null, events: [], raceLost: { reason, fights, total } })
 }
 
 /**
@@ -528,13 +529,13 @@ function rollTimeRace(save: SaveData, areaId: string) {
   const up = timeRaceTimeUp(save, data, areaId, raceNow())
   if (up) {
     commitSave(up.save)
-    return raceLostCard('time', up.fights, up.total)
+    return raceLostCard(areaId, 'time', up.fights, up.total)
   }
   if (timeRaceStateOf(save, areaId).gates?.length) return setRun({ phase: 'idle', encounter: null })
   if (!hasAbleTeam(save)) {
     const lost = raceLostOf(save, areaId)
     commitSave(applyWipe(save, areaId, data))
-    return raceLostCard('wipe', lost.fights, lost.total)
+    return raceLostCard(areaId, 'wipe', lost.fights, lost.total)
   }
   if (timeRaceForkDue(save, data, areaId)) {
     const opened = openTimeRaceFork(save, data, areaId, runRng)
@@ -567,6 +568,16 @@ export function beginTimeRace(areaId: string): boolean {
   setRun({ raceLost: null })
   rollNext()
   return true
+}
+
+/**
+ * A fork due but not dealt yet (the page opened between a fight and its fork, a reload): it is dealt now. Nothing
+ * when it isn't due any more by the time this runs (the clock ran out meanwhile, a fight began).
+ */
+export function openDueTimeRaceFork() {
+  const { save, data, run } = useGame.getState()
+  if (!save || !run.areaId || run.phase !== 'idle' || !timeRaceForkDue(save, data, run.areaId)) return
+  rollTimeRace(save, run.areaId)
 }
 
 /** The way in shows: the team and the Box are healed as at a Pokémon Center (the engine's). */
@@ -607,7 +618,7 @@ export function timeRaceExpired(): boolean {
   const up = timeRaceTimeUp(save, data, areaId, raceNow())
   if (!up) return false
   commitSave(up.save)
-  raceLostCard('time', up.fights, up.total)
+  raceLostCard(areaId, 'time', up.fights, up.total)
   return true
 }
 
@@ -1052,7 +1063,7 @@ function settleBattle(stalemate: boolean) {
     const raced = inTimeRace(res.save, data, run.areaId) ? winTimeRaceFight(res.save, data, run.areaId, raceNow()) : null
     if (raced?.outOfTime) {
       commitSave(raced.save)
-      return raceLostCard('time', raced.fights, raced.total)
+      return raceLostCard(run.areaId, 'time', raced.fights, raced.total)
     }
     commitSave(raced?.save ?? dream?.save ?? res.save)
     queuePickup(res.events)

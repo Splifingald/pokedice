@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import {
   canStartTimeRace,
+  timeRaceForkDue,
   timeRaceLeft,
   timeRaceLock,
   timeRaceModeOf,
@@ -38,24 +39,23 @@ import {
   healAndStartTimeRaceRaid,
   leaveArea,
   markTimeRacePopup,
+  openDueTimeRaceFork,
   pickRaceGate,
   timeRaceExpired,
 } from '@/store/run'
 import { useServerNow } from '@/store/serverTime'
 import { progressRaidPath } from '@/screens/events/progressRaids'
 
-/** The clock's milliseconds left in the try under way here, on the server's time (the device's until it's read). */
+/**
+ * The clock's milliseconds left in the try under way here, on the server's time; null outside a try, or until the
+ * server's time is known (a page just opened: a guess from the device's clock could show minutes off).
+ */
 function useRaceLeft(areaId: string | null | undefined): number | null {
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
-  const server = useServerNow(250)
-  const [device, setDevice] = useState(() => Date.now())
-  useEffect(() => {
-    const t = setInterval(() => setDevice(Date.now()), 250)
-    return () => clearInterval(t)
-  }, [])
-  if (!save || !areaId) return null
-  return timeRaceLeft(save, data, areaId, server ?? device)
+  const now = useServerNow(250)
+  if (!save || !areaId || now == null) return null
+  return timeRaceLeft(save, data, areaId, now)
 }
 
 /**
@@ -72,9 +72,11 @@ export function TimeRaceGuard() {
   useEffect(() => {
     if (lock && runArea !== lock.id) enterArea(lock.id)
   }, [lock, runArea])
+  // On the area's page (in a fight too): a page on its way there must not race the redirect.
+  const here = pathname === '/area'
   useEffect(() => {
-    if (lock && left === 0) timeRaceExpired()
-  }, [lock, left])
+    if (lock && here && left === 0) timeRaceExpired()
+  }, [lock, here, left])
   if (!lock) return null
   return pathname !== '/area' ? <Navigate to="/area" replace /> : null
 }
@@ -121,8 +123,19 @@ export function timeRaceStepDue(area: Area, s: { save: SaveData; data: GameData 
   return (
     timeRaceVictoryDue(s.save, s.data, area.id) ||
     canStartTimeRace(s.save, s.data, area.id) ||
-    (r.active && !!r.gates?.length)
+    (r.active && !!r.gates?.length) ||
+    // A fork due but not opened yet (a reload between the fights and the fork): it opens at once.
+    timeRaceForkDue(s.save, s.data, area.id)
   )
+}
+
+/** A fork due but not dealt yet: deals it (the engine draws its gates), its gates next on this page. */
+function OpenFork() {
+  const areaId = useGame((s) => s.run.areaId)
+  useEffect(() => {
+    if (areaId) openDueTimeRaceFork()
+  }, [areaId])
+  return null
 }
 
 /** The area's own step: the win once due, the way in before a try, a fork's gates in one. Null otherwise. */
@@ -169,6 +182,7 @@ export function TimeRaceStep({ area }: { area: Area }) {
       />
     )
   }
+  if (timeRaceForkDue(save, data, area.id)) return <OpenFork />
   return null
 }
 
