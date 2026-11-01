@@ -11,7 +11,7 @@
  */
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { postWebhook, type DEmbed } from './api'
+import { postWebhook, type DEmbed, type WebhookFile } from './api'
 import { existsSync } from 'node:fs'
 import { loadEnv, ROOT } from './env'
 import type { PostLang } from './french'
@@ -36,6 +36,8 @@ export interface PatchNote {
   body: string
   /** The first picture in the note (`![…](url)`), shown big under the text. */
   image?: string
+  /** A video instead (`![…](/patch-notes/….mp4)`, a path on the site): sent with the last message, played there. */
+  video?: string
   /** From the file name's yyyy-mm-dd. */
   date?: string
 }
@@ -46,11 +48,13 @@ export function parseNote(text: string, file = '', site = SITE): PatchNote {
   const first = lines[0] ?? ''
   const title = /^#\s+/.test(first) ? first.replace(/^#\s+/, '').trim() : path.basename(file, '.md')
   let image: string | undefined
+  let video: string | undefined
   const body = (/^#\s+/.test(first) ? lines.slice(1) : lines)
     .filter((l) => {
       const m = /^\s*!\[[^\]]*\]\(([^)\s]+)\)\s*$/.exec(l)
       if (!m) return true
-      image ??= m[1]!.startsWith('/') ? `${site}${m[1]}` : m[1]
+      if (VIDEO.test(m[1]!)) video ??= m[1]
+      else image ??= m[1]!.startsWith('/') ? `${site}${m[1]}` : m[1]
       return false
     })
     .map((l) => l.replace(/^#{2,6}\s+(.+?)\s*#*\s*$/, '**$1**'))
@@ -58,7 +62,27 @@ export function parseNote(text: string, file = '', site = SITE): PatchNote {
     .replace(/\n{3,}/g, '\n\n')
     .trim()
   const date = /(\d{4}-\d{2}-\d{2})/.exec(path.basename(file))?.[1]
-  return { title, body, ...(image ? { image } : {}), ...(date ? { date } : {}) }
+  return { title, body, ...(image ? { image } : {}), ...(video ? { video } : {}), ...(date ? { date } : {}) }
+}
+
+/** A video by its extension: Discord plays these inline. */
+export const VIDEO = /\.(mp4|webm|mov)$/i
+/** Discord's limit on a webhook's file, kept under with a margin. */
+export const VIDEO_MAX = 10 * 1024 * 1024
+
+/** The note's video, read from public/ (a path on the site is a file there); null without one. */
+export async function noteVideo(note: PatchNote): Promise<WebhookFile | null> {
+  if (!note.video) return null
+  if (!note.video.startsWith('/')) throw new Error(`${note.video}: a video is a path on the site, under public/`)
+  const data = await readFile(path.join(ROOT, 'public', note.video))
+  if (data.byteLength > VIDEO_MAX)
+    throw new Error(`${note.video} is ${(data.byteLength / 1e6).toFixed(1)} MB: Discord takes 10 MB at most`)
+  const ext = path.extname(note.video).slice(1).toLowerCase()
+  return {
+    name: path.basename(note.video),
+    data,
+    type: ext === 'mov' ? 'video/quicktime' : `video/${ext}`,
+  }
 }
 
 /** Cuts text into pieces of at most `max` characters: between paragraphs, else between lines, else anywhere. */
@@ -178,7 +202,11 @@ async function main() {
     // No ping in French: the Patch Notes Pings role is the English channel's.
     const roleId = lang === 'en' ? env.DISCORD_PATCH_ROLE?.trim() || undefined : undefined
     const messages = noteMessages(note, { roleId, site, lang })
-    console.log(`${file}: "${note.title}", ${messages.length} message(s)${lang === 'fr' ? ', in #français' : ''}.`)
+    const video = await noteVideo(note)
+    console.log(
+      `${file}: "${note.title}", ${messages.length} message(s)${lang === 'fr' ? ', in #français' : ''}` +
+        `${video ? `, with ${video.name} (${(video.data.byteLength / 1e6).toFixed(1)} MB)` : ''}.`,
+    )
     if (dry) {
       console.log(JSON.stringify(messages, null, 2))
       continue
@@ -188,7 +216,9 @@ async function main() {
       console.log(`  No ${envName[lang]}: not posted.`)
       continue
     }
-    for (const m of messages) await postWebhook(webhook, m)
+    // The video goes with the last message, under its embed.
+    for (const [i, m] of messages.entries())
+      await postWebhook(webhook, m, i === messages.length - 1 ? (video ?? undefined) : undefined)
     console.log('✓ Posted.')
   }
 }

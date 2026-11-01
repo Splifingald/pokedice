@@ -7,7 +7,7 @@ import { LAYOUT } from '../scripts/discord/layout'
 import { P } from '../scripts/discord/perms'
 import { blockers, contentPhase, fillMentions, matchChannels, matchRoles, planAll, rolesPhase, type Snapshot } from '../scripts/discord/plan'
 import { raidMessage } from '../scripts/discord/raid-post'
-import { DESCRIPTION_MAX, frenchTwin, MESSAGE_MAX, noteLang, noteMessages, parseNote, splitText } from '../scripts/discord/patch-notes'
+import { DESCRIPTION_MAX, frenchTwin, MESSAGE_MAX, noteLang, noteMessages, noteVideo, parseNote, splitText } from '../scripts/discord/patch-notes'
 import { fr, frenchData } from '../scripts/discord/french'
 import { dueLiveEvents, liveBanner, liveDetails, liveMessage, repeatLabel } from '../scripts/discord/live-event-post'
 import { nextAfterWeek, weekChart, weekMessage, weekOf, weekRuns, WEEK_MAX } from '../scripts/discord/live-week-post'
@@ -233,6 +233,14 @@ describe('patch notes', () => {
   it('takes the title from the first line and turns headings into bold lines', () => {
     const note = parseNote('# Version 2\n\nHello\n\n## New\n- Raids\n\n![](/area-art/x.png)\n', 'patch-notes/2026-10-20-version-2.md')
     expect(note).toEqual({ title: 'Version 2', body: 'Hello\n\n**New**\n- Raids', image: 'https://poke-dice.netlify.app/area-art/x.png', date: '2026-10-20' })
+  })
+
+  it('takes a video line as the video to send with the post, not as the picture', async () => {
+    const note = parseNote('# V\n\nHi\n\n![](/patch-notes/clip.mp4)\n', 'patch-notes/2026-11-01-v.md')
+    expect(note).toEqual({ title: 'V', body: 'Hi', video: '/patch-notes/clip.mp4', date: '2026-11-01' })
+    expect(noteMessages(note)[0]!.embeds[0]!.image).toBeUndefined()
+    await expect(noteVideo({ title: 'V', body: '', video: 'https://x/clip.mp4' })).rejects.toThrow(/under public/)
+    expect(await noteVideo({ title: 'V', body: '' })).toBeNull()
   })
 
   it('cuts long notes within Discord limits, pinging once', () => {

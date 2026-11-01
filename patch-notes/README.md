@@ -10,6 +10,9 @@ and its French twin to #🥖-français (`.github/workflows/discord-patch-notes.y
   `## Headings` become bold lines (Discord's embeds have no headings).
 - **One picture**, optionally: a line with only `![](/area-art/a522.png)` (a path on the site, or a full URL). It shows
   under the text.
+- **Or one video**: a line with only `![](/patch-notes/2026-11-01-version-2-8.mp4)`, a file in `public/patch-notes/`
+  (MP4, under 10 MB, Discord's limit). It is sent with the post and plays under it, in both languages.
+  `scripts/patch-clip.ts` records the game's own screens for one, frame by frame (its header says how).
 - Write it for players: what they will notice, not how it was built. English (the server's main language).
 - **Short** (the user's rule, 2026-11-01): the title, the 2 to 4 highlights as one-line bullets, then everything else in
   one `Also:` line (`·` between items, a few words each). No numbers, rules or how-tos the game itself explains. A
