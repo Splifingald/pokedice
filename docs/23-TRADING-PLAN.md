@@ -192,7 +192,7 @@ hidden talents you haven't found. A search shows every listing."
   its four rows.
 
 **Setting it up**: run
-[`0108_trade_picks.sql`](https://github.com/Splifingald/pokedice/blob/ccr-fbc66ea0-rrh0dw/supabase/migrations/0108_trade_picks.sql)
+[`0108_trade_picks.sql`](https://github.com/Splifingald/pokedice/blob/version/2_9/supabase/migrations/0108_trade_picks.sql)
 (`supabase/seed.sql` carries it too), then deploy. Until it has run, the board picks among the 50 listings ending
 soonest. Admin → Config → Trades has the two numbers.
 
