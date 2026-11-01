@@ -1519,6 +1519,7 @@ const FEATURES: Feature[] = [
   bare('Route 1 opening & tutorial', 'openingRounds'),
   own('Unown Pokédex', 'unownDex', 'unown'),
   own('Hidden talents', 'hiddenTalents', 'talents'),
+  bare('Outfits', 'outfits'),
   own('Extreme mode', 'extreme', 'extreme'),
   own('Extreme Pokémon Centers', 'extremeCenters', 'extreme'),
   own('Double battles', 'doubleBattles', 'doubles'),

@@ -1101,6 +1101,12 @@ export interface GameConfig {
    */
   championCinema: { access: EventAccess }
   /**
+   * Outfits (docs/59): Pokémon dressed up (Santa Pikachu), given as gifts. Off, an outfit Pokémon looks plain (it keeps
+   * its tag). Only looks and evolution in the player's own save, so no server function reads it. Migration 0105 inserts
+   * the same row.
+   */
+  outfits: { access: EventAccess }
+  /**
    * The Unown Pokédex (docs/41): the 28 letters, once an area where Unown live is opened; `reward` ₽ for the last one.
    * Migration 0080 inserts the same row.
    */
@@ -1663,6 +1669,11 @@ export interface PokemonInstance {
   /** Unown only (docs/41): its letter, 'a'–'z', '!' or '?'. Absent = an A (`letterOf`). */
   letter?: string
   /**
+   * Its outfit (docs/59), a key of `OUTFITS` (src/engine/outfits.ts): 'santa'. Only its look: it evolves only into a
+   * species that wears the same outfit, an Egg it leaves hatches plain, and it goes with it in a trade. Absent = none.
+   */
+  outfit?: string
+  /**
    * It carries its family's hidden talent (docs/51): set when its family is unlocked in its region (`syncTalents`), or
    * when it arrives with it (a trade, a gift). Never taken off. Absent = no talent.
    */
@@ -1815,6 +1826,8 @@ export interface SaveData {
   talentsMet?: number[]
   /** The hidden talents' rules pop-up has been shown (once; INFO shows it again). */
   talentRulesSeen?: boolean
+  /** Outfits (docs/59): their rules pop-up seen, once for good. */
+  outfitRulesSeen?: boolean
   /** The regions whose Unown Pokédex prize was paid (once each). */
   unownDexPaid?: RegionId[]
   /** The Unown Pokédex's rules pop-up has been shown (once, when it opens; INFO shows it again). */
