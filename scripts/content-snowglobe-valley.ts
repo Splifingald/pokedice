@@ -19,6 +19,7 @@ import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { BundleRaw, Region, SmallWorld } from '../src/engine/types'
+import { DEFAULT_WHITEOUT } from '../src/engine/whiteoutMode'
 import { stableUuid } from './seed'
 import { balls, buildAreas, worldSql, type AreaSpec, type WorldContent } from './world-content'
 
@@ -853,6 +854,9 @@ export const AREAS: AreaSpec[] = [
     hidden: true,
     unlock: [{ kind: 'pokedex', count: 50 }],
     boss: [{ dex: 460, level: 50, shiny: true }],
+    // Whiteout (docs/61 §4.3): three waves of fixed foes in the blizzard, a bonfire after each, then Abomasnow. With
+    // its switch Off the area plays as the plain secret area below (its short deck, then its boss).
+    mode: DEFAULT_WHITEOUT,
     wild: [
       [460, 15, 48, 52],
       [586, 15, 48, 52],

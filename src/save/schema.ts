@@ -160,6 +160,18 @@ const nightmareSchema = z.object({
   tries: z.number().int().min(0).optional(),
 })
 
+const whiteoutSchema = z.object({
+  active: z.boolean(),
+  wave: z.number().int().min(0).max(99),
+  foe: z.number().int().min(0).max(99),
+  bonfire: z.boolean().optional(),
+  warmed: z.boolean().optional(),
+  boss: z.boolean().optional(),
+  won: z.boolean().optional(),
+  wonSeen: z.boolean().optional(),
+  tries: z.number().int().min(0).optional(),
+})
+
 const progressSchema = z.object({
   roundsDone: z.number().int().min(0).optional(),
   roundCounted: z.boolean().optional(),
@@ -182,6 +194,8 @@ const progressSchema = z.object({
   portal: portalSchema.optional().catch(undefined),
   // The nightmare (docs/30): the same, an odd value drops it, never the save.
   nightmare: nightmareSchema.optional().catch(undefined),
+  // The whiteout (docs/61 §4.3): the same.
+  whiteout: whiteoutSchema.optional().catch(undefined),
   // Extreme mode's Centers (docs/47): a secret area's first one met, and a round to start over at a Center.
   centerMet: z.boolean().optional(),
   wiped: z.boolean().optional(),
@@ -296,6 +310,7 @@ export const saveSchema = z.object({
   areaVersusRulesSeen: z.boolean().optional(),
   portalRulesSeen: z.boolean().optional(),
   nightmareRulesSeen: z.boolean().optional(),
+  whiteoutRulesSeen: z.boolean().optional(),
   events: z
     .object({
       seen: z.array(z.enum(EVENT_IDS)).optional(),

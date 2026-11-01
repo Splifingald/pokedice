@@ -28,6 +28,14 @@ import {
   nightmareWipe,
   nightmareWon,
 } from './nightmare'
+import {
+  atBonfire,
+  canStartWhiteout,
+  inWhiteout,
+  whiteoutBagShut,
+  whiteoutWipe,
+  whiteoutWon,
+} from './whiteout'
 import { familyTalent, TALENT, talentCandyFits, talentOf, talentOnEvolve, unlockFamily } from './talents'
 import { areaOpenAt } from './worldList'
 import {
@@ -318,6 +326,8 @@ export function latestOpenArea(save: SaveData, data: GameData, now?: number | nu
 export function isAreaClosed(save: SaveData, areaId: string, data: GameData): boolean {
   const area = data.areas.find((a) => a.id === areaId)
   if (!area) return false
+  // Crown Shrine once its whiteout is won (docs/61 §4.3): its boss caught, the shrine closes for good.
+  if (whiteoutWon(save, data, areaId)) return true
   const c = deckCounts(area.encounterWeights, deckAbilities(area))
   if (c.wild + c.trainer + c.casino > 0) return false
   const bosses = fightBosses(area, data)
@@ -335,7 +345,7 @@ export function isAreaClosed(save: SaveData, areaId: string, data: GameData): bo
  * then sealed. Unlike a closed area it can still be entered (its raid is reached from it).
  */
 export const isAreaSealed = (save: SaveData, data: GameData, areaId: string): boolean =>
-  portalWon(save, data, areaId) || nightmareWon(save, data, areaId)
+  portalWon(save, data, areaId) || nightmareWon(save, data, areaId) || whiteoutWon(save, data, areaId)
 
 /** A boss of this area was caught here: noted in its progress (what a small world's bosses go by, docs/26 §2.5). */
 export function noteBossCaught(save: SaveData, areaId: string, dex: number): SaveData {
@@ -423,6 +433,8 @@ export type RunEvent =
   | { kind: 'nightmare_round'; round: number; total: number }
   /** The item a nightmare round left in the bag (docs/30), once for good. */
   | { kind: 'nightmare_gift'; key: string; qty: number }
+  /** A wave of the whiteout cleared (docs/61 §4.3): `wave` of `waves`; a bonfire comes next. */
+  | { kind: 'whiteout_wave'; wave: number; waves: number }
   /**
    * An Unown caught with the Unown Pokédex open (docs/41): its letter, new to the page or not, the page's count, and
    * the prize when it was the last one.
@@ -753,6 +765,8 @@ export function applyWipe(save: SaveData, areaId: string, data: GameData): SaveD
   if (inPortalRun(save, data, areaId)) return portalWipe(save, data, areaId)
   // So does the nightmare (docs/30): the player wakes up, the rounds back to 0.
   if (inNightmare(save, data, areaId)) return nightmareWipe(save, data, areaId)
+  // And the whiteout (docs/61 §4.3): back to wave 1, healed.
+  if (inWhiteout(save, data, areaId)) return whiteoutWipe(save, data, areaId)
   const p = progressOf(save, areaId)
   const healed = new Set(wipeHeals(save, data) ? save.team : [])
   // Extreme mode's boon Centers (docs/47): the round starts over at a Center that only swaps.
@@ -817,6 +831,15 @@ export function arriveAtNightmare(save: SaveData, data: GameData, areaId: string
 }
 
 /**
+ * Arriving at the whiteout's way in (docs/61 §4.3, before BEGIN) heals as a Pokémon Center does, as the nightmare's way
+ * in does. The same save when there is nothing to heal, or outside a way in.
+ */
+export function arriveAtWhiteout(save: SaveData, data: GameData, areaId: string): SaveData {
+  if (!canStartWhiteout(save, data, areaId)) return save
+  return healedOrSame(save, data)
+}
+
+/**
  * Waking up from the nightmare, HEAL & START RAID (docs/30, as the portal run's victory): the team and the Box healed as
  * a Pokémon Center would, the waking marked seen. The same save when no waking is waiting here.
  */
@@ -849,12 +872,16 @@ export interface SwapPlace {
 export function teamSwapsOpen(save: SaveData, data: GameData, at: SwapPlace): boolean {
   // An Extreme boon Center (docs/47): the team changes once its boon is picked, so the boons fit the team they met.
   if (at.phase === 'center') return !(at.areaId && pendingBoons(save, at.areaId))
-  // The nightmare's way in too (docs/30), before it begins: there is no Center inside it either.
+  // The nightmare's way in too (docs/30), before it begins: there is no Center inside it either. And the whiteout's
+  // (docs/61 §4.3): its way in, and its bonfires, the only places the team changes once it has begun.
   return (
     at.phase === 'idle' &&
     !!at.areaId &&
     save.currentAreaId === at.areaId &&
-    (canStartPortal(save, data, at.areaId) || canStartNightmare(save, data, at.areaId))
+    (canStartPortal(save, data, at.areaId) ||
+      canStartNightmare(save, data, at.areaId) ||
+      canStartWhiteout(save, data, at.areaId) ||
+      atBonfire(save, data, at.areaId))
   )
 }
 
@@ -953,6 +980,8 @@ export function applyFieldItem(
   const item = data.items[key]
   const inst = getInstance(save, instId)
   if (!item || !inst || isReviving(inst) || !usableIn(item, 'field') || (save.inventory[key] ?? 0) <= 0) return null
+  // In the whiteout (docs/61 §4.3) the bag opens only at a bonfire.
+  if (whiteoutBagShut(save, data)) return null
   if (item.effect.kind === 'heal' || item.effect.kind === 'revive') {
     if (!healItemsOn(save, data)) return null
     const healed = applyItemToInstance(save, key, instId, data)

@@ -21,6 +21,7 @@ import { ARCEUS_DEX, choiceFormDie, choiceFormsOf, gmaxFormsOf, lowHpFormOf, meg
 import { battleSpeed, effectiveStats } from './progression'
 import { carriedTalent, TALENT, talentRerolls, type TalentKey } from './talents'
 import { potionHeal, shouldUsePotion } from './trainerItems'
+import { blizzardWear } from './whiteoutMode'
 import { createRng, type Rng } from './rng'
 import {
   applyStatuses,
@@ -145,6 +146,15 @@ export interface BattleState {
   canRun: boolean
   /** Extreme mode with the admin's items switch off: no Potion or Revive works. */
   noHealItems?: boolean
+  /** The bag stays shut: no item at all (the whiteout's fights, docs/61 §4.3). */
+  noBag?: boolean
+  /**
+   * The weather of this fight (the whiteout's blizzard, docs/61 §4.3): at the end of each round every Pokémon out that
+   * isn't of a spared type loses a share of its max HP, both sides (the raids' rule, engine/whiteoutMode.ts).
+   */
+  weather?: 'snow' | 'sand'
+  /** The turn whose end of round the weather last fell on, so a turn begun again after a switch isn't worn twice. */
+  weatherAt?: number
   /** The types the player's Arceus may take (its plates, docs/34). Absent = any. */
   plates?: PokeType[]
   lastDamage: DamageResult | null
@@ -379,6 +389,8 @@ export type LogEntry =
   /** A Freeze or a Paralysis that missed its chance. */
   | { kind: 'status_resisted'; target: Side; targetUid: string; status: StatusKind; chance: number }
   | { kind: 'status_tick'; target: Side; targetUid: string; status: 'burn' | 'poison'; amount: number; hpAfter: number }
+  /** The weather wore a Pokémon down at the end of a round (the whiteout's blizzard, docs/61 §4.3). */
+  | { kind: 'weather'; weather: 'snow' | 'sand'; target: Side; targetUid: string; amount: number; hpAfter: number }
   /** `pending`: the player may still cure it before the turn is lost. */
   | { kind: 'stunned'; side: Side; uid: string; status: 'frozen' | 'paralyze'; pending?: boolean }
   | { kind: 'faint'; side: Side; uid: string; dex: number }
@@ -553,6 +565,10 @@ export interface CreateBattleOptions {
   auto?: boolean
   /** No Potion or Revive works (Extreme mode, items switched off). */
   noHealItems?: boolean
+  /** No item at all: the bag stays shut (the whiteout, docs/61 §4.3). */
+  noBag?: boolean
+  /** The weather of this fight, both sides worn down each round (the whiteout's blizzard). Absent = none. */
+  weather?: 'snow' | 'sand' | null
   /** The types the player's Arceus may take: its plates (docs/34). Absent = any. Foes are never limited. */
   plates?: PokeType[]
   /** The reroll lesson rigs this fight's second throw and its reroll (docs/46 §6; see `rerollLessonDue`). */
@@ -979,6 +995,8 @@ export function createBattle(opts: CreateBattleOptions, data: GameData): { state
     participants: [lead.uid],
     canRun: opts.kind === 'wild' && !data.config.noEscape,
     ...(opts.noHealItems && { noHealItems: true }),
+    ...(opts.noBag && { noBag: true }),
+    ...(opts.weather && { weather: opts.weather }),
     ...(opts.plates && { plates: [...opts.plates] }),
     lastDamage: null,
     itemUsedThisTurn: false,
@@ -1045,7 +1063,8 @@ function deadlocked(s: BattleState, data: GameData): boolean {
   const me = activeBattler(s)
   const foe = s.enemy
   if (me.hp <= 0 || foe.hp <= 0) return false
-  const pending = (b: Battler) => !!b.status.burn || !!b.status.poison || confusionLevel(b.status) > 0
+  const pending = (b: Battler) =>
+    !!b.status.burn || !!b.status.poison || confusionLevel(b.status) > 0 || weatherWearOf(s, b) > 0
   if (pending(me) || pending(foe) || canHurt(foe, me, data)) return false
   return !s.player.some((p) => p.hp > 0 && canHurt(p, foe, data))
 }
@@ -1067,6 +1086,33 @@ export function startDuelStep(s: BattleState, side: Side, data: GameData, log: L
   beginTurn(s, side, data, log, rng)
 }
 
+/** HP the fight's weather takes from `b` at the end of a round (0: no weather, a spared type, or K.O.). */
+function weatherWearOf(s: BattleState, b: Battler): number {
+  return s.weather && b.hp > 0 ? Math.min(b.hp, blizzardWear(s.weather, b.types, b.maxHp)) : 0
+}
+
+/**
+ * The end of a round (every second turn): the weather wears down both Pokémon out, yours first, each that isn't of a
+ * spared type, by the raids' rule. Once per round: a turn begun again after a switch doesn't wear twice. True when it
+ * fell on anyone.
+ */
+function weatherFalls(s: BattleState, log: LogEntry[]): boolean {
+  if (!s.weather || s.single || s.double || s.turn <= 0 || s.turn % 2 !== 0 || s.weatherAt === s.turn) return false
+  s.weatherAt = s.turn
+  let fell = false
+  for (const [side, b] of [
+    ['player', activeBattler(s)],
+    ['enemy', s.enemy],
+  ] as const) {
+    const amount = weatherWearOf(s, b)
+    if (amount <= 0) continue
+    b.hp -= amount
+    log.push({ kind: 'weather', weather: s.weather, target: side, targetUid: b.uid, amount, hpAfter: b.hp })
+    fell = true
+  }
+  return fell
+}
+
 /** Turn start: DoT tick (can K.O.), then the stun check (skips the turn), then the actor may act. */
 /** `rng`: for a chance status (Freeze, Paralysis) carried by a strike from a turn away; absent at a battle's start. */
 function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[], rng?: Rng) {
@@ -1078,6 +1124,15 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[], 
       // No rewards, no wipe; HP damage is kept like a RUN.
       finish(s, 'fled', log, 'stalemate')
       return
+    }
+    // A round is two turns: once both sides have had theirs, the weather falls on both (a K.O. ends the turn here).
+    if (weatherFalls(s, log)) {
+      checkHpForms(s, data, log)
+      if (checkKnockouts(s, log)) {
+        // The one sent in after it takes the turn that was coming.
+        if (s.phase === 'player_switch') s.nextActor = side
+        return
+      }
     }
     s.turn += 1
     s.actor = side
@@ -2032,7 +2087,8 @@ export function reduce(
     case 'USE_ITEM': {
       // One item per turn — before the roll, after it, or while stunned. It doesn't end the turn.
       const phaseOk = s.phase === 'player_roll' || s.phase === 'player_reroll' || s.phase === 'player_stunned'
-      if (!phaseOk || s.itemUsedThisTurn) return NOOP(state)
+      // The whiteout's fights (docs/61 §4.3): the bag stays shut, whatever is in it.
+      if (!phaseOk || s.itemUsedThisTurn || s.noBag) return NOOP(state)
       const item = data.items[e.key]
       const target = s.player.find((b) => b.uid === (e.targetUid ?? activeBattler(s).uid))
       if (!item || !target) return NOOP(state)

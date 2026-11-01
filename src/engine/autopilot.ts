@@ -8,6 +8,8 @@ import { ballBonus, isBallFor } from './items'
 import { linearAreas } from './data'
 import { nightmareModeOf } from './nightmareMode'
 import { nightmareLock } from './nightmare'
+import { whiteoutLock } from './whiteout'
+import { whiteoutModeOf } from './whiteoutMode'
 import { portalModeOf } from './portalMode'
 import { portalLock } from './portal'
 import { regionOfArea } from './regions'
@@ -55,9 +57,9 @@ export interface AutoRun {
   rebattle?: unknown
 }
 
-/** A portal run's or the nightmare's area (docs/28, docs/30): their own steps, so never the autopilot's. */
+/** A portal run's, the nightmare's or the whiteout's area (docs/28, docs/30, docs/61): their own steps, never the autopilot's. */
 const specialArea = (area: Area | undefined, data: GameData): boolean =>
-  !!area && (!!portalModeOf(area, data) || !!nightmareModeOf(area, data))
+  !!area && (!!portalModeOf(area, data) || !!nightmareModeOf(area, data) || !!whiteoutModeOf(area, data))
 
 /**
  * Where the auto switch is offered (the area's header, a battle's extras). Off: cleared areas, as auto-mode always was.
@@ -105,7 +107,7 @@ function enterable(save: SaveData, data: GameData, area: Area, now: number | nul
   if (!isAreaUnlocked(save, area.id, data) || isAreaClosed(save, area.id, data)) return false
   if (now !== undefined && !areaOpenAt(data, area.id, now)) return false
   if (specialArea(area, data)) return false
-  const held = portalLock(save, data) ?? nightmareLock(save, data)
+  const held = portalLock(save, data) ?? nightmareLock(save, data) ?? whiteoutLock(save, data)
   return !held || held.id === area.id
 }
 

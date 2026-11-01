@@ -249,7 +249,8 @@ export function worldCompletion(save: SaveData, data: GameData, world: SmallWorl
   const areas = data.areas.filter((a) => (a.regionId ?? KANTO) === world.regionId)
   const done = areas.filter((a) => {
     const p = progress[a.id]
-    return !!(p?.cleared || p?.portal?.won || p?.nightmare?.won)
+    // Crown Shrine's whiteout won (docs/61 §4.3): its boss caught, the shrine closed for good.
+    return !!(p?.cleared || p?.portal?.won || p?.nightmare?.won || p?.whiteout?.won)
   }).length
   const species = [...regionSpecies(data, world.regionId)].filter((d) => !!data.species[d])
   const dex = species.filter((d) => caught.has(d)).length
