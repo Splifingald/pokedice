@@ -5,6 +5,7 @@ import { startAnalytics } from '@/analytics/ping'
 import { checkContentVersion } from '@/config/remote'
 import { AUTH_PROVIDERS, loadAuthProviders } from '@/lib/authProviders'
 import { loadFriendStatus } from '@/lib/friends'
+import { loadFriendship } from './friendship'
 import { fetchRaidsDone } from '@/lib/raid'
 import { isOffline, offlineOr } from '@/lib/online'
 import { getSupabase } from '@/lib/supabase'
@@ -811,7 +812,10 @@ function checkFreshness(returning: boolean) {
   reloadIfSafe()
   relisten()
   // New friends, on the way back to the tab (at most every 5 minutes): no Realtime for friends (docs/16 §1.7).
-  if (returning) void loadFriendStatus()
+  if (returning) {
+    void loadFriendStatus()
+    void loadFriendship()
+  }
   if (Date.now() - loadedAt >= MAX_PAGE_AGE_MS) return reloadWhenSafe()
   if (Date.now() - lastVersionCheck >= (returning ? VERSION_ON_RETURN_MS : VERSION_WHILE_OPEN_MS))
     void checkForNewBuild()

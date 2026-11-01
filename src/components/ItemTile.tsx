@@ -1,6 +1,7 @@
 // One item, one design (docs/43 §4): the Mart's shelf, the Bag, a live event's Special Shop, the Underground's
 // Explorakits, a small world's Mart and the Mega Gems all draw their items with `ItemTile`, and open them in
 // `ItemDetail` (a sheet on phones, docked beside the shelf on PC through SplitView).
+import { useItemDescription } from '@/lib/itemText'
 import { useContext, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
@@ -232,6 +233,8 @@ export function ItemDetail({
   actions: ReactNode
   onClose: () => void
 }) {
+  // The Friend Ball's line says its boost today (docs/60).
+  const said = useItemDescription(description)
   const { t } = useT()
   const docked = useContext(SheetDock)
   return (
@@ -253,7 +256,7 @@ export function ItemDetail({
             <p className="m-0 font-pixel-sm text-[18px] text-ink">{t('ui.item.inBag', { n: held })}</p>
           </div>
         </div>
-        {description && <p className="copy m-0 text-[18px] text-muted">{description}</p>}
+        {said && <p className="copy m-0 text-[18px] text-muted">{said}</p>}
         {note && <div className="font-pixel-sm text-[18px] leading-tight text-ink">{note}</div>}
       </div>
     </Sheet>

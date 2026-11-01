@@ -109,6 +109,11 @@ export interface GiftLanded {
   isNew?: boolean
   /** A Pokémon that joined the team of the region being played (there was room). */
   joinedTeam?: boolean
+  /**
+   * A Friend Market Pokémon (docs/60) waiting in its species' region, locked until one of the player's Pokémon there
+   * reaches its level (or until that region is started).
+   */
+  locked?: boolean
 }
 
 export const giftsOf = (save: SaveData): GiftsSave => save.gifts ?? { done: [] }

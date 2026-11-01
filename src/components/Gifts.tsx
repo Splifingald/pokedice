@@ -192,8 +192,10 @@ function useWhere() {
           ? many
             ? t('ui.gift.inMoneyOf', { region })
             : t('ui.gift.inMoney')
-          : l.joinedTeam
-            ? t('ui.gift.joinedTeam')
+          : l.locked
+            ? t('ui.trades.result.locked', { region, level: t('ui.common.level.short', { n: l.gift.level }) })
+            : l.joinedTeam
+              ? t('ui.gift.joinedTeam')
             : many
               ? t('ui.gift.inBoxOf', { region })
               : t('ui.gift.inBox')
@@ -357,7 +359,9 @@ export function GiftMoment({
           ? t('ui.gift.wobble')
           : source === 'calendar'
             ? t('ui.cal.arrive', { n: day ?? 1 })
-            : t(source === 'invite' ? 'ui.invite.arrive' : 'ui.gift.arrive')
+            : source === 'market'
+              ? t('ui.market.arrive')
+              : t(source === 'invite' ? 'ui.invite.arrive' : 'ui.gift.arrive')
   return createPortal(
     <motion.div
       role="dialog"
@@ -365,7 +369,9 @@ export function GiftMoment({
       aria-label={
         source === 'calendar'
           ? t('ui.cal.arrive', { n: day ?? 1 })
-          : t(source === 'invite' ? 'ui.invite.momentTitle' : 'ui.gift.title')
+          : source === 'market'
+            ? t('ui.market.arrive')
+            : t(source === 'invite' ? 'ui.invite.momentTitle' : 'ui.gift.title')
       }
       className="fixed inset-0 z-[100] overflow-y-auto bg-paper"
       initial={{ opacity: 0 }}

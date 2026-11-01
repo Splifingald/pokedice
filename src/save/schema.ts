@@ -209,7 +209,11 @@ const levelRecord = <K extends string>(keys: readonly K[]) =>
     .record(z.number().int().min(1).max(10))
     .transform((r) => Object.fromEntries(keys.map((k) => [k, r[k] ?? 1])) as Record<K, number>)
 
-const eggParentSchema = z.object({ dex: z.number().int().min(1), owner: z.string().max(40).optional() })
+const eggParentSchema = z.object({
+  dex: z.number().int().min(1),
+  owner: z.string().max(40).optional(),
+  ownerId: z.string().max(64).optional(),
+})
 
 const dayCareSchema = z.object({
   // `region` is absent on saves from before the one Day Care: parseSave tags them.
@@ -370,6 +374,7 @@ export const saveSchema = z.object({
             worldId: z.string().max(80).optional(),
             from: z.string().min(1).max(80).optional(),
             tradedBy: z.string().max(40).optional(),
+            market: z.literal(true).optional(),
           }),
         )
         .max(2000)
@@ -502,6 +507,14 @@ export const saveSchema = z.object({
     .object({
       done: z.array(z.number().int()).max(200).default([]),
       rulesSeen: z.boolean().optional(),
+    })
+    .optional(),
+  // Friendship (docs/60): the rules read, market purchases put away (ids), Eggs to tell the server about.
+  friendship: z
+    .object({
+      rulesSeen: z.boolean().optional(),
+      applied: z.array(z.string().max(64)).max(100).optional(),
+      eggs: z.array(z.string().max(64)).max(20).optional(),
     })
     .optional(),
   // Trick or Treat (docs/29): its rules pop-up seen.

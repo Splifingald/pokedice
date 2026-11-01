@@ -19,6 +19,9 @@ import { TrophyCount } from '../TrophyCount'
 import { TheirTrades } from '../trades/TheirTrades'
 import { useAddText } from './AddFriendModal'
 import { TrainerName } from '../TrainerName'
+import { FriendStreakBlock } from './Friendship'
+import { friendshipWaits, utcDay } from '@/engine'
+import { useFriendship } from '@/store/friendship'
 
 type Load = { state: 'loading' } | { state: 'ready'; profile: FriendProfile } | { state: 'gone' } | { state: 'error'; why: string }
 
@@ -37,6 +40,9 @@ export function FriendProfileSheet({
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
+  // Your friendship streak with them (docs/60), while it's on for you in the main game.
+  const fship = useFriendship((s) => s.status)
+  const fshipOn = useGame((s) => !!s.save && [null, 'world'].includes(friendshipWaits(s.save, s.data))) && !!fship
   // The league is the main game's (Extreme keeps Versus as it was), so the realm being played decides, as for your card.
   const league = useGame((s) => !!s.save && versusLeagueFor(s.save, s.data))
   const best = useLeagueBest(!!userId && league, userId ?? undefined)
@@ -157,6 +163,14 @@ export function FriendProfileSheet({
               </div>
               {here && here.team.length > 0 && <CardTeam team={here.team} label={t('ui.board.theirTeam', { name: profile.name })} />}
             </CardFrame>
+
+            {fshipOn && (
+              <FriendStreakBlock
+                s={fship?.streaks.find((x) => x.friend === profile.userId)}
+                today={fship?.day || utcDay(Date.now())}
+                name={profile.name}
+              />
+            )}
 
             {profile.versus && profile.versus.team.length > 0 && (
               <section className="flex flex-col gap-1.5">
