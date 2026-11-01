@@ -16,7 +16,8 @@ and its French twin to #🥖-français (`.github/workflows/discord-patch-notes.y
 - Write it for players: what they will notice, not how it was built. English (the server's main language).
 - **Short** (the user's rule, 2026-11-01): the title, the 2 to 4 highlights as one-line bullets, then everything else in
   one `Also:` line (`·` between items, a few words each). No numbers, rules or how-tos the game itself explains. A
-  feature switched on later that day may be among the highlights, said once ("Switching on during the day:").
+  feature switched on later that day may be among the highlights, said once ("Arriving later today:").
+  The players' words only: no design terms (a "card", the "deck", a "round", a "switch"), what they see and do.
 - **And in French:** every note has a twin, `YYYY-MM-DD-short-name.fr.md` (same name, `.fr` before `.md`, same
   format), written for French players ("tu", as the game speaks). The same run posts it to `#🥖-français`, without a
   ping. `pnpm test` fails on a note from version 2.8 on that has no twin.
