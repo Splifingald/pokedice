@@ -140,12 +140,13 @@
  {
   "key": "friend-ball",
   "name": "Friend Ball",
-  "description": "A ball from the Friend Market: adds 3 to the catch die, as an Ultra Ball does.",
+  "description": "More chances to discover hidden talents on catch depending on your best streak, current: ×{x}.",
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/friend-ball.png",
   "price": 100,
   "effect": {
    "kind": "ball",
-   "bonus": 3
+   "bonus": 3,
+   "talentBoost": true
   },
   "inShop": false,
   "shopBadges": 0

@@ -1,4 +1,4 @@
-// Friendship streaks and the Friend Market (docs/59; docs/15 §41). The pieces: the Festival Coins plate, a friend's
+// Friendship streaks and the Friend Market (docs/59; docs/15 §41). The pieces: the Heart Scales plate, a friend's
 // streak badge (on their row), the streak's tiers, the Friends page's Friendship card, the streak on a friend's card,
 // the market's shelf (the shiny of the week and the items) and the rules. They only show what the engine and the
 // server decided; every state is on /kitchen-sink (FriendshipBits).
@@ -7,6 +7,7 @@ import {
   friendshipNumbers,
   friendshipTiers,
   marketQtys,
+  marketShinyHome,
   marketWhy,
   nextStreakDay,
   streakState,
@@ -17,6 +18,7 @@ import {
   type StreakState,
 } from '@/engine'
 import { useT } from '@/i18n/react'
+import { useItemDescription } from '@/lib/itemText'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { PixelIcon } from '../icons'
@@ -52,7 +54,7 @@ export function CoinPlate({
         className,
       )}
     >
-      <PixelIcon name="fcoin" size={size === 'lg' ? 24 : size === 'sm' ? 14 : 18} />
+      <PixelIcon name="heartScale" size={size === 'lg' ? 24 : size === 'sm' ? 14 : 18} />
       <span className="tabular-nums">{n.toLocaleString()}</span>
     </span>
   )
@@ -62,7 +64,7 @@ export function CoinPlate({
 export function CoinPrice({ n }: { n: number }) {
   return (
     <span className="inline-flex items-center gap-1 normal-case tabular-nums">
-      <PixelIcon name="fcoin" size={16} />
+      <PixelIcon name="heartScale" size={16} />
       {n.toLocaleString()}
     </span>
   )
@@ -143,7 +145,7 @@ export function StreakLadder({ streak, data }: { streak: number; data: GameData 
             )}
           >
             <span className="flex items-center gap-0.5 text-[20px] leading-none">
-              <PixelIcon name="fcoin" size={14} />+{tier.coins}
+              <PixelIcon name="heartScale" size={14} />+{tier.coins}
             </span>
             <span aria-hidden className="w-full truncate font-pixel-sm text-[16px] leading-none tabular-nums">
               {end == null ? `${tier.from}+` : `${tier.from}–${end}`}
@@ -352,7 +354,7 @@ export function useFriendshipRules(): RuleRow[] {
   return [
     { icon: 'trade', title: t('ui.rules.fship.streak.title'), text: t('ui.rules.fship.streak.text') },
     {
-      icon: 'fcoin',
+      icon: 'heartScale',
       title: t('ui.rules.fship.coins.title'),
       text: t('ui.rules.fship.coins.text', { ladder, cap }),
     },
@@ -386,7 +388,7 @@ export function FriendshipBanner() {
     >
       <span className="flex items-center gap-4">
         <PixelIcon name="heart" size={44} />
-        <PixelIcon name="fcoin" size={72} />
+        <PixelIcon name="heartScale" size={72} />
         <PixelIcon name="heart" size={44} />
       </span>
     </div>
@@ -473,6 +475,16 @@ export function MarketShinyCard({
 }) {
   const { t } = useT()
   const species = useGame((s) => (row.dex ? s.data.species[row.dex] : undefined))
+  // Where it goes (docs/59): its species' region, locked there until one of yours reaches its level.
+  const homeRegion = useGame((s) =>
+    s.save && row.dex ? marketShinyHome(s.save, s.data, row.dex, row.level ?? 15).region : null,
+  )
+  const locked = useGame(
+    (s) => !!s.save && !!row.dex && marketShinyHome(s.save, s.data, row.dex, row.level ?? 15).locked,
+  )
+  const regionName = useGame((s) =>
+    homeRegion ? (s.data.regions.find((r) => r.id === homeRegion)?.name ?? homeRegion) : '',
+  )
   return (
     <section
       aria-labelledby="market-shiny"
@@ -500,8 +512,14 @@ export function MarketShinyCard({
             {species?.name ?? `#${row.dex}`}
           </h2>
           <span className="font-pixel-sm text-[16px] leading-tight">
-            {t('ui.market.shinyLine', { level: row.level ?? 15 })}
+            {t('ui.market.shinyLine', { level: row.level ?? 15, region: regionName })}
           </span>
+          {locked && (
+            <span className="flex items-start gap-1 font-pixel-sm text-[16px] leading-tight">
+              <PixelIcon name="lock" size={14} className="mt-0.5 shrink-0" />
+              {t('ui.market.shinyLocked', { region: regionName, level: row.level ?? 15 })}
+            </span>
+          )}
           <LeftLine row={row} />
         </div>
       </div>
@@ -523,6 +541,7 @@ export function MarketItemCard({
   onBuy: (qty: number) => void
 }) {
   const item = useGame((s) => s.data.items[row.key])
+  const description = useItemDescription(item?.description)
   return (
     <li
       className={cx('grid gap-2 p-2.5', row.left > 0 ? 'bg-paper shadow-card' : 'bg-well shadow-ring-line')}
@@ -534,7 +553,7 @@ export function MarketItemCard({
         </span>
         <div className="grid min-w-0 flex-1 gap-1">
           <b className="truncate text-[22px] font-normal leading-none">{item?.name ?? row.key}</b>
-          <span className="font-pixel-sm text-[16px] leading-tight text-muted">{item?.description}</span>
+          <span className="font-pixel-sm text-[16px] leading-tight text-muted">{description}</span>
           <LeftLine row={row} />
         </div>
       </div>

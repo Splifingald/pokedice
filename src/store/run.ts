@@ -1,4 +1,5 @@
 // Run flow: map → area → encounter preview → battle → rewards → next. Thin glue over the pure engine.
+import { friendBallBoostNow } from './friendship'
 import {
   areaVersusHere,
   foeGoldMultiplier,
@@ -131,6 +132,8 @@ import {
   trickCfg,
   type TrickStep,
   type ProgressRaid,
+  friendBallTalent,
+  isTalentBall,
 } from '@/engine'
 import { activeSlot } from '@/save/storage'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type CatchState, type RunState } from './game'
@@ -1076,7 +1079,11 @@ function settleThrow(save: SaveData, roll: CatchRoll, ballKey: string | null, ba
     } else {
       // An Unown's letter is drawn as it's caught (docs/41): one the page is missing.
       const letter = c.dex === UNOWN_DEX ? unownLetterFor(next, runRng) : undefined
-      const res = applyCatch(next, { dex: c.dex, level: c.level, shiny: c.shiny, letter, talent: c.talent }, c.target, data, Date.now(), newId)
+      // The Friend Ball (docs/59): more chances of its hidden talent, by the player's best friendship streak.
+      const talent = isTalentBall(ballKey ? data.items[ballKey] : undefined)
+        ? friendBallTalent(data, c.dex, !!c.talent, friendBallBoostNow(), runRng)
+        : c.talent
+      const res = applyCatch(next, { dex: c.dex, level: c.level, shiny: c.shiny, letter, talent }, c.target, data, Date.now(), newId)
       // A boss is noted as caught in its area: a small world's goes by that, not the Pokédex (docs/26 §2.5).
       next = c.kind === 'boss' && run.areaId ? noteBossCaught(res.save, run.areaId, c.dex) : res.save
       events = res.events

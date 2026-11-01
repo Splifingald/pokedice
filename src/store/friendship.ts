@@ -4,6 +4,9 @@
 import { create } from 'zustand'
 import {
   applyMarketBuys,
+  bestLiveStreak,
+  friendBallBoost,
+  utcDay,
   clearEggReports,
   friendshipOf,
   friendshipOn,
@@ -180,3 +183,12 @@ export async function raidWithFriends(ids: string[], key: string | null): Promis
 }
 
 export const seeFriendshipRules = () => mutateSave(markFriendshipRulesSeen)
+
+/** The Friend Ball's boost now (docs/59), from the last status: ×1 without one. */
+export function friendBallBoostNow(): number {
+  const status = useFriendship.getState().status
+  return friendBallBoost(
+    bestLiveStreak(status?.streaks, status?.day || utcDay(Date.now())),
+    useGame.getState().data,
+  )
+}

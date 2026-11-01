@@ -1,6 +1,6 @@
 -- Friendship streaks and the Friend Market (docs/59). Two friends who interact on a UTC day keep a streak going: a
 -- raid fought beside the other's team (either way round), a trade between them, or an Egg the Day Care made with the
--- other's Pokémon. Each new day of a streak pays both of them Festival Coins, more the longer it runs (3 a day on days
+-- other's Pokémon. Each new day of a streak pays both of them Heart Scales, more the longer it runs (3 a day on days
 -- 1–3, 4 on 4–7, 5 on 8–14, 6 on 15–30, 7 from day 31), at most 50 a player a UTC day across every friend. A day with
 -- no interaction ends the streak. The coins buy from the Friend Market, a weekly shop (Monday 00:00 UTC): Friend Balls,
 -- Rare Candies, Talent Candies and one shiny Pokémon of the week, each with its weekly limit.
@@ -20,7 +20,8 @@
 --    in its save (engine/gifts.ts); friend_market_applied(): the game has them. A purchase not marked applied comes
 --    back in the status until it is (a tab closed mid-way loses nothing; the save remembers the ids it applied).
 -- 5. Removing a friend ends your streak; Delete my data (the main save) takes the wallet and the purchases.
--- 6. The Friend Ball (an Ultra Ball for now: its own effect comes later) in items, as src/data/items.json has it.
+-- 6. The Friend Ball in items, as src/data/items.json has it: +3 on the catch die as an Ultra Ball, and more chances
+--    of the hidden talent on its catch by the player's best streak (the game's: engine/friendship.ts friendBallTalent).
 --
 -- Run after 0104; safe to run again.
 begin;
@@ -44,7 +45,8 @@ language sql immutable as $$
       {"key": "rare-candy", "price": 15, "limit": 10},
       {"key": "talent-candy", "price": 60, "limit": 2}
     ],
-    "shiny": {"price": 150, "level": 15, "pool": [175, 133, 172, 173, 174, 447, 440, 446, 427, 298, 433, 527]}
+    "shiny": {"price": 150, "level": 15, "pool": [175, 133, 172, 173, 174, 447, 440, 446, 427, 298, 433, 527]},
+    "ballBoost": [1, 2, 3, 4, 5]
   }'::jsonb
 $$;
 
@@ -433,10 +435,10 @@ create trigger saves_friendship_gone after delete on saves
 -- ---------------------------------------------------------------- 6. the Friend Ball
 
 insert into items (key, name, description, sprite_url, price, effect, in_shop, shop_badges) values
-  ('friend-ball', 'Friend Ball', 'A ball from the Friend Market: adds 3 to the catch die, as an Ultra Ball does.',
+  ('friend-ball', 'Friend Ball', 'More chances to discover hidden talents on catch depending on your best streak, current: ×{x}.',
    'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/friend-ball.png', 100,
-   '{"kind":"ball","bonus":3}'::jsonb, false, 0)
-on conflict (key) do nothing;
+   '{"kind":"ball","bonus":3,"talentBoost":true}'::jsonb, false, 0)
+on conflict (key) do update set description = excluded.description, effect = excluded.effect;
 
 -- ---------------------------------------------------------------- who may call what
 

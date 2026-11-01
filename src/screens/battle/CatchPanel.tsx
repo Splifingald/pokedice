@@ -7,7 +7,18 @@ import { TalentGem, talentName } from '@/components/Talent'
 import { AutoButton } from '@/components/AutoButton'
 import { BottomDock } from '@/components/BottomDock'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { baitChance, baitFaces, ballBonus, catchChance, catchValueOf, isBallFor, sureThrow } from '@/engine'
+import {
+  baitChance,
+  baitFaces,
+  ballBonus,
+  catchChance,
+  catchValueOf,
+  friendBallHelps,
+  isBallFor,
+  isTalentBall,
+  sureThrow,
+} from '@/engine'
+import { useFriendBallBoost } from '@/lib/itemText'
 import { Die } from '@/components/Die'
 import { ItemSprite } from '@/components/ItemSprite'
 import { PixelButton } from '@/components/PixelButton'
@@ -103,8 +114,14 @@ export function CatchPanel({
   const pct = (bonus: number) => Math.round(catchChance(value, bonus + swipe) * 100)
   // A ball adds nothing once a weaker option (or no ball) is already certain.
   const sure = catchChance(value, swipe) >= 1
+  // The Friend Ball (docs/59): its hidden-talent boost, while it can still find this one's talent.
+  const boost = useFriendBallBoost()
+  const talentUp = (o: (typeof options)[number]) =>
+    o.key != null && isTalentBall(data.items[o.key]) && friendBallHelps(data, c.dex, !!c.talent, boost)
   const notNeeded = (o: (typeof options)[number]) =>
-    o.key != null && options.some((w) => w.bonus < o.bonus && catchChance(value, w.bonus + swipe) >= 1)
+    o.key != null &&
+    !talentUp(o) &&
+    options.some((w) => w.bonus < o.bonus && catchChance(value, w.bonus + swipe) >= 1)
 
   // A throw that couldn't miss has no die and nothing to read once the ball has landed: on at once, no CONTINUE (the
   // user's call, 2026-10-26). A throw with a die keeps its CONTINUE, which loads and goes by itself.
@@ -230,12 +247,12 @@ export function CatchPanel({
                   <button
                     key={o.key ?? 'none'}
                     type="button"
-                    aria-label={t('ui.catch.throwLabel', {
+                    aria-label={`${t('ui.catch.throwLabel', {
                       label: o.label,
                       left: o.n != null ? t('ui.catch.ballLeft', { n: o.n }) : '',
                       pct: pct(o.bonus),
                       useless: useless ? t('ui.catch.notNeededSuffix') : '',
-                    })}
+                    })}${talentUp(o) ? `, ${t('ui.catch.talentBoost', { x: boost })}` : ''}`}
                     title={useless ? t('ui.catch.notNeededTitle', { label: o.label }) : o.label}
                     onClick={() => {
                       setBall(o.key)
@@ -250,6 +267,7 @@ export function CatchPanel({
                     <span className="grid h-[28px] w-[28px] place-items-center">
                       {item ? <ItemSprite item={item} size={28} /> : <PixelIcon name="dice" size={22} />}
                     </span>
+                    {talentUp(o) && <FriendBallTag boost={boost} className="absolute -right-1 -top-2.5 z-[1]" />}
                     <b className="font-pixel text-[22px] font-normal leading-none tabular-nums">{pct(o.bonus)}%</b>
                     <small className="font-pixel-sm text-[16px] leading-none text-muted">
                       {useless ? t('ui.catch.notNeeded') : o.n != null ? `×${o.n}` : t('ui.catch.noBall')}
@@ -268,4 +286,22 @@ export function CatchPanel({
 /** Outside a battle's panel (a raid, the kitchen sink): the buttons in the flow, as before. */
 function Plain({ children }: { children?: ReactNode }) {
   return <>{children}</>
+}
+
+/**
+ * The Friend Ball's corner tag on its throw button (docs/59): the unknown talent's gem and the boost, while it can
+ * still find this Pokémon's hidden talent. The button's name says it in words.
+ */
+export function FriendBallTag({ boost, className }: { boost: number; className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={cx(
+        'light-scope flex items-center gap-0.5 bg-gold px-1 font-pixel-sm text-tag leading-none text-ink shadow-ring-thin',
+        className,
+      )}
+    >
+      <TalentGem talent="extraReroll" unknown size={12} />×{boost}
+    </span>
+  )
 }

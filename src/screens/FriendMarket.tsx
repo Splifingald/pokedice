@@ -1,4 +1,4 @@
-// The Friend Market (docs/59; docs/15 §41), reached from the Friends page's Friendship card: Festival Coins earned by
+// The Friend Market (docs/59; docs/15 §41), reached from the Friends page's Friendship card: Heart Scales earned by
 // friendship streaks buy the week's shelf — the shiny of the week, then Friend Balls, Rare Candies and Talent Candies,
 // each with its weekly limit. The rules the first time (a card at the top), INFO at the foot. The server prices,
 // limits and pays; a purchase opens like a gift (GiftMoment) into the region being played.
@@ -53,7 +53,7 @@ export function FriendMarketScreen() {
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
       {head}
       <div className="flex flex-col items-center gap-3 bg-paper px-3.5 py-4 text-center shadow-card">
-        <PixelIcon name="fcoin" size={48} />
+        <PixelIcon name="heartScale" size={48} />
         <p className="m-0 text-[20px] leading-[1.15]">{text}</p>
         {extra}
       </div>

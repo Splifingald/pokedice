@@ -844,7 +844,7 @@ export function KitchenSink() {
       <Section title="The gift calendar: a door in every state (shut, today's, last chance, opened with each kind of gift, missed, busy), a calendar on its 10th day, Home's card (gold, later, done), the rules card and INFO, a door's opening (docs/55)">
         <CalendarBits />
       </Section>
-      <Section title="Friendship streaks and the Friend Market: coins, a streak badge (kept, waiting), the tiers' ladder, today's gauge, the Friendship card (streaks waiting, none, loading, failed), a friend's streak (waiting, kept, top, lost, none), the shiny of the week (to buy, too poor, sold out), the items, the rules card and INFO, a purchase's opening (docs/59)">
+      <Section title="Friendship streaks and the Friend Market: coins, a streak badge (kept, waiting), the tiers' ladder, today's gauge, the Friend Ball's catch tag, the Friendship card (streaks waiting, none, loading, failed), a friend's streak (waiting, kept, top, lost, none), the shiny of the week (to buy, too poor, sold out), the items, the rules card and INFO, a purchase's opening (docs/59)">
         <FriendshipBits />
       </Section>
       <Section title="Day and night (Johto): the top bar's chip by day and by night, the fights' indicator, the list tags (its half, the other half), rules">

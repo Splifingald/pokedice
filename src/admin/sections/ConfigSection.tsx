@@ -722,7 +722,7 @@ function FriendshipBox() {
     <Box
       title="Friendship & Friend Market"
       icon="heart"
-      hint="Two friends who raid beside each other's team, trade together or make an Egg with the other's Pokémon keep a streak going (once per UTC day). Each new streak day pays both of them Festival Coins by its tier, up to the daily cap across every friend. A missed day starts the streak again. The coins buy from the Friend Market, whose limits and shiny reset every Monday 00:00 UTC."
+      hint="Two friends who raid beside each other's team, trade together or make an Egg with the other's Pokémon keep a streak going (once per UTC day). Each new streak day pays both of them Heart Scales by its tier, up to the daily cap across every friend. A missed day starts the streak again. The coins buy from the Friend Market, whose limits and shiny reset every Monday 00:00 UTC."
     >
       <div className="grid gap-3">
         <div className="grid gap-3 sm:grid-cols-5">
@@ -743,6 +743,23 @@ function FriendshipBox() {
                   onChange={(v) => set({ tiers: cfg.tiers.map((x, j) => (j === i ? { ...x, coins: n(v, 0, 99, 0) } : x)) })}
                 />
               </div>
+            </Field>
+          ))}
+        </div>
+        <div className="grid gap-3 sm:grid-cols-5">
+          {cfg.tiers.map((tier, i) => (
+            <Field key={i} label={`Friend Ball ×, tier ${i + 1}`} hint={`hidden-talent odds × this from day ${tier.from}`}>
+              <NumInput
+                className="w-16"
+                min={1}
+                max={20}
+                value={cfg.ballBoost?.[i] ?? 1}
+                onChange={(v) => {
+                  const boosts = cfg.tiers.map((_, j) => cfg.ballBoost?.[j] ?? 1)
+                  boosts[i] = n(v, 1, 20, 1)
+                  set({ ballBoost: boosts })
+                }}
+              />
             </Field>
           ))}
         </div>

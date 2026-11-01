@@ -5,9 +5,14 @@
 import { describe, expect, it } from 'vitest'
 import {
   applyMarketBuys,
+  bestLiveStreak,
+  createRng,
+  friendBallBoost,
+  friendBallHelps,
+  friendBallTalent,
+  isTalentBall,
   clearEggReports,
   createInstance,
-  createRng,
   DEFAULT_CONFIG,
   friendshipCap,
   friendshipOf,
@@ -19,6 +24,7 @@ import {
   marketQtys,
   marketRows,
   marketShiny,
+  marketShinyHome,
   marketWeek,
   marketWeekEnds,
   marketWhy,
@@ -129,14 +135,31 @@ describe('the market', () => {
     expect(res.save.inventory['friend-ball']).toBe(5)
     expect(friendshipOf(res.save).applied).toEqual(['b1'])
     expect(applyMarketBuys(res.save, ON, [buy], 0, newId)).toBeNull()
-    const shiny = applyMarketBuys(
-      save,
-      ON,
-      [{ id: 'b2', gifts: [{ kind: 'pokemon', dex: 175, level: 15, shiny: true, region: 'latest' }] }],
-      0,
-      newId,
-    )!
-    expect(shiny.save.box.find((p) => p.dex === 175)).toMatchObject({ level: 15, shiny: true })
+  })
+
+  it('sends a Pokémon to its region of origin, locked there until one of yours reaches its level', () => {
+    // A Kanto game: Togepi (Johto) waits for Johto, a region not even started.
+    const save = fresh()
+    const buy = { id: 'b2', gifts: [{ kind: 'pokemon', dex: 175, level: 15, shiny: true, region: 'latest' }] }
+    const res = applyMarketBuys(save, ON, [buy], 0, newId)!
+    expect(res.landed).toEqual([expect.objectContaining({ region: 'johto', locked: true })])
+    expect(res.save.box.some((p) => p.dex === 175)).toBe(false)
+    expect(res.save.events?.worldHome).toEqual([
+      expect.objectContaining({
+        region: 'johto',
+        market: true,
+        inst: expect.objectContaining({ dex: 175, level: 15, shiny: true }),
+      }),
+    ])
+    expect(marketShinyHome(save, ON, 175, 15)).toEqual({ region: 'johto', locked: true })
+    // Kanto's own (Pikachu) at a level a Pokémon there already has: it arrives in the Box at once.
+    const top = Math.max(...save.box.map((p) => p.level))
+    const gift = { kind: 'pokemon', dex: 25, level: top, shiny: true, region: 'latest' }
+    const pika = applyMarketBuys(save, ON, [{ id: 'b3', gifts: [gift] }], 0, newId)!
+    expect(pika.landed[0]).toMatchObject({ region: 'kanto', isNew: true })
+    expect(pika.landed[0]!.locked).toBeUndefined()
+    expect(pika.save.box.find((p) => p.dex === 25)).toMatchObject({ shiny: true })
+    expect(pika.save.events?.worldHome ?? []).toEqual([])
   })
 
   it('waits in Extreme mode and while switched off', () => {
@@ -162,10 +185,8 @@ describe('the save', () => {
     expect(back.ok && back.save.friendship).toEqual({ rulesSeen: true, applied: ['b1'], eggs: ['u1'] })
   })
 
-  it('announces itself on Home for an account, until the rules are read', () => {
-    expect(homeNotices(fresh(), ON, { signedIn: true })).toContain('friendship')
-    expect(homeNotices(fresh(), ON, { signedIn: false })).not.toContain('friendship')
-    expect(homeNotices(markFriendshipRulesSeen(fresh())!, ON, { signedIn: true })).not.toContain('friendship')
+  it('is never announced on Home: players meet it on the Friends page (the user’s call, 2026-11-01)', () => {
+    expect(homeNotices(fresh(), ON, { signedIn: true })).not.toContain('friendship')
   })
 
   it('queues Eggs with friends for the server, each friend once', () => {
@@ -211,5 +232,52 @@ describe('the save', () => {
     const later = processDayCare(started, ON, 1000 * HOUR, createRng(3))
     expect(later.laid).toBe(true)
     expect(friendshipOf(later.save).eggs).toEqual(['friend-1'])
+  })
+})
+
+describe('the Friend Ball', () => {
+  const T = (talentPatch: Partial<GameData['config']['hiddenTalents']> = {}): GameData =>
+    makeData({
+      friendship: { ...DEFAULT_CONFIG.friendship, access: 'all' },
+      hiddenTalents: { ...DEFAULT_CONFIG.hiddenTalents, access: 'all', wildChance: 0.05, ...talentPatch },
+    })
+
+  it('is the ball with the talent boost', () => {
+    expect(isTalentBall(data.items['friend-ball'])).toBe(true)
+    expect(isTalentBall(data.items['ultra-ball'])).toBe(false)
+  })
+
+  it('boosts by the best live streak: ×1 on 0–3, ×2 on 4–7, ×3 on 8–14, ×4 on 15–30, ×5 from 31', () => {
+    expect([0, 1, 3, 4, 7, 8, 14, 15, 30, 31, 99].map((n) => friendBallBoost(n, ON))).toEqual([
+      1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5,
+    ])
+    expect(friendBallBoost(40, on({ access: 'off' }))).toBe(1)
+    const streaks = [s(12, '2026-11-03'), s(40, '2026-10-01'), s(5, '2026-11-04')]
+    // The 40-day one is lost: the best still alive is 12.
+    expect(bestLiveStreak(streaks, '2026-11-04')).toBe(12)
+    expect(bestLiveStreak(undefined, '2026-11-04')).toBe(0)
+  })
+
+  it('makes the whole chance the wild odds × the boost', () => {
+    const d = T()
+    const rate = (boost: number) => {
+      const rng = createRng(11)
+      let n = 0
+      for (let i = 0; i < 20_000; i++)
+        if (rng.next() < 0.05 || friendBallTalent(d, 16, false, boost, rng)) n++
+      return n / 20_000
+    }
+    expect(rate(1)).toBeCloseTo(0.05, 2)
+    expect(rate(3)).toBeCloseTo(0.15, 2)
+    expect(rate(5)).toBeCloseTo(0.25, 2)
+  })
+
+  it('keeps a talent already carried; never for a starter line, never with talents off', () => {
+    const d = T()
+    expect(friendBallTalent(d, 16, true, 1, createRng(1))).toBe(true)
+    expect(friendBallHelps(d, 1, false, 5)).toBe(false) // Bulbasaur's line
+    expect(friendBallHelps(T({ access: 'off' }), 16, false, 5)).toBe(false)
+    expect(friendBallHelps(d, 16, false, 1)).toBe(false)
+    expect(friendBallHelps(d, 16, false, 2)).toBe(true)
   })
 })

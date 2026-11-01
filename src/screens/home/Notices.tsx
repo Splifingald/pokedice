@@ -104,8 +104,6 @@ export function featureTarget(
       return { name: t('ui.unown.title'), icon: 'dex', to: '/pokedex?view=unown' }
     case 'invites':
       return { name: t('ui.invite.title'), icon: 'gift', to: '/friends' }
-    case 'friendship':
-      return { name: t('ui.fship.title'), icon: 'fcoin', to: '/friends' }
     case 'raidRules':
       return { name: t('ui.events.raid.name'), icon: 'star', to: '/events/raid' }
     case 'underground':

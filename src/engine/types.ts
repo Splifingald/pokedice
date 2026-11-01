@@ -572,7 +572,11 @@ export type ItemEffect =
   /** Rare Candy: levels, from the Team screen. */
   | { kind: 'level'; amount: number }
   /** Poké Balls: added to the catch die. `raidOnly`: thrown in raids alone (the Raid Ball, docs/44). */
-  | { kind: 'ball'; bonus: number; raidOnly?: boolean }
+  /**
+   * `talentBoost` (the Friend Ball, docs/59): a catch with it has more chances to find the Pokémon's hidden talent, by
+   * the player's best friendship streak (`friendBallBoost`).
+   */
+  | { kind: 'ball'; bonus: number; raidOnly?: boolean; talentBoost?: boolean }
   /** The Link Cable: evolves a Pokémon that only evolves by trade (`trade.evolveOnTrade`), from the Team screen. */
   | { kind: 'link' }
   /**
@@ -2154,6 +2158,8 @@ export interface WorldHomer {
   from?: RegionId
   /** The trainer it came from in a trade (docs/23 §1.4), when it arrived above the region's best level. */
   tradedBy?: string
+  /** Bought at the Friend Market (docs/59): it waits in its species' region until one there reaches its level. */
+  market?: true
 }
 
 /** A shiny mythical won in a small world, waiting for its home region to be started. */
@@ -2244,7 +2250,7 @@ export interface FriendshipTier {
   coins: number
 }
 
-/** A Friend Market item: its price in Festival Coins and how many a player can buy a week. */
+/** A Friend Market item: its price in Heart Scales and how many a player can buy a week. */
 export interface FriendMarketItem {
   key: string
   price: number
@@ -2258,6 +2264,11 @@ export interface FriendshipConfig {
   market: FriendMarketItem[]
   /** The shiny of the week: its price, its level and the pool it turns through, a species a week. */
   shiny: { price: number; level: number; pool: number[] }
+  /**
+   * The Friend Ball's hidden-talent boost by the player's best live streak, one per tier (the first also below it):
+   * ×1, ×2, ×3, ×4, ×5. Read by the game only (the catch is the game's).
+   */
+  ballBoost: number[]
 }
 
 /** Friendship in a save (docs/59): the rules read, purchases put away, Eggs to tell the server about. */

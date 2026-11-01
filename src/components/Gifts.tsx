@@ -181,8 +181,10 @@ function useWhere() {
           ? many
             ? t('ui.gift.inMoneyOf', { region })
             : t('ui.gift.inMoney')
-          : l.joinedTeam
-            ? t('ui.gift.joinedTeam')
+          : l.locked
+            ? t('ui.trades.result.locked', { region, level: t('ui.common.level.short', { n: l.gift.level }) })
+            : l.joinedTeam
+              ? t('ui.gift.joinedTeam')
             : many
               ? t('ui.gift.inBoxOf', { region })
               : t('ui.gift.inBox')

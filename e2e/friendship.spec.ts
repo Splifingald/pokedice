@@ -190,8 +190,8 @@ test('the Friends page: the Friendship card, the streaks on the rows, the rules 
   )
   const card = page.getByTestId('friendship-card')
   await expect(card).toBeVisible()
-  await expect(card.getByRole('img', { name: '186 Festival Coins' })).toBeVisible()
-  await expect(card.getByRole('meter', { name: '9 of 50 Festival Coins earned today' })).toBeVisible()
+  await expect(card.getByRole('img', { name: '186 Heart Scales' })).toBeVisible()
+  await expect(card.getByRole('meter', { name: '9 of 50 Heart Scales earned today' })).toBeVisible()
   await expect(card).toContainText('1 of 3 streaks kept today')
   // The streaks to keep today, the longest first, each with what today would pay.
   const waiting = card.getByRole('list', { name: 'Streaks to keep today' }).getByRole('listitem')
@@ -253,19 +253,25 @@ test('the Friend Market: the shiny of the week, the shelf, a purchase opened lik
   const shiny = page.getByTestId('market-shiny')
   await expect(shiny).toContainText(data.species[SHINY]!.name)
   await expect(shiny).toContainText('Lv.15')
-  await expect(shiny.getByRole('button', { name: /Buy 1 for 150 Festival Coins/ })).toBeVisible()
+  // It goes to its own region, and waits there locked while nothing there is at its level (docs/59).
+  // A starter at Lv.5 is the save's best: the shiny (Lv.15) waits there, locked.
+  await expect(shiny).toContainText(/goes to \w+/)
+  await expect(shiny).toContainText('It waits there, locked, until one of yours in')
+  await expect(shiny.getByRole('button', { name: /Buy 1 for 150 Heart Scales/ })).toBeVisible()
   const candy = page.getByTestId('market-rare-candy')
   await expect(candy).toContainText('2 of 10 left this week')
   // ×10 is more than what's left: only ×1 shows (×5 too, it's short).
   await expect(candy.getByRole('button', { name: /Buy 10/ })).toHaveCount(0)
   const balls = page.getByTestId('market-friend-ball')
   await expect(balls).toContainText('Friend Ball')
+  // Its hidden-talent boost, by the best streak still alive (Erika's 34 days): ×5.
+  await expect(balls).toContainText('depending on your best streak, current: ×5.')
   await expect(balls).toContainText('20 of 20 left this week')
   expect(await seriousAxe(page)).toEqual([])
   await shot(page, '3-market-phone')
 
   const before = save.inventory['rare-candy'] ?? 0
-  await candy.getByRole('button', { name: 'Buy 1 for 15 Festival Coins' }).click()
+  await candy.getByRole('button', { name: 'Buy 1 for 15 Heart Scales' }).click()
   const moment = page.getByRole('dialog', { name: 'From the Friend Market!' })
   await expect(moment).toBeVisible()
   await moment.getByRole('button', { name: /skip/i }).click()
@@ -285,7 +291,7 @@ test('the market on a wide screen, and the shiny too dear', async ({ page }) => 
   await page.goto('/market')
   const shiny = page.getByTestId('market-shiny')
   await expect(
-    shiny.getByRole('button', { name: /Buy 1 for 150 Festival Coins.*Need 110 more coins/ }),
+    shiny.getByRole('button', { name: /Buy 1 for 150 Heart Scales.*Need 110 more Heart Scales/ }),
   ).toBeVisible()
   await expect(page.getByTestId('market-talent-candy')).toContainText('Sold out this week')
   await shot(page, '5-market-desktop')

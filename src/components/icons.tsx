@@ -55,13 +55,15 @@ const GIFT_PAL: Record<string, string> = {
   o: '#e08e00',
 }
 
-/** The Festival Coin: rose, its rim deeper, a white heart (the same in both themes, its outline the edge). */
-const FCOIN_PAL: Record<string, string> = {
+/** The Heart Scale: the item sprite's own pearly colours, its outline the edge's navy. */
+const HEART_SCALE_PAL: Record<string, string> = {
   k: '#24304f',
-  w: '#ffffff',
-  l: '#ffc2d6',
-  p: '#ff6f9c',
-  P: '#c93d6c',
+  a: '#ceceef',
+  b: '#efefef',
+  c: '#ceefef',
+  d: '#7b7b9c',
+  e: '#efcece',
+  f: '#c5e6c5',
 }
 
 /** The battle Bag: a red flap with a gold buckle over a tan backpack, its front pocket and brown straps. */
@@ -177,19 +179,23 @@ export const ICONS = {
     '.kRRRyoRRRk.',
     '.kkkkkkkkkk.',
   ],
-  /** A Festival Coin (docs/59): the Friend Market's currency, a rose coin with a white heart. */
-  fcoin: [
-    '...kkkkkk...',
-    '.kkllllllkk.',
-    '.klppppppPk.',
-    'klpwwppwwpPk',
-    'klwwwwwwwwPk',
-    'kpwwwwwwwwPk',
-    'kppwwwwwwpPk',
-    'kpppwwwwpPPk',
-    '.kpppwwpPPk.',
-    '.kkPPPPPPkk.',
-    '...kkkkkk...',
+  /** A Heart Scale (docs/59): the Friend Market's currency, the games' own item sprite (Gen IV, 18 × 15). */
+  heartScale: [
+    '....kkkk..........',
+    '...kaaaak.........',
+    '..kabbbbbk........',
+    '..kaccccbk........',
+    '.dacccccckkkkk....',
+    '.kaeeeeecccebakk..',
+    '.kabbbbeecccebaak.',
+    'dabfffbbeeccebaabk',
+    'dafffffbeeccebaabk',
+    'kaccccfbeeccebaabk',
+    'kcbcccfbeeccebafbk',
+    'kcbbccfbeecebabbk.',
+    'kcbbccbeecebbbkk..',
+    'kcbbbbbbbbbkkk....',
+    'kkkkkkkkkkk.......',
   ],
   burn: ['....k...', '...kok..', '..koYok.', '.kooYyok', '.koyYyok', '.kooyyok', '..koook.', '...kkk..'],
   frozen: ['...kk...', '..kCck..', '.kCccck.', 'kCcCccck', 'kcccCcck', '.kcccck.', '..kcck..', '...kk...'],
@@ -627,7 +633,7 @@ const OWN_PALETTE: Partial<Record<IconName, Record<string, string>>> = {
   navFriends: NAV_PAL,
   trade: TRADE_PAL,
   gift: GIFT_PAL,
-  fcoin: FCOIN_PAL,
+  heartScale: HEART_SCALE_PAL,
   bag: BAG_PAL,
   pumpkin: PUMPKIN_PAL,
   pickaxe: DIG_PAL,

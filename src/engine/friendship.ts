@@ -1,13 +1,17 @@
 // Friendship streaks and the Friend Market (docs/59). Two friends who interact on a UTC day (a raid beside the other's
 // team, a trade between them, an Egg made with the other's Pokémon) keep a streak going; each new day of it pays both
-// Festival Coins by the streak's tier, at most the day's cap across every friend. The coins buy from a weekly market.
+// Heart Scales by the streak's tier, at most the day's cap across every friend. The coins buy from a weekly market.
 // The server keeps the streaks, the wallet and the purchases (migration 0105); these functions read the admin's
 // numbers, name the tiers, lay out the market and put what was bought in the save. The screens only say it.
 import { eventOpenTo } from './events'
 import { daysBetween } from './eventTime'
 import { isExtreme } from './extreme'
 import { parseGifts, placeGifts, type GiftLanded } from './gifts'
-import { inWorldRegion } from './regions'
+import { regionBestLevel, releaseWorldHome, speciesHome, worldHomers } from './homecoming'
+import { createInstance } from './progression'
+import { inWorldRegion, regionOf } from './regions'
+import type { Rng } from './rng'
+import { isStarterFamily, rollTalentFor, talentsOn, wildTalentChance } from './talents'
 import type {
   FriendshipConfig,
   FriendshipSave,
@@ -117,6 +121,50 @@ export function nextStreakDay(
   return { streak, coins: streakCoins(streak, data) }
 }
 
+/** The player's best streak still alive today (kept or waiting), across every friend: the Friend Ball reads it. */
+export const bestLiveStreak = (streaks: readonly FriendStreak[] | undefined, today: string): number =>
+  Math.max(0, ...(streaks ?? []).map((s) => liveStreak(s, today)))
+
+// ---------------------------------------------------------------- the Friend Ball
+
+/** A ball that boosts the hidden talent's chance on its catch (the Friend Ball). */
+export const isTalentBall = (
+  item: { effect: { kind: string; talentBoost?: boolean } } | undefined,
+): boolean => item?.effect.kind === 'ball' && !!item.effect.talentBoost
+
+/**
+ * The Friend Ball's boost for the player's best live streak: the tier's (×1 on days 0–3, ×2 on 4–7, ×3 on 8–14, ×4 on
+ * 15–30, ×5 from 31 by default); ×1 with no streak or with the switch off.
+ */
+export function friendBallBoost(streak: number, data: GameData): number {
+  if (!friendshipOn(data)) return 1
+  const boosts = data.config.friendship?.ballBoost ?? []
+  const v = Number(boosts[Math.max(0, streakTier(streak, data).level)])
+  return Number.isFinite(v) && v >= 1 ? Math.min(20, v) : 1
+}
+
+/**
+ * A catch with the Friend Ball: does the Pokémon come out carrying its hidden talent? One that carried it already
+ * does. Otherwise a second draw makes the whole chance the wild odds × `boost` (it was met at the wild odds once):
+ * (min(1, w × boost) − w) / (1 − w). Never a starter line's, never with hidden talents off, nothing drawn at ×1.
+ */
+export function friendBallTalent(
+  data: GameData,
+  dex: number,
+  carried: boolean,
+  boost: number,
+  rng: Rng,
+): boolean {
+  if (carried) return true
+  if (!friendBallHelps(data, dex, carried, boost)) return false
+  const w = wildTalentChance(data)
+  return rng.next() < (Math.min(1, w * boost) - w) / (1 - w)
+}
+
+/** The Friend Ball's boost can still do something for this Pokémon (it doesn't carry its talent, it could). */
+export const friendBallHelps = (data: GameData, dex: number, carried: boolean, boost: number): boolean =>
+  !carried && boost > 1 && talentsOn(data) && !isStarterFamily(data, dex) && wildTalentChance(data) < 1
+
 // ---------------------------------------------------------------- the market
 
 /** The market's week: the Monday (UTC) of the day, as yyyy-mm-dd. */
@@ -215,8 +263,11 @@ export interface MarketBuy {
 }
 
 /**
- * Puts purchases in the save, each once (the save remembers the last ids it put away), where the gifts' rules place
- * them. Null when nothing was new.
+ * Puts purchases in the save, each once (the save remembers the last ids it put away). Items go where the gifts' rules
+ * place them (the Bag of the region being played). A Pokémon goes to its species' own region (Togepi to Johto) and
+ * waits there on the regions' waiting list (engine/homecoming.ts), locked until one of the player's Pokémon there
+ * reaches its level — or until that region is started; with one there at its level already, it arrives at once.
+ * Null when nothing was new.
  */
 export function applyMarketBuys(
   save: SaveData,
@@ -230,13 +281,49 @@ export function applyMarketBuys(
   const fresh = buys.filter((b) => !done.has(b.id))
   if (!fresh.length) return null
   const gifts: Gift[] = fresh.flatMap((b) => parseGifts(b.gifts))
-  const placed = placeGifts(save, data, gifts, now, newId)
+  const placed = placeGifts(
+    save,
+    data,
+    gifts.filter((g) => g.kind !== 'pokemon'),
+    now,
+    newId,
+  )
+  let next = placed.save
+  const landed = [...placed.landed]
+  for (const gift of gifts) {
+    if (gift.kind !== 'pokemon' || !data.species[gift.dex]) continue
+    const inst = createInstance(gift.dex, gift.level, data, newId(), now)
+    if (gift.shiny) inst.shiny = true
+    // Its family's hidden talent, at the wild odds (docs/51), as any gift.
+    if (rollTalentFor(data, inst.dex, inst.id)) inst.talent = true
+    const region = speciesHome(data, gift.dex)
+    const dexThere = region === regionOf(next) ? next.pokedex : (next.parked?.[region]?.pokedex ?? [])
+    const waiting: SaveData = {
+      ...next,
+      events: { ...next.events, worldHome: [...worldHomers(next), { inst, region, market: true }] },
+    }
+    const released = releaseWorldHome(waiting, data)
+    next = released.save
+    const arrived = released.arrived.find((a) => a.inst.id === inst.id)
+    landed.push({
+      gift,
+      region: arrived?.region ?? region,
+      moved: false,
+      ...(arrived ? { isNew: !dexThere.includes(gift.dex) } : { locked: true }),
+    })
+  }
   const applied = [...(f.applied ?? []), ...fresh.map((b) => b.id)].slice(-APPLIED_KEPT)
   return {
-    save: { ...placed.save, friendship: { ...friendshipOf(placed.save), applied } },
-    landed: placed.landed,
+    save: { ...next, friendship: { ...friendshipOf(next), applied } },
+    landed,
     ids: buys.map((b) => b.id),
   }
+}
+
+/** Where the shiny of the week would go now: its species' region, and whether it would wait there, locked. */
+export function marketShinyHome(save: SaveData, data: GameData, dex: number, level: number) {
+  const region = speciesHome(data, dex)
+  return { region, locked: regionBestLevel(save, data, region) < level }
 }
 
 export const friendshipRulesDue = (save: SaveData, data: GameData): boolean =>

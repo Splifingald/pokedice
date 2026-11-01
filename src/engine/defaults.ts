@@ -447,7 +447,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   giftCalendar: { access: 'off' },
   // The champions' own cinematics (docs/56): off until the admin switches it on. Migration 0101 inserts the same row.
   championCinema: { access: 'off' },
-  // Friendship streaks and the Friend Market (docs/59): off until the admin switches it on. 3 to 7 Festival Coins a
+  // Friendship streaks and the Friend Market (docs/59): off until the admin switches it on. 3 to 7 Heart Scales a
   // streak day by tier, 50 a day at most; the market's weekly shelf and the shiny of the week turning through Pokémon
   // that grow with friendship. Migration 0105 holds the same numbers (friendship_defaults()).
   friendship: {
@@ -466,6 +466,7 @@ export const DEFAULT_CONFIG: GameConfig = {
       { key: 'talent-candy', price: 60, limit: 2 },
     ],
     shiny: { price: 150, level: 15, pool: [175, 133, 172, 173, 174, 447, 440, 446, 427, 298, 433, 527] },
+    ballBoost: [1, 2, 3, 4, 5],
   },
   // The Unown Pokédex (docs/41): off until the admin switches it on; ₽1,000 for the 28th letter. Migration 0080 inserts
   // the same row.

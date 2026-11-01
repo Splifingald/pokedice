@@ -19,6 +19,8 @@ import {
   useFriendshipRules,
 } from '@/components/friends/Friendship'
 import { GiftMoment } from '@/components/Gifts'
+import { ItemSprite } from '@/components/ItemSprite'
+import { FriendBallTag } from '@/screens/battle/CatchPanel'
 import { PixelButton } from '@/components/PixelButton'
 import { InfoButton } from '@/components/RulesModal'
 import { RulesCard } from '@/components/RulesCard'
@@ -92,7 +94,7 @@ export function FriendshipBits() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end gap-3">
-        <Frame name="Coins: sm, md, lg" w="w-auto">
+        <Frame name="Heart Scales: sm, md, lg" w="w-auto">
           <span className="flex items-center gap-2">
             <CoinPlate n={7} size="sm" />
             <CoinPlate n={128} />
@@ -107,6 +109,24 @@ export function FriendshipBits() {
           </span>
         </Frame>
       </div>
+      <Frame
+        name="The Friend Ball's throw button tag: ×2, ×5 (while its boost can still find the talent)"
+        w="w-auto"
+      >
+        <span className="flex items-center gap-3 pt-3">
+          {[2, 5].map((x) => (
+            <span
+              key={x}
+              className="pixel-btn relative grid min-h-[84px] w-[76px] content-center justify-items-center gap-1 bg-paper py-1.5"
+            >
+              <ItemSprite item={data.items['friend-ball']} size={28} />
+              <b className="font-pixel text-[22px] font-normal leading-none">85%</b>
+              <small className="font-pixel-sm text-[16px] leading-none text-muted">×3</small>
+              <FriendBallTag boost={x} className="absolute -right-1 -top-2.5 z-[1]" />
+            </span>
+          ))}
+        </span>
+      </Frame>
       <div className="grid gap-3 md:grid-cols-2">
         <Frame name="Ladder: day 2 (Friends)">
           <StreakLadder streak={2} data={kData} />
