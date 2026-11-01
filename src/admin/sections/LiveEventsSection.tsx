@@ -1,20 +1,24 @@
 // Admin → Live events (docs/20): what changes the whole game for a while, the same for everyone — a Shiny Parade, a
-// Special Shop, Cash Flow or the Underground (docs/34; its numbers are a row of their own, UndergroundBox). One
+// Special Shop, Cash Flow, the Underground (docs/34; its numbers are a row of their own, UndergroundBox) or a Gift
+// calendar (docs/55; its days in CalendarBox, its switch a row of its own). One
 // game_config row, `liveEvents`. Events may overlap (each gets its square on Home; two of a kind add up), except two
 // Undergrounds. One runs once, between two dates, or comes back (§9): every year on a date, or on a weekday, every week
 // or on some weeks of the month. An event is edited as a draft and goes into the list only when nothing is wrong with
 // it; Save & Publish sends it.
 import { useMemo, useState } from 'react'
 import {
+  calendarEnd,
   LIVE_REPEAT_MAX_HOURS,
   LIVE_TYPES,
   enabledRegions,
+  liveDefaultBanner,
   liveNextRun,
   liveProblems,
   liveRuns,
   liveState,
   newLiveEvent,
   normaliseLiveEvent,
+  resizeCalendar,
   sellPrice,
   type GameData,
   type LiveEvent,
@@ -33,9 +37,16 @@ import { PixelButton } from '@/components/PixelButton'
 import { useAdminData } from '../store'
 import { AccessSwitch, Box, Field, NumInput, PicturePicker, inputCls } from '../widgets'
 import { useConfigRow } from './ConfigSection'
+import { CalendarEditor } from './CalendarBox'
 import { UndergroundBox } from './UndergroundBox'
 
-const TYPE_NAME: Record<LiveType, string> = { shiny: 'Shiny Parade', shop: 'Special Shop', cash: 'Cash Flow', underground: 'Underground' }
+const TYPE_NAME: Record<LiveType, string> = {
+  shiny: 'Shiny Parade',
+  shop: 'Special Shop',
+  cash: 'Cash Flow',
+  underground: 'Underground',
+  calendar: 'Gift calendar',
+}
 const STATE_CLS = { live: 'bg-good text-white', scheduled: 'bg-[#2f4f8f] text-white', ended: 'bg-shadow text-muted' }
 const HOUR = 3_600_000
 
@@ -94,6 +105,10 @@ function summary(e: LiveEvent, data: GameData | null): string {
   if (e.type === 'cash') return `+${pct(e.cash.multiplier)} % on every ₽ earned`
   if (e.type === 'shop') return `${e.shop.items.length} item${e.shop.items.length === 1 ? '' : 's'}`
   if (e.type === 'underground') return 'walls to dig, orbs, fossils and plates (its settings are shared)'
+  if (e.type === 'calendar') {
+    const n = e.calendar.days.length
+    return `a gift a day for ${n} day${n === 1 ? '' : 's'}`
+  }
   const s = e.shiny
   const where =
     s.scope === 'all'
@@ -129,7 +144,8 @@ export function LiveEventsSection() {
   const start = () => {
     // The next round hour, for three days (events may overlap now: no need to wait for the last one's end).
     const s = Math.ceil(now / HOUR) * HOUR
-    setDraft(newLiveEvent(newId(), new Date(s).toISOString(), new Date(s + 72 * HOUR).toISOString()))
+    const e = newLiveEvent(newId(), new Date(s).toISOString(), new Date(s + 72 * HOUR).toISOString())
+    setDraft({ ...e, banner: liveDefaultBanner(e) })
   }
   /** Ends it now, for everyone: a one-off event's end, or only the running run of a recurring one. */
   const endNow = (e: LiveEvent) => {
@@ -264,7 +280,22 @@ function LiveEditor({
   onApply: () => void
   onCancel: () => void
 }) {
-  const patch = (p: Partial<LiveEvent>) => set({ ...draft, ...p })
+  // The picture follows the dates and the type (liveDefaultBanner) until one is picked by hand, so changing the
+  // dates of an event left on its default moves it to the new occasion's.
+  const patch = (p: Partial<LiveEvent>) => {
+    let next = { ...draft, ...p }
+    // A gift calendar runs once, from its start to the day after its last (the last door's catch-up); a type just
+    // switched to it starts with as many days as the dates it had (₽1,000 each), within 1 to 31.
+    if (next.type === 'calendar') {
+      const days = next.calendar.days.length
+        ? next.calendar.days
+        : resizeCalendar([], Math.round((Date.parse(draft.end) - Date.parse(draft.start)) / (24 * HOUR)) || 7)
+      next = { ...next, repeat: null, calendar: { days }, end: calendarEnd(next.start, days.length) }
+    }
+    const auto = !draft.banner || draft.banner === liveDefaultBanner(draft)
+    set(!('banner' in p) && auto ? { ...next, banner: liveDefaultBanner(next) } : next)
+  }
+  const cal = draft.type === 'calendar'
   const span = Date.parse(draft.end) - Date.parse(draft.start)
   const now = useNow(60_000)
   return (
@@ -294,29 +325,37 @@ function LiveEditor({
               ))}
             </select>
           </Field>
-          <Field label="Picture" hint="Home's square, the pop-up, the shop's section.">
+          <Field
+            label="Picture"
+            hint="Home's square, the pop-up, the shop's section. Until you pick one: the occasion of its dates (Halloween, winter, New Year, spring, summer), else its type's own; the Underground, always its cave."
+          >
             <PicturePicker value={draft.banner} placeholder="— pick one —" onChange={(banner) => patch({ banner })} />
           </Field>
           <Field label="Shown from (badges)" hint="Every region's counted.">
             <NumInput value={draft.minBadges} min={0} max={80} onChange={(v) => patch({ minBadges: Math.max(0, v ?? 0) })} />
           </Field>
-          <Field label="When" hint={draft.repeat ? 'Comes back by itself; each run is a new event for players.' : 'Between two dates.'}>
-            <select
-              className={inputCls}
-              value={draft.repeat?.kind ?? 'once'}
-              onChange={(ev) => {
-                const kind = ev.target.value
-                patch({ repeat: kind === 'yearly' || kind === 'weekly' ? repeatFrom(kind, draft) : null })
-              }}
-            >
-              <option value="once">Once (dates)</option>
-              <option value="yearly">Every year (a date)</option>
-              <option value="weekly">Every week (a weekday)</option>
-            </select>
-          </Field>
+          {!cal && (
+            <Field label="When" hint={draft.repeat ? 'Comes back by itself; each run is a new event for players.' : 'Between two dates.'}>
+              <select
+                className={inputCls}
+                value={draft.repeat?.kind ?? 'once'}
+                onChange={(ev) => {
+                  const kind = ev.target.value
+                  patch({ repeat: kind === 'yearly' || kind === 'weekly' ? repeatFrom(kind, draft) : null })
+                }}
+              >
+                <option value="once">Once (dates)</option>
+                <option value="yearly">Every year (a date)</option>
+                <option value="weekly">Every week (a weekday)</option>
+              </select>
+            </Field>
+          )}
           {!draft.repeat && (
             <>
-              <Field label="Starts (UTC)" hint={`${yourTime(draft.start)} your time`}>
+              <Field
+                label={cal ? 'Day 1 opens (UTC)' : 'Starts (UTC)'}
+                hint={`${yourTime(draft.start)} your time${cal ? ' · each next door at the same time' : ''}`}
+              >
                 <input
                   type="datetime-local"
                   className={inputCls}
@@ -327,17 +366,23 @@ function LiveEditor({
                   }}
                 />
               </Field>
-              <Field label="Ends (UTC)" hint={`${yourTime(draft.end)} your time${span > 0 ? ` · lasts ${duration(span)}` : ''}`}>
-                <input
-                  type="datetime-local"
-                  className={inputCls}
-                  value={toInput(draft.end)}
-                  onChange={(e) => {
-                    const iso = fromInput(e.target.value)
-                    if (iso) patch({ end: iso })
-                  }}
-                />
-              </Field>
+              {cal ? (
+                <Field label="Ends (UTC)" hint={`${yourTime(draft.end)} your time · the day after the last, its catch-up`}>
+                  <span className="min-h-[34px] py-0.5 font-mono text-base">{utc(draft.end)}</span>
+                </Field>
+              ) : (
+                <Field label="Ends (UTC)" hint={`${yourTime(draft.end)} your time${span > 0 ? ` · lasts ${duration(span)}` : ''}`}>
+                  <input
+                    type="datetime-local"
+                    className={inputCls}
+                    value={toInput(draft.end)}
+                    onChange={(e) => {
+                      const iso = fromInput(e.target.value)
+                      if (iso) patch({ end: iso })
+                    }}
+                  />
+                </Field>
+              )}
             </>
           )}
         </div>
@@ -371,6 +416,7 @@ function LiveEditor({
       <div className="border-t-2 border-line pt-2">
         {draft.type === 'shiny' && <ShinyEditor e={draft} set={(shiny) => patch({ shiny })} data={data} />}
         {draft.type === 'underground' && <UndergroundBox />}
+        {cal && <CalendarEditor e={draft} set={(days) => patch({ calendar: { days } })} data={data} />}
         {draft.type === 'shop' && <ShopEditor items={draft.shop.items} set={(items) => patch({ shop: { items } })} data={data} />}
         {draft.type === 'cash' && (
           <Field label="₽ earned + %" hint="Trainers and Gyms, ₽ found in areas, the Elite Rebattle, the Game Corner, the Day Care, the Fortune Wheel. Selling isn't boosted.">

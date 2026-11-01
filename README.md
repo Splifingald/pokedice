@@ -248,7 +248,7 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   it also moves the leaderboard onto small *player cards*, written once per cloud push, and retires the leaderboard
   cache, its rebuild and its pg_cron job (0026, 0031, 0032), which were most of the database's work.
 - **Day Care v2** — one Day Care for every region (it no longer resets with a region and shows the same in each),
-  open from 20 species caught across every region's Pokédex. Two of your Pokémon train there to Lv.100 (+1 XP every
+  open from 10 species caught across every region's Pokédex. Two of your Pokémon train there to Lv.100 (+1 XP every
   10 min, no other cap); a Pokémon taken back goes to its own region's Box. Up to four Pokémon from friends' Day Cares
   visit (they stay theirs: nothing changes for the friend). Eggs are bred from the real Egg groups (Showdown data,
   `pnpm egg-groups`): every 12 h each of yours checks everyone there and a compatible pair leaves an Egg; Ditto pairs

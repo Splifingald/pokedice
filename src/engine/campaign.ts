@@ -1,12 +1,13 @@
 // Headless campaign: plays the real run loop — the encounter deck, battles with the greedy AI on both sides, rewards,
 // catches, Centers, wipes and (optionally) upgrade buying — and records what a player would feel, area by area.
 // Powers the admin Simulator (Campaign and Area test tabs, in a Web Worker) and `pnpm balance`.
+import { areaVersusHere, foeGoldMultiplier, foeLevels, type AreaFoe } from './areaVersus'
 import { battleOutcome, createBattle, type BattleKind } from './battle'
-import { uniformLevels } from './damage'
+import { uniformLevels, type UpgradeLevels } from './damage'
 import { linearAreas } from './data'
 import { getRegion, newRegionBlock, regionOf, regionOfArea, startRegion } from './regions'
 import { maxComboLevel, maxDieLevel, nextComboCost, nextDieCost } from './economy'
-import { challengeEncounter, enemyUpgradeLevelFor, nextEncounter, type EncounterRoll } from './encounters'
+import { challengeEncounter, enemyUpgradeLevelFor, isPlayerFoe, nextEncounter, type EncounterRoll } from './encounters'
 import { applyCatch, catchChance, catchTarget, catchValueOf, rollCatch } from './catching'
 import { ballBonus, isBallFor } from './items'
 import { starterFainted, trainerPrize } from './opening'
@@ -55,6 +56,13 @@ export interface CampaignOptions {
   multiExp: boolean
   /** Which region to run. Defaults to the first — a campaign is a run through one region, never across two. */
   regionId?: RegionId
+  /**
+   * Real-player battles (docs/54), while their switch is on in `data`: the card is dealt where an area has it, always
+   * with a team waiting, and fought (healed before and after, ×₽, a loss is no wipe). The team is modelled on a player
+   * whose newest area this is: the simulated player's own team and upgrades at that moment, each level × (1 +
+   * `levelShift`). Unset: no real player is ever met.
+   */
+  realPlayers?: { levelShift?: number } | null
 }
 
 export type EncounterTally = Record<'wild' | 'trainer' | 'center' | 'item' | 'casino' | 'trick' | 'gym' | 'boss', number>
@@ -85,6 +93,10 @@ export interface AreaReport {
   /** Encounters from arrival until the area was cleared (null: never cleared). Averaged over clears when merged. */
   toClear: number | null
   clears: number
+  /** XP earned here, every Pokémon's (Multi EXP's share included). */
+  xp: number
+  /** Real-player battles here (docs/54): fought, won (their whole team down), lost, and their XP and ₽. */
+  versus: { fights: number; wins: number; losses: number; xp: number; gold: number }
 }
 
 export interface TimelinePoint {
@@ -94,6 +106,8 @@ export interface TimelinePoint {
   level: number
   gold: number
   dex: number
+  /** Every combo and die track's level added up: what the ₽ has bought so far. */
+  upgrades: number
 }
 
 export interface CampaignResult {
@@ -258,6 +272,8 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
         levelOut: lv,
         toClear: null,
         clears: 0,
+        xp: 0,
+        versus: { fights: 0, wins: 0, losses: 0, xp: 0, gold: 0 },
       }
       reports.set(area.id, r)
     }
@@ -289,6 +305,8 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
     gym?: { trainerId: string; last: boolean },
     /** A set opening's trainer (docs/46): this K.O.'s share of the prize. */
     prize?: number,
+    /** A real player's Pokémon (docs/54): their upgrades, their ₽ ×, and a loss that is no wipe. */
+    real?: { levels: UpgradeLevels; goldMultiplier: number },
   ) => {
     const created = createBattle(
       {
@@ -297,7 +315,7 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
         enemy,
         // A small world's boosters on both sides, as in the game.
         playerLevels: withWorldBoost({ comboLevels: save.comboLevels, dieLevels: save.dieLevels }, data, area),
-        enemyLevels: withWorldBoost(uniformLevels(upgradeLevel), data, area),
+        enemyLevels: withWorldBoost(real?.levels ?? uniformLevels(upgradeLevel), data, area),
       },
       data,
     )
@@ -326,6 +344,7 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
           gymTrainerId: gym?.trainerId,
           gymComplete: gym?.last,
           prize,
+          ...(real && { goldMultiplier: real.goldMultiplier }),
         },
         data,
         rng,
@@ -336,7 +355,15 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
       const earned = Math.max(0, save.gold - before)
       r.gold += earned
       goldEarned += earned
+      const xp = res.events.reduce((n, e) => (e.kind === 'xp' ? n + e.amount : n), 0)
+      r.xp += xp
+      if (real) {
+        r.versus.xp += xp
+        r.versus.gold += earned
+      }
       if (kind === 'wild' || kind === 'boss') tryCatch(r, enemy, kind)
+    } else if (out.result === 'lost' && real) {
+      // Lost to a real player's team: no wipe (the team is healed once the fight is over).
     } else if (out.result === 'lost') {
       r.wipes++
       save = applyWipe(save, area.id, data)
@@ -382,6 +409,7 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
         // Nobody able to fight (e.g. after a stalemate) → the Center is the only sensible next stop.
         forceKind: healFirst || teamOf(save).every((p) => p.currentHp <= 0) ? 'center' : null,
         player: playerSideOf(save),
+        versusFoe: opts.realPlayers && areaVersusHere(save, area, data) ? mirrorFoe(save, opts.realPlayers.levelShift ?? 0) : null,
       },
       rng,
     )
@@ -401,7 +429,23 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
       save = pickUpItem(save, area.id, enc, data, 0, newId)
       r.itemsFound++
     }
-    else if (enc.kind === 'trainer' || enc.kind === 'gym') {
+    else if (isPlayerFoe(enc)) {
+      // A real player's team (docs/54): healed before and after, their upgrades and ₽ ×, a loss that is no wipe.
+      save = centerHeal(save, data)
+      const real = { levels: foeLevels(enc.player), goldMultiplier: foeGoldMultiplier(data) }
+      let won = true
+      r.versus.fights++
+      for (let k = 0; k < enc.team.length; k++) {
+        if (fight(area, r, 'trainer', enc.team[k]!, 0, undefined, undefined, real) !== 'won' || (k < enc.team.length - 1 && teamOf(save).every((p) => p.currentHp <= 0))) {
+          won = false
+          break
+        }
+      }
+      if (won) r.versus.wins++
+      else r.versus.losses++
+      save = centerHeal(save, data)
+      if (opts.spend) save = spend(save, data)
+    } else if (enc.kind === 'trainer' || enc.kind === 'gym') {
       for (let k = 0; k < enc.team.length; k++) {
         const gym = enc.kind === 'gym' ? { trainerId: enc.trainerId, last: k === enc.team.length - 1 } : undefined
         const prize = trainerPrize(enc, k === enc.team.length - 1)
@@ -420,7 +464,9 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
     }
     const level = round1(teamAverageLevel(save))
     r.levelOut = level
-    timeline.push({ i, areaId: area.id, level, gold: save.gold, dex: new Set(save.pokedex).size })
+    const upgrades =
+      Object.values(save.comboLevels).reduce((n, l) => n + l, 0) + Object.values(save.dieLevels).reduce((n, l) => n + l, 0)
+    timeline.push({ i, areaId: area.id, level, gold: save.gold, dex: new Set(save.pokedex).size, upgrades })
     if ((i + 1) % 5 === 0 || i + 1 === total) yield (i + 1) / total
   }
 
@@ -436,6 +482,20 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
       dieLevels: { ...save.dieLevels },
       comboLevels: { ...save.comboLevels },
     },
+  }
+}
+
+/** The real player met in the simulation (docs/54): a player at this area as their newest, modelled on the simulated
+ * player's own team and upgrades at that moment, each level × (1 + `shift`). */
+function mirrorFoe(save: SaveData, shift: number): AreaFoe {
+  return {
+    id: 'sim-real-player',
+    name: 'Rival',
+    avatar: 'green',
+    playedAt: 0,
+    team: teamOf(save).map((p) => ({ dex: p.dex, level: Math.min(100, Math.max(1, Math.round(p.level * (1 + shift)))) })),
+    comboLevels: { ...save.comboLevels },
+    dieLevels: { ...save.dieLevels },
   }
 }
 
@@ -456,7 +516,7 @@ export function mergeAreaReports(runs: readonly AreaReport[][]): AreaReport[] {
       if (r.toClear != null) clearSum.set(r.areaId, (clearSum.get(r.areaId) ?? 0) + r.toClear * r.clears)
       const m = out.get(r.areaId)
       if (!m) {
-        out.set(r.areaId, { ...r, kinds: { ...r.kinds }, turns: [...r.turns] })
+        out.set(r.areaId, { ...r, kinds: { ...r.kinds }, turns: [...r.turns], versus: { ...r.versus } })
         continue
       }
       const visits = m.visits + r.visits
@@ -473,6 +533,14 @@ export function mergeAreaReports(runs: readonly AreaReport[][]): AreaReport[] {
       m.fled += r.fled
       m.itemsFound += r.itemsFound
       m.clears += r.clears
+      m.xp += r.xp
+      m.versus = {
+        fights: m.versus.fights + r.versus.fights,
+        wins: m.versus.wins + r.versus.wins,
+        losses: m.versus.losses + r.versus.losses,
+        xp: m.versus.xp + r.versus.xp,
+        gold: m.versus.gold + r.versus.gold,
+      }
       for (const k of Object.keys(m.kinds) as (keyof EncounterTally)[]) m.kinds[k] += r.kinds[k]
       for (const t of r.turns) m.turns.push(t)
     }

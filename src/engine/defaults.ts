@@ -29,6 +29,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   versusUpgradeLevel: 5,
   // The weekly Versus league (docs/44): off until the admin switches it on (the numbers: engine/versusLeague.ts).
   versusLeague: { access: 'off' },
+  // Real-player battles in areas (docs/54): off until the admin switches it on (the numbers: engine/areaVersus.ts).
+  areaVersus: { access: 'off' },
   allowVoluntarySwitch: true,
   maxBattleTurns: 150,
   multiExpShare: 0.3,
@@ -76,7 +78,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   // One Day Care for every region (docs/15): two of yours, four friends' visitors, Lv.100 the only XP cap, an Egg-group
   // check every 12 h and Ditto's every 24 h, Egg now for ₽200, ₽10 when a hatchling isn't kept, shiny 1 in 100.
   dayCare: {
-    unlockPokedex: 20,
+    unlockPokedex: 10,
     slots: 2,
     friendSlots: 4,
     xpPerTick: 1,
@@ -188,6 +190,43 @@ export const DEFAULT_CONFIG: GameConfig = {
       { friends: 2, gifts: [{ kind: 'gold', amount: 1000, region: 'latest' }] },
       { friends: 3, gifts: [{ kind: 'pokemon', dex: 132, level: 10, shiny: true, region: 'latest' }] },
       { friends: 4, gifts: [{ kind: 'item', key: 'master-ball', qty: 1, region: 'latest' }] },
+    ],
+  },
+  // Welcome-back gifts (docs/58): off until the admin switches them on. Migration 0103 inserts the same row (and its
+  // SQL test keeps the two the same). Only the highest tier reached is given, at most once every 14 days.
+  welcomeBack: {
+    access: 'off',
+    cooldownDays: 14,
+    tiers: [
+      {
+        minDays: 3,
+        gifts: [
+          { kind: 'gold', amount: 300, region: 'latest' },
+          { kind: 'item', key: 'great-ball', qty: 5, region: 'latest' },
+          { kind: 'item', key: 'super-potion', qty: 3, region: 'latest' },
+          { kind: 'item', key: 'rare-candy', qty: 1, region: 'latest' },
+        ],
+      },
+      {
+        minDays: 7,
+        gifts: [
+          { kind: 'gold', amount: 1000, region: 'latest' },
+          { kind: 'item', key: 'ultra-ball', qty: 5, region: 'latest' },
+          { kind: 'item', key: 'hyper-potion', qty: 3, region: 'latest' },
+          { kind: 'item', key: 'revive', qty: 2, region: 'latest' },
+          { kind: 'item', key: 'rare-candy', qty: 2, region: 'latest' },
+        ],
+      },
+      {
+        minDays: 14,
+        gifts: [
+          { kind: 'gold', amount: 2500, region: 'latest' },
+          { kind: 'item', key: 'ultra-ball', qty: 10, region: 'latest' },
+          { kind: 'item', key: 'max-revive', qty: 3, region: 'latest' },
+          { kind: 'item', key: 'max-ether', qty: 2, region: 'latest' },
+          { kind: 'item', key: 'rare-candy', qty: 5, region: 'latest' },
+        ],
+      },
     ],
   },
   extreme: {
@@ -402,6 +441,12 @@ export const DEFAULT_CONFIG: GameConfig = {
   leagueHeal: { access: 'off' },
   // Hidden talents (docs/51): off until the admin switches them on. Migration 0094 inserts the same row.
   hiddenTalents: { access: 'off', wildChance: 0.05, evolveChance: 0.3, families: {} },
+  // The legends' own cinematics (docs/53): off until the admin switches it on. Migration 0098 inserts the same row.
+  legendCinema: { access: 'off' },
+  // The gift calendar (docs/55): off until the admin switches it on. Migration 0100 inserts the same row.
+  giftCalendar: { access: 'off' },
+  // The champions' own cinematics (docs/56): off until the admin switches it on. Migration 0101 inserts the same row.
+  championCinema: { access: 'off' },
   // The Unown Pokédex (docs/41): off until the admin switches it on; ₽1,000 for the 28th letter. Migration 0080 inserts
   // the same row.
   unownDex: { access: 'off', reward: 1000 },
@@ -462,6 +507,9 @@ export const DEFAULT_CONFIG: GameConfig = {
       { perHour: 18, cost: 1250 },
       { perHour: 20, cost: 1500 },
     ],
+    // Before any level is bought, so every player's first absence pays a little and the upgrade has something to grow
+    // from (₽24 a day at most, half of level 1).
+    offlineBase: 1,
     offlineMaxHours: 24,
     richCost: 99999,
     // The Shiny Charm (the user's numbers, 2026-10-18): from the base 1 in 1,000 to 1 in 333, ₽69,000 in all, a

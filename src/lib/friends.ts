@@ -5,6 +5,7 @@
 import { create } from 'zustand'
 import { inviteRewardsOn, parseGifts, type Gift, type InviteStatus } from '@/engine'
 import { useGame } from '@/store/game'
+import { loadFriendRequests } from '@/store/areaVersus'
 import { avatarOf } from './avatars'
 import { deviceId } from './device'
 import { realmArgs } from './realm'
@@ -302,6 +303,8 @@ export async function loadFriendStatus(force = false, now = Date.now()): Promise
   }
   // The invite gauge rides along, while the rewards are on for this player (not twice within a minute).
   await loadInviteStatus(false, now)
+  // So do the friend requests to answer (docs/54), while real-player battles are on.
+  await loadFriendRequests()
 }
 
 /**

@@ -198,8 +198,11 @@ export function shatter(g: G, p: number, A: readonly string[]) {
     }
 }
 
-/** The name card: a slanted band sweeping in, the name at 2×, a glint across the letters, level and types. */
-function banner(g: G, t: number, p: LegendParams, pin: number, pout: number) {
+/**
+ * The name card: a slanted band sweeping in, the name at 2×, a glint across the letters (from `glintAt`), level and
+ * types. A mythical's own entrance (cinema/mew.ts) lays the same card at its own time.
+ */
+export function banner(g: G, t: number, p: LegendParams, pin: number, pout: number, glintAt = 3.95) {
   const A = p.look.aura
   const x = Math.round(-W * (1 - ease.outExpo(pin)) + W * ease.inC(pout))
   const y0 = 96
@@ -220,7 +223,7 @@ function banner(g: G, t: number, p: LegendParams, pin: number, pout: number) {
   const ty = y0 + 8
   const nameW = label(g, p.name, tx, ty, '#ffffff', '#05030a', 2)
   // Glint: a diagonal band redrawing the letters in the light colour.
-  const gp = span(t, 3.95, 4.3)
+  const gp = span(t, glintAt, glintAt + 0.35)
   if (gp > 0 && gp < 1) {
     g.save()
     g.beginPath()

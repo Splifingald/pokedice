@@ -42,6 +42,8 @@ import {
   type Side,
   inPortalRun,
   inNightmare,
+  legendCinemaOn,
+  championCinemaOn,
 } from '@/engine'
 import { playCry } from '@/audio/cries'
 import { feelSound } from '@/audio/feel'
@@ -61,9 +63,11 @@ import { TypeMatchups } from '@/components/TypeMatchups'
 import { BattleDayTime } from '@/components/DayNight'
 import { pictureOf, versusPicture } from '@/fx/areaArt'
 import { ballOfItem } from '@/fx/scenes'
-import { loadSprite, spriteKey } from '@/fx/sprites'
+import { loadPicture, loadSprite, pictureKey, spriteKey } from '@/fx/sprites'
 import { catchTimeline } from '@/fx/timelines/catch'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
+import { BOSS_CINEMAS } from '@/fx/timelines/cinema'
+import { championCinemaFor } from '@/fx/timelines/cinema/champions'
 import { useT } from '@/i18n/react'
 import { effectText, zMoveText } from '@/i18n/text'
 import { trainerTitle, typeName } from '@/lib/format'
@@ -352,6 +356,13 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const swapped = !!battle.sendLater
   const [bossIntro, setBossIntro] = useState(st.kind === 'boss' && level !== 'off' && !resumed && !swapped)
   const [trainerIntro, setTrainerIntro] = useState(isTrainerFight && !quick && !resumed && !swapped)
+  // A League Champion's own entrance (docs/56) in place of the trainer stepping onto the field: when the switch is on
+  // and its scene is made. It ends with the champion's lead thrown out; the send-out step follows as for any trainer.
+  const champion =
+    enc?.kind === 'gym' && enc.role === 'champion' && championCinemaOn(data)
+      ? championCinemaFor(trainerSprite)
+      : undefined
+  const [champIntro, setChampIntro] = useState(trainerIntro && !!champion)
   const [foeOut, setFoeOut] = useState(!bossIntro && !trainerIntro)
   const [ownOut, setOwnOut] = useState(quick || resumed)
   // The send-out step (the rework): the foe is out, yours waits for the player's pick; the fight starts once it's out.
@@ -389,13 +400,13 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   }, [])
 
   useEffect(() => {
-    if (!trainerIntro) return
+    if (!trainerIntro || champIntro) return
     const t = setTimeout(() => {
       setTrainerIntro(false)
       setFoeOut(true)
     }, TRAINER_INTRO_MS * pace)
     return () => clearTimeout(t)
-  }, [trainerIntro, pace])
+  }, [trainerIntro, champIntro, pace])
   useEffect(() => {
     if (ownOut || !foeOut || bossIntro || picking) return
     const t = setTimeout(() => setOwnOut(true), quick ? 0 : SEND_OUT_MS * pace)
@@ -811,15 +822,18 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     if (!bossIntro) return null
     const foe = st.enemy
     const lead = activeBattler(st)
+    const params = {
+      own: spriteKey(lead.dex, true, lead.shiny),
+      foe: spriteKey(foe.dex, false, foe.shiny),
+      look: legendLook(foe.baseDex ?? foe.dex, foe.types[0] ?? 'normal'),
+      name: foe.name,
+      level: t('ui.common.level.short', { n: foe.level }),
+      types: foe.types.map((ty) => typeName(ty)).join(' / '),
+    }
+    // A mythical's own entrance (docs/53: Mew in its forest) when the cinematics are on and it has one.
+    const cinema = legendCinemaOn(data) ? BOSS_CINEMAS[foe.baseDex ?? foe.dex] : undefined
     return {
-      timeline: legendTimeline({
-        own: spriteKey(lead.dex, true, lead.shiny),
-        foe: spriteKey(foe.dex, false, foe.shiny),
-        look: legendLook(foe.baseDex ?? foe.dex, foe.types[0] ?? 'normal'),
-        name: foe.name,
-        level: t('ui.common.level.short', { n: foe.level }),
-        types: foe.types.map((ty) => typeName(ty)).join(' / '),
-      }),
+      timeline: cinema ? cinema.makeBattle(params) : legendTimeline(params),
       ready: Promise.all([loadSprite(lead.dex, true, lead.shiny), loadSprite(foe.dex, false, foe.shiny)]),
       label: t('ui.battle.aWild', { name: foe.name }),
       hud: {
@@ -834,6 +848,41 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     // One entrance per battle.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bossIntro])
+
+  // A champion's entrance (docs/56): its scene, its card, its lead thrown out; its trainer sprite isn't shown meanwhile.
+  const championIntro = useMemo<StageOverlay | null>(() => {
+    if (!champIntro || !champion || enc?.kind !== 'gym') return null
+    const foe = st.enemy
+    const lead = activeBattler(st)
+    const ace = enc.team[enc.team.length - 1] ?? { dex: foe.dex, shiny: foe.shiny }
+    const picture = trainerSprite ?? ''
+    const done = () => {
+      setChampIntro(false)
+      setTrainerIntro(false)
+      setFoeOut(true)
+    }
+    return {
+      timeline: champion.makeBattle({
+        trainer: pictureKey(picture),
+        foe: spriteKey(foe.dex, false, foe.shiny),
+        ace: spriteKey(ace.dex, false, !!ace.shiny),
+        own: spriteKey(lead.dex, true, lead.shiny),
+        name: trainerName ?? '',
+        team: enc.team.length,
+      }),
+      ready: Promise.all([
+        loadPicture(picture),
+        loadSprite(foe.dex, false, foe.shiny),
+        loadSprite(ace.dex, false, !!ace.shiny),
+        loadSprite(lead.dex, true, lead.shiny),
+        ...champion.extras.map((d) => loadSprite(d, false)),
+      ]),
+      label: trainerName ?? '',
+      onEnd: done,
+    }
+    // One entrance per battle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [champIntro])
 
   // ---- Layout numbers.
   const panelWidth = useWidth(panel)
@@ -919,6 +968,9 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   const over = !!versus && played && !!versus.end
   const result = !versus && ready && (run.phase === 'victory' || run.phase === 'wipe' || run.phase === 'stalemate')
+  // A real player's last Pokémon down (docs/54, the user's ask): their trainer steps back onto its spot for the result,
+  // the K.O.'d Pokémon's plate gone.
+  const trainerBack = result && run.phase === 'victory' && run.duel?.outcome === 'won' && !!trainerSprite
   useBattleMusic(!over && !(ready && !versus && ['victory', 'wipe', 'stalemate'].includes(run.phase)))
   // The player's own prompt, waiting on the dice (useBattleAnimator's 'turn' line).
   const prompting = !catching && !switching && !(forced && !auto) && fx.message === t('ui.log.whatWillDo', { name: active.name })
@@ -1105,8 +1157,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         art={art}
         ownShown={ownOut}
         foeShown={foeOut}
-        trainer={trainerIntro && isTrainerFight ? (trainerSprite ?? '') : null}
-        overlay={legend ?? thrown}
+        trainer={
+          trainerIntro && isTrainerFight && !champIntro ? (trainerSprite ?? '') : trainerBack ? trainerSprite : null
+        }
+        overlay={legend ?? championIntro ?? thrown}
         distorted={distorted}
         world={dream ? 'nightmare' : undefined}
         haunted={dream}
@@ -1129,7 +1183,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             party={party}
           />
         )}
-        {!dbl && foeOut && !bossIntro && (
+        {!dbl && foeOut && !bossIntro && !trainerBack && (
           <FoePlate
             b={st.enemy}
             hp={fx.hp[st.enemy.uid] ?? st.enemy.hp}
@@ -1868,7 +1922,7 @@ function SendOutStep({
 }: {
   foe: number
   lead: string
-  /** A computer's fight: picked in the team's column at the side (SwitchStep's `chosen`). */
+  /** A computer's fight: the pick shared with the team's column at the side (SwitchStep's `chosen`). */
   chosen?: { value: string | null; onChange: (uid: string) => void }
 }) {
   const { t } = useT()
@@ -1904,13 +1958,11 @@ function SendOutStep({
   })
   return (
     <div className="flex flex-1 flex-col gap-3">
-      {/* In the middle of the room there is (a tall PC panel's too), GO! at the foot. */}
+      {/* In the middle of the room there is (a tall PC panel's too), GO! at the foot. A computer keeps the cards too
+          (the user's call, 2026-10-31: the one picked alone read as "only this one can go"); they and the team's
+          column share the pick. */}
       <div className="my-auto">
-        {chosen ? (
-          <PickedOne inst={save?.box.find((p) => p.id === picked)} />
-        ) : (
-          <LeadPicker value={picked} onChange={setPicked} foe={types} go fight />
-        )}
+        <LeadPicker value={picked} onChange={setPicked} foe={types} go fight />
       </div>
       <BottomDock>
       {auto && !touched && (

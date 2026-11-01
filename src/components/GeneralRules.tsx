@@ -52,7 +52,8 @@ export function useGeneralRules(): RuleRow[] {
       icon: 'moon',
       title: t('ui.general.offline.name'),
       text: t('ui.rules.gen.offline.text', {
-        min: money(first(cfg.offline)?.perHour ?? 0),
+        // Level 0 earns a little too (`offlineBase`): the range starts there when it does.
+        min: money((cfg.offlineBase ?? 0) > 0 ? cfg.offlineBase : (first(cfg.offline)?.perHour ?? 0)),
         max: money(last(cfg.offline)?.perHour ?? 0),
         hours: cfg.offlineMaxHours,
       }),

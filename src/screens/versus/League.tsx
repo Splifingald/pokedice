@@ -36,6 +36,7 @@ import { InfoButton } from '@/components/RulesModal'
 import { Seg } from '@/components/Segmented'
 import { SocialColumns, SocialDock } from '@/components/SocialTabs'
 import { TrainerSprite } from '@/components/TrainerArt'
+import { TrophyCount } from '@/components/TrophyCount'
 import { useT } from '@/i18n/react'
 import { avatarOf } from '@/lib/avatars'
 import { timeLeft } from '@/lib/format'
@@ -392,21 +393,6 @@ export function EdgeMark({ edge, total }: { edge: number; total: number }) {
     >
       {edge} / {total}
       <PixelIcon name="thumbUp" size={16} />
-    </span>
-  )
-}
-
-/** A trophy count with its icon (the words for screen readers). */
-export function TrophyCount({ n, size = 16 }: { n: number; size?: number }) {
-  const { t } = useT()
-  return (
-    <span
-      className="inline-flex items-center gap-1 font-pixel-sm leading-none tabular-nums"
-      style={{ fontSize: size + 4 }}
-      aria-label={t('ui.league.trophiesLabel', { n })}
-    >
-      {n}
-      <PixelIcon name="trophy" size={size} />
     </span>
   )
 }

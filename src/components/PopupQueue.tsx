@@ -25,6 +25,7 @@ import { DayCareNotice } from './DayCareTutorial'
 import { DayNightRulesPopup } from './DayNight'
 import { AwayReportModal, ExtremeUnlockPopup } from './Extreme'
 import { FriendsService } from './friends/FriendsService'
+import { AreaVersusService } from './AreaVersus'
 import { InviteRewardPopup, useInviteRewardWaiting } from './friends/InviteRewards'
 import { OfflineReportModal } from './GeneralRules'
 import { GiftService } from './Gifts'
@@ -146,6 +147,7 @@ export function OneTimePopups() {
       <WorldByePopup />
       <LivePopup />
       <FriendsService />
+      <AreaVersusService />
       <TradesService />
       <PushService />
     </>

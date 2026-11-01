@@ -167,6 +167,57 @@ export function loadSprite(dex: number, back: boolean, shiny = false): Promise<s
   return p
 }
 
+/** A picture's key on the canvas (a trainer's, for a champion's entrance: docs/56). */
+export const pictureKey = (url: string) => `pic|${url}`
+
+/**
+ * Load any picture by URL for the canvas, cropped to what it draws (a trainer's 80×80 has empty margins), so it stands
+ * on its feet like a Pokémon's sprite; resolves to its key (also when it fails: it then draws nothing).
+ */
+export function loadPicture(url: string): Promise<string> {
+  const key = pictureKey(url)
+  if (frames.has(key)) return Promise.resolve(key)
+  let p = loading.get(key)
+  if (p) return p
+  p = new Promise<string>((res) => {
+    const img = new Image()
+    img.onload = () => {
+      const full = canvas(img.naturalWidth, img.naturalHeight)
+      full.g.drawImage(img, 0, 0)
+      let box = { x0: 0, y0: 0, x1: full.width, y1: full.height }
+      try {
+        const px = full.g.getImageData(0, 0, full.width, full.height).data
+        let x0 = full.width
+        let y0 = full.height
+        let x1 = 0
+        let y1 = 0
+        for (let y = 0; y < full.height; y++)
+          for (let x = 0; x < full.width; x++)
+            if (px[(y * full.width + x) * 4 + 3]! > 8) {
+              x0 = Math.min(x0, x)
+              y0 = Math.min(y0, y)
+              x1 = Math.max(x1, x + 1)
+              y1 = Math.max(y1, y + 1)
+            }
+        if (x1 > x0) box = { x0, y0, x1, y1 }
+      } catch {
+        // A picture from elsewhere can't be read back: drawn whole.
+      }
+      const c = canvas(box.x1 - box.x0, box.y1 - box.y0)
+      c.g.drawImage(full, -box.x0, -box.y0)
+      frames.set(key, c)
+      res(key)
+    }
+    img.onerror = () => {
+      loading.delete(key)
+      res(key)
+    }
+    img.src = url
+  })
+  loading.set(key, p)
+  return p
+}
+
 /** Register a ready-made frame under a key (forms drawn in code, tests). */
 export const putSprite = (key: string, frame: Canvas) => void frames.set(key, frame)
 

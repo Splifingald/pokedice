@@ -338,7 +338,8 @@ export function LandingPick({
   name: string
   /** The level it arrives at: the one it waits for where it's locked. */
   level: number
-  options: LandingOption[]
+  /** `level` on an option: it arrives at a level of its own there (a Day Care hatchling: docs/15), shown by its name. */
+  options: (LandingOption & { level?: number })[]
   value: RegionId | null
   onChange: (region: RegionId) => void
   disabled?: boolean
@@ -377,7 +378,14 @@ export function LandingPick({
               {on && <i className="block size-2 bg-ink" />}
             </span>
             <span className="grid min-w-0 flex-1 gap-0.5">
-              <b className="truncate text-[19px] font-normal leading-none">{regionName(data, o.region)}</b>
+              <span className="flex min-w-0 items-baseline gap-1.5">
+                <b className="truncate text-[19px] font-normal leading-none">{regionName(data, o.region)}</b>
+                {o.level != null && (
+                  <span className="shrink-0 font-pixel-sm text-[16px] leading-none text-muted">
+                    {lv(o.level)}
+                  </span>
+                )}
+              </span>
               <small className="font-pixel-sm text-[16px] leading-tight text-muted">{line(o)}</small>
             </span>
             <span className="flex shrink-0 flex-col items-end gap-1">

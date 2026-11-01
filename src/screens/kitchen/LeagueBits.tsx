@@ -13,8 +13,8 @@ import {
   LeagueResultCard,
   LeagueRows,
   RewardMark,
-  TrophyCount,
 } from '@/screens/versus/League'
+import { TrophyCount } from '@/components/TrophyCount'
 import { useVersusRules, VersusRulesModal } from '@/components/FeatureRules'
 import { ItemSprite } from '@/components/ItemSprite'
 import { CatchPanel } from '@/screens/battle/CatchPanel'
@@ -229,11 +229,14 @@ export function LeagueBits() {
           ))}
         </div>
       </Frame>
-      <Frame name="TrophyCount · BotTag">
+      <Frame name="TrophyCount · BotTag · the trainer card's Versus best (inherit)">
         <div className="flex items-center gap-3">
           <TrophyCount n={0} />
           <TrophyCount n={152} size={20} />
           <BotTag />
+          <span className="text-[17px]">
+            <TrophyCount n={152} size={13} inherit />
+          </span>
         </div>
       </Frame>
       <Frame name="Result · a win with 2 left (+6)">

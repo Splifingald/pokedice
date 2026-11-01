@@ -205,10 +205,10 @@ describe('the General upgrades', () => {
     expect(captureLuck(s, on, 'wild', true)).toBe(0)
   })
 
-  it('offline earnings: none at level 0; ₽2 an hour at level 1, +₽2 a level, ₽20 at the top', () => {
+  it('offline earnings: ₽1 an hour at level 0; ₽2 an hour at level 1, +₽2 a level, ₽20 at the top', () => {
     let s = fresh(1_000_000)
-    expect(offlineRate(s, on)).toBe(0)
-    expect(markOfflineFrom(s, on, 0)).toBe(s)
+    expect(offlineRate(s, on)).toBe(1)
+    expect(markOfflineFrom(s, on, 0).general?.awayFrom).toBe(0)
     for (let i = 1; i <= 10; i++) {
       s = buyGeneral(s, on, 'offline')!
       expect(offlineRate(s, on)).toBe(2 * i)
@@ -246,6 +246,17 @@ describe('the General upgrades', () => {
     expect(collectOffline(away, on, t0 - HOUR)!.gold).toBe(0)
     // Nothing open, nothing paid.
     expect(collectOffline(s, on, t0)).toBeNull()
+  })
+
+  it('level 0 pays offlineBase (₽24 for a day away at ₽1); 0 turns it off and no absence starts', () => {
+    const s = fresh(0)
+    const t0 = 1_000_000
+    expect(collectOffline(markOfflineFrom(s, on, t0), on, t0 + 30 * HOUR)!.gold).toBe(24)
+    const none = makeData({ general: { ...GENERAL_ON, offlineBase: 0 } })
+    expect(offlineRate(s, none)).toBe(0)
+    expect(markOfflineFrom(s, none, t0)).toBe(s)
+    // The switch off: nothing, level 0 included.
+    expect(offlineRate(s, off)).toBe(0)
   })
 
   it('the rules pop-up: once the tab is on, from the first badge', () => {

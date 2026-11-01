@@ -4,6 +4,7 @@ import {
   DEFAULT_CONFIG,
   EVENT_ACCESS,
   VERSUS_LEAGUE_DEFAULTS,
+  AREA_VERSUS_DEFAULTS,
   eggSpecies,
   eggsPerWeek,
   centerBoonRules,
@@ -31,6 +32,11 @@ import {
   INVITE_TIERS_MAX,
   inviteTiers,
   type InviteRewardsConfig,
+  type WelcomeBackConfig,
+  WELCOME_BACK_DAYS_MAX,
+  WELCOME_BACK_TIERS_MAX,
+  welcomeBackCooldown,
+  welcomeBackTiers,
   type HiddenTalentsConfig,
   familyOf,
   familyTalent,
@@ -46,8 +52,11 @@ import { DataTable } from '../DataTable'
 import { GiftEditor, giftName } from '../GiftEditor'
 import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
 import { AccessSwitch, Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
+import { LegendIntrosBox } from './LegendIntrosBox'
+import { ChampionIntrosBox } from './ChampionIntrosBox'
 import { PushBox } from './PushBox'
 import { VersusLeagueBox } from './VersusLeagueBox'
+import { AreaVersusBox } from './AreaVersusBox'
 import { VersusLeagueGroups } from './VersusLeagueGroups'
 
 export function useConfigRow<K extends keyof GameConfig>(key: K): [GameConfig[K], (v: GameConfig[K]) => void] {
@@ -715,6 +724,9 @@ function GeneralBox() {
         <Field label="Offline earnings count up to (hours)" hint="per absence, on the server's clock">
           <NumInput min={1} max={168} value={cfg.offlineMaxHours} onChange={(v) => set({ offlineMaxHours: Math.max(1, v ?? 24) })} />
         </Field>
+        <Field label="Offline earnings at level 0 (₽ / hour)" hint="before any level is bought; 0 = nothing">
+          <NumInput min={0} value={cfg.offlineBase} onChange={(v) => set({ offlineBase: Math.max(0, v ?? 0) })} />
+        </Field>
         <Field label="I am just rich (₽)" hint="one level: a golden name">
           <NumInput min={0} value={cfg.richCost} onChange={(v) => set({ richCost: Math.max(0, v ?? 0) })} />
         </Field>
@@ -924,6 +936,94 @@ function InviteRewardsBox() {
 }
 
 /**
+ * Welcome-back gifts (docs/58): the cooldown and the tiers — each a number of days away and the gifts it gives (the
+ * same editor as a message's gifts). The server reads the same row (0103): on a return it writes the player a message
+ * from you with the highest tier's gifts, and only while the Gifts switch (Messages) is on for them too.
+ */
+function WelcomeBackBox() {
+  const data = useAdminData()
+  const [raw, setRaw] = useConfigRow('welcomeBack')
+  const cfg: WelcomeBackConfig = { ...DEFAULT_CONFIG.welcomeBack, ...(raw ?? {}) }
+  const set = (patch: Partial<WelcomeBackConfig>) => setRaw({ ...cfg, ...patch })
+  const tiers = Array.isArray(cfg.tiers) ? cfg.tiers : []
+  const setTier = (i: number, patch: Partial<WelcomeBackConfig['tiers'][number]>) =>
+    set({ tiers: tiers.map((t, j) => (j === i ? { ...t, ...patch } : t)) })
+  // What the server will read: in order, each number of days once, only tiers whose every gift is readable.
+  const seen = welcomeBackTiers(cfg)
+  const nextDays = Math.min(WELCOME_BACK_DAYS_MAX, Math.max(0, ...tiers.map((t) => Number(t.minDays) || 0)) + 7)
+  const clampDays = (v: number | null) => Math.max(1, Math.min(WELCOME_BACK_DAYS_MAX, Math.round(v ?? 1)))
+  return (
+    <Box
+      title="Welcome back" icon="gift"
+      hint="A player back after days away (the days the server saw them play: back the next day = 1) finds a message from you with the gifts of the highest tier reached, opened like any message's gifts, at most once per cooldown. Never for a new player. The server checks the switch, and needs the Gifts switch (Messages) on for the player too."
+    >
+      <Field
+        label="Cooldown (days)"
+        hint={`at most one welcome-back gift per player every this many days (1–${WELCOME_BACK_DAYS_MAX})`}
+      >
+        <NumInput
+          className="w-24"
+          value={cfg.cooldownDays}
+          min={1}
+          max={WELCOME_BACK_DAYS_MAX}
+          onChange={(v) => set({ cooldownDays: clampDays(v) })}
+        />
+      </Field>
+      <ol className="m-0 flex list-none flex-col gap-2 p-0">
+        {tiers.map((t, i) => (
+          <li key={i} className="flex flex-col gap-2 border-2 border-shadow p-2">
+            <div className="flex flex-wrap items-end gap-3">
+              <Field label="Days away, at least" hint={`1–${WELCOME_BACK_DAYS_MAX}`}>
+                <NumInput
+                  className="w-24"
+                  value={t.minDays}
+                  min={1}
+                  max={WELCOME_BACK_DAYS_MAX}
+                  onChange={(v) => setTier(i, { minDays: clampDays(v) })}
+                />
+              </Field>
+              <PixelButton size="sm" variant="ghost" onClick={() => set({ tiers: tiers.filter((_, j) => j !== i) })}>
+                Remove tier
+              </PixelButton>
+            </div>
+            {data && (
+              <GiftEditor
+                data={data}
+                gifts={t.gifts ?? []}
+                onChange={(gifts) => setTier(i, { gifts })}
+                hint="in your message when they come back"
+              />
+            )}
+          </li>
+        ))}
+      </ol>
+      <div className="flex flex-wrap items-center gap-3">
+        <PixelButton
+          size="sm"
+          disabled={tiers.length >= WELCOME_BACK_TIERS_MAX}
+          onClick={() => set({ tiers: [...tiers, { minDays: nextDays, gifts: [] }] })}
+        >
+          Add a tier
+        </PixelButton>
+        <span className="text-base text-muted">
+          {WELCOME_BACK_TIERS_MAX} tiers at most. Only the highest tier reached is given. A tier without a gift, or a
+          number of days already used, is left out.
+        </span>
+      </div>
+      {data && (
+        <p className="text-lg">
+          Players get:{' '}
+          {seen.length
+            ? seen.map((t) => `${t.minDays}+ days → ${t.gifts.map((g) => giftName(data, g)).join(' + ')}`).join(' · ')
+            : 'nothing (no tier).'}{' '}
+          · one every {welcomeBackCooldown(cfg)} days at most.
+        </p>
+      )}
+    </Box>
+  )
+}
+
+/**
  * Pokémon Day Care, one for every region: when it opens, how fast residents train, the friend slots, the two Egg
  * checks, Egg now and what Eggs hatch into.
  */
@@ -987,7 +1087,7 @@ function DayCareBox() {
         {week('breed').toFixed(1)} Eggs a week (Ditto pairs: {week('ditto').toFixed(1)}).
       </p>
       <div className="grid gap-3 sm:grid-cols-4">
-        <Field label="Unowned weight" hint="× odds of a species not in the Pokédex (owned = 1)">
+        <Field label="Unowned weight" hint="× odds of a line, or a pool species, not in the Pokédex (owned = 1)">
           {num('unownedWeight', 0)}
         </Field>
         <Field label="Hatch: rank" hint="the n-th lowest level owned">
@@ -998,7 +1098,9 @@ function DayCareBox() {
       </div>
       <div className="grid gap-2">
         <p className="text-base text-muted">
-          Eggs hatch into the first form of a line that evolves, starters excluded, and only from the region they are
+          An Egg hatches the first form of one parent’s line (Ditto passes none on), from the regions the player
+          has discovered, into the Box they pick. An Egg no parent passes a line on to (the free first one, Ditto
+          × Ditto) hatches the first form of a line that evolves, starters excluded, from the region it is
           hatched in:
         </p>
         {pools.map(({ region, pool }) => (
@@ -1340,13 +1442,16 @@ const TABS = [
   { id: 'doubles', label: 'Double battles', icon: 'vs' },
   { id: 'trades', label: 'Trades', icon: 'trade' },
   { id: 'versus', label: 'Versus league', icon: 'trophy' },
+  { id: 'areaVersus', label: 'Real-player battles', icon: 'user' },
   { id: 'general', label: 'General upgrades', icon: 'navUpgrades' },
   { id: 'powers', label: 'Battle powers', icon: 'up' },
   { id: 'invites', label: 'Invite rewards', icon: 'gift' },
+  { id: 'welcomeBack', label: 'Welcome back', icon: 'gift' },
   { id: 'push', label: 'Push', icon: 'bell' },
   { id: 'gameCorner', label: 'Game Corner', icon: 'coin' },
   { id: 'unown', label: 'Unown Pokédex', icon: 'book' },
   { id: 'talents', label: 'Hidden talents', icon: 'talent' },
+  { id: 'intros', label: 'Intros', icon: 'sparkle' },
   { id: 'support', label: 'Support & Discord', icon: 'heart' },
   { id: 'rows', label: 'All rows', icon: 'wrench' },
 ] as const satisfies readonly { id: string; label: string; icon: IconName }[]
@@ -1409,6 +1514,8 @@ const FEATURES: Feature[] = [
   own('Idle mode', 'idleMode'),
   own('Trainer looks', 'looks'),
   bare('League heal', 'leagueHeal'),
+  own('Legendary intros', 'legendCinema', 'intros'),
+  own('Champion intros', 'championCinema', 'intros'),
   bare('Route 1 opening & tutorial', 'openingRounds'),
   own('Unown Pokédex', 'unownDex', 'unown'),
   own('Hidden talents', 'hiddenTalents', 'talents'),
@@ -1418,6 +1525,7 @@ const FEATURES: Feature[] = [
   own('Trades', 'trade', 'trades'),
   own('Versus league', 'versusLeague', 'versus', VERSUS_LEAGUE_DEFAULTS as unknown as Row),
   field('Versus global board', 'versusLeague', 'globalAccess', 'versus'),
+  own('Real-player battles', 'areaVersus', 'areaVersus', AREA_VERSUS_DEFAULTS as unknown as Row),
   own('Game Corner', 'slotMachine', 'gameCorner'),
   own('General upgrades', 'general', 'general'),
   field('Shiny Charm', 'general', 'charmAccess', 'general'),
@@ -1427,6 +1535,7 @@ const FEATURES: Feature[] = [
   inPart('Gigantamax', 'gigantamax', 'boost', 'powers'),
   own('Z-Moves', 'zMove', 'powers'),
   own('Friend invite rewards', 'inviteRewards', 'invites'),
+  own('Welcome back', 'welcomeBack', 'welcomeBack'),
   own('Push notifications', 'push', 'push'),
 ]
 
@@ -1554,13 +1663,17 @@ export function ConfigSection() {
           <VersusLeagueGroups />
         </div>
       )}
+      {tab === 'areaVersus' && <AreaVersusBox />}
       {tab === 'general' && <GeneralBox />}
       {tab === 'powers' && <BattlePowersBox />}
       {tab === 'invites' && <InviteRewardsBox />}
+      {tab === 'welcomeBack' && <WelcomeBackBox />}
       {tab === 'push' && <PushBox />}
       {tab === 'gameCorner' && <SlotMachineBox />}
       {tab === 'unown' && <UnownDexBox />}
       {tab === 'talents' && <HiddenTalentsBox />}
+      {tab === 'intros' && <LegendIntrosBox />}
+      {tab === 'intros' && <ChampionIntrosBox />}
       {tab === 'support' && (
         <div className="grid gap-4 xl:grid-cols-2">
           <DonationBox />
