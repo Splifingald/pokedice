@@ -29,11 +29,13 @@ const ORDER0 = 9200
 const id = (...parts: (string | number)[]) => stableUuid(['snowglobe-valley', ...parts].join(':'))
 
 /**
- * The three partners (the user's review of 2026-11-01): fan favourites with a plain three-stage line evolving at about
- * the same levels, none strong against Ice: Rowlet (the snowy owl, 17/34), Popplio (the sea lion, 17/34), Mareep (the
- * woolly sheep, 15/30). Alolan Sandshrew and Vulpix, the first picks, stay in the wild.
+ * The three partners (the user's reviews of 2026-11-01): fan favourites with a plain three-stage line evolving by level
+ * at about the same levels (no trade, no stone), none strong against Ice, and none a game's own starter: Mareep (the
+ * woolly sheep, 15/30), Lillipup (Stoutland, the snow-rescue dog, 16/32), Pikipek (Toucannon, 14/28): each clears the
+ * chain and the league on the campaign simulator (Bounsweet, Grass, struggled on the first trail; Abra's Kadabra
+ * evolves by trade here). Alolan Sandshrew and Vulpix, the first picks, stay in the wild.
  */
-export const STARTERS = [722, 728, 179]
+export const STARTERS = [179, 506, 731]
 
 /** The world's areas, in order: its chain, its league, then its secret areas. */
 export const AREAS: AreaSpec[] = [
@@ -49,28 +51,29 @@ export const AREAS: AreaSpec[] = [
     upgrade: 1,
     wild: [
       [161, 30, 3, 5],
-      [396, 30, 3, 5],
-      [872, 20, 4, 6],
-      [163, 15, 4, 6],
+      [396, 18, 3, 5],
+      [872, 8, 3, 5],
+      [163, 10, 4, 6],
       [220, 6, 4, 6],
-      [613, 5, 5, 7],
+      [506, 5, 4, 6],
+      [613, 3, 4, 6],
     ],
     trainers: [
       {
         name: 'Youngster Tim',
         sprite: 'youngster',
         team: [
-          [161, 5],
-          [396, 5],
+          [161, 4],
+          [396, 4],
         ],
       },
-      { name: 'Skier Lena', sprite: 'sinnoh/skier-f', team: [[872, 6]] },
+      { name: 'Skier Lena', sprite: 'sinnoh/skier-f', team: [[872, 5]] },
       {
         name: 'Lass Pippa',
         sprite: 'lass',
         team: [
-          [163, 5],
-          [161, 5],
+          [163, 4],
+          [161, 4],
         ],
       },
     ],
@@ -100,7 +103,7 @@ export const AREAS: AreaSpec[] = [
       [613, 4, 8, 10],
       [10103, 8, 7, 9],
       [234, 8, 7, 9],
-      [722, 4, 7, 9],
+      [731, 4, 7, 9],
     ],
     trainers: [
       {
@@ -157,7 +160,6 @@ export const AREAS: AreaSpec[] = [
       [363, 10, 12, 15],
       [170, 8, 12, 15],
       [349, 4, 14, 16],
-      [728, 4, 12, 15],
       [195, 4, 14, 16],
     ],
     trainers: [
@@ -698,7 +700,7 @@ export const AREAS: AreaSpec[] = [
         role: 'elite',
         team: [
           [131, 53],
-          [365, 53],
+          [87, 53],
           [91, 54],
         ],
         items: ['hyper-potion'],
@@ -730,7 +732,8 @@ export const AREAS: AreaSpec[] = [
         sprite: 'hoenn/elite-glacia',
         role: 'elite',
         team: [
-          [478, 58],
+          // No Ghost type a league must get past: a team of Normal types couldn't touch it (the simulator's stuck runs).
+          [365, 58],
           [362, 57],
           [10104, 58],
         ],
@@ -970,7 +973,8 @@ export const AREAS: AreaSpec[] = [
     hidden: true,
     // 90 of the world's Pokémon, from New Year's Day (the world's `opens`).
     unlock: [{ kind: 'pokedex', count: 90 }],
-    boss: [{ dex: 493, level: 70, shiny: true, raid: true }],
+    // Lv.90 (the user's review); its portal run (docs/61 §4.5) will hold the raid's own numbers.
+    boss: [{ dex: 493, level: 90, shiny: true, raid: true }],
     // Only Pokémon met elsewhere too: everything must be catchable before it opens.
     wild: [
       [461, 15, 60, 64],
@@ -987,6 +991,15 @@ export const AREAS: AreaSpec[] = [
       [131, 15, 60, 64],
       [225, 15, 52, 55],
       [875, 15, 52, 55],
+      // Every type among its Pokémon (the user's review): Normal, Fire and Rock, Grass, Electric, Fighting, Poison and
+      // Psychic join the Ice-led pool.
+      [143, 15, 60, 64],
+      [219, 15, 60, 64],
+      [460, 15, 60, 64],
+      [181, 15, 60, 64],
+      [740, 15, 60, 64],
+      [169, 15, 60, 64],
+      [124, 15, 60, 64],
       [998, 2, 68, 70],
     ],
     trainers: [

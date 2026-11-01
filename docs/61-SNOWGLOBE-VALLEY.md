@@ -17,7 +17,7 @@ plays as a plain secret area (a short deck, then its boss or raid), which is how
 |---|---|
 | Sat 19 Dec → Sun 3 Jan 2027, 15 days | **Sat 19 Dec 12:00 UTC → Sun 3 Jan 12:00 UTC** (13:00 in Paris), Haunted Hollow's hour: exactly 15 × 24 h. Counted inclusively the dates are 16 days; the review asks. |
 | Inspired by Haunted Hollow, Ice instead of Ghost | Its rules (3 badges to enter, the world's ₽ and tracks, Home's secret rows, its Pokémon going home at the end) unchanged; **Ice ×1.2** both sides; **XP ×1.5** |
-| 3 Ice starters with Alolan Sandshrew and Alolan Vulpix | Changed by the review: **Rowlet, Popplio, Mareep**, Lv.5 (§6). Alolan Sandshrew and Vulpix stay in the wild |
+| 3 Ice starters with Alolan Sandshrew and Alolan Vulpix | Changed by the reviews: **Mareep, Lillipup, Pikipek**, Lv.5 (§6). Alolan Sandshrew and Vulpix stay in the wild |
 | About 125 Pokémon | **125** (`regionSpecies`), all but the three legends catchable before Spear Pillar and the Hall of Origin open |
 | About 10 areas + the Frost League | **10 areas + the Frost League** (four Elite Four and Champion Nicholas, no badges) |
 | 5 secret areas | Moonlit Glade, Evergreen Hill, Crown Shrine, Spear Pillar, Hall of Origin (§2.3) |
@@ -47,6 +47,8 @@ shares with Haunted Hollow (its output unchanged, byte for byte). Names in the t
 - Every Pokémon of Moonlit Glade, Evergreen Hill and Crown Shrine is also found on the road: a secret area closes once
   its boss is caught.
 - No Houndour line (the user: it led Haunted Hollow's picks).
+- No Ghost type a player must get past (a league or a Crown Shrine wave): a team of Normal types can't touch one, and
+  the simulator's all-Normal Lillipup runs stalled on Elite Four Holly's Froslass until it became a Walrein.
 - Every deck: 10 cards in a main area, 6 in a secret one, each with 1 item and 1 Pokémon Center.
 
 ### 2.2 The road
@@ -63,7 +65,7 @@ shares with Haunted Hollow (its output unchanged, byte for byte). Names in the t
 | 8 | Ember Springs | volcano | 37–44 | 4 · 4 | 4 | Sealeo (bathing) | Peat Block |
 | 9 | Blizzard Pass | mountain | 42–50 | 4 · 4 | 4 | Glalie, Beartic, Vanillish, Crabominable, Mamoswine, Froslass | — |
 | 10 | Aurora Summit | a54 | 48–56 | 4 · 4 | 4 | Weavile, Walrein, Avalugg, Frosmoth, Jynx, Vanilluxe, Alolan Sandslash and Ninetales (rare) | — |
-| 11 | Frost League | league | 52–60 | five fights | 7 | Elite Four Fjord (Water), Gunnar (Steel), Drasna (Dragon), Holly (Ice), Champion Nicholas (his ace Abomasnow, Lv.60) | — |
+| 11 | Frost League | league | 52–60 | five fights | 7 | Elite Four Fjord (Water), Gunnar (Steel), Drasna (Dragon), Holly (Ice: Walrein, Glalie, Alolan Ninetales; no Ghost), Champion Nicholas (his ace Abomasnow, Lv.60) | — |
 
 The script holds every pool and trainer; the artifact shows them with their sprites.
 
@@ -75,7 +77,7 @@ The script holds every pool and trainer; the artifact shows them with their spri
 | S2 | Evergreen Hill | a858 | 34–40 | 24 Dec 00:00 Paris | shiny Delibird Lv.40 (boss) |
 | S3 | Crown Shrine | a855 | 48–55 | 50 caught | shiny Abomasnow Lv.50 (boss) |
 | S4 | Spear Pillar | lair-summit | 56–64 | Frost League cleared, 25 Dec 00:00 Paris | shiny Dialga and shiny Palkia Lv.70 (raids) |
-| S5 | Hall of Origin | a130 | 52–70 | 90 caught, 1 Jan 00:00 Paris | shiny Arceus Lv.70 (raid; Lv.100 once its mode is built) |
+| S5 | Hall of Origin | a130 | 52–70 | 90 caught, 1 Jan 00:00 Paris | shiny Arceus Lv.90 (raid) |
 
 Spear Pillar's pool holds the race's types by fork (§4.4), all met elsewhere. The Hall of Origin's pool too.
 
@@ -89,27 +91,30 @@ Hyper Potion ₽80 · Revive ₽300 · Ice Stone, Water Stone, Dawn Stone, Razor
 
 `pnpm snowglobe-balance [encounters] [seeds]` (`scripts/snowglobe-balance.ts`): the headless campaign through the
 world's chain, each starter, XP ×1.5, Ice ×1.2 and the world's own tracks. 3 starters × 5 seeds, 400 encounters, with
-the review's starters (Rowlet, Popplio, Mareep):
+the starters of the third review (Mareep, Lillipup, Pikipek):
 
 | Area | Lv. | Arriving Lv. | Wipes a run | Cleared |
 |---|---|---:|---:|---:|
-| Snowy Trail | 3–7 | 5.0 | 1.2 | 15/15 |
-| Pinewood Forest | 7–12 | 8.8 | 2.9 | 15/15 |
-| Frozen Pond | 11–16 | 16.2 | 0.4 | 15/15 |
-| Holly Village | 15–21 | 20.9 | 1.1 | 15/15 |
-| Toy Workshop | 20–26 | 27.8 | 1.5 | 15/15 |
-| Icicle Cave | 25–32 | 35.0 | 2.5 | 15/15 |
-| Frostbite Harbour | 31–38 | 43.3 | 2.1 | 15/15 |
-| Ember Springs | 37–44 | 51.5 | 1.9 | 15/15 |
-| Blizzard Pass | 42–50 | 59.2 | 2.5 | 15/15 |
-| Aurora Summit | 48–56 | 67.6 | 7.0 | 15/15 |
-| Frost League | 52–60 | 81.4 | 7.3 | 15/15 |
+| Snowy Trail | 3–7 | 5.0 | 2.7 | 15/15 |
+| Pinewood Forest | 7–12 | 9.4 | 2.9 | 15/15 |
+| Frozen Pond | 11–16 | 16.1 | 0.1 | 15/15 |
+| Holly Village | 15–21 | 20.4 | 0.7 | 15/15 |
+| Toy Workshop | 20–26 | 26.1 | 2.9 | 15/15 |
+| Icicle Cave | 25–32 | 35.5 | 1.7 | 15/15 |
+| Frostbite Harbour | 31–38 | 42.7 | 2.0 | 15/15 |
+| Ember Springs | 37–44 | 50.8 | 1.9 | 15/15 |
+| Blizzard Pass | 42–50 | 58.6 | 3.5 | 15/15 |
+| Aurora Summit | 48–56 | 68.5 | 7.8 | 15/15 |
+| Frost League | 52–60 | 83.3 | 4.8 | 15/15 |
 
-The first pass (the Alolan starters) measured three walls, softened: Toy Workshop (Steel and Steel/Fairy wall an Ice
-team; foes' upgrades 3 → 2), Ember Springs (Fire; 5 → 4) and Aurora Summit (3 wild · 5 trainers at 5 → 4 · 4 at 4).
-With the new starters Pinewood Forest measured 3.7 wipes a run: its trainers and wild Pokémon are a level lower (2.9;
-Haunted Hollow's second area makes 2). Haunted Hollow measured the same way today arrives at its league at Lv.76 with
-8 wipes a run there.
+How it got here: the first pass (the Alolan starters) measured three walls, softened (Toy Workshop's foes' upgrades
+3 → 2, Ember Springs' 5 → 4, Aurora Summit 3 wild · 5 trainers at 5 → 4 · 4 at 4). The review's starters are weaker
+early: Pinewood Forest's trainers and wild Pokémon went a level lower, Snowy Trail's Starly, Hoothoot and Snom became
+rarer (they beat a Grass or lone starter) and its trainers a level lower. The first two areas stay the roughest stretch
+(about 3 wipes a run each, against 0.4 and 2 in Haunted Hollow): one Lv.5 Pokémon alone against the wild. Starters
+measured and left out: Bounsweet (Grass: 4–9 wipes on the first trail, 2 of 5 runs missed the league), Abra (Kadabra
+evolves by trade here), Shinx (fine, but a second Electric), Venipede, Starly and Pidgey (runs missed the league).
+Haunted Hollow measured the same way today arrives at its league at Lv.76 with 8 wipes a run there.
 
 ## 4. The secret areas' gameplays (designed, for review)
 
@@ -129,15 +134,20 @@ secret area. Every number below is the admin's.
   Revive. A player who always taps reaches level 5 3.8% of the time (19.2% with a Delibird), level 6 3.8%.
 - Its own switch (Off / On for admin / On for everyone), Off by default; Off, the item card stays.
 
-### 4.1 Moonlit Glade: Tracks in the Snow (hide and seek)
+### 4.1 Moonlit Glade: Tracks in the Snow (hide and seek, three rounds)
 
-- Stantler hides under one of **9 snowy bushes** (3 × 3). A bush holds a wild Pokémon (a fight, catchable), a find, a
-  warm cabin (a Pokémon Center) or nothing; once opened it shows **hoofprints pointing at Stantler** (8 directions).
-- **5 taps per snowfall**: not found by then, snow falls, the prints vanish, Stantler moves, the bushes refill.
-- Found: **Stantler's intro** (as the bosses' intros), then the boss fight, Lv.30. A missed throw sends it to another
-  bush. Caught: the outro, and the glade closes. A wipe: back at its edge, healed, XP and items kept.
-- The artifact has a playable prototype, with two settings to tune (taps per snowfall; prints on every bush or only
-  the empty ones).
+- **Three rounds** (the user's second review): rounds 1 and 2 on a **3 × 3** glade, each ending on a **normal Stantler**
+  (a wild encounter, catchable); round 3 on a **4 × 4** glade, ending on the **shiny Stantler** (its intro, then the boss
+  fight, Lv.30). A cleared round is kept through a wipe or a trip Home.
+- A bush holds a wild Pokémon (a fight, catchable), a find, a warm cabin (a Pokémon Center) or nothing; once opened it
+  shows **hoofprints pointing at Stantler** (8 directions).
+- **The first bush opened is never Stantler**: it is placed only after that first tap. On the 4 × 4 it is never next to
+  that first bush either (not one of its 8 neighbours), so the last round always takes a little hunting.
+- **Taps per snowfall**: 5 on a 3 × 3, 7 on the 4 × 4 (the admin's numbers). Out of taps: snow falls, the prints vanish,
+  Stantler moves, the bushes refill, and the first-bush rule holds again.
+- Caught: the outro, and the glade closes. A wipe: back at its edge, healed, XP and items kept.
+- The artifact's prototype plays all three rounds, with the taps (both sizes) and the prints (every bush, or only the
+  empty ones) to tune.
 
 ### 4.2 Evergreen Hill: Christmas Eve on the hill
 
@@ -153,8 +163,9 @@ secret area. Every number below is the admin's.
   round**, both sides, with its chip, its snowfall and its log line. (Weather is otherwise off in small worlds; this
   area's mode turns it on.)
 - **Waves of 2, 3 and 4 foes**, various types, one Ice type in each; the last holds an Ice type and one foe strong
-  against each starter line: Glalie · Bronzong (Lv.47); Beartic · Sawsbuck · Absol (48–49); Froslass · Talonflame ·
-  Lanturn · Ursaluna (49–50), below Abomasnow's Lv.50 (the user's call, 2026-11-01).
+  against each starter line: Glalie · Bronzong (Lv.47); Beartic · Sawsbuck · Absol (48–49); Walrein · Crabominable
+  (vs Stoutland) · Lanturn (vs Toucannon) · Ursaluna (vs Ampharos) (49–50), below Abomasnow's Lv.50 (the user's call,
+  2026-11-01). No Ghost type.
 - **A bonfire after every wave, the last just before Abomasnow**: a cozy animated fire with the team around it; it
   heals 40%, and only there can the team change and items be used. **No bag in battle**: "It's too dangerous to open
   the bag here, items might fly away."
@@ -175,16 +186,14 @@ secret area. Every number below is the admin's.
 - **One replay** once that legend is caught, with **other types**: Normal or Fairy · Rock or Flying · Bug or Dragon ·
   Ice or Dark, then only the other gate. Foes +4 levels, **10:00**. The pool holds both runs' types.
 
-### 4.5 Hall of Origin: the Plates of Creation (roguelike)
+### 4.5 Hall of Origin: the Stairway of Plates (Giratina's run, kept)
 
-- Giratina's portal run (docs/28) reworked: the same way in (a Center's heal, team changes until READY!, no way out
-  but a full K.O.), but **a map of 8 floors** to climb, choosing each room: wild fight, Elite (harder, pick a Plate from
-  three), campfire (heal 30%), find, mystery.
-- **Plates**, one per type (17): +10 damage on attacks of that type, or +1 die of that type for one Pokémon (8 at
-  most). For the run only.
-- Floor 8, **the Judgment**: Cooltrainer Genesis. Won: shiny Arceus raid, **Lv.100, foes' dice 10, 4 HP bars**, teams up
-  to Lv.100, **a new Plate each bar** (Normal → Ice → Steel → Dragon, the review asks). A wipe: back to floor 1,
-  Plates lost, XP and items kept.
+- The user's review: **keep it like the Giratina event.** Distortion World's portal run as it is (docs/28: the way in,
+  cycles of 5 wild Pokémon and a find, then a boon pick of 3, no Center, no way out but a full K.O.), dressed for Arceus:
+  10 landings of a stairway of light, each ended by an altar; the type-damage boon is a Plate.
+- **Every type is among its Pokémon**: 22 species, all met on the road, not catchable here (a test checks the 18 types).
+- The 10th altar: shiny Arceus. The raid: **Lv.90**, foes' dice 10, 4 HP bars, teams up to Lv.90, its Plate changing on
+  each bar: Normal → Ice → Steel → Dragon (agreed).
 
 ### 4.6 Intros and outros, and closing
 
@@ -211,7 +220,7 @@ The user's notes, left in the artifact's feedback boxes, each answered there:
 
 | Note | What changed |
 |---|---|
-| Starters too different, Spheal most | Rowlet, Popplio, Mareep: plain three-stage lines, evolving at about the same levels, none strong against Ice (a test) |
+| Starters too different, Spheal most | Rowlet, Popplio, Mareep: plain three-stage lines, evolving at about the same levels, none strong against Ice (a test); replaced by the third review |
 | Ember Springs: no Houndoom line | Gone from the world (a test); Magcargo and Absol take its places |
 | Frost League: the Champion's Abomasnow with a Mega Gem | Abomasnow is his ace (last, Lv.60); the gem needs engine work (trainer megas are off in worlds): on the build list |
 | A special card in every normal area | The Gift card (§4.0) |
@@ -220,4 +229,14 @@ The user's notes, left in the artifact's feedback boxes, each answered there:
 | Crown Shrine | §4.3: docs/62's Snow, waves 2–3–4, bonfires with team and bag, no bag in battle |
 | Spear Pillar: animation speed; other types for the replay | §4.4 |
 | Every secret area: an intro and an outro | §4.6 |
+
+### The second and third reviews (2026-11-01)
+
+| Note | What changed |
+|---|---|
+| Spear Pillar: quick speed, no auto-battle | §4.4 |
+| Crown Shrine: the waves' levels are fine | Kept |
+| Moonlit Glade: three rounds, 3 × 3, 3 × 3, 4 × 4; the first bush never Stantler, never next to it on the 4 × 4 | §4.1 and the prototype |
+| Starters: no game starters | Mareep, Lillipup, Pikipek (§3 for the measures) |
+| Hall of Origin: like Giratina's, every type, raid Lv.90, the 4 Plate bars | §4.5 |
 

@@ -4,6 +4,7 @@ import {
   areaOpenAt,
   compileGameData,
   evolutionsIn,
+  isTradeEvolution,
   isLegendary,
   regionSpecies,
   smallWorlds,
@@ -48,15 +49,18 @@ describe('Snowglobe Valley', () => {
   })
 
   it('offers three starters with a plain three-stage line, evolving at about the same levels, none strong against Ice', () => {
-    // The user's review (2026-11-01): Rowlet, Popplio and Mareep, fan favourites.
-    expect(STARTERS.map((d) => data.species[d]!.name)).toEqual(['Rowlet', 'Popplio', 'Mareep'])
+    // The user's reviews (2026-11-01): fan favourites, none a game's own starter.
+    expect(STARTERS.map((d) => data.species[d]!.name)).toEqual(['Mareep', 'Lillipup', 'Pikipek'])
     const ICE_BEATERS = ['fire', 'fighting', 'rock', 'steel']
-    // Only the evolutions this world allows (Hisuian Decidueye, Grass/Fighting, happens in Galar alone).
+    // Only the evolutions this world allows (a regional one, such as a Hisuian form, happens in its region alone).
     const evos = (dex: number) => evolutionsIn(data.species[dex]!.evolutions ?? [], REGION_ID)
     const levels = STARTERS.map((d) => {
       const line = [d]
       for (let e = evos(d); e.length; e = evos(line.at(-1)!)) {
         expect(e, data.species[line.at(-1)!]!.name).toHaveLength(1)
+        // By level only: Kadabra, for one, evolves by trade here.
+        expect(e[0]!.level, data.species[line.at(-1)!]!.name).toBeTruthy()
+        expect(isTradeEvolution(data, line.at(-1)!, e[0]!.toDex)).toBe(false)
         line.push(e[0]!.toDex)
       }
       expect(line, data.species[d]!.name).toHaveLength(3)
@@ -83,6 +87,31 @@ describe('Snowglobe Valley', () => {
     for (const name of ['Moonlit Glade', 'Evergreen Hill', 'Crown Shrine'])
       for (const w of h.areas.find((a) => a.name === name)!.wildPool)
         expect(onRoad.has(w.dex), `${name}: ${data.species[w.dex]!.name}`).toBe(true)
+  })
+
+  it('puts every type among the Hall of Origin’s Pokémon (the user’s review)', () => {
+    const hall = h.areas.find((a) => a.name === 'Hall of Origin')!
+    const types = new Set(hall.wildPool.flatMap((w) => typesOf(w.dex)))
+    expect([...types].sort()).toEqual([
+      'bug',
+      'dark',
+      'dragon',
+      'electric',
+      'fairy',
+      'fighting',
+      'fire',
+      'flying',
+      'ghost',
+      'grass',
+      'ground',
+      'ice',
+      'normal',
+      'poison',
+      'psychic',
+      'rock',
+      'steel',
+      'water',
+    ])
   })
 
   it('has no Houndour line (the user: it led Haunted Hollow’s picks)', () => {
@@ -205,7 +234,7 @@ describe('Snowglobe Valley', () => {
       [
         'Hall of Origin',
         [{ kind: 'pokedex', count: 90 }],
-        [{ dex: 493, level: 70, shiny: true, raid: true }],
+        [{ dex: 493, level: 90, shiny: true, raid: true }],
       ],
     ])
   })
