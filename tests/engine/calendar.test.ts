@@ -126,6 +126,22 @@ describe('the doors', () => {
 })
 
 describe('opening a door', () => {
+  it('a door giving Santa Pikachu (docs/59): in its hat with outfits on, a plain Pikachu with them off', () => {
+    const e = cal({ calendar: { days: [{ kind: 'pokemon', dex: 25, level: 10, outfit: 'santa', qty: 1 }] } })
+    const open = (outfits: 'off' | 'all') => {
+      const d = makeData({
+        liveEvents: { access: 'all', list: [e] },
+        giftCalendar: { access: 'all' },
+        outfits: { access: outfits },
+      })
+      const s = fresh()
+      const res = openCalendarDay(s, d, e, 1, T0 + 10, newId)!
+      return res.save.box.filter((p) => !s.box.some((q) => q.id === p.id))
+    }
+    expect(open('all').map((p) => [p.dex, p.outfit])).toEqual([[25, 'santa']])
+    expect(open('off').map((p) => [p.dex, p.outfit])).toEqual([[25, undefined]])
+  })
+
   it('₽ to the region being played, once', () => {
     const e = cal()
     const d = withCal(e)

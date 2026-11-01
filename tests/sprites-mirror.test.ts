@@ -16,6 +16,8 @@ import {
   type ShowdownEntry,
 } from '@/lib/showdown'
 import { existsSync } from 'node:fs'
+import { OUTFITS } from '@/engine/outfits'
+import { OUTFIT_SPRITES, outfitSprite } from '@/lib/outfitSprites'
 import { customFiles, mirrorFiles } from '../scripts/sprites-mirror'
 
 const entries = Object.values(showdown as unknown as Record<string, ShowdownEntry>)
@@ -75,5 +77,23 @@ describe('the sprite copy', () => {
       expect(paths.has(f.path), f.path).toBe(true)
       expect(existsSync(f.cache), f.cache).toBe(true)
     }
+  })
+
+  it('has every outfit sprite the game can ask for (docs/59), with its measures; never asked of Showdown itself', () => {
+    for (const [key, o] of Object.entries(OUTFITS))
+      for (const [dex, id] of Object.entries(o.sprites)) {
+        const e = OUTFIT_SPRITES[id]
+        expect(e, `${key} on ${dex}`).toBeDefined()
+        expect(e!.id).toBe(id)
+        SHOWDOWN_VIEWS.forEach((view, v) => {
+          if (e!.v[v] === 'a' || e!.v[v] === 'g')
+            expect(
+              paths.has(pathOf(showdownSpriteUrl(id, view, e!.v[v] as 'a' | 'g'))),
+              `${id} ${view}`,
+            ).toBe(true)
+        })
+        // These tests build without VITE_SPRITES_HOST: the game reads Showdown, which has none of our own drawings.
+        if (o.own) expect(outfitSprite(key, Number(dex))).toBeNull()
+      }
   })
 })

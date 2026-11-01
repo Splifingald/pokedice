@@ -1,6 +1,7 @@
 // Gifts with the developer's messages (docs/15 §23): items (a quantity each), Pokémon (a level each, shiny or not) and
 // Pokédollars, each sent to a region the admin picked or to the player's latest one. The server holds them on the message until the
 // player's game claims them (migration 0048); these functions decide where each one lands, and the screens only say it.
+import { cleanOutfit, hasOutfit, outfitsOn } from './outfits'
 import { rollTalentFor } from './talents'
 import { eventOpenTo } from './events'
 import { isExtreme } from './extreme'
@@ -57,7 +58,14 @@ export function parseGifts(raw: unknown): Gift[] {
       const dex = int(o.dex)
       const level = int(o.level)
       if (dex != null && dex >= 1 && level != null && level >= 1 && level <= 100)
-        out.push({ kind: 'pokemon', dex, level, ...(o.shiny === true && { shiny: true }), region })
+        out.push({
+          kind: 'pokemon',
+          dex,
+          level,
+          ...(o.shiny === true && { shiny: true }),
+          ...(cleanOutfit(o.outfit, dex) && { outfit: o.outfit as string }),
+          region,
+        })
     } else if (o.kind === 'gold') {
       const amount = int(o.amount)
       if (amount != null && amount >= 1 && amount <= GIFT_GOLD_MAX) out.push({ kind: 'gold', amount, region })
@@ -141,6 +149,8 @@ export function placeGifts(
     if (!data.species[gift.dex]) continue
     const inst = createInstance(gift.dex, gift.level, data, newId(), now)
     if (gift.shiny) inst.shiny = true
+    // Its outfit (docs/59), only while outfits are on: off, the same gift brings the plain Pokémon.
+    if (gift.outfit && outfitsOn(data) && hasOutfit(gift.outfit, inst.dex)) inst.outfit = gift.outfit
     // Its family's hidden talent, at the wild odds (docs/51); a legendary always.
     if (rollTalentFor(data, inst.dex, inst.id)) inst.talent = true
     const dexBefore = region === regionOf(next) ? next.pokedex : (next.parked?.[region]?.pokedex ?? [])

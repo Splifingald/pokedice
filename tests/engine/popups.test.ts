@@ -84,6 +84,7 @@ describe('the one-time pop-ups queue', () => {
       'dayNight',
       'powers',
       'talents',
+      'outfits',
       'world',
       'worldFinish',
       'worldBye',

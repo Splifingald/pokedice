@@ -59,6 +59,8 @@ export interface Battler {
   status: StatusState
   spriteUrl: string
   shiny: boolean
+  /** Its outfit (docs/59), as `outfitOf` gave it: only how it looks (a Gigantamax form shows plain). */
+  outfit?: string
   /** A trainer Pokémon's potion, used once (null when used or never given). */
   item?: string | null
   /** Ditto: its dice are a copy of the opponent's, taken again whenever the opponent changes. `ownDice` = its own set. */
@@ -417,6 +419,8 @@ export interface BattlerSeed {
   diceLevel?: number
   hp: number
   shiny?: boolean
+  /** Its outfit (docs/59), as `outfitOf` gave it (the switch read). */
+  outfit?: string | null
   item?: string
   nickname?: string
   /** A portal run's extra dice (docs/28), after its typed dice; the whole set kept to `diceCap` dice. */
@@ -460,6 +464,7 @@ export function makeBattler(seed: BattlerSeed, data: GameData): Battler {
     status: emptyStatus(),
     spriteUrl: species.spriteUrl,
     shiny: !!seed.shiny,
+    ...(seed.outfit && { outfit: seed.outfit }),
     baseDex: seed.dex,
     ...(seed.item && { item: seed.item }),
     ...(seed.powered && { powered: seed.powered }),

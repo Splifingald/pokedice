@@ -15,9 +15,11 @@ import {
   type GameData,
   type ItemDef,
   type LiveEvent,
+  hasOutfit
 } from '@/engine'
 import { AccessSwitch, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 import { useConfigRow } from './ConfigSection'
+import { OutfitSelect } from '../OutfitSelect'
 
 const DAY = 24 * 3_600_000
 
@@ -174,7 +176,15 @@ function DayRow({
           <div className="flex flex-wrap items-end gap-2">
             <label className="flex min-w-[200px] flex-1 flex-col text-base">
               Pokémon
-              <PokemonPicker data={data} value={r.dex} onChange={(dex) => set({ ...r, dex })} />
+              <PokemonPicker
+                data={data}
+                value={r.dex}
+                // An outfit stays only on a species that wears it (docs/59).
+                onChange={(dex) => {
+                  const { outfit, ...rest } = r
+                  set({ ...rest, dex, ...(outfit && hasOutfit(outfit, dex) && { outfit }) })
+                }}
+              />
             </label>
             <label className="flex w-20 flex-col text-base">
               Level
@@ -193,6 +203,14 @@ function DayRow({
               />
               Shiny
             </label>
+            <OutfitSelect
+              dex={r.dex}
+              value={r.outfit}
+              onChange={(outfit) => {
+                const { outfit: _old, ...rest } = r
+                set({ ...rest, ...(outfit && { outfit }) })
+              }}
+            />
             <label className="flex w-20 flex-col text-base">
               How many
               <NumInput

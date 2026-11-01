@@ -733,8 +733,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     return {
       instant,
       timeline: catchTimeline({
-        own: spriteKey(active.dex, true, active.shiny),
-        foe: spriteKey(foe.dex, false, foe.shiny),
+        own: spriteKey(active.dex, true, active.shiny, active.outfit),
+        foe: spriteKey(foe.dex, false, foe.shiny, foe.outfit),
         ball: ballOfItem(r.ballKey),
         caught: r.caught,
         roll: r,
@@ -745,7 +745,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         stays: !!r.stays,
         instant,
       }),
-      ready: Promise.all([loadSprite(active.dex, true, active.shiny), loadSprite(foe.dex, false, foe.shiny)]),
+      ready: Promise.all([loadSprite(active.dex, true, active.shiny, active.outfit), loadSprite(foe.dex, false, foe.shiny, foe.outfit)]),
       label:
         r.baited === 'used'
           ? t('ui.catch.baitThrown', { name: foe.name })
@@ -823,8 +823,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     const foe = st.enemy
     const lead = activeBattler(st)
     const params = {
-      own: spriteKey(lead.dex, true, lead.shiny),
-      foe: spriteKey(foe.dex, false, foe.shiny),
+      own: spriteKey(lead.dex, true, lead.shiny, lead.outfit),
+      foe: spriteKey(foe.dex, false, foe.shiny, foe.outfit),
       look: legendLook(foe.baseDex ?? foe.dex, foe.types[0] ?? 'normal'),
       name: foe.name,
       level: t('ui.common.level.short', { n: foe.level }),
@@ -834,7 +834,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     const cinema = legendCinemaOn(data) ? BOSS_CINEMAS[foe.baseDex ?? foe.dex] : undefined
     return {
       timeline: cinema ? cinema.makeBattle(params) : legendTimeline(params),
-      ready: Promise.all([loadSprite(lead.dex, true, lead.shiny), loadSprite(foe.dex, false, foe.shiny)]),
+      ready: Promise.all([loadSprite(lead.dex, true, lead.shiny, lead.outfit), loadSprite(foe.dex, false, foe.shiny, foe.outfit)]),
       label: t('ui.battle.aWild', { name: foe.name }),
       hud: {
         show: (side, on) => on && (side === 'foe' ? setFoeOut(true) : setOwnOut(true)),
@@ -864,17 +864,17 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     return {
       timeline: champion.makeBattle({
         trainer: pictureKey(picture),
-        foe: spriteKey(foe.dex, false, foe.shiny),
+        foe: spriteKey(foe.dex, false, foe.shiny, foe.outfit),
         ace: spriteKey(ace.dex, false, !!ace.shiny),
-        own: spriteKey(lead.dex, true, lead.shiny),
+        own: spriteKey(lead.dex, true, lead.shiny, lead.outfit),
         name: trainerName ?? '',
         team: enc.team.length,
       }),
       ready: Promise.all([
         loadPicture(picture),
-        loadSprite(foe.dex, false, foe.shiny),
+        loadSprite(foe.dex, false, foe.shiny, foe.outfit),
         loadSprite(ace.dex, false, !!ace.shiny),
-        loadSprite(lead.dex, true, lead.shiny),
+        loadSprite(lead.dex, true, lead.shiny, lead.outfit),
         ...champion.extras.map((d) => loadSprite(d, false)),
       ]),
       label: trainerName ?? '',

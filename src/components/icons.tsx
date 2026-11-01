@@ -481,6 +481,17 @@ export const ICONS = {
     '................',
   ],
   // Trick or Treat (docs/29): its card (a jack-o'-lantern), and the flee zone's ghost.
+  // An outfit (docs/59): Santa's hat, its tip and pom-pom hanging left, as Santa Pikachu wears it.
+  santaHat: [
+    '....kkkk...',
+    '..kkrrrRk..',
+    '.krrrrrrRk.',
+    'kwkrrrrrrRk',
+    'kwkrrrrrrRk',
+    '.kkwwwwwwwk',
+    '..kwwwwwwwk',
+    '...kkkkkkk.',
+  ],
   pumpkin: [
     '....kkk....',
     '....kgk....',
@@ -606,6 +617,7 @@ const OWN_PALETTE: Partial<Record<IconName, Record<string, string>>> = {
   gift: GIFT_PAL,
   bag: BAG_PAL,
   pumpkin: PUMPKIN_PAL,
+  santaHat: GIFT_PAL,
   pickaxe: DIG_PAL,
   pickaxeSm: DIG_PAL,
   kit: DIG_PAL,

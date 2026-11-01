@@ -10,6 +10,7 @@ import {
   teamOf,
   type PokemonInstance,
   type PokeType,
+  outfitOf,
 } from '@/engine'
 import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
@@ -29,6 +30,7 @@ import { useNow } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { TeamCards } from './team/TeamCards'
 import { InstTalentGem } from '@/components/Talent'
+import { outfitName } from '@/components/Outfit'
 
 type Sort = Exclude<BoxSort, 'type'>
 const SORTS: readonly Sort[] = ['dex', 'level', 'newest']
@@ -188,6 +190,7 @@ export function TeamScreen() {
                     name(p),
                     p.nickname ? speciesName(p) : null,
                     p.shiny ? t('ui.mon.shiny') : null,
+                    outfitOf(data, p) ? outfitName(p.outfit!) : null,
                     reviving ? t('ui.mon.revivesIn', { time: until }) : level,
                   ]
                     .filter(Boolean)
@@ -196,6 +199,8 @@ export function TeamScreen() {
                   tags={
                     <>
                       {p.shiny && <PixelIcon name="star" size={12} className="absolute left-[5px] top-[5px]" />}
+                      {/* Its outfit (docs/59): the box icon is the plain one, so a hat in the corner says which. */}
+                      {outfitOf(data, p) && <PixelIcon name="santaHat" size={14} className="absolute right-[5px] top-[5px]" />}
                       {/* Its hidden talent (docs/51): under the star, or in its place. */}
                       <InstTalentGem inst={p} className={cx('absolute left-[6px]', p.shiny ? 'top-[20px]' : 'top-[5px]')} />
                     </>
@@ -226,6 +231,7 @@ export function TeamScreen() {
                     name(p),
                     p.nickname ? speciesName(p) : null,
                     p.shiny ? t('ui.mon.shiny') : null,
+                    outfitOf(data, p) ? outfitName(p.outfit!) : null,
                     t('ui.mon.lockedUntil', { n: p.level }),
                   ]
                     .filter(Boolean)
@@ -234,6 +240,8 @@ export function TeamScreen() {
                   tags={
                     <>
                       {p.shiny && <PixelIcon name="star" size={12} className="absolute left-[5px] top-[5px]" />}
+                      {/* Its outfit (docs/59): the box icon is the plain one, so a hat in the corner says which. */}
+                      {outfitOf(data, p) && <PixelIcon name="santaHat" size={14} className="absolute right-[5px] top-[5px]" />}
                       {/* Its hidden talent (docs/51): under the star, or in its place. */}
                       <InstTalentGem inst={p} className={cx('absolute left-[6px]', p.shiny ? 'top-[20px]' : 'top-[5px]')} />
                     </>

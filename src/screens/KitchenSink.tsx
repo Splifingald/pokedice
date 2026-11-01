@@ -71,6 +71,7 @@ import { UndergroundBits } from './kitchen/UndergroundBits'
 import { CalendarBits } from './kitchen/CalendarBits'
 import { DayNightBits } from './kitchen/DayNightBits'
 import { TalentBits } from './kitchen/TalentBits'
+import { OutfitBits } from './kitchen/OutfitBits'
 import { AreaVersusBits } from './kitchen/AreaVersusBits'
 import { IdleBits } from './kitchen/IdleBits'
 import { ShinyDexBits } from './kitchen/ShinyDexBits'
@@ -848,6 +849,9 @@ export function KitchenSink() {
       </Section>
       <Section title="Hidden talents: the gem (base, super, unknown), every talent, the sheet's box (carried, known, never met), the encounter's line, the result cards, the battle log, the trade toggle, rules (docs/51)">
         <TalentBits />
+      </Section>
+      <Section title="Outfits: the sheet's chip (a tap: the rules), the hat on a tile or a gift (each size), Santa Pikachu in each view (and Raichu, which has no outfit), the rules pop-up (docs/59)">
+        <OutfitBits />
       </Section>
       <Section title="Real-player battles: the intro, the tag, the card (a stranger, a rich friend), the rules, the result's part (won, lost; each friend request state), the Friends page's requests (docs/54)">
         <AreaVersusBits />

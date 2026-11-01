@@ -1,7 +1,7 @@
 // Outfits (docs/59): a Pokémon dressed up, Santa Pikachu first. Only how it looks changes: the same species, dice,
 // stats and talent. Its one rule is evolution's: it evolves only into a species that has the same outfit drawn.
 import { eventOpenTo } from './events'
-import type { GameData, PokemonInstance } from './types'
+import type { GameData, PokemonInstance, SaveData } from './types'
 
 export interface OutfitDef {
   /** The sprite of each species that wears it: Showdown's id style, our own drawings live in sprites-custom/. */
@@ -47,3 +47,17 @@ export const outfitChoices = (dex: number): string[] =>
 /** An outfit key a gift or a save may carry: a known one, worn by that species. Anything else is dropped. */
 export const cleanOutfit = (key: unknown, dex: number): string | undefined =>
   typeof key === 'string' && hasOutfit(key, dex) ? key : undefined
+
+/** Whether a save owns a Pokémon in an outfit, in any region (the rules wait for the first one to arrive). */
+export const ownsOutfit = (save: SaveData): boolean =>
+  save.box.some((p) => p.outfit) || Object.values(save.parked ?? {}).some((b) => b?.box.some((p) => p.outfit))
+
+/**
+ * The rules pop-up (docs/15 §20: outfits have no page of their own): once, between fights, when the first Pokémon in an
+ * outfit has arrived with the switch on. A tap on the outfit's chip on the Pokémon sheet shows them again.
+ */
+export const outfitRulesDue = (save: SaveData, data: GameData): boolean =>
+  outfitsOn(data) && !save.outfitRulesSeen && ownsOutfit(save)
+
+export const markOutfitRulesSeen = (save: SaveData): SaveData =>
+  save.outfitRulesSeen ? save : { ...save, outfitRulesSeen: true }

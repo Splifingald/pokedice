@@ -890,7 +890,8 @@ export interface LiveShopItem {
 export type CalendarReward =
   | { kind: 'item'; key: string; qty: number }
   | { kind: 'gold'; amount: number }
-  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; qty: number }
+  /** `outfit` (docs/59): the Pokémon comes dressed up (a key of `OUTFITS` its species wears). */
+  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; outfit?: string; qty: number }
 
 /** A week of the month a weekly live event runs in: the 1st to the 4th of that weekday, or the month's last. */
 export type LiveWeek = 1 | 2 | 3 | 4 | 'last'
@@ -1379,7 +1380,8 @@ export type GiftRegion = string
  */
 export type Gift =
   | { kind: 'item'; key: string; qty: number; region: GiftRegion }
-  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; region: GiftRegion }
+  /** `outfit` (docs/59): the Pokémon comes dressed up (a key of `OUTFITS` its species wears). */
+  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; outfit?: string; region: GiftRegion }
   | { kind: 'gold'; amount: number; region: GiftRegion }
 
 /** The gifts a save has opened (docs/15 §23). */

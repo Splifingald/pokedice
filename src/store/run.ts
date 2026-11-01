@@ -131,6 +131,7 @@ import {
   trickCfg,
   type TrickStep,
   type ProgressRaid,
+  outfitOf,
 } from '@/engine'
 import { activeSlot } from '@/save/storage'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type CatchState, type RunState } from './game'
@@ -643,6 +644,8 @@ function startBattle(
     level: p.level,
     hp: p.currentHp,
     shiny: p.shiny,
+    // Its outfit (docs/59), while the switch is on.
+    outfit: outfitOf(data, p),
     nickname: p.nickname,
     // Its hidden talent (docs/51), while the switch is on.
     talent: talentOf(data, p),

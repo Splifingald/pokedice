@@ -16,7 +16,7 @@ events"*, and *"propose a calendar for 1st of December to 24th"* (§5).
 | Its switch | Its own, `giftCalendar.access` (Off / On for admin / On for everyone, **Off** by default), on top of the live events' one, as the Underground has. It sits in the calendar's editor. Off: no card, no notice, no page, no push, no Discord post |
 | Dates | The admin picks **when day 1 opens** (UTC, with their own time beside) and **how many days** (1 to 31). Each next door opens 24 hours later, at the same time. A calendar runs **once** (no yearly or weekly repeat: copy it next year) |
 | The end | Set by itself: **the day after the last door** (its catch-up day), so a 24-day Advent from 1 December 00:00 UTC ends on 26 December 00:00 UTC. *End now* still ends it early (every door not opened is then missed) |
-| A day's reward | **One** per day: an **item** and how many (1–999), **Pokédollars** (₽1–999,999), or a **Pokémon** (its level, shiny or not, and how many: 1–6, each a Pokémon of its own) |
+| A day's reward | **One** per day: an **item** and how many (1–999), **Pokédollars** (₽1–999,999), or a **Pokémon** (its level, shiny or not, an **outfit** for a species that has one, such as Santa Pikachu: docs/59, and how many: 1–6, each a Pokémon of its own) |
 | Missing a day | A door opens on **its day** or **the next day** (the catch-up, "LAST CHANCE"); **two days on it is missed** for good |
 | What the clock is | **The server's** (`event_time`), as every live event: changing the device's clock opens no door early |
 | Where a reward lands | **The region being played**, as the developer's gifts do (`placeGifts`, docs/15 §23): its Bag, its ₽, its Box, or the team when there's room. Cash Flow doesn't touch it (a gift, not ₽ earned) |
