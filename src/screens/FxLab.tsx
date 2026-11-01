@@ -431,7 +431,7 @@ const PRESETS: Preset[] = [
   {
     name: 'Stairway of Plates: an altar lit (a blessing picked)',
     sprites: [],
-    make: (o) => altarLitTimeline({ short: o.short }),
+    make: (o) => altarLitTimeline({ plate: 'fire', short: o.short }),
   },
   {
     name: 'Stairway of Plates: the victory (shiny Arceus down the stairs, the Judgment)',

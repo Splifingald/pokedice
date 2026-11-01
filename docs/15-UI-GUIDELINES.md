@@ -2331,23 +2331,39 @@ bar: Arceus takes the Icicle Plate").
   `plateKey`: `plate.<type>`, Normal the Legend Plate of Legends: Arceus, `ui.plates.legend`), its line "Arceus's Flame
   Plate: +10 damage on every Fire attack, for this climb.", the run's bonuses "Flame Plate: +20 damage". Its icon stays
   the type's badge.
-- **Its palette** (`PL` in `src/fx/timelines/plates.ts`): a white-gold sky (`#fffdf6` to `#f6cf7e`), pale stone
-  (`#f6ecd2`, `#dcc595`, risers `#caa968`), Arceus's gold (`#e3a92f`, `#ffc94a`, `#ffe9a3`), an ink of dark gold for
-  edges and words on cream (`#4a3410`, `#8a6420`), and the seventeen Plates' colours (the types' own) round its wheel.
+- **Its palette** (`PL` in `src/fx/timelines/plates.ts`): an amber sky paling to white at the horizon (`#dc9a4e` to
+  `#fff4da`), cream clouds lit on top and shaded gold below (`#fffaf0`, `#f8e5be`, `#e9c68a`, `#d4a262`), pale stone
+  (treads `#fbf0d4`, risers `#efd9a8` to `#caa968`, columns `#f3e4c2` edged `#a8823e`), Arceus's gold (`#e3a92f`,
+  `#ffc94a`, `#ffe9a3`), an ink of dark gold for edges and words on cream (`#4a3410`, `#8a6420`), jade for the wheel's
+  jewels (`#3ad0a0`), and the seventeen Plates' colours (the types' own).
+- **The Hall of Origin** (every scene's set, `hallOf`/`drawHall`): a real perspective seen from below the stairway's
+  foot (the steps one unit deep, half a unit high, rising away up the screen): the dithered sky, the wheel's light a
+  wide white glow, long thin clouds, a sea of cloud banks below the horizon (scalloped tops lit, a shade where each rises
+  before the one behind), the stairway (each riser lit from behind with a bright nose, the near treads seen too, a runner
+  of light up its middle), balustrades with a gold rail (a glint running up), a brazier on each landing's newel posts
+  (lit in that landing's Plate once its altar is: a rainbow climbing from Fire at the foot), marble columns every other
+  landing and a gate pair at the top, near clouds drifting past the foot. Above the top, **Arceus's wheel**: a crisp gold
+  ring (dark-gold edges, lit upper left, a soft dithered light inside, not a disc), four jade jewels with gold points,
+  the seventeen Plates as tablets of their colours orbiting it on a tilted ring (behind it, then before it), god-rays.
   Its panels have the gold along their top (`.plates-panel`), its line cards are cream with dark-gold ink (contrast on
   the light sky), the tap prompt a cream chip.
 - **Its scenes** (the same timings, cues' places and motion levels as §27's, so the screens swap one for the other):
   - **The way in** (`stairwayTimeline`, 3.9 s, holds its end): the area's picture (the Hall's `a130`) brightens in two
-    white pulses, a point of gold light opens at the top, rays of light race out over the area, the area comes apart in
-    pieces that rise and whiten into light, and behind them the white-gold sky and **a stairway of light** (pale steps in
-    perspective, gold rails with a glint running up, an altar on each landing) rising to **Arceus's wheel** (a white
-    heart through pale to gold, rays turning, a dashed gold rim, four gold spikes turning, the Plates' gems turning the
-    other way); a flash, rings, the name card in gold with white rims. Then it holds (the wheel turning, light rising)
-    for the tap, its pop-up over it.
-  - **The altar** (`altarLoop`, `drawAltar`: the wheel on a two-tier pedestal) where the portal turned: the rules'
-    banner, the pop-up on its own, by an altar's blessings (`PortalArt`).
-  - **An altar lit** (`altarLitTimeline`, 1.6 s, `short` 0.9 s): the wheel swells, light of every Plate's colour is drawn
-    into it, it turns faster and shrinks to a point, a white flash, the gold seal ring.
+    white pulses, a point of gold light opens where the wheel will be, rays of light race out over the area, the area
+    comes apart in tiles that rise and whiten into light (nearest the light first), and behind them the Hall: the steps
+    coming down out of the light from the top (sparks off each), the columns rising, the wheel drawing itself round and
+    the Plates popping out round it one by one, spinning fast and slowing; a flash, rings, the name card in gold with
+    white rims at the bottom. Then it holds (the Plates orbiting, light rising, clouds drifting) for the tap, its pop-up
+    over it.
+  - **The altar** (`altarLoop`): the Hall where the portal turned (the rules' banner, the pop-up on its own); by an
+    altar's blessings (`PortalArt`) an altar (`drawAltar`: a plinth, a pale shaft with a carved groove and diamond, a
+    gold-banded top with a slot for a Plate) under the wheel, its Plates orbiting.
+  - **An altar lit** (`altarLitTimeline`, 1.6 s, `short` 0.9 s; `plate`: the type boon's type, from
+    `playPortalClose(type)`, else Arceus's gold): an altar on a step; the Plate appears in a twinkle high above and comes
+    down turning, faces us as it hovers over the slot drawing light in, then drops in: a white frame, the carvings ignite
+    in its colour, a ring runs out over the floor, sparks; a beam of its light shoots up the stairway to the wheel (a ring
+    of its colour there) and the next landing's braziers catch in it. Over the page (`clear`): the altar alone, the beam
+    up off the top, faded in and out through the dither.
   - **Its wild Pokémon wear light, never torn** (`lightBurstFrame`, `lightRestCss`; `GlitchSprite look="plates"`,
     `BattleStage lit`): a faint gold and white rim of its own shape, motes of light rising; every 5 s a gleam of 0.35 s,
     white and gold copies a pixel or two off, brighter on two frames. `short`: one pale copy; off: the rim alone.
@@ -2355,17 +2371,22 @@ bar: Arceus takes the Icicle Plate").
     frames (white and pale gold, gold edges, a few sparkles), the page warmed to gold for three of them (a soft-light
     layer, `.plates-fx-tint`); the UI's pieces catch the light now and then (`.ui-gleam`: a white-gold rim a pixel off,
     a little brighter; never torn). `short`: a thin band, no warming, `.ui-gleam-short`; off: nothing.
-  - **The victory** (`descentTimeline`, 6.2 s, `short` 3.1 s): the stairway glowing whole, the wheel at its top throbbing
-    in two white pulses, gold rays; **shiny Arceus's silhouette appears in the wheel and comes down the stairs, growing**,
-    in a flickering white-and-gold outline, a gleam; the reveal at their foot (a flash, rings, the roar and its cry, a
-    quake); **the Judgment**: seventeen beams of the Plates' colours falling round it; the shiny sparkle; the name card.
-    Then §27's words and buttons.
+  - **The victory** (`descentTimeline`, 6.2 s, `short` 3.1 s): every landing's braziers burning, the wheel throbbing in
+    two white pulses; a flare in it and **shiny Arceus stands at the top of the stairs, backlit** (a dark body, its edges
+    facing the sky lit pale and gold, a screen-pixel rim of white and gold round it) and **comes down a landing at a
+    stride, growing with the perspective**, each landing flaring under it; at the foot the light gathers into it (the
+    Hall dims a little); the reveal (a flash, rings, the roar and its cry, a quake); **the Judgment**: the Plates shoot up
+    out of the wheel and come down as seventeen beams of their colours fanning out round it, each striking the stairs in
+    a flare and a ring of its colour, sparks; the shiny sparkle; the Plates back round the wheel (its halo behind Arceus),
+    a calm hold, the name card at the bottom under its feet. Then §27's words and buttons.
 - **Its raid** wears the usual raid look (no violet night, no distortion: §27's raid theme is Distortion World's only;
   the lock in its words, "Light every altar of … to open this raid"). Its show is **Arceus's Plate on each bar**: as a bar
   starts with a type of the area's list (Normal → Ice → Steel → Dragon), the stage's `plate` scene (`plateTimeline`,
-  1.85 s: a Plate of the new type's colour, gold-rimmed, falls out of the sky turning and touches Arceus; a flash of that
-  colour, rings in it and gold, the new form, motes rising; `short`: a flash and the new sprite), and at the touch (its
-  `contact` cue) the line "Arceus takes the Icicle Plate! It is now Ice type!" and the gold NEW PLATE! banner; the
+  2.1 s: the field dims a little, a glint high above Arceus, a column of light; the Plate, a tablet of the new type's
+  colour, falls out of the sky turning, its light trailing, and strikes it at 0.8 s: a hit-stop, a white frame in which
+  the form changes cleanly, a shockwave of that colour round it and over the ground, a ring of the type's own bits
+  (flakes for Ice); then the new form in an aura of its colour (a glow, light pooled and a dashed ring at its feet, its
+  bits rising) that fades; `short`: a flash, one ring and the new sprite), and at the strike (its `contact` cue) the line "Arceus takes the Icicle Plate! It is now Ice type!" and the gold NEW PLATE! banner; the
   battle's history says "took the Icicle Plate · now Ice type". Its first bar's Plate is said as the fight starts unless
   it is already that type (Normal).
 - **Its rules pop-up** is its own (`platesRulesSeen`): a player who read Distortion World's still gets the stairway's

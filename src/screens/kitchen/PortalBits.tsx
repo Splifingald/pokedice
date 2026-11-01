@@ -114,7 +114,7 @@ function Bits({ skin }: { skin: PortalSkin }) {
         <PixelButton size="sm" onClick={() => setOpen('confirm')}>
           A boon&apos;s confirm pop-up (BACK / CONFIRM)
         </PixelButton>
-        <PixelButton size="sm" onClick={playPortalClose}>
+        <PixelButton size="sm" onClick={() => playPortalClose(plates ? 'fire' : null)}>
           A portal closing
         </PixelButton>
         <PixelButton size="sm" onClick={() => setOpen('won')}>
