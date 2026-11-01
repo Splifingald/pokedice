@@ -1,5 +1,5 @@
 // Kitchen sink (dev only): the region flavours (docs/62) — every weather's chip, its recap factor and its fall over a
-// stage; a horde's banner, an island trial's card, a Titan's card (Klawf's, and Dondozo's with Tatsugiri); a Totem's and
+// stage; Castform's forms; a horde's banner, an island trial's card, a Titan's card (Klawf's, and Dondozo's with Tatsugiri); a Totem's and
 // a Titan's aura; the fights' lines; each one's rules.
 import { useState, type ReactNode } from 'react'
 import { WEATHER_KINDS, type Encounter, type RegionId, type Weather } from '@/engine'
@@ -81,6 +81,25 @@ export function FlavourBits() {
               <WeatherChip weather={w} size={14} />
             </span>
           </Stage>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-end gap-4">
+        {/* Castform's Forecast (docs/62 §3): the form each weather brings. */}
+        {(
+          [
+            [351, null],
+            [10013, 'sun'],
+            [10014, 'rain'],
+            [10015, 'snow'],
+          ] as const
+        ).map(([dex, w]) => (
+          <span key={dex} className="flex flex-col items-center gap-1 font-pixel-sm text-[16px]">
+            <SpriteImg dex={dex} size={72} />
+            <span className="flex items-center gap-1">
+              {w && <WeatherChip weather={w} size={12} />}
+              {w ? t(weatherNameKey(w)) : 'Castform'}
+            </span>
+          </span>
         ))}
       </div>
       <div className="grid gap-3 md:grid-cols-2">

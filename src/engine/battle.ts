@@ -17,7 +17,7 @@ import {
   type RerollLesson,
 } from './lesson'
 import { reviveHp } from './economy'
-import { ARCEUS_DEX, choiceFormDie, choiceFormsOf, gmaxFormsOf, lowHpFormOf, megaDie, megaFormsOf, megaOptions, swapOneDie } from './forms'
+import { ARCEUS_DEX, choiceFormDie, choiceFormsOf, gmaxFormsOf, lowHpFormOf, megaDie, megaFormsOf, megaOptions, swapOneDie, weatherFormOf } from './forms'
 import { battleSpeed, effectiveStats } from './progression'
 import { carriedTalent, TALENT, talentRerolls, type TalentKey } from './talents'
 import { potionHeal, shouldUsePotion } from './trainerItems'
@@ -429,8 +429,8 @@ export type LogEntry =
   /**
    * A Pokémon changed form: `mega` (Mega Evolution, Primal Reversion, Ultra Burst — `die` is the die it gained),
    * `gmax` (Gigantamax; `revert` when it shrinks back), `lowHp` (Giratina's Origin Forme…, `revert` when it goes back
-   * above half HP), `unleash` (that form on a raid Pokémon's last bar, for good; `die` is the die it gained)
-   * or `choice` (an Arceus, Silvally or Ogerpon type).
+   * above half HP), `unleash` (that form on a raid Pokémon's last bar, for good; `die` is the die it gained),
+   * `choice` (an Arceus, Silvally or Ogerpon type) or `weather` (Castform's Sunny, Rainy or Snowy Form, docs/62 §3).
    */
   | {
       kind: 'form'
@@ -438,7 +438,7 @@ export type LogEntry =
       uid: string
       fromDex: number
       toDex: number
-      reason: 'mega' | 'gmax' | 'lowHp' | 'unleash' | 'choice'
+      reason: 'mega' | 'gmax' | 'lowHp' | 'unleash' | 'choice' | 'weather'
       dice: DieType[]
       die?: DieType
       revert?: boolean
@@ -1050,6 +1050,8 @@ export function createBattle(opts: CreateBattleOptions, data: GameData): { state
   const log: LogEntry[] = [{ kind: 'start', first }]
   // A Giratina sent out below half HP is already in its Origin Forme.
   checkHpForms(state, data, log)
+  // Castform takes the weather's form (docs/62 §3).
+  weatherForms(state, data, log)
   copyFoeDice(state, log)
   beginTurn(state, first, data, log)
   return { state, log }
@@ -1313,6 +1315,8 @@ function createDouble(
   if (state.double!.calls && lead != null)
     for (const i of foeSlots) if (i !== lead) log.push({ kind: 'sos', from: foes[lead]!.uid, uid: foes[i]!.uid })
   checkHpForms(state, data, log)
+  // Castform takes the weather's form (docs/62 §3).
+  weatherForms(state, data, log)
   // Every Ditto out copies the Pokémon facing it.
   for (const [side, row, facing] of [
     ['player', ownOnField(state), foesOnField(state)],
@@ -1691,6 +1695,26 @@ function weatherTick(s: BattleState, b: Battler, side: Side, log: LogEntry[]): b
   b.hp -= amount
   log.push({ kind: 'weather_tick', target: side, targetUid: b.uid, weather: s.weather, amount, hpAfter: b.hp })
   return true
+}
+
+/**
+ * Castform's Forecast (docs/62 §3): as a fight under sun, rain or snow starts, each Castform on either side takes the
+ * weather's form, its dice of its own type turning into the form's. Said for those out on the field; those on the bench
+ * are in it as they come out.
+ */
+function weatherForms(s: BattleState, data: GameData, log: LogEntry[]) {
+  if (!s.weather) return
+  const out = new Set([...ownOnField(s), ...foesOnField(s)].map((b) => b.uid))
+  const foes = s.double?.foes ?? [s.enemy]
+  for (const [side, b] of [...s.player.map((p) => ['player', p] as const), ...foes.map((f) => ['enemy', f] as const)]) {
+    const form = weatherFormOf(data, b.baseDex ?? b.dex, s.weather)
+    if (!form || b.dex === form.dex) continue
+    const own = data.species[b.dex]?.type1
+    const fromDex = b.dex
+    wearForm(b, form, data)
+    b.dice = b.dice.map((d) => (d === own ? (form.type1 as DieType) : d))
+    if (out.has(b.uid)) log.push({ kind: 'form', side, uid: b.uid, fromDex, toDex: b.dex, reason: 'weather', dice: [...b.dice] })
+  }
 }
 
 /** Magma Armor (docs/51): the turns a freeze holds it. */

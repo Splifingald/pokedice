@@ -84,8 +84,12 @@ weather means the same thing everywhere in the game:
 
 - **Decision (H1): which areas.** **The six above.** Also possible: the Abyssal Ruins/Seafloor Cavern under heavy rain,
   or Mt. Chimney under harsh sun (neither area is fixed in the games).
-- **Decision (H2): Castform.** The bundle has no Castform forms (10013–10015), so Castform stays in its normal form.
-  **Default: left as is.** Adding the three forms and their sprites is possible as a follow-up.
+- **Castform** (decision H2, the user's call of 2026-11-01: include its forms): as a fight under harsh sun, rain (or a
+  thunderstorm) or snow starts, each Castform on either side takes its Sunny (Fire), Rainy (Water) or Snowy (Ice)
+  Form, its Normal dice turning into the form's type (`weatherFormOf`, the `form` log's `weather` reason: "Castform
+  became Water type!"). A Castform caught in one is Castform. The forms are battle rows 10013–10015 (migration 0118),
+  written by `scripts/castform-forms.ts` with their names and offline sprites; Showdown's come from
+  `pnpm showdown-sprites pokemon icons cries --only 10013,10014,10015`.
 - **Admin**: the areas' weather is the `hoennWeather` row's `areas` (Admin → Config → All rows), by area id: `fixed`,
   or `alternate` (two that take turns a round each). Without it, the game's own (the table above).
 
@@ -224,7 +228,7 @@ rules, docs/61 §2's roadblocks being the newest of them):
 | # | Question | Default |
 | --- | --- | --- |
 | H1 | Hoenn's weather areas | The six in §3 |
-| H2 | Castform's forms | Left as is (no forms in the bundle) |
+| H2 | Castform's forms | Included (the user's call): Sunny, Rainy and Snowy, with the weather |
 | G1 | Route 9 & Spikemuth in snow | No |
 | G2 | When Galar's day changes | UTC midnight |
 | K1 | Five foes on the field at once | No: two at a time with pips |
@@ -257,6 +261,8 @@ What differs from the plan:
 - **Titan's server check**: a trial or a Titan the server doesn't allow (an out-of-date page) is the captain's battle,
   or no challenge yet.
 - The Sootopolis weather turns with the area's rounds done (sun on even, rain on odd).
+- **Castform's forms are in** (decision H2 changed, the user's call): §3.
+- **Hoenn's rules don't list its areas** (the user's call): each area's chip says its weather.
 
 ### Pictures
 
@@ -265,7 +271,8 @@ Taken by `e2e/region-flavours.spec.ts` in the game, with the switches on:
 | | |
 | --- | --- |
 | ![](62-region-flavours/1-weather-rules-hoenn.png) Hoenn's weather: its rules, once | ![](62-region-flavours/1-weather-rain-battle.png) Rain on Routes 118 & 119: the chip by the area's name and on the stage, the rain falling |
-| ![](62-region-flavours/1-weather-sandstorm.png) The Route 111 desert's sandstorm wears Treecko down (−3) | ![](62-region-flavours/2-weather-rules-galar.png) Galar's weather: its rules |
+| ![](62-region-flavours/1-weather-sandstorm.png) The Route 111 desert's sandstorm wears Treecko down (−3) | ![](62-region-flavours/1-weather-castform.png) Castform in its Rainy Form: Water dice, rain's ×1.25 |
+| ![](62-region-flavours/2-weather-rules-galar.png) Galar's weather: its rules | |
 | ![](62-region-flavours/2-weather-galar-battle.png) A rainy day in the Rolling Fields | ![](62-region-flavours/3-horde-rules.png) Hordes: the rules, the first time |
 | ![](62-region-flavours/3-horde-preview.png) A horde's card | ![](62-region-flavours/3-horde-battle.png) Two at a time, five pips |
 | ![](62-region-flavours/4-trial-rules.png) Island trials: the rules | ![](62-region-flavours/4-trial-card.png) Ilima's trial: Totem Gumshoos and its allies |
@@ -293,7 +300,10 @@ Taken by `e2e/region-flavours.spec.ts` in the game, with the switches on:
      — the trials' switch, Totem Kommo-o's row and Vast Poni Canyon's gyms.
    - [0117_titans.sql](https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0117_titans.sql)
      — the Titans' switch and the five bosses.
+   - [0118_castform_forms.sql](https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0118_castform_forms.sql)
+     — Castform's Sunny, Rainy and Snowy Forms.
 
-   `supabase/seed.sql` carries the data part (Kommo-o, the gyms, the Titans' bosses) for a fresh database.
+   `supabase/seed.sql` carries the data part (Kommo-o, the gyms, the Titans' bosses, Castform's forms) for a fresh
+   database.
 2. Admin → Config → Switches: each of the five, Off / On for admin / On for everyone. Admin → Config → Region flavours
    for the numbers.

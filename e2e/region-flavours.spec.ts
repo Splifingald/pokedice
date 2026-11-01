@@ -135,6 +135,24 @@ test('Hoenn: the Route 111 desert’s sandstorm wears a Pokémon down at its tur
   await shot(page, '1-weather-sandstorm')
 })
 
+test('Hoenn: Castform takes its Rainy Form in the rain', async ({ page }) => {
+  const base = standingIn('hoenn', 'Routes 118 & 119', { deck: ['wild', 'wild'], drawn: ['center'] }, { flavours: { seen: ['hoennWeather'] } })
+  // Castform leads (the Weather Institute's gift).
+  const lead = base.box.find((p) => p.id === base.team[0])!
+  const shape = { ...lead, dex: 351, nickname: undefined }
+  // Healed to its own max HP: a hurt team meets a Pokémon Center first.
+  const castform = { ...shape, currentHp: instanceMaxHp(shape, data) }
+  const save = { ...base, box: base.box.map((p) => (p.id === lead.id ? castform : p)), pokedex: [...base.pokedex, 351] }
+  await boot(page, save)
+  await goOn(page)
+  await expect(page.locator('[data-battle-weather="rain"]')).toBeVisible({ timeout: 20_000 })
+  await page.getByRole('button', { name: /^Send out Castform/ }).first().click()
+  await expect(page.getByText(/Castform became Water type/).first()).toBeVisible({ timeout: 30_000 })
+  // A wild Castform here changes too, its line after yours.
+  await page.waitForTimeout(3000)
+  await shot(page, '1-weather-castform')
+})
+
 test('Galar: the Wild Area’s weather of the day, in its rules, by its name and in a fight', async ({ page }) => {
   const save = standingIn('galar', 'The Wild Area: Rolling Fields & Dappled Grove', { deck: ['wild', 'wild'], drawn: ['center'] })
   // A rainy day in the Rolling Fields (the server's clock says so; the weather is the day's, the same for everyone).

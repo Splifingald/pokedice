@@ -92,8 +92,11 @@ export interface SpeciesForm {
   /**
    * Battle forms only — when the engine switches to it. `lowHp`: below half HP, swapping one `swapDie.from` die for a
    * `swapDie.to` one (Giratina). `choice`: picked from a menu, every die turning into the form's type (Arceus).
+   * `weather`: as a fight under one of `weather` starts, its dice of the species' type turning into the form's
+   * (Castform, docs/62 §3).
    */
-  trigger?: 'lowHp' | 'choice' | null
+  trigger?: 'lowHp' | 'choice' | 'weather' | null
+  weather?: Weather[] | null
   swapDie?: { from: DieType; to: DieType } | null
   /** A `mega` row that is a Primal Reversion or an Ultra Burst: the same rules, its own name in the game. */
   mechanic?: 'primal' | 'ultra' | null

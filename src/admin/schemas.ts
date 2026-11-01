@@ -1,7 +1,7 @@
 // Zod row schemas for every config table (snake_case, as stored). Errors are shown in the cell; saving is blocked.
 import { z } from 'zod'
 import type { Row, TableName } from '@/config/mapping'
-import { BATTLE_BACKGROUNDS, COMBO_KEYS, DAY_TIMES, EVENT_ACCESS, POKE_TYPES, ROADBLOCK_KINDS, STATUS_KINDS, TRICK_TIERS } from '@/engine/types'
+import { BATTLE_BACKGROUNDS, COMBO_KEYS, DAY_TIMES, EVENT_ACCESS, POKE_TYPES, ROADBLOCK_KINDS, STATUS_KINDS, TRICK_TIERS, WEATHER_KINDS } from '@/engine/types'
 
 const pokeType = z.enum(POKE_TYPES)
 const background = z.enum(BATTLE_BACKGROUNDS)
@@ -148,7 +148,9 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
           of: int(1),
           kind: z.enum(['regional', 'mega', 'gmax', 'battle']),
           region: z.string().nullable().optional(),
-          trigger: z.enum(['lowHp', 'choice']).nullable().optional(),
+          trigger: z.enum(['lowHp', 'choice', 'weather']).nullable().optional(),
+          // Castform's forms (docs/62 §3): the weathers that bring each.
+          weather: z.array(z.enum(WEATHER_KINDS)).nullable().optional(),
           swapDie: z.object({ from: dieType, to: dieType }).nullable().optional(),
           mechanic: z.enum(['primal', 'ultra']).nullable().optional(),
         })

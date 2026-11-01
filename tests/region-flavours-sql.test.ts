@@ -1,6 +1,6 @@
-// The region flavours' migrations (docs/62), 0114 to 0117, against a real Postgres (PGlite, in process), over the areas
+// The region flavours' migrations (docs/62), 0114 to 0118, against a real Postgres (PGlite, in process), over the areas
 // they touch as they were before them: the five Titans' areas with no boss, Vast Poni Canyon's gyms without Totem
-// Kommo-o. Each migration does what the bundle has; run again, nothing moves but the content version.
+// Kommo-o, no Castform form. Each migration does what the bundle has; run again, nothing moves but the content version.
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
@@ -10,7 +10,7 @@ import type { Area, Trainer } from '@/engine'
 
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
-const FILES = ['0114_weather.sql', '0115_hordes.sql', '0116_trials.sql', '0117_titans.sql']
+const FILES = ['0114_weather.sql', '0115_hordes.sql', '0116_trials.sql', '0117_titans.sql', '0118_castform_forms.sql']
 
 const AUTH = `create role anon; create role authenticated; create schema auth; create table auth.users (id uuid primary key);
   create function auth.uid() returns uuid language sql stable as $$
@@ -43,6 +43,7 @@ async function setUp(db: PGlite) {
     alter table areas add column if not exists scale_offsets jsonb;
     alter table areas add column if not exists mode jsonb;
     alter table trainers add column if not exists duo boolean not null default false;
+    alter table pokemon add column if not exists form jsonb;
     insert into game_config (key, value) values ('configVersion', '300');`)
   // As they were before: no Titan, no Kommo-o.
   const rows = [...TITAN_AREAS, byId(CANYON)].map((a) => {
@@ -59,7 +60,7 @@ async function setUp(db: PGlite) {
 
 const one = async <T,>(db: PGlite, text: string, params: unknown[] = []) => (await db.query<T>(text, params)).rows[0]
 
-describe('the region flavours’ migrations (0114–0117)', () => {
+describe('the region flavours’ migrations (0114–0118)', () => {
   let db: PGlite
   beforeAll(async () => {
     db = new PGlite()
@@ -92,8 +93,20 @@ describe('the region flavours’ migrations (0114–0117)', () => {
     }
   })
 
+  it('0118: Castform’s three weather forms, as the bundle has them', async () => {
+    const species = BUNDLE.pokemon as { dex: number; type1: string; form?: unknown }[]
+    for (const dex of [10013, 10014, 10015]) {
+      const r = await one<{ type1: string; form: unknown }>(db, 'select type1, form from pokemon where dex = $1', [dex])
+      const own = species.find((p) => p.dex === dex)!
+      expect(r, String(dex)).toEqual({ type1: own.type1, form: own.form })
+    }
+  })
+
   it('run again, nothing moves but the content version', async () => {
-    const snap = async () => (await db.query('select id, gyms, legendary_boss from areas order by id')).rows
+    const snap = async () => [
+      ...(await db.query('select id, gyms, legendary_boss from areas order by id')).rows,
+      ...(await db.query('select dex, form from pokemon order by dex')).rows,
+    ]
     const before = await snap()
     const v0 = (await one<{ v: number }>(db, "select (value #>> '{}')::int v from game_config where key = 'configVersion'"))!.v
     for (const f of FILES) await db.exec(sql(f))

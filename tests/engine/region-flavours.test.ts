@@ -332,3 +332,41 @@ describe('Paldea’s Titans (docs/62 §7)', () => {
     expect(r.save.inventory['rare-candy']).toBe((s.inventory['rare-candy'] ?? 0) + 3)
   })
 })
+
+describe('Castform’s Forecast (docs/62 §3)', () => {
+  const start = (weather: 'rain' | 'sun' | 'snow' | 'sand' | null, enemy = { dex: 16, level: 20 }) =>
+    createBattle(
+      {
+        kind: 'wild',
+        team: [{ uid: 'a', dex: 351, level: 25, hp: 999 }],
+        enemy,
+        playerLevels: uniformLevels(1),
+        enemyLevels: uniformLevels(1),
+        weather,
+      },
+      live,
+    )
+
+  it('takes the weather’s form as the fight starts: its Normal dice its new type’s', () => {
+    for (const [weather, dex, type] of [
+      ['rain', 10014, 'water'],
+      ['sun', 10013, 'fire'],
+      ['snow', 10015, 'ice'],
+    ] as const) {
+      const { state, log } = start(weather)
+      const b = state.player[0]!
+      expect(b.dex, weather).toBe(dex)
+      expect(b.types).toEqual([type])
+      expect(b.dice.every((d) => d === type || d === 'base')).toBe(true)
+      expect(log).toContainEqual(expect.objectContaining({ kind: 'form', uid: 'a', fromDex: 351, toDex: dex, reason: 'weather' }))
+    }
+  })
+
+  it('stays Castform under a sandstorm or none, and a foe Castform changes too, caught as Castform', () => {
+    expect(start('sand').state.player[0]!.dex).toBe(351)
+    expect(start(null).state.player[0]!.dex).toBe(351)
+    const foe = start('rain', { dex: 351, level: 20 }).state.enemy
+    expect(foe.dex).toBe(10014)
+    expect(foe.baseDex).toBe(351)
+  })
+})
