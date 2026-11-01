@@ -2,7 +2,7 @@
 // type die and back to the area, once. The screen dims but for the one thing to tap (the real button: its own action
 // does the step), Prof. Oak says why in a bubble, and nothing else can be pressed meanwhile. The engine says when it's
 // due and which step the page is at; this only finds that step's button on screen and points at it.
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   diceTutorialCost,
@@ -27,8 +27,10 @@ type PointStep = Exclude<DiceTutorialStep, 'back'>
 
 /** Each step's button on screen (the first one showing). */
 const TARGETS: Record<PointStep, (type: string) => string> = {
-  // The money in the top bar opens the Mart: on every page, on a phone and on PC alike.
-  toMart: () => '[data-hud-gold]',
+  // Home, then its Mart tab: the bottom bar's on a phone, the side rail's on PC. Right after Joey, the round's Pokémon
+  // Center is on screen: its own HOME first (the nav is shut there).
+  toHome: () => '[data-guide="center-home"], [data-guide="nav-home"]',
+  toMart: () => '[data-guide="nav-shop"]',
   toUpgrades: () => '#mart-upgrades',
   toDice: () => '#up-dice',
   buy: (type) => `[data-guide="buy-die-${type}"]`,
@@ -36,6 +38,7 @@ const TARGETS: Record<PointStep, (type: string) => string> = {
 
 /** Where a step's button lives, should it not be on screen: SHOW ME goes there. */
 const PLACES: Record<PointStep, string> = {
+  toHome: '/home',
   toMart: '/shop',
   toUpgrades: '/shop?tab=upgrades',
   toDice: '/shop?tab=upgrades&up=dice',
@@ -55,16 +58,17 @@ export interface GuideBox {
   h: number
 }
 
-const boxOf = (el: Element): GuideBox | null => {
+export const boxOf = (el: Element): GuideBox | null => {
   const r = el.getBoundingClientRect()
   return r.width > 0 && r.height > 0 ? { x: r.left, y: r.top, w: r.width, h: r.height } : null
 }
 
 /**
  * The step's button on screen, followed as the page scrolls or lays out again; null while it isn't there. On arrival
- * it's scrolled into view and takes the focus, so a keyboard's Enter presses it.
+ * it's scrolled into view and takes the focus, so a keyboard's Enter presses it. A list of selectors is tried in its
+ * order: the first that shows one wins.
  */
-function useTargetBox(selector: string | null): GuideBox | null {
+export function useTargetBox(selector: string | null, focus = true): GuideBox | null {
   const [box, setBox] = useState<GuideBox | null>(null)
   useEffect(() => {
     setBox(null)
@@ -72,11 +76,15 @@ function useTargetBox(selector: string | null): GuideBox | null {
     let raf = 0
     let found: Element | null = null
     const tick = () => {
-      const el = [...document.querySelectorAll(selector)].find((e) => boxOf(e)) ?? null
+      const el =
+        selector
+          .split(',')
+          .map((one) => [...document.querySelectorAll(one)].find((e) => boxOf(e)))
+          .find(Boolean) ?? null
       if (el && el !== found) {
         found = el
         el.scrollIntoView({ block: 'center', inline: 'nearest' })
-        ;(el as HTMLElement).focus?.({ preventScroll: true })
+        if (focus) (el as HTMLElement).focus?.({ preventScroll: true })
       }
       const next = el ? boxOf(el) : null
       setBox((b) =>
@@ -94,7 +102,7 @@ function useTargetBox(selector: string | null): GuideBox | null {
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [selector])
+  }, [selector, focus])
   return box
 }
 
@@ -141,18 +149,65 @@ export function GuideBubble({
   )
 }
 
+/** The spotlight's zoom in (docs/15 §8: pixel motion steps): its steps and each step's time, by motion level. */
+const ZOOM_STEPS = { full: 6, short: 3 } as const
+const ZOOM_STEP_MS = 70
+
+/** `from` moved `p` (0–1) of the way to `to`. */
+const towards = (from: GuideBox, to: GuideBox, p: number): GuideBox => ({
+  x: from.x + (to.x - from.x) * p,
+  y: from.y + (to.y - from.y) * p,
+  w: from.w + (to.w - from.w) * p,
+  h: from.h + (to.h - from.h) * p,
+})
+
+/**
+ * The zoom's progress (0–1, in steps) for the step `key`: it plays again whenever the key changes. None (1 at once)
+ * when the screen is calm or animations are off.
+ */
+function useZoom(key: string, active: boolean): number {
+  const { level, calm } = useMotion()
+  const steps = calm || level === 'off' ? 0 : ZOOM_STEPS[level]
+  const [step, setStep] = useState(0)
+  useEffect(() => {
+    if (!active || !steps) return
+    setStep(0)
+    let n = 0
+    const id = window.setInterval(() => {
+      n += 1
+      setStep(n)
+      if (n >= steps) window.clearInterval(id)
+    }, ZOOM_STEP_MS)
+    return () => window.clearInterval(id)
+  }, [key, active, steps])
+  if (!active || !steps) return 1
+  // Eased out: big strides first, then it settles on the target.
+  const p = Math.min(1, step / steps)
+  return 1 - (1 - p) ** 2
+}
+
+/** A box with room around it: a hole in the dimmed screen. */
+const padded = (b: GuideBox): GuideBox => ({ x: b.x - PAD, y: b.y - PAD, w: b.w + 2 * PAD, h: b.h + 2 * PAD })
+
 /**
  * The dimmed screen with its hole on `box`, the hand pointing at it and the bubble on the other half. `fixed`: over
  * the whole window (the game); off, inside its parent (the kitchen sink's frames). Taps outside the hole go nowhere.
  */
 export function GuideFrame({
   box,
+  spots = [],
+  handAt,
   bubble,
   bubbleAt,
   still,
   fixed = true,
+  zoomKey = '',
 }: {
   box: GuideBox | null
+  /** Lit too, to be looked at, not tapped (the reroll lesson's combo): out of the dim, ringed, but taps go nowhere. */
+  spots?: readonly GuideBox[]
+  /** What the hand points at, when it's one thing inside the hole (a die of the tray): the hole's middle otherwise. */
+  handAt?: GuideBox | null
   bubble: ReactNode
   /**
    * Where the bubble goes when it holds the button itself (it can't move away from its own button): the middle keeps
@@ -161,6 +216,11 @@ export function GuideFrame({
   bubbleAt?: 'top' | 'middle' | 'bottom'
   still?: boolean
   fixed?: boolean
+  /**
+   * The step: each new one zooms its spotlight in from the whole screen onto what to tap (and what to look at), so the
+   * eye goes there; the hand and the bubble come once it has closed in.
+   */
+  zoomKey?: string
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ w: 0, h: 0 })
@@ -173,14 +233,24 @@ export function GuideFrame({
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
-  const hole = box && { x: box.x - PAD, y: box.y - PAD, w: box.w + 2 * PAD, h: box.h + 2 * PAD }
+  const mask = useId()
+  const hole = box && padded(box)
+  const lit = spots.map(padded)
+  // The zoom: the hole and its ring shrink from the whole frame onto what to tap. Taps only ever reach the target (the
+  // blockers use the hole itself).
+  const zoom = useZoom(`${zoomKey}|${hole ? 1 : 0}`, !!hole && size.w > 0)
+  const screen = { x: 0, y: 0, w: size.w, h: size.h }
+  const zoomed = zoom < 1
+  // Only what to tap zooms in (the user's call, 2026-10-31); what to look at is lit where it is from the start.
+  const cuts = [hole && (zoomed ? towards(screen, hole, zoom) : hole), ...lit]
   // The hand under its button pointing up, or above it pointing down when the button sits low on the screen.
   const handW = 16 * HAND_SCALE
   const handH = 17 * HAND_SCALE
-  const down = !!hole && hole.y + hole.h / 2 > size.h * 0.6
-  const hand = hole && {
-    left: Math.max(4, Math.min(size.w - handW - 4, hole.x + hole.w / 2 - HAND_TIP.x * HAND_SCALE)),
-    top: down ? hole.y - handH - 2 : hole.y + hole.h + 2,
+  const aim = handAt ? padded(handAt) : hole
+  const down = !!aim && aim.y + aim.h / 2 > size.h * 0.6
+  const hand = aim && {
+    left: Math.max(4, Math.min(size.w - handW - 4, aim.x + aim.w / 2 - HAND_TIP.x * HAND_SCALE)),
+    top: down ? aim.y - handH - 2 : aim.y + aim.h + 2,
   }
   // The bubble away from the button: at the foot when it's in the top half, else at the top.
   const place = bubbleAt ?? (!hole || hole.y + hole.h / 2 < size.h / 2 ? 'bottom' : 'top')
@@ -201,23 +271,37 @@ export function GuideFrame({
         'pointer-events-none',
       )}
     >
+      {/* The dim, with the hole and the spots cut out of it (a mask: they may overlap). */}
+      <svg aria-hidden className="absolute inset-0 h-full w-full">
+        <defs>
+          <mask id={mask}>
+            <rect width="100%" height="100%" fill="white" />
+            {cuts.map((r, i) => r && <rect key={i} x={r.x} y={r.y} width={r.w} height={r.h} fill="black" />)}
+          </mask>
+        </defs>
+        <rect width="100%" height="100%" className="fill-night/60" mask={`url(#${mask})`} />
+      </svg>
       {blockers.map((b, i) => (
         <div
           key={i}
-          className="pointer-events-auto absolute bg-night/60"
+          className="pointer-events-auto absolute"
           style={b}
           onClick={(e) => e.stopPropagation()}
         />
       ))}
-      {/* The hole's gold ring: what to tap. */}
-      {hole && (
-        <div
-          aria-hidden
-          className="absolute shadow-[inset_0_0_0_3px_theme(colors.gold)]"
-          style={{ left: hole.x, top: hole.y, width: hole.w, height: hole.h }}
-        />
+      {/* The gold rings: the hole's is what to tap, a spot's what to look at. */}
+      {cuts.map(
+        (r, i) =>
+          r && (
+            <div
+              key={i}
+              aria-hidden
+              className="absolute shadow-[inset_0_0_0_3px_theme(colors.gold)]"
+              style={{ left: r.x, top: r.y, width: r.w, height: r.h }}
+            />
+          ),
       )}
-      {hand && (
+      {hand && !zoomed && (
         <div className="absolute" style={{ left: hand.left, top: hand.top }}>
           <TutorialHand scale={HAND_SCALE} down={down} still={still} />
         </div>
@@ -296,6 +380,12 @@ export function DiceTutorial() {
       />
     )
   return (
-    <GuideFrame box={box} bubble={bubble} bubbleAt={step === 'back' ? 'middle' : undefined} still={calm} />
+    <GuideFrame
+      box={box}
+      bubble={bubble}
+      bubbleAt={step === 'back' ? 'middle' : undefined}
+      still={calm}
+      zoomKey={step}
+    />
   )
 }

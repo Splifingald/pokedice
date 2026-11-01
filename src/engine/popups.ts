@@ -44,6 +44,11 @@ export const SHARE_PROMPT_BADGES = 2
 export interface PopupContext {
   /** Between fights: no encounter under way (`run.phase === 'idle'`), no battle, no full-screen moment on screen. */
   calm: boolean
+  /**
+   * A Pokémon Center between fights, its heal played: not calm (an encounter is under way), but the dice tutorial may
+   * start there, its HOME the way to the Mart. Right after Joey the round's Center comes at once (docs/46 §5).
+   */
+  atCenter?: boolean
   /** The page open (its path): a pop-up never opens over the page it leads to. */
   path: string
   /** Signed in to the online service: Trades and the invite rewards are only there for an account. */
@@ -172,7 +177,8 @@ export function nextOneTimePopup(
   data: GameData,
   ctx: PopupContext,
 ): OneTimePopup | null {
-  if (!save || !ctx.calm) return null
+  if (!save) return null
+  if (!ctx.calm) return ctx.atCenter && ready('diceTutorial', save, data, ctx) ? 'diceTutorial' : null
   if (ctx.showing && ready(ctx.showing, save, data, ctx)) return ctx.showing
   return ONE_TIME_POPUPS.find((id) => ready(id, save, data, ctx)) ?? null
 }

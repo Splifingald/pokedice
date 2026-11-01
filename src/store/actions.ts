@@ -14,6 +14,7 @@ import {
   markShinyDexSeen as markShinyDexSeenIn,
   markUnownDexSeen as markUnownDexSeenIn,
   startDiceTutorial,
+  finishItemLesson,
   finishDiceTutorial,
   sellItem,
   createRng,
@@ -235,6 +236,11 @@ export function markUnownDexSeen(): void {
 /** The dice tutorial has shown (docs/46 §5): it comes back until it's finished. */
 export function startDiceTutorialNow(): void {
   mutateSave((s) => (s.diceTutorial ? null : startDiceTutorial(s)))
+}
+
+/** The item tutorial has shown (docs/46 §7): never again. */
+export function finishItemLessonNow(): void {
+  mutateSave((s) => (s.itemLesson ? null : finishItemLesson(s)))
 }
 
 /** BACK TO the area: the dice tutorial is done, for good. */

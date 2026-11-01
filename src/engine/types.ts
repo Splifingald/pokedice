@@ -1836,6 +1836,10 @@ export interface SaveData {
   unownDexSeen?: boolean
   /** The dice tutorial after Route 1's first round (docs/46 §5): shown and not finished, or finished for good. */
   diceTutorial?: 'started' | 'done'
+  /** The reroll lesson in a new player's first fight (docs/46 §6) has played. */
+  rerollLesson?: 'done'
+  /** The item tutorial (docs/46 §7) has shown: the Bag pointed at once, in a fight below half HP. */
+  itemLesson?: 'done'
   /** Trades (docs/23): listed Pokémon, the trades already applied, the last ones done. Absent = never traded. */
   trades?: TradesSave
   /** Gifts from the developer (docs/15 §23): the ones opened, and the rules seen. Absent = none yet. */
