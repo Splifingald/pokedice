@@ -24,6 +24,7 @@ import { cx } from '@/theme/util'
 import { Chip, NewTag, type ChipTone } from '../Chip'
 import { FriendTag } from '../friends/FriendBits'
 import { PixelIcon } from '../icons'
+import { PixelButton } from '../PixelButton'
 import type { RulesPicture } from '../RulesModal'
 import { MiniSprite } from '../SpriteImg'
 import { TrainerName } from '../TrainerName'
@@ -305,6 +306,43 @@ export function ListingRow({
         </span>
       </button>
     </li>
+  )
+}
+
+/**
+ * NEW PICKS under the board's picks (docs/23 §2.1): the day's left on it ("2/2 today"); greyed with a line when every
+ * listing you can take is already shown, and "New picks tomorrow" once the day's are used.
+ */
+export function NewPicksButton({
+  left,
+  max,
+  more,
+  busy,
+  onClick,
+}: {
+  /** NEW PICKS left today, of `max` a day. */
+  left: number
+  max: number
+  /** Other listings you can take than the ones shown. */
+  more: boolean
+  busy?: boolean
+  onClick: () => void
+}) {
+  const { t } = useT()
+  return (
+    <div className="grid gap-1.5">
+      <PixelButton size="sm" className="w-full" disabled={!left || !more || busy} onClick={onClick}>
+        <PixelIcon name="dice" size={16} />
+        {left
+          ? `${t('ui.trades.newPicks')} · ${t('ui.trades.today', { n: left, max })}`
+          : t('ui.trades.picksTomorrow')}
+      </PixelButton>
+      {!more && !!left && (
+        <p className="m-0 text-center font-pixel-sm text-[16px] leading-[1.15] text-muted">
+          {t('ui.trades.picksAll')}
+        </p>
+      )}
+    </div>
   )
 }
 

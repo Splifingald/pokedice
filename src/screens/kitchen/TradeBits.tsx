@@ -1,14 +1,21 @@
 // Kitchen sink: Trades (docs/23) — who can see a listing, what it wants, its time left, board rows in every state
-// (you can trade, a friend's, yours, greyed with why, shiny and NEW, a guest's view), the listing's sheet, the share
-// pop-up, the rules (unlock and INFO), the trade scene (plain, shiny, "Trade done!" back Home, a trade evolution) and
-// what it ends on (locked too), and the pick of the Box a traded Pokémon goes to (docs/23 §1.4).
+// (you can trade, a friend's, yours, greyed with why, shiny and NEW, a guest's view), NEW PICKS (§2.1), the listing's
+// sheet, the share pop-up, the rules (unlock and INFO), the trade scene (plain, shiny, "Trade done!" back Home, a trade
+// evolution) and what it ends on (locked too), and the pick of the Box a traded Pokémon goes to (docs/23 §1.4).
 import { useState } from 'react'
 import { encodeDexSet, type LandingOption, type RegionId, type TradeLogEntry } from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
 import { InfoButton } from '@/components/RulesModal'
 import { ListingSheet } from '@/components/trades/ListingSheet'
 import { ShareListingModal, type Shared } from '@/components/trades/ShareListing'
-import { LandingPick, ListingRow, TimeLeft, VisChip, WantTile } from '@/components/trades/TradeBits'
+import {
+  LandingPick,
+  ListingRow,
+  NewPicksButton,
+  TimeLeft,
+  VisChip,
+  WantTile,
+} from '@/components/trades/TradeBits'
 import { TradesRulesModal } from '@/components/trades/TradeRules'
 import { LandingStepView, TradeResult, TradeScene } from '@/components/trades/TradeScene'
 import type { TradeListing } from '@/lib/trades'
@@ -227,6 +234,13 @@ export function TradeKitBits() {
           <ListingRow key={l.id} listing={l} why={why} guest={guest} onOpen={() => setOpen(l)} />
         ))}
       </ul>
+      {/* NEW PICKS under the board's picks (docs/23 §2.1): ready, busy, every listing shown, none left today. */}
+      <div className="grid max-w-[460px] gap-2">
+        <NewPicksButton left={2} max={2} more onClick={() => {}} />
+        <NewPicksButton left={1} max={2} more busy onClick={() => {}} />
+        <NewPicksButton left={1} max={2} more={false} onClick={() => {}} />
+        <NewPicksButton left={0} max={2} more onClick={() => {}} />
+      </div>
       <div className="flex flex-wrap gap-2">
         {SCENES.map((s) => (
           <PixelButton key={s.label} size="sm" onClick={() => setScene(s.show)}>

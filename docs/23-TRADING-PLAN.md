@@ -143,7 +143,8 @@ most every 5 minutes), in the same call as the friends check where possible:
 
 **Trainer menu → Trades**, under Friends: a page like Friends and Versus (`/trades`), two tabs:
 
-- **Board**: open listings, public and friends' (sky blue with the Friend tag, as on the boards).
+- **Board**: open listings, public and friends' (sky blue with the Friend tag, as on the boards). Since 2026-11-01 it
+  shows 5 picked for you until you search (§2.1); what follows is the search's list.
   - A search (Pokémon or trainer) and chips: **All**, **Friends**, **New for me**, **I can trade**.
   - Sort: **Tradable first** (the default: what you can take now, friends first, then ending soonest), **Ending soon**,
     **Newest**.
@@ -156,6 +157,44 @@ most every 5 minutes), in the same call as the friends check where possible:
   - A listing shows its Pokémon, the want, a Public / Friends / Private chip, the time left, SHARE and CANCEL.
   - An empty slot is **+ New listing**.
   - Below, **Done**: your last trades, both ways.
+
+### 2.1 The board's picks (added 2026-11-01, the user's ask)
+
+Listing every open listing didn't scale, so the **Board** no longer does. Without a search it shows **5 listings
+picked for you** (admin `trade.boardPicks`), under "Picked for you" and one line: "Pokémon you don't have first, then
+hidden talents you haven't found. A search shows every listing."
+
+- **Only listings you can take** (`takeBlock`: your region started, something of yours it wants), never your own.
+  The day's cap doesn't hide one: tomorrow it can be taken, and its row says "No trades left today" meanwhile.
+- **Ranked** (`rankPicks`, engine/trade.ts):
+  1. a Pokémon **you don't have** in the Box it would land in, or a **shiny** when you have no shiny of it (as "Any I
+     don't own" counts it; a trade evolution counts as what it becomes: a Kadabra is new when you have no Alakazam);
+  2. one carrying the **hidden talent** its family hasn't unlocked in that region (talents on);
+  3. any other you can take.
+  Within each, friends' first, then ending soonest.
+- **NEW PICKS** (`NewPicksButton`, the dice icon, "New picks · 2/2 today"): **twice a UTC day** (admin
+  `trade.boardRerolls`). The listings shown go to the back of the line until midnight UTC: the ones not shown yet come
+  first, then those seen, the one seen longest ago first, so each press brings the listings seen least. Greyed with
+  "That's every listing you can take right now" when nothing else can be shown, "New picks tomorrow" once used. Kept
+  in the save (`trades.picks`: the day, the presses, the listings passed over), so a reload or another device doesn't
+  give them back. The server doesn't count them: a search shows every listing anyway.
+- **A search, as often as you like**: typing a Pokémon or a trainer shows every listing that matches (`trade_board`,
+  unchanged: 50 at a time), with the sort and the chips (All, Friends, New for me, I can trade), greyed rows with why,
+  your own last. Clearing it brings the picks back.
+- **On the server** (`trade_picks`, migration **0108**): the game sends what it owns (the snapshot a listing keeps),
+  every species it could give and the species whose family's talent it has unlocked (`picksAsk`). The server ranks
+  every open listing it may see the same way (tradable first, then new, talent, the rest; friends' first, ending
+  soonest; the ones passed over today last) and sends back 40 candidates; the game ranks those exactly and shows the
+  first 5 it can take. A database before 0108 answers with the board's first 50, so the page works before the
+  migration has run.
+- No switch of its own: a change to the Trades page, under Trades' switch (as the Fortune Wheel's tickets were,
+  docs/15 §20), explained where it happens (the line over the picks, the count on NEW PICKS), so the rules card keeps
+  its four rows.
+
+**Setting it up**: run
+[`0108_trade_picks.sql`](https://github.com/Splifingald/pokedice/blob/ccr-fbc66ea0-rrh0dw/supabase/migrations/0108_trade_picks.sql)
+(`supabase/seed.sql` carries it too), then deploy. Until it has run, the board picks among the 50 listings ending
+soonest. Admin → Config → Trades has the two numbers.
 
 **A listing** (a sheet): the Pokémon large (shiny sparkles), its types, "Sora's", what they want, the time left, "You
 get it at the level of the Pokémon you give", then **TRADE** (red), or why you can't (region not started, cap reached,
@@ -218,6 +257,7 @@ Config (a new `game_config` row `trade`, inserted by the migration only if missi
 trade: {
   access: 'off' | 'admin' | 'all'          // 'off'
   maxListings: 4, listingDays: 3, tradesPerDay: 5, levelCap: 50, minBadges: 1,
+  boardPicks: 5, boardRerolls: 2,          // the board's picks and NEW PICKS a day (§2.1, added 2026-11-01)
   evolveOnTrade: [[64, 65], [67, 68], [75, 76], [93, 94], [525, 526], [533, 534], [588, 589], [616, 617], [708, 709], [710, 711]],
 }
 ```
@@ -254,6 +294,7 @@ Functions (security definer, signed-in, `p_realm`, the switch checked as `wheel_
 | `trade_take(code, inst)` | Reads your Pokémon from your cloud save (any region's Box). Checks the want, visibility (friends via `friend_ids_of`), that you've started the listed Pokémon's home region, the daily cap, not your own. Then one conditional `update … where status = 'open' and ends_at > now()`, so two takers can't both win. Returns both Pokémon. |
 | `trade_cancel(id)` | Only while open. |
 | `trade_board(filter, sort, after)` | Public + friends' open listings, 50 at a time; the browser works out *tradable* for the default sort from its own save. Reads listing rows only, never a save. |
+| `trade_picks(me, skip, limit)` | (0108, §2.1) The board's candidates for the player, ranked from what the game says it owns, could give and has unlocked; the listings passed over today last. Listing rows only. |
 | `trade_view(code)` | One listing by its link; signed-out players can call it too, rate-limited like `friend_lookup`. |
 | `trade_mine()` | Your listings and takes that still need applying (taken, ended), for the check on load / return to the tab. |
 | `trade_applied(ids)` | Marks them applied once your save holds them. |
@@ -387,6 +428,7 @@ live, then On for everyone.
 | Scene | `tradeTimeline` in `src/fx/timelines/trade.ts` (three acts: sending, the link, arriving), its sounds `trade.*` in `src/audio/sfx.ts`, both Pokémon's cries; on `/kitchen-sink/fx` (plain, shiny) and `/kitchen-sink` (every state) |
 | Admin | Config → Trades (the switch, the numbers, the trade-evolution and never-traded lists); Admin → Trades (open listings, Remove) |
 | End to end | `e2e/trades.spec.ts`: the rules once, a poster posting and finding it taken, a taker trading from the board, a guest, a shared link, the switch off; all on a phone |
+| The board's picks (§2.1) | `rankPicks`, `boardPicks`, `rerollPicks`, `picksAsk` in `engine/trade.ts` (`tests/engine/trade.test.ts`); `trade_picks` in `0108_trade_picks.sql` (`tests/trades-sql.test.ts`); `fetchPicks` and the store's `loadPicks` / `newPicks` (`tests/trades-picks-client.test.ts`); the page's `Picks` and `Found`, `NewPicksButton`; `e2e/trades.spec.ts` (the picks, NEW PICKS twice, a search) |
 
 What differs from the sections above, or wasn't in them:
 

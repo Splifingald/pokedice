@@ -48,6 +48,15 @@ import {
   tradeLandings,
   tradesTakenToday,
   worldHomers,
+  boardPicks,
+  familyOf,
+  picksAsk,
+  picksLeft,
+  picksToday,
+  rankPicks,
+  rerollPicks,
+  snapshotHas,
+  type PickListing,
   type PokemonInstance,
   type SaveData,
   type TradeConfig,
@@ -725,5 +734,125 @@ describe('small worlds: no trade reaches one (docs/21)', () => {
     // A Pokémon owed meanwhile (a check run before entering) goes to a real region's Box, never the world's.
     const r = receiveTrade(inside, data, { dex: 4 }, 20, NOW, newId)
     expect(r.region).not.toBe('w-isle')
+  })
+})
+
+describe('the board’s picks (§2.1)', () => {
+  const talentOn = makeData({
+    trade: TRADE,
+    hiddenTalents: { ...DEFAULT_CONFIG.hiddenTalents, access: 'all' },
+  })
+  const poster = (regions = ['kanto']) => ({ ...encodeDexSet([]), shiny: [], regions })
+  const listing = (id: string, dex: number, extra: Partial<PickListing> = {}): PickListing => ({
+    id,
+    dex,
+    shiny: false,
+    talent: false,
+    isMe: false,
+    isFriend: false,
+    endsAt: NOW + 3_600_000,
+    want: { kind: 'species', dex: 16 },
+    poster: poster(),
+    ...extra,
+  })
+  // Charmander (the starter) and a Pidgey to give.
+  const s = kanto(mon(16, 22))
+  const tiers = (save: SaveData, d: typeof data, ls: PickListing[]) =>
+    rankPicks(save, d, ls, NOW).map((r) => [r.listing.id, r.tier])
+
+  it('puts what you don’t have first (a shiny counted), then a talent your family lacks, then the rest', () => {
+    const ls = [
+      listing('mine', 25, { isMe: true }),
+      listing('noSquirtle', 25, { want: { kind: 'species', dex: 7 } }),
+      listing('johto', 158),
+      listing('plain', 4),
+      listing('talent', 4, { talent: true }),
+      listing('shiny', 4, { shiny: true, endsAt: NOW + 7_200_000 }),
+      listing('pikachu', 25, { endsAt: NOW + 9_000_000 }),
+      listing('friend', 25, { isFriend: true, endsAt: NOW + 9_900_000 }),
+    ]
+    expect(tiers(s, talentOn, ls)).toEqual([
+      // New: friends' first, then ending soonest.
+      ['friend', 'new'],
+      ['shiny', 'new'],
+      ['pikachu', 'new'],
+      ['talent', 'talent'],
+      ['plain', 'other'],
+      ['johto', 'blocked'],
+      ['mine', 'blocked'],
+      ['noSquirtle', 'blocked'],
+    ])
+    // Talents off, or the family's talent already found: just another one you can take.
+    expect(tiers(s, data, [listing('talent', 4, { talent: true })])).toEqual([['talent', 'other']])
+    const found = { ...s, talents: { kanto: [familyOf(talentOn, 4)] } }
+    expect(tiers(found, talentOn, [listing('talent', 4, { talent: true })])).toEqual([['talent', 'other']])
+  })
+
+  it('counts a trade evolution as what it becomes', () => {
+    expect(tiers(kanto(mon(16, 22), mon(64, 20)), data, [listing('kadabra', 64)])).toEqual([
+      ['kadabra', 'new'],
+    ])
+    expect(tiers(kanto(mon(16, 22), mon(65, 40)), data, [listing('kadabra', 64)])).toEqual([
+      ['kadabra', 'other'],
+    ])
+  })
+
+  it('keeps a listing past the day’s cap among the picks (its row says why)', () => {
+    const log = Array.from({ length: TRADE.tradesPerDay }, (_, i) => ({
+      id: `x${i}`,
+      at: NOW,
+      role: 'taker' as const,
+      with: 'Misty',
+      gave: { dex: 1, level: 5 },
+      got: { dex: 4, level: 5 },
+      outcome: 'new' as const,
+    }))
+    const capped = { ...s, trades: { out: [], done: [], log } }
+    expect(tiers(capped, data, [listing('pikachu', 25)])).toEqual([['pikachu', 'new']])
+  })
+
+  it('picks the admin’s number among those you can take, and says when there are others', () => {
+    const few = makeData({ trade: { ...TRADE, boardPicks: 2 } })
+    const ls = [listing('a', 25), listing('b', 4), listing('c', 158), listing('d', 4, { shiny: true })]
+    const r = boardPicks(s, few, ls, NOW)
+    expect(r.picks.map((p) => p.listing.id)).toEqual(['a', 'd'])
+    expect(r.more).toBe(true)
+    const all = boardPicks(s, data, ls, NOW)
+    expect(all.picks.map((p) => p.listing.id)).toEqual(['a', 'd', 'b']) // never the Totodile
+    expect(all.more).toBe(false)
+  })
+
+  it('shows others on NEW PICKS, twice a UTC day, the ones seen least first', () => {
+    // Seven Pikachu, ending one after the other.
+    const ls = 'abcdefg'.split('').map((id, i) => listing(id, 25, { endsAt: NOW + (i + 1) * 60_000 }))
+    const shown = (save: SaveData) => boardPicks(save, data, ls, NOW).picks.map((p) => p.listing.id)
+    expect(shown(s)).toEqual(['a', 'b', 'c', 'd', 'e'])
+    expect(picksLeft(s, data, NOW)).toBe(2)
+    const once = rerollPicks(s, data, shown(s), NOW)!
+    expect(shown(once)).toEqual(['f', 'g', 'a', 'b', 'c'])
+    expect(picksLeft(once, data, NOW)).toBe(1)
+    const twice = rerollPicks(once, data, shown(once), NOW)!
+    expect(shown(twice)).toEqual(['d', 'e', 'f', 'g', 'a'])
+    expect(picksLeft(twice, data, NOW)).toBe(0)
+    expect(rerollPicks(twice, data, shown(twice), NOW)).toBeNull()
+    // The next UTC day starts afresh.
+    const tomorrow = NOW + 86_400_000
+    expect(picksLeft(twice, data, tomorrow)).toBe(2)
+    expect(picksToday(twice, tomorrow).skip).toEqual([])
+    // The save keeps it.
+    const parsed = parseSave(JSON.parse(JSON.stringify(twice)))
+    expect(parsed.ok && parsed.save.trades?.picks).toEqual(tradesOf(twice).picks)
+  })
+
+  it('tells the server what you own, what you could give and the talents you have', () => {
+    const ask = picksAsk(s, data)
+    expect(snapshotHas(ask, 4)).toBe(true)
+    expect(snapshotHas(ask.offer, 16)).toBe(true)
+    expect(snapshotHas(ask.offer, 25)).toBe(false)
+    expect(ask.regions).toEqual(['kanto'])
+    expect(ask.talented).toBeNull() // talents off
+    const found = picksAsk({ ...s, talents: { kanto: [familyOf(talentOn, 4)] } }, talentOn)
+    expect(snapshotHas(found.talented!, 6)).toBe(true)
+    expect(snapshotHas(found.talented!, 16)).toBe(false)
   })
 })

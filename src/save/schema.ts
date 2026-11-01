@@ -495,6 +495,13 @@ export const saveSchema = z.object({
         .max(20)
         .optional(),
       rulesSeen: z.boolean().optional(),
+      picks: z
+        .object({
+          day: z.number().int().min(0),
+          rerolls: z.number().int().min(0).max(1000),
+          skip: z.array(z.string().max(80)).max(100),
+        })
+        .optional(),
     })
     .optional(),
   gifts: z
