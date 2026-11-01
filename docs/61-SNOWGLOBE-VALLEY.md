@@ -154,7 +154,7 @@ secret area. Every number below is the admin's.
   area's mode turns it on.)
 - **Waves of 2, 3 and 4 foes**, various types, one Ice type in each; the last holds an Ice type and one foe strong
   against each starter line: Glalie · Bronzong (Lv.47); Beartic · Sawsbuck · Absol (48–49); Froslass · Talonflame ·
-  Lanturn · Ursaluna (49–50).
+  Lanturn · Ursaluna (49–50), below Abomasnow's Lv.50 (the user's call, 2026-11-01).
 - **A bonfire after every wave, the last just before Abomasnow**: a cozy animated fire with the team around it; it
   heals 40%, and only there can the team change and items be used. **No bag in battle**: "It's too dangerous to open
   the bag here, items might fly away."
@@ -171,7 +171,7 @@ secret area. Every number below is the admin's.
   up to Lv.70.
 - Out of time or a wipe: back to the start, healed, XP and items kept, no limit.
 - **One animation speed for everyone**: inside the race every fight plays at the quick speed whatever the player's
-  setting, and auto-battle is off; the timer is tuned on it (the review's point; normal speed is the alternative).
+  setting, and auto-battle is off; the timer is tuned on it (the user's call, 2026-11-01).
 - **One replay** once that legend is caught, with **other types**: Normal or Fairy · Rock or Flying · Bug or Dragon ·
   Ice or Dark, then only the other gate. Foes +4 levels, **10:00**. The pool holds both runs' types.
 
