@@ -185,11 +185,17 @@ describe('the rules, as the engine has them', () => {
   })
 
   it("heads bots for the engine's trophies (0128)", async () => {
-    for (const botTargets of [VERSUS_LEAGUE_DEFAULTS.botTargets, [300, 100], [-50, 100]] as [number, number][])
+    for (const botTargets of [VERSUS_LEAGUE_DEFAULTS.botTargets, [300, 100], [-50, 100]] as [
+      number,
+      number,
+    ][])
       for (const roll of [0, 0.1, 0.25, 0.5, 0.73, 0.999, 1]) {
         const cfg = { ...VERSUS_LEAGUE_DEFAULTS, botTargets }
         const [row] = (
-          await db.query<{ t: number }>('select versus_league_bot_target($1, $2) t', [roll, JSON.stringify(cfg)])
+          await db.query<{ t: number }>('select versus_league_bot_target($1, $2) t', [
+            roll,
+            JSON.stringify(cfg),
+          ])
         ).rows
         expect(row!.t, `${roll} in ${botTargets}`).toBe(botTargetOf(roll, cfg))
       }
