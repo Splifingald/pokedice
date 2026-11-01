@@ -303,7 +303,7 @@ export function TrickGauge({
             style={{ left: pct(band.flee) }}
             aria-hidden
           >
-            <PixelIcon name="ghost" size={16} />
+            <PixelIcon name={theme === 'safari' ? 'run' : 'ghost'} size={16} />
           </span>
         </div>
         {/* Where the gauge stands: a white post with an ink edge, taller than the track, readable on every section. */}
@@ -345,7 +345,7 @@ export function TrickGauge({
             {!width || px(band.flee, TRICK_GAUGE_MAX) >= 30 ? (
               t('ui.trick.flees')
             ) : (
-              <PixelIcon name="ghost" size={12} />
+              <PixelIcon name={theme === 'safari' ? 'run' : 'ghost'} size={12} />
             )}
           </span>
         </span>

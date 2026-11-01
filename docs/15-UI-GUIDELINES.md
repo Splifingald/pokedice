@@ -2049,3 +2049,29 @@ docs/60. Its switch is `friendship.access` (§20); the server keeps the streaks,
 - **The Friend Ball** (docs/60 §1b): its description ends with the boost now ("current: ×2", `useItemDescription`
   fills it wherever an item's description shows). On the catch panel its button wears a gold corner tag (the unknown
   talent's gem and ×n) while the boost can still find this Pokémon's talent, and it is never "not needed" then.
+
+## 43. The side quests: roadblocks, disguises, Safaris, rivals and gifts
+
+docs/61. Their switches are `disguises`, `safari`, `rivals` and `giftMoments` (§20; one server check,
+`side_quest_open`); the roadblocks and Snowpoint Temple's Regis are content. Every state is on `/kitchen-sink`
+(`SideQuestBits`); `e2e/side-quests.spec.ts` plays each one in the game and keeps its picture in `docs/61-side-quests/`.
+
+- **A roadblock is never called legendary**: its card's tag is IN THE WAY and its line its own ("A sleeping Pokémon
+  blocks the way!"); the area, Home, the Pokédex and the result say "In the way" / a plain VICTORY / "The wild …".
+  Everything else is a boss's (the challenge, the intro, the throw).
+- **A disguise is a find until it's picked up**: the find's screen shows the item it poses as (no rarity tag of its own:
+  the plainest find's), PICK IT UP; then the ball wobbles and bursts in a white flash and the Pokémon stands there with
+  its line in red ("It wasn't an item at all: it's Voltorb!") and FIGHT. No FLEE: the line under it says why. Calm
+  motion: the Pokémon is simply there.
+- **The Safari is Trick or Treat's screen in daylight**: the same gauge, buttons and result card (§28), its words and
+  pictures its own (Bait, the Safari Ball, a Pokémon that runs off the stage instead of fading into wisps; the flee
+  zone's running icon), the stage's sky a day's when the area has no picture. A round's price is said under CONTINUE
+  ("₽100 a round", "Free round") and a paid round is a toast; short of ₽ the toast says the price.
+- **A gift is a step on the stage of its own** (as a find is, §15): the giver walks in from the left, what they give
+  beside them (a Poké Ball, or the Day Care's Egg), their line in the dialogue box; a choice is cards to tap (sprite,
+  name, types; the picked one ringed in gold); TAKE IT (AutoButton when there's nothing to choose), BUY and NO THANKS for
+  a price. Taken: the ball springs open as a disguise does, or the Egg slides to the middle and wobbles; the panel says
+  what and where. A gift Egg in the Box and on cards is the Egg, "Egg" and HATCHING with its countdown: what's inside
+  stays hidden until it hatches (a toast then).
+- **A rival needs no card**: the fight opens on the battle screen as every trainer's does, the rival's line its first
+  message.

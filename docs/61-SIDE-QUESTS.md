@@ -1,8 +1,8 @@
-# Side quests from the main games: plan (for validation)
+# Side quests from the main games
 
-Status: **draft, awaiting the user's go-ahead** (2026-11-01). Branch `ccr-f432a8de-hqqe99`. Order of work: questions
-(done, §0) → this plan → Visual Lab mockups for the new scenes (a gift's giver, the Safari screen) → implementation,
-one part at a time in the order of §7.
+Status: **built** (2026-11-01), the five parts on `ccr-f432a8de-hqqe99` (from `version/2_8`), in a pull request into
+`version/2_9`. Every part with a switch ships **Off**. What was built and where it differs from the plan: §9; the
+pictures: `docs/61-side-quests/` (`e2e/side-quests.spec.ts` takes them); setting it up: §10.
 
 The user's question of 2026-11-01: which unique moments and side quests of the main games (Gen 1 to 4, then every
 generation) could make the adventure less monotonous. Today every area plays the same way: draw a card, fight, throw the
@@ -38,7 +38,8 @@ right Pokémon first.
 - **Already in**: a secret area checks its conditions every time (`isAreaUnlocked`), so a player who has been in
   Snowpoint Temple without the Regis would find it shut. A secret area the player has already entered stays open, whatever
   its `caught` conditions say.
-- The Map's "???" card: "Catch Regirock, Regice and Registeel · 1/3", the three sprites grey until caught.
+- The Map's "???" card and the area's lock: "Catch Regirock, Regice, Registeel · 1/3" (the condition's words and count, as
+  every secret area's are).
 
 ### Pieces
 
@@ -107,7 +108,8 @@ Catch values: Snorlax 7 (a Poké Ball needs a 6), Sudowoodo 5, Kecleon 2.
 
 - Engine (`engine/encounters.ts`): the item draw returns the disguise as a wild encounter with `disguisedAs`.
 - Store: the find's phase hands over to a battle.
-- FX: the ball wobbles, pops and the Pokémon bursts out (the catch timeline's break-free, run backwards).
+- FX, on the find's screen (FindView, where every find is shown): the ball wobbles, bursts in a white flash, and the
+  Pokémon stands where it lay with a hop (`SprungThing`); then FIGHT, and the battle as any wild one's.
 - DB: `area_loot_pool.disguise` (a migration), Admin → Areas → Loot edits it.
 - Strings, the kitchen sink (the find, the reveal), tests (the draw, Off passes it over, the battle and the catch).
 
@@ -205,7 +207,8 @@ Safari Zone**: the old area's 23 wild Pokémon, a loot table of its own (new, so
 
 ### 5.2 Rivals
 
-- The rival's sprite slides in with one line, then the usual trainer preview; FIGHT only.
+- The fight starts on the battle screen, as every trainer's does now (the rework: no preview card), the rival's line its
+  first message ("Rival Green: “There you are! Let’s see how strong you’ve got!” Rival Green sent out Pidgeotto!").
 - One team per starter (`Trainer.rivalOf`, as the Champion's today) where the original's rival had one; Hoenn's rival
   is May or Brendan, from the player's look (docs/31).
 - While Rivals is on, the rivals now in trainer pools leave them (met only as moments). Off, the pools are as today.
@@ -228,10 +231,11 @@ they're built: about 45 meetings, up to three versions each, written by a script
 
 ### 5.3 Gifts
 
-- **The intro** (Visual Lab first): the giver's sprite walks onto the stage and says one line; then a Poké Ball is
-  tossed and opens as the catch's does, or an Egg is handed over; the gift opening's fanfare and shiny stars
-  (`fx/timelines/gift.ts`). "You received Eevee!", and it goes where a catch goes (the team if it has room, else
-  Add to team? / the Box). Givers' sprites from the trainer atlas, the closest class when a character has none.
+- **The intro** (`GiftView`, a step on the stage of its own as a find is): the giver walks in from the left with a Poké
+  Ball (or an Egg) beside them and says one line; TAKE IT (BUY and NO THANKS for the salesman; the Pokémon to pick for a
+  choice); the ball springs open in the middle of the stage and the Pokémon stands there, or the Egg is handed over and
+  wobbles. "You received Eevee!", and it goes where a catch goes (the team if it has room, else the Box). Givers'
+  pictures from the trainer sheet, the closest class when a character has none.
 - **Eggs** go to the Box hatching, on the fossils' timer (`revivesAt`, docs/01 §4.6), at the Day Care's hatch level
   (`hatchLevel`); the Day Care's own Egg isn't touched.
 - **The one choice**, Hitmonlee or Hitmonchan: two Poké Balls with their sprites, types and dice; the other stays wild
@@ -310,3 +314,57 @@ request into the version branch and its Netlify preview; the migrations' links i
 
 Still to settle in the content pass, with tables for validation: the rivals' teams and Kalos's and Paldea's meeting
 points (§5.2).
+
+## 9. What was built (2026-11-01)
+
+| Part | Engine | Screens | Switch | Migration |
+|---|---|---|---|---|
+| 1. Regigigas | `UnlockCondition` `caught` (`conditionStatus`, `pokedexEverywhere`), an area already entered stays open (`isAreaUnlocked`) | the lock's words everywhere a condition shows | none (content) | 0108 |
+| 2. Roadblocks | `BossDef.roadblock`, `roadblockOf` | the boss card's IN THE WAY and line, the area and Home's lines, the Pokédex, a plain victory and catch | none (content) | 0109 |
+| 3. Disguises | `LootEntry.disguise`, `engine/disguises.ts`; a find drawn as a wild encounter with `disguisedAs` | FindView: the ball, then it springs out (`SprungThing`), FIGHT | `disguises` | 0110 (+ `side_quest_open`) |
+| 4. Safaris | `engine/safari.ts`; Trick or Treat's engine with a theme (`TrickState.theme`, `lureCfg`); the `safari` encounter | Trick or Treat's screen in the Safari's look and words; the round's price under CONTINUE | `safari` | 0111 |
+| 5. Rivals and gifts | `engine/moments.ts`, the content in `engine/momentsContent.ts` (written by `scripts/patch-side-quests.ts`) | the rival's line as the fight opens; GiftView; Eggs in the Box (HATCHING) | `rivals`, `giftMoments` | 0112 |
+
+Where it differs from the plan:
+
+- **The rival's intro** is its line as the fight's first message, not a card: fights start on the battle screen now.
+- **Admin**: the four switches are in Config's list; the Safari has its tab (Events → Safari: the price, the gauge's
+  numbers, each Safari's tiers); an area's Safari toggle and a loot row's disguise are in Areas; a Snowpoint-style
+  condition is a new kind in the unlock conditions. The meetings and gifts are code (as Route 1's opening is), the
+  database holding only their switches and an Egg's hours.
+- **The server's check** is one function for the four switches, `side_quest_open(key)` (0110). A rival's or a gift's
+  moment, dealt as the next card is, waits for the answer to be known (`sideQuestKnown`): the first time, it comes with
+  the next card.
+- **Rival trainers**: 51 new rows (Blue ×4 meetings, Silver ×5, May ×5, Barry ×1, three versions each; Wally ×2) and
+  Blue's two old rows made versions. The rivals already in pools (Barry, Cheren, Bianca, Shauna, Tierno, Trevor, Hau,
+  Gladion, Hop, Bede, Marnie, Nemona) are each one meeting where they were. Kalos's Serena or Calem and more of Nemona's
+  meetings are not in yet.
+- **Not done**: Visual Lab mockups (the screens were built and shown in the game instead, the pictures below).
+
+### The pictures
+
+| | |
+|---|---|
+| ![](61-side-quests/2-roadblock-home.png) Routes 12–15: a Pokémon blocks the way | ![](61-side-quests/2-roadblock-fight.png) Snorlax, a wild one's words |
+| ![](61-side-quests/3-disguise-find.png) A Poké Ball in the Power Plant | ![](61-side-quests/3-disguise-sprung.png) It springs out: Voltorb |
+| ![](61-side-quests/4-safari-home.png) The Safari's round on CONTINUE | ![](61-side-quests/4-safari-card.png) Its card |
+| ![](61-side-quests/4-safari-rules.png) Its rules, once | ![](61-side-quests/4-safari-screen.png) Bait and Safari Balls |
+| ![](61-side-quests/5-gift-offer.png) A gift: Eevee in Celadon | ![](61-side-quests/5-gift-received.png) Taken |
+| ![](61-side-quests/5-gift-choice.png) Hitmonlee or Hitmonchan | ![](61-side-quests/5-gift-sale.png) The Magikarp salesman |
+| ![](61-side-quests/5-rival-battle.png) Blue at Nugget Bridge | ![](61-side-quests/0-kitchen-sink.png) Every state (kitchen sink) |
+
+## 10. Setting it up
+
+1. Run the five migrations in the Supabase SQL editor, in order (each safe to run again; `supabase/seed.sql` carries
+   their content, its schema part the `disguise` column):
+   - https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0108_regigigas_regis.sql
+   - https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0109_roadblocks.sql
+   - https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0110_disguises.sql
+   - https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0111_safaris.sql
+   - https://github.com/Splifingald/pokedice/blob/ccr-f432a8de-hqqe99/supabase/migrations/0112_set_moments.sql
+2. Parts 1, 2 and 4's split are content: they apply as soon as 0108, 0109 and 0111 are run (Snowpoint Temple's Regis,
+   the roadblocks, Fuchsia City and the four Safaris off the main road).
+3. Admin → Config: **Pokémon posing as items**, **Safari Zones**, **Rivals on the road**, **Gift Pokémon**: On for admin
+   to try them, then On for everyone. Events → Safari has its numbers.
+4. Content from scratch or an admin export: `tsx scripts/patch-side-quests.ts --data` writes src/data and
+   `src/engine/momentsContent.ts`, then `pnpm seed-sql`; run it again after `pnpm seed-regions`.
