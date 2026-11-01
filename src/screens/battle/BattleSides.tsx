@@ -59,6 +59,7 @@ export function BagColumn({
   used,
   aim,
   onPick,
+  shut,
   className,
 }: {
   entries: readonly BagEntry[]
@@ -69,6 +70,8 @@ export function BagColumn({
   /** The item waiting for its Pokémon. */
   aim: string | null
   onPick: (key: string) => void
+  /** Why the bag stays shut in this fight (the whiteout, docs/61 §4.3), said over its greyed items. */
+  shut?: string | null
   className?: string
 }) {
   const { t } = useT()
@@ -91,6 +94,12 @@ export function BagColumn({
         </>
       }
     >
+      {shut && (
+        <p className="m-0 flex items-start gap-1.5 bg-well p-2 font-pixel-sm text-[16px] leading-tight shadow-ring-line" role="note">
+          <PixelIcon name="lock" size={14} className="mt-px shrink-0" />
+          <span>{shut}</span>
+        </p>
+      )}
       {entries.length === 0 ? (
         <p className="m-0 py-2 text-center text-[18px] leading-tight text-muted">{t('ui.shop.bagEmpty')}</p>
       ) : (

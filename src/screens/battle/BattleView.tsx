@@ -1366,6 +1366,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                 <BagColumn
                   entries={bagEntries}
                   open={bagOpen && !teamPick}
+                  shut={bagShut ? t('ui.whiteout.noBag') : null}
                   used={!!st.itemUsedThisTurn}
                   aim={aim}
                   onPick={pickItem}
