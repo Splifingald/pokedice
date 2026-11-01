@@ -2179,9 +2179,15 @@ a blizzard, a bonfire after each, then shiny Abomasnow. Built as the nightmare's
 `src/components/Whiteout.tsx` and `src/screens/area/WhiteoutRun.tsx`, every state on `/kitchen-sink` (`WhiteoutBits`);
 the engine (`engine/whiteout.ts`, `whiteoutMode.ts`) decides every foe, number and outcome, the blizzard's wear in the
 battle engine itself (`BattleState.weather`, the raids' rule). **Every effect is pixel art on the game's FX engine**
-(`src/fx/timelines/whiteout.ts`, `cinema/abomasnow.ts`; on `/kitchen-sink/fx`). Its palette (`WO`): the storm's
-near-black blues to slate, the snow's whites and frost, the crown tree's pine greens with a gold crown, the fire's ramp
-(cream, yellow, orange, red, ember) and the morning's blues and sun gold at the end. **Its lasting effects follow §8**
+(`src/fx/timelines/whiteout.ts`, `cinema/abomasnow.ts`; on `/kitchen-sink/fx`), built like the legends' cinematics:
+**Crown Shrine** in layers that drift at their own pace (parallax): a storm sky with its cloud deck, two ranges of
+mountains, a forest ridge, a snowfield in perspective (drift ridges closing up toward the horizon), stone steps with
+stone lanterns climbing to a mound, boulders, rocks in the foreground; on the mound **the crown tree**, a huge old fir
+of five or six drooping tiers, each under a thick lumpy blanket of snow with its dark needle hem below, a sacred rope
+round its trunk, a gold crown on its top. The snow falls in three depths (far, middle, near streaks) with wisps of
+blown snow for the gusts. Its palette (`WO`): the storm's near-black blues to slate, the snow's whites and frost, the
+pine greens, the fire's ramp (cream, yellow, orange, red, ember) and the morning's blues and sun gold at the end; a
+day light of the same shrine for the end. **Its lasting effects follow §8**
 (`useWhiteoutLevel`: a calm OS or motion off stills them; short halves the snow).
 
 - **The switch and the rules** follow §20: `whiteout` (Admin → Areas → Special mode: whiteout), Off by default; the
@@ -2193,9 +2199,12 @@ near-black blues to slate, the snow's whites and frost, the crown tree's pine gr
   (`WhiteoutRulesModal`, the shrine in its storm as the banner, `ShrineScene`).
 - **The way in** (`WhiteoutEntry`): the nightmare's, piece for piece. CONTINUE on Home says ENTER THE BLIZZARD ("3
   waves, no travel until it ends"); it plays **the intro at once** (`WhiteoutIntro`, full screen: the blizzard rolls in
-  over the area's picture as a white wall with a dithered front until all is white, then the shrine shows in the storm
-  and two red eyes blink open in the crown tree; the line in a storm-blue card with a snow rim and a gold edge; held at
-  its end, "Tap to continue ▼" with the focus; no SKIP; motion off, its end at once). Arriving heals as a Center does.
+  over the area's picture, gust after gust of blown snow at every depth, the light going, until the area is lost in
+  the white; the gust passes and the shrine shows in the storm, its layers drifting as the camera settles, the lanterns
+  lit; the dark closes in, the lanterns gutter out, and two slanted red eyes open in the crown tree's shadow (a blink,
+  a red bloom; held, a blink now and then); the name card over the foreground, clear of the crown; the line in a
+  storm-blue card with a snow rim and a gold edge; held at its end, "Tap to continue ▼" with the focus; no SKIP; short
+  in half the time; motion off, its end at once). Arriving heals as a Center does.
   The tap raises its pop-up at the bottom (`WhiteoutEntryDialog`, "Into the blizzard"): the rules, "Healed as at a
   Pokémon Center" with TEAM (the team can change until it begins; back from the Team screen the pop-up is up again at
   once: `run.whiteoutPopup`), NOT NOW and BRAVE THE BLIZZARD (red). After a wipe the next way in plays it again.
@@ -2215,10 +2224,14 @@ near-black blues to slate, the snow's whites and frost, the crown tree's pine gr
   it too; **at a bonfire the bag opens**.
 - **The result card** after a wave's last foe adds "Wave 1/3 cleared: a bonfire ahead" on a storm-blue card with a
   flame.
-- **The bonfire** (`BonfireView`, the cozy moment): on the area's page, a 2:1 scene (`bonfireTimeline`): the dark, far
-  pines, snow falling softly; a spark on the logs, then the fire catching and growing (tongues of flame through the
-  fire's ramp, swaying, a lick now and then; its glow dithered over the snow; embers rising); the team sitting round it
-  in an arc, their front sprites (those on its left turned to face it), cold blue until it catches, then lit warm. When
+- **The bonfire** (`BonfireView`, the cozy moment): on the area's page, a 2:1 scene (`bonfireTimeline`): the dark,
+  the crown tree's shape far off, pines, snow blowing beyond the light; flint sparks on the logs and a wisp of smoke,
+  then the fire catching and growing (stones round crossed logs, an ember bed, tongues of flame in frames through the
+  fire's ramp, licks breaking off; sparks rising and dying, a log cracking now and then); its light pools warm on the
+  snow in rings that flicker and pushes the dark back; the team in a ring round it in depth (`campSlots`, 1 to 6: the
+  back row further off and smaller, lit full in the face; the sides lit on the fire's side with a rim of light; the
+  front ones nearer and bigger, dark against the fire with a rim), their front sprites (those on its left turned to
+  face it), shadows thrown away from the fire, cold blue until it catches. When
   it has caught (`hud.heal`) the engine gives the heal and the team's cards under it fill; the line says "Its warmth
   gave every Pokémon still standing 40% of its max HP back." (a K.O. one stays K.O.: a Revive from the bag, there).
   Its title is "Bonfire 1/3", the last "The last bonfire". A well with a flame says the team can change and items be
@@ -2227,13 +2240,17 @@ near-black blues to slate, the snow's whites and frost, the crown tree's pine gr
   stays until then (a reload or a trip Home shows it again, warmed: no second heal). Motion off or short: it has caught
   at once.
 - **Abomasnow's entrance** (`abomasnowCinema`, a boss cinematic, docs/53): the shrine in the blizzard, the crown tree
-  where the foe will stand; its eyes open, it shakes harder and harder and the snow pours off its tiers in clumps; then
-  Abomasnow steps out from behind it as a white-rimmed silhouette into its place, and the reveal (the name card, the
-  send-out). Played by the whiteout whatever the cinematics' switch says; listed with the bosses' (FX lab, Admin →
+  right behind where the foe will stand; its eyes open; the ground rumbles twice, the tree shudders, then shakes hard
+  (each tier whipping after the one above) and its snow avalanches off in clumps and powder; it heaves, a burst of
+  powder, and Abomasnow breaks out of it toward us, a dark frost-rimmed shape with burning eyes, landing in its place
+  with a stomp (the ground shakes, snow sprays low both ways); then the reveal with its own burst (no rings: the boss
+  cinematics' `rings: false`), the name card, the send-out. Played by the whiteout whatever the cinematics' switch says; listed with the bosses' (FX lab, Admin →
   Legend intros).
-- **The end** (`WhiteoutVictoryView`): full screen; the wind falls, the snow thins and stops, the morning dithers in
-  over the storm, long gold rays break over the shrine, the snow on the tree glints; shiny Abomasnow by its tree, a
-  sparkle and its cry; the card. Then "The blizzard lifts" in gold on the storm card, "Shiny Abomasnow is yours.
+- **The end** (`WhiteoutVictoryView`): full screen; the wind falls and the blizzard thins out layer by layer (the near
+  snow first, the far last); the clouds break open round the sun in frames, a lit silver lining at their edge, the
+  morning blue behind; the sunlight sweeps over the land from the sun's side; dithered sunbeams fan down over the
+  shrine, the snow glints on the ground and the tree, a glitter of fine snow in the light; a shaft of light lands in
+  front of the tree and shiny Abomasnow appears in it, a sparkle and its cry; the card over the foreground. Then "The blizzard lifts" in gold on the storm card, "Shiny Abomasnow is yours.
   Sunlight falls on Crown Shrine, closed for good.", and the green BACK TO THE WORLD (the focus). No skip. The shrine
   is closed from then on (`isAreaClosed`): Home's CONTINUE for it is shut and says why.
 - **If the boss gets away** (its throw failed, or none was thrown): back to wave 1 as after a wipe (the user's call),
