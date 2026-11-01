@@ -315,13 +315,83 @@ export interface Area {
   lootPool: LootEntry[]
   /**
    * How the area plays instead of rounds: Distortion World's portal run (docs/28), Newmoon Island's nightmare
-   * (docs/30). Absent or null = a plain area.
+   * (docs/30), Spear Pillar's race of time and space (docs/61 §4.4). Absent or null = a plain area.
    */
   mode?: AreaMode | null
 }
 
-/** An area's special mode: the portal run (docs/28) or the nightmare (docs/30). */
-export type AreaMode = PortalRunMode | NightmareMode
+/** An area's special mode: the portal run (docs/28), the nightmare (docs/30) or the time race (docs/61 §4.4). */
+export type AreaMode = PortalRunMode | NightmareMode | TimeRaceMode
+
+/** One of the race's two gates at a fork leading to a legend (docs/61 §4.4): its type, and whose raid it opens. */
+export interface TimeRaceLegend {
+  type: PokeType
+  /** The legend's dex: one of the area's raid bosses (`legendaryBoss`). */
+  dex: number
+}
+
+/**
+ * The race of time and space (docs/61 §4.4, Spear Pillar): a time trial. From READY! the clock runs on the server's
+ * time: `perFork` fights after each fork, each fork two gates of a type (the next foes of that type, drawn from the
+ * area's wild pool); the forks are `forks` then the last one, whose gates are the `legends`' types: the gate taken there
+ * opens that legend's raid when the last fight is won within `seconds`. Each gate holds a find: an item, or a time shard
+ * (`shard.seconds` more on the clock). No Pokémon Center, no catch, no way out but a full K.O. or the clock; inside it
+ * every fight plays at one speed (`speed`) with no auto-battle, so the clock means the same for everyone. Once that
+ * legend is caught, one `replay` with its own forks, the other legend's gate alone at the end, foes `levelBonus` higher
+ * and `seconds` on the clock. Every number is the admin's.
+ */
+export interface TimeRaceMode {
+  kind: 'timeRace'
+  /** The forks before the last, in order: two gate types each. */
+  forks: [PokeType, PokeType][]
+  /** The last fork's gates: each type opens its legend's raid. */
+  legends: TimeRaceLegend[]
+  /** Fights after each fork (3). */
+  perFork: number
+  /** The clock at READY!, in seconds (12:00). */
+  seconds: number
+  /** A gate's find: a time shard `chance` % of the time (`seconds` more on the clock), else an item from `items`. */
+  shard: { chance: number; seconds: number }
+  items: { key: string; qty: number; weight: number }[]
+  /** The battle's speed inside the race, for everyone (1.5: the quick speed). */
+  speed: number
+  /** The one replay, once the first legend is caught: its forks, its foes' extra levels, its clock. */
+  replay: { forks: [PokeType, PokeType][]; levelBonus: number; seconds: number }
+  /** The legends' raids once won: their level, the foe's dice level, its HP bars and the teams' level cap. */
+  raid: { level: number; upgradeLevel: number; bars: number; teamCap: number }
+}
+
+/** A gate at a fork, as drawn: its type and its find (an item, or a time shard; none when the admin left neither). */
+export interface TimeRaceGate {
+  type: PokeType
+  find: { kind: 'shard'; seconds: number } | { kind: 'item'; key: string; qty: number } | null
+}
+
+/** Where the race stands, in its area's progress (so it's saved and parked with the region). */
+export interface TimeRaceState {
+  /** In a try: the player can't leave the area until it is won, lost to the clock or to a full K.O. */
+  active: boolean
+  /** The server's time at READY! (ms). */
+  startedAt?: number
+  /** The server's time the clock reaches 0:00 (ms): READY! plus the clock plus the shards picked up. */
+  deadline?: number
+  /** Fights won this try. */
+  fights: number
+  /** The gates taken this try, in order (their types). */
+  path: PokeType[]
+  /** A fork is open: its gates, waiting for the pick. */
+  gates?: TimeRaceGate[] | null
+  /** Species met since the last fork (the next foe is another one while the pool allows). */
+  met?: number[]
+  /** Time shards picked up this try. */
+  shards?: number
+  /** The legends (dex) whose raid a won try opened, in order: the first race's, then the replay's. */
+  won?: number[]
+  /** The last win's moment has played. */
+  wonSeen?: boolean
+  /** Tries started here. */
+  tries?: number
+}
 
 /** One of the nightmare's foes, met in its order (docs/30): a wild Pokémon at a set level. */
 export interface NightmareFoe {
@@ -1071,6 +1141,8 @@ export interface GameConfig {
   portalRun: { access: EventAccess }
   /** The areas' nightmare (docs/30): its switch. The server reads the same row (0060). */
   nightmare: { access: EventAccess }
+  /** The areas' race of time and space (docs/61 §4.4): its switch. The server reads the same row (0124). */
+  timeRace: { access: EventAccess }
   /** Trainer looks (docs/31): unlockable looks in place of the free list. Off by default. */
   looks: { access: EventAccess }
   /** Trick or Treat (docs/29): its switch, numbers and each area's ghosts. The server reads the switch too. */
@@ -1732,6 +1804,8 @@ export interface AreaProgress {
   portal?: PortalState
   /** The nightmare here (docs/30): its round, Darkrai's strike due, the gifts given, whether it's over. */
   nightmare?: NightmareState
+  /** The race of time and space here (docs/61 §4.4): its clock, its gates, the legends it opened. */
+  timeRace?: TimeRaceState
   /** Extreme mode (docs/47): a Pokémon Center has been met here (a secret area has only its first). */
   centerMet?: boolean
   /** Extreme mode (docs/47): the team was K.O. here; the round starts over at a Center that only swaps. */

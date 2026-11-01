@@ -10,6 +10,8 @@ import { nightmareModeOf } from './nightmareMode'
 import { nightmareLock } from './nightmare'
 import { portalModeOf } from './portalMode'
 import { portalLock } from './portal'
+import { timeRaceModeOf } from './timeRaceMode'
+import { timeRaceLock } from './timeRace'
 import { regionOfArea } from './regions'
 import { hasAbleTeam, isAreaClosed, isAreaUnlocked, progressOf } from './run'
 import {
@@ -55,9 +57,12 @@ export interface AutoRun {
   rebattle?: unknown
 }
 
-/** A portal run's or the nightmare's area (docs/28, docs/30): their own steps, so never the autopilot's. */
+/**
+ * A portal run's, the nightmare's or the race's area (docs/28, docs/30, docs/61 §4.4): their own steps, so never the
+ * autopilot's.
+ */
 const specialArea = (area: Area | undefined, data: GameData): boolean =>
-  !!area && (!!portalModeOf(area, data) || !!nightmareModeOf(area, data))
+  !!area && (!!portalModeOf(area, data) || !!nightmareModeOf(area, data) || !!timeRaceModeOf(area, data))
 
 /**
  * Where the auto switch is offered (the area's header, a battle's extras). Off: cleared areas, as auto-mode always was.
@@ -73,6 +78,9 @@ export function autoAvailable(
   // Extreme mode's boon Centers (docs/47): every Center is a choice, so nothing plays itself there (the user's call,
   // 2026-10-28: no idle mode in Extreme).
   if (boonCenters(save, data)) return false
+  // The race of time and space (docs/61 §4.4): auto-battle is off there, whatever the switch (the user's call,
+  // 2026-11-01), so the clock means the same for everyone.
+  if (timeRaceModeOf(data.areas.find((a) => a.id === areaId), data)) return false
   const cleared = progressOf(save, areaId).cleared
   if (!idleModeOn(data)) return cleared
   const style = playStyleOf(s)
@@ -105,7 +113,7 @@ function enterable(save: SaveData, data: GameData, area: Area, now: number | nul
   if (!isAreaUnlocked(save, area.id, data) || isAreaClosed(save, area.id, data)) return false
   if (now !== undefined && !areaOpenAt(data, area.id, now)) return false
   if (specialArea(area, data)) return false
-  const held = portalLock(save, data) ?? nightmareLock(save, data)
+  const held = portalLock(save, data) ?? nightmareLock(save, data) ?? timeRaceLock(save, data)
   return !held || held.id === area.id
 }
 

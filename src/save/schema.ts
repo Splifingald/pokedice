@@ -160,6 +160,29 @@ const nightmareSchema = z.object({
   tries: z.number().int().min(0).optional(),
 })
 
+const raceGateSchema = z.object({
+  type: typeEnum,
+  find: z
+    .union([
+      z.object({ kind: z.literal('shard'), seconds: z.number().min(0) }),
+      z.object({ kind: z.literal('item'), key: z.string(), qty: z.number().int().min(1) }),
+    ])
+    .nullable(),
+})
+const timeRaceSchema = z.object({
+  active: z.boolean(),
+  startedAt: z.number().optional(),
+  deadline: z.number().optional(),
+  fights: z.number().int().min(0).max(999),
+  path: z.array(typeEnum).max(99),
+  gates: z.array(raceGateSchema).max(4).nullable().optional(),
+  met: z.array(z.number().int()).max(99).optional(),
+  shards: z.number().int().min(0).optional(),
+  won: z.array(z.number().int()).max(9).optional(),
+  wonSeen: z.boolean().optional(),
+  tries: z.number().int().min(0).optional(),
+})
+
 const progressSchema = z.object({
   roundsDone: z.number().int().min(0).optional(),
   roundCounted: z.boolean().optional(),
@@ -182,6 +205,8 @@ const progressSchema = z.object({
   portal: portalSchema.optional().catch(undefined),
   // The nightmare (docs/30): the same, an odd value drops it, never the save.
   nightmare: nightmareSchema.optional().catch(undefined),
+  // The race of time and space (docs/61 §4.4): the same, an odd value drops it, never the save.
+  timeRace: timeRaceSchema.optional().catch(undefined),
   // Extreme mode's Centers (docs/47): a secret area's first one met, and a round to start over at a Center.
   centerMet: z.boolean().optional(),
   wiped: z.boolean().optional(),

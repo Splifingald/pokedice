@@ -6,6 +6,7 @@ import { raidBosses, shinyLocked } from './encounters'
 import { areaProgressAnywhere } from './events'
 import { portalModeOf } from './portalMode'
 import { nightmareModeOf } from './nightmareMode'
+import { timeRaceModeOf } from './timeRaceMode'
 import { powerEarned } from './powers'
 import { addRaidMon, type RaidMon } from './raid'
 import { MEGA_RAIDS } from './raidSpecials'
@@ -103,6 +104,9 @@ export function progressRaidState(save: SaveData, data: GameData, raid: Progress
   // So does a nightmare area's (docs/30), once the player has woken up from it.
   if (nightmareModeOf(data.areas.find((a) => a.id === raid.areaId), data))
     return progress?.nightmare?.won ? 'open' : 'locked'
+  // A race area's two raids (docs/61 §4.4): each opens once a race won at its legend's gate, never with the rounds.
+  if (timeRaceModeOf(data.areas.find((a) => a.id === raid.areaId), data))
+    return progress?.timeRace?.won?.includes(raid.dex) ? 'open' : 'locked'
   if (progress?.bossesDefeated.includes(raid.dex) && regionPokedex(save, raid.region).includes(raid.dex))
     return 'done'
   return progress?.cleared ? 'open' : 'locked'

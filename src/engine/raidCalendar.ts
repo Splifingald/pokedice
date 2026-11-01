@@ -7,6 +7,7 @@
 import { isLegendary } from './breeding'
 import { portalRaidRules } from './portalMode'
 import { nightmareRaidRules } from './nightmareMode'
+import { timeRaceRaidRules } from './timeRaceMode'
 import { raidAllyAllowed } from './raidBattle'
 import { raidSpecialOf, type RaidSpecial } from './raidSpecials'
 import { regionOf, regionOfArea, regionOfSpecies } from './regions'
@@ -34,13 +35,17 @@ export type RaidRules = Required<RaidMonRules>
 /** Which raid: the day's (the calendar) or a progression raid in an area (docs/24). */
 export type RaidKindOf = 'daily' | 'progress'
 
+/** The raid numbers an area's special mode sets (the portal run's, the nightmare's, the race's); null elsewhere. */
+const specialRaidRules = (data: GameData, areaId: string | undefined) =>
+  portalRaidRules(data, areaId) ?? nightmareRaidRules(data, areaId) ?? timeRaceRaidRules(data, areaId)
+
 /**
  * A raid's own rules with the raid overhaul on (docs/40): a progression raid of the main game (or a Mega raid), or
  * Arceus's daily raid. Never a small world's, a portal's or a nightmare's raid: those keep their own (docs/26, 28, 30).
  */
 export function raidSpecialFor(data: GameData, dex: number, kind: RaidKindOf = 'daily', areaId?: string): RaidSpecial | null {
   if (kind === 'progress') {
-    if (portalRaidRules(data, areaId) ?? nightmareRaidRules(data, areaId)) return null
+    if (specialRaidRules(data, areaId)) return null
     const area = areaId ? data.areas.find((a) => a.id === areaId) : undefined
     if (area && worldOfArea(data, area)) return null
   }
@@ -61,7 +66,8 @@ export function raidRules(data: GameData, dex: number, kind: RaidKindOf = 'daily
   }
   // A portal area's raid (docs/28: Distortion World's Giratina) has its own numbers, set on the area.
   // So has a nightmare area's (docs/30: Newmoon Island's Darkrai).
-  const portal = kind === 'progress' ? (portalRaidRules(data, areaId) ?? nightmareRaidRules(data, areaId)) : null
+  // And a race area's two (docs/61 §4.4: Spear Pillar's Dialga and Palkia).
+  const portal = kind === 'progress' ? specialRaidRules(data, areaId) : null
   if (portal)
     return { bars: portal.bars, barHp: Math.max(0.1, pick('barHp') ?? 1), level: portal.level, upgradeLevel: portal.upgradeLevel }
   const level = (kind === 'progress' && worldRaidLevel(data, dex, areaId)) || pick('level')
@@ -90,7 +96,7 @@ export function raidTeamCap(data: GameData, dex: number, kind: RaidKindOf = 'dai
   // The raid overhaul (docs/40): the sides fight up to the raid's own level.
   const special = raidSpecialFor(data, dex, kind, areaId)
   if (kind === 'daily') return special ? special.level : cfg.teamCap
-  const portal = portalRaidRules(data, areaId) ?? nightmareRaidRules(data, areaId)
+  const portal = specialRaidRules(data, areaId)
   if (portal) return portal.teamCap
   const world = worldRaidLevel(data, dex, areaId)
   if (world) return Math.max(1, Math.min(100, Math.round(world)))
