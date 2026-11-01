@@ -922,7 +922,7 @@ pieces.
   board): it always shows its real top 100, every friend wherever they are, and you with the 10 trainers ahead of you
   and the 10 behind, all with their real ranks ("You're #N of M" counts the whole board). Each run of rows left out is
   one `BoardGap` between dashed rules, "37 trainers not shown", the last one too. FRIENDS shows only your friends and
-  you, as before, with no gaps.
+  you, as before, with no gaps. The Versus league's Global board keeps nobody around you (`boardWindow(rows, 0)`).
 - **Versus locked**: what opens it, a meter n/3, and the three Pokémon closest to Lv.50 with how many levels to go
   (`versusClosest`). Unlocked: tabs Opponents (with the count still to beat) / My team / Leaderboard; Opponents has
   your team strip with Change, a search by trainer *or* Pokémon and To beat / Beaten / All chips with counts. My team
@@ -953,8 +953,9 @@ pieces.
   - **Global** (docs/44 §8, its own switch): a third option in that `Seg`, every group's players this week (no bots),
     ranked by trophies. It wins nothing, so no `RewardMark`; a muted line over the rows says so ("No rewards here: just
     the glory."), and that line is its rules (a rule explained where it happens, §20: no pop-up, the league's INFO
-    stays the league's). Long, it is windowed as the leaderboard is (`boardWindow`: its top 100, you with the 10 either
-    side, your friends; `BoardGap` between). With it on, PC's board panel is headed "Leaderboard", not "Your group".
+    stays the league's). Long, it shows its top 100, you and your friends with their real ranks, no one else
+    (`boardWindow` with nobody around you; `BoardGap` between). With it on, PC's board panel is headed "Leaderboard",
+    not "Your group".
   - The admin alone sees `BotTag` (BOT) on a bot, before its name.
   - The fight is the battle screen with `versus.live`: the player's own controls and powers, AUTO-MODE as the panel's
     switch, never the Bag. Its result card (`LeagueResultCard`) shows the trophies won or lost, green or red, beside
