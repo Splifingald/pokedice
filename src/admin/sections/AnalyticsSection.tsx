@@ -1,14 +1,17 @@
 // Admin → Analytics: retention on day 1, 3, 7 and 30 and the players, from the daily ping (migrations 0028, 0102),
 // players per hour (0042) and churn by starter and area (0102, 0129), those two on demand. Admin-only via RLS. docs/57.
+// Every number is for the players the WHO switch names: all, the logged-in ones or the guests (0130).
 import { PixelIcon } from '@/components/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
+  cohortsOf,
   dayKey,
   RETENTION_DAYS,
   retentionByDay,
   type Cohorts,
   type Retention,
   type RetentionDay,
+  type Who,
 } from '@/analytics/retention'
 import { PixelButton } from '@/components/PixelButton'
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase'
@@ -20,6 +23,7 @@ import { ChurnPanel } from './AnalyticsChurn'
 import { HourlyPlayers } from './AnalyticsHourly'
 import { errorText, PlayerPanel } from './AnalyticsPlayer'
 import { SuspiciousSaves } from './AnalyticsSuspicious'
+import { WHO, WHO_MIGRATION, WHO_TEXT } from './analyticsWho'
 
 interface PlayerRow {
   player: string
@@ -151,10 +155,27 @@ function RetentionTile({ day, r }: { day: RetentionDay; r: Retention | null }) {
   )
 }
 
-function RetentionHero({ byDay }: { byDay: Record<RetentionDay, Retention> | null }) {
+function RetentionHero({
+  byDay,
+  who,
+  unsplit,
+}: {
+  byDay: Record<RetentionDay, Retention> | null
+  who: Who
+  /** The database doesn't split the players by who plays yet. */
+  unsplit: boolean
+}) {
   return (
     <section className="pixel-panel-dark flex flex-col gap-3 p-4" aria-label="Retention">
-      <span className="text-xl uppercase tracking-wider text-gold">Retention</span>
+      <div className="flex flex-col">
+        <span className="text-xl uppercase tracking-wider text-gold">Retention</span>
+        <span className="text-base opacity-80">{WHO_TEXT[who]}</span>
+      </div>
+      {unsplit && (
+        <p className="text-lg text-danger-light">
+          Logged in and Not logged in need {WHO_MIGRATION} to be run.
+        </p>
+      )}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {RETENTION_DAYS.map((d) => (
           <RetentionTile key={d} day={d} r={byDay?.[d] ?? null} />
@@ -221,6 +242,7 @@ const dayLabel = (day: string) =>
 
 export function AnalyticsSection() {
   const [frame, setFrame] = useState<FrameId>('30d')
+  const [who, setWho] = useState<Who>('all')
   const [cohorts, setCohorts] = useState<Cohorts | null>(null)
   const [rows, setRows] = useState<PlayerRow[]>([])
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
@@ -256,20 +278,28 @@ export function AnalyticsSection() {
   useEffect(() => {
     if (isSupabaseConfigured) void load()
   }, [load])
-  useEffect(() => setShown(200), [frame, search])
+  useEffect(() => setShown(200), [frame, search, who])
 
-  const retention = useMemo(() => (cohorts ? retentionByDay(cohorts, from, null) : null), [cohorts, from])
+  // The database sends every player and the guests apart: switching who costs no request.
+  const ofWho = useMemo(() => (cohorts ? cohortsOf(cohorts, who) : null), [cohorts, who])
+  const retention = useMemo(() => (ofWho ? retentionByDay(ofWho, from, null) : null), [ofWho, from])
   const rawData = useGame((s) => s.rawData)
   const areaNames = useMemo(() => new Map(rawData.areas.map((a) => [a.id, a.name])), [rawData])
 
+  // A guest is a player keyed by their device, as the database counts them.
+  const whoRows = useMemo(
+    () => (who === 'all' ? rows : rows.filter((r) => r.player.startsWith('device:') === (who === 'guests'))),
+    [rows, who],
+  )
+
   const players = useMemo(() => {
     const q = search.trim().toLowerCase()
-    const list = rows
+    const list = whoRows
       .map((r) => ({
         ...r,
         // In English from the game data when it knows the area, else the snapshot's own name.
         area: (r.last_area && areaNames.get(r.last_area)) || r.area,
-        guest: !r.user_id,
+        guest: r.player.startsWith('device:'),
         label: r.name || r.email?.split('@')[0] || `Guest ${r.player.slice(-4)}`,
         topLevel: Math.max(0, ...(r.team ?? []).map((m) => Number(m.level) || 0)),
         badgeCount: Number(r.badges) || 0,
@@ -286,13 +316,13 @@ export function AnalyticsSection() {
               ? p.badgeCount
               : p[sort.key]
     return list.sort((a, b) => (val(a) < val(b) ? -1 : val(a) > val(b) ? 1 : 0) * sort.dir)
-  }, [rows, search, sort.key, sort.dir, areaNames])
+  }, [whoRows, search, sort.key, sort.dir, areaNames])
 
   if (!isSupabaseConfigured)
     return <p className="text-xl">Analytics needs Supabase — this admin is running offline.</p>
 
   const selected = player ? players.find((p) => p.player === player) : null
-  const newInFrame = from ? rows.filter((r) => r.first_day >= dayKey(from)).length : rows.length
+  const newInFrame = from ? whoRows.filter((r) => r.first_day >= dayKey(from)).length : whoRows.length
 
   return (
     <div className="flex flex-col gap-4">
@@ -315,16 +345,33 @@ export function AnalyticsSection() {
             </button>
           ))}
         </div>
+        <div className="flex flex-wrap gap-1" role="group" aria-label="Players counted">
+          {WHO.map((w) => (
+            <button
+              key={w.id}
+              type="button"
+              aria-pressed={who === w.id}
+              onClick={() => setWho(w.id)}
+              className={cx('pixel-btn px-2 py-0.5 text-lg', who === w.id ? 'bg-gold' : 'bg-panel')}
+            >
+              {w.label}
+            </button>
+          ))}
+        </div>
         <PixelButton size="sm" onClick={() => void load()} disabled={status === 'loading'}>
           {status === 'loading' ? 'Loading…' : 'Refresh'}
         </PixelButton>
       </div>
 
-      <RetentionHero byDay={status === 'loading' ? null : retention} />
+      <RetentionHero
+        byDay={status === 'loading' ? null : retention}
+        who={who}
+        unsplit={cohorts != null && ofWho == null}
+      />
 
-      <HourlyPlayers />
+      <HourlyPlayers who={who} />
 
-      <ChurnPanel since={from} frame={frameLabel} />
+      <ChurnPanel since={from} frame={frameLabel} who={who} />
 
       <SuspiciousSaves
         onPick={(id, name) => {
@@ -355,7 +402,7 @@ export function AnalyticsSection() {
         <h3 className="flex flex-wrap items-center gap-3 border-b-[3px] border-edge px-3 py-1 text-2xl">
           Players
           <span className="text-lg text-muted">
-            {rows.length.toLocaleString()} seen · {newInFrame.toLocaleString()} new
+            {whoRows.length.toLocaleString()} seen · {newInFrame.toLocaleString()} new
           </span>
           <input
             type="search"

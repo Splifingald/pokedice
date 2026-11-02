@@ -1,6 +1,7 @@
 // Admin → Analytics → Churn by starter and area (docs/57): where the players who stopped playing were when they left,
 // in game order, and which Pokémon they had picked at the very start. The database is asked (analytics_churn,
-// migrations 0102 and 0129) only when FETCH is pressed, never on its own.
+// migrations 0102 and 0129) only when FETCH is pressed, never on its own; for the players the page's who switch names
+// (0130: the averages can't be split after the fact, so the database is asked again).
 import { useState, type ReactNode } from 'react'
 import {
   churnByArea,
@@ -11,24 +12,24 @@ import {
   type StarterChurn,
   type StarterChurnRow,
 } from '@/analytics/churn'
-import { dayKey } from '@/analytics/retention'
+import { dayKey, type Who } from '@/analytics/retention'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
 import { getSupabase } from '@/lib/supabase'
 import { useGame } from '@/store/game'
 import { NumInput } from '../widgets'
 import { errorText } from './AnalyticsPlayer'
+import { WHO_MIGRATION, WHO_TEXT } from './analyticsWho'
 
 const DAYS_MIN = 1
 const DAYS_MAX = 365
 
-async function fetchChurn(days: number, since: Date | null): Promise<ChurnRaw> {
+async function fetchChurn(days: number, since: Date | null, who: Who): Promise<ChurnRaw> {
   const c = await getSupabase()
   if (!c) throw new Error('Supabase client unavailable')
-  const { data, error } = await c.rpc('analytics_churn', {
-    p_days: days,
-    p_since: since ? dayKey(since) : null,
-  })
+  const args = { p_days: days, p_since: since ? dayKey(since) : null }
+  // Everyone keeps the two-argument call, which works before migration 0130 too.
+  const { data, error } = await c.rpc('analytics_churn', who === 'all' ? args : { ...args, p_who: who })
   if (error) throw error
   return data as ChurnRaw
 }
@@ -43,6 +44,7 @@ const dayLabel = (day: string) =>
 interface Asked {
   days: number
   frame: string
+  who: Who
 }
 
 /** The columns both tables share, after the first (the area or the starter). */
@@ -157,7 +159,7 @@ function AreaTable({ churn }: { churn: Churn }) {
   )
 }
 
-export function ChurnPanel({ since, frame }: { since: Date | null; frame: string }) {
+export function ChurnPanel({ since, frame, who }: { since: Date | null; frame: string; who: Who }) {
   const data = useGame((s) => s.rawData)
   const [days, setDays] = useState(3)
   const [result, setResult] = useState<{ churn: Churn; starters: StarterChurn | null; asked: Asked } | null>(
@@ -172,11 +174,11 @@ export function ChurnPanel({ since, frame }: { since: Date | null; frame: string
     setLoading(true)
     setError(null)
     try {
-      const raw = await fetchChurn(days, since)
+      const raw = await fetchChurn(days, since, who)
       setResult({
         churn: churnByArea(raw, data),
         starters: churnByStarter(raw, data),
-        asked: { days, frame },
+        asked: { days, frame, who },
       })
     } catch (err) {
       setError(errorText(err))
@@ -187,7 +189,8 @@ export function ChurnPanel({ since, frame }: { since: Date | null; frame: string
 
   const churn = result?.churn
   const starters = result?.starters ?? null
-  const stale = result && (result.asked.days !== days || result.asked.frame !== frame)
+  const stale =
+    result && (result.asked.days !== days || result.asked.frame !== frame || result.asked.who !== who)
 
   return (
     <section className="pixel-panel-dark flex flex-col gap-3 p-4" aria-label="Churn">
@@ -226,7 +229,8 @@ export function ChurnPanel({ since, frame }: { since: Date | null; frame: string
       )}
       {error && (
         <p className="text-lg text-danger-light">
-          Could not fetch: {error}. Has supabase/migrations/0102_analytics_retention.sql been run?
+          Could not fetch: {error}. Has{' '}
+          {who === 'all' ? 'supabase/migrations/0102_analytics_retention.sql' : WHO_MIGRATION} been run?
         </p>
       )}
       {!churn && !error && (
@@ -257,12 +261,12 @@ export function ChurnPanel({ since, frame }: { since: Date | null; frame: string
             )}
           </div>
           <p className="text-base leading-snug opacity-80">
-            First day in: {result.asked.frame}. Churned: last played on {dayLabel(churn.cutoff)} or before (
-            {result.asked.days} day{result.asked.days === 1 ? '' : 's'} or more away, UTC). The area is where
-            they were in the last hour they played (where they started their last day, for days before this
-            update). The starter is the one picked at the very start, in Kanto (a guest's is known from their
-            first day played after this update, or from a Kanto Pokédex holding only one of the three). Days
-            played: the average, churned / active.
+            {WHO_TEXT[result.asked.who]}. First day in: {result.asked.frame}. Churned: last played on{' '}
+            {dayLabel(churn.cutoff)} or before ({result.asked.days} day{result.asked.days === 1 ? '' : 's'} or
+            more away, UTC). The area is where they were in the last hour they played (where they started
+            their last day, for days before this update). The starter is the one picked at the very start, in
+            Kanto (a guest's is known from their first day played after this update, or from a Kanto Pokédex
+            holding only one of the three). Days played: the average, churned / active.
             {stale && ' The settings changed: press Fetch to count again.'}
           </p>
           {!starters ? (
