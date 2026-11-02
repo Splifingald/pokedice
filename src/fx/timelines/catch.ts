@@ -7,7 +7,7 @@
 // after its wobbles while the player is asked; then `from: 'ground'` takes over from that very frame — the Bait tossed
 // beside the ball and a last wobble or two, or straight to the break-free when it's kept. `stays` (Capture Luck): it
 // breaks free but stays on its platform, for one more throw.
-import { fxSound, type FxSound } from '@/audio/sfx'
+import { fxSound } from '@/audio/sfx'
 import { catchShakes, type CatchRoll } from '@/engine'
 import { haptic } from '@/lib/haptics'
 import { cached, canvas, clamp, ease, lerp, line, rect, ring, rng, softEllipse, span, type G } from '../pixel'
@@ -17,6 +17,7 @@ import { drawFlee, fleeDim, fleeStep } from './trick'
 import {
   H,
   quad,
+  quicken,
   screenFlash,
   skippingNow,
   Stage,
@@ -47,10 +48,10 @@ export interface CatchParams extends Fighters {
    */
   roll?: Pick<CatchRoll, 'total' | 'need' | 'caught' | 'bait'>
   /**
-   * A throw that can't miss: the screen jumps straight to the end (StageOverlay `instant`), so the throw, beam and
-   * wobble sounds stay quiet instead of all firing in the same frame; only the "Gotcha!" plays.
+   * A throw that can't miss: no suspense to build, so the whole catch plays twice as fast (the user's call, 2026-11-02:
+   * sped up, not skipped), its sounds and buzzes with it.
    */
-  instant?: boolean
+  sure?: boolean
   /**
    * Where the Pokémon floats or stands (its feet), in place of the foe's platform, and the line the ball lands on:
    * Trick or Treat's ghost at the stage's centre (docs/29). With `own` left empty no Pokémon of yours is drawn.
@@ -110,12 +111,17 @@ export function vignette(g: G, a: number) {
 
 type S = Stage & { CP: Point; ground: number; start: Point; ctrl: Point }
 
+/** How much faster a throw that can't miss plays. */
+export const SURE_SPEED = 2
+
 export function catchTimeline(p: CatchParams): Timeline<S> {
+  const tl = catchAtPace(p)
+  return p.sure ? quicken(tl, SURE_SPEED) : tl
+}
+
+function catchAtPace(p: CatchParams): Timeline<S> {
   const kind = p.ball
   const caught = kind === 'master' || p.caught
-  const sound = (name: FxSound) => {
-    if (!p.instant) fxSound(name)
-  }
   const T_THROW = 0.8
   const T_HIT = 1.35
   const T_OPEN = 1.43
@@ -495,10 +501,10 @@ export function catchTimeline(p: CatchParams): Timeline<S> {
       const c: Cue<S>[] = ground
         ? []
         : [
-            [T_THROW, () => sound('catch.throw')],
-            [T_OPEN, () => sound('catch.open')],
+            [T_THROW, () => fxSound('catch.throw')],
+            [T_OPEN, () => fxSound('catch.open')],
             [T_ABS, (hud) => hud.show?.('foe', false)],
-            [T_CLOSE, () => sound('catch.close')],
+            [T_CLOSE, () => fxSound('catch.close')],
             // The host rolls the catch die under the ball now; the wobbles keep the suspense.
             [T_ROLL, (hud) => hud.beat?.('roll')],
           ]
@@ -507,8 +513,8 @@ export function catchTimeline(p: CatchParams): Timeline<S> {
       // A buzz with each wobble (never all at once when skipped to the end), a longer one for the catch.
       for (const w of WOB)
         c.push(
-          [w, () => (sound('catch.wobble'), !p.instant && !skippingNow() && haptic('wobble'))],
-          [w + 0.4, () => sound('catch.settle')],
+          [w, () => (fxSound('catch.wobble'), !skippingNow() && haptic('wobble'))],
+          [w + 0.4, () => fxSound('catch.settle')],
         )
       if (p.hold) c.push([T_HOLD - 0.05, (hud) => hud.beat?.('hold')])
       else if (caught)

@@ -250,7 +250,7 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
 - **The round gauge sits once, under the area's header** (and at the top of a fight, under the top bar): a plain bar,
   a segment per card, no icons, the round beside it. Never again over an action bar (the rework, 2026-10-25).
 - **A step's buttons stay at the foot of the screen on phones** (the rework, 2026-10-25): in a battle's panel the
-  attack, the throw, CONTINUE, NEXT / BACK, NOT YET and the Bag-and-team row sit in a `BottomDock` (`sticky`, at the
+  attack, the throw, CONTINUE, NEXT / HOME, NOT YET and the Bag-and-team row sit in a `BottomDock` (`sticky`, at the
   screen's bottom whatever is above them, the content scrolling behind); the action bars above are pinned the same way.
   From 1024 px they sit at the foot of the fight's panel, pinned there when a long step (a result) scrolls inside it.
 - **No button presses itself** (the user's call, 2026-10-27, replacing "no step is only a button"): a step whose one
@@ -271,8 +271,7 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   No toast. Under the autopilot it shows too, its PICK IT UP loading.
 - **A fight's result card follows itself and moves on** (2026-10-26): each piece (XP, a level-up, the Pokédex entry…)
   scrolls into view as it comes, clear of the buttons at the foot; once all is shown, NEXT waits for the tap (its gauge
-  fills and goes only while auto-mode or Idle mode plays the area, the user's call of 2026-10-27), BACK still in reach.
-  The fight that cleared the area has HOME in BACK's place, beside the next area's button (2026-11-01). It waits instead when a new species was caught or a small world's mythical won (its card is looked at, and a full team's
+  fills and goes only while auto-mode or Idle mode plays the area, the user's call of 2026-10-27), HOME still in reach. It waits instead when a new species was caught or a small world's mythical won (its card is looked at, and a full team's
   replace choice, scrolled to, is made), when the area was cleared (the way on is the next area), and in a rebattle.
   No AUTO switch on the card nor in Settings: AUTO-MODE is the fights' own.
 - **A region begun opens on its first area**, its first encounter under way (`exploreFirstArea`): a new game's partner
@@ -423,7 +422,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 | Attacks: one move per type (Flamethrower, Hydro Pump, Razor Leaf, Thunderbolt, Psychic in `attacks.ts`; Tackle, jabs and a fist, gusts and a wing slash, Sludge Bomb, earth spikes, Rock Slide, a swarm and X-Scissor, Shadow Ball, Metal Claw, Ice Beam, Dragon Breath, Dark Pulse and Crunch, Moonblast in `attacks-types.ts`); a generic impact for typeless dice. With the game-feel pass (docs/38 §2, always on): every hit scaled by its power (`hitPower`: shake, stop, particles), the damage number at 2× (gold super effective, grey 1× resisted), a settle 0.5 s after the last hit, the K.O.'s boss stop | the typed move | one generic hit |
 | A shiny's entrance (game-feel pass, `shiny.ts`): on a clear canvas over the page's sprite, two rings of stars as it lands, twinkles, the shiny chime | in full | in full |
 | A Z-Move (§33, `zmove.ts`): the power gathering, then the strike — the type's own move as its Z variant (`z`: more of it, bigger, harder, on a dimmed field, the attacker outlined in gold and the type's light) with the Z's mark on its last hit (a golden Z on the target, rings, a white flash); a Flying, Ground or Water one goes away first and comes back before its strike | the gathering, the Z variant | a flash of the type's colour; the one generic hit with the Z's mark |
-| Catch | throw, beam, drop, wobbles, result — the engine's count of wobbles (`catchShakes`): 3 for a catch, for a miss 3, 2, 1 or none as it fell 1, 2, 3 or 4+ short, so the third never gives it away; a buzz with each (`haptic`); with a Bait to offer it holds on the ball lying still (`hold`) and the answer plays on from that frame (`from: 'ground'`: the Bait tossed beside the ball, a heart, its last wobbles, 2 or fewer by the same rule; or straight to the break-free); Capture Luck's stay (`stays`): out of the ball, a "!" and two hops, no flight | throw and drop, result at once (the Bait still lands); a throw that can't miss jumps to its end at every level |
+| Catch | throw, beam, drop, wobbles, result — the engine's count of wobbles (`catchShakes`): 3 for a catch, for a miss 3, 2, 1 or none as it fell 1, 2, 3 or 4+ short, so the third never gives it away; a buzz with each (`haptic`); with a Bait to offer it holds on the ball lying still (`hold`) and the answer plays on from that frame (`from: 'ground'`: the Bait tossed beside the ball, a heart, its last wobbles, 2 or fewer by the same rule; or straight to the break-free); Capture Luck's stay (`stays`): out of the ball, a "!" and two hops, no flight | throw and drop, result at once (the Bait still lands); a throw that can't miss plays twice as fast at every level (Off still skips it) |
 | Pokémon Center | in its picture (`public/backgrounds/pokemon-center.png`): a ball per team member into the machine's slots, the heal jingle (B G♯ ×3, E) | one flash, healed |
 | Mega Evolution, Gigantamax | the full change | a white flash and the new sprite |
 | A raid Pokémon's form unleashed on its last bar (`unleashTimeline`: Giratina's Origin Forme, §27) | the full change, held on its new form while the words are read | a white flash and the new sprite, held as long |
@@ -634,11 +633,14 @@ Players shouldn't have to make many requests:
   top of Friends). Never red. **A
   region on offer** is its own picture as the card, "{region} is available", and two buttons: NOT NOW (put away on this
   device for good; the Regions view keeps it) and GO (gold: the professor's lab for that region).
-- **After an encounter the player stays in the area** (a trainer, a wild Pokémon, a find, the Center, the Game
-  Corner, fleeing): `/area` between encounters (`AreaIdle`) is the area's header, "Back on the trail…", the team (each
-  card opens its sheet) and the action bar, HOME or CONTINUE, the next encounter (or the gym or legend waiting, with Keep exploring);
-  when the next one can't start, the reason sits over the buttons. Only a full K.O. ends the run and goes back Home,
-  and the HOME buttons.
+- **After an encounter the next one comes, or Home** (the user's call, 2026-11-02: no stop on the area's page in
+  between). A fight won: NEXT ▸ (or the next area's button) goes on, **HOME** goes Home. FLEE / AVOID / SKIP, the Game
+  Corner's LEAVE, Trick or Treat over, a stalemate's CONTINUE, a find picked up and the Center's CONTINUE go straight on
+  to the next encounter (`onToNext`, `continueExploring`: Home's CONTINUE, a gym or legend waiting included). When the
+  next one can't start (the area closed, everyone resting) the player lands on Home, which says why; Idle mode stays
+  on the area's page and waits. A full K.O. ends the run and goes back Home. The area's page (`AreaIdle`: the scene,
+  the team, HOME or CONTINUE) is left for a challenge put off (NOT YET, with Keep exploring) and a reload; an area with
+  a mode of its own (a portal, the nightmare, the race, the whiteout, the glade) keeps its own page between cards.
 - **Behind in the region** (the furthest open area of the region's main chain is elsewhere: `latestOpenArea`; secret
   areas don't count; not while an encounter is under way): with nothing of its own waiting where the player stands (a
   cleared area's free play), **CONTINUE itself reads GO TO {area}** and travels there, its second line saying what
@@ -812,8 +814,8 @@ each at most 340 px (docs/42 §3). The history is More details' button at the pa
   is already certain): one tap on a ball throws it (docs/42 §4). A sure catch or no ball has one button that loads and
   presses itself. The catch timeline plays; the die and the
   result show together on `catchResult`, never before (the die would spoil the wobbles). A throw that can't miss
-  (`sureThrow`: its bonus alone reaches the need) has no die and no animation: the stage jumps to the catch's end
-  (`StageOverlay.instant`), only the "Gotcha!" sounds, and the result shows at once.
+  (`sureThrow`: its bonus alone reaches the need) has no die: its catch plays in full but twice as fast (`sure`,
+  `SURE_SPEED`), sounds and buzzes included, and the result shows as it ends.
 - **The Bait** (docs/25): a throw that fell short, with a Bait in the bag that could still make it, stops with the ball
   lying still after its wobbles; the die shows with the math (`4 + 1 = 5 < 7`), the message asks "So close! Throw a
   Bait to tempt Snorlax?", and a line gives the Bait's die and the odds ("The Bait's die (1, 1, 1, 2, 2, 3) adds to

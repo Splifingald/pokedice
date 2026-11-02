@@ -100,8 +100,8 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
 
 /**
  * The encounter route: the preview of what CONTINUE rolled on Home, the Pokémon Center, the Game Corner and the battle.
- * Between encounters the player stays here (AreaIdle: the team, HOME or the next encounter); only a full K.O. (which
- * ends the run) or the HOME buttons go back Home.
+ * Most ways out of an encounter go straight on to the next one or Home; the area's page between encounters (AreaIdle:
+ * the team, HOME or the next encounter) is for a challenge put off, a portal run or the nightmare, a reload.
  */
 export function AreaScreen() {
   const save = useGame((s) => s.save)

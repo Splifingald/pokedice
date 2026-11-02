@@ -794,10 +794,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
    */
   const catchScene = (r: CatchThrow, from?: 'ground'): StageOverlay => {
     const foe = foeFront
-    // A throw that couldn't miss has no suspense to build: its result at once.
-    const instant = sureThrow(r)
     return {
-      instant,
       timeline: catchTimeline({
         own: spriteKey(active.dex, true, active.shiny, active.outfit),
         foe: spriteKey(foe.dex, false, foe.shiny, foe.outfit),
@@ -809,7 +806,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         from,
         bait: r.baited === 'used',
         stays: !!r.stays,
-        instant,
+        // A throw that couldn't miss has no suspense to build: it plays twice as fast.
+        sure: sureThrow(r),
       }),
       ready: Promise.all([loadSprite(active.dex, true, active.shiny, active.outfit), loadSprite(foe.dex, false, foe.shiny, foe.outfit)]),
       label:
