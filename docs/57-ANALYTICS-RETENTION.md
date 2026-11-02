@@ -1,4 +1,4 @@
-# Analytics: retention on day 1, 3, 7 and 30, one player per guest who signs in, churn by area and by starter
+# Analytics: retention on day 1, 3, 7 and 30, one player per guest who signs in, churn by area and by starter, playtime
 
 Admin → Analytics (`src/admin/sections/AnalyticsSection.tsx`) measured day-1 retention only, counted a guest who later
 signed in as two players, and couldn't say where players stop. Migration 0102 and the page fix the three. It is the
@@ -91,6 +91,28 @@ of the game, from the same FETCH (one request: `analytics_churn` returns both).
   are counted apart ("churned with no known starter").
 - Before 0129 runs, the answer has no `starters`: the panel shows the areas and says the migration is needed.
 
+### 3.2 Playtime (migration 0130)
+
+A panel under Churn: **FETCH** adds up how long the players have played (`analytics_playtime()`, admin-only, asked only
+then). It shows the time played by everyone, by how many players and their average, and the share of the time frame's
+players (those the Players table lists). The answer also adds two sortable columns to the Players table, which then
+shows the longest played first: **Playtime** and **Hrs 7d**.
+
+- **What counts** (`src/analytics/playtime.ts`): the time the game is on screen (the tab visible) and in use (a
+  touch, click, scroll or key in the last 5 minutes, so watching a battle to its end counts and a tab left open stops
+  counting). Added up every 15 seconds, never more than 30 seconds at once (a device waking from sleep didn't play the
+  gap). Extreme saves count too: it's the same player playing. Two windows of the game visible side by side would
+  count twice; rare enough to leave.
+- **No new request**: the seconds wait in localStorage (`pokedice.analytics.playtime`, per player) and go with the call
+  the game already makes, at most one an hour (`player_ping`'s or `player_seen`'s `p_seconds`, at most 7,200 a call;
+  the server drops more). The last part of a session reaches the server with the next session's first call: a player
+  who never comes back loses at most their last hour. Without seconds to send, the call keeps its old signature.
+- **A guest who signs in**: the seconds waiting for the device go with the account's call, and the merge (0102) adds
+  the guest row's playtime to the account's.
+- **Before this update** nothing measured playtime, so it starts at zero for everyone; the panel says since when
+  (`players.play_since`, the first seconds received). **Hrs 7d** (the hours a player played in over the last 7 days,
+  from `player_hours`, whatever part of each hour) gives a rough idea for that time meanwhile.
+
 ## 4. The database (`supabase/migrations/0102_analytics_retention.sql`)
 
 - `players.last_area text`, filled from each snapshot's `areaId`.
@@ -113,6 +135,16 @@ of the game, from the same FETCH (one request: `analytics_churn` returns both).
 - `analytics_churn`, same signature, adds `starters: {dex: [churned, active, churned's average days, active's]}` and
   `noStarter: [churned, active]`. The build deployed before it ignores both.
 
+`supabase/migrations/0130_analytics_playtime.sql`:
+
+- `players.play_seconds bigint` (0 by default) and `players.play_since timestamptz` (the first seconds received).
+- `analytics_add_playtime(text, int)`: internal; ignores anything but 1 to 7,200 seconds.
+- `player_ping(text, date, text, jsonb, int)` and `player_seen(text, text, int)`: the new calls, overloads of 0102's
+  (which stay, for the deployed build), each calling the old one then adding the seconds to the row it leaves.
+- `analytics_merge_player`, as 0102's, adds the guest's playtime to the account's.
+- `analytics_playtime() → json`: `{since, total, rows: {player: [seconds, hours in the last 7 days]}}`, every player
+  with seconds or a recent hour. Admin-only.
+
 ## 5. Setting it up
 
 1. Run the migration once in Supabase's SQL editor, **before** deploying the build (the new page calls
@@ -123,6 +155,11 @@ of the game, from the same FETCH (one request: `analytics_churn` returns both).
 2. Deploy. Admin → Analytics shows the four rates at once; Churn by area on FETCH.
 3. Churn by starter: run migration 0129 (after 0102; any time, before or after the build that shows it):
    <https://github.com/Splifingald/pokedice/blob/ccr-b9616e2b-7ntj2b/supabase/migrations/0129_churn_by_starter.sql>.
+   Version 2.9's file (`supabase/releases/2026-11-01-version-2-9.sql`) carries it too. Not in `supabase/seed.sql`.
+
+4. Playtime: run migration 0130 (after 0102), **before** deploying the build that sends the seconds (it calls the new
+   overloads):
+   <https://github.com/Splifingald/pokedice/blob/claude/zen-hamilton-5jn02d/supabase/migrations/0130_analytics_playtime.sql>.
    Version 2.9's file (`supabase/releases/2026-11-01-version-2-9.sql`) carries it too. Not in `supabase/seed.sql`.
 
 ## 6. Tests
@@ -142,3 +179,10 @@ of the game, from the same FETCH (one request: `analytics_churn` returns both).
   (`churnByStarter`: the order, the shares, null before 0129).
 - `e2e/admin-analytics.spec.ts`: the four rates from one request per load, and churn fetched only on FETCH, the
   starters in the order offered and the areas in game order, with the frame's first day sent.
+- `tests/playtime.test.ts`: what counts as played (hidden, idle, a long gap), the seconds waiting (whole seconds, what
+  was counted during a call kept, a guest's to the account), the admin's format.
+- `tests/analytics-playtime-sql.test.ts`: migration 0130 on PGlite: both calls add the seconds, the deployed calls
+  still work, a call's bounds, a guest's playtime merged into the account, `analytics_playtime` (the rows, the 7 days,
+  admin-only), safe to re-run.
+- `e2e/admin-analytics.spec.ts`: Playtime fetched only on FETCH, its totals, and the Players table's column, longest
+  first.
