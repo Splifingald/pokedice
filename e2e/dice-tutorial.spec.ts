@@ -120,3 +120,45 @@ test('switched off, or before Joey is beaten, there is no tutorial', async ({ pa
   await expect(page.getByRole('button', { name: 'CONTINUE', exact: true }).first()).toBeVisible()
   await expect(bubble(page)).toHaveCount(0)
 })
+
+test("the starter K.O. against Joey: CONTINUE at once on the round's Center still opens the tutorial there", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  // Joey just beaten by a Pidgey caught on the way, the starter K.O.: the round not counted yet, ₽10 in the purse.
+  const base = makeSave(4)
+  const starter = base.box[0]!
+  const pidgey = { ...starter, id: 'pidgey-1', dex: 16, caughtAt: starter.caughtAt + 1000 }
+  const save: SaveData = {
+    ...base,
+    gold: 10,
+    currentAreaId: ROUTE1,
+    rerollLesson: 'done',
+    itemLesson: 'done',
+    box: [{ ...starter, currentHp: 0 }, pidgey],
+    team: [starter.id, pidgey.id],
+    areaProgress: {
+      ...base.areaProgress,
+      [ROUTE1]: {
+        ...emptyProgress(),
+        round: 1,
+        opening: 0,
+        deck: [],
+        drawn: ['wild', 'wild', 'item', 'center', 'wild', 'trainer'],
+      },
+    },
+  }
+  await boot(page, save)
+  await page.goto('/home')
+  await expect(bubble(page)).toHaveCount(0)
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+  // The round's Center, CONTINUE pressed straight away (as a double tap on the result card's would): the tutorial
+  // opens over the Center instead of the Center being left.
+  await expect(page.locator('[data-guide="center-home"]')).toBeVisible()
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).click()
+  await expect(bubble(page)).toContainText('First, head Home')
+  await expect(page).toHaveURL(/\/area$/)
+  await page.locator('[data-guide="center-home"]').click()
+  await expect(page).toHaveURL(/\/home$/)
+  await expect(bubble(page)).toContainText('Tap Shop')
+})

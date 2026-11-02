@@ -5,6 +5,7 @@ import { getSpecies } from './data'
 import { attackMultiplier, attackType, computeDamage, type AttackMods, type DamageResult, type UpgradeLevels } from './damage'
 import { dieValue, rerollMasked, rollAll, type RolledDie } from './dice'
 import {
+  capFoeThrow,
   LESSON_FOE,
   LESSON_THROW,
   lessonBadRoll,
@@ -204,6 +205,8 @@ export interface BattleState {
   raidHit?: RaidHit
   /** A new player's first fight: the reroll lesson's rigged throws (docs/46 §6, engine/lesson.ts). */
   lesson?: RerollLesson
+  /** The gentle foe (docs/46 §7, `gentleFoeMax`): no die of the foe's shows more than this. */
+  foeDiceMax?: number
 }
 
 /** A double battle's field (docs/33). */
@@ -557,6 +560,8 @@ export interface CreateBattleOptions {
   plates?: PokeType[]
   /** The reroll lesson rigs this fight's second throw and its reroll (docs/46 §6; see `rerollLessonDue`). */
   rerollLesson?: boolean
+  /** The gentle foe (docs/46 §7; see `gentleFoeMax`): the most each of the foe's dice may show. */
+  foeDiceMax?: number
 }
 
 /**
@@ -984,6 +989,7 @@ export function createBattle(opts: CreateBattleOptions, data: GameData): { state
     itemUsedThisTurn: false,
     ...battlePowersOf(opts),
     ...(opts.rerollLesson && { lesson: { step: 'wait', throws: 0 } }),
+    ...(opts.foeDiceMax != null && { foeDiceMax: opts.foeDiceMax }),
   }
   const log: LogEntry[] = [{ kind: 'start', first }]
   // A Giratina sent out below half HP is already in its Origin Forme.
@@ -2209,7 +2215,9 @@ export function reduce(
       const foePlan = lesson ? LESSON_FOE[lesson.foeThrows ?? 0] : undefined
       if (lesson) lesson.foeThrows = (lesson.foeThrows ?? 0) + 1
       const setThrow = foePlan ? lessonFoeRoll(en.dice, foePlan.value, data) : null
-      s.dice = setThrow ?? rollAll(en.dice, data, rng)
+      // The gentle foe caps every throw (the lesson's set ones are its own).
+      const gentle = (dice: RolledDie[]) => (s.foeDiceMax == null ? dice : capFoeThrow(dice, s.foeDiceMax, data, rng))
+      s.dice = setThrow ?? gentle(rollAll(en.dice, data, rng))
       log.push({ kind: 'roll', side: 'enemy', dice: s.dice })
       const setReroll = setThrow && foePlan?.reroll != null ? lessonFoeRoll(en.dice, foePlan.reroll, data) : null
       if (setReroll && en.rerollsLeft > 0) {
@@ -2229,7 +2237,7 @@ export function reduce(
           targetHp: target.hp,
         })
         if (!mask || !mask.some(Boolean)) break
-        s.dice = rerollMasked(s.dice, mask, data, rng, s.enemy.talent === 'reroller')
+        s.dice = gentle(rerollMasked(s.dice, mask, data, rng, s.enemy.talent === 'reroller'))
         en.rerollsLeft -= 1
         log.push({ kind: 'reroll', side: 'enemy', mask, dice: s.dice, rerollsLeft: en.rerollsLeft })
       }

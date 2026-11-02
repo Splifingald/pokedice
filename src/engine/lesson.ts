@@ -5,6 +5,7 @@
 // battle.ts's reducer calls it.
 import { detectCombos } from './combos'
 import { facesOf, type RolledDie } from './dice'
+import type { Rng } from './rng'
 import type { DieType, GameData } from './types'
 
 /**
@@ -182,4 +183,21 @@ export function lessonFirstRoll(
 export function lessonFoeRoll(types: readonly DieType[], value: number, data: GameData): RolledDie[] | null {
   const dice = types.map((type) => ({ type, faceIndex: plainFace(type, value, data) }))
   return dice.length && dice.every((d) => d.faceIndex >= 0) ? dice : null
+}
+
+/**
+ * The gentle foe (docs/46 §7): every die above `max` lands instead on one of its plain faces at `max` or below (at
+ * random), so a new player's foe hits softly; a die with none shows its lowest face. A status face counts as above:
+ * its status would hurt more than its number says.
+ */
+export function capFoeThrow(dice: readonly RolledDie[], max: number, data: GameData, rng: Rng): RolledDie[] {
+  return dice.map((d) => {
+    const faces = facesOf(d.type, data)
+    const shown = faces[d.faceIndex]
+    if (shown && shown.kind === 'number' && shown.value <= max) return d
+    const low = faces.flatMap((f, i) => (f.kind === 'number' && f.value <= max ? [i] : []))
+    if (low.length) return { type: d.type, faceIndex: rng.pick(low) }
+    const lowest = faces.reduce((b, f, i) => (b < 0 || f.value < faces[b]!.value ? i : b), -1)
+    return lowest < 0 ? d : { type: d.type, faceIndex: lowest }
+  })
 }

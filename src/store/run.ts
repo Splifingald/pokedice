@@ -137,6 +137,7 @@ import {
   outfitOf,
   finishRerollLesson,
   rerollLessonDue,
+  gentleFoeMax,
 } from '@/engine'
 import { activeSlot } from '@/save/storage'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type CatchState, type RunState } from './game'
@@ -700,6 +701,8 @@ function startBattle(
       auto,
       // A new player's first fight teaches the reroll and the combo (docs/46 §6): played by hand, one foe.
       rerollLesson: !auto && !double && rerollLessonDue(save, data, run.areaId),
+      // …and once the item tutorial has shown, its foes hit softly until the first round is won (docs/46 §7).
+      foeDiceMax: gentleFoeMax(save, data, run.areaId),
       ...(double && {
         double: { foes: double.foes, leadUids: double.leadUids, plans: double.foes.map((f, i) => enemyPlanFor(save, data, f, trainerAt(i))) },
       }),

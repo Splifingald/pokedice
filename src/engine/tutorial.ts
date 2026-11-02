@@ -139,3 +139,22 @@ export function itemLessonItem(
 /** The item tutorial has shown (the Bag opened, or on a computer its column seen): never again. */
 export const finishItemLesson = (save: SaveData): SaveData =>
   save.itemLesson ? save : { ...save, itemLesson: 'done' }
+
+/** The most a foe's die may show once the item tutorial has shown (the user's rule, 2026-11-02). */
+export const GENTLE_FOE_MAX = 3
+
+/**
+ * The gentle foe (docs/46 §7): once the item tutorial has shown, foes on the set opening's area throw no die above
+ * `GENTLE_FOE_MAX` until its first round is won, so a new player reaches Youngster Joey's ₽10 and the dice tutorial
+ * rather than a K.O. Undefined otherwise (the switch off, another area, the round won).
+ */
+export function gentleFoeMax(save: SaveData, data: GameData, areaId: string | null | undefined): number | undefined {
+  const area = data.config.openingRounds?.areaId
+  return save.itemLesson &&
+    openingOn(data) &&
+    !!areaId &&
+    areaId === area &&
+    (progressOf(save, area).roundsDone ?? 0) === 0
+    ? GENTLE_FOE_MAX
+    : undefined
+}

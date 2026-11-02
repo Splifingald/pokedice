@@ -16,6 +16,7 @@ import {
   startDiceTutorial,
   finishItemLesson,
   finishDiceTutorial,
+  gentleFoeMax,
   sellItem,
   createRng,
   randomSeed,
@@ -241,6 +242,10 @@ export function startDiceTutorialNow(): void {
 /** The item tutorial has shown (docs/46 §7): never again. */
 export function finishItemLessonNow(): void {
   mutateSave((s) => (s.itemLesson ? null : finishItemLesson(s)))
+  // From now on the foe hits softly on the set opening's first round (docs/46 §7): this fight too, not only the next.
+  const { save, data, run, battle } = useGame.getState()
+  const max = save && battle && !battle.state.foeDiceMax ? gentleFoeMax(save, data, run.areaId) : undefined
+  if (max != null) useGame.setState({ battle: { ...battle!, state: { ...battle!.state, foeDiceMax: max } } })
 }
 
 /** BACK TO the area: the dice tutorial is done, for good. */
