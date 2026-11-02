@@ -1038,26 +1038,20 @@ export function VictoryView() {
     <RebattleNext go={go} />
   ) : (
     <div className="flex flex-col gap-2">
-      {/* BACK: the area's page between encounters (its HOME, the team); NEXT: the next encounter. The area cleared, BACK
-          would land on a page with nothing left to do: HOME beside the next area instead (the user's call, 2026-11-01). */}
+      {/* HOME: back Home (the user's call, 2026-11-02: no stop on the area's page first); NEXT: the next encounter. */}
       <div className={locked ? 'grid' : 'grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-2.5'}>
-        {!locked &&
-          (nextArea ? (
-            <PixelButton
-              size="lg"
-              className="whitespace-nowrap px-2"
-              onClick={go(() => {
-                continueAfterVictory()
-                navigate('/home')
-              })}
-            >
-              {t('ui.nav.home')}
-            </PixelButton>
-          ) : (
-            <PixelButton size="lg" className="whitespace-nowrap px-2" onClick={go(() => continueAfterVictory())}>
-              ◂ {t('ui.common.back')}
-            </PixelButton>
-          ))}
+        {!locked && (
+          <PixelButton
+            size="lg"
+            className="whitespace-nowrap px-2"
+            onClick={go(() => {
+              continueAfterVictory()
+              navigate('/home')
+            })}
+          >
+            {t('ui.nav.home')}
+          </PixelButton>
+        )}
         <PixelButton
           variant="primary"
           size="lg"
@@ -1324,7 +1318,6 @@ function DuelLostView({ foe }: { foe: AreaFoe }) {
           className="w-full"
           onClick={() => {
             afterStalemate()
-            continueExploring()
           }}
         >
           {t('ui.common.continue')}

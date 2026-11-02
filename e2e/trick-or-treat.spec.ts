@@ -120,10 +120,9 @@ test('a Trick or Treat card: the preview, the rules once, a Treat, Trick Balls, 
     )
     expect(saved.pokedex).toContain(92)
   } else await expect(page.getByText('Gastly fled')).toBeVisible()
-  // Back on the area's page (the rework: no line about it), its CONTINUE for the next card.
+  // Straight on to the next card (the user's call, 2026-11-02: no stop on the area's page): the wild one under it.
   await next.click()
-  await expect(page).toHaveURL(/\/area$/)
-  await expect(page.getByRole('button', { name: 'CONTINUE', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: /^Battle: .* against a wild / })).toBeAttached({ timeout: 15_000 })
 
   // A second ghost: no rules pop-up this time, and INFO shows them again.
   const later = await page.evaluate(

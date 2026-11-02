@@ -100,6 +100,9 @@ import {
   portalLock,
   portalNoCatch,
   portalModeOf,
+  nightmareModeOf,
+  timeRaceModeOf,
+  whiteoutModeOf,
   portalSkin,
   portalNextCard,
   portalStateOf,
@@ -355,6 +358,22 @@ function backToArea() {
   const { save, data, run } = useGame.getState()
   if (save && run.areaId && inPortalRun(save, data, run.areaId) && portalNextCard(save, run.areaId) === 'distortion')
     rollNext()
+}
+
+/**
+ * Back on the trail and straight on to the next encounter, as Home's CONTINUE: a flee, a skip, the Game Corner left,
+ * Trick or Treat over, a stalemate. No stop on the area's page in between (the user's call, 2026-11-02). An area with a
+ * mode of its own (a portal, the nightmare, the race, the whiteout, the glade) keeps its own page between cards, as
+ * the Area screen tells them apart, and a rebattle its own.
+ */
+function onToNext() {
+  backToArea()
+  const { save, data, run } = useGame.getState()
+  if (!save || !run.areaId || run.phase !== 'idle' || run.rebattle) return
+  const area = data.areas.find((a) => a.id === run.areaId)
+  if (!area) return
+  const own = [portalModeOf, nightmareModeOf, timeRaceModeOf, whiteoutModeOf, tracksModeOf].some((m) => m(area, data))
+  if (!own) continueExploring()
 }
 
 /** Everything `nextEncounter` needs about the save and the area, as things stand. */
@@ -1109,7 +1128,7 @@ export function canSkipCurrent(): boolean {
   return !!run.encounter && !data.config.noEscape && canSkip(run.encounter, data.config.skipPolicy, run.skipsUsed)
 }
 
-/** FLEE / AVOID: back to the area screen (heal, check the team…); the next encounter waits for CONTINUE. */
+/** FLEE / AVOID: on to the next encounter (the user's call, 2026-11-02: no stop on the area's page). */
 export function skipEncounter() {
   if (!canSkipCurrent()) return
   const { run } = useGame.getState()
@@ -1117,14 +1136,14 @@ export function skipEncounter() {
   // SKIP a real player's team (docs/54): the card is used, no ₽, and the server hears of the meet (offered last next).
   if (isPlayerFoe(enc)) {
     if (run.areaId) noteMeet(enc.player, run.areaId, 'skipped')
-    backToArea()
+    onToNext()
     pushToast(t('ui.areaVersus.skippedToast', { name: enc.player.name }))
     return
   }
   const trainer = run.encounter?.kind === 'trainer'
   // skipsUsed survives until a fight is engaged, so skipPolicy 'once' still allows one skip in a row.
   setRun({ skipsUsed: run.skipsUsed + 1 })
-  backToArea()
+  onToNext()
   pushToast(t(trainer ? 'ui.toast.slippedPast' : 'ui.toast.gotAway'))
 }
 
@@ -1892,7 +1911,7 @@ function duelOver(foe: AreaFoe, won: boolean | null): NonNullable<RunState['duel
 
 export function afterStalemate() {
   useGame.setState({ battle: null })
-  backToArea()
+  onToNext()
 }
 
 export function finishCenter() {
@@ -1937,7 +1956,7 @@ export function spinSlotMachine(): SpinResult | null {
 }
 
 export function leaveCasino() {
-  backToArea()
+  onToNext()
 }
 
 // ---------------------------------------------------------------- set moments: rivals and gifts (docs/61 §5)
@@ -2057,7 +2076,7 @@ async function beginTrick(enc: Extract<NonNullable<RunState['encounter']>, { kin
   if (run.phase !== 'preview' || run.encounter !== enc) return
   if (!ok) {
     pushToast(t('ui.trick.closed'), 'bad')
-    backToArea()
+    onToNext()
     return
   }
   setRun({ phase: 'trick', trick: { id: ++trickSeq, state: startTrick(enc, trickCfg(useGame.getState().data), runRng), last: null, caught: null } })
@@ -2124,12 +2143,12 @@ export function fleeTrick() {
   pushToast(t('ui.toast.gotAway'))
 }
 
-/** Caught or fled: back on the trail (the round may be complete). */
+/** Caught or fled: back on the trail and on to the next card (the round may be complete). */
 export function leaveTrick() {
   const tr = useGame.getState().run.trick
   if (tr && !tr.state.end) return
   setRun({ trick: null })
-  backToArea()
+  onToNext()
 }
 
 // ---------------------------------------------------------------- the Gift card (docs/64 §4.0, §4.2)
