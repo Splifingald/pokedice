@@ -468,9 +468,7 @@ export function RaidView({ run }: { run: RaidRun }) {
     : null
   // A throw a Bait could still save stops with the ball on the ground while the panel asks (docs/25); the answer
   // plays on from that frame. Raids have no Capture Luck.
-  // A throw that couldn't miss has no suspense to build: its result at once.
   const catchScene = (r: NonNullable<RaidCatch['result']>, from?: 'ground'): StageOverlay => ({
-    instant: sureThrow(r),
     timeline: catchTimeline({
       own: spriteKey(own.dex, true, own.shiny),
       foe: spriteKey(st.boss.dex, false, st.boss.shiny),
@@ -481,7 +479,8 @@ export function RaidView({ run }: { run: RaidRun }) {
       hold: !!r.baitOffer,
       from,
       bait: r.baited === 'used',
-      instant: sureThrow(r),
+      // A throw that couldn't miss has no suspense to build: it plays twice as fast.
+      sure: sureThrow(r),
     }),
     ready: Promise.all([
       loadSprite(own.dex, true, own.shiny),

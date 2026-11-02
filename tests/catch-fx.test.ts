@@ -31,7 +31,7 @@ const buzzes = vi.hoisted(() => [] as string[])
 vi.mock('@/audio/sfx', () => ({ fxSound: (name: string) => sounds.push(name) }))
 vi.mock('@/lib/haptics', () => ({ haptic: (cue: string) => buzzes.push(cue) }))
 
-const { catchTimeline } = await import('@/fx/timelines/catch')
+const { catchTimeline, SURE_SPEED } = await import('@/fx/timelines/catch')
 type Params = Parameters<typeof catchTimeline>[0]
 
 /** Every cue of the timeline, in order: the sounds and buzzes they make, and what they tell the screen. */
@@ -93,9 +93,16 @@ describe('the catch timeline', () => {
     expect(caught.told).toContain('result:true')
   })
 
-  it('a sure throw stays quiet until its Gotcha', () => {
-    const r = play({ instant: true, caught: true, roll: { total: 9, need: 7, caught: true } })
-    expect(r.wobbles).toBe(0)
-    expect(r.buzzes).toEqual(['catch'])
+  it('a sure throw plays in full, twice as fast, with its sounds and buzzes', () => {
+    const roll = { total: 9, need: 7, caught: true }
+    const r = play({ sure: true, caught: true, roll })
+    expect(r.wobbles).toBe(3)
+    expect(r.buzzes).toEqual(['wobble', 'wobble', 'wobble', 'catch'])
+    expect(r.told).toContain('result:true')
+    const full = catchTimeline({ own: '', foe: '', ball: 'poke', caught: true, roll })
+    const sure = catchTimeline({ own: '', foe: '', ball: 'poke', caught: true, roll, sure: true })
+    expect(sure.dur).toBeCloseTo(full.dur / SURE_SPEED)
+    const at = (tl: typeof full) => tl.cues(tl.setup()).map(([t]) => t)
+    expect(at(sure)).toEqual(at(full).map((t) => t / SURE_SPEED))
   })
 })
