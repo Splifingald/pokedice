@@ -19,7 +19,7 @@
 -- The server orders the moves and answers each with its seed, derived from a secret that never leaves it: every die is
 -- thrown from a number that didn't exist before the move asking for it.
 --
--- Run after 0129; safe to run again.
+-- Run after 0130; safe to run again.
 begin;
 
 -- ---------------------------------------------------------------- 1. beta testers

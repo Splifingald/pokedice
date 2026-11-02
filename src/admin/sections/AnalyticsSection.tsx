@@ -1,5 +1,6 @@
 // Admin → Analytics: retention on day 1, 3, 7 and 30 and the players, from the daily ping (migrations 0028, 0102),
-// players per hour (0042) and churn by starter and area (0102, 0129), those two on demand. Admin-only via RLS. docs/57.
+// players per hour (0042), churn by starter and area (0102, 0129) and playtime (0130), those three on demand.
+// Admin-only via RLS. docs/57.
 import { PixelIcon } from '@/components/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
@@ -10,6 +11,7 @@ import {
   type Retention,
   type RetentionDay,
 } from '@/analytics/retention'
+import { formatPlaytime } from '@/analytics/playtime'
 import { PixelButton } from '@/components/PixelButton'
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
@@ -19,6 +21,7 @@ import { inputCls } from '../widgets'
 import { ChurnPanel } from './AnalyticsChurn'
 import { HourlyPlayers } from './AnalyticsHourly'
 import { errorText, PlayerPanel } from './AnalyticsPlayer'
+import { fetchPlaytime, PlaytimePanel, type PlaytimeRaw } from './AnalyticsPlaytime'
 import { SuspiciousSaves } from './AnalyticsSuspicious'
 
 interface PlayerRow {
@@ -170,7 +173,7 @@ function RetentionHero({ byDay }: { byDay: Record<RetentionDay, Retention> | nul
   )
 }
 
-type PlayerSort = 'name' | 'first' | 'last' | 'days' | 'topLevel' | 'badges'
+type PlayerSort = 'name' | 'first' | 'last' | 'days' | 'topLevel' | 'badges' | 'playtime' | 'hours'
 
 function SortTh({
   label,
@@ -231,6 +234,23 @@ export function AnalyticsSection() {
   const [search, setSearch] = useState('')
   const [shown, setShown] = useState(200)
   const sort = useSort<PlayerSort>('last', -1, ['name'])
+  // Playtime (0130), fetched on demand: until then the table has no Playtime column.
+  const [playtime, setPlaytime] = useState<PlaytimeRaw | null>(null)
+  const [playtimeLoading, setPlaytimeLoading] = useState(false)
+  const [playtimeError, setPlaytimeError] = useState<string | null>(null)
+  const loadPlaytime = async () => {
+    setPlaytimeLoading(true)
+    setPlaytimeError(null)
+    try {
+      setPlaytime(await fetchPlaytime())
+      // The ask is who played longest: the table shows them first.
+      if (sort.key !== 'playtime') sort.toggle('playtime')
+    } catch (err) {
+      setPlaytimeError(errorText(err))
+    } finally {
+      setPlaytimeLoading(false)
+    }
+  }
 
   const frameDef = FRAMES.find((f) => f.id === frame)!
   const frameLabel = frameDef.days == null ? 'all time' : `the last ${frameDef.label}`
@@ -273,6 +293,8 @@ export function AnalyticsSection() {
         label: r.name || r.email?.split('@')[0] || `Guest ${r.player.slice(-4)}`,
         topLevel: Math.max(0, ...(r.team ?? []).map((m) => Number(m.level) || 0)),
         badgeCount: Number(r.badges) || 0,
+        playtime: playtime?.rows[r.player]?.[0] ?? 0,
+        hours: playtime?.rows[r.player]?.[1] ?? 0,
       }))
       .filter((r) => !q || r.label.toLowerCase().includes(q) || (r.email ?? '').toLowerCase().includes(q))
     const val = (p: (typeof list)[number]): string | number =>
@@ -286,13 +308,23 @@ export function AnalyticsSection() {
               ? p.badgeCount
               : p[sort.key]
     return list.sort((a, b) => (val(a) < val(b) ? -1 : val(a) > val(b) ? 1 : 0) * sort.dir)
-  }, [rows, search, sort.key, sort.dir, areaNames])
+  }, [rows, search, sort.key, sort.dir, areaNames, playtime])
 
   if (!isSupabaseConfigured)
     return <p className="text-xl">Analytics needs Supabase — this admin is running offline.</p>
 
   const selected = player ? players.find((p) => p.player === player) : null
   const newInFrame = from ? rows.filter((r) => r.first_day >= dayKey(from)).length : rows.length
+  // The players listed (seen in the time frame), whatever the search.
+  const framePlaytime = playtime
+    ? rows.reduce(
+        (t, r) => {
+          const [sec = 0, hrs = 0] = playtime.rows[r.player] ?? []
+          return { seconds: t.seconds + sec, players: t.players + (sec > 0 ? 1 : 0), hours: t.hours + hrs }
+        },
+        { seconds: 0, players: 0, hours: 0 },
+      )
+    : null
 
   return (
     <div className="flex flex-col gap-4">
@@ -325,6 +357,15 @@ export function AnalyticsSection() {
       <HourlyPlayers />
 
       <ChurnPanel since={from} frame={frameLabel} />
+
+      <PlaytimePanel
+        result={playtime}
+        frame={frameLabel}
+        inFrame={framePlaytime}
+        loading={playtimeLoading}
+        error={playtimeError}
+        onFetch={() => void loadPlaytime()}
+      />
 
       <SuspiciousSaves
         onPick={(id, name) => {
@@ -398,6 +439,24 @@ export function AnalyticsSection() {
                   dir={sort.dir}
                   onClick={() => sort.toggle('days')}
                 />
+                {playtime && (
+                  <>
+                    <SortTh
+                      label="Playtime"
+                      right
+                      active={sort.key === 'playtime'}
+                      dir={sort.dir}
+                      onClick={() => sort.toggle('playtime')}
+                    />
+                    <SortTh
+                      label="Hrs 7d"
+                      right
+                      active={sort.key === 'hours'}
+                      dir={sort.dir}
+                      onClick={() => sort.toggle('hours')}
+                    />
+                  </>
+                )}
                 <SortTh
                   label="First day"
                   right
@@ -448,13 +507,21 @@ export function AnalyticsSection() {
                   <td className="px-2 text-right">{p.topLevel || '–'}</td>
                   <td className="px-2 text-right">{p.badgeCount || '–'}</td>
                   <td className="px-2 text-right">{p.days}</td>
+                  {playtime && (
+                    <>
+                      <td className="whitespace-nowrap px-2 text-right">
+                        {p.playtime ? formatPlaytime(p.playtime) : '–'}
+                      </td>
+                      <td className="px-2 text-right">{p.hours || '–'}</td>
+                    </>
+                  )}
                   <td className="whitespace-nowrap px-2 text-right text-muted">{dayLabel(p.first_day)}</td>
                   <td className="whitespace-nowrap px-2 text-right text-muted">{dayLabel(p.last_day)}</td>
                 </tr>
               ))}
               {status === 'ready' && !players.length && (
                 <tr>
-                  <td colSpan={7} className="px-3 py-4 text-center text-muted">
+                  <td colSpan={playtime ? 9 : 7} className="px-3 py-4 text-center text-muted">
                     {search ? 'No player matches.' : 'No players in this time frame.'}
                   </td>
                 </tr>

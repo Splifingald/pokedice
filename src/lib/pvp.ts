@@ -1,4 +1,4 @@
-// Friend Battles, the cloud side (docs/65): the calls to supabase/migrations/0130_friend_battles.sql and its two
+// Friend Battles, the cloud side (docs/65): the calls to supabase/migrations/0131_friend_battles.sql and its two
 // private Realtime topics — `pvp-inbox:<you>` (a challenge, its answer) and `pvp:<match>` (each move with its seed, and
 // "something changed"). The rules and the fight are the engine's (engine/friendBattle.ts); the store drives them
 // (store/pvp.ts).

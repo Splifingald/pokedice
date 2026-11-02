@@ -1089,7 +1089,7 @@ Two rules for every feature that adds something players can do (an event, a mode
 (the user's rule, 2026-10-12).
 
 - **A switch in the admin: Off / On for admin / On for everyone** (`EventAccess`, the `AccessSwitch` widget), **Off by
-  default**. A feature whose server functions read `access_open(access)` (migration 0130) also offers **On for beta
+  default**. A feature whose server functions read `access_open(access)` (migration 0131) also offers **On for beta
   testers**: the admin and the accounts on Admin → Config → Switches' Beta testers list (docs/65 §3; the game learns it
   from friend_status, `viewer.beta`). Moving an older feature onto it is its `*_open()` calling `access_open` and its
   row's `beta: true` in `ConfigSection`'s `FEATURES`. Off: the feature is nowhere in the game (no row, no square, no pop-up, no link that works); On for admin:

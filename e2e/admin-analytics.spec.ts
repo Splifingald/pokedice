@@ -245,3 +245,63 @@ test('Suspicious saves: fetched on demand, the banned hidden, a row opens the pl
   await panel.getByRole('button', { name: 'KEEPER' }).click()
   await expect(page.getByRole('region', { name: "KEEPER's profile" })).toBeVisible()
 })
+
+test('Playtime: added up on demand, and a column of the players', async ({ page }) => {
+  test.setTimeout(120_000)
+  const calls = await openAnalytics(page, {
+    analytics_retention: {},
+    analytics_playtime: {
+      since: new Date().toISOString(),
+      total: 3 * 3600 + 30 * 60,
+      // Misty played longest; Brock only before playtime was counted (an hour played in, no seconds).
+      rows: { u1: [30 * 60, 2], u2: [3 * 3600, 5], 'device:b': [0, 1] },
+    },
+  })
+  const player = (id: string, name: string) => ({
+    player: id,
+    user_id: id.startsWith('device:') ? null : id,
+    device_id: 'd',
+    name,
+    email: null,
+    first_day: localDay(-3),
+    last_day: localDay(0),
+    days: 4,
+    last_area: null,
+    area: null,
+    badges: null,
+    team: null,
+  })
+  // After mockSupabase's catch-all, so this one answers the players.
+  await page.route('**/rest/v1/players?*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([player('u1', 'Ash'), player('u2', 'Misty'), player('device:b', 'Brock')]),
+    }),
+  )
+  const panel = page.getByRole('region', { name: 'Playtime' })
+  await expect(panel).toBeVisible({ timeout: 30_000 })
+  await expect(panel.getByText('Press Fetch to add up the time played.')).toBeVisible()
+  const table = page.getByRole('region', { name: 'Players' })
+  await expect(table.getByText('Misty')).toBeVisible()
+  await expect(table.getByRole('columnheader', { name: /Playtime/ })).toHaveCount(0)
+  // Opening the tab doesn't ask.
+  await page.waitForTimeout(1000)
+  expect(calls.filter((c) => c.includes('/rpc/analytics_playtime'))).toHaveLength(0)
+
+  await panel.getByRole('button', { name: 'Fetch' }).click()
+  await expect(panel).toContainText('3 h 30 min played in all')
+  await expect(panel).toContainText('by 2 players')
+  await expect(panel).toContainText('1 h 45 min each on average')
+  await expect(panel).toContainText('Players of the last 30 days: 3 h 30 min by 2, and 8 hours played in')
+  expect(calls.filter((c) => c.includes('/rpc/analytics_playtime'))).toHaveLength(1)
+
+  // The players, longest played first.
+  await expect(table.getByRole('columnheader', { name: /Playtime/ })).toHaveAttribute('aria-sort', 'descending')
+  const rows = table.locator('tbody tr')
+  await expect(rows.nth(0)).toContainText('Misty')
+  await expect(rows.nth(0)).toContainText('3 h 00 min')
+  await expect(rows.nth(1)).toContainText('Ash')
+  await expect(rows.nth(1)).toContainText('30 min')
+  await expect(rows.nth(2)).toContainText('Brock')
+})

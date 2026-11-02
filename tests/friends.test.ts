@@ -93,7 +93,7 @@ describe('parsing', () => {
       beta: false,
     })
     expect(parseStatus([])).toEqual({ ids: [], unseen: [], beta: false })
-    // A beta tester (docs/65 §3): friend_status carries it from migration 0130.
+    // A beta tester (docs/65 §3): friend_status carries it from migration 0131.
     expect(parseStatus([{ ids: [], unseen: [], beta: true }]).beta).toBe(true)
   })
 

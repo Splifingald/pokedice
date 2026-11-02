@@ -1,4 +1,4 @@
-// Migration 0130 against a real Postgres (PGlite, in process): Friend Battles (docs/65) and the beta testers' access
+// Migration 0131 against a real Postgres (PGlite, in process): Friend Battles (docs/65) and the beta testers' access
 // level. The switch (beta testers included), the admin's list, friend_status saying who's a tester; a challenge (friends,
 // online, a team, one at a time), its answer, cancel and expiry; Classic's order step and Draft's coin, picks (in turn,
 // no mirror, the time-out's pick) and order; the battle's moves (in sequence, each with its seed), the time-out move, a
@@ -12,7 +12,7 @@ import { FRIEND_BATTLES_DEFAULTS } from '@/engine'
 
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
-const FILE = '0130_friend_battles.sql'
+const FILE = '0131_friend_battles.sql'
 const ADMIN = 'gregoire.ftn@gmail.com'
 
 const U = {

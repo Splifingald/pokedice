@@ -1,5 +1,5 @@
 // Admin → Config: Friend Battles (docs/65). Its numbers (game_config `friendBattles`, read by the server too: migration
-// 0130; its switch is on the Switches tab, beta testers included), and the beta testers' list, beside the switches,
+// 0131; its switch is on the Switches tab, beta testers included), and the beta testers' list, beside the switches,
 // which every feature set "On for beta testers" opens to.
 import { useCallback, useEffect, useState } from 'react'
 import { FRIEND_BATTLES_DEFAULTS, type FriendBattlesConfig } from '@/engine'
@@ -87,7 +87,7 @@ const ERRORS: Record<string, string> = {
 function refusal(err: unknown): string {
   const e = err as { code?: string; message?: string }
   if (e.code === 'PGRST202' || e.code === '42883')
-    return 'The database has no beta testers yet: run supabase/migrations/0130_friend_battles.sql.'
+    return 'The database has no beta testers yet: run supabase/migrations/0131_friend_battles.sql.'
   const key = Object.keys(ERRORS).find((k) => e.message?.includes(k))
   return key ? ERRORS[key]! : `Refused: ${e.message ?? String(err)}`
 }

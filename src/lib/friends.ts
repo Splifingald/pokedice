@@ -157,7 +157,7 @@ export function parseStatus(raw: unknown): { ids: string[]; unseen: FriendNotice
   return {
     ids: Array.isArray(row?.ids) ? row.ids.map(String) : [],
     unseen: parseNotices(row?.unseen),
-    // A database before 0130 says nothing: not a tester.
+    // A database before 0131 says nothing: not a tester.
     beta: row?.beta === true,
   }
 }

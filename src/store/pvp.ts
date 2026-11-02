@@ -276,7 +276,7 @@ export async function loadOnline(force = false): Promise<void> {
   try {
     usePvp.setState({ online: await pvpOnline() })
   } catch {
-    // Offline or before 0130: nobody shows as online.
+    // Offline or before 0131: nobody shows as online.
   }
 }
 
@@ -367,7 +367,7 @@ export async function here() {
   try {
     await pvpHere()
   } catch {
-    // Offline or before 0130.
+    // Offline or before 0131.
   }
 }
 

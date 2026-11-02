@@ -9,7 +9,7 @@ surprise. Draft: as explained above. Build a plan and mockup."*
 
 **Status (2026-11-02): built**, behind its switch, **Off**, on `claude/trusting-mendel-7lu85u` (from `version/2_9`).
 The user approved the plan and the three proposals of §12 as they stood. Migration
-**`0130_friend_battles.sql`** (version 2.9's SQL file carries it too, last). What was built, and where it differs from
+**`0131_friend_battles.sql`** (version 2.9's SQL file carries it too, last). What was built, and where it differs from
 the plan, is §13; how to switch it on is §14.
 
 **The mockup** (15 screens, Daybreak with a Dusk toggle on each, the game's own sprites):
@@ -143,7 +143,7 @@ Two replicas fed the same moves and seeds end equal (1,000 random fights); a dif
 step; the shield halves exactly one attack, on the right side, and never a tick; draft rules (mirror refused,
 allowed when nothing else); timeouts pick the strongest; the record's maths.
 
-## 5. The database (`supabase/migrations/0130_friend_battles.sql`, the number as of version/2_9)
+## 5. The database (`supabase/migrations/0131_friend_battles.sql`, the number as of version/2_9)
 
 ### 5.1 Tables (players never touch them: `security definer` functions only)
 
@@ -248,7 +248,7 @@ picks taken, the two perspectives).
 |---|---|---|
 | **P0 · Beta testers** | `'beta'` access, `beta_testers`, `access_open`, `friend_status().beta`, the admin box, the switch's 4th option | The beta switch, usable by any feature moved onto `access_open` |
 | **P1 · Engine** | `friendBattle.ts`, the shield, per-move seeds, the draft, canonical sides, tests | — |
-| **P2 · Database** | 0130: tables, functions, Realtime policies, cron; SQL tests as `tests/versus-league-sql.test.ts` | — |
+| **P2 · Database** | 0131: tables, functions, Realtime policies, cron; SQL tests as `tests/versus-league-sql.test.ts` | — |
 | **P3 · Game** | `/battles`, the flow, the banner, `pvp.live`, Friends page, strings, docs/15 §50, kitchen sink, e2e with two pages | The feature, behind its switch, **Off** |
 | **P4 · Extras** | Push for challenges, the trainer card's W–L, the friendship hook | — |
 
@@ -286,7 +286,7 @@ preview; the migration's GitHub link given with the push; patch notes only when 
   teams between turns. `battle.ts`: `BattleState.shield` and the `shield` log entry (the hit cut before it lands).
   `EVENT_ACCESS` gains `'beta'`; `eventOpenTo` reads `viewer.beta`. Tests: `tests/engine/friend-battle.test.ts` (120
   whole fights on two replicas end equal, the shield, the draft, time-outs, forfeits, the views, the switch).
-- **Database** `supabase/migrations/0130_friend_battles.sql`: as §3 and §5, tested on PGlite by
+- **Database** `supabase/migrations/0131_friend_battles.sql`: as §3 and §5, tested on PGlite by
   `tests/friend-battles-sql.test.ts`. Whose turn it is in the fight is the games' (the server doesn't run the engine):
   a move out of turn is stored and ignored the same by both engines; a time-out move only ever costs the side whose turn
   it is. A forfeit is settled by the server at once.
@@ -310,7 +310,7 @@ preview; the migration's GitHub link given with the push; patch notes only when 
 ## 14. Setting it up
 
 1. Run the migration in Supabase → SQL Editor:
-   https://github.com/Splifingald/pokedice/blob/claude/trusting-mendel-7lu85u/supabase/migrations/0130_friend_battles.sql
+   https://github.com/Splifingald/pokedice/blob/version/2_9/supabase/migrations/0131_friend_battles.sql
    (or version 2.9's file, `supabase/releases/2026-11-01-version-2-9.sql`, which carries it last). Not in
    `supabase/seed.sql`. Realtime must be on for the project (it is: the `app` channel uses it).
 2. Admin → Config → Switches: add the beta testers (name, friend ID or e-mail) in the Beta testers box.

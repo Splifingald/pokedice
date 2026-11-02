@@ -1406,7 +1406,7 @@ export interface GameConfig {
   friendship: FriendshipConfig
   /**
    * Friend Battles (docs/65): live 3 v 3 between two friends, Classic or Draft. The switch (beta testers allowed) and
-   * the timers; the server reads the same row (migration 0130, friend_battles_cfg()).
+   * the timers; the server reads the same row (migration 0131, friend_battles_cfg()).
    */
   friendBattles?: Partial<FriendBattlesConfig>
   /**
