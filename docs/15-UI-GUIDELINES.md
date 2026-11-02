@@ -250,7 +250,7 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
 - **The round gauge sits once, under the area's header** (and at the top of a fight, under the top bar): a plain bar,
   a segment per card, no icons, the round beside it. Never again over an action bar (the rework, 2026-10-25).
 - **A step's buttons stay at the foot of the screen on phones** (the rework, 2026-10-25): in a battle's panel the
-  attack, the throw, CONTINUE, NEXT / BACK, NOT YET and the Bag-and-team row sit in a `BottomDock` (`sticky`, at the
+  attack, the throw, CONTINUE, NEXT / HOME, NOT YET and the Bag-and-team row sit in a `BottomDock` (`sticky`, at the
   screen's bottom whatever is above them, the content scrolling behind); the action bars above are pinned the same way.
   From 1024 px they sit at the foot of the fight's panel, pinned there when a long step (a result) scrolls inside it.
 - **No button presses itself** (the user's call, 2026-10-27, replacing "no step is only a button"): a step whose one
@@ -271,8 +271,7 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   No toast. Under the autopilot it shows too, its PICK IT UP loading.
 - **A fight's result card follows itself and moves on** (2026-10-26): each piece (XP, a level-up, the Pokédex entry…)
   scrolls into view as it comes, clear of the buttons at the foot; once all is shown, NEXT waits for the tap (its gauge
-  fills and goes only while auto-mode or Idle mode plays the area, the user's call of 2026-10-27), BACK still in reach.
-  The fight that cleared the area has HOME in BACK's place, beside the next area's button (2026-11-01). It waits instead when a new species was caught or a small world's mythical won (its card is looked at, and a full team's
+  fills and goes only while auto-mode or Idle mode plays the area, the user's call of 2026-10-27), HOME still in reach. It waits instead when a new species was caught or a small world's mythical won (its card is looked at, and a full team's
   replace choice, scrolled to, is made), when the area was cleared (the way on is the next area), and in a rebattle.
   No AUTO switch on the card nor in Settings: AUTO-MODE is the fights' own.
 - **A region begun opens on its first area**, its first encounter under way (`exploreFirstArea`): a new game's partner
@@ -634,11 +633,14 @@ Players shouldn't have to make many requests:
   top of Friends). Never red. **A
   region on offer** is its own picture as the card, "{region} is available", and two buttons: NOT NOW (put away on this
   device for good; the Regions view keeps it) and GO (gold: the professor's lab for that region).
-- **After an encounter the player stays in the area** (a trainer, a wild Pokémon, a find, the Center, the Game
-  Corner, fleeing): `/area` between encounters (`AreaIdle`) is the area's header, "Back on the trail…", the team (each
-  card opens its sheet) and the action bar, HOME or CONTINUE, the next encounter (or the gym or legend waiting, with Keep exploring);
-  when the next one can't start, the reason sits over the buttons. Only a full K.O. ends the run and goes back Home,
-  and the HOME buttons.
+- **After an encounter the next one comes, or Home** (the user's call, 2026-11-02: no stop on the area's page in
+  between). A fight won: NEXT ▸ (or the next area's button) goes on, **HOME** goes Home. FLEE / AVOID / SKIP, the Game
+  Corner's LEAVE, Trick or Treat over, a stalemate's CONTINUE, a find picked up and the Center's CONTINUE go straight on
+  to the next encounter (`onToNext`, `continueExploring`: Home's CONTINUE, a gym or legend waiting included). When the
+  next one can't start (the area closed, everyone resting) the player lands on Home, which says why; Idle mode stays
+  on the area's page and waits. A full K.O. ends the run and goes back Home. The area's page (`AreaIdle`: the scene,
+  the team, HOME or CONTINUE) is left for a challenge put off (NOT YET, with Keep exploring) and a reload; an area with
+  a mode of its own (a portal, the nightmare, the race, the whiteout, the glade) keeps its own page between cards.
 - **Behind in the region** (the furthest open area of the region's main chain is elsewhere: `latestOpenArea`; secret
   areas don't count; not while an encounter is under way): with nothing of its own waiting where the player stands (a
   cleared area's free play), **CONTINUE itself reads GO TO {area}** and travels there, its second line saying what

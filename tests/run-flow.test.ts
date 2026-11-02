@@ -101,7 +101,7 @@ describe('run flow', () => {
     expect(wipes).toBeGreaterThanOrEqual(0)
   })
 
-  it('fleeing goes back to the area screen instead of dealing the next encounter', () => {
+  it('fleeing deals the next encounter at once, with no stop on the area screen', () => {
     seedRun(11)
     startNewGame(4)
     const { data } = useGame.getState()
@@ -117,8 +117,13 @@ describe('run flow', () => {
         } else if (kind !== 'wild') useGame.setState((s) => ({ run: { ...s.run, phase: 'idle', encounter: null } }))
       }
       expect(canSkipCurrent()).toBe(true)
+      const fled = useGame.getState().run.encounter
       skipEncounter()
-      expect(useGame.getState().run).toMatchObject({ phase: 'idle', encounter: null })
+      // The user's call (2026-11-02): straight on, as Home's CONTINUE.
+      const after = useGame.getState().run
+      expect(after.phase).not.toBe('idle')
+      expect(after.encounter).not.toBeNull()
+      expect(after.encounter).not.toBe(fled)
     } finally {
       data.config.noEscape = true
     }

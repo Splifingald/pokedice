@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { autoAvailable, heldIn, portalLock, teamOf, type Area } from '@/engine'
 import { useT } from '@/i18n/react'
 import { AutoModeToggle } from '@/components/AutoModeToggle'
@@ -10,6 +10,7 @@ import { skinKey, skinOfArea } from '@/components/portalSkin'
 import { PixelButton } from '@/components/PixelButton'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { useContinue } from '@/screens/home/ContinueBar'
+import { useAutoLevel } from '@/store/autopilot'
 import { useGame } from '@/store/game'
 import { AreaDetails } from '@/screens/home/AreaDetails'
 import { AreaPlate } from '@/screens/home/AreaPlate'
@@ -22,8 +23,9 @@ import { RunRoundGauge } from './RoundGauge'
 import { StagePanel } from './StagePanel'
 
 /**
- * Between two encounters, the player stays in the area (only a full K.O. sends them Home): the team, each card opening
- * its sheet (lead, items), and the action bar — HOME, or what Home's CONTINUE would start next.
+ * The area's page with no encounter under way: the team, each card opening its sheet (lead, items), and the action bar —
+ * HOME, or what Home's CONTINUE would start next. Most ways out of an encounter go straight on to the next one or Home
+ * (the user's call, 2026-11-02); this shows for a challenge put off (NOT YET), a portal run or the nightmare, a reload.
  */
 export function AreaIdle({ area, scene = false }: { area: Area; scene?: boolean }) {
   const { t } = useT()
@@ -37,7 +39,11 @@ export function AreaIdle({ area, scene = false }: { area: Area; scene?: boolean 
   const held = useGame((s) => heldIn(s.save, s.data)?.area ?? null)
   const heldBy = useGame((s) => heldIn(s.save, s.data)?.by ?? 'nightmare')
   const autoHere = useGame((s) => !!s.save && autoAvailable(s.save, s.data, s.settings, area.id))
+  const pilot = useAutoLevel() === 'full'
   if (!save) return null
+  // The next encounter can't start (the area closed, everyone resting): Home, which says why (the user's call,
+  // 2026-11-02). Not while Idle mode plays the area: it waits here for the team to be back (docs/36).
+  if (scene && off && !pilot) return <Navigate to="/home" replace />
 
   const bar = (
     <>
