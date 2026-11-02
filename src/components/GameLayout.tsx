@@ -12,6 +12,7 @@ import { NightmareGuard } from '@/screens/area/NightmareRun'
 import { TimeRaceGuard } from '@/screens/area/TimeRaceRun'
 import { WhiteoutGuard } from '@/screens/area/WhiteoutRun'
 import { useUndergroundSettle } from '@/store/underground'
+import { FriendBattlesService } from './pvp/FriendBattlesService'
 
 /** In-game shell: top bar, side bar (desktop) or bottom bar (phones), and the screen. No save → back to the title. */
 export function GameLayout() {
@@ -82,6 +83,8 @@ export function GameLayout() {
         <TimeRaceGuard />
         {/* The whiteout holding the player (docs/64 §4.3): the run kept in Crown Shrine. */}
         <WhiteoutGuard />
+        {/* Friend Battles (docs/65): a challenge to answer, the match's topic and clock while one is on. */}
+        <FriendBattlesService />
       </div>
     </PopupQueue>
   )

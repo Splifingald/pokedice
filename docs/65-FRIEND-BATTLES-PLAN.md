@@ -7,7 +7,10 @@ feature is locked between off / on for admin / on for everyone and a new categor
 the list of beta testers in admin. There are 2 game modes: Classic: every player goes with their selected team, full
 surprise. Draft: as explained above. Build a plan and mockup."*
 
-**Status: plan and mockup, nothing built.** Branch `claude/trusting-mendel-7lu85u`, from `version/2_9`.
+**Status (2026-11-02): built**, behind its switch, **Off**, on `claude/trusting-mendel-7lu85u` (from `version/2_9`).
+The user approved the plan and the three proposals of §12 as they stood. Migration
+**`0130_friend_battles.sql`** (version 2.9's SQL file carries it too, last). What was built, and where it differs from
+the plan, is §13; how to switch it on is §14.
 
 **The mockup** (15 screens, Daybreak with a Dusk toggle on each, the game's own sprites):
 https://claude.ai/artifact/DvqovnATbfQns2gvBbxREa
@@ -29,16 +32,16 @@ https://claude.ai/artifact/DvqovnATbfQns2gvBbxREa
 | Who can be challenged | **Friends only, online now** (in the game in the last 2 minutes, §5.3). An offline friend's button says *Offline* |
 | Who can play | Signed in, the switch open to them, **Versus unlocked** (3 Pokémon at Lv.50). Not in Extreme mode (a race of its own, as Trades). One battle at a time |
 | The challenge | The challenger picks the mode and sends it. The friend sees a **banner** (not a modal) with ACCEPT / NO and a 2-minute gauge, on any page; **mid-fight it waits for the fight's end**. Expires after **120 s** (admin). Cancel any time before an answer |
-| The fight's rules | **Versus's**: 3 v 3, **Lv.50 with the dice and rerolls of the Pokémon's own level** (`versusSeedLevels`), hidden talents carried, **battle powers as in Versus**, **no Bag**, no XP, no ₽. The save is never touched |
+| The fight's rules | **Versus's**: 3 v 3, **Lv.50 with the dice and rerolls of the Pokémon's own level** (`versusSeedLevels`), hidden talents carried, **no battle powers** (built: §13), **no Bag**, **no switching** (the order is set before the fight), no XP, no ₽. The save is never touched |
 | Classic | Each brings **their registered Versus team** (`versus_teams`, held by the server), can CHANGE it in the lobby, then READY. Neither sees the other's team until the fight starts. **No coin, no shield**: Speed decides who moves, as in every fight |
 | Draft: the coin | The **server** tosses (heads: challenger). Both see the same animated coin. The winner picks first |
 | Draft: the picks | **A-B-A-B-A-B**, one Pokémon at a time, **30 s a pick** (admin). Each picks from **their own** Lv.50+ Pokémon (`versusChoices`: every region's Box, one per species, shiny apart). Every pick is shown to both as it lands. ❓ **A species one player took is gone for the other** (no mirror), unless they have nothing else left. Time out: the best one left on their list is picked for them (§4.3) |
 | Draft: the order | After the 6th pick, **20 s** to set your order (drag or tap two to swap). The lead is secret until sent out; each next one is too. Time out: the order shown is kept |
 | The Bonus Shield ❓ | **The first picker's team takes half damage (rounded up) from the opponent's first attack**, whenever that attack comes (if the shielded player moves first, it waits for the reply). A burn or poison tick isn't an attack and doesn't use it. Shown as a blue **◆ Shield** tag on the plate, struck out once used; the hit's log line says "The Bonus Shield takes half: 38 → 19." 50 % is admin |
-| Turns | **45 s a turn** (admin), a gauge in the message box. Time out: auto plays that turn for them (`versusAutoMove`), played by the waiting player's game so nothing stalls |
-| Speed ties | Broken by the match's seed (not "the player", as there are two) |
+| Turns | **45 s a turn** (admin), a chip at the top right. Time out: the server files a time-out move (asked by the waiting game), and **the dice in hand attack** (built: §13). AUTO-MODE plays your own turns if you like |
+| Who moves | The faster lead first (a tie: the battle's seed). Then **turn about**: a stunned Pokémon's turn passes by itself, and a K.O.'d one's next comes out in order |
 | Watching | On the opponent's turn you see **their dice live**: each reroll and the attack as they press it |
-| Leaving | FORFEIT (the flag) is a loss. A dropped connection pauses the fight: back within **60 s** (admin) it resumes where it was; otherwise the other player wins |
+| Leaving | FORFEIT (the flag) is a loss. A dropped connection: the other game says "{name} lost connection" after 30 s; back within **90 s** (admin) the match goes on where it is (a turn that ran out meanwhile attacked with the dice in hand); otherwise the other player wins |
 | Rewards ❓ | **None in ₽ or items** (between friends it would be farmed). What it gives: a **head-to-head record** per friend ("You lead 5–3"), a total W–L on the trainer card, and it **counts as a friendship interaction** (docs/60: keeps the streak, Heart Scales once a day per pair) when Friendship is on |
 | Rematch | A new challenge, same mode, answered like any other; Draft tosses again |
 | Switch | `friendBattles.access`: **Off / On for admin / On for beta testers / On for everyone**, Off by default, checked by every server function (§3) |
@@ -272,3 +275,45 @@ preview; the migration's GitHub link given with the push; patch notes only when 
    more to build)?
 3. **Rewards**: none but the record and the friendship streak (proposed), or a small daily ₽ for the first win of the
    day?
+
+## 13. Built
+
+- **Engine** `src/engine/friendBattle.ts` (pure): `FRIEND_BATTLES_DEFAULTS`, `friendBattlesConfig/On/For`,
+  `friendBattlesRulesDue`, `markFriendBattlesRulesSeen`; the draft (`draftCandidates`, `draftOrder`, `draftTurn`,
+  `draftChoices`, `draftAutoPick`, `coinFace`); the fight (`startPvp`, `applyPvpMove`, `pvpView`, `pvpLogFor`,
+  `flipEntry`, `pvpStanding`, `pvpHash`). Each turn is the battle engine's one-turn duel step (`startDuelStep`, the
+  raids') with the side whose turn it is in the player seat, so both sides run the same code; the match keeps both
+  teams between turns. `battle.ts`: `BattleState.shield` and the `shield` log entry (the hit cut before it lands).
+  `EVENT_ACCESS` gains `'beta'`; `eventOpenTo` reads `viewer.beta`. Tests: `tests/engine/friend-battle.test.ts` (120
+  whole fights on two replicas end equal, the shield, the draft, time-outs, forfeits, the views, the switch).
+- **Database** `supabase/migrations/0130_friend_battles.sql`: as §3 and §5, tested on PGlite by
+  `tests/friend-battles-sql.test.ts`. Whose turn it is in the fight is the games' (the server doesn't run the engine):
+  a move out of turn is stored and ignored the same by both engines; a time-out move only ever costs the side whose turn
+  it is. A forfeit is settled by the server at once.
+- **Game** `src/lib/pvp.ts` (the calls, the topics), `src/store/pvp.ts` (the lockstep, the clock, catching up),
+  `src/components/pvp/` (`FriendBattlesService` with the banners, `ChallengeSheet`, `FriendBattleBits`, `ShieldTag`),
+  `src/screens/Battles.tsx` (`/battles`), `src/screens/battles/Live.tsx` (`/battles/live`: waiting, coin, draft,
+  order, the fight on `BattleView` with `versus.live` and `noSwitch`, the result). The Friends page's card and BATTLE
+  buttons; Home's notice; How to play's feature list; Admin → Config: the row (with the beta choice), the Friend
+  Battles tab, the Beta testers box. Strings in the ten languages. docs/15 §50; the kitchen sink. e2e:
+  `e2e/friend-battles.spec.ts` (with a fight's move checked against the engine on the same seeds, and a reload's
+  catch-up), `e2e/admin-config.spec.ts`.
+- **Different from the plan**:
+  - **No battle powers** in Friend Battles: the engine's powers are tied to the "player" seat and the foe's AI plan;
+    letting both people use them needs its own work. Talents are carried.
+  - **A time-out attacks with the dice in hand** rather than playing the AI's turn: the server can file it alone
+    (`pvp_timeout`), the same on both games.
+  - **No switching during the fight**: the order step sets it, the next one comes out on a K.O.
+  - **Push for challenges** (§7, phase 4) is **not built**: a friend must be in the game (Online now) to be challenged.
+  - The trainer card's W–L isn't shown; the record is on `/battles` and the Friends page's card.
+
+## 14. Setting it up
+
+1. Run the migration in Supabase → SQL Editor:
+   https://github.com/Splifingald/pokedice/blob/claude/trusting-mendel-7lu85u/supabase/migrations/0130_friend_battles.sql
+   (or version 2.9's file, `supabase/releases/2026-11-01-version-2-9.sql`, which carries it last). Not in
+   `supabase/seed.sql`. Realtime must be on for the project (it is: the `app` channel uses it).
+2. Admin → Config → Switches: add the beta testers (name, friend ID or e-mail) in the Beta testers box.
+3. Set **Friend Battles** to *On for beta testers* (or *On for admin* to try it alone first), Save, Publish.
+4. Admin → Config → Friend Battles: the timers, the shield, each mode on or off.
+

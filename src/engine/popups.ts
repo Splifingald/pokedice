@@ -31,7 +31,8 @@ import { tradeRulesDue, tradesToWatch } from './trade'
 import { diceTutorialDue } from './tutorial'
 import { ugRulesDue } from './underground'
 import { unownDexRulesDue } from './unownDex'
-import { versusRulesDue } from './versus'
+import { versusRulesDue, versusUnlocked } from './versus'
+import { friendBattlesRulesDue } from './friendBattle'
 import { inWorld, worldByeDue, worldFinishPopupDue, worldFor, worldPopupDue } from './worlds'
 import type { GameData, LiveEvent, SaveData } from './types'
 
@@ -206,6 +207,9 @@ const NOTICES = {
   versus: (s: SaveData, d: GameData) => versusRulesDue(s, d),
   /** Trades, for an account. → /trades */
   trades: (s: SaveData, d: GameData, c: NoticeContext) => !!c.signedIn && tradeRulesDue(s, d),
+  /** Friend Battles (docs/65), for an account with Versus open (three Pokémon at Lv.50). → /battles */
+  friendBattles: (s: SaveData, d: GameData, c: NoticeContext) =>
+    !!c.signedIn && friendBattlesRulesDue(s, d) && versusUnlocked(s, d),
   /** The shiny Pokédex, at the first league beaten. → the Pokédex's shiny view */
   shinyDex: (s: SaveData, d: GameData) => shinyDexRulesDue(s, d),
   /** The Unown Pokédex, once an area where Unown live is opened. → the Pokédex's Unown view */

@@ -671,6 +671,16 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           banner: { id: nextId(), text: t('ui.log.missBanner'), tone: 'immune' },
         }),
       }
+    case 'shield':
+      // The Bonus Shield (docs/65) cuts the hit that follows: said first, as a talent's pop-up is.
+      return {
+        delay: 900,
+        apply: (f) => ({
+          ...f,
+          message: t('ui.log.shield', { name: nameOf(e.uid), before: e.before, after: e.after }),
+          banner: { id: nextId(), text: t('ui.log.shieldBanner'), tone: 'info' },
+        }),
+      }
     case 'cleansed':
       return {
         delay: 900,

@@ -48,6 +48,10 @@ import { cx } from '@/theme/util'
 import { TrainerName } from '@/components/TrainerName'
 import { FriendshipCard, FriendshipRulesModal, StreakBadge } from '@/components/friends/Friendship'
 import { loadFriendship, useFriendship } from '@/store/friendship'
+import { friendBattlesFor, friendBattlesRulesDue } from '@/engine'
+import { ChallengeSheet, type ChallengeTarget } from '@/components/pvp/ChallengeSheet'
+import { loadHome, loadOnline, usePvp } from '@/store/pvp'
+import { headToHead } from '@/screens/Battles'
 
 /** Off the boards after 72 hours without playing: shown, but quieter. */
 const AWAY_MS = 72 * 3_600_000
@@ -122,6 +126,25 @@ function FriendsBody({ counter }: { counter?: string }) {
   const navigate = useNavigate()
   const fship = useFriendshipView()
   const [fshipInfo, setFshipInfo] = useState(false)
+  // Friend Battles (docs/65): their card, a BATTLE button on each friend in the game now, the challenge sheet.
+  const pvpOn = useGame((s) => s.auth.status === 'signed_in' && friendBattlesFor(s.save, s.data))
+  const pvpNew = useGame((s) => !!s.save && friendBattlesRulesDue(s.save, s.data))
+  const onlineIds = usePvp((s) => s.online)
+  const records = usePvp((s) => s.home?.records)
+  const [target, setTarget] = useState<ChallengeTarget | null>(null)
+  useEffect(() => {
+    if (!pvpOn) return
+    void loadOnline(true)
+    void loadHome()
+    const id = setInterval(() => void loadOnline(true), 20_000)
+    return () => clearInterval(id)
+  }, [pvpOn])
+  const firstOnline = list?.find((f) => f.inRealm && onlineIds.includes(f.userId))?.userId
+  const recordWith = (id: string, name: string) => {
+    const r = records?.find((x) => x.id === id)
+    return r ? headToHead(t, r.wins, r.losses, name) : null
+  }
+  const pvpTotals = records?.reduce((acc, r) => ({ w: acc.w + r.wins, l: acc.l + r.losses }), { w: 0, l: 0 })
 
   const share = () => {
     if (!code) return
@@ -164,6 +187,25 @@ function FriendsBody({ counter }: { counter?: string }) {
           onInfo={() => setFshipInfo(true)}
         />
       )}
+      {pvpOn && (
+        <button
+          type="button"
+          onClick={() => navigate('/battles')}
+          className="flex items-center gap-2.5 bg-sky p-2.5 pb-3 text-left shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_-4px_0_rgb(var(--c-sky-line))]"
+        >
+          <PixelIcon name="vs" size={36} className="shrink-0" />
+          <span className="grid min-w-0 flex-1 gap-0.5">
+            <b className="text-[22px] font-normal leading-none">{t('ui.pvp.title')}</b>
+            <small className="font-pixel-sm text-[16px] leading-tight text-muted">
+              {pvpTotals && pvpTotals.w + pvpTotals.l > 0
+                ? t('ui.pvp.cardRecord', { w: pvpTotals.w, l: pvpTotals.l })
+                : t('ui.pvp.cardLine')}
+            </small>
+          </span>
+          {pvpNew && <NewTag className="shrink-0" />}
+          <span aria-hidden className="block h-[14px] w-[10px] shrink-0 bg-shadow [clip-path:polygon(0_0,100%_50%,0_100%,0_70%,50%_50%,0_30%)]" />
+        </button>
+      )}
 
       <section className="flex flex-col gap-1.5" aria-labelledby="friends-list-title">
         <h2 id="friends-list-title" className="m-0 flex items-baseline gap-2 text-[24px] font-normal leading-none">
@@ -191,6 +233,16 @@ function FriendsBody({ counter }: { counter?: string }) {
                 today={fship.today}
                 picked={wide && shown?.userId === f.userId}
                 onOpen={() => setOpen(f)}
+                battle={
+                  pvpOn && f.inRealm
+                    ? {
+                        online: onlineIds.includes(f.userId),
+                        first: firstOnline === f.userId,
+                        onBattle: () =>
+                          setTarget({ id: f.userId, name: f.name, avatar: f.avatar, record: recordWith(f.userId, f.name) }),
+                      }
+                    : undefined
+                }
               />
             ))}
           </ul>
@@ -260,6 +312,7 @@ function FriendsBody({ counter }: { counter?: string }) {
 
       <FriendsInfoModal open={rules} onClose={() => setRules(false)} invites={gaugeOn} friendship={fship.on} />
       <FriendshipRulesModal open={fshipInfo} onClose={() => setFshipInfo(false)} />
+      {pvpOn && <ChallengeSheet target={target} onClose={() => setTarget(null)} />}
       <Modal open={resetting} onClose={() => setResetting(false)} title={t('ui.friends.resetTitle')}>
         <p className="copy mb-4 text-lg">{t('ui.friends.resetBody')}</p>
         <div className="flex justify-end gap-2">
@@ -280,12 +333,15 @@ function FriendListRow({
   picked,
   streak,
   today,
+  battle,
 }: {
   friend: FriendRow
   onOpen: () => void
   picked?: boolean
   streak?: FriendStreak
   today: string
+  /** Friend Battles (docs/65): BATTLE beside the row, for a friend in the game now (red on the first one). */
+  battle?: { online: boolean; first: boolean; onBattle: () => void }
 }) {
   const { t } = useT()
   const line = useFriendLine()
@@ -293,9 +349,9 @@ function FriendListRow({
   // Extreme mode (docs/22): a friend without an Extreme save is listed, greyed, and has no card to open here.
   const elsewhere = !f.inRealm
   const away = elsewhere || !f.updatedAt || now - f.updatedAt > AWAY_MS
-  const summary = elsewhere ? t('ui.extreme.notIn') : line(f, now)
+  const summary = elsewhere ? t('ui.extreme.notIn') : battle?.online ? t('ui.pvp.onlineNow') : line(f, now)
   return (
-    <li>
+    <li className="flex items-stretch gap-1.5">
       <button
         type="button"
         onClick={elsewhere ? undefined : onOpen}
@@ -303,7 +359,7 @@ function FriendListRow({
         aria-label={`${f.name}, ${summary}`}
         aria-current={picked || undefined}
         className={cx(
-          'flex min-h-[60px] w-full items-center gap-2 pb-1.5 pl-1.5 pr-2.5 pt-1 text-left',
+          'flex min-h-[60px] w-full min-w-0 flex-1 items-center gap-2 pb-1.5 pl-1.5 pr-2.5 pt-1 text-left',
           picked ? 'bg-gold-pale shadow-card-gold' : away ? 'bg-well shadow-ring-line' : 'bg-paper shadow-ring-line',
         )}
       >
@@ -322,7 +378,15 @@ function FriendListRow({
               ))}
             </span>
           )}
-          <small className={cx('truncate font-pixel-sm text-[16px] leading-tight', away ? 'text-ink' : 'text-muted')}>{summary}</small>
+          <small
+            className={cx(
+              'flex items-center gap-1 truncate font-pixel-sm text-[16px] leading-tight',
+              battle?.online ? 'text-good' : away ? 'text-ink' : 'text-muted',
+            )}
+          >
+            {battle?.online && <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#3fbf6a] shadow-ring-thin" />}
+            {summary}
+          </small>
         </span>
         {streak && <StreakBadge streak={streak.streak} state={streakState(streak, today)} />}
         {elsewhere ? (
@@ -331,6 +395,18 @@ function FriendListRow({
           <span aria-hidden className="block h-[14px] w-[10px] shrink-0 bg-shadow [clip-path:polygon(0_0,100%_50%,0_100%,0_70%,50%_50%,0_30%)]" />
         )}
       </button>
+      {battle && (
+        <PixelButton
+          size="sm"
+          variant={battle.online ? (battle.first ? 'primary' : 'dark') : 'secondary'}
+          className="shrink-0 self-center"
+          disabled={!battle.online}
+          aria-label={battle.online ? t('ui.pvp.battleWith', { name: f.name }) : t('ui.pvp.offlineWith', { name: f.name })}
+          onClick={battle.onBattle}
+        >
+          {battle.online ? t('ui.pvp.battle') : t('ui.pvp.offline')}
+        </PixelButton>
+      )}
     </li>
   )
 }

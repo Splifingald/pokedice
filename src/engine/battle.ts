@@ -191,6 +191,11 @@ export interface BattleState {
    * their type themselves. Under the newer ones (docs/35) the player's side uses its powers by itself.
    */
   auto?: boolean
+  /**
+   * The Bonus Shield (Friend Battles' draft, docs/65): the first attack landing on `side` deals `pct` % of its damage
+   * (rounded up), then it's `used`. A status tick isn't an attack and leaves it.
+   */
+  shield?: { side: Side; pct: number; used?: boolean }
   /** What the foe does on its first turn — a trainer's ace Mega Evolving or Gigantamaxing — and whether it changes type. */
   enemyPlan?: EnemyPlan
   /** The plan's Mega / Gigantamax has been used. */
@@ -432,6 +437,8 @@ export type LogEntry =
   | { kind: 'dodge'; side: Side; uid: string; how: ZAway }
   /** A Steel Z-Move: the Pokémon shook off every status (a stun included). */
   | { kind: 'cleansed'; side: Side; uid: string }
+  /** The Bonus Shield (docs/65) took part of a hit on `side`'s Pokémon: `before` the damage it would have done. */
+  | { kind: 'shield'; side: Side; uid: string; before: number; after: number }
   | { kind: 'end'; result: 'won' | 'lost' | 'fled'; reason?: 'stalemate' | 'forfeit' }
   /**
    * A Pokémon changed form: `mega` (Mega Evolution, Primal Reversion, Ultra Burst — `die` is the die it gained),
@@ -2001,6 +2008,14 @@ function resolveAttack(
     log.push({ kind: 'dodge', side: other(side), uid: def.uid, how: def.away.how })
     confusedRecoil(atk, side, data, log)
     return endAttack(s, side, data, log, rng)
+  }
+  // The Bonus Shield (docs/65): the first attack that lands on its side is cut, once.
+  const shield = s.shield
+  if (shield && !shield.used && shield.side === other(side) && result.final > 0) {
+    const before = result.final
+    result = { ...result, final: Math.ceil((before * shield.pct) / 100) }
+    shield.used = true
+    log.push({ kind: 'shield', side: other(side), uid: def.uid, before, after: result.final })
   }
   def.hp = Math.max(0, def.hp - result.final)
   // Sturdy (docs/51): once a battle, the hit that would K.O. it leaves it at 1 HP.

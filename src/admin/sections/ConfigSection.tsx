@@ -5,6 +5,7 @@ import {
   EVENT_ACCESS,
   VERSUS_LEAGUE_DEFAULTS,
   AREA_VERSUS_DEFAULTS,
+  FRIEND_BATTLES_DEFAULTS,
   eggSpecies,
   eggsPerWeek,
   centerBoonRules,
@@ -61,6 +62,7 @@ import { ChampionIntrosBox } from './ChampionIntrosBox'
 import { PushBox } from './PushBox'
 import { VersusLeagueBox } from './VersusLeagueBox'
 import { AreaVersusBox } from './AreaVersusBox'
+import { BetaTestersBox, FriendBattlesBox } from './FriendBattlesBox'
 import { VersusLeagueGroups } from './VersusLeagueGroups'
 
 export function useConfigRow<K extends keyof GameConfig>(key: K): [GameConfig[K], (v: GameConfig[K]) => void] {
@@ -1579,6 +1581,7 @@ const TABS = [
   { id: 'trades', label: 'Trades', icon: 'trade' },
   { id: 'versus', label: 'Versus league', icon: 'trophy' },
   { id: 'areaVersus', label: 'Real-player battles', icon: 'user' },
+  { id: 'friendBattles', label: 'Friend Battles', icon: 'vs' },
   { id: 'general', label: 'General upgrades', icon: 'navUpgrades' },
   { id: 'powers', label: 'Battle powers', icon: 'up' },
   { id: 'invites', label: 'Invite rewards', icon: 'gift' },
@@ -1607,6 +1610,8 @@ interface Feature {
   row: keyof GameConfig
   get: (row: Row) => unknown
   put: (row: Row, access: EventAccess) => Row
+  /** Its server functions read access_open (docs/65 §3): "On for beta testers" is offered. */
+  beta?: boolean
 }
 
 const D = DEFAULT_CONFIG as unknown as Record<keyof GameConfig, Row>
@@ -1675,6 +1680,7 @@ const FEATURES: Feature[] = [
   own('Versus league', 'versusLeague', 'versus', VERSUS_LEAGUE_DEFAULTS as unknown as Row),
   field('Versus global board', 'versusLeague', 'globalAccess', 'versus'),
   own('Real-player battles', 'areaVersus', 'areaVersus', AREA_VERSUS_DEFAULTS as unknown as Row),
+  { ...own('Friend Battles', 'friendBattles', 'friendBattles', FRIEND_BATTLES_DEFAULTS as unknown as Row), beta: true },
   own('Game Corner', 'slotMachine', 'gameCorner'),
   own('General upgrades', 'general', 'general'),
   field('Shiny Charm', 'general', 'charmAccess', 'general'),
@@ -1715,6 +1721,7 @@ function FeatureRow({ feature, open }: { feature: Feature; open: (tab: TabId) =>
           value={access}
           onChange={(a) => setRaw(feature.put(row, a) as unknown as GameConfig[typeof feature.row])}
           label={`${feature.name}: who has it`}
+          beta={feature.beta}
         />
       </td>
     </tr>
@@ -1727,7 +1734,7 @@ function SwitchesTable({ open }: { open: (tab: TabId) => void }) {
   return (
     <Box
       title="Feature switches" icon="gear"
-      hint="Off: nowhere in the game. On for admin: only you, signed in, to try it first. On for everyone: open. A name opens its numbers. Save, then Publish."
+      hint="Off: nowhere in the game. On for admin: only you, signed in, to try it first. On for beta testers (where offered): you and the Beta testers list below. On for everyone: open. A name opens its numbers. Save, then Publish."
     >
       <div className="grid gap-x-6 lg:grid-cols-2">
         {[FEATURES.slice(0, half), FEATURES.slice(half)].map((list, i) => (
@@ -1865,6 +1872,7 @@ export function ConfigSection() {
         ))}
       </nav>
       {tab === 'switches' && <SwitchesTable open={open} />}
+      {tab === 'switches' && <BetaTestersBox />}
       {tab === 'game' && <GameSettings />}
       {tab === 'odds' && (
         <div className="grid gap-4 xl:grid-cols-2">
@@ -1900,6 +1908,7 @@ export function ConfigSection() {
         </div>
       )}
       {tab === 'areaVersus' && <AreaVersusBox />}
+      {tab === 'friendBattles' && <FriendBattlesBox />}
       {tab === 'general' && <GeneralBox />}
       {tab === 'powers' && <BattlePowersBox />}
       {tab === 'invites' && <InviteRewardsBox />}

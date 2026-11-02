@@ -30,6 +30,8 @@ import { EventsScreen } from '@/screens/events/EventsScreen'
 import { UndergroundScreen } from '@/screens/events/Underground'
 import { CalendarScreen } from '@/screens/events/Calendar'
 import { FriendMarketScreen } from '@/screens/FriendMarket'
+import { BattlesScreen } from '@/screens/Battles'
+import { BattleLiveScreen } from '@/screens/battles/Live'
 import { UndergroundDig } from '@/screens/events/UndergroundDig'
 import { ProgressRaidScreen } from '@/screens/events/ProgressRaidScreen'
 import { PageMeta } from '@/lib/pageMeta'
@@ -126,6 +128,8 @@ export function App() {
               <Route path="/underground/dig" element={<UndergroundDig />} />
               <Route path="/calendar" element={<CalendarScreen />} />
               <Route path="/market" element={<FriendMarketScreen />} />
+              <Route path="/battles" element={<BattlesScreen />} />
+              <Route path="/battles/live" element={<BattleLiveScreen />} />
               <Route path="/raid/:areaId/:dex" element={<ProgressRaidScreen />} />
               <Route path="/settings" element={<SettingsScreen />} />
             </Route>

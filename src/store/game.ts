@@ -291,6 +291,8 @@ export interface GameStore {
   run: RunState
   battle: BattleSlice | null
   auth: AuthState
+  /** The signed-in account is on the admin's beta testers' list (docs/65 §3): friend_status says so. */
+  beta: boolean
   toasts: Toast[]
 }
 
@@ -433,6 +435,7 @@ export const useGame = create<GameStore>()(() => ({
   contentChecked: false,
   contentAsked: false,
   auth: { status: 'unknown', userId: null, email: null },
+  beta: false,
   toasts: [],
 }))
 
@@ -440,9 +443,12 @@ export const useGame = create<GameStore>()(() => ({
  * Who's playing goes into the game data: an event the admin switched on "for the admin" (to try it in production
  * first) shows only while the admin is signed in. Kept up to date as the sign-in and the content change.
  */
-function withViewer(data: GameData, auth: AuthState): GameData {
+function withViewer(data: GameData, auth: AuthState, betaTester: boolean): GameData {
   const admin = auth.status === 'signed_in' && isAdminEmail(auth.email)
-  const viewed = !!data.viewer?.admin === admin ? data : { ...data, viewer: { ...data.viewer, admin } }
+  // A beta tester (docs/65 §3) sees what the admin set "On for beta testers", signed in.
+  const beta = auth.status === 'signed_in' && betaTester
+  const same = !!data.viewer?.admin === admin && !!data.viewer?.beta === beta
+  const viewed = same ? data : { ...data, viewer: { ...data.viewer, admin, beta } }
   // The Extreme save's page is a race (docs/48): new content or a new language gets its online features off again.
   return activeSlot() === 'extreme' ? raceData(viewed) : viewed
 }
@@ -452,8 +458,8 @@ useGame.subscribe((s, prev) => {
   if ((s.run !== prev.run || s.battle !== prev.battle) && s.save) scheduleWrite(onDisk(s.save))
 })
 useGame.subscribe((s, prev) => {
-  if (s.auth === prev.auth && s.data === prev.data) return
-  const data = withViewer(s.data, s.auth)
+  if (s.auth === prev.auth && s.data === prev.data && s.beta === prev.beta) return
+  const data = withViewer(s.data, s.auth, s.beta)
   if (data !== s.data) useGame.setState({ data })
 })
 

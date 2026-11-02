@@ -1089,7 +1089,10 @@ Two rules for every feature that adds something players can do (an event, a mode
 (the user's rule, 2026-10-12).
 
 - **A switch in the admin: Off / On for admin / On for everyone** (`EventAccess`, the `AccessSwitch` widget), **Off by
-  default**. Off: the feature is nowhere in the game (no row, no square, no pop-up, no link that works); On for admin:
+  default**. A feature whose server functions read `access_open(access)` (migration 0130) also offers **On for beta
+  testers**: the admin and the accounts on Admin → Config → Switches' Beta testers list (docs/65 §3; the game learns it
+  from friend_status, `viewer.beta`). Moving an older feature onto it is its `*_open()` calling `access_open` and its
+  row's `beta: true` in `ConfigSection`'s `FEATURES`. Off: the feature is nowhere in the game (no row, no square, no pop-up, no link that works); On for admin:
   only the admin sees it, signed in, to try it in production first; On for everyone: open. The game reads it through
   one helper (`eventOpenTo(access, data)`); **the server checks it too** in every function that acts for a player
   (as `wheel_spin` does), so an old build or a hand-made call can't use a feature that's off. Turning it off keeps
@@ -1103,7 +1106,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   rules pop-up (`RulesModal`, Later / Let's go!), taking its turn in the one-time pop-ups' queue, below; so do the
   rules shown at their own moment (the portal's and the nightmare's way in, Trick or Treat's first ghost, the Gift
   card's first present (§45), the gifts', the looks'). The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27; the Stairway of Plates, §49, on a switch of its own, `platesRun`, with its own rules flag), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is a tap on the Pokémon sheet's talent box, as it has no page), real-player battles (§39: its rules pop-up after the first card's intro, as Trick or Treat's at the first ghost; INFO on the card), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), Tracks in the Snow (§46: the same, as the nightmare's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event), the gift calendar (§40: its page's rules card, once; INFO in its dock), outfits (§41, docs/59: no page, so its rules pop-up once the first Pokémon in an outfit arrives; its INFO is a tap on the outfit's chip on the Pokémon sheet), friendship (§42: its rules card on the Friends page or the market, whichever opens first, once; INFO on its card and at the market's foot; **no Home notice**, the user's call of 2026-11-01: players meet it on the Friends page), welcome-back gifts (§23, docs/58: **no rules and no INFO**, the user's explicit exception of 2026-11-01: a developer's message that says only how long the player was away) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27; the Stairway of Plates, §49, on a switch of its own, `platesRun`, with its own rules flag), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is a tap on the Pokémon sheet's talent box, as it has no page), real-player battles (§39: its rules pop-up after the first card's intro, as Trick or Treat's at the first ghost; INFO on the card), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), Tracks in the Snow (§46: the same, as the nightmare's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event), the gift calendar (§40: its page's rules card, once; INFO in its dock), outfits (§41, docs/59: no page, so its rules pop-up once the first Pokémon in an outfit arrives; its INFO is a tap on the outfit's chip on the Pokémon sheet), friendship (§42: its rules card on the Friends page or the market, whichever opens first, once; INFO on its card and at the market's foot; **no Home notice**, the user's call of 2026-11-01: players meet it on the Friends page), Friend Battles (§50: its page's rules card, once; INFO at its foot; Home's notice for an account with Versus open), welcome-back gifts (§23, docs/58: **no rules and no INFO**, the user's explicit exception of 2026-11-01: a developer's message that says only how long the player was away) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **The one-time pop-ups take turns, in one queue** (`nextOneTimePopup`, src/engine/popups.ts; docs/38 U2a): one at a
   time, only between fights (`run.phase === 'idle'`, no battle, no full-screen moment, no gift being opened), never on
@@ -2519,3 +2522,40 @@ bar: Arceus takes the Icicle Plate").
   it is already that type (Normal).
 - **Its rules pop-up** is its own (`platesRulesSeen`): a player who read Distortion World's still gets the stairway's
   once.
+
+## 50. Friend Battles (live PvP between friends)
+
+docs/65. Its own switch (§20), **the first with "On for beta testers"**: the admin and the accounts on Admin → Config →
+Switches' Beta testers list. The switch offers that 4th value only on a feature whose server functions read
+`access_open` (Friend Battles first); a row set to it draws the choice in INFO's blue.
+
+- **Where it starts**: the Friends page. A sky card under the friendship card (the vs icon, "Friend Battles", the
+  record or "Live 3 v 3 against a friend", NEW until its rules are read) opens `/battles`. Each friend's row gets a
+  **BATTLE** button at its side, never inside the row's own button: red on the first friend in the game now, navy
+  (`dark`) on the others, hatched "Offline" for the rest. "Online now" with a green dot replaces the row's line.
+- **The challenge sheet** (`ChallengeSheet`): the friend's look, the two modes as cards (radio buttons; the picked one
+  `bg-cream shadow-card-gold` with the check), chips for 3 v 3 · Lv.50 · No items, one red SEND CHALLENGE in the
+  footer and the answer's time under it. A refusal is said in a rose line in the sheet (offline, busy, no team).
+- **A challenge arriving** (`ChallengeCard`): a dialogue-framed banner under the top bar (never a modal, never over a
+  fight: it waits for the fight's end), the challenger's look, "{name} challenges you!", the mode tag, a time gauge,
+  NO and ACCEPT (twice as wide, red). Away from the match's page while one is on, a slim card says so with BACK TO IT.
+- **Time** is always a dark chip with a clock and m:ss (`TimeChip`, red text from 10 s) and, where there's room, a
+  gauge (`TimeGauge`, sky blue, red from 10 s) with its label.
+- **Mode tags** (`ModeTag`): CLASSIC in INFO's blue, DRAFT in gold. **The Bonus Shield** (`ShieldTag`): a small blue tag
+  with a shield glyph, on the plate of the first picker's Pokémon in the fight and beside their name in the draft;
+  struck out on `shadow` once used. Its hit says "The Bonus Shield takes half: 38 → 19." with a SHIELD banner first.
+- **The coin**: a big pixel coin flips up and lands (14 steps of 100 ms; calm: landed at once), then the first picker's
+  look ringed in gold, the headline and the shield's card; the draft opens 2.2 s later.
+- **The draft board**: the two rows of three slots (yours on top), the six picks' order strip (done: muted; now: red for
+  you, blue for them), then a search and the list of your Pokémon. Taken species are hatched with "Taken by {name}"; a
+  row's line says how many of their picks it hits super effectively (green), else its level → 50. One red PICK
+  {name} in a dock at the foot; their turn: a disabled "{name}'s turn". Their pick lands as a dialogue line for 2.6 s.
+- **The order** (Draft's, and Classic's "Ready to battle?"): their team (Draft: their three; Classic: three Poké Balls),
+  ready or choosing; your three numbered, the lead's number red with a LEAD tag; tap two to swap; READY in the dock.
+- **The fight** is the battle screen (§14) with `versus.live` and `noSwitch`: your controls on your turn, the other's
+  dice shown as their moves arrive, AUTO-MODE as in the league, no Bag, no switching (the team's step keeps BACK and the
+  flag, which gives up the match). A chip at the top right says whose turn and the seconds left. The result card:
+  VICTORY! / DEFEAT / DRAW, how many were left, the head to head, REMATCH (red) and BACK TO FRIENDS.
+- **The page** `/battles`: rules card the first time (`friendBattlesRulesSeen`), a match still on, the record (W and L
+  chips) and the last battles (vs, mode tag, when, head to head, WIN / LOSS / DRAW), a sky note pointing to the Friends
+  page, INFO. Home's notice announces it (signed in, Versus open).

@@ -280,6 +280,12 @@ export interface VersusReplay {
   end?: ReactNode
   /** Fought by the player (the weekly league): AUTO is their switch, off at the start. */
   live?: { auto: boolean; onAuto: (on: boolean) => void }
+  /**
+   * No switching on your turn (a Friend Battle, docs/65: the order was set before the fight): the team's step keeps
+   * only BACK and the flag, and the flag gives up through `onForfeit`.
+   */
+  noSwitch?: boolean
+  onForfeit?: () => void
 }
 
 export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: VersusReplay }) {
@@ -546,7 +552,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     })
   // Out on the field already: not one to switch in (a double battle has two out).
   const onField = (p: Battler) => (dbl ? dbl.ownSlots.some((i) => st.player[i]!.uid === p.uid) : p.uid === activeBattler(st).uid)
-  const switchTargets = st.player.filter((p) => p.hp > 0 && !onField(p))
+  const switchTargets = versus?.noSwitch ? [] : st.player.filter((p) => p.hp > 0 && !onField(p))
   // After a K.O. with one Pokémon left to come in, it comes in: nothing to choose (the user, 2026-10-27).
   const lastOne = forced && !auto && switchTargets.length === 1 ? switchTargets[0]!.uid : null
   useEffect(() => {
@@ -1292,6 +1298,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             party={party}
             onClick={tapMatchups && (() => tapMatchups('enemy'))}
             open={matchups === 'enemy'}
+            shield={st.shield?.side === 'enemy' ? st.shield : null}
           />
         )}
         {!dbl && ownOut && !bossIntro && (
@@ -1300,6 +1307,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             hp={fx.hp[active.uid] ?? active.hp}
             onClick={tapMatchups && (() => tapMatchups('player'))}
             open={matchups === 'player'}
+            shield={st.shield?.side === 'player' ? st.shield : null}
           />
         )}
         {matchups && (
@@ -1476,6 +1484,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                 }}
                 onBack={() => setSwitching(null)}
                 chosen={teamPick ?? undefined}
+                onForfeit={versus?.onForfeit}
               />
             ) : (
               <>
@@ -1914,12 +1923,15 @@ export function SwitchStep({
   onPick,
   onBack,
   chosen,
+  onForfeit,
 }: {
   options: Battler[]
   first?: string
   foe: number
   onPick: (uid: string) => void
   onBack?: () => void
+  /** The flag's own way to give up (a Friend Battle); else the run's fight's. */
+  onForfeit?: () => void
   /**
    * A computer's fight (BattleSides): the team's column at the side is where the pick is made, so the step shows the
    * one picked, not the cards, and the caller holds the pick.
@@ -1955,7 +1967,7 @@ export function SwitchStep({
                 {t('ui.common.back')}
               </PixelButton>
             )}
-            <ForfeitButton flag />
+            <ForfeitButton flag onForfeit={onForfeit} />
           </div>
         </BottomDock>
       </div>
@@ -1996,7 +2008,7 @@ export function SwitchStep({
             </PixelButton>
           )}
           {go}
-          <ForfeitButton flag />
+          <ForfeitButton flag onForfeit={onForfeit} />
         </div>
         <KeyHints
           keys={[

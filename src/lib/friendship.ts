@@ -33,7 +33,7 @@ async function rpc<T>(fn: string, args?: Record<string, unknown>): Promise<T> {
   return data as T
 }
 
-const KINDS: readonly FriendshipKind[] = ['raid', 'trade', 'egg']
+const KINDS: readonly FriendshipKind[] = ['raid', 'trade', 'egg', 'battle']
 const kindOf = (k: unknown): FriendshipKind =>
   KINDS.includes(k as FriendshipKind) ? (k as FriendshipKind) : 'trade'
 const num = (n: unknown) => (Number.isFinite(Number(n)) ? Number(n) : 0)

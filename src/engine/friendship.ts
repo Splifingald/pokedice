@@ -27,7 +27,8 @@ const APPLIED_KEPT = 60
 /** Egg reports waiting to reach the server, at most. */
 const EGG_REPORTS_KEPT = 8
 
-export type FriendshipKind = 'raid' | 'trade' | 'egg'
+/** 'battle': a Friend Battle fought to its end (docs/65). */
+export type FriendshipKind = 'raid' | 'trade' | 'egg' | 'battle'
 
 /** The admin's switch (docs/15 §20): on for everyone, or for the admin only. */
 export const friendshipOn = (data: GameData): boolean => eventOpenTo(data.config.friendship?.access, data)

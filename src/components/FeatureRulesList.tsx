@@ -8,6 +8,7 @@ import {
   EVENT_IDS,
   eventOn,
   extremeOn,
+  friendBattlesOn,
   friendshipOn,
   galarWeatherOn,
   generalOn,
@@ -38,6 +39,7 @@ import { DevGiftRulesModal } from './DevGiftRules'
 import { ExtremeRulesModal } from './Extreme'
 import { DayCareRulesModal, VersusRulesModal } from './FeatureRules'
 import { FriendshipRulesModal } from './friends/Friendship'
+import { FriendBattleRulesModal } from './pvp/FriendBattleBits'
 import { InviteRulesModal } from './friends/InviteRewards'
 import { GeneralRulesModal } from './GeneralRules'
 import { GiftRulesModal as GiftCardRulesModal } from './GiftCard'
@@ -150,6 +152,13 @@ function useFeatures(save: SaveData, data: GameData): Feature[] {
       icon: 'heart',
       on: friendshipOn(data),
       rules: (p) => <FriendshipRulesModal {...p} />,
+    },
+    {
+      id: 'friendBattles',
+      name: t('ui.pvp.title'),
+      icon: 'vs',
+      on: friendBattlesOn(data),
+      rules: (p) => <FriendBattleRulesModal {...p} />,
     },
     {
       id: 'invites',

@@ -96,6 +96,8 @@ export function featureTarget(
         : { name: t('ui.versus.title'), icon: 'vs', to: '/versus' }
     case 'trades':
       return { name: t('ui.trades.title'), icon: 'trade', to: '/trades' }
+    case 'friendBattles':
+      return { name: t('ui.pvp.title'), icon: 'vs', to: '/battles' }
     case 'shinyDex':
       return { name: t('ui.dex.shinyTitle'), icon: 'sparkle', to: '/pokedex?view=shiny' }
     case 'unownDex':

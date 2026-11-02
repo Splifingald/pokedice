@@ -917,9 +917,10 @@ export type EventId = (typeof EVENT_IDS)[number]
 
 /**
  * Each event type's switch in the admin (the user's rule, 2026-10-11): off (nowhere in the game), on for the admin only
- * (to try it in production first), on for everyone. Off by default.
+ * (to try it in production first), on for the admin and the beta testers' list (docs/65 §3, offered only where the
+ * feature's server functions read `access_open`), on for everyone. Off by default.
  */
-export const EVENT_ACCESS = ['off', 'admin', 'all'] as const
+export const EVENT_ACCESS = ['off', 'admin', 'beta', 'all'] as const
 export type EventAccess = (typeof EVENT_ACCESS)[number]
 
 /** One place band of the week's rewards: ranks up to `upTo` (after the band before) get these. */
@@ -1403,6 +1404,11 @@ export interface GameConfig {
    * from a pool). The server prices and pays from the same row (migration 0107, friendship_cfg()).
    */
   friendship: FriendshipConfig
+  /**
+   * Friend Battles (docs/65): live 3 v 3 between two friends, Classic or Draft. The switch (beta testers allowed) and
+   * the timers; the server reads the same row (migration 0130, friend_battles_cfg()).
+   */
+  friendBattles?: Partial<FriendBattlesConfig>
   /**
    * Outfits (docs/59): Pokémon dressed up (Santa Pikachu), given as gifts. Off, an outfit Pokémon looks plain (it keeps
    * its tag). Only looks and evolution in the player's own save, so no server function reads it. Migration 0105 inserts
@@ -2308,6 +2314,8 @@ export interface SaveData {
   versusLeagueRulesSeen?: boolean
   /** Retired: real-player battles' rules pop-up was shown (it no longer opens by itself, 2026-11-02). Old saves keep it. */
   areaVersusRulesSeen?: boolean
+  /** Friend Battles' rules card has been read on its page (docs/65; INFO shows them again). */
+  friendBattlesRulesSeen?: boolean
   /** The portal run's rules pop-up (docs/28) has been shown (once; INFO shows them again). */
   portalRulesSeen?: boolean
   /** The same for a portal run dressed as the Stairway of Plates (docs/64 §4.5): its own, as its words are its own. */
@@ -2819,6 +2827,23 @@ export interface FriendMarketItem {
   limit: number
 }
 
+/** Friend Battles' numbers (docs/65), every time in seconds. */
+export interface FriendBattlesConfig {
+  access: EventAccess
+  /** A challenge waits this long for its answer. */
+  expiry: number
+  /** A draft pick, the team's order, a turn. */
+  pick: number
+  order: number
+  turn: number
+  /** A player not seen this long during a match loses it. */
+  grace: number
+  /** The Bonus Shield: the % of the first attack's damage the first picker's team takes. */
+  shield: number
+  classic: boolean
+  draft: boolean
+}
+
 export interface FriendshipConfig {
   access: EventAccess
   tiers: FriendshipTier[]
@@ -2958,6 +2983,9 @@ export interface GameData {
   /** Family (its lowest dex) → its hidden talent, the game's own pick (docs/51). */
   talentFamilies: Record<string, string>
   /** Who's playing, set by the store: the admin sees the events switched on for the admin only. Absent = a player. */
-  /** Who's playing: the admin (signed in), and the Extreme save's race (docs/48: its online features off). */
-  viewer?: { admin: boolean; race?: boolean }
+  /**
+   * Who's playing: the admin (signed in), a beta tester (docs/65 §3: the server's list, read by friend_status), and the
+   * Extreme save's race (docs/48: its online features off).
+   */
+  viewer?: { admin: boolean; beta?: boolean; race?: boolean }
 }

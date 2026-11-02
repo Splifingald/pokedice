@@ -453,7 +453,7 @@ const TABS = [
   { id: 'safari', label: 'Safari', icon: 'ball' },
 ] as const satisfies readonly { id: string; label: string; icon: IconName }[]
 type TabId = (typeof TABS)[number]['id']
-const ACCESS_SHORT: Record<EventAccess, string> = { off: 'Off', admin: 'Admin', all: 'On' }
+const ACCESS_SHORT: Record<EventAccess, string> = { off: 'Off', admin: 'Admin', beta: 'Beta', all: 'On' }
 
 /**
  * Admin → Events: General (every event's switch, Home order, unlock area, banner and pop-up rules), then one tab per

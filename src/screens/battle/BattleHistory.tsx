@@ -261,6 +261,9 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: r
       case 'cleansed':
         rows.push({ key, ...who(e.uid), text: t('ui.hist.zCleansed'), icon: 'heal' })
         return
+      case 'shield':
+        rows.push({ key, ...who(e.uid), text: t('ui.hist.shield', { before: e.before, after: e.after }), icon: 'shield' })
+        return
       case 'recoil':
         rows.push({
           key,

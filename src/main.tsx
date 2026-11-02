@@ -21,7 +21,9 @@ for (const type of ['gesturestart', 'gesturechange'])
 
 // Test scripts (the prototype, the dev server) reach the store; the real build has neither.
 if (import.meta.env.VITE_PROTO || import.meta.env.DEV)
-  void import('./store/run').then((run) => Object.assign(window, { __pd: { useGame, run, setSettings } }))
+  void Promise.all([import('./store/run'), import('./store/pvp')]).then(([run, pvp]) =>
+    Object.assign(window, { __pd: { useGame, run, setSettings, usePvp: pvp.usePvp } }),
+  )
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
