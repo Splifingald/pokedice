@@ -15,7 +15,7 @@ import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame, pushToast } from '@/store/game'
 import { useInFight } from '@/store/hooks'
 import { answer, foeOf, here, keepInbox, keepMatchTopic, loadHome, tick, usePvp } from '@/store/pvp'
-import { ModeTag, TimeGauge, useSecondsLeft } from './FriendBattleBits'
+import { LevelTag, ModeTag, TimeGauge, useSecondsLeft } from './FriendBattleBits'
 import { challengeError } from './ChallengeSheet'
 import { cx } from '@/theme/util'
 
@@ -82,6 +82,7 @@ function Banners() {
       <ChallengeCard
         from={from}
         mode={incoming.mode}
+        level={incoming.level}
         seconds={seconds}
         total={incoming.cfg.expiry}
         onAccept={() => void accept()}
@@ -109,6 +110,7 @@ function Banners() {
 export function ChallengeCard({
   from,
   mode,
+  level = 50,
   seconds,
   total,
   onAccept,
@@ -117,6 +119,7 @@ export function ChallengeCard({
 }: {
   from: PvpPlayer
   mode: PvpMode
+  level?: number
   seconds: number | null
   total: number
   onAccept: () => void
@@ -141,6 +144,7 @@ export function ChallengeCard({
           <b className="text-[22px] font-normal leading-none">{t('ui.pvp.challenged', { name: from.name })}</b>
           <span className="flex items-center gap-1.5">
             <ModeTag mode={mode} />
+            <LevelTag level={level} />
             <span className="font-pixel-sm text-[16px] text-muted">{t('ui.pvp.chip.size')}</span>
             <PixelIcon name="battleTicket" size={18} title={t('ui.ticket.cost')} />
             <span className="font-pixel-sm text-[16px] text-muted">−1</span>

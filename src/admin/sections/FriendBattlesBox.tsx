@@ -66,6 +66,10 @@ export function FriendBattlesBox() {
         <label className="flex items-center gap-2">
           <input type="checkbox" checked={cfg.draft} onChange={(e) => set({ draft: e.target.checked })} /> Draft mode
         </label>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={cfg.lv100} onChange={(e) => set({ lv100: e.target.checked })} /> Lv.100 battles
+          (beside Lv.50)
+        </label>
       </div>
     </Box>
   )

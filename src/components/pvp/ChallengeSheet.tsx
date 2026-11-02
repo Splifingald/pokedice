@@ -3,7 +3,7 @@
 // SEND CHALLENGE. Sent, the game goes to the match's page to wait for the answer.
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { friendBattlesConfig, type PvpMode } from '@/engine'
+import { friendBattlesConfig, PVP_LEVELS, type PvpLevel, type PvpMode } from '@/engine'
 import { Sheet } from '@/components/Sheet'
 import { PixelButton } from '@/components/PixelButton'
 import { PixelIcon } from '@/components/icons'
@@ -37,6 +37,8 @@ export function challengeError(t: (k: string, v?: TVars) => string, code: string
       return t(mode === 'classic' ? 'ui.pvp.err.noTeam' : 'ui.pvp.err.noDraft')
     case 'pvp_friend_no_team':
       return t(mode === 'classic' ? 'ui.pvp.err.friendNoTeam' : 'ui.pvp.err.friendNoDraft', { name })
+    case 'pvp_level_off':
+      return t('ui.pvp.err.failed')
     case 'pvp_no_ticket':
       return t('ui.pvp.err.noTicket')
     case 'pvp_friend_no_ticket':
@@ -52,6 +54,9 @@ export function ChallengeSheet({ target, onClose }: { target: ChallengeTarget | 
   const cfg = friendBattlesConfig(useGame((s) => s.data))
   const modes = (['classic', 'draft'] as const).filter((m) => cfg[m])
   const [mode, setMode] = useState<PvpMode>(cfg.draft ? 'draft' : 'classic')
+  // The fight's level (docs/65 §16): Lv.50, or Lv.100 while the admin offers it.
+  const [level, setLevel] = useState<PvpLevel>(50)
+  const lv = cfg.lv100 ? level : 50
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // Battle tickets (docs/65 §15): none held, nothing to send (null: a database before 0132 counts none).
@@ -62,7 +67,7 @@ export function ChallengeSheet({ target, onClose }: { target: ChallengeTarget | 
     if (!target || busy) return
     setBusy(true)
     setError(null)
-    const code = await challenge(target.id, chosen)
+    const code = await challenge(target.id, chosen, lv)
     setBusy(false)
     if (code) return setError(challengeError(t, code, target.name, chosen))
     onClose()
@@ -125,10 +130,38 @@ export function ChallengeSheet({ target, onClose }: { target: ChallengeTarget | 
               </button>
             ))}
           </div>
+          {cfg.lv100 && (
+            <div className="grid gap-1.5">
+              <span className="font-pixel-sm text-[16px] text-muted">{t('ui.pvp.pickLevel')}</span>
+              <div role="radiogroup" aria-label={t('ui.pvp.pickLevel')} className="grid grid-cols-2 gap-2">
+                {PVP_LEVELS.map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    role="radio"
+                    aria-checked={lv === n}
+                    onClick={() => setLevel(n)}
+                    className={cx(
+                      'grid gap-0.5 p-2 pb-2.5 text-left',
+                      lv === n ? 'bg-cream shadow-card-gold' : 'bg-paper shadow-card',
+                    )}
+                  >
+                    <b className="flex items-center gap-1.5 text-[22px] font-normal leading-none">
+                      {t('ui.common.level.short', { n })}
+                      {lv === n && <PixelIcon name="check" size={16} />}
+                    </b>
+                    <span className="font-pixel-sm text-[16px] leading-tight text-muted">
+                      {t(n === 100 ? 'ui.pvp.level100' : 'ui.pvp.level50')}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="flex flex-wrap gap-1.5">
-            {['ui.pvp.chip.size', 'ui.pvp.chip.level', 'ui.pvp.chip.items'].map((k) => (
+            {[t('ui.pvp.chip.size'), t('ui.common.level.short', { n: lv }), t('ui.pvp.chip.items')].map((k) => (
               <span key={k} className="bg-paper px-2 py-0.5 font-pixel-sm text-[16px] shadow-ring-thin">
-                {t(k)}
+                {k}
               </span>
             ))}
           </div>

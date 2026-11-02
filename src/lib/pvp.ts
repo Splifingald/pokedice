@@ -4,7 +4,7 @@
 // (store/pvp.ts).
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import type { DraftMon, FriendBattlesConfig, PvpMode, PvpMove, PvpSide, VersusMon } from '@/engine'
-import { FRIEND_BATTLES_DEFAULTS } from '@/engine'
+import { FRIEND_BATTLES_DEFAULTS, pvpLevelOf, type PvpLevel } from '@/engine'
 import { avatarOf } from './avatars'
 import { getSupabase } from './supabase'
 
@@ -20,6 +20,8 @@ export interface PvpPlayer {
 export interface PvpInfo {
   id: number
   mode: PvpMode
+  /** The level the fight is at (docs/65 §16): 50, or 100. */
+  level: PvpLevel
   state: PvpState
   side: PvpSide
   a: PvpPlayer
@@ -62,6 +64,7 @@ export interface PvpRecord extends PvpPlayer {
 export interface PvpHistoryRow {
   id: number
   mode: PvpMode
+  level: PvpLevel
   at: number
   foe: PvpPlayer
   result: 'win' | 'loss' | 'draw'
@@ -123,6 +126,7 @@ export function parseInfo(raw: unknown): PvpInfo | null {
   return {
     id: num(r.id),
     mode: r.mode === 'draft' ? 'draft' : 'classic',
+    level: pvpLevelOf(r.level),
     state,
     side: side(r.side),
     a: parsePlayer(r.a),
@@ -178,6 +182,7 @@ export function parseHome(raw: unknown): PvpHome | null {
           return {
             id: num(o.id),
             mode: o.mode === 'draft' ? 'draft' : 'classic',
+            level: pvpLevelOf(o.level),
             at: num(o.at),
             foe: parsePlayer(o.foe),
             result,
@@ -211,7 +216,8 @@ const info = async (fn: string, args: Record<string, unknown>) => {
   return m
 }
 
-export const pvpChallenge = (friend: string, mode: PvpMode) => info('pvp_challenge', { p_friend: friend, p_mode: mode })
+export const pvpChallenge = (friend: string, mode: PvpMode, level: PvpLevel = 50) =>
+  info('pvp_challenge', { p_friend: friend, p_mode: mode, p_level: level })
 export const pvpAnswer = (id: number, accept: boolean) => info('pvp_answer', { p_match: id, p_accept: accept })
 export const pvpCancel = (id: number) => info('pvp_cancel', { p_match: id })
 export const pvpPick = (id: number, m: Pick<DraftMon, 'dex' | 'shiny'>) =>

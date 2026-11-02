@@ -11,6 +11,8 @@ import {
   friendBattlesFor,
   friendBattlesOn,
   marketRows,
+  makeBattler,
+  pvpBattler,
   BATTLE_TICKET_KEY,
   pvpHash,
   pvpLogFor,
@@ -243,6 +245,44 @@ describe('battle tickets on the Friend Market (docs/65 §15)', () => {
 
   it('not sold while it is off', () => {
     expect(marketRows(open('off'), '2026-11-02').some((r) => r.kind === 'ticket')).toBe(false)
+  })
+})
+
+describe('Lv.50 or Lv.100 (docs/65 §16)', () => {
+  const own = (dex: number, level: number) => makeBattler({ uid: 'x', dex, level, hp: 9999 }, data)
+
+  it('Lv.100: a weaker one is brought up — Lv.100 HP and Speed, its own dice and rerolls', () => {
+    const b = pvpBattler({ dex: 149, level: 60, shiny: false }, 'a0', data, 100)
+    const at100 = own(149, 100)
+    const at60 = own(149, 60)
+    expect(b.level).toBe(100)
+    expect(b.maxHp).toBe(at100.maxHp)
+    expect(b.hp).toBe(at100.maxHp)
+    expect(b.speed).toBe(at100.speed)
+    expect(b.dice).toEqual(at60.dice)
+    expect(b.rerolls).toBe(at60.rerolls)
+  })
+
+  it('Lv.50: a stronger one is brought down, its own dice kept (Versus’s rule)', () => {
+    const b = pvpBattler({ dex: 149, level: 80, shiny: false }, 'a0', data, 50)
+    expect(b.level).toBe(50)
+    expect(b.maxHp).toBe(own(149, 50).maxHp)
+    expect(b.dice).toEqual(own(149, 80).dice)
+  })
+
+  it('a match opens at its level, and plays to its end the same on two games', () => {
+    const opened = startPvp(team([6, 9, 3], 70), team([94, 130, 68], 55), null, data, 3, 50, 100)
+    expect(opened.match.a.every((b) => b.level === 100)).toBe(true)
+    let one = opened.match
+    let two = structuredClone(opened.match)
+    const rng = createRng(8)
+    for (let i = 0; i < 2000 && !one.winner; i++) {
+      const s = rng.int(0, 2 ** 31 - 1)
+      one = applyPvpMove(one, one.actor, { k: 'attack' }, s, data).match
+      two = applyPvpMove(two, two.actor, { k: 'attack' }, s, data).match
+    }
+    expect(one.winner).toBeDefined()
+    expect(pvpHash(one)).toBe(pvpHash(two))
   })
 })
 

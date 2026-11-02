@@ -13,6 +13,7 @@ import { RulesCard } from '@/components/RulesCard'
 import { TrainerLook } from '@/components/TrainerLook'
 import {
   FriendBattleRulesModal,
+  LevelTag,
   ModeTag,
   TicketsCard,
   useFriendBattleRules,
@@ -116,6 +117,7 @@ export function BattlesScreen() {
                     <span className="flex items-center gap-1.5">
                       <b className="truncate text-[20px] font-normal leading-none">{t('ui.pvp.vs', { name: h.foe.name })}</b>
                       <ModeTag mode={h.mode} />
+                      <LevelTag level={h.level} />
                     </span>
                     <small className="truncate font-pixel-sm text-[16px] text-muted">
                       {agoText(h.at, now)}

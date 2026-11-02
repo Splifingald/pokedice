@@ -16,6 +16,7 @@ import {
   type PvpEntry,
   type PvpMatch,
   type PvpMode,
+  type PvpLevel,
   type PvpMove,
   type PvpSide,
 } from '@/engine'
@@ -95,7 +96,7 @@ function openEngine(info: PvpInfo): { engine: PvpMatch; log: PvpEntry[] } | null
   const teamA = info.side === 'a' ? info.team : info.foeTeam
   const teamB = info.side === 'a' ? info.foeTeam : info.team
   const shield = info.mode === 'draft' ? info.firstPicker : null
-  const r = startPvp(teamA, teamB, shield, data(), info.seed, info.cfg.shield)
+  const r = startPvp(teamA, teamB, shield, data(), info.seed, info.cfg.shield, info.level)
   return { engine: r.match, log: r.log }
 }
 
@@ -163,9 +164,9 @@ async function finish(): Promise<void> {
 
 // ---------------------------------------------------------------- what the screens call
 
-export async function challenge(friend: string, mode: PvpMode): Promise<string | null> {
+export async function challenge(friend: string, mode: PvpMode, level: PvpLevel = 50): Promise<string | null> {
   try {
-    adopt(await pvpChallenge(friend, mode))
+    adopt(await pvpChallenge(friend, mode, level))
     usePvp.setState({ error: null })
     return null
   } catch (err) {

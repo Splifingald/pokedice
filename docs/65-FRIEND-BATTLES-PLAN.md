@@ -320,6 +320,10 @@ preview; the migration's GitHub link given with the push; patch notes only when 
    https://github.com/Splifingald/pokedice/blob/version/2_9/supabase/migrations/0132_battle_tickets.sql
    after 0131 (version 2.9's file carries it too, last). Not in `supabase/seed.sql`.
 
+6. Lv.50 or Lv.100 (§16): run
+   https://github.com/Splifingald/pokedice/blob/version/2_9/supabase/migrations/0133_friend_battle_levels.sql
+   after 0132 (version 2.9's file carries it too, last). Not in `supabase/seed.sql`.
+
 ## 15. Battle tickets
 
 The user's ask, 2026-11-02: *"Add battle tickets as a new currency, one battle ticket is given to all players at
@@ -342,4 +346,20 @@ BUY MORE to the Friend Market); the Friends page's card shows the count; the cha
 a rose line saying why, SEND off); the challenge banner shows "−1" by the ticket; the market's card says how many you
 hold. The rules card's 4th row is the tickets' (the turn's time joined the first row). Tests: the SQL suite's
 "battle tickets (0132)", the engine's market row, two e2e.
+
+## 16. Lv.50 or Lv.100
+
+The user's ask, 2026-11-02: *"Add choice between lvl 50 or lvl 100 battles too."* Migration
+**`0133_friend_battle_levels.sql`**.
+
+| Question | Answer |
+|---|---|
+| Who picks | **The challenger**, beside the mode, in the challenge sheet (Lv.50 first). The friend sees it on the banner (a level tag beside the mode), and the match shows it at every step and in the history. A rematch keeps it |
+| The rule | **Versus's rule at either level**: every Pokémon shows the fight's level and has that level's **HP and Speed**, and keeps the **dice and rerolls of its own level** (`pvpBattler`). At Lv.50 a stronger one is brought down (as before); at Lv.100 a weaker one is brought up to Lv.100's HP and Speed, its dice its own. So Lv.100 fights are longer, and the dice of a better-raised Pokémon count for more |
+| Who can play | The same at both: Pokémon at Lv.50 or more (the Versus team for Classic) |
+| Admin | Config → Friend Battles: *Lv.100 battles* (on by default; off, the sheet offers Lv.50 only and the server refuses 100: `pvp_level_off`) |
+
+Built in `src/engine/friendBattle.ts` (`PVP_LEVELS`, `pvpBattler`, `startPvp`'s level), the match's `level` column and
+`pvp_challenge(friend, mode, level)`, the sheet's level choice (`LevelTag` elsewhere: Lv.100 in ink, Lv.50 plain),
+tests in the engine, SQL and e2e suites.
 

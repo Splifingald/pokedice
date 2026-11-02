@@ -2851,6 +2851,8 @@ export interface FriendBattlesConfig {
   ticketCap: number
   ticketPrice: number
   ticketWeekly: number
+  /** Lv.100 battles offered beside Lv.50 (docs/65 §16). */
+  lv100: boolean
 }
 
 export interface FriendshipConfig {

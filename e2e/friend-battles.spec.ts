@@ -143,7 +143,7 @@ test('the Friends page: the card, BATTLE on the friend in the game, the challeng
 
   await expect(page).toHaveURL(/\/battles\/live$/)
   await expect(page.getByText('Waiting for Misty…').first()).toBeVisible()
-  expect(sent).toEqual([{ p_friend: MISTY, p_mode: 'draft' }])
+  expect(sent).toEqual([{ p_friend: MISTY, p_mode: 'draft', p_level: 50 }])
   await shot(page, 'pvp-waiting')
 })
 
@@ -293,6 +293,29 @@ test('the page: its rules card once, the record and the last battles', async ({ 
   await expect
     .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}').friendBattlesRulesSeen))
     .toBe(true)
+})
+
+test('Lv.100: picked in the sheet, sent with the challenge, said on the banner and the match', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  const sent: unknown[] = []
+  await boot(page, save(), {
+    pvp_challenge: (body: unknown) => {
+      sent.push(body)
+      return info({ level: 100, mode: 'classic' })
+    },
+  })
+  await page.goto('/friends')
+  await page.getByRole('button', { name: 'Battle Misty' }).click()
+  const sheet = page.getByRole('dialog', { name: 'Challenge Misty' })
+  const levels = sheet.getByRole('radiogroup', { name: 'Pick a level' })
+  await expect(levels.getByRole('radio', { name: /Lv\.50/ })).toHaveAttribute('aria-checked', 'true')
+  await sheet.getByRole('radio', { name: /Classic/ }).click()
+  await levels.getByRole('radio', { name: /Lv\.100/ }).click()
+  await expect(sheet.getByText('Lv.100', { exact: true }).last()).toBeVisible()
+  await shot(page, 'pvp-sheet-lv100')
+  await sheet.getByRole('button', { name: 'Send challenge' }).click()
+  await expect.poll(() => sent).toEqual([{ p_friend: MISTY, p_mode: 'classic', p_level: 100 }])
+  await expect(page.getByText('Lv.100', { exact: true }).first()).toBeVisible()
 })
 
 test('battle tickets: the sheet says the cost; with none, SEND is off and says why', async ({ page }) => {

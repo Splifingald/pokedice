@@ -36,6 +36,7 @@ function match(over: Partial<PvpInfo>): PvpInfo {
   return {
     id: 999_000 + Math.floor(Math.random() * 1000),
     mode: 'draft',
+    level: 50,
     state: 'draft',
     side: 'a',
     a: ASH,
@@ -106,6 +107,7 @@ export function FriendBattleBits() {
     classicReady: match({
       state: 'order',
       mode: 'classic',
+      level: 100,
       firstPicker: null,
       team: [mon(149, 72), mon(9, 61), mon(135, 55)],
       readyA: true,
@@ -146,7 +148,7 @@ export function FriendBattleBits() {
           <VsRow me={ASH} foe={KIRO} foeDim />
         </Frame>
         <Frame name="A challenge to answer (the banner, never over a fight)">
-          <ChallengeCard from={KIRO} mode="draft" seconds={77} total={120} onAccept={nop} onNo={nop} />
+          <ChallengeCard from={KIRO} mode="draft" level={100} seconds={77} total={120} onAccept={nop} onNo={nop} />
         </Frame>
         <Frame name="Battle tickets: the count (sm, md, lg), the page's card (2: next at midnight; full; none)">
           <div className="grid gap-2">
@@ -234,7 +236,7 @@ export function FriendBattleBits() {
         <Frame name="Classic: ready to battle?">
           <OrderStep match={m.classic} inline />
         </Frame>
-        <Frame name="Classic: ready, waiting for them">
+        <Frame name="Classic at Lv.100: ready, waiting for them">
           <OrderStep match={m.classicReady} inline />
         </Frame>
       </div>

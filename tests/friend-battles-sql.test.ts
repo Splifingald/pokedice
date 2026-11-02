@@ -15,6 +15,7 @@ const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
 const FILE = '0131_friend_battles.sql'
 const TICKETS = '0132_battle_tickets.sql'
+const LEVELS = '0133_friend_battle_levels.sql'
 const ADMIN = 'gregoire.ftn@gmail.com'
 
 const U = {
@@ -173,11 +174,13 @@ beforeAll(async () => {
     '0107_friendship.sql',
     FILE,
     TICKETS,
+    LEVELS,
   ])
     await db.exec(sql(f))
   // Safe to run again.
   await db.exec(sql(FILE))
   await db.exec(sql(TICKETS))
+  await db.exec(sql(LEVELS))
   await db.exec(`insert into auth.users (id) values ${Object.values(U).map((u) => `('${u}')`).join(',')}`)
   for (const u of Object.values(U))
     await db.query(
@@ -485,6 +488,23 @@ describe('battle tickets (0132)', () => {
     // Not sold while Friend Battles is off for the buyer.
     await access('off')
     expect(await fails(U.ash, `select friend_market_buy('battle-ticket', 1)`)).toContain('friendship_not_sold')
+  })
+})
+
+describe('Lv.50 or Lv.100 (0133)', () => {
+  it('the challenger picks the level; the match says it; Lv.50 when not said', async () => {
+    const m = await one<Match & { level: number }>(U.ash, 'select pvp_challenge($1, $2, 100) r', [U.misty, 'classic'])
+    expect(m.level).toBe(100)
+    expect((await state(U.misty, m.id)).match).toMatchObject({ level: 100 })
+    await one(U.ash, 'select pvp_cancel($1) r', [m.id])
+    expect((await challenge(U.ash, U.misty)) as Match & { level: number }).toMatchObject({ level: 50 })
+  })
+
+  it('only 50 or 100, and Lv.100 only while the admin offers it', async () => {
+    expect(await fails(U.ash, 'select pvp_challenge($1, $2, 70)', [U.misty, 'classic'])).toContain('pvp_level_off')
+    await db.query(`update game_config set value = value || '{"lv100": false}' where key = 'friendBattles'`)
+    expect(await fails(U.ash, 'select pvp_challenge($1, $2, 100)', [U.misty, 'classic'])).toContain('pvp_level_off')
+    await db.query(`update game_config set value = value - 'lv100' where key = 'friendBattles'`)
   })
 })
 

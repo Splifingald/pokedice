@@ -24,6 +24,8 @@ import { uniformLevels } from './damage'
 import { eventOpenTo } from './events'
 import { isExtreme } from './extreme'
 import { createRng, type Rng } from './rng'
+import { getSpecies } from './data'
+import { battleSpeed, effectiveStats } from './progression'
 import { carriedTalent } from './talents'
 import { versusChoices, versusSeedLevels, type VersusMon } from './versus'
 import { versusPower } from './versusLeague'
@@ -47,6 +49,7 @@ export const FRIEND_BATTLES_DEFAULTS: FriendBattlesConfig = {
   ticketCap: 3,
   ticketPrice: 10,
   ticketWeekly: 10,
+  lv100: true,
 }
 
 /** The Friend Market's key for battle tickets (docs/65 §15): never an item of the Bag, held by the server. */
@@ -184,18 +187,26 @@ const teamOf = (m: PvpMatch, s: PvpSide) => (s === 'a' ? m.a : m.b)
 const activeOf = (m: PvpMatch, s: PvpSide) => (s === 'a' ? m.activeA : m.activeB)
 const setActive = (m: PvpMatch, s: PvpSide, i: number) => (s === 'a' ? (m.activeA = i) : (m.activeB = i))
 
-function battlerFor(mon: VersusMon, uid: string, data: GameData): Battler {
-  return makeBattler(
-    {
-      uid,
-      dex: mon.dex,
-      ...versusSeedLevels(mon.level),
-      hp: Number.MAX_SAFE_INTEGER,
-      shiny: mon.shiny,
-      talent: carriedTalent(data, mon.dex, mon.talent),
-    },
-    data,
-  )
+/** The levels a Friend Battle is fought at (docs/65 §16). */
+export const PVP_LEVELS = [50, 100] as const
+export type PvpLevel = (typeof PVP_LEVELS)[number]
+export const pvpLevelOf = (n: unknown): PvpLevel => (n === 100 ? 100 : 50)
+
+/**
+ * A Pokémon in a Friend Battle at `level` (docs/65 §16), Versus's rule at either level: it shows that level and has
+ * that level's HP and Speed, and keeps the dice and rerolls of its own level. At Lv.50 a stronger one is brought down;
+ * at Lv.100 a weaker one is brought up, its dice its own.
+ */
+export function pvpBattler(mon: VersusMon, uid: string, data: GameData, level: PvpLevel = 50): Battler {
+  const talent = carriedTalent(data, mon.dex, mon.talent)
+  const seed = { uid, dex: mon.dex, hp: Number.MAX_SAFE_INTEGER, shiny: mon.shiny, talent }
+  if (level === 50) return makeBattler({ ...seed, ...versusSeedLevels(mon.level) }, data)
+  // Its own level's dice and rerolls, then the fight's level, HP and Speed.
+  const b = makeBattler({ ...seed, level: Math.min(mon.level, level) }, data)
+  if (mon.level >= level) return b
+  const species = getSpecies(data, mon.dex)
+  const at = effectiveStats(species, level, data, talent)
+  return { ...b, level, maxHp: at.maxHp, hp: at.maxHp, speed: battleSpeed(species, level, data, talent) }
 }
 
 /** The engine's state for `actor`'s turn: its team in the player seat, the other side's Pokémon out as the foe. */
@@ -337,11 +348,12 @@ export function startPvp(
   data: GameData,
   seed: number,
   shieldPct = FRIEND_BATTLES_DEFAULTS.shield,
+  level: PvpLevel = 50,
 ): { match: PvpMatch; log: PvpEntry[] } {
   if (!teamA.length || !teamB.length) throw new Error('pvp_empty_team')
   const rng = createRng(seed)
-  const a = teamA.map((mon, i) => battlerFor(mon, `a${i}`, data))
-  const b = teamB.map((mon, i) => battlerFor(mon, `b${i}`, data))
+  const a = teamA.map((mon, i) => pvpBattler(mon, `a${i}`, data, level))
+  const b = teamB.map((mon, i) => pvpBattler(mon, `b${i}`, data, level))
   const speedA = a[0]!.speed ?? 0
   const speedB = b[0]!.speed ?? 0
   const first: PvpSide = speedA > speedB ? 'a' : speedB > speedA ? 'b' : rng.next() < 0.5 ? 'a' : 'b'

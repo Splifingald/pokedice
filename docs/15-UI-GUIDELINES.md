@@ -2556,6 +2556,9 @@ Switches' Beta testers list. The switch offers that 4th value only on a feature 
   dice shown as their moves arrive, AUTO-MODE as in the league, no Bag, no switching (the team's step keeps BACK and the
   flag, which gives up the match). A chip at the top right says whose turn and the seconds left. The result card:
   VICTORY! / DEFEAT / DRAW, how many were left, the head to head, REMATCH (red) and BACK TO FRIENDS.
+- **The level** (docs/65 §16): the sheet's two cards under the modes (Lv.50 / Lv.100, each with its line), then the
+  chips follow it. Elsewhere `LevelTag` beside `ModeTag`: Lv.100 in ink, Lv.50 plain (the banner, each step's head, the
+  history).
 - **Battle tickets** (docs/65 §15): the `battleTicket` icon (the wheel's stub in blue, a red cross of blades) and its
   number (`TicketCount`, the words "{n} battle tickets" for screen readers), never the wheel's gold ticket. `/battles`'
   `TicketsCard` (rose with none), the count on the Friends page's card, the cost in the sheet (a rose line and SEND off

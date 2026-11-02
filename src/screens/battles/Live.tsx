@@ -17,7 +17,6 @@ import {
   randomSeed,
   sameMon,
   versusEdge,
-  VERSUS_LEVEL,
   type BattleEvent,
   type DraftMon,
   type LogEntry,
@@ -33,6 +32,7 @@ import { ShieldTag } from '@/components/pvp/ShieldTag'
 import {
   AWAY_NOTICE_S,
   DropNotice,
+  LevelTag,
   ModeTag,
   TimeChip,
   TimeGauge,
@@ -123,6 +123,7 @@ function StepHead({ match, title, seconds }: { match: PvpInfo; title: string; se
   return (
     <div className="flex items-center gap-2">
       <ModeTag mode={match.mode} />
+      <LevelTag level={match.level} />
       <span className="truncate font-pixel-sm text-[16px] text-muted">{t('ui.pvp.vs', { name: foeOf(match).name })}</span>
       <span className="flex-1" />
       <TimeChip seconds={seconds} />
@@ -432,7 +433,7 @@ export function DraftStep({ match, inline = false }: { match: PvpInfo; inline?: 
                   <small className={cx('font-pixel-sm text-[16px]', hits > 0 ? 'text-good' : 'text-muted')}>
                     {hits > 0
                       ? t('ui.pvp.hits', { n: hits, total: foeDexes.length })
-                      : t('ui.pvp.levelTo', { a: c.level, b: Math.min(c.level, VERSUS_LEVEL) })}
+                      : t('ui.pvp.levelTo', { a: c.level, b: match.level })}
                   </small>
                 </span>
               </button>
@@ -547,7 +548,7 @@ export function OrderStep({ match, inline = false }: { match: PvpInfo; inline?: 
                   <small className={cx('font-pixel-sm text-[16px]', hits ? 'text-good' : 'text-muted')}>
                     {hits
                       ? t('ui.pvp.hits', { n: hits, total: foeDexes.length })
-                      : t('ui.pvp.levelTo', { a: m.level, b: Math.min(m.level, VERSUS_LEVEL) })}
+                      : t('ui.pvp.levelTo', { a: m.level, b: match.level })}
                   </small>
                 </span>
               </button>
@@ -691,7 +692,7 @@ function PvpResult({ match }: { match: PvpInfo }) {
   const rematch = async () => {
     const mode = match.mode
     leaveMatch()
-    const code = await challenge(foe.id, mode)
+    const code = await challenge(foe.id, mode, match.level)
     if (code) {
       pushToast(challengeError(t, code, foe.name, mode), 'bad')
       navigate('/friends')

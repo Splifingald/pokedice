@@ -153,6 +153,22 @@ export function TicketsCard({
   )
 }
 
+/** The fight's level (docs/65 §16): Lv.50 plain, Lv.100 in ink, so the bigger one stands out. */
+export function LevelTag({ level, className }: { level: number; className?: string }) {
+  const { t } = useT()
+  return (
+    <span
+      className={cx(
+        'pixel-corners inline-flex shrink-0 items-center px-1.5 py-px font-pixel-sm text-[14px] uppercase leading-none tracking-[0.04em]',
+        level === 100 ? 'bg-ink text-panel' : 'bg-paper text-ink shadow-ring-thin',
+        className,
+      )}
+    >
+      {t('ui.common.level.short', { n: level })}
+    </span>
+  )
+}
+
 /** CLASSIC (blue) or DRAFT (gold). */
 export function ModeTag({ mode, className }: { mode: PvpMode; className?: string }) {
   const { t } = useT()
