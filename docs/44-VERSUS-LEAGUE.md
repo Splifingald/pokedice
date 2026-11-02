@@ -183,8 +183,9 @@ The admin sees **BOT** on the bots, before their names, in the opponents and the
    "—" while the league is on.
 
 9. For **bots the same in every group** (§11), run
-   <https://github.com/Splifingald/pokedice/blob/ccr-7db9d89a-y7lc5s/supabase/migrations/0128_versus_bot_targets.sql>
-   (after 0082 and 0092; safe to run again; `supabase/seed.sql` doesn't inline it). Bots already seated keep where
+   <https://github.com/Splifingald/pokedice/blob/version/2_9/supabase/migrations/0128_versus_bot_targets.sql>
+   (after 0082 and 0092; safe to run again; `supabase/seed.sql` doesn't inline it). Version 2.9's one-file
+   `supabase/releases/2026-11-01-version-2-9.sql` carries it too, last. Bots already seated keep where
    they were headed; the ones seated from then on follow the new rule.
 
 After a change to the species, their forms or the gems, the next week's set has them already. To bring the built-in
