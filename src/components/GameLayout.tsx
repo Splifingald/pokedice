@@ -41,7 +41,7 @@ export function GameLayout() {
     // offer, the push question) wait their turn.
     <PopupQueue>
       <div
-        className={cx('flex min-h-screen flex-col', inside && 'in-world')}
+        className={cx('flex min-h-[100dvh] flex-col', inside && 'in-world')}
         // --top-bar: the top bar's height, for a full-screen page under it to fit the rest of the screen (the battle).
         style={{
           ...(inside ? worldVars(world) : undefined),

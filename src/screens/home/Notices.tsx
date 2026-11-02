@@ -96,14 +96,10 @@ export function featureTarget(
         : { name: t('ui.versus.title'), icon: 'vs', to: '/versus' }
     case 'trades':
       return { name: t('ui.trades.title'), icon: 'trade', to: '/trades' }
-    case 'general':
-      return { name: t('ui.home.generalName'), icon: 'navUpgrades', to: '/shop?tab=upgrades&up=general' }
     case 'shinyDex':
       return { name: t('ui.dex.shinyTitle'), icon: 'sparkle', to: '/pokedex?view=shiny' }
     case 'unownDex':
       return { name: t('ui.unown.title'), icon: 'dex', to: '/pokedex?view=unown' }
-    case 'invites':
-      return { name: t('ui.invite.title'), icon: 'gift', to: '/friends' }
     case 'raidRules':
       return { name: t('ui.events.raid.name'), icon: 'star', to: '/events/raid' }
     case 'underground':
