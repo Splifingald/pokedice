@@ -624,6 +624,21 @@ export const ICONS = {
     '............',
     '............',
   ],
+  // A Friend Battles ticket (docs/65): the wheel's stub in blue, a red cross of two blades on it.
+  battleTicket: [
+    '............',
+    '............',
+    'kkkkkkkkkkkk',
+    'kBBBBBBBkBBk',
+    'kbbbbbbb.bbk',
+    '.kbrbrbbkbk.',
+    '.kbbrbbb.bk.',
+    'kbbrbrbbkbbk',
+    'kddddddd.ddk',
+    'kkkkkkkkkkkk',
+    '............',
+    '............',
+  ],
   // The region flavours (docs/62): the weather's six, and a horde's five.
   weatherRain: [
     '....kkkk....',
@@ -754,6 +769,9 @@ export const ICONS = {
 
 export type IconName = keyof typeof ICONS
 
+/** The battle ticket's blues and its red blades (docs/65). */
+const BATTLE_TICKET_PAL: Record<string, string> = { k: '#24304f', B: '#a9c8ff', b: '#4a86e8', d: '#2f5fb8', r: '#f2553f' }
+
 /** The check mark's green square and white tick: the same in both themes. */
 const CHECK_PAL: Record<string, string> = { G: '#24a05c', w: '#ffffff' }
 
@@ -790,6 +808,7 @@ const OWN_PALETTE: Partial<Record<IconName, Record<string, string>>> = {
   weatherAsh: NAV_PAL,
   weatherCloud: NAV_PAL,
   horde: NAV_PAL,
+  battleTicket: BATTLE_TICKET_PAL,
 }
 
 export function PixelIcon({

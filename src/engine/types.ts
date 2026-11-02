@@ -2842,6 +2842,15 @@ export interface FriendBattlesConfig {
   shield: number
   classic: boolean
   draft: boolean
+  /**
+   * Battle tickets (docs/65 §15): `ticketDaily` given at each UTC midnight while a player holds fewer than `ticketCap`
+   * (never past it); the Friend Market sells them at `ticketPrice` Heart Scales, `ticketWeekly` a week (bought ones can
+   * go past the cap). A fight costs each player one, taken as it starts.
+   */
+  ticketDaily: number
+  ticketCap: number
+  ticketPrice: number
+  ticketWeekly: number
 }
 
 export interface FriendshipConfig {

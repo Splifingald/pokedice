@@ -68,7 +68,23 @@ export interface PvpHistoryRow {
   reason: string | null
 }
 
+/** Battle tickets (docs/65 §15): what the player holds, the cap a midnight fills to, and the next midnight (ms). */
+export interface PvpTickets {
+  balance: number
+  cap: number
+  daily: number
+  nextAt: number
+}
+
+export function parseTickets(raw: unknown): PvpTickets | null {
+  const r = (Array.isArray(raw) ? raw[0] : raw) as Record<string, unknown> | null | undefined
+  if (!r || typeof r !== 'object') return null
+  return { balance: Math.max(0, num(r.balance)), cap: num(r.cap, 3), daily: num(r.daily, 1), nextAt: num(r.nextAt) }
+}
+
 export interface PvpHome {
+  /** Null from a database before 0132: no tickets to show, none asked. */
+  tickets: PvpTickets | null
   current: PvpInfo | null
   records: PvpRecord[]
   history: PvpHistoryRow[]
@@ -147,6 +163,7 @@ export function parseHome(raw: unknown): PvpHome | null {
   const r = (Array.isArray(raw) ? raw[0] : raw) as Record<string, unknown> | null | undefined
   if (!r || typeof r !== 'object') return null
   return {
+    tickets: r.tickets ? parseTickets(r.tickets) : null,
     current: r.current ? parseInfo(r.current) : null,
     records: Array.isArray(r.records)
       ? r.records.map((x) => {

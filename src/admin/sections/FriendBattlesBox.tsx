@@ -19,7 +19,7 @@ export function FriendBattlesBox() {
     <Box
       title="Friend Battles"
       icon="vs"
-      hint="Live 3 v 3 between two friends who are both in the game, from the Friends page. Classic: each brings their Versus team, unseen until the fight. Draft: the server tosses a coin, then one pick each in turn (A-B-A-B-A-B) from their own Lv.50+ Pokémon, a species taken by one gone for the other; the first picker's team carries the Bonus Shield. Lv.50 with their own dice, no items, no battle powers, no ₽: a head to head per friend, and a friendship interaction. Times in seconds."
+      hint="Live 3 v 3 between two friends who are both in the game, from the Friends page. Classic: each brings their Versus team, unseen until the fight. Draft: the server tosses a coin, then one pick each in turn (A-B-A-B-A-B) from their own Lv.50+ Pokémon, a species taken by one gone for the other; the first picker's team carries the Bonus Shield. Lv.50 with their own dice, no items, no battle powers, no ₽: a head to head per friend, and a friendship interaction. A fight costs each player a battle ticket, taken as it starts. Times in seconds."
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Challenge expires" hint="a challenge waits this long for its answer">
@@ -43,6 +43,20 @@ export function FriendBattlesBox() {
             value={cfg.shield}
             onChange={(v) => set({ shield: Math.max(0, Math.min(100, Math.round(v ?? 0))) })}
           />
+        </Field>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Battle tickets a midnight" hint="given at each UTC midnight while a player holds fewer than the cap">
+          <NumInput min={0} value={cfg.ticketDaily} onChange={(v) => set({ ticketDaily: Math.max(0, Math.floor(v ?? 0)) })} />
+        </Field>
+        <Field label="Ticket cap" hint="midnights never give past this (bought ones can); a new player starts here">
+          <NumInput min={0} value={cfg.ticketCap} onChange={(v) => set({ ticketCap: Math.max(0, Math.floor(v ?? 0)) })} />
+        </Field>
+        <Field label="Ticket price (Heart Scales)" hint="at the Friend Market; 0 takes them off the shelf">
+          <NumInput min={0} value={cfg.ticketPrice} onChange={(v) => set({ ticketPrice: Math.max(0, Math.floor(v ?? 0)) })} />
+        </Field>
+        <Field label="Tickets sold a week" hint="per player, the market's week">
+          <NumInput min={0} value={cfg.ticketWeekly} onChange={(v) => set({ ticketWeekly: Math.max(0, Math.floor(v ?? 0)) })} />
         </Field>
       </div>
       <div className="flex flex-wrap gap-4 text-lg">

@@ -4,6 +4,7 @@
 // server decided; every state is on /kitchen-sink (FriendshipBits).
 import type { ReactNode } from 'react'
 import {
+  friendBattlesConfig,
   friendshipNumbers,
   friendshipTiers,
   marketQtys,
@@ -20,6 +21,7 @@ import {
 import { useT } from '@/i18n/react'
 import { useItemDescription } from '@/lib/itemText'
 import { useGame } from '@/store/game'
+import { usePvp } from '@/store/pvp'
 import { cx } from '@/theme/util'
 import { PixelIcon } from '../icons'
 import { ItemSprite } from '../ItemSprite'
@@ -540,8 +542,13 @@ export function MarketItemCard({
   busy: boolean
   onBuy: (qty: number) => void
 }) {
+  const { t } = useT()
   const item = useGame((s) => s.data.items[row.key])
   const description = useItemDescription(item?.description)
+  // Battle tickets (docs/65 §15): not an item of the Bag; the server's count of them.
+  const ticket = row.kind === 'ticket'
+  const held = usePvp((s) => s.home?.tickets?.balance ?? 0)
+  const cap = useGame((s) => friendBattlesConfig(s.data).ticketCap)
   return (
     <li
       className={cx('grid gap-2 p-2.5', row.left > 0 ? 'bg-paper shadow-card' : 'bg-well shadow-ring-line')}
@@ -549,11 +556,15 @@ export function MarketItemCard({
     >
       <div className="flex items-start gap-2.5">
         <span className="grid h-[52px] w-[52px] shrink-0 place-items-center bg-well shadow-ring-line">
-          <ItemSprite item={item} size={44} />
+          {ticket ? <PixelIcon name="battleTicket" size={44} /> : <ItemSprite item={item} size={44} />}
         </span>
         <div className="grid min-w-0 flex-1 gap-1">
-          <b className="truncate text-[22px] font-normal leading-none">{item?.name ?? row.key}</b>
-          <span className="font-pixel-sm text-[16px] leading-tight text-muted">{description}</span>
+          <b className="truncate text-[22px] font-normal leading-none">
+            {ticket ? t('ui.ticket.name') : (item?.name ?? row.key)}
+          </b>
+          <span className="font-pixel-sm text-[16px] leading-tight text-muted">
+            {ticket ? t('ui.ticket.marketLine', { n: held, cap }) : description}
+          </span>
           <LeftLine row={row} />
         </div>
       </div>

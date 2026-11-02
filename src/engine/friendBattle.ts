@@ -43,7 +43,14 @@ export const FRIEND_BATTLES_DEFAULTS: FriendBattlesConfig = {
   shield: 50,
   classic: true,
   draft: true,
+  ticketDaily: 1,
+  ticketCap: 3,
+  ticketPrice: 10,
+  ticketWeekly: 10,
 }
+
+/** The Friend Market's key for battle tickets (docs/65 §15): never an item of the Bag, held by the server. */
+export const BATTLE_TICKET_KEY = 'battle-ticket'
 
 export const friendBattlesConfig = (data: GameData): FriendBattlesConfig => ({
   ...FRIEND_BATTLES_DEFAULTS,

@@ -3,7 +3,8 @@
 // online, a team, one at a time), its answer, cancel and expiry; Classic's order step and Draft's coin, picks (in turn,
 // no mirror, the time-out's pick) and order; the battle's moves (in sequence, each with its seed), the time-out move, a
 // forfeit, the result (two claims agree, differ, or one alone), leaving, the head to head and the friendship streak; what
-// each side may see; who may listen on which topic. Realtime is stood in for by a table of what was sent.
+// each side may see; who may listen on which topic. Battle tickets (0132): a new player's three, a midnight's one up to
+// three, one from each as the fight starts, none to challenge or answer, the Friend Market's, past three. Realtime is stood in for by a table of what was sent.
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
@@ -13,6 +14,7 @@ import { FRIEND_BATTLES_DEFAULTS } from '@/engine'
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
 const FILE = '0131_friend_battles.sql'
+const TICKETS = '0132_battle_tickets.sql'
 const ADMIN = 'gregoire.ftn@gmail.com'
 
 const U = {
@@ -170,10 +172,12 @@ beforeAll(async () => {
     '0049_general_upgrades.sql',
     '0107_friendship.sql',
     FILE,
+    TICKETS,
   ])
     await db.exec(sql(f))
   // Safe to run again.
   await db.exec(sql(FILE))
+  await db.exec(sql(TICKETS))
   await db.exec(`insert into auth.users (id) values ${Object.values(U).map((u) => `('${u}')`).join(',')}`)
   for (const u of Object.values(U))
     await db.query(
@@ -192,7 +196,8 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await db.exec(`delete from pvp_matches; delete from pvp_records; delete from pvp_here; delete from beta_testers;
-    delete from realtime.sent; delete from friendship_streaks;`)
+    delete from realtime.sent; delete from friendship_streaks; delete from pvp_tickets; delete from friend_market_buys;
+    delete from friendship_wallets;`)
   await access('all')
   for (const u of [U.ash, U.misty, U.brock, U.admin])
     await save(u, [mon('1', 6, 60), mon('2', 9, 55), mon('3', 3, 52), mon('4', 94, 70), mon('5', 130, 50)])
@@ -411,3 +416,75 @@ describe('the battle', () => {
     expect((await state(U.ash, m.id)).match.state).toBe('void')
   })
 })
+
+const tickets = async (user: string) =>
+  (await one<{ balance: number; cap: number; nextAt: number } | null>(user, 'select pvp_tickets() r'))!
+/** Moves the player's last look back `days` UTC days, as if midnights had gone by. */
+const nights = (user: string, days: number) =>
+  db.query(`update pvp_tickets set day = day - $2::int where user_id = $1`, [user, days])
+const setTickets = (user: string, n: number) =>
+  db.query(`update pvp_tickets set balance = $2 where user_id = $1`, [user, n])
+
+describe('battle tickets (0132)', () => {
+  it('a new player holds three; each midnight gives one, never past three', async () => {
+    const t = await tickets(U.ash)
+    expect(t).toMatchObject({ balance: 3, cap: 3 })
+    expect(t.nextAt).toBeGreaterThan(Date.now())
+    await setTickets(U.ash, 0)
+    await nights(U.ash, 1)
+    expect((await tickets(U.ash)).balance).toBe(1)
+    await nights(U.ash, 5)
+    expect((await tickets(U.ash)).balance).toBe(3)
+    // Bought ones above the cap stay, and no midnight adds to them.
+    await setTickets(U.ash, 7)
+    await nights(U.ash, 2)
+    expect((await tickets(U.ash)).balance).toBe(7)
+  })
+
+  it('a fight takes one from each as it starts, not before', async () => {
+    const m = await challenge(U.ash, U.misty)
+    await answer(U.misty, m.id)
+    await order(U.ash, m.id)
+    expect((await tickets(U.ash)).balance).toBe(3)
+    await order(U.misty, m.id)
+    expect((await tickets(U.ash)).balance).toBe(2)
+    expect((await tickets(U.misty)).balance).toBe(2)
+    const home = await one<{ tickets: { balance: number } }>(U.misty, 'select pvp_home() r')
+    expect(home.tickets.balance).toBe(2)
+  })
+
+  it('no ticket, no challenge, no answer', async () => {
+    await tickets(U.ash)
+    await tickets(U.misty)
+    await setTickets(U.ash, 0)
+    expect(await fails(U.ash, 'select pvp_challenge($1, $2)', [U.misty, 'classic'])).toContain('pvp_no_ticket')
+    await setTickets(U.ash, 1)
+    await setTickets(U.misty, 0)
+    expect(await fails(U.ash, 'select pvp_challenge($1, $2)', [U.misty, 'classic'])).toContain('pvp_friend_no_ticket')
+    await setTickets(U.misty, 1)
+    const m = await challenge(U.ash, U.misty)
+    await setTickets(U.misty, 0)
+    expect(await fails(U.misty, 'select pvp_answer($1, true)', [m.id])).toContain('pvp_no_ticket')
+  })
+
+  it('the Friend Market sells them for Heart Scales, 10 a week, past three', async () => {
+    await db.query(`update game_config set value = jsonb_set(value, '{access}', '"all"') where key = 'friendship'`)
+    await db.query(`insert into friendship_wallets (user_id, balance) values ($1, 200)`, [U.ash])
+    const buy = await one<{ balance: number; tickets: number; gifts: unknown[] }>(
+      U.ash,
+      `select friend_market_buy('battle-ticket', 5) r`,
+    )
+    expect(buy).toMatchObject({ balance: 150, tickets: 8, gifts: [] })
+    expect((await tickets(U.ash)).balance).toBe(8)
+    expect(await fails(U.ash, `select friend_market_buy('battle-ticket', 6)`)).toContain('friendship_limit')
+    await one(U.ash, `select friend_market_buy('battle-ticket', 5) r`)
+    expect((await tickets(U.ash)).balance).toBe(13)
+    // Nothing waits to be put away: they're the server's.
+    const pending = await db.query(`select 1 from friend_market_buys where key = 'battle-ticket' and not applied`)
+    expect(pending.rows).toEqual([])
+    // Not sold while Friend Battles is off for the buyer.
+    await access('off')
+    expect(await fails(U.ash, `select friend_market_buy('battle-ticket', 1)`)).toContain('friendship_not_sold')
+  })
+})
+

@@ -10,6 +10,8 @@ import {
   flipEntry,
   friendBattlesFor,
   friendBattlesOn,
+  marketRows,
+  BATTLE_TICKET_KEY,
   pvpHash,
   pvpLogFor,
   pvpStanding,
@@ -226,3 +228,21 @@ describe('Friend Battles: the switch', () => {
     expect(friendBattlesFor(null, open)).toBe(false)
   })
 })
+
+describe('battle tickets on the Friend Market (docs/65 §15)', () => {
+  const open = (access: 'off' | 'all'): GameData => ({
+    ...data,
+    config: { ...data.config, friendBattles: { access } },
+  })
+
+  it('last on the shelf while Friend Battles is open: 10 Heart Scales, 10 a week', () => {
+    const rows = marketRows(open('all'), '2026-11-02', { [BATTLE_TICKET_KEY]: 4 })
+    const ticket = rows.at(-1)!
+    expect(ticket).toMatchObject({ key: 'battle-ticket', kind: 'ticket', price: 10, limit: 10, left: 6 })
+  })
+
+  it('not sold while it is off', () => {
+    expect(marketRows(open('off'), '2026-11-02').some((r) => r.kind === 'ticket')).toBe(false)
+  })
+})
+

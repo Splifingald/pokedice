@@ -11,7 +11,8 @@ import { TrainerLook } from '@/components/TrainerLook'
 import type { TVars } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { avatarOf } from '@/lib/avatars'
-import { challenge } from '@/store/pvp'
+import { challenge, usePvp } from '@/store/pvp'
+import { TicketCount } from './FriendBattleBits'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 
@@ -36,6 +37,10 @@ export function challengeError(t: (k: string, v?: TVars) => string, code: string
       return t(mode === 'classic' ? 'ui.pvp.err.noTeam' : 'ui.pvp.err.noDraft')
     case 'pvp_friend_no_team':
       return t(mode === 'classic' ? 'ui.pvp.err.friendNoTeam' : 'ui.pvp.err.friendNoDraft', { name })
+    case 'pvp_no_ticket':
+      return t('ui.pvp.err.noTicket')
+    case 'pvp_friend_no_ticket':
+      return t('ui.pvp.err.friendNoTicket', { name })
     default:
       return t('ui.pvp.err.failed')
   }
@@ -49,6 +54,9 @@ export function ChallengeSheet({ target, onClose }: { target: ChallengeTarget | 
   const [mode, setMode] = useState<PvpMode>(cfg.draft ? 'draft' : 'classic')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Battle tickets (docs/65 §15): none held, nothing to send (null: a database before 0132 counts none).
+  const tickets = usePvp((s) => s.home?.tickets ?? null)
+  const noTicket = tickets != null && tickets.balance < 1
   const chosen = modes.includes(mode) ? mode : (modes[0] ?? 'classic')
   const send = async () => {
     if (!target || busy) return
@@ -68,7 +76,13 @@ export function ChallengeSheet({ target, onClose }: { target: ChallengeTarget | 
       sub={target?.record ?? undefined}
       footer={
         <div className="grid gap-1.5">
-          <PixelButton variant="primary" size="lg" className="w-full" disabled={busy || !modes.length} onClick={() => void send()}>
+          <PixelButton
+            variant="primary"
+            size="lg"
+            className="w-full"
+            disabled={busy || !modes.length || noTicket}
+            onClick={() => void send()}
+          >
             {t('ui.pvp.send')}
           </PixelButton>
           <p className="m-0 text-center font-pixel-sm text-[16px] text-muted">
@@ -118,6 +132,14 @@ export function ChallengeSheet({ target, onClose }: { target: ChallengeTarget | 
               </span>
             ))}
           </div>
+          {tickets && (
+            <div className={cx('flex items-center gap-2 p-2', noTicket ? 'bg-rose shadow-ring-line' : 'bg-sky')}>
+              <span className="min-w-0 flex-1 font-pixel-sm text-[16px] leading-tight">
+                {noTicket ? t('ui.ticket.none') : t('ui.ticket.cost')}
+              </span>
+              <TicketCount n={tickets.balance} size="sm" />
+            </div>
+          )}
           {error && (
             <p role="alert" className="m-0 bg-rose px-3 py-2 text-[18px] leading-tight text-danger shadow-ring-line">
               {error}

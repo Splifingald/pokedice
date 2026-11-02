@@ -50,6 +50,7 @@ import { FriendshipCard, FriendshipRulesModal, StreakBadge } from '@/components/
 import { loadFriendship, useFriendship } from '@/store/friendship'
 import { friendBattlesFor, friendBattlesRulesDue } from '@/engine'
 import { ChallengeSheet, type ChallengeTarget } from '@/components/pvp/ChallengeSheet'
+import { TicketCount } from '@/components/pvp/FriendBattleBits'
 import { loadHome, loadOnline, usePvp } from '@/store/pvp'
 import { headToHead } from '@/screens/Battles'
 
@@ -131,6 +132,7 @@ function FriendsBody({ counter }: { counter?: string }) {
   const pvpNew = useGame((s) => !!s.save && friendBattlesRulesDue(s.save, s.data))
   const onlineIds = usePvp((s) => s.online)
   const records = usePvp((s) => s.home?.records)
+  const pvpTickets = usePvp((s) => s.home?.tickets)
   const [target, setTarget] = useState<ChallengeTarget | null>(null)
   useEffect(() => {
     if (!pvpOn) return
@@ -203,6 +205,7 @@ function FriendsBody({ counter }: { counter?: string }) {
             </small>
           </span>
           {pvpNew && <NewTag className="shrink-0" />}
+          {pvpTickets && <TicketCount n={pvpTickets.balance} size="sm" />}
           <span aria-hidden className="block h-[14px] w-[10px] shrink-0 bg-shadow [clip-path:polygon(0_0,100%_50%,0_100%,0_70%,50%_50%,0_30%)]" />
         </button>
       )}

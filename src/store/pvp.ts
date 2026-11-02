@@ -110,6 +110,8 @@ function adopt(info: PvpInfo) {
   if (!now.engine && (info.state === 'battle' || info.state === 'done' || info.state === 'void')) {
     const opened = openEngine(info)
     if (opened) usePvp.setState({ engine: opened.engine, log: opened.log, applied: 0 })
+    // The fight took a battle ticket from each: the count shown follows.
+    if (info.state === 'battle') void loadHome()
   }
 }
 
@@ -244,6 +246,12 @@ export async function sendMove(move: PvpMove): Promise<void> {
   } finally {
     usePvp.setState({ pending: false })
   }
+}
+
+/** Battle tickets after a Friend Market purchase (the server's new count), or a fight's start. */
+export function setTickets(balance: number) {
+  const home = usePvp.getState().home
+  if (home?.tickets) usePvp.setState({ home: { ...home, tickets: { ...home.tickets, balance } } })
 }
 
 /** Leaves a finished (or refused) match's screen. */

@@ -4,13 +4,16 @@
 // the coin (replayable), the draft (your pick, theirs, a species taken), the order (Draft's and Classic's ready, and
 // ready, waiting for them). The fight is the battle screen (its plates carry the shield tag).
 import { useState, type ReactNode } from 'react'
-import { FRIEND_BATTLES_DEFAULTS, type DraftMon, type PvpSide } from '@/engine'
+import { BATTLE_TICKET_KEY, FRIEND_BATTLES_DEFAULTS, type DraftMon, type PvpSide } from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
 import { InfoButton } from '@/components/RulesModal'
 import { RulesCard } from '@/components/RulesCard'
 import { ChallengeSheet } from '@/components/pvp/ChallengeSheet'
+import { MarketItemCard } from '@/components/friends/Friendship'
 import {
   DropNotice,
+  TicketCount,
+  TicketsCard,
   FriendBattleRulesModal,
   ModeTag,
   TimeChip,
@@ -144,6 +147,34 @@ export function FriendBattleBits() {
         </Frame>
         <Frame name="A challenge to answer (the banner, never over a fight)">
           <ChallengeCard from={KIRO} mode="draft" seconds={77} total={120} onAccept={nop} onNo={nop} />
+        </Frame>
+        <Frame name="Battle tickets: the count (sm, md, lg), the page's card (2: next at midnight; full; none)">
+          <div className="grid gap-2">
+            <span className="flex items-center gap-3">
+              <TicketCount n={2} size="sm" />
+              <TicketCount n={3} />
+              <TicketCount n={12} size="lg" />
+            </span>
+            <TicketsCard tickets={{ balance: 2, cap: 3, daily: 1, nextAt: Date.now() + 5 * 3_600_000 }} onMarket={nop} />
+            <TicketsCard tickets={{ balance: 3, cap: 3, daily: 1, nextAt: Date.now() + 5 * 3_600_000 }} onMarket={nop} />
+            <TicketsCard tickets={{ balance: 0, cap: 3, daily: 1, nextAt: Date.now() + 47 * 60_000 }} />
+          </div>
+        </Frame>
+        <Frame name="Battle tickets on the Friend Market's shelf: to buy, sold out this week">
+          <ul className="m-0 grid list-none gap-2 p-0">
+            <MarketItemCard
+              row={{ key: BATTLE_TICKET_KEY, kind: 'ticket', price: 10, limit: 10, left: 6 }}
+              balance={84}
+              busy={false}
+              onBuy={nop}
+            />
+            <MarketItemCard
+              row={{ key: BATTLE_TICKET_KEY, kind: 'ticket', price: 10, limit: 10, left: 0 }}
+              balance={84}
+              busy={false}
+              onBuy={nop}
+            />
+          </ul>
         </Frame>
         <Frame name="The other player lost connection (52 s left before you win)">
           <DropNotice name="Kiro" left={52} total={90} />

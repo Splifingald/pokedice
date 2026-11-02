@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react'
 import { friendBattlesConfig, type PvpMode } from '@/engine'
 import { PixelIcon } from '@/components/icons'
+import { until } from '@/components/Calendar'
+import { PixelButton } from '@/components/PixelButton'
 import { RulesModal, type RuleRow } from '@/components/RulesModal'
 import { TrainerLook } from '@/components/TrainerLook'
 import { useT } from '@/i18n/react'
 import { avatarOf } from '@/lib/avatars'
-import type { PvpPlayer } from '@/lib/pvp'
+import type { PvpPlayer, PvpTickets } from '@/lib/pvp'
 import { useGame } from '@/store/game'
 import { serverNow } from '@/store/pvp'
 import { cx } from '@/theme/util'
@@ -93,6 +95,64 @@ export function DropNotice({ name, left, total, className }: { name: string; lef
   )
 }
 
+/** Battle tickets held (docs/65 §15): the ticket and the number, the words for screen readers. */
+export function TicketCount({ n, size = 'md', className }: { n: number; size?: 'sm' | 'md' | 'lg'; className?: string }) {
+  const { t } = useT()
+  const px = size === 'lg' ? 32 : size === 'sm' ? 18 : 24
+  return (
+    <span
+      role="img"
+      aria-label={t('ui.ticket.count', { n })}
+      className={cx(
+        'inline-flex shrink-0 items-center gap-1 tabular-nums leading-none',
+        size === 'lg' ? 'text-[30px]' : size === 'sm' ? 'text-[18px]' : 'text-[22px]',
+        className,
+      )}
+    >
+      <PixelIcon name="battleTicket" size={px} />
+      {n}
+    </span>
+  )
+}
+
+/** The page's tickets: how many, the next one at midnight (while under the cap), and the Friend Market for more. */
+export function TicketsCard({
+  tickets,
+  onMarket,
+  className,
+}: {
+  tickets: PvpTickets
+  onMarket?: () => void
+  className?: string
+}) {
+  const { t } = useT()
+  const now = serverNow()
+  const next = tickets.balance < tickets.cap ? until(Math.max(0, tickets.nextAt - now)) : null
+  return (
+    <section
+      aria-label={t('ui.ticket.title')}
+      className={cx(
+        'flex items-center gap-3 bg-paper p-2.5 pb-3 shadow-card',
+        tickets.balance === 0 && 'bg-rose',
+        className,
+      )}
+    >
+      <TicketCount n={tickets.balance} size="lg" />
+      <span className="grid min-w-0 flex-1 gap-0.5">
+        <b className="text-[20px] font-normal leading-none">{t('ui.ticket.title')}</b>
+        <small className="font-pixel-sm text-[16px] leading-tight text-muted">
+          {next ? t('ui.ticket.next', { time: next, cap: tickets.cap }) : t('ui.ticket.full', { cap: tickets.cap })}
+        </small>
+      </span>
+      {onMarket && (
+        <PixelButton size="sm" onClick={onMarket}>
+          {t('ui.ticket.buy')}
+        </PixelButton>
+      )}
+    </section>
+  )
+}
+
 /** CLASSIC (blue) or DRAFT (gold). */
 export function ModeTag({ mode, className }: { mode: PvpMode; className?: string }) {
   const { t } = useT()
@@ -148,10 +208,14 @@ export function useFriendBattleRules(): RuleRow[] {
   const { t } = useT()
   const cfg = friendBattlesConfig(useGame((s) => s.data))
   return [
-    { icon: 'vs', title: t('ui.rules.pvp.challenge.title'), text: t('ui.rules.pvp.challenge.text', { n: Math.round(cfg.expiry / 60) || 1 }) },
+    { icon: 'vs', title: t('ui.rules.pvp.challenge.title'), text: t('ui.rules.pvp.challenge.text', { n: Math.round(cfg.expiry / 60) || 1, turn: cfg.turn }) },
     { icon: 'dice', title: t('ui.rules.pvp.modes.title'), text: t('ui.rules.pvp.modes.text') },
     { icon: 'shield', title: t('ui.rules.pvp.shield.title'), text: t('ui.rules.pvp.shield.text', { pct: 100 - cfg.shield }) },
-    { icon: 'clock', title: t('ui.rules.pvp.turn.title', { n: cfg.turn }), text: t('ui.rules.pvp.turn.text') },
+    {
+      icon: 'battleTicket',
+      title: t('ui.rules.pvp.tickets.title'),
+      text: t('ui.rules.pvp.tickets.text', { cap: cfg.ticketCap, price: cfg.ticketPrice, n: cfg.ticketWeekly }),
+    },
   ]
 }
 

@@ -316,4 +316,30 @@ preview; the migration's GitHub link given with the push; patch notes only when 
 2. Admin → Config → Switches: add the beta testers (name, friend ID or e-mail) in the Beta testers box.
 3. Set **Friend Battles** to *On for beta testers* (or *On for admin* to try it alone first), Save, Publish.
 4. Admin → Config → Friend Battles: the timers, the shield, each mode on or off.
+5. Battle tickets (§15): run
+   https://github.com/Splifingald/pokedice/blob/version/2_9/supabase/migrations/0132_battle_tickets.sql
+   after 0131 (version 2.9's file carries it too, last). Not in `supabase/seed.sql`.
+
+## 15. Battle tickets
+
+The user's ask, 2026-11-02: *"Add battle tickets as a new currency, one battle ticket is given to all players at
+midnight and max 3 tickets can be held at the same time. Battle tickets are bought in the friend shop too for 10 heart
+scales up to 10 per week (if the player buys them it can go over 3). A pvp fight costs 1 battle ticket to both
+players. Spent on start."* Migration **`0132_battle_tickets.sql`**.
+
+| Question | Answer |
+|---|---|
+| Where they live | **On the server**, per account (`pvp_tickets`), like Heart Scales: the server takes them, so a hand-edited save can't make any |
+| Midnight | **UTC midnight** (the friendship streaks' day): +1 while a player holds **fewer than 3**, never past 3. Counted lazily: the first look after N midnights gives up to N, still capped at 3 |
+| A new player | **Starts at 3** (the cap), so a first match never waits for a midnight |
+| The Friend Market | **Battle ticket, 10 Heart Scales, 10 a week** (the market's week), last on the shelf while Friend Battles is open to the player. Bought ones **can go past 3**, and a midnight then gives none until they're spent below 3. Credited at once: no gift to open |
+| The cost | **1 from each player, taken as the fight starts** (both ready, after the draft or Classic's order). A challenge needs both to hold one (`pvp_no_ticket`, `pvp_friend_no_ticket`), and so does the answer. A match left before its fight costs nothing; one started and then void keeps its tickets spent |
+| Admin | Config → Friend Battles: tickets a midnight, the cap, the price, the week's limit (`friendBattles.ticketDaily`, `ticketCap`, `ticketPrice`, `ticketWeekly`) |
+
+**On screen**: the ticket is the wheel's stub redrawn in blue with a red cross of blades (`battleTicket`), the count
+beside it (`TicketCount`). `/battles` has the tickets card (the count, "+1 at midnight, in 5 h (up to 3)" or "Full",
+BUY MORE to the Friend Market); the Friends page's card shows the count; the challenge sheet says the cost (none held:
+a rose line saying why, SEND off); the challenge banner shows "−1" by the ticket; the market's card says how many you
+hold. The rules card's 4th row is the tickets' (the turn's time joined the first row). Tests: the SQL suite's
+"battle tickets (0132)", the engine's market row, two e2e.
 

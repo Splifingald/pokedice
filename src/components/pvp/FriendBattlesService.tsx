@@ -5,6 +5,7 @@
 import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { friendBattlesFor, type PvpMode } from '@/engine'
+import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { TrainerLook } from '@/components/TrainerLook'
 import { useT } from '@/i18n/react'
@@ -141,6 +142,8 @@ export function ChallengeCard({
           <span className="flex items-center gap-1.5">
             <ModeTag mode={mode} />
             <span className="font-pixel-sm text-[16px] text-muted">{t('ui.pvp.chip.size')}</span>
+            <PixelIcon name="battleTicket" size={18} title={t('ui.ticket.cost')} />
+            <span className="font-pixel-sm text-[16px] text-muted">−1</span>
           </span>
         </span>
       </div>

@@ -3,7 +3,7 @@
 // A challenge starts from a friend's BATTLE button on the Friends page.
 import { useEffect, useState, type ReactNode } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { friendBattlesFor, friendBattlesRulesDue, isExtreme } from '@/engine'
+import { friendBattlesFor, friendBattlesRulesDue, friendshipWaits, isExtreme } from '@/engine'
 import { AccountButton } from '@/components/AccountButton'
 import { PixelIcon } from '@/components/icons'
 import { PageHead } from '@/components/PageHead'
@@ -11,7 +11,12 @@ import { PixelButton } from '@/components/PixelButton'
 import { InfoButton } from '@/components/RulesModal'
 import { RulesCard } from '@/components/RulesCard'
 import { TrainerLook } from '@/components/TrainerLook'
-import { FriendBattleRulesModal, ModeTag, useFriendBattleRules } from '@/components/pvp/FriendBattleBits'
+import {
+  FriendBattleRulesModal,
+  ModeTag,
+  TicketsCard,
+  useFriendBattleRules,
+} from '@/components/pvp/FriendBattleBits'
 import type { TVars } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { agoText } from '@/lib/ago'
@@ -64,6 +69,14 @@ export function BattlesScreen() {
       {head}
       {friendBattlesRulesDue(save, data) && (
         <RulesCard title={t('ui.pvp.title')} icon="vs" rules={rules} onDone={seeFriendBattlesRules} />
+      )}
+
+      {home?.tickets && (
+        <TicketsCard
+          tickets={home.tickets}
+          // More at the Friend Market, where it opens to this player (docs/60).
+          onMarket={friendshipWaits(save, data) === null ? () => navigate('/market') : undefined}
+        />
       )}
 
       {live && (

@@ -5,7 +5,7 @@
 // the screenshots of each screen for review.
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import { applyPvpMove, FRIEND_BATTLES_DEFAULTS, startPvp, type SaveData } from '../src/engine'
+import { applyPvpMove, FRIEND_BATTLES_DEFAULTS, marketShiny, marketWeek, startPvp, type SaveData } from '../src/engine'
 import {
   EVENTS_ON,
   FAST,
@@ -40,6 +40,8 @@ const friend = (user_id: string, name: string, avatar: string) => ({
 const FRIENDS = [friend(MISTY, 'Misty', 'green'), friend(BROCK, 'Brock', 'kanto/hiker')]
 const ON = { ...EVENTS_ON, friendBattles: { ...FRIEND_BATTLES_DEFAULTS, access: 'all' } }
 const mon = (dex: number, level = 60) => ({ dex, level, shiny: false })
+/** Battle tickets (docs/65 §15) as pvp_home carries them: `n` held, the next at midnight in 5 h. */
+const TICKETS = (n: number) => ({ balance: n, cap: 3, daily: 1, nextAt: Date.now() + 5 * 3_600_000 })
 
 /** A match as pvp_public returns it, from my side `side`. */
 function info(over: Record<string, unknown> = {}) {
@@ -78,7 +80,7 @@ async function boot(page: Page, save: SaveData, rpc: SupabaseMock['rpc'] = {}, c
       friend_seen: null,
       pvp_here: null,
       pvp_online: [MISTY],
-      pvp_home: { current: null, records: [], history: [] },
+      pvp_home: { current: null, records: [], history: [], tickets: TICKETS(2) },
       pvp_ping: null,
       ...rpc,
     },
@@ -291,6 +293,65 @@ test('the page: its rules card once, the record and the last battles', async ({ 
   await expect
     .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}').friendBattlesRulesSeen))
     .toBe(true)
+})
+
+test('battle tickets: the sheet says the cost; with none, SEND is off and says why', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await boot(page, save(), { pvp_home: { current: null, records: [], history: [], tickets: TICKETS(0) } })
+  await page.goto('/friends')
+  await expect(page.getByRole('img', { name: '0 battle tickets' }).first()).toBeVisible()
+  await page.getByRole('button', { name: 'Battle Misty' }).click()
+  const sheet = page.getByRole('dialog', { name: 'Challenge Misty' })
+  await expect(sheet.getByText(/No battle ticket left/)).toBeVisible()
+  await expect(sheet.getByRole('button', { name: 'Send challenge' })).toBeDisabled()
+  await shot(page, 'pvp-no-ticket')
+})
+
+test('battle tickets: the page counts them; the Friend Market sells them, credited at once', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  const DAY = new Date().toISOString().slice(0, 10)
+  const WEEK = marketWeek(DAY)
+  const bought: unknown[] = []
+  await boot(
+    page,
+    save(),
+    {
+      friendship_status: () => ({
+        day: DAY,
+        week: WEEK,
+        shiny: marketShiny(WEEK, data),
+        balance: 120,
+        earned: 0,
+        total: 120,
+        streaks: [],
+        today: [],
+        bought: {},
+        pending: [],
+      }),
+      friend_market_buy: (body: unknown) => {
+        bought.push(body)
+        return { id: 'b1', key: 'battle-ticket', gifts: [], balance: 110, tickets: 3 }
+      },
+    },
+    { ...ON, friendship: { ...data.config.friendship, access: 'all' } },
+  )
+  await page.goto('/battles')
+  const card = page.getByRole('region', { name: 'Battle tickets' })
+  await expect(card.getByRole('img', { name: '2 battle tickets' })).toBeVisible()
+  await expect(card).toContainText('+1 at midnight')
+  await shot(page, 'pvp-tickets-card')
+  await card.getByRole('button', { name: 'Buy more' }).click()
+  await expect(page).toHaveURL(/\/market$/)
+  const ticket = page.getByTestId('market-battle-ticket')
+  await expect(ticket).toContainText('Battle ticket')
+  await expect(ticket).toContainText('You hold 2')
+  await shot(page, 'pvp-market-ticket')
+  await ticket.getByRole('button', { name: 'Buy 1 for 10 Heart Scales' }).click()
+  await expect.poll(() => bought).toEqual([{ p_key: 'battle-ticket', p_qty: 1 }])
+  await expect(page.getByText('+1 battle tickets!')).toBeVisible()
+  await expect(ticket).toContainText('You hold 3')
+  // Nothing to open: the server holds them.
+  await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
 test('switched off: no card, no BATTLE, the page goes back to Friends', async ({ page }) => {
