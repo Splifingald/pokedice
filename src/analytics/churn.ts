@@ -1,6 +1,7 @@
 // Churn by area (Admin → Analytics, docs/57): where the players who stopped playing were when they left. The database
 // counts them per area (analytics_churn, migration 0102); this puts the areas in game order with their English names.
 // "Where they were" is the area of the last hour they played (player_seen carries it; the daily snapshot before it).
+// Churn by starter (0129) counts the same players by the Pokémon they picked at the very start, Kanto's starter.
 import { regionOfArea } from '@/engine/regions'
 import type { GameData } from '@/engine/types'
 
@@ -14,6 +15,10 @@ export interface ChurnRaw {
   areas: Record<string, readonly [number, number, number | null, number | null]>
   /** Players with no area recorded: [churned, active]. */
   unknown: readonly [number, number]
+  /** Kanto starter's dex → the same four as `areas` (0129; missing before it ran). */
+  starters?: Record<string, readonly [number, number, number | null, number | null]>
+  /** Players with no starter known: [churned, active] (0129). */
+  noStarter?: readonly [number, number]
 }
 
 export interface ChurnRow {
@@ -102,5 +107,57 @@ export function churnByArea(raw: ChurnRaw, data: Pick<GameData, 'areas' | 'regio
     active: all.reduce((n, r) => n + r.active, unknown.active),
     unknown,
     maxChurned: Math.max(0, ...all.map((r) => r.churned)),
+  }
+}
+
+export interface StarterChurnRow {
+  dex: number
+  name: string
+  churned: number
+  active: number
+  /** churned / (churned + active). */
+  share: number
+  churnedDays: number | null
+  activeDays: number | null
+}
+
+export interface StarterChurn {
+  /** The starters offered at the start first, in their order; any other Pokémon after, by dex number. */
+  rows: StarterChurnRow[]
+  /** Churned and active players whose starter isn't known (not in `rows`). */
+  unknown: { churned: number; active: number }
+  /** The most churned on one starter: the bars' full width. */
+  maxChurned: number
+}
+
+/** Null when the database doesn't count starters yet (migration 0129 not run). */
+export function churnByStarter(
+  raw: ChurnRaw,
+  data: Pick<GameData, 'species'> & { config: Pick<GameData['config'], 'starters'> },
+): StarterChurn | null {
+  if (!raw.starters || !raw.noStarter) return null
+  const offered = data.config.starters
+  const rank = (dex: number) => {
+    const i = offered.indexOf(dex)
+    return i < 0 ? offered.length : i
+  }
+  const rows = Object.entries(raw.starters)
+    .map(([key, [churned, active, churnedDays, activeDays]]): StarterChurnRow => {
+      const dex = Number(key)
+      return {
+        dex,
+        name: data.species[dex]?.name ?? `#${dex}`,
+        churned,
+        active,
+        share: churned / Math.max(1, churned + active),
+        churnedDays,
+        activeDays,
+      }
+    })
+    .sort((a, b) => rank(a.dex) - rank(b.dex) || a.dex - b.dex)
+  return {
+    rows,
+    unknown: { churned: raw.noStarter[0], active: raw.noStarter[1] },
+    maxChurned: Math.max(0, ...rows.map((r) => r.churned)),
   }
 }

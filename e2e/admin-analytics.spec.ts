@@ -1,6 +1,6 @@
 // Admin → Analytics → Players per hour (the user's ask, 2026-10-11): the database is asked only when the button is
 // pressed, and the answer shows as one bar per hour of the last 24, with every hour in the table under it. Then
-// retention on day 1, 3, 7 and 30 from the page's one request, and churn by area on demand (docs/57).
+// retention on day 1, 3, 7 and 30 from the page's one request, and churn by starter and area on demand (docs/57).
 import { expect, test, type Page } from '@playwright/test'
 import { fakeSession, gameData, makeSave, mockSupabase, STORAGE_KEY } from './helpers'
 
@@ -109,7 +109,7 @@ test('Retention: day 1, 3, 7 and 30 from the one request of the page', async ({ 
   await expect(tile(30)).toContainText('Pending: 7 players from 2 first days')
 })
 
-test('Churn by area: fetched on demand, in game order', async ({ page }) => {
+test('Churn by starter and area: fetched on demand, in game order', async ({ page }) => {
   test.setTimeout(120_000)
   const kanto = gameData()
     .areas.filter((a) => (a.regionId ?? 'kanto') === 'kanto')
@@ -131,12 +131,15 @@ test('Churn by area: fetched on demand, in game order', async ({ page }) => {
           [a2!.id]: [6, 6, 3, 5],
         },
         unknown: [4, 2],
+        // Out of order too: the starters offered come first, in their order.
+        starters: { '7': [5, 5, 2, 6], '1': [9, 3, 1.5, 8], '4': [7, 9, 2, 4] },
+        noStarter: [4, 1],
       }
     },
   })
-  const panel = page.getByRole('region', { name: 'Churn by area' })
+  const panel = page.getByRole('region', { name: 'Churn', exact: true })
   await expect(panel).toBeVisible({ timeout: 30_000 })
-  await expect(panel.getByText('Press Fetch to count the churned players by area.')).toBeVisible()
+  await expect(panel.getByText('Press Fetch to count the churned players by starter and area.')).toBeVisible()
   // Opening the tab doesn't ask.
   await page.waitForTimeout(1000)
   expect(calls.filter((c) => c.includes('/rpc/analytics_churn'))).toHaveLength(0)
@@ -149,17 +152,32 @@ test('Churn by area: fetched on demand, in game order', async ({ page }) => {
   await days.fill('5')
   await panel.getByRole('button', { name: 'Fetch' }).click()
 
-  await expect(panel.getByRole('table')).toBeVisible()
+  const byArea = panel.getByRole('table', { name: 'Churn by area' })
+  await expect(byArea).toBeVisible()
   // The page's frame (30 days, today included) on first day.
   expect(asked).toEqual([{ p_days: 5, p_since: localDay(-29) }])
-  await expect(panel.getByRole('columnheader', { name: 'Kanto' })).toBeVisible()
-  await expect(panel.locator('tbody tr td:first-child')).toHaveText([
+
+  const byStarter = panel.getByRole('table', { name: 'Churn by starter' })
+  const species = gameData().species
+  const starters = gameData().config.starters.map((d) => species[d]!.name)
+  await expect(byStarter.locator('tbody tr td:first-child')).toHaveText(starters)
+  await expect(byStarter.locator('tbody tr').first().locator('td')).toHaveText([
+    starters[0]!,
+    '9',
+    '3',
+    '75%',
+    '1.5 / 8',
+  ])
+  await expect(panel.getByText('4 churned with no known starter', { exact: true })).toBeVisible()
+
+  await expect(byArea.getByRole('columnheader', { name: 'Kanto' })).toBeVisible()
+  await expect(byArea.locator('tbody tr td:first-child')).toHaveText([
     a1!.name,
     a2!.name,
     a3!.name,
     'Area gone0000',
   ])
-  const first = panel.locator('tbody tr', { hasText: a1!.name })
+  const first = byArea.locator('tbody tr', { hasText: a1!.name })
   await expect(first.locator('td')).toHaveText([a1!.name, '12', '4', '75%', '2.3 / 7'])
   // 21 churned in known areas and 4 with none; 16 + 2 active.
   await expect(panel.getByText('25 churned', { exact: true })).toBeVisible()
