@@ -655,7 +655,8 @@ function PvpFight({ match }: { match: PvpInfo }) {
     live: { auto, onAuto: setAuto },
     noSwitch: true,
     onForfeit: () => void sendMove({ k: 'forfeit' }),
-    end: over ? <PvpResult match={match} /> : undefined,
+    // Only on the last of their Pokémon: a game catching up on a finished match plays the earlier ones through first.
+    end: over && bounds.length <= n ? <PvpResult match={match} /> : undefined,
   }
 
   return (
