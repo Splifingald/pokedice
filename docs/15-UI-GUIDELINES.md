@@ -1301,10 +1301,9 @@ or not, and Pokédollars (₽1–999,999), at most 20 (migration 0048). Each goe
 (the newest one they've started). The engine (`engine/gifts.ts`) decides where each lands and what it becomes; the
 pieces are in `src/components/Gifts.tsx`, every state on `/kitchen-sink` (`GiftBits`), the opening on `/kitchen-sink/fx`.
 
-- **The switch and the rules** follow §20: the Gifts switch sits at the top of Admin → Messages (Off by default; the
-  server hides gifts and won't open them while it's off, and they wait on their messages). The rules pop-up
-  (`GiftRulesModal`, three gifts drawn in code as its banner) opens before the first gift does: Let's go! opens it,
-  Later leaves it waiting in My messages. INFO sits at the bottom of My messages.
+- **The switch** follows §20: the Gifts switch sits at the top of Admin → Messages (Off by default; the server hides
+  gifts and won't open them while it's off, and they wait on their messages). Gifts have no rules pop-up and no INFO
+  (the user's call, 2026-11-02): the message and the opening say all there is, so the first gift opens like any other.
 - **Under the message**: the pop-up of answers (or "A message from the developer!", when the developer wrote first)
   shows the words, then the wrapped gift (`GiftPresent`: gold, the gift wobbling, "3 things inside" — not what: that's
   the opening). Its one button says **OPEN THE GIFT**; closing the message any way opens it. A message with a gift not
@@ -1960,8 +1959,8 @@ pop-up). The pieces are in `src/components/Talent.tsx`, every state on `/kitchen
   paralysis, Pressure's lost reroll, Shed Skin, Limber, Magic Guard, Mirror's die, Sturdy, Natural Cure, Magma Armor. A talent that changes numbers alone (Speed,
   rerolls, HP) says nothing.
 - **Trades**: asking for a species, a toggle "With its hidden talent" under the species (only while the switch is on).
-- Its rules: a `RulesModal` once, in the one-time pop-ups' queue after the battle powers' (`talentRulesSeen`); again
-  from a tap on the sheet's talent box.
+- Its rules: a `RulesModal` from a tap on the sheet's talent box, and nowhere else: no one-time pop-up (the user's
+  call, 2026-11-02; `talentRulesSeen` stays in the save type only so older saves still parse).
 
 ## 39. Real-player battles in areas
 

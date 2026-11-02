@@ -32,7 +32,6 @@ import { GiftService } from './Gifts'
 import { POPUP_GAP_MS, PopupTurnContext, usePopupOnScreen } from './popupTurn'
 import { PowersUnlockPopup } from './PowersRules'
 import { OutfitRulesPopup } from './Outfit'
-import { TalentRulesPopup } from './Talent'
 import { PushService } from './PushService'
 import { RaidGiftPopup } from './RaidGiftPopup'
 import { ReplyPopup, useRepliesWaiting } from './ReplyPopup'
@@ -61,7 +60,7 @@ export function PopupQueue({ children }: { children: ReactNode }) {
   const path = useLocation().pathname
   // Never over a full-screen moment (a battle, a hatching, a trade, the lab) or a gift being opened.
   const full = useFullscreen()
-  const gifts = useGiftMoment((s) => s.busy || !!s.rulesFor || !!s.opening)
+  const gifts = useGiftMoment((s) => s.busy || !!s.opening)
   const now = useServerNow(5000)
   const awayReport = useAwayReport((s) => !!s.report)
   const offlineReport = useOfflineReport((s) => !!s.report)
@@ -156,7 +155,6 @@ export function OneTimePopups() {
       <PortalUnlockPopup />
       <DayNightRulesPopup />
       <PowersUnlockPopup />
-      <TalentRulesPopup />
       <OutfitRulesPopup />
       <WorldPopup />
       <WorldPick />

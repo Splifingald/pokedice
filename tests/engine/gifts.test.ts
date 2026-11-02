@@ -7,12 +7,10 @@ import {
   DEFAULT_CONFIG,
   GIFT_LATEST,
   giftLanding,
-  giftRulesDue,
   giftsOf,
   giftsOn,
   giftsWait,
   latestRegion,
-  markGiftRulesSeen,
   newRegionBlock,
   newSave,
   parseGifts,
@@ -211,13 +209,5 @@ describe('opening a message’s gifts', () => {
     expect(giftsOf(first.save).done).toEqual([13])
     const parsed = parseSave(JSON.parse(JSON.stringify(first.save)))
     expect(parsed.ok && parsed.save.gifts).toEqual({ done: [13] })
-  })
-})
-
-describe('the rules', () => {
-  it('open once before the first gift, and only while gifts are on', () => {
-    expect(giftRulesDue(kanto(), data)).toBe(true)
-    expect(giftRulesDue(markGiftRulesSeen(kanto()), data)).toBe(false)
-    expect(giftRulesDue(kanto(), makeData())).toBe(false)
   })
 })

@@ -2,7 +2,7 @@
 // sheet's box (carried, known but not learnt, never met), the encounter's line (to learn, already learnt), the result
 // cards (caught, passed, found evolving; Regenerator, Pay Day, Amulet Coin), Pickup's tag, the battle's plaque (yours,
 // a foe's, one said as it first acts), False Swipe's catch line, the Day Care's line, the battle log's lines, the trade
-// toggle, and the rules (unlock, and again from a tap on the sheet's box). Each talent at work in a real fight:
+// toggle, and the rules (from a tap on the sheet's box). Each talent at work in a real fight:
 // /kitchen-sink/talent-lab?talent=<key>.
 import { useState, type ReactNode } from 'react'
 import {
@@ -16,7 +16,6 @@ import {
   talentLogText,
   talentName,
 } from '@/components/Talent'
-import { PixelButton } from '@/components/PixelButton'
 import { Toggle } from '@/components/Toggle'
 import { ItemSprite } from '@/components/ItemSprite'
 import { useGame } from '@/store/game'
@@ -37,7 +36,7 @@ function Frame({ name, children }: { name: string; children: ReactNode }) {
 export function TalentBits() {
   useT()
   const data = useGame((s) => s.data)
-  const [rules, setRules] = useState<'unlock' | 'info' | null>(null)
+  const [rules, setRules] = useState(false)
   const [withTalent, setWithTalent] = useState(true)
   const logs: { talent: TalentKey; amount?: number; hurt?: { amount: number }; entry?: boolean }[] = [
     { talent: 'quick', entry: true },
@@ -183,16 +182,11 @@ export function TalentBits() {
         </Frame>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <PixelButton onClick={() => setRules('unlock')}>Rules · unlock</PixelButton>
         <span className="w-72">
-          <TalentBox talent="raider" has known onClick={() => setRules('info')} />
+          <TalentBox talent="raider" has known onClick={() => setRules(true)} />
         </span>
       </div>
-      <TalentRulesModal
-        open={rules != null}
-        onClose={() => setRules(null)}
-        onGo={rules === 'unlock' ? () => setRules(null) : undefined}
-      />
+      <TalentRulesModal open={rules} onClose={() => setRules(false)} />
     </div>
   )
 }

@@ -424,9 +424,3 @@ export const catchTalentBonus = (
   inst: Pick<PokemonInstance, 'dex' | 'talent'> | undefined,
 ): number => (inst && talentOf(data, inst) === 'falseSwipe' ? TALENT.falseSwipe : 0)
 
-// ---------------------------------------------------------------- the rules pop-up
-
-export const talentRulesDue = (save: SaveData, data: GameData): boolean =>
-  talentsOn(data) && !save.talentRulesSeen
-export const markTalentRulesSeen = (save: SaveData): SaveData =>
-  save.talentRulesSeen ? save : { ...save, talentRulesSeen: true }

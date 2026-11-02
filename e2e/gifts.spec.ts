@@ -77,12 +77,8 @@ test('an answer with a gift: shown under it, opened on closing, into the save', 
   await expect(popup.getByText(/3 things inside · Close the message to open it\./)).toBeVisible()
   await popup.getByRole('button', { name: 'Open the gift' }).click()
 
-  // The first gift: its rules, then Let's go! opens it.
-  const rules = page.getByRole('dialog', { name: 'Gifts from the developer' })
-  await expect(rules.getByText('With a message', { exact: true })).toBeVisible()
-  expect(claims).toHaveLength(0)
-  await rules.getByRole('button', { name: "Let's go!" }).click()
-
+  // The first gift opens straight away: no rules pop-up (the user's call, 2026-11-02).
+  await expect(page.getByRole('dialog', { name: 'Gifts from the developer' })).toHaveCount(0)
   const moment = page.getByRole('dialog', { name: 'A gift from the developer' })
   await expect(moment).toBeVisible()
   expect(claims).toHaveLength(1)
@@ -108,7 +104,7 @@ test('an answer with a gift: shown under it, opened on closing, into the save', 
   const pika = stored.box.find((p: { dex: number }) => p.dex === 25)
   expect(pika).toMatchObject({ level: 20, shiny: true })
   expect(stored.team).toContain(pika.id)
-  expect(stored.gifts).toEqual({ done: [9], rulesSeen: true })
+  expect(stored.gifts).toEqual({ done: [9] })
 
   // My messages keeps it, opened.
   await page.getByRole('button', { name: 'Your trainer menu' }).click()
@@ -116,7 +112,7 @@ test('an answer with a gift: shown under it, opened on closing, into the save', 
   const form = page.getByRole('dialog', { name: 'Contact the developer' })
   await form.getByRole('button', { name: 'My messages' }).click()
   await expect(form.getByText('Opened — it held:')).toBeVisible()
-  await expect(form.getByRole('button', { name: 'Info: how a gift works' })).toBeVisible()
+  await expect(form.getByRole('button', { name: 'Info: how a gift works' })).toHaveCount(0)
 })
 
 test('a message from the developer with a gift that waits: Extreme mode says so, and opens nothing', async ({

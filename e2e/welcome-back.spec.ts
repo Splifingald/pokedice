@@ -1,7 +1,7 @@
 // Welcome-back gifts (docs/58): once a day the game asks the server whether the player is back from days away
 // (welcome_back_claim, with the player's own day and the device); the server decides and writes a message from the
 // developer with the tier's gifts, which then comes like any other: the pop-up (its own title and words, in the
-// player's language), the wrapped gift, the gifts' rules the first time, the opening, the save, My messages. No rule
+// player's language), the wrapped gift, the opening, the save, My messages. No rule
 // line and no INFO of its own (the user's call, 2026-11-01).
 // Nothing is asked while the switch, or the gifts', is off; a reload the same day asks nothing more.
 import { expect, test, type Page } from '@playwright/test'
@@ -110,18 +110,14 @@ test('back after 9 days: the developer’s message with the 7-day gift, opened i
   await expect(
     popup.getByText(/You were away for 9 days, so here's a gift to get you going again!/),
   ).toBeVisible()
-  // The message says only how long they were away: its rules are INFO's, in My messages (the user's call, 2026-11-01).
+  // The message says only how long they were away (the user's call, 2026-11-01).
   await expect(popup.getByText(/Come back after|At most one every/)).toHaveCount(0)
   await expect(popup.getByText('A gift is attached!')).toBeVisible()
   await expect(popup.getByText(/5 things inside · Close the message to open it\./)).toBeVisible()
   await page.screenshot({ path: 'test-results/welcome-back-popup.png' })
   await popup.getByRole('button', { name: 'Open the gift' }).click()
 
-  // The first gift ever: the gifts' own rules, then the opening.
-  await page
-    .getByRole('dialog', { name: 'Gifts from the developer' })
-    .getByRole('button', { name: "Let's go!" })
-    .click()
+  // The first gift ever opens straight away (no rules pop-up, the user's call, 2026-11-02).
   const moment = page.getByRole('dialog', { name: 'A gift from the developer' })
   await expect(moment).toBeVisible()
   expect(opened).toHaveLength(1)
@@ -142,9 +138,9 @@ test('back after 9 days: the developer’s message with the 7-day gift, opened i
   expect(stored.inventory['revive']).toBe((SAVE.inventory['revive'] ?? 0) + 2)
   expect(stored.inventory['rare-candy']).toBe((SAVE.inventory['rare-candy'] ?? 0) + 2)
   expect(stored.gold).toBe(SAVE.gold + 1000)
-  expect(stored.gifts).toEqual({ done: [31], rulesSeen: true })
+  expect(stored.gifts).toEqual({ done: [31] })
 
-  // My messages keeps it, opened, with no INFO of its own (the gifts' INFO at the bottom of the list is theirs).
+  // My messages keeps it, opened, with no INFO.
   await page.getByRole('button', { name: 'Your trainer menu' }).click()
   await page.getByRole('button', { name: 'Contact the developer' }).click()
   const form = page.getByRole('dialog', { name: 'Contact the developer' })

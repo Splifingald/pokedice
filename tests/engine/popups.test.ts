@@ -5,7 +5,6 @@ import { describe, expect, it } from 'vitest'
 import {
   createInstance,
   DEFAULT_CONFIG,
-  giftRulesDue,
   homeNotices,
   inviteRulesDue,
   markDonationSeen,
@@ -83,7 +82,6 @@ describe('the one-time pop-ups queue', () => {
       'portal',
       'dayNight',
       'powers',
-      'talents',
       'outfits',
       'world',
       'worldFinish',
@@ -108,10 +106,9 @@ describe('the one-time pop-ups queue', () => {
     ).toBeNull()
   })
 
-  it('opens the battle powers’ rules with the gifts and Trick or Treat switched on and their rules unseen', () => {
+  it('opens the battle powers’ rules with Trick or Treat switched on and its rules unseen', () => {
     const save = megaWon(start())
-    // Their own rules open at their moment (the first gift, the first ghost), so they are due and stay due.
-    expect(giftRulesDue(save, on)).toBe(true)
+    // Its own rules open at their moment (the first ghost), so they are due and stay due.
     expect(trickRulesDue(save, on)).toBe(true)
     expect(nextOneTimePopup(save, on, HOME)).toBe('powers')
     expect(nextOneTimePopup({ ...save, powers: { ...save.powers, seen: ['mega'] } }, on, HOME)).toBeNull()

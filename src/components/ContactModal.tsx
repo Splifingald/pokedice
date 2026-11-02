@@ -20,10 +20,9 @@ import { requestGifts, useGiftMoment } from '@/store/gifts'
 import { pushToast, useGame } from '@/store/game'
 import { useCloudSync } from '@/store/sync'
 import { cx } from '@/theme/util'
-import { GiftOpened, GiftPresent, GiftRulesModal } from './Gifts'
+import { GiftOpened, GiftPresent } from './Gifts'
 import { Sheet } from './Sheet'
 import { PixelButton } from './PixelButton'
-import { InfoButton } from './RulesModal'
 import { useWelcomeWords } from './WelcomeBack'
 
 const when = (iso: string) =>
@@ -71,7 +70,7 @@ export const messageTitle = (t: (k: string) => string, title: string) =>
 
 /**
  * Everything the player sent, newest first, each with its answer, and what the developer wrote first; the gifts any of
- * them carries (opened: what it held; not yet: OPEN IT, or why it waits), and the gifts' INFO. Opening it marks the
+ * them carries (opened: what it held; not yet: OPEN IT, or why it waits). Opening it marks the
  * answers seen.
  */
 function History({ onClose }: { onClose: () => void }) {
@@ -86,7 +85,6 @@ function History({ onClose }: { onClose: () => void }) {
   const signedIn = useGame((s) => s.auth.status === 'signed_in')
   const synced = useCloudSync((s) => s.settled)
   const syncWait = signedIn && !synced
-  const [rules, setRules] = useState(false)
 
   useEffect(() => {
     void load()
@@ -101,38 +99,24 @@ function History({ onClose }: { onClose: () => void }) {
         {loading ? t('ui.common.loading') : offlineOr(t('ui.contact.historyFailed'))}
       </p>
     )
-  const info = wait !== 'off' && (
-    <>
-      <InfoButton name={t('ui.gift.infoName')} onClick={() => setRules(true)} />
-      <GiftRulesModal open={rules} onClose={() => setRules(false)} />
-    </>
-  )
   if (!messages.length)
-    return (
-      <div className="flex flex-col gap-3">
-        <p className="text-xl text-muted">{t('ui.contact.historyEmpty')}</p>
-        {info}
-      </div>
-    )
+    return <p className="text-xl text-muted">{t('ui.contact.historyEmpty')}</p>
   return (
-    <div className="flex flex-col gap-3">
-      <ul className="flex flex-col gap-3">
-        {messages.map((m) => (
-          <MessageItem
-            key={m.id}
-            m={m}
-            wait={wait}
-            busy={busy || syncWait}
-            onOpen={() => {
-              // The opening takes the whole screen: the form goes first.
-              onClose()
-              requestGifts([m.id])
-            }}
-          />
-        ))}
-      </ul>
-      {info}
-    </div>
+    <ul className="flex flex-col gap-3">
+      {messages.map((m) => (
+        <MessageItem
+          key={m.id}
+          m={m}
+          wait={wait}
+          busy={busy || syncWait}
+          onOpen={() => {
+            // The opening takes the whole screen: the form goes first.
+            onClose()
+            requestGifts([m.id])
+          }}
+        />
+      ))}
+    </ul>
   )
 }
 

@@ -4,9 +4,8 @@
 // and INFO), and the opening itself (one item, Pokédollars, a shiny Pokémon, many things).
 import { useState } from 'react'
 import { GIFT_LATEST, type Gift, type GiftLanded } from '@/engine'
-import { GiftMoment, GiftOpened, GiftPresent, GiftResult, GiftRulesModal } from '@/components/Gifts'
+import { GiftMoment, GiftOpened, GiftPresent, GiftResult } from '@/components/Gifts'
 import { PixelButton } from '@/components/PixelButton'
-import { InfoButton } from '@/components/RulesModal'
 
 const item = (key: string, qty: number, region = GIFT_LATEST): Gift => ({ kind: 'item', key, qty, region })
 const mon = (dex: number, level: number, shiny = false, region = GIFT_LATEST): Gift => ({
@@ -41,7 +40,7 @@ const MANY: GiftLanded[] = [
   land(mon(4, 5)),
 ]
 
-type Open = null | 'rules-first' | 'rules-info' | 'one' | 'gold' | 'shiny' | 'mixed' | 'many'
+type Open = null | 'one' | 'gold' | 'shiny' | 'mixed' | 'many'
 
 export function GiftBits() {
   const [open, setOpen] = useState<Open>(null)
@@ -68,9 +67,6 @@ export function GiftBits() {
       <GiftOpened gifts={MIXED.map((l) => l.gift)} />
       <GiftResult landed={MIXED} onDone={() => {}} />
       <div className="flex flex-wrap gap-2">
-        <PixelButton size="sm" onClick={() => setOpen('rules-first')}>
-          First gift: rules
-        </PixelButton>
         <PixelButton size="sm" onClick={() => setOpen('one')}>
           Open: one item
         </PixelButton>
@@ -87,12 +83,6 @@ export function GiftBits() {
           Open: eight things
         </PixelButton>
       </div>
-      <InfoButton name="a gift" onClick={() => setOpen('rules-info')} />
-      <GiftRulesModal
-        open={open === 'rules-first' || open === 'rules-info'}
-        onClose={close}
-        onGo={open === 'rules-first' ? close : undefined}
-      />
       {moment && <GiftMoment key={open} landed={moment} onDone={close} />}
     </div>
   )

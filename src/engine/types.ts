@@ -1398,7 +1398,7 @@ export type Gift =
 export interface GiftsSave {
   /** Messages whose gifts are in this save already (the last 100): a gift is put in once. */
   done: number[]
-  /** The rules pop-up has been shown (once, before the first gift opens; INFO shows it again). */
+  /** Kept so older saves still parse: the gifts' rules pop-up is gone (2026-11-02). */
   rulesSeen?: boolean
 }
 
@@ -1836,7 +1836,7 @@ export interface SaveData {
   talents?: Partial<Record<RegionId, number[]>>
   /** The families whose talent has been met (a talented one seen, or unlocked): the sheet names it from then on. */
   talentsMet?: number[]
-  /** The hidden talents' rules pop-up has been shown (once; INFO shows it again). */
+  /** Kept so older saves still parse: the hidden talents' rules pop-up is gone (2026-11-02). */
   talentRulesSeen?: boolean
   /** Outfits (docs/59): their rules pop-up seen, once for good. */
   outfitRulesSeen?: boolean

@@ -4,7 +4,7 @@
 // powers' rules waited on the gifts' and Trick or Treat's, which only clear at the first gift or the first ghost, so
 // with either switched on they never opened.
 //
-// The rules that open at their own moment (the gifts' before the first gift, Trick or Treat's at the first ghost, the
+// The rules that open at their own moment (Trick or Treat's at the first ghost, the
 // portal's and the nightmare's on their way in, the looks' at the first open) aren't in the queue, and being due holds
 // nothing back.
 //
@@ -28,7 +28,6 @@ import { inWorldRegion, regionOfferDue } from './regions'
 import { badgeCase, portalRulesDue } from './run'
 import { shinyDexRulesDue } from './shinyDex'
 import { outfitRulesDue } from './outfits'
-import { talentRulesDue } from './talents'
 import { tradeRulesDue, tradesToWatch } from './trade'
 import { diceTutorialDue } from './tutorial'
 import { ugRulesDue } from './underground'
@@ -117,8 +116,6 @@ const QUEUE = {
   dayNight: { due: (s, d) => dayNightRulesDue(s, d) },
   /** Mega Evolution, Gigantamax and Z-Moves, each once its badge is won. */
   powers: { due: (s, d) => !!powerRulesDue(s, d) },
-  /** Hidden talents (docs/51), as the switch opens them. */
-  talents: { due: (s, d) => talentRulesDue(s, d) },
   /** Outfits (docs/59), as the first Pokémon in one arrives. */
   outfits: { due: (s, d) => outfitRulesDue(s, d) },
   /** A small world has opened (the player outside it). */

@@ -313,7 +313,7 @@ export function InviteRewardPopup() {
   const latest = useFriends((s) => s.invites?.latest ?? null)
   const turn = useMyTurn('inviteReward')
   const busy = useInviteRewards((s) => s.busy)
-  const gifts = useGiftMoment((s) => s.busy || !!s.rulesFor || !!s.opening)
+  const gifts = useGiftMoment((s) => s.busy || !!s.opening)
   // Opened once the sign-in's sync has settled, so the cloud copy can't replace what the gifts went into.
   const synced = useCloudSync((s) => s.settled)
   const open = turn && !!gauge && !gifts && synced

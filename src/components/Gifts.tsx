@@ -1,6 +1,6 @@
-// Gifts from the developer (docs/15 §23): the wrapped gift under a message (and in My messages), its rules pop-up (once,
-// then INFO), and the opening itself, full screen: the gift timeline (src/fx/timelines/gift.ts) with SKIP, then what
-// arrived and where it went, and DONE. Every rule — where a gift lands, what it becomes — is the engine's.
+// Gifts from the developer (docs/15 §23): the wrapped gift under a message (and in My messages), and the opening
+// itself, full screen: the gift timeline (src/fx/timelines/gift.ts) with SKIP, then what arrived and where it went,
+// and DONE. Every rule — where a gift lands, what it becomes — is the engine's.
 import { motion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -21,7 +21,7 @@ import { giftTimeline, type GiftContent } from '@/fx/timelines/gift'
 import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
 import { useHoldFullscreen } from '@/lib/fullscreen'
-import { closeGiftMoment, giftRulesGo, giftRulesLater, useGiftMoment, type GiftSource } from '@/store/gifts'
+import { closeGiftMoment, useGiftMoment, type GiftSource } from '@/store/gifts'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { Chip, NewTag } from './Chip'
@@ -29,7 +29,6 @@ import { bumpGold } from './GoldPill'
 import { PixelIcon } from './icons'
 import { ItemSprite } from './ItemSprite'
 import { PixelButton } from './PixelButton'
-import { RulesModal, type RuleRow } from './RulesModal'
 import { outfitName } from './Outfit'
 import { MiniSprite } from './SpriteImg'
 import { StageCanvas, type StageHandle } from './StageCanvas'
@@ -242,53 +241,6 @@ export function GiftResult({
   )
 }
 
-/** The rules pop-up's banner, drawn in code: three gifts on the night strip, and a few sparkles. */
-function GiftBanner() {
-  return (
-    <div className="absolute inset-0 flex items-end justify-center gap-3 bg-night pb-3" aria-hidden>
-      <PixelIcon name="sparkle" size={18} className="mb-14" />
-      <PixelIcon name="gift" size={48} />
-      <PixelIcon name="gift" size={84} className="-mb-1" />
-      <PixelIcon name="gift" size={48} />
-      <PixelIcon name="sparkle" size={18} className="mb-16" />
-    </div>
-  )
-}
-
-export function useGiftRules(): RuleRow[] {
-  const { t } = useT()
-  return [
-    { icon: 'mail', title: t('ui.rules.gift.msg.title'), text: t('ui.rules.gift.msg.text') },
-    { icon: 'potion', title: t('ui.rules.gift.items.title'), text: t('ui.rules.gift.items.text') },
-    { icon: 'ball', title: t('ui.rules.gift.mons.title'), text: t('ui.rules.gift.mons.text') },
-    { icon: 'gift', title: t('ui.rules.gift.where.title'), text: t('ui.rules.gift.where.text') },
-  ]
-}
-
-/** The gifts' rules: before the first gift opens (Later / Let's go!), and from My messages' INFO (OK). */
-export function GiftRulesModal({
-  open,
-  onClose,
-  onGo,
-}: {
-  open: boolean
-  onClose: () => void
-  onGo?: () => void
-}) {
-  const { t } = useT()
-  return (
-    <RulesModal
-      open={open}
-      onClose={onClose}
-      title={t('ui.rules.gift.title')}
-      picture={<GiftBanner />}
-      icon="gift"
-      rules={useGiftRules()}
-      onGo={onGo}
-    />
-  )
-}
-
 /** What the stage draws for each gift: the Pokémon's front sprite (its shiny one), the item's picture, coins. */
 function contentsOf(
   landed: GiftLanded[],
@@ -419,22 +371,16 @@ export function GiftMoment({
   )
 }
 
-/** The gifts' pop-ups, wherever the game is: the rules the first time, and the opening. */
+/** The gifts' opening, wherever the game is. */
 export function GiftService() {
   const opening = useGiftMoment((s) => s.opening)
   const source = useGiftMoment((s) => s.source)
   const day = useGiftMoment((s) => s.day)
-  const rulesFor = useGiftMoment((s) => s.rulesFor)
   const live = useGame((s) => (s.save ? regionOf(s.save) : null))
   const done = () => {
     // ₽ for the region being played came in while the top bar was hidden: its pill bumps when it's back.
     if (opening?.some((l) => l.gift.kind === 'gold' && l.region === live)) bumpGold()
     closeGiftMoment()
   }
-  return (
-    <>
-      <GiftRulesModal open={!!rulesFor} onClose={giftRulesLater} onGo={giftRulesGo} />
-      {opening && <GiftMoment landed={opening} onDone={done} source={source} day={day} />}
-    </>
-  )
+  return opening ? <GiftMoment landed={opening} onDone={done} source={source} day={day} /> : null
 }
