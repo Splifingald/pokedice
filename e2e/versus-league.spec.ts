@@ -344,7 +344,7 @@ test("Monday: the week's rewards pop up as the league's, in its own words, and o
     [
       STORAGE_KEY,
       JSON.stringify(fakeSession()),
-      JSON.stringify({ ...readySave(), versusLeagueRulesSeen: true, gifts: { done: [], rulesSeen: true } }),
+      JSON.stringify({ ...readySave(), versusLeagueRulesSeen: true, gifts: { done: [] } }),
       FAST,
       JSON.stringify({ ...EVENTS_ON, versusLeague: { access: 'all' }, gifts: { access: 'all' } }),
     ],

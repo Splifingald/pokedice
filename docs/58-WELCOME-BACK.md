@@ -28,7 +28,7 @@ Behind its own admin switch (docs/15 §20), **Off by default**: while it's Off t
 | Never | For a **brand-new player** (no earlier day); with **no Supabase** (nothing is asked); while the switch is Off, or On for admin and it isn't the admin |
 | Small worlds, Extreme | The message comes; **its gift waits** for the main game outside a small world, as every message's gift does (`giftsWait`). The Extreme save never opens one |
 | How it arrives | **A developer's message with the tier's gifts** (the user's call), written by the server on the return. Its words are the game's, in the player's language (below) |
-| Rules and INFO (§20) | **None: no rules and no INFO** (the user's explicit exception, 2026-11-01: "No need for an info pop up at all for this feature"). The message says only "You were away for 9 days, so here's a gift to get you going again!"; a rule line under it and an INFO under the message in My messages were removed the same day. The gifts' own rules pop-up still opens before a player's very first gift, as for any gift |
+| Rules and INFO (§20) | **None: no rules and no INFO** (the user's explicit exception, 2026-11-01: "No need for an info pop up at all for this feature"). The message says only "You were away for 9 days, so here's a gift to get you going again!"; a rule line under it and an INFO under the message in My messages were removed the same day. The gifts' own rules pop-up is gone too (2026-11-02): the first gift opens straight away |
 | Needs the gifts | The gift rides on a message, whose gift is hidden while the **Gifts** switch (Admin › Messages) is off. So the server sends a welcome back only while **both** switches are on for the player |
 
 ### What changed from the first brief, and why

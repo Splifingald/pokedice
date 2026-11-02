@@ -2,7 +2,7 @@
 // sheet's box (carried, known but not learnt, never met), the encounter's line (to learn, already learnt), the result
 // cards (caught, passed, found evolving; Regenerator, Pay Day, Amulet Coin), Pickup's tag, the battle's plaque (yours,
 // a foe's, one said as it first acts), False Swipe's catch line, the Day Care's line, the battle log's lines, the trade
-// toggle, and the rules (unlock, and again from a tap on the sheet's box). Each talent at work in a real fight:
+// toggle, and the rules (from a tap on the sheet's box). Each talent at work in a real fight:
 // /kitchen-sink/talent-lab?talent=<key>.
 import { useState, type ReactNode } from 'react'
 import {

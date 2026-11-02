@@ -61,7 +61,7 @@ export function PopupQueue({ children }: { children: ReactNode }) {
   const path = useLocation().pathname
   // Never over a full-screen moment (a battle, a hatching, a trade, the lab) or a gift being opened.
   const full = useFullscreen()
-  const gifts = useGiftMoment((s) => s.busy || !!s.rulesFor || !!s.opening)
+  const gifts = useGiftMoment((s) => s.busy || !!s.opening)
   const now = useServerNow(5000)
   const awayReport = useAwayReport((s) => !!s.report)
   const offlineReport = useOfflineReport((s) => !!s.report)

@@ -7,12 +7,10 @@ import {
   DEFAULT_CONFIG,
   GIFT_LATEST,
   giftLanding,
-  giftRulesDue,
   giftsOf,
   giftsOn,
   giftsWait,
   latestRegion,
-  markGiftRulesSeen,
   newRegionBlock,
   newSave,
   parseGifts,
@@ -250,10 +248,3 @@ describe('Heart Scales on a message (docs/60)', () => {
   })
 })
 
-describe('the rules', () => {
-  it('open once before the first gift, and only while gifts are on', () => {
-    expect(giftRulesDue(kanto(), data)).toBe(true)
-    expect(giftRulesDue(markGiftRulesSeen(kanto()), data)).toBe(false)
-    expect(giftRulesDue(kanto(), makeData())).toBe(false)
-  })
-})

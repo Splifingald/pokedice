@@ -154,7 +154,8 @@ Each entry: before (from the audit), after on a phone, after on PC, and what was
   opening ("Versus is open!" → its page, where the `RulesCard` ends it), Prof. Oak's leaderboard tip, his invite,
   Support me, a region on offer once its pop-up was seen. The rules modals of the Day Care, the events, Versus, Trades,
   the General upgrades, the Shiny and Unown dexes, the invite rewards, the raids' overhaul and the Underground left the
-  queue; nothing opens on arrival any more.
+  queue; nothing opens on arrival any more. The General upgrades and the invite rewards have no Home notice either (the
+  user's call, 2026-11-02): their rules card waits on their page.
 - **Removed**: the plate on Home, the AREAS square, the arrival modals (Support me, the tip, the invite), RegionBar's
   banner and switcher. **Merged**: the details into the Areas sheet; every square into one card.
 - **Taps**: Home → dice 1 → 1; the area's details 1 → 1; the area list 1 → 2 on phones (1 on PC, side by side); a modal

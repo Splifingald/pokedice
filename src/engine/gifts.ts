@@ -231,12 +231,3 @@ function addGold(save: SaveData, region: RegionId, amount: number): SaveData {
   if (!block) return save
   return { ...save, parked: { ...save.parked, [region]: { ...block, gold: block.gold + amount } } }
 }
-
-/** The rules pop-up opens once, before the first gift does (docs/15 §20). */
-export const giftRulesDue = (save: SaveData, data: GameData): boolean =>
-  giftsOn(data) && !giftsOf(save).rulesSeen
-
-export const markGiftRulesSeen = (save: SaveData): SaveData => ({
-  ...save,
-  gifts: { ...giftsOf(save), rulesSeen: true },
-})

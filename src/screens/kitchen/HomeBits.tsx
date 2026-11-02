@@ -191,7 +191,7 @@ export function HomeBits() {
       </Frame>
       <Frame name="Notice: a feature with a long name">
         <FeatureNotice
-          target={{ name: t('ui.home.generalName'), icon: 'navUpgrades', to: '/shop' }}
+          target={{ name: t('ui.dex.shinyTitle'), icon: 'sparkle', to: '/pokedex?view=shiny' }}
           onGo={noop}
           onClose={noop}
         />
