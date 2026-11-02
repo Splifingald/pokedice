@@ -92,7 +92,7 @@ async function fight(page: Page, done: () => Promise<boolean>) {
   }
 }
 
-test('the card: its intro, the rules the first time, their team; FIGHT, won, ×1.5 ₽, the friend request sent', async ({
+test('the card: its intro (no rules pop-up), their team, INFO; FIGHT, won, ×1.5 ₽, the friend request sent', async ({
   page,
 }) => {
   const sent: Record<string, unknown>[] = []
@@ -119,20 +119,20 @@ test('the card: its intro, the rules the first time, their team; FIGHT, won, ×1
   await expect(intro).toBeVisible()
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/area-versus-intro.png` })
   await intro.click()
-  // The first time, the rules (Later / Let's go!).
-  const rules = page.getByRole('dialog', { name: 'Real-player battles' })
-  await expect(rules).toBeVisible()
-  await rules.getByRole('button', { name: "Let's go!" }).click()
+  // No rules pop-up (the user's call, 2026-11-02): they are INFO's.
+  await expect(page.getByRole('dialog', { name: 'Real-player battles' })).toHaveCount(0)
   await expect(card.getByText('REAL PLAYER', { exact: true })).toBeVisible()
   await expect(card.getByText('Misty', { exact: true })).toBeVisible()
   await expect(card.getByText('Played here 2 days ago')).toBeVisible()
   await expect(card.getByRole('list', { name: 'Their team' }).getByRole('listitem')).toHaveCount(2)
   await expect(card.getByText(/^Win ₽/)).toBeVisible()
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/area-versus-card.png` })
-  // Seen for good (the save is written a moment later).
-  await expect
-    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!).areaVersusRulesSeen))
-    .toBe(true)
+  // INFO shows the rules (OK).
+  await card.getByRole('button', { name: 'INFO', exact: true }).click()
+  const rules = page.getByRole('dialog', { name: 'Real-player battles' })
+  await expect(rules).toBeVisible()
+  await rules.getByRole('button', { name: 'OK', exact: true }).click()
+  await expect(rules).toHaveCount(0)
 
   const goldBefore = await page.evaluate(
     () => JSON.parse(localStorage.getItem('pokedice.save')!).gold as number,
@@ -171,7 +171,12 @@ test('SKIP: no ₽, the card used, the meet told', async ({ page }) => {
   })
   const card = await toCard(page)
   const gold = await page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!).gold as number)
-  await card.getByRole('button', { name: 'SKIP · NO ₽' }).click()
+  // FIGHT and SKIP share the row evenly, both on the screen (SKIP used to run off it).
+  const fightBox = (await card.getByRole('button', { name: /FIGHT/ }).boundingBox())!
+  const skipBox = (await card.getByRole('button', { name: 'SKIP', exact: true }).boundingBox())!
+  expect(Math.abs(fightBox.width - skipBox.width)).toBeLessThan(2)
+  expect(skipBox.x + skipBox.width).toBeLessThanOrEqual(page.viewportSize()!.width)
+  await card.getByRole('button', { name: 'SKIP', exact: true }).click()
   await expect(
     page.getByText('You let Misty’s team pass.').or(page.getByText("You let Misty's team pass.")),
   ).toBeVisible()
@@ -228,4 +233,18 @@ test('the Friends page: a request to answer, ACCEPT makes friends', async ({ pag
   await requests.getByRole('button', { name: "Accept Misty's friend request" }).click()
   await expect(page.getByText('Misty is now your friend!')).toBeVisible()
   expect(answers).toEqual([{ p_from: MISTY, p_accept: true }])
+})
+
+test('How to play lists the features: Real-player battles opens its rules', async ({ page }) => {
+  await boot(page, inRoute3(60), { area_versus_offer: null })
+  await page.goto('/help')
+  const list = page.getByRole('region', { name: 'Game features' })
+  await expect(list).toBeVisible()
+  await list.getByRole('button', { name: 'Real-player battles' }).click()
+  const rules = page.getByRole('dialog', { name: 'Real-player battles' })
+  await expect(rules).toBeVisible()
+  await rules.getByRole('button', { name: 'OK', exact: true }).click()
+  await expect(rules).toHaveCount(0)
+  // A feature switched off isn't listed.
+  await expect(list.getByRole('button', { name: 'Hidden talents' })).toHaveCount(0)
 })

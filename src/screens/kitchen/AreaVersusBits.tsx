@@ -1,5 +1,5 @@
 // Kitchen sink (dev only): real-player battles in areas (docs/54) — the intro (replayed), the card (a stranger, a rich
-// friend with a shiny and a talent, three Pokémon), the tag, the rules (the first time and INFO), the result's part (won
+// friend with a shiny and a talent, three Pokémon), the tag, the rules (INFO), the result's part (won
 // or lost; the request to send, sending, sent, failed, friends at once, already friends, signed out) and the Friends
 // page's requests (one, several).
 import { useEffect, useState, type ReactNode } from 'react'
@@ -73,7 +73,7 @@ export function AreaVersusBits() {
   useEffect(() => {
     if (replay) setPlaying(replay)
   }, [replay])
-  const [rules, setRules] = useState<'unlock' | 'info' | null>(null)
+  const [rules, setRules] = useState(false)
   // The result's states, each under its own foe: the store holds what became of a request.
   useEffect(() => {
     useAreaVersus.setState((s) => ({
@@ -88,7 +88,7 @@ export function AreaVersusBits() {
   }, [])
   const card = (f: AreaFoe) => {
     const enc = foeEncounter(f, data)
-    return enc ? <PlayerFoeCard enc={enc} areaId={area?.id} firstRules={false} intro={false} /> : null
+    return enc ? <PlayerFoeCard enc={enc} areaId={area?.id} intro={false} /> : null
   }
   const withId = (id: string) => ({ ...STRANGER, id })
   return (
@@ -126,25 +126,16 @@ export function AreaVersusBits() {
           {(() => {
             const enc = foeEncounter(STRANGER, data)
             return enc ? (
-              <PlayerFoeCard key={`i${replay}`} enc={enc} areaId={area?.id} firstRules={false} />
+              <PlayerFoeCard key={`i${replay}`} enc={enc} areaId={area?.id} />
             ) : null
           })()}
         </div>
       </Frame>
       <Frame name="The rules">
-        <div className="flex gap-2">
-          <PixelButton size="sm" onClick={() => setRules('unlock')}>
-            The first time
-          </PixelButton>
-          <PixelButton size="sm" onClick={() => setRules('info')}>
-            INFO
-          </PixelButton>
-        </div>
-        <AreaVersusRulesModal
-          open={rules != null}
-          onClose={() => setRules(null)}
-          onGo={rules === 'unlock' ? () => setRules(null) : undefined}
-        />
+        <PixelButton size="sm" onClick={() => setRules(true)}>
+          INFO
+        </PixelButton>
+        <AreaVersusRulesModal open={rules} onClose={() => setRules(false)} />
       </Frame>
       <Frame name="Won: the request to send">
         <DuelResult outcome="won" foe={withId('ks-to-send')} signedInAs />

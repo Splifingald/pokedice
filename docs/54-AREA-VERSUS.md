@@ -88,8 +88,8 @@ Migration `0099_area_versus.sql` (0098 is the legendary cinematics', docs/53).
 - **The card** (`PlayerFoeCard`, the encounter's pop-up): REAL PLAYER over their look, their name (golden for the
   rich), Friend, "Played here 2 days ago", their team (sprites, levels, shiny stars, talent gems), "Win ₽540 (×1.5 a
   trainer's)" and INFO. **FIGHT** (red) and **SKIP · no ₽**.
-- **Its rules** (the feature has no page): a pop-up the first time a card is turned over (`RulesModal`, GOT IT; the
-  save's `areaVersusRulesSeen`), and INFO on the card.
+- **Its rules** (the feature has no page): INFO on the card only (`RulesModal`, OK). No pop-up the first time any more
+  (the user's call, 2026-11-02); the save's `areaVersusRulesSeen` stays only so older saves still parse.
 - **The fight**: a trainer's, their look as the foe's sprite, their name.
 - **The result**: the victory card's ₽, then "You beat Misty's team!", "Your team is healed." and SEND FRIEND REQUEST;
   a loss: "Misty's team won", "No ₽ this time. Your team is healed and the round goes on.", SEND FRIEND REQUEST and

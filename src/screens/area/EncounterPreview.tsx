@@ -501,10 +501,12 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
           className={cx('flex gap-2 border-t-[3px] p-3', dark ? 'border-shadow' : 'border-edge')}
           style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
         >
+          {/* min-w-0: the buttons share the row evenly, a long label shrinking to fit rather than pushing its
+              neighbour off the screen. */}
           <Primary
             variant="primary"
             size="lg"
-            className="flex-1"
+            className="min-w-0 flex-1"
             autoFocus
             {...(pilot && { ms: PILOT_PICK_MS, hold: picked })}
             onClick={() => engage(!fight ? undefined : double ? pickedPair(leads) : (lead ?? defaultLead()))}
@@ -528,15 +530,24 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
             )}
           </Primary>
           {skippable && (
-            <PixelButton size="lg" className="flex-1" onClick={skipEncounter}>
+            <PixelButton size="lg" className="min-w-0 flex-1" onClick={skipEncounter}>
               {fight && <PixelIcon name="run" size={20} />}
-              {t(isPlayerFoe(enc) ? 'ui.areaVersus.skip' : enc.kind === 'trainer' ? 'ui.enc.avoid' : fight ? 'ui.enc.flee' : 'ui.enc.skip')}
+              {/* A real player's is plain SKIP: the gold box above already says skipping pays nothing. */}
+              {t(
+                isPlayerFoe(enc)
+                  ? 'ui.enc.skip'
+                  : enc.kind === 'trainer'
+                    ? 'ui.enc.avoid'
+                    : fight
+                      ? 'ui.enc.flee'
+                      : 'ui.enc.skip',
+              )}
               {data.config.skipPolicy === 'once' && !isPlayerFoe(enc) && <span className="text-base"> (1)</span>}
             </PixelButton>
           )}
           {/* A challenge the player picked (gym, or a legendary due once every round is done) can wait. */}
           {(enc.kind === 'gym' || (enc.kind === 'boss' && !enc.returning)) && (
-            <PixelButton size="lg" className="flex-1" onClick={declineChallenge}>
+            <PixelButton size="lg" className="min-w-0 flex-1" onClick={declineChallenge}>
               {t('ui.enc.notYet')}
             </PixelButton>
           )}

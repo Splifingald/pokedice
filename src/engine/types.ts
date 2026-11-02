@@ -2306,7 +2306,7 @@ export interface SaveData {
   versusRulesSeen?: boolean
   /** The weekly Versus league's rules card has been read (docs/44): its own flag, as players who had Versus see it too. */
   versusLeagueRulesSeen?: boolean
-  /** Real-player battles' rules pop-up (docs/54) has been shown: the first time a card is turned over. */
+  /** Retired: real-player battles' rules pop-up was shown (it no longer opens by itself, 2026-11-02). Old saves keep it. */
   areaVersusRulesSeen?: boolean
   /** The portal run's rules pop-up (docs/28) has been shown (once; INFO shows them again). */
   portalRulesSeen?: boolean

@@ -1121,6 +1121,11 @@ notifications' question last. A new pop-up gets a place in that list, not a list
   (docs/43 §7: the Day Care, the events, Versus, Trades, the General upgrades, the Shiny and Unown dexes, the invite
   rewards' rules, the raids' overhaul, the Underground, Prof. Oak's tip and invite, Support me) is a Home notice
   (`homeNotices`) and, for a feature with a page, its `RulesCard` there.
+- **How to play lists every feature's rules** (`FeatureRulesList`, the user's ask of 2026-11-02): at the bottom of How
+  to play, under "All the rules", **Game features**: a button per feature switched on for the player (its icon and its
+  rules' title), each opening its `RulesModal` (OK). Several rules no longer open by themselves (2026-11-02: the
+  gifts', hidden talents', real-player battles'; no Home notice for the General upgrades or the invite rewards), so
+  this is where a player finds them all. A new feature with a `RulesModal` gets a row there too.
 - **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
 - **A rule explained where it happens** (the League's heal between its battles, docs/42): the switch, but no rules
@@ -1996,7 +2001,8 @@ docs/54. A card of the area's deck that brings a real player's team, behind its 
   stacked on a phone, side by side on a wide screen; a tap ends it. Then: the **REAL PLAYER** tag (the friends' sky blue, a person: a word, never colour alone; Friend beside it for a
   friend), their look and name (golden when rich), "Played here 2 days ago", their team as chips (menu icon, name,
   level, the shiny star, the talent gem), the ₽ in a gold-pale box ("Win ₽26", "1.5× a trainer's ₽. Skip it and get
-  none."), the heal line and INFO. Its buttons: **FIGHT** (red) and **SKIP · NO ₽**.
+  none."), the heal line (a heart before it) and INFO: the rules open only from INFO, never by themselves (the user's
+  call, 2026-11-02). Its buttons: **FIGHT** (red) and **SKIP**, sharing the row evenly.
 - **The round gauge**: a person on the card's segment, as a heart on a Center's; the card is there only once a team
   waits for the area. Home's area details count "Real players" in the mix then.
 - **The result**: a win's victory card ends with the real player's part (`DuelResult`: the tag, "You beat Misty's
