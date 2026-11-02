@@ -1,9 +1,19 @@
-// Admin → Analytics → Churn by area (docs/57): where the players who stopped playing were when they left, in game
-// order. The database is asked (analytics_churn, migration 0102) only when FETCH is pressed, never on its own.
-import { useState } from 'react'
-import { churnByArea, type Churn, type ChurnRaw } from '@/analytics/churn'
+// Admin → Analytics → Churn by starter and area (docs/57): where the players who stopped playing were when they left,
+// in game order, and which Pokémon they had picked at the very start. The database is asked (analytics_churn,
+// migrations 0102 and 0129) only when FETCH is pressed, never on its own.
+import { useState, type ReactNode } from 'react'
+import {
+  churnByArea,
+  churnByStarter,
+  type Churn,
+  type ChurnRaw,
+  type ChurnRow,
+  type StarterChurn,
+  type StarterChurnRow,
+} from '@/analytics/churn'
 import { dayKey } from '@/analytics/retention'
 import { PixelButton } from '@/components/PixelButton'
+import { SpriteImg } from '@/components/SpriteImg'
 import { getSupabase } from '@/lib/supabase'
 import { useGame } from '@/store/game'
 import { NumInput } from '../widgets'
@@ -35,22 +45,92 @@ interface Asked {
   frame: string
 }
 
-function ChurnTable({ churn }: { churn: Churn }) {
-  const width = (n: number) => `${(n / Math.max(1, churn.maxChurned)) * 100}%`
+/** The columns both tables share, after the first (the area or the starter). */
+function ChurnHead({ first }: { first: string }) {
+  return (
+    <thead className="sticky top-0 bg-ink text-left uppercase text-gold">
+      <tr>
+        <th className="px-2 py-1">{first}</th>
+        <th className="w-[40%] px-2 py-1">Churned</th>
+        <th className="px-2 py-1 text-right">Active</th>
+        <th className="px-2 py-1 text-right">Churn</th>
+        <th className="px-2 py-1 text-right" title="Average days played, churned / active">
+          Days played
+        </th>
+      </tr>
+    </thead>
+  )
+}
+
+function ChurnCells({
+  r,
+  max,
+  label,
+}: {
+  r: ChurnRow | StarterChurnRow
+  /** The most churned in the table: the bars' full width. */
+  max: number
+  label: ReactNode
+}) {
+  return (
+    <tr className="border-t border-white/20">
+      {label}
+      <td className="px-2">
+        <span className="flex items-center gap-2">
+          <span className="h-4 flex-1" aria-hidden>
+            {r.churned > 0 && (
+              <span
+                className="block h-full bg-gold"
+                style={{ width: `${(r.churned / Math.max(1, max)) * 100}%` }}
+              />
+            )}
+          </span>
+          <span className="w-12 text-right">{r.churned.toLocaleString()}</span>
+        </span>
+      </td>
+      <td className="px-2 text-right">{r.active.toLocaleString()}</td>
+      <td className="px-2 text-right">{pct(r.share)}</td>
+      <td className="whitespace-nowrap px-2 text-right">
+        {avg(r.churnedDays)} / {avg(r.activeDays)}
+      </td>
+    </tr>
+  )
+}
+
+function StarterTable({ churn }: { churn: StarterChurn }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[560px] text-lg" aria-label="Churn by starter">
+        <ChurnHead first="Starter" />
+        <tbody>
+          {churn.rows.map((r) => (
+            <ChurnCells
+              key={r.dex}
+              r={r}
+              max={churn.maxChurned}
+              label={
+                <td className="px-2">
+                  <span className="flex items-center gap-2">
+                    <SpriteImg dex={r.dex} size={32} alt="" />
+                    <span className="truncate" title={`#${r.dex}`}>
+                      {r.name}
+                    </span>
+                  </span>
+                </td>
+              }
+            />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function AreaTable({ churn }: { churn: Churn }) {
   return (
     <div className="pixel-scroll max-h-[560px] overflow-auto">
-      <table className="w-full min-w-[560px] text-lg">
-        <thead className="sticky top-0 bg-ink text-left uppercase text-gold">
-          <tr>
-            <th className="px-2 py-1">Area</th>
-            <th className="w-[40%] px-2 py-1">Churned</th>
-            <th className="px-2 py-1 text-right">Active</th>
-            <th className="px-2 py-1 text-right">Churn</th>
-            <th className="px-2 py-1 text-right" title="Average days played, churned / active">
-              Days played
-            </th>
-          </tr>
-        </thead>
+      <table className="w-full min-w-[560px] text-lg" aria-label="Churn by area">
+        <ChurnHead first="Area" />
         {churn.groups.map((g) => (
           <tbody key={g.regionId ?? '?'}>
             <tr>
@@ -59,26 +139,16 @@ function ChurnTable({ churn }: { churn: Churn }) {
               </th>
             </tr>
             {g.rows.map((r) => (
-              <tr key={r.areaId} className="border-t border-white/20">
-                <td className="max-w-[200px] truncate px-2" title={r.areaId}>
-                  {r.name}
-                </td>
-                <td className="px-2">
-                  <span className="flex items-center gap-2">
-                    <span className="h-4 flex-1" aria-hidden>
-                      {r.churned > 0 && (
-                        <span className="block h-full bg-gold" style={{ width: width(r.churned) }} />
-                      )}
-                    </span>
-                    <span className="w-12 text-right">{r.churned.toLocaleString()}</span>
-                  </span>
-                </td>
-                <td className="px-2 text-right">{r.active.toLocaleString()}</td>
-                <td className="px-2 text-right">{pct(r.share)}</td>
-                <td className="whitespace-nowrap px-2 text-right">
-                  {avg(r.churnedDays)} / {avg(r.activeDays)}
-                </td>
-              </tr>
+              <ChurnCells
+                key={r.areaId}
+                r={r}
+                max={churn.maxChurned}
+                label={
+                  <td className="max-w-[200px] truncate px-2" title={r.areaId}>
+                    {r.name}
+                  </td>
+                }
+              />
             ))}
           </tbody>
         ))}
@@ -87,10 +157,12 @@ function ChurnTable({ churn }: { churn: Churn }) {
   )
 }
 
-export function ChurnByArea({ since, frame }: { since: Date | null; frame: string }) {
+export function ChurnPanel({ since, frame }: { since: Date | null; frame: string }) {
   const data = useGame((s) => s.rawData)
   const [days, setDays] = useState(3)
-  const [result, setResult] = useState<{ churn: Churn; asked: Asked } | null>(null)
+  const [result, setResult] = useState<{ churn: Churn; starters: StarterChurn | null; asked: Asked } | null>(
+    null,
+  )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const valid = Number.isInteger(days) && days >= DAYS_MIN && days <= DAYS_MAX
@@ -100,7 +172,12 @@ export function ChurnByArea({ since, frame }: { since: Date | null; frame: strin
     setLoading(true)
     setError(null)
     try {
-      setResult({ churn: churnByArea(await fetchChurn(days, since), data), asked: { days, frame } })
+      const raw = await fetchChurn(days, since)
+      setResult({
+        churn: churnByArea(raw, data),
+        starters: churnByStarter(raw, data),
+        asked: { days, frame },
+      })
     } catch (err) {
       setError(errorText(err))
     } finally {
@@ -109,15 +186,17 @@ export function ChurnByArea({ since, frame }: { since: Date | null; frame: strin
   }
 
   const churn = result?.churn
+  const starters = result?.starters ?? null
   const stale = result && (result.asked.days !== days || result.asked.frame !== frame)
 
   return (
-    <section className="pixel-panel-dark flex flex-col gap-3 p-4" aria-label="Churn by area">
+    <section className="pixel-panel-dark flex flex-col gap-3 p-4" aria-label="Churn">
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex flex-col">
-          <span className="text-xl uppercase tracking-wider text-gold">Churn by area</span>
+          <span className="text-xl uppercase tracking-wider text-gold">Churn by starter and area</span>
           <span className="text-base opacity-80">
-            Where the players who stopped playing were when they left. New players of the time frame only.
+            Which starter the players who stopped playing had picked, and where they were when they left. New
+            players of the time frame only.
           </span>
         </div>
         <span className="flex-1" />
@@ -151,7 +230,7 @@ export function ChurnByArea({ since, frame }: { since: Date | null; frame: strin
         </p>
       )}
       {!churn && !error && (
-        <p className="text-lg opacity-80">Press Fetch to count the churned players by area.</p>
+        <p className="text-lg opacity-80">Press Fetch to count the churned players by starter and area.</p>
       )}
       {churn && result && (
         <>
@@ -171,16 +250,32 @@ export function ChurnByArea({ since, frame }: { since: Date | null; frame: strin
             <span>
               <b>{churn.unknown.churned.toLocaleString()}</b> churned with no known area
             </span>
+            {starters && (
+              <span>
+                <b>{starters.unknown.churned.toLocaleString()}</b> churned with no known starter
+              </span>
+            )}
           </div>
           <p className="text-base leading-snug opacity-80">
             First day in: {result.asked.frame}. Churned: last played on {dayLabel(churn.cutoff)} or before (
             {result.asked.days} day{result.asked.days === 1 ? '' : 's'} or more away, UTC). The area is where
             they were in the last hour they played (where they started their last day, for days before this
-            update). Days played: the average, churned / active.
+            update). The starter is the one picked at the very start, in Kanto (a guest's is known from their
+            first day played after this update, or from a Kanto Pokédex holding only one of the three). Days
+            played: the average, churned / active.
             {stale && ' The settings changed: press Fetch to count again.'}
           </p>
+          {!starters ? (
+            <p className="text-lg text-danger-light">
+              Churn by starter needs supabase/migrations/0129_churn_by_starter.sql to be run.
+            </p>
+          ) : starters.rows.length ? (
+            <StarterTable churn={starters} />
+          ) : (
+            <p className="text-lg opacity-80">No player with a known starter in this time frame.</p>
+          )}
           {churn.groups.length ? (
-            <ChurnTable churn={churn} />
+            <AreaTable churn={churn} />
           ) : (
             <p className="text-lg opacity-80">No player with a known area in this time frame.</p>
           )}

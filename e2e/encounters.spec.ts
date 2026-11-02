@@ -157,6 +157,28 @@ test('Home offers the furthest open area of the region when the player is behind
   await expect(page.getByRole('button', { name: /^Stay here/ })).toHaveCount(0)
 })
 
+test('back behind an area already started, CONTINUE plays here and the green GO TO goes back', async ({ page }) => {
+  const data = gameData()
+  const base = makeSave(4)
+  const chain = linearAreas(data, regionOf(base))
+  const latest = chain[2]!
+  const areaProgress = {
+    ...Object.fromEntries(chain.slice(0, 2).map((a) => [a.id, { ...emptyProgress(), cleared: true }])),
+    // An encounter already met there: coming back here was a choice.
+    [latest.id]: { ...emptyProgress(), round: 1, drawn: ['wild' as const] },
+  }
+  await boot(page, { ...base, areaProgress, currentAreaId: chain[0]!.id })
+  await page.goto('/home')
+
+  await expect(page.getByRole('button', { name: 'CONTINUE', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Stay here/ })).toHaveCount(0)
+  const go = page.getByRole('button', { name: new RegExp(`^Go to ${latest.name} · `) })
+  await expect(go).toHaveCount(1)
+  await go.click()
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(latest.name)
+  await expect(go).toHaveCount(0)
+})
+
 test('Stay here keeps the free play of a cleared area when the story goes on elsewhere', async ({ page }) => {
   const data = gameData()
   const base = makeSave(4)
