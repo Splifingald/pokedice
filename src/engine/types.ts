@@ -92,8 +92,11 @@ export interface SpeciesForm {
   /**
    * Battle forms only — when the engine switches to it. `lowHp`: below half HP, swapping one `swapDie.from` die for a
    * `swapDie.to` one (Giratina). `choice`: picked from a menu, every die turning into the form's type (Arceus).
+   * `weather`: as a fight under one of `weather` starts, its dice of the species' type turning into the form's
+   * (Castform, docs/62 §3).
    */
-  trigger?: 'lowHp' | 'choice' | null
+  trigger?: 'lowHp' | 'choice' | 'weather' | null
+  weather?: Weather[] | null
   swapDie?: { from: DieType; to: DieType } | null
   /** A `mega` row that is a Primal Reversion or an Ultra Burst: the same rules, its own name in the game. */
   mechanic?: 'primal' | 'ultra' | null
@@ -184,8 +187,10 @@ export interface DieUpgradeRow {
  * 'casino': the Game Corner — a slot machine the player can play as long as they like (Rocket Hideout). 'trick': Trick
  * or Treat (docs/29) — a ghost tempted with treats and caught with a Trick Ball, dealt only while its switch is on.
  * 'versus': a real player's team (docs/54), dealt only while its switch is on and the server has one for the area.
+ * 'gift': the Gift card (docs/64 §4.0) — a present to open or make bigger, dealt only while its switch is on, in place
+ * of the area's item cards.
  */
-export const ENCOUNTER_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus'] as const
+export const ENCOUNTER_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus', 'gift'] as const
 export type EncounterKind = (typeof ENCOUNTER_KINDS)[number]
 /** Cards in an area's encounter deck; 'legend' is a fled legendary coming back (one per deck until it's caught). */
 export type DeckCard = EncounterKind | 'legend'
@@ -241,15 +246,35 @@ export interface LootEntry {
   /** Quantity found (for money: the ₽ amount), drawn between these. */
   minQty: number
   maxQty: number
+  /**
+   * A Pokémon posing as this item (docs/61 §3): Voltorb in a Poké Ball. Dealt and shown as the find, it springs out as
+   * a wild Pokémon when picked up, at a level between these. Only while its switch is on.
+   */
+  disguise?: LootDisguise | null
+}
+
+export interface LootDisguise {
+  dex: number
+  minLevel: number
+  maxLevel: number
 }
 
 /** Battle scenes (public/battle/*.png). */
 export const BATTLE_BACKGROUNDS = ['grass', 'sea', 'water', 'rock', 'default'] as const
 export type BattleBackground = (typeof BATTLE_BACKGROUNDS)[number]
 
+/**
+ * A roadblock boss (docs/61 §2): a Pokémon across the road, not a legendary. Its kind picks its words: Snorlax asleep,
+ * Sudowoodo the "tree", Kecleon unseen.
+ */
+export const ROADBLOCK_KINDS = ['sleeping', 'tree', 'invisible'] as const
+export type RoadblockKind = (typeof ROADBLOCK_KINDS)[number]
+
 export interface BossDef {
   dex: number
   level: number
+  /** A Pokémon blocking the road rather than a legendary (docs/61 §2): the same rules, its own words. */
+  roadblock?: RoadblockKind | null
   /** Victory Road style: the boss triggers when the team's average level reaches this, instead of once every round is done. */
   teamAvgThreshold?: number
   /** Upgrade level this legendary fights at; unset = the area's. */
@@ -266,6 +291,25 @@ export interface BossDef {
    * caught nowhere else here. Only while Raid Battles are switched on for the player; otherwise a boss as before.
    */
   raid?: boolean
+  /**
+   * It comes out of a present (the Gift card's, docs/64 §4.2: Evergreen Hill's Delibird): its challenge opens on a
+   * present that only grows and bursts on the last tap, then the fight. Only while the Gift card is on; a plain boss
+   * otherwise.
+   */
+  present?: boolean
+  /**
+   * A Titan (docs/62 §7): fought in two phases, the second bigger and stronger after a Herba Mystica, never caught.
+   * Only while the Titans' switch is on for the player; otherwise the area has no boss.
+   */
+  titan?: TitanDef | null
+}
+
+/** A Titan's own (docs/62 §7); its numbers are the Titans' config. */
+export interface TitanDef {
+  /** The species fought instead by a player in Green's look (Violet's side): Iron Treads for Great Tusk. */
+  versionDex?: number | null
+  /** A second Titan fought beside it in the first phase (Tatsugiri with Dondozo), which jumps in for the second. */
+  partner?: { dex: number; level: number } | null
 }
 
 /** Levels relative to the team average, both ends included: { min: -15, max: -10 } = 15 to 10 levels below. */
@@ -291,9 +335,16 @@ export interface Area {
   roundsToClear: number | null
   minLevel: number
   maxLevel: number
-  /** Copies of each card in a deck; Trick or Treat's (docs/29) and a real player's (docs/54) are optional, as content
-   * from before them has none. */
-  encounterWeights: Record<Exclude<EncounterKind, 'trick' | 'versus'>, number> & { trick?: number; versus?: number }
+  /**
+   * Copies of each card in a deck; Trick or Treat's (docs/29), a real player's (docs/54) and the Gift card's (docs/64
+   * §4.0) are optional, as content from before them has none. While the Gift card is on, its copies replace the item
+   * cards: an area with `gift` deals no item card then.
+   */
+  encounterWeights: Record<Exclude<EncounterKind, 'trick' | 'versus' | 'gift'>, number> & {
+    trick?: number
+    versus?: number
+    gift?: number
+  }
   backtrackMultiplier: number
   legendaryBoss: BossDef[] | null
   scalesToTeam: boolean
@@ -315,13 +366,203 @@ export interface Area {
   lootPool: LootEntry[]
   /**
    * How the area plays instead of rounds: Distortion World's portal run (docs/28), Newmoon Island's nightmare
-   * (docs/30). Absent or null = a plain area.
+   * (docs/30), Moonlit Glade's Tracks in the Snow (docs/64 §4.1), Crown Shrine's whiteout (§4.3), Spear Pillar's race
+   * of time and space (§4.4). Absent or null = a plain area.
    */
   mode?: AreaMode | null
 }
 
-/** An area's special mode: the portal run (docs/28) or the nightmare (docs/30). */
-export type AreaMode = PortalRunMode | NightmareMode
+/**
+ * An area's special mode: the portal run (docs/28), the nightmare (docs/30), the Safari (docs/61 §4), Tracks in the Snow
+ * (docs/64 §4.1), the whiteout (§4.3) or the time race (§4.4).
+ */
+export type AreaMode = PortalRunMode | NightmareMode | SafariMode | TracksMode | TimeRaceMode | WhiteoutMode
+
+/** One of the race's two gates at a fork leading to a legend (docs/64 §4.4): its type, and whose raid it opens. */
+export interface TimeRaceLegend {
+  type: PokeType
+  /** The legend's dex: one of the area's raid bosses (`legendaryBoss`). */
+  dex: number
+}
+
+/**
+ * The race of time and space (docs/64 §4.4, Spear Pillar): a time trial. From READY! the clock runs on the server's
+ * time: `perFork` fights after each fork, each fork two gates of a type (the next foes of that type, drawn from the
+ * area's wild pool); the forks are `forks` then the last one, whose gates are the `legends`' types: the gate taken there
+ * opens that legend's raid when the last fight is won within `seconds`. Each gate holds a find: an item, or a time shard
+ * (`shard.seconds` more on the clock). No Pokémon Center, no catch, no way out but a full K.O. or the clock; inside it
+ * every fight plays at one speed (`speed`) with no auto-battle, so the clock means the same for everyone. Once that
+ * legend is caught, one `replay` with its own forks, the other legend's gate alone at the end, foes `levelBonus` higher
+ * and `seconds` on the clock. Every number is the admin's.
+ */
+export interface TimeRaceMode {
+  kind: 'timeRace'
+  /** The forks before the last, in order: two gate types each. */
+  forks: [PokeType, PokeType][]
+  /** The last fork's gates: each type opens its legend's raid. */
+  legends: TimeRaceLegend[]
+  /** Fights after each fork (3). */
+  perFork: number
+  /** The clock at READY!, in seconds (12:00). */
+  seconds: number
+  /** A gate's find: a time shard `chance` % of the time (`seconds` more on the clock), else an item from `items`. */
+  shard: { chance: number; seconds: number }
+  items: { key: string; qty: number; weight: number }[]
+  /** The battle's speed inside the race, for everyone (1.5: the quick speed). */
+  speed: number
+  /** The one replay, once the first legend is caught: its forks, its foes' extra levels, its clock. */
+  replay: { forks: [PokeType, PokeType][]; levelBonus: number; seconds: number }
+  /** The legends' raids once won: their level, the foe's dice level, its HP bars and the teams' level cap. */
+  raid: { level: number; upgradeLevel: number; bars: number; teamCap: number }
+}
+
+/** A gate at a fork, as drawn: its type and its find (an item, or a time shard; none when the admin left neither). */
+export interface TimeRaceGate {
+  type: PokeType
+  find: { kind: 'shard'; seconds: number } | { kind: 'item'; key: string; qty: number } | null
+}
+
+/** Where the race stands, in its area's progress (so it's saved and parked with the region). */
+export interface TimeRaceState {
+  /** In a try: the player can't leave the area until it is won, lost to the clock or to a full K.O. */
+  active: boolean
+  /** The server's time at READY! (ms). */
+  startedAt?: number
+  /** The server's time the clock reaches 0:00 (ms): READY! plus the clock plus the shards picked up. */
+  deadline?: number
+  /** Fights won this try. */
+  fights: number
+  /** The gates taken this try, in order (their types). */
+  path: PokeType[]
+  /** A fork is open: its gates, waiting for the pick. */
+  gates?: TimeRaceGate[] | null
+  /** Species met since the last fork (the next foe is another one while the pool allows). */
+  met?: number[]
+  /** Time shards picked up this try. */
+  shards?: number
+  /** What was left on the clock when the last try was won (ms), for the win's line. */
+  left?: number
+  /** The legends (dex) whose raid a won try opened, in order: the first race's, then the replay's. */
+  won?: number[]
+  /** The last win's moment has played. */
+  wonSeen?: boolean
+  /** Tries started here. */
+  tries?: number
+}
+
+/** One of the whiteout's foes (docs/64 §4.3): a wild Pokémon at a set level, met in its wave's order. */
+export interface WhiteoutFoe {
+  dex: number
+  level: number
+}
+
+/**
+ * The whiteout (docs/64 §4.3, Crown Shrine): weather survival. Its `waves` of fixed foes are fought one after the other,
+ * as wild Pokémon that can't be caught, in the blizzard: every Pokémon that isn't of the weather's spared types loses
+ * the weather's share of its max HP each round, both sides (the raids' rule, engine/raidSpecials.ts). After every wave
+ * a bonfire heals the team `bonfirePercent` % of each one's max HP, and it is the only place the team can change and
+ * the bag be used; in battle the bag stays shut. After the last bonfire: the area's boss, in the blizzard too. Caught,
+ * the area closes for good; a full K.O. sends the player back to wave 1. Every number is the admin's.
+ */
+export interface WhiteoutMode {
+  kind: 'whiteout'
+  waves: WhiteoutFoe[][]
+  /** The weather of every fight here: snow (Ice spared) or a sandstorm (Rock, Ground, Steel spared); null = none. */
+  weather: 'snow' | 'sand' | null
+  /** % of max HP a bonfire gives back to every team member still standing (never above its max). */
+  bonfirePercent: number
+}
+
+/** Where the whiteout stands, in its area's progress (so it's saved and parked with the region). */
+export interface WhiteoutState {
+  /** Under way: the player can't travel elsewhere until it ends. */
+  active: boolean
+  /** Waves cleared this try (the next foes are `waves[wave]`). */
+  wave: number
+  /** Foes beaten in the wave under way. */
+  foe: number
+  /** At a bonfire (a wave just cleared, or the boss got away): the team and the bag open, MOVE ON next. */
+  bonfire?: boolean
+  /** This bonfire's heal has been given (a reload doesn't give it twice). */
+  warmed?: boolean
+  /** Every wave and bonfire behind: the boss is next. */
+  boss?: boolean
+  /** The boss caught: the blizzard is over, the area closed for good. */
+  won?: boolean
+  /** The outro has played. */
+  wonSeen?: boolean
+  /** Tries started here (a wipe ends one). */
+  tries?: number
+}
+
+/** One round of Tracks in the Snow (docs/64 §4.1): its glade of snowy bushes and what they hold. */
+export interface TracksRound {
+  /** Bushes on a side: a size × size glade. */
+  size: number
+  /** Bushes the player may open before the snow falls (a fresh glade, Stantler moved). */
+  taps: number
+  /** Bushes holding a wild Pokémon of the area's pool, a find of its loot, a warm cabin (a Pokémon Center's heal). */
+  wild: number
+  finds: number
+  cabins: number
+  /** Stantler never hides in one of the 8 bushes around the first one opened either (the 4 × 4: a little hunting). */
+  apart: boolean
+}
+
+/**
+ * Tracks in the Snow (docs/64 §4.1, Moonlit Glade): hide and seek with Stantler, round after round. Each round is a
+ * glade of snowy bushes; the first opened is never Stantler's (it is hidden only then, away from it). Every bush opened
+ * shows hoofprints pointing at it (or only the empty ones, `emptyPrintsOnly`). Each round but the last ends on a wild
+ * Stantler (the boss's species, catchable); the last on the area's boss (the shiny Stantler). Every number is the
+ * admin's.
+ */
+export interface TracksMode {
+  kind: 'tracks'
+  rounds: TracksRound[]
+  emptyPrintsOnly: boolean
+}
+
+/** What a bush of the glade holds. */
+export type TracksBush = 'stantler' | 'wild' | 'find' | 'cabin' | 'empty'
+
+/** The glade being searched (one snowfall's): it lives in the save, so a reload can't reshuffle it. */
+export interface TracksField {
+  /** Bushes left to open before the snow falls. */
+  taps: number
+  /** What each bush holds, row by row; null until the first is opened (Stantler is hidden then, away from it). */
+  bushes: TracksBush[] | null
+  /** The bushes opened, in order. */
+  opened: number[]
+  /** Stantler was found: its fight (and its catch) decide; back on the glade without it, it has bolted. */
+  found?: boolean
+  /** Fresh snow fell on this glade (the last one ran out of taps): said on the glade until a bush is opened. */
+  snowed?: boolean
+  /** Stantler bolted to another bush (it fled, or the throw missed): said on the glade until a bush is opened. */
+  bolted?: boolean
+}
+
+/** Where Tracks in the Snow stands, in its area's progress (so it's saved and parked with the region). */
+export interface TracksState {
+  /** In the glade: begun, not over. A trip Home keeps it (and its field). */
+  active: boolean
+  /** Rounds cleared, kept through a wipe and a trip Home: the next is `rounds[round]`. */
+  round: number
+  field?: TracksField | null
+  /** The shiny Stantler caught: the glade closes for good. */
+  won?: boolean
+  /** The outro has played. */
+  wonSeen?: boolean
+  /** Times the glade was entered (BEGIN). */
+  tries?: number
+}
+
+/**
+ * A Safari (docs/61 §4): a secret area of its own where nobody battles. Its wild cards are Safari encounters, Trick or
+ * Treat's gauge with Bait and Safari Balls, while the Safari's switch is on; off, they're fought as wild Pokémon.
+ */
+export interface SafariMode {
+  kind: 'safari'
+}
 
 /** One of the nightmare's foes, met in its order (docs/30): a wild Pokémon at a set level. */
 export interface NightmareFoe {
@@ -378,8 +619,17 @@ export interface NightmareState {
  * distortion offers `offers` boons of distinct kinds drawn by weight; the last one wins the run and opens the area's
  * raid at `raid`'s numbers. Every number is the admin's (Admin → Areas).
  */
+/**
+ * How a portal run is dressed (docs/28, docs/64 §4.5): Distortion World's portals (the default), or the Hall of
+ * Origin's stairway of light, its landings ended by altars and its damage boons named after Arceus's Plates. The
+ * rules and numbers are the same either way: only the words and the effects change.
+ */
+export type PortalSkin = 'distortion' | 'plates'
+
 export interface PortalRunMode {
   kind: 'portal'
+  /** Its look (absent: Distortion World's). */
+  skin?: PortalSkin
   portals: number
   wild: number
   items: number
@@ -394,8 +644,12 @@ export interface PortalRunMode {
   die: { weight: number; maxDice: number }
   /** A rare item into the bag, drawn from `items` by weight. */
   item: { weight: number; items: { key: string; weight: number }[] }
-  /** The area's raid once the run is won: its level, the foe's dice level, its HP bars and the teams' level cap. */
-  raid: { level: number; upgradeLevel: number; bars: number; teamCap: number }
+  /**
+   * The area's raid once the run is won: its level, the foe's dice level, its HP bars and the teams' level cap.
+   * `barTypes`: the type the raid Pokémon takes at the start of each bar (the Hall of Origin's Arceus changing its Plate:
+   * Normal → Ice → Steel → Dragon), through its type forms; absent or short, it keeps the type it has.
+   */
+  raid: { level: number; upgradeLevel: number; bars: number; teamCap: number; barTypes?: PokeType[] }
 }
 
 /** One boon a distortion offers (docs/28), as drawn: who and what it names is fixed when it's offered. */
@@ -440,6 +694,11 @@ export type UnlockCondition =
   | { kind: 'area'; areaId: string }
   /** Another area is cleared — e.g. a small world's league beaten, every main area done (docs/26 §2.5). */
   | { kind: 'cleared'; areaId: string }
+  /**
+   * Every species listed is caught, in any region's Pokédex (docs/61 §1): Snowpoint Temple waits for the three Regis,
+   * caught in Hoenn. Caught rather than owned, so trading one away doesn't shut the area again.
+   */
+  | { kind: 'caught'; dex: number[] }
 
 /**
  * The roaming legendaries. They have no area of their own: once every Pokémon in `requires` has been **caught**, each
@@ -707,6 +966,11 @@ export interface VersusLeagueConfig {
   secondsPerMove: number
   /** The trophies from which a bot's team gets stronger: a tier each (the last brings all three powers). */
   botTiers: number[]
+  /**
+   * Where seated bots' trophies are headed by Sunday night: [lowest, highest], most of them near the bottom. Fixed, so
+   * every group gets bots as strong as every other's, whatever its players do (the user's rule, 2026-11-01).
+   */
+  botTargets: [number, number]
   /** ₽ for each trophy at the end of the week. */
   goldPerTrophy: number
   rewards: LeagueRewardBand[]
@@ -1069,12 +1333,40 @@ export interface GameConfig {
   push: PushConfig
   /** The areas' portal run (docs/28): its switch. The server reads the same row (0057). */
   portalRun: { access: EventAccess }
+  /** The Hall of Origin's Stairway of Plates (docs/64 §4.5): a portal run with its own switch. The server reads it (0127). */
+  platesRun: { access: EventAccess }
   /** The areas' nightmare (docs/30): its switch. The server reads the same row (0060). */
   nightmare: { access: EventAccess }
+  /** The areas' race of time and space (docs/64 §4.4): its switch. The server reads the same row (0126). */
+  timeRace: { access: EventAccess }
+  /** The areas' whiteout (docs/64 §4.3, Crown Shrine): its switch. Migration 0125 inserts the same row. */
+  whiteout: { access: EventAccess }
+  /** Tracks in the Snow (docs/64 §4.1): its switch. The server reads the same row (0124, tracks_open). */
+  tracks: { access: EventAccess }
   /** Trainer looks (docs/31): unlockable looks in place of the free list. Off by default. */
   looks: { access: EventAccess }
   /** Trick or Treat (docs/29): its switch, numbers and each area's ghosts. The server reads the switch too. */
   trickOrTreat: TrickOrTreatConfig
+  /** The Gift card (docs/64 §4.0): its switch and numbers. The server reads the switch too (0123). */
+  giftCard: GiftCardConfig
+  /** Pokémon posing as items (docs/61 §3): its switch. The server reads the same row (0111: side_quest_open). */
+  disguises: { access: EventAccess }
+  /** The Safari (docs/61 §4): its switch, its gauge's numbers, tiers and a round's price. The server reads the switch. */
+  safari: SafariConfig
+  /** Rivals' set meetings (docs/61 §5.2): the switch (the server reads it) and the meetings, the game's own. */
+  rivals: RivalsConfig
+  /** Gift Pokémon (docs/61 §5.3): the switch (the server reads it), an Egg's hours and the gifts, the game's own. */
+  giftMoments: GiftMomentsConfig
+  /** Hoenn's fixed weather (docs/62 §3): the switch (the server reads it) and each area's. */
+  hoennWeather: WeatherConfig
+  /** Galar's weather of the day (docs/62 §4): the switch (the server reads it), each area's odds and the pool shift. */
+  galarWeather: WeatherConfig
+  /** Kalos hordes (docs/62 §5). */
+  hordes: HordesConfig
+  /** Alola's island trials (docs/62 §6): the Totems instead of the captains' battles. */
+  trials: TrialsConfig
+  /** Paldea's Titans (docs/62 §7). */
+  titans: TitansConfig
   /** Day and night in Johto (docs/32): its switch. Migration 0061 inserts the same row. */
   dayNight: { access: EventAccess }
   /** Idle mode and the play styles (docs/36): its switch. Migration 0068 inserts the same row. */
@@ -1313,8 +1605,212 @@ export interface TrickOrTreatConfig {
   areas: Record<string, TrickGhost[]>
 }
 
+/**
+ * The Safari (docs/61 §4): Trick or Treat's numbers (Bait is its Treat, the Safari Ball its Trick Ball) with their own
+ * values, each Safari area's tier overrides (`areas`: a Pokémon not listed takes its tier from its catch value), and the
+ * price of a round: the first rounds in each Safari area free, the next ones paid in the region's ₽.
+ */
+export interface SafariConfig extends TrickOrTreatConfig {
+  /** Rounds free in each Safari area, per save. */
+  freeRounds: number
+  /** ₽ for each round after them. */
+  roundPrice: number
+}
+
+/**
+ * A set moment's place (docs/61 §5): an area, the round it comes in (the rounds done there: 0 = the first) and how many
+ * cards of that round are turned over before it. It comes on top of the deck and uses no card.
+ */
+export interface MomentPoint {
+  areaId: string
+  round: number
+  after: number
+}
+
+/**
+ * A rival's meeting (docs/61 §5.2): one trainer per version, the player's starter picking it (`Trainer.rivalOf`), or one
+ * for everyone. Met once per save, only while the area isn't cleared.
+ */
+export interface RivalMeeting extends MomentPoint {
+  id: string
+  trainers: string[]
+}
+
+/**
+ * A gift Pokémon (docs/61 §5.3): the giver (a trainer's name, translated as one; its picture), what's given, and how.
+ * `dex`: one Pokémon, or several to pick one from; `byStarter`: the one for the player's starter instead (the Unova
+ * monkey); `egg`: an Egg hatching after `eggHours`, the Odd Egg (`dex` several) one of them at random; `price`: ₽ to pay
+ * (the Magikarp salesman). `level`: absent = the area's lowest. Met once per save, a cleared area's on the next visit.
+ */
+export interface GiftMoment extends MomentPoint {
+  id: string
+  giver: string
+  sprite: string
+  dex: number[]
+  byStarter?: Record<string, number>
+  level?: number
+  egg?: boolean
+  /** An Egg's own shiny odds (the Odd Egg's); absent = the wild odds. */
+  shinyChance?: number
+  price?: number
+}
+
+export interface RivalsConfig {
+  access: EventAccess
+  meetings: RivalMeeting[]
+}
+
+export interface GiftMomentsConfig {
+  access: EventAccess
+  /** Hours a gift Egg takes to hatch (the user's call, 2026-11-01: 6). */
+  eggHours: number
+  gifts: GiftMoment[]
+}
+
+/** The region flavours' weather (docs/62 §2): what it does is the raids' own rules. */
+export const WEATHER_KINDS = ['clear', 'overcast', 'rain', 'thunderstorm', 'sun', 'sand', 'snow', 'fog', 'ash'] as const
+export type Weather = (typeof WEATHER_KINDS)[number]
+
+/** An area's weather (docs/62 §3–4): one that never changes, two taking turns a round each, or the odds of the day's. */
+export interface AreaWeather {
+  fixed?: Weather | null
+  alternate?: Weather[] | null
+  /** Weights of each weather of the day (UTC), the same for everyone. */
+  daily?: Partial<Record<Weather, number>> | null
+}
+
+/** Hoenn's or Galar's weather (docs/62): the switch (the server reads it) and each area's weather, by area id. */
+export interface WeatherConfig {
+  access: EventAccess
+  areas: Record<string, AreaWeather>
+  /** Galar: × the weight of the wild Pokémon of the day's weather's types (no species added or taken away). */
+  poolTimes?: number
+}
+
+/** Kalos hordes (docs/62 §5): the switch (the server reads it) and the numbers. */
+export interface HordesConfig {
+  access: EventAccess
+  /** % of the wild cards that come as a horde. */
+  chance: number
+  /** Hordes at most per visit to an area (the round's cards). */
+  perArea: number
+  /** How many come. */
+  size: number
+  /** Levels below the one rolled (never under Lv 2). */
+  levelDrop: number
+  /** % of hordes with one of another species. */
+  mixedChance: number
+  /** Pool entries up to this weight (the rarest) never make a horde. */
+  minWeight: number
+  regions: RegionId[]
+}
+
+/** An island trial (docs/62 §6): the Totem fought instead of a captain's battle, or a trial of its own. */
+export interface TrialDef {
+  id: string
+  /** The Z-Crystal it gives: Z-Moves of this type (docs/62 §6). */
+  crystal?: PokeType | null
+  areaId: string
+  /** The gym battle this trial replaces: a captain's, or (`own`) a row there only for the trial. */
+  trainerId: string
+  /** The gym exists only as this trial (Vast Poni Canyon's): with the switch off, the area doesn't have it. */
+  own?: boolean
+  /** Who greets the player ('Ilima', 'Hapu'). */
+  captain: string
+  /** The place said in the greeting ('the Verdant Cavern'). */
+  place: string
+  totem: number
+  level: number
+  /** The allies it calls, in turn. */
+  allies: number[]
+  allyLevel: number
+}
+
+export interface TrialsConfig {
+  access: EventAccess
+  /** × the Totem's max HP. */
+  hpTimes: number
+  /** Extra dice of its type: its aura. */
+  extraDice: number
+  /** Allies it calls in a fight, at most. */
+  calls: number
+  trials: TrialDef[]
+  /** The other battles that give a Z-Crystal (the kahunas', Mina's), by trainer id. */
+  crystals?: Record<string, PokeType>
+}
+
+/** The Titans (docs/62 §7): the switch (the server reads it), the second phase's numbers and the reward. */
+export interface TitansConfig {
+  access: EventAccess
+  hpTimes: number
+  extraDice: number
+  /** Dondozo with Tatsugiri in its mouth (Commander): its own numbers. */
+  commanderHpTimes: number
+  commanderExtraDice: number
+  gold: number
+  items: { key: string; qty: number }[]
+}
+
+/** The region flavours, each with its switch and its rules (docs/62). */
+export const FLAVOUR_KEYS = ['hoennWeather', 'galarWeather', 'hordes', 'trials', 'titans'] as const
+export type FlavourKey = (typeof FLAVOUR_KEYS)[number]
+
+export interface FlavoursSave {
+  /** The flavours whose rules have been shown once. */
+  seen?: FlavourKey[]
+}
+
+/** The set moments a save has met (docs/61 §5): each one's id, once. */
+export interface MomentsSave {
+  done: string[]
+}
+
+/** Trick or Treat's look: the haunted one (docs/29) or the Safari's (docs/61 §4). */
+export type LureTheme = 'trick' | 'safari'
+
 /** Trick or Treat in a save (docs/29): its rules pop-up shown. */
 export interface TrickSave {
+  rulesSeen?: boolean
+}
+
+/**
+ * What a Gift card's level gives (docs/64 §4.0), one part of a reward: the area's own ball (the best its finds hold)
+ * or the one above it, an item, Pokédollars (`qty` × the area's level) or an evolution item its Mart sells.
+ */
+export const GIFT_REWARD_KINDS = ['ball', 'betterBall', 'item', 'money', 'evolution'] as const
+export type GiftRewardKind = (typeof GIFT_REWARD_KINDS)[number]
+
+export interface GiftRewardPart {
+  kind: GiftRewardKind
+  /** The item, for `item`. */
+  key?: string
+  qty: number
+}
+
+/**
+ * The Gift card (docs/64 §4.0): a present to OPEN for its level's reward or MAKE BIGGER, each tap able to break it, a
+ * broken one a wild Pokémon of the area. Owning the helper (Delibird) makes every tap safer and adds a level.
+ */
+export interface GiftCardConfig {
+  /** The switch (docs/15 §20): off (the item card as before), on for the admin only, on for everyone. Off by default. */
+  access: EventAccess
+  /**
+   * The % a MAKE IT BIGGER tap breaks the gift, by the level it is at (first = level 1). The level after the last is the
+   * top: it can't grow.
+   */
+  breakChances: number[]
+  /** Owning this Pokémon (team or Box): every tap `safer` % less likely to break, `extraLevels` more on top. */
+  helper: { dex: number; safer: number; extraLevels: number }
+  /** Each level's reward (first = level 1): its options, one drawn as the gift appears; a level past the list takes the last. */
+  rewards: GiftRewardPart[][][]
+  /** Poké Balls from worst to best: an area's ball is the best of these in its finds, its better ball the next one. */
+  balls: string[]
+  /** A boss that comes out of a present (`BossDef.present`): the taps until it bursts. */
+  bossTaps: number
+}
+
+/** The Gift card in a save (docs/64 §4.0): its rules pop-up shown. */
+export interface GiftCardSave {
   rulesSeen?: boolean
 }
 
@@ -1386,13 +1882,19 @@ export type GiftRegion = string
 
 /**
  * One gift on a message, as the admin set it (Admin → Messages, or a player's profile): an item and how many, a
- * Pokémon at a level, shiny or not, or Pokédollars. Each goes to its region's Bag, Box or ₽.
+ * Pokémon at a level, shiny or not, Pokédollars, or Heart Scales. Each goes to its region's Bag, Box or ₽, the Heart
+ * Scales to the player's wallet.
  */
 export type Gift =
   | { kind: 'item'; key: string; qty: number; region: GiftRegion }
   /** `outfit` (docs/59): the Pokémon comes dressed up (a key of `OUTFITS` its species wears). */
   | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; outfit?: string; region: GiftRegion }
   | { kind: 'gold'; amount: number; region: GiftRegion }
+  /**
+   * Heart Scales (docs/60), a message's only: the server adds them to the player's wallet as it hands the gifts over
+   * (migration 0121), so a message carrying them goes to an account. `region` is kept for the shape, never read.
+   */
+  | { kind: 'heartScales'; amount: number; region: GiftRegion }
 
 /** The gifts a save has opened (docs/15 §23). */
 export interface GiftsSave {
@@ -1446,6 +1948,10 @@ export interface TradeConfig {
   evolveOnTrade: [number, number][]
   /** Never tradable, on top of legendaries and mythicals (the Ultra Beasts by default). */
   exclude: number[]
+  /** Listings the board picks for a player (docs/23 §2.1); a search still shows every match. */
+  boardPicks: number
+  /** NEW PICKS a player can ask for per UTC day: the board shows others. */
+  boardRerolls: number
 }
 
 /** One booster of a small world: every hit of this type, both sides', × `multiplier`. */
@@ -1672,6 +2178,9 @@ export interface PokemonInstance {
   revivesAt?: number
   /** The fossil item it came from (for its picture while it revives). */
   fossil?: string
+  /** A gift Egg (docs/61 §5.3) waiting to hatch at `revivesAt`, in the Box as a fossil waits; `hatchShiny` when it hatches. */
+  egg?: boolean
+  hatchShiny?: boolean
   /** Extreme mode: when it was K.O. (ms, server time). It rests until `koHours` later. Absent = not on the clock. */
   koAt?: number
   /** Extreme mode's Pokébuff (docs/47): one more die of this type in its battles until `until` (ms, real time). */
@@ -1695,6 +2204,8 @@ export interface PokemonInstance {
 export interface AreaProgress {
   /** Rounds completed here (a round counts once its last card is dealt with; a wipe loses the round in progress). */
   roundsDone: number
+  /** A Safari (docs/61 §4): rounds begun here, the free ones included; a round is paid for as it's dealt. */
+  safariRounds?: number
   /** The current round has already been counted (its deck ran out): don't count it twice. */
   roundCounted?: boolean
   /** Exploration XP from before rounds replaced the gauge: converted to `roundsDone` on load, then dropped. */
@@ -1728,10 +2239,18 @@ export interface AreaProgress {
   portal?: PortalState
   /** The nightmare here (docs/30): its round, Darkrai's strike due, the gifts given, whether it's over. */
   nightmare?: NightmareState
+  /** The race of time and space here (docs/64 §4.4): its clock, its gates, the legends it opened. */
+  timeRace?: TimeRaceState
+  /** The whiteout here (docs/64 §4.3): its wave, a bonfire, the boss next, whether it's over. */
+  whiteout?: WhiteoutState
+  /** Tracks in the Snow here (docs/64 §4.1): the rounds cleared, the glade being searched, whether it's over. */
+  tracks?: TracksState
   /** Extreme mode (docs/47): a Pokémon Center has been met here (a secret area has only its first). */
   centerMet?: boolean
   /** Extreme mode (docs/47): the team was K.O. here; the round starts over at a Center that only swaps. */
   wiped?: boolean
+  /** Kalos hordes met this round (docs/62 §5): the round and how many. */
+  hordes?: { round: number; n: number }
 }
 
 export interface SaveData {
@@ -1791,8 +2310,14 @@ export interface SaveData {
   areaVersusRulesSeen?: boolean
   /** The portal run's rules pop-up (docs/28) has been shown (once; INFO shows them again). */
   portalRulesSeen?: boolean
+  /** The same for a portal run dressed as the Stairway of Plates (docs/64 §4.5): its own, as its words are its own. */
+  platesRulesSeen?: boolean
   /** The nightmare's rules pop-up (docs/30) has been shown (once; INFO shows them again). */
   nightmareRulesSeen?: boolean
+  /** The whiteout's rules pop-up (docs/64 §4.3) has been shown (once; INFO shows them again). */
+  whiteoutRulesSeen?: boolean
+  /** Tracks in the Snow's rules (docs/64 §4.1) have been read on its way in (they show there every time). */
+  tracksRulesSeen?: boolean
   /** The region being played. Absent on saves from before the second region = 'kanto'. */
   region?: RegionId
   /** The regions not being played, each holding everything that region owns. */
@@ -1836,7 +2361,7 @@ export interface SaveData {
   talents?: Partial<Record<RegionId, number[]>>
   /** The families whose talent has been met (a talented one seen, or unlocked): the sheet names it from then on. */
   talentsMet?: number[]
-  /** The hidden talents' rules pop-up has been shown (once; INFO shows it again). */
+  /** Retired: the hidden talents' rules pop-up was shown (it no longer opens by itself, 2026-11-01). Old saves keep it. */
   talentRulesSeen?: boolean
   /** Outfits (docs/59): their rules pop-up seen, once for good. */
   outfitRulesSeen?: boolean
@@ -1862,6 +2387,14 @@ export interface SaveData {
   general?: GeneralSave
   /** Trick or Treat (docs/29): its rules seen. Absent = never met. */
   trickOrTreat?: TrickSave
+  /** The Gift card (docs/64 §4.0): its rules seen. Absent = never met. */
+  giftCard?: GiftCardSave
+  /** The Safari (docs/61 §4): its rules pop-up shown. */
+  safari?: TrickSave
+  /** The set moments met: rivals' meetings and gifts (docs/61 §5). */
+  moments?: MomentsSave
+  /** The region flavours (docs/62): the rules seen of each. */
+  flavours?: FlavoursSave
   /** The Underground (docs/34): the running event's kits, pickaxe, orbs and wall. Gone when the event ends. */
   underground?: UndergroundSave
   /** Arceus's plates found in the Underground, by type: kept for good. Each lets the player's Arceus take its type. */
@@ -2023,6 +2556,14 @@ export interface TradeLanding {
   dex: number
 }
 
+/** The board's picks today (docs/23 §2.1): NEW PICKS used, and the listings shown before them, least recently first. */
+export interface TradePicks {
+  /** The UTC day (days since 1970) these count for: a new day starts afresh. */
+  day: number
+  rerolls: number
+  skip: string[]
+}
+
 export interface TradesSave {
   out: TradeOut[]
   /** Trade ids already applied to this save (the last 50): a trade is applied exactly once. */
@@ -2035,6 +2576,8 @@ export interface TradesSave {
   landing?: TradeLanding[]
   /** The rules pop-up has been shown (once; INFO shows it again). */
   rulesSeen?: boolean
+  /** The board's NEW PICKS today. */
+  picks?: TradePicks
 }
 
 export type SaveMode = 'main' | 'extreme'

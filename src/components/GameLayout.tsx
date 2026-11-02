@@ -9,6 +9,8 @@ import { BottomNav, Header, SideNav } from './Hud'
 import { OneTimePopups, PopupQueue } from './PopupQueue'
 import { PortalGuard } from '@/screens/area/PortalRun'
 import { NightmareGuard } from '@/screens/area/NightmareRun'
+import { TimeRaceGuard } from '@/screens/area/TimeRaceRun'
+import { WhiteoutGuard } from '@/screens/area/WhiteoutRun'
 import { useUndergroundSettle } from '@/store/underground'
 
 /** In-game shell: top bar, side bar (desktop) or bottom bar (phones), and the screen. No save → back to the title. */
@@ -76,6 +78,10 @@ export function GameLayout() {
         <PortalGuard />
         {/* The nightmare holding the player (docs/30): the run kept in its area (no screen effect). */}
         <NightmareGuard />
+        {/* The race of time and space (docs/64 §4.4): a try kept in its area, ended by its clock wherever it is. */}
+        <TimeRaceGuard />
+        {/* The whiteout holding the player (docs/64 §4.3): the run kept in Crown Shrine. */}
+        <WhiteoutGuard />
       </div>
     </PopupQueue>
   )

@@ -244,6 +244,10 @@ test('the kitchen sink shows every piece, with no error', async ({ page }) => {
   await page.goto('/kitchen-sink')
   await expect(page.getByText(/^Trick or Treat: the gauge of each tier/)).toBeVisible({ timeout: 30_000 })
   expect(await page.getByRole('meter', { name: 'Trick or Treat gauge' }).count()).toBeGreaterThanOrEqual(12)
+  // Its own panel only: the Safari's (docs/61 §4, the same engine) and others above it have an "Idle" and rules too.
+  const sink = page
+    .getByRole('heading', { name: /^Trick or Treat: the gauge of each tier/ })
+    .locator('xpath=ancestor::*[contains(concat(" ", @class, " "), " mb-5 ")][1]')
   // The screen in each of its states, and the result cards.
   for (const state of [
     'Idle',
@@ -251,13 +255,13 @@ test('the kitchen sink shows every piece, with no error', async ({ page }) => {
     'A throw playing: wobbles, Gotcha! (loops)',
     'Fled after a miss',
   ])
-    await expect(page.getByText(state, { exact: true })).toBeVisible()
-  await page.getByRole('button', { name: 'The caught result card' }).click()
+    await expect(sink.getByText(state, { exact: true })).toBeVisible()
+  await sink.getByRole('button', { name: 'The caught result card' }).click()
   const card = page.getByRole('dialog', { name: 'Gastly caught!' })
   await expect(card).toBeVisible()
   await card.getByRole('button', { name: 'CONTINUE', exact: true }).click()
   await expect(card).toHaveCount(0)
-  await page.getByRole('button', { name: 'Rules (first time)' }).click()
+  await sink.getByRole('button', { name: 'Rules (first time)' }).click()
   await expect(page.getByRole('dialog', { name: 'Trick or Treat' })).toBeVisible()
   expect(errors).toEqual([])
 })

@@ -42633,6 +42633,94 @@
   }
  },
  {
+  "dex": 10013,
+  "name": "Castform",
+  "type1": "fire",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 70,
+  "spriteUrl": "/pokemon/10013_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 2
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "castform-sunny · in sun, its Normal dice become fire dice",
+  "form": {
+   "of": 351,
+   "kind": "battle",
+   "trigger": "weather",
+   "weather": [
+    "sun"
+   ]
+  }
+ },
+ {
+  "dex": 10014,
+  "name": "Castform",
+  "type1": "water",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 70,
+  "spriteUrl": "/pokemon/10014_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 2
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "castform-rainy · in rain or thunderstorm, its Normal dice become water dice",
+  "form": {
+   "of": 351,
+   "kind": "battle",
+   "trigger": "weather",
+   "weather": [
+    "rain",
+    "thunderstorm"
+   ]
+  }
+ },
+ {
+  "dex": 10015,
+  "name": "Castform",
+  "type1": "ice",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 70,
+  "spriteUrl": "/pokemon/10015_front.png",
+  "dice": [
+   {
+    "type": "ice",
+    "count": 2
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "castform-snowy · in snow, its Normal dice become ice dice",
+  "form": {
+   "of": 351,
+   "kind": "battle",
+   "trigger": "weather",
+   "weather": [
+    "snow"
+   ]
+  }
+ },
+ {
   "dex": 10017,
   "name": "Darmanitan",
   "type1": "fire",

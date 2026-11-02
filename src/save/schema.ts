@@ -5,6 +5,7 @@ import { OUTFITS } from '@/engine/outfits'
 import {
   COMBO_KEYS,
   EVENT_IDS,
+  FLAVOUR_KEYS,
   PLAY_STYLES,
   POKE_TYPES,
   POWER_KINDS,
@@ -31,6 +32,9 @@ const instanceSchema = z.object({
   shiny: z.boolean().optional(),
   revivesAt: z.number().optional(),
   fossil: z.string().optional(),
+  // A gift Egg waiting to hatch (docs/61 §5.3), and the shiny it hatches with.
+  egg: z.boolean().optional(),
+  hatchShiny: z.boolean().optional(),
   koAt: z.number().optional(),
   // Extreme mode's Pokébuff (docs/47): an odd one (an edited save) is dropped, never the Pokémon.
   buff: z
@@ -160,6 +164,61 @@ const nightmareSchema = z.object({
   tries: z.number().int().min(0).optional(),
 })
 
+const raceGateSchema = z.object({
+  type: typeEnum,
+  find: z
+    .union([
+      z.object({ kind: z.literal('shard'), seconds: z.number().min(0) }),
+      z.object({ kind: z.literal('item'), key: z.string(), qty: z.number().int().min(1) }),
+    ])
+    .nullable(),
+})
+const timeRaceSchema = z.object({
+  active: z.boolean(),
+  startedAt: z.number().optional(),
+  deadline: z.number().optional(),
+  fights: z.number().int().min(0).max(999),
+  path: z.array(typeEnum).max(99),
+  gates: z.array(raceGateSchema).max(4).nullable().optional(),
+  met: z.array(z.number().int()).max(99).optional(),
+  shards: z.number().int().min(0).optional(),
+  left: z.number().min(0).optional(),
+  won: z.array(z.number().int()).max(9).optional(),
+  wonSeen: z.boolean().optional(),
+  tries: z.number().int().min(0).optional(),
+})
+const whiteoutSchema = z.object({
+  active: z.boolean(),
+  wave: z.number().int().min(0).max(99),
+  foe: z.number().int().min(0).max(99),
+  bonfire: z.boolean().optional(),
+  warmed: z.boolean().optional(),
+  boss: z.boolean().optional(),
+  won: z.boolean().optional(),
+  wonSeen: z.boolean().optional(),
+  tries: z.number().int().min(0).optional(),
+})
+// Tracks in the Snow (docs/64 §4.1): its rounds cleared and the glade being searched.
+const tracksBush = z.enum(['stantler', 'wild', 'find', 'cabin', 'empty'])
+const tracksSchema = z.object({
+  active: z.boolean(),
+  round: z.number().int().min(0).max(99),
+  field: z
+    .object({
+      taps: z.number().int().min(0).max(99),
+      bushes: z.array(tracksBush).max(100).nullable(),
+      opened: z.array(z.number().int().min(0).max(99)).max(100),
+      found: z.boolean().optional(),
+      snowed: z.boolean().optional(),
+      bolted: z.boolean().optional(),
+    })
+    .nullable()
+    .optional(),
+  won: z.boolean().optional(),
+  wonSeen: z.boolean().optional(),
+  tries: z.number().int().min(0).optional(),
+})
+
 const progressSchema = z.object({
   roundsDone: z.number().int().min(0).optional(),
   roundCounted: z.boolean().optional(),
@@ -170,11 +229,11 @@ const progressSchema = z.object({
   bossesDefeated: z.array(z.number().int()).default([]),
   bossesCaught: z.array(z.number().int()).optional(),
   gymsDefeated: z.array(z.string()).default([]),
-  deck: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus', 'legend'])).optional(),
+  deck: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus', 'gift', 'legend'])).optional(),
   lootDeck: z.array(z.string()).optional(),
   uniqueFound: z.array(z.string()).optional(),
   round: z.number().int().min(0).optional(),
-  drawn: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus', 'legend'])).optional(),
+  drawn: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus', 'gift', 'legend'])).optional(),
   lastCenter: z.boolean().optional(),
   // Route 1's set opening (docs/46): the deck in play is its round of this index. An odd value: a shuffled deck's cards.
   opening: z.number().int().min(0).optional().catch(undefined),
@@ -182,9 +241,19 @@ const progressSchema = z.object({
   portal: portalSchema.optional().catch(undefined),
   // The nightmare (docs/30): the same, an odd value drops it, never the save.
   nightmare: nightmareSchema.optional().catch(undefined),
+  // The race of time and space (docs/64 §4.4): the same, an odd value drops it, never the save.
+  timeRace: timeRaceSchema.optional().catch(undefined),
+  // The whiteout (docs/64 §4.3): the same.
+  whiteout: whiteoutSchema.optional().catch(undefined),
+  // Tracks in the Snow (docs/64 §4.1): the same, an odd value drops it, never the save.
+  tracks: tracksSchema.optional().catch(undefined),
   // Extreme mode's Centers (docs/47): a secret area's first one met, and a round to start over at a Center.
   centerMet: z.boolean().optional(),
   wiped: z.boolean().optional(),
+  // A Safari (docs/61 §4): rounds begun there (the free ones included). An odd value counts as none.
+  safariRounds: z.number().int().min(0).optional().catch(undefined),
+  // Kalos hordes met this round (docs/62 §5).
+  hordes: z.object({ round: z.number().int().min(0), n: z.number().int().min(0) }).optional().catch(undefined),
 })
 
 /** One parked region's block: the same fields the live region keeps at the top level of the save. */
@@ -295,7 +364,10 @@ export const saveSchema = z.object({
   versusLeagueRulesSeen: z.boolean().optional(),
   areaVersusRulesSeen: z.boolean().optional(),
   portalRulesSeen: z.boolean().optional(),
+  platesRulesSeen: z.boolean().optional(),
   nightmareRulesSeen: z.boolean().optional(),
+  whiteoutRulesSeen: z.boolean().optional(),
+  tracksRulesSeen: z.boolean().optional(),
   events: z
     .object({
       seen: z.array(z.enum(EVENT_IDS)).optional(),
@@ -495,6 +567,13 @@ export const saveSchema = z.object({
         .max(20)
         .optional(),
       rulesSeen: z.boolean().optional(),
+      picks: z
+        .object({
+          day: z.number().int().min(0),
+          rerolls: z.number().int().min(0).max(1000),
+          skip: z.array(z.string().max(80)).max(100),
+        })
+        .optional(),
     })
     .optional(),
   gifts: z
@@ -519,6 +598,14 @@ export const saveSchema = z.object({
     .optional(),
   // Trick or Treat (docs/29): its rules pop-up seen.
   trickOrTreat: z.object({ rulesSeen: z.boolean().optional() }).optional(),
+  // The Gift card (docs/64 §4.0): its rules pop-up seen.
+  giftCard: z.object({ rulesSeen: z.boolean().optional() }).optional(),
+  // The Safari (docs/61 §4): its rules pop-up shown.
+  safari: z.object({ rulesSeen: z.boolean().optional() }).optional().catch(undefined),
+  // The set moments met (docs/61 §5): rivals' meetings and gifts, by id. An odd value drops the list, never the save.
+  moments: z.object({ done: z.array(z.string()) }).optional().catch(undefined),
+  // The region flavours (docs/62): whose rules have been shown. An odd value drops the list, never the save.
+  flavours: z.object({ seen: z.array(z.enum(FLAVOUR_KEYS)).optional() }).optional().catch(undefined),
   // The Underground (docs/34): the running event's block, and the plates kept for good.
   underground: undergroundSchema.optional(),
   plates: z.array(typeEnum).max(18).optional(),

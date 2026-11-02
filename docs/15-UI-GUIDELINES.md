@@ -188,7 +188,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `PixelIcon` | Every icon | Pixel maps drawn as SVG rects: the Pokémon ones hand-drawn in `icons.tsx` (balls, Pokédex, badges, status symbols, the battle Bag's backpack), the generic UI ones (coin, heart, shop, trophy, settings…) from the "1-bit Pixel Icons" pack, recoloured into `packIcons.ts` by `scripts/import-icons.ts` (11–16 px squares; the tab bar's on 16×16). Draw them at 12 px or more. One shared palette (`ICON_PALETTE`); a map may have its own (`OWN_PALETTE`) |
 | `TrainerName` / `NameIn` | Another trainer's name anywhere social (§24) | Plain; golden (`rich`: the `rich` token, a sparkle that twinkles, a stepped glint, still under reduced motion). Inline, so `truncate` around it still ends in "…". `NameIn` puts it in a translated sentence ("Misty's"), only the name golden |
 | `RulesModal` / `InfoButton` | A feature's rules: once when it unlocks, then from the blue INFO button at the bottom of its page | The special events' pop-up: its picture as a banner (`RulesBanner`), or a banner drawn in code (the gifts'), a NOW OPEN tag on the unlock, 2–4 `RuleList` rows (an icon, a short title, a line with the config's numbers, optionally a small button under it); Later and Let's go! on the unlock, OK from INFO. The Day Care and Versus use it (`FeatureRules.tsx`); the events have their own copies (`EventUnlockPopup`, `EventInfo`), with the same words. INFO is a quiet 48 px button on the sky tint with a blue "i" mark (`.ev-info`), never a competing block; `compact` when it shares a dock row. `RulesCard`: the rules at the top of a feature's page the first time (§20) |
-| `ContinueButton` / `StayHere` / `ComingUpView` / `LeaderboardTipModal` | Home (§12, docs/38 §6) | The big button: CONTINUE (the play arrow), a challenge waiting (the sword), greyed out (a tap says why), GO TO {area} behind in the region (the map) with Stay here, a 44 px link, under it; the "Coming up" line for the Day Care, the special events, Versus and a secret area (a level, the Pokédex); Prof. Oak's leaderboard tip with Later (✕ and Later end it for good) and SEE THE LEADERBOARD (`HomeBits`) |
+| `ContinueButton` / `MapButton` / `StayHere` / `ComingUpView` / `LeaderboardTipModal` | Home (§12, docs/38 §6) | The big button: CONTINUE (the play arrow), a challenge waiting (the sword), greyed out (a tap says why), GO TO {area} behind in the region (the map) with Stay here, a 44 px link, under it; the green map square left of CONTINUE (plain; shut by the nightmare); the "Coming up" line for the Day Care, the special events, Versus and a secret area (a level, the Pokédex); Prof. Oak's leaderboard tip with Later (✕ and Later end it for good) and SEE THE LEADERBOARD (`HomeBits`) |
 | `RotateCover` / `RotateView` | A phone held sideways (§6) | Over everything, not dismissable: the pixel phone tipping upright in steps (upright and still under reduced motion), the title and a line |
 | `ToastStack` / `ToastCard` | A short word on what just happened, or why something didn't (§7) | On `<body>`, beside the dialogs: under the top bar on phones, at the bottom on desktop; four at most. Info (panel) and good (green): a tap closes them, they go after 4 s or 1.2 s + 70 ms a character, waiting while touched, hovered or focused. Error (red): a ✕ (44 px), stays until closed |
 | `DiceLogo` | The title with the game feel on (docs/38 §9) | The word POKÉDICE as eight pixel-art dice on a canvas (`role="img"`, named Pokédice, inside the `<h1>`): thrown in and landing crooked on their letters (full), dropped in (short), two-step drops (calm), at rest (off); two rows under 768 px, one from 768; the white flash, the gold rings, the tagline; a tap throws it again. Off: the wordmark and its five dice |
@@ -271,7 +271,8 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   No toast. Under the autopilot it shows too, its PICK IT UP loading.
 - **A fight's result card follows itself and moves on** (2026-10-26): each piece (XP, a level-up, the Pokédex entry…)
   scrolls into view as it comes, clear of the buttons at the foot; once all is shown, NEXT waits for the tap (its gauge
-  fills and goes only while auto-mode or Idle mode plays the area, the user's call of 2026-10-27), BACK still in reach. It waits instead when a new species was caught or a small world's mythical won (its card is looked at, and a full team's
+  fills and goes only while auto-mode or Idle mode plays the area, the user's call of 2026-10-27), BACK still in reach.
+  The fight that cleared the area has HOME in BACK's place, beside the next area's button (2026-11-01). It waits instead when a new species was caught or a small world's mythical won (its card is looked at, and a full team's
   replace choice, scrolled to, is made), when the area was cleared (the way on is the next area), and in a rebattle.
   No AUTO switch on the card nor in Settings: AUTO-MODE is the fights' own.
 - **A region begun opens on its first area**, its first encounter under way (`exploreFirstArea`): a new game's partner
@@ -614,20 +615,23 @@ Players shouldn't have to make many requests:
   Events (the region's **legendary raids open now first**, as cards of their own, then a small world, the live events
   and the rest), Secret areas and Features as Home's one card (`HomeCard`: the picture as a strip on the left, the name,
   one status line, a thin gauge where time or progress runs; gold for one new thing), then the "Coming up" line. The
-  **PLAY dock** is CONTINUE (and Stay here, Keep exploring, a green GO TO when they apply). Phones: pinned over the tab
+  **PLAY dock** is CONTINUE (and Stay here, Keep exploring, a green GO TO when they apply), with **a green map square
+  on its left** (`MapButton`, 76 px, as tall as CONTINUE: the map and AREAS; the user's call, 2026-11-01) opening the
+  same Areas sheet as the banner, in the thumb's reach; shut by the nightmare with its reason. Phones: pinned over the tab
   bar, the page scrolling behind it; 768–1023 px: sticky at the column's foot; from 1024 px: the scene as tall as the
   window on the left (`SceneStage fill`, a box at most 1.15× as tall as wide, kept on where the team walks: `focus`) with **the dock under it, pinned with it,
   always in sight** (the user's call, 2026-10-27; the scene gives it its room), and on the right (clamp(380px, 34%,
   520px)) the area's Pokémon (`HereCard`), the notice and the sections. The encounter itself plays on
   `/area`, and Home stays lit in the menus while it does.
-- **The Areas sheet** opens from the area's banner on the area's details (tabs Details · All areas · Regions); a row opens
+- **The Areas sheet** opens from the area's banner (or the dock's map square) on the area's details (tabs Details · All areas · Regions); a row opens
   its details in the same sheet. From 1024 px it is one wide sheet: the list or the regions on the left, the picked
   area's details on the right, their CONTINUE HERE / TRAVEL HERE navy so the lead GO stays the one red. Area rows have
   Home's card shape: strip, name, one status line (levels · caught · to catch, or why it's locked), GO at the right.
 - **Notices** (`NoticeCard`, `homeNotices`): what never needs a pop-up over Home is a card in the page, one at a time: a
   feature with a page opening ("Versus is open!", SEE VERSUS; ✕ hides it for the visit, the page's `RulesCard` ends
   it), Prof. Oak's leaderboard tip, Support me, a region on offer once its pop-up was seen. **His invite is the
-  friends list's**, at the top of Friends until ✕ or a share (the user's call, 2026-10-27: not on Home). Never red. **A
+  friends list's**, a line of the Friends page's INFO (the user's call, 2026-10-27: not on Home; 2026-11-01: no note on
+  top of Friends). Never red. **A
   region on offer** is its own picture as the card, "{region} is available", and two buttons: NOT NOW (put away on this
   device for good; the Regions view keeps it) and GO (gold: the professor's lab for that region).
 - **After an encounter the player stays in the area** (a trainer, a wild Pokémon, a find, the Center, the Game
@@ -1092,9 +1096,9 @@ Two rules for every feature that adds something players can do (an event, a mode
   is announced on Home as a notice card with a button to its page, never a modal over Home. A feature **with no page**
   of its own (day and night, the battle powers, a small world's opening, Extreme mode, the push question) keeps its
   rules pop-up (`RulesModal`, Later / Let's go!), taking its turn in the one-time pop-ups' queue, below; so do the
-  rules shown at their own moment (the portal's and the nightmare's way in, Trick or Treat's first ghost, the gifts',
-  the looks'). The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is a tap on the Pokémon sheet's talent box, as it has no page), real-player battles (§39: its rules pop-up after the first card's intro, as Trick or Treat's at the first ghost; INFO on the card), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event), the gift calendar (§40: its page's rules card, once; INFO in its dock), outfits (§41, docs/59: no page, so its rules pop-up once the first Pokémon in an outfit arrives; its INFO is a tap on the outfit's chip on the Pokémon sheet), friendship (§42: its rules card on the Friends page or the market, whichever opens first, once; INFO on its card and at the market's foot; **no Home notice**, the user's call of 2026-11-01: players meet it on the Friends page), welcome-back gifts (§23, docs/58: **no rules and no INFO**, the user's explicit exception of 2026-11-01: a developer's message that says only how long the player was away) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  rules shown at their own moment (the portal's and the nightmare's way in, Trick or Treat's first ghost, the Gift
+  card's first present (§45), the gifts', the looks'). The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
+  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27; the Stairway of Plates, §49, on a switch of its own, `platesRun`, with its own rules flag), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is a tap on the Pokémon sheet's talent box, as it has no page), real-player battles (§39: its rules pop-up after the first card's intro, as Trick or Treat's at the first ghost; INFO on the card), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), Tracks in the Snow (§46: the same, as the nightmare's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event), the gift calendar (§40: its page's rules card, once; INFO in its dock), outfits (§41, docs/59: no page, so its rules pop-up once the first Pokémon in an outfit arrives; its INFO is a tap on the outfit's chip on the Pokémon sheet), friendship (§42: its rules card on the Friends page or the market, whichever opens first, once; INFO on its card and at the market's foot; **no Home notice**, the user's call of 2026-11-01: players meet it on the Friends page), welcome-back gifts (§23, docs/58: **no rules and no INFO**, the user's explicit exception of 2026-11-01: a developer's message that says only how long the player was away) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **The one-time pop-ups take turns, in one queue** (`nextOneTimePopup`, src/engine/popups.ts; docs/38 U2a): one at a
   time, only between fights (`run.phase === 'idle'`, no battle, no full-screen moment, no gift being opened), never on
@@ -1171,6 +1175,12 @@ decides every level, landing Box and outcome, and the screens only say them.
   Johto first, no trades left today, you have no Haunter…), the row greyed, and the time left at its far end (so the
   trainer's name keeps its room on a phone). Friends' rows are sky blue with
   the FRIEND tag, yours gold with YOURS, sorted last. A guest's rows have no line.
+- **The board's picks** (docs/23 §2.1): without a search the Board shows 5 listings picked for the player (only ones
+  they can take: a Pokémon they don't have first, then a hidden talent their family lacks), under "Picked for you" and
+  its one-line why, then **NEW PICKS** (`NewPicksButton`: a white button with the dice icon and "2/2 today"; greyed
+  with "That's every listing you can take right now" under it when nothing else can be shown; "New picks tomorrow"
+  once the day's are used). Typing a search swaps the picks for every listing that matches, with the sort beside the
+  field and the chips under it; clearing it brings the picks back.
 - **Who can see it** (`VisChip`): Public blue, Friends green, Private (link) navy. **Time left** (`TimeLeft`): "2d 4h"
   and a thin bar of the listing's life, red in its last 6 hours.
 - **The listing's sheet** (`ListingSheet`): the sprite large, types, whose, its chips and level, a box with what they
@@ -1317,12 +1327,18 @@ pieces are in `src/components/Gifts.tsx`, every state on `/kitchen-sink` (`GiftB
   into a copy), at its level within the game's cap and full HP, and into the team when that region is the one being
   played and the team has room. A region the player hasn't started yet sends it to their latest one, and the result
   says so.
+- **Heart Scales** (docs/60, the Friend Market's coins; migration 0121): a message to a signed-in player can also give
+  1–9,999 of them. They live on the server, so the server puts them in the player's wallet as the game claims the
+  message's gifts, once, in the same step that marks them opened (not counted toward the streaks' daily cap). A guest
+  has no wallet: the server refuses Heart Scales on a message to a device, and the editor shuts its row there. They
+  show among what arrived ("Added to your Heart Scales") only while Friendship is on for the player; the Friends page
+  and the market show the new count at once. Invite rewards, welcome-back gifts and calendars don't offer them.
 - **The opening** (`GiftMoment`, `giftTimeline` in `src/fx/timelines/gift.ts`): full screen, held with
   `useHoldFullscreen` so pop-ups wait. The wrapped box falls onto a warm stage and lands with a squash, wobbles three
   times, each bigger (the anticipation), the bow springs loose, the box crouches and holds four frames, and the lid
   flies off in a burst of light and confetti; then what was inside rises out one by one — items as their pictures, the
   Pokémon as their sprites, a shiny with its two rings of stars — in an arc over the box (six at most; past that the
-  last says "+n"; Pokédollars rise as a stack of coins drawn in code), and a short fanfare. The lines (beats `wobble`, `untie`, `opened`) are in the message box below,
+  last says "+n"; Pokédollars rise as a stack of coins drawn in code, Heart Scales as their icon), and a short fanfare. The lines (beats `wobble`, `untie`, `opened`) are in the message box below,
   in a polite live region. SKIP and Esc jump to what arrived (`GiftResult`: each thing's picture, name, ×quantity or
   level or ₽, ✦ Shiny, NEW, and where it went: "In your Johto Bag", "Added to your Pokédollars", "Joined your team"),
   then DONE. Motion off jumps there
@@ -1338,7 +1354,8 @@ pieces are in `src/components/Gifts.tsx`, every state on `/kitchen-sink` (`GiftB
   opened yet. The trainer menu's **Inbox** row opens it on its own, with the same count (§17).
 - **In the admin**, the same gift editor in both places (`GiftEditor`): an item and a quantity, a Pokémon, its level
   and Shiny, or an amount of ₽, each with its region (their latest, or one by name; on a profile, the regions they haven't started say
-  where it would go). A message's card says whether its gifts were opened, and when; an opened gift can't be changed.
+  where it would go); and, on a message, Heart Scales (to an account only, and only while Friendship is on: the row says
+  why it's shut, and warns while it's on for the admin alone). A message's card says whether its gifts were opened, and when; an opened gift can't be changed.
 
 ## 24. The General upgrades and golden names
 
@@ -1379,11 +1396,9 @@ tiers, places the gauge and puts the gifts away (as `engine/gifts.ts` does a mes
   Misty gets a reward for inviting you!" Adding by friend ID counts nobody.
 - **The switch and the rules** follow §20: Off, no gauge, pop-up or dot, and no invite is counted (what was counted
   and opened stays); On for admin, only the admin sees the gauge and opens rewards, and the players they invite count.
-  The rules pop-up (`InviteRulesModal`, friends, a badge and the gift drawn in code as its banner; the tiers listed
-  from the config, "1 → Rare Candy · 2 → ₽1,000 …") opens once, and only on the Friends page: the first time a
-  signed-in player in the main game opens it with the gauge there (OK; marked seen as it opens). It is not in the
-  one-time pop-ups' queue and never opens over another page (the user's call, 2026-10-25). INFO sits at the bottom of
-  the Friends page.
+  The rules (the tiers listed from the config, "1 → Rare Candy · 2 → ₽1,000 …") never open by themselves: they are a
+  part of the Friends page's INFO, at its foot (the user's call, 2026-11-01), and reaching the page marks them seen.
+  They are not in the one-time pop-ups' queue and never open over another page (the user's call, 2026-10-25).
 - **The gauge**: the tiers evenly spaced (the fill moves evenly between two of them, `inviteFill`), each tile right
   over the end of its stretch of track, the number of friends under it. Gold only for a tier ready to open; a check
   for one opened (it stays opened even if the count drops). The track is a `meter` ("3 of 4 friends with their first
@@ -1443,7 +1458,8 @@ when the OS asks for calm; the player's Animations → short gives their lighter
 full-screen flash).
 
 - **The switch and the rules** follow §20: `portalRun` (Admin → Areas → Special mode), Off by default and checked by the
-  server for the area's raid; Off, the area plays as before. The rules pop-up (`PortalRulesModal`, the Distortion World as
+  server for the area's raid; Off, the area plays as before. A run in the Stairway of Plates' look has its own,
+  `platesRun` (§49). The rules pop-up (`PortalRulesModal`, the Distortion World as
   its banner: `PortalScene`, four rows from the area's numbers) once, when the area opens for the player, between fights after
   the other one-time pop-ups; Let's go! travels there. INFO sits at the bottom of the area's page.
 - **The way in**: CONTINUE there says ENTER THE DISTORTION ("Close 10 portals in a row"). The area's page plays the
@@ -1960,8 +1976,8 @@ pop-up). The pieces are in `src/components/Talent.tsx`, every state on `/kitchen
   paralysis, Pressure's lost reroll, Shed Skin, Limber, Magic Guard, Mirror's die, Sturdy, Natural Cure, Magma Armor. A talent that changes numbers alone (Speed,
   rerolls, HP) says nothing.
 - **Trades**: asking for a species, a toggle "With its hidden talent" under the species (only while the switch is on).
-- Its rules: a `RulesModal` once, in the one-time pop-ups' queue after the battle powers' (`talentRulesSeen`); again
-  from a tap on the sheet's talent box.
+- Its rules: a `RulesModal` from a tap on the sheet's talent box, never a pop-up of its own (the user's call,
+  2026-11-01: no rules pop-up nor INFO button for talents).
 
 ## 39. Real-player battles in areas
 
@@ -2036,6 +2052,10 @@ docs/60. Its switch is `friendship.access` (§20); the server keeps the streaks,
 - **A streak is never colour alone**: kept today, rose with the check; waiting (one interaction today keeps it), gold
   with a red "!"; its state is the badge's accessible name ("Friendship streak: 12 days, keep it today!"). A lost
   streak shows nothing on the row; the friend's card says "Start one with …".
+- **The Friends page opens on what's there, with no notes on top** (the user's call, 2026-11-01): Prof. Oak's invite,
+  the invite rewards' rules and friendship's rules all wait behind the one INFO at the page's foot (`FriendsInfoModal`:
+  the invite line, then a part per feature on for the player, OK). Reaching the page marks the invite rules seen (Home's
+  notice that sends there ends).
 - **The Friendship card** sits on the Friends page under the invite rewards: the coins, today's gauge (a `meter`), the
   streaks to keep today (the longest first, at most three, with what today would pay), one line on what counts, and
   FRIEND MARKET (navy: the page's red stays SHARE INVITE LINK) beside a small INFO.
@@ -2049,3 +2069,442 @@ docs/60. Its switch is `friendship.access` (§20); the server keeps the streaks,
 - **The Friend Ball** (docs/60 §1b): its description ends with the boost now ("current: ×2", `useItemDescription`
   fills it wherever an item's description shows). On the catch panel its button wears a gold corner tag (the unknown
   talent's gem and ×n) while the boost can still find this Pokémon's talent, and it is never "not needed" then.
+
+## 43. The side quests: roadblocks, disguises, Safaris, rivals and gifts
+
+docs/61. Their switches are `disguises`, `safari`, `rivals` and `giftMoments` (§20; one server check,
+`side_quest_open`); the roadblocks and Snowpoint Temple's Regis are content. Every state is on `/kitchen-sink`
+(`SideQuestBits`); `e2e/side-quests.spec.ts` plays each one in the game and keeps its picture in `docs/61-side-quests/`.
+
+- **A roadblock is never called legendary**: its card's tag is IN THE WAY and its line its own ("A sleeping Pokémon
+  blocks the way!"); the area, Home, the Pokédex and the result say "In the way" / a plain VICTORY / "The wild …".
+  Everything else is a boss's (the challenge, the intro, the throw).
+- **A disguise is a find until it's picked up**: the find's screen shows the item it poses as (no rarity tag of its own:
+  the plainest find's), PICK IT UP; then the ball wobbles and bursts in a white flash and the Pokémon stands there with
+  its line in red ("It wasn't an item at all: it's Voltorb!") and FIGHT. No FLEE: the line under it says why. Calm
+  motion: the Pokémon is simply there.
+- **The Safari is Trick or Treat's screen in daylight**: the same gauge, buttons and result card (§28), its words and
+  pictures its own (Bait, the Safari Ball, a Pokémon that runs off the stage instead of fading into wisps; the flee
+  zone's running icon), the stage's sky a day's when the area has no picture. A round's price is said under CONTINUE
+  ("₽100 a round", "Free round") and a paid round is a toast; short of ₽ the toast says the price.
+- **A gift is a step on the stage of its own** (as a find is, §15): the giver walks in from the left, what they give
+  beside them (a Poké Ball, or the Day Care's Egg), their line in the dialogue box; a choice is cards to tap (sprite,
+  name, types; the picked one ringed in gold); TAKE IT (AutoButton when there's nothing to choose), BUY and NO THANKS for
+  a price. Taken: the ball springs open as a disguise does, or the Egg slides to the middle and wobbles; the panel says
+  what and where. A gift Egg in the Box and on cards is the Egg, "Egg" and HATCHING with its countdown: what's inside
+  stays hidden until it hatches (a toast then).
+- **A rival needs no card**: the fight opens on the battle screen as every trainer's does, the rival's line its first
+  message.
+
+## 44. The region flavours: weather, hordes, island trials, Titans
+
+docs/62. Their switches are `hoennWeather`, `galarWeather`, `hordes`, `trials` and `titans` (§20; the same server check
+as §43, `side_quest_open`). Every state is on `/kitchen-sink` (`FlavourBits`); `e2e/region-flavours.spec.ts` plays each
+one in the game and keeps its picture in `docs/62-region-flavours/`.
+
+- **The weather is a chip, never a hidden number**: its icon on a tile by the area's name in the top bar (a tap is its
+  rules, the INFO), its small twin at the stage's top right (Johto's sun or moon has that corner; no region has both),
+  and its fall over the stage (rain streaks, flakes, blowing sand, ash; the sun's glare, fog's band, a dimming under
+  clouds): `components/Weather.tsx`. Its × in the damage recap is its own factor (`WeatherBoostChip`: the weather's icon
+  and ×1.25), after the type's, as a small world's booster is (§21). A sandstorm's or snow's wear is a line and a −N pop,
+  as a burn's is. At Motion level 0 nothing falls: a still frame stays, and the chip says the rest.
+- **The rules come once per region** (Hoenn's, Galar's), between fights, in the one-time pop-ups' queue (`weather`,
+  after `dayNight`), Later / Let's go!. They say what the weather does, never which area has which (the user's call,
+  2026-11-01: each area's chip says it); Galar's add that it changes every day, and its top-bar line says the day's
+  weather and when it changes ("Today: Rain · changes in 5 h").
+- **Castform shows the weather's form** as the fight starts (the Sunny, Rainy or Snowy Form's sprite), said as a type
+  change ("Castform became Water type!"), one line per Castform out.
+- **A horde, a trial and a Titan each have a card of their own** (`screens/area/FlavourCards.tsx`), with INFO top right
+  and the rules opening by themselves the first time the card shows (Later / Let's go!). A horde: HORDE over the five of
+  them (a shiny one starred), its two lines, then the one in front as any wild card; in the fight, five pips under the
+  foes' plates count down. A trial: ISLAND TRIAL, the captain walking in with their line in the dialogue box, the Totem
+  on a night tile with its aura, its numbers and the Z-Crystal, its allies as a trainer's team is shown. A Titan:
+  TITAN, its line, the Titan (and Tatsugiri) on a night tile with its aura, its two phases, what it leaves, "beaten, not
+  caught".
+- **A Totem and a Titan's second phase stand bigger**, their feet where they were (×1.3, ×1.55), with a warm glow that
+  pulses slowly (still for reduced motion): `foe-aura-totem`, `foe-aura-titan` (`styles/flavours.css`). Its calls and its
+  return are messages of their own ("Gumshoos called for help! Yungoos appeared!", "Klawf ate a Herba Mystica… It's
+  back, and huge!"); a trial's allies flee when the Totem falls.
+- **A Titan alone is one on one**: its card asks for one Pokémon, not two; Dondozo with Tatsugiri asks for two.
+- **A trial says its Z-Crystal** under the Totem (its type's badge and "Its Z-Crystal: Fire-type Z-Moves"), and the
+  result card says it was won ("You got the Fire Z-Crystal!"). With Z-Crystals, the Z-MOVE button only shows for a
+  Pokémon of a type whose crystal is held; the Z-Moves' rules open with "One Z-Crystal per type".
+
+## 45. The Gift card
+
+An encounter card (docs/64 §4.0), in place of an area's item card while its switch is on: a present appears at level 1;
+**OPEN** gives that level's reward, **MAKE IT BIGGER** grows it a level but may break it, and a broken gift is a wild
+Pokémon of the area. Evergreen Hill's Delibird comes out of a present of its own (§4.2). The engine
+(`engine/giftCard.ts`) decides every number and outcome; the pieces are in `src/components/GiftCard.tsx`, the screen in
+`src/screens/area/PresentView.tsx` (`GiftScreen`, `GiftRecap`), the animations in `src/fx/timelines/present.ts`; every
+state on `/kitchen-sink` (`GiftCardBits`), every take on `/kitchen-sink/fx`.
+
+- **The switch and the rules** follow §20: `giftCard.access`, Off by default and read by the server too
+  (`gift_card_open()`, migration 0123). Off, the item card is dealt as before (no gift tile on the round gauge, no
+  "Gifts" in the area's round mix) and a gift left in a deck is set aside. The rules pop-up opens over the screen the
+  first time a present appears (Later / Let's go! both carry on), INFO sits at the foot of the panel; four rows with the
+  config's numbers: OPEN, MAKE IT BIGGER (the break chances in order and the top level), a broken gift, and the
+  helper (Delibird's sprite, "every tap 20% safer, and level 6 on top"). A boss's present has neither: it is a moment,
+  not a choice.
+- **The card** has no preview of its own: the present comes out at once (no step that is only a button), a gift tile
+  on the round gauge. While the server is asked, the preview card shows a present and LET'S SEE!, which presses itself.
+- **The screen is the battle's** (§14), as Trick or Treat's (§28): full screen (`useHoldFullscreen`), the battle's
+  column, the stage on top (the area's picture as the battle cuts it, a winter night where there's none), and it fits a
+  360×640 phone with nothing to scroll (`e2e/gift-card.spec.ts`).
+  - **The stage**: the present at its centre, drawn in pixels at each level's own size (a body and a lid that grow by
+    whole pixels, its bow too), breathing a pixel at rest; the plate top left as a foe's (`GiftPlate`: the gift icon,
+    "Gift", "Lv.3/5", and "Delibird helps" with its sprite when the player owns one). A boss's present is silver with a
+    gold bow, glowing in dithered steps, sparkling now and then; its plate says "Shining present", "Lv.3" (no top).
+  - **The panel**, top to bottom: the message box (`pixel-dialogue`, a polite live region); the level row ("Lv.3/5" and
+    `GiftGauge`, a step per level, each a little taller, numbered, the reached ones gold, the current one ringed; a
+    meter for screen readers); "Next, Lv.4:" and its reward (`RewardLine`, each thing's picture and "Revive ×1"); then
+    **OPEN** (white) beside **MAKE IT BIGGER** (red, the one main action) in the battle's `1fr / 1.4fr` grid. Under OPEN
+    what it gives now; under MAKE IT BIGGER the next tap's break chance from the engine, in red with a skull ("40% to
+    break"), green "Safe: it can't break" at 0 %, and at the top the button is disabled and says "As big as it gets!".
+    Each button's accessible name carries its line ("OPEN: Poké Ball ×2"). A boss's present has only MAKE IT BIGGER,
+    full width, "What could be inside?" under it (the players don't know it will burst). Broken or burst, the two give
+    way to one red **FIGHT!**, into the battle with what came out (as a wild card's or the boss's own).
+  - **The result card** (opened) rises over the panel as a battle's (`Overlay`): "Gift opened!", each thing big with its
+    name and count (`RewardList`; ₽ as coins), the round gauge and **CONTINUE** (back on the trail). An area with no wild
+    Pokémon left would break into nothing: a short card says so (`GiftEmpty`).
+- **Motion** (§8), on the battle's stage with the game's pixel FX, never CSS tweens; one canvas, every take holding its
+  last frame (`hold`), drawn to read on any area's picture (snow as night): the present is a box seen from a little
+  above (a lit top face in perspective, the lid's band, the body's front in dithered light from the top left, a ribbon
+  with its light and shadow edges, a bow of two loops, a knot and two tails), outlined in ink with a dithered contact
+  shadow; every squash, stretch and growth is drawn at its own size in whole pixels, never a scaled picture. At rest it
+  breathes (a pixel of squash) and a shine sweeps across it now and then (a boss's more often, with glints on its
+  corners and a warm pool of light on the snow). **It lands**: it drops in stretched, squashes, rebounds, snow puffs
+  either side. **It holds** (`grow`): a crouch, two wobbles (it leans row by row), a deeper crouch, it springs up, two
+  white frames growing (half way, then past the new size), then it settles on the new size in steps, a gold ring,
+  twinkles, a shine, a soft warm flash unless calm; the gauge and the message change on the `grown` beat. **It
+  breaks**: it strains, bulging wide then tall and shaking harder each beat, three rips (shreds fly at each, light leaks
+  through), a 4-frame hit-stop on its fullest bulge with beams through the tears, then a starburst, a flash and a shake:
+  paper shreds that turn over, flutter down, lie on the snow and fade out through the dither, curling ribbons that
+  shorten away, the bow tossed aside onto the snow, a puff; the wild Pokémon leaps out on an arc and lands with a
+  squash and two white frames (ink-edged), snow puffing (`broke`, then `out`: its cry). **Delibird's** is the same,
+  longer and bigger, silver and gold with confetti, and a shiny's two rings of stars. **OPEN**: it shivers, the bow
+  springs off and lands beside it, the lid jumps on the light pushing under it, then pops off, turns over and lands on
+  the other side; light pours up out of the open box, confetti and ribbons fly, and each thing rises out of it (an
+  item's picture, ₽ as coins) with a burst of stars (`opened`). The buttons wait while a take plays. `short`: no
+  wobbles, a short strain. `off`: the stage jumps to the end, every cue fired, every message kept. `calm`: no
+  breathing, no shine, no flash or starburst, no shake.
+- **Sound** (§9): `present.land`, `present.wobble`, `present.grow` (a chime, a step higher per level),
+  `present.strain`, `present.rip`, `present.break` (Delibird's `present.burst`), `present.untie`, `present.open` and
+  `present.item` on the takes' cues, and the Pokémon's cry as it comes out.
+- **Admin**: Events → Gift card (`GiftCardTab`: the switch, each level's break chance with the odds of reaching each
+  level by always tapping with and without the helper, the helper and its bonus, each level's reward options, the
+  balls from worst to best, a boss's taps). Areas → Encounter deck has the Gift card's copies ("in place of the item
+  cards, only while its switch is on"), and a boss's "Out of a present" box.
+
+## 46. Tracks in the Snow (Moonlit Glade)
+
+docs/64 §4.1: an area's special mode (`Area.mode`, kind `tracks`), hide and seek with Stantler in three rounds, built
+as the nightmare's parallel (§29). Its pieces are in `src/components/Tracks.tsx` and `src/screens/area/TracksRun.tsx`,
+every state on `/kitchen-sink` (`TracksBits`); the engine (`engine/tracks.ts`, `tracksMode.ts`) hides Stantler, fills
+the bushes, points the prints and decides every outcome with its own rng. **Every scene is pixel art on the FX engine**
+(`src/fx/timelines/tracks.ts`, `cinema/stantler.ts`; on `/kitchen-sink/fx`), and the bushes too (`bushSprite`,
+`openBushSprite`, drawn into small canvases). Its palette (`TS`): the winter night's blues, the moon's creams, the
+snow's whites and blue shades, the bushes' pine greens, Stantler's gold. Its scenes share one glade painted in layers,
+as the legends' cinematics are (`buildGlade`: the sky and its twinkling stars, the moon with its halo and ring of ice,
+snowy peaks, the forest along the horizon in mist, a snowfield in perspective with its drifts, the moon's path, glints
+and the pines' blue moon-shadows, snow-laden pines and bushes at every depth, a snowbank in front), each depth drifting
+at its own pace as the camera moves, snow falling at three depths; a silhouette is solid, rimmed with moonlight on the
+moon's side (`drawPose`). Its scenes follow §8 (short: half the time; off: their end at once).
+
+- **The switch and the rules** follow §20: `tracks` (Admin → Areas → Special mode: Tracks in the Snow), Off by default;
+  the server answers it (`tracks_open()`, 0124) before a signed-in player begins. Off, the glade is a plain secret
+  area. **Its rules are short**, as the nightmare's: four one-line `RuleList` rows from the area's numbers ("3 rounds:
+  find Stantler, the shiny one last", "Every bush you open shows hoofprints pointing at it" (or "Empty bushes…"), "5
+  taps (7 in the last glade) before the snow falls and it moves", "Bushes hide wild Pokémon, finds and warm cabins"),
+  on the way in's pop-up every time and from INFO at the bottom of the area's page (`TracksRulesModal`, the glade on
+  the pixel engine as its banner: `GladeScene`).
+- **The way in** (`TracksEntry`): the nightmare's, piece for piece. CONTINUE on Home says ENTER THE GLADE ("3 rounds of
+  hide and seek"; after a wipe "Round 2/3: find Stantler"); the intro plays at once, full screen (`TracksIntro`: the
+  camera comes down from the stars and the moon to the glade, snow falling; a reindeer's solid silhouette trots out
+  from behind a pine, crouches and leaps in a high arc across the moon, dropping into the bushes on the right, which
+  throw up a cloud of snow and shake; the card (a night-blue band with snow along its top and icicles under it, the
+  title wiped in beside a small moon once the band has settled); the line in a night-blue card with the moon's cream above and
+  ice below from its landing; held at its end, "Tap to continue ▼" with the focus; no SKIP). Arriving heals as a
+  Center does. The tap raises its pop-up at the bottom ("Into the glade": the rules, TEAM with "Healed as at a Pokémon
+  Center…", NOT NOW, BEGIN THE SEARCH in red). Back from TEAM the pop-up is up again at once (`run.tracksPopup`).
+- **The gauge** (`TracksGauge`): in the round gauge's place, a tile per round, hoofprints on the cleared ones, the gold
+  edge on the one under way, a snowflake on the last; "1/3"; an image with "Rounds cleared: 1/3". The top bar's
+  "n/3" counts the glade's rounds too.
+- **The glade** (`TracksPanel` + `TracksGlade`): the area's page between bushes. "Round 2/3", the taps left as
+  snowflakes (spent ones faded; an image "Taps before the snow: 4"), the last round's line ("The shiny Stantler hides
+  here", a sparkle), the grid, and one line under it (`aria-live`): "Tap a bush to search it.", what the bush just
+  held, "Snow falls: …", "Stantler bolted to another bush!". **The grid is square**, `size` columns of equal width,
+  6 px gaps: each bush is a button on a tile of moonlit snow (the same in both themes: it's a night scene) with the
+  game's 2 px edge, **44 px at least**; a 4 × 4 fits a 360 px phone (about 78 px a bush). A closed bush lifts 2 px on
+  hover and focus (a gold focus ring); an opened one is parted (`openBushSprite`), disabled, sinks into the trampled
+  snow and shows what it held (a ball: a wild Pokémon; a sparkle: a find; the cabin; Stantler's own sprite, shiny in
+  the last round; nothing) and, in its top right corner, **the hoofprints** (two prints a stride apart, rotated to one
+  of 8 directions). Every bush's name says its row, column, what it held and where the prints point ("Snowy bush, row
+  2, column 2, Nothing, Hoofprints point up and right"): **direction is never the picture alone**. The bush just opened
+  rustles (four stepped frames, `.ts-rustle`; none when calm or off) and its moment holds 0.7 s (0.35 s short, none
+  off) before what it held comes: a fight on the battle screen, the find's step, the cabin as a Pokémon Center.
+- **The snow falling** (`tracksSnowfallTimeline` over the grid, transparent elsewhere): after the last tap, flakes
+  thicken into a flurry and a dithered white veil covers the glade (the bush just opened still shown under it until
+  then), then thins out over the fresh glade (a flurry at three depths, the wind swinging it, gusts streaking across;
+  the veil in stepped alpha, never a dither over the bushes). Coming back from a fight on the last tap, it falls once as the page opens.
+- **Stantler's fights**: rounds 1 and 2's is a plain wild fight (catchable); the result card adds "Round 1/3 cleared:
+  Stantler found!" on a night card with hoofprints. Round 3's is the area's boss: **its own entrance on the battle
+  stage** (`stantlerCinema`, as docs/53's bosses, whatever the legends' cinematics switch): the layered glade drifting into
+  place, the bush before the moon shaking twice (snow puffing off it), antlers rising out of it, a solid silhouette
+  rimmed with moonlight; it rises and the bush parts, it crouches and rears up (leaning back on its hind feet), its rim
+  flashing gold three times with sparkles off its antlers; it stamps down (snow bursting along the ground and off the
+  bushes, the stage shaking, none when calm), the moonlight gathers into it, the reveal, shiny sparkles, the name
+  card.
+- **The outro** (`TracksOutroView`): full screen, out of the white the shiny Stantler stands in the moonlit glade, its
+  breath steaming, its trail of hoofprints coming up the snow to it; the near bushes' last rustle; fresh snow falls
+  thicker and fills the prints one after another, the far ones first; a calm moment, it bows its head and its coat
+  sparkles; the card; then "The glade is quiet again", "Fresh snow covers the prints.
+  Shiny Stantler is yours." and the green BACK TO THE WORLD. Then the glade is closed (Home: "Stantler was caught: the
+  glade is closed", CONTINUE shut).
+- **A wipe** keeps the wipe card (§14), its line: back at the glade's edge, the team healed, XP, ₽, items and the
+  cleared rounds kept.
+
+## 47. Whiteout (Crown Shrine)
+
+An area's special mode (docs/64 §4.3), Snowglobe Valley's third secret area: weather survival. Waves of fixed foes in
+a blizzard, a bonfire after each, then shiny Abomasnow. Built as the nightmare's parallel (§29); the pieces are in
+`src/components/Whiteout.tsx` and `src/screens/area/WhiteoutRun.tsx`, every state on `/kitchen-sink` (`WhiteoutBits`);
+the engine (`engine/whiteout.ts`, `whiteoutMode.ts`) decides every foe, number and outcome, the blizzard's wear in the
+battle engine itself (`BattleState.weather`, the raids' rule). **Every effect is pixel art on the game's FX engine**
+(`src/fx/timelines/whiteout.ts`, `cinema/abomasnow.ts`; on `/kitchen-sink/fx`), built like the legends' cinematics:
+**Crown Shrine** in layers that drift at their own pace (parallax): a storm sky with its cloud deck, two ranges of
+mountains, a forest ridge, a snowfield in perspective (drift ridges closing up toward the horizon), stone steps with
+stone lanterns climbing to a mound, boulders, rocks in the foreground; on the mound **the crown tree**, a huge old fir
+of five or six drooping tiers, each under a thick lumpy blanket of snow with its dark needle hem below, a sacred rope
+round its trunk, a gold crown on its top. The snow falls in three depths (far, middle, near streaks) with wisps of
+blown snow for the gusts. Its palette (`WO`): the storm's near-black blues to slate, the snow's whites and frost, the
+pine greens, the fire's ramp (cream, yellow, orange, red, ember) and the morning's blues and sun gold at the end; a
+day light of the same shrine for the end. **Its lasting effects follow §8**
+(`useWhiteoutLevel`: a calm OS or motion off stills them; short halves the snow).
+
+- **The switch and the rules** follow §20: `whiteout` (Admin → Areas → Special mode: whiteout), Off by default; the
+  server has its check (`whiteout_open()`, 0125). Off: the area plays as a plain secret area (its deck, then its boss).
+  **Its rules are short**, six one-line `RuleList` rows from the area's numbers: "3 waves of foes that can't be
+  caught", "The blizzard takes 4% HP each round from all but Ice types, foes too", "A bonfire after each wave: +40% HP,
+  team changes and items", "No bag in battle", "Then Abomasnow: catch it to end the blizzard", "No travel until it ends
+  (the shop stays open)". On the way in's pop-up every time, and from INFO at the foot of the area's page
+  (`WhiteoutRulesModal`, the shrine in its storm as the banner, `ShrineScene`).
+- **The way in** (`WhiteoutEntry`): the nightmare's, piece for piece. CONTINUE on Home says ENTER THE BLIZZARD ("3
+  waves, no travel until it ends"); it plays **the intro at once** (`WhiteoutIntro`, full screen: the blizzard rolls in
+  over the area's picture, gust after gust of blown snow at every depth, the light going, until the area is lost in
+  the white; the gust passes and the shrine shows in the storm, its layers drifting as the camera settles, the lanterns
+  lit; the dark closes in, the lanterns gutter out, and two slanted red eyes open in the crown tree's shadow (a blink,
+  a red bloom; held, a blink now and then); the name card over the foreground, clear of the crown; the line in a
+  storm-blue card with a snow rim and a gold edge; held at its end, "Tap to continue ▼" with the focus; no SKIP; short
+  in half the time; motion off, its end at once). Arriving heals as a Center does.
+  The tap raises its pop-up at the bottom (`WhiteoutEntryDialog`, "Into the blizzard"): the rules, "Healed as at a
+  Pokémon Center" with TEAM (the team can change until it begins; back from the Team screen the pop-up is up again at
+  once: `run.whiteoutPopup`), NOT NOW and BRAVE THE BLIZZARD (red). After a wipe the next way in plays it again.
+- **The gauge** (`WhiteoutGauge`): the round gauge's place, a tile per wave with a pip per foe (snow-white once
+  beaten), the wave under way with the gold edge, a flame between waves (lit once its bonfire is behind), the crown for
+  the boss (gold edge when it's next), "1/3"; an image with "Waves cleared: 1/3".
+- **The foes**: the preview says "Wave 2/3 · 1/3" over the name and "Lost in the blizzard: it can't be caught." in
+  place of the catch hint (no NEW / caught tag), on a storm-blue frame. **Every fight here is in the blizzard** (the
+  boss's too): it is docs/62's Snow (§44), so the weather's own fall over the stage, its chip and its log lines and
+  history rows show it, at each Pokémon's turn, both sides (an Ice type takes nothing).
+- **No bag in battle**: the engine refuses every item (`noBag`). On a phone the Bag button stays enabled and a tap (or
+  B) toasts "It's too dangerous to open the bag here, items might fly away"; on a computer the Bag column keeps its
+  items greyed with that line over them in a well with a lock (a `note`). Between fights the Pokémon sheet's items say
+  it too; **at a bonfire the bag opens**.
+- **The result card** after a wave's last foe adds "Wave 1/3 cleared: a bonfire ahead" on a storm-blue card with a
+  flame.
+- **The bonfire** (`BonfireView`, the cozy moment): on the area's page, a 2:1 scene (`bonfireTimeline`): the dark,
+  the crown tree's shape far off, pines, snow blowing beyond the light; flint sparks on the logs and a wisp of smoke,
+  then the fire catching and growing (stones round crossed logs, an ember bed, tongues of flame in frames through the
+  fire's ramp, licks breaking off; sparks rising and dying, a log cracking now and then); its light pools warm on the
+  snow in rings that flicker and pushes the dark back; the team in a ring round it in depth (`campSlots`, 1 to 6: the
+  back row further off and smaller, lit full in the face; the sides lit on the fire's side with a rim of light; the
+  front ones nearer and bigger, dark against the fire with a rim), their front sprites (those on its left turned to
+  face it), shadows thrown away from the fire, cold blue until it catches. When
+  it has caught (`hud.heal`) the engine gives the heal and the team's cards under it fill; the line says "Its warmth
+  gave every Pokémon still standing 40% of its max HP back." (a K.O. one stays K.O.: a Revive from the bag, there).
+  Its title is "Bonfire 1/3", the last "The last bonfire". A well with a flame says the team can change and items be
+  used here, with TEAM (the Team screen: "At the bonfire: swap Pokémon with your Box and use items before you move on."
+  and BACK TO THE BONFIRE). The way on (red, enabled once lit): "On to wave 2", or "Face the crown tree" at the last. It
+  stays until then (a reload or a trip Home shows it again, warmed: no second heal). Motion off or short: it has caught
+  at once.
+- **Abomasnow's entrance** (`abomasnowCinema`, a boss cinematic, docs/53): the shrine in the blizzard, the crown tree
+  right behind where the foe will stand; its eyes open; the ground rumbles twice, the tree shudders, then shakes hard
+  (each tier whipping after the one above) and its snow avalanches off in clumps and powder; it heaves, a burst of
+  powder, and Abomasnow breaks out of it toward us, a dark frost-rimmed shape with burning eyes, landing in its place
+  with a stomp (the ground shakes, snow sprays low both ways); then the reveal with its own burst (no rings: the boss
+  cinematics' `rings: false`), the name card, the send-out. Played by the whiteout whatever the cinematics' switch says; listed with the bosses' (FX lab, Admin →
+  Legend intros).
+- **The end** (`WhiteoutVictoryView`): full screen; the wind falls and the blizzard thins out layer by layer (the near
+  snow first, the far last); the clouds break open round the sun in frames, a lit silver lining at their edge, the
+  morning blue behind; the sunlight sweeps over the land from the sun's side; dithered sunbeams fan down over the
+  shrine, the snow glints on the ground and the tree, a glitter of fine snow in the light; a shaft of light lands in
+  front of the tree and shiny Abomasnow appears in it, a sparkle and its cry; the card over the foreground. Then "The blizzard lifts" in gold on the storm card, "Shiny Abomasnow is yours.
+  Sunlight falls on Crown Shrine, closed for good.", and the green BACK TO THE WORLD (the focus). No skip. The shrine
+  is closed from then on (`isAreaClosed`): Home's CONTINUE for it is shut and says why.
+- **If the boss gets away** (its throw failed, or none was thrown): back to wave 1 as after a wipe (the user's call),
+  the team healed; a toast says so ("Abomasnow vanished into the blizzard: back to wave 1.") and the way in plays again.
+- **The lock**: as the nightmare's (§29), only travel shuts, with its own words ("The blizzard holds you at Crown Shrine:
+  no travel until it ends. The Mart stays open.", "Areas: locked during the blizzard"): Home's Areas button, the green
+  GO TO, the world strip's way back. The Mart, the Team, the bag (at a bonfire) and the menus stay open. No screen
+  effect outside its fights.
+- **A wipe** keeps the wipe card (§14), its line: the blizzard swallowed the team, the waves cleared are lost, back to
+  wave 1, XP, ₽ and items kept, the team healed; the lock lifts.
+
+## 48. The Race of Time and Space (Spear Pillar)
+
+An area's special mode (docs/64-SNOWGLOBE-VALLEY.md §4.4), Snowglobe Valley's S4: a time trial whose last gate picks the
+raid (Water: shiny Palkia, Steel: shiny Dialga). Built as the portal run's and the nightmare's parallel (§27, §29); the
+pieces are in `src/components/TimeRace.tsx` and `src/screens/area/TimeRaceRun.tsx`, every state on `/kitchen-sink`
+(`TimeRaceBits`); the engine (`engine/timeRace.ts`, `timeRaceMode.ts`) decides every gate, foe, find, second and outcome.
+**Every scene is pixel art on the game's FX engine** (`src/fx/timelines/timeRace.ts`, on `/kitchen-sink/fx`: the intro
+over the drawn ruins and over Spear Pillar's picture, Dialga's and Palkia's wins). **It stands in the very place of
+Dialga's and Palkia's raid cinematics** (`cinema/spearPillar.ts`, whose ruins it reuses: the worn tiles in perspective,
+the round dais, broken columns near and far, the sea of clouds), under a night sky that is time's blue on the left and
+space's violet on the right; the clock is the raid's clock of light (rims, sixty ticks, gears behind, the ruins seen
+through it), the rift a ragged tear (pearl lips, the void's stars streaming into it). Its palette (`TR`): Spear Pillar's
+indigo night (`#05061a` to `#6a62b8`), the stone's greys, **time's steel blue and gold** (`#4a6bd8`, `#a8c8ff`,
+`#ffd65a`: Dialga, the clock) and **space's pearl pinks** (`#e88ac0`, `#ffd0ea`: Palkia, the rift). Its scenes follow §8
+as every timeline does (short: half the time; calm: no quake, no flash; off: the end at once); the loop (`RaceScene`) is
+one still frame with motion off.
+
+- **The switch and the rules** follow §20: `timeRace` (Admin → Areas → Special mode: race of time and space), Off by
+  default and checked by the server for the area's two raids; Off, the area plays as a plain secret area (its short deck,
+  then its raids). Its rules are four short `RuleList` rows from the try's plan and the area's numbers: "15 fights in
+  12:00" (the replay's line under it: "foes 4 levels higher"), "A fork every 3 fights: pick a type" (behind each gate an
+  item or a time shard), "The last gate: Water for Palkia, Steel for Dialga" (the replay names its one gate), "No Center,
+  no catch, no auto: one speed for all" (out of time or K.O.: back to the start). They are on the way in's pop-up every
+  time, as the nightmare's, and from INFO at the bottom of the area's page (`TimeRaceRulesModal`, the scene as its banner).
+- **The way in** (`TimeRaceEntry`): the Distortion World's, piece for piece. CONTINUE on Home says ENTER THE RACE ("15
+  fights in 12:00"; the replay: "The replay: 15 fights in 10:00"); the area plays **the intro at once** (`TimeRaceIntro`,
+  `raceIntroTimeline`, 3.8 s, full screen: the area darkens and dissolves into the night over the ruins; the clock of
+  light draws itself round, its hands tick forward once then whip backwards (a dithered smear of light behind them, a
+  click each quarter turn), slowing to a stop; across from it space strains (a pinprick, pink crackles), a seam runs out
+  from it and tears open with a flash, a quake and a shockwave (a bright ring, a dark one behind it, sparks flung out),
+  the void's stars streaming into it, motes sucked in; the line in a night card from then; held at its end, the clock ticking and the rift shimmering, "Tap to continue ▼" with the focus; no SKIP).
+  Arriving heals as a Center does. The tap raises its pop-up over that end ("Into the race", or "The race again" for the
+  replay): the rules, "Healed as at a Pokémon Center" with TEAM (the team can change until READY!, `teamSwapsOpen`; back
+  from the Team screen the pop-up is up again at once: `run.racePopup`), NOT NOW and READY!. READY! waits for the server's
+  time (a toast says the player is offline until it is read).
+- **The clock** (`RaceClock`): big pixel digits on a night plate with the clock icon, under the gauge on the area's page,
+  small in a fight's top right corner (`TimeRaceClockHere`). Time's light blue; **gold under a minute; red and blinking in
+  its last 30 seconds**, with a "!" so it is never colour alone (still when calm). A `timer` whose name says the time
+  ("Time left: 7:32"); it doesn't announce every second. The last 10 seconds tick (`race.tick`). It reads the server's
+  time only (nothing until it is read). At 0:00 the try ends wherever the player is on the area's page, in a fight too.
+- **The gauge** (`RaceGauge`): the round gauge's place, a tile per fight grouped by fork, each group in its gate's type
+  colour once taken (faint ahead, filled once won), the next with the gold edge, "4/15"; an image named "Race fights won:
+  4/15".
+- **A fork** (`ForkView`): on the area's page, a panel "Fork 2/5: pick a gate" ("The last fork: pick your legend"; "The
+  last gate" when the replay's is alone), one line on what it means, then **the gates side by side** (one alone, full
+  width): each an archway in its type's colour (`typeColor`) with its `TypeBadge`, what lies behind it (the item's sprite,
+  or a time shard: a small hourglass of light) and its words on the type's badge colours, and on the last fork the
+  legend's raid in gold ("Opens Palkia's raid"). Each gate is one button of at least 44 px, its name all of it ("Water
+  gate: Revive · Opens Palkia's raid"); the first holds the focus. Taking it: `race.gate`, or `race.shard` and a toast
+  "+30 s on the clock"; an item's toast says it went into the bag; its first foe comes at once.
+- **The fights**: straight in, no preview card (a time trial). **One speed for everyone** (the user's call): every fight
+  plays at the short motion level and the race's pace (the auto battle's quick 1.5×, the admin's number) whatever the
+  player's Animations setting, and **auto-battle is off** (its switch isn't offered); the admins' own No animations stays
+  off for them. The foes can't be caught (no throw). The result card adds "Race fight 4/15 won in time" on a night card
+  with the clock (the last: "The last fight is won in time!"). Won after 0:00, a fight counts for nothing.
+- **The lock**: while a try runs, as the portal run's: every page sends back to the area (a reload too), the menus are
+  shut and say why ("You can't leave the race until you finish, run out of time or your party is K.O."), the result card
+  has no HOME.
+- **Out of time or a wipe** keeps the wipe card (§14): "Out of time!" as its title when the clock ran out, its line the
+  fights won and lost ("The clock ran out after 11 of 15 fights: back to the start of the race. XP, ₽ and items are kept,
+  and your team is healed."); a wipe's says the party was K.O. The next way in plays the intro again.
+- **The win** (`TimeRaceVictoryView`, `raceWinTimeline`, 6.4 s): full screen; dark pulses (the clock and the rift
+  flaring), the legend rising out of the dais in silhouette, ink rim-lit in its colour (its top edges and left lit, the
+  dais's light on its lower part), its glow behind; light gathers into it; the reveal (a white flash gone in a quarter
+  second, three rings, rays that fade within a second, its roar and its cry, a quake) and the shiny sparkle (four stars
+  popping round it, the gleam, the chime), then **time and space settle**, the other legend's half first and its own
+  last: the hands sweep round to twelve and stop with a recoil and a chime (rings, gold for Dialga), the clock breaking
+  up into motes; the rift is pulled shut to a line (trembling for Palkia), shrinks to a point and closes with a glint
+  (`race.settle` on its own legend's); the name card (SHINY, its raid level), a plate fully on screen (on a short stage
+  the legend stands lower and the card is only as wide as its words, on the left, so its head stays clear); "Time and space settle", "Shiny Palkia is now available in raids.", the time it was
+  won with in gold; HEAL & START RAID (red, the focus) over the green BACK TO THE WORLD; no skip.
+- **The raids**: each of the area's two opens on its own legend's win; before, its page is locked ("Win the race of
+  Spear Pillar to open this raid", "Take the Water gate at the last fork and finish in time to face Palkia here."). Their
+  look is the plain raid's (no themed page yet).
+
+## 49. The Stairway of Plates (Hall of Origin)
+
+docs/64 §4.5: the Hall of Origin's portal run, **§27's run with its rules, numbers, flows and buttons unchanged, dressed
+for Arceus** in light instead of distortion, **on a switch of its own** (`platesRun`, §20; the user's call of
+2026-11-01): a portal area in this look answers to it, every other to §27's `portalRun`, so either opens without the
+other (`portalSwitchOf`, `src/engine/portalMode.ts`; the server's 0127). The area's mode says so (`skin: 'plates'`,
+Admin → Areas → Special mode → Its look); absent, Distortion World's look, as it always was. The pieces are §27's: they
+read the look from `PortalSkinProvider` (`src/components/portalSkin.ts`), so every state is on `/kitchen-sink`
+(`PortalBits skin="plates"`, its own section) and every scene on `/kitchen-sink/fx` ("Stairway of Plates: …", "A raid's
+bar: Arceus takes the Icicle Plate").
+
+- **Its words** are their own (`ui.plates.*`, all ten languages) wherever a line names portals or distortions, the
+  portal run's (`ui.portal.*`) where they read the same (Ready!, Not now, Team, Confirm, Tap to continue): `skinKey`
+  picks. A portal is a **landing** (the gauge, "Landings climbed: 3/10"), a distortion an **altar** ("Altar 4/10", "Pick
+  one blessing to light this altar"), a boon a **blessing** ("Take this blessing?"), the run a **climb** ("This climb's
+  bonuses"); CONTINUE says CLIMB THE STAIRWAY ("Climb 10 landings in a row"); the lock "You can't leave the stairway
+  until you reach the top or your party is K.O."; its Pokémon "Of the Hall of Origin: it can't be caught here."; the
+  victory "All 10 altars are lit!" and "Shiny Arceus came down the stairway of light: it is now available in raids."
+- **The type boon is a Plate**: its title the games' Plate of that type with the bonus ("Flame Plate: Fire +10",
+  `plateKey`: `plate.<type>`, Normal the Legend Plate of Legends: Arceus, `ui.plates.legend`), its line "Arceus's Flame
+  Plate: +10 damage on every Fire attack, for this climb.", the run's bonuses "Flame Plate: +20 damage". Its icon stays
+  the type's badge.
+- **Its palette** (`PL` in `src/fx/timelines/plates.ts`): an amber sky paling to white at the horizon (`#dc9a4e` to
+  `#fff4da`), cream clouds lit on top and shaded gold below (`#fffaf0`, `#f8e5be`, `#e9c68a`, `#d4a262`), pale stone
+  (treads `#fbf0d4`, risers `#efd9a8` to `#caa968`, columns `#f3e4c2` edged `#a8823e`), Arceus's gold (`#e3a92f`,
+  `#ffc94a`, `#ffe9a3`), an ink of dark gold for edges and words on cream (`#4a3410`, `#8a6420`), jade for the wheel's
+  jewels (`#3ad0a0`), and the seventeen Plates' colours (the types' own).
+- **The Hall of Origin** (every scene's set, `hallOf`/`drawHall`): a real perspective seen from below the stairway's
+  foot (the steps one unit deep, half a unit high, rising away up the screen): the dithered sky, the wheel's light a
+  wide white glow, long thin clouds, a sea of cloud banks below the horizon (scalloped tops lit, a shade where each rises
+  before the one behind), the stairway (each riser lit from behind with a bright nose, the near treads seen too, a runner
+  of light up its middle), balustrades with a gold rail (a glint running up), a brazier on each landing's newel posts
+  (lit in that landing's Plate once its altar is: a rainbow climbing from Fire at the foot), marble columns every other
+  landing and a gate pair at the top, near clouds drifting past the foot. Above the top, **Arceus's wheel**: a crisp gold
+  ring (dark-gold edges, lit upper left, a soft dithered light inside, not a disc), four jade jewels with gold points,
+  the seventeen Plates as tablets of their colours orbiting it on a tilted ring (behind it, then before it), god-rays.
+  Its panels have the gold along their top (`.plates-panel`), its line cards are cream with dark-gold ink (contrast on
+  the light sky), the tap prompt a cream chip.
+- **Its scenes** (the same timings, cues' places and motion levels as §27's, so the screens swap one for the other):
+  - **The way in** (`stairwayTimeline`, 3.9 s, holds its end): the area's picture (the Hall's `a130`) brightens in two
+    white pulses, a point of gold light opens where the wheel will be, rays of light race out over the area, the area
+    comes apart in tiles that rise and whiten into light (nearest the light first), and behind them the Hall: the steps
+    coming down out of the light from the top (sparks off each), the columns rising, the wheel drawing itself round and
+    the Plates popping out round it one by one, spinning fast and slowing; a flash, rings, the name card in gold with
+    white rims at the bottom. Then it holds (the Plates orbiting, light rising, clouds drifting) for the tap, its pop-up
+    over it.
+  - **The altar** (`altarLoop`): the Hall where the portal turned (the rules' banner, the pop-up on its own); by an
+    altar's blessings (`PortalArt`) an altar (`drawAltar`: a plinth, a pale shaft with a carved groove and diamond, a
+    gold-banded top with a slot for a Plate) under the wheel, its Plates orbiting.
+  - **An altar lit** (`altarLitTimeline`, 1.6 s, `short` 0.9 s; `plate`: the type boon's type, from
+    `playPortalClose(type)`, else Arceus's gold): an altar on a step; the Plate appears in a twinkle high above and comes
+    down turning, faces us as it hovers over the slot drawing light in, then drops in: a white frame, the carvings ignite
+    in its colour, a ring runs out over the floor, sparks; a beam of its light shoots up the stairway to the wheel (a ring
+    of its colour there) and the next landing's braziers catch in it. Over the page (`clear`): the altar alone, the beam
+    up off the top, faded in and out through the dither.
+  - **Its wild Pokémon wear light, never torn** (`lightBurstFrame`, `lightRestCss`; `GlitchSprite look="plates"`,
+    `BattleStage lit`): a faint gold and white rim of its own shape, motes of light rising; every 5 s a gleam of 0.35 s,
+    white and gold copies a pixel or two off, brighter on two frames. `short`: one pale copy; off: the rim alone.
+  - **The screen's gleam** (`DistortionFx` in that look): every 6–10 s a slanted band of light sweeps across in four
+    frames (white and pale gold, gold edges, a few sparkles), the page warmed to gold for three of them (a soft-light
+    layer, `.plates-fx-tint`); the UI's pieces catch the light now and then (`.ui-gleam`: a white-gold rim a pixel off,
+    a little brighter; never torn). `short`: a thin band, no warming, `.ui-gleam-short`; off: nothing.
+  - **The victory** (`descentTimeline`, 6.2 s, `short` 3.1 s): every landing's braziers burning, the wheel throbbing in
+    two white pulses; a flare in it and **shiny Arceus stands at the top of the stairs, backlit** (a dark body, its edges
+    facing the sky lit pale and gold, a screen-pixel rim of white and gold round it) and **comes down a landing at a
+    stride, growing with the perspective**, each landing flaring under it; at the foot the light gathers into it (the
+    Hall dims a little); the reveal (a flash, rings, the roar and its cry, a quake); **the Judgment**: the Plates shoot up
+    out of the wheel and come down as seventeen beams of their colours fanning out round it, each striking the stairs in
+    a flare and a ring of its colour, sparks; the shiny sparkle; the Plates back round the wheel (its halo behind Arceus),
+    a calm hold, the name card at the bottom under its feet. Then §27's words and buttons.
+- **Its raid** wears the usual raid look (no violet night, no distortion: §27's raid theme is Distortion World's only;
+  the lock in its words, "Light every altar of … to open this raid"). Its show is **Arceus's Plate on each bar**: as a bar
+  starts with a type of the area's list (Normal → Ice → Steel → Dragon), the stage's `plate` scene (`plateTimeline`,
+  2.1 s: the field dims a little, a glint high above Arceus, a column of light; the Plate, a tablet of the new type's
+  colour, falls out of the sky turning, its light trailing, and strikes it at 0.8 s: a hit-stop, a white frame in which
+  the form changes cleanly, a shockwave of that colour round it and over the ground, a ring of the type's own bits
+  (flakes for Ice); then the new form in an aura of its colour (a glow, light pooled and a dashed ring at its feet, its
+  bits rising) that fades; `short`: a flash, one ring and the new sprite), and at the strike (its `contact` cue) the line "Arceus takes the Icicle Plate! It is now Ice type!" and the gold NEW PLATE! banner; the
+  battle's history says "took the Icicle Plate · now Ice type". Its first bar's Plate is said as the fight starts unless
+  it is already that type (Normal).
+- **Its rules pop-up** is its own (`platesRulesSeen`): a player who read Distortion World's still gets the stairway's
+  once.

@@ -141,8 +141,9 @@ describe('areas & trainers', () => {
   const allTrainers = trainers as Trainer[]
   const allAreas = everyArea.filter((a) => (a.regionId ?? 'kanto') === 'kanto')
 
-  it('has 26 Kanto areas with valid dex references', () => {
-    expect(allAreas).toHaveLength(26)
+  it('has 27 Kanto areas with valid dex references', () => {
+    // 26, and the Safari Zone split off Fuchsia City as a secret area of its own (docs/61 §4).
+    expect(allAreas).toHaveLength(27)
     for (const a of allAreas) for (const w of a.wildPool) expect(w.dex).toBeGreaterThanOrEqual(1)
     for (const a of allAreas) for (const w of a.wildPool) expect(w.dex).toBeLessThanOrEqual(151)
     for (const t of allTrainers) for (const m of t.team) expect(m.dex).toBeGreaterThanOrEqual(1)
@@ -161,7 +162,8 @@ describe('areas & trainers', () => {
     const evolved = new Set([809])
     for (const l of ALL_LEGENDARIES) expect(bosses.has(l) || roamers.has(l) || evolved.has(l), `#${l}`).toBe(true)
     for (const m of mythicals) expect(bosses.has(m) || evolved.has(m), `#${m} is its lair's boss`).toBe(true)
-    for (const b of bossList) expect(!!b.raid, `#${b.dex}`).toBe(!mythicals.has(b.dex))
+    // A roadblock (docs/61 §2: Snorlax across the road) or a Titan (docs/62 §7) is a boss fight in its area, never a raid.
+    for (const b of bossList) expect(!!b.raid, `#${b.dex}`).toBe(!b.roadblock && !b.titan && !mythicals.has(b.dex))
   })
 
   it('keeps the starters rare in the wild (weight 3 in the catch-all, 1 elsewhere), never in trainer teams', () => {
@@ -173,7 +175,8 @@ describe('areas & trainers', () => {
         else if (entry) expect(entry.weight, a.name).toBe(TUNED_STARTERS[`${a.id}/${s}`] ?? 1)
       }
     }
-    for (const t of allTrainers) for (const m of t.team) expect(STARTERS).not.toContain(m.dex)
+    // A rival's versions carry the starter strong against yours, as in the games (docs/61 §5.2).
+    for (const t of allTrainers.filter((x) => x.rivalOf == null)) for (const m of t.team) expect(STARTERS).not.toContain(m.dex)
     // The Game Corner jackpot prize (Porygon) counts too.
     const catchable = new Set([...allAreas.flatMap((a) => a.wildPool.map((w) => w.dex)), ...LEGENDARIES, (BUNDLE.config.slotMachine as { prizeDex: number }).prizeDex])
     expect(catchable.size).toBe(151)
@@ -205,12 +208,21 @@ describe('Kanto structure', () => {
   const linear = allAreas.filter((a) => !a.hidden).sort((a, b) => a.orderIndex - b.orderIndex)
   const hidden = allAreas.filter((a) => a.hidden)
 
-  it('has 22 linear areas in order, Route 1 → Indigo Plateau, and 4 secret areas with conditions', () => {
+  it('has 22 linear areas in order, Route 1 → Indigo Plateau, and 5 secret areas with conditions', () => {
     // Victory Road II and Indigo Plateau II left for the Elite Rebattle (special events).
     expect(linear.map((a) => a.orderIndex)).toEqual(Array.from({ length: 22 }, (_, i) => i + 1))
     expect(linear[0]!.name).toBe('Route 1')
     expect(linear.at(-1)!.name).toBe('Indigo Plateau')
-    expect(hidden.map((a) => a.name).sort()).toEqual(['Cerulean Cave', 'Faraway Island', 'Power Plant', 'Rocket Hideout'])
+    // The Safari Zone (docs/61 §4): a secret mini game of its own, opening once Fuchsia City (Koga's town) is reached.
+    expect(hidden.map((a) => a.name).sort()).toEqual([
+      'Cerulean Cave',
+      'Faraway Island',
+      'Power Plant',
+      'Rocket Hideout',
+      'Safari Zone',
+    ])
+    const fuchsia = linear.find((a) => a.name === 'Fuchsia City')!
+    expect(allAreas.find((a) => a.name === 'Safari Zone')!.unlockConditions).toEqual([{ kind: 'area', areaId: fuchsia.id }])
     for (const a of hidden) expect(a.unlockConditions?.length).toBeGreaterThan(0)
     expect(allAreas.find((a) => a.name === 'Faraway Island')!.unlockConditions).toEqual([{ kind: 'pokedex', count: 150 }])
     const celadon = allAreas.find((a) => a.name === 'Routes 7 & 8')!
@@ -290,8 +302,9 @@ describe('Kanto structure', () => {
 
   it('gives every trainer a sprite cut from the trainer sheet', () => {
     for (const t of trainers as Trainer[]) {
-      // Rival versions show as the character the player didn't pick.
-      expect(t.spriteUrl, t.name).toMatch(t.rivalOf != null ? /^\/characters\/(red|green)\.png$/ : /^\/trainers\/classes\//)
+      // Rival versions show as the character the player didn't pick (Kanto's champion), or the rival's own class
+      // picture (Blue, Silver, May, Barry: docs/61 §5.2).
+      expect(t.spriteUrl, t.name).toMatch(t.rivalOf != null ? /^\/(characters\/(red|green)|trainers\/classes\/.+)\.png$/ : /^\/trainers\/classes\//)
       expect(existsSync(path.join('public', t.spriteUrl!)), t.spriteUrl!).toBe(true)
     }
   })

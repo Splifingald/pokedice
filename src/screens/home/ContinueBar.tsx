@@ -10,16 +10,29 @@ import {
   isAreaClosed,
   isAreaSealed,
   latestOpenArea,
-  nightmareLock,
+  heldIn,
   nightmareModeOf,
   nightmareStateOf,
+  whiteoutModeOf,
+  whiteoutStateOf,
   openRaidIn,
   playerSideOf,
   portalModeOf,
+  portalSkin,
   portalStateOf,
   progressOf,
   raidRules,
+  tracksField,
+  tracksQuarryDex,
+  tracksModeOf,
+  tracksStateOf,
+  safariRoundDue,
+  safariRoundPrice,
   teamAverageLevel,
+  canStartTimeRace,
+  timeRaceModeOf,
+  timeRacePlan,
+  timeRaceStateOf,
   type Area,
 } from '@/engine'
 import { useT } from '@/i18n/react'
@@ -27,6 +40,7 @@ import { NewTag } from '@/components/Chip'
 import { RestingPanel } from '@/components/Extreme'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
+import { skinKey } from '@/components/portalSkin'
 import { countdown, trainerTitle } from '@/lib/format'
 import { pushToast, useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
@@ -65,17 +79,34 @@ export function useContinue(area: Area) {
   // it is only its raid, then sealed.
   const mode = portalModeOf(area, data)
   const portal = mode ? portalStateOf(save, area.id) : null
+  // Its lines in its look's words (the Stairway of Plates: docs/64 §4.5).
+  const pk = (key: string) => skinKey(portalSkin(mode), key)
   // A nightmare area (docs/30): the same way: before it, CONTINUE goes to its way in; once over, only its raid.
   const dreamMode = nightmareModeOf(area, data)
   const dream = dreamMode ? nightmareStateOf(save, area.id) : null
-  const gym = mode || dreamMode ? null : dueGym(area, progress, data, side)
-  const boss = gym || mode || dreamMode ? null : dueBoss(area, progress, teamAverageLevel(save), data)
+  // The race of time and space's area (docs/64 §4.4): before a try, CONTINUE goes to its way in (the replay's too, once
+  // the first legend is caught); in one, back to it; won, only its raids.
+  const raceMode = timeRaceModeOf(area, data)
+  const race = raceMode ? timeRaceStateOf(save, area.id) : null
+  // The whiteout's area (docs/64 §4.3): before it, CONTINUE goes to its way in; its boss is its own last step.
+  const whiteMode = whiteoutModeOf(area, data)
+  const white = whiteMode ? whiteoutStateOf(save, area.id) : null
+  // Tracks in the Snow's glade (docs/64 §4.1): before it, CONTINUE goes to its way in; under way, to the glade; once its
+  // shiny Stantler is caught, the glade is closed. Its boss is found in a bush, never challenged.
+  const gladeMode = tracksModeOf(area, data)
+  const glade = gladeMode ? tracksStateOf(save, area.id) : null
+  const special = mode || dreamMode || raceMode || whiteMode || gladeMode
+  const gym = special ? null : dueGym(area, progress, data, side)
+  const boss = gym || special ? null : dueBoss(area, progress, teamAverageLevel(save), data)
   const closed = isAreaClosed(save, area.id, data) || isAreaSealed(save, data, area.id)
   const busy = (run.areaId === area.id && run.phase !== 'idle') || battle
   const raid = gym || boss || busy ? null : openRaidIn(save, data, area)
   const raidName = raid ? (data.species[raid.dex]?.name ?? '') : ''
   const need = area.roundsToClear || null
   const done = progress.roundsDone ?? 0
+  // A Safari (docs/61 §4): the next round's price, or its free round, under CONTINUE.
+  const safariDue = !busy && safariRoundDue(data, area, progress)
+  const safariPrice = safariDue ? safariRoundPrice(data, area, progress) : 0
   // Extreme mode (docs/22): nobody can fight and no Center will come — the team rests.
   // With its boon Centers (docs/47), a K.O. here sends the Center that swaps instead.
   const resting = !busy && !hasAbleTeam(save) && !centersOn(save, data) && !wipeCenterDue(save, area.id, data)
@@ -83,27 +114,68 @@ export function useContinue(area: Area) {
 
   const enterPortal = !!mode && !portal?.active && !portal?.won && !busy
   const enterDream = !!dreamMode && !dream?.active && !dream?.won && !busy
-  const enter = enterPortal || enterDream
-  // Darkrai's strike waits on the area's page after a round (docs/30).
-  const struck = !!dream?.active && (!!dream.strike || (run.areaId === area.id && !!run.nightmareStruck))
+  const enterRace = !!raceMode && canStartTimeRace(save, data, area.id) && !busy
+  const racePlan = raceMode ? timeRacePlan(save, raceMode, area.id) : null
+  const enterWhite = !!whiteMode && !white?.active && !white?.won && !busy
+  const enterGlade = !!gladeMode && !glade?.active && !glade?.won && !busy
+  const searching = !!glade?.active && !busy
+  const enter = enterPortal || enterDream || enterRace || enterWhite || enterGlade
+  // Darkrai's strike waits on the area's page after a round (docs/30); so does a bonfire after a wave (docs/64).
+  const struck =
+    (!!dream?.active && (!!dream.strike || (run.areaId === area.id && !!run.nightmareStruck))) ||
+    (!!white?.active && !!white.bonfire)
+  const stantler = gladeMode ? (data.species[tracksQuarryDex(area) ?? 0]?.name ?? '') : ''
   const sub = busy
     ? t('ui.home.backToEncounter')
+    : enterRace
+      ? t(racePlan!.replay ? 'ui.timeRace.enterReplaySub' : 'ui.timeRace.enterSub', {
+          n: racePlan!.total,
+          time: `${Math.floor(racePlan!.seconds / 60)}:${String(racePlan!.seconds % 60).padStart(2, '0')}`,
+        })
+    : enterWhite
+      ? t('ui.whiteout.enterSub', { n: whiteMode!.waves.length })
+    : white?.won
+      ? t('ui.whiteout.sealed')
+    : white?.active
+      ? white.bonfire
+        ? t('ui.whiteout.bonfireSub')
+        : white.boss
+          ? t('ui.whiteout.bossSub')
+          : t('ui.whiteout.continueSub', { n: Math.min(white.wave + 1, whiteMode!.waves.length), total: whiteMode!.waves.length })
+    : enterGlade
+      ? glade?.round
+        ? t('ui.tracks.continueSub', { n: glade.round + 1, total: gladeMode!.rounds.length, name: stantler })
+        : t('ui.tracks.enterSub', { n: gladeMode!.rounds.length })
+      : searching
+        ? t('ui.tracks.continueSub', {
+            n: (tracksField(save, data, area.id)?.index ?? 0) + 1,
+            total: gladeMode!.rounds.length,
+            name: stantler,
+          })
+      : glade?.won
+        ? t('ui.tracks.sealed', { name: stantler })
     : enterDream
       ? t('ui.nightmare.enterSub', { n: dreamMode!.foes.length })
       : enter
-      ? t('ui.portal.enterSub', { n: mode!.portals })
+      ? t(pk('ui.portal.enterSub'), { n: mode!.portals })
       : raid && dream?.won
         ? t('ui.raid.progress.continueSub', { level: raidRules(data, raid.dex, 'progress', raid.areaId).level })
       : dream?.won
         ? t('ui.nightmare.sealed')
       : dream?.active
         ? t('ui.nightmare.continueSub', { n: Math.min(dream.round + 1, dreamMode!.foes.length), total: dreamMode!.foes.length })
+      : raid && race?.won?.length
+        ? t('ui.raid.progress.continueSub', { level: raidRules(data, raid.dex, 'progress', raid.areaId).level })
+      : race?.won?.length && !race.active
+        ? t('ui.timeRace.sealed')
+      : race?.active
+        ? t('ui.timeRace.continueSub', { n: Math.min(race.fights + 1, racePlan!.total), total: racePlan!.total })
       : raid && portal?.won
         ? t('ui.raid.progress.continueSub', { level: raidRules(data, raid.dex, 'progress', raid.areaId).level })
       : portal?.won
-        ? t('ui.portal.sealed')
+        ? t(pk('ui.portal.sealed'))
       : portal?.active
-        ? t('ui.portal.continueSub', { n: portal.closed, total: mode!.portals })
+        ? t(pk('ui.portal.continueSub'), { n: portal.closed, total: mode!.portals })
     : resting
       ? back
         ? t('ui.extreme.card.resting', {
@@ -114,11 +186,15 @@ export function useContinue(area: Area) {
       : gym
       ? t('ui.home.gymReady', { name: trainerTitle(gym) })
       : boss
-        ? t('ui.home.legendReady')
+        ? t(boss.roadblock ? 'ui.home.roadblockReady' : 'ui.home.legendReady')
         : raid
           ? t('ui.raid.progress.continueSub', { level: raidRules(data, raid.dex, 'progress', raid.areaId).level })
         : closed
           ? t('ui.home.closed')
+          : safariDue
+            ? safariPrice > 0
+              ? t('ui.safari.price', { price: safariPrice })
+              : t('ui.safari.freeRound')
           : progress.cleared
             ? t('ui.home.freePlay')
             : need != null
@@ -132,7 +208,8 @@ export function useContinue(area: Area) {
     const leader = dueGym(to, p, data, side)
     const rounds = to.roundsToClear || null
     if (leader) return t('ui.home.gymReady', { name: trainerTitle(leader) })
-    if (dueBoss(to, p, teamAverageLevel(save), data)) return t('ui.home.legendReady')
+    const waiting = dueBoss(to, p, teamAverageLevel(save), data)
+    if (waiting) return t(waiting.roadblock ? 'ui.home.roadblockReady' : 'ui.home.legendReady')
     return rounds != null
       ? t('ui.home.roundOf', { n: Math.min((p.roundsDone ?? 0) + 1, rounds), total: rounds })
       : t('ui.home.secretArea')
@@ -147,14 +224,19 @@ export function useContinue(area: Area) {
     // Shut (sealed, resting): CONTINUE is greyed out, and the map's CONTINUE HERE says why instead.
     if (off) return pushToast(sub, 'info')
     if (raid) return navigate(progressRaidPath(raid))
-    if (enter || (portal?.active && portal.offers?.length) || struck) {
+    if (enter || (portal?.active && portal.offers?.length) || struck || race?.active || searching) {
       ensureRun(area)
       return navigate('/area')
     }
     if (gym || boss) {
       ensureRun(area)
-      challenge()
-      if (useGame.getState().run.phase !== 'idle') navigate('/area')
+      // A trial's or a Titan's server answer may be on its way (docs/62): the area opens once it's there.
+      const opened = () => {
+        if (useGame.getState().run.phase !== 'idle') navigate('/area')
+      }
+      const asked = challenge()
+      if (asked) void asked.then(opened)
+      else opened()
       return
     }
     explore()
@@ -176,6 +258,9 @@ export function useContinue(area: Area) {
     !struck &&
     !portal?.active &&
     !dream?.active &&
+    !race?.active &&
+    !white?.active &&
+    !glade?.active &&
     !closed &&
     progress.cleared
   // GO TO's two lines: the area, and what waits for the player there (the gym, the legend, the round).
@@ -184,10 +269,16 @@ export function useContinue(area: Area) {
       ? { area: latest, label: t('ui.victory.goToArea', { name: latest.name }), sub: waitsIn(latest) }
       : null
   const keepExploring = !!(gym || boss || raid) && !closed && !busy && !resting
-  const label = enterDream
+  const label = enterRace
+    ? t('ui.timeRace.enter')
+    : enterWhite
+    ? t('ui.whiteout.enter')
+    : enterGlade
+    ? t('ui.tracks.enter')
+    : enterDream
     ? t('ui.nightmare.enter')
     : enter
-    ? t('ui.portal.enter')
+    ? t(pk('ui.portal.enter'))
     : gym
     ? t('ui.area.challenge', { name: gym.name.toUpperCase() })
     : boss
@@ -263,6 +354,32 @@ export function ContinueButton({
   )
 }
 
+/**
+ * The green map square left of the big action (the user's call, 2026-11-01): the Areas sheet in the thumb's reach, the
+ * same one the area button on the scene opens. Shut by Darkrai's nightmare: a tap says why.
+ */
+export function MapButton({ heldWhy, onOpen }: { heldWhy: string | null; onOpen: () => void }) {
+  const { t } = useT()
+  return (
+    <PixelButton
+      variant={heldWhy ? 'secondary' : 'success'}
+      size="xl"
+      // As tall as CONTINUE (xl, 72px), narrow: the label under the icon.
+      className={cx('h-full w-[76px] shrink-0 !px-1 !py-1.5', heldWhy && 'hatched')}
+      shut={heldWhy}
+      onClick={onOpen}
+      aria-label={t('ui.home.areas')}
+      aria-haspopup={heldWhy ? undefined : 'dialog'}
+      data-map-button
+    >
+      <span className="flex flex-col items-center gap-1">
+        <PixelIcon name={heldWhy ? 'lock' : 'map'} size={28} />
+        <span className="font-pixel-sm text-[16px] leading-none tracking-[0.04em]">{t('ui.home.areas')}</span>
+      </span>
+    </PixelButton>
+  )
+}
+
 /** Under GO TO: the free play where the player stands, as CONTINUE gave it (`sub` says what it is, for screen readers). */
 export function StayHere({ sub, onClick }: { sub: string; onClick: () => void }) {
   const { t } = useT()
@@ -314,6 +431,7 @@ export function AreaButton({
 }) {
   const { t } = useT()
   const save = useGame((s) => s.save)!
+  const heldBy = useGame((s) => heldIn(s.save, s.data)?.by ?? 'nightmare')
   // The round's own steps when the encounters are dealt from a deck (the area's gauge), its rounds as pips otherwise.
   const steps = useGame((s) => s.data.config.showRoundGauge && s.data.config.encounterMode === 'deck')
   const p = progressOf(save, area.id)
@@ -339,7 +457,7 @@ export function AreaButton({
       aria-disabled={heldWhy ? true : undefined}
       aria-label={
         heldWhy
-          ? `${area.name} · ${t('ui.nightmare.areasLocked')}`
+          ? `${area.name} · ${t(`ui.${heldBy}.areasLocked`)}`
           : [t('ui.home.areaButton', { area: area.name, levels, rounds }), news].filter(Boolean).join('. ') + parade
       }
       data-area-button
@@ -380,15 +498,18 @@ export function AreaButton({
  * Home's PLAY dock (docs/43 §5.2): the area button, then the one big action (useContinue). Behind in the region's main
  * chain with nothing waiting here, the big action is GO TO the furthest open area, with "Stay here" (the free play)
  * under it; otherwise CONTINUE, with the green GO TO and "keep exploring" (when a gym or a legendary waits) under it in
- * one row. Phones pin it over the tab bar; on PC it heads the column beside the scene. (Auto-mode is switched in the
- * area itself, on the encounter screens.)
+ * one row. The green map square (`MapButton`, the Areas sheet) stands left of the big action. Phones pin it over the
+ * tab bar; on PC it heads the column beside the scene. (Auto-mode is switched in the area itself, on the encounter
+ * screens.)
  */
-export function PlayDock({ area }: { area: Area }) {
+export function PlayDock({ area, onAreas }: { area: Area; onAreas?: () => void }) {
   const { t } = useT()
   const { label, sub, go, explore, off, gym, boss, raid, resting, latest, goTo, keepExploring } = useContinue(area)
-  // Darkrai's nightmare holds the player in its area (docs/30): the area button is shut, and says why.
-  const held = useGame((s) => nightmareLock(s.save, s.data))
-  const heldWhy = held ? t('ui.nightmare.locked', { area: held.name }) : null
+  // Darkrai's nightmare (docs/30) or the whiteout (docs/64 §4.3) holds the player in its area: the area button is
+  // shut, and says why.
+  const held = useGame((s) => heldIn(s.save, s.data)?.area ?? null)
+  const heldBy = useGame((s) => heldIn(s.save, s.data)?.by ?? 'nightmare')
+  const heldWhy = held ? t(`ui.${heldBy}.locked`, { area: held.name }) : null
   const ahead = heldWhy ? null : goTo
   const green = latest && !heldWhy && !ahead ? latest : null
 
@@ -404,11 +525,23 @@ export function PlayDock({ area }: { area: Area }) {
         </p>
       )}
       {resting && <RestingPanel />}
-      {ahead ? (
-        <ContinueButton label={ahead.label} sub={ahead.sub} icon="map" onClick={() => travelTo(ahead.area)} />
-      ) : (
-        <ContinueButton label={label} sub={sub} icon={gym || boss || raid ? 'sword' : 'play'} off={off} onClick={go} />
-      )}
+      {/* The green map square beside the big action opens the Areas sheet, as the area button on the scene does. */}
+      <div className="flex items-stretch gap-2">
+        {onAreas && <MapButton heldWhy={heldWhy} onOpen={onAreas} />}
+        <div className="min-w-0 flex-1">
+          {ahead ? (
+            <ContinueButton label={ahead.label} sub={ahead.sub} icon="map" onClick={() => travelTo(ahead.area)} />
+          ) : (
+            <ContinueButton
+              label={label}
+              sub={sub}
+              icon={gym || boss || raid ? 'sword' : 'play'}
+              off={off}
+              onClick={go}
+            />
+          )}
+        </div>
+      </div>
       {/* The free play stays a tap away under GO TO. */}
       {ahead && <StayHere sub={sub} onClick={go} />}
       {(green || keepExploring) && (

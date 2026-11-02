@@ -32,6 +32,7 @@ import { useMotion } from '@/lib/motion'
 import { usePace } from '@/lib/pace'
 import { useGame } from '@/store/game'
 import { BoosterChip } from '@/screens/events/world'
+import { WeatherBoostChip } from '@/components/Weather'
 import { PALETTE } from '@/theme/colors'
 import { cx } from '@/theme/util'
 
@@ -444,6 +445,7 @@ export function Readout({
         </Chip>
       )}
       {r.boost && <BoosterChip type={r.boost.type} n={r.boost.multiplier} />}
+      {r.weather && <WeatherBoostChip kind={r.weather.kind} n={r.weather.multiplier} />}
       <Effectiveness r={r} />
       {preview.statuses.map((s) => (
         <StatusChip key={s.status} status={s.status} count={statusCount(s)} />

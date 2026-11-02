@@ -34,6 +34,7 @@ export const VERSUS_LEAGUE_DEFAULTS: VersusLeagueConfig = {
   minWinSeconds: 5,
   secondsPerMove: 0.2,
   botTiers: [0, 100, 250, 500],
+  botTargets: [20, 250],
   goldPerTrophy: 1,
   rewards: [
     { upTo: 1, raidBalls: 5, rareCandies: 10 },
@@ -183,6 +184,19 @@ export function botTierOf(trophies: number, cfg: VersusLeagueConfig): number {
     if (trophies >= from) tier = i
   })
   return Math.min(3, tier)
+}
+
+/**
+ * Where a seated bot's trophies are headed by Sunday night, for a roll in [0, 1): between `botTargets`' two ends, the
+ * roll squared so most bots sit low and few high, as players do. It never looks at the group's players: a group with a
+ * player far ahead gets the same bots as any other (the user's rule, 2026-11-01). The server's
+ * `versus_league_bot_target` is the same sum.
+ */
+export function botTargetOf(roll: number, cfg: VersusLeagueConfig): number {
+  const [lo, hi] = cfg.botTargets
+  const low = Math.max(0, Math.min(lo, hi))
+  const r = Math.min(1, Math.max(0, roll))
+  return Math.round(low + (Math.max(lo, hi) - low) * r * r)
 }
 
 const typesOf = (data: GameData, dex: number): PokeType[] => {

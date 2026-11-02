@@ -142,6 +142,29 @@ test('the area button opens the Areas sheet on its details, and Esc gives focus 
   await expect(button).toBeFocused()
 })
 
+test('the green map square left of CONTINUE opens the same Areas sheet, as tall as CONTINUE', async ({ page }) => {
+  await page.setViewportSize(PHONE)
+  const save = makeSave(4)
+  const area = data.areas.find((a) => a.id === save.currentAreaId)!
+  await boot(page, save)
+  await page.goto('/home')
+  const map = page.getByRole('button', { name: 'Areas', exact: true })
+  const go = page.getByRole('button', { name: 'CONTINUE', exact: true })
+  const mapBox = (await map.boundingBox())!
+  const goBox = (await go.boundingBox())!
+  // On CONTINUE's row, on its left, as tall as it.
+  expect(mapBox.x + mapBox.width).toBeLessThanOrEqual(goBox.x)
+  expect(Math.abs(mapBox.y - goBox.y)).toBeLessThanOrEqual(1)
+  expect(Math.abs(mapBox.height - goBox.height)).toBeLessThanOrEqual(1)
+  await map.click()
+  const sheet = page.getByRole('dialog', { name: 'Kanto' })
+  await expect(sheet).toBeVisible()
+  await expect(sheet.getByRole('heading', { name: area.name, level: 3 })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(sheet).toHaveCount(0)
+  await expect(map).toBeFocused()
+})
+
 test('All areas lists the region, and its search finds areas by Pokémon; Regions is a tab of the same sheet', async ({
   page,
 }) => {

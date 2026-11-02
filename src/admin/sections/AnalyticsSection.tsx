@@ -19,6 +19,7 @@ import { inputCls } from '../widgets'
 import { ChurnByArea } from './AnalyticsChurn'
 import { HourlyPlayers } from './AnalyticsHourly'
 import { errorText, PlayerPanel } from './AnalyticsPlayer'
+import { SuspiciousSaves } from './AnalyticsSuspicious'
 
 interface PlayerRow {
   player: string
@@ -225,6 +226,8 @@ export function AnalyticsSection() {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
   const [player, setPlayer] = useState<string | null>(null)
+  // A player picked from the suspicious list, who may not be in this time frame's list.
+  const [picked, setPicked] = useState<{ player: string; name: string } | null>(null)
   const [search, setSearch] = useState('')
   const [shown, setShown] = useState(200)
   const sort = useSort<PlayerSort>('last', -1, ['name'])
@@ -323,6 +326,13 @@ export function AnalyticsSection() {
 
       <ChurnByArea since={from} frame={frameLabel} />
 
+      <SuspiciousSaves
+        onPick={(id, name) => {
+          setPlayer(null)
+          setPicked({ player: id, name })
+        }}
+      />
+
       {status === 'error' && (
         <div className="pixel-panel p-3 text-lg">
           <p className="text-danger">Could not load analytics: {error}</p>
@@ -330,13 +340,15 @@ export function AnalyticsSection() {
         </div>
       )}
 
-      {selected && (
+      {selected ? (
         <PlayerPanel
           key={selected.player}
           player={selected.player}
           name={selected.label}
           deviceId={selected.device_id}
         />
+      ) : (
+        picked && <PlayerPanel key={picked.player} player={picked.player} name={picked.name} />
       )}
 
       <section className="pixel-panel overflow-hidden p-0" aria-label="Players">
@@ -406,7 +418,10 @@ export function AnalyticsSection() {
               {players.slice(0, shown).map((p, i) => (
                 <tr
                   key={p.player}
-                  onClick={() => setPlayer(player === p.player ? null : p.player)}
+                  onClick={() => {
+                    setPicked(null)
+                    setPlayer(player === p.player ? null : p.player)
+                  }}
                   className={cx(
                     'cursor-pointer border-t border-shadow/40 hover:bg-gold/30',
                     player === p.player ? 'bg-gold/60' : i % 2 ? 'bg-parchment/50' : '',

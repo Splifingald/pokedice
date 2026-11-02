@@ -24,7 +24,9 @@ import { RunRoundGauge } from '@/screens/area/RoundGauge'
 import { StagePanel } from '@/screens/area/StagePanel'
 import { useGame } from '@/store/game'
 import { currentLive } from '@/store/live'
-import { pickUpFind } from '@/store/run'
+import { fightSprung, pickUpFind, revealDisguise } from '@/store/run'
+import { fxSound } from '@/audio/sfx'
+import { SpriteImg } from '@/components/SpriteImg'
 import { cx } from '@/theme/util'
 
 type Find = Extract<Encounter, { kind: 'item' }>
@@ -80,7 +82,19 @@ const RARITY_LOOK: Record<FindRarity, string> = {
  */
 export function FindView() {
   const { t } = useT()
-  const enc = useGame((s) => (s.run.encounter?.kind === 'item' ? s.run.encounter : null))
+  const raw = useGame((s) => s.run.encounter)
+  // A Pokémon posing as a find (docs/61 §3): the find it looks like until PICK IT UP, then the Pokémon springing out.
+  const disguise = raw?.kind === 'wild' && raw.disguisedAs ? raw : null
+  const sprung = useGame((s) => !!s.run.sprung) && !!disguise
+  const enc = useMemo<Find | null>(
+    () =>
+      raw?.kind === 'item'
+        ? raw
+        : disguise
+          ? { kind: 'item', entryId: `disguise:${disguise.dex}`, itemKey: disguise.disguisedAs!, qty: 1 }
+          : null,
+    [raw, disguise],
+  )
   const areaId = useGame((s) => s.run.areaId)
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
@@ -89,7 +103,8 @@ export function FindView() {
   // Read as it was found: picking a once-only find up strikes it off the table the rarity is read from.
   const entryId = enc?.entryId
   const rarity = useMemo<FindRarity>(
-    () => (area && save && entryId ? findRarity(area, progressOf(save, area.id), data, entryId) : 'common'),
+    // A disguise looks like the plainest of finds.
+    () => (area && save && entryId && !disguise ? findRarity(area, progressOf(save, area.id), data, entryId) : 'common'),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [entryId],
   )
@@ -113,14 +128,43 @@ export function FindView() {
     <div className="relative isolate aspect-[3/2] w-full select-none overflow-hidden shadow-ledge">
       <StageBackground art={art} zones={false} />
       <RunRoundGauge strip className="absolute inset-x-0 top-0 z-30" />
-      <FoundThing key={enc.entryId} enc={enc} isMoney={isMoney} rarity={rarity} />
+      {sprung && disguise ? (
+        <SprungThing itemKey={enc.itemKey} dex={disguise.dex} shiny={disguise.shiny} />
+      ) : (
+        <FoundThing key={enc.entryId} enc={enc} isMoney={isMoney} rarity={rarity} />
+      )}
     </div>
   )
+  if (sprung && disguise) {
+    const name = data.species[disguise.dex]?.name ?? `#${disguise.dex}`
+    return (
+      <StagePanel
+        scene={stage}
+        bar={
+          <AutoButton variant="primary" size="lg" className="w-full" paused="byDialogs" onClick={fightSprung}>
+            <PixelIcon name="sword" size={22} />
+            {t('ui.enc.fight')}
+          </AutoButton>
+        }
+      >
+        <div className="flex flex-col items-center gap-2 py-2 text-center" role="status">
+          <p className="m-0 text-[26px] leading-tight text-danger">{t('ui.disguise.reveal', { name })}</p>
+          <p className="copy m-0 text-muted">{t('ui.disguise.noRun')}</p>
+        </div>
+      </StagePanel>
+    )
+  }
   return (
     <StagePanel
       scene={stage}
       bar={
-        <AutoButton variant="primary" size="lg" className="w-full" paused="byDialogs" onClick={pickUpFind}>
+        <AutoButton
+          variant="primary"
+          size="lg"
+          className="w-full"
+          paused="byDialogs"
+          onClick={disguise ? () => void revealDisguise() : pickUpFind}
+        >
           {t('ui.enc.pickUp')}
         </AutoButton>
       }
@@ -304,6 +348,85 @@ export function FoundThing({ enc, isMoney, rarity }: { enc: Find; isMoney: boole
             <PixelIcon name="sparkle" size={Math.round(size / 4)} />
           </motion.span>
         ))}
+    </div>
+  )
+}
+
+/**
+ * A Pokémon posing as a find springs out (docs/61 §3): the ball on the ground wobbles, the third wobble bursts it in a
+ * white flash, and the Pokémon stands where it lay, with a hop. No motion, or a calm screen: the Pokémon is simply there.
+ */
+export function SprungThing({
+  itemKey,
+  dex,
+  shiny,
+  size: own,
+}: {
+  itemKey: string
+  dex: number
+  shiny?: boolean
+  /** Its size to the stage's (a gift's, sized to the stage); unset = the find's screen's. */
+  size?: number
+}) {
+  const data = useGame((s) => s.data)
+  const { level, calm } = useMotion()
+  const wide = useMediaQuery('(min-width: 1024px)')
+  const still = level === 'off' || calm
+  const size = own ?? (wide ? 136 : 80)
+  const item = data.items[itemKey]
+  // The wobbles and the burst take this long; the Pokémon is out from there.
+  const burst = level === 'short' ? 0.45 : 0.8
+  useEffect(() => {
+    if (still) return void fxSound('catch.open')
+    fxSound('catch.wobble')
+    const timers = [
+      setTimeout(() => fxSound('catch.wobble'), burst * 400),
+      setTimeout(() => fxSound('catch.open'), burst * 1000),
+    ]
+    return () => timers.forEach(clearTimeout)
+  }, [still, burst])
+  return (
+    <div
+      className="absolute z-20"
+      style={{
+        left: `${FIND_SPOT.x * 100}%`,
+        top: `${FIND_SPOT.y * 100}%`,
+        width: size * 1.6,
+        height: size * 1.6,
+        transform: 'translate(-50%, -100%)',
+      }}
+    >
+      {!still && (
+        <motion.div
+          aria-hidden
+          className="absolute bottom-0 left-1/2 -translate-x-1/2"
+          style={{ width: size * 0.62, height: size * 0.62, transformOrigin: '50% 100%' }}
+          initial={{ rotate: 0, opacity: 1, scale: 1 }}
+          animate={{ rotate: [0, -18, 18, -12, 0], opacity: [1, 1, 1, 1, 0], scale: [1, 1, 1, 1.4, 1.6] }}
+          transition={{ duration: burst, times: [0, 0.25, 0.5, 0.8, 1], ease: stepped(6) }}
+        >
+          <ItemSprite item={item} size={Math.round(size * 0.62)} />
+        </motion.div>
+      )}
+      {!still && (
+        <motion.span
+          aria-hidden
+          className="absolute bottom-[5%] left-1/2 h-[70%] w-[70%] -translate-x-1/2 bg-white"
+          style={{ borderRadius: '50%' }}
+          initial={{ opacity: 0, scale: 0.2 }}
+          animate={{ opacity: [0, 0.95, 0], scale: [0.2, 1.2, 1.5] }}
+          transition={{ delay: burst * 0.85, duration: 0.35, ease: stepped(4) }}
+        />
+      )}
+      <motion.div
+        className="absolute bottom-0 left-1/2 -translate-x-1/2"
+        style={{ transformOrigin: '50% 100%' }}
+        initial={still ? false : { opacity: 0, scale: 0.3, y: 0 }}
+        animate={still ? { opacity: 1 } : { opacity: [0, 1, 1, 1], scale: [0.3, 1.1, 0.95, 1], y: ['0%', '-12%', '0%', '0%'] }}
+        transition={still ? { duration: 0 } : { delay: burst * 0.9, duration: 0.5, ease: stepped(5) }}
+      >
+        <SpriteImg dex={dex} size={Math.round(size * 1.5)} shiny={shiny} />
+      </motion.div>
     </div>
   )
 }

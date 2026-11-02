@@ -17,6 +17,7 @@ import {
   isBallFor,
   isTalentBall,
   sureThrow,
+  roadblockOf,
 } from '@/engine'
 import { useFriendBallBoost } from '@/lib/itemText'
 import { Die } from '@/components/Die'
@@ -36,6 +37,12 @@ type Catch = NonNullable<RunState['catch']>
 /** The Bait's die on the panel: its berry's colour, as the stage draws it (art, not a theme colour). */
 const BAIT_COLOR = '#e8506a'
 
+/** The boss being caught is a roadblock (docs/61 §2): "The wild Snorlax", not "The legendary". */
+const roadblockHere = (dex: number): boolean => {
+  const { data, run } = useGame.getState()
+  return !!roadblockOf(data.areas.find((a) => a.id === run.areaId), dex)
+}
+
 /** What the message box says during the catch. */
 export function catchMessage(c: Catch, name: string, thrown: { revealed: boolean }): string {
   const r = c.result
@@ -43,7 +50,7 @@ export function catchMessage(c: Catch, name: string, thrown: { revealed: boolean
     return c.retried
       ? tr('ui.catch.again', { name })
       : tr('ui.catch.wornOut', {
-          who: tr(c.kind === 'boss' ? 'ui.catch.theLegendary' : 'ui.catch.theWild'),
+          who: tr(c.kind === 'boss' && !roadblockHere(c.dex) ? 'ui.catch.theLegendary' : 'ui.catch.theWild'),
           name,
         })
   if (thrown.revealed) {

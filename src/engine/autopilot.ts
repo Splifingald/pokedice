@@ -8,8 +8,13 @@ import { ballBonus, isBallFor } from './items'
 import { linearAreas } from './data'
 import { nightmareModeOf } from './nightmareMode'
 import { nightmareLock } from './nightmare'
+import { whiteoutLock } from './whiteout'
+import { whiteoutModeOf } from './whiteoutMode'
 import { portalModeOf } from './portalMode'
 import { portalLock } from './portal'
+import { timeRaceModeOf } from './timeRaceMode'
+import { timeRaceLock } from './timeRace'
+import { tracksModeOf } from './tracksMode'
 import { regionOfArea } from './regions'
 import { hasAbleTeam, isAreaClosed, isAreaUnlocked, progressOf } from './run'
 import {
@@ -55,9 +60,17 @@ export interface AutoRun {
   rebattle?: unknown
 }
 
-/** A portal run's or the nightmare's area (docs/28, docs/30): their own steps, so never the autopilot's. */
+/**
+ * A portal run's, the nightmare's, Tracks in the Snow's, the whiteout's or the race's area (docs/28, docs/30, docs/64
+ * §4.1, §4.3, §4.4): their own steps, so never the autopilot's.
+ */
 const specialArea = (area: Area | undefined, data: GameData): boolean =>
-  !!area && (!!portalModeOf(area, data) || !!nightmareModeOf(area, data))
+  !!area &&
+  (!!portalModeOf(area, data) ||
+    !!nightmareModeOf(area, data) ||
+    !!tracksModeOf(area, data) ||
+    !!timeRaceModeOf(area, data) ||
+    !!whiteoutModeOf(area, data))
 
 /**
  * Where the auto switch is offered (the area's header, a battle's extras). Off: cleared areas, as auto-mode always was.
@@ -73,6 +86,9 @@ export function autoAvailable(
   // Extreme mode's boon Centers (docs/47): every Center is a choice, so nothing plays itself there (the user's call,
   // 2026-10-28: no idle mode in Extreme).
   if (boonCenters(save, data)) return false
+  // The race of time and space (docs/64 §4.4): auto-battle is off there, whatever the switch (the user's call,
+  // 2026-11-01), so the clock means the same for everyone.
+  if (timeRaceModeOf(data.areas.find((a) => a.id === areaId), data)) return false
   const cleared = progressOf(save, areaId).cleared
   if (!idleModeOn(data)) return cleared
   const style = playStyleOf(s)
@@ -105,7 +121,7 @@ function enterable(save: SaveData, data: GameData, area: Area, now: number | nul
   if (!isAreaUnlocked(save, area.id, data) || isAreaClosed(save, area.id, data)) return false
   if (now !== undefined && !areaOpenAt(data, area.id, now)) return false
   if (specialArea(area, data)) return false
-  const held = portalLock(save, data) ?? nightmareLock(save, data)
+  const held = portalLock(save, data) ?? nightmareLock(save, data) ?? timeRaceLock(save, data) ?? whiteoutLock(save, data)
   return !held || held.id === area.id
 }
 
@@ -226,13 +242,28 @@ export function chooseIdleBall(
  */
 export const autoOffersLead = (kind: string | null | undefined): boolean => kind === 'trainer' || kind === 'gym'
 
-/** The cards the autopilot leaves on the table: Trick or Treat (the player plays it), and a trainer's (`autoOffersLead`). */
-export const pilotShowsCard = (kind: string | null | undefined): boolean => kind === 'trick' || autoOffersLead(kind)
+/**
+ * The cards the autopilot leaves on the table: Trick or Treat, the Safari's and the Gift card (the player plays them),
+ * and a trainer's (`autoOffersLead`).
+ */
+export const pilotShowsCard = (kind: string | null | undefined): boolean =>
+  kind === 'trick' || kind === 'safari' || kind === 'gift' || autoOffersLead(kind)
 
 /** What the run stands at, as the screens see it. */
 export interface AutoView {
   phase:
-    'idle' | 'preview' | 'battle' | 'catch' | 'victory' | 'center' | 'casino' | 'trick' | 'wipe' | 'stalemate'
+    | 'idle'
+    | 'preview'
+    | 'battle'
+    | 'catch'
+    | 'victory'
+    | 'center'
+    | 'casino'
+    | 'trick'
+    | 'present'
+    | 'gift'
+    | 'wipe'
+    | 'stalemate'
   areaId: string
   /** The kind of card on the table (the preview). */
   encounter?: string | null
@@ -294,13 +325,16 @@ export function autopilotStep(
     case 'catch':
       return style === 'idle' && v.catch ? idleCatchStep(save, data, v.catch) : { do: 'wait', why: 'player' }
     case 'trick':
+    case 'present':
       return { do: 'wait', why: 'player' }
     case 'preview':
       // Trick or Treat is a catch of its own: the player plays it. A trainer's card is the page's (pilotShowsCard).
-      return pilotShowsCard(v.encounter) ? { do: 'wait', why: 'player' } : { do: 'engage' }
+      return pilotShowsCard(v.encounter) || v.encounter === 'disguise' ? { do: 'wait', why: 'player' } : { do: 'engage' }
     case 'victory':
       // Idle changes no team: "Add to team?" is answered as CONTINUE answers it, to the Box.
       return v.pendingCatch && style !== 'idle' ? { do: 'wait', why: 'player' } : { do: 'close' }
+    // A gift (docs/61 §5.3): a free one taken (its first choice), a paid one turned down.
+    case 'gift':
     case 'center':
     case 'casino':
     case 'stalemate':

@@ -1748,7 +1748,13 @@
    "trainer": 3
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
+  "legendaryBoss": [
+   {
+    "dex": 352,
+    "level": 30,
+    "roadblock": "invisible"
+   }
+  ],
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 6,
@@ -1765,13 +1771,6 @@
     "weight": 14,
     "minLevel": 31,
     "maxLevel": 37
-   },
-   {
-    "id": "16bc8568-d41e-598b-ab97-2cfbe327aee3",
-    "dex": 352,
-    "weight": 12,
-    "minLevel": 32,
-    "maxLevel": 38
    },
    {
     "id": "b5267f4e-1e1a-5788-99b8-0890180cc8fa",
@@ -1943,7 +1942,7 @@
   "regionId": "hoenn",
   "name": "Safari Zone",
   "bannerUrl": "/banners/plains.png",
-  "roundsToClear": 2,
+  "roundsToClear": null,
   "minLevel": 32,
   "maxLevel": 41,
   "encounterWeights": {
@@ -1959,8 +1958,13 @@
   "easyMode": false,
   "enemyUpgradeLevel": 7,
   "battleBackground": "grass",
-  "hidden": false,
-  "unlockConditions": null,
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "e34791dd-2b08-51ef-9c9f-be18cea0524b"
+   }
+  ],
   "gyms": [],
   "wildPool": [
    {
@@ -2149,7 +2153,10 @@
     "minQty": 100,
     "maxQty": 200
    }
-  ]
+  ],
+  "mode": {
+   "kind": "safari"
+  }
  },
  {
   "id": "88858f3b-8429-567d-90ea-fd319448d274",
@@ -2469,6 +2476,19 @@
     "unique": true,
     "minQty": 1,
     "maxQty": 1
+   },
+   {
+    "id": "56f72fe5-e1dd-59ac-9181-e25d3eb33fa7",
+    "itemKey": "poke-ball",
+    "weight": 30,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 101,
+     "minLevel": 36,
+     "maxLevel": 45
+    }
    }
   ]
  },
@@ -3131,6 +3151,14 @@
    {
     "kind": "maxLevel",
     "level": 65
+   },
+   {
+    "kind": "caught",
+    "dex": [
+     377,
+     378,
+     379
+    ]
    }
   ],
   "gyms": [],
@@ -3822,6 +3850,32 @@
     "unique": false,
     "minQty": 1,
     "maxQty": 1
+   },
+   {
+    "id": "ac4762ac-52d0-5cb5-a237-1fffa7e1e1d3",
+    "itemKey": "poke-ball",
+    "weight": 2,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 100,
+     "minLevel": 25,
+     "maxLevel": 32
+    }
+   },
+   {
+    "id": "271d2ecb-a1ec-54b6-9e66-dc1a6c118dac",
+    "itemKey": "poke-ball",
+    "weight": 2,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 101,
+     "minLevel": 33,
+     "maxLevel": 36
+    }
    }
   ]
  },
@@ -5291,6 +5345,16 @@
   ],
   "trainerPool": [
    {
+    "id": "9c66baff-5b86-518f-8951-9aa04ed07af5",
+    "trainerId": "e6c0606d-391b-588b-8102-7be00561a4fd",
+    "weight": 10
+   },
+   {
+    "id": "846ab1fc-d6e2-5eb3-867e-64ec4e0b70ff",
+    "trainerId": "425ba983-52d2-51a9-bf23-9f86c8383172",
+    "weight": 10
+   },
+   {
     "id": "0c23f2a8-eb09-5d24-857d-70ad9760d42d",
     "trainerId": "eae848bc-90c6-5de6-96dd-91091874e0b9",
     "weight": 10
@@ -5610,6 +5674,19 @@
     "unique": true,
     "minQty": 1,
     "maxQty": 1
+   },
+   {
+    "id": "cc331cf8-fc26-5b16-958a-f123495650de",
+    "itemKey": "poke-ball",
+    "weight": 32,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 100,
+     "minLevel": 18,
+     "maxLevel": 24
+    }
    }
   ]
  },
@@ -5884,7 +5961,13 @@
    "versus": 1
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
+  "legendaryBoss": [
+   {
+    "dex": 143,
+    "level": 30,
+    "roadblock": "sleeping"
+   }
+  ],
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 5,
@@ -5927,13 +6010,6 @@
     "weight": 5,
     "minLevel": 20,
     "maxLevel": 25
-   },
-   {
-    "id": "dd2a6cbd-52c7-50b4-80b6-093cbefb3740",
-    "dex": 143,
-    "weight": 2,
-    "minLevel": 30,
-    "maxLevel": 30
    },
    {
     "id": "d4b33063-e7c7-5a10-8be2-9cd7d8d5e6c6",
@@ -6297,191 +6373,30 @@
   "id": "2238f26a-2629-5f28-af07-e74cb41d5f7a",
   "orderIndex": 15,
   "regionId": "kanto",
-  "name": "Safari Zone",
+  "name": "Fuchsia City",
   "bannerUrl": "/banners/swamp.png",
-  "roundsToClear": 2,
-  "minLevel": 24,
-  "maxLevel": 33,
+  "roundsToClear": 1,
+  "minLevel": 30,
+  "maxLevel": 34,
   "encounterWeights": {
+   "wild": 0,
    "item": 2,
-   "wild": 5,
    "center": 1,
-   "trainer": 0
+   "trainer": 5,
+   "casino": 0
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 5,
-  "battleBackground": "grass",
+  "battleBackground": "default",
   "hidden": false,
   "unlockConditions": null,
   "gyms": [
    "105640d0-b406-554f-be2c-2cf40b5d2522"
   ],
-  "wildPool": [
-   {
-    "id": "1d7e4355-ff82-5f42-8d20-6a811f8d44ce",
-    "dex": 29,
-    "weight": 8,
-    "minLevel": 22,
-    "maxLevel": 30
-   },
-   {
-    "id": "6cbcb0d1-f9bf-54a0-afa9-068a45da4554",
-    "dex": 30,
-    "weight": 5,
-    "minLevel": 28,
-    "maxLevel": 31
-   },
-   {
-    "id": "074ccfac-3c86-5d67-a2bd-971672a250f2",
-    "dex": 32,
-    "weight": 8,
-    "minLevel": 22,
-    "maxLevel": 30
-   },
-   {
-    "id": "a8c7c4d4-c313-5af0-a531-e33257e5e7ef",
-    "dex": 33,
-    "weight": 5,
-    "minLevel": 28,
-    "maxLevel": 31
-   },
-   {
-    "id": "f9e6b9f5-54fa-586d-a775-920d7d45e9da",
-    "dex": 102,
-    "weight": 10,
-    "minLevel": 24,
-    "maxLevel": 28
-   },
-   {
-    "id": "718a6e85-f95a-504d-8684-6f9e930dcfe9",
-    "dex": 111,
-    "weight": 8,
-    "minLevel": 25,
-    "maxLevel": 28
-   },
-   {
-    "id": "f963f888-819f-5a7b-9284-8a609e529ba4",
-    "dex": 46,
-    "weight": 6,
-    "minLevel": 22,
-    "maxLevel": 26
-   },
-   {
-    "id": "612d8a09-1586-5691-8bce-0897dc71cd25",
-    "dex": 47,
-    "weight": 4,
-    "minLevel": 27,
-    "maxLevel": 30
-   },
-   {
-    "id": "69d33dfb-2c09-548b-99eb-ad23addc507a",
-    "dex": 48,
-    "weight": 6,
-    "minLevel": 22,
-    "maxLevel": 28
-   },
-   {
-    "id": "fe6af96b-c1af-5d15-af20-3e062e3874c6",
-    "dex": 49,
-    "weight": 4,
-    "minLevel": 30,
-    "maxLevel": 32
-   },
-   {
-    "id": "c6af43e6-b568-5c93-ac6a-e826406116ba",
-    "dex": 84,
-    "weight": 6,
-    "minLevel": 26,
-    "maxLevel": 28
-   },
-   {
-    "id": "fdd5158b-d2c3-5a3b-ae72-3a88a2f6e151",
-    "dex": 113,
-    "weight": 2,
-    "minLevel": 23,
-    "maxLevel": 28
-   },
-   {
-    "id": "37f0c64e-09e0-5011-9a2a-eb774e9285c6",
-    "dex": 115,
-    "weight": 2,
-    "minLevel": 25,
-    "maxLevel": 28
-   },
-   {
-    "id": "fc1afc74-4f89-5923-8bd7-e033afeb7268",
-    "dex": 123,
-    "weight": 2,
-    "minLevel": 23,
-    "maxLevel": 28
-   },
-   {
-    "id": "e1751896-ad3e-5dec-91f0-9d91ad9fa8df",
-    "dex": 127,
-    "weight": 2,
-    "minLevel": 23,
-    "maxLevel": 28
-   },
-   {
-    "id": "46f4180c-b531-56e3-b6ad-84ef02ee148d",
-    "dex": 128,
-    "weight": 2,
-    "minLevel": 25,
-    "maxLevel": 28
-   },
-   {
-    "id": "dc0b3c05-1080-5eeb-b330-64d08a85601b",
-    "dex": 147,
-    "weight": 2,
-    "minLevel": 15,
-    "maxLevel": 25
-   },
-   {
-    "id": "f797e097-8949-5c94-86c8-00b67df58a7b",
-    "dex": 148,
-    "weight": 1,
-    "minLevel": 25,
-    "maxLevel": 30
-   },
-   {
-    "id": "5f61d58d-9c2d-5178-8731-51634a962523",
-    "dex": 79,
-    "weight": 5,
-    "minLevel": 20,
-    "maxLevel": 25
-   },
-   {
-    "id": "42391aba-8fe2-5bc2-a529-7967edf46da7",
-    "dex": 54,
-    "weight": 5,
-    "minLevel": 20,
-    "maxLevel": 25
-   },
-   {
-    "id": "c510dc0e-8b27-58bc-818f-ab4603c87c9d",
-    "dex": 119,
-    "weight": 3,
-    "minLevel": 25,
-    "maxLevel": 30
-   },
-   {
-    "id": "00601b9e-944a-5b1e-888b-06a322043e8d",
-    "dex": 60,
-    "weight": 5,
-    "minLevel": 20,
-    "maxLevel": 25
-   },
-   {
-    "id": "cf3dbb9e-4510-5f10-8eb4-79929418732b",
-    "dex": 129,
-    "weight": 5,
-    "minLevel": 5,
-    "maxLevel": 15
-   }
-  ],
+  "wildPool": [],
   "trainerPool": [
    {
     "id": "9e4eedbd-5435-5a97-a033-935d260dfbba",
@@ -7800,7 +7715,13 @@
    "versus": 1
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
+  "legendaryBoss": [
+   {
+    "dex": 143,
+    "level": 15,
+    "roadblock": "sleeping"
+   }
+  ],
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 2,
@@ -7878,13 +7799,6 @@
     "weight": 6,
     "minLevel": 12,
     "maxLevel": 15
-   },
-   {
-    "id": "fe966699-73e0-51c4-84d2-b1e00a73a3f4",
-    "dex": 143,
-    "weight": 2,
-    "minLevel": 15,
-    "maxLevel": 17
    }
   ],
   "trainerPool": [
@@ -10034,6 +9948,19 @@
     "unique": false,
     "minQty": 50,
     "maxQty": 100
+   },
+   {
+    "id": "8d04b152-b23b-5c37-b009-de0bf1055105",
+    "itemKey": "poke-ball",
+    "weight": 32,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 100,
+     "minLevel": 27,
+     "maxLevel": 29
+    }
    }
   ]
  },
@@ -16262,7 +16189,13 @@
    "versus": 1
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
+  "legendaryBoss": [
+   {
+    "dex": 185,
+    "level": 20,
+    "roadblock": "tree"
+   }
+  ],
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 4,
@@ -16351,13 +16284,6 @@
     "minLevel": 17,
     "maxLevel": 24,
     "time": "day"
-   },
-   {
-    "id": "29d3e958-1b64-5c9c-8fd4-ac8c7e2d390d",
-    "dex": 185,
-    "weight": 3,
-    "minLevel": 20,
-    "maxLevel": 24
    },
    {
     "id": "e0d4735f-b286-5784-9f2c-1893639c1231",
@@ -21691,6 +21617,32 @@
     "unique": true,
     "minQty": 1,
     "maxQty": 1
+   },
+   {
+    "id": "3278e5ac-76c1-5399-8619-397dc62edcd0",
+    "itemKey": "poke-ball",
+    "weight": 16,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 100,
+     "minLevel": 33,
+     "maxLevel": 39
+    }
+   },
+   {
+    "id": "30953001-6060-5359-a922-36c7ea4c0a66",
+    "itemKey": "poke-ball",
+    "weight": 16,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 101,
+     "minLevel": 35,
+     "maxLevel": 41
+    }
    }
   ]
  },
@@ -21983,6 +21935,21 @@
   ],
   "trainerPool": [
    {
+    "id": "302c76a0-c850-5959-8afb-7520d631c6ed",
+    "trainerId": "8d833c86-04c0-51c3-9de0-d3e233bf6fa0",
+    "weight": 10
+   },
+   {
+    "id": "355cd36f-1d12-5e9e-836e-a5e94d5be9a8",
+    "trainerId": "17525632-f090-55aa-95a9-dad4d5189baa",
+    "weight": 10
+   },
+   {
+    "id": "33303310-20f2-51b4-87f1-ffa2e12978a1",
+    "trainerId": "d6833d16-3963-5c2c-9092-782b64d6eb90",
+    "weight": 10
+   },
+   {
     "id": "7b0ff4d5-9fc1-543e-9a15-d125d1fd21d7",
     "trainerId": "b076750d-a6e3-5784-872f-17eaf90ef57f",
     "weight": 10
@@ -22055,16 +22022,16 @@
   "regionId": "kalos",
   "name": "The Friend Safari",
   "bannerUrl": "/banners/plains.png#flip",
-  "roundsToClear": 1,
+  "roundsToClear": null,
   "minLevel": 60,
   "maxLevel": 76,
   "encounterWeights": {
    "item": 1,
    "wild": 6,
    "casino": 0,
-   "center": 1,
-   "trainer": 2,
-   "versus": 1
+   "center": 0,
+   "trainer": 0,
+   "versus": 0
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -23718,25 +23685,30 @@
     "weight": 10,
     "minLevel": 60,
     "maxLevel": 76
-   }
-  ],
-  "trainerPool": [
-   {
-    "id": "302c76a0-c850-5959-8afb-7520d631c6ed",
-    "trainerId": "8d833c86-04c0-51c3-9de0-d3e233bf6fa0",
-    "weight": 10
    },
    {
-    "id": "355cd36f-1d12-5e9e-836e-a5e94d5be9a8",
-    "trainerId": "17525632-f090-55aa-95a9-dad4d5189baa",
-    "weight": 10
+    "id": "494d86ab-6221-5002-8c18-2c5fb23fa97c",
+    "dex": 1,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
    },
    {
-    "id": "33303310-20f2-51b4-87f1-ffa2e12978a1",
-    "trainerId": "d6833d16-3963-5c2c-9092-782b64d6eb90",
-    "weight": 10
+    "id": "500fe10a-8d09-5dc9-a554-cef31bc92f48",
+    "dex": 4,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "5db429ce-36e1-537e-816a-ab5f4de2e2b0",
+    "dex": 7,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
    }
   ],
+  "trainerPool": [],
   "lootPool": [
    {
     "id": "fe5ccc3f-f455-5ee0-bcf0-203793de34b7",
@@ -23786,7 +23758,10 @@
     "minQty": 200,
     "maxQty": 400
    }
-  ]
+  ],
+  "mode": {
+   "kind": "safari"
+  }
  },
  {
   "id": "3a1aeecf-7492-5b10-a8ca-909a574d61f5",
@@ -28249,7 +28224,9 @@
   "battleBackground": "grass",
   "hidden": false,
   "unlockConditions": null,
-  "gyms": [],
+  "gyms": [
+   "8cebb4a0-7553-5d00-904d-0461d1389075"
+  ],
   "wildPool": [
    {
     "id": "71e9ff96-3617-5a9d-bcb8-76c517bd8628",
@@ -29297,7 +29274,9 @@
   "battleBackground": "sea",
   "hidden": false,
   "unlockConditions": null,
-  "gyms": [],
+  "gyms": [
+   "23c7789e-eb83-55e8-96bb-9bb2097fe93d"
+  ],
   "wildPool": [
    {
     "id": "65049284-b757-5d69-bd17-63e970fff086",
@@ -30396,16 +30375,16 @@
   "regionId": "sinnoh",
   "name": "The Great Marsh",
   "bannerUrl": "/banners/swamp.png#flip",
-  "roundsToClear": 1,
+  "roundsToClear": null,
   "minLevel": 30,
   "maxLevel": 38,
   "encounterWeights": {
    "item": 1,
    "wild": 3,
    "casino": 0,
-   "center": 1,
-   "trainer": 2,
-   "versus": 1
+   "center": 0,
+   "trainer": 0,
+   "versus": 0
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -30413,8 +30392,13 @@
   "easyMode": false,
   "enemyUpgradeLevel": 6,
   "battleBackground": "water",
-  "hidden": false,
-  "unlockConditions": null,
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "67b3b539-dd5b-5c9a-96d4-60e4d8b8d188"
+   }
+  ],
   "gyms": [],
   "wildPool": [
    {
@@ -30481,18 +30465,7 @@
     "maxLevel": 38
    }
   ],
-  "trainerPool": [
-   {
-    "id": "9c66baff-5b86-518f-8951-9aa04ed07af5",
-    "trainerId": "e6c0606d-391b-588b-8102-7be00561a4fd",
-    "weight": 10
-   },
-   {
-    "id": "846ab1fc-d6e2-5eb3-867e-64ec4e0b70ff",
-    "trainerId": "425ba983-52d2-51a9-bf23-9f86c8383172",
-    "weight": 10
-   }
-  ],
+  "trainerPool": [],
   "lootPool": [
    {
     "id": "b8d0947a-aa7d-5d44-8ac2-b6d5dea41ba3",
@@ -30582,7 +30555,10 @@
     "minQty": 100,
     "maxQty": 200
    }
-  ]
+  ],
+  "mode": {
+   "kind": "safari"
+  }
  },
  {
   "id": "110c8267-ee16-5a44-960f-620d6055d6ca",
@@ -32664,7 +32640,9 @@
   "battleBackground": "default",
   "hidden": false,
   "unlockConditions": null,
-  "gyms": [],
+  "gyms": [
+   "65e861d9-c327-56f8-aa34-bd8710000c3a"
+  ],
   "wildPool": [
    {
     "id": "da05e9f0-83e3-5fc5-8cff-b34e537094db",
@@ -33091,7 +33069,9 @@
   "battleBackground": "rock",
   "hidden": false,
   "unlockConditions": null,
-  "gyms": [],
+  "gyms": [
+   "9f29379a-7508-5443-8710-c533da46baa5"
+  ],
   "wildPool": [
    {
     "id": "64da1426-441f-54aa-8332-bb5f66a13677",
@@ -33304,7 +33284,9 @@
   "battleBackground": "rock",
   "hidden": false,
   "unlockConditions": null,
-  "gyms": [],
+  "gyms": [
+   "ce72ec00-480b-588e-9ffb-178257855a46"
+  ],
   "wildPool": [
    {
     "id": "4880af9b-5941-5be4-934b-9ae1568a0da1",
@@ -34314,6 +34296,7 @@
   "hidden": false,
   "unlockConditions": null,
   "gyms": [
+   "7278511c-319e-5fc1-a053-0be766cb70fd",
    "c6106307-fd9e-50e1-aa2c-8edd1069cb8f"
   ],
   "wildPool": [
@@ -34535,7 +34518,9 @@
   "battleBackground": "rock",
   "hidden": false,
   "unlockConditions": null,
-  "gyms": [],
+  "gyms": [
+   "a8411dd0-0c2b-5f0f-ac1a-0556001dc88d"
+  ],
   "wildPool": [
    {
     "id": "4bab38e2-91db-520f-b4cc-d45b7bee9a6a",
@@ -38231,6 +38216,19 @@
     "unique": false,
     "minQty": 50,
     "maxQty": 100
+   },
+   {
+    "id": "35c80365-6e31-5113-a33a-d0cb4e0e6bfa",
+    "itemKey": "poke-ball",
+    "weight": 32,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 590,
+     "minLevel": 26,
+     "maxLevel": 31
+    }
    }
   ]
  },
@@ -51056,7 +51054,13 @@
    "trainer": 2
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
+  "legendaryBoss": [
+   {
+    "dex": 950,
+    "level": 16,
+    "titan": {}
+   }
+  ],
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 1,
@@ -51456,7 +51460,13 @@
    "trainer": 2
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
+  "legendaryBoss": [
+   {
+    "dex": 962,
+    "level": 20,
+    "titan": {}
+   }
+  ],
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 3,
@@ -51861,7 +51871,13 @@
    "trainer": 2
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
+  "legendaryBoss": [
+   {
+    "dex": 968,
+    "level": 29,
+    "titan": {}
+   }
+  ],
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 4,
@@ -52093,7 +52109,15 @@
    "trainer": 2
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
+  "legendaryBoss": [
+   {
+    "dex": 984,
+    "level": 33,
+    "titan": {
+     "versionDex": 990
+    }
+   }
+  ],
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 4,
@@ -53857,7 +53881,18 @@
    "versus": 1
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
+  "legendaryBoss": [
+   {
+    "dex": 977,
+    "level": 56,
+    "titan": {
+     "partner": {
+      "dex": 978,
+      "level": 57
+     }
+    }
+   }
+  ],
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -58071,6 +58106,19 @@
     "unique": false,
     "minQty": 100,
     "maxQty": 200
+   },
+   {
+    "id": "2f62d186-c3bd-5d48-8749-8d09c4238542",
+    "itemKey": "poke-ball",
+    "weight": 32,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 590,
+     "minLevel": 30,
+     "maxLevel": 35
+    }
    }
   ]
  },
@@ -58619,6 +58667,19 @@
     "unique": false,
     "minQty": 100,
     "maxQty": 200
+   },
+   {
+    "id": "ef9fdc57-ba18-5810-8b43-98d62ff05ed9",
+    "itemKey": "poke-ball",
+    "weight": 32,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 591,
+     "minLevel": 35,
+     "maxLevel": 40
+    }
    }
   ]
  },
@@ -59046,6 +59107,19 @@
     "unique": false,
     "minQty": 200,
     "maxQty": 400
+   },
+   {
+    "id": "ff71b70c-4aaf-55d6-b6e1-f9f6ed2ff284",
+    "itemKey": "poke-ball",
+    "weight": 29,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1,
+    "disguise": {
+     "dex": 591,
+     "minLevel": 60,
+     "maxLevel": 68
+    }
    }
   ]
  },
@@ -61202,5 +61276,237 @@
     "maxQty": 400
    }
   ]
+ },
+ {
+  "id": "38fc3c59-6f8d-5aa8-a299-a5bb949254b2",
+  "orderIndex": 958,
+  "regionId": "kanto",
+  "name": "Safari Zone",
+  "bannerUrl": "/banners/swamp.png",
+  "roundsToClear": null,
+  "minLevel": 24,
+  "maxLevel": 33,
+  "encounterWeights": {
+   "wild": 6,
+   "item": 2,
+   "center": 0,
+   "trainer": 0,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 5,
+  "battleBackground": "grass",
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "2238f26a-2629-5f28-af07-e74cb41d5f7a"
+   }
+  ],
+  "gyms": [],
+  "wildPool": [
+   {
+    "id": "1d7e4355-ff82-5f42-8d20-6a811f8d44ce",
+    "dex": 29,
+    "weight": 8,
+    "minLevel": 22,
+    "maxLevel": 30
+   },
+   {
+    "id": "6cbcb0d1-f9bf-54a0-afa9-068a45da4554",
+    "dex": 30,
+    "weight": 5,
+    "minLevel": 28,
+    "maxLevel": 31
+   },
+   {
+    "id": "074ccfac-3c86-5d67-a2bd-971672a250f2",
+    "dex": 32,
+    "weight": 8,
+    "minLevel": 22,
+    "maxLevel": 30
+   },
+   {
+    "id": "a8c7c4d4-c313-5af0-a531-e33257e5e7ef",
+    "dex": 33,
+    "weight": 5,
+    "minLevel": 28,
+    "maxLevel": 31
+   },
+   {
+    "id": "f9e6b9f5-54fa-586d-a775-920d7d45e9da",
+    "dex": 102,
+    "weight": 10,
+    "minLevel": 24,
+    "maxLevel": 28
+   },
+   {
+    "id": "718a6e85-f95a-504d-8684-6f9e930dcfe9",
+    "dex": 111,
+    "weight": 8,
+    "minLevel": 25,
+    "maxLevel": 28
+   },
+   {
+    "id": "f963f888-819f-5a7b-9284-8a609e529ba4",
+    "dex": 46,
+    "weight": 6,
+    "minLevel": 22,
+    "maxLevel": 26
+   },
+   {
+    "id": "612d8a09-1586-5691-8bce-0897dc71cd25",
+    "dex": 47,
+    "weight": 4,
+    "minLevel": 27,
+    "maxLevel": 30
+   },
+   {
+    "id": "69d33dfb-2c09-548b-99eb-ad23addc507a",
+    "dex": 48,
+    "weight": 6,
+    "minLevel": 22,
+    "maxLevel": 28
+   },
+   {
+    "id": "fe6af96b-c1af-5d15-af20-3e062e3874c6",
+    "dex": 49,
+    "weight": 4,
+    "minLevel": 30,
+    "maxLevel": 32
+   },
+   {
+    "id": "c6af43e6-b568-5c93-ac6a-e826406116ba",
+    "dex": 84,
+    "weight": 6,
+    "minLevel": 26,
+    "maxLevel": 28
+   },
+   {
+    "id": "fdd5158b-d2c3-5a3b-ae72-3a88a2f6e151",
+    "dex": 113,
+    "weight": 2,
+    "minLevel": 23,
+    "maxLevel": 28
+   },
+   {
+    "id": "37f0c64e-09e0-5011-9a2a-eb774e9285c6",
+    "dex": 115,
+    "weight": 2,
+    "minLevel": 25,
+    "maxLevel": 28
+   },
+   {
+    "id": "fc1afc74-4f89-5923-8bd7-e033afeb7268",
+    "dex": 123,
+    "weight": 2,
+    "minLevel": 23,
+    "maxLevel": 28
+   },
+   {
+    "id": "e1751896-ad3e-5dec-91f0-9d91ad9fa8df",
+    "dex": 127,
+    "weight": 2,
+    "minLevel": 23,
+    "maxLevel": 28
+   },
+   {
+    "id": "46f4180c-b531-56e3-b6ad-84ef02ee148d",
+    "dex": 128,
+    "weight": 2,
+    "minLevel": 25,
+    "maxLevel": 28
+   },
+   {
+    "id": "dc0b3c05-1080-5eeb-b330-64d08a85601b",
+    "dex": 147,
+    "weight": 2,
+    "minLevel": 15,
+    "maxLevel": 25
+   },
+   {
+    "id": "f797e097-8949-5c94-86c8-00b67df58a7b",
+    "dex": 148,
+    "weight": 1,
+    "minLevel": 25,
+    "maxLevel": 30
+   },
+   {
+    "id": "5f61d58d-9c2d-5178-8731-51634a962523",
+    "dex": 79,
+    "weight": 5,
+    "minLevel": 20,
+    "maxLevel": 25
+   },
+   {
+    "id": "42391aba-8fe2-5bc2-a529-7967edf46da7",
+    "dex": 54,
+    "weight": 5,
+    "minLevel": 20,
+    "maxLevel": 25
+   },
+   {
+    "id": "c510dc0e-8b27-58bc-818f-ab4603c87c9d",
+    "dex": 119,
+    "weight": 3,
+    "minLevel": 25,
+    "maxLevel": 30
+   },
+   {
+    "id": "00601b9e-944a-5b1e-888b-06a322043e8d",
+    "dex": 60,
+    "weight": 5,
+    "minLevel": 20,
+    "maxLevel": 25
+   },
+   {
+    "id": "cf3dbb9e-4510-5f10-8eb4-79929418732b",
+    "dex": 129,
+    "weight": 5,
+    "minLevel": 5,
+    "maxLevel": 15
+   }
+  ],
+  "trainerPool": [],
+  "lootPool": [
+   {
+    "id": "dcc370fd-62b2-53f9-aa28-49aa3134c009",
+    "itemKey": "poke-ball",
+    "weight": 4,
+    "unique": false,
+    "minQty": 2,
+    "maxQty": 3
+   },
+   {
+    "id": "cb20f0b9-da4b-594a-a678-450d03ed770b",
+    "itemKey": "great-ball",
+    "weight": 3,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "c11f996f-f818-5b78-a861-35f6faab7693",
+    "itemKey": "ultra-ball",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "73301700-6705-5c69-a182-7aa6e9a72dc1",
+    "itemKey": "money",
+    "weight": 3,
+    "unique": false,
+    "minQty": 100,
+    "maxQty": 300
+   }
+  ],
+  "mode": {
+   "kind": "safari"
+  }
  }
 ]

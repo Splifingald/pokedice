@@ -15,6 +15,7 @@ export const config = { schedule: '*/5 * * * *' }
 
 /** A push the browser has missed for this long isn't worth showing any more. */
 const TTL_SECONDS = 6 * 3600
+const PUSH_TIMEOUT_MS = 5000
 
 export default async function handler(): Promise<Response> {
   const env = process.env
@@ -45,7 +46,10 @@ export default async function handler(): Promise<Response> {
       if (error) throw new Error(`push_due: ${error.message}`)
       return (data ?? []) as DueRow[]
     },
-    push: (sub, body) => webpush.sendNotification(sub, body, { TTL: TTL_SECONDS, urgency: 'normal' }),
+    // A push service that never answers must not hold up the run (Netlify stops it after about 30 s, and every notice it
+    // claimed would be lost): 5 s each at most (docs/63).
+    push: (sub, body) =>
+      webpush.sendNotification(sub, body, { TTL: TTL_SECONDS, urgency: 'normal', timeout: PUSH_TIMEOUT_MS }),
     report: async (ok, gone) => {
       const { error } = await db.rpc('push_report', { p_ok: ok, p_gone: gone })
       if (error) console.warn(`[push-send] push_report: ${error.message}`)

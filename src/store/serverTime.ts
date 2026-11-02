@@ -5,7 +5,7 @@
 import { useEffect } from 'react'
 import { create } from 'zustand'
 import { getSupabase } from '@/lib/supabase'
-import { anchorClock } from './clock'
+import { anchorClock, trustedNow } from './clock'
 import { useNow } from './hooks'
 
 interface ServerTime {
@@ -68,17 +68,23 @@ export async function syncServerTime(): Promise<void> {
   useServerTime.setState({ offset: server - (before + after) / 2 })
 }
 
-/** The real time now, or null while unknown. */
+/**
+ * The real time now, or null while unknown: the last reading carried on the page's steady clock (trustedNow), so moving
+ * the device's clock between two readings changes nothing (docs/63). The offset stands in only where no reading set the
+ * anchor (tests that set it by hand).
+ */
 export function serverNow(): number | null {
   const { offset } = useServerTime.getState()
-  return offset == null ? null : Date.now() + offset
+  if (offset == null) return null
+  return trustedNow() ?? Date.now() + offset
 }
 
 /** The real time, re-read every `ms`; null while unknown. */
 export function useServerNow(ms = 1000): number | null {
   const now = useNow(ms)
   const offset = useServerTime((s) => s.offset)
-  return offset == null ? null : now + offset
+  if (offset == null) return null
+  return trustedNow() ?? now + offset
 }
 
 const RESYNC_MS = 10 * 60_000

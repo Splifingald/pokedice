@@ -1,4 +1,5 @@
 // Items: where each one can be used, what the Poké Mart sells, and the per-area loot decks behind item finds.
+import { lootDealable } from './disguises'
 import { shuffle } from './deal'
 import { eventOpenTo } from './events'
 import { pityChance } from './pity'
@@ -116,7 +117,8 @@ export function lootPoolFor(area: Area, progress: AreaProgress, data: GameData):
     (e) =>
       e.weight > 0 &&
       (e.itemKey === MONEY || (!!data.items[e.itemKey] && (itemOn(data, e.itemKey) || !!worldOfArea(data, area)))) &&
-      !(e.unique && found.has(e.id)),
+      !(e.unique && found.has(e.id)) &&
+      lootDealable(e, data),
   )
 }
 

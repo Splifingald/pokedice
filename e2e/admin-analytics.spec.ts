@@ -167,3 +167,63 @@ test('Churn by area: fetched on demand, in game order', async ({ page }) => {
   await expect(panel.getByText('4 churned with no known area', { exact: true })).toBeVisible()
   expect(calls.filter((c) => c.includes('/rpc/analytics_churn'))).toHaveLength(1)
 })
+
+test('Suspicious saves: fetched on demand, the banned hidden, a row opens the player', async ({ page }) => {
+  test.setTimeout(120_000)
+  const row = (o: Record<string, unknown>) => ({
+    realm: 'main',
+    box: 60,
+    shinies: 2,
+    lv100: 0,
+    gold: 100,
+    candies: 0,
+    masters: 0,
+    top_stack: 10,
+    days: 10,
+    first_day: localDay(-10),
+    dupes: 0,
+    dex_over: false,
+    future: false,
+    banned: false,
+    ...o,
+  })
+  const calls = await openAnalytics(page, {
+    analytics_retention: {},
+    // As the database orders them: the most reasons first.
+    admin_suspicious: [
+      row({
+        user_id: '00000000-0000-4000-8000-0000000000a1',
+        name: 'RICH',
+        box: 9229,
+        gold: 10_000_520,
+        reasons: ['box', 'gold', 'items'],
+      }),
+      row({
+        user_id: '00000000-0000-4000-8000-0000000000a2',
+        name: 'GONE',
+        banned: true,
+        reasons: ['levels', 'shinies'],
+      }),
+      row({ user_id: '00000000-0000-4000-8000-0000000000a3', name: 'KEEPER', dupes: 1, reasons: ['trade'] }),
+    ],
+  })
+  const panel = page.getByRole('region', { name: 'Suspicious saves' })
+  await expect(panel).toBeVisible({ timeout: 30_000 })
+  // Opening the tab doesn't ask: it reads every save.
+  await page.waitForTimeout(1000)
+  expect(calls.filter((c) => c.includes('/rpc/admin_suspicious'))).toHaveLength(0)
+
+  await panel.getByRole('button', { name: 'Fetch' }).click()
+  const rows = panel.locator('tbody tr')
+  await expect(rows).toHaveCount(2)
+  await expect(rows.first()).toContainText('RICH')
+  await expect(rows.first()).toContainText('Box too big for the days played')
+  await expect(rows.first()).toContainText('9,229')
+  await expect(rows.nth(1)).toContainText('Still holds a Pokémon it traded away')
+  await panel.getByLabel('Show the banned (1)').check()
+  await expect(rows).toHaveCount(3)
+  expect(calls.filter((c) => c.includes('/rpc/admin_suspicious'))).toHaveLength(1)
+
+  await panel.getByRole('button', { name: 'KEEPER' }).click()
+  await expect(page.getByRole('region', { name: "KEEPER's profile" })).toBeVisible()
+})

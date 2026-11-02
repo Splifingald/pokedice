@@ -45,6 +45,11 @@ import {
   type TrickPlaced,
   type TrickState,
   type TrickStep,
+  type GiftItem,
+  type GiftState,
+  type GiftStep,
+  type TracksBush,
+  type TracksPrint,
 } from '@/engine'
 import { activeSlot, DEFAULT_SETTINGS, readSave, readSettings, scheduleWrite, writeSettings, type Settings } from '@/save/storage'
 import { trustedNow } from './clock'
@@ -61,7 +66,47 @@ export interface Toast {
   tone: ToastTone
 }
 
-export type RunPhase = 'idle' | 'preview' | 'battle' | 'catch' | 'victory' | 'center' | 'casino' | 'trick' | 'wipe' | 'stalemate'
+export type RunPhase =
+  | 'idle'
+  | 'preview'
+  | 'battle'
+  | 'catch'
+  | 'victory'
+  | 'center'
+  | 'casino'
+  | 'trick'
+  | 'present'
+  | 'gift'
+  | 'wipe'
+  | 'stalemate'
+
+/**
+ * A Gift card under way (docs/64 §4.0), or a boss's present (§4.2): the present, the last tap for the screen to play,
+ * what OPEN gave, and what came out of it when it broke or burst (the fight that follows).
+ */
+export interface PresentRun {
+  /** One per present: the screen starts afresh for each. */
+  id: number
+  state: GiftState
+  /** The last MAKE IT BIGGER, for the screen to play (null before the first, and once opened). */
+  last: GiftStep | null
+  /** Opened: what went into the bag (the save has it already). */
+  got: GiftItem[] | null
+  /** Broken or burst: the wild Pokémon or the boss that came out, fought once its moment has played. */
+  out: Encounter | null
+}
+
+/** A gift being given (docs/61 §5.3): which one, and once taken what came of it (the screen's result). */
+export interface GiftRun {
+  id: string
+  received: {
+    dex: number
+    shiny: boolean
+    placed: 'team' | 'box' | 'replaced' | 'merged' | 'egg'
+    isNew: boolean
+    replacedLevel?: number
+  } | null
+}
 
 /** Trick or Treat under way (docs/29): the ghost and its gauge, the last Treat or Trick Ball to play, and the catch. */
 export interface TrickRun {
@@ -148,8 +193,44 @@ export interface RunState {
   nightmarePopup?: boolean
   /** Darkrai's strike has landed and its moment is still on the area's page (until CONTINUE: the next round). */
   nightmareStruck?: boolean
+  /**
+   * The race's way in has shown its pop-up (docs/64 §4.4): back from the Team screen, it shows again at once over the
+   * intro's end, with no intro and no tap to wait for (as the Distortion World's portalPopup).
+   */
+  racePopup?: boolean
+  /**
+   * A try of the race just ended (docs/64 §4.4): the clock reached 0:00 or the team was K.O., with the fights it had won
+   * (the wipe card says so).
+   */
+  raceLost?: { reason: 'time' | 'wipe'; fights: number; total: number } | null
+  /** A wipe just ended a whiteout try (docs/64 §4.3): the waves it had cleared, lost now (the wipe card says so). */
+  whiteoutLost?: number | null
+  /**
+   * The whiteout's way in has shown its pop-up: back from the Team screen, it shows again at once over the intro's
+   * end, with no intro and no tap to wait for (as the nightmare's nightmarePopup).
+   */
+  whiteoutPopup?: boolean
+  /** A wipe just sent the player back to the glade's edge (docs/64 §4.1): the wipe card says its cleared rounds stay. */
+  tracksWiped?: boolean
+  /**
+   * Tracks in the Snow's way in has shown its pop-up (docs/64 §4.1): back from the Team screen, it shows again at once
+   * over the intro's end (as the nightmare's nightmarePopup).
+   */
+  tracksPopup?: boolean
+  /**
+   * The bush just opened in the glade (docs/64 §4.1), for its moment on the glade (it parts, shows what it held and its
+   * prints; the snow falls after the last tap). With an encounter, the glade shows it first: `meetBush` then brings
+   * the fight, the find or the cabin. `id` tells one opening from the next.
+   */
+  tracksBush?: { id: number; index: number; bush: TracksBush; print: TracksPrint | null; snowfall: boolean } | null
   /** Trick or Treat under way (docs/29). */
   trick?: TrickRun | null
+  /** A Gift card or a boss's present under way (docs/64 §4.0, §4.2). */
+  present?: PresentRun | null
+  /** A Pokémon posing as a find has sprung out (docs/61 §3): the find's screen shows it, FIGHT to go. */
+  sprung?: boolean
+  /** A gift being given (docs/61 §5.3), phase 'gift'. */
+  gift?: GiftRun | null
   /** The fight is on the screen, the player's side not out yet: one tap on a Pokémon sends it (the rework). */
   pickLead?: boolean
   /**
@@ -464,7 +545,7 @@ export function commitSave(next: SaveData | null, opts: { silent?: boolean; keep
   if (!opts.silent) for (const fn of saveListeners) fn(stamped, prev)
   for (const p of settled?.revived ?? [])
     pushToast(
-      t(p.shiny ? 'ui.toast.revivedFossilShiny' : 'ui.toast.revivedFossil', {
+      t(p.egg ? (p.shiny ? 'ui.toast.hatchedGiftShiny' : 'ui.toast.hatchedGift') : p.shiny ? 'ui.toast.revivedFossilShiny' : 'ui.toast.revivedFossil', {
         name: data.species[p.dex]?.name ?? `#${p.dex}`,
       }),
       'good',

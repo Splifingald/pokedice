@@ -29,6 +29,8 @@ export interface BossScene<X> {
   aura: readonly [string, string, string, string]
   /** Its flash on the reveal. */
   flash?: string
+  /** The two rings of light bursting from it on the reveal; false: none (a scene whose own burst says it). */
+  rings?: boolean
   setup(st: Stage, r: Rng): X
   step(s: Stage & X, t: number, dt: number): void
   /** The scene behind the legend; `k` how much of it is left (1 until it dissolves into the battle's ground). */
@@ -114,8 +116,10 @@ export function bossCinema<X>(spec: BossScene<X>): BossCinema {
           outline: t < T.out ? (Math.floor(t * 8) % 2 ? A[1] : A[2]) : undefined,
         })
       const cy = s.L.foe.y - fz.h / 2
-      burstRing(g, s.L.foe.x, cy, span(t, R, R + 0.5), 100, 2, A[0])
-      burstRing(g, s.L.foe.x, cy, span(t, R + 0.1, R + 0.6), 120, 2, A[2])
+      if (spec.rings !== false) {
+        burstRing(g, s.L.foe.x, cy, span(t, R, R + 0.5), 100, 2, A[0])
+        burstRing(g, s.L.foe.x, cy, span(t, R + 0.1, R + 0.6), 120, 2, A[2])
+      }
       if (t >= T.send && t < T.pop) {
         const q = span(t, T.send, T.pop)
         const b = quad(

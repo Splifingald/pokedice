@@ -135,7 +135,13 @@ export function PlayerMessages({
           className="copy w-full resize-y border-[3px] border-edge bg-panel p-2 text-lg leading-snug"
         />
       </label>
-      <GiftEditor data={data} gifts={gifts} onChange={setGifts} save={save} />
+      <GiftEditor
+        data={data}
+        gifts={gifts}
+        onChange={setGifts}
+        save={save}
+        scales={target.userId ? 'account' : 'guest'}
+      />
       <div className="flex justify-end">
         <PixelButton size="sm" variant="primary" disabled={!ready} onClick={() => void send()}>
           <PixelIcon name="mail" size={18} /> Send to {name}

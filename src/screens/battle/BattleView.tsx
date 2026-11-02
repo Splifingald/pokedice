@@ -42,9 +42,15 @@ import {
   teamOf,
   type Side,
   inPortalRun,
+  portalModeOf,
+  portalSkin,
   inNightmare,
+  timeRaceBattleSpeed,
+  inWhiteout,
+  tracksFound,
   legendCinemaOn,
   championCinemaOn,
+  roadblockOf,
 } from '@/engine'
 import { playCry } from '@/audio/cries'
 import { feelSound } from '@/audio/feel'
@@ -62,12 +68,16 @@ import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { TypeMatchups } from '@/components/TypeMatchups'
 import { BattleDayTime } from '@/components/DayNight'
+import { BattleWeather, WeatherLayer } from '@/components/Weather'
 import { pictureOf, versusPicture } from '@/fx/areaArt'
 import { ballOfItem } from '@/fx/scenes'
 import { loadPicture, loadSprite, pictureKey, spriteKey } from '@/fx/sprites'
 import { catchTimeline } from '@/fx/timelines/catch'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { BOSS_CINEMAS } from '@/fx/timelines/cinema'
+import { abomasnowCinema } from '@/fx/timelines/cinema/abomasnow'
+import { stantlerCinema } from '@/fx/timelines/cinema/stantler'
+import { t as say } from '@/i18n'
 import { championCinemaFor } from '@/fx/timelines/cinema/champions'
 import { useT } from '@/i18n/react'
 import { effectText, zMoveText } from '@/i18n/text'
@@ -76,6 +86,7 @@ import { useHoldFullscreen } from '@/lib/fullscreen'
 import { haptic } from '@/lib/haptics'
 import { capMotion, MotionCap, useMotion, type MotionLevel } from '@/lib/motion'
 import { AUTO_PACE, PaceContext, usePace, VERSUS_PACE } from '@/lib/pace'
+import { TimeRaceClockHere } from '@/screens/area/TimeRaceRun'
 import { useDialogOpen } from '@/lib/useDialog'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { pushToast, setSettings, useGame, type BattleSlice, type CatchThrow } from '@/store/game'
@@ -289,8 +300,15 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const dbl = st.double
   // A portal run's wild Pokémon wear the distortion (docs/28).
   const distorted = !versus && st.kind === 'wild' && !!save && inPortalRun(save, data, run.areaId)
+  // The Stairway of Plates' wild Pokémon wear light instead (docs/64 §4.5).
+  const lit =
+    distorted && portalSkin(portalModeOf(data.areas.find((a) => a.id === run.areaId), data)) === 'plates'
   // The nightmare's rounds (docs/30) are fought under its full moon, a dark shadow haunting the foe.
   const dream = !versus && st.kind === 'wild' && !!save && inNightmare(save, data, run.areaId)
+  // The whiteout's fights (docs/64 §4.3): the engine's blizzard (its chip, snow over the stage) and the bag shut.
+  const bagShut = !versus && !!st.noBag
+  // Tracks in the Snow's last round (docs/64 §4.1): the shiny Stantler found in its bush, its own entrance.
+  const gladeBoss = !versus && st.kind === 'boss' && !!save && tracksFound(save, data, run.areaId)
   const stageBox = useRef<HTMLDivElement>(null)
   const panel = useRef<HTMLDivElement>(null)
   const [menu, setMenu] = useState<null | 'item' | 'history' | 'mega' | 'form' | 'z'>(null)
@@ -326,10 +344,13 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const live = versus?.live
   const scripted = !!versus && !live
   const auto = live ? live.auto : !!versus || autoAt !== 'off'
+  // The race of time and space (docs/64 §4.4): one speed for everyone inside it, whatever the setting (the engine's:
+  // short animations at its quick pace), so its clock means the same for all. Auto-battle is off there.
+  const raceSpeed = !versus && save ? timeRaceBattleSpeed(save, data, run.areaId) : null
   // Auto-mode plays the whole fight faster: animations, dice and timers.
-  const pace = scripted ? VERSUS_PACE : auto ? AUTO_PACE : 1
+  const pace = scripted ? VERSUS_PACE : raceSpeed ? raceSpeed.pace : auto ? AUTO_PACE : 1
   // A fight that plays itself is watched, not played: short animations unless the player turned them off altogether.
-  const motionCap: MotionLevel | null = auto ? 'short' : null
+  const motionCap: MotionLevel | null = raceSpeed ? raceSpeed.motion : auto ? 'short' : null
   const level = capMotion(chosenLevel, motionCap)
   // Nothing to wait for: animations off.
   const quick = level === 'off'
@@ -380,13 +401,34 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     (st.kind === 'wild' || st.kind === 'boss') &&
     !!save &&
     !!catchTarget(save, b.baseDex ?? b.dex, b.level, st.kind, data, b.shiny)
-  const catchable = dbl ? (uid: string) => dbl.foes.some((f) => f.uid === uid && canCatch(f)) : canCatch(st.enemy)
+  // A region flavour's fight (docs/62): a horde's one throw, a Totem's and a Titan's none.
+  const flavour =
+    enc?.kind === 'wild' && enc.horde?.length ? 'horde' : enc?.kind === 'gym' && enc.trial ? 'trial' : enc?.kind === 'boss' && enc.titan ? 'titan' : null
+  const hordeCatch = (uid: string) => {
+    // The shiny one waits worn out at once; else only the last one, as the fight is won.
+    const f = dbl?.foes.find((x) => x.uid === uid)
+    if (!f || !canCatch(f)) return false
+    if (dbl!.foes.some((x) => x.shiny)) return f.shiny && dbl!.foes.find((x) => x.shiny) === f
+    return st.phase === 'won' && dbl!.kos[dbl!.kos.length - 1]?.uid === uid
+  }
+  const catchable =
+    flavour === 'titan'
+      ? false
+      : flavour === 'horde'
+        ? hordeCatch
+        : dbl
+          ? (uid: string) => dbl.foes.some((f) => f.uid === uid && canCatch(f))
+          : canCatch(st.enemy)
   const { fx, ready, sceneContact, sceneDone } = useBattleAnimator(
     battle,
     quick,
     {
       kind: st.kind,
       trainerName,
+      // A roadblock boss (docs/61 §2) is spoken of as the wild Pokémon it is, not a legendary.
+      roadblock: st.kind === 'boss' && !!roadblockOf(data.areas.find((a) => a.id === run.areaId), st.enemy.baseDex ?? st.enemy.dex),
+      rival: enc?.kind === 'trainer' && !!enc.moment,
+      flavour,
       catchable,
       itemName: (k) => data.items[k]?.name ?? k,
       speciesName: (dex) => data.species[dex]?.name ?? `#${dex}`,
@@ -440,8 +482,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const foeBack = dbl ? (foeRow.find((b) => b.uid !== foeFront.uid && waiting(b)) ?? null) : null
   // Cries: the foe's as it comes out, yours as each of yours does (after the foe's when both come out at once), a
   // Mega's once it stands there.
+  // Another lead picked at the send-out step: the foe out already has cried (a trainer's next one still does).
+  const [criedFoe] = useState(() => (swapped ? st.enemy.uid : null))
   useEffect(() => {
-    if (!foeOut) return
+    if (!foeOut || st.enemy.uid === criedFoe) return
     playCry(st.enemy.dex)
     // A pair: the second one's cry after the first's.
     const partner = dbl?.foes[1]
@@ -571,7 +615,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const usefulItems = ownedItems.filter(([k]) => st.player.some((p) => itemHelps(k, p)))
   const showSwitch = data.config.allowVoluntarySwitch
   // What the B and S keys (and the pips) can open right now: the same rules as their buttons.
-  const bagOpen = !versus && !auto && canItem && usefulItems.length > 0
+  const bagOpen = !versus && !auto && canItem && usefulItems.length > 0 && !bagShut
   // With nobody to send in, the team's pips still open the step: its BACK and its flag, the fight's way out (the user,
   // 2026-10-27).
   const switchOpen = !auto && canAct && showSwitch
@@ -654,6 +698,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
           dispatch(stunned ? { t: 'PASS' } : st.phase === 'player_roll' ? { t: 'ROLL' } : { t: 'ATTACK' })
         } else if (key === 'r' && rolling) keyAct.current.reroll()
         else if (/^[1-6]$/.test(e.key) && rolling) keyAct.current.toggleDie(Number(e.key) - 1)
+        else if (key === 'b' && bagShut) shutBag()
         else if (key === 'b' && bagOpen) {
           // A computer's Bag is open at the side already: B goes to its first item.
           if (wide) bagBox.current?.querySelector<HTMLButtonElement>('button:not([disabled])')?.focus()
@@ -674,7 +719,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [canAct, stunned, auto, covered, menu, aim, switching, matchups, rolling, bagOpen, switchOpen, wide, st.phase, dispatch, lesson])
+  }, [canAct, stunned, auto, covered, menu, aim, switching, matchups, rolling, bagOpen, bagShut, switchOpen, wide, st.phase, dispatch, lesson])
   // Mega Evolution (once per battle, Lv.50+, from Kalos on), Gigantamax and Arceus's types.
   const megaOpts = scripted ? [] : megaChoices(st, data)
   const gmaxOpts = scripted ? [] : gmaxChoices(st, data)
@@ -852,7 +897,16 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       types: foe.types.map((ty) => typeName(ty)).join(' / '),
     }
     // A mythical's own entrance (docs/53: Mew in its forest) when the cinematics are on and it has one.
-    const cinema = legendCinemaOn(data) ? BOSS_CINEMAS[foe.baseDex ?? foe.dex] : undefined
+    // The whiteout's boss (docs/64 §4.3): the crown tree shaking out Abomasnow, its own way in whatever that switch says.
+    // The glade's shiny Stantler rears up under the moon (docs/64 §4.1), with the feature's own switch.
+    const cinema =
+      save && inWhiteout(save, data, run.areaId)
+        ? abomasnowCinema
+        : gladeBoss
+          ? stantlerCinema
+          : legendCinemaOn(data)
+            ? BOSS_CINEMAS[foe.baseDex ?? foe.dex]
+            : undefined
     return {
       timeline: cinema ? cinema.makeBattle(params) : legendTimeline(params),
       ready: Promise.all([loadSprite(lead.dex, true, lead.shiny, lead.outfit), loadSprite(foe.dex, false, foe.shiny, foe.outfit)]),
@@ -986,7 +1040,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       ? dbl
         ? { count: dbl.foes.length, index: dbl.foes.filter((f) => fx.fainted[f.uid]).length }
         : { count: enc.team.length, index: run.trainer.index }
-      : null
+      : // A horde's five and a Titan's two phases (docs/62) count down the same way.
+        (flavour === 'horde' || flavour === 'titan') && dbl
+        ? { count: dbl.foes.length, index: dbl.foes.filter((f) => fx.fainted[f.uid] || fx.wornOut[f.uid]).length }
+        : null
 
   const pairNames = (row: readonly Battler[]) => row.map((b) => b.name).join(' & ')
   const heading = dbl
@@ -1098,10 +1155,11 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     ownedItems.length > 0 &&
     !auto && (
       <BagButton
-        disabled={!bagOpen}
-        title={st.itemUsedThisTurn ? t('ui.battle.oneItemPerTurn') : undefined}
+        // The whiteout's bag stays shut, but its button still answers: why (docs/64 §4.3).
+        disabled={!bagOpen && !bagShut}
+        title={bagShut ? t('ui.whiteout.noBag') : st.itemUsedThisTurn ? t('ui.battle.oneItemPerTurn') : undefined}
         keys="B"
-        onClick={openBag}
+        onClick={bagShut ? shutBag : openBag}
       />
     )
   )
@@ -1182,8 +1240,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       style={{ '--strip': !versus && !run.rebattle ? '14px' : '0px' } as CSSProperties}
     >
       {!versus && !run.rebattle && <RunRoundGauge strip className="absolute inset-x-0 top-0 z-30" />}
-      {/* Each new fight opens on its own beat (docs/42). */}
-      {!versus && <EncounterSwipe />}
+      {/* Each new fight opens on its own beat (docs/42); another lead picked is the same fight, already open. */}
+      {!versus && !swapped && <EncounterSwipe />}
       <BattleStage
         own={active}
         foe={foeFront}
@@ -1196,11 +1254,13 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         art={art}
         ownShown={ownOut}
         foeShown={foeOut}
+        foeSettled={swapped}
         trainer={
           trainerIntro && isTrainerFight && !champIntro ? (trainerSprite ?? '') : trainerBack ? trainerSprite : null
         }
         overlay={legend ?? championIntro ?? thrown}
         distorted={distorted}
+        lit={lit}
         world={dream ? 'nightmare' : undefined}
         haunted={dream}
         worn={(catching || !!fx.wornOut[foeFront.uid]) && !thrown}
@@ -1211,6 +1271,11 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         label={heading}
       >
         {dayTime && <BattleDayTime time={dayTime} />}
+        {/* The race's clock runs on in its fights (docs/64 §4.4), in the stage's top right corner. */}
+        {raceSpeed && <TimeRaceClockHere areaId={run.areaId} size="small" className="absolute right-2 top-5 z-20" />}
+        {/* The weather (docs/62 §2): falling over the stage, and its chip. */}
+        {st.weather && <WeatherLayer weather={st.weather} />}
+        {st.weather && <BattleWeather weather={st.weather} />}
         {dbl && foeOut && ownOut && !catching && (
           <DoublePlates
             foes={foeRow}
@@ -1344,6 +1409,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                 <BagColumn
                   entries={bagEntries}
                   open={bagOpen && !teamPick}
+                  shut={bagShut ? t('ui.whiteout.noBag') : null}
                   used={!!st.itemUsedThisTurn}
                   aim={aim}
                   onPick={pickItem}
@@ -2086,3 +2152,6 @@ function SendOutStep({
     </div>
   )
 }
+
+/** The whiteout's bag stays shut (docs/64 §4.3): the Bag button and B say why. */
+const shutBag = () => pushToast(say('ui.whiteout.noBag'), 'info')

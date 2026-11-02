@@ -22,7 +22,7 @@ import { useAdminData } from '../../store'
 import { AccessSwitch, Box, Field, NumInput, PokemonPicker, inputCls } from '../../widgets'
 import { useConfigRow } from '../ConfigSection'
 
-const TIER_NAME: Record<TrickTier, string> = { common: 'Common', rare: 'Rare', veryRare: 'Very rare' }
+export const TIER_NAME: Record<TrickTier, string> = { common: 'Common', rare: 'Rare', veryRare: 'Very rare' }
 const pct = (x: number) => `${Math.round(x * 1000) / 10} %`
 
 /** The row over the defaults, one level deep per tier, so an older row missing a field still works. */
@@ -41,7 +41,7 @@ function useTrickConfig(): [TrickOrTreatConfig, (patch: Partial<TrickOrTreatConf
   return [cfg, (patch) => setRaw({ ...cfg, ...patch })]
 }
 
-function TierBox({
+export function TierBox({
   tier,
   cfg,
   set,

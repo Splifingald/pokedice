@@ -1,8 +1,10 @@
 /**
  * Showdown sprites: one source, Pokémon Showdown, for every Pokémon and trainer picture (docs/13-SHOWDOWN-SPRITES.md).
  *
- * `pnpm showdown-sprites [pokemon] [icons] [cries] [trainers]` (all four when none is named). Every download is cached
- * under scripts/.cache/showdown, misses included, so a re-run is offline.
+ * `pnpm showdown-sprites [pokemon] [icons] [cries] [trainers] [--only 10013,10014]` (all four when none is named). Every
+ * download is cached under scripts/.cache/showdown, misses included, so a re-run is offline. `--only` limits the
+ * pokemon, icons and cries steps to those dex numbers (new forms), leaving every other entry and the icon sheet as
+ * they are.
  *
  * - `pokemon`: per species and form, the pixel-art animated GIF of each view (`gen5ani`, `gen5ani-back`, `-shiny`,
  *   `-back-shiny`: Black/White's animated sprites, and the community's in that style after #649), or Showdown's static
@@ -17,6 +19,7 @@
  * - `cries`: which of Showdown's cries (`audio/cries/<id>.mp3`) exist, checked with a HEAD request each. The game
  *   plays them from Showdown's CDN, nothing is copied. A form without a cry of its own gets its base species' as `c`
  *   in src/data/showdown-sprites.json, so the game never asks for a cry that isn't there.
+ * - `pack`: the trainers step's sheets alone, from the files already in public/ (nothing downloaded).
  * - `trainers`: downloads Showdown's 80×80 trainer sprite for every Kanto–Unova class and character (TRAINERS below;
  *   Kalos onward came from Showdown already, see region-trainers.ts) over the files in public/, then packs every
  *   sprite the game refers to into one sheet per region (src/assets/trainers/<region>.png) and writes their cells to
@@ -392,8 +395,8 @@ async function showdownIds(): Promise<Map<number, string>> {
   return ids
 }
 
-async function buildPokemon(entries: Record<string, ShowdownEntry>) {
-  const ids = await showdownIds()
+async function buildPokemon(entries: Record<string, ShowdownEntry>, only: Set<number> | null) {
+  const ids = new Map([...(await showdownIds())].filter(([dex]) => !only || only.has(dex)))
   const sameBox = (a?: ShowdownBox, b?: ShowdownBox) =>
     !!a && !!b && a.length === b.length && a.every((n, i) => n === b[i])
   const counts = { a: 0, g: 0, '-': 0 }
@@ -456,10 +459,12 @@ async function buildPokemon(entries: Record<string, ShowdownEntry>) {
 // ---------------------------------------------------------------------------------------------------------------------
 // Cries
 
-async function buildCries(entries: Record<string, ShowdownEntry>) {
+async function buildCries(entries: Record<string, ShowdownEntry>, only: Set<number> | null) {
   const has = (id: string) =>
     existsCached(`${SHOWDOWN_CRIES}/${id}.mp3`, path.join(CACHE, 'cries', `${id}.mp3`))
-  const list = Object.values(entries)
+  const list = Object.entries(entries)
+    .filter(([dex]) => !only || only.has(Number(dex)))
+    .map(([, e]) => e)
   const own = await pool(list, 16, (e) => has(e.id))
   const counts = { own: 0, base: 0, none: 0 }
   for (const [n, e] of list.entries()) {
@@ -487,7 +492,7 @@ async function buildCries(entries: Record<string, ShowdownEntry>) {
 // ---------------------------------------------------------------------------------------------------------------------
 // Icons
 
-async function buildIcons(entries: Record<string, ShowdownEntry>) {
+async function buildIcons(entries: Record<string, ShowdownEntry>, only: Set<number> | null) {
   const buf = await mustFetch(
     `${SHOWDOWN_SPRITES}/pokemonicons-sheet.png`,
     path.join(CACHE, 'pokemonicons-sheet.png'),
@@ -507,10 +512,16 @@ async function buildIcons(entries: Record<string, ShowdownEntry>) {
     if (!id) throw new Error(`#${s.dex}: run the pokemon step first`)
     nums.set(s.dex, indexes.get(id.replace(/-/g, '')) ?? rootDex(s.dex))
   }
-  for (const s of SPECIES) entries[s.dex]!.i = nums.get(s.dex)!
   const rows = Math.ceil(sheet.height / ICON_H)
   if (sheet.width !== ICON_COLS * ICON_W || Math.max(...nums.values()) >= rows * ICON_COLS)
     throw new Error('Unexpected icon sheet layout')
+  // Only some (new forms): their cells alone, the sheet in the repo kept as it is.
+  if (only) {
+    for (const dex of only) entries[dex]!.i = nums.get(dex)!
+    console.log(`Icons: ${only.size} entries set, the sheet left as it is`)
+    return
+  }
+  for (const s of SPECIES) entries[s.dex]!.i = nums.get(s.dex)!
   await mkdir(path.join(ROOT, 'src/assets'), { recursive: true })
   await writeFile(path.join(ROOT, 'src/assets/pokemon-icons.png'), buf)
   console.log(
@@ -911,11 +922,12 @@ const fileFor = (region: keyof typeof TRAINERS, name: string) =>
       ? path.join(PUBLIC, 'trainers/classes', `${name}.png`)
       : path.join(PUBLIC, 'trainers/classes', region, `${name}.png`)
 
-async function buildTrainers() {
+async function buildTrainers(download = true) {
   const jobs = Object.entries(TRAINERS).flatMap(([region, table]) =>
     Object.entries(table).map(([name, id]) => ({ file: fileFor(region as keyof typeof TRAINERS, name), id })),
   )
-  await pool(jobs, 16, async ({ file, id }) => {
+  // `pack`: the sheets from the files already in public/, nothing downloaded (a sprite newly named by a trainer).
+  await pool(download ? jobs : [], 16, async ({ file, id }) => {
     const buf = await mustFetch(
       `${SHOWDOWN_SPRITES}/trainers/${id}.png`,
       path.join(CACHE, 'trainers', `${id}.png`),
@@ -925,7 +937,7 @@ async function buildTrainers() {
       throw new Error(`${id}: ${img.width}×${img.height}`)
     await writeFile(file, PNG.sync.write(img, { colorType: 6 }))
   })
-  console.log(`Trainers: ${jobs.length} sprites from Showdown written over public/`)
+  if (download) console.log(`Trainers: ${jobs.length} sprites from Showdown written over public/`)
 
   // Every sprite the game names: trainers, social looks, the two characters and Professor Oak.
   const urls = new Set<string>(['/characters/red.png', '/characters/green.png', '/characters/prof-oak.png'])
@@ -977,23 +989,26 @@ async function buildTrainers() {
 // ---------------------------------------------------------------------------------------------------------------------
 
 async function main() {
-  const args = process.argv.slice(2)
+  const argv = process.argv.slice(2)
+  const at = argv.indexOf('--only')
+  const only = at >= 0 ? new Set(argv[at + 1]!.split(',').map(Number)) : null
+  const args = at >= 0 ? argv.filter((_, i) => i !== at && i !== at + 1) : argv
   const steps = args.length ? args : ['pokemon', 'icons', 'cries', 'trainers']
   for (const s of steps)
-    if (!['pokemon', 'icons', 'cries', 'trainers'].includes(s)) throw new Error(`Unknown step: ${s}`)
+    if (!['pokemon', 'icons', 'cries', 'trainers', 'pack'].includes(s)) throw new Error(`Unknown step: ${s}`)
   const entries: Record<string, ShowdownEntry> = existsSync(SPRITES_JSON)
     ? JSON.parse(await readFile(SPRITES_JSON, 'utf8'))
     : {}
-  if (steps.includes('pokemon')) await buildPokemon(entries)
-  if (steps.includes('icons')) await buildIcons(entries)
-  if (steps.includes('cries')) await buildCries(entries)
-  if (steps.some((s) => s !== 'trainers')) {
+  if (steps.includes('pokemon')) await buildPokemon(entries, only)
+  if (steps.includes('icons')) await buildIcons(entries, only)
+  if (steps.includes('cries')) await buildCries(entries, only)
+  if (steps.some((s) => s !== 'trainers' && s !== 'pack')) {
     const sorted = Object.fromEntries(Object.entries(entries).sort(([a], [b]) => Number(a) - Number(b)))
     await writeFile(SPRITES_JSON, `${JSON.stringify(sorted)}\n`)
   }
   if (steps.includes('trainers')) {
     await buildTrainers()
-  }
+  } else if (steps.includes('pack')) await buildTrainers(false)
 }
 
 main().catch((err) => {

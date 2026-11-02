@@ -435,7 +435,7 @@ Today ~28 one-time pop-ups take turns (`PopupQueue`). This pass:
 | Inside areas, the top bar: the area's name and its round | `AreaTitle`: the name, "2/3" or a check once cleared |
 | The Centers on the gauge, even the one outside the deck; a Center even at full HP | Every round opens with its Center, recorded as the round's first step; the gauge shows it ahead |
 | The Center's animation a bit longer, a banner while inside | The full scene at 2.4× (about 2.7 s); `CenterSign` under the strip |
-| The friend invite only on the friends list | Off Home; at the top of Friends until ✕ or a share |
+| The friend invite only on the friends list | Off Home; a line of the Friends page's INFO (2026-11-01: no note on top) |
 | The tab bar: Shop, Team, Home, Pokédex, Social | Done (the PC rail: Home, Shop, Team, Pokédex, Social) |
 | Use an item: the Bag's icon | Done |
 | Auto-mode in a fight: one button with its states | AUTO-MODE: ON / OFF in the same place; no note and STOP |

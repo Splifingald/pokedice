@@ -493,7 +493,8 @@ function DoubleBattlesBox() {
 }
 
 /**
- * Trades (docs/23): the numbers, the trade evolutions (a pair taken off evolves by level again)
+ * Trades (docs/23): the numbers (the board's picks among them, §2.1), the trade evolutions (a pair taken off evolves by
+ * level again)
  * and the species that can never be traded (the Ultra Beasts; legendaries and mythicals always are out).
  */
 function TradesBox() {
@@ -504,7 +505,18 @@ function TradesBox() {
   const [from, setFrom] = useState<number | null>(null)
   const [to, setTo] = useState<number | null>(null)
   const [out, setOut] = useState<number | null>(null)
-  const num = (k: 'maxListings' | 'listingDays' | 'tradesPerDay' | 'levelCap' | 'minBadges', min = 0, max?: number) => (
+  const num = (
+    k:
+      | 'maxListings'
+      | 'listingDays'
+      | 'tradesPerDay'
+      | 'levelCap'
+      | 'minBadges'
+      | 'boardPicks'
+      | 'boardRerolls',
+    min = 0,
+    max?: number,
+  ) => (
     <NumInput min={min} max={max} value={cfg[k]} onChange={(v) => set({ [k]: Math.max(min, Math.min(max ?? Infinity, v ?? min)) })} />
   )
   const name = (dex: number) => data?.species[dex]?.name ?? `#${dex}`
@@ -519,6 +531,10 @@ function TradesBox() {
         <Field label="Trades taken a day" hint="per player, UTC days">{num('tradesPerDay', 1, 100)}</Field>
         <Field label="Level cap" hint="traded Pokémon arrive at most at">{num('levelCap', 1, 100)}</Field>
         <Field label="Badges needed" hint="every region's counted">{num('minBadges', 0, 100)}</Field>
+        <Field label="Board picks" hint="listings picked for a player; a search shows all">
+          {num('boardPicks', 1, 20)}
+        </Field>
+        <Field label="New picks a day" hint="per player, UTC days">{num('boardRerolls', 0, 20)}</Field>
       </div>
       <div className="grid gap-2">
         <span className="text-lg">Evolve when traded (never by level)</span>
@@ -1559,6 +1575,7 @@ const TABS = [
   { id: 'dayCare', label: 'Day Care', icon: 'heal' },
   { id: 'extreme', label: 'Extreme mode', icon: 'skull' },
   { id: 'doubles', label: 'Double battles', icon: 'vs' },
+  { id: 'flavours', label: 'Region flavours', icon: 'weatherRain' },
   { id: 'trades', label: 'Trades', icon: 'trade' },
   { id: 'versus', label: 'Versus league', icon: 'trophy' },
   { id: 'areaVersus', label: 'Real-player battles', icon: 'user' },
@@ -1637,6 +1654,17 @@ const FEATURES: Feature[] = [
   own('Legendary intros', 'legendCinema', 'intros'),
   own('Champion intros', 'championCinema', 'intros'),
   bare('Route 1 opening & tutorial', 'openingRounds'),
+  // The side quests (docs/61).
+  bare('Pokémon posing as items', 'disguises'),
+  own('Safari Zones', 'safari'),
+  bare('Rivals on the road', 'rivals'),
+  bare('Gift Pokémon', 'giftMoments'),
+  // The region flavours (docs/62): each one's numbers and content stay the game's own unless the row says otherwise.
+  own("Hoenn's weather", 'hoennWeather', 'flavours'),
+  own("Galar's weather of the day", 'galarWeather', 'flavours'),
+  own('Kalos hordes', 'hordes', 'flavours'),
+  own('Alola island trials', 'trials', 'flavours'),
+  own('Paldea Titans', 'titans', 'flavours'),
   own('Unown Pokédex', 'unownDex', 'unown'),
   own('Hidden talents', 'hiddenTalents', 'talents'),
   bare('Outfits', 'outfits'),
@@ -1720,6 +1748,91 @@ function SwitchesTable({ open }: { open: (tab: TabId) => void }) {
  * Admin → Config: sub-tabs at the top, the feature switches first, then one tab per feature with its numbers. The tab
  * is in the address (?tab=trades), so a reload stays on it.
  */
+/**
+ * The region flavours' numbers (docs/62): Galar's weather pool shift, the hordes', the Totems' and the Titans'. Each
+ * area's weather and each trial are the game's own content (All rows edits them as JSON); only what's set here is
+ * written, so a row keeps following the game's own numbers otherwise.
+ */
+function RegionFlavoursBox() {
+  const [galarRaw, setGalar] = useConfigRow('galarWeather')
+  const [hordeRaw, setHordes] = useConfigRow('hordes')
+  const [trialRaw, setTrials] = useConfigRow('trials')
+  const [titanRaw, setTitans] = useConfigRow('titans')
+  const galar = { ...DEFAULT_CONFIG.galarWeather, ...galarRaw }
+  const hordes = { ...DEFAULT_CONFIG.hordes, ...hordeRaw }
+  const trials = { ...DEFAULT_CONFIG.trials, ...trialRaw }
+  const titans = { ...DEFAULT_CONFIG.titans, ...titanRaw }
+  // Only the numbers go into the row: the areas and the trials stay the game's (deep-merged at load).
+  const num = (v: number | null, d: number, min = 0) => Math.max(min, v ?? d)
+  return (
+    <div className="grid items-start gap-4 xl:grid-cols-2">
+      <Box
+        title="Galar's weather of the day"
+        icon="weatherRain"
+        hint="Each Wild Area area rolls its weather once a UTC day (the same for everyone). Its types' wild Pokémon weigh × this. Hoenn's weather is fixed per area."
+      >
+        <Field label="× the weather's types" hint="1 = no shift">
+          <NumInput min={1} step={0.5} value={galar.poolTimes ?? 2} onChange={(v) => setGalar({ ...galarRaw, access: galar.access, poolTimes: num(v, 2, 1) } as typeof galar)} />
+        </Field>
+      </Box>
+      <Box title="Kalos hordes" icon="horde" hint="A wild card becomes a horde: five of a species, fought two at a time, one throw at the end.">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Field label="% of wild cards">
+            <NumInput min={0} max={100} value={hordes.chance} onChange={(v) => setHordes({ ...hordes, ...hordeRaw, chance: num(v, 4) })} />
+          </Field>
+          <Field label="At most a round">
+            <NumInput min={0} value={hordes.perArea} onChange={(v) => setHordes({ ...hordes, ...hordeRaw, perArea: num(v, 1) })} />
+          </Field>
+          <Field label="How many">
+            <NumInput min={2} max={8} value={hordes.size} onChange={(v) => setHordes({ ...hordes, ...hordeRaw, size: num(v, 5, 2) })} />
+          </Field>
+          <Field label="Levels down">
+            <NumInput min={0} value={hordes.levelDrop} onChange={(v) => setHordes({ ...hordes, ...hordeRaw, levelDrop: num(v, 3) })} />
+          </Field>
+          <Field label="% mixed">
+            <NumInput min={0} max={100} value={hordes.mixedChance} onChange={(v) => setHordes({ ...hordes, ...hordeRaw, mixedChance: num(v, 10) })} />
+          </Field>
+          <Field label="Rarest left out" hint="pool weight up to">
+            <NumInput min={0} value={hordes.minWeight} onChange={(v) => setHordes({ ...hordes, ...hordeRaw, minWeight: num(v, 2) })} />
+          </Field>
+        </div>
+      </Box>
+      <Box title="Alola island trials" icon="sparkle" hint="The Totem instead of the captain's battle: its aura and the allies it calls.">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Field label="× HP">
+            <NumInput min={1} step={0.5} value={trials.hpTimes} onChange={(v) => setTrials({ ...trialRaw, access: trials.access, hpTimes: num(v, 2, 1) } as typeof trials)} />
+          </Field>
+          <Field label="Extra dice">
+            <NumInput min={0} max={3} value={trials.extraDice} onChange={(v) => setTrials({ ...trialRaw, access: trials.access, extraDice: num(v, 1) } as typeof trials)} />
+          </Field>
+          <Field label="Allies called">
+            <NumInput min={0} max={4} value={trials.calls} onChange={(v) => setTrials({ ...trialRaw, access: trials.access, calls: num(v, 2) } as typeof trials)} />
+          </Field>
+        </div>
+      </Box>
+      <Box title="Paldea Titans" icon="crown" hint="The second phase after the Herba Mystica, Dondozo's with Tatsugiri in its mouth, and what a Titan leaves.">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Field label="× HP">
+            <NumInput min={1} step={0.5} value={titans.hpTimes} onChange={(v) => setTitans({ ...titans, ...titanRaw, hpTimes: num(v, 2, 1) })} />
+          </Field>
+          <Field label="Extra dice">
+            <NumInput min={0} max={3} value={titans.extraDice} onChange={(v) => setTitans({ ...titans, ...titanRaw, extraDice: num(v, 1) })} />
+          </Field>
+          <Field label="₽ left">
+            <NumInput min={0} step={100} value={titans.gold} onChange={(v) => setTitans({ ...titans, ...titanRaw, gold: num(v, 1000) })} />
+          </Field>
+          <Field label="Commander × HP">
+            <NumInput min={1} step={0.5} value={titans.commanderHpTimes} onChange={(v) => setTitans({ ...titans, ...titanRaw, commanderHpTimes: num(v, 2, 1) })} />
+          </Field>
+          <Field label="Commander dice">
+            <NumInput min={0} max={3} value={titans.commanderExtraDice} onChange={(v) => setTitans({ ...titans, ...titanRaw, commanderExtraDice: num(v, 2) })} />
+          </Field>
+        </div>
+      </Box>
+    </div>
+  )
+}
+
 export function ConfigSection() {
   const [version] = useConfigRow('configVersion')
   const [params, setParams] = useSearchParams()
@@ -1778,6 +1891,7 @@ export function ConfigSection() {
         </div>
       )}
       {tab === 'doubles' && <DoubleBattlesBox />}
+      {tab === 'flavours' && <RegionFlavoursBox />}
       {tab === 'trades' && <TradesBox />}
       {tab === 'versus' && (
         <div className="grid items-start gap-4">

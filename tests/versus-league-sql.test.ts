@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { trophyChange, VERSUS_LEAGUE_DEFAULTS, weekBotTeams, type LeagueOutcome } from '@/engine'
+import { botTargetOf, trophyChange, VERSUS_LEAGUE_DEFAULTS, weekBotTeams, type LeagueOutcome } from '@/engine'
 import { botsSql, BEGIN, END } from '../scripts/versus-bots'
 import { data } from './fixtures'
 
@@ -145,6 +145,7 @@ beforeAll(async () => {
     '0086_versus_league_admin_board.sql',
     '0091_versus_league_global.sql',
     '0092_versus_bot_weeks.sql',
+    '0128_versus_bot_targets.sql',
   ])
     await db.exec(sql(f))
   // Safe to run again.
@@ -152,6 +153,7 @@ beforeAll(async () => {
   await db.exec(sql('0086_versus_league_admin_board.sql'))
   await db.exec(sql('0091_versus_league_global.sql'))
   await db.exec(sql('0092_versus_bot_weeks.sql'))
+  await db.exec(sql('0128_versus_bot_targets.sql'))
   await db.exec(
     `insert into auth.users (id) values ${Object.values(U)
       .map((u) => `('${u}')`)
@@ -180,6 +182,23 @@ describe('the rules, as the engine has them', () => {
       { cfg: unknown },
     ]
     expect(cfg).toEqual(VERSUS_LEAGUE_DEFAULTS)
+  })
+
+  it("heads bots for the engine's trophies (0128)", async () => {
+    for (const botTargets of [VERSUS_LEAGUE_DEFAULTS.botTargets, [300, 100], [-50, 100]] as [
+      number,
+      number,
+    ][])
+      for (const roll of [0, 0.1, 0.25, 0.5, 0.73, 0.999, 1]) {
+        const cfg = { ...VERSUS_LEAGUE_DEFAULTS, botTargets }
+        const [row] = (
+          await db.query<{ t: number }>('select versus_league_bot_target($1, $2) t', [
+            roll,
+            JSON.stringify(cfg),
+          ])
+        ).rows
+        expect(row!.t, `${roll} in ${botTargets}`).toBe(botTargetOf(roll, cfg))
+      }
   })
 
   it('counts trophies as trophyChange does', async () => {
@@ -335,11 +354,28 @@ describe('the league', () => {
 
   it('seats bots in groups with room, players to everyone but the admin', async () => {
     expect(await fails(U.ash, `select versus_league_admin('seat_bots')`)).toContain('not_admin')
+    // A player far ahead used to pull the group's bots up with them; no more (0128).
+    const before = await trophiesOf(U.ash)
+    await db.query(`update versus_league_members set trophies = 1500 where user_id = $1`, [U.ash])
     const [seated] = await as<{ n: number }>(U.admin, `select versus_league_admin('seat_bots') n`)
+    await db.query(`update versus_league_members set trophies = $2 where user_id = $1`, [U.ash, before])
     expect(seated!.n).toBeGreaterThan(0)
     const mine = await home(U.ash)
     const bots = mine.rows.filter((r) => !r.isMe && !['MISTY', 'BROCK'].includes(r.name))
     expect(bots.length).toBe(VERSUS_LEAGUE_DEFAULTS.botsPerDay)
+    // Headed for Admin's range, whatever the group's players have (0128): one bot in each fifth of the rolls.
+    const [lo, hi] = VERSUS_LEAGUE_DEFAULTS.botTargets
+    const targets = (
+      await db.query<{ target: number }>(
+        `select bot_target target from versus_league_members where bot_id is not null order by bot_target`,
+      )
+    ).rows.map((r) => r.target)
+    expect(targets).toHaveLength(seated!.n)
+    expect(targets.every((t) => t >= lo && t <= hi)).toBe(true)
+    targets.forEach((t, i) => {
+      expect(t).toBeGreaterThanOrEqual(botTargetOf(i / 5, VERSUS_LEAGUE_DEFAULTS))
+      expect(t).toBeLessThanOrEqual(botTargetOf((i + 1) / 5, VERSUS_LEAGUE_DEFAULTS))
+    })
     expect(mine.rows.every((r) => r.bot === null)).toBe(true)
     // A bot's id looks like a player's.
     expect(bots.every((b) => /^[0-9a-f-]{36}$/.test(b.id))).toBe(true)

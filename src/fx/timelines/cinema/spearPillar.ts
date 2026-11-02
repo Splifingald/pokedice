@@ -57,8 +57,9 @@ import {
 } from './kit'
 
 // ---------------------------------------------------------------- the ruins they share
+// (Exported: the race of time and space, timeRace.ts, stands in the same place.)
 
-interface Pal {
+export interface Pal {
   /** Lit, middle, shade, ink. */
   stone: readonly [string, string, string, string]
   tiles: readonly [string, string, string]
@@ -66,7 +67,7 @@ interface Pal {
   peaks: string
 }
 
-interface Column {
+export interface Column {
   x: number
   base: number
   hgt: number
@@ -75,7 +76,7 @@ interface Column {
   broken: number
 }
 
-interface Lay {
+export interface Lay {
   w: number
   h: number
   cx: number
@@ -135,7 +136,7 @@ function layout(p: CinemaParams): Lay {
 const quiet = (f: () => void) => () => void (!skippingNow() && f())
 
 /** A column: a fluted shaft lit from the left, its base, its capital or a broken top. */
-function column(g: G, c: Column, P: Pal, r: Rng) {
+export function column(g: G, c: Column, P: Pal, r: Rng) {
   const { x, base, hgt, hw, broken } = c
   const top = base - hgt
   rect(g, x - hw, top, hw * 2, hgt, P.stone[1])
@@ -161,7 +162,7 @@ function column(g: G, c: Column, P: Pal, r: Rng) {
 }
 
 /** The ruins' floor: worn tiles in perspective, the ones in the middle lighter (the dais's light). */
-function floor(L: Lay, P: Pal): Canvas {
+export function floor(L: Pick<Lay, 'w' | 'h' | 'hz' | 'cx'>, P: Pal): Canvas {
   const { w, h, hz, cx } = L
   const H = h - hz
   return shade(w, H, (x, y) => {
@@ -185,7 +186,7 @@ function floor(L: Lay, P: Pal): Canvas {
 }
 
 /** The dais: a round stone step, a ring cut into it. */
-function dais(g: G, L: Lay, P: Pal) {
+export function dais(g: G, L: Pick<Lay, 'cx' | 'dais'>, P: Pal) {
   const { cx, dais: D } = L
   ellipse(g, cx, D.y + 2, D.rx + 2, D.ry + 1, P.stone[3])
   ellipse(g, cx, D.y, D.rx, D.ry, P.stone[1])
@@ -195,7 +196,7 @@ function dais(g: G, L: Lay, P: Pal) {
 }
 
 /** The sea of clouds at the horizon, Coronet's far peaks standing out of it; twice the screen wide (it drifts). */
-function cloudSea(L: Lay, P: Pal, r: Rng): Canvas {
+export function cloudSea(L: Pick<Lay, 'w' | 'm'>, P: Pal, r: Rng): Canvas {
   const { w, m } = L
   const hh = Math.max(12, Math.round(m * 0.12))
   const cv = canvas(w * 2, hh + 20)
@@ -256,9 +257,9 @@ const D_STOP = D_TICKS[D_TICKS.length - 1]!
 const D_FORM = 3.85
 const D_CRACK = 4.3
 const D_REVEAL = 4.9
-const D_AURA = ['#ffffff', '#c8e0ff', '#5a8ae0', '#1f3a7a'] as const
-const CLOCK = ['#ffffff', '#c8e0ff', '#8ab0e8', '#4a7ac8', '#24448a'] as const
-const D_PAL: Pal = {
+export const D_AURA = ['#ffffff', '#c8e0ff', '#5a8ae0', '#1f3a7a'] as const
+export const CLOCK = ['#ffffff', '#c8e0ff', '#8ab0e8', '#4a7ac8', '#24448a'] as const
+export const D_PAL: Pal = {
   stone: ['#8a96b0', '#5a647e', '#3a4258', '#1a1e2c'],
   tiles: ['#4a5470', '#3e4862', '#262c3e'],
   cloud: ['#3a4668', '#6a7aa0'],
@@ -653,7 +654,7 @@ function circle(g: G, src: Canvas, x: number, y: number, R: number) {
 }
 
 /** A cog of light: a rim, a hub, teeth, turning. */
-function cog(g: G, x: number, y: number, R: number, a: number, col: string) {
+export function cog(g: G, x: number, y: number, R: number, a: number, col: string) {
   ellipseLine(g, x, y, R, R, col)
   ellipseLine(g, x, y, Math.max(2, Math.round(R * 0.45)), Math.max(2, Math.round(R * 0.45)), col)
   const n = Math.max(6, Math.round(R * 0.8))
@@ -737,9 +738,9 @@ const P_SPLIT = 3.45
 const P_RENDS = [3.72, 4.02, 4.3] as const
 const P_COME = 3.85
 const P_REVEAL = 4.8
-const P_AURA = ['#ffffff', '#ffd0f0', '#d06ab0', '#6a1f5a'] as const
-const PINK = ['#ffffff', '#ffd0f0', '#ff8ad0', '#d04aa8', '#7a1a6a'] as const
-const P_PAL: Pal = {
+export const P_AURA = ['#ffffff', '#ffd0f0', '#d06ab0', '#6a1f5a'] as const
+export const PINK = ['#ffffff', '#ffd0f0', '#ff8ad0', '#d04aa8', '#7a1a6a'] as const
+export const P_PAL: Pal = {
   stone: ['#b09ac0', '#706088', '#463a5e', '#1e1830'],
   tiles: ['#524466', '#463a5a', '#2c2440'],
   cloud: ['#4a3a6a', '#7e6aa4'],

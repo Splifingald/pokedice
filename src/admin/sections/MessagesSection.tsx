@@ -183,7 +183,13 @@ export function MessageCard({
           {opened ? (
             <GiftsLine m={m} />
           ) : giving ? (
-            <GiftEditor data={data} gifts={gifts} onChange={setGifts} save={save} />
+            <GiftEditor
+              data={data}
+              gifts={gifts}
+              onChange={setGifts}
+              save={save}
+              scales={m.user_id ? 'account' : 'guest'}
+            />
           ) : (
             <PixelButton size="sm" className="self-start" disabled={busy} onClick={() => setGiving(true)}>
               <PixelIcon name="gift" size={18} /> Add a gift

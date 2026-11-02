@@ -12,7 +12,7 @@ import { ConnectHint, ShareNoticeView } from '@/components/ShareTutorial'
 import { SupportNoticeView } from '@/components/SupportModal'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
-import { AreaButton, ContinueButton, StayHere } from '@/screens/home/ContinueBar'
+import { AreaButton, ContinueButton, MapButton, StayHere } from '@/screens/home/ContinueBar'
 import { FeatureNotice, RegionOfferNotice } from '@/screens/home/Notices'
 import { CARD_STRIP_H, HomeCard, Meter } from '@/screens/home/Widget'
 import { ComingUpView } from '@/screens/home/Widgets'
@@ -85,6 +85,32 @@ export function HomeBits() {
           icon="play"
           onClick={noop}
         />
+      </Frame>
+      <Frame name="The map square beside CONTINUE (opens the Areas sheet)">
+        <div className="flex items-stretch gap-2">
+          <MapButton heldWhy={null} onOpen={noop} />
+          <div className="min-w-0 flex-1">
+            <ContinueButton
+              label={t('ui.common.continue')}
+              sub={t('ui.home.roundOf', { n: 1, total: 2 })}
+              icon="play"
+              onClick={noop}
+            />
+          </div>
+        </div>
+      </Frame>
+      <Frame name="The map square shut by the nightmare (a tap says why)">
+        <div className="flex items-stretch gap-2">
+          <MapButton heldWhy={t('ui.nightmare.locked', { area: route.name })} onOpen={noop} />
+          <div className="min-w-0 flex-1">
+            <ContinueButton
+              label={t('ui.common.continue')}
+              sub={t('ui.home.roundOf', { n: 1, total: 2 })}
+              icon="play"
+              onClick={noop}
+            />
+          </div>
+        </div>
       </Frame>
       <Frame name="A challenge waiting">
         <ContinueButton

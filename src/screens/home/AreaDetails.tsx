@@ -15,9 +15,11 @@ import {
   progressRaidState,
   portalModeOf,
   nightmareModeOf,
+  timeRaceModeOf,
   raidRules,
   teamAverageLevel,
   trickDealable,
+  giftDealable,
   gameCornerOn,
   uniqueFindChances,
   type Area,
@@ -30,6 +32,7 @@ import {
 } from '@/engine'
 import { useT } from '@/i18n/react'
 import { BadgeIcon } from '@/components/BadgeIcon'
+import { skinKey, skinOfArea } from '@/components/portalSkin'
 import { Chip } from '@/components/Chip'
 import { DayNightTag } from '@/components/DayNight'
 import { rarity } from '@/components/DexEntry'
@@ -63,6 +66,7 @@ const MIX: Record<EncounterKind, string> = {
   casino: '#9b5de5',
   trick: '#ff8a3d',
   versus: '#3d7bd9',
+  gift: '#e2364a',
 }
 
 function Fact({
@@ -121,10 +125,12 @@ function RaidFact({ area, boss }: { area: Area; boss: BossDef }) {
       note={t(
         state === 'locked'
           ? portalModeOf(area, data)
-            ? 'ui.portal.factLocked'
+            ? skinKey(skinOfArea(area, data), 'ui.portal.factLocked')
             : nightmareModeOf(area, data)
               ? 'ui.nightmare.factLocked'
-              : 'ui.raid.progress.factLocked'
+              : timeRaceModeOf(area, data)
+                ? 'ui.timeRace.factLocked'
+                : 'ui.raid.progress.factLocked'
           : state === 'done'
             ? 'ui.raid.progress.factDone'
             : 'ui.raid.progress.factOpen',
@@ -315,11 +321,14 @@ export function DetailsBody({ area }: { area: Area }) {
   const kinds = (Object.entries(area.encounterWeights) as [EncounterKind, number][]).filter(
     // Trick or Treat only where it is dealt (its switch on, the area's ghosts listed: docs/29); the Game Corner only
     // while it's on.
-    // A real player (docs/54) only while a team waits for the area.
+    // A real player (docs/54) only while a team waits for the area. The Gift card (docs/64 §4.0) only while it's on,
+    // and then in place of the item card.
     ([k, v]) =>
       v > 0 &&
       MIX[k] &&
       (k !== 'trick' || trickDealable(data, area)) &&
+      (k !== 'gift' || giftDealable(data, area)) &&
+      (k !== 'item' || !giftDealable(data, area)) &&
       (k !== 'casino' || gameCornerOn(data)) &&
       (k !== 'versus' || (areaVersusHere(save, area, data) && !!foe)),
   )
@@ -390,7 +399,7 @@ export function DetailsBody({ area }: { area: Area }) {
                 key={b.dex}
                 gold
                 icon={<MiniSprite dex={b.dex} size={40} silhouette={!caught && !beaten} />}
-                small={t('ui.map.legendary')}
+                small={t(b.roadblock ? 'ui.map.roadblock' : 'ui.map.legendary')}
                 title={`${caught || beaten ? (data.species[b.dex]?.name ?? '???') : t('ui.common.unknown')} · ${t('ui.common.level.short', { n: b.level })}`}
                 note={when}
                 tag={

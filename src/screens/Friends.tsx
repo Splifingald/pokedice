@@ -9,8 +9,8 @@ import { NewTag } from '@/components/Chip'
 import { AddFriendForm, useAddText } from '@/components/friends/AddFriendModal'
 import { FriendProfileSheet } from '@/components/friends/FriendProfileSheet'
 import { useFriendLine } from '@/components/friends/FriendBits'
-import { InviteRewardsCard, InviteRulesModal, useInviteGauge, useInviteRules } from '@/components/friends/InviteRewards'
-import { RulesCard } from '@/components/RulesCard'
+import { InviteRewardsCard, useInviteGauge } from '@/components/friends/InviteRewards'
+import { FriendsInfoModal } from '@/components/friends/FriendsInfo'
 import { PixelIcon } from '@/components/icons'
 import { Modal } from '@/components/Modal'
 import { PageHead } from '@/components/PageHead'
@@ -46,9 +46,8 @@ import { FriendRequests } from '@/components/AreaVersus'
 import { openInviteRewards, seeInviteRules, useInviteRewards } from '@/store/invites'
 import { cx } from '@/theme/util'
 import { TrainerName } from '@/components/TrainerName'
-import { ShareNotice, useShareSeen } from '@/components/ShareTutorial'
-import { FriendshipCard, FriendshipRulesModal, StreakBadge, useFriendshipRules } from '@/components/friends/Friendship'
-import { loadFriendship, seeFriendshipRules, useFriendship } from '@/store/friendship'
+import { FriendshipCard, FriendshipRulesModal, StreakBadge } from '@/components/friends/Friendship'
+import { loadFriendship, useFriendship } from '@/store/friendship'
 
 /** Off the boards after 72 hours without playing: shown, but quieter. */
 const AWAY_MS = 72 * 3_600_000
@@ -59,17 +58,10 @@ export function FriendsScreen() {
   const max = useGame((s) => s.data.config.maxFriends)
   const count = useFriends((s) => (s.list ? s.list.length : null))
   const signedIn = auth.status === 'signed_in'
-  // Prof. Oak's invite lives here, where friends are made, until ✕ or a share (the user's call, 2026-10-27: not Home).
-  const shareSeen = useShareSeen()
 
   return (
     <div className="flex flex-col gap-3">
       <PageHead icon="navFriends" title={t('ui.friends.title')} social="friends" />
-      {!shareSeen && (
-        <div className="mx-auto w-full max-w-xl">
-          <ShareNotice />
-        </div>
-      )}
       {!isSupabaseConfigured || auth.status === 'unavailable' ? (
         <p className="m-0 mx-auto w-full max-w-xl bg-paper px-3.5 py-4 text-center text-[20px] leading-[1.15] shadow-card">
           {t('ui.friends.offline')}
@@ -105,7 +97,12 @@ function FriendsBody({ counter }: { counter?: string }) {
   const gauge = useInviteGauge()
   const rewardsBusy = useInviteRewards((s) => s.busy)
   const gaugeOn = !!gauge
+  // The rewards' rules are behind INFO, never on the page (the user's call, 2026-11-01): reaching it is enough for Home's
+  // notice that sends the player here.
   const rulesDue = useGame((s) => !!s.save && inviteRulesDue(s.save, s.data))
+  useEffect(() => {
+    if (gaugeOn && rulesDue) seeInviteRules()
+  }, [gaugeOn, rulesDue])
   // PC: the pane beside the list is never empty while there is a friend to show (the first one, as the Team opens on
   // its lead). A phone opens a card only on a tap.
   const firstFriend = list?.find((f) => f.inRealm) ?? null
@@ -121,13 +118,9 @@ function FriendsBody({ counter }: { counter?: string }) {
   }, [])
   // Friend requests from players whose team you met (docs/54): at the top, while there are some.
   const requests = useAreaVersus((s) => s.requests)
-  // The rewards' rules sit at the top of this page, and nowhere else, while the gauge shows and until GOT IT (docs/43
-  // §7: rules where they apply); INFO keeps them.
-  const inviteRules = useInviteRules()
-  // Friendship streaks (docs/60): their card under the invite rewards, the rules on top the first time.
+  // Friendship streaks (docs/60): their card under the invite rewards; their rules behind INFO.
   const navigate = useNavigate()
   const fship = useFriendshipView()
-  const fshipRules = useFriendshipRules()
   const [fshipInfo, setFshipInfo] = useState(false)
 
   const share = () => {
@@ -157,14 +150,8 @@ function FriendsBody({ counter }: { counter?: string }) {
 
   const main = (
     <>
-      {gaugeOn && rulesDue && (
-        <RulesCard title={t('ui.invite.infoName')} icon="gift" rules={inviteRules} onDone={seeInviteRules} />
-      )}
       {gauge && <InviteRewardsCard gauge={gauge} busy={rewardsBusy} onOpen={() => void openInviteRewards()} />}
       <FriendRequests requests={requests} />
-      {fship.on && fship.rulesDue && (
-        <RulesCard title={t('ui.fship.title')} icon="heart" rules={fshipRules} onDone={seeFriendshipRules} />
-      )}
       {fship.on && (
         <FriendshipCard
           balance={fship.status?.balance ?? 0}
@@ -249,7 +236,7 @@ function FriendsBody({ counter }: { counter?: string }) {
           {t('ui.friends.reset')}
         </PixelButton>
       </div>
-      {gauge && <InfoButton name={t('ui.invite.infoName')} onClick={() => setRules(true)} />}
+      <InfoButton name={t('ui.friends.infoName')} onClick={() => setRules(true)} />
     </>
   )
 
@@ -271,7 +258,7 @@ function FriendsBody({ counter }: { counter?: string }) {
       />
       {!wide && <SocialDock>{shareButton}</SocialDock>}
 
-      <InviteRulesModal open={rules} onClose={() => setRules(false)} />
+      <FriendsInfoModal open={rules} onClose={() => setRules(false)} invites={gaugeOn} friendship={fship.on} />
       <FriendshipRulesModal open={fshipInfo} onClose={() => setFshipInfo(false)} />
       <Modal open={resetting} onClose={() => setResetting(false)} title={t('ui.friends.resetTitle')}>
         <p className="copy mb-4 text-lg">{t('ui.friends.resetBody')}</p>
