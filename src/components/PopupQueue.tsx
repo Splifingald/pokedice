@@ -30,7 +30,7 @@ import { AreaVersusService } from './AreaVersus'
 import { InviteRewardPopup, useInviteRewardWaiting } from './friends/InviteRewards'
 import { OfflineReportModal } from './GeneralRules'
 import { GiftService } from './Gifts'
-import { POPUP_GAP_MS, PopupTurnContext, usePopupOnScreen } from './popupTurn'
+import { POPUP_GAP_MS, PopupTurnContext, useCenterRush, usePopupOnScreen } from './popupTurn'
 import { PowersUnlockPopup } from './PowersRules'
 import { OutfitRulesPopup } from './Outfit'
 import { PushService } from './PushService'
@@ -76,9 +76,14 @@ export function PopupQueue({ children }: { children: ReactNode }) {
   // A Pokémon Center, once its heal has had time to play (about 2.7 s): the dice tutorial may start there.
   const center = useGame((s) => s.run.phase === 'center' && !s.battle)
   const [healed, setHealed] = useState(false)
+  // …or at once, CONTINUE pressed before then (CenterView).
+  const rushed = useCenterRush((s) => s.on)
   useEffect(() => {
     setHealed(false)
-    if (!center) return
+    if (!center) {
+      useCenterRush.setState({ on: false })
+      return
+    }
     const timer = setTimeout(() => setHealed(true), CENTER_HEAL_MS)
     return () => clearTimeout(timer)
   }, [center])
@@ -88,7 +93,7 @@ export function PopupQueue({ children }: { children: ReactNode }) {
     () =>
       nextOneTimePopup(save, data, {
         calm: idle && !full && !gifts,
-        atCenter: center && healed && !full && !gifts,
+        atCenter: center && (healed || rushed) && !full && !gifts,
         path,
         signedIn,
         online: isSupabaseConfigured,
@@ -107,6 +112,7 @@ export function PopupQueue({ children }: { children: ReactNode }) {
       idle,
       center,
       healed,
+      rushed,
       full,
       gifts,
       path,
@@ -136,7 +142,9 @@ export function PopupQueue({ children }: { children: ReactNode }) {
     const timer = setTimeout(() => wake((n) => n + 1), until - Date.now() + 50)
     return () => clearTimeout(timer)
   }, [resting, until])
-  const turn = closing || (resting && !showing && !(due && FOLLOWS_AT_ONCE.has(due))) ? null : due
+  // The dice tutorial never rests either: it is a new player's next step, and at a Center its moment is short.
+  const prompt = due != null && (FOLLOWS_AT_ONCE.has(due) || due === 'diceTutorial')
+  const turn = closing || (resting && !showing && !prompt) ? null : due
   return <PopupTurnContext.Provider value={turn}>{children}</PopupTurnContext.Provider>
 }
 

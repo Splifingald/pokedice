@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   boonCenters,
   centerRulesDue,
+  diceTutorialDue,
   monName,
   pendingBoons,
   POKE_TYPES,
@@ -21,6 +22,7 @@ import { BoxFilter, sortBox, type BoxSort } from '@/components/BoxSort'
 import { PokeCard } from '@/components/PokeCard'
 import { PixelButton } from '@/components/PixelButton'
 import { PixelIcon } from '@/components/icons'
+import { useCenterRush } from '@/components/popupTurn'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { StageCanvas } from '@/components/StageCanvas'
 import { loadSprite, spriteKey } from '@/fx/sprites'
@@ -149,6 +151,11 @@ export function CenterView() {
         size="lg"
         className="whitespace-nowrap px-2"
         onClick={() => {
+          // The dice tutorial due here opens first (docs/46 §5); pressed again (it couldn't open), on as usual.
+          if (diceTutorialDue(save, data) && !useCenterRush.getState().on) {
+            useCenterRush.setState({ on: true })
+            return
+          }
           finishCenter()
           continueExploring()
         }}

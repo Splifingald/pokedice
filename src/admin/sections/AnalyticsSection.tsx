@@ -1,5 +1,5 @@
 // Admin → Analytics: retention on day 1, 3, 7 and 30 and the players, from the daily ping (migrations 0028, 0102),
-// players per hour (0042) and churn by area (0102), those two on demand. Admin-only via RLS. docs/57.
+// players per hour (0042) and churn by starter and area (0102, 0129), those two on demand. Admin-only via RLS. docs/57.
 import { PixelIcon } from '@/components/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
@@ -16,7 +16,7 @@ import { useGame } from '@/store/game'
 import { PALETTE } from '@/theme/colors'
 import { cx } from '@/theme/util'
 import { inputCls } from '../widgets'
-import { ChurnByArea } from './AnalyticsChurn'
+import { ChurnPanel } from './AnalyticsChurn'
 import { HourlyPlayers } from './AnalyticsHourly'
 import { errorText, PlayerPanel } from './AnalyticsPlayer'
 import { SuspiciousSaves } from './AnalyticsSuspicious'
@@ -324,7 +324,7 @@ export function AnalyticsSection() {
 
       <HourlyPlayers />
 
-      <ChurnByArea since={from} frame={frameLabel} />
+      <ChurnPanel since={from} frame={frameLabel} />
 
       <SuspiciousSaves
         onPick={(id, name) => {

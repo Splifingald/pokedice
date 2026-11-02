@@ -1,4 +1,4 @@
-# Analytics: retention on day 1, 3, 7 and 30, one player per guest who signs in, churn by area
+# Analytics: retention on day 1, 3, 7 and 30, one player per guest who signs in, churn by area and by starter
 
 Admin → Analytics (`src/admin/sections/AnalyticsSection.tsx`) measured day-1 retention only, counted a guest who later
 signed in as two players, and couldn't say where players stop. Migration 0102 and the page fix the three. It is the
@@ -67,6 +67,30 @@ before FETCH (`analytics_churn(p_days, p_since)`, admin-only).
   save's area stays. Before 0102 only the snapshot existed: the migration copies its area, which is where a player
   **started** their last day; it gets sharper as players come back.
 
+### 3.1 Churn by starter (migration 0129)
+
+The same panel (now **Churn by starter and area**) counts the same players by the Pokémon they picked at the very start
+of the game, from the same FETCH (one request: `analytics_churn` returns both).
+
+- **The starter** is Kanto's: the first entry of Kanto's Pokédex, live or parked (`firstStarter`,
+  `src/analytics/events.ts`), the same "first Pokédex entry" the rival versions read (`playerSideOf`). It never changes
+  as a player moves on, so churned and active players are compared on the same choice (a later region's starter would
+  put the players still active in later regions on other rows). A new game on another starter replaces it.
+- **Where it comes from**: the daily ping's snapshot carries `starter`; a trigger on `players`
+  (`players_starter_from_snapshot`) copies it into `players.starter` whenever a snapshot arrives, so `player_ping` and
+  the guest merge stay as 0102 left them (a guest's starter follows their snapshot into their account). A snapshot
+  without it (a build from before this one) leaves the column as it was; an Extreme save sends no snapshot.
+- **The players already there**, once in the migration:
+  - signed in: from their main cloud save (`saves`, realm `main`), exactly: Kanto's Pokédex's first entry;
+  - guests: from their latest snapshot when it was taken in a Kanto area and its Pokédex holds exactly one of Kanto's
+    starters (the `regions` row's). Every Kanto Pokédex holds its own starter, so one alone is theirs; with two or more
+    (one given later) the player stays unknown. A guest who doesn't match gets theirs at their next day played.
+- **The table**, above the areas: each starter with its sprite, churned (a bar, scaled to the most churned starter),
+  active, the churn share, the average days played of each (churned / active). The starters offered at the start
+  (`config.starters`) first, in their order; any other Pokémon after, by dex number. The players with no starter known
+  are counted apart ("churned with no known starter").
+- Before 0129 runs, the answer has no `starters`: the panel shows the areas and says the migration is needed.
+
 ## 4. The database (`supabase/migrations/0102_analytics_retention.sql`)
 
 - `players.last_area text`, filled from each snapshot's `areaId`.
@@ -81,6 +105,14 @@ before FETCH (`analytics_churn(p_days, p_since)`, admin-only).
 - `analytics_churn(p_days int, p_since date default null) → json`: `{today, cutoff, areas: {area id: [churned, active,
   churned's average days, active's]}, unknown: [churned, active]}`. Admin-only; `p_days` from 1 to 365.
 
+`supabase/migrations/0129_churn_by_starter.sql`:
+
+- `players.starter int`, kept from each snapshot's `starter` by the trigger `players_starter` (before insert or update
+  of `snapshot`; a dex number from 1 to 2000, else ignored).
+- The one-time backfill above (only a starter still missing: safe to run again).
+- `analytics_churn`, same signature, adds `starters: {dex: [churned, active, churned's average days, active's]}` and
+  `noStarter: [churned, active]`. The build deployed before it ignores both.
+
 ## 5. Setting it up
 
 1. Run the migration once in Supabase's SQL editor, **before** deploying the build (the new page calls
@@ -89,6 +121,9 @@ before FETCH (`analytics_churn(p_days, p_since)`, admin-only).
    (after 0028 and 0042). Safe to run again: a re-run merges only pairs made since. `supabase/seed.sql` doesn't inline
    it (analytics migrations never were).
 2. Deploy. Admin → Analytics shows the four rates at once; Churn by area on FETCH.
+3. Churn by starter: run migration 0129 (after 0102; any time, before or after the build that shows it):
+   <https://github.com/Splifingald/pokedice/blob/ccr-b9616e2b-7ntj2b/supabase/migrations/0129_churn_by_starter.sql>.
+   Version 2.9's file (`supabase/releases/2026-11-01-version-2-9.sql`) carries it too. Not in `supabase/seed.sql`.
 
 ## 6. Tests
 
@@ -99,5 +134,11 @@ before FETCH (`analytics_churn(p_days, p_since)`, admin-only).
   or a device with no guest row, not callable by players); the backfill (shared device to the earliest account, safe
   to re-run); `player_seen` with an area, without one, and its old one-argument call; `analytics_retention` against
   `analytics_d1`; `analytics_churn` (per area, the frame, the bounds); both admin-only.
-- `e2e/admin-analytics.spec.ts`: the four rates from one request per load, and churn fetched only on FETCH, in game
-  order, with the frame's first day sent.
+- `tests/analytics-starter-sql.test.ts`: migration 0129 on PGlite: the snapshot's starter into the column (kept by a
+  snapshot without one, bad values ignored, followed into the account by the merge); the backfill (main save live or
+  parked, not Extreme; a guest's Kanto snapshot with one Kanto starter only; safe to re-run); `analytics_churn`'s
+  starters (counts, the frame, admin-only).
+- `tests/analytics.test.ts` (`firstStarter`, the snapshot's `starter`) and `tests/retention.test.ts`
+  (`churnByStarter`: the order, the shares, null before 0129).
+- `e2e/admin-analytics.spec.ts`: the four rates from one request per load, and churn fetched only on FETCH, the
+  starters in the order offered and the areas in game order, with the frame's first day sent.

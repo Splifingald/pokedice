@@ -343,6 +343,16 @@ export function latestOpenArea(save: SaveData, data: GameData, now?: number | nu
 }
 
 /**
+ * The player has played in this area: an encounter met, a round done, a gym leader or a legend beaten. Merely entering
+ * doesn't count. Home reads it for the furthest open area: standing behind it once it's started was the player's choice.
+ */
+export function areaStarted(save: SaveData, areaId: string): boolean {
+  const p = save.areaProgress[areaId]
+  if (!p) return false
+  return p.roundsDone > 0 || (p.round ?? 0) > 0 || !!p.drawn?.length || p.gymsDefeated.length > 0 || p.bossesDefeated.length > 0
+}
+
+/**
  * An area with no deck — no wild Pokémon, trainers or Game Corner to meet, only Pokémon Centers and items, e.g. a
  * legendary's lair — closes once nothing is left to do there: every gym battle won, every legendary beaten and caught.
  * It can't be entered anymore. Areas with a deck, and ones with nothing special to begin with, never close.

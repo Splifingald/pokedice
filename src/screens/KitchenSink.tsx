@@ -698,7 +698,7 @@ export function KitchenSink() {
         <RulesBits />
       </Section>
 
-      <Section title="Home: the Coming up line (each thing still to open), the big button (CONTINUE, a challenge, greyed out, GO TO with Stay here), the leaderboard tip">
+      <Section title="Home: the Coming up line (each thing still to open), the big button (CONTINUE, a challenge, greyed out, GO TO with Stay here, CONTINUE with the green GO TO), the leaderboard tip">
         <HomeBits />
       </Section>
 

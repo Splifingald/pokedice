@@ -192,6 +192,7 @@ import {
   outfitOf,
   finishRerollLesson,
   rerollLessonDue,
+  gentleFoeMax,
   arriveAtTracks,
   canStartTracks,
   inTracks,
@@ -1220,6 +1221,8 @@ function startBattle(kind: BattleKind, enemy: FoeSeed, leadUid?: string, double?
       weather: whiteoutWeather(save, data, run.areaId) ?? weatherHere(save, data, area),
       // A new player's first fight teaches the reroll and the combo (docs/46 §6): played by hand, one foe.
       rerollLesson: !auto && !double && rerollLessonDue(save, data, run.areaId),
+      // …and once the item tutorial has shown, its foes hit softly until the first round is won (docs/46 §7).
+      foeDiceMax: gentleFoeMax(save, data, run.areaId),
       ...(double && {
         // A Totem uses no Z-Move nor any power (docs/62 §6, the user's call): its aura is its own.
         double: {
