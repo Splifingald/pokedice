@@ -1,6 +1,6 @@
 // Kitchen sink (dev only): Home's pieces (docs/43 §5.2) — the area button (plain, a secret area new, shut by the
 // nightmare), the big button as CONTINUE, a challenge, greyed out and GO TO (with "Stay here" under
-// it), Home's one card (plain, gold, with a gauge), the notices that replaced the arrival pop-ups (Prof. Oak's
+// it, or under CONTINUE in green once that area is started), Home's one card (plain, gold, with a gauge), the notices that replaced the arrival pop-ups (Prof. Oak's
 // leaderboard tip, his invite with and without the gauge's room, Support me, a feature opened, a new region on offer), and the "Coming
 // up" line for each thing still to open.
 import { type ReactNode } from 'react'
@@ -12,7 +12,7 @@ import { ConnectHint, ShareNoticeView } from '@/components/ShareTutorial'
 import { SupportNoticeView } from '@/components/SupportModal'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
-import { AreaButton, ContinueButton, MapButton, StayHere } from '@/screens/home/ContinueBar'
+import { AreaButton, ContinueButton, GoToNext, MapButton, StayHere } from '@/screens/home/ContinueBar'
 import { FeatureNotice, RegionOfferNotice } from '@/screens/home/Notices'
 import { CARD_STRIP_H, HomeCard, Meter } from '@/screens/home/Widget'
 import { ComingUpView } from '@/screens/home/Widgets'
@@ -137,6 +137,14 @@ export function HomeBits() {
           onClick={noop}
         />
         <StayHere sub={t('ui.home.freePlay')} onClick={noop} />
+      </Frame>
+      <Frame name="Back behind an area already started: CONTINUE, and the green GO TO">
+        <ContinueButton label={t('ui.common.continue')} sub={t('ui.home.freePlay')} icon="play" onClick={noop} />
+        <GoToNext
+          label={t('ui.victory.goToArea', { name: route.name })}
+          sub={t('ui.home.roundOf', { n: 2, total: 5 })}
+          onClick={noop}
+        />
       </Frame>
       <Frame name="Home's card: a secret area">
         <HomeCard

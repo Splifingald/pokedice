@@ -1,6 +1,7 @@
 import { useId } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  areaStarted,
   centersOn,
   wipeCenterDue,
   dueBoss,
@@ -268,6 +269,9 @@ export function useContinue(area: Area) {
     behind && latest
       ? { area: latest, label: t('ui.victory.goToArea', { name: latest.name }), sub: waitsIn(latest) }
       : null
+  // Already played in that area: coming back here was the player's choice, so CONTINUE keeps playing here and GO TO
+  // drops to the green button under it.
+  const returned = !!goTo && areaStarted(save, goTo.area.id)
   const keepExploring = !!(gym || boss || raid) && !closed && !busy && !resting
   const label = enterRace
     ? t('ui.timeRace.enter')
@@ -301,6 +305,7 @@ export function useContinue(area: Area) {
     cleared: progress.cleared,
     latest,
     goTo,
+    returned,
     keepExploring,
     enter,
   }
@@ -391,6 +396,19 @@ export function StayHere({ sub, onClick }: { sub: string; onClick: () => void })
   )
 }
 
+
+/**
+ * Under CONTINUE once the player came back behind an area they already started: the way back to it, green, where
+ * Stay here sits otherwise (`sub` says what waits there, for screen readers).
+ */
+export function GoToNext({ label, sub, onClick }: { label: string; sub: string; onClick: () => void }) {
+  return (
+    <PixelButton variant="success" size="md" className="w-full" onClick={onClick} aria-label={`${label} · ${sub}`}>
+      <PixelIcon name="map" size={18} />
+      {label}
+    </PixelButton>
+  )
+}
 
 /** What the area button's tag says: nothing, a secret area opened (NEW), or a new region open. */
 export type AreasState = 'plain' | 'new' | 'region'
@@ -497,21 +515,25 @@ export function AreaButton({
 /**
  * Home's PLAY dock (docs/43 §5.2): the area button, then the one big action (useContinue). Behind in the region's main
  * chain with nothing waiting here, the big action is GO TO the furthest open area, with "Stay here" (the free play)
- * under it; otherwise CONTINUE, with the green GO TO and "keep exploring" (when a gym or a legendary waits) under it in
+ * under it; once that area is started (the player came back by choice) CONTINUE stays, with the green GO TO in Stay
+ * here's place; otherwise CONTINUE, with the green GO TO and "keep exploring" (when a gym or a legendary waits) under it in
  * one row. The green map square (`MapButton`, the Areas sheet) stands left of the big action. Phones pin it over the
  * tab bar; on PC it heads the column beside the scene. (Auto-mode is switched in the area itself, on the encounter
  * screens.)
  */
 export function PlayDock({ area, onAreas }: { area: Area; onAreas?: () => void }) {
   const { t } = useT()
-  const { label, sub, go, explore, off, gym, boss, raid, resting, latest, goTo, keepExploring } = useContinue(area)
+  const { label, sub, go, explore, off, gym, boss, raid, resting, latest, goTo, returned, keepExploring } =
+    useContinue(area)
   // Darkrai's nightmare (docs/30) or the whiteout (docs/64 §4.3) holds the player in its area: the area button is
   // shut, and says why.
   const held = useGame((s) => heldIn(s.save, s.data)?.area ?? null)
   const heldBy = useGame((s) => heldIn(s.save, s.data)?.by ?? 'nightmare')
   const heldWhy = held ? t(`ui.${heldBy}.locked`, { area: held.name }) : null
-  const ahead = heldWhy ? null : goTo
-  const green = latest && !heldWhy && !ahead ? latest : null
+  // GO TO as the big button (Stay here under it), or, the area already started, as the green one under CONTINUE.
+  const ahead = heldWhy || returned ? null : goTo
+  const next = heldWhy || !returned ? null : goTo
+  const green = latest && !heldWhy && !ahead && !next ? latest : null
 
   return (
     <div className="flex flex-col gap-2">
@@ -544,6 +566,7 @@ export function PlayDock({ area, onAreas }: { area: Area; onAreas?: () => void }
       </div>
       {/* The free play stays a tap away under GO TO. */}
       {ahead && <StayHere sub={sub} onClick={go} />}
+      {next && <GoToNext label={next.label} sub={next.sub} onClick={() => travelTo(next.area)} />}
       {(green || keepExploring) && (
         <div className={cx('grid gap-2', green && keepExploring && 'grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]')}>
           {keepExploring && (
