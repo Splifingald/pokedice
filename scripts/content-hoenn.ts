@@ -229,6 +229,9 @@ export const HOENN_AREAS: AreaPlan[] = [
     tier: 3,
     once: [
       ['thunder-stone', 1, 1, 1, true], // New Mauville
+      // Steelix and Scizor: New Mauville's wild Magnemite carry it in Emerald. The bundle and migration 0134 hold it
+      // twice (one for the shiny), like every area-only evolution item since 0059.
+      ['metal-coat', 1, 1, 1, true],
     ],
     wild: [
       [309, 24, 17, 23], // Electrike
