@@ -53,7 +53,7 @@ export function ReplyPopup() {
   // A signed-in player's gifts wait for the sign-in's sync, so the cloud copy can't replace what they went into.
   const synced = useCloudSync((s) => s.settled)
   const syncWait = status === 'signed_in' && !synced
-  const giftsBusy = useGiftMoment((s) => s.busy || !!s.rulesFor || !!s.opening)
+  const giftsBusy = useGiftMoment((s) => s.busy || !!s.opening)
 
   // Once we know who is playing, and again whenever that changes (signing in brings the account's messages).
   useEffect(() => {

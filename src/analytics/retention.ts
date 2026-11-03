@@ -7,8 +7,33 @@
 export const RETENTION_DAYS = [1, 3, 7, 30] as const
 export type RetentionDay = (typeof RETENTION_DAYS)[number]
 
-/** first day ('YYYY-MM-DD') → [new players that day, of them back on day 1, day 3, day 7, day 30]. */
+/**
+ * first day ('YYYY-MM-DD') → [new players that day, of them back on day 1, day 3, day 7, day 30]. From migration 0135,
+ * the guests' own five follow (`cohortsOf` picks).
+ */
 export type Cohorts = Record<string, readonly number[]>
+
+/** Which players Admin → Analytics counts: everyone, the logged-in ones (an account) or the guests (a device). */
+export type Who = 'all' | 'logged_in' | 'guests'
+
+const SLOTS = RETENTION_DAYS.length + 1
+
+/**
+ * The cohorts of `who` alone, five numbers a first day: the logged-in ones are all − guests (a guest who signs in is
+ * merged into their account, so counts as logged in from their first day). null when `who` isn't everyone and the
+ * database doesn't split them yet (migration 0135 not run).
+ */
+export function cohortsOf(cohorts: Cohorts, who: Who): Cohorts | null {
+  const rows = Object.entries(cohorts)
+  if (who === 'all') return Object.fromEntries(rows.map(([day, row]) => [day, row.slice(0, SLOTS)]))
+  if (rows.some(([, row]) => row.length < SLOTS * 2)) return null
+  return Object.fromEntries(
+    rows.map(([day, row]) => {
+      const guests = row.slice(SLOTS, SLOTS * 2)
+      return [day, who === 'guests' ? guests : row.slice(0, SLOTS).map((n, i) => n - guests[i]!)]
+    }),
+  )
+}
 
 export interface Retention {
   /** New players in the frame whose day N is over. */

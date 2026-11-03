@@ -2,7 +2,7 @@
 // listings and decides who got there first; each player's game applies its own half of a trade, here. Everything a
 // trade decides — the level a Pokémon arrives at, where it lands, how it's kept, a trade evolution — is worked out by
 // these functions; the screens only show their results.
-import { familyUnlocked, idRng, talentOnEvolve } from './talents'
+import { familyUnlocked, idRng, talentOnEvolve, talentsOn } from './talents'
 import { isLegendary } from './breeding'
 import { everyRegionBox, type BoxedMon } from './daycare'
 import { eventOpenTo } from './events'
@@ -36,6 +36,7 @@ import type {
   TradeLogEntry,
   TradeOut,
   TradeOutcome,
+  TradePicks,
   TradeVisibility,
   TradeWant,
   TradesSave,
@@ -1036,6 +1037,163 @@ export function previewLandings(
   return first.received.landings.length > 1
     ? first.received.landings.map((r) => previewTake(save, data, listed, given, r))
     : [first]
+}
+
+// ---------------------------------------------------------------- the board's picks (§2.1)
+
+/**
+ * What a listing on the board is worth to this save, best first: `new`, it brings a Pokémon you don't have in the Box
+ * it would land in, or a shiny when you have no shiny of it (as "Any I don't own" counts it; a trade evolution counts
+ * as what it becomes); `talent`, it carries the hidden talent its family hasn't unlocked in that region; `other`, one
+ * you can take all the same; `blocked`, one you can't (its region not started, nothing of yours it wants, your own).
+ * The day's cap doesn't block a pick: tomorrow it can be taken, and its row says so meanwhile.
+ */
+export type PickTier = 'new' | 'talent' | 'other' | 'blocked'
+
+const TIERS: PickTier[] = ['new', 'talent', 'other', 'blocked']
+
+/** A listing, as far as the picks read it (the board's rows are these and more). */
+export interface PickListing {
+  id: string
+  dex: number
+  shiny: boolean
+  talent: boolean
+  isMe: boolean
+  isFriend: boolean
+  endsAt: number
+  want: TradeWant
+  poster: TradeSnapshot
+}
+
+export interface RankedPick<L extends PickListing = PickListing> {
+  listing: L
+  tier: PickTier
+  /** Shown before a NEW PICKS today: it comes after every listing not shown yet. */
+  seen: boolean
+}
+
+function pickTier(
+  save: SaveData,
+  data: GameData,
+  l: PickListing,
+  owned: { has: Set<number>; shiny: Set<number> },
+  now: number,
+): PickTier {
+  if (l.isMe) return 'blocked'
+  const why = takeBlock(save, data, l, now)
+  if (why === 'region' || why === 'no_match') return 'blocked'
+  const home = homeRegionOf(data, l.dex)
+  const to = tradeEvolutionOf(data, l.dex)
+  const gets = to != null && home && speciesAllowedIn(data, home)(to) ? to : l.dex
+  if (!owned.has.has(gets) || (l.shiny && !owned.shiny.has(gets))) return 'new'
+  if (l.talent && talentsOn(data) && home && !familyUnlocked(save, data, gets, home)) return 'talent'
+  return 'other'
+}
+
+const utcDay = (now: number) => Math.floor(now / DAY_MS)
+
+/** Today's NEW PICKS used and the listings shown before them (least recently first); a new UTC day starts afresh. */
+export function picksToday(save: SaveData, now: number): Pick<TradePicks, 'rerolls' | 'skip'> {
+  const p = tradesOf(save).picks
+  return p && p.day === utcDay(now) ? p : { rerolls: 0, skip: [] }
+}
+
+/** NEW PICKS left today (the admin's number a day). */
+export const picksLeft = (save: SaveData, data: GameData, now: number): number =>
+  Math.max(0, tradeCfg(data).boardRerolls - picksToday(save, now).rerolls)
+
+/**
+ * Every listing ranked for this save: those not shown before a NEW PICKS today first, best tier first, then friends'
+ * first, then ending soonest; the ones shown before after them, the one shown longest ago first, so each NEW PICKS
+ * brings the listings seen least.
+ */
+export function rankPicks<L extends PickListing>(
+  save: SaveData,
+  data: GameData,
+  listings: L[],
+  now: number,
+): RankedPick<L>[] {
+  const owned = ownedForTrades(save, data)
+  const order = new Map(picksToday(save, now).skip.map((id, i) => [id, i]))
+  return listings
+    .map((listing) => ({
+      listing,
+      tier: pickTier(save, data, listing, owned, now),
+      seen: order.has(listing.id),
+    }))
+    .sort(
+      (a, b) =>
+        Number(a.seen) - Number(b.seen) ||
+        (order.get(a.listing.id) ?? 0) - (order.get(b.listing.id) ?? 0) ||
+        TIERS.indexOf(a.tier) - TIERS.indexOf(b.tier) ||
+        Number(b.listing.isFriend) - Number(a.listing.isFriend) ||
+        a.listing.endsAt - b.listing.endsAt ||
+        (a.listing.id < b.listing.id ? -1 : a.listing.id > b.listing.id ? 1 : 0),
+    )
+}
+
+/**
+ * The board's picks: the first `boardPicks` listings you can take, in `rankPicks`' order. `more`: there are others
+ * you can take, so a NEW PICKS would show something else.
+ */
+export function boardPicks<L extends PickListing>(
+  save: SaveData,
+  data: GameData,
+  listings: L[],
+  now: number,
+): { picks: RankedPick<L>[]; more: boolean } {
+  const can = rankPicks(save, data, listings, now).filter((r) => r.tier !== 'blocked')
+  const n = Math.max(1, tradeCfg(data).boardPicks)
+  return { picks: can.slice(0, n), more: can.length > n }
+}
+
+const SKIP_KEPT = 100
+
+/**
+ * NEW PICKS: the listings shown go to the back of the line until tomorrow, and one of the day's NEW PICKS is used.
+ * Null when none is left.
+ */
+export function rerollPicks(save: SaveData, data: GameData, shown: string[], now: number): SaveData | null {
+  if (picksLeft(save, data, now) < 1) return null
+  const today = picksToday(save, now)
+  const skip = [...today.skip.filter((id) => !shown.includes(id)), ...shown].slice(-SKIP_KEPT)
+  return {
+    ...save,
+    trades: { ...tradesOf(save), picks: { day: utcDay(now), rerolls: today.rerolls + 1, skip } },
+  }
+}
+
+/**
+ * What the server ranks the board's candidates by (`trade_picks`, migration 0108), so a crowded board still finds the
+ * ones worth showing: what you own (the snapshot a listing keeps), every species you could give, and the species whose
+ * family's hidden talent you've unlocked in their home region (null while talents are off). The game ranks the
+ * candidates it sends back exactly (`rankPicks`).
+ */
+export interface PicksAsk extends TradeSnapshot {
+  offer: Pick<TradeSnapshot, 'has' | 'forms'>
+  talented: Pick<TradeSnapshot, 'has' | 'forms'> | null
+}
+
+export function picksAsk(save: SaveData, data: GameData): PicksAsk {
+  const offer = tradeChoices(save, data)
+    .filter((at) => !tradeBlocked(save, data, at))
+    .map((at) => at.inst.dex)
+  const regions = new Set(tradeRegions(save, data))
+  const talented = talentsOn(data)
+    ? data.speciesList
+        .filter((s) => {
+          const home = homeRegionOf(data, s.dex)
+          return (
+            !!home && regions.has(home) && !untradable(data, s.dex) && familyUnlocked(save, data, s.dex, home)
+          )
+        })
+        .map((s) => s.dex)
+    : null
+  return {
+    ...tradeSnapshot(save, data),
+    offer: encodeDexSet(offer),
+    talented: talented && encodeDexSet(talented),
+  }
 }
 
 /**

@@ -1,24 +1,32 @@
 // Admin → Analytics: retention on day 1, 3, 7 and 30 and the players, from the daily ping (migrations 0028, 0102),
-// players per hour (0042) and churn by area (0102), those two on demand. Admin-only via RLS. docs/57.
+// players per hour (0042), churn by starter and area (0102, 0129) and playtime (0130), those three on demand.
+// Admin-only via RLS. docs/57. Every number is for the players the WHO switch names: all, the logged-in ones or the
+// guests (0135).
 import { PixelIcon } from '@/components/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
+  cohortsOf,
   dayKey,
   RETENTION_DAYS,
   retentionByDay,
   type Cohorts,
   type Retention,
   type RetentionDay,
+  type Who,
 } from '@/analytics/retention'
+import { formatPlaytime } from '@/analytics/playtime'
 import { PixelButton } from '@/components/PixelButton'
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
 import { PALETTE } from '@/theme/colors'
 import { cx } from '@/theme/util'
 import { inputCls } from '../widgets'
-import { ChurnByArea } from './AnalyticsChurn'
+import { ChurnPanel } from './AnalyticsChurn'
 import { HourlyPlayers } from './AnalyticsHourly'
 import { errorText, PlayerPanel } from './AnalyticsPlayer'
+import { fetchPlaytime, PlaytimePanel, type PlaytimeRaw } from './AnalyticsPlaytime'
+import { SuspiciousSaves } from './AnalyticsSuspicious'
+import { WHO, WHO_MIGRATION, WHO_TEXT } from './analyticsWho'
 
 interface PlayerRow {
   player: string
@@ -150,10 +158,27 @@ function RetentionTile({ day, r }: { day: RetentionDay; r: Retention | null }) {
   )
 }
 
-function RetentionHero({ byDay }: { byDay: Record<RetentionDay, Retention> | null }) {
+function RetentionHero({
+  byDay,
+  who,
+  unsplit,
+}: {
+  byDay: Record<RetentionDay, Retention> | null
+  who: Who
+  /** The database doesn't split the players by who plays yet. */
+  unsplit: boolean
+}) {
   return (
     <section className="pixel-panel-dark flex flex-col gap-3 p-4" aria-label="Retention">
-      <span className="text-xl uppercase tracking-wider text-gold">Retention</span>
+      <div className="flex flex-col">
+        <span className="text-xl uppercase tracking-wider text-gold">Retention</span>
+        <span className="text-base opacity-80">{WHO_TEXT[who]}</span>
+      </div>
+      {unsplit && (
+        <p className="text-lg text-danger-light">
+          Logged in and Not logged in need {WHO_MIGRATION} to be run.
+        </p>
+      )}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {RETENTION_DAYS.map((d) => (
           <RetentionTile key={d} day={d} r={byDay?.[d] ?? null} />
@@ -169,7 +194,7 @@ function RetentionHero({ byDay }: { byDay: Record<RetentionDay, Retention> | nul
   )
 }
 
-type PlayerSort = 'name' | 'first' | 'last' | 'days' | 'topLevel' | 'badges'
+type PlayerSort = 'name' | 'first' | 'last' | 'days' | 'topLevel' | 'badges' | 'playtime' | 'hours'
 
 function SortTh({
   label,
@@ -220,14 +245,34 @@ const dayLabel = (day: string) =>
 
 export function AnalyticsSection() {
   const [frame, setFrame] = useState<FrameId>('30d')
+  const [who, setWho] = useState<Who>('all')
   const [cohorts, setCohorts] = useState<Cohorts | null>(null)
   const [rows, setRows] = useState<PlayerRow[]>([])
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
   const [player, setPlayer] = useState<string | null>(null)
+  // A player picked from the suspicious list, who may not be in this time frame's list.
+  const [picked, setPicked] = useState<{ player: string; name: string } | null>(null)
   const [search, setSearch] = useState('')
   const [shown, setShown] = useState(200)
   const sort = useSort<PlayerSort>('last', -1, ['name'])
+  // Playtime (0130), fetched on demand: until then the table has no Playtime column.
+  const [playtime, setPlaytime] = useState<PlaytimeRaw | null>(null)
+  const [playtimeLoading, setPlaytimeLoading] = useState(false)
+  const [playtimeError, setPlaytimeError] = useState<string | null>(null)
+  const loadPlaytime = async () => {
+    setPlaytimeLoading(true)
+    setPlaytimeError(null)
+    try {
+      setPlaytime(await fetchPlaytime())
+      // The ask is who played longest: the table shows them first.
+      if (sort.key !== 'playtime') sort.toggle('playtime')
+    } catch (err) {
+      setPlaytimeError(errorText(err))
+    } finally {
+      setPlaytimeLoading(false)
+    }
+  }
 
   const frameDef = FRAMES.find((f) => f.id === frame)!
   const frameLabel = frameDef.days == null ? 'all time' : `the last ${frameDef.label}`
@@ -253,23 +298,33 @@ export function AnalyticsSection() {
   useEffect(() => {
     if (isSupabaseConfigured) void load()
   }, [load])
-  useEffect(() => setShown(200), [frame, search])
+  useEffect(() => setShown(200), [frame, search, who])
 
-  const retention = useMemo(() => (cohorts ? retentionByDay(cohorts, from, null) : null), [cohorts, from])
+  // The database sends every player and the guests apart: switching who costs no request.
+  const ofWho = useMemo(() => (cohorts ? cohortsOf(cohorts, who) : null), [cohorts, who])
+  const retention = useMemo(() => (ofWho ? retentionByDay(ofWho, from, null) : null), [ofWho, from])
   const rawData = useGame((s) => s.rawData)
   const areaNames = useMemo(() => new Map(rawData.areas.map((a) => [a.id, a.name])), [rawData])
 
+  // A guest is a player keyed by their device, as the database counts them.
+  const whoRows = useMemo(
+    () => (who === 'all' ? rows : rows.filter((r) => r.player.startsWith('device:') === (who === 'guests'))),
+    [rows, who],
+  )
+
   const players = useMemo(() => {
     const q = search.trim().toLowerCase()
-    const list = rows
+    const list = whoRows
       .map((r) => ({
         ...r,
         // In English from the game data when it knows the area, else the snapshot's own name.
         area: (r.last_area && areaNames.get(r.last_area)) || r.area,
-        guest: !r.user_id,
+        guest: r.player.startsWith('device:'),
         label: r.name || r.email?.split('@')[0] || `Guest ${r.player.slice(-4)}`,
         topLevel: Math.max(0, ...(r.team ?? []).map((m) => Number(m.level) || 0)),
         badgeCount: Number(r.badges) || 0,
+        playtime: playtime?.rows[r.player]?.[0] ?? 0,
+        hours: playtime?.rows[r.player]?.[1] ?? 0,
       }))
       .filter((r) => !q || r.label.toLowerCase().includes(q) || (r.email ?? '').toLowerCase().includes(q))
     const val = (p: (typeof list)[number]): string | number =>
@@ -283,13 +338,23 @@ export function AnalyticsSection() {
               ? p.badgeCount
               : p[sort.key]
     return list.sort((a, b) => (val(a) < val(b) ? -1 : val(a) > val(b) ? 1 : 0) * sort.dir)
-  }, [rows, search, sort.key, sort.dir, areaNames])
+  }, [whoRows, search, sort.key, sort.dir, areaNames, playtime])
 
   if (!isSupabaseConfigured)
     return <p className="text-xl">Analytics needs Supabase — this admin is running offline.</p>
 
   const selected = player ? players.find((p) => p.player === player) : null
-  const newInFrame = from ? rows.filter((r) => r.first_day >= dayKey(from)).length : rows.length
+  const newInFrame = from ? whoRows.filter((r) => r.first_day >= dayKey(from)).length : whoRows.length
+  // The players listed (seen in the time frame), whatever the search.
+  const framePlaytime = playtime
+    ? whoRows.reduce(
+        (t, r) => {
+          const [sec = 0, hrs = 0] = playtime.rows[r.player] ?? []
+          return { seconds: t.seconds + sec, players: t.players + (sec > 0 ? 1 : 0), hours: t.hours + hrs }
+        },
+        { seconds: 0, players: 0, hours: 0 },
+      )
+    : null
 
   return (
     <div className="flex flex-col gap-4">
@@ -312,16 +377,49 @@ export function AnalyticsSection() {
             </button>
           ))}
         </div>
+        <div className="flex flex-wrap gap-1" role="group" aria-label="Players counted">
+          {WHO.map((w) => (
+            <button
+              key={w.id}
+              type="button"
+              aria-pressed={who === w.id}
+              onClick={() => setWho(w.id)}
+              className={cx('pixel-btn px-2 py-0.5 text-lg', who === w.id ? 'bg-gold' : 'bg-panel')}
+            >
+              {w.label}
+            </button>
+          ))}
+        </div>
         <PixelButton size="sm" onClick={() => void load()} disabled={status === 'loading'}>
           {status === 'loading' ? 'Loading…' : 'Refresh'}
         </PixelButton>
       </div>
 
-      <RetentionHero byDay={status === 'loading' ? null : retention} />
+      <RetentionHero
+        byDay={status === 'loading' ? null : retention}
+        who={who}
+        unsplit={cohorts != null && ofWho == null}
+      />
 
-      <HourlyPlayers />
+      <HourlyPlayers who={who} />
 
-      <ChurnByArea since={from} frame={frameLabel} />
+      <ChurnPanel since={from} frame={frameLabel} who={who} />
+
+      <PlaytimePanel
+        result={playtime}
+        frame={frameLabel}
+        inFrame={framePlaytime}
+        loading={playtimeLoading}
+        error={playtimeError}
+        onFetch={() => void loadPlaytime()}
+      />
+
+      <SuspiciousSaves
+        onPick={(id, name) => {
+          setPlayer(null)
+          setPicked({ player: id, name })
+        }}
+      />
 
       {status === 'error' && (
         <div className="pixel-panel p-3 text-lg">
@@ -330,20 +428,22 @@ export function AnalyticsSection() {
         </div>
       )}
 
-      {selected && (
+      {selected ? (
         <PlayerPanel
           key={selected.player}
           player={selected.player}
           name={selected.label}
           deviceId={selected.device_id}
         />
+      ) : (
+        picked && <PlayerPanel key={picked.player} player={picked.player} name={picked.name} />
       )}
 
       <section className="pixel-panel overflow-hidden p-0" aria-label="Players">
         <h3 className="flex flex-wrap items-center gap-3 border-b-[3px] border-edge px-3 py-1 text-2xl">
           Players
           <span className="text-lg text-muted">
-            {rows.length.toLocaleString()} seen · {newInFrame.toLocaleString()} new
+            {whoRows.length.toLocaleString()} seen · {newInFrame.toLocaleString()} new
           </span>
           <input
             type="search"
@@ -386,6 +486,24 @@ export function AnalyticsSection() {
                   dir={sort.dir}
                   onClick={() => sort.toggle('days')}
                 />
+                {playtime && (
+                  <>
+                    <SortTh
+                      label="Playtime"
+                      right
+                      active={sort.key === 'playtime'}
+                      dir={sort.dir}
+                      onClick={() => sort.toggle('playtime')}
+                    />
+                    <SortTh
+                      label="Hrs 7d"
+                      right
+                      active={sort.key === 'hours'}
+                      dir={sort.dir}
+                      onClick={() => sort.toggle('hours')}
+                    />
+                  </>
+                )}
                 <SortTh
                   label="First day"
                   right
@@ -406,7 +524,10 @@ export function AnalyticsSection() {
               {players.slice(0, shown).map((p, i) => (
                 <tr
                   key={p.player}
-                  onClick={() => setPlayer(player === p.player ? null : p.player)}
+                  onClick={() => {
+                    setPicked(null)
+                    setPlayer(player === p.player ? null : p.player)
+                  }}
                   className={cx(
                     'cursor-pointer border-t border-shadow/40 hover:bg-gold/30',
                     player === p.player ? 'bg-gold/60' : i % 2 ? 'bg-parchment/50' : '',
@@ -433,13 +554,21 @@ export function AnalyticsSection() {
                   <td className="px-2 text-right">{p.topLevel || '–'}</td>
                   <td className="px-2 text-right">{p.badgeCount || '–'}</td>
                   <td className="px-2 text-right">{p.days}</td>
+                  {playtime && (
+                    <>
+                      <td className="whitespace-nowrap px-2 text-right">
+                        {p.playtime ? formatPlaytime(p.playtime) : '–'}
+                      </td>
+                      <td className="px-2 text-right">{p.hours || '–'}</td>
+                    </>
+                  )}
                   <td className="whitespace-nowrap px-2 text-right text-muted">{dayLabel(p.first_day)}</td>
                   <td className="whitespace-nowrap px-2 text-right text-muted">{dayLabel(p.last_day)}</td>
                 </tr>
               ))}
               {status === 'ready' && !players.length && (
                 <tr>
-                  <td colSpan={7} className="px-3 py-4 text-center text-muted">
+                  <td colSpan={playtime ? 9 : 7} className="px-3 py-4 text-center text-muted">
                     {search ? 'No player matches.' : 'No players in this time frame.'}
                   </td>
                 </tr>

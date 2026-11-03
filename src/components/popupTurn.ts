@@ -32,3 +32,10 @@ export function useOnScreen(id: OneTimePopup, open: boolean) {
     }
   }, [id, open])
 }
+
+/**
+ * CONTINUE pressed at a Pokémon Center while the dice tutorial waits for its heal to play (docs/46 §5): the tutorial
+ * opens at once rather than the Center being left without it (a tap on the result card's CONTINUE landing on the
+ * Center's own, in the same spot, skipped it). Back to false as the Center closes.
+ */
+export const useCenterRush = create<{ on: boolean }>(() => ({ on: false }))

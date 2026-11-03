@@ -3,7 +3,7 @@
 // area, the send-out step, and auto-mode switched on in the middle of a cleared area's battle.
 import { expect, test, type Page } from '@playwright/test'
 import { emptyProgress, instanceMaxHp, linearAreas, regionOf, type SaveData } from '../src/engine'
-import { FAST, gameData, makeSave, mockSupabase } from './helpers'
+import { EVENTS_ON, FAST, gameData, makeSave, mockSupabase } from './helpers'
 
 const MOTION_ON = JSON.stringify({ sfx: false, sound: false, reducedMotion: false })
 
@@ -28,7 +28,7 @@ const strong = (save: SaveData, level = 15): SaveData => {
 
 /** Plays the fight on screen until its result's buttons show (ATTACK, the catch and its CONTINUE on the way). */
 async function winFight(page: Page) {
-  const back = page.getByRole('button', { name: '◂ Back', exact: true })
+  const back = page.getByRole('button', { name: 'Home', exact: true })
   for (let i = 0; i < 300 && !(await back.isVisible()); i++) {
     for (const name of ['ATTACK', 'CATCH', 'CONTINUE']) {
       const b = page.getByRole('button', { name, exact: true }).first()
@@ -94,7 +94,7 @@ test('a find on the way is a step of its own: on the stage, PICK IT UP, then the
   await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeVisible({ timeout: 20_000 })
 })
 
-test('after a fight the player stays in the area: no tab bar, one gauge, HOME the way back', async ({ page }) => {
+test('after a fight HOME goes straight Home: no stop on the area page', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   const base = makeSave(4)
   await boot(page, strong({ ...base, areaProgress: { ...base.areaProgress, [base.currentAreaId]: { ...emptyProgress(), deck: ['wild', 'wild'] } } }))
@@ -103,19 +103,35 @@ test('after a fight the player stays in the area: no tab bar, one gauge, HOME th
   await winFight(page)
   // The result in the battle's panel, its buttons at the foot.
   await expect(page.getByRole('button', { name: 'Next ▸', exact: true })).toBeVisible()
-  await page.getByRole('button', { name: '◂ Back', exact: true }).click()
-
-  await expect(page).toHaveURL(/\/area$/)
-  await expect(page.getByRole('navigation', { name: 'Menus' })).toHaveCount(0)
-  const next = page.getByRole('button', { name: 'CONTINUE', exact: true })
-  await expect(next).toBeEnabled()
-  // The round's gauge once, under the area's name; none over the bar.
-  await expect(page.getByRole('img', { name: 'This round: 1 of 2 encounters done' })).toHaveCount(1)
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0)
-
+  // The user's call (2026-11-02): HOME on the result card is Home itself, with the tab bar back.
   await page.getByRole('button', { name: 'Home', exact: true }).click()
   await expect(page).toHaveURL(/\/home$/)
   await expect(page.getByRole('navigation', { name: 'Menus' }).last()).toBeVisible()
+})
+
+test('FLEE goes straight on to the next encounter: no stop on the area page', async ({ page }) => {
+  const base = makeSave(1)
+  const lead = base.box[0]!
+  const mon = { ...lead, id: 'e2e-charmander', dex: 4 }
+  const team = [lead, mon].map((p) => ({ ...p, currentHp: instanceMaxHp(p, gameData()) }))
+  await boot(page, {
+    ...base,
+    box: team,
+    team: team.map((p) => p.id),
+    areaProgress: { ...base.areaProgress, [base.currentAreaId]: { ...emptyProgress(), deck: ['wild', 'wild', 'wild'] } },
+  })
+  // FLEE is shut by default (noEscape): opened for this test, over the config the mock sets.
+  await page.addInitScript((cfg) => localStorage.setItem('pokedice.devConfig', cfg), JSON.stringify({ ...EVENTS_ON, noEscape: false }))
+  await page.goto('/home')
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+  await page.getByRole('button', { name: 'FLEE' }).click()
+  await expect(page.getByText('Got away safely!')).toBeVisible()
+  // The user's call (2026-11-02): the next wild one's send-out step, not the area's page with its team and CONTINUE.
+  await expect(page).toHaveURL(/\/area$/)
+  await expect(page.getByRole('heading', { level: 1, name: /^Battle: .* against a wild / })).toBeAttached()
+  await expect(page.getByRole('button', { name: 'FLEE' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /^Team \(/ })).toHaveCount(0)
 })
 
 test('Home offers the furthest open area of the region when the player is behind', async ({ page }) => {
@@ -139,6 +155,28 @@ test('Home offers the furthest open area of the region when the player is behind
   await expect(go).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'CONTINUE', exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: /^Stay here/ })).toHaveCount(0)
+})
+
+test('back behind an area already started, CONTINUE plays here and the green GO TO goes back', async ({ page }) => {
+  const data = gameData()
+  const base = makeSave(4)
+  const chain = linearAreas(data, regionOf(base))
+  const latest = chain[2]!
+  const areaProgress = {
+    ...Object.fromEntries(chain.slice(0, 2).map((a) => [a.id, { ...emptyProgress(), cleared: true }])),
+    // An encounter already met there: coming back here was a choice.
+    [latest.id]: { ...emptyProgress(), round: 1, drawn: ['wild' as const] },
+  }
+  await boot(page, { ...base, areaProgress, currentAreaId: chain[0]!.id })
+  await page.goto('/home')
+
+  await expect(page.getByRole('button', { name: 'CONTINUE', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Stay here/ })).toHaveCount(0)
+  const go = page.getByRole('button', { name: new RegExp(`^Go to ${latest.name} · `) })
+  await expect(go).toHaveCount(1)
+  await go.click()
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(latest.name)
+  await expect(go).toHaveCount(0)
 })
 
 test('Stay here keeps the free play of a cleared area when the story goes on elsewhere', async ({ page }) => {
@@ -253,4 +291,46 @@ test('the send-out step: the foe out, the first picked, whole names at 360 px, a
   await page.getByRole('button', { name: 'Send out Charmander' }).click()
   await expect(page.getByRole('button', { name: /^Send out/ })).toHaveCount(0)
   await expect(page.getByText(/Go, Charmander!/)).toBeVisible({ timeout: 20_000 })
+})
+
+test('another Pokémon picked at the send-out step: the same fight, its way in not played again', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 640 })
+  const base = makeSave(1)
+  const lead = base.box[0]!
+  const mon = { ...lead, id: 'e2e-charmander', dex: 4 }
+  const box = [...base.box, mon].map((p) => ({ ...p, currentHp: instanceMaxHp(p, gameData()) }))
+  await boot(
+    page,
+    {
+      ...base,
+      box,
+      team: [...base.team, mon.id],
+      areaProgress: { ...base.areaProgress, [base.currentAreaId]: { ...emptyProgress(), deck: ['wild'] } },
+    },
+    MOTION_ON,
+  )
+  await page.goto('/home')
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+  // The way in plays once, as the fight opens, then goes.
+  const swipe = page.getByTestId('encounter-swipe')
+  await expect(swipe).toHaveCount(1)
+  await expect(swipe).toHaveCount(0)
+  await page
+    .getByRole('main')
+    .getByRole('button', { pressed: false })
+    .filter({ hasText: 'Charmander' })
+    .click()
+  // GO! stages the fight again with Charmander in front: no second swipe over the stage, even a brief one.
+  await page.evaluate(() => {
+    const w = window as unknown as { swiped?: boolean }
+    new MutationObserver(() => {
+      if (document.querySelector('[data-testid="encounter-swipe"]')) w.swiped = true
+    }).observe(document.body, { childList: true, subtree: true })
+  })
+  await page.getByRole('button', { name: 'Send out Charmander' }).click()
+  await expect(page.getByRole('button', { name: /^Send out/ })).toHaveCount(0)
+  await expect(page.getByText(/Go, Charmander!/)).toBeVisible({ timeout: 20_000 })
+  expect(await page.evaluate(() => (window as unknown as { swiped?: boolean }).swiped ?? false)).toBe(false)
 })

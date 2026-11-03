@@ -3,6 +3,7 @@
 // Heart Scales by the streak's tier, at most the day's cap across every friend. The coins buy from a weekly market.
 // The server keeps the streaks, the wallet and the purchases (migration 0107); these functions read the admin's
 // numbers, name the tiers, lay out the market and put what was bought in the save. The screens only say it.
+import { BATTLE_TICKET_KEY, friendBattlesConfig, friendBattlesOn } from './friendBattle'
 import { eventOpenTo } from './events'
 import { daysBetween } from './eventTime'
 import { isExtreme } from './extreme'
@@ -27,7 +28,8 @@ const APPLIED_KEPT = 60
 /** Egg reports waiting to reach the server, at most. */
 const EGG_REPORTS_KEPT = 8
 
-export type FriendshipKind = 'raid' | 'trade' | 'egg'
+/** 'battle': a Friend Battle fought to its end (docs/65). */
+export type FriendshipKind = 'raid' | 'trade' | 'egg' | 'battle'
 
 /** The admin's switch (docs/15 §20): on for everyone, or for the admin only. */
 export const friendshipOn = (data: GameData): boolean => eventOpenTo(data.config.friendship?.access, data)
@@ -186,9 +188,10 @@ export function marketShiny(week: string, data: GameData): number | null {
 }
 
 export interface MarketRow {
-  /** An item's key, or 'shiny'. */
+  /** An item's key, 'shiny', or 'battle-ticket'. */
   key: string
-  kind: 'item' | 'pokemon'
+  /** `ticket`: Friend Battles' battle tickets (docs/65 §15), held by the server, not the Bag. */
+  kind: 'item' | 'pokemon' | 'ticket'
   price: number
   /** The week's limit and what's left of it. */
   limit: number
@@ -223,6 +226,18 @@ export function marketRows(data: GameData, week: string, bought: Record<string, 
       limit: m.limit,
       left: Math.max(0, m.limit - (bought[m.key] ?? 0)),
     })
+  }
+  // Battle tickets (docs/65 §15), while Friend Battles is open to this player: last on the shelf.
+  if (friendBattlesOn(data)) {
+    const fb = friendBattlesConfig(data)
+    if (fb.ticketPrice > 0 && fb.ticketWeekly > 0)
+      rows.push({
+        key: BATTLE_TICKET_KEY,
+        kind: 'ticket',
+        price: fb.ticketPrice,
+        limit: fb.ticketWeekly,
+        left: Math.max(0, fb.ticketWeekly - (bought[BATTLE_TICKET_KEY] ?? 0)),
+      })
   }
   return rows
 }

@@ -13,6 +13,7 @@ import { DiceSet } from './DiceSet'
 import { KoTag } from './Extreme'
 import { HpBar } from './HpBar'
 import { PixelIcon } from './icons'
+import { EggSprite } from './EggSprite'
 import { ItemSprite } from './ItemSprite'
 import { MiniSprite } from './SpriteImg'
 import { TypeBadge } from './TypeBadge'
@@ -27,8 +28,13 @@ export function RevivalBar({ inst, className }: { inst: PokemonInstance; classNa
   const left = Math.max(0, (inst.revivesAt ?? 0) - now)
   const pct = 1 - left / total
   return (
-    <div className={cx('flex items-center gap-2', className)} role="img" aria-label={t('ui.mon.revivesIn', { time: countdown(left) })}>
-      <span className="text-sm leading-none">{t('ui.mon.reviving')}</span>
+    <div
+      className={cx('flex items-center gap-2', className)}
+      role="img"
+      aria-label={t(inst.egg ? 'ui.mon.hatchesIn' : 'ui.mon.revivesIn', { time: countdown(left) })}
+    >
+      {/* A gift Egg (docs/61 §5.3) hatches; a fossil revives. */}
+      <span className="text-sm leading-none">{t(inst.egg ? 'ui.mon.hatching' : 'ui.mon.reviving')}</span>
       <div className="h-2 flex-1 border border-edge bg-night" style={{ borderRadius: 1 }}>
         <div className="h-full bg-gold" style={{ width: `${pct * 100}%` }} />
       </div>
@@ -186,13 +192,17 @@ export function MonCard({
         <div className="flex items-start gap-2">
           {/* Party icons sit low in their box: pull it up so the creature lines up with the name. */}
           {reviving ? (
-            <ItemSprite item={fossil} size={32} className="-mt-1" />
+            inst.egg ? (
+              <EggSprite size={28} className="-mt-1 shrink-0" />
+            ) : (
+              <ItemSprite item={fossil} size={32} className="-mt-1" />
+            )
           ) : (
             <MiniSprite dex={inst.dex} size={40} className={cx('-mb-2 -ml-1 -mt-4 shrink-0', fainted && 'grayscale')} />
           )}
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
             <span className="flex min-w-0 items-center gap-1">
-              <span className="truncate text-xl leading-none">{inst.nickname || species.name}</span>
+              <span className="truncate text-xl leading-none">{inst.egg ? t('ui.mon.egg') : inst.nickname || species.name}</span>
               {inst.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
               {/* Its outfit (docs/59): the menu icon is the plain one, so its hat beside the name says it. */}
               {outfitOf(data, inst) && (

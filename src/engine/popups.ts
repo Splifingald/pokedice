@@ -4,14 +4,14 @@
 // powers' rules waited on the gifts' and Trick or Treat's, which only clear at the first gift or the first ghost, so
 // with either switched on they never opened.
 //
-// The rules that open at their own moment (the gifts' before the first gift, Trick or Treat's at the first ghost, the
+// The rules that open at their own moment (Trick or Treat's at the first ghost, the
 // portal's and the nightmare's on their way in, the looks' at the first open) aren't in the queue, and being due holds
 // nothing back.
 //
 // Home's notices (`homeNotices`, below; docs/43 §7) took what never needed a pop-up over Home: what asks nothing of the
 // player (Prof. Oak's leaderboard tip, his invite, Support me) and the opening of every feature with a page of its own
-// (the Day Care, Versus, the special events, Trades, the General upgrades, the shiny and Unown Pokédexes, the invite
-// rewards, the raid overhaul, the Underground), whose rules are now a card at the top of that page (`RulesCard`).
+// (the Day Care, Versus, the special events, Trades, the shiny and Unown Pokédexes, the raid overhaul, the
+// Underground), whose rules are now a card at the top of that page (`RulesCard`).
 // Every "seen" flag stays where it was in the save.
 import { calendarRulesDue } from './calendar'
 import { dayCareTutorialDue, leaderboardTutorialDue } from './daycare'
@@ -19,8 +19,7 @@ import { donationDue } from './donation'
 import { dayNightRulesDue } from './dayNight'
 import { eventUnlockDue } from './events'
 import { extremeRulesDue, isExtreme } from './extreme'
-import { generalRulesDue } from './general'
-import { inviteRulesDue } from './invites'
+import { weatherRulesDue } from './flavours'
 import { liveList, livePopupDue, livesFor, type LiveSet } from './liveEvents'
 import { powerRulesDue } from './powers'
 import { raidOverhaulRulesDue } from './progressRaid'
@@ -28,12 +27,12 @@ import { inWorldRegion, regionOfferDue } from './regions'
 import { badgeCase, portalRulesDue } from './run'
 import { shinyDexRulesDue } from './shinyDex'
 import { outfitRulesDue } from './outfits'
-import { talentRulesDue } from './talents'
 import { tradeRulesDue, tradesToWatch } from './trade'
 import { diceTutorialDue } from './tutorial'
 import { ugRulesDue } from './underground'
 import { unownDexRulesDue } from './unownDex'
-import { versusRulesDue } from './versus'
+import { versusRulesDue, versusUnlocked } from './versus'
+import { friendBattlesRulesDue } from './friendBattle'
 import { inWorld, worldByeDue, worldFinishPopupDue, worldFor, worldPopupDue } from './worlds'
 import type { GameData, LiveEvent, SaveData } from './types'
 
@@ -115,10 +114,10 @@ const QUEUE = {
   inviteReward: { due: (_s, _d, c) => !!c.inviteReward, away: under('/friends') },
   portal: { due: (s, d) => !!portalRulesDue(s, d), away: (p) => p === '/area' },
   dayNight: { due: (s, d) => dayNightRulesDue(s, d) },
+  /** The weather (docs/62 §2): the first time in an area with weather, Hoenn's and Galar's each. */
+  weather: { due: (s, d, c) => weatherRulesDue(s, d, c.now ?? Date.now()) },
   /** Mega Evolution, Gigantamax and Z-Moves, each once its badge is won. */
   powers: { due: (s, d) => !!powerRulesDue(s, d) },
-  /** Hidden talents (docs/51), as the switch opens them. */
-  talents: { due: (s, d) => talentRulesDue(s, d) },
   /** Outfits (docs/59), as the first Pokémon in one arrives. */
   outfits: { due: (s, d) => outfitRulesDue(s, d) },
   /** A small world has opened (the player outside it). */
@@ -193,10 +192,12 @@ export interface NoticeContext {
 /**
  * Home's notices (docs/43 §7), in the order Home shows them: each feature with a page of its own as it opens (until its
  * page's rules card is read: the feature's own "seen" flag), then what asks nothing of the player. The flags are the
- * pop-ups' own (`dayCare.visited`, `versusRulesSeen`, `events.seen`, `trades.rulesSeen`, `general.rulesSeen`,
+ * pop-ups' own (`dayCare.visited`, `versusRulesSeen`, `events.seen`, `trades.rulesSeen`,
  * `shinyDexSeen`, `unownDexSeen`, `invites.rulesSeen`, `events.raidRulesSeen`, `underground.rulesSeen`,
  * `events.calendarRulesSeen`, `leaderboardVisited`, `donationSeen`, the invite's per-region mark on the device).
  */
+// The General upgrades and the invite rewards have no notice (the user's call, 2026-11-02): their rules card waits on
+// their page.
 const NOTICES = {
   /** The Day Care, at its catches (Prof. Oak's tutorial was its rules). → /daycare */
   dayCare: (s: SaveData, d: GameData) => dayCareTutorialDue(s, d),
@@ -206,14 +207,13 @@ const NOTICES = {
   versus: (s: SaveData, d: GameData) => versusRulesDue(s, d),
   /** Trades, for an account. → /trades */
   trades: (s: SaveData, d: GameData, c: NoticeContext) => !!c.signedIn && tradeRulesDue(s, d),
-  /** The General upgrades (and the Shiny Charm among them). → the Mart's Upgrades */
-  general: (s: SaveData, d: GameData) => generalRulesDue(s, d),
+  /** Friend Battles (docs/65), for an account with Versus open (three Pokémon at Lv.50). → /battles */
+  friendBattles: (s: SaveData, d: GameData, c: NoticeContext) =>
+    !!c.signedIn && friendBattlesRulesDue(s, d) && versusUnlocked(s, d),
   /** The shiny Pokédex, at the first league beaten. → the Pokédex's shiny view */
   shinyDex: (s: SaveData, d: GameData) => shinyDexRulesDue(s, d),
   /** The Unown Pokédex, once an area where Unown live is opened. → the Pokédex's Unown view */
   unownDex: (s: SaveData, d: GameData) => unownDexRulesDue(s, d),
-  /** The invite rewards. → /friends */
-  invites: (s: SaveData, d: GameData) => inviteRulesDue(s, d),
   /** The raid overhaul's rules (docs/40), once a raid is open with it on. → /events/raid */
   raidRules: (s: SaveData, d: GameData) => raidOverhaulRulesDue(s, d),
   /** The Underground, while its live event runs. → /underground */

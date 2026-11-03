@@ -4,6 +4,7 @@
 import { create } from 'zustand'
 import {
   applyMarketBuys,
+  BATTLE_TICKET_KEY,
   bestLiveStreak,
   friendBallBoost,
   utcDay,
@@ -15,6 +16,7 @@ import {
   type MarketBuy,
 } from '@/engine'
 import { t } from '@/i18n'
+import { setTickets } from './pvp'
 import {
   buyFromMarket,
   fetchFriendshipStatus,
@@ -132,6 +134,16 @@ export async function buyMarket(key: string, qty: number): Promise<boolean> {
   try {
     const buy = await buyFromMarket(key, qty)
     const st = useFriendship.getState().status
+    // Battle tickets (docs/65 §15): credited on the server, nothing to open or put away.
+    if (key === BATTLE_TICKET_KEY) {
+      if (st)
+        useFriendship.setState({
+          status: { ...st, balance: buy.balance, bought: { ...st.bought, [key]: (st.bought[key] ?? 0) + qty } },
+        })
+      if (buy.tickets != null) setTickets(buy.tickets)
+      pushToast(t('ui.ticket.bought', { n: qty }), 'good')
+      return true
+    }
     if (st)
       useFriendship.setState({
         status: {

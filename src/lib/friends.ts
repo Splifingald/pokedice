@@ -152,12 +152,38 @@ export function parseNotices(raw: unknown): FriendNotice[] {
   }))
 }
 
-export function parseStatus(raw: unknown): { ids: string[]; unseen: FriendNotice[] } {
-  const row = (Array.isArray(raw) ? raw[0] : raw) as { ids?: unknown; unseen?: unknown } | undefined
+export function parseStatus(raw: unknown): { ids: string[]; unseen: FriendNotice[]; beta: boolean } {
+  const row = (Array.isArray(raw) ? raw[0] : raw) as { ids?: unknown; unseen?: unknown; beta?: unknown } | undefined
   return {
     ids: Array.isArray(row?.ids) ? row.ids.map(String) : [],
     unseen: parseNotices(row?.unseen),
+    // A database before 0131 says nothing: not a tester.
+    beta: row?.beta === true,
   }
+}
+
+/**
+ * The account last known as a beta tester (docs/65 §3), kept on the device so what's on for testers shows from the
+ * game's first frame; friend_status confirms it (or takes it back) a moment later.
+ */
+const BETA_KEY = 'pokedice.beta'
+
+function cachedBeta(user: string | null): boolean {
+  try {
+    return !!user && localStorage.getItem(BETA_KEY) === user
+  } catch {
+    return false
+  }
+}
+
+function setBeta(user: string | null, beta: boolean) {
+  try {
+    if (beta && user) localStorage.setItem(BETA_KEY, user)
+    else if (localStorage.getItem(BETA_KEY) === user || !user) localStorage.removeItem(BETA_KEY)
+  } catch {
+    // Storage blocked: the flag lives for this page only.
+  }
+  if (useGame.getState().beta !== beta) useGame.setState({ beta })
 }
 
 export function parseProfile(raw: unknown): FriendProfile | null {
@@ -280,13 +306,17 @@ export const LIST_EVERY_MS = 60_000
 /** Signed out (or another account): nothing of the last account's friends stays on screen. */
 export function clearFriends() {
   if (useFriends.getState().userId !== null) useFriends.setState({ ...EMPTY })
+  if (useGame.getState().beta) useGame.setState({ beta: false })
 }
 
 /** The signed-in account, or null; the store is cleared when it isn't the one it holds. */
 function signedInUser(): string | null {
   const { auth } = useGame.getState()
   const user = auth.status === 'signed_in' ? auth.userId : null
-  if (useFriends.getState().userId !== user) useFriends.setState({ ...EMPTY, userId: user, code: cachedCode(user) })
+  if (useFriends.getState().userId !== user) {
+    useFriends.setState({ ...EMPTY, userId: user, code: cachedCode(user) })
+    if (useGame.getState().beta !== cachedBeta(user)) useGame.setState({ beta: cachedBeta(user) })
+  }
   return user
 }
 
@@ -296,8 +326,9 @@ export async function loadFriendStatus(force = false, now = Date.now()): Promise
   if (!force && now - useFriends.getState().statusAt < STATUS_EVERY_MS) return
   useFriends.setState({ statusAt: now })
   try {
-    const { ids, unseen } = parseStatus(await rpc('friend_status', realmArgs()))
+    const { ids, unseen, beta } = parseStatus(await rpc('friend_status', realmArgs()))
     useFriends.setState({ ids: new Set(ids), unseen })
+    setBeta(useFriends.getState().userId, beta)
   } catch (err) {
     console.warn('[friends] status not loaded:', err instanceof Error ? err.message : err)
   }

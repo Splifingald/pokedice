@@ -9,6 +9,7 @@ import { isDitto } from './breeding'
 import {
   inWorldRegion,
   isWorldRegion,
+  pokedexEverywhere,
   regionCases,
   regionOf,
   regionOfSpecies,
@@ -43,10 +44,7 @@ export const dayCareOf = (save: SaveData): DayCareState => {
 
 /** Distinct species caught across every region's Pokédex (a small world's left out): what opens the Day Care. */
 export function speciesCaughtEverywhere(save: SaveData): number {
-  const world = worldRegionOf(save)
-  const all = new Set(regionOf(save) === world ? [] : save.pokedex)
-  for (const [id, block] of Object.entries(save.parked ?? {})) if (id !== world) for (const dex of block?.pokedex ?? []) all.add(dex)
-  return all.size
+  return pokedexEverywhere(save).size
 }
 
 /** The Day Care opens once enough species are caught, all regions counted. Pokédexes only grow: open for good. */

@@ -62,6 +62,8 @@ interface Spot {
   /** Share of the area's wild pool — or of its loot table for a fossil (0 for a legendary). */
   share: number
   legendary: boolean
+  /** A roadblock boss there (docs/61 §2): said so rather than "legendary". */
+  roadblock?: boolean
   /** Set when the species is revived from a fossil found here rather than met in the grass. */
   fossil?: ItemDef
   /**
@@ -108,7 +110,8 @@ export function whereToFind(dex: number, data: GameData, region: RegionId, now: 
     if (raid) {
       const level = raidRules(data, dex, 'progress', area.id).level
       out.push({ area, minLevel: level, maxLevel: level, share: 0, legendary: true, raid })
-    } else if (boss) out.push({ area, minLevel: boss.level, maxLevel: boss.level, share: 0, legendary: true })
+    } else if (boss)
+      out.push({ area, minLevel: boss.level, maxLevel: boss.level, share: 0, legendary: true, ...(boss.roadblock && { roadblock: true }) })
 
     // Omanyte, Kabuto and Aerodactyl are wild nowhere: they are dug out of an area's loot table as a fossil, and
     // without this the only Pokémon in the game you have to go looking for had no entry telling you where.
@@ -235,7 +238,7 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
                 ? t('ui.dex.raidSpot', { levels }) +
                   (raidState === 'done' ? t('ui.dex.raidDoneSuffix') : raidState === 'locked' && !locked ? t('ui.dex.raidLockedSuffix') : '')
               : spot.legendary
-                ? t('ui.dex.legendarySpot', { levels })
+                ? t(spot.roadblock ? 'ui.dex.roadblockSpot' : 'ui.dex.legendarySpot', { levels })
                 : t('ui.dex.wildSpot', { levels, rarity: rarity(spot.share) })}
           {locked && ` · ${lockReason(save, data, area) || t('ui.dex.locked')}`}
           {closed && t('ui.dex.closedSuffix')}

@@ -90,8 +90,11 @@ describe('parsing', () => {
     expect(parseStatus([{ ids: ['a', 'b'], unseen: [{ id: 'b', name: 'MISTY', avatar: 'green' }] }])).toEqual({
       ids: ['a', 'b'],
       unseen: [{ id: 'b', name: 'MISTY', avatar: 'green' }],
+      beta: false,
     })
-    expect(parseStatus([])).toEqual({ ids: [], unseen: [] })
+    expect(parseStatus([])).toEqual({ ids: [], unseen: [], beta: false })
+    // A beta tester (docs/65 §3): friend_status carries it from migration 0131.
+    expect(parseStatus([{ ids: [], unseen: [], beta: true }]).beta).toBe(true)
   })
 
   it('reads a profile, and nothing for someone who is not a friend', () => {

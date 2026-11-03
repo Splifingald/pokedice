@@ -27,7 +27,7 @@ wild rarely carries it; catching one unlocks the talent for the whole family. Th
 | Trades | A traded Pokémon **keeps** its talent (and unlocks its family on arrival). A listing can ask for a species **with its hidden talent** |
 | Icon | A small **gem** (a lozenge): green for a common talent, blue for a rare one, gold for an ultra one, red for the unique one, grey for unknown; on the Box, the team, the plates and trades |
 | Small worlds, Extreme | **On** in both; Extreme mode keeps its own (its own save) |
-| Switch and rules | Off / On for admin / On for everyone; a rules pop-up once, then a tap on the Pokémon sheet's talent box (no INFO button: the user's call, 2026-10-30) |
+| Switch and rules | Off / On for admin / On for everyone; its rules from a tap on the Pokémon sheet's talent box only (no INFO button: the user's call, 2026-10-30; no rules pop-up either, 2026-11-01) |
 
 ## 2. The talents (`TALENT` in `src/engine/talents.ts` holds the numbers)
 
@@ -97,7 +97,7 @@ adds its row.
   `familyTalent`), `isStarterFamily`, the rolls (`rollTalent`, `rollTalentFor` from an id, `foeTalentChance`), the
   player's families (`save.talents[region]`, `familyUnlocked`, `unlockFamily`, `talentsMet`/`noteTalentMet`), the mirror
   on each Pokémon (`inst.talent`, `syncTalents` as every save settles), the evolution roll (`talentOnEvolve`), False
-  Swipe's bonus, the rules pop-up's flag; Ditto always carries Imposter (`alwaysTalented`, `syncTalents`).
+  Swipe's bonus; Ditto always carries Imposter (`alwaysTalented`, `syncTalents`).
 - **Encounters** (`encounters.ts` `dealTalents`, `doubles.ts`): who carries one, drawn as the encounter is dealt; nothing
   drawn while the switch is off, so every seed plays as before.
 - **Catching** (`catching.ts`): `catchTarget(…, talent)` gives `learn` for a weaker one; `applyCatch` unlocks and

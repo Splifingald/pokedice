@@ -312,6 +312,7 @@ export function DevToolsSection() {
                 <option value="center">center</option>
                 <option value="casino">Game Corner</option>
                 <option value="trick">Trick or Treat</option>
+                <option value="gift">Gift card</option>
                 <option value="gym">gym / Elite battle</option>
                 <option value="boss">legendary boss</option>
               </select>

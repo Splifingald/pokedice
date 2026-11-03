@@ -8,10 +8,15 @@ import {
   gymsFor,
   playerSideOf,
   nightmareModeOf,
+  whiteoutModeOf,
+  tracksModeOf,
   nextRoundSize,
   opensWithoutCenter,
   portalModeOf,
+  portalSkin,
   progressOf,
+  timeRaceModeOf,
+  timeRacePlan,
   type Area,
   type AreaProgress,
   type DeckCard,
@@ -28,7 +33,11 @@ import { useGame } from '@/store/game'
 import { useAreaVersus } from '@/store/areaVersus'
 import { cx } from '@/theme/util'
 import { DistortionGauge } from '@/components/Portal'
+import { PortalSkinProvider } from '@/components/portalSkin'
 import { NightmareGauge } from '@/components/Nightmare'
+import { RaceGauge } from '@/components/TimeRace'
+import { WhiteoutGauge } from '@/components/Whiteout'
+import { TracksGauge } from '@/components/Tracks'
 
 const CARD_ICON: Record<DeckCard, IconName> = {
   wild: 'ball',
@@ -38,6 +47,7 @@ const CARD_ICON: Record<DeckCard, IconName> = {
   casino: 'coin',
   trick: 'pumpkin',
   versus: 'user',
+  gift: 'gift',
   legend: 'masterball',
 }
 /** What a met card was, for the gauge's tooltips. */
@@ -77,7 +87,10 @@ export function RoundGauge({
   const portal = portalModeOf(area, data)
   if (portal)
     return (
-      <DistortionGauge closed={progress.portal?.closed ?? 0} total={portal.portals} className={className} />
+      // The Stairway of Plates counts its landings climbed (docs/64 §4.5).
+      <PortalSkinProvider value={portalSkin(portal)}>
+        <DistortionGauge closed={progress.portal?.closed ?? 0} total={portal.portals} className={className} />
+      </PortalSkinProvider>
     )
   // The nightmare (docs/30) counts its rounds won.
   const dream = nightmareModeOf(area, data)
@@ -89,6 +102,36 @@ export function RoundGauge({
         className={className}
       />
     )
+  // The race of time and space (docs/64 §4.4) counts its fights, each fork's stretch in its gate's type.
+  const race = timeRaceModeOf(area, data)
+  if (race && save) {
+    const r = progress.timeRace
+    return (
+      <RaceGauge
+        fights={r?.active ? r.fights : 0}
+        total={timeRacePlan(save, race, area.id).total}
+        perFork={race.perFork}
+        path={r?.active ? r.path : []}
+        className={className}
+      />
+    )
+  }
+  // The whiteout (docs/64 §4.3) counts its waves, a pip a foe, then the crown for its boss.
+  const white = whiteoutModeOf(area, data)
+  if (white)
+    return (
+      <WhiteoutGauge
+        sizes={white.waves.map((w) => w.length)}
+        wave={progress.whiteout?.wave ?? 0}
+        foe={progress.whiteout?.foe ?? 0}
+        boss={!!progress.whiteout?.boss}
+        className={className}
+      />
+    )
+  // Tracks in the Snow (docs/64 §4.1) counts its rounds cleared.
+  const glade = tracksModeOf(area, data)
+  if (glade)
+    return <TracksGauge round={progress.tracks?.round ?? 0} total={glade.rounds.length} className={className} />
   if (!cfg.showRoundGauge || cfg.encounterMode !== 'deck') return null
   const remaining = progress.deck?.length ?? 0
   const met = progress.drawn ?? []
@@ -262,7 +305,7 @@ export function RoundGauge({
             <PixelIcon
               name="masterball"
               size={18}
-              title={t('ui.area.legendaryNamed', { name: finale ?? '' })}
+              title={t(boss.roadblock ? 'ui.area.roadblockNamed' : 'ui.area.legendaryNamed', { name: finale ?? '' })}
             />
           ) : null}
         </span>

@@ -160,7 +160,7 @@ test('the rules under the cards fold one at a time', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'The goal', level: 3 })).toBeVisible()
   // One section open at a time: opening Battles closes The goal.
   const goal = page.getByRole('button', { name: 'The goal' })
-  const battles = page.getByRole('button', { name: 'Battles' })
+  const battles = page.getByRole('button', { name: 'Battles', exact: true })
   await goal.click()
   await expect(goal).toHaveAttribute('aria-expanded', 'true')
   await battles.click()

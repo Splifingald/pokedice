@@ -102,7 +102,12 @@ bundled tables). Right then, a **pointing hand** walks the player to it, step by
 - **When**: between fights, as the one-time pop-ups' first (`popups.ts`): it keeps the turn on every page it walks
   through, so nothing comes between its steps. Joey's win leads straight into the next round's Pokémon Center, which
   isn't "between fights" for the other pop-ups: the tutorial alone may start there, once the heal has played (about
-  3 s, `PopupContext.atCenter`), so a new player meets it before their next fight. Due once the opening's first round
+  3 s, `PopupContext.atCenter`), so a new player meets it before their next fight. Any Center counts, the emergency one
+  after a K.O. too. **CONTINUE can't skip it** (a player's report, 2026-11-02: the result card's CONTINUE sits where
+  the Center's does, so a quick second tap left the Center before the heal's 3 s, and the fights that followed never
+  gave it a calm moment): pressed while it is due and not open yet, CONTINUE opens it at once (`useCenterRush`); pressed
+  again (should it be unable to open), the Center is left as usual. It never waits out the queue's minute of rest
+  either. Due once the opening's first round
   is won while the die is Lv.1 and the purse holds its price (`diceTutorialDue`); once shown (`save.diceTutorial: 'started'`) it comes back until BACK TO
   (`'done'`), the die bought or not. A player who upgraded the die on their own never sees it.
 - **No rules card, no INFO**: it is the explanation (docs/15 §20).
@@ -162,6 +167,13 @@ use potions in battle to heal your Pokémon and still play your turn." (the user
   items off.
 - **No switch of its own, no rules**: it rides the set opening's switch with the other new-player tutorials, and it is
   the explanation.
+- **Then the foe hits softly** (the user's request, 2026-11-02): once it has shown, foes on the set opening's area
+  throw **no die above 3** until its first round is won, so a new player reaches Joey's ₽10 and the dice tutorial
+  rather than a K.O. (`gentleFoeMax`, `GENTLE_FOE_MAX`). Every die above 3, a status face too, lands instead on one of
+  its plain faces at 3 or below (`capFoeThrow`), the foe's rerolls as well; combos still count. It starts in the very
+  fight the tutorial showed in (`finishItemLessonNow` sets `BattleState.foeDiceMax`), then each fight's `createBattle`
+  gets it. The reroll lesson's set throws are its own.
 - **The pieces**: `itemLessonItem`, `ITEM_LESSON_WASTE` and `finishItemLesson` in `src/engine/tutorial.ts`,
   `ItemLessonGuide` (`RerollLesson.tsx`); the Bag button carries `data-guide="bag"`, a computer's Bag column
-  `bag-column`. On the kitchen sink, a phone's and a computer's. e2e: `e2e/item-lesson.spec.ts`.
+  `bag-column`. On the kitchen sink, a phone's and a computer's. e2e: `e2e/item-lesson.spec.ts`. The gentle foe:
+  `gentleFoeMax` (tutorial.ts), `capFoeThrow` (lesson.ts), `tests/engine/gentle-foe.test.ts`.

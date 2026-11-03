@@ -7,6 +7,7 @@ import { cx } from '@/theme/util'
 import { BuffTag, KoTag } from './Extreme'
 import { HpBar } from './HpBar'
 import { PixelIcon } from './icons'
+import { EggSprite } from './EggSprite'
 import { ItemSprite } from './ItemSprite'
 import { RevivalBar } from './MonCard'
 import { MiniSprite } from './SpriteImg'
@@ -77,7 +78,8 @@ export function PokeCard({
   const fossil = reviving && inst.fossil ? data.items[inst.fossil] : undefined
   const fainted = !reviving && inst.currentHp <= 0
   const edge = hints && foe?.length ? attackEdge(data, instanceStats(inst, data).dice, foe) : 1
-  const name = inst.nickname || species.name
+  // A gift Egg (docs/61 §5.3) keeps what's inside to itself.
+  const name = inst.egg ? t('ui.mon.egg') : inst.nickname || species.name
   const need = xpToNext(inst.level, data.config)
   const xpPct = inst.level >= data.config.maxLevel ? 1 : Math.min(1, inst.xp / Math.max(1, need))
   const crown = lead && (
@@ -91,7 +93,11 @@ export function PokeCard({
       {/* Tight on a phone's three to a row: the sprite's transparent edges and the gaps give the lead's crown its room. */}
       <div className="flex min-w-0 items-center gap-0.5">
         {reviving ? (
-          <ItemSprite item={fossil} size={28} className="shrink-0" />
+          inst.egg ? (
+            <EggSprite size={24} className="shrink-0" />
+          ) : (
+            <ItemSprite item={fossil} size={28} className="shrink-0" />
+          )
         ) : (
           <MiniSprite dex={inst.dex} size={32} className={cx('-my-1 -ml-1 -mr-0.5 shrink-0', fainted && 'grayscale')} />
         )}

@@ -62,13 +62,20 @@ import { PortalBits } from './kitchen/PortalBits'
 import { PortalRaidBits } from './kitchen/PortalRaidBits'
 import { NightmareBits } from './kitchen/NightmareBits'
 import { NightmareRaidBits } from './kitchen/NightmareRaidBits'
+import { TimeRaceBits } from './kitchen/TimeRaceBits'
+import { WhiteoutBits } from './kitchen/WhiteoutBits'
+import { TracksBits } from './kitchen/TracksBits'
 import { GiftBits } from './kitchen/GiftBits'
 import { InviteBits } from './kitchen/InviteBits'
 import { WelcomeBackBits } from './kitchen/WelcomeBackBits'
 import { SupportBits } from './kitchen/SupportBits'
 import { TrickBits } from './kitchen/TrickBits'
+import { GiftCardBits } from './kitchen/GiftCardBits'
+import { SideQuestBits } from './kitchen/SideQuestBits'
+import { FlavourBits } from './kitchen/FlavourBits'
 import { UndergroundBits } from './kitchen/UndergroundBits'
 import { FriendshipBits } from './kitchen/FriendshipBits'
+import { FriendBattleBits } from './kitchen/FriendBattleBits'
 import { CalendarBits } from './kitchen/CalendarBits'
 import { DayNightBits } from './kitchen/DayNightBits'
 import { TalentBits } from './kitchen/TalentBits'
@@ -692,7 +699,7 @@ export function KitchenSink() {
         <RulesBits />
       </Section>
 
-      <Section title="Home: the Coming up line (each thing still to open), the big button (CONTINUE, a challenge, greyed out, GO TO with Stay here), the leaderboard tip">
+      <Section title="Home: the Coming up line (each thing still to open), the big button (CONTINUE, a challenge, greyed out, GO TO with Stay here, CONTINUE with the green GO TO), the leaderboard tip">
         <HomeBits />
       </Section>
 
@@ -827,6 +834,9 @@ export function KitchenSink() {
       <Section title="Portal run (Distortion World): the portal, gauge, breach and its pop-up, rules, boons, bonuses, shader, screen distortion, victory">
         <PortalBits />
       </Section>
+      <Section title="The Stairway of Plates (Hall of Origin): the altar, landings' gauge, the way in and its pop-up, rules, an altar's blessings (a Plate), bonuses, light on its Pokémon, the screen's gleam, an altar lit, shiny Arceus coming down">
+        <PortalBits skin="plates" />
+      </Section>
       <Section title="Giratina's area raid (Distortion World): the themed raid page, its pop-up, the raid's stage and a bar's tear">
         <PortalRaidBits />
       </Section>
@@ -836,8 +846,26 @@ export function KitchenSink() {
       <Section title="Darkrai's area raid (the nightmare): the themed raid page, its pop-up, the raid's stage and a bar's shadow, the screen's vignette">
         <NightmareRaidBits />
       </Section>
+      <Section title="The race of time and space (Spear Pillar): the clock and rift, the countdown, the gauge, a fork's gates (first, last, the replay's alone), the way in (intro, then its pop-up; the replay's), rules, result and lost-try cards, the wins (Dialga, Palkia)">
+        <TimeRaceBits />
+      </Section>
+      <Section title="Whiteout (Crown Shrine): the shrine, the gauge of waves, the blizzard's chip and snow over a fight, the way in (intro, then its pop-up), rules, the bonfire (catching, warmed, the last, one Pokémon, six), the wave's card, the shut bag, the locked Areas button, the end">
+        <WhiteoutBits />
+      </Section>
+      <Section title="Tracks in the Snow (Moonlit Glade): the glade, gauge, bushes and prints, the glade's panel (fresh, searched, a bush rustling, the snow falling, bolted, found), the 4 × 4 at 360 px, a playable glade, way in, rules, result card, wipe line, outro">
+        <TracksBits />
+      </Section>
+      <Section title="The side quests (docs/61): a roadblock's words, a Pokémon posing as a find (before and as it springs out), the Safari, rivals and gifts">
+        <SideQuestBits />
+      </Section>
+      <Section title="The region flavours (docs/62): the weather (its chips, its recap factor, its fall on a stage), a horde, an island trial, the Titans, the auras, the fights' lines, the rules">
+        <FlavourBits />
+      </Section>
       <Section title="Trick or Treat: the gauge of each tier, the screen in each state (idle, after a Treat, a Treat and a throw playing, a miss, caught, fled), the recaps, the pieces, preview cards, rules">
         <TrickBits />
+      </Section>
+      <Section title="The Gift card (docs/64 §4.0, §4.2): the present at every level in both looks, the level gauge, rewards, the plate and Delibird's chip, the screen in each state (lands, grows, with Delibird, at the top, breaks, broken, opening, opened), Delibird's present (idle, growing, bursting, shiny Delibird out), the result cards, the preview card, rules">
+        <GiftCardBits />
       </Section>
       <Section title="The Underground: the cave, the crack gauge, a wall in each state (fresh, half dug with a strike flashing, cleared, collapsing), the pickaxe die and faces, orbs and plates, the haul, the plates and orb bag, the team seats, the rules">
         <UndergroundBits />
@@ -847,6 +875,9 @@ export function KitchenSink() {
       </Section>
       <Section title="Friendship streaks and the Friend Market: coins, a streak badge (kept, waiting), the tiers' ladder, today's gauge, the Friend Ball's catch tag, the Friendship card (streaks waiting, none, loading, failed), a friend's streak (waiting, kept, top, lost, none), the shiny of the week (to buy, too poor, sold out), the items, the rules card and INFO, a purchase's opening (docs/60)">
         <FriendshipBits />
+      </Section>
+      <Section title="Friend Battles: the shield tag (up, used), the mode tags, the time chip and gauge, face to face, a challenge to answer, a match on, the rules card, INFO and the challenge sheet, and each step of a match — waiting, its outcomes, the coin (yours, theirs), the draft (your pick, theirs), the order (Draft's, Classic's ready, waiting) (docs/65)">
+        <FriendBattleBits />
       </Section>
       <Section title="Day and night (Johto): the top bar's chip by day and by night, the fights' indicator, the list tags (its half, the other half), rules">
         <DayNightBits />

@@ -1,7 +1,8 @@
 // Kitchen sink: the Team's deep pass (docs/43 §5.4). The one Pokémon card in every state (lead, picked, fainted,
 // resting after a K.O., a fossil reviving, shiny, with its XP line, a drop target), the Box's tile with its level tag
-// (picked, locked, reviving), the Box's one Sort & filter control (nothing set, two set), and the sheet's footer at a
-// Center (a team member, the lead, one from the Box with room, the team full) with the save this browser holds.
+// (picked, locked, reviving), the Box's one Sort & filter control (nothing set, two set), the sheet's footer at a
+// Center (a team member, the lead, one from the Box with room, the team full) with the save this browser holds, and the
+// Team screen's top line on team changes in its four places.
 import { useState } from 'react'
 import { BoxFilter, type BoxSort } from '@/components/BoxSort'
 import { PixelIcon } from '@/components/icons'
@@ -9,7 +10,7 @@ import { ItemSprite } from '@/components/ItemSprite'
 import { MonTile, TILE_GRID } from '@/components/MonTile'
 import { PixelButton } from '@/components/PixelButton'
 import { PokeCard } from '@/components/PokeCard'
-import { TeamSwapDock } from '@/components/TeamSwapActions'
+import { TeamSwapDock, TeamSwapsNote, type TeamSwapPlace } from '@/components/TeamSwapActions'
 import { teamOf, type PokemonInstance, type PokeType } from '@/engine'
 import { useGame } from '@/store/game'
 
@@ -37,6 +38,7 @@ const CARDS: { label: string; inst: PokemonInstance; lead?: boolean; selected?: 
 ]
 
 const TYPES: PokeType[] = ['normal', 'fire', 'water', 'grass', 'electric', 'rock']
+const PLACES: TeamSwapPlace[] = ['center', 'portal', 'nightmare', 'closed']
 
 export function TeamDeepBits() {
   const data = useGame((s) => s.data)
@@ -143,6 +145,16 @@ export function TeamDeepBits() {
       ) : (
         <p className="copy text-muted">Start a game to see the dock with a team.</p>
       )}
+
+      <b className="text-lg">
+        TeamSwapsNote: the Team screen&apos;s top at a Center, at a portal&apos;s and the nightmare&apos;s way
+        in, and elsewhere (changes wait for a Center)
+      </b>
+      <div className="grid max-w-3xl gap-3">
+        {PLACES.map((at) => (
+          <TeamSwapsNote key={at} at={at} onBack={() => {}} />
+        ))}
+      </div>
     </div>
   )
 }

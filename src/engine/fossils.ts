@@ -33,18 +33,24 @@ export function fossilRevivesShiny(save: Pick<SaveData, 'mode'>, p: Pick<Pokemon
   return save.mode !== 'extreme' && chance > 0 && createRng(idSeed(p.id)).next() < chance
 }
 
-/** Fossils whose time has come are revived: full HP, into the Pokédex, shiny at the fossil odds. `revived` lists them. */
+/**
+ * Fossils whose time has come are revived: full HP, into the Pokédex, shiny at the fossil odds; a gift Egg hatches the
+ * same way (docs/61 §5.3), with the shiny it was given. `revived` lists them.
+ */
 export function reviveFossils(save: SaveData, data: GameData, now: number): { save: SaveData; revived: PokemonInstance[] } {
   const revived: PokemonInstance[] = []
   const box = save.box.map((p) => {
     if (p.revivesAt == null || p.revivesAt > now) return p
-    const { revivesAt: _t, fossil: _f, ...rest } = p
+    const { revivesAt: _t, fossil: _f, egg: _e, hatchShiny: _s, ...rest } = p
+    // A gift Egg (docs/61 §5.3) hatches with the shiny it was given; a fossil rolls its own odds now.
+    const shiny = p.egg ? !!p.hatchShiny : fossilRevivesShiny(save, p, data)
     const done = {
       ...rest,
       currentHp: instanceMaxHp(rest, data),
-      ...(fossilRevivesShiny(save, p, data) && { shiny: true }),
+      ...(shiny && { shiny: true }),
     }
-    revived.push(done)
+    // The list keeps an Egg's mark, for its toast ("hatched", not "revived"); the Box doesn't.
+    revived.push(p.egg ? { ...done, egg: true } : done)
     return done
   })
   if (!revived.length) return { save, revived }

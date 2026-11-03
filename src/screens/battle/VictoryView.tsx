@@ -3,11 +3,13 @@ import { BottomDock } from '@/components/BottomDock'
 import { AutoButton, PILOT_PICK_MS } from '@/components/AutoButton'
 import { AnimatePresence, motion } from 'framer-motion'
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   getInstance,
   isUnownLetter,
   latestOpenArea,
   portalLock,
+  timeRaceLock,
   instanceStats,
   progressOf,
   rebattleEncounter,
@@ -18,6 +20,7 @@ import {
   type DieType,
   type Milestone,
   type RunEvent,
+  roadblockOf,
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
 import { feelSound, type FeelSound } from '@/audio/feel'
@@ -26,6 +29,7 @@ import { EvolutionQueue, type EvolutionShow } from '@/components/Evolution'
 import { useCountUp } from '@/components/GoldPill'
 import { Chip, NewTag } from '@/components/Chip'
 import { PixelIcon } from '@/components/icons'
+import { HoofIcon, STANTLER } from '@/components/Tracks'
 import { LeadPicker, defaultLead } from '@/components/LeadPicker'
 import { ForfeitButton } from '@/components/ForfeitButton'
 import { speciesTypes } from '@/components/TypeMatchups'
@@ -37,8 +41,9 @@ import { DuelResult } from '@/components/AreaVersus'
 import { UnownLetterCard } from '@/components/UnownDex'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { ItemSprite } from '@/components/ItemSprite'
+import { TypeBadge } from '@/components/TypeBadge'
 import { dexNo, milestoneText, money, typeName } from '@/lib/format'
-import { t } from '@/i18n'
+import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useMotion } from '@/lib/motion'
 import { usePace } from '@/lib/pace'
@@ -64,6 +69,7 @@ import { Medal, tierName } from '@/screens/events/RebattlePage'
 import { cx, shade, typeColor } from '@/theme/util'
 import { WorldMythicalCard } from '@/screens/events/world'
 import { TalentAfterWinCard, TalentFoundCard, talentName } from '@/components/Talent'
+import { skinKey, skinOfArea } from '@/components/portalSkin'
 
 /** How long NEXT fills before it goes by itself, with Auto on. */
 const ADVANCE_MS = 1800
@@ -575,6 +581,50 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
             ),
           })
           return
+        case 'time_race_fight':
+          // A fight of the race of time and space won in time (docs/64 §4.4): the next comes, or a fork, or the win.
+          extras.push({
+            key: k,
+            node: (
+              <div className="light-scope flex items-center justify-center gap-2 bg-[#0b0f2e] p-2 text-center text-white shadow-[inset_0_3px_0_#a8c8ff,0_0_0_2px_#24304f]">
+                <PixelIcon name="clock" size={22} />
+                <span className="text-xl leading-tight">
+                  {e.fight >= e.total
+                    ? t('ui.timeRace.lastFightWon')
+                    : t('ui.timeRace.fightWon', { n: e.fight, total: e.total })}
+                </span>
+              </div>
+            ),
+          })
+          return
+        case 'whiteout_wave':
+          // A wave of the whiteout cleared (docs/64 §4.3): a bonfire comes next.
+          extras.push({
+            key: k,
+            node: (
+              <div className="light-scope flex items-center justify-center gap-2 bg-[#16264a] p-2 text-center text-[#eef6ff] shadow-[inset_0_3px_0_#e6f1fa,0_0_0_2px_#060b18]">
+                <PixelIcon name="burn" size={22} />
+                <span className="text-xl leading-tight">
+                  {t('ui.whiteout.waveWon', { n: e.wave, total: e.waves })}
+                </span>
+              </div>
+            ),
+          })
+          return
+        case 'tracks_round':
+          // A round of Tracks in the Snow cleared (docs/64 §4.1): Stantler found and down; the next glade waits.
+          extras.push({
+            key: k,
+            node: (
+              <div className="light-scope flex items-center justify-center gap-2 bg-[#0b1530] p-2 text-center text-[#f4f8ff] shadow-[inset_0_3px_0_#f3efd6,0_0_0_2px_#24304f]">
+                <HoofIcon size={22} />
+                <span className="text-xl leading-tight">
+                  {t('ui.tracks.roundWon', { n: e.round, total: e.total, name: data.species[STANTLER]?.name ?? '' })}
+                </span>
+              </div>
+            ),
+          })
+          return
         case 'nightmare_gift': {
           // The item a round left in the bag (docs/30), once for good.
           const item = data.items[e.key]
@@ -586,6 +636,38 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
                 {item && <ItemSprite item={item} size={32} />}
                 <span className="text-xl leading-tight">
                   {t('ui.nightmare.gotGift', { item: `${item?.name ?? e.key}${e.qty > 1 ? ` ×${e.qty}` : ''}` })}
+                </span>
+              </div>
+            ),
+          })
+          return
+        }
+        case 'z_crystal': {
+          // A Z-Crystal won (docs/62 §6): Z-Moves of its type.
+          extras.push({
+            key: k,
+            sound: 'gold',
+            node: (
+              <div className="flex items-center justify-center gap-2 bg-gold-pale p-2 text-center shadow-ring" data-z-crystal={e.type}>
+                <TypeBadge type={e.type} size="sm" />
+                <span className="text-xl leading-tight">{t('ui.zCrystal.got', { type: typeName(e.type) })}</span>
+              </div>
+            ),
+          })
+          return
+        }
+        case 'titan_reward': {
+          // A Titan beaten (docs/62 §7): what it left, a Herba Mystica's worth.
+          const what = e.items.map((i) => `${data.items[i.key]?.name ?? i.key}${i.qty > 1 ? ` ×${i.qty}` : ''}`)
+          const first = e.items[0] ? data.items[e.items[0].key] : undefined
+          extras.push({
+            key: k,
+            sound: 'gold',
+            node: (
+              <div className="flex items-center justify-center gap-2 bg-gold-pale p-2 text-center shadow-ring" data-titan-reward>
+                {first && <ItemSprite item={first} size={32} />}
+                <span className="text-xl leading-tight">
+                  {t('ui.titan.left', { name: data.species[e.dex]?.name ?? '', items: joinList(what) })}
                 </span>
               </div>
             ),
@@ -803,6 +885,7 @@ const AUTO_CARD_MS = 1600
  */
 export function VictoryView() {
   const { t } = useT()
+  const navigate = useNavigate()
   const run = useGame((s) => s.run)
   const battle = useGame((s) => s.battle)
   const data = useGame((s) => s.data)
@@ -880,8 +963,8 @@ export function VictoryView() {
     return () => clearTimeout(timer)
   }, [closes, allShown, then, picking, lead])
 
-  // Inside a portal run (docs/28) there is no way Home: CONTINUE alone.
-  const locked = useGame((s) => !!portalLock(s.save, s.data))
+  // Inside a portal run (docs/28) there is no way Home: CONTINUE alone. Nor in a try of the race (docs/64 §4.4).
+  const locked = useGame((s) => !!portalLock(s.save, s.data) || !!timeRaceLock(s.save, s.data))
 
   // After a fight: NEXT waits for the player, unless Auto is on (Settings, or AUTO beside NEXT): then it fills and goes.
   const sendNext = go(() => continueAfterVictory(lead ?? stillIn ?? defaultLead()))
@@ -955,11 +1038,18 @@ export function VictoryView() {
     <RebattleNext go={go} />
   ) : (
     <div className="flex flex-col gap-2">
-      {/* BACK: the area's page between encounters (its HOME, the team); NEXT: the next encounter. */}
+      {/* HOME: back Home (the user's call, 2026-11-02: no stop on the area's page first); NEXT: the next encounter. */}
       <div className={locked ? 'grid' : 'grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-2.5'}>
         {!locked && (
-          <PixelButton size="lg" className="whitespace-nowrap px-2" onClick={go(() => continueAfterVictory())}>
-            ◂ {t('ui.common.back')}
+          <PixelButton
+            size="lg"
+            className="whitespace-nowrap px-2"
+            onClick={go(() => {
+              continueAfterVictory()
+              navigate('/home')
+            })}
+          >
+            {t('ui.nav.home')}
           </PixelButton>
         )}
         <PixelButton
@@ -983,7 +1073,10 @@ export function VictoryView() {
     </div>
   )
 
-  const title = t(battle?.state.kind === 'boss' ? 'ui.victory.legendaryVictory' : 'ui.victory.victory')
+  // A roadblock boss (docs/61 §2) is a plain victory: it isn't a legendary.
+  const bossFoe = battle?.state.kind === 'boss' ? battle.state.enemy : null
+  const roadblock = !!bossFoe && !!roadblockOf(data.areas.find((a) => a.id === run.areaId), bossFoe.baseDex ?? bossFoe.dex)
+  const title = t(battle?.state.kind === 'boss' && !roadblock ? 'ui.victory.legendaryVictory' : 'ui.victory.victory')
   return (
     <Overlay footer={footer} label={title}>
       {/* The battle's live region says the fight is won (the line under the stage gives way to the card). */}
@@ -1152,6 +1245,13 @@ function AreaWipe() {
   const portalLost = useGame((s) => s.run.portalLost)
   // A wipe that woke the player from the nightmare (docs/30): its rounds start again from the first.
   const nightmareLost = useGame((s) => s.run.nightmareLost)
+  // A try of the race of time and space ended (docs/64 §4.4): the clock or a full K.O., back to the start.
+  const raceLost = useGame((s) => s.run.raceLost)
+  const timeUp = raceLost?.reason === 'time'
+  // A wipe in the whiteout (docs/64 §4.3): back to wave 1.
+  const whiteoutLost = useGame((s) => s.run.whiteoutLost)
+  // A wipe in Tracks in the Snow's glade (docs/64 §4.1): back at its edge, its cleared rounds kept.
+  const tracksWiped = useGame((s) => !!s.run.tracksWiped)
   return (
     <Overlay
       label={t('ui.wipe.title')}
@@ -1161,14 +1261,33 @@ function AreaWipe() {
         </AutoButton>
       }
     >
-      <h2 className="mb-2 text-center text-[32px] font-normal leading-none" aria-live="polite">{t('ui.wipe.title')}</h2>
+      <h2 className="mb-2 text-center text-[32px] font-normal leading-none" aria-live="polite">
+        {timeUp ? t('ui.timeRace.timeUpTitle') : t('ui.wipe.title')}
+      </h2>
       {/* The rework: what a wipe costs is said only where it differs from the usual (a portal, the nightmare, Extreme). */}
-      <p className="copy mb-3 text-lg" hidden={portalLost == null && nightmareLost == null && !!save && wipeHeals(save, data)}>
+      <p
+        className="copy mb-3 text-lg"
+        hidden={
+          portalLost == null &&
+          nightmareLost == null &&
+          whiteoutLost == null &&
+          !raceLost &&
+          !tracksWiped &&
+          !!save &&
+          wipeHeals(save, data)
+        }
+      >
         {/* Extreme mode heals nobody after a lost round: the fainted ones rest (docs/22). */}
-        {portalLost != null
-          ? t('ui.portal.wipeBody', { n: portalLost })
+        {raceLost
+          ? t(timeUp ? 'ui.timeRace.timeUpBody' : 'ui.timeRace.wipeBody', { n: raceLost.fights, total: raceLost.total })
+          : portalLost != null
+          ? t(skinKey(skinOfArea(area, data), 'ui.portal.wipeBody'), { n: portalLost })
           : nightmareLost != null
           ? t('ui.nightmare.wipeBody', { n: nightmareLost })
+          : whiteoutLost != null
+          ? t('ui.whiteout.wipeBody', { n: whiteoutLost })
+          : tracksWiped
+          ? t('ui.tracks.wipeBody')
           : save && !wipeHeals(save, data)
           ? t('ui.wipe.bodyExtreme', {
               area: area?.name ?? '',
@@ -1199,7 +1318,6 @@ function DuelLostView({ foe }: { foe: AreaFoe }) {
           className="w-full"
           onClick={() => {
             afterStalemate()
-            continueExploring()
           }}
         >
           {t('ui.common.continue')}

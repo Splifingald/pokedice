@@ -14,9 +14,14 @@ export function areaProgressAnywhere(save: SaveData, data: GameData, areaId: str
 
 export const eventDef = (data: GameData, id: EventId): EventDef => data.config.events[id]
 
-/** Switched on for whoever is playing: for everyone, or for the admin alone while the admin plays (to try it first). */
+/**
+ * Switched on for whoever is playing: for everyone, for the admin alone while the admin plays (to try it first), or for
+ * the admin and the beta testers' list (docs/65 §3).
+ */
 export const eventOpenTo = (access: EventAccess | undefined, data: GameData): boolean =>
-  access === 'all' || (access === 'admin' && !!data.viewer?.admin)
+  access === 'all' ||
+  (access === 'admin' && !!data.viewer?.admin) ||
+  (access === 'beta' && (!!data.viewer?.admin || !!data.viewer?.beta))
 
 /** The Game Corner's slot machine (its cards in area decks): off since 2026-10-25, the wheel gives Porygon instead. */
 export const gameCornerOn = (data: GameData): boolean => eventOpenTo(data.config.slotMachine?.access, data)

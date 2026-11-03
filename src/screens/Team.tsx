@@ -1,9 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  centersOn,
   homersIn,
   teamSwapsOpen,
   nightmareModeOf,
+  timeRaceModeOf,
+  whiteoutModeOf,
+  atBonfire,
+  tracksModeOf,
   monName,
   POKE_TYPES,
   regionOf,
@@ -16,13 +21,14 @@ import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { BoxFilter, sortBox, type BoxSort } from '@/components/BoxSort'
 import { PixelIcon } from '@/components/icons'
+import { EggSprite } from '@/components/EggSprite'
 import { ItemSprite } from '@/components/ItemSprite'
 import { MonTile, TILE_GRID } from '@/components/MonTile'
 import { PageHead } from '@/components/PageHead'
-import { PixelButton } from '@/components/PixelButton'
 import { SearchField } from '@/components/Segmented'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { SplitView } from '@/components/SplitView'
+import { TeamSwapsNote } from '@/components/TeamSwapActions'
 import { countdown } from '@/lib/format'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { useGame } from '@/store/game'
@@ -31,6 +37,7 @@ import { cx } from '@/theme/util'
 import { TeamCards } from './team/TeamCards'
 import { InstTalentGem } from '@/components/Talent'
 import { outfitName } from '@/components/Outfit'
+import { skinKey, useRunSkin } from '@/components/portalSkin'
 
 type Sort = Exclude<BoxSort, 'type'>
 const SORTS: readonly Sort[] = ['dex', 'level', 'newest']
@@ -49,6 +56,8 @@ export function TeamScreen() {
   // Pokémon's sheet then has the Center's moves at its foot.
   const swaps = useGame((s) => !!s.save && teamSwapsOpen(s.save, s.data, s.run))
   const atPortal = useGame((s) => swaps && s.run.phase === 'idle')
+  // The Stairway of Plates' way in says it in its own words (docs/64 §4.5).
+  const skin = useRunSkin()
   // …or the nightmare's way in (docs/30): its own words.
   const atNightmare = useGame(
     (s) =>
@@ -58,6 +67,52 @@ export function TeamScreen() {
         s.data,
       ),
   )
+  // …or the race of time and space's (docs/64 §4.4).
+  const atRace = useGame(
+    (s) =>
+      atPortal &&
+      !!timeRaceModeOf(
+        s.data.areas.find((a) => a.id === s.run.areaId),
+        s.data,
+      ),
+  )
+  // …or the whiteout's (docs/64 §4.3): its way in, or a bonfire between its waves (the bag open there too).
+  const atWhiteout = useGame(
+    (s) =>
+      atPortal &&
+      !!whiteoutModeOf(
+        s.data.areas.find((a) => a.id === s.run.areaId),
+        s.data,
+      ),
+  )
+  // …or Tracks in the Snow's (docs/64 §4.1).
+  const atGlade = useGame(
+    (s) => atPortal && !!tracksModeOf(s.data.areas.find((a) => a.id === s.run.areaId), s.data),
+  )
+  const atCamp = useGame((s) => atWhiteout && !!s.save && atBonfire(s.save, s.data, s.run.areaId))
+  const hint = atCamp
+    ? 'ui.whiteout.teamHintBonfire'
+    : atNightmare || atWhiteout
+      ? 'ui.nightmare.teamHint'
+      : atGlade
+        ? 'ui.tracks.teamHint'
+        : atRace
+          ? 'ui.timeRace.teamHint'
+          : skinKey(skin, 'ui.portal.teamHint')
+  const back = atCamp
+    ? 'ui.whiteout.backToBonfire'
+    : atWhiteout
+      ? 'ui.whiteout.backToWayIn'
+      : atNightmare
+        ? 'ui.nightmare.backToWayIn'
+        : atGlade
+          ? 'ui.tracks.backToWayIn'
+          : atRace
+            ? 'ui.timeRace.backToWayIn'
+            : skinKey(skin, 'ui.portal.backToPortal')
+  // Extreme mode without Centers (docs/22) has none to point to.
+  const centers = useGame((s) => !!s.save && centersOn(s.save, s.data))
+  const place = atNightmare ? 'nightmare' : atPortal ? 'portal' : swaps ? 'center' : centers ? 'closed' : null
   const navigate = useNavigate()
   const now = useNow(30_000)
   const wide = useMediaQuery('(min-width: 1024px)')
@@ -67,7 +122,8 @@ export function TeamScreen() {
   const [q, setQ] = useState('')
   if (!save) return null
   const team = teamOf(save)
-  const name = (p: PokemonInstance) => monName(p, data)
+  // A gift Egg (docs/61 §5.3) keeps what's inside to itself.
+  const name = (p: PokemonInstance) => (p.egg ? t('ui.mon.egg') : monName(p, data))
   const speciesName = (p: PokemonInstance) => data.species[p.dex]?.name ?? t('ui.common.unknown')
   const typesOf = (p: PokemonInstance) => {
     const s = data.species[p.dex]
@@ -111,17 +167,10 @@ export function TeamScreen() {
       {/* No scene here (the user's call, 2026-10-27): Home already shows the team roaming; the Team is for managing it. */}
       <PageHead icon="navTeam" title={t('ui.team.title')} />
 
-      {/* At a portal's way in: healed, the Box open, and the way back to its pop-up. */}
-      {atPortal && (
-        <div className="pixel-dialogue flex flex-col gap-2.5 px-3 py-2.5 sm:flex-row sm:items-center">
-          <p className="m-0 flex flex-1 items-center gap-3 text-[20px] leading-[1.15]">
-            <PixelIcon name="heart" size={24} className="shrink-0" />
-            <span>{t(atNightmare ? 'ui.nightmare.teamHint' : 'ui.portal.teamHint')}</span>
-          </p>
-          <PixelButton variant="primary" className="shrink-0" onClick={() => navigate('/area')}>
-            {t(atNightmare ? 'ui.nightmare.backToWayIn' : 'ui.portal.backToPortal')}
-          </PixelButton>
-        </div>
+      {/* At a Center or a way in: the Box open, and the way back there. Elsewhere: changes wait for a Center. A way
+          in's own words (the whiteout's bonfire, the glade, the race, the run's skin) replace the portal's. */}
+      {place && (
+        <TeamSwapsNote at={place} text={atPortal ? { hint, back } : undefined} onBack={() => navigate('/area')} />
       )}
 
       <TeamCards team={team} onOpen={open} selected={current} />
@@ -185,13 +234,13 @@ export function TeamScreen() {
                   level={reviving ? undefined : level}
                   sub={reviving ? until : undefined}
                   selected={current === p.id}
-                  icon={reviving ? <ItemSprite item={fossil} size={40} /> : undefined}
+                  icon={reviving ? p.egg ? <EggSprite size={34} /> : <ItemSprite item={fossil} size={40} /> : undefined}
                   label={[
                     name(p),
                     p.nickname ? speciesName(p) : null,
                     p.shiny ? t('ui.mon.shiny') : null,
                     outfitOf(data, p) ? outfitName(p.outfit!) : null,
-                    reviving ? t('ui.mon.revivesIn', { time: until }) : level,
+                    reviving ? t(p.egg ? 'ui.mon.hatchesIn' : 'ui.mon.revivesIn', { time: until }) : level,
                   ]
                     .filter(Boolean)
                     .join(', ')}

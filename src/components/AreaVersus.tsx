@@ -30,7 +30,7 @@ import {
   type AnswerStatus,
   type FriendRequest,
 } from '@/store/areaVersus'
-import { mutateSave, pushToast, useGame } from '@/store/game'
+import { pushToast, useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { FriendTag } from './friends/FriendBits'
 import { PixelIcon } from './icons'
@@ -112,16 +112,11 @@ function PlayersBanner() {
   )
 }
 
-/** The rules pop-up: `onGo` the first time (Later / Let's go!), without it INFO's copy (OK). */
-export function AreaVersusRulesModal({
-  open,
-  onClose,
-  onGo,
-}: {
-  open: boolean
-  onClose: () => void
-  onGo?: () => void
-}) {
+/**
+ * The rules, from the card's INFO (OK). They never open by themselves (the user's call, 2026-11-02): a player who
+ * wants them taps INFO.
+ */
+export function AreaVersusRulesModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useT()
   const rules = useAreaVersusRules()
   return (
@@ -132,7 +127,6 @@ export function AreaVersusRulesModal({
       picture={<PlayersBanner />}
       icon="user"
       rules={rules}
-      onGo={onGo}
     />
   )
 }
@@ -396,14 +390,11 @@ export function RealPlayerIntro({ foe, onDone }: { foe: AreaFoe; onDone: () => v
 export function PlayerFoeCard({
   enc,
   areaId,
-  firstRules = true,
   intro: withIntro = true,
 }: {
   enc: Extract<Encounter, { kind: 'trainer' }> & { player: AreaFoe }
   /** The area it pays in: the run's, unless shown elsewhere (the kitchen sink). */
   areaId?: string
-  /** The rules pop-up after the intro, the first time (off on the kitchen sink). */
-  firstRules?: boolean
   /** Its intro first (the kitchen sink shows the card still too). */
   intro?: boolean
 }) {
@@ -413,26 +404,16 @@ export function PlayerFoeCard({
   const where = useGame((s) => areaId ?? s.run.areaId)
   const area = data.areas.find((a) => a.id === where)
   const cleared = useGame((s) => !!s.save && !!where && progressOf(s.save, where).cleared)
-  const seen = useGame((s) => !!s.save?.areaVersusRulesSeen) || !firstRules
   const played = usePlayedText()
-  // The intro first (the user's ask), then, the first time, the rules.
+  // The intro first (the user's ask); the rules only from INFO.
   const [intro, setIntro] = useState(withIntro)
-  const [rules, setRules] = useState<'unlock' | 'info' | null>(null)
-  const endIntro = () => {
-    setIntro(false)
-    if (!seen) setRules('unlock')
-  }
+  const [rules, setRules] = useState(false)
   const foe = enc.player
   const gold = area ? foePrize(enc.team, area, cleared, data) : 0
   const x = areaVersusConfig(data).prizeMultiplier
-  const closeRules = () => {
-    if (rules === 'unlock')
-      mutateSave((s) => (s.areaVersusRulesSeen ? null : { ...s, areaVersusRulesSeen: true }))
-    setRules(null)
-  }
   return (
     <div className="flex flex-col gap-2.5">
-      {intro && <RealPlayerIntro foe={foe} onDone={endIntro} />}
+      {intro && <RealPlayerIntro foe={foe} onDone={() => setIntro(false)} />}
       <div className="flex items-center gap-3">
         <div className="-my-2 shrink-0 self-end">
           <TrainerSprite src={foe.sprite ?? avatarOf(foe.avatar).src} size={desktop ? 160 : 112} />
@@ -457,18 +438,15 @@ export function PlayerFoeCard({
         </span>
       </div>
       <div className="flex items-center justify-between gap-2">
-        <p className="m-0 font-pixel-sm text-[16px] leading-tight text-muted">
+        <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted">
+          <PixelIcon name="heart" size={16} className="shrink-0" />
           {t('ui.areaVersus.healNote')}
         </p>
-        <PixelButton size="sm" className="shrink-0" onClick={() => setRules('info')}>
+        <PixelButton size="sm" className="shrink-0" onClick={() => setRules(true)}>
           {t('ui.lead.info')}
         </PixelButton>
       </div>
-      <AreaVersusRulesModal
-        open={rules != null}
-        onClose={closeRules}
-        onGo={rules === 'unlock' ? closeRules : undefined}
-      />
+      <AreaVersusRulesModal open={rules} onClose={() => setRules(false)} />
     </div>
   )
 }

@@ -75,7 +75,8 @@ export function FriendMarketScreen() {
   const week = status.week || marketWeek(utcDay(now))
   const rows = marketRows(data, week, status.bought)
   const shiny = rows.find((r) => r.kind === 'pokemon')
-  const items = rows.filter((r) => r.kind === 'item')
+  // The items, then battle tickets (docs/65 §15) while Friend Battles is open to this player.
+  const items = rows.filter((r) => r.kind === 'item' || r.kind === 'ticket')
   const restock = until(Math.max(0, marketWeekEnds(week) - now))
   const buy = (key: string) => (qty: number) => {
     if (!busy && !opening) void buyMarket(key, qty)

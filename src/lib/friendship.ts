@@ -33,7 +33,7 @@ async function rpc<T>(fn: string, args?: Record<string, unknown>): Promise<T> {
   return data as T
 }
 
-const KINDS: readonly FriendshipKind[] = ['raid', 'trade', 'egg']
+const KINDS: readonly FriendshipKind[] = ['raid', 'trade', 'egg', 'battle']
 const kindOf = (k: unknown): FriendshipKind =>
   KINDS.includes(k as FriendshipKind) ? (k as FriendshipKind) : 'trade'
 const num = (n: unknown) => (Number.isFinite(Number(n)) ? Number(n) : 0)
@@ -72,9 +72,13 @@ export function parseFriendshipStatus(raw: unknown): FriendshipStatus | null {
 
 export const fetchFriendshipStatus = async () => parseFriendshipStatus(await rpc('friendship_status'))
 
-export async function buyFromMarket(key: string, qty: number): Promise<MarketBuy & { balance: number }> {
+export async function buyFromMarket(
+  key: string,
+  qty: number,
+): Promise<MarketBuy & { balance: number; tickets: number | null }> {
   const r = await rpc<Record<string, unknown>>('friend_market_buy', { p_key: key, p_qty: qty })
-  return { id: String(r?.id), gifts: r?.gifts, balance: num(r?.balance) }
+  // Battle tickets (docs/65 §15) come back as the new count: the server holds them, nothing to open.
+  return { id: String(r?.id), gifts: r?.gifts, balance: num(r?.balance), tickets: r?.tickets == null ? null : num(r.tickets) }
 }
 
 export const markMarketApplied = (ids: string[]) => rpc('friend_market_applied', { p_ids: ids })

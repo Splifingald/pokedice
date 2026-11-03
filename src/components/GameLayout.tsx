@@ -9,7 +9,10 @@ import { BottomNav, Header, SideNav } from './Hud'
 import { OneTimePopups, PopupQueue } from './PopupQueue'
 import { PortalGuard } from '@/screens/area/PortalRun'
 import { NightmareGuard } from '@/screens/area/NightmareRun'
+import { TimeRaceGuard } from '@/screens/area/TimeRaceRun'
+import { WhiteoutGuard } from '@/screens/area/WhiteoutRun'
 import { useUndergroundSettle } from '@/store/underground'
+import { FriendBattlesService } from './pvp/FriendBattlesService'
 
 /** In-game shell: top bar, side bar (desktop) or bottom bar (phones), and the screen. No save → back to the title. */
 export function GameLayout() {
@@ -41,7 +44,7 @@ export function GameLayout() {
     // offer, the push question) wait their turn.
     <PopupQueue>
       <div
-        className={cx('flex min-h-screen flex-col', inside && 'in-world')}
+        className={cx('flex min-h-[100dvh] flex-col', inside && 'in-world')}
         // --top-bar: the top bar's height, for a full-screen page under it to fit the rest of the screen (the battle).
         style={{
           ...(inside ? worldVars(world) : undefined),
@@ -76,6 +79,12 @@ export function GameLayout() {
         <PortalGuard />
         {/* The nightmare holding the player (docs/30): the run kept in its area (no screen effect). */}
         <NightmareGuard />
+        {/* The race of time and space (docs/64 §4.4): a try kept in its area, ended by its clock wherever it is. */}
+        <TimeRaceGuard />
+        {/* The whiteout holding the player (docs/64 §4.3): the run kept in Crown Shrine. */}
+        <WhiteoutGuard />
+        {/* Friend Battles (docs/65): a challenge to answer, the match's topic and clock while one is on. */}
+        <FriendBattlesService />
       </div>
     </PopupQueue>
   )

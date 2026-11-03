@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { churnByArea, type ChurnRaw } from '@/analytics/churn'
-import { retentionByDay, retentionOn, type Cohorts } from '@/analytics/retention'
-import type { Area, Region } from '@/engine/types'
+import { churnByArea, churnByStarter, type ChurnRaw } from '@/analytics/churn'
+import { cohortsOf, retentionByDay, retentionOn, type Cohorts } from '@/analytics/retention'
+import type { Area, Region, Species } from '@/engine/types'
 
 // Local-time dates: day n of September 2026 at hour h.
 const at = (day: number, h = 12) => new Date(2026, 8, day, h)
@@ -109,6 +109,40 @@ describe('retentionOn, days 3, 7 and 30', () => {
   })
 })
 
+describe('cohortsOf: all, logged in, not logged in', () => {
+  // [new, back on day 1, day 3, day 7, day 30, then the guests' own five] (migration 0135).
+  const split: Cohorts = {
+    '2026-09-10': [10, 6, 4, 3, 2, 4, 1, 1, 0, 0],
+    '2026-09-12': [3, 1, 0, 0, 0, 3, 1, 0, 0, 0],
+  }
+
+  it('keeps the first five for everyone, the last five for the guests, and the difference for the logged in', () => {
+    expect(cohortsOf(split, 'all')).toEqual({ '2026-09-10': [10, 6, 4, 3, 2], '2026-09-12': [3, 1, 0, 0, 0] })
+    expect(cohortsOf(split, 'guests')).toEqual({
+      '2026-09-10': [4, 1, 1, 0, 0],
+      '2026-09-12': [3, 1, 0, 0, 0],
+    })
+    expect(cohortsOf(split, 'logged_in')).toEqual({
+      '2026-09-10': [6, 5, 3, 3, 2],
+      '2026-09-12': [0, 0, 0, 0, 0],
+    })
+  })
+
+  it('feeds the rates as before', () => {
+    const r = retentionOn(cohortsOf(split, 'logged_in')!, 1, null, null, NOW)
+    expect(r).toMatchObject({ cohort: 6, returned: 5 })
+  })
+
+  it('has nothing to split before migration 0135, but still everyone', () => {
+    const old: Cohorts = { '2026-09-10': [10, 6, 4, 3, 2] }
+    expect(cohortsOf(old, 'all')).toEqual(old)
+    expect(cohortsOf(old, 'guests')).toBeNull()
+    expect(cohortsOf(old, 'logged_in')).toBeNull()
+    // No first day at all: nothing to tell apart, nothing missing.
+    expect(cohortsOf({}, 'guests')).toEqual({})
+  })
+})
+
 describe('churnByArea', () => {
   const area = (id: string, orderIndex: number, name: string, regionId?: string) =>
     ({ id, orderIndex, name, ...(regionId && { regionId }) }) as Area
@@ -161,5 +195,54 @@ describe('churnByArea', () => {
     expect(c.unknown).toEqual({ churned: 5, active: 1 })
     expect(c.maxChurned).toBe(6)
     expect(c.cutoff).toBe('2026-09-17')
+  })
+})
+
+describe('churnByStarter', () => {
+  const data = {
+    species: {
+      1: { name: 'Bulbasaur' },
+      4: { name: 'Charmander' },
+      7: { name: 'Squirtle' },
+      25: { name: 'Pikachu' },
+    } as unknown as Record<number, Species>,
+    config: { starters: [1, 4, 7] },
+  }
+  const raw: ChurnRaw = {
+    today: '2026-09-20',
+    cutoff: '2026-09-17',
+    areas: {},
+    unknown: [0, 0],
+    // As the database sends them: in any order, with a Pokémon no longer offered and one the game doesn't have.
+    starters: {
+      '999': [1, 0, 1, null],
+      '7': [3, 1, 2, 6],
+      '25': [1, 1, 1, 2],
+      '4': [8, 2, 1.5, 4],
+      '1': [0, 2, null, 5],
+    },
+    noStarter: [6, 3],
+  }
+
+  it('lists the starters offered first, in their order, then the others by dex number', () => {
+    const c = churnByStarter(raw, data)!
+    expect(c.rows.map((r) => r.name)).toEqual(['Bulbasaur', 'Charmander', 'Squirtle', 'Pikachu', '#999'])
+    expect(c.rows[1]).toEqual({
+      dex: 4,
+      name: 'Charmander',
+      churned: 8,
+      active: 2,
+      share: 0.8,
+      churnedDays: 1.5,
+      activeDays: 4,
+    })
+    expect(c.rows[0]!.share).toBe(0)
+    expect(c.unknown).toEqual({ churned: 6, active: 3 })
+    expect(c.maxChurned).toBe(8)
+  })
+
+  it("is null when the database doesn't count starters yet", () => {
+    const { starters: _s, noStarter: _n, ...before } = raw
+    expect(churnByStarter(before, data)).toBeNull()
   })
 })

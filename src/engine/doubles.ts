@@ -43,7 +43,9 @@ export function asDouble(enc: Encounter, ctx: EncounterContext, save: SaveData, 
   const { area, data } = ctx
   if (isExtreme(save) || worldOfArea(data, area) || area.mode || !doublesIn(data, regionOfArea(area))) return enc
   if (enc.kind === 'wild') {
-    if (enc.partner || !pairAble(save) || rng.next() * 100 >= doublesConfig(data).wildChance) return enc
+    // A Pokémon that posed as a find comes alone (docs/61 §3).
+    // A horde (docs/62 §5) is a double of its own.
+    if (enc.partner || enc.disguisedAs || enc.horde || !pairAble(save) || rng.next() * 100 >= doublesConfig(data).wildChance) return enc
     const partner = rollWild(ctx, rng)
     // A roamer turning up instead is a legendary on its own: no pair this time.
     if (partner?.kind !== 'wild') return enc
@@ -70,4 +72,8 @@ export function fitWildPair(enc: Encounter, save: SaveData): Encounter {
 
 /** The encounter is a double battle. */
 export const isDoubleEncounter = (enc: Encounter | null | undefined): boolean =>
-  !!enc && ((enc.kind === 'wild' && !!enc.partner) || ((enc.kind === 'trainer' || enc.kind === 'gym') && !!enc.double))
+  !!enc &&
+  ((enc.kind === 'wild' && (!!enc.partner || !!enc.horde?.length)) ||
+    (enc.kind === 'trainer' && !!enc.double) ||
+    (enc.kind === 'gym' && (!!enc.double || !!enc.trial)) ||
+    (enc.kind === 'boss' && !!enc.titan))
