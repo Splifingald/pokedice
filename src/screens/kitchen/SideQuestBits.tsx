@@ -15,6 +15,7 @@ import { SpriteImg } from '@/components/SpriteImg'
 import { useT } from '@/i18n/react'
 import { FoundThing, SprungThing } from '@/screens/area/FindView'
 import { StageBackground } from '@/screens/battle/BattleStage'
+import { InlineCard, RivalLostView } from '@/screens/battle/VictoryView'
 
 /** One state, phone-wide, in a frame. */
 function Frame({ name, children, dark }: { name: string; children: ReactNode; dark?: boolean }) {
@@ -174,6 +175,18 @@ function GiftBits() {
       <p className="pixel-dialogue m-0 max-w-xl px-3 py-1.5 text-[18px] leading-[1.15]">
         {t('ui.log.startRival', { trainer: 'Silver', foe: 'Quilava', lead: 'Totodile' })}
       </p>
+      {/* A rival lost to, with its switch on (docs/61 §5.4): healed, or resting in Extreme mode. */}
+      <div className="flex flex-wrap gap-4">
+        {[true, false].map((healed) => (
+          <Frame key={String(healed)} name={healed ? 'Rival lost: healed' : 'Rival lost: resting (Extreme)'}>
+            <div className="flex min-h-[220px] flex-col">
+              <InlineCard.Provider value={true}>
+                <RivalLostView name="Silver" healed={healed} />
+              </InlineCard.Provider>
+            </div>
+          </Frame>
+        ))}
+      </div>
     </div>
   )
 }

@@ -5,7 +5,8 @@
 import { applyCatch, catchTarget } from './catching'
 import { hatchLevel } from './daycare'
 import { eventOpenTo } from './events'
-import { createInstance } from './progression'
+import { wipeHeals } from './extreme'
+import { createInstance, instanceMaxHp } from './progression'
 import { createRng, type Rng } from './rng'
 import { rollTalentFor } from './talents'
 import type { Encounter } from './encounters'
@@ -24,6 +25,8 @@ import type {
 
 /** Rivals' meetings: switched on for whoever is playing (docs/15 §20). */
 export const rivalsOn = (data: GameData): boolean => eventOpenTo(data.config.rivals?.access, data)
+/** A rival lost to heals the team and lets the area go on (docs/61 §5.4): switched on for whoever is playing. */
+export const rivalLossHealOn = (data: GameData): boolean => eventOpenTo(data.config.rivalLossHeal?.access, data)
 /** Gift Pokémon: switched on for whoever is playing. */
 export const giftMomentsOn = (data: GameData): boolean => eventOpenTo(data.config.giftMoments?.access, data)
 
@@ -93,6 +96,27 @@ export const giftLevel = (g: GiftMoment, area: Pick<Area, 'minLevel'>): number =
 export function markMomentDone(save: SaveData, id: string): SaveData {
   const done = save.moments?.done ?? []
   return done.includes(id) ? save : { ...save, moments: { ...save.moments, done: [...done, id] } }
+}
+
+/**
+ * The fight just lost was a rival's set meeting (its `moment`) and losing it is no wipe (docs/61 §5.4). Every other
+ * trainer, a rival met in a trainer pool among them, still wipes.
+ */
+export const rivalLossForgiven = (data: GameData, moment: string | null | undefined): moment is string =>
+  !!moment && rivalLossHealOn(data)
+
+/**
+ * Lost to a rival's set meeting (docs/61 §5.4, the user's ask, 2026-11-03): no wipe. The team is healed as a lost round
+ * heals it (nobody in Extreme mode while its wipes heal nobody: the team rests), the meeting is met (the rival moves
+ * on, no prize: it never comes back for a rematch), and the area goes on where it was: its deck, the cards turned over
+ * and the rounds done are all kept. Levels, XP, items and Pokédollars are kept, as in a wipe.
+ */
+export function applyRivalLoss(save: SaveData, data: GameData, moment: string): SaveData {
+  const healed = new Set(wipeHeals(save, data) ? save.team : [])
+  const next = healed.size
+    ? { ...save, box: save.box.map((inst) => (healed.has(inst.id) ? { ...inst, currentHp: instanceMaxHp(inst, data) } : inst)) }
+    : save
+  return markMomentDone(next, moment)
 }
 
 export type GiftPlaced = 'team' | 'box' | 'replaced' | 'merged' | 'egg'
