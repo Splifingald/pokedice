@@ -5,7 +5,6 @@ import {
   foeGoldMultiplier,
   foeLevels,
   isPlayerFoe,
-  matchFoe,
   type AreaFoe,
   autoLevel,
   autoOffersLead,
@@ -386,7 +385,6 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
   const { data, run } = useGame.getState()
   const area = data.areas.find((a) => a.id === areaId)
   if (!area) return null
-  const foe = areaVersusHere(save, area, data) ? areaFoeFor(area.id) : null
   return {
     area,
     progress: progressOf(save, area.id),
@@ -410,8 +408,7 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
     // Day and night (docs/32): in Johto, only the hour's wild Pokémon come.
     hour: localHour(),
     // Real-player battles (docs/54): the team the server has for this area, if the save meets them here.
-    // …brought down to the player's level while the level match is on (the user's ask, 2026-11-03).
-    versusFoe: foe && matchFoe(foe, save, area, data),
+    versusFoe: areaVersusHere(save, area, data) ? areaFoeFor(area.id) : null,
     // The weather (docs/62 §4): Galar's of the day brings its types out more.
     weather: weatherHere(save, data, area),
   }

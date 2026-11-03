@@ -941,13 +941,6 @@ export interface AreaVersusConfig {
   requestDays: number
   /** The cards go among the round's last this many. */
   lastCards: number
-  /**
-   * The level match's own switch (the user's ask, 2026-11-03): a team whose best Pokémon stands more than `levelMargin`
-   * above the player's best in the region is scaled down, and fights with the area's dice and combos. Off when missing.
-   */
-  levelMatchAccess: EventAccess
-  /** Their best Pokémon is at most this many levels above the player's best. */
-  levelMargin: number
 }
 
 export interface VersusLeagueConfig {

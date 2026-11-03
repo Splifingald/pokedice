@@ -26,7 +26,7 @@ import {
   type SaveData,
   type TrainerMon,
 } from './types'
-import { uniformLevels, type UpgradeLevels } from './damage'
+import type { UpgradeLevels } from './damage'
 
 export const AREA_VERSUS_DEFAULTS: AreaVersusConfig = {
   access: 'off',
@@ -34,8 +34,6 @@ export const AREA_VERSUS_DEFAULTS: AreaVersusConfig = {
   recentDays: 14,
   requestDays: 30,
   lastCards: 3,
-  levelMatchAccess: 'off',
-  levelMargin: 1,
 }
 
 /** The admin's numbers over the defaults; an odd number keeps its default. */
@@ -52,17 +50,11 @@ export function areaVersusConfig(data: GameData): AreaVersusConfig {
     recentDays: Math.round(num(raw.recentDays, d.recentDays, 1)),
     requestDays: Math.round(num(raw.requestDays, d.requestDays, 1)),
     lastCards: Math.round(num(raw.lastCards, d.lastCards, 1)),
-    levelMatchAccess: raw.levelMatchAccess ?? d.levelMatchAccess,
-    levelMargin: Math.round(num(raw.levelMargin, d.levelMargin, 0)),
   }
 }
 
 /** The admin's switch (docs/15 §20). Off: no deck holds the card, the server offers nobody. */
 export const areaVersusOn = (data: GameData): boolean => eventOpenTo(data.config.areaVersus?.access, data)
-
-/** The level match's switch: real players' teams brought down to the player's level (`matchFoe`). */
-export const levelMatchOn = (data: GameData): boolean =>
-  areaVersusOn(data) && eventOpenTo(areaVersusConfig(data).levelMatchAccess, data)
 
 /** The area's real-player cards a round, as Admin › Areas sets them (its `versus` weight). */
 export const versusWeight = (area: Area): number =>
@@ -200,33 +192,7 @@ export function foeEncounter(foe: AreaFoe, data: GameData) {
   }
 }
 
-/** The player's best level in the region being played: the team and the Box (a weak team fielded doesn't lower it). */
-export const bestOwnedLevel = (save: SaveData): number =>
-  save.box.reduce((best, p) => Math.max(best, p.level), 1)
-
-/**
- * The level match (the user's ask, 2026-11-03: "it's never more than 1 level above the max player pokemon level of
- * this region"). A team whose best Pokémon stands above the player's best + the margin is scaled down by one ratio, so
- * their best lands on that cap and the team keeps its proportions (45/42/38/30/22 against a best of 30: 31/29/26/21/15).
- * While the match is on, they fight with the area's dice and combos, as its trainers do, not their own. The same foe
- * with the switch off, or with a team already within reach (only the upgrades then).
- */
-export function matchFoe(foe: AreaFoe, save: SaveData, area: Area | undefined, data: GameData): AreaFoe {
-  if (!levelMatchOn(data)) return foe
-  const cap = Math.min(data.config.maxLevel, bestOwnedLevel(save) + areaVersusConfig(data).levelMargin)
-  const top = foe.team.reduce((best, m) => Math.max(best, m.level), 0)
-  const ratio = top > cap ? cap / top : 1
-  const { comboLevels, dieLevels } = uniformLevels(area?.enemyUpgradeLevel ?? data.config.enemyUpgradeLevel)
-  return {
-    ...foe,
-    team:
-      ratio < 1 ? foe.team.map((m) => ({ ...m, level: Math.max(1, Math.round(m.level * ratio)) })) : foe.team,
-    comboLevels,
-    dieLevels,
-  }
-}
-
-/** Their dice and combo upgrades (the area's, under the level match): the levels their side fights at. */
+/** Their dice and combo upgrades, as they had them: the levels their side fights at. */
 export const foeLevels = (foe: AreaFoe): UpgradeLevels => ({
   comboLevels: { ...foe.comboLevels },
   dieLevels: { ...foe.dieLevels },

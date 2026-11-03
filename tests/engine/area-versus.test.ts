@@ -13,7 +13,6 @@ import {
   foeLevels,
   foePrize,
   isPlayerFoe,
-  matchFoe,
   newSave,
   nextEncounter,
   parseAreaFoe,
@@ -85,8 +84,6 @@ describe('the switch and the areas', () => {
       recentDays: 14,
       requestDays: 30,
       lastCards: 3,
-      levelMatchAccess: 'off',
-      levelMargin: 1,
     })
     const d = makeData({ areaVersus: { access: 'admin', prizeMultiplier: 2, recentDays: -3 as number } })
     expect(areaVersusConfig(d)).toMatchObject({ access: 'admin', prizeMultiplier: 2, recentDays: 14 })
@@ -213,63 +210,6 @@ describe('the fight', () => {
     expect(foePrize(foe.team, ROUTE3, false, on)).toBe(
       Math.round(trainerGoldFor(18, ROUTE3, false, on) * 1.5) +
         Math.round(trainerGoldFor(15, ROUTE3, false, on) * 1.5),
-    )
-  })
-})
-
-describe('the level match', () => {
-  const matched = makeData({ areaVersus: { access: 'all', levelMatchAccess: 'all' } })
-  const strong: AreaFoe = {
-    ...foe,
-    team: [45, 42, 38, 30, 22].map((level) => ({ dex: 25, level })),
-  }
-  // Their best is 30 in the Box, 12 on the team: the Box counts.
-  const at30 = (): SaveData => {
-    const s = save()
-    return {
-      ...s,
-      box: s.box
-        .map((p, i) => ({ ...p, level: i ? 30 : 12 }))
-        .concat({ ...s.box[0]!, id: 'boxed', level: 30 }),
-    }
-  }
-
-  it('scales a stronger team by one ratio: their best at the player’s best +1, the proportions kept', () => {
-    const m = matchFoe(strong, at30(), ROUTE3, matched)
-    expect(m.team.map((p) => p.level)).toEqual([31, 29, 26, 21, 15])
-    expect(foeEncounter(m, matched)!.team.map((p) => p.level)).toEqual([31, 29, 26, 21, 15])
-  })
-
-  it('fights with the area’s dice and combos, their levels kept within reach', () => {
-    const m = matchFoe(foe, at30(), ROUTE3, matched)
-    expect(m.team).toEqual(foe.team)
-    const lv = ROUTE3.enemyUpgradeLevel ?? matched.config.enemyUpgradeLevel
-    expect(Object.values(foeLevels(m).comboLevels).every((v) => v === lv)).toBe(true)
-    expect(Object.values(foeLevels(m).dieLevels).every((v) => v === lv)).toBe(true)
-  })
-
-  it('takes the admin’s margin, and never goes below level 1', () => {
-    const d = makeData({ areaVersus: { access: 'all', levelMatchAccess: 'all', levelMargin: 0 } })
-    const s = { ...save(), box: save().box.map((p) => ({ ...p, level: 5 })) }
-    const m = matchFoe(
-      {
-        ...foe,
-        team: [
-          { dex: 25, level: 100 },
-          { dex: 16, level: 2 },
-        ],
-      },
-      s,
-      ROUTE3,
-      d,
-    )
-    expect(m.team.map((p) => p.level)).toEqual([5, 1])
-  })
-
-  it('leaves the team as it was with its switch off, or real players off', () => {
-    expect(matchFoe(strong, at30(), ROUTE3, on)).toBe(strong)
-    expect(matchFoe(strong, at30(), ROUTE3, makeData({ areaVersus: { levelMatchAccess: 'all' } }))).toBe(
-      strong,
     )
   })
 })

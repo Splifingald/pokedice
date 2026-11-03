@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   areaVersusConfig,
-  levelMatchOn,
   areaVersusHere,
   daysAgo,
   familyTalent,
@@ -70,20 +69,9 @@ export function AreaVersusService() {
 export function useAreaVersusRules(): RuleRow[] {
   const { t } = useT()
   // The data, then its numbers: a selector must not build a new object on every call.
-  const data = useGame((s) => s.data)
-  const cfg = areaVersusConfig(data)
+  const cfg = areaVersusConfig(useGame((s) => s.data))
   return [
     { icon: 'user', title: t('ui.areaVersus.rule1Title'), text: t('ui.areaVersus.rule1Text') },
-    // The level match (the user's ask, 2026-11-03): only while its switch is on.
-    ...(levelMatchOn(data)
-      ? [
-          {
-            icon: 'shield' as const,
-            title: t('ui.areaVersus.ruleMatchTitle'),
-            text: t('ui.areaVersus.ruleMatchText', { n: cfg.levelMargin }),
-          },
-        ]
-      : []),
     { icon: 'heart', title: t('ui.areaVersus.rule2Title'), text: t('ui.areaVersus.rule2Text') },
     {
       icon: 'coin',
