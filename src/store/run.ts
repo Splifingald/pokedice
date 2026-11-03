@@ -228,6 +228,7 @@ import {
   safariDealable,
   safariOn,
   safariRoundDue,
+  safariCfg,
   safariRoundPrice,
   startSafariRound,
 } from '@/engine'
@@ -243,6 +244,7 @@ import { trickAllowed } from './trick'
 import { giftAllowed } from './giftCard'
 import { tracksAllowed } from './tracks'
 import { sideQuestAllowed, sideQuestCached, sideQuestKnown } from './sideQuests'
+import { askSafari, closeSafariAsk, useSafariAsk } from './safariAsk'
 import { weatherHere } from './flavours'
 import { t } from '@/i18n'
 
@@ -378,6 +380,8 @@ function onToNext() {
   const area = data.areas.find((a) => a.id === run.areaId)
   if (!area) return
   const own = [portalModeOf, nightmareModeOf, timeRaceModeOf, whiteoutModeOf, tracksModeOf].some((m) => m(area, data))
+  // A Safari's next round is never begun on the way (a player's report, 2026-11-03: round after round paid by itself):
+  // rollNext asks first, its pop-up over the area's page (the price, or that it's free; HOME beside it).
   if (!own) continueExploring()
 }
 
@@ -942,6 +946,20 @@ export function finishTracksOutro() {
 }
 
 /** Roll the next encounter and show its preview card. */
+/** The player said yes to the Safari round about to begin (its pop-up): the next rollNext begins it. */
+let safariYes = false
+
+/** The Safari pop-up's START / PAY: the round begins (paid if it costs), its first card dealt. */
+export function confirmSafariRound() {
+  const { run } = useGame.getState()
+  const ask = useSafariAsk.getState().ask
+  closeSafariAsk()
+  if (!ask || run.areaId !== ask.areaId) return
+  safariYes = true
+  rollNext()
+  safariYes = false
+}
+
 export function rollNext() {
   settleRound()
   const { save, data, run } = useGame.getState()
@@ -980,6 +998,15 @@ export function rollNext() {
   const forceKind = noneAble && !wipeCenter && !(safari && safariDealable(data, safari)) ? 'center' : run.forceNext
   if (safari && safariRoundDue(data, safari, progressOf(save, safari.id))) {
     const price = safariRoundPrice(data, safari, progressOf(save, safari.id))
+    // Never begun without the player's yes (a player's report, 2026-11-03): the pop-up says the price, or that it's
+    // free, with HOME beside it; its button comes back here (confirmSafariRound).
+    if (!safariYes) {
+      setRun({ phase: 'idle', encounter: null })
+      askSafari({ areaId: safari.id, price, next: Math.max(0, Math.round(Number(safariCfg(data).roundPrice) || 0)) })
+      return
+    }
+    safariYes = false
+    closeSafariAsk()
     const paid = startSafariRound(save, data, safari)
     if (!paid) {
       setRun({ phase: 'idle', encounter: null })
@@ -2166,6 +2193,14 @@ export function fleeTrick() {
   setRun({ trick: { ...tr, state, last: null } })
   leaveTrick()
   pushToast(t('ui.toast.gotAway'))
+}
+
+/** HOME on the result card: back on the trail, no card dealt; Home's CONTINUE goes on from there. */
+export function leaveTrickHome() {
+  const tr = useGame.getState().run.trick
+  if (tr && !tr.state.end) return
+  setRun({ trick: null })
+  backToArea()
 }
 
 /** Caught or fled: back on the trail and on to the next card (the round may be complete). */

@@ -32,13 +32,13 @@ https://claude.ai/artifact/DvqovnATbfQns2gvBbxREa
 | Who can be challenged | **Friends only, online now** (in the game in the last 2 minutes, §5.3). An offline friend's button says *Offline* |
 | Who can play | Signed in, the switch open to them, **Versus unlocked** (3 Pokémon at Lv.50). Not in Extreme mode (a race of its own, as Trades). One battle at a time |
 | The challenge | The challenger picks the mode and sends it. The friend sees a **banner** (not a modal) with ACCEPT / NO and a 2-minute gauge, on any page; **mid-fight it waits for the fight's end**. Expires after **120 s** (admin). Cancel any time before an answer |
-| The fight's rules | **Versus's**: 3 v 3, **Lv.50 with the dice and rerolls of the Pokémon's own level** (`versusSeedLevels`), hidden talents carried, **no battle powers** (built: §13), **no Bag**, **no switching** (the order is set before the fight), no XP, no ₽. The save is never touched |
+| The fight's rules | **Versus's**: 3 v 3, **Lv.50 with the dice and rerolls of the Pokémon's own level** (`versusSeedLevels`), hidden talents carried, **no battle powers** (built: §13), **no Bag**, **switching on your turn, which costs the turn** (2.9.2, §17; it was none), no XP, no ₽. The save is never touched |
 | Classic | Each brings **their registered Versus team** (`versus_teams`, held by the server), can CHANGE it in the lobby, then READY. Neither sees the other's team until the fight starts. **No coin, no shield**: Speed decides who moves, as in every fight |
 | Draft: the coin | The **server** tosses (heads: challenger). Both see the same animated coin. The winner picks first |
 | Draft: the picks | **A-B-A-B-A-B**, one Pokémon at a time, **30 s a pick** (admin). Each picks from **their own** Lv.50+ Pokémon (`versusChoices`: every region's Box, one per species, shiny apart). Every pick is shown to both as it lands. ❓ **A species one player took is gone for the other** (no mirror), unless they have nothing else left. Time out: the best one left on their list is picked for them (§4.3) |
 | Draft: the order | After the 6th pick, **20 s** to set your order (drag or tap two to swap). The lead is secret until sent out; each next one is too. Time out: the order shown is kept |
-| The Bonus Shield ❓ | **The first picker's team takes half damage (rounded up) from the opponent's first attack**, whenever that attack comes (if the shielded player moves first, it waits for the reply). A burn or poison tick isn't an attack and doesn't use it. Shown as a blue **◆ Shield** tag on the plate, struck out once used; the hit's log line says "The Bonus Shield takes half: 38 → 19." 50 % is admin |
-| Turns | **45 s a turn** (admin), a chip at the top right. Time out: the server files a time-out move (asked by the waiting game), and **the dice in hand attack** (built: §13). AUTO-MODE plays your own turns if you like |
+| The Bonus Shield ❓ | **The first picker's team takes half damage (rounded up) from the opponent's first attack**, whenever that attack comes (if the shielded player moves first, it waits for the reply). A burn or poison tick isn't an attack and doesn't use it. Shown as a blue **◆ Shield** tag on the plate, struck out once used; the hit's log line says "The Bonus Shield softens the hit: 38 → 29." **A quarter blocked since 2.9.2** (§17; it was half); admin |
+| Turns | **45 s a turn** (admin), a chip at the top right. Time out: the server files a time-out move (asked by the waiting game), and **the dice in hand attack** (built: §13). **No AUTO-MODE** (2.9.2, §17: it was offered): each player plays their own turns |
 | Who moves | The faster lead first (a tie: the battle's seed). Then **turn about**: a stunned Pokémon's turn passes by itself, and a K.O.'d one's next comes out in order |
 | Watching | On the opponent's turn you see **their dice live**: each reroll and the attack as they press it |
 | Leaving | FORFEIT (the flag) is a loss. A dropped connection: the other game says "{name} lost connection" after 30 s; back within **90 s** (admin) the match goes on where it is (a turn that ran out meanwhile attacked with the dice in hand); otherwise the other player wins |
@@ -303,7 +303,8 @@ preview; the migration's GitHub link given with the push; patch notes only when 
     letting both people use them needs its own work. Talents are carried.
   - **A time-out attacks with the dice in hand** rather than playing the AI's turn: the server can file it alone
     (`pvp_timeout`), the same on both games.
-  - **No switching during the fight**: the order step sets it, the next one comes out on a K.O.
+  - **No switching during the fight** (until 2.9.2, §17: now on your turn, costing it): the order step sets it, the
+    next one comes out on a K.O.
   - **Push for challenges** (§7, phase 4) is **not built**: a friend must be in the game (Online now) to be challenged.
   - The trainer card's W–L isn't shown; the record is on `/battles` and the Friends page's card.
 
@@ -323,6 +324,11 @@ preview; the migration's GitHub link given with the push; patch notes only when 
 6. Lv.50 or Lv.100 (§16): run
    https://github.com/Splifingald/pokedice/blob/version/2_9/supabase/migrations/0133_friend_battle_levels.sql
    after 0132 (version 2.9's file carries it too, last). Not in `supabase/seed.sql`.
+
+7. Switching and the quarter shield (§17, version 2.9.2): run
+   https://github.com/Splifingald/pokedice/blob/claude/determined-feynman-wqflg9/supabase/migrations/0137_friend_battle_switch.sql
+   after 0133 (the same file on `version/2_9_2` once merged). Not in `supabase/seed.sql`. Run it before the 2.9.2 build
+   goes live: the build sends switches the server refuses until then.
 
 ## 15. Battle tickets
 
@@ -363,3 +369,24 @@ Built in `src/engine/friendBattle.ts` (`PVP_LEVELS`, `pvpBattler`, `startPvp`'s 
 `pvp_challenge(friend, mode, level)`, the sheet's level choice (`LevelTag` elsewhere: Lv.100 in ink, Lv.50 plain),
 tests in the engine, SQL and e2e suites.
 
+## 17. Switching, and a quarter shield (version 2.9.2)
+
+The user's ask, 2026-11-03: *"Players should be able to change pokemon in versus battles and friend battles. Also, the
+shield value should be 25% not 50% in friend battles draft mode."* Migration **`0137_friend_battle_switch.sql`**.
+
+| Question | Answer |
+|---|---|
+| Switching | **On your turn, as in every fight**: a team pip (or the PC's team column), the send-out's cards, GO!. **It costs the turn**: the dice in hand are dropped and the other side plays. A stunned turn still passes by itself (no switching then, as everywhere) |
+| After a K.O. | Unchanged: **the next one in order comes out** (the order step still sets it). A switch on the turn that follows changes it, at a turn's cost |
+| The move | `{ k: 'switch', uid }` (`PvpMove`): the engine's own voluntary switch in the turn's duel step, logged as `pvp_out` with `switched` (the engine's `switch` entry names no side). Refused alike on both games when it can't be made (not that side's turn, the one out, fainted, not theirs). The server takes it only with one of the mover's own uids (`a0`–`a5` for side a) |
+| On screen | Your switch: "Come back… Go!" as in any fight. Theirs: the next battle opens on your screen with the one they sent in, as after a K.O.; the dots on their plate count only K.O.s now |
+| AUTO-MODE | **Gone from Friend Battles** (the user's follow-up, 2026-11-03): two people fight it, each plays their own turns. A turn left to run out still attacks with the dice in hand (the time-out). `BattleView`'s `live` without `onAuto` draws no AUTO-MODE switch |
+| Versus league | **Already had it** (docs/44 §4: "dice, rerolls, switches"): checked on a phone and a PC; an e2e now keeps it so |
+| The shield | **Blocks a quarter** of the opponent's first attack (it took half): `friendBattles.shield`, the share of the hit still taken, **75** (was 50). The migration moves a stored 50 to 75 and leaves another value the admin set. The admin's field now says the share **blocked** (25), the way the rules card says it ("25% less"). The log line no longer says "half" |
+
+Built in `src/engine/friendBattle.ts` (`applyPvpMove`'s switch, `FRIEND_BATTLES_DEFAULTS.shield` 75), `src/lib/pvp.ts`
+(`parseMove`), `src/screens/battles/Live.tsx` (SWITCH sent as a move; `noSwitch` is gone from `BattleView`), the admin's
+Friend Battles box, the rules card's first row ("Switching costs your turn.") and the shield's log line in the ten
+languages. Tests: the engine's (switches mixed into the 120 replica fights, a switch's turn and log, the refused ones,
+the quarter), the SQL suite's "switching and the quarter shield (0137)", e2e `friend-battles.spec.ts` (my switch sent and
+played; theirs arriving) and `versus-league.spec.ts` (a switch on your turn).

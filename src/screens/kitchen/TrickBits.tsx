@@ -259,6 +259,7 @@ export function TrickBits() {
           placed="team"
           isNew
           onContinue={() => setRecap(null)}
+          onHome={() => setRecap(null)}
         />
       )}
 

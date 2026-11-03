@@ -7,6 +7,7 @@ import { cx } from '@/theme/util'
 import { useInWorld, worldVars } from '@/screens/events/world'
 import { BottomNav, Header, SideNav } from './Hud'
 import { OneTimePopups, PopupQueue } from './PopupQueue'
+import { SafariAskPopup } from '@/screens/area/SafariAsk'
 import { PortalGuard } from '@/screens/area/PortalRun'
 import { NightmareGuard } from '@/screens/area/NightmareRun'
 import { TimeRaceGuard } from '@/screens/area/TimeRaceRun'
@@ -85,6 +86,8 @@ export function GameLayout() {
         <WhiteoutGuard />
         {/* Friend Battles (docs/65): a challenge to answer, the match's topic and clock while one is on. */}
         <FriendBattlesService />
+        {/* A Safari round asked before it begins (docs/61 §4): its price or that it's free, HOME beside it. */}
+        <SafariAskPopup />
       </div>
     </PopupQueue>
   )

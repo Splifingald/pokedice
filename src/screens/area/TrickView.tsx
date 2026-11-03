@@ -5,11 +5,14 @@
 // the flee) and the battle's catch timeline with the Trick Ball (the throw, the ball on the ground, the wobbles, Gotcha!
 // or the break-free), the die shown as the ball stops. Once it's over, the result card rises as a battle's does.
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   failPush,
   lureCfg,
   markSafariRulesSeen,
+  portalLock,
   safariRulesDue,
+  timeRaceLock,
   treatRange,
   trickBand,
   trickChance,
@@ -51,7 +54,7 @@ import { useT } from '@/i18n/react'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { useMotion } from '@/lib/motion'
 import { mutateSave, useGame, type TrickRun } from '@/store/game'
-import { fleeTrick, giveTreat, leaveTrick, throwTrickBall } from '@/store/run'
+import { fleeTrick, giveTreat, leaveTrick, leaveTrickHome, throwTrickBall } from '@/store/run'
 import { CatchCard, Overlay, SecretAreaCard } from '@/screens/battle/VictoryView'
 import { cx } from '@/theme/util'
 import { PlateBox } from '@/screens/battle/Plates'
@@ -329,12 +332,18 @@ export function TrickRecapBody({
   )
 }
 
-/** The result card, risen over the panel as a battle's: the title, the recap, the round gauge and CONTINUE. */
+/** The result card, risen over the panel as a battle's: the title, the recap, the round gauge, HOME and CONTINUE. */
 export function TrickRecap({
   name,
   onContinue,
+  onHome,
   ...body
-}: Parameters<typeof TrickRecapBody>[0] & { name: string; onContinue: () => void }) {
+}: Parameters<typeof TrickRecapBody>[0] & {
+  name: string
+  onContinue: () => void
+  /** HOME, as on a battle's card; absent (a portal run, a race) = CONTINUE alone. */
+  onHome?: () => void
+}) {
   const { t } = useT()
   const title =
     body.end === 'caught' ? t('ui.trick.caughtTitle', { name }) : t('ui.trick.fledTitle', { name })
@@ -344,9 +353,18 @@ export function TrickRecap({
       footer={
         <div className="flex flex-col gap-2">
           <RunRoundGauge className="px-1" />
-          <PixelButton variant="primary" size="lg" className="w-full" onClick={onContinue}>
-            {t('ui.common.continue')}
-          </PixelButton>
+          {/* HOME beside CONTINUE, as a battle's card has it: a Safari is nothing but these cards, so without it the
+              only way out was the next one (a player's report, 2026-11-03). */}
+          <div className={onHome ? 'grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-2.5' : 'grid'}>
+            {onHome && (
+              <PixelButton size="lg" className="whitespace-nowrap px-2" onClick={onHome}>
+                {t('ui.nav.home')}
+              </PixelButton>
+            )}
+            <PixelButton variant="primary" size="lg" className="w-full whitespace-nowrap px-2" onClick={onContinue}>
+              {t('ui.common.continue')}
+            </PixelButton>
+          </div>
         </div>
       }
     >
@@ -367,6 +385,9 @@ export function TrickView() {
   const save = useGame((s) => s.save)
   const trick = run.trick as TrickRun
   const { level, calm } = useMotion()
+  const navigate = useNavigate()
+  // Inside a portal run or a try of the race there is no way Home (as on a battle's card).
+  const locked = useGame((s) => !!portalLock(s.save, s.data) || !!timeRaceLock(s.save, s.data))
   const st = trick.state
   // The Safari (docs/61 §4) is Trick or Treat's screen with its own look, words and numbers.
   const theme = st.theme
@@ -557,6 +578,14 @@ export function TrickView() {
           replacedLevel={trick.caught?.replacedLevel}
           secrets={(trick.caught?.secrets ?? []).map((id) => data.areas.find((a) => a.id === id)?.name ?? id)}
           onContinue={leaveTrick}
+          onHome={
+            locked
+              ? undefined
+              : () => {
+                  leaveTrickHome()
+                  navigate('/home')
+                }
+          }
         />
       )}
     </TrickScreen>

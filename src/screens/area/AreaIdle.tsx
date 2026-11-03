@@ -31,7 +31,7 @@ export function AreaIdle({ area, scene = false }: { area: Area; scene?: boolean 
   const { t } = useT()
   const navigate = useNavigate()
   const save = useGame((s) => s.save)
-  const { label, sub, go, explore, off, gym, boss, raid, closed, resting } = useContinue(area)
+  const { label, sub, go, explore, off, gym, boss, raid, closed, resting, safariDue, safariPrice } = useContinue(area)
   // Inside a portal run (docs/28) there is no way Home: CONTINUE alone.
   const locked = useGame((s) => !!portalLock(s.save, s.data))
   const data = useGame((s) => s.data)
@@ -65,10 +65,14 @@ export function AreaIdle({ area, scene = false }: { area: Area; scene?: boolean 
             {t('ui.nav.home')}
           </PixelButton>
         )}
-        <PixelButton variant="primary" size="lg" className="px-2" disabled={off} onClick={go}>
-          {(gym || boss || raid) && <PixelIcon name="sword" size={22} />}
-          {gym || boss || raid ? label : t('ui.common.continue')}
-        </PixelButton>
+        {safariDue && !off ? (
+          <SafariPayButton price={safariPrice} onClick={go} />
+        ) : (
+          <PixelButton variant="primary" size="lg" className="px-2" disabled={off} onClick={go}>
+            {(gym || boss || raid) && <PixelIcon name="sword" size={22} />}
+            {gym || boss || raid ? label : t('ui.common.continue')}
+          </PixelButton>
+        )}
       </div>
     </>
   )
@@ -158,5 +162,31 @@ export function AreaTeam() {
       </ol>
       <SheetModal view={view} onClose={() => setView(null)} manage />
     </section>
+  )
+}
+
+/**
+ * CONTINUE when a Safari round waits for this tap (docs/61 §4): its price on the button itself, under the word, or
+ * "Free round", as Home's CONTINUE says it (a player's report, 2026-11-03: rounds paid without seeing it). The round's
+ * pop-up asks once more before anything is paid.
+ */
+export function SafariPayButton({ price, onClick }: { price: number; onClick: () => void }) {
+  const { t } = useT()
+  const sub = price > 0 ? t('ui.safari.price', { price }) : t('ui.safari.freeRound')
+  return (
+    <PixelButton
+      variant="primary"
+      size="lg"
+      className="px-2"
+      onClick={onClick}
+      aria-label={`${t('ui.common.continue')} · ${sub}`}
+    >
+      <span className="grid min-w-0 gap-[3px] text-center">
+        <span className="truncate leading-none">{t('ui.common.continue')}</span>
+        <span className="truncate font-pixel-sm text-[16px] normal-case leading-none tracking-[0.02em] text-[#ffe2db] [text-shadow:none]">
+          {sub}
+        </span>
+      </span>
+    </PixelButton>
   )
 }

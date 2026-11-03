@@ -278,13 +278,12 @@ export interface VersusReplay {
   onPlayed: () => void | (() => void)
   /** The result card, once the whole fight is over. */
   end?: ReactNode
-  /** Fought by the player (the weekly league): AUTO is their switch, off at the start. */
-  live?: { auto: boolean; onAuto: (on: boolean) => void }
   /**
-   * No switching on your turn (a Friend Battle, docs/65: the order was set before the fight): the team's step keeps
-   * only BACK and the flag, and the flag gives up through `onForfeit`.
+   * Fought by the player (the weekly league): AUTO is their switch, off at the start. Without `onAuto` (a Friend
+   * Battle, docs/65 §17: two people, each plays their own turns) there is no AUTO-MODE at all.
    */
-  noSwitch?: boolean
+  live?: { auto: boolean; onAuto?: (on: boolean) => void }
+  /** The flag gives up through this (a Friend Battle, docs/65: the server settles a forfeit), not the run's way. */
   onForfeit?: () => void
 }
 
@@ -552,7 +551,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     })
   // Out on the field already: not one to switch in (a double battle has two out).
   const onField = (p: Battler) => (dbl ? dbl.ownSlots.some((i) => st.player[i]!.uid === p.uid) : p.uid === activeBattler(st).uid)
-  const switchTargets = versus?.noSwitch ? [] : st.player.filter((p) => p.hp > 0 && !onField(p))
+  const switchTargets = st.player.filter((p) => p.hp > 0 && !onField(p))
   // After a K.O. with one Pokémon left to come in, it comes in: nothing to choose (the user, 2026-10-27).
   const lastOne = forced && !auto && switchTargets.length === 1 ? switchTargets[0]!.uid : null
   useEffect(() => {
@@ -1097,7 +1096,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   }, [picking])
   // A cleared area's fight can be handed to auto-mode midway, as the area's switch would have from its start.
   // One switch, in the same place on or off (the user's call, 2026-10-27): no note and STOP while it plays.
-  const autoToggle = (autoOpen && !versus && !catching) || !!live
+  const autoToggle = (autoOpen && !versus && !catching) || !!live?.onAuto
   const extras =
     !terminal &&
     ((!auto && (megaOpts.length > 0 || gmaxOpts.length > 0 || zOpen || typeMenu || st.canRun)) || autoToggle)
@@ -1600,7 +1599,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                         aria-pressed={auto}
                         onClick={() => {
                           setMenu(null)
-                          if (live) live.onAuto(!auto)
+                          if (live) live.onAuto?.(!auto)
                           else setSettings({ autoMode: !auto })
                         }}
                       >
