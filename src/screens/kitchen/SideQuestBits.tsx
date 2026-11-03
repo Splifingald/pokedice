@@ -175,6 +175,10 @@ function GiftBits() {
       <p className="pixel-dialogue m-0 max-w-xl px-3 py-1.5 text-[18px] leading-[1.15]">
         {t('ui.log.startRival', { trainer: 'Silver', foe: 'Quilava', lead: 'Totodile' })}
       </p>
+      {/* …and a rival whose team was matched to the player's (docs/61 §5.5). */}
+      <p className="pixel-dialogue m-0 max-w-xl px-3 py-1.5 text-[18px] leading-[1.15]">
+        {t('ui.log.startRivalMatched', { trainer: 'Silver', foe: 'Cyndaquil', lead: 'Totodile' })}
+      </p>
       {/* A rival lost to, with its switch on (docs/61 §5.4): healed, or resting in Extreme mode. */}
       <div className="flex flex-wrap gap-4">
         {[true, false].map((healed) => (

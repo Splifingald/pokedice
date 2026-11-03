@@ -119,6 +119,8 @@ export interface AnimatorContext {
   roadblock?: boolean
   /** A rival's set meeting (docs/61 §5.2): the fight opens with their line. */
   rival?: boolean
+  /** …whose team was fitted to the player's (docs/61 §5.5): their line says so. */
+  rivalMatched?: boolean
   /** A region flavour's fight (docs/62): a Kalos horde, an island trial (the Totem's), a Titan's. */
   flavour?: 'horde' | 'trial' | 'titan' | null
   /**
@@ -245,7 +247,7 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           ? t('ui.log.startWild', { foe: st.enemy.name, lead })
           : ctx.kind === 'boss'
             ? t(ctx.roadblock ? 'ui.log.startWild' : 'ui.log.startBoss', { foe: st.enemy.name, lead })
-            : t(ctx.rival ? 'ui.log.startRival' : 'ui.log.startTrainer', {
+            : t(ctx.rival ? (ctx.rivalMatched ? 'ui.log.startRivalMatched' : 'ui.log.startRival') : 'ui.log.startTrainer', {
                 trainer: ctx.trainerName ?? t('ui.log.theTrainer'),
                 foe: st.enemy.name,
                 lead,

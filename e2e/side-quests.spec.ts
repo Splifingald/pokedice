@@ -153,6 +153,18 @@ test('a rival on the road: Blue at Nugget Bridge, his line as the fight opens', 
   await shot(page, '5-rival-battle')
 })
 
+test('a rival matched to the player (docs/61 §5.5): Blue brings a team at their level, back to its first forms', async ({
+  page,
+}) => {
+  const save = standingIn('Route 4 & Nugget Bridge', { drawn: ['center', 'wild'] })
+  await boot(page, save, { rivalMatch: { access: 'all', levels: 'cap', margin: 1, stages: 'byLevel' } })
+  await goOn(page)
+  // His Pidgeotto (Lv.18) brought down under 18 is a Pidgey again, and his line says why.
+  await expect(page.getByText(/I trained my team to match yours.*sent out Pidgey!/).first()).toBeVisible({ timeout: 20_000 })
+  await page.waitForTimeout(800)
+  await shot(page, '5-rival-matched')
+})
+
 test('a rival lost to, its switch on: the team healed, Blue moves on, the round goes on', async ({ page }) => {
   const bridge = area('Route 4 & Nugget Bridge')
   const base = standingIn('Route 4 & Nugget Bridge', { drawn: ['center', 'wild'] })
