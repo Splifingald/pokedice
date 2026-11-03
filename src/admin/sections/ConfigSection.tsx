@@ -1681,6 +1681,7 @@ const FEATURES: Feature[] = [
   own('Versus league', 'versusLeague', 'versus', VERSUS_LEAGUE_DEFAULTS as unknown as Row),
   field('Versus global board', 'versusLeague', 'globalAccess', 'versus'),
   own('Real-player battles', 'areaVersus', 'areaVersus', AREA_VERSUS_DEFAULTS as unknown as Row),
+  field('Real-player level match', 'areaVersus', 'levelMatchAccess', 'areaVersus'),
   { ...own('Friend Battles', 'friendBattles', 'friendBattles', FRIEND_BATTLES_DEFAULTS as unknown as Row), beta: true },
   own('Game Corner', 'slotMachine', 'gameCorner'),
   own('General upgrades', 'general', 'general'),

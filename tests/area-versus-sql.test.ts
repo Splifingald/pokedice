@@ -212,7 +212,9 @@ beforeEach(async () => {
 describe('the switch and the numbers', () => {
   it('starts Off, with the engine’s defaults', async () => {
     const row = (await db.query<{ v: Record<string, unknown> }>(`select area_versus_cfg() v`)).rows[0]!.v
-    expect({ ...row, access: 'off' }).toEqual({ ...AREA_VERSUS_DEFAULTS })
+    // The level match is the game's side alone (docs/54 §9): the server never reads it, its row needn't carry it.
+    const { levelMatchAccess: _match, levelMargin: _margin, ...served } = AREA_VERSUS_DEFAULTS
+    expect({ ...row, access: 'off' }).toEqual(served)
     await access('off')
     expect(await offer(U.ash)).toBeNull()
     expect(await fails(U.ash, `select area_versus_met($1, $2, 'won')`, [U.misty, A.route3])).toContain(

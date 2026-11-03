@@ -58,6 +58,12 @@ export function AreaVersusBox() {
         <Field label="Round's last cards" hint="the card goes among the round's last this many">
           <NumInput min={1} value={cfg.lastCards} onChange={(v) => set({ lastCards: whole(v) })} />
         </Field>
+        <Field
+          label="Level match margin"
+          hint="with the level match on (Switches): their best Pokémon at most this many levels above the player's best in the region (team and Box), the whole team scaled down by the same ratio; they fight with the area's dice and combos"
+        >
+          <NumInput min={0} value={cfg.levelMargin} onChange={(v) => set({ levelMargin: whole(v, 0) })} />
+        </Field>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <PixelButton size="sm" onClick={() => void fill()}>
