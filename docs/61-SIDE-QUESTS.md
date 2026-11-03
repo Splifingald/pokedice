@@ -200,7 +200,7 @@ Safari Zone**: the old area's 23 wild Pokémon, a loot table of its own (new, so
   opening (docs/46) stays as it is.
 - Once per save (`save.moments`). A **rival** comes only while its area isn't cleared (a Lv.9 rival is nothing to a
   Lv.50 team). A **gift** also comes on a later visit to a cleared area, so a save already past it gets it the next time
-  it's there. A rival lost to is a normal wipe; the moment waits.
+  it's there. A rival lost to is a normal wipe, the moment waiting, unless the switch of §5.4 is on.
 - **Two switches**, Rivals and Gift Pokémon (Off / On for admin / On for everyone, server-checked). The developer's
   gifts (docs/15 §23) are another feature and keep their own.
 - **Rules**: explained where they happen (docs/15 §20): no rules card, no INFO.
@@ -278,6 +278,36 @@ they're built: about 45 meetings, up to three versions each, written by a script
 
 Paldea has no gift to borrow.
 
+### 5.4 A rival lost to
+
+The user's ask (2026-11-03): losing to a rival heals the team and the area goes on, instead of sending the player back
+to its start. Behind its own switch, `rivalLossHeal` (Off / On for admin / On for everyone), Off by default.
+
+- **Rivals' set meetings only** (§5.2, the trainer card carrying its `moment`). Every other trainer, a rival met as a
+  random pool card while Rivals is off, gyms, the League and its Champion, still wipe as before.
+- **No wipe**: the deck, the cards turned over and the rounds done are kept; the round goes on with its next card.
+  Levels, XP, items and Pokédollars are kept, as in a wipe.
+- **Healed as a lost round heals** (`wipeHeals`): the team in full. In Extreme mode while its wipes heal nobody, the
+  team rests instead (the area still goes on).
+- **The meeting is met**: the rival moves on, no prize, no rematch (it would come straight back otherwise, its point
+  already reached). Giving up the fight (FORFEIT) is a loss like any other.
+- **The engine**: `rivalLossHealOn`, `rivalLossForgiven(data, moment)` and `applyRivalLoss(save, data, moment)` in
+  `engine/moments.ts`. The store calls it from every loss path (one-on-one, double, a forfeit between the rival's
+  Pokémon) before the wipe.
+- **The screen**: the stalemate card's rival variant (`RivalLostView`): **Defeat**, "Silver moves on. No ₽ this time,
+  but your team is healed and the round goes on." (Extreme: "your team rests"), CONTINUE to the next card. On
+  `/kitchen-sink` (side quests), both states. The forfeit's confirmation says so too ("Rival Green moves on, and the
+  round goes on"), not "you lose the round".
+
+  ![](61-side-quests/5-rival-lost.png)
+- **Rules**: explained where they happen (docs/15 §20): no rules card, no INFO.
+- **Setting it up**: run `supabase/migrations/0136_rival_loss_heal.sql` (the switch's row, Off, and the content version
+  + 1; safe to run again; `supabase/seed.sql` carries it, inlined):
+  https://github.com/Splifingald/pokedice/blob/ccr-14424068-6hqatv/supabase/migrations/0136_rival_loss_heal.sql
+  Then Admin → Config → **Rival lost: healed, area goes on**: On for admin to try it, On for everyone to open it.
+- **Tests**: `tests/engine/rival-loss.test.ts` (the switch; healed, met, the round kept; a wipe without it; Extreme)
+  and `tests/rival-loss-sql.test.ts` (migration 0136 on PGlite, inlined in `seed.sql`).
+
 ## 6. Switches and rules
 
 | Part | Switch | Rules |
@@ -287,6 +317,7 @@ Paldea has no gift to borrow.
 | Pokémon posing as items | `disguises` | explained where it happens |
 | Safari | `safari` | a pop-up at the first Safari encounter, INFO on its screen |
 | Rivals | `rivals` | explained where it happens |
+| A rival lost to (§5.4) | `rivalLossHeal` | explained where it happens |
 | Gift Pokémon | `giftMoments` | explained where it happens |
 
 Every switch is Off by default and checked by the server too; every line is in `src/i18n/strings.csv` in the ten

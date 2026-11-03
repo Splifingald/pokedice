@@ -238,6 +238,11 @@ export interface RunState {
    * them is: no wipe). The result card's SEND FRIEND REQUEST is for `foe`.
    */
   duel?: { outcome: 'won' | 'lost'; foe: AreaFoe } | null
+  /**
+   * A rival's set meeting was just lost, its switch on (docs/61 §5.4): no wipe, the stalemate's card says the rival
+   * moved on and whether the team was healed (not in Extreme mode while its wipes heal nobody).
+   */
+  rivalLost?: { name: string; healed: boolean } | null
 }
 
 export interface BattleSlice {

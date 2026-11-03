@@ -1378,6 +1378,11 @@ export interface GameConfig {
    */
   leagueHeal: { access: EventAccess }
   /**
+   * A rival's set meeting lost heals the team and lets the area go on instead of a wipe (docs/61 §5.4). Migration 0136
+   * inserts the same row.
+   */
+  rivalLossHeal: { access: EventAccess }
+  /**
    * Hidden talents (docs/51): the switch, the odds of a wild Pokémon carrying its talent and of a locked family finding
    * it on an evolution, and the admin's picks per family (by its lowest dex; the bundled ones otherwise). Migration
    * 0094 inserts the same row.

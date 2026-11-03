@@ -1332,10 +1332,36 @@ function DuelLostView({ foe }: { foe: AreaFoe }) {
   )
 }
 
+/**
+ * Lost to a rival's set meeting (docs/61 §5.4): no wipe. The defeat's jingle, the rival moving on, the team healed (or
+ * resting, in Extreme mode), and CONTINUE to the next card of the round.
+ */
+export function RivalLostView({ name, healed }: { name: string; healed: boolean }) {
+  const { t } = useT()
+  useFeelOnce('defeat.jingle')
+  return (
+    <Overlay
+      label={t('ui.rivalLost.title')}
+      footer={
+        <AutoButton paused="byDialogs" variant="primary" size="lg" className="w-full" onClick={afterStalemate}>
+          {t('ui.common.continue')}
+        </AutoButton>
+      }
+    >
+      <h2 className="mb-2 text-center text-[32px] font-normal leading-none" aria-live="polite">
+        {t('ui.rivalLost.title')}
+      </h2>
+      <p className="copy mb-3 text-lg">{t(healed ? 'ui.rivalLost.body' : 'ui.rivalLost.bodyRest', { name })}</p>
+    </Overlay>
+  )
+}
+
 export function StalemateView() {
   const { t } = useT()
   const duel = useGame((s) => s.run.duel)
+  const rival = useGame((s) => s.run.rivalLost)
   if (duel) return <DuelLostView foe={duel.foe} />
+  if (rival) return <RivalLostView name={rival.name} healed={rival.healed} />
   return (
     <Overlay
       label={t('ui.stalemate.title')}
