@@ -13,7 +13,7 @@ import { LeadPicker } from '@/components/LeadPicker'
 import { teamOf } from '@/engine'
 import { AreaSceneBox } from '@/screens/area/AreaIdle'
 import { EncounterSwipe } from '@/screens/battle/EncounterSwipe'
-import { TeamXpStrip, type MonRecap } from '@/screens/battle/VictoryView'
+import { CardXp, TeamXpStrip, type MonRecap } from '@/screens/battle/VictoryView'
 import { setSettings, useGame } from '@/store/game'
 
 const mon = (over: Partial<PokemonInstance>): PokemonInstance => ({
@@ -40,6 +40,7 @@ export function ReworkBits() {
   const details = useGame((s) => s.settings.details === true)
   const [strip, setStrip] = useState(0)
   const [switchPick, setSwitchPick] = useState(TEAM[1]!.id)
+  const [xpPick, setXpPick] = useState<string | null>(null)
   // The result strip and the area scene read the save: shown with the save this browser holds, if any.
   const save = useGame((s) => s.save)
   const area = useGame((s) => s.data.areas.find((a) => a.id === s.save?.currentAreaId))
@@ -67,6 +68,27 @@ export function ReworkBits() {
         <PixelButton size="sm" className="self-start" onClick={() => setStrip((n) => n + 1)}>
           Fill it again
         </PixelButton>
+      </div>
+
+      <div className="grid max-w-md gap-2">
+        <b className="text-lg">
+          Between a trainer's Pokémon: the pick cards carry the XP (CardXp; the first levels up, the last not reached yet)
+        </b>
+        {mons.length > 1 ? (
+          <LeadPicker
+            key={strip}
+            value={xpPick}
+            onChange={setXpPick}
+            go
+            fight
+            under={(p) => {
+              const i = mons.findIndex((m) => m.uid === p.id)
+              return i < 0 ? null : <CardXp m={mons[i]!} live={i < mons.length - 1} />
+            }}
+          />
+        ) : (
+          <p className="copy text-muted">Start a game with two Pokémon or more: the cards show the save's team.</p>
+        )}
       </div>
 
       <div className="grid max-w-md gap-2">

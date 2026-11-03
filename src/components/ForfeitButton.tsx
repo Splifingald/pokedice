@@ -1,12 +1,17 @@
 import { useState } from 'react'
+import { rivalLossForgiven } from '@/engine'
 import { useT } from '@/i18n/react'
+import { useGame } from '@/store/game'
 import { forfeit } from '@/store/run'
 import { cx } from '@/theme/util'
 import { PixelIcon } from './icons'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
 
-/** Always the last thing in a "who's next?" menu: give up the fight, after a confirmation — the round is lost. */
+/**
+ * Always the last thing in a "who's next?" menu: give up the fight, after a confirmation — the round is lost (a rival's
+ * set meeting aside: docs/61 §5.4).
+ */
 export function ForfeitButton({
   className,
   onForfeit,
@@ -19,6 +24,11 @@ export function ForfeitButton({
 }) {
   const { t } = useT()
   const [confirm, setConfirm] = useState(false)
+  // A rival's set meeting with its switch on (docs/61 §5.4): giving up loses no round, the rival moves on.
+  const rival = useGame((s) => {
+    const enc = s.run.encounter
+    return !onForfeit && enc?.kind === 'trainer' && rivalLossForgiven(s.data, enc.moment) ? enc.name : null
+  })
   return (
     <>
       {flag ? (
@@ -43,7 +53,9 @@ export function ForfeitButton({
         </PixelButton>
       )}
       <Modal open={confirm} onClose={() => setConfirm(false)} title={t('ui.battle.forfeitTitle')}>
-        <p className="copy mb-4 text-lg">{t('ui.battle.forfeitBody')}</p>
+        <p className="copy mb-4 text-lg">
+          {rival ? t('ui.battle.forfeitBodyRival', { name: rival }) : t('ui.battle.forfeitBody')}
+        </p>
         <div className="flex justify-end gap-2">
           <PixelButton onClick={() => setConfirm(false)}>{t('ui.common.cancel')}</PixelButton>
           <PixelButton

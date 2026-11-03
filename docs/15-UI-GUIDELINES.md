@@ -167,6 +167,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `SidePanel` | The trainer menu drawer | From the right |
 | `SettingsOverlay` | Settings opened from the trainer menu under a lock (mid-fight, a portal run: §12) | A `Modal` titled Settings over the page: mid-fight a line saying the fight waits, Settings' panels with what would end the fight shut, BACK TO THE FIGHT pinned at its bottom (BACK under a portal run's lock alone); SUPPORT ME white, as on the page |
 | `HpBar` | HP | Track with ink ring; the fill drains over 700 ms, the trail waits 280 ms then follows over 900 ms; numbers for your own, words for a foe's (screen readers) |
+| `XpGauge` | XP | The HP bar's shape (clipped corners, ink ring, the fill 2px inside with a lighter top row), blue on the dark track: every XP bar (`XpBar`, the Team card's line, the Day Care's) |
 | `TypeBadge`, `TypeSwatch` | A type | `md` 20 px, `sm` 16 px (plates) |
 | `Die` | A die face | Square corners; pips on whole pixels (`pipLayout`: one even pip size, three fixed columns) at any size; ink pips on light dice, white on dark; status face = white + status ring and a round badge with its icon; `selected` = lifted 6 px with a red outline and a ↻ tag on its top-left corner; `combo` = a gold ring and gold corner brackets (a shape each, never colour alone), with the game feel on its tier's ring (`tier`, docs/38); every ring is a `box-shadow` on the die's body, never a chain of `drop-shadow` filters (a GPU pass each, which froze phones, docs/38 F2b); its wrapper stays flat, never `preserve-3d` (with no filter to flatten it, phones left a landed die undrawn until tapped); `squash` (the last die of a throw down), `jitter` (a pick before the last reroll); `onLand` once it is down; values without a pip layout (0, 7, 8…) show their number, centred on the face; with a `rollKey` it tumbles in, or, with the dice throws on (docs/37), is thrown in as a pixel cube and lands on its face (`useDieThrow`; on `/kitchen-sink` at every motion level, frozen mid-throw) |
 | `PageHead` / `Wallet` | A tab's title row | Tab icon, the one `<h1>` (`as="h2"` where the page has its own), a count ("3/3", "81/151") or the gold as a navy plate |
@@ -861,7 +862,9 @@ each at most 340 px (docs/42 §3). The history is More details' button at the pa
   cleared the area and opened the story's way forward (`latestOpenArea`), with **Home** the quiet white button beside
   it. With the game-feel pass (docs/38 §4) the card has its jingles, the XP bars fill in steps and the coins fly to
   the top bar. Between a trainer's Pokémon, the card shows the trainer and the
-  sprite of the one about to come out. Versus ends on its own card in the panel: Victory / Defeat and Back to
+  sprite of the one about to come out, then **the team once**: the pick cards carry what each earned under them, above
+  INFO (`CardXp`: XP bar, +XP, level-up and milestone chips), no XP strip below (2026-11-03); a team of one keeps the
+  strip. Versus ends on its own card in the panel: Victory / Defeat and Back to
   Versus — once a fight is done, it's done (no rematch).
 - **Versus** plays on auto, to its end: no skip.
 - **The stage draws the forms the log has reached** (`Fx.dex`), not the state's: a Gigantamax still attacks as

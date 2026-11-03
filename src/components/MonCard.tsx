@@ -11,7 +11,7 @@ import { useNow } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { DiceSet } from './DiceSet'
 import { KoTag } from './Extreme'
-import { HpBar } from './HpBar'
+import { HpBar, XpGauge } from './HpBar'
 import { PixelIcon } from './icons'
 import { EggSprite } from './EggSprite'
 import { ItemSprite } from './ItemSprite'
@@ -129,12 +129,7 @@ export function XpBar({
   return (
     <div className={cx('flex items-center gap-2', className)}>
       <span className="text-sm leading-none">{t('ui.mon.xp')}</span>
-      <div className="h-1.5 flex-1 border border-edge bg-night" style={{ borderRadius: 1 }}>
-        <div
-          className={shown?.white ? 'h-full bg-white' : 'h-full bg-type-water'}
-          style={{ width: `${pct * 100}%`, transition: shown !== undefined ? 'none' : 'width 700ms ease-out' }}
-        />
-      </div>
+      <XpGauge pct={pct} white={!!shown?.white} animate={shown === undefined} className="flex-1" />
       {numbers && (
         <span className="min-w-[4.5ch] text-right font-mono text-xs tabular-nums leading-none">
           {level >= cfg.maxLevel ? t('ui.mon.xpMax') : `${xp}/${need}`}

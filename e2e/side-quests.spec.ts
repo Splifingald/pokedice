@@ -48,7 +48,7 @@ function standingIn(
   return { ...base, box: team, currentAreaId: target.id, areaProgress, ...patch }
 }
 
-async function boot(page: Page, save: SaveData) {
+async function boot(page: Page, save: SaveData, config: Record<string, unknown> = {}) {
   await mockSupabase(page)
   await page.addInitScript(
     ([s, f, c]) => {
@@ -56,7 +56,7 @@ async function boot(page: Page, save: SaveData) {
       localStorage.setItem('pokedice.settings', f!)
       localStorage.setItem('pokedice.devConfig', c!)
     },
-    [JSON.stringify(save), SETTINGS, ON],
+    [JSON.stringify(save), SETTINGS, JSON.stringify({ ...JSON.parse(ON), ...config })],
   )
 }
 
@@ -151,6 +151,32 @@ test('a rival on the road: Blue at Nugget Bridge, his line as the fight opens', 
   await expect(page.getByText(/Let’s see how strong you’ve got/).first()).toBeVisible({ timeout: 20_000 })
   await page.waitForTimeout(800)
   await shot(page, '5-rival-battle')
+})
+
+test('a rival lost to, its switch on: the team healed, Blue moves on, the round goes on', async ({ page }) => {
+  const bridge = area('Route 4 & Nugget Bridge')
+  const base = standingIn('Route 4 & Nugget Bridge', { drawn: ['center', 'wild'] })
+  // Two in the team: the switch's cards, and the forfeit flag beside them.
+  const second = { ...base.box[0]!, id: 'e2e-second', dex: 4 }
+  await boot(page, { ...base, box: [...base.box, second], team: [...base.team, second.id] }, { rivalLossHeal: { access: 'all' } })
+  await goOn(page)
+  await page.getByRole('button', { name: /^Send out / }).click({ timeout: 20_000 })
+  await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeEnabled({ timeout: 20_000 })
+  // A tap on the other pip opens the switch's cards, the forfeit flag beside them.
+  await page.getByRole('region', { name: 'Switch Pokémon' }).getByRole('button', { name: /^Charmander, .*Switch in$/ }).click()
+  await page.getByRole('button', { name: /^forfeit$/i }).click()
+  const dialog = page.getByRole('dialog')
+  await expect(dialog.getByText(/moves on, and the round goes on/)).toBeVisible()
+  await dialog.getByRole('button', { name: /forfeit/i }).click()
+  await expect(page.getByText(/moves on\. No ₽ this time, but your team is healed and the round goes on/)).toBeVisible()
+  await expect(page.getByText('Your team fainted…')).toHaveCount(0)
+  await page.waitForTimeout(600)
+  await shot(page, '5-rival-lost')
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!) as SaveData)
+  expect(saved.moments?.done).toContain('rival-kanto-cerulean')
+  expect(saved.areaProgress[bridge.id]!.drawn).toEqual(['center', 'wild'])
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).click()
+  await expect(page.getByText(/moves on\. No ₽/)).toHaveCount(0)
 })
 
 test('a roadblock: Snorlax across Routes 12–15', async ({ page }) => {

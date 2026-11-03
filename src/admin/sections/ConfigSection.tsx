@@ -1663,6 +1663,7 @@ const FEATURES: Feature[] = [
   bare('Pokémon posing as items', 'disguises'),
   own('Safari Zones', 'safari'),
   bare('Rivals on the road', 'rivals'),
+  bare('Rival lost: healed, area goes on', 'rivalLossHeal'),
   bare('Gift Pokémon', 'giftMoments'),
   // The region flavours (docs/62): each one's numbers and content stay the game's own unless the row says otherwise.
   own("Hoenn's weather", 'hoennWeather', 'flavours'),
