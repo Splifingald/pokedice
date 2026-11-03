@@ -208,7 +208,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `CoinPlate` / `FriendBallTag` / `StreakBadge` / `StreakLadder` / `CapGauge` / `FriendshipCard` / `FriendStreakBlock` / `MarketShinyCard` / `MarketItemCard` / `MarketHead` / `FriendshipRulesModal` | Friendship streaks and the Friend Market (§42) | Heart Scales (sm, md, lg); the Friend Ball's catch tag (×2, ×5); a streak kept (rose, check) and waiting (gold, "!"), none when lost; the ladder at each tier; today's gauge empty, midway, capped; the card with streaks waiting, none, loading, failed; a friend's streak waiting, kept, at the top, lost, none; the shiny of the week to buy, too dear, sold out; an item to buy, short, sold out; the rules card and INFO; a purchase's opening |
 | `CalendarDoorTile` / `CalendarGrid` / `CalendarRewardIcon` / `CalendarRulesModal` | The gift calendar (§40) | A door shut (a wrapped gift, its number), today's (gold, OPEN), yesterday's (LAST CHANCE), opened with each kind of gift, missed (hatched), busy; the grid on a calendar's 10th day; Home's card gold, later, done; the rules card and INFO; a door's opening |
 | `UgCave` / `CrackGauge` / `UgWall` / `PickaxeDie` / `PickaxeFaces` / `OrbArt` / `PlateArt` / `ThingIcon` / `HaulList` / `PlateGrid` / `OrbBagTable` / `UgRulesModal` / `UgTeamSeats` | The Underground (§32) | The cave (a square's size; big); the gauge fresh, under way, its last three shaking or calm, collapsed; the wall fresh, half dug with a strike flashing, cleared (glinting), collapsing; the die unrolled and rolled; the faces with the one that came up, and the next level's with its raised face; orbs of every colour and size, plates; the haul with every outcome; the plates none and some; the orb bag; the team seats solo, two, full; the rules (once, INFO) |
-| `TeamSwapActions` / `TeamSwapDock` / `SheetActionRow` | The Center's moves (`teamSwapsOpen`: inside a Pokémon Center, at a portal's way in before READY!) | `TeamSwapDock` is the Team sheet's footer where swaps are open: Make lead (red) beside Use an item, Send to the Box a small link; Add to team (red); a full team: "swap X in for:" and the members as one-tap buttons (mini, swap arrow, name); a fossil still reviving: a line saying so. `TeamSwapActions` (the body version) stays for the Center's own sheet. `SheetActionRow`: a quiet button and the main one sharing a `minmax(0,1fr)_minmax(0,1.4fr)` row |
+| `TeamSwapActions` / `TeamSwapDock` / `SheetActionRow` | The Center's moves (`teamSwapsOpen`: inside a Pokémon Center, at a portal's way in before READY!) | `TeamSwapDock` is the Team sheet's footer where swaps are open: Make lead (red) beside Use an item, Send to the Box a small link; Add to team (red); a full team: "swap X in for:" and the members as one-tap buttons (mini, swap arrow, name); a fossil still reviving: a line saying so. `TeamSwapActions` (the body version) stays for the Center's own sheet. `SheetActionRow`: a quiet button and the main one sharing a `minmax(0,1fr)_minmax(0,1.4fr)` row. `TeamSwapsNote`: the Team screen's top on team changes — at a Center, a portal's or the nightmare's way in, a dialogue panel (heart, what you can do, the way back in red); elsewhere a small lock line |
 | `PlayStylePicker` / `PlayStylePanel` / `IdleRulesModal` / `AutoModeButton` / `AutopilotNote` | Idle mode and the play styles (§34, docs/36) | The two styles as a radio group of cards (an icon, the name, its line; the picked one on gold-pale with the gold ring and a check; none picked; arrow keys move the pick); Settings' panel with INFO; the rules (INFO only: they never pop up); the area's switch (AUTO-MODE or Idle mode, off and on, with Prof. Oak's tip); the line standing in for a card the autopilot takes (each style's); the catch panel with Idle's pick (`BattleBits`) |
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
@@ -597,7 +597,10 @@ Players shouldn't have to make many requests:
   stays under the strip** (`CenterSign`: the heart and "Pokémon Center") while you're inside, and the team and the Box
   have the screen, as cards three to a row (six from 1024 px: the Center is stacked on every screen, no picture of the
   area beside the cards, the user's call, 2026-10-28)
-  (`PokeCard`, the send-out step's card: a tap opens the details and the team moves). It plays once: back from Home,
+  (`PokeCard`, the send-out step's card: a tap opens the details and the team moves). **Team menu** (a small button
+  right of the team's heading) opens the Team screen, where the Center's moves stay open while you're inside, its
+  search and filters too (the user's call, 2026-10-29: players changed the team there before 2.5, and a phone has no
+  tab bar in an area); **Back to the Center** at its top comes back. It plays once: back from Home or the Team screen,
   the Center opens on the team (`run.healShown`). Then Home or
   **Continue** (the next encounter), so a run through an area never needs a trip Home; the Center never moves on by
   itself. **Every round opens with a Center**, outside its deck, even with the whole team at full HP (the user's call,
@@ -686,6 +689,11 @@ Players shouldn't have to make many requests:
   the same sheet, with Back.
 - **The Team has no scene** (the user's call, 2026-10-27): its title, the team's cards, the Box. Home is where the team
   roams.
+- **The Team says where team changes stand**, under its title (`TeamSwapsNote`, the user's call, 2026-10-29): at a
+  Pokémon Center, "You're at a Pokémon Center: you can change your team." with **Back to the Center**; at a portal's or
+  the nightmare's way in, their own words and way back; anywhere else a small lock line, "You can change your team at
+  Pokémon Centers only." (none in Extreme mode without Centers: there is no Center to point to). The order (Make lead,
+  dragging) changes anywhere.
 - **The Team on PC**: from 1024 px the Team is a `SplitView`: the selected Pokémon's sheet stands docked at the right,
   always open (the lead's on arrival); a card or tile swaps it and is outlined in gold. On phones it is the bottom sheet.
 - **A small world's Pokémon waiting to unlock** (§22, docs/26 §1) opens the same sheet, its line saying "Waiting to
