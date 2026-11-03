@@ -156,7 +156,9 @@ export function parseMove(raw: unknown): PvpMoveRow | null {
   const move: PvpMove | null =
     k === 'reroll' && Array.isArray(m.mask)
       ? { k: 'reroll', mask: m.mask.map((x) => x === true) }
-      : k === 'attack' || k === 'timeout' || k === 'forfeit'
+      : k === 'switch' && typeof m.uid === 'string'
+        ? { k: 'switch', uid: m.uid }
+        : k === 'attack' || k === 'timeout' || k === 'forfeit'
         ? { k }
         : null
   if (!move || r.seq == null) return null

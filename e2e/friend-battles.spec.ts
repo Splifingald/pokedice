@@ -239,6 +239,78 @@ test('the fight: my ATTACK goes to the server with its number, and its seed play
   await shot(page, 'pvp-after-attack', false)
 })
 
+test('a switch on my turn: the pip, GO!, the move sent, my Pokémon in and their turn', async ({ page }) => {
+  test.setTimeout(90_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  // Jolteon (fast) leads against Snorlax: my turn first. Blastoise comes in instead.
+  const fighting = info({
+    state: 'battle',
+    mode: 'classic',
+    team: [mon(135), mon(9), mon(3)],
+    foeTeam: [mon(143), mon(94), mon(130)],
+    readyA: true,
+    readyB: true,
+    seed: 4242,
+    deadline: Date.now() + 45_000,
+  })
+  const moves: { p_seq: number; p_move: { k: string; uid?: string } }[] = []
+  await boot(page, save(), {
+    pvp_home: { current: fighting, records: [], history: [] },
+    pvp_state: () => ({ match: fighting, moves: [] }),
+    pvp_move: (body: { p_seq: number; p_move: { k: string } }) => {
+      moves.push(body)
+      return { seq: body.p_seq, seed: 99 }
+    },
+  })
+  await page.goto('/battles/live')
+  await expect(page.getByRole('button', { name: /^attack/i })).toBeEnabled({ timeout: 20_000 })
+  await page.getByRole('button', { name: /Blastoise.*Switch in/ }).click()
+  await expect(page.getByText('Switch (costs your turn)')).toBeVisible()
+  await shot(page, 'pvp-switch', false)
+  await page.getByRole('button', { name: 'Send out Blastoise' }).click()
+  await expect.poll(() => moves.map((m) => [m.p_seq, m.p_move.k, m.p_move.uid])).toEqual([[1, 'switch', 'a1']])
+  // The engine, from the same seed: Blastoise out, the turn spent, Misty's to play.
+  const opened = startPvp(fighting.team as never, fighting.foeTeam as never, null, data, 4242)
+  const after = applyPvpMove(opened.match, 'a', { k: 'switch', uid: 'a1' }, 99, data).match
+  expect(after.activeA).toBe(1)
+  await expect(page.getByText("Misty's turn")).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByRole('button', { name: /Blastoise.*in battle/ })).toBeVisible()
+  const inStore = await page.evaluate(() => {
+    const s = (window as unknown as { __pd: { usePvp: { getState: () => { applied: number; engine: { activeA: number; actor: string } } } } }).__pd.usePvp.getState()
+    return { applied: s.applied, activeA: s.engine.activeA, actor: s.engine.actor }
+  })
+  expect(inStore).toEqual({ applied: 1, activeA: 1, actor: after.actor })
+})
+
+test('their switch: the one they send in comes out on my screen', async ({ page }) => {
+  test.setTimeout(90_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  // Their Jolteon is faster than my Snorlax: Misty moved first, while this game was away, switching to her Starmie.
+  const fighting = info({
+    state: 'battle',
+    mode: 'classic',
+    team: [mon(143), mon(9), mon(3)],
+    foeTeam: [mon(135), mon(121), mon(130)],
+    readyA: true,
+    readyB: true,
+    seq: 1,
+    seed: 777,
+    deadline: Date.now() + 45_000,
+  })
+  const missed = [{ seq: 1, side: 'b', move: { k: 'switch', uid: 'b1' }, seed: 31337 }]
+  await boot(page, save(), {
+    pvp_home: { current: fighting, records: [], history: [] },
+    pvp_state: (body: { p_after?: number }) => ({ match: fighting, moves: (body.p_after ?? 0) < 1 ? missed : [] }),
+  })
+  await page.goto('/battles/live')
+  await expect(page.getByRole('button', { name: 'Starmie: strengths and weaknesses' }).first()).toBeVisible({
+    timeout: 20_000,
+  })
+  await expect(page.getByText('Your turn')).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByRole('button', { name: /^attack/i })).toBeEnabled({ timeout: 20_000 })
+  await shot(page, 'pvp-their-switch', false)
+})
+
 test('back after a reload: the moves missed are read back and played the same as the other game did', async ({ page }) => {
   test.setTimeout(90_000)
   await page.setViewportSize({ width: 390, height: 844 })
@@ -259,7 +331,7 @@ test('back after a reload: the moves missed are read back and played the same as
     pvp_state: (body: { p_after?: number }) => ({ match: fighting, moves: (body.p_after ?? 0) < 1 ? missed : [] }),
   })
   await page.goto('/battles/live')
-  // The same fight here: the shield (I picked first) halved their first hit.
+  // The same fight here: the shield (I picked first) cut their first hit.
   const opened = startPvp(fighting.team as never, fighting.foeTeam as never, 'a', data, 777)
   const after = applyPvpMove(opened.match, 'b', { k: 'attack' }, 31337, data).match
   const mine = after.a[0]!

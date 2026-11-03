@@ -280,11 +280,7 @@ export interface VersusReplay {
   end?: ReactNode
   /** Fought by the player (the weekly league): AUTO is their switch, off at the start. */
   live?: { auto: boolean; onAuto: (on: boolean) => void }
-  /**
-   * No switching on your turn (a Friend Battle, docs/65: the order was set before the fight): the team's step keeps
-   * only BACK and the flag, and the flag gives up through `onForfeit`.
-   */
-  noSwitch?: boolean
+  /** The flag gives up through this (a Friend Battle, docs/65: the server settles a forfeit), not the run's way. */
   onForfeit?: () => void
 }
 
@@ -552,7 +548,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     })
   // Out on the field already: not one to switch in (a double battle has two out).
   const onField = (p: Battler) => (dbl ? dbl.ownSlots.some((i) => st.player[i]!.uid === p.uid) : p.uid === activeBattler(st).uid)
-  const switchTargets = versus?.noSwitch ? [] : st.player.filter((p) => p.hp > 0 && !onField(p))
+  const switchTargets = st.player.filter((p) => p.hp > 0 && !onField(p))
   // After a K.O. with one Pokémon left to come in, it comes in: nothing to choose (the user, 2026-10-27).
   const lastOne = forced && !auto && switchTargets.length === 1 ? switchTargets[0]!.uid : null
   useEffect(() => {

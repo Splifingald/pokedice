@@ -36,6 +36,9 @@ const team = (dexes: number[], level = VERSUS_LEVEL): VersusMon[] => dexes.map((
 function botMove(m: PvpMatch, rng: ReturnType<typeof createRng>): PvpMove {
   const step = m.step!
   const me = step.player[step.activeIndex]!
+  // Now and then another able one comes in (the turn spent).
+  const bench = step.player.filter((b, i) => i !== step.activeIndex && b.hp > 0)
+  if (bench.length && rng.next() < 0.1) return { k: 'switch', uid: bench[rng.int(0, bench.length - 1)]!.uid }
   if (me.rerollsLeft > 0 && rng.next() < 0.4) {
     const mask = step.dice.map((d) => d.faceIndex <= 2)
     if (mask.some(Boolean)) return { k: 'reroll', mask }
@@ -92,7 +95,7 @@ describe('Friend Battles: the fight', () => {
     expect(hashes.size).toBeGreaterThan(1)
   })
 
-  it('the Bonus Shield halves the first attack on its side, once, and never the other side', () => {
+  it('the Bonus Shield blocks a quarter of the first attack on its side, once, and never the other side', () => {
     for (let seed = 1; seed <= 30; seed++) {
       const { log } = playOut(team([6, 9, 3]), team([94, 130, 68]), seed, 'b')
       const shields = log.filter((e) => e.kind === 'shield')
@@ -101,8 +104,8 @@ describe('Friend Battles: the fight', () => {
         if (e.kind !== 'shield') continue
         // In side a's view, b is the foe.
         expect(e.side).toBe('enemy')
-        expect(e.after).toBe(Math.ceil(e.before / 2))
-        // The damage that follows is the halved one.
+        expect(e.after).toBe(Math.ceil((e.before * 75) / 100))
+        // The damage that follows is the cut one.
         const next = log[log.indexOf(e) + 1]
         expect(next?.kind === 'damage' && next.amount).toBe(e.after)
       }
@@ -118,6 +121,38 @@ describe('Friend Battles: the fight', () => {
       expect(r.log.some((e) => e.kind === 'shield' && e.side === 'player')).toBe(true)
       expect(r.match.shield?.used).toBe(true)
     }
+  })
+
+  it('a switch brings another able one in and spends the turn', () => {
+    // Snorlax's side (a) moves second: Jolteon (b) first. b switches its lead for its second.
+    const { match } = startPvp(team([143, 143, 143]), team([135, 26, 135]), null, data, 7)
+    expect(match.actor).toBe('b')
+    const r = applyPvpMove(match, 'b', { k: 'switch', uid: 'b1' }, 5, data)
+    expect(r.match.activeB).toBe(1)
+    expect(r.match.b[1]!.dex).toBe(26)
+    // Nobody was hit: the switch was the whole turn, and a's turn has its dice thrown.
+    expect(r.log.some((e) => e.kind === 'damage')).toBe(false)
+    expect(r.match.actor).toBe('a')
+    expect(r.match.step?.phase).toBe('player_reroll')
+    // In side a's view the one coming in is the foe's, marked as switched in; b's own game sees it as its own.
+    const out = r.log.find((e) => e.kind === 'pvp_out')
+    expect(out).toEqual({ kind: 'pvp_out', side: 'enemy', uid: 'b1', switched: true })
+    expect(pvpLogFor(r.log, 'b').find((e) => e.kind === 'pvp_out')).toMatchObject({ side: 'player', uid: 'b1' })
+    expect(r.log.some((e) => e.kind === 'switch')).toBe(false)
+    // a's screen faces the new one.
+    expect(pvpView(r.match, 'a', data).enemy.uid).toBe('b1')
+  })
+
+  it('a switch out of turn, to the one out, to a fainted or unknown one, changes nothing', () => {
+    const { match } = startPvp(team([143, 143]), team([135, 135]), null, data, 7)
+    expect(applyPvpMove(match, 'a', { k: 'switch', uid: 'a1' }, 1, data).match).toBe(match)
+    expect(applyPvpMove(match, 'b', { k: 'switch', uid: 'b0' }, 1, data).match).toBe(match)
+    expect(applyPvpMove(match, 'b', { k: 'switch', uid: 'a1' }, 1, data).match).toBe(match)
+    expect(applyPvpMove(match, 'b', { k: 'switch', uid: 'zz' }, 1, data).match).toBe(match)
+    const down = structuredClone(match)
+    down.b[1]!.hp = 0
+    down.step!.player[1]!.hp = 0
+    expect(applyPvpMove(down, 'b', { k: 'switch', uid: 'b1' }, 1, data).match).toBe(down)
   })
 
   it('a move out of turn, or a reroll with none left, changes nothing', () => {

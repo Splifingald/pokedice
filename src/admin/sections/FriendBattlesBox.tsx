@@ -37,11 +37,14 @@ export function FriendBattlesBox() {
         <Field label="Reconnect grace" hint="a player not seen this long during a match loses it">
           <NumInput min={10} value={cfg.grace} onChange={(v) => set({ grace: secs(v, 10) })} />
         </Field>
-        <Field label="Bonus Shield (% of damage taken)" hint="the first attack on the first picker's team">
+        {/* Stored as the share of the hit still taken (the engine's number); shown as the share blocked, the way the
+            players' rules say it ("25% less"). */}
+        <Field label="Bonus Shield (% of the hit blocked)" hint="Draft: the opponent's first attack on the first picker's team">
           <NumInput
             min={0}
-            value={cfg.shield}
-            onChange={(v) => set({ shield: Math.max(0, Math.min(100, Math.round(v ?? 0))) })}
+            max={100}
+            value={100 - cfg.shield}
+            onChange={(v) => set({ shield: 100 - Math.max(0, Math.min(100, Math.round(v ?? 0))) })}
           />
         </Field>
       </div>

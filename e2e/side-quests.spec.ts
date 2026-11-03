@@ -159,7 +159,7 @@ const SHEET = (() => {
 async function nothingCut(page: Page, buttons: Locator) {
   const cut = await buttons.evaluateAll((els) =>
     els.flatMap((b) =>
-      [b, ...b.querySelectorAll<HTMLElement>('.truncate')].filter((el) => el.scrollWidth > el.clientWidth + 1),
+      [b, ...Array.from(b.querySelectorAll<HTMLElement>('.truncate'))].filter((el) => el.scrollWidth > el.clientWidth + 1),
     ).map((el) => el.textContent ?? ''),
   )
   expect(cut).toEqual([])

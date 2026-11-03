@@ -2558,7 +2558,8 @@ Switches' Beta testers list. The switch offers that 4th value only on a feature 
   gauge (`TimeGauge`, sky blue, red from 10 s) with its label.
 - **Mode tags** (`ModeTag`): CLASSIC in INFO's blue, DRAFT in gold. **The Bonus Shield** (`ShieldTag`): a small blue tag
   with a shield glyph, on the plate of the first picker's Pokémon in the fight and beside their name in the draft;
-  struck out on `shadow` once used. Its hit says "The Bonus Shield takes half: 38 → 19." with a SHIELD banner first.
+  struck out on `shadow` once used (it blocks a quarter of the hit, 2.9.2). Its hit says "The Bonus Shield softens the
+  hit: 38 → 29." with a SHIELD banner first.
 - **The coin**: a big pixel coin flips up and lands (14 steps of 100 ms; calm: landed at once), then the first picker's
   look ringed in gold, the headline and the shield's card; the draft opens 2.2 s later.
 - **The draft board**: the two rows of three slots (yours on top), the six picks' order strip (done: muted; now: red for
@@ -2567,9 +2568,11 @@ Switches' Beta testers list. The switch offers that 4th value only on a feature 
   {name} in a dock at the foot; their turn: a disabled "{name}'s turn". Their pick lands as a dialogue line for 2.6 s.
 - **The order** (Draft's, and Classic's "Ready to battle?"): their team (Draft: their three; Classic: three Poké Balls),
   ready or choosing; your three numbered, the lead's number red with a LEAD tag; tap two to swap; READY in the dock.
-- **The fight** is the battle screen (§14) with `versus.live` and `noSwitch`: your controls on your turn, the other's
-  dice shown as their moves arrive, AUTO-MODE as in the league, no Bag, no switching (the team's step keeps BACK and the
-  flag, which gives up the match). A chip at the top right says whose turn and the seconds left. The result card:
+- **The fight** is the battle screen (§14) with `versus.live`: your controls on your turn, the other's dice shown as
+  their moves arrive, AUTO-MODE as in the league, no Bag. **Switching** as in every fight (docs/65 §17, 2.9.2): a pip,
+  the send-out's cards ("Switch (costs your turn)"), GO!; the flag in that step gives up the match. Their switch opens
+  the next battle on your screen, the one they sent in coming out; the dots on their plate count only K.O.s. A chip at
+  the top right says whose turn and the seconds left. The result card:
   VICTORY! / DEFEAT / DRAW, how many were left, the head to head, REMATCH (red) and BACK TO FRIENDS.
 - **The level** (docs/65 §16): the sheet's two cards under the modes (Lv.50 / Lv.100, each with its line), then the
   chips follow it. Elsewhere `LevelTag` beside `ModeTag`: Lv.100 in ink, Lv.50 plain (the banner, each step's head, the

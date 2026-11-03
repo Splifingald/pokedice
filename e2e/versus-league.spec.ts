@@ -285,6 +285,19 @@ test('a match by hand: after a K.O. with two left, the two come up as cards and 
   await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeVisible({ timeout: 30_000 })
 })
 
+test('a match by hand: on your turn, a pip switches another in, and it costs the turn', async ({ page }) => {
+  await fakeLeague(page)
+  await leagueOn(page, { ...readySave(), versusLeagueRulesSeen: true })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/versus')
+  await page.getByRole('button', { name: 'Fight Kenta07' }).click()
+  await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeEnabled({ timeout: 30_000 })
+  await page.getByRole('button', { name: /Blastoise.*Switch in/ }).click()
+  await expect(page.getByText('Switch (costs your turn)')).toBeVisible()
+  await page.getByRole('button', { name: 'Send out Blastoise' }).click()
+  await expect(page.getByRole('button', { name: /Blastoise.*in battle/ })).toBeVisible({ timeout: 30_000 })
+})
+
 test("the trainer card's Versus line: the most trophies ever held, not the old board's wins (phone)", async ({
   page,
 }) => {
