@@ -454,6 +454,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   // The League's heal between its battles (docs/42): off until the admin switches it on. Migration 0081 inserts the
   // same row.
   leagueHeal: { access: 'off' },
+  rivalLossHeal: { access: 'off' },
   // Hidden talents (docs/51): off until the admin switches them on. Migration 0094 inserts the same row.
   hiddenTalents: { access: 'off', wildChance: 0.05, evolveChance: 0.3, families: {} },
   // The legends' own cinematics (docs/53): off until the admin switches it on. Migration 0098 inserts the same row.
