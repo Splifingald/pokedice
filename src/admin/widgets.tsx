@@ -350,13 +350,33 @@ export function Stepper({
 export const n = (v: unknown, d = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : v == null || v === '' ? d : Number(v) || d)
 export const s = (v: unknown) => (v == null ? '' : String(v))
 
-const ACCESS_LABEL: Record<EventAccess, string> = { off: 'Off', admin: 'On for admin', all: 'On for everyone' }
+const ACCESS_LABEL: Record<EventAccess, string> = {
+  off: 'Off',
+  admin: 'On for admin',
+  beta: 'On for beta testers',
+  all: 'On for everyone',
+}
 
-/** An event type's switch: off, on for the admin only (to try it in production first), on for everyone. */
-export function AccessSwitch({ value, onChange, label }: { value: EventAccess; onChange: (v: EventAccess) => void; label: string }) {
+/**
+ * An event type's switch: off, on for the admin only (to try it in production first), on for everyone. `beta`: also on
+ * for the beta testers' list (docs/65 §3), offered only on a feature whose server functions read `access_open`; a row
+ * already set to beta shows the choice anyway, so it can be turned back.
+ */
+export function AccessSwitch({
+  value,
+  onChange,
+  label,
+  beta = false,
+}: {
+  value: EventAccess
+  onChange: (v: EventAccess) => void
+  label: string
+  beta?: boolean
+}) {
+  const options = EVENT_ACCESS.filter((a) => a !== 'beta' || beta || value === 'beta')
   return (
     <span role="radiogroup" aria-label={label} className="inline-flex flex-wrap gap-1">
-      {EVENT_ACCESS.map((a) => (
+      {options.map((a) => (
         <button
           key={a}
           type="button"
@@ -365,7 +385,15 @@ export function AccessSwitch({ value, onChange, label }: { value: EventAccess; o
           onClick={() => onChange(a)}
           className={cx(
             'min-h-[34px] px-2.5 text-lg leading-none shadow-ring',
-            value === a ? (a === 'off' ? 'bg-well-deep text-ink' : a === 'admin' ? 'bg-gold text-ink' : 'bg-good text-white') : 'bg-panel text-muted',
+            value === a
+              ? a === 'off'
+                ? 'bg-well-deep text-ink'
+                : a === 'admin'
+                  ? 'bg-gold text-ink'
+                  : a === 'beta'
+                    ? 'bg-[#3a7bd5] text-white'
+                    : 'bg-good text-white'
+              : 'bg-panel text-muted',
           )}
         >
           {ACCESS_LABEL[a]}

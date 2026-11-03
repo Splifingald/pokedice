@@ -2,12 +2,18 @@ import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import {
   autoAvailable,
+  fitWildPair,
+  isDisguisedFind,
   nightmareModeOf,
+  whiteoutModeOf,
+  pilotShowsCard,
   portalModeOf,
   portalStateOf,
   progressOf,
+  tracksModeOf,
   scaledLevelSpan,
   teamAverageLevel,
+  timeRaceModeOf,
   type Area,
   type AreaProgress,
 } from '@/engine'
@@ -19,10 +25,12 @@ import { useGame } from '@/store/game'
 import { BattleView } from './battle/BattleView'
 import { CasinoView } from './area/CasinoView'
 import { TrickView } from './area/TrickView'
+import { PresentView } from './area/PresentView'
 import { AreaIdle } from './area/AreaIdle'
 import { CenterView } from './area/CenterView'
 import { EncounterPreview } from './area/EncounterPreview'
 import { FindView } from './area/FindView'
+import { GiftView } from './area/GiftView'
 import { RoundGauge } from './area/RoundGauge'
 import { AreaDetails } from './home/AreaDetails'
 import { RebattleHeader } from './events/RebattlePage'
@@ -30,6 +38,9 @@ import { AreaStrip } from '@/components/AreaStrip'
 import { WipeView } from './battle/VictoryView'
 import { PortalBonuses, PortalInfo, PortalStep } from './area/PortalRun'
 import { NightmareInfo, NightmareStep, nightmareStepDue } from './area/NightmareRun'
+import { TimeRaceClockHere, TimeRaceInfo, TimeRaceStep, timeRaceStepDue } from './area/TimeRaceRun'
+import { WhiteoutInfo, WhiteoutStep, whiteoutStepDue } from './area/WhiteoutRun'
+import { TracksInfo, TracksStep, tracksStepDue } from './area/TracksRun'
 import { AutopilotNote } from './area/AutopilotNote'
 import { useAutopilot } from './area/useAutopilot'
 
@@ -73,6 +84,8 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
           </span>
         </div>
         <RoundGauge area={area} progress={progress} />
+        {/* The race of time and space (docs/64 §4.4): its clock, big, under the gauge while a try runs. */}
+        <TimeRaceClockHere areaId={area.id} className="self-center" />
         {/* A cleared area can play itself (with Idle, any area): switched here, between its encounters, without a
             trip Home. */}
         {autoHere && (
@@ -87,8 +100,8 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
 
 /**
  * The encounter route: the preview of what CONTINUE rolled on Home, the Pokémon Center, the Game Corner and the battle.
- * Between encounters the player stays here (AreaIdle: the team, HOME or the next encounter); only a full K.O. (which
- * ends the run) or the HOME buttons go back Home.
+ * Most ways out of an encounter go straight on to the next one or Home; the area's page between encounters (AreaIdle:
+ * the team, HOME or the next encounter) is for a challenge put off, a portal run or the nightmare, a reload.
  */
 export function AreaScreen() {
   const save = useGame((s) => s.save)
@@ -108,6 +121,8 @@ export function AreaScreen() {
   if (battle) return <BattleView key={battle.id} battle={battle} />
   // Trick or Treat takes the whole screen as a battle does (docs/15 §28).
   if (run.phase === 'trick' && run.trick && run.areaId) return <TrickView key={run.trick.id} />
+  // So does the Gift card, and a boss's present (docs/64 §4.0, §4.2; docs/15 §45).
+  if (run.phase === 'present' && run.present && run.areaId) return <PresentView key={run.present.id} />
   // An Elite Rebattle run ends on its own page.
   if (!area || !run.areaId || (run.phase === 'idle' && run.rebattle))
     return <Navigate to={run.rebattle ? '/events/rebattle' : '/home'} replace />
@@ -121,10 +136,34 @@ export function AreaScreen() {
   // The nightmare's area (docs/30): its way in, its intro, Darkrai's strike after a round, the waking.
   const nm = run.rebattle ? null : nightmareModeOf(area, data)
   const dream = !!nm && run.phase === 'idle' && nightmareStepDue(area, { save, data }, run)
+  // The race of time and space's area (docs/64 §4.4): its way in, a fork's gates, the win.
+  const race = run.rebattle ? null : timeRaceModeOf(area, data)
+  const raced = !!race && run.phase === 'idle' && timeRaceStepDue(area, { save, data })
+  // The whiteout's area (docs/64 §4.3): its way in, its intro, the bonfire after a wave, the end.
+  const wo = run.rebattle ? null : whiteoutModeOf(area, data)
+  const white = !!wo && run.phase === 'idle' && whiteoutStepDue(area, { save, data })
+  // Tracks in the Snow's glade (docs/64 §4.1): its way in, the glade between bushes (a bush just opened included, before
+  // what it held comes), its outro.
+  const trk = run.rebattle ? null : tracksModeOf(area, data)
+  const glade = !!trk && tracksStepDue(area, { save, data }, run)
   // The plain page between encounters (docs/42): the area's scene with the team, as on Home, in the banner's place.
-  const sceneIdle = run.phase === 'idle' && !own && !dream && !mode && !nm && !run.rebattle
+  const sceneIdle =
+    run.phase === 'idle' &&
+    !own &&
+    !dream &&
+    !raced &&
+    !white &&
+    !glade &&
+    !mode &&
+    !nm &&
+    !race &&
+    !wo &&
+    !trk &&
+    !run.rebattle
   // A find is a step on the stage of its own (FindView), with or without the autopilot: no banner, no card.
-  const finding = run.phase === 'preview' && run.encounter?.kind === 'item'
+  // A Pokémon posing as a find (docs/61 §3) is a find on that screen until it springs out and the fight starts.
+  const finding =
+    run.phase === 'preview' && (run.encounter?.kind === 'item' || isDisguisedFind(run.encounter)) && !glade
   return (
     <div className="flex flex-col gap-4">
       {/* The Center is laid out as a battle (the rework): its own gauge at the top, no area banner. */}
@@ -133,30 +172,41 @@ export function AreaScreen() {
       ) : (
         !(run.phase === 'center' && !pilot) &&
         !sceneIdle &&
-        !finding && <AreaHeader area={area} progress={progress} teamAvg={teamAverageLevel(save)} />
+        !finding &&
+        run.phase !== 'gift' && <AreaHeader area={area} progress={progress} teamAvg={teamAverageLevel(save)} />
       )}
       {finding && <FindView />}
-      {run.phase === 'preview' && run.encounter && !finding && !(pilot && run.encounter.kind !== 'trick') && (
-        <EncounterPreview enc={run.encounter} />
+      {/* A gift (docs/61 §5.3): a step on the stage of its own, as a find is, with or without the autopilot. */}
+      {run.phase === 'gift' && <GiftView />}
+      {/* Under the autopilot, the cards it leaves on the table (Trick or Treat, a trainer's: pilotShowsCard) still open. */}
+      {run.phase === 'preview' && run.encounter && !finding && !glade && !(pilot && !pilotShowsCard(run.encounter.kind)) && (
+        // A wild pair shown as it will be fought: alone if the team lost its second able one since (docs/33).
+        <EncounterPreview enc={fitWildPair(run.encounter, save)} />
       )}
       {run.phase === 'center' && !pilot && <CenterView />}
       {run.phase === 'casino' && !pilot && <CasinoView />}
       {pilot &&
         (run.phase === 'center' ||
           run.phase === 'casino' ||
-          (run.phase === 'preview' && !finding && run.encounter?.kind !== 'trick')) && <AutopilotNote />}
+          (run.phase === 'preview' && !finding && !pilotShowsCard(run.encounter?.kind))) && <AutopilotNote />}
       {/* A run that ended outside a fight (nobody left standing): its wipe card. */}
       {run.phase === 'wipe' && <WipeView />}
       {run.phase === 'idle' && own && step}
       {dream && <NightmareStep area={area} />}
-      {run.phase === 'idle' && !own && !dream && (
+      {raced && <TimeRaceStep area={area} />}
+      {white && <WhiteoutStep area={area} />}
+      {glade && <TracksStep area={area} />}
+      {run.phase === 'idle' && !own && !dream && !raced && !white && !glade && (
         <>
           {mode && <PortalBonuses area={area} />}
           <AreaIdle area={area} scene={sceneIdle} />
         </>
       )}
-      {mode && run.phase === 'idle' && <PortalInfo mode={mode} />}
+      {mode && run.phase === 'idle' && <PortalInfo mode={mode} area={area} />}
       {nm && run.phase === 'idle' && <NightmareInfo mode={nm} />}
+      {race && run.phase === 'idle' && <TimeRaceInfo area={area} mode={race} />}
+      {wo && run.phase === 'idle' && <WhiteoutInfo area={area} mode={wo} />}
+      {trk && run.phase === 'idle' && <TracksInfo mode={trk} />}
     </div>
   )
 }

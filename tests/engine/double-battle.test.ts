@@ -8,6 +8,7 @@ import {
   createBattle,
   createRng,
   emptyProgress,
+  fitWildPair,
   foesOnField,
   getInstance,
   isDoubleEncounter,
@@ -20,13 +21,14 @@ import {
   type EncounterContext,
   type GameData,
   type LogEntry,
+  type SaveData,
 } from '@/engine'
 import { data, die, makeData } from '../fixtures'
 
 let n = 0
 const newId = () => `id-${++n}`
 
-/** Squirtle (Speed 4) and Bulbasaur (4) with Charmander (6) on the bench, against two Pidgey (5) or a trainer's team. */
+/** Squirtle (Speed 43 + 10) and Bulbasaur (45 + 10) with Charmander on the bench, against two Pidgey (56 + 5) or a trainer's team. */
 function start(foes = [{ dex: 16, level: 5 }, { dex: 16, level: 6 }], kind: 'wild' | 'trainer' = 'wild', d = data) {
   return createBattle(
     {
@@ -69,15 +71,15 @@ describe('double battle: the field (docs/33)', () => {
   })
 
   it('lets everyone act once a round, fastest first', () => {
-    // Charmander (6) and Squirtle (5) against two Pidgey (5): Charmander, then Squirtle (a tie goes to yours), then
-    // both Pidgey.
+    // Charmander (65 + 10) and Squirtle (43 + 18) against two Pidgey (56 + 5): Charmander, then Squirtle (a tie goes
+    // to yours), then both Pidgey.
     const r = rng()
     let s = createBattle(
       {
         kind: 'wild',
         team: [
           { uid: 'c', dex: 4, level: 10, hp: 999 },
-          { uid: 'a', dex: 7, level: 10, hp: 999 },
+          { uid: 'a', dex: 7, level: 18, hp: 999 },
         ],
         enemy: { dex: 16, level: 5 },
         double: { foes: [{ dex: 16, level: 5 }, { dex: 16, level: 5 }], leadUids: ['c', 'a'] },
@@ -245,6 +247,12 @@ describe('double battle: when (docs/33)', () => {
     return { area, progress: emptyProgress(), data: d, teamAvgLevel: 10, teamHurt: false, isFirstInArea: false, pokedex: [] }
   }
   const wild: Encounter = { kind: 'wild', dex: 263, level: 5, isNew: true }
+  /** A new game's starter and a second Pokémon (HP `hp`): a wild pair needs two able. */
+  const withSecond = (save: SaveData, hp = 999): SaveData => {
+    const first = getInstance(save, save.team[0]!)!
+    const second = { ...first, id: 'second', currentHp: hp }
+    return { ...save, team: [first.id, second.id], box: [...save.box, second] }
+  }
 
   it('is off by default, and leaves the encounter alone', () => {
     const save = newSave(4, data, 0, newId)
@@ -253,7 +261,7 @@ describe('double battle: when (docs/33)', () => {
 
   it('pairs a wild Pokémon in a ticked region only, and never in Extreme mode', () => {
     const d = on()
-    const save = newSave(4, d, 0, newId)
+    const save = withSecond(newSave(4, d, 0, newId))
     const paired = asDouble(wild, ctxIn(d, 'hoenn'), save, rng())
     expect(paired.kind === 'wild' && paired.partner).toBeTruthy()
     expect(isDoubleEncounter(paired)).toBe(true)
@@ -261,7 +269,31 @@ describe('double battle: when (docs/33)', () => {
     expect(asDouble(wild, ctxIn(d, 'hoenn'), { ...save, mode: 'extreme' }, rng())).toBe(wild)
     // 0 %: never.
     const never = on({ doubleBattles: { access: 'all', regions: ['hoenn'], wildChance: 0 } })
-    expect(asDouble(wild, ctxIn(never, 'hoenn'), newSave(4, never, 0, newId), rng())).toBe(wild)
+    expect(asDouble(wild, ctxIn(never, 'hoenn'), withSecond(newSave(4, never, 0, newId)), rng())).toBe(wild)
+  })
+
+  it('never pairs a wild Pokémon against a team with one able, nor touches the rng then', () => {
+    const d = on()
+    const alone = newSave(4, d, 0, newId)
+    const oneKo = withSecond(alone, 0)
+    for (const save of [alone, oneKo]) {
+      const r = rng()
+      expect(asDouble(wild, ctxIn(d, 'hoenn'), save, r)).toBe(wild)
+      expect(r.next()).toBe(rng().next())
+    }
+    // The second back on its feet: the pair again.
+    expect(isDoubleEncounter(asDouble(wild, ctxIn(d, 'hoenn'), withSecond(alone, 1), rng()))).toBe(true)
+  })
+
+  it('fights a previewed wild pair as one wild Pokémon once the team has one able left', () => {
+    const d = on()
+    const save = withSecond(newSave(4, d, 0, newId))
+    const paired = asDouble(wild, ctxIn(d, 'hoenn'), save, rng())
+    expect(fitWildPair(paired, save)).toBe(paired)
+    const fitted = fitWildPair(paired, withSecond(newSave(4, d, 0, newId), 0))
+    expect(isDoubleEncounter(fitted)).toBe(false)
+    expect(fitted).toEqual(wild)
+    expect('partner' in fitted).toBe(false)
   })
 
   it('makes Tate & Liza fight 2 v 2, and never an Elite Four member', () => {
@@ -270,7 +302,10 @@ describe('double battle: when (docs/33)', () => {
     const tl = Object.values(d.trainers).find((t) => t.name === 'Tate & Liza')!
     expect(tl.duo).toBe(true)
     const gym: Encounter = { kind: 'gym', trainerId: tl.id, name: tl.name, spriteUrl: null, team: tl.team, role: 'leader', badge: tl.badge, index: 7, total: 8 }
-    expect(isDoubleEncounter(asDouble(gym, ctxIn(d, 'hoenn'), save, rng()))).toBe(true)
+    // A team of one included: a duo trainer is fought 1 v 2 (only a wild pair needs two able).
+    const twoOnOne = asDouble(gym, ctxIn(d, 'hoenn'), save, rng())
+    expect(isDoubleEncounter(twoOnOne)).toBe(true)
+    expect(fitWildPair(twoOnOne, save)).toBe(twoOnOne)
     const elite = { ...d, trainers: { ...d.trainers, [tl.id]: { ...tl, role: 'elite' as const } } }
     expect(isDoubleEncounter(asDouble({ ...gym, role: 'elite' }, ctxIn(elite, 'hoenn'), save, rng()))).toBe(false)
     // The Elite Rebattle never.

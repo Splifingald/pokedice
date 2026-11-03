@@ -1,6 +1,7 @@
 // Double battles (docs/33, docs/15 §30): a wild pair in a ticked region — the preview shows both, no rules pop-up nor
 // tag (the user, 2026-10-17), two leads go out — then the battle with four Pokémon on the stage and the target picker, a throw at each
-// one, and the rewards; switched off, the same encounter is one wild Pokémon. The kitchen sink shows every piece.
+// one, and the rewards; switched off, or with a team of one, the same encounter is one wild Pokémon. The kitchen sink
+// shows every piece.
 // Set SHOTS=<dir> to keep screenshots of the stage at phone size.
 import { expect, test, type Page } from '@playwright/test'
 import { DEFAULT_CONFIG, emptyProgress, instanceMaxHp, type SaveData } from '../src/engine'
@@ -167,6 +168,19 @@ test('switched off, the same card is one wild Pokémon', async ({ page }) => {
   await expect(page.getByRole('button', { name: /^Send out / })).toBeVisible({ timeout: 20_000 })
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await expect(page.getByText('DOUBLE BATTLE')).toHaveCount(0)
+})
+
+test('a team of one never meets a wild pair: the card is one wild Pokémon', async ({ page }) => {
+  const save = strongSave()
+  await boot(page, { ...save, team: [save.team[0]!] }, DOUBLES_ON)
+  await page.goto('/home')
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+  // One able: straight into the fight, against one.
+  const title = page.getByRole('heading', { level: 1, name: /^Battle: / })
+  await expect(title).toBeVisible({ timeout: 20_000 })
+  await expect(title).not.toContainText(' & ')
+  await expect(page.getByRole('dialog', { name: 'Two wild Pokémon appeared!' })).toHaveCount(0)
+  await expect(page.getByRole('radiogroup', { name: 'Which foe to attack' })).toHaveCount(0)
 })
 
 test('the kitchen sink shows every double battle piece, with no error', async ({ page }) => {

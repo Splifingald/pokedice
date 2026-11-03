@@ -162,9 +162,11 @@ export function PlayerMenu() {
   const earned = badges.filter((b) => b.earned).length
   // The Connect row only makes sense when cloud backup exists on this deployment and nobody is signed in.
   const canConnect = isSupabaseConfigured && auth.status === 'signed_out'
-  // Extreme mode (docs/22): from the main save once it's open (or an Extreme save exists); back from Extreme always.
+  // Extreme mode (docs/22): its page from either save once it's open (docs/48: its runs, their times, the board);
+  // back to the main game from Extreme always.
   const extreme = isExtreme(save)
-  const canSwitch = extreme || (extremeOn(data) && (extremeOpen(save, data) || !!otherSave()))
+  const mainSave = extreme ? otherSave() : save
+  const extremePage = extremeOn(data) && extremeOpen(mainSave, data)
 
   const go = (to: string) => () => {
     setOpen(false)
@@ -258,11 +260,20 @@ export function PlayerMenu() {
               }}
             />
           )}
-          {canSwitch && (
+          {extremePage && (
             <MenuRow
-              icon={extreme ? 'play' : 'skull'}
-              label={t(extreme ? 'ui.extreme.menu.toMain' : 'ui.extreme.menu.toExtreme')}
-              desc={t(extreme ? 'ui.extreme.menu.toMainDesc' : 'ui.extreme.menu.toExtremeDesc')}
+              icon="skull"
+              label={t('ui.extreme.menu.toExtreme')}
+              desc={t('ui.xrun.menuDesc')}
+              onClick={go('/extreme')}
+              shut={shut}
+            />
+          )}
+          {extreme && (
+            <MenuRow
+              icon="play"
+              label={t('ui.extreme.menu.toMain')}
+              desc={t('ui.extreme.menu.toMainDesc')}
               onClick={() => {
                 setOpen(false)
                 setSwitching(true)

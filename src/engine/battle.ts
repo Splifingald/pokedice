@@ -2,11 +2,25 @@
 import { adjustRaidHit, type RaidHit } from './raidHit'
 import { aiRerollMask } from './ai'
 import { getSpecies } from './data'
-import { attackMultiplier, attackType, computeDamage, type DamageResult, type UpgradeLevels } from './damage'
-import { rerollMasked, rollAll, type RolledDie } from './dice'
+import { attackMultiplier, attackType, computeDamage, type AttackMods, type DamageResult, type UpgradeLevels } from './damage'
+import { dieValue, rerollMasked, rollAll, type RolledDie } from './dice'
+import {
+  capFoeThrow,
+  LESSON_FOE,
+  LESSON_THROW,
+  lessonBadRoll,
+  lessonFirstRoll,
+  lessonFoeRoll,
+  lessonPairRoll,
+  lessonPairValue,
+  lessonWindow,
+  type LessonHit,
+  type RerollLesson,
+} from './lesson'
 import { reviveHp } from './economy'
-import { ARCEUS_DEX, choiceFormDie, choiceFormsOf, gmaxFormsOf, lowHpFormOf, megaDie, megaFormsOf, megaOptions, swapOneDie } from './forms'
-import { effectiveStats } from './progression'
+import { ARCEUS_DEX, choiceFormDie, choiceFormsOf, gmaxFormsOf, lowHpFormOf, megaDie, megaFormsOf, megaOptions, swapOneDie, weatherFormOf } from './forms'
+import { battleSpeed, effectiveStats } from './progression'
+import { carriedTalent, TALENT, talentRerolls, type TalentKey } from './talents'
 import { potionHeal, shouldUsePotion } from './trainerItems'
 import { createRng, type Rng } from './rng'
 import {
@@ -23,7 +37,8 @@ import {
   type StatusApplication,
   type StatusState,
 } from './status'
-import type { CurableStatus, DieType, GameData, PokeType, PowerKind, RaidTypeScale, Species, StatusKind } from './types'
+import type { CurableStatus, DieType, GameData, PokeType, PowerKind, RaidTypeScale, Species, StatusKind, Weather } from './types'
+import { weatherTypeBoost, weatherWear } from './weather'
 
 export type Side = 'player' | 'enemy'
 export type BattleKind = 'wild' | 'trainer' | 'boss'
@@ -58,6 +73,8 @@ export interface Battler {
   status: StatusState
   spriteUrl: string
   shiny: boolean
+  /** Its outfit (docs/59), as `outfitOf` gave it: only how it looks (a Gigantamax form shows plain). */
+  outfit?: string
   /** A trainer Pokémon's potion, used once (null when used or never given). */
   item?: string | null
   /** Ditto: its dice are a copy of the opponent's, taken again whenever the opponent changes. `ownDice` = its own set. */
@@ -87,13 +104,30 @@ export interface Battler {
   formChanges?: number
   /** Gigantamaxed: its own turns left, and how it looked before (the die it gained goes when it shrinks back). */
   gmax?: { turns: number; pre: FormSnapshot }
+  /** Its family's hidden talent (docs/51), yours or a foe's. */
+  talent?: TalentKey
+  /** The once-a-battle talents it has spent (Sturdy, Mirror, Disguise). */
+  talentSpent?: TalentKey[]
+  /** A foe's Pressure (docs/51) already took its reroll. */
+  pressured?: boolean
+  /** Its talent that works on its own (Quick, Extra Reroll…) was said as it first acted (docs/51). */
+  announced?: boolean
+  /** Attacks it has made this battle (Opener counts the first). */
+  attacks?: number
+  /** A Totem's or a Titan's look (docs/62): bigger, with its aura. */
+  aura?: FoeAura
 }
+
+/** A foe bigger than its kind (docs/62): an island trial's Totem, or a Titan's second phase. */
+export type FoeAura = 'totem' | 'titan'
 
 export interface FormSnapshot {
   dex: number
   name: string
   types: PokeType[]
   dice: DieType[]
+  /** Absent in a battle saved before forms kept their own Speed. */
+  speed?: number
 }
 
 /** Species that fight with a copy of their opponent's dice (Ditto), rolled on their own and with their own upgrades. */
@@ -118,6 +152,8 @@ export interface BattleState {
   canRun: boolean
   /** Extreme mode with the admin's items switch off: no Potion or Revive works. */
   noHealItems?: boolean
+  /** The bag stays shut: no item at all (the whiteout's fights, docs/64 §4.3). */
+  noBag?: boolean
   /** The types the player's Arceus may take (its plates, docs/34). Absent = any. */
   plates?: PokeType[]
   lastDamage: DamageResult | null
@@ -148,11 +184,18 @@ export interface BattleState {
   ownLimits?: boolean
   /** The player may use a Z-Move in this fight (docs/35). Absent = no. */
   zAllowed?: boolean
+  /** …of these types only: the Z-Crystals held (docs/62 §6). Absent = any. */
+  zTypes?: PokeType[]
   /**
    * An auto battle: under the older rules no Mega Evolution or Gigantamax on either side; type changers on both pick
    * their type themselves. Under the newer ones (docs/35) the player's side uses its powers by itself.
    */
   auto?: boolean
+  /**
+   * The Bonus Shield (Friend Battles' draft, docs/65): the first attack landing on `side` deals `pct` % of its damage
+   * (rounded up), then it's `used`. A status tick isn't an attack and leaves it.
+   */
+  shield?: { side: Side; pct: number; used?: boolean }
   /** What the foe does on its first turn — a trainer's ace Mega Evolving or Gigantamaxing — and whether it changes type. */
   enemyPlan?: EnemyPlan
   /** The plan's Mega / Gigantamax has been used. */
@@ -164,6 +207,10 @@ export interface BattleState {
    * end of battle and no statuses cleared: the raid decides what a K.O. means and who acts next.
    */
   single?: boolean
+  /** A raid side's step: another side's Pokémon in battle with Power Spot (docs/51) boosts this side's hits. */
+  allyPowerSpot?: { uid: string; name: string }
+  /** …and one with Friend Guard softens the raid Pokémon's hits on this side. */
+  allyFriendGuard?: { uid: string; name: string }
   /**
    * A double battle (docs/33): two of each side out at once. `activeIndex` and `enemy` are then the pair in front —
    * the Pokémon whose turn it is and the one it targets — so every rule written for one against one applies to them.
@@ -171,6 +218,12 @@ export interface BattleState {
   double?: DoubleState
   /** A raid step's own rules on its hits (docs/40, engine/raidHit.ts), set by the raid; read back once the step is done. */
   raidHit?: RaidHit
+  /** A new player's first fight: the reroll lesson's rigged throws (docs/46 §6, engine/lesson.ts). */
+  lesson?: RerollLesson
+  /** The gentle foe (docs/46 §7, `gentleFoeMax`): no die of the foe's shows more than this. */
+  foeDiceMax?: number
+  /** The weather the fight is under (docs/62 §2): its × is on both sides' levels; a sandstorm or snow wears. */
+  weather?: Weather
 }
 
 /** A double battle's field (docs/33). */
@@ -181,6 +234,14 @@ export interface DoubleState {
   foeSlots: number[]
   /** Indexes into `player` of yours out on the field (one or two), left to right. */
   ownSlots: number[]
+  /** Yours out at once at most (a Titan's phases are one on one); absent = two. */
+  ownMax?: number
+  /** Index into `foes` of the one whose K.O. ends the fight (an island trial's Totem): the others flee. */
+  leader?: number
+  /** The foes after the first two are allies the leader calls (an island trial's SOS). */
+  calls?: boolean
+  /** Each foe's phase (a Titan's): one of a later phase comes out only once every earlier one is down. */
+  phases?: number[]
   /** Index into `foes` of `enemy`: the foe in front. */
   foeIndex: number
   /** Still to act this round, fastest first (uids). Newcomers wait for the next round. */
@@ -202,6 +263,8 @@ export interface DoubleKo {
   level: number
   shiny: boolean
   fighters: string[]
+  /** It carried its family's hidden talent (docs/51). */
+  talent?: boolean
 }
 
 export interface EnemyPlan {
@@ -283,6 +346,31 @@ export type BattleEvent =
   | { t: 'TARGET'; uid: string }
 
 export type LogEntry =
+  /**
+   * A hidden talent at work (docs/51): `amount` is what it did (HP healed, damage added; the die copied for Mirror). A
+   * talent that changes the numbers alone (Speed, rerolls) logs nothing.
+   */
+  /**
+   * Power Spot's, Friend Guard's: `ally` the one it helped (Static's, Rough Skin's, Pressure's: the foe it hit); `name`
+   * its own when it isn't in this fight's teams (a raid's other side). `hurt`: the HP another Pokémon lost to it (Rough
+   * Skin).
+   */
+  | {
+      kind: 'talent'
+      side: Side
+      uid: string
+      talent: TalentKey
+      amount?: number
+      hpAfter?: number
+      ally?: string
+      name?: string
+      hurt?: { side: Side; uid: string; amount: number; hpAfter: number }
+      /** Mirror's: the roll it turned (`index` the die that took the highest's face), for the tray to show it. */
+      dice?: RolledDie[]
+      index?: number
+      /** Said as it first acts: a talent that works on its own (`ANNOUNCED_TALENTS`). */
+      entry?: true
+    }
   /** `double`: a double battle's opening, yours and the foes out (docs/33). */
   | { kind: 'start'; first: Side; double?: { own: string[]; foes: string[] } }
   /** A double battle: the pair in front changed — the Pokémon whose turn it is, and the one it attacks. */
@@ -290,6 +378,14 @@ export type LogEntry =
   | { kind: 'focus'; own: string; foe: string; aim?: true }
   /** A double battle: the trainer's next Pokémon takes the place of one K.O.'d. */
   | { kind: 'foe_out'; uid: string }
+  /** The weather wears a Pokémon down at its turn (docs/62 §2): a sandstorm or snow. */
+  | { kind: 'weather_tick'; target: Side; targetUid: string; weather: Weather; amount: number; hpAfter: number }
+  /** An island trial's Totem calls an ally (docs/62 §6), the one coming out next. */
+  | { kind: 'sos'; from: string; uid: string }
+  /** A Titan's second phase is coming (docs/62 §7): it ate a Herba Mystica; `commander`: Tatsugiri jumped in. */
+  | { kind: 'titan_rise'; uid: string; commander?: boolean }
+  /** The leader fell: the foes still out flee (an island trial's allies). */
+  | { kind: 'foe_fled'; uid: string }
   | { kind: 'turn'; side: Side; turn: number; uid: string }
   | { kind: 'roll'; side: Side; dice: RolledDie[] }
   | { kind: 'reroll'; side: Side; mask: boolean[]; dice: RolledDie[]; rerollsLeft: number }
@@ -341,12 +437,15 @@ export type LogEntry =
   | { kind: 'dodge'; side: Side; uid: string; how: ZAway }
   /** A Steel Z-Move: the Pokémon shook off every status (a stun included). */
   | { kind: 'cleansed'; side: Side; uid: string }
+  /** The Bonus Shield (docs/65) took part of a hit on `side`'s Pokémon: `before` the damage it would have done. */
+  | { kind: 'shield'; side: Side; uid: string; before: number; after: number }
   | { kind: 'end'; result: 'won' | 'lost' | 'fled'; reason?: 'stalemate' | 'forfeit' }
   /**
    * A Pokémon changed form: `mega` (Mega Evolution, Primal Reversion, Ultra Burst — `die` is the die it gained),
    * `gmax` (Gigantamax; `revert` when it shrinks back), `lowHp` (Giratina's Origin Forme…, `revert` when it goes back
-   * above half HP), `unleash` (that form on a raid Pokémon's last bar, for good; `die` is the die it gained)
-   * or `choice` (an Arceus, Silvally or Ogerpon type).
+   * above half HP), `unleash` (that form on a raid Pokémon's last bar, for good; `die` is the die it gained),
+   * `choice` (an Arceus, Silvally or Ogerpon type), `plate` (a raid's Arceus taking its bar's Plate, docs/64 §4.5) or
+   * `weather` (Castform's Sunny, Rainy or Snowy Form, docs/62 §3).
    */
   | {
       kind: 'form'
@@ -354,7 +453,7 @@ export type LogEntry =
       uid: string
       fromDex: number
       toDex: number
-      reason: 'mega' | 'gmax' | 'lowHp' | 'unleash' | 'choice'
+      reason: 'mega' | 'gmax' | 'lowHp' | 'unleash' | 'choice' | 'plate' | 'weather'
       dice: DieType[]
       die?: DieType
       revert?: boolean
@@ -373,6 +472,8 @@ export interface BattlerSeed {
   diceLevel?: number
   hp: number
   shiny?: boolean
+  /** Its outfit (docs/59), as `outfitOf` gave it (the switch read). */
+  outfit?: string | null
   item?: string
   nickname?: string
   /** A portal run's extra dice (docs/28), after its typed dice; the whole set kept to `diceCap` dice. */
@@ -380,6 +481,8 @@ export interface BattlerSeed {
   diceCap?: number
   /** The battle power it already used (a Versus fight carries it from one battle to the next, docs/35). */
   powered?: PowerKind
+  /** Its family's hidden talent (docs/51): `talentOf` for yours, `carriedTalent` for a foe. */
+  talent?: TalentKey | null
 }
 
 /** A set of dice with extra ones joining the typed dice (ahead of any base die), the extras cut to stay within `cap`. */
@@ -393,8 +496,9 @@ export function withExtraDice(dice: readonly DieType[], extra: readonly DieType[
 
 export function makeBattler(seed: BattlerSeed, data: GameData): Battler {
   const species = getSpecies(data, seed.dex)
-  const at = effectiveStats(species, seed.level, data)
-  const own = seed.diceLevel != null && seed.diceLevel > seed.level ? effectiveStats(species, seed.diceLevel, data) : at
+  const talent = seed.talent ?? null
+  const at = effectiveStats(species, seed.level, data, talent)
+  const own = seed.diceLevel != null && seed.diceLevel > seed.level ? effectiveStats(species, seed.diceLevel, data, talent) : at
   const base = own === at ? at : { ...at, dice: own.dice, rerolls: own.rerolls }
   const stats = seed.extraDice?.length ? { ...base, dice: withExtraDice(base.dice, seed.extraDice, seed.diceCap) } : base
   return {
@@ -406,17 +510,20 @@ export function makeBattler(seed: BattlerSeed, data: GameData): Battler {
     types: stats.types,
     maxHp: stats.maxHp,
     hp: Math.max(0, Math.min(stats.maxHp, seed.hp)),
-    speed: species.speed,
+    speed: battleSpeed(species, seed.level, data, talent),
     dice: stats.dice,
-    rerolls: stats.rerolls,
-    rerollsLeft: stats.rerolls,
+    rerolls: stats.rerolls + talentRerolls(talent),
+    rerollsLeft: stats.rerolls + talentRerolls(talent),
     status: emptyStatus(),
     spriteUrl: species.spriteUrl,
     shiny: !!seed.shiny,
+    ...(seed.outfit && { outfit: seed.outfit }),
     baseDex: seed.dex,
     ...(seed.item && { item: seed.item }),
     ...(seed.powered && { powered: seed.powered }),
-    ...(COPIES_FOE_DICE.has(seed.dex) && { copiesFoe: true, ownDice: stats.dice }),
+    ...(talent && { talent }),
+    // Imposter (docs/51): Ditto's, always carried; any other family an admin gives it copies too.
+    ...((COPIES_FOE_DICE.has(seed.dex) || talent === 'imposter') && { copiesFoe: true, ownDice: stats.dice }),
   }
 }
 
@@ -433,6 +540,8 @@ export function copyFoeDice(s: BattleState, log: LogEntry[]) {
     if (!b.copiesFoe || b.hp <= 0) continue
     const dice = [...(foe.copiesFoe ? (foe.ownDice ?? foe.dice) : foe.dice)]
     b.dice = dice
+    // Imposter (docs/51): Ditto's talent, said as it copies.
+    if (b.talent === 'imposter') log.push({ kind: 'talent', side, uid: b.uid, talent: 'imposter' })
     log.push({ kind: 'transform', side, uid: b.uid, fromUid: foe.uid, dice })
   }
 }
@@ -440,6 +549,17 @@ export function copyFoeDice(s: BattleState, log: LogEntry[]) {
 export interface FoeSeed {
   dex: number
   level: number
+  /** × its max HP (a Totem's, a Titan's second phase: docs/62). */
+  hpTimes?: number
+  /** Dice it gets on top of its own: its aura. */
+  extraDice?: DieType[]
+  aura?: FoeAura
+  /** A Titan's phase (docs/62 §7): see `DoubleState.phases`. */
+  phase?: number
+  /** Dealt with its family's hidden talent (docs/51). */
+  talent?: boolean
+  /** As a `BattlerSeed`'s: a Versus defender fights (and shows) at Lv.50 with the dice of its own level. */
+  diceLevel?: number
   hp?: number
   shiny?: boolean
   item?: string
@@ -454,7 +574,19 @@ export interface CreateBattleOptions {
    * A double battle (docs/33): every foe, two out at once (`enemy` is ignored), and yours led by `leadUids`. With
    * `plans` each foe's Mega / Gigantamax / type change, in the same order.
    */
-  double?: { foes: FoeSeed[]; leadUids?: string[]; plans?: (EnemyPlan | null)[] }
+  double?: {
+    foes: FoeSeed[]
+    leadUids?: string[]
+    plans?: (EnemyPlan | null)[]
+    /** The foe whose K.O. ends the fight (an island trial's Totem), the others its called allies (docs/62 §6). */
+    leader?: number
+    calls?: boolean
+    /** Foes out at once and yours at most (one each for a Titan, docs/62 §7); absent = two. */
+    foeField?: number
+    ownField?: number
+  }
+  /** The area's weather (docs/62 §2), both sides alike; absent = none. */
+  weather?: Weather | null
   playerLevels: UpgradeLevels
   enemyLevels: UpgradeLevels
   /** The player has unlocked Mega Evolution (see `megaUnlocked`). */
@@ -463,6 +595,8 @@ export interface CreateBattleOptions {
   gmaxAllowed?: boolean
   /** The player has unlocked Z-Moves (see `zUnlocked`). */
   zAllowed?: boolean
+  /** The Z-Crystals held (docs/62 §6): a Z-Move only for a Pokémon of one of these types. Absent = any type. */
+  zTypes?: PokeType[]
   /** The newer rules (docs/35, see `battlePowersFor`): the gems' Mega forms and a Mega's turns… */
   megaForms?: number[]
   megaTurns?: number
@@ -479,24 +613,41 @@ export interface CreateBattleOptions {
   auto?: boolean
   /** No Potion or Revive works (Extreme mode, items switched off). */
   noHealItems?: boolean
+  /** No item at all: the bag stays shut (the whiteout, docs/64 §4.3). */
+  noBag?: boolean
   /** The types the player's Arceus may take: its plates (docs/34). Absent = any. Foes are never limited. */
   plates?: PokeType[]
+  /** The reroll lesson rigs this fight's second throw and its reroll (docs/46 §6; see `rerollLessonDue`). */
+  rerollLesson?: boolean
+  /** The gentle foe (docs/46 §7; see `gentleFoeMax`): the most each of the foe's dice may show. */
+  foeDiceMax?: number
 }
 
-/** Takes on a form's look and types (the dice are the caller's business). */
-export function wearForm(b: Battler, form: Species) {
+/**
+ * Takes on a form's look, types and Speed (the dice are the caller's business). The Speed counts from the next time
+ * the order is read: a single battle reads it once, as it opens; a double battle every round.
+ */
+export function wearForm(b: Battler, form: Species, data: GameData) {
   b.dex = form.dex
   b.name = b.nickname || form.name
   b.types = form.type2 ? [form.type1, form.type2] : [form.type1]
   b.spriteUrl = form.spriteUrl
+  b.speed = battleSpeed(form, b.level, data, b.talent)
 }
 
-const snapshot = (b: Battler): FormSnapshot => ({ dex: b.dex, name: b.name, types: [...b.types], dice: [...b.dice] })
+const snapshot = (b: Battler): FormSnapshot => ({
+  dex: b.dex,
+  name: b.name,
+  types: [...b.types],
+  dice: [...b.dice],
+  speed: b.speed,
+})
 function restore(b: Battler, pre: FormSnapshot, data: GameData) {
   b.dex = pre.dex
   b.name = pre.name
   b.types = pre.types
   b.dice = pre.dice
+  if (pre.speed != null) b.speed = pre.speed
   b.spriteUrl = data.species[pre.dex]?.spriteUrl ?? b.spriteUrl
 }
 
@@ -528,7 +679,7 @@ function megaEvolve(s: BattleState, side: Side, b: Battler, mega: Species, data:
   if (!base) return
   const pre = snapshot(b)
   const die = megaDie(base, mega)
-  wearForm(b, mega)
+  wearForm(b, mega, data)
   b.mega = true
   b.powered = 'mega'
   if (s.megaTurns) b.megaTimer = { turns: Math.max(1, s.megaTurns), pre }
@@ -565,7 +716,7 @@ function gigantamax(s: BattleState, side: Side, b: Battler, form: Species, data:
   if (!base) return
   const pre = snapshot(b)
   const die = megaDie(base, form)
-  wearForm(b, form)
+  wearForm(b, form, data)
   const thrown = addDice(s, side, b, die, Math.max(1, s.gmaxBoost?.dice ?? 1), data, rng)
   b.gmax = { turns: Math.max(1, data.config.gigantamax.turns), pre }
   b.powered = 'gmax'
@@ -612,10 +763,10 @@ function tickGmax(s: BattleState, side: Side, data: GameData, log: LogEntry[]) {
 }
 
 /** A type picked from the menu (Arceus, Silvally, Ogerpon): its look, and every die — the hand too — takes the type. */
-function changeForm(s: BattleState, side: Side, b: Battler, form: Species, log: LogEntry[]) {
+function changeForm(s: BattleState, side: Side, b: Battler, form: Species, data: GameData, log: LogEntry[]) {
   const fromDex = b.dex
   const type = choiceFormDie(form)
-  wearForm(b, form)
+  wearForm(b, form, data)
   b.dice = b.dice.map(() => type)
   if (side === 'player') s.dice = s.dice.map((d) => ({ ...d, type }))
   log.push({ kind: 'form', side, uid: b.uid, fromDex, toDex: b.dex, reason: 'choice', dice: [...b.dice] })
@@ -664,9 +815,27 @@ export function raidFormShift(b: Battler, target: Battler, data: GameData): Extr
   if (!form) return null
   const fromDex = b.dex
   const type = choiceFormDie(form)
-  wearForm(b, form)
+  wearForm(b, form, data)
   b.dice = b.dice.map(() => type)
   return { kind: 'form', side: 'enemy', uid: b.uid, fromDex, toDex: b.dex, reason: 'choice', dice: [...b.dice] }
+}
+
+/**
+ * A raid Pokémon takes a set type (the Hall of Origin's Arceus, its Plate on each bar: docs/64 §4.5): its type form of
+ * that type (its own species for the type it was sent out as), every die taking it. Null when it already has that type,
+ * or has no such form (the bar's type is then simply skipped).
+ */
+export function raidPlate(b: Battler, type: PokeType, data: GameData): Extract<LogEntry, { kind: 'form' }> | null {
+  const base = b.baseDex ?? b.dex
+  const own = data.species[base]
+  const forms = choiceFormsOf(data, base)
+  if (!own || !forms.length) return null
+  const form = own.type1 === type && !own.type2 ? own : forms.find((f) => choiceFormDie(f) === type)
+  if (!form || form.dex === b.dex) return null
+  const fromDex = b.dex
+  wearForm(b, form, data)
+  b.dice = b.dice.map(() => type)
+  return { kind: 'form', side: 'enemy', uid: b.uid, fromDex, toDex: b.dex, reason: 'plate', dice: [...b.dice] }
 }
 
 /** Auto-mode's pick for the Pokémon in battle: a type form best against the foe, at random among equals. */
@@ -691,7 +860,7 @@ function checkHpForms(s: BattleState, data: GameData, log: LogEntry[]) {
       const swap = form.form?.swapDie
       b.preForm = snapshot(b)
       const fromDex = b.dex
-      wearForm(b, form)
+      wearForm(b, form, data)
       if (swap) b.dice = swapOneDie(b.dice, swap.from, swap.to)
       log.push({ kind: 'form', side, uid: b.uid, fromDex, toDex: b.dex, reason: 'lowHp', dice: [...b.dice] })
     } else if (!low && b.preForm) {
@@ -713,7 +882,7 @@ export function unleashForm(b: Battler, data: GameData): Extract<LogEntry, { kin
   if (!form || b.dex === form.dex) return null
   const die = form.form?.swapDie?.to ?? form.type1
   const fromDex = b.dex
-  wearForm(b, form)
+  wearForm(b, form, data)
   // With the other typed dice, ahead of any base die.
   b.dice.splice(b.dice.filter((d) => d !== 'base').length, 0, die)
   return {
@@ -767,10 +936,16 @@ export function gmaxChoices(s: BattleState, data: GameData): Species[] {
  * The Pokémon in battle could attack with a Z-Move now: after the roll, once per battle, not already powered — or,
  * a Steel-type, while frozen or paralyzed (its Z-Move shakes the stun off).
  */
+/** The types this Pokémon's Z-Move may take: its own, those whose Z-Crystal is held (docs/62 §6). */
+export const zTypesOf = (s: BattleState, b: Battler): PokeType[] => (s.zTypes ? b.types.filter((t) => s.zTypes!.includes(t)) : b.types)
+
 export function canZMove(s: BattleState, data: GameData): boolean {
   if (!s.zAllowed || powerSpent(s, 'z', data)) return false
   const a = activeBattler(s)
-  const when = s.phase === 'player_reroll' || (s.phase === 'player_stunned' && a.types.includes('steel'))
+  // With Z-Crystals, only for a Pokémon of a type whose crystal is held.
+  const allowed = zTypesOf(s, a)
+  if (!allowed.length) return false
+  const when = s.phase === 'player_reroll' || (s.phase === 'player_stunned' && allowed.includes('steel'))
   return when && canPower(a)
 }
 
@@ -781,7 +956,7 @@ export function canZMove(s: BattleState, data: GameData): boolean {
  */
 export function zTypeChoices(s: BattleState, data: GameData): PokeType[] {
   if (!canZMove(s, data) || s.phase !== 'player_reroll') return []
-  const types = activeBattler(s).types
+  const types = zTypesOf(s, activeBattler(s))
   return types.length > 1 ? [...types] : []
 }
 
@@ -795,7 +970,7 @@ export function zMovePreview(
   type?: PokeType,
 ): { effect: ZEffect; result: DamageResult } {
   const a = activeBattler(s)
-  let result = computeDamage(s.dice, a.types, s.enemy.types, s.playerLevels, data, type)
+  let result = computeDamage(s.dice, a.types, s.enemy.types, s.playerLevels, data, type, attackModsFor(s, a, s.enemy))
   // A copy of the raid's rules: running a hit through them marks them (absorbed, bounced).
   if (s.raidHit) result = adjustRaidHit(result, { ...s.raidHit }, s.playerLevels.typeScale)
   const effect = zEffectOf(result.attackType)
@@ -844,6 +1019,7 @@ function battlePowersOf(opts: CreateBattleOptions): Partial<BattleState> {
     ...(mega && { megaAllowed: true }),
     ...(gmax && { gmaxAllowed: true }),
     ...(opts.zAllowed && { zAllowed: true }),
+    ...(opts.zAllowed && opts.zTypes && { zTypes: [...opts.zTypes] }),
     ...(opts.megaForms && { megaForms: [...opts.megaForms] }),
     ...(opts.megaTurns && { megaTurns: opts.megaTurns }),
     ...(opts.gmaxBoost && { gmaxBoost: { ...opts.gmaxBoost } }),
@@ -855,17 +1031,43 @@ function battlePowersOf(opts: CreateBattleOptions): Partial<BattleState> {
   }
 }
 
+/** A foe as it fights: its talent carried, and a Totem's or a Titan's HP, aura dice and look (docs/62). */
+function foeBattler(f: FoeSeed, uid: string, data: GameData): Battler {
+  const b = makeBattler(
+    {
+      uid,
+      dex: f.dex,
+      level: f.level,
+      diceLevel: f.diceLevel,
+      hp: f.hp ?? Infinity,
+      shiny: f.shiny,
+      item: f.item,
+      talent: carriedTalent(data, f.dex, f.talent),
+      ...(f.extraDice?.length && { extraDice: f.extraDice }),
+    },
+    data,
+  )
+  if (f.hpTimes && f.hpTimes > 0 && f.hpTimes !== 1) {
+    b.maxHp = Math.max(1, Math.round(b.maxHp * f.hpTimes))
+    b.hp = Math.min(b.maxHp, f.hp ?? b.maxHp)
+  }
+  if (f.aura) b.aura = f.aura
+  return b
+}
+
+/** Both sides' levels under the weather (docs/62 §2): its × on attacks of its types, for each alike. */
+function withWeather(levels: UpgradeLevels, w: Weather | null | undefined): UpgradeLevels {
+  const boost = weatherTypeBoost(w)
+  return w && Object.keys(boost).length ? { ...levels, weather: { kind: w, boost } } : levels
+}
+
 export function createBattle(opts: CreateBattleOptions, data: GameData): { state: BattleState; log: LogEntry[] } {
   if (opts.double && opts.double.foes.length > 1) return createDouble(opts, opts.double, data)
   const player = opts.team.map((t) => makeBattler(t, data))
   let activeIndex = player.findIndex((b) => b.uid === opts.leadUid && b.hp > 0)
   if (activeIndex < 0) activeIndex = player.findIndex((b) => b.hp > 0)
   if (activeIndex < 0) throw new Error('No able Pokémon to send out')
-  const enemyMax = effectiveStats(getSpecies(data, opts.enemy.dex), opts.enemy.level, data).maxHp
-  const enemy = makeBattler(
-    { uid: 'enemy', dex: opts.enemy.dex, level: opts.enemy.level, hp: opts.enemy.hp ?? enemyMax, shiny: opts.enemy.shiny, item: opts.enemy.item },
-    data,
-  )
+  const enemy = foeBattler(opts.enemy, 'enemy', data)
   const lead = player[activeIndex]!
   const first: Side = lead.speed >= enemy.speed ? 'player' : 'enemy' // tie → player
   const state: BattleState = {
@@ -879,19 +1081,26 @@ export function createBattle(opts: CreateBattleOptions, data: GameData): { state
     enemy,
     dice: [],
     selected: [],
-    playerLevels: opts.playerLevels,
-    enemyLevels: opts.enemyLevels,
+    playerLevels: withWeather(opts.playerLevels, opts.weather),
+    enemyLevels: withWeather(opts.enemyLevels, opts.weather),
+    ...(opts.weather && { weather: opts.weather }),
     participants: [lead.uid],
     canRun: opts.kind === 'wild' && !data.config.noEscape,
     ...(opts.noHealItems && { noHealItems: true }),
+    ...(opts.noBag && { noBag: true }),
+    ...(opts.weather && { weather: opts.weather }),
     ...(opts.plates && { plates: [...opts.plates] }),
     lastDamage: null,
     itemUsedThisTurn: false,
     ...battlePowersOf(opts),
+    ...(opts.rerollLesson && { lesson: { step: 'wait', throws: 0 } }),
+    ...(opts.foeDiceMax != null && { foeDiceMax: opts.foeDiceMax }),
   }
   const log: LogEntry[] = [{ kind: 'start', first }]
   // A Giratina sent out below half HP is already in its Origin Forme.
   checkHpForms(state, data, log)
+  // Castform takes the weather's form (docs/62 §3).
+  weatherForms(state, data, log)
   copyFoeDice(state, log)
   beginTurn(state, first, data, log)
   return { state, log }
@@ -935,6 +1144,8 @@ function checkKnockouts(s: BattleState, log: LogEntry[]): boolean {
  * through a raid's matchups when it has them.
  */
 export function canHurt(atk: Battler, def: Battler, data: GameData, scale?: RaidTypeScale): boolean {
+  // Mind's Eye (docs/51): nothing is immune to it.
+  if (atk.talent === 'mindsEye' && atk.dice.length) return true
   const dice = atk.dice.map((type) => ({ type, faceIndex: 0 }))
   return attackMultiplier(attackType(dice, atk.types, def.types, data), def.types, data, scale) > 0
 }
@@ -947,7 +1158,8 @@ function deadlocked(s: BattleState, data: GameData): boolean {
   const me = activeBattler(s)
   const foe = s.enemy
   if (me.hp <= 0 || foe.hp <= 0) return false
-  const pending = (b: Battler) => !!b.status.burn || !!b.status.poison || confusionLevel(b.status) > 0
+  const pending = (b: Battler) =>
+    !!b.status.burn || !!b.status.poison || confusionLevel(b.status) > 0 || weatherWear(s.weather, b.types, b.maxHp) > 0
   if (pending(me) || pending(foe) || canHurt(foe, me, data)) return false
   return !s.player.some((p) => p.hp > 0 && canHurt(p, foe, data))
 }
@@ -988,14 +1200,12 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[], 
     s.itemUsedThisTurn = false
     const b = side === 'player' ? activeBattler(s) : s.enemy
     log.push({ kind: 'turn', side, turn: s.turn, uid: b.uid })
+    announce(b, side, log)
+    pressure(b, side === 'player' ? s.enemy : activeBattler(s), side, log)
 
-    const { state, ticks } = tickDot(b.status, rules, b.maxHp)
-    b.status = state
-    for (const t of ticks) {
-      b.hp = Math.max(0, b.hp - t.amount)
-      log.push({ kind: 'status_tick', target: side, targetUid: b.uid, status: t.status, amount: t.amount, hpAfter: b.hp })
-    }
-    if (ticks.length) checkHpForms(s, data, log)
+    const ticks = statusTicks(b, side, rules, log)
+    const worn = weatherTick(s, b, side, log)
+    if (ticks || worn) checkHpForms(s, data, log)
     if (b.hp <= 0 && s.single) return endStep(s)
     if (b.hp <= 0) {
       // A K.O. here ends the turn.
@@ -1033,6 +1243,20 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[], 
 
 function afterAction(s: BattleState, side: Side, data: GameData, log: LogEntry[], rng?: Rng) {
   tickGmax(s, side, data, log)
+  // Leftovers (docs/51): the Pokémon that just acted heals a little at the end of its turn.
+  const actor = side === 'player' ? activeBattler(s) : s.enemy
+  if (actor.talent === 'leftovers' && actor.hp > 0 && actor.hp < actor.maxHp) {
+    const amount = Math.min(actor.maxHp - actor.hp, Math.max(1, Math.round(actor.maxHp * TALENT.leftovers)))
+    actor.hp += amount
+    log.push({ kind: 'talent', side, uid: actor.uid, talent: 'leftovers', amount, hpAfter: actor.hp })
+  }
+  // Shed Skin (docs/51): a chance to shed its statuses at the end of its turn.
+  if (actor.talent === 'shedSkin' && actor.hp > 0 && hasAnyStatus(actor.status)) {
+    if ((rng ?? createRng(s.turn)).next() < TALENT.shedSkin) {
+      actor.status = emptyStatus()
+      log.push({ kind: 'talent', side, uid: actor.uid, talent: 'shedSkin' })
+    }
+  }
   if (s.single) return endStep(s)
   if (s.double) {
     if (!doubleKnockouts(s, log)) beginDoubleTurn(s, data, log, rng)
@@ -1065,17 +1289,21 @@ function createDouble(
   data: GameData,
 ): { state: BattleState; log: LogEntry[] } {
   const player = opts.team.map((t) => makeBattler(t, data))
+  // A Titan's phases are one on one (docs/62 §7): one of yours out at a time.
+  const ownMax = Math.max(1, Math.min(2, double.ownField ?? 2))
   // The leads picked, then whoever is able, two at most; one alone fights both (docs/33).
   const ownSlots: number[] = []
   for (const uid of [...(double.leadUids ?? []), ...(opts.leadUid ? [opts.leadUid] : []), ...player.map((b) => b.uid)]) {
     const i = player.findIndex((b) => b.uid === uid && b.hp > 0)
-    if (i >= 0 && !ownSlots.includes(i) && ownSlots.length < 2) ownSlots.push(i)
+    if (i >= 0 && !ownSlots.includes(i) && ownSlots.length < ownMax) ownSlots.push(i)
   }
   if (!ownSlots.length) throw new Error('No able Pokémon to send out')
-  const foes = double.foes.map((f, i) => {
-    const max = effectiveStats(getSpecies(data, f.dex), f.level, data).maxHp
-    return makeBattler({ uid: foeUid(i), dex: f.dex, level: f.level, hp: f.hp ?? max, shiny: f.shiny, item: f.item }, data)
-  })
+  const foes = double.foes.map((f, i) => foeBattler(f, foeUid(i), data))
+  // A Titan's phases (docs/62 §7): those of the first phase come out; a later one waits for them all to fall.
+  const phases = double.foes.map((f) => f.phase ?? 1)
+  const phased = phases.some((p) => p !== phases[0])
+  const foeMax = Math.max(1, Math.min(2, double.foeField ?? 2))
+  const foeSlots = foes.map((_, i) => i).filter((i) => phases[i] === Math.min(...phases)).slice(0, foeMax)
   const plans: Record<string, EnemyPlan> = {}
   double.plans?.forEach((p, i) => {
     // An auto battle keeps a foe's powers whose newer rules are on (docs/35), as one on one does.
@@ -1100,8 +1328,9 @@ function createDouble(
     enemy: foes[0]!,
     dice: [],
     selected: [],
-    playerLevels: opts.playerLevels,
-    enemyLevels: opts.enemyLevels,
+    playerLevels: withWeather(opts.playerLevels, opts.weather),
+    enemyLevels: withWeather(opts.enemyLevels, opts.weather),
+    ...(opts.weather && { weather: opts.weather }),
     participants: ownSlots.map((i) => player[i]!.uid),
     canRun: opts.kind === 'wild' && !data.config.noEscape,
     ...(opts.noHealItems && { noHealItems: true }),
@@ -1112,8 +1341,12 @@ function createDouble(
       : { ...(opts.megaAllowed && { megaAllowed: true }), ...(opts.gmaxAllowed && { gmaxAllowed: true }) }),
     double: {
       foes,
-      foeSlots: foes.length > 1 ? [0, 1] : [0],
+      foeSlots,
       ownSlots,
+      ...(ownMax < 2 && { ownMax }),
+      ...(double.leader != null && foes[double.leader] && { leader: double.leader }),
+      ...(double.calls && { calls: true }),
+      ...(phased && { phases }),
       foeIndex: 0,
       queue: [],
       round: 0,
@@ -1127,7 +1360,13 @@ function createDouble(
   const log: LogEntry[] = [
     { kind: 'start', first, double: { own: ownOnField(state).map((b) => b.uid), foes: foesOnField(state).map((b) => b.uid) } },
   ]
+  // An island trial (docs/62 §6): the Totem calls its first ally as the fight opens.
+  const lead = state.double!.leader
+  if (state.double!.calls && lead != null)
+    for (const i of foeSlots) if (i !== lead) log.push({ kind: 'sos', from: foes[lead]!.uid, uid: foes[i]!.uid })
   checkHpForms(state, data, log)
+  // Castform takes the weather's form (docs/62 §3).
+  weatherForms(state, data, log)
   // Every Ditto out copies the Pokémon facing it.
   for (const [side, row, facing] of [
     ['player', ownOnField(state), foesOnField(state)],
@@ -1165,6 +1404,7 @@ function copyDiceOf(b: Battler, side: Side, foe: Battler, log: LogEntry[]) {
   const dice = [...(foe.copiesFoe ? (foe.ownDice ?? foe.dice) : foe.dice)]
   if (dice.length === b.dice.length && dice.every((d, i) => d === b.dice[i])) return
   b.dice = dice
+  if (b.talent === 'imposter') log.push({ kind: 'talent', side, uid: b.uid, talent: 'imposter' })
   log.push({ kind: 'transform', side, uid: b.uid, fromUid: foe.uid, dice })
 }
 
@@ -1247,14 +1487,12 @@ function beginDoubleTurn(s: BattleState, data: GameData, log: LogEntry[], rng?: 
     s.itemUsedThisTurn = false
     const b = side === 'player' ? activeBattler(s) : s.enemy
     log.push({ kind: 'turn', side, turn: s.turn, uid: b.uid })
+    announce(b, side, log)
+    pressure(b, side === 'player' ? s.enemy : activeBattler(s), side, log)
 
-    const { state, ticks } = tickDot(b.status, rules, b.maxHp)
-    b.status = state
-    for (const t of ticks) {
-      b.hp = Math.max(0, b.hp - t.amount)
-      log.push({ kind: 'status_tick', target: side, targetUid: b.uid, status: t.status, amount: t.amount, hpAfter: b.hp })
-    }
-    if (ticks.length) checkHpForms(s, data, log)
+    const ticks = statusTicks(b, side, rules, log)
+    const worn = weatherTick(s, b, side, log)
+    if (ticks || worn) checkHpForms(s, data, log)
     if (b.hp <= 0) {
       // A K.O. here ends the turn.
       if (doubleKnockouts(s, log)) return
@@ -1293,20 +1531,37 @@ function beginDoubleTurn(s: BattleState, data: GameData, log: LogEntry[], rng?: 
 function doubleKnockouts(s: BattleState, log: LogEntry[]): boolean {
   const d = s.double!
   const fighters = d.ownSlots.map((i) => s.player[i]!.uid)
+  const phaseOf = (k: number) => d.phases?.[k] ?? 1
+  let leaderDown = false
   for (const [at, i] of [...d.foeSlots].entries()) {
     const f = d.foes[i]!
     if (f.hp > 0) continue
     log.push({ kind: 'faint', side: 'enemy', uid: f.uid, dex: f.dex })
-    d.kos.push({ uid: f.uid, dex: f.baseDex ?? f.dex, level: f.level, shiny: f.shiny, fighters })
+    d.kos.push({ uid: f.uid, dex: f.baseDex ?? f.dex, level: f.level, shiny: f.shiny, fighters, ...(f.talent && { talent: true }) })
     const slot = d.foeSlots.indexOf(i)
-    // A foe never out yet (alive and off the field) takes its place, in the same spot.
-    const reserve = d.foes.findIndex((x, k) => x.hp > 0 && !d.foeSlots.includes(k))
+    if (d.leader === i) leaderDown = true
+    // A foe never out yet (alive and off the field) takes its place, in the same spot: of a later phase (a Titan's
+    // second) only once every foe of the earlier one is down; an island trial's allies only while the Totem stands.
+    const lowest = Math.min(...d.foes.map((x, k) => (x.hp > 0 ? phaseOf(k) : Infinity)))
+    const reserve =
+      leaderDown || (d.leader != null && d.foes[d.leader]!.hp <= 0)
+        ? -1
+        : d.foes.findIndex((x, k) => x.hp > 0 && !d.foeSlots.includes(k) && phaseOf(k) <= lowest)
     if (reserve >= 0) {
       d.foeSlots[slot] = reserve
+      if (phaseOf(reserve) > phaseOf(i))
+        log.push({ kind: 'titan_rise', uid: d.foes[reserve]!.uid, ...(d.phases!.filter((p) => p === phaseOf(i)).length > 1 && { commander: true }) })
+      else if (d.calls && d.leader != null) log.push({ kind: 'sos', from: d.foes[d.leader]!.uid, uid: d.foes[reserve]!.uid })
       log.push({ kind: 'foe_out', uid: d.foes[reserve]!.uid })
       const facing = ownOnField(s).filter((b) => b.hp > 0)
       if (facing.length) copyDiceOf(d.foes[reserve]!, 'enemy', facing[Math.min(at, facing.length - 1)]!, log)
     } else d.foeSlots.splice(slot, 1)
+  }
+  // The Totem down (docs/62 §6): the trial is won, and its allies still out flee.
+  if (leaderDown || (d.leader != null && d.foes[d.leader]!.hp <= 0)) {
+    for (const k of d.foeSlots) if (d.foes[k]!.hp > 0) log.push({ kind: 'foe_fled', uid: d.foes[k]!.uid })
+    finish(s, 'won', log)
+    return true
   }
   if (!d.foes.some((f) => f.hp > 0)) {
     finish(s, 'won', log)
@@ -1327,7 +1582,7 @@ function doubleKnockouts(s: BattleState, log: LogEntry[]): boolean {
   }
   if (fallen) {
     const bench = s.player.filter((b, k) => b.hp > 0 && !d.ownSlots.includes(k)).length
-    d.toReplace = Math.min(fallen, bench, 2 - d.ownSlots.length)
+    d.toReplace = Math.min(fallen, bench, (d.ownMax ?? 2) - d.ownSlots.length)
     if (d.toReplace > 0) {
       s.phase = 'player_switch'
       s.dice = []
@@ -1366,7 +1621,8 @@ function doubleSwitch(s: BattleState, uid: string, data: GameData, log: LogEntry
   }
   if ((s.phase !== 'player_roll' && s.phase !== 'player_reroll') || !data.config.allowVoluntarySwitch) return false
   const outgoing = activeBattler(s)
-  if (d.ownSlots.length >= 2) {
+  naturalCure(outgoing, 'player', log)
+  if (d.ownSlots.length >= (d.ownMax ?? 2)) {
     // A Gigantamax Pokémon shrinks back when it leaves the field.
     if (outgoing.gmax) endGmax('player', outgoing, data, log)
     d.ownSlots[d.ownSlots.indexOf(s.activeIndex)] = idx
@@ -1439,6 +1695,7 @@ function applyZEffect(effect: ZEffect, atk: Battler, def: Battler, side: Side, d
   }
   if (def.hp <= 0) return
   const status: StatusKind = effect === 'freeze' ? 'frozen' : effect
+  if (shrugs(def, status)) return void log.push({ kind: 'talent', side: other(side), uid: def.uid, talent: 'limber' })
   // A Psychic Z-Move confuses as much as a full hand of Confuse faces.
   const level = effect === 'confuse' ? Math.max(1, data.config.status.confuse.maxFaces) : undefined
   const app = effect === 'burn' ? { status, stacks: cfg.burnStacks } : { status, level }
@@ -1458,6 +1715,8 @@ function confusedRecoil(atk: Battler, side: Side, data: GameData, log: LogEntry[
   const level = confusionLevel(atk.status)
   if (!level) return
   atk.status = { ...atk.status, confused: 0 }
+  // Magic Guard (docs/51): no status hurts it.
+  if (atk.talent === 'magicGuard') return void log.push({ kind: 'talent', side, uid: atk.uid, talent: 'magicGuard' })
   const amount = confusionRecoil(atk.maxHp, level, data)
   atk.hp = Math.max(0, atk.hp - amount)
   log.push({ kind: 'recoil', side, uid: atk.uid, amount, hpAfter: atk.hp })
@@ -1469,6 +1728,234 @@ function endAttack(s: BattleState, side: Side, data: GameData, log: LogEntry[], 
   s.dice = []
   s.selected = []
   afterAction(s, side, data, log, rng)
+}
+
+/**
+ * A sandstorm's or snow's wear at the start of a Pokémon's turn (docs/62 §2): 4 % of its max HP unless its type is
+ * spared (it can K.O.); Magic Guard takes none. True when it wore.
+ */
+function weatherTick(s: BattleState, b: Battler, side: Side, log: LogEntry[]): boolean {
+  if (!s.weather || s.single || b.hp <= 0) return false
+  const amount = Math.min(b.hp, weatherWear(s.weather, b.types, b.maxHp))
+  if (amount <= 0) return false
+  if (b.talent === 'magicGuard') {
+    log.push({ kind: 'talent', side, uid: b.uid, talent: 'magicGuard' })
+    return false
+  }
+  b.hp -= amount
+  log.push({ kind: 'weather_tick', target: side, targetUid: b.uid, weather: s.weather, amount, hpAfter: b.hp })
+  return true
+}
+
+/**
+ * Castform's Forecast (docs/62 §3): as a fight under sun, rain or snow starts, each Castform on either side takes the
+ * weather's form, its dice of its own type turning into the form's. Said for those out on the field; those on the bench
+ * are in it as they come out.
+ */
+function weatherForms(s: BattleState, data: GameData, log: LogEntry[]) {
+  if (!s.weather) return
+  const out = new Set([...ownOnField(s), ...foesOnField(s)].map((b) => b.uid))
+  const foes = s.double?.foes ?? [s.enemy]
+  for (const [side, b] of [...s.player.map((p) => ['player', p] as const), ...foes.map((f) => ['enemy', f] as const)]) {
+    const form = weatherFormOf(data, b.baseDex ?? b.dex, s.weather)
+    if (!form || b.dex === form.dex) continue
+    const own = data.species[b.dex]?.type1
+    const fromDex = b.dex
+    wearForm(b, form, data)
+    b.dice = b.dice.map((d) => (d === own ? (form.type1 as DieType) : d))
+    if (out.has(b.uid)) log.push({ kind: 'form', side, uid: b.uid, fromDex, toDex: b.dex, reason: 'weather', dice: [...b.dice] })
+  }
+}
+
+/** Magma Armor (docs/51): the turns a freeze holds it. */
+const MAGMA_ARMOR_TURNS = 1
+
+/** Natural Cure (docs/51): its statuses clear as it leaves the field. */
+function naturalCure(b: Battler, side: Side, log: LogEntry[]) {
+  if (b.talent !== 'naturalCure' || b.hp <= 0 || !hasAnyStatus(b.status)) return
+  b.status = emptyStatus()
+  log.push({ kind: 'talent', side, uid: b.uid, talent: 'naturalCure' })
+}
+
+/**
+ * The burn and poison at the start of a turn (they can K.O.): Poison Heal and Flame Heal turn theirs into a heal, Magic
+ * Guard takes none (docs/51). True when anything ticked.
+ */
+function statusTicks(b: Battler, side: Side, rules: GameData['config']['status'], log: LogEntry[]): boolean {
+  const { state, ticks } = tickDot(b.status, rules, b.maxHp)
+  b.status = state
+  for (const t of ticks) {
+    const heals = (t.status === 'poison' && b.talent === 'poisonHeal') || (t.status === 'burn' && b.talent === 'flameHeal')
+    if (heals) {
+      const amount = Math.min(b.maxHp - b.hp, t.amount)
+      if (amount <= 0) continue
+      b.hp += amount
+      log.push({ kind: 'talent', side, uid: b.uid, talent: b.talent!, amount, hpAfter: b.hp })
+    } else if (b.talent === 'magicGuard') {
+      log.push({ kind: 'talent', side, uid: b.uid, talent: 'magicGuard' })
+    } else {
+      b.hp = Math.max(0, b.hp - t.amount)
+      log.push({ kind: 'status_tick', target: side, targetUid: b.uid, status: t.status, amount: t.amount, hpAfter: b.hp })
+    }
+  }
+  return ticks.length > 0
+}
+
+/**
+ * The talents that work on their own, with no moment of their own (docs/51): said once, as the Pokémon first acts, so
+ * the player sees them at work (the rerolls it has, its Speed, its HP, its rerolls that never repeat).
+ */
+export const ANNOUNCED_TALENTS: readonly TalentKey[] = [
+  'extraReroll',
+  'doubleReroll',
+  'quick',
+  'ultraSpeed',
+  'thickHide',
+  'reroller',
+]
+
+function announce(b: Battler, side: Side, log: LogEntry[]) {
+  if (b.announced || !b.talent || !ANNOUNCED_TALENTS.includes(b.talent) || b.hp <= 0) return
+  b.announced = true
+  log.push({ kind: 'talent', side, uid: b.uid, talent: b.talent, entry: true })
+}
+
+/** Pressure (docs/51): the first turn a Pokémon takes facing it, it loses a reroll (once a battle). */
+function pressure(b: Battler, foe: Battler, side: Side, log: LogEntry[]) {
+  if (foe.talent !== 'pressure' || foe.hp <= 0 || b.hp <= 0 || b.pressured) return
+  b.pressured = true
+  b.rerollsLeft = Math.max(0, b.rerollsLeft - TALENT.pressure)
+  log.push({ kind: 'talent', side: other(side), uid: foe.uid, talent: 'pressure', ally: b.uid })
+}
+
+/** Limber (docs/51): no paralysis lands on it. */
+const shrugs = (b: Battler, status: StatusKind) => status === 'paralyze' && b.talent === 'limber'
+
+/**
+ * A hit that dealt `dealt` (docs/51): Shell Bell heals the attacker a share of it; the target's Rough Skin hurts the
+ * attacker back (not through Magic Guard); its Static may paralyse the attacker (not through Limber).
+ */
+function hitTalents(
+  atk: Battler,
+  def: Battler,
+  side: Side,
+  dealt: number,
+  rules: GameData['config']['status'],
+  log: LogEntry[],
+  rng: Rng,
+) {
+  const foe = other(side)
+  if (atk.talent === 'shellBell' && atk.hp > 0 && atk.hp < atk.maxHp) {
+    const amount = Math.min(atk.maxHp - atk.hp, Math.max(1, Math.round(dealt * TALENT.shellBell)))
+    atk.hp += amount
+    log.push({ kind: 'talent', side, uid: atk.uid, talent: 'shellBell', amount, hpAfter: atk.hp })
+  }
+  if (def.talent === 'roughSkin' && atk.hp > 0) {
+    if (atk.talent === 'magicGuard') log.push({ kind: 'talent', side, uid: atk.uid, talent: 'magicGuard' })
+    else {
+      const amount = Math.max(1, Math.round(dealt * TALENT.roughSkin))
+      atk.hp = Math.max(0, atk.hp - amount)
+      log.push({
+        kind: 'talent',
+        side: foe,
+        uid: def.uid,
+        talent: 'roughSkin',
+        ally: atk.uid,
+        hurt: { side, uid: atk.uid, amount, hpAfter: atk.hp },
+      })
+    }
+  }
+  if (def.talent === 'static' && atk.hp > 0 && atk.status.paralyze <= 0 && rng.next() < TALENT.static) {
+    if (shrugs(atk, 'paralyze')) return void log.push({ kind: 'talent', side, uid: atk.uid, talent: 'limber' })
+    log.push({ kind: 'talent', side: foe, uid: def.uid, talent: 'static', ally: atk.uid })
+    atk.status = applyStatuses(atk.status, [{ status: 'paralyze' }], rules)
+    log.push({ kind: 'status', target: side, targetUid: atk.uid, status: 'paralyze', turns: rules.paralyze.stunTurns })
+  }
+}
+
+/** Mirror (docs/51): the lowest die becomes a copy of the highest. Null when they already match. */
+function mirrorDice(dice: readonly RolledDie[], data: GameData): { dice: RolledDie[]; value: number; index: number } | null {
+  if (dice.length < 2) return null
+  const values = dice.map((d) => dieValue(d, data))
+  const hi = values.indexOf(Math.max(...values))
+  const lo = values.indexOf(Math.min(...values))
+  if (values[hi] === values[lo]) return null
+  return { dice: dice.map((d, i) => (i === lo ? { ...dice[hi]! } : d)), value: values[hi]!, index: lo }
+}
+
+/**
+ * What the hidden talents (docs/51) do to this attack. The attacker's own: Technician (a Pair), Triple Pro and Fours
+ * Pro (Three and Four of a Kind), Opener (its first
+ * attack), Finisher (a foe under a third of its HP), Guts (it has a status), Mind's Eye, Raider (a raid's fight), Skill
+ * Link (its combo a level up). A partner's Power Spot. The target's: Intimidate (the attacker's first attacks),
+ * Disguise (the first hit it takes), a partner's Friend Guard. Undefined when nothing.
+ */
+export function attackModsFor(s: BattleState, atk: Battler, def: Battler): AttackMods | undefined {
+  const t = atk.talent
+  const own: AttackMods | undefined =
+    t === 'technician'
+      ? { talent: t, comboTimes: { key: 'pair', times: 1 + TALENT.technician } }
+      : t === 'triplePro'
+        ? { talent: t, comboTimes: { key: 'three_kind', times: 1 + TALENT.triplePro } }
+        : t === 'foursPro'
+          ? { talent: t, comboTimes: { key: 'four_kind', times: 1 + TALENT.foursPro } }
+      : t === 'opener' && (atk.attacks ?? 0) === 0
+        ? { talent: t, times: 1 + TALENT.opener }
+        : t === 'finisher' && def.hp < def.maxHp * TALENT.finisherBelow
+          ? { talent: t, times: 1 + TALENT.finisher }
+          : t === 'guts' && hasAnyStatus(atk.status)
+            ? { talent: t, times: 1 + TALENT.guts }
+            : t === 'mindsEye'
+              ? { talent: t, immuneAs: TALENT.mindsEye }
+              : t === 'raider' && s.single
+                ? { talent: t, times: 1 + TALENT.raider }
+                : t === 'skillLink'
+                  ? { talent: t, comboUp: TALENT.skillLink }
+                  : undefined
+  let mods = own
+  const times = (m: AttackMods | undefined, x: number): AttackMods => ({ ...m, times: (m?.times ?? 1) * x })
+  const partner = powerSpotOf(s, atk)
+  if (partner) mods = { ...times(mods, 1 + TALENT.powerSpot), powerSpot: partner }
+  const guards: { key: TalentKey; uid: string }[] = []
+  let guardTimes = 1
+  if (def.talent === 'intimidate' && (atk.attacks ?? 0) < TALENT.intimidateHits) {
+    guardTimes *= 1 - TALENT.intimidate
+    guards.push({ key: 'intimidate', uid: def.uid })
+  }
+  if (def.talent === 'disguise' && !def.talentSpent?.includes('disguise')) {
+    guardTimes *= 1 - TALENT.disguise
+    guards.push({ key: 'disguise', uid: def.uid })
+  }
+  const guard = friendGuardOf(s, def)
+  if (guard) {
+    guardTimes *= 1 - TALENT.friendGuard
+    guards.push({ key: 'friendGuard', uid: guard })
+  }
+  return guards.length ? { ...mods, guardTimes, guards } : mods
+}
+
+/**
+ * Power Spot (docs/51): the partner on the field that boosts this attacker. In a double battle, the other one of its
+ * side still standing; in a raid, any other side's Pokémon in battle (`allyPowerSpot`, set by the raid for its sides'
+ * hits). A Pokémon never boosts itself.
+ */
+function powerSpotOf(s: BattleState, atk: Battler): string | undefined {
+  if (s.allyPowerSpot && s.player.some((p) => p.uid === atk.uid)) return s.allyPowerSpot.uid
+  return partnerWith(s, atk, 'powerSpot')
+}
+
+/** Friend Guard (docs/51): the partner that softens the hits this Pokémon takes, as Power Spot's twin. */
+function friendGuardOf(s: BattleState, def: Battler): string | undefined {
+  if (s.allyFriendGuard && s.player.some((p) => p.uid === def.uid)) return s.allyFriendGuard.uid
+  return partnerWith(s, def, 'friendGuard')
+}
+
+/** In a double battle, the other Pokémon on `b`'s side of the field, still standing, that carries `talent`. */
+function partnerWith(s: BattleState, b: Battler, talent: TalentKey): string | undefined {
+  if (!s.double) return undefined
+  const mine = ownOnField(s).some((x) => x.uid === b.uid)
+  const field = mine ? ownOnField(s) : foesOnField(s)
+  return field.find((x) => x.uid !== b.uid && x.hp > 0 && x.talent === talent)?.uid
 }
 
 /**
@@ -1487,9 +1974,17 @@ function resolveAttack(
   const atk = side === 'player' ? activeBattler(s) : s.enemy
   const def = side === 'player' ? s.enemy : activeBattler(s)
   const levels = side === 'player' ? s.playerLevels : s.enemyLevels
+  // Mirror (docs/51): once a battle, its lowest die turns into its highest before the attack.
+  const mirrored = atk.talent === 'mirror' && !atk.talentSpent?.includes('mirror') ? mirrorDice(s.dice, data) : null
+  if (mirrored) {
+    s.dice = mirrored.dice
+    atk.talentSpent = [...(atk.talentSpent ?? []), 'mirror']
+    log.push({ kind: 'talent', side, uid: atk.uid, talent: 'mirror', amount: mirrored.value, dice: mirrored.dice, index: mirrored.index })
+  }
   const dice = s.dice
 
-  let result = computeDamage(dice, atk.types, def.types, levels, data, z ? zType : undefined)
+  let result = computeDamage(dice, atk.types, def.types, levels, data, z ? zType : undefined, attackModsFor(s, atk, def))
+  atk.attacks = (atk.attacks ?? 0) + 1
   // A raid's own rules on this hit (docs/40): shields, halved hits, hits never resisted…
   if (s.raidHit) result = adjustRaidHit(result, s.raidHit, levels.typeScale)
   const zMove = z === true && rng ? zMoveOf(result, data, rng) : null
@@ -1514,7 +2009,45 @@ function resolveAttack(
     confusedRecoil(atk, side, data, log)
     return endAttack(s, side, data, log, rng)
   }
+  // The Bonus Shield (docs/65): the first attack that lands on its side is cut, once.
+  const shield = s.shield
+  if (shield && !shield.used && shield.side === other(side) && result.final > 0) {
+    const before = result.final
+    result = { ...result, final: Math.ceil((before * shield.pct) / 100) }
+    shield.used = true
+    log.push({ kind: 'shield', side: other(side), uid: def.uid, before, after: result.final })
+  }
   def.hp = Math.max(0, def.hp - result.final)
+  // Sturdy (docs/51): once a battle, the hit that would K.O. it leaves it at 1 HP.
+  const sturdy = def.hp === 0 && result.final > 0 && def.talent === 'sturdy' && !def.talentSpent?.includes('sturdy')
+  if (sturdy) {
+    def.hp = 1
+    def.talentSpent = [...(def.talentSpent ?? []), 'sturdy']
+  }
+  // The talents that changed the hit are said first, then it lands (an ability's pop-up, as in the main games).
+  if (result.talent?.key) log.push({ kind: 'talent', side, uid: atk.uid, talent: result.talent.key })
+  for (const g of result.talent?.guards ?? []) {
+    // Disguise (docs/51): spent on the first hit it takes.
+    if (g.key === 'disguise') def.talentSpent = [...(def.talentSpent ?? []), 'disguise']
+    log.push({
+      kind: 'talent',
+      side: other(side),
+      uid: g.uid,
+      talent: g.key,
+      amount: result.talent!.saved,
+      ...(g.uid !== def.uid && { ally: def.uid }),
+      ...(s.allyFriendGuard?.uid === g.uid && { name: s.allyFriendGuard.name }),
+    })
+  }
+  if (result.talent?.powerSpot)
+    log.push({
+      kind: 'talent',
+      side,
+      uid: result.talent.powerSpot,
+      talent: 'powerSpot',
+      ally: atk.uid,
+      ...(s.allyPowerSpot?.uid === result.talent.powerSpot && { name: s.allyPowerSpot.name }),
+    })
   s.lastDamage = result
   log.push({
     kind: 'damage',
@@ -1527,6 +2060,8 @@ function resolveAttack(
     result,
     ...(z && { z: typeof z === 'string' ? { from: z } : {} }),
   })
+  if (sturdy) log.push({ kind: 'talent', side: other(side), uid: def.uid, talent: 'sturdy' })
+  if (result.final > 0) hitTalents(atk, def, side, result.final, data.config.status, log, rng ?? createRng(s.turn))
   const all = statusesFromRoll(dice, data, levels)
   // An attack with no effect inflicts nothing either; nor one a raid's shield or terrain stopped (docs/40).
   if (def.hp > 0 && !result.immune && !s.raidHit?.bounced && !s.raidHit?.noStatus) {
@@ -1535,6 +2070,10 @@ function resolveAttack(
     const apps: StatusApplication[] = []
     for (const a of all) {
       if (a.status === 'heal') continue
+      if (shrugs(def, a.status)) {
+        log.push({ kind: 'talent', side: other(side), uid: def.uid, talent: 'limber' })
+        continue
+      }
       const chance = a.chance ?? 1
       if (chance >= 1 || chanceRng.next() < chance) apps.push(a)
       else log.push({ kind: 'status_resisted', target: other(side), targetUid: def.uid, status: a.status, chance })
@@ -1543,6 +2082,11 @@ function resolveAttack(
     const longer = s.raidHit?.burnLonger ?? 0
     if (longer) for (const a of apps) if (a.status === 'burn' && a.turns != null) a.turns += longer
     def.status = applyStatuses(def.status, apps, data.config.status)
+    // Magma Armor (docs/51): a freeze holds it one turn only.
+    if (def.talent === 'magmaArmor' && def.status.frozen > MAGMA_ARMOR_TURNS && apps.some((a) => a.status === 'frozen')) {
+      def.status = { ...def.status, frozen: MAGMA_ARMOR_TURNS }
+      log.push({ kind: 'talent', side: other(side), uid: def.uid, talent: 'magmaArmor' })
+    }
     for (const a of apps)
       log.push({
         kind: 'status',
@@ -1569,6 +2113,12 @@ function resolveAttack(
 
 const NOOP = (state: BattleState) => ({ state, log: [] as LogEntry[] })
 
+/** A throw's damage to the foe in front, as `a`'s attack would deal it: what the reroll lesson weighs its throws by. */
+const lessonHit =
+  (s: BattleState, a: Battler, data: GameData): LessonHit =>
+  (dice) =>
+    computeDamage(dice, a.types, s.enemy.types, s.playerLevels, data, undefined, attackModsFor(s, a, s.enemy)).final
+
 export function reduce(
   state: BattleState,
   e: BattleEvent,
@@ -1586,6 +2136,22 @@ export function reduce(
       if (s.phase !== 'player_roll') return NOOP(state)
       const a = activeBattler(s)
       s.dice = rollAll(a.dice, data, rng)
+      // The reroll lesson: the first throw an average hit that leaves the foe for the pair to finish; the second the
+      // worst these dice can do, with a reroll left to mend it and a pair to land.
+      const lesson = s.lesson
+      if (lesson?.step === 'wait') {
+        lesson.throws += 1
+        if (lesson.throws === 1) s.dice = lessonFirstRoll(a.dice, data, lessonHit(s, a, data), s.enemy.hp) ?? s.dice
+        else if (
+          lesson.throws >= LESSON_THROW &&
+          a.rerollsLeft > 0 &&
+          s.dice.length >= 2 &&
+          lessonPairValue(a.dice, data) != null
+        ) {
+          s.dice = lessonBadRoll(a.dice, data)
+          lesson.step = 'reroll'
+        }
+      }
       s.selected = s.dice.map(() => false)
       s.phase = 'player_reroll'
       log.push({ kind: 'roll', side: 'player', dice: s.dice })
@@ -1601,7 +2167,19 @@ export function reduce(
       if (s.phase !== 'player_reroll' || a.rerollsLeft <= 0 || !s.selected.some(Boolean)) return NOOP(state)
       // One press = one reroll spent, however many dice were selected.
       const mask = [...s.selected]
-      s.dice = rerollMasked(s.dice, mask, data, rng)
+      // The reroll lesson's reroll lands its pair; any other is thrown as usual.
+      const rigged = s.lesson?.step === 'reroll' ? lessonPairRoll(s.dice, mask, data) : null
+      let next = rigged ?? rerollMasked(s.dice, mask, data, rng, a.talent === 'reroller')
+      // A reroll of the lesson's first throw stays in its window: the foe left standing, for the pair to finish.
+      if (!rigged && s.lesson?.step === 'wait' && s.lesson.throws === 1) {
+        const hit = lessonHit(s, a, data)
+        const window = lessonWindow(a.dice, data, hit, s.enemy.hp)
+        const fits = (d: RolledDie[]) => !window || (hit(d) >= window.min && hit(d) <= window.max)
+        for (let i = 0; i < 50 && !fits(next); i++) next = rerollMasked(s.dice, mask, data, rng, a.talent === 'reroller')
+        if (!fits(next)) next = s.dice
+      }
+      s.dice = next
+      if (s.lesson?.step === 'reroll') s.lesson.step = 'attack'
       a.rerollsLeft -= 1
       s.selected = s.dice.map(() => false)
       log.push({ kind: 'reroll', side: 'player', mask, dice: s.dice, rerollsLeft: a.rerollsLeft })
@@ -1609,6 +2187,8 @@ export function reduce(
     }
     case 'ATTACK': {
       if (s.phase !== 'player_reroll') return NOOP(state)
+      // The lesson's throw attacked with: it's over, mended or not.
+      if (s.lesson && (s.lesson.step === 'reroll' || s.lesson.step === 'attack')) s.lesson.step = 'done'
       resolveAttack(s, 'player', data, log, rng)
       break
     }
@@ -1616,8 +2196,10 @@ export function reduce(
       if (!canZMove(s, data)) return NOOP(state)
       if (e.type && !zTypeChoices(s, data).includes(e.type)) return NOOP(state)
       const a = activeBattler(s)
+      // A two-type Pokémon with one of its crystals: its Z-Move takes that type (docs/62 §6).
+      const only = s.zTypes && a.types.length > 1 ? zTypesOf(s, a) : []
       // Stunned, it is a Steel-type's own Z-Move that shakes the stun off, whatever its other type.
-      const type = s.phase === 'player_stunned' ? 'steel' : e.type
+      const type = s.phase === 'player_stunned' ? 'steel' : (e.type ?? (only.length === 1 ? only[0] : undefined))
       // A Steel-type frozen or paralyzed: its Z-Move shakes off the stun and every status, then it throws and strikes.
       if (s.phase === 'player_stunned') {
         a.status = emptyStatus()
@@ -1634,7 +2216,8 @@ export function reduce(
     case 'USE_ITEM': {
       // One item per turn — before the roll, after it, or while stunned. It doesn't end the turn.
       const phaseOk = s.phase === 'player_roll' || s.phase === 'player_reroll' || s.phase === 'player_stunned'
-      if (!phaseOk || s.itemUsedThisTurn) return NOOP(state)
+      // The whiteout's fights (docs/64 §4.3): the bag stays shut, whatever is in it.
+      if (!phaseOk || s.itemUsedThisTurn || s.noBag) return NOOP(state)
       const item = data.items[e.key]
       const target = s.player.find((b) => b.uid === (e.targetUid ?? activeBattler(s).uid))
       if (!item || !target) return NOOP(state)
@@ -1649,7 +2232,7 @@ export function reduce(
         // A double battle with a spot empty (yours fought on alone): it stands back up there, and acts from next round.
         const d = s.double
         const at = s.player.indexOf(target)
-        if (d && d.ownSlots.length < 2 && !d.ownSlots.includes(at)) {
+        if (d && d.ownSlots.length < (d.ownMax ?? 2) && !d.ownSlots.includes(at)) {
           d.ownSlots.push(at)
           if (!s.participants.includes(target.uid)) s.participants.push(target.uid)
         }
@@ -1696,7 +2279,7 @@ export function reduce(
       const a = activeBattler(s)
       const form = formChoices(s, data).find((f) => f.dex === e.toDex)
       if (!form) return NOOP(state)
-      changeForm(s, 'player', a, form, log)
+      changeForm(s, 'player', a, form, data, log)
       a.formChanges = (a.formChanges ?? 0) + 1
       break
     }
@@ -1724,6 +2307,7 @@ export function reduce(
       // A Gigantamax Pokémon shrinks back when it leaves the field; so does a timed Mega (the gem rules) change back.
       if (switchable && outgoing.gmax) endGmax('player', outgoing, data, log)
       if (switchable && outgoing.megaTimer) endMega('player', outgoing, data, log)
+      if (switchable) naturalCure(outgoing, 'player', log)
       if (s.phase === 'player_switch') {
         s.activeIndex = idx
         if (!s.participants.includes(target.uid)) s.participants.push(target.uid)
@@ -1778,7 +2362,7 @@ export function reduce(
       if (plan?.formChanges && (en.formChanges ?? 0) < data.config.formChangesPerBattle) {
         const form = foeTypeForm(s, en, target, data, rng)
         if (form) {
-          changeForm(s, 'enemy', en, form, log)
+          changeForm(s, 'enemy', en, form, data, log)
           en.formChanges = (en.formChanges ?? 0) + 1
         }
       }
@@ -1805,9 +2389,23 @@ export function reduce(
         en.item = null
         checkHpForms(s, data, log)
       }
-      s.dice = rollAll(en.dice, data, rng)
+      // The reroll lesson's fight: the foe's throws are set (LESSON_FOE), so the fight plays the same for everyone.
+      const lesson = s.lesson && s.lesson.step !== 'done' ? s.lesson : null
+      const foePlan = lesson ? LESSON_FOE[lesson.foeThrows ?? 0] : undefined
+      if (lesson) lesson.foeThrows = (lesson.foeThrows ?? 0) + 1
+      const setThrow = foePlan ? lessonFoeRoll(en.dice, foePlan.value, data) : null
+      // The gentle foe caps every throw (the lesson's set ones are its own).
+      const gentle = (dice: RolledDie[]) => (s.foeDiceMax == null ? dice : capFoeThrow(dice, s.foeDiceMax, data, rng))
+      s.dice = setThrow ?? gentle(rollAll(en.dice, data, rng))
       log.push({ kind: 'roll', side: 'enemy', dice: s.dice })
-      for (let guard = 0; guard < 20 && en.rerollsLeft > 0; guard++) {
+      const setReroll = setThrow && foePlan?.reroll != null ? lessonFoeRoll(en.dice, foePlan.reroll, data) : null
+      if (setReroll && en.rerollsLeft > 0) {
+        const mask = s.dice.map(() => true)
+        s.dice = setReroll
+        en.rerollsLeft -= 1
+        log.push({ kind: 'reroll', side: 'enemy', mask, dice: s.dice, rerollsLeft: en.rerollsLeft })
+      }
+      for (let guard = 0; guard < 20 && !setThrow && en.rerollsLeft > 0; guard++) {
         const mask = aiRerollMask({
           dice: s.dice,
           attackerTypes: en.types,
@@ -1818,7 +2416,7 @@ export function reduce(
           targetHp: target.hp,
         })
         if (!mask || !mask.some(Boolean)) break
-        s.dice = rerollMasked(s.dice, mask, data, rng)
+        s.dice = gentle(rerollMasked(s.dice, mask, data, rng, s.enemy.talent === 'reroller'))
         en.rerollsLeft -= 1
         log.push({ kind: 'reroll', side: 'enemy', mask, dice: s.dice, rerollsLeft: en.rerollsLeft })
       }

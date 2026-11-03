@@ -106,6 +106,7 @@ export function compileGameData(raw: BundleRaw): GameData {
     config,
     regions: compileRegions(raw.regions, areas),
     eggGroups: raw.eggGroups ?? {},
+    talentFamilies: raw.talentFamilies ?? {},
   }
 }
 

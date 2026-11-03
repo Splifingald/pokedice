@@ -5,6 +5,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   activeEvents,
+  calendarReady,
   currentTier,
   heldWorld,
   inWorld,
@@ -44,7 +45,19 @@ import { useWorld, worldName } from '@/store/worlds'
 
 import { CARD_STRIP_H, HomeCard, Meter } from '@/screens/home/Widget'
 import { Medal, tierName } from './RebattlePage'
-import { LiveFx, LiveGauge, LivePicture, LiveTag, liveName, liveSub, liveTime, openLivePopup } from './live'
+import {
+  calendarPath,
+  calendarSub,
+  LiveFx,
+  LiveGauge,
+  LivePicture,
+  LiveTag,
+  liveLabel,
+  liveName,
+  liveSub,
+  liveTime,
+  openLivePopup,
+} from './live'
 import { goIntoWorld, MythicalArt, ShinyTag, WorldTag, worldVars } from './world'
 import { PreviewGauge } from './worldPreview'
 import { bannerUrl, EVENT_ICON, EventPicture, RewardIcon, rewardName } from './shared'
@@ -263,21 +276,29 @@ function LiveCard({ live, now }: { live: LiveEvent; now: number }) {
   const navigate = useNavigate()
   const data = useGame((s) => s.data)
   const ug = useGame((s) => s.save?.underground)
+  const save = useGame((s) => s.save)
   const left = liveLeft(live, now)
   const name = liveName(live)
   const shop = live.type === 'shop'
   const dig = live.type === 'underground'
+  const cal = live.type === 'calendar'
   const kits = dig && ug?.eventId === live.id ? kitsHeld(ug) : null
+  // A gift calendar says the door to open now, or when the next one opens.
   const sub =
-    kits == null
-      ? liveSub(live, data)
-      : ug!.freeAt != null
-        ? t('ui.live.underground.kitsNext', { n: kits, time: countdown(Math.max(0, ug!.freeAt - now)) })
-        : t('ui.live.underground.kits', { n: kits })
+    cal && save
+      ? calendarSub(save, live, now)
+      : kits == null
+        ? liveSub(live, data)
+        : ug!.freeAt != null
+          ? t('ui.live.underground.kitsNext', { n: kits, time: countdown(Math.max(0, ug!.freeAt - now)) })
+          : t('ui.live.underground.kits', { n: kits })
   const time = t('ui.live.endsIn', { time: liveTime(left.ms) })
   const hot = left.ms < 3 * HOUR
+  // A calendar door to open is the one new thing on the card: gold (docs/15 §40).
+  const ready = cal && !!save && calendarReady(save, live, now).length > 0
   return (
     <HomeCard
+      tone={ready ? 'gold' : undefined}
       testId="live-square"
       picture={
         <LivePicture e={live} className="absolute inset-0">
@@ -288,12 +309,16 @@ function LiveCard({ live, now }: { live: LiveEvent; now: number }) {
       tag={<LiveTag e={live} />}
       status={<span className={hot ? 'text-danger' : undefined}>{`${sub} · ${time}`}</span>}
       meter={<LiveGauge share={left.share} hot={hot} className="lv-gauge-light" />}
-      label={t(shop ? 'ui.live.labelShop' : dig ? 'ui.live.labelUnderground' : 'ui.live.label', {
-        name,
-        sub,
-        time,
-      })}
-      onClick={() => (shop ? navigate('/shop') : dig ? navigate('/underground') : openLivePopup(live.id))}
+      label={t(liveLabel(live), { name, sub, time })}
+      onClick={() =>
+        shop
+          ? navigate('/shop')
+          : dig
+            ? navigate('/underground')
+            : cal
+              ? navigate(calendarPath(live))
+              : openLivePopup(live.id)
+      }
     />
   )
 }

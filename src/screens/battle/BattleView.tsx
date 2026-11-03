@@ -1,14 +1,17 @@
 // The battle, full screen: the 240×160 stage on top (BattleStage) and the panel under it — the message, the dice tray
 // and its readout, the actions, the Bag and the team. It drives the engine through the store and plays the engine's
 // log (useBattleAnimator); the UI never recomputes a rule.
-import { AutoButton } from '@/components/AutoButton'
+import { TalentPlaque } from '@/components/Talent'
+import { AutoButton, PILOT_PICK_MS } from '@/components/AutoButton'
 import { BottomDock } from '@/components/BottomDock'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import {
   activeBattler,
+  itemLessonItem,
   autoAvailable,
   autoLevel,
+  autoOffersLead,
   autoEvents,
   instanceMaxHp,
   catchTarget,
@@ -39,7 +42,15 @@ import {
   teamOf,
   type Side,
   inPortalRun,
+  portalModeOf,
+  portalSkin,
   inNightmare,
+  timeRaceBattleSpeed,
+  inWhiteout,
+  tracksFound,
+  legendCinemaOn,
+  championCinemaOn,
+  roadblockOf,
 } from '@/engine'
 import { playCry } from '@/audio/cries'
 import { feelSound } from '@/audio/feel'
@@ -57,24 +68,33 @@ import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { TypeMatchups } from '@/components/TypeMatchups'
 import { BattleDayTime } from '@/components/DayNight'
+import { BattleWeather, WeatherLayer } from '@/components/Weather'
 import { pictureOf, versusPicture } from '@/fx/areaArt'
 import { ballOfItem } from '@/fx/scenes'
-import { loadSprite, spriteKey } from '@/fx/sprites'
+import { loadPicture, loadSprite, pictureKey, spriteKey } from '@/fx/sprites'
 import { catchTimeline } from '@/fx/timelines/catch'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
+import { BOSS_CINEMAS } from '@/fx/timelines/cinema'
+import { abomasnowCinema } from '@/fx/timelines/cinema/abomasnow'
+import { stantlerCinema } from '@/fx/timelines/cinema/stantler'
+import { t as say } from '@/i18n'
+import { championCinemaFor } from '@/fx/timelines/cinema/champions'
 import { useT } from '@/i18n/react'
 import { effectText, zMoveText } from '@/i18n/text'
 import { trainerTitle, typeName } from '@/lib/format'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { haptic } from '@/lib/haptics'
 import { capMotion, MotionCap, useMotion, type MotionLevel } from '@/lib/motion'
-import { AUTO_PACE, PaceContext, VERSUS_PACE } from '@/lib/pace'
+import { AUTO_PACE, PaceContext, usePace, VERSUS_PACE } from '@/lib/pace'
+import { TimeRaceClockHere } from '@/screens/area/TimeRaceRun'
 import { useDialogOpen } from '@/lib/useDialog'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { pushToast, setSettings, useGame, type BattleSlice, type CatchThrow } from '@/store/game'
-import { autoStepNow } from '@/store/autopilot'
+import { autoStepNow, useAutoLevel } from '@/store/autopilot'
 import { answerBait, dispatchBattle, canSkipCurrent, fleeAtSendOut, notYet, passCatch, retryCatch, sendOutLead, throwBall } from '@/store/run'
 import { LeadPicker } from '@/components/LeadPicker'
+import { ItemLessonGuide, RerollLessonGuide, type LessonStep } from '@/components/RerollLesson'
+import { finishItemLessonNow } from '@/store/actions'
 import { PokeCard } from '@/components/PokeCard'
 import { RunRoundGauge } from '@/screens/area/RoundGauge'
 import { speciesTypes } from '@/components/TypeMatchups'
@@ -219,7 +239,15 @@ const BATTLE_PANEL = '330px'
  * height (the line, the dice, the readout, a row of powers, the actions), the Bag and the team in columns at its sides.
  * The stage is as wide as the height left allows (3:2), and leaves each side column 220 px at the least.
  */
-const PC_PANEL = '268px'
+const PC_PANEL = 268
+/**
+ * …and as tall as this at most: a fight's step that needs more room (the line on two rows, a row of powers, the AUTO
+ * switch, the key hints) takes it from the stage, up to here, rather than scrolling under its pinned buttons (a
+ * player's feedback, 2026-10-29: the damage hidden behind REROLL and ATTACK). What it grew to stays for the session,
+ * so the stage doesn't change size from one turn or fight to the next.
+ */
+const PC_PANEL_MAX = 440
+let pcPanelSeen = PC_PANEL
 const STAGE_W =
   'max(360px, min(calc((100dvh - var(--top-bar, 0px) - 2rem - 0.75rem - var(--pc-panel)) * 1.5), calc(100vw - 4rem - 440px)))'
 
@@ -252,6 +280,12 @@ export interface VersusReplay {
   end?: ReactNode
   /** Fought by the player (the weekly league): AUTO is their switch, off at the start. */
   live?: { auto: boolean; onAuto: (on: boolean) => void }
+  /**
+   * No switching on your turn (a Friend Battle, docs/65: the order was set before the fight): the team's step keeps
+   * only BACK and the flag, and the flag gives up through `onForfeit`.
+   */
+  noSwitch?: boolean
+  onForfeit?: () => void
 }
 
 export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: VersusReplay }) {
@@ -272,8 +306,15 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const dbl = st.double
   // A portal run's wild Pokémon wear the distortion (docs/28).
   const distorted = !versus && st.kind === 'wild' && !!save && inPortalRun(save, data, run.areaId)
+  // The Stairway of Plates' wild Pokémon wear light instead (docs/64 §4.5).
+  const lit =
+    distorted && portalSkin(portalModeOf(data.areas.find((a) => a.id === run.areaId), data)) === 'plates'
   // The nightmare's rounds (docs/30) are fought under its full moon, a dark shadow haunting the foe.
   const dream = !versus && st.kind === 'wild' && !!save && inNightmare(save, data, run.areaId)
+  // The whiteout's fights (docs/64 §4.3): the engine's blizzard (its chip, snow over the stage) and the bag shut.
+  const bagShut = !versus && !!st.noBag
+  // Tracks in the Snow's last round (docs/64 §4.1): the shiny Stantler found in its bush, its own entrance.
+  const gladeBoss = !versus && st.kind === 'boss' && !!save && tracksFound(save, data, run.areaId)
   const stageBox = useRef<HTMLDivElement>(null)
   const panel = useRef<HTMLDivElement>(null)
   const [menu, setMenu] = useState<null | 'item' | 'history' | 'mega' | 'form' | 'z'>(null)
@@ -309,10 +350,13 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const live = versus?.live
   const scripted = !!versus && !live
   const auto = live ? live.auto : !!versus || autoAt !== 'off'
+  // The race of time and space (docs/64 §4.4): one speed for everyone inside it, whatever the setting (the engine's:
+  // short animations at its quick pace), so its clock means the same for all. Auto-battle is off there.
+  const raceSpeed = !versus && save ? timeRaceBattleSpeed(save, data, run.areaId) : null
   // Auto-mode plays the whole fight faster: animations, dice and timers.
-  const pace = scripted ? VERSUS_PACE : auto ? AUTO_PACE : 1
+  const pace = scripted ? VERSUS_PACE : raceSpeed ? raceSpeed.pace : auto ? AUTO_PACE : 1
   // A fight that plays itself is watched, not played: short animations unless the player turned them off altogether.
-  const motionCap: MotionLevel | null = auto ? 'short' : null
+  const motionCap: MotionLevel | null = raceSpeed ? raceSpeed.motion : auto ? 'short' : null
   const level = capMotion(chosenLevel, motionCap)
   // Nothing to wait for: animations off.
   const quick = level === 'off'
@@ -342,9 +386,19 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const swapped = !!battle.sendLater
   const [bossIntro, setBossIntro] = useState(st.kind === 'boss' && level !== 'off' && !resumed && !swapped)
   const [trainerIntro, setTrainerIntro] = useState(isTrainerFight && !quick && !resumed && !swapped)
+  // A League Champion's own entrance (docs/56) in place of the trainer stepping onto the field: when the switch is on
+  // and its scene is made. It ends with the champion's lead thrown out; the send-out step follows as for any trainer.
+  const champion =
+    enc?.kind === 'gym' && enc.role === 'champion' && championCinemaOn(data)
+      ? championCinemaFor(trainerSprite)
+      : undefined
+  const [champIntro, setChampIntro] = useState(trainerIntro && !!champion)
   const [foeOut, setFoeOut] = useState(!bossIntro && !trainerIntro)
   const [ownOut, setOwnOut] = useState(quick || resumed)
-  const intro = bossIntro || trainerIntro || !ownOut
+  // The send-out step (the rework): the foe is out, yours waits for the player's pick; the fight starts once it's out.
+  // Until then nothing moves, on auto either (a trainer's send-out waits on auto too: engine autoOffersLead).
+  const picking = !versus && !!run.pickLead
+  const intro = bossIntro || trainerIntro || !ownOut || picking
 
   // A wild or legendary foe the player can still catch isn't knocked out of the scene: the catch throw comes next. A
   // wild pair's first K.O. waits worn out on its spot until the other is down too, then each gets its throw (docs/33).
@@ -353,13 +407,34 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     (st.kind === 'wild' || st.kind === 'boss') &&
     !!save &&
     !!catchTarget(save, b.baseDex ?? b.dex, b.level, st.kind, data, b.shiny)
-  const catchable = dbl ? (uid: string) => dbl.foes.some((f) => f.uid === uid && canCatch(f)) : canCatch(st.enemy)
+  // A region flavour's fight (docs/62): a horde's one throw, a Totem's and a Titan's none.
+  const flavour =
+    enc?.kind === 'wild' && enc.horde?.length ? 'horde' : enc?.kind === 'gym' && enc.trial ? 'trial' : enc?.kind === 'boss' && enc.titan ? 'titan' : null
+  const hordeCatch = (uid: string) => {
+    // The shiny one waits worn out at once; else only the last one, as the fight is won.
+    const f = dbl?.foes.find((x) => x.uid === uid)
+    if (!f || !canCatch(f)) return false
+    if (dbl!.foes.some((x) => x.shiny)) return f.shiny && dbl!.foes.find((x) => x.shiny) === f
+    return st.phase === 'won' && dbl!.kos[dbl!.kos.length - 1]?.uid === uid
+  }
+  const catchable =
+    flavour === 'titan'
+      ? false
+      : flavour === 'horde'
+        ? hordeCatch
+        : dbl
+          ? (uid: string) => dbl.foes.some((f) => f.uid === uid && canCatch(f))
+          : canCatch(st.enemy)
   const { fx, ready, sceneContact, sceneDone } = useBattleAnimator(
     battle,
     quick,
     {
       kind: st.kind,
       trainerName,
+      // A roadblock boss (docs/61 §2) is spoken of as the wild Pokémon it is, not a legendary.
+      roadblock: st.kind === 'boss' && !!roadblockOf(data.areas.find((a) => a.id === run.areaId), st.enemy.baseDex ?? st.enemy.dex),
+      rival: enc?.kind === 'trainer' && !!enc.moment,
+      flavour,
       catchable,
       itemName: (k) => data.items[k]?.name ?? k,
       speciesName: (dex) => data.species[dex]?.name ?? `#${dex}`,
@@ -376,15 +451,13 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   }, [])
 
   useEffect(() => {
-    if (!trainerIntro) return
+    if (!trainerIntro || champIntro) return
     const t = setTimeout(() => {
       setTrainerIntro(false)
       setFoeOut(true)
     }, TRAINER_INTRO_MS * pace)
     return () => clearTimeout(t)
-  }, [trainerIntro, pace])
-  // The send-out step (the rework): the foe is out, yours waits for the player's pick; the fight starts once it's out.
-  const picking = !versus && !!run.pickLead
+  }, [trainerIntro, champIntro, pace])
   useEffect(() => {
     if (ownOut || !foeOut || bossIntro || picking) return
     const t = setTimeout(() => setOwnOut(true), quick ? 0 : SEND_OUT_MS * pace)
@@ -415,8 +488,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const foeBack = dbl ? (foeRow.find((b) => b.uid !== foeFront.uid && waiting(b)) ?? null) : null
   // Cries: the foe's as it comes out, yours as each of yours does (after the foe's when both come out at once), a
   // Mega's once it stands there.
+  // Another lead picked at the send-out step: the foe out already has cried (a trainer's next one still does).
+  const [criedFoe] = useState(() => (swapped ? st.enemy.uid : null))
   useEffect(() => {
-    if (!foeOut) return
+    if (!foeOut || st.enemy.uid === criedFoe) return
     playCry(st.enemy.dex)
     // A pair: the second one's cry after the first's.
     const partner = dbl?.foes[1]
@@ -441,6 +516,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   // One item per turn: before the roll, after it, or to cure a stun.
   const canItem = (canAct || stunned) && !st.itemUsedThisTurn
   const rolling = st.phase === 'player_reroll'
+  // The reroll lesson (docs/46 §6): the engine rigged this throw; a guide walks the player through mending it.
+  const lessonAt = !auto && canAct && rolling ? st.lesson?.step : undefined
+  const lesson: LessonStep | null =
+    lessonAt === 'attack' ? 'attack' : lessonAt === 'reroll' ? (st.selected.every(Boolean) ? 'reroll' : 'pick') : null
 
   const preview = useMemo<Preview | null>(() => {
     if (!rolling || !st.dice.length) return null
@@ -473,7 +552,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     })
   // Out on the field already: not one to switch in (a double battle has two out).
   const onField = (p: Battler) => (dbl ? dbl.ownSlots.some((i) => st.player[i]!.uid === p.uid) : p.uid === activeBattler(st).uid)
-  const switchTargets = st.player.filter((p) => p.hp > 0 && !onField(p))
+  const switchTargets = versus?.noSwitch ? [] : st.player.filter((p) => p.hp > 0 && !onField(p))
   // After a K.O. with one Pokémon left to come in, it comes in: nothing to choose (the user, 2026-10-27).
   const lastOne = forced && !auto && switchTargets.length === 1 ? switchTargets[0]!.uid : null
   useEffect(() => {
@@ -542,11 +621,17 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const usefulItems = ownedItems.filter(([k]) => st.player.some((p) => itemHelps(k, p)))
   const showSwitch = data.config.allowVoluntarySwitch
   // What the B and S keys (and the pips) can open right now: the same rules as their buttons.
-  const bagOpen = !versus && !auto && canItem && usefulItems.length > 0
+  const bagOpen = !versus && !auto && canItem && usefulItems.length > 0 && !bagShut
   // With nobody to send in, the team's pips still open the step: its BACK and its flag, the fight's way out (the user,
   // 2026-10-27).
   const switchOpen = !auto && canAct && showSwitch
   const openSwitch = (uid?: string) => setSwitching(uid ?? switchTargets[0]?.uid ?? active.uid)
+  // The item tutorial on screen (set further down, once the dice are down): opening the Bag ends it.
+  const itemLessonRef = useRef(false)
+  const openBag = () => {
+    if (itemLessonRef.current) finishItemLessonNow()
+    setMenu('item')
+  }
   // The Bag's items, the ones that would do something right now first: the Sheet's list, and a computer's column.
   const bagList = [...ownedItems].sort(
     ([a], [b]) => Number(st.player.some((p) => itemHelps(b, p))) - Number(st.player.some((p) => itemHelps(a, p))),
@@ -562,6 +647,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   }))
   // A computer's Bag: an Ether goes to the one in battle; anything else waits for the team's column to say who.
   const pickItem = (k: string) => {
+    // An item picked while the item tutorial points at the Bag: it has done its job.
+    if (itemLessonRef.current) finishItemLessonNow()
     if (data.items[k]?.effect.kind === 'rerolls') {
       setAim(null)
       dispatch({ t: 'USE_ITEM', key: k, targetUid: activeBattler(st).uid })
@@ -587,8 +674,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   // Keyboard (docs/43 §5.3): 1–6 pick dice, R rerolls, Space (or Enter) throws or attacks, B opens the Bag, S the
   // switch, Esc goes back; on every other step Enter presses the step's one red button (GO!, CONTINUE, NEXT…).
-  const keyAct = useRef({ toggleDie, reroll, openSwitch })
-  keyAct.current = { toggleDie, reroll, openSwitch }
+  const keyAct = useRef({ toggleDie, reroll, openSwitch, openBag })
+  keyAct.current = { toggleDie, reroll, openSwitch, openBag }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null
@@ -605,16 +692,23 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       const onControl = !!el?.closest?.('button, a[href]')
       const key = e.key.toLowerCase()
       if ((canAct || stunned) && !switching) {
+        // The item tutorial: only B, the Bag.
+        if (itemLessonRef.current && key !== 'b') return
+        // The reroll lesson: only its step's keys (the dice's numbers, then R, then Space or Enter to attack).
+        const pick = /^[1-6]$/.test(e.key)
+        if (lesson && !(lesson === 'attack' ? e.key === ' ' || e.key === 'Enter' : pick || (lesson === 'reroll' && key === 'r')))
+          return
         if (e.key === ' ' || e.key === 'Enter') {
           if (onControl) return
           e.preventDefault()
           dispatch(stunned ? { t: 'PASS' } : st.phase === 'player_roll' ? { t: 'ROLL' } : { t: 'ATTACK' })
         } else if (key === 'r' && rolling) keyAct.current.reroll()
         else if (/^[1-6]$/.test(e.key) && rolling) keyAct.current.toggleDie(Number(e.key) - 1)
+        else if (key === 'b' && bagShut) shutBag()
         else if (key === 'b' && bagOpen) {
           // A computer's Bag is open at the side already: B goes to its first item.
           if (wide) bagBox.current?.querySelector<HTMLButtonElement>('button:not([disabled])')?.focus()
-          else setMenu('item')
+          else keyAct.current.openBag()
         }
         else if (key === 's' && switchOpen) keyAct.current.openSwitch()
         return
@@ -631,7 +725,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [canAct, stunned, auto, covered, menu, aim, switching, matchups, rolling, bagOpen, switchOpen, wide, st.phase, dispatch])
+  }, [canAct, stunned, auto, covered, menu, aim, switching, matchups, rolling, bagOpen, bagShut, switchOpen, wide, st.phase, dispatch, lesson])
   // Mega Evolution (once per battle, Lv.50+, from Kalos on), Gigantamax and Arceus's types.
   const megaOpts = scripted ? [] : megaChoices(st, data)
   const gmaxOpts = scripted ? [] : gmaxChoices(st, data)
@@ -706,13 +800,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
    */
   const catchScene = (r: CatchThrow, from?: 'ground'): StageOverlay => {
     const foe = foeFront
-    // A throw that couldn't miss has no suspense to build: its result at once.
-    const instant = sureThrow(r)
     return {
-      instant,
       timeline: catchTimeline({
-        own: spriteKey(active.dex, true, active.shiny),
-        foe: spriteKey(foe.dex, false, foe.shiny),
+        own: spriteKey(active.dex, true, active.shiny, active.outfit),
+        foe: spriteKey(foe.dex, false, foe.shiny, foe.outfit),
         ball: ballOfItem(r.ballKey),
         caught: r.caught,
         roll: r,
@@ -721,9 +812,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         from,
         bait: r.baited === 'used',
         stays: !!r.stays,
-        instant,
+        // A throw that couldn't miss has no suspense to build: it plays twice as fast.
+        sure: sureThrow(r),
       }),
-      ready: Promise.all([loadSprite(active.dex, true, active.shiny), loadSprite(foe.dex, false, foe.shiny)]),
+      ready: Promise.all([loadSprite(active.dex, true, active.shiny, active.outfit), loadSprite(foe.dex, false, foe.shiny, foe.outfit)]),
       label:
         r.baited === 'used'
           ? t('ui.catch.baitThrown', { name: foe.name })
@@ -800,16 +892,28 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     if (!bossIntro) return null
     const foe = st.enemy
     const lead = activeBattler(st)
+    const params = {
+      own: spriteKey(lead.dex, true, lead.shiny, lead.outfit),
+      foe: spriteKey(foe.dex, false, foe.shiny, foe.outfit),
+      look: legendLook(foe.baseDex ?? foe.dex, foe.types[0] ?? 'normal'),
+      name: foe.name,
+      level: t('ui.common.level.short', { n: foe.level }),
+      types: foe.types.map((ty) => typeName(ty)).join(' / '),
+    }
+    // A mythical's own entrance (docs/53: Mew in its forest) when the cinematics are on and it has one.
+    // The whiteout's boss (docs/64 §4.3): the crown tree shaking out Abomasnow, its own way in whatever that switch says.
+    // The glade's shiny Stantler rears up under the moon (docs/64 §4.1), with the feature's own switch.
+    const cinema =
+      save && inWhiteout(save, data, run.areaId)
+        ? abomasnowCinema
+        : gladeBoss
+          ? stantlerCinema
+          : legendCinemaOn(data)
+            ? BOSS_CINEMAS[foe.baseDex ?? foe.dex]
+            : undefined
     return {
-      timeline: legendTimeline({
-        own: spriteKey(lead.dex, true, lead.shiny),
-        foe: spriteKey(foe.dex, false, foe.shiny),
-        look: legendLook(foe.baseDex ?? foe.dex, foe.types[0] ?? 'normal'),
-        name: foe.name,
-        level: t('ui.common.level.short', { n: foe.level }),
-        types: foe.types.map((ty) => typeName(ty)).join(' / '),
-      }),
-      ready: Promise.all([loadSprite(lead.dex, true, lead.shiny), loadSprite(foe.dex, false, foe.shiny)]),
+      timeline: cinema ? cinema.makeBattle(params) : legendTimeline(params),
+      ready: Promise.all([loadSprite(lead.dex, true, lead.shiny, lead.outfit), loadSprite(foe.dex, false, foe.shiny, foe.outfit)]),
       label: t('ui.battle.aWild', { name: foe.name }),
       hud: {
         show: (side, on) => on && (side === 'foe' ? setFoeOut(true) : setOwnOut(true)),
@@ -823,6 +927,41 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     // One entrance per battle.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bossIntro])
+
+  // A champion's entrance (docs/56): its scene, its card, its lead thrown out; its trainer sprite isn't shown meanwhile.
+  const championIntro = useMemo<StageOverlay | null>(() => {
+    if (!champIntro || !champion || enc?.kind !== 'gym') return null
+    const foe = st.enemy
+    const lead = activeBattler(st)
+    const ace = enc.team[enc.team.length - 1] ?? { dex: foe.dex, shiny: foe.shiny }
+    const picture = trainerSprite ?? ''
+    const done = () => {
+      setChampIntro(false)
+      setTrainerIntro(false)
+      setFoeOut(true)
+    }
+    return {
+      timeline: champion.makeBattle({
+        trainer: pictureKey(picture),
+        foe: spriteKey(foe.dex, false, foe.shiny, foe.outfit),
+        ace: spriteKey(ace.dex, false, !!ace.shiny),
+        own: spriteKey(lead.dex, true, lead.shiny, lead.outfit),
+        name: trainerName ?? '',
+        team: enc.team.length,
+      }),
+      ready: Promise.all([
+        loadPicture(picture),
+        loadSprite(foe.dex, false, foe.shiny, foe.outfit),
+        loadSprite(ace.dex, false, !!ace.shiny),
+        loadSprite(lead.dex, true, lead.shiny, lead.outfit),
+        ...champion.extras.map((d) => loadSprite(d, false)),
+      ]),
+      label: trainerName ?? '',
+      onEnd: done,
+    }
+    // One entrance per battle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [champIntro])
 
   // ---- Layout numbers.
   const panelWidth = useWidth(panel)
@@ -882,6 +1021,22 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       : foeHand && { side: 'enemy' as const, dice: foeHand }
   const foeSize = Math.max(40, Math.round((dieSize * 0.75) / 2) * 2)
   const lastReroll = rolling && active.rerollsLeft === 1
+  // The reroll lesson's guide shows once the dice are down (and, after the reroll, once the pair's combo has counted).
+  const lessonShown = !!lesson && settled && (lesson !== 'attack' || comboIn)
+  // The item tutorial (docs/46 §7): once the dice are down, the first time the Pokémon in battle is below half HP with
+  // a potion that fits (the engine says which), nothing else open.
+  const itemLesson =
+    !!save &&
+    !auto &&
+    !versus &&
+    !lesson &&
+    settled &&
+    bagOpen &&
+    !menu &&
+    !aim &&
+    !switching &&
+    !!itemLessonItem(save, data, active, !!st.noHealItems)
+  itemLessonRef.current = itemLesson
 
   const party = versus
     ? { count: versus.foeCount, index: versus.foeIndex }
@@ -889,7 +1044,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       ? dbl
         ? { count: dbl.foes.length, index: dbl.foes.filter((f) => fx.fainted[f.uid]).length }
         : { count: enc.team.length, index: run.trainer.index }
-      : null
+      : // A horde's five and a Titan's two phases (docs/62) count down the same way.
+        (flavour === 'horde' || flavour === 'titan') && dbl
+        ? { count: dbl.foes.length, index: dbl.foes.filter((f) => fx.fainted[f.uid] || fx.wornOut[f.uid]).length }
+        : null
 
   const pairNames = (row: readonly Battler[]) => row.map((b) => b.name).join(' & ')
   const heading = dbl
@@ -908,6 +1066,9 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   const over = !!versus && played && !!versus.end
   const result = !versus && ready && (run.phase === 'victory' || run.phase === 'wipe' || run.phase === 'stalemate')
+  // A real player's last Pokémon down (docs/54, the user's ask): their trainer steps back onto its spot for the result,
+  // the K.O.'d Pokémon's plate gone.
+  const trainerBack = result && run.phase === 'victory' && run.duel?.outcome === 'won' && !!trainerSprite
   useBattleMusic(!over && !(ready && !versus && ['victory', 'wipe', 'stalemate'].includes(run.phase)))
   // The player's own prompt, waiting on the dice (useBattleAnimator's 'turn' line).
   const prompting = !catching && !switching && !(forced && !auto) && fx.message === t('ui.log.whatWillDo', { name: active.name })
@@ -968,6 +1129,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
           disabled={!canAct || active.rerollsLeft <= 0 || !st.selected.some(Boolean)}
           title={t('ui.battle.selectDice')}
           aria-keyshortcuts="R"
+          data-guide="reroll"
           onClick={reroll}
         >
           {lastReroll ? t('ui.battle.lastReroll') : t('ui.battle.reroll', { left: active.rerollsLeft })}
@@ -978,6 +1140,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
           className="whitespace-nowrap px-2"
           disabled={!canAct}
           aria-keyshortcuts="Space Enter"
+          data-guide="attack"
           onClick={() => dispatch({ t: 'ATTACK' })}
         >
           {t('ui.battle.attack')}
@@ -996,10 +1159,11 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     ownedItems.length > 0 &&
     !auto && (
       <BagButton
-        disabled={!bagOpen}
-        title={st.itemUsedThisTurn ? t('ui.battle.oneItemPerTurn') : undefined}
+        // The whiteout's bag stays shut, but its button still answers: why (docs/64 §4.3).
+        disabled={!bagOpen && !bagShut}
+        title={bagShut ? t('ui.whiteout.noBag') : st.itemUsedThisTurn ? t('ui.battle.oneItemPerTurn') : undefined}
         keys="B"
-        onClick={() => setMenu('item')}
+        onClick={bagShut ? shutBag : openBag}
       />
     )
   )
@@ -1080,8 +1244,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       style={{ '--strip': !versus && !run.rebattle ? '14px' : '0px' } as CSSProperties}
     >
       {!versus && !run.rebattle && <RunRoundGauge strip className="absolute inset-x-0 top-0 z-30" />}
-      {/* Each new fight opens on its own beat (docs/42). */}
-      {!versus && <EncounterSwipe />}
+      {/* Each new fight opens on its own beat (docs/42); another lead picked is the same fight, already open. */}
+      {!versus && !swapped && <EncounterSwipe />}
       <BattleStage
         own={active}
         foe={foeFront}
@@ -1094,9 +1258,13 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         art={art}
         ownShown={ownOut}
         foeShown={foeOut}
-        trainer={trainerIntro && isTrainerFight ? (trainerSprite ?? '') : null}
-        overlay={legend ?? thrown}
+        foeSettled={swapped}
+        trainer={
+          trainerIntro && isTrainerFight && !champIntro ? (trainerSprite ?? '') : trainerBack ? trainerSprite : null
+        }
+        overlay={legend ?? championIntro ?? thrown}
         distorted={distorted}
+        lit={lit}
         world={dream ? 'nightmare' : undefined}
         haunted={dream}
         worn={(catching || !!fx.wornOut[foeFront.uid]) && !thrown}
@@ -1107,6 +1275,11 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         label={heading}
       >
         {dayTime && <BattleDayTime time={dayTime} />}
+        {/* The race's clock runs on in its fights (docs/64 §4.4), in the stage's top right corner. */}
+        {raceSpeed && <TimeRaceClockHere areaId={run.areaId} size="small" className="absolute right-2 top-5 z-20" />}
+        {/* The weather (docs/62 §2): falling over the stage, and its chip. */}
+        {st.weather && <WeatherLayer weather={st.weather} />}
+        {st.weather && <BattleWeather weather={st.weather} />}
         {dbl && foeOut && ownOut && !catching && (
           <DoublePlates
             foes={foeRow}
@@ -1118,13 +1291,14 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             party={party}
           />
         )}
-        {!dbl && foeOut && !bossIntro && (
+        {!dbl && foeOut && !bossIntro && !trainerBack && (
           <FoePlate
             b={st.enemy}
             hp={fx.hp[st.enemy.uid] ?? st.enemy.hp}
             party={party}
             onClick={tapMatchups && (() => tapMatchups('enemy'))}
             open={matchups === 'enemy'}
+            shield={st.shield?.side === 'enemy' ? st.shield : null}
           />
         )}
         {!dbl && ownOut && !bossIntro && (
@@ -1133,6 +1307,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             hp={fx.hp[active.uid] ?? active.hp}
             onClick={tapMatchups && (() => tapMatchups('player'))}
             open={matchups === 'player'}
+            shield={st.shield?.side === 'player' ? st.shield : null}
           />
         )}
         {matchups && (
@@ -1168,12 +1343,61 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             </motion.div>
           )}
         </AnimatePresence>
+        {/* A hidden talent at work (docs/51): its plaque, on its owner's side. */}
+        {fx.talent && (
+          <TalentPlaque
+            key={fx.talent.id}
+            talent={fx.talent.key}
+            name={fx.talent.name}
+            side={fx.talent.side}
+            entry={fx.talent.entry}
+            pace={pace}
+            still={quick}
+          />
+        )}
       </BattleStage>
     </div>
   )
 
+  // A computer's fight step fits its panel: whatever it would scroll by goes to the panel, from the stage (PC_PANEL_MAX).
+  // A result, the send-out and the catch keep the panel as it is and scroll, their buttons pinned at its foot.
+  const [pcPanel, setPcPanel] = useState(pcPanelSeen)
+  const fitting = wide && !result && !picking && !catching
+  useEffect(() => {
+    const el = panel.current
+    if (!fitting || !el || typeof ResizeObserver === 'undefined') return
+    const fit = () => {
+      const over = el.scrollHeight - el.clientHeight
+      if (over <= 1 || pcPanelSeen >= PC_PANEL_MAX) return
+      pcPanelSeen = Math.min(PC_PANEL_MAX, pcPanelSeen + Math.ceil(over))
+      setPcPanel(pcPanelSeen)
+    }
+    const sizes = new ResizeObserver(fit)
+    const watch = () => {
+      sizes.disconnect()
+      sizes.observe(el)
+      for (const c of Array.from(el.children)) sizes.observe(c)
+    }
+    watch()
+    const kids = new MutationObserver(watch)
+    kids.observe(el, { childList: true })
+    return () => {
+      sizes.disconnect()
+      kids.disconnect()
+    }
+  }, [fitting])
+
   return (
     <BattleContexts pace={pace} motionCap={motionCap}>
+      {itemLesson && <ItemLessonGuide wide={!!sides} onOk={finishItemLessonNow} />}
+      {lesson && (
+        <RerollLessonGuide
+          step={lesson}
+          show={lessonShown}
+          next={Math.max(0, st.selected.findIndex((x) => !x))}
+          bonus={shownR?.combo?.bonus ?? 0}
+        />
+      )}
       {/* The stage on top and the panel under it, on every screen (the user's call, 2026-10-28). A computer's middle
           column: the stage as wide as the height left allows (3:2), the panel framed under it, scrolling inside itself
           when it holds more (a long result); on its sides, from the send-out to the catch, the Bag open (left) and the
@@ -1182,15 +1406,16 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         <section
           aria-label={heading}
           className="mx-auto flex min-h-[calc(100dvh_-_var(--top-bar,0px))] w-full max-w-[max(300px,min(560px,calc((100dvh_-_var(--battle-panel)_-_var(--top-bar,0px))_*_1.5)))] flex-col [container-type:inline-size] lg:grid lg:h-[calc(100dvh_-_var(--top-bar,0px))] lg:min-h-0 lg:max-w-none lg:grid-cols-[minmax(0,340px)_var(--stage-w)_minmax(0,340px)] lg:justify-center lg:gap-4 lg:p-4"
-          style={{ '--battle-panel': BATTLE_PANEL, '--pc-panel': PC_PANEL, '--stage-w': STAGE_W } as CSSProperties}
+          style={{ '--battle-panel': BATTLE_PANEL, '--pc-panel': `${pcPanel}px`, '--stage-w': STAGE_W } as CSSProperties}
         >
           <h1 className="sr-only">{heading}</h1>
           {wide && (
-            <div ref={bagBox} className="flex min-h-0 flex-col">
+            <div ref={bagBox} className="flex min-h-0 flex-col" data-guide="bag-column">
               {sides && !versus && (
                 <BagColumn
                   entries={bagEntries}
                   open={bagOpen && !teamPick}
+                  shut={bagShut ? t('ui.whiteout.noBag') : null}
                   used={!!st.itemUsedThisTurn}
                   aim={aim}
                   onPick={pickItem}
@@ -1259,6 +1484,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                 }}
                 onBack={() => setSwitching(null)}
                 chosen={teamPick ?? undefined}
+                onForfeit={versus?.onForfeit}
               />
             ) : (
               <>
@@ -1293,6 +1519,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                 <div
                   className="flex min-h-[30px] flex-wrap items-center justify-center gap-x-2 gap-y-1"
                   aria-live="polite"
+                  data-guide="readout"
                 >
                   {fx.chip && (
                     <Chip key={fx.chip.id} tone="gold" className="text-[16px]">
@@ -1696,12 +1923,15 @@ export function SwitchStep({
   onPick,
   onBack,
   chosen,
+  onForfeit,
 }: {
   options: Battler[]
   first?: string
   foe: number
   onPick: (uid: string) => void
   onBack?: () => void
+  /** The flag's own way to give up (a Friend Battle); else the run's fight's. */
+  onForfeit?: () => void
   /**
    * A computer's fight (BattleSides): the team's column at the side is where the pick is made, so the step shows the
    * one picked, not the cards, and the caller holds the pick.
@@ -1737,7 +1967,7 @@ export function SwitchStep({
                 {t('ui.common.back')}
               </PixelButton>
             )}
-            <ForfeitButton flag />
+            <ForfeitButton flag onForfeit={onForfeit} />
           </div>
         </BottomDock>
       </div>
@@ -1778,7 +2008,7 @@ export function SwitchStep({
             </PixelButton>
           )}
           {go}
-          <ForfeitButton flag />
+          <ForfeitButton flag onForfeit={onForfeit} />
         </div>
         <KeyHints
           keys={[
@@ -1817,7 +2047,7 @@ function SendOutStep({
 }: {
   foe: number
   lead: string
-  /** A computer's fight: picked in the team's column at the side (SwitchStep's `chosen`). */
+  /** A computer's fight: the pick shared with the team's column at the side (SwitchStep's `chosen`). */
   chosen?: { value: string | null; onChange: (uid: string) => void }
 }) {
   const { t } = useT()
@@ -1825,14 +2055,22 @@ function SendOutStep({
   const enc = useGame((s) => s.run.encounter)
   const types = speciesTypes(data, foe)
   const canWait = enc?.kind === 'gym' || (enc?.kind === 'boss' && !enc.returning)
-  // Only a wild Pokémon's send-out goes by itself: a trainer, a gym or a boss is a pick worth waiting for.
+  // Only a wild Pokémon's send-out goes by itself: a trainer, a gym or a boss is a pick worth waiting for…
   const wild = enc?.kind === 'wild'
+  // …but on auto a trainer's goes by itself too, after time to pick (PILOT_PICK_MS, whatever the pace), unless a
+  // Pokémon is tapped: then GO! waits for the player (engine autoOffersLead).
+  const pace = usePace()
+  const auto = useAutoLevel() !== 'off' && autoOffersLead(enc?.kind)
+  const [touched, setTouched] = useState(false)
   // FLEE / AVOID only where the game's config allows a way out (noEscape, skipPolicy), as on the old pop-up.
   const canFlee = useGame(() => canSkipCurrent())
   // The first able Pokémon is picked to begin with; a tap on another card picks it, GO! sends the one picked.
   const [own, setOwn] = useState(lead)
   const picked = chosen ? (chosen.value ?? lead) : own
-  const setPicked = chosen ? chosen.onChange : setOwn
+  const setPicked = (uid: string) => {
+    setTouched(true)
+    ;(chosen ? chosen.onChange : setOwn)(uid)
+  }
   const save = useGame((s) => s.save)
   const team = save ? teamOf(save) : []
   usePickKeys(
@@ -1845,16 +2083,33 @@ function SendOutStep({
   })
   return (
     <div className="flex flex-1 flex-col gap-3">
-      {/* In the middle of the room there is (a tall PC panel's too), GO! at the foot. */}
+      {/* In the middle of the room there is (a tall PC panel's too), GO! at the foot. A computer keeps the cards too
+          (the user's call, 2026-10-31: the one picked alone read as "only this one can go"); they and the team's
+          column share the pick. */}
       <div className="my-auto">
-        {chosen ? (
-          <PickedOne inst={save?.box.find((p) => p.id === picked)} />
-        ) : (
-          <LeadPicker value={picked} onChange={setPicked} foe={types} go fight />
-        )}
+        <LeadPicker value={picked} onChange={setPicked} foe={types} go fight />
       </div>
       <BottomDock>
-      {wild ? (
+      {auto && !touched && (
+        <p className="m-0 text-center font-pixel-sm text-[16px] leading-[1.15] text-muted" role="status">
+          {t('ui.idle.pickLead')}
+        </p>
+      )}
+      {auto ? (
+        <AutoButton
+          variant="primary"
+          size="lg"
+          className="w-full"
+          ms={PILOT_PICK_MS / pace}
+          hold={touched || (chosen?.value != null && chosen.value !== lead)}
+          paused="byDialogs"
+          aria-keyshortcuts="Enter"
+          aria-label={t('ui.lead.sendOutName', { name })}
+          onClick={() => sendOutLead(picked)}
+        >
+          {t('ui.lead.go')}
+        </AutoButton>
+      ) : wild ? (
         // A wild Pokémon (docs/42): GO! loads and sends the one picked by itself; a tap on another card picks it and
         // starts the count again (the key), a sheet open over it holds it.
         <AutoButton
@@ -1907,3 +2162,6 @@ function SendOutStep({
     </div>
   )
 }
+
+/** The whiteout's bag stays shut (docs/64 §4.3): the Bag button and B say why. */
+const shutBag = () => pushToast(say('ui.whiteout.noBag'), 'info')

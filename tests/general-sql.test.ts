@@ -60,13 +60,19 @@ async function as<T = Record<string, unknown>>(
   }
 }
 
+/** An upload as the game makes it: an update of the save, an insert only when there is none (0088 refuses upserts). */
 async function putSave(user: string, data: unknown, realm = 'main') {
   await db.query(`select set_config('request.jwt.claim.sub', '', false)`)
-  await db.query(
-    `insert into saves (user_id, realm, data, updated_at) values ($1, $2, $3, now())
-     on conflict (user_id, realm) do update set data = excluded.data, updated_at = excluded.updated_at`,
+  const updated = await db.query(
+    `update saves set data = $3, updated_at = now() where user_id = $1 and realm = $2`,
     [user, realm, JSON.stringify(data)],
   )
+  if (updated.affectedRows) return
+  await db.query(`insert into saves (user_id, realm, data, updated_at) values ($1, $2, $3, now())`, [
+    user,
+    realm,
+    JSON.stringify(data),
+  ])
 }
 const card = async (user: string, realm = 'main') =>
   (
@@ -226,8 +232,9 @@ describe('0049: the switches and the items', () => {
       `select key, value from game_config where key in ('general', 'itemSwitches') order by key`,
     )
     // The Shiny Charm came later (2026-10-18): its switch and levels come from the game's defaults under this row (the
-    // server never reads them), so 0049's row is the defaults without them.
-    const { charmAccess: _access, charm: _charm, ...before } = DEFAULT_CONFIG.general
+    // server never reads them), so 0049's row is the defaults without them. Level 0's earnings (`offlineBase`) came
+    // with 0104, which adds them to the row.
+    const { charmAccess: _access, charm: _charm, offlineBase: _base, ...before } = DEFAULT_CONFIG.general
     expect(rows).toEqual([
       { key: 'general', value: before },
       { key: 'itemSwitches', value: DEFAULT_CONFIG.itemSwitches },

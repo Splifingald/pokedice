@@ -1,5 +1,5 @@
 // The dice tutorial (docs/46 §5): after Youngster Joey's ₽10, the hand walks a new player to their starter's type die
-// (the money in the top bar, Upgrades, Dice Types, the die) and back to Route 1, once; nothing else can be pressed.
+// (Home, its Shop tab, Upgrades, Dice Types, the die) and back to Route 1, once; nothing else can be pressed.
 // SHOTS_DIR set: each step's screen is saved there too.
 import { expect, test, type Page } from '@playwright/test'
 import { DEFAULT_CONFIG, emptyProgress, type SaveData } from '../src/engine'
@@ -50,19 +50,23 @@ test('the hand walks a new player to the Fire die and back to Route 1, once', as
   await boot(page, afterJoey())
   await page.goto('/home')
 
-  // 1. The money in the top bar opens the Mart; nothing else can be pressed.
+  // 1. On Home: the bottom bar's Shop tab; nothing else can be pressed.
   await expect(bubble(page)).toContainText('You won ₽10!')
   await expect(bubble(page)).toContainText('Charmander')
-  await shot(page, '1-money')
+  await expect(bubble(page)).toContainText('Tap Shop')
+  await shot(page, '1-shop')
   await page.getByRole('link', { name: 'Pokédex' }).last().click({ force: true })
+  await page.locator('[data-hud-gold]').click({ force: true })
   await expect(page).toHaveURL(/\/home$/)
-  await page.locator('[data-hud-gold]').click()
+  await page.locator('nav [data-guide="nav-shop"]:visible').click()
 
-  // 2. The Mart: Upgrades.
+  // 2. The Mart: Upgrades (its tab's dot may have opened it there already).
   await expect(page).toHaveURL(/\/shop/)
-  await expect(bubble(page)).toContainText(/Open Upgrades|open Upgrades/)
-  await shot(page, '2-upgrades')
-  await page.locator('#mart-upgrades').click()
+  if (!/tab=upgrades/.test(page.url())) {
+    await expect(bubble(page)).toContainText(/Open Upgrades|open Upgrades/)
+    await shot(page, '2-upgrades')
+    await page.locator('#mart-upgrades').click()
+  }
 
   // 3. Dice Types (the Mart may have opened on Upgrades already: its nav dot leads there).
   await expect(bubble(page)).toContainText('Open Dice Types')
@@ -94,13 +98,17 @@ test('the hand walks a new player to the Fire die and back to Route 1, once', as
   expect((await saved()).dieLevels.fire).toBe(2)
 })
 
-test('on PC the hand points the same way, and the bubble keeps out of the way', async ({ page }) => {
+test("on PC, away from Home: Home first, then the side rail's Shop", async ({ page }) => {
   await boot(page, afterJoey())
-  await page.goto('/home')
-  await expect(bubble(page)).toContainText('You won ₽10!')
-  await shot(page, 'pc-1-money')
-  await page.locator('[data-hud-gold]').click()
-  await page.locator('#mart-upgrades').click()
+  await page.goto('/team')
+  await expect(bubble(page)).toContainText('First, head Home')
+  await shot(page, 'pc-1-home')
+  await page.locator('nav [data-guide="nav-home"]:visible').click()
+  await expect(page).toHaveURL(/\/home$/)
+  await expect(bubble(page)).toContainText('Tap Shop')
+  await shot(page, 'pc-2-shop')
+  await page.locator('nav [data-guide="nav-shop"]:visible').click()
+  if (!/tab=upgrades/.test(page.url())) await page.locator('#mart-upgrades').click()
   await page.locator('#up-dice').click()
   await expect(bubble(page)).toContainText('Upgrade the Fire die')
   await shot(page, 'pc-4-buy')
@@ -111,4 +119,46 @@ test('switched off, or before Joey is beaten, there is no tutorial', async ({ pa
   await page.goto('/home')
   await expect(page.getByRole('button', { name: 'CONTINUE', exact: true }).first()).toBeVisible()
   await expect(bubble(page)).toHaveCount(0)
+})
+
+test("the starter K.O. against Joey: CONTINUE at once on the round's Center still opens the tutorial there", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  // Joey just beaten by a Pidgey caught on the way, the starter K.O.: the round not counted yet, ₽10 in the purse.
+  const base = makeSave(4)
+  const starter = base.box[0]!
+  const pidgey = { ...starter, id: 'pidgey-1', dex: 16, caughtAt: starter.caughtAt + 1000 }
+  const save: SaveData = {
+    ...base,
+    gold: 10,
+    currentAreaId: ROUTE1,
+    rerollLesson: 'done',
+    itemLesson: 'done',
+    box: [{ ...starter, currentHp: 0 }, pidgey],
+    team: [starter.id, pidgey.id],
+    areaProgress: {
+      ...base.areaProgress,
+      [ROUTE1]: {
+        ...emptyProgress(),
+        round: 1,
+        opening: 0,
+        deck: [],
+        drawn: ['wild', 'wild', 'item', 'center', 'wild', 'trainer'],
+      },
+    },
+  }
+  await boot(page, save)
+  await page.goto('/home')
+  await expect(bubble(page)).toHaveCount(0)
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+  // The round's Center, CONTINUE pressed straight away (as a double tap on the result card's would): the tutorial
+  // opens over the Center instead of the Center being left.
+  await expect(page.locator('[data-guide="center-home"]')).toBeVisible()
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).click()
+  await expect(bubble(page)).toContainText('First, head Home')
+  await expect(page).toHaveURL(/\/area$/)
+  await page.locator('[data-guide="center-home"]').click()
+  await expect(page).toHaveURL(/\/home$/)
+  await expect(bubble(page)).toContainText('Tap Shop')
 })

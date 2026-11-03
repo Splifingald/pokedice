@@ -76,6 +76,13 @@ const HOME = {
   rows: [row('Blue', 60, 1), row('Sam', 24, 2, true), row('Lina', 24, 2), row('Theo', 3, 4)],
 }
 
+/** The global board: every group's players this week (Kenta07 from another group), no bots. */
+const GLOBAL = {
+  week: HOME.week,
+  endsAt: HOME.endsAt,
+  rows: [row('Kenta07', 212, 1), row('Blue', 60, 2), row('Sam', 24, 3, true), row('Lina', 24, 3)],
+}
+
 /** Three Pokémon past Lv.50: what opens Versus. */
 function readySave() {
   const base = makeSave(4, { player: { name: 'Sam', character: 'red' } })
@@ -90,7 +97,7 @@ function readySave() {
   return { ...base, box: [...base.box, at('cz', 6, 72), at('vn', 3, 55), at('bl', 9, 60)] }
 }
 
-async function leagueOn(page: Page, save: object) {
+async function leagueOn(page: Page, save: object, league: object = {}) {
   await page.addInitScript(
     ([key, session, s, f, cfg]) => {
       localStorage.setItem(key!, session!)
@@ -103,18 +110,22 @@ async function leagueOn(page: Page, save: object) {
       JSON.stringify(fakeSession()),
       JSON.stringify(save),
       FAST,
-      JSON.stringify({ ...EVENTS_ON, versusLeague: { ...DEFAULT_CONFIG.versusLeague, access: 'all' } }),
+      JSON.stringify({
+        ...EVENTS_ON,
+        versusLeague: { ...DEFAULT_CONFIG.versusLeague, access: 'all', ...league },
+      }),
     ],
   )
 }
 
 async function fakeLeague(page: Page) {
-  const sent: Record<string, Record<string, unknown>[]> = { start: [], finish: [] }
+  const sent: Record<string, Record<string, unknown>[]> = { start: [], finish: [], best: [] }
   await mockSupabase(page, {
     rpc: {
       versus_board: BOARD,
       versus_league_home: (b: Record<string, unknown>) =>
         b.p_last ? { ...HOME, joined: false, trophies: 0, rows: [] } : HOME,
+      versus_league_global: GLOBAL,
       versus_league_choices: CHOICES,
       versus_league_start: (b: Record<string, unknown>) => {
         sent.start!.push(b)
@@ -124,6 +135,11 @@ async function fakeLeague(page: Page) {
       versus_league_finish: (b: Record<string, unknown>) => {
         sent.finish!.push(b)
         return b.p_outcome === 'won' ? [{ delta: 10, trophies: 34 }] : [{ delta: 0, trophies: 24 }]
+      },
+      // The most trophies ever held, in any week (migration 0097).
+      versus_league_best: (b: Record<string, unknown>) => {
+        sent.best!.push(b)
+        return 152
       },
     },
   })
@@ -159,12 +175,38 @@ test('the league: trophies and the week, 3 opponents with theirs, the group rank
     .first()
     .click()
   await expect(side.getByText("You didn't play in the league last week.")).toBeVisible()
+  // The global board waits on its own switch (Off here).
+  await expect(side.getByRole('radio', { name: 'Global' })).toHaveCount(0)
 
   // A phone: the group is the third tab.
   await page.setViewportSize({ width: 390, height: 844 })
   await page.getByRole('tab', { name: 'Leaderboard' }).click()
   await expect(page.getByRole('tabpanel').getByText('Blue')).toBeVisible()
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/league-phone-board.png`, fullPage: true })
+})
+
+test('the global board, its switch on: every group’s players, for the glory (no rewards)', async ({
+  page,
+}) => {
+  await fakeLeague(page)
+  await leagueOn(page, { ...readySave(), versusLeagueRulesSeen: true }, { globalAccess: 'all' })
+  await page.goto('/versus')
+  const aside = page.getByRole('complementary')
+  // Not only your group any more: the panel is the Leaderboard.
+  await expect(aside.getByRole('heading', { name: 'Leaderboard' })).toBeVisible()
+  await aside.getByRole('radio', { name: 'Global' }).click()
+  await expect(aside.getByText('No rewards here: just the glory.', { exact: false })).toBeVisible()
+  const board = aside.getByRole('list', { name: 'Global' })
+  await expect(board.getByText('Kenta07')).toBeVisible()
+  await expect(board.getByLabel('212 trophies')).toBeVisible()
+  // Nothing to win: no Raid Balls or Rare Candies drawn.
+  await expect(board.getByLabel(/Wins \d+ Raid Ball/)).toHaveCount(0)
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/league-global-pc.png`, fullPage: true })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.getByRole('tab', { name: 'Leaderboard' }).click()
+  await page.getByRole('tabpanel').getByRole('radio', { name: 'Global' }).click()
+  await expect(page.getByRole('tabpanel').getByText('Kenta07')).toBeVisible()
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/league-global-phone.png`, fullPage: true })
 })
 
 test('a match: recorded as it starts, fought (here on AUTO, no Bag), its result sent and answered in trophies', async ({
@@ -243,6 +285,29 @@ test('a match by hand: after a K.O. with two left, the two come up as cards and 
   await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeVisible({ timeout: 30_000 })
 })
 
+test("the trainer card's Versus line: the most trophies ever held, not the old board's wins (phone)", async ({
+  page,
+}) => {
+  const sent = await fakeLeague(page)
+  await leagueOn(page, { ...readySave(), versusLeagueRulesSeen: true })
+  await page.setViewportSize({ width: 360, height: 640 })
+  await page.goto('/home')
+  await page.getByRole('button', { name: 'Your trainer menu' }).click()
+  const card = page.getByRole('dialog', { name: 'Trainer card' })
+  await card.getByRole('button', { name: 'Stats', exact: true }).click()
+  const stats = card.locator('#card-stats')
+  await expect(stats.getByRole('term').filter({ hasText: 'Versus best' })).toBeVisible()
+  const line = stats.getByRole('definition').filter({ has: page.getByLabel('152 trophies') })
+  await expect(line).toBeVisible()
+  await expect(stats).not.toContainText(' won · ')
+  // Whole on a 360 px phone, not cut short.
+  expect(await line.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+  // Your own: no friend asked about (dev's StrictMode may ask twice).
+  expect(sent.best!.length).toBeGreaterThan(0)
+  expect(sent.best!.every((b) => !('p_user' in b))).toBe(true)
+  if (SHOTS) await card.screenshot({ path: `${SHOTS}/card-versus-best.png` })
+})
+
 test("Monday: the week's rewards pop up as the league's, in its own words, and open as a gift", async ({
   page,
 }) => {
@@ -279,7 +344,7 @@ test("Monday: the week's rewards pop up as the league's, in its own words, and o
     [
       STORAGE_KEY,
       JSON.stringify(fakeSession()),
-      JSON.stringify({ ...readySave(), versusLeagueRulesSeen: true, gifts: { done: [], rulesSeen: true } }),
+      JSON.stringify({ ...readySave(), versusLeagueRulesSeen: true, gifts: { done: [] } }),
       FAST,
       JSON.stringify({ ...EVENTS_ON, versusLeague: { access: 'all' }, gifts: { access: 'all' } }),
     ],

@@ -34,6 +34,7 @@ import { getLang, searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { avatarOf, playerAvatarId } from '@/lib/avatars'
 import { fetchProgressRaidFriends, fetchRaidFriends, type RaidFriend } from '@/lib/raid'
+import { useSlotOrder } from '@/lib/useDragSwap'
 import { mutateSave, pushToast, useGame } from '@/store/game'
 import { useDetails } from '@/store/hooks'
 import {
@@ -277,8 +278,11 @@ function TeamEditor({
         b.level - a.level,
     )
   const valid = picks.filter((id) => candidates.some((c) => c.inst.id === id))
-  const toggle = (id: string) =>
+  const order = useSlotOrder(valid, setPicks)
+  const toggle = (id: string) => {
+    order.release()
     setPicks((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : cur.length >= TEAM_SIZE ? cur : [...cur, id]))
+  }
   const submit = async () => {
     if (!valid.length || saving) return
     setSaving(true)
@@ -306,21 +310,45 @@ function TeamEditor({
     >
       <div className="grid gap-2">
         <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{setup.pick}</p>
+        {valid.length > 1 && (
+          <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{t('ui.team.slotsTip')}</p>
+        )}
         <ol className="m-0 grid list-none grid-cols-3 gap-1.5 p-0" aria-label={setup.title}>
           {Array.from({ length: TEAM_SIZE }, (_, i) => {
             const c = candidates.find((x) => x.inst.id === valid[i])
+            const num = (
+              <span className="light-scope absolute left-1.5 top-[5px] bg-night px-[5px] pb-0.5 pt-px font-pixel-sm text-[16px] leading-none text-gold-light">
+                {i + 1}
+              </span>
+            )
+            if (!c)
+              return (
+                <li
+                  key={i}
+                  className="relative grid min-h-[96px] place-items-center bg-well px-1 pb-1.5 pt-[18px] text-center font-pixel-sm text-[16px] text-ink shadow-ring-line"
+                >
+                  {num}
+                  {t('ui.versus.slotEmpty')}
+                </li>
+              )
             return (
-              <li
-                key={i}
-                className={cx(
-                  'relative grid min-h-[96px] place-items-center px-1 pb-1.5 pt-[18px] text-center',
-                  c ? 'bg-paper shadow-card' : 'bg-well font-pixel-sm text-[16px] text-ink shadow-ring-line',
-                )}
-              >
-                <span className="light-scope absolute left-1.5 top-[5px] bg-night px-[5px] pb-0.5 pt-px font-pixel-sm text-[16px] leading-none text-gold-light">
-                  {i + 1}
-                </span>
-                {c ? (
+              <li key={i} className={cx('relative', order.lifted === i && 'z-10')}>
+                {/* Drag it onto another slot, or tap it then the other: the two swap places. */}
+                <button
+                  type="button"
+                  {...order.handlers(i)}
+                  onClick={() => order.tap(i)}
+                  aria-pressed={order.held === i}
+                  aria-label={t('ui.team.slotN', { n: i + 1, name: data.species[c.inst.dex]?.name ?? '' })}
+                  title={t('ui.team.slotsTip')}
+                  className={cx(
+                    'relative grid h-full min-h-[96px] w-full cursor-grab touch-pan-y select-none place-items-center px-1 pb-1.5 pt-[18px] text-center',
+                    order.held === i ? 'bg-gold-pale shadow-card-gold' : 'bg-paper shadow-card',
+                    order.lifted === i && 'cursor-grabbing',
+                    order.over === i && 'outline-dashed outline-[3px] outline-offset-2 outline-danger',
+                  )}
+                >
+                  {num}
                   <span className="grid justify-items-center gap-0.5">
                     <span className="relative">
                       <SpriteImg dex={c.inst.dex} size={48} shiny={c.inst.shiny} />
@@ -328,9 +356,7 @@ function TeamEditor({
                     </span>
                     <small className="font-pixel-sm text-[16px] text-muted">{t('ui.common.level.short', { n: Math.min(c.inst.level, cap) })}</small>
                   </span>
-                ) : (
-                  t('ui.versus.slotEmpty')
-                )}
+                </button>
               </li>
             )
           })}

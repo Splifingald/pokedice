@@ -1,26 +1,35 @@
 /**
  * pnpm versus-bots — the weekly Versus league's bots (docs/44).
  *
- * Writes the bots into supabase/migrations/0082_versus_league.sql, between its BEGIN/END GENERATED BOTS lines:
+ * Writes the bots into supabase/migrations/0092_versus_bot_weeks.sql, between its BEGIN/END GENERATED BOTS lines (0082
+ * held them first; its copy stays as it was):
  * - BOT_NAMES names, each with a classic trainer look (the free list every player can wear), so a bot reads like a
  *   player on the board;
- * - TEAMS_PER_TIER teams for each of the four tiers, from the engine's buildBotTeam (good coverage, the tier's battle
- *   powers), on fixed seeds: a re-run writes the same rows unless the game data changed.
- * tests/versus-league-sql.test.ts checks the file still holds what this writes. Run again after a change to the species,
- * their forms or the gems, then run the migration again.
+ * - the built-in set of teams, BOT_TEAMS_PER_TIER for each of the four tiers, from the engine's buildBotTeam (good
+ *   coverage, the tier's battle powers), on fixed seeds: a re-run writes the same rows unless the game data changed.
+ *   Every week makes a set of its own (netlify/functions/versus-bots.mts), so this one only serves a week whose set
+ *   isn't made yet.
+ * tests/versus-league-sql.test.ts checks the file still holds what this writes. After a change to the species, their
+ * forms or the gems, the next week's set has them already; run this then 0092 again to bring the built-in set along.
  */
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { BUNDLE } from '../src/config/bundle'
-import { buildBotTeam, compileGameData, createRng, type GameData } from '../src/engine'
+import {
+  BOT_TEAMS_PER_TIER,
+  botTeamNumber,
+  buildBotTeam,
+  compileGameData,
+  createRng,
+  type GameData,
+} from '../src/engine'
 import { AVATAR_GROUPS } from '../src/lib/avatars'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-export const MIGRATION = path.join(ROOT, 'supabase', 'migrations', '0082_versus_league.sql')
+export const MIGRATION = path.join(ROOT, 'supabase', 'migrations', '0092_versus_bot_weeks.sql')
 export const BEGIN = "-- BEGIN GENERATED BOTS (pnpm versus-bots: scripts/versus-bots.ts; don't edit by hand)"
 export const END = '-- END GENERATED BOTS'
-export const TEAMS_PER_TIER = 40
 
 /**
  * First names from the game's ten languages and a few handles, as players type them (twelve characters at most, like
@@ -195,12 +204,14 @@ export function botsSql(data: GameData): string {
     .map((b, i) => `  (${i + 1}, ${q(b.name)}, ${q(b.avatar)})`)
     .join(',\n')
   const teams: string[] = []
-  for (let tier = 0; tier < 4; tier++)
-    for (let i = 0; i < TEAMS_PER_TIER; i++) {
-      const id = tier * 1000 + i + 1
+  BOT_TEAMS_PER_TIER.forEach((count, tier) => {
+    for (let i = 0; i < count; i++) {
+      const id = botTeamNumber(tier, i)
+      // 0082's seeds: the teams it wrote stay the same, and so do the bots seated with them.
       const { team, powers } = buildBotTeam(data, tier, createRng(0xb07 + id * 7919))
       teams.push(`  (${id}, ${tier}, ${q(JSON.stringify(team))}, ${q(JSON.stringify(powers))})`)
     }
+  })
   return [
     BEGIN,
     'insert into versus_league_bots (id, name, avatar) values',
@@ -217,7 +228,7 @@ export function botsSql(data: GameData): string {
 export function withBots(sql: string, data: GameData): string {
   const a = sql.indexOf(BEGIN)
   const b = sql.indexOf(END)
-  if (a < 0 || b < a) throw new Error('0082_versus_league.sql: the GENERATED BOTS lines are missing')
+  if (a < 0 || b < a) throw new Error(`${path.basename(MIGRATION)}: the GENERATED BOTS lines are missing`)
   return sql.slice(0, a) + botsSql(data) + sql.slice(b + END.length)
 }
 
@@ -225,9 +236,8 @@ async function main() {
   const data = compileGameData(BUNDLE)
   const sql = await readFile(MIGRATION, 'utf8')
   await writeFile(MIGRATION, withBots(sql, data))
-  console.log(
-    `Wrote ${BOT_NAMES} bots and ${TEAMS_PER_TIER * 4} teams into ${path.relative(ROOT, MIGRATION)}`,
-  )
+  const teams = BOT_TEAMS_PER_TIER.reduce((a, b) => a + b, 0)
+  console.log(`Wrote ${BOT_NAMES} bots and ${teams} teams into ${path.relative(ROOT, MIGRATION)}`)
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) void main()

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   applyGifts,
+  BOT_TEAMS_PER_TIER,
+  botTeamSeed,
+  botTargetOf,
   botTierOf,
   buildBotTeam,
   createRng,
@@ -16,12 +19,14 @@ import {
   teamCoverage,
   trophyChange,
   versusAutoMove,
+  versusGlobalOn,
   versusNextRound,
   versusPower,
   versusStanding,
   versusStep,
   VERSUS_LEAGUE_DEFAULTS as CFG,
   weekEndOf,
+  weekBotTeams,
   weekId,
   weekStartOf,
   winTooFast,
@@ -123,6 +128,16 @@ describe('the ranking and the rewards', () => {
   })
 })
 
+describe('the global board', () => {
+  const withLeague = (versusLeague: object) => ({ ...data, config: { ...data.config, versusLeague } })
+
+  it('is off until its own switch is on, and only with the league', () => {
+    expect(versusGlobalOn(withLeague({ access: 'all' }))).toBe(false)
+    expect(versusGlobalOn(withLeague({ access: 'all', globalAccess: 'all' }))).toBe(true)
+    expect(versusGlobalOn(withLeague({ access: 'off', globalAccess: 'all' }))).toBe(false)
+  })
+})
+
 describe('the Raid Ball', () => {
   it('is thrown in raids alone, +5', () => {
     const ball = data.items['raid-ball']
@@ -140,6 +155,12 @@ describe('the bots', () => {
     expect([0, 99, 100, 249, 250, 499, 500, 9999].map((t) => botTierOf(t, CFG))).toEqual([
       0, 0, 1, 1, 2, 2, 3, 3,
     ])
+  })
+
+  it("head for trophies from Admin's range alone, most of them low", () => {
+    expect([0, 0.5, 0.999, 1].map((r) => botTargetOf(r, CFG))).toEqual([20, 78, 250, 250])
+    expect(botTargetOf(0.5, { ...CFG, botTargets: [300, 100] })).toBe(150)
+    expect(botTargetOf(-1, { ...CFG, botTargets: [-50, 100] })).toBe(0)
   })
 
   it('field three different Pokémon at Lv.50, with as many powers as their tier', () => {
@@ -170,6 +191,22 @@ describe('the bots', () => {
 
   it('are the same for the same seed', () => {
     expect(buildBotTeam(data, 2, createRng(9))).toEqual(buildBotTeam(data, 2, createRng(9)))
+  })
+
+  it('come as a new set every week: 40 different teams a tier, 80 from 500 trophies, the same set for the same week', () => {
+    const week = weekBotTeams(data, '2026-10-26')
+    const key = (t: (typeof week)[number]) => `${t.tier}:${[...t.team.map((m) => m.dex)].sort().join(',')}`
+    expect(BOT_TEAMS_PER_TIER).toEqual([40, 40, 40, 80])
+    expect([0, 1, 2, 3].map((tier) => week.filter((t) => t.tier === tier).length)).toEqual([40, 40, 40, 80])
+    expect(new Set(week.map(key)).size).toBe(week.length)
+    expect(weekBotTeams(data, '2026-10-26')).toEqual(week)
+    const next = weekBotTeams(data, '2026-11-02')
+    // Below 500 trophies the teams are all new; the last tier's few species make many of its teams come back.
+    const below = next.filter((t) => t.tier < 3)
+    const shared = below.filter((t) => week.some((w) => key(w) === key(t))).length
+    expect(shared).toBeLessThan(below.length / 10)
+    expect(botTeamSeed('2026-10-26', 1)).not.toBe(botTeamSeed('2026-11-02', 1))
+    expect(botTeamSeed('2026-10-26', 1)).not.toBe(botTeamSeed('2026-10-26', 2))
   })
 })
 

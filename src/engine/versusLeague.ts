@@ -8,7 +8,7 @@ import { gmaxFormsOf, megaFormsOf } from './forms'
 import { GIFT_CURRENT } from './gifts'
 import { gemOf, type VersusPowers } from './powers'
 import { effectiveStats } from './progression'
-import type { Rng } from './rng'
+import { createRng, type Rng } from './rng'
 import { typeMultiplier } from './typechart'
 import {
   POKE_TYPES,
@@ -34,6 +34,7 @@ export const VERSUS_LEAGUE_DEFAULTS: VersusLeagueConfig = {
   minWinSeconds: 5,
   secondsPerMove: 0.2,
   botTiers: [0, 100, 250, 500],
+  botTargets: [20, 250],
   goldPerTrophy: 1,
   rewards: [
     { upTo: 1, raidBalls: 5, rareCandies: 10 },
@@ -55,6 +56,10 @@ export const leagueConfig = (data: GameData): VersusLeagueConfig => ({
 
 /** The admin's switch (docs/15 §20). Off: Versus as it was (every team, two boards, fights on auto). */
 export const versusLeagueOn = (data: GameData): boolean => eventOpenTo(data.config.versusLeague?.access, data)
+
+/** The global board's switch (docs/44 §8): every player of every group this week, for the glory. Only with the league. */
+export const versusGlobalOn = (data: GameData): boolean =>
+  versusLeagueOn(data) && eventOpenTo(data.config.versusLeague?.globalAccess, data)
 
 /** The league is this save's Versus: switched on, in the main game (Extreme mode keeps Versus as it was). */
 export const versusLeagueFor = (save: SaveData, data: GameData): boolean =>
@@ -181,6 +186,19 @@ export function botTierOf(trophies: number, cfg: VersusLeagueConfig): number {
   return Math.min(3, tier)
 }
 
+/**
+ * Where a seated bot's trophies are headed by Sunday night, for a roll in [0, 1): between `botTargets`' two ends, the
+ * roll squared so most bots sit low and few high, as players do. It never looks at the group's players: a group with a
+ * player far ahead gets the same bots as any other (the user's rule, 2026-11-01). The server's
+ * `versus_league_bot_target` is the same sum.
+ */
+export function botTargetOf(roll: number, cfg: VersusLeagueConfig): number {
+  const [lo, hi] = cfg.botTargets
+  const low = Math.max(0, Math.min(lo, hi))
+  const r = Math.min(1, Math.max(0, roll))
+  return Math.round(low + (Math.max(lo, hi) - low) * r * r)
+}
+
 const typesOf = (data: GameData, dex: number): PokeType[] => {
   const s = data.species[dex]
   return s ? (s.type2 ? [s.type1, s.type2] : [s.type1]) : []
@@ -293,4 +311,59 @@ export function buildBotTeam(
       z: kinds.includes('z'),
     },
   }
+}
+
+// ---------------------------------------------------------------- the week's set
+
+/**
+ * The teams a set holds for each tier. The last tier (500 trophies and more) has twice the others (the user's ask,
+ * 2026-10-30): its few players meet each other's bots all week, so they'd see the same teams most.
+ */
+export const BOT_TEAMS_PER_TIER: readonly number[] = [40, 40, 40, 80]
+
+/** A team's number within a set, by tier: 1 to 40 for tier 0, 1001… for tier 1, 3001 to 3080 for tier 3. */
+export const botTeamNumber = (tier: number, i: number): number => tier * 1000 + i + 1
+
+/**
+ * The seed of a week's team, from the week ("2026-10-26") and the team's number: every week draws new teams, and a
+ * week always the same ones, whoever makes its set and however often.
+ */
+export function botTeamSeed(week: string, n: number): number {
+  // FNV-1a over the week's text, then the number mixed in.
+  let h = 0x811c9dc5
+  for (let i = 0; i < week.length; i++) h = Math.imul(h ^ week.charCodeAt(i), 0x01000193)
+  return (h ^ Math.imul(n, 0x9e3779b1)) >>> 0
+}
+
+export interface BotTeamRow {
+  tier: number
+  team: VersusMon[]
+  powers: VersusPowers
+}
+
+/** Draws a team gets before the set takes it even though it holds the same three already. */
+const BOT_TEAM_DRAWS = 30
+
+/**
+ * A week's bot teams (migration 0092 stores them): `BOT_TEAMS_PER_TIER` a tier, each from `buildBotTeam` on the week's
+ * seed for it. The last tier picks from few species (some 30), so it draws the same three again and again: a team the
+ * set holds already is drawn anew, so that its 80 teams are 80 different ones.
+ */
+export function weekBotTeams(data: GameData, week: string): BotTeamRow[] {
+  const held = new Set<string>()
+  const keyOf = (tier: number, team: VersusMon[]) =>
+    `${tier}:${team
+      .map((m) => m.dex)
+      .sort((a, b) => a - b)
+      .join(',')}`
+  return BOT_TEAMS_PER_TIER.flatMap((count, tier) =>
+    Array.from({ length: count }, (_, i) => {
+      const n = botTeamNumber(tier, i)
+      let drawn = buildBotTeam(data, tier, createRng(botTeamSeed(week, n)))
+      for (let k = 1; k < BOT_TEAM_DRAWS && held.has(keyOf(tier, drawn.team)); k++)
+        drawn = buildBotTeam(data, tier, createRng(botTeamSeed(week, n + k * 10_000)))
+      held.add(keyOf(tier, drawn.team))
+      return { tier, ...drawn }
+    }),
+  )
 }

@@ -1,20 +1,24 @@
 // Pure state transitions on the save: new game, rewards, catches, wipes, center, team, shop, upgrades.
+import { crystalOf, zCrystalsOn } from './trials'
 import { getSpecies, linearAreas } from './data'
-import { KANTO, evolutionGate, inWorldRegion, regionOf, regionOfArea } from './regions'
+import { KANTO, evolutionGate, inWorldRegion, pokedexEverywhere, regionOf, regionOfArea } from './regions'
 import { asSeenBy, gymsFor, playerSideOf } from './rival'
 import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount, multiExpShareFor } from './economy'
 import { bossCaught, deckAbilities, deckCounts, dueGym, fightBosses, roundsComplete } from './encounters'
 import { eventOpenTo } from './events'
-import { centersOn, healItemsOn, wipeHeals } from './extreme'
+import { centersOn, healItemsOn, isExtreme, wipeHeals } from './extreme'
+import { boonCenters, pendingBoons } from './extremeCenters'
 import { addFossil, isReviving } from './fossils'
 import { LEGACY_GAUGE } from './legacyGauge'
-import { itemOnFor, MONEY, sellPrice, shopSells, usableIn } from './items'
+import { itemOnFor, lootPoolFor, MONEY, sellPrice, shopSells, usableIn } from './items'
 import { earnedGold, type LiveSet } from './liveEvents'
 import {
   canStartPortal,
   inPortalRun,
   markPortalWonSeen,
   portalModeOf,
+  portalRulesSeen,
+  portalSkin,
   portalStateOf,
   portalWipe,
   portalWon,
@@ -27,6 +31,24 @@ import {
   nightmareWipe,
   nightmareWon,
 } from './nightmare'
+import {
+  canStartTimeRace,
+  inTimeRace,
+  markTimeRaceWonSeen,
+  timeRaceSealed,
+  timeRaceStateOf,
+  timeRaceWipe,
+} from './timeRace'
+import {
+  atBonfire,
+  canStartWhiteout,
+  inWhiteout,
+  whiteoutBagShut,
+  whiteoutWipe,
+  whiteoutWon,
+} from './whiteout'
+import { canStartTracks, inTracks, tracksStateOf, tracksWipe, tracksWon } from './tracks'
+import { familyTalent, TALENT, talentCandyFits, talentOf, talentOnEvolve, unlockFamily } from './talents'
 import { areaOpenAt } from './worldList'
 import {
   averageLevel,
@@ -149,7 +171,7 @@ export function recordDraws(
   save: SaveData,
   areaId: string,
   roll: {
-    encounter?: { kind: string }
+    encounter?: { kind: string; reason?: string }
     deck: DeckCard[] | null
     lootDeck?: string[] | null
     drawn?: DeckCard[]
@@ -157,10 +179,12 @@ export function recordDraws(
     opening?: number | null
   },
 ): SaveData {
-  const p = progressOf(save, areaId)
+  const was = progressOf(save, areaId)
+  const p = extremeCenterNotes(was, save, roll.encounter)
   const lastCenter = roll.encounter ? roll.encounter.kind === 'center' : p.lastCenter
   if (!roll.deck && !roll.lootDeck) {
-    return spendLoneCenters(!!lastCenter === !!p.lastCenter ? save : withProgress(save, areaId, { ...p, lastCenter }), areaId)
+    const same = !!lastCenter === !!p.lastCenter && p === was
+    return spendLoneCenters(same ? save : withProgress(save, areaId, { ...p, lastCenter }), areaId)
   }
   const round = roll.newRound ? (p.round ?? 0) + 1 : p.round
   const drawn = roll.newRound ? (roll.drawn ?? []) : roll.drawn ? [...(p.drawn ?? []), ...roll.drawn] : p.drawn
@@ -180,6 +204,17 @@ export function recordDraws(
     }),
     areaId,
   )
+}
+
+/**
+ * Extreme mode's Centers (docs/47), noted as they are met: a secret area has only its first, and the Center a K.O. sent
+ * is the one the round starts over at. The same progress object when there is nothing to note.
+ */
+function extremeCenterNotes(p: AreaProgress, save: SaveData, enc?: { kind: string; reason?: string }): AreaProgress {
+  if (!isExtreme(save) || enc?.kind !== 'center') return p
+  if (p.centerMet && !(enc.reason === 'wipe' && p.wiped)) return p
+  const { wiped: _w, ...rest } = p
+  return { ...(enc.reason === 'wipe' ? rest : p), centerMet: true }
 }
 
 /**
@@ -262,6 +297,13 @@ export function conditionStatus(cond: UnlockCondition, save: SaveData, data: Gam
     const current = new Set(save.pokedex).size
     return { cond, current, target: cond.count, met: current >= cond.count, label: `Catch ${cond.count} Pokémon` }
   }
+  if (cond.kind === 'caught') {
+    const dex = [...new Set(cond.dex)]
+    const caught = pokedexEverywhere(save)
+    const current = dex.filter((d) => caught.has(d)).length
+    const names = dex.map((d) => data.species[d]?.name ?? `#${d}`).join(', ')
+    return { cond, current, target: dex.length, met: current >= dex.length, label: `Catch ${names}` }
+  }
   const current = maxOwnedLevel(save)
   return { cond, current, target: cond.level, met: current >= cond.level, label: `Raise a Pokémon to Lv.${cond.level}` }
 }
@@ -273,7 +315,12 @@ export function conditionStatus(cond: UnlockCondition, save: SaveData, data: Gam
 export function isAreaUnlocked(save: SaveData, areaId: string, data: GameData, depth = 0): boolean {
   const area = data.areas.find((a) => a.id === areaId)
   if (!area) return false
-  if (area.hidden) return (area.unlockConditions ?? []).every((c) => conditionStatus(c, save, data, depth).met)
+  if (area.hidden)
+    return (area.unlockConditions ?? []).every(
+      // A species condition added after a player had already been in (Snowpoint Temple's Regis, docs/61 §1) doesn't
+      // shut them out: the area stays open to anyone it has progress for.
+      (c) => (c.kind === 'caught' && !!save.areaProgress[area.id]) || conditionStatus(c, save, data, depth).met,
+    )
   // A region is a run of its own: an area opens behind the one before it *in its own region*, never across a border.
   const chain = linearAreas(data, regionOfArea(area))
   const idx = chain.findIndex((a) => a.id === areaId)
@@ -296,6 +343,16 @@ export function latestOpenArea(save: SaveData, data: GameData, now?: number | nu
 }
 
 /**
+ * The player has played in this area: an encounter met, a round done, a gym leader or a legend beaten. Merely entering
+ * doesn't count. Home reads it for the furthest open area: standing behind it once it's started was the player's choice.
+ */
+export function areaStarted(save: SaveData, areaId: string): boolean {
+  const p = save.areaProgress[areaId]
+  if (!p) return false
+  return p.roundsDone > 0 || (p.round ?? 0) > 0 || !!p.drawn?.length || p.gymsDefeated.length > 0 || p.bossesDefeated.length > 0
+}
+
+/**
  * An area with no deck — no wild Pokémon, trainers or Game Corner to meet, only Pokémon Centers and items, e.g. a
  * legendary's lair — closes once nothing is left to do there: every gym battle won, every legendary beaten and caught.
  * It can't be entered anymore. Areas with a deck, and ones with nothing special to begin with, never close.
@@ -303,6 +360,10 @@ export function latestOpenArea(save: SaveData, data: GameData, now?: number | nu
 export function isAreaClosed(save: SaveData, areaId: string, data: GameData): boolean {
   const area = data.areas.find((a) => a.id === areaId)
   if (!area) return false
+  // Crown Shrine once its whiteout is won (docs/64 §4.3): its boss caught, the shrine closes for good.
+  if (whiteoutWon(save, data, areaId)) return true
+  // Tracks in the Snow (docs/64 §4.1): the shiny Stantler caught and its outro played, the glade closes for good.
+  if (tracksWon(save, data, areaId) && tracksStateOf(save, areaId).wonSeen) return true
   const c = deckCounts(area.encounterWeights, deckAbilities(area))
   if (c.wild + c.trainer + c.casino > 0) return false
   const bosses = fightBosses(area, data)
@@ -317,10 +378,16 @@ export function isAreaClosed(save: SaveData, areaId: string, data: GameData): bo
 
 /**
  * The area deals no more cards: its portal run (docs/28) or its nightmare (docs/30) is won, so it is only its raid,
- * then sealed. Unlike a closed area it can still be entered (its raid is reached from it).
+ * then sealed; or its race of time and space (docs/64 §4.4) is won with no replay open now, so it is only its raids; or
+ * its Tracks in the Snow (docs/64 §4.1), the shiny Stantler caught, closing once its outro has played.
+ * Unlike a closed area it can still be entered (its raid is reached from it; the glade's outro plays there).
  */
 export const isAreaSealed = (save: SaveData, data: GameData, areaId: string): boolean =>
-  portalWon(save, data, areaId) || nightmareWon(save, data, areaId)
+  portalWon(save, data, areaId) ||
+  nightmareWon(save, data, areaId) ||
+  timeRaceSealed(save, data, areaId) ||
+  whiteoutWon(save, data, areaId) ||
+  tracksWon(save, data, areaId)
 
 /** A boss of this area was caught here: noted in its progress (what a small world's bosses go by, docs/26 §2.5). */
 export function noteBossCaught(save: SaveData, areaId: string, dex: number): SaveData {
@@ -408,11 +475,30 @@ export type RunEvent =
   | { kind: 'nightmare_round'; round: number; total: number }
   /** The item a nightmare round left in the bag (docs/30), once for good. */
   | { kind: 'nightmare_gift'; key: string; qty: number }
+  /** A fight of the race of time and space won in time (docs/64 §4.4): `fight` of `total`. */
+  | { kind: 'time_race_fight'; fight: number; total: number }
+  /** A wave of the whiteout cleared (docs/64 §4.3): `wave` of `waves`; a bonfire comes next. */
+  | { kind: 'whiteout_wave'; wave: number; waves: number }
+  /** A round of Tracks in the Snow cleared (docs/64 §4.1): Stantler found and K.O., `round` of `total` now cleared. */
+  | { kind: 'tracks_round'; round: number; total: number }
   /**
    * An Unown caught with the Unown Pokédex open (docs/41): its letter, new to the page or not, the page's count, and
    * the prize when it was the last one.
    */
   | { kind: 'unown_letter'; letter: string; isNew: boolean; found: number; total: number; reward?: number }
+  /** Regenerator (docs/51): it healed after the battle it won. */
+  | { kind: 'regenerator'; uid: string; amount: number }
+  /** Pay Day, Amulet Coin (docs/51): the ₽ it added to this K.O.'s (in the `gold` event's amount). */
+  | { kind: 'talent_gold'; uid: string; dex: number; talent: 'payDay' | 'amuletCoin'; amount: number }
+  /**
+   * Pickup (docs/51): it found something after the battle it won (`key` 'money' for ₽). Nothing is paid yet: the find
+   * is shown on its own step (FindView) as the next card, and PICK IT UP takes it (`pickUpItem`).
+   */
+  | { kind: 'pickup'; uid: string; dex: number; entryId: string; key: string; qty: number }
+  /** A Z-Crystal won (docs/62 §6): Z-Moves of its type. */
+  | { kind: 'z_crystal'; type: PokeType }
+  /** A Titan beaten (docs/62 §7): what it left, its ₽ in the `gold` events' total. */
+  | { kind: 'titan_reward'; dex: number; gold: number; items: { key: string; qty: number }[] }
 
 export interface VictoryInput {
   areaId: string
@@ -427,6 +513,10 @@ export interface VictoryInput {
   gymComplete?: boolean
   /** A set opening's trainer (docs/46): this K.O. pays these ₽ instead of its level's (`trainerPrize` says how many). */
   prize?: number
+  /** This K.O. ends the fight (a trainer's last Pokémon). Absent = it does, unless it's a trainer's or a gym's. */
+  last?: boolean
+  /** × this K.O.'s ₽, before the talents that add to it: a real player's team pays more (docs/54). */
+  goldMultiplier?: number
 }
 
 export interface VictoryResult {
@@ -451,6 +541,7 @@ export function awardBattleXp(
   events: RunEvent[],
 ): SaveData {
   let next: SaveData = { ...save, pokedex: [...save.pokedex] }
+  const from = events.length
   const xp = pokemonXp(enemyLevel, area, cleared, data)
   // Cross-generation evolutions wait for their generation; the gate is the same for every award in this battle.
   const allowDex = evolutionGate(save, data)
@@ -481,7 +572,14 @@ export function awardBattleXp(
       if (share > 0) award(uid, Math.max(1, Math.round(xp * share)), true)
     }
   }
-  return next
+  return withEvolveTalents(next, data, events, from, rng)
+}
+
+/** A locked family may find its hidden talent as one of its Pokémon evolves (docs/51): the events from `from` on. */
+function withEvolveTalents(save: SaveData, data: GameData, events: ProgressEvent[] | RunEvent[], from: number, rng: Rng): SaveData {
+  const found = talentOnEvolve(save, data, events.slice(from), rng)
+  for (const f of found.found) (events as ProgressEvent[]).push({ kind: 'talent', ...f, how: 'evolved' })
+  return found.save
 }
 
 /**
@@ -508,7 +606,16 @@ export function applyVictory(
   // Gold — trainers only (gym leaders, the Elite Four and the Champion pay extra; a set trainer its prize, with its
   // last K.O.), more under Cash Flow
   if ((input.kind === 'trainer' || input.kind === 'gym') && input.prize !== 0) {
-    const due = input.prize ?? trainerGoldFor(input.enemyLevel, area, progress.cleared, data, input.kind === 'gym')
+    // Pay Day and Amulet Coin (docs/51): more for this K.O.; a set prize stays as it is.
+    const due =
+      input.prize ??
+      goldTalents(
+        Math.round(trainerGoldFor(input.enemyLevel, area, progress.cleared, data, input.kind === 'gym') * (input.goldMultiplier ?? 1)),
+        save,
+        data,
+        fighters,
+        events,
+      )
     const { amount, bonus } = earnedGold(due, live)
     next = { ...next, gold: next.gold + amount }
     events.push(bonus ? { kind: 'gold', amount, bonus } : { kind: 'gold', amount })
@@ -527,9 +634,12 @@ export function applyVictory(
   if (input.kind === 'gym' && input.gymComplete && input.gymTrainerId) {
     const raw = data.trainers[input.gymTrainerId]
     const t = raw && asSeenBy(raw, playerSideOf(save))
-    if (!progress.gymsDefeated.includes(input.gymTrainerId))
-      progress = { ...progress, gymsDefeated: [...progress.gymsDefeated, input.gymTrainerId] }
+    const first = !progress.gymsDefeated.includes(input.gymTrainerId)
+    if (first) progress = { ...progress, gymsDefeated: [...progress.gymsDefeated, input.gymTrainerId] }
     if (t) events.push({ kind: 'gym_defeated', trainerId: t.id, name: t.name, badge: t.badge, role: t.role })
+    // Its Z-Crystal, the first time (docs/62 §6).
+    const crystal = first && zCrystalsOn(data) ? crystalOf(data, input.gymTrainerId) : null
+    if (crystal) events.push({ kind: 'z_crystal', type: crystal })
   }
 
   const cleared = clearIfDone(area, progress, save, data)
@@ -547,9 +657,69 @@ export function applyVictory(
   // Secret areas whose conditions just came true (a catch, a level-up…)
   for (const id of unlockedHiddenAreas(next, data)) if (!hiddenBefore.has(id)) events.push({ kind: 'secret_unlocked', areaId: id })
 
+  // The fight is won: Regenerator and Pickup (docs/51).
+  const over = input.last ?? (input.kind !== 'trainer' && input.kind !== 'gym')
+  if (over) next = afterWinTalents(next, data, area, progressOf(next, area.id), rng, events)
+
   void now
   void newId
   return { save: next, events }
+}
+
+/**
+ * Trainer ₽ for a K.O. with the talents on it (docs/51): Pay Day on the Pokémon that made it, Amulet Coin anywhere on
+ * the team; each says what it added (`talent_gold`), for the victory card.
+ */
+function goldTalents(
+  base: number,
+  save: SaveData,
+  data: GameData,
+  fighters: string | readonly string[],
+  events: RunEvent[],
+): number {
+  const made = (typeof fighters === 'string' ? [fighters] : [...fighters])
+    .map((uid) => getInstance(save, uid))
+    .find((p) => !!p && talentOf(data, p) === 'payDay')
+  const coin = teamOf(save).find((p) => talentOf(data, p) === 'amuletCoin')
+  let total = base
+  for (const [p, talent] of [
+    [made, 'payDay'],
+    [coin, 'amuletCoin'],
+  ] as const) {
+    if (!p) continue
+    const extra = Math.round(base * TALENT[talent])
+    if (extra <= 0) continue
+    total += extra
+    events.push({ kind: 'talent_gold', uid: p.id, dex: p.dex, talent, amount: extra })
+  }
+  return total
+}
+
+/**
+ * A fight won: each team member still standing with Regenerator heals a share of its max HP; each with Pickup may find
+ * something from the area's loot (its odds, never a once-only find, the deck untouched).
+ */
+function afterWinTalents(save: SaveData, data: GameData, area: Area, progress: AreaProgress, rng: Rng, events: RunEvent[]): SaveData {
+  let next = save
+  for (const p of teamOf(save)) {
+    if (p.currentHp <= 0) continue
+    const talent = talentOf(data, p)
+    if (talent === 'regenerator') {
+      const max = instanceMaxHp(p, data)
+      const amount = Math.min(max - p.currentHp, Math.max(1, Math.round(max * TALENT.regenerator)))
+      if (amount > 0) {
+        next = replaceInstance(next, { ...p, currentHp: p.currentHp + amount })
+        events.push({ kind: 'regenerator', uid: p.id, amount })
+      }
+    } else if (talent === 'pickup' && !events.some((e) => e.kind === 'pickup') && rng.next() < TALENT.pickup) {
+      // One find a win, never a once-only one, the area's deck untouched.
+      const entry = rng.weighted(lootPoolFor(area, progress, data).filter((e) => !e.unique && !e.disguise), (e) => e.weight)
+      if (!entry) continue
+      const qty = Math.max(1, Math.min(entry.minQty, entry.maxQty))
+      events.push({ kind: 'pickup', uid: p.id, dex: p.dex, entryId: entry.id, key: entry.itemKey, qty })
+    }
+  }
+  return next
 }
 
 /**
@@ -648,10 +818,18 @@ export function applyWipe(save: SaveData, areaId: string, data: GameData): SaveD
   if (inPortalRun(save, data, areaId)) return portalWipe(save, data, areaId)
   // So does the nightmare (docs/30): the player wakes up, the rounds back to 0.
   if (inNightmare(save, data, areaId)) return nightmareWipe(save, data, areaId)
+  // And the race of time and space (docs/64 §4.4): back to the start, healed, the legends won kept.
+  if (inTimeRace(save, data, areaId)) return timeRaceWipe(save, data, areaId)
+  // And the whiteout (docs/64 §4.3): back to wave 1, healed.
+  if (inWhiteout(save, data, areaId)) return whiteoutWipe(save, data, areaId)
+  // Tracks in the Snow (docs/64 §4.1): back at the glade's edge, healed, its cleared rounds kept.
+  if (inTracks(save, data, areaId)) return tracksWipe(save, data, areaId)
   const p = progressOf(save, areaId)
   const healed = new Set(wipeHeals(save, data) ? save.team : [])
+  // Extreme mode's boon Centers (docs/47): the round starts over at a Center that only swaps.
+  const wiped = boonCenters(save, data) ? { wiped: true } : {}
   return {
-    ...withProgress(save, areaId, { ...p, deck: [], drawn: [] }),
+    ...withProgress(save, areaId, { ...p, deck: [], drawn: [], ...wiped }),
     box: save.box.map((inst) => (healed.has(inst.id) ? { ...inst, currentHp: instanceMaxHp(inst, data) } : inst)),
   }
 }
@@ -710,6 +888,42 @@ export function arriveAtNightmare(save: SaveData, data: GameData, areaId: string
 }
 
 /**
+ * Arriving at the race's way in (docs/64 §4.4, before READY!) heals as a Pokémon Center does, as the portal's way in
+ * does. The same save when there is nothing to heal, or outside a way in.
+ */
+export function arriveAtTimeRace(save: SaveData, data: GameData, areaId: string): SaveData {
+  if (!canStartTimeRace(save, data, areaId)) return save
+  return healedOrSame(save, data)
+}
+
+/**
+ * Arriving at Tracks in the Snow's way in (docs/64 §4.1, before BEGIN) heals as a Pokémon Center does, as the
+ * nightmare's way in does. The same save when there is nothing to heal, or outside a way in.
+ */
+export function arriveAtTracks(save: SaveData, data: GameData, areaId: string): SaveData {
+  if (!canStartTracks(save, data, areaId)) return save
+  return healedOrSame(save, data)
+}
+
+/**
+ * Arriving at the whiteout's way in (docs/64 §4.3, before BEGIN) heals as a Pokémon Center does, as the nightmare's way
+ * in does. The same save when there is nothing to heal, or outside a way in.
+ */
+export function arriveAtWhiteout(save: SaveData, data: GameData, areaId: string): SaveData {
+  if (!canStartWhiteout(save, data, areaId)) return save
+  return healedOrSame(save, data)
+}
+
+/**
+ * The race won, HEAL & START RAID (docs/64 §4.4, as the portal run's victory): the team and the Box healed as a Pokémon
+ * Center would, the win's moment marked seen. The same save when no win is waiting here.
+ */
+export function timeRaceVictoryToRaid(save: SaveData, data: GameData, areaId: string): SaveData {
+  if (!timeRaceStateOf(save, areaId).won?.length) return save
+  return markTimeRaceWonSeen(centerHeal(save, data), areaId)
+}
+
+/**
  * Waking up from the nightmare, HEAL & START RAID (docs/30, as the portal run's victory): the team and the Box healed as
  * a Pokémon Center would, the waking marked seen. The same save when no waking is waiting here.
  */
@@ -740,13 +954,22 @@ export interface SwapPlace {
  * Center inside the run. The order of the team can change anywhere (setTeam).
  */
 export function teamSwapsOpen(save: SaveData, data: GameData, at: SwapPlace): boolean {
-  if (at.phase === 'center') return true
-  // The nightmare's way in too (docs/30), before it begins: there is no Center inside it either.
+  // An Extreme boon Center (docs/47): the team changes once its boon is picked, so the boons fit the team they met.
+  if (at.phase === 'center') return !(at.areaId && pendingBoons(save, at.areaId))
+  // The nightmare's way in too (docs/30), before it begins: there is no Center inside it either. And the whiteout's
+  // (docs/64 §4.3): its way in, and its bonfires, the only places the team changes once it has begun. And the race's
+  // way in (docs/64 §4.4), before READY!.
   return (
     at.phase === 'idle' &&
     !!at.areaId &&
     save.currentAreaId === at.areaId &&
-    (canStartPortal(save, data, at.areaId) || canStartNightmare(save, data, at.areaId))
+    (canStartPortal(save, data, at.areaId) ||
+      canStartNightmare(save, data, at.areaId) ||
+      canStartTimeRace(save, data, at.areaId) ||
+      canStartWhiteout(save, data, at.areaId) ||
+      atBonfire(save, data, at.areaId) ||
+      // Tracks in the Snow's way in too (docs/64 §4.1).
+      canStartTracks(save, data, at.areaId))
   )
 }
 
@@ -845,6 +1068,8 @@ export function applyFieldItem(
   const item = data.items[key]
   const inst = getInstance(save, instId)
   if (!item || !inst || isReviving(inst) || !usableIn(item, 'field') || (save.inventory[key] ?? 0) <= 0) return null
+  // In the whiteout (docs/64 §4.3) the bag opens only at a bonfire.
+  if (whiteoutBagShut(save, data)) return null
   if (item.effect.kind === 'heal' || item.effect.kind === 'revive') {
     if (!healItemsOn(save, data)) return null
     const healed = applyItemToInstance(save, key, instId, data)
@@ -859,7 +1084,14 @@ export function applyFieldItem(
     const evolved = evolve(inst, toDex, data)
     let next = replaceInstance(consumeItem(save, key)!, evolved)
     if (!next.pokedex.includes(toDex)) next = { ...next, pokedex: [...next.pokedex, toDex] }
-    return { save: next, events: [{ kind: 'evolve', uid: inst.id, fromDex: inst.dex, toDex, level: inst.level }] }
+    const events: ProgressEvent[] = [{ kind: 'evolve', uid: inst.id, fromDex: inst.dex, toDex, level: inst.level }]
+    return { save: withEvolveTalents(next, data, events, 0, rng), events }
+  }
+  // The Talent Candy (docs/51): only on a Pokémon whose talent isn't revealed yet; its whole family carries it after.
+  if (item.effect.kind === 'talent') {
+    if (!talentCandyFits(save, data, inst)) return null
+    const next = unlockFamily(consumeItem(save, key)!, data, inst.dex)
+    return { save: next, events: [{ kind: 'talent', uid: inst.id, dex: inst.dex, talent: familyTalent(data, inst.dex), how: 'candy' }] }
   }
   if (item.effect.kind !== 'level' || inst.level >= data.config.maxLevel) return null
   let cur = inst
@@ -871,7 +1103,7 @@ export function applyFieldItem(
   }
   let next = replaceInstance(consumeItem(save, key)!, cur)
   for (const ev of events) if (ev.kind === 'evolve' && !next.pokedex.includes(ev.toDex)) next = { ...next, pokedex: [...next.pokedex, ev.toDex] }
-  return { save: next, events }
+  return { save: withEvolveTalents(next, data, events, 0, rng), events }
 }
 
 /**
@@ -892,7 +1124,8 @@ export function applyLevelEvolution(
   const target = ready.length === 1 ? ready[0]! : rng.pick(preferUnowned(ready, save.pokedex))
   let next = replaceInstance(save, evolve(inst, target.toDex, data))
   if (!next.pokedex.includes(target.toDex)) next = { ...next, pokedex: [...next.pokedex, target.toDex] }
-  return { save: next, events: [{ kind: 'evolve', uid: inst.id, fromDex: inst.dex, toDex: target.toDex, level: inst.level }] }
+  const events: ProgressEvent[] = [{ kind: 'evolve', uid: inst.id, fromDex: inst.dex, toDex: target.toDex, level: inst.level }]
+  return { save: withEvolveTalents(next, data, events, 0, rng), events }
 }
 
 /** A small world has tracks of its own, bought with its own ₽ (docs/26: the user's call, 2026-10-13). */
@@ -947,11 +1180,14 @@ export function releaseDuplicates(save: SaveData): { save: SaveData; released: P
   const best = new Map<number, PokemonInstance>()
   // Team members first, so a Box copy has to beat them outright to stay.
   for (const p of [...teamOf(save), ...save.box.filter((p) => !inTeam.has(p.id))]) {
-    if (p.shiny || isReviving(p)) continue
+    // A shiny or an outfit (docs/59) is a Pokémon of its own: never a plain copy to let go.
+    if (p.shiny || p.outfit || isReviving(p)) continue
     const cur = best.get(p.dex)
     if (!cur || stronger(p, cur)) best.set(p.dex, p)
   }
-  const released = save.box.filter((p) => !p.shiny && !isReviving(p) && !inTeam.has(p.id) && best.get(p.dex) !== p)
+  const released = save.box.filter(
+    (p) => !p.shiny && !p.outfit && !isReviving(p) && !inTeam.has(p.id) && best.get(p.dex) !== p,
+  )
   if (!released.length) return { save, released }
   const gone = new Set(released.map((p) => p.id))
   return { save: { ...save, box: save.box.filter((p) => !gone.has(p.id)) }, released }
@@ -959,16 +1195,17 @@ export function releaseDuplicates(save: SaveData): { save: SaveData; released: P
 
 /**
  * The portal run's rules pop-up is due (docs/28, docs/15 §20): the first area of the region being played with a portal
- * run switched on, open and not won yet, while the player hasn't seen the rules. Null otherwise.
+ * run switched on, open and not won yet, while the player hasn't seen the rules of its look. Null otherwise.
  */
 export function portalRulesDue(save: SaveData, data: GameData): Area | null {
-  if (save.portalRulesSeen) return null
   const region = regionOf(save)
   return (
     data.areas.find(
       (a) =>
         regionOfArea(a) === region &&
         !!portalModeOf(a, data) &&
+        // Each look its own flag: the Stairway of Plates' rules are new to a Distortion World veteran.
+        !portalRulesSeen(save, portalSkin(portalModeOf(a, data))) &&
         !portalStateOf(save, a.id).won &&
         isAreaUnlocked(save, a.id, data),
     ) ?? null

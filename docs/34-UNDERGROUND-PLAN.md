@@ -76,7 +76,10 @@ Assumed while planning (say if not):
 ### 1.4 The haul: `wallHaul(wall, team)` then `applyHaul(save, haul, data, now)`
 
 - **A plate** joins `save.plates` (for good). Arceus can take its type from then on.
-- **A fossil** goes to the Box through `addFossil`, reviving after its hours, as a fossil find does.
+- **A fossil** goes to the Box through `addFossil`, reviving after its hours, as a fossil find does, and revives shiny at
+  the fossil odds (`fossilShinyChance`, 1 in 10 by default, never the Shiny Charm's: docs/01 §4.6). Owning that fossil
+  or its Pokémon changes nothing: every fossil of the regions opened stays in the draw (a plain copy then meets the
+  Box's one-per-species rule, `releaseDuplicates`; a shiny one is always kept).
 - **An orb of my colour, or of a colour nobody in my team holds** → my orb bag. **An orb of a teammate's colour** →
   sent to them (§3), shown as "Sent to Dawn".
 - Things not fully dug out are lost ("Lost in the rubble").

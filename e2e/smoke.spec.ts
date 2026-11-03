@@ -28,7 +28,14 @@ test('new game → first battle → win', async ({ page }) => {
   // Every round opens with its Pokémon Center, even at full HP (the user's call, 2026-10-27): CONTINUE moves on.
   await expect(page.getByText('Pokémon Center', { exact: true })).toBeVisible({ timeout: 15_000 })
   await page.getByRole('button', { name: 'CONTINUE', exact: true }).click()
-  await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeVisible({ timeout: 20_000 })
+  // The round's deck is shuffled: a find (or a Center card) can come before the first fight, so walk past it.
+  const attack = page.getByRole('button', { name: 'ATTACK', exact: true })
+  const reach = Date.now() + 20_000
+  while (Date.now() < reach && !(await attack.isVisible())) {
+    await clickAny(page, ['PICK IT UP', 'CONTINUE'])
+    await page.waitForTimeout(80)
+  }
+  await expect(attack).toBeVisible()
 
   // The fight to its end; the result shows in the battle's panel, NEXT and BACK at its foot.
   const next = page.getByRole('button', { name: 'Next ▸', exact: true })

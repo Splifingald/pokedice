@@ -1,5 +1,7 @@
-// Admin → Analytics → player → Leaderboard: ban a signed-in player from the leaderboard, or lift the ban. Their game and
-// cloud save are untouched; `leaderboard()` just leaves them out (table leaderboard_bans, migration 0011).
+// Admin → Analytics → player → Leaderboard: ban a signed-in player from everything other players see, or lift the ban.
+// Their game and cloud save are untouched. `leaderboard()` leaves them out (table leaderboard_bans, migration 0011), and
+// since 0114 (docs/63) their Versus, raid and area versus teams go, their open listings are cancelled, their League
+// trophies this week go to 0, and none of these take them back until the ban is lifted.
 import { useEffect, useState } from 'react'
 import { PixelButton } from '@/components/PixelButton'
 import { getSupabase } from '@/lib/supabase'
@@ -39,7 +41,13 @@ export function LeaderboardBan({ player, name }: { player: string; name: string 
   if (banned === undefined) return <p className="text-lg text-muted">Loading…</p>
 
   const toggle = async () => {
-    if (!banned && !window.confirm(`Ban ${name} from the leaderboard? You can lift it later.`)) return
+    if (
+      !banned &&
+      !window.confirm(
+        `Ban ${name}? They leave the boards, their Versus, raid and area teams go and their open trades are cancelled. You can lift it later.`,
+      )
+    )
+      return
     setBusy(true)
     try {
       const c = await client()
@@ -48,7 +56,7 @@ export function LeaderboardBan({ player, name }: { player: string; name: string 
         : await c.from('leaderboard_bans').insert({ user_id: player })
       if (error) throw error
       setBanned(!banned)
-      pushToast(banned ? `${name} is back on the leaderboard` : `${name} is banned from the leaderboard`, 'good')
+      pushToast(banned ? `${name} is no longer banned` : `${name} is banned`, 'good')
     } catch (e) {
       pushToast(e instanceof Error ? e.message : String(e), 'bad')
     } finally {
@@ -60,13 +68,13 @@ export function LeaderboardBan({ player, name }: { player: string; name: string 
     <div className="flex flex-wrap items-center justify-between gap-2">
       <p className="text-lg">
         {banned ? (
-          <span className="text-danger">Banned — hidden from the leaderboard.</span>
+          <span className="text-danger">Banned — off the boards, Versus, raids and trades.</span>
         ) : (
-          <span className="text-muted">Shown on the leaderboard.</span>
+          <span className="text-muted">Not banned.</span>
         )}
       </p>
       <PixelButton size="sm" variant={banned ? 'secondary' : 'danger'} disabled={busy} onClick={() => void toggle()}>
-        {banned ? 'LIFT THE BAN' : 'BAN FROM LEADERBOARD'}
+        {banned ? 'LIFT THE BAN' : 'BAN'}
       </PixelButton>
     </div>
   )

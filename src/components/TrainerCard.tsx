@@ -1,15 +1,27 @@
 // The trainer card, opened from the avatar in the top bar (docs/43 §5.9): compact — your look, your name (a pencil to
 // change it), an ID number (your friend ID once you have one), your badges and your team; the numbers that say how far
 // you are (money, Pokédex, best level, areas, shinies, Versus) fold behind Stats, open by themselves with More details.
+// Versus says the most trophies ever held while the weekly league is on (docs/44 §10), the old board's wins otherwise.
 // Under it, the look other trainers see. A friend's card (docs/16) is drawn with the same pieces: CardFrame, Stat and
 // CardTeam.
 import { useEffect, useState, type ReactNode } from 'react'
-import { badgesHeld, isRich, linearAreas, looksOn, regionOf, regionSpecies, teamOf, versusUnlocked } from '@/engine'
+import {
+  badgesHeld,
+  isRich,
+  linearAreas,
+  looksOn,
+  regionOf,
+  regionSpecies,
+  teamOf,
+  versusLeagueFor,
+  versusUnlocked,
+} from '@/engine'
 import { useT } from '@/i18n/react'
 import { AVATAR_GROUPS, avatarName, avatarOf, playerAvatarId } from '@/lib/avatars'
 import { money } from '@/lib/format'
 import { formatCode, useFriends } from '@/lib/friends'
 import { fetchVersusBoard } from '@/lib/versus'
+import { fetchLeagueBest } from '@/lib/versusLeague'
 import { CharacterSelect } from '@/screens/NewGame'
 import { mutateSave, useGame } from '@/store/game'
 import { useDetails } from '@/store/hooks'
@@ -21,6 +33,7 @@ import { playerOf } from './TrainerArt'
 import { TrainerLook } from './TrainerLook'
 import { TrainerLooks } from './TrainerLooks'
 import { TrainerName } from './TrainerName'
+import { TrophyCount } from './TrophyCount'
 
 /** A five-digit ID number, the same every time for the same trainer. */
 function idNumber(seed: string): string {
@@ -29,7 +42,7 @@ function idNumber(seed: string): string {
   return String(h).padStart(5, '0')
 }
 
-/** Your Versus record, read once from the board when the card opens (signed in, Versus open). */
+/** Your Versus record, read once from the board when the card opens (signed in, Versus open, no league). */
 function useVersusRecord(enabled: boolean): { won: number; held: number } | null {
   const [rec, setRec] = useState<{ won: number; held: number } | null>(null)
   useEffect(() => {
@@ -48,7 +61,27 @@ function useVersusRecord(enabled: boolean): { won: number; held: number } | null
   return rec
 }
 
-export function Stat({ label, value }: { label: string; value: string }) {
+/**
+ * The most trophies ever held in the Versus league, in any week (docs/44 §10): yours, or a friend's (`userId`). Read
+ * once when the card opens; null until the server answers, or when it can't (no migration 0097, offline).
+ */
+export function useLeagueBest(enabled: boolean, userId?: string): number | null {
+  const [best, setBest] = useState<number | null>(null)
+  useEffect(() => {
+    setBest(null)
+    if (!enabled) return
+    let live = true
+    fetchLeagueBest(userId)
+      .then((n) => live && setBest(n))
+      .catch(() => live && setBest(null))
+    return () => {
+      live = false
+    }
+  }, [enabled, userId])
+  return best
+}
+
+export function Stat({ label, value }: { label: string; value: ReactNode }) {
   return (
     <>
       <dt className="font-pixel-sm text-[16px] text-muted">{label}</dt>
@@ -100,7 +133,11 @@ export function TrainerCard() {
   // Folded unless More details is on, until the player opens or folds them here.
   const stats = statsOpen ?? details
   const versusOpen = !!save && versusUnlocked(save, data)
-  const record = useVersusRecord(versusOpen && auth.status === 'signed_in')
+  // The league starts again every Monday: its best week's high mark says more than this week's trophies.
+  const league = !!save && versusLeagueFor(save, data)
+  const signedIn = auth.status === 'signed_in'
+  const record = useVersusRecord(versusOpen && signedIn && !league)
+  const leagueBest = useLeagueBest(versusOpen && signedIn && league)
   // Your friend ID stands in for the ID number once this device knows it (docs/16).
   const friendCode = useFriends((st) => (st.userId && st.userId === auth.userId ? st.code : null))
   if (!save) return null
@@ -111,6 +148,13 @@ export function TrainerCard() {
   const species = regionSpecies(data, region)
   const areas = linearAreas(data, region)
   const best = Math.max(0, ...save.box.map((p) => p.level))
+  // With the league, "best" goes in the label (as Best level's) and the league's trophy for the word: a short value in
+  // every language, a friend's narrower card too.
+  let versusValue: ReactNode = '—'
+  if (!versusOpen) versusValue = t('ui.card.locked')
+  else if (league) {
+    if (leagueBest != null) versusValue = <TrophyCount n={leagueBest} size={13} inherit />
+  } else if (record) versusValue = t('ui.card.versusRecord', { won: record.won, held: record.held })
 
   if (renaming)
     return (
@@ -198,16 +242,7 @@ export function TrainerCard() {
               value={`${areas.filter((a) => save.areaProgress[a.id]?.cleared).length}/${areas.length}`}
             />
             <Stat label={t('ui.card.shinies')} value={String(save.box.filter((p) => p.shiny).length)} />
-            <Stat
-              label={t('ui.card.versus')}
-              value={
-                !versusOpen
-                  ? t('ui.card.locked')
-                  : record
-                    ? t('ui.card.versusRecord', { won: record.won, held: record.held })
-                    : '—'
-              }
-            />
+            <Stat label={t(league ? 'ui.card.versusBest' : 'ui.card.versus')} value={versusValue} />
           </dl>
         )}
       </CardFrame>

@@ -1,6 +1,11 @@
+import { EggSprite } from './EggSprite'
 import { useMemo, type ReactNode } from 'react'
 import {
   ARCEUS_DEX,
+  battleSpeed,
+  talentOf,
+  TALENT,
+  type TalentKey,
   choiceFormsOf,
   plateTypes,
   COPIES_FOE_DICE,
@@ -26,6 +31,7 @@ import {
   type Milestone,
   type PokemonInstance,
   type Species,
+  outfitOf,
 } from '@/engine'
 import { typeName } from '@/lib/format'
 import { t } from '@/i18n'
@@ -37,7 +43,7 @@ import { Chip } from './Chip'
 import { CryButton } from './CryButton'
 import { DiceSet } from './DiceSet'
 import { FaceDice, facesStatuses, StatusLines } from './FaceDice'
-import { KoPanel } from './Extreme'
+import { BuffTag, KoPanel } from './Extreme'
 import { HpBar } from './HpBar'
 import { PixelIcon, type IconName } from './icons'
 import { ItemSprite } from './ItemSprite'
@@ -48,13 +54,25 @@ import { MiniSprite, SpriteImg } from './SpriteImg'
 import { StatChip, statHint, statLabel, type StatKind } from './StatChip'
 import { TypeBadge } from './TypeBadge'
 import { TypeMatchups } from './TypeMatchups'
+import { OutfitChip } from './Outfit'
+import { TalentSection } from './Talent'
 
 /** A stat as a big number over its name (Speed, Rerolls, Catch value); the hint is the tooltip. */
-function StatTile({ stat, value }: { stat: StatKind; value: ReactNode }) {
+/** Speed's breakdown under its total: "90 + Lv.30", and Quick's or Ultra Speed's share when it carries one (docs/51). */
+function speedParts(base: number, level: number, talent: TalentKey | null): string {
+  const up = talent === 'quick' ? TALENT.quick : talent === 'ultraSpeed' ? TALENT.ultraSpeed : 0
+  return up
+    ? t('ui.stat.speed.partsTalent', { base, level, n: Math.round(up * 100) })
+    : t('ui.stat.speed.parts', { base, level })
+}
+
+/** `parts`: how the number is made, under it (Speed: "90 + Lv.30"). */
+function StatTile({ stat, value, parts }: { stat: StatKind; value: ReactNode; parts?: string }) {
   useT()
   return (
-    <div className="grid justify-items-center bg-paper px-1 pb-2 pt-1.5 shadow-ring-line" title={statHint(stat)}>
+    <div className="grid content-start justify-items-center bg-paper px-1 pb-2 pt-1.5 shadow-ring-line" title={statHint(stat)}>
       <b className="text-[26px] font-normal leading-none tabular-nums">{value}</b>
+      {parts && <small className="font-pixel-sm text-[15px] leading-none text-muted tabular-nums">{parts}</small>}
       <small className="font-pixel-sm text-[16px] text-muted">{statLabel(stat)}</small>
     </div>
   )
@@ -471,7 +489,10 @@ export function PokemonSheet({
   const species = getSpecies(data, dex)
   const level = inst?.level ?? 1
   const shiny = shinyAsked ?? inst?.shiny
-  const stats = effectiveStats(species, level, data)
+  // Its outfit (docs/59), while the switch is on: the sprite and a chip naming it.
+  const outfit = inst && inst.dex === dex ? outfitOf(data, inst) : null
+  // Its own hidden talent counts (docs/51: Thick Hide's HP).
+  const stats = effectiveStats(species, level, data, inst ? talentOf(data, inst) : null)
   const hints = useTypeHints()
   const types = species.type2 ? [species.type1, species.type2] : [species.type1]
   const lowHp = lowHpFormOf(data, species.dex)
@@ -490,7 +511,8 @@ export function PokemonSheet({
       {hero && (
       <div className="flex items-center gap-3">
         <div className="grid h-[112px] w-[120px] shrink-0 place-items-center bg-sky shadow-ring">
-          <SpriteImg dex={dex} size={96} shiny={shiny} />
+          {/* A gift Egg (docs/61 §5.3) keeps what's inside to itself. */}
+          {inst?.egg ? <EggSprite size={72} /> : <SpriteImg dex={dex} size={96} shiny={shiny} outfit={outfit} />}
         </div>
         <div className="grid min-w-0 flex-1 gap-2">
           <div className="flex flex-wrap items-center gap-1">
@@ -502,6 +524,7 @@ export function PokemonSheet({
                 <PixelIcon name="star" size={12} /> {t('ui.mon.shinyTag')}
               </Chip>
             )}
+            {outfit && <OutfitChip outfit={outfit} />}
             {inst?.revivesAt == null && <CryButton dex={dex} name={species.name} className="ml-auto" />}
           </div>
           {inst?.revivesAt != null ? (
@@ -512,6 +535,8 @@ export function PokemonSheet({
               {xp && <XpBar inst={inst} numbers={details} />}
               {/* Extreme mode: resting after a K.O., and until when (docs/22). */}
               {inst.currentHp <= 0 && <KoPanel inst={inst} />}
+              {/* Extreme mode's Pokébuff (docs/47). */}
+              <BuffTag inst={inst} />
             </>
           ) : (
             <StatChip
@@ -578,6 +603,8 @@ export function PokemonSheet({
         </ul>
       </SheetSection>
 
+      <TalentSection dex={dex} inst={inst} />
+
       <MilestoneTrack species={species} level={inst ? inst.level : null} onOpenDex={onOpenDex} />
 
       {beforeMatchups}
@@ -600,7 +627,16 @@ export function PokemonSheet({
           {t('ui.sheet.stats')}
         </summary>
         <div className="mt-1 grid grid-cols-3 gap-1.5">
-          <StatTile stat="speed" value={species.speed} />
+          {/* An owned Pokémon's Speed is its species' plus its level; the Pokédex shows the species' own. */}
+          {inst ? (
+            <StatTile
+              stat="speed"
+              value={battleSpeed(species, inst.level, data, talentOf(data, inst))}
+              parts={speedParts(species.speed, inst.level, talentOf(data, inst))}
+            />
+          ) : (
+            <StatTile stat="speed" value={species.speed} />
+          )}
           <StatTile stat="rerolls" value={stats.rerolls} />
           <StatTile stat="catch" value={species.catchValue} />
         </div>

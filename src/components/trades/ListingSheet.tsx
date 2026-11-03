@@ -47,6 +47,7 @@ import {
   VisChip,
   WantTile,
 } from './TradeBits'
+import { DexTalentGem, InstTalentGem } from '../Talent'
 
 type Step = { kind: 'view' } | { kind: 'pick' } | { kind: 'confirm'; give: TakeChoice; region?: RegionId }
 
@@ -210,6 +211,7 @@ function ListingFlow({
                       <span className="flex min-w-0 flex-wrap items-center gap-1">
                         <b className="truncate text-[19px] font-normal leading-none">{name(p.dex)}</b>
                         {p.shiny && <ShinyStar />}
+                        <InstTalentGem inst={p} />
                         <LevelTag level={p.level} />
                         {c.at.inTeam && <Chip tone="dark">{t('ui.trades.teamTag')}</Chip>}
                         {several && <Chip tone="lock">{regionName(data, c.at.region)}</Chip>}
@@ -299,6 +301,7 @@ function ListingFlow({
               <b className="flex max-w-full items-center gap-1 truncate text-[18px] font-normal leading-none">
                 {mon}
                 {l.shiny && <ShinyStar />}
+                {l.talent && <DexTalentGem dex={l.dex} />}
               </b>
               <LevelTag level={r.arrival.level} />
             </span>
@@ -428,6 +431,7 @@ function ListingFlow({
           <span className="inline-flex items-center gap-1.5">
             {mon}
             {l.shiny && <ShinyStar />}
+            {l.talent && <DexTalentGem dex={l.dex} />}
           </span>
         }
         sub={[

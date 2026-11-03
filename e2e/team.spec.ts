@@ -52,7 +52,7 @@ test.describe('on a phone', () => {
     await boot(page)
     await page.goto('/team')
     await expect(page.getByRole('heading', { level: 1, name: 'Team' })).toBeVisible()
-    // The count is the cards' (no "3/3" over them); the Center's rule is the sheet's, not a chip here.
+    // The count is the cards' (no "3/3" over them); the Center's rule is a line under the title, not a chip.
     await expect(page.getByText('3/3')).toHaveCount(0)
     await expect(card(page, /^Charmander, Lv\.\d+, HP \d+\/\d+, lead$/)).toBeVisible()
     await expect(page.getByRole('heading', { name: /^Box/ })).toContainText('7')
@@ -99,6 +99,9 @@ test.describe('on a phone', () => {
     await expect(sheet.getByText('Speed', { exact: true })).toBeHidden()
     await sheet.locator('summary', { hasText: 'Stats' }).click()
     await expect(sheet.getByText('Speed', { exact: true })).toBeVisible()
+    // Speed is the species' base Speed plus the level (docs/52): Pikachu's 90 at Lv.21.
+    await expect(sheet.getByText('90 + Lv.21', { exact: true })).toBeVisible()
+    await expect(sheet.getByText('111', { exact: true })).toBeVisible()
     await expect(sheet.getByRole('button', { name: 'Use an item' })).toBeVisible()
     expect(await smallControls(page)).toEqual([])
     expect(await serious(page)).toEqual([])
@@ -122,6 +125,37 @@ test.describe('on a phone', () => {
     await expect.poll(async () => (await stored(page)).team[0]).toBe('team-2')
     // The drag opened nothing.
     await expect(page.getByRole('dialog')).toHaveCount(0)
+  })
+
+  test('at a Pokémon Center, Team menu opens the Team with its moves; Back to the Center returns', async ({ page }) => {
+    // Hurt: CONTINUE opens the round with its Center.
+    const save = teamSave()
+    await boot(page, { ...save, box: save.box.map((p) => ({ ...p, currentHp: 1 })) })
+    await page.goto('/team')
+    // Away from a Center the Team says where changes wait (the user's call, 2026-10-29).
+    const only = page.getByText('You can change your team at Pokémon Centers only.')
+    await expect(only).toBeVisible()
+
+    await page.goto('/home')
+    await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+    await expect(page.getByRole('heading', { name: /^Team \(3\/3\)/ })).toBeVisible()
+    // No tab bar in an area: the Center's own button is a phone's way to the Team.
+    await page.getByRole('button', { name: 'Team menu' }).click()
+    await expect(page).toHaveURL(/\/team$/)
+    await expect(page.getByText('You’re at a Pokémon Center: you can change your team.')).toBeVisible()
+    await expect(only).toHaveCount(0)
+
+    await page.locator('#box-title ~ ul button', { hasText: 'Vulpix' }).click()
+    const sheet = page.getByRole('dialog', { name: 'Vulpix' })
+    await sheet.getByRole('button', { name: 'Swap Vulpix in for Geodude, who goes to the Box' }).click()
+    await expect.poll(async () => (await stored(page)).team).toEqual(['e2e-1', 'team-1', 'team-5'])
+
+    // Back inside, healed already: no scene again, the new team on its cards.
+    await page.getByRole('button', { name: 'Back to the Center' }).click()
+    await expect(page).toHaveURL(/\/area$/)
+    await expect(page.getByRole('img', { name: 'Healing…' })).toHaveCount(0)
+    await expect(page.locator('ol').getByRole('button', { name: /Vulpix/ })).toBeVisible()
+    expect(await serious(page)).toEqual([])
   })
 })
 
@@ -174,6 +208,8 @@ test.describe('on a PC', () => {
   test('at a Pokémon Center the full team’s swap is one tap on who leaves', async ({ page }) => {
     await boot(page)
     await page.goto('/team')
+    // window.__pd comes with store/run's own import, after the first paint (src/main.tsx): wait for it.
+    await page.waitForFunction(() => '__pd' in window)
     await page.evaluate(() => {
       const pd = (window as unknown as { __pd: { useGame: { setState: (f: (s: { run: object }) => object) => void } } })
         .__pd

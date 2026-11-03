@@ -81,6 +81,8 @@ export function rowsToBundle(r: TableRows): BundleRaw {
       unique: !!l.unique_find,
       minQty: num(l.min_qty),
       maxQty: num(l.max_qty),
+      // A Pokémon posing as the find (docs/61 §3); a database before migration 0111 has no column.
+      ...(l.disguise && typeof l.disguise === 'object' ? { disguise: l.disguise as Area['lootPool'][number]['disguise'] } : {}),
     })
     lootBy.set(String(l.area_id), list)
   }
@@ -309,6 +311,7 @@ export function bundleToRows(b: BundleRaw): TableRows {
         unique_find: l.unique,
         min_qty: l.minQty,
         max_qty: l.maxQty,
+        disguise: l.disguise ?? null,
       })),
     ),
     combo_upgrades: b.upgrades.combos.map((x) => ({

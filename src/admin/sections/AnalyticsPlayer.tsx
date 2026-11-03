@@ -67,8 +67,19 @@ function Block({
   )
 }
 
-/** The selected player: their game as it stands, then messages, the leaderboard ban and the cheats. */
-export function PlayerPanel({ player, name }: { player: string; name: string }) {
+/**
+ * The selected player: their game as it stands, then messages, the leaderboard ban and the cheats. `deviceId`, the
+ * latest device they played on, brings a signed-in player's messages from when they played there as a guest.
+ */
+export function PlayerPanel({
+  player,
+  name,
+  deviceId,
+}: {
+  player: string
+  name: string
+  deviceId?: string | null
+}) {
   const data = useGame((s) => s.data)
   const [state, setState] = useState<GameState | null | undefined>(undefined)
   const [err, setErr] = useState<string | null>(null)
@@ -188,7 +199,7 @@ export function PlayerPanel({ player, name }: { player: string; name: string }) 
       )}
 
       <Block title="Messages">
-        <PlayerMessages player={player} name={name} save={state?.save} />
+        <PlayerMessages player={player} name={name} save={state?.save} deviceId={deviceId} />
       </Block>
 
       <Block title="Leaderboard">

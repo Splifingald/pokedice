@@ -129,6 +129,7 @@ const BALL_COLORS: Record<string, { T: string; M: string }> = {
   'great-ball': { T: '#3a74d8', M: '#e03c3c' },
   'ultra-ball': { T: '#34343c', M: '#f2c230' },
   'master-ball': { T: '#8a3fc4', M: '#f07cc0' },
+  'friend-ball': { T: '#4aa93a', M: '#e2452a' },
 }
 
 export function PokeBall({ ballKey, size = 28, className }: { ballKey?: string | null; size?: number; className?: string }) {

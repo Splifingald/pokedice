@@ -9,6 +9,8 @@ import {
   diceTutorialTarget,
   emptyProgress,
   finishDiceTutorial,
+  finishItemLesson,
+  itemLessonItem,
   newSave,
   nextOneTimePopup,
   startDiceTutorial,
@@ -81,9 +83,10 @@ describe('the dice tutorial (docs/46 §5)', () => {
     expect(startDiceTutorial(finishDiceTutorial(bought)).diceTutorial).toBe('done')
   })
 
-  it('reads its step from the page: to the Mart, Upgrades, Dice Types, the die', () => {
+  it('reads its step from the page: Home, its Mart tab, Upgrades, Dice Types, the die', () => {
     const save = winRoundOne(newSave(4, on, 0, newId), on)
-    expect(diceTutorialStep(save, on, at('/area'))).toBe('toMart')
+    expect(diceTutorialStep(save, on, at('/area'))).toBe('toHome')
+    expect(diceTutorialStep(save, on, at('/team'))).toBe('toHome')
     expect(diceTutorialStep(save, on, at('/home'))).toBe('toMart')
     expect(diceTutorialStep(save, on, at('/shop'))).toBe('toUpgrades')
     expect(diceTutorialStep(save, on, at('/shop', 'sell'))).toBe('toUpgrades')
@@ -97,5 +100,50 @@ describe('the dice tutorial (docs/46 §5)', () => {
     expect(nextOneTimePopup(save, on, ctx)).toBe('diceTutorial')
     expect(nextOneTimePopup(save, on, { ...ctx, calm: false })).toBeNull()
     expect(nextOneTimePopup(finishDiceTutorial(save), on, ctx)).toBe('away')
+  })
+
+  it("may start over the round's Pokémon Center right after Joey, and nothing else may", () => {
+    const save = winRoundOne(newSave(4, on, 0, newId), on)
+    const ctx = { calm: false, atCenter: true, path: '/area', signedIn: false, now: null, awayReport: true }
+    expect(nextOneTimePopup(save, on, ctx)).toBe('diceTutorial')
+    expect(nextOneTimePopup(finishDiceTutorial(save), on, ctx)).toBeNull()
+    expect(nextOneTimePopup(save, on, { ...ctx, atCenter: false })).toBeNull()
+  })
+})
+
+describe('the item tutorial (docs/46 §7)', () => {
+  /** A new player past the reroll lesson, with `items` in the Bag. */
+  const player = (items: Record<string, number>) => ({
+    ...newSave(4, on, 0, newId),
+    rerollLesson: 'done' as const,
+    inventory: items,
+  })
+  const mon = (hp: number, maxHp = 40) => ({ hp, maxHp })
+
+  it('points to a potion below half HP, when it would waste at most 5 HP', () => {
+    const save = player({ potion: 1 })
+    expect(itemLessonItem(save, on, mon(19))).toBe('potion') // 21 missing
+    expect(itemLessonItem(save, on, mon(14, 29))).toBe('potion') // 15 missing: 5 wasted
+    expect(itemLessonItem(save, on, mon(13, 27))).toBeNull() // 14 missing: 6 wasted
+    expect(itemLessonItem(save, on, mon(20))).toBeNull() // half HP is not below half
+    expect(itemLessonItem(save, on, mon(0))).toBeNull()
+  })
+
+  it('takes the smallest heal that fits: a Super Potion only with 45 HP missing', () => {
+    expect(itemLessonItem(player({ 'super-potion': 1 }), on, mon(10))).toBeNull() // 30 missing
+    expect(itemLessonItem(player({ 'super-potion': 1 }), on, mon(20, 65))).toBe('super-potion')
+    expect(itemLessonItem(player({ potion: 2, 'super-potion': 1 }), on, mon(20, 65))).toBe('potion')
+    expect(itemLessonItem(player({ potion: 0 }), on, mon(5))).toBeNull()
+  })
+
+  it('once only, for players who began with the tutorials, the set opening on, heal items allowed', () => {
+    const save = player({ potion: 1 })
+    expect(itemLessonItem(finishItemLesson(save), on, mon(5))).toBeNull()
+    expect(itemLessonItem({ ...save, rerollLesson: undefined }, on, mon(5))).toBeNull()
+    expect(itemLessonItem({ ...save, rerollLesson: undefined, diceTutorial: 'done' }, on, mon(5))).toBe(
+      'potion',
+    )
+    expect(itemLessonItem(save, off, mon(5))).toBeNull()
+    expect(itemLessonItem(save, on, mon(5), true)).toBeNull()
   })
 })

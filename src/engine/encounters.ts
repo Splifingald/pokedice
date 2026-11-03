@@ -1,3 +1,6 @@
+import { areaVersusConfig, foeEncounter, placeVersusCards, type AreaFoe } from './areaVersus'
+import { safariDealable, safariTier } from './safari'
+import { dealtAsMeeting } from './moments'
 import { isLegendary } from './breeding'
 import { areaDayTime, wildPoolAt } from './dayNight'
 import { shuffle } from './deal'
@@ -7,16 +10,24 @@ import { drawLoot } from './items'
 import { openingCardAt, openingDeck, openingRound, openingRoundDue } from './opening'
 import { pityChance } from './pity'
 import { asSeenBy, gymsFor, type PlayerSide } from './rival'
-import type { Rng } from './rng'
+import { createRng, type Rng } from './rng'
 import { dealTrainerItems } from './trainerItems'
+import { foeTalentChance, rollTalent, talentsOn } from './talents'
+import { giftDealable } from './giftCard'
 import { pickTrickGhost, trickDealable } from './trickOrTreat'
 import { isWorldMythical, worldOfArea } from './worldList'
+import { weatherPoolTimes } from './weather'
+import { titansOn } from './titans'
+import { trialOf, trialTeam } from './trials'
 import type {
   Area,
   AreaProgress,
   BattleBackground,
   BossDef,
+  LootDisguise,
+  RoadblockKind,
   DeckCard,
+  SaveData,
   EncounterKind,
   GameData,
   LevelOffsetRange,
@@ -26,12 +37,26 @@ import type {
   TrainerMon,
   TrainerRole,
   TrickTier,
+  Weather,
   WildPoolEntry,
 } from './types'
 
 export type Encounter =
   /** `partner`: a second wild Pokémon, for a double battle (docs/33). */
-  | { kind: 'wild'; dex: number; level: number; isNew: boolean; shiny?: boolean; partner?: WildPartner }
+  /** `talent`: it carries its family's hidden talent (docs/51). */
+  /** `disguisedAs`: it posed as this item until picked up (docs/61 §3): never fled from, never one of a pair. */
+  | {
+      kind: 'wild'
+      dex: number
+      level: number
+      isNew: boolean
+      shiny?: boolean
+      talent?: boolean
+      partner?: WildPartner
+      disguisedAs?: string
+      /** A Kalos horde (docs/62 §5): the others, fought two at a time with this one. */
+      horde?: WildPartner[]
+    }
   /**
    * `double`: fought 2 v 2, two of the team out at once (docs/33). `prize`: a set opening's trainer (docs/46) pays these
    * ₽ for the win instead of the usual amount per K.O.
@@ -44,6 +69,10 @@ export type Encounter =
       team: TrainerMon[]
       double?: boolean
       prize?: number
+      /** A real player's team (docs/54): the fight is theirs, as it was, with its own rules (`isPlayerFoe`). */
+      player?: AreaFoe
+      /** A rival's set meeting (docs/61 §5.2): met once it's won. */
+      moment?: string
     }
   | {
       kind: 'gym'
@@ -62,17 +91,25 @@ export type Encounter =
       rebattle?: { regionId: string; tier: number }
       /** Fought 2 v 2 (Tate & Liza, docs/33). */
       double?: boolean
+      /** An island trial (docs/62 §6): its Totem and allies are `team`, the captain greets. */
+      trial?: string
     }
   /** `reason`: 'round' opens a new round; 'fainted' follows a K.O. in an easy area. */
-  | { kind: 'center'; forced: boolean; reason?: 'fainted' | 'round' }
+  | { kind: 'center'; forced: boolean; reason?: 'fainted' | 'round' | 'wipe' }
   /** `returning`: beaten before, fled the catch, back for another try. */
-  | { kind: 'boss'; dex: number; level: number; returning?: boolean; shiny?: boolean }
+  /** `titan`: a Titan (docs/62 §7), fought in two phases and never caught. */
+  | { kind: 'boss'; dex: number; level: number; returning?: boolean; shiny?: boolean; talent?: boolean; titan?: boolean }
   /** Something on the ground: `qty` of an item, or Pokédollars (itemKey 'money', qty = ₽). */
-  | { kind: 'item'; entryId: string; itemKey: string; qty: number }
+  /** `pickup`: found after a win by this Pokémon's Pickup talent (docs/51), not a card of the deck. */
+  | { kind: 'item'; entryId: string; itemKey: string; qty: number; pickup?: { uid: string; dex: number } }
   /** The Game Corner: play the slot machine as long as you like. */
   | { kind: 'casino' }
   /** Trick or Treat (docs/29): a ghost from the area's list, tempted with Treats and caught with a Trick Ball. */
-  | { kind: 'trick'; dex: number; level: number; tier: TrickTier; isNew: boolean; shiny?: boolean }
+  | { kind: 'trick'; dex: number; level: number; tier: TrickTier; isNew: boolean; shiny?: boolean; talent?: boolean }
+  /** The Gift card (docs/64 §4.0): a present to open or make bigger; what it holds is drawn when it appears. */
+  | { kind: 'gift' }
+  /** A Safari's wild card (docs/61 §4): Trick or Treat's gauge, with Bait and Safari Balls; nobody battles. */
+  | { kind: 'safari'; dex: number; level: number; tier: TrickTier; isNew: boolean; shiny?: boolean; talent?: boolean }
 
 /** A wild double battle's second Pokémon (docs/33). */
 export interface WildPartner {
@@ -80,6 +117,7 @@ export interface WildPartner {
   level: number
   isNew: boolean
   shiny?: boolean
+  talent?: boolean
 }
 
 export type ForceKind = EncounterKind | 'boss' | 'gym'
@@ -102,6 +140,13 @@ export interface EncounterContext {
   player?: PlayerSide | null
   /** Extreme mode: no Pokémon Center is ever dealt or sent. */
   noCenters?: boolean
+  /**
+   * Extreme mode's boon Centers (docs/47): only a round's opening Center and the deck's Center cards; none sent for a
+   * hurt or fainted team.
+   */
+  boonCenters?: boolean
+  /** Extreme mode's boon Centers: the team was K.O. here, so the next round opens with a Center that only swaps. */
+  wipeCenter?: boolean
   /** × the wild shiny odds here: a Shiny Parade live event covering the area (liveEvents shinyBoost). */
   shinyBoost?: number
   /** The player's wild shiny odds, 0–1: the Shiny Charm's (general wildShinyChance). Unset = game_config's. */
@@ -111,7 +156,18 @@ export interface EncounterContext {
    * Unset = every one, as where time isn't kept.
    */
   hour?: number | null
+  /**
+   * Real-player battles (docs/54): the team the server has for this area, when the save meets them here
+   * (`areaVersusHere`). Without one, no deck holds the card and a card already dealt is set aside.
+   */
+  versusFoe?: AreaFoe | null
+  /** The area's weather now (docs/62 §2): in Galar, the day's brings its types out more. */
+  weather?: Weather | null
 }
+
+/** A real player's team (docs/54), not a trainer of the content. */
+export const isPlayerFoe = (enc: Encounter | null | undefined): enc is Extract<Encounter, { kind: 'trainer' }> & { player: AreaFoe } =>
+  enc?.kind === 'trainer' && !!enc.player
 
 /** Every round the area asks for is done: its gym / legendary waits, and the area can clear. */
 export const roundsComplete = (area: Area, progress: AreaProgress) =>
@@ -128,18 +184,21 @@ export function dueGym(area: Area, progress: AreaProgress, data: GameData, side?
   return null
 }
 
-function gymEncounter(area: Area, t: Trainer, data: GameData, side?: PlayerSide | null): Encounter {
+function gymEncounter(area: Area, t: Trainer, data: GameData, side?: PlayerSide | null, save?: SaveData | null): Encounter {
   const gyms = gymsFor(area, data, side)
+  // An island trial (docs/62 §6): the Totem and its allies instead of the captain's team.
+  const trial = trialOf(data, t.id, save)
   return {
     kind: 'gym',
     trainerId: t.id,
     name: t.name,
     spriteUrl: t.spriteUrl,
-    team: dealTrainerItems(t.team, t.items, data),
+    team: trial ? trialTeam(trial, data) : dealTrainerItems(t.team, t.items, data),
     role: t.role,
     badge: t.badge,
     index: gyms.indexOf(t.id) + 1,
     total: gyms.length,
+    ...(trial && { trial: trial.id }),
   }
 }
 
@@ -157,7 +216,13 @@ export const progressRaidsOn = (data: GameData): boolean => eventOn(data, 'raid'
 export const isRaidBoss = (data: GameData, b: BossDef): boolean => !!b.raid && progressRaidsOn(data)
 
 /** The bosses an area fights as bosses (its raids left out). */
-export const fightBosses = (area: Area, data: GameData): BossDef[] => (area.legendaryBoss ?? []).filter((b) => !isRaidBoss(data, b))
+/** The roadblock this area's boss is (docs/61 §2), or null for a legendary (or no boss of that species there). */
+export const roadblockOf = (area: Area | null | undefined, dex: number): RoadblockKind | null =>
+  area?.legendaryBoss?.find((b) => b.dex === dex)?.roadblock ?? null
+
+export const fightBosses = (area: Area, data: GameData): BossDef[] =>
+  // A Titan (docs/62 §7) is a boss only while its switch is on.
+  (area.legendaryBoss ?? []).filter((b) => !isRaidBoss(data, b) && (!b.titan || titansOn(data)))
 
 /** An area's progression raids, in order. */
 export const raidBosses = (area: Area, data: GameData): BossDef[] => (area.legendaryBoss ?? []).filter((b) => isRaidBoss(data, b))
@@ -179,7 +244,7 @@ export function dueBoss(area: Area, progress: AreaProgress, teamAvgLevel: number
  * One roll of the wild shiny odds — the player's (the Shiny Charm, `odds`) or game_config's `shinyChance` — × a Shiny
  * Parade's boost for wild Pokémon.
  */
-const rollShiny = (data: GameData, rng: Rng, boost = 1, odds?: number): boolean => {
+export const rollShiny = (data: GameData, rng: Rng, boost = 1, odds?: number): boolean => {
   const chance = Math.min(1, (odds ?? data.config.shinyChance ?? 0) * Math.max(1, boost))
   return chance > 0 && rng.next() < chance
 }
@@ -206,7 +271,12 @@ const legendShiny = (b: BossDef, area: Area, data: GameData, rng?: Rng, odds?: n
  * a kind and the Pokédex says it.
  */
 export const bossCaught = (area: Area, progress: AreaProgress, pokedex: readonly number[], dex: number, data: GameData): boolean =>
-  worldOfArea(data, area) ? !!progress.bossesCaught?.includes(dex) : pokedex.includes(dex)
+  // A Titan (docs/62 §7) is beaten, never caught: done once beaten.
+  area.legendaryBoss?.some((b) => b.dex === dex && b.titan)
+    ? progress.bossesDefeated.includes(dex)
+    : worldOfArea(data, area)
+      ? !!progress.bossesCaught?.includes(dex)
+      : pokedex.includes(dex)
 
 /**
  * A legendary beaten earlier that fled the catch. It keeps coming back — one card per encounter deck — until caught. A
@@ -288,15 +358,16 @@ export function rollRoamer(ctx: EncounterContext, rng: Rng): Encounter | null {
  * themselves. While it's ×1, or every one is caught (or none is), the pool's own weights.
  */
 export function wildOdds(
-  ctx: Pick<EncounterContext, 'area' | 'progress' | 'data' | 'pokedex' | 'hour'>,
+  ctx: Pick<EncounterContext, 'area' | 'progress' | 'data' | 'pokedex' | 'hour' | 'weather'>,
 ): { entry: WildPoolEntry; weight: number; isNew: boolean }[] {
   const caught = new Set(ctx.pokedex)
   const pool = wildPoolAt(ctx.area, areaDayTime(ctx.data, ctx.area, ctx.hour))
-  const odds = pool.map((entry) => ({
-    entry,
-    weight: ctx.data.species[entry.dex] ? Math.max(0, entry.weight) : 0,
-    isNew: !caught.has(entry.dex),
-  }))
+  const odds = pool.map((entry) => {
+    const sp = ctx.data.species[entry.dex]
+    // Galar's weather of the day (docs/62 §4): its types come out more; no species is added or taken away.
+    const times = sp ? weatherPoolTimes(ctx.area, ctx.data, ctx.weather, sp.type2 ? [sp.type1, sp.type2] : [sp.type1]) : 1
+    return { entry, weight: sp ? Math.max(0, entry.weight) * times : 0, isNew: !caught.has(entry.dex) }
+  })
   const total = odds.reduce((sum, o) => sum + o.weight, 0)
   const fresh = odds.reduce((sum, o) => sum + (o.isNew ? o.weight : 0), 0)
   if (!(fresh > 0 && fresh < total)) return odds
@@ -333,8 +404,45 @@ export function rollTrick(ctx: EncounterContext, rng: Rng): Encounter | null {
   return { kind: 'trick', dex: ghost.dex, level, tier: ghost.tier, isNew: !ctx.pokedex.includes(ghost.dex), ...(shiny && { shiny }) }
 }
 
+/**
+ * A Gift card (docs/64 §4.0): the present itself (its rewards are drawn as it appears, engine/giftCard.ts). Null while
+ * the switch is off for the player or the area can't deal it: the card is then discarded like any card the area can't
+ * produce.
+ */
+export const rollGift = (ctx: EncounterContext): Encounter | null =>
+  giftDealable(ctx.data, ctx.area) ? { kind: 'gift' } : null
+
+/**
+ * What comes out of a broken gift (docs/64 §4.0): a wild Pokémon of the area's own pool, as a wild card would bring it
+ * (its level, the shiny odds, a hidden talent), never a roaming legendary. Null when the area has none.
+ */
+export function rollGiftWild(ctx: EncounterContext, rng: Rng): Encounter | null {
+  const entry = rng.weighted(wildOdds(ctx), (o) => o.weight)?.entry
+  if (!entry) return null
+  const level = enemyLevel(rng.int(entry.minLevel, Math.max(entry.minLevel, entry.maxLevel)), ctx, rng)
+  const shiny = !shinyLocked(ctx.data, entry.dex) && rollShiny(ctx.data, rng, ctx.shinyBoost, ctx.shinyChance)
+  const enc: Encounter = { kind: 'wild', dex: entry.dex, level, isNew: !ctx.pokedex.includes(entry.dex), ...(shiny && { shiny }) }
+  return dealTalents(enc, ctx.data, rng)
+}
+
+/**
+ * A Safari's wild card (docs/61 §4): a Pokémon from the area's wild pool by its odds (the new-Pokémon pity and the time
+ * of day as for a wild card; never a roamer), its tier from the Safari's list or its catch value, the wild shiny odds.
+ */
+export function rollSafari(ctx: EncounterContext, rng: Rng): Encounter | null {
+  const entry = rng.weighted(wildOdds(ctx), (o) => o.weight)?.entry
+  if (!entry) return null
+  const level = enemyLevel(rng.int(entry.minLevel, Math.max(entry.minLevel, entry.maxLevel)), ctx, rng)
+  const shiny = !shinyLocked(ctx.data, entry.dex) && rollShiny(ctx.data, rng, ctx.shinyBoost, ctx.shinyChance)
+  const tier = safariTier(ctx.data, ctx.area.id, entry.dex)
+  return { kind: 'safari', dex: entry.dex, level, tier, isNew: !ctx.pokedex.includes(entry.dex), ...(shiny && { shiny }) }
+}
+
 export function rollTrainer(ctx: EncounterContext, rng: Rng): Encounter | null {
-  const entry = rng.weighted(ctx.area.trainerPool, (t) => (ctx.data.trainers[t.trainerId] ? t.weight : 0))
+  // A rival is met at a set point while rivals are on (docs/61 §5.2), never as a pool's card.
+  const entry = rng.weighted(ctx.area.trainerPool, (t) =>
+    ctx.data.trainers[t.trainerId] && !dealtAsMeeting(ctx.data, t.trainerId) ? t.weight : 0,
+  )
   const trainer = entry && ctx.data.trainers[entry.trainerId]
   if (!trainer || !trainer.team.length) return null
   return {
@@ -350,67 +458,83 @@ export function rollTrainer(ctx: EncounterContext, rng: Rng): Encounter | null {
   }
 }
 
-const DECK_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick'] as const
+const DECK_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus', 'gift'] as const
 export type DeckCounts = Record<(typeof DECK_KINDS)[number], number>
 
 /**
  * Cards of each kind in one encounter deck. An area's encounter weight *is* its number of copies (v1.6): wild 8,
  * Center 1, item 1 → a 10-card deck. Kinds the area can't produce (no wild pool / no trainers / no loot / the Game Corner
- * or Trick or Treat switched off, or no ghosts) get none; an area with nothing at all gets a single Center.
+ * or Trick or Treat switched off, or no ghosts; the Gift card switched off) get none; an area with nothing at all gets a
+ * single Center. Gift cards, when dealt, take the item cards' place (docs/64 §4.0: "the item card becomes a Gift").
  */
 export function deckCounts(
   weights: Partial<Record<EncounterKind, number>>,
-  can: { wild: boolean; trainer: boolean; item?: boolean; casino?: boolean; trick?: boolean },
+  can: { wild: boolean; trainer: boolean; item?: boolean; casino?: boolean; trick?: boolean; versus?: boolean; gift?: boolean },
 ): DeckCounts {
+  const count = (k: (typeof DECK_KINDS)[number]) => Math.max(0, Math.round(Number(weights[k]) || 0))
+  const gifts = can.gift ? count('gift') : 0
   const copies = (k: (typeof DECK_KINDS)[number]) =>
     (k === 'wild' && !can.wild) ||
     (k === 'trainer' && !can.trainer) ||
-    (k === 'item' && !can.item) ||
+    (k === 'item' && (!can.item || gifts > 0)) ||
     (k === 'casino' && !can.casino) ||
-    (k === 'trick' && !can.trick)
+    (k === 'trick' && !can.trick) ||
+    (k === 'versus' && !can.versus) ||
+    (k === 'gift' && !gifts)
       ? 0
-      : Math.max(0, Math.round(Number(weights[k]) || 0))
+      : count(k)
   const c = Object.fromEntries(DECK_KINDS.map((k) => [k, copies(k)])) as DeckCounts
-  return DECK_KINDS.some((k) => c[k] > 0) ? c : { wild: 0, trainer: 0, center: 1, item: 0, casino: 0, trick: 0 }
+  // A real player's card alone is no deck: it only comes on top of the area's own cards.
+  return DECK_KINDS.some((k) => k !== 'versus' && c[k] > 0)
+    ? c
+    : { wild: 0, trainer: 0, center: 1, item: 0, casino: 0, trick: 0, versus: 0, gift: 0 }
 }
 
-/** Cards in one freshly dealt encounter deck of the area (Trick or Treat counted only with the game data to say so). */
-export const deckSize = (area: Area, data?: GameData) =>
-  Object.values(deckCounts(area.encounterWeights, deckAbilities(area, data))).reduce((a, b) => a + b, 0)
+/**
+ * Cards in one freshly dealt encounter deck of the area (Trick or Treat counted only with the game data to say so; a
+ * real player's card only with `foe`, a team waiting for the area: docs/54).
+ */
+export const deckSize = (area: Area, data?: GameData, foe = false) =>
+  Object.values(deckCounts(area.encounterWeights, deckAbilities(area, data, foe))).reduce((a, b) => a + b, 0)
 
 /** The next round dealt here is the set opening's first (docs/42): no Pokémon Center opens it. */
 export const opensWithoutCenter = (area: Area, progress: AreaProgress, data: GameData): boolean =>
   openingRoundDue(area, progress, data) === 0
 
 /** Cards in the next round dealt here: the set opening's round when one is due (docs/46), else a fresh deck's. */
-export function nextRoundSize(area: Area, progress: AreaProgress, data: GameData): number {
+export function nextRoundSize(area: Area, progress: AreaProgress, data: GameData, foe = false): number {
   const due = openingRoundDue(area, progress, data)
-  return (due == null ? null : openingRound(area, data, due))?.length ?? deckSize(area, data)
+  return (due == null ? null : openingRound(area, data, due))?.length ?? deckSize(area, data, foe)
 }
 
-export const deckAbilities = (area: Area, data?: GameData) => ({
+/** `foe`: a real player's team waits for the area (docs/54); the caller has checked the save meets them here. */
+export const deckAbilities = (area: Area, data?: GameData, foe = false) => ({
   wild: area.wildPool.length > 0,
   trainer: area.trainerPool.length > 0,
   item: area.lootPool.length > 0,
   casino: !!data && gameCornerOn(data),
   trick: !!data && trickDealable(data, area),
+  versus: foe,
+  gift: !!data && giftDealable(data, area),
 })
 
 /**
  * A freshly shuffled deck for the area (plus any `extra` cards, e.g. a returning legendary). No two Centers are dealt
  * back to back, and with `noCenterFirst` (the round opens with a Center, or one was just met) the first card isn't
- * one — as long as the deck has enough other cards to keep them apart. Cards are drawn from the end of the array.
+ * one — as long as the deck has enough other cards to keep them apart. With `foe` (a real player's team waits for the
+ * area, docs/54), its cards go among the round's last ones. Cards are drawn from the end of the array.
  */
 export function buildDeck(
   area: Area,
   data: GameData,
   rng: Rng,
   extra: readonly DeckCard[] = [],
-  opts: { noCenterFirst?: boolean; noCenters?: boolean } = {},
+  opts: { noCenterFirst?: boolean; noCenters?: boolean; foe?: boolean } = {},
 ): DeckCard[] {
-  const counts = deckCounts(area.encounterWeights, deckAbilities(area, data))
+  const counts = deckCounts(area.encounterWeights, deckAbilities(area, data, !!opts.foe))
   const c = opts.noCenters ? { ...counts, center: 0 } : counts
-  const others = shuffle([...DECK_KINDS.filter((k) => k !== 'center').flatMap((k) => Array.from({ length: c[k] }, (): DeckCard => k)), ...extra], rng)
+  const shuffled = DECK_KINDS.filter((k) => k !== 'center' && k !== 'versus')
+  const others = shuffle([...shuffled.flatMap((k) => Array.from({ length: c[k] }, (): DeckCard => k)), ...extra], rng)
   // Centers go into distinct gaps between the other cards (gap i = just before the i-th card drawn).
   const gaps = shuffle(Array.from({ length: others.length + 1 }, (_, i) => i).filter((i) => !opts.noCenterFirst || i > 0 || others.length === 0), rng)
   const perGap = new Map<number, number>()
@@ -423,7 +547,7 @@ export function buildDeck(
     for (let k = 0; k < (perGap.get(i) ?? 0); k++) order.push('center')
     if (i < others.length) order.push(others[i]!)
   }
-  return order.reverse()
+  return placeVersusCards(order, c.versus, areaVersusConfig(data).lastCards, rng).reverse()
 }
 
 export interface EncounterRoll {
@@ -446,12 +570,15 @@ export interface EncounterRoll {
  */
 export function dueCenter(ctx: EncounterContext): 'round' | 'hurt' | 'fainted' | null {
   const { area, data } = ctx
+  // After a K.O. of the whole team in Extreme mode (docs/47) the round starts over at a Center, wherever this is.
+  if (ctx.wipeCenter && !ctx.progress.deck?.length) return 'round'
   if (ctx.noCenters || ctx.progress.lastCenter) return null
   // A round is one full deck. A new one opens with a Pokémon Center, outside the deck, even with nothing to heal (the
   // user's call, 2026-10-27: a step of every round, on its gauge).
   // The set opening's first round (docs/46) starts straight with its first card: the game begins with a fight.
   if (data.config.encounterMode !== 'random' && !ctx.progress.deck?.length && !opensWithoutCenter(area, ctx.progress, data))
     return 'round'
+  if (ctx.boonCenters) return null
   if (ctx.isFirstInArea && ctx.teamHurt && data.config.forcedCenterWhenHurt) return 'hurt'
   // During the set opening (docs/46), only the starter's K.O. sends one.
   const opening = openingRoundDue(area, ctx.progress, data) != null
@@ -465,6 +592,43 @@ export function dueCenter(ctx: EncounterContext): 'round' | 'hurt' | 'fainted' |
  * A due gym battle or legendary is never dealt here: the player takes it on when ready (`challengeEncounter`).
  */
 export function nextEncounter(ctx: EncounterContext, rng: Rng): EncounterRoll {
+  // A Safari (docs/61 §4) deals no Pokémon Center while it's played: nothing there hurts.
+  const roll = dealEncounter(safariDealable(ctx.data, ctx.area) ? { ...ctx, noCenters: true } : ctx, rng)
+  return { ...roll, encounter: dealTalents(roll.encounter, ctx.data, rng) }
+}
+
+/**
+ * Hidden talents (docs/51): who of this encounter carries its family's talent. A wild Pokémon, a ghost or a boss: a
+ * legendary always, a starter line never, any other at the wild odds. A trainer's: a gym leader's, an Elite Four's or a
+ * Champion's ace always, any other at the wild odds. Nothing is drawn while the switch is off.
+ */
+export function dealTalents(enc: Encounter, data: GameData, rng: Rng): Encounter {
+  if (!talentsOn(data)) return enc
+  switch (enc.kind) {
+    case 'wild':
+    case 'trick':
+    case 'safari':
+    case 'boss':
+      return rollTalent(data, enc.dex, rng) ? { ...enc, talent: true } : enc
+    case 'trainer':
+    case 'gym': {
+      // A real player's team is as it was (docs/54): their talents came with it.
+      if (enc.kind === 'trainer' && enc.player) return enc
+      const levels = enc.team.map((m) => m.level)
+      const ace = enc.kind === 'gym' && enc.role !== 'trainer' ? levels.lastIndexOf(Math.max(...levels)) : -1
+      const has = (dex: number) => {
+        const chance = foeTalentChance(data, dex)
+        return chance >= 1 || rng.next() < chance
+      }
+      const team = enc.team.map((m, i) => (i === ace || has(m.dex) ? { ...m, talent: true } : m))
+      return { ...enc, team }
+    }
+    default:
+      return enc
+  }
+}
+
+function dealEncounter(ctx: EncounterContext, rng: Rng): EncounterRoll {
   const { data } = ctx
   const fixed = (encounter: Encounter): EncounterRoll => ({ encounter, deck: null, lootDeck: null })
   if (ctx.forceKind === 'item') {
@@ -478,7 +642,8 @@ export function nextEncounter(ctx: EncounterContext, rng: Rng): EncounterRoll {
   if (due === 'round') {
     const { deck, opening } = dealRound(ctx, rng, true)
     // The opening Center is the round's first step: it is in the round's record, so its gauge shows it met.
-    return { encounter: { kind: 'center', forced: true, reason: 'round' }, deck, lootDeck: null, drawn: ['center'], newRound: true, opening }
+    const reason = ctx.wipeCenter ? 'wipe' : 'round'
+    return { encounter: { kind: 'center', forced: true, reason }, deck, lootDeck: null, drawn: ['center'], newRound: true, opening }
   }
   if (due === 'hurt') return fixed({ kind: 'center', forced: true })
   if (due === 'fainted') return fixed({ kind: 'center', forced: true, reason: 'fainted' })
@@ -498,14 +663,22 @@ export function challengeEncounter(
   side?: PlayerSide | null,
   rng?: Rng,
   shinyOdds?: number,
+  save?: SaveData | null,
 ): Encounter | null {
   const gym = dueGym(area, progress, data, side)
-  if (gym) return gymEncounter(area, gym, data, side)
+  // Hidden talents (docs/51): without a draw to make, a gym's ace and a legendary boss still carry theirs.
+  const talents = (enc: Encounter) => dealTalents(enc, data, rng ?? NO_DRAW)
+  if (gym) return talents(gymEncounter(area, gym, data, side, save))
   const boss = dueBoss(area, progress, teamAvgLevel, data)
+  // A Titan (docs/62 §7) is never shiny: it is fought, not caught.
+  if (boss?.titan) return { kind: 'boss', dex: boss.dex, level: boss.level, titan: true }
   return boss
-    ? { kind: 'boss', dex: boss.dex, level: boss.level, ...(legendShiny(boss, area, data, rng, shinyOdds) && { shiny: true }) }
+    ? talents({ kind: 'boss', dex: boss.dex, level: boss.level, ...(legendShiny(boss, area, data, rng, shinyOdds) && { shiny: true }) })
     : null
 }
+
+/** An rng that never lands a chance: only what is sure happens. */
+const NO_DRAW: Rng = { ...createRng(1), next: () => 1 }
 
 /** The next encounter alone, for callers that don't keep decks (each call deals from fresh ones). */
 export function rollEncounter(ctx: EncounterContext, rng: Rng): Encounter {
@@ -514,9 +687,20 @@ export function rollEncounter(ctx: EncounterContext, rng: Rng): Encounter {
 
 function findItem(ctx: EncounterContext, rng: Rng): { encounter: Encounter; lootDeck: string[] } | null {
   const loot = drawLoot(ctx.area, ctx.progress, ctx.data, rng)
-  return loot
-    ? { encounter: { kind: 'item', entryId: loot.entry.id, itemKey: loot.entry.itemKey, qty: loot.qty }, lootDeck: loot.lootDeck }
-    : null
+  if (!loot) return null
+  const disguise = loot.entry.disguise
+  if (disguise) return { encounter: disguisedWild(disguise, loot.entry.itemKey, ctx, rng), lootDeck: loot.lootDeck }
+  return { encounter: { kind: 'item', entryId: loot.entry.id, itemKey: loot.entry.itemKey, qty: loot.qty }, lootDeck: loot.lootDeck }
+}
+
+/**
+ * The Pokémon a disguised find is (docs/61 §3): a wild one at a level of its row (around the team where the area
+ * scales), with the wild shiny odds; it keeps the item it posed as, for the find to look like it until picked up.
+ */
+function disguisedWild(d: LootDisguise, itemKey: string, ctx: EncounterContext, rng: Rng): Encounter {
+  const level = enemyLevel(rng.int(d.minLevel, Math.max(d.minLevel, d.maxLevel)), ctx, rng)
+  const shiny = !shinyLocked(ctx.data, d.dex) && rollShiny(ctx.data, rng, ctx.shinyBoost, ctx.shinyChance)
+  return { kind: 'wild', dex: d.dex, level, isNew: !ctx.pokedex.includes(d.dex), disguisedAs: itemKey, ...(shiny && { shiny }) }
 }
 
 function returningLegend(ctx: EncounterContext, rng: Rng): Encounter | null {
@@ -524,16 +708,29 @@ function returningLegend(ctx: EncounterContext, rng: Rng): Encounter | null {
   return b ? { kind: 'boss', dex: b.dex, level: b.level, returning: true, ...(legendShiny(b, ctx.area, ctx.data, rng, ctx.shinyChance) && { shiny: true }) } : null
 }
 
-const cardEncounter = (card: 'wild' | 'trainer' | 'center' | 'casino' | 'trick', ctx: EncounterContext, rng: Rng): Encounter | null =>
+const cardEncounter = (
+  card: 'wild' | 'trainer' | 'center' | 'casino' | 'trick' | 'versus' | 'gift',
+  ctx: EncounterContext,
+  rng: Rng,
+): Encounter | null =>
   card === 'wild'
-    ? rollWild(ctx, rng)
+    ? safariDealable(ctx.data, ctx.area)
+      ? rollSafari(ctx, rng)
+      : rollWild(ctx, rng)
     : card === 'trainer'
       ? rollTrainer(ctx, rng)
       : card === 'casino'
         ? { kind: 'casino' }
         : card === 'trick'
           ? rollTrick(ctx, rng)
-          : { kind: 'center', forced: false }
+          : card === 'versus'
+            ? playerEncounter(ctx)
+            : card === 'gift'
+              ? rollGift(ctx)
+              : { kind: 'center', forced: false }
+
+/** A real player's card (docs/54): the team waiting for the area, else nothing (the card is set aside). */
+const playerEncounter = (ctx: EncounterContext): Encounter | null => (ctx.versusFoe ? foeEncounter(ctx.versusFoe, ctx.data) : null)
 
 /** The extra card a fled legendary adds to every deck dealt until it's caught. */
 const legendCards = (ctx: EncounterContext): DeckCard[] => (fledLegendary(ctx.area, ctx.progress, ctx.pokedex, ctx.data) ? ['legend'] : [])
@@ -543,7 +740,7 @@ function dealRound(ctx: EncounterContext, rng: Rng, noCenterFirst: boolean): { d
   const opening = openingRoundDue(ctx.area, ctx.progress, ctx.data)
   const round = opening == null ? null : openingRound(ctx.area, ctx.data, opening)
   if (round) return { deck: openingDeck(round, ctx.noCenters), opening }
-  const deck = buildDeck(ctx.area, ctx.data, rng, legendCards(ctx), { noCenterFirst, noCenters: ctx.noCenters })
+  const deck = buildDeck(ctx.area, ctx.data, rng, legendCards(ctx), { noCenterFirst, noCenters: ctx.noCenters, foe: !!ctx.versusFoe })
   return { deck, opening: null }
 }
 
@@ -594,7 +791,7 @@ function drawFromDeck(ctx: EncounterContext, rng: Rng): EncounterRoll {
   let drawn: DeckCard[] = []
   const roll = (r: Omit<EncounterRoll, 'opening'>): EncounterRoll => (r.newRound ? { ...r, opening } : r)
   // A card the area can no longer produce (content edited since the deal, a legendary caught) is discarded.
-  const tries = 2 * (deck.length + deckSize(ctx.area, ctx.data) + 1)
+  const tries = 2 * (deck.length + deckSize(ctx.area, ctx.data, !!ctx.versusFoe) + 1)
   for (let i = 0; i < tries; i++) {
     if (!deck.length) {
       deck = deal()
@@ -645,13 +842,16 @@ function drawFromDeck(ctx: EncounterContext, rng: Rng): EncounterRoll {
 function rollWeighted(ctx: EncounterContext, rng: Rng): EncounterRoll {
   const w = ctx.area.encounterWeights
   const can = deckAbilities(ctx.area, ctx.data)
-  const kinds: { kind: 'wild' | 'trainer' | 'center' | 'item' | 'casino' | 'trick'; weight: number }[] = [
+  // Gift cards take the item cards' place while they're dealt (docs/64 §4.0).
+  const gifts = can.gift ? (w.gift ?? 0) : 0
+  const kinds: { kind: 'wild' | 'trainer' | 'center' | 'item' | 'casino' | 'trick' | 'gift'; weight: number }[] = [
     { kind: 'wild', weight: can.wild ? w.wild : 0 },
     { kind: 'trainer', weight: can.trainer ? w.trainer : 0 },
     { kind: 'center', weight: ctx.noCenters ? 0 : w.center },
-    { kind: 'item', weight: can.item ? (w.item ?? 0) : 0 },
+    { kind: 'item', weight: can.item && !(gifts > 0) ? (w.item ?? 0) : 0 },
     { kind: 'casino', weight: can.casino ? (w.casino ?? 0) : 0 },
     { kind: 'trick', weight: can.trick ? (w.trick ?? 0) : 0 },
+    { kind: 'gift', weight: gifts },
   ]
   for (let attempt = 0; attempt < 10; attempt++) {
     const pick = rng.weighted(kinds, (k) => k.weight)?.kind ?? 'wild'
@@ -684,8 +884,13 @@ function forcedEncounter(ctx: EncounterContext, kind: ForceKind, rng: Rng): Enco
       return { kind: 'casino' }
     case 'trick':
       return rollTrick(ctx, rng)
+    case 'gift':
+      return rollGift(ctx)
+    case 'versus':
+      return playerEncounter(ctx)
     case 'boss': {
       const b = fightBosses(ctx.area, ctx.data).find((x) => !ctx.progress.bossesDefeated.includes(x.dex))
+      if (b?.titan) return { kind: 'boss', dex: b.dex, level: b.level, titan: true }
       return b ? { kind: 'boss', dex: b.dex, level: b.level, ...(legendShiny(b, ctx.area, ctx.data, rng, ctx.shinyChance) && { shiny: true }) } : returningLegend(ctx, rng)
     }
     default:
@@ -695,6 +900,8 @@ function forcedEncounter(ctx: EncounterContext, kind: ForceKind, rng: Rng): Enco
 
 export function canSkip(enc: Encounter, policy: SkipPolicy, skipsThisEncounter: number): boolean {
   if (enc.kind !== 'wild' && enc.kind !== 'trainer') return false
+  // A Pokémon that posed as a find was picked up: there's no leaving it (docs/61 §3).
+  if (enc.kind === 'wild' && enc.disguisedAs) return false
   if (policy === 'none') return false
   if (policy === 'once') return skipsThisEncounter < 1
   return true

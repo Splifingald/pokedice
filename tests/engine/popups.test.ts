@@ -5,7 +5,6 @@ import { describe, expect, it } from 'vitest'
 import {
   createInstance,
   DEFAULT_CONFIG,
-  giftRulesDue,
   homeNotices,
   inviteRulesDue,
   markDonationSeen,
@@ -82,7 +81,9 @@ describe('the one-time pop-ups queue', () => {
       'inviteReward',
       'portal',
       'dayNight',
+      'weather',
       'powers',
+      'outfits',
       'world',
       'worldFinish',
       'worldBye',
@@ -106,10 +107,9 @@ describe('the one-time pop-ups queue', () => {
     ).toBeNull()
   })
 
-  it('opens the battle powers’ rules with the gifts and Trick or Treat switched on and their rules unseen', () => {
+  it('opens the battle powers’ rules with Trick or Treat switched on and its rules unseen', () => {
     const save = megaWon(start())
-    // Their own rules open at their moment (the first gift, the first ghost), so they are due and stay due.
-    expect(giftRulesDue(save, on)).toBe(true)
+    // Its own rules open at their moment (the first ghost), so they are due and stay due.
     expect(trickRulesDue(save, on)).toBe(true)
     expect(nextOneTimePopup(save, on, HOME)).toBe('powers')
     expect(nextOneTimePopup({ ...save, powers: { ...save.powers, seen: ['mega'] } }, on, HOME)).toBeNull()
@@ -189,7 +189,7 @@ describe('the one-time pop-ups queue', () => {
     expect(nextOneTimePopup(closed, on, { ...HOME, raidGifts: true, showing: 'versus' })).toBe('raidGifts')
   })
 
-  it('Trades and the invite rewards: notices on Home, never queued; Trades only for an account', () => {
+  it('Trades: a notice on Home, never queued, only for an account; the invite rewards: none (2026-11-02)', () => {
     const social = makeData({
       inviteRewards: { ...D.inviteRewards, access: 'all' },
       trade: { ...D.trade, access: 'all', minBadges: 0 },
@@ -197,8 +197,8 @@ describe('the one-time pop-ups queue', () => {
     const save = start()
     expect(inviteRulesDue(save, social)).toBe(true)
     expect(nextOneTimePopup(save, social, { ...HOME, signedIn: true })).toBeNull()
-    expect(homeNotices(save, social, { signedIn: false })).toEqual(['invites'])
-    expect(homeNotices(save, social, { signedIn: true })).toEqual(['trades', 'invites'])
+    expect(homeNotices(save, social, { signedIn: false })).toEqual([])
+    expect(homeNotices(save, social, { signedIn: true })).toEqual(['trades'])
     const read = {
       ...save,
       trades: { out: [], done: [], rulesSeen: true },

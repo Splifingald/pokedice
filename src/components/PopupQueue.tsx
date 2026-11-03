@@ -23,13 +23,16 @@ import { WorldPick } from '@/screens/events/worldPick'
 import { PortalUnlockPopup } from '@/screens/area/PortalRun'
 import { DayCareNotice } from './DayCareTutorial'
 import { DayNightRulesPopup } from './DayNight'
+import { WeatherRulesPopup } from './Weather'
 import { AwayReportModal, ExtremeUnlockPopup } from './Extreme'
 import { FriendsService } from './friends/FriendsService'
+import { AreaVersusService } from './AreaVersus'
 import { InviteRewardPopup, useInviteRewardWaiting } from './friends/InviteRewards'
 import { OfflineReportModal } from './GeneralRules'
 import { GiftService } from './Gifts'
-import { POPUP_GAP_MS, PopupTurnContext, usePopupOnScreen } from './popupTurn'
+import { POPUP_GAP_MS, PopupTurnContext, useCenterRush, usePopupOnScreen } from './popupTurn'
 import { PowersUnlockPopup } from './PowersRules'
+import { OutfitRulesPopup } from './Outfit'
 import { PushService } from './PushService'
 import { RaidGiftPopup } from './RaidGiftPopup'
 import { ReplyPopup, useRepliesWaiting } from './ReplyPopup'
@@ -50,12 +53,15 @@ const FOLLOWS_AT_ONCE = new Set<OneTimePopup>([
   'push',
 ])
 
+/** How long a Center's heal plays before the dice tutorial may start over it. */
+const CENTER_HEAL_MS = 3200
+
 /** Works out whose turn it is, once, and hands it down to every pop-up (the pages' too: the region offer, push). */
 export function PopupQueue({ children }: { children: ReactNode }) {
   const path = useLocation().pathname
   // Never over a full-screen moment (a battle, a hatching, a trade, the lab) or a gift being opened.
   const full = useFullscreen()
-  const gifts = useGiftMoment((s) => s.busy || !!s.rulesFor || !!s.opening)
+  const gifts = useGiftMoment((s) => s.busy || !!s.opening)
   const now = useServerNow(5000)
   const awayReport = useAwayReport((s) => !!s.report)
   const offlineReport = useOfflineReport((s) => !!s.report)
@@ -67,12 +73,27 @@ export function PopupQueue({ children }: { children: ReactNode }) {
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const idle = useGame((s) => s.run.phase === 'idle' && !s.battle)
+  // A Pokémon Center, once its heal has had time to play (about 2.7 s): the dice tutorial may start there.
+  const center = useGame((s) => s.run.phase === 'center' && !s.battle)
+  const [healed, setHealed] = useState(false)
+  // …or at once, CONTINUE pressed before then (CenterView).
+  const rushed = useCenterRush((s) => s.on)
+  useEffect(() => {
+    setHealed(false)
+    if (!center) {
+      useCenterRush.setState({ on: false })
+      return
+    }
+    const timer = setTimeout(() => setHealed(true), CENTER_HEAL_MS)
+    return () => clearTimeout(timer)
+  }, [center])
   const signedIn = useGame((s) => s.auth.status === 'signed_in')
   // Worked out again only when one of these changes, not on every change to the store (a toast, a fight's turn).
   const due = useMemo(
     () =>
       nextOneTimePopup(save, data, {
         calm: idle && !full && !gifts,
+        atCenter: center && (healed || rushed) && !full && !gifts,
         path,
         signedIn,
         online: isSupabaseConfigured,
@@ -89,6 +110,9 @@ export function PopupQueue({ children }: { children: ReactNode }) {
       save,
       data,
       idle,
+      center,
+      healed,
+      rushed,
       full,
       gifts,
       path,
@@ -118,7 +142,9 @@ export function PopupQueue({ children }: { children: ReactNode }) {
     const timer = setTimeout(() => wake((n) => n + 1), until - Date.now() + 50)
     return () => clearTimeout(timer)
   }, [resting, until])
-  const turn = closing || (resting && !showing && !(due && FOLLOWS_AT_ONCE.has(due))) ? null : due
+  // The dice tutorial never rests either: it is a new player's next step, and at a Center its moment is short.
+  const prompt = due != null && (FOLLOWS_AT_ONCE.has(due) || due === 'diceTutorial')
+  const turn = closing || (resting && !showing && !prompt) ? null : due
   return <PopupTurnContext.Provider value={turn}>{children}</PopupTurnContext.Provider>
 }
 
@@ -137,13 +163,16 @@ export function OneTimePopups() {
       <InviteRewardPopup />
       <PortalUnlockPopup />
       <DayNightRulesPopup />
+      <WeatherRulesPopup />
       <PowersUnlockPopup />
+      <OutfitRulesPopup />
       <WorldPopup />
       <WorldPick />
       <WorldFinishPopup />
       <WorldByePopup />
       <LivePopup />
       <FriendsService />
+      <AreaVersusService />
       <TradesService />
       <PushService />
     </>

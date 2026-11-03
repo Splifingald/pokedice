@@ -125,7 +125,9 @@ checkbox per boss.
   - Replaced when a try starts, so the next try offers a new four.
 
 ### 3.4 Save (`EventsSave`, zod schema)
-- `raidsDone?: string[]`: the progression raids caught (at most 200).
+- `raidsDone?: string[]`: the progression raids caught (at most 200). Never undone: a sync keeps the ones either copy
+  has, and at sign-in the game adds back any the server recorded in `raid_progress_done` and the save lost
+  (`raid_progress_mine`, migration 0089; docs/49).
 - `raidTeams?: Record<string, string[]>`: the team left on each progression raid (three ids each).
 - `raidNpc?: { key: string; seed: number }`.
 

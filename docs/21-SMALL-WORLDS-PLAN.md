@@ -356,8 +356,9 @@ next day):
   the millisecond; the row keeps microseconds), or an insert when it knew of no row — and anything else throws
   `SaveConflictError` without writing. The waiting upload then compares the two again as at sign-in, so the further
   copy wins and the other goes to the device's backups — once nothing on screen would be cut short (a fight, an
-  encounter, a catch decision, Versus); until then no upload is even tried. Pages still on an older build write as
-  before until they reload (a day at most).
+  encounter, a catch decision, Versus); until then no upload is even tried. Pages still on an older build wrote as
+  before — not for a day at most, as hoped: resumed after days, they kept overwriting saves until 0088 refused them
+  (docs/49).
 - **A tie went to the save changed last, not played last.** Level on progress, the sync keeps the one played last —
   but `updatedAt` moves with every change, and a stale device changes its save on its own at load (the offline pay, an
   Extreme absence healed, a fossil revived, raid gifts and settled trades arriving), so it looked newest. The save now
@@ -381,3 +382,10 @@ next day):
 
 ### Setting it up
 1. **No SQL to run**: the check is the upload's own filter, on the `saves` table as it is.
+
+## 13. A world closed a week early (2026-10-29)
+
+A player's phone closed Haunted Hollow on 2026-10-25, a week before its end: the clock read the end on `serverNow()`,
+the device's clock plus the offset from the last reading of the server's, and the device's clock can move between two
+readings. A world now closes for its end on `trustedNow()`, the last reading carried on the page's own steady clock,
+and a reading whose round trip took too long is dropped (docs/49 §2).

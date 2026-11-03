@@ -504,6 +504,16 @@ describe('General upgrades across devices and tabs (lost on 2026-10-16)', () => 
     expect(adoptStoredSave('not a save')).toBe(false)
   })
 
+  it('never takes in a copy an old page stored (no playedAt) (2026-10-29)', () => {
+    const mine = { ...bought(base, { luck: 3 }, 1), playedAt: base.updatedAt + 1 }
+    useGame.setState({ save: mine })
+    // Stamped later, but every part its build never knew is gone: here the General upgrades.
+    const stripped: SaveData = { ...base, updatedAt: base.updatedAt + 60_000 }
+    delete stripped.general
+    expect(adoptStoredSave(JSON.stringify(stripped))).toBe(false)
+    expect(useGame.getState().save).toBe(mine)
+  })
+
   it('reads the stored save itself when no value is handed over (the tab coming back)', () => {
     useGame.setState({ save: base })
     const other = bought(base, { luck: 3 }, 60)

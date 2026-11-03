@@ -5,7 +5,9 @@
 // animations off. Giratina's raid, its area in portal mode (docs/15 §27), opens in the Distortion World instead: the
 // pixel engine's scene (raidEntranceTimeline: shiny Giratina coming out of the portal) under the same words and timing,
 // its tapes in Giratina's red and the void's night. That one has no Skip (the user, 2026-10-15, as the portal's breach
-// and victory): a tap or Esc does nothing, it plays out; motion off still goes straight to the fight.
+// and victory): a tap or Esc does nothing, it plays out; motion off still goes straight to the fight. With the legends'
+// cinematics on (docs/53), a legend's raid has no tapes and no alarm, and one with a cinematic of its own plays it, the
+// words following its reveal (`wordsAt`), however long it takes to come.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { hiss, tone } from '@/audio/sfx'
 import { StageCanvas } from '@/components/StageCanvas'
@@ -13,6 +15,7 @@ import { raidEntranceStage, raidEntranceTimeline } from '@/fx/timelines/portalRa
 import { nightRaidEntranceTimeline } from '@/fx/timelines/nightmareRaid'
 import { legendRaidEntranceTimeline } from '@/fx/timelines/legendRaid'
 import type { LegendRaidScene } from '@/fx/timelines/legendRaidScenes'
+import { wordsAt, type Cinema } from '@/fx/timelines/cinema'
 import { MiniSprite } from '@/components/SpriteImg'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { bolt, disc, ease, polyline, rng as pixelRng } from '@/fx/pixel'
@@ -26,8 +29,6 @@ import { cx } from '@/theme/util'
 const W = 240
 const H = 360
 const FEET = 262
-/** When it all ends (ms). */
-const END = 6150
 
 interface Particle {
   x: number
@@ -54,7 +55,14 @@ export function RaidIntro({
    * A legendary's own entrance (docs/40, the raid overhaul): its place, weather and omen on the pixel engine under the
    * intro's words. Its Skip shows from the second time the player meets it (`skippable`).
    */
-  legend?: { scene: LegendRaidScene; skippable: boolean }
+  legend?: {
+    scene?: LegendRaidScene
+    /** Its own cinematic (docs/53), when the switch is on and it has one. */
+    cinema?: Cinema
+    skippable: boolean
+    /** The cinematics' switch is on: no warning tapes, no alarm. */
+    quiet?: boolean
+  }
   /**
    * Giratina's raid in the Distortion World (docs/15 §27), or Darkrai's under the nightmare's full moon (§29): its own
    * scene under the intro's words, and no Skip.
@@ -76,8 +84,13 @@ export function RaidIntro({
     () =>
       dw
         ? {
-            ready: loadSprite(boss.dex, false, boss.shiny),
-            timeline: legend
+            ready: Promise.all([
+              loadSprite(boss.dex, false, boss.shiny),
+              ...(legend?.cinema?.sprites ?? []).map(([d, s]) => loadSprite(d, false, s)),
+            ]),
+            timeline: legend?.cinema
+              ? legend.cinema.make({ w: size.w, h: size.h, mon: spriteKey(boss.dex, false, boss.shiny), short: level === 'short' })
+              : legend?.scene
               ? legendRaidEntranceTimeline({
                   scene: legend.scene,
                   w: size.w,
@@ -279,40 +292,43 @@ export function RaidIntro({
     const timers: ReturnType<typeof setTimeout>[] = []
     const at = (ms: number, fn: () => void) => timers.push(setTimeout(fn, ms))
     const add = (c: string) => () => setStage((s) => [...s, c])
-    at(40, add('alert'))
-    at(80, () => {
-      tone(660, 0.18, { type: 'square', vol: 0.05 })
-      tone(880, 0.18, { type: 'square', vol: 0.05, at: 0.2 })
-      tone(660, 0.18, { type: 'square', vol: 0.05, at: 0.42 })
-      tone(880, 0.18, { type: 'square', vol: 0.05, at: 0.62 })
-    })
-    at(950, add('alert-out'))
+    const W8 = wordsAt(legend?.cinema?.reveal)
+    if (!legend?.quiet) {
+      at(40, add('alert'))
+      at(80, () => {
+        tone(660, 0.18, { type: 'square', vol: 0.05 })
+        tone(880, 0.18, { type: 'square', vol: 0.05, at: 0.2 })
+        tone(660, 0.18, { type: 'square', vol: 0.05, at: 0.42 })
+        tone(880, 0.18, { type: 'square', vol: 0.05, at: 0.62 })
+      })
+      at(950, add('alert-out'))
+    }
     // The storm's sounds; the Distortion World's scene has its own (the pulses, the tear, the heartbeats, the roar).
     if (!dw) {
       at(1050, () => hiss(1.6, { vol: 0.06, freq: 120, type: 'lowpass' }))
       for (const b of bolts) at(b.at * 1000, () => hiss(0.35, { vol: 0.09, freq: 2600, slide: -2300 }))
       at(2350, () => hiss(0.45, { vol: 0.07, freq: 400, slide: 3000 }))
     }
-    at(2750, () => {
+    at(W8.boom, () => {
       setStage((s) => [...s, 'boom'])
       if (dw) return
       tone(55, 0.7, { type: 'sawtooth', vol: 0.08, slide: -20 })
       hiss(0.6, { vol: 0.1, freq: 300 })
     })
     if (!dw) at(2900, () => tone(240, 0.6, { type: 'sawtooth', vol: 0.06, slide: -160 }))
-    at(3250, () => {
+    at(W8.name, () => {
       setStage((s) => [...s, 'name'])
       hiss(0.18, { vol: 0.09, freq: 160 })
     })
-    at(3600, add('bars'))
-    for (let i = 0; i < run.state.bars; i++) at(3650 + i * 250, () => tone(1320 + i * 220, 0.12, { vol: 0.045 }))
-    at(4550, add('cuts'))
-    run.state.sides.forEach((_, i) => at(4560 + i * 150, () => hiss(0.18, { vol: 0.05, freq: 1500, slide: 1500 })))
-    at(5500, () => {
+    at(W8.bars, add('bars'))
+    for (let i = 0; i < run.state.bars; i++) at(W8.bars + 50 + i * 250, () => tone(1320 + i * 220, 0.12, { vol: 0.045 }))
+    at(W8.cuts, add('cuts'))
+    run.state.sides.forEach((_, i) => at(W8.cuts + 10 + i * 150, () => hiss(0.18, { vol: 0.05, freq: 1500, slide: 1500 })))
+    at(W8.go, () => {
       setStage((s) => [...s, 'go'])
       ;[523, 659, 784, 1047].forEach((f, i) => tone(f, 0.12, { vol: 0.05, at: i * 0.07 }))
     })
-    at(END, () => finish(false))
+    at(W8.end, () => finish(false))
     let raf = 0
     const t0 = performance.now()
     const loop = (now: number) => {
@@ -348,26 +364,30 @@ export function RaidIntro({
       ) : (
         <canvas ref={cv} className="rd-i-cv" width={W} height={H} aria-hidden />
       )}
-      <div className="rd-i-tape top" aria-hidden>
-        <b>
-          {t(
-            world === 'nightmare'
-              ? 'ui.nightmare.raidIntroTop'
-              : world === 'distortion'
-                ? 'ui.portal.raidIntroTop'
-                : 'ui.raid.intro.warning',
-          )}
-        </b>
-      </div>
-      <div className="rd-i-tape bottom" aria-hidden>
-        <b>
-          {world === 'nightmare'
-            ? t('ui.nightmare.raidIntroBottom', { name: boss.name })
-            : world === 'distortion'
-              ? t('ui.portal.raidIntroBottom', { name: boss.name })
-              : t('ui.raid.intro.appears')}
-        </b>
-      </div>
+      {!legend?.quiet && (
+        <>
+          <div className="rd-i-tape top" aria-hidden>
+            <b>
+              {t(
+                world === 'nightmare'
+                  ? 'ui.nightmare.raidIntroTop'
+                  : world === 'distortion'
+                    ? 'ui.portal.raidIntroTop'
+                    : 'ui.raid.intro.warning',
+              )}
+            </b>
+          </div>
+          <div className="rd-i-tape bottom" aria-hidden>
+            <b>
+              {world === 'nightmare'
+                ? t('ui.nightmare.raidIntroBottom', { name: boss.name })
+                : world === 'distortion'
+                  ? t('ui.portal.raidIntroBottom', { name: boss.name })
+                  : t('ui.raid.intro.appears')}
+            </b>
+          </div>
+        </>
+      )}
       <div className="rd-i-name">
         <small>{t('ui.raid.intro.kicker')}</small>
         <b>{boss.name.toUpperCase()}</b>

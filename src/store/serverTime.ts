@@ -5,7 +5,7 @@
 import { useEffect } from 'react'
 import { create } from 'zustand'
 import { getSupabase } from '@/lib/supabase'
-import { anchorClock } from './clock'
+import { anchorClock, trustedNow } from './clock'
 import { useNow } from './hooks'
 
 interface ServerTime {
@@ -33,6 +33,13 @@ async function fromSite(): Promise<number | null> {
   return Number.isNaN(at) ? null : at
 }
 
+/**
+ * The longest round trip a reading is kept from. Longer (the page frozen in the background, the device asleep, its
+ * clock moved meanwhile), the halfway guess below could be off by half of it — days, for a page left a week — and a
+ * small world could close early on it (2026-10-25).
+ */
+export const MAX_ROUND_TRIP_MS = 20_000
+
 /** Reads the real time and keeps how far the device's clock is from it. Failures leave the last value. */
 export async function syncServerTime(): Promise<void> {
   const before = Date.now()
@@ -51,22 +58,33 @@ export async function syncServerTime(): Promise<void> {
     }
   }
   if (server == null) return
+  const after = Date.now()
+  const perfAfter = performance.now()
+  // Too long a wait to tell when the server read its clock, on either clock: the last reading stays.
+  const wall = after - before
+  if (wall < 0 || wall > MAX_ROUND_TRIP_MS || perfAfter - perfBefore > MAX_ROUND_TRIP_MS) return
   // Halfway through the round trip is the best guess for when the server read its clock.
-  anchorClock(server, (perfBefore + performance.now()) / 2)
-  useServerTime.setState({ offset: server - (before + Date.now()) / 2 })
+  anchorClock(server, (perfBefore + perfAfter) / 2)
+  useServerTime.setState({ offset: server - (before + after) / 2 })
 }
 
-/** The real time now, or null while unknown. */
+/**
+ * The real time now, or null while unknown: the last reading carried on the page's steady clock (trustedNow), so moving
+ * the device's clock between two readings changes nothing (docs/63). The offset stands in only where no reading set the
+ * anchor (tests that set it by hand).
+ */
 export function serverNow(): number | null {
   const { offset } = useServerTime.getState()
-  return offset == null ? null : Date.now() + offset
+  if (offset == null) return null
+  return trustedNow() ?? Date.now() + offset
 }
 
 /** The real time, re-read every `ms`; null while unknown. */
 export function useServerNow(ms = 1000): number | null {
   const now = useNow(ms)
   const offset = useServerTime((s) => s.offset)
-  return offset == null ? null : now + offset
+  if (offset == null) return null
+  return trustedNow() ?? now + offset
 }
 
 const RESYNC_MS = 10 * 60_000

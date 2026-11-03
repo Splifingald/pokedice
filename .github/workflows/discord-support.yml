@@ -1,12 +1,14 @@
 # Posts the week's Ko-fi update to the Discord server's #support-me (docs/23-DISCORD-SERVER.md §11): the month's goal
-# (Admin → Config → Support me), what Ko-fi has brought this month, and what next month already holds from monthly
-# members. Nothing is posted while Support me is off, nor before the DISCORD_SUPPORT_WEBHOOK secret exists.
+# (Admin → Config → Support me), what Ko-fi has brought this month, how many months ahead are covered, and what next
+# month already holds from monthly members. Nothing is posted while Support me is off, nor before the
+# DISCORD_SUPPORT_WEBHOOK secret exists.
 name: Discord weekly Ko-fi update
 
 on:
   schedule:
-    # Mondays 07:43 UTC (08:43 in Paris in winter): off the top of the hour, GitHub's busiest minute.
-    - cron: '43 7 * * 1'
+    # Saturdays at noon UTC (13:00 in Paris in winter), the admin's choice. On the hour GitHub can start it a few
+    # minutes late.
+    - cron: '0 12 * * 6'
   workflow_dispatch:
     inputs:
       force:

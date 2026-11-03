@@ -11,6 +11,7 @@ import {
   canSell,
   choiceFormsOf,
   createBattle,
+  createInstance,
   createRng,
   dealWall,
   formChoices,
@@ -40,6 +41,7 @@ import {
   uniformLevels,
   upgradePickaxe,
   wallHaul,
+  wallFossils,
   wallStatus,
   wallYield,
   type EventAccess,
@@ -215,6 +217,29 @@ describe('dealing a wall', () => {
         expect(regionOfSpecies(d, (item.effect as { dex: number }).dex)).toBe('kanto')
       }
     }
+  })
+
+  it('buries a fossil the player already has, as the Pokémon or still reviving', () => {
+    const d = world({ cfg: { loot: { ...UG.loot, weights: { orbS: 0, orbM: 0, orbL: 0, fossil: 1, plate: 0 } } } })
+    const s = inEvent(100, d)
+    const kanto = wallFossils(s, d).map((it) => it.key)
+    expect(kanto).toEqual(expect.arrayContaining(['helix-fossil', 'dome-fossil', 'old-amber']))
+    // Every Kanto fossil's Pokémon in the Box, and a Helix Fossil still reviving.
+    const owner: SaveData = {
+      ...s,
+      box: [
+        ...s.box,
+        createInstance(138, 30, d, 'omanyte', 0),
+        createInstance(140, 30, d, 'kabuto', 0),
+        createInstance(142, 30, d, 'aerodactyl', 0),
+        { ...createInstance(138, 20, d, 'helix', 0), revivesAt: T0 + 24 * H, fossil: 'helix-fossil' },
+      ],
+      pokedex: [...s.pokedex, 138, 140, 142],
+    }
+    expect(wallFossils(owner, d).map((it) => it.key)).toEqual(kanto)
+    const w = dealWall(owner, d, 'w', createRng(5))
+    expect(w.things.length).toBeGreaterThan(0)
+    expect(w.things.every((t) => t.kind === 'fossil' && kanto.includes(t.item!))).toBe(true)
   })
 
   it('with every plate held, plates give way to the other things', () => {

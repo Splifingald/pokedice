@@ -19,7 +19,7 @@ import { HomeNotices } from './home/Notices'
 import { H as SCENE_H, W as SCENE_W } from './home/scene'
 import { SceneStage } from './home/SceneStage'
 import { pictureOf } from '@/fx/areaArt'
-import { nightmareLock } from '@/engine'
+import { heldIn } from '@/engine'
 import { travelTo } from '@/store/travel'
 import { Widgets } from './home/Widgets'
 import { useInWorld, WorldStrip, WorldWaiting } from '@/screens/events/world'
@@ -111,14 +111,16 @@ function HomeView({ area }: { area: Area }) {
   }
   const openSheet = (view: AreasView) => setSheet({ view, key: Date.now() })
   const wide = useMediaQuery('(min-width: 1024px)')
-  // Darkrai's nightmare holds the player in its area (docs/30): the banner is shut, and says why.
-  const held = useGame((s) => nightmareLock(s.save, s.data))
-  const heldWhy = held ? t('ui.nightmare.locked', { area: held.name }) : null
+  // Darkrai's nightmare (docs/30) or the whiteout (docs/64 §4.3) holds the player in its area: the banner is shut, and
+  // says why. (The area and the kind apart: a selector hands back stable values.)
+  const heldArea = useGame((s) => heldIn(s.save, s.data)?.area ?? null)
+  const heldBy = useGame((s) => heldIn(s.save, s.data)?.by ?? null)
+  const heldWhy = heldArea && heldBy ? t(`ui.${heldBy}.locked`, { area: heldArea.name }) : null
   // What the phone's shorter scene keeps: a window of SCENE_SHOWN of its height, centred on where the team walks.
   const walk = pictureOf(area.id)?.walk
   const walkMid = walk ? (walk[1] + walk[3]) / 2 / SCENE_H : 0.62
   const cropTop = Math.min(1 - SCENE_SHOWN, Math.max(0, walkMid - SCENE_SHOWN / 2))
-  const dock = <PlayDock area={area} />
+  const dock = <PlayDock area={area} onAreas={() => openSheet('details')} />
   const [dockRef, dockH] = useHeight<HTMLDivElement>()
   // PC: CONTINUE under the scene, in the pinned column, always in sight (the user's call, 2026-10-27); the scene gives it
   // its room in the window's height.

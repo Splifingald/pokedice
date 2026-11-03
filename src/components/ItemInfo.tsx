@@ -2,6 +2,7 @@
 // that only name items (an area's "Also found here").
 import { useT } from '@/i18n/react'
 import { effectText } from '@/i18n/text'
+import { useItemDescription } from '@/lib/itemText'
 import { useGame } from '@/store/game'
 import { ItemSprite } from './ItemSprite'
 import { Modal } from './Modal'
@@ -10,6 +11,7 @@ export function ItemInfo({ itemKey, onClose }: { itemKey: string | null; onClose
   const { t } = useT()
   const item = useGame((s) => (itemKey ? s.data.items[itemKey] : undefined))
   const owned = useGame((s) => (itemKey ? (s.save?.inventory[itemKey] ?? 0) : 0))
+  const description = useItemDescription(item?.description)
   return (
     <Modal open={!!item} onClose={onClose} title={item?.name}>
       {item && (
@@ -20,7 +22,7 @@ export function ItemInfo({ itemKey, onClose }: { itemKey: string | null; onClose
             </span>
             <p className="m-0 text-[20px] leading-tight">{effectText(item)}</p>
           </div>
-          {item.description && <p className="copy m-0 text-muted">{item.description}</p>}
+          {description && <p className="copy m-0 text-muted">{description}</p>}
           <p className="m-0 font-pixel-sm text-[16px] text-muted">{t('ui.item.inBag', { n: owned })}</p>
         </div>
       )}

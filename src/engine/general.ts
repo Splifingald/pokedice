@@ -61,10 +61,11 @@ export function luckAt(data: GameData, level: number): number {
   return row ? Math.max(0, Math.min(1, row.chance / 100)) : 0
 }
 
-/** Offline earnings at a level, ₽ an hour (level 0: none). */
+/** Offline earnings at a level, ₽ an hour (level 0: `offlineBase`, the little every player earns before buying). */
 export function offlineAt(data: GameData, level: number): number {
-  const row =
-    level > 0 ? generalCfg(data).offline[Math.min(level, generalCfg(data).offline.length) - 1] : undefined
+  const cfg = generalCfg(data)
+  if (level <= 0) return Math.max(0, cfg.offlineBase ?? 0)
+  const row = cfg.offline[Math.min(level, cfg.offline.length) - 1]
   return row ? Math.max(0, row.perHour) : 0
 }
 
@@ -159,7 +160,7 @@ export function wildShinyChance(save: SaveData, data: GameData): number {
 
 // ---------------------------------------------------------------- offline earnings
 
-/** ₽ an hour the save earns while away (0 with the switch off or nothing bought). */
+/** ₽ an hour the save earns while away (0 with the switch off; level 0 earns `offlineBase`). */
 export function offlineRate(save: Pick<SaveData, 'general'>, data: GameData): number {
   return generalOn(data) ? offlineAt(data, generalLevel(save, 'offline', data)) : 0
 }

@@ -6,6 +6,7 @@ import { raidBosses, shinyLocked } from './encounters'
 import { areaProgressAnywhere } from './events'
 import { portalModeOf } from './portalMode'
 import { nightmareModeOf } from './nightmareMode'
+import { timeRaceModeOf } from './timeRaceMode'
 import { powerEarned } from './powers'
 import { addRaidMon, type RaidMon } from './raid'
 import { MEGA_RAIDS } from './raidSpecials'
@@ -103,6 +104,9 @@ export function progressRaidState(save: SaveData, data: GameData, raid: Progress
   // So does a nightmare area's (docs/30), once the player has woken up from it.
   if (nightmareModeOf(data.areas.find((a) => a.id === raid.areaId), data))
     return progress?.nightmare?.won ? 'open' : 'locked'
+  // A race area's two raids (docs/64 §4.4): each opens once a race won at its legend's gate, never with the rounds.
+  if (timeRaceModeOf(data.areas.find((a) => a.id === raid.areaId), data))
+    return progress?.timeRace?.won?.includes(raid.dex) ? 'open' : 'locked'
   if (progress?.bossesDefeated.includes(raid.dex) && regionPokedex(save, raid.region).includes(raid.dex))
     return 'done'
   return progress?.cleared ? 'open' : 'locked'
@@ -144,7 +148,7 @@ export function progressRaidTeam(save: SaveData, data: GameData, raid: ProgressR
   const team = chosen.length ? chosen : [...box].sort((a, b) => b.level - a.level).slice(0, 3)
   return team
     .slice(0, 3)
-    .map((p) => ({ id: p.id, dex: p.dex, level: p.level, shiny: !!p.shiny }))
+    .map((p) => ({ id: p.id, dex: p.dex, level: p.level, shiny: !!p.shiny, ...(p.talent && { talent: true }) }))
 }
 
 /** Leaves a team on a progression raid: up to three ids from its region's Box. */
@@ -180,6 +184,18 @@ export function applyProgressRaidCatch(
     'progress',
   )
   return { save: res.save, region: res.region, instId: res.instId, live: res.live }
+}
+
+/**
+ * Raids won elsewhere stay won: another copy of the save (the cloud sync, another tab) or the server's own record of
+ * the player's raids (`raid_progress_done`, 0089), which no page can overwrite. A raid is never undone, so this only
+ * adds. The same save back when there's nothing to add.
+ */
+export function keepRaidsDone(save: SaveData, done: readonly string[] | null | undefined): SaveData {
+  const mine = save.events?.raidsDone ?? []
+  const add = (done ?? []).filter((key) => !mine.includes(key))
+  if (!add.length) return save
+  return { ...save, events: { ...save.events, raidsDone: [...mine, ...add] } }
 }
 
 /**

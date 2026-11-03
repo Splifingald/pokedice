@@ -4,33 +4,35 @@
 // powers' rules waited on the gifts' and Trick or Treat's, which only clear at the first gift or the first ghost, so
 // with either switched on they never opened.
 //
-// The rules that open at their own moment (the gifts' before the first gift, Trick or Treat's at the first ghost, the
+// The rules that open at their own moment (Trick or Treat's at the first ghost, the
 // portal's and the nightmare's on their way in, the looks' at the first open) aren't in the queue, and being due holds
 // nothing back.
 //
 // Home's notices (`homeNotices`, below; docs/43 §7) took what never needed a pop-up over Home: what asks nothing of the
 // player (Prof. Oak's leaderboard tip, his invite, Support me) and the opening of every feature with a page of its own
-// (the Day Care, Versus, the special events, Trades, the General upgrades, the shiny and Unown Pokédexes, the invite
-// rewards, the raid overhaul, the Underground), whose rules are now a card at the top of that page (`RulesCard`).
+// (the Day Care, Versus, the special events, Trades, the shiny and Unown Pokédexes, the raid overhaul, the
+// Underground), whose rules are now a card at the top of that page (`RulesCard`).
 // Every "seen" flag stays where it was in the save.
+import { calendarRulesDue } from './calendar'
 import { dayCareTutorialDue, leaderboardTutorialDue } from './daycare'
 import { donationDue } from './donation'
 import { dayNightRulesDue } from './dayNight'
 import { eventUnlockDue } from './events'
 import { extremeRulesDue, isExtreme } from './extreme'
-import { generalRulesDue } from './general'
-import { inviteRulesDue } from './invites'
+import { weatherRulesDue } from './flavours'
 import { liveList, livePopupDue, livesFor, type LiveSet } from './liveEvents'
 import { powerRulesDue } from './powers'
 import { raidOverhaulRulesDue } from './progressRaid'
 import { inWorldRegion, regionOfferDue } from './regions'
 import { badgeCase, portalRulesDue } from './run'
 import { shinyDexRulesDue } from './shinyDex'
+import { outfitRulesDue } from './outfits'
 import { tradeRulesDue, tradesToWatch } from './trade'
 import { diceTutorialDue } from './tutorial'
 import { ugRulesDue } from './underground'
 import { unownDexRulesDue } from './unownDex'
-import { versusRulesDue } from './versus'
+import { versusRulesDue, versusUnlocked } from './versus'
+import { friendBattlesRulesDue } from './friendBattle'
 import { inWorld, worldByeDue, worldFinishPopupDue, worldFor, worldPopupDue } from './worlds'
 import type { GameData, LiveEvent, SaveData } from './types'
 
@@ -41,6 +43,11 @@ export const SHARE_PROMPT_BADGES = 2
 export interface PopupContext {
   /** Between fights: no encounter under way (`run.phase === 'idle'`), no battle, no full-screen moment on screen. */
   calm: boolean
+  /**
+   * A Pokémon Center between fights, its heal played: not calm (an encounter is under way), but the dice tutorial may
+   * start there, its HOME the way to the Mart. Right after Joey the round's Center comes at once (docs/46 §5).
+   */
+  atCenter?: boolean
   /** The page open (its path): a pop-up never opens over the page it leads to. */
   path: string
   /** Signed in to the online service: Trades and the invite rewards are only there for an account. */
@@ -76,11 +83,12 @@ interface Entry {
 const under = (prefix: string) => (path: string) => path === prefix || path.startsWith(`${prefix}/`)
 
 /**
- * The live events whose pop-up still takes a turn in the queue: all but the Underground, whose rules are on its page
- * now (docs/43 §7) and whose opening is a notice on Home.
+ * The live events whose pop-up still takes a turn in the queue: all but those with a page of their own, the
+ * Underground and the gift calendar (docs/55), whose rules are on their page (docs/43 §7) and whose opening is a notice
+ * on Home.
  */
 export const queuedLives = (lives: LiveSet): LiveEvent[] =>
-  liveList(lives).filter((e) => e.type !== 'underground')
+  liveList(lives).filter((e) => e.type !== 'underground' && e.type !== 'calendar')
 
 /**
  * Every one-time pop-up, in the order they take the screen: what you came back to first, the messages, a new region,
@@ -106,8 +114,12 @@ const QUEUE = {
   inviteReward: { due: (_s, _d, c) => !!c.inviteReward, away: under('/friends') },
   portal: { due: (s, d) => !!portalRulesDue(s, d), away: (p) => p === '/area' },
   dayNight: { due: (s, d) => dayNightRulesDue(s, d) },
+  /** The weather (docs/62 §2): the first time in an area with weather, Hoenn's and Galar's each. */
+  weather: { due: (s, d, c) => weatherRulesDue(s, d, c.now ?? Date.now()) },
   /** Mega Evolution, Gigantamax and Z-Moves, each once its badge is won. */
   powers: { due: (s, d) => !!powerRulesDue(s, d) },
+  /** Outfits (docs/59), as the first Pokémon in one arrives. */
+  outfits: { due: (s, d) => outfitRulesDue(s, d) },
   /** A small world has opened (the player outside it). */
   world: {
     due: (s, d, c) => !inWorld(s, d) && worldPopupDue(s, worldFor(s, d, c.now)),
@@ -164,7 +176,8 @@ export function nextOneTimePopup(
   data: GameData,
   ctx: PopupContext,
 ): OneTimePopup | null {
-  if (!save || !ctx.calm) return null
+  if (!save) return null
+  if (!ctx.calm) return ctx.atCenter && ready('diceTutorial', save, data, ctx) ? 'diceTutorial' : null
   if (ctx.showing && ready(ctx.showing, save, data, ctx)) return ctx.showing
   return ONE_TIME_POPUPS.find((id) => ready(id, save, data, ctx)) ?? null
 }
@@ -179,10 +192,12 @@ export interface NoticeContext {
 /**
  * Home's notices (docs/43 §7), in the order Home shows them: each feature with a page of its own as it opens (until its
  * page's rules card is read: the feature's own "seen" flag), then what asks nothing of the player. The flags are the
- * pop-ups' own (`dayCare.visited`, `versusRulesSeen`, `events.seen`, `trades.rulesSeen`, `general.rulesSeen`,
+ * pop-ups' own (`dayCare.visited`, `versusRulesSeen`, `events.seen`, `trades.rulesSeen`,
  * `shinyDexSeen`, `unownDexSeen`, `invites.rulesSeen`, `events.raidRulesSeen`, `underground.rulesSeen`,
- * `leaderboardVisited`, `donationSeen`, the invite's per-region mark on the device).
+ * `events.calendarRulesSeen`, `leaderboardVisited`, `donationSeen`, the invite's per-region mark on the device).
  */
+// The General upgrades and the invite rewards have no notice (the user's call, 2026-11-02): their rules card waits on
+// their page.
 const NOTICES = {
   /** The Day Care, at its catches (Prof. Oak's tutorial was its rules). → /daycare */
   dayCare: (s: SaveData, d: GameData) => dayCareTutorialDue(s, d),
@@ -192,18 +207,19 @@ const NOTICES = {
   versus: (s: SaveData, d: GameData) => versusRulesDue(s, d),
   /** Trades, for an account. → /trades */
   trades: (s: SaveData, d: GameData, c: NoticeContext) => !!c.signedIn && tradeRulesDue(s, d),
-  /** The General upgrades (and the Shiny Charm among them). → the Mart's Upgrades */
-  general: (s: SaveData, d: GameData) => generalRulesDue(s, d),
+  /** Friend Battles (docs/65), for an account with Versus open (three Pokémon at Lv.50). → /battles */
+  friendBattles: (s: SaveData, d: GameData, c: NoticeContext) =>
+    !!c.signedIn && friendBattlesRulesDue(s, d) && versusUnlocked(s, d),
   /** The shiny Pokédex, at the first league beaten. → the Pokédex's shiny view */
   shinyDex: (s: SaveData, d: GameData) => shinyDexRulesDue(s, d),
   /** The Unown Pokédex, once an area where Unown live is opened. → the Pokédex's Unown view */
   unownDex: (s: SaveData, d: GameData) => unownDexRulesDue(s, d),
-  /** The invite rewards. → /friends */
-  invites: (s: SaveData, d: GameData) => inviteRulesDue(s, d),
   /** The raid overhaul's rules (docs/40), once a raid is open with it on. → /events/raid */
   raidRules: (s: SaveData, d: GameData) => raidOverhaulRulesDue(s, d),
   /** The Underground, while its live event runs. → /underground */
   underground: (s: SaveData, d: GameData, c: NoticeContext) => ugRulesDue(s, d, c.now ?? null),
+  /** A gift calendar, while one runs, until its page's rules card is read (docs/55). → /calendar */
+  calendar: (s: SaveData, d: GameData, c: NoticeContext) => calendarRulesDue(s, d, c.now ?? null),
   /** Prof. Oak's leaderboard tip, from the first badge (after the Day Care's). → /leaderboard */
   leaderboard: (s: SaveData, d: GameData) => leaderboardTutorialDue(s, d),
   /** Prof. Oak's invite, at a region's 2nd badge (INVITE shares the link). */

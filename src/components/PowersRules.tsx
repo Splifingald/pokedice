@@ -9,6 +9,7 @@ import {
   powerLeader,
   powerRulesDue,
   regionCaseOf,
+  zCrystalsOn,
   type GameData,
   type PowerKind,
 } from '@/engine'
@@ -99,8 +100,10 @@ export function usePowerRules(kind: PowerKind): RuleRow[] {
     ]
   }
   const z = data.config.zMove
+  // With Z-Crystals (docs/62 §6), what opens them is a crystal per type, not Lana's badge.
+  const crystals: RuleRow = { icon: 'badge', title: t('ui.rules.z.crystals.title'), text: t('ui.rules.z.crystals.text') }
   return [
-    open,
+    zCrystalsOn(data) ? crystals : open,
     {
       icon: 'sword',
       title: t('ui.rules.z.types.title'),

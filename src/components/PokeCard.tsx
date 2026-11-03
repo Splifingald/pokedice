@@ -1,17 +1,20 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
-import { instanceMaxHp, instanceStats, xpToNext, type PokemonInstance, type PokeType } from '@/engine'
+import { instanceMaxHp, instanceStats, xpToNext, type PokemonInstance, type PokeType, outfitOf } from '@/engine'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { useDetails, useTypeHints } from '@/store/hooks'
 import { cx } from '@/theme/util'
-import { KoTag } from './Extreme'
+import { BuffTag, KoTag } from './Extreme'
 import { HpBar } from './HpBar'
 import { PixelIcon } from './icons'
+import { EggSprite } from './EggSprite'
 import { ItemSprite } from './ItemSprite'
 import { RevivalBar } from './MonCard'
 import { MiniSprite } from './SpriteImg'
 import { TypeBadge } from './TypeBadge'
 import { attackEdge } from './TypeMatchups'
+import { InstTalentGem } from './Talent'
+import { outfitName } from './Outfit'
 
 /**
  * A Pokémon as a card, three to a row: the one card for a team member everywhere (docs/43 §4: the Team screen, the
@@ -75,7 +78,8 @@ export function PokeCard({
   const fossil = reviving && inst.fossil ? data.items[inst.fossil] : undefined
   const fainted = !reviving && inst.currentHp <= 0
   const edge = hints && foe?.length ? attackEdge(data, instanceStats(inst, data).dice, foe) : 1
-  const name = inst.nickname || species.name
+  // A gift Egg (docs/61 §5.3) keeps what's inside to itself.
+  const name = inst.egg ? t('ui.mon.egg') : inst.nickname || species.name
   const need = xpToNext(inst.level, data.config)
   const xpPct = inst.level >= data.config.maxLevel ? 1 : Math.min(1, inst.xp / Math.max(1, need))
   const crown = lead && (
@@ -86,14 +90,23 @@ export function PokeCard({
   )
   const facts = (
     <>
-      <div className="flex min-w-0 items-center gap-1">
+      {/* Tight on a phone's three to a row: the sprite's transparent edges and the gaps give the lead's crown its room. */}
+      <div className="flex min-w-0 items-center gap-0.5">
         {reviving ? (
-          <ItemSprite item={fossil} size={28} className="shrink-0" />
+          inst.egg ? (
+            <EggSprite size={24} className="shrink-0" />
+          ) : (
+            <ItemSprite item={fossil} size={28} className="shrink-0" />
+          )
         ) : (
-          <MiniSprite dex={inst.dex} size={32} className={cx('-my-1 -ml-1 shrink-0', fainted && 'grayscale')} />
+          <MiniSprite dex={inst.dex} size={32} className={cx('-my-1 -ml-1 -mr-0.5 shrink-0', fainted && 'grayscale')} />
         )}
         <span className="text-base leading-none">{t('ui.common.level.short', { n: inst.level })}</span>
         {inst.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
+        {/* Its outfit (docs/59): the menu icon is the plain one, so its hat beside the name says it. */}
+        {outfitOf(data, inst) && (
+          <PixelIcon name="santaHat" size={14} title={outfitName(inst.outfit!)} className="shrink-0" />
+        )}
         {(edge !== 1 || badge || crown) && (
           <span className="ml-auto flex shrink-0 items-center gap-0.5">
             {edge !== 1 && (
@@ -112,6 +125,8 @@ export function PokeCard({
           must. */}
       <span className={cx('leading-none [overflow-wrap:anywhere]', nameWidth(name) > 9 ? 'text-base sm:text-lg' : 'text-lg')}>
         {name}
+        {/* The talent's gem (docs/51) after the name: in the top row it pushed the lead's crown off a narrow card. */}
+        <InstTalentGem inst={inst} size={10} className="ml-1 inline-block align-middle" />
       </span>
       {!brief && (
         <div className="flex flex-wrap items-center gap-1">
@@ -119,6 +134,8 @@ export function PokeCard({
           {species.type2 && <TypeBadge type={species.type2} size="sm" />}
         </div>
       )}
+      {/* Extreme mode's Pokébuff (docs/47): its extra die, and for how long. */}
+      <BuffTag inst={inst} />
       {reviving ? (
         <RevivalBar inst={inst} />
       ) : brief && !fainted ? (

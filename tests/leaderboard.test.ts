@@ -321,4 +321,19 @@ describe('boardWindow: the top 100, you with 10 either side, your friends', () =
   it('shows a short board whole', () => {
     expect(boardWindow(ranked(50).slice(0, 80)).every((it) => 'row' in it)).toBe(true)
   })
+
+  it('keeps nobody around you with around = 0 (Versus global): the top 100, you and your friends', () => {
+    expect(shape(boardWindow(ranked(200, [150, 299]), 0))).toEqual([
+      ...range(1, 100),
+      '…49',
+      150,
+      '…49',
+      200,
+      '…98',
+      299,
+      '…1',
+    ])
+    expect(shape(boardWindow(ranked(101), 0))).toEqual([...range(1, 101), '…199'])
+    expect(shape(boardWindow(ranked(50), 0))).toEqual([...range(1, 100), '…200'])
+  })
 })

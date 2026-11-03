@@ -50,8 +50,9 @@ export function ForfeitButton({
             variant="danger"
             onClick={() => {
               setConfirm(false)
-              onForfeit?.()
-              forfeit()
+              // A fight of its own (a Friend Battle, docs/65) gives up its way; else the run's fight.
+              if (onForfeit) onForfeit()
+              else forfeit()
             }}
           >
             <PixelIcon name="flag" size={14} /> {t('ui.battle.forfeit')}

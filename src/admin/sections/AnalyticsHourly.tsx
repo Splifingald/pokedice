@@ -1,11 +1,14 @@
 // Admin → Analytics → Players per hour: how many different players played in each of the last 24 hours
-// (analytics_hourly, migration 0042). The database is asked only when the button is pressed, never on its own.
+// (analytics_hourly, migration 0042). The database is asked only when the button is pressed, never on its own. Every
+// hour carries its guests and the answer the guests' total (0135), so the page's who switch needs no new request.
 import { useState } from 'react'
+import type { Who } from '@/analytics/retention'
 import { PixelButton } from '@/components/PixelButton'
 import { getSupabase } from '@/lib/supabase'
 import { PALETTE } from '@/theme/colors'
 import { cx } from '@/theme/util'
 import { errorText } from './AnalyticsPlayer'
+import { WHO, WHO_MIGRATION, WHO_TEXT } from './analyticsWho'
 
 interface Hour {
   start: Date
@@ -19,6 +22,8 @@ interface Hourly {
   hours: Hour[]
   /** Different players over the 24 hours. */
   total: number
+  /** Of them, the guests; null before migration 0135. */
+  guests: number | null
   /** The first hour ever recorded. */
   since: Date | null
 }
@@ -31,6 +36,7 @@ async function fetchHourly(): Promise<Hourly> {
   const raw = (data ?? {}) as {
     hours?: [string, number, number][] | null
     total?: number
+    guests?: number
     since?: string | null
   }
   const since = raw.since ? new Date(raw.since) : null
@@ -40,6 +46,7 @@ async function fetchHourly(): Promise<Hourly> {
       return { start, players, guests, recorded: since != null && start >= since }
     }),
     total: raw.total ?? 0,
+    guests: raw.guests ?? null,
     since,
   }
 }
@@ -63,8 +70,21 @@ function axis(top: number) {
 /** The hour in progress is striped: its count is still growing. */
 const NOW_FILL = `repeating-linear-gradient(135deg, ${PALETTE.gold} 0 4px, transparent 4px 7px)`
 
-function Chart({ data }: { data: Hourly }) {
+/** An hour's players of `who`: a guest and an account are different keys, so the logged-in ones are all − guests. */
+const countOf = (h: { players: number; guests: number }, who: Who) =>
+  who === 'all' ? h.players : who === 'guests' ? h.guests : h.players - h.guests
+
+function Chart({ data: all, who }: { data: Hourly; who: Who }) {
   const [hover, setHover] = useState<number | null>(null)
+  const data = {
+    ...all,
+    hours: all.hours.map((h) => ({ ...h, players: countOf(h, who) })),
+    total:
+      who === 'all' || all.guests == null
+        ? all.total
+        : countOf({ players: all.total, guests: all.guests }, who),
+  }
+  const unsplit = who !== 'all' && all.guests == null
   const { hours } = data
   const last = hours.length - 1
   const { max, ticks } = axis(Math.max(0, ...hours.map((h) => h.players)))
@@ -77,7 +97,8 @@ function Chart({ data }: { data: Hourly }) {
     <>
       <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-xl">
         <span>
-          <b className="text-5xl leading-none">{data.total.toLocaleString()}</b> different players
+          <b className="text-5xl leading-none">{unsplit ? '–' : data.total.toLocaleString()}</b> different
+          players
         </span>
         {peak && (
           <span>
@@ -90,6 +111,11 @@ function Chart({ data }: { data: Hourly }) {
           </span>
         )}
       </div>
+      {unsplit && (
+        <p className="text-lg text-danger-light">
+          The different players over the 24 hours need {WHO_MIGRATION} to be run.
+        </p>
+      )}
       {data.since && hours[0] && data.since > hours[0].start && (
         <p className="text-base opacity-80">
           Counting started at {time(data.since)} on {data.since.toLocaleDateString()}: the hours before are
@@ -109,7 +135,7 @@ function Chart({ data }: { data: Hourly }) {
           <div
             className="relative h-48"
             role="img"
-            aria-label={`Players per hour over the last 24 hours${peak ? `: peak ${peak.players} at ${time(peak.start)}` : ''}. The table below has every hour.`}
+            aria-label={`Players per hour over the last 24 hours${who === 'all' ? '' : ` (${WHO.find((w) => w.id === who)!.label})`}${peak ? `: peak ${peak.players} at ${time(peak.start)}` : ''}. The table below has every hour.`}
           >
             {ticks.map((t) => (
               <div key={t} className="absolute inset-x-0 h-px bg-white/20" style={{ bottom: pct(t) }} />
@@ -145,9 +171,11 @@ function Chart({ data }: { data: Hourly }) {
                 <b>{span(h)}</b>
                 {hover === last && ' (so far)'}
                 <br />
-                {h.recorded
-                  ? `${h.players.toLocaleString()} players · ${h.guests.toLocaleString()} guests`
-                  : 'Not recorded yet'}
+                {!h.recorded
+                  ? 'Not recorded yet'
+                  : who === 'all'
+                    ? `${h.players.toLocaleString()} players · ${h.guests.toLocaleString()} guests`
+                    : `${h.players.toLocaleString()} players`}
               </div>
             )}
           </div>
@@ -209,7 +237,7 @@ function Chart({ data }: { data: Hourly }) {
   )
 }
 
-export function HourlyPlayers() {
+export function HourlyPlayers({ who }: { who: Who }) {
   const [data, setData] = useState<Hourly | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -231,7 +259,7 @@ export function HourlyPlayers() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex flex-col">
           <span className="text-xl uppercase tracking-wider text-gold">Players per hour</span>
-          <span className="text-base opacity-80">The last 24 hours, in your time zone</span>
+          <span className="text-base opacity-80">The last 24 hours, in your time zone. {WHO_TEXT[who]}</span>
         </div>
         <span className="flex-1" />
         <PixelButton size="sm" onClick={() => void load()} disabled={loading}>
@@ -246,7 +274,7 @@ export function HourlyPlayers() {
       {!data && !error && (
         <p className="text-lg opacity-80">Press Check to count the players of the last 24 hours.</p>
       )}
-      {data && <Chart data={data} />}
+      {data && <Chart data={data} who={who} />}
     </section>
   )
 }

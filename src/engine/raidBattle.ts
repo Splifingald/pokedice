@@ -7,6 +7,7 @@
 import {
   makeBattler,
   raidFormShift,
+  raidPlate,
   reduce,
   startDuelStep,
   unleashForm,
@@ -19,6 +20,7 @@ import {
 } from './battle'
 import { isLegendary } from './breeding'
 import { attackMultiplier, uniformLevels, type UpgradeLevels } from './damage'
+import { portalRaidRules } from './portalMode'
 import { raidRules, raidSpecialFor, type RaidKindOf, type RaidRules } from './raidCalendar'
 import type { RaidHit } from './raidHit'
 import {
@@ -89,6 +91,11 @@ export interface RaidState {
   auto?: boolean
   /** The raid overhaul's own rules for this raid and where they stand (docs/40); absent when it's off. */
   special?: RaidSpecialState
+  /**
+   * The type it takes as each bar starts (the Hall of Origin's Arceus changing its Plate, docs/64 §4.5: its area's mode
+   * says which), by bar; absent for every other raid.
+   */
+  plates?: PokeType[]
 }
 
 /** What heals in a raid outside a duel step (docs/40). */
@@ -353,6 +360,8 @@ export function createRaid(
   boss.hp = boss.maxHp
   // Giratina's Origin Forme (any below-half-HP form) is its last bar's, not its HP's.
   boss.formHeld = true
+  // A portal area's raid may set its type bar by bar (the Hall of Origin's Arceus and its Plates).
+  const plates = opts.kind === 'progress' ? portalRaidRules(data, opts.areaId)?.barTypes : undefined
   const sides: RaidSide[] = opts.sides.map((seed) => {
     const { team, ...who } = seed
     const mons = team.map((t) => makeBattler(t, data))
@@ -382,8 +391,11 @@ export function createRaid(
     foeLevels: { ...uniformLevels(rules.upgradeLevel), typeScale: cfg.bossTypes, ...boosts(special, 'boss') },
     ...(special && { special }),
     ...(opts.auto && { auto: true }),
+    ...(plates && plates.length > 0 && { plates }),
   }
   const log: RaidLogEntry[] = [{ kind: 'raid_start', boss: boss.uid }]
+  // Its first bar's Plate (none to announce when it starts in that type already).
+  takePlate(s, data, log)
   if (special) {
     if (special.weather || special.terrain)
       log.push({ kind: 'raid_field', weather: special.weather ?? null, terrain: special.terrain ?? null })
@@ -475,6 +487,11 @@ function advance(s: RaidState, data: GameData, rng: Rng, log: RaidLogEntry[]) {
 /** The duel for one action: the side's team (its active Pokémon out) against the raid Pokémon. */
 function duelOf(s: RaidState, sideIdx: number, hit?: RaidHit): BattleState {
   const side = s.sides[sideIdx]!
+  // Power Spot (docs/51): another side's Pokémon in battle that carries it boosts this side's hits.
+  const others = s.sides.filter((x, i) => i !== sideIdx && !x.out).map((x) => activeOf(x))
+  const powerSpot = others.find((b) => b && b.hp > 0 && b.talent === 'powerSpot')
+  // Friend Guard: one softens the raid Pokémon's hits on this side.
+  const friendGuard = others.find((b) => b && b.hp > 0 && b.talent === 'friendGuard')
   return {
     kind: 'boss',
     phase: 'player_roll',
@@ -497,6 +514,8 @@ function duelOf(s: RaidState, sideIdx: number, hit?: RaidHit): BattleState {
     ...((side.kind !== 'me' || s.auto) && { auto: true }),
     single: true,
     ...(hit && { raidHit: hit }),
+    ...(powerSpot && { allyPowerSpot: { uid: powerSpot.uid, name: powerSpot.name } }),
+    ...(friendGuard && { allyFriendGuard: { uid: friendGuard.uid, name: friendGuard.name } }),
   }
 }
 
@@ -958,7 +977,16 @@ function breakBar(s: RaidState, overflow: number, sideIdx: number, log: RaidLogE
     }
     newBar(s, sideIdx, data, log)
   }
+  takePlate(s, data, log)
   if (s.bars - s.broken === 1) unleash(s, data, log)
+}
+
+/** The bar starting now takes its Plate, when the raid has them (docs/64 §4.5): its type form, every die that type. */
+function takePlate(s: RaidState, data: GameData, log: RaidLogEntry[]) {
+  const type = s.plates?.[s.broken]
+  if (!type) return
+  const e = raidPlate(s.boss, type, data)
+  if (e) log.push(e)
 }
 
 /** The last bar: the raid Pokémon's below-half-HP form unleashed, one more die with it (none for most); its own power. */
@@ -972,7 +1000,7 @@ function unleash(s: RaidState, data: GameData, log: RaidLogEntry[]) {
   if (!fin) return
   if (fin.form && data.species[fin.form]) {
     const fromDex = s.boss.dex
-    wearForm(s.boss, data.species[fin.form]!)
+    wearForm(s.boss, data.species[fin.form]!, data)
     log.push({
       kind: 'form',
       side: 'enemy',
