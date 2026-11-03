@@ -1648,7 +1648,9 @@ and the battle's `catch.ts`; every state on `/kitchen-sink` (`TrickBits`), every
     went: the team, the Box, in place of a weaker copy, or into yours) or the ghost greyed with "It vanished into the
     night", a secret area it opened (`SecretAreaCard`), then the round gauge and **HOME** beside **CONTINUE** (back on
     the trail), in the battle card's `1fr / 2fr` row; CONTINUE alone inside a portal run or a race. A Safari's paid
-    round is never dealt by CONTINUE: the player stops on the area's page, its price over the bar (docs/61 §4.2).
+    round is never dealt by CONTINUE: the player stops on the area's page, where CONTINUE carries the price on a
+    second line ("₽100 a round", as Home's CONTINUE; `SafariPayButton`, on `/kitchen-sink`), checked at 360 px in all
+    ten languages (docs/61 §4.2).
 - **Motion** (§8), on the battle's stage with the game's pixel FX, never CSS tweens: a step plays as a timeline over the
   stage (`StageCanvas`), the page's sprite hidden meanwhile, as the battle's catch. **The Treat** (`treatTimeline`): the
   ghost perks up, the Treat flies from your side in an arc, a quarter turn at a time, trailing gold twinkles; the ghost

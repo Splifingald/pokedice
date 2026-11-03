@@ -9,6 +9,7 @@ import { catchTimeline } from '@/fx/timelines/catch'
 import { treatTimeline } from '@/fx/timelines/trick'
 import { TrickRecapBody, TrickScreen, type TrickScreenProps } from '@/screens/area/TrickView'
 import { GiftStage, giftLine } from '@/screens/area/GiftView'
+import { SafariPayButton } from '@/screens/area/AreaIdle'
 import { useGame } from '@/store/game'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
@@ -61,6 +62,7 @@ function useLoop(make: () => Omit<TrickOverlay, 'onEnd'>): TrickOverlay {
 
 /** The Safari's screen in its states: idle, the Bait, a throw, a run-off, and its card, recap and rules. */
 function SafariBits() {
+  const { t } = useT()
   const [rules, setRules] = useState(false)
   const foe = spriteKey(CHANSEY, false)
   const band = trickBand(DEFAULT_CONFIG.safari, 'veryRare')
@@ -127,6 +129,13 @@ function SafariBits() {
         <div className="pixel-panel p-3">
           <TrickRecapBody theme="safari" dex={CHANSEY} level={26} end="fled" />
         </div>
+      </div>
+      {/* The area's page after a round's last card: a paid round waits for this tap, its price on CONTINUE. */}
+      <div className="grid w-full max-w-[360px] grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
+        <PixelButton size="lg" className="px-2">
+          {t('ui.nav.home')}
+        </PixelButton>
+        <SafariPayButton price={100} onClick={() => {}} />
       </div>
       <PixelButton size="sm" className="self-start" onClick={() => setRules(true)}>
         The Safari's rules
