@@ -11,6 +11,7 @@ import { createRng, type Rng } from './rng'
 import { rollTalentFor } from './talents'
 import type { Encounter } from './encounters'
 import { asSeenBy, type PlayerSide } from './rival'
+import { matchRivalTeam } from './rivalMatch'
 import type {
   Area,
   AreaProgress,
@@ -217,18 +218,27 @@ export const giftRng = (save: SaveData, g: GiftMoment): Rng => {
 
 /**
  * A rival's meeting as the trainer card it is: the version for the player's starter, under the rival's name and picture
- * as they see it (Kanto's the other character, Hoenn's May or Brendan), its team at its own levels. Met once it's won.
+ * as they see it (Kanto's the other character, Hoenn's May or Brendan), its team at its own levels, or fitted to the
+ * player's team (`save`) while the match is on (docs/61 §5.5). Met once it's won.
  */
-export function rivalEncounter(m: RivalMeeting, data: GameData, side?: PlayerSide | null): Encounter | null {
+export function rivalEncounter(
+  m: RivalMeeting,
+  data: GameData,
+  side?: PlayerSide | null,
+  save?: SaveData | null,
+): Encounter | null {
   const t = rivalFor(m, data, side)
   if (!t || !t.team.length) return null
   const seen = asSeenBy(t, side)
+  const written = t.team.map((p) => ({ dex: p.dex, level: Math.max(1, Math.min(data.config.maxLevel, p.level)) }))
+  const { team, matched } = matchRivalTeam(written, save, data)
   return {
     kind: 'trainer',
     trainerId: t.id,
     name: seen.name,
     spriteUrl: seen.spriteUrl,
-    team: t.team.map((p) => ({ dex: p.dex, level: Math.max(1, Math.min(data.config.maxLevel, p.level)) })),
+    team,
     moment: m.id,
+    ...(matched && { matched: true }),
   }
 }

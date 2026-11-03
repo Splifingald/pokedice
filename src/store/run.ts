@@ -2003,7 +2003,8 @@ function dealMoment(save: SaveData, areaId: string, noneAble: boolean): boolean 
   }
   const meeting = noneAble ? null : dueRival(save, area, progress, data)
   if (!meeting || !sideQuestKnown('rivals', rivalsOn(data))) return false
-  const encounter = rivalEncounter(meeting, data, playerSideOf(save))
+  // Fitted to the team the player brings while the match is on (docs/61 §5.5).
+  const encounter = rivalEncounter(meeting, data, playerSideOf(save), save)
   if (!encounter) return false
   setRun({ phase: 'preview', encounter, firstInArea: false, sprung: false })
   beginFight()
