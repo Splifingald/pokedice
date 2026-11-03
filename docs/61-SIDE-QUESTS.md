@@ -159,7 +159,8 @@ Safari Zone**: the old area's 23 wild Pokémon, a loot table of its own (new, so
   area and per save"; a free round a day would be the same two numbers with a daily reset.
 - **Never paid on the way** (a player's report, 2026-11-03: round after round paid by itself, and no way out): once a
   round's last card is over, a paid round is not dealt as the next card is everywhere else; the player stops on the
-  area's page, "₽100 a round" over its HOME and CONTINUE, and only that CONTINUE (or Home's, which says the same) pays.
+  area's page, beside HOME a CONTINUE carrying its price under the word ("₽100 a round", `SafariPayButton`), and only
+  that CONTINUE (or Home's, which says the same) pays.
   A free round still follows at once. Every Safari result card has **HOME** beside CONTINUE, as a battle's has.
 - **Switch**: Off / On for admin / On for everyone (`game_config.safari.access`), checked by the server (`safari_open()`,
   as `trick_or_treat_open()`). Off: the Safari areas are still secret areas off the main road, and their cards are

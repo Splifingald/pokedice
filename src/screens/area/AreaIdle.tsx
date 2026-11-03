@@ -49,12 +49,6 @@ export function AreaIdle({ area, scene = false }: { area: Area; scene?: boolean 
     <>
       {/* Why the next encounter can't start (the area closed, everyone resting): said next to it. */}
       {off && <p className="m-0 text-center font-pixel-sm text-[16px] leading-tight text-ink">{sub}</p>}
-      {/* A Safari's paid round waits here for the player's CONTINUE (docs/61 §4): what it costs, said over it. */}
-      {!off && safariPrice > 0 && (
-        <p className="m-0 text-center font-pixel-sm text-[16px] leading-tight text-ink">
-          {t('ui.safari.price', { price: safariPrice })}
-        </p>
-      )}
       {locked && (
         <p className="m-0 text-center font-pixel-sm text-[16px] leading-tight text-ink">
           {t(skinKey(skinOfArea(area, data), 'ui.portal.locked'))}
@@ -71,10 +65,14 @@ export function AreaIdle({ area, scene = false }: { area: Area; scene?: boolean 
             {t('ui.nav.home')}
           </PixelButton>
         )}
-        <PixelButton variant="primary" size="lg" className="px-2" disabled={off} onClick={go}>
-          {(gym || boss || raid) && <PixelIcon name="sword" size={22} />}
-          {gym || boss || raid ? label : t('ui.common.continue')}
-        </PixelButton>
+        {safariPrice > 0 && !off ? (
+          <SafariPayButton price={safariPrice} onClick={go} />
+        ) : (
+          <PixelButton variant="primary" size="lg" className="px-2" disabled={off} onClick={go}>
+            {(gym || boss || raid) && <PixelIcon name="sword" size={22} />}
+            {gym || boss || raid ? label : t('ui.common.continue')}
+          </PixelButton>
+        )}
       </div>
     </>
   )
@@ -164,5 +162,30 @@ export function AreaTeam() {
       </ol>
       <SheetModal view={view} onClose={() => setView(null)} manage />
     </section>
+  )
+}
+
+/**
+ * CONTINUE when a Safari's paid round waits for this tap (docs/61 §4): its price on the button itself, under the word,
+ * as Home's CONTINUE says it (a player's report, 2026-11-03: rounds paid without seeing it).
+ */
+export function SafariPayButton({ price, onClick }: { price: number; onClick: () => void }) {
+  const { t } = useT()
+  const sub = t('ui.safari.price', { price })
+  return (
+    <PixelButton
+      variant="primary"
+      size="lg"
+      className="px-2"
+      onClick={onClick}
+      aria-label={`${t('ui.common.continue')} · ${sub}`}
+    >
+      <span className="grid min-w-0 gap-[3px] text-center">
+        <span className="truncate leading-none">{t('ui.common.continue')}</span>
+        <span className="truncate font-pixel-sm text-[16px] normal-case leading-none tracking-[0.02em] text-[#ffe2db] [text-shadow:none]">
+          {sub}
+        </span>
+      </span>
+    </PixelButton>
   )
 }

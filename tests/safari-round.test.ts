@@ -1,7 +1,15 @@
 // The Safari's way out and its price (docs/61 §4): a player's report (2026-11-03) found no HOME on its cards and round
 // after round paid by itself, ₽100 each, with no tap that named the price.
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createRng, emptyProgress, fleeTrick, isSafariArea, lureCfg, startTrick, type GameData } from '@/engine'
+import {
+  createRng,
+  emptyProgress,
+  fleeTrick,
+  isSafariArea,
+  lureCfg,
+  startTrick,
+  type GameData,
+} from '@/engine'
 import { useGame } from '@/store/game'
 import { leaveTrick, leaveTrickHome, rollNext, seedRun, startNewGame } from '@/store/run'
 
@@ -10,7 +18,10 @@ function standInSafari(rounds: number, deck: string[] = []) {
   seedRun(5)
   startNewGame(3)
   const { data, save, run } = useGame.getState()
-  const on: GameData = { ...data, config: { ...data.config, safari: { ...data.config.safari, access: 'all' } } }
+  const on: GameData = {
+    ...data,
+    config: { ...data.config, safari: { ...data.config.safari, access: 'all' } },
+  }
   const area = on.areas.find((a) => isSafariArea(a) && (a.regionId ?? 'kanto') === 'kanto')!
   const cfg = lureCfg(on, 'safari')
   const state = fleeTrick(startTrick({ dex: 113, level: 25, tier: 'veryRare' }, cfg, createRng(1), 'safari'))!
@@ -25,7 +36,13 @@ function standInSafari(rounds: number, deck: string[] = []) {
         [area.id]: { ...emptyProgress(), safariRounds: rounds, deck: deck as never },
       },
     },
-    run: { ...run, areaId: area.id, phase: 'trick', encounter: null, trick: { id: 1, state, last: null, caught: null } },
+    run: {
+      ...run,
+      areaId: area.id,
+      phase: 'trick',
+      encounter: null,
+      trick: { id: 1, state, last: null, caught: null },
+    },
   })
   return area
 }

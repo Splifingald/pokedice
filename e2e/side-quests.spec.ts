@@ -1,9 +1,12 @@
 // The side quests (docs/61), played in the game with their switches on: a Poké Ball that springs out as Voltorb, a
 // Safari's round and its encounter, a gift handed over, a rival met on the road, a roadblock across Routes 12–15, and
 // the kitchen sink's states. Each step leaves its picture in docs/61-side-quests/ (the doc shows them).
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 import { DEFAULT_CONFIG, emptyProgress, instanceMaxHp, linearAreas, type SaveData } from '../src/engine'
-import { gameData, makeSave, mockSupabase } from './helpers'
+import { readFileSync } from 'node:fs'
+import { parseCsv } from '../src/i18n/csv'
+import { LANGS, type Lang } from '../src/i18n/langs'
+import { FAST, gameData, makeSave, mockSupabase } from './helpers'
 
 const SHOTS = 'docs/61-side-quests'
 const data = gameData()
@@ -48,7 +51,7 @@ function standingIn(
   return { ...base, box: team, currentAreaId: target.id, areaProgress, ...patch }
 }
 
-async function boot(page: Page, save: SaveData) {
+async function boot(page: Page, save: SaveData, settings = SETTINGS) {
   await mockSupabase(page)
   await page.addInitScript(
     ([s, f, c]) => {
@@ -56,7 +59,7 @@ async function boot(page: Page, save: SaveData) {
       localStorage.setItem('pokedice.settings', f!)
       localStorage.setItem('pokedice.devConfig', c!)
     },
-    [JSON.stringify(save), SETTINGS, ON],
+    [JSON.stringify(save), settings, ON],
   )
 }
 
@@ -139,6 +142,63 @@ test("the Safari's last card over: HOME on its card, and no round paid by itself
   expect(gold).toBe(2000)
   await page.getByRole('button', { name: 'Home', exact: true }).click()
   await expect(page).toHaveURL(/\/home$/)
+})
+
+/** The strings sheet as the game reads it (a blank cell is English), for buttons named in each language. */
+const SHEET = (() => {
+  const rows = parseCsv(readFileSync('src/i18n/strings.csv', 'utf8'))
+  const head = rows[0]!.map((h) => h.trim())
+  return (lang: Lang, key: string, vars: Record<string, string | number> = {}) => {
+    const row = rows.find((r) => r[0]?.trim() === key)!
+    const text = row[head.indexOf(lang)] || row[head.indexOf('en')]!
+    return text.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? ''))
+  }
+})()
+
+/** Nothing cut off: none of these buttons, nor a one-line label in them, wider than its box; no sideways scroll. */
+async function nothingCut(page: Page, buttons: Locator) {
+  const cut = await buttons.evaluateAll((els) =>
+    els.flatMap((b) =>
+      [b, ...b.querySelectorAll<HTMLElement>('.truncate')].filter((el) => el.scrollWidth > el.clientWidth + 1),
+    ).map((el) => el.textContent ?? ''),
+  )
+  expect(cut).toEqual([])
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true)
+}
+
+test.describe('the Safari on a 360 × 640 phone', () => {
+  test.use({ viewport: { width: 360, height: 640 } })
+  for (const lang of LANGS) {
+    test(`${lang}: HOME and CONTINUE on its card, then the price on the area page's CONTINUE`, async ({ page }) => {
+      const tr = (key: string, vars?: Record<string, string | number>) => SHEET(lang, key, vars)
+      const save = standingIn(
+        'Safari Zone',
+        { safariRounds: 1, deck: ['wild'] },
+        { gold: 2000, safari: { rulesSeen: true } },
+        'Fuchsia City',
+      )
+      await boot(page, save, JSON.stringify({ ...JSON.parse(FAST), lang }))
+      await page.goto('/home')
+      await page.getByRole('button', { name: tr('ui.common.continue'), exact: true }).first().click()
+      await page.getByRole('button', { name: tr('ui.safari.start') }).click()
+      const home = page.getByRole('dialog').getByRole('button', { name: tr('ui.nav.home'), exact: true })
+      const bait = page.getByRole('button', { name: tr('ui.safari.treat') })
+      for (let i = 0; i < 60 && !(await home.isVisible()); i++) {
+        if (await bait.isEnabled()) await bait.click()
+        else await page.waitForTimeout(300)
+      }
+      await expect(home).toBeVisible()
+      await nothingCut(page, page.getByRole('dialog').getByRole('button'))
+      await page.screenshot({ path: `test-results/safari-phone-${lang}-card.png` })
+      await page.getByRole('dialog').getByRole('button', { name: tr('ui.common.continue'), exact: true }).click()
+      const price = tr('ui.safari.price', { price: 100 })
+      const pay = page.getByRole('button', { name: `${tr('ui.common.continue')} · ${price}`, exact: true })
+      await expect(pay).toBeVisible()
+      await expect(pay).toContainText(price)
+      await nothingCut(page, page.getByRole('button', { name: tr('ui.nav.home'), exact: true }).or(pay))
+      await page.screenshot({ path: `test-results/safari-phone-${lang}-area.png` })
+    })
+  }
 })
 
 test('a gift: the giver walks in, TAKE IT, the Pokémon is yours', async ({ page }) => {
