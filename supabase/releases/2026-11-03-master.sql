@@ -1265,7 +1265,7 @@ returns text
 language sql immutable as $$
   select coalesce(nullif(left(btrim(regexp_replace(regexp_replace(regexp_replace(
     normalize(coalesce(p, ''), NFC),
-    '[\u0001-\u001F\u007F-\u009F­؜᠎​-‏ -‮⁠-⁯﻿￹-￻]', '', 'g'),
+    '[\u0001-\u001F\u007F-\u009F\u00AD\u061C\u180E\u200B-\u200F\u2028-\u202E\u2060-\u206F\uFEFF\uFFF9-\uFFFB]', '', 'g'),
     '([̀-ͯ҃-҉᪰-᫿᷀-᷿⃐-⃿︠-︯])[̀-ͯ҃-҉᪰-᫿᷀-᷿⃐-⃿︠-︯]+',
     '\1', 'g'),
     '\s+', ' ', 'g')), 12), ''), 'Trainer')
