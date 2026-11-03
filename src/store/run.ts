@@ -378,6 +378,9 @@ function onToNext() {
   const area = data.areas.find((a) => a.id === run.areaId)
   if (!area) return
   const own = [portalModeOf, nightmareModeOf, timeRaceModeOf, whiteoutModeOf, tracksModeOf].some((m) => m(area, data))
+  // A Safari's next round costs ₽ (docs/61 §4): never paid on the way, only by a CONTINUE that names the price. The
+  // player waits on the area's page, HOME beside it (a player's report, 2026-11-03: round after round paid by itself).
+  if (safariRoundPrice(data, area, progressOf(save, area.id)) > 0) return
   if (!own) continueExploring()
 }
 
@@ -2166,6 +2169,14 @@ export function fleeTrick() {
   setRun({ trick: { ...tr, state, last: null } })
   leaveTrick()
   pushToast(t('ui.toast.gotAway'))
+}
+
+/** HOME on the result card: back on the trail, no card dealt; Home's CONTINUE goes on from there. */
+export function leaveTrickHome() {
+  const tr = useGame.getState().run.trick
+  if (tr && !tr.state.end) return
+  setRun({ trick: null })
+  backToArea()
 }
 
 /** Caught or fled: back on the trail and on to the next card (the round may be complete). */

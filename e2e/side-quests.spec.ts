@@ -112,6 +112,35 @@ test('the Safari: its round on CONTINUE, its card, its rules, Bait and a Safari 
   await shot(page, '4-safari-bait')
 })
 
+test("the Safari's last card over: HOME on its card, and no round paid by itself", async ({ page }) => {
+  // A player's report (2026-11-03): no way out of the Safari, and round after round paid by itself.
+  const save = standingIn(
+    'Safari Zone',
+    { safariRounds: 1, deck: ['wild'] },
+    { gold: 2000, safari: { rulesSeen: true } },
+    'Fuchsia City',
+  )
+  await boot(page, save)
+  await goOn(page)
+  await page.getByRole('button', { name: /Approach it/i }).click()
+  // Bait until it runs off (or it's caught): the result card.
+  const home = page.getByRole('button', { name: 'Home', exact: true })
+  const bait = page.getByRole('button', { name: /Bait/ })
+  for (let i = 0; i < 60 && !(await home.isVisible()); i++) {
+    if (await bait.isEnabled()) await bait.click()
+    else await page.waitForTimeout(400)
+  }
+  await expect(home).toBeVisible()
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).click()
+  // The round's last card: the next one costs ₽100, so the player stops on the area's page, nothing paid.
+  await expect(page.getByText('₽100 a round').first()).toBeVisible()
+  await expect(page.getByRole('button', { name: /Approach it/i })).toHaveCount(0)
+  const gold = await page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!).gold)
+  expect(gold).toBe(2000)
+  await page.getByRole('button', { name: 'Home', exact: true }).click()
+  await expect(page).toHaveURL(/\/home$/)
+})
+
 test('a gift: the giver walks in, TAKE IT, the Pokémon is yours', async ({ page }) => {
   const save = standingIn('Routes 7 & 8', { drawn: ['center', 'wild', 'wild'] })
   await boot(page, save)

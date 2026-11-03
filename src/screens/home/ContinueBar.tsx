@@ -302,6 +302,7 @@ export function useContinue(area: Area) {
     closed,
     busy,
     resting,
+    safariPrice,
     cleared: progress.cleared,
     latest,
     goTo,

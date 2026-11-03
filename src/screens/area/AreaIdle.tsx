@@ -31,7 +31,7 @@ export function AreaIdle({ area, scene = false }: { area: Area; scene?: boolean 
   const { t } = useT()
   const navigate = useNavigate()
   const save = useGame((s) => s.save)
-  const { label, sub, go, explore, off, gym, boss, raid, closed, resting } = useContinue(area)
+  const { label, sub, go, explore, off, gym, boss, raid, closed, resting, safariPrice } = useContinue(area)
   // Inside a portal run (docs/28) there is no way Home: CONTINUE alone.
   const locked = useGame((s) => !!portalLock(s.save, s.data))
   const data = useGame((s) => s.data)
@@ -49,6 +49,12 @@ export function AreaIdle({ area, scene = false }: { area: Area; scene?: boolean 
     <>
       {/* Why the next encounter can't start (the area closed, everyone resting): said next to it. */}
       {off && <p className="m-0 text-center font-pixel-sm text-[16px] leading-tight text-ink">{sub}</p>}
+      {/* A Safari's paid round waits here for the player's CONTINUE (docs/61 §4): what it costs, said over it. */}
+      {!off && safariPrice > 0 && (
+        <p className="m-0 text-center font-pixel-sm text-[16px] leading-tight text-ink">
+          {t('ui.safari.price', { price: safariPrice })}
+        </p>
+      )}
       {locked && (
         <p className="m-0 text-center font-pixel-sm text-[16px] leading-tight text-ink">
           {t(skinKey(skinOfArea(area, data), 'ui.portal.locked'))}
